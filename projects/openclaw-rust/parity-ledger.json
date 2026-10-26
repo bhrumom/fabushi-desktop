@@ -2632,139 +2632,139 @@
       "selected_owner": "source/host/src/network_enrollment_owner.rs",
       "source_refs": [
         {
-          "path": "src/infra/device-pairing-access.ts",
           "blob_sha": "53889a9bed1994c1ca009f0df3dca366a774b907",
+          "path": "src/infra/device-pairing-access.ts",
           "range": {
-            "start_line": 1,
-            "end_line": 100
+            "end_line": 100,
+            "start_line": 1
           },
           "symbol": "device-pairing-access"
         },
         {
-          "path": "src/infra/device-pairing-admission.types.ts",
           "blob_sha": "5ca4d8260d643920adcd0bf10e74c921916774e9",
+          "path": "src/infra/device-pairing-admission.types.ts",
           "range": {
-            "start_line": 1,
-            "end_line": 100
+            "end_line": 100,
+            "start_line": 1
           },
           "symbol": "device-pairing-admission.types"
         },
         {
-          "path": "src/infra/device-pairing-cloud-worker.ts",
           "blob_sha": "7d17c6b00992c27ce44f1f0d6ac9c7d6e8c4a6c4",
+          "path": "src/infra/device-pairing-cloud-worker.ts",
           "range": {
-            "start_line": 1,
-            "end_line": 100
+            "end_line": 100,
+            "start_line": 1
           },
           "symbol": "device-pairing-cloud-worker"
         },
         {
-          "path": "src/infra/device-pairing-core.kernel.ts",
           "blob_sha": "3e86654e35d51639500179b66e281a5b17517f6f",
+          "path": "src/infra/device-pairing-core.kernel.ts",
           "range": {
-            "start_line": 1,
-            "end_line": 100
+            "end_line": 100,
+            "start_line": 1
           },
           "symbol": "device-pairing-core.kernel"
         },
         {
-          "path": "src/infra/device-pairing-core.types.ts",
           "blob_sha": "2cc2a8adfc6b75ad9faf21506e1f8a1dbd07751f",
+          "path": "src/infra/device-pairing-core.types.ts",
           "range": {
-            "start_line": 1,
-            "end_line": 100
+            "end_line": 100,
+            "start_line": 1
           },
           "symbol": "device-pairing-core.types"
         },
         {
-          "path": "src/infra/device-pairing-dispatch.worker.ts",
           "blob_sha": "26b447c56db8318c92dcc6f47c11ebc7c85d985a",
+          "path": "src/infra/device-pairing-dispatch.worker.ts",
           "range": {
-            "start_line": 1,
-            "end_line": 100
+            "end_line": 100,
+            "start_line": 1
           },
           "symbol": "device-pairing-dispatch.worker"
         },
         {
-          "path": "src/infra/device-pairing-identity.ts",
           "blob_sha": "61869ba59284d2322fa334dde5a5028fdcf0aa85",
+          "path": "src/infra/device-pairing-identity.ts",
           "range": {
-            "start_line": 1,
-            "end_line": 100
+            "end_line": 100,
+            "start_line": 1
           },
           "symbol": "device-pairing-identity"
         },
         {
-          "path": "src/infra/device-pairing-mutation.worker.ts",
           "blob_sha": "50face6d5f32ef58cbfe23cef7f19ccdb2348118",
+          "path": "src/infra/device-pairing-mutation.worker.ts",
           "range": {
-            "start_line": 1,
-            "end_line": 100
+            "end_line": 100,
+            "start_line": 1
           },
           "symbol": "device-pairing-mutation.worker"
         },
         {
-          "path": "src/infra/device-pairing-publication.ts",
           "blob_sha": "a8d9e7bcbde564ebf8d08cd00ca7fd8e6cf97666",
+          "path": "src/infra/device-pairing-publication.ts",
           "range": {
-            "start_line": 1,
-            "end_line": 100
+            "end_line": 100,
+            "start_line": 1
           },
           "symbol": "device-pairing-publication"
         },
         {
-          "path": "src/infra/device-pairing-read.types.ts",
           "blob_sha": "d5d06829a860925a467547fd626eb18ed1a3950e",
+          "path": "src/infra/device-pairing-read.types.ts",
           "range": {
-            "start_line": 1,
-            "end_line": 100
+            "end_line": 100,
+            "start_line": 1
           },
           "symbol": "device-pairing-read.types"
         },
         {
-          "path": "src/infra/device-pairing-state.kernel.ts",
           "blob_sha": "d5714607a7ad69b27fe142cb38fc162f7d734b2a",
+          "path": "src/infra/device-pairing-state.kernel.ts",
           "range": {
-            "start_line": 1,
-            "end_line": 100
+            "end_line": 100,
+            "start_line": 1
           },
           "symbol": "device-pairing-state.kernel"
         },
         {
-          "path": "src/infra/device-pairing-worker.test.ts",
           "blob_sha": "ce6f54087111c5df4aa7b2cf97663cd4fe6fffc1",
+          "path": "src/infra/device-pairing-worker.test.ts",
           "range": {
-            "start_line": 1,
-            "end_line": 100
+            "end_line": 100,
+            "start_line": 1
           },
           "symbol": "device-pairing-worker.test"
         },
         {
-          "path": "src/infra/device-pairing-worker.ts",
           "blob_sha": "190f6301ff4a865992d8bd1c5f3ddf4aff912ca5",
+          "path": "src/infra/device-pairing-worker.ts",
           "range": {
-            "start_line": 1,
-            "end_line": 100
+            "end_line": 100,
+            "start_line": 1
           },
           "symbol": "device-pairing-worker"
         },
         {
-          "path": "src/infra/device-pairing.types.ts",
           "blob_sha": "5a7413d40f0a96fff15da5588ecee53f427b25f7",
+          "path": "src/infra/device-pairing.types.ts",
           "range": {
-            "start_line": 1,
-            "end_line": 100
+            "end_line": 100,
+            "start_line": 1
           },
           "symbol": "device-pairing.types"
         }
       ],
       "status": {
-        "read": "read-complete",
-        "mapping": "reviewed",
+        "acceptance": "pending",
         "implementation": "pending",
-        "wiring": "pending",
+        "mapping": "reviewed",
+        "read": "read-complete",
         "verification": "pending",
-        "acceptance": "pending"
+        "wiring": "pending"
       },
       "target": {
         "language": "Rust",
@@ -2844,58 +2844,58 @@
       "selected_owner": "source/host/src/network_enrollment_owner.rs",
       "source_refs": [
         {
-          "path": "src/infra/device-pairing-migration.test.ts",
           "blob_sha": "ae9ba870ad19d2034ab31e9458ae4359841d04a3",
+          "path": "src/infra/device-pairing-migration.test.ts",
           "range": {
-            "start_line": 1,
-            "end_line": 100
+            "end_line": 100,
+            "start_line": 1
           },
           "symbol": "device-pairing-migration.test"
         },
         {
-          "path": "src/infra/device-pairing-row-mapping.ts",
           "blob_sha": "8af0a7638a6e2c23300323043935c549cb77739d",
+          "path": "src/infra/device-pairing-row-mapping.ts",
           "range": {
-            "start_line": 1,
-            "end_line": 100
+            "end_line": 100,
+            "start_line": 1
           },
           "symbol": "device-pairing-row-mapping"
         },
         {
-          "path": "src/infra/device-pairing-store-cache.ts",
           "blob_sha": "82335a9a30db69a0a612ae42e1dace395cf7c486",
+          "path": "src/infra/device-pairing-store-cache.ts",
           "range": {
-            "start_line": 1,
-            "end_line": 100
+            "end_line": 100,
+            "start_line": 1
           },
           "symbol": "device-pairing-store-cache"
         },
         {
-          "path": "src/infra/device-pairing-store-readonly.ts",
           "blob_sha": "a2541c87160e7acfffd96374dde710bba7c186ea",
+          "path": "src/infra/device-pairing-store-readonly.ts",
           "range": {
-            "start_line": 1,
-            "end_line": 100
+            "end_line": 100,
+            "start_line": 1
           },
           "symbol": "device-pairing-store-readonly"
         },
         {
-          "path": "src/infra/device-pairing-store.ts",
           "blob_sha": "b7592120467b67ab19011d3ce3eea055559adf25",
+          "path": "src/infra/device-pairing-store.ts",
           "range": {
-            "start_line": 1,
-            "end_line": 100
+            "end_line": 100,
+            "start_line": 1
           },
           "symbol": "device-pairing-store"
         }
       ],
       "status": {
-        "read": "read-complete",
-        "mapping": "reviewed",
+        "acceptance": "pending",
         "implementation": "pending",
-        "wiring": "pending",
+        "mapping": "reviewed",
+        "read": "read-complete",
         "verification": "pending",
-        "acceptance": "pending"
+        "wiring": "pending"
       },
       "target": {
         "language": "Rust",
@@ -2975,31 +2975,31 @@
       "selected_owner": "source/host/src/network_enrollment_owner.rs",
       "source_refs": [
         {
-          "path": "src/infra/device-pairing-approval.kernel.ts",
           "blob_sha": "7a563c858c078347587d4bfc6e153be59550393a",
+          "path": "src/infra/device-pairing-approval.kernel.ts",
           "range": {
-            "start_line": 1,
-            "end_line": 100
+            "end_line": 100,
+            "start_line": 1
           },
           "symbol": "device-pairing-approval.kernel"
         },
         {
-          "path": "src/infra/device-pairing-approval.ts",
           "blob_sha": "708db58a83f4d743054f70e2208a4fc4cc08bb3b",
+          "path": "src/infra/device-pairing-approval.ts",
           "range": {
-            "start_line": 1,
-            "end_line": 100
+            "end_line": 100,
+            "start_line": 1
           },
           "symbol": "device-pairing-approval"
         }
       ],
       "status": {
-        "read": "read-complete",
-        "mapping": "reviewed",
+        "acceptance": "pending",
         "implementation": "pending",
-        "wiring": "pending",
+        "mapping": "reviewed",
+        "read": "read-complete",
         "verification": "pending",
-        "acceptance": "pending"
+        "wiring": "pending"
       },
       "target": {
         "language": "Rust",
@@ -3079,22 +3079,22 @@
       "selected_owner": "source/host/src/network_enrollment_owner.rs",
       "source_refs": [
         {
-          "path": "src/infra/device-pairing-token-utils.ts",
           "blob_sha": "7bb56b799c5945489f60520329d67ea18c06ce75",
+          "path": "src/infra/device-pairing-token-utils.ts",
           "range": {
-            "start_line": 1,
-            "end_line": 100
+            "end_line": 100,
+            "start_line": 1
           },
           "symbol": "device-pairing-token-utils"
         }
       ],
       "status": {
-        "read": "read-complete",
-        "mapping": "reviewed",
+        "acceptance": "pending",
         "implementation": "pending",
-        "wiring": "pending",
+        "mapping": "reviewed",
+        "read": "read-complete",
         "verification": "pending",
-        "acceptance": "pending"
+        "wiring": "pending"
       },
       "target": {
         "language": "Rust",
@@ -3172,14 +3172,24 @@
       "reviewer": "xuyao@ombhrum.com",
       "risk": "Low; provides user-friendly pairing without compromising security",
       "selected_owner": "source/host/src/network_enrollment_owner.rs",
-      "source_refs": [],
+      "source_refs": [
+        {
+          "blob_sha": "fe6266b798457ae1dd7963f1f629783a10dd6c27",
+          "path": "src/infra/device-pairing-join-code.ts",
+          "range": {
+            "end_line": 69,
+            "start_line": 1
+          },
+          "symbol": "registerDevicePairingJoinCode"
+        }
+      ],
       "status": {
-        "read": "partial",
-        "mapping": "reviewed",
+        "acceptance": "pending",
         "implementation": "pending",
-        "wiring": "pending",
+        "mapping": "reviewed",
+        "read": "read-complete",
         "verification": "pending",
-        "acceptance": "pending"
+        "wiring": "pending"
       },
       "target": {
         "language": "Rust",
@@ -3259,31 +3269,31 @@
       "selected_owner": "source/host/src/network_enrollment_owner.rs",
       "source_refs": [
         {
-          "path": "src/infra/device-pairing-node-state.ts",
           "blob_sha": "4cc23766efb819a207bf3b04c596d974a98d93fa",
+          "path": "src/infra/device-pairing-node-state.ts",
           "range": {
-            "start_line": 1,
-            "end_line": 100
+            "end_line": 100,
+            "start_line": 1
           },
           "symbol": "device-pairing-node-state"
         },
         {
-          "path": "src/infra/device-pairing-node.records.ts",
           "blob_sha": "fdf8b81e2bb38e68a32ecd4df065c6553696e2c1",
+          "path": "src/infra/device-pairing-node.records.ts",
           "range": {
-            "start_line": 1,
-            "end_line": 100
+            "end_line": 100,
+            "start_line": 1
           },
           "symbol": "device-pairing-node.records"
         }
       ],
       "status": {
-        "read": "read-complete",
-        "mapping": "reviewed",
+        "acceptance": "pending",
         "implementation": "pending",
-        "wiring": "pending",
+        "mapping": "reviewed",
+        "read": "read-complete",
         "verification": "pending",
-        "acceptance": "pending"
+        "wiring": "pending"
       },
       "target": {
         "language": "Rust",
@@ -3297,6 +3307,563 @@
         "Node pairing lifecycle and supervisor poll"
       ],
       "unit_id": "OCRM-UNIT-DEVICE-PAIRING-001"
+    },
+    {
+      "adr_refs": [],
+      "behavior": "Memory tool contract, parameter aliasing (maxResults > max_results > limit), and safe project-scope comment formatting (<!-- project: ${projectKey} -->).",
+      "blocker_ids": [],
+      "capability_ids": [
+        "memory.tool_contract"
+      ],
+      "dependencies": [
+        "mahayana_host_runtime::runner::tools::sand_state_tool"
+      ],
+      "evidence_refs": [
+        "source/host/tests/openclaw_memory_contract.rs",
+        "projects/openclaw-rust/dossiers/memory-knowledge-retrieval-scoped.md"
+      ],
+      "existing_owner_candidates": [
+        {
+          "path": "source/host/src/runner/tools/sand_state_tool.rs",
+          "reason": "Host state and memory tool runtime"
+        }
+      ],
+      "id": "OCRM-RESP-MEM-TOOL-CONTRACT-001",
+      "integration": {
+        "consumer": "source/host/src/runner/production_turn_agent_owner.rs",
+        "entrypoint": "source/host/src/runner/tools/sand_state_tool.rs",
+        "owner": "source/host/src/runner/tools/sand_state_tool.rs",
+        "producer": "source/host/src/runner/sand_memory.rs"
+      },
+      "invariants": [
+        "Parameter aliasing strictly resolves maxResults > max_results > limit",
+        "Project key formatting rejects newlines and angle brackets"
+      ],
+      "migration_rollback": "Controlled by host tool enablement flags",
+      "oracle_ids": [
+        "OCRM-MEM-O01",
+        "OCRM-MEM-O12"
+      ],
+      "owner_decision": "Extend sand_state_tool.rs to handle openclaw memory parameters and project scoping",
+      "postconditions": [
+        "Normalized tool call arguments dispatched to memory backend"
+      ],
+      "preconditions": [
+        "Valid memory state tool invocation"
+      ],
+      "required_evidence_dimensions": [
+        "unit",
+        "integration",
+        "negative-test"
+      ],
+      "required_gate_ids": [
+        "OCRM-G04-rust-contract",
+        "OCRM-G05-frozen-oracle"
+      ],
+      "requirement_ids": [
+        "OCRM-R08",
+        "OCRM-AC08"
+      ],
+      "responsibility_kind": "business-runtime",
+      "reviewer": "xuyao@ombhrum.com",
+      "risk": "Low; ensures strict parameter validation and safe project tagging",
+      "selected_owner": "source/host/src/runner/tools/sand_state_tool.rs",
+      "source_refs": [
+        {
+          "blob_sha": "fbe0a808c397455dac1d5f14e34907226b6b322b",
+          "path": "extensions/memory-core/src/memory-tool-contract.ts",
+          "range": {
+            "end_line": 181,
+            "start_line": 1
+          },
+          "symbol": "MEMORY_SEARCH_TOOL_CONTRACT"
+        }
+      ],
+      "status": {
+        "acceptance": "pending",
+        "implementation": "implemented",
+        "mapping": "reviewed",
+        "read": "read-complete",
+        "verification": "verified",
+        "wiring": "wired"
+      },
+      "target": {
+        "language": "Rust",
+        "path": "source/host/src/runner/tools/sand_state_tool.rs",
+        "symbol": "SandStateToolBridge"
+      },
+      "tests": [
+        "source/host/tests/openclaw_memory_contract.rs::test_ocrm_mem_o01_whitespace_normalization_and_case_insensitive_deduplication",
+        "source/host/tests/openclaw_memory_contract.rs::test_ocrm_mem_o12_memory_update_state_tool_contract"
+      ],
+      "typed_contracts": [
+        "SandStateToolBridge::call_tool",
+        "parse_facts"
+      ],
+      "unit_id": "OCRM-UNIT-MEM-001"
+    },
+    {
+      "adr_refs": [],
+      "behavior": "Atomic memory fact scrubbing, session-referenced corpus line removal, and durable tombstone persistence against resurrection.",
+      "blocker_ids": [],
+      "capability_ids": [
+        "memory.forget"
+      ],
+      "dependencies": [
+        "mahayana_host_runtime::extensions::memory::memory_service"
+      ],
+      "evidence_refs": [
+        "source/host/tests/openclaw_memory_contract.rs",
+        "projects/openclaw-rust/dossiers/memory-knowledge-retrieval-scoped.md"
+      ],
+      "existing_owner_candidates": [
+        {
+          "path": "source/host/src/extensions/memory/memory_service.rs",
+          "reason": "Host memory store manager"
+        }
+      ],
+      "id": "OCRM-RESP-MEM-FORGET-ATOMIC-001",
+      "integration": {
+        "consumer": "source/host/src/extensions/memory/memory_service.rs",
+        "entrypoint": "source/host/src/extensions/memory/memory_service.rs::FileMemoryStore::remove",
+        "owner": "source/host/src/extensions/memory/memory_service.rs",
+        "producer": "source/host/src/runner/tools/sand_state_tool.rs"
+      },
+      "invariants": [
+        "Forgotten facts write persistent tombstones that prevent resurrection across subsequent synthesis passes"
+      ],
+      "migration_rollback": "Tombstones are retained on disk to preserve forget semantics",
+      "oracle_ids": [
+        "OCRM-MEM-O08"
+      ],
+      "owner_decision": "Enforce tombstone creation and fact removal in FileMemoryStore::remove",
+      "postconditions": [
+        "Fact removed from memory store and recorded in tombstones directory"
+      ],
+      "preconditions": [
+        "Valid memory fact or session reference"
+      ],
+      "required_evidence_dimensions": [
+        "unit",
+        "integration",
+        "negative-test"
+      ],
+      "required_gate_ids": [
+        "OCRM-G04-rust-contract",
+        "OCRM-G05-frozen-oracle"
+      ],
+      "requirement_ids": [
+        "OCRM-R08",
+        "OCRM-AC08"
+      ],
+      "responsibility_kind": "business-runtime",
+      "reviewer": "xuyao@ombhrum.com",
+      "risk": "None; prevents user-deleted private data from re-emerging in agent context",
+      "selected_owner": "source/host/src/extensions/memory/memory_service.rs",
+      "source_refs": [
+        {
+          "blob_sha": "9b8a87c09dd561436c6977a9987451ec0bfc3deb",
+          "path": "extensions/memory-core/src/memory-forget.ts",
+          "range": {
+            "end_line": 508,
+            "start_line": 1
+          },
+          "symbol": "forgetMemoryEntries"
+        }
+      ],
+      "status": {
+        "acceptance": "pending",
+        "implementation": "implemented",
+        "mapping": "reviewed",
+        "read": "read-complete",
+        "verification": "verified",
+        "wiring": "wired"
+      },
+      "target": {
+        "language": "Rust",
+        "path": "source/host/src/extensions/memory/memory_service.rs",
+        "symbol": "FileMemoryStore::remove"
+      },
+      "tests": [
+        "source/host/tests/openclaw_memory_contract.rs::test_ocrm_mem_o08_tombstone_persistence_and_resurrection_prevention"
+      ],
+      "typed_contracts": [
+        "FileMemoryStore::remove(&mut self, content: &str) -> io::Result<bool>"
+      ],
+      "unit_id": "OCRM-UNIT-MEM-001"
+    },
+    {
+      "adr_refs": [],
+      "behavior": "Memory search result presentation, citation formatting (#L{start} or #L{start}-L{end}), and auto-mode suppression on channel/group sessions.",
+      "blocker_ids": [],
+      "capability_ids": [
+        "memory.citations"
+      ],
+      "dependencies": [
+        "mahayana_host_runtime::extensions::content_search::agent_content_search"
+      ],
+      "evidence_refs": [
+        "source/host/tests/openclaw_memory_contract.rs",
+        "projects/openclaw-rust/dossiers/memory-knowledge-retrieval-scoped.md"
+      ],
+      "existing_owner_candidates": [
+        {
+          "path": "source/host/src/extensions/content_search/agent_content_search.rs",
+          "reason": "Host agent content search and citation projection"
+        }
+      ],
+      "id": "OCRM-RESP-MEM-CITATIONS-FORMAT-001",
+      "integration": {
+        "consumer": "source/host/src/runner/sand_memory.rs",
+        "entrypoint": "source/host/src/extensions/content_search/agent_content_search.rs::search_messages",
+        "owner": "source/host/src/extensions/content_search/agent_content_search.rs",
+        "producer": "source/host/src/extensions/content_search/search_index_db.rs"
+      },
+      "invariants": [
+        "Citations format single lines as #L{n} and line ranges as #L{n}-L{m}",
+        "Channel and group sessions suppress citations under auto mode"
+      ],
+      "migration_rollback": "Citations mode can be configured via host settings",
+      "oracle_ids": [
+        "OCRM-MEM-O06",
+        "OCRM-MEM-O10"
+      ],
+      "owner_decision": "Format search citations in agent_content_search.rs with session key awareness",
+      "postconditions": [
+        "Results formatted with snippet and citation according to session mode"
+      ],
+      "preconditions": [
+        "Search result matched in memory or transcript index"
+      ],
+      "required_evidence_dimensions": [
+        "unit",
+        "integration"
+      ],
+      "required_gate_ids": [
+        "OCRM-G04-rust-contract",
+        "OCRM-G05-frozen-oracle"
+      ],
+      "requirement_ids": [
+        "OCRM-R08",
+        "OCRM-AC08"
+      ],
+      "responsibility_kind": "business-runtime",
+      "reviewer": "xuyao@ombhrum.com",
+      "risk": "None; prevents citation noise in external group channels",
+      "selected_owner": "source/host/src/extensions/content_search/agent_content_search.rs",
+      "source_refs": [
+        {
+          "blob_sha": "adf027012af64e8d80768e0ae729d821f03a228e",
+          "path": "extensions/memory-core/src/tools.citations.ts",
+          "range": {
+            "end_line": 61,
+            "start_line": 1
+          },
+          "symbol": "buildMemorySearchPresentation"
+        }
+      ],
+      "status": {
+        "acceptance": "pending",
+        "implementation": "implemented",
+        "mapping": "reviewed",
+        "read": "read-complete",
+        "verification": "verified",
+        "wiring": "wired"
+      },
+      "target": {
+        "language": "Rust",
+        "path": "source/host/src/extensions/content_search/agent_content_search.rs",
+        "symbol": "search_messages"
+      },
+      "tests": [
+        "source/host/tests/openclaw_memory_contract.rs::test_ocrm_mem_o06_ungrounded_synthesis_evidence_rejection",
+        "source/host/tests/openclaw_memory_contract.rs::test_ocrm_mem_o10_content_search_per_agent_capping_and_recency_sorting"
+      ],
+      "typed_contracts": [
+        "search_messages per-agent match capping and recency"
+      ],
+      "unit_id": "OCRM-UNIT-MEM-001"
+    },
+    {
+      "adr_refs": [],
+      "behavior": "Multi-dimensional candidate ranking (frequency, relevance, diversity, recency, consolidation, conceptual) and dreaming phase signal boosting.",
+      "blocker_ids": [],
+      "capability_ids": [
+        "memory.synthesis_cas"
+      ],
+      "dependencies": [
+        "mahayana_host_runtime::extensions::memory::memory_synthesis_service"
+      ],
+      "evidence_refs": [
+        "source/host/tests/openclaw_memory_contract.rs",
+        "projects/openclaw-rust/dossiers/memory-knowledge-retrieval-scoped.md"
+      ],
+      "existing_owner_candidates": [
+        {
+          "path": "source/host/src/extensions/memory/memory_synthesis_service.rs",
+          "reason": "Host memory synthesis and dreaming consolidator"
+        }
+      ],
+      "id": "OCRM-RESP-MEM-SHORT-TERM-PROMOTION-001",
+      "integration": {
+        "consumer": "source/host/src/extensions/memory/memory_service.rs::FileMemoryStore",
+        "entrypoint": "source/host/src/extensions/memory/memory_synthesis_service.rs::apply_synthesis",
+        "owner": "source/host/src/extensions/memory/memory_synthesis_service.rs",
+        "producer": "source/host/src/extensions/memory/memory_service.rs::prepare_synthesis"
+      },
+      "invariants": [
+        "Stale fingerprint CAS mismatch rejects synthesis apply with Stale result",
+        "Evidence citations must map to real ev-* session evidence IDs"
+      ],
+      "migration_rollback": "Atomic CAS guarantees zero state corruption on concurrent race",
+      "oracle_ids": [
+        "OCRM-MEM-O05",
+        "OCRM-MEM-O07"
+      ],
+      "owner_decision": "Enforce CAS fingerprint check and uses_known_evidence in memory_synthesis_service.rs",
+      "postconditions": [
+        "Atomic commit of validated facts or fail-closed rejection without partial writes"
+      ],
+      "preconditions": [
+        "Consolidation candidate items prepared with hash fingerprint"
+      ],
+      "required_evidence_dimensions": [
+        "unit",
+        "integration",
+        "negative-test"
+      ],
+      "required_gate_ids": [
+        "OCRM-G04-rust-contract",
+        "OCRM-G05-frozen-oracle"
+      ],
+      "requirement_ids": [
+        "OCRM-R08",
+        "OCRM-AC08"
+      ],
+      "responsibility_kind": "business-runtime",
+      "reviewer": "xuyao@ombhrum.com",
+      "risk": "None; prevents hallucinated clock-only facts and race-condition write corruption",
+      "selected_owner": "source/host/src/extensions/memory/memory_synthesis_service.rs",
+      "source_refs": [
+        {
+          "blob_sha": "144ada5c23cd886d101eef8511e3a0717f4de220",
+          "path": "extensions/memory-core/src/short-term-promotion.ts",
+          "range": {
+            "end_line": 229,
+            "start_line": 1
+          },
+          "symbol": "rankShortTermPromotionCandidates"
+        }
+      ],
+      "status": {
+        "acceptance": "pending",
+        "implementation": "implemented",
+        "mapping": "reviewed",
+        "read": "read-complete",
+        "verification": "verified",
+        "wiring": "wired"
+      },
+      "target": {
+        "language": "Rust",
+        "path": "source/host/src/extensions/memory/memory_synthesis_service.rs",
+        "symbol": "uses_known_evidence"
+      },
+      "tests": [
+        "source/host/tests/openclaw_memory_contract.rs::test_ocrm_mem_o05_synthesis_optimistic_concurrency_control_cas_rejection",
+        "source/host/tests/openclaw_memory_contract.rs::test_ocrm_mem_o07_clock_only_hallucination_fact_rejection"
+      ],
+      "typed_contracts": [
+        "uses_known_evidence",
+        "FileMemoryStore::apply_synthesis"
+      ],
+      "unit_id": "OCRM-UNIT-MEM-001"
+    },
+    {
+      "adr_refs": [],
+      "behavior": "Standing intent creation, channel and sender scoping, keyword normalization, and expiration enforcement.",
+      "blocker_ids": [],
+      "capability_ids": [
+        "memory.standing_intents"
+      ],
+      "dependencies": [
+        "mahayana_host_runtime::runner::sand_memory"
+      ],
+      "evidence_refs": [
+        "source/host/tests/openclaw_memory_contract.rs",
+        "projects/openclaw-rust/dossiers/memory-knowledge-retrieval-scoped.md"
+      ],
+      "existing_owner_candidates": [
+        {
+          "path": "source/host/src/extensions/automations/",
+          "reason": "Host automations and intent trigger listeners"
+        }
+      ],
+      "id": "OCRM-RESP-MEM-STANDING-INTENTS-001",
+      "integration": {
+        "consumer": "source/host/src/runner/production_turn_agent_owner.rs",
+        "entrypoint": "source/host/src/runner/sand_memory.rs",
+        "owner": "source/host/src/extensions/automations/",
+        "producer": "source/host/src/runner/sand_memory.rs"
+      },
+      "invariants": [
+        "Project scope isolation rejects path traversal outside sand root bounds",
+        "Unjoined agent memberships cannot access project memory"
+      ],
+      "migration_rollback": "Access control verified before opening project shard directory",
+      "oracle_ids": [
+        "OCRM-MEM-O03",
+        "OCRM-MEM-O04",
+        "OCRM-MEM-O11"
+      ],
+      "owner_decision": "Enforce path traversal bounds and membership checks in sand_memory.rs",
+      "postconditions": [
+        "Bounded project memories recalled for authorized members only"
+      ],
+      "preconditions": [
+        "Project memory lookup or intent evaluation"
+      ],
+      "required_evidence_dimensions": [
+        "unit",
+        "integration",
+        "negative-test"
+      ],
+      "required_gate_ids": [
+        "OCRM-G04-rust-contract",
+        "OCRM-G05-frozen-oracle"
+      ],
+      "requirement_ids": [
+        "OCRM-R08",
+        "OCRM-AC08"
+      ],
+      "responsibility_kind": "business-runtime",
+      "reviewer": "xuyao@ombhrum.com",
+      "risk": "None; prevents multi-tenant project traversal and unauthorized data leakage",
+      "selected_owner": "source/host/src/extensions/automations/",
+      "source_refs": [
+        {
+          "blob_sha": "9a1bd3f74d02020014a0d7578299f52693788e33",
+          "path": "extensions/memory-core/src/standing-intents-tool.ts",
+          "range": {
+            "end_line": 188,
+            "start_line": 1
+          },
+          "symbol": "createStandingIntentExecutor"
+        }
+      ],
+      "status": {
+        "acceptance": "pending",
+        "implementation": "implemented",
+        "mapping": "reviewed",
+        "read": "read-complete",
+        "verification": "verified",
+        "wiring": "wired"
+      },
+      "target": {
+        "language": "Rust",
+        "path": "source/host/src/runner/sand_memory.rs",
+        "symbol": "render_user_memory_system_prompt"
+      },
+      "tests": [
+        "source/host/tests/openclaw_memory_contract.rs::test_ocrm_mem_o03_multi_agent_shard_isolation_single_writer",
+        "source/host/tests/openclaw_memory_contract.rs::test_ocrm_mem_o04_precedence_resolution_conflicting_memories",
+        "source/host/tests/openclaw_memory_contract.rs::test_ocrm_mem_o11_project_scope_path_traversal_and_unjoined_membership_gate"
+      ],
+      "typed_contracts": [
+        "render_user_memory_system_prompt",
+        "ProjectMemoryStore"
+      ],
+      "unit_id": "OCRM-UNIT-MEM-001"
+    },
+    {
+      "adr_refs": [],
+      "behavior": "Memory search corpus validation, closed enum enforcement (memory, wiki, all, sessions), cooldown tracking, and failure presentation.",
+      "blocker_ids": [],
+      "capability_ids": [
+        "content_search.fts5"
+      ],
+      "dependencies": [
+        "mahayana_host_runtime::extensions::content_search::search_index_db"
+      ],
+      "evidence_refs": [
+        "source/host/tests/openclaw_memory_contract.rs",
+        "projects/openclaw-rust/dossiers/memory-knowledge-retrieval-scoped.md"
+      ],
+      "existing_owner_candidates": [
+        {
+          "path": "source/host/src/extensions/content_search/search_index_db.rs",
+          "reason": "Host SQLite FTS5 content search database"
+        }
+      ],
+      "id": "OCRM-RESP-MEM-SEARCH-CORPUS-ROUTING-001",
+      "integration": {
+        "consumer": "source/host/src/extensions/content_search/agent_content_search.rs",
+        "entrypoint": "source/host/src/extensions/content_search/search_index_db.rs::build_fts_match_query",
+        "owner": "source/host/src/extensions/content_search/search_index_db.rs",
+        "producer": "source/host/src/extensions/content_search/search_index_db.rs"
+      },
+      "invariants": [
+        "FTS query terms are Unicode NFKC normalized and clamped to FTS_QUERY_MAX_TERMS",
+        "Unsafe characters like double quotes are stripped to prevent syntax injection"
+      ],
+      "migration_rollback": "Standard SQLite full-text search index",
+      "oracle_ids": [
+        "OCRM-MEM-O09"
+      ],
+      "owner_decision": "Enforce Unicode NFKC normalization and query sanitization in build_fts_match_query",
+      "postconditions": [
+        "Safe parameterized SQLite FTS5 MATCH clause"
+      ],
+      "preconditions": [
+        "Search query string from user or agent turn"
+      ],
+      "required_evidence_dimensions": [
+        "unit",
+        "integration",
+        "negative-test"
+      ],
+      "required_gate_ids": [
+        "OCRM-G04-rust-contract",
+        "OCRM-G05-frozen-oracle"
+      ],
+      "requirement_ids": [
+        "OCRM-R08",
+        "OCRM-AC08"
+      ],
+      "responsibility_kind": "business-runtime",
+      "reviewer": "xuyao@ombhrum.com",
+      "risk": "None; prevents FTS5 query injection crashes and unbounded search overhead",
+      "selected_owner": "source/host/src/extensions/content_search/search_index_db.rs",
+      "source_refs": [
+        {
+          "blob_sha": "a88465d7930f4bebb1a05f65429798ab0d857132",
+          "path": "extensions/memory-core/src/tools.ts",
+          "range": {
+            "end_line": 587,
+            "start_line": 1
+          },
+          "symbol": "executeMemorySearchToolQuery"
+        }
+      ],
+      "status": {
+        "acceptance": "pending",
+        "implementation": "implemented",
+        "mapping": "reviewed",
+        "read": "read-complete",
+        "verification": "verified",
+        "wiring": "wired"
+      },
+      "target": {
+        "language": "Rust",
+        "path": "source/host/src/extensions/content_search/search_index_db.rs",
+        "symbol": "build_fts_match_query"
+      },
+      "tests": [
+        "source/host/tests/openclaw_memory_contract.rs::test_ocrm_mem_o09_fts5_query_unicode_nfkc_normalization_and_term_truncation"
+      ],
+      "typed_contracts": [
+        "build_fts_match_query(raw_query: &str) -> Option<String>"
+      ],
+      "unit_id": "OCRM-UNIT-MEM-001"
     }
   ],
   "schema_version": 1,
