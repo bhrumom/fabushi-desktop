@@ -2028,6 +2028,98 @@ impl AttachmentsService {
                 let access = crate::extensions::attachments::read_capability::resolve_agent_scoped_outbound_media_access(&params);
                 Ok(serde_json::to_value(access).unwrap_or(Value::Null))
             })(),
+            "resolveInputFileLimits" => (|| {
+                let config: Option<crate::extensions::attachments::input_files::InputFileLimitsConfig> =
+                    if args.is_null() || (args.is_object() && args.as_object().unwrap().is_empty()) {
+                        None
+                    } else {
+                        Some(serde_json::from_value(args.clone()).map_err(|e| format!("Invalid InputFileLimitsConfig: {e}"))?)
+                    };
+                let limits = crate::extensions::attachments::input_files::resolve_input_file_limits(config.as_ref());
+                Ok(serde_json::to_value(limits).unwrap_or(Value::Null))
+            })(),
+            "extractFileContentFromBuffer" => (|| {
+                let b64 = args.get("bufferBase64").and_then(Value::as_str)
+                    .ok_or_else(|| "extractFileContentFromBuffer requires bufferBase64".to_string())?;
+                let buf = STANDARD.decode(b64).map_err(|e| format!("Invalid base64: {e}"))?;
+                let filename = args.get("filename").and_then(Value::as_str);
+                let mime_type = args.get("mimeType").and_then(Value::as_str);
+                let charset = args.get("charset").and_then(Value::as_str);
+                let limits_val = args.get("limits").cloned().unwrap_or(Value::Null);
+                let limits: crate::extensions::attachments::input_files::InputFileLimits =
+                    serde_json::from_value(limits_val).unwrap_or_else(|_| {
+                        crate::extensions::attachments::input_files::resolve_input_file_limits(None)
+                    });
+                let result = crate::extensions::attachments::input_files::extract_file_content_from_buffer(
+                    &buf,
+                    filename,
+                    mime_type,
+                    charset,
+                    &limits,
+                    None,
+                )?;
+                Ok(serde_json::to_value(result).unwrap_or(Value::Null))
+            })(),
+            "extractFileContentFromSource" => (|| {
+                let source_val = args.get("source").cloned().ok_or_else(|| "extractFileContentFromSource requires source".to_string())?;
+                let source: crate::extensions::attachments::input_files::InputFileSource =
+                    serde_json::from_value(source_val).map_err(|e| format!("Invalid InputFileSource: {e}"))?;
+                let limits_val = args.get("limits").cloned().unwrap_or(Value::Null);
+                let limits: crate::extensions::attachments::input_files::InputFileLimits =
+                    serde_json::from_value(limits_val).unwrap_or_else(|_| {
+                        crate::extensions::attachments::input_files::resolve_input_file_limits(None)
+                    });
+                let result = crate::extensions::attachments::input_files::extract_file_content_from_source(&source, &limits)?;
+                Ok(serde_json::to_value(result).unwrap_or(Value::Null))
+            })(),
+            "extractImageContentFromSource" => (|| {
+                let source_val = args.get("source").cloned().ok_or_else(|| "extractImageContentFromSource requires source".to_string())?;
+                let source: crate::extensions::attachments::input_files::InputImageSource =
+                    serde_json::from_value(source_val).map_err(|e| format!("Invalid InputImageSource: {e}"))?;
+                let limits_val = args.get("limits").cloned().unwrap_or(Value::Null);
+                let limits: crate::extensions::attachments::input_files::InputImageLimits =
+                    serde_json::from_value(limits_val).map_err(|e| format!("Invalid InputImageLimits: {e}"))?;
+                let result = crate::extensions::attachments::input_files::extract_image_content_from_source(&source, &limits)?;
+                Ok(serde_json::to_value(result).unwrap_or(Value::Null))
+            })(),
+            "resolveStagedInputMediaPaths" => (|| {
+                let media: Option<Vec<crate::extensions::attachments::media_facts::MediaFact>> =
+                    if let Some(m) = args.get("media") {
+                        Some(serde_json::from_value(m.clone()).map_err(|e| format!("Invalid MediaFact list: {e}"))?)
+                    } else if args.is_array() {
+                        Some(serde_json::from_value(args.clone()).map_err(|e| format!("Invalid MediaFact array: {e}"))?)
+                    } else {
+                        None
+                    };
+                let resolved = crate::extensions::attachments::staged_inputs::resolve_staged_input_media_paths(media.as_deref());
+                Ok(serde_json::to_value(resolved).unwrap_or(Value::Null))
+            })(),
+            "stagedInputPathDirectory" => (|| {
+                let path = args.get("relativePath").and_then(Value::as_str)
+                    .or_else(|| args.as_str())
+                    .ok_or_else(|| "stagedInputPathDirectory requires relativePath".to_string())?;
+                let dir = crate::extensions::attachments::staged_inputs::staged_input_path_directory(path);
+                Ok(serde_json::to_value(dir).unwrap_or(Value::Null))
+            })(),
+            "isStagedInputPath" => (|| {
+                let path = args.get("relativePath").and_then(Value::as_str)
+                    .ok_or_else(|| "isStagedInputPath requires relativePath".to_string())?;
+                let dirs: std::collections::HashSet<String> = if let Some(d) = args.get("directories") {
+                    serde_json::from_value(d.clone()).unwrap_or_default()
+                } else {
+                    std::collections::HashSet::new()
+                };
+                let matched = crate::extensions::attachments::staged_inputs::is_staged_input_path(path, &dirs);
+                Ok(Value::Bool(matched))
+            })(),
+            "ensureStagedInputDirectory" => (|| {
+                let root_str = args.get("rootDir").and_then(Value::as_str)
+                    .ok_or_else(|| "ensureStagedInputDirectory requires rootDir".to_string())?;
+                let dir_str = args.get("directory").and_then(Value::as_str)
+                    .ok_or_else(|| "ensureStagedInputDirectory requires directory".to_string())?;
+                crate::extensions::attachments::staged_inputs::ensure_staged_input_directory(Path::new(root_str), dir_str)?;
+                Ok(serde_json::json!({ "success": true }))
+            })(),
             _ => return None,
         };
         Some(result)

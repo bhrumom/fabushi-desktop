@@ -10,10 +10,10 @@
     "ui_accepted": false
   },
   "file_coverage": {
-    "mapped_paths": 230,
+    "mapped_paths": 235,
     "omitted_known": 0,
     "tracked_paths": 58750,
-    "unclassified_paths": 58520
+    "unclassified_paths": 58515
   },
   "inventory_authority": {
     "manifest_source": "GitHub Actions immutable artifact candidate",
@@ -13296,6 +13296,239 @@
         "resolve_edge_tts_voice"
       ],
       "unit_id": "OCRM-UNIT-TALK-001"
+    },
+    {
+      "adr_refs": [],
+      "behavior": "Input file and image extraction, MIME classification, WHATWG charset normalization, surrogate-safe UTF-16 truncation, and SSRF guard pipeline. Validates buffer size and image dimensions, detects and verifies container formats, decodes multi-byte charsets with streaming chunk state preservation, truncates safely at UTF-16 surrogate boundaries, converts HEIC/HEIF images to JPEG, and enforces network SSRF policies on remote input sources.",
+      "blocker_ids": [
+        "BL-MEDIA-INPUT-FILES-CHAT-WIRING-001"
+      ],
+      "capability_ids": [
+        "media.input_files",
+        "media.image_normalize"
+      ],
+      "dependencies": [
+        "source/host/src/extensions/attachments/media_fetch.rs",
+        "source/host/src/extensions/attachments/attachments_service.rs"
+      ],
+      "evidence_refs": [
+        "source/host/tests/openclaw_input_files_contract.rs",
+        "projects/openclaw-rust/dossiers/media-input-files-staged-inputs-scoped.md"
+      ],
+      "existing_owner_candidates": [
+        {
+          "path": "source/host/src/extensions/attachments/attachments_service.rs",
+          "reason": "Attachment service gateway and input file extractor"
+        }
+      ],
+      "id": "OCRM-RESP-MEDIA-INPUT-FILES-EXTRACT-001",
+      "integration": {
+        "consumer": "Pending user turn input processing and multi-modal prompt formatting",
+        "entrypoint": "source/host/src/extensions/attachments/attachments_service.rs::dispatch_gateway",
+        "owner": "source/host/src/extensions/attachments/input_files.rs",
+        "producer": "AttachmentsService::dispatch_gateway"
+      },
+      "invariants": [
+        "URL sources rejected when allowUrl is false",
+        "File and image buffers exceeding maxBytes rejected with explicit limit errors",
+        "Container MIME formats (AVI, PDF, ZIP) arbitrated by byte classification over declared headers",
+        "WHATWG charsets decoded with state retention across chunks and truncated safely at UTF-16 surrogate edges",
+        "HEIC/HEIF images converted to JPEG with bounded buffer limits"
+      ],
+      "migration_rollback": "Reject remote URL sources and fallback to raw UTF-8 decoding",
+      "oracle_ids": [
+        "OCRM-INPUT-FILES-O01"
+      ],
+      "owner_decision": "Dedicated native Rust module input_files implementing WHATWG text decoding, surrogate slicing, and image format normalization",
+      "postconditions": [
+        "Valid InputFileExtractResult or PdfExtractedImage returned with verified metadata"
+      ],
+      "preconditions": [
+        "Valid input source or buffer payload"
+      ],
+      "required_evidence_dimensions": [
+        "unit",
+        "integration",
+        "negative-test"
+      ],
+      "required_gate_ids": [
+        "OCRM-G04-rust-contract",
+        "OCRM-G05-frozen-oracle"
+      ],
+      "requirement_ids": [
+        "OCRM-R24",
+        "OCRM-AC24"
+      ],
+      "responsibility_kind": "business-runtime",
+      "reviewer": "xuyao@ombhrum.com",
+      "risk": "Medium; handles untrusted multi-modal inputs, memory decoding bounds, and network SSRF boundaries",
+      "selected_owner": "source/host/src/extensions/attachments/input_files.rs",
+      "source_refs": [
+        {
+          "blob_sha": "c8a8167f53f9547d2f34936d0a7a0b368731ad8c",
+          "path": "src/media/input-files.ts",
+          "range": {
+            "end_line": 409,
+            "start_line": 1
+          },
+          "symbol": "extractFileContentFromBuffer, extractFileContentFromSource, extractImageContentFromSource, normalizeInputImageBuffer, resolveInputFileLimits"
+        },
+        {
+          "blob_sha": "8ba1804f8664ecffbb724e5ef6dc972b2c9ad508",
+          "path": "src/media/input-files.extract.test.ts",
+          "range": {
+            "end_line": 329,
+            "start_line": 1
+          },
+          "symbol": "named attachment decoding, legacy text, charset recovery, and truncation tests"
+        },
+        {
+          "blob_sha": "c41f92e59e19864aa9dbeff64a4ad9cbaebfe411",
+          "path": "src/media/input-files.fetch-guard.test.ts",
+          "range": {
+            "end_line": 700,
+            "start_line": 1
+          },
+          "symbol": "input file network fetch guard, Content-Length checks, and HEIC normalization tests"
+        }
+      ],
+      "status": {
+        "acceptance": "pending",
+        "implementation": "implemented",
+        "mapping": "reviewed",
+        "read": "read-complete",
+        "verification": "not-run",
+        "wiring": "not-wired"
+      },
+      "target": {
+        "language": "Rust",
+        "path": "source/host/src/extensions/attachments/input_files.rs",
+        "symbol": "extract_file_content_from_buffer, extract_file_content_from_source, extract_image_content_from_source, normalize_input_image_buffer, resolve_input_file_limits"
+      },
+      "tests": [
+        "source/host/tests/openclaw_input_files_contract.rs::test_named_attachment_decoding_and_charsets",
+        "source/host/tests/openclaw_input_files_contract.rs::test_input_file_limits_and_truncation",
+        "source/host/tests/openclaw_input_files_contract.rs::test_input_source_and_image_validation"
+      ],
+      "typed_contracts": [
+        "extract_file_content_from_buffer(buffer: &[u8], filename: Option<&str>, mime_type: Option<&str>, charset: Option<&str>, limits: &InputFileLimits, classification: Option<&AttachmentClassification>) -> Result<InputFileExtractResult, String>",
+        "extract_file_content_from_source(source: &InputFileSource, limits: &InputFileLimits) -> Result<InputFileExtractResult, String>",
+        "extract_image_content_from_source(source: &InputImageSource, limits: &InputImageLimits) -> Result<PdfExtractedImage, String>",
+        "resolve_input_file_limits(config: Option<&InputFileLimitsConfig>) -> InputFileLimits"
+      ],
+      "unit_id": "OCRM-UNIT-MEDIA-014"
+    },
+    {
+      "adr_refs": [],
+      "behavior": "Inbound task input staging directory sandboxing, exact .gitignore marker digest validation, alias disambiguation, and media fact path mapping. Enforces OpenClaw-owned staging directories with 0o600 permissions and SHA-256 verified .gitignore markers, extracts stem and extension aliases for turn inputs, and removes ambiguous duplicates to prevent unverified selection.",
+      "blocker_ids": [
+        "BL-MEDIA-STAGED-INPUTS-CHAT-WIRING-001"
+      ],
+      "capability_ids": [
+        "media.staged_inputs",
+        "media.input_staging"
+      ],
+      "dependencies": [
+        "source/host/src/extensions/attachments/media_facts.rs",
+        "source/host/src/extensions/attachments/attachments_service.rs"
+      ],
+      "evidence_refs": [
+        "source/host/tests/openclaw_input_files_contract.rs",
+        "projects/openclaw-rust/dossiers/media-input-files-staged-inputs-scoped.md"
+      ],
+      "existing_owner_candidates": [
+        {
+          "path": "source/host/src/extensions/attachments/attachments_service.rs",
+          "reason": "Attachment service gateway and staged input path resolver"
+        }
+      ],
+      "id": "OCRM-RESP-MEDIA-STAGED-INPUTS-001",
+      "integration": {
+        "consumer": "Inbound task agent execution sandbox and staged input injectors",
+        "entrypoint": "source/host/src/extensions/attachments/attachments_service.rs::dispatch_gateway",
+        "owner": "source/host/src/extensions/attachments/staged_inputs.rs",
+        "producer": "AttachmentsService::dispatch_gateway"
+      },
+      "invariants": [
+        "Staging directory identity must match exact 64-hex lower or UUID v4 format",
+        "Directory ownership established exclusively by regular .gitignore file matching STAGED_INPUT_GITIGNORE_SHA256",
+        "Duplicate alias handles are detected as ambiguous and stripped from turn resolution",
+        "Staged directory creation enforces 0o600 permissions on marker file"
+      ],
+      "migration_rollback": "Fail closed on staging directory access and reject unverified paths",
+      "oracle_ids": [
+        "OCRM-STAGED-INPUTS-O01"
+      ],
+      "owner_decision": "Dedicated native Rust module staged_inputs implementing candidate identity validation, marker verification, and path aliasing",
+      "postconditions": [
+        "Private staged input directories safely initialized and unambiguous file handles mapped"
+      ],
+      "preconditions": [
+        "Valid staging directory identity or media facts"
+      ],
+      "required_evidence_dimensions": [
+        "unit",
+        "integration",
+        "security"
+      ],
+      "required_gate_ids": [
+        "OCRM-G04-rust-contract",
+        "OCRM-G05-frozen-oracle"
+      ],
+      "requirement_ids": [
+        "OCRM-R24",
+        "OCRM-AC24"
+      ],
+      "responsibility_kind": "business-runtime",
+      "reviewer": "xuyao@ombhrum.com",
+      "risk": "Medium; ensures task inputs remain strictly private within isolated sandbox boundaries",
+      "selected_owner": "source/host/src/extensions/attachments/staged_inputs.rs",
+      "source_refs": [
+        {
+          "blob_sha": "6f92023d537f525bf7845f061ca91307bdfa5e55",
+          "path": "src/media/staged-inputs.ts",
+          "range": {
+            "end_line": 175,
+            "start_line": 1
+          },
+          "symbol": "ensureStagedInputDirectory, stagedInputPathDirectory, isStagedInputPath, stagedInputDirectoriesFromEntries, resolveStagedInputMediaPaths"
+        },
+        {
+          "blob_sha": "815aa025a1f6a1e360ca690623d24ea2be81a8c0",
+          "path": "src/media/staged-inputs.test-support.ts",
+          "range": {
+            "end_line": 53,
+            "start_line": 1
+          },
+          "symbol": "createStagedInputOwnershipFixture, ownership verification tests"
+        }
+      ],
+      "status": {
+        "acceptance": "pending",
+        "implementation": "implemented",
+        "mapping": "reviewed",
+        "read": "read-complete",
+        "verification": "not-run",
+        "wiring": "not-wired"
+      },
+      "target": {
+        "language": "Rust",
+        "path": "source/host/src/extensions/attachments/staged_inputs.rs",
+        "symbol": "ensure_staged_input_directory, staged_input_path_directory, is_staged_input_path, staged_input_directories_from_entries, resolve_staged_input_media_paths"
+      },
+      "tests": [
+        "source/host/tests/openclaw_input_files_contract.rs::test_staged_input_directory_and_ownership",
+        "source/host/tests/openclaw_input_files_contract.rs::test_resolve_staged_input_media_paths",
+        "source/host/tests/openclaw_input_files_contract.rs::test_gateway_dispatch_input_files_and_staged_inputs"
+      ],
+      "typed_contracts": [
+        "staged_input_path_directory(relative_path: &str) -> Option<String>",
+        "is_staged_input_path(relative_path: &str, directories: &HashSet<String>) -> bool",
+        "staged_input_directories_from_entries(entries: &[StagedManifestEntry]) -> HashSet<String>",
+        "resolve_staged_input_media_paths(media: Option<&[MediaFact]>) -> HashMap<String, String>",
+        "ensure_staged_input_directory(root_dir: &Path, directory: &str) -> Result<(), String>"
+      ],
+      "unit_id": "OCRM-UNIT-MEDIA-014"
     }
   ],
   "schema_version": 1,
