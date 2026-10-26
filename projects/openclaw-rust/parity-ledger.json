@@ -10,10 +10,10 @@
     "ui_accepted": false
   },
   "file_coverage": {
-    "mapped_paths": 283,
+    "mapped_paths": 291,
     "omitted_known": 0,
     "tracked_paths": 58750,
-    "unclassified_paths": 58467
+    "unclassified_paths": 58459
   },
   "inventory_authority": {
     "manifest_source": "GitHub Actions immutable artifact candidate",
@@ -5620,8 +5620,8 @@
           "blob_sha": "a7c310e4ab4e38d27df972a45a5a6161a90ccb94",
           "path": "src/media-understanding/attachments.cache.test.ts",
           "range": {
-            "start_line": 1,
-            "end_line": 635
+            "end_line": 635,
+            "start_line": 1
           },
           "symbol": "media attachment cache test suite"
         }
@@ -6151,8 +6151,8 @@
           "blob_sha": "319545cc697418461a21bcfd5313413e9df0df37",
           "path": "src/media-understanding/defaults.constants.ts",
           "range": {
-            "start_line": 1,
-            "end_line": 2
+            "end_line": 2,
+            "start_line": 1
           },
           "symbol": "media understanding defaults constants"
         },
@@ -6160,8 +6160,8 @@
           "blob_sha": "6654f9a7a0a2619b341df1836fdb341456d312a1",
           "path": "src/media-understanding/defaults.test.ts",
           "range": {
-            "start_line": 1,
-            "end_line": 134
+            "end_line": 134,
+            "start_line": 1
           },
           "symbol": "media defaults test suite"
         },
@@ -6169,8 +6169,8 @@
           "blob_sha": "c6b7c887ac475ba8230a4947bd2a6fae24a7aaef",
           "path": "src/media-understanding/defaults.generation.test.ts",
           "range": {
-            "start_line": 1,
-            "end_line": 81
+            "end_line": 81,
+            "start_line": 1
           },
           "symbol": "media defaults generation ownership test suite"
         },
@@ -6178,8 +6178,8 @@
           "blob_sha": "58050bf666b092d8c99e4faad2558a873f352a01",
           "path": "src/media-understanding/config-provider-models.ts",
           "range": {
-            "start_line": 1,
-            "end_line": 31
+            "end_line": 31,
+            "start_line": 1
           },
           "symbol": "listImageCapableConfiguredProviders, resolveConfiguredMediaProviderCapabilities"
         }
@@ -14033,8 +14033,8 @@
           "blob_sha": "d1494a0f2f5e68114552b02b602afa0f4a2e881f",
           "path": "src/media/playback-transcode.ts",
           "range": {
-            "start_line": 1,
-            "end_line": 598
+            "end_line": 598,
+            "start_line": 1
           },
           "symbol": "createPlaybackTranscodeCacheKey, resolvePlaybackTranscode, resolvePlaybackMetadataForSource"
         },
@@ -14042,8 +14042,8 @@
           "blob_sha": "d8863fe39c1db2561076d559f94042d792f3a49b",
           "path": "src/media/playback-transcode.test.ts",
           "range": {
-            "start_line": 1,
-            "end_line": 927
+            "end_line": 927,
+            "start_line": 1
           },
           "symbol": "playback transcode policy test suite"
         },
@@ -14051,8 +14051,8 @@
           "blob_sha": "ec5701c2fa59037daf24ba840ff3140e028f6e21",
           "path": "src/media/playback-transcode.staging.test.ts",
           "range": {
-            "start_line": 1,
-            "end_line": 225
+            "end_line": 225,
+            "start_line": 1
           },
           "symbol": "playback transcode staging test suite"
         },
@@ -14060,8 +14060,8 @@
           "blob_sha": "d57dd08b487cf944a492413e017879ecb19165de",
           "path": "src/media/playback-transcode.test-support.ts",
           "range": {
-            "start_line": 1,
-            "end_line": 91
+            "end_line": 91,
+            "start_line": 1
           },
           "symbol": "usePlaybackFixture, observePlaybackSourceOpen"
         }
@@ -14154,8 +14154,8 @@
           "blob_sha": "d00a635b7ee764126236a7f7c4c32969acf3f893",
           "path": "src/media/generated-html-provenance.ts",
           "range": {
-            "start_line": 1,
-            "end_line": 97
+            "end_line": 97,
+            "start_line": 1
           },
           "symbol": "readGeneratedHtmlProvenance, writeGeneratedHtmlProvenance, pruneGeneratedHtmlProvenance"
         },
@@ -14163,8 +14163,8 @@
           "blob_sha": "e49c01be45ac77f6275498eeeece0b83feb648a1",
           "path": "src/media/generated-html-provenance.test.ts",
           "range": {
-            "start_line": 1,
-            "end_line": 293
+            "end_line": 293,
+            "start_line": 1
           },
           "symbol": "generated HTML provenance worker boundary test suite"
         },
@@ -14172,8 +14172,8 @@
           "blob_sha": "0dd1b22b82eb26d4c53e00a8bc8bf9ae62b035fa",
           "path": "src/media/generated-html-provenance.worker.ts",
           "range": {
-            "start_line": 1,
-            "end_line": 90
+            "end_line": 90,
+            "start_line": 1
           },
           "symbol": "generatedHtmlProvenanceReadOperations, generatedHtmlProvenanceOperations"
         },
@@ -14181,8 +14181,8 @@
           "blob_sha": "3d1ad1f65212e1b7dd166e647c426c38fe4283d6",
           "path": "src/media/generated-html-provenance.worker-contract.ts",
           "range": {
-            "start_line": 1,
-            "end_line": 23
+            "end_line": 23,
+            "start_line": 1
           },
           "symbol": "GeneratedHtmlProvenanceRow, GeneratedHtmlProvenanceOperations"
         }
@@ -14275,8 +14275,8 @@
           "blob_sha": "20891acad1523385cc8d5208ea02d09ab7a84cc4",
           "path": "src/media-understanding/echo-transcript.ts",
           "range": {
-            "start_line": 1,
-            "end_line": 75
+            "end_line": 75,
+            "start_line": 1
           },
           "symbol": "DEFAULT_ECHO_TRANSCRIPT_FORMAT, formatEchoTranscript, sendTranscriptEcho"
         },
@@ -14284,8 +14284,8 @@
           "blob_sha": "0b87e6a7c50790fa6b25547539e11c57e2e605b2",
           "path": "src/media-understanding/echo-transcript.test.ts",
           "range": {
-            "start_line": 1,
-            "end_line": 96
+            "end_line": 96,
+            "start_line": 1
           },
           "symbol": "echo transcript test suite"
         },
@@ -14293,8 +14293,8 @@
           "blob_sha": "e47c017541f391f392ba424cc0d8f283bce2d86b",
           "path": "src/media-understanding/audio-preflight.ts",
           "range": {
-            "start_line": 1,
-            "end_line": 138
+            "end_line": 138,
+            "start_line": 1
           },
           "symbol": "transcribeFirstAudio, transcribeAudioAttachments"
         },
@@ -14302,8 +14302,8 @@
           "blob_sha": "65954401ce2cb6a06a92a71e2a1fcaeca9678b49",
           "path": "src/media-understanding/audio-preflight.test.ts",
           "range": {
-            "start_line": 1,
-            "end_line": 99
+            "end_line": 99,
+            "start_line": 1
           },
           "symbol": "audio preflight test suite"
         },
@@ -14311,8 +14311,8 @@
           "blob_sha": "b1c32ffc83097ec0f1388fbbbc45ba23dc49bd36",
           "path": "src/media-understanding/audio-preflight.attachments.test.ts",
           "range": {
-            "start_line": 1,
-            "end_line": 287
+            "end_line": 287,
+            "start_line": 1
           },
           "symbol": "audio preflight attachments test suite"
         },
@@ -14320,8 +14320,8 @@
           "blob_sha": "86aa24e3039714c05ae3be0d1540821a29272122",
           "path": "src/media-understanding/audio.test-helpers.ts",
           "range": {
-            "start_line": 1,
-            "end_line": 83
+            "end_line": 83,
+            "start_line": 1
           },
           "symbol": "audio test helper fixtures"
         }
@@ -14419,8 +14419,8 @@
           "blob_sha": "8c06a0b3fedb50767c51c83643a0c9cb1a4afca2",
           "path": "src/media-understanding/attachments.ts",
           "range": {
-            "start_line": 1,
-            "end_line": 8
+            "end_line": 8,
+            "start_line": 1
           },
           "symbol": "attachments facade export"
         },
@@ -14428,8 +14428,8 @@
           "blob_sha": "ee275a078707defe401671e8fe648f6c64ced6b9",
           "path": "src/media-understanding/attachments.normalize.ts",
           "range": {
-            "start_line": 1,
-            "end_line": 74
+            "end_line": 74,
+            "start_line": 1
           },
           "symbol": "normalizeAttachmentPath, normalizeAttachments, resolveAttachmentKind"
         },
@@ -14437,8 +14437,8 @@
           "blob_sha": "ac3e65bfa28be9b6b298aeb948f2fb7cb4320323",
           "path": "src/media-understanding/attachments.normalize.test.ts",
           "range": {
-            "start_line": 1,
-            "end_line": 72
+            "end_line": 72,
+            "start_line": 1
           },
           "symbol": "attachment normalization test suite"
         },
@@ -14446,8 +14446,8 @@
           "blob_sha": "dce24589afd191f8a1775b9874fa18c7e8b6fea9",
           "path": "src/media-understanding/attachments.select.ts",
           "range": {
-            "start_line": 1,
-            "end_line": 81
+            "end_line": 81,
+            "start_line": 1
           },
           "symbol": "selectAttachments, createAttachmentDispositions"
         },
@@ -14455,8 +14455,8 @@
           "blob_sha": "88ac641ad0ecd1ff3d20bc27d444a9d46542cb6c",
           "path": "src/media-understanding/attachments.guards.test.ts",
           "range": {
-            "start_line": 1,
-            "end_line": 85
+            "end_line": 85,
+            "start_line": 1
           },
           "symbol": "attachment security guards test suite"
         },
@@ -14464,8 +14464,8 @@
           "blob_sha": "bfa3b593e050f8ff35188d6808ec2aa0bea95213",
           "path": "src/media-understanding/attachments.file-url.windows.test.ts",
           "range": {
-            "start_line": 1,
-            "end_line": 40
+            "end_line": 40,
+            "start_line": 1
           },
           "symbol": "windows file URL normalization test suite"
         }
@@ -14561,8 +14561,8 @@
           "blob_sha": "258aab74c8397fc17c262fdd386f4c5da9d85df7",
           "path": "src/media-understanding/entry-capabilities.ts",
           "range": {
-            "start_line": 1,
-            "end_line": 55
+            "end_line": 55,
+            "start_line": 1
           },
           "symbol": "resolveConfiguredMediaEntryCapabilities, resolveEffectiveMediaEntryCapabilities, matchesMediaEntryCapability"
         },
@@ -14570,8 +14570,8 @@
           "blob_sha": "c27ce0d57afe41eceb62c82bc58add371f8bfb9d",
           "path": "src/media-understanding/entry-capabilities.test.ts",
           "range": {
-            "start_line": 1,
-            "end_line": 55
+            "end_line": 55,
+            "start_line": 1
           },
           "symbol": "shared media entry capability inference test suite"
         }
@@ -14598,6 +14598,255 @@
         "matches_media_entry_capability"
       ],
       "unit_id": "OCRM-UNIT-MEDIA-UND-003"
+    },
+    {
+      "adr_refs": [],
+      "behavior": "Inbound file extraction limits resolution, clamping to safety ceilings, MIME and safe local path validation, file attachment outcome discrimination, and model-visible marker budget capping.",
+      "blocker_ids": [
+        "BL-MEDIA-UND-FILE-OUTCOMES-CHAT-WIRING-001"
+      ],
+      "capability_ids": [
+        "media.understanding.file_outcomes"
+      ],
+      "dependencies": [
+        "mahayana_host_runtime::extensions::attachments::media_understanding_service",
+        "mahayana_host_runtime::extensions::attachments::input_files"
+      ],
+      "evidence_refs": [
+        "source/host/tests/openclaw_media_understanding_contract.rs",
+        "projects/openclaw-rust/dossiers/media-understanding-file-context-scoped.md"
+      ],
+      "existing_owner_candidates": [
+        {
+          "path": "source/host/src/extensions/attachments/media_understanding_service.rs",
+          "reason": "Media understanding file outcome and extraction limits resolver"
+        }
+      ],
+      "id": "OCRM-RESP-MEDIA-UND-FILE-OUTCOMES-001",
+      "integration": {
+        "consumer": "source/host/src/extensions/attachments/media_understanding_service.rs",
+        "entrypoint": "source/host/src/extensions/attachments/media_understanding_service.rs::render_file_attachment_outcome",
+        "owner": "source/host/src/extensions/attachments/media_understanding_service.rs",
+        "producer": "source/host/src/extensions/attachments/media_understanding_service.rs"
+      },
+      "invariants": [
+        "Byte cap clamped to 25MB ceiling and PDF pages clamped to 150 pages",
+        "MIMEs validated against RFC 9110 and parameters stripped; malformed MIMEs dropped from marker copy",
+        "Local file paths validated against positive unicode safe set forbidding traversal and shell injection",
+        "Marker budget caps skipped file outcomes at 5 and emits overflow summary"
+      ],
+      "migration_rollback": "Use default unrestricted media payload forwarding",
+      "oracle_ids": [
+        "OCRM-MEDIA-UND-O15",
+        "OCRM-MEDIA-UND-O16",
+        "OCRM-MEDIA-UND-O17"
+      ],
+      "owner_decision": "Implement file extraction limits, outcome discrimination, and outcome rendering in media_understanding_service",
+      "postconditions": [
+        "Extraction limits resolved or sanitized outcome string rendered"
+      ],
+      "preconditions": [
+        "File extraction limits config or attachment outcome payload supplied"
+      ],
+      "required_evidence_dimensions": [
+        "unit",
+        "security"
+      ],
+      "required_gate_ids": [
+        "OCRM-G04-rust-contract",
+        "OCRM-G05-frozen-oracle"
+      ],
+      "requirement_ids": [
+        "OCRM-R24",
+        "OCRM-AC24"
+      ],
+      "responsibility_kind": "business-runtime",
+      "reviewer": "xuyao@ombhrum.com",
+      "risk": "Medium; protects LLM prompt context from marker spoofing, traversal, and hostile file types",
+      "selected_owner": "source/host/src/extensions/attachments/media_understanding_service.rs",
+      "source_refs": [
+        {
+          "blob_sha": "358f3d77401c1e8a8399b11944ae99e241a744c6",
+          "path": "src/media-understanding/file-extraction-limits.ts",
+          "range": {
+            "end_line": 45,
+            "start_line": 1
+          },
+          "symbol": "resolveFileExtractionLimits"
+        },
+        {
+          "blob_sha": "40be43456b6d36e2f0811a15d0752feaad9b1036",
+          "path": "src/media-understanding/file-extraction-limits.test.ts",
+          "range": {
+            "end_line": 44,
+            "start_line": 1
+          },
+          "symbol": "file extraction limits test suite"
+        },
+        {
+          "blob_sha": "ae4fad8c4964f86a6e040301bdd26aa0930dd0c9",
+          "path": "src/media-understanding/extracted-file-images.ts",
+          "range": {
+            "end_line": 14,
+            "start_line": 1
+          },
+          "symbol": "ExtractedFileImage, stripExtractedFileImageMetadata"
+        },
+        {
+          "blob_sha": "f389c538182b0e78f94261281e5903162741158e",
+          "path": "src/media-understanding/media-attachment-outcomes.ts",
+          "range": {
+            "end_line": 49,
+            "start_line": 1
+          },
+          "symbol": "renderMediaAttachmentDisposition, applyAttachmentMarkerBudget"
+        },
+        {
+          "blob_sha": "41012ea860e78b95977bf28efc65c4fa1ab391ee",
+          "path": "src/media-understanding/file-attachment-outcomes.ts",
+          "range": {
+            "end_line": 180,
+            "start_line": 1
+          },
+          "symbol": "FileAttachmentOutcome, resolveFileExtractionOutcome, renderFileAttachmentOutcome, sanitizeMimeType"
+        },
+        {
+          "blob_sha": "397579143cdcb842d933fb15af5a8f9564b1ab97",
+          "path": "src/media-understanding/file-attachment-outcomes.test.ts",
+          "range": {
+            "end_line": 93,
+            "start_line": 1
+          },
+          "symbol": "file attachment outcome rendering test suite"
+        }
+      ],
+      "status": {
+        "acceptance": "pending",
+        "implementation": "implemented",
+        "mapping": "reviewed",
+        "read": "read-complete",
+        "verification": "not-run",
+        "wiring": "not-wired"
+      },
+      "target": {
+        "language": "Rust",
+        "path": "source/host/src/extensions/attachments/media_understanding_service.rs",
+        "symbol": "resolve_file_extraction_limits, sanitize_mime_type, marker_safe_local_path, resolve_file_extraction_outcome, render_file_attachment_outcome, render_media_attachment_disposition, apply_attachment_marker_budget"
+      },
+      "tests": [
+        "source/host/tests/openclaw_media_understanding_contract.rs::test_ocrm_media_und_o15_file_extraction_limits_clamping_and_defaults",
+        "source/host/tests/openclaw_media_understanding_contract.rs::test_ocrm_media_und_o16_mime_and_path_security_sanitization",
+        "source/host/tests/openclaw_media_understanding_contract.rs::test_ocrm_media_und_o17_file_attachment_outcomes_and_fencing"
+      ],
+      "typed_contracts": [
+        "resolve_file_extraction_limits",
+        "render_file_attachment_outcome",
+        "apply_attachment_marker_budget"
+      ],
+      "unit_id": "OCRM-UNIT-MEDIA-UND-004"
+    },
+    {
+      "adr_refs": [],
+      "behavior": "Inbound file and document context extraction, classification, local path self-serve upgrade management, and prompt block rendering.",
+      "blocker_ids": [
+        "BL-MEDIA-UND-FILE-CONTEXT-CHAT-WIRING-001"
+      ],
+      "capability_ids": [
+        "media.understanding.file_context"
+      ],
+      "dependencies": [
+        "mahayana_host_runtime::extensions::attachments::media_understanding_service",
+        "mahayana_host_runtime::extensions::attachments::media_file_context"
+      ],
+      "evidence_refs": [
+        "source/host/tests/openclaw_media_understanding_contract.rs",
+        "projects/openclaw-rust/dossiers/media-understanding-file-context-scoped.md"
+      ],
+      "existing_owner_candidates": [
+        {
+          "path": "source/host/src/extensions/attachments/media_understanding_service.rs",
+          "reason": "Inbound document context renderer"
+        }
+      ],
+      "id": "OCRM-RESP-MEDIA-UND-FILE-CONTEXT-001",
+      "integration": {
+        "consumer": "source/host/src/extensions/attachments/media_understanding_service.rs",
+        "entrypoint": "source/host/src/extensions/attachments/media_understanding_service.rs::render_inbound_document_context_from_items",
+        "owner": "source/host/src/extensions/attachments/media_understanding_service.rs",
+        "producer": "source/host/src/extensions/attachments/media_understanding_service.rs"
+      },
+      "invariants": [
+        "Inbound document context wraps blocks into safe XML file tags",
+        "Extracted images preserve original attachment index provenance",
+        "Marker budget applied across all parsed file blocks"
+      ],
+      "migration_rollback": "Omit inbound document text extraction in chat pipeline",
+      "oracle_ids": [
+        "OCRM-MEDIA-UND-O18"
+      ],
+      "owner_decision": "Implement inbound document context rendering and item aggregation in media_understanding_service",
+      "postconditions": [
+        "Inbound document context with text and image list returned"
+      ],
+      "preconditions": [
+        "Normalized inbound items and options provided"
+      ],
+      "required_evidence_dimensions": [
+        "unit",
+        "integration"
+      ],
+      "required_gate_ids": [
+        "OCRM-G04-rust-contract",
+        "OCRM-G05-frozen-oracle"
+      ],
+      "requirement_ids": [
+        "OCRM-R24",
+        "OCRM-AC24"
+      ],
+      "responsibility_kind": "business-runtime",
+      "reviewer": "xuyao@ombhrum.com",
+      "risk": "Low; coordinates inbound document rendering without risking tag injection",
+      "selected_owner": "source/host/src/extensions/attachments/media_understanding_service.rs",
+      "source_refs": [
+        {
+          "blob_sha": "e5906a64ea5439488e15e3d344130a66ea2d1b94",
+          "path": "src/media-understanding/file-context.ts",
+          "range": {
+            "end_line": 333,
+            "start_line": 1
+          },
+          "symbol": "extractFileContext, renderInboundDocumentContext, prepareFileContextFromMedia"
+        },
+        {
+          "blob_sha": "8b2eb46bce291af61d4525b55840362e622ba25c",
+          "path": "src/media-understanding/file-context.test.ts",
+          "range": {
+            "end_line": 155,
+            "start_line": 1
+          },
+          "symbol": "file context extraction and charset decode test suite"
+        }
+      ],
+      "status": {
+        "acceptance": "pending",
+        "implementation": "implemented",
+        "mapping": "reviewed",
+        "read": "read-complete",
+        "verification": "not-run",
+        "wiring": "not-wired"
+      },
+      "target": {
+        "language": "Rust",
+        "path": "source/host/src/extensions/attachments/media_understanding_service.rs",
+        "symbol": "render_inbound_document_context_from_items, InboundDocumentContext, InboundDocumentItem"
+      },
+      "tests": [
+        "source/host/tests/openclaw_media_understanding_contract.rs::test_ocrm_media_und_o18_inbound_document_context_and_marker_budget"
+      ],
+      "typed_contracts": [
+        "render_inbound_document_context_from_items"
+      ],
+      "unit_id": "OCRM-UNIT-MEDIA-UND-004"
     }
   ],
   "schema_version": 1,
