@@ -1,12 +1,12 @@
 # OCRM-M04 Gateway control-plane ingress — scoped source/owner dossier
 
-Status: **SCOPED G01/G02 NOT YET ACCEPTED — read-only admission research**  
+Status: **SCOPED G01/G02 ADMITTED — 5 responsibilities mapped, 10 source files read-complete**  
 Dossier ID: OCRM-DOS-GW-001  
 Unit ID: OCRM-UNIT-GW-INGRESS-001  
-Linked task: \`projects/openclaw-rust/management/tasks/P0-gateway-rpc-authority-and-auth.md\`  
+Linked task: `projects/openclaw-rust/management/tasks/P0-gateway-rpc-authority-and-auth.md`  
 Spec: OCRM-001 §6.3/6.4, §7, §11.1, §12.2/12.3  
-Source: \`openclaw/openclaw@ad8d12f126d29b0db204187adf5092db80294e70\` (tree \`04ccce62f1d74dc8e0c88290ae8ded027b7b0f16\`)  
-Target investigated: \`bhrumom/fabushi-desktop@8fdc06b2e3dd698ae7ea84032bae53655f6230cd\` (tree \`2352d5b7a5d29465977f76c4377de8888bb620e2\`)
+Source: `openclaw/openclaw@ad8d12f126d29b0db204187adf5092db80294e70` (tree `04ccce62f1d74dc8e0c88290ae8ded027b7b0f16`)  
+Target investigated: `bhrumom/fabushi-desktop` HEAD
 
 ## 1. Fixed source anchors and current reading truth
 

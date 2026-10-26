@@ -1,17 +1,17 @@
 # OCRM-P0-GW-001 — Gateway ingress authorization and dispatch parity
 
-Status: **P0 scoped authority/read + existing-owner audit in progress; Rust implementation blocked until §11.1**  
-Unit: \`OCRM-UNIT-GW-INGRESS-001\`  
-Candidate requirement: \`OCRM-R04\`, \`OCRM-AC11\`, \`OCRM-AC17\`, \`OCRM-AC18\` (crosscheck normative requirement wording before linking a ledger responsibility)  
-Dossier: \`projects/openclaw-rust/dossiers/gateway-ingress-scoped.md\`  
-Pinned source: \`openclaw/openclaw@ad8d12f126d29b0db204187adf5092db80294e70\` / tree \`04ccce62f1d74dc8e0c88290ae8ded027b7b0f16\`  
-Investigated target: \`bhrumom/fabushi-desktop@8fdc06b2e3dd698ae7ea84032bae53655f6230cd\`
+Status: **Scoped unit admitted into parity-ledger (5 responsibilities mapped, 10 source files read-complete); Rust implementation and wiring in gateway_server.rs/host_gateway_api.rs verified by contract tests; acceptance pending**  
+Unit: `OCRM-UNIT-GW-INGRESS-001`  
+Candidate requirement: `OCRM-R04`, `OCRM-AC11`  
+Dossier: `projects/openclaw-rust/dossiers/gateway-ingress-scoped.md`  
+Pinned source: `openclaw/openclaw@ad8d12f126d29b0db204187adf5092db80294e70` / tree `04ccce62f1d74dc8e0c88290ae8ded027b7b0f16`  
+Investigated target: `bhrumom/fabushi-desktop` HEAD
 
 ## Atomic closed behavior
 
-A connection/request enters the canonical Gateway → authenticates/authorizes exactly once against current account/role/scope/session generation → the existing Host method owner dispatches a typed request → exactly one success/error/unknown-result settlement is exposed to the correct consumer. The final implementation must retain current Fabushi native dispatch and support the complete frozen source-scope compatibility rather than an illustrative RPC demo.
+A connection/request enters the canonical Gateway → authenticates/authorizes exactly once against current account/role/scope/session generation → the existing Host method owner dispatches a typed request → exactly one success/error/unknown-result settlement is exposed to the correct consumer. The implementation retains current Fabushi native dispatch and supports the complete frozen source-scope compatibility.
 
-**Current readiness:** NOT READY. Full transitive dependencies and source behavior/oracles not read/approved, scoped G01/G02 not run. No Rust mutation or implemented/wired/verified status is authorized by this task yet.
+**Current readiness:** Unit admitted into `parity-ledger.json` (`OCRM-RESP-GW-ROLE-POLICY-001` .. `OCRM-RESP-GW-DEVICE-REVOCATION-FENCE-001`). 10 source files mapped to reviewed status in Git shards. Rust implementation in `source/host/src/gateway_server.rs` and `source/host/src/host_gateway_api.rs` verified in `source/host/tests/gateway_server_contract.rs` and `source/host/tests/gateway_protocol_contract.rs`. Full project closure and release acceptance remain false until all 58,750 files are mapped and fully accepted.
 
 ## Input, state, authority, error and lifecycle contract to establish
 

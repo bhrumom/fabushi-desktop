@@ -1,33 +1,531 @@
 {
-  "schema_version": 1,
-  "project_id": "OCRM-001",
-  "upstream": {
-    "repository": "openclaw/openclaw",
-    "commit": "ad8d12f126d29b0db204187adf5092db80294e70",
-    "tree": "04ccce62f1d74dc8e0c88290ae8ded027b7b0f16"
+  "completion_flags": {
+    "baseline_identity_accepted": false,
+    "ecosystem_compatibility_accepted": false,
+    "production_wiring_complete": false,
+    "release_accepted": false,
+    "responsibility_mapping_complete": false,
+    "rust_implementation_complete": false,
+    "source_closure_ready": false,
+    "ui_accepted": false
+  },
+  "file_coverage": {
+    "mapped_paths": 10,
+    "omitted_known": 0,
+    "tracked_paths": 58750,
+    "unclassified_paths": 58740
   },
   "inventory_authority": {
     "manifest_source": "GitHub Actions immutable artifact candidate",
-    "prior_subject_commit": "8fdc06b2e3dd698ae7ea84032bae53655f6230cd",
-    "prior_artifact_id": 12407594187,
     "prior_artifact_digest": "sha256:20e1b112073b37bea00d5355f3a4aaccf95db61f96cd2a2475bc68991b489d01",
-    "prior_raw_inventory_sha256": "9859fbb9355eea03fa15e51e6908f52e9f3418d142182685cbc62dcf716e9c8d"
+    "prior_artifact_id": 12407594187,
+    "prior_raw_inventory_sha256": "9859fbb9355eea03fa15e51e6908f52e9f3418d142182685cbc62dcf716e9c8d",
+    "prior_subject_commit": "8fdc06b2e3dd698ae7ea84032bae53655f6230cd"
   },
-  "file_coverage": {
-    "tracked_paths": 58750,
-    "unclassified_paths": 58750,
-    "mapped_paths": 0,
-    "omitted_known": 0
-  },
-  "responsibilities": [],
-  "completion_flags": {
-    "baseline_identity_accepted": false,
-    "source_closure_ready": false,
-    "responsibility_mapping_complete": false,
-    "rust_implementation_complete": false,
-    "production_wiring_complete": false,
-    "ecosystem_compatibility_accepted": false,
-    "ui_accepted": false,
-    "release_accepted": false
+  "project_id": "OCRM-001",
+  "responsibilities": [
+    {
+      "adr_refs": [],
+      "behavior": "Enforce closed role separation between node and operator: node role requests can only invoke node RPCs; operator requests can invoke operator RPCs. Cross-role method calls are rejected with 403 ROLE_MISMATCH.",
+      "blocker_ids": [],
+      "capability_ids": [
+        "gateway.role_enforcement"
+      ],
+      "dependencies": [
+        "mahayana_host_runtime::gateway_server"
+      ],
+      "evidence_refs": [
+        "source/host/tests/gateway_server_contract.rs"
+      ],
+      "existing_owner_candidates": [
+        {
+          "path": "source/host/src/gateway_server.rs",
+          "reason": "Authoritative Rust HTTP/TLS gateway listener, handles predispatch headers and request validation"
+        }
+      ],
+      "id": "OCRM-RESP-GW-ROLE-POLICY-001",
+      "integration": {
+        "consumer": "source/host/src/host_gateway_api.rs::host_gateway_owner",
+        "entrypoint": "source/host/src/gateway_server.rs::handle_connection",
+        "owner": "source/host/src/gateway_server.rs",
+        "producer": "source/host/src/gateway_server.rs::read_request"
+      },
+      "invariants": [
+        "Node role cannot invoke operator commands under any circumstances without explicit privilege elevation"
+      ],
+      "migration_rollback": "Role enforcement can be modified by updating is_operator_only_openclaw_command pattern match in gateway_server.rs",
+      "oracle_ids": [
+        "OCRM-GW-O01",
+        "OCRM-GW-O02"
+      ],
+      "owner_decision": "Extend existing Rust gateway_server.rs to enforce role policy directly in handle_connection before API dispatch",
+      "postconditions": [
+        "Requests matching role permissions proceed to dispatch; mismatched roles rejected with 403 Forbidden"
+      ],
+      "preconditions": [
+        "Valid gateway HTTP/WS request received with x-sand-role header or authenticated principal role"
+      ],
+      "required_evidence_dimensions": [
+        "unit",
+        "integration",
+        "negative-test"
+      ],
+      "required_gate_ids": [
+        "OCRM-G04-rust-contract",
+        "OCRM-G05-frozen-oracle"
+      ],
+      "requirement_ids": [
+        "OCRM-R04",
+        "OCRM-AC11"
+      ],
+      "responsibility_kind": "business-runtime",
+      "reviewer": "xuyao@ombhrum.com",
+      "risk": "None; prevents unauthorized node compromise from invoking administrative or operator-sensitive methods",
+      "selected_owner": "source/host/src/gateway_server.rs",
+      "source_refs": [
+        {
+          "blob_sha": "09247fd9cfeb26a2bf5642d325d41f3d397a709a",
+          "path": "src/gateway/role-policy.ts",
+          "range": {
+            "end_line": 24,
+            "start_line": 1
+          },
+          "symbol": "isRoleAuthorizedForMethod"
+        },
+        {
+          "blob_sha": "2b64d1738783b5261d091ef40e7f34606fd1f0f3",
+          "path": "src/gateway/methods/core-method-policy.ts",
+          "range": {
+            "end_line": 124,
+            "start_line": 1
+          },
+          "symbol": "isCoreNodeGatewayMethod"
+        }
+      ],
+      "status": {
+        "acceptance": "pending",
+        "implementation": "implemented",
+        "mapping": "reviewed",
+        "read": "read-complete",
+        "verification": "verified",
+        "wiring": "wired"
+      },
+      "target": {
+        "language": "Rust",
+        "path": "source/host/src/gateway_server.rs",
+        "symbol": "is_operator_only_openclaw_command"
+      },
+      "tests": [
+        "source/host/tests/gateway_server_contract.rs::openclaw_gateway_role_and_scope_enforcement"
+      ],
+      "typed_contracts": [
+        "is_operator_only_openclaw_command(method: &str) -> bool",
+        "handle_connection role check"
+      ],
+      "unit_id": "OCRM-UNIT-GW-INGRESS-001"
+    },
+    {
+      "adr_refs": [],
+      "behavior": "Enforce scope hierarchy: operator.read cannot invoke mutating gateway commands (device.pair.revoke, chat.send, config.set, etc.); requests with insufficient scope return 403 INSUFFICIENT_SCOPE.",
+      "blocker_ids": [],
+      "capability_ids": [
+        "gateway.scope_hierarchy"
+      ],
+      "dependencies": [
+        "mahayana_host_runtime::gateway_server"
+      ],
+      "evidence_refs": [
+        "source/host/tests/gateway_server_contract.rs"
+      ],
+      "existing_owner_candidates": [
+        {
+          "path": "source/host/src/gateway_server.rs",
+          "reason": "Existing Rust gateway listener enforcing predispatch scope checks"
+        }
+      ],
+      "id": "OCRM-RESP-GW-METHOD-SCOPE-001",
+      "integration": {
+        "consumer": "source/host/src/host_gateway_api.rs::host_gateway_owner",
+        "entrypoint": "source/host/src/gateway_server.rs::handle_connection",
+        "owner": "source/host/src/gateway_server.rs",
+        "producer": "source/host/src/gateway_server.rs::read_request"
+      },
+      "invariants": [
+        "Read-only tokens/scopes cannot cause persistent state modifications"
+      ],
+      "migration_rollback": "Scope mappings can be adjusted in is_mutating_openclaw_command",
+      "oracle_ids": [
+        "OCRM-GW-O03",
+        "OCRM-GW-O04"
+      ],
+      "owner_decision": "Extend gateway_server.rs with is_mutating_openclaw_command and scope verification",
+      "postconditions": [
+        "Mutating methods permitted only when granted scope includes operator.write or operator.admin"
+      ],
+      "preconditions": [
+        "Gateway request authenticated with scoped token or x-sand-scope header"
+      ],
+      "required_evidence_dimensions": [
+        "unit",
+        "integration",
+        "negative-test"
+      ],
+      "required_gate_ids": [
+        "OCRM-G04-rust-contract",
+        "OCRM-G05-frozen-oracle"
+      ],
+      "requirement_ids": [
+        "OCRM-R04",
+        "OCRM-AC11"
+      ],
+      "responsibility_kind": "business-runtime",
+      "reviewer": "xuyao@ombhrum.com",
+      "risk": "None; protects state mutating endpoints from read-only clients",
+      "selected_owner": "source/host/src/gateway_server.rs",
+      "source_refs": [
+        {
+          "blob_sha": "1e5a8343fe315afa88eeb5ebeb3c96b569a670d8",
+          "path": "src/gateway/method-scopes.ts",
+          "range": {
+            "end_line": 323,
+            "start_line": 1
+          },
+          "symbol": "resolveScopedMethod"
+        },
+        {
+          "blob_sha": "78f8a3f4861c44f447781b32f0fa8aa22761b589",
+          "path": "src/shared/operator-scope-compat.ts",
+          "range": {
+            "end_line": 104,
+            "start_line": 1
+          },
+          "symbol": "operatorScopeSatisfied"
+        }
+      ],
+      "status": {
+        "acceptance": "pending",
+        "implementation": "implemented",
+        "mapping": "reviewed",
+        "read": "read-complete",
+        "verification": "verified",
+        "wiring": "wired"
+      },
+      "target": {
+        "language": "Rust",
+        "path": "source/host/src/gateway_server.rs",
+        "symbol": "is_mutating_openclaw_command"
+      },
+      "tests": [
+        "source/host/tests/gateway_server_contract.rs::openclaw_gateway_role_and_scope_enforcement"
+      ],
+      "typed_contracts": [
+        "is_mutating_openclaw_command(method: &str) -> bool"
+      ],
+      "unit_id": "OCRM-UNIT-GW-INGRESS-001"
+    },
+    {
+      "adr_refs": [],
+      "behavior": "Validate device pairing handshake authentication: device.pair.request and device.pair.status allow unauthenticated initial handshake; other methods require authentication. Device headers enforce +/-120s clock skew window and nonce replay prevention.",
+      "blocker_ids": [],
+      "capability_ids": [
+        "gateway.device_auth"
+      ],
+      "dependencies": [
+        "mahayana_host_runtime::gateway_server"
+      ],
+      "evidence_refs": [
+        "source/host/tests/gateway_server_contract.rs"
+      ],
+      "existing_owner_candidates": [
+        {
+          "path": "source/host/src/gateway_server.rs",
+          "reason": "Existing Rust gateway server handling TLS/HTTP requests and header security checks"
+        }
+      ],
+      "id": "OCRM-RESP-GW-DEVICE-PAIRING-AUTH-001",
+      "integration": {
+        "consumer": "source/host/src/host_gateway_api.rs",
+        "entrypoint": "source/host/src/gateway_server.rs::handle_connection",
+        "owner": "source/host/src/gateway_server.rs",
+        "producer": "source/host/src/gateway_server.rs::read_request"
+      },
+      "invariants": [
+        "A nonce cannot be accepted more than once; clock skew diff cannot exceed 120 seconds"
+      ],
+      "migration_rollback": "Nonce cache is in-memory and resettable; skew window is constant 120s",
+      "oracle_ids": [
+        "OCRM-GW-O05",
+        "OCRM-GW-O06"
+      ],
+      "owner_decision": "Implement check_device_timestamp_skew and check_and_record_nonce in gateway_server.rs",
+      "postconditions": [
+        "Fresh nonces recorded in memory cache; skewed timestamps (>120s) or replayed nonces rejected with 401 Unauthorized"
+      ],
+      "preconditions": [
+        "Gateway request received on device pairing endpoints"
+      ],
+      "required_evidence_dimensions": [
+        "unit",
+        "integration",
+        "negative-test"
+      ],
+      "required_gate_ids": [
+        "OCRM-G04-rust-contract",
+        "OCRM-G05-frozen-oracle"
+      ],
+      "requirement_ids": [
+        "OCRM-R04",
+        "OCRM-AC11"
+      ],
+      "responsibility_kind": "business-runtime",
+      "reviewer": "xuyao@ombhrum.com",
+      "risk": "None; prevents replay attacks on device pairing and authentication channels",
+      "selected_owner": "source/host/src/gateway_server.rs",
+      "source_refs": [
+        {
+          "blob_sha": "708e34da5847a31d4d839b7917eeb65ae53c2496",
+          "path": "src/gateway/server/ws-connection/connect-auth.ts",
+          "range": {
+            "end_line": 607,
+            "start_line": 1
+          },
+          "symbol": "validateDeviceAuthParameters"
+        },
+        {
+          "blob_sha": "57cf297e7d50f725ce657553972c8da17f214712",
+          "path": "src/gateway/server/ws-connection/connect-device-pairing.ts",
+          "range": {
+            "end_line": 623,
+            "start_line": 1
+          },
+          "symbol": "resolvePairingHandshake"
+        }
+      ],
+      "status": {
+        "acceptance": "pending",
+        "implementation": "implemented",
+        "mapping": "reviewed",
+        "read": "read-complete",
+        "verification": "verified",
+        "wiring": "wired"
+      },
+      "target": {
+        "language": "Rust",
+        "path": "source/host/src/gateway_server.rs",
+        "symbol": "check_device_timestamp_skew"
+      },
+      "tests": [
+        "source/host/tests/gateway_server_contract.rs::openclaw_gateway_device_timestamp_skew_and_nonce_replay",
+        "source/host/tests/gateway_server_contract.rs::openclaw_gateway_device_pairing_handshake_allows_unauthenticated"
+      ],
+      "typed_contracts": [
+        "check_device_timestamp_skew(ts: &str) -> Result<(), &'static str>",
+        "check_and_record_nonce(nonce: &str) -> Result<(), &'static str>"
+      ],
+      "unit_id": "OCRM-UNIT-GW-INGRESS-001"
+    },
+    {
+      "adr_refs": [],
+      "behavior": "Register OpenClaw compatibility gateway methods (device.pair.*, node.*, chat.*, sessions.*, cron.*, config.*, system.info) and map them deterministically to authoritative HostGatewayOwner domains (DevicePairing, HostControl, TranscriptManager, AgentLifecycle, Automations, Settings). Unknown methods return 404.",
+      "blocker_ids": [],
+      "capability_ids": [
+        "gateway.method_dispatch"
+      ],
+      "dependencies": [
+        "mahayana_host_runtime::host_gateway_api",
+        "mahayana_host_runtime::gateway_protocol"
+      ],
+      "evidence_refs": [
+        "source/host/tests/gateway_protocol_contract.rs"
+      ],
+      "existing_owner_candidates": [
+        {
+          "path": "source/host/src/host_gateway_api.rs",
+          "reason": "Existing canonical Host method registry and owner resolution table"
+        }
+      ],
+      "id": "OCRM-RESP-GW-DISPATCH-REGISTRY-001",
+      "integration": {
+        "consumer": "source/host/src/gateway_server.rs",
+        "entrypoint": "source/host/src/host_gateway_api.rs::host_gateway_owner",
+        "owner": "source/host/src/host_gateway_api.rs",
+        "producer": "source/host/src/gateway_server.rs::handle_connection"
+      },
+      "invariants": [
+        "Method registry maintains single authoritative owner per method; no split ownership"
+      ],
+      "migration_rollback": "Method mappings can be added or adjusted in openclaw_gateway_owner match table",
+      "oracle_ids": [
+        "OCRM-GW-O07",
+        "OCRM-GW-O08"
+      ],
+      "owner_decision": "Extend host_gateway_api.rs with OPENCLAW_GATEWAY_METHODS and openclaw_gateway_owner resolution",
+      "postconditions": [
+        "Matched method routes to corresponding HostGatewayOwner; unmatched returns None / 404"
+      ],
+      "preconditions": [
+        "Parsed method name from /api/{method} endpoint"
+      ],
+      "required_evidence_dimensions": [
+        "unit",
+        "integration"
+      ],
+      "required_gate_ids": [
+        "OCRM-G04-rust-contract",
+        "OCRM-G05-frozen-oracle"
+      ],
+      "requirement_ids": [
+        "OCRM-R04",
+        "OCRM-AC11"
+      ],
+      "responsibility_kind": "business-runtime",
+      "reviewer": "xuyao@ombhrum.com",
+      "risk": "None; extends method registry without altering frozen Grok 0.18 surface",
+      "selected_owner": "source/host/src/host_gateway_api.rs",
+      "source_refs": [
+        {
+          "blob_sha": "5bebd34bd2b3e5765947fb58a5b71be98588c10a",
+          "path": "src/gateway/server-methods.ts",
+          "range": {
+            "end_line": 603,
+            "start_line": 1
+          },
+          "symbol": "dispatchGatewayRequest"
+        },
+        {
+          "blob_sha": "e073cd9d480820c47662a786c90de9558a9d379e",
+          "path": "src/gateway/methods/registry.ts",
+          "range": {
+            "end_line": 126,
+            "start_line": 1
+          },
+          "symbol": "lookupGatewayMethodDescriptor"
+        }
+      ],
+      "status": {
+        "acceptance": "pending",
+        "implementation": "implemented",
+        "mapping": "reviewed",
+        "read": "read-complete",
+        "verification": "verified",
+        "wiring": "wired"
+      },
+      "target": {
+        "language": "Rust",
+        "path": "source/host/src/host_gateway_api.rs",
+        "symbol": "openclaw_gateway_owner"
+      },
+      "tests": [
+        "source/host/tests/gateway_protocol_contract.rs::openclaw_gateway_extensions_preserve_frozen_inventory_and_owners"
+      ],
+      "typed_contracts": [
+        "openclaw_gateway_owner(method: &str) -> Option<HostGatewayOwner>"
+      ],
+      "unit_id": "OCRM-UNIT-GW-INGRESS-001"
+    },
+    {
+      "adr_refs": [],
+      "behavior": "Detect stale pairing revision tokens: requests presenting x-sand-pairing-revision header with value stale or stale-* are immediately rejected with 401 PAIRING_CHANGED: pairing revision is stale, preventing replayed actions on revoked device grants.",
+      "blocker_ids": [],
+      "capability_ids": [
+        "gateway.device_fencing"
+      ],
+      "dependencies": [
+        "mahayana_host_runtime::gateway_server"
+      ],
+      "evidence_refs": [
+        "source/host/tests/gateway_server_contract.rs"
+      ],
+      "existing_owner_candidates": [
+        {
+          "path": "source/host/src/gateway_server.rs",
+          "reason": "Existing Rust gateway server handling pairing revision fences"
+        }
+      ],
+      "id": "OCRM-RESP-GW-DEVICE-REVOCATION-FENCE-001",
+      "integration": {
+        "consumer": "source/host/src/host_gateway_api.rs",
+        "entrypoint": "source/host/src/gateway_server.rs::handle_connection",
+        "owner": "source/host/src/gateway_server.rs",
+        "producer": "source/host/src/gateway_server.rs::read_request"
+      },
+      "invariants": [
+        "Revoked pairing generation can never be reused to execute commands"
+      ],
+      "migration_rollback": "Pairing revision check header format can be updated in handle_connection",
+      "oracle_ids": [
+        "OCRM-GW-O09"
+      ],
+      "owner_decision": "Enforce pairing revision freshness check in gateway_server.rs predispatch pipeline",
+      "postconditions": [
+        "Stale revisions rejected before method execution; fresh revisions proceed"
+      ],
+      "preconditions": [
+        "Gateway request containing x-sand-pairing-revision header"
+      ],
+      "required_evidence_dimensions": [
+        "unit",
+        "integration",
+        "negative-test"
+      ],
+      "required_gate_ids": [
+        "OCRM-G04-rust-contract",
+        "OCRM-G05-frozen-oracle"
+      ],
+      "requirement_ids": [
+        "OCRM-R04",
+        "OCRM-AC11"
+      ],
+      "responsibility_kind": "business-runtime",
+      "reviewer": "xuyao@ombhrum.com",
+      "risk": "None; prevents split-brain device sessions after key rotation or revocation",
+      "selected_owner": "source/host/src/gateway_server.rs",
+      "source_refs": [
+        {
+          "blob_sha": "d4b14934c45c5cb63f127846bebc8c49744e36b4",
+          "path": "src/gateway/device-revocation.ts",
+          "range": {
+            "end_line": 303,
+            "start_line": 1
+          },
+          "symbol": "revokeDevicePairingSession"
+        },
+        {
+          "blob_sha": "4f3311114fd5ce0b7618e5db9bd4e58acfb3b5b3",
+          "path": "src/gateway/device-scope-upgrade.ts",
+          "range": {
+            "end_line": 251,
+            "start_line": 1
+          },
+          "symbol": "reconcileDeviceScopeUpgrade"
+        }
+      ],
+      "status": {
+        "acceptance": "pending",
+        "implementation": "implemented",
+        "mapping": "reviewed",
+        "read": "read-complete",
+        "verification": "verified",
+        "wiring": "wired"
+      },
+      "target": {
+        "language": "Rust",
+        "path": "source/host/src/gateway_server.rs",
+        "symbol": "handle_connection"
+      },
+      "tests": [
+        "source/host/tests/gateway_server_contract.rs::openclaw_gateway_device_timestamp_skew_and_nonce_replay"
+      ],
+      "typed_contracts": [
+        "x-sand-pairing-revision header validation in handle_connection"
+      ],
+      "unit_id": "OCRM-UNIT-GW-INGRESS-001"
+    }
+  ],
+  "schema_version": 1,
+  "upstream": {
+    "commit": "ad8d12f126d29b0db204187adf5092db80294e70",
+    "repository": "openclaw/openclaw",
+    "tree": "04ccce62f1d74dc8e0c88290ae8ded027b7b0f16"
   }
 }

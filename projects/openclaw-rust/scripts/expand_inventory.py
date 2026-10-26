@@ -26,24 +26,43 @@ for line in result.stdout.splitlines():
     sizes[parts[0]] = int(parts[2])
 if len(sizes) != len(object_shas):
     raise RuntimeError("Missing source object sizes")
+
+shards_manifest = Path("projects/openclaw-rust/inventory/shards/manifest.json")
+shard_map = {}
+if shards_manifest.exists():
+    import gzip
+    m = json.loads(shards_manifest.read_text())
+    for s in m.get("shards", []):
+        sp = Path(s["path"])
+        if sp.exists():
+            with gzip.open(sp, "rt", encoding="utf-8") as gf:
+                for line in gf:
+                    r = json.loads(line)
+                    if r.get("read_status") == "read-complete" or r.get("responsibility_status") != "unclassified":
+                        shard_map[r["path"]] = r
+
 for e in entries:
+    shard_rec = shard_map.get(e["path"])
     e.update({
         "source_repository": payload["upstream"]["repository"],
         "source_commit": payload["upstream"]["commit"],
         "source_tree": payload["upstream"]["tree"],
         "blob_sha": e["sha"] if e["git_type"] == "blob" else None,
         "size_bytes": sizes[e["sha"]] if e["git_type"] == "blob" else None,
-        "language_kind": "unclassified",
-        "module_id": None,
-        "dependency_edges": [],
-        "read_ranges": [],
-        "content_identity": None,
-        "responsibility_ids": [],
-        "disposition": None,
-        "license_provenance": None,
-        "reviewer": None,
-        "evidence_refs": [],
+        "language_kind": shard_rec.get("language_kind", "unclassified") if shard_rec else "unclassified",
+        "module_id": shard_rec.get("module_id") if shard_rec else None,
+        "dependency_edges": shard_rec.get("dependency_edges", []) if shard_rec else [],
+        "read_ranges": shard_rec.get("read_ranges", []) if shard_rec else [],
+        "content_identity": shard_rec.get("content_identity") if shard_rec else None,
+        "responsibility_ids": shard_rec.get("responsibility_ids", []) if shard_rec else [],
+        "disposition": shard_rec.get("disposition") if shard_rec else None,
+        "license_provenance": shard_rec.get("license_provenance") if shard_rec else None,
+        "reviewer": shard_rec.get("reviewer") if shard_rec else None,
+        "evidence_refs": shard_rec.get("evidence_refs", []) if shard_rec else [],
     })
+    if shard_rec:
+        e["read_status"] = shard_rec.get("read_status", e["read_status"])
+        e["responsibility_status"] = shard_rec.get("responsibility_status", e["responsibility_status"])
 output = json.dumps(payload, ensure_ascii=False, sort_keys=True, separators=(",", ":")) + "\n"
 source.write_text(output)
 digest = hashlib.sha256(source.read_bytes()).hexdigest()
