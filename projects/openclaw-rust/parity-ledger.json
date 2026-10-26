@@ -10,10 +10,10 @@
     "ui_accepted": false
   },
   "file_coverage": {
-    "mapped_paths": 264,
+    "mapped_paths": 270,
     "omitted_known": 0,
     "tracked_paths": 58750,
-    "unclassified_paths": 58486
+    "unclassified_paths": 58480
   },
   "inventory_authority": {
     "manifest_source": "GitHub Actions immutable artifact candidate",
@@ -14161,6 +14161,150 @@
         "filter_stale_provenance_rows"
       ],
       "unit_id": "OCRM-UNIT-MEDIA-016"
+    },
+    {
+      "adr_refs": [],
+      "behavior": "Audio transcription preflight before mention checks, STT prompt echo artifact rejection, upload filename mapping, and deliverable chat transcript echoes.",
+      "blocker_ids": [
+        "BL-MEDIA-UND-AUDIO-PREFLIGHT-CHAT-WIRING-001"
+      ],
+      "capability_ids": [
+        "media.understanding.audio"
+      ],
+      "dependencies": [
+        "mahayana_host_runtime::extensions::attachments::media_understanding_service"
+      ],
+      "evidence_refs": [
+        "source/host/tests/openclaw_media_understanding_contract.rs",
+        "projects/openclaw-rust/dossiers/media-understanding-audio-preflight-scoped.md"
+      ],
+      "existing_owner_candidates": [
+        {
+          "path": "source/host/src/extensions/attachments/media_understanding_service.rs",
+          "reason": "Media understanding service and audio preflight evaluator"
+        }
+      ],
+      "id": "OCRM-RESP-MEDIA-UND-AUDIO-PREFLIGHT-001",
+      "integration": {
+        "consumer": "source/host/src/extensions/attachments/media_understanding_service.rs",
+        "entrypoint": "source/host/src/extensions/attachments/media_understanding_service.rs::format_echo_transcript",
+        "owner": "source/host/src/extensions/attachments/media_understanding_service.rs",
+        "producer": "source/host/src/extensions/attachments/media_understanding_service.rs"
+      },
+      "invariants": [
+        "Empty STT prompt artifact echoes are strictly rejected from transcript output",
+        "Audio transcription multipart uploads normalize AAC file extensions to provider-compatible .m4a",
+        "Echo transcript templates preserve literal dollar sequences and deliver exclusively to deliverable channels"
+      ],
+      "migration_rollback": "Skip voice note preflight transcription and deliver raw audio without text echo",
+      "oracle_ids": [
+        "OCRM-MEDIA-UND-O01"
+      ],
+      "owner_decision": "Incorporate audio preflight, artifact rejection, and echo formatting into media_understanding_service",
+      "postconditions": [
+        "Voice note transcribed and echo formatted for target chat or safely skipped"
+      ],
+      "preconditions": [
+        "Message context with media attachments and channel routing facts available"
+      ],
+      "required_evidence_dimensions": [
+        "unit",
+        "format"
+      ],
+      "required_gate_ids": [
+        "OCRM-G04-rust-contract",
+        "OCRM-G05-frozen-oracle"
+      ],
+      "requirement_ids": [
+        "OCRM-R23",
+        "OCRM-AC23"
+      ],
+      "responsibility_kind": "business-runtime",
+      "reviewer": "xuyao@ombhrum.com",
+      "risk": "Low; audio preflight failures fail soft without blocking regular text handling",
+      "selected_owner": "source/host/src/extensions/attachments/media_understanding_service.rs",
+      "source_refs": [
+        {
+          "blob_sha": "20891acad1523385cc8d5208ea02d09ab7a84cc4",
+          "path": "src/media-understanding/echo-transcript.ts",
+          "range": {
+            "start_line": 1,
+            "end_line": 75
+          },
+          "symbol": "DEFAULT_ECHO_TRANSCRIPT_FORMAT, formatEchoTranscript, sendTranscriptEcho"
+        },
+        {
+          "blob_sha": "0b87e6a7c50790fa6b25547539e11c57e2e605b2",
+          "path": "src/media-understanding/echo-transcript.test.ts",
+          "range": {
+            "start_line": 1,
+            "end_line": 96
+          },
+          "symbol": "echo transcript test suite"
+        },
+        {
+          "blob_sha": "e47c017541f391f392ba424cc0d8f283bce2d86b",
+          "path": "src/media-understanding/audio-preflight.ts",
+          "range": {
+            "start_line": 1,
+            "end_line": 138
+          },
+          "symbol": "transcribeFirstAudio, transcribeAudioAttachments"
+        },
+        {
+          "blob_sha": "65954401ce2cb6a06a92a71e2a1fcaeca9678b49",
+          "path": "src/media-understanding/audio-preflight.test.ts",
+          "range": {
+            "start_line": 1,
+            "end_line": 99
+          },
+          "symbol": "audio preflight test suite"
+        },
+        {
+          "blob_sha": "b1c32ffc83097ec0f1388fbbbc45ba23dc49bd36",
+          "path": "src/media-understanding/audio-preflight.attachments.test.ts",
+          "range": {
+            "start_line": 1,
+            "end_line": 287
+          },
+          "symbol": "audio preflight attachments test suite"
+        },
+        {
+          "blob_sha": "86aa24e3039714c05ae3be0d1540821a29272122",
+          "path": "src/media-understanding/audio.test-helpers.ts",
+          "range": {
+            "start_line": 1,
+            "end_line": 83
+          },
+          "symbol": "audio test helper fixtures"
+        }
+      ],
+      "status": {
+        "acceptance": "pending",
+        "implementation": "implemented",
+        "mapping": "reviewed",
+        "read": "read-complete",
+        "verification": "not-run",
+        "wiring": "not-wired"
+      },
+      "target": {
+        "language": "Rust",
+        "path": "source/host/src/extensions/attachments/media_understanding_service.rs",
+        "symbol": "is_transcript_artifact_text, resolve_audio_transcription_upload_file_name, format_echo_transcript, can_deliver_transcript_echo"
+      },
+      "tests": [
+        "source/host/tests/openclaw_media_understanding_contract.rs::test_ocrm_media_und_o01_stt_transcript_artifact_rejection",
+        "source/host/tests/openclaw_media_understanding_contract.rs::test_ocrm_media_und_o02_audio_transcription_upload_filename",
+        "source/host/tests/openclaw_media_understanding_contract.rs::test_ocrm_media_und_o09_echo_transcript_formatting",
+        "source/host/tests/openclaw_media_understanding_contract.rs::test_ocrm_media_und_o10_echo_transcript_channel_deliverability"
+      ],
+      "typed_contracts": [
+        "is_transcript_artifact_text",
+        "resolve_audio_transcription_upload_file_name",
+        "format_echo_transcript",
+        "can_deliver_transcript_echo"
+      ],
+      "unit_id": "OCRM-UNIT-MEDIA-UND-001"
     }
   ],
   "schema_version": 1,

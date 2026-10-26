@@ -624,7 +624,8 @@
       "acceptance_status": "in-progress",
       "blocker_ids": [
         "BL-MEDIA-PLAYBACK-TRANSCODE-CHAT-WIRING-001",
-        "BL-MEDIA-HTML-PROVENANCE-CHAT-WIRING-001"
+        "BL-MEDIA-HTML-PROVENANCE-CHAT-WIRING-001",
+        "BL-MEDIA-UND-AUDIO-PREFLIGHT-CHAT-WIRING-001"
       ],
       "evidence_refs": [
         "projects/openclaw-rust/dossiers/crash-guard-media-scoped.md",
@@ -633,7 +634,8 @@
         "source/host/tests/openclaw_media_generation_contract.rs",
         "projects/openclaw-rust/dossiers/media-playback-and-html-provenance-scoped.md",
         "source/host/tests/openclaw_playback_transcode_contract.rs",
-        "source/host/tests/openclaw_html_provenance_contract.rs"
+        "source/host/tests/openclaw_html_provenance_contract.rs",
+        "projects/openclaw-rust/dossiers/media-understanding-audio-preflight-scoped.md"
       ],
       "gate_ids": [],
       "id": "OCRM-R23",
@@ -663,7 +665,8 @@
         "OCRM-RESP-MEDIA-LOCAL-ACCESS-001",
         "OCRM-RESP-MEDIA-OUTBOUND-ATTACHMENT-001",
         "OCRM-RESP-MEDIA-PLAYBACK-TRANSCODE-001",
-        "OCRM-RESP-MEDIA-GENERATED-HTML-PROVENANCE-001"
+        "OCRM-RESP-MEDIA-GENERATED-HTML-PROVENANCE-001",
+        "OCRM-RESP-MEDIA-UND-AUDIO-PREFLIGHT-001"
       ],
       "reviewer": "xuyao@ombhrum.com"
     },
@@ -1361,7 +1364,8 @@
       "acceptance_status": "in-progress",
       "blocker_ids": [
         "BL-MEDIA-PLAYBACK-TRANSCODE-CHAT-WIRING-001",
-        "BL-MEDIA-HTML-PROVENANCE-CHAT-WIRING-001"
+        "BL-MEDIA-HTML-PROVENANCE-CHAT-WIRING-001",
+        "BL-MEDIA-UND-AUDIO-PREFLIGHT-CHAT-WIRING-001"
       ],
       "evidence_refs": [
         "projects/openclaw-rust/dossiers/crash-guard-media-scoped.md",
@@ -1370,7 +1374,8 @@
         "source/host/tests/openclaw_media_generation_contract.rs",
         "projects/openclaw-rust/dossiers/media-playback-and-html-provenance-scoped.md",
         "source/host/tests/openclaw_playback_transcode_contract.rs",
-        "source/host/tests/openclaw_html_provenance_contract.rs"
+        "source/host/tests/openclaw_html_provenance_contract.rs",
+        "projects/openclaw-rust/dossiers/media-understanding-audio-preflight-scoped.md"
       ],
       "gate_ids": [],
       "id": "OCRM-AC23",
@@ -1400,7 +1405,8 @@
         "OCRM-RESP-MEDIA-LOCAL-ACCESS-001",
         "OCRM-RESP-MEDIA-OUTBOUND-ATTACHMENT-001",
         "OCRM-RESP-MEDIA-PLAYBACK-TRANSCODE-001",
-        "OCRM-RESP-MEDIA-GENERATED-HTML-PROVENANCE-001"
+        "OCRM-RESP-MEDIA-GENERATED-HTML-PROVENANCE-001",
+        "OCRM-RESP-MEDIA-UND-AUDIO-PREFLIGHT-001"
       ],
       "reviewer": "xuyao@ombhrum.com"
     },

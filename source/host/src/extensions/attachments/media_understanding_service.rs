@@ -179,3 +179,35 @@ pub fn is_media_store_url(url: &str) -> bool {
     let trimmed = url.trim().to_ascii_lowercase();
     trimmed.starts_with("media://")
 }
+
+pub const DEFAULT_ECHO_TRANSCRIPT_FORMAT: &str = "📝 \"{transcript}\"";
+
+/// Formats the transcript into the echo template, preserving literal dollar sequences.
+pub fn format_echo_transcript(transcript: &str, format: Option<&str>) -> String {
+    let template = format.unwrap_or(DEFAULT_ECHO_TRANSCRIPT_FORMAT);
+    template.replace("{transcript}", transcript)
+}
+
+/// Checks if a message channel is a valid deliverable destination.
+pub fn is_deliverable_message_channel(channel: &str) -> bool {
+    let normalized = channel.trim().to_ascii_lowercase();
+    match normalized.as_str() {
+        "discord" | "telegram" | "whatsapp" | "slack" | "signal" | "imessage" | "wechat"
+        | "mattermost" | "matrix" | "teams" => true,
+        _ => false,
+    }
+}
+
+/// Evaluates if echo transcript delivery should proceed based on destination context.
+pub fn can_deliver_transcript_echo(channel: Option<&str>, to: Option<&str>) -> bool {
+    let chan = match channel {
+        Some(c) if !c.trim().is_empty() => c.trim(),
+        _ => return false,
+    };
+    let dest = match to {
+        Some(t) if !t.trim().is_empty() => t.trim(),
+        _ => return false,
+    };
+    !dest.is_empty() && is_deliverable_message_channel(chan)
+}
+

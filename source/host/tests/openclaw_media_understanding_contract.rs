@@ -133,3 +133,34 @@ fn test_ocrm_media_und_o08_attachment_service_artifact_text_suppression() {
     let real_preview = read_attachment_text_with_root(&sand_root, &agent_dir, &real_file);
     assert!(real_preview.is_some());
 }
+
+#[test]
+fn test_ocrm_media_und_o09_echo_transcript_formatting() {
+    // Default format
+    assert_eq!(
+        format_echo_transcript("Meeting notes", None),
+        "📝 \"Meeting notes\""
+    );
+
+    // Custom format preserving dollar signs
+    assert_eq!(
+        format_echo_transcript("Cost is $100 and $200", Some("Transcription: [{transcript}]")),
+        "Transcription: [Cost is $100 and $200]"
+    );
+}
+
+#[test]
+fn test_ocrm_media_und_o10_echo_transcript_channel_deliverability() {
+    assert!(can_deliver_transcript_echo(Some("telegram"), Some("chat123")));
+    assert!(can_deliver_transcript_echo(Some("discord"), Some("channel456")));
+    assert!(can_deliver_transcript_echo(Some("slack"), Some("general")));
+
+    // Non-deliverable or empty channels
+    assert!(!can_deliver_transcript_echo(Some("cli"), Some("user")));
+    assert!(!can_deliver_transcript_echo(Some("internal"), Some("dest")));
+    assert!(!can_deliver_transcript_echo(Some(""), Some("dest")));
+    assert!(!can_deliver_transcript_echo(None, Some("dest")));
+    assert!(!can_deliver_transcript_echo(Some("telegram"), Some("")));
+    assert!(!can_deliver_transcript_echo(Some("telegram"), None));
+}
+
