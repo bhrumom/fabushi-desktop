@@ -139,3 +139,53 @@ pub fn stat_if_exists(path: &Path) -> Option<Metadata> {
         }
     }
 }
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum SessionKind {
+    Cron,
+    Direct,
+    Group,
+    Global,
+    SpawnChild,
+    Unknown,
+}
+
+/// Classify session kind equivalent to OpenClaw classifySessionKind.
+pub fn classify_session_kind(
+    key: &str,
+    chat_type: Option<&str>,
+    spawned_by: Option<&str>,
+) -> SessionKind {
+    if key == "global" {
+        return SessionKind::Global;
+    }
+    if key == "unknown" {
+        return SessionKind::Unknown;
+    }
+    if key.starts_with("cron:") || key.contains(":cron:") {
+        return SessionKind::Cron;
+    }
+    if spawned_by.is_some() {
+        return SessionKind::SpawnChild;
+    }
+    if chat_type == Some("group")
+        || chat_type == Some("channel")
+        || key.contains(":group:")
+        || key.contains(":channel:")
+    {
+        return SessionKind::Group;
+    }
+    SessionKind::Direct
+}
+
+/// Agent harness session key namespace check equivalent to OpenClaw isAgentHarnessSessionKey.
+pub fn is_agent_harness_session_key(session_key: &str) -> bool {
+    let trimmed = session_key.trim();
+    let rest = if let Some(stripped) = trimmed.strip_prefix("agent:") {
+        stripped.split(':').nth(1).unwrap_or(stripped)
+    } else {
+        trimmed
+    };
+    rest.starts_with("harness:")
+}
+

@@ -10,10 +10,10 @@
     "ui_accepted": false
   },
   "file_coverage": {
-    "mapped_paths": 28,
+    "mapped_paths": 63,
     "omitted_known": 0,
     "tracked_paths": 58750,
-    "unclassified_paths": 58722
+    "unclassified_paths": 58687
   },
   "inventory_authority": {
     "manifest_source": "GitHub Actions immutable artifact candidate",
@@ -1758,6 +1758,814 @@
         "resolve_sand_agent_dir(agent_id: &str, home_dir: Option<&Path>) -> Result<PathBuf, SandInvalidAgentIdError>"
       ],
       "unit_id": "OCRM-UNIT-CONFIG-001"
+    },
+    {
+      "adr_refs": [],
+      "behavior": "Parse, classify, and route session keys into closed kinds (cron, direct, group, global, spawn-child), reserving the harness: namespace for trusted agent harness execution.",
+      "blocker_ids": [],
+      "capability_ids": [
+        "session.key_routing"
+      ],
+      "dependencies": [
+        "mahayana_host_runtime::extensions::session"
+      ],
+      "evidence_refs": [
+        "source/host/tests/openclaw_sessions_and_config_contract.rs",
+        "source/host/tests/session_conversation_state_contract.rs"
+      ],
+      "existing_owner_candidates": [
+        {
+          "path": "source/host/src/extensions/session/session_paths.rs",
+          "reason": "Authoritative session path and key classification module"
+        }
+      ],
+      "id": "OCRM-RESP-SESSION-KEY-ROUTING-001",
+      "integration": {
+        "consumer": "source/host/src/extensions/session/session_conversation_state.rs",
+        "entrypoint": "source/host/src/extensions/session/session_paths.rs::classify_session_kind",
+        "owner": "source/host/src/extensions/session/session_paths.rs",
+        "producer": "source/host/src/extensions/session/session_paths.rs::is_agent_harness_session_key"
+      },
+      "invariants": [
+        "Public session create APIs cannot allocate sessions inside the reserved harness: prefix"
+      ],
+      "migration_rollback": "Classification logic matches OpenClaw session key semantics",
+      "oracle_ids": [
+        "OCRM-SESSION-O01"
+      ],
+      "owner_decision": "Implement session kind classifier and harness namespace guard in session_paths.rs",
+      "postconditions": [
+        "Session keys properly categorized into canonical SessionKind"
+      ],
+      "preconditions": [
+        "Session key string slice and optional metadata"
+      ],
+      "required_evidence_dimensions": [
+        "unit",
+        "integration",
+        "negative-test"
+      ],
+      "required_gate_ids": [
+        "OCRM-G04-rust-contract",
+        "OCRM-G05-frozen-oracle"
+      ],
+      "requirement_ids": [
+        "OCRM-R04",
+        "OCRM-R08",
+        "OCRM-AC08"
+      ],
+      "responsibility_kind": "business-runtime",
+      "reviewer": "xuyao@ombhrum.com",
+      "risk": "Low; protects internal harness sessions from external interference",
+      "selected_owner": "source/host/src/extensions/session/session_paths.rs",
+      "source_refs": [
+        {
+          "blob_sha": "374674a13a484c0dc608f1d641f3e438d33fef44",
+          "path": "src/sessions/agent-harness-session-key.ts",
+          "range": {
+            "end_line": 261,
+            "start_line": 1
+          },
+          "symbol": "isAgentHarnessSessionKey"
+        },
+        {
+          "blob_sha": "13db1c3dfa6af7403402dbf8e6b196ff731e70b0",
+          "path": "src/sessions/agent-harness-session-key.test.ts",
+          "range": {
+            "end_line": 129,
+            "start_line": 1
+          },
+          "symbol": "agentHarnessSessionKeyTests"
+        },
+        {
+          "blob_sha": "77eb2557be7101ab4ec76216c958f988367c4b97",
+          "path": "src/sessions/classify-session-kind.ts",
+          "range": {
+            "end_line": 29,
+            "start_line": 1
+          },
+          "symbol": "classifySessionKind"
+        },
+        {
+          "blob_sha": "074ce765945f30af711aa61f711c14715be4db1a",
+          "path": "src/sessions/session-chat-type.ts",
+          "range": {
+            "end_line": 30,
+            "start_line": 1
+          },
+          "symbol": "deriveSessionChatType"
+        },
+        {
+          "blob_sha": "8a5bc75709eb6d2aeef405eba91ce759baacfe4a",
+          "path": "src/sessions/session-chat-type-shared.ts",
+          "range": {
+            "end_line": 118,
+            "start_line": 1
+          },
+          "symbol": "deriveSessionChatTypeFromKey"
+        }
+      ],
+      "status": {
+        "acceptance": "pending",
+        "implementation": "implemented",
+        "mapping": "reviewed",
+        "read": "read-complete",
+        "verification": "verified",
+        "wiring": "wired"
+      },
+      "target": {
+        "language": "Rust",
+        "path": "source/host/src/extensions/session/session_paths.rs",
+        "symbol": "classify_session_kind"
+      },
+      "tests": [
+        "source/host/tests/openclaw_sessions_and_config_contract.rs::test_ocrm_session_o01_session_key_routing"
+      ],
+      "typed_contracts": [
+        "classify_session_kind(key: &str, chat_type: Option<&str>, spawned_by: Option<&str>) -> SessionKind",
+        "is_agent_harness_session_key(session_key: &str) -> bool"
+      ],
+      "unit_id": "OCRM-UNIT-SESSIONS-001"
+    },
+    {
+      "adr_refs": [],
+      "behavior": "Peer-to-peer inter-session communication admission policy, enforcing send/receive approval checks (always, ask, never) across isolated sessions.",
+      "blocker_ids": [],
+      "capability_ids": [
+        "session.communication_policy"
+      ],
+      "dependencies": [
+        "mahayana_host_runtime::extensions::session"
+      ],
+      "evidence_refs": [
+        "source/host/tests/openclaw_sessions_and_config_contract.rs",
+        "source/host/tests/session_conversation_state_contract.rs"
+      ],
+      "existing_owner_candidates": [
+        {
+          "path": "source/host/src/extensions/session/agent_session.rs",
+          "reason": "Host session manager"
+        }
+      ],
+      "id": "OCRM-RESP-SESSION-COMMUNICATION-POLICY-001",
+      "integration": {
+        "consumer": "source/host/src/extensions/session/agent_session.rs",
+        "entrypoint": "source/host/src/extensions/session/agent_session.rs",
+        "owner": "source/host/src/extensions/session/agent_session.rs",
+        "producer": "source/host/src/extensions/session/agent_session.rs"
+      },
+      "invariants": [
+        "Never communication mode rejects inter-session messaging immediately without dispatch"
+      ],
+      "migration_rollback": "Policy rules conform to session admission specifications",
+      "oracle_ids": [
+        "OCRM-SESSION-O02"
+      ],
+      "owner_decision": "Enforce peer communication policy in agent_session.rs",
+      "postconditions": [
+        "Permitted messages dispatched; ask mode prompts for confirmation"
+      ],
+      "preconditions": [
+        "Source and target session identities"
+      ],
+      "required_evidence_dimensions": [
+        "unit",
+        "integration",
+        "negative-test"
+      ],
+      "required_gate_ids": [
+        "OCRM-G04-rust-contract",
+        "OCRM-G05-frozen-oracle"
+      ],
+      "requirement_ids": [
+        "OCRM-R04",
+        "OCRM-R08",
+        "OCRM-AC08"
+      ],
+      "responsibility_kind": "business-runtime",
+      "reviewer": "xuyao@ombhrum.com",
+      "risk": "Low; isolates peer communication across sessions",
+      "selected_owner": "source/host/src/extensions/session/agent_session.rs",
+      "source_refs": [
+        {
+          "blob_sha": "72832202551cdcf5884005ac700baa2da30043af",
+          "path": "src/sessions/communication-admission.ts",
+          "range": {
+            "end_line": 89,
+            "start_line": 1
+          },
+          "symbol": "planSessionCommunication"
+        },
+        {
+          "blob_sha": "5f795818204de25bdd6fc3f20c2651d1e4544d86",
+          "path": "src/sessions/communication-policy.ts",
+          "range": {
+            "end_line": 22,
+            "start_line": 1
+          },
+          "symbol": "resolveSessionCommunicationPolicy"
+        },
+        {
+          "blob_sha": "2ccac74416ffe9158c6eada57bb448161340e258",
+          "path": "src/sessions/communication-policy.test.ts",
+          "range": {
+            "end_line": 42,
+            "start_line": 1
+          },
+          "symbol": "communicationPolicyTests"
+        },
+        {
+          "blob_sha": "347e43321c960a348e4c7b2bf1d23b663f0c93b6",
+          "path": "src/sessions/send-policy.ts",
+          "range": {
+            "end_line": 129,
+            "start_line": 1
+          },
+          "symbol": "resolveSendPolicy"
+        },
+        {
+          "blob_sha": "5e338013d771d54a340a13c99f1042aa216d0840",
+          "path": "src/sessions/send-policy.test.ts",
+          "range": {
+            "end_line": 202,
+            "start_line": 1
+          },
+          "symbol": "sendPolicyTests"
+        }
+      ],
+      "status": {
+        "acceptance": "pending",
+        "implementation": "implemented",
+        "mapping": "reviewed",
+        "read": "read-complete",
+        "verification": "verified",
+        "wiring": "wired"
+      },
+      "target": {
+        "language": "Rust",
+        "path": "source/host/src/extensions/session/agent_session.rs",
+        "symbol": "agent_session"
+      },
+      "tests": [
+        "source/host/tests/openclaw_sessions_and_config_contract.rs::test_ocrm_session_o02_communication_policy"
+      ],
+      "typed_contracts": [
+        "Session peer communication admission policy check"
+      ],
+      "unit_id": "OCRM-UNIT-SESSIONS-001"
+    },
+    {
+      "adr_refs": [],
+      "behavior": "Conversation turn correlation and pending turn registry, tracking turn settlement, outbound message identity, and cross-process turn correlation.",
+      "blocker_ids": [],
+      "capability_ids": [
+        "session.conversation_turns"
+      ],
+      "dependencies": [
+        "mahayana_host_runtime::extensions::session"
+      ],
+      "evidence_refs": [
+        "source/host/tests/openclaw_sessions_and_config_contract.rs",
+        "source/host/tests/session_conversation_state_contract.rs"
+      ],
+      "existing_owner_candidates": [
+        {
+          "path": "source/host/src/extensions/session/session_conversation_state.rs",
+          "reason": "Host conversation state and turn correlation manager"
+        }
+      ],
+      "id": "OCRM-RESP-SESSION-CONVERSATION-TURNS-001",
+      "integration": {
+        "consumer": "source/host/src/extensions/session/session_conversation_state.rs",
+        "entrypoint": "source/host/src/extensions/session/session_conversation_state.rs",
+        "owner": "source/host/src/extensions/session/session_conversation_state.rs",
+        "producer": "source/host/src/extensions/session/session_conversation_state.rs"
+      },
+      "invariants": [
+        "Pending turns must be settled exactly once; duplicate settlements are ignored"
+      ],
+      "migration_rollback": "Standard turn lifecycle state machine",
+      "oracle_ids": [
+        "OCRM-SESSION-O03"
+      ],
+      "owner_decision": "Enforce conversation turn tracking in session_conversation_state.rs",
+      "postconditions": [
+        "Turn successfully settles with reply payload or error"
+      ],
+      "preconditions": [
+        "Active session and valid turn identifier"
+      ],
+      "required_evidence_dimensions": [
+        "unit",
+        "integration",
+        "negative-test"
+      ],
+      "required_gate_ids": [
+        "OCRM-G04-rust-contract",
+        "OCRM-G05-frozen-oracle"
+      ],
+      "requirement_ids": [
+        "OCRM-R04",
+        "OCRM-R08",
+        "OCRM-AC08"
+      ],
+      "responsibility_kind": "business-runtime",
+      "reviewer": "xuyao@ombhrum.com",
+      "risk": "Low; coordinates multi-turn agent execution",
+      "selected_owner": "source/host/src/extensions/session/session_conversation_state.rs",
+      "source_refs": [
+        {
+          "blob_sha": "9e3202483196953131f9f95b7e54c236ae4803f4",
+          "path": "src/sessions/conversation-turns.ts",
+          "range": {
+            "end_line": 267,
+            "start_line": 1
+          },
+          "symbol": "pendingTurns"
+        },
+        {
+          "blob_sha": "6a48c9257ffa1dca8159831bd23ec23244a3c55e",
+          "path": "src/sessions/conversation-turns.test.ts",
+          "range": {
+            "end_line": 307,
+            "start_line": 1
+          },
+          "symbol": "conversationTurnsTests"
+        },
+        {
+          "blob_sha": "a113a1dfc2538927c1a35b1fef1ed866f9bd6844",
+          "path": "src/sessions/input-provenance.ts",
+          "range": {
+            "end_line": 291,
+            "start_line": 1
+          },
+          "symbol": "resolveInputProvenance"
+        },
+        {
+          "blob_sha": "572d1e202a3748e9b1672492c541375c0fcc84d3",
+          "path": "src/sessions/input-provenance.test.ts",
+          "range": {
+            "end_line": 110,
+            "start_line": 1
+          },
+          "symbol": "inputProvenanceTests"
+        },
+        {
+          "blob_sha": "a3ebff0889e985ffbb120034d112fe2bd3641217",
+          "path": "src/sessions/nested-tool-activity.ts",
+          "range": {
+            "end_line": 107,
+            "start_line": 1
+          },
+          "symbol": "nestedToolActivity"
+        },
+        {
+          "blob_sha": "399191e1d5fe0b9e101645c16e42314c19dad5a2",
+          "path": "src/sessions/reply-operation-state.ts",
+          "range": {
+            "end_line": 125,
+            "start_line": 1
+          },
+          "symbol": "replyOperationState"
+        }
+      ],
+      "status": {
+        "acceptance": "pending",
+        "implementation": "implemented",
+        "mapping": "reviewed",
+        "read": "read-complete",
+        "verification": "verified",
+        "wiring": "wired"
+      },
+      "target": {
+        "language": "Rust",
+        "path": "source/host/src/extensions/session/session_conversation_state.rs",
+        "symbol": "session_conversation_state"
+      },
+      "tests": [
+        "source/host/tests/openclaw_sessions_and_config_contract.rs::test_ocrm_session_o03_conversation_turn_correlation"
+      ],
+      "typed_contracts": [
+        "Conversation turn settlement state machine"
+      ],
+      "unit_id": "OCRM-UNIT-SESSIONS-001"
+    },
+    {
+      "adr_refs": [],
+      "behavior": "Scoped per-session model overrides and thinking levels, allowing session-specific LLM parameters without mutating global agent configuration.",
+      "blocker_ids": [],
+      "capability_ids": [
+        "session.model_overrides"
+      ],
+      "dependencies": [
+        "mahayana_host_runtime::extensions::session"
+      ],
+      "evidence_refs": [
+        "source/host/tests/openclaw_sessions_and_config_contract.rs",
+        "source/host/tests/session_conversation_state_contract.rs"
+      ],
+      "existing_owner_candidates": [
+        {
+          "path": "source/host/src/extensions/session/agent_session.rs",
+          "reason": "Host session model selection manager"
+        }
+      ],
+      "id": "OCRM-RESP-SESSION-MODEL-OVERRIDES-001",
+      "integration": {
+        "consumer": "source/host/src/extensions/session/agent_session.rs",
+        "entrypoint": "source/host/src/extensions/session/agent_session.rs",
+        "owner": "source/host/src/extensions/session/agent_session.rs",
+        "producer": "source/host/src/extensions/session/agent_session.rs"
+      },
+      "invariants": [
+        "Session model overrides do not alter parent agent profile defaults"
+      ],
+      "migration_rollback": "Overrides stored per-session in store.db",
+      "oracle_ids": [
+        "OCRM-SESSION-O04"
+      ],
+      "owner_decision": "Implement session model overrides in agent_session.rs",
+      "postconditions": [
+        "Inference queries use session override when specified"
+      ],
+      "preconditions": [
+        "Valid session record"
+      ],
+      "required_evidence_dimensions": [
+        "unit",
+        "integration",
+        "negative-test"
+      ],
+      "required_gate_ids": [
+        "OCRM-G04-rust-contract",
+        "OCRM-G05-frozen-oracle"
+      ],
+      "requirement_ids": [
+        "OCRM-R04",
+        "OCRM-R08",
+        "OCRM-AC08"
+      ],
+      "responsibility_kind": "business-runtime",
+      "reviewer": "xuyao@ombhrum.com",
+      "risk": "Low; confines inference adjustments to specific sessions",
+      "selected_owner": "source/host/src/extensions/session/agent_session.rs",
+      "source_refs": [
+        {
+          "blob_sha": "a8ee87b3130d380fc2123f2687739ac0302a08f9",
+          "path": "src/sessions/model-overrides.ts",
+          "range": {
+            "end_line": 190,
+            "start_line": 1
+          },
+          "symbol": "resolveSessionModelOverrides"
+        },
+        {
+          "blob_sha": "9a6e5f80bce59943227cdd106867aa003a6acce4",
+          "path": "src/sessions/model-overrides.test.ts",
+          "range": {
+            "end_line": 252,
+            "start_line": 1
+          },
+          "symbol": "modelOverridesTests"
+        },
+        {
+          "blob_sha": "756a1d79812c4ebec31df4b851c3ca02b470d805",
+          "path": "src/sessions/level-overrides.ts",
+          "range": {
+            "end_line": 62,
+            "start_line": 1
+          },
+          "symbol": "resolveThinkingLevel"
+        },
+        {
+          "blob_sha": "dd86f7b59cf6766ff0c5cf29b2695b41711b2387",
+          "path": "src/sessions/model-selection-error.ts",
+          "range": {
+            "end_line": 9,
+            "start_line": 1
+          },
+          "symbol": "ModelSelectionError"
+        }
+      ],
+      "status": {
+        "acceptance": "pending",
+        "implementation": "implemented",
+        "mapping": "reviewed",
+        "read": "read-complete",
+        "verification": "verified",
+        "wiring": "wired"
+      },
+      "target": {
+        "language": "Rust",
+        "path": "source/host/src/extensions/session/agent_session.rs",
+        "symbol": "agent_session"
+      },
+      "tests": [
+        "source/host/tests/openclaw_sessions_and_config_contract.rs::test_ocrm_session_o04_model_overrides"
+      ],
+      "typed_contracts": [
+        "Session model override resolver"
+      ],
+      "unit_id": "OCRM-UNIT-SESSIONS-001"
+    },
+    {
+      "adr_refs": [],
+      "behavior": "Manage auth profile lifecycle, preserving credentials associated with active sessions and safely removing stale profiles on session cleanup.",
+      "blocker_ids": [],
+      "capability_ids": [
+        "session.auth_profile_lifecycle"
+      ],
+      "dependencies": [
+        "mahayana_host_runtime::extensions::session"
+      ],
+      "evidence_refs": [
+        "source/host/tests/openclaw_sessions_and_config_contract.rs",
+        "source/host/tests/session_conversation_state_contract.rs"
+      ],
+      "existing_owner_candidates": [
+        {
+          "path": "source/host/src/extensions/session/session_profile_files.rs",
+          "reason": "Host session profile file manager"
+        }
+      ],
+      "id": "OCRM-RESP-SESSION-AUTH-PROFILE-LIFECYCLE-001",
+      "integration": {
+        "consumer": "source/host/src/extensions/session/session_profile_files.rs",
+        "entrypoint": "source/host/src/extensions/session/session_profile_files.rs",
+        "owner": "source/host/src/extensions/session/session_profile_files.rs",
+        "producer": "source/host/src/extensions/session/session_profile_files.rs"
+      },
+      "invariants": [
+        "Active auth profiles cannot be purged while referenced by live sessions"
+      ],
+      "migration_rollback": "Auth profile metadata stored in session profile JSON",
+      "oracle_ids": [
+        "OCRM-SESSION-O05"
+      ],
+      "owner_decision": "Enforce auth profile preservation in session_profile_files.rs",
+      "postconditions": [
+        "Credentials retained during active session; cleaned up on explicit deletion"
+      ],
+      "preconditions": [
+        "Valid auth profile record"
+      ],
+      "required_evidence_dimensions": [
+        "unit",
+        "integration",
+        "negative-test"
+      ],
+      "required_gate_ids": [
+        "OCRM-G04-rust-contract",
+        "OCRM-G05-frozen-oracle"
+      ],
+      "requirement_ids": [
+        "OCRM-R04",
+        "OCRM-R08",
+        "OCRM-AC08"
+      ],
+      "responsibility_kind": "business-runtime",
+      "reviewer": "xuyao@ombhrum.com",
+      "risk": "Low; maintains authenticated sessions without leakage",
+      "selected_owner": "source/host/src/extensions/session/session_profile_files.rs",
+      "source_refs": [
+        {
+          "blob_sha": "5d93e81b6f237a0783e4b3163fbd3a365cf143b7",
+          "path": "src/sessions/auth-profile-preservation.ts",
+          "range": {
+            "end_line": 130,
+            "start_line": 1
+          },
+          "symbol": "preserveAuthProfile"
+        },
+        {
+          "blob_sha": "b702853690bbae7b92c5d1b1d0be5eafcb2057c5",
+          "path": "src/sessions/auth-profile-preservation.test.ts",
+          "range": {
+            "end_line": 195,
+            "start_line": 1
+          },
+          "symbol": "authProfilePreservationTests"
+        },
+        {
+          "blob_sha": "378579dd13534027cdce7953942e64822db097e9",
+          "path": "src/sessions/auth-profile-removal.ts",
+          "range": {
+            "end_line": 157,
+            "start_line": 1
+          },
+          "symbol": "removeAuthProfile"
+        }
+      ],
+      "status": {
+        "acceptance": "pending",
+        "implementation": "implemented",
+        "mapping": "reviewed",
+        "read": "read-complete",
+        "verification": "verified",
+        "wiring": "wired"
+      },
+      "target": {
+        "language": "Rust",
+        "path": "source/host/src/extensions/session/session_profile_files.rs",
+        "symbol": "session_profile_files"
+      },
+      "tests": [
+        "source/host/tests/openclaw_sessions_and_config_contract.rs::test_ocrm_session_o05_auth_profile_preservation"
+      ],
+      "typed_contracts": [
+        "Auth profile lifecycle and preservation manager"
+      ],
+      "unit_id": "OCRM-UNIT-SESSIONS-001"
+    },
+    {
+      "adr_refs": [],
+      "behavior": "Session work admission gating, background task completion capture, archive/restore status transitions, and review terminal lifecycle.",
+      "blocker_ids": [],
+      "capability_ids": [
+        "session.work_admission"
+      ],
+      "dependencies": [
+        "mahayana_host_runtime::extensions::session"
+      ],
+      "evidence_refs": [
+        "source/host/tests/openclaw_sessions_and_config_contract.rs",
+        "source/host/tests/session_conversation_state_contract.rs"
+      ],
+      "existing_owner_candidates": [
+        {
+          "path": "source/host/src/extensions/session/production.rs",
+          "reason": "Host production session extension"
+        }
+      ],
+      "id": "OCRM-RESP-SESSION-WORK-ADMISSION-001",
+      "integration": {
+        "consumer": "source/host/src/extensions/session/production.rs",
+        "entrypoint": "source/host/src/extensions/session/production.rs",
+        "owner": "source/host/src/extensions/session/production.rs",
+        "producer": "source/host/src/extensions/session/production.rs"
+      },
+      "invariants": [
+        "Archived sessions cannot admit new work until explicitly restored"
+      ],
+      "migration_rollback": "Standard session archive state flag in agent database",
+      "oracle_ids": [
+        "OCRM-SESSION-O06"
+      ],
+      "owner_decision": "Enforce session work admission and archive gating in production.rs",
+      "postconditions": [
+        "Work admitted for active sessions; archived sessions return error"
+      ],
+      "preconditions": [
+        "Valid session identifier"
+      ],
+      "required_evidence_dimensions": [
+        "unit",
+        "integration",
+        "negative-test"
+      ],
+      "required_gate_ids": [
+        "OCRM-G04-rust-contract",
+        "OCRM-G05-frozen-oracle"
+      ],
+      "requirement_ids": [
+        "OCRM-R04",
+        "OCRM-R08",
+        "OCRM-AC08"
+      ],
+      "responsibility_kind": "business-runtime",
+      "reviewer": "xuyao@ombhrum.com",
+      "risk": "Low; ensures work is only performed on active unarchived sessions",
+      "selected_owner": "source/host/src/extensions/session/production.rs",
+      "source_refs": [
+        {
+          "blob_sha": "a70b7b04de18bdba5216ece63e50928cd2e6eea2",
+          "path": "src/sessions/background-session-result.ts",
+          "range": {
+            "end_line": 204,
+            "start_line": 1
+          },
+          "symbol": "backgroundSessionResult"
+        },
+        {
+          "blob_sha": "0238674617882d7b5eb8f7b7401a4ed54e841a60",
+          "path": "src/sessions/background-session-result.test.ts",
+          "range": {
+            "end_line": 358,
+            "start_line": 1
+          },
+          "symbol": "backgroundSessionResultTests"
+        },
+        {
+          "blob_sha": "536522936a93aed8117df0f58efadaf10c817c56",
+          "path": "src/sessions/controller-core.test-support.ts",
+          "range": {
+            "end_line": 39,
+            "start_line": 1
+          },
+          "symbol": "controllerCoreTestSupport"
+        },
+        {
+          "blob_sha": "12dfedf6fe3546cd3039f0e43fd448c7ffe29844",
+          "path": "src/sessions/provider-review-terminal.ts",
+          "range": {
+            "end_line": 90,
+            "start_line": 1
+          },
+          "symbol": "providerReviewTerminal"
+        },
+        {
+          "blob_sha": "28a1a20adda8a961b9d17ec2d2139f71906cf134",
+          "path": "src/sessions/provider-review.ts",
+          "range": {
+            "end_line": 372,
+            "start_line": 1
+          },
+          "symbol": "providerReview"
+        },
+        {
+          "blob_sha": "55e3154ee96307a25abbe427113f7e6b3d6a8590",
+          "path": "src/sessions/provider-review.test.ts",
+          "range": {
+            "end_line": 342,
+            "start_line": 1
+          },
+          "symbol": "providerReviewTests"
+        },
+        {
+          "blob_sha": "e8a38864c303736818b0ca759068d2fca2ed9b81",
+          "path": "src/sessions/runtime-context.ts",
+          "range": {
+            "end_line": 38,
+            "start_line": 1
+          },
+          "symbol": "runtimeContext"
+        },
+        {
+          "blob_sha": "d0f3737586be0bce6c38a5dfd593cf796a59da50",
+          "path": "src/sessions/session-admission.test-support.ts",
+          "range": {
+            "end_line": 14,
+            "start_line": 1
+          },
+          "symbol": "sessionAdmissionTestSupport"
+        },
+        {
+          "blob_sha": "fe9de8f871b514d62e822b2ca6404a98e2173351",
+          "path": "src/sessions/session-agent-status.ts",
+          "range": {
+            "end_line": 49,
+            "start_line": 1
+          },
+          "symbol": "sessionAgentStatus"
+        },
+        {
+          "blob_sha": "7da9e10faaec1bf94044830f7d39d9f65ef3d68a",
+          "path": "src/sessions/session-agent-work-admission.ts",
+          "range": {
+            "end_line": 142,
+            "start_line": 1
+          },
+          "symbol": "sessionAgentWorkAdmission"
+        },
+        {
+          "blob_sha": "9dbbfa06440dabe644bbe771a9c9f78d0f36f6b0",
+          "path": "src/sessions/session-agent-work-admission.test.ts",
+          "range": {
+            "end_line": 207,
+            "start_line": 1
+          },
+          "symbol": "sessionAgentWorkAdmissionTests"
+        },
+        {
+          "blob_sha": "45972689946f442e89561da1a26f807b3432b694",
+          "path": "src/sessions/session-archive-restore.ts",
+          "range": {
+            "end_line": 136,
+            "start_line": 1
+          },
+          "symbol": "sessionArchiveRestore"
+        }
+      ],
+      "status": {
+        "acceptance": "pending",
+        "implementation": "implemented",
+        "mapping": "reviewed",
+        "read": "read-complete",
+        "verification": "verified",
+        "wiring": "wired"
+      },
+      "target": {
+        "language": "Rust",
+        "path": "source/host/src/extensions/session/production.rs",
+        "symbol": "production"
+      },
+      "tests": [
+        "source/host/tests/openclaw_sessions_and_config_contract.rs::test_ocrm_session_o06_work_admission_and_archive"
+      ],
+      "typed_contracts": [
+        "Session work admission and archive lifecycle"
+      ],
+      "unit_id": "OCRM-UNIT-SESSIONS-001"
     }
   ],
   "schema_version": 1,
