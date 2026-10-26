@@ -203,7 +203,7 @@ pub fn persist_agent_media_bytes(
     let temporary = root.join(format!(".{}.tmp", Uuid::new_v4().simple()));
     fs::write(&temporary, bytes)?;
     if let Err(error) = fs::rename(&temporary, &target) {
-        let _ = fs::remove_file(&temporary);
+        crate::extensions::attachments::media_file_context::unlink_if_exists(Some(&temporary));
         return Err(error);
     }
     Ok(target)
