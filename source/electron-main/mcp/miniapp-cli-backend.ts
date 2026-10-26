@@ -11,8 +11,8 @@
 import { spawn } from "node:child_process";
 import { randomUUID } from "node:crypto";
 import { ProgressStream } from "./progress-stream.js";
-import { lstat, realpath, stat } from "node:fs/promises";
-import { basename, dirname, isAbsolute, relative, sep } from "node:path";
+import { lstat, mkdtemp, realpath, stat, writeFile, rm } from "node:fs/promises";
+import { basename, dirname, isAbsolute, join, relative, sep } from "node:path";
 import type {
   MiniAppCapability,
   MiniAppSelectionEntry,
@@ -150,7 +150,7 @@ export function createDandelionCliBackend(
   const platform = config.platform ?? process.platform;
   const nativeCliSupported = platform === "linux" || platform === "darwin";
   const spawnCommand = ports.spawn ?? defaultSpawn(config.binaryPath, config.configPath);
-  const selections = new Map<string, { root: string; device: bigint; inode: bigint; expiresAt: number }>();
+  const selections = new Map<string, { root: string; device: bigint; inode: bigint; expiresAt: number; dispose?: () => Promise<void> }>();
   const operations = new Map<string, Operation>();
   const active = new Set<NativeRun>();
   let generation = 0;
@@ -174,14 +174,19 @@ export function createDandelionCliBackend(
     }));
     return resolvedRoots;
   };
+  const dropSelection = (selectionId: string): void => {
+    const record = selections.get(selectionId);
+    selections.delete(selectionId);
+    void record?.dispose?.().catch(() => {});
+  };
 
   const pruneSelections = (): void => {
     const now = Date.now();
-    for (const [id, record] of selections) if (record.expiresAt <= now) selections.delete(id);
+    for (const [id, record] of selections) if (record.expiresAt <= now) dropSelection(id);
     while (selections.size > MAX_SELECTIONS) {
       const oldest = selections.keys().next().value;
       if (oldest === undefined) break;
-      selections.delete(oldest);
+      dropSelection(oldest);
     }
   };
 
@@ -197,7 +202,7 @@ export function createDandelionCliBackend(
     pruneSelections();
     const record = selections.get(selectionId);
     if (!record) throw new Error("UNKNOWN_SELECTION");
-    if (record.expiresAt <= Date.now()) { selections.delete(selectionId); throw new Error("SELECTION_EXPIRED"); }
+    if (record.expiresAt <= Date.now()) { dropSelection(selectionId); throw new Error("SELECTION_EXPIRED"); }
     const info = await lstat(record.root, { bigint: true });
     if (!info.isDirectory() || info.isSymbolicLink() || info.dev !== record.device || info.ino !== record.inode) throw new Error("SELECTION_SOURCE_CHANGED");
     return record.root;
@@ -330,8 +335,23 @@ export function createDandelionCliBackend(
       return { selectionId, entries };
     },
     release(selectionId) {
-      selections.delete(selectionId);
+      dropSelection(selectionId);
       return Promise.resolve();
+    },
+    async compose(text, selectionId) {
+      if (!stateDirectory || !text || Buffer.byteLength(text) > 65536) throw new Error("MESSAGE_LIMIT");
+      const source = selectionId ? await requireSelection(selectionId) : null;
+      const root = await mkdtemp(join(stateDirectory, "miniapp-compose-"));
+      try {
+        await writeFile(join(root, "message.txt"), text, "utf8");
+        const info = await stat(root, { bigint: true });
+        const id = randomUUID();
+        selections.set(id, { root, device: info.dev, inode: info.ino, expiresAt: Date.now() + SELECTION_TTL_MS, dispose: () => rm(root, { recursive: true, force: true }) });
+        return { selectionId: id, entries: [{ name: source ? `${basename(source)} + message.txt` : "message.txt", size: Buffer.byteLength(text) }] };
+      } catch (error) {
+        await rm(root, { recursive: true, force: true });
+        throw error;
+      }
     },
     async send(sendConfig: MiniAppTransferSendConfig) {
       const ticket = generation;
