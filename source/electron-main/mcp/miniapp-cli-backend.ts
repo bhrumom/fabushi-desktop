@@ -66,6 +66,7 @@ export interface MiniAppPickPort {
 export interface MiniAppChildHandle {
   readonly done: Promise<{ readonly code: number; readonly stdout: string; readonly stderr: string }>;
   kill(): void;
+  snapshot?(): string;
 }
 
 export interface MiniAppSpawnPort {
@@ -123,7 +124,7 @@ function defaultSpawn(binaryPath: string, configPath: string): MiniAppSpawnPort 
         settle({ code: exceeded ? -2 : code ?? -1, stdout: progress?.snapshot() ?? stdout, stderr });
       });
     });
-    return { done, kill };
+    return { done, kill, snapshot: () => progress?.snapshot() ?? stdout };
   };
 }
 
@@ -244,7 +245,25 @@ export function createDandelionCliBackend(
 
   const finish = async (run: NativeRun, mode: "single" | "receive" | "send" | "watch" = "single"): Promise<unknown> => {
     let result;
-    try { result = await run.result; }
+    try {
+      if (mode === "send" && run.handle.snapshot) {
+        // A signed native worker may finish its receipt before its bounded
+        // shutdown tasks close stdout. Surface the verified terminal receipt
+        // immediately; the normal process completion still settles cleanup.
+        let settled = false;
+        result = await Promise.race([
+          run.result.finally(() => { settled = true; }),
+          (async () => {
+            for (;;) {
+              const snapshot = run.handle.snapshot?.() ?? "";
+              if (/\"schema_version\"\s*:\s*1/.test(snapshot)) return { code: 0, stdout: snapshot, stderr: "" };
+              if (settled) throw new Error("DANDELION_PROCESS_FAILED");
+              await new Promise((resolve) => setTimeout(resolve, 100));
+            }
+          })(),
+        ]);
+      } else result = await run.result;
+    }
     catch { throw new Error("DANDELION_PROCESS_FAILED"); }
     if (run.cancelled) throw new Error("DANDELION_CANCELLED");
     if (run.timedOut) throw new Error("DANDELION_TIMEOUT");
