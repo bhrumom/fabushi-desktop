@@ -5444,6 +5444,8 @@
       "evidence_refs": [
         "source/host/tests/openclaw_crash_guard_media_contract.rs",
         "projects/openclaw-rust/dossiers/crash-guard-media-scoped.md",
+        "projects/openclaw-rust/dossiers/media-pdf-and-parse-output-scoped.md",
+        "source/host/tests/inline_image_materialization_contract.rs",
         "source/host/tests/openclaw_pdf_and_parse_contract.rs"
       ],
       "existing_owner_candidates": [
@@ -5533,6 +5535,9 @@
         "symbol": "validate_and_prepare_attachment_payload"
       },
       "tests": [
+        "source/host/tests/openclaw_crash_guard_media_contract.rs::test_ocrm_media_o05_attachment_processor_size_limits",
+        "source/host/tests/inline_image_materialization_contract.rs::oversized_inline_image_exceeding_max_bytes_is_rejected_and_writes_no_file",
+        "source/host/tests/inline_image_materialization_contract.rs::inline_image_materialization_boundary_admittance",
         "source/host/tests/openclaw_image_ops_contract.rs::test_ocrm_image_ops_prepare_attachment"
       ],
       "typed_contracts": [

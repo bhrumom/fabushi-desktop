@@ -59,6 +59,11 @@ The following 21 media extraction, parsing, and media test suite files (totaling
    - **Behavior**: Attachment payload size verification and validation.
    - **Rust Owner**: `source/host/src/attachment_paths.rs::validate_and_prepare_attachment_payload`.
    - **Production Consumer**: Actively wired into `source/host/src/extensions/transcript/inline_image_materialization.rs::materialize_one` guarding every inline image before filesystem materialization.
+   - **Production Integration Tests**:
+     - `source/host/tests/inline_image_materialization_contract.rs::oversized_inline_image_exceeding_max_bytes_is_rejected_and_writes_no_file` (verifies > `MAX_IMAGE_BYTES` (20,000,000 bytes) returns `None` and writes 0 files to disk).
+     - `source/host/tests/inline_image_materialization_contract.rs::inline_image_materialization_boundary_admittance` (verifies valid payload within boundary is written to disk and returns asset reference).
+     - `source/host/tests/openclaw_crash_guard_media_contract.rs::test_ocrm_media_o05_attachment_processor_size_limits`.
+     - `source/host/tests/openclaw_image_ops_contract.rs::test_ocrm_image_ops_prepare_attachment`.
    - **Status**: Calibrated to `implementation=implemented`, `wiring=wired`, `verification=verified`, `blocker_ids=[]` (eliminating `BL-MEDIA-ATTACHMENT-PROCESSOR-CONSUMERS-001`).
 
 ---
@@ -79,7 +84,7 @@ The following 21 media extraction, parsing, and media test suite files (totaling
 
 A dedicated contract test suite was authored and verified passing:
 - **Test File**: `source/host/tests/openclaw_pdf_and_parse_contract.rs`
-- **Results**: 8/8 tests passing:
+- **Results**: 9/9 tests passing:
   1. `test_pdf_extract_disabled_when_no_extractor`: Verifies clear disablement error when no document extractors are available.
   2. `test_pdf_extract_metadata_validation`: Verifies automatic vs explicit selection, max_pages bounds, unique positive page IDs, and truncation consistency.
   3. `test_pdf_extract_mock_extractor_success_and_error`: Verifies end-to-end execution with mock plugin extractor and error aggregation.
