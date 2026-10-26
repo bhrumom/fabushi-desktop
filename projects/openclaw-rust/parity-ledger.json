@@ -10,10 +10,10 @@
     "ui_accepted": false
   },
   "file_coverage": {
-    "mapped_paths": 136,
+    "mapped_paths": 142,
     "omitted_known": 0,
     "tracked_paths": 58750,
-    "unclassified_paths": 58614
+    "unclassified_paths": 58608
   },
   "inventory_authority": {
     "manifest_source": "GitHub Actions immutable artifact candidate",
@@ -7721,6 +7721,556 @@
         "AttachmentTextPreview"
       ],
       "unit_id": "OCRM-UNIT-MEDIA-001"
+    },
+    {
+      "adr_refs": [],
+      "behavior": "Deep byte-level image MIME detection matching upstream detectSupportedImageMimeType (JPEG byte 4 0xf7 rejection for lossless JPEG, static PNG magic byte verification, animated PNG rejection via acTL chunk inspection before IDAT chunk, GIF87a/GIF89a validation, WebP RIFF/WEBP/VP8 signature check, and BMP DIB header structure validation where pixelDataOffset < declaredFileSize).",
+      "blocker_ids": [],
+      "capability_ids": [
+        "media.image_mime_detect"
+      ],
+      "dependencies": [
+        "mahayana_host_runtime::media_mime"
+      ],
+      "evidence_refs": [
+        "source/host/tests/openclaw_crash_guard_media_contract.rs",
+        "projects/openclaw-rust/dossiers/crash-guard-media-scoped.md"
+      ],
+      "existing_owner_candidates": [
+        {
+          "path": "source/host/src/media_mime.rs",
+          "reason": "Host media MIME detector and validator"
+        }
+      ],
+      "id": "OCRM-RESP-MEDIA-IMAGE-MIME-DETECT-001",
+      "integration": {
+        "consumer": "source/host/src/attachment_paths.rs::resolve_outbound_attachment_from_buffer, source/host/src/extensions/transcript/inline_image_materialization.rs::materialize_one",
+        "entrypoint": "source/host/src/media_mime.rs::detect_supported_image_mime_type",
+        "owner": "source/host/src/media_mime.rs::detect_supported_image_mime_type",
+        "producer": "source/host/src/attachment_paths.rs::validate_and_prepare_attachment_payload, source/host/src/media_mime.rs::sniff_mime_from_base64_with_hints"
+      },
+      "invariants": [
+        "JPEG with byte 4 == 0xf7 is rejected as unsupported lossless JPEG",
+        "PNG containing acTL chunk before IDAT is rejected as animated PNG",
+        "BMP with pixelDataOffset >= declaredFileSize is rejected as malformed DIB header"
+      ],
+      "migration_rollback": "Fall back to extension-only mime detection without deep byte validation",
+      "oracle_ids": [
+        "OCRM-MEDIA-O01",
+        "OCRM-MEDIA-O02"
+      ],
+      "owner_decision": "Consolidate image format byte sniffing inside host media_mime module",
+      "postconditions": [
+        "Recognized supported static images return standard MIME string (image/jpeg, image/png, image/gif, image/webp, image/bmp)",
+        "Unsupported or malformed images return None"
+      ],
+      "preconditions": [
+        "Raw image byte slice is supplied for deep inspection"
+      ],
+      "required_evidence_dimensions": [
+        "unit",
+        "format"
+      ],
+      "required_gate_ids": [
+        "OCRM-G04-rust-contract",
+        "OCRM-G05-frozen-oracle"
+      ],
+      "requirement_ids": [
+        "OCRM-R23",
+        "OCRM-AC23"
+      ],
+      "responsibility_kind": "business-runtime",
+      "reviewer": "xuyao@ombhrum.com",
+      "risk": "Low; prevents invalid/animated image ingestion from breaking downstream chat/transcript views",
+      "selected_owner": "source/host/src/media_mime.rs",
+      "source_refs": [
+        {
+          "blob_sha": "7744266bb3bbeafbbf778b654a9be5831275b4da",
+          "path": "src/agents/utils/mime.ts",
+          "range": {
+            "end_line": 116,
+            "start_line": 1
+          },
+          "symbol": "detectSupportedImageMimeType"
+        }
+      ],
+      "status": {
+        "acceptance": "pending",
+        "implementation": "implemented",
+        "mapping": "reviewed",
+        "read": "read-complete",
+        "verification": "verified",
+        "wiring": "wired"
+      },
+      "target": {
+        "language": "Rust",
+        "path": "source/host/src/media_mime.rs",
+        "symbol": "detect_supported_image_mime_type"
+      },
+      "tests": [
+        "source/host/tests/openclaw_crash_guard_media_contract.rs::test_ocrm_media_o01_deep_image_mime_detection",
+        "source/host/tests/openclaw_crash_guard_media_contract.rs::test_ocrm_media_o02_servable_image_mime"
+      ],
+      "typed_contracts": [
+        "detect_supported_image_mime_type"
+      ],
+      "unit_id": "OCRM-UNIT-MEDIA-001"
+    },
+    {
+      "adr_refs": [],
+      "behavior": "Deterministic resolution of subagent session attachment directory trees mounted under /openclaw/attachments using normalized agent ID and SHA-256 session ref, preserving run-level subagent attachment directory trees.",
+      "blocker_ids": [],
+      "capability_ids": [
+        "agents.subagents.attachment_paths"
+      ],
+      "dependencies": [
+        "mahayana_host_runtime::attachment_paths"
+      ],
+      "evidence_refs": [
+        "source/host/tests/openclaw_crash_guard_media_contract.rs",
+        "projects/openclaw-rust/dossiers/crash-guard-media-scoped.md"
+      ],
+      "existing_owner_candidates": [
+        {
+          "path": "source/host/src/attachment_paths.rs",
+          "reason": "Host attachment paths owner"
+        }
+      ],
+      "id": "OCRM-RESP-SUBAGENT-ATTACHMENT-PATHS-001",
+      "integration": {
+        "consumer": "source/host/src/extensions/attachments/attachments_service.rs::upload, source/host/src/attachment_paths.rs::get_agent_outbound_attachments_dir",
+        "entrypoint": "source/host/src/attachment_paths.rs::resolve_subagent_session_attachment_root_dir",
+        "owner": "source/host/src/attachment_paths.rs::resolve_subagent_session_attachment_root_dir",
+        "producer": "source/host/src/attachment_paths.rs::subagent_attachment_root_for_run"
+      },
+      "invariants": [
+        "SANDBOX_SUBAGENT_ATTACHMENTS_MOUNT equals /openclaw/attachments",
+        "Subagent session attachment root uses sha256 hex digest of session_ref"
+      ],
+      "migration_rollback": "Mount attachments directly at host root without subagent hashing",
+      "oracle_ids": [
+        "OCRM-MEDIA-O04",
+        "OCRM-MEDIA-O06"
+      ],
+      "owner_decision": "Host attachment paths owner resolves subagent directory structures",
+      "postconditions": [
+        "Returns deterministic subagent attachment directory path with safe session isolation"
+      ],
+      "preconditions": [
+        "Agent ID and session reference provided"
+      ],
+      "required_evidence_dimensions": [
+        "unit",
+        "format"
+      ],
+      "required_gate_ids": [
+        "OCRM-G04-rust-contract",
+        "OCRM-G05-frozen-oracle"
+      ],
+      "requirement_ids": [
+        "OCRM-R08",
+        "OCRM-AC08"
+      ],
+      "responsibility_kind": "business-runtime",
+      "reviewer": "xuyao@ombhrum.com",
+      "risk": "Low; ensures deterministic sandbox path resolution without cross-agent collisions",
+      "selected_owner": "source/host/src/attachment_paths.rs",
+      "source_refs": [
+        {
+          "blob_sha": "8b8817362005640491d5bb6c40503306e9a804ed",
+          "path": "src/agents/subagents/subagent-attachment-paths.ts",
+          "range": {
+            "end_line": 30,
+            "start_line": 1
+          },
+          "symbol": "resolveSubagentSessionAttachmentRootDir"
+        }
+      ],
+      "status": {
+        "acceptance": "pending",
+        "implementation": "implemented",
+        "mapping": "reviewed",
+        "read": "read-complete",
+        "verification": "verified",
+        "wiring": "wired"
+      },
+      "target": {
+        "language": "Rust",
+        "path": "source/host/src/attachment_paths.rs",
+        "symbol": "resolve_subagent_session_attachment_root_dir"
+      },
+      "tests": [
+        "source/host/tests/openclaw_crash_guard_media_contract.rs::test_ocrm_media_o04_subagent_attachment_paths",
+        "source/host/tests/openclaw_crash_guard_media_contract.rs::test_ocrm_media_o06_storage_path_resolution"
+      ],
+      "typed_contracts": [
+        "resolve_subagent_session_attachment_root_dir"
+      ],
+      "unit_id": "OCRM-UNIT-MEDIA-001"
+    },
+    {
+      "adr_refs": [],
+      "behavior": "Attachment payload validation and preparation, calculating exact base64 decoded size and enforcing bounds limits before materialization.",
+      "blocker_ids": [],
+      "capability_ids": [
+        "media.attachment_processor"
+      ],
+      "dependencies": [
+        "mahayana_host_runtime::attachment_paths"
+      ],
+      "evidence_refs": [
+        "source/host/tests/openclaw_crash_guard_media_contract.rs",
+        "projects/openclaw-rust/dossiers/crash-guard-media-scoped.md"
+      ],
+      "existing_owner_candidates": [
+        {
+          "path": "source/host/src/attachment_paths.rs",
+          "reason": "Host attachment processing and path validator"
+        }
+      ],
+      "id": "OCRM-RESP-MEDIA-ATTACHMENT-PROCESSOR-001",
+      "integration": {
+        "consumer": "source/host/src/attachment_paths.rs::resolve_outbound_attachment_from_buffer",
+        "entrypoint": "source/host/src/attachment_paths.rs::validate_and_prepare_attachment_payload",
+        "owner": "source/host/src/attachment_paths.rs::validate_and_prepare_attachment_payload",
+        "producer": "source/host/src/extensions/transcript/inline_image_materialization.rs::materialize_one"
+      },
+      "invariants": [
+        "Base64 decoded size computed strictly accounting for padding without full allocation",
+        "Payload exceeding max_bytes returns explicit size limit error"
+      ],
+      "migration_rollback": "Directly decode base64 without size pre-validation",
+      "oracle_ids": [
+        "OCRM-MEDIA-O05"
+      ],
+      "owner_decision": "Implement payload size bounds checking in attachment paths module",
+      "postconditions": [
+        "Validated payload metadata returned ready for staging or persistence"
+      ],
+      "preconditions": [
+        "Base64 payload or raw buffer supplied with optional max_bytes limit"
+      ],
+      "required_evidence_dimensions": [
+        "unit",
+        "format"
+      ],
+      "required_gate_ids": [
+        "OCRM-G04-rust-contract",
+        "OCRM-G05-frozen-oracle"
+      ],
+      "requirement_ids": [
+        "OCRM-R23",
+        "OCRM-AC23"
+      ],
+      "responsibility_kind": "business-runtime",
+      "reviewer": "xuyao@ombhrum.com",
+      "risk": "Low; protects system memory against unbounded base64 decoding bombs",
+      "selected_owner": "source/host/src/attachment_paths.rs",
+      "source_refs": [
+        {
+          "blob_sha": "0dc184f58bfa76877108d9d57eaa3a3f06e59bd1",
+          "path": "src/media/attachment-processor.ts",
+          "range": {
+            "end_line": 34,
+            "start_line": 1
+          },
+          "symbol": "validateAndPrepareAttachmentPayload"
+        }
+      ],
+      "status": {
+        "acceptance": "pending",
+        "implementation": "implemented",
+        "mapping": "reviewed",
+        "read": "read-complete",
+        "verification": "verified",
+        "wiring": "wired"
+      },
+      "target": {
+        "language": "Rust",
+        "path": "source/host/src/attachment_paths.rs",
+        "symbol": "validate_and_prepare_attachment_payload"
+      },
+      "tests": [
+        "source/host/tests/openclaw_crash_guard_media_contract.rs::test_ocrm_media_o05_attachment_processor_size_limits"
+      ],
+      "typed_contracts": [
+        "validate_and_prepare_attachment_payload"
+      ],
+      "unit_id": "OCRM-UNIT-MEDIA-001"
+    },
+    {
+      "adr_refs": [],
+      "behavior": "Resolves outbound attachment buffers into persisted media files inside agent outbound directory with byte bounds checks and MIME sniffing.",
+      "blocker_ids": [],
+      "capability_ids": [
+        "media.outbound_attachment"
+      ],
+      "dependencies": [
+        "mahayana_host_runtime::attachment_paths"
+      ],
+      "evidence_refs": [
+        "source/host/tests/openclaw_crash_guard_media_contract.rs",
+        "projects/openclaw-rust/dossiers/crash-guard-media-scoped.md"
+      ],
+      "existing_owner_candidates": [
+        {
+          "path": "source/host/src/attachment_paths.rs",
+          "reason": "Host outbound attachments manager"
+        }
+      ],
+      "id": "OCRM-RESP-MEDIA-OUTBOUND-ATTACHMENT-001",
+      "integration": {
+        "consumer": "source/host/src/extensions/attachments/attachments_service.rs::read_text, source/host/src/extensions/transcript/inline_image_materialization.rs::materialize_one",
+        "entrypoint": "source/host/src/attachment_paths.rs::resolve_outbound_attachment_from_buffer",
+        "owner": "source/host/src/attachment_paths.rs::resolve_outbound_attachment_from_buffer",
+        "producer": "source/host/src/extensions/attachments/attachments_service.rs::upload"
+      },
+      "invariants": [
+        "Outbound staging enforces max_bytes limit",
+        "Staged file is placed inside agent outbound attachments directory"
+      ],
+      "migration_rollback": "Write directly to temporary directory without agent directory structure",
+      "oracle_ids": [
+        "OCRM-MEDIA-O08",
+        "OCRM-MEDIA-O09"
+      ],
+      "owner_decision": "Host attachment paths owner manages outbound staging and bounds verification",
+      "postconditions": [
+        "Outbound attachment file persisted on disk with resolved mime and path"
+      ],
+      "preconditions": [
+        "Agent ID, byte buffer, and file name supplied"
+      ],
+      "required_evidence_dimensions": [
+        "unit",
+        "format"
+      ],
+      "required_gate_ids": [
+        "OCRM-G04-rust-contract",
+        "OCRM-G05-frozen-oracle"
+      ],
+      "requirement_ids": [
+        "OCRM-R23",
+        "OCRM-AC23"
+      ],
+      "responsibility_kind": "business-runtime",
+      "reviewer": "xuyao@ombhrum.com",
+      "risk": "Low; ensures clean staging of agent outbound files",
+      "selected_owner": "source/host/src/attachment_paths.rs",
+      "source_refs": [
+        {
+          "blob_sha": "d2c00c2905323763fb58cb61b4e3aeb5bf37a250",
+          "path": "src/media/outbound-attachment.ts",
+          "range": {
+            "end_line": 65,
+            "start_line": 1
+          },
+          "symbol": "resolveOutboundAttachmentFromBuffer"
+        }
+      ],
+      "status": {
+        "acceptance": "pending",
+        "implementation": "implemented",
+        "mapping": "reviewed",
+        "read": "read-complete",
+        "verification": "verified",
+        "wiring": "wired"
+      },
+      "target": {
+        "language": "Rust",
+        "path": "source/host/src/attachment_paths.rs",
+        "symbol": "resolve_outbound_attachment_from_buffer"
+      },
+      "tests": [
+        "source/host/tests/openclaw_crash_guard_media_contract.rs::test_ocrm_media_o08_outbound_attachment_staging",
+        "source/host/tests/openclaw_crash_guard_media_contract.rs::test_ocrm_media_o09_persist_media_bytes"
+      ],
+      "typed_contracts": [
+        "resolve_outbound_attachment_from_buffer"
+      ],
+      "unit_id": "OCRM-UNIT-MEDIA-001"
+    },
+    {
+      "adr_refs": [],
+      "behavior": "Child process spawn telemetry tracking, command family classification (git, shell, node, python, rust, docker, curl, etc.), unscoped operation categorization, and atomic sample recording matching upstream spawn-diagnostics.ts.",
+      "blocker_ids": [
+        "BL-SPAWN-DIAGNOSTICS-DAEMON-WIRING-001"
+      ],
+      "capability_ids": [
+        "process.spawn_diagnostics"
+      ],
+      "dependencies": [
+        "mahayana_host_runtime::process_spawn_diagnostics"
+      ],
+      "evidence_refs": [
+        "source/host/tests/openclaw_crash_guard_media_contract.rs",
+        "projects/openclaw-rust/dossiers/crash-guard-media-scoped.md"
+      ],
+      "existing_owner_candidates": [
+        {
+          "path": "source/host/src/process_spawn_diagnostics.rs",
+          "reason": "Host child process spawn diagnostics tracker"
+        }
+      ],
+      "id": "OCRM-RESP-PROCESS-SPAWN-DIAGNOSTICS-001",
+      "integration": {
+        "consumer": "source/host/src/telemetry/mod.rs (pending daemon wiring)",
+        "entrypoint": "source/host/src/process_spawn_diagnostics.rs::ChildProcessSpawnTracker::record_spawn",
+        "owner": "source/host/src/process_spawn_diagnostics.rs::ChildProcessSpawnTracker",
+        "producer": "source/host/src/runner/mod.rs (pending daemon wiring)"
+      },
+      "invariants": [
+        "Tracks total spawns and per-command-family counters",
+        "Unscoped Git and shell operations are classified deterministically"
+      ],
+      "migration_rollback": "Disable child process spawn telemetry recording",
+      "oracle_ids": [
+        "OCRM-CRASH-O02"
+      ],
+      "owner_decision": "Implement dedicated process spawn diagnostics tracker in host runtime",
+      "postconditions": [
+        "Telemetry counters and sample ring buffer updated atomically"
+      ],
+      "preconditions": [
+        "Command name and argument vector supplied when spawning child process"
+      ],
+      "required_evidence_dimensions": [
+        "unit",
+        "telemetry"
+      ],
+      "required_gate_ids": [
+        "OCRM-G04-rust-contract",
+        "OCRM-G05-frozen-oracle"
+      ],
+      "requirement_ids": [
+        "OCRM-R08",
+        "OCRM-AC08"
+      ],
+      "responsibility_kind": "business-runtime",
+      "reviewer": "xuyao@ombhrum.com",
+      "risk": "Low; telemetry attribution module without control flow interference",
+      "selected_owner": "source/host/src/process_spawn_diagnostics.rs",
+      "source_refs": [
+        {
+          "blob_sha": "1dec1b04c0247e5de0d172e42c32bfe4c4903110",
+          "path": "src/process/spawn-diagnostics.ts",
+          "range": {
+            "end_line": 235,
+            "start_line": 1
+          },
+          "symbol": "ChildProcessSpawnTracker"
+        }
+      ],
+      "status": {
+        "acceptance": "pending",
+        "implementation": "implemented",
+        "mapping": "reviewed",
+        "read": "read-complete",
+        "verification": "not-run",
+        "wiring": "not-wired"
+      },
+      "target": {
+        "language": "Rust",
+        "path": "source/host/src/process_spawn_diagnostics.rs",
+        "symbol": "ChildProcessSpawnTracker"
+      },
+      "tests": [
+        "source/host/tests/openclaw_crash_guard_media_contract.rs::test_ocrm_crash_o02_spawn_diagnostics_tracker"
+      ],
+      "typed_contracts": [
+        "ChildProcessSpawnTracker"
+      ],
+      "unit_id": "OCRM-UNIT-PROCESS-001"
+    },
+    {
+      "adr_refs": [],
+      "behavior": "Attaches sanitized diagnostic metadata to error objects, masking sensitive credentials (Bearer tokens, API keys, password params) and producing bounded display format strings under 2,048 UTF-16 code units.",
+      "blocker_ids": [],
+      "capability_ids": [
+        "infra.error_diagnostics"
+      ],
+      "dependencies": [
+        "mahayana_host_runtime::error_diagnostics"
+      ],
+      "evidence_refs": [
+        "source/host/tests/openclaw_crash_guard_media_contract.rs",
+        "projects/openclaw-rust/dossiers/crash-guard-media-scoped.md"
+      ],
+      "existing_owner_candidates": [
+        {
+          "path": "source/host/src/error_diagnostics.rs",
+          "reason": "Host error diagnostics sanitizer and formatter"
+        }
+      ],
+      "id": "OCRM-RESP-ERROR-DIAGNOSTICS-ATTACH-001",
+      "integration": {
+        "consumer": "source/host/src/extensions/session/production.rs::record_error",
+        "entrypoint": "source/host/src/error_diagnostics.rs::format_error_message_for_display",
+        "owner": "source/host/src/error_diagnostics.rs::sanitize_error_diagnostic",
+        "producer": "source/host/src/process_crash_guard.rs::classify_panic_or_error"
+      },
+      "invariants": [
+        "Bearer tokens and sk- keys are redacted with <redacted>",
+        "Formatted error message does not exceed 2048 code units"
+      ],
+      "migration_rollback": "Format error messages without sanitization masking",
+      "oracle_ids": [
+        "OCRM-CRASH-O03"
+      ],
+      "owner_decision": "Implement error diagnostics sanitizer in host infra module",
+      "postconditions": [
+        "Sanitized error diagnostic and display string generated"
+      ],
+      "preconditions": [
+        "Error or diagnostic string provided"
+      ],
+      "required_evidence_dimensions": [
+        "unit",
+        "security"
+      ],
+      "required_gate_ids": [
+        "OCRM-G04-rust-contract",
+        "OCRM-G05-frozen-oracle"
+      ],
+      "requirement_ids": [
+        "OCRM-R23",
+        "OCRM-AC23"
+      ],
+      "responsibility_kind": "business-runtime",
+      "reviewer": "xuyao@ombhrum.com",
+      "risk": "Low; security hardening for error reporting and UI diagnostics",
+      "selected_owner": "source/host/src/error_diagnostics.rs",
+      "source_refs": [
+        {
+          "blob_sha": "226092ad8d0bde17891ebc0310fd7919fd80a9ce",
+          "path": "src/infra/error-diagnostics.ts",
+          "range": {
+            "end_line": 45,
+            "start_line": 1
+          },
+          "symbol": "sanitizeErrorDiagnostic"
+        }
+      ],
+      "status": {
+        "acceptance": "pending",
+        "implementation": "implemented",
+        "mapping": "reviewed",
+        "read": "read-complete",
+        "verification": "verified",
+        "wiring": "wired"
+      },
+      "target": {
+        "language": "Rust",
+        "path": "source/host/src/error_diagnostics.rs",
+        "symbol": "sanitize_error_diagnostic"
+      },
+      "tests": [
+        "source/host/tests/openclaw_crash_guard_media_contract.rs::test_ocrm_crash_o03_error_diagnostics_redaction"
+      ],
+      "typed_contracts": [
+        "DiagnosticError"
+      ],
+      "unit_id": "OCRM-UNIT-ERROR-001"
     }
   ],
   "schema_version": 1,

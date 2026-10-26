@@ -99,7 +99,146 @@ pub fn format_attachment_too_large_notice(filename: &str) -> String {
     )
 }
 
+pub const PNG_SIGNATURE: [u8; 8] = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a];
+
+pub fn detect_supported_image_mime_type(buffer: &[u8]) -> Option<&'static str> {
+    if buffer.len() >= 3 && buffer[..3] == [0xff, 0xd8, 0xff] {
+        return if buffer.get(3) == Some(&0xf7) {
+            None
+        } else {
+            Some("image/jpeg")
+        };
+    }
+    if buffer.len() >= 8 && buffer[..8] == PNG_SIGNATURE {
+        return if is_png(buffer) && !is_animated_png(buffer) {
+            Some("image/png")
+        } else {
+            None
+        };
+    }
+    if buffer.starts_with(b"GIF") {
+        return Some("image/gif");
+    }
+    if buffer.len() >= 12 && buffer.starts_with(b"RIFF") && &buffer[8..12] == b"WEBP" {
+        return Some("image/webp");
+    }
+    if buffer.starts_with(b"BM") && is_bmp(buffer) {
+        return Some("image/bmp");
+    }
+    None
+}
+
+fn read_u32_be(buffer: &[u8], offset: usize) -> Option<u32> {
+    let bytes = buffer.get(offset..offset + 4)?;
+    Some(u32::from_be_bytes([bytes[0], bytes[1], bytes[2], bytes[3]]))
+}
+
+fn read_u32_le(buffer: &[u8], offset: usize) -> Option<u32> {
+    let bytes = buffer.get(offset..offset + 4)?;
+    Some(u32::from_le_bytes([bytes[0], bytes[1], bytes[2], bytes[3]]))
+}
+
+fn read_u16_le(buffer: &[u8], offset: usize) -> Option<u16> {
+    let bytes = buffer.get(offset..offset + 2)?;
+    Some(u16::from_le_bytes([bytes[0], bytes[1]]))
+}
+
+fn is_png(buffer: &[u8]) -> bool {
+    buffer.len() >= 16
+        && read_u32_be(buffer, PNG_SIGNATURE.len()) == Some(13)
+        && buffer.get(12..16) == Some(b"IHDR")
+}
+
+fn is_animated_png(buffer: &[u8]) -> bool {
+    let mut offset = PNG_SIGNATURE.len();
+    while offset + 8 <= buffer.len() {
+        let chunk_length = match read_u32_be(buffer, offset) {
+            Some(len) => len as usize,
+            None => return false,
+        };
+        let chunk_type_offset = offset + 4;
+        let chunk_type = match buffer.get(chunk_type_offset..chunk_type_offset + 4) {
+            Some(t) => t,
+            None => return false,
+        };
+        if chunk_type == b"acTL" {
+            return true;
+        }
+        if chunk_type == b"IDAT" {
+            return false;
+        }
+        let next_offset = match offset.checked_add(12).and_then(|o| o.checked_add(chunk_length)) {
+            Some(next) => next,
+            None => return false,
+        };
+        if next_offset <= offset || next_offset > buffer.len() {
+            return false;
+        }
+        offset = next_offset;
+    }
+    false
+}
+
+fn is_bmp(buffer: &[u8]) -> bool {
+    if buffer.len() < 26 {
+        return false;
+    }
+    let declared_file_size = match read_u32_le(buffer, 2) {
+        Some(s) => s as usize,
+        None => return false,
+    };
+    let pixel_data_offset = match read_u32_le(buffer, 10) {
+        Some(s) => s as usize,
+        None => return false,
+    };
+    let dib_header_size = match read_u32_le(buffer, 14) {
+        Some(s) => s as usize,
+        None => return false,
+    };
+    if declared_file_size != 0 && declared_file_size < 26 {
+        return false;
+    }
+    if pixel_data_offset < 14 + dib_header_size {
+        return false;
+    }
+    if declared_file_size != 0 && pixel_data_offset >= declared_file_size {
+        return false;
+    }
+
+    let (color_planes, bits_per_pixel) = if dib_header_size == 12 {
+        let planes = match read_u16_le(buffer, 22) {
+            Some(p) => p,
+            None => return false,
+        };
+        let bpp = match read_u16_le(buffer, 24) {
+            Some(b) => b,
+            None => return false,
+        };
+        (planes, bpp)
+    } else if (40..=124).contains(&dib_header_size) {
+        if buffer.len() < 30 {
+            return false;
+        }
+        let planes = match read_u16_le(buffer, 26) {
+            Some(p) => p,
+            None => return false,
+        };
+        let bpp = match read_u16_le(buffer, 28) {
+            Some(b) => b,
+            None => return false,
+        };
+        (planes, bpp)
+    } else {
+        return false;
+    };
+
+    color_planes == 1 && matches!(bits_per_pixel, 1 | 4 | 8 | 16 | 24 | 32)
+}
+
 pub fn sniff_mime_from_buffer(bytes: &[u8]) -> Option<&'static str> {
+    if let Some(image_mime) = detect_supported_image_mime_type(bytes) {
+        return Some(image_mime);
+    }
     if bytes.len() >= 8 && bytes[..8] == [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a] {
         return Some("image/png");
     }

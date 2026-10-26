@@ -84,3 +84,5 @@ pub use device_pairing_owner::DevicePairingOwner;
 
 pub mod host_gateway_api;
 pub mod sand_host;
+pub mod error_diagnostics;
+pub mod process_spawn_diagnostics;

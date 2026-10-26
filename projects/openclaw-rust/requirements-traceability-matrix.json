@@ -201,9 +201,13 @@
     },
     {
       "acceptance_status": "in-progress",
-      "blocker_ids": [],
+      "blocker_ids": [
+        "BL-SPAWN-DIAGNOSTICS-DAEMON-WIRING-001"
+      ],
       "evidence_refs": [
+        "projects/openclaw-rust/dossiers/crash-guard-media-scoped.md",
         "projects/openclaw-rust/dossiers/memory-knowledge-retrieval-scoped.md",
+        "source/host/tests/openclaw_crash_guard_media_contract.rs",
         "source/host/tests/openclaw_memory_contract.rs",
         "source/host/tests/openclaw_sessions_and_config_contract.rs",
         "source/host/tests/session_conversation_state_contract.rs"
@@ -213,6 +217,9 @@
       "kind": "requirement",
       "not_applicable_reason": null,
       "oracle_ids": [
+        "OCRM-CRASH-O02",
+        "OCRM-MEDIA-O04",
+        "OCRM-MEDIA-O06",
         "OCRM-MEM-O01",
         "OCRM-MEM-O02",
         "OCRM-MEM-O03",
@@ -240,12 +247,14 @@
         "OCRM-RESP-MEM-SHORT-TERM-PROMOTION-001",
         "OCRM-RESP-MEM-STANDING-INTENTS-001",
         "OCRM-RESP-MEM-TOOL-CONTRACT-001",
+        "OCRM-RESP-PROCESS-SPAWN-DIAGNOSTICS-001",
         "OCRM-RESP-SESSION-AUTH-PROFILE-LIFECYCLE-001",
         "OCRM-RESP-SESSION-COMMUNICATION-POLICY-001",
         "OCRM-RESP-SESSION-CONVERSATION-TURNS-001",
         "OCRM-RESP-SESSION-KEY-ROUTING-001",
         "OCRM-RESP-SESSION-MODEL-OVERRIDES-001",
-        "OCRM-RESP-SESSION-WORK-ADMISSION-001"
+        "OCRM-RESP-SESSION-WORK-ADMISSION-001",
+        "OCRM-RESP-SUBAGENT-ATTACHMENT-PATHS-001"
       ],
       "reviewer": "xuyao@ombhrum.com"
     },
@@ -600,8 +609,10 @@
       "acceptance_status": "in-progress",
       "blocker_ids": [],
       "evidence_refs": [
-        "source/host/tests/openclaw_media_generation_contract.rs",
-        "projects/openclaw-rust/dossiers/media-generation-attachments-scoped.md"
+        "projects/openclaw-rust/dossiers/crash-guard-media-scoped.md",
+        "projects/openclaw-rust/dossiers/media-generation-attachments-scoped.md",
+        "source/host/tests/openclaw_crash_guard_media_contract.rs",
+        "source/host/tests/openclaw_media_generation_contract.rs"
       ],
       "gate_ids": [],
       "id": "OCRM-R23",
@@ -613,13 +624,23 @@
         "OCRM-ATTACH-O03",
         "OCRM-ATTACH-O05",
         "OCRM-ATTACH-O06",
-        "OCRM-ATTACH-O07"
+        "OCRM-ATTACH-O07",
+        "OCRM-CRASH-O03",
+        "OCRM-MEDIA-O01",
+        "OCRM-MEDIA-O02",
+        "OCRM-MEDIA-O05",
+        "OCRM-MEDIA-O08",
+        "OCRM-MEDIA-O09"
       ],
       "requirement_text_source": "docs/specs/openclaw-rust-equivalence-migration.md#5",
       "responsibility_ids": [
+        "OCRM-RESP-ERROR-DIAGNOSTICS-ATTACH-001",
+        "OCRM-RESP-MEDIA-ATTACHMENT-PROCESSOR-001",
         "OCRM-RESP-MEDIA-BYTE-CAPS-001",
         "OCRM-RESP-MEDIA-IMAGE-ASSETS-001",
-        "OCRM-RESP-MEDIA-LOCAL-ACCESS-001"
+        "OCRM-RESP-MEDIA-IMAGE-MIME-DETECT-001",
+        "OCRM-RESP-MEDIA-LOCAL-ACCESS-001",
+        "OCRM-RESP-MEDIA-OUTBOUND-ATTACHMENT-001"
       ],
       "reviewer": "xuyao@ombhrum.com"
     },
@@ -778,9 +799,13 @@
     },
     {
       "acceptance_status": "in-progress",
-      "blocker_ids": [],
+      "blocker_ids": [
+        "BL-SPAWN-DIAGNOSTICS-DAEMON-WIRING-001"
+      ],
       "evidence_refs": [
+        "projects/openclaw-rust/dossiers/crash-guard-media-scoped.md",
         "projects/openclaw-rust/dossiers/memory-knowledge-retrieval-scoped.md",
+        "source/host/tests/openclaw_crash_guard_media_contract.rs",
         "source/host/tests/openclaw_memory_contract.rs",
         "source/host/tests/openclaw_sessions_and_config_contract.rs",
         "source/host/tests/session_conversation_state_contract.rs"
@@ -790,6 +815,9 @@
       "kind": "acceptance-criterion",
       "not_applicable_reason": null,
       "oracle_ids": [
+        "OCRM-CRASH-O02",
+        "OCRM-MEDIA-O04",
+        "OCRM-MEDIA-O06",
         "OCRM-MEM-O01",
         "OCRM-MEM-O02",
         "OCRM-MEM-O03",
@@ -817,12 +845,14 @@
         "OCRM-RESP-MEM-SHORT-TERM-PROMOTION-001",
         "OCRM-RESP-MEM-STANDING-INTENTS-001",
         "OCRM-RESP-MEM-TOOL-CONTRACT-001",
+        "OCRM-RESP-PROCESS-SPAWN-DIAGNOSTICS-001",
         "OCRM-RESP-SESSION-AUTH-PROFILE-LIFECYCLE-001",
         "OCRM-RESP-SESSION-COMMUNICATION-POLICY-001",
         "OCRM-RESP-SESSION-CONVERSATION-TURNS-001",
         "OCRM-RESP-SESSION-KEY-ROUTING-001",
         "OCRM-RESP-SESSION-MODEL-OVERRIDES-001",
-        "OCRM-RESP-SESSION-WORK-ADMISSION-001"
+        "OCRM-RESP-SESSION-WORK-ADMISSION-001",
+        "OCRM-RESP-SUBAGENT-ATTACHMENT-PATHS-001"
       ],
       "reviewer": "xuyao@ombhrum.com"
     },
@@ -1174,8 +1204,10 @@
       "acceptance_status": "in-progress",
       "blocker_ids": [],
       "evidence_refs": [
-        "source/host/tests/openclaw_media_generation_contract.rs",
-        "projects/openclaw-rust/dossiers/media-generation-attachments-scoped.md"
+        "projects/openclaw-rust/dossiers/crash-guard-media-scoped.md",
+        "projects/openclaw-rust/dossiers/media-generation-attachments-scoped.md",
+        "source/host/tests/openclaw_crash_guard_media_contract.rs",
+        "source/host/tests/openclaw_media_generation_contract.rs"
       ],
       "gate_ids": [],
       "id": "OCRM-AC23",
@@ -1187,13 +1219,23 @@
         "OCRM-ATTACH-O03",
         "OCRM-ATTACH-O05",
         "OCRM-ATTACH-O06",
-        "OCRM-ATTACH-O07"
+        "OCRM-ATTACH-O07",
+        "OCRM-CRASH-O03",
+        "OCRM-MEDIA-O01",
+        "OCRM-MEDIA-O02",
+        "OCRM-MEDIA-O05",
+        "OCRM-MEDIA-O08",
+        "OCRM-MEDIA-O09"
       ],
       "requirement_text_source": "docs/specs/openclaw-rust-equivalence-migration.md#15",
       "responsibility_ids": [
+        "OCRM-RESP-ERROR-DIAGNOSTICS-ATTACH-001",
+        "OCRM-RESP-MEDIA-ATTACHMENT-PROCESSOR-001",
         "OCRM-RESP-MEDIA-BYTE-CAPS-001",
         "OCRM-RESP-MEDIA-IMAGE-ASSETS-001",
-        "OCRM-RESP-MEDIA-LOCAL-ACCESS-001"
+        "OCRM-RESP-MEDIA-IMAGE-MIME-DETECT-001",
+        "OCRM-RESP-MEDIA-LOCAL-ACCESS-001",
+        "OCRM-RESP-MEDIA-OUTBOUND-ATTACHMENT-001"
       ],
       "reviewer": "xuyao@ombhrum.com"
     },
