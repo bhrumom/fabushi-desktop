@@ -1998,6 +1998,22 @@ impl AttachmentsService {
                     .map_err(|e| e.to_string())?;
                 Ok(serde_json::json!({ "allowed": true }))
             })(),
+            "readRemoteMediaBuffer" => (|| {
+                let options: crate::extensions::attachments::media_fetch::FetchMediaOptions =
+                    serde_json::from_value(args.clone())
+                        .map_err(|e| format!("Invalid FetchMediaOptions: {e}"))?;
+                let res = crate::extensions::attachments::media_fetch::read_remote_media_buffer(&options)
+                    .map_err(|e| e.to_string())?;
+                Ok(serde_json::to_value(res).unwrap_or(Value::Null))
+            })(),
+            "saveRemoteMedia" => (|| {
+                let options: crate::extensions::attachments::media_fetch::SaveRemoteMediaOptions =
+                    serde_json::from_value(args.clone())
+                        .map_err(|e| format!("Invalid SaveRemoteMediaOptions: {e}"))?;
+                let res = crate::extensions::attachments::media_fetch::save_remote_media(&options)
+                    .map_err(|e| e.to_string())?;
+                Ok(serde_json::to_value(res).unwrap_or(Value::Null))
+            })(),
             _ => return None,
         };
         Some(result)

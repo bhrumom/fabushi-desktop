@@ -11,6 +11,7 @@ pub mod link_preview_image_bounds;
 pub mod local_roots;
 pub mod media_audio_transcode;
 pub mod media_facts;
+pub mod media_fetch;
 pub mod media_file_context;
 pub mod media_probe;
 pub mod media_qr_png;
