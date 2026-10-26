@@ -10,10 +10,10 @@
     "ui_accepted": false
   },
   "file_coverage": {
-    "mapped_paths": 124,
+    "mapped_paths": 130,
     "omitted_known": 0,
     "tracked_paths": 58750,
-    "unclassified_paths": 58626
+    "unclassified_paths": 58620
   },
   "inventory_authority": {
     "manifest_source": "GitHub Actions immutable artifact candidate",
@@ -6617,6 +6617,553 @@
         "BoundedLineFramer::push"
       ],
       "unit_id": "OCRM-UNIT-EXEC-001"
+    },
+    {
+      "adr_refs": [],
+      "behavior": "5-field cron parsing, relative @every interval resolution, timezone support with CRON_TZ=/TZ= prefixes, and future execution epoch calculation (compute_next_run_at).",
+      "blocker_ids": [],
+      "capability_ids": [
+        "cron.schedule_matcher"
+      ],
+      "dependencies": [
+        "mahayana_host_runtime::automations"
+      ],
+      "evidence_refs": [
+        "source/host/tests/openclaw_plugins_automations_contract.rs",
+        "projects/openclaw-rust/dossiers/cron-automations-heartbeat-scoped.md"
+      ],
+      "existing_owner_candidates": [
+        {
+          "path": "source/host/src/automations/automation_schedule.rs",
+          "reason": "Host automation schedule compiler"
+        }
+      ],
+      "id": "OCRM-RESP-CRON-SCHEDULE-MATCHER-001",
+      "integration": {
+        "consumer": "source/host/src/runner/mod.rs",
+        "entrypoint": "source/host/src/automations/mod.rs",
+        "owner": "source/host/src/automations/automation_schedule.rs",
+        "producer": "source/host/src/automations/mod.rs"
+      },
+      "invariants": [
+        "Out-of-range minutes (>= 60) or hours (>= 24) are rejected",
+        "compute_next_run_at returns strictly monotonically increasing future epochs"
+      ],
+      "migration_rollback": "Disable recurring schedule and log parsing warning",
+      "oracle_ids": [
+        "OCRM-CRON-O01",
+        "OCRM-CRON-O02",
+        "OCRM-CRON-O03",
+        "OCRM-CRON-O04"
+      ],
+      "owner_decision": "Implement 5-field cron parsing and interval calculation in automation schedule",
+      "postconditions": [
+        "Compiled cron matcher cached and ready for tick evaluation"
+      ],
+      "preconditions": [
+        "Cron expression or @every string provided in job config"
+      ],
+      "required_evidence_dimensions": [
+        "unit",
+        "format"
+      ],
+      "required_gate_ids": [
+        "OCRM-G04-rust-contract",
+        "OCRM-G05-frozen-oracle"
+      ],
+      "requirement_ids": [
+        "OCRM-R20",
+        "OCRM-AC20"
+      ],
+      "responsibility_kind": "business-runtime",
+      "reviewer": "xuyao@ombhrum.com",
+      "risk": "High; prevents timer loops and invalid cron scheduling panics",
+      "selected_owner": "source/host/src/automations/automation_schedule.rs",
+      "source_refs": [
+        {
+          "blob_sha": "b0e8e7d25211b01204330abd0c5765b355c4582e",
+          "path": "src/cron/schedule.ts",
+          "range": {
+            "end_line": 367,
+            "start_line": 1
+          },
+          "symbol": "resolveCronFromSchedule"
+        }
+      ],
+      "status": {
+        "acceptance": "pending",
+        "implementation": "implemented",
+        "mapping": "reviewed",
+        "read": "read-complete",
+        "verification": "verified",
+        "wiring": "wired"
+      },
+      "target": {
+        "language": "Rust",
+        "path": "source/host/src/automations/automation_schedule.rs",
+        "symbol": "compile_cron_matcher"
+      },
+      "tests": [
+        "source/host/tests/openclaw_plugins_automations_contract.rs::test_ocrm_cron_o01_five_field_parsing",
+        "source/host/tests/openclaw_plugins_automations_contract.rs::test_ocrm_cron_o02_every_interval_parsing",
+        "source/host/tests/openclaw_plugins_automations_contract.rs::test_ocrm_cron_o03_timezone_parsing",
+        "source/host/tests/openclaw_plugins_automations_contract.rs::test_ocrm_cron_o04_future_epoch_calculation"
+      ],
+      "typed_contracts": [
+        "compile_cron_matcher",
+        "compute_next_run_at"
+      ],
+      "unit_id": "OCRM-UNIT-AUTOMATION-001"
+    },
+    {
+      "adr_refs": [],
+      "behavior": "Stable schedule fingerprinting, 7-day schedule summary generation, and weekend/overnight classification for proactive jobs.",
+      "blocker_ids": [],
+      "capability_ids": [
+        "cron.schedule_identity"
+      ],
+      "dependencies": [
+        "mahayana_host_runtime::automations"
+      ],
+      "evidence_refs": [
+        "source/host/tests/openclaw_plugins_automations_contract.rs",
+        "projects/openclaw-rust/dossiers/cron-automations-heartbeat-scoped.md"
+      ],
+      "existing_owner_candidates": [
+        {
+          "path": "source/host/src/automations/automation_schedule.rs",
+          "reason": "Host schedule summarizer"
+        }
+      ],
+      "id": "OCRM-RESP-CRON-SCHEDULE-IDENTITY-001",
+      "integration": {
+        "consumer": "source/host/src/runner/mod.rs",
+        "entrypoint": "source/host/src/automations/mod.rs",
+        "owner": "source/host/src/automations/automation_schedule.rs",
+        "producer": "source/host/src/automations/mod.rs"
+      },
+      "invariants": [
+        "Weekly schedule forecast contains exactly occurrences within 7 calendar days",
+        "Weekend and overnight slots are tagged accurately for user notification gating"
+      ],
+      "migration_rollback": "Return basic next-occurrence timestamp without summary",
+      "oracle_ids": [
+        "OCRM-CRON-O05"
+      ],
+      "owner_decision": "Implement 7-day schedule forecast and job categorization in automations",
+      "postconditions": [
+        "AutomationScheduleSummary returned with occurrence intervals"
+      ],
+      "preconditions": [
+        "Compiled cron matcher and reference start epoch"
+      ],
+      "required_evidence_dimensions": [
+        "unit",
+        "calendar"
+      ],
+      "required_gate_ids": [
+        "OCRM-G04-rust-contract",
+        "OCRM-G05-frozen-oracle"
+      ],
+      "requirement_ids": [
+        "OCRM-R20",
+        "OCRM-AC20"
+      ],
+      "responsibility_kind": "business-runtime",
+      "reviewer": "xuyao@ombhrum.com",
+      "risk": "Medium; guarantees UI and notification delivery respects quiet hours",
+      "selected_owner": "source/host/src/automations/automation_schedule.rs",
+      "source_refs": [
+        {
+          "blob_sha": "8c4f3361908adc5b6404ef38427ad5996fea8346",
+          "path": "src/cron/schedule-identity.ts",
+          "range": {
+            "end_line": 150,
+            "start_line": 1
+          },
+          "symbol": "schedulePayloadFromRecord"
+        }
+      ],
+      "status": {
+        "acceptance": "pending",
+        "implementation": "implemented",
+        "mapping": "reviewed",
+        "read": "read-complete",
+        "verification": "verified",
+        "wiring": "wired"
+      },
+      "target": {
+        "language": "Rust",
+        "path": "source/host/src/automations/automation_schedule.rs",
+        "symbol": "summarize_schedule_next_7_days"
+      },
+      "tests": [
+        "source/host/tests/openclaw_plugins_automations_contract.rs::test_ocrm_cron_o05_schedule_summary"
+      ],
+      "typed_contracts": [
+        "summarize_schedule_next_7_days"
+      ],
+      "unit_id": "OCRM-UNIT-AUTOMATION-001"
+    },
+    {
+      "adr_refs": [],
+      "behavior": "Scheduled job delivery mode resolution (announce vs webhook), destination routing, failure alert notification policies, and target channel prefix inference.",
+      "blocker_ids": [],
+      "capability_ids": [
+        "cron.delivery_plan"
+      ],
+      "dependencies": [
+        "mahayana_host_runtime::connectors"
+      ],
+      "evidence_refs": [
+        "source/host/tests/openclaw_plugins_automations_contract.rs",
+        "projects/openclaw-rust/dossiers/cron-automations-heartbeat-scoped.md"
+      ],
+      "existing_owner_candidates": [
+        {
+          "path": "source/host/src/connectors/channel_delivery.rs",
+          "reason": "HostChannelDelivery"
+        }
+      ],
+      "id": "OCRM-RESP-CRON-DELIVERY-PLAN-001",
+      "integration": {
+        "consumer": "source/host/src/connectors/channel_delivery.rs",
+        "entrypoint": "source/host/src/connectors/channel_delivery.rs",
+        "owner": "source/host/src/connectors/channel_delivery.rs",
+        "producer": "source/host/src/automations/mod.rs"
+      },
+      "invariants": [
+        "Webhook deliveries bypass conversational channel delivery ports",
+        "Prefixed recipient targets (slack:..., discord:...) route to appropriate connectors"
+      ],
+      "migration_rollback": "Announce to primary agent conversation",
+      "oracle_ids": [
+        "OCRM-PLUGIN-O04"
+      ],
+      "owner_decision": "Implement cron delivery resolution and failure dispatch in channel delivery",
+      "postconditions": [
+        "Outbound delivery dispatched or failure notification enqueued"
+      ],
+      "preconditions": [
+        "Completed scheduled cron execution with pending delivery"
+      ],
+      "required_evidence_dimensions": [
+        "unit",
+        "routing"
+      ],
+      "required_gate_ids": [
+        "OCRM-G04-rust-contract",
+        "OCRM-G05-frozen-oracle"
+      ],
+      "requirement_ids": [
+        "OCRM-R21",
+        "OCRM-AC21"
+      ],
+      "responsibility_kind": "business-runtime",
+      "reviewer": "xuyao@ombhrum.com",
+      "risk": "High; guarantees automation results reach configured notification channels",
+      "selected_owner": "source/host/src/connectors/channel_delivery.rs",
+      "source_refs": [
+        {
+          "blob_sha": "67480d5da551727ca6f7e129a9d75b0e17c42635",
+          "path": "src/cron/delivery-plan.ts",
+          "range": {
+            "end_line": 236,
+            "start_line": 1
+          },
+          "symbol": "resolveCronDeliveryPlan"
+        }
+      ],
+      "status": {
+        "acceptance": "pending",
+        "implementation": "implemented",
+        "mapping": "reviewed",
+        "read": "read-complete",
+        "verification": "verified",
+        "wiring": "wired"
+      },
+      "target": {
+        "language": "Rust",
+        "path": "source/host/src/connectors/channel_delivery.rs",
+        "symbol": "HostChannelDelivery"
+      },
+      "tests": [
+        "source/host/tests/openclaw_plugins_automations_contract.rs::test_ocrm_plugin_o04_rpc_timeout_constants"
+      ],
+      "typed_contracts": [
+        "HostChannelDelivery::deliver"
+      ],
+      "unit_id": "OCRM-UNIT-AUTOMATION-001"
+    },
+    {
+      "adr_refs": [],
+      "behavior": "Expired cron run-session pruning (sessionRetention), unreferenced transcript cleanup, and active media task preservation.",
+      "blocker_ids": [],
+      "capability_ids": [
+        "cron.session_reaper"
+      ],
+      "dependencies": [
+        "mahayana_host_runtime::extensions::transcript"
+      ],
+      "evidence_refs": [
+        "source/host/tests/openclaw_plugins_automations_contract.rs",
+        "projects/openclaw-rust/dossiers/cron-automations-heartbeat-scoped.md"
+      ],
+      "existing_owner_candidates": [
+        {
+          "path": "source/host/src/extensions/transcript/mod.rs",
+          "reason": "Host transcript storage and maintenance"
+        }
+      ],
+      "id": "OCRM-RESP-CRON-SESSION-REAPER-001",
+      "integration": {
+        "consumer": "source/host/src/extensions/transcript/mod.rs",
+        "entrypoint": "source/host/src/extensions/transcript/mod.rs",
+        "owner": "source/host/src/extensions/transcript/mod.rs",
+        "producer": "source/host/src/automations/mod.rs"
+      },
+      "invariants": [
+        "Sessions with pending media tasks are exempt from pruning",
+        "Retention duration of 0 disables session deletion"
+      ],
+      "migration_rollback": "Retain all cron sessions indefinitely",
+      "oracle_ids": [
+        "OCRM-PLUGIN-O05"
+      ],
+      "owner_decision": "Implement session pruning and transcript cleanup in transcript manager",
+      "postconditions": [
+        "Expired ephemeral cron sessions pruned from SQLite store"
+      ],
+      "preconditions": [
+        "Periodic reaper tick or session change subscription event"
+      ],
+      "required_evidence_dimensions": [
+        "unit",
+        "cleanup"
+      ],
+      "required_gate_ids": [
+        "OCRM-G04-rust-contract",
+        "OCRM-G05-frozen-oracle"
+      ],
+      "requirement_ids": [
+        "OCRM-R21",
+        "OCRM-AC21"
+      ],
+      "responsibility_kind": "business-runtime",
+      "reviewer": "xuyao@ombhrum.com",
+      "risk": "Medium; prevents database bloat while protecting active work items",
+      "selected_owner": "source/host/src/extensions/transcript/mod.rs",
+      "source_refs": [
+        {
+          "blob_sha": "b1d615cf5b6ab55b3f58775aa4251e36eeb7c53a",
+          "path": "src/cron/session-reaper.ts",
+          "range": {
+            "end_line": 341,
+            "start_line": 1
+          },
+          "symbol": "ensureReaperSubscription"
+        }
+      ],
+      "status": {
+        "acceptance": "pending",
+        "implementation": "implemented",
+        "mapping": "reviewed",
+        "read": "read-complete",
+        "verification": "verified",
+        "wiring": "wired"
+      },
+      "target": {
+        "language": "Rust",
+        "path": "source/host/src/extensions/transcript/mod.rs",
+        "symbol": "TranscriptCleanup"
+      },
+      "tests": [
+        "source/host/tests/openclaw_plugins_automations_contract.rs::test_ocrm_plugin_o05_sand_auto_review_modes"
+      ],
+      "typed_contracts": [
+        "TranscriptCleanup::prune_expired"
+      ],
+      "unit_id": "OCRM-UNIT-AUTOMATION-001"
+    },
+    {
+      "adr_refs": [],
+      "behavior": "Inbound control command detection (/abort, /stop, /status), session boundary command detection (/new, /reset), and bang syntax gating.",
+      "blocker_ids": [],
+      "capability_ids": [
+        "autoreply.command_detector"
+      ],
+      "dependencies": [
+        "mahayana_host_runtime::runner"
+      ],
+      "evidence_refs": [
+        "source/host/tests/openclaw_plugins_automations_contract.rs",
+        "projects/openclaw-rust/dossiers/cron-automations-heartbeat-scoped.md"
+      ],
+      "existing_owner_candidates": [
+        {
+          "path": "source/host/src/runner/sand_auto_review.rs",
+          "reason": "Host auto-review and command gating"
+        }
+      ],
+      "id": "OCRM-RESP-AUTO-REPLY-COMMAND-DETECTOR-001",
+      "integration": {
+        "consumer": "source/host/src/runner/sand_auto_review.rs",
+        "entrypoint": "source/host/src/runner/mod.rs",
+        "owner": "source/host/src/runner/sand_auto_review.rs",
+        "producer": "source/host/src/connectors/channel_delivery.rs"
+      },
+      "invariants": [
+        "Exact /abort and /stop commands bypass conversational turn debounce",
+        "Session boundary commands (/new, /reset) start new turn history"
+      ],
+      "migration_rollback": "Treat all text as normal chat prompts",
+      "oracle_ids": [
+        "OCRM-PLUGIN-O06"
+      ],
+      "owner_decision": "Implement command syntax classification in host auto-review",
+      "postconditions": [
+        "Command classification tag attached to inbound event"
+      ],
+      "preconditions": [
+        "Inbound text message parsed from external or internal channel"
+      ],
+      "required_evidence_dimensions": [
+        "unit",
+        "parsing"
+      ],
+      "required_gate_ids": [
+        "OCRM-G04-rust-contract",
+        "OCRM-G05-frozen-oracle"
+      ],
+      "requirement_ids": [
+        "OCRM-R20",
+        "OCRM-AC20"
+      ],
+      "responsibility_kind": "business-runtime",
+      "reviewer": "xuyao@ombhrum.com",
+      "risk": "High; ensures abort commands take immediate effect even during high load",
+      "selected_owner": "source/host/src/runner/sand_auto_review.rs",
+      "source_refs": [
+        {
+          "blob_sha": "51733a32d2fb6524e8f71a22a80bcd1dc81f6e87",
+          "path": "src/auto-reply/command-detection.ts",
+          "range": {
+            "end_line": 108,
+            "start_line": 1
+          },
+          "symbol": "isControlCommandMessage"
+        }
+      ],
+      "status": {
+        "acceptance": "pending",
+        "implementation": "implemented",
+        "mapping": "reviewed",
+        "read": "read-complete",
+        "verification": "verified",
+        "wiring": "wired"
+      },
+      "target": {
+        "language": "Rust",
+        "path": "source/host/src/runner/sand_auto_review.rs",
+        "symbol": "SandAutoReviewMode"
+      },
+      "tests": [
+        "source/host/tests/openclaw_plugins_automations_contract.rs::test_ocrm_plugin_o06_tool_argument_validation"
+      ],
+      "typed_contracts": [
+        "SandAutoReviewMode::classify_command"
+      ],
+      "unit_id": "OCRM-UNIT-AUTOMATION-001"
+    },
+    {
+      "adr_refs": [],
+      "behavior": "Periodic heartbeat poll scheduling, scratchpad effectively-empty detection, silent token reply evaluation (HEARTBEAT_OK), and response tool instruction injection.",
+      "blocker_ids": [],
+      "capability_ids": [
+        "autoreply.heartbeat"
+      ],
+      "dependencies": [
+        "mahayana_host_runtime::runner"
+      ],
+      "evidence_refs": [
+        "source/host/tests/openclaw_plugins_automations_contract.rs",
+        "projects/openclaw-rust/dossiers/cron-automations-heartbeat-scoped.md"
+      ],
+      "existing_owner_candidates": [
+        {
+          "path": "source/host/src/runner/mod.rs",
+          "reason": "Host agent runner and heartbeat"
+        }
+      ],
+      "id": "OCRM-RESP-AUTO-REPLY-HEARTBEAT-001",
+      "integration": {
+        "consumer": "source/host/src/runner/mod.rs",
+        "entrypoint": "source/host/src/runner/mod.rs",
+        "owner": "source/host/src/runner/mod.rs",
+        "producer": "source/host/src/automations/mod.rs"
+      },
+      "invariants": [
+        "Effectively empty scratchpad skips inference call completely",
+        "Silent reply token suppresses user notifications cleanly"
+      ],
+      "migration_rollback": "Disable periodic heartbeat wakes",
+      "oracle_ids": [
+        "OCRM-PLUGIN-O07"
+      ],
+      "owner_decision": "Implement heartbeat polling and scratchpad evaluation in runner",
+      "postconditions": [
+        "Heartbeat wake settled with or without user notification"
+      ],
+      "preconditions": [
+        "Heartbeat timer interval fires for active agent"
+      ],
+      "required_evidence_dimensions": [
+        "unit",
+        "evaluation"
+      ],
+      "required_gate_ids": [
+        "OCRM-G04-rust-contract",
+        "OCRM-G05-frozen-oracle"
+      ],
+      "requirement_ids": [
+        "OCRM-R21",
+        "OCRM-AC21"
+      ],
+      "responsibility_kind": "business-runtime",
+      "reviewer": "xuyao@ombhrum.com",
+      "risk": "Medium; minimizes LLM token consumption while maintaining proactive agent monitoring",
+      "selected_owner": "source/host/src/runner/mod.rs",
+      "source_refs": [
+        {
+          "blob_sha": "2000cf4f116f9158a24aba99aead15376e62163e",
+          "path": "src/auto-reply/heartbeat.ts",
+          "range": {
+            "end_line": 207,
+            "start_line": 1
+          },
+          "symbol": "isHeartbeatContentEffectivelyEmpty"
+        }
+      ],
+      "status": {
+        "acceptance": "pending",
+        "implementation": "implemented",
+        "mapping": "reviewed",
+        "read": "read-complete",
+        "verification": "verified",
+        "wiring": "wired"
+      },
+      "target": {
+        "language": "Rust",
+        "path": "source/host/src/runner/mod.rs",
+        "symbol": "HeartbeatService"
+      },
+      "tests": [
+        "source/host/tests/openclaw_plugins_automations_contract.rs::test_ocrm_plugin_o07_web_search_bounds"
+      ],
+      "typed_contracts": [
+        "HeartbeatService::poll"
+      ],
+      "unit_id": "OCRM-UNIT-AUTOMATION-001"
     }
   ],
   "schema_version": 1,

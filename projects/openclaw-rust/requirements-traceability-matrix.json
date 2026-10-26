@@ -533,30 +533,55 @@
       "reviewer": null
     },
     {
-      "acceptance_status": "not-started",
+      "acceptance_status": "in-progress",
       "blocker_ids": [],
-      "evidence_refs": [],
+      "evidence_refs": [
+        "source/host/tests/openclaw_plugins_automations_contract.rs",
+        "projects/openclaw-rust/dossiers/cron-automations-heartbeat-scoped.md"
+      ],
       "gate_ids": [],
       "id": "OCRM-R20",
       "kind": "requirement",
       "not_applicable_reason": null,
-      "oracle_ids": [],
+      "oracle_ids": [
+        "OCRM-CRON-O01",
+        "OCRM-CRON-O02",
+        "OCRM-CRON-O03",
+        "OCRM-CRON-O04",
+        "OCRM-CRON-O05",
+        "OCRM-PLUGIN-O06"
+      ],
       "requirement_text_source": "docs/specs/openclaw-rust-equivalence-migration.md#5",
-      "responsibility_ids": [],
-      "reviewer": null
+      "responsibility_ids": [
+        "OCRM-RESP-CRON-SCHEDULE-MATCHER-001",
+        "OCRM-RESP-CRON-SCHEDULE-IDENTITY-001",
+        "OCRM-RESP-AUTO-REPLY-COMMAND-DETECTOR-001"
+      ],
+      "reviewer": "xuyao@ombhrum.com"
     },
     {
-      "acceptance_status": "not-started",
+      "acceptance_status": "in-progress",
       "blocker_ids": [],
-      "evidence_refs": [],
+      "evidence_refs": [
+        "source/host/tests/openclaw_plugins_automations_contract.rs",
+        "projects/openclaw-rust/dossiers/cron-automations-heartbeat-scoped.md"
+      ],
       "gate_ids": [],
       "id": "OCRM-R21",
       "kind": "requirement",
       "not_applicable_reason": null,
-      "oracle_ids": [],
+      "oracle_ids": [
+        "OCRM-PLUGIN-O04",
+        "OCRM-PLUGIN-O05",
+        "OCRM-PLUGIN-O07"
+      ],
       "requirement_text_source": "docs/specs/openclaw-rust-equivalence-migration.md#5",
-      "responsibility_ids": [],
-      "reviewer": null
+      "responsibility_ids": [
+        "OCRM-RESP-CRON-DELIVERY-PLAN-001",
+        "OCRM-RESP-CRON-SESSION-REAPER-001",
+        "OCRM-RESP-AUTO-REPLY-HEARTBEAT-001"
+      ],
+      "reviewer": "xuyao@ombhrum.com"
     },
     {
       "acceptance_status": "not-started",
@@ -1054,30 +1079,55 @@
       "reviewer": "xuyao@ombhrum.com"
     },
     {
-      "acceptance_status": "not-started",
+      "acceptance_status": "in-progress",
       "blocker_ids": [],
-      "evidence_refs": [],
+      "evidence_refs": [
+        "source/host/tests/openclaw_plugins_automations_contract.rs",
+        "projects/openclaw-rust/dossiers/cron-automations-heartbeat-scoped.md"
+      ],
       "gate_ids": [],
       "id": "OCRM-AC20",
       "kind": "acceptance-criterion",
       "not_applicable_reason": null,
-      "oracle_ids": [],
+      "oracle_ids": [
+        "OCRM-CRON-O01",
+        "OCRM-CRON-O02",
+        "OCRM-CRON-O03",
+        "OCRM-CRON-O04",
+        "OCRM-CRON-O05",
+        "OCRM-PLUGIN-O06"
+      ],
       "requirement_text_source": "docs/specs/openclaw-rust-equivalence-migration.md#15",
-      "responsibility_ids": [],
-      "reviewer": null
+      "responsibility_ids": [
+        "OCRM-RESP-CRON-SCHEDULE-MATCHER-001",
+        "OCRM-RESP-CRON-SCHEDULE-IDENTITY-001",
+        "OCRM-RESP-AUTO-REPLY-COMMAND-DETECTOR-001"
+      ],
+      "reviewer": "xuyao@ombhrum.com"
     },
     {
-      "acceptance_status": "not-started",
+      "acceptance_status": "in-progress",
       "blocker_ids": [],
-      "evidence_refs": [],
+      "evidence_refs": [
+        "source/host/tests/openclaw_plugins_automations_contract.rs",
+        "projects/openclaw-rust/dossiers/cron-automations-heartbeat-scoped.md"
+      ],
       "gate_ids": [],
       "id": "OCRM-AC21",
       "kind": "acceptance-criterion",
       "not_applicable_reason": null,
-      "oracle_ids": [],
+      "oracle_ids": [
+        "OCRM-PLUGIN-O04",
+        "OCRM-PLUGIN-O05",
+        "OCRM-PLUGIN-O07"
+      ],
       "requirement_text_source": "docs/specs/openclaw-rust-equivalence-migration.md#15",
-      "responsibility_ids": [],
-      "reviewer": null
+      "responsibility_ids": [
+        "OCRM-RESP-CRON-DELIVERY-PLAN-001",
+        "OCRM-RESP-CRON-SESSION-REAPER-001",
+        "OCRM-RESP-AUTO-REPLY-HEARTBEAT-001"
+      ],
+      "reviewer": "xuyao@ombhrum.com"
     },
     {
       "acceptance_status": "not-started",

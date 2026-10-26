@@ -1,5 +1,5 @@
 {
-  "canonical_inventory_sha256": "90fbe2584ff7c520255f68346de7c3db6a43d5f835b875c9c8cb3a12d9a18908",
+  "canonical_inventory_sha256": "8ee8d016761ea5cd15eed12a40a89b165f1d829c9e3b3e734505fa00deb23f07",
   "compression": "gzip with mtime=0, UTF-8 JSONL, full canonical schema records",
   "format_version": 1,
   "project_id": "OCRM-001",
@@ -215,12 +215,12 @@
       "uncompressed_sha256": "faddf4ee19809c202b2cb61d3c65a908d63ba9c54fc952580048a0b33c5b13e6"
     },
     {
-      "compressed_sha256": "2e3b4720e8325de45d9fd8ad5129fedf446fd4d786b28c7f396eaeec59b10c20",
+      "compressed_sha256": "2b538ef38f1d8f4c05c14076a76dd629501c131352e39f8f5dec9c43e3a3eb9e",
       "count": 1024,
       "first_path": "src/agents/tools/embedded-gateway-stub.runtime.ts",
       "last_path": "src/auto-reply/reply/commands-diagnostics.ts",
       "path": "projects/openclaw-rust/inventory/shards/part-0026.jsonl.gz",
-      "uncompressed_sha256": "8b1316e6daf4f30dabf528db9abaa63abfe5bd8dfcd1bd3197dacb685629604b"
+      "uncompressed_sha256": "ef5a8053b318b8d014fd7b642e676a14718606dd690646c47d196f2ea4a967d8"
     },
     {
       "compressed_sha256": "4441652717af87a4d8a91121553ba75150ba7c0e1fb2872b35e35275ebbad673",
@@ -271,12 +271,12 @@
       "uncompressed_sha256": "2b32533ccaaaa0d2efd36d3129d493ba12f89de242e904829e230a0262c3a4f0"
     },
     {
-      "compressed_sha256": "1261c3c016a38ae60975a303d13f0d222ca7c5d4e444efbfc73f6b6db5c91894",
+      "compressed_sha256": "51d0bdc71f67e989c69b5108e77ffc3ec36758d1161f51e1a3cad0135351b525",
       "count": 1024,
       "first_path": "src/cron/cli-thinking.gateway.test.ts",
       "last_path": "src/flows/doctor-stale-runtime-build-contribution.test.ts",
       "path": "projects/openclaw-rust/inventory/shards/part-0033.jsonl.gz",
-      "uncompressed_sha256": "e0f692686f2212bd325412e5dac18e2cb1f68f5f18a5c2dea699e7098eb12342"
+      "uncompressed_sha256": "61ffa92d74219bfba8e75df4901467220137320d9f05a69752b4e9065d9b948d"
     },
     {
       "compressed_sha256": "244827f46d0fb240f7f5ba69d31cf2ffe2fc355e2119b84b277907c693416220",
