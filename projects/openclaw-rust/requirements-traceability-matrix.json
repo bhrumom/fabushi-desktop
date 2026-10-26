@@ -141,30 +141,50 @@
       "reviewer": "xuyao@ombhrum.com"
     },
     {
-      "acceptance_status": "not-started",
+      "acceptance_status": "in-progress",
       "blocker_ids": [],
-      "evidence_refs": [],
+      "evidence_refs": [
+        "source/host/tests/openclaw_agent_turn_contract.rs",
+        "projects/openclaw-rust/dossiers/transcript-round94-openclaw-agent-turn-and-channel-delivery-native-fusion-20261026.md"
+      ],
       "gate_ids": [],
       "id": "OCRM-R05",
       "kind": "requirement",
       "not_applicable_reason": null,
       "oracle_ids": [],
       "requirement_text_source": "docs/specs/openclaw-rust-equivalence-migration.md#5",
-      "responsibility_ids": [],
-      "reviewer": null
+      "responsibility_ids": [
+        "OCRM-RESP-AGENT-LOOP-RUNNER-001",
+        "OCRM-RESP-AGENT-LOOP-DETECTION-001",
+        "OCRM-RESP-AGENT-CONTEXT-COMPACTION-001",
+        "OCRM-RESP-AGENT-MODEL-PRICING-001",
+        "OCRM-RESP-AGENT-ACP-COMMANDS-001",
+        "OCRM-RESP-AGENT-ACP-POLICY-001"
+      ],
+      "reviewer": "xuyao@ombhrum.com"
     },
     {
-      "acceptance_status": "not-started",
+      "acceptance_status": "in-progress",
       "blocker_ids": [],
-      "evidence_refs": [],
+      "evidence_refs": [
+        "source/host/tests/openclaw_agent_turn_contract.rs",
+        "projects/openclaw-rust/dossiers/transcript-round94-openclaw-agent-turn-and-channel-delivery-native-fusion-20261026.md"
+      ],
       "gate_ids": [],
       "id": "OCRM-R06",
       "kind": "requirement",
       "not_applicable_reason": null,
       "oracle_ids": [],
       "requirement_text_source": "docs/specs/openclaw-rust-equivalence-migration.md#5",
-      "responsibility_ids": [],
-      "reviewer": null
+      "responsibility_ids": [
+        "OCRM-RESP-AGENT-LOOP-RUNNER-001",
+        "OCRM-RESP-AGENT-LOOP-DETECTION-001",
+        "OCRM-RESP-AGENT-CONTEXT-COMPACTION-001",
+        "OCRM-RESP-AGENT-MODEL-PRICING-001",
+        "OCRM-RESP-AGENT-ACP-COMMANDS-001",
+        "OCRM-RESP-AGENT-ACP-POLICY-001"
+      ],
+      "reviewer": "xuyao@ombhrum.com"
     },
     {
       "acceptance_status": "not-started",
@@ -584,7 +604,9 @@
       "blocker_ids": [],
       "evidence_refs": [
         "projects/openclaw-rust/dossiers/transcript-round56-settings-gateway-ingress-and-worker-writers-20261024.md",
-        "source/host/tests/settings_service_contract.rs"
+        "source/host/tests/settings_service_contract.rs",
+        "source/host/tests/openclaw_agent_turn_contract.rs",
+        "projects/openclaw-rust/dossiers/transcript-round94-openclaw-agent-turn-and-channel-delivery-native-fusion-20261026.md"
       ],
       "gate_ids": [],
       "id": "OCRM-AC05",
@@ -605,22 +627,38 @@
         "OCRM-RESP-CONFIG-SINGLE-WRITER-LOCK-001",
         "OCRM-RESP-CONFIG-IO-SNAPSHOT-001",
         "OCRM-RESP-CONFIG-SCHEMA-NORMALIZATION-001",
-        "OCRM-RESP-CONFIG-AGENT-WORKSPACE-DIRS-001"
+        "OCRM-RESP-CONFIG-AGENT-WORKSPACE-DIRS-001",
+        "OCRM-RESP-AGENT-LOOP-RUNNER-001",
+        "OCRM-RESP-AGENT-LOOP-DETECTION-001",
+        "OCRM-RESP-AGENT-CONTEXT-COMPACTION-001",
+        "OCRM-RESP-AGENT-MODEL-PRICING-001",
+        "OCRM-RESP-AGENT-ACP-COMMANDS-001",
+        "OCRM-RESP-AGENT-ACP-POLICY-001"
       ],
       "reviewer": "xuyao@ombhrum.com"
     },
     {
-      "acceptance_status": "not-started",
+      "acceptance_status": "in-progress",
       "blocker_ids": [],
-      "evidence_refs": [],
+      "evidence_refs": [
+        "source/host/tests/openclaw_agent_turn_contract.rs",
+        "projects/openclaw-rust/dossiers/transcript-round94-openclaw-agent-turn-and-channel-delivery-native-fusion-20261026.md"
+      ],
       "gate_ids": [],
       "id": "OCRM-AC06",
       "kind": "acceptance-criterion",
       "not_applicable_reason": null,
       "oracle_ids": [],
       "requirement_text_source": "docs/specs/openclaw-rust-equivalence-migration.md#15",
-      "responsibility_ids": [],
-      "reviewer": null
+      "responsibility_ids": [
+        "OCRM-RESP-AGENT-LOOP-RUNNER-001",
+        "OCRM-RESP-AGENT-LOOP-DETECTION-001",
+        "OCRM-RESP-AGENT-CONTEXT-COMPACTION-001",
+        "OCRM-RESP-AGENT-MODEL-PRICING-001",
+        "OCRM-RESP-AGENT-ACP-COMMANDS-001",
+        "OCRM-RESP-AGENT-ACP-POLICY-001"
+      ],
+      "reviewer": "xuyao@ombhrum.com"
     },
     {
       "acceptance_status": "not-started",

@@ -1,5 +1,5 @@
 {
-  "canonical_inventory_sha256": "0cc4719bc10bcb0dd7395c4f63a33316c41bc3641585af3268ac531587a6611b",
+  "canonical_inventory_sha256": "6cc0694060637cf7049f12795e5c009e085ffd5d55248bac6bfd047ac57a4400",
   "compression": "gzip with mtime=0, UTF-8 JSONL, full canonical schema records",
   "format_version": 1,
   "project_id": "OCRM-001",
@@ -175,12 +175,12 @@
       "uncompressed_sha256": "e7b5bca1508f05e5da843e7a697f6cf34ea7d7296ae56f9b10545eedd13dc09c"
     },
     {
-      "compressed_sha256": "ffb645002fe81d7d7c20c65a904e13662a766d2c63124ee3f5bca1aa70dbebd2",
+      "compressed_sha256": "bbfc5cc3a145b0aad7eb7e44e5e01e4bab26760528f0ccc62a51b0678b48972e",
       "count": 1024,
       "first_path": "scripts/release-plan-producer.mts",
       "last_path": "src/agents/auth-profiles/usage.ts",
       "path": "projects/openclaw-rust/inventory/shards/part-0021.jsonl.gz",
-      "uncompressed_sha256": "9896da56bf6e0d9b16bc9dae3ca3adaf2564e6bdcf8b0e3e7122f321a44eb3b6"
+      "uncompressed_sha256": "8b65e42d6441ecece741237a12bf9ff2af73fda37d4e1d8dbe48e526e4455251"
     },
     {
       "compressed_sha256": "7f7a1b5bc6839a2178221c2f155c44124c65ca628d7bb7c61a0c8465f2735a84",
@@ -207,12 +207,12 @@
       "uncompressed_sha256": "a0633d94f1b71f8d0cffac89c3a155cb91fc4b4c7d0eb533b124936e8d9ffb19"
     },
     {
-      "compressed_sha256": "ab755ce41416a24d99193a0dfd354e36daffaff2a34db73d38ee4f76e9bcd0a6",
+      "compressed_sha256": "5e6b4fccda0c0a7969c8745b680120287f1bd29caa9d05fbe698b20329d6e171",
       "count": 1024,
       "first_path": "src/agents/sessions/agent-session-models.admission.test.ts",
       "last_path": "src/agents/tools/embedded-gateway-stub.history.test.ts",
       "path": "projects/openclaw-rust/inventory/shards/part-0025.jsonl.gz",
-      "uncompressed_sha256": "cf14fcc55e48cb2397c2083c3476785653460597ac19f1524b6a98fd4c3e2616"
+      "uncompressed_sha256": "faddf4ee19809c202b2cb61d3c65a908d63ba9c54fc952580048a0b33c5b13e6"
     },
     {
       "compressed_sha256": "2e3b4720e8325de45d9fd8ad5129fedf446fd4d786b28c7f396eaeec59b10c20",
@@ -343,12 +343,12 @@
       "uncompressed_sha256": "019da0b4adb4a45122aa84c2a39c3ce5e9f994aa94874e8a475d2808f40e0187"
     },
     {
-      "compressed_sha256": "5d417a3499a1df74e0f504af4aa3a1e50f06fba88a48792934cc675fb8d8dc92",
+      "compressed_sha256": "52a5d7b2eb028534f831a53c3eb0a216ac3bdcb8456dcbb46565ed24e6c751b3",
       "count": 1024,
       "first_path": "src/infra/update-startup-campaign-run.test.ts",
       "last_path": "src/plugin-sdk/agent-sessions.ts",
       "path": "projects/openclaw-rust/inventory/shards/part-0042.jsonl.gz",
-      "uncompressed_sha256": "3cea3d292d1bf37a9959619c56f52b865d81aa05e5a1c9348fe928e6d72b7365"
+      "uncompressed_sha256": "fd85b7b2715f57fb7ac50c7605488a09011cd8f5e3e926d02280a6e12004caf9"
     },
     {
       "compressed_sha256": "412b84f956dcebb7a98613e3839d9571f4b0c9f44e826c68964a076d0437c0fa",
