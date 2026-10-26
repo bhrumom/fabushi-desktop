@@ -664,8 +664,10 @@
       "blocker_ids": [],
       "evidence_refs": [
         "projects/openclaw-rust/dossiers/media-generation-attachments-scoped.md",
+        "projects/openclaw-rust/dossiers/media-reference-probe-scoped.md",
         "projects/openclaw-rust/dossiers/media-understanding-runtime-scoped.md",
         "source/host/tests/openclaw_media_generation_contract.rs",
+        "source/host/tests/openclaw_media_reference_contract.rs",
         "source/host/tests/openclaw_media_understanding_contract.rs"
       ],
       "gate_ids": [],
@@ -679,6 +681,14 @@
         "OCRM-ATTACH-O10",
         "OCRM-ATTACH-O11",
         "OCRM-ATTACH-O12",
+        "OCRM-MEDIA-REF-O01",
+        "OCRM-MEDIA-REF-O02",
+        "OCRM-MEDIA-REF-O03",
+        "OCRM-MEDIA-REF-O04",
+        "OCRM-MEDIA-REF-O05",
+        "OCRM-MEDIA-REF-O06",
+        "OCRM-MEDIA-REF-O07",
+        "OCRM-MEDIA-REF-O08",
         "OCRM-MEDIA-UND-O01",
         "OCRM-MEDIA-UND-O02",
         "OCRM-MEDIA-UND-O03",
@@ -692,13 +702,19 @@
       "responsibility_ids": [
         "OCRM-RESP-MEDIA-APPLY-UNDERSTANDING-001",
         "OCRM-RESP-MEDIA-ATTACHMENTS-CACHE-001",
+        "OCRM-RESP-MEDIA-BOUNDED-READ-001",
         "OCRM-RESP-MEDIA-DEFAULT-MODELS-001",
+        "OCRM-RESP-MEDIA-FACTS-001",
+        "OCRM-RESP-MEDIA-INBOUND-URI-001",
+        "OCRM-RESP-MEDIA-PROBE-METADATA-001",
+        "OCRM-RESP-MEDIA-REFERENCE-RESOLUTION-001",
         "OCRM-RESP-MEDIA-RESOLUTION-001",
         "OCRM-RESP-MEDIA-SHARED-TRANSPORT-001",
         "OCRM-RESP-MEDIA-SNIFF-PREVIEW-001",
         "OCRM-RESP-MEDIA-TRANSCRIPTION-ARTIFACTS-001",
         "OCRM-RESP-MEDIA-UNDERSTANDING-RUNTIME-001",
-        "OCRM-RESP-MEDIA-UNDERSTANDING-TYPES-001"
+        "OCRM-RESP-MEDIA-UNDERSTANDING-TYPES-001",
+        "OCRM-RESP-PLAYBACK-CODEC-POLICY-001"
       ],
       "reviewer": "xuyao@ombhrum.com"
     },
@@ -1290,8 +1306,10 @@
       "blocker_ids": [],
       "evidence_refs": [
         "projects/openclaw-rust/dossiers/media-generation-attachments-scoped.md",
+        "projects/openclaw-rust/dossiers/media-reference-probe-scoped.md",
         "projects/openclaw-rust/dossiers/media-understanding-runtime-scoped.md",
         "source/host/tests/openclaw_media_generation_contract.rs",
+        "source/host/tests/openclaw_media_reference_contract.rs",
         "source/host/tests/openclaw_media_understanding_contract.rs"
       ],
       "gate_ids": [],
@@ -1305,6 +1323,14 @@
         "OCRM-ATTACH-O10",
         "OCRM-ATTACH-O11",
         "OCRM-ATTACH-O12",
+        "OCRM-MEDIA-REF-O01",
+        "OCRM-MEDIA-REF-O02",
+        "OCRM-MEDIA-REF-O03",
+        "OCRM-MEDIA-REF-O04",
+        "OCRM-MEDIA-REF-O05",
+        "OCRM-MEDIA-REF-O06",
+        "OCRM-MEDIA-REF-O07",
+        "OCRM-MEDIA-REF-O08",
         "OCRM-MEDIA-UND-O01",
         "OCRM-MEDIA-UND-O02",
         "OCRM-MEDIA-UND-O03",
@@ -1318,13 +1344,19 @@
       "responsibility_ids": [
         "OCRM-RESP-MEDIA-APPLY-UNDERSTANDING-001",
         "OCRM-RESP-MEDIA-ATTACHMENTS-CACHE-001",
+        "OCRM-RESP-MEDIA-BOUNDED-READ-001",
         "OCRM-RESP-MEDIA-DEFAULT-MODELS-001",
+        "OCRM-RESP-MEDIA-FACTS-001",
+        "OCRM-RESP-MEDIA-INBOUND-URI-001",
+        "OCRM-RESP-MEDIA-PROBE-METADATA-001",
+        "OCRM-RESP-MEDIA-REFERENCE-RESOLUTION-001",
         "OCRM-RESP-MEDIA-RESOLUTION-001",
         "OCRM-RESP-MEDIA-SHARED-TRANSPORT-001",
         "OCRM-RESP-MEDIA-SNIFF-PREVIEW-001",
         "OCRM-RESP-MEDIA-TRANSCRIPTION-ARTIFACTS-001",
         "OCRM-RESP-MEDIA-UNDERSTANDING-RUNTIME-001",
-        "OCRM-RESP-MEDIA-UNDERSTANDING-TYPES-001"
+        "OCRM-RESP-MEDIA-UNDERSTANDING-TYPES-001",
+        "OCRM-RESP-PLAYBACK-CODEC-POLICY-001"
       ],
       "reviewer": "xuyao@ombhrum.com"
     }

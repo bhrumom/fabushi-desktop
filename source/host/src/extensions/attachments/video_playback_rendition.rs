@@ -169,8 +169,25 @@ pub fn create_video_playback_source_with(
         "file".into(),
         source_path.to_string_lossy().into_owned(),
     ];
-    let codec = runner("ffprobe", &probe_args).ok()?.trim().to_ascii_lowercase();
-    if codec != "hevc" {
+    let probe_raw = runner("ffprobe", &probe_args).ok()?;
+    let probe_trimmed = probe_raw.trim();
+
+    let requires_transcode = if let Some(probe_meta) =
+        crate::extensions::attachments::media_probe::parse_ffprobe_media_metadata(
+            probe_trimmed,
+            crate::extensions::attachments::media_probe::PlaybackMediaKind::Video,
+        )
+    {
+        crate::extensions::attachments::media_probe::resolve_native_playback_codec_compatibility(
+            crate::extensions::attachments::media_probe::PlaybackMediaKind::Video,
+            "video/mp4",
+            &probe_meta,
+        ) == Some(false)
+    } else {
+        probe_trimmed.to_ascii_lowercase() == "hevc"
+    };
+
+    if !requires_transcode {
         return Some(source_path.to_path_buf());
     }
     if has_playback_rendition(rendition_path) {

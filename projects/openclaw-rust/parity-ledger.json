@@ -10,10 +10,10 @@
     "ui_accepted": false
   },
   "file_coverage": {
-    "mapped_paths": 154,
+    "mapped_paths": 160,
     "omitted_known": 0,
     "tracked_paths": 58750,
-    "unclassified_paths": 58596
+    "unclassified_paths": 58590
   },
   "inventory_authority": {
     "manifest_source": "GitHub Actions immutable artifact candidate",
@@ -9366,6 +9366,559 @@
         "MediaAttachmentProcessing"
       ],
       "unit_id": "OCRM-UNIT-MEDIA-003"
+    },
+    {
+      "adr_refs": [],
+      "behavior": "Bounded outbound media file reading with max bytes enforcement and size bounds protection.",
+      "blocker_ids": [],
+      "capability_ids": [
+        "media.bounded_read"
+      ],
+      "dependencies": [
+        "mahayana_host_runtime::extensions::attachments::media_reference"
+      ],
+      "evidence_refs": [
+        "source/host/tests/openclaw_media_reference_contract.rs",
+        "projects/openclaw-rust/dossiers/media-reference-probe-scoped.md"
+      ],
+      "existing_owner_candidates": [
+        {
+          "path": "source/host/src/extensions/attachments/media_reference.rs",
+          "reason": "Host media reference and bounded reader owner"
+        }
+      ],
+      "id": "OCRM-RESP-MEDIA-BOUNDED-READ-001",
+      "integration": {
+        "consumer": "source/host/src/extensions/attachments/attachments_service.rs",
+        "entrypoint": "source/host/src/extensions/attachments/media_reference.rs::read_outbound_media_file_bounded",
+        "owner": "source/host/src/extensions/attachments/media_reference.rs",
+        "producer": "source/host/src/extensions/attachments/attachments_service.rs"
+      },
+      "invariants": [
+        "Files exceeding max_bytes rejected with InvalidData before full memory allocation"
+      ],
+      "migration_rollback": "Unbounded file reading",
+      "oracle_ids": [
+        "OCRM-MEDIA-REF-O04"
+      ],
+      "owner_decision": "Implement bounded media file reading in attachments reference module",
+      "postconditions": [
+        "Bounded byte buffer returned or size error raised"
+      ],
+      "preconditions": [
+        "Target file path exists and is a file"
+      ],
+      "required_evidence_dimensions": [
+        "unit",
+        "format"
+      ],
+      "required_gate_ids": [
+        "OCRM-G04-rust-contract",
+        "OCRM-G05-frozen-oracle"
+      ],
+      "requirement_ids": [
+        "OCRM-R24",
+        "OCRM-AC24"
+      ],
+      "responsibility_kind": "business-runtime",
+      "reviewer": "xuyao@ombhrum.com",
+      "risk": "Low; prevents unbounded memory consumption during media reads",
+      "selected_owner": "source/host/src/extensions/attachments/media_reference.rs",
+      "source_refs": [
+        {
+          "blob_sha": "c6761090ffa01740cf3b4b9341f8d50062126517",
+          "path": "src/media/bounded-read-file.ts",
+          "range": {
+            "end_line": 34,
+            "start_line": 1
+          },
+          "symbol": "readOutboundMediaFile"
+        }
+      ],
+      "status": {
+        "acceptance": "pending",
+        "implementation": "implemented",
+        "mapping": "reviewed",
+        "read": "read-complete",
+        "verification": "verified",
+        "wiring": "wired"
+      },
+      "target": {
+        "language": "Rust",
+        "path": "source/host/src/extensions/attachments/media_reference.rs",
+        "symbol": "read_outbound_media_file_bounded"
+      },
+      "tests": [
+        "source/host/tests/openclaw_media_reference_contract.rs::test_ocrm_media_ref_04_bounded_read_file"
+      ],
+      "typed_contracts": [
+        "read_outbound_media_file_bounded"
+      ],
+      "unit_id": "OCRM-UNIT-MEDIA-004"
+    },
+    {
+      "adr_refs": [],
+      "behavior": "Inbound media URI parsing, hostname restriction (inbound), path traversal prevention, and MEDIA: prefix stripping.",
+      "blocker_ids": [],
+      "capability_ids": [
+        "media.inbound_uri"
+      ],
+      "dependencies": [
+        "mahayana_host_runtime::extensions::attachments::media_reference"
+      ],
+      "evidence_refs": [
+        "source/host/tests/openclaw_media_reference_contract.rs",
+        "projects/openclaw-rust/dossiers/media-reference-probe-scoped.md"
+      ],
+      "existing_owner_candidates": [
+        {
+          "path": "source/host/src/extensions/attachments/media_reference.rs",
+          "reason": "Host inbound media URI parser owner"
+        }
+      ],
+      "id": "OCRM-RESP-MEDIA-INBOUND-URI-001",
+      "integration": {
+        "consumer": "source/host/src/extensions/attachments/attachments_service.rs",
+        "entrypoint": "source/host/src/extensions/attachments/media_reference.rs::parse_inbound_media_uri",
+        "owner": "source/host/src/extensions/attachments/media_reference.rs",
+        "producer": "source/host/src/extensions/attachments/attachments_service.rs"
+      },
+      "invariants": [
+        "Hostname must equal inbound",
+        "Search, hash, auth, nested paths, and traversal rejected"
+      ],
+      "migration_rollback": "Raw file paths without media:// URI support",
+      "oracle_ids": [
+        "OCRM-MEDIA-REF-O01"
+      ],
+      "owner_decision": "Implement inbound URI parser in media_reference",
+      "postconditions": [
+        "Valid InboundMediaUri returned or MediaReferenceError raised"
+      ],
+      "preconditions": [
+        "Input URI string provided"
+      ],
+      "required_evidence_dimensions": [
+        "unit",
+        "format"
+      ],
+      "required_gate_ids": [
+        "OCRM-G04-rust-contract",
+        "OCRM-G05-frozen-oracle"
+      ],
+      "requirement_ids": [
+        "OCRM-R24",
+        "OCRM-AC24"
+      ],
+      "responsibility_kind": "business-runtime",
+      "reviewer": "xuyao@ombhrum.com",
+      "risk": "Medium; security critical path traversal prevention",
+      "selected_owner": "source/host/src/extensions/attachments/media_reference.rs",
+      "source_refs": [
+        {
+          "blob_sha": "47da2a2bf0f5d6e27bcf7cee369584e064dca072",
+          "path": "src/media/inbound-media-uri.ts",
+          "range": {
+            "end_line": 73,
+            "start_line": 1
+          },
+          "symbol": "parseInboundMediaUri"
+        }
+      ],
+      "status": {
+        "acceptance": "pending",
+        "implementation": "implemented",
+        "mapping": "reviewed",
+        "read": "read-complete",
+        "verification": "verified",
+        "wiring": "wired"
+      },
+      "target": {
+        "language": "Rust",
+        "path": "source/host/src/extensions/attachments/media_reference.rs",
+        "symbol": "parse_inbound_media_uri"
+      },
+      "tests": [
+        "source/host/tests/openclaw_media_reference_contract.rs::test_ocrm_media_ref_01_inbound_uri_parsing_and_validation"
+      ],
+      "typed_contracts": [
+        "InboundMediaUri",
+        "MediaReferenceError"
+      ],
+      "unit_id": "OCRM-UNIT-MEDIA-004"
+    },
+    {
+      "adr_refs": [],
+      "behavior": "Media reference scheme classification, sandbox path rewrite (media/inbound/<id>), and local store resolution.",
+      "blocker_ids": [],
+      "capability_ids": [
+        "media.reference_resolution"
+      ],
+      "dependencies": [
+        "mahayana_host_runtime::extensions::attachments::media_reference"
+      ],
+      "evidence_refs": [
+        "source/host/tests/openclaw_media_reference_contract.rs",
+        "projects/openclaw-rust/dossiers/media-reference-probe-scoped.md"
+      ],
+      "existing_owner_candidates": [
+        {
+          "path": "source/host/src/extensions/attachments/media_reference.rs",
+          "reason": "Host media reference resolution owner"
+        }
+      ],
+      "id": "OCRM-RESP-MEDIA-REFERENCE-RESOLUTION-001",
+      "integration": {
+        "consumer": "source/host/src/extensions/attachments/attachments_service.rs",
+        "entrypoint": "source/host/src/extensions/attachments/media_reference.rs::classify_media_reference_source",
+        "owner": "source/host/src/extensions/attachments/media_reference.rs",
+        "producer": "source/host/src/extensions/attachments/attachments_service.rs"
+      },
+      "invariants": [
+        "Windows drive paths not classified as unsupported schemes",
+        "Sandbox paths rewritten to media/inbound/<id>"
+      ],
+      "migration_rollback": "Direct local path resolution",
+      "oracle_ids": [
+        "OCRM-MEDIA-REF-O02",
+        "OCRM-MEDIA-REF-O03"
+      ],
+      "owner_decision": "Implement scheme classifier and sandbox rewriter in media_reference",
+      "postconditions": [
+        "Classification flags and rewritten sandbox paths returned"
+      ],
+      "preconditions": [
+        "Source media string supplied"
+      ],
+      "required_evidence_dimensions": [
+        "unit",
+        "format"
+      ],
+      "required_gate_ids": [
+        "OCRM-G04-rust-contract",
+        "OCRM-G05-frozen-oracle"
+      ],
+      "requirement_ids": [
+        "OCRM-R24",
+        "OCRM-AC24"
+      ],
+      "responsibility_kind": "business-runtime",
+      "reviewer": "xuyao@ombhrum.com",
+      "risk": "Low; accurate scheme dispatch and sandbox containment",
+      "selected_owner": "source/host/src/extensions/attachments/media_reference.rs",
+      "source_refs": [
+        {
+          "blob_sha": "a75dbbe5d16aff5b4860a2e22e2ea1b86ab60502",
+          "path": "src/media/media-reference.ts",
+          "range": {
+            "end_line": 188,
+            "start_line": 1
+          },
+          "symbol": "classifyMediaReferenceSource"
+        }
+      ],
+      "status": {
+        "acceptance": "pending",
+        "implementation": "implemented",
+        "mapping": "reviewed",
+        "read": "read-complete",
+        "verification": "verified",
+        "wiring": "wired"
+      },
+      "target": {
+        "language": "Rust",
+        "path": "source/host/src/extensions/attachments/media_reference.rs",
+        "symbol": "classify_media_reference_source"
+      },
+      "tests": [
+        "source/host/tests/openclaw_media_reference_contract.rs::test_ocrm_media_ref_02_classify_media_reference_source",
+        "source/host/tests/openclaw_media_reference_contract.rs::test_ocrm_media_ref_03_inbound_path_resolution_and_sandbox_rewrite"
+      ],
+      "typed_contracts": [
+        "MediaReferenceSourceInfo",
+        "MediaSandboxPathRewrite",
+        "InboundMediaReference"
+      ],
+      "unit_id": "OCRM-UNIT-MEDIA-004"
+    },
+    {
+      "adr_refs": [],
+      "behavior": "Cross-client audio/video playback transcode policy and native codec compatibility resolution.",
+      "blocker_ids": [],
+      "capability_ids": [
+        "media.playback_policy"
+      ],
+      "dependencies": [
+        "mahayana_host_runtime::extensions::attachments::media_probe"
+      ],
+      "evidence_refs": [
+        "source/host/tests/openclaw_media_reference_contract.rs",
+        "projects/openclaw-rust/dossiers/media-reference-probe-scoped.md"
+      ],
+      "existing_owner_candidates": [
+        {
+          "path": "source/host/src/extensions/attachments/media_probe.rs",
+          "reason": "Host playback codec policy owner"
+        }
+      ],
+      "id": "OCRM-RESP-PLAYBACK-CODEC-POLICY-001",
+      "integration": {
+        "consumer": "source/host/src/extensions/attachments/video_playback_rendition.rs",
+        "entrypoint": "source/host/src/extensions/attachments/media_probe.rs::resolve_playback_mode",
+        "owner": "source/host/src/extensions/attachments/media_probe.rs",
+        "producer": "source/host/src/extensions/attachments/video_playback_rendition.rs"
+      },
+      "invariants": [
+        "Video MP4 with H.264 high profile and yuv420p is native; HEVC triggers transcode",
+        "Audio WAV requires PCM s16le or u8"
+      ],
+      "migration_rollback": "Hardcoded HEVC transcode check",
+      "oracle_ids": [
+        "OCRM-MEDIA-REF-O05",
+        "OCRM-MEDIA-REF-O06"
+      ],
+      "owner_decision": "Implement playback policy and codec compatibility rules in media_probe",
+      "postconditions": [
+        "PlaybackMode and compatibility boolean resolved"
+      ],
+      "preconditions": [
+        "MIME type and probe result supplied"
+      ],
+      "required_evidence_dimensions": [
+        "unit",
+        "format"
+      ],
+      "required_gate_ids": [
+        "OCRM-G04-rust-contract",
+        "OCRM-G05-frozen-oracle"
+      ],
+      "requirement_ids": [
+        "OCRM-R24",
+        "OCRM-AC24"
+      ],
+      "responsibility_kind": "business-runtime",
+      "reviewer": "xuyao@ombhrum.com",
+      "risk": "Low; ensures cross-client media playback compatibility",
+      "selected_owner": "source/host/src/extensions/attachments/media_probe.rs",
+      "source_refs": [
+        {
+          "blob_sha": "3bc97dbffc68d4f2763b7d3759abe6ff7197c5cc",
+          "path": "src/media/playback-codec-policy.ts",
+          "range": {
+            "end_line": 149,
+            "start_line": 1
+          },
+          "symbol": "PLAYBACK_TRANSCODE_POLICY"
+        }
+      ],
+      "status": {
+        "acceptance": "pending",
+        "implementation": "implemented",
+        "mapping": "reviewed",
+        "read": "read-complete",
+        "verification": "verified",
+        "wiring": "wired"
+      },
+      "target": {
+        "language": "Rust",
+        "path": "source/host/src/extensions/attachments/media_probe.rs",
+        "symbol": "get_playback_policy"
+      },
+      "tests": [
+        "source/host/tests/openclaw_media_reference_contract.rs::test_ocrm_media_ref_05_playback_codec_policy_resolution",
+        "source/host/tests/openclaw_media_reference_contract.rs::test_ocrm_media_ref_06_native_codec_compatibility_rules"
+      ],
+      "typed_contracts": [
+        "PlaybackPolicyEntry",
+        "PlaybackMode",
+        "resolve_native_playback_codec_compatibility"
+      ],
+      "unit_id": "OCRM-UNIT-MEDIA-004"
+    },
+    {
+      "adr_refs": [],
+      "behavior": "FFprobe JSON output parsing, duration resolution, SAR scaling, and 90/270 rotation axis swapping.",
+      "blocker_ids": [],
+      "capability_ids": [
+        "media.probe_metadata"
+      ],
+      "dependencies": [
+        "mahayana_host_runtime::extensions::attachments::media_probe"
+      ],
+      "evidence_refs": [
+        "source/host/tests/openclaw_media_reference_contract.rs",
+        "projects/openclaw-rust/dossiers/media-reference-probe-scoped.md"
+      ],
+      "existing_owner_candidates": [
+        {
+          "path": "source/host/src/extensions/attachments/media_probe.rs",
+          "reason": "Host media probe parser owner"
+        }
+      ],
+      "id": "OCRM-RESP-MEDIA-PROBE-METADATA-001",
+      "integration": {
+        "consumer": "source/host/src/extensions/attachments/video_playback_rendition.rs",
+        "entrypoint": "source/host/src/extensions/attachments/media_probe.rs::parse_ffprobe_media_metadata",
+        "owner": "source/host/src/extensions/attachments/media_probe.rs",
+        "producer": "source/host/src/extensions/attachments/video_playback_rendition.rs"
+      },
+      "invariants": [
+        "90/270 degree rotation swaps display width and height",
+        "Non-square SAR scales display width"
+      ],
+      "migration_rollback": "Raw regex stream parsing",
+      "oracle_ids": [
+        "OCRM-MEDIA-REF-O07"
+      ],
+      "owner_decision": "Implement ffprobe metadata parser and geometry transformation in media_probe",
+      "postconditions": [
+        "PlaybackMediaProbeResult and MediaProbeResult parsed"
+      ],
+      "preconditions": [
+        "Valid ffprobe JSON stdout provided"
+      ],
+      "required_evidence_dimensions": [
+        "unit",
+        "format"
+      ],
+      "required_gate_ids": [
+        "OCRM-G04-rust-contract",
+        "OCRM-G05-frozen-oracle"
+      ],
+      "requirement_ids": [
+        "OCRM-R24",
+        "OCRM-AC24"
+      ],
+      "responsibility_kind": "business-runtime",
+      "reviewer": "xuyao@ombhrum.com",
+      "risk": "Low; accurate duration and dimension extraction",
+      "selected_owner": "source/host/src/extensions/attachments/media_probe.rs",
+      "source_refs": [
+        {
+          "blob_sha": "aca3c74ebabd4c1ca6aab6f1d6c942ef2e892d5b",
+          "path": "src/media/media-probe.ts",
+          "range": {
+            "end_line": 260,
+            "start_line": 1
+          },
+          "symbol": "parseFfprobeMediaMetadata"
+        }
+      ],
+      "status": {
+        "acceptance": "pending",
+        "implementation": "implemented",
+        "mapping": "reviewed",
+        "read": "read-complete",
+        "verification": "verified",
+        "wiring": "wired"
+      },
+      "target": {
+        "language": "Rust",
+        "path": "source/host/src/extensions/attachments/media_probe.rs",
+        "symbol": "parse_ffprobe_media_metadata"
+      },
+      "tests": [
+        "source/host/tests/openclaw_media_reference_contract.rs::test_ocrm_media_ref_07_probe_metadata_aspect_ratio_and_rotation"
+      ],
+      "typed_contracts": [
+        "PlaybackMediaProbeResult",
+        "MediaProbeResult",
+        "to_media_probe_result"
+      ],
+      "unit_id": "OCRM-UNIT-MEDIA-004"
+    },
+    {
+      "adr_refs": [],
+      "behavior": "Persisted and runtime media facts normalization, carrier canonicalization into __openclaw.media, and legacy projections.",
+      "blocker_ids": [],
+      "capability_ids": [
+        "media.facts"
+      ],
+      "dependencies": [
+        "mahayana_host_runtime::extensions::attachments::media_facts"
+      ],
+      "evidence_refs": [
+        "source/host/tests/openclaw_media_reference_contract.rs",
+        "projects/openclaw-rust/dossiers/media-reference-probe-scoped.md"
+      ],
+      "existing_owner_candidates": [
+        {
+          "path": "source/host/src/extensions/attachments/media_facts.rs",
+          "reason": "Host media facts and legacy canonicalization owner"
+        }
+      ],
+      "id": "OCRM-RESP-MEDIA-FACTS-001",
+      "integration": {
+        "consumer": "source/host/src/extensions/attachments/attachments_service.rs",
+        "entrypoint": "source/host/src/extensions/attachments/media_facts.rs::canonicalize_persisted_user_message_media",
+        "owner": "source/host/src/extensions/attachments/media_facts.rs",
+        "producer": "source/host/src/extensions/attachments/attachments_service.rs"
+      },
+      "invariants": [
+        "Legacy keys (MediaPath, MediaUrl, etc.) pruned from root",
+        "Canonical facts stored under __openclaw.media",
+        "Ambiguous sparse arrays rejected"
+      ],
+      "migration_rollback": "Unstructured top-level media fields",
+      "oracle_ids": [
+        "OCRM-MEDIA-REF-O08"
+      ],
+      "owner_decision": "Implement media facts canonicalizer, kind resolver, and projections in media_facts",
+      "postconditions": [
+        "Message canonicalized into __openclaw.media with root clean"
+      ],
+      "preconditions": [
+        "JSON message value supplied"
+      ],
+      "required_evidence_dimensions": [
+        "unit",
+        "format"
+      ],
+      "required_gate_ids": [
+        "OCRM-G04-rust-contract",
+        "OCRM-G05-frozen-oracle"
+      ],
+      "requirement_ids": [
+        "OCRM-R24",
+        "OCRM-AC24"
+      ],
+      "responsibility_kind": "business-runtime",
+      "reviewer": "xuyao@ombhrum.com",
+      "risk": "Low; standardizes media facts persistence across storage formats",
+      "selected_owner": "source/host/src/extensions/attachments/media_facts.rs",
+      "source_refs": [
+        {
+          "blob_sha": "f1df5c9b2899a5e82f15aab30a7ff233e25c966a",
+          "path": "src/media/media-facts.ts",
+          "range": {
+            "end_line": 513,
+            "start_line": 1
+          },
+          "symbol": "canonicalizePersistedUserMessageMedia"
+        }
+      ],
+      "status": {
+        "acceptance": "pending",
+        "implementation": "implemented",
+        "mapping": "reviewed",
+        "read": "read-complete",
+        "verification": "verified",
+        "wiring": "wired"
+      },
+      "target": {
+        "language": "Rust",
+        "path": "source/host/src/extensions/attachments/media_facts.rs",
+        "symbol": "canonicalize_persisted_user_message_media"
+      },
+      "tests": [
+        "source/host/tests/openclaw_media_reference_contract.rs::test_ocrm_media_ref_08_canonicalize_persisted_user_message_media"
+      ],
+      "typed_contracts": [
+        "MediaFact",
+        "canonicalize_persisted_user_message_media",
+        "project_media_facts"
+      ],
+      "unit_id": "OCRM-UNIT-MEDIA-004"
     }
   ],
   "schema_version": 1,

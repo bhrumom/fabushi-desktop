@@ -326,7 +326,12 @@ pub fn read_host_attachment_image_with_root(
         return None;
     }
     let mime = servable_image_mime_from_path(&resolved)?;
-    let data = fs::read(&resolved).ok()?;
+    let limit = attachment_byte_limit_for_name(&resolved) as usize;
+    let data = crate::extensions::attachments::media_reference::read_outbound_media_file_bounded(
+        &resolved,
+        limit,
+    )
+    .ok()?;
     let size = image_size(&data, mime);
     Some(HostAttachmentImage {
         data_url: format!("data:{mime};base64,{}", STANDARD.encode(data)),
@@ -350,11 +355,11 @@ pub fn read_host_attachment_video_bytes_with_root(
     if !path_is_within(sand_root, &resolved, true) || video_mime_from_path(&resolved).is_none() {
         return None;
     }
-    let info = fs::metadata(&resolved).ok()?;
-    if !info.is_file() || info.len() > VIDEO_BYTE_LIMIT {
-        return None;
-    }
-    fs::read(resolved).ok()
+    crate::extensions::attachments::media_reference::read_outbound_media_file_bounded(
+        &resolved,
+        VIDEO_BYTE_LIMIT as usize,
+    )
+    .ok()
 }
 
 pub fn read_host_attachment_video_bytes(file_path: &Path) -> Option<Vec<u8>> {
@@ -1524,6 +1529,36 @@ impl AttachmentsService {
 
     pub fn read_media_dimensions(&self, path: &Path) -> Option<ImageSize> {
         read_media_dimensions_with_root(&self.sand_root, path)
+    }
+
+    pub fn resolve_media_reference(
+        &self,
+        source: &str,
+    ) -> Result<PathBuf, crate::extensions::attachments::media_reference::MediaReferenceError> {
+        let media_dir = self.sand_root.join("media");
+        let info = crate::extensions::attachments::media_reference::resolve_media_reference_local_path_info(
+            source,
+            &media_dir,
+        )?;
+        match info {
+            crate::extensions::attachments::media_reference::MediaReferenceLocalPathInfo::Inbound { path, .. } => {
+                Ok(path)
+            }
+            crate::extensions::attachments::media_reference::MediaReferenceLocalPathInfo::Local { path } => {
+                Ok(path)
+            }
+        }
+    }
+
+    pub fn parse_inbound_media_uri(
+        &self,
+        source: &str,
+    ) -> Result<Option<crate::extensions::attachments::media_reference::InboundMediaUri>, crate::extensions::attachments::media_reference::MediaReferenceError> {
+        crate::extensions::attachments::media_reference::parse_inbound_media_uri(source)
+    }
+
+    pub fn canonicalize_user_message_media(&self, message: &mut serde_json::Value) -> Result<bool, String> {
+        crate::extensions::attachments::media_facts::canonicalize_persisted_user_message_media(message)
     }
 
     pub fn persist_image_bytes(
