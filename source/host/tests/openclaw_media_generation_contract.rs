@@ -4,26 +4,31 @@
 //! - OCRM-ATTACH-O01: ATTACHMENT_BYTE_LIMIT (25 MiB) and VIDEO_BYTE_LIMIT (200 MiB) constants.
 //! - OCRM-ATTACH-O02: Directory name constants (ATTACHMENTS_DIRNAME, ASSETS_DIRNAME).
 //! - OCRM-ATTACH-O03: SandGenerateImageResourceAccessor path containment and assets isolation.
-//! - OCRM-ATTACH-O04: configured_generate_image_model_id returns non-empty model identifier.
+//! - OCRM-ATTACH-O04: resolve_default_media_model and resolve_auto_media_key_providers capability & priority resolution.
 //! - OCRM-ATTACH-O05: SandGenerateImageService successful image generation and persistence.
 //! - OCRM-ATTACH-O06: SandGenerateImageService failure on persistence rejection (Persist error).
 //! - OCRM-ATTACH-O07: SandGenerateImageService rejection on invalid base64 image data.
-//! - OCRM-ATTACH-O08: GENERATE_IMAGE_TOOL_NAME constant matches routed tool registry definition.
-//! - OCRM-ATTACH-O09: GenerateImageToolExecutor execution with prompt description and references.
-//! - OCRM-ATTACH-O10: Standard Base64 roundtrip verification for generated media binary payload.
-//! - OCRM-ATTACH-O11: AttachmentTextPreview enum variants (Text with truncation vs Binary bytes).
+//! - OCRM-ATTACH-O08: normalize_image_generation_resolution normalization (1K, 2K, 4K) and invalid value rejection.
+//! - OCRM-ATTACH-O09: SandGenerateImageToolBridge tool call resolution validation and rejection.
+//! - OCRM-ATTACH-O10: sniff_mime_from_base64 prefix-bounded detection and magic byte detection.
+//! - OCRM-ATTACH-O11: AttachmentTextPreview real filesystem truncation (>64 KiB) and binary classification.
 //! - OCRM-ATTACH-O12: Host Extension ID and dependency graph integrity for AttachmentsExtension.
 
+use std::collections::HashMap;
+use std::fs;
 use std::sync::{Arc, Mutex};
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use base64::Engine;
 use base64::engine::general_purpose::STANDARD;
+use serde_json::{Value, json};
 
 use mahayana_host_runtime::attachment_paths::{
-    ASSETS_DIRNAME, ATTACHMENTS_DIRNAME,
+    ASSETS_DIRNAME, ATTACHMENTS_DIRNAME, get_agent_attachments_dir,
 };
-use mahayana_host_runtime::extensions::attachments::attachments_service::AttachmentTextPreview;
+use mahayana_host_runtime::extensions::attachments::attachments_service::{
+    AttachmentTextPreview, read_attachment_text_with_root,
+};
 use mahayana_host_runtime::extensions::attachments::extension::{
     ATTACHMENTS_DEPENDENCIES, ATTACHMENTS_EXTENSION_ID,
 };
@@ -31,16 +36,32 @@ use mahayana_host_runtime::extensions::attachments::generate_image_resource_acce
     GenerateImageResourceResult, SandGenerateImageResourceAccessor,
 };
 use mahayana_host_runtime::extensions::attachments::generate_image_service::{
-    configured_generate_image_model_id, GeneratedImage, PersistedImage,
-    SandGenerateImageError, SandGenerateImageService,
+    GeneratedImage, PersistedImage, SandGenerateImageError, SandGenerateImageService,
 };
 use mahayana_host_runtime::extensions::extension_ids_generated::HostExtensionId;
-use mahayana_host_runtime::extensions::inference::provider_session::ProviderSessionError;
+use mahayana_host_runtime::extensions::inference::provider_session::{
+    ProviderSessionError, RoutedToolDefinition,
+};
 use mahayana_host_runtime::media_mime::{
-    ATTACHMENT_BYTE_LIMIT, VIDEO_BYTE_LIMIT,
+    ATTACHMENT_BYTE_LIMIT, BASE64_SNIFF_PREFIX_CHARS, MimeSniffHints, VIDEO_BYTE_LIMIT,
+    inspect_canonical_base64, sniff_mime_from_base64, sniff_mime_from_base64_with_hints,
+    sniff_mime_from_buffer,
+};
+use mahayana_host_runtime::media_understanding_defaults::{
+    MediaUnderstandingCapability, MediaUnderstandingProviderMetadata,
+    resolve_auto_media_key_providers, resolve_default_media_model,
+};
+use mahayana_host_runtime::runner::box_tool_access::{
+    RunnerBoxReadRequest, RunnerBoxResourcePort, RunnerBoxShellRequest, RunnerBoxWriteRequest,
+};
+use mahayana_host_runtime::runner::routed_provider_runtime::RoutedToolBridge;
+use mahayana_host_runtime::runner::shell_terminal_watch::{
+    ShellTerminalPollRead, TerminalReadResult,
 };
 use mahayana_host_runtime::runner::tools::sand_generate_image_tool::{
-    GenerateImageToolExecutor, GeneratedImageToolOutput, GENERATE_IMAGE_TOOL_NAME,
+    GenerateImageToolExecutor, GenerateImageToolOptions, GeneratedImageToolOutput,
+    GENERATE_IMAGE_TOOL_NAME, ImageGenerationResolution, SandGenerateImageToolBridge,
+    normalize_image_generation_resolution,
 };
 
 fn temp_agent_root(label: &str) -> std::path::PathBuf {
@@ -52,7 +73,7 @@ fn temp_agent_root(label: &str) -> std::path::PathBuf {
         "fabushi-media-contract-{label}-{}-{suffix}",
         std::process::id()
     ));
-    std::fs::create_dir_all(&dir).expect("create temp dir");
+    fs::create_dir_all(&dir).expect("create temp dir");
     dir
 }
 
@@ -106,14 +127,98 @@ fn test_ocrm_attach_o03_resource_accessor_containment() {
 }
 
 // ---------------------------------------------------------------------------
-// OCRM-ATTACH-O04: Configured Model ID
+// OCRM-ATTACH-O04: Media Understanding Default Models & Auto Priority Order
 // ---------------------------------------------------------------------------
 #[test]
-fn test_ocrm_attach_o04_configured_model_id() {
-    let model_id = configured_generate_image_model_id();
-    assert!(
-        !model_id.trim().is_empty(),
-        "Configured generate image model ID must not be empty"
+fn test_ocrm_attach_o04_media_understanding_default_models() {
+    let mut registry = HashMap::new();
+
+    let mut google_defaults = HashMap::new();
+    google_defaults.insert("image".to_string(), "gemini-2.5-flash".to_string());
+    let mut google_prio = HashMap::new();
+    google_prio.insert("image".to_string(), 30);
+    registry.insert(
+        "google".to_string(),
+        MediaUnderstandingProviderMetadata {
+            id: "google".to_string(),
+            capabilities: vec![MediaUnderstandingCapability::Image],
+            default_models: google_defaults,
+            auto_priority: google_prio,
+        },
+    );
+
+    let mut minimax_defaults = HashMap::new();
+    minimax_defaults.insert("image".to_string(), "MiniMax-M2.7".to_string());
+    let mut minimax_prio = HashMap::new();
+    minimax_prio.insert("image".to_string(), 40);
+    registry.insert(
+        "minimax".to_string(),
+        MediaUnderstandingProviderMetadata {
+            id: "minimax".to_string(),
+            capabilities: vec![MediaUnderstandingCapability::Image],
+            default_models: minimax_defaults,
+            auto_priority: minimax_prio,
+        },
+    );
+
+    let mut openrouter_defaults = HashMap::new();
+    openrouter_defaults.insert("image".to_string(), "auto".to_string());
+    let mut openrouter_prio = HashMap::new();
+    openrouter_prio.insert("image".to_string(), 50);
+    registry.insert(
+        "openrouter".to_string(),
+        MediaUnderstandingProviderMetadata {
+            id: "openrouter".to_string(),
+            capabilities: vec![MediaUnderstandingCapability::Image],
+            default_models: openrouter_defaults,
+            auto_priority: openrouter_prio,
+        },
+    );
+
+    let mut configured_models = HashMap::new();
+    configured_models.insert(
+        "openrouter".to_string(),
+        vec!["google/gemini-2.5-flash".to_string()],
+    );
+
+    // 1. Configured image models take precedence when include_configured_models is true
+    let model = resolve_default_media_model(
+        "openrouter",
+        MediaUnderstandingCapability::Image,
+        &registry,
+        Some(&configured_models),
+        true,
+    );
+    assert_eq!(
+        model.as_deref(),
+        Some("google/gemini-2.5-flash"),
+        "Configured model override must be preferred"
+    );
+
+    // 2. When include_configured_models is false, manifest default is returned
+    let default_model = resolve_default_media_model(
+        "openrouter",
+        MediaUnderstandingCapability::Image,
+        &registry,
+        Some(&configured_models),
+        false,
+    );
+    assert_eq!(
+        default_model.as_deref(),
+        Some("auto"),
+        "Should fallback to registry default model"
+    );
+
+    // 3. Auto discovery priority order matches priorities (30, 40, 50)
+    let auto_providers = resolve_auto_media_key_providers(
+        MediaUnderstandingCapability::Image,
+        &registry,
+        None,
+    );
+    assert_eq!(
+        auto_providers,
+        vec!["google", "minimax", "openrouter"],
+        "Providers must be sorted in ascending order of autoPriority"
     );
 }
 
@@ -203,94 +308,348 @@ fn test_ocrm_attach_o07_invalid_base64() {
 }
 
 // ---------------------------------------------------------------------------
-// OCRM-ATTACH-O08: Tool Name Constant
+// OCRM-ATTACH-O08: Image Resolution Normalization and Rejection
 // ---------------------------------------------------------------------------
 #[test]
-fn test_ocrm_attach_o08_tool_name_constant() {
-    assert_eq!(GENERATE_IMAGE_TOOL_NAME, "GenerateImage");
+fn test_ocrm_attach_o08_resolution_normalization() {
+    // Valid values (case-insensitive, trimmed)
+    assert_eq!(
+        normalize_image_generation_resolution(Some("1K")).unwrap(),
+        Some(ImageGenerationResolution::R1K)
+    );
+    assert_eq!(
+        normalize_image_generation_resolution(Some(" 2k \t")).unwrap(),
+        Some(ImageGenerationResolution::R2K)
+    );
+    assert_eq!(
+        normalize_image_generation_resolution(Some("4k")).unwrap(),
+        Some(ImageGenerationResolution::R4K)
+    );
+
+    // Empty or omitted resolution returns None
+    assert_eq!(normalize_image_generation_resolution(None).unwrap(), None);
+    assert_eq!(
+        normalize_image_generation_resolution(Some("")).unwrap(),
+        None
+    );
+    assert_eq!(
+        normalize_image_generation_resolution(Some("   ")).unwrap(),
+        None
+    );
+
+    // Invalid resolutions must be rejected with the exact upstream error
+    let err = normalize_image_generation_resolution(Some("8K")).unwrap_err();
+    match err {
+        ProviderSessionError::Tool(msg) => {
+            assert!(
+                msg.contains("resolution must be one of 1K, 2K, or 4K"),
+                "Unexpected error message: {msg}"
+            );
+        }
+        other => panic!("Expected ProviderSessionError::Tool, got {other:?}"),
+    }
+
+    let err2 = normalize_image_generation_resolution(Some("1080p")).unwrap_err();
+    match err2 {
+        ProviderSessionError::Tool(msg) => {
+            assert!(msg.contains("resolution must be one of 1K, 2K, or 4K"));
+        }
+        other => panic!("Expected ProviderSessionError::Tool, got {other:?}"),
+    }
 }
 
 // ---------------------------------------------------------------------------
-// OCRM-ATTACH-O09: GenerateImageToolExecutor Mock Invocation
+// OCRM-ATTACH-O09: Tool Call Resolution Validation & Rejection
 // ---------------------------------------------------------------------------
-struct MockImageExecutor {
-    last_prompt: Mutex<Option<String>>,
-}
-
-impl GenerateImageToolExecutor for MockImageExecutor {
-    fn generate(
+struct TestToolDelegate;
+impl RoutedToolBridge for TestToolDelegate {
+    fn list_tools(&self) -> Result<Vec<RoutedToolDefinition>, ProviderSessionError> {
+        Ok(Vec::new())
+    }
+    fn call_tool(
         &self,
-        description: &str,
-        reference_images: &[(String, String)],
-    ) -> Result<GeneratedImageToolOutput, ProviderSessionError> {
-        *self.last_prompt.lock().unwrap() = Some(description.to_string());
-        assert_eq!(reference_images.len(), 1);
-        assert_eq!(reference_images[0].0, "ref_base64");
-        assert_eq!(reference_images[0].1, "image/jpeg");
+        _tool: &RoutedToolDefinition,
+        _args: Value,
+        _tool_call_id: &str,
+    ) -> Result<Value, ProviderSessionError> {
+        Err(ProviderSessionError::Tool("unexpected delegate invocation".into()))
+    }
+}
 
+struct TestImageExecutor {
+    last_received_options: Mutex<Option<GenerateImageToolOptions>>,
+}
+
+impl GenerateImageToolExecutor for TestImageExecutor {
+    fn generate_with_options(
+        &self,
+        _description: &str,
+        _references: &[(String, String)],
+        options: &GenerateImageToolOptions,
+    ) -> Result<GeneratedImageToolOutput, ProviderSessionError> {
+        *self.last_received_options.lock().unwrap() = Some(options.clone());
         Ok(GeneratedImageToolOutput {
-            persisted_path: "/workspace/diagram.png".to_string(),
-            image_data_base64: "AQIDBA==".to_string(),
+            persisted_path: "/workspace/assets/test-image.png".to_string(),
+            image_data_base64: STANDARD.encode(b"\x89PNG\r\n\x1a\n"),
         })
     }
 }
 
+#[derive(Default)]
+struct TestBoxPort {
+    writes: Mutex<Vec<(String, Vec<u8>, String)>>,
+}
+impl RunnerBoxResourcePort for TestBoxPort {
+    fn execute_shell(
+        &self,
+        _request: RunnerBoxShellRequest,
+    ) -> Result<Value, ProviderSessionError> {
+        unreachable!()
+    }
+    fn execute_read(
+        &self,
+        _request: RunnerBoxReadRequest,
+    ) -> Result<Value, ProviderSessionError> {
+        Ok(json!({"kind": "fileNotFound"}))
+    }
+    fn execute_write(
+        &self,
+        request: RunnerBoxWriteRequest,
+    ) -> Result<(), ProviderSessionError> {
+        self.writes.lock().unwrap().push((
+            request.path,
+            request.data,
+            request.tool_call_id,
+        ));
+        Ok(())
+    }
+    fn poll_background_shell_terminal(&self, _shell_id: &str) -> ShellTerminalPollRead {
+        ShellTerminalPollRead::Snapshot {
+            output_path: "/tmp/test-out".into(),
+            result: TerminalReadResult::FileNotFound,
+        }
+    }
+}
+
 #[test]
-fn test_ocrm_attach_o09_tool_executor_execution() {
-    let executor = MockImageExecutor {
-        last_prompt: Mutex::new(None),
+fn test_ocrm_attach_o09_tool_resolution_validation_and_rejection() {
+    let box_port = Arc::new(TestBoxPort::default());
+    let executor = Arc::new(TestImageExecutor {
+        last_received_options: Mutex::new(None),
+    });
+    let bridge = SandGenerateImageToolBridge::new(
+        Arc::new(TestToolDelegate),
+        executor.clone(),
+        box_port,
+    );
+
+    let tool_def = RoutedToolDefinition {
+        name: GENERATE_IMAGE_TOOL_NAME.into(),
+        provider_identifier: "test".into(),
+        tool_name: GENERATE_IMAGE_TOOL_NAME.into(),
+        description: None,
+        input_schema: json!({}),
     };
 
-    let refs = vec![("ref_base64".to_string(), "image/jpeg".to_string())];
-    let output = executor
-        .generate("Generate an ER diagram", &refs)
-        .expect("executor succeeds");
-
-    assert_eq!(output.persisted_path, "/workspace/diagram.png");
-    assert_eq!(output.image_data_base64, "AQIDBA==");
+    // 1. Call with invalid resolution must be rejected before executor
+    let invalid_call = bridge.call_tool(
+        &tool_def,
+        json!({
+            "description": "drawing of a cat",
+            "resolution": "8K"
+        }),
+        "call_1",
+    );
+    assert!(invalid_call.is_err(), "Invalid resolution must fail");
+    let err_str = invalid_call.unwrap_err().to_string();
+    assert!(
+        err_str.contains("resolution must be one of 1K, 2K, or 4K"),
+        "Error must mention 1K, 2K, or 4K: {err_str}"
+    );
     assert_eq!(
-        *executor.last_prompt.lock().unwrap(),
-        Some("Generate an ER diagram".to_string())
+        *executor.last_received_options.lock().unwrap(),
+        None,
+        "Rejected call must never invoke executor"
+    );
+
+    // 2. Call with valid resolution must succeed, propagate options to executor, and echo in output
+    let valid_call = bridge.call_tool(
+        &tool_def,
+        json!({
+            "description": "drawing of a cat",
+            "resolution": "2K"
+        }),
+        "call_2",
+    ).expect("valid call succeeds");
+
+    assert_eq!(
+        valid_call["success"]["resolution"].as_str(),
+        Some("2K"),
+        "Success payload must reflect normalized resolution"
+    );
+
+    let received_options = executor.last_received_options.lock().unwrap().clone();
+    assert_eq!(
+        received_options,
+        Some(GenerateImageToolOptions {
+            resolution: Some(ImageGenerationResolution::R2K),
+            aspect_ratio: None,
+        }),
+        "Executor must receive the parsed and normalized resolution in options"
     );
 }
 
 // ---------------------------------------------------------------------------
-// OCRM-ATTACH-O10: Standard Base64 Roundtrip
+// OCRM-ATTACH-O10: Prefix-bounded Base64 MIME Sniffing, Canonical Pad Bits & Hints
 // ---------------------------------------------------------------------------
 #[test]
-fn test_ocrm_attach_o10_base64_roundtrip() {
-    let original = b"Header: image/png\x00Binary\xFFPayload\x42";
-    let encoded = STANDARD.encode(original);
-    let decoded = STANDARD.decode(&encoded).expect("base64 decode");
-    assert_eq!(decoded, original);
+fn test_ocrm_attach_o10_sniff_mime_from_base64() {
+    // 1. Valid magic byte payloads
+    let png_b64 = STANDARD.encode(b"\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR");
+    assert_eq!(
+        sniff_mime_from_base64(&png_b64).as_deref(),
+        Some("image/png")
+    );
+
+    let jpeg_b64 = STANDARD.encode(b"\xff\xd8\xff\xe0\x00\x10JFIF");
+    assert_eq!(
+        sniff_mime_from_base64(&jpeg_b64).as_deref(),
+        Some("image/jpeg")
+    );
+
+    let webp_b64 = STANDARD.encode(b"RIFF\x24\x00\x00\x00WEBPVP8 ");
+    assert_eq!(
+        sniff_mime_from_base64(&webp_b64).as_deref(),
+        Some("image/webp")
+    );
+
+    let pdf_b64 = STANDARD.encode(b"%PDF-1.4\n%header");
+    assert_eq!(
+        sniff_mime_from_base64(&pdf_b64).as_deref(),
+        Some("application/pdf")
+    );
+
+    // 2. Tail corruption test: valid PNG prefix, but trailing garbage
+    let corrupted_tail = format!("{png_b64}invalid_tail_chars!@#$");
+    assert_eq!(
+        sniff_mime_from_base64(&corrupted_tail),
+        None,
+        "Tail corruption must cause the entire payload to be rejected"
+    );
+
+    // 3. Non-canonical pad bits test: last data char before == has non-zero unused bits
+    // 'A' has value 0 (000000_2, unused bits 0), valid pad bits.
+    // 'B' has value 1 (000001_2, unused bits 1 != 0), non-canonical pad bits.
+    assert!(inspect_canonical_base64("AA==").is_some());
+    assert!(inspect_canonical_base64("AB==").is_none());
+    assert_eq!(sniff_mime_from_base64("AB=="), None);
+
+    // 4. Slice length < 8 chars returns None (too short for magic bytes)
+    assert_eq!(sniff_mime_from_base64("AQIDBA=="), None);
+    assert_eq!(sniff_mime_from_base64(""), None);
+
+    // 5. Non-magic bytes without hints returns None
+    let text_b64 = STANDARD.encode(b"Hello world, this is plain text!");
+    assert_eq!(sniff_mime_from_base64(&text_b64), None);
+
+    // 6. Hints fallback: non-magic payload falls back to header/path hints
+    let hints_header = MimeSniffHints {
+        header_mime: Some("image/svg+xml"),
+        file_path: None,
+        additional_hints: &[],
+    };
+    assert_eq!(
+        sniff_mime_from_base64_with_hints(&text_b64, &hints_header).as_deref(),
+        Some("image/svg+xml"),
+        "When buffer lacks magic bytes, headerMime hint must be used"
+    );
+
+    // 7. Hints conflict: magic bytes take precedence over conflicting header hint
+    let conflicting_hints = MimeSniffHints {
+        header_mime: Some("image/jpeg"),
+        file_path: None,
+        additional_hints: &[],
+    };
+    assert_eq!(
+        sniff_mime_from_base64_with_hints(&png_b64, &conflicting_hints).as_deref(),
+        Some("image/png"),
+        "Magic bytes must take precedence over conflicting header hint"
+    );
+
+    // 8. Prefix bound: longer payloads only inspect up to BASE64_SNIFF_PREFIX_CHARS
+    assert_eq!(BASE64_SNIFF_PREFIX_CHARS, 256);
+    assert_eq!(sniff_mime_from_buffer(b"\x89PNG\r\n\x1a\n"), Some("image/png"));
+    assert_eq!(sniff_mime_from_buffer(b"\xff\xd8\xff"), Some("image/jpeg"));
+    assert_eq!(sniff_mime_from_buffer(b"%PDF-"), Some("application/pdf"));
+    let mut large_payload = b"\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR".to_vec();
+    large_payload.resize(10_000, 0x55);
+    let large_b64 = STANDARD.encode(&large_payload);
+    assert_eq!(
+        sniff_mime_from_base64(&large_b64).as_deref(),
+        Some("image/png")
+    );
 }
 
 // ---------------------------------------------------------------------------
-// OCRM-ATTACH-O11: AttachmentTextPreview Enum Variants
+// OCRM-ATTACH-O11: Attachment Text Preview Real Truncation and Binary
 // ---------------------------------------------------------------------------
 #[test]
-fn test_ocrm_attach_o11_attachment_text_preview_variants() {
-    let text_preview = AttachmentTextPreview::Text {
-        text: "Preview snippet".to_string(),
-        truncated: false,
-        bytes: 15,
-    };
+fn test_ocrm_attach_o11_attachment_text_preview_truncation_and_binary() {
+    let sand_root = temp_agent_root("sand_preview");
+    let agent_dir = sand_root.join("agent_test");
+    let attachments_dir = get_agent_attachments_dir(&agent_dir);
+    fs::create_dir_all(&attachments_dir).expect("create attachments dir");
 
-    match text_preview {
+    // 1. Large text file (> 64 KiB) should be read and marked truncated = true
+    let large_text_path = attachments_dir.join("large_log.txt");
+    let large_content = "Line of log entry text to exceed preview bounds.\n".repeat(1500);
+    assert!(large_content.len() > 64 * 1024);
+    fs::write(&large_text_path, &large_content).expect("write large text file");
+
+    let preview = read_attachment_text_with_root(&sand_root, &agent_dir, &large_text_path)
+        .expect("text preview available");
+
+    match preview {
         AttachmentTextPreview::Text { text, truncated, bytes } => {
-            assert_eq!(text, "Preview snippet");
-            assert!(!truncated);
-            assert_eq!(bytes, 15);
+            assert!(truncated, "Text exceeding 64 KiB must have truncated = true");
+            assert_eq!(bytes, large_content.len() as u64);
+            assert!(
+                text.len() <= 64 * 1024,
+                "Returned preview text must be bounded by byte cap"
+            );
         }
-        AttachmentTextPreview::Binary { .. } => panic!("Expected Text variant"),
+        AttachmentTextPreview::Binary { .. } => panic!("Expected Text preview variant for text file"),
     }
 
-    let binary_preview = AttachmentTextPreview::Binary { bytes: 1048576 };
-    match binary_preview {
+    // 2. Binary file (containing binary / null bytes) must return Binary variant
+    let binary_path = attachments_dir.join("data.bin");
+    let binary_content = vec![0u8, 159u8, 255u8, 0u8, 128u8, 32u8, 0u8, 0u8];
+    fs::write(&binary_path, &binary_content).expect("write binary file");
+
+    let bin_preview = read_attachment_text_with_root(&sand_root, &agent_dir, &binary_path)
+        .expect("binary preview available");
+
+    match bin_preview {
         AttachmentTextPreview::Binary { bytes } => {
-            assert_eq!(bytes, 1048576);
+            assert_eq!(bytes, binary_content.len() as u64);
         }
-        AttachmentTextPreview::Text { .. } => panic!("Expected Binary variant"),
+        AttachmentTextPreview::Text { .. } => panic!("Expected Binary preview variant for binary file"),
+    }
+
+    // 3. Small text file (< 64 KiB) should have truncated = false
+    let small_text_path = attachments_dir.join("small_notes.txt");
+    fs::write(&small_text_path, "Hello world").expect("write small text file");
+
+    let small_preview = read_attachment_text_with_root(&sand_root, &agent_dir, &small_text_path)
+        .expect("small text preview available");
+
+    match small_preview {
+        AttachmentTextPreview::Text { text, truncated, bytes } => {
+            assert!(!truncated, "Small text file must not be truncated");
+            assert_eq!(text, "Hello world");
+            assert_eq!(bytes, 11);
+        }
+        AttachmentTextPreview::Binary { .. } => panic!("Expected Text preview variant"),
     }
 }
 

@@ -1382,8 +1382,13 @@ impl AttachmentsService {
         bytes_base64: Option<&str>,
         agent_id: Option<&str>,
     ) -> Result<PathBuf, SandAttachmentError> {
+        let b64 = bytes_base64.unwrap_or_default();
+        if !b64.is_empty() {
+            crate::media_mime::inspect_canonical_base64(b64)
+                .ok_or_else(|| SandAttachmentError::InvalidBase64("non-canonical base64 payload".into()))?;
+        }
         let bytes = STANDARD
-            .decode(bytes_base64.unwrap_or_default())
+            .decode(b64)
             .map_err(|error| SandAttachmentError::InvalidBase64(error.to_string()))?;
         Ok(ingest_attachment_bytes(
             &self.resolve_dir(agent_id)?,

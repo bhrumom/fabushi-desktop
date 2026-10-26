@@ -613,8 +613,7 @@
         "OCRM-ATTACH-O03",
         "OCRM-ATTACH-O05",
         "OCRM-ATTACH-O06",
-        "OCRM-ATTACH-O07",
-        "OCRM-ATTACH-O10"
+        "OCRM-ATTACH-O07"
       ],
       "requirement_text_source": "docs/specs/openclaw-rust-equivalence-migration.md#5",
       "responsibility_ids": [
@@ -639,6 +638,7 @@
         "OCRM-ATTACH-O04",
         "OCRM-ATTACH-O08",
         "OCRM-ATTACH-O09",
+        "OCRM-ATTACH-O10",
         "OCRM-ATTACH-O11",
         "OCRM-ATTACH-O12"
       ],
@@ -1187,8 +1187,7 @@
         "OCRM-ATTACH-O03",
         "OCRM-ATTACH-O05",
         "OCRM-ATTACH-O06",
-        "OCRM-ATTACH-O07",
-        "OCRM-ATTACH-O10"
+        "OCRM-ATTACH-O07"
       ],
       "requirement_text_source": "docs/specs/openclaw-rust-equivalence-migration.md#15",
       "responsibility_ids": [
@@ -1213,6 +1212,7 @@
         "OCRM-ATTACH-O04",
         "OCRM-ATTACH-O08",
         "OCRM-ATTACH-O09",
+        "OCRM-ATTACH-O10",
         "OCRM-ATTACH-O11",
         "OCRM-ATTACH-O12"
       ],

@@ -5055,8 +5055,8 @@
         "symbol": "TurnRunShell"
       },
       "tests": [
-        "source/host/tests/openclaw_agent_turn_contract.rs::test_ocrm_agent_o01_active_inference_stream_conflict_rejection",
-        "source/host/tests/openclaw_agent_turn_contract.rs::test_ocrm_agent_o02_deferred_supersedes_on_pending_turn_start"
+        "source/host/tests/openclaw_agent_turn_contract.rs::test_ocrm_agent_o01_active_stream_conflict_rejection",
+        "source/host/tests/openclaw_agent_turn_contract.rs::test_ocrm_agent_o02_deferred_supersedes_queue"
       ],
       "typed_contracts": [
         "TurnRunShell::begin_run"
@@ -5147,8 +5147,8 @@
         "symbol": "TurnOwnerToken"
       },
       "tests": [
-        "source/host/tests/openclaw_agent_turn_contract.rs::test_ocrm_agent_o03_immediate_supersedes_on_tool_execution_cancellation",
-        "source/host/tests/openclaw_agent_turn_contract.rs::test_ocrm_agent_o04_monotonic_generation_increments"
+        "source/host/tests/openclaw_agent_turn_contract.rs::test_ocrm_agent_o03_immediate_cancellation",
+        "source/host/tests/openclaw_agent_turn_contract.rs::test_ocrm_agent_o04_owner_token_monotonic_generation"
       ],
       "typed_contracts": [
         "TurnOwnerToken::next_generation"
@@ -5239,8 +5239,8 @@
         "symbol": "ContextWindowTracker"
       },
       "tests": [
-        "source/host/tests/openclaw_agent_turn_contract.rs::test_ocrm_agent_o09_context_window_token_tracking_and_compaction_triggers",
-        "source/host/tests/openclaw_agent_turn_contract.rs::test_ocrm_agent_o10_tool_call_argument_schema_preflight_validation"
+        "source/host/tests/openclaw_agent_turn_contract.rs::test_ocrm_agent_o09_context_window_compaction_trigger",
+        "source/host/tests/openclaw_agent_turn_contract.rs::test_ocrm_agent_o10_tool_argument_validation"
       ],
       "typed_contracts": [
         "ContextWindowTracker::check_compaction"
@@ -5331,8 +5331,8 @@
         "symbol": "TurnUsage"
       },
       "tests": [
-        "source/host/tests/openclaw_agent_turn_contract.rs::test_ocrm_agent_o07_model_pricing_calculation_and_turn_usage_merge",
-        "source/host/tests/openclaw_agent_turn_contract.rs::test_ocrm_agent_o08_provider_fallback_chain_on_rate_limit"
+        "source/host/tests/openclaw_agent_turn_contract.rs::test_ocrm_agent_o07_model_catalog_pricing_calculation",
+        "source/host/tests/openclaw_agent_turn_contract.rs::test_ocrm_agent_o08_provider_fallback_chain"
       ],
       "typed_contracts": [
         "merge_turn_usage"
@@ -5423,8 +5423,8 @@
         "symbol": "AvailableCommand"
       },
       "tests": [
-        "source/host/tests/openclaw_agent_turn_contract.rs::test_ocrm_agent_o05_viral_turn_tainting_upon_unreviewed_execution",
-        "source/host/tests/openclaw_agent_turn_contract.rs::test_ocrm_agent_o06_auto_review_decision_resolution"
+        "source/host/tests/openclaw_agent_turn_contract.rs::test_ocrm_agent_o05_viral_turn_tainting",
+        "source/host/tests/openclaw_agent_turn_contract.rs::test_ocrm_agent_o06_auto_review_approval_gate"
       ],
       "typed_contracts": [
         "get_available_commands"
@@ -5515,8 +5515,8 @@
         "symbol": "SandAutoReviewDecision"
       },
       "tests": [
-        "source/host/tests/openclaw_agent_turn_contract.rs::test_ocrm_agent_o11_runner_settlement_receipt_emission",
-        "source/host/tests/openclaw_agent_turn_contract.rs::test_ocrm_agent_o12_zombie_turn_attempt_lease_expiration"
+        "source/host/tests/openclaw_agent_turn_contract.rs::test_ocrm_agent_o11_runner_settlement_receipt",
+        "source/host/tests/openclaw_agent_turn_contract.rs::test_ocrm_agent_o12_zombie_turn_lease_expiration"
       ],
       "typed_contracts": [
         "TurnSettlement::settle"
@@ -6248,7 +6248,8 @@
         "symbol": "run_production_turn_shell_lifecycle"
       },
       "tests": [
-        "source/host/tests/production_turn_run_shell_adapter_contract.rs::first_output_timeout_for_attempt"
+        "source/host/tests/production_turn_run_shell_adapter_contract.rs::production_turn_adapter_doubles_first_output_deadline_after_retry",
+        "source/host/tests/production_turn_run_shell_adapter_contract.rs::production_turn_adapter_first_output_watchdog_interrupts_silent_attempt"
       ],
       "typed_contracts": [
         "run_production_turn_shell_lifecycle"
@@ -6706,8 +6707,8 @@
       "tests": [
         "source/host/tests/openclaw_plugins_automations_contract.rs::test_ocrm_cron_o01_five_field_parsing",
         "source/host/tests/openclaw_plugins_automations_contract.rs::test_ocrm_cron_o02_every_interval_parsing",
-        "source/host/tests/openclaw_plugins_automations_contract.rs::test_ocrm_cron_o03_timezone_parsing",
-        "source/host/tests/openclaw_plugins_automations_contract.rs::test_ocrm_cron_o04_future_epoch_calculation"
+        "source/host/tests/openclaw_plugins_automations_contract.rs::test_ocrm_cron_o03_timezone_handling",
+        "source/host/tests/openclaw_plugins_automations_contract.rs::test_ocrm_cron_o04_compute_next_run_monotonicity"
       ],
       "typed_contracts": [
         "compile_cron_matcher",
@@ -6798,7 +6799,7 @@
         "symbol": "summarize_schedule_next_7_days"
       },
       "tests": [
-        "source/host/tests/openclaw_plugins_automations_contract.rs::test_ocrm_cron_o05_schedule_summary"
+        "source/host/tests/openclaw_plugins_automations_contract.rs::test_ocrm_cron_o05_seven_day_summary"
       ],
       "typed_contracts": [
         "summarize_schedule_next_7_days"
@@ -6888,7 +6889,7 @@
         "symbol": "HostChannelDelivery"
       },
       "tests": [
-        "source/host/tests/openclaw_plugins_automations_contract.rs::test_ocrm_plugin_o04_rpc_timeout_constants"
+        "source/host/tests/openclaw_plugins_automations_contract.rs::test_ocrm_plugin_o04_plugin_rpc_timeouts"
       ],
       "typed_contracts": [
         "HostChannelDelivery::deliver"
@@ -6978,7 +6979,7 @@
         "symbol": "TranscriptCleanup"
       },
       "tests": [
-        "source/host/tests/openclaw_plugins_automations_contract.rs::test_ocrm_plugin_o05_sand_auto_review_modes"
+        "source/host/tests/openclaw_plugins_automations_contract.rs::test_ocrm_plugin_o05_sand_auto_review_modes_uniform"
       ],
       "typed_contracts": [
         "TranscriptCleanup::prune_expired"
@@ -7068,7 +7069,7 @@
         "symbol": "SandAutoReviewMode"
       },
       "tests": [
-        "source/host/tests/openclaw_plugins_automations_contract.rs::test_ocrm_plugin_o06_tool_argument_validation"
+        "source/host/tests/openclaw_plugins_automations_contract.rs::test_ocrm_plugin_o06_tool_schema_validation"
       ],
       "typed_contracts": [
         "SandAutoReviewMode::classify_command"
@@ -7158,7 +7159,7 @@
         "symbol": "HeartbeatService"
       },
       "tests": [
-        "source/host/tests/openclaw_plugins_automations_contract.rs::test_ocrm_plugin_o07_web_search_bounds"
+        "source/host/tests/openclaw_plugins_automations_contract.rs::test_ocrm_plugin_o07_web_search_and_fetch_bounds"
       ],
       "typed_contracts": [
         "HeartbeatService::poll"
@@ -7250,7 +7251,7 @@
       },
       "tests": [
         "source/host/tests/openclaw_media_generation_contract.rs::test_ocrm_attach_o01_byte_limits",
-        "source/host/tests/openclaw_media_generation_contract.rs::test_ocrm_attach_o02_directory_constants"
+        "source/host/tests/openclaw_media_generation_contract.rs::test_ocrm_attach_o02_directory_names"
       ],
       "typed_contracts": [
         "ATTACHMENT_BYTE_LIMIT",
@@ -7293,8 +7294,7 @@
       "oracle_ids": [
         "OCRM-ATTACH-O05",
         "OCRM-ATTACH-O06",
-        "OCRM-ATTACH-O07",
-        "OCRM-ATTACH-O10"
+        "OCRM-ATTACH-O07"
       ],
       "owner_decision": "Implement image persistence and format sniffing in generate image service",
       "postconditions": [
@@ -7344,10 +7344,9 @@
         "symbol": "SandGenerateImageService"
       },
       "tests": [
-        "source/host/tests/openclaw_media_generation_contract.rs::test_ocrm_attach_o05_successful_image_generation",
+        "source/host/tests/openclaw_media_generation_contract.rs::test_ocrm_attach_o05_generation_and_persistence",
         "source/host/tests/openclaw_media_generation_contract.rs::test_ocrm_attach_o06_persistence_failure",
-        "source/host/tests/openclaw_media_generation_contract.rs::test_ocrm_attach_o07_invalid_base64_data",
-        "source/host/tests/openclaw_media_generation_contract.rs::test_ocrm_attach_o10_base64_roundtrip"
+        "source/host/tests/openclaw_media_generation_contract.rs::test_ocrm_attach_o07_invalid_base64"
       ],
       "typed_contracts": [
         "SandGenerateImageService::generate_image"
@@ -7356,7 +7355,7 @@
     },
     {
       "adr_refs": [],
-      "behavior": "Image generation resolution normalization (1K, 2K, 4K), invalid resolution rejection (ToolInputError), and default model resolution selection.",
+      "behavior": "Image generation resolution normalization (1K, 2K, 4K), invalid resolution rejection (ToolInputError), tool bridge argument validation, and propagation of GenerateImageToolOptions to GenerateImageToolExecutor.",
       "blocker_ids": [],
       "capability_ids": [
         "media.resolution"
@@ -7376,10 +7375,10 @@
       ],
       "id": "OCRM-RESP-MEDIA-RESOLUTION-001",
       "integration": {
-        "consumer": "source/host/src/runner/tools/sand_generate_image_tool.rs",
-        "entrypoint": "source/host/src/runner/mod.rs",
-        "owner": "source/host/src/runner/tools/sand_generate_image_tool.rs",
-        "producer": "source/host/src/runner/production_turn_agent_owner.rs"
+        "consumer": "source/host/src/runner/host_generate_image_dependencies.rs::ProductionGenerateImageToolExecutor::generate_with_options",
+        "entrypoint": "source/host/src/runner/tools/sand_generate_image_tool.rs::call_tool",
+        "owner": "source/host/src/runner/tools/sand_generate_image_tool.rs::normalize_image_generation_resolution",
+        "producer": "source/host/src/runner/tools/sand_generate_image_tool.rs::SandGenerateImageToolBridge::call_tool"
       },
       "invariants": [
         "GENERATE_IMAGE_TOOL_NAME matches routed tool registry definition",
@@ -7435,11 +7434,11 @@
       "target": {
         "language": "Rust",
         "path": "source/host/src/runner/tools/sand_generate_image_tool.rs",
-        "symbol": "GenerateImageToolExecutor"
+        "symbol": "normalize_image_generation_resolution"
       },
       "tests": [
-        "source/host/tests/openclaw_media_generation_contract.rs::test_ocrm_attach_o08_tool_name_constant",
-        "source/host/tests/openclaw_media_generation_contract.rs::test_ocrm_attach_o09_tool_executor"
+        "source/host/tests/openclaw_media_generation_contract.rs::test_ocrm_attach_o08_resolution_normalization",
+        "source/host/tests/openclaw_media_generation_contract.rs::test_ocrm_attach_o09_tool_resolution_validation_and_rejection"
       ],
       "typed_contracts": [
         "GenerateImageToolExecutor::execute"
@@ -7538,7 +7537,7 @@
     },
     {
       "adr_refs": [],
-      "behavior": "Media understanding default provider and model resolution (resolveDefaultMediaModel), vision/audio capability registration, and configured model retrieval.",
+      "behavior": "Media understanding default provider and model resolution (resolve_default_media_model), vision/audio capability registration, configured model retrieval, and auto-discovery provider priority sorting (resolve_auto_media_key_providers).",
       "blocker_ids": [],
       "capability_ids": [
         "media.default_models"
@@ -7558,10 +7557,10 @@
       ],
       "id": "OCRM-RESP-MEDIA-DEFAULT-MODELS-001",
       "integration": {
-        "consumer": "source/host/src/extensions/attachments/generate_image_service.rs",
-        "entrypoint": "source/host/src/extensions/attachments/mod.rs",
-        "owner": "source/host/src/extensions/attachments/generate_image_service.rs",
-        "producer": "source/host/src/runner/tools/sand_generate_image_tool.rs"
+        "consumer": "pending-production-model-router-wiring",
+        "entrypoint": "source/host/src/media_understanding_defaults.rs::resolve_default_media_model",
+        "owner": "source/host/src/media_understanding_defaults.rs",
+        "producer": "pending-production-manifest-model-resolution"
       },
       "invariants": [
         "configured_generate_image_model_id returns non-empty model identifier",
@@ -7610,16 +7609,16 @@
         "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "verified",
-        "wiring": "wired"
+        "verification": "not-run",
+        "wiring": "not-wired"
       },
       "target": {
         "language": "Rust",
-        "path": "source/host/src/extensions/attachments/generate_image_service.rs",
-        "symbol": "configured_generate_image_model_id"
+        "path": "source/host/src/media_understanding_defaults.rs",
+        "symbol": "resolve_default_media_model"
       },
       "tests": [
-        "source/host/tests/openclaw_media_generation_contract.rs::test_ocrm_attach_o04_configured_model_id"
+        "source/host/tests/openclaw_media_generation_contract.rs::test_ocrm_attach_o04_media_understanding_default_models"
       ],
       "typed_contracts": [
         "configured_generate_image_model_id"
@@ -7628,7 +7627,7 @@
     },
     {
       "adr_refs": [],
-      "behavior": "Prefix-bounded Base64 MIME detection (BASE64_SNIFF_PREFIX_CHARS = 256), attachment text preview classification (Text with truncation vs Binary bytes), and extension ID dependency registration.",
+      "behavior": "Full-payload canonical Base64 inspection (canonicalPadBits & whitespace tolerance), prefix-bounded MIME detection with hint precedence (MimeSniffHints), attachment text preview classification with filesystem truncation (>64 KiB) vs binary detection, and production wiring into attachment upload and inline image materialization.",
       "blocker_ids": [],
       "capability_ids": [
         "media.sniff_preview"
@@ -7648,10 +7647,10 @@
       ],
       "id": "OCRM-RESP-MEDIA-SNIFF-PREVIEW-001",
       "integration": {
-        "consumer": "source/host/src/extensions/transcript/mod.rs",
-        "entrypoint": "source/host/src/extensions/attachments/mod.rs",
-        "owner": "source/host/src/extensions/attachments/attachments_service.rs",
-        "producer": "source/host/src/extensions/attachments/mod.rs"
+        "consumer": "source/host/src/extensions/attachments/attachments_service.rs::read_text, source/host/src/extensions/transcript/inline_image_materialization.rs::materialize_one",
+        "entrypoint": "source/host/src/media_mime.rs::sniff_mime_from_base64",
+        "owner": "source/host/src/media_mime.rs::sniff_mime_from_base64_with_hints, source/host/src/media_mime.rs::inspect_canonical_base64",
+        "producer": "source/host/src/extensions/attachments/attachments_service.rs::upload, source/host/src/extensions/transcript/inline_image_materialization.rs::materialize_one"
       },
       "invariants": [
         "Text files produce Text variant with bounded truncation",
@@ -7660,6 +7659,7 @@
       ],
       "migration_rollback": "Display raw file path without preview",
       "oracle_ids": [
+        "OCRM-ATTACH-O10",
         "OCRM-ATTACH-O11",
         "OCRM-ATTACH-O12"
       ],
@@ -7707,11 +7707,12 @@
       },
       "target": {
         "language": "Rust",
-        "path": "source/host/src/extensions/attachments/attachments_service.rs",
-        "symbol": "AttachmentTextPreview"
+        "path": "source/host/src/media_mime.rs",
+        "symbol": "sniff_mime_from_base64"
       },
       "tests": [
-        "source/host/tests/openclaw_media_generation_contract.rs::test_ocrm_attach_o11_text_preview",
+        "source/host/tests/openclaw_media_generation_contract.rs::test_ocrm_attach_o10_sniff_mime_from_base64",
+        "source/host/tests/openclaw_media_generation_contract.rs::test_ocrm_attach_o11_attachment_text_preview_truncation_and_binary",
         "source/host/tests/openclaw_media_generation_contract.rs::test_ocrm_attach_o12_extension_id_and_dependencies"
       ],
       "typed_contracts": [

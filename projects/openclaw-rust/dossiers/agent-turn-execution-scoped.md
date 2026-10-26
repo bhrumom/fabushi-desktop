@@ -62,18 +62,18 @@ The audited source code was decomposed into 6 discrete Rust runtime responsibili
 
 ## 3. Falsifiable Test Oracles (`source/host/tests/openclaw_agent_turn_contract.rs`)
 
-1. **`OCRM-AGENT-O01`**: `test_ocrm_agent_o01_active_inference_stream_conflict_rejection`
-2. **`OCRM-AGENT-O02`**: `test_ocrm_agent_o02_deferred_supersedes_on_pending_turn_start`
-3. **`OCRM-AGENT-O03`**: `test_ocrm_agent_o03_immediate_cancellation_supersedes_active_turn`
-4. **`OCRM-AGENT-O04`**: `test_ocrm_agent_o04_turn_owner_token_monotonic_generation_fencing`
-5. **`OCRM-AGENT-O05`**: `test_ocrm_agent_o05_viral_turn_tainting_upon_unreviewed_execution`
-6. **`OCRM-AGENT-O06`**: `test_ocrm_agent_o06_auto_review_decision_resolution`
-7. **`OCRM-AGENT-O07`**: `test_ocrm_agent_o07_context_token_compaction_threshold`
-8. **`OCRM-AGENT-O08`**: `test_ocrm_agent_o08_system_prompt_pinned_across_compaction`
-9. **`OCRM-AGENT-O09`**: `test_ocrm_agent_o09_model_pricing_catalog_cost_estimation`
-10. **`OCRM-AGENT-O10`**: `test_ocrm_agent_o10_unknown_model_fallback_rate`
-11. **`OCRM-AGENT-O11`**: `test_ocrm_agent_o11_runner_settlement_receipt_emission`
-12. **`OCRM-AGENT-O12`**: `test_ocrm_agent_o12_zombie_turn_attempt_lease_expiration`
+1. **`OCRM-AGENT-O01`**: `test_ocrm_agent_o01_active_stream_conflict_rejection`
+2. **`OCRM-AGENT-O02`**: `test_ocrm_agent_o02_deferred_supersedes_queue`
+3. **`OCRM-AGENT-O03`**: `test_ocrm_agent_o03_immediate_cancellation`
+4. **`OCRM-AGENT-O04`**: `test_ocrm_agent_o04_owner_token_monotonic_generation`
+5. **`OCRM-AGENT-O05`**: `test_ocrm_agent_o05_viral_turn_tainting`
+6. **`OCRM-AGENT-O06`**: `test_ocrm_agent_o06_auto_review_approval_gate`
+7. **`OCRM-AGENT-O07`**: `test_ocrm_agent_o07_model_catalog_pricing_calculation`
+8. **`OCRM-AGENT-O08`**: `test_ocrm_agent_o08_provider_fallback_chain`
+9. **`OCRM-AGENT-O09`**: `test_ocrm_agent_o09_context_window_compaction_trigger`
+10. **`OCRM-AGENT-O10`**: `test_ocrm_agent_o10_tool_argument_validation`
+11. **`OCRM-AGENT-O11`**: `test_ocrm_agent_o11_runner_settlement_receipt`
+12. **`OCRM-AGENT-O12`**: `test_ocrm_agent_o12_zombie_turn_lease_expiration`
 
 ---
 

@@ -64,13 +64,13 @@ The audited source code was decomposed into 6 discrete Rust runtime responsibili
 
 1. **`OCRM-CRON-O01`**: `test_ocrm_cron_o01_five_field_parsing`
 2. **`OCRM-CRON-O02`**: `test_ocrm_cron_o02_every_interval_parsing`
-3. **`OCRM-CRON-O03`**: `test_ocrm_cron_o03_timezone_parsing`
-4. **`OCRM-CRON-O04`**: `test_ocrm_cron_o04_future_epoch_calculation`
-5. **`OCRM-CRON-O05`**: `test_ocrm_cron_o05_schedule_summary`
-6. **`OCRM-PLUGIN-O04`**: `test_ocrm_plugin_o04_rpc_timeout_constants`
-7. **`OCRM-PLUGIN-O05`**: `test_ocrm_plugin_o05_sand_auto_review_modes`
-8. **`OCRM-PLUGIN-O06`**: `test_ocrm_plugin_o06_tool_argument_validation`
-9. **`OCRM-PLUGIN-O07`**: `test_ocrm_plugin_o07_web_search_bounds`
+3. **`OCRM-CRON-O03`**: `test_ocrm_cron_o03_timezone_handling`
+4. **`OCRM-CRON-O04`**: `test_ocrm_cron_o04_compute_next_run_monotonicity`
+5. **`OCRM-CRON-O05`**: `test_ocrm_cron_o05_seven_day_summary`
+6. **`OCRM-PLUGIN-O04`**: `test_ocrm_plugin_o04_plugin_rpc_timeouts`
+7. **`OCRM-PLUGIN-O05`**: `test_ocrm_plugin_o05_sand_auto_review_modes_uniform`
+8. **`OCRM-PLUGIN-O06`**: `test_ocrm_plugin_o06_tool_schema_validation`
+9. **`OCRM-PLUGIN-O07`**: `test_ocrm_plugin_o07_web_search_and_fetch_bounds`
 
 ---
 

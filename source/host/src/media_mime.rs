@@ -1,8 +1,12 @@
 use std::path::Path;
 
+use base64::Engine;
+use base64::engine::general_purpose::STANDARD;
+
 pub const ATTACHMENT_BYTE_LIMIT: u64 = 25 * 1024 * 1024;
 pub const VIDEO_BYTE_LIMIT: u64 = 200 * 1024 * 1024;
 pub const BYTES_PER_MB: u64 = 1024 * 1024;
+pub const BASE64_SNIFF_PREFIX_CHARS: usize = 256;
 
 fn extension(path: &Path) -> Option<String> {
     path.extension()
@@ -93,4 +97,154 @@ pub fn format_attachment_too_large_notice(filename: &str) -> String {
         format_megabytes(limit),
         if video { " for video" } else { "" }
     )
+}
+
+pub fn sniff_mime_from_buffer(bytes: &[u8]) -> Option<&'static str> {
+    if bytes.len() >= 8 && bytes[..8] == [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a] {
+        return Some("image/png");
+    }
+    if bytes.len() >= 3 && bytes[..3] == [0xff, 0xd8, 0xff] {
+        return Some("image/jpeg");
+    }
+    if bytes.len() >= 6 && (&bytes[..6] == b"GIF87a" || &bytes[..6] == b"GIF89a") {
+        return Some("image/gif");
+    }
+    if bytes.len() >= 12 && &bytes[..4] == b"RIFF" && &bytes[8..12] == b"WEBP" {
+        return Some("image/webp");
+    }
+    if bytes.len() >= 5 && &bytes[..5] == b"%PDF-" {
+        return Some("application/pdf");
+    }
+    None
+}
+
+fn base64_char_value(code: u8) -> Option<u8> {
+    match code {
+        b'A'..=b'Z' => Some(code - b'A'),
+        b'a'..=b'z' => Some(code - b'a' + 26),
+        b'0'..=b'9' => Some(code - b'0' + 52),
+        b'+' => Some(62),
+        b'/' => Some(63),
+        _ => None,
+    }
+}
+
+pub struct CanonicalBase64Facts {
+    pub cleaned_base64: String,
+    pub decoded_byte_len: usize,
+    pub canonical_pad_bits: bool,
+}
+
+pub fn inspect_canonical_base64(raw: &str) -> Option<CanonicalBase64Facts> {
+    let mut cleaned = Vec::with_capacity(raw.len());
+    let mut padding = 0usize;
+    let mut last_data_value = 0u8;
+
+    for &byte in raw.as_bytes() {
+        if byte <= 0x20 {
+            // Canonical base64 ignores ASCII whitespace
+            continue;
+        }
+        if byte == b'=' {
+            padding += 1;
+            if padding > 2 {
+                return None;
+            }
+        } else {
+            if padding > 0 {
+                // Characters after padding are forbidden
+                return None;
+            }
+            let value = base64_char_value(byte)?;
+            last_data_value = value;
+        }
+        cleaned.push(byte);
+    }
+
+    let cleaned_len = cleaned.len();
+    if cleaned_len == 0 {
+        return None;
+    }
+    let remainder = cleaned_len % 4;
+    if remainder != 0 && (padding > 0 || remainder == 1) {
+        return None;
+    }
+
+    let effective_padding = if remainder == 0 { padding } else { 4 - remainder };
+    let pad_bit_mask = match effective_padding {
+        2 => 0x0f,
+        1 => 0x03,
+        _ => 0x00,
+    };
+    let canonical_pad_bits = (last_data_value & pad_bit_mask) == 0;
+    if !canonical_pad_bits {
+        return None;
+    }
+
+    if remainder != 0 {
+        for _ in 0..(4 - remainder) {
+            cleaned.push(b'=');
+        }
+    }
+
+    let decoded_byte_len = (cleaned.len() / 4) * 3 - padding;
+    let cleaned_base64 = String::from_utf8(cleaned).ok()?;
+    Some(CanonicalBase64Facts {
+        cleaned_base64,
+        decoded_byte_len,
+        canonical_pad_bits: true,
+    })
+}
+
+#[derive(Debug, Clone, Default)]
+pub struct MimeSniffHints<'a> {
+    pub header_mime: Option<&'a str>,
+    pub file_path: Option<&'a Path>,
+    pub additional_hints: &'a [&'a str],
+}
+
+pub fn sniff_mime_from_base64_with_hints(
+    base64_str: &str,
+    hints: &MimeSniffHints,
+) -> Option<String> {
+    // 1. Inspect whole payload for canonical base64 conformance and canonical pad bits
+    let facts = inspect_canonical_base64(base64_str)?;
+
+    // 2. Bound decoding to BASE64_SNIFF_PREFIX_CHARS
+    let take = facts.cleaned_base64.len().min(BASE64_SNIFF_PREFIX_CHARS);
+    let slice_len = take - (take % 4);
+    if slice_len < 8 {
+        return None;
+    }
+    let slice = &facts.cleaned_base64[..slice_len];
+    let decoded = STANDARD.decode(slice).ok()?;
+
+    // 3. First check binary magic bytes
+    if let Some(sniffed) = sniff_mime_from_buffer(&decoded) {
+        return Some(sniffed.to_string());
+    }
+
+    // 4. Fallback to hints (header_mime, file_path, additional_hints)
+    if let Some(header) = hints.header_mime {
+        let trimmed = header.trim();
+        if !trimmed.is_empty() {
+            return Some(trimmed.to_string());
+        }
+    }
+    if let Some(path) = hints.file_path {
+        if let Some(path_mime) = image_mime_from_path(path) {
+            return Some(path_mime.to_string());
+        }
+    }
+    for hint in hints.additional_hints {
+        let trimmed = hint.trim();
+        if !trimmed.is_empty() {
+            return Some(trimmed.to_string());
+        }
+    }
+    None
+}
+
+pub fn sniff_mime_from_base64(base64_str: &str) -> Option<String> {
+    sniff_mime_from_base64_with_hints(base64_str, &MimeSniffHints::default())
 }

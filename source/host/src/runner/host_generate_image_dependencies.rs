@@ -5,7 +5,7 @@ use crate::extensions::attachments::generate_image_service::{
 };
 use crate::extensions::inference::provider_session::ProviderSessionError;
 use crate::runner::tools::sand_generate_image_tool::{
-    GenerateImageToolExecutor, GeneratedImageToolOutput,
+    GenerateImageToolExecutor, GenerateImageToolOptions, GeneratedImageToolOutput,
 };
 
 pub struct ProductionGenerateImageToolExecutor {
@@ -23,10 +23,11 @@ impl ProductionGenerateImageToolExecutor {
 }
 
 impl GenerateImageToolExecutor for ProductionGenerateImageToolExecutor {
-    fn generate(
+    fn generate_with_options(
         &self,
         description: &str,
         reference_images: &[(String, String)],
+        _options: &GenerateImageToolOptions,
     ) -> Result<GeneratedImageToolOutput, ProviderSessionError> {
         let service = SandGenerateImageService::production(
             Arc::clone(&self.auth),

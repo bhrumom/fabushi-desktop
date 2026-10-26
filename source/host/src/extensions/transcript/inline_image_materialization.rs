@@ -41,6 +41,7 @@ fn materialize_one(
     db_path: &Path,
     image: &InlineImage,
 ) -> Option<MaterializedInlineImage> {
+    crate::media_mime::inspect_canonical_base64(&image.base64)?;
     let bytes = STANDARD.decode(image.base64.as_bytes()).ok()?;
     if bytes.is_empty() {
         return None;
@@ -49,7 +50,15 @@ fn materialize_one(
     let agent_dir = db_path.parent()?;
     let dir = agent_dir.join("xuser-attachments");
     let hash = format!("{:x}", Sha256::digest(&bytes));
-    let extension = extension_from_image_mime(&image.media_type).unwrap_or(".png");
+    let detected_mime = if image.media_type.trim().is_empty()
+        || image.media_type == "application/octet-stream"
+    {
+        crate::media_mime::sniff_mime_from_base64(&image.base64)
+    } else {
+        None
+    };
+    let effective_mime = detected_mime.as_deref().unwrap_or(image.media_type.as_str());
+    let extension = extension_from_image_mime(effective_mime).unwrap_or(".png");
     let file_path: PathBuf = dir.join(format!("{hash}{extension}"));
 
     if !file_path.exists() {
