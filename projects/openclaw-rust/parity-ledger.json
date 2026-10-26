@@ -10,10 +10,10 @@
     "ui_accepted": false
   },
   "file_coverage": {
-    "mapped_paths": 130,
+    "mapped_paths": 136,
     "omitted_known": 0,
     "tracked_paths": 58750,
-    "unclassified_paths": 58620
+    "unclassified_paths": 58614
   },
   "inventory_authority": {
     "manifest_source": "GitHub Actions immutable artifact candidate",
@@ -7164,6 +7164,560 @@
         "HeartbeatService::poll"
       ],
       "unit_id": "OCRM-UNIT-AUTOMATION-001"
+    },
+    {
+      "adr_refs": [],
+      "behavior": "Enforces ATTACHMENT_BYTE_LIMIT (25 MiB), VIDEO_BYTE_LIMIT (200 MiB), resolveGeneratedMediaMaxBytes, and channel/account media caps.",
+      "blocker_ids": [],
+      "capability_ids": [
+        "media.byte_caps"
+      ],
+      "dependencies": [
+        "mahayana_host_runtime"
+      ],
+      "evidence_refs": [
+        "source/host/tests/openclaw_media_generation_contract.rs",
+        "projects/openclaw-rust/dossiers/media-generation-attachments-scoped.md"
+      ],
+      "existing_owner_candidates": [
+        {
+          "path": "source/host/src/media_mime.rs",
+          "reason": "Host media constants"
+        }
+      ],
+      "id": "OCRM-RESP-MEDIA-BYTE-CAPS-001",
+      "integration": {
+        "consumer": "source/host/src/extensions/attachments/mod.rs",
+        "entrypoint": "source/host/src/media_mime.rs",
+        "owner": "source/host/src/media_mime.rs",
+        "producer": "source/host/src/connectors/channel_attachment.rs"
+      },
+      "invariants": [
+        "Attachments exceeding 25 MiB and videos exceeding 200 MiB are rejected",
+        "Attachments and assets directory names match canonical definitions"
+      ],
+      "migration_rollback": "Fallback to standard 10 MiB limit",
+      "oracle_ids": [
+        "OCRM-ATTACH-O01",
+        "OCRM-ATTACH-O02"
+      ],
+      "owner_decision": "Enforce attachment size boundaries in host media mime",
+      "postconditions": [
+        "Media payload length validated against kind-specific cap"
+      ],
+      "preconditions": [
+        "Inbound or outbound media payload presented for processing"
+      ],
+      "required_evidence_dimensions": [
+        "unit",
+        "format"
+      ],
+      "required_gate_ids": [
+        "OCRM-G04-rust-contract",
+        "OCRM-G05-frozen-oracle"
+      ],
+      "requirement_ids": [
+        "OCRM-R23",
+        "OCRM-AC23"
+      ],
+      "responsibility_kind": "business-runtime",
+      "reviewer": "xuyao@ombhrum.com",
+      "risk": "High; prevents out-of-memory crashes and denial of service from huge media blobs",
+      "selected_owner": "source/host/src/media_mime.rs",
+      "source_refs": [
+        {
+          "blob_sha": "0a0c31d1017e765bc1bd399fc7179e1aca4e97f8",
+          "path": "src/media/configured-max-bytes.ts",
+          "range": {
+            "end_line": 96,
+            "start_line": 1
+          },
+          "symbol": "resolveGeneratedMediaMaxBytes"
+        }
+      ],
+      "status": {
+        "acceptance": "pending",
+        "implementation": "implemented",
+        "mapping": "reviewed",
+        "read": "read-complete",
+        "verification": "verified",
+        "wiring": "wired"
+      },
+      "target": {
+        "language": "Rust",
+        "path": "source/host/src/media_mime.rs",
+        "symbol": "ATTACHMENT_BYTE_LIMIT"
+      },
+      "tests": [
+        "source/host/tests/openclaw_media_generation_contract.rs::test_ocrm_attach_o01_byte_limits",
+        "source/host/tests/openclaw_media_generation_contract.rs::test_ocrm_attach_o02_directory_constants"
+      ],
+      "typed_contracts": [
+        "ATTACHMENT_BYTE_LIMIT",
+        "VIDEO_BYTE_LIMIT"
+      ],
+      "unit_id": "OCRM-UNIT-MEDIA-001"
+    },
+    {
+      "adr_refs": [],
+      "behavior": "Generated image assets management, magic-byte sniffing (PNG, JPEG, WEBP), data URL generation, and standard Base64 roundtrip verification.",
+      "blocker_ids": [],
+      "capability_ids": [
+        "media.image_assets"
+      ],
+      "dependencies": [
+        "mahayana_host_runtime::extensions::attachments"
+      ],
+      "evidence_refs": [
+        "source/host/tests/openclaw_media_generation_contract.rs",
+        "projects/openclaw-rust/dossiers/media-generation-attachments-scoped.md"
+      ],
+      "existing_owner_candidates": [
+        {
+          "path": "source/host/src/extensions/attachments/generate_image_service.rs",
+          "reason": "Host image generation service"
+        }
+      ],
+      "id": "OCRM-RESP-MEDIA-IMAGE-ASSETS-001",
+      "integration": {
+        "consumer": "source/host/src/extensions/attachments/generate_image_service.rs",
+        "entrypoint": "source/host/src/extensions/attachments/mod.rs",
+        "owner": "source/host/src/extensions/attachments/generate_image_service.rs",
+        "producer": "source/host/src/runner/tools/sand_generate_image_tool.rs"
+      },
+      "invariants": [
+        "Magic bytes 0x89PNG, 0xFFD8, RIFF..WEBP resolve to correct mime type",
+        "Invalid base64 payload is rejected with structured parse error"
+      ],
+      "migration_rollback": "Retain image in memory only without disk persistence",
+      "oracle_ids": [
+        "OCRM-ATTACH-O05",
+        "OCRM-ATTACH-O06",
+        "OCRM-ATTACH-O07",
+        "OCRM-ATTACH-O10"
+      ],
+      "owner_decision": "Implement image persistence and format sniffing in generate image service",
+      "postconditions": [
+        "PersistedImage saved into agent assets folder and returned to caller"
+      ],
+      "preconditions": [
+        "Generated image bytes returned by upstream provider"
+      ],
+      "required_evidence_dimensions": [
+        "unit",
+        "format"
+      ],
+      "required_gate_ids": [
+        "OCRM-G04-rust-contract",
+        "OCRM-G05-frozen-oracle"
+      ],
+      "requirement_ids": [
+        "OCRM-R23",
+        "OCRM-AC23"
+      ],
+      "responsibility_kind": "business-runtime",
+      "reviewer": "xuyao@ombhrum.com",
+      "risk": "High; guarantees valid image rendering in web and mobile clients",
+      "selected_owner": "source/host/src/extensions/attachments/generate_image_service.rs",
+      "source_refs": [
+        {
+          "blob_sha": "ec73319b6e70662f7b537ae720ce3f4f0b3512a1",
+          "path": "src/image-generation/image-assets.ts",
+          "range": {
+            "end_line": 275,
+            "start_line": 1
+          },
+          "symbol": "sniffImageMimeType"
+        }
+      ],
+      "status": {
+        "acceptance": "pending",
+        "implementation": "implemented",
+        "mapping": "reviewed",
+        "read": "read-complete",
+        "verification": "verified",
+        "wiring": "wired"
+      },
+      "target": {
+        "language": "Rust",
+        "path": "source/host/src/extensions/attachments/generate_image_service.rs",
+        "symbol": "SandGenerateImageService"
+      },
+      "tests": [
+        "source/host/tests/openclaw_media_generation_contract.rs::test_ocrm_attach_o05_successful_image_generation",
+        "source/host/tests/openclaw_media_generation_contract.rs::test_ocrm_attach_o06_persistence_failure",
+        "source/host/tests/openclaw_media_generation_contract.rs::test_ocrm_attach_o07_invalid_base64_data",
+        "source/host/tests/openclaw_media_generation_contract.rs::test_ocrm_attach_o10_base64_roundtrip"
+      ],
+      "typed_contracts": [
+        "SandGenerateImageService::generate_image"
+      ],
+      "unit_id": "OCRM-UNIT-MEDIA-001"
+    },
+    {
+      "adr_refs": [],
+      "behavior": "Image generation resolution normalization (1K, 2K, 4K), invalid resolution rejection (ToolInputError), and default model resolution selection.",
+      "blocker_ids": [],
+      "capability_ids": [
+        "media.resolution"
+      ],
+      "dependencies": [
+        "mahayana_host_runtime::runner"
+      ],
+      "evidence_refs": [
+        "source/host/tests/openclaw_media_generation_contract.rs",
+        "projects/openclaw-rust/dossiers/media-generation-attachments-scoped.md"
+      ],
+      "existing_owner_candidates": [
+        {
+          "path": "source/host/src/runner/tools/sand_generate_image_tool.rs",
+          "reason": "Host generate image tool executor"
+        }
+      ],
+      "id": "OCRM-RESP-MEDIA-RESOLUTION-001",
+      "integration": {
+        "consumer": "source/host/src/runner/tools/sand_generate_image_tool.rs",
+        "entrypoint": "source/host/src/runner/mod.rs",
+        "owner": "source/host/src/runner/tools/sand_generate_image_tool.rs",
+        "producer": "source/host/src/runner/production_turn_agent_owner.rs"
+      },
+      "invariants": [
+        "GENERATE_IMAGE_TOOL_NAME matches routed tool registry definition",
+        "Resolution values outside 1K, 2K, 4K rejected with invalid input error"
+      ],
+      "migration_rollback": "Default to 1K resolution without failing tool execution",
+      "oracle_ids": [
+        "OCRM-ATTACH-O08",
+        "OCRM-ATTACH-O09"
+      ],
+      "owner_decision": "Implement image resolution validation and tool invocation in generate image tool",
+      "postconditions": [
+        "GeneratedImageToolOutput returned to agent conversation stream"
+      ],
+      "preconditions": [
+        "Tool call generate_image invoked by agent runner"
+      ],
+      "required_evidence_dimensions": [
+        "unit",
+        "tool"
+      ],
+      "required_gate_ids": [
+        "OCRM-G04-rust-contract",
+        "OCRM-G05-frozen-oracle"
+      ],
+      "requirement_ids": [
+        "OCRM-R24",
+        "OCRM-AC24"
+      ],
+      "responsibility_kind": "business-runtime",
+      "reviewer": "xuyao@ombhrum.com",
+      "risk": "Medium; prevents invalid provider calls and token waste",
+      "selected_owner": "source/host/src/runner/tools/sand_generate_image_tool.rs",
+      "source_refs": [
+        {
+          "blob_sha": "d5d6f12047a9fce50aecb340f30fff3d99c10fe7",
+          "path": "src/image-generation/resolution.ts",
+          "range": {
+            "end_line": 15,
+            "start_line": 1
+          },
+          "symbol": "normalizeImageGenerationResolution"
+        }
+      ],
+      "status": {
+        "acceptance": "pending",
+        "implementation": "implemented",
+        "mapping": "reviewed",
+        "read": "read-complete",
+        "verification": "verified",
+        "wiring": "wired"
+      },
+      "target": {
+        "language": "Rust",
+        "path": "source/host/src/runner/tools/sand_generate_image_tool.rs",
+        "symbol": "GenerateImageToolExecutor"
+      },
+      "tests": [
+        "source/host/tests/openclaw_media_generation_contract.rs::test_ocrm_attach_o08_tool_name_constant",
+        "source/host/tests/openclaw_media_generation_contract.rs::test_ocrm_attach_o09_tool_executor"
+      ],
+      "typed_contracts": [
+        "GenerateImageToolExecutor::execute"
+      ],
+      "unit_id": "OCRM-UNIT-MEDIA-001"
+    },
+    {
+      "adr_refs": [],
+      "behavior": "Local media filesystem access boundary, canonical boundary path resolution (resolveCanonicalBoundaryPath), directory traversal prevention, and assets isolation.",
+      "blocker_ids": [],
+      "capability_ids": [
+        "media.local_access"
+      ],
+      "dependencies": [
+        "mahayana_host_runtime::extensions::attachments"
+      ],
+      "evidence_refs": [
+        "source/host/tests/openclaw_media_generation_contract.rs",
+        "projects/openclaw-rust/dossiers/media-generation-attachments-scoped.md"
+      ],
+      "existing_owner_candidates": [
+        {
+          "path": "source/host/src/extensions/attachments/generate_image_resource_accessor.rs",
+          "reason": "Host generate image resource accessor"
+        }
+      ],
+      "id": "OCRM-RESP-MEDIA-LOCAL-ACCESS-001",
+      "integration": {
+        "consumer": "source/host/src/extensions/attachments/generate_image_resource_accessor.rs",
+        "entrypoint": "source/host/src/extensions/attachments/mod.rs",
+        "owner": "source/host/src/extensions/attachments/generate_image_resource_accessor.rs",
+        "producer": "source/host/src/runner/tools/sand_generate_image_tool.rs"
+      },
+      "invariants": [
+        "Path traversal '../' outside configured assets folder is strictly rejected",
+        "Only resources within authorized conversation workspace are accessible"
+      ],
+      "migration_rollback": "Deny all relative media path access",
+      "oracle_ids": [
+        "OCRM-ATTACH-O03"
+      ],
+      "owner_decision": "Implement resource containment and assets isolation in generate image resource accessor",
+      "postconditions": [
+        "GenerateImageResourceResult returns sanitized resource handle"
+      ],
+      "preconditions": [
+        "Media resource requested via file URI or relative asset path"
+      ],
+      "required_evidence_dimensions": [
+        "unit",
+        "security"
+      ],
+      "required_gate_ids": [
+        "OCRM-G04-rust-contract",
+        "OCRM-G05-frozen-oracle"
+      ],
+      "requirement_ids": [
+        "OCRM-R23",
+        "OCRM-AC23"
+      ],
+      "responsibility_kind": "business-runtime",
+      "reviewer": "xuyao@ombhrum.com",
+      "risk": "High; prevents unauthorized reading of host files or adjacent agent workspaces",
+      "selected_owner": "source/host/src/extensions/attachments/generate_image_resource_accessor.rs",
+      "source_refs": [
+        {
+          "blob_sha": "960de1cd63cb989efba972c7ef8bc9c78e6c1cdc",
+          "path": "src/media/local-media-access.ts",
+          "range": {
+            "end_line": 290,
+            "start_line": 1
+          },
+          "symbol": "resolveLocalMediaRoots"
+        }
+      ],
+      "status": {
+        "acceptance": "pending",
+        "implementation": "implemented",
+        "mapping": "reviewed",
+        "read": "read-complete",
+        "verification": "verified",
+        "wiring": "wired"
+      },
+      "target": {
+        "language": "Rust",
+        "path": "source/host/src/extensions/attachments/generate_image_resource_accessor.rs",
+        "symbol": "SandGenerateImageResourceAccessor"
+      },
+      "tests": [
+        "source/host/tests/openclaw_media_generation_contract.rs::test_ocrm_attach_o03_resource_accessor_containment"
+      ],
+      "typed_contracts": [
+        "SandGenerateImageResourceAccessor::access_resource"
+      ],
+      "unit_id": "OCRM-UNIT-MEDIA-001"
+    },
+    {
+      "adr_refs": [],
+      "behavior": "Media understanding default provider and model resolution (resolveDefaultMediaModel), vision/audio capability registration, and configured model retrieval.",
+      "blocker_ids": [],
+      "capability_ids": [
+        "media.default_models"
+      ],
+      "dependencies": [
+        "mahayana_host_runtime::extensions::attachments"
+      ],
+      "evidence_refs": [
+        "source/host/tests/openclaw_media_generation_contract.rs",
+        "projects/openclaw-rust/dossiers/media-generation-attachments-scoped.md"
+      ],
+      "existing_owner_candidates": [
+        {
+          "path": "source/host/src/extensions/attachments/generate_image_service.rs",
+          "reason": "Host generate image service model resolver"
+        }
+      ],
+      "id": "OCRM-RESP-MEDIA-DEFAULT-MODELS-001",
+      "integration": {
+        "consumer": "source/host/src/extensions/attachments/generate_image_service.rs",
+        "entrypoint": "source/host/src/extensions/attachments/mod.rs",
+        "owner": "source/host/src/extensions/attachments/generate_image_service.rs",
+        "producer": "source/host/src/runner/tools/sand_generate_image_tool.rs"
+      },
+      "invariants": [
+        "configured_generate_image_model_id returns non-empty model identifier",
+        "Configured provider models override default fallback models"
+      ],
+      "migration_rollback": "Fallback to system default image model",
+      "oracle_ids": [
+        "OCRM-ATTACH-O04"
+      ],
+      "owner_decision": "Implement media understanding model resolution in attachments service",
+      "postconditions": [
+        "Authoritative model identifier returned for inference dispatch"
+      ],
+      "preconditions": [
+        "Image generation or vision inference requested without explicit model"
+      ],
+      "required_evidence_dimensions": [
+        "unit",
+        "config"
+      ],
+      "required_gate_ids": [
+        "OCRM-G04-rust-contract",
+        "OCRM-G05-frozen-oracle"
+      ],
+      "requirement_ids": [
+        "OCRM-R24",
+        "OCRM-AC24"
+      ],
+      "responsibility_kind": "business-runtime",
+      "reviewer": "xuyao@ombhrum.com",
+      "risk": "Medium; guarantees image generation always has a valid target model",
+      "selected_owner": "source/host/src/extensions/attachments/generate_image_service.rs",
+      "source_refs": [
+        {
+          "blob_sha": "d3ea82eeff26e5f8ca2cb529d1d3b5240b55239f",
+          "path": "src/media-understanding/defaults.ts",
+          "range": {
+            "end_line": 193,
+            "start_line": 1
+          },
+          "symbol": "resolveDefaultMediaModel"
+        }
+      ],
+      "status": {
+        "acceptance": "pending",
+        "implementation": "implemented",
+        "mapping": "reviewed",
+        "read": "read-complete",
+        "verification": "verified",
+        "wiring": "wired"
+      },
+      "target": {
+        "language": "Rust",
+        "path": "source/host/src/extensions/attachments/generate_image_service.rs",
+        "symbol": "configured_generate_image_model_id"
+      },
+      "tests": [
+        "source/host/tests/openclaw_media_generation_contract.rs::test_ocrm_attach_o04_configured_model_id"
+      ],
+      "typed_contracts": [
+        "configured_generate_image_model_id"
+      ],
+      "unit_id": "OCRM-UNIT-MEDIA-001"
+    },
+    {
+      "adr_refs": [],
+      "behavior": "Prefix-bounded Base64 MIME detection (BASE64_SNIFF_PREFIX_CHARS = 256), attachment text preview classification (Text with truncation vs Binary bytes), and extension ID dependency registration.",
+      "blocker_ids": [],
+      "capability_ids": [
+        "media.sniff_preview"
+      ],
+      "dependencies": [
+        "mahayana_host_runtime::extensions::attachments"
+      ],
+      "evidence_refs": [
+        "source/host/tests/openclaw_media_generation_contract.rs",
+        "projects/openclaw-rust/dossiers/media-generation-attachments-scoped.md"
+      ],
+      "existing_owner_candidates": [
+        {
+          "path": "source/host/src/extensions/attachments/attachments_service.rs",
+          "reason": "Host attachments service"
+        }
+      ],
+      "id": "OCRM-RESP-MEDIA-SNIFF-PREVIEW-001",
+      "integration": {
+        "consumer": "source/host/src/extensions/transcript/mod.rs",
+        "entrypoint": "source/host/src/extensions/attachments/mod.rs",
+        "owner": "source/host/src/extensions/attachments/attachments_service.rs",
+        "producer": "source/host/src/extensions/attachments/mod.rs"
+      },
+      "invariants": [
+        "Text files produce Text variant with bounded truncation",
+        "Binary media produces Binary variant with exact byte count",
+        "ATTACHMENTS_EXTENSION_ID matches host extension registry graph"
+      ],
+      "migration_rollback": "Display raw file path without preview",
+      "oracle_ids": [
+        "OCRM-ATTACH-O11",
+        "OCRM-ATTACH-O12"
+      ],
+      "owner_decision": "Implement attachment text preview and extension ID registration in attachments extension",
+      "postconditions": [
+        "AttachmentTextPreview created and formatted for UI / transcript"
+      ],
+      "preconditions": [
+        "Attachment payload inspected for transcript or chat display"
+      ],
+      "required_evidence_dimensions": [
+        "unit",
+        "format"
+      ],
+      "required_gate_ids": [
+        "OCRM-G04-rust-contract",
+        "OCRM-G05-frozen-oracle"
+      ],
+      "requirement_ids": [
+        "OCRM-R24",
+        "OCRM-AC24"
+      ],
+      "responsibility_kind": "business-runtime",
+      "reviewer": "xuyao@ombhrum.com",
+      "risk": "Low; ensures clean transcript preview without crashing on binary files",
+      "selected_owner": "source/host/src/extensions/attachments/attachments_service.rs",
+      "source_refs": [
+        {
+          "blob_sha": "109a3e78d1fbadb2c3bec859b9cf8d4264693b4f",
+          "path": "src/media/sniff-mime-from-base64.ts",
+          "range": {
+            "end_line": 29,
+            "start_line": 1
+          },
+          "symbol": "sniffMimeFromBase64"
+        }
+      ],
+      "status": {
+        "acceptance": "pending",
+        "implementation": "implemented",
+        "mapping": "reviewed",
+        "read": "read-complete",
+        "verification": "verified",
+        "wiring": "wired"
+      },
+      "target": {
+        "language": "Rust",
+        "path": "source/host/src/extensions/attachments/attachments_service.rs",
+        "symbol": "AttachmentTextPreview"
+      },
+      "tests": [
+        "source/host/tests/openclaw_media_generation_contract.rs::test_ocrm_attach_o11_text_preview",
+        "source/host/tests/openclaw_media_generation_contract.rs::test_ocrm_attach_o12_extension_id_and_dependencies"
+      ],
+      "typed_contracts": [
+        "AttachmentTextPreview"
+      ],
+      "unit_id": "OCRM-UNIT-MEDIA-001"
     }
   ],
   "schema_version": 1,

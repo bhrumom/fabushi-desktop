@@ -597,30 +597,58 @@
       "reviewer": null
     },
     {
-      "acceptance_status": "not-started",
+      "acceptance_status": "in-progress",
       "blocker_ids": [],
-      "evidence_refs": [],
+      "evidence_refs": [
+        "source/host/tests/openclaw_media_generation_contract.rs",
+        "projects/openclaw-rust/dossiers/media-generation-attachments-scoped.md"
+      ],
       "gate_ids": [],
       "id": "OCRM-R23",
       "kind": "requirement",
       "not_applicable_reason": null,
-      "oracle_ids": [],
+      "oracle_ids": [
+        "OCRM-ATTACH-O01",
+        "OCRM-ATTACH-O02",
+        "OCRM-ATTACH-O03",
+        "OCRM-ATTACH-O05",
+        "OCRM-ATTACH-O06",
+        "OCRM-ATTACH-O07",
+        "OCRM-ATTACH-O10"
+      ],
       "requirement_text_source": "docs/specs/openclaw-rust-equivalence-migration.md#5",
-      "responsibility_ids": [],
-      "reviewer": null
+      "responsibility_ids": [
+        "OCRM-RESP-MEDIA-BYTE-CAPS-001",
+        "OCRM-RESP-MEDIA-IMAGE-ASSETS-001",
+        "OCRM-RESP-MEDIA-LOCAL-ACCESS-001"
+      ],
+      "reviewer": "xuyao@ombhrum.com"
     },
     {
-      "acceptance_status": "not-started",
+      "acceptance_status": "in-progress",
       "blocker_ids": [],
-      "evidence_refs": [],
+      "evidence_refs": [
+        "source/host/tests/openclaw_media_generation_contract.rs",
+        "projects/openclaw-rust/dossiers/media-generation-attachments-scoped.md"
+      ],
       "gate_ids": [],
       "id": "OCRM-R24",
       "kind": "requirement",
       "not_applicable_reason": null,
-      "oracle_ids": [],
+      "oracle_ids": [
+        "OCRM-ATTACH-O04",
+        "OCRM-ATTACH-O08",
+        "OCRM-ATTACH-O09",
+        "OCRM-ATTACH-O11",
+        "OCRM-ATTACH-O12"
+      ],
       "requirement_text_source": "docs/specs/openclaw-rust-equivalence-migration.md#5",
-      "responsibility_ids": [],
-      "reviewer": null
+      "responsibility_ids": [
+        "OCRM-RESP-MEDIA-RESOLUTION-001",
+        "OCRM-RESP-MEDIA-DEFAULT-MODELS-001",
+        "OCRM-RESP-MEDIA-SNIFF-PREVIEW-001"
+      ],
+      "reviewer": "xuyao@ombhrum.com"
     },
     {
       "acceptance_status": "not-started",
@@ -1143,30 +1171,58 @@
       "reviewer": null
     },
     {
-      "acceptance_status": "not-started",
+      "acceptance_status": "in-progress",
       "blocker_ids": [],
-      "evidence_refs": [],
+      "evidence_refs": [
+        "source/host/tests/openclaw_media_generation_contract.rs",
+        "projects/openclaw-rust/dossiers/media-generation-attachments-scoped.md"
+      ],
       "gate_ids": [],
       "id": "OCRM-AC23",
       "kind": "acceptance-criterion",
       "not_applicable_reason": null,
-      "oracle_ids": [],
+      "oracle_ids": [
+        "OCRM-ATTACH-O01",
+        "OCRM-ATTACH-O02",
+        "OCRM-ATTACH-O03",
+        "OCRM-ATTACH-O05",
+        "OCRM-ATTACH-O06",
+        "OCRM-ATTACH-O07",
+        "OCRM-ATTACH-O10"
+      ],
       "requirement_text_source": "docs/specs/openclaw-rust-equivalence-migration.md#15",
-      "responsibility_ids": [],
-      "reviewer": null
+      "responsibility_ids": [
+        "OCRM-RESP-MEDIA-BYTE-CAPS-001",
+        "OCRM-RESP-MEDIA-IMAGE-ASSETS-001",
+        "OCRM-RESP-MEDIA-LOCAL-ACCESS-001"
+      ],
+      "reviewer": "xuyao@ombhrum.com"
     },
     {
-      "acceptance_status": "not-started",
+      "acceptance_status": "in-progress",
       "blocker_ids": [],
-      "evidence_refs": [],
+      "evidence_refs": [
+        "source/host/tests/openclaw_media_generation_contract.rs",
+        "projects/openclaw-rust/dossiers/media-generation-attachments-scoped.md"
+      ],
       "gate_ids": [],
       "id": "OCRM-AC24",
       "kind": "acceptance-criterion",
       "not_applicable_reason": null,
-      "oracle_ids": [],
+      "oracle_ids": [
+        "OCRM-ATTACH-O04",
+        "OCRM-ATTACH-O08",
+        "OCRM-ATTACH-O09",
+        "OCRM-ATTACH-O11",
+        "OCRM-ATTACH-O12"
+      ],
       "requirement_text_source": "docs/specs/openclaw-rust-equivalence-migration.md#15",
-      "responsibility_ids": [],
-      "reviewer": null
+      "responsibility_ids": [
+        "OCRM-RESP-MEDIA-RESOLUTION-001",
+        "OCRM-RESP-MEDIA-DEFAULT-MODELS-001",
+        "OCRM-RESP-MEDIA-SNIFF-PREVIEW-001"
+      ],
+      "reviewer": "xuyao@ombhrum.com"
     }
   ],
   "schema_version": 1,

@@ -1,5 +1,5 @@
 {
-  "canonical_inventory_sha256": "8ee8d016761ea5cd15eed12a40a89b165f1d829c9e3b3e734505fa00deb23f07",
+  "canonical_inventory_sha256": "5c029a553c2f559c966bd405edb8352aee561461790c00a2dff1da3785c2d356",
   "compression": "gzip with mtime=0, UTF-8 JSONL, full canonical schema records",
   "format_version": 1,
   "project_id": "OCRM-001",
@@ -319,12 +319,12 @@
       "uncompressed_sha256": "62ce93f30601200031baa75e17d65c30251d37f80f4041c02ec20ac7e56abb55"
     },
     {
-      "compressed_sha256": "7c8a2cfda6789eb2a798fc94c78f8e188c0caecb9187e2bf7e46cabad35bca96",
+      "compressed_sha256": "9a3c4d85f906dba7a6da43504560d5c2227071eb8ac7073ead0bb71eaebf3ef2",
       "count": 1024,
       "first_path": "src/hooks/bundled/compaction-notifier/HOOK.md",
       "last_path": "src/infra/heartbeat-runner.subagent-session-guard.test.ts",
       "path": "projects/openclaw-rust/inventory/shards/part-0039.jsonl.gz",
-      "uncompressed_sha256": "a39463a2c5fc620f5d1890ae74ea84011cc2cde6503f6f4aed54c09ce9fb54d8"
+      "uncompressed_sha256": "9fb2581c4cd4f0932374b2beaeb615faf559a0b668d3dc35217b7cd5733daf3b"
     },
     {
       "compressed_sha256": "3c909e01d48093dc0cf56ebfae4ff657a7a54cdcb5b260ee4732a60189ca35f2",
@@ -343,12 +343,12 @@
       "uncompressed_sha256": "019da0b4adb4a45122aa84c2a39c3ce5e9f994aa94874e8a475d2808f40e0187"
     },
     {
-      "compressed_sha256": "52a5d7b2eb028534f831a53c3eb0a216ac3bdcb8456dcbb46565ed24e6c751b3",
+      "compressed_sha256": "0420809ddb4df61f493e92d721b067f71389b1f85391af3d4f79781a34d06098",
       "count": 1024,
       "first_path": "src/infra/update-startup-campaign-run.test.ts",
       "last_path": "src/plugin-sdk/agent-sessions.ts",
       "path": "projects/openclaw-rust/inventory/shards/part-0042.jsonl.gz",
-      "uncompressed_sha256": "fd85b7b2715f57fb7ac50c7605488a09011cd8f5e3e926d02280a6e12004caf9"
+      "uncompressed_sha256": "7bd61a425532051b4d13245dcded2025cf09b38520440f94ed63d554ff7febd8"
     },
     {
       "compressed_sha256": "412b84f956dcebb7a98613e3839d9571f4b0c9f44e826c68964a076d0437c0fa",
