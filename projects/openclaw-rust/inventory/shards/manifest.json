@@ -375,12 +375,12 @@
       "uncompressed_sha256": "ff9db8146072d04d0bbb46ec95951739c378b190e6a163755e6e5e0a39be2ad4"
     },
     {
-      "compressed_sha256": "185fa0f98012ba394e5796004956643382bebb0bff06c3673df11359fd1c9ab7",
+      "compressed_sha256": "708e1205cc95d823924c356f69f5520044d51bf79008b6dcedb8684a57da2eba",
       "count": 1024,
       "first_path": "src/sessions/session-controller-model.test-support.ts",
       "last_path": "src/state/openclaw-agent-legacy-acp-schema.test.ts",
       "path": "projects/openclaw-rust/inventory/shards/part-0046.jsonl.gz",
-      "uncompressed_sha256": "3086e81e08f0ae668103480f2fc616c3b9ed6eb4375cff5f800c12c04f675bb6"
+      "uncompressed_sha256": "37eb6db461b43c1dc458c462263dbc56f10f2834dae2888e38c334a24cd8d2e3"
     },
     {
       "compressed_sha256": "c82e41bf4efd64a54ebde7346ff3c182e04aed100eadf0dd0ff3bdc6eb272e36",
