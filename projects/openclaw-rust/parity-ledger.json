@@ -10,10 +10,10 @@
     "ui_accepted": false
   },
   "file_coverage": {
-    "mapped_paths": 148,
+    "mapped_paths": 154,
     "omitted_known": 0,
     "tracked_paths": 58750,
-    "unclassified_paths": 58602
+    "unclassified_paths": 58596
   },
   "inventory_authority": {
     "manifest_source": "GitHub Actions immutable artifact candidate",
@@ -8817,6 +8817,555 @@
         "can_write_doctor_include"
       ],
       "unit_id": "OCRM-UNIT-ROSTER-001"
+    },
+    {
+      "adr_refs": [],
+      "behavior": "Application of media understanding across attachments in capability order (image, audio, video), voice note placeholder handling, and body block concatenation.",
+      "blocker_ids": [],
+      "capability_ids": [
+        "media.apply_understanding"
+      ],
+      "dependencies": [
+        "mahayana_host_runtime::extensions::attachments::media_understanding_service"
+      ],
+      "evidence_refs": [
+        "source/host/tests/openclaw_media_understanding_contract.rs",
+        "projects/openclaw-rust/dossiers/media-understanding-runtime-scoped.md"
+      ],
+      "existing_owner_candidates": [
+        {
+          "path": "source/host/src/extensions/attachments/media_understanding_service.rs",
+          "reason": "Host media understanding application owner"
+        }
+      ],
+      "id": "OCRM-RESP-MEDIA-APPLY-UNDERSTANDING-001",
+      "integration": {
+        "consumer": "source/host/src/extensions/transcript/production_runtime.rs",
+        "entrypoint": "source/host/src/extensions/attachments/media_understanding_service.rs::append_file_blocks",
+        "owner": "source/host/src/extensions/attachments/media_understanding_service.rs::append_file_blocks",
+        "producer": "source/host/src/extensions/attachments/media_understanding_service.rs::append_file_blocks"
+      },
+      "invariants": [
+        "Capability order is image, audio, video",
+        "Empty voice notes use designated placeholder constant"
+      ],
+      "migration_rollback": "Pass attachments without body block concatenation",
+      "oracle_ids": [
+        "OCRM-MEDIA-UND-O04",
+        "OCRM-MEDIA-UND-O05"
+      ],
+      "owner_decision": "Consolidate media understanding application logic in attachments service",
+      "postconditions": [
+        "Formatted prompt string with appended media file blocks returned"
+      ],
+      "preconditions": [
+        "Original prompt and optional suffix block supplied"
+      ],
+      "required_evidence_dimensions": [
+        "unit",
+        "format"
+      ],
+      "required_gate_ids": [
+        "OCRM-G04-rust-contract",
+        "OCRM-G05-frozen-oracle"
+      ],
+      "requirement_ids": [
+        "OCRM-R24",
+        "OCRM-AC24"
+      ],
+      "responsibility_kind": "business-runtime",
+      "reviewer": "xuyao@ombhrum.com",
+      "risk": "Low; prompt formatting and block concatenation for media attachments",
+      "selected_owner": "source/host/src/extensions/attachments/media_understanding_service.rs",
+      "source_refs": [
+        {
+          "blob_sha": "bd8c0fd0d1efa78cb0d0a0f30ca41ede8f3fbb04",
+          "path": "src/media-understanding/apply.ts",
+          "range": {
+            "end_line": 344,
+            "start_line": 1
+          },
+          "symbol": "applyMediaUnderstanding"
+        }
+      ],
+      "status": {
+        "acceptance": "pending",
+        "implementation": "implemented",
+        "mapping": "reviewed",
+        "read": "read-complete",
+        "verification": "verified",
+        "wiring": "wired"
+      },
+      "target": {
+        "language": "Rust",
+        "path": "source/host/src/extensions/attachments/media_understanding_service.rs",
+        "symbol": "append_file_blocks"
+      },
+      "tests": [
+        "source/host/tests/openclaw_media_understanding_contract.rs::test_ocrm_media_und_o04_capability_order_and_voice_note_placeholder",
+        "source/host/tests/openclaw_media_understanding_contract.rs::test_ocrm_media_und_o05_append_file_blocks"
+      ],
+      "typed_contracts": [
+        "append_file_blocks"
+      ],
+      "unit_id": "OCRM-UNIT-MEDIA-003"
+    },
+    {
+      "adr_refs": [],
+      "behavior": "Inbound media reference source classification (media:// local store URLs vs remote fetch), maxBytes bounds checking, and fetch retry policies.",
+      "blocker_ids": [],
+      "capability_ids": [
+        "media.attachments_cache"
+      ],
+      "dependencies": [
+        "mahayana_host_runtime::extensions::attachments::media_understanding_service"
+      ],
+      "evidence_refs": [
+        "source/host/tests/openclaw_media_understanding_contract.rs",
+        "projects/openclaw-rust/dossiers/media-understanding-runtime-scoped.md"
+      ],
+      "existing_owner_candidates": [
+        {
+          "path": "source/host/src/extensions/attachments/media_understanding_service.rs",
+          "reason": "Host media attachment cache and reference validator"
+        }
+      ],
+      "id": "OCRM-RESP-MEDIA-ATTACHMENTS-CACHE-001",
+      "integration": {
+        "consumer": "source/host/src/extensions/attachments/attachments_service.rs::read_attachment_text_with_root",
+        "entrypoint": "source/host/src/extensions/attachments/media_understanding_service.rs::is_media_store_url",
+        "owner": "source/host/src/extensions/attachments/media_understanding_service.rs::is_media_store_url",
+        "producer": "source/host/src/extensions/attachments/attachments_service.rs::upload"
+      },
+      "invariants": [
+        "media:// references are classified as local media store URLs",
+        "External URLs are distinct from local store identities"
+      ],
+      "migration_rollback": "Fetch all URLs over network without media store check",
+      "oracle_ids": [
+        "OCRM-MEDIA-UND-O07"
+      ],
+      "owner_decision": "Classify media store references in attachments service",
+      "postconditions": [
+        "Correct media store classification boolean returned"
+      ],
+      "preconditions": [
+        "Media reference URL string supplied"
+      ],
+      "required_evidence_dimensions": [
+        "unit",
+        "format"
+      ],
+      "required_gate_ids": [
+        "OCRM-G04-rust-contract",
+        "OCRM-G05-frozen-oracle"
+      ],
+      "requirement_ids": [
+        "OCRM-R24",
+        "OCRM-AC24"
+      ],
+      "responsibility_kind": "business-runtime",
+      "reviewer": "xuyao@ombhrum.com",
+      "risk": "Low; prevents SSRF by recognizing local media store URLs",
+      "selected_owner": "source/host/src/extensions/attachments/media_understanding_service.rs",
+      "source_refs": [
+        {
+          "blob_sha": "987e8a1bc3fb8e8276bf8e99b0d481b67acd9f45",
+          "path": "src/media-understanding/attachments.cache.ts",
+          "range": {
+            "end_line": 550,
+            "start_line": 1
+          },
+          "symbol": "MediaAttachmentCache"
+        }
+      ],
+      "status": {
+        "acceptance": "pending",
+        "implementation": "implemented",
+        "mapping": "reviewed",
+        "read": "read-complete",
+        "verification": "verified",
+        "wiring": "wired"
+      },
+      "target": {
+        "language": "Rust",
+        "path": "source/host/src/extensions/attachments/media_understanding_service.rs",
+        "symbol": "is_media_store_url"
+      },
+      "tests": [
+        "source/host/tests/openclaw_media_understanding_contract.rs::test_ocrm_media_und_o07_media_store_url_classification"
+      ],
+      "typed_contracts": [
+        "is_media_store_url"
+      ],
+      "unit_id": "OCRM-UNIT-MEDIA-003"
+    },
+    {
+      "adr_refs": [],
+      "behavior": "Runtime dispatch for image description, structured extraction, video description, and audio input budgeting.",
+      "blocker_ids": [],
+      "capability_ids": [
+        "media.understanding_runtime"
+      ],
+      "dependencies": [
+        "mahayana_host_runtime::extensions::attachments::media_understanding_service"
+      ],
+      "evidence_refs": [
+        "source/host/tests/openclaw_media_understanding_contract.rs",
+        "projects/openclaw-rust/dossiers/media-understanding-runtime-scoped.md"
+      ],
+      "existing_owner_candidates": [
+        {
+          "path": "source/host/src/extensions/attachments/media_understanding_service.rs",
+          "reason": "Host media understanding runtime manager"
+        }
+      ],
+      "id": "OCRM-RESP-MEDIA-UNDERSTANDING-RUNTIME-001",
+      "integration": {
+        "consumer": "source/host/src/extensions/attachments/attachments_service.rs",
+        "entrypoint": "source/host/src/extensions/attachments/media_understanding_service.rs::AudioInputBudget::validate_payload_size",
+        "owner": "source/host/src/extensions/attachments/media_understanding_service.rs::AudioInputBudget",
+        "producer": "source/host/src/extensions/attachments/attachments_service.rs::upload"
+      },
+      "invariants": [
+        "Audio payloads exceeding budget return explicit error",
+        "Default audio budget enforces 25 MiB cap"
+      ],
+      "migration_rollback": "Allow unbounded audio payload upload",
+      "oracle_ids": [
+        "OCRM-MEDIA-UND-O06"
+      ],
+      "owner_decision": "Validate media input budgets in attachments service",
+      "postconditions": [
+        "Result indicating whether audio payload fits budget returned"
+      ],
+      "preconditions": [
+        "Audio byte length supplied"
+      ],
+      "required_evidence_dimensions": [
+        "unit",
+        "resource"
+      ],
+      "required_gate_ids": [
+        "OCRM-G04-rust-contract",
+        "OCRM-G05-frozen-oracle"
+      ],
+      "requirement_ids": [
+        "OCRM-R24",
+        "OCRM-AC24"
+      ],
+      "responsibility_kind": "business-runtime",
+      "reviewer": "xuyao@ombhrum.com",
+      "risk": "Low; resource protection against unbounded audio ingestion",
+      "selected_owner": "source/host/src/extensions/attachments/media_understanding_service.rs",
+      "source_refs": [
+        {
+          "blob_sha": "d9e792decf4b56f24fbc16fa6b8ceb7a5d4e8869",
+          "path": "src/media-understanding/runtime.ts",
+          "range": {
+            "end_line": 387,
+            "start_line": 1
+          },
+          "symbol": "resolveAudioInputBudget"
+        }
+      ],
+      "status": {
+        "acceptance": "pending",
+        "implementation": "implemented",
+        "mapping": "reviewed",
+        "read": "read-complete",
+        "verification": "verified",
+        "wiring": "wired"
+      },
+      "target": {
+        "language": "Rust",
+        "path": "source/host/src/extensions/attachments/media_understanding_service.rs",
+        "symbol": "AudioInputBudget"
+      },
+      "tests": [
+        "source/host/tests/openclaw_media_understanding_contract.rs::test_ocrm_media_und_o06_audio_input_budget"
+      ],
+      "typed_contracts": [
+        "AudioInputBudget"
+      ],
+      "unit_id": "OCRM-UNIT-MEDIA-003"
+    },
+    {
+      "adr_refs": [],
+      "behavior": "Shared media transport utilities: OpenAI-compatible auth header generation, audio transcription upload filename mapping (AAC to .m4a), and multipart form data building.",
+      "blocker_ids": [],
+      "capability_ids": [
+        "media.shared_transport"
+      ],
+      "dependencies": [
+        "mahayana_host_runtime::extensions::attachments::media_understanding_service"
+      ],
+      "evidence_refs": [
+        "source/host/tests/openclaw_media_understanding_contract.rs",
+        "projects/openclaw-rust/dossiers/media-understanding-runtime-scoped.md"
+      ],
+      "existing_owner_candidates": [
+        {
+          "path": "source/host/src/extensions/attachments/media_understanding_service.rs",
+          "reason": "Host media transport utility owner"
+        }
+      ],
+      "id": "OCRM-RESP-MEDIA-SHARED-TRANSPORT-001",
+      "integration": {
+        "consumer": "source/host/src/extensions/attachments/attachments_service.rs",
+        "entrypoint": "source/host/src/extensions/attachments/media_understanding_service.rs::resolve_audio_transcription_upload_file_name",
+        "owner": "source/host/src/extensions/attachments/media_understanding_service.rs::resolve_audio_transcription_upload_file_name",
+        "producer": "source/host/src/extensions/attachments/attachments_service.rs::upload"
+      },
+      "invariants": [
+        "Raw .aac filenames map to .m4a for provider compatibility",
+        "Bearer authorization headers generated correctly"
+      ],
+      "migration_rollback": "Send raw filenames without extension mapping",
+      "oracle_ids": [
+        "OCRM-MEDIA-UND-O02",
+        "OCRM-MEDIA-UND-O03"
+      ],
+      "owner_decision": "Handle filename mapping and auth header construction in media service",
+      "postconditions": [
+        "Provider-friendly upload filename returned"
+      ],
+      "preconditions": [
+        "Filename and optional mime supplied"
+      ],
+      "required_evidence_dimensions": [
+        "unit",
+        "network"
+      ],
+      "required_gate_ids": [
+        "OCRM-G04-rust-contract",
+        "OCRM-G05-frozen-oracle"
+      ],
+      "requirement_ids": [
+        "OCRM-R24",
+        "OCRM-AC24"
+      ],
+      "responsibility_kind": "business-runtime",
+      "reviewer": "xuyao@ombhrum.com",
+      "risk": "Low; ensures provider compatibility for AAC audio files",
+      "selected_owner": "source/host/src/extensions/attachments/media_understanding_service.rs",
+      "source_refs": [
+        {
+          "blob_sha": "c95cdc7df6b3084f8d5635fc018c8998d09b4ff7",
+          "path": "src/media-understanding/shared.ts",
+          "range": {
+            "end_line": 587,
+            "start_line": 1
+          },
+          "symbol": "resolveAudioTranscriptionUploadFileName"
+        }
+      ],
+      "status": {
+        "acceptance": "pending",
+        "implementation": "implemented",
+        "mapping": "reviewed",
+        "read": "read-complete",
+        "verification": "verified",
+        "wiring": "wired"
+      },
+      "target": {
+        "language": "Rust",
+        "path": "source/host/src/extensions/attachments/media_understanding_service.rs",
+        "symbol": "resolve_audio_transcription_upload_file_name"
+      },
+      "tests": [
+        "source/host/tests/openclaw_media_understanding_contract.rs::test_ocrm_media_und_o02_audio_transcription_upload_filename",
+        "source/host/tests/openclaw_media_understanding_contract.rs::test_ocrm_media_und_o03_openai_auth_headers"
+      ],
+      "typed_contracts": [
+        "resolve_audio_transcription_upload_file_name",
+        "build_open_ai_compatible_auth_headers"
+      ],
+      "unit_id": "OCRM-UNIT-MEDIA-003"
+    },
+    {
+      "adr_refs": [],
+      "behavior": "Detection and suppression of empty STT prompt artifact echoes (context:, ###, transcribe the audio) from transcript entries and preview pipelines.",
+      "blocker_ids": [],
+      "capability_ids": [
+        "media.transcription_artifacts"
+      ],
+      "dependencies": [
+        "mahayana_host_runtime::extensions::attachments::media_understanding_service"
+      ],
+      "evidence_refs": [
+        "source/host/tests/openclaw_media_understanding_contract.rs",
+        "projects/openclaw-rust/dossiers/media-understanding-runtime-scoped.md"
+      ],
+      "existing_owner_candidates": [
+        {
+          "path": "source/host/src/extensions/attachments/media_understanding_service.rs",
+          "reason": "Host transcript artifact filter owner"
+        }
+      ],
+      "id": "OCRM-RESP-MEDIA-TRANSCRIPTION-ARTIFACTS-001",
+      "integration": {
+        "consumer": "source/host/src/extensions/attachments/attachments_service.rs::read_attachment_text_with_root",
+        "entrypoint": "source/host/src/extensions/attachments/media_understanding_service.rs::is_transcript_artifact_text",
+        "owner": "source/host/src/extensions/attachments/media_understanding_service.rs::is_transcript_artifact_text",
+        "producer": "source/host/src/extensions/attachments/attachments_service.rs::read_attachment_text_with_root"
+      },
+      "invariants": [
+        "Empty STT prompt echoes are suppressed from transcript preview",
+        "Genuine speech text is preserved verbatim"
+      ],
+      "migration_rollback": "Allow artifact text into transcript preview",
+      "oracle_ids": [
+        "OCRM-MEDIA-UND-O01",
+        "OCRM-MEDIA-UND-O08"
+      ],
+      "owner_decision": "Filter STT artifact echoes during attachment text preview generation",
+      "postconditions": [
+        "Boolean indicating whether text is an artifact echo returned"
+      ],
+      "preconditions": [
+        "Transcribed or preview text string supplied"
+      ],
+      "required_evidence_dimensions": [
+        "unit",
+        "format"
+      ],
+      "required_gate_ids": [
+        "OCRM-G04-rust-contract",
+        "OCRM-G05-frozen-oracle"
+      ],
+      "requirement_ids": [
+        "OCRM-R24",
+        "OCRM-AC24"
+      ],
+      "responsibility_kind": "business-runtime",
+      "reviewer": "xuyao@ombhrum.com",
+      "risk": "Low; cleans transcript view of model hallucinated prompt echoes",
+      "selected_owner": "source/host/src/extensions/attachments/media_understanding_service.rs",
+      "source_refs": [
+        {
+          "blob_sha": "dab43b64e0a188cc8562f910c9ce819cc8266750",
+          "path": "src/media-understanding/transcription-text.ts",
+          "range": {
+            "end_line": 11,
+            "start_line": 1
+          },
+          "symbol": "isTranscriptArtifactText"
+        }
+      ],
+      "status": {
+        "acceptance": "pending",
+        "implementation": "implemented",
+        "mapping": "reviewed",
+        "read": "read-complete",
+        "verification": "verified",
+        "wiring": "wired"
+      },
+      "target": {
+        "language": "Rust",
+        "path": "source/host/src/extensions/attachments/media_understanding_service.rs",
+        "symbol": "is_transcript_artifact_text"
+      },
+      "tests": [
+        "source/host/tests/openclaw_media_understanding_contract.rs::test_ocrm_media_und_o01_stt_transcript_artifact_rejection",
+        "source/host/tests/openclaw_media_understanding_contract.rs::test_ocrm_media_und_o08_attachment_service_artifact_text_suppression"
+      ],
+      "typed_contracts": [
+        "is_transcript_artifact_text"
+      ],
+      "unit_id": "OCRM-UNIT-MEDIA-003"
+    },
+    {
+      "adr_refs": [],
+      "behavior": "Typed data contracts for media understanding decisions, attachment dispositions, processing states, and model request structures.",
+      "blocker_ids": [],
+      "capability_ids": [
+        "media.understanding_types"
+      ],
+      "dependencies": [
+        "mahayana_host_runtime::extensions::attachments::media_understanding_service"
+      ],
+      "evidence_refs": [
+        "source/host/tests/openclaw_media_understanding_contract.rs",
+        "projects/openclaw-rust/dossiers/media-understanding-runtime-scoped.md"
+      ],
+      "existing_owner_candidates": [
+        {
+          "path": "source/host/src/extensions/attachments/media_understanding_service.rs",
+          "reason": "Host media understanding types owner"
+        }
+      ],
+      "id": "OCRM-RESP-MEDIA-UNDERSTANDING-TYPES-001",
+      "integration": {
+        "consumer": "source/host/src/extensions/attachments/attachments_service.rs",
+        "entrypoint": "source/host/src/extensions/attachments/media_understanding_service.rs::MediaUnderstandingDecision",
+        "owner": "source/host/src/extensions/attachments/media_understanding_service.rs",
+        "producer": "source/host/src/extensions/attachments/media_understanding_service.rs"
+      },
+      "invariants": [
+        "Capability variants match image, audio, video",
+        "Disposition kinds model exact upstream outcomes"
+      ],
+      "migration_rollback": "Use untyped JSON objects for media decisions",
+      "oracle_ids": [
+        "OCRM-MEDIA-UND-O04"
+      ],
+      "owner_decision": "Expose typed media understanding contracts in attachments extension",
+      "postconditions": [
+        "Structured decision object initialized"
+      ],
+      "preconditions": [
+        "Decision metadata supplied"
+      ],
+      "required_evidence_dimensions": [
+        "unit",
+        "format"
+      ],
+      "required_gate_ids": [
+        "OCRM-G04-rust-contract",
+        "OCRM-G05-frozen-oracle"
+      ],
+      "requirement_ids": [
+        "OCRM-R24",
+        "OCRM-AC24"
+      ],
+      "responsibility_kind": "business-runtime",
+      "reviewer": "xuyao@ombhrum.com",
+      "risk": "Low; ensures type safety across media understanding subsystem",
+      "selected_owner": "source/host/src/extensions/attachments/media_understanding_service.rs",
+      "source_refs": [
+        {
+          "blob_sha": "ec438ecdf26ee1574499cdf00243c7ba06a3b63f",
+          "path": "src/media-understanding/types.ts",
+          "range": {
+            "end_line": 232,
+            "start_line": 1
+          },
+          "symbol": "MediaUnderstandingDecision"
+        }
+      ],
+      "status": {
+        "acceptance": "pending",
+        "implementation": "implemented",
+        "mapping": "reviewed",
+        "read": "read-complete",
+        "verification": "verified",
+        "wiring": "wired"
+      },
+      "target": {
+        "language": "Rust",
+        "path": "source/host/src/extensions/attachments/media_understanding_service.rs",
+        "symbol": "MediaUnderstandingDecision"
+      },
+      "tests": [
+        "source/host/tests/openclaw_media_understanding_contract.rs::test_ocrm_media_und_o04_capability_order_and_voice_note_placeholder"
+      ],
+      "typed_contracts": [
+        "MediaUnderstandingDecision",
+        "MediaAttachmentDisposition",
+        "MediaAttachmentProcessing"
+      ],
+      "unit_id": "OCRM-UNIT-MEDIA-003"
     }
   ],
   "schema_version": 1,

@@ -604,8 +604,12 @@ pub fn read_attachment_text_with_root(
     if looks_like_binary(&head) {
         return Some(AttachmentTextPreview::Binary { bytes: info.len() });
     }
+    let text = String::from_utf8_lossy(&head).into_owned();
+    if super::media_understanding_service::is_transcript_artifact_text(&text) {
+        return None;
+    }
     Some(AttachmentTextPreview::Text {
-        text: String::from_utf8_lossy(&head).into_owned(),
+        text,
         truncated: info.len()
             > u64::try_from(ATTACHMENT_TEXT_PREVIEW_BYTE_CAP).unwrap_or(u64::MAX),
         bytes: info.len(),
