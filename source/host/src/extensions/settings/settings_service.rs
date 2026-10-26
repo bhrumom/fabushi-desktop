@@ -27,6 +27,46 @@ pub fn is_valid_iana_time_zone(value: &str) -> bool {
     value.parse::<Tz>().is_ok()
 }
 
+/// Traverses a nested JSON Value along a dot-separated path (e.g. "foo.bar"),
+/// blocking prototype-bearing keys like "__proto__", "prototype", and "constructor".
+pub fn get_json_value_at_path<'a>(root: &'a Value, path: &str) -> Option<&'a Value> {
+    let mut cursor = root;
+    for part in path.split('.') {
+        let trimmed = part.trim();
+        if trimmed.is_empty() || trimmed == "__proto__" || trimmed == "prototype" || trimmed == "constructor" {
+            return None;
+        }
+        cursor = cursor.as_object()?.get(trimmed)?;
+    }
+    Some(cursor)
+}
+
+/// Mutates a nested JSON Object along a dot-separated path, creating intermediate objects
+/// and rejecting unsafe prototype keys.
+pub fn set_json_value_at_path(root: &mut Value, path: &str, val: Value) -> Result<(), &'static str> {
+    let parts: Vec<&str> = path.split('.').map(str::trim).collect();
+    if parts.is_empty() || parts.iter().any(|p| p.is_empty()) {
+        return Err("Invalid path. Use non-empty dot notation (e.g. foo.bar)");
+    }
+    if parts.iter().any(|p| *p == "__proto__" || *p == "prototype" || *p == "constructor") {
+        return Err("Unsafe path segment: prototype pollution prevented");
+    }
+    if !root.is_object() {
+        *root = Value::Object(Map::new());
+    }
+    let mut cursor = root.as_object_mut().unwrap();
+    let (leaf, ancestors) = parts.split_last().unwrap();
+    for ancestor in ancestors {
+        if !cursor.contains_key(*ancestor) || !cursor[*ancestor].is_object() {
+            cursor.insert((*ancestor).to_string(), Value::Object(Map::new()));
+        }
+        cursor = cursor.get_mut(*ancestor).unwrap().as_object_mut().unwrap();
+    }
+    cursor.insert((*leaf).to_string(), val);
+    Ok(())
+}
+
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct SandAutoReviewInstructions {
     pub is_enabled: bool,

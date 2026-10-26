@@ -1,5 +1,5 @@
 {
-  "canonical_inventory_sha256": "4e8730703c9555359b1b4d8a293e820d34369089a143564d2adbc1fa69310937",
+  "canonical_inventory_sha256": "0d2d4f29ddf9c73a5406aee7761bc3b858de91153a37375dec82da0f4a1d190c",
   "compression": "gzip with mtime=0, UTF-8 JSONL, full canonical schema records",
   "format_version": 1,
   "project_id": "OCRM-001",
@@ -255,20 +255,20 @@
       "uncompressed_sha256": "fa254383e6aa0fb0529e745fecba975f60f0d541cd6ce43d27f318c63f933154"
     },
     {
-      "compressed_sha256": "c65f42be186b7164170608f09028894aeb3aa49252900bc85db9ecd7cd08d7ce",
+      "compressed_sha256": "5e3219320e5411682f14db3711f7128d04a0bb6d2809c4a90e1e22ca7840f9d8",
       "count": 1024,
       "first_path": "src/commands/sandbox-explain.test.ts",
       "last_path": "src/config/sessions/session-accessor.sqlite-transcript-incremental-read.ts",
       "path": "projects/openclaw-rust/inventory/shards/part-0031.jsonl.gz",
-      "uncompressed_sha256": "88eee3eafb5a57f5d70cb49491a30fdab6e6ceba3e58cf952079c7796abef1ad"
+      "uncompressed_sha256": "a67d6c0e9e540ad5b8719e3ee2e7402f2e9d2916c56381cdbd2b51050e43ff3e"
     },
     {
-      "compressed_sha256": "7bf5fe3755ce151b76041cf79cd3535e70922dbfdd1ec96e4f0b1f25e1c54b95",
+      "compressed_sha256": "6f37801490c5aceeb96ca9e00803be13ccb098f339932444f246af0a2f1571dc",
       "count": 1024,
       "first_path": "src/config/sessions/session-accessor.sqlite-transcript-message-append.ts",
       "last_path": "src/cron/backup-command.ts",
       "path": "projects/openclaw-rust/inventory/shards/part-0032.jsonl.gz",
-      "uncompressed_sha256": "a2306aad8bccca05775c954d983f4ed1097184b03a02a20dbf2f03565cbb01fd"
+      "uncompressed_sha256": "2b32533ccaaaa0d2efd36d3129d493ba12f89de242e904829e230a0262c3a4f0"
     },
     {
       "compressed_sha256": "1261c3c016a38ae60975a303d13f0d222ca7c5d4e444efbfc73f6b6db5c91894",

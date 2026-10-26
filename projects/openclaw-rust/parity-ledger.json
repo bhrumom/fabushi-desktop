@@ -10,10 +10,10 @@
     "ui_accepted": false
   },
   "file_coverage": {
-    "mapped_paths": 20,
+    "mapped_paths": 28,
     "omitted_known": 0,
     "tracked_paths": 58750,
-    "unclassified_paths": 58730
+    "unclassified_paths": 58722
   },
   "inventory_authority": {
     "manifest_source": "GitHub Actions immutable artifact candidate",
@@ -1187,6 +1187,577 @@
         "Streaming AES-256-GCM encryption with 1MB segment bounds and OCSTOR1 header"
       ],
       "unit_id": "OCRM-UNIT-STORAGE-001"
+    },
+    {
+      "adr_refs": [],
+      "behavior": "Safe configuration path traversal and mutation using dot notation (e.g. foo.bar), blocking prototype pollution keys (__proto__, prototype, constructor), and pruning empty intermediate ancestors.",
+      "blocker_ids": [],
+      "capability_ids": [
+        "config.path_mutation"
+      ],
+      "dependencies": [
+        "mahayana_host_runtime::extensions::settings"
+      ],
+      "evidence_refs": [
+        "projects/openclaw-rust/dossiers/transcript-round56-settings-gateway-ingress-and-worker-writers-20261024.md",
+        "source/host/tests/settings_service_contract.rs"
+      ],
+      "existing_owner_candidates": [
+        {
+          "path": "source/host/src/extensions/settings/settings_service.rs",
+          "reason": "Authoritative host settings and configuration store"
+        }
+      ],
+      "id": "OCRM-RESP-CONFIG-PATH-MUTATION-001",
+      "integration": {
+        "consumer": "source/host/src/extensions/settings/settings_service.rs::set_host_settings",
+        "entrypoint": "source/host/src/extensions/settings/settings_service.rs::set_json_value_at_path",
+        "owner": "source/host/src/extensions/settings/settings_service.rs",
+        "producer": "source/host/src/extensions/settings/settings_service.rs::get_json_value_at_path"
+      },
+      "invariants": [
+        "Prototype pollution keys (__proto__, prototype, constructor) strictly rejected on read and write"
+      ],
+      "migration_rollback": "Path mutation logic can be adjusted in settings_service.rs",
+      "oracle_ids": [
+        "OCRM-CONFIG-O01"
+      ],
+      "owner_decision": "Implement safe JSON path mutation helpers directly in settings_service.rs",
+      "postconditions": [
+        "Valid paths update target property; unsafe prototype paths fail with error"
+      ],
+      "preconditions": [
+        "JSON root object and non-empty dot notation path string"
+      ],
+      "required_evidence_dimensions": [
+        "unit",
+        "integration",
+        "negative-test"
+      ],
+      "required_gate_ids": [
+        "OCRM-G04-rust-contract",
+        "OCRM-G05-frozen-oracle"
+      ],
+      "requirement_ids": [
+        "OCRM-R04",
+        "OCRM-R09",
+        "OCRM-AC05",
+        "OCRM-AC17"
+      ],
+      "responsibility_kind": "business-runtime",
+      "reviewer": "xuyao@ombhrum.com",
+      "risk": "Low; strict validation protects against prototype pollution attacks",
+      "selected_owner": "source/host/src/extensions/settings/settings_service.rs",
+      "source_refs": [
+        {
+          "blob_sha": "8051cbb221cac97dec1066d57bc86dc2109a40f6",
+          "path": "src/config/config-paths.ts",
+          "range": {
+            "end_line": 118,
+            "start_line": 1
+          },
+          "symbol": "setConfigValueAtPath"
+        }
+      ],
+      "status": {
+        "acceptance": "pending",
+        "implementation": "implemented",
+        "mapping": "reviewed",
+        "read": "read-complete",
+        "verification": "verified",
+        "wiring": "wired"
+      },
+      "target": {
+        "language": "Rust",
+        "path": "source/host/src/extensions/settings/settings_service.rs",
+        "symbol": "set_json_value_at_path"
+      },
+      "tests": [
+        "source/host/tests/settings_service_contract.rs::test_ocrm_config_o01_path_mutation"
+      ],
+      "typed_contracts": [
+        "get_json_value_at_path(root: &Value, path: &str) -> Option<&Value>",
+        "set_json_value_at_path(root: &mut Value, path: &str, val: Value) -> Result<(), &'static str>"
+      ],
+      "unit_id": "OCRM-UNIT-CONFIG-001"
+    },
+    {
+      "adr_refs": [],
+      "behavior": "Enforce read-only and immutable deployment mode invariants, ensuring external configuration (Nix or read-only mode) is treated as immutable.",
+      "blocker_ids": [],
+      "capability_ids": [
+        "config.write_guard"
+      ],
+      "dependencies": [
+        "mahayana_host_runtime::extensions::settings"
+      ],
+      "evidence_refs": [
+        "projects/openclaw-rust/dossiers/transcript-round56-settings-gateway-ingress-and-worker-writers-20261024.md",
+        "source/host/tests/settings_service_contract.rs"
+      ],
+      "existing_owner_candidates": [
+        {
+          "path": "source/host/src/extensions/settings/settings_service.rs",
+          "reason": "Host settings manager"
+        }
+      ],
+      "id": "OCRM-RESP-CONFIG-WRITE-GUARD-001",
+      "integration": {
+        "consumer": "source/host/src/extensions/settings/settings_service.rs::set_host_settings",
+        "entrypoint": "source/host/src/extensions/settings/settings_service.rs::set_json_field",
+        "owner": "source/host/src/extensions/settings/settings_service.rs",
+        "producer": "source/host/src/extensions/settings/settings_service.rs::get_host_settings"
+      },
+      "invariants": [
+        "Immutable configuration files reject mutation attempts with descriptive fail-closed error"
+      ],
+      "migration_rollback": "Read-only enforcement controlled by host deployment settings",
+      "oracle_ids": [
+        "OCRM-CONFIG-O02"
+      ],
+      "owner_decision": "Enforce immutability checks in settings_service.rs before write lock acquisition",
+      "postconditions": [
+        "Mutations in immutable mode fail immediately without touching disk"
+      ],
+      "preconditions": [
+        "Host settings file and environment flags"
+      ],
+      "required_evidence_dimensions": [
+        "unit",
+        "integration",
+        "negative-test"
+      ],
+      "required_gate_ids": [
+        "OCRM-G04-rust-contract",
+        "OCRM-G05-frozen-oracle"
+      ],
+      "requirement_ids": [
+        "OCRM-R04",
+        "OCRM-R09",
+        "OCRM-AC05",
+        "OCRM-AC17"
+      ],
+      "responsibility_kind": "business-runtime",
+      "reviewer": "xuyao@ombhrum.com",
+      "risk": "Low; protects immutable deployments from inadvertent mutation",
+      "selected_owner": "source/host/src/extensions/settings/settings_service.rs",
+      "source_refs": [
+        {
+          "blob_sha": "e6a48815cea83c07d42c4b2517cb5b75092aef4e",
+          "path": "src/config/config-write-guard.ts",
+          "range": {
+            "end_line": 64,
+            "start_line": 1
+          },
+          "symbol": "assertConfigWriteAllowedInCurrentMode"
+        },
+        {
+          "blob_sha": "07221d87c68043d79c6ea0e0612717d2992da220",
+          "path": "src/config/write-authority.ts",
+          "range": {
+            "end_line": 95,
+            "start_line": 1
+          },
+          "symbol": "createConfigWriteAuthorityGuard"
+        }
+      ],
+      "status": {
+        "acceptance": "pending",
+        "implementation": "implemented",
+        "mapping": "reviewed",
+        "read": "read-complete",
+        "verification": "verified",
+        "wiring": "wired"
+      },
+      "target": {
+        "language": "Rust",
+        "path": "source/host/src/extensions/settings/settings_service.rs",
+        "symbol": "set_host_settings"
+      },
+      "tests": [
+        "source/host/tests/settings_service_contract.rs::test_ocrm_config_o02_immutable_mode_guard"
+      ],
+      "typed_contracts": [
+        "set_host_settings validation of read-only mode"
+      ],
+      "unit_id": "OCRM-UNIT-CONFIG-001"
+    },
+    {
+      "adr_refs": [],
+      "behavior": "Strict single-writer mutex ensuring all settings writes across threads and processes serialize safely without interleaved writes or lost updates.",
+      "blocker_ids": [],
+      "capability_ids": [
+        "config.single_writer_lock"
+      ],
+      "dependencies": [
+        "mahayana_host_runtime::extensions::settings"
+      ],
+      "evidence_refs": [
+        "projects/openclaw-rust/dossiers/transcript-round56-settings-gateway-ingress-and-worker-writers-20261024.md",
+        "source/host/tests/settings_service_contract.rs"
+      ],
+      "existing_owner_candidates": [
+        {
+          "path": "source/host/src/extensions/settings/settings_service.rs",
+          "reason": "Host settings mutex owner"
+        }
+      ],
+      "id": "OCRM-RESP-CONFIG-SINGLE-WRITER-LOCK-001",
+      "integration": {
+        "consumer": "source/host/src/extensions/settings/settings_service.rs::set_json_field",
+        "entrypoint": "source/host/src/extensions/settings/settings_service.rs::write_lock",
+        "owner": "source/host/src/extensions/settings/settings_service.rs",
+        "producer": "source/host/src/extensions/settings/settings_service.rs::set_host_settings"
+      },
+      "invariants": [
+        "Only one writer thread can hold settings mutation lock at any given instant"
+      ],
+      "migration_rollback": "Standard Mutex synchronization in Rust runtime",
+      "oracle_ids": [
+        "OCRM-CONFIG-O03"
+      ],
+      "owner_decision": "Use internal write_lock Mutex in SettingsService to guarantee single-writer serial execution",
+      "postconditions": [
+        "Sequential execution of settings file mutations with atomic persistence"
+      ],
+      "preconditions": [
+        "Valid SettingsService instance"
+      ],
+      "required_evidence_dimensions": [
+        "unit",
+        "integration",
+        "negative-test"
+      ],
+      "required_gate_ids": [
+        "OCRM-G04-rust-contract",
+        "OCRM-G05-frozen-oracle"
+      ],
+      "requirement_ids": [
+        "OCRM-R04",
+        "OCRM-R09",
+        "OCRM-AC05",
+        "OCRM-AC17"
+      ],
+      "responsibility_kind": "business-runtime",
+      "reviewer": "xuyao@ombhrum.com",
+      "risk": "Low; prevents concurrent write corruptions",
+      "selected_owner": "source/host/src/extensions/settings/settings_service.rs",
+      "source_refs": [
+        {
+          "blob_sha": "ffb8f1f3146d263ee81ca98a3c7986e30fdf6ac9",
+          "path": "src/config/write-lock.ts",
+          "range": {
+            "end_line": 377,
+            "start_line": 1
+          },
+          "symbol": "runConfigLockScope"
+        }
+      ],
+      "status": {
+        "acceptance": "pending",
+        "implementation": "implemented",
+        "mapping": "reviewed",
+        "read": "read-complete",
+        "verification": "verified",
+        "wiring": "wired"
+      },
+      "target": {
+        "language": "Rust",
+        "path": "source/host/src/extensions/settings/settings_service.rs",
+        "symbol": "set_json_field"
+      },
+      "tests": [
+        "source/host/tests/settings_service_contract.rs::test_ocrm_config_o03_single_writer_lock"
+      ],
+      "typed_contracts": [
+        "SettingsService write_lock Mutex serialization"
+      ],
+      "unit_id": "OCRM-UNIT-CONFIG-001"
+    },
+    {
+      "adr_refs": [],
+      "behavior": "Atomic configuration load, temporary file staging with nonce (.settings.json.tmp...), atomic rename, and durable persistence.",
+      "blocker_ids": [],
+      "capability_ids": [
+        "config.io_snapshot"
+      ],
+      "dependencies": [
+        "mahayana_host_runtime::extensions::settings"
+      ],
+      "evidence_refs": [
+        "projects/openclaw-rust/dossiers/transcript-round56-settings-gateway-ingress-and-worker-writers-20261024.md",
+        "source/host/tests/settings_service_contract.rs"
+      ],
+      "existing_owner_candidates": [
+        {
+          "path": "source/host/src/extensions/settings/settings_service.rs",
+          "reason": "Host settings IO persistence engine"
+        }
+      ],
+      "id": "OCRM-RESP-CONFIG-IO-SNAPSHOT-001",
+      "integration": {
+        "consumer": "source/host/src/extensions/settings/settings_service.rs::load",
+        "entrypoint": "source/host/src/extensions/settings/settings_service.rs::persist",
+        "owner": "source/host/src/extensions/settings/settings_service.rs",
+        "producer": "source/host/src/extensions/settings/settings_service.rs::set_json_field"
+      },
+      "invariants": [
+        "Partial or failed writes never overwrite active settings.json on disk"
+      ],
+      "migration_rollback": "Standard atomic rename pattern ensures crash safety",
+      "oracle_ids": [
+        "OCRM-CONFIG-O04"
+      ],
+      "owner_decision": "Implement atomic temporary write and rename pattern in persist() method",
+      "postconditions": [
+        "settings.json contains complete, valid JSON payload"
+      ],
+      "preconditions": [
+        "Settings directory writable"
+      ],
+      "required_evidence_dimensions": [
+        "unit",
+        "integration",
+        "negative-test"
+      ],
+      "required_gate_ids": [
+        "OCRM-G04-rust-contract",
+        "OCRM-G05-frozen-oracle"
+      ],
+      "requirement_ids": [
+        "OCRM-R04",
+        "OCRM-R09",
+        "OCRM-AC05",
+        "OCRM-AC17"
+      ],
+      "responsibility_kind": "business-runtime",
+      "reviewer": "xuyao@ombhrum.com",
+      "risk": "Low; guarantees atomic crash consistency",
+      "selected_owner": "source/host/src/extensions/settings/settings_service.rs",
+      "source_refs": [
+        {
+          "blob_sha": "457842b4eb3e6118a995e20e6f1eb8d949f4c524",
+          "path": "src/config/io.ts",
+          "range": {
+            "end_line": 63,
+            "start_line": 1
+          },
+          "symbol": "writeConfigFile"
+        }
+      ],
+      "status": {
+        "acceptance": "pending",
+        "implementation": "implemented",
+        "mapping": "reviewed",
+        "read": "read-complete",
+        "verification": "verified",
+        "wiring": "wired"
+      },
+      "target": {
+        "language": "Rust",
+        "path": "source/host/src/extensions/settings/settings_service.rs",
+        "symbol": "persist"
+      },
+      "tests": [
+        "source/host/tests/settings_service_contract.rs::test_ocrm_config_o04_io_atomic_snapshot"
+      ],
+      "typed_contracts": [
+        "SettingsService::persist(&self, settings: &Map<String, Value>) -> io::Result<()>"
+      ],
+      "unit_id": "OCRM-UNIT-CONFIG-001"
+    },
+    {
+      "adr_refs": [],
+      "behavior": "Validate and normalize known configuration fields while preserving unknown and future schema extensions without silent data loss.",
+      "blocker_ids": [],
+      "capability_ids": [
+        "config.schema_normalization"
+      ],
+      "dependencies": [
+        "mahayana_host_runtime::extensions::settings"
+      ],
+      "evidence_refs": [
+        "projects/openclaw-rust/dossiers/transcript-round56-settings-gateway-ingress-and-worker-writers-20261024.md",
+        "source/host/tests/settings_service_contract.rs"
+      ],
+      "existing_owner_candidates": [
+        {
+          "path": "source/host/src/extensions/settings/settings_service.rs",
+          "reason": "Host settings schema normalization engine"
+        }
+      ],
+      "id": "OCRM-RESP-CONFIG-SCHEMA-NORMALIZATION-001",
+      "integration": {
+        "consumer": "source/host/src/extensions/settings/settings_service.rs::get_host_settings",
+        "entrypoint": "source/host/src/extensions/settings/settings_service.rs::set_host_settings",
+        "owner": "source/host/src/extensions/settings/settings_service.rs",
+        "producer": "source/host/src/extensions/settings/settings_service.rs::load"
+      },
+      "invariants": [
+        "Unknown settings keys are preserved across reads and writes"
+      ],
+      "migration_rollback": "Non-destructive JSON field preservation",
+      "oracle_ids": [
+        "OCRM-CONFIG-O05"
+      ],
+      "owner_decision": "Enforce unknown field preservation in SettingsService load and persist methods",
+      "postconditions": [
+        "Known fields normalized; unknown keys intact"
+      ],
+      "preconditions": [
+        "JSON settings value"
+      ],
+      "required_evidence_dimensions": [
+        "unit",
+        "integration",
+        "negative-test"
+      ],
+      "required_gate_ids": [
+        "OCRM-G04-rust-contract",
+        "OCRM-G05-frozen-oracle"
+      ],
+      "requirement_ids": [
+        "OCRM-R04",
+        "OCRM-R09",
+        "OCRM-AC05",
+        "OCRM-AC17"
+      ],
+      "responsibility_kind": "business-runtime",
+      "reviewer": "xuyao@ombhrum.com",
+      "risk": "Low; ensures compatibility with upstream extensions and future schemas",
+      "selected_owner": "source/host/src/extensions/settings/settings_service.rs",
+      "source_refs": [
+        {
+          "blob_sha": "4470c6e9140112bf6817f8a0a73eb00d5518b46e",
+          "path": "src/config/schema.ts",
+          "range": {
+            "end_line": 538,
+            "start_line": 1
+          },
+          "symbol": "validateConfig"
+        },
+        {
+          "blob_sha": "c8b1d6c8caa3bf5e7738af4f409820acfe8a8532",
+          "path": "src/config/types.openclaw.ts",
+          "range": {
+            "end_line": 160,
+            "start_line": 1
+          },
+          "symbol": "OpenClawConfig"
+        }
+      ],
+      "status": {
+        "acceptance": "pending",
+        "implementation": "implemented",
+        "mapping": "reviewed",
+        "read": "read-complete",
+        "verification": "verified",
+        "wiring": "wired"
+      },
+      "target": {
+        "language": "Rust",
+        "path": "source/host/src/extensions/settings/settings_service.rs",
+        "symbol": "load"
+      },
+      "tests": [
+        "source/host/tests/settings_service_contract.rs::test_ocrm_config_o05_schema_normalization"
+      ],
+      "typed_contracts": [
+        "SettingsService::load(&self) -> Map<String, Value>"
+      ],
+      "unit_id": "OCRM-UNIT-CONFIG-001"
+    },
+    {
+      "adr_refs": [],
+      "behavior": "Resolve agent workspace, profile, and session directories under sand root bounds, disallowing cross-tenant directory escape or path traversal.",
+      "blocker_ids": [],
+      "capability_ids": [
+        "config.agent_workspace_dirs"
+      ],
+      "dependencies": [
+        "mahayana_host_runtime::storage::agent_paths"
+      ],
+      "evidence_refs": [
+        "projects/openclaw-rust/dossiers/transcript-round56-settings-gateway-ingress-and-worker-writers-20261024.md",
+        "source/host/tests/settings_service_contract.rs"
+      ],
+      "existing_owner_candidates": [
+        {
+          "path": "source/host/src/storage/agent_paths.rs",
+          "reason": "Host agent path and directory resolution module"
+        }
+      ],
+      "id": "OCRM-RESP-CONFIG-AGENT-WORKSPACE-DIRS-001",
+      "integration": {
+        "consumer": "source/host/src/storage/agent_paths.rs::resolve_sand_agent_dir",
+        "entrypoint": "source/host/src/storage/agent_paths.rs::assert_valid_sand_agent_id",
+        "owner": "source/host/src/storage/agent_paths.rs",
+        "producer": "source/host/src/storage/agent_paths.rs::get_sand_agents_root_dir"
+      },
+      "invariants": [
+        "Agent directories must be strictly nested inside sand agents root"
+      ],
+      "migration_rollback": "Standard directory hierarchy under host root",
+      "oracle_ids": [
+        "OCRM-CONFIG-O06"
+      ],
+      "owner_decision": "Enforce workspace directory resolution in agent_paths.rs",
+      "postconditions": [
+        "Agent directory path is canonicalized and within designated root"
+      ],
+      "preconditions": [
+        "Safe agent ID string"
+      ],
+      "required_evidence_dimensions": [
+        "unit",
+        "integration",
+        "negative-test"
+      ],
+      "required_gate_ids": [
+        "OCRM-G04-rust-contract",
+        "OCRM-G05-frozen-oracle"
+      ],
+      "requirement_ids": [
+        "OCRM-R04",
+        "OCRM-R09",
+        "OCRM-AC05",
+        "OCRM-AC17"
+      ],
+      "responsibility_kind": "business-runtime",
+      "reviewer": "xuyao@ombhrum.com",
+      "risk": "Low; ensures sandbox tenant directory isolation",
+      "selected_owner": "source/host/src/storage/agent_paths.rs",
+      "source_refs": [
+        {
+          "blob_sha": "644aed9ab98e896badc94429d5f06a673301b083",
+          "path": "src/config/agent-dirs.ts",
+          "range": {
+            "end_line": 97,
+            "start_line": 1
+          },
+          "symbol": "resolveAgentDirs"
+        }
+      ],
+      "status": {
+        "acceptance": "pending",
+        "implementation": "implemented",
+        "mapping": "reviewed",
+        "read": "read-complete",
+        "verification": "verified",
+        "wiring": "wired"
+      },
+      "target": {
+        "language": "Rust",
+        "path": "source/host/src/storage/agent_paths.rs",
+        "symbol": "resolve_sand_agent_dir"
+      },
+      "tests": [
+        "source/host/tests/settings_service_contract.rs::test_ocrm_config_o06_agent_workspace_dirs"
+      ],
+      "typed_contracts": [
+        "resolve_sand_agent_dir(agent_id: &str, home_dir: Option<&Path>) -> Result<PathBuf, SandInvalidAgentIdError>"
+      ],
+      "unit_id": "OCRM-UNIT-CONFIG-001"
     }
   ],
   "schema_version": 1,

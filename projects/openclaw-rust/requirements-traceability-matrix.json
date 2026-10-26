@@ -57,7 +57,9 @@
         "source/host/tests/gateway_server_contract.rs",
         "source/host/tests/gateway_protocol_contract.rs",
         "projects/openclaw-rust/dossiers/transcript-round100-openclaw-storage-migration-and-diagnostics-observability-native-fusion-20261026.md",
-        "source/host/tests/openclaw_storage_diagnostics_contract.rs"
+        "source/host/tests/openclaw_storage_diagnostics_contract.rs",
+        "projects/openclaw-rust/dossiers/transcript-round56-settings-gateway-ingress-and-worker-writers-20261024.md",
+        "source/host/tests/settings_service_contract.rs"
       ],
       "gate_ids": [],
       "id": "OCRM-R04",
@@ -79,7 +81,13 @@
         "OCRM-STORAGE-O12",
         "OCRM-STORAGE-O13",
         "OCRM-STORAGE-O14",
-        "OCRM-STORAGE-O15"
+        "OCRM-STORAGE-O15",
+        "OCRM-CONFIG-O01",
+        "OCRM-CONFIG-O02",
+        "OCRM-CONFIG-O03",
+        "OCRM-CONFIG-O04",
+        "OCRM-CONFIG-O05",
+        "OCRM-CONFIG-O06"
       ],
       "requirement_text_source": "docs/specs/openclaw-rust-equivalence-migration.md#5",
       "responsibility_ids": [
@@ -94,7 +102,13 @@
         "OCRM-RESP-STORAGE-PROVIDER-ACQUISITION-001",
         "OCRM-RESP-STORAGE-FILESYSTEM-BACKEND-001",
         "OCRM-RESP-STORAGE-LOCATION-LIFECYCLE-001",
-        "OCRM-RESP-STORAGE-STREAMING-ENCRYPTION-001"
+        "OCRM-RESP-STORAGE-STREAMING-ENCRYPTION-001",
+        "OCRM-RESP-CONFIG-PATH-MUTATION-001",
+        "OCRM-RESP-CONFIG-WRITE-GUARD-001",
+        "OCRM-RESP-CONFIG-SINGLE-WRITER-LOCK-001",
+        "OCRM-RESP-CONFIG-IO-SNAPSHOT-001",
+        "OCRM-RESP-CONFIG-SCHEMA-NORMALIZATION-001",
+        "OCRM-RESP-CONFIG-AGENT-WORKSPACE-DIRS-001"
       ],
       "reviewer": "xuyao@ombhrum.com"
     },
@@ -151,17 +165,34 @@
       "reviewer": null
     },
     {
-      "acceptance_status": "not-started",
+      "acceptance_status": "in-progress",
       "blocker_ids": [],
-      "evidence_refs": [],
+      "evidence_refs": [
+        "projects/openclaw-rust/dossiers/transcript-round56-settings-gateway-ingress-and-worker-writers-20261024.md",
+        "source/host/tests/settings_service_contract.rs"
+      ],
       "gate_ids": [],
       "id": "OCRM-R09",
       "kind": "requirement",
       "not_applicable_reason": null,
-      "oracle_ids": [],
+      "oracle_ids": [
+        "OCRM-CONFIG-O01",
+        "OCRM-CONFIG-O02",
+        "OCRM-CONFIG-O03",
+        "OCRM-CONFIG-O04",
+        "OCRM-CONFIG-O05",
+        "OCRM-CONFIG-O06"
+      ],
       "requirement_text_source": "docs/specs/openclaw-rust-equivalence-migration.md#5",
-      "responsibility_ids": [],
-      "reviewer": null
+      "responsibility_ids": [
+        "OCRM-RESP-CONFIG-PATH-MUTATION-001",
+        "OCRM-RESP-CONFIG-WRITE-GUARD-001",
+        "OCRM-RESP-CONFIG-SINGLE-WRITER-LOCK-001",
+        "OCRM-RESP-CONFIG-IO-SNAPSHOT-001",
+        "OCRM-RESP-CONFIG-SCHEMA-NORMALIZATION-001",
+        "OCRM-RESP-CONFIG-AGENT-WORKSPACE-DIRS-001"
+      ],
+      "reviewer": "xuyao@ombhrum.com"
     },
     {
       "acceptance_status": "not-started",
@@ -430,17 +461,34 @@
       "reviewer": null
     },
     {
-      "acceptance_status": "not-started",
+      "acceptance_status": "in-progress",
       "blocker_ids": [],
-      "evidence_refs": [],
+      "evidence_refs": [
+        "projects/openclaw-rust/dossiers/transcript-round56-settings-gateway-ingress-and-worker-writers-20261024.md",
+        "source/host/tests/settings_service_contract.rs"
+      ],
       "gate_ids": [],
       "id": "OCRM-AC05",
       "kind": "acceptance-criterion",
       "not_applicable_reason": null,
-      "oracle_ids": [],
+      "oracle_ids": [
+        "OCRM-CONFIG-O01",
+        "OCRM-CONFIG-O02",
+        "OCRM-CONFIG-O03",
+        "OCRM-CONFIG-O04",
+        "OCRM-CONFIG-O05",
+        "OCRM-CONFIG-O06"
+      ],
       "requirement_text_source": "docs/specs/openclaw-rust-equivalence-migration.md#15",
-      "responsibility_ids": [],
-      "reviewer": null
+      "responsibility_ids": [
+        "OCRM-RESP-CONFIG-PATH-MUTATION-001",
+        "OCRM-RESP-CONFIG-WRITE-GUARD-001",
+        "OCRM-RESP-CONFIG-SINGLE-WRITER-LOCK-001",
+        "OCRM-RESP-CONFIG-IO-SNAPSHOT-001",
+        "OCRM-RESP-CONFIG-SCHEMA-NORMALIZATION-001",
+        "OCRM-RESP-CONFIG-AGENT-WORKSPACE-DIRS-001"
+      ],
+      "reviewer": "xuyao@ombhrum.com"
     },
     {
       "acceptance_status": "not-started",
@@ -605,17 +653,34 @@
       "reviewer": null
     },
     {
-      "acceptance_status": "not-started",
+      "acceptance_status": "in-progress",
       "blocker_ids": [],
-      "evidence_refs": [],
+      "evidence_refs": [
+        "projects/openclaw-rust/dossiers/transcript-round56-settings-gateway-ingress-and-worker-writers-20261024.md",
+        "source/host/tests/settings_service_contract.rs"
+      ],
       "gate_ids": [],
       "id": "OCRM-AC17",
       "kind": "acceptance-criterion",
       "not_applicable_reason": null,
-      "oracle_ids": [],
+      "oracle_ids": [
+        "OCRM-CONFIG-O01",
+        "OCRM-CONFIG-O02",
+        "OCRM-CONFIG-O03",
+        "OCRM-CONFIG-O04",
+        "OCRM-CONFIG-O05",
+        "OCRM-CONFIG-O06"
+      ],
       "requirement_text_source": "docs/specs/openclaw-rust-equivalence-migration.md#15",
-      "responsibility_ids": [],
-      "reviewer": null
+      "responsibility_ids": [
+        "OCRM-RESP-CONFIG-PATH-MUTATION-001",
+        "OCRM-RESP-CONFIG-WRITE-GUARD-001",
+        "OCRM-RESP-CONFIG-SINGLE-WRITER-LOCK-001",
+        "OCRM-RESP-CONFIG-IO-SNAPSHOT-001",
+        "OCRM-RESP-CONFIG-SCHEMA-NORMALIZATION-001",
+        "OCRM-RESP-CONFIG-AGENT-WORKSPACE-DIRS-001"
+      ],
+      "reviewer": "xuyao@ombhrum.com"
     },
     {
       "acceptance_status": "not-started",
