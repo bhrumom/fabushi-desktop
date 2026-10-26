@@ -670,7 +670,9 @@
         "source/host/tests/openclaw_audio_transcode_contract.rs",
         "source/host/tests/openclaw_media_generation_contract.rs",
         "source/host/tests/openclaw_media_reference_contract.rs",
-        "source/host/tests/openclaw_media_understanding_contract.rs"
+        "source/host/tests/openclaw_media_understanding_contract.rs",
+        "source/host/tests/openclaw_qr_png_contract.rs",
+        "projects/openclaw-rust/dossiers/media-qr-png-store-shared-scoped.md"
       ],
       "gate_ids": [],
       "id": "OCRM-R24",
@@ -704,7 +706,15 @@
         "OCRM-MEDIA-UND-O05",
         "OCRM-MEDIA-UND-O06",
         "OCRM-MEDIA-UND-O07",
-        "OCRM-MEDIA-UND-O08"
+        "OCRM-MEDIA-UND-O08",
+        "OCRM-QR-PNG-O01",
+        "OCRM-QR-PNG-O02",
+        "OCRM-QR-PNG-O03",
+        "OCRM-QR-PNG-O04",
+        "OCRM-QR-PNG-O05",
+        "OCRM-QR-PNG-O06",
+        "OCRM-QR-PNG-O07",
+        "OCRM-QR-PNG-O08"
       ],
       "requirement_text_source": "docs/specs/openclaw-rust-equivalence-migration.md#5",
       "responsibility_ids": [
@@ -734,7 +744,12 @@
         "OCRM-RESP-MEDIA-TEMP-CLEANUP-001",
         "OCRM-RESP-MEDIA-DOC-TRUNCATION-001",
         "OCRM-RESP-MEDIA-PROMPT-IMAGE-PROVENANCE-001",
-        "OCRM-RESP-MEDIA-IMAGE-PROCESSOR-SPEC-001"
+        "OCRM-RESP-MEDIA-IMAGE-PROCESSOR-SPEC-001",
+        "OCRM-RESP-MEDIA-QR-TERMINAL-001",
+        "OCRM-RESP-MEDIA-QR-IMAGE-001",
+        "OCRM-RESP-MEDIA-PNG-ENCODE-001",
+        "OCRM-RESP-MEDIA-PHOTON-RUNTIME-001",
+        "OCRM-RESP-MEDIA-STORE-SHARED-001"
       ],
       "reviewer": "xuyao@ombhrum.com"
     },
@@ -1332,7 +1347,9 @@
         "source/host/tests/openclaw_audio_transcode_contract.rs",
         "source/host/tests/openclaw_media_generation_contract.rs",
         "source/host/tests/openclaw_media_reference_contract.rs",
-        "source/host/tests/openclaw_media_understanding_contract.rs"
+        "source/host/tests/openclaw_media_understanding_contract.rs",
+        "source/host/tests/openclaw_qr_png_contract.rs",
+        "projects/openclaw-rust/dossiers/media-qr-png-store-shared-scoped.md"
       ],
       "gate_ids": [],
       "id": "OCRM-AC24",
@@ -1366,7 +1383,15 @@
         "OCRM-MEDIA-UND-O05",
         "OCRM-MEDIA-UND-O06",
         "OCRM-MEDIA-UND-O07",
-        "OCRM-MEDIA-UND-O08"
+        "OCRM-MEDIA-UND-O08",
+        "OCRM-QR-PNG-O01",
+        "OCRM-QR-PNG-O02",
+        "OCRM-QR-PNG-O03",
+        "OCRM-QR-PNG-O04",
+        "OCRM-QR-PNG-O05",
+        "OCRM-QR-PNG-O06",
+        "OCRM-QR-PNG-O07",
+        "OCRM-QR-PNG-O08"
       ],
       "requirement_text_source": "docs/specs/openclaw-rust-equivalence-migration.md#15",
       "responsibility_ids": [
@@ -1396,7 +1421,12 @@
         "OCRM-RESP-MEDIA-TEMP-CLEANUP-001",
         "OCRM-RESP-MEDIA-DOC-TRUNCATION-001",
         "OCRM-RESP-MEDIA-PROMPT-IMAGE-PROVENANCE-001",
-        "OCRM-RESP-MEDIA-IMAGE-PROCESSOR-SPEC-001"
+        "OCRM-RESP-MEDIA-IMAGE-PROCESSOR-SPEC-001",
+        "OCRM-RESP-MEDIA-QR-TERMINAL-001",
+        "OCRM-RESP-MEDIA-QR-IMAGE-001",
+        "OCRM-RESP-MEDIA-PNG-ENCODE-001",
+        "OCRM-RESP-MEDIA-PHOTON-RUNTIME-001",
+        "OCRM-RESP-MEDIA-STORE-SHARED-001"
       ],
       "reviewer": "xuyao@ombhrum.com"
     }

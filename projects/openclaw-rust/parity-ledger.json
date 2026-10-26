@@ -10,10 +10,10 @@
     "ui_accepted": false
   },
   "file_coverage": {
-    "mapped_paths": 176,
+    "mapped_paths": 182,
     "omitted_known": 0,
     "tracked_paths": 58750,
-    "unclassified_paths": 58574
+    "unclassified_paths": 58568
   },
   "inventory_authority": {
     "manifest_source": "GitHub Actions immutable artifact candidate",
@@ -11091,6 +11091,495 @@
         "ImageProcessorOperation"
       ],
       "unit_id": "OCRM-UNIT-MEDIA-006"
+    },
+    {
+      "adr_refs": [],
+      "behavior": "Terminal ANSI QR text renderer supporting compact half-block characters (\u2588, \u2580, \u2584, space), 1-module margin, quiet zone black-on-white formatting, and standard full-block terminal fallback.",
+      "blocker_ids": [
+        "BL-MEDIA-QR-TERMINAL-CALLER-001"
+      ],
+      "capability_ids": [
+        "media.qr_terminal"
+      ],
+      "dependencies": [
+        "mahayana_host_runtime::extensions::attachments::media_qr_png"
+      ],
+      "evidence_refs": [
+        "source/host/tests/openclaw_qr_png_contract.rs",
+        "projects/openclaw-rust/dossiers/media-qr-png-store-shared-scoped.md"
+      ],
+      "existing_owner_candidates": [
+        {
+          "path": "source/host/src/extensions/attachments/media_qr_png.rs",
+          "reason": "Media QR terminal formatting module"
+        }
+      ],
+      "id": "OCRM-RESP-MEDIA-QR-TERMINAL-001",
+      "integration": {
+        "consumer": "source/host/src/device_pairing_owner.rs (pending CLI and gateway chat-assistant terminal display pipeline)",
+        "entrypoint": "source/host/src/extensions/attachments/media_qr_png.rs::render_qr_terminal",
+        "owner": "source/host/src/extensions/attachments/media_qr_png.rs",
+        "producer": "source/host/src/extensions/attachments/attachments_service.rs::handle_openclaw_media_gateway_call"
+      },
+      "invariants": [
+        "Compact mode uses 1-module quiet-zone margin with half-block row compaction (2 module rows per character line)",
+        "Lines begin with black-on-white ANSI escape and end with ANSI reset",
+        "Out-of-bounds module reads evaluate to light (false)"
+      ],
+      "migration_rollback": "Fallback to standard block rendering without half-block compaction",
+      "oracle_ids": [
+        "OCRM-QR-PNG-O01",
+        "OCRM-QR-PNG-O02"
+      ],
+      "owner_decision": "Implement native half-block ANSI QR renderer in media_qr_png.rs using qrcode core engine",
+      "postconditions": [
+        "Rendered terminal ANSI string returned"
+      ],
+      "preconditions": [
+        "QR payload text provided"
+      ],
+      "required_evidence_dimensions": [
+        "unit"
+      ],
+      "required_gate_ids": [
+        "OCRM-G04-rust-contract"
+      ],
+      "requirement_ids": [
+        "OCRM-R24",
+        "OCRM-AC24"
+      ],
+      "responsibility_kind": "business-runtime",
+      "reviewer": "xuyao@ombhrum.com",
+      "risk": "Low; purely visual terminal rendering of pairing payloads",
+      "selected_owner": "source/host/src/extensions/attachments/media_qr_png.rs",
+      "source_refs": [
+        {
+          "blob_sha": "59a90da9e549b15fc7d0a0626174fff0475454df",
+          "path": "src/media/qr-runtime.ts",
+          "range": {
+            "end_line": 7,
+            "start_line": 1
+          },
+          "symbol": "loadQrCodeRuntime"
+        },
+        {
+          "blob_sha": "5612d19c427114583ab7e25f3ea2c410eade8aef",
+          "path": "src/media/qr-terminal.ts",
+          "range": {
+            "end_line": 44,
+            "start_line": 1
+          },
+          "symbol": "renderQrTerminal"
+        }
+      ],
+      "status": {
+        "acceptance": "pending",
+        "implementation": "implemented",
+        "mapping": "reviewed",
+        "read": "read-complete",
+        "verification": "not-run",
+        "wiring": "not-wired"
+      },
+      "target": {
+        "language": "Rust",
+        "path": "source/host/src/extensions/attachments/media_qr_png.rs",
+        "symbol": "render_qr_terminal"
+      },
+      "tests": [
+        "source/host/tests/openclaw_qr_png_contract.rs::test_ocrm_qr_terminal_compact",
+        "source/host/tests/openclaw_qr_png_contract.rs::test_ocrm_qr_terminal_standard"
+      ],
+      "typed_contracts": [
+        "render_qr_terminal",
+        "COMPACT_MARGIN_MODULES",
+        "TERMINAL_BLACK_ON_WHITE",
+        "TERMINAL_RESET"
+      ],
+      "unit_id": "OCRM-UNIT-MEDIA-007"
+    },
+    {
+      "adr_refs": [],
+      "behavior": "Bounded QR code PNG rendering (scale 1..12, margin 0..16), Data URL generation (data:image/png;base64,), and scoped temporary directory workspace file generation with path segment sanitization.",
+      "blocker_ids": [
+        "BL-MEDIA-QR-IMAGE-CALLER-001"
+      ],
+      "capability_ids": [
+        "media.qr_image"
+      ],
+      "dependencies": [
+        "mahayana_host_runtime::extensions::attachments::media_qr_png"
+      ],
+      "evidence_refs": [
+        "source/host/tests/openclaw_qr_png_contract.rs",
+        "projects/openclaw-rust/dossiers/media-qr-png-store-shared-scoped.md"
+      ],
+      "existing_owner_candidates": [
+        {
+          "path": "source/host/src/extensions/attachments/media_qr_png.rs",
+          "reason": "Media QR PNG rendering and scoped temp workspace module"
+        }
+      ],
+      "id": "OCRM-RESP-MEDIA-QR-IMAGE-001",
+      "integration": {
+        "consumer": "source/host/src/device_pairing_owner.rs (pending Gateway device pairing RPC and desktop pairing UI data URL presentation)",
+        "entrypoint": "source/host/src/extensions/attachments/media_qr_png.rs::render_qr_png_data_url",
+        "owner": "source/host/src/extensions/attachments/media_qr_png.rs",
+        "producer": "source/host/src/extensions/attachments/attachments_service.rs::handle_openclaw_media_gateway_call"
+      },
+      "invariants": [
+        "Scale must be finite integer between 1 and 12",
+        "Margin modules must be finite integer between 0 and 16",
+        "Path segments must be non-empty and must not contain directory traversal or path separators",
+        "Rendered PNG data URLs start with data:image/png;base64,"
+      ],
+      "migration_rollback": "Return unscaled default QR PNG buffers",
+      "oracle_ids": [
+        "OCRM-QR-PNG-O03",
+        "OCRM-QR-PNG-O04",
+        "OCRM-QR-PNG-O05"
+      ],
+      "owner_decision": "Implement bounded QR PNG generator, Data URL formatter, and scoped temp workspace writer in media_qr_png.rs",
+      "postconditions": [
+        "Valid PNG buffer, base64 string, data URL, or scoped temp file returned"
+      ],
+      "preconditions": [
+        "Input payload string and render options provided"
+      ],
+      "required_evidence_dimensions": [
+        "unit"
+      ],
+      "required_gate_ids": [
+        "OCRM-G04-rust-contract"
+      ],
+      "requirement_ids": [
+        "OCRM-R24",
+        "OCRM-AC24"
+      ],
+      "responsibility_kind": "business-runtime",
+      "reviewer": "xuyao@ombhrum.com",
+      "risk": "Low; prevents unbounded memory consumption by enforcing strict limits on QR rendering scale and margins",
+      "selected_owner": "source/host/src/extensions/attachments/media_qr_png.rs",
+      "source_refs": [
+        {
+          "blob_sha": "8bf0b227d7946b5ff80f12396863daee6cdb64c8",
+          "path": "src/media/qr-image.ts",
+          "range": {
+            "end_line": 92,
+            "start_line": 1
+          },
+          "symbol": "renderQrPngDataUrl"
+        }
+      ],
+      "status": {
+        "acceptance": "pending",
+        "implementation": "implemented",
+        "mapping": "reviewed",
+        "read": "read-complete",
+        "verification": "not-run",
+        "wiring": "not-wired"
+      },
+      "target": {
+        "language": "Rust",
+        "path": "source/host/src/extensions/attachments/media_qr_png.rs",
+        "symbol": "render_qr_png_data_url"
+      },
+      "tests": [
+        "source/host/tests/openclaw_qr_png_contract.rs::test_ocrm_qr_image_options_validation",
+        "source/host/tests/openclaw_qr_png_contract.rs::test_ocrm_qr_png_data_url_and_buffer",
+        "source/host/tests/openclaw_qr_png_contract.rs::test_ocrm_qr_png_temp_file_lifecycle"
+      ],
+      "typed_contracts": [
+        "QrPngRenderOptions",
+        "QrPngTempFileOptions",
+        "QrPngTempFile",
+        "render_qr_png_buffer",
+        "render_qr_png_base64",
+        "render_qr_png_data_url",
+        "write_qr_png_temp_file"
+      ],
+      "unit_id": "OCRM-UNIT-MEDIA-007"
+    },
+    {
+      "adr_refs": [],
+      "behavior": "Pure Rust PNG chunk encoder (signature, IHDR, IDAT with zlib deflate compression, IEND, CRC32 checksum) supporting tightly packed RGB (3 channels) and RGBA (4 channels) pixel buffers and bounds-checked fill_pixel buffer manipulation.",
+      "blocker_ids": [
+        "BL-MEDIA-PNG-ENCODE-CALLER-001"
+      ],
+      "capability_ids": [
+        "media.png_encode"
+      ],
+      "dependencies": [
+        "mahayana_host_runtime::extensions::attachments::media_qr_png"
+      ],
+      "evidence_refs": [
+        "source/host/tests/openclaw_qr_png_contract.rs",
+        "projects/openclaw-rust/dossiers/media-qr-png-store-shared-scoped.md"
+      ],
+      "existing_owner_candidates": [
+        {
+          "path": "source/host/src/extensions/attachments/media_qr_png.rs",
+          "reason": "Pure Rust PNG encoder and chunk assembler"
+        }
+      ],
+      "id": "OCRM-RESP-MEDIA-PNG-ENCODE-001",
+      "integration": {
+        "consumer": "source/host/src/extensions/attachments/media_qr_png.rs (pending upstream image processor and canvas renderer consumption)",
+        "entrypoint": "source/host/src/extensions/attachments/media_qr_png.rs::encode_png_rgb",
+        "owner": "source/host/src/extensions/attachments/media_qr_png.rs",
+        "producer": "source/host/src/extensions/attachments/media_qr_png.rs::render_qr_png_buffer"
+      },
+      "invariants": [
+        "Raw scanlines prepend filter byte 0 (None) before width * channels pixel payload",
+        "IHDR chunk specifies bit depth 8 and color type 2 (RGB) or 6 (RGBA)",
+        "CRC32 checksum covers chunk type and chunk data bytes",
+        "fill_pixel silently ignores out-of-bounds coordinates without panicking"
+      ],
+      "migration_rollback": "Use external image transcoding binary or libpng",
+      "oracle_ids": [
+        "OCRM-QR-PNG-O06"
+      ],
+      "owner_decision": "Implement native zlib deflate scanline compression and PNG chunk assembly in media_qr_png.rs",
+      "postconditions": [
+        "Conforming PNG byte vector returned with valid chunks and checksums"
+      ],
+      "preconditions": [
+        "RGB or RGBA pixel buffer matching width * height * channels provided"
+      ],
+      "required_evidence_dimensions": [
+        "unit"
+      ],
+      "required_gate_ids": [
+        "OCRM-G04-rust-contract"
+      ],
+      "requirement_ids": [
+        "OCRM-R24",
+        "OCRM-AC24"
+      ],
+      "responsibility_kind": "business-runtime",
+      "reviewer": "xuyao@ombhrum.com",
+      "risk": "Low; produces standard PNG images with zero C/WASM dependencies",
+      "selected_owner": "source/host/src/extensions/attachments/media_qr_png.rs",
+      "source_refs": [
+        {
+          "blob_sha": "4b552143b36d863446898a1690b22f689675681f",
+          "path": "src/media/png-encode.ts",
+          "range": {
+            "end_line": 74,
+            "start_line": 1
+          },
+          "symbol": "encodePngRgb"
+        }
+      ],
+      "status": {
+        "acceptance": "pending",
+        "implementation": "implemented",
+        "mapping": "reviewed",
+        "read": "read-complete",
+        "verification": "not-run",
+        "wiring": "not-wired"
+      },
+      "target": {
+        "language": "Rust",
+        "path": "source/host/src/extensions/attachments/media_qr_png.rs",
+        "symbol": "encode_png_rgb"
+      },
+      "tests": [
+        "source/host/tests/openclaw_qr_png_contract.rs::test_ocrm_png_encode_raw_rgb_and_rgba"
+      ],
+      "typed_contracts": [
+        "fill_pixel",
+        "encode_png",
+        "encode_png_rgb",
+        "encode_png_rgba",
+        "png_chunk_parts"
+      ],
+      "unit_id": "OCRM-UNIT-MEDIA-007"
+    },
+    {
+      "adr_refs": [],
+      "behavior": "Fallback BMP-to-PNG transcoder specification and runtime safety isolation with zero-leak buffer lifecycle management for unsupported raster image formats.",
+      "blocker_ids": [
+        "BL-MEDIA-PHOTON-BMP-PIPELINE-001"
+      ],
+      "capability_ids": [
+        "media.photon_runtime"
+      ],
+      "dependencies": [
+        "mahayana_host_runtime::extensions::attachments::media_qr_png"
+      ],
+      "evidence_refs": [
+        "source/host/tests/openclaw_qr_png_contract.rs",
+        "projects/openclaw-rust/dossiers/media-qr-png-store-shared-scoped.md"
+      ],
+      "existing_owner_candidates": [
+        {
+          "path": "source/host/src/extensions/attachments/media_qr_png.rs",
+          "reason": "Native image conversion and raster format fallback module"
+        }
+      ],
+      "id": "OCRM-RESP-MEDIA-PHOTON-RUNTIME-001",
+      "integration": {
+        "consumer": "source/host/src/extensions/attachments/attachments_service.rs (pending Rastermill fallback and media understanding transcode consumption)",
+        "entrypoint": "source/host/src/extensions/attachments/media_qr_png.rs::convert_bmp_to_png",
+        "owner": "source/host/src/extensions/attachments/media_qr_png.rs",
+        "producer": "source/host/src/extensions/attachments/attachments_service.rs::handle_openclaw_media_gateway_call"
+      },
+      "invariants": [
+        "Validates BMP header magic 'BM' and minimum 54-byte header length",
+        "Verifies DIB header size >= 40 and uncompressed BI_RGB format",
+        "Supports 24-bit BGR and 32-bit BGRA scanlines with 4-byte row alignment",
+        "Transcodes safely to PNG without memory leaks or unsafe C pointers"
+      ],
+      "migration_rollback": "Reject BMP format uploads at ingress boundary",
+      "oracle_ids": [
+        "OCRM-QR-PNG-O07"
+      ],
+      "owner_decision": "Implement native safe BMP decoding and PNG transcoding in media_qr_png.rs replacing external Photon WASM module",
+      "postconditions": [
+        "Transcoded PNG bytes returned or explicit validation error produced"
+      ],
+      "preconditions": [
+        "BMP byte slice provided"
+      ],
+      "required_evidence_dimensions": [
+        "unit"
+      ],
+      "required_gate_ids": [
+        "OCRM-G04-rust-contract"
+      ],
+      "requirement_ids": [
+        "OCRM-R24",
+        "OCRM-AC24"
+      ],
+      "responsibility_kind": "business-runtime",
+      "reviewer": "xuyao@ombhrum.com",
+      "risk": "Low; provides safe pure-Rust BMP parsing without external WASM dependencies",
+      "selected_owner": "source/host/src/extensions/attachments/media_qr_png.rs",
+      "source_refs": [
+        {
+          "blob_sha": "1089b4ede000a03e5746f23cc449df7025f02735",
+          "path": "src/media/photon.runtime.ts",
+          "range": {
+            "end_line": 14,
+            "start_line": 1
+          },
+          "symbol": "convertBmpToPngWithPhoton"
+        }
+      ],
+      "status": {
+        "acceptance": "pending",
+        "implementation": "implemented",
+        "mapping": "reviewed",
+        "read": "read-complete",
+        "verification": "not-run",
+        "wiring": "not-wired"
+      },
+      "target": {
+        "language": "Rust",
+        "path": "source/host/src/extensions/attachments/media_qr_png.rs",
+        "symbol": "convert_bmp_to_png"
+      },
+      "tests": [
+        "source/host/tests/openclaw_qr_png_contract.rs::test_ocrm_bmp_to_png_conversion"
+      ],
+      "typed_contracts": [
+        "convert_bmp_to_png"
+      ],
+      "unit_id": "OCRM-UNIT-MEDIA-007"
+    },
+    {
+      "adr_refs": [],
+      "behavior": "Shared media storage invariants (MEDIA_FILE_MODE=0o644), legacy-binary byte size formatting with unit capping at megabytes, and typed SaveMediaSourceError error category dispatch.",
+      "blocker_ids": [
+        "BL-MEDIA-STORE-SHARED-PIPELINE-001"
+      ],
+      "capability_ids": [
+        "media.store_shared"
+      ],
+      "dependencies": [
+        "mahayana_host_runtime::extensions::attachments::media_store_shared"
+      ],
+      "evidence_refs": [
+        "source/host/tests/openclaw_qr_png_contract.rs",
+        "projects/openclaw-rust/dossiers/media-qr-png-store-shared-scoped.md"
+      ],
+      "existing_owner_candidates": [
+        {
+          "path": "source/host/src/extensions/attachments/media_store_shared.rs",
+          "reason": "Shared media store constants, formatting, and errors"
+        }
+      ],
+      "id": "OCRM-RESP-MEDIA-STORE-SHARED-001",
+      "integration": {
+        "consumer": "source/host/src/extensions/attachments/attachments_service.rs (pending src/media/store.ts persistence integration)",
+        "entrypoint": "source/host/src/extensions/attachments/media_store_shared.rs::format_media_size",
+        "owner": "source/host/src/extensions/attachments/media_store_shared.rs",
+        "producer": "source/host/src/extensions/attachments/attachments_service.rs::handle_openclaw_media_gateway_call"
+      },
+      "invariants": [
+        "MEDIA_FILE_MODE is exactly 0o644 (user read-write, group/other read-only)",
+        "format_media_size caps units at megabytes ('MB') and formats whole numbers with 0 decimals, fractional with 2 decimals",
+        "SaveMediaSourceError categorizes errors into invalid-path, not-found, not-file, path-mismatch, and too-large"
+      ],
+      "migration_rollback": "Use default umask and generic I/O errors",
+      "oracle_ids": [
+        "OCRM-QR-PNG-O08"
+      ],
+      "owner_decision": "Implement media file mode constants, size formatter, and error categories in media_store_shared.rs",
+      "postconditions": [
+        "Formatted size string or typed error instance produced"
+      ],
+      "preconditions": [
+        "Byte limit or storage operation requested"
+      ],
+      "required_evidence_dimensions": [
+        "unit"
+      ],
+      "required_gate_ids": [
+        "OCRM-G04-rust-contract"
+      ],
+      "requirement_ids": [
+        "OCRM-R24",
+        "OCRM-AC24"
+      ],
+      "responsibility_kind": "business-runtime",
+      "reviewer": "xuyao@ombhrum.com",
+      "risk": "Low; standardizes permission masks and user-facing size limits across media persistence",
+      "selected_owner": "source/host/src/extensions/attachments/media_store_shared.rs",
+      "source_refs": [
+        {
+          "blob_sha": "3e06d13268b774a149cdd657983f82e74ee51772",
+          "path": "src/media/store.shared.ts",
+          "range": {
+            "end_line": 38,
+            "start_line": 1
+          },
+          "symbol": "SaveMediaSourceError"
+        }
+      ],
+      "status": {
+        "acceptance": "pending",
+        "implementation": "implemented",
+        "mapping": "reviewed",
+        "read": "read-complete",
+        "verification": "not-run",
+        "wiring": "not-wired"
+      },
+      "target": {
+        "language": "Rust",
+        "path": "source/host/src/extensions/attachments/media_store_shared.rs",
+        "symbol": "MEDIA_FILE_MODE"
+      },
+      "tests": [
+        "source/host/tests/openclaw_qr_png_contract.rs::test_ocrm_media_store_shared_invariants"
+      ],
+      "typed_contracts": [
+        "MEDIA_FILE_MODE",
+        "format_media_size",
+        "SaveMediaSourceErrorCode",
+        "SaveMediaSourceError"
+      ],
+      "unit_id": "OCRM-UNIT-MEDIA-007"
     }
   ],
   "schema_version": 1,

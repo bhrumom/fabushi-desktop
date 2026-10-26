@@ -1726,6 +1726,51 @@ impl AttachmentsService {
                 );
                 Ok(rendered.map(Value::String).unwrap_or(Value::Null))
             }
+            "renderQrTerminal" => (|| {
+                let input = args
+                    .get("input")
+                    .and_then(Value::as_str)
+                    .ok_or_else(|| "renderQrTerminal.input must be a string".to_string())?;
+                let small = args
+                    .get("small")
+                    .and_then(Value::as_bool)
+                    .unwrap_or(false);
+                crate::extensions::attachments::media_qr_png::render_qr_terminal(input, small)
+                    .map(Value::String)
+            })(),
+            "renderQrPngDataUrl" => (|| {
+                let input = args
+                    .get("input")
+                    .and_then(Value::as_str)
+                    .ok_or_else(|| "renderQrPngDataUrl.input must be a string".to_string())?;
+                let scale = args.get("scale").and_then(Value::as_u64).map(|n| n as u32);
+                let margin_modules = args.get("marginModules").and_then(Value::as_u64).map(|n| n as u32);
+                let opts = crate::extensions::attachments::media_qr_png::QrPngRenderOptions {
+                    scale,
+                    margin_modules,
+                };
+                crate::extensions::attachments::media_qr_png::render_qr_png_data_url(input, &opts)
+                    .map(Value::String)
+            })(),
+            "convertBmpToPng" => (|| {
+                let b64 = args
+                    .get("bytesBase64")
+                    .and_then(Value::as_str)
+                    .ok_or_else(|| "convertBmpToPng.bytesBase64 must be a string".to_string())?;
+                use base64::Engine;
+                let raw = base64::prelude::BASE64_STANDARD
+                    .decode(b64)
+                    .map_err(|e| format!("Invalid base64 payload: {e}"))?;
+                let png = crate::extensions::attachments::media_qr_png::convert_bmp_to_png(&raw)?;
+                Ok(Value::String(base64::prelude::BASE64_STANDARD.encode(&png)))
+            })(),
+            "formatMediaSize" => {
+                let bytes = args
+                    .get("bytes")
+                    .and_then(Value::as_u64)
+                    .unwrap_or(0);
+                Ok(Value::String(crate::extensions::attachments::media_store_shared::format_media_size(bytes)))
+            }
             _ => return None,
         };
         Some(result)
