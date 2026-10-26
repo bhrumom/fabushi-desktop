@@ -1947,6 +1947,57 @@ impl AttachmentsService {
                     .map_err(|e| format!("{e}"))?;
                 Ok(serde_json::to_value(res).unwrap_or(Value::Null))
             })(),
+            "resolveChannelInboundRoots" => (|| {
+                let channel_id = args.get("channelId").and_then(Value::as_str);
+                let account_id = args.get("accountId").and_then(Value::as_str);
+                let cfg = crate::extensions::attachments::channel_inbound_roots::ChannelInboundRootsConfig::default();
+                let roots = crate::extensions::attachments::channel_inbound_roots::resolve_channel_inbound_attachment_roots_for_channel(
+                    &cfg,
+                    &[],
+                    channel_id,
+                    account_id,
+                )?;
+                Ok(serde_json::to_value(roots).unwrap_or(Value::Null))
+            })(),
+            "resolveLocalRoots" => (|| {
+                let state_dir_str = args.get("stateDir").and_then(Value::as_str).unwrap_or("/tmp");
+                let config_dir_str = args.get("configDir").and_then(Value::as_str).unwrap_or("/tmp");
+                let agent_id = args.get("agentId").and_then(Value::as_str);
+                let session_ws_str = args.get("sessionWorkspaceDir").and_then(Value::as_str);
+                let state_dir = Path::new(state_dir_str);
+                let config_dir = Path::new(config_dir_str);
+                let session_ws = session_ws_str.map(Path::new);
+                let roots = crate::extensions::attachments::local_roots::get_agent_scoped_media_local_roots(
+                    state_dir,
+                    config_dir,
+                    agent_id,
+                    None,
+                    session_ws,
+                );
+                let str_roots: Vec<String> = roots.into_iter().map(|p| p.to_string_lossy().to_string()).collect();
+                Ok(serde_json::to_value(str_roots).unwrap_or(Value::Null))
+            })(),
+            "assertHostReadMediaAllowed" => (|| {
+                let file_path_str = args.get("filePath").and_then(Value::as_str);
+                let file_path = file_path_str.map(Path::new);
+                let sniffed = args.get("sniffedContentType").and_then(Value::as_str);
+                let content_type = args.get("contentType").and_then(Value::as_str);
+                let kind = args.get("kind").and_then(Value::as_str);
+                let data_base64 = args.get("dataBase64").and_then(Value::as_str);
+                let decoded = data_base64.and_then(|b64| STANDARD.decode(b64).ok());
+                let params = crate::extensions::attachments::host_read_media_policy::AssertHostReadParams {
+                    sniffed_content_type: sniffed,
+                    content_type,
+                    file_path,
+                    kind,
+                    buffer: decoded.as_deref(),
+                    trusted_generated_html_path: None,
+                    explicit_html_publication: false,
+                };
+                crate::extensions::attachments::host_read_media_policy::assert_host_read_media_allowed(&params)
+                    .map_err(|e| e.to_string())?;
+                Ok(serde_json::json!({ "allowed": true }))
+            })(),
             _ => return None,
         };
         Some(result)

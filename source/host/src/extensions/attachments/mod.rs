@@ -1,11 +1,14 @@
 pub mod anthropic_inline_images;
 pub mod attachments_service;
 pub mod box_staging;
+pub mod channel_inbound_roots;
 pub mod extension;
 pub mod generate_image_resource_accessor;
 pub mod generate_image_service;
+pub mod host_read_media_policy;
 pub mod image_ops;
 pub mod link_preview_image_bounds;
+pub mod local_roots;
 pub mod media_audio_transcode;
 pub mod media_facts;
 pub mod media_file_context;
