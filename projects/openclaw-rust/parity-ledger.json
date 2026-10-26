@@ -10,10 +10,10 @@
     "ui_accepted": false
   },
   "file_coverage": {
-    "mapped_paths": 225,
+    "mapped_paths": 230,
     "omitted_known": 0,
     "tracked_paths": 58750,
-    "unclassified_paths": 58525
+    "unclassified_paths": 58520
   },
   "inventory_authority": {
     "manifest_source": "GitHub Actions immutable artifact candidate",
@@ -8494,6 +8494,146 @@
         "TERMINAL_RESET"
       ],
       "unit_id": "OCRM-UNIT-MEDIA-007"
+    },
+    {
+      "adr_refs": [],
+      "behavior": "Agent-scoped outbound media read capability resolver and load options normalization. Normalizes local roots and preserves 'any' opt-in sentinel, gates host read capability requiring explicit local roots, isolates native host opener from public access, respects sender/group tool policies by revoking host reads and confining to managed outbound media roots upon denial, and prioritizes workspace overrides while binding allowed directories safely.",
+      "blocker_ids": [
+        "BL-MEDIA-READ-CAPABILITY-CHAT-WIRING-001"
+      ],
+      "capability_ids": [
+        "media.read_capability",
+        "media.load_options"
+      ],
+      "dependencies": [
+        "source/host/src/extensions/attachments/local_roots.rs",
+        "source/host/src/extensions/attachments/attachments_service.rs"
+      ],
+      "evidence_refs": [
+        "source/host/tests/openclaw_read_capability_contract.rs",
+        "projects/openclaw-rust/dossiers/media-read-capability-load-options-scoped.md"
+      ],
+      "existing_owner_candidates": [
+        {
+          "path": "source/host/src/extensions/attachments/attachments_service.rs",
+          "reason": "Attachment service gateway and read capability dispatcher"
+        }
+      ],
+      "id": "OCRM-RESP-MEDIA-READ-CAPABILITY-001",
+      "integration": {
+        "consumer": "Pending outbound message actions and agent response pipelines",
+        "entrypoint": "source/host/src/extensions/attachments/attachments_service.rs::dispatch_gateway",
+        "owner": "source/host/src/extensions/attachments/read_capability.rs",
+        "producer": "AttachmentsService::dispatch_gateway"
+      },
+      "invariants": [
+        "Host media read capability requires explicit localRoots or sentinel 'any' to prevent silent widening",
+        "Tool policy denying read tool must revoke host read file capability and confine local roots to managed media outbound",
+        "Native file opener must remain exclusive to internal host access and not exposed to untrusted callers",
+        "Explicit workspaceDir overrides must take precedence over ambient or mediaAccess workspace dirs"
+      ],
+      "migration_rollback": "Confine media access to managed outbound roots and return None for host read file",
+      "oracle_ids": [
+        "OCRM-READ-CAP-O01",
+        "OCRM-READ-CAP-O02"
+      ],
+      "owner_decision": "Dedicated native Rust modules load_options and read_capability implementing option normalization, policy gates, and root scoping",
+      "postconditions": [
+        "Valid OutboundMediaAccess or HostOutboundMediaAccess returned with authorized root boundaries"
+      ],
+      "preconditions": [
+        "Valid agent parameters or media load options"
+      ],
+      "required_evidence_dimensions": [
+        "unit",
+        "integration",
+        "negative-test"
+      ],
+      "required_gate_ids": [
+        "OCRM-G04-rust-contract",
+        "OCRM-G05-frozen-oracle"
+      ],
+      "requirement_ids": [
+        "OCRM-R24",
+        "OCRM-AC24"
+      ],
+      "responsibility_kind": "business-runtime",
+      "reviewer": "xuyao@ombhrum.com",
+      "risk": "Medium; governs filesystem access boundaries and tool policy enforcement for outbound media",
+      "selected_owner": "source/host/src/extensions/attachments/read_capability.rs",
+      "source_refs": [
+        {
+          "blob_sha": "8ec6046e7f226be8ad679bb8d1ca030626359f4f",
+          "path": "src/media/read-capability.ts",
+          "range": {
+            "end_line": 267,
+            "start_line": 1
+          },
+          "symbol": "resolveAgentScopedOutboundMediaAccess, resolveAgentScopedHostOutboundMediaAccess"
+        },
+        {
+          "blob_sha": "1f52d0b59b17727142b93478d531d053229bbfba",
+          "path": "src/media/read-capability.test.ts",
+          "range": {
+            "end_line": 594,
+            "start_line": 1
+          },
+          "symbol": "agent scoped outbound media access, workspace selection, and tool policy tests"
+        },
+        {
+          "blob_sha": "f85fa3462d4b29bbba14249bf5fa764d93b3f114",
+          "path": "src/media/read-capability.workspace-access.test.ts",
+          "range": {
+            "end_line": 245,
+            "start_line": 1
+          },
+          "symbol": "registered workspace outbound media, remote reader, and mirror isolation tests"
+        },
+        {
+          "blob_sha": "386ba8fc69faee9b58c566a01b22e17ea4fb61e3",
+          "path": "src/media/load-options.ts",
+          "range": {
+            "end_line": 103,
+            "start_line": 1
+          },
+          "symbol": "buildOutboundMediaLoadOptions, resolveOutboundMediaLocalRoots, resolveOutboundMediaAccess"
+        },
+        {
+          "blob_sha": "957b44576ff918730ce976bf67117f781df5a0aa",
+          "path": "src/media/load-options.test.ts",
+          "range": {
+            "end_line": 70,
+            "start_line": 1
+          },
+          "symbol": "outbound media load options normalization and host read requirement tests"
+        }
+      ],
+      "status": {
+        "acceptance": "pending",
+        "implementation": "implemented",
+        "mapping": "reviewed",
+        "read": "read-complete",
+        "verification": "not-run",
+        "wiring": "not-wired"
+      },
+      "target": {
+        "language": "Rust",
+        "path": "source/host/src/extensions/attachments/read_capability.rs",
+        "symbol": "resolve_agent_scoped_outbound_media_access, resolve_agent_scoped_host_outbound_media_access, build_outbound_media_load_options, resolve_outbound_media_local_roots"
+      },
+      "tests": [
+        "source/host/tests/openclaw_read_capability_contract.rs::test_ocrm_load_options_normalization_and_root_validation",
+        "source/host/tests/openclaw_read_capability_contract.rs::test_ocrm_read_capability_host_opener_isolation",
+        "source/host/tests/openclaw_read_capability_contract.rs::test_ocrm_read_capability_workspace_selection_and_containment",
+        "source/host/tests/openclaw_read_capability_contract.rs::test_ocrm_read_capability_policy_denial_and_managed_roots",
+        "source/host/tests/openclaw_read_capability_contract.rs::test_ocrm_read_capability_gateway_dispatch"
+      ],
+      "typed_contracts": [
+        "resolve_agent_scoped_outbound_media_access(params: &AgentScopedOutboundMediaAccessParams) -> OutboundMediaAccess",
+        "resolve_agent_scoped_host_outbound_media_access(params: &AgentScopedOutboundMediaAccessParams) -> HostOutboundMediaAccess",
+        "build_outbound_media_load_options(params: &OutboundMediaLoadParams) -> Result<OutboundMediaLoadOptions, String>"
+      ],
+      "unit_id": "OCRM-UNIT-MEDIA-013"
     },
     {
       "adr_refs": [],

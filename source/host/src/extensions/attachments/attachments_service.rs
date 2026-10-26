@@ -2014,6 +2014,20 @@ impl AttachmentsService {
                     .map_err(|e| e.to_string())?;
                 Ok(serde_json::to_value(res).unwrap_or(Value::Null))
             })(),
+            "buildOutboundMediaLoadOptions" => (|| {
+                let params: crate::extensions::attachments::load_options::OutboundMediaLoadParams =
+                    serde_json::from_value(args.clone())
+                        .map_err(|e| format!("Invalid OutboundMediaLoadParams: {e}"))?;
+                let opts = crate::extensions::attachments::load_options::build_outbound_media_load_options(&params)?;
+                Ok(serde_json::to_value(opts).unwrap_or(Value::Null))
+            })(),
+            "resolveAgentScopedOutboundMediaAccess" => (|| {
+                let params: crate::extensions::attachments::read_capability::AgentScopedOutboundMediaAccessParams =
+                    serde_json::from_value(args.clone())
+                        .map_err(|e| format!("Invalid AgentScopedOutboundMediaAccessParams: {e}"))?;
+                let access = crate::extensions::attachments::read_capability::resolve_agent_scoped_outbound_media_access(&params);
+                Ok(serde_json::to_value(access).unwrap_or(Value::Null))
+            })(),
             _ => return None,
         };
         Some(result)
