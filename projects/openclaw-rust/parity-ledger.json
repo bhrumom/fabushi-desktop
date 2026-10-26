@@ -10511,7 +10511,9 @@
     {
       "adr_refs": [],
       "behavior": "Renders sanitized attachment text as a model-visible <file> block with attribute XML escaping (&, <, >, \", ') and escaping of injected </file> and <file markers in content body, supporting compact single-line mode.",
-      "blocker_ids": [],
+      "blocker_ids": [
+        "BL-MEDIA-FILE-CONTEXT-UPSTREAM-CALLER-001"
+      ],
       "capability_ids": [
         "media.file_context"
       ],
@@ -10530,7 +10532,7 @@
       ],
       "id": "OCRM-RESP-MEDIA-FILE-CONTEXT-001",
       "integration": {
-        "consumer": "source/host/src/extensions/attachments/attachments_service.rs::dispatch_gateway",
+        "consumer": "source/host/src/runner/prompt_assembler.rs (pending upstream attachment file context embedding)",
         "entrypoint": "source/host/src/extensions/attachments/attachments_service.rs::dispatch_gateway(\"renderFileContext\")",
         "owner": "source/host/src/extensions/attachments/media_file_context.rs::render_file_context_block",
         "producer": "source/host/src/extensions/attachments/attachments_service.rs"
@@ -10586,8 +10588,8 @@
         "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "verified",
-        "wiring": "wired"
+        "verification": "not-run",
+        "wiring": "not-wired"
       },
       "target": {
         "language": "Rust",
@@ -10701,7 +10703,9 @@
     {
       "adr_refs": [],
       "behavior": "Best-effort temporary file cleanup helper for optional file paths produced during media conversion and staging flows, gracefully ignoring missing files.",
-      "blocker_ids": [],
+      "blocker_ids": [
+        "BL-MEDIA-TEMP-CLEANUP-UPSTREAM-001"
+      ],
       "capability_ids": [
         "media.temp_cleanup"
       ],
@@ -10720,10 +10724,10 @@
       ],
       "id": "OCRM-RESP-MEDIA-TEMP-CLEANUP-001",
       "integration": {
-        "consumer": "source/host/src/extensions/attachments/media_file_context.rs::unlink_if_exists",
+        "consumer": "source/host/src/extensions/attachments/video_playback_rendition.rs::create_video_playback_source_with",
         "entrypoint": "source/host/src/extensions/attachments/media_file_context.rs::unlink_if_exists",
-        "owner": "source/host/src/extensions/attachments/media_file_context.rs",
-        "producer": "source/host/src/extensions/attachments/media_file_context.rs"
+        "owner": "source/host/src/extensions/attachments/media_file_context.rs::unlink_if_exists",
+        "producer": "source/host/src/extensions/attachments/video_playback_rendition.rs"
       },
       "invariants": [
         "Non-existent file paths do not return an error or panic",
@@ -10770,8 +10774,8 @@
         "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "verified",
-        "wiring": "wired"
+        "verification": "not-run",
+        "wiring": "not-wired"
       },
       "target": {
         "language": "Rust",
@@ -10789,7 +10793,9 @@
     {
       "adr_refs": [],
       "behavior": "Formats structured notice for partial document text or page extractions, reflecting automatic selection limits, explicit user limits, and text/image truncation flags.",
-      "blocker_ids": [],
+      "blocker_ids": [
+        "BL-MEDIA-DOC-TRUNCATION-UPSTREAM-CALLER-001"
+      ],
       "capability_ids": [
         "media.doc_truncation"
       ],
@@ -10808,7 +10814,7 @@
       ],
       "id": "OCRM-RESP-MEDIA-DOC-TRUNCATION-001",
       "integration": {
-        "consumer": "source/host/src/extensions/attachments/attachments_service.rs::dispatch_gateway",
+        "consumer": "source/host/src/extensions/attachments/attachments_service.rs::read_text (pending document preview truncation notice attachment)",
         "entrypoint": "source/host/src/extensions/attachments/attachments_service.rs::dispatch_gateway(\"renderDocumentTruncation\")",
         "owner": "source/host/src/extensions/attachments/media_file_context.rs::render_document_truncation_notice",
         "producer": "source/host/src/extensions/attachments/attachments_service.rs"
@@ -10860,8 +10866,8 @@
         "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "verified",
-        "wiring": "wired"
+        "verification": "not-run",
+        "wiring": "not-wired"
       },
       "target": {
         "language": "Rust",

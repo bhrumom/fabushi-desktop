@@ -260,7 +260,7 @@ pub fn create_video_playback_source_with(
         fs::rename(&temp_path, rendition_path).ok()?;
         Some(rendition_path.to_path_buf())
     })();
-    let _ = fs::remove_file(&temp_path);
+    crate::extensions::attachments::media_file_context::unlink_if_exists(Some(&temp_path));
     result
 }
 
@@ -331,7 +331,7 @@ impl Resolution {
             .lock()
             .unwrap_or_else(|poisoned| poisoned.into_inner());
         if matches!(*ready, ResolutionState::Ready(_)) {
-            let _ = fs::remove_file(&self.rendition_path);
+            crate::extensions::attachments::media_file_context::unlink_if_exists(Some(&self.rendition_path));
         }
     }
 

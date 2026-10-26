@@ -163,12 +163,38 @@ fn test_ocrm_file_ctx_04_unlink_if_exists() {
     fs::write(&test_file, b"pcm-audio-bytes").expect("write temp file");
     assert!(test_file.exists());
 
+    // 1. Success boundary: existing file deleted
     unlink_if_exists(Some(&test_file));
     assert!(!test_file.exists());
 
-    // Best-effort cleanup on non-existent path does not panic
-    unlink_if_exists(Some(&tmp.join("does_not_exist.bin")));
+    // 2. Duplicate deletion boundary (idempotent; second call on deleted file does not error)
+    unlink_if_exists(Some(&test_file));
+    assert!(!test_file.exists());
+
+    // 3. Failure/missing file boundary: non-existent path silently ignored
+    let non_existent = tmp.join("does_not_exist_file.bin");
+    unlink_if_exists(Some(&non_existent));
+    assert!(!non_existent.exists());
+
+    // 4. None boundary: None path input is safely handled
     unlink_if_exists(None);
+
+    // 5. Aborted conversion / failure cleanup simulation:
+    // When a transcode fails midway, the intermediate temp file is cleaned up
+    let partial_temp = tmp.join("aborted_transcode.mp4.tmp");
+    fs::write(&partial_temp, b"partial-truncated-bytes").expect("write partial temp");
+    assert!(partial_temp.exists());
+    let conversion_sim = |should_fail: bool| -> Result<(), &'static str> {
+        if should_fail {
+            unlink_if_exists(Some(&partial_temp));
+            Err("transcode-aborted")
+        } else {
+            Ok(())
+        }
+    };
+    assert!(conversion_sim(true).is_err());
+    assert!(!partial_temp.exists());
+
     let _ = fs::remove_dir_all(&tmp);
 }
 

@@ -34,30 +34,30 @@ The audited source code was decomposed into 6 discrete Rust runtime responsibili
 1. **`OCRM-RESP-MEDIA-FILE-CONTEXT-001`**:
    - **Behavior**: Renders sanitized attachment text as a model-visible `<file>` block with attribute XML escaping (`&`, `<`, `>`, `"`, `'`) and escaping of injected `</file>` and `<file` markers in content body, supporting compact single-line mode.
    - **Rust Owner**: `source/host/src/extensions/attachments/media_file_context.rs::render_file_context_block`.
-   - **Production Call Chain**: Producer `AttachmentsService::dispatch_gateway("renderFileContext")` → Owner `render_file_context_block` → Consumer.
+   - **Production Call Chain**: Producer `AttachmentsService::dispatch_gateway("renderFileContext")` → Owner `render_file_context_block` → Consumer (pending upstream prompt assembler integration).
    - **Oracles**: `OCRM-FILE-CTX-O01`, `OCRM-FILE-CTX-O02`, `OCRM-FILE-CTX-O08`.
-   - **Status**: `implementation=implemented`, `wiring=wired`, `verification=verified`.
+   - **Status**: `implementation=implemented`, `wiring=not-wired`, `verification=not-run` (`blocker_ids=["BL-MEDIA-FILE-CONTEXT-UPSTREAM-CALLER-001"]`: prompt assembly pipeline and OpenResponses HTTP gateway handlers do not yet route attachment text blocks through `render_file_context_block`).
 
 2. **`OCRM-RESP-MEDIA-LOCAL-PATH-001`**:
    - **Behavior**: Resolves raw media reference string to local filesystem `PathBuf` when not a remote URL or data URL, normalizing single-slash and mixed-case file URLs, rejecting UNC hostnames and encoded traversal separators (`%2f`, `%5c`), and expanding tilde home directory paths.
    - **Rust Owner**: `source/host/src/extensions/attachments/media_file_context.rs::resolve_local_media_path`.
-   - **Production Call Chain**: Producer `channel_attachment.rs::to_local_channel_attachment_path` → Owner `resolve_local_media_path` → Consumer `resolve_channel_attachment`.
+   - **Production Call Chain**: Producer `cross_user_sharing/production.rs::CrossUserSharingService::resolve_attachment` → Entrypoint `AttachmentsService::resolve_channel_attachment` → Resolver `channel_attachment.rs::to_local_channel_attachment_path` → Owner `resolve_local_media_path` → Consumer `cross_user_sharing/production.rs`.
    - **Oracles**: `OCRM-FILE-CTX-O03`, `OCRM-FILE-CTX-O08`.
    - **Status**: `implementation=implemented`, `wiring=wired`, `verification=verified`.
 
 3. **`OCRM-RESP-MEDIA-TEMP-CLEANUP-001`**:
    - **Behavior**: Best-effort temporary file cleanup helper for optional file paths produced during media conversion and staging flows, gracefully ignoring missing files.
    - **Rust Owner**: `source/host/src/extensions/attachments/media_file_context.rs::unlink_if_exists`.
-   - **Production Call Chain**: Producer `unlink_if_exists` → Cleanup Temp Artifact → Consumer.
+   - **Production Call Chain**: Producer `video_playback_rendition.rs::create_video_playback_source_with` → Owner `unlink_if_exists` → Consumer `video_playback_rendition.rs` (pending managed image attachment and audio transcode staging pipelines).
    - **Oracles**: `OCRM-FILE-CTX-O04`.
-   - **Status**: `implementation=implemented`, `wiring=wired`, `verification=verified`.
+   - **Status**: `implementation=implemented`, `wiring=not-wired`, `verification=not-run` (`blocker_ids=["BL-MEDIA-TEMP-CLEANUP-UPSTREAM-001"]`: temporary media conversion cleanup helper is wired into video rendition runner but not yet connected to managed outgoing image attachment and audio transcode staging pipelines).
 
 4. **`OCRM-RESP-MEDIA-DOC-TRUNCATION-001`**:
    - **Behavior**: Formats structured notice for partial document text or page extractions, reflecting automatic selection limits, explicit user limits, and text/image truncation flags.
    - **Rust Owner**: `source/host/src/extensions/attachments/media_file_context.rs::render_document_truncation_notice`.
-   - **Production Call Chain**: Producer `AttachmentsService::dispatch_gateway("renderDocumentTruncation")` → Owner `render_document_truncation_notice` → Consumer.
+   - **Production Call Chain**: Producer `AttachmentsService::dispatch_gateway("renderDocumentTruncation")` → Owner `render_document_truncation_notice` → Consumer (pending document extraction preview attachment pipeline).
    - **Oracles**: `OCRM-FILE-CTX-O05`, `OCRM-FILE-CTX-O08`.
-   - **Status**: `implementation=implemented`, `wiring=wired`, `verification=verified`.
+   - **Status**: `implementation=implemented`, `wiring=not-wired`, `verification=not-run` (`blocker_ids=["BL-MEDIA-DOC-TRUNCATION-UPSTREAM-CALLER-001"]`: document extraction preview pipeline does not yet invoke `render_document_truncation_notice`).
 
 5. **`OCRM-RESP-MEDIA-PROMPT-IMAGE-PROVENANCE-001`**:
    - **Behavior**: Carries prompt image fact ownership indexes across provider-visible message payload structures without altering provider-visible bytes or schema contracts.
@@ -92,5 +92,5 @@ The audited source code was decomposed into 6 discrete Rust runtime responsibili
   - `unclassified_paths`: 58,574
   - `tracked_paths`: 58,750 ($176 + 58,574 = 58,750$)
   - `responsibilities`: 114
-  - Active blockers: `BL-CURSOR-BACKEND-IMAGE-RESOLUTION-001`, `BL-AGENT-ROSTER-UPSTREAM-CALLER-001`, `BL-MEDIA-UNDERSTANDING-UPSTREAM-CALLER-001`, `BL-MEDIA-FFMPEG-EXEC-UPSTREAM-001`, `BL-MEDIA-AUDIO-TRANSCODE-UPSTREAM-001`, `BL-MEDIA-REF-COMPARISON-UPSTREAM-001`, `BL-MEDIA-PROMPT-IMAGE-INPUT-UPSTREAM-001`, `BL-MEDIA-PROMPT-IMAGE-PROVENANCE-UPSTREAM-001`, `BL-MEDIA-IMAGE-PROCESSOR-RASTERMILL-001`.
+  - Active blockers: `BL-CURSOR-BACKEND-IMAGE-RESOLUTION-001`, `BL-AGENT-ROSTER-UPSTREAM-CALLER-001`, `BL-MEDIA-UNDERSTANDING-UPSTREAM-CALLER-001`, `BL-MEDIA-FFMPEG-EXEC-UPSTREAM-001`, `BL-MEDIA-AUDIO-TRANSCODE-UPSTREAM-001`, `BL-MEDIA-REF-COMPARISON-UPSTREAM-001`, `BL-MEDIA-PROMPT-IMAGE-INPUT-UPSTREAM-001`, `BL-MEDIA-PROMPT-IMAGE-PROVENANCE-UPSTREAM-001`, `BL-MEDIA-IMAGE-PROCESSOR-RASTERMILL-001`, `BL-MEDIA-FILE-CONTEXT-UPSTREAM-CALLER-001`, `BL-MEDIA-TEMP-CLEANUP-UPSTREAM-001`, `BL-MEDIA-DOC-TRUNCATION-UPSTREAM-CALLER-001`.
   - All 8 completion flags remain `false`.
