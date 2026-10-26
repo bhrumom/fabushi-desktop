@@ -10,10 +10,10 @@
     "ui_accepted": false
   },
   "file_coverage": {
-    "mapped_paths": 112,
+    "mapped_paths": 118,
     "omitted_known": 0,
     "tracked_paths": 58750,
-    "unclassified_paths": 58638
+    "unclassified_paths": 58632
   },
   "inventory_authority": {
     "manifest_source": "GitHub Actions immutable artifact candidate",
@@ -3931,8 +3931,8 @@
           "blob_sha": "664540bba2ec156f9ef5ef57bfd1fb7bd7f93d0d",
           "path": "src/infra/net/ssrf.ts",
           "range": {
-            "start_line": 1,
-            "end_line": 736
+            "end_line": 736,
+            "start_line": 1
           },
           "symbol": "validate_web_fetch_url"
         }
@@ -4022,8 +4022,8 @@
           "blob_sha": "e9dd6374f40b7917a0a8b63398b047ad7e84e47c",
           "path": "src/agents/tools/web-fetch.ts",
           "range": {
-            "start_line": 1,
-            "end_line": 950
+            "end_line": 950,
+            "start_line": 1
           },
           "symbol": "render_web_fetch_result"
         }
@@ -4113,8 +4113,8 @@
           "blob_sha": "5cf9e9d4a8f394e5399e2658015137a1735b1a61",
           "path": "src/web-search/runtime.ts",
           "range": {
-            "start_line": 1,
-            "end_line": 616
+            "end_line": 616,
+            "start_line": 1
           },
           "symbol": "SandWebToolBridge"
         }
@@ -4203,8 +4203,8 @@
           "blob_sha": "c818a88aa10cc7c72d2d9d254c60b2487ad65c57",
           "path": "src/web-fetch/runtime.ts",
           "range": {
-            "start_line": 1,
-            "end_line": 166
+            "end_line": 166,
+            "start_line": 1
           },
           "symbol": "WebToolExecutor"
         }
@@ -4294,8 +4294,8 @@
           "blob_sha": "26f9a040cab5391c86383453a8b457e0a654bbea",
           "path": "src/shared/browser-image-mime-types.ts",
           "range": {
-            "start_line": 1,
-            "end_line": 9
+            "end_line": 9,
+            "start_line": 1
           },
           "symbol": "BROWSER_IMAGE_MIME_TYPES"
         }
@@ -4387,8 +4387,8 @@
           "blob_sha": "765032c984a44c6337373c9b1007b68764dc0463",
           "path": "src/worker/browser-runtime.ts",
           "range": {
-            "start_line": 1,
-            "end_line": 91
+            "end_line": 91,
+            "start_line": 1
           },
           "symbol": "BOX_CDP_PORT_BASE"
         }
@@ -4480,8 +4480,8 @@
           "blob_sha": "ddd39516d5697de19af870ee654b3f807e5864ac",
           "path": "src/talk/talk-session-controller.ts",
           "range": {
-            "start_line": 1,
-            "end_line": 222
+            "end_line": 222,
+            "start_line": 1
           },
           "symbol": "createTalkSessionController"
         }
@@ -4573,8 +4573,8 @@
           "blob_sha": "9b31de718e10bd5fb748a30126889bea85533c91",
           "path": "src/talk/client-voice-session-lifecycle.ts",
           "range": {
-            "start_line": 1,
-            "end_line": 208
+            "end_line": 208,
+            "start_line": 1
           },
           "symbol": "withClientVoiceSessionSettlement"
         }
@@ -4663,8 +4663,8 @@
           "blob_sha": "de7fe86c4709e4dd09ace653f43b0b5802126b18",
           "path": "src/talk/exact-speech-protocol.ts",
           "range": {
-            "start_line": 1,
-            "end_line": 96
+            "end_line": 96,
+            "start_line": 1
           },
           "symbol": "classifyRealtimeVoiceConsultToolCall"
         }
@@ -4754,8 +4754,8 @@
           "blob_sha": "d708e9b70db100bf16e24d1ea6f397cadf8ec3ee",
           "path": "src/talk/audio-output-port.ts",
           "range": {
-            "start_line": 1,
-            "end_line": 98
+            "end_line": 98,
+            "start_line": 1
           },
           "symbol": "createRealtimeVoiceAudioPortSender"
         }
@@ -4846,8 +4846,8 @@
           "blob_sha": "f31643dca1189f96264a02bd1c26b802ef4105b8",
           "path": "src/talk/turn-context-tracker.ts",
           "range": {
-            "start_line": 1,
-            "end_line": 192
+            "end_line": 192,
+            "start_line": 1
           },
           "symbol": "createRealtimeVoiceTurnContextTracker"
         }
@@ -4941,8 +4941,8 @@
           "blob_sha": "01934ce2d4c638f646e7d2b05fd18c964a1712ef",
           "path": "src/realtime-transcription/websocket-session.ts",
           "range": {
-            "start_line": 1,
-            "end_line": 564
+            "end_line": 564,
+            "start_line": 1
           },
           "symbol": "WebSocketRealtimeTranscriptionSession"
         }
@@ -5035,8 +5035,8 @@
           "blob_sha": "bf5d08bb075195a0488c0e0747141f2d61f16605",
           "path": "src/agents/tool-loop-admission.ts",
           "range": {
-            "start_line": 1,
-            "end_line": 299
+            "end_line": 299,
+            "start_line": 1
           },
           "symbol": "evaluateToolLoopCall"
         }
@@ -5127,8 +5127,8 @@
           "blob_sha": "e5ec67ad724be1a28243ebb25ac66103366422d0",
           "path": "src/agents/tool-loop-detection.ts",
           "range": {
-            "start_line": 1,
-            "end_line": 760
+            "end_line": 760,
+            "start_line": 1
           },
           "symbol": "hashToolCall"
         }
@@ -5219,8 +5219,8 @@
           "blob_sha": "43601859d6ee9f015eb96a60111106d0d6026578",
           "path": "src/agents/sessions/compaction/compaction.ts",
           "range": {
-            "start_line": 1,
-            "end_line": 50
+            "end_line": 50,
+            "start_line": 1
           },
           "symbol": "generateSummary"
         }
@@ -5311,8 +5311,8 @@
           "blob_sha": "92e53d1556a7eda2c5487613fe240ab6d5a11c41",
           "path": "src/model-catalog/pricing.ts",
           "range": {
-            "start_line": 1,
-            "end_line": 424
+            "end_line": 424,
+            "start_line": 1
           },
           "symbol": "ModelPricing"
         }
@@ -5403,8 +5403,8 @@
           "blob_sha": "ed35270d5976a1700d7b0adc7367b0b5b4352f44",
           "path": "src/acp/commands.ts",
           "range": {
-            "start_line": 1,
-            "end_line": 45
+            "end_line": 45,
+            "start_line": 1
           },
           "symbol": "getAvailableCommands"
         }
@@ -5495,8 +5495,8 @@
           "blob_sha": "5cbf002ee4ad1c9e2529417ec4b3d054a73e69fb",
           "path": "src/acp/policy.ts",
           "range": {
-            "start_line": 1,
-            "end_line": 48
+            "end_line": 48,
+            "start_line": 1
           },
           "symbol": "resolveAcpDispatchPolicyError"
         }
@@ -5522,6 +5522,555 @@
         "TurnSettlement::settle"
       ],
       "unit_id": "OCRM-UNIT-AGENT-TURN-001"
+    },
+    {
+      "adr_refs": [],
+      "behavior": "Inbound message debouncing gate, immediate bypass for control command messages (abort/stop/status) and media payloads, and channel-scoped timing resolution.",
+      "blocker_ids": [],
+      "capability_ids": [
+        "channel.inbound_debounce"
+      ],
+      "dependencies": [
+        "mahayana_host_runtime::connectors"
+      ],
+      "evidence_refs": [
+        "source/host/tests/openclaw_channel_delivery_contract.rs",
+        "projects/openclaw-rust/dossiers/channels-outbound-delivery-scoped.md"
+      ],
+      "existing_owner_candidates": [
+        {
+          "path": "source/host/src/connectors/channel_delivery.rs",
+          "reason": "Host InboundChannelDeduplicator"
+        }
+      ],
+      "id": "OCRM-RESP-CHANNEL-INBOUND-DEBOUNCE-001",
+      "integration": {
+        "consumer": "source/host/src/extensions/transcript/mod.rs",
+        "entrypoint": "source/host/src/connectors/channel_delivery.rs",
+        "owner": "source/host/src/connectors/channel_delivery.rs",
+        "producer": "source/host/src/connectors/channel_delivery.rs"
+      },
+      "invariants": [
+        "Exact duplicate message id is suppressed idempotently",
+        "Stale or out-of-order cursors are rejected"
+      ],
+      "migration_rollback": "Controlled by channel delivery port config",
+      "oracle_ids": [
+        "OCRM-CHANNEL-O01",
+        "OCRM-CHANNEL-O08"
+      ],
+      "owner_decision": "Implement inbound message deduplication and debounce control in host channel delivery",
+      "postconditions": [
+        "Unique message admitted into conversation turn pipeline"
+      ],
+      "preconditions": [
+        "Inbound channel message event received"
+      ],
+      "required_evidence_dimensions": [
+        "unit",
+        "concurrency"
+      ],
+      "required_gate_ids": [
+        "OCRM-G04-rust-contract",
+        "OCRM-G05-frozen-oracle"
+      ],
+      "requirement_ids": [
+        "OCRM-R14",
+        "OCRM-AC14"
+      ],
+      "responsibility_kind": "business-runtime",
+      "reviewer": "xuyao@ombhrum.com",
+      "risk": "High; prevents double-turn triggers and loop feedback",
+      "selected_owner": "source/host/src/connectors/channel_delivery.rs",
+      "source_refs": [
+        {
+          "blob_sha": "edc265f0c352c44dcf816f48200c1d65a33d6a14",
+          "path": "src/channels/inbound-debounce-policy.ts",
+          "range": {
+            "end_line": 59,
+            "start_line": 1
+          },
+          "symbol": "shouldDebounceTextInbound"
+        }
+      ],
+      "status": {
+        "acceptance": "pending",
+        "implementation": "implemented",
+        "mapping": "reviewed",
+        "read": "read-complete",
+        "verification": "verified",
+        "wiring": "wired"
+      },
+      "target": {
+        "language": "Rust",
+        "path": "source/host/src/connectors/channel_delivery.rs",
+        "symbol": "InboundChannelDeduplicator"
+      },
+      "tests": [
+        "source/host/tests/openclaw_channel_delivery_contract.rs::test_ocrm_channel_o01_inbound_deduplication",
+        "source/host/tests/openclaw_channel_delivery_contract.rs::test_ocrm_channel_o08_receipt_settlement"
+      ],
+      "typed_contracts": [
+        "InboundChannelDeduplicator::process_message"
+      ],
+      "unit_id": "OCRM-UNIT-CHANNELS-001"
+    },
+    {
+      "adr_refs": [],
+      "behavior": "Thread binding lifecycle, account-level idle timeout and max age resolution, thread spawn policy resolution (isolated vs fork), and conversation affinity routing.",
+      "blocker_ids": [],
+      "capability_ids": [
+        "channel.thread_bindings"
+      ],
+      "dependencies": [
+        "mahayana_host_runtime::connectors"
+      ],
+      "evidence_refs": [
+        "source/host/tests/openclaw_channel_delivery_contract.rs",
+        "projects/openclaw-rust/dossiers/channels-outbound-delivery-scoped.md"
+      ],
+      "existing_owner_candidates": [
+        {
+          "path": "source/host/src/connectors/channel_delivery.rs",
+          "reason": "Host ChannelThreadRouter"
+        }
+      ],
+      "id": "OCRM-RESP-CHANNEL-THREAD-BINDINGS-001",
+      "integration": {
+        "consumer": "source/host/src/extensions/transcript/mod.rs",
+        "entrypoint": "source/host/src/connectors/channel_delivery.rs",
+        "owner": "source/host/src/connectors/channel_delivery.rs",
+        "producer": "source/host/src/connectors/channel_delivery.rs"
+      },
+      "invariants": [
+        "Messages with identical thread id resolve to canonical conversation scope",
+        "Root channel messages resolve to distinct root conversation scope"
+      ],
+      "migration_rollback": "Fallback to root channel conversation scope",
+      "oracle_ids": [
+        "OCRM-CHANNEL-O02"
+      ],
+      "owner_decision": "Implement thread routing and conversation affinity in host channel delivery",
+      "postconditions": [
+        "Conversation scope isolated and preserved across thread lifetime"
+      ],
+      "preconditions": [
+        "Threaded message ingress from external channel"
+      ],
+      "required_evidence_dimensions": [
+        "unit",
+        "lifecycle"
+      ],
+      "required_gate_ids": [
+        "OCRM-G04-rust-contract",
+        "OCRM-G05-frozen-oracle"
+      ],
+      "requirement_ids": [
+        "OCRM-R14",
+        "OCRM-AC14"
+      ],
+      "responsibility_kind": "business-runtime",
+      "reviewer": "xuyao@ombhrum.com",
+      "risk": "Medium; guarantees message isolation between distinct threads",
+      "selected_owner": "source/host/src/connectors/channel_delivery.rs",
+      "source_refs": [
+        {
+          "blob_sha": "849ad93c82d1c07d67dac8679d24b457b2e8f135",
+          "path": "src/channels/thread-bindings-policy.ts",
+          "range": {
+            "end_line": 185,
+            "start_line": 1
+          },
+          "symbol": "resolveThreadBindingSpawnPolicy"
+        }
+      ],
+      "status": {
+        "acceptance": "pending",
+        "implementation": "implemented",
+        "mapping": "reviewed",
+        "read": "read-complete",
+        "verification": "verified",
+        "wiring": "wired"
+      },
+      "target": {
+        "language": "Rust",
+        "path": "source/host/src/connectors/channel_delivery.rs",
+        "symbol": "ChannelThreadRouter"
+      },
+      "tests": [
+        "source/host/tests/openclaw_channel_delivery_contract.rs::test_ocrm_channel_o02_thread_routing_affinity"
+      ],
+      "typed_contracts": [
+        "ChannelThreadRouter::resolve_or_create"
+      ],
+      "unit_id": "OCRM-UNIT-CHANNELS-001"
+    },
+    {
+      "adr_refs": [],
+      "behavior": "Channel config entry precedence matching (direct, parent, wildcard fallback), nested allowlist gating, and host channel delivery port lifecycle registration.",
+      "blocker_ids": [],
+      "capability_ids": [
+        "channel.delivery_port"
+      ],
+      "dependencies": [
+        "mahayana_host_runtime::connectors"
+      ],
+      "evidence_refs": [
+        "source/host/tests/openclaw_channel_delivery_contract.rs",
+        "projects/openclaw-rust/dossiers/channels-outbound-delivery-scoped.md"
+      ],
+      "existing_owner_candidates": [
+        {
+          "path": "source/host/src/connectors/channel_delivery.rs",
+          "reason": "HostChannelDelivery and ChannelDeliveryPort"
+        }
+      ],
+      "id": "OCRM-RESP-CHANNEL-DELIVERY-PORT-001",
+      "integration": {
+        "consumer": "source/host/src/connectors/channel_delivery.rs",
+        "entrypoint": "source/host/src/connectors/channel_delivery.rs",
+        "owner": "source/host/src/connectors/channel_delivery.rs",
+        "producer": "source/host/src/runner/production_turn_agent_owner.rs"
+      },
+      "invariants": [
+        "Unregistered delivery port returns SandChannelDeliveryUnregisteredError",
+        "Registered port dispatches outbound messages reliably"
+      ],
+      "migration_rollback": "Reset delivery port to default unregistered port",
+      "oracle_ids": [
+        "OCRM-CHANNEL-O03",
+        "OCRM-CHANNEL-O04"
+      ],
+      "owner_decision": "Implement HostChannelDelivery port management and dead letter routing",
+      "postconditions": [
+        "Outbound message delivered or enqueued to dead letter queue"
+      ],
+      "preconditions": [
+        "Outbound message transmission requested by agent"
+      ],
+      "required_evidence_dimensions": [
+        "unit",
+        "lifecycle"
+      ],
+      "required_gate_ids": [
+        "OCRM-G04-rust-contract",
+        "OCRM-G05-frozen-oracle"
+      ],
+      "requirement_ids": [
+        "OCRM-R15",
+        "OCRM-AC15"
+      ],
+      "responsibility_kind": "business-runtime",
+      "reviewer": "xuyao@ombhrum.com",
+      "risk": "High; prevents silent message drops when connectors disconnect",
+      "selected_owner": "source/host/src/connectors/channel_delivery.rs",
+      "source_refs": [
+        {
+          "blob_sha": "871d6288d54e149616b1d657862a78b0bf3b893e",
+          "path": "src/channels/channel-config.ts",
+          "range": {
+            "end_line": 146,
+            "start_line": 1
+          },
+          "symbol": "resolveChannelEntryMatchWithFallback"
+        }
+      ],
+      "status": {
+        "acceptance": "pending",
+        "implementation": "implemented",
+        "mapping": "reviewed",
+        "read": "read-complete",
+        "verification": "verified",
+        "wiring": "wired"
+      },
+      "target": {
+        "language": "Rust",
+        "path": "source/host/src/connectors/channel_delivery.rs",
+        "symbol": "HostChannelDelivery"
+      },
+      "tests": [
+        "source/host/tests/openclaw_channel_delivery_contract.rs::test_ocrm_channel_o03_delivery_port_registration_lifecycle",
+        "source/host/tests/openclaw_channel_delivery_contract.rs::test_ocrm_channel_o04_dead_letter_fallback"
+      ],
+      "typed_contracts": [
+        "HostChannelDelivery::deliver",
+        "HostChannelDelivery::set_port"
+      ],
+      "unit_id": "OCRM-UNIT-CHANNELS-001"
+    },
+    {
+      "adr_refs": [],
+      "behavior": "Streaming progress draft composition, reasoning/commentary line formatting, and local attachment 50 MiB upload cap enforcement with safe mime resolution.",
+      "blocker_ids": [],
+      "capability_ids": [
+        "channel.attachment_resolver"
+      ],
+      "dependencies": [
+        "mahayana_host_runtime::connectors"
+      ],
+      "evidence_refs": [
+        "source/host/tests/openclaw_channel_delivery_contract.rs",
+        "projects/openclaw-rust/dossiers/channels-outbound-delivery-scoped.md"
+      ],
+      "existing_owner_candidates": [
+        {
+          "path": "source/host/src/connectors/channel_attachment.rs",
+          "reason": "Host channel attachment resolver"
+        }
+      ],
+      "id": "OCRM-RESP-CHANNEL-ATTACHMENT-RESOLVER-001",
+      "integration": {
+        "consumer": "source/host/src/connectors/channel_delivery.rs",
+        "entrypoint": "source/host/src/connectors/channel_attachment.rs",
+        "owner": "source/host/src/connectors/channel_attachment.rs",
+        "producer": "source/host/src/runner/production_turn_agent_owner.rs"
+      },
+      "invariants": [
+        "Attachments exceeding 50 MiB rejected",
+        "MIME type and image flag resolved accurately from header magic bytes"
+      ],
+      "migration_rollback": "Reject attachment and log error without crashing host",
+      "oracle_ids": [
+        "OCRM-CHANNEL-O05"
+      ],
+      "owner_decision": "Implement channel attachment validation and resolution in connectors",
+      "postconditions": [
+        "ResolvedChannelAttachment returned with upload metadata"
+      ],
+      "preconditions": [
+        "Attachment path or URL provided for outbound message"
+      ],
+      "required_evidence_dimensions": [
+        "unit",
+        "negative-test"
+      ],
+      "required_gate_ids": [
+        "OCRM-G04-rust-contract",
+        "OCRM-G05-frozen-oracle"
+      ],
+      "requirement_ids": [
+        "OCRM-R15",
+        "OCRM-AC15"
+      ],
+      "responsibility_kind": "business-runtime",
+      "reviewer": "xuyao@ombhrum.com",
+      "risk": "High; prevents memory exhaustion and unverified binary uploads",
+      "selected_owner": "source/host/src/connectors/channel_attachment.rs",
+      "source_refs": [
+        {
+          "blob_sha": "6da9c87e6231f48df2852bf2026a18cb7eec3805",
+          "path": "src/channels/progress-draft-compositor.ts",
+          "range": {
+            "end_line": 753,
+            "start_line": 1
+          },
+          "symbol": "createChannelProgressDraftCompositor"
+        }
+      ],
+      "status": {
+        "acceptance": "pending",
+        "implementation": "implemented",
+        "mapping": "reviewed",
+        "read": "read-complete",
+        "verification": "verified",
+        "wiring": "wired"
+      },
+      "target": {
+        "language": "Rust",
+        "path": "source/host/src/connectors/channel_attachment.rs",
+        "symbol": "resolve_channel_attachment"
+      },
+      "tests": [
+        "source/host/tests/openclaw_channel_delivery_contract.rs::test_ocrm_channel_o05_attachment_50_mib_limit"
+      ],
+      "typed_contracts": [
+        "resolve_channel_attachment"
+      ],
+      "unit_id": "OCRM-UNIT-CHANNELS-001"
+    },
+    {
+      "adr_refs": [],
+      "behavior": "Draft streaming preview chunk size clamping, break preference resolution (paragraph, newline, sentence), and code fence boundary preservation.",
+      "blocker_ids": [],
+      "capability_ids": [
+        "channel.streaming_chunking"
+      ],
+      "dependencies": [
+        "mahayana_host_runtime::connectors"
+      ],
+      "evidence_refs": [
+        "source/host/tests/openclaw_channel_delivery_contract.rs",
+        "projects/openclaw-rust/dossiers/channels-outbound-delivery-scoped.md"
+      ],
+      "existing_owner_candidates": [
+        {
+          "path": "source/host/src/connectors/channel_delivery.rs",
+          "reason": "Host outbound message chunker"
+        }
+      ],
+      "id": "OCRM-RESP-CHANNEL-STREAMING-CHUNKING-001",
+      "integration": {
+        "consumer": "source/host/src/connectors/channel_delivery.rs",
+        "entrypoint": "source/host/src/connectors/channel_delivery.rs",
+        "owner": "source/host/src/connectors/channel_delivery.rs",
+        "producer": "source/host/src/runner/production_turn_agent_owner.rs"
+      },
+      "invariants": [
+        "All chunks maintain balanced and valid markdown code fences",
+        "Chunk boundaries honor paragraph, sentence, or newline preferences"
+      ],
+      "migration_rollback": "Deliver single truncated message with warning",
+      "oracle_ids": [
+        "OCRM-CHANNEL-O06"
+      ],
+      "owner_decision": "Implement message splitting and code fence preservation in connectors",
+      "postconditions": [
+        "List of compliant message chunks generated"
+      ],
+      "preconditions": [
+        "Message exceeding channel length limit (4,000 chars)"
+      ],
+      "required_evidence_dimensions": [
+        "unit",
+        "format"
+      ],
+      "required_gate_ids": [
+        "OCRM-G04-rust-contract",
+        "OCRM-G05-frozen-oracle"
+      ],
+      "requirement_ids": [
+        "OCRM-R15",
+        "OCRM-AC15"
+      ],
+      "responsibility_kind": "business-runtime",
+      "reviewer": "xuyao@ombhrum.com",
+      "risk": "Medium; guarantees message delivery without downstream protocol errors",
+      "selected_owner": "source/host/src/connectors/channel_delivery.rs",
+      "source_refs": [
+        {
+          "blob_sha": "ca99866dc4c2b40b7d735f3799e8fee80e24fb5b",
+          "path": "src/channels/draft-streaming-chunking.ts",
+          "range": {
+            "end_line": 50,
+            "start_line": 1
+          },
+          "symbol": "resolveChannelDraftStreamingChunking"
+        }
+      ],
+      "status": {
+        "acceptance": "pending",
+        "implementation": "implemented",
+        "mapping": "reviewed",
+        "read": "read-complete",
+        "verification": "verified",
+        "wiring": "wired"
+      },
+      "target": {
+        "language": "Rust",
+        "path": "source/host/src/connectors/channel_delivery.rs",
+        "symbol": "split_channel_message"
+      },
+      "tests": [
+        "source/host/tests/openclaw_channel_delivery_contract.rs::test_ocrm_channel_o06_message_chunking_code_fence_preservation"
+      ],
+      "typed_contracts": [
+        "split_channel_message"
+      ],
+      "unit_id": "OCRM-UNIT-CHANNELS-001"
+    },
+    {
+      "adr_refs": [],
+      "behavior": "Channel sender access control list (ACL) evaluation, wildcard resolution, normalized candidate matching, and webhook HMAC signature replay protection.",
+      "blocker_ids": [],
+      "capability_ids": [
+        "channel.access_control"
+      ],
+      "dependencies": [
+        "mahayana_host_runtime::connectors"
+      ],
+      "evidence_refs": [
+        "source/host/tests/openclaw_channel_delivery_contract.rs",
+        "projects/openclaw-rust/dossiers/channels-outbound-delivery-scoped.md"
+      ],
+      "existing_owner_candidates": [
+        {
+          "path": "source/host/src/connectors/channel_delivery.rs",
+          "reason": "Host ChannelAclGate"
+        }
+      ],
+      "id": "OCRM-RESP-CHANNEL-ACCESS-CONTROL-001",
+      "integration": {
+        "consumer": "source/host/src/extensions/transcript/mod.rs",
+        "entrypoint": "source/host/src/connectors/channel_delivery.rs",
+        "owner": "source/host/src/connectors/channel_delivery.rs",
+        "producer": "source/host/src/connectors/channel_delivery.rs"
+      },
+      "invariants": [
+        "Denylisted senders strictly rejected even if present on allowlist",
+        "Wildcard '*' grants access to all non-denylisted senders",
+        "Invalid HMAC signatures rejected immediately"
+      ],
+      "migration_rollback": "Default deny-all access policy",
+      "oracle_ids": [
+        "OCRM-CHANNEL-O11",
+        "OCRM-CHANNEL-O12"
+      ],
+      "owner_decision": "Implement channel ACL gating and webhook signature verification in connectors",
+      "postconditions": [
+        "Access authorized or denied with security audit log"
+      ],
+      "preconditions": [
+        "Inbound webhook or message from external sender"
+      ],
+      "required_evidence_dimensions": [
+        "unit",
+        "security"
+      ],
+      "required_gate_ids": [
+        "OCRM-G04-rust-contract",
+        "OCRM-G05-frozen-oracle"
+      ],
+      "requirement_ids": [
+        "OCRM-R14",
+        "OCRM-AC14"
+      ],
+      "responsibility_kind": "business-runtime",
+      "reviewer": "xuyao@ombhrum.com",
+      "risk": "High; prevents unauthorized bot interactions and spoofed webhook triggers",
+      "selected_owner": "source/host/src/connectors/channel_delivery.rs",
+      "source_refs": [
+        {
+          "blob_sha": "0735987eeec5980109dbec31a98af08c93f5e69c",
+          "path": "src/channels/allowlist-match.ts",
+          "range": {
+            "end_line": 107,
+            "start_line": 1
+          },
+          "symbol": "resolveCompiledAllowlistMatch"
+        }
+      ],
+      "status": {
+        "acceptance": "pending",
+        "implementation": "implemented",
+        "mapping": "reviewed",
+        "read": "read-complete",
+        "verification": "verified",
+        "wiring": "wired"
+      },
+      "target": {
+        "language": "Rust",
+        "path": "source/host/src/connectors/channel_delivery.rs",
+        "symbol": "ChannelAclGate"
+      },
+      "tests": [
+        "source/host/tests/openclaw_channel_delivery_contract.rs::test_ocrm_channel_o11_webhook_hmac_verification",
+        "source/host/tests/openclaw_channel_delivery_contract.rs::test_ocrm_channel_o12_acl_gating"
+      ],
+      "typed_contracts": [
+        "ChannelAclGate::is_authorized",
+        "verify_webhook_hmac_sha256"
+      ],
+      "unit_id": "OCRM-UNIT-CHANNELS-001"
     }
   ],
   "schema_version": 1,

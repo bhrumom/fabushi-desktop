@@ -1,5 +1,5 @@
 {
-  "canonical_inventory_sha256": "6cc0694060637cf7049f12795e5c009e085ffd5d55248bac6bfd047ac57a4400",
+  "canonical_inventory_sha256": "c2efc7a5b3754936590264aeeb9147cd9bfeaa3ee339fb3585eaa5aabcedbc01",
   "compression": "gzip with mtime=0, UTF-8 JSONL, full canonical schema records",
   "format_version": 1,
   "project_id": "OCRM-001",
@@ -223,20 +223,20 @@
       "uncompressed_sha256": "8b1316e6daf4f30dabf528db9abaa63abfe5bd8dfcd1bd3197dacb685629604b"
     },
     {
-      "compressed_sha256": "f80ad024a99bde9e006e9be50d304ad823e2349dd51a898f73a7d166d4c29fd8",
+      "compressed_sha256": "4441652717af87a4d8a91121553ba75150ba7c0e1fb2872b35e35275ebbad673",
       "count": 1024,
       "first_path": "src/auto-reply/reply/commands-export-common.ts",
       "last_path": "src/channels/plugins/bundled.load-failures.test.ts",
       "path": "projects/openclaw-rust/inventory/shards/part-0027.jsonl.gz",
-      "uncompressed_sha256": "616c3f683b3d9b6b2cfbbea8cdc2e497b18f68ad8fe4844f8925fc51fdbaa3c7"
+      "uncompressed_sha256": "0b93e536c1f3c67aa5785a911acec67e747d0edfc349eddb7c15ab8c704c5b54"
     },
     {
-      "compressed_sha256": "72b42f7db7325188f54898ea0ab15174636388081b95ca58853d161530ec7c95",
+      "compressed_sha256": "936326593bae89d956929c0a6df0f12c2304173304d26408d15d24793395a0ac",
       "count": 1024,
       "first_path": "src/channels/plugins/bundled.shape-guard.test-helpers.ts",
       "last_path": "src/cli/plugin-invocation-resources.test.ts",
       "path": "projects/openclaw-rust/inventory/shards/part-0028.jsonl.gz",
-      "uncompressed_sha256": "f0fa031e5d24ee419c49517919d741609178ddbef3f9fd5ba4e60711364d2350"
+      "uncompressed_sha256": "fd331bf505f861f0d32bb3677caec4d7fb8acbe96f40ce578a4df053d0de2741"
     },
     {
       "compressed_sha256": "1347fd3603bd4ea2d41580b540d41cb4471bd27ea36b7c386b9977eeef50f263",

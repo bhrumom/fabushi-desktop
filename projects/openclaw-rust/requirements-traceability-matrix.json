@@ -386,24 +386,39 @@
       "reviewer": "xuyao@ombhrum.com"
     },
     {
-      "acceptance_status": "not-started",
+      "acceptance_status": "in-progress",
       "blocker_ids": [],
-      "evidence_refs": [],
+      "evidence_refs": [
+        "source/host/tests/openclaw_channel_delivery_contract.rs",
+        "projects/openclaw-rust/dossiers/channels-outbound-delivery-scoped.md"
+      ],
       "gate_ids": [],
       "id": "OCRM-R14",
       "kind": "requirement",
       "not_applicable_reason": null,
-      "oracle_ids": [],
+      "oracle_ids": [
+        "OCRM-CHANNEL-O01",
+        "OCRM-CHANNEL-O02",
+        "OCRM-CHANNEL-O08",
+        "OCRM-CHANNEL-O11",
+        "OCRM-CHANNEL-O12"
+      ],
       "requirement_text_source": "docs/specs/openclaw-rust-equivalence-migration.md#5",
-      "responsibility_ids": [],
-      "reviewer": null
+      "responsibility_ids": [
+        "OCRM-RESP-CHANNEL-INBOUND-DEBOUNCE-001",
+        "OCRM-RESP-CHANNEL-THREAD-BINDINGS-001",
+        "OCRM-RESP-CHANNEL-ACCESS-CONTROL-001"
+      ],
+      "reviewer": "xuyao@ombhrum.com"
     },
     {
       "acceptance_status": "in-progress",
       "blocker_ids": [],
       "evidence_refs": [
         "projects/openclaw-rust/dossiers/transcript-round100-openclaw-storage-migration-and-diagnostics-observability-native-fusion-20261026.md",
-        "source/host/tests/openclaw_storage_diagnostics_contract.rs"
+        "source/host/tests/openclaw_storage_diagnostics_contract.rs",
+        "source/host/tests/openclaw_channel_delivery_contract.rs",
+        "projects/openclaw-rust/dossiers/channels-outbound-delivery-scoped.md"
       ],
       "gate_ids": [],
       "id": "OCRM-R15",
@@ -416,7 +431,11 @@
         "OCRM-STORAGE-O12",
         "OCRM-STORAGE-O13",
         "OCRM-STORAGE-O14",
-        "OCRM-STORAGE-O15"
+        "OCRM-STORAGE-O15",
+        "OCRM-CHANNEL-O03",
+        "OCRM-CHANNEL-O04",
+        "OCRM-CHANNEL-O05",
+        "OCRM-CHANNEL-O06"
       ],
       "requirement_text_source": "docs/specs/openclaw-rust-equivalence-migration.md#5",
       "responsibility_ids": [
@@ -426,7 +445,10 @@
         "OCRM-RESP-STORAGE-PROVIDER-ACQUISITION-001",
         "OCRM-RESP-STORAGE-FILESYSTEM-BACKEND-001",
         "OCRM-RESP-STORAGE-LOCATION-LIFECYCLE-001",
-        "OCRM-RESP-STORAGE-STREAMING-ENCRYPTION-001"
+        "OCRM-RESP-STORAGE-STREAMING-ENCRYPTION-001",
+        "OCRM-RESP-CHANNEL-DELIVERY-PORT-001",
+        "OCRM-RESP-CHANNEL-ATTACHMENT-RESOLVER-001",
+        "OCRM-RESP-CHANNEL-STREAMING-CHUNKING-001"
       ],
       "reviewer": "xuyao@ombhrum.com"
     },
@@ -840,30 +862,55 @@
       "reviewer": null
     },
     {
-      "acceptance_status": "not-started",
+      "acceptance_status": "in-progress",
       "blocker_ids": [],
-      "evidence_refs": [],
+      "evidence_refs": [
+        "source/host/tests/openclaw_channel_delivery_contract.rs",
+        "projects/openclaw-rust/dossiers/channels-outbound-delivery-scoped.md"
+      ],
       "gate_ids": [],
       "id": "OCRM-AC14",
       "kind": "acceptance-criterion",
       "not_applicable_reason": null,
-      "oracle_ids": [],
+      "oracle_ids": [
+        "OCRM-CHANNEL-O01",
+        "OCRM-CHANNEL-O02",
+        "OCRM-CHANNEL-O08",
+        "OCRM-CHANNEL-O11",
+        "OCRM-CHANNEL-O12"
+      ],
       "requirement_text_source": "docs/specs/openclaw-rust-equivalence-migration.md#15",
-      "responsibility_ids": [],
-      "reviewer": null
+      "responsibility_ids": [
+        "OCRM-RESP-CHANNEL-INBOUND-DEBOUNCE-001",
+        "OCRM-RESP-CHANNEL-THREAD-BINDINGS-001",
+        "OCRM-RESP-CHANNEL-ACCESS-CONTROL-001"
+      ],
+      "reviewer": "xuyao@ombhrum.com"
     },
     {
-      "acceptance_status": "not-started",
+      "acceptance_status": "in-progress",
       "blocker_ids": [],
-      "evidence_refs": [],
+      "evidence_refs": [
+        "source/host/tests/openclaw_channel_delivery_contract.rs",
+        "projects/openclaw-rust/dossiers/channels-outbound-delivery-scoped.md"
+      ],
       "gate_ids": [],
       "id": "OCRM-AC15",
       "kind": "acceptance-criterion",
       "not_applicable_reason": null,
-      "oracle_ids": [],
+      "oracle_ids": [
+        "OCRM-CHANNEL-O03",
+        "OCRM-CHANNEL-O04",
+        "OCRM-CHANNEL-O05",
+        "OCRM-CHANNEL-O06"
+      ],
       "requirement_text_source": "docs/specs/openclaw-rust-equivalence-migration.md#15",
-      "responsibility_ids": [],
-      "reviewer": null
+      "responsibility_ids": [
+        "OCRM-RESP-CHANNEL-DELIVERY-PORT-001",
+        "OCRM-RESP-CHANNEL-ATTACHMENT-RESOLVER-001",
+        "OCRM-RESP-CHANNEL-STREAMING-CHUNKING-001"
+      ],
+      "reviewer": "xuyao@ombhrum.com"
     },
     {
       "acceptance_status": "not-started",
