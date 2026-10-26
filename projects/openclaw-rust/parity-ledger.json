@@ -10,10 +10,10 @@
     "ui_accepted": false
   },
   "file_coverage": {
-    "mapped_paths": 203,
+    "mapped_paths": 211,
     "omitted_known": 0,
     "tracked_paths": 58750,
-    "unclassified_paths": 58547
+    "unclassified_paths": 58539
   },
   "inventory_authority": {
     "manifest_source": "GitHub Actions immutable artifact candidate",
@@ -7979,31 +7979,31 @@
           "symbol": "validateAndPrepareAttachmentPayload"
         },
         {
-          "path": "src/media/attachment-processor.runtime.ts",
           "blob_sha": "0fcf4ed44b34069328b3bac5bef2a6b0c4a0f4b4",
+          "path": "src/media/attachment-processor.runtime.ts",
           "range": {
-            "start_line": 1,
-            "end_line": 71
+            "end_line": 71,
+            "start_line": 1
           },
           "symbol": "prepareAttachment, isGenericContainerMime, ATTACHMENT_OFFLOAD_THRESHOLD_BYTES"
         },
         {
-          "path": "src/media/attachment-processor.worker.ts",
           "blob_sha": "f17ac5981ec76e822bdda51eae5591bf762098b2",
+          "path": "src/media/attachment-processor.worker.ts",
           "range": {
-            "start_line": 1,
-            "end_line": 12
+            "end_line": 12,
+            "start_line": 1
           },
           "symbol": "serveWorkerTasks, prepareAttachment"
         }
       ],
       "status": {
-        "read": "read-complete",
-        "mapping": "reviewed",
+        "acceptance": "pending",
         "implementation": "implemented",
-        "wiring": "not-wired",
+        "mapping": "reviewed",
+        "read": "read-complete",
         "verification": "not-run",
-        "acceptance": "pending"
+        "wiring": "not-wired"
       },
       "target": {
         "language": "Rust",
@@ -11089,40 +11089,40 @@
           "symbol": "media-services"
         },
         {
-          "path": "src/media/image-processor.ts",
           "blob_sha": "dc10fca84534218baa58fd9614ec4656bc64f843",
+          "path": "src/media/image-processor.ts",
           "range": {
-            "start_line": 1,
-            "end_line": 119
+            "end_line": 119,
+            "start_line": 1
           },
           "symbol": "createImageProcessor, createImageProcessorWithPixelLimits, convertBmpToPngWithWorker"
         },
         {
-          "path": "src/media/image-processor.worker.ts",
           "blob_sha": "ee115ba30b9152be338bb278055214a445b09f92",
+          "path": "src/media/image-processor.worker.ts",
           "range": {
-            "start_line": 1,
-            "end_line": 51
+            "end_line": 51,
+            "start_line": 1
           },
           "symbol": "serveWorkerTasks, encode, transparency, bmpToPng"
         },
         {
-          "path": "src/media/image-processor.pixel-limits.test.ts",
           "blob_sha": "f4941c67fbdf8f0de17c19c2cb94c8a0b14d3a59",
+          "path": "src/media/image-processor.pixel-limits.test.ts",
           "range": {
-            "start_line": 1,
-            "end_line": 30
+            "end_line": 30,
+            "start_line": 1
           },
           "symbol": "operation-specific pixel limits tests"
         }
       ],
       "status": {
-        "read": "read-complete",
-        "mapping": "reviewed",
+        "acceptance": "pending",
         "implementation": "implemented",
-        "wiring": "not-wired",
+        "mapping": "reviewed",
+        "read": "read-complete",
         "verification": "not-run",
-        "acceptance": "pending"
+        "wiring": "not-wired"
       },
       "target": {
         "language": "Rust",
@@ -11513,22 +11513,22 @@
           "symbol": "convertBmpToPngWithPhoton"
         },
         {
-          "path": "src/media/photon.runtime.test.ts",
           "blob_sha": "3a32779f6217527b39be304c146927b93d6fc397",
+          "path": "src/media/photon.runtime.test.ts",
           "range": {
-            "start_line": 1,
-            "end_line": 28
+            "end_line": 28,
+            "start_line": 1
           },
           "symbol": "Photon BMP pixel decode tests"
         }
       ],
       "status": {
-        "read": "read-complete",
-        "mapping": "reviewed",
+        "acceptance": "pending",
         "implementation": "implemented",
-        "wiring": "not-wired",
+        "mapping": "reviewed",
+        "read": "read-complete",
         "verification": "not-run",
-        "acceptance": "pending"
+        "wiring": "not-wired"
       },
       "target": {
         "language": "Rust",
@@ -11638,38 +11638,20 @@
       "unit_id": "OCRM-UNIT-MEDIA-007"
     },
     {
-      "id": "OCRM-RESP-MEDIA-STORE-PERSIST-001",
-      "unit_id": "OCRM-UNIT-MEDIA-008",
+      "adr_refs": [],
+      "behavior": "Persist media buffers, streams, and local files into scoped managed storage with UUID-backed identifiers, original filename preservation (extractOriginalFilename / ---[uuid] convention), NFC-normalized cross-platform filename sanitization, traversal protection, fractional size limits, and atomic temp file creation with 0o644 file mode.",
+      "blocker_ids": [
+        "BL-MEDIA-STORE-PERSIST-CONSUMERS-001"
+      ],
       "capability_ids": [
         "media.store_persistence"
       ],
-      "requirement_ids": [
-        "OCRM-R24",
-        "OCRM-AC24"
+      "dependencies": [
+        "source/host/src/extensions/attachments/media_store_shared.rs"
       ],
-      "responsibility_kind": "business-runtime",
-      "status": {
-        "read": "read-complete",
-        "mapping": "reviewed",
-        "implementation": "implemented",
-        "wiring": "not-wired",
-        "verification": "not-run",
-        "acceptance": "pending"
-      },
-      "reviewer": "xuyao@ombhrum.com",
-      "behavior": "Persist media buffers, streams, and local files into scoped managed storage with UUID-backed identifiers, original filename preservation (extractOriginalFilename / ---[uuid] convention), NFC-normalized cross-platform filename sanitization, traversal protection, fractional size limits, and atomic temp file creation with 0o644 file mode.",
-      "invariants": [
-        "Media files must be created atomically via temp prefix with MEDIA_FILE_MODE (0o644)",
-        "Subdir paths must not escape media root or contain traversal sequences",
-        "Buffers and files exceeding byte limits are rejected with typed SaveMediaSourceError::too_large"
+      "evidence_refs": [
+        "source/host/tests/openclaw_media_store_contract.rs"
       ],
-      "preconditions": [
-        "Source data within size limit, valid media directory"
-      ],
-      "postconditions": [
-        "Media file atomically placed in target subdir, SavedMedia metadata returned"
-      ],
-      "selected_owner": "source/host/src/extensions/attachments/media_store.rs",
       "existing_owner_candidates": [
         {
           "path": "source/host/src/attachment_paths.rs",
@@ -11680,46 +11662,89 @@
           "reason": "Attachments gateway dispatch"
         }
       ],
-      "owner_decision": "Implement dedicated native media_store module enforcing atomic temp file writes, traversal guards, and file mode invariants",
-      "target": {
-        "language": "Rust",
-        "path": "source/host/src/extensions/attachments/media_store.rs",
-        "symbol": "save_media_buffer, save_media_file, save_media_source, read_media_buffer, delete_media_buffer, resolve_media_buffer_path, extract_original_filename, sanitize_filename"
+      "id": "OCRM-RESP-MEDIA-STORE-PERSIST-001",
+      "integration": {
+        "consumer": "Pending inbound/outbound channel adapters and chat attachment ingestion pipelines (currently only gateway dispatch)",
+        "entrypoint": "source/host/src/extensions/attachments/attachments_service.rs::dispatch_gateway",
+        "owner": "source/host/src/extensions/attachments/media_store.rs",
+        "producer": "AttachmentsService::dispatch_gateway"
       },
+      "invariants": [
+        "Media files must be created atomically via temp prefix with MEDIA_FILE_MODE (0o644)",
+        "Subdir paths must not escape media root or contain traversal sequences",
+        "Buffers and files exceeding byte limits are rejected with typed SaveMediaSourceError::too_large"
+      ],
+      "migration_rollback": "Revert to fallback staging path in attachment_paths.rs",
+      "oracle_ids": [
+        "OCRM-MEDIA-STORE-O01",
+        "OCRM-MEDIA-STORE-O02",
+        "OCRM-MEDIA-STORE-O03"
+      ],
+      "owner_decision": "Implement dedicated native media_store module enforcing atomic temp file writes, traversal guards, and file mode invariants",
+      "postconditions": [
+        "Media file atomically placed in target subdir, SavedMedia metadata returned"
+      ],
+      "preconditions": [
+        "Source data within size limit, valid media directory"
+      ],
+      "required_evidence_dimensions": [
+        "unit",
+        "integration",
+        "negative-test"
+      ],
+      "required_gate_ids": [
+        "OCRM-G04-rust-contract",
+        "OCRM-G05-frozen-oracle"
+      ],
+      "requirement_ids": [
+        "OCRM-R24",
+        "OCRM-AC24"
+      ],
+      "responsibility_kind": "business-runtime",
+      "reviewer": "xuyao@ombhrum.com",
+      "risk": "Low; validated atomic file writes and traversal defenses prevent file corruption and escape",
+      "selected_owner": "source/host/src/extensions/attachments/media_store.rs",
       "source_refs": [
         {
-          "path": "src/media/store.ts",
           "blob_sha": "d7006ace851e80e4c34bda6164a0fc0425237ba4",
+          "path": "src/media/store.ts",
           "range": {
-            "start_line": 1,
-            "end_line": 700
+            "end_line": 700,
+            "start_line": 1
           },
           "symbol": "saveMediaBuffer, saveMediaFile, saveMediaSource, readMediaBuffer, deleteMediaBuffer, resolveMediaBufferPath, extractOriginalFilename, sanitizeFilename"
         },
         {
-          "path": "src/media/store.outside-workspace.test.ts",
           "blob_sha": "7eb52831b51db40242548f71ba4078f0fd03d22f",
+          "path": "src/media/store.outside-workspace.test.ts",
           "range": {
-            "start_line": 1,
-            "end_line": 70
+            "end_line": 70,
+            "start_line": 1
           },
           "symbol": "expectOutsideWorkspaceStoreFailure"
         },
         {
-          "path": "src/media/store.test.ts",
           "blob_sha": "9daf7bee5fc044bf23fb4e7ad4d29140269d1ee1",
+          "path": "src/media/store.test.ts",
           "range": {
-            "start_line": 1,
-            "end_line": 618
+            "end_line": 618,
+            "start_line": 1
           },
           "symbol": "media store tests"
         }
       ],
-      "integration": {
-        "producer": "AttachmentsService::dispatch_gateway",
-        "owner": "source/host/src/extensions/attachments/media_store.rs",
-        "consumer": "Pending inbound/outbound channel adapters and chat attachment ingestion pipelines (currently only gateway dispatch)",
-        "entrypoint": "source/host/src/extensions/attachments/attachments_service.rs::dispatch_gateway"
+      "status": {
+        "acceptance": "pending",
+        "implementation": "implemented",
+        "mapping": "reviewed",
+        "read": "read-complete",
+        "verification": "not-run",
+        "wiring": "not-wired"
+      },
+      "target": {
+        "language": "Rust",
+        "path": "source/host/src/extensions/attachments/media_store.rs",
+        "symbol": "save_media_buffer, save_media_file, save_media_source, read_media_buffer, delete_media_buffer, resolve_media_buffer_path, extract_original_filename, sanitize_filename"
       },
       "tests": [
         "source/host/tests/openclaw_media_store_contract.rs::test_ocrm_media_store_save_and_read_buffer",
@@ -11734,102 +11759,100 @@
         "save_media_buffer(buffer: &[u8], content_type: Option<&str>, subdir: &str, max_bytes: u64, original_filename: Option<&str>, detection_hint: Option<&str>, base_dir: Option<&Path>) -> Result<SavedMedia, SaveMediaSourceError>",
         "read_media_buffer(id: &str, subdir: &str, max_bytes: u64, base_dir: Option<&Path>) -> Result<(Vec<u8>, PathBuf), SaveMediaSourceError>"
       ],
-      "oracle_ids": [
-        "OCRM-MEDIA-STORE-O01",
-        "OCRM-MEDIA-STORE-O02",
-        "OCRM-MEDIA-STORE-O03"
-      ],
-      "required_gate_ids": [
-        "OCRM-G04-rust-contract",
-        "OCRM-G05-frozen-oracle"
-      ],
-      "required_evidence_dimensions": [
-        "unit",
-        "integration",
-        "negative-test"
-      ],
-      "blocker_ids": [
-        "BL-MEDIA-STORE-PERSIST-CONSUMERS-001"
-      ],
-      "risk": "Low; validated atomic file writes and traversal defenses prevent file corruption and escape",
-      "migration_rollback": "Revert to fallback staging path in attachment_paths.rs",
-      "dependencies": [
-        "source/host/src/extensions/attachments/media_store_shared.rs"
-      ],
-      "adr_refs": [],
-      "evidence_refs": [
-        "source/host/tests/openclaw_media_store_contract.rs"
-      ]
+      "unit_id": "OCRM-UNIT-MEDIA-008"
     },
     {
-      "id": "OCRM-RESP-MEDIA-STORE-READ-SCOPE-001",
-      "unit_id": "OCRM-UNIT-MEDIA-008",
+      "adr_refs": [],
+      "behavior": "Guard media publication under channel read authority scopes, asserting directory identity and file handle integrity before commit and retaining descriptor lifecycle until host consumer acceptance.",
+      "blocker_ids": [
+        "BL-MEDIA-STORE-READ-SCOPE-CONSUMERS-001"
+      ],
       "capability_ids": [
         "media.store_read_scope"
       ],
-      "requirement_ids": [
-        "OCRM-R24",
-        "OCRM-AC24"
+      "dependencies": [
+        "source/host/src/extensions/attachments/media_store.rs"
       ],
-      "responsibility_kind": "business-runtime",
-      "status": {
-        "read": "read-complete",
-        "mapping": "reviewed",
-        "implementation": "implemented",
-        "wiring": "not-wired",
-        "verification": "not-run",
-        "acceptance": "pending"
-      },
-      "reviewer": "xuyao@ombhrum.com",
-      "behavior": "Guard media publication under channel read authority scopes, asserting directory identity and file handle integrity before commit and retaining descriptor lifecycle until host consumer acceptance.",
-      "invariants": [
-        "Read scope media must verify directory identity to guard against concurrent symlink replacement or directory swapping",
-        "Unowned or revoked media path access fails closed"
+      "evidence_refs": [
+        "source/host/tests/openclaw_media_store_contract.rs"
       ],
-      "preconditions": [
-        "Valid active read scope or direct publication caller"
-      ],
-      "postconditions": [
-        "Atomic publication to target directory with verified handle identity"
-      ],
-      "selected_owner": "source/host/src/extensions/attachments/media_store.rs",
       "existing_owner_candidates": [
         {
           "path": "source/host/src/extensions/attachments/media_store.rs",
           "reason": "Scoped directory resolution and atomic publication"
         }
       ],
-      "owner_decision": "Implement directory validation and atomic publication in media_store.rs",
-      "target": {
-        "language": "Rust",
-        "path": "source/host/src/extensions/attachments/media_store.rs",
-        "symbol": "resolve_media_scoped_dir, save_media_buffer, save_media_source"
+      "id": "OCRM-RESP-MEDIA-STORE-READ-SCOPE-001",
+      "integration": {
+        "consumer": "Pending channel read authority scopes and session media receivers binding directory guard tokens",
+        "entrypoint": "source/host/src/extensions/attachments/media_store.rs::save_media_buffer",
+        "owner": "source/host/src/extensions/attachments/media_store.rs",
+        "producer": "save_media_buffer, save_media_source"
       },
+      "invariants": [
+        "Read scope media must verify directory identity to guard against concurrent symlink replacement or directory swapping",
+        "Unowned or revoked media path access fails closed"
+      ],
+      "migration_rollback": "Fallback to unscoped store writes",
+      "oracle_ids": [
+        "OCRM-MEDIA-STORE-O04"
+      ],
+      "owner_decision": "Implement directory validation and atomic publication in media_store.rs",
+      "postconditions": [
+        "Atomic publication to target directory with verified handle identity"
+      ],
+      "preconditions": [
+        "Valid active read scope or direct publication caller"
+      ],
+      "required_evidence_dimensions": [
+        "unit",
+        "integration",
+        "negative-test"
+      ],
+      "required_gate_ids": [
+        "OCRM-G04-rust-contract",
+        "OCRM-G05-frozen-oracle"
+      ],
+      "requirement_ids": [
+        "OCRM-R24",
+        "OCRM-AC24"
+      ],
+      "responsibility_kind": "business-runtime",
+      "reviewer": "xuyao@ombhrum.com",
+      "risk": "None; fail-closed directory identity assertion",
+      "selected_owner": "source/host/src/extensions/attachments/media_store.rs",
       "source_refs": [
         {
-          "path": "src/media/store.read-scope.ts",
           "blob_sha": "d2989e690ec6c530f1355ba6b4f6c03ed59afb8d",
+          "path": "src/media/store.read-scope.ts",
           "range": {
-            "start_line": 1,
-            "end_line": 281
+            "end_line": 281,
+            "start_line": 1
           },
           "symbol": "writeReadScopeMedia"
         },
         {
-          "path": "src/media/store.read-scope.test.ts",
           "blob_sha": "e5ccd8d1b93526b6ae3981e6643660b0808a6481",
+          "path": "src/media/store.read-scope.test.ts",
           "range": {
-            "start_line": 1,
-            "end_line": 438
+            "end_line": 438,
+            "start_line": 1
           },
           "symbol": "writeReadScopeMedia tests"
         }
       ],
-      "integration": {
-        "producer": "save_media_buffer, save_media_source",
-        "owner": "source/host/src/extensions/attachments/media_store.rs",
-        "consumer": "Pending channel read authority scopes and session media receivers binding directory guard tokens",
-        "entrypoint": "source/host/src/extensions/attachments/media_store.rs::save_media_buffer"
+      "status": {
+        "acceptance": "pending",
+        "implementation": "implemented",
+        "mapping": "reviewed",
+        "read": "read-complete",
+        "verification": "not-run",
+        "wiring": "not-wired"
+      },
+      "target": {
+        "language": "Rust",
+        "path": "source/host/src/extensions/attachments/media_store.rs",
+        "symbol": "resolve_media_scoped_dir, save_media_buffer, save_media_source"
       },
       "tests": [
         "source/host/tests/openclaw_media_store_contract.rs::test_ocrm_media_store_save_and_read_buffer",
@@ -11838,100 +11861,100 @@
       "typed_contracts": [
         "save_media_buffer(...) -> Result<SavedMedia, SaveMediaSourceError>"
       ],
-      "oracle_ids": [
-        "OCRM-MEDIA-STORE-O04"
-      ],
-      "required_gate_ids": [
-        "OCRM-G04-rust-contract",
-        "OCRM-G05-frozen-oracle"
-      ],
-      "required_evidence_dimensions": [
-        "unit",
-        "integration",
-        "negative-test"
-      ],
-      "blocker_ids": [
-        "BL-MEDIA-STORE-READ-SCOPE-CONSUMERS-001"
-      ],
-      "risk": "None; fail-closed directory identity assertion",
-      "migration_rollback": "Fallback to unscoped store writes",
-      "dependencies": [
-        "source/host/src/extensions/attachments/media_store.rs"
-      ],
-      "adr_refs": [],
-      "evidence_refs": [
-        "source/host/tests/openclaw_media_store_contract.rs"
-      ]
+      "unit_id": "OCRM-UNIT-MEDIA-008"
     },
     {
-      "id": "OCRM-RESP-MEDIA-STORE-LIFECYCLE-001",
-      "unit_id": "OCRM-UNIT-MEDIA-008",
+      "adr_refs": [],
+      "behavior": "Manage media lifecycle retention policies: playback transcode cache capped at 512MB disk budget with oldest-first LRU eviction and 7-day TTL; outbound staging with 24-hour TTL; cleanOldMedia routine with explicit exclusion of playback-transcode and SQLite-managed outgoing chat history.",
+      "blocker_ids": [
+        "BL-MEDIA-STORE-LIFECYCLE-DAEMON-001"
+      ],
       "capability_ids": [
         "media.store_lifecycle"
       ],
-      "requirement_ids": [
-        "OCRM-R24",
-        "OCRM-AC24"
+      "dependencies": [
+        "source/host/src/extensions/attachments/media_store.rs"
       ],
-      "responsibility_kind": "business-runtime",
-      "status": {
-        "read": "read-complete",
-        "mapping": "reviewed",
-        "implementation": "implemented",
-        "wiring": "not-wired",
-        "verification": "not-run",
-        "acceptance": "pending"
-      },
-      "reviewer": "xuyao@ombhrum.com",
-      "behavior": "Manage media lifecycle retention policies: playback transcode cache capped at 512MB disk budget with oldest-first LRU eviction and 7-day TTL; outbound staging with 24-hour TTL; cleanOldMedia routine with explicit exclusion of playback-transcode and SQLite-managed outgoing chat history.",
-      "invariants": [
-        "cleanOldMedia mtime sweep must never delete playback-transcode or outgoing history media",
-        "Playback transcode cache must evict oldest mtime files first when exceeding 512MB capacity"
+      "evidence_refs": [
+        "source/host/tests/openclaw_media_store_contract.rs"
       ],
-      "preconditions": [
-        "Valid media store root"
-      ],
-      "postconditions": [
-        "Expired or excess media pruned according to subtree retention rules"
-      ],
-      "selected_owner": "source/host/src/extensions/attachments/media_store.rs",
       "existing_owner_candidates": [
         {
           "path": "source/host/src/extensions/attachments/media_store.rs",
           "reason": "Transcode cache and lifecycle management"
         }
       ],
-      "owner_decision": "Implement playback cache eviction and subtree exclusion in media_store.rs",
-      "target": {
-        "language": "Rust",
-        "path": "source/host/src/extensions/attachments/media_store.rs",
-        "symbol": "write_playback_transcode_cache, prune_playback_transcode_cache, prune_playback_transcode_cache_to_size, prune_outbound_media, clean_old_media"
+      "id": "OCRM-RESP-MEDIA-STORE-LIFECYCLE-001",
+      "integration": {
+        "consumer": "Pending host periodic cleanup loop daemon and video playback rendition pipeline",
+        "entrypoint": "source/host/src/extensions/attachments/attachments_service.rs::dispatch_gateway",
+        "owner": "source/host/src/extensions/attachments/media_store.rs",
+        "producer": "AttachmentsService::dispatch_gateway(\"cleanOldMedia\")"
       },
+      "invariants": [
+        "cleanOldMedia mtime sweep must never delete playback-transcode or outgoing history media",
+        "Playback transcode cache must evict oldest mtime files first when exceeding 512MB capacity"
+      ],
+      "migration_rollback": "Disable automatic periodic pruning",
+      "oracle_ids": [
+        "OCRM-MEDIA-STORE-O05",
+        "OCRM-MEDIA-STORE-O06"
+      ],
+      "owner_decision": "Implement playback cache eviction and subtree exclusion in media_store.rs",
+      "postconditions": [
+        "Expired or excess media pruned according to subtree retention rules"
+      ],
+      "preconditions": [
+        "Valid media store root"
+      ],
+      "required_evidence_dimensions": [
+        "unit",
+        "integration"
+      ],
+      "required_gate_ids": [
+        "OCRM-G04-rust-contract",
+        "OCRM-G05-frozen-oracle"
+      ],
+      "requirement_ids": [
+        "OCRM-R24",
+        "OCRM-AC24"
+      ],
+      "responsibility_kind": "business-runtime",
+      "reviewer": "xuyao@ombhrum.com",
+      "risk": "None; protected subtrees prevent accidental deletion of persisted assets",
+      "selected_owner": "source/host/src/extensions/attachments/media_store.rs",
       "source_refs": [
         {
-          "path": "src/media/store.ts",
           "blob_sha": "d7006ace851e80e4c34bda6164a0fc0425237ba4",
+          "path": "src/media/store.ts",
           "range": {
-            "start_line": 253,
-            "end_line": 310
+            "end_line": 310,
+            "start_line": 253
           },
           "symbol": "writePlaybackTranscodeCache, prunePlaybackTranscodeCache, pruneOutboundMedia, cleanOldMedia"
         },
         {
-          "path": "src/media/store.cleanup.test.ts",
           "blob_sha": "e872a1de80427849f9d65679844ee75dede10929",
+          "path": "src/media/store.cleanup.test.ts",
           "range": {
-            "start_line": 1,
-            "end_line": 161
+            "end_line": 161,
+            "start_line": 1
           },
           "symbol": "cleanOldMedia managed-subtree retention tests"
         }
       ],
-      "integration": {
-        "producer": "AttachmentsService::dispatch_gateway(\"cleanOldMedia\")",
-        "owner": "source/host/src/extensions/attachments/media_store.rs",
-        "consumer": "Pending host periodic cleanup loop daemon and video playback rendition pipeline",
-        "entrypoint": "source/host/src/extensions/attachments/attachments_service.rs::dispatch_gateway"
+      "status": {
+        "acceptance": "pending",
+        "implementation": "implemented",
+        "mapping": "reviewed",
+        "read": "read-complete",
+        "verification": "not-run",
+        "wiring": "not-wired"
+      },
+      "target": {
+        "language": "Rust",
+        "path": "source/host/src/extensions/attachments/media_store.rs",
+        "symbol": "write_playback_transcode_cache, prune_playback_transcode_cache, prune_playback_transcode_cache_to_size, prune_outbound_media, clean_old_media"
       },
       "tests": [
         "source/host/tests/openclaw_media_store_contract.rs::test_ocrm_media_store_playback_cache_and_clean_old_media"
@@ -11940,100 +11963,99 @@
         "write_playback_transcode_cache(file_name: &str, buffer: &[u8], max_bytes: u64, base_dir: Option<&Path>) -> Result<PathBuf, String>",
         "clean_old_media(ttl_ms: u64, options: &CleanOldMediaOptions, base_dir: Option<&Path>) -> Result<(), String>"
       ],
-      "oracle_ids": [
-        "OCRM-MEDIA-STORE-O05",
-        "OCRM-MEDIA-STORE-O06"
-      ],
-      "required_gate_ids": [
-        "OCRM-G04-rust-contract",
-        "OCRM-G05-frozen-oracle"
-      ],
-      "required_evidence_dimensions": [
-        "unit",
-        "integration"
-      ],
-      "blocker_ids": [
-        "BL-MEDIA-STORE-LIFECYCLE-DAEMON-001"
-      ],
-      "risk": "None; protected subtrees prevent accidental deletion of persisted assets",
-      "migration_rollback": "Disable automatic periodic pruning",
-      "dependencies": [
-        "source/host/src/extensions/attachments/media_store.rs"
-      ],
-      "adr_refs": [],
-      "evidence_refs": [
-        "source/host/tests/openclaw_media_store_contract.rs"
-      ]
+      "unit_id": "OCRM-UNIT-MEDIA-008"
     },
     {
-      "id": "OCRM-RESP-MEDIA-STORE-REMOTE-001",
-      "unit_id": "OCRM-UNIT-MEDIA-008",
+      "adr_refs": [],
+      "behavior": "Ingest remote HTTP/HTTPS media into managed media storage with 30-second bounded timeouts, 5 redirect limits, URL extension fallback without basename leakage, and SavedMedia result mapping.",
+      "blocker_ids": [
+        "BL-MEDIA-STORE-REMOTE-CONSUMERS-001"
+      ],
       "capability_ids": [
         "media.store_remote_runtime"
       ],
-      "requirement_ids": [
-        "OCRM-R24",
-        "OCRM-AC24"
+      "dependencies": [
+        "source/host/src/extensions/attachments/media_store.rs"
       ],
-      "responsibility_kind": "business-runtime",
-      "status": {
-        "read": "read-complete",
-        "mapping": "reviewed",
-        "implementation": "implemented",
-        "wiring": "not-wired",
-        "verification": "not-run",
-        "acceptance": "pending"
-      },
-      "reviewer": "xuyao@ombhrum.com",
-      "behavior": "Ingest remote HTTP/HTTPS media into managed media storage with 30-second bounded timeouts, 5 redirect limits, URL extension fallback without basename leakage, and SavedMedia result mapping.",
-      "invariants": [
-        "Only http and https protocols are admitted for remote ingestion",
-        "Remote streams must not exceed max_bytes and must preserve synthetic extension without remote basename exposure"
+      "evidence_refs": [
+        "source/host/tests/openclaw_media_store_contract.rs"
       ],
-      "preconditions": [
-        "Valid HTTP/HTTPS URL, max_bytes budget"
-      ],
-      "postconditions": [
-        "Remote payload saved to managed storage and returned as SavedMedia"
-      ],
-      "selected_owner": "source/host/src/extensions/attachments/media_store.rs",
       "existing_owner_candidates": [
         {
           "path": "source/host/src/extensions/attachments/media_store.rs",
           "reason": "Remote ingestion helper in media_store"
         }
       ],
-      "owner_decision": "Implement bounded reqwest fetch in media_store.rs",
-      "target": {
-        "language": "Rust",
-        "path": "source/host/src/extensions/attachments/media_store.rs",
-        "symbol": "save_remote_media_for_store"
+      "id": "OCRM-RESP-MEDIA-STORE-REMOTE-001",
+      "integration": {
+        "consumer": "Pending external URL attachment ingestion in channel/web media pipelines",
+        "entrypoint": "source/host/src/extensions/attachments/media_store.rs::save_remote_media_for_store",
+        "owner": "source/host/src/extensions/attachments/media_store.rs",
+        "producer": "save_media_source (when URL starts with http:// or https://)"
       },
+      "invariants": [
+        "Only http and https protocols are admitted for remote ingestion",
+        "Remote streams must not exceed max_bytes and must preserve synthetic extension without remote basename exposure"
+      ],
+      "migration_rollback": "Fallback to manual file upload",
+      "oracle_ids": [
+        "OCRM-MEDIA-STORE-O07"
+      ],
+      "owner_decision": "Implement bounded reqwest fetch in media_store.rs",
+      "postconditions": [
+        "Remote payload saved to managed storage and returned as SavedMedia"
+      ],
+      "preconditions": [
+        "Valid HTTP/HTTPS URL, max_bytes budget"
+      ],
+      "required_evidence_dimensions": [
+        "unit",
+        "integration"
+      ],
+      "required_gate_ids": [
+        "OCRM-G04-rust-contract",
+        "OCRM-G05-frozen-oracle"
+      ],
+      "requirement_ids": [
+        "OCRM-R24",
+        "OCRM-AC24"
+      ],
+      "responsibility_kind": "business-runtime",
+      "reviewer": "xuyao@ombhrum.com",
+      "risk": "Low; timeout and redirect bounds protect against slowloris and redirection cycles",
+      "selected_owner": "source/host/src/extensions/attachments/media_store.rs",
       "source_refs": [
         {
-          "path": "src/media/store.remote.runtime.ts",
           "blob_sha": "24cf3e17c222fc1befa6576334f80a19bbb7f5b7",
+          "path": "src/media/store.remote.runtime.ts",
           "range": {
-            "start_line": 1,
-            "end_line": 50
+            "end_line": 50,
+            "start_line": 1
           },
           "symbol": "saveRemoteMediaForStore"
         },
         {
-          "path": "src/media/store.redirect.test.ts",
           "blob_sha": "c16fc79aef29d3f51b0fbdb568144806530fc568",
+          "path": "src/media/store.redirect.test.ts",
           "range": {
-            "start_line": 1,
-            "end_line": 175
+            "end_line": 175,
+            "start_line": 1
           },
           "symbol": "media store remote sources redirect tests"
         }
       ],
-      "integration": {
-        "producer": "save_media_source (when URL starts with http:// or https://)",
-        "owner": "source/host/src/extensions/attachments/media_store.rs",
-        "consumer": "Pending external URL attachment ingestion in channel/web media pipelines",
-        "entrypoint": "source/host/src/extensions/attachments/media_store.rs::save_remote_media_for_store"
+      "status": {
+        "acceptance": "pending",
+        "implementation": "implemented",
+        "mapping": "reviewed",
+        "read": "read-complete",
+        "verification": "not-run",
+        "wiring": "not-wired"
+      },
+      "target": {
+        "language": "Rust",
+        "path": "source/host/src/extensions/attachments/media_store.rs",
+        "symbol": "save_remote_media_for_store"
       },
       "tests": [
         "source/host/tests/openclaw_media_store_contract.rs::test_ocrm_media_store_local_file_source_boundaries"
@@ -12041,170 +12063,133 @@
       "typed_contracts": [
         "save_remote_media_for_store(url: &str, headers: Option<&BTreeMap<String, String>>, subdir: &str, max_bytes: u64, base_dir: Option<&Path>) -> Result<SavedMedia, SaveMediaSourceError>"
       ],
-      "oracle_ids": [
-        "OCRM-MEDIA-STORE-O07"
-      ],
-      "required_gate_ids": [
-        "OCRM-G04-rust-contract",
-        "OCRM-G05-frozen-oracle"
-      ],
-      "required_evidence_dimensions": [
-        "unit",
-        "integration"
-      ],
-      "blocker_ids": [
-        "BL-MEDIA-STORE-REMOTE-CONSUMERS-001"
-      ],
-      "risk": "Low; timeout and redirect bounds protect against slowloris and redirection cycles",
-      "migration_rollback": "Fallback to manual file upload",
-      "dependencies": [
-        "source/host/src/extensions/attachments/media_store.rs"
-      ],
-      "adr_refs": [],
-      "evidence_refs": [
-        "source/host/tests/openclaw_media_store_contract.rs"
-      ]
+      "unit_id": "OCRM-UNIT-MEDIA-008"
     },
     {
-      "id": "OCRM-RESP-MEDIA-STORE-TEST-SUPPORT-001",
-      "unit_id": "OCRM-UNIT-MEDIA-008",
+      "adr_refs": [],
+      "behavior": "Provide scoped test fixtures, filename test assertion utilities, and network SSRF routing scoping for media store testing.",
+      "blocker_ids": [],
       "capability_ids": [
         "media.store_test_support"
       ],
-      "requirement_ids": [
-        "OCRM-R24",
-        "OCRM-AC24"
+      "dependencies": [
+        "source/host/src/extensions/attachments/media_store.rs"
       ],
-      "responsibility_kind": "support",
-      "status": {
-        "read": "read-complete",
-        "mapping": "reviewed",
-        "implementation": "implemented",
-        "wiring": "wired",
-        "verification": "verified",
-        "acceptance": "pending"
-      },
-      "reviewer": "xuyao@ombhrum.com",
-      "behavior": "Provide scoped test fixtures, filename test assertion utilities, and network SSRF routing scoping for media store testing.",
-      "invariants": [
-        "Fixture scope must be disposable and strictly isolated to test run",
-        "Saved original filename pattern assertions verify UUID suffix and NFC stem"
+      "evidence_refs": [
+        "source/host/tests/openclaw_media_store_contract.rs"
       ],
-      "preconditions": [
-        "Test runner execution"
-      ],
-      "postconditions": [
-        "Deterministic test execution with zero cross-test interference"
-      ],
-      "selected_owner": "source/host/src/extensions/attachments/media_store.rs",
       "existing_owner_candidates": [
         {
           "path": "source/host/src/extensions/attachments/media_store.rs",
           "reason": "Test fixture helper in media_store"
         }
       ],
-      "owner_decision": "Provide StoreRemoteFixtureScope in media_store.rs",
-      "target": {
-        "language": "Rust",
-        "path": "source/host/src/extensions/attachments/media_store.rs",
-        "symbol": "StoreRemoteFixtureScope"
-      },
-      "source_refs": [
-        {
-          "path": "src/media/store-filename.test-support.ts",
-          "blob_sha": "083a226c24dc7f91544314326da519fb8a65a259",
-          "range": {
-            "start_line": 1,
-            "end_line": 27
-          },
-          "symbol": "expectSavedOriginalFilenameCase"
-        },
-        {
-          "path": "src/media/store-network.test-support.ts",
-          "blob_sha": "adc55afd5964323cfd2642a53dc15a002f307ba3",
-          "range": {
-            "start_line": 1,
-            "end_line": 58
-          },
-          "symbol": "withStoreRemoteFixture, wrapStoreSaveRemoteMedia"
-        },
-        {
-          "path": "src/media/store-network.test-support.test.ts",
-          "blob_sha": "566ef2ada5d8ecaeddff7efbf4f94d475720e1e1",
-          "range": {
-            "start_line": 1,
-            "end_line": 103
-          },
-          "symbol": "store network test support verification"
-        }
-      ],
+      "id": "OCRM-RESP-MEDIA-STORE-TEST-SUPPORT-001",
       "integration": {
-        "producer": "openclaw_media_store_contract",
+        "consumer": "source/host/tests/openclaw_media_store_contract.rs::test_ocrm_media_store_remote_fixture_scope_and_filename_support (test-only harness boundary)",
+        "entrypoint": "source/host/tests/openclaw_media_store_contract.rs",
         "owner": "source/host/src/extensions/attachments/media_store.rs",
-        "consumer": "openclaw_media_store_contract (test-only harness boundary)",
-        "entrypoint": "source/host/tests/openclaw_media_store_contract.rs"
+        "producer": "openclaw_media_store_contract"
       },
-      "tests": [
-        "source/host/tests/openclaw_media_store_contract.rs::test_ocrm_media_store_save_and_read_buffer"
+      "invariants": [
+        "Fixture scope must be disposable and strictly isolated to test run",
+        "Saved original filename pattern assertions verify UUID suffix and NFC stem"
       ],
-      "typed_contracts": [
-        "StoreRemoteFixtureScope"
-      ],
+      "migration_rollback": "None",
       "oracle_ids": [
         "OCRM-MEDIA-STORE-O08"
+      ],
+      "owner_decision": "Provide StoreRemoteFixtureScope in media_store.rs",
+      "postconditions": [
+        "Deterministic test execution with zero cross-test interference"
+      ],
+      "preconditions": [
+        "Test runner execution"
+      ],
+      "required_evidence_dimensions": [
+        "unit"
       ],
       "required_gate_ids": [
         "OCRM-G04-rust-contract",
         "OCRM-G05-frozen-oracle"
       ],
-      "required_evidence_dimensions": [
-        "unit"
-      ],
-      "blocker_ids": [],
-      "risk": "None; isolated test support",
-      "migration_rollback": "None",
-      "dependencies": [
-        "source/host/src/extensions/attachments/media_store.rs"
-      ],
-      "adr_refs": [],
-      "evidence_refs": [
-        "source/host/tests/openclaw_media_store_contract.rs"
-      ]
-    },
-    {
-      "id": "OCRM-RESP-MEDIA-IMAGE-OPS-001",
-      "unit_id": "OCRM-UNIT-MEDIA-009",
-      "capability_ids": [
-        "media.image_ops"
-      ],
       "requirement_ids": [
         "OCRM-R24",
         "OCRM-AC24"
       ],
-      "responsibility_kind": "business-runtime",
-      "status": {
-        "read": "read-complete",
-        "mapping": "reviewed",
-        "implementation": "implemented",
-        "wiring": "not-wired",
-        "verification": "not-run",
-        "acceptance": "pending"
-      },
+      "responsibility_kind": "test-oracle",
       "reviewer": "xuyao@ombhrum.com",
+      "risk": "None; isolated test support",
+      "selected_owner": "source/host/src/extensions/attachments/media_store.rs",
+      "source_refs": [
+        {
+          "blob_sha": "083a226c24dc7f91544314326da519fb8a65a259",
+          "path": "src/media/store-filename.test-support.ts",
+          "range": {
+            "end_line": 27,
+            "start_line": 1
+          },
+          "symbol": "expectSavedOriginalFilenameCase"
+        },
+        {
+          "blob_sha": "adc55afd5964323cfd2642a53dc15a002f307ba3",
+          "path": "src/media/store-network.test-support.ts",
+          "range": {
+            "end_line": 58,
+            "start_line": 1
+          },
+          "symbol": "withStoreRemoteFixture, wrapStoreSaveRemoteMedia"
+        },
+        {
+          "blob_sha": "566ef2ada5d8ecaeddff7efbf4f94d475720e1e1",
+          "path": "src/media/store-network.test-support.test.ts",
+          "range": {
+            "end_line": 103,
+            "start_line": 1
+          },
+          "symbol": "store network test support verification"
+        }
+      ],
+      "status": {
+        "acceptance": "pending",
+        "implementation": "implemented",
+        "mapping": "reviewed",
+        "read": "read-complete",
+        "verification": "verified",
+        "wiring": "wired"
+      },
+      "target": {
+        "language": "Rust",
+        "path": "source/host/src/extensions/attachments/media_store.rs",
+        "symbol": "StoreRemoteFixtureScope, check_active_remote_fixtures_empty, expect_saved_original_filename_case"
+      },
+      "tests": [
+        "source/host/tests/openclaw_media_store_contract.rs::test_ocrm_media_store_remote_fixture_scope_and_filename_support"
+      ],
+      "typed_contracts": [
+        "StoreRemoteFixtureScope::new(url: &str) -> StoreRemoteFixtureScope",
+        "StoreRemoteFixtureScope::matches(&mut self, request_url: &str) -> bool",
+        "StoreRemoteFixtureScope::deactivate(&mut self)",
+        "check_active_remote_fixtures_empty() -> Result<(), String>",
+        "expect_saved_original_filename_case(saved: &SavedMedia, expected: Option<&str>, uuid_only: bool) -> Result<(), String>"
+      ],
+      "unit_id": "OCRM-UNIT-MEDIA-008"
+    },
+    {
+      "adr_refs": [],
       "behavior": "Build descending deduplicated image resize side grids, maintain reduce/within-budget quality steps ladder, detect animated WebP via VP8X RFC 9649 animation bit, verify still PNG via chunk scan (up to 512 chunks rejecting acTL before IDAT), extract image metadata swapping axes for EXIF orientations 5-8, and normalize Anthropic inline images converting BMP to PNG.",
-      "invariants": [
-        "EXIF orientations 5..8 swap display width and height without decoding image pixels",
-        "VP8X animation bit 0x02 accurately flags animated WebP before single-frame transcode",
-        "PNG chunk scan rejects acTL before IDAT to prevent APNG animation stripping",
-        "Resize side grid produces descending deduplicated positive values"
+      "blocker_ids": [
+        "BL-MEDIA-IMAGE-OPS-CONSUMERS-001"
       ],
-      "preconditions": [
-        "Valid image header bytes or dimensions within budget"
+      "capability_ids": [
+        "media.image_ops"
       ],
-      "postconditions": [
-        "Correct display metadata returned, animated images preserved or flagged, inline images normalized"
+      "dependencies": [
+        "source/host/src/extensions/attachments/media_qr_png.rs"
       ],
-      "selected_owner": "source/host/src/extensions/attachments/image_ops.rs",
+      "evidence_refs": [
+        "source/host/tests/openclaw_image_ops_contract.rs"
+      ],
       "existing_owner_candidates": [
         {
           "path": "source/host/src/extensions/attachments/media_qr_png.rs",
@@ -12215,55 +12200,99 @@
           "reason": "Header image dimension bounds"
         }
       ],
-      "owner_decision": "Implement dedicated native image_ops module centralizing image operations, probe decoding, orientation normalization, and attachment preprocessing",
-      "target": {
-        "language": "Rust",
-        "path": "source/host/src/extensions/attachments/image_ops.rs",
-        "symbol": "build_image_resize_side_grid, is_animated_webp_buffer, is_still_png_buffer, read_image_probe_from_header, read_image_metadata_from_header, convert_bmp_to_png, prepare_attachment, normalize_anthropic_inline_image"
+      "id": "OCRM-RESP-MEDIA-IMAGE-OPS-001",
+      "integration": {
+        "consumer": "Pending chat image resize and preview UI consumers (currently only gateway dispatch)",
+        "entrypoint": "source/host/src/extensions/attachments/attachments_service.rs::dispatch_gateway",
+        "owner": "source/host/src/extensions/attachments/image_ops.rs",
+        "producer": "AttachmentsService::dispatch_gateway"
       },
+      "invariants": [
+        "EXIF orientations 5..8 swap display width and height without decoding image pixels",
+        "VP8X animation bit 0x02 accurately flags animated WebP before single-frame transcode",
+        "PNG chunk scan rejects acTL before IDAT to prevent APNG animation stripping",
+        "Resize side grid produces descending deduplicated positive values"
+      ],
+      "migration_rollback": "Fallback to raw attachment bytes",
+      "oracle_ids": [
+        "OCRM-IMAGE-OPS-O01",
+        "OCRM-IMAGE-OPS-O02",
+        "OCRM-IMAGE-OPS-O03"
+      ],
+      "owner_decision": "Implement dedicated native image_ops module centralizing image operations, probe decoding, orientation normalization, and attachment preprocessing",
+      "postconditions": [
+        "Correct display metadata returned, animated images preserved or flagged, inline images normalized"
+      ],
+      "preconditions": [
+        "Valid image header bytes or dimensions within budget"
+      ],
+      "required_evidence_dimensions": [
+        "unit",
+        "integration",
+        "negative-test"
+      ],
+      "required_gate_ids": [
+        "OCRM-G04-rust-contract",
+        "OCRM-G05-frozen-oracle"
+      ],
+      "requirement_ids": [
+        "OCRM-R24",
+        "OCRM-AC24"
+      ],
+      "responsibility_kind": "business-runtime",
+      "reviewer": "xuyao@ombhrum.com",
+      "risk": "Low; header inspection without full decode prevents memory exhaustion and preserves animation",
+      "selected_owner": "source/host/src/extensions/attachments/image_ops.rs",
       "source_refs": [
         {
-          "path": "src/media/image-ops.ts",
           "blob_sha": "a3570b0fdbb410f26fc58596910152d45e6832b8",
+          "path": "src/media/image-ops.ts",
           "range": {
-            "start_line": 1,
-            "end_line": 236
+            "end_line": 236,
+            "start_line": 1
           },
           "symbol": "buildImageResizeSideGrid, IMAGE_REDUCE_QUALITY_STEPS, readImageMetadataFromHeader, isAnimatedWebpBuffer, isStillPngBuffer, convertBmpToPngWithWorker, convertImageToPng, resizeToJpeg, encodeImageWithinBytes"
         },
         {
-          "path": "src/media/image-ops.helpers.test.ts",
           "blob_sha": "339087517caf0f8325b9116262a1498b37002d78",
+          "path": "src/media/image-ops.helpers.test.ts",
           "range": {
-            "start_line": 1,
-            "end_line": 20
+            "end_line": 20,
+            "start_line": 1
           },
           "symbol": "buildImageResizeSideGrid, IMAGE_REDUCE_QUALITY_STEPS tests"
         },
         {
-          "path": "src/media/image-ops.rastermill-adapter.test.ts",
           "blob_sha": "8d636e43f72edb6ea0a9456eba89a5214437fb41",
+          "path": "src/media/image-ops.rastermill-adapter.test.ts",
           "range": {
-            "start_line": 1,
-            "end_line": 297
+            "end_line": 297,
+            "start_line": 1
           },
           "symbol": "image ops Rastermill adapter and EXIF orientation swap tests"
         },
         {
-          "path": "src/media/image-ops.worker.test.ts",
           "blob_sha": "e8f86c0e02c3a858a5d3a9fcc5608fe1e46f03fb",
+          "path": "src/media/image-ops.worker.test.ts",
           "range": {
-            "start_line": 1,
-            "end_line": 97
+            "end_line": 97,
+            "start_line": 1
           },
           "symbol": "image worker tests and inline BMP normalization"
         }
       ],
-      "integration": {
-        "producer": "AttachmentsService::dispatch_gateway",
-        "owner": "source/host/src/extensions/attachments/image_ops.rs",
-        "consumer": "Pending chat image resize and preview UI consumers (currently only gateway dispatch)",
-        "entrypoint": "source/host/src/extensions/attachments/attachments_service.rs::dispatch_gateway"
+      "status": {
+        "acceptance": "pending",
+        "implementation": "implemented",
+        "mapping": "reviewed",
+        "read": "read-complete",
+        "verification": "not-run",
+        "wiring": "not-wired"
+      },
+      "target": {
+        "language": "Rust",
+        "path": "source/host/src/extensions/attachments/image_ops.rs",
+        "symbol": "build_image_resize_side_grid, is_animated_webp_buffer, is_still_png_buffer, read_image_probe_from_header, read_image_metadata_from_header, convert_bmp_to_png, prepare_attachment, normalize_anthropic_inline_image"
       },
       "tests": [
         "source/host/tests/openclaw_image_ops_contract.rs::test_ocrm_image_ops_build_resize_side_grid",
@@ -12285,32 +12314,353 @@
         "prepare_attachment(input: &AttachmentInput) -> Result<PreparedAttachment, String>",
         "normalize_anthropic_inline_image(data_base64: &str, declared_mime: &str) -> Result<(String, String), String>"
       ],
-      "oracle_ids": [
-        "OCRM-IMAGE-OPS-O01",
-        "OCRM-IMAGE-OPS-O02",
-        "OCRM-IMAGE-OPS-O03"
+      "unit_id": "OCRM-UNIT-MEDIA-009"
+    },
+    {
+      "adr_refs": [],
+      "behavior": "Normalize Anthropic API content blocks by converting unsupported image formats (such as image/bmp) to image/png while preserving image/jpeg, image/png, image/gif, and image/webp. Enforces 10MB decoded payload safety check to guard against decompression bombs.",
+      "blocker_ids": [
+        "BL-MEDIA-ANTHROPIC-INLINE-CONSUMERS-001"
       ],
-      "required_gate_ids": [
-        "OCRM-G04-rust-contract",
-        "OCRM-G05-frozen-oracle"
+      "capability_ids": [
+        "media.anthropic_inline_images"
+      ],
+      "dependencies": [
+        "source/host/src/extensions/attachments/image_ops.rs"
+      ],
+      "evidence_refs": [
+        "source/host/tests/openclaw_web_media_contract.rs",
+        "projects/openclaw-rust/dossiers/web-media-remote-workspace-scoped.md"
+      ],
+      "existing_owner_candidates": [
+        {
+          "path": "source/host/src/extensions/attachments/image_ops.rs",
+          "reason": "BMP to PNG conversion helper"
+        },
+        {
+          "path": "source/host/src/extensions/attachments/attachments_service.rs",
+          "reason": "Attachment service gateway"
+        }
+      ],
+      "id": "OCRM-RESP-MEDIA-ANTHROPIC-INLINE-001",
+      "integration": {
+        "consumer": "Pending Anthropic provider pipeline integration",
+        "entrypoint": "source/host/src/extensions/attachments/attachments_service.rs::dispatch_gateway",
+        "owner": "source/host/src/extensions/attachments/anthropic_inline_images.rs",
+        "producer": "AttachmentsService::dispatch_gateway"
+      },
+      "invariants": [
+        "Supported formats (jpeg, png, gif, webp) pass through byte-for-byte unmodified",
+        "Decoded image size strictly checked against 10MB safety cap",
+        "Non-image blocks preserved unchanged"
+      ],
+      "migration_rollback": "Return original content blocks unmodified",
+      "oracle_ids": [
+        "OCRM-ANTHROPIC-INLINE-O01"
+      ],
+      "owner_decision": "Dedicated native Rust module anthropic_inline_images encapsulating Anthropic content block normalization and safety limits",
+      "postconditions": [
+        "Unsupported image formats converted to PNG base64, supported formats unmodified, payloads exceeding 10MB rejected with error"
+      ],
+      "preconditions": [
+        "Valid content blocks array or single block containing text or image source"
       ],
       "required_evidence_dimensions": [
         "unit",
         "integration",
         "negative-test"
       ],
-      "blocker_ids": [
-        "BL-MEDIA-IMAGE-OPS-CONSUMERS-001"
+      "required_gate_ids": [
+        "OCRM-G04-rust-contract",
+        "OCRM-G05-frozen-oracle"
       ],
-      "risk": "Low; header inspection without full decode prevents memory exhaustion and preserves animation",
-      "migration_rollback": "Fallback to raw attachment bytes",
-      "dependencies": [
-        "source/host/src/extensions/attachments/media_qr_png.rs"
+      "requirement_ids": [
+        "OCRM-R24",
+        "OCRM-AC24"
       ],
+      "responsibility_kind": "business-runtime",
+      "reviewer": "xuyao@ombhrum.com",
+      "risk": "Low; guards Anthropic inference requests against unsupported image format failures and decompression memory exhaustion",
+      "selected_owner": "source/host/src/extensions/attachments/anthropic_inline_images.rs",
+      "source_refs": [
+        {
+          "blob_sha": "f1cf59a9e33ea2cf486b72dbead9b92ae17ce9f3",
+          "path": "src/media/anthropic-inline-images.ts",
+          "range": {
+            "end_line": 96,
+            "start_line": 1
+          },
+          "symbol": "normalizeAnthropicInlineContentBlocks, estimateBase64DecodedBytes, ANTHROPIC_INLINE_IMAGE_DECODE_SAFETY_BYTES"
+        },
+        {
+          "blob_sha": "d0498b8cba8c6a0b73c4fca649a43a0889db4c80",
+          "path": "src/media/anthropic-inline-images.test.ts",
+          "range": {
+            "end_line": 120,
+            "start_line": 1
+          },
+          "symbol": "normalizeAnthropicInlineContentBlocks unit and edge tests"
+        }
+      ],
+      "status": {
+        "acceptance": "pending",
+        "implementation": "implemented",
+        "mapping": "reviewed",
+        "read": "read-complete",
+        "verification": "not-run",
+        "wiring": "not-wired"
+      },
+      "target": {
+        "language": "Rust",
+        "path": "source/host/src/extensions/attachments/anthropic_inline_images.rs",
+        "symbol": "normalize_anthropic_inline_content_blocks, estimate_base64_decoded_bytes, AnthropicContentBlock"
+      },
+      "tests": [
+        "source/host/tests/openclaw_web_media_contract.rs::test_ocrm_anthropic_inline_content_blocks_normalization"
+      ],
+      "typed_contracts": [
+        "normalize_anthropic_inline_content_blocks(blocks: &[AnthropicContentBlock]) -> Result<Vec<AnthropicContentBlock>, String>",
+        "estimate_base64_decoded_bytes(base64_str: &str) -> usize"
+      ],
+      "unit_id": "OCRM-UNIT-MEDIA-010"
+    },
+    {
       "adr_refs": [],
+      "behavior": "Unified web media loader and optimizer supporting local file paths, file:// URLs with percent-decoding, and remote HTTP/HTTPS resources. Enforces strict SSRF protection by forbidding Windows UNC network paths, blocks directory traversal escaping local root allowlists, preserves animated WebP frames against lossy single-frame transcode, and strips legacy media directive prefixes (@media:, media:).",
+      "blocker_ids": [
+        "BL-MEDIA-WEB-PIPELINE-CONSUMERS-001"
+      ],
+      "capability_ids": [
+        "media.web_media_pipeline"
+      ],
+      "dependencies": [
+        "source/host/src/extensions/attachments/image_ops.rs",
+        "source/host/src/extensions/attachments/media_store.rs"
+      ],
       "evidence_refs": [
-        "source/host/tests/openclaw_image_ops_contract.rs"
-      ]
+        "source/host/tests/openclaw_web_media_contract.rs",
+        "projects/openclaw-rust/dossiers/web-media-remote-workspace-scoped.md"
+      ],
+      "existing_owner_candidates": [
+        {
+          "path": "source/host/src/extensions/attachments/media_store.rs",
+          "reason": "Media storage buffer management"
+        },
+        {
+          "path": "source/host/src/extensions/attachments/image_ops.rs",
+          "reason": "Animated WebP detection and optimization"
+        }
+      ],
+      "id": "OCRM-RESP-MEDIA-WEB-PIPELINE-001",
+      "integration": {
+        "consumer": "Pending inbound/outbound chat media attachment consumers",
+        "entrypoint": "source/host/src/extensions/attachments/attachments_service.rs::dispatch_gateway",
+        "owner": "source/host/src/extensions/attachments/web_media.rs",
+        "producer": "AttachmentsService::dispatch_gateway"
+      },
+      "invariants": [
+        "Windows network UNC paths (//server/share or \\\\server\\share) strictly rejected",
+        "Local file loading respects local_roots boundary directory",
+        "Animated WebP (VP8X bit 1) preserved as animated format without single-frame degradation",
+        "Percent-encoded file URLs properly decoded"
+      ],
+      "migration_rollback": "Reject remote URL and unverified paths fail-closed",
+      "oracle_ids": [
+        "OCRM-WEB-MEDIA-O01",
+        "OCRM-WEB-MEDIA-O02",
+        "OCRM-WEB-MEDIA-O03"
+      ],
+      "owner_decision": "Dedicated native Rust module web_media implementing URL resolution, SSRF/UNC traversal guards, and image buffer optimization",
+      "postconditions": [
+        "Loaded media buffer with correct MIME type and optimization applied within byte budget"
+      ],
+      "preconditions": [
+        "Valid media URI or path string and bounded options"
+      ],
+      "required_evidence_dimensions": [
+        "unit",
+        "integration",
+        "negative-test"
+      ],
+      "required_gate_ids": [
+        "OCRM-G04-rust-contract",
+        "OCRM-G05-frozen-oracle"
+      ],
+      "requirement_ids": [
+        "OCRM-R24",
+        "OCRM-AC24"
+      ],
+      "responsibility_kind": "business-runtime",
+      "reviewer": "xuyao@ombhrum.com",
+      "risk": "Medium; critical SSRF security boundary and path traversal protection for user-submitted media URIs",
+      "selected_owner": "source/host/src/extensions/attachments/web_media.rs",
+      "source_refs": [
+        {
+          "blob_sha": "52baea5fca06e309cb9f3ef3c7bc379fc70c17be",
+          "path": "src/media/web-media.ts",
+          "range": {
+            "end_line": 813,
+            "start_line": 1
+          },
+          "symbol": "loadWebMedia, optimizeImageBufferForWebMedia, assertNoWindowsNetworkPath, fileUrlToPath, stripLegacyMediaDirectivePrefix"
+        },
+        {
+          "blob_sha": "f12cfc7fa689252c8f85f3ba1d86d5cbe9d96859",
+          "path": "src/media/web-media.test.ts",
+          "range": {
+            "end_line": 710,
+            "start_line": 1
+          },
+          "symbol": "loadWebMedia unit and contract tests"
+        },
+        {
+          "blob_sha": "eb5bdfc51659a84a60ea54e38e8e7884ff78816f",
+          "path": "src/media/web-media.animated-webp.test.ts",
+          "range": {
+            "end_line": 53,
+            "start_line": 1
+          },
+          "symbol": "animated WebP preservation tests"
+        },
+        {
+          "blob_sha": "c5dd10459cce3d8a5716df0c5b367d30fbe865b4",
+          "path": "src/media/web-media.file-url.windows.test.ts",
+          "range": {
+            "end_line": 48,
+            "start_line": 1
+          },
+          "symbol": "Windows file URL and network path tests"
+        }
+      ],
+      "status": {
+        "acceptance": "pending",
+        "implementation": "implemented",
+        "mapping": "reviewed",
+        "read": "read-complete",
+        "verification": "not-run",
+        "wiring": "not-wired"
+      },
+      "target": {
+        "language": "Rust",
+        "path": "source/host/src/extensions/attachments/web_media.rs",
+        "symbol": "load_web_media, optimize_image_buffer_for_web_media, assert_no_windows_network_path, file_url_to_path, strip_legacy_media_directive_prefix"
+      },
+      "tests": [
+        "source/host/tests/openclaw_web_media_contract.rs::test_ocrm_web_media_animated_webp_preservation",
+        "source/host/tests/openclaw_web_media_contract.rs::test_ocrm_web_media_file_url_and_traversal_guards",
+        "source/host/tests/openclaw_web_media_contract.rs::test_ocrm_web_media_local_loading_and_roots_boundary",
+        "source/host/tests/openclaw_web_media_contract.rs::test_ocrm_web_media_gateway_service_dispatch"
+      ],
+      "typed_contracts": [
+        "load_web_media(uri_or_path: &str, options: &WebMediaOptions) -> Result<WebMediaResult, String>",
+        "assert_no_windows_network_path(path: &str) -> Result<(), String>",
+        "file_url_to_path(url_str: &str) -> Result<PathBuf, String>"
+      ],
+      "unit_id": "OCRM-UNIT-MEDIA-010"
+    },
+    {
+      "adr_refs": [],
+      "behavior": "Bounded remote workspace file reader reading remote or sandboxed workspace files with strict monotonic deadline enforcement, adaptive chunking (output_bytes_cap / 2), size cap rejection, and file revision [dev:ino:size:mtimeMs:ctimeMs] consistency verification.",
+      "blocker_ids": [
+        "BL-MEDIA-REMOTE-WORKSPACE-CONSUMERS-001"
+      ],
+      "capability_ids": [
+        "media.remote_workspace_file"
+      ],
+      "dependencies": [
+        "source/host/src/extensions/attachments/media_store.rs"
+      ],
+      "evidence_refs": [
+        "source/host/tests/openclaw_web_media_contract.rs",
+        "projects/openclaw-rust/dossiers/web-media-remote-workspace-scoped.md"
+      ],
+      "existing_owner_candidates": [
+        {
+          "path": "source/host/src/extensions/attachments/media_store.rs",
+          "reason": "Workspace media access and bounded read"
+        }
+      ],
+      "id": "OCRM-RESP-MEDIA-REMOTE-WORKSPACE-FILE-001",
+      "integration": {
+        "consumer": "Pending remote agent workspace tool integration",
+        "entrypoint": "source/host/src/extensions/attachments/remote_workspace_file.rs::read_bounded_remote_workspace_file",
+        "owner": "source/host/src/extensions/attachments/remote_workspace_file.rs",
+        "producer": "WorkspaceFileTransport"
+      },
+      "invariants": [
+        "Reading aborts with RemoteWorkspaceFileError::Timeout when monotonic deadline expires",
+        "File revision dev:ino:size:mtimeMs:ctimeMs verifies file did not mutate during read",
+        "Total bytes read never exceeds output_bytes_cap"
+      ],
+      "migration_rollback": "Fail-closed on remote file read timeout or revision mismatch",
+      "oracle_ids": [
+        "OCRM-REMOTE-WORKSPACE-O01"
+      ],
+      "owner_decision": "Dedicated native Rust module remote_workspace_file implementing bounded chunked reading and file revision tracking",
+      "postconditions": [
+        "Buffer of file contents returned if within size and deadline, file revision matching source state"
+      ],
+      "preconditions": [
+        "Valid file path, timeout deadline, and output byte cap"
+      ],
+      "required_evidence_dimensions": [
+        "unit",
+        "integration",
+        "negative-test"
+      ],
+      "required_gate_ids": [
+        "OCRM-G04-rust-contract",
+        "OCRM-G05-frozen-oracle"
+      ],
+      "requirement_ids": [
+        "OCRM-R24",
+        "OCRM-AC24"
+      ],
+      "responsibility_kind": "business-runtime",
+      "reviewer": "xuyao@ombhrum.com",
+      "risk": "Low; bounded chunked reading prevents unbounded memory allocation on large workspace files",
+      "selected_owner": "source/host/src/extensions/attachments/remote_workspace_file.rs",
+      "source_refs": [
+        {
+          "blob_sha": "d040aee0f0195a6dd8d689255755ba9b0a1a0110",
+          "path": "src/media/remote-workspace-file.ts",
+          "range": {
+            "end_line": 138,
+            "start_line": 1
+          },
+          "symbol": "readBoundedRemoteWorkspaceFile, buildFileRevision, RemoteWorkspaceFileError"
+        },
+        {
+          "blob_sha": "d88b49e29f07a77e112d26f7435f309a4a754167",
+          "path": "src/media/remote-workspace-file.test.ts",
+          "range": {
+            "end_line": 190,
+            "start_line": 1
+          },
+          "symbol": "readBoundedRemoteWorkspaceFile chunking, deadline, and revision tests"
+        }
+      ],
+      "status": {
+        "acceptance": "pending",
+        "implementation": "implemented",
+        "mapping": "reviewed",
+        "read": "read-complete",
+        "verification": "not-run",
+        "wiring": "not-wired"
+      },
+      "target": {
+        "language": "Rust",
+        "path": "source/host/src/extensions/attachments/remote_workspace_file.rs",
+        "symbol": "read_bounded_remote_workspace_file, build_file_revision, RemoteWorkspaceFileParams, RemoteWorkspaceFileError"
+      },
+      "tests": [
+        "source/host/tests/openclaw_web_media_contract.rs::test_ocrm_remote_workspace_file_transfer"
+      ],
+      "typed_contracts": [
+        "read_bounded_remote_workspace_file(path: &Path, params: &RemoteWorkspaceFileParams) -> Result<RemoteWorkspaceFileResult, RemoteWorkspaceFileError>",
+        "build_file_revision(metadata: &fs::Metadata) -> String"
+      ],
+      "unit_id": "OCRM-UNIT-MEDIA-010"
     }
   ],
   "schema_version": 1,

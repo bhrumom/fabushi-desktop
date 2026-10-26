@@ -62,9 +62,9 @@ The audited source code was decomposed into 5 discrete Rust runtime responsibili
    - **Status**: `implementation=implemented`, `wiring=not-wired`, `verification=not-run`, `blocker_ids=["BL-MEDIA-STORE-REMOTE-CONSUMERS-001"]` (channel/web media pipelines do not yet invoke remote URL media ingestion).
 
 5. **`OCRM-RESP-MEDIA-STORE-TEST-SUPPORT-001`**:
-   - **Behavior**: Scoped test fixtures, filename test assertion utilities, and network SSRF routing scoping for media store testing.
-   - **Rust Owner**: `source/host/src/extensions/attachments/media_store.rs::StoreRemoteFixtureScope`.
-   - **Production Call Chain**: Producer `openclaw_media_store_contract` → Owner `media_store::StoreRemoteFixtureScope` → Consumer: `openclaw_media_store_contract` (*test-only harness boundary, no production runtime claim*).
+   - **Behavior**: Scoped test fixtures, filename test assertion utilities (`expect_saved_original_filename_case`), and network SSRF routing scoping (`StoreRemoteFixtureScope`, `check_active_remote_fixtures_empty`) for media store testing.
+   - **Rust Owner**: `source/host/src/extensions/attachments/media_store.rs::StoreRemoteFixtureScope, check_active_remote_fixtures_empty, expect_saved_original_filename_case`.
+   - **Production Call Chain**: Producer `openclaw_media_store_contract` → Owner `media_store::StoreRemoteFixtureScope` → Consumer: `source/host/tests/openclaw_media_store_contract.rs::test_ocrm_media_store_remote_fixture_scope_and_filename_support` (*strictly scoped to test-only harness boundary, explicitly classified as non-production runtime*).
    - **Oracles**: `OCRM-MEDIA-STORE-O08`.
    - **Status**: `implementation=implemented`, `wiring=wired`, `verification=verified`, `blocker_ids=[]` (*support scope only*).
 

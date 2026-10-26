@@ -1,21 +1,16 @@
-use std::collections::BTreeMap;
-use std::fs::{self, File};
-use std::io::Write;
+use std::fs;
 use std::path::{Path, PathBuf};
-use std::time::{Duration, SystemTime};
 
 use mahayana_host_runtime::device_pairing_owner::DevicePairingOwner;
 use mahayana_host_runtime::extensions::attachments::attachments_service::AttachmentsService;
 use mahayana_host_runtime::extensions::attachments::media_store::{
     CleanOldMediaOptions, MEDIA_MAX_BYTES, PLAYBACK_TRANSCODE_SUBDIR, MANAGED_OUTGOING_SUBDIR,
-    build_saved_media_id, clean_old_media, delete_media_buffer, extract_original_filename,
-    prune_playback_transcode_cache_to_size, read_media_buffer, resolve_media_buffer_path,
+    clean_old_media, delete_media_buffer, extract_original_filename,
+    prune_playback_transcode_cache_to_size, read_media_buffer,
     resolve_media_scoped_dir, resolve_media_subdir, sanitize_filename, save_media_buffer,
     save_media_source, write_playback_transcode_cache,
 };
-use mahayana_host_runtime::extensions::attachments::media_store_shared::{
-    MEDIA_FILE_MODE, SaveMediaSourceErrorCode, format_media_size,
-};
+use mahayana_host_runtime::extensions::attachments::media_store_shared::SaveMediaSourceErrorCode;
 use serde_json::json;
 
 struct TempTestDir {
@@ -378,4 +373,76 @@ fn test_ocrm_device_pairing_qr_wiring() {
     // Verify qrTerminal generation and format
     let qr_terminal = obj.get("qrTerminal").and_then(|v| v.as_str()).expect("qrTerminal should be present");
     assert!(!qr_terminal.is_empty(), "qrTerminal should be non-empty");
+}
+
+#[test]
+fn test_ocrm_media_store_remote_fixture_scope_and_filename_support() {
+    use mahayana_host_runtime::extensions::attachments::media_store::{
+        check_active_remote_fixtures_empty, expect_saved_original_filename_case,
+        StoreRemoteFixtureScope,
+    };
+
+    // 1. Initial state: active scopes must be empty
+    assert!(check_active_remote_fixtures_empty().is_ok());
+
+    let target_url = "http://127.0.0.1:43123/fixture.bin?case=one";
+    {
+        let mut fixture = StoreRemoteFixtureScope::new(target_url);
+        assert!(fixture.active);
+        assert_eq!(fixture.matched_count, 0);
+
+        // While active, checking empty must fail with active count error
+        let err = check_active_remote_fixtures_empty().unwrap_err();
+        assert!(err.contains("Store remote fixtures are still active"));
+
+        // Match exact URL
+        assert!(fixture.matches(target_url));
+        assert_eq!(fixture.matched_count, 1);
+
+        // Unmatched URL
+        assert!(!fixture.matches("http://127.0.0.1:43123/other.bin"));
+        assert_eq!(fixture.matched_count, 1);
+
+        // Deactivating shuts off matching
+        fixture.deactivate();
+        assert!(!fixture.active);
+        assert!(!fixture.matches(target_url));
+    }
+
+    // Dropped / deactivated scope cleans up atomically
+    assert!(check_active_remote_fixtures_empty().is_ok());
+
+    // 2. Test expect_saved_original_filename_case
+    let temp = TempTestDir::new("orig-fn");
+    let saved_with_orig = save_media_buffer(
+        b"data with name",
+        Some("text/plain"),
+        "inbound",
+        1024,
+        Some("my-report.txt"),
+        None,
+        Some(&temp.path),
+    ).expect("save with original filename");
+
+    assert!(expect_saved_original_filename_case(
+        &saved_with_orig,
+        Some("my-report.txt"),
+        false,
+    ).is_ok());
+
+    let saved_uuid_only = save_media_buffer(
+        b"data no name",
+        Some("text/plain"),
+        "inbound",
+        1024,
+        None,
+        None,
+        Some(&temp.path),
+    ).expect("save without original filename");
+
+    assert!(expect_saved_original_filename_case(
+        &saved_uuid_only,
+        None,
+        true,
+    ).is_ok());
 }

@@ -822,8 +822,79 @@ pub fn clean_old_media(
     Ok(())
 }
 
+use std::sync::atomic::{AtomicUsize, Ordering};
+
+static ACTIVE_REMOTE_FIXTURE_SCOPES: AtomicUsize = AtomicUsize::new(0);
+
+/// Scoped remote fixture simulating network interceptors for media store tests.
 #[derive(Debug, Clone)]
 pub struct StoreRemoteFixtureScope {
     pub url: String,
     pub active: bool,
+    pub matched_count: usize,
+}
+
+impl StoreRemoteFixtureScope {
+    pub fn new(url: &str) -> Self {
+        ACTIVE_REMOTE_FIXTURE_SCOPES.fetch_add(1, Ordering::SeqCst);
+        Self {
+            url: url.to_string(),
+            active: true,
+            matched_count: 0,
+        }
+    }
+
+    pub fn matches(&mut self, request_url: &str) -> bool {
+        if self.active && self.url == request_url {
+            self.matched_count += 1;
+            true
+        } else {
+            false
+        }
+    }
+
+    pub fn deactivate(&mut self) {
+        if self.active {
+            self.active = false;
+            ACTIVE_REMOTE_FIXTURE_SCOPES.fetch_sub(1, Ordering::SeqCst);
+        }
+    }
+}
+
+impl Drop for StoreRemoteFixtureScope {
+    fn drop(&mut self) {
+        self.deactivate();
+    }
+}
+
+/// Verifies that all active test fixtures have joined and completed.
+pub fn check_active_remote_fixtures_empty() -> Result<(), String> {
+    let count = ACTIVE_REMOTE_FIXTURE_SCOPES.load(Ordering::SeqCst);
+    if count != 0 {
+        Err(format!("Store remote fixtures are still active: {count}"))
+    } else {
+        Ok(())
+    }
+}
+
+/// Helper asserting original filename patterns from `store-filename.test-support.ts`.
+pub fn expect_saved_original_filename_case(
+    saved: &SavedMedia,
+    expected_original_filename: Option<&str>,
+    expect_uuid_only: bool,
+) -> Result<(), String> {
+    if expect_uuid_only {
+        if saved.id.contains("---") {
+            return Err(format!("Expected UUID-only ID, got: {}", saved.id));
+        }
+    }
+    if let Some(expected) = expected_original_filename {
+        let extracted = extract_original_filename(&saved.path);
+        if extracted != expected {
+            return Err(format!(
+                "Original filename mismatch: expected '{expected}', extracted '{extracted}'"
+            ));
+        }
+    }
+    Ok(())
 }

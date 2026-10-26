@@ -1921,6 +1921,32 @@ impl AttachmentsService {
                     "mimeType": norm_mime
                 }))
             })(),
+            "normalizeAnthropicInlineContentBlocks" => (|| {
+                let blocks_val = args
+                    .get("blocks")
+                    .ok_or_else(|| "normalizeAnthropicInlineContentBlocks.blocks is required".to_string())?;
+                let blocks: Vec<crate::extensions::attachments::anthropic_inline_images::AnthropicContentBlock> =
+                    serde_json::from_value(blocks_val.clone())
+                        .map_err(|e| format!("Invalid AnthropicContentBlock array: {e}"))?;
+                let normalized = crate::extensions::attachments::anthropic_inline_images::normalize_anthropic_inline_content_blocks(&blocks)?;
+                Ok(serde_json::to_value(normalized).unwrap_or(Value::Array(Vec::new())))
+            })(),
+            "loadWebMedia" => (|| {
+                let url = args
+                    .get("url")
+                    .and_then(Value::as_str)
+                    .ok_or_else(|| "loadWebMedia.url must be a string".to_string())?;
+                let max_bytes = args.get("maxBytes").and_then(Value::as_u64).map(|v| v as usize);
+                let optimize = args.get("optimizeImages").and_then(Value::as_bool).unwrap_or(true);
+                let opts = crate::extensions::attachments::web_media::WebMediaOptions {
+                    max_bytes,
+                    optimize_images: optimize,
+                    ..Default::default()
+                };
+                let res = crate::extensions::attachments::web_media::load_web_media(url, &opts)
+                    .map_err(|e| format!("{e}"))?;
+                Ok(serde_json::to_value(res).unwrap_or(Value::Null))
+            })(),
             _ => return None,
         };
         Some(result)

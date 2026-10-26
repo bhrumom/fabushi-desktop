@@ -1,3 +1,4 @@
+pub mod anthropic_inline_images;
 pub mod attachments_service;
 pub mod box_staging;
 pub mod extension;
@@ -14,5 +15,7 @@ pub mod media_reference;
 pub mod media_store;
 pub mod media_store_shared;
 pub mod media_understanding_service;
+pub mod remote_workspace_file;
 pub mod safe_link_preview_fetch;
 pub mod video_playback_rendition;
+pub mod web_media;
