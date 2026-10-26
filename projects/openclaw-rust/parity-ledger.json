@@ -10,10 +10,10 @@
     "ui_accepted": false
   },
   "file_coverage": {
-    "mapped_paths": 142,
+    "mapped_paths": 148,
     "omitted_known": 0,
     "tracked_paths": 58750,
-    "unclassified_paths": 58608
+    "unclassified_paths": 58602
   },
   "inventory_authority": {
     "manifest_source": "GitHub Actions immutable artifact candidate",
@@ -8269,6 +8269,554 @@
         "DiagnosticError"
       ],
       "unit_id": "OCRM-UNIT-ERROR-001"
+    },
+    {
+      "adr_refs": [],
+      "behavior": "Agent roster representation decoding (entries map vs list array), normalization, sole-agent vs marked default resolution, ACP subagent target aggregation, and Gateway system agent enumeration.",
+      "blocker_ids": [],
+      "capability_ids": [
+        "agents.roster.representation"
+      ],
+      "dependencies": [
+        "mahayana_host_runtime::agents::agent_roster"
+      ],
+      "evidence_refs": [
+        "source/host/tests/openclaw_agent_roster_contract.rs",
+        "projects/openclaw-rust/dossiers/agent-roster-provenance-scoped.md"
+      ],
+      "existing_owner_candidates": [
+        {
+          "path": "source/host/src/agents/agent_roster.rs",
+          "reason": "Host agent roster representation owner"
+        }
+      ],
+      "id": "OCRM-RESP-AGENT-ROSTER-REPRESENTATION-001",
+      "integration": {
+        "consumer": "source/host/src/host_roster_bookkeeping.rs::HostRosterBookkeeping::apply",
+        "entrypoint": "source/host/src/host_roster_bookkeeping.rs::HostRosterBookkeeping::apply_config",
+        "owner": "source/host/src/agents/agent_roster.rs::list_agent_ids, try_resolve_default_agent_id",
+        "producer": "source/host/src/host_roster_bookkeeping.rs::HostRosterBookkeeping::apply_config"
+      },
+      "invariants": [
+        "Unauthored empty roster returns implicit main agent",
+        "Explicit ownership mode disables legacy marked default resolution",
+        "Acp subagent target aggregation extracts valid non-wildcard agent IDs"
+      ],
+      "migration_rollback": "Fall back to single-agent hardcoded main configuration",
+      "oracle_ids": [
+        "OCRM-ROSTER-O01",
+        "OCRM-ROSTER-O02",
+        "OCRM-ROSTER-O03",
+        "OCRM-ROSTER-O09"
+      ],
+      "owner_decision": "Consolidate agent roster parsing and resolution inside host agents module",
+      "postconditions": [
+        "Unique normalized agent IDs and active fallback agent resolved"
+      ],
+      "preconditions": [
+        "Configuration JSON value provided"
+      ],
+      "required_evidence_dimensions": [
+        "unit",
+        "format"
+      ],
+      "required_gate_ids": [
+        "OCRM-G04-rust-contract",
+        "OCRM-G05-frozen-oracle"
+      ],
+      "requirement_ids": [
+        "OCRM-R08",
+        "OCRM-AC08"
+      ],
+      "responsibility_kind": "business-runtime",
+      "reviewer": "xuyao@ombhrum.com",
+      "risk": "Low; ensures deterministic agent discovery and active agent bookkeeping",
+      "selected_owner": "source/host/src/agents/agent_roster.rs",
+      "source_refs": [
+        {
+          "blob_sha": "89b4c78e017ee7715ddef2052bf6ace0863fd209",
+          "path": "src/agents/agent-roster.ts",
+          "range": {
+            "end_line": 173,
+            "start_line": 1
+          },
+          "symbol": "listAgentIds"
+        }
+      ],
+      "status": {
+        "acceptance": "pending",
+        "implementation": "implemented",
+        "mapping": "reviewed",
+        "read": "read-complete",
+        "verification": "verified",
+        "wiring": "wired"
+      },
+      "target": {
+        "language": "Rust",
+        "path": "source/host/src/agents/agent_roster.rs",
+        "symbol": "list_agent_ids"
+      },
+      "tests": [
+        "source/host/tests/openclaw_agent_roster_contract.rs::test_ocrm_roster_o01_entries_and_list_representations",
+        "source/host/tests/openclaw_agent_roster_contract.rs::test_ocrm_roster_o02_default_and_sole_resolution",
+        "source/host/tests/openclaw_agent_roster_contract.rs::test_ocrm_roster_o03_acp_and_gateway_subagent_targets",
+        "source/host/tests/openclaw_agent_roster_contract.rs::test_ocrm_roster_o09_bookkeeping_apply_config_wiring"
+      ],
+      "typed_contracts": [
+        "AgentRosterProperty",
+        "ListedAgentEntry"
+      ],
+      "unit_id": "OCRM-UNIT-ROSTER-001"
+    },
+    {
+      "adr_refs": [],
+      "behavior": "Roster include provenance evaluation, determining whether  contributes membership or default metadata at agents.entries/list or bindings boundaries.",
+      "blocker_ids": [],
+      "capability_ids": [
+        "config.agent_roster.provenance"
+      ],
+      "dependencies": [
+        "mahayana_host_runtime::agents::agent_roster"
+      ],
+      "evidence_refs": [
+        "source/host/tests/openclaw_agent_roster_contract.rs",
+        "projects/openclaw-rust/dossiers/agent-roster-provenance-scoped.md"
+      ],
+      "existing_owner_candidates": [
+        {
+          "path": "source/host/src/agents/agent_roster.rs",
+          "reason": "Host roster provenance analyzer"
+        }
+      ],
+      "id": "OCRM-RESP-AGENT-ROSTER-PROVENANCE-001",
+      "integration": {
+        "consumer": "source/host/src/agents/agent_roster.rs::can_write_doctor_include",
+        "entrypoint": "source/host/src/agents/agent_roster.rs::config_include_owns_agent_roster_values",
+        "owner": "source/host/src/agents/agent_roster.rs::include_contribution_owns_agent_roster",
+        "producer": "source/host/src/agents/agent_roster.rs::can_write_doctor_include"
+      },
+      "invariants": [
+        "Includes at agents.entries or list boundaries are marked include-owned",
+        "Unrelated includes do not claim roster ownership"
+      ],
+      "migration_rollback": "Disallow included agent rosters entirely",
+      "oracle_ids": [
+        "OCRM-ROSTER-O04"
+      ],
+      "owner_decision": "Evaluate include ownership inside host agents module",
+      "postconditions": [
+        "Returns boolean flag indicating whether roster is include-owned"
+      ],
+      "preconditions": [
+        "Configuration AST and resolution facts provided"
+      ],
+      "required_evidence_dimensions": [
+        "unit",
+        "security"
+      ],
+      "required_gate_ids": [
+        "OCRM-G04-rust-contract",
+        "OCRM-G05-frozen-oracle"
+      ],
+      "requirement_ids": [
+        "OCRM-R08",
+        "OCRM-AC08"
+      ],
+      "responsibility_kind": "business-runtime",
+      "reviewer": "xuyao@ombhrum.com",
+      "risk": "Low; prevents config mutation from overwriting external include files",
+      "selected_owner": "source/host/src/agents/agent_roster.rs",
+      "source_refs": [
+        {
+          "blob_sha": "2ada1a408e176df45e8571b597777e85cb049227",
+          "path": "src/config/agent-roster-provenance.ts",
+          "range": {
+            "end_line": 114,
+            "start_line": 1
+          },
+          "symbol": "configIncludeOwnsAgentRoster"
+        }
+      ],
+      "status": {
+        "acceptance": "pending",
+        "implementation": "implemented",
+        "mapping": "reviewed",
+        "read": "read-complete",
+        "verification": "verified",
+        "wiring": "wired"
+      },
+      "target": {
+        "language": "Rust",
+        "path": "source/host/src/agents/agent_roster.rs",
+        "symbol": "config_include_owns_agent_roster_values"
+      },
+      "tests": [
+        "source/host/tests/openclaw_agent_roster_contract.rs::test_ocrm_roster_o04_include_provenance"
+      ],
+      "typed_contracts": [
+        "include_contribution_owns_agent_roster"
+      ],
+      "unit_id": "OCRM-UNIT-ROSTER-001"
+    },
+    {
+      "adr_refs": [],
+      "behavior": "Workspace transition and survivor workspace pinning on multi-agent to sole-agent collapse, preserving agent workspace isolation across roster mutations.",
+      "blocker_ids": [],
+      "capability_ids": [
+        "config.agent_roster.transition"
+      ],
+      "dependencies": [
+        "mahayana_host_runtime::agents::agent_roster"
+      ],
+      "evidence_refs": [
+        "source/host/tests/openclaw_agent_roster_contract.rs",
+        "projects/openclaw-rust/dossiers/agent-roster-provenance-scoped.md"
+      ],
+      "existing_owner_candidates": [
+        {
+          "path": "source/host/src/agents/agent_roster.rs",
+          "reason": "Host workspace transition manager"
+        }
+      ],
+      "id": "OCRM-RESP-AGENT-WORKSPACE-TRANSITION-001",
+      "integration": {
+        "consumer": "source/host/src/agents/settings_file.rs::write_sand_settings_file",
+        "entrypoint": "source/host/src/agents/agent_roster.rs::pin_survivor_workspace_for_roster_collapse",
+        "owner": "source/host/src/agents/agent_roster.rs::pin_survivor_workspace_for_roster_collapse",
+        "producer": "source/host/src/agents/agent_roster.rs::pin_survivor_workspace_for_roster_collapse"
+      },
+      "invariants": [
+        "Survivor workspace is explicitly pinned when reducing multi-agent to sole-agent",
+        "Non-collapsing transitions leave configurations unpinned"
+      ],
+      "migration_rollback": "Allow workspace directories to move implicitly to root",
+      "oracle_ids": [
+        "OCRM-ROSTER-O07"
+      ],
+      "owner_decision": "Host agents module manages workspace transitions",
+      "postconditions": [
+        "Transformed configuration and list of inserted paths returned"
+      ],
+      "preconditions": [
+        "Source config, target config, and optional survivor directory provided"
+      ],
+      "required_evidence_dimensions": [
+        "unit",
+        "filesystem"
+      ],
+      "required_gate_ids": [
+        "OCRM-G04-rust-contract",
+        "OCRM-G05-frozen-oracle"
+      ],
+      "requirement_ids": [
+        "OCRM-R08",
+        "OCRM-AC08"
+      ],
+      "responsibility_kind": "business-runtime",
+      "reviewer": "xuyao@ombhrum.com",
+      "risk": "Low; ensures survivor agent retains its dedicated workspace directory",
+      "selected_owner": "source/host/src/agents/agent_roster.rs",
+      "source_refs": [
+        {
+          "blob_sha": "e8e480275ad9d5dbf302e8acd9908e625c0df43f",
+          "path": "src/config/agent-workspace-roster-transition.ts",
+          "range": {
+            "end_line": 101,
+            "start_line": 1
+          },
+          "symbol": "pinSurvivorWorkspaceForRosterCollapse"
+        }
+      ],
+      "status": {
+        "acceptance": "pending",
+        "implementation": "implemented",
+        "mapping": "reviewed",
+        "read": "read-complete",
+        "verification": "verified",
+        "wiring": "wired"
+      },
+      "target": {
+        "language": "Rust",
+        "path": "source/host/src/agents/agent_roster.rs",
+        "symbol": "pin_survivor_workspace_for_roster_collapse"
+      },
+      "tests": [
+        "source/host/tests/openclaw_agent_roster_contract.rs::test_ocrm_roster_o07_survivor_workspace_pinning"
+      ],
+      "typed_contracts": [
+        "pin_survivor_workspace_for_roster_collapse"
+      ],
+      "unit_id": "OCRM-UNIT-ROSTER-001"
+    },
+    {
+      "adr_refs": [],
+      "behavior": "Materializes default implicit agent roster ({ entries: { main: {} } }) on fresh unauthored configurations.",
+      "blocker_ids": [],
+      "capability_ids": [
+        "config.agent_roster.implicit_defaults"
+      ],
+      "dependencies": [
+        "mahayana_host_runtime::agents::agent_roster"
+      ],
+      "evidence_refs": [
+        "source/host/tests/openclaw_agent_roster_contract.rs",
+        "projects/openclaw-rust/dossiers/agent-roster-provenance-scoped.md"
+      ],
+      "existing_owner_candidates": [
+        {
+          "path": "source/host/src/agents/agent_roster.rs",
+          "reason": "Host implicit defaults materializer"
+        }
+      ],
+      "id": "OCRM-RESP-AGENT-IMPLICIT-ROSTER-001",
+      "integration": {
+        "consumer": "source/host/src/agents/agent_roster.rs::list_agent_ids",
+        "entrypoint": "source/host/src/agents/agent_roster.rs::apply_implicit_agent_roster_defaults",
+        "owner": "source/host/src/agents/agent_roster.rs::apply_implicit_agent_roster_defaults",
+        "producer": "source/host/src/host_roster_bookkeeping.rs::HostRosterBookkeeping::apply_config"
+      },
+      "invariants": [
+        "Fresh configs receive main agent entry",
+        "Explicit fleets and populated rosters remain untouched"
+      ],
+      "migration_rollback": "Require explicit agent declaration in all configurations",
+      "oracle_ids": [
+        "OCRM-ROSTER-O05"
+      ],
+      "owner_decision": "Host agents module materializes implicit defaults",
+      "postconditions": [
+        "Default agent roster populated if unauthored"
+      ],
+      "preconditions": [
+        "Raw config JSON supplied"
+      ],
+      "required_evidence_dimensions": [
+        "unit",
+        "format"
+      ],
+      "required_gate_ids": [
+        "OCRM-G04-rust-contract",
+        "OCRM-G05-frozen-oracle"
+      ],
+      "requirement_ids": [
+        "OCRM-R08",
+        "OCRM-AC08"
+      ],
+      "responsibility_kind": "business-runtime",
+      "reviewer": "xuyao@ombhrum.com",
+      "risk": "Low; ensures zero-config out-of-box operation",
+      "selected_owner": "source/host/src/agents/agent_roster.rs",
+      "source_refs": [
+        {
+          "blob_sha": "7037173dd7e41fd8abe29b111c2bfeb27fa37f20",
+          "path": "src/config/implicit-agent-roster.ts",
+          "range": {
+            "end_line": 19,
+            "start_line": 1
+          },
+          "symbol": "applyImplicitAgentRosterDefaults"
+        }
+      ],
+      "status": {
+        "acceptance": "pending",
+        "implementation": "implemented",
+        "mapping": "reviewed",
+        "read": "read-complete",
+        "verification": "verified",
+        "wiring": "wired"
+      },
+      "target": {
+        "language": "Rust",
+        "path": "source/host/src/agents/agent_roster.rs",
+        "symbol": "apply_implicit_agent_roster_defaults"
+      },
+      "tests": [
+        "source/host/tests/openclaw_agent_roster_contract.rs::test_ocrm_roster_o05_implicit_defaults_materialization"
+      ],
+      "typed_contracts": [
+        "apply_implicit_agent_roster_defaults"
+      ],
+      "unit_id": "OCRM-UNIT-ROSTER-001"
+    },
+    {
+      "adr_refs": [],
+      "behavior": "Security audit rule config.agent_roster.invalid_default_count, detecting invalid default selection counts in explicit vs compatibility fleets.",
+      "blocker_ids": [],
+      "capability_ids": [
+        "security.audit.agent_roster"
+      ],
+      "dependencies": [
+        "mahayana_host_runtime::agents::agent_roster"
+      ],
+      "evidence_refs": [
+        "source/host/tests/openclaw_agent_roster_contract.rs",
+        "projects/openclaw-rust/dossiers/agent-roster-provenance-scoped.md"
+      ],
+      "existing_owner_candidates": [
+        {
+          "path": "source/host/src/agents/agent_roster.rs",
+          "reason": "Host agent roster security auditor"
+        }
+      ],
+      "id": "OCRM-RESP-AGENT-ROSTER-AUDIT-001",
+      "integration": {
+        "consumer": "source/host/src/security_diagnostics.rs",
+        "entrypoint": "source/host/src/agents/agent_roster.rs::collect_agent_roster_findings",
+        "owner": "source/host/src/agents/agent_roster.rs::collect_agent_roster_findings",
+        "producer": "source/host/src/agents/agent_roster.rs::collect_agent_roster_findings"
+      },
+      "invariants": [
+        "Explicit fleet with default=true markers emits warning",
+        "Compatibility fleet with >1 default markers emits warning"
+      ],
+      "migration_rollback": "Suppress roster audit checks",
+      "oracle_ids": [
+        "OCRM-ROSTER-O06"
+      ],
+      "owner_decision": "Host agents module audits roster security findings",
+      "postconditions": [
+        "List of security audit findings returned"
+      ],
+      "preconditions": [
+        "OpenClaw config JSON supplied"
+      ],
+      "required_evidence_dimensions": [
+        "unit",
+        "security"
+      ],
+      "required_gate_ids": [
+        "OCRM-G04-rust-contract",
+        "OCRM-G05-frozen-oracle"
+      ],
+      "requirement_ids": [
+        "OCRM-R08",
+        "OCRM-AC08"
+      ],
+      "responsibility_kind": "business-runtime",
+      "reviewer": "xuyao@ombhrum.com",
+      "risk": "Low; security diagnostics rule for fleet configuration",
+      "selected_owner": "source/host/src/agents/agent_roster.rs",
+      "source_refs": [
+        {
+          "blob_sha": "97e144954c8138c45af11ef859975217c2f2cdda",
+          "path": "src/security/audit-agent-roster.ts",
+          "range": {
+            "end_line": 49,
+            "start_line": 1
+          },
+          "symbol": "collectAgentRosterFindings"
+        }
+      ],
+      "status": {
+        "acceptance": "pending",
+        "implementation": "implemented",
+        "mapping": "reviewed",
+        "read": "read-complete",
+        "verification": "verified",
+        "wiring": "wired"
+      },
+      "target": {
+        "language": "Rust",
+        "path": "source/host/src/agents/agent_roster.rs",
+        "symbol": "collect_agent_roster_findings"
+      },
+      "tests": [
+        "source/host/tests/openclaw_agent_roster_contract.rs::test_ocrm_roster_o06_security_audit_invalid_default_count"
+      ],
+      "typed_contracts": [
+        "SecurityAuditFinding"
+      ],
+      "unit_id": "OCRM-UNIT-ROSTER-001"
+    },
+    {
+      "adr_refs": [],
+      "behavior": "Doctor guarded config write staging and include boundary determination, protecting include-owned rosters from destructive in-place writes.",
+      "blocker_ids": [],
+      "capability_ids": [
+        "commands.doctor.roster_include_write"
+      ],
+      "dependencies": [
+        "mahayana_host_runtime::agents::agent_roster"
+      ],
+      "evidence_refs": [
+        "source/host/tests/openclaw_agent_roster_contract.rs",
+        "projects/openclaw-rust/dossiers/agent-roster-provenance-scoped.md"
+      ],
+      "existing_owner_candidates": [
+        {
+          "path": "source/host/src/agents/agent_roster.rs",
+          "reason": "Host doctor include write boundary owner"
+        }
+      ],
+      "id": "OCRM-RESP-DOCTOR-ROSTER-INCLUDE-WRITE-001",
+      "integration": {
+        "consumer": "source/host/src/agents/settings_file.rs::write_sand_settings_file",
+        "entrypoint": "source/host/src/agents/agent_roster.rs::can_write_doctor_include",
+        "owner": "source/host/src/agents/agent_roster.rs::can_write_doctor_include",
+        "producer": "source/host/src/agents/agent_roster.rs::can_write_doctor_include"
+      },
+      "invariants": [
+        "Include-owned roster returns false for direct doctor include writes",
+        "Clean locally-owned roster allows direct doctor writes"
+      ],
+      "migration_rollback": "Allow raw doctor overwrites",
+      "oracle_ids": [
+        "OCRM-ROSTER-O08"
+      ],
+      "owner_decision": "Host agents module enforces doctor write boundary contracts",
+      "postconditions": [
+        "Boolean permission for doctor include write returned"
+      ],
+      "preconditions": [
+        "Parsed and resolved configurations supplied"
+      ],
+      "required_evidence_dimensions": [
+        "unit",
+        "format"
+      ],
+      "required_gate_ids": [
+        "OCRM-G04-rust-contract",
+        "OCRM-G05-frozen-oracle"
+      ],
+      "requirement_ids": [
+        "OCRM-R08",
+        "OCRM-AC08"
+      ],
+      "responsibility_kind": "business-runtime",
+      "reviewer": "xuyao@ombhrum.com",
+      "risk": "Low; protects user included configuration files against corruption",
+      "selected_owner": "source/host/src/agents/agent_roster.rs",
+      "source_refs": [
+        {
+          "blob_sha": "985beab31531c6aeaf49aa9c7465a3de23d4c497",
+          "path": "src/commands/doctor/shared/roster-include-write.ts",
+          "range": {
+            "end_line": 116,
+            "start_line": 1
+          },
+          "symbol": "canWriteDoctorInclude"
+        }
+      ],
+      "status": {
+        "acceptance": "pending",
+        "implementation": "implemented",
+        "mapping": "reviewed",
+        "read": "read-complete",
+        "verification": "verified",
+        "wiring": "wired"
+      },
+      "target": {
+        "language": "Rust",
+        "path": "source/host/src/agents/agent_roster.rs",
+        "symbol": "can_write_doctor_include"
+      },
+      "tests": [
+        "source/host/tests/openclaw_agent_roster_contract.rs::test_ocrm_roster_o08_doctor_include_write_staging"
+      ],
+      "typed_contracts": [
+        "can_write_doctor_include"
+      ],
+      "unit_id": "OCRM-UNIT-ROSTER-001"
     }
   ],
   "schema_version": 1,
