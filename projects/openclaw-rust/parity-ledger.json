@@ -10,10 +10,10 @@
     "ui_accepted": false
   },
   "file_coverage": {
-    "mapped_paths": 100,
+    "mapped_paths": 106,
     "omitted_known": 0,
     "tracked_paths": 58750,
-    "unclassified_paths": 58650
+    "unclassified_paths": 58644
   },
   "inventory_authority": {
     "manifest_source": "GitHub Actions immutable artifact candidate",
@@ -4415,6 +4415,561 @@
         "BOX_CDP_PORT_BASE"
       ],
       "unit_id": "OCRM-UNIT-BROWSER-001"
+    },
+    {
+      "adr_refs": [],
+      "behavior": "Voice call session controller FSM, state transitions (invited, ringing, connected, ended, failed), and generation fencing.",
+      "blocker_ids": [],
+      "capability_ids": [
+        "talk.session_controller"
+      ],
+      "dependencies": [
+        "mahayana_host_runtime::extensions::session::call_session"
+      ],
+      "evidence_refs": [
+        "source/host/tests/openclaw_audio_talk_contract.rs",
+        "projects/openclaw-rust/dossiers/transcript-round93-openclaw-audio-speech-and-realtime-talk-native-fusion-20261026.md"
+      ],
+      "existing_owner_candidates": [
+        {
+          "path": "source/host/src/extensions/session/call_session.rs",
+          "reason": "Host CallSession FSM"
+        }
+      ],
+      "id": "OCRM-RESP-TALK-SESSION-CONTROLLER-001",
+      "integration": {
+        "consumer": "source/host/src/runner/production_turn_agent_owner.rs",
+        "entrypoint": "source/host/src/extensions/session/call_session.rs",
+        "owner": "source/host/src/extensions/session/call_session.rs",
+        "producer": "source/host/src/extensions/session/call_session.rs"
+      },
+      "invariants": [
+        "Reconnect increments monotonic generation",
+        "Terminal session mutations strictly fail closed"
+      ],
+      "migration_rollback": "Controlled by call session persistence database schema version",
+      "oracle_ids": [
+        "OCRM-AUDIO-O01",
+        "OCRM-AUDIO-O04"
+      ],
+      "owner_decision": "Extend CallSession FSM for OpenClaw talk session controller semantics",
+      "postconditions": [
+        "Call state and generation persisted to sqlite"
+      ],
+      "preconditions": [
+        "Valid call session initiation request"
+      ],
+      "required_evidence_dimensions": [
+        "unit",
+        "integration"
+      ],
+      "required_gate_ids": [
+        "OCRM-G04-rust-contract",
+        "OCRM-G05-frozen-oracle"
+      ],
+      "requirement_ids": [
+        "OCRM-R12",
+        "OCRM-AC12"
+      ],
+      "responsibility_kind": "business-runtime",
+      "reviewer": "xuyao@ombhrum.com",
+      "risk": "Medium; enforces clean lifecycle and prevents orphan call states",
+      "selected_owner": "source/host/src/extensions/session/call_session.rs",
+      "source_refs": [
+        {
+          "blob_sha": "ddd39516d5697de19af870ee654b3f807e5864ac",
+          "path": "src/talk/talk-session-controller.ts",
+          "range": {
+            "start_line": 1,
+            "end_line": 222
+          },
+          "symbol": "createTalkSessionController"
+        }
+      ],
+      "status": {
+        "acceptance": "pending",
+        "implementation": "implemented",
+        "mapping": "reviewed",
+        "read": "read-complete",
+        "verification": "verified",
+        "wiring": "wired"
+      },
+      "target": {
+        "language": "Rust",
+        "path": "source/host/src/extensions/session/call_session.rs",
+        "symbol": "CallSession"
+      },
+      "tests": [
+        "source/host/tests/openclaw_audio_talk_contract.rs::test_ocrm_audio_o01_generation_fencing",
+        "source/host/tests/openclaw_audio_talk_contract.rs::test_ocrm_audio_o04_terminal_session_mutation_invariant"
+      ],
+      "typed_contracts": [
+        "CallSession::update_media",
+        "CallSession::send_signal"
+      ],
+      "unit_id": "OCRM-UNIT-TALK-001"
+    },
+    {
+      "adr_refs": [],
+      "behavior": "Client voice session signaling sequence gap detection, monotonic signal_seq, and idempotent replay handling.",
+      "blocker_ids": [],
+      "capability_ids": [
+        "talk.client_lifecycle"
+      ],
+      "dependencies": [
+        "mahayana_host_runtime::extensions::session::production"
+      ],
+      "evidence_refs": [
+        "source/host/tests/openclaw_audio_talk_contract.rs",
+        "projects/openclaw-rust/dossiers/transcript-round93-openclaw-audio-speech-and-realtime-talk-native-fusion-20261026.md"
+      ],
+      "existing_owner_candidates": [
+        {
+          "path": "source/host/src/extensions/session/production.rs",
+          "reason": "Host session production manager"
+        }
+      ],
+      "id": "OCRM-RESP-TALK-CLIENT-LIFECYCLE-001",
+      "integration": {
+        "consumer": "source/host/src/runner/production_turn_agent_owner.rs",
+        "entrypoint": "source/host/src/extensions/session/production.rs",
+        "owner": "source/host/src/extensions/session/production.rs",
+        "producer": "source/host/src/extensions/session/production.rs"
+      },
+      "invariants": [
+        "Out-of-order signals rejected with sequence gap error",
+        "Matching signal payloads accepted idempotently"
+      ],
+      "migration_rollback": "Controlled by session manager protocol version",
+      "oracle_ids": [
+        "OCRM-AUDIO-O02",
+        "OCRM-AUDIO-O03"
+      ],
+      "owner_decision": "Integrate signaling sequence tracking in production session manager",
+      "postconditions": [
+        "Ordered signaling delivered to WebRTC peer"
+      ],
+      "preconditions": [
+        "Active call session with valid generation"
+      ],
+      "required_evidence_dimensions": [
+        "unit",
+        "integration"
+      ],
+      "required_gate_ids": [
+        "OCRM-G04-rust-contract",
+        "OCRM-G05-frozen-oracle"
+      ],
+      "requirement_ids": [
+        "OCRM-R12",
+        "OCRM-AC12"
+      ],
+      "responsibility_kind": "business-runtime",
+      "reviewer": "xuyao@ombhrum.com",
+      "risk": "Medium; prevents signaling race conditions over lossy transports",
+      "selected_owner": "source/host/src/extensions/session/production.rs",
+      "source_refs": [
+        {
+          "blob_sha": "9b31de718e10bd5fb748a30126889bea85533c91",
+          "path": "src/talk/client-voice-session-lifecycle.ts",
+          "range": {
+            "start_line": 1,
+            "end_line": 208
+          },
+          "symbol": "withClientVoiceSessionSettlement"
+        }
+      ],
+      "status": {
+        "acceptance": "pending",
+        "implementation": "implemented",
+        "mapping": "reviewed",
+        "read": "read-complete",
+        "verification": "verified",
+        "wiring": "wired"
+      },
+      "target": {
+        "language": "Rust",
+        "path": "source/host/src/extensions/session/production.rs",
+        "symbol": "call_sessions"
+      },
+      "tests": [
+        "source/host/tests/openclaw_audio_talk_contract.rs::test_ocrm_audio_o02_sequential_signal_gap_rejection",
+        "source/host/tests/openclaw_audio_talk_contract.rs::test_ocrm_audio_o03_idempotent_signal_replay_vs_conflict"
+      ],
+      "typed_contracts": [
+        "CallSession::accept_signal"
+      ],
+      "unit_id": "OCRM-UNIT-TALK-001"
+    },
+    {
+      "adr_refs": [],
+      "behavior": "Exact speech sentinel classification and echo suppression to prevent recursive agent consult loops.",
+      "blocker_ids": [],
+      "capability_ids": [
+        "talk.exact_speech"
+      ],
+      "dependencies": [
+        "mahayana_host_runtime::runner::tools"
+      ],
+      "evidence_refs": [
+        "source/host/tests/openclaw_audio_talk_contract.rs",
+        "projects/openclaw-rust/dossiers/transcript-round93-openclaw-audio-speech-and-realtime-talk-native-fusion-20261026.md"
+      ],
+      "existing_owner_candidates": [
+        {
+          "path": "source/host/src/runner/mod.rs",
+          "reason": "Host runner voice consult classifier"
+        }
+      ],
+      "id": "OCRM-RESP-TALK-EXACT-SPEECH-001",
+      "integration": {
+        "consumer": "source/host/src/runner/production_turn_agent_owner.rs",
+        "entrypoint": "source/host/src/runner/mod.rs",
+        "owner": "source/host/src/runner/mod.rs",
+        "producer": "source/host/src/runner/mod.rs"
+      },
+      "invariants": [
+        "Synthesized playback results classified as exact-speech-echo",
+        "Prevents infinite turn re-entry for audio playback"
+      ],
+      "migration_rollback": "Controlled by voice consult enablement flags",
+      "oracle_ids": [
+        "OCRM-AUDIO-O07"
+      ],
+      "owner_decision": "Implement classify_realtime_voice_consult_tool_call in runner tools",
+      "postconditions": [
+        "Exact speech echo suppressed from recursive consult"
+      ],
+      "preconditions": [
+        "Realtime consult tool call argument payload"
+      ],
+      "required_evidence_dimensions": [
+        "unit"
+      ],
+      "required_gate_ids": [
+        "OCRM-G04-rust-contract",
+        "OCRM-G05-frozen-oracle"
+      ],
+      "requirement_ids": [
+        "OCRM-R12",
+        "OCRM-AC12"
+      ],
+      "responsibility_kind": "business-runtime",
+      "reviewer": "xuyao@ombhrum.com",
+      "risk": "High; breaks infinite turn loops in live speech sessions",
+      "selected_owner": "source/host/src/runner/mod.rs",
+      "source_refs": [
+        {
+          "blob_sha": "de7fe86c4709e4dd09ace653f43b0b5802126b18",
+          "path": "src/talk/exact-speech-protocol.ts",
+          "range": {
+            "start_line": 1,
+            "end_line": 96
+          },
+          "symbol": "classifyRealtimeVoiceConsultToolCall"
+        }
+      ],
+      "status": {
+        "acceptance": "pending",
+        "implementation": "implemented",
+        "mapping": "reviewed",
+        "read": "read-complete",
+        "verification": "verified",
+        "wiring": "wired"
+      },
+      "target": {
+        "language": "Rust",
+        "path": "source/host/src/runner/mod.rs",
+        "symbol": "classify_realtime_voice_consult_tool_call"
+      },
+      "tests": [
+        "source/host/tests/openclaw_audio_talk_contract.rs::test_ocrm_audio_o07_exact_speech_loop_prevention"
+      ],
+      "typed_contracts": [
+        "classify_realtime_voice_consult_tool_call"
+      ],
+      "unit_id": "OCRM-UNIT-TALK-001"
+    },
+    {
+      "adr_refs": [],
+      "behavior": "Audio output port buffer bounds (320 chunks / 1 MiB) and 32-bit atomic close fence.",
+      "blocker_ids": [],
+      "capability_ids": [
+        "talk.audio_port_fence"
+      ],
+      "dependencies": [
+        "mahayana_host_runtime::ports"
+      ],
+      "evidence_refs": [
+        "source/host/tests/openclaw_audio_talk_contract.rs",
+        "projects/openclaw-rust/dossiers/transcript-round93-openclaw-audio-speech-and-realtime-talk-native-fusion-20261026.md"
+      ],
+      "existing_owner_candidates": [
+        {
+          "path": "source/host/src/ports/mod.rs",
+          "reason": "Host audio output port and fence"
+        }
+      ],
+      "id": "OCRM-RESP-TALK-AUDIO-PORT-FENCE-001",
+      "integration": {
+        "consumer": "source/host/src/runner/production_turn_agent_owner.rs",
+        "entrypoint": "source/host/src/ports/mod.rs",
+        "owner": "source/host/src/ports/mod.rs",
+        "producer": "source/host/src/ports/mod.rs"
+      },
+      "invariants": [
+        "Chunk buffer strictly capped at 320 pending chunks",
+        "Atomic close fence immediately rejects audio playback after revocation"
+      ],
+      "migration_rollback": "Controlled by audio port bridge implementation",
+      "oracle_ids": [
+        "OCRM-AUDIO-O05",
+        "OCRM-AUDIO-O06"
+      ],
+      "owner_decision": "Implement AudioOutputPort with AtomicI32 close fence",
+      "postconditions": [
+        "Audio frames dropped safely without memory leakage upon close"
+      ],
+      "preconditions": [
+        "PCM audio frame buffer submitted to port"
+      ],
+      "required_evidence_dimensions": [
+        "unit",
+        "concurrency-fence"
+      ],
+      "required_gate_ids": [
+        "OCRM-G04-rust-contract",
+        "OCRM-G05-frozen-oracle"
+      ],
+      "requirement_ids": [
+        "OCRM-R12",
+        "OCRM-AC12"
+      ],
+      "responsibility_kind": "business-runtime",
+      "reviewer": "xuyao@ombhrum.com",
+      "risk": "Medium; prevents audio frame leakage during barge-in",
+      "selected_owner": "source/host/src/ports/mod.rs",
+      "source_refs": [
+        {
+          "blob_sha": "d708e9b70db100bf16e24d1ea6f397cadf8ec3ee",
+          "path": "src/talk/audio-output-port.ts",
+          "range": {
+            "start_line": 1,
+            "end_line": 98
+          },
+          "symbol": "createRealtimeVoiceAudioPortSender"
+        }
+      ],
+      "status": {
+        "acceptance": "pending",
+        "implementation": "implemented",
+        "mapping": "reviewed",
+        "read": "read-complete",
+        "verification": "verified",
+        "wiring": "wired"
+      },
+      "target": {
+        "language": "Rust",
+        "path": "source/host/src/ports/mod.rs",
+        "symbol": "AudioOutputPort"
+      },
+      "tests": [
+        "source/host/tests/openclaw_audio_talk_contract.rs::test_ocrm_audio_o05_audio_buffer_queue_overflow",
+        "source/host/tests/openclaw_audio_talk_contract.rs::test_ocrm_audio_o06_shared_array_buffer_close_fence"
+      ],
+      "typed_contracts": [
+        "AudioOutputPort::send_audio",
+        "AudioOutputPort::close"
+      ],
+      "unit_id": "OCRM-UNIT-TALK-001"
+    },
+    {
+      "adr_refs": [],
+      "behavior": "Realtime voice turn context tracker, VAD barge-in response cancellation, and silent turn pruning.",
+      "blocker_ids": [],
+      "capability_ids": [
+        "talk.turn_context"
+      ],
+      "dependencies": [
+        "mahayana_host_runtime::runner"
+      ],
+      "evidence_refs": [
+        "source/host/tests/openclaw_audio_talk_contract.rs",
+        "projects/openclaw-rust/dossiers/transcript-round93-openclaw-audio-speech-and-realtime-talk-native-fusion-20261026.md"
+      ],
+      "existing_owner_candidates": [
+        {
+          "path": "source/host/src/runner/mod.rs",
+          "reason": "Host turn context tracker"
+        }
+      ],
+      "id": "OCRM-RESP-TALK-TURN-CONTEXT-001",
+      "integration": {
+        "consumer": "source/host/src/runner/production_turn_agent_owner.rs",
+        "entrypoint": "source/host/src/runner/mod.rs",
+        "owner": "source/host/src/runner/mod.rs",
+        "producer": "source/host/src/runner/mod.rs"
+      },
+      "invariants": [
+        "Barge-in speech_started flushes audio queue and cancels pending turn",
+        "Silent closed turns pruned during audio context preparation"
+      ],
+      "migration_rollback": "Controlled by turn context tracker options",
+      "oracle_ids": [
+        "OCRM-AUDIO-O08",
+        "OCRM-AUDIO-O09"
+      ],
+      "owner_decision": "Implement TurnContextTracker with silent turn pruning and barge-in",
+      "postconditions": [
+        "Clean turn context correlated to active voice responses"
+      ],
+      "preconditions": [
+        "Voice turn events emitted by transport"
+      ],
+      "required_evidence_dimensions": [
+        "unit"
+      ],
+      "required_gate_ids": [
+        "OCRM-G04-rust-contract",
+        "OCRM-G05-frozen-oracle"
+      ],
+      "requirement_ids": [
+        "OCRM-R12",
+        "OCRM-AC12"
+      ],
+      "responsibility_kind": "business-runtime",
+      "reviewer": "xuyao@ombhrum.com",
+      "risk": "Low; bounds turn queue to 32 entries and prevents stale context attachment",
+      "selected_owner": "source/host/src/runner/mod.rs",
+      "source_refs": [
+        {
+          "blob_sha": "f31643dca1189f96264a02bd1c26b802ef4105b8",
+          "path": "src/talk/turn-context-tracker.ts",
+          "range": {
+            "start_line": 1,
+            "end_line": 192
+          },
+          "symbol": "createRealtimeVoiceTurnContextTracker"
+        }
+      ],
+      "status": {
+        "acceptance": "pending",
+        "implementation": "implemented",
+        "mapping": "reviewed",
+        "read": "read-complete",
+        "verification": "verified",
+        "wiring": "wired"
+      },
+      "target": {
+        "language": "Rust",
+        "path": "source/host/src/runner/mod.rs",
+        "symbol": "TurnContextTracker"
+      },
+      "tests": [
+        "source/host/tests/openclaw_audio_talk_contract.rs::test_ocrm_audio_o08_barge_in_playback_cancellation",
+        "source/host/tests/openclaw_audio_talk_contract.rs::test_ocrm_audio_o09_turn_context_silent_turn_pruning"
+      ],
+      "typed_contracts": [
+        "TurnContextTracker::consume_audio_context",
+        "TurnContextTracker::mark_audio"
+      ],
+      "unit_id": "OCRM-UNIT-TALK-001"
+    },
+    {
+      "adr_refs": [],
+      "behavior": "Realtime transcription WebSocket queue, SDP offer validation, empty-audio rejection, and CJK voice fallback.",
+      "blocker_ids": [],
+      "capability_ids": [
+        "talk.ws_transcription"
+      ],
+      "dependencies": [
+        "mahayana_host_runtime::runner"
+      ],
+      "evidence_refs": [
+        "source/host/tests/openclaw_audio_talk_contract.rs",
+        "projects/openclaw-rust/dossiers/transcript-round93-openclaw-audio-speech-and-realtime-talk-native-fusion-20261026.md"
+      ],
+      "existing_owner_candidates": [
+        {
+          "path": "source/host/src/runner/mod.rs",
+          "reason": "Host realtime voice audio queue"
+        }
+      ],
+      "id": "OCRM-RESP-TALK-WS-TRANSCRIPTION-001",
+      "integration": {
+        "consumer": "source/host/src/runner/production_turn_agent_owner.rs",
+        "entrypoint": "source/host/src/runner/mod.rs",
+        "owner": "source/host/src/runner/mod.rs",
+        "producer": "source/host/src/runner/mod.rs"
+      },
+      "invariants": [
+        "SDP rejects video streams and enforces max 4096 lines",
+        "Empty audio buffers rejected with SandTranscribeEmptyAudioError",
+        "CJK density >30% dynamically selects zh-CN voice"
+      ],
+      "migration_rollback": "Controlled by transcription provider settings",
+      "oracle_ids": [
+        "OCRM-AUDIO-O10",
+        "OCRM-AUDIO-O11",
+        "OCRM-AUDIO-O12"
+      ],
+      "owner_decision": "Integrate RealtimeVoiceAudioQueue and voice selector in runner",
+      "postconditions": [
+        "Validated audio streams delivered to transcription provider"
+      ],
+      "preconditions": [
+        "Incoming WebRTC SDP or transcription audio stream"
+      ],
+      "required_evidence_dimensions": [
+        "unit",
+        "validation"
+      ],
+      "required_gate_ids": [
+        "OCRM-G04-rust-contract",
+        "OCRM-G05-frozen-oracle"
+      ],
+      "requirement_ids": [
+        "OCRM-R12",
+        "OCRM-AC12"
+      ],
+      "responsibility_kind": "business-runtime",
+      "reviewer": "xuyao@ombhrum.com",
+      "risk": "Medium; enforces SDP safety and prevents empty audio processing cost",
+      "selected_owner": "source/host/src/runner/mod.rs",
+      "source_refs": [
+        {
+          "blob_sha": "01934ce2d4c638f646e7d2b05fd18c964a1712ef",
+          "path": "src/realtime-transcription/websocket-session.ts",
+          "range": {
+            "start_line": 1,
+            "end_line": 564
+          },
+          "symbol": "WebSocketRealtimeTranscriptionSession"
+        }
+      ],
+      "status": {
+        "acceptance": "pending",
+        "implementation": "implemented",
+        "mapping": "reviewed",
+        "read": "read-complete",
+        "verification": "verified",
+        "wiring": "wired"
+      },
+      "target": {
+        "language": "Rust",
+        "path": "source/host/src/runner/mod.rs",
+        "symbol": "RealtimeVoiceAudioQueue"
+      },
+      "tests": [
+        "source/host/tests/openclaw_audio_talk_contract.rs::test_ocrm_audio_o10_sdp_offer_validation",
+        "source/host/tests/openclaw_audio_talk_contract.rs::test_ocrm_audio_o11_empty_audio_transcription_rejection",
+        "source/host/tests/openclaw_audio_talk_contract.rs::test_ocrm_audio_o12_edge_tts_cjk_dominant_voice_fallback"
+      ],
+      "typed_contracts": [
+        "validate_sdp_offer",
+        "resolve_edge_tts_voice"
+      ],
+      "unit_id": "OCRM-UNIT-TALK-001"
     }
   ],
   "schema_version": 1,

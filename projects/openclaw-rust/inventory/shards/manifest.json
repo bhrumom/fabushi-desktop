@@ -1,5 +1,5 @@
 {
-  "canonical_inventory_sha256": "f56244dce4a25be57f3c6c0a5dc28a6311fd076fd5b30cca3426f28b24c784c1",
+  "canonical_inventory_sha256": "0cc4719bc10bcb0dd7395c4f63a33316c41bc3641585af3268ac531587a6611b",
   "compression": "gzip with mtime=0, UTF-8 JSONL, full canonical schema records",
   "format_version": 1,
   "project_id": "OCRM-001",
@@ -367,12 +367,12 @@
       "uncompressed_sha256": "ea722082777640677be97153ee4fefa3f9553a0dd64b07e8bc76e4260018e811"
     },
     {
-      "compressed_sha256": "4b2cae5fe6fd7122f89690feaeb916cf95c7b6f39c9513a5e680506439bc19bb",
+      "compressed_sha256": "682e2ade148c69a6387c3dff0279b212ebebcfd1a02d3dc9f1e88ce6369b6d5c",
       "count": 1024,
       "first_path": "src/plugins/runtime.shutdown-preload.test.ts",
       "last_path": "src/sessions/session-chat-type.ts",
       "path": "projects/openclaw-rust/inventory/shards/part-0045.jsonl.gz",
-      "uncompressed_sha256": "ff9db8146072d04d0bbb46ec95951739c378b190e6a163755e6e5e0a39be2ad4"
+      "uncompressed_sha256": "880af5b9fb71c898d1251e30c397ab19159b597de110c0225c178c04d4ee9555"
     },
     {
       "compressed_sha256": "3a7b88d981ce0c6641de0ac251edadc7c1e6617f8a4590db9bd40cd8c937b41d",
@@ -383,12 +383,12 @@
       "uncompressed_sha256": "396eb78791e653de9058a00bf0a0e890b2ad1e8e9a760393df18f2a5ac487d72"
     },
     {
-      "compressed_sha256": "c82e41bf4efd64a54ebde7346ff3c182e04aed100eadf0dd0ff3bdc6eb272e36",
+      "compressed_sha256": "e9c1981f545d2fb907fa8994d2c30782fe4f2d266947c9cdd9f5a7127c80555a",
       "count": 1024,
       "first_path": "src/state/openclaw-agent-legacy-acp-schema.ts",
       "last_path": "src/tts/status-config.ts",
       "path": "projects/openclaw-rust/inventory/shards/part-0047.jsonl.gz",
-      "uncompressed_sha256": "f850760e4af53062dcea613a545296cf0b46bb03e47182b7c97ab33b8821b077"
+      "uncompressed_sha256": "34104df887cc16f9fcedf9d8bc74e83328a75f1944ac6fb44dad23c8de616b6b"
     },
     {
       "compressed_sha256": "18c00fbc6793440da2c89648614c8bb3ebe1de8a97192a6c572d86dcde54bd99",
