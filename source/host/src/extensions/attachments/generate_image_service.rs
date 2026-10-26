@@ -69,6 +69,20 @@ pub type GenerateImageBackend = Arc<
         + Send
         + Sync,
 >;
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct SandGenerateImageExecutionOptions {
+    pub resolution: Option<String>,
+}
+
+pub type GenerateImageBackendWithOptions = Arc<
+    dyn Fn(
+            &str,
+            &[(String, String)],
+            &SandGenerateImageExecutionOptions,
+        ) -> Result<GeneratedImage, GenerateImageBackendError>
+        + Send
+        + Sync,
+>;
 pub type PersistGeneratedImage =
     Arc<dyn Fn(&[u8], &str) -> Result<Option<PersistedImage>, String> + Send + Sync>;
 pub type GenerateImageRequestIdObserver = Arc<dyn Fn(&str) + Send + Sync>;
@@ -227,12 +241,31 @@ pub fn create_cursor_generate_image_backend(
 
 #[derive(Clone)]
 pub struct SandGenerateImageService {
-    generate: GenerateImageBackend,
+    generate: GenerateImageBackendWithOptions,
     persist: PersistGeneratedImage,
 }
 
 impl SandGenerateImageService {
     pub fn new(generate: GenerateImageBackend, persist: PersistGeneratedImage) -> Self {
+        let with_options: GenerateImageBackendWithOptions =
+            Arc::new(move |description, reference_images, options| {
+                if let Some(resolution) = options.resolution.as_ref() {
+                    return Err(GenerateImageBackendError::Generate(format!(
+                        "Backend provider does not support resolution parameter: {resolution}"
+                    )));
+                }
+                generate(description, reference_images)
+            });
+        Self {
+            generate: with_options,
+            persist,
+        }
+    }
+
+    pub fn new_with_options(
+        generate: GenerateImageBackendWithOptions,
+        persist: PersistGeneratedImage,
+    ) -> Self {
         Self { generate, persist }
     }
 
@@ -252,16 +285,29 @@ impl SandGenerateImageService {
         description: &str,
         reference_images: &[(String, String)],
     ) -> Result<(String, String), SandGenerateImageError> {
-        let generated = (self.generate)(description, reference_images).map_err(|error| {
-            match error {
+        self.generate_with_options(
+            description,
+            reference_images,
+            &SandGenerateImageExecutionOptions::default(),
+        )
+    }
+
+    pub fn generate_with_options(
+        &self,
+        description: &str,
+        reference_images: &[(String, String)],
+        options: &SandGenerateImageExecutionOptions,
+    ) -> Result<(String, String), SandGenerateImageError> {
+        let generated = (self.generate)(description, reference_images, options).map_err(
+            |error| match error {
                 GenerateImageBackendError::Generate(message) => {
                     SandGenerateImageError::Generate(message)
                 }
                 GenerateImageBackendError::ModelRestricted(message) => {
                     SandGenerateImageError::ModelRestricted(message)
                 }
-            }
-        })?;
+            },
+        )?;
         let bytes = STANDARD
             .decode(generated.image_data.as_bytes())
             .map_err(|_| SandGenerateImageError::InvalidBase64)?;

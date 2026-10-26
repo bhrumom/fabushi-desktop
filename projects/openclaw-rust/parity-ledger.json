@@ -7355,8 +7355,10 @@
     },
     {
       "adr_refs": [],
-      "behavior": "Image generation resolution normalization (1K, 2K, 4K), invalid resolution rejection (ToolInputError), tool bridge argument validation, and propagation of GenerateImageToolOptions to GenerateImageToolExecutor.",
-      "blocker_ids": [],
+      "behavior": "Image generation resolution input normalization (1K, 2K, 4K), invalid resolution rejection (ToolInputError), tool bridge argument validation, and propagation of GenerateImageToolOptions to GenerateImageToolExecutor and SandGenerateImageService; live Cursor backend parameter dispatch pending provider capability expansion.",
+      "blocker_ids": [
+        "BL-CURSOR-BACKEND-IMAGE-RESOLUTION-001"
+      ],
       "capability_ids": [
         "media.resolution"
       ],
@@ -7375,7 +7377,7 @@
       ],
       "id": "OCRM-RESP-MEDIA-RESOLUTION-001",
       "integration": {
-        "consumer": "source/host/src/runner/host_generate_image_dependencies.rs::ProductionGenerateImageToolExecutor::generate_with_options",
+        "consumer": "source/host/src/runner/host_generate_image_dependencies.rs::ProductionGenerateImageToolExecutor::generate_with_options -> source/host/src/extensions/attachments/generate_image_service.rs::SandGenerateImageService::generate_with_options",
         "entrypoint": "source/host/src/runner/tools/sand_generate_image_tool.rs::call_tool",
         "owner": "source/host/src/runner/tools/sand_generate_image_tool.rs::normalize_image_generation_resolution",
         "producer": "source/host/src/runner/tools/sand_generate_image_tool.rs::SandGenerateImageToolBridge::call_tool"
@@ -7428,8 +7430,8 @@
         "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "verified",
-        "wiring": "wired"
+        "verification": "not-run",
+        "wiring": "not-wired"
       },
       "target": {
         "language": "Rust",

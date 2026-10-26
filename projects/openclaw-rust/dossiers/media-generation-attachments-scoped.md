@@ -39,11 +39,11 @@ The audited source code was decomposed into 6 discrete Rust runtime responsibili
    - **Oracles**: `OCRM-ATTACH-O05`, `OCRM-ATTACH-O06`, `OCRM-ATTACH-O07`.
 
 3. **`OCRM-RESP-MEDIA-RESOLUTION-001`**:
-   - **Behavior**: Image generation resolution normalization (1K, 2K, 4K), invalid resolution rejection (`ToolInputError`), tool bridge argument validation, and propagation of `GenerateImageToolOptions` with resolution to `GenerateImageToolExecutor`.
+   - **Behavior**: Image generation resolution input normalization (1K, 2K, 4K), invalid resolution rejection (`ToolInputError`), tool bridge argument validation, and propagation of `GenerateImageToolOptions` with resolution to `GenerateImageToolExecutor` and `SandGenerateImageService::generate_with_options`; live Cursor backend parameter dispatch pending provider capability expansion.
    - **Rust Owner**: `source/host/src/runner/tools/sand_generate_image_tool.rs:normalize_image_generation_resolution, SandGenerateImageToolBridge`.
-   - **Production Call Chain**: Producer `SandGenerateImageToolBridge::call_tool` → Owner `normalize_image_generation_resolution` → Options `GenerateImageToolOptions` → Consumer `ProductionGenerateImageToolExecutor::generate_with_options` → Storage `/workspace/assets/{filename}`.
-   - **Oracles**: `OCRM-ATTACH-O08` (positive/negative normalization), `OCRM-ATTACH-O09` (invalid rejection + executor options delivery verification).
-   - **Status**: `implementation=implemented`, `wiring=wired`, `verification=verified`.
+   - **Production Call Chain**: Producer `SandGenerateImageToolBridge::call_tool` → Owner `normalize_image_generation_resolution` → Options `GenerateImageToolOptions` → Consumer `ProductionGenerateImageToolExecutor::generate_with_options` → `SandGenerateImageService::generate_with_options` (blocked from live Cursor AiService dispatch by `BL-CURSOR-BACKEND-IMAGE-RESOLUTION-001`).
+   - **Oracles**: `OCRM-ATTACH-O08` (positive/negative normalization), `OCRM-ATTACH-O09` (invalid rejection + provider options delivery & rejection verification).
+   - **Status**: Honest calibration: `implementation=implemented`, `wiring=not-wired`, `verification=not-run` (`blocker_ids=["BL-CURSOR-BACKEND-IMAGE-RESOLUTION-001"]`: Cursor `/aiserver.v1.AiService/RunGenerateImage` protobuf schema lacks resolution field; live provider parameter dispatch cannot be wired end-to-end until native multi-provider image dispatch or expanded backend proto is integrated).
 
 4. **`OCRM-RESP-MEDIA-LOCAL-ACCESS-001`**:
    - **Behavior**: Local media filesystem access boundary, canonical boundary path resolution (`resolveCanonicalBoundaryPath`), directory traversal prevention, and assets isolation.

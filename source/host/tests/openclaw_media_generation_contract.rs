@@ -16,6 +16,7 @@
 
 use std::collections::HashMap;
 use std::fs;
+use std::path::Path;
 use std::sync::{Arc, Mutex};
 use std::time::{SystemTime, UNIX_EPOCH};
 
@@ -36,8 +37,10 @@ use mahayana_host_runtime::extensions::attachments::generate_image_resource_acce
     GenerateImageResourceResult, SandGenerateImageResourceAccessor,
 };
 use mahayana_host_runtime::extensions::attachments::generate_image_service::{
-    GeneratedImage, PersistedImage, SandGenerateImageError, SandGenerateImageService,
+    GenerateImageAuth, GenerateImageBackendWithOptions, GeneratedImage, PersistedImage,
+    SandGenerateImageError, SandGenerateImageExecutionOptions, SandGenerateImageService,
 };
+use mahayana_host_runtime::runner::host_generate_image_dependencies::ProductionGenerateImageToolExecutor;
 use mahayana_host_runtime::extensions::extension_ids_generated::HostExtensionId;
 use mahayana_host_runtime::extensions::inference::provider_session::{
     ProviderSessionError, RoutedToolDefinition,
@@ -431,6 +434,19 @@ impl RunnerBoxResourcePort for TestBoxPort {
     }
 }
 
+#[derive(Clone)]
+struct TestGenerateImageAuth;
+
+impl GenerateImageAuth for TestGenerateImageAuth {
+    fn get_access_token(&self) -> Result<String, String> {
+        Ok("test-access-token".into())
+    }
+
+    fn get_machine_id(&self) -> Result<String, String> {
+        Ok("test-machine-id".into())
+    }
+}
+
 #[test]
 fn test_ocrm_attach_o09_tool_resolution_validation_and_rejection() {
     let box_port = Arc::new(TestBoxPort::default());
@@ -497,6 +513,90 @@ fn test_ocrm_attach_o09_tool_resolution_validation_and_rejection() {
         }),
         "Executor must receive the parsed and normalized resolution in options"
     );
+
+    // 3. Positive Oracle: Provider that supports options receives resolution parameter end-to-end
+    let captured_provider_resolution = Arc::new(Mutex::new(None));
+    let cap_res = Arc::clone(&captured_provider_resolution);
+    let sample_png_b64 = STANDARD.encode(b"\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR");
+    let provider_backend: GenerateImageBackendWithOptions = Arc::new(move |_desc, _refs, opts| {
+        *cap_res.lock().unwrap() = opts.resolution.clone();
+        Ok(GeneratedImage {
+            image_data: sample_png_b64.clone(),
+            mime_type: "image/png".to_string(),
+        })
+    });
+    let persist_callback = Arc::new(|_bytes: &[u8], _mime: &str| {
+        Ok(Some(PersistedImage {
+            absolute_path: "/workspace/assets/out.png".to_string(),
+        }))
+    });
+    let service_with_options = SandGenerateImageService::new_with_options(
+        provider_backend,
+        persist_callback.clone(),
+    );
+    let (persisted_path, _) = service_with_options
+        .generate_with_options(
+            "render landscape",
+            &[],
+            &SandGenerateImageExecutionOptions {
+                resolution: Some("4K".to_string()),
+            },
+        )
+        .expect("generation succeeds");
+    assert_eq!(persisted_path, "/workspace/assets/out.png");
+    assert_eq!(
+        *captured_provider_resolution.lock().unwrap(),
+        Some("4K".to_string()),
+        "Provider backend must receive the 4K resolution parameter"
+    );
+
+    // 4. Negative Oracle: Unsupported provider explicitly fails rather than silently dropping options
+    let legacy_backend = Arc::new(|_desc: &str, _refs: &[(String, String)]| {
+        Ok(GeneratedImage {
+            image_data: STANDARD.encode(b"\x89PNG\r\n\x1a\n"),
+            mime_type: "image/png".to_string(),
+        })
+    });
+    let unsupporting_service = SandGenerateImageService::new(legacy_backend, persist_callback.clone());
+    let unsupported_err = unsupporting_service
+        .generate_with_options(
+            "render landscape",
+            &[],
+            &SandGenerateImageExecutionOptions {
+                resolution: Some("2K".to_string()),
+            },
+        )
+        .unwrap_err();
+    match unsupported_err {
+        SandGenerateImageError::Generate(msg) => {
+            assert!(
+                msg.contains("Backend provider does not support resolution parameter: 2K"),
+                "Must explicitly report unsupported resolution: {msg}"
+            );
+        }
+        other => panic!("Expected SandGenerateImageError::Generate, got {other:?}"),
+    }
+
+    // 5. Production executor wiring: ProductionGenerateImageToolExecutor propagates options to service
+    let prod_executor = ProductionGenerateImageToolExecutor::new(
+        Arc::new(TestGenerateImageAuth),
+        persist_callback,
+    );
+    let prod_err = prod_executor
+        .generate_with_options(
+            "render landscape",
+            &[],
+            &GenerateImageToolOptions {
+                resolution: Some(ImageGenerationResolution::R2K),
+                aspect_ratio: None,
+            },
+        )
+        .unwrap_err();
+    let prod_err_msg = prod_err.to_string();
+    assert!(
+        prod_err_msg.contains("does not support resolution parameter: 2K"),
+        "Production executor must pass resolution to service and report provider rejection: {prod_err_msg}"
+    );
 }
 
 // ---------------------------------------------------------------------------
@@ -537,12 +637,25 @@ fn test_ocrm_attach_o10_sniff_mime_from_base64() {
         "Tail corruption must cause the entire payload to be rejected"
     );
 
-    // 3. Non-canonical pad bits test: last data char before == has non-zero unused bits
-    // 'A' has value 0 (000000_2, unused bits 0), valid pad bits.
-    // 'B' has value 1 (000001_2, unused bits 1 != 0), non-canonical pad bits.
+    // 3. Non-canonical pad bits tests (RFC 4648 canonicalBase64 inspection)
+    // 2-pad ('=='):
+    // 'AA==' (data byte 0, pad bits 0) -> valid
     assert!(inspect_canonical_base64("AA==").is_some());
+    // 'AB==' (value 1, pad bits 1 != 0) -> non-canonical
     assert!(inspect_canonical_base64("AB==").is_none());
     assert_eq!(sniff_mime_from_base64("AB=="), None);
+    // '/w==' (value 48 = 0b110000, lowest 4 bits = 0) -> canonical
+    assert!(inspect_canonical_base64("/w==").is_some());
+    // '//==' (value 63 = 0b111111, lowest 4 bits = 0b1111 != 0) -> non-canonical
+    assert!(inspect_canonical_base64("//==").is_none());
+    assert_eq!(sniff_mime_from_base64("//=="), None);
+
+    // 1-pad ('='):
+    // '//8=' (char 3 is '8' = 60 = 0b111100, lowest 2 bits = 0) -> canonical
+    assert!(inspect_canonical_base64("//8=").is_some());
+    // '///=' (char 3 is '/' = 63 = 0b111111, lowest 2 bits = 0b11 != 0) -> non-canonical
+    assert!(inspect_canonical_base64("///=").is_none());
+    assert_eq!(sniff_mime_from_base64("///="), None);
 
     // 4. Slice length < 8 chars returns None (too short for magic bytes)
     assert_eq!(sniff_mime_from_base64("AQIDBA=="), None);
@@ -561,22 +674,34 @@ fn test_ocrm_attach_o10_sniff_mime_from_base64() {
     assert_eq!(
         sniff_mime_from_base64_with_hints(&text_b64, &hints_header).as_deref(),
         Some("image/svg+xml"),
-        "When buffer lacks magic bytes, headerMime hint must be used"
+        "When buffer lacks magic bytes and file path, headerMime hint must be used"
     );
 
-    // 7. Hints conflict: magic bytes take precedence over conflicting header hint
+    // 7. Path extension takes precedence over headerMime hint (matching upstream detectMime)
+    let hints_path_precedence = MimeSniffHints {
+        header_mime: Some("image/svg+xml"),
+        file_path: Some(Path::new("recording.mp4")),
+        additional_hints: &[],
+    };
+    assert_eq!(
+        sniff_mime_from_base64_with_hints(&text_b64, &hints_path_precedence).as_deref(),
+        Some("video/mp4"),
+        "File path extension must take precedence over header hint when magic bytes are absent"
+    );
+
+    // 8. Hints conflict: magic bytes take precedence over conflicting header hint and file path
     let conflicting_hints = MimeSniffHints {
         header_mime: Some("image/jpeg"),
-        file_path: None,
+        file_path: Some(Path::new("document.pdf")),
         additional_hints: &[],
     };
     assert_eq!(
         sniff_mime_from_base64_with_hints(&png_b64, &conflicting_hints).as_deref(),
         Some("image/png"),
-        "Magic bytes must take precedence over conflicting header hint"
+        "Magic bytes must take precedence over conflicting header hint and path"
     );
 
-    // 8. Prefix bound: longer payloads only inspect up to BASE64_SNIFF_PREFIX_CHARS
+    // 9. Prefix bound: longer payloads only inspect up to BASE64_SNIFF_PREFIX_CHARS
     assert_eq!(BASE64_SNIFF_PREFIX_CHARS, 256);
     assert_eq!(sniff_mime_from_buffer(b"\x89PNG\r\n\x1a\n"), Some("image/png"));
     assert_eq!(sniff_mime_from_buffer(b"\xff\xd8\xff"), Some("image/jpeg"));

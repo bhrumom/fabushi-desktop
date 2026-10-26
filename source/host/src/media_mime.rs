@@ -219,21 +219,33 @@ pub fn sniff_mime_from_base64_with_hints(
     let slice = &facts.cleaned_base64[..slice_len];
     let decoded = STANDARD.decode(slice).ok()?;
 
-    // 3. First check binary magic bytes
+    // 3. First check binary magic bytes (PNG, JPEG, GIF, WEBP, PDF)
     if let Some(sniffed) = sniff_mime_from_buffer(&decoded) {
         return Some(sniffed.to_string());
     }
 
-    // 4. Fallback to hints (header_mime, file_path, additional_hints)
+    // 4. File extension hint takes precedence over header/generic metadata
+    // (matches upstream detectMime priority: inferred = (sniffed ?? extMime) ?? headerMime)
+    if let Some(path) = hints.file_path {
+        if let Some(path_mime) = servable_image_mime_from_path(path)
+            .or_else(|| video_mime_from_path(path))
+            .or_else(|| audio_mime_from_path(path))
+            .or_else(|| match extension(path).as_deref() {
+                Some(".pdf") => Some("application/pdf"),
+                Some(".txt") => Some("text/plain"),
+                Some(".json") => Some("application/json"),
+                _ => None,
+            })
+        {
+            return Some(path_mime.to_string());
+        }
+    }
+
+    // 5. Fallback to header_mime and additional hints
     if let Some(header) = hints.header_mime {
         let trimmed = header.trim();
         if !trimmed.is_empty() {
             return Some(trimmed.to_string());
-        }
-    }
-    if let Some(path) = hints.file_path {
-        if let Some(path_mime) = image_mime_from_path(path) {
-            return Some(path_mime.to_string());
         }
     }
     for hint in hints.additional_hints {
