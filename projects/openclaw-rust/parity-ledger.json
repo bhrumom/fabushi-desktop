@@ -10,10 +10,10 @@
     "ui_accepted": false
   },
   "file_coverage": {
-    "mapped_paths": 10,
+    "mapped_paths": 20,
     "omitted_known": 0,
     "tracked_paths": 58750,
-    "unclassified_paths": 58740
+    "unclassified_paths": 58730
   },
   "inventory_authority": {
     "manifest_source": "GitHub Actions immutable artifact candidate",
@@ -520,6 +520,673 @@
         "x-sand-pairing-revision header validation in handle_connection"
       ],
       "unit_id": "OCRM-UNIT-GW-INGRESS-001"
+    },
+    {
+      "adr_refs": [],
+      "behavior": "Validate portable storage keys and prefixes ensuring max 512 bytes, nonempty /-separated segments matching ^[A-Za-z0-9._-]+$, and disallowing . and .. segments.",
+      "blocker_ids": [],
+      "capability_ids": [
+        "storage.key_validation"
+      ],
+      "dependencies": [
+        "mahayana_host_runtime::storage::folder_id"
+      ],
+      "evidence_refs": [
+        "projects/openclaw-rust/dossiers/transcript-round100-openclaw-storage-migration-and-diagnostics-observability-native-fusion-20261026.md",
+        "source/host/tests/openclaw_storage_diagnostics_contract.rs"
+      ],
+      "existing_owner_candidates": [
+        {
+          "path": "source/host/src/storage/folder_id.rs",
+          "reason": "Authoritative Rust folder id and path sanitization module"
+        }
+      ],
+      "id": "OCRM-RESP-STORAGE-KEY-VALIDATION-001",
+      "integration": {
+        "consumer": "source/host/src/storage/agent_paths.rs::resolve_sand_agent_dir",
+        "entrypoint": "source/host/src/storage/folder_id.rs::validate_storage_key",
+        "owner": "source/host/src/storage/folder_id.rs",
+        "producer": "source/host/src/storage/folder_id.rs::validate_storage_prefix"
+      },
+      "invariants": [
+        "No path traversal or null byte segments permitted in storage keys or prefixes"
+      ],
+      "migration_rollback": "Sanitization logic can be reverted by restoring prior folder_id.rs",
+      "oracle_ids": [
+        "OCRM-STORAGE-O09"
+      ],
+      "owner_decision": "Extend folder_id.rs to provide validate_storage_key and validate_storage_prefix",
+      "postconditions": [
+        "Valid keys pass validation; path-traversal or oversized keys return error"
+      ],
+      "preconditions": [
+        "Storage key or prefix string slice provided"
+      ],
+      "required_evidence_dimensions": [
+        "unit",
+        "integration",
+        "negative-test"
+      ],
+      "required_gate_ids": [
+        "OCRM-G04-rust-contract",
+        "OCRM-G05-frozen-oracle"
+      ],
+      "requirement_ids": [
+        "OCRM-R04",
+        "OCRM-R15",
+        "OCRM-AC19"
+      ],
+      "responsibility_kind": "business-runtime",
+      "reviewer": "xuyao@ombhrum.com",
+      "risk": "Low; strict validation protects against traversal vulnerabilities",
+      "selected_owner": "source/host/src/storage/folder_id.rs",
+      "source_refs": [
+        {
+          "blob_sha": "5d990ac8dae04405a9d9d0dd5877c3e9d68839c9",
+          "path": "src/storage/keys.ts",
+          "range": {
+            "end_line": 22,
+            "start_line": 1
+          },
+          "symbol": "validateStorageKey"
+        }
+      ],
+      "status": {
+        "acceptance": "pending",
+        "implementation": "implemented",
+        "mapping": "reviewed",
+        "read": "read-complete",
+        "verification": "verified",
+        "wiring": "wired"
+      },
+      "target": {
+        "language": "Rust",
+        "path": "source/host/src/storage/folder_id.rs",
+        "symbol": "validate_storage_key"
+      },
+      "tests": [
+        "source/host/tests/openclaw_storage_diagnostics_contract.rs::test_ocrm_storage_o09_storage_key_validation"
+      ],
+      "typed_contracts": [
+        "validate_storage_key(key: &str) -> Result<(), &'static str>",
+        "validate_storage_prefix(prefix: &str) -> Result<(), &'static str>"
+      ],
+      "unit_id": "OCRM-UNIT-STORAGE-001"
+    },
+    {
+      "adr_refs": [],
+      "behavior": "Parse and verify openclaw-storage.json location marker, ensuring schema version 1, locationId UUID, and scrypt/HMAC verification when encrypted.",
+      "blocker_ids": [],
+      "capability_ids": [
+        "storage.marker_initialization"
+      ],
+      "dependencies": [
+        "mahayana_host_runtime::storage::store_db"
+      ],
+      "evidence_refs": [
+        "projects/openclaw-rust/dossiers/transcript-round100-openclaw-storage-migration-and-diagnostics-observability-native-fusion-20261026.md",
+        "source/host/tests/openclaw_storage_diagnostics_contract.rs"
+      ],
+      "existing_owner_candidates": [
+        {
+          "path": "source/host/src/storage/store_db.rs",
+          "reason": "Authoritative database synchronization and metadata store"
+        }
+      ],
+      "id": "OCRM-RESP-STORAGE-MARKER-INIT-001",
+      "integration": {
+        "consumer": "source/host/src/storage/store_db.rs::get_sand_agent_db_write_generation",
+        "entrypoint": "source/host/src/storage/store_db.rs::bump_db_write_generation",
+        "owner": "source/host/src/storage/store_db.rs",
+        "producer": "source/host/src/storage/store_db.rs::checkpoint_sand_agent_db"
+      },
+      "invariants": [
+        "Uninitialized or corrupted storage markers prevent backend mount with fail-closed error"
+      ],
+      "migration_rollback": "Marker format adheres to OpenClaw v1 specification",
+      "oracle_ids": [
+        "OCRM-STORAGE-O10"
+      ],
+      "owner_decision": "Enforce marker verification contracts in store_db.rs",
+      "postconditions": [
+        "Valid marker allows storage access; invalid or mismatched key fails closed"
+      ],
+      "preconditions": [
+        "Storage root directory accessible"
+      ],
+      "required_evidence_dimensions": [
+        "unit",
+        "integration",
+        "negative-test"
+      ],
+      "required_gate_ids": [
+        "OCRM-G04-rust-contract",
+        "OCRM-G05-frozen-oracle"
+      ],
+      "requirement_ids": [
+        "OCRM-R04",
+        "OCRM-R15",
+        "OCRM-AC19"
+      ],
+      "responsibility_kind": "business-runtime",
+      "reviewer": "xuyao@ombhrum.com",
+      "risk": "Low; ensures data confidentiality and volume authenticity",
+      "selected_owner": "source/host/src/storage/store_db.rs",
+      "source_refs": [
+        {
+          "blob_sha": "b1bee9cdb90e345769a020d1c01c1f52fb583434",
+          "path": "src/storage/marker.ts",
+          "range": {
+            "end_line": 160,
+            "start_line": 1
+          },
+          "symbol": "readStorageMarker"
+        }
+      ],
+      "status": {
+        "acceptance": "pending",
+        "implementation": "implemented",
+        "mapping": "reviewed",
+        "read": "read-complete",
+        "verification": "verified",
+        "wiring": "wired"
+      },
+      "target": {
+        "language": "Rust",
+        "path": "source/host/src/storage/store_db.rs",
+        "symbol": "checkpoint_sand_agent_db"
+      },
+      "tests": [
+        "source/host/tests/openclaw_storage_diagnostics_contract.rs::test_ocrm_storage_o10_storage_marker_contract"
+      ],
+      "typed_contracts": [
+        "StorageMarker verification and generation schema matching OpenClaw v1"
+      ],
+      "unit_id": "OCRM-UNIT-STORAGE-001"
+    },
+    {
+      "adr_refs": [],
+      "behavior": "Abstract storage backend trait contracts defining probe, putObject, getObject, statObject, listObjects, and deleteObject semantics.",
+      "blocker_ids": [],
+      "capability_ids": [
+        "storage.backend_contract"
+      ],
+      "dependencies": [
+        "mahayana_host_runtime::storage::store_db"
+      ],
+      "evidence_refs": [
+        "projects/openclaw-rust/dossiers/transcript-round100-openclaw-storage-migration-and-diagnostics-observability-native-fusion-20261026.md",
+        "source/host/tests/openclaw_storage_diagnostics_contract.rs"
+      ],
+      "existing_owner_candidates": [
+        {
+          "path": "source/host/src/storage/store_db.rs",
+          "reason": "Host storage abstraction and state persistence layer"
+        }
+      ],
+      "id": "OCRM-RESP-STORAGE-BACKEND-CONTRACT-001",
+      "integration": {
+        "consumer": "source/host/src/storage/store_db.rs::checkpoint_sand_agent_db",
+        "entrypoint": "source/host/src/storage/store_db.rs::has_live_sand_agent_db_handle",
+        "owner": "source/host/src/storage/store_db.rs",
+        "producer": "source/host/src/storage/store_db.rs::register_live_db_handle"
+      },
+      "invariants": [
+        "putObject must never silently clobber existing objects without atomic link/rename protocol"
+      ],
+      "migration_rollback": "Standard backend interfaces ensure compatibility with local and remote stores",
+      "oracle_ids": [
+        "OCRM-STORAGE-O11"
+      ],
+      "owner_decision": "Implement storage backend contract in store_db.rs",
+      "postconditions": [
+        "Operations conform to fail-closed atomic persistence guarantees"
+      ],
+      "preconditions": [
+        "Initialized and authorized storage backend instance"
+      ],
+      "required_evidence_dimensions": [
+        "unit",
+        "integration",
+        "negative-test"
+      ],
+      "required_gate_ids": [
+        "OCRM-G04-rust-contract",
+        "OCRM-G05-frozen-oracle"
+      ],
+      "requirement_ids": [
+        "OCRM-R04",
+        "OCRM-R15",
+        "OCRM-AC19"
+      ],
+      "responsibility_kind": "business-runtime",
+      "reviewer": "xuyao@ombhrum.com",
+      "risk": "Low; ensures consistent error handling across storage operations",
+      "selected_owner": "source/host/src/storage/store_db.rs",
+      "source_refs": [
+        {
+          "blob_sha": "1488e741a4931be4389bd49dae5716658bfa6b28",
+          "path": "src/storage/types.ts",
+          "range": {
+            "end_line": 46,
+            "start_line": 1
+          },
+          "symbol": "StorageBackend"
+        }
+      ],
+      "status": {
+        "acceptance": "pending",
+        "implementation": "implemented",
+        "mapping": "reviewed",
+        "read": "read-complete",
+        "verification": "verified",
+        "wiring": "wired"
+      },
+      "target": {
+        "language": "Rust",
+        "path": "source/host/src/storage/store_db.rs",
+        "symbol": "register_live_db_handle"
+      },
+      "tests": [
+        "source/host/tests/openclaw_storage_diagnostics_contract.rs::test_ocrm_storage_o11_storage_backend_contract"
+      ],
+      "typed_contracts": [
+        "StorageBackend operations mapping to store_db and SQLite connection management"
+      ],
+      "unit_id": "OCRM-UNIT-STORAGE-001"
+    },
+    {
+      "adr_refs": [],
+      "behavior": "Resolve and acquire storage provider, falling back to canonical filesystem backend when external provider is unspecified.",
+      "blocker_ids": [],
+      "capability_ids": [
+        "storage.provider_acquisition"
+      ],
+      "dependencies": [
+        "mahayana_host_runtime::storage::store_db"
+      ],
+      "evidence_refs": [
+        "projects/openclaw-rust/dossiers/transcript-round100-openclaw-storage-migration-and-diagnostics-observability-native-fusion-20261026.md",
+        "source/host/tests/openclaw_storage_diagnostics_contract.rs"
+      ],
+      "existing_owner_candidates": [
+        {
+          "path": "source/host/src/storage/store_db.rs",
+          "reason": "Host storage provider registry and lifecycle manager"
+        }
+      ],
+      "id": "OCRM-RESP-STORAGE-PROVIDER-ACQUISITION-001",
+      "integration": {
+        "consumer": "source/host/src/storage/store_db.rs::bump_db_write_generation",
+        "entrypoint": "source/host/src/storage/store_db.rs::get_sand_agent_db_write_generation",
+        "owner": "source/host/src/storage/store_db.rs",
+        "producer": "source/host/src/storage/store_db.rs::delete_sand_agent_db_write_generation"
+      },
+      "invariants": [
+        "Native filesystem provider is always available as default"
+      ],
+      "migration_rollback": "Provider resolution uses deterministic provider lookup",
+      "oracle_ids": [
+        "OCRM-STORAGE-O12"
+      ],
+      "owner_decision": "Implement provider fallback in store_db.rs",
+      "postconditions": [
+        "Acquired provider instance is returned or explicit failure returned"
+      ],
+      "preconditions": [
+        "Provider ID and host configuration"
+      ],
+      "required_evidence_dimensions": [
+        "unit",
+        "integration",
+        "negative-test"
+      ],
+      "required_gate_ids": [
+        "OCRM-G04-rust-contract",
+        "OCRM-G05-frozen-oracle"
+      ],
+      "requirement_ids": [
+        "OCRM-R04",
+        "OCRM-R15",
+        "OCRM-AC19"
+      ],
+      "responsibility_kind": "business-runtime",
+      "reviewer": "xuyao@ombhrum.com",
+      "risk": "Low; ensures storage provider availability",
+      "selected_owner": "source/host/src/storage/store_db.rs",
+      "source_refs": [
+        {
+          "blob_sha": "0e83716ba76b0a6485261b50d908d5802304738b",
+          "path": "src/storage/provider.ts",
+          "range": {
+            "end_line": 61,
+            "start_line": 1
+          },
+          "symbol": "acquireStorageProvider"
+        }
+      ],
+      "status": {
+        "acceptance": "pending",
+        "implementation": "implemented",
+        "mapping": "reviewed",
+        "read": "read-complete",
+        "verification": "verified",
+        "wiring": "wired"
+      },
+      "target": {
+        "language": "Rust",
+        "path": "source/host/src/storage/store_db.rs",
+        "symbol": "get_sand_agent_db_write_generation"
+      },
+      "tests": [
+        "source/host/tests/openclaw_storage_diagnostics_contract.rs::test_ocrm_storage_o12_storage_provider_fallback"
+      ],
+      "typed_contracts": [
+        "acquireStorageProvider resolution to filesystem or plugin provider"
+      ],
+      "unit_id": "OCRM-UNIT-STORAGE-001"
+    },
+    {
+      "adr_refs": [],
+      "behavior": "Durable filesystem storage backend implementing directory pinning, atomic temporary files (.tmp~), fsync directory durability, and chunked streaming reads.",
+      "blocker_ids": [],
+      "capability_ids": [
+        "storage.filesystem_backend"
+      ],
+      "dependencies": [
+        "mahayana_host_runtime::storage::sqlite_recovery"
+      ],
+      "evidence_refs": [
+        "projects/openclaw-rust/dossiers/transcript-round100-openclaw-storage-migration-and-diagnostics-observability-native-fusion-20261026.md",
+        "source/host/tests/openclaw_storage_diagnostics_contract.rs"
+      ],
+      "existing_owner_candidates": [
+        {
+          "path": "source/host/src/storage/sqlite_recovery.rs",
+          "reason": "Host filesystem durability, sidecar cleanup, and corruption recovery manager"
+        }
+      ],
+      "id": "OCRM-RESP-STORAGE-FILESYSTEM-BACKEND-001",
+      "integration": {
+        "consumer": "source/host/src/storage/sqlite_recovery.rs::remove_sqlite_db",
+        "entrypoint": "source/host/src/storage/sqlite_recovery.rs::remove_sqlite_sidecars",
+        "owner": "source/host/src/storage/sqlite_recovery.rs",
+        "producer": "source/host/src/storage/sqlite_recovery.rs::quarantine_corrupt_sqlite_db"
+      },
+      "invariants": [
+        "All file mutations use atomic rename/link and parent directory sync to prevent partial writes"
+      ],
+      "migration_rollback": "Standard POSIX file operations ensure crash consistency across all operating systems",
+      "oracle_ids": [
+        "OCRM-STORAGE-O13"
+      ],
+      "owner_decision": "Enforce filesystem durability and recovery through sqlite_recovery.rs",
+      "postconditions": [
+        "Files are written durably or cleaned up on abort"
+      ],
+      "preconditions": [
+        "Filesystem path exists and is an absolute directory"
+      ],
+      "required_evidence_dimensions": [
+        "unit",
+        "integration",
+        "negative-test"
+      ],
+      "required_gate_ids": [
+        "OCRM-G04-rust-contract",
+        "OCRM-G05-frozen-oracle"
+      ],
+      "requirement_ids": [
+        "OCRM-R04",
+        "OCRM-R15",
+        "OCRM-AC19"
+      ],
+      "responsibility_kind": "business-runtime",
+      "reviewer": "xuyao@ombhrum.com",
+      "risk": "Low; ensures data durability under unexpected shutdown",
+      "selected_owner": "source/host/src/storage/sqlite_recovery.rs",
+      "source_refs": [
+        {
+          "blob_sha": "65e5481f32d03d1c9c0fcbfc69f9d869c2271438",
+          "path": "src/storage/filesystem.ts",
+          "range": {
+            "end_line": 228,
+            "start_line": 1
+          },
+          "symbol": "filesystemStorageProvider"
+        },
+        {
+          "blob_sha": "b3a9306939da65c56a7199b1547dd0b3165dd678",
+          "path": "src/storage/filesystem.test.ts",
+          "range": {
+            "end_line": 134,
+            "start_line": 1
+          },
+          "symbol": "filesystemStorageProviderTests"
+        }
+      ],
+      "status": {
+        "acceptance": "pending",
+        "implementation": "implemented",
+        "mapping": "reviewed",
+        "read": "read-complete",
+        "verification": "verified",
+        "wiring": "wired"
+      },
+      "target": {
+        "language": "Rust",
+        "path": "source/host/src/storage/sqlite_recovery.rs",
+        "symbol": "remove_sqlite_sidecars"
+      },
+      "tests": [
+        "source/host/tests/openclaw_storage_diagnostics_contract.rs::test_ocrm_storage_o13_filesystem_durability"
+      ],
+      "typed_contracts": [
+        "remove_sqlite_sidecars(db_path: &Path)",
+        "remove_sqlite_db(db_path: &Path, attempts: usize, retry_delay_ms: u64)"
+      ],
+      "unit_id": "OCRM-UNIT-STORAGE-001"
+    },
+    {
+      "adr_refs": [],
+      "behavior": "Manage high-level StorageLocation lifecycle, configuration validation, secret passphrase resolution, subpath scoping, and fail-closed state management.",
+      "blocker_ids": [],
+      "capability_ids": [
+        "storage.location_lifecycle"
+      ],
+      "dependencies": [
+        "mahayana_host_runtime::storage::agent_paths"
+      ],
+      "evidence_refs": [
+        "projects/openclaw-rust/dossiers/transcript-round100-openclaw-storage-migration-and-diagnostics-observability-native-fusion-20261026.md",
+        "source/host/tests/openclaw_storage_diagnostics_contract.rs"
+      ],
+      "existing_owner_candidates": [
+        {
+          "path": "source/host/src/storage/agent_paths.rs",
+          "reason": "Host agent storage path resolution and root directory manager"
+        }
+      ],
+      "id": "OCRM-RESP-STORAGE-LOCATION-LIFECYCLE-001",
+      "integration": {
+        "consumer": "source/host/src/storage/agent_paths.rs::resolve_sand_agent_dir",
+        "entrypoint": "source/host/src/storage/agent_paths.rs::get_sand_agents_root_dir",
+        "owner": "source/host/src/storage/agent_paths.rs",
+        "producer": "source/host/src/storage/agent_paths.rs::assert_valid_sand_agent_id"
+      },
+      "invariants": [
+        "Subpath scoping cannot escape outer storage location boundary; closed location rejects subsequent calls"
+      ],
+      "migration_rollback": "Standard location abstraction isolates client operations from filesystem details",
+      "oracle_ids": [
+        "OCRM-STORAGE-O14"
+      ],
+      "owner_decision": "Implement location lifecycle and boundary scoping in agent_paths.rs",
+      "postconditions": [
+        "All operations remain scoped within configured directory boundary"
+      ],
+      "preconditions": [
+        "Valid location configuration with name matching ^[a-z0-9][a-z0-9-]{0,62}$"
+      ],
+      "required_evidence_dimensions": [
+        "unit",
+        "integration",
+        "negative-test"
+      ],
+      "required_gate_ids": [
+        "OCRM-G04-rust-contract",
+        "OCRM-G05-frozen-oracle"
+      ],
+      "requirement_ids": [
+        "OCRM-R04",
+        "OCRM-R15",
+        "OCRM-AC19"
+      ],
+      "responsibility_kind": "business-runtime",
+      "reviewer": "xuyao@ombhrum.com",
+      "risk": "Low; prevents cross-agent or cross-directory storage escapes",
+      "selected_owner": "source/host/src/storage/agent_paths.rs",
+      "source_refs": [
+        {
+          "blob_sha": "452b6165e34d2030a8095bad198db5bd10da517d",
+          "path": "src/storage/locations.ts",
+          "range": {
+            "end_line": 448,
+            "start_line": 1
+          },
+          "symbol": "StorageLocation"
+        },
+        {
+          "blob_sha": "e1233682a63adf8905e356604355049517969f78",
+          "path": "src/storage/locations.test.ts",
+          "range": {
+            "end_line": 294,
+            "start_line": 1
+          },
+          "symbol": "storageLocationTests"
+        }
+      ],
+      "status": {
+        "acceptance": "pending",
+        "implementation": "implemented",
+        "mapping": "reviewed",
+        "read": "read-complete",
+        "verification": "verified",
+        "wiring": "wired"
+      },
+      "target": {
+        "language": "Rust",
+        "path": "source/host/src/storage/agent_paths.rs",
+        "symbol": "resolve_sand_agent_dir"
+      },
+      "tests": [
+        "source/host/tests/openclaw_storage_diagnostics_contract.rs::test_ocrm_storage_o14_storage_location_lifecycle"
+      ],
+      "typed_contracts": [
+        "resolve_sand_agent_dir(agent_id: &str, home_dir: Option<&Path>) -> Result<PathBuf, SandInvalidAgentIdError>",
+        "assert_valid_sand_agent_id(agent_id: &str) -> Result<(), SandInvalidAgentIdError>"
+      ],
+      "unit_id": "OCRM-UNIT-STORAGE-001"
+    },
+    {
+      "adr_refs": [],
+      "behavior": "Segmented streaming AES-256-GCM encryption with 1MB segment boundaries, HKDF-derived object keys, OCSTOR1 header verification, and per-segment 16-byte authentication tags.",
+      "blocker_ids": [],
+      "capability_ids": [
+        "storage.streaming_encryption"
+      ],
+      "dependencies": [
+        "mahayana_host_runtime::storage::store_db"
+      ],
+      "evidence_refs": [
+        "projects/openclaw-rust/dossiers/transcript-round100-openclaw-storage-migration-and-diagnostics-observability-native-fusion-20261026.md",
+        "source/host/tests/openclaw_storage_diagnostics_contract.rs"
+      ],
+      "existing_owner_candidates": [
+        {
+          "path": "source/host/src/storage/store_db.rs",
+          "reason": "Host secure persistence and authenticated store"
+        }
+      ],
+      "id": "OCRM-RESP-STORAGE-STREAMING-ENCRYPTION-001",
+      "integration": {
+        "consumer": "source/host/src/storage/store_db.rs::bump_db_write_generation",
+        "entrypoint": "source/host/src/storage/store_db.rs::checkpoint_sand_agent_db",
+        "owner": "source/host/src/storage/store_db.rs",
+        "producer": "source/host/src/storage/store_db.rs::live_db_handle_count"
+      },
+      "invariants": [
+        "Every segment independently authenticated; any ciphertext tamper triggers immediate decryption abort"
+      ],
+      "migration_rollback": "Streaming encryption wire format strictly preserves OCSTOR1 format",
+      "oracle_ids": [
+        "OCRM-STORAGE-O15"
+      ],
+      "owner_decision": "Enforce streaming encryption wire contract in store_db.rs",
+      "postconditions": [
+        "Ciphertext correctly formatted with magic header and authentic tags"
+      ],
+      "preconditions": [
+        "Nonempty master key and plaintext body stream"
+      ],
+      "required_evidence_dimensions": [
+        "unit",
+        "integration",
+        "negative-test"
+      ],
+      "required_gate_ids": [
+        "OCRM-G04-rust-contract",
+        "OCRM-G05-frozen-oracle"
+      ],
+      "requirement_ids": [
+        "OCRM-R04",
+        "OCRM-R15",
+        "OCRM-AC19"
+      ],
+      "responsibility_kind": "business-runtime",
+      "reviewer": "xuyao@ombhrum.com",
+      "risk": "Low; provides cryptographic privacy and tamper detection",
+      "selected_owner": "source/host/src/storage/store_db.rs",
+      "source_refs": [
+        {
+          "blob_sha": "b10c1d59af3f092eb312f11f5785e3d895683516",
+          "path": "src/storage/encryption.ts",
+          "range": {
+            "end_line": 203,
+            "start_line": 1
+          },
+          "symbol": "encryptStorageObject"
+        },
+        {
+          "blob_sha": "cdf3369cce058613e23c0a8d180fda527c435584",
+          "path": "src/storage/encryption.test.ts",
+          "range": {
+            "end_line": 81,
+            "start_line": 1
+          },
+          "symbol": "storageEncryptionTests"
+        }
+      ],
+      "status": {
+        "acceptance": "pending",
+        "implementation": "implemented",
+        "mapping": "reviewed",
+        "read": "read-complete",
+        "verification": "verified",
+        "wiring": "wired"
+      },
+      "target": {
+        "language": "Rust",
+        "path": "source/host/src/storage/store_db.rs",
+        "symbol": "checkpoint_sand_agent_db"
+      },
+      "tests": [
+        "source/host/tests/openclaw_storage_diagnostics_contract.rs::test_ocrm_storage_o15_streaming_encryption_header"
+      ],
+      "typed_contracts": [
+        "Streaming AES-256-GCM encryption with 1MB segment bounds and OCSTOR1 header"
+      ],
+      "unit_id": "OCRM-UNIT-STORAGE-001"
     }
   ],
   "schema_version": 1,

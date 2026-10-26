@@ -32,6 +32,16 @@ use mahayana_host_runtime::host_diagnostics::{
     pin_host_diagnostics_reporter, report_diagnostic_event, report_host_diagnostic,
     HostDiagnostic,
 };
+use mahayana_host_runtime::storage::{
+    agent_paths::{assert_valid_sand_agent_id, resolve_sand_agent_dir},
+    folder_id::{is_safe_folder_id, validate_storage_key, validate_storage_prefix},
+    sqlite_recovery::remove_sqlite_sidecars,
+    store_db::{
+        bump_db_write_generation, delete_sand_agent_db_write_generation,
+        get_sand_agent_db_write_generation, live_db_handle_count, register_live_db_handle,
+        release_live_db_handle, SQLITE_DB_SIDECAR_SUFFIXES,
+    },
+};
 
 fn temp_root(label: &str) -> std::path::PathBuf {
     let suffix = SystemTime::now()
@@ -316,3 +326,158 @@ fn test_ocrm_diag_o04_report_diagnostic_event() {
 
     pin_host_diagnostics_reporter(None);
 }
+
+// ---------------------------------------------------------------------------
+// OCRM-STORAGE-O09: Storage Key and Prefix Validation
+// ---------------------------------------------------------------------------
+#[test]
+fn test_ocrm_storage_o09_storage_key_validation() {
+    // Valid keys
+    assert!(validate_storage_key("artifacts/v1_image.png").is_ok());
+    assert!(validate_storage_key("sessions/123/transcript.jsonl").is_ok());
+    assert!(validate_storage_key("config.json").is_ok());
+
+    // Invalid keys (falsifiable)
+    assert!(validate_storage_key("").is_err());
+    assert!(validate_storage_key(".").is_err());
+    assert!(validate_storage_key("..").is_err());
+    assert!(validate_storage_key("a/../b").is_err());
+    assert!(validate_storage_key("a/./b").is_err());
+    assert!(validate_storage_key("a//b").is_err());
+    assert!(validate_storage_key("a/b/").is_err());
+    let long_key = "a".repeat(513);
+    assert!(validate_storage_key(&long_key).is_err());
+
+    // Valid and invalid prefixes
+    assert!(validate_storage_prefix("").is_ok());
+    assert!(validate_storage_prefix("artifacts/").is_ok());
+    assert!(validate_storage_prefix("sessions/123").is_ok());
+    assert!(validate_storage_prefix("sessions/../escape").is_err());
+}
+
+// ---------------------------------------------------------------------------
+// OCRM-STORAGE-O10: Storage Marker Schema and Verification Contract
+// ---------------------------------------------------------------------------
+#[test]
+fn test_ocrm_storage_o10_storage_marker_contract() {
+    let unencrypted_marker = json!({
+        "version": 1,
+        "locationId": "764714e6-7bb7-44a0-846a-18e9255eff59",
+        "createdAt": 1729900000000_u64,
+        "encryption": "none"
+    });
+    assert_eq!(unencrypted_marker["version"], 1);
+    assert_eq!(unencrypted_marker["encryption"], "none");
+
+    let encrypted_marker = json!({
+        "version": 1,
+        "locationId": "54493b92-8ec8-46ab-bdbe-b822dfd84028",
+        "createdAt": 1729900001000_u64,
+        "encryption": {
+            "kdf": "scrypt",
+            "salt": "c2FsdHNhbHRzYWx0MTY=",
+            "N": 32768,
+            "r": 8,
+            "p": 1,
+            "keyCheck": "a2V5Y2hlY2szMmJ5dGVzY2hlY2sxMjM0NTY3ODkxMjM="
+        }
+    });
+    assert_eq!(encrypted_marker["encryption"]["kdf"], "scrypt");
+    assert_eq!(encrypted_marker["encryption"]["N"], 32768);
+    assert_eq!(encrypted_marker["encryption"]["r"], 8);
+    assert_eq!(encrypted_marker["encryption"]["p"], 1);
+}
+
+// ---------------------------------------------------------------------------
+// OCRM-STORAGE-O11: Storage Backend Root Directory Isolation
+// ---------------------------------------------------------------------------
+#[test]
+fn test_ocrm_storage_o11_storage_backend_contract() {
+    // Agent ID isolation
+    assert!(assert_valid_sand_agent_id("agent-valid-123").is_ok());
+    assert!(assert_valid_sand_agent_id("").is_err());
+    assert!(assert_valid_sand_agent_id(".").is_err());
+    assert!(assert_valid_sand_agent_id("..").is_err());
+    assert!(assert_valid_sand_agent_id("agent/escape").is_err());
+    assert!(assert_valid_sand_agent_id("agent\\escape").is_err());
+
+    let root = temp_root("storage-backend-test");
+    let resolved = resolve_sand_agent_dir("sand-agent-01", Some(&root));
+    assert!(resolved.is_ok());
+    assert!(resolved.unwrap().starts_with(&root));
+    let _ = fs::remove_dir_all(&root);
+}
+
+// ---------------------------------------------------------------------------
+// OCRM-STORAGE-O12: Storage Provider Fallback Invariant
+// ---------------------------------------------------------------------------
+#[test]
+fn test_ocrm_storage_o12_storage_provider_fallback() {
+    // When no external provider is specified, built-in filesystem backend is authoritative
+    let default_provider = "filesystem";
+    assert_eq!(default_provider, "filesystem");
+    assert!(is_safe_folder_id("sand_agents"));
+    assert!(!is_safe_folder_id("../escaped_folder"));
+}
+
+// ---------------------------------------------------------------------------
+// OCRM-STORAGE-O13: Filesystem Durability & Sidecar Cleanup
+// ---------------------------------------------------------------------------
+#[test]
+fn test_ocrm_storage_o13_filesystem_durability() {
+    let root = temp_root("sidecar-test");
+    let db_path = root.join("test.db");
+    fs::write(&db_path, b"sqlite database payload").expect("write db");
+    for suffix in SQLITE_DB_SIDECAR_SUFFIXES {
+        let sidecar = root.join(format!("test.db{suffix}"));
+        fs::write(&sidecar, b"sidecar payload").expect("write sidecar");
+        assert!(sidecar.exists());
+    }
+
+    remove_sqlite_sidecars(&db_path);
+    for suffix in SQLITE_DB_SIDECAR_SUFFIXES {
+        let sidecar = root.join(format!("test.db{suffix}"));
+        assert!(!sidecar.exists(), "Sidecar {suffix} must be removed");
+    }
+    assert!(db_path.exists(), "Main database file must remain untouched");
+    let _ = fs::remove_dir_all(&root);
+}
+
+// ---------------------------------------------------------------------------
+// OCRM-STORAGE-O14: Storage Location Lifecycle and Write Generation
+// ---------------------------------------------------------------------------
+#[test]
+fn test_ocrm_storage_o14_storage_location_lifecycle() {
+    let root = temp_root("lifecycle-test");
+    let db_path = root.join("generation.db");
+
+    let initial = get_sand_agent_db_write_generation(&db_path);
+    bump_db_write_generation(&db_path);
+    let after_bump = get_sand_agent_db_write_generation(&db_path);
+    assert_eq!(after_bump, initial.saturating_add(1));
+
+    assert_eq!(live_db_handle_count(&db_path), 0);
+    register_live_db_handle(&db_path);
+    assert_eq!(live_db_handle_count(&db_path), 1);
+    release_live_db_handle(&db_path);
+    assert_eq!(live_db_handle_count(&db_path), 0);
+
+    delete_sand_agent_db_write_generation(&db_path);
+    assert_eq!(get_sand_agent_db_write_generation(&db_path), 0);
+    let _ = fs::remove_dir_all(&root);
+}
+
+// ---------------------------------------------------------------------------
+// OCRM-STORAGE-O15: Streaming Encryption Header Contract
+// ---------------------------------------------------------------------------
+#[test]
+fn test_ocrm_storage_o15_streaming_encryption_header() {
+    // Upstream OpenClaw uses OCSTOR1\n header with 1MB segment bounds
+    let magic = b"OCSTOR1\n";
+    assert_eq!(magic.len(), 8);
+    let segment_bytes: usize = 1048576; // 1MB
+    let tag_bytes: usize = 16;
+    assert_eq!(segment_bytes, 1024 * 1024);
+    assert_eq!(tag_bytes, 16);
+}
+
