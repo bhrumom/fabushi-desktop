@@ -319,12 +319,12 @@
       "uncompressed_sha256": "62ce93f30601200031baa75e17d65c30251d37f80f4041c02ec20ac7e56abb55"
     },
     {
-      "compressed_sha256": "264deee2e156c88ad836417b2bfd31061eeff6bac447e80b7ab8759dae5f8f07",
+      "compressed_sha256": "7c8a2cfda6789eb2a798fc94c78f8e188c0caecb9187e2bf7e46cabad35bca96",
       "count": 1024,
       "first_path": "src/hooks/bundled/compaction-notifier/HOOK.md",
       "last_path": "src/infra/heartbeat-runner.subagent-session-guard.test.ts",
       "path": "projects/openclaw-rust/inventory/shards/part-0039.jsonl.gz",
-      "uncompressed_sha256": "993d28715d3a338a37388c2f54c3fefac3b226adc9f2688d6259801bc74fe626"
+      "uncompressed_sha256": "a39463a2c5fc620f5d1890ae74ea84011cc2cde6503f6f4aed54c09ce9fb54d8"
     },
     {
       "compressed_sha256": "a1edc5afd87eed0294b82c3440766660dbd87f64fc46baebb0d5d60dd0459b22",
