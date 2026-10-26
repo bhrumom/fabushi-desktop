@@ -49,8 +49,10 @@ const MAX_FUZZY_SPAN_MULTIPLIER = 3;
 export function normalizePaletteSearch(value: string): string {
   let normalized = "";
   let separated = false;
-  for (let index = 0; index < value.length; index += 1) {
-    const character = value.charAt(index).normalize("NFKD").replace(COMBINING_MARKS, "").toLowerCase();
+  // Iterate Unicode code points, not UTF-16 halves: supplementary CJK names
+  // must remain searchable through the canonical participant search owner.
+  for (const codePoint of value) {
+    const character = codePoint.normalize("NFKD").replace(COMBINING_MARKS, "").toLowerCase();
     for (const unit of character) {
       if (!LETTER_OR_NUMBER.test(unit)) {
         separated = true;
