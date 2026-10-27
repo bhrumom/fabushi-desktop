@@ -11487,7 +11487,7 @@
         "acceptance": "pending",
         "implementation": "implemented",
         "mapping": "mapped",
-        "read": "partial",
+        "read": "read-complete",
         "verification": "not-run",
         "wiring": "not-wired"
       },
