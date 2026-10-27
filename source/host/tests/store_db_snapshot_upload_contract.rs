@@ -142,7 +142,7 @@ fn multi_artifact_upload_reuses_owner_and_preflights_paths() {
             &[
                 SnapshotArtifact {
                     rel_path: "global/manifest.json".into(),
-                    path: first,
+                    path: first.clone(),
                     mode: 0o600,
                 },
                 SnapshotArtifact {
@@ -170,6 +170,24 @@ fn multi_artifact_upload_reuses_owner_and_preflights_paths() {
         )
         .is_err());
     assert_eq!(manifest.len(), 2, "invalid batch must not mutate manifest");
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::symlink;
+        let symlink_path = temp_file("symlink-target", b"target").with_file_name("symlink");
+        symlink(&first, &symlink_path).expect("create source symlink");
+        assert!(service
+            .upload_artifact_set(
+                "store-1",
+                manifest,
+                &[SnapshotArtifact {
+                    rel_path: "global/symlink.json".into(),
+                    path: symlink_path,
+                    mode: 0o600,
+                }],
+            )
+            .is_err());
+        assert_eq!(manifest.len(), 2, "source alias must not mutate manifest");
+    }
 }
 
 #[test]

@@ -123,6 +123,25 @@ impl StoreDbSnapshotUpload {
                     artifact.rel_path
                 ));
             }
+            let metadata = fs::symlink_metadata(&artifact.path).map_err(|error| {
+                format!(
+                    "snapshot artifact source cannot be inspected {}: {error}",
+                    artifact.path.display()
+                )
+            })?;
+            if !metadata.is_file() {
+                return Err(format!(
+                    "snapshot artifact source must be a regular file: {}",
+                    artifact.path.display()
+                ));
+            }
+            #[cfg(unix)]
+            if std::os::unix::fs::MetadataExt::nlink(&metadata) != 1 {
+                return Err(format!(
+                    "snapshot artifact source must not be hard-linked: {}",
+                    artifact.path.display()
+                ));
+            }
         }
         Ok(artifacts
             .iter()

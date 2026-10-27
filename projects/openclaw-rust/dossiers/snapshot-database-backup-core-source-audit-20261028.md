@@ -289,3 +289,9 @@ mutating the manifest. The method is deliberately documented as non-atomic
 because the current object-store API has no batch transaction; a future
 OpenClaw caller must supply its own recovery policy and remains unimplemented.
 
+The same owner batch boundary now preflights each source artifact with
+`symlink_metadata`, requiring a regular file and (on Unix) a single link before
+any upload begins. The production-owner contract rejects a source symlink and
+leaves the manifest unchanged. This closes source-alias custody for the
+adapter; it does not establish the missing OpenClaw caller or PostgreSQL port.
+
