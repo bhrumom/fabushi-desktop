@@ -10,10 +10,10 @@
     "ui_accepted": false
   },
   "file_coverage": {
-    "mapped_paths": 470,
+    "mapped_paths": 525,
     "omitted_known": 0,
     "tracked_paths": 58750,
-    "unclassified_paths": 58280
+    "unclassified_paths": 58225
   },
   "inventory_authority": {
     "manifest_source": "GitHub Actions immutable artifact candidate",
@@ -8533,7 +8533,7 @@
     },
     {
       "adr_refs": [],
-      "behavior": "Terminal ANSI QR text renderer supporting compact half-block characters (\u2588, \u2580, \u2584, space), 1-module margin, quiet zone black-on-white formatting, and standard full-block terminal fallback.",
+      "behavior": "Terminal ANSI QR text renderer supporting compact half-block characters (█, ▀, ▄, space), 1-module margin, quiet zone black-on-white formatting, and standard full-block terminal fallback.",
       "blocker_ids": [
         "BL-MEDIA-QR-TERMINAL-CALLER-001"
       ],
@@ -18422,6 +18422,784 @@
       ],
       "reviewer": "xuyao@ombhrum.com",
       "migration_rollback": "Disable standalone stdio tools server and use internal runner tool invocation"
+    },
+    {
+      "id": "OCRM-RESP-LLM-TRANSPORT-RATE-LIMIT-001",
+      "unit_id": "OCRM-UNIT-LLM-001",
+      "responsibility_kind": "business-runtime",
+      "behavior": "Core LLM transport admission controller with request priority queueing, timeout bounds, rate-limit retry feedback, retry diagnostics with terminal assistant error classifications, and egress secret sentinels redaction.",
+      "risk": "High; LLM rate limits and retry loops can exhaust API quota, hang interactive requests, or leak sentinels without bounded admission gates",
+      "status": {
+        "read": "read-complete",
+        "mapping": "reviewed",
+        "wiring": "not-wired",
+        "implementation": "implemented",
+        "verification": "not-run",
+        "acceptance": "pending"
+      },
+      "selected_owner": "source/host/src/extensions/inference/llm_transport_rate_limit.rs",
+      "existing_owner_candidates": [
+        {
+          "path": "source/host/src/extensions/inference/llm_transport_rate_limit.rs",
+          "reason": "Host LLM transport admission controller, queue prioritizer, and retry diagnostics"
+        }
+      ],
+      "owner_decision": "Native implementation in llm_transport_rate_limit under inference extension",
+      "dependencies": [
+        "mahayana_host_runtime::extensions::inference::llm_transport_rate_limit"
+      ],
+      "capability_ids": [
+        "inference.llm_rate_limit"
+      ],
+      "preconditions": [
+        "Model requests submitted with priority, route key, and timeout budget"
+      ],
+      "postconditions": [
+        "Requests admitted or queued with strict interactive prioritization and terminal errors classified without redundant retry"
+      ],
+      "invariants": [
+        "Interactive requests strictly precede background requests in rate-limit queue",
+        "Terminal assistant errors (e.g. repeated_tool, 401, 403) are never retried",
+        "Secret sentinels are completely masked before provider egress"
+      ],
+      "typed_contracts": [
+        "RateLimitGate",
+        "RateLimitAdmissionController",
+        "is_terminal_assistant_error",
+        "redact_secret_sentinels_for_egress"
+      ],
+      "tests": [
+        "source/host/tests/openclaw_llm_contract.rs::test_ocrm_llm_rate_limit_priority_and_admission",
+        "source/host/tests/openclaw_llm_contract.rs::test_ocrm_llm_terminal_error_and_secret_redaction"
+      ],
+      "integration": {
+        "producer": "source/host/src/extensions/inference/llm_transport_rate_limit.rs",
+        "owner": "source/host/src/extensions/inference/llm_transport_rate_limit.rs",
+        "consumer": "source/host/src/extensions/inference/llm_transport_rate_limit.rs",
+        "entrypoint": "source/host/src/extensions/inference/llm_transport_rate_limit.rs::admit_request"
+      },
+      "source_refs": [
+        {
+          "path": "src/llm/ai-transport-host.test.ts",
+          "blob_sha": "395c56a29ae0b7a1cb015fd28e5f444f1ee97c91",
+          "range": {
+            "start_line": 1,
+            "end_line": 219
+          },
+          "symbol": "ai-transport-host.test"
+        },
+        {
+          "path": "src/llm/ai-transport-host.ts",
+          "blob_sha": "00eef5cde67a001d52ec9ecddb370645bd471c74",
+          "range": {
+            "start_line": 1,
+            "end_line": 80
+          },
+          "symbol": "ai-transport-host"
+        },
+        {
+          "path": "src/llm/model-registry.ts",
+          "blob_sha": "50783e37c68be067ea1f7609710318219c97f679",
+          "range": {
+            "start_line": 1,
+            "end_line": 9
+          },
+          "symbol": "model-registry"
+        },
+        {
+          "path": "src/llm/model-runtime-binding.ts",
+          "blob_sha": "21474a33e41bde0364c0c0d9c12dab68401e1789",
+          "range": {
+            "start_line": 1,
+            "end_line": 72
+          },
+          "symbol": "model-runtime-binding"
+        },
+        {
+          "path": "src/llm/model-transport-context.ts",
+          "blob_sha": "59ce65b02b0739ebe2ee91fc4a64f94184c32c87",
+          "range": {
+            "start_line": 1,
+            "end_line": 26
+          },
+          "symbol": "model-transport-context"
+        },
+        {
+          "path": "src/llm/openai-compatible-auth.test.ts",
+          "blob_sha": "54419f9200fed032e008e0ddcc8345855fe7f06c",
+          "range": {
+            "start_line": 1,
+            "end_line": 137
+          },
+          "symbol": "openai-compatible-auth.test"
+        },
+        {
+          "path": "src/llm/provider-rate-limit-stream.ts",
+          "blob_sha": "9998abc5bdf154b00b191e014d5ad01268596305",
+          "range": {
+            "start_line": 1,
+            "end_line": 53
+          },
+          "symbol": "provider-rate-limit-stream"
+        },
+        {
+          "path": "src/llm/provider-rate-limit.ts",
+          "blob_sha": "55605a173fbcdcae12cf5dc14dd6c06d8828a05a",
+          "range": {
+            "start_line": 1,
+            "end_line": 246
+          },
+          "symbol": "provider-rate-limit"
+        },
+        {
+          "path": "src/llm/simple-completion-sentinel-egress.test.ts",
+          "blob_sha": "cfdbdd7f651622c1f5f4761b81d2fabb2a68984b",
+          "range": {
+            "start_line": 1,
+            "end_line": 164
+          },
+          "symbol": "simple-completion-sentinel-egress.test"
+        },
+        {
+          "path": "src/llm/stream.complete-host.test.ts",
+          "blob_sha": "c8e6ec95fd8548e0f5fa38cfa4668bbd18a4cfbc",
+          "range": {
+            "start_line": 1,
+            "end_line": 361
+          },
+          "symbol": "stream.complete-host.test"
+        },
+        {
+          "path": "src/llm/stream.sync-host.test.ts",
+          "blob_sha": "17a1d9d85d58d8aeeef9800738411cd2c40998ef",
+          "range": {
+            "start_line": 1,
+            "end_line": 84
+          },
+          "symbol": "stream.sync-host.test"
+        },
+        {
+          "path": "src/llm/stream.ts",
+          "blob_sha": "f5b4fcfcaaea9629dd953103ba98b884f23d3e92",
+          "range": {
+            "start_line": 1,
+            "end_line": 142
+          },
+          "symbol": "stream"
+        },
+        {
+          "path": "src/llm/tool-result-redaction.test.ts",
+          "blob_sha": "449ebeeaf544aa3394dfb307aa3b5d37d343c16d",
+          "range": {
+            "start_line": 1,
+            "end_line": 74
+          },
+          "symbol": "tool-result-redaction.test"
+        },
+        {
+          "path": "src/llm/types.ts",
+          "blob_sha": "7c85826c1e341f46edf626b113f36a3d8c5f0830",
+          "range": {
+            "start_line": 1,
+            "end_line": 2
+          },
+          "symbol": "types"
+        },
+        {
+          "path": "src/llm/utils/event-stream.ts",
+          "blob_sha": "679cc4c909a0bdba22157dd590ce7f7907b2f9eb",
+          "range": {
+            "start_line": 1,
+            "end_line": 2
+          },
+          "symbol": "event-stream"
+        },
+        {
+          "path": "src/llm/utils/node-http-proxy.test.ts",
+          "blob_sha": "b2ff9037014e057c1e195d70fa06ed25b790fa11",
+          "range": {
+            "start_line": 1,
+            "end_line": 78
+          },
+          "symbol": "node-http-proxy.test"
+        },
+        {
+          "path": "src/llm/utils/node-http-proxy.ts",
+          "blob_sha": "37353cb7fa61ad5377d765422d12ec62a003c48c",
+          "range": {
+            "start_line": 1,
+            "end_line": 24
+          },
+          "symbol": "node-http-proxy"
+        },
+        {
+          "path": "src/llm/utils/retry.test.ts",
+          "blob_sha": "151462f086072e8586b89154c3c1cb5e3322b876",
+          "range": {
+            "start_line": 1,
+            "end_line": 161
+          },
+          "symbol": "retry.test"
+        },
+        {
+          "path": "src/llm/utils/retry.ts",
+          "blob_sha": "8694af0a54eea7d92bf38a09b237282818683d20",
+          "range": {
+            "start_line": 1,
+            "end_line": 71
+          },
+          "symbol": "retry"
+        },
+        {
+          "path": "src/llm/utils/stream-wrapper.ts",
+          "blob_sha": "d71ee343efb671ccc0edfca561c36dd3e5230007",
+          "range": {
+            "start_line": 1,
+            "end_line": 11
+          },
+          "symbol": "stream-wrapper"
+        }
+      ],
+      "evidence_refs": [
+        "source/host/tests/openclaw_llm_contract.rs",
+        "projects/openclaw-rust/dossiers/llm-layer-scoped.md"
+      ],
+      "requirement_ids": [
+        "OCRM-R04",
+        "OCRM-R08",
+        "OCRM-R10",
+        "OCRM-R14",
+        "OCRM-R24",
+        "OCRM-AC08",
+        "OCRM-AC14",
+        "OCRM-AC24"
+      ],
+      "required_gate_ids": [
+        "OCRM-G04-rust-contract",
+        "OCRM-G05-frozen-oracle"
+      ],
+      "oracle_ids": [
+        "OCRM-LLM-CORE-O01",
+        "OCRM-LLM-CORE-O02"
+      ],
+      "adr_refs": [],
+      "blocker_ids": [
+        "BL-LLM-TRANSPORT-WIRING-001"
+      ],
+      "target": {
+        "path": "source/host/src/extensions/inference/llm_transport_rate_limit.rs",
+        "symbol": "RateLimitAdmissionController",
+        "language": "Rust"
+      },
+      "required_evidence_dimensions": [
+        "unit",
+        "format"
+      ],
+      "reviewer": "xuyao@ombhrum.com",
+      "migration_rollback": "Fallback to direct unthrottled provider dispatch with client-level retry"
+    },
+    {
+      "id": "OCRM-RESP-LLM-PROVIDER-STREAM-WRAPPERS-001",
+      "unit_id": "OCRM-UNIT-LLM-001",
+      "responsibility_kind": "business-runtime",
+      "behavior": "Provider stream wrappers including Anthropic Claude Bedrock ARN detection, prompt cache retention families, tool schema normalization, OpenAI service tier cooldown observation, and Google Gemini thinking budget level resolution.",
+      "risk": "Medium; malformed tool schemas cause API rejections and cache misses lead to cost blowup",
+      "status": {
+        "read": "read-complete",
+        "mapping": "reviewed",
+        "wiring": "not-wired",
+        "implementation": "implemented",
+        "verification": "not-run",
+        "acceptance": "pending"
+      },
+      "selected_owner": "source/host/src/extensions/inference/stream_wrappers_service.rs",
+      "existing_owner_candidates": [
+        {
+          "path": "source/host/src/extensions/inference/stream_wrappers_service.rs",
+          "reason": "Host LLM provider stream wrappers, tool payload compatibility, and tier observer"
+        }
+      ],
+      "owner_decision": "Native implementation in stream_wrappers_service under inference extension",
+      "dependencies": [
+        "mahayana_host_runtime::extensions::inference::stream_wrappers_service"
+      ],
+      "capability_ids": [
+        "inference.stream_wrappers"
+      ],
+      "preconditions": [
+        "Model requests dispatched with provider stream options and tool definitions"
+      ],
+      "postconditions": [
+        "Tool schemas normalized to valid JSON schema objects and provider tier feedback observed with automatic fallback"
+      ],
+      "invariants": [
+        "Empty tool schemas are projected into valid typed object schemas",
+        "OpenAI service tier rejections trigger cooloff with default tier fallback",
+        "Gemini 2.5 Pro rejects budget 0 and enforces mandatory thinking mode"
+      ],
+      "typed_contracts": [
+        "AnthropicCacheFamily",
+        "is_anthropic_bedrock_model",
+        "normalize_anthropic_tool_schema",
+        "OpenAiServiceTierObserver",
+        "resolve_google_thinking_level"
+      ],
+      "tests": [
+        "source/host/tests/openclaw_llm_contract.rs::test_ocrm_llm_stream_wrappers_cache_and_tools"
+      ],
+      "integration": {
+        "producer": "source/host/src/extensions/inference/stream_wrappers_service.rs",
+        "owner": "source/host/src/extensions/inference/stream_wrappers_service.rs",
+        "consumer": "source/host/src/extensions/inference/stream_wrappers_service.rs",
+        "entrypoint": "source/host/src/extensions/inference/stream_wrappers_service.rs::normalize_anthropic_tool_schema"
+      },
+      "source_refs": [
+        {
+          "path": "src/llm/providers/anthropic-cloudflare.fetch-proof.test.ts",
+          "blob_sha": "2eff699702d49f67d17a8313e63e6f96f6561b81",
+          "range": {
+            "start_line": 1,
+            "end_line": 65
+          },
+          "symbol": "anthropic-cloudflare.fetch-proof.test"
+        },
+        {
+          "path": "src/llm/providers/minimax-fast-mode.ts",
+          "blob_sha": "3785645652448142c159106733001563fe8110f0",
+          "range": {
+            "start_line": 1,
+            "end_line": 11
+          },
+          "symbol": "minimax-fast-mode"
+        },
+        {
+          "path": "src/llm/providers/openai-fast-mode.ts",
+          "blob_sha": "2f4a5085b51c00a31327145c2e8ebdfc9e964704",
+          "range": {
+            "start_line": 1,
+            "end_line": 32
+          },
+          "symbol": "openai-fast-mode"
+        },
+        {
+          "path": "src/llm/providers/stream-wrappers/anthropic-cache-control-payload.test.ts",
+          "blob_sha": "cdd31a85ad23955961459a5f84205d6f196730be",
+          "range": {
+            "start_line": 1,
+            "end_line": 36
+          },
+          "symbol": "anthropic-cache-control-payload.test"
+        },
+        {
+          "path": "src/llm/providers/stream-wrappers/anthropic-family-cache-semantics.ts",
+          "blob_sha": "f98829690dc0b962dc1fd158d74d00a961073cd7",
+          "range": {
+            "start_line": 1,
+            "end_line": 87
+          },
+          "symbol": "anthropic-family-cache-semantics"
+        },
+        {
+          "path": "src/llm/providers/stream-wrappers/anthropic-family-tool-payload-compat.live.test.ts",
+          "blob_sha": "57e2ec50e865429267ebbebad4eded52b9f7aeb6",
+          "range": {
+            "start_line": 1,
+            "end_line": 87
+          },
+          "symbol": "anthropic-family-tool-payload-compat.live.test"
+        },
+        {
+          "path": "src/llm/providers/stream-wrappers/anthropic-family-tool-payload-compat.test.ts",
+          "blob_sha": "60a6d4e62baf758b4204765f43d7e477e7f1a4ab",
+          "range": {
+            "start_line": 1,
+            "end_line": 355
+          },
+          "symbol": "anthropic-family-tool-payload-compat.test"
+        },
+        {
+          "path": "src/llm/providers/stream-wrappers/anthropic-family-tool-payload-compat.ts",
+          "blob_sha": "b966980366a6373a66a4e24fe5ac06dc905ba85a",
+          "range": {
+            "start_line": 1,
+            "end_line": 307
+          },
+          "symbol": "anthropic-family-tool-payload-compat"
+        },
+        {
+          "path": "src/llm/providers/stream-wrappers/google-thinking-payload.ts",
+          "blob_sha": "3ba5723bc0c20fe2910e87738c343afc5956fdf6",
+          "range": {
+            "start_line": 1,
+            "end_line": 247
+          },
+          "symbol": "google-thinking-payload"
+        },
+        {
+          "path": "src/llm/providers/stream-wrappers/google.test.ts",
+          "blob_sha": "8cae2a359954c5f2fe994f403d605d8fe1bf0059",
+          "range": {
+            "start_line": 1,
+            "end_line": 70
+          },
+          "symbol": "google.test"
+        },
+        {
+          "path": "src/llm/providers/stream-wrappers/google.ts",
+          "blob_sha": "b1fd6da3709890e790ea5e8d16d19ebdf64251cf",
+          "range": {
+            "start_line": 1,
+            "end_line": 2
+          },
+          "symbol": "google"
+        },
+        {
+          "path": "src/llm/providers/stream-wrappers/minimax.test.ts",
+          "blob_sha": "f56ec776932a461ecf0ebc687eeda0c0e6be9d13",
+          "range": {
+            "start_line": 1,
+            "end_line": 100
+          },
+          "symbol": "minimax.test"
+        },
+        {
+          "path": "src/llm/providers/stream-wrappers/minimax.ts",
+          "blob_sha": "83bf795cdef5dd4580215ed4e00ce7571127ca9f",
+          "range": {
+            "start_line": 1,
+            "end_line": 79
+          },
+          "symbol": "minimax"
+        },
+        {
+          "path": "src/llm/providers/stream-wrappers/moonshot-thinking.ts",
+          "blob_sha": "2b4a206f75843a5a9ce98e9baf0c3a16afadd404",
+          "range": {
+            "start_line": 1,
+            "end_line": 185
+          },
+          "symbol": "moonshot-thinking"
+        },
+        {
+          "path": "src/llm/providers/stream-wrappers/moonshot.ts",
+          "blob_sha": "849d0526bba0d983277f6174fffef9273f991216",
+          "range": {
+            "start_line": 1,
+            "end_line": 29
+          },
+          "symbol": "moonshot"
+        },
+        {
+          "path": "src/llm/providers/stream-wrappers/openai-service-tier-observation.test.ts",
+          "blob_sha": "821037313b04edda7cb59902c1e79654e2631595",
+          "range": {
+            "start_line": 1,
+            "end_line": 242
+          },
+          "symbol": "openai-service-tier-observation.test"
+        },
+        {
+          "path": "src/llm/providers/stream-wrappers/openai-service-tier-observation.ts",
+          "blob_sha": "1c9e04430ea3382a9f0344bca86404c4ed91f77c",
+          "range": {
+            "start_line": 1,
+            "end_line": 102
+          },
+          "symbol": "openai-service-tier-observation"
+        },
+        {
+          "path": "src/llm/providers/stream-wrappers/openai.test.ts",
+          "blob_sha": "02af59f3a8caf4511b17253d536f7060c9bd3421",
+          "range": {
+            "start_line": 1,
+            "end_line": 883
+          },
+          "symbol": "openai.test"
+        },
+        {
+          "path": "src/llm/providers/stream-wrappers/openai.ts",
+          "blob_sha": "1cef905c3ba12d173c1029f3b1e1b3ece4673c82",
+          "range": {
+            "start_line": 1,
+            "end_line": 695
+          },
+          "symbol": "openai"
+        },
+        {
+          "path": "src/llm/providers/stream-wrappers/proxy.test.ts",
+          "blob_sha": "5349463d0dec930ac1ecd71a33b58387209ef00e",
+          "range": {
+            "start_line": 1,
+            "end_line": 294
+          },
+          "symbol": "proxy.test"
+        },
+        {
+          "path": "src/llm/providers/stream-wrappers/proxy.ts",
+          "blob_sha": "66e45c8f51dbaaf613057d079de17fc3aed0bffd",
+          "range": {
+            "start_line": 1,
+            "end_line": 249
+          },
+          "symbol": "proxy"
+        },
+        {
+          "path": "src/llm/providers/stream-wrappers/reasoning-effort-utils.test.ts",
+          "blob_sha": "2df0eeacc96fb00936ad9d8aadbe945b4d9ff2ea",
+          "range": {
+            "start_line": 1,
+            "end_line": 25
+          },
+          "symbol": "reasoning-effort-utils.test"
+        },
+        {
+          "path": "src/llm/providers/stream-wrappers/reasoning-effort-utils.ts",
+          "blob_sha": "4ab5631f8406316079bf08aa382d519b1fd13e31",
+          "range": {
+            "start_line": 1,
+            "end_line": 18
+          },
+          "symbol": "reasoning-effort-utils"
+        },
+        {
+          "path": "src/llm/providers/stream-wrappers/stream-payload-utils.test.ts",
+          "blob_sha": "6b8d26d61ae9c3c3bfe424854751bacc6c19a103",
+          "range": {
+            "start_line": 1,
+            "end_line": 81
+          },
+          "symbol": "stream-payload-utils.test"
+        },
+        {
+          "path": "src/llm/providers/stream-wrappers/stream-payload-utils.ts",
+          "blob_sha": "f6c819ac4041e8c56560664fe8756085b127536c",
+          "range": {
+            "start_line": 1,
+            "end_line": 50
+          },
+          "symbol": "stream-payload-utils"
+        },
+        {
+          "path": "src/llm/providers/stream-wrappers/zai.ts",
+          "blob_sha": "c85a3194ad0a5ab3c18abd9b6e082e29aa7e9572",
+          "range": {
+            "start_line": 1,
+            "end_line": 23
+          },
+          "symbol": "zai"
+        }
+      ],
+      "evidence_refs": [
+        "source/host/tests/openclaw_llm_contract.rs",
+        "projects/openclaw-rust/dossiers/llm-layer-scoped.md"
+      ],
+      "requirement_ids": [
+        "OCRM-R04",
+        "OCRM-R08",
+        "OCRM-R10",
+        "OCRM-R14",
+        "OCRM-R24",
+        "OCRM-AC08",
+        "OCRM-AC14",
+        "OCRM-AC24"
+      ],
+      "required_gate_ids": [
+        "OCRM-G04-rust-contract",
+        "OCRM-G05-frozen-oracle"
+      ],
+      "oracle_ids": [
+        "OCRM-LLM-WRAPPERS-O01"
+      ],
+      "adr_refs": [],
+      "blocker_ids": [
+        "BL-LLM-WRAPPERS-WIRING-001"
+      ],
+      "target": {
+        "path": "source/host/src/extensions/inference/stream_wrappers_service.rs",
+        "symbol": "normalize_anthropic_tool_schema",
+        "language": "Rust"
+      },
+      "required_evidence_dimensions": [
+        "unit",
+        "format"
+      ],
+      "reviewer": "xuyao@ombhrum.com",
+      "migration_rollback": "Disable provider payload transformation wrappers and pass raw options"
+    },
+    {
+      "id": "OCRM-RESP-LLM-OAUTH-REGISTRY-001",
+      "unit_id": "OCRM-UNIT-LLM-001",
+      "responsibility_kind": "business-runtime",
+      "behavior": "LLM OAuth credentials registry, loopback callback security host policy, PKCE challenge generation, token expiration calculation, and valid API key resolution.",
+      "risk": "High; security vulnerabilities in OAuth callback host acceptance can allow token exfiltration",
+      "status": {
+        "read": "read-complete",
+        "mapping": "reviewed",
+        "wiring": "not-wired",
+        "implementation": "implemented",
+        "verification": "not-run",
+        "acceptance": "pending"
+      },
+      "selected_owner": "source/host/src/extensions/inference/oauth_registry_service.rs",
+      "existing_owner_candidates": [
+        {
+          "path": "source/host/src/extensions/inference/oauth_registry_service.rs",
+          "reason": "Host LLM OAuth registry and PKCE challenge provider"
+        }
+      ],
+      "owner_decision": "Native implementation in oauth_registry_service under inference extension",
+      "dependencies": [
+        "mahayana_host_runtime::extensions::inference::oauth_registry_service"
+      ],
+      "capability_ids": [
+        "inference.oauth_registry"
+      ],
+      "preconditions": [
+        "OAuth credentials supplied or refreshed by provider login flow"
+      ],
+      "postconditions": [
+        "Loopback hosts restricted strictly to 127.0.0.1, localhost, or ::1 and expired tokens rejected"
+      ],
+      "invariants": [
+        "Non-loopback callback hosts are strictly rejected",
+        "PKCE code challenge is computed as base64url(SHA256(verifier)) without padding",
+        "Expired tokens return TokenExpired error rather than silent re-use"
+      ],
+      "typed_contracts": [
+        "OAuthProviderId",
+        "OAuthCredentials",
+        "OAuthProviderRegistry",
+        "validate_anthropic_callback_host",
+        "generate_pkce_challenge_from_verifier"
+      ],
+      "tests": [
+        "source/host/tests/openclaw_llm_contract.rs::test_ocrm_llm_oauth_registry_and_pkce"
+      ],
+      "integration": {
+        "producer": "source/host/src/extensions/inference/oauth_registry_service.rs",
+        "owner": "source/host/src/extensions/inference/oauth_registry_service.rs",
+        "consumer": "source/host/src/extensions/inference/oauth_registry_service.rs",
+        "entrypoint": "source/host/src/extensions/inference/oauth_registry_service.rs::get_api_key"
+      },
+      "source_refs": [
+        {
+          "path": "src/llm/oauth.ts",
+          "blob_sha": "3f39238be6089612de8a7f80291f4028f50ec1b0",
+          "range": {
+            "start_line": 1,
+            "end_line": 2
+          },
+          "symbol": "oauth"
+        },
+        {
+          "path": "src/llm/utils/oauth/abort.test.ts",
+          "blob_sha": "e0676b5ae5a626774c526ea944c82fd260788772",
+          "range": {
+            "start_line": 1,
+            "end_line": 37
+          },
+          "symbol": "abort.test"
+        },
+        {
+          "path": "src/llm/utils/oauth/abort.ts",
+          "blob_sha": "3f75f876f70d18b5b62e0f9e3168acd7fb9dab69",
+          "range": {
+            "start_line": 1,
+            "end_line": 6
+          },
+          "symbol": "abort"
+        },
+        {
+          "path": "src/llm/utils/oauth/anthropic.test.ts",
+          "blob_sha": "ca654182ba86af8c4c5d48a2c2bfde306735ce27",
+          "range": {
+            "start_line": 1,
+            "end_line": 251
+          },
+          "symbol": "anthropic.test"
+        },
+        {
+          "path": "src/llm/utils/oauth/anthropic.ts",
+          "blob_sha": "64662a6a3a9311ca9c7783531b4867f518aa1121",
+          "range": {
+            "start_line": 1,
+            "end_line": 367
+          },
+          "symbol": "anthropic"
+        },
+        {
+          "path": "src/llm/utils/oauth/index.ts",
+          "blob_sha": "d90c4e1518c12e703455556b2bb746ca28fcb75e",
+          "range": {
+            "start_line": 1,
+            "end_line": 92
+          },
+          "symbol": "index"
+        },
+        {
+          "path": "src/llm/utils/oauth/openai-chatgpt.test.ts",
+          "blob_sha": "a8fab68b41c317b6bb56fbf6cfd953fd8178c485",
+          "range": {
+            "start_line": 1,
+            "end_line": 255
+          },
+          "symbol": "openai-chatgpt.test"
+        },
+        {
+          "path": "src/llm/utils/oauth/openai-chatgpt.ts",
+          "blob_sha": "e40cb6dbbacaaa3e34e99cbe5a90f164798facde",
+          "range": {
+            "start_line": 1,
+            "end_line": 131
+          },
+          "symbol": "openai-chatgpt"
+        },
+        {
+          "path": "src/llm/utils/oauth/types.ts",
+          "blob_sha": "505903e1fac0ac1e9ee114031190b0b18729c847",
+          "range": {
+            "start_line": 1,
+            "end_line": 7
+          },
+          "symbol": "types"
+        }
+      ],
+      "evidence_refs": [
+        "source/host/tests/openclaw_llm_contract.rs",
+        "projects/openclaw-rust/dossiers/llm-layer-scoped.md"
+      ],
+      "requirement_ids": [
+        "OCRM-R04",
+        "OCRM-R08",
+        "OCRM-R10",
+        "OCRM-R13",
+        "OCRM-R24",
+        "OCRM-AC08",
+        "OCRM-AC14",
+        "OCRM-AC24"
+      ],
+      "required_gate_ids": [
+        "OCRM-G04-rust-contract",
+        "OCRM-G05-frozen-oracle"
+      ],
+      "oracle_ids": [
+        "OCRM-LLM-OAUTH-O01"
+      ],
+      "adr_refs": [],
+      "blocker_ids": [
+        "BL-LLM-OAUTH-WIRING-001"
+      ],
+      "target": {
+        "path": "source/host/src/extensions/inference/oauth_registry_service.rs",
+        "symbol": "OAuthProviderRegistry",
+        "language": "Rust"
+      },
+      "required_evidence_dimensions": [
+        "unit",
+        "format"
+      ],
+      "reviewer": "xuyao@ombhrum.com",
+      "migration_rollback": "Clear OAuth registry and require manual API key input in settings"
     }
   ],
   "schema_version": 1,

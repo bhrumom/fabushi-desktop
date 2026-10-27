@@ -11,3 +11,6 @@ pub mod generated_inference_codec;
 pub mod sand_labeling;
 pub mod model_picker_service;
 pub mod model_catalog_service;
+pub mod llm_transport_rate_limit;
+pub mod stream_wrappers_service;
+pub mod oauth_registry_service;
