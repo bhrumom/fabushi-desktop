@@ -66,4 +66,6 @@ pub mod node_host;
 pub mod plugin_state;
 pub mod plugins;
 pub mod process;
+pub mod proxy_capture;
+pub mod security;
 

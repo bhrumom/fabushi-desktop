@@ -10,10 +10,10 @@
     "ui_accepted": false
   },
   "file_coverage": {
-    "mapped_paths": 3754,
+    "mapped_paths": 4237,
     "omitted_known": 0,
     "tracked_paths": 58750,
-    "unclassified_paths": 54996
+    "unclassified_paths": 54513
   },
   "inventory_authority": {
     "manifest_source": "GitHub Actions immutable artifact candidate",
@@ -51090,6 +51090,4707 @@
       ],
       "reviewer": "xuyao@ombhrum.com",
       "migration_rollback": "Spawn child processes directly with standard library std::process without group management"
+    },
+    {
+      "id": "OCRM-RESP-SECRETS-AUDIT-APPLY-001",
+      "unit_id": "OCRM-UNIT-SECRETS-001",
+      "responsibility_kind": "business-runtime",
+      "behavior": "Secrets audit scanner detecting plaintext credential residue (sk-, ghp-, xoxb-), redacted value placeholders, and mapping channel-declared environment variable requirements.",
+      "risk": "Critical; plaintext credentials written to config files or git repositories lead to catastrophic token leaks",
+      "status": {
+        "read": "read-complete",
+        "mapping": "reviewed",
+        "wiring": "not-wired",
+        "implementation": "implemented",
+        "verification": "not-run",
+        "acceptance": "pending"
+      },
+      "selected_owner": "source/host/src/extensions/secrets/audit_manager.rs",
+      "existing_owner_candidates": [
+        {
+          "path": "source/host/src/extensions/secrets/audit_manager.rs",
+          "reason": "Host secrets plaintext audit scanner and channel env vars manager"
+        }
+      ],
+      "owner_decision": "Native implementation in audit_manager under secrets extension",
+      "dependencies": [
+        "mahayana_host_runtime::extensions::secrets::audit_manager"
+      ],
+      "capability_ids": [
+        "secrets.audit_apply"
+      ],
+      "preconditions": [
+        "Configuration JSON or environment mapping loaded"
+      ],
+      "postconditions": [
+        "Findings emitted for unindirected secrets and channel env vars listed"
+      ],
+      "invariants": [
+        "Unindirected API keys with known prefixes must be flagged with PlaintextResidue"
+      ],
+      "typed_contracts": [
+        "SecretsAuditManager",
+        "SecretAuditFinding",
+        "SecretFindingKind"
+      ],
+      "tests": [
+        "source/host/tests/openclaw_secrets_security_contract.rs::test_ocrm_secrets_audit_manager"
+      ],
+      "integration": {
+        "producer": "source/host/src/extensions/secrets/audit_manager.rs",
+        "owner": "source/host/src/extensions/secrets/audit_manager.rs",
+        "consumer": "source/host/src/extensions/secrets/audit_manager.rs",
+        "entrypoint": "source/host/src/extensions/secrets/audit_manager.rs::SecretsAuditManager::audit_json_value"
+      },
+      "source_refs": [
+        {
+          "path": "src/secrets/apply.test-support.ts",
+          "blob_sha": "e4b9ded6712b90cc19af41bfc82ee372cec09686",
+          "range": {
+            "start_line": 1,
+            "end_line": 128
+          },
+          "symbol": "apply-support"
+        },
+        {
+          "path": "src/secrets/apply.test.ts",
+          "blob_sha": "eb126e471503946f324c9f243bd9838d57a2e1a7",
+          "range": {
+            "start_line": 1,
+            "end_line": 818
+          },
+          "symbol": "apply"
+        },
+        {
+          "path": "src/secrets/apply.ts",
+          "blob_sha": "4ffcc3d3843fd141916d30627fc356010b3cd535",
+          "range": {
+            "start_line": 1,
+            "end_line": 717
+          },
+          "symbol": "apply"
+        },
+        {
+          "path": "src/secrets/audit-store.ts",
+          "blob_sha": "6918b0ad7e7229f8da9703fff01f9b63ee4159c4",
+          "range": {
+            "start_line": 1,
+            "end_line": 82
+          },
+          "symbol": "audit-store"
+        },
+        {
+          "path": "src/secrets/audit.test.ts",
+          "blob_sha": "c64b5baaa2c08e97e75da1019b58581da18f9fb4",
+          "range": {
+            "start_line": 1,
+            "end_line": 581
+          },
+          "symbol": "audit"
+        },
+        {
+          "path": "src/secrets/audit.ts",
+          "blob_sha": "ec57ddc5e584c8009eb69a6b41aedf179b1ea614",
+          "range": {
+            "start_line": 1,
+            "end_line": 638
+          },
+          "symbol": "audit"
+        },
+        {
+          "path": "src/secrets/auth-profiles-scan.ts",
+          "blob_sha": "861f0d8c379e1db1bce3e86f2557e81babbd96b3",
+          "range": {
+            "start_line": 1,
+            "end_line": 60
+          },
+          "symbol": "auth-profiles-scan"
+        },
+        {
+          "path": "src/secrets/auth-store-paths.ts",
+          "blob_sha": "e82229abc1b13391a4c56552d0edd4a577be7f5e",
+          "range": {
+            "start_line": 1,
+            "end_line": 63
+          },
+          "symbol": "auth-store-paths"
+        },
+        {
+          "path": "src/secrets/channel-contract-api.external.test.ts",
+          "blob_sha": "183837cf91e932c92be080c6eb542ab7c880ff4a",
+          "range": {
+            "start_line": 1,
+            "end_line": 169
+          },
+          "symbol": "channel-contract-api.external"
+        },
+        {
+          "path": "src/secrets/channel-contract-api.fast-path.test.ts",
+          "blob_sha": "f8d0757cb8110377e60262491bfca17f17e9a13d",
+          "range": {
+            "start_line": 1,
+            "end_line": 96
+          },
+          "symbol": "channel-contract-api.fast-path"
+        },
+        {
+          "path": "src/secrets/channel-contract-api.ts",
+          "blob_sha": "2546aea21b7fe1eb4c2fb4c8d4211fa06651ac31",
+          "range": {
+            "start_line": 1,
+            "end_line": 224
+          },
+          "symbol": "channel-contract-api"
+        },
+        {
+          "path": "src/secrets/channel-contract-surface-guardrails.test.ts",
+          "blob_sha": "5f5e0c4fee0b5118770ea7c6104ff3140bc8f943",
+          "range": {
+            "start_line": 1,
+            "end_line": 61
+          },
+          "symbol": "channel-contract-surface-guardrails"
+        },
+        {
+          "path": "src/secrets/channel-env-var-names.ts",
+          "blob_sha": "35421e40f117fde7a17cba0a42d4c58f337cf3ae",
+          "range": {
+            "start_line": 1,
+            "end_line": 21
+          },
+          "symbol": "channel-env-var-names"
+        },
+        {
+          "path": "src/secrets/channel-env-vars.dynamic.test.ts",
+          "blob_sha": "9282e89caef85d314b64043702c2f68be73204ea",
+          "range": {
+            "start_line": 1,
+            "end_line": 60
+          },
+          "symbol": "channel-env-vars.dynamic"
+        },
+        {
+          "path": "src/secrets/channel-env-vars.ts",
+          "blob_sha": "d5c24d775dafcf68bafc87528861760891cc8c9c",
+          "range": {
+            "start_line": 1,
+            "end_line": 64
+          },
+          "symbol": "channel-env-vars"
+        },
+        {
+          "path": "src/secrets/channel-secret-basic-runtime.ts",
+          "blob_sha": "c58b25355aab19cacd2cd062d0b7138f8bbeaf54",
+          "range": {
+            "start_line": 1,
+            "end_line": 494
+          },
+          "symbol": "channel-secret-basic-runtime"
+        },
+        {
+          "path": "src/secrets/channel-secret-tts-runtime.ts",
+          "blob_sha": "4af8d38dd6aa935e50869b218b0ccfd5dea980a6",
+          "range": {
+            "start_line": 1,
+            "end_line": 119
+          },
+          "symbol": "channel-secret-tts-runtime"
+        },
+        {
+          "path": "src/secrets/command-config.test.ts",
+          "blob_sha": "a85796ddc974d113adbd21697d4650c70f175e9e",
+          "range": {
+            "start_line": 1,
+            "end_line": 123
+          },
+          "symbol": "command-config"
+        },
+        {
+          "path": "src/secrets/command-config.ts",
+          "blob_sha": "223ce83cf44954afcf64deb0c89b43115577028e",
+          "range": {
+            "start_line": 1,
+            "end_line": 98
+          },
+          "symbol": "command-config"
+        },
+        {
+          "path": "src/secrets/config-io.test.ts",
+          "blob_sha": "db8104341929b86ac39b7b47b61cac04a5c22ec4",
+          "range": {
+            "start_line": 1,
+            "end_line": 42
+          },
+          "symbol": "config-io"
+        },
+        {
+          "path": "src/secrets/config-io.ts",
+          "blob_sha": "07ec0973ce8f286a749565dcbb80753500bfb559",
+          "range": {
+            "start_line": 1,
+            "end_line": 42
+          },
+          "symbol": "config-io"
+        },
+        {
+          "path": "src/secrets/config-secret-target.ts",
+          "blob_sha": "500f86e8a97c3f68456369867bda0c28246495e0",
+          "range": {
+            "start_line": 1,
+            "end_line": 46
+          },
+          "symbol": "config-secret-target"
+        },
+        {
+          "path": "src/secrets/configure-plan.test.ts",
+          "blob_sha": "c9b143b2e1ef6066cd430cc5e8875a0469f91a81",
+          "range": {
+            "start_line": 1,
+            "end_line": 97
+          },
+          "symbol": "configure-plan"
+        },
+        {
+          "path": "src/secrets/configure-plan.ts",
+          "blob_sha": "7c275f5b2087a401074f72c695d219c20e252c40",
+          "range": {
+            "start_line": 1,
+            "end_line": 236
+          },
+          "symbol": "configure-plan"
+        },
+        {
+          "path": "src/secrets/configure.output.test.ts",
+          "blob_sha": "2b5342a6db3ed69cc962a6786b521094e0b8ff43",
+          "range": {
+            "start_line": 1,
+            "end_line": 129
+          },
+          "symbol": "configure.output"
+        },
+        {
+          "path": "src/secrets/configure.test.ts",
+          "blob_sha": "bd02a4e4163294d761bfdc3a43b9181f5de59fe0",
+          "range": {
+            "start_line": 1,
+            "end_line": 118
+          },
+          "symbol": "configure"
+        },
+        {
+          "path": "src/secrets/configure.ts",
+          "blob_sha": "1c4b2007bbba9a4d58b96f9e28ada15503fe6cf4",
+          "range": {
+            "start_line": 1,
+            "end_line": 875
+          },
+          "symbol": "configure"
+        },
+        {
+          "path": "src/secrets/credential-matrix.test-support.ts",
+          "blob_sha": "b901bb268bca70b9d1dfa6a016ff07d2687d8d7d",
+          "range": {
+            "start_line": 1,
+            "end_line": 84
+          },
+          "symbol": "credential-matrix-support"
+        },
+        {
+          "path": "src/secrets/egress-proxy/certificates.ts",
+          "blob_sha": "95040ee59eab5a371aebb908f3ddc6377c80c82b",
+          "range": {
+            "start_line": 1,
+            "end_line": 179
+          },
+          "symbol": "certificates"
+        },
+        {
+          "path": "src/secrets/egress-proxy/environment.test.ts",
+          "blob_sha": "c829db83e75b6dca919547f8bf4d07a41b6ebd9c",
+          "range": {
+            "start_line": 1,
+            "end_line": 77
+          },
+          "symbol": "environment"
+        },
+        {
+          "path": "src/secrets/egress-proxy/environment.ts",
+          "blob_sha": "6ce61414a4ba0ce31b43069fc43633e8f522e55a",
+          "range": {
+            "start_line": 1,
+            "end_line": 48
+          },
+          "symbol": "environment"
+        },
+        {
+          "path": "src/secrets/egress-proxy/fixtures/emudhra/README.md",
+          "blob_sha": "22e94d83eb277fe57d5480c70b57df2c1ed2e703",
+          "range": {
+            "start_line": 1,
+            "end_line": 29
+          },
+          "symbol": "README.md"
+        },
+        {
+          "path": "src/secrets/egress-proxy/fixtures/emudhra/leaf.pem",
+          "blob_sha": "c5c10a5c2a0be74a9a1f67079006fe7c91975466",
+          "range": {
+            "start_line": 1,
+            "end_line": 23
+          },
+          "symbol": "leaf.pem"
+        },
+        {
+          "path": "src/secrets/egress-proxy/fixtures/emudhra/untrusted.pem",
+          "blob_sha": "3225cd2867cd61f92217d53af9d2a732bd843c55",
+          "range": {
+            "start_line": 1,
+            "end_line": 71
+          },
+          "symbol": "untrusted.pem"
+        },
+        {
+          "path": "src/secrets/egress-proxy/proxy-forward.test.ts",
+          "blob_sha": "becc0ec285ffd1b19a1d6d5d0d3d429a624e4030",
+          "range": {
+            "start_line": 1,
+            "end_line": 255
+          },
+          "symbol": "proxy-forward"
+        },
+        {
+          "path": "src/secrets/egress-proxy/proxy-forward.ts",
+          "blob_sha": "b4c6a3a10a2ec8af37528c2dbccabc20160b7f05",
+          "range": {
+            "start_line": 1,
+            "end_line": 485
+          },
+          "symbol": "proxy-forward"
+        },
+        {
+          "path": "src/secrets/egress-proxy/proxy-server.lifecycle.test.ts",
+          "blob_sha": "575cfa1df978e94e561da21a785e2e5fb27cf4f2",
+          "range": {
+            "start_line": 1,
+            "end_line": 931
+          },
+          "symbol": "proxy-server.lifecycle"
+        },
+        {
+          "path": "src/secrets/egress-proxy/proxy-server.test.ts",
+          "blob_sha": "a17f500f5da0e652c135fc701e1e60b2306f5c71",
+          "range": {
+            "start_line": 1,
+            "end_line": 1092
+          },
+          "symbol": "proxy-server"
+        },
+        {
+          "path": "src/secrets/egress-proxy/proxy-server.ts",
+          "blob_sha": "82fb2bb82fb97b4cb6d0c8fa20b3c8bf09f7ef9b",
+          "range": {
+            "start_line": 1,
+            "end_line": 778
+          },
+          "symbol": "proxy-server"
+        },
+        {
+          "path": "src/secrets/egress-proxy/proxy-server.websocket.test.ts",
+          "blob_sha": "41e0d499a26d82734e673a5cb1277a205ff53b2b",
+          "range": {
+            "start_line": 1,
+            "end_line": 446
+          },
+          "symbol": "proxy-server.websocket"
+        },
+        {
+          "path": "src/secrets/egress-proxy/proxy-worker.test.ts",
+          "blob_sha": "83cde80f6bd15aad5c1233d227d3e8ab87e82f67",
+          "range": {
+            "start_line": 1,
+            "end_line": 389
+          },
+          "symbol": "proxy-worker"
+        },
+        {
+          "path": "src/secrets/egress-proxy/proxy-worker.ts",
+          "blob_sha": "041ca5795c6719eb008719d8ac5e6eaf8273beef",
+          "range": {
+            "start_line": 1,
+            "end_line": 157
+          },
+          "symbol": "proxy-worker"
+        },
+        {
+          "path": "src/secrets/egress-proxy/proxy-worker.types.ts",
+          "blob_sha": "836b1e6b54a88137b4bb83ebcb22ea3d856c8c63",
+          "range": {
+            "start_line": 1,
+            "end_line": 31
+          },
+          "symbol": "proxy-worker.types"
+        },
+        {
+          "path": "src/secrets/egress-proxy/proxy.worker.ts",
+          "blob_sha": "6060dce61d306157532b9f4af45d8a70eb3db06e",
+          "range": {
+            "start_line": 1,
+            "end_line": 63
+          },
+          "symbol": "proxy.worker"
+        },
+        {
+          "path": "src/secrets/egress-proxy/registry.ts",
+          "blob_sha": "b0d091455fa786fcaf8e317ae0ccc1fd5f4666e4",
+          "range": {
+            "start_line": 1,
+            "end_line": 54
+          },
+          "symbol": "registry"
+        },
+        {
+          "path": "src/secrets/egress-proxy/response-headers.test.ts",
+          "blob_sha": "81e2151ab26c2dc4081b35d1db00901bda550c9d",
+          "range": {
+            "start_line": 1,
+            "end_line": 47
+          },
+          "symbol": "response-headers"
+        },
+        {
+          "path": "src/secrets/egress-proxy/response-headers.ts",
+          "blob_sha": "11714002c31ebbb3400ce7effae8eab5be085785",
+          "range": {
+            "start_line": 1,
+            "end_line": 93
+          },
+          "symbol": "response-headers"
+        },
+        {
+          "path": "src/secrets/egress-proxy/runtime.test.ts",
+          "blob_sha": "58ef7eccb1d1e11f02d044b9d3fa96cdc4eacd74",
+          "range": {
+            "start_line": 1,
+            "end_line": 98
+          },
+          "symbol": "runtime"
+        },
+        {
+          "path": "src/secrets/egress-proxy/runtime.ts",
+          "blob_sha": "e5a0ee8b4aea77b4fb7d25348022bbe6f64602e7",
+          "range": {
+            "start_line": 1,
+            "end_line": 104
+          },
+          "symbol": "runtime"
+        },
+        {
+          "path": "src/secrets/egress-proxy/stream-substitution.test.ts",
+          "blob_sha": "2b970f24f3ab2f858ceb723c95e59ffc7f8e36a8",
+          "range": {
+            "start_line": 1,
+            "end_line": 89
+          },
+          "symbol": "stream-substitution"
+        },
+        {
+          "path": "src/secrets/egress-proxy/stream-substitution.ts",
+          "blob_sha": "579a6be9c86d600db0ad798c72e4a6ea9476e928",
+          "range": {
+            "start_line": 1,
+            "end_line": 149
+          },
+          "symbol": "stream-substitution"
+        },
+        {
+          "path": "src/secrets/egress.test-support.ts",
+          "blob_sha": "e57cc2460092cd2f183294b1433885168cfb94e6",
+          "range": {
+            "start_line": 1,
+            "end_line": 43
+          },
+          "symbol": "egress-support"
+        },
+        {
+          "path": "src/secrets/exact-hostname.ts",
+          "blob_sha": "d1eef3438fa8690a35729f1c01ce81241d8693ab",
+          "range": {
+            "start_line": 1,
+            "end_line": 41
+          },
+          "symbol": "exact-hostname"
+        },
+        {
+          "path": "src/secrets/exec-provider-path-validation.ts",
+          "blob_sha": "ad17d6effc6b9f57b0b10bb48fdda63b84108dc1",
+          "range": {
+            "start_line": 1,
+            "end_line": 71
+          },
+          "symbol": "exec-provider-path-validation"
+        },
+        {
+          "path": "src/secrets/exec-resolution-policy.ts",
+          "blob_sha": "d2f632910ef67f898606e0b48b6fd7adf7809b6b",
+          "range": {
+            "start_line": 1,
+            "end_line": 54
+          },
+          "symbol": "exec-resolution-policy"
+        },
+        {
+          "path": "src/secrets/exec-secret-ref-id-parity.test.ts",
+          "blob_sha": "b059aaa149cb4c851b72fe3451637ef6541abb7b",
+          "range": {
+            "start_line": 1,
+            "end_line": 126
+          },
+          "symbol": "exec-secret-ref-id-parity"
+        },
+        {
+          "path": "src/secrets/job-egress.test.ts",
+          "blob_sha": "e64a6054435ce3ca9366f1371d836c091184f577",
+          "range": {
+            "start_line": 1,
+            "end_line": 190
+          },
+          "symbol": "job-egress"
+        },
+        {
+          "path": "src/secrets/job-egress.ts",
+          "blob_sha": "1ff340d58b8b7bccba8640526c3c2de23395cf23",
+          "range": {
+            "start_line": 1,
+            "end_line": 131
+          },
+          "symbol": "job-egress"
+        },
+        {
+          "path": "src/secrets/json-pointer.test.ts",
+          "blob_sha": "6b588454f6a5ef9afefaad85751cd8f803a64863",
+          "range": {
+            "start_line": 1,
+            "end_line": 27
+          },
+          "symbol": "json-pointer"
+        },
+        {
+          "path": "src/secrets/json-pointer.ts",
+          "blob_sha": "9ed4833397b82281e843a03ca79173cbde5e406a",
+          "range": {
+            "start_line": 1,
+            "end_line": 52
+          },
+          "symbol": "json-pointer"
+        },
+        {
+          "path": "src/secrets/model-egress.test.ts",
+          "blob_sha": "3e128ea8597f20a825a952095142beeb2c1bece7",
+          "range": {
+            "start_line": 1,
+            "end_line": 151
+          },
+          "symbol": "model-egress"
+        },
+        {
+          "path": "src/secrets/model-egress.ts",
+          "blob_sha": "133527bf5c358c607598ab87588a313ef5dafe59",
+          "range": {
+            "start_line": 1,
+            "end_line": 174
+          },
+          "symbol": "model-egress"
+        },
+        {
+          "path": "src/secrets/model-provider-header-policy.ts",
+          "blob_sha": "7ebf2056937ece873261244a289fb1ee4ff676e3",
+          "range": {
+            "start_line": 1,
+            "end_line": 29
+          },
+          "symbol": "model-provider-header-policy"
+        },
+        {
+          "path": "src/secrets/official-external-channel-secret-contract.test.ts",
+          "blob_sha": "9b6d07fd82327390634e6d7fbc67b15c5f29ea6e",
+          "range": {
+            "start_line": 1,
+            "end_line": 90
+          },
+          "symbol": "official-external-channel-secret-contract"
+        },
+        {
+          "path": "src/secrets/official-external-channel-secret-contract.ts",
+          "blob_sha": "f087831adce6bfe5c45e4b2af0206f9f2337213b",
+          "range": {
+            "start_line": 1,
+            "end_line": 168
+          },
+          "symbol": "official-external-channel-secret-contract"
+        },
+        {
+          "path": "src/secrets/path-utils.test.ts",
+          "blob_sha": "994c596df88165e3953770e98c2d74f83e6cff53",
+          "range": {
+            "start_line": 1,
+            "end_line": 111
+          },
+          "symbol": "path-utils"
+        },
+        {
+          "path": "src/secrets/path-utils.ts",
+          "blob_sha": "0ac04602cdf1a5dc21815a8e570d23f9e032a141",
+          "range": {
+            "start_line": 1,
+            "end_line": 228
+          },
+          "symbol": "path-utils"
+        },
+        {
+          "path": "src/secrets/plan.test.ts",
+          "blob_sha": "6fdba710f60a71e9701e36d94b3e323d250ae148",
+          "range": {
+            "start_line": 1,
+            "end_line": 73
+          },
+          "symbol": "plan"
+        },
+        {
+          "path": "src/secrets/plan.ts",
+          "blob_sha": "db232f59f6b781848fe7d572fafdf4a46807164e",
+          "range": {
+            "start_line": 1,
+            "end_line": 185
+          },
+          "symbol": "plan"
+        },
+        {
+          "path": "src/secrets/plugin-secret-provider.test-support.ts",
+          "blob_sha": "0e6be2626da2a5e6b878f0af4b3dae004f586662",
+          "range": {
+            "start_line": 1,
+            "end_line": 53
+          },
+          "symbol": "plugin-secret-provider-support"
+        },
+        {
+          "path": "src/secrets/plugin-setup-plan.ts",
+          "blob_sha": "69f734fe93907eeb7a07abbce28af1201fdea639",
+          "range": {
+            "start_line": 1,
+            "end_line": 151
+          },
+          "symbol": "plugin-setup-plan"
+        },
+        {
+          "path": "src/secrets/prepared-plugin-input.test.ts",
+          "blob_sha": "51591a759895a6fd4b0ea5851e6ee52e047cc0cf",
+          "range": {
+            "start_line": 1,
+            "end_line": 120
+          },
+          "symbol": "prepared-plugin-input"
+        },
+        {
+          "path": "src/secrets/prepared-plugin-input.ts",
+          "blob_sha": "ecbeb71950b2d71691ca66316187e79bfa127d30",
+          "range": {
+            "start_line": 1,
+            "end_line": 63
+          },
+          "symbol": "prepared-plugin-input"
+        },
+        {
+          "path": "src/secrets/private-plan-file.test.ts",
+          "blob_sha": "2b78059d8cb34f60077a1036fcb13e6f813b0de0",
+          "range": {
+            "start_line": 1,
+            "end_line": 60
+          },
+          "symbol": "private-plan-file"
+        },
+        {
+          "path": "src/secrets/private-plan-file.ts",
+          "blob_sha": "62275a692efbe2b27d3c3ca61f3d7646b9a47a60",
+          "range": {
+            "start_line": 1,
+            "end_line": 338
+          },
+          "symbol": "private-plan-file"
+        },
+        {
+          "path": "src/secrets/provider-auth-evidence.ts",
+          "blob_sha": "60af936c92a9d2c9fafc0e615a2f003cd95c9a29",
+          "range": {
+            "start_line": 1,
+            "end_line": 86
+          },
+          "symbol": "provider-auth-evidence"
+        },
+        {
+          "path": "src/secrets/provider-credential-values.ts",
+          "blob_sha": "fcef441b7e03451ab442624b2221e356beb95479",
+          "range": {
+            "start_line": 1,
+            "end_line": 24
+          },
+          "symbol": "provider-credential-values"
+        },
+        {
+          "path": "src/secrets/provider-env-vars.dynamic.test.ts",
+          "blob_sha": "8565b6b9243e305127c8b2750ce4e9989d52acbe",
+          "range": {
+            "start_line": 1,
+            "end_line": 521
+          },
+          "symbol": "provider-env-vars.dynamic"
+        },
+        {
+          "path": "src/secrets/provider-env-vars.snapshot.test.ts",
+          "blob_sha": "e68e1d7fb6579d0b2b7760feba9b532bd2c60a24",
+          "range": {
+            "start_line": 1,
+            "end_line": 110
+          },
+          "symbol": "provider-env-vars.snapshot"
+        },
+        {
+          "path": "src/secrets/provider-env-vars.test.ts",
+          "blob_sha": "2277381688d46b83dc60f964375268f2f8b2d214",
+          "range": {
+            "start_line": 1,
+            "end_line": 44
+          },
+          "symbol": "provider-env-vars"
+        },
+        {
+          "path": "src/secrets/provider-env-vars.ts",
+          "blob_sha": "f91090bce61dfa9f31728d5ed349221b1098bc66",
+          "range": {
+            "start_line": 1,
+            "end_line": 453
+          },
+          "symbol": "provider-env-vars"
+        },
+        {
+          "path": "src/secrets/provider-integrations.test.ts",
+          "blob_sha": "acdcf91294da66971879b9b534a85aa964492e1d",
+          "range": {
+            "start_line": 1,
+            "end_line": 550
+          },
+          "symbol": "provider-integrations"
+        },
+        {
+          "path": "src/secrets/provider-integrations.ts",
+          "blob_sha": "6e771cddf44f6b18a08db98f0797f0fa2c38d8f1",
+          "range": {
+            "start_line": 1,
+            "end_line": 310
+          },
+          "symbol": "provider-integrations"
+        },
+        {
+          "path": "src/secrets/provider-request-secret-fields.ts",
+          "blob_sha": "ca2d7a366f6173b4cf2959aa2c6da7404a1c9807",
+          "range": {
+            "start_line": 1,
+            "end_line": 14
+          },
+          "symbol": "provider-request-secret-fields"
+        },
+        {
+          "path": "src/secrets/ref-contract.test.ts",
+          "blob_sha": "a0dfc6d2edc0359fb7fc4208d9812f1113d73c8b",
+          "range": {
+            "start_line": 1,
+            "end_line": 56
+          },
+          "symbol": "ref-contract"
+        },
+        {
+          "path": "src/secrets/ref-contract.ts",
+          "blob_sha": "280bc10d69e1adad312c88c3216838058a7b336e",
+          "range": {
+            "start_line": 1,
+            "end_line": 252
+          },
+          "symbol": "ref-contract"
+        },
+        {
+          "path": "src/secrets/resolve-errors.ts",
+          "blob_sha": "7faf28d865363e0b435ce865fd113fc051753286",
+          "range": {
+            "start_line": 1,
+            "end_line": 178
+          },
+          "symbol": "resolve-errors"
+        },
+        {
+          "path": "src/secrets/resolve-secret-input-string.ts",
+          "blob_sha": "9d17978e469f40b0be8c8928c5e314f449a4e1de",
+          "range": {
+            "start_line": 1,
+            "end_line": 51
+          },
+          "symbol": "resolve-secret-input-string"
+        },
+        {
+          "path": "src/secrets/resolve-store.ts",
+          "blob_sha": "30695d632cc597df4b35437b85dbf807b718006e",
+          "range": {
+            "start_line": 1,
+            "end_line": 73
+          },
+          "symbol": "resolve-store"
+        },
+        {
+          "path": "src/secrets/resolve-types.ts",
+          "blob_sha": "64af0d46de1305b36a9b69878624e10a3f1dbcf2",
+          "range": {
+            "start_line": 1,
+            "end_line": 18
+          },
+          "symbol": "resolve-types"
+        },
+        {
+          "path": "src/secrets/resolve.manifest-registry.test.ts",
+          "blob_sha": "5bd72157f1aa949757943ff5fdfb65e5f871d3ed",
+          "range": {
+            "start_line": 1,
+            "end_line": 62
+          },
+          "symbol": "resolve.manifest-registry"
+        },
+        {
+          "path": "src/secrets/resolve.mixed-failures.test.ts",
+          "blob_sha": "39f6a3eb15fc67cf18b48f23f7d3ceb67f5cfaae",
+          "range": {
+            "start_line": 1,
+            "end_line": 110
+          },
+          "symbol": "resolve.mixed-failures"
+        },
+        {
+          "path": "src/secrets/resolve.test.ts",
+          "blob_sha": "1abfe75e884e16fd13fbecbec90d14ad4bdbcf39",
+          "range": {
+            "start_line": 1,
+            "end_line": 646
+          },
+          "symbol": "resolve"
+        },
+        {
+          "path": "src/secrets/resolve.ts",
+          "blob_sha": "b43bcc045181d9b1ce1cee25db750435c94138c5",
+          "range": {
+            "start_line": 1,
+            "end_line": 629
+          },
+          "symbol": "resolve"
+        },
+        {
+          "path": "src/secrets/runtime-assignment-provenance.ts",
+          "blob_sha": "574494f6f5fd8d2c2354e9f65fe667a24d599cbe",
+          "range": {
+            "start_line": 1,
+            "end_line": 17
+          },
+          "symbol": "runtime-assignment-provenance"
+        },
+        {
+          "path": "src/secrets/runtime-auth-collectors.ts",
+          "blob_sha": "0cc649b9382abf0dd3d8cd770c3f8a54f7979f57",
+          "range": {
+            "start_line": 1,
+            "end_line": 154
+          },
+          "symbol": "runtime-auth-collectors"
+        },
+        {
+          "path": "src/secrets/runtime-auth-profile-owner.ts",
+          "blob_sha": "29c6f3ca4afbed9a701f6d8e6ad13b59fa80c101",
+          "range": {
+            "start_line": 1,
+            "end_line": 32
+          },
+          "symbol": "runtime-auth-profile-owner"
+        },
+        {
+          "path": "src/secrets/runtime-auth-profiles-oauth-policy.test.ts",
+          "blob_sha": "552c4bc497e17abd4a138f7de0fc265c71631ea1",
+          "range": {
+            "start_line": 1,
+            "end_line": 69
+          },
+          "symbol": "runtime-auth-profiles-oauth-policy"
+        },
+        {
+          "path": "src/secrets/runtime-auth-refresh-failure.test.ts",
+          "blob_sha": "db3f42f1d408b934a5b1967c3f3d12e105e4f31d",
+          "range": {
+            "start_line": 1,
+            "end_line": 258
+          },
+          "symbol": "runtime-auth-refresh-failure"
+        },
+        {
+          "path": "src/secrets/runtime-auth-store-admission.test.ts",
+          "blob_sha": "3eb535c99f6550c1fdb7ef3a6381248f0a7fafe8",
+          "range": {
+            "start_line": 1,
+            "end_line": 146
+          },
+          "symbol": "runtime-auth-store-admission"
+        },
+        {
+          "path": "src/secrets/runtime-auth-store-admission.ts",
+          "blob_sha": "d0d4063c107ce72bb54242ab0a0c781821be636e",
+          "range": {
+            "start_line": 1,
+            "end_line": 110
+          },
+          "symbol": "runtime-auth-store-admission"
+        },
+        {
+          "path": "src/secrets/runtime-auth-store-inline-refs.test.ts",
+          "blob_sha": "5d82d2c09f26c88845d5c5f1e68615f3e4a8b6ca",
+          "range": {
+            "start_line": 1,
+            "end_line": 180
+          },
+          "symbol": "runtime-auth-store-inline-refs"
+        },
+        {
+          "path": "src/secrets/runtime-auth.integration.test-helpers.ts",
+          "blob_sha": "32503a41132e4b5ff0bb99ce86c3ce6351fa01cd",
+          "range": {
+            "start_line": 1,
+            "end_line": 74
+          },
+          "symbol": "runtime-auth.integration-helpers"
+        },
+        {
+          "path": "src/secrets/runtime-channel-inactive-variants.test-support.ts",
+          "blob_sha": "e72d761029e554af98ea2a0318bafb7269e3b376",
+          "range": {
+            "start_line": 1,
+            "end_line": 55
+          },
+          "symbol": "runtime-channel-inactive-variants-support"
+        },
+        {
+          "path": "src/secrets/runtime-channel-inactive-variants.test.ts",
+          "blob_sha": "1cdced2a95869c636d1d3a6308d08a6d346520f1",
+          "range": {
+            "start_line": 1,
+            "end_line": 189
+          },
+          "symbol": "runtime-channel-inactive-variants"
+        },
+        {
+          "path": "src/secrets/runtime-channel-secret.test-support.ts",
+          "blob_sha": "a153bf3eddce773a7a9c13aeacaab7096fccc4e1",
+          "range": {
+            "start_line": 1,
+            "end_line": 20
+          },
+          "symbol": "runtime-channel-secret-support"
+        },
+        {
+          "path": "src/secrets/runtime-command-secrets.test.ts",
+          "blob_sha": "2c9189dd0372517d10acb333e813cf069a7017e0",
+          "range": {
+            "start_line": 1,
+            "end_line": 192
+          },
+          "symbol": "runtime-command-secrets"
+        },
+        {
+          "path": "src/secrets/runtime-command-secrets.ts",
+          "blob_sha": "0742e5306e1ab5cd43cfdafca0e0e1e9500ba499",
+          "range": {
+            "start_line": 1,
+            "end_line": 325
+          },
+          "symbol": "runtime-command-secrets"
+        },
+        {
+          "path": "src/secrets/runtime-config-collectors-channels.test.ts",
+          "blob_sha": "d197379e443edb753776158328b860327b73fa76",
+          "range": {
+            "start_line": 1,
+            "end_line": 76
+          },
+          "symbol": "runtime-config-collectors-channels"
+        },
+        {
+          "path": "src/secrets/runtime-config-collectors-channels.ts",
+          "blob_sha": "1d015d4e68bf45d71ef982bbd787f611470f66d5",
+          "range": {
+            "start_line": 1,
+            "end_line": 46
+          },
+          "symbol": "runtime-config-collectors-channels"
+        },
+        {
+          "path": "src/secrets/runtime-config-collectors-core.ts",
+          "blob_sha": "15b6c319e4d15321f033caf53173d00ece0c90fb",
+          "range": {
+            "start_line": 1,
+            "end_line": 545
+          },
+          "symbol": "runtime-config-collectors-core"
+        },
+        {
+          "path": "src/secrets/runtime-config-collectors-memory.ts",
+          "blob_sha": "6f0a6a199abf315462201df4a2458d28e07e1181",
+          "range": {
+            "start_line": 1,
+            "end_line": 230
+          },
+          "symbol": "runtime-config-collectors-memory"
+        },
+        {
+          "path": "src/secrets/runtime-config-collectors-plugins.bundled.test.ts",
+          "blob_sha": "31228d1c236fc6c27dccd8a490090542b11be663",
+          "range": {
+            "start_line": 1,
+            "end_line": 287
+          },
+          "symbol": "runtime-config-collectors-plugins.bundled"
+        },
+        {
+          "path": "src/secrets/runtime-config-collectors-plugins.test.ts",
+          "blob_sha": "64b83fe7f5f247c5072f19dcfa88640d4d20ca2d",
+          "range": {
+            "start_line": 1,
+            "end_line": 269
+          },
+          "symbol": "runtime-config-collectors-plugins"
+        },
+        {
+          "path": "src/secrets/runtime-config-collectors-plugins.ts",
+          "blob_sha": "1a3b6806f0b6c2ebcf9147adfc30943ae14f98a3",
+          "range": {
+            "start_line": 1,
+            "end_line": 160
+          },
+          "symbol": "runtime-config-collectors-plugins"
+        },
+        {
+          "path": "src/secrets/runtime-config-collectors-sandbox.ts",
+          "blob_sha": "b4cd41004530bb51ebdf3baf78827f9e92bc29f1",
+          "range": {
+            "start_line": 1,
+            "end_line": 154
+          },
+          "symbol": "runtime-config-collectors-sandbox"
+        },
+        {
+          "path": "src/secrets/runtime-config-collectors-tts.test.ts",
+          "blob_sha": "0aa57815d519c074d066a7c62673dc6b87e2cf01",
+          "range": {
+            "start_line": 1,
+            "end_line": 61
+          },
+          "symbol": "runtime-config-collectors-tts"
+        },
+        {
+          "path": "src/secrets/runtime-config-collectors-tts.ts",
+          "blob_sha": "b18988623d6e6f62355135d0ffcce925214a3d9b",
+          "range": {
+            "start_line": 1,
+            "end_line": 60
+          },
+          "symbol": "runtime-config-collectors-tts"
+        },
+        {
+          "path": "src/secrets/runtime-config-collectors.ts",
+          "blob_sha": "6b8d6737b9907eee9b63f2b3dbf1843a0caae138",
+          "range": {
+            "start_line": 1,
+            "end_line": 63
+          },
+          "symbol": "runtime-config-collectors"
+        },
+        {
+          "path": "src/secrets/runtime-core-snapshots.test.ts",
+          "blob_sha": "3b365df2706693963d58baf0c32d1514416e34ab",
+          "range": {
+            "start_line": 1,
+            "end_line": 486
+          },
+          "symbol": "runtime-core-snapshots"
+        },
+        {
+          "path": "src/secrets/runtime-degradation-attribution.test.ts",
+          "blob_sha": "3cc6e324d13ded4e497f5728cf5c19986e056286",
+          "range": {
+            "start_line": 1,
+            "end_line": 398
+          },
+          "symbol": "runtime-degradation-attribution"
+        },
+        {
+          "path": "src/secrets/runtime-degraded-state.test.ts",
+          "blob_sha": "db22848b8b70037570d06959aa89804e9e6af736",
+          "range": {
+            "start_line": 1,
+            "end_line": 108
+          },
+          "symbol": "runtime-degraded-state"
+        },
+        {
+          "path": "src/secrets/runtime-degraded-state.ts",
+          "blob_sha": "dd9bd3efa40604f62008acf14f909b43c9babc51",
+          "range": {
+            "start_line": 1,
+            "end_line": 262
+          },
+          "symbol": "runtime-degraded-state"
+        },
+        {
+          "path": "src/secrets/runtime-discord-surface.test.ts",
+          "blob_sha": "eb9414b602f11be254bfa5668451a0a640a602a1",
+          "range": {
+            "start_line": 1,
+            "end_line": 331
+          },
+          "symbol": "runtime-discord-surface"
+        },
+        {
+          "path": "src/secrets/runtime-discord.test-support.ts",
+          "blob_sha": "6be294e0fd114c33f081d70af5ff2f543bc25245",
+          "range": {
+            "start_line": 1,
+            "end_line": 22
+          },
+          "symbol": "runtime-discord-support"
+        },
+        {
+          "path": "src/secrets/runtime-external-channel-audit.test.ts",
+          "blob_sha": "9c26fa21e0633b1989fdd0d5c13b96ff76954fce",
+          "range": {
+            "start_line": 1,
+            "end_line": 462
+          },
+          "symbol": "runtime-external-channel-audit"
+        },
+        {
+          "path": "src/secrets/runtime-external-channel-origin-discovery.test.ts",
+          "blob_sha": "1cc2fae74eb6b4a6df7427a9254ef8d6a2517458",
+          "range": {
+            "start_line": 1,
+            "end_line": 89
+          },
+          "symbol": "runtime-external-channel-origin-discovery"
+        },
+        {
+          "path": "src/secrets/runtime-fast-path.ts",
+          "blob_sha": "7d1beaf3af04fd1e665b16a195340d8084e0f8b6",
+          "range": {
+            "start_line": 1,
+            "end_line": 221
+          },
+          "symbol": "runtime-fast-path"
+        },
+        {
+          "path": "src/secrets/runtime-file-observation.test.ts",
+          "blob_sha": "05052944ed6d6b9dc25991450a3afe0c5afd7ec2",
+          "range": {
+            "start_line": 1,
+            "end_line": 275
+          },
+          "symbol": "runtime-file-observation"
+        },
+        {
+          "path": "src/secrets/runtime-gateway-auth-surfaces.ts",
+          "blob_sha": "597dacdaa22b5e8d41a490a65835b59271269b36",
+          "range": {
+            "start_line": 1,
+            "end_line": 160
+          },
+          "symbol": "runtime-gateway-auth-surfaces"
+        },
+        {
+          "path": "src/secrets/runtime-gateway-local-surfaces.test.ts",
+          "blob_sha": "22f436d9bbb78965a8c00336caea9642919e3c3c",
+          "range": {
+            "start_line": 1,
+            "end_line": 101
+          },
+          "symbol": "runtime-gateway-local-surfaces"
+        },
+        {
+          "path": "src/secrets/runtime-inactive-core-surfaces.test.ts",
+          "blob_sha": "06aebcfa415238be5b608d1a426573e6f9ef29d6",
+          "range": {
+            "start_line": 1,
+            "end_line": 73
+          },
+          "symbol": "runtime-inactive-core-surfaces"
+        },
+        {
+          "path": "src/secrets/runtime-inactive-telegram-surfaces.test.ts",
+          "blob_sha": "55fb5ec63e4a20cbc99c7aee1827ded99e3adb3c",
+          "range": {
+            "start_line": 1,
+            "end_line": 58
+          },
+          "symbol": "runtime-inactive-telegram-surfaces"
+        },
+        {
+          "path": "src/secrets/runtime-manifest.runtime.ts",
+          "blob_sha": "6e786bc463dba253d553d45e8b4221cb485dcd72",
+          "range": {
+            "start_line": 1,
+            "end_line": 10
+          },
+          "symbol": "runtime-manifest.runtime"
+        },
+        {
+          "path": "src/secrets/runtime-matrix-shadowing.test.ts",
+          "blob_sha": "abe474d44acdf832ff8ae03d296437a684c816a1",
+          "range": {
+            "start_line": 1,
+            "end_line": 62
+          },
+          "symbol": "runtime-matrix-shadowing"
+        },
+        {
+          "path": "src/secrets/runtime-matrix-top-level.test.ts",
+          "blob_sha": "4a1e0bc2cd3b8522d9a53bb3b72e10dfc04f4420",
+          "range": {
+            "start_line": 1,
+            "end_line": 57
+          },
+          "symbol": "runtime-matrix-top-level"
+        },
+        {
+          "path": "src/secrets/runtime-matrix.test-support.ts",
+          "blob_sha": "5a834e036101d86c058f998ede4f878d5c347304",
+          "range": {
+            "start_line": 1,
+            "end_line": 22
+          },
+          "symbol": "runtime-matrix-support"
+        },
+        {
+          "path": "src/secrets/runtime-media-secret-owner.ts",
+          "blob_sha": "636016a347d7f7e7402c4d68208b8bf1d0615197",
+          "range": {
+            "start_line": 1,
+            "end_line": 54
+          },
+          "symbol": "runtime-media-secret-owner"
+        },
+        {
+          "path": "src/secrets/runtime-memory-secret-owner.ts",
+          "blob_sha": "7009329dfa3dceb6b11d37bc932a772f353fc19b",
+          "range": {
+            "start_line": 1,
+            "end_line": 7
+          },
+          "symbol": "runtime-memory-secret-owner"
+        },
+        {
+          "path": "src/secrets/runtime-nextcloud-talk-file-precedence.test.ts",
+          "blob_sha": "438af811c83fdf0c7dfb2a887d4b9cf0412f5655",
+          "range": {
+            "start_line": 1,
+            "end_line": 102
+          },
+          "symbol": "runtime-nextcloud-talk-file-precedence"
+        },
+        {
+          "path": "src/secrets/runtime-nextcloud-talk.test-support.ts",
+          "blob_sha": "f35b5e751ac296e3a3b58a7b271a42550b551623",
+          "range": {
+            "start_line": 1,
+            "end_line": 23
+          },
+          "symbol": "runtime-nextcloud-talk-support"
+        },
+        {
+          "path": "src/secrets/runtime-nostr.test.ts",
+          "blob_sha": "87ae55fd66c049f12d388d2211d0beb495a24f81",
+          "range": {
+            "start_line": 1,
+            "end_line": 97
+          },
+          "symbol": "runtime-nostr"
+        },
+        {
+          "path": "src/secrets/runtime-openai-file-fixture.test-helper.ts",
+          "blob_sha": "62dede925777ed97effc387549fa37bfed0e4f80",
+          "range": {
+            "start_line": 1,
+            "end_line": 90
+          },
+          "symbol": "runtime-openai-file-fixture-helper"
+        },
+        {
+          "path": "src/secrets/runtime-owner-assignments.ts",
+          "blob_sha": "20639b8f8b3adfc3c049fc5cd14c370beee21b3e",
+          "range": {
+            "start_line": 1,
+            "end_line": 589
+          },
+          "symbol": "runtime-owner-assignments"
+        },
+        {
+          "path": "src/secrets/runtime-owner-contract.test.ts",
+          "blob_sha": "c28c83187d05e56da1482bc1ec685e374eb0d582",
+          "range": {
+            "start_line": 1,
+            "end_line": 36
+          },
+          "symbol": "runtime-owner-contract"
+        },
+        {
+          "path": "src/secrets/runtime-owner-contract.ts",
+          "blob_sha": "0ed12bf01cb57448a3f8514560e76742a79501ff",
+          "range": {
+            "start_line": 1,
+            "end_line": 76
+          },
+          "symbol": "runtime-owner-contract"
+        },
+        {
+          "path": "src/secrets/runtime-plugin-secret-owners.test.ts",
+          "blob_sha": "262bf61c46f8a8d6bc1f767662b1a8d3fab26dde",
+          "range": {
+            "start_line": 1,
+            "end_line": 114
+          },
+          "symbol": "runtime-plugin-secret-owners"
+        },
+        {
+          "path": "src/secrets/runtime-prepare.runtime.ts",
+          "blob_sha": "7cc83aaff8155a84eb28d731f6d8a100736da330",
+          "range": {
+            "start_line": 1,
+            "end_line": 14
+          },
+          "symbol": "runtime-prepare.runtime"
+        },
+        {
+          "path": "src/secrets/runtime-provider-and-media-surfaces.test.ts",
+          "blob_sha": "50f1fec3fdcce229d1c6c292d362f98268a830d3",
+          "range": {
+            "start_line": 1,
+            "end_line": 777
+          },
+          "symbol": "runtime-provider-and-media-surfaces"
+        },
+        {
+          "path": "src/secrets/runtime-provider-auth-scope.ts",
+          "blob_sha": "65a3445aa1ebc9e4365cfcc828d6ea5cd28c7988",
+          "range": {
+            "start_line": 1,
+            "end_line": 55
+          },
+          "symbol": "runtime-provider-auth-scope"
+        },
+        {
+          "path": "src/secrets/runtime-provider-auth-warnings.test.ts",
+          "blob_sha": "225afd3a907b70ecf4cff979c369980529261c82",
+          "range": {
+            "start_line": 1,
+            "end_line": 87
+          },
+          "symbol": "runtime-provider-auth-warnings"
+        },
+        {
+          "path": "src/secrets/runtime-provider-failure-fanout.test.ts",
+          "blob_sha": "b724b49350eb81e64425ccafadeecdb4301f6902",
+          "range": {
+            "start_line": 1,
+            "end_line": 170
+          },
+          "symbol": "runtime-provider-failure-fanout"
+        },
+        {
+          "path": "src/secrets/runtime-redaction-degradation.test.ts",
+          "blob_sha": "9132a8f38f4cb11c13ae86d8fae5f8814f36759c",
+          "range": {
+            "start_line": 1,
+            "end_line": 106
+          },
+          "symbol": "runtime-redaction-degradation"
+        },
+        {
+          "path": "src/secrets/runtime-request-secret-refs.test.ts",
+          "blob_sha": "dad45aa63dd3048f36d29e9fce97125930e15bef",
+          "range": {
+            "start_line": 1,
+            "end_line": 291
+          },
+          "symbol": "runtime-request-secret-refs"
+        },
+        {
+          "path": "src/secrets/runtime-sandbox-secret-owner.ts",
+          "blob_sha": "adfae530540e36871ed8ec5c62db1f194e48d070",
+          "range": {
+            "start_line": 1,
+            "end_line": 16
+          },
+          "symbol": "runtime-sandbox-secret-owner"
+        },
+        {
+          "path": "src/secrets/runtime-secret-scan.ts",
+          "blob_sha": "78babbb7603321336c67853ba709eb90fce334f6",
+          "range": {
+            "start_line": 1,
+            "end_line": 58
+          },
+          "symbol": "runtime-secret-scan"
+        },
+        {
+          "path": "src/secrets/runtime-shared.test.ts",
+          "blob_sha": "03e67ff7952d63f803f6329873ea26eddd1184c3",
+          "range": {
+            "start_line": 1,
+            "end_line": 25
+          },
+          "symbol": "runtime-shared"
+        },
+        {
+          "path": "src/secrets/runtime-shared.ts",
+          "blob_sha": "dc5e7c51d862ef080c564f7539a16be56cec7030",
+          "range": {
+            "start_line": 1,
+            "end_line": 284
+          },
+          "symbol": "runtime-shared"
+        },
+        {
+          "path": "src/secrets/runtime-source-contract.test.ts",
+          "blob_sha": "e6c4bd2ed56c4876f3dcdea7d12b6d8fb89f8e56",
+          "range": {
+            "start_line": 1,
+            "end_line": 63
+          },
+          "symbol": "runtime-source-contract"
+        },
+        {
+          "path": "src/secrets/runtime-source-contract.ts",
+          "blob_sha": "966d144a3ddf36a059389e883d38d34a0b653098",
+          "range": {
+            "start_line": 1,
+            "end_line": 133
+          },
+          "symbol": "runtime-source-contract"
+        },
+        {
+          "path": "src/secrets/runtime-state.clear.test.ts",
+          "blob_sha": "6c4f20f43e4061fee0656931897382e5537eb57e",
+          "range": {
+            "start_line": 1,
+            "end_line": 157
+          },
+          "symbol": "runtime-state.clear"
+        },
+        {
+          "path": "src/secrets/runtime-state.test.ts",
+          "blob_sha": "e218a46b2f56b8a98e7d0822dd529832d24d74e8",
+          "range": {
+            "start_line": 1,
+            "end_line": 1303
+          },
+          "symbol": "runtime-state"
+        },
+        {
+          "path": "src/secrets/runtime-state.ts",
+          "blob_sha": "6eb1adfcbc86f629d642185bf7692f804df29c44",
+          "range": {
+            "start_line": 1,
+            "end_line": 1332
+          },
+          "symbol": "runtime-state"
+        },
+        {
+          "path": "src/secrets/runtime-store.test.ts",
+          "blob_sha": "0249e13b14f7a82d822da13ca4a398c3617e1b56",
+          "range": {
+            "start_line": 1,
+            "end_line": 88
+          },
+          "symbol": "runtime-store"
+        },
+        {
+          "path": "src/secrets/runtime-talk-secret-owners.test.ts",
+          "blob_sha": "8e1c5e91d6c482cc104783d8538753ce6d1c2506",
+          "range": {
+            "start_line": 1,
+            "end_line": 170
+          },
+          "symbol": "runtime-talk-secret-owners"
+        },
+        {
+          "path": "src/secrets/runtime-telegram-token-inheritance.test.ts",
+          "blob_sha": "7fc3e78fe22f4afb43c1accff5dff65c0970c9f2",
+          "range": {
+            "start_line": 1,
+            "end_line": 93
+          },
+          "symbol": "runtime-telegram-token-inheritance"
+        },
+        {
+          "path": "src/secrets/runtime-telegram.test-support.ts",
+          "blob_sha": "efe59ff3aace2e0237cad98c9da9f106305d0489",
+          "range": {
+            "start_line": 1,
+            "end_line": 22
+          },
+          "symbol": "runtime-telegram-support"
+        },
+        {
+          "path": "src/secrets/runtime-typesafe-provider.test.ts",
+          "blob_sha": "24fca468a44b6d33a6157c10fb158b7b8afdad26",
+          "range": {
+            "start_line": 1,
+            "end_line": 60
+          },
+          "symbol": "runtime-typesafe-provider"
+        },
+        {
+          "path": "src/secrets/runtime-warning-log.test.ts",
+          "blob_sha": "eac7d34a6d255c2321490de80ea42e70ab063a41",
+          "range": {
+            "start_line": 1,
+            "end_line": 43
+          },
+          "symbol": "runtime-warning-log"
+        },
+        {
+          "path": "src/secrets/runtime-warning-log.ts",
+          "blob_sha": "0cf0f0eab0d5eefa16a0d3b02cfc21978fa1ff69",
+          "range": {
+            "start_line": 1,
+            "end_line": 41
+          },
+          "symbol": "runtime-warning-log"
+        },
+        {
+          "path": "src/secrets/runtime-web-secret-owner.ts",
+          "blob_sha": "cd51da2ec67eb718448f1b2a34d51f6feb95959f",
+          "range": {
+            "start_line": 1,
+            "end_line": 5
+          },
+          "symbol": "runtime-web-secret-owner"
+        },
+        {
+          "path": "src/secrets/runtime-web-tools-fallback.runtime.ts",
+          "blob_sha": "4523eda6509b5f2d89facc8e5ed1efc2d5b6cdf1",
+          "range": {
+            "start_line": 1,
+            "end_line": 13
+          },
+          "symbol": "runtime-web-tools-fallback.runtime"
+        },
+        {
+          "path": "src/secrets/runtime-web-tools-provider.test-support.ts",
+          "blob_sha": "0f1c2f787b83a360b8d798da68ddb8f54851b0ce",
+          "range": {
+            "start_line": 1,
+            "end_line": 124
+          },
+          "symbol": "runtime-web-tools-provider-support"
+        },
+        {
+          "path": "src/secrets/runtime-web-tools-selection.types.ts",
+          "blob_sha": "c3946527b141eb639ac382c74320f3406a8b4946",
+          "range": {
+            "start_line": 1,
+            "end_line": 55
+          },
+          "symbol": "runtime-web-tools-selection.types"
+        },
+        {
+          "path": "src/secrets/runtime-web-tools-state.test.ts",
+          "blob_sha": "00788373e5e1b65133bf08ba1fe0e79eefb43282",
+          "range": {
+            "start_line": 1,
+            "end_line": 44
+          },
+          "symbol": "runtime-web-tools-state"
+        },
+        {
+          "path": "src/secrets/runtime-web-tools-state.ts",
+          "blob_sha": "3ce5c24a66554ba16dad382571935c89dc629ec3",
+          "range": {
+            "start_line": 1,
+            "end_line": 26
+          },
+          "symbol": "runtime-web-tools-state"
+        },
+        {
+          "path": "src/secrets/runtime-web-tools.shared.ts",
+          "blob_sha": "039f7503ec1ad78bdb91ec2ad0e7a4531bf725a3",
+          "range": {
+            "start_line": 1,
+            "end_line": 430
+          },
+          "symbol": "runtime-web-tools.shared"
+        },
+        {
+          "path": "src/secrets/runtime-web-tools.test.ts",
+          "blob_sha": "0f9668d0309da146a045bb64fda25d0cf809b1fd",
+          "range": {
+            "start_line": 1,
+            "end_line": 909
+          },
+          "symbol": "runtime-web-tools"
+        },
+        {
+          "path": "src/secrets/runtime-web-tools.ts",
+          "blob_sha": "1fb519823f4bf4bbc2241cadf9246e2585388653",
+          "range": {
+            "start_line": 1,
+            "end_line": 769
+          },
+          "symbol": "runtime-web-tools"
+        },
+        {
+          "path": "src/secrets/runtime-web-tools.types.ts",
+          "blob_sha": "da50816b8bd57b6234ccbf01410be3d8b2f46642",
+          "range": {
+            "start_line": 1,
+            "end_line": 50
+          },
+          "symbol": "runtime-web-tools.types"
+        },
+        {
+          "path": "src/secrets/runtime-zalo-token-activity.test.ts",
+          "blob_sha": "5be9cdc665750b502e053d4c37110518189f98c6",
+          "range": {
+            "start_line": 1,
+            "end_line": 69
+          },
+          "symbol": "runtime-zalo-token-activity"
+        },
+        {
+          "path": "src/secrets/runtime-zalo.test-support.ts",
+          "blob_sha": "4e20936b145ca05081f745a6bd0122d2a8a736bd",
+          "range": {
+            "start_line": 1,
+            "end_line": 22
+          },
+          "symbol": "runtime-zalo-support"
+        },
+        {
+          "path": "src/secrets/runtime.auth-migration-isolation.test.ts",
+          "blob_sha": "9fd8eefa3ea1281df87f997e56990fc59af821a8",
+          "range": {
+            "start_line": 1,
+            "end_line": 114
+          },
+          "symbol": "runtime.auth-migration-isolation"
+        },
+        {
+          "path": "src/secrets/runtime.auth.integration.test.ts",
+          "blob_sha": "e1495873735df5e505f569059efb02db05f9e961",
+          "range": {
+            "start_line": 1,
+            "end_line": 143
+          },
+          "symbol": "runtime.auth.integration"
+        },
+        {
+          "path": "src/secrets/runtime.coverage.test.ts",
+          "blob_sha": "65d0bd120adc8adf0a33608a8e9d1cee92b7c4bd",
+          "range": {
+            "start_line": 1,
+            "end_line": 497
+          },
+          "symbol": "runtime.coverage"
+        },
+        {
+          "path": "src/secrets/runtime.fast-path.test.ts",
+          "blob_sha": "421510546a970ef75f925912cab1b466f25ec1e8",
+          "range": {
+            "start_line": 1,
+            "end_line": 393
+          },
+          "symbol": "runtime.fast-path"
+        },
+        {
+          "path": "src/secrets/runtime.gateway-auth.integration.test.ts",
+          "blob_sha": "2cfcfca602cc5d6f7eb3c166db4e311dd962af00",
+          "range": {
+            "start_line": 1,
+            "end_line": 97
+          },
+          "symbol": "runtime.gateway-auth.integration"
+        },
+        {
+          "path": "src/secrets/runtime.integration.test-helpers.ts",
+          "blob_sha": "35d7601d389aff3a252a50d30bd938caca9e20fb",
+          "range": {
+            "start_line": 1,
+            "end_line": 48
+          },
+          "symbol": "runtime.integration-helpers"
+        },
+        {
+          "path": "src/secrets/runtime.loadable-plugin-origins.test.ts",
+          "blob_sha": "5d5e6eda99cd04963fc9ac5e33a2c91fe67e9a5e",
+          "range": {
+            "start_line": 1,
+            "end_line": 90
+          },
+          "symbol": "runtime.loadable-plugin-origins"
+        },
+        {
+          "path": "src/secrets/runtime.test-support.ts",
+          "blob_sha": "13b2aed9ebc6fe4ad502c5485c92843913f14304",
+          "range": {
+            "start_line": 1,
+            "end_line": 130
+          },
+          "symbol": "runtime-support"
+        },
+        {
+          "path": "src/secrets/runtime.test.ts",
+          "blob_sha": "423c425231dfd0c75a723344b15042eefca9fb0f",
+          "range": {
+            "start_line": 1,
+            "end_line": 485
+          },
+          "symbol": "runtime"
+        },
+        {
+          "path": "src/secrets/runtime.ts",
+          "blob_sha": "08c6b7ff72fa65d18ebdbcbd2d195749e2012ea2",
+          "range": {
+            "start_line": 1,
+            "end_line": 758
+          },
+          "symbol": "runtime"
+        },
+        {
+          "path": "src/secrets/secret-env-name.ts",
+          "blob_sha": "e30c67eedea7546b549ab1fc477b69eaf2581666",
+          "range": {
+            "start_line": 1,
+            "end_line": 10
+          },
+          "symbol": "secret-env-name"
+        },
+        {
+          "path": "src/secrets/secret-value.ts",
+          "blob_sha": "963211d2add083bbcd049f06a1809d6fac415dc6",
+          "range": {
+            "start_line": 1,
+            "end_line": 34
+          },
+          "symbol": "secret-value"
+        },
+        {
+          "path": "src/secrets/sentinel.test.ts",
+          "blob_sha": "dea1f37a089546658278634797fa037b4e421b8e",
+          "range": {
+            "start_line": 1,
+            "end_line": 114
+          },
+          "symbol": "sentinel"
+        },
+        {
+          "path": "src/secrets/sentinel.ts",
+          "blob_sha": "7448467f97e7e04f7cdee97f364e7c9416dc0552",
+          "range": {
+            "start_line": 1,
+            "end_line": 168
+          },
+          "symbol": "sentinel"
+        },
+        {
+          "path": "src/secrets/setup-secret-migration.test.ts",
+          "blob_sha": "62178e03dded183465ccc29ebb65c584171acd95",
+          "range": {
+            "start_line": 1,
+            "end_line": 26
+          },
+          "symbol": "setup-secret-migration"
+        },
+        {
+          "path": "src/secrets/setup-secret-migration.ts",
+          "blob_sha": "58784713cba6f37dda3d2c3115ad31055cadd32b",
+          "range": {
+            "start_line": 1,
+            "end_line": 47
+          },
+          "symbol": "setup-secret-migration"
+        },
+        {
+          "path": "src/secrets/shared.ts",
+          "blob_sha": "fa6b72ea6d83da5e0d5e9828ce24c94495df2f29",
+          "range": {
+            "start_line": 1,
+            "end_line": 38
+          },
+          "symbol": "shared"
+        },
+        {
+          "path": "src/secrets/storage-scan.ts",
+          "blob_sha": "9a0152b63c6b2691b3946e0e51dba2f027bc7256",
+          "range": {
+            "start_line": 1,
+            "end_line": 56
+          },
+          "symbol": "storage-scan"
+        },
+        {
+          "path": "src/secrets/store/dotenv.ts",
+          "blob_sha": "6c52c3a5bad489dd956cb1d56074f67a85d79e0c",
+          "range": {
+            "start_line": 1,
+            "end_line": 31
+          },
+          "symbol": "dotenv"
+        },
+        {
+          "path": "src/secrets/store/secret-store-changes.ts",
+          "blob_sha": "29f80b1c997d5dae727234960a8e2482a86f3e77",
+          "range": {
+            "start_line": 1,
+            "end_line": 39
+          },
+          "symbol": "secret-store-changes"
+        },
+        {
+          "path": "src/secrets/store/secret-store-config-ref.kernel.ts",
+          "blob_sha": "c8b9cc06efe0ef7f4e0820b9718b30d0d0a91b2d",
+          "range": {
+            "start_line": 1,
+            "end_line": 93
+          },
+          "symbol": "secret-store-config-ref.kernel"
+        },
+        {
+          "path": "src/secrets/store/secret-store-config-ref.worker.test.ts",
+          "blob_sha": "eba21fb8efefca9979ac16b942dd37b7925189cb",
+          "range": {
+            "start_line": 1,
+            "end_line": 57
+          },
+          "symbol": "secret-store-config-ref.worker"
+        },
+        {
+          "path": "src/secrets/store/secret-store-expiry.kernel.ts",
+          "blob_sha": "9c7d4d7d87c2049b5a22d555aa3cedcbef6b30fb",
+          "range": {
+            "start_line": 1,
+            "end_line": 150
+          },
+          "symbol": "secret-store-expiry.kernel"
+        },
+        {
+          "path": "src/secrets/store/secret-store-github-handoff.worker.ts",
+          "blob_sha": "180908e060de3927734dc2867c169f2c87299c32",
+          "range": {
+            "start_line": 1,
+            "end_line": 89
+          },
+          "symbol": "secret-store-github-handoff.worker"
+        },
+        {
+          "path": "src/secrets/store/secret-store-github-names.ts",
+          "blob_sha": "5c82b23faaf290776ee459128e187655841b6273",
+          "range": {
+            "start_line": 1,
+            "end_line": 44
+          },
+          "symbol": "secret-store-github-names"
+        },
+        {
+          "path": "src/secrets/store/secret-store-hidden-github.kernel.ts",
+          "blob_sha": "a546ec0a38b9e80dd14d82a7c56827a02826fdc1",
+          "range": {
+            "start_line": 1,
+            "end_line": 215
+          },
+          "symbol": "secret-store-hidden-github.kernel"
+        },
+        {
+          "path": "src/secrets/store/secret-store-hidden-github.ts",
+          "blob_sha": "b0a7920e3e2423f424ce06254ac045586cfb694e",
+          "range": {
+            "start_line": 1,
+            "end_line": 105
+          },
+          "symbol": "secret-store-hidden-github"
+        },
+        {
+          "path": "src/secrets/store/secret-store-metadata.kernel.ts",
+          "blob_sha": "582460549c9eb965f712921aff380f24c7374b99",
+          "range": {
+            "start_line": 1,
+            "end_line": 176
+          },
+          "symbol": "secret-store-metadata.kernel"
+        },
+        {
+          "path": "src/secrets/store/secret-store-metadata.worker.test.ts",
+          "blob_sha": "d72cc10efd4a3b4cdf21fc4861fedf45e2a008e4",
+          "range": {
+            "start_line": 1,
+            "end_line": 330
+          },
+          "symbol": "secret-store-metadata.worker"
+        },
+        {
+          "path": "src/secrets/store/secret-store-mutations.ts",
+          "blob_sha": "19d5911832f510daf88ca7cfa8fdf0d27f3e736c",
+          "range": {
+            "start_line": 1,
+            "end_line": 208
+          },
+          "symbol": "secret-store-mutations"
+        },
+        {
+          "path": "src/secrets/store/secret-store-sqlite.ts",
+          "blob_sha": "3174576f750d3238d8efdb48c00b68d02a4c1c0f",
+          "range": {
+            "start_line": 1,
+            "end_line": 11
+          },
+          "symbol": "secret-store-sqlite"
+        },
+        {
+          "path": "src/secrets/store/secret-store-validation-error.ts",
+          "blob_sha": "f34436897994f55ce37a30108d15bc815fe9d566",
+          "range": {
+            "start_line": 1,
+            "end_line": 17
+          },
+          "symbol": "secret-store-validation-error"
+        },
+        {
+          "path": "src/secrets/store/secret-store-validation.ts",
+          "blob_sha": "595fd52e9fb3c8f3d4922907ddafe6a57f71b376",
+          "range": {
+            "start_line": 1,
+            "end_line": 95
+          },
+          "symbol": "secret-store-validation"
+        },
+        {
+          "path": "src/secrets/store/secret-store-value.ts",
+          "blob_sha": "6046432bbd91f8174491f524a427e971ce9b48aa",
+          "range": {
+            "start_line": 1,
+            "end_line": 24
+          },
+          "symbol": "secret-store-value"
+        },
+        {
+          "path": "src/secrets/store/secret-store-write.ts",
+          "blob_sha": "cc867adfac284146a87732ad9a6785be1bfd089c",
+          "range": {
+            "start_line": 1,
+            "end_line": 322
+          },
+          "symbol": "secret-store-write"
+        },
+        {
+          "path": "src/secrets/store/secret-store.redaction.test.ts",
+          "blob_sha": "d6ff139b21463b5d0fa9a8e8d4f3be6a934ef2e4",
+          "range": {
+            "start_line": 1,
+            "end_line": 131
+          },
+          "symbol": "secret-store.redaction"
+        },
+        {
+          "path": "src/secrets/store/secret-store.test.ts",
+          "blob_sha": "1ee08b427c942497b06d3f3541d90776bed7a711",
+          "range": {
+            "start_line": 1,
+            "end_line": 742
+          },
+          "symbol": "secret-store"
+        },
+        {
+          "path": "src/secrets/store/secret-store.ts",
+          "blob_sha": "b2f7e23251568e309d06dafbf3877fa33a2a1545",
+          "range": {
+            "start_line": 1,
+            "end_line": 361
+          },
+          "symbol": "secret-store"
+        },
+        {
+          "path": "src/secrets/store/secret-store.types.ts",
+          "blob_sha": "8f73ab2c125b08ea2fb320b741f7be50cb9f341e",
+          "range": {
+            "start_line": 1,
+            "end_line": 33
+          },
+          "symbol": "secret-store.types"
+        },
+        {
+          "path": "src/secrets/store/secret-store.worker.ts",
+          "blob_sha": "362e22ce9770c9a86a1eada5cf29dfc35b35946c",
+          "range": {
+            "start_line": 1,
+            "end_line": 79
+          },
+          "symbol": "secret-store.worker"
+        },
+        {
+          "path": "src/secrets/target-registry-data.current-snapshot.test.ts",
+          "blob_sha": "52dff2e64e229c2465451e81fa193ce57fe658f9",
+          "range": {
+            "start_line": 1,
+            "end_line": 490
+          },
+          "symbol": "target-registry-data.current-snapshot"
+        },
+        {
+          "path": "src/secrets/target-registry-data.ts",
+          "blob_sha": "14ee0fb4aaa391bf5e8e495fb2c61146b412e7e3",
+          "range": {
+            "start_line": 1,
+            "end_line": 366
+          },
+          "symbol": "target-registry-data"
+        },
+        {
+          "path": "src/secrets/target-registry-pattern.test.ts",
+          "blob_sha": "1804e5bb0f4f5a9bdb0361c7e556f2c0ac1aa10e",
+          "range": {
+            "start_line": 1,
+            "end_line": 104
+          },
+          "symbol": "target-registry-pattern"
+        },
+        {
+          "path": "src/secrets/target-registry-pattern.ts",
+          "blob_sha": "8d73b59d17069598d09a61da41313b13fc8ebea8",
+          "range": {
+            "start_line": 1,
+            "end_line": 205
+          },
+          "symbol": "target-registry-pattern"
+        },
+        {
+          "path": "src/secrets/target-registry-query.ts",
+          "blob_sha": "295b147a68ff77bf33cbac6b6d8be955e051ac0f",
+          "range": {
+            "start_line": 1,
+            "end_line": 560
+          },
+          "symbol": "target-registry-query"
+        },
+        {
+          "path": "src/secrets/target-registry-types.ts",
+          "blob_sha": "bee855b2fbec330f8430c77ea1679b91b544ab38",
+          "range": {
+            "start_line": 1,
+            "end_line": 93
+          },
+          "symbol": "target-registry-types"
+        },
+        {
+          "path": "src/secrets/target-registry.docs.test.ts",
+          "blob_sha": "eaffdf91de74c3857b43bf0ce397e059214f2824",
+          "range": {
+            "start_line": 1,
+            "end_line": 40
+          },
+          "symbol": "target-registry.docs"
+        },
+        {
+          "path": "src/secrets/target-registry.path-scope.test.ts",
+          "blob_sha": "be6aab0175cf956c6a4c92eb4cde1a2872561409",
+          "range": {
+            "start_line": 1,
+            "end_line": 367
+          },
+          "symbol": "target-registry.path-scope"
+        },
+        {
+          "path": "src/secrets/target-registry.ts",
+          "blob_sha": "f5f6d0a450f633ad326ad24335a32759f460cf62",
+          "range": {
+            "start_line": 1,
+            "end_line": 5
+          },
+          "symbol": "target-registry"
+        },
+        {
+          "path": "src/secrets/test-node-command.test-support.ts",
+          "blob_sha": "50d6bc2a52c31e37e49bc0804151ec98a6b25754",
+          "range": {
+            "start_line": 1,
+            "end_line": 42
+          },
+          "symbol": "test-node-command-support"
+        },
+        {
+          "path": "src/secrets/trusted-plan-path-policy.ts",
+          "blob_sha": "5cd9699303f36f5255f74f9ccfe72e52a8b1d4d3",
+          "range": {
+            "start_line": 1,
+            "end_line": 54
+          },
+          "symbol": "trusted-plan-path-policy"
+        },
+        {
+          "path": "src/secrets/trusted-plan-path.ts",
+          "blob_sha": "0b602ff509af173b5cfb944b8a70a473311f7911",
+          "range": {
+            "start_line": 1,
+            "end_line": 174
+          },
+          "symbol": "trusted-plan-path"
+        },
+        {
+          "path": "src/secrets/trusted-plan-path.windows.test.ts",
+          "blob_sha": "31cd7bbeddb8612f42b8528fae11af72cd53ba1a",
+          "range": {
+            "start_line": 1,
+            "end_line": 165
+          },
+          "symbol": "trusted-plan-path.windows"
+        },
+        {
+          "path": "src/secrets/unsupported-surface-policy.test.ts",
+          "blob_sha": "2a905861e24c4907b1d73c6d3ce832481ae88f61",
+          "range": {
+            "start_line": 1,
+            "end_line": 70
+          },
+          "symbol": "unsupported-surface-policy"
+        },
+        {
+          "path": "src/secrets/unsupported-surface-policy.ts",
+          "blob_sha": "3a6a7e443b9e573d563b72bffe54b7c7ee49df95",
+          "range": {
+            "start_line": 1,
+            "end_line": 54
+          },
+          "symbol": "unsupported-surface-policy"
+        }
+      ],
+      "evidence_refs": [
+        "source/host/tests/openclaw_secrets_security_contract.rs",
+        "projects/openclaw-rust/dossiers/secrets-security-scoped.md"
+      ],
+      "requirement_ids": [
+        "OCRM-R04",
+        "OCRM-R08",
+        "OCRM-R09",
+        "OCRM-R21",
+        "OCRM-R24",
+        "OCRM-AC08",
+        "OCRM-AC21",
+        "OCRM-AC24"
+      ],
+      "required_gate_ids": [
+        "OCRM-G04-rust-contract",
+        "OCRM-G05-frozen-oracle"
+      ],
+      "oracle_ids": [
+        "OCRM-SECRETS-AUDIT-O01"
+      ],
+      "adr_refs": [],
+      "blocker_ids": [
+        "BL-SECRETS-AUDIT-WIRING-001"
+      ],
+      "target": {
+        "path": "source/host/src/extensions/secrets/audit_manager.rs",
+        "symbol": "SecretsAuditManager",
+        "language": "Rust"
+      },
+      "required_evidence_dimensions": [
+        "unit",
+        "format"
+      ],
+      "reviewer": "xuyao@ombhrum.com",
+      "migration_rollback": "Store credentials in raw process environment without schema-level audit scans"
+    },
+    {
+      "id": "OCRM-RESP-SECURITY-EXEC-AUDIT-001",
+      "unit_id": "OCRM-UNIT-SECURITY-001",
+      "responsibility_kind": "business-runtime",
+      "behavior": "Subprocess execution safe binary allowlist, symlink traversal path confinement, and sensitive file permission checks.",
+      "risk": "Critical; unconfined symlinks allow path traversal reading host private keys outside workspace",
+      "status": {
+        "read": "read-complete",
+        "mapping": "reviewed",
+        "wiring": "not-wired",
+        "implementation": "implemented",
+        "verification": "not-run",
+        "acceptance": "pending"
+      },
+      "selected_owner": "source/host/src/extensions/security/policy_auditor.rs",
+      "existing_owner_candidates": [
+        {
+          "path": "source/host/src/extensions/security/policy_auditor.rs",
+          "reason": "Host security policy auditor, binary whitelist, and symlink guard"
+        }
+      ],
+      "owner_decision": "Native implementation in policy_auditor under security extension",
+      "dependencies": [
+        "mahayana_host_runtime::extensions::security::policy_auditor"
+      ],
+      "capability_ids": [
+        "security.exec_audit"
+      ],
+      "preconditions": [
+        "Execution binary or filesystem path evaluated"
+      ],
+      "postconditions": [
+        "Disallowed binaries and symlink traversals outside root rejected"
+      ],
+      "invariants": [
+        "Canonicalized target path must start with canonical root; safe binaries strictly allowlisted"
+      ],
+      "typed_contracts": [
+        "SecurityPolicyAuditor"
+      ],
+      "tests": [
+        "source/host/tests/openclaw_secrets_security_contract.rs::test_ocrm_security_policy_auditor"
+      ],
+      "integration": {
+        "producer": "source/host/src/extensions/security/policy_auditor.rs",
+        "owner": "source/host/src/extensions/security/policy_auditor.rs",
+        "consumer": "source/host/src/extensions/security/policy_auditor.rs",
+        "entrypoint": "source/host/src/extensions/security/policy_auditor.rs::SecurityPolicyAuditor::check_symlink_traversal"
+      },
+      "source_refs": [
+        {
+          "path": "src/security/audit-agent-roster.ts",
+          "blob_sha": "97e144954c8138c45af11ef859975217c2f2cdda",
+          "range": {
+            "start_line": 1,
+            "end_line": 61
+          },
+          "symbol": "audit-agent-roster"
+        },
+        {
+          "path": "src/security/audit-channel-account-metadata.test.ts",
+          "blob_sha": "32cfc34a00f3702635c3560c78c3d56a79b0f6a7",
+          "range": {
+            "start_line": 1,
+            "end_line": 63
+          },
+          "symbol": "audit-channel-account-metadata"
+        },
+        {
+          "path": "src/security/audit-channel-dm-policy.test.ts",
+          "blob_sha": "dc027b543498d56720ba599aa314cf3e7aef19d9",
+          "range": {
+            "start_line": 1,
+            "end_line": 257
+          },
+          "symbol": "audit-channel-dm-policy"
+        },
+        {
+          "path": "src/security/audit-channel-entry-authentication.test.ts",
+          "blob_sha": "10b93573f5a01dabb5e2700d1a944d52dff1ca2f",
+          "range": {
+            "start_line": 1,
+            "end_line": 266
+          },
+          "symbol": "audit-channel-entry-authentication"
+        },
+        {
+          "path": "src/security/audit-channel-readonly-resolution.test.ts",
+          "blob_sha": "06fe67203d47eb1e0e65202d23c09ba8c476562a",
+          "range": {
+            "start_line": 1,
+            "end_line": 66
+          },
+          "symbol": "audit-channel-readonly-resolution"
+        },
+        {
+          "path": "src/security/audit-channel-readonly-setup-fallback.test.ts",
+          "blob_sha": "ec9942d1a4b95d6524a2219ee49f18a90f24786e",
+          "range": {
+            "start_line": 1,
+            "end_line": 133
+          },
+          "symbol": "audit-channel-readonly-setup-fallback"
+        },
+        {
+          "path": "src/security/audit-channel-source-config-discord.test.ts",
+          "blob_sha": "80667c71ae7aa6539fd0671712ff6902c8c24459",
+          "range": {
+            "start_line": 1,
+            "end_line": 90
+          },
+          "symbol": "audit-channel-source-config-discord"
+        },
+        {
+          "path": "src/security/audit-channel-source-config-slack.test.ts",
+          "blob_sha": "17c348de07f9bd34c57ef96d1e5ce2f4642c60db",
+          "range": {
+            "start_line": 1,
+            "end_line": 90
+          },
+          "symbol": "audit-channel-source-config-slack"
+        },
+        {
+          "path": "src/security/audit-channel-test-helpers.ts",
+          "blob_sha": "da33cc9fd93fb4d72eee495beff2e08ec68e581a",
+          "range": {
+            "start_line": 1,
+            "end_line": 59
+          },
+          "symbol": "audit-channel-test-helpers"
+        },
+        {
+          "path": "src/security/audit-channel.collect.runtime.ts",
+          "blob_sha": "37134a056786379823d16c6c521fd7cda66a73e4",
+          "range": {
+            "start_line": 1,
+            "end_line": 5
+          },
+          "symbol": "audit-channel.collect.runtime"
+        },
+        {
+          "path": "src/security/audit-channel.ts",
+          "blob_sha": "39c7d527c4579a473badcf00e1d80b81a412352b",
+          "range": {
+            "start_line": 1,
+            "end_line": 726
+          },
+          "symbol": "audit-channel"
+        },
+        {
+          "path": "src/security/audit-config-include-perms.test.ts",
+          "blob_sha": "d64bd6ec4c270c31f755fe1b277967466180f84d",
+          "range": {
+            "start_line": 1,
+            "end_line": 98
+          },
+          "symbol": "audit-config-include-perms"
+        },
+        {
+          "path": "src/security/audit-config-symlink.test.ts",
+          "blob_sha": "75057e3b64b1e8baa795127b6180c301084e5345",
+          "range": {
+            "start_line": 1,
+            "end_line": 50
+          },
+          "symbol": "audit-config-symlink"
+        },
+        {
+          "path": "src/security/audit-cross-agent-session-access.test.ts",
+          "blob_sha": "0ee4559df98c44157b799ae6b73d9a237b5a972c",
+          "range": {
+            "start_line": 1,
+            "end_line": 253
+          },
+          "symbol": "audit-cross-agent-session-access"
+        },
+        {
+          "path": "src/security/audit-deep-code-safety.ts",
+          "blob_sha": "4852dea77194c6b85d45d5bb90083979bc75da96",
+          "range": {
+            "start_line": 1,
+            "end_line": 25
+          },
+          "symbol": "audit-deep-code-safety"
+        },
+        {
+          "path": "src/security/audit-deep-probe-findings.ts",
+          "blob_sha": "605e32c37308e467ee1585626efec2289b58f512",
+          "range": {
+            "start_line": 1,
+            "end_line": 44
+          },
+          "symbol": "audit-deep-probe-findings"
+        },
+        {
+          "path": "src/security/audit-exec-safe-bins.test.ts",
+          "blob_sha": "d2a582644d19ddaf9b6275d8fb31b911fd20b89c",
+          "range": {
+            "start_line": 1,
+            "end_line": 67
+          },
+          "symbol": "audit-exec-safe-bins"
+        },
+        {
+          "path": "src/security/audit-exec-sandbox-host.test.ts",
+          "blob_sha": "5ca1d169eb5e3ca4d79868e3cbcf4d3cbf21a1bc",
+          "range": {
+            "start_line": 1,
+            "end_line": 53
+          },
+          "symbol": "audit-exec-sandbox-host"
+        },
+        {
+          "path": "src/security/audit-exec-surface.test.ts",
+          "blob_sha": "d511e94b69e3c302a83a771a45488170e1c5550a",
+          "range": {
+            "start_line": 1,
+            "end_line": 393
+          },
+          "symbol": "audit-exec-surface"
+        },
+        {
+          "path": "src/security/audit-extra.async.test.ts",
+          "blob_sha": "489e4be37cd89f464221a54842368d19c5b25dea",
+          "range": {
+            "start_line": 1,
+            "end_line": 326
+          },
+          "symbol": "audit-extra.async"
+        },
+        {
+          "path": "src/security/audit-extra.async.ts",
+          "blob_sha": "5b1db512bfd278d2939f36ca39510b9bc76c4249",
+          "range": {
+            "start_line": 1,
+            "end_line": 459
+          },
+          "symbol": "audit-extra.async"
+        },
+        {
+          "path": "src/security/audit-extra.summary.ts",
+          "blob_sha": "122b2adeb3ca009de1af9f6252ba97beb75cd83d",
+          "range": {
+            "start_line": 1,
+            "end_line": 394
+          },
+          "symbol": "audit-extra.summary"
+        },
+        {
+          "path": "src/security/audit-extra.sync.test.ts",
+          "blob_sha": "35d796c0879c70284a2958b9a7d264df2fb326bc",
+          "range": {
+            "start_line": 1,
+            "end_line": 93
+          },
+          "symbol": "audit-extra.sync"
+        },
+        {
+          "path": "src/security/audit-extra.sync.ts",
+          "blob_sha": "e57d082372792d19e37db8a8788aca0bc15fd788",
+          "range": {
+            "start_line": 1,
+            "end_line": 1100
+          },
+          "symbol": "audit-extra.sync"
+        },
+        {
+          "path": "src/security/audit-filesystem-windows.test.ts",
+          "blob_sha": "28a91565c030b1d13005c7ea8e992a5ec50d5a84",
+          "range": {
+            "start_line": 1,
+            "end_line": 104
+          },
+          "symbol": "audit-filesystem-windows"
+        },
+        {
+          "path": "src/security/audit-fs.ts",
+          "blob_sha": "5d0382997931fcd9ca6c7dfe40d158927b0b9bd0",
+          "range": {
+            "start_line": 1,
+            "end_line": 44
+          },
+          "symbol": "audit-fs"
+        },
+        {
+          "path": "src/security/audit-gateway-config.ts",
+          "blob_sha": "1250ce4defc40867e1611048dff12c59abaf9b2f",
+          "range": {
+            "start_line": 1,
+            "end_line": 605
+          },
+          "symbol": "audit-gateway-config"
+        },
+        {
+          "path": "src/security/audit-gateway-exposure.test.ts",
+          "blob_sha": "c7596a56754bd2a2771c02e72c1fb0d0ef5bdba7",
+          "range": {
+            "start_line": 1,
+            "end_line": 712
+          },
+          "symbol": "audit-gateway-exposure"
+        },
+        {
+          "path": "src/security/audit-gateway-http-auth.test.ts",
+          "blob_sha": "6d6a6d3e81b390c7ab056e9f311b06eeaf976ee9",
+          "range": {
+            "start_line": 1,
+            "end_line": 96
+          },
+          "symbol": "audit-gateway-http-auth"
+        },
+        {
+          "path": "src/security/audit-gateway-probe.ts",
+          "blob_sha": "12f21584429ef6723dfcebceb255031fdbe54761",
+          "range": {
+            "start_line": 1,
+            "end_line": 63
+          },
+          "symbol": "audit-gateway-probe"
+        },
+        {
+          "path": "src/security/audit-gateway-tools-http.test.ts",
+          "blob_sha": "c155c1ebedc29d43e2dcdaa5668c6208a3b207e9",
+          "range": {
+            "start_line": 1,
+            "end_line": 49
+          },
+          "symbol": "audit-gateway-tools-http"
+        },
+        {
+          "path": "src/security/audit-gateway.test.ts",
+          "blob_sha": "a8fbe34e6885c9ff6e204be76d3ac0d6c2c1b069",
+          "range": {
+            "start_line": 1,
+            "end_line": 93
+          },
+          "symbol": "audit-gateway"
+        },
+        {
+          "path": "src/security/audit-loopback-logging.test.ts",
+          "blob_sha": "222be73fc4aad575bb721c119a067f89fdf99f5c",
+          "range": {
+            "start_line": 1,
+            "end_line": 65
+          },
+          "symbol": "audit-loopback-logging"
+        },
+        {
+          "path": "src/security/audit-mcporter-registry.ts",
+          "blob_sha": "be73133ef714497f3bb020610e6493b8a93a7111",
+          "range": {
+            "start_line": 1,
+            "end_line": 50
+          },
+          "symbol": "audit-mcporter-registry"
+        },
+        {
+          "path": "src/security/audit-model-refs.ts",
+          "blob_sha": "8c7268f77f7a64784c42a2248245057491bd22fd",
+          "range": {
+            "start_line": 1,
+            "end_line": 77
+          },
+          "symbol": "audit-model-refs"
+        },
+        {
+          "path": "src/security/audit-node-command-findings.test.ts",
+          "blob_sha": "c70db21643191ba658278ca5781d3024cb91b8b7",
+          "range": {
+            "start_line": 1,
+            "end_line": 84
+          },
+          "symbol": "audit-node-command-findings"
+        },
+        {
+          "path": "src/security/audit-open-inbound.ts",
+          "blob_sha": "d3cd6094543355c6cda574d4fbd4526864238bb5",
+          "range": {
+            "start_line": 1,
+            "end_line": 51
+          },
+          "symbol": "audit-open-inbound"
+        },
+        {
+          "path": "src/security/audit-plugin-code-safety.test.ts",
+          "blob_sha": "d951dd341f39405f06ccfaef0535ab4702605300",
+          "range": {
+            "start_line": 1,
+            "end_line": 14
+          },
+          "symbol": "audit-plugin-code-safety"
+        },
+        {
+          "path": "src/security/audit-plugin-readonly-scope.test.ts",
+          "blob_sha": "ad5ac34ebc1477d1e3bc96ac582863c8ffb14716",
+          "range": {
+            "start_line": 1,
+            "end_line": 200
+          },
+          "symbol": "audit-plugin-readonly-scope"
+        },
+        {
+          "path": "src/security/audit-plugins-trust.test.ts",
+          "blob_sha": "7e770140d926524755bbc26562362db3d24cce65",
+          "range": {
+            "start_line": 1,
+            "end_line": 451
+          },
+          "symbol": "audit-plugins-trust"
+        },
+        {
+          "path": "src/security/audit-plugins-trust.ts",
+          "blob_sha": "ee97e0ef29fbc835d41e3b9cfd1fc4968d0e5f49",
+          "range": {
+            "start_line": 1,
+            "end_line": 456
+          },
+          "symbol": "audit-plugins-trust"
+        },
+        {
+          "path": "src/security/audit-probe-failure.test.ts",
+          "blob_sha": "786a095e36d98f3ea8f2db8eed890caaf4314abf",
+          "range": {
+            "start_line": 1,
+            "end_line": 74
+          },
+          "symbol": "audit-probe-failure"
+        },
+        {
+          "path": "src/security/audit-rosterless.test.ts",
+          "blob_sha": "607164f2652cea779a3307f03e67f9803235c008",
+          "range": {
+            "start_line": 1,
+            "end_line": 122
+          },
+          "symbol": "audit-rosterless"
+        },
+        {
+          "path": "src/security/audit-sandbox-browser.test.ts",
+          "blob_sha": "9f4f369f9ba321ccae781aee21c601f0665d1541",
+          "range": {
+            "start_line": 1,
+            "end_line": 113
+          },
+          "symbol": "audit-sandbox-browser"
+        },
+        {
+          "path": "src/security/audit-sandbox-docker-config.test.ts",
+          "blob_sha": "e7c84a8b321a19737affe69e318026ce3899ff2e",
+          "range": {
+            "start_line": 1,
+            "end_line": 122
+          },
+          "symbol": "audit-sandbox-docker-config"
+        },
+        {
+          "path": "src/security/audit-summary.test.ts",
+          "blob_sha": "2290154d2b8625c15f7a558ae98fe0a711c4efe8",
+          "range": {
+            "start_line": 1,
+            "end_line": 110
+          },
+          "symbol": "audit-summary"
+        },
+        {
+          "path": "src/security/audit-synced-folder.test.ts",
+          "blob_sha": "fa0d15201f53e2470d83ac1f3ce505f2cfac9875",
+          "range": {
+            "start_line": 1,
+            "end_line": 17
+          },
+          "symbol": "audit-synced-folder"
+        },
+        {
+          "path": "src/security/audit-workshop-skills.test.ts",
+          "blob_sha": "7fcf2f940e8256e411ee27eb65e4fbcea2707f68",
+          "range": {
+            "start_line": 1,
+            "end_line": 173
+          },
+          "symbol": "audit-workshop-skills"
+        },
+        {
+          "path": "src/security/audit.deep.runtime.ts",
+          "blob_sha": "6720d0576b49c479a3e33f806ebea67060f534c5",
+          "range": {
+            "start_line": 1,
+            "end_line": 446
+          },
+          "symbol": "audit.deep.runtime"
+        },
+        {
+          "path": "src/security/audit.nondeep.runtime.ts",
+          "blob_sha": "a4d3ceeeb53fbfef75b28cf7acb108d2d8c26d88",
+          "range": {
+            "start_line": 1,
+            "end_line": 30
+          },
+          "symbol": "audit.nondeep.runtime"
+        },
+        {
+          "path": "src/security/audit.runtime.ts",
+          "blob_sha": "bab8c9fedf0fbd19988a6d10e8146b66086cd2e0",
+          "range": {
+            "start_line": 1,
+            "end_line": 3
+          },
+          "symbol": "audit.runtime"
+        },
+        {
+          "path": "src/security/audit.test-support.ts",
+          "blob_sha": "962ed087d013cf80e63092b93d9e6380edb8593e",
+          "range": {
+            "start_line": 1,
+            "end_line": 18
+          },
+          "symbol": "audit-support"
+        },
+        {
+          "path": "src/security/audit.ts",
+          "blob_sha": "9b5cfc45858fa830bf46d993cefcd379ace8ebad",
+          "range": {
+            "start_line": 1,
+            "end_line": 1316
+          },
+          "symbol": "audit"
+        },
+        {
+          "path": "src/security/audit.types.ts",
+          "blob_sha": "bc7fba68eaf107fd9dc744e9d2f45e15a824c700",
+          "range": {
+            "start_line": 1,
+            "end_line": 22
+          },
+          "symbol": "audit.types"
+        },
+        {
+          "path": "src/security/channel-metadata.test.ts",
+          "blob_sha": "128330886c1518795c0dabe16982ba5b83e703c3",
+          "range": {
+            "start_line": 1,
+            "end_line": 45
+          },
+          "symbol": "channel-metadata"
+        },
+        {
+          "path": "src/security/channel-metadata.ts",
+          "blob_sha": "e3f57f324c62eed35f57aecaa98afedbb60fb777",
+          "range": {
+            "start_line": 1,
+            "end_line": 55
+          },
+          "symbol": "channel-metadata"
+        },
+        {
+          "path": "src/security/config-regex.ts",
+          "blob_sha": "dc210646bf62ccebebed9bef4e6f9e1c5f9a8234",
+          "range": {
+            "start_line": 1,
+            "end_line": 71
+          },
+          "symbol": "config-regex"
+        },
+        {
+          "path": "src/security/context-visibility.test.ts",
+          "blob_sha": "552a07c9ae83279426c3d6fa920feeddfbfecc57",
+          "range": {
+            "start_line": 1,
+            "end_line": 46
+          },
+          "symbol": "context-visibility"
+        },
+        {
+          "path": "src/security/context-visibility.ts",
+          "blob_sha": "05705871aeca2002f386846f93d6c5c1ff1628db",
+          "range": {
+            "start_line": 1,
+            "end_line": 60
+          },
+          "symbol": "context-visibility"
+        },
+        {
+          "path": "src/security/core-dangerous-config-flags.ts",
+          "blob_sha": "0b6b83abb6f8558e5809fa8b307f12359f7b12a1",
+          "range": {
+            "start_line": 1,
+            "end_line": 40
+          },
+          "symbol": "core-dangerous-config-flags"
+        },
+        {
+          "path": "src/security/dangerous-config-flags-core.ts",
+          "blob_sha": "1b2d42b4751b8d1e0094f700ad32b319da40f30a",
+          "range": {
+            "start_line": 1,
+            "end_line": 132
+          },
+          "symbol": "dangerous-config-flags-core"
+        },
+        {
+          "path": "src/security/dangerous-config-flags-current-snapshot.test.ts",
+          "blob_sha": "07d8f70692c6da7bdf87f3fcbcdfc5d5505a261b",
+          "range": {
+            "start_line": 1,
+            "end_line": 68
+          },
+          "symbol": "dangerous-config-flags-current-snapshot"
+        },
+        {
+          "path": "src/security/dangerous-config-flags-current.ts",
+          "blob_sha": "5cba83bde69dfa1b6f85c91ba09e964124718dc0",
+          "range": {
+            "start_line": 1,
+            "end_line": 56
+          },
+          "symbol": "dangerous-config-flags-current"
+        },
+        {
+          "path": "src/security/dangerous-config-flags.test.ts",
+          "blob_sha": "c9a53786fe9edc8d870e2cfd858d96c17666459a",
+          "range": {
+            "start_line": 1,
+            "end_line": 134
+          },
+          "symbol": "dangerous-config-flags"
+        },
+        {
+          "path": "src/security/dangerous-config-flags.ts",
+          "blob_sha": "36609970327b3173b5d27aa19c134c486ece33b2",
+          "range": {
+            "start_line": 1,
+            "end_line": 67
+          },
+          "symbol": "dangerous-config-flags"
+        },
+        {
+          "path": "src/security/dangerous-tools.ts",
+          "blob_sha": "e602985a2f4b6d928aee7f7de5e803c75e583470",
+          "range": {
+            "start_line": 1,
+            "end_line": 87
+          },
+          "symbol": "dangerous-tools"
+        },
+        {
+          "path": "src/security/dm-policy-shared.ts",
+          "blob_sha": "332ddea7da29731a1c8f1171bdc7cc2385832c24",
+          "range": {
+            "start_line": 1,
+            "end_line": 227
+          },
+          "symbol": "dm-policy-shared"
+        },
+        {
+          "path": "src/security/exec-filesystem-policy.ts",
+          "blob_sha": "fdbf8fd295cd71a66df0a4cd2e83f1a5e19b9622",
+          "range": {
+            "start_line": 1,
+            "end_line": 88
+          },
+          "symbol": "exec-filesystem-policy"
+        },
+        {
+          "path": "src/security/external-content-source.ts",
+          "blob_sha": "d15a1e2aa83decbbba1789f249ed34502252c771",
+          "range": {
+            "start_line": 1,
+            "end_line": 35
+          },
+          "symbol": "external-content-source"
+        },
+        {
+          "path": "src/security/external-content.test.ts",
+          "blob_sha": "602a76ae1d35e3627fabee2b53b79d004a5d52ec",
+          "range": {
+            "start_line": 1,
+            "end_line": 285
+          },
+          "symbol": "external-content"
+        },
+        {
+          "path": "src/security/external-content.ts",
+          "blob_sha": "da4b3402dbd24b697b01c331bcbca3867411115a",
+          "range": {
+            "start_line": 1,
+            "end_line": 377
+          },
+          "symbol": "external-content"
+        },
+        {
+          "path": "src/security/fix.test.ts",
+          "blob_sha": "df220f2b337299444ff3e3c8cf489d12dd3a63e7",
+          "range": {
+            "start_line": 1,
+            "end_line": 302
+          },
+          "symbol": "fix"
+        },
+        {
+          "path": "src/security/fix.ts",
+          "blob_sha": "fa8e9289b4154b3721519c8efe6c48a1702d996d",
+          "range": {
+            "start_line": 1,
+            "end_line": 283
+          },
+          "symbol": "fix"
+        },
+        {
+          "path": "src/security/install-policy-response.ts",
+          "blob_sha": "622e96c5a068e1d81bd905245bbb19bc64b526db",
+          "range": {
+            "start_line": 1,
+            "end_line": 170
+          },
+          "symbol": "install-policy-response"
+        },
+        {
+          "path": "src/security/install-policy.test.ts",
+          "blob_sha": "65160be40f1bc5841cb5692576a1ce7c396585a5",
+          "range": {
+            "start_line": 1,
+            "end_line": 527
+          },
+          "symbol": "install-policy"
+        },
+        {
+          "path": "src/security/install-policy.ts",
+          "blob_sha": "10893024ecac4a8a645bd906cd67b4561eb06817",
+          "range": {
+            "start_line": 1,
+            "end_line": 479
+          },
+          "symbol": "install-policy"
+        },
+        {
+          "path": "src/security/install-policy.windows.test.ts",
+          "blob_sha": "d0c3e1537602ad9327f82d6d98d060b75915d349",
+          "range": {
+            "start_line": 1,
+            "end_line": 76
+          },
+          "symbol": "install-policy.windows"
+        },
+        {
+          "path": "src/security/installed-plugin-dirs.ts",
+          "blob_sha": "17d4cb8de85703640b76bd8080cd300133bd3582",
+          "range": {
+            "start_line": 1,
+            "end_line": 64
+          },
+          "symbol": "installed-plugin-dirs"
+        },
+        {
+          "path": "src/security/safe-regex.test.ts",
+          "blob_sha": "27a513091173d4b673bb61f29b18922cad957a90",
+          "range": {
+            "start_line": 1,
+            "end_line": 55
+          },
+          "symbol": "safe-regex"
+        },
+        {
+          "path": "src/security/safe-regex.ts",
+          "blob_sha": "146faf882590b47d87283c293f0f179e1f0ca080",
+          "range": {
+            "start_line": 1,
+            "end_line": 243
+          },
+          "symbol": "safe-regex"
+        },
+        {
+          "path": "src/security/scan-paths.test.ts",
+          "blob_sha": "ceee6722d448262144483d36972a9d29f7f922ef",
+          "range": {
+            "start_line": 1,
+            "end_line": 34
+          },
+          "symbol": "scan-paths"
+        },
+        {
+          "path": "src/security/scan-paths.ts",
+          "blob_sha": "b09f9161d17a394697c53e77bba6861351201607",
+          "range": {
+            "start_line": 1,
+            "end_line": 14
+          },
+          "symbol": "scan-paths"
+        },
+        {
+          "path": "src/security/secret-equal.test.ts",
+          "blob_sha": "b6f036f48e6428a5d99e82e09a009500b46513bf",
+          "range": {
+            "start_line": 1,
+            "end_line": 41
+          },
+          "symbol": "secret-equal"
+        },
+        {
+          "path": "src/security/secret-equal.ts",
+          "blob_sha": "c6fc89c306b3b238249050daf76c635e6f3ac460",
+          "range": {
+            "start_line": 1,
+            "end_line": 29
+          },
+          "symbol": "secret-equal"
+        },
+        {
+          "path": "src/security/secret-mask.test.ts",
+          "blob_sha": "40f7100ebc6a00518516d602171eb932d29ce3d0",
+          "range": {
+            "start_line": 1,
+            "end_line": 47
+          },
+          "symbol": "secret-mask"
+        },
+        {
+          "path": "src/security/secret-mask.ts",
+          "blob_sha": "1da1b0972556556022881c923851e079b3f405d6",
+          "range": {
+            "start_line": 1,
+            "end_line": 27
+          },
+          "symbol": "secret-mask"
+        },
+        {
+          "path": "src/security/test-temp-cases.ts",
+          "blob_sha": "5340a648ff00efa0f90eff8e79b2638e53b6c580",
+          "range": {
+            "start_line": 1,
+            "end_line": 27
+          },
+          "symbol": "test-temp-cases"
+        },
+        {
+          "path": "src/security/windows-acl.test.ts",
+          "blob_sha": "050cb01c67531c6f1968f2ab7adef5817641a281",
+          "range": {
+            "start_line": 1,
+            "end_line": 51
+          },
+          "symbol": "windows-acl"
+        },
+        {
+          "path": "src/security/windows-acl.ts",
+          "blob_sha": "43b296c0643bb03a233d99f48ce8465fc9347900",
+          "range": {
+            "start_line": 1,
+            "end_line": 6
+          },
+          "symbol": "windows-acl"
+        }
+      ],
+      "evidence_refs": [
+        "source/host/tests/openclaw_secrets_security_contract.rs",
+        "projects/openclaw-rust/dossiers/secrets-security-scoped.md"
+      ],
+      "requirement_ids": [
+        "OCRM-R04",
+        "OCRM-R08",
+        "OCRM-R09",
+        "OCRM-R21",
+        "OCRM-R24",
+        "OCRM-AC08",
+        "OCRM-AC21",
+        "OCRM-AC24"
+      ],
+      "required_gate_ids": [
+        "OCRM-G04-rust-contract",
+        "OCRM-G05-frozen-oracle"
+      ],
+      "oracle_ids": [
+        "OCRM-SECURITY-EXEC-O01"
+      ],
+      "adr_refs": [],
+      "blocker_ids": [
+        "BL-SECURITY-EXEC-WIRING-001"
+      ],
+      "target": {
+        "path": "source/host/src/extensions/security/policy_auditor.rs",
+        "symbol": "SecurityPolicyAuditor",
+        "language": "Rust"
+      },
+      "required_evidence_dimensions": [
+        "unit",
+        "format"
+      ],
+      "reviewer": "xuyao@ombhrum.com",
+      "migration_rollback": "Allow executing any binary in system PATH without allowlist checks"
+    },
+    {
+      "id": "OCRM-RESP-PROXY-CAPTURE-HEADER-001",
+      "unit_id": "OCRM-UNIT-PROXY-001",
+      "responsibility_kind": "business-runtime",
+      "behavior": "Sensitive HTTP header redaction (Authorization, X-Api-Key, Cookie, Set-Cookie) and query parameter scrubbing for captured network interactions.",
+      "risk": "High; unredacted HTTP authorization headers in debug captures leak access tokens to log collectors",
+      "status": {
+        "read": "read-complete",
+        "mapping": "reviewed",
+        "wiring": "not-wired",
+        "implementation": "implemented",
+        "verification": "not-run",
+        "acceptance": "pending"
+      },
+      "selected_owner": "source/host/src/extensions/proxy_capture/header_redactor.rs",
+      "existing_owner_candidates": [
+        {
+          "path": "source/host/src/extensions/proxy_capture/header_redactor.rs",
+          "reason": "Host proxy capture header sanitizer and redactor"
+        }
+      ],
+      "owner_decision": "Native implementation in header_redactor under proxy_capture extension",
+      "dependencies": [
+        "mahayana_host_runtime::extensions::proxy_capture::header_redactor"
+      ],
+      "capability_ids": [
+        "proxy_capture.header_redaction"
+      ],
+      "preconditions": [
+        "HTTP headers map provided for capture serialization"
+      ],
+      "postconditions": [
+        "Sensitive credentials replaced with [REDACTED] in-place"
+      ],
+      "invariants": [
+        "Authorization, X-Api-Key, Cookie, and Set-Cookie are strictly sanitized"
+      ],
+      "typed_contracts": [
+        "ProxyHeaderRedactor"
+      ],
+      "tests": [
+        "source/host/tests/openclaw_secrets_security_contract.rs::test_ocrm_proxy_capture_header_redactor"
+      ],
+      "integration": {
+        "producer": "source/host/src/extensions/proxy_capture/header_redactor.rs",
+        "owner": "source/host/src/extensions/proxy_capture/header_redactor.rs",
+        "consumer": "source/host/src/extensions/proxy_capture/header_redactor.rs",
+        "entrypoint": "source/host/src/extensions/proxy_capture/header_redactor.rs::ProxyHeaderRedactor::redact_headers"
+      },
+      "source_refs": [
+        {
+          "path": "src/proxy-capture/ca.openssl.test.ts",
+          "blob_sha": "504dc0fe749717a553635ecd3d3f12f6cd494fbb",
+          "range": {
+            "start_line": 1,
+            "end_line": 116
+          },
+          "symbol": "ca.openssl"
+        },
+        {
+          "path": "src/proxy-capture/ca.test.ts",
+          "blob_sha": "44aa393c1b4378054b7d3e3e0c0575393e66ffac",
+          "range": {
+            "start_line": 1,
+            "end_line": 164
+          },
+          "symbol": "ca"
+        },
+        {
+          "path": "src/proxy-capture/ca.ts",
+          "blob_sha": "c8f2c85094c011eec8f3e6ed49d6bfbec96ae711",
+          "range": {
+            "start_line": 1,
+            "end_line": 260
+          },
+          "symbol": "ca"
+        },
+        {
+          "path": "src/proxy-capture/child-transport.process.test-support.ts",
+          "blob_sha": "1ad0ef1d4764ec9ef9398b34b002a07d828c33c7",
+          "range": {
+            "start_line": 1,
+            "end_line": 25
+          },
+          "symbol": "child-transport.process-support"
+        },
+        {
+          "path": "src/proxy-capture/child-transport.ts",
+          "blob_sha": "6f59486fcce7d6507559e90e5eaccab03ecd7cb8",
+          "range": {
+            "start_line": 1,
+            "end_line": 133
+          },
+          "symbol": "child-transport"
+        },
+        {
+          "path": "src/proxy-capture/cli-contract.ts",
+          "blob_sha": "040ff2c403f61dfe5e97dc20ad367c625abc9ba7",
+          "range": {
+            "start_line": 1,
+            "end_line": 100
+          },
+          "symbol": "cli-contract"
+        },
+        {
+          "path": "src/proxy-capture/coverage.test.ts",
+          "blob_sha": "718b721193841c28fdbc560f2ec212621c7f00d8",
+          "range": {
+            "start_line": 1,
+            "end_line": 52
+          },
+          "symbol": "coverage"
+        },
+        {
+          "path": "src/proxy-capture/coverage.ts",
+          "blob_sha": "12d2243e470f0e3033bd507bbc2fe6fb2d449e63",
+          "range": {
+            "start_line": 1,
+            "end_line": 160
+          },
+          "symbol": "coverage"
+        },
+        {
+          "path": "src/proxy-capture/env.test.ts",
+          "blob_sha": "0c51a102cc80d055bcc81d760e4f8123fbefc7d3",
+          "range": {
+            "start_line": 1,
+            "end_line": 64
+          },
+          "symbol": "env"
+        },
+        {
+          "path": "src/proxy-capture/env.ts",
+          "blob_sha": "a41f8f08a1f7cb6d3d559dc05e0e8543da2b4637",
+          "range": {
+            "start_line": 1,
+            "end_line": 149
+          },
+          "symbol": "env"
+        },
+        {
+          "path": "src/proxy-capture/fixtures/retained-ca-no-key-identifiers.pem",
+          "blob_sha": "86ec91af44d872d43f6ef618f3a8ae28a9f299c3",
+          "range": {
+            "start_line": 1,
+            "end_line": 31
+          },
+          "symbol": "retained-ca-no-key-identifiers.pem"
+        },
+        {
+          "path": "src/proxy-capture/header-redaction.test.ts",
+          "blob_sha": "ecc9f3d5fae90153b44bf897dc22f60b99c747b5",
+          "range": {
+            "start_line": 1,
+            "end_line": 89
+          },
+          "symbol": "header-redaction"
+        },
+        {
+          "path": "src/proxy-capture/header-redaction.ts",
+          "blob_sha": "e051d93b7b85e4c91ae890ceec37210ca0f9843a",
+          "range": {
+            "start_line": 1,
+            "end_line": 49
+          },
+          "symbol": "header-redaction"
+        },
+        {
+          "path": "src/proxy-capture/native-process-runtime.test-support.ts",
+          "blob_sha": "26f2859971772bc28d8e63f4613e8b2296afeeba",
+          "range": {
+            "start_line": 1,
+            "end_line": 15
+          },
+          "symbol": "native-process-runtime-support"
+        },
+        {
+          "path": "src/proxy-capture/proxy-server.managed-proxy.test.ts",
+          "blob_sha": "0497329346ea50f97570bc9ebb98b29de207eb5e",
+          "range": {
+            "start_line": 1,
+            "end_line": 189
+          },
+          "symbol": "proxy-server.managed-proxy"
+        },
+        {
+          "path": "src/proxy-capture/proxy-server.test.ts",
+          "blob_sha": "183c99079a98646c3efc62825222e40c7872121b",
+          "range": {
+            "start_line": 1,
+            "end_line": 613
+          },
+          "symbol": "proxy-server"
+        },
+        {
+          "path": "src/proxy-capture/proxy-server.ts",
+          "blob_sha": "dbae5c17e0e0f98ecc8ec8f3217570677aa47859",
+          "range": {
+            "start_line": 1,
+            "end_line": 559
+          },
+          "symbol": "proxy-server"
+        },
+        {
+          "path": "src/proxy-capture/runtime-cleanup.ts",
+          "blob_sha": "0f6eb977a620c920217f04a60f970f86580f9ada",
+          "range": {
+            "start_line": 1,
+            "end_line": 25
+          },
+          "symbol": "runtime-cleanup"
+        },
+        {
+          "path": "src/proxy-capture/runtime-deferral.ts",
+          "blob_sha": "0ecc8fe45f1949a3bc8118092c0058c6fa3296a5",
+          "range": {
+            "start_line": 1,
+            "end_line": 34
+          },
+          "symbol": "runtime-deferral"
+        },
+        {
+          "path": "src/proxy-capture/runtime-fetch-patch.ts",
+          "blob_sha": "cb9ba97dc24876226c01e06b1562f5135397df4f",
+          "range": {
+            "start_line": 1,
+            "end_line": 98
+          },
+          "symbol": "runtime-fetch-patch"
+        },
+        {
+          "path": "src/proxy-capture/runtime-owner.ts",
+          "blob_sha": "8d9cf86deaa949e0784904dd191ed30415518fd7",
+          "range": {
+            "start_line": 1,
+            "end_line": 721
+          },
+          "symbol": "runtime-owner"
+        },
+        {
+          "path": "src/proxy-capture/runtime-response-body.ts",
+          "blob_sha": "be664c243afbf604d244537c85a7959768fd44a1",
+          "range": {
+            "start_line": 1,
+            "end_line": 189
+          },
+          "symbol": "runtime-response-body"
+        },
+        {
+          "path": "src/proxy-capture/runtime.compat.test-support.ts",
+          "blob_sha": "8c2f2a28aa852a1ef79b02f3d22ae5c15ff81153",
+          "range": {
+            "start_line": 1,
+            "end_line": 138
+          },
+          "symbol": "runtime.compat-support"
+        },
+        {
+          "path": "src/proxy-capture/runtime.guarded-fetch.test.ts",
+          "blob_sha": "74ce79f2ca7eafadf996c5580b1d4c34f6b5ad4b",
+          "range": {
+            "start_line": 1,
+            "end_line": 256
+          },
+          "symbol": "runtime.guarded-fetch"
+        },
+        {
+          "path": "src/proxy-capture/runtime.input-admission.test.ts",
+          "blob_sha": "3f80a530529d96df0e69bee939b766d9230cdd8d",
+          "range": {
+            "start_line": 1,
+            "end_line": 151
+          },
+          "symbol": "runtime.input-admission"
+        },
+        {
+          "path": "src/proxy-capture/runtime.lifecycle.test.ts",
+          "blob_sha": "c607d75f5c75cc90d72cdabec7a58d3a4952fdbe",
+          "range": {
+            "start_line": 1,
+            "end_line": 987
+          },
+          "symbol": "runtime.lifecycle"
+        },
+        {
+          "path": "src/proxy-capture/runtime.retirement.test.ts",
+          "blob_sha": "bbd951fc4a80fa48bc94700703c211089b842588",
+          "range": {
+            "start_line": 1,
+            "end_line": 122
+          },
+          "symbol": "runtime.retirement"
+        },
+        {
+          "path": "src/proxy-capture/runtime.test.ts",
+          "blob_sha": "68711480e46876f726bf0cf1021f705def5532e5",
+          "range": {
+            "start_line": 1,
+            "end_line": 447
+          },
+          "symbol": "runtime"
+        },
+        {
+          "path": "src/proxy-capture/runtime.transport-admission.test.ts",
+          "blob_sha": "cfd266d49c57d958b82db7d9bda2db6b57e5a5c8",
+          "range": {
+            "start_line": 1,
+            "end_line": 437
+          },
+          "symbol": "runtime.transport-admission"
+        },
+        {
+          "path": "src/proxy-capture/runtime.ts",
+          "blob_sha": "c02e8d1c4d5c645b3c885f63efb1e198429d5643",
+          "range": {
+            "start_line": 1,
+            "end_line": 606
+          },
+          "symbol": "runtime"
+        },
+        {
+          "path": "src/proxy-capture/store-lifecycle.ts",
+          "blob_sha": "27d54c7c7149e95b8fe41281b81a59429d58154f",
+          "range": {
+            "start_line": 1,
+            "end_line": 92
+          },
+          "symbol": "store-lifecycle"
+        },
+        {
+          "path": "src/proxy-capture/store-readonly.async.ts",
+          "blob_sha": "fc146bc7d657e4968ca0f50347d1674d2e4d4007",
+          "range": {
+            "start_line": 1,
+            "end_line": 38
+          },
+          "symbol": "store-readonly.async"
+        },
+        {
+          "path": "src/proxy-capture/store-readonly.test.ts",
+          "blob_sha": "e976ff2e7591459a7cc457249335ebb6f2184962",
+          "range": {
+            "start_line": 1,
+            "end_line": 303
+          },
+          "symbol": "store-readonly"
+        },
+        {
+          "path": "src/proxy-capture/store-readonly.ts",
+          "blob_sha": "ba3704c5ef7b944fb4b9f3458c783b8e1215c9e2",
+          "range": {
+            "start_line": 1,
+            "end_line": 353
+          },
+          "symbol": "store-readonly"
+        },
+        {
+          "path": "src/proxy-capture/store.async.test.ts",
+          "blob_sha": "9458530192513003944bcbdc3afd24bdb1cbd2a9",
+          "range": {
+            "start_line": 1,
+            "end_line": 226
+          },
+          "symbol": "store.async"
+        },
+        {
+          "path": "src/proxy-capture/store.async.ts",
+          "blob_sha": "8573b9411bb0d71f06b868feb57a499372551ead",
+          "range": {
+            "start_line": 1,
+            "end_line": 159
+          },
+          "symbol": "store.async"
+        },
+        {
+          "path": "src/proxy-capture/store.kernel.ts",
+          "blob_sha": "f6015fc7746da044c2f8c55164544c8bb4187dd9",
+          "range": {
+            "start_line": 1,
+            "end_line": 636
+          },
+          "symbol": "store.kernel"
+        },
+        {
+          "path": "src/proxy-capture/store.sqlite.test.ts",
+          "blob_sha": "517ffdb1379b68210888557cca0181ae6fe6efe5",
+          "range": {
+            "start_line": 1,
+            "end_line": 729
+          },
+          "symbol": "store.sqlite"
+        },
+        {
+          "path": "src/proxy-capture/store.sqlite.ts",
+          "blob_sha": "c2cabc5981013857825ffaaadf02175782e13a59",
+          "range": {
+            "start_line": 1,
+            "end_line": 442
+          },
+          "symbol": "store.sqlite"
+        },
+        {
+          "path": "src/proxy-capture/store.types.ts",
+          "blob_sha": "fc2e69b820d50c6c62e494900ef5c44ca8f1c5aa",
+          "range": {
+            "start_line": 1,
+            "end_line": 51
+          },
+          "symbol": "store.types"
+        },
+        {
+          "path": "src/proxy-capture/store.worker-contract.ts",
+          "blob_sha": "2570fe9b73edbffc2cb3d4348c2317b2236b33db",
+          "range": {
+            "start_line": 1,
+            "end_line": 47
+          },
+          "symbol": "store.worker-contract"
+        },
+        {
+          "path": "src/proxy-capture/store.worker.ts",
+          "blob_sha": "3ac1bdd7dc6ffb2d95f9c4b77e02a5584cad1d06",
+          "range": {
+            "start_line": 1,
+            "end_line": 70
+          },
+          "symbol": "store.worker"
+        },
+        {
+          "path": "src/proxy-capture/types.ts",
+          "blob_sha": "8479062f26a2c0342915189419e433152b437351",
+          "range": {
+            "start_line": 1,
+            "end_line": 59
+          },
+          "symbol": "types"
+        }
+      ],
+      "evidence_refs": [
+        "source/host/tests/openclaw_secrets_security_contract.rs",
+        "projects/openclaw-rust/dossiers/secrets-security-scoped.md"
+      ],
+      "requirement_ids": [
+        "OCRM-R04",
+        "OCRM-R08",
+        "OCRM-R09",
+        "OCRM-R21",
+        "OCRM-R24",
+        "OCRM-AC08",
+        "OCRM-AC21",
+        "OCRM-AC24"
+      ],
+      "required_gate_ids": [
+        "OCRM-G04-rust-contract",
+        "OCRM-G05-frozen-oracle"
+      ],
+      "oracle_ids": [
+        "OCRM-PROXY-CAPTURE-O01"
+      ],
+      "adr_refs": [],
+      "blocker_ids": [
+        "BL-PROXY-CAPTURE-WIRING-001"
+      ],
+      "target": {
+        "path": "source/host/src/extensions/proxy_capture/header_redactor.rs",
+        "symbol": "ProxyHeaderRedactor",
+        "language": "Rust"
+      },
+      "required_evidence_dimensions": [
+        "unit",
+        "format"
+      ],
+      "reviewer": "xuyao@ombhrum.com",
+      "migration_rollback": "Capture raw HTTP headers without masking"
+    },
+    {
+      "id": "OCRM-RESP-SESSION-ROUTING-DISPATCH-001",
+      "unit_id": "OCRM-UNIT-SESSION-002",
+      "responsibility_kind": "business-runtime",
+      "behavior": "Session routing key calculation, session cards metadata, project scope mapping, and realtime transcription bridge dispatch.",
+      "risk": "Medium; mismatched session routing keys deliver messages to incorrect conversation threads",
+      "status": {
+        "read": "read-complete",
+        "mapping": "reviewed",
+        "wiring": "not-wired",
+        "implementation": "implemented",
+        "verification": "not-run",
+        "acceptance": "pending"
+      },
+      "selected_owner": "source/host/src/extensions/session/session_conversation_state.rs",
+      "existing_owner_candidates": [
+        {
+          "path": "source/host/src/extensions/session/session_conversation_state.rs",
+          "reason": "Host session conversation state manager and thread routing calculator"
+        }
+      ],
+      "owner_decision": "Native implementation in session_conversation_state",
+      "dependencies": [
+        "mahayana_host_runtime::extensions::session::session_conversation_state"
+      ],
+      "capability_ids": [
+        "session.routing_dispatch"
+      ],
+      "preconditions": [
+        "Session key or thread target supplied"
+      ],
+      "postconditions": [
+        "Session bound to active conversation thread"
+      ],
+      "invariants": [
+        "Routing keys are deterministically hashed and scoped per project"
+      ],
+      "typed_contracts": [
+        "ConversationStructureRefs"
+      ],
+      "tests": [
+        "source/host/tests/openclaw_secrets_security_contract.rs::test_ocrm_secrets_audit_manager"
+      ],
+      "integration": {
+        "producer": "source/host/src/extensions/session/session_conversation_state.rs",
+        "owner": "source/host/src/extensions/session/session_conversation_state.rs",
+        "consumer": "source/host/src/extensions/session/session_conversation_state.rs",
+        "entrypoint": "source/host/src/extensions/session/session_conversation_state.rs::get_conversation_state"
+      },
+      "source_refs": [
+        {
+          "path": "src/poll-params.test.ts",
+          "blob_sha": "bf7918df646d0e185f97fc3551a35c06c6cdeafc",
+          "range": {
+            "start_line": 1,
+            "end_line": 54
+          },
+          "symbol": "poll-params"
+        },
+        {
+          "path": "src/poll-params.ts",
+          "blob_sha": "5feb63be9620e87124caa7cf73113be7c2b8be0b",
+          "range": {
+            "start_line": 1,
+            "end_line": 61
+          },
+          "symbol": "poll-params"
+        },
+        {
+          "path": "src/polls.test.ts",
+          "blob_sha": "2c1d0da039ea2a3daa86b692111c0c1c0fbbc32a",
+          "range": {
+            "start_line": 1,
+            "end_line": 40
+          },
+          "symbol": "polls"
+        },
+        {
+          "path": "src/polls.ts",
+          "blob_sha": "8244d69aae65cec274cd8fbce65ca8876af7b3c3",
+          "range": {
+            "start_line": 1,
+            "end_line": 85
+          },
+          "symbol": "polls"
+        },
+        {
+          "path": "src/projects/project-checkout.ts",
+          "blob_sha": "fc1ffc190d637686c9c0f885a1a19ab2d231c8e8",
+          "range": {
+            "start_line": 1,
+            "end_line": 78
+          },
+          "symbol": "project-checkout"
+        },
+        {
+          "path": "src/projects/project-clone-registration.test.ts",
+          "blob_sha": "c68275d32c79624057eb66090edefb51efaf4b14",
+          "range": {
+            "start_line": 1,
+            "end_line": 153
+          },
+          "symbol": "project-clone-registration"
+        },
+        {
+          "path": "src/projects/project-clone-runtime.test.ts",
+          "blob_sha": "09e0865c208dda6aa8bf8c4a6c5c6abee8d3c7f3",
+          "range": {
+            "start_line": 1,
+            "end_line": 337
+          },
+          "symbol": "project-clone-runtime"
+        },
+        {
+          "path": "src/projects/project-clone-runtime.ts",
+          "blob_sha": "1d4f84a383b48f1c6379bd496de3f837b0cc2e16",
+          "range": {
+            "start_line": 1,
+            "end_line": 525
+          },
+          "symbol": "project-clone-runtime"
+        },
+        {
+          "path": "src/projects/project-clone.ts",
+          "blob_sha": "887676177918ffa896eaa8f817c2f2a55d574d06",
+          "range": {
+            "start_line": 1,
+            "end_line": 370
+          },
+          "symbol": "project-clone"
+        },
+        {
+          "path": "src/projects/project-environment.test.ts",
+          "blob_sha": "b7ebb07f4d15426f7654f083203a48c824298805",
+          "range": {
+            "start_line": 1,
+            "end_line": 292
+          },
+          "symbol": "project-environment"
+        },
+        {
+          "path": "src/projects/project-git-url.runtime.ts",
+          "blob_sha": "da3f9cb609cc5b3c5766c21b29fd5bfa45199762",
+          "range": {
+            "start_line": 1,
+            "end_line": 9
+          },
+          "symbol": "project-git-url.runtime"
+        },
+        {
+          "path": "src/projects/project-git-url.ts",
+          "blob_sha": "633b343efa2a5832dd176a1712b3e52ad66d3e0d",
+          "range": {
+            "start_line": 1,
+            "end_line": 53
+          },
+          "symbol": "project-git-url"
+        },
+        {
+          "path": "src/projects/project-registration.ts",
+          "blob_sha": "b5047499d45cd5a88c741519a300a0a111a7fb13",
+          "range": {
+            "start_line": 1,
+            "end_line": 64
+          },
+          "symbol": "project-registration"
+        },
+        {
+          "path": "src/projects/project-registry.authority.test.ts",
+          "blob_sha": "6dc1bef97b2e3fe243bbcbc4c6737450a2cb9886",
+          "range": {
+            "start_line": 1,
+            "end_line": 602
+          },
+          "symbol": "project-registry.authority"
+        },
+        {
+          "path": "src/projects/project-registry.kernel.ts",
+          "blob_sha": "0eb922b6741dd26a9efb886af7f9d62b395ec5d6",
+          "range": {
+            "start_line": 1,
+            "end_line": 189
+          },
+          "symbol": "project-registry.kernel"
+        },
+        {
+          "path": "src/projects/project-registry.test-support.ts",
+          "blob_sha": "9518733917b7c034f34c48aa252dd5105ba5c440",
+          "range": {
+            "start_line": 1,
+            "end_line": 33
+          },
+          "symbol": "project-registry-support"
+        },
+        {
+          "path": "src/projects/project-registry.test.ts",
+          "blob_sha": "75893301e570722c5c982c957242172b34c496fd",
+          "range": {
+            "start_line": 1,
+            "end_line": 716
+          },
+          "symbol": "project-registry"
+        },
+        {
+          "path": "src/projects/project-registry.ts",
+          "blob_sha": "0eeb2318c670a59dbdf2343ea474b29cf3034ebe",
+          "range": {
+            "start_line": 1,
+            "end_line": 299
+          },
+          "symbol": "project-registry"
+        },
+        {
+          "path": "src/projects/project-registry.types.ts",
+          "blob_sha": "457f0ecf9c20d09ac9f7517ec98c5ca2be47c2c7",
+          "range": {
+            "start_line": 1,
+            "end_line": 11
+          },
+          "symbol": "project-registry.types"
+        },
+        {
+          "path": "src/projects/project-registry.worker.ts",
+          "blob_sha": "4bdb7698f0067a709f0e554f37926a2307663bd6",
+          "range": {
+            "start_line": 1,
+            "end_line": 81
+          },
+          "symbol": "project-registry.worker"
+        },
+        {
+          "path": "src/projects/project-source-env.test.ts",
+          "blob_sha": "805fee86c69c26abcafbd14d25c590e5e7e5a3d0",
+          "range": {
+            "start_line": 1,
+            "end_line": 201
+          },
+          "symbol": "project-source-env"
+        },
+        {
+          "path": "src/provider-runtime/operation-retry.test.ts",
+          "blob_sha": "070423e0b4e1c6493afc8a07e0e7936929519310",
+          "range": {
+            "start_line": 1,
+            "end_line": 102
+          },
+          "symbol": "operation-retry"
+        },
+        {
+          "path": "src/provider-runtime/operation-retry.ts",
+          "blob_sha": "0ca7bbe4de2b9a4a796b90af3457deae65eb44f2",
+          "range": {
+            "start_line": 1,
+            "end_line": 210
+          },
+          "symbol": "operation-retry"
+        },
+        {
+          "path": "src/realtime-transcription/provider-registry.ts",
+          "blob_sha": "b85e024111904a0c3f9088e00ed0243ff642e386",
+          "range": {
+            "start_line": 1,
+            "end_line": 32
+          },
+          "symbol": "provider-registry"
+        },
+        {
+          "path": "src/realtime-transcription/provider-types.ts",
+          "blob_sha": "446c620edd9d728fe8a1cf6764477fc3a5151d85",
+          "range": {
+            "start_line": 1,
+            "end_line": 39
+          },
+          "symbol": "provider-types"
+        },
+        {
+          "path": "src/realtime-transcription/transcript-bytes.ts",
+          "blob_sha": "1f39fe51aec4407fe2269097bdbaf281e31023c5",
+          "range": {
+            "start_line": 1,
+            "end_line": 17
+          },
+          "symbol": "transcript-bytes"
+        },
+        {
+          "path": "src/realtime-transcription/websocket-session.test.ts",
+          "blob_sha": "c90fc977ec243146d46de907986a32bee4f0642f",
+          "range": {
+            "start_line": 1,
+            "end_line": 605
+          },
+          "symbol": "websocket-session"
+        },
+        {
+          "path": "src/realtime-transcription/websocket-session.ts",
+          "blob_sha": "01934ce2d4c638f646e7d2b05fd18c964a1712ef",
+          "range": {
+            "start_line": 1,
+            "end_line": 540
+          },
+          "symbol": "websocket-session"
+        },
+        {
+          "path": "src/routing/account-id.test.ts",
+          "blob_sha": "4e9d7904c31eb5381cc8f7f20f8df333a7bbe6b5",
+          "range": {
+            "start_line": 1,
+            "end_line": 51
+          },
+          "symbol": "account-id"
+        },
+        {
+          "path": "src/routing/account-id.ts",
+          "blob_sha": "829fd34791747e3e143f6dddd361e58bada77d51",
+          "range": {
+            "start_line": 1,
+            "end_line": 27
+          },
+          "symbol": "account-id"
+        },
+        {
+          "path": "src/routing/account-lookup.test.ts",
+          "blob_sha": "733002c121b9c0136786acdc732eeaae3142a17a",
+          "range": {
+            "start_line": 1,
+            "end_line": 101
+          },
+          "symbol": "account-lookup"
+        },
+        {
+          "path": "src/routing/account-lookup.ts",
+          "blob_sha": "09317fd8730442f09973267c194d44899946e78e",
+          "range": {
+            "start_line": 1,
+            "end_line": 161
+          },
+          "symbol": "account-lookup"
+        },
+        {
+          "path": "src/routing/binding-scope.ts",
+          "blob_sha": "d4976f4fe1363cb8031ab14e57292513252e4f43",
+          "range": {
+            "start_line": 1,
+            "end_line": 110
+          },
+          "symbol": "binding-scope"
+        },
+        {
+          "path": "src/routing/bindings.selection-work.test.ts",
+          "blob_sha": "fe157520c8041345fb8f8d10f1d2866a43561ab5",
+          "range": {
+            "start_line": 1,
+            "end_line": 123
+          },
+          "symbol": "bindings.selection-work"
+        },
+        {
+          "path": "src/routing/bindings.test.ts",
+          "blob_sha": "e6c79316c6296743ccb3a6d36c328a2198da42df",
+          "range": {
+            "start_line": 1,
+            "end_line": 103
+          },
+          "symbol": "bindings"
+        },
+        {
+          "path": "src/routing/bindings.ts",
+          "blob_sha": "968b61a0d001bdff9b719008cee524d3a77c0dd4",
+          "range": {
+            "start_line": 1,
+            "end_line": 79
+          },
+          "symbol": "bindings"
+        },
+        {
+          "path": "src/routing/bound-account-read.test.ts",
+          "blob_sha": "24672300cc7b0b4b15d836bb2fb3973f56399b7e",
+          "range": {
+            "start_line": 1,
+            "end_line": 154
+          },
+          "symbol": "bound-account-read"
+        },
+        {
+          "path": "src/routing/bound-account-read.ts",
+          "blob_sha": "03b10dcb991d2570f104fdc6ee33e9f39a7a55f1",
+          "range": {
+            "start_line": 1,
+            "end_line": 113
+          },
+          "symbol": "bound-account-read"
+        },
+        {
+          "path": "src/routing/channel-route-targets.test.ts",
+          "blob_sha": "1c0be3f48dc39ecfd972edf6fb3352ec93ea9e4e",
+          "range": {
+            "start_line": 1,
+            "end_line": 73
+          },
+          "symbol": "channel-route-targets"
+        },
+        {
+          "path": "src/routing/channel-route-targets.ts",
+          "blob_sha": "fde345020fb197ba54a7b6912822378ec4cafdd2",
+          "range": {
+            "start_line": 1,
+            "end_line": 102
+          },
+          "symbol": "channel-route-targets"
+        },
+        {
+          "path": "src/routing/conversation-ref.ts",
+          "blob_sha": "d7a5de95110c7dd1e4caf1976049848fdaca4e74",
+          "range": {
+            "start_line": 1,
+            "end_line": 32
+          },
+          "symbol": "conversation-ref"
+        },
+        {
+          "path": "src/routing/default-account-warnings.ts",
+          "blob_sha": "a263d6b40af8f0118a4d18aa5605e6894334200e",
+          "range": {
+            "start_line": 1,
+            "end_line": 29
+          },
+          "symbol": "default-account-warnings"
+        },
+        {
+          "path": "src/routing/peer-kind-match.ts",
+          "blob_sha": "fe4df6ab0cacb3116d1a5786743bf110756d097e",
+          "range": {
+            "start_line": 1,
+            "end_line": 13
+          },
+          "symbol": "peer-kind-match"
+        },
+        {
+          "path": "src/routing/resolve-route.cache.test.ts",
+          "blob_sha": "82c0251bc0c3daf1290699c6d387ed0aa7671622",
+          "range": {
+            "start_line": 1,
+            "end_line": 150
+          },
+          "symbol": "resolve-route.cache"
+        },
+        {
+          "path": "src/routing/resolve-route.msteams.test.ts",
+          "blob_sha": "58de95850d3a568ed2c6a116d8a2e63972d87b16",
+          "range": {
+            "start_line": 1,
+            "end_line": 27
+          },
+          "symbol": "resolve-route.msteams"
+        },
+        {
+          "path": "src/routing/resolve-route.test.ts",
+          "blob_sha": "c525307241fa4a9e53e2ba0acd386ab483ac8b6b",
+          "range": {
+            "start_line": 1,
+            "end_line": 404
+          },
+          "symbol": "resolve-route"
+        },
+        {
+          "path": "src/routing/resolve-route.ts",
+          "blob_sha": "542d1dca21ad55bf99f5ad8553fa355b46920dd9",
+          "range": {
+            "start_line": 1,
+            "end_line": 415
+          },
+          "symbol": "resolve-route"
+        },
+        {
+          "path": "src/routing/route-binding-index.ts",
+          "blob_sha": "b6534a8c2138148eb1fa3dfb689c1c199cc2a1a7",
+          "range": {
+            "start_line": 1,
+            "end_line": 228
+          },
+          "symbol": "route-binding-index"
+        },
+        {
+          "path": "src/routing/session-key.continuity.test.ts",
+          "blob_sha": "72ff7da25835c4c920055ab03a04271814d2f7eb",
+          "range": {
+            "start_line": 1,
+            "end_line": 11
+          },
+          "symbol": "session-key.continuity"
+        },
+        {
+          "path": "src/routing/session-key.test.ts",
+          "blob_sha": "577cc2cfa202883c3e170b98c1242a489c98f31e",
+          "range": {
+            "start_line": 1,
+            "end_line": 201
+          },
+          "symbol": "session-key"
+        },
+        {
+          "path": "src/routing/session-key.ts",
+          "blob_sha": "08967c8977795201df750caaa0230872ee111002",
+          "range": {
+            "start_line": 1,
+            "end_line": 316
+          },
+          "symbol": "session-key"
+        },
+        {
+          "path": "src/runtime.test.ts",
+          "blob_sha": "fd4e0bd35a7cddaf9e62552f7c718d523039cb18",
+          "range": {
+            "start_line": 1,
+            "end_line": 127
+          },
+          "symbol": "runtime"
+        },
+        {
+          "path": "src/runtime.ts",
+          "blob_sha": "1abec3d91901bff001f727344694130840f13f41",
+          "range": {
+            "start_line": 1,
+            "end_line": 145
+          },
+          "symbol": "runtime"
+        },
+        {
+          "path": "src/scripts/ci-changed-scope.contract-fixtures.test.ts",
+          "blob_sha": "cf5bd5f9f190949284c4ac38eb42b1259533a513",
+          "range": {
+            "start_line": 1,
+            "end_line": 41
+          },
+          "symbol": "ci-changed-scope.contract-fixtures"
+        },
+        {
+          "path": "src/scripts/ci-changed-scope.control-ui.test.ts",
+          "blob_sha": "2bd4aef098e4adfbb7df576425072430bd625ab8",
+          "range": {
+            "start_line": 1,
+            "end_line": 67
+          },
+          "symbol": "ci-changed-scope.control-ui"
+        },
+        {
+          "path": "src/scripts/ci-changed-scope.git-owner.test.ts",
+          "blob_sha": "c89eaf525451150e53ce123bff5e6214d1f94210",
+          "range": {
+            "start_line": 1,
+            "end_line": 12
+          },
+          "symbol": "ci-changed-scope.git-owner"
+        },
+        {
+          "path": "src/scripts/ci-changed-scope.native-i18n.test.ts",
+          "blob_sha": "744dd98443cbe82af636edde3b079ab5ed235685",
+          "range": {
+            "start_line": 1,
+            "end_line": 130
+          },
+          "symbol": "ci-changed-scope.native-i18n"
+        },
+        {
+          "path": "src/scripts/ci-changed-scope.test.ts",
+          "blob_sha": "42d1a723a6bcba08ef4b6d8c4d36d709a420078e",
+          "range": {
+            "start_line": 1,
+            "end_line": 360
+          },
+          "symbol": "ci-changed-scope"
+        },
+        {
+          "path": "src/scripts/ci-changed-scope.windows.test.ts",
+          "blob_sha": "422b47d33477a18f9d036f45edef4da768d4bccf",
+          "range": {
+            "start_line": 1,
+            "end_line": 52
+          },
+          "symbol": "ci-changed-scope.windows"
+        },
+        {
+          "path": "src/scripts/ci-ios-screenshot-scope.test.ts",
+          "blob_sha": "59f814cf58c62864c6f4ef46300bb3d808138f41",
+          "range": {
+            "start_line": 1,
+            "end_line": 71
+          },
+          "symbol": "ci-ios-screenshot-scope"
+        },
+        {
+          "path": "src/scripts/control-ui-i18n-report.test.ts",
+          "blob_sha": "a785c26d96086c4416173503427a4c8163679968",
+          "range": {
+            "start_line": 1,
+            "end_line": 112
+          },
+          "symbol": "control-ui-i18n-report"
+        },
+        {
+          "path": "src/scripts/control-ui-i18n.test.ts",
+          "blob_sha": "7a6ca0cf3a7d40019bd7db8c47a50e1e3fc2618d",
+          "range": {
+            "start_line": 1,
+            "end_line": 57
+          },
+          "symbol": "control-ui-i18n"
+        },
+        {
+          "path": "src/scripts/docs-link-audit.test.ts",
+          "blob_sha": "9e55c3b50501e0d3bfdfccc6192cfb44bbcbe8b4",
+          "range": {
+            "start_line": 1,
+            "end_line": 751
+          },
+          "symbol": "docs-link-audit"
+        },
+        {
+          "path": "src/scripts/nextcloud-talk-release-compatibility.test.ts",
+          "blob_sha": "bb6a9a240051eec5cf8b21bc00eebb3b4b42a4b0",
+          "range": {
+            "start_line": 1,
+            "end_line": 91
+          },
+          "symbol": "nextcloud-talk-release-compatibility"
+        },
+        {
+          "path": "src/scripts/prepare-codex-ci-auth.test.ts",
+          "blob_sha": "4f89ca674c2d6df66921df442a495bb9e03452ea",
+          "range": {
+            "start_line": 1,
+            "end_line": 74
+          },
+          "symbol": "prepare-codex-ci-auth"
+        },
+        {
+          "path": "src/scripts/prepare-codex-ci-config.test.ts",
+          "blob_sha": "61c75f44ad9e26f95727b70867207c4d01ee3936",
+          "range": {
+            "start_line": 1,
+            "end_line": 51
+          },
+          "symbol": "prepare-codex-ci-config"
+        },
+        {
+          "path": "src/scripts/sync-plugin-versions.test.ts",
+          "blob_sha": "ddad87d6f1d1df88fe055ff551dc9141015b94ab",
+          "range": {
+            "start_line": 1,
+            "end_line": 158
+          },
+          "symbol": "sync-plugin-versions"
+        },
+        {
+          "path": "src/session-cards/progress-card-channel-summary.test.ts",
+          "blob_sha": "3a91c801ebaeaebc99f1230a3ba9386e4810a9f0",
+          "range": {
+            "start_line": 1,
+            "end_line": 55
+          },
+          "symbol": "progress-card-channel-summary"
+        },
+        {
+          "path": "src/session-cards/progress-card-channel-summary.ts",
+          "blob_sha": "0fa6d08a09d719b99aa7fa84fd9f1943a951121c",
+          "range": {
+            "start_line": 1,
+            "end_line": 35
+          },
+          "symbol": "progress-card-channel-summary"
+        },
+        {
+          "path": "src/session-cards/progress-card-input.ts",
+          "blob_sha": "f0117850e8bd83d7e05375b14da97939e77c535c",
+          "range": {
+            "start_line": 1,
+            "end_line": 102
+          },
+          "symbol": "progress-card-input"
+        },
+        {
+          "path": "src/session-cards/progress-card-store.test.ts",
+          "blob_sha": "af40a260a2eb2874ed80ee6d76db87bda278cc74",
+          "range": {
+            "start_line": 1,
+            "end_line": 326
+          },
+          "symbol": "progress-card-store"
+        },
+        {
+          "path": "src/session-cards/progress-card-store.ts",
+          "blob_sha": "2542a81472a304f3a6937f1e6ebecbd5b0677585",
+          "range": {
+            "start_line": 1,
+            "end_line": 197
+          },
+          "symbol": "progress-card-store"
+        },
+        {
+          "path": "src/session-cards/progress-card-store.types.ts",
+          "blob_sha": "893bb51338dcf0f881be0d2c6ef54ad03e89acd5",
+          "range": {
+            "start_line": 1,
+            "end_line": 12
+          },
+          "symbol": "progress-card-store.types"
+        },
+        {
+          "path": "src/session-cards/progress-card-store.worker.ts",
+          "blob_sha": "b64e91738285cda596e907551ca0da00af2ecd81",
+          "range": {
+            "start_line": 1,
+            "end_line": 63
+          },
+          "symbol": "progress-card-store.worker"
+        },
+        {
+          "path": "src/session-cards/progress-card-values.ts",
+          "blob_sha": "532535cf9415f3829cfa88e0986e06acd6e34e97",
+          "range": {
+            "start_line": 1,
+            "end_line": 14
+          },
+          "symbol": "progress-card-values"
+        },
+        {
+          "path": "src/session-cards/session-actor-progress-card-contract.ts",
+          "blob_sha": "b3fc6a210091b1edae131294a196e57e2f543ccd",
+          "range": {
+            "start_line": 1,
+            "end_line": 27
+          },
+          "symbol": "session-actor-progress-card-contract"
+        },
+        {
+          "path": "src/session-cards/session-actor-progress-card-memory.ts",
+          "blob_sha": "cc72dc83f96a976b0d8002a4a9a93f139c70c1dc",
+          "range": {
+            "start_line": 1,
+            "end_line": 64
+          },
+          "symbol": "session-actor-progress-card-memory"
+        },
+        {
+          "path": "src/session-cards/session-actor-progress-card-store.test.ts",
+          "blob_sha": "4c32ede12741ba16929731eedf624d01f2c4a6cd",
+          "range": {
+            "start_line": 1,
+            "end_line": 129
+          },
+          "symbol": "session-actor-progress-card-store"
+        },
+        {
+          "path": "src/session-cards/session-actor-progress-card-store.ts",
+          "blob_sha": "e5cbc966ff67274ee772ceeffe10e73feebb3d43",
+          "range": {
+            "start_line": 1,
+            "end_line": 47
+          },
+          "symbol": "session-actor-progress-card-store"
+        },
+        {
+          "path": "src/sessions/agent-harness-session-key.test.ts",
+          "blob_sha": "13db1c3dfa6af7403402dbf8e6b196ff731e70b0",
+          "range": {
+            "start_line": 1,
+            "end_line": 165
+          },
+          "symbol": "agent-harness-session-key"
+        },
+        {
+          "path": "src/sessions/agent-harness-session-key.ts",
+          "blob_sha": "374674a13a484c0dc608f1d641f3e438d33fef44",
+          "range": {
+            "start_line": 1,
+            "end_line": 280
+          },
+          "symbol": "agent-harness-session-key"
+        },
+        {
+          "path": "src/sessions/auth-profile-preservation.test.ts",
+          "blob_sha": "b702853690bbae7b92c5d1b1d0be5eafcb2057c5",
+          "range": {
+            "start_line": 1,
+            "end_line": 207
+          },
+          "symbol": "auth-profile-preservation"
+        },
+        {
+          "path": "src/sessions/auth-profile-preservation.ts",
+          "blob_sha": "5d93e81b6f237a0783e4b3163fbd3a365cf143b7",
+          "range": {
+            "start_line": 1,
+            "end_line": 160
+          },
+          "symbol": "auth-profile-preservation"
+        },
+        {
+          "path": "src/sessions/auth-profile-removal.ts",
+          "blob_sha": "378579dd13534027cdce7953942e64822db097e9",
+          "range": {
+            "start_line": 1,
+            "end_line": 197
+          },
+          "symbol": "auth-profile-removal"
+        },
+        {
+          "path": "src/sessions/background-session-result.test.ts",
+          "blob_sha": "0238674617882d7b5eb8f7b7401a4ed54e841a60",
+          "range": {
+            "start_line": 1,
+            "end_line": 385
+          },
+          "symbol": "background-session-result"
+        },
+        {
+          "path": "src/sessions/background-session-result.ts",
+          "blob_sha": "a70b7b04de18bdba5216ece63e50928cd2e6eea2",
+          "range": {
+            "start_line": 1,
+            "end_line": 241
+          },
+          "symbol": "background-session-result"
+        },
+        {
+          "path": "src/sessions/classify-session-kind.ts",
+          "blob_sha": "77eb2557be7101ab4ec76216c958f988367c4b97",
+          "range": {
+            "start_line": 1,
+            "end_line": 22
+          },
+          "symbol": "classify-session-kind"
+        },
+        {
+          "path": "src/sessions/communication-admission.ts",
+          "blob_sha": "72832202551cdcf5884005ac700baa2da30043af",
+          "range": {
+            "start_line": 1,
+            "end_line": 80
+          },
+          "symbol": "communication-admission"
+        },
+        {
+          "path": "src/sessions/communication-policy.test.ts",
+          "blob_sha": "2ccac74416ffe9158c6eada57bb448161340e258",
+          "range": {
+            "start_line": 1,
+            "end_line": 44
+          },
+          "symbol": "communication-policy"
+        },
+        {
+          "path": "src/sessions/communication-policy.ts",
+          "blob_sha": "5f795818204de25bdd6fc3f20c2651d1e4544d86",
+          "range": {
+            "start_line": 1,
+            "end_line": 25
+          },
+          "symbol": "communication-policy"
+        },
+        {
+          "path": "src/sessions/controller-core.test-support.ts",
+          "blob_sha": "536522936a93aed8117df0f58efadaf10c817c56",
+          "range": {
+            "start_line": 1,
+            "end_line": 34
+          },
+          "symbol": "controller-core-support"
+        },
+        {
+          "path": "src/sessions/conversation-turns.test.ts",
+          "blob_sha": "6a48c9257ffa1dca8159831bd23ec23244a3c55e",
+          "range": {
+            "start_line": 1,
+            "end_line": 294
+          },
+          "symbol": "conversation-turns"
+        },
+        {
+          "path": "src/sessions/conversation-turns.ts",
+          "blob_sha": "9e3202483196953131f9f95b7e54c236ae4803f4",
+          "range": {
+            "start_line": 1,
+            "end_line": 252
+          },
+          "symbol": "conversation-turns"
+        },
+        {
+          "path": "src/sessions/input-provenance.test.ts",
+          "blob_sha": "572d1e202a3748e9b1672492c541375c0fcc84d3",
+          "range": {
+            "start_line": 1,
+            "end_line": 119
+          },
+          "symbol": "input-provenance"
+        },
+        {
+          "path": "src/sessions/input-provenance.ts",
+          "blob_sha": "a113a1dfc2538927c1a35b1fef1ed866f9bd6844",
+          "range": {
+            "start_line": 1,
+            "end_line": 305
+          },
+          "symbol": "input-provenance"
+        },
+        {
+          "path": "src/sessions/level-overrides.ts",
+          "blob_sha": "756a1d79812c4ebec31df4b851c3ca02b470d805",
+          "range": {
+            "start_line": 1,
+            "end_line": 58
+          },
+          "symbol": "level-overrides"
+        },
+        {
+          "path": "src/sessions/model-overrides.test.ts",
+          "blob_sha": "9a6e5f80bce59943227cdd106867aa003a6acce4",
+          "range": {
+            "start_line": 1,
+            "end_line": 243
+          },
+          "symbol": "model-overrides"
+        },
+        {
+          "path": "src/sessions/model-overrides.ts",
+          "blob_sha": "a8ee87b3130d380fc2123f2687739ac0302a08f9",
+          "range": {
+            "start_line": 1,
+            "end_line": 201
+          },
+          "symbol": "model-overrides"
+        },
+        {
+          "path": "src/sessions/model-selection-error.ts",
+          "blob_sha": "dd86f7b59cf6766ff0c5cf29b2695b41711b2387",
+          "range": {
+            "start_line": 1,
+            "end_line": 10
+          },
+          "symbol": "model-selection-error"
+        },
+        {
+          "path": "src/sessions/nested-tool-activity.ts",
+          "blob_sha": "a3ebff0889e985ffbb120034d112fe2bd3641217",
+          "range": {
+            "start_line": 1,
+            "end_line": 107
+          },
+          "symbol": "nested-tool-activity"
+        },
+        {
+          "path": "src/sessions/provider-review-terminal.ts",
+          "blob_sha": "12dfedf6fe3546cd3039f0e43fd448c7ffe29844",
+          "range": {
+            "start_line": 1,
+            "end_line": 101
+          },
+          "symbol": "provider-review-terminal"
+        },
+        {
+          "path": "src/sessions/provider-review.test.ts",
+          "blob_sha": "55e3154ee96307a25abbe427113f7e6b3d6a8590",
+          "range": {
+            "start_line": 1,
+            "end_line": 363
+          },
+          "symbol": "provider-review"
+        },
+        {
+          "path": "src/sessions/provider-review.ts",
+          "blob_sha": "28a1a20adda8a961b9d17ec2d2139f71906cf134",
+          "range": {
+            "start_line": 1,
+            "end_line": 372
+          },
+          "symbol": "provider-review"
+        },
+        {
+          "path": "src/sessions/reply-operation-state.ts",
+          "blob_sha": "399191e1d5fe0b9e101645c16e42314c19dad5a2",
+          "range": {
+            "start_line": 1,
+            "end_line": 122
+          },
+          "symbol": "reply-operation-state"
+        },
+        {
+          "path": "src/sessions/runtime-context.ts",
+          "blob_sha": "e8a38864c303736818b0ca759068d2fca2ed9b81",
+          "range": {
+            "start_line": 1,
+            "end_line": 44
+          },
+          "symbol": "runtime-context"
+        },
+        {
+          "path": "src/sessions/send-policy.test.ts",
+          "blob_sha": "5e338013d771d54a340a13c99f1042aa216d0840",
+          "range": {
+            "start_line": 1,
+            "end_line": 193
+          },
+          "symbol": "send-policy"
+        },
+        {
+          "path": "src/sessions/send-policy.ts",
+          "blob_sha": "347e43321c960a348e4c7b2bf1d23b663f0c93b6",
+          "range": {
+            "start_line": 1,
+            "end_line": 128
+          },
+          "symbol": "send-policy"
+        },
+        {
+          "path": "src/sessions/session-admission.test-support.ts",
+          "blob_sha": "d0f3737586be0bce6c38a5dfd593cf796a59da50",
+          "range": {
+            "start_line": 1,
+            "end_line": 9
+          },
+          "symbol": "session-admission-support"
+        },
+        {
+          "path": "src/sessions/session-agent-status.ts",
+          "blob_sha": "fe9de8f871b514d62e822b2ca6404a98e2173351",
+          "range": {
+            "start_line": 1,
+            "end_line": 47
+          },
+          "symbol": "session-agent-status"
+        },
+        {
+          "path": "src/sessions/session-agent-work-admission.test.ts",
+          "blob_sha": "9dbbfa06440dabe644bbe771a9c9f78d0f36f6b0",
+          "range": {
+            "start_line": 1,
+            "end_line": 231
+          },
+          "symbol": "session-agent-work-admission"
+        },
+        {
+          "path": "src/sessions/session-agent-work-admission.ts",
+          "blob_sha": "7da9e10faaec1bf94044830f7d39d9f65ef3d68a",
+          "range": {
+            "start_line": 1,
+            "end_line": 138
+          },
+          "symbol": "session-agent-work-admission"
+        },
+        {
+          "path": "src/sessions/session-archive-restore.ts",
+          "blob_sha": "45972689946f442e89561da1a26f807b3432b694",
+          "range": {
+            "start_line": 1,
+            "end_line": 147
+          },
+          "symbol": "session-archive-restore"
+        },
+        {
+          "path": "src/sessions/session-chat-type-shared.ts",
+          "blob_sha": "8a5bc75709eb6d2aeef405eba91ce759baacfe4a",
+          "range": {
+            "start_line": 1,
+            "end_line": 116
+          },
+          "symbol": "session-chat-type-shared"
+        },
+        {
+          "path": "src/sessions/session-chat-type.ts",
+          "blob_sha": "074ce765945f30af711aa61f711c14715be4db1a",
+          "range": {
+            "start_line": 1,
+            "end_line": 30
+          },
+          "symbol": "session-chat-type"
+        }
+      ],
+      "evidence_refs": [
+        "source/host/tests/openclaw_secrets_security_contract.rs",
+        "projects/openclaw-rust/dossiers/secrets-security-scoped.md"
+      ],
+      "requirement_ids": [
+        "OCRM-R04",
+        "OCRM-R08",
+        "OCRM-R09",
+        "OCRM-R21",
+        "OCRM-R24",
+        "OCRM-AC08",
+        "OCRM-AC21",
+        "OCRM-AC24"
+      ],
+      "required_gate_ids": [
+        "OCRM-G04-rust-contract",
+        "OCRM-G05-frozen-oracle"
+      ],
+      "oracle_ids": [
+        "OCRM-SESSION-ROUTING-O01"
+      ],
+      "adr_refs": [],
+      "blocker_ids": [
+        "BL-SESSION-ROUTING-WIRING-001"
+      ],
+      "target": {
+        "path": "source/host/src/extensions/session/session_conversation_state.rs",
+        "symbol": "ConversationStructureRefs",
+        "language": "Rust"
+      },
+      "required_evidence_dimensions": [
+        "unit",
+        "format"
+      ],
+      "reviewer": "xuyao@ombhrum.com",
+      "migration_rollback": "Use flat session ID keys without hierarchical project and routing scoping"
     }
   ],
   "schema_version": 1,
