@@ -477,6 +477,32 @@ pub fn parse_git_backup_manifest(value: &Value) -> Result<GitBackupManifest, Str
     Ok(manifest)
 }
 
+pub fn read_git_backup_manifest(path: impl AsRef<Path>) -> Result<GitBackupManifest, String> {
+    let path = path.as_ref();
+    let mut file = open_unaliased_readonly(path)
+        .map_err(|error| format!("open Git backup manifest {}: {error}", path.display()))?;
+    let metadata = file
+        .metadata()
+        .map_err(|error| format!("stat Git backup manifest {}: {error}", path.display()))?;
+    if !metadata.is_file() {
+        return Err("Git backup manifest must be a regular file".into());
+    }
+    #[cfg(unix)]
+    if metadata.nlink() != 1 {
+        return Err("Git backup manifest must not be hard-linked".into());
+    }
+    let mut bytes = Vec::new();
+    file.take((MAX_EXPORT_MANIFEST_BYTES + 1) as u64)
+        .read_to_end(&mut bytes)
+        .map_err(|error| format!("read Git backup manifest {}: {error}", path.display()))?;
+    if bytes.len() > MAX_EXPORT_MANIFEST_BYTES {
+        return Err("Git backup manifest exceeds 1 MiB".into());
+    }
+    let value: Value = serde_json::from_slice(&bytes)
+        .map_err(|error| format!("parse Git backup manifest {}: {error}", path.display()))?;
+    parse_git_backup_manifest(&value)
+}
+
 fn validate_artifact(label: &str, artifact: &PostgresArtifactDigest) -> Result<(), String> {
     if !valid_digest(&artifact.sha256) {
         return Err(format!("{label} has an invalid SHA-256 digest"));

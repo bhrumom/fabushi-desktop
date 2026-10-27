@@ -156,6 +156,38 @@ fn test_ocrm_snapshot_postgres_manifest_schema_and_profile_oracles() {
         &invalid_table,
     )
     .is_err());
+    let git_manifest_path = std::env::temp_dir().join(format!(
+        "fabushi-git-backup-manifest-{}.json",
+        std::process::id()
+    ));
+    fs::write(
+        &git_manifest_path,
+        serde_json::to_vec(&git_manifest).expect("serialize Git backup manifest"),
+    )
+    .expect("write Git backup manifest");
+    mahayana_host_runtime::extensions::snapshot::git_backup_manager::read_git_backup_manifest(
+        &git_manifest_path,
+    )
+    .expect("read Git backup manifest");
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::symlink;
+        let symlink_path = git_manifest_path.with_extension("symlink.json");
+        symlink(&git_manifest_path, &symlink_path).expect("create Git manifest symlink");
+        assert!(mahayana_host_runtime::extensions::snapshot::git_backup_manager::read_git_backup_manifest(
+            &symlink_path,
+        )
+        .is_err());
+        let hardlink_path = git_manifest_path.with_extension("hardlink.json");
+        fs::hard_link(&git_manifest_path, &hardlink_path).expect("create Git manifest hardlink");
+        assert!(mahayana_host_runtime::extensions::snapshot::git_backup_manager::read_git_backup_manifest(
+            &hardlink_path,
+        )
+        .is_err());
+        let _ = fs::remove_file(symlink_path);
+        let _ = fs::remove_file(hardlink_path);
+    }
+    let _ = fs::remove_file(git_manifest_path);
 
     let mut leading_zero_allocation = valid.clone();
     leading_zero_allocation["verification"]["allocations"]["messages_id_seq"]["value"] =
