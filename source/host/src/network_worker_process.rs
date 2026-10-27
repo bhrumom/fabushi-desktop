@@ -7,6 +7,8 @@ use std::process::{Child, ChildStdin, Command, Stdio};
 use std::sync::mpsc;
 use std::thread;
 use std::time::{Duration, Instant};
+#[cfg(unix)]
+use std::os::unix::process::CommandExt;
 
 use base64::Engine as _;
 use base64::engine::general_purpose::STANDARD as BASE64_STANDARD;
@@ -534,6 +536,9 @@ pub fn start_network_worker(
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())
         .stderr(Stdio::piped());
+
+    #[cfg(unix)]
+    command.process_group(0);
 
     copy_required_os_environment(&mut command);
 

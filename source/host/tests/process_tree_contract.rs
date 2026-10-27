@@ -6,8 +6,11 @@ use mahayana_host_runtime::runner::process_tree::terminate_process_tree;
 #[cfg(unix)]
 #[test]
 fn production_terminator_kills_real_shell_and_descendant() {
+    use std::os::unix::process::CommandExt;
+
     let mut child = Command::new("sh")
         .args(["-c", "sleep 30 & wait"])
+        .process_group(0)
         .spawn()
         .expect("spawn shell with descendant");
 

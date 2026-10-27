@@ -6,6 +6,8 @@ use std::path::{Path, PathBuf};
 use std::process::{Child, ChildStdin, Command, Stdio};
 use std::thread;
 use std::time::{Duration, Instant};
+#[cfg(unix)]
+use std::os::unix::process::CommandExt;
 
 use super::box_remote_accessor::{ping_box_transport_classified, BoxEndpoint};
 use super::generated_production::{create_production_box_control_client, ProductionBoxTransport};
@@ -209,6 +211,9 @@ pub fn start_box_exec_daemon_process(
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())
         .stderr(Stdio::piped());
+
+    #[cfg(unix)]
+    command.process_group(0);
 
     let mut child = command.spawn().map_err(|error| {
         format!(
