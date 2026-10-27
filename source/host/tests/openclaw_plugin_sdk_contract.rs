@@ -7,6 +7,7 @@ use mahayana_host_runtime::extensions::plugin_sdk::acp_runtime::{
 use mahayana_host_runtime::extensions::plugin_sdk::agent_harness::{
     AgentHarnessManager, AttemptTerminalStatus, StructuredInputForm,
 };
+use serde_json::Value;
 
 #[test]
 fn test_ocrm_plugin_sdk_access_groups_and_account_id() {
