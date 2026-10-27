@@ -10,10 +10,10 @@
     "ui_accepted": false
   },
   "file_coverage": {
-    "mapped_paths": 525,
+    "mapped_paths": 680,
     "omitted_known": 0,
     "tracked_paths": 58750,
-    "unclassified_paths": 58225
+    "unclassified_paths": 58070
   },
   "inventory_authority": {
     "manifest_source": "GitHub Actions immutable artifact candidate",
@@ -19200,6 +19200,1677 @@
       ],
       "reviewer": "xuyao@ombhrum.com",
       "migration_rollback": "Clear OAuth registry and require manual API key input in settings"
+    },
+    {
+      "id": "OCRM-RESP-LOGGING-CORE-CONSOLE-001",
+      "unit_id": "OCRM-UNIT-LOGGING-001",
+      "responsibility_kind": "business-runtime",
+      "behavior": "Core structured console logging, log level hierarchy (silent to trace), env overrides, timestamping, subsystem routing, and JSON line formatting.",
+      "risk": "Low; core logging pipeline for process lifecycle and debug visibility",
+      "status": {
+        "read": "read-complete",
+        "mapping": "reviewed",
+        "wiring": "not-wired",
+        "implementation": "implemented",
+        "verification": "not-run",
+        "acceptance": "pending"
+      },
+      "selected_owner": "source/host/src/extensions/telemetry/openclaw_logging_core.rs",
+      "existing_owner_candidates": [
+        {
+          "path": "source/host/src/extensions/telemetry/openclaw_logging_core.rs",
+          "reason": "Structured console logging core, formatting, and level filtering"
+        }
+      ],
+      "owner_decision": "Native implementation in openclaw_logging_core under telemetry extension",
+      "dependencies": [
+        "mahayana_host_runtime::extensions::telemetry::openclaw_logging_core"
+      ],
+      "capability_ids": [
+        "telemetry.logging_core"
+      ],
+      "preconditions": [
+        "Log event emitted with level, message, and optional subsystem"
+      ],
+      "postconditions": [
+        "Log event filtered according to active threshold and formatted into structured JSON or text"
+      ],
+      "invariants": [
+        "Silent level disables all event emissions",
+        "Verbose flag forces threshold to at least Debug",
+        "JSON log format strictly complies with line-delimited JSON"
+      ],
+      "typed_contracts": [
+        "LogLevel",
+        "ConsoleStyle",
+        "ConsoleLineFormatter",
+        "parse_log_level",
+        "resolve_env_log_level"
+      ],
+      "tests": [
+        "source/host/tests/openclaw_logging_contract.rs::test_ocrm_logging_levels_and_formatting"
+      ],
+      "integration": {
+        "producer": "source/host/src/extensions/telemetry/openclaw_logging_core.rs",
+        "owner": "source/host/src/extensions/telemetry/openclaw_logging_core.rs",
+        "consumer": "source/host/src/extensions/telemetry/openclaw_logging_core.rs",
+        "entrypoint": "source/host/src/extensions/telemetry/openclaw_logging_core.rs::format_json"
+      },
+      "source_refs": [
+        {
+          "path": "src/logger.test.ts",
+          "blob_sha": "7843667d1fc3211bf8b4d8b4b23f878cce7d5601",
+          "range": {
+            "start_line": 1,
+            "end_line": 85
+          },
+          "symbol": "logger.test"
+        },
+        {
+          "path": "src/logger.ts",
+          "blob_sha": "96641055540d986e644379802b8d6dfac3575333",
+          "range": {
+            "start_line": 1,
+            "end_line": 56
+          },
+          "symbol": "logger"
+        },
+        {
+          "path": "src/logging.ts",
+          "blob_sha": "69dfbbc7fe8d5c240e8f4eb6d02e6e1aa2cf2d1e",
+          "range": {
+            "start_line": 1,
+            "end_line": 10
+          },
+          "symbol": "logging"
+        },
+        {
+          "path": "src/logging/config.test.ts",
+          "blob_sha": "c51a55a257e18e17fb08ae5f3ce7070edd39929d",
+          "range": {
+            "start_line": 1,
+            "end_line": 168
+          },
+          "symbol": "config.test"
+        },
+        {
+          "path": "src/logging/config.ts",
+          "blob_sha": "732ea2a3db480f07cdd497f93a7ee5d27cc0de7c",
+          "range": {
+            "start_line": 1,
+            "end_line": 140
+          },
+          "symbol": "config"
+        },
+        {
+          "path": "src/logging/console-capture.test.ts",
+          "blob_sha": "6c561b845e6ddeb47fdaa48263abd6a79c0eb4df",
+          "range": {
+            "start_line": 1,
+            "end_line": 600
+          },
+          "symbol": "console-capture.test"
+        },
+        {
+          "path": "src/logging/console-timestamp.test.ts",
+          "blob_sha": "15da8aecf41ed5c9076d6efb2d57db457a515e62",
+          "range": {
+            "start_line": 1,
+            "end_line": 23
+          },
+          "symbol": "console-timestamp.test"
+        },
+        {
+          "path": "src/logging/console.ts",
+          "blob_sha": "c5c5abb966c8ba2d698a21dc41972b8d2977e586",
+          "range": {
+            "start_line": 1,
+            "end_line": 325
+          },
+          "symbol": "console"
+        },
+        {
+          "path": "src/logging/env-log-level.ts",
+          "blob_sha": "ca671faac164a630cfd5bc1af320f1b7e693b491",
+          "range": {
+            "start_line": 1,
+            "end_line": 25
+          },
+          "symbol": "env-log-level"
+        },
+        {
+          "path": "src/logging/json-console-line.ts",
+          "blob_sha": "9e141e7012b24948d12d2eff31115e773e32d86f",
+          "range": {
+            "start_line": 1,
+            "end_line": 44
+          },
+          "symbol": "json-console-line"
+        },
+        {
+          "path": "src/logging/level-filter.test.ts",
+          "blob_sha": "29f93c45f983d73b507ae36b0995de9599ba2e85",
+          "range": {
+            "start_line": 1,
+            "end_line": 163
+          },
+          "symbol": "level-filter.test"
+        },
+        {
+          "path": "src/logging/levels.test.ts",
+          "blob_sha": "d7eff4ead27689a4bac3d9f252a9cf0def48903d",
+          "range": {
+            "start_line": 1,
+            "end_line": 19
+          },
+          "symbol": "levels.test"
+        },
+        {
+          "path": "src/logging/levels.ts",
+          "blob_sha": "6222f92822b22dda78a49eec02c50e89ac64e44d",
+          "range": {
+            "start_line": 1,
+            "end_line": 45
+          },
+          "symbol": "levels"
+        },
+        {
+          "path": "src/logging/log-file-path.test.ts",
+          "blob_sha": "eed5dd3796f006bbb17399681beff6d3b91b5982",
+          "range": {
+            "start_line": 1,
+            "end_line": 87
+          },
+          "symbol": "log-file-path.test"
+        },
+        {
+          "path": "src/logging/log-file-path.ts",
+          "blob_sha": "131162f3143051eff3aba42c979a7d3ef2daf06b",
+          "range": {
+            "start_line": 1,
+            "end_line": 82
+          },
+          "symbol": "log-file-path"
+        },
+        {
+          "path": "src/logging/log-file-shared.ts",
+          "blob_sha": "5734fca0cbd820e4e9860220ee909798e4302bd7",
+          "range": {
+            "start_line": 1,
+            "end_line": 17
+          },
+          "symbol": "log-file-shared"
+        },
+        {
+          "path": "src/logging/log-file-size-cap.test.ts",
+          "blob_sha": "15a67755463c4b41bc75e1fef436338d1402dd6d",
+          "range": {
+            "start_line": 1,
+            "end_line": 95
+          },
+          "symbol": "log-file-size-cap.test"
+        },
+        {
+          "path": "src/logging/log-tail.test.ts",
+          "blob_sha": "f61edb6070d3fa579fb7dbd801da54f852e367c2",
+          "range": {
+            "start_line": 1,
+            "end_line": 419
+          },
+          "symbol": "log-tail.test"
+        },
+        {
+          "path": "src/logging/log-tail.ts",
+          "blob_sha": "5ea1aa6ac0d5d6638d2ffa6ce0843d7fdbc05368",
+          "range": {
+            "start_line": 1,
+            "end_line": 355
+          },
+          "symbol": "log-tail"
+        },
+        {
+          "path": "src/logging/log-test-helpers.ts",
+          "blob_sha": "6ce346cb25c9f7155d16d85e4ad9bf83bc9bf032",
+          "range": {
+            "start_line": 1,
+            "end_line": 24
+          },
+          "symbol": "log-test-helpers"
+        },
+        {
+          "path": "src/logging/logger-env.test.ts",
+          "blob_sha": "2fe96d058169cdfc1c0bc8c79b06c6ca4d6563dc",
+          "range": {
+            "start_line": 1,
+            "end_line": 85
+          },
+          "symbol": "logger-env.test"
+        },
+        {
+          "path": "src/logging/logger-file-message.ts",
+          "blob_sha": "f0f89184ee3557c630b9ddb4a31d9895577bc257",
+          "range": {
+            "start_line": 1,
+            "end_line": 126
+          },
+          "symbol": "logger-file-message"
+        },
+        {
+          "path": "src/logging/logger-file-transport.test.ts",
+          "blob_sha": "6ba86bf7d3bf41e428a31ffd01f668c8215dd9c2",
+          "range": {
+            "start_line": 1,
+            "end_line": 382
+          },
+          "symbol": "logger-file-transport.test"
+        },
+        {
+          "path": "src/logging/logger-file-transport.ts",
+          "blob_sha": "ea11b8f561c7559766c5488308415111cc6f6f37",
+          "range": {
+            "start_line": 1,
+            "end_line": 433
+          },
+          "symbol": "logger-file-transport"
+        },
+        {
+          "path": "src/logging/logger-plugin-jsonl.test.ts",
+          "blob_sha": "7dc5038dd2d5ec06fb49096c1f72a5cbc561127e",
+          "range": {
+            "start_line": 1,
+            "end_line": 182
+          },
+          "symbol": "logger-plugin-jsonl.test"
+        },
+        {
+          "path": "src/logging/logger-reload.test.ts",
+          "blob_sha": "21618ee3832503132ad1bf82a865a802e73f68f1",
+          "range": {
+            "start_line": 1,
+            "end_line": 134
+          },
+          "symbol": "logger-reload.test"
+        },
+        {
+          "path": "src/logging/logger-settings.test.ts",
+          "blob_sha": "4bc72e379d2c20814b3a733e3591e311b0ab7655",
+          "range": {
+            "start_line": 1,
+            "end_line": 75
+          },
+          "symbol": "logger-settings.test"
+        },
+        {
+          "path": "src/logging/logger-timestamp.test.ts",
+          "blob_sha": "d1ff326317211d41598269d4e9e13b6eba523b8d",
+          "range": {
+            "start_line": 1,
+            "end_line": 58
+          },
+          "symbol": "logger-timestamp.test"
+        },
+        {
+          "path": "src/logging/logger-transport.test.ts",
+          "blob_sha": "3ffb005b23190c21e40ff887c11a280d16fd083e",
+          "range": {
+            "start_line": 1,
+            "end_line": 22
+          },
+          "symbol": "logger-transport.test"
+        },
+        {
+          "path": "src/logging/logger.browser-import.test.ts",
+          "blob_sha": "c8893cfb940b2ac0c7555bd3e52077b8e34a0c07",
+          "range": {
+            "start_line": 1,
+            "end_line": 88
+          },
+          "symbol": "logger.browser-import.test"
+        },
+        {
+          "path": "src/logging/logger.test-support.ts",
+          "blob_sha": "9c18c73d28c9ec8ef6123b3d3a9fabab20e14438",
+          "range": {
+            "start_line": 1,
+            "end_line": 6
+          },
+          "symbol": "logger.test-support"
+        },
+        {
+          "path": "src/logging/logger.ts",
+          "blob_sha": "82af0c12710534428ecf4c86999702b94c43d05c",
+          "range": {
+            "start_line": 1,
+            "end_line": 694
+          },
+          "symbol": "logger"
+        },
+        {
+          "path": "src/logging/message-lifecycle.test.ts",
+          "blob_sha": "c6c29e6677627ca3d33a8104c5e37bcf9b033bea",
+          "range": {
+            "start_line": 1,
+            "end_line": 128
+          },
+          "symbol": "message-lifecycle.test"
+        },
+        {
+          "path": "src/logging/message-lifecycle.ts",
+          "blob_sha": "7421da6c478d16b1a4efdd7d17d50d44fe538196",
+          "range": {
+            "start_line": 1,
+            "end_line": 98
+          },
+          "symbol": "message-lifecycle"
+        },
+        {
+          "path": "src/logging/parse-log-line.test.ts",
+          "blob_sha": "185dea9fd82ab374a5ff750119277fa04620695c",
+          "range": {
+            "start_line": 1,
+            "end_line": 80
+          },
+          "symbol": "parse-log-line.test"
+        },
+        {
+          "path": "src/logging/parse-log-line.ts",
+          "blob_sha": "7a235703a0f86c8596a8f436884fc4161080dcc5",
+          "range": {
+            "start_line": 1,
+            "end_line": 91
+          },
+          "symbol": "parse-log-line"
+        },
+        {
+          "path": "src/logging/state.test.ts",
+          "blob_sha": "c4493d322113092141de8e4defef42863dcd9ff5",
+          "range": {
+            "start_line": 1,
+            "end_line": 11
+          },
+          "symbol": "state.test"
+        },
+        {
+          "path": "src/logging/state.ts",
+          "blob_sha": "08083dd199b7e63f006eb7e9f40302689e924825",
+          "range": {
+            "start_line": 1,
+            "end_line": 42
+          },
+          "symbol": "state"
+        },
+        {
+          "path": "src/logging/subsystem.test.ts",
+          "blob_sha": "5bb96f1a16386f7e9fb032b265caab0a76234e9c",
+          "range": {
+            "start_line": 1,
+            "end_line": 666
+          },
+          "symbol": "subsystem.test"
+        },
+        {
+          "path": "src/logging/subsystem.ts",
+          "blob_sha": "0933267fa875c50c74318242455ccf29836e8d57",
+          "range": {
+            "start_line": 1,
+            "end_line": 523
+          },
+          "symbol": "subsystem"
+        },
+        {
+          "path": "src/logging/test-helpers/console-snapshot.ts",
+          "blob_sha": "f59678dade94f3dcdcfcea6c8f0a83ef6df77bf9",
+          "range": {
+            "start_line": 1,
+            "end_line": 31
+          },
+          "symbol": "console-snapshot"
+        },
+        {
+          "path": "src/logging/test-helpers/warn-log-capture.ts",
+          "blob_sha": "86092f06c5d6a1c3d6672573d3c3c1351846202a",
+          "range": {
+            "start_line": 1,
+            "end_line": 29
+          },
+          "symbol": "warn-log-capture"
+        },
+        {
+          "path": "src/logging/timestamps.test.ts",
+          "blob_sha": "6429da2f3c87713181940e25e67abec54632fa9b",
+          "range": {
+            "start_line": 1,
+            "end_line": 46
+          },
+          "symbol": "timestamps.test"
+        },
+        {
+          "path": "src/logging/timestamps.ts",
+          "blob_sha": "139153297b19ba8e2c4c28c961292078796266eb",
+          "range": {
+            "start_line": 1,
+            "end_line": 96
+          },
+          "symbol": "timestamps"
+        },
+        {
+          "path": "src/logging/types.ts",
+          "blob_sha": "bd304226908f2a05e950b4d1e1d8c0fae6f90138",
+          "range": {
+            "start_line": 1,
+            "end_line": 12
+          },
+          "symbol": "types"
+        }
+      ],
+      "evidence_refs": [
+        "source/host/tests/openclaw_logging_contract.rs",
+        "projects/openclaw-rust/dossiers/logging-diagnostics-scoped.md"
+      ],
+      "requirement_ids": [
+        "OCRM-R04",
+        "OCRM-R08",
+        "OCRM-R21",
+        "OCRM-R24",
+        "OCRM-AC08",
+        "OCRM-AC21",
+        "OCRM-AC24"
+      ],
+      "required_gate_ids": [
+        "OCRM-G04-rust-contract",
+        "OCRM-G05-frozen-oracle"
+      ],
+      "oracle_ids": [
+        "OCRM-LOGGING-CORE-O01"
+      ],
+      "adr_refs": [],
+      "blocker_ids": [
+        "BL-LOGGING-CORE-WIRING-001"
+      ],
+      "target": {
+        "path": "source/host/src/extensions/telemetry/openclaw_logging_core.rs",
+        "symbol": "ConsoleLineFormatter",
+        "language": "Rust"
+      },
+      "required_evidence_dimensions": [
+        "unit",
+        "format"
+      ],
+      "reviewer": "xuyao@ombhrum.com",
+      "migration_rollback": "Fallback to standard stderr printing without subsystem routing"
+    },
+    {
+      "id": "OCRM-RESP-LOGGING-SECRET-REDACTION-001",
+      "unit_id": "OCRM-UNIT-LOGGING-001",
+      "responsibility_kind": "business-runtime",
+      "behavior": "Comprehensive sensitive token masking, sensitive URL query parameter redaction, PEM private key block sanitization, and structured authorization header masking.",
+      "risk": "Critical; unredacted credentials or private keys in logs result in security exposure",
+      "status": {
+        "read": "read-complete",
+        "mapping": "reviewed",
+        "wiring": "not-wired",
+        "implementation": "implemented",
+        "verification": "not-run",
+        "acceptance": "pending"
+      },
+      "selected_owner": "source/host/src/extensions/telemetry/openclaw_secret_redactor.rs",
+      "existing_owner_candidates": [
+        {
+          "path": "source/host/src/extensions/telemetry/openclaw_secret_redactor.rs",
+          "reason": "Host log secret redactor and credential sanitizer"
+        }
+      ],
+      "owner_decision": "Native implementation in openclaw_secret_redactor under telemetry extension",
+      "dependencies": [
+        "mahayana_host_runtime::extensions::telemetry::openclaw_secret_redactor"
+      ],
+      "capability_ids": [
+        "telemetry.secret_redaction"
+      ],
+      "preconditions": [
+        "Strings, URLs, or headers potentially containing sensitive keys or tokens passed for logging"
+      ],
+      "postconditions": [
+        "Tokens masked, sensitive query parameters replaced with [REDACTED], and PEM blocks sanitised"
+      ],
+      "invariants": [
+        "Tokens with <= 8 chars are masked completely",
+        "Tokens > 8 chars preserve only first 4 and last 4 characters",
+        "PEM private keys are never emitted in plaintext"
+      ],
+      "typed_contracts": [
+        "mask_token",
+        "redact_sensitive_query_params",
+        "redact_pem_blocks",
+        "redact_auth_header"
+      ],
+      "tests": [
+        "source/host/tests/openclaw_logging_contract.rs::test_ocrm_logging_secret_redaction"
+      ],
+      "integration": {
+        "producer": "source/host/src/extensions/telemetry/openclaw_secret_redactor.rs",
+        "owner": "source/host/src/extensions/telemetry/openclaw_secret_redactor.rs",
+        "consumer": "source/host/src/extensions/telemetry/openclaw_secret_redactor.rs",
+        "entrypoint": "source/host/src/extensions/telemetry/openclaw_secret_redactor.rs::redact_sensitive_query_params"
+      },
+      "source_refs": [
+        {
+          "path": "src/logging/diagnostic-support-log-redaction.ts",
+          "blob_sha": "402a548775a8b86a5b16b8f51fd9ea299c4d9612",
+          "range": {
+            "start_line": 1,
+            "end_line": 169
+          },
+          "symbol": "diagnostic-support-log-redaction"
+        },
+        {
+          "path": "src/logging/diagnostic-support-redaction.test.ts",
+          "blob_sha": "e9491082fb0f64f06c38ece06419a55eeae28455",
+          "range": {
+            "start_line": 1,
+            "end_line": 515
+          },
+          "symbol": "diagnostic-support-redaction.test"
+        },
+        {
+          "path": "src/logging/diagnostic-support-redaction.ts",
+          "blob_sha": "6e08a041cac11a97a0a7edd5c1ae0f07fd7b9db1",
+          "range": {
+            "start_line": 1,
+            "end_line": 755
+          },
+          "symbol": "diagnostic-support-redaction"
+        },
+        {
+          "path": "src/logging/log-tail-redaction.test.ts",
+          "blob_sha": "befbc4b3f566acad8c229daffb004f21fd2730bb",
+          "range": {
+            "start_line": 1,
+            "end_line": 168
+          },
+          "symbol": "log-tail-redaction.test"
+        },
+        {
+          "path": "src/logging/logger-redaction-behavior.test.ts",
+          "blob_sha": "4cb0ab51fcc36f16e22f3fc3ba298724559474f3",
+          "range": {
+            "start_line": 1,
+            "end_line": 234
+          },
+          "symbol": "logger-redaction-behavior.test"
+        },
+        {
+          "path": "src/logging/redact-bounded.ts",
+          "blob_sha": "c7d59b3397eee2edda422316f7a38f1f84cb75f5",
+          "range": {
+            "start_line": 1,
+            "end_line": 28
+          },
+          "symbol": "redact-bounded"
+        },
+        {
+          "path": "src/logging/redact-byte-identity-fixture.json",
+          "blob_sha": "73adf0774c2cc34a3c9c1aba9dcdf7963c80c549",
+          "range": {
+            "start_line": 1,
+            "end_line": 1
+          },
+          "symbol": "redact-byte-identity-fixture"
+        },
+        {
+          "path": "src/logging/redact-byte-identity.test.ts",
+          "blob_sha": "8d4e517704b98e58cafdebb5c8f89d9b5cee9066",
+          "range": {
+            "start_line": 1,
+            "end_line": 71
+          },
+          "symbol": "redact-byte-identity.test"
+        },
+        {
+          "path": "src/logging/redact-edit-composition.ts",
+          "blob_sha": "413fed8d3b63f5825d3fa5180c839c8b5a714248",
+          "range": {
+            "start_line": 1,
+            "end_line": 178
+          },
+          "symbol": "redact-edit-composition"
+        },
+        {
+          "path": "src/logging/redact-json-tokens.ts",
+          "blob_sha": "d5fdc51964193970f1d460ba03edfd3752ecaa8d",
+          "range": {
+            "start_line": 1,
+            "end_line": 242
+          },
+          "symbol": "redact-json-tokens"
+        },
+        {
+          "path": "src/logging/redact-json.ts",
+          "blob_sha": "0415dceab6f8df189d29d94c1d6113c4fd10968f",
+          "range": {
+            "start_line": 1,
+            "end_line": 604
+          },
+          "symbol": "redact-json"
+        },
+        {
+          "path": "src/logging/redact-large-text-security.test.ts",
+          "blob_sha": "85254d552f3891cb6650f3023ab744100cb8e99b",
+          "range": {
+            "start_line": 1,
+            "end_line": 177
+          },
+          "symbol": "redact-large-text-security.test"
+        },
+        {
+          "path": "src/logging/redact-linear-matchers.ts",
+          "blob_sha": "602a0517da3b21ad902109e4cae63610597a02ec",
+          "range": {
+            "start_line": 1,
+            "end_line": 596
+          },
+          "symbol": "redact-linear-matchers"
+        },
+        {
+          "path": "src/logging/redact-mask.ts",
+          "blob_sha": "67e11f8248ac9c3bca842b34569c40c14bce5a5b",
+          "range": {
+            "start_line": 1,
+            "end_line": 66
+          },
+          "symbol": "redact-mask"
+        },
+        {
+          "path": "src/logging/redact-pattern-allocation.test.ts",
+          "blob_sha": "5a706084839d7b356cab076e5285b1927cac6a5a",
+          "range": {
+            "start_line": 1,
+            "end_line": 36
+          },
+          "symbol": "redact-pattern-allocation.test"
+        },
+        {
+          "path": "src/logging/redact-pattern-runtime.ts",
+          "blob_sha": "a7210e7b828e49f3e6728fb5c53c5957fc799d32",
+          "range": {
+            "start_line": 1,
+            "end_line": 414
+          },
+          "symbol": "redact-pattern-runtime"
+        },
+        {
+          "path": "src/logging/redact-patterns.test.ts",
+          "blob_sha": "359f35a85b3e59c8008970b84bc0121d89c6fe3e",
+          "range": {
+            "start_line": 1,
+            "end_line": 257
+          },
+          "symbol": "redact-patterns.test"
+        },
+        {
+          "path": "src/logging/redact-patterns.ts",
+          "blob_sha": "9369cb004c219cf10dccfcf52b1415d92eddcefd",
+          "range": {
+            "start_line": 1,
+            "end_line": 617
+          },
+          "symbol": "redact-patterns"
+        },
+        {
+          "path": "src/logging/redact-pem.ts",
+          "blob_sha": "e07ff1f94768a05c552d87bd27fc2e5687d58862",
+          "range": {
+            "start_line": 1,
+            "end_line": 227
+          },
+          "symbol": "redact-pem"
+        },
+        {
+          "path": "src/logging/redact-performance.test.ts",
+          "blob_sha": "05e3cba9499672d11ccf1a856fe5e1494854f157",
+          "range": {
+            "start_line": 1,
+            "end_line": 49
+          },
+          "symbol": "redact-performance.test"
+        },
+        {
+          "path": "src/logging/redact-performance.ts",
+          "blob_sha": "6d3c5f69d3ee43c769db5cae0e6ca623675fe7fa",
+          "range": {
+            "start_line": 1,
+            "end_line": 29
+          },
+          "symbol": "redact-performance"
+        },
+        {
+          "path": "src/logging/redact-prefilter-fixture.json",
+          "blob_sha": "c1d0bcc316c41c0e3babe2a48ebe35df20ea4ddb",
+          "range": {
+            "start_line": 1,
+            "end_line": 2353
+          },
+          "symbol": "redact-prefilter-fixture"
+        },
+        {
+          "path": "src/logging/redact-prefilter.ts",
+          "blob_sha": "85f271a3da05531dfca8e6bb818c2e4d2136046c",
+          "range": {
+            "start_line": 1,
+            "end_line": 60
+          },
+          "symbol": "redact-prefilter"
+        },
+        {
+          "path": "src/logging/redact-token-ordering.test.ts",
+          "blob_sha": "e92d6a4f604cd1e4276ded6a4349be3a46bf59c1",
+          "range": {
+            "start_line": 1,
+            "end_line": 99
+          },
+          "symbol": "redact-token-ordering.test"
+        },
+        {
+          "path": "src/logging/redact.reentrancy.test.ts",
+          "blob_sha": "8d081879b9645f6aab05d0325c8b1c594554f60d",
+          "range": {
+            "start_line": 1,
+            "end_line": 121
+          },
+          "symbol": "redact.reentrancy.test"
+        },
+        {
+          "path": "src/logging/redact.test.ts",
+          "blob_sha": "be8ba701bfa68b867b05c03342fc49f4d7b7845f",
+          "range": {
+            "start_line": 1,
+            "end_line": 915
+          },
+          "symbol": "redact.test"
+        },
+        {
+          "path": "src/logging/redact.ts",
+          "blob_sha": "93e192f786a70ecbebe25907c25cdedfa8a60271",
+          "range": {
+            "start_line": 1,
+            "end_line": 1199
+          },
+          "symbol": "redact"
+        },
+        {
+          "path": "src/logging/redacting-stream.test.ts",
+          "blob_sha": "25b6ed7ac82e3df42a710f0e1a1798f45b3537cc",
+          "range": {
+            "start_line": 1,
+            "end_line": 64
+          },
+          "symbol": "redacting-stream.test"
+        },
+        {
+          "path": "src/logging/redacting-stream.ts",
+          "blob_sha": "6d6fc4e91041d30925349741eabe4731292722bf",
+          "range": {
+            "start_line": 1,
+            "end_line": 48
+          },
+          "symbol": "redacting-stream"
+        },
+        {
+          "path": "src/logging/secret-redaction-registry.test-support.ts",
+          "blob_sha": "547a0bb7a190168384618115d61f2d1cbe0b377a",
+          "range": {
+            "start_line": 1,
+            "end_line": 15
+          },
+          "symbol": "secret-redaction-registry.test-support"
+        },
+        {
+          "path": "src/logging/secret-redaction-registry.ts",
+          "blob_sha": "43845a3c2ee0ac3b7eaa6732beb2e75c470c1140",
+          "range": {
+            "start_line": 1,
+            "end_line": 150
+          },
+          "symbol": "secret-redaction-registry"
+        },
+        {
+          "path": "src/logging/structured-authorization-code.ts",
+          "blob_sha": "8478dec7e0f3dfa2d48c57a3d4e14284cb7f0ba5",
+          "range": {
+            "start_line": 1,
+            "end_line": 25
+          },
+          "symbol": "structured-authorization-code"
+        }
+      ],
+      "evidence_refs": [
+        "source/host/tests/openclaw_logging_contract.rs",
+        "projects/openclaw-rust/dossiers/logging-diagnostics-scoped.md"
+      ],
+      "requirement_ids": [
+        "OCRM-R04",
+        "OCRM-R08",
+        "OCRM-R13",
+        "OCRM-R21",
+        "OCRM-R24",
+        "OCRM-AC08",
+        "OCRM-AC21",
+        "OCRM-AC24"
+      ],
+      "required_gate_ids": [
+        "OCRM-G04-rust-contract",
+        "OCRM-G05-frozen-oracle"
+      ],
+      "oracle_ids": [
+        "OCRM-LOGGING-SECRET-O01"
+      ],
+      "adr_refs": [],
+      "blocker_ids": [
+        "BL-LOGGING-SECRET-WIRING-001"
+      ],
+      "target": {
+        "path": "source/host/src/extensions/telemetry/openclaw_secret_redactor.rs",
+        "symbol": "redact_sensitive_query_params",
+        "language": "Rust"
+      },
+      "required_evidence_dimensions": [
+        "unit",
+        "format"
+      ],
+      "reviewer": "xuyao@ombhrum.com",
+      "migration_rollback": "Use conservative full string masking on any error during redaction"
+    },
+    {
+      "id": "OCRM-RESP-LOGGING-DIAGNOSTIC-TELEMETRY-001",
+      "unit_id": "OCRM-UNIT-LOGGING-001",
+      "responsibility_kind": "business-runtime",
+      "behavior": "Runtime diagnostic telemetry, multi-tier memory pressure evaluation (normal/moderate/critical), session heartbeat liveness tracking, and watchdog activity projection.",
+      "risk": "Medium; memory leak detection and unresponsive session watchdog monitoring",
+      "status": {
+        "read": "read-complete",
+        "mapping": "reviewed",
+        "wiring": "not-wired",
+        "implementation": "implemented",
+        "verification": "not-run",
+        "acceptance": "pending"
+      },
+      "selected_owner": "source/host/src/extensions/telemetry/openclaw_diagnostic_telemetry.rs",
+      "existing_owner_candidates": [
+        {
+          "path": "source/host/src/extensions/telemetry/openclaw_diagnostic_telemetry.rs",
+          "reason": "Host diagnostic telemetry, memory pressure evaluator, and heartbeat liveness registry"
+        }
+      ],
+      "owner_decision": "Native implementation in openclaw_diagnostic_telemetry under telemetry extension",
+      "dependencies": [
+        "mahayana_host_runtime::extensions::telemetry::openclaw_diagnostic_telemetry"
+      ],
+      "capability_ids": [
+        "telemetry.diagnostics"
+      ],
+      "preconditions": [
+        "Memory and heartbeat metrics sampled during session execution"
+      ],
+      "postconditions": [
+        "Memory pressure classified accurately and expired heartbeats marked not alive"
+      ],
+      "invariants": [
+        "Memory ratio >= 0.90 is Critical, >= 0.75 is Moderate",
+        "Sweep marks timed-out sessions as not alive without dropping telemetry context"
+      ],
+      "typed_contracts": [
+        "MemoryPressureLevel",
+        "evaluate_memory_pressure",
+        "DiagnosticRunRegistry"
+      ],
+      "tests": [
+        "source/host/tests/openclaw_logging_contract.rs::test_ocrm_logging_diagnostics_and_memory_pressure"
+      ],
+      "integration": {
+        "producer": "source/host/src/extensions/telemetry/openclaw_diagnostic_telemetry.rs",
+        "owner": "source/host/src/extensions/telemetry/openclaw_diagnostic_telemetry.rs",
+        "consumer": "source/host/src/extensions/telemetry/openclaw_diagnostic_telemetry.rs",
+        "entrypoint": "source/host/src/extensions/telemetry/openclaw_diagnostic_telemetry.rs::evaluate_memory_pressure"
+      },
+      "source_refs": [
+        {
+          "path": "src/logging/code-mode-diagnostic.ts",
+          "blob_sha": "84e9234194e91fef31b58a0ddcbab787e72658ba",
+          "range": {
+            "start_line": 1,
+            "end_line": 90
+          },
+          "symbol": "code-mode-diagnostic"
+        },
+        {
+          "path": "src/logging/diagnostic-argument-churn-activity.ts",
+          "blob_sha": "10b1e25a6385993a58351dad7adbe935746f2231",
+          "range": {
+            "start_line": 1,
+            "end_line": 213
+          },
+          "symbol": "diagnostic-argument-churn-activity"
+        },
+        {
+          "path": "src/logging/diagnostic-backend-liveness.test.ts",
+          "blob_sha": "d354b7b724fb22496672e7a63a9185227124d345",
+          "range": {
+            "start_line": 1,
+            "end_line": 322
+          },
+          "symbol": "diagnostic-backend-liveness.test"
+        },
+        {
+          "path": "src/logging/diagnostic-controller-projection.ts",
+          "blob_sha": "9c3574c0ff9060efc1d192c0f4da59da5cb261b4",
+          "range": {
+            "start_line": 1,
+            "end_line": 88
+          },
+          "symbol": "diagnostic-controller-projection"
+        },
+        {
+          "path": "src/logging/diagnostic-cpu-profile.test.ts",
+          "blob_sha": "4ce7961c8b35ffca2be8f90a50a8376238fbca65",
+          "range": {
+            "start_line": 1,
+            "end_line": 692
+          },
+          "symbol": "diagnostic-cpu-profile.test"
+        },
+        {
+          "path": "src/logging/diagnostic-cpu-profile.ts",
+          "blob_sha": "b9b81ef953225d9b48176a70ed477ef61ef089f8",
+          "range": {
+            "start_line": 1,
+            "end_line": 157
+          },
+          "symbol": "diagnostic-cpu-profile"
+        },
+        {
+          "path": "src/logging/diagnostic-embedded-run-index.ts",
+          "blob_sha": "1f44242303d3d12b1553bcd550dbd05798192067",
+          "range": {
+            "start_line": 1,
+            "end_line": 12
+          },
+          "symbol": "diagnostic-embedded-run-index"
+        },
+        {
+          "path": "src/logging/diagnostic-gc.test.ts",
+          "blob_sha": "9b1530a433b51990092ab40b56996422194553ed",
+          "range": {
+            "start_line": 1,
+            "end_line": 469
+          },
+          "symbol": "diagnostic-gc.test"
+        },
+        {
+          "path": "src/logging/diagnostic-gc.ts",
+          "blob_sha": "8f25ee9f7a10cc2bc72c325d379c10748d1de34d",
+          "range": {
+            "start_line": 1,
+            "end_line": 36
+          },
+          "symbol": "diagnostic-gc"
+        },
+        {
+          "path": "src/logging/diagnostic-heap-profile.fixture.json",
+          "blob_sha": "1d6d53488265f785f51e36a8f4a6e0da4fb7fae2",
+          "range": {
+            "start_line": 1,
+            "end_line": 377
+          },
+          "symbol": "diagnostic-heap-profile.fixture"
+        },
+        {
+          "path": "src/logging/diagnostic-heap-profile.test-helpers.ts",
+          "blob_sha": "59c225ff243dbb14c3b22772eb8b889b327d60e4",
+          "range": {
+            "start_line": 1,
+            "end_line": 26
+          },
+          "symbol": "diagnostic-heap-profile.test-helpers"
+        },
+        {
+          "path": "src/logging/diagnostic-heap-profile.test.ts",
+          "blob_sha": "9c315991a7764db19b84de016f0d8e9af00744e7",
+          "range": {
+            "start_line": 1,
+            "end_line": 600
+          },
+          "symbol": "diagnostic-heap-profile.test"
+        },
+        {
+          "path": "src/logging/diagnostic-heap-profile.ts",
+          "blob_sha": "f4a880551344fc600a771a2af568fcdce206beb2",
+          "range": {
+            "start_line": 1,
+            "end_line": 303
+          },
+          "symbol": "diagnostic-heap-profile"
+        },
+        {
+          "path": "src/logging/diagnostic-heap-snapshot.ts",
+          "blob_sha": "bbddd1063e93821170f1d8e2ee14651799fee22c",
+          "range": {
+            "start_line": 1,
+            "end_line": 103
+          },
+          "symbol": "diagnostic-heap-snapshot"
+        },
+        {
+          "path": "src/logging/diagnostic-heartbeat-context.test.ts",
+          "blob_sha": "0c10da509d698193f6122bd898e425f4654658f4",
+          "range": {
+            "start_line": 1,
+            "end_line": 190
+          },
+          "symbol": "diagnostic-heartbeat-context.test"
+        },
+        {
+          "path": "src/logging/diagnostic-lifecycle.test.ts",
+          "blob_sha": "054725c4ccee9b9e2c3919deba16ad16bb051e32",
+          "range": {
+            "start_line": 1,
+            "end_line": 272
+          },
+          "symbol": "diagnostic-lifecycle.test"
+        },
+        {
+          "path": "src/logging/diagnostic-liveness.ts",
+          "blob_sha": "1d83db4416447589663f14a2093c3b75175719f8",
+          "range": {
+            "start_line": 1,
+            "end_line": 156
+          },
+          "symbol": "diagnostic-liveness"
+        },
+        {
+          "path": "src/logging/diagnostic-log-events.test.ts",
+          "blob_sha": "e596fbf9650fdf5f97357ef1707e6cc4c0396484",
+          "range": {
+            "start_line": 1,
+            "end_line": 133
+          },
+          "symbol": "diagnostic-log-events.test"
+        },
+        {
+          "path": "src/logging/diagnostic-memory-bundle.ts",
+          "blob_sha": "4fea31bc198c6c323bd2104276fa3764a763f213",
+          "range": {
+            "start_line": 1,
+            "end_line": 131
+          },
+          "symbol": "diagnostic-memory-bundle"
+        },
+        {
+          "path": "src/logging/diagnostic-memory-growth.test.ts",
+          "blob_sha": "c3822d8448b31da8e417b06af2348d5b08b97c26",
+          "range": {
+            "start_line": 1,
+            "end_line": 59
+          },
+          "symbol": "diagnostic-memory-growth.test"
+        },
+        {
+          "path": "src/logging/diagnostic-memory.test.ts",
+          "blob_sha": "5cbabdec374cecbce0a2e91aec5d726fcbf836af",
+          "range": {
+            "start_line": 1,
+            "end_line": 732
+          },
+          "symbol": "diagnostic-memory.test"
+        },
+        {
+          "path": "src/logging/diagnostic-memory.ts",
+          "blob_sha": "2803b7a896023c96770ab6fa08465a51d25a5d0f",
+          "range": {
+            "start_line": 1,
+            "end_line": 380
+          },
+          "symbol": "diagnostic-memory"
+        },
+        {
+          "path": "src/logging/diagnostic-message-content.ts",
+          "blob_sha": "380e740531fc5944adba28a2c186f2b39ea33d72",
+          "range": {
+            "start_line": 1,
+            "end_line": 45
+          },
+          "symbol": "diagnostic-message-content"
+        },
+        {
+          "path": "src/logging/diagnostic-metric.ts",
+          "blob_sha": "58f1bfb64856f22606e994f28c33ae5f19b66b95",
+          "range": {
+            "start_line": 1,
+            "end_line": 8
+          },
+          "symbol": "diagnostic-metric"
+        },
+        {
+          "path": "src/logging/diagnostic-model-stream-progress.ts",
+          "blob_sha": "3e7206a6034575eb160a52327bde947d1720c812",
+          "range": {
+            "start_line": 1,
+            "end_line": 78
+          },
+          "symbol": "diagnostic-model-stream-progress"
+        },
+        {
+          "path": "src/logging/diagnostic-owned-activity.ts",
+          "blob_sha": "d4adf68f3fec5bd4275664c4bd1726957226196a",
+          "range": {
+            "start_line": 1,
+            "end_line": 209
+          },
+          "symbol": "diagnostic-owned-activity"
+        },
+        {
+          "path": "src/logging/diagnostic-payload.ts",
+          "blob_sha": "65dc7d5bb1c1c66ff6d64020a1446a9e0f3d876f",
+          "range": {
+            "start_line": 1,
+            "end_line": 45
+          },
+          "symbol": "diagnostic-payload"
+        },
+        {
+          "path": "src/logging/diagnostic-phase.test.ts",
+          "blob_sha": "36d8de28ea75e0e928249249aba2c3b0819181c5",
+          "range": {
+            "start_line": 1,
+            "end_line": 56
+          },
+          "symbol": "diagnostic-phase.test"
+        },
+        {
+          "path": "src/logging/diagnostic-phase.ts",
+          "blob_sha": "9ad61598e13f110b93bf5629e33014bbf14075dc",
+          "range": {
+            "start_line": 1,
+            "end_line": 95
+          },
+          "symbol": "diagnostic-phase"
+        },
+        {
+          "path": "src/logging/diagnostic-profile-runtime.test-support.ts",
+          "blob_sha": "75ee443dc08f74260616dd78a6b6db75ce77fc04",
+          "range": {
+            "start_line": 1,
+            "end_line": 22
+          },
+          "symbol": "diagnostic-profile-runtime.test-support"
+        },
+        {
+          "path": "src/logging/diagnostic-profile.ts",
+          "blob_sha": "ba34d95a961b720886e7b978bc947a8b58f924b8",
+          "range": {
+            "start_line": 1,
+            "end_line": 355
+          },
+          "symbol": "diagnostic-profile"
+        },
+        {
+          "path": "src/logging/diagnostic-recovery.test-support.ts",
+          "blob_sha": "118a12472c64942c4617b1e746788000650e42cd",
+          "range": {
+            "start_line": 1,
+            "end_line": 7
+          },
+          "symbol": "diagnostic-recovery.test-support"
+        },
+        {
+          "path": "src/logging/diagnostic-repeated-request-activity.ts",
+          "blob_sha": "b8cb0860c3b223810928db22d66c29fad1d5b9cd",
+          "range": {
+            "start_line": 1,
+            "end_line": 90
+          },
+          "symbol": "diagnostic-repeated-request-activity"
+        },
+        {
+          "path": "src/logging/diagnostic-responses-request-deadline.integration.test.ts",
+          "blob_sha": "3cad45865057fcb4f6a6057f21cce30c483df0b9",
+          "range": {
+            "start_line": 1,
+            "end_line": 423
+          },
+          "symbol": "diagnostic-responses-request-deadline.integration.test"
+        },
+        {
+          "path": "src/logging/diagnostic-run-activity-owners.test.ts",
+          "blob_sha": "921e2e84753d2d0a61546e799e46c900f4165db3",
+          "range": {
+            "start_line": 1,
+            "end_line": 406
+          },
+          "symbol": "diagnostic-run-activity-owners.test"
+        },
+        {
+          "path": "src/logging/diagnostic-run-activity-recovery.ts",
+          "blob_sha": "d4f415fcef99b2b1497c9043a2d43abcd3d9f26b",
+          "range": {
+            "start_line": 1,
+            "end_line": 138
+          },
+          "symbol": "diagnostic-run-activity-recovery"
+        },
+        {
+          "path": "src/logging/diagnostic-run-activity-snapshot.ts",
+          "blob_sha": "b296a3efb74a2b581edaa536510b7e2b33e33252",
+          "range": {
+            "start_line": 1,
+            "end_line": 198
+          },
+          "symbol": "diagnostic-run-activity-snapshot"
+        },
+        {
+          "path": "src/logging/diagnostic-run-activity-state.ts",
+          "blob_sha": "4a23514a54ceb0ac68c8db245c7bf7e83f8bf950",
+          "range": {
+            "start_line": 1,
+            "end_line": 212
+          },
+          "symbol": "diagnostic-run-activity-state"
+        },
+        {
+          "path": "src/logging/diagnostic-run-activity.test-support.ts",
+          "blob_sha": "40a52ee00d9adba9a599494f7b591cbc5ac7f158",
+          "range": {
+            "start_line": 1,
+            "end_line": 36
+          },
+          "symbol": "diagnostic-run-activity.test-support"
+        },
+        {
+          "path": "src/logging/diagnostic-run-activity.test.ts",
+          "blob_sha": "bd6169d9f1536f2049bf9a5a4b8b6d654e81ae8a",
+          "range": {
+            "start_line": 1,
+            "end_line": 634
+          },
+          "symbol": "diagnostic-run-activity.test"
+        },
+        {
+          "path": "src/logging/diagnostic-run-activity.ts",
+          "blob_sha": "d6730b505bc68b6fbae292ebf0492c4ca824cf32",
+          "range": {
+            "start_line": 1,
+            "end_line": 661
+          },
+          "symbol": "diagnostic-run-activity"
+        },
+        {
+          "path": "src/logging/diagnostic-runtime.ts",
+          "blob_sha": "f4ae0c71ee5f192d7ecb2be4350b8fd09cd2fb2e",
+          "range": {
+            "start_line": 1,
+            "end_line": 125
+          },
+          "symbol": "diagnostic-runtime"
+        },
+        {
+          "path": "src/logging/diagnostic-session-attention.test.ts",
+          "blob_sha": "c4fda0e517b97c1350c4b3d1b548369f82d24c3d",
+          "range": {
+            "start_line": 1,
+            "end_line": 90
+          },
+          "symbol": "diagnostic-session-attention.test"
+        },
+        {
+          "path": "src/logging/diagnostic-session-attention.ts",
+          "blob_sha": "ffd372e76e32cd219706465dc2a03803465a30cf",
+          "range": {
+            "start_line": 1,
+            "end_line": 164
+          },
+          "symbol": "diagnostic-session-attention"
+        },
+        {
+          "path": "src/logging/diagnostic-session-context.test.ts",
+          "blob_sha": "8adeacdf183529dbac4f3d01fe05b0c45db4086d",
+          "range": {
+            "start_line": 1,
+            "end_line": 221
+          },
+          "symbol": "diagnostic-session-context.test"
+        },
+        {
+          "path": "src/logging/diagnostic-session-context.ts",
+          "blob_sha": "bf6d3472a0a1a733238f3d413fd928642706c72c",
+          "range": {
+            "start_line": 1,
+            "end_line": 81
+          },
+          "symbol": "diagnostic-session-context"
+        },
+        {
+          "path": "src/logging/diagnostic-session-recovery-coordinator.ts",
+          "blob_sha": "13fbdc85d031be811ee8f9589aa459c1b788a659",
+          "range": {
+            "start_line": 1,
+            "end_line": 68
+          },
+          "symbol": "diagnostic-session-recovery-coordinator"
+        },
+        {
+          "path": "src/logging/diagnostic-session-recovery.ts",
+          "blob_sha": "02e3c360fbecdd1ca50cb7031108177c696ff4e4",
+          "range": {
+            "start_line": 1,
+            "end_line": 137
+          },
+          "symbol": "diagnostic-session-recovery"
+        },
+        {
+          "path": "src/logging/diagnostic-session-state.ts",
+          "blob_sha": "ce7c11c425beefcbe46576db82fa5ba35dba6bb0",
+          "range": {
+            "start_line": 1,
+            "end_line": 330
+          },
+          "symbol": "diagnostic-session-state"
+        },
+        {
+          "path": "src/logging/diagnostic-stability-bundle.runtime-identity.test.ts",
+          "blob_sha": "1330ac718561dbc4bfeb7bd2236c0061a0fcc077",
+          "range": {
+            "start_line": 1,
+            "end_line": 85
+          },
+          "symbol": "diagnostic-stability-bundle.runtime-identity.test"
+        },
+        {
+          "path": "src/logging/diagnostic-stability-bundle.test.ts",
+          "blob_sha": "d7b40605c2ba22e166018055d028dc0940f87891",
+          "range": {
+            "start_line": 1,
+            "end_line": 929
+          },
+          "symbol": "diagnostic-stability-bundle.test"
+        },
+        {
+          "path": "src/logging/diagnostic-stability-bundle.ts",
+          "blob_sha": "49bb34bc8bc15f05e1ec5d6d88c387fc91b1ab0d",
+          "range": {
+            "start_line": 1,
+            "end_line": 930
+          },
+          "symbol": "diagnostic-stability-bundle"
+        },
+        {
+          "path": "src/logging/diagnostic-stability-projection.test.ts",
+          "blob_sha": "6274f7fc8ef8057d4be8f01289771757143d529f",
+          "range": {
+            "start_line": 1,
+            "end_line": 105
+          },
+          "symbol": "diagnostic-stability-projection.test"
+        },
+        {
+          "path": "src/logging/diagnostic-stability-query.ts",
+          "blob_sha": "3ed59b799c028eeb78c57c78d96f20d47bc78b43",
+          "range": {
+            "start_line": 1,
+            "end_line": 62
+          },
+          "symbol": "diagnostic-stability-query"
+        },
+        {
+          "path": "src/logging/diagnostic-stability-readers.ts",
+          "blob_sha": "51d74cb7f3e8e97f6ae21a369f143a62e6f86079",
+          "range": {
+            "start_line": 1,
+            "end_line": 46
+          },
+          "symbol": "diagnostic-stability-readers"
+        },
+        {
+          "path": "src/logging/diagnostic-stability.test.ts",
+          "blob_sha": "5e6d258ab8cf10992845056af70a252a69f498bb",
+          "range": {
+            "start_line": 1,
+            "end_line": 767
+          },
+          "symbol": "diagnostic-stability.test"
+        },
+        {
+          "path": "src/logging/diagnostic-stability.ts",
+          "blob_sha": "ee3e40c19c7db07760486530d2df295a364076e5",
+          "range": {
+            "start_line": 1,
+            "end_line": 795
+          },
+          "symbol": "diagnostic-stability"
+        },
+        {
+          "path": "src/logging/diagnostic-stall-flight-recorder.test.ts",
+          "blob_sha": "405ae7aff5041caa3aec24f908c3bc42116596d6",
+          "range": {
+            "start_line": 1,
+            "end_line": 168
+          },
+          "symbol": "diagnostic-stall-flight-recorder.test"
+        },
+        {
+          "path": "src/logging/diagnostic-stall-flight-recorder.ts",
+          "blob_sha": "17c77a52f0d4d76b79a0b6967586f421528abff2",
+          "range": {
+            "start_line": 1,
+            "end_line": 134
+          },
+          "symbol": "diagnostic-stall-flight-recorder"
+        },
+        {
+          "path": "src/logging/diagnostic-stuck-session-exec-deadline.test.ts",
+          "blob_sha": "6a8f3c5ce1325b71ba448e8a1ccc174945563709",
+          "range": {
+            "start_line": 1,
+            "end_line": 161
+          },
+          "symbol": "diagnostic-stuck-session-exec-deadline.test"
+        },
+        {
+          "path": "src/logging/diagnostic-stuck-session-followup-recovery.integration.test.ts",
+          "blob_sha": "86c978a709dc2c598a7ec7614daa81d840779bcf",
+          "range": {
+            "start_line": 1,
+            "end_line": 145
+          },
+          "symbol": "diagnostic-stuck-session-followup-recovery.integration.test"
+        },
+        {
+          "path": "src/logging/diagnostic-stuck-session-recovery.integration.test.ts",
+          "blob_sha": "72410a629c78041380d25213264b8146d7f66e4e",
+          "range": {
+            "start_line": 1,
+            "end_line": 226
+          },
+          "symbol": "diagnostic-stuck-session-recovery.integration.test"
+        },
+        {
+          "path": "src/logging/diagnostic-stuck-session-recovery.runtime.incognito.test.ts",
+          "blob_sha": "88ab099f1ed05d72af7e4ff6105a38f6996810a8",
+          "range": {
+            "start_line": 1,
+            "end_line": 190
+          },
+          "symbol": "diagnostic-stuck-session-recovery.runtime.incognito.test"
+        },
+        {
+          "path": "src/logging/diagnostic-stuck-session-recovery.runtime.test.ts",
+          "blob_sha": "6caa7abc1f7eddd1c6b6dc1bde085a787b9d4331",
+          "range": {
+            "start_line": 1,
+            "end_line": 199
+          },
+          "symbol": "diagnostic-stuck-session-recovery.runtime.test"
+        },
+        {
+          "path": "src/logging/diagnostic-stuck-session-recovery.runtime.ts",
+          "blob_sha": "12432d34757c262e4c3d50eb3d3bfabc72712332",
+          "range": {
+            "start_line": 1,
+            "end_line": 81
+          },
+          "symbol": "diagnostic-stuck-session-recovery.runtime"
+        },
+        {
+          "path": "src/logging/diagnostic-support-bundle.test.ts",
+          "blob_sha": "da5888e7e4194f04cc665bb23389dbe3cc2f4c07",
+          "range": {
+            "start_line": 1,
+            "end_line": 93
+          },
+          "symbol": "diagnostic-support-bundle.test"
+        },
+        {
+          "path": "src/logging/diagnostic-support-bundle.ts",
+          "blob_sha": "a4e7330e53201eaa90329c60c00d3210d1998878",
+          "range": {
+            "start_line": 1,
+            "end_line": 121
+          },
+          "symbol": "diagnostic-support-bundle"
+        },
+        {
+          "path": "src/logging/diagnostic-support-export.test.ts",
+          "blob_sha": "ece1d9ed686ad3786bac9fa07cfe721424810dcc",
+          "range": {
+            "start_line": 1,
+            "end_line": 788
+          },
+          "symbol": "diagnostic-support-export.test"
+        },
+        {
+          "path": "src/logging/diagnostic-support-export.ts",
+          "blob_sha": "a167b900bba13346effc7303548492c456fface5",
+          "range": {
+            "start_line": 1,
+            "end_line": 679
+          },
+          "symbol": "diagnostic-support-export"
+        },
+        {
+          "path": "src/logging/diagnostic-tool-loop.ts",
+          "blob_sha": "172a1ede3fdb601095b5144ca534a9ddf07f234c",
+          "range": {
+            "start_line": 1,
+            "end_line": 49
+          },
+          "symbol": "diagnostic-tool-loop"
+        },
+        {
+          "path": "src/logging/diagnostic-worker-gc-profile.test.ts",
+          "blob_sha": "cd5696529dfa2301c4773e82645117322083d68f",
+          "range": {
+            "start_line": 1,
+            "end_line": 119
+          },
+          "symbol": "diagnostic-worker-gc-profile.test"
+        },
+        {
+          "path": "src/logging/diagnostic-worker-gc-profile.ts",
+          "blob_sha": "c9f4c6c5d85af5839ef56ce3f8597901c3c76aa0",
+          "range": {
+            "start_line": 1,
+            "end_line": 105
+          },
+          "symbol": "diagnostic-worker-gc-profile"
+        },
+        {
+          "path": "src/logging/diagnostic.incognito.test.ts",
+          "blob_sha": "f85334f3c872b12f11eadc48ff4ba094020d4bee",
+          "range": {
+            "start_line": 1,
+            "end_line": 129
+          },
+          "symbol": "diagnostic.incognito.test"
+        },
+        {
+          "path": "src/logging/diagnostic.test-support.ts",
+          "blob_sha": "3813aa8e08480b840009a669c483cac50a535d9c",
+          "range": {
+            "start_line": 1,
+            "end_line": 35
+          },
+          "symbol": "diagnostic.test-support"
+        },
+        {
+          "path": "src/logging/diagnostic.test.ts",
+          "blob_sha": "877af17bbd7e9a2c4ebe79978d3ad048e8c92bf2",
+          "range": {
+            "start_line": 1,
+            "end_line": 1261
+          },
+          "symbol": "diagnostic.test"
+        },
+        {
+          "path": "src/logging/diagnostic.ts",
+          "blob_sha": "d1a82994c060bb9e3d1f1ba10ac8a0c99803f4fd",
+          "range": {
+            "start_line": 1,
+            "end_line": 966
+          },
+          "symbol": "diagnostic"
+        },
+        {
+          "path": "src/logging/test-helpers/diagnostic-log-capture.test.ts",
+          "blob_sha": "34b79563a61c16f865e4680b354550e91c415425",
+          "range": {
+            "start_line": 1,
+            "end_line": 32
+          },
+          "symbol": "diagnostic-log-capture.test"
+        },
+        {
+          "path": "src/logging/test-helpers/diagnostic-log-capture.ts",
+          "blob_sha": "de4e4b91ce593b538b685786da500f1e19cb26fc",
+          "range": {
+            "start_line": 1,
+            "end_line": 39
+          },
+          "symbol": "diagnostic-log-capture"
+        }
+      ],
+      "evidence_refs": [
+        "source/host/tests/openclaw_logging_contract.rs",
+        "projects/openclaw-rust/dossiers/logging-diagnostics-scoped.md"
+      ],
+      "requirement_ids": [
+        "OCRM-R04",
+        "OCRM-R08",
+        "OCRM-R21",
+        "OCRM-R24",
+        "OCRM-AC08",
+        "OCRM-AC21",
+        "OCRM-AC24"
+      ],
+      "required_gate_ids": [
+        "OCRM-G04-rust-contract",
+        "OCRM-G05-frozen-oracle"
+      ],
+      "oracle_ids": [
+        "OCRM-LOGGING-DIAG-O01"
+      ],
+      "adr_refs": [],
+      "blocker_ids": [
+        "BL-LOGGING-DIAG-WIRING-001"
+      ],
+      "target": {
+        "path": "source/host/src/extensions/telemetry/openclaw_diagnostic_telemetry.rs",
+        "symbol": "evaluate_memory_pressure",
+        "language": "Rust"
+      },
+      "required_evidence_dimensions": [
+        "unit",
+        "format"
+      ],
+      "reviewer": "xuyao@ombhrum.com",
+      "migration_rollback": "Disable adaptive memory pressure triggers and retain default fixed caches"
     }
   ],
   "schema_version": 1,
