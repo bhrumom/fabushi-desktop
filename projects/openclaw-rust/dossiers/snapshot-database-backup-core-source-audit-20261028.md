@@ -178,6 +178,12 @@ deterministic renderer. The contract creates a temporary table, index, and
 trigger and verifies the returned order. This is SQLite-owner evidence only;
 it is not PostgreSQL port inspection or restore publication.
 
+`digest_sqlite_table` now reads a real owner SQLite table through `SELECT *`,
+converts NULL/integer/REAL/text/blob cells, streams row encoding into SHA-256,
+and returns the manifest-compatible count/digest without retaining the full
+table. The contract compares it to an independently assembled JSONL digest and
+rejects injection-shaped table names. PostgreSQL materialization remains absent.
+
 ## Responsibility/evidence decision
 
 `OCRM-RESP-SNAPSHOT-BACKUP-CODEC-001` remains `read=partial`,
