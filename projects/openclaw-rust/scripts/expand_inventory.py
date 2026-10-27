@@ -73,6 +73,9 @@ for e in entries:
         "reviewer": shard_rec.get("reviewer") if shard_rec else None,
         "evidence_refs": shard_rec.get("evidence_refs", []) if shard_rec else [],
     })
+    if shard_rec:
+        e["read_status"] = shard_rec.get("read_status", e["read_status"])
+        e["responsibility_status"] = shard_rec.get("responsibility_status", e["responsibility_status"])
     ledger_ids = ledger_responsibilities.get((e["path"], e["blob_sha"]), [])
     if ledger_ids:
         e["responsibility_ids"] = sorted(
@@ -80,9 +83,6 @@ for e in entries:
         )
         if e.get("responsibility_status") == "unclassified":
             e["responsibility_status"] = "mapped"
-    if shard_rec:
-        e["read_status"] = shard_rec.get("read_status", e["read_status"])
-        e["responsibility_status"] = shard_rec.get("responsibility_status", e["responsibility_status"])
 output = json.dumps(payload, ensure_ascii=False, sort_keys=True, separators=(",", ":")) + "\n"
 source.write_text(output)
 digest = hashlib.sha256(source.read_bytes()).hexdigest()
