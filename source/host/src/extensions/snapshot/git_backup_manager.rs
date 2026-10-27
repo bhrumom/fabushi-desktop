@@ -235,6 +235,37 @@ pub fn write_postgres_export_manifest(
         .map_err(|error| format!("persist Postgres export manifest {}: {error}", path.display()))
 }
 
+/// Verify the two SQLite artifacts referenced by a parsed manifest.
+///
+/// This checks bytes and sidecar custody while the files are opened; it does
+/// not inspect the anchor database identity or materialize a restore target.
+pub fn verify_postgres_export_artifacts(
+    directory: impl AsRef<Path>,
+    manifest: &PostgresExportManifest,
+    required_profile: &str,
+) -> Result<(), String> {
+    let directory = directory.as_ref();
+    let directory_id = directory
+        .file_name()
+        .and_then(|name| name.to_str())
+        .ok_or_else(|| "export directory has no valid identifier".to_string())?;
+    if directory_id != manifest.snapshot_id || manifest.profile != required_profile {
+        return Err("export directory/profile does not match manifest".into());
+    }
+    for (name, expected) in [
+        ("database.sqlite", &manifest.artifacts.database),
+        ("anchor.sqlite", &manifest.artifacts.anchor),
+    ] {
+        let path = directory.join(name);
+        assert_no_sqlite_sidecars(&path, "Postgres export has unexpected SQLite sidecar")?;
+        let actual = capture_database_artifact(&path)?;
+        if actual.sha256 != expected.sha256 || actual.size_bytes != expected.size_bytes {
+            return Err(format!("export artifact verification failed: {name}"));
+        }
+    }
+    Ok(())
+}
+
 impl SnapshotGenerationFence {
     pub fn new(initial_generation: u64) -> Self {
         Self {

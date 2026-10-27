@@ -87,6 +87,12 @@ The same owner now writes validated schema-v2 manifests with an exclusive
 manifest oracle reads the resulting bytes back and validates them again; this
 still does not prove held-handle anchor inspection or database materialization.
 
+`verify_postgres_export_artifacts` now binds a parsed manifest to its directory
+name, required profile, two opened regular artifacts, exact SHA-256/size values,
+and sidecar absence. The local oracle passes real temporary database/anchor
+files and rejects a newly introduced anchor WAL sidecar; it intentionally does
+not claim anchor identity inspection or restore publication.
+
 ## Responsibility/evidence decision
 
 `OCRM-RESP-SNAPSHOT-BACKUP-CODEC-001` remains `read=partial`,

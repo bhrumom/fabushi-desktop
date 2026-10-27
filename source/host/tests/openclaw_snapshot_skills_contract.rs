@@ -8,7 +8,8 @@ use mahayana_host_runtime::extensions::skills::skill_runtime::{
 use mahayana_host_runtime::extensions::snapshot::git_backup_manager::{
     assert_database_artifact, capture_database_artifact, create_export_envelope,
     assert_fresh_restore_target, assert_no_sqlite_sidecars, parse_postgres_export_manifest,
-    verify_export_envelope, write_postgres_export_manifest, SnapshotGenerationFence,
+    verify_export_envelope, verify_postgres_export_artifacts, write_postgres_export_manifest,
+    SnapshotGenerationFence,
 };
 use serde_json::json;
 use std::fs;
@@ -108,6 +109,36 @@ fn test_ocrm_snapshot_postgres_manifest_schema_and_profile_oracles() {
     let parsed = parse_postgres_export_manifest(&valid, "snap-002", Some("exact"))
         .expect("valid schema-v2 manifest");
     assert_eq!(parsed.export_schema_version, 2);
+
+    let export_root = std::env::temp_dir().join(format!(
+        "fabushi-export-{}",
+        std::process::id()
+    ));
+    let export_dir = export_root.join("snap-002");
+    let _ = fs::remove_dir_all(&export_root);
+    fs::create_dir_all(&export_dir).expect("create export directory");
+    fs::write(export_dir.join("database.sqlite"), b"database-image")
+        .expect("write database artifact");
+    fs::write(export_dir.join("anchor.sqlite"), b"anchor-image").expect("write anchor artifact");
+    let database_artifact = capture_database_artifact(export_dir.join("database.sqlite"))
+        .expect("capture database artifact");
+    let anchor_artifact = capture_database_artifact(export_dir.join("anchor.sqlite"))
+        .expect("capture anchor artifact");
+    let mut artifact_manifest = valid.clone();
+    artifact_manifest["artifacts"]["database.sqlite"]["sha256"] =
+        json!(database_artifact.sha256);
+    artifact_manifest["artifacts"]["database.sqlite"]["size_bytes"] =
+        json!(database_artifact.size_bytes);
+    artifact_manifest["artifacts"]["anchor.sqlite"]["sha256"] = json!(anchor_artifact.sha256);
+    artifact_manifest["artifacts"]["anchor.sqlite"]["size_bytes"] = json!(anchor_artifact.size_bytes);
+    let parsed_artifacts = parse_postgres_export_manifest(&artifact_manifest, "snap-002", Some("exact"))
+        .expect("parse artifact manifest");
+    verify_postgres_export_artifacts(&export_dir, &parsed_artifacts, "exact")
+        .expect("verify export artifacts");
+    fs::write(export_dir.join("anchor.sqlite-wal"), b"unexpected sidecar")
+        .expect("write sidecar");
+    assert!(verify_postgres_export_artifacts(&export_dir, &parsed_artifacts, "exact").is_err());
+    let _ = fs::remove_dir_all(&export_root);
 
     let manifest_path = std::env::temp_dir().join(format!(
         "fabushi-snapshot-manifest-{}-{}.json",
