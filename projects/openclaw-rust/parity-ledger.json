@@ -24677,8 +24677,212 @@
             "end_line": 10,
             "start_line": 1
           },
-          "symbol": "listPluginCompatRecords"
-        }
+    "symbol": "listPluginCompatRecords"
+  },
+    {
+      "blob_sha": "cc90ebd6be99d6cc5300c0a726905dd84792f0ec",
+      "path": "src/plugins/compat/activation-hint-records.ts",
+      "range": {"end_line": 1, "start_line": 1},
+      "symbol": "activation-hint-records"
+    },
+    {
+      "blob_sha": "db1f46d1e7afde78c1879bdb4f84d523b6fa72c0",
+      "path": "src/plugins/compat/agent-harness-records.ts",
+      "range": {"end_line": 1, "start_line": 1},
+      "symbol": "agent-harness-records"
+    },
+    {
+      "blob_sha": "c2329d509eb6fa1b76ad8112946ff22ca3f83ddc",
+      "path": "src/plugins/compat/agent-list-runtime-projection-records.ts",
+      "range": {"end_line": 1, "start_line": 1},
+      "symbol": "agent-list-runtime-projection-records"
+    },
+    {
+      "blob_sha": "29df36e45e337d1a0b608d7ace76acb6b94759ff",
+      "path": "src/plugins/compat/assistant-text-phase-terminal-hint-record.ts",
+      "range": {"end_line": 1, "start_line": 1},
+      "symbol": "assistant-text-phase-terminal-hint-record"
+    },
+    {
+      "blob_sha": "0c547f485f78a5a47b5bf4b29848bcb325d782a8",
+      "path": "src/plugins/compat/async-sqlite-preparation-records.ts",
+      "range": {"end_line": 1, "start_line": 1},
+      "symbol": "async-sqlite-preparation-records"
+    },
+    {
+      "blob_sha": "b1df96256d4197a49ff2b98183717d7afbcec9f3",
+      "path": "src/plugins/compat/auth-async-record.ts",
+      "range": {"end_line": 1, "start_line": 1},
+      "symbol": "auth-async-record"
+    },
+    {
+      "blob_sha": "d2ef86f03c1066130174618a2c7b089a2574528e",
+      "path": "src/plugins/compat/binding-persistence-records.ts",
+      "range": {"end_line": 1, "start_line": 1},
+      "symbol": "binding-persistence-records"
+    },
+    {
+      "blob_sha": "f645155e275c1a16d3db7f225a0dfdceeee46b94",
+      "path": "src/plugins/compat/channel-pairing-record.ts",
+      "range": {"end_line": 1, "start_line": 1},
+      "symbol": "channel-pairing-record"
+    },
+    {
+      "blob_sha": "9da88b080f376f7e06c40ae310c5e6a57203a9fb",
+      "path": "src/plugins/compat/channel-prepared-tool-policy-record.ts",
+      "range": {"end_line": 1, "start_line": 1},
+      "symbol": "channel-prepared-tool-policy-record"
+    },
+    {
+      "blob_sha": "5e4c42f7db272176882e4bcbb62adcdcde0ba01d",
+      "path": "src/plugins/compat/conversation-read-tools.ts",
+      "range": {"end_line": 1, "start_line": 1},
+      "symbol": "conversation-read-tools"
+    },
+    {
+      "blob_sha": "88d9a1ea22291fb9579b2e22647f6c849ed4f060",
+      "path": "src/plugins/compat/cron-store-path-record.ts",
+      "range": {"end_line": 1, "start_line": 1},
+      "symbol": "cron-store-path-record"
+    },
+    {
+      "blob_sha": "95b3ddea3badc17389e63eb5a89b17d7981def91",
+      "path": "src/plugins/compat/deprecation-marking.ts",
+      "range": {"end_line": 1, "start_line": 1},
+      "symbol": "deprecation-marking"
+    },
+    {
+      "blob_sha": "113cd34050ddfe6b87c5899346e6c9b46ea84cec",
+      "path": "src/plugins/compat/media-legacy-projection.ts",
+      "range": {"end_line": 1, "start_line": 1},
+      "symbol": "media-legacy-projection"
+    },
+    {
+      "blob_sha": "2103628a6dc9dd4f8c1ecab20919c7a346e15fa1",
+      "path": "src/plugins/compat/memory-session-records.ts",
+      "range": {"end_line": 1, "start_line": 1},
+      "symbol": "memory-session-records"
+    },
+    {
+      "blob_sha": "5d3167c44fe0511a32853733251a284d93d390dc",
+      "path": "src/plugins/compat/mention-inbox-deprecation.test.ts",
+      "range": {"end_line": 1, "start_line": 1},
+      "symbol": "mention-inbox-deprecation.test"
+    },
+    {
+      "blob_sha": "9ced0d758e02f7323e8d77615ea30b4b71df0e07",
+      "path": "src/plugins/compat/mention-inbox-deprecation.ts",
+      "range": {"end_line": 1, "start_line": 1},
+      "symbol": "mention-inbox-deprecation"
+    },
+    {
+      "blob_sha": "d30aec15fbb8d8e8e0756f216200e2a45689c963",
+      "path": "src/plugins/compat/model-account-connect-deprecation.test.ts",
+      "range": {"end_line": 1, "start_line": 1},
+      "symbol": "model-account-connect-deprecation.test"
+    },
+    {
+      "blob_sha": "4f3a94e4c70c50daf6b72afd03e2021d2633b71d",
+      "path": "src/plugins/compat/model-account-connect-deprecation.ts",
+      "range": {"end_line": 1, "start_line": 1},
+      "symbol": "model-account-connect-deprecation"
+    },
+    {
+      "blob_sha": "1e02a186a2355fc5e501f3dc2512be3d9e10f117",
+      "path": "src/plugins/compat/native-exec-approval-record.ts",
+      "range": {"end_line": 1, "start_line": 1},
+      "symbol": "native-exec-approval-record"
+    },
+    {
+      "blob_sha": "3a95715468d9ad33df1fa120d26b95f674f10209",
+      "path": "src/plugins/compat/plugin-sdk-private-runtime-export-record.ts",
+      "range": {"end_line": 1, "start_line": 1},
+      "symbol": "plugin-sdk-private-runtime-export-record"
+    },
+    {
+      "blob_sha": "071986489a6c3f00c01718ee6c0f9a6872ecec76",
+      "path": "src/plugins/compat/plugin-sdk-removed-export-records.ts",
+      "range": {"end_line": 1, "start_line": 1},
+      "symbol": "plugin-sdk-removed-export-records"
+    },
+    {
+      "blob_sha": "14096401a8aa071d46f908d86b9218204ebf6643",
+      "path": "src/plugins/compat/plugin-sdk-subpath-records.ts",
+      "range": {"end_line": 1, "start_line": 1},
+      "symbol": "plugin-sdk-subpath-records"
+    },
+    {
+      "blob_sha": "ac462c4a5f7de9020bb29cb8eef43c0088e806ba",
+      "path": "src/plugins/compat/progress-receipt-handoff-record.ts",
+      "range": {"end_line": 1, "start_line": 1},
+      "symbol": "progress-receipt-handoff-record"
+    },
+    {
+      "blob_sha": "4cae202259682223aad5bc6f6b069599b78ee9ec",
+      "path": "src/plugins/compat/registry-records.ts",
+      "range": {"end_line": 1, "start_line": 1},
+      "symbol": "registry-records"
+    },
+    {
+      "blob_sha": "2b8ac18b9cb5ff5cd723b60c9814d5b0a145f443",
+      "path": "src/plugins/compat/registry.test.ts",
+      "range": {"end_line": 1, "start_line": 1},
+      "symbol": "registry.test"
+    },
+    {
+      "blob_sha": "0ac2a339b3fcdc08d482b4d3849cec06777ed27f",
+      "path": "src/plugins/compat/reply-tool-authority-record.ts",
+      "range": {"end_line": 1, "start_line": 1},
+      "symbol": "reply-tool-authority-record"
+    },
+    {
+      "blob_sha": "9eb9f7243a431dc3019effc2002c3e349ed64221",
+      "path": "src/plugins/compat/session-persistence-records.ts",
+      "range": {"end_line": 1, "start_line": 1},
+      "symbol": "session-persistence-records"
+    },
+    {
+      "blob_sha": "c87054f4f4cffda4f452230050ff5843454dc658",
+      "path": "src/plugins/compat/session-transcript-preparation-deprecation.ts",
+      "range": {"end_line": 1, "start_line": 1},
+      "symbol": "session-transcript-preparation-deprecation"
+    },
+    {
+      "blob_sha": "710bcbf9619fef3c58097b87270ef7413f883d1e",
+      "path": "src/plugins/compat/session-transcript-view-record.ts",
+      "range": {"end_line": 1, "start_line": 1},
+      "symbol": "session-transcript-view-record"
+    },
+    {
+      "blob_sha": "e250f5c619081616fd1d6dc0c5071be33cac951c",
+      "path": "src/plugins/compat/sqlite-runtime-records.ts",
+      "range": {"end_line": 1, "start_line": 1},
+      "symbol": "sqlite-runtime-records"
+    },
+    {
+      "blob_sha": "eb356c1aec0c85fd16b9e06bae8453e48f97a685",
+      "path": "src/plugins/compat/transcript-stats-record.ts",
+      "range": {"end_line": 1, "start_line": 1},
+      "symbol": "transcript-stats-record"
+    },
+    {
+      "blob_sha": "a7d3cee6421c2682993b45e35dbe7b133e1b358c",
+      "path": "src/plugins/compat/types.ts",
+      "range": {"end_line": 1, "start_line": 1},
+      "symbol": "types"
+    },
+    {
+      "blob_sha": "c935d0c95e19e3a4460b1ceb3fdc4a0fc609a7aa",
+      "path": "src/plugins/compat/web-search-provider-list-record.ts",
+      "range": {"end_line": 1, "start_line": 1},
+      "symbol": "web-search-provider-list-record"
+    },
+    {
+      "blob_sha": "ef1b5d5eaf808180a010da00269638708d615a7e",
+      "path": "src/plugins/compat/workspace-mutation-guard.ts",
+      "range": {"end_line": 1, "start_line": 1},
+      "symbol": "workspace-mutation-guard"
+    }
       ],
       "status": {
         "acceptance": "pending",
