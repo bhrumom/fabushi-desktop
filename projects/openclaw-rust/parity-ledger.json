@@ -11058,8 +11058,8 @@
       ],
       "id": "OCRM-RESP-PROCESS-SPAWN-DIAGNOSTICS-001",
       "integration": {
-        "consumer": "source/host/src/process_spawn_diagnostics.rs::ChildProcessSpawnTracker::sample_counts",
-        "entrypoint": "source/host/src/process_spawn_diagnostics.rs::global_child_process_spawn_tracker",
+    "consumer": "source/host/src/extensions/telemetry/host_telemetry_service.rs::report_child_process_spawn_sample",
+    "entrypoint": "source/host/src/extensions/telemetry/host_telemetry_service.rs::EventLoopTelemetryRuntime callback",
         "owner": "source/host/src/process_spawn_diagnostics.rs::ChildProcessSpawnTracker",
         "producer": "source/host/src/box/exec_daemon_process.rs::spawn_box_exec_daemon_process, source/host/src/network_worker_process.rs::spawn_network_worker_process"
       },
@@ -11111,7 +11111,7 @@
         "mapping": "mapped",
         "read": "partial",
         "verification": "not-run",
-        "wiring": "not-wired"
+    "wiring": "wired"
       },
       "target": {
         "language": "Rust",
