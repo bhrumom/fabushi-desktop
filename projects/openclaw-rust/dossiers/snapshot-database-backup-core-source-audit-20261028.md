@@ -224,3 +224,8 @@ after all rows succeed. An independent in-memory database round-trips the
 producer digest; row-arity failure is rejected. This is SQLite staging only;
 PostgreSQL namespace materialization and publication remain pending.
 
+The restore consumer oracle now injects a row-arity failure after a valid row
+and verifies the target count is unchanged, proving transaction rollback rather
+than partial commit. This is local SQLite atomicity evidence only; it does not
+establish cross-database PostgreSQL cleanup or publication custody.
+
