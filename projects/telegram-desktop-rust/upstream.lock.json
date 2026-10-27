@@ -227,7 +227,7 @@
       "commit": "2dae74bb693e42d850fb0adcc9045c5b71fbdeae"
     },
     {
-      "parent": "desktop-app/cmake_helpers@c90e6a1236142cbd80ac0ea3cdf219dabab2ed53",
+      "parent": "desktop-app/cmake_helpers@7ceca3019b4750d7a5acb2de0faffd523ee14095",
       "path": "external/glib/cppgir",
       "repository": "gitlab.com/mnauw/cppgir",
       "commit": "47cf94f83b54cda59018135601e19d7fb0c77776"
@@ -307,5 +307,40 @@
       "artifact_id": 11474492724,
       "artifact_digest": "sha256:ab52d74cadbc20427e8183fd0963a955d7a7a4f91a478744688fb6c299442d38"
     }
+  },
+  "recursive_submodule_spot_checks": {
+    "status": "partial-read-only-connector-evidence-not-full-closure",
+    "authority": "telegramdesktop/tdesktop@f985723b552b30fe1c17d377d57f44e61a15a8c4",
+    "checked": [
+      {
+        "repository": "desktop-app/cmake_helpers",
+        "commit": "7ceca3019b4750d7a5acb2de0faffd523ee14095",
+        "entries": 170,
+        "truncated": false,
+        "nested_gitlinks": [
+          {
+            "path": "external/glib/cppgir",
+            "commit": "47cf94f83b54cda59018135601e19d7fb0c77776"
+          }
+        ]
+      },
+      {
+        "repository": "desktop-app/lib_base",
+        "commit": "95a543e426e35938dd632139d0bb828b268c3b4c",
+        "entries": 254,
+        "truncated": false,
+        "nested_gitlinks": []
+      },
+      {
+        "repository": "desktop-app/lib_ui",
+        "commit": "79c846fdf0327ff99d3efdc1cc4e11ef50bedc6d",
+        "entries": 459,
+        "truncated": false,
+        "nested_gitlinks": []
+      }
+    ],
+    "remaining_direct_gitlinks_unchecked": 33,
+    "remaining_nested_gitlinks_and_build_time_acquisitions": "not fully revalidated",
+    "closure_status": "open"
   }
 }
