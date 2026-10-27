@@ -51,7 +51,10 @@ for e in entries:
         "size_bytes": sizes[e["sha"]] if e["git_type"] == "blob" else None,
         "language_kind": shard_rec.get("language_kind", "unclassified") if shard_rec else "unclassified",
         "module_id": shard_rec.get("module_id") if shard_rec else None,
-        "dependency_edges": shard_rec.get("dependency_edges", []) if shard_rec else [],
+        # Shards are hand-reviewed evidence inputs, but older records can repeat
+        # an import edge.  The canonical schema intentionally requires unique
+        # edges; normalize without changing edge membership or ordering.
+        "dependency_edges": list(dict.fromkeys(shard_rec.get("dependency_edges", []))) if shard_rec else [],
         "read_ranges": shard_rec.get("read_ranges", []) if shard_rec else [],
         "content_identity": shard_rec.get("content_identity") if shard_rec else None,
         "responsibility_ids": shard_rec.get("responsibility_ids", []) if shard_rec else [],
