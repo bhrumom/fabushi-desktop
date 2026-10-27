@@ -221,6 +221,14 @@ fn test_ocrm_snapshot_postgres_manifest_schema_and_profile_oracles() {
         let _ = fs::remove_file(symlink_path);
         let _ = fs::remove_file(hardlink_path);
     }
+    let oversized_manifest = manifest_path.with_extension("oversized.json");
+    fs::write(
+        &oversized_manifest,
+        vec![b' '; 1024 * 1024 + 1],
+    )
+    .expect("write oversized manifest fixture");
+    assert!(read_postgres_export_manifest(&oversized_manifest, "snap-002", None).is_err());
+    let _ = fs::remove_file(oversized_manifest);
     let _ = fs::remove_file(&manifest_path);
 
     let mut sanitized = valid.clone();
