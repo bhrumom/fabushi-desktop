@@ -3,6 +3,7 @@ pub mod bundle_manifest;
 pub mod capability_catalog;
 pub mod clawhub;
 pub mod cli_backend;
+pub mod commands;
 pub mod hook_runner;
 pub mod installed_index_store;
 pub mod manifest_doctor;

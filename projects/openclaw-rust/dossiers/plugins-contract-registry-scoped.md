@@ -291,6 +291,36 @@
 - **CLI Gateway Nodes RPC**: Implements node list and invocation routing. Assigns deterministic UUID idempotency keys if omitted. Enforces operator scope restriction: operator scopes are only passed if the calling plugin is bundled or a trusted official install; third-party callers have scopes stripped. Duplex streaming is explicitly rejected in CLI mode.
 - **Process-Stable Root Descriptors & Lazy Registration**: Manifest-derived root command descriptors are gathered before plugin code executes. Command groups are deduplicated stably, keeping the first occurrence. Lazy registration is permitted only when placeholders cover all declared command names; otherwise registration falls back to eager.
 
+## 13. Audited Commands Registration, Execution Locks, Code Mode & Compaction Providers (13 files)
+- **Primary Responsibility**: `OCRM-RESP-PLUGINS-CAPABILITY-CATALOG-001`
+- **Reviewer**: `xuyao@ombhrum.com`
+- **Native Implementation**: `source/host/src/extensions/plugins/commands.rs` (`RESERVED_COMMAND_NAMES`, `CommandValidator`, `CommandExecutionLock`, `CodeModeExecutorResolver`, `CompactionProviderRegistry`, `CommandRegistry`)
+- **Contract Tests**: `source/host/tests/openclaw_plugins_contract.rs::test_ocrm_plugins_command_registration_execution_and_compaction`
+
+| Path | Lines | Size (bytes) | Git Blob SHA | Mapped Responsibility |
+| --- | --- | --- | --- | --- |
+| `src/plugins/code-mode-executor.test.ts` | 109 | 4824 | `ecfa0615c32e18481d237f4daeff7bdbc441f226` | `OCRM-RESP-PLUGINS-CAPABILITY-CATALOG-001` |
+| `src/plugins/code-mode-executor.ts` | 68 | 3014 | `39356b265e94e9c62b25869a5e5b08440679aa19` | `OCRM-RESP-PLUGINS-CAPABILITY-CATALOG-001` |
+| `src/plugins/codex-app-server-extension-types.ts` | 43 | 1325 | `7a492647b76a67580b141e4c144bb2f8a5e1fffd` | `OCRM-RESP-PLUGINS-CAPABILITY-CATALOG-001` |
+| `src/plugins/command-execution-lock.ts` | 76 | 2571 | `bb9d3d45ab2871b74b7a005fa0bf28b4fe7f3fba` | `OCRM-RESP-PLUGINS-CAPABILITY-CATALOG-001` |
+| `src/plugins/command-registration.runtime-capabilities.test.ts` | 36 | 1622 | `0e111fa0e794ca2940c7abbec7e15a75eefb3ff3` | `OCRM-RESP-PLUGINS-CAPABILITY-CATALOG-001` |
+| `src/plugins/command-registration.ts` | 449 | 15055 | `48bc672c5060f30e2cf2bce86335a1accaea6895` | `OCRM-RESP-PLUGINS-CAPABILITY-CATALOG-001` |
+| `src/plugins/command-registry-state.ts` | 80 | 2769 | `2b14ec0423e630588a9f72d1c7eab419a4e4c4d2` | `OCRM-RESP-PLUGINS-CAPABILITY-CATALOG-001` |
+| `src/plugins/command-specs.ts` | 117 | 4114 | `a7b921af199e35ae1d69467af2a548456df3d2b2` | `OCRM-RESP-PLUGINS-CAPABILITY-CATALOG-001` |
+| `src/plugins/commands.required-scopes.test.ts` | 83 | 3090 | `18ba779f970493a6a3bf8090060d070d6ffb7fd6` | `OCRM-RESP-PLUGINS-CAPABILITY-CATALOG-001` |
+| `src/plugins/commands.test.ts` | 1407 | 42342 | `c39a87120cb5e4c0de10b22f7d4a571dcefbd1a2` | `OCRM-RESP-PLUGINS-CAPABILITY-CATALOG-001` |
+| `src/plugins/commands.ts` | 58 | 2136 | `d4b97026163048bcb02f85fb218510d9c3ad4d40` | `OCRM-RESP-PLUGINS-CAPABILITY-CATALOG-001` |
+| `src/plugins/compaction-provider.test.ts` | 94 | 4079 | `e7c929a7fad3681666081049a0d84ab15cf0e9f8` | `OCRM-RESP-PLUGINS-CAPABILITY-CATALOG-001` |
+| `src/plugins/compaction-provider.ts` | 16 | 779 | `e738ceb21b24f470cd55e5b3f9a04410428704d9` | `OCRM-RESP-PLUGINS-CAPABILITY-CATALOG-001` |
+
+### 13.1 Invariant Validation Summary
+- **Built-in Reserved Commands Protection**: Guardrails enforce a set of 35 built-in reserved commands (`help`, `commands`, `status`, `diagnostics`, `codex`, `whoami`, `context`, `btw`, `stop`, `restart`, `reset`, `new`, `compact`, `config`, `debug`, `allowlist`, `activation`, `skill`, `learn`, `loop`, `subagents`, `kill`, `steer`, `tell`, `model`, `models`, `queue`, `send`, `bash`, `exec`, `think`, `verbose`, `reasoning`, `elevated`, `usage`). Non-reserved plugins attempting to claim reserved command names are rejected with validation errors.
+- **Command Execution Admission & Drain**: Atomic execution tracking counts active invocations on a registry view. When retired, admission is refused. When draining, waiters block until active count drops to 0. Deadlocks during internal process cleanups are prevented by active execution context detection.
+- **Code Mode Executor Selection Resolution**: Validates candidate executor declarations against control plane availability and base policy. Bundled executors gain restrictive allowlist bypass. If 0 owners are found or multiple conflicting owners are detected, execution fails closed with explicit operator remediation messages.
+- **Compaction Provider Lifetime & First-Owner Precedence**: Compaction providers enforce first-write-wins; duplicate registrations emit error diagnostics without evicting the incumbent. Calls through a retired or reloaded owner instance fail closed.
+- **Command Matching & Channel Scoping**: Command matching accommodates optional leading slashes (`/`), separates arguments, and verifies declared channel constraints. Prompt guidance lines are deduplicated and stably sorted by plugin ID and command name.
+
+
 
 
 

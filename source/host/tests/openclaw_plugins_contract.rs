@@ -2697,6 +2697,202 @@ fn test_ocrm_plugins_cli_backends_and_command_runtime() {
     ));
 }
 
+#[test]
+fn test_ocrm_plugins_command_registration_execution_and_compaction() {
+    use mahayana_host_runtime::extensions::plugins::commands::{
+        is_reserved_command_name, CodeModeExecutorResolver, CodeModeOwnerCandidate,
+        CommandExecutionLock, CommandRegistry, CommandValidator, CompactionProviderRegistry,
+        PluginCommandDefinition, RegisteredPluginCommand,
+    };
+
+    // 1. Reserved Command Names
+    assert!(is_reserved_command_name("HELP"));
+    assert!(is_reserved_command_name("status"));
+    assert!(is_reserved_command_name("whoami"));
+    assert!(is_reserved_command_name("compact"));
+    assert!(!is_reserved_command_name("custom_command"));
+
+    // 2. CommandValidator
+    let custom_cmd = PluginCommandDefinition {
+        name: "my_cmd".to_string(),
+        description: "My command".to_string(),
+        accepts_args: true,
+        required_scopes: vec![],
+        ownership: None,
+        channels: vec![],
+        agent_prompt_guidance: vec![],
+    };
+    assert!(CommandValidator::validate_command(&custom_cmd, false).is_ok());
+
+    let reserved_cmd = PluginCommandDefinition {
+        name: "status".to_string(),
+        description: "Status cmd".to_string(),
+        accepts_args: false,
+        required_scopes: vec![],
+        ownership: None,
+        channels: vec![],
+        agent_prompt_guidance: vec![],
+    };
+    assert!(CommandValidator::validate_command(&reserved_cmd, false).is_err());
+    assert!(CommandValidator::validate_command(&reserved_cmd, true).is_ok());
+
+    let empty_name_cmd = PluginCommandDefinition {
+        name: "   ".to_string(),
+        description: "Empty".to_string(),
+        accepts_args: false,
+        required_scopes: vec![],
+        ownership: None,
+        channels: vec![],
+        agent_prompt_guidance: vec![],
+    };
+    assert!(CommandValidator::validate_command(&empty_name_cmd, false).is_err());
+
+    // 3. CommandExecutionLock
+    let lock = CommandExecutionLock::new();
+    assert_eq!(lock.get_active_count(), 0);
+
+    let executed = lock
+        .with_execution(|| {
+            assert_eq!(lock.get_active_count(), 1);
+            42
+        })
+        .unwrap();
+    assert_eq!(executed, 42);
+    assert_eq!(lock.get_active_count(), 0);
+
+    lock.retire();
+    assert!(lock.with_execution(|| 0).is_err());
+
+    // 4. CodeModeExecutorResolver
+    let candidates = vec![
+        CodeModeOwnerCandidate {
+            plugin_id: "bundled-executor".to_string(),
+            is_bundled: true,
+            code_mode_executors: vec!["python-env".to_string()],
+            available_for_control_plane: true,
+            passes_base_policy: true,
+        },
+        CodeModeOwnerCandidate {
+            plugin_id: "disabled-executor".to_string(),
+            is_bundled: false,
+            code_mode_executors: vec!["node-env".to_string()],
+            available_for_control_plane: false,
+            passes_base_policy: true,
+        },
+    ];
+
+    let resolved = CodeModeExecutorResolver::resolve_executor("python-env", &candidates).unwrap();
+    assert_eq!(resolved, "bundled-executor");
+
+    let disabled_err =
+        CodeModeExecutorResolver::resolve_executor("node-env", &candidates).unwrap_err();
+    assert!(disabled_err.contains("unavailable or disabled"));
+
+    let duplicate_candidates = vec![
+        CodeModeOwnerCandidate {
+            plugin_id: "owner-1".to_string(),
+            is_bundled: true,
+            code_mode_executors: vec!["shared-env".to_string()],
+            available_for_control_plane: true,
+            passes_base_policy: true,
+        },
+        CodeModeOwnerCandidate {
+            plugin_id: "owner-2".to_string(),
+            is_bundled: true,
+            code_mode_executors: vec!["shared-env".to_string()],
+            available_for_control_plane: true,
+            passes_base_policy: true,
+        },
+    ];
+    let dup_err =
+        CodeModeExecutorResolver::resolve_executor("shared-env", &duplicate_candidates)
+            .unwrap_err();
+    assert!(dup_err.contains("multiple plugin owners"));
+
+    // 5. CompactionProviderRegistry
+    let compaction_reg = CompactionProviderRegistry::new();
+    assert!(compaction_reg
+        .register("compact-1", "Default Compaction", "plugin-a")
+        .is_ok());
+
+    // Duplicate registration rejected
+    let dup_compaction = compaction_reg.register("compact-1", "Other", "plugin-b");
+    assert!(dup_compaction.is_err());
+    assert!(dup_compaction
+        .unwrap_err()
+        .contains("compaction provider already registered"));
+
+    // Lookup succeeds for active owner
+    let provider = compaction_reg.get_provider("compact-1").unwrap();
+    assert_eq!(provider.id, "compact-1");
+    assert_eq!(provider.owner_plugin_id, "plugin-a");
+
+    // Retired owner fails
+    compaction_reg.unregister_owner("plugin-a");
+    let retired_compaction = compaction_reg.get_provider("compact-1");
+    assert!(retired_compaction.is_err());
+    assert!(retired_compaction
+        .unwrap_err()
+        .contains("reloaded, disabled or retired"));
+
+    // 6. CommandRegistry Matching & Agent Prompt Guidance
+    let registered_commands = vec![
+        RegisteredPluginCommand {
+            command: PluginCommandDefinition {
+                name: "echo".to_string(),
+                description: "Echo message".to_string(),
+                accepts_args: true,
+                required_scopes: vec![],
+                ownership: None,
+                channels: vec!["slack".to_string()],
+                agent_prompt_guidance: vec!["Use /echo to test connectivity.".to_string()],
+            },
+            plugin_id: "echo-plugin".to_string(),
+            trusted_owner_status_exposure: false,
+        },
+        RegisteredPluginCommand {
+            command: PluginCommandDefinition {
+                name: "audit".to_string(),
+                description: "Run audit".to_string(),
+                accepts_args: false,
+                required_scopes: vec!["admin".to_string()],
+                ownership: Some("reserved".to_string()),
+                channels: vec![],
+                agent_prompt_guidance: vec!["Use /audit to verify permissions.".to_string()],
+            },
+            plugin_id: "audit-plugin".to_string(),
+            trusted_owner_status_exposure: true,
+        },
+    ];
+
+    // 6a. Match with slash prefix and channel filtering
+    let matched_echo =
+        CommandRegistry::match_command(&registered_commands, "/echo hello world", Some("slack"));
+    assert!(matched_echo.is_some());
+    let (cmd, args) = matched_echo.unwrap();
+    assert_eq!(cmd.command.name, "echo");
+    assert_eq!(args, Some("hello world".to_string()));
+
+    // Echo command rejected on telegram channel
+    let echo_wrong_ch =
+        CommandRegistry::match_command(&registered_commands, "/echo hello", Some("telegram"));
+    assert!(echo_wrong_ch.is_none());
+
+    // Audit command matches without slash and has owner exposure
+    let matched_audit = CommandRegistry::match_command(&registered_commands, "audit", None);
+    assert!(matched_audit.is_some());
+    let (audit_cmd, _) = matched_audit.unwrap();
+    assert!(audit_cmd.is_trusted_reserved_owner());
+    assert!(audit_cmd.can_expose_sender_is_owner());
+
+    // 6b. list_agent_prompt_guidance sorted deterministically by plugin_id then command name
+    let guidance = CommandRegistry::list_agent_prompt_guidance(&registered_commands);
+    assert_eq!(guidance.len(), 2);
+    assert_eq!(guidance[0], "Use /audit to verify permissions."); // audit-plugin < echo-plugin
+    assert_eq!(guidance[1], "Use /echo to test connectivity.");
+}
+
+
 
 
 
