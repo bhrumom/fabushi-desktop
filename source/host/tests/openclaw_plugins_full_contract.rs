@@ -548,6 +548,95 @@ fn test_ocrm_plugins_session_actions_attachments_and_projection() {
     assert_eq!(entry["sessionId"], "session-123");
 }
 
+#[test]
+fn test_ocrm_plugins_agent_executor_tool_middleware_and_before_reply() {
+    use std::sync::Arc;
+    use serde_json::json;
+    use mahayana_host_runtime::extensions::plugins::hook_runner::{
+        normalize_agent_prompt_surface_kind, is_openclaw_main_prompt_surface,
+        resolve_agent_executor_controller,
+        AgentToolResultMiddlewareRuntime, normalize_agent_tool_result_middleware_runtimes,
+        AgentToolResultMiddlewareRegistration, AgentToolResultMiddlewarePipeline,
+        build_handled_before_agent_reply_payloads, PluginReplyPayload, SILENT_REPLY_TOKEN,
+    };
+
+    // 1. Agent prompt surface kind normalization
+    assert_eq!(normalize_agent_prompt_surface_kind("pi_main"), "openclaw_main");
+    assert_eq!(normalize_agent_prompt_surface_kind("openclaw_main"), "openclaw_main");
+    assert_eq!(normalize_agent_prompt_surface_kind("chat_sidebar"), "chat_sidebar");
+    assert!(is_openclaw_main_prompt_surface("pi_main"));
+    assert!(is_openclaw_main_prompt_surface("openclaw_main"));
+    assert!(!is_openclaw_main_prompt_surface("chat_sidebar"));
+
+    // 2. Agent executor controller deprecation error
+    let err = resolve_agent_executor_controller("custom-ctrl").unwrap_err();
+    assert_eq!(err.capability, "api.registerAgentExecutorController");
+    assert!(err.message.contains("Executor controller \"custom-ctrl\" is unavailable"));
+
+    // 3. Tool result middleware normalization and execution pipeline
+    let declared_runtimes = vec!["OPENCLAW".into(), "codex".into(), "unknown_runtime".into()];
+    let normalized = normalize_agent_tool_result_middleware_runtimes(&declared_runtimes);
+    assert_eq!(
+        normalized,
+        vec![AgentToolResultMiddlewareRuntime::OpenClaw, AgentToolResultMiddlewareRuntime::Codex]
+    );
+
+    let pipeline = AgentToolResultMiddlewarePipeline::new();
+    pipeline.register(AgentToolResultMiddlewareRegistration {
+        plugin_id: "sanitizer-plugin".into(),
+        runtimes: vec![AgentToolResultMiddlewareRuntime::OpenClaw],
+        tool_names: Some(vec!["web_search".into()]),
+        transform: Arc::new(|_tool, val| {
+            let mut modified = val.clone();
+            if let Some(obj) = modified.as_object_mut() {
+                obj.insert("sanitized".into(), json!(true));
+            }
+            modified
+        }),
+    });
+
+    // Matching tool and runtime gets transformed
+    let raw_search = json!({"results": ["a", "b"]});
+    let transformed = pipeline.apply(
+        AgentToolResultMiddlewareRuntime::OpenClaw,
+        "web_search",
+        raw_search.clone(),
+    );
+    assert_eq!(transformed["sanitized"], json!(true));
+    assert_eq!(transformed["results"], json!(["a", "b"]));
+
+    // Non-matching tool is passed through unmodified
+    let raw_bash = json!({"output": "hello"});
+    let untransformed = pipeline.apply(
+        AgentToolResultMiddlewareRuntime::OpenClaw,
+        "bash",
+        raw_bash.clone(),
+    );
+    assert_eq!(untransformed, raw_bash);
+
+    // Non-matching runtime is passed through unmodified
+    let untransformed_runtime = pipeline.apply(
+        AgentToolResultMiddlewareRuntime::Codex,
+        "web_search",
+        raw_search.clone(),
+    );
+    assert_eq!(untransformed_runtime, raw_search);
+
+    // 4. Before agent reply silent fallback
+    let silent_payloads = build_handled_before_agent_reply_payloads(None);
+    assert_eq!(silent_payloads.len(), 1);
+    assert_eq!(silent_payloads[0].text, SILENT_REPLY_TOKEN);
+
+    let explicit_payload = build_handled_before_agent_reply_payloads(Some(PluginReplyPayload {
+        text: "Hello from agent".into(),
+        metadata: Some(json!({"intent": "greeting"})),
+    }));
+    assert_eq!(explicit_payload.len(), 1);
+    assert_eq!(explicit_payload[0].text, "Hello from agent");
+    assert_eq!(explicit_payload[0].metadata, Some(json!({"intent": "greeting"})));
+}
+
+
 
 
 

@@ -10,10 +10,10 @@
     "ui_accepted": false
   },
   "file_coverage": {
-    "mapped_paths": 512,
+    "mapped_paths": 523,
     "omitted_known": 0,
     "tracked_paths": 58750,
-    "unclassified_paths": 58238
+    "unclassified_paths": 58227
   },
   "inventory_authority": {
     "manifest_source": "GitHub Actions immutable artifact candidate",
@@ -21855,22 +21855,103 @@
       "selected_owner": "source/host/src/extensions/plugins/hook_runner.rs",
       "source_refs": [
         {
-          "blob_sha": "d4facdeb8048a36324e25a331bef9de6a11e0ab0",
-          "path": "src/plugins/gateway-access-policy-registration.test-support.ts",
+          "blob_sha": "91f06de2d130a0f80f747d096f76e439bd84d755",
+          "path": "src/plugins/AGENTS.md",
           "range": {
-            "end_line": 212,
+            "end_line": 46,
             "start_line": 1
           },
-          "symbol": "gateway-access-policy-registration-support"
+          "symbol": "AGENTS"
         },
         {
-          "blob_sha": "670d679bc58abe6044d740e0227bc95c3eaca93c",
-          "path": "src/plugins/contracts/boundary-invariants.test.ts",
+          "blob_sha": "5a7b1531a9888e6156ef247ab1e945f203a74cad",
+          "path": "src/plugins/agent-executor-controller.test.ts",
           "range": {
-            "end_line": 291,
+            "end_line": 12,
             "start_line": 1
           },
-          "symbol": "plugin contract boundary invariants"
+          "symbol": "agent-executor-controller.test"
+        },
+        {
+          "blob_sha": "c9b67fb2f946caa522cff3662ee3e368235566c1",
+          "path": "src/plugins/agent-executor-controller.ts",
+          "range": {
+            "end_line": 10,
+            "start_line": 1
+          },
+          "symbol": "agent-executor-controller"
+        },
+        {
+          "blob_sha": "a375b971b16a9c49f88cfbbacd5a3543c7543e0f",
+          "path": "src/plugins/agent-executor-controller.types.ts",
+          "range": {
+            "end_line": 25,
+            "start_line": 1
+          },
+          "symbol": "agent-executor-controller.types"
+        },
+        {
+          "blob_sha": "be6e9d9cdad8c194d4bdfac4d3463bc3e10344d9",
+          "path": "src/plugins/agent-prompt-surface-kind.ts",
+          "range": {
+            "end_line": 13,
+            "start_line": 1
+          },
+          "symbol": "agent-prompt-surface-kind"
+        },
+        {
+          "blob_sha": "1a316586757985de8db082c87557f2e50dd20966",
+          "path": "src/plugins/agent-tool-result-middleware-loader.ts",
+          "range": {
+            "end_line": 80,
+            "start_line": 1
+          },
+          "symbol": "agent-tool-result-middleware-loader"
+        },
+        {
+          "blob_sha": "05338bcd56e3a5a41e9596696e6fefa0d8ec2921",
+          "path": "src/plugins/agent-tool-result-middleware-types.ts",
+          "range": {
+            "end_line": 45,
+            "start_line": 1
+          },
+          "symbol": "agent-tool-result-middleware-types"
+        },
+        {
+          "blob_sha": "2c65970425202a83ce6fddd209d69334f2a1a650",
+          "path": "src/plugins/agent-tool-result-middleware.test.ts",
+          "range": {
+            "end_line": 68,
+            "start_line": 1
+          },
+          "symbol": "agent-tool-result-middleware.test"
+        },
+        {
+          "blob_sha": "712b12d08afc67ab53e3ae7ec484f324e834f1dc",
+          "path": "src/plugins/agent-tool-result-middleware.ts",
+          "range": {
+            "end_line": 120,
+            "start_line": 1
+          },
+          "symbol": "agent-tool-result-middleware"
+        },
+        {
+          "blob_sha": "092e8ddfde3c48eed3fddbf652e553186dfadd8d",
+          "path": "src/plugins/before-agent-reply.test.ts",
+          "range": {
+            "end_line": 176,
+            "start_line": 1
+          },
+          "symbol": "before-agent-reply.test"
+        },
+        {
+          "blob_sha": "5c0469af1e491fc9e896083590222d34aa8241f9",
+          "path": "src/plugins/before-agent-reply.ts",
+          "range": {
+            "end_line": 111,
+            "start_line": 1
+          },
+          "symbol": "before-agent-reply"
         },
         {
           "blob_sha": "b893fe0780c1a9a349f72b91f1d3d9f7bea8e2d9",
@@ -21891,6 +21972,15 @@
           "symbol": "agent event subscription payloads"
         },
         {
+          "blob_sha": "670d679bc58abe6044d740e0227bc95c3eaca93c",
+          "path": "src/plugins/contracts/boundary-invariants.test.ts",
+          "range": {
+            "end_line": 291,
+            "start_line": 1
+          },
+          "symbol": "plugin contract boundary invariants"
+        },
+        {
           "blob_sha": "28c61fbedb0f4b7c894efd1ad73d3b803ddb87d1",
           "path": "src/plugins/contracts/bundled-extension-config-api-guardrails.test.ts",
           "range": {
@@ -21898,6 +21988,15 @@
             "start_line": 1
           },
           "symbol": "bundled extension config api guardrails"
+        },
+        {
+          "blob_sha": "063a7eeeb4d1e9ef88917f373123ae87a24d2fc2",
+          "path": "src/plugins/contracts/config-boundary-guard.test.ts",
+          "range": {
+            "end_line": 268,
+            "start_line": 1
+          },
+          "symbol": "config boundary guard"
         },
         {
           "blob_sha": "50f11181509426f2dabc0e8c0201c806f9d48b24",
@@ -21918,13 +22017,13 @@
           "symbol": "deprecated internal config API guardrails"
         },
         {
-          "blob_sha": "9925531bd0c4f798534861070bd47b412d175dc8",
-          "path": "src/plugins/contracts/model-catalog-core-imports.test.ts",
+          "blob_sha": "513c4bb7676ccc231dde4eb9fb8ef69f9f73c9d5",
+          "path": "src/plugins/contracts/extension-test-api-consumption.test.ts",
           "range": {
-            "end_line": 82,
+            "end_line": 209,
             "start_line": 1
           },
-          "symbol": "model catalog core imports"
+          "symbol": "extension test API consumption guard"
         },
         {
           "blob_sha": "199053d1532e558b73caf0215f53fe47053e3da4",
@@ -21934,33 +22033,6 @@
             "start_line": 1
           },
           "symbol": "host hook fixture double"
-        },
-        {
-          "blob_sha": "b251c07a8fabcb07130255477fe32c5ed42b1056",
-          "path": "src/plugins/contracts/test-helpers/host-hook-ui-projection.ts",
-          "range": {
-            "end_line": 33,
-            "start_line": 1
-          },
-          "symbol": "host-hook UI projection"
-        },
-        {
-          "blob_sha": "063a7eeeb4d1e9ef88917f373123ae87a24d2fc2",
-          "path": "src/plugins/contracts/config-boundary-guard.test.ts",
-          "range": {
-            "end_line": 268,
-            "start_line": 1
-          },
-          "symbol": "config boundary guard"
-        },
-        {
-          "blob_sha": "513c4bb7676ccc231dde4eb9fb8ef69f9f73c9d5",
-          "path": "src/plugins/contracts/extension-test-api-consumption.test.ts",
-          "range": {
-            "end_line": 209,
-            "start_line": 1
-          },
-          "symbol": "extension test API consumption guard"
         },
         {
           "blob_sha": "27271822ec435474d1ee7ae990f38d563537cc8e",
@@ -21979,6 +22051,15 @@
             "start_line": 1
           },
           "symbol": "plugin host hooks contract suite"
+        },
+        {
+          "blob_sha": "9925531bd0c4f798534861070bd47b412d175dc8",
+          "path": "src/plugins/contracts/model-catalog-core-imports.test.ts",
+          "range": {
+            "end_line": 82,
+            "start_line": 1
+          },
+          "symbol": "model catalog core imports"
         },
         {
           "blob_sha": "d151cd744c1783c2ab946098f316bd05316cf8b2",
@@ -22033,6 +22114,24 @@
             "start_line": 1
           },
           "symbol": "session entry projection contract"
+        },
+        {
+          "blob_sha": "b251c07a8fabcb07130255477fe32c5ed42b1056",
+          "path": "src/plugins/contracts/test-helpers/host-hook-ui-projection.ts",
+          "range": {
+            "end_line": 33,
+            "start_line": 1
+          },
+          "symbol": "host-hook UI projection"
+        },
+        {
+          "blob_sha": "d4facdeb8048a36324e25a331bef9de6a11e0ab0",
+          "path": "src/plugins/gateway-access-policy-registration.test-support.ts",
+          "range": {
+            "end_line": 212,
+            "start_line": 1
+          },
+          "symbol": "gateway-access-policy-registration-support"
         }
       ],
       "status": {
@@ -22057,7 +22156,8 @@
         "source/host/tests/openclaw_plugins_full_contract.rs::test_ocrm_plugins_config_boundary_and_test_api_consumption",
         "source/host/tests/openclaw_plugins_full_contract.rs::test_ocrm_plugins_host_hook_identity_and_gateway_methods",
         "source/host/tests/openclaw_plugins_full_contract.rs::test_ocrm_plugins_run_context_and_scheduled_turns",
-        "source/host/tests/openclaw_plugins_full_contract.rs::test_ocrm_plugins_session_actions_attachments_and_projection"
+        "source/host/tests/openclaw_plugins_full_contract.rs::test_ocrm_plugins_session_actions_attachments_and_projection",
+        "source/host/tests/openclaw_plugins_full_contract.rs::test_ocrm_plugins_agent_executor_tool_middleware_and_before_reply"
       ],
       "typed_contracts": [
         "PluginHookRunner",

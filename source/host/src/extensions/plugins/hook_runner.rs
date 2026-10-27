@@ -748,6 +748,161 @@ impl PluginSessionEntryProjection {
     }
 }
 
+// ---------------------------------------------------------------------------
+// Agent Prompt Surface Kind Normalization (from src/plugins/agent-prompt-surface-kind.ts)
+// ---------------------------------------------------------------------------
+
+pub fn normalize_agent_prompt_surface_kind(surface: &str) -> String {
+    if surface.eq_ignore_ascii_case("pi_main") {
+        "openclaw_main".to_string()
+    } else {
+        surface.to_string()
+    }
+}
+
+pub fn is_openclaw_main_prompt_surface(surface: &str) -> bool {
+    normalize_agent_prompt_surface_kind(surface) == "openclaw_main"
+}
+
+// ---------------------------------------------------------------------------
+// Agent Executor Controller Deprecation Guard (from src/plugins/agent-executor-controller.ts)
+// ---------------------------------------------------------------------------
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct PluginCapabilityRemovedError {
+    pub capability: String,
+    pub message: String,
+}
+
+impl std::fmt::Display for PluginCapabilityRemovedError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}: {}", self.capability, self.message)
+    }
+}
+
+impl std::error::Error for PluginCapabilityRemovedError {}
+
+pub fn resolve_agent_executor_controller(plugin_id: &str) -> Result<(), PluginCapabilityRemovedError> {
+    Err(PluginCapabilityRemovedError {
+        capability: "api.registerAgentExecutorController".to_string(),
+        message: format!(
+            "Executor controller \"{}\" is unavailable. Retire or migrate its saved AgentsAPI sessions with the previous host before switching to an externally managed self_hosted environment.",
+            plugin_id
+        ),
+    })
+}
+
+// ---------------------------------------------------------------------------
+// Agent Tool Result Middleware Pipeline (from src/plugins/agent-tool-result-middleware.ts & loader.ts)
+// ---------------------------------------------------------------------------
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum AgentToolResultMiddlewareRuntime {
+    OpenClaw,
+    Codex,
+    AgentsApi,
+}
+
+impl AgentToolResultMiddlewareRuntime {
+    pub fn parse(s: &str) -> Option<Self> {
+        match s.trim().to_ascii_lowercase().as_str() {
+            "openclaw" => Some(Self::OpenClaw),
+            "codex" => Some(Self::Codex),
+            "agentsapi" => Some(Self::AgentsApi),
+            _ => None,
+        }
+    }
+
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Self::OpenClaw => "openclaw",
+            Self::Codex => "codex",
+            Self::AgentsApi => "agentsapi",
+        }
+    }
+}
+
+pub fn normalize_agent_tool_result_middleware_runtimes(runtimes: &[String]) -> Vec<AgentToolResultMiddlewareRuntime> {
+    let mut out = Vec::new();
+    for r in runtimes {
+        if let Some(parsed) = AgentToolResultMiddlewareRuntime::parse(r) {
+            if !out.contains(&parsed) {
+                out.push(parsed);
+            }
+        }
+    }
+    out
+}
+
+#[derive(Clone)]
+pub struct AgentToolResultMiddlewareRegistration {
+    pub plugin_id: String,
+    pub runtimes: Vec<AgentToolResultMiddlewareRuntime>,
+    pub tool_names: Option<Vec<String>>,
+    pub transform: Arc<dyn Fn(&str, &serde_json::Value) -> serde_json::Value + Send + Sync>,
+}
+
+#[derive(Default, Clone)]
+pub struct AgentToolResultMiddlewarePipeline {
+    registrations: Arc<Mutex<Vec<AgentToolResultMiddlewareRegistration>>>,
+}
+
+impl AgentToolResultMiddlewarePipeline {
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    pub fn register(&self, reg: AgentToolResultMiddlewareRegistration) {
+        let mut list = self.registrations.lock().unwrap();
+        list.push(reg);
+    }
+
+    pub fn apply(
+        &self,
+        runtime: AgentToolResultMiddlewareRuntime,
+        tool_name: &str,
+        raw_result: serde_json::Value,
+    ) -> serde_json::Value {
+        let list = self.registrations.lock().unwrap();
+        let mut current = raw_result;
+        for reg in list.iter() {
+            if !reg.runtimes.contains(&runtime) {
+                continue;
+            }
+            if let Some(tools) = &reg.tool_names {
+                if !tools.iter().any(|t| t.eq_ignore_ascii_case(tool_name)) {
+                    continue;
+                }
+            }
+            current = (reg.transform)(tool_name, &current);
+        }
+        current
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Before Agent Reply Hook Pipeline & Silent Reply (from src/plugins/before-agent-reply.ts)
+// ---------------------------------------------------------------------------
+
+pub const SILENT_REPLY_TOKEN: &str = "NO_REPLY";
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct PluginReplyPayload {
+    pub text: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub metadata: Option<serde_json::Value>,
+}
+
+pub fn build_handled_before_agent_reply_payloads(
+    reply: Option<PluginReplyPayload>,
+) -> Vec<PluginReplyPayload> {
+    vec![reply.unwrap_or_else(|| PluginReplyPayload {
+        text: SILENT_REPLY_TOKEN.to_string(),
+        metadata: None,
+    })]
+}
+
+
 
 
 

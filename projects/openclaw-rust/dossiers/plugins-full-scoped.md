@@ -60,6 +60,31 @@
     - Verifies plugin session actions gateway dispatch and scope authorization.
     - Verifies session attachment delivery, MIME sniffing bounds (FILE_TYPE_SNIFF_MAX_BYTES), and temporary resource cleanup.
     - Verifies plugin session extension isolation within entry.plugins[pluginId][namespace] and non-destructive retirement stripping.
+  - `test_ocrm_plugins_agent_executor_tool_middleware_and_before_reply` (PASSED)
+    - Verifies agent prompt surface kind normalization (`pi_main` -> `openclaw_main`).
+    - Verifies agent executor controller deprecation error guard (`api.registerAgentExecutorController`).
+    - Verifies tool result middleware runtime normalization, tool matching, and execution pipeline.
+    - Verifies before-agent-reply payload packaging with `SILENT_REPLY_TOKEN` (`NO_REPLY`).
+
+## 4. Audited Agent Executor, Tool Result Middleware & Before Reply Files (11 files)
+- **Responsibility**: `OCRM-RESP-PLUGINS-HOOKS-PIPELINE-001`
+- **Reviewer**: `xuyao@ombhrum.com`
+- **Native Implementation**: `source/host/src/extensions/plugins/hook_runner.rs` (`normalize_agent_prompt_surface_kind`, `resolve_agent_executor_controller`, `AgentToolResultMiddlewarePipeline`, `build_handled_before_agent_reply_payloads`)
+
+| Path | Lines | Size (bytes) | Git Blob SHA |
+| --- | --- | --- | --- |
+| `src/plugins/AGENTS.md` | 46 | 3943 | `91f06de2d130a0f80f747d096f76e439bd84d755` |
+| `src/plugins/agent-executor-controller.test.ts` | 12 | 522 | `5a7b1531a9888e6156ef247ab1e945f203a74cad` |
+| `src/plugins/agent-executor-controller.ts` | 10 | 633 | `c9b67fb2f946caa522cff3662ee3e368235566c1` |
+| `src/plugins/agent-executor-controller.types.ts` | 25 | 1015 | `a375b971b16a9c49f88cfbbacd5a3543c7543e0f` |
+| `src/plugins/agent-prompt-surface-kind.ts` | 13 | 544 | `be6e9d9cdad8c194d4bdfac4d3463bc3e10344d9` |
+| `src/plugins/agent-tool-result-middleware-loader.ts` | 80 | 3284 | `1a316586757985de8db082c87557f2e50dd20966` |
+| `src/plugins/agent-tool-result-middleware-types.ts` | 45 | 1377 | `05338bcd56e3a5a41e9596696e6fefa0d8ec2921` |
+| `src/plugins/agent-tool-result-middleware.test.ts` | 68 | 2554 | `2c65970425202a83ce6fddd209d69334f2a1a650` |
+| `src/plugins/agent-tool-result-middleware.ts` | 120 | 4245 | `712b12d08afc67ab53e3ae7ec484f324e834f1dc` |
+| `src/plugins/before-agent-reply.test.ts` | 176 | 6311 | `092e8ddfde3c48eed3fddbf652e553186dfadd8d` |
+| `src/plugins/before-agent-reply.ts` | 111 | 4316 | `5c0469af1e491fc9e896083590222d34aa8241f9` |
+
 
 
 
