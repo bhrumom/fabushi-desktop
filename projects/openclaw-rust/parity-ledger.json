@@ -10,10 +10,10 @@
     "ui_accepted": false
   },
   "file_coverage": {
-    "mapped_paths": 424,
+    "mapped_paths": 432,
     "omitted_known": 0,
     "tracked_paths": 58750,
-    "unclassified_paths": 58326
+    "unclassified_paths": 58318
   },
   "inventory_authority": {
     "manifest_source": "GitHub Actions immutable artifact candidate",
@@ -17475,6 +17475,255 @@
       ],
       "reviewer": "xuyao@ombhrum.com",
       "migration_rollback": "Disable interactive pairing and require manual token pre-provisioning"
+    },
+    {
+      "id": "OCRM-RESP-INTERACTIVE-PRESENTATION-001",
+      "unit_id": "OCRM-UNIT-INTERACTIVE-001",
+      "responsibility_kind": "business-runtime",
+      "behavior": "Portable message presentation schema, component cards, select menus, buttons, question actions, model-picker envelopes, and safe fallback text rendering.",
+      "risk": "Medium; prevents leakage of private callback tokens into human transcripts or insecure chat channels",
+      "status": {
+        "read": "read-complete",
+        "mapping": "reviewed",
+        "wiring": "not-wired",
+        "implementation": "implemented",
+        "verification": "not-run",
+        "acceptance": "pending"
+      },
+      "selected_owner": "source/host/src/extensions/interactive/payload_service.rs",
+      "existing_owner_candidates": [
+        {
+          "path": "source/host/src/extensions/interactive/payload_service.rs",
+          "reason": "Portable interactive message presentation service"
+        }
+      ],
+      "owner_decision": "Native implementation in payload_service under interactive extension",
+      "dependencies": [
+        "mahayana_host_runtime::extensions::interactive::payload_service"
+      ],
+      "capability_ids": [
+        "ui.interactive_presentation"
+      ],
+      "preconditions": [
+        "Message presentation structure provided"
+      ],
+      "postconditions": [
+        "Presentation validated and safe fallback text rendered without exposing callback values"
+      ],
+      "invariants": [
+        "Opaque callback values are never leaked in fallback text",
+        "Question action strictly validates known intents (custom-input) and option values",
+        "Invalid action schemas cause presentation normalization to fail closed"
+      ],
+      "typed_contracts": [
+        "MessagePresentation",
+        "PresentationBlock",
+        "MessagePresentationAction",
+        "normalize_message_presentation",
+        "render_message_presentation_fallback_text"
+      ],
+      "tests": [
+        "source/host/tests/openclaw_interactive_contract.rs::test_ocrm_interactive_fallback_select_does_not_leak_callback",
+        "source/host/tests/openclaw_interactive_contract.rs::test_ocrm_interactive_fallback_buttons_and_card",
+        "source/host/tests/openclaw_interactive_contract.rs::test_ocrm_interactive_action_normalization"
+      ],
+      "integration": {
+        "producer": "source/host/src/extensions/interactive/payload_service.rs",
+        "owner": "source/host/src/extensions/interactive/payload_service.rs",
+        "consumer": "source/host/src/extensions/interactive/payload_service.rs",
+        "entrypoint": "source/host/src/extensions/interactive/payload_service.rs::render_message_presentation_fallback_text"
+      },
+      "source_refs": [
+        {
+          "path": "src/interactive/payload.ts",
+          "blob_sha": "19ba5d4f1777b372bb3515d72b25abfb140336a6",
+          "range": {
+            "start_line": 1,
+            "end_line": 1201
+          },
+          "symbol": "payload"
+        },
+        {
+          "path": "src/interactive/payload.test.ts",
+          "blob_sha": "2a3efdb67e287664d0e61fd46b5a33c11ba9093e",
+          "range": {
+            "start_line": 1,
+            "end_line": 530
+          },
+          "symbol": "payload.test"
+        },
+        {
+          "path": "src/interactive/payload.fallback.test.ts",
+          "blob_sha": "afd83ee94f6c08b5acd253b7e9393e18725c613e",
+          "range": {
+            "start_line": 1,
+            "end_line": 37
+          },
+          "symbol": "payload.fallback.test"
+        }
+      ],
+      "evidence_refs": [
+        "source/host/tests/openclaw_interactive_contract.rs",
+        "projects/openclaw-rust/dossiers/interactive-param-key-scoped.md"
+      ],
+      "requirement_ids": [
+        "OCRM-R23",
+        "OCRM-AC23"
+      ],
+      "required_gate_ids": [
+        "OCRM-G04-rust-contract",
+        "OCRM-G05-frozen-oracle"
+      ],
+      "oracle_ids": [
+        "OCRM-INTERACTIVE-O01",
+        "OCRM-INTERACTIVE-O02",
+        "OCRM-INTERACTIVE-O03"
+      ],
+      "adr_refs": [],
+      "blocker_ids": [
+        "BL-INTERACTIVE-PRESENTATION-EXEC-WIRING-001"
+      ],
+      "target": {
+        "path": "source/host/src/extensions/interactive/payload_service.rs",
+        "symbol": "render_message_presentation_fallback_text",
+        "language": "Rust"
+      },
+      "required_evidence_dimensions": [
+        "unit",
+        "format",
+        "boundary"
+      ],
+      "reviewer": "xuyao@ombhrum.com",
+      "migration_rollback": "Emit plain markdown message body without interactive blocks"
+    },
+    {
+      "id": "OCRM-RESP-PARAM-KEY-NORMALIZATION-001",
+      "unit_id": "OCRM-UNIT-INTERACTIVE-001",
+      "responsibility_kind": "business-runtime",
+      "behavior": "Parameter key normalization from camelCase to snake_case preserving whitespace, fallback parameter lookup, and public library facade wrappers.",
+      "risk": "Low; core utility string normalization and public facade delegation",
+      "status": {
+        "read": "read-complete",
+        "mapping": "reviewed",
+        "wiring": "not-wired",
+        "implementation": "implemented",
+        "verification": "not-run",
+        "acceptance": "pending"
+      },
+      "selected_owner": "source/host/src/extensions/interactive/param_key.rs",
+      "existing_owner_candidates": [
+        {
+          "path": "source/host/src/extensions/interactive/param_key.rs",
+          "reason": "Parameter key resolution and case normalization helper"
+        }
+      ],
+      "owner_decision": "Native implementation in param_key under interactive extension",
+      "dependencies": [
+        "mahayana_host_runtime::extensions::interactive::param_key"
+      ],
+      "capability_ids": [
+        "core.param_key_normalization"
+      ],
+      "preconditions": [
+        "Parameter map and query key provided"
+      ],
+      "postconditions": [
+        "Key normalized to snake_case and mapped value retrieved if present"
+      ],
+      "invariants": [
+        "Multi-letter acronyms convert cleanly (e.g. parseURL to parse_url)",
+        "Direct property match takes precedence over snake_case variant"
+      ],
+      "typed_contracts": [
+        "to_snake_case_key",
+        "resolve_snake_case_param_key",
+        "read_snake_case_param_raw"
+      ],
+      "tests": [
+        "source/host/tests/openclaw_interactive_contract.rs::test_ocrm_param_key_normalization"
+      ],
+      "integration": {
+        "producer": "source/host/src/extensions/interactive/param_key.rs",
+        "owner": "source/host/src/extensions/interactive/param_key.rs",
+        "consumer": "source/host/src/extensions/interactive/param_key.rs",
+        "entrypoint": "source/host/src/extensions/interactive/param_key.rs::resolve_snake_case_param_key"
+      },
+      "source_refs": [
+        {
+          "path": "src/param-key.ts",
+          "blob_sha": "89cfb70d9d7c5410bfe73df429e126d0d9921ce7",
+          "range": {
+            "start_line": 1,
+            "end_line": 31
+          },
+          "symbol": "param-key"
+        },
+        {
+          "path": "src/library.ts",
+          "blob_sha": "eb7a54a9038b40217a63338ea35eee690b58e060",
+          "range": {
+            "start_line": 1,
+            "end_line": 50
+          },
+          "symbol": "library"
+        },
+        {
+          "path": "src/library.test.ts",
+          "blob_sha": "bd5421f9f8be692792e6b41c75f1b3b4ccd961a6",
+          "range": {
+            "start_line": 1,
+            "end_line": 79
+          },
+          "symbol": "library.test"
+        },
+        {
+          "path": "src/install-sh-version.test.ts",
+          "blob_sha": "df9aee161a7dd4d52db2141911520c549a45248d",
+          "range": {
+            "start_line": 1,
+            "end_line": 89
+          },
+          "symbol": "install-sh-version.test"
+        },
+        {
+          "path": "src/plugin-activation-boundary.test.ts",
+          "blob_sha": "c193390ebba56a8993772d0f5ad4714591b3331b",
+          "range": {
+            "start_line": 1,
+            "end_line": 99
+          },
+          "symbol": "plugin-activation-boundary.test"
+        }
+      ],
+      "evidence_refs": [
+        "source/host/tests/openclaw_interactive_contract.rs",
+        "projects/openclaw-rust/dossiers/interactive-param-key-scoped.md"
+      ],
+      "requirement_ids": [
+        "OCRM-R24",
+        "OCRM-AC24"
+      ],
+      "required_gate_ids": [
+        "OCRM-G04-rust-contract",
+        "OCRM-G05-frozen-oracle"
+      ],
+      "oracle_ids": [
+        "OCRM-PARAM-KEY-O01"
+      ],
+      "adr_refs": [],
+      "blocker_ids": [
+        "BL-PARAM-KEY-EXEC-WIRING-001"
+      ],
+      "target": {
+        "path": "source/host/src/extensions/interactive/param_key.rs",
+        "symbol": "resolve_snake_case_param_key",
+        "language": "Rust"
+      },
+      "required_evidence_dimensions": [
+        "unit"
+      ],
+      "reviewer": "xuyao@ombhrum.com",
+      "migration_rollback": "Direct string lookup without automatic snake_case fallback"
     }
   ],
   "schema_version": 1,
