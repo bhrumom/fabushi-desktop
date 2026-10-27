@@ -10,10 +10,10 @@
     "ui_accepted": false
   },
   "file_coverage": {
-    "mapped_paths": 399,
+    "mapped_paths": 424,
     "omitted_known": 0,
     "tracked_paths": 58750,
-    "unclassified_paths": 58351
+    "unclassified_paths": 58326
   },
   "inventory_authority": {
     "manifest_source": "GitHub Actions immutable artifact candidate",
@@ -17153,6 +17153,328 @@
       ],
       "reviewer": "xuyao@ombhrum.com",
       "migration_rollback": "Use bundled static catalog when remote overlay refresh is disabled or offline"
+    },
+    {
+      "id": "OCRM-RESP-PAIRING-CHANNEL-CORE-001",
+      "unit_id": "OCRM-UNIT-PAIRING-001",
+      "responsibility_kind": "business-runtime",
+      "behavior": "Device pairing channel protocol, join codes, challenge issuance, approval guidance formatting, store key sanitization, setup code security policy, and SQLite store persistence.",
+      "risk": "Medium; controls device pairing admission and cleartext mobile pairing rejection",
+      "status": {
+        "read": "read-complete",
+        "mapping": "reviewed",
+        "wiring": "not-wired",
+        "implementation": "implemented",
+        "verification": "not-run",
+        "acceptance": "pending"
+      },
+      "selected_owner": "source/host/src/device_pairing_owner.rs",
+      "existing_owner_candidates": [
+        {
+          "path": "source/host/src/device_pairing_owner.rs",
+          "reason": "Device pairing SQLite database and gateway command dispatcher"
+        }
+      ],
+      "owner_decision": "Native implementation in DevicePairingOwner in mahayana-host-runtime",
+      "dependencies": [
+        "mahayana_host_runtime::device_pairing_owner"
+      ],
+      "capability_ids": [
+        "gateway.device_pairing"
+      ],
+      "preconditions": [
+        "Pairing request or join code provided"
+      ],
+      "postconditions": [
+        "Join code verified, keys sanitized, mobile pairing URL security enforced, and pairing state persisted"
+      ],
+      "invariants": [
+        "Join codes are 16 bytes base64url encoded (22 chars)",
+        "Key sanitization removes traversal dots and invalid filesystem characters",
+        "Cleartext ws:// is rejected on the public internet and permitted only for LAN and loopback",
+        "Approval prompts format exact CLI approval commands"
+      ],
+      "typed_contracts": [
+        "is_device_pairing_join_code",
+        "parse_device_pairing_join_request_path",
+        "safe_channel_key",
+        "safe_account_key",
+        "build_pairing_reply",
+        "validate_mobile_pairing_url"
+      ],
+      "tests": [
+        "source/host/tests/device_pairing_contract.rs::test_ocrm_pair_o13_join_code_validation_and_path_parsing",
+        "source/host/tests/device_pairing_contract.rs::test_ocrm_pair_o14_safe_keys_and_labels",
+        "source/host/tests/device_pairing_contract.rs::test_ocrm_pair_o15_pairing_reply_formatting",
+        "source/host/tests/device_pairing_contract.rs::test_ocrm_pair_o16_mobile_pairing_security_policy"
+      ],
+      "integration": {
+        "producer": "source/host/src/device_pairing_owner.rs",
+        "owner": "source/host/src/device_pairing_owner.rs",
+        "consumer": "source/host/src/device_pairing_owner.rs",
+        "entrypoint": "source/host/src/device_pairing_owner.rs::DevicePairingOwner::handle_pairing_command"
+      },
+      "source_refs": [
+        {
+          "path": "src/pairing/command-owner.ts",
+          "blob_sha": "1cf6999f093d7e513d86a43c93af2da2f0ee789d",
+          "range": {
+            "start_line": 1,
+            "end_line": 42
+          },
+          "symbol": "command-owner"
+        },
+        {
+          "path": "src/pairing/join-code.ts",
+          "blob_sha": "7f712a0d9a3c83c6c7fcdf10f339887caa9f44d2",
+          "range": {
+            "start_line": 1,
+            "end_line": 19
+          },
+          "symbol": "join-code"
+        },
+        {
+          "path": "src/pairing/pairing-allowlist.lifecycle.test.ts",
+          "blob_sha": "efade71b16f8fbcae084f342c45f8ce345c71398",
+          "range": {
+            "start_line": 1,
+            "end_line": 93
+          },
+          "symbol": "pairing-allowlist.lifecycle.test"
+        },
+        {
+          "path": "src/pairing/pairing-allowlist.worker.test.ts",
+          "blob_sha": "d7f558c0af9f96a677db9d535b3aab997f9a5f15",
+          "range": {
+            "start_line": 1,
+            "end_line": 114
+          },
+          "symbol": "pairing-allowlist.worker.test"
+        },
+        {
+          "path": "src/pairing/pairing-challenge.test.ts",
+          "blob_sha": "90934e10011af8c568ef27a558819fb117c319b5",
+          "range": {
+            "start_line": 1,
+            "end_line": 101
+          },
+          "symbol": "pairing-challenge.test"
+        },
+        {
+          "path": "src/pairing/pairing-challenge.ts",
+          "blob_sha": "2fc59b86febd972a2be0a8d953d34a4936e2c163",
+          "range": {
+            "start_line": 1,
+            "end_line": 74
+          },
+          "symbol": "pairing-challenge"
+        },
+        {
+          "path": "src/pairing/pairing-labels.ts",
+          "blob_sha": "f905a6c82927a554f7cf35705060125c5ee80ef3",
+          "range": {
+            "start_line": 1,
+            "end_line": 8
+          },
+          "symbol": "pairing-labels"
+        },
+        {
+          "path": "src/pairing/pairing-messages.test.ts",
+          "blob_sha": "5d0ed3e89029dba169772c843b9722eea183a518",
+          "range": {
+            "start_line": 1,
+            "end_line": 31
+          },
+          "symbol": "pairing-messages.test"
+        },
+        {
+          "path": "src/pairing/pairing-messages.ts",
+          "blob_sha": "9aecd74d501949dc0a6a06623a11715ed2e5fc78",
+          "range": {
+            "start_line": 1,
+            "end_line": 27
+          },
+          "symbol": "pairing-messages"
+        },
+        {
+          "path": "src/pairing/pairing-store-keys.test.ts",
+          "blob_sha": "d1c6bab5e72ad643ebbb9987811a4f18f90ab4e5",
+          "range": {
+            "start_line": 1,
+            "end_line": 52
+          },
+          "symbol": "pairing-store-keys.test"
+        },
+        {
+          "path": "src/pairing/pairing-store-keys.ts",
+          "blob_sha": "f4f10d0718488b51df23d8501db1a0551b295329",
+          "range": {
+            "start_line": 1,
+            "end_line": 65
+          },
+          "symbol": "pairing-store-keys"
+        },
+        {
+          "path": "src/pairing/pairing-store-model.ts",
+          "blob_sha": "58b2c0d284e347600f3b4fc399953ba3c6872253",
+          "range": {
+            "start_line": 1,
+            "end_line": 89
+          },
+          "symbol": "pairing-store-model"
+        },
+        {
+          "path": "src/pairing/pairing-store-sqlite.test-helpers.ts",
+          "blob_sha": "31aea5db5ed305af3f69bca69e1ac2d75d64e003",
+          "range": {
+            "start_line": 1,
+            "end_line": 29
+          },
+          "symbol": "pairing-store-sqlite.test-helpers"
+        },
+        {
+          "path": "src/pairing/pairing-store-sqlite.ts",
+          "blob_sha": "e6fe4d6703bf1179ab34f1bf14fbfc315f66e7e0",
+          "range": {
+            "start_line": 1,
+            "end_line": 296
+          },
+          "symbol": "pairing-store-sqlite"
+        },
+        {
+          "path": "src/pairing/pairing-store.read.ts",
+          "blob_sha": "a471b54a15db62b135099e3e678d16c6607bf448",
+          "range": {
+            "start_line": 1,
+            "end_line": 27
+          },
+          "symbol": "pairing-store.read"
+        },
+        {
+          "path": "src/pairing/pairing-store.test-support.ts",
+          "blob_sha": "c8c4cb346c6338d1933bf05623974f362971861f",
+          "range": {
+            "start_line": 1,
+            "end_line": 62
+          },
+          "symbol": "pairing-store.test-support"
+        },
+        {
+          "path": "src/pairing/pairing-store.test.ts",
+          "blob_sha": "2ad0396ca3100711da787b03ec59a79a42cb5acc",
+          "range": {
+            "start_line": 1,
+            "end_line": 241
+          },
+          "symbol": "pairing-store.test"
+        },
+        {
+          "path": "src/pairing/pairing-store.ts",
+          "blob_sha": "f36eb9034f1119721093fe142c10265d383e6dfd",
+          "range": {
+            "start_line": 1,
+            "end_line": 278
+          },
+          "symbol": "pairing-store"
+        },
+        {
+          "path": "src/pairing/pairing-store.types.ts",
+          "blob_sha": "8d5de412480cc0d2dd4170971ffcc0db822cb9f0",
+          "range": {
+            "start_line": 1,
+            "end_line": 40
+          },
+          "symbol": "pairing-store.types"
+        },
+        {
+          "path": "src/pairing/pairing-store.worker-contract.ts",
+          "blob_sha": "83853a6adf362afc135c21202ddddb05c0dc599e",
+          "range": {
+            "start_line": 1,
+            "end_line": 25
+          },
+          "symbol": "pairing-store.worker-contract"
+        },
+        {
+          "path": "src/pairing/pairing-store.worker.test.ts",
+          "blob_sha": "73e4b47404bf1c7447ae71e9e1cd71682d212657",
+          "range": {
+            "start_line": 1,
+            "end_line": 275
+          },
+          "symbol": "pairing-store.worker.test"
+        },
+        {
+          "path": "src/pairing/pairing-store.worker.ts",
+          "blob_sha": "dd3adda9017e87867c1635216a5b8ae58f8c5f6c",
+          "range": {
+            "start_line": 1,
+            "end_line": 375
+          },
+          "symbol": "pairing-store.worker"
+        },
+        {
+          "path": "src/pairing/setup-code.public-origin.test.ts",
+          "blob_sha": "8116cc204d80677c6ed4f730fc2dc98377507928",
+          "range": {
+            "start_line": 1,
+            "end_line": 137
+          },
+          "symbol": "setup-code.public-origin.test"
+        },
+        {
+          "path": "src/pairing/setup-code.test.ts",
+          "blob_sha": "ce523dd4b9a999dcd0b9aa7b19fa38022f87ce9f",
+          "range": {
+            "start_line": 1,
+            "end_line": 391
+          },
+          "symbol": "setup-code.test"
+        },
+        {
+          "path": "src/pairing/setup-code.ts",
+          "blob_sha": "88d7f41c78f61c786fa01623da15f2e6951cc29b",
+          "range": {
+            "start_line": 1,
+            "end_line": 578
+          },
+          "symbol": "setup-code"
+        }
+      ],
+      "evidence_refs": [
+        "source/host/tests/device_pairing_contract.rs",
+        "projects/openclaw-rust/dossiers/pairing-channel-core-scoped.md"
+      ],
+      "requirement_ids": [
+        "OCRM-R08",
+        "OCRM-AC08"
+      ],
+      "required_gate_ids": [
+        "OCRM-G04-rust-contract",
+        "OCRM-G05-frozen-oracle"
+      ],
+      "oracle_ids": [
+        "OCRM-PAIRING-O13",
+        "OCRM-PAIRING-O14",
+        "OCRM-PAIRING-O15",
+        "OCRM-PAIRING-O16"
+      ],
+      "adr_refs": [],
+      "blocker_ids": [
+        "BL-PAIRING-CHANNEL-EXEC-WIRING-001"
+      ],
+      "target": {
+        "path": "source/host/src/device_pairing_owner.rs",
+        "symbol": "DevicePairingOwner",
+        "language": "Rust"
+      },
+      "required_evidence_dimensions": [
+        "unit",
+        "format",
+        "boundary"
+      ],
+      "reviewer": "xuyao@ombhrum.com",
+      "migration_rollback": "Disable interactive pairing and require manual token pre-provisioning"
     }
   ],
   "schema_version": 1,

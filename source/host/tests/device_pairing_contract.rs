@@ -140,7 +140,7 @@ fn test_ocrm_pair_o07_pair_reject() {
 fn test_ocrm_pair_o08_pair_list() {
     let owner = DevicePairingOwner::in_memory().expect("in-memory db");
 
-    let req1 = owner.handle_pairing_command(
+    let _req1 = owner.handle_pairing_command(
         "device.pair.request",
         &json!({ "deviceId": "dev-list-pending", "publicKey": "pk-1" }),
     ).unwrap();
@@ -244,3 +244,81 @@ fn test_ocrm_pair_o12_setup_code() {
     assert_eq!(res["access"], "full");
     assert!(res["expiresAtMs"].as_i64().unwrap() > 0);
 }
+
+#[test]
+fn test_ocrm_pair_o13_join_code_validation_and_path_parsing() {
+    use mahayana_host_runtime::device_pairing_owner::*;
+
+    // Valid 22-char base64url codes
+    assert!(is_device_pairing_join_code("A1b2C3d4E5f6G7h8I9j0_-"));
+    assert!(is_device_pairing_join_code("abcdefghijklmnopqrstuv"));
+
+    // Invalid length or chars
+    assert!(!is_device_pairing_join_code("too-short"));
+    assert!(!is_device_pairing_join_code("A1b2C3d4E5f6G7h8I9j0_+=")); // + and = are standard base64, not url
+    assert!(!is_device_pairing_join_code("this-code-is-longer-than-22-chars"));
+
+    // Path parsing
+    assert_eq!(parse_device_pairing_join_request_path("/gateway/j"), Some(""));
+    assert_eq!(parse_device_pairing_join_request_path("/j"), Some(""));
+    assert_eq!(parse_device_pairing_join_request_path("/proxy/j/app/j/code123"), Some("code123"));
+    assert_eq!(parse_device_pairing_join_request_path("/gateway/j/shortcode"), Some("shortcode"));
+    assert_eq!(parse_device_pairing_join_request_path("/api/status"), None);
+}
+
+#[test]
+fn test_ocrm_pair_o14_safe_keys_and_labels() {
+    use mahayana_host_runtime::device_pairing_owner::*;
+
+    // Key sanitization
+    assert_eq!(safe_channel_key("Telegram").unwrap(), "telegram");
+    assert_eq!(safe_channel_key("slack/team:work*channel").unwrap(), "slack_team_work_channel");
+    assert_eq!(safe_account_key("user..profile").unwrap(), "user_profile");
+
+    // Empty and sanitized-empty keys rejected
+    assert!(safe_channel_key("   ").is_err());
+    assert!(safe_channel_key("..").is_err());
+    assert!(safe_account_key("/").is_err());
+
+    // ID labels
+    assert_eq!(resolve_pairing_id_label(None), "userId");
+    assert_eq!(resolve_pairing_id_label(Some("telegramId")), "telegramId");
+}
+
+#[test]
+fn test_ocrm_pair_o15_pairing_reply_formatting() {
+    use mahayana_host_runtime::device_pairing_owner::*;
+
+    let reply = build_pairing_reply("discord", "Discord User: @alice#1234", "PAIR-9876");
+    assert!(reply.contains("OpenClaw: access not configured."));
+    assert!(reply.contains("Discord User: @alice#1234"));
+    assert!(reply.contains("PAIR-9876"));
+    assert!(reply.contains("openclaw pairing approve discord PAIR-9876"));
+}
+
+#[test]
+fn test_ocrm_pair_o16_mobile_pairing_security_policy() {
+    use mahayana_host_runtime::device_pairing_owner::*;
+
+    // Secure WSS and HTTPS always allowed
+    assert!(validate_mobile_pairing_url("wss://gateway.example.com/ws").is_ok());
+    assert!(validate_mobile_pairing_url("https://gateway.example.com/ws").is_ok());
+
+    // Loopback and LAN cleartext allowed
+    assert!(validate_mobile_pairing_url("ws://localhost:8080").is_ok());
+    assert!(validate_mobile_pairing_url("ws://127.0.0.1:8080").is_ok());
+    assert!(validate_mobile_pairing_url("ws://[::1]:8080").is_ok());
+    assert!(validate_mobile_pairing_url("ws://192.168.1.100:8080").is_ok());
+    assert!(validate_mobile_pairing_url("ws://10.0.1.20:8080").is_ok());
+    assert!(validate_mobile_pairing_url("ws://172.20.0.5:8080").is_ok());
+    assert!(validate_mobile_pairing_url("ws://169.254.10.20:8080").is_ok());
+    assert!(validate_mobile_pairing_url("ws://macbook.local:8080").is_ok());
+    assert!(validate_mobile_pairing_url("ws://10.0.2.2:8080").is_ok()); // Android emulator
+
+    // Public cleartext internet rejected
+    let public_err = validate_mobile_pairing_url("ws://8.8.8.8:8080").unwrap_err();
+    assert!(public_err.contains("require a secure gateway URL"));
+    let domain_err = validate_mobile_pairing_url("ws://public.openclaw.ai:8080").unwrap_err();
+    assert!(domain_err.contains("require a secure gateway URL"));
+}
+
