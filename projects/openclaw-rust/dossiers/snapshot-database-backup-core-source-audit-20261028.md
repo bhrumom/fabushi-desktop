@@ -167,6 +167,11 @@ table-name rule (ASCII letter/underscore first, then ASCII alphanumeric or
 underscore). The local oracle rejects JSONL path names and SQL injection-shaped
 identifiers before future schema/table publication.
 
+`render_sqlite_schema` now sorts table/index/trigger definitions in the exact
+upstream order, normalizes statement terminators, and appends the user_version
+pragma marker. Positive byte-level and unsupported-kind negative oracles pass;
+the live SQLite schema scanner and restore consumer are still absent.
+
 ## Responsibility/evidence decision
 
 `OCRM-RESP-SNAPSHOT-BACKUP-CODEC-001` remains `read=partial`,
