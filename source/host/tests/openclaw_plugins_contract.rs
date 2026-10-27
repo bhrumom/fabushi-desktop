@@ -3035,6 +3035,174 @@ fn test_plugin_sdk_deprecation_tracker() {
     assert!(w4.message.contains("prepareLegacyTranscript is deprecated; use prepareTranscriptAsync"));
 }
 
+#[test]
+fn test_computer_use_contract_and_execution_manager() {
+    use mahayana_host_runtime::extensions::plugins::computer_use::{
+        computer_act_v1_action_names, computer_use_v1_action_names,
+        is_valid_computer_execution_id, ComputerExecutionManager, COMPUTER_HOST_BUSY,
+        COMPUTER_USE_V2_ACTION_NAMES,
+    };
+
+    assert_eq!(COMPUTER_USE_V2_ACTION_NAMES.len(), 40);
+    assert_eq!(computer_use_v1_action_names().len(), 15);
+    assert_eq!(computer_act_v1_action_names().len(), 13);
+
+    // Execution ID validation
+    assert!(is_valid_computer_execution_id(
+        "12345678-1234-4234-8234-123456789abc"
+    ));
+    assert!(!is_valid_computer_execution_id("invalid-id"));
+    assert!(!is_valid_computer_execution_id(""));
+
+    let manager = ComputerExecutionManager::new();
+    assert!(!manager.is_active());
+
+    // Invalid execution ID rejected
+    let bad_open = manager.open_execution("not-a-uuid", None);
+    assert!(bad_open.is_err());
+
+    let exec_1 = "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee";
+    let exec_2 = "11111111-2222-4333-8444-555555555555";
+
+    // First open succeeds
+    let ok_open = manager.open_execution(exec_1, Some("session-1".to_string()));
+    assert!(ok_open.is_ok());
+    assert!(manager.is_active());
+
+    // Same ID idempotent open succeeds
+    assert!(manager.open_execution(exec_1, None).is_ok());
+
+    // Different ID rejected while busy
+    let busy_err = manager.open_execution(exec_2, None);
+    assert!(busy_err.is_err());
+    assert_eq!(busy_err.unwrap_err(), COMPUTER_HOST_BUSY);
+
+    // Verification
+    assert!(manager.verify_execution(Some(exec_1)).is_ok());
+    assert_eq!(
+        manager.verify_execution(Some(exec_2)).unwrap_err(),
+        COMPUTER_HOST_BUSY
+    );
+    assert!(manager.verify_execution(None).is_err());
+
+    // Close execution releases lock
+    assert!(manager.close_execution(exec_1, "done").is_ok());
+    assert!(!manager.is_active());
+
+    // Now exec_2 can acquire
+    assert!(manager.open_execution(exec_2, None).is_ok());
+    assert!(manager.is_active());
+}
+
+#[test]
+fn test_plugin_config_contract_matching_and_activation() {
+    use mahayana_host_runtime::extensions::plugins::config::{
+        collect_plugin_config_contract_matches, has_plugin_config_migration_source,
+        resolve_memory_slot_decision, resolve_plugin_activation_state,
+        NormalizedPluginsConfig, PluginActivationSource, PluginEntryConfig,
+    };
+    use serde_json::json;
+
+    // 1. Path pattern contract matching
+    let root = json!({
+        "plugins": {
+            "entries": {
+                "my_plugin": {
+                    "apiKey": "secret-123",
+                    "endpoints": ["https://api.one", "https://api.two"]
+                }
+            }
+        }
+    });
+
+    let matches_exact = collect_plugin_config_contract_matches(
+        &root,
+        "plugins.entries.my_plugin.apiKey",
+    );
+    assert_eq!(matches_exact.len(), 1);
+    assert_eq!(matches_exact[0].value, json!("secret-123"));
+
+    let matches_wildcard = collect_plugin_config_contract_matches(
+        &root,
+        "plugins.entries.*.apiKey",
+    );
+    assert_eq!(matches_wildcard.len(), 1);
+    assert_eq!(matches_wildcard[0].path, "plugins.entries.my_plugin.apiKey");
+
+    let matches_array = collect_plugin_config_contract_matches(
+        &root,
+        "plugins.entries.my_plugin.endpoints.*",
+    );
+    assert_eq!(matches_array.len(), 2);
+    assert_eq!(matches_array[0].path, "plugins.entries.my_plugin.endpoints.0");
+    assert_eq!(matches_array[1].value, json!("https://api.two"));
+
+    // Migration source check
+    let patterns = vec!["plugins.entries.*.apiKey".to_string()];
+    assert!(has_plugin_config_migration_source(&root, &patterns, None));
+
+    // 2. Activation state resolution
+    let mut config = NormalizedPluginsConfig::default();
+    config.entries.insert(
+        "custom-plugin".to_string(),
+        PluginEntryConfig {
+            enabled: Some(true),
+            ..Default::default()
+        },
+    );
+    config.entries.insert(
+        "disabled-plugin".to_string(),
+        PluginEntryConfig {
+            enabled: Some(false),
+            ..Default::default()
+        },
+    );
+    config.slots.memory = Some("active-memory".to_string());
+    config.allow.push("allowed-external".to_string());
+
+    // Explicitly enabled
+    let s_explicit = resolve_plugin_activation_state("custom-plugin", "bundled", &config, false);
+    assert!(s_explicit.enabled);
+    assert_eq!(s_explicit.source, PluginActivationSource::Explicit);
+
+    // Explicitly disabled
+    let s_disabled = resolve_plugin_activation_state("disabled-plugin", "bundled", &config, true);
+    assert!(!s_disabled.enabled);
+    assert_eq!(s_disabled.source, PluginActivationSource::Disabled);
+
+    // Selected memory slot
+    let s_mem = resolve_plugin_activation_state("active-memory", "bundled", &config, false);
+    assert!(s_mem.enabled);
+    assert_eq!(s_mem.source, PluginActivationSource::Explicit);
+
+    // Allowed external plugin
+    let s_ext = resolve_plugin_activation_state("allowed-external", "external", &config, false);
+    assert!(s_ext.enabled);
+    assert_eq!(s_ext.source, PluginActivationSource::Explicit);
+
+    // Default enabled
+    let s_def = resolve_plugin_activation_state("unconfigured", "bundled", &config, true);
+    assert!(s_def.enabled);
+    assert_eq!(s_def.source, PluginActivationSource::Default);
+
+    // Auto disabled
+    let s_auto = resolve_plugin_activation_state("unconfigured", "bundled", &config, false);
+    assert!(!s_auto.enabled);
+    assert_eq!(s_auto.source, PluginActivationSource::Auto);
+
+    // 3. Memory slot decision
+    let available = vec!["mem-a".to_string(), "mem-b".to_string()];
+    let dec_explicit = resolve_memory_slot_decision(&config, &available);
+    assert_eq!(dec_explicit.selected_plugin_id.as_deref(), Some("active-memory"));
+    assert!(!dec_explicit.disabled);
+
+    let config_empty = NormalizedPluginsConfig::default();
+    let dec_single = resolve_memory_slot_decision(&config_empty, &["single-mem".to_string()]);
+    assert_eq!(dec_single.selected_plugin_id.as_deref(), Some("single-mem"));
+    assert!(!dec_single.disabled);
+}
+
+
 
 
 

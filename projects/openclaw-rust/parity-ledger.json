@@ -10,10 +10,10 @@
     "ui_accepted": false
   },
   "file_coverage": {
-    "mapped_paths": 687,
+    "mapped_paths": 703,
     "omitted_known": 0,
     "tracked_paths": 58750,
-    "unclassified_paths": 58063
+    "unclassified_paths": 58047
   },
   "inventory_authority": {
     "manifest_source": "GitHub Actions immutable artifact candidate",
@@ -24196,6 +24196,117 @@
         "warn_mention_inbox_deprecation"
       ],
       "unit_id": "OCRM-UNIT-PLUGINS-COMPAT-001"
+    },
+    {
+      "adr_refs": [],
+      "behavior": "Plugin computer use contract (actions matrix, single-flight execution lock, screen snapshots) and plugin configuration engine (contract path matching, normalization, activation state resolution, memory slot decisions).",
+      "blocker_ids": [],
+      "capability_ids": [
+        "plugins.computer_use",
+        "plugins.config"
+      ],
+      "dependencies": [
+        "mahayana_host_runtime::extensions::plugins::computer_use",
+        "mahayana_host_runtime::extensions::plugins::config"
+      ],
+      "evidence_refs": [
+        "source/host/tests/openclaw_plugins_contract.rs",
+        "projects/openclaw-rust/dossiers/plugins-computer-use-and-config-scoped.md"
+      ],
+      "existing_owner_candidates": [
+        {
+          "path": "source/host/src/extensions/plugins/computer_use.rs",
+          "reason": "Host native computer use contract and single-flight execution manager"
+        },
+        {
+          "path": "source/host/src/extensions/plugins/config.rs",
+          "reason": "Host native plugin configuration normalization, contract pattern matching, and activation state resolver"
+        }
+      ],
+      "id": "OCRM-RESP-PLUGINS-COMPUTER-USE-CONFIG-001",
+      "integration": {
+        "consumer": "source/host/src/extensions/plugins/mod.rs",
+        "entrypoint": "source/host/src/extensions/plugins/mod.rs",
+        "owner": "source/host/src/extensions/plugins/mod.rs",
+        "producer": "source/host/src/extensions/plugins/mod.rs"
+      },
+      "invariants": [
+        "Computer use execution requires valid UUID and allows only one active provider execution per computer",
+        "Plugin config contract matching traversals evaluate wildcards and array indexes without widening edits",
+        "Memory slot decisions fail closed on retired plugins and select available provider deterministically"
+      ],
+      "migration_rollback": "Fallback to unverified configuration and unrestricted computer use registration",
+      "oracle_ids": [
+        "OCRM-PLUGINS-CU-CONFIG-O01"
+      ],
+      "owner_decision": "Unified native plugin computer use and configuration subsystems in extensions::plugins",
+      "postconditions": [
+        "Computer executions gated with single-flight mutex",
+        "Plugin activation state resolved with exact precedence",
+        "Config migration source contracts safely validated"
+      ],
+      "preconditions": [
+        "Normalized plugins config available"
+      ],
+      "required_evidence_dimensions": [
+        "unit",
+        "integration"
+      ],
+      "required_gate_ids": [
+        "OCRM-G04-rust-contract"
+      ],
+      "requirement_ids": [
+        "OCRM-R28",
+        "OCRM-AC28"
+      ],
+      "responsibility_kind": "business-runtime",
+      "reviewer": "xuyao@ombhrum.com",
+      "risk": "Medium; computer use security boundaries and plugin configuration integrity",
+      "selected_owner": "source/host/src/extensions/plugins/mod.rs",
+      "source_refs": [
+        {
+          "blob_sha": "8ee54fc6561f5f2fe4e8be510ad671c667089b33",
+          "path": "src/plugins/computer-use-registration.ts",
+          "range": {
+            "end_line": 224,
+            "start_line": 1
+          },
+          "symbol": "registerComputerUseProvider"
+        },
+        {
+          "blob_sha": "9cb6a927a7c50e4a78fa844bf25b0cb907293a90",
+          "path": "src/plugins/config-state.ts",
+          "range": {
+            "end_line": 254,
+            "start_line": 1
+          },
+          "symbol": "resolveEffectivePluginActivationState"
+        }
+      ],
+      "status": {
+        "acceptance": "pending",
+        "implementation": "implemented",
+        "mapping": "reviewed",
+        "read": "read-complete",
+        "verification": "verified",
+        "wiring": "wired"
+      },
+      "target": {
+        "language": "Rust",
+        "path": "source/host/src/extensions/plugins/computer_use.rs",
+        "symbol": "ComputerExecutionManager"
+      },
+      "tests": [
+        "source/host/tests/openclaw_plugins_contract.rs::test_computer_use_contract_and_execution_manager",
+        "source/host/tests/openclaw_plugins_contract.rs::test_plugin_config_contract_matching_and_activation"
+      ],
+      "typed_contracts": [
+        "ComputerExecutionManager",
+        "collect_plugin_config_contract_matches",
+        "resolve_plugin_activation_state",
+        "resolve_memory_slot_decision"
+      ],
+      "unit_id": "OCRM-UNIT-PLUGINS-CU-CONFIG-001"
     }
   ],
   "schema_version": 1,
