@@ -10,10 +10,10 @@
     "ui_accepted": false
   },
   "file_coverage": {
-    "mapped_paths": 720,
+    "mapped_paths": 825,
     "omitted_known": 0,
     "tracked_paths": 58750,
-    "unclassified_paths": 58030
+    "unclassified_paths": 57925
   },
   "inventory_authority": {
     "manifest_source": "GitHub Actions immutable artifact candidate",
@@ -21503,6 +21503,1224 @@
       ],
       "reviewer": "xuyao@ombhrum.com",
       "migration_rollback": "Terminate attempts forcefully without draining in-flight messages"
+    },
+    {
+      "id": "OCRM-RESP-MEETING-BOT-AUDIO-001",
+      "unit_id": "OCRM-UNIT-MEETING-BOT-001",
+      "responsibility_kind": "business-runtime",
+      "behavior": "Meeting audio bridge, canonical base64 audio decoding, PCM chunk duration calculation, and audio loopback verification.",
+      "risk": "Medium; malformed audio frames cause distortion or bridge crash during live meeting participation",
+      "status": {
+        "read": "read-complete",
+        "mapping": "reviewed",
+        "wiring": "not-wired",
+        "implementation": "implemented",
+        "verification": "not-run",
+        "acceptance": "pending"
+      },
+      "selected_owner": "source/host/src/extensions/meeting_bot/audio_bridge.rs",
+      "existing_owner_candidates": [
+        {
+          "path": "source/host/src/extensions/meeting_bot/audio_bridge.rs",
+          "reason": "Host meeting bot audio bridge and base64 audio codec"
+        }
+      ],
+      "owner_decision": "Native implementation in audio_bridge under meeting_bot extension",
+      "dependencies": [
+        "mahayana_host_runtime::extensions::meeting_bot::audio_bridge"
+      ],
+      "capability_ids": [
+        "meeting_bot.audio_bridge"
+      ],
+      "preconditions": [
+        "Meeting audio stream frames or base64 clips received from browser or channel"
+      ],
+      "postconditions": [
+        "Audio decoded and chunk metadata validated according to sample rate and channels"
+      ],
+      "invariants": [
+        "Empty or non-base64 payloads are rejected with descriptive action error",
+        "Duration calculation accurately accounts for 16-bit PCM sample depth"
+      ],
+      "typed_contracts": [
+        "AudioSampleRate",
+        "MeetingAudioChunk",
+        "decode_meeting_audio_base64",
+        "is_meeting_audio_base64"
+      ],
+      "tests": [
+        "source/host/tests/openclaw_meeting_bot_contract.rs::test_ocrm_meeting_bot_audio_bridge"
+      ],
+      "integration": {
+        "producer": "source/host/src/extensions/meeting_bot/audio_bridge.rs",
+        "owner": "source/host/src/extensions/meeting_bot/audio_bridge.rs",
+        "consumer": "source/host/src/extensions/meeting_bot/audio_bridge.rs",
+        "entrypoint": "source/host/src/extensions/meeting_bot/audio_bridge.rs::decode_meeting_audio_base64"
+      },
+      "source_refs": [
+        {
+          "path": "src/meeting-bot/audio-backend.test-support.ts",
+          "blob_sha": "35229eade2e7ffdb4a9fb718d3a51d18b5ab23a4",
+          "range": {
+            "start_line": 1,
+            "end_line": 24
+          },
+          "symbol": "audio-backend.test-support"
+        },
+        {
+          "path": "src/meeting-bot/audio-backend.ts",
+          "blob_sha": "f3319b4821400cb7771d9260f3eaa29626dbf5e9",
+          "range": {
+            "start_line": 1,
+            "end_line": 182
+          },
+          "symbol": "audio-backend"
+        },
+        {
+          "path": "src/meeting-bot/audio-base64.test.ts",
+          "blob_sha": "9241730d0a4d050e2038775f452e4a0e3dfc15c7",
+          "range": {
+            "start_line": 1,
+            "end_line": 12
+          },
+          "symbol": "audio-base64.test"
+        },
+        {
+          "path": "src/meeting-bot/audio-base64.ts",
+          "blob_sha": "82bafcdb9311998051f204789247b7ecc01241f1",
+          "range": {
+            "start_line": 1,
+            "end_line": 13
+          },
+          "symbol": "audio-base64"
+        },
+        {
+          "path": "src/meeting-bot/audio-bridge-source.ts",
+          "blob_sha": "b5d2edf79f54a26706f4dc22f38f26bdcb1f06a6",
+          "range": {
+            "start_line": 1,
+            "end_line": 46
+          },
+          "symbol": "audio-bridge-source"
+        },
+        {
+          "path": "src/meeting-bot/bridge-process.ts",
+          "blob_sha": "26c460f40aca376fc8a52a279b031e91e8491608",
+          "range": {
+            "start_line": 1,
+            "end_line": 150
+          },
+          "symbol": "bridge-process"
+        },
+        {
+          "path": "src/meeting-bot/node-audio-config.ts",
+          "blob_sha": "2604e41d58c213957f69ff1507cb9b316ed3c519",
+          "range": {
+            "start_line": 1,
+            "end_line": 96
+          },
+          "symbol": "node-audio-config"
+        },
+        {
+          "path": "src/meeting-bot/node-audio-pull-waiters.ts",
+          "blob_sha": "4cec9ff8089fce4c734796cc5879fcfca258fdb8",
+          "range": {
+            "start_line": 1,
+            "end_line": 31
+          },
+          "symbol": "node-audio-pull-waiters"
+        },
+        {
+          "path": "src/meeting-bot/node-host.audio.test.ts",
+          "blob_sha": "8beb27aee0172178210a8685c1142a14f4c36eae",
+          "range": {
+            "start_line": 1,
+            "end_line": 605
+          },
+          "symbol": "node-host.audio.test"
+        },
+        {
+          "path": "src/meeting-bot/node-host.test.ts",
+          "blob_sha": "5177025bbc22660501a583475e38e32387bca1b2",
+          "range": {
+            "start_line": 1,
+            "end_line": 51
+          },
+          "symbol": "node-host.test"
+        },
+        {
+          "path": "src/meeting-bot/node-host.ts",
+          "blob_sha": "2ad2c11927eb679b215d7cf2d79e59f05489038b",
+          "range": {
+            "start_line": 1,
+            "end_line": 609
+          },
+          "symbol": "node-host"
+        },
+        {
+          "path": "src/meeting-bot/node-invoke-policy.ts",
+          "blob_sha": "b2bf186f61889299aadb84b01d5b0521ab3f4829",
+          "range": {
+            "start_line": 1,
+            "end_line": 238
+          },
+          "symbol": "node-invoke-policy"
+        },
+        {
+          "path": "src/meeting-bot/output-loopback-verifier.test.ts",
+          "blob_sha": "b78c27e6b905ed8b5c22cbde4d172859917fcddb",
+          "range": {
+            "start_line": 1,
+            "end_line": 123
+          },
+          "symbol": "output-loopback-verifier.test"
+        },
+        {
+          "path": "src/meeting-bot/output-loopback-verifier.ts",
+          "blob_sha": "93b9f2ca962c2c237cfd59955c01bcb339665d7b",
+          "range": {
+            "start_line": 1,
+            "end_line": 300
+          },
+          "symbol": "output-loopback-verifier"
+        },
+        {
+          "path": "src/meeting-bot/sox-audio-command.ts",
+          "blob_sha": "08835bf70269c2154cabc8c06a8756fb42da56e9",
+          "range": {
+            "start_line": 1,
+            "end_line": 57
+          },
+          "symbol": "sox-audio-command"
+        },
+        {
+          "path": "src/meeting-bot/transcripts-bridge.provenance.test.ts",
+          "blob_sha": "0368243142e57e75ebf506f297ae9c22fd3bd55a",
+          "range": {
+            "start_line": 1,
+            "end_line": 129
+          },
+          "symbol": "transcripts-bridge.provenance.test"
+        },
+        {
+          "path": "src/meeting-bot/transcripts-bridge.runtime.ts",
+          "blob_sha": "7ad966bec17d753f23ed2e3020b2f9197c5468c7",
+          "range": {
+            "start_line": 1,
+            "end_line": 467
+          },
+          "symbol": "transcripts-bridge.runtime"
+        },
+        {
+          "path": "src/meeting-bot/transcripts-bridge.test.ts",
+          "blob_sha": "d367ff4bc9ed7e10f0b3b3030497fa74c0d39cb9",
+          "range": {
+            "start_line": 1,
+            "end_line": 338
+          },
+          "symbol": "transcripts-bridge.test"
+        },
+        {
+          "path": "src/meeting-bot/transcripts-bridge.ts",
+          "blob_sha": "a2c03644b240252a94b48507cfd03656289d2d2b",
+          "range": {
+            "start_line": 1,
+            "end_line": 54
+          },
+          "symbol": "transcripts-bridge"
+        },
+        {
+          "path": "src/meeting-bot/voice-call-gateway.ts",
+          "blob_sha": "ceaa6c01edc1632d64c7e70b1abf5aee54486471",
+          "range": {
+            "start_line": 1,
+            "end_line": 193
+          },
+          "symbol": "voice-call-gateway"
+        }
+      ],
+      "evidence_refs": [
+        "source/host/tests/openclaw_meeting_bot_contract.rs",
+        "projects/openclaw-rust/dossiers/meeting-bot-scoped.md"
+      ],
+      "requirement_ids": [
+        "OCRM-R04",
+        "OCRM-R08",
+        "OCRM-R14",
+        "OCRM-R24",
+        "OCRM-AC08",
+        "OCRM-AC14",
+        "OCRM-AC24"
+      ],
+      "required_gate_ids": [
+        "OCRM-G04-rust-contract",
+        "OCRM-G05-frozen-oracle"
+      ],
+      "oracle_ids": [
+        "OCRM-MEETING-BOT-AUDIO-O01"
+      ],
+      "adr_refs": [],
+      "blocker_ids": [
+        "BL-MEETING-BOT-AUDIO-WIRING-001"
+      ],
+      "target": {
+        "path": "source/host/src/extensions/meeting_bot/audio_bridge.rs",
+        "symbol": "decode_meeting_audio_base64",
+        "language": "Rust"
+      },
+      "required_evidence_dimensions": [
+        "unit",
+        "format"
+      ],
+      "reviewer": "xuyao@ombhrum.com",
+      "migration_rollback": "Disable meeting bot audio ingestion and fall back to plain text transcripts"
+    },
+    {
+      "id": "OCRM-RESP-MEETING-BOT-BROWSER-001",
+      "unit_id": "OCRM-UNIT-MEETING-BOT-001",
+      "responsibility_kind": "business-runtime",
+      "behavior": "Meeting browser controller, process-serialized per-tab action lock, navigation state tracking, and deadline timeout enforcement.",
+      "risk": "High; race conditions in browser tab evaluations cause desynchronized call state and stranded Chrome nodes",
+      "status": {
+        "read": "read-complete",
+        "mapping": "reviewed",
+        "wiring": "not-wired",
+        "implementation": "implemented",
+        "verification": "not-run",
+        "acceptance": "pending"
+      },
+      "selected_owner": "source/host/src/extensions/meeting_bot/browser_controller.rs",
+      "existing_owner_candidates": [
+        {
+          "path": "source/host/src/extensions/meeting_bot/browser_controller.rs",
+          "reason": "Host meeting bot browser controller and serialized tab action lock"
+        }
+      ],
+      "owner_decision": "Native implementation in browser_controller under meeting_bot extension",
+      "dependencies": [
+        "mahayana_host_runtime::extensions::meeting_bot::browser_controller"
+      ],
+      "capability_ids": [
+        "meeting_bot.browser_controller"
+      ],
+      "preconditions": [
+        "Meeting browser operations submitted with target ID and deadline timestamp"
+      ],
+      "postconditions": [
+        "Operations serialized per target tab and expired deadlines rejected immediately"
+      ],
+      "invariants": [
+        "Concurrent operations on same target ID are serialized without interleaving",
+        "Exceeded deadlines return exact error: Meeting browser operation timed out waiting for browser tab control."
+      ],
+      "typed_contracts": [
+        "MeetingBrowserActLock",
+        "BrowserNavigationState",
+        "BROWSER_ACT_TIMEOUT_MESSAGE"
+      ],
+      "tests": [
+        "source/host/tests/openclaw_meeting_bot_contract.rs::test_ocrm_meeting_bot_browser_controller"
+      ],
+      "integration": {
+        "producer": "source/host/src/extensions/meeting_bot/browser_controller.rs",
+        "owner": "source/host/src/extensions/meeting_bot/browser_controller.rs",
+        "consumer": "source/host/src/extensions/meeting_bot/browser_controller.rs",
+        "entrypoint": "source/host/src/extensions/meeting_bot/browser_controller.rs::acquire_lock"
+      },
+      "source_refs": [
+        {
+          "path": "src/meeting-bot/browser-act-lock.test.ts",
+          "blob_sha": "2a5dd6d76401286ca8ff9519cabb7c80c7005bf9",
+          "range": {
+            "start_line": 1,
+            "end_line": 56
+          },
+          "symbol": "browser-act-lock.test"
+        },
+        {
+          "path": "src/meeting-bot/browser-act-lock.ts",
+          "blob_sha": "3e70b5f22316fe1af8cbae1a78eb1a9d8cfb3a11",
+          "range": {
+            "start_line": 1,
+            "end_line": 57
+          },
+          "symbol": "browser-act-lock"
+        },
+        {
+          "path": "src/meeting-bot/browser-adapter-options.ts",
+          "blob_sha": "fb7b70d4f8a88ad3cf46e5e55f7bc6e794a2db99",
+          "range": {
+            "start_line": 1,
+            "end_line": 114
+          },
+          "symbol": "browser-adapter-options"
+        },
+        {
+          "path": "src/meeting-bot/browser-audio-capture-source.test.ts",
+          "blob_sha": "59b6fda9a578a566f7c8dda4d5499cb94f558ba8",
+          "range": {
+            "start_line": 1,
+            "end_line": 264
+          },
+          "symbol": "browser-audio-capture-source.test"
+        },
+        {
+          "path": "src/meeting-bot/browser-audio-capture-source.ts",
+          "blob_sha": "652adbe08548f44d293e6228f5bb34adac1a9ee1",
+          "range": {
+            "start_line": 1,
+            "end_line": 266
+          },
+          "symbol": "browser-audio-capture-source"
+        },
+        {
+          "path": "src/meeting-bot/browser-controller.test.ts",
+          "blob_sha": "1b5a7fe4837577547fe2491e0fe3c75b2cff37f1",
+          "range": {
+            "start_line": 1,
+            "end_line": 153
+          },
+          "symbol": "browser-controller.test"
+        },
+        {
+          "path": "src/meeting-bot/browser-controller.ts",
+          "blob_sha": "32694e190d479a2e60e1fc44b9a64f3c9fa72b0c",
+          "range": {
+            "start_line": 1,
+            "end_line": 501
+          },
+          "symbol": "browser-controller"
+        },
+        {
+          "path": "src/meeting-bot/browser-navigation-errors.ts",
+          "blob_sha": "5f767324d5f5797e6730344d15c0c59401d3d46b",
+          "range": {
+            "start_line": 1,
+            "end_line": 7
+          },
+          "symbol": "browser-navigation-errors"
+        },
+        {
+          "path": "src/meeting-bot/browser-node.ts",
+          "blob_sha": "f2d8e352ca54b8379e8be46a0e45bb3d1a0f14bb",
+          "range": {
+            "start_line": 1,
+            "end_line": 168
+          },
+          "symbol": "browser-node"
+        },
+        {
+          "path": "src/meeting-bot/browser-plugin-cli.ts",
+          "blob_sha": "a63ce99357df77dfd8fd08206c236b8dbeb6d7db",
+          "range": {
+            "start_line": 1,
+            "end_line": 37
+          },
+          "symbol": "browser-plugin-cli"
+        },
+        {
+          "path": "src/meeting-bot/browser-plugin.config-setup.test.ts",
+          "blob_sha": "9dd23bafc58f9dbb65b0d60987cc702cc2685c23",
+          "range": {
+            "start_line": 1,
+            "end_line": 205
+          },
+          "symbol": "browser-plugin.config-setup.test"
+        },
+        {
+          "path": "src/meeting-bot/browser-plugin.metadata.test.ts",
+          "blob_sha": "cbb35e958f07f54e4bf2c06dbf05f766e553529e",
+          "range": {
+            "start_line": 1,
+            "end_line": 69
+          },
+          "symbol": "browser-plugin.metadata.test"
+        },
+        {
+          "path": "src/meeting-bot/browser-plugin.node-host.test.ts",
+          "blob_sha": "39db8cf34fcfc632d36f6a65ee482f6547bd1dee",
+          "range": {
+            "start_line": 1,
+            "end_line": 102
+          },
+          "symbol": "browser-plugin.node-host.test"
+        },
+        {
+          "path": "src/meeting-bot/browser-plugin.test-support.ts",
+          "blob_sha": "fbc31e1b8789139d0b13c201f60c67487b37b10e",
+          "range": {
+            "start_line": 1,
+            "end_line": 23
+          },
+          "symbol": "browser-plugin.test-support"
+        },
+        {
+          "path": "src/meeting-bot/browser-plugin.ts",
+          "blob_sha": "53158d6455fd966c39157e0fc23d144c400a1a07",
+          "range": {
+            "start_line": 1,
+            "end_line": 265
+          },
+          "symbol": "browser-plugin"
+        },
+        {
+          "path": "src/meeting-bot/browser-request.ts",
+          "blob_sha": "dbc555f337a282ef939e76018f30599d0ea226f5",
+          "range": {
+            "start_line": 1,
+            "end_line": 62
+          },
+          "symbol": "browser-request"
+        },
+        {
+          "path": "src/meeting-bot/browser-session-control.test.ts",
+          "blob_sha": "8749b6b8d38b483d235897314cec304a94a942cd",
+          "range": {
+            "start_line": 1,
+            "end_line": 147
+          },
+          "symbol": "browser-session-control.test"
+        },
+        {
+          "path": "src/meeting-bot/browser-session-control.ts",
+          "blob_sha": "89b7e372043e44e758c45760d86ca762c0f160dc",
+          "range": {
+            "start_line": 1,
+            "end_line": 269
+          },
+          "symbol": "browser-session-control"
+        },
+        {
+          "path": "src/meeting-bot/chrome-node-result.ts",
+          "blob_sha": "e69fe442c1c103e5df426e40d975dbae10f2acd1",
+          "range": {
+            "start_line": 1,
+            "end_line": 24
+          },
+          "symbol": "chrome-node-result"
+        },
+        {
+          "path": "src/meeting-bot/chrome-transport-types.ts",
+          "blob_sha": "a8cc77c296725926a0e021c6e2da107540a819b1",
+          "range": {
+            "start_line": 1,
+            "end_line": 102
+          },
+          "symbol": "chrome-transport-types"
+        },
+        {
+          "path": "src/meeting-bot/chrome-transport.test.ts",
+          "blob_sha": "b26ce64b01b267ae945dc18e62d022b7994afb45",
+          "range": {
+            "start_line": 1,
+            "end_line": 559
+          },
+          "symbol": "chrome-transport.test"
+        },
+        {
+          "path": "src/meeting-bot/chrome-transport.ts",
+          "blob_sha": "4990b93d8e36de4d3af882b8db7ff6f895ef9a43",
+          "range": {
+            "start_line": 1,
+            "end_line": 666
+          },
+          "symbol": "chrome-transport"
+        },
+        {
+          "path": "src/meeting-bot/command-argv.ts",
+          "blob_sha": "7ef35a0707bb4d92c2d336c0c721280f281f040b",
+          "range": {
+            "start_line": 1,
+            "end_line": 7
+          },
+          "symbol": "command-argv"
+        },
+        {
+          "path": "src/meeting-bot/page-script-source.ts",
+          "blob_sha": "3193720b74899be52729374c5701e4e5101faf55",
+          "range": {
+            "start_line": 1,
+            "end_line": 329
+          },
+          "symbol": "page-script-source"
+        },
+        {
+          "path": "src/meeting-bot/platform-adapter-contract.ts",
+          "blob_sha": "8027f3eab72d05a25fd700934ec1503d55758792",
+          "range": {
+            "start_line": 1,
+            "end_line": 208
+          },
+          "symbol": "platform-adapter-contract"
+        },
+        {
+          "path": "src/meeting-bot/platform-adapter.provenance.test.ts",
+          "blob_sha": "fdcdac7661af74d50c53cf91152f8f17ab9801f5",
+          "range": {
+            "start_line": 1,
+            "end_line": 145
+          },
+          "symbol": "platform-adapter.provenance.test"
+        },
+        {
+          "path": "src/meeting-bot/platform-adapter.ts",
+          "blob_sha": "4aff61088af9a3e563473d9c4f9f782a3748a0ac",
+          "range": {
+            "start_line": 1,
+            "end_line": 419
+          },
+          "symbol": "platform-adapter"
+        }
+      ],
+      "evidence_refs": [
+        "source/host/tests/openclaw_meeting_bot_contract.rs",
+        "projects/openclaw-rust/dossiers/meeting-bot-scoped.md"
+      ],
+      "requirement_ids": [
+        "OCRM-R04",
+        "OCRM-R08",
+        "OCRM-R14",
+        "OCRM-R24",
+        "OCRM-AC08",
+        "OCRM-AC14",
+        "OCRM-AC24"
+      ],
+      "required_gate_ids": [
+        "OCRM-G04-rust-contract",
+        "OCRM-G05-frozen-oracle"
+      ],
+      "oracle_ids": [
+        "OCRM-MEETING-BOT-BROWSER-O01"
+      ],
+      "adr_refs": [],
+      "blocker_ids": [
+        "BL-MEETING-BOT-BROWSER-WIRING-001"
+      ],
+      "target": {
+        "path": "source/host/src/extensions/meeting_bot/browser_controller.rs",
+        "symbol": "MeetingBrowserActLock",
+        "language": "Rust"
+      },
+      "required_evidence_dimensions": [
+        "unit",
+        "format"
+      ],
+      "reviewer": "xuyao@ombhrum.com",
+      "migration_rollback": "Kill orphaned browser process and force cleanup of target tab"
+    },
+    {
+      "id": "OCRM-RESP-MEETING-BOT-LIFECYCLE-001",
+      "unit_id": "OCRM-UNIT-MEETING-BOT-001",
+      "responsibility_kind": "business-runtime",
+      "behavior": "Realtime meeting modes (agent/bidi), call route readiness verification, participation state tracking, and session cleanup state tracking.",
+      "risk": "Medium; uncleaned meeting sessions leak resources, microphones, or network bandwidth",
+      "status": {
+        "read": "read-complete",
+        "mapping": "reviewed",
+        "wiring": "not-wired",
+        "implementation": "implemented",
+        "verification": "not-run",
+        "acceptance": "pending"
+      },
+      "selected_owner": "source/host/src/extensions/meeting_bot/session_lifecycle.rs",
+      "existing_owner_candidates": [
+        {
+          "path": "source/host/src/extensions/meeting_bot/session_lifecycle.rs",
+          "reason": "Host meeting bot session lifecycle manager and cleanup tracker"
+        }
+      ],
+      "owner_decision": "Native implementation in session_lifecycle under meeting_bot extension",
+      "dependencies": [
+        "mahayana_host_runtime::extensions::meeting_bot::session_lifecycle"
+      ],
+      "capability_ids": [
+        "meeting_bot.session_lifecycle"
+      ],
+      "preconditions": [
+        "Meeting session initialized with target call mode and audio routing state"
+      ],
+      "postconditions": [
+        "Route readiness evaluated and cleanup state tracked across browser left, stop settled, and unpublish phases"
+      ],
+      "invariants": [
+        "Realtime route ready requires mode in (agent, bidi), inCall=true, mic unmuted, audio routed, and no manual action",
+        "Session cleanup is complete only when browserSettled, stopSettled, and unpublished are all true"
+      ],
+      "typed_contracts": [
+        "is_meeting_talk_back_mode",
+        "is_meeting_realtime_route_ready",
+        "MeetingBrowserHealth",
+        "MeetingSessionCleanupState",
+        "MeetingSessionCleanupTracker"
+      ],
+      "tests": [
+        "source/host/tests/openclaw_meeting_bot_contract.rs::test_ocrm_meeting_bot_session_lifecycle"
+      ],
+      "integration": {
+        "producer": "source/host/src/extensions/meeting_bot/session_lifecycle.rs",
+        "owner": "source/host/src/extensions/meeting_bot/session_lifecycle.rs",
+        "consumer": "source/host/src/extensions/meeting_bot/session_lifecycle.rs",
+        "entrypoint": "source/host/src/extensions/meeting_bot/session_lifecycle.rs::is_meeting_realtime_route_ready"
+      },
+      "source_refs": [
+        {
+          "path": "src/meeting-bot/agent-consult.test.ts",
+          "blob_sha": "c0217b5f93cc98b080cc4187ab134b1b17626239",
+          "range": {
+            "start_line": 1,
+            "end_line": 117
+          },
+          "symbol": "agent-consult.test"
+        },
+        {
+          "path": "src/meeting-bot/agent-consult.ts",
+          "blob_sha": "0b8c2c4543256efb34543e027c183e86c0df5ce6",
+          "range": {
+            "start_line": 1,
+            "end_line": 193
+          },
+          "symbol": "agent-consult"
+        },
+        {
+          "path": "src/meeting-bot/configured-node-host.test.ts",
+          "blob_sha": "e3b19f8892239d7d320429f38a7f7dae239b3bc7",
+          "range": {
+            "start_line": 1,
+            "end_line": 162
+          },
+          "symbol": "configured-node-host.test"
+        },
+        {
+          "path": "src/meeting-bot/configured-node-host.ts",
+          "blob_sha": "f3c3fcd40d4d6413a3a339041cbc71c5bc8fddd2",
+          "range": {
+            "start_line": 1,
+            "end_line": 117
+          },
+          "symbol": "configured-node-host"
+        },
+        {
+          "path": "src/meeting-bot/meeting-modes.ts",
+          "blob_sha": "879616593eec38f08a2e9e8328a18b2ab3463ef4",
+          "range": {
+            "start_line": 1,
+            "end_line": 24
+          },
+          "symbol": "meeting-modes"
+        },
+        {
+          "path": "src/meeting-bot/observation-provenance.test-support.ts",
+          "blob_sha": "755a79bdae843602aee243605670c658c86a1555",
+          "range": {
+            "start_line": 1,
+            "end_line": 102
+          },
+          "symbol": "observation-provenance.test-support"
+        },
+        {
+          "path": "src/meeting-bot/observation-provenance.ts",
+          "blob_sha": "6df9b018a5e12280f49c1d82bf0a67ba0324114d",
+          "range": {
+            "start_line": 1,
+            "end_line": 75
+          },
+          "symbol": "observation-provenance"
+        },
+        {
+          "path": "src/meeting-bot/participation-browser.test.ts",
+          "blob_sha": "d4fcfd91e8513c38240c44b2e11b8e41cdd96631",
+          "range": {
+            "start_line": 1,
+            "end_line": 236
+          },
+          "symbol": "participation-browser.test"
+        },
+        {
+          "path": "src/meeting-bot/participation-browser.ts",
+          "blob_sha": "7eb54eab22be98eed4b1aff9633f96f71bfbf724",
+          "range": {
+            "start_line": 1,
+            "end_line": 121
+          },
+          "symbol": "participation-browser"
+        },
+        {
+          "path": "src/meeting-bot/participation-types.ts",
+          "blob_sha": "a59457d848ec33f56935d0b07afa4dbef2a65630",
+          "range": {
+            "start_line": 1,
+            "end_line": 90
+          },
+          "symbol": "participation-types"
+        },
+        {
+          "path": "src/meeting-bot/participation.capacity-race.test.ts",
+          "blob_sha": "131901ce685fa0c94c9df751d828f03b9c55fd84",
+          "range": {
+            "start_line": 1,
+            "end_line": 109
+          },
+          "symbol": "participation.capacity-race.test"
+        },
+        {
+          "path": "src/meeting-bot/participation.test.ts",
+          "blob_sha": "e5094c9174bd0143d681517f627911a79ac07628",
+          "range": {
+            "start_line": 1,
+            "end_line": 815
+          },
+          "symbol": "participation.test"
+        },
+        {
+          "path": "src/meeting-bot/participation.ts",
+          "blob_sha": "0aecefc1c4d1a76e34df18e8aa929df4df1358c4",
+          "range": {
+            "start_line": 1,
+            "end_line": 522
+          },
+          "symbol": "participation"
+        },
+        {
+          "path": "src/meeting-bot/plugin-cli.test.ts",
+          "blob_sha": "edb8bb8db6c1453b2cbe82954ab2f519193bbcb7",
+          "range": {
+            "start_line": 1,
+            "end_line": 80
+          },
+          "symbol": "plugin-cli.test"
+        },
+        {
+          "path": "src/meeting-bot/plugin-cli.ts",
+          "blob_sha": "44b202436d96599bfcd4f91fce9a29d6b28f120d",
+          "range": {
+            "start_line": 1,
+            "end_line": 165
+          },
+          "symbol": "plugin-cli"
+        },
+        {
+          "path": "src/meeting-bot/plugin-config.ts",
+          "blob_sha": "a6a143352454819fa303f5467cc08b92abce9e5b",
+          "range": {
+            "start_line": 1,
+            "end_line": 131
+          },
+          "symbol": "plugin-config"
+        },
+        {
+          "path": "src/meeting-bot/plugin-entry.ts",
+          "blob_sha": "60becbc4ba3514deb3bfcd8d0e7877c91108d5bd",
+          "range": {
+            "start_line": 1,
+            "end_line": 377
+          },
+          "symbol": "plugin-entry"
+        },
+        {
+          "path": "src/meeting-bot/plugin-shell.ts",
+          "blob_sha": "fdc4073270ecaedcec7998dd558f4a2830f92a74",
+          "range": {
+            "start_line": 1,
+            "end_line": 236
+          },
+          "symbol": "plugin-shell"
+        },
+        {
+          "path": "src/meeting-bot/realtime-agent-engine.ts",
+          "blob_sha": "8f07d4ebf15caf3d41964d248ee0e8b1e831bcbc",
+          "range": {
+            "start_line": 1,
+            "end_line": 282
+          },
+          "symbol": "realtime-agent-engine"
+        },
+        {
+          "path": "src/meeting-bot/realtime-audio-format.ts",
+          "blob_sha": "3932215cd7a3b1fa58d4c1221936dfb6015ddaa8",
+          "range": {
+            "start_line": 1,
+            "end_line": 102
+          },
+          "symbol": "realtime-audio-format"
+        },
+        {
+          "path": "src/meeting-bot/realtime-audio-transport.ts",
+          "blob_sha": "46bbf371928748f7cab36720e4aee07248aefcf9",
+          "range": {
+            "start_line": 1,
+            "end_line": 22
+          },
+          "symbol": "realtime-audio-transport"
+        },
+        {
+          "path": "src/meeting-bot/realtime-browser-audio-transport.test.ts",
+          "blob_sha": "61846720181ed902e30b83ac77653a21b07ca4da",
+          "range": {
+            "start_line": 1,
+            "end_line": 85
+          },
+          "symbol": "realtime-browser-audio-transport.test"
+        },
+        {
+          "path": "src/meeting-bot/realtime-browser-audio-transport.ts",
+          "blob_sha": "819c3825098488d003dfc058a9c8fe499bc2d72c",
+          "range": {
+            "start_line": 1,
+            "end_line": 173
+          },
+          "symbol": "realtime-browser-audio-transport"
+        },
+        {
+          "path": "src/meeting-bot/realtime-engine-support.ts",
+          "blob_sha": "5e584cbfbe9c9abb086c2c8c376080aed1425bf5",
+          "range": {
+            "start_line": 1,
+            "end_line": 226
+          },
+          "symbol": "realtime-engine-support"
+        },
+        {
+          "path": "src/meeting-bot/realtime-engine.test.ts",
+          "blob_sha": "35eb6baf30ac0b29e23b381c6d892db87481e041",
+          "range": {
+            "start_line": 1,
+            "end_line": 752
+          },
+          "symbol": "realtime-engine.test"
+        },
+        {
+          "path": "src/meeting-bot/realtime-engine.ts",
+          "blob_sha": "4673337cfd00c7f9f880feb4b48fa7bb77be2d90",
+          "range": {
+            "start_line": 1,
+            "end_line": 638
+          },
+          "symbol": "realtime-engine"
+        },
+        {
+          "path": "src/meeting-bot/realtime-local-audio-transport.test.ts",
+          "blob_sha": "e87db8293cf3cf80d6202a0353351a7d09b64d2b",
+          "range": {
+            "start_line": 1,
+            "end_line": 207
+          },
+          "symbol": "realtime-local-audio-transport.test"
+        },
+        {
+          "path": "src/meeting-bot/realtime-local-audio-transport.ts",
+          "blob_sha": "6559a26c1cd4bad575bae21521b2fe26bfbcb36e",
+          "range": {
+            "start_line": 1,
+            "end_line": 308
+          },
+          "symbol": "realtime-local-audio-transport"
+        },
+        {
+          "path": "src/meeting-bot/realtime-node-audio-transport.test.ts",
+          "blob_sha": "64974fa8e61bbc5d49acf89a8e88f2d856ca8daf",
+          "range": {
+            "start_line": 1,
+            "end_line": 200
+          },
+          "symbol": "realtime-node-audio-transport.test"
+        },
+        {
+          "path": "src/meeting-bot/realtime-node-audio-transport.ts",
+          "blob_sha": "cf8953c4ef0bf8c3b7636188fdcbec8c598d316b",
+          "range": {
+            "start_line": 1,
+            "end_line": 193
+          },
+          "symbol": "realtime-node-audio-transport"
+        },
+        {
+          "path": "src/meeting-bot/realtime-output-owner.ts",
+          "blob_sha": "d528ac626141d66fd606550bc917684b38e75f2e",
+          "range": {
+            "start_line": 1,
+            "end_line": 280
+          },
+          "symbol": "realtime-output-owner"
+        },
+        {
+          "path": "src/meeting-bot/realtime-shutdown.test.ts",
+          "blob_sha": "23afd1b6d2e38dcc88197c45c3f06488ddc35381",
+          "range": {
+            "start_line": 1,
+            "end_line": 396
+          },
+          "symbol": "realtime-shutdown.test"
+        },
+        {
+          "path": "src/meeting-bot/realtime-tool-continuity.ts",
+          "blob_sha": "8b81d1c8c0d3f1203fcc5494170e2a4e3af2ddb2",
+          "range": {
+            "start_line": 1,
+            "end_line": 101
+          },
+          "symbol": "realtime-tool-continuity"
+        },
+        {
+          "path": "src/meeting-bot/runtime-facade-types.ts",
+          "blob_sha": "32334273b6bc2c5a0c2a5638584be07d2593153b",
+          "range": {
+            "start_line": 1,
+            "end_line": 277
+          },
+          "symbol": "runtime-facade-types"
+        },
+        {
+          "path": "src/meeting-bot/runtime-facade.ts",
+          "blob_sha": "439200d8d4ebbbcd07191cc09fe246788ded1e14",
+          "range": {
+            "start_line": 1,
+            "end_line": 501
+          },
+          "symbol": "runtime-facade"
+        },
+        {
+          "path": "src/meeting-bot/runtime-probes.test.ts",
+          "blob_sha": "8d279223f47703726f33b05215414491e2c527d6",
+          "range": {
+            "start_line": 1,
+            "end_line": 153
+          },
+          "symbol": "runtime-probes.test"
+        },
+        {
+          "path": "src/meeting-bot/runtime-probes.ts",
+          "blob_sha": "614b541e58cf46b1495b412e4a41dff990ba3e33",
+          "range": {
+            "start_line": 1,
+            "end_line": 260
+          },
+          "symbol": "runtime-probes"
+        },
+        {
+          "path": "src/meeting-bot/runtime-setup.ts",
+          "blob_sha": "33eaa7e592ea0a6273f9e42452b5fb8e555920c3",
+          "range": {
+            "start_line": 1,
+            "end_line": 180
+          },
+          "symbol": "runtime-setup"
+        },
+        {
+          "path": "src/meeting-bot/session-cleanup-tracker.ts",
+          "blob_sha": "1793332dde2610754d053d0b9960893fbcf9d8ae",
+          "range": {
+            "start_line": 1,
+            "end_line": 146
+          },
+          "symbol": "session-cleanup-tracker"
+        },
+        {
+          "path": "src/meeting-bot/session-durable-transcripts.ts",
+          "blob_sha": "00527dd670b4c5c38b4bb09924c107530ccba08f",
+          "range": {
+            "start_line": 1,
+            "end_line": 230
+          },
+          "symbol": "session-durable-transcripts"
+        },
+        {
+          "path": "src/meeting-bot/session-factory.ts",
+          "blob_sha": "324d8b65730aff4ba910d5d752375e50e8528072",
+          "range": {
+            "start_line": 1,
+            "end_line": 58
+          },
+          "symbol": "session-factory"
+        },
+        {
+          "path": "src/meeting-bot/session-runtime-browser-tabs.ts",
+          "blob_sha": "85dfaf9d230e2f3030b68269259284609bd8d05a",
+          "range": {
+            "start_line": 1,
+            "end_line": 110
+          },
+          "symbol": "session-runtime-browser-tabs"
+        },
+        {
+          "path": "src/meeting-bot/session-runtime-types.ts",
+          "blob_sha": "bd3c7f8af19e60c51f224a02f13668360defac51",
+          "range": {
+            "start_line": 1,
+            "end_line": 125
+          },
+          "symbol": "session-runtime-types"
+        },
+        {
+          "path": "src/meeting-bot/session-runtime.startup.test.ts",
+          "blob_sha": "d572f98a9c4fc2d80737a85ddc305799963f97df",
+          "range": {
+            "start_line": 1,
+            "end_line": 514
+          },
+          "symbol": "session-runtime.startup.test"
+        },
+        {
+          "path": "src/meeting-bot/session-runtime.test-support.ts",
+          "blob_sha": "befb1c05a345b27a57db87a910423ebc917876aa",
+          "range": {
+            "start_line": 1,
+            "end_line": 194
+          },
+          "symbol": "session-runtime.test-support"
+        },
+        {
+          "path": "src/meeting-bot/session-runtime.test.ts",
+          "blob_sha": "7128288366d501d259cfbc20272d62303f9772de",
+          "range": {
+            "start_line": 1,
+            "end_line": 800
+          },
+          "symbol": "session-runtime.test"
+        },
+        {
+          "path": "src/meeting-bot/session-runtime.ts",
+          "blob_sha": "07c917cee80539e4c12900044fd6688f35ff2436",
+          "range": {
+            "start_line": 1,
+            "end_line": 696
+          },
+          "symbol": "session-runtime"
+        },
+        {
+          "path": "src/meeting-bot/session-speech-readiness.ts",
+          "blob_sha": "240a93f68c1a36e9cdadda04afd0f018fb4f99f9",
+          "range": {
+            "start_line": 1,
+            "end_line": 63
+          },
+          "symbol": "session-speech-readiness"
+        },
+        {
+          "path": "src/meeting-bot/session-transcript-store.test.ts",
+          "blob_sha": "ac13530b720c904dca72d144cb823b37d0ac939b",
+          "range": {
+            "start_line": 1,
+            "end_line": 190
+          },
+          "symbol": "session-transcript-store.test"
+        },
+        {
+          "path": "src/meeting-bot/session-transcript-store.ts",
+          "blob_sha": "b33bed17d154fa71a79d9a01822514516cec6185",
+          "range": {
+            "start_line": 1,
+            "end_line": 370
+          },
+          "symbol": "session-transcript-store"
+        },
+        {
+          "path": "src/meeting-bot/session-types.ts",
+          "blob_sha": "0fd789e90610aac9381de5dfe97d5523e2d952a1",
+          "range": {
+            "start_line": 1,
+            "end_line": 192
+          },
+          "symbol": "session-types"
+        },
+        {
+          "path": "src/meeting-bot/setup-checks.ts",
+          "blob_sha": "39263debdfa99a3d02d4c4ef84b007d86c409bfb",
+          "range": {
+            "start_line": 1,
+            "end_line": 24
+          },
+          "symbol": "setup-checks"
+        },
+        {
+          "path": "src/meeting-bot/status-call-ownership-source.ts",
+          "blob_sha": "03fdd88af7839d63b03c4195f6a03a307c7c539a",
+          "range": {
+            "start_line": 1,
+            "end_line": 43
+          },
+          "symbol": "status-call-ownership-source"
+        },
+        {
+          "path": "src/meeting-bot/status-call-source.test.ts",
+          "blob_sha": "b17ce1d98d71e86bd8c79a7029ad486ead31d278",
+          "range": {
+            "start_line": 1,
+            "end_line": 238
+          },
+          "symbol": "status-call-source.test"
+        },
+        {
+          "path": "src/meeting-bot/status-call-source.ts",
+          "blob_sha": "67c03a32a169c5f5decd9cdb4bec7868ad59aa69",
+          "range": {
+            "start_line": 1,
+            "end_line": 655
+          },
+          "symbol": "status-call-source"
+        },
+        {
+          "path": "src/meeting-bot/status-prejoin-fragments.ts",
+          "blob_sha": "3b6d0eb9b20ae4d75e6f775ef4721142ed74e918",
+          "range": {
+            "start_line": 1,
+            "end_line": 186
+          },
+          "symbol": "status-prejoin-fragments"
+        },
+        {
+          "path": "src/meeting-bot/status-prejoin-source.ts",
+          "blob_sha": "0a5a0a8fbfaea3cdc116f68f8120a2c0ce7d636f",
+          "range": {
+            "start_line": 1,
+            "end_line": 309
+          },
+          "symbol": "status-prejoin-source"
+        },
+        {
+          "path": "src/meeting-bot/status-source-parity.test.ts",
+          "blob_sha": "6f48ccfdf1058fbdab2cc615dd02a608646307f3",
+          "range": {
+            "start_line": 1,
+            "end_line": 65
+          },
+          "symbol": "status-source-parity.test"
+        }
+      ],
+      "evidence_refs": [
+        "source/host/tests/openclaw_meeting_bot_contract.rs",
+        "projects/openclaw-rust/dossiers/meeting-bot-scoped.md"
+      ],
+      "requirement_ids": [
+        "OCRM-R04",
+        "OCRM-R08",
+        "OCRM-R14",
+        "OCRM-R24",
+        "OCRM-AC08",
+        "OCRM-AC14",
+        "OCRM-AC24"
+      ],
+      "required_gate_ids": [
+        "OCRM-G04-rust-contract",
+        "OCRM-G05-frozen-oracle"
+      ],
+      "oracle_ids": [
+        "OCRM-MEETING-BOT-LIFECYCLE-O01"
+      ],
+      "adr_refs": [],
+      "blocker_ids": [
+        "BL-MEETING-BOT-LIFECYCLE-WIRING-001"
+      ],
+      "target": {
+        "path": "source/host/src/extensions/meeting_bot/session_lifecycle.rs",
+        "symbol": "MeetingSessionCleanupTracker",
+        "language": "Rust"
+      },
+      "required_evidence_dimensions": [
+        "unit",
+        "format"
+      ],
+      "reviewer": "xuyao@ombhrum.com",
+      "migration_rollback": "Mark session aborted immediately and release active resources"
     }
   ],
   "schema_version": 1,

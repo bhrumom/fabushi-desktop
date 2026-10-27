@@ -61,4 +61,5 @@ pub mod content_search;
 pub mod interactive;
 
 pub mod plugin_sdk;
+pub mod meeting_bot;
 
