@@ -24992,8 +24992,92 @@
             "end_line": 254,
             "start_line": 1
           },
-          "symbol": "resolveEffectivePluginActivationState"
-        }
+    "symbol": "resolveEffectivePluginActivationState"
+  },
+    {
+      "blob_sha": "f7a1f109f334679e22087d2fd04a365d0665eb17",
+      "path": "src/plugins/compiled-sdk-host.test-support.ts",
+      "range": {"end_line": 1, "start_line": 1},
+      "symbol": "compiled-sdk-host.test-support"
+    },
+    {
+      "blob_sha": "fb408c48c630c33be1ef289bda87c1f44e608f3d",
+      "path": "src/plugins/compiled-sdk-host.test.ts",
+      "range": {"end_line": 1, "start_line": 1},
+      "symbol": "compiled-sdk-host.test"
+    },
+    {
+      "blob_sha": "6e3f7fd7521653cd72bf07713615e90f9aac0e3b",
+      "path": "src/plugins/computer-use-contract.test.ts",
+      "range": {"end_line": 1, "start_line": 1},
+      "symbol": "computer-use-contract.test"
+    },
+    {
+      "blob_sha": "e2bbec1d819bec68ebdd8f4ec17db18c0e4595c4",
+      "path": "src/plugins/computer-use-contract.ts",
+      "range": {"end_line": 1, "start_line": 1},
+      "symbol": "computer-use-contract"
+    },
+    {
+      "blob_sha": "12c1f4b45e696e22ef1cab7c43c774bc01ad17e6",
+      "path": "src/plugins/config-activation-shared.ts",
+      "range": {"end_line": 1, "start_line": 1},
+      "symbol": "config-activation-shared"
+    },
+    {
+      "blob_sha": "5e1510a51ec0064ca86492782a54acaf896b9533",
+      "path": "src/plugins/config-contract-matches.ts",
+      "range": {"end_line": 1, "start_line": 1},
+      "symbol": "config-contract-matches"
+    },
+    {
+      "blob_sha": "90c191c0c3c81ddc058fa149c4d689566118ec67",
+      "path": "src/plugins/config-contracts.test.ts",
+      "range": {"end_line": 1, "start_line": 1},
+      "symbol": "config-contracts.test"
+    },
+    {
+      "blob_sha": "48898087937442291fd17d1e81af01396513adf3",
+      "path": "src/plugins/config-contracts.ts",
+      "range": {"end_line": 1, "start_line": 1},
+      "symbol": "config-contracts"
+    },
+    {
+      "blob_sha": "f8ef3480e8ebe63d953eb3083cfe5983b828bc0f",
+      "path": "src/plugins/config-normalization-shared.ts",
+      "range": {"end_line": 1, "start_line": 1},
+      "symbol": "config-normalization-shared"
+    },
+    {
+      "blob_sha": "2fa9fa52943049f8e8915d4fdb2e68a9ed5043e2",
+      "path": "src/plugins/config-policy.test.ts",
+      "range": {"end_line": 1, "start_line": 1},
+      "symbol": "config-policy.test"
+    },
+    {
+      "blob_sha": "9f0365c5452c33c79a3e55d1d627426f45e5bdca",
+      "path": "src/plugins/config-policy.ts",
+      "range": {"end_line": 1, "start_line": 1},
+      "symbol": "config-policy"
+    },
+    {
+      "blob_sha": "345bf47325ecd8527e4a0560e01a50c6190a976d",
+      "path": "src/plugins/config-schema.test.ts",
+      "range": {"end_line": 1, "start_line": 1},
+      "symbol": "config-schema.test"
+    },
+    {
+      "blob_sha": "e7cf551cca9118e97d05e7cfc64dbcd74b08c69b",
+      "path": "src/plugins/config-schema.ts",
+      "range": {"end_line": 1, "start_line": 1},
+      "symbol": "config-schema"
+    },
+    {
+      "blob_sha": "1645fddbd6c4d2c6963d198868b21033ba3ce45d",
+      "path": "src/plugins/config-state.test.ts",
+      "range": {"end_line": 1, "start_line": 1},
+      "symbol": "config-state.test"
+    }
       ],
       "status": {
         "acceptance": "pending",
