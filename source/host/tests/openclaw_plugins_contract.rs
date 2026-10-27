@@ -668,3 +668,37 @@ fn test_ocrm_plugins_provider_catalog_deprecation_guard() {
     let err = ProviderCatalogDeprecationGuard::assert_no_deprecated_discovery_hooks(&deprecated_sources).unwrap_err();
     assert_eq!(err, vec!["extensions/legacy/src/index.ts"]);
 }
+
+#[test]
+fn test_ocrm_plugins_auth_choice_contract() {
+    // Tests equivalent behavior from upstream src/plugins/contracts/auth-choice.contract.test.ts
+    use mahayana_host_runtime::extensions::plugins::capability_catalog::{
+        PluginCapabilityCatalog, ProviderAuthChoice,
+    };
+
+    let catalog = PluginCapabilityCatalog::new();
+    let choice_id = PluginCapabilityCatalog::build_provider_method_choice("demo-oauth-provider", "oauth");
+    assert_eq!(choice_id, "demo-oauth-provider:oauth");
+
+    catalog.register_auth_choice(ProviderAuthChoice {
+        provider: "demo-oauth-provider".to_string(),
+        method: "oauth".to_string(),
+        choice_id: choice_id.clone(),
+        choice_label: "OAuth".to_string(),
+        onboarding_scopes: vec!["chat".to_string()],
+        cli_flag: None,
+        option_key: None,
+    });
+
+    // Resolves preferred provider for auth choice
+    assert_eq!(
+        catalog.resolve_preferred_provider_for_auth_choice(&choice_id),
+        Some("demo-oauth-provider".to_string())
+    );
+
+    // Resolves None for unknown choice
+    assert_eq!(
+        catalog.resolve_preferred_provider_for_auth_choice("unknown"),
+        None
+    );
+}

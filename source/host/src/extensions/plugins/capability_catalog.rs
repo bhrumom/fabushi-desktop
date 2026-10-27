@@ -128,6 +128,22 @@ impl PluginCapabilityCatalog {
         list.push(choice);
     }
 
+    pub fn build_provider_method_choice(provider_id: &str, method_id: &str) -> String {
+        format!("{}:{}", provider_id, method_id)
+    }
+
+    pub fn resolve_preferred_provider_for_auth_choice(&self, choice: &str) -> Option<String> {
+        let list = self.auth_choices.lock().unwrap();
+        for entry in list.iter() {
+            if entry.choice_id == choice
+                || Self::build_provider_method_choice(&entry.provider, &entry.method) == choice
+            {
+                return Some(entry.provider.clone());
+            }
+        }
+        None
+    }
+
     pub fn filter_text_onboarding_auth_choices(&self) -> Vec<ProviderAuthChoice> {
         let list = self.auth_choices.lock().unwrap();
         list.iter()

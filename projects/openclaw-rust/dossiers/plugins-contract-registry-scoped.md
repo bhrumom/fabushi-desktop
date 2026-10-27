@@ -10,6 +10,7 @@
   - `src/plugins/contracts/registry.retry.test.ts` (82 lines, SHA: `cf3c45ec802b14969e8e3bf7218e8bfc0da05a3c`)
   - `src/plugins/contracts/shared-upstream-model.contract.test.ts` (141 lines, SHA: `9dc26ecc0f3241f30af9f6f65af997a29c05af0b`)
   - `src/plugins/contracts/provider-catalog-deprecation.contract.test.ts` (134 lines, SHA: `a3d72e37dae910ac9885cffacc519745ca12a312`)
+  - `src/plugins/contracts/auth-choice.contract.test.ts` (81 lines, SHA: `e88e0234fe3772b07fedee0776bd400b93b490c2`)
 - **Upstream Commit**: `ad8d12f126d29b0db204187adf5092db80294e70` (tree `04ccce62f1d74dc8e0c88290ae8ded027b7b0f16`).
 - **Module ID**: `OCRM-M28` (plugins).
 - **Reviewer**: `xuyao@ombhrum.com`.
@@ -63,3 +64,5 @@
     - Verifies upstream model reference integrity and code-mode tier consistency across shared model sibling rows.
   - `test_ocrm_plugins_provider_catalog_deprecation_guard` (PASSED)
     - Verifies absence of deprecated `discovery:` hooks in provider plugins, enforcing static descriptor isolation.
+  - `test_ocrm_plugins_auth_choice_contract` (PASSED)
+    - Verifies method choice string building and resolution to preferred provider ID.
