@@ -99,9 +99,23 @@ const historicalCommit=lock.previous_historical_baseline?.commit;
 fail(/^[0-9a-f]{40}$/.test(historicalCommit||''),'historical source baseline identity missing');
 fail(acquisitionInventory.upstream_repository===lock.upstream.repository,'historical acquisition repository drift');
 fail(acquisitionInventory.upstream_commit===historicalCommit,'historical acquisition inventory provenance drift');
+// Keep the historical acquisition scan immutable. Candidate acceptance must point to
+// a distinct, independently acquired inventory; it cannot retroactively rebrand history.
 if (candidateIsAccepted) {
-  fail(acquisitionInventory.upstream_commit===lock.upstream.commit,
-    'accepted baseline requires a refreshed acquisition inventory; historical evidence is not candidate evidence');
+  const candidatePath=lock.accepted_candidate_authority?.build_time_acquisition_inventory_path;
+  fail(typeof candidatePath==='string' && candidatePath.startsWith('projects/telegram-desktop-rust/inventory/') && candidatePath.endsWith('.json') && candidatePath!==lock.build_time_acquisition_inventory?.path && !candidatePath.includes('..'),
+    'accepted candidate must name a separate acquisition inventory, not historical evidence');
+  const candidateAcquisitionInventory=await readJson(candidatePath);
+  fail(candidateAcquisitionInventory.project_id==='TDRP-001' && candidateAcquisitionInventory.spec_revision===9,
+    'accepted candidate acquisition inventory lacks Revision 9 identity');
+  fail(candidateAcquisitionInventory.upstream_repository===lock.upstream.repository && candidateAcquisitionInventory.upstream_commit===lock.upstream.commit,
+    'accepted candidate acquisition source identity does not match candidate lock');
+  fail(candidateAcquisitionInventory.upstream_commit!==historicalCommit,
+    'accepted candidate acquisition inventory must not alias historical baseline');
+  fail(candidateAcquisitionInventory.discovery?.candidate_lines_pending_classification===0 && candidateAcquisitionInventory.discovery?.candidate_lines_total===candidateAcquisitionInventory.discovery?.candidate_lines_classified,
+    'accepted candidate acquisition discovery is not fully classified');
+  fail(candidateAcquisitionInventory.recursive_build_reachability?.accepted_upstream_commit===lock.upstream.commit,
+    'accepted candidate requires its own recursive build reachability evidence');
 }
 fail(lock.build_time_acquisition_inventory?.path==='projects/telegram-desktop-rust/inventory/build-time-acquisitions.json','lock missing build-time acquisition inventory authority');
 fail(acquisitionInventory.discovery?.candidate_lines_total===lock.build_time_acquisition_inventory.candidate_lines_total,'build-time candidate count drift');
