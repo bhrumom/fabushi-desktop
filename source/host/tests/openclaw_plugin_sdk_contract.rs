@@ -272,3 +272,62 @@ fn test_ocrm_plugin_sdk_agent_workspace_runtime() {
     assert!(!preparer.can_admit_attachment(2, 8 * 1024, 4 * 1024)); // Size limit
 }
 
+#[test]
+fn test_ocrm_plugin_sdk_approval_security_and_reactions() {
+    use mahayana_host_runtime::extensions::plugin_sdk::approval_security::{
+        build_approval_reaction_hint, format_approval_decision_label,
+        has_approval_reaction_hint_text, normalize_approval_reaction_emoji,
+        resolve_approval_reaction_decision, ExecApprovalReplyDecision,
+        ImplicitSameChatApprovalRegistry, SYSTEM_AGENT_APPROVAL_EXPIRED_TEXT,
+    };
+
+    // 1. Emoji normalization
+    assert_eq!(normalize_approval_reaction_emoji("👍\u{FE0F}"), "👍");
+    assert_eq!(normalize_approval_reaction_emoji("♾"), "♾️");
+    assert_eq!(normalize_approval_reaction_emoji("👎"), "👎");
+
+    // 2. Decision resolution
+    let allowed = vec![
+        ExecApprovalReplyDecision::AllowOnce,
+        ExecApprovalReplyDecision::Deny,
+    ];
+    assert_eq!(
+        resolve_approval_reaction_decision("👍", &allowed),
+        Some(ExecApprovalReplyDecision::AllowOnce)
+    );
+    assert_eq!(
+        resolve_approval_reaction_decision("👎", &allowed),
+        Some(ExecApprovalReplyDecision::Deny)
+    );
+    // AllowAlways not in allowed list -> None
+    assert_eq!(
+        resolve_approval_reaction_decision("♾️", &allowed),
+        None
+    );
+
+    // 3. Reaction hint builder
+    let hint = build_approval_reaction_hint(&allowed);
+    assert!(hint.is_some());
+    let hint_str = hint.unwrap();
+    assert!(hint_str.contains("React with:"));
+    assert!(hint_str.contains("👍 Allow Once"));
+    assert!(hint_str.contains("👎 Deny"));
+    assert!(has_approval_reaction_hint_text(&hint_str));
+
+    // 4. Decision labels
+    assert_eq!(format_approval_decision_label("allow-once"), "Approved (once)");
+    assert_eq!(format_approval_decision_label("allow-always"), "Approved (always)");
+    assert_eq!(format_approval_decision_label("deny"), "Denied");
+    assert_eq!(format_approval_decision_label("expired"), "Expired");
+    assert_eq!(SYSTEM_AGENT_APPROVAL_EXPIRED_TEXT, "⏱️ OpenClaw change expired. No change was made.");
+
+    // 5. Implicit same chat authorization
+    let registry = ImplicitSameChatApprovalRegistry::new();
+    assert!(!registry.is_implicit_authorized("chat-1"));
+    registry.mark_implicit_authorization("chat-1");
+    assert!(registry.is_implicit_authorized("chat-1"));
+    registry.clear("chat-1");
+    assert!(!registry.is_implicit_authorized("chat-1"));
+}
+
+

@@ -10,10 +10,10 @@
     "ui_accepted": false
   },
   "file_coverage": {
-    "mapped_paths": 714,
+    "mapped_paths": 745,
     "omitted_known": 0,
     "tracked_paths": 58750,
-    "unclassified_paths": 58036
+    "unclassified_paths": 58005
   },
   "inventory_authority": {
     "manifest_source": "GitHub Actions immutable artifact candidate",
@@ -20673,8 +20673,8 @@
         "mahayana_host_runtime::extensions::plugin_sdk::approval_security"
       ],
       "evidence_refs": [
-        "source/host/tests/openclaw_plugin_sdk_core_contract.rs",
-        "projects/openclaw-rust/dossiers/plugin-sdk-core-scoped.md"
+        "source/host/tests/openclaw_plugin_sdk_contract.rs",
+        "projects/openclaw-rust/dossiers/plugin-sdk-approvals-security-and-reactions-scoped.md"
       ],
       "existing_owner_candidates": [
         {
@@ -20739,8 +20739,8 @@
       "status": {
         "acceptance": "pending",
         "implementation": "implemented",
-        "mapping": "mapped",
-        "read": "partial",
+        "mapping": "reviewed",
+        "read": "read-complete",
         "verification": "not-run",
         "wiring": "not-wired"
       },
@@ -20750,7 +20750,7 @@
         "symbol": "NativeApprovalControlRegistry"
       },
       "tests": [
-        "source/host/tests/openclaw_plugin_sdk_core_contract.rs::test_ocrm_plugin_sdk_approval_security"
+        "source/host/tests/openclaw_plugin_sdk_contract.rs::test_ocrm_plugin_sdk_approval_security_and_reactions"
       ],
       "typed_contracts": [
         "NativeApprovalControlRegistry",
