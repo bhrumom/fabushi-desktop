@@ -65,4 +65,5 @@ pub mod meeting_bot;
 pub mod node_host;
 pub mod plugin_state;
 pub mod plugins;
+pub mod process;
 

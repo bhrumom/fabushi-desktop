@@ -10,10 +10,10 @@
     "ui_accepted": false
   },
   "file_coverage": {
-    "mapped_paths": 3213,
+    "mapped_paths": 3754,
     "omitted_known": 0,
     "tracked_paths": 58750,
-    "unclassified_paths": 55537
+    "unclassified_paths": 54996
   },
   "inventory_authority": {
     "manifest_source": "GitHub Actions immutable artifact candidate",
@@ -46031,6 +46031,5065 @@
       ],
       "reviewer": "xuyao@ombhrum.com",
       "migration_rollback": "Use built-in static providers only"
+    },
+    {
+      "id": "OCRM-RESP-PLUGINS-RUNTIME-FINAL-001",
+      "unit_id": "OCRM-UNIT-PLUGINS-003",
+      "responsibility_kind": "business-runtime",
+      "behavior": "Plugin runtime state manager, uninstallation receipt accounting, status reporting (active, disabled, error, uninstalled), and worker thread pool manager.",
+      "risk": "Medium; state corruption on plugin uninstallation leaves dangling file handlers and stale capabilities",
+      "status": {
+        "read": "read-complete",
+        "mapping": "reviewed",
+        "wiring": "not-wired",
+        "implementation": "implemented",
+        "verification": "not-run",
+        "acceptance": "pending"
+      },
+      "selected_owner": "source/host/src/extensions/plugins/runtime_final.rs",
+      "existing_owner_candidates": [
+        {
+          "path": "source/host/src/extensions/plugins/runtime_final.rs",
+          "reason": "Host plugin runtime status and uninstallation receipt manager"
+        }
+      ],
+      "owner_decision": "Native implementation in runtime_final under plugins extension",
+      "dependencies": [
+        "mahayana_host_runtime::extensions::plugins::runtime_final"
+      ],
+      "capability_ids": [
+        "plugins.runtime_final"
+      ],
+      "preconditions": [
+        "Plugin runtime status requested or uninstallation requested"
+      ],
+      "postconditions": [
+        "Receipt generated with file count and status transitioned to Uninstalled"
+      ],
+      "invariants": [
+        "Uninstalled plugins must not be returned in active plugin enumeration"
+      ],
+      "typed_contracts": [
+        "PluginRuntimeManager",
+        "PluginStatus",
+        "PluginUninstallReceipt"
+      ],
+      "tests": [
+        "source/host/tests/openclaw_process_plugin_contract.rs::test_ocrm_plugins_runtime_final"
+      ],
+      "integration": {
+        "producer": "source/host/src/extensions/plugins/runtime_final.rs",
+        "owner": "source/host/src/extensions/plugins/runtime_final.rs",
+        "consumer": "source/host/src/extensions/plugins/runtime_final.rs",
+        "entrypoint": "source/host/src/extensions/plugins/runtime_final.rs::PluginRuntimeManager::uninstall_plugin"
+      },
+      "source_refs": [
+        {
+          "path": "src/plugins/runtime.shutdown-preload.test.ts",
+          "blob_sha": "e7cac56b5f95969ab7d8600021147a149f7986ff",
+          "range": {
+            "start_line": 1,
+            "end_line": 93
+          },
+          "symbol": "runtime.shutdown-preload"
+        },
+        {
+          "path": "src/plugins/runtime.test.ts",
+          "blob_sha": "3d0a3c914b3c5406a7e13591114e067534c35992",
+          "range": {
+            "start_line": 1,
+            "end_line": 573
+          },
+          "symbol": "runtime"
+        },
+        {
+          "path": "src/plugins/runtime.ts",
+          "blob_sha": "bc68a4a53574f6a31175ffe6f567667a3a598a25",
+          "range": {
+            "start_line": 1,
+            "end_line": 689
+          },
+          "symbol": "runtime"
+        },
+        {
+          "path": "src/plugins/runtime/channel-runtime-contexts.ts",
+          "blob_sha": "999ff98d5887deb0c2d0311453e03c5b809303a7",
+          "range": {
+            "start_line": 1,
+            "end_line": 123
+          },
+          "symbol": "channel-runtime-contexts"
+        },
+        {
+          "path": "src/plugins/runtime/execution-frame.ts",
+          "blob_sha": "7e5fea74089f7d4e8963a02b27ef7a415e86559c",
+          "range": {
+            "start_line": 1,
+            "end_line": 60
+          },
+          "symbol": "execution-frame"
+        },
+        {
+          "path": "src/plugins/runtime/gateway-context-binding-owner.ts",
+          "blob_sha": "f5318cd778c08bde458c9c39fc8329ed998e88e8",
+          "range": {
+            "start_line": 1,
+            "end_line": 30
+          },
+          "symbol": "gateway-context-binding-owner"
+        },
+        {
+          "path": "src/plugins/runtime/gateway-context-binding.ts",
+          "blob_sha": "ed5bf9ee0c17b4285782b5c8e7a56c366b9f08cc",
+          "range": {
+            "start_line": 1,
+            "end_line": 185
+          },
+          "symbol": "gateway-context-binding"
+        },
+        {
+          "path": "src/plugins/runtime/gateway-request-scope.import.test.ts",
+          "blob_sha": "5e198fcbc6191f487df773824381b186731893e7",
+          "range": {
+            "start_line": 1,
+            "end_line": 11
+          },
+          "symbol": "gateway-request-scope.import"
+        },
+        {
+          "path": "src/plugins/runtime/gateway-request-scope.test-fixtures.ts",
+          "blob_sha": "bedac5791985b5ef0e4b48aea54ab5f15cc46cad",
+          "range": {
+            "start_line": 1,
+            "end_line": 8
+          },
+          "symbol": "gateway-request-scope-fixtures"
+        },
+        {
+          "path": "src/plugins/runtime/gateway-request-scope.test.ts",
+          "blob_sha": "3c6be2467a7c19754ac2da61504403d37c03890a",
+          "range": {
+            "start_line": 1,
+            "end_line": 458
+          },
+          "symbol": "gateway-request-scope"
+        },
+        {
+          "path": "src/plugins/runtime/gateway-request-scope.ts",
+          "blob_sha": "d637eb80216bb4ed2f515aef08d091a20805e256",
+          "range": {
+            "start_line": 1,
+            "end_line": 325
+          },
+          "symbol": "gateway-request-scope"
+        },
+        {
+          "path": "src/plugins/runtime/gateway-request-scope.types.ts",
+          "blob_sha": "071fc769c352130b5330aaa51eb08b3b3f14d454",
+          "range": {
+            "start_line": 1,
+            "end_line": 72
+          },
+          "symbol": "gateway-request-scope.types"
+        },
+        {
+          "path": "src/plugins/runtime/generation-scope.ts",
+          "blob_sha": "f6e54c538198708accb064b19f35d8678ce83991",
+          "range": {
+            "start_line": 1,
+            "end_line": 56
+          },
+          "symbol": "generation-scope"
+        },
+        {
+          "path": "src/plugins/runtime/generation-state.ts",
+          "blob_sha": "cc48bd79d4364fc235a81edffb65d2329c597f4f",
+          "range": {
+            "start_line": 1,
+            "end_line": 36
+          },
+          "symbol": "generation-state"
+        },
+        {
+          "path": "src/plugins/runtime/index.sandbox-authority.test.ts",
+          "blob_sha": "dfae77ee5ab23950b786706cce39e11be1087e39",
+          "range": {
+            "start_line": 1,
+            "end_line": 140
+          },
+          "symbol": "index.sandbox-authority"
+        },
+        {
+          "path": "src/plugins/runtime/index.test.ts",
+          "blob_sha": "1041ac36ec73288174978f29720a8758db3f7911",
+          "range": {
+            "start_line": 1,
+            "end_line": 122
+          },
+          "symbol": "index"
+        },
+        {
+          "path": "src/plugins/runtime/index.ts",
+          "blob_sha": "7f69d2272a6290efe2fcadb43dcf6e474b41fc3e",
+          "range": {
+            "start_line": 1,
+            "end_line": 434
+          },
+          "symbol": "index"
+        },
+        {
+          "path": "src/plugins/runtime/index.worktrees.test.ts",
+          "blob_sha": "196c5246f86ed1b173fd0033714102827f23cfd3",
+          "range": {
+            "start_line": 1,
+            "end_line": 91
+          },
+          "symbol": "index.worktrees"
+        },
+        {
+          "path": "src/plugins/runtime/load-context-state.ts",
+          "blob_sha": "2e2485dd7450c90404df9b6b92f23f3eaad75d8a",
+          "range": {
+            "start_line": 1,
+            "end_line": 41
+          },
+          "symbol": "load-context-state"
+        },
+        {
+          "path": "src/plugins/runtime/load-context.current-snapshot.test.ts",
+          "blob_sha": "8b15009b2e2377b1d5a0a700117578d8aed9d395",
+          "range": {
+            "start_line": 1,
+            "end_line": 77
+          },
+          "symbol": "load-context.current-snapshot"
+        },
+        {
+          "path": "src/plugins/runtime/load-context.resolve.ts",
+          "blob_sha": "be8a144d8565786e548206be79e67bdada79eeb2",
+          "range": {
+            "start_line": 1,
+            "end_line": 104
+          },
+          "symbol": "load-context.resolve"
+        },
+        {
+          "path": "src/plugins/runtime/load-context.test.ts",
+          "blob_sha": "538ec9e51e5653c17fe0991115ae88ba68b57ea0",
+          "range": {
+            "start_line": 1,
+            "end_line": 279
+          },
+          "symbol": "load-context"
+        },
+        {
+          "path": "src/plugins/runtime/load-context.ts",
+          "blob_sha": "9e3c725ee5c3a7e4c56ca362721fac6c5055cdbf",
+          "range": {
+            "start_line": 1,
+            "end_line": 208
+          },
+          "symbol": "load-context"
+        },
+        {
+          "path": "src/plugins/runtime/metadata-registry-loader.test.ts",
+          "blob_sha": "88df6e7ae5673b9ba217ef36335a32027a557506",
+          "range": {
+            "start_line": 1,
+            "end_line": 152
+          },
+          "symbol": "metadata-registry-loader"
+        },
+        {
+          "path": "src/plugins/runtime/metadata-registry-loader.ts",
+          "blob_sha": "4f5106216e703b8c7f5ea54d6722597a1b48fb12",
+          "range": {
+            "start_line": 1,
+            "end_line": 60
+          },
+          "symbol": "metadata-registry-loader"
+        },
+        {
+          "path": "src/plugins/runtime/model-auth-types.ts",
+          "blob_sha": "4729b4247302553d96d1ebc94a79d2304885e3cc",
+          "range": {
+            "start_line": 1,
+            "end_line": 20
+          },
+          "symbol": "model-auth-types"
+        },
+        {
+          "path": "src/plugins/runtime/native-deps.ts",
+          "blob_sha": "c1ecaa8c30bc812690e5b87ba0d960d0e0eadba7",
+          "range": {
+            "start_line": 1,
+            "end_line": 27
+          },
+          "symbol": "native-deps"
+        },
+        {
+          "path": "src/plugins/runtime/native-subagent-context.test.ts",
+          "blob_sha": "0fd6ae06d2d28e292fc8cce5251bb42a46abe076",
+          "range": {
+            "start_line": 1,
+            "end_line": 182
+          },
+          "symbol": "native-subagent-context"
+        },
+        {
+          "path": "src/plugins/runtime/native-subagent-context.ts",
+          "blob_sha": "6a89a30f551ea6879b53ed36b01e608f678bd9c5",
+          "range": {
+            "start_line": 1,
+            "end_line": 100
+          },
+          "symbol": "native-subagent-context"
+        },
+        {
+          "path": "src/plugins/runtime/runtime-agent-session-catalog.test.ts",
+          "blob_sha": "7ccbe1124eb90fc6144c88e7e8f7a53e851d2050",
+          "range": {
+            "start_line": 1,
+            "end_line": 17
+          },
+          "symbol": "runtime-agent-session-catalog"
+        },
+        {
+          "path": "src/plugins/runtime/runtime-agent-session-catalog.ts",
+          "blob_sha": "cdb73d6ae9674ff92f80356b8dd6540c83a18411",
+          "range": {
+            "start_line": 1,
+            "end_line": 50
+          },
+          "symbol": "runtime-agent-session-catalog"
+        },
+        {
+          "path": "src/plugins/runtime/runtime-agent-session-create.ts",
+          "blob_sha": "55bbb43724aa8859008fd3c2eb40da7fb8283182",
+          "range": {
+            "start_line": 1,
+            "end_line": 683
+          },
+          "symbol": "runtime-agent-session-create"
+        },
+        {
+          "path": "src/plugins/runtime/runtime-agent-workspace.ts",
+          "blob_sha": "1faaaca4397a077a4749182157dda86d1442550c",
+          "range": {
+            "start_line": 1,
+            "end_line": 52
+          },
+          "symbol": "runtime-agent-workspace"
+        },
+        {
+          "path": "src/plugins/runtime/runtime-agent.acp-binding.test.ts",
+          "blob_sha": "6d6c1dd58351588262515d33b00e9ae352707d33",
+          "range": {
+            "start_line": 1,
+            "end_line": 187
+          },
+          "symbol": "runtime-agent.acp-binding"
+        },
+        {
+          "path": "src/plugins/runtime/runtime-agent.ingress.integration.test.ts",
+          "blob_sha": "bd07a3ecbf08f5718994b934fd940cd8d76fc5ba",
+          "range": {
+            "start_line": 1,
+            "end_line": 229
+          },
+          "symbol": "runtime-agent.ingress.integration"
+        },
+        {
+          "path": "src/plugins/runtime/runtime-agent.session-color.test.ts",
+          "blob_sha": "5a6be958111ec2ee8cf90b6295d9eb90c2e2cbeb",
+          "range": {
+            "start_line": 1,
+            "end_line": 111
+          },
+          "symbol": "runtime-agent.session-color"
+        },
+        {
+          "path": "src/plugins/runtime/runtime-agent.session-list.test.ts",
+          "blob_sha": "0afc7177ef4c01e30c78d2353e2956f718a59eeb",
+          "range": {
+            "start_line": 1,
+            "end_line": 148
+          },
+          "symbol": "runtime-agent.session-list"
+        },
+        {
+          "path": "src/plugins/runtime/runtime-agent.test.ts",
+          "blob_sha": "c318e77ff2f0913c26c430fa0f89c6b52595860a",
+          "range": {
+            "start_line": 1,
+            "end_line": 889
+          },
+          "symbol": "runtime-agent"
+        },
+        {
+          "path": "src/plugins/runtime/runtime-agent.ts",
+          "blob_sha": "c24b43e1aa810fcf374b3f8640477251a4b484aa",
+          "range": {
+            "start_line": 1,
+            "end_line": 341
+          },
+          "symbol": "runtime-agent"
+        },
+        {
+          "path": "src/plugins/runtime/runtime-agent.work-admission.test.ts",
+          "blob_sha": "91ed6b3eba261ef734334a7942d205d34af1961c",
+          "range": {
+            "start_line": 1,
+            "end_line": 174
+          },
+          "symbol": "runtime-agent.work-admission"
+        },
+        {
+          "path": "src/plugins/runtime/runtime-base.test.ts",
+          "blob_sha": "6a40272c96533a42bd80f2a7d9b376a13baa539f",
+          "range": {
+            "start_line": 1,
+            "end_line": 18
+          },
+          "symbol": "runtime-base"
+        },
+        {
+          "path": "src/plugins/runtime/runtime-base.ts",
+          "blob_sha": "cae3b34df93496c5b372eb1af44f2a6b6eb54669",
+          "range": {
+            "start_line": 1,
+            "end_line": 59
+          },
+          "symbol": "runtime-base"
+        },
+        {
+          "path": "src/plugins/runtime/runtime-cache.ts",
+          "blob_sha": "94f4e14419f0685f7756fc8b4d19534ddec8edba",
+          "range": {
+            "start_line": 1,
+            "end_line": 12
+          },
+          "symbol": "runtime-cache"
+        },
+        {
+          "path": "src/plugins/runtime/runtime-channel.delivery-custody.test.ts",
+          "blob_sha": "aafd091737ee3b846784a3d5166b991ff9192aa6",
+          "range": {
+            "start_line": 1,
+            "end_line": 798
+          },
+          "symbol": "runtime-channel.delivery-custody"
+        },
+        {
+          "path": "src/plugins/runtime/runtime-channel.media.test.ts",
+          "blob_sha": "e7648edcabdbea5ee32d8d9b12ee6446978237f3",
+          "range": {
+            "start_line": 1,
+            "end_line": 78
+          },
+          "symbol": "runtime-channel.media"
+        },
+        {
+          "path": "src/plugins/runtime/runtime-channel.test.ts",
+          "blob_sha": "50a568b51e00683452ce5f121a15e9653747d5f4",
+          "range": {
+            "start_line": 1,
+            "end_line": 208
+          },
+          "symbol": "runtime-channel"
+        },
+        {
+          "path": "src/plugins/runtime/runtime-channel.ts",
+          "blob_sha": "4f2d09d422648ef5621fe0c8c342a859bec569ed",
+          "range": {
+            "start_line": 1,
+            "end_line": 408
+          },
+          "symbol": "runtime-channel"
+        },
+        {
+          "path": "src/plugins/runtime/runtime-config.test.ts",
+          "blob_sha": "05acaaef861cf1b481d01ff1ddab2c47813f437b",
+          "range": {
+            "start_line": 1,
+            "end_line": 83
+          },
+          "symbol": "runtime-config"
+        },
+        {
+          "path": "src/plugins/runtime/runtime-config.ts",
+          "blob_sha": "66b7c2d9e807ccaa1ace644149de8f56f8cebf76",
+          "range": {
+            "start_line": 1,
+            "end_line": 22
+          },
+          "symbol": "runtime-config"
+        },
+        {
+          "path": "src/plugins/runtime/runtime-embedded-agent.runtime.test.ts",
+          "blob_sha": "1b8306df89a326e65c9b1e1fe53d3a6a8dd83be4",
+          "range": {
+            "start_line": 1,
+            "end_line": 637
+          },
+          "symbol": "runtime-embedded-agent.runtime"
+        },
+        {
+          "path": "src/plugins/runtime/runtime-embedded-agent.runtime.ts",
+          "blob_sha": "ec4d6d79092d867ab735192b51eb403b573d7ad2",
+          "range": {
+            "start_line": 1,
+            "end_line": 213
+          },
+          "symbol": "runtime-embedded-agent.runtime"
+        },
+        {
+          "path": "src/plugins/runtime/runtime-embedded-agent.terminal-writes.test.ts",
+          "blob_sha": "79e788a09d3277eb4be20200d2fada2450a32053",
+          "range": {
+            "start_line": 1,
+            "end_line": 117
+          },
+          "symbol": "runtime-embedded-agent.terminal-writes"
+        },
+        {
+          "path": "src/plugins/runtime/runtime-llm-diagnostics.runtime.test.ts",
+          "blob_sha": "d1d6c53c395771047138983fbf47b43747f51ec1",
+          "range": {
+            "start_line": 1,
+            "end_line": 311
+          },
+          "symbol": "runtime-llm-diagnostics.runtime"
+        },
+        {
+          "path": "src/plugins/runtime/runtime-llm-error.test.ts",
+          "blob_sha": "9362852c0c7bc57d5223d1e137ba8dab925768d0",
+          "range": {
+            "start_line": 1,
+            "end_line": 25
+          },
+          "symbol": "runtime-llm-error"
+        },
+        {
+          "path": "src/plugins/runtime/runtime-llm-error.ts",
+          "blob_sha": "df6c3dc36448593ae18ca4c910eb0eb58726b263",
+          "range": {
+            "start_line": 1,
+            "end_line": 62
+          },
+          "symbol": "runtime-llm-error"
+        },
+        {
+          "path": "src/plugins/runtime/runtime-llm-facade.ts",
+          "blob_sha": "249a981615277e1601e052f7e56fd16cf8c98180",
+          "range": {
+            "start_line": 1,
+            "end_line": 25
+          },
+          "symbol": "runtime-llm-facade"
+        },
+        {
+          "path": "src/plugins/runtime/runtime-llm-isolated.runtime.test.ts",
+          "blob_sha": "878c0416f0edc3af52e71010de7e1eccf066e4f5",
+          "range": {
+            "start_line": 1,
+            "end_line": 553
+          },
+          "symbol": "runtime-llm-isolated.runtime"
+        },
+        {
+          "path": "src/plugins/runtime/runtime-llm-isolated.ts",
+          "blob_sha": "69afd5b1d7f6c120be8964c630ac109feeb1ed65",
+          "range": {
+            "start_line": 1,
+            "end_line": 219
+          },
+          "symbol": "runtime-llm-isolated"
+        },
+        {
+          "path": "src/plugins/runtime/runtime-llm-operator-authority.ts",
+          "blob_sha": "89882d0d875c64bb2274a303fd51d15343b032f0",
+          "range": {
+            "start_line": 1,
+            "end_line": 106
+          },
+          "symbol": "runtime-llm-operator-authority"
+        },
+        {
+          "path": "src/plugins/runtime/runtime-llm.oauth-model.integration.test.ts",
+          "blob_sha": "3de349ac62f4ff25db232b894e1acaa37cd7a5bc",
+          "range": {
+            "start_line": 1,
+            "end_line": 214
+          },
+          "symbol": "runtime-llm.oauth-model.integration"
+        },
+        {
+          "path": "src/plugins/runtime/runtime-llm.operator-model-policy.test.ts",
+          "blob_sha": "89931bc68bbe5d7e24582293be1534634a344726",
+          "range": {
+            "start_line": 1,
+            "end_line": 620
+          },
+          "symbol": "runtime-llm.operator-model-policy"
+        },
+        {
+          "path": "src/plugins/runtime/runtime-llm.prepared-owner.test.ts",
+          "blob_sha": "d05f3dadc9258e3eb2db00d6ece9907d0a85ec7b",
+          "range": {
+            "start_line": 1,
+            "end_line": 920
+          },
+          "symbol": "runtime-llm.prepared-owner"
+        },
+        {
+          "path": "src/plugins/runtime/runtime-llm.retained-generation.test.ts",
+          "blob_sha": "c92c365da1ccdbdb35017698f7ce31ec5354566b",
+          "range": {
+            "start_line": 1,
+            "end_line": 144
+          },
+          "symbol": "runtime-llm.retained-generation"
+        },
+        {
+          "path": "src/plugins/runtime/runtime-llm.runtime.test.ts",
+          "blob_sha": "f4281505bf284d131d38b1c003b92d487f06657c",
+          "range": {
+            "start_line": 1,
+            "end_line": 698
+          },
+          "symbol": "runtime-llm.runtime"
+        },
+        {
+          "path": "src/plugins/runtime/runtime-llm.runtime.ts",
+          "blob_sha": "e296881a3c360709733b2b8aba21109801fb7903",
+          "range": {
+            "start_line": 1,
+            "end_line": 507
+          },
+          "symbol": "runtime-llm.runtime"
+        },
+        {
+          "path": "src/plugins/runtime/runtime-logging.test.ts",
+          "blob_sha": "b3ea3d62251a643232ccf2191209ae25888afa46",
+          "range": {
+            "start_line": 1,
+            "end_line": 112
+          },
+          "symbol": "runtime-logging"
+        },
+        {
+          "path": "src/plugins/runtime/runtime-logging.ts",
+          "blob_sha": "3c39856983e0caf879c66924b4b625c83d2052ed",
+          "range": {
+            "start_line": 1,
+            "end_line": 52
+          },
+          "symbol": "runtime-logging"
+        },
+        {
+          "path": "src/plugins/runtime/runtime-media.ts",
+          "blob_sha": "df6952fdf37c93f78de2a0a321da9eaa6ae59b4d",
+          "range": {
+            "start_line": 1,
+            "end_line": 28
+          },
+          "symbol": "runtime-media"
+        },
+        {
+          "path": "src/plugins/runtime/runtime-model-auth.runtime.test.ts",
+          "blob_sha": "505f3afb02718146cceb6cc64334d4a9a8e2015f",
+          "range": {
+            "start_line": 1,
+            "end_line": 80
+          },
+          "symbol": "runtime-model-auth.runtime"
+        },
+        {
+          "path": "src/plugins/runtime/runtime-model-auth.runtime.ts",
+          "blob_sha": "4fa2c544920f06c4db599f79116ea626f3cf483a",
+          "range": {
+            "start_line": 1,
+            "end_line": 54
+          },
+          "symbol": "runtime-model-auth.runtime"
+        },
+        {
+          "path": "src/plugins/runtime/runtime-model-policy.test.ts",
+          "blob_sha": "a621dbb87e9649c56ab852a6120d4d1dd3bbb122",
+          "range": {
+            "start_line": 1,
+            "end_line": 37
+          },
+          "symbol": "runtime-model-policy"
+        },
+        {
+          "path": "src/plugins/runtime/runtime-model-policy.ts",
+          "blob_sha": "e25fe7ec60150aa558eecc80c4907a01de7fbcfb",
+          "range": {
+            "start_line": 1,
+            "end_line": 288
+          },
+          "symbol": "runtime-model-policy"
+        },
+        {
+          "path": "src/plugins/runtime/runtime-model-usage.test.ts",
+          "blob_sha": "04ed8d4f664fea9a26439d5538ba1ab9242a82a9",
+          "range": {
+            "start_line": 1,
+            "end_line": 72
+          },
+          "symbol": "runtime-model-usage"
+        },
+        {
+          "path": "src/plugins/runtime/runtime-model-usage.ts",
+          "blob_sha": "cbffee6ac2eea47e4e5b6af238851aed8b873561",
+          "range": {
+            "start_line": 1,
+            "end_line": 170
+          },
+          "symbol": "runtime-model-usage"
+        },
+        {
+          "path": "src/plugins/runtime/runtime-registry-loader.test.ts",
+          "blob_sha": "66bbc8975f0be12ad958ea948723b3211df50715",
+          "range": {
+            "start_line": 1,
+            "end_line": 372
+          },
+          "symbol": "runtime-registry-loader"
+        },
+        {
+          "path": "src/plugins/runtime/runtime-registry-loader.ts",
+          "blob_sha": "503572a6d0e7904e6fbc54aa642a45eb94587b48",
+          "range": {
+            "start_line": 1,
+            "end_line": 166
+          },
+          "symbol": "runtime-registry-loader"
+        },
+        {
+          "path": "src/plugins/runtime/runtime-session-events.test.ts",
+          "blob_sha": "1a59655e0b4444161931b4ca925a7582d0f4a79e",
+          "range": {
+            "start_line": 1,
+            "end_line": 138
+          },
+          "symbol": "runtime-session-events"
+        },
+        {
+          "path": "src/plugins/runtime/runtime-session-events.ts",
+          "blob_sha": "8dd8bab48f34c67ed4a7735e47e978c77f29d87f",
+          "range": {
+            "start_line": 1,
+            "end_line": 77
+          },
+          "symbol": "runtime-session-events"
+        },
+        {
+          "path": "src/plugins/runtime/runtime-system.ts",
+          "blob_sha": "3f2a77aa0a38c1146bdab6c5384dca6ac488e55b",
+          "range": {
+            "start_line": 1,
+            "end_line": 19
+          },
+          "symbol": "runtime-system"
+        },
+        {
+          "path": "src/plugins/runtime/runtime-web-channel-plugin.test.ts",
+          "blob_sha": "036b9a0ebea4142d92b9ab892578cd69642ce3e7",
+          "range": {
+            "start_line": 1,
+            "end_line": 298
+          },
+          "symbol": "runtime-web-channel-plugin"
+        },
+        {
+          "path": "src/plugins/runtime/runtime-web-channel-plugin.ts",
+          "blob_sha": "38050fda9da38b1ab90f82b5a9989bd448e638c9",
+          "range": {
+            "start_line": 1,
+            "end_line": 76
+          },
+          "symbol": "runtime-web-channel-plugin"
+        },
+        {
+          "path": "src/plugins/runtime/session-changes.ts",
+          "blob_sha": "cbf20524fdc2c395f6b26f7e7314e2254591134a",
+          "range": {
+            "start_line": 1,
+            "end_line": 27
+          },
+          "symbol": "session-changes"
+        },
+        {
+          "path": "src/plugins/runtime/subagent-requester-context.test.ts",
+          "blob_sha": "26cfcb88a510cbb215db45adcb990a2bba4ac1c9",
+          "range": {
+            "start_line": 1,
+            "end_line": 82
+          },
+          "symbol": "subagent-requester-context"
+        },
+        {
+          "path": "src/plugins/runtime/subagent-requester-context.ts",
+          "blob_sha": "8cc30eb11fd27e6c891271b279f5f81052d2de6d",
+          "range": {
+            "start_line": 1,
+            "end_line": 71
+          },
+          "symbol": "subagent-requester-context"
+        },
+        {
+          "path": "src/plugins/runtime/system-events.ts",
+          "blob_sha": "dff4e22d934cf8d75d5eac44c7463c8ed785a85b",
+          "range": {
+            "start_line": 1,
+            "end_line": 102
+          },
+          "symbol": "system-events"
+        },
+        {
+          "path": "src/plugins/runtime/tool-grant.ts",
+          "blob_sha": "15d305a539605881d8799eddb6812ad95074955c",
+          "range": {
+            "start_line": 1,
+            "end_line": 4
+          },
+          "symbol": "tool-grant"
+        },
+        {
+          "path": "src/plugins/runtime/types-channel.ts",
+          "blob_sha": "2a581235494eda20c27b5c000643e6ddab62b88b",
+          "range": {
+            "start_line": 1,
+            "end_line": 315
+          },
+          "symbol": "types-channel"
+        },
+        {
+          "path": "src/plugins/runtime/types-core.ts",
+          "blob_sha": "021a552bbf876fabc5a698a18addd746a9fba0fe",
+          "range": {
+            "start_line": 1,
+            "end_line": 837
+          },
+          "symbol": "types-core"
+        },
+        {
+          "path": "src/plugins/runtime/types-native-subagent.ts",
+          "blob_sha": "441c6d5bcabe5ac2cc53438edc61f265604f0591",
+          "range": {
+            "start_line": 1,
+            "end_line": 80
+          },
+          "symbol": "types-native-subagent"
+        },
+        {
+          "path": "src/plugins/runtime/types-scheduled-turns.ts",
+          "blob_sha": "187863bac7c202dcf914dce5c5b321a75eda0797",
+          "range": {
+            "start_line": 1,
+            "end_line": 23
+          },
+          "symbol": "types-scheduled-turns"
+        },
+        {
+          "path": "src/plugins/runtime/types-session-facts.ts",
+          "blob_sha": "ea3cdb3b5e5c5dce15027ef31ba92a23fd94b74a",
+          "range": {
+            "start_line": 1,
+            "end_line": 61
+          },
+          "symbol": "types-session-facts"
+        },
+        {
+          "path": "src/plugins/runtime/types.ts",
+          "blob_sha": "68b9206d12fe41f2ad49f21a6e147bf82f9076c8",
+          "range": {
+            "start_line": 1,
+            "end_line": 290
+          },
+          "symbol": "types"
+        },
+        {
+          "path": "src/plugins/schema-validator.manifest.test.ts",
+          "blob_sha": "dc02183c7dd367f5fc5621fc4c7f7b99c9e47851",
+          "range": {
+            "start_line": 1,
+            "end_line": 152
+          },
+          "symbol": "schema-validator.manifest"
+        },
+        {
+          "path": "src/plugins/schema-validator.required.test.ts",
+          "blob_sha": "5b20c33b75f402534ed58011ff7ca3972c67c0f2",
+          "range": {
+            "start_line": 1,
+            "end_line": 825
+          },
+          "symbol": "schema-validator.required"
+        },
+        {
+          "path": "src/plugins/schema-validator.ts",
+          "blob_sha": "ad1ae158f717b3784d9f015a45c50e42750911d5",
+          "range": {
+            "start_line": 1,
+            "end_line": 457
+          },
+          "symbol": "schema-validator"
+        },
+        {
+          "path": "src/plugins/sdk-alias-normalization.test.ts",
+          "blob_sha": "4cc5a22ddd857166c7e69e223b1e1ac6b922283f",
+          "range": {
+            "start_line": 1,
+            "end_line": 99
+          },
+          "symbol": "sdk-alias-normalization"
+        },
+        {
+          "path": "src/plugins/sdk-alias-normalization.ts",
+          "blob_sha": "6cc7164673224525fa4c9d377117fb8e8295569f",
+          "range": {
+            "start_line": 1,
+            "end_line": 101
+          },
+          "symbol": "sdk-alias-normalization"
+        },
+        {
+          "path": "src/plugins/sdk-alias-workspace.test.ts",
+          "blob_sha": "a1b890e22b667f402d5870a5c6cbf163eaf8c56c",
+          "range": {
+            "start_line": 1,
+            "end_line": 91
+          },
+          "symbol": "sdk-alias-workspace"
+        },
+        {
+          "path": "src/plugins/sdk-alias-workspace.ts",
+          "blob_sha": "fe1c6cfcd7d19cb9cace34ae15673f6570baecd7",
+          "range": {
+            "start_line": 1,
+            "end_line": 134
+          },
+          "symbol": "sdk-alias-workspace"
+        },
+        {
+          "path": "src/plugins/sdk-alias.memoization.test.ts",
+          "blob_sha": "4d6e8a87a1d2b93251344d4cfeef8377d49db67c",
+          "range": {
+            "start_line": 1,
+            "end_line": 104
+          },
+          "symbol": "sdk-alias.memoization"
+        },
+        {
+          "path": "src/plugins/sdk-alias.test-fixtures.ts",
+          "blob_sha": "30a9ac4c365a9bda92b9bb1834cc39c38d4d18c3",
+          "range": {
+            "start_line": 1,
+            "end_line": 76
+          },
+          "symbol": "sdk-alias-fixtures"
+        },
+        {
+          "path": "src/plugins/sdk-alias.test.ts",
+          "blob_sha": "0cd9722f9d57e01ae6568f11987a67efb0720d56",
+          "range": {
+            "start_line": 1,
+            "end_line": 1965
+          },
+          "symbol": "sdk-alias"
+        },
+        {
+          "path": "src/plugins/sdk-alias.ts",
+          "blob_sha": "50d8981fe4d4c17e553e4a7ae13597e9a1a246c1",
+          "range": {
+            "start_line": 1,
+            "end_line": 1077
+          },
+          "symbol": "sdk-alias"
+        },
+        {
+          "path": "src/plugins/sdk-deprecated-imports.ts",
+          "blob_sha": "5b3fbc154ad1984bf5fff6da6731bf7ffe4aada7",
+          "range": {
+            "start_line": 1,
+            "end_line": 29
+          },
+          "symbol": "sdk-deprecated-imports"
+        },
+        {
+          "path": "src/plugins/sdk-deprecation-notices.test.ts",
+          "blob_sha": "28d82eeed2ab75c92dfc662039a196a3206feea6",
+          "range": {
+            "start_line": 1,
+            "end_line": 81
+          },
+          "symbol": "sdk-deprecation-notices"
+        },
+        {
+          "path": "src/plugins/sdk-deprecation-notices.ts",
+          "blob_sha": "48d98cc22c311cce617dc8c74e42d681102b4c6e",
+          "range": {
+            "start_line": 1,
+            "end_line": 39
+          },
+          "symbol": "sdk-deprecation-notices"
+        },
+        {
+          "path": "src/plugins/sdk-deprecation-usage.ts",
+          "blob_sha": "f9a1ae59acc756c4d491e00be9481a0eda8c9529",
+          "range": {
+            "start_line": 1,
+            "end_line": 27
+          },
+          "symbol": "sdk-deprecation-usage"
+        },
+        {
+          "path": "src/plugins/sdk-deprecation.test.ts",
+          "blob_sha": "a090f9a20f6c805d446770031ab21a93ddfbe27b",
+          "range": {
+            "start_line": 1,
+            "end_line": 103
+          },
+          "symbol": "sdk-deprecation"
+        },
+        {
+          "path": "src/plugins/sdk-deprecation.ts",
+          "blob_sha": "c6250a3cd45900aa3948c07a6dab1d5dc46b3cb0",
+          "range": {
+            "start_line": 1,
+            "end_line": 116
+          },
+          "symbol": "sdk-deprecation"
+        },
+        {
+          "path": "src/plugins/security-events.ts",
+          "blob_sha": "ad703008a335eb0eb5a993e76db6fce6ab876530",
+          "range": {
+            "start_line": 1,
+            "end_line": 70
+          },
+          "symbol": "security-events"
+        },
+        {
+          "path": "src/plugins/service-automation-capabilities.ts",
+          "blob_sha": "c0966df26d12f9c1a0e8d1a26164fbc8d2180144",
+          "range": {
+            "start_line": 1,
+            "end_line": 49
+          },
+          "symbol": "service-automation-capabilities"
+        },
+        {
+          "path": "src/plugins/service-control-ui-ingress.ts",
+          "blob_sha": "551a85c181cb982d6f3d6c64753aedcceb3152bf",
+          "range": {
+            "start_line": 1,
+            "end_line": 88
+          },
+          "symbol": "service-control-ui-ingress"
+        },
+        {
+          "path": "src/plugins/service-cron.ts",
+          "blob_sha": "fad2a9bfbf35ed8ac5ec7443b422a07a7388cef9",
+          "range": {
+            "start_line": 1,
+            "end_line": 135
+          },
+          "symbol": "service-cron"
+        },
+        {
+          "path": "src/plugins/service-diagnostics.ts",
+          "blob_sha": "b06ae67915f7fccca712f110d465cf5bb25988f0",
+          "range": {
+            "start_line": 1,
+            "end_line": 83
+          },
+          "symbol": "service-diagnostics"
+        },
+        {
+          "path": "src/plugins/service-diagnostics.work.test.ts",
+          "blob_sha": "2daa2a52a8f06eba237837049321d98da8a2f800",
+          "range": {
+            "start_line": 1,
+            "end_line": 45
+          },
+          "symbol": "service-diagnostics.work"
+        },
+        {
+          "path": "src/plugins/service-health.ts",
+          "blob_sha": "3df7a32710f391f76a99ab355787557877652e1a",
+          "range": {
+            "start_line": 1,
+            "end_line": 49
+          },
+          "symbol": "service-health"
+        },
+        {
+          "path": "src/plugins/service-lifecycle.types.ts",
+          "blob_sha": "3dd75da0bae5688135e023f5fe3c48f394eefda0",
+          "range": {
+            "start_line": 1,
+            "end_line": 81
+          },
+          "symbol": "service-lifecycle.types"
+        },
+        {
+          "path": "src/plugins/service-mcp-events.test.ts",
+          "blob_sha": "95245efccf430e65d9bbc353687dd1027790778a",
+          "range": {
+            "start_line": 1,
+            "end_line": 568
+          },
+          "symbol": "service-mcp-events"
+        },
+        {
+          "path": "src/plugins/service-mcp-events.ts",
+          "blob_sha": "717799923ed880afa608024aea7b5a9440dd3f55",
+          "range": {
+            "start_line": 1,
+            "end_line": 662
+          },
+          "symbol": "service-mcp-events"
+        },
+        {
+          "path": "src/plugins/service-nodes.ts",
+          "blob_sha": "dddb1a33d2184641547c67ee031dd7ac9c20c6c4",
+          "range": {
+            "start_line": 1,
+            "end_line": 182
+          },
+          "symbol": "service-nodes"
+        },
+        {
+          "path": "src/plugins/service-scheduler-binding.ts",
+          "blob_sha": "180c6cd40567b9e790c682217c5aed5d236d9ffe",
+          "range": {
+            "start_line": 1,
+            "end_line": 37
+          },
+          "symbol": "service-scheduler-binding"
+        },
+        {
+          "path": "src/plugins/service-scheduler-context.ts",
+          "blob_sha": "7fcb611ec83fd556512ab7cc789f7f85ff1b800f",
+          "range": {
+            "start_line": 1,
+            "end_line": 71
+          },
+          "symbol": "service-scheduler-context"
+        },
+        {
+          "path": "src/plugins/service-scheduler.test.ts",
+          "blob_sha": "27cbbe0e761427283878bc4ad3e7c5555889ed6b",
+          "range": {
+            "start_line": 1,
+            "end_line": 127
+          },
+          "symbol": "service-scheduler"
+        },
+        {
+          "path": "src/plugins/service-scheduler.ts",
+          "blob_sha": "c99f2b7ce3b2c81fcdbea8dcae6090a753762675",
+          "range": {
+            "start_line": 1,
+            "end_line": 80
+          },
+          "symbol": "service-scheduler"
+        },
+        {
+          "path": "src/plugins/service-scheduler.types.ts",
+          "blob_sha": "8667c86f69721fa6c888d04a3c67eca488993813",
+          "range": {
+            "start_line": 1,
+            "end_line": 29
+          },
+          "symbol": "service-scheduler.types"
+        },
+        {
+          "path": "src/plugins/services.control-ui-ingress.test.ts",
+          "blob_sha": "c643ef40a9e9175e7b925e9d56ff223d9156188f",
+          "range": {
+            "start_line": 1,
+            "end_line": 159
+          },
+          "symbol": "services.control-ui-ingress"
+        },
+        {
+          "path": "src/plugins/services.cron.test.ts",
+          "blob_sha": "ec360f13c7414acee4c28292fc5bb4313bf8bc60",
+          "range": {
+            "start_line": 1,
+            "end_line": 212
+          },
+          "symbol": "services.cron"
+        },
+        {
+          "path": "src/plugins/services.diagnostics.test.ts",
+          "blob_sha": "99e9bb926d38fae6e9be4a85bfca8e1514636db1",
+          "range": {
+            "start_line": 1,
+            "end_line": 82
+          },
+          "symbol": "services.diagnostics"
+        },
+        {
+          "path": "src/plugins/services.nodes.test.ts",
+          "blob_sha": "fda918707af057d1a08c369fdd5408a24de41cb2",
+          "range": {
+            "start_line": 1,
+            "end_line": 485
+          },
+          "symbol": "services.nodes"
+        },
+        {
+          "path": "src/plugins/services.reload.test.ts",
+          "blob_sha": "ab77692bcfc5050621b73d09b9af398ca0ddba80",
+          "range": {
+            "start_line": 1,
+            "end_line": 639
+          },
+          "symbol": "services.reload"
+        },
+        {
+          "path": "src/plugins/services.retention.test-support.ts",
+          "blob_sha": "1a62cc464584533ec43171baddfef29a066ba944",
+          "range": {
+            "start_line": 1,
+            "end_line": 100
+          },
+          "symbol": "services.retention-support"
+        },
+        {
+          "path": "src/plugins/services.retention.test.ts",
+          "blob_sha": "1e802f004f4123f20373f1fd83bcda6a0a373dfa",
+          "range": {
+            "start_line": 1,
+            "end_line": 23
+          },
+          "symbol": "services.retention"
+        },
+        {
+          "path": "src/plugins/services.scheduler-context.test.ts",
+          "blob_sha": "0dd382665e6b27d2ed1c805560b0d6ce997678e4",
+          "range": {
+            "start_line": 1,
+            "end_line": 466
+          },
+          "symbol": "services.scheduler-context"
+        },
+        {
+          "path": "src/plugins/services.test-support.ts",
+          "blob_sha": "0a1dbb7634f240eea934a37e27ce36332da93651",
+          "range": {
+            "start_line": 1,
+            "end_line": 99
+          },
+          "symbol": "services-support"
+        },
+        {
+          "path": "src/plugins/services.test.ts",
+          "blob_sha": "4e97836b99ad07f64aaadd8713dfea914911db86",
+          "range": {
+            "start_line": 1,
+            "end_line": 949
+          },
+          "symbol": "services"
+        },
+        {
+          "path": "src/plugins/services.ts",
+          "blob_sha": "3c16dd3ce7d522272d6c3c21148eb347a2359368",
+          "range": {
+            "start_line": 1,
+            "end_line": 844
+          },
+          "symbol": "services"
+        },
+        {
+          "path": "src/plugins/session-catalog-acp-adoption.ts",
+          "blob_sha": "a10f8ee420bea6c2407dc8b266c123e50d30e6e2",
+          "range": {
+            "start_line": 1,
+            "end_line": 94
+          },
+          "symbol": "session-catalog-acp-adoption"
+        },
+        {
+          "path": "src/plugins/session-catalog-active.ts",
+          "blob_sha": "736a16f5aaae90bae5bfac4eae6757a3b9fa4349",
+          "range": {
+            "start_line": 1,
+            "end_line": 40
+          },
+          "symbol": "session-catalog-active"
+        },
+        {
+          "path": "src/plugins/session-catalog-family.ts",
+          "blob_sha": "1bec2d2782a59baa268b1c77a3cf657df889201a",
+          "range": {
+            "start_line": 1,
+            "end_line": 642
+          },
+          "symbol": "session-catalog-family"
+        },
+        {
+          "path": "src/plugins/session-catalog-history-import.test.ts",
+          "blob_sha": "ec5fa75f527f57738f51d47c1ee9b2578ac877cc",
+          "range": {
+            "start_line": 1,
+            "end_line": 258
+          },
+          "symbol": "session-catalog-history-import"
+        },
+        {
+          "path": "src/plugins/session-catalog-history-import.ts",
+          "blob_sha": "6c11d31cad33beded9c3e3e3d8f71541dd8e0f2d",
+          "range": {
+            "start_line": 1,
+            "end_line": 327
+          },
+          "symbol": "session-catalog-history-import"
+        },
+        {
+          "path": "src/plugins/session-catalog-jsonl-activity.ts",
+          "blob_sha": "d3795a091d7842502d78287927872f577ac77bd3",
+          "range": {
+            "start_line": 1,
+            "end_line": 74
+          },
+          "symbol": "session-catalog-jsonl-activity"
+        },
+        {
+          "path": "src/plugins/session-catalog-upstream.types.ts",
+          "blob_sha": "659a60dcf369c83c6eead63d1a58bd0f4d44e926",
+          "range": {
+            "start_line": 1,
+            "end_line": 5
+          },
+          "symbol": "session-catalog-upstream.types"
+        },
+        {
+          "path": "src/plugins/session-catalog.test-support.ts",
+          "blob_sha": "bb9dc2a9ed727192586153b522019bdb1777c110",
+          "range": {
+            "start_line": 1,
+            "end_line": 33
+          },
+          "symbol": "session-catalog-support"
+        },
+        {
+          "path": "src/plugins/session-catalog.test.ts",
+          "blob_sha": "466500681a90f1c5d13e1d342df9c00574941f46",
+          "range": {
+            "start_line": 1,
+            "end_line": 343
+          },
+          "symbol": "session-catalog"
+        },
+        {
+          "path": "src/plugins/session-catalog.ts",
+          "blob_sha": "7f62db797112b56d9d91e298e6a49e21cd528dac",
+          "range": {
+            "start_line": 1,
+            "end_line": 372
+          },
+          "symbol": "session-catalog"
+        },
+        {
+          "path": "src/plugins/session-conversation-binding.ts",
+          "blob_sha": "606ec5ebf5fed179653bb40fd5d235633bd695e0",
+          "range": {
+            "start_line": 1,
+            "end_line": 118
+          },
+          "symbol": "session-conversation-binding"
+        },
+        {
+          "path": "src/plugins/session-discussion-registry.test.ts",
+          "blob_sha": "0ccdbf2817ffe43e5b7c9fc35ce2fc2f2de1686c",
+          "range": {
+            "start_line": 1,
+            "end_line": 44
+          },
+          "symbol": "session-discussion-registry"
+        },
+        {
+          "path": "src/plugins/session-discussion-registry.ts",
+          "blob_sha": "ba6459f7d63f3303641fb9152e8732c7ba754182",
+          "range": {
+            "start_line": 1,
+            "end_line": 50
+          },
+          "symbol": "session-discussion-registry"
+        },
+        {
+          "path": "src/plugins/session-end-transcript.test-support.ts",
+          "blob_sha": "2fba93062a1373bcd6f5f3c275090a4f1a50d058",
+          "range": {
+            "start_line": 1,
+            "end_line": 19
+          },
+          "symbol": "session-end-transcript-support"
+        },
+        {
+          "path": "src/plugins/session-end-transcript.ts",
+          "blob_sha": "9dccc572d0ea84a661f7135761e9a386c87efb9f",
+          "range": {
+            "start_line": 1,
+            "end_line": 115
+          },
+          "symbol": "session-end-transcript"
+        },
+        {
+          "path": "src/plugins/session-entry-slot-keys.ts",
+          "blob_sha": "51a3716210f952da280bf84633df14dfa9d76175",
+          "range": {
+            "start_line": 1,
+            "end_line": 219
+          },
+          "symbol": "session-entry-slot-keys"
+        },
+        {
+          "path": "src/plugins/setup-descriptors.ts",
+          "blob_sha": "6447ee92a494bab487dae3aba34a5967d4d2581f",
+          "range": {
+            "start_line": 1,
+            "end_line": 32
+          },
+          "symbol": "setup-descriptors"
+        },
+        {
+          "path": "src/plugins/setup-presentation-url.ts",
+          "blob_sha": "db16b9bbb9165540dd59564cabd60181e88b2aaa",
+          "range": {
+            "start_line": 1,
+            "end_line": 15
+          },
+          "symbol": "setup-presentation-url"
+        },
+        {
+          "path": "src/plugins/setup-registry.artifacts.test.ts",
+          "blob_sha": "4e100bb08a1bdfee98bc383d3d924deea4216f4a",
+          "range": {
+            "start_line": 1,
+            "end_line": 144
+          },
+          "symbol": "setup-registry.artifacts"
+        },
+        {
+          "path": "src/plugins/setup-registry.lifecycle.test.ts",
+          "blob_sha": "a6c6146f20b6c9457799e69b97a2b53cc30723d0",
+          "range": {
+            "start_line": 1,
+            "end_line": 754
+          },
+          "symbol": "setup-registry.lifecycle"
+        },
+        {
+          "path": "src/plugins/setup-registry.migrations.test.ts",
+          "blob_sha": "d9b0ef0ceeb3911d786f77cbe4f30224da922c02",
+          "range": {
+            "start_line": 1,
+            "end_line": 59
+          },
+          "symbol": "setup-registry.migrations"
+        },
+        {
+          "path": "src/plugins/setup-registry.runtime.test.ts",
+          "blob_sha": "0b89f57f087cc6db3813951dbdf93137c4b4018d",
+          "range": {
+            "start_line": 1,
+            "end_line": 254
+          },
+          "symbol": "setup-registry.runtime"
+        },
+        {
+          "path": "src/plugins/setup-registry.runtime.ts",
+          "blob_sha": "80b74781e3cccbe51e38e2ba25519a7cc8a0cfbe",
+          "range": {
+            "start_line": 1,
+            "end_line": 79
+          },
+          "symbol": "setup-registry.runtime"
+        },
+        {
+          "path": "src/plugins/setup-registry.test-fixtures.ts",
+          "blob_sha": "363ff4c72e39ec22ca614dbe2ebe4ae518d074eb",
+          "range": {
+            "start_line": 1,
+            "end_line": 6
+          },
+          "symbol": "setup-registry-fixtures"
+        },
+        {
+          "path": "src/plugins/setup-registry.test.ts",
+          "blob_sha": "0338b33aba7706e2716ed9700c5289016e8a0b7d",
+          "range": {
+            "start_line": 1,
+            "end_line": 455
+          },
+          "symbol": "setup-registry"
+        },
+        {
+          "path": "src/plugins/setup-registry.ts",
+          "blob_sha": "a1ce525527fc26f709579718cd55517bb3b9007a",
+          "range": {
+            "start_line": 1,
+            "end_line": 689
+          },
+          "symbol": "setup-registry"
+        },
+        {
+          "path": "src/plugins/slot-selection.ts",
+          "blob_sha": "a0a57bbed0b92ae050bfb936808737fbd0455e0f",
+          "range": {
+            "start_line": 1,
+            "end_line": 54
+          },
+          "symbol": "slot-selection"
+        },
+        {
+          "path": "src/plugins/slots.test.ts",
+          "blob_sha": "22e431e891b2faea7444e4920fe85215ca0c23c4",
+          "range": {
+            "start_line": 1,
+            "end_line": 65
+          },
+          "symbol": "slots"
+        },
+        {
+          "path": "src/plugins/slots.ts",
+          "blob_sha": "b751951f78c7ec469cd31f01b9d15d0dd8628377",
+          "range": {
+            "start_line": 1,
+            "end_line": 139
+          },
+          "symbol": "slots"
+        },
+        {
+          "path": "src/plugins/source-checkout-runtime.test.ts",
+          "blob_sha": "468abbad0c4bda08cb2f570f15fabdad6d0ded41",
+          "range": {
+            "start_line": 1,
+            "end_line": 30
+          },
+          "symbol": "source-checkout-runtime"
+        },
+        {
+          "path": "src/plugins/source-cleanup.ts",
+          "blob_sha": "40535ece6cf73d555847bc7cb98cfa58f866e6a5",
+          "range": {
+            "start_line": 1,
+            "end_line": 109
+          },
+          "symbol": "source-cleanup"
+        },
+        {
+          "path": "src/plugins/source-display.test.ts",
+          "blob_sha": "1055886a44c32ef0e0c168cffba8cae935608728",
+          "range": {
+            "start_line": 1,
+            "end_line": 101
+          },
+          "symbol": "source-display"
+        },
+        {
+          "path": "src/plugins/source-display.ts",
+          "blob_sha": "8ffea11c86a36afc7b69420f6fa6926c686c7583",
+          "range": {
+            "start_line": 1,
+            "end_line": 54
+          },
+          "symbol": "source-display"
+        },
+        {
+          "path": "src/plugins/stage-bundled-plugin-runtime.test.ts",
+          "blob_sha": "811690d08eec3fda122edb6772f4385e71282b66",
+          "range": {
+            "start_line": 1,
+            "end_line": 508
+          },
+          "symbol": "stage-bundled-plugin-runtime"
+        },
+        {
+          "path": "src/plugins/stale-local-bundled-plugin-install-records.test.ts",
+          "blob_sha": "78252df7fd6a50d929f2169338f806ca4bf96517",
+          "range": {
+            "start_line": 1,
+            "end_line": 74
+          },
+          "symbol": "stale-local-bundled-plugin-install-records"
+        },
+        {
+          "path": "src/plugins/stale-local-bundled-plugin-install-records.ts",
+          "blob_sha": "56ae67951a97a5a2d561d5b08ad43b2cac2025a3",
+          "range": {
+            "start_line": 1,
+            "end_line": 113
+          },
+          "symbol": "stale-local-bundled-plugin-install-records"
+        },
+        {
+          "path": "src/plugins/startup-trace-segment.test.ts",
+          "blob_sha": "c410c386ac55f180b57dbf8b330fdb479869c45a",
+          "range": {
+            "start_line": 1,
+            "end_line": 22
+          },
+          "symbol": "startup-trace-segment"
+        },
+        {
+          "path": "src/plugins/startup-trace-segment.ts",
+          "blob_sha": "551443a90341e234359413e94f5cd3846ce1451d",
+          "range": {
+            "start_line": 1,
+            "end_line": 15
+          },
+          "symbol": "startup-trace-segment"
+        },
+        {
+          "path": "src/plugins/state.worker.ts",
+          "blob_sha": "3724be370f69379887fc5e11a3d1b02a0d299940",
+          "range": {
+            "start_line": 1,
+            "end_line": 220
+          },
+          "symbol": "state.worker"
+        },
+        {
+          "path": "src/plugins/status-compatibility.ts",
+          "blob_sha": "6fe1a8cfe137b7f713b1daa42dac2349b2250361",
+          "range": {
+            "start_line": 1,
+            "end_line": 18
+          },
+          "symbol": "status-compatibility"
+        },
+        {
+          "path": "src/plugins/status-dependencies-core.test.ts",
+          "blob_sha": "926d33a337b579fd56f37ce35c39acb75eb1eeef",
+          "range": {
+            "start_line": 1,
+            "end_line": 316
+          },
+          "symbol": "status-dependencies-core"
+        },
+        {
+          "path": "src/plugins/status-dependencies-core.ts",
+          "blob_sha": "03fa452c76e6ea2a66f6f75af36abe2e1e6a8874",
+          "range": {
+            "start_line": 1,
+            "end_line": 316
+          },
+          "symbol": "status-dependencies-core"
+        },
+        {
+          "path": "src/plugins/status-dependencies.types.ts",
+          "blob_sha": "1080d8a743f4678a383884f3da4d2e1d2750e223",
+          "range": {
+            "start_line": 1,
+            "end_line": 16
+          },
+          "symbol": "status-dependencies.types"
+        },
+        {
+          "path": "src/plugins/status-effective-plugin-discovery.test.ts",
+          "blob_sha": "fbba92b5233f7b31cb95ee7b2158b69eff85d31f",
+          "range": {
+            "start_line": 1,
+            "end_line": 153
+          },
+          "symbol": "status-effective-plugin-discovery"
+        },
+        {
+          "path": "src/plugins/status-snapshot.cold-imports.test.ts",
+          "blob_sha": "e466b047d8a299b2107aed3b3dfec4d5e4f3415c",
+          "range": {
+            "start_line": 1,
+            "end_line": 20
+          },
+          "symbol": "status-snapshot.cold-imports"
+        },
+        {
+          "path": "src/plugins/status-snapshot.ts",
+          "blob_sha": "4d321f2c880529693c99f0c641b62ff5d417d471",
+          "range": {
+            "start_line": 1,
+            "end_line": 381
+          },
+          "symbol": "status-snapshot"
+        },
+        {
+          "path": "src/plugins/status.compatibility.integration.test.ts",
+          "blob_sha": "fa1a1b999ae0ba9db1c190ca81f8fac49a1974ea",
+          "range": {
+            "start_line": 1,
+            "end_line": 75
+          },
+          "symbol": "status.compatibility.integration"
+        },
+        {
+          "path": "src/plugins/status.install-health.test.ts",
+          "blob_sha": "c1951e4b2e03c25411e9d6ffe5ec1f9f9605affb",
+          "range": {
+            "start_line": 1,
+            "end_line": 608
+          },
+          "symbol": "status.install-health"
+        },
+        {
+          "path": "src/plugins/status.registry-snapshot.test.ts",
+          "blob_sha": "64f4b9b007c9aaf52fe112bf7a251bd5871b936e",
+          "range": {
+            "start_line": 1,
+            "end_line": 498
+          },
+          "symbol": "status.registry-snapshot"
+        },
+        {
+          "path": "src/plugins/status.runtime-inspection.test-helpers.ts",
+          "blob_sha": "b54b79199b3525f6a9bd43b47c6985e9a6798738",
+          "range": {
+            "start_line": 1,
+            "end_line": 55
+          },
+          "symbol": "status.runtime-inspection-helpers"
+        },
+        {
+          "path": "src/plugins/status.runtime-inspection.test.ts",
+          "blob_sha": "072fc2385522387e16a9b1e040bc5449e54f14c0",
+          "range": {
+            "start_line": 1,
+            "end_line": 724
+          },
+          "symbol": "status.runtime-inspection"
+        },
+        {
+          "path": "src/plugins/status.test-fixtures.ts",
+          "blob_sha": "5905a8345637d86e30ddeb98d15f9c4586a9b8da",
+          "range": {
+            "start_line": 1,
+            "end_line": 120
+          },
+          "symbol": "status-fixtures"
+        },
+        {
+          "path": "src/plugins/status.test-helpers.ts",
+          "blob_sha": "3c69a8cd61374e515c7a8e35a7f36ff0b88b31d2",
+          "range": {
+            "start_line": 1,
+            "end_line": 46
+          },
+          "symbol": "status-helpers"
+        },
+        {
+          "path": "src/plugins/status.test.ts",
+          "blob_sha": "0e967224ee6380dd80e694cb4154b8d059a7c2b9",
+          "range": {
+            "start_line": 1,
+            "end_line": 423
+          },
+          "symbol": "status"
+        },
+        {
+          "path": "src/plugins/status.ts",
+          "blob_sha": "ab87b1ce8fbbc3c993ff466115d5c0738125d58f",
+          "range": {
+            "start_line": 1,
+            "end_line": 657
+          },
+          "symbol": "status"
+        },
+        {
+          "path": "src/plugins/storage-provider-manifest.ts",
+          "blob_sha": "c187dfd098c0355072e18f2fcf571336917f4ee6",
+          "range": {
+            "start_line": 1,
+            "end_line": 48
+          },
+          "symbol": "storage-provider-manifest"
+        },
+        {
+          "path": "src/plugins/storage-provider-registry.test.ts",
+          "blob_sha": "c5194b13d6724659d018019db0361d206cb4a2a1",
+          "range": {
+            "start_line": 1,
+            "end_line": 72
+          },
+          "symbol": "storage-provider-registry"
+        },
+        {
+          "path": "src/plugins/storage-provider-registry.ts",
+          "blob_sha": "747d5166bd6ee61f5d092641e8396a489c4065ff",
+          "range": {
+            "start_line": 1,
+            "end_line": 47
+          },
+          "symbol": "storage-provider-registry"
+        },
+        {
+          "path": "src/plugins/synthetic-auth.runtime.test.ts",
+          "blob_sha": "4708c01ac74455ecd1540711278fc057118719b8",
+          "range": {
+            "start_line": 1,
+            "end_line": 157
+          },
+          "symbol": "synthetic-auth.runtime"
+        },
+        {
+          "path": "src/plugins/synthetic-auth.runtime.ts",
+          "blob_sha": "38865795bfb88f33af9bf31638a189b664e54b0b",
+          "range": {
+            "start_line": 1,
+            "end_line": 94
+          },
+          "symbol": "synthetic-auth.runtime"
+        },
+        {
+          "path": "src/plugins/test-helpers/archive-fixtures.ts",
+          "blob_sha": "5c6d73216c00644acc792f5bb0d4e3600f3e0968",
+          "range": {
+            "start_line": 1,
+            "end_line": 19
+          },
+          "symbol": "archive-fixtures"
+        },
+        {
+          "path": "src/plugins/test-helpers/cold-plugin-fixtures.ts",
+          "blob_sha": "6883130f5ac9e4b5eaa9de695c249727d37fc392",
+          "range": {
+            "start_line": 1,
+            "end_line": 96
+          },
+          "symbol": "cold-plugin-fixtures"
+        },
+        {
+          "path": "src/plugins/test-helpers/fs-fixtures.ts",
+          "blob_sha": "fbbc32f6cb139aae87966a7698456421319a1e4a",
+          "range": {
+            "start_line": 1,
+            "end_line": 77
+          },
+          "symbol": "fs-fixtures"
+        },
+        {
+          "path": "src/plugins/test-helpers/install-account-policy.test-support.ts",
+          "blob_sha": "fd434730700cb9a9faf0e73fc38a37a8fbfe03af",
+          "range": {
+            "start_line": 1,
+            "end_line": 55
+          },
+          "symbol": "install-account-policy-support"
+        },
+        {
+          "path": "src/plugins/test-helpers/install-fixtures.ts",
+          "blob_sha": "53d2cf0b6134a03749bbc4f25288858cd29169c0",
+          "range": {
+            "start_line": 1,
+            "end_line": 124
+          },
+          "symbol": "install-fixtures"
+        },
+        {
+          "path": "src/plugins/test-helpers/installed-plugin-index.ts",
+          "blob_sha": "13e8baf265d35ffba90cd450e040017a159e98e7",
+          "range": {
+            "start_line": 1,
+            "end_line": 89
+          },
+          "symbol": "installed-plugin-index"
+        },
+        {
+          "path": "src/plugins/test-helpers/managed-npm-plugin.ts",
+          "blob_sha": "caaa96a702367e5f74100288935022f4e780ca5f",
+          "range": {
+            "start_line": 1,
+            "end_line": 60
+          },
+          "symbol": "managed-npm-plugin"
+        },
+        {
+          "path": "src/plugins/test-helpers/npm-registry-fixtures.ts",
+          "blob_sha": "ccda7d8b80ad15d5f08f3bc87cabd38c082b5f53",
+          "range": {
+            "start_line": 1,
+            "end_line": 288
+          },
+          "symbol": "npm-registry-fixtures"
+        },
+        {
+          "path": "src/plugins/test-helpers/plugin-registry-snapshot.ts",
+          "blob_sha": "87ec1b0a79e88b0d24fd3e03a1204c0eceba09a1",
+          "range": {
+            "start_line": 1,
+            "end_line": 28
+          },
+          "symbol": "plugin-registry-snapshot"
+        },
+        {
+          "path": "src/plugins/test-helpers/registry-jiti-mocks.ts",
+          "blob_sha": "286515b881658791ef55fec23dcff1a32cca79cb",
+          "range": {
+            "start_line": 1,
+            "end_line": 93
+          },
+          "symbol": "registry-jiti-mocks"
+        },
+        {
+          "path": "src/plugins/theme-catalog.test.ts",
+          "blob_sha": "e809b9bdafea16c32b974848cdd5d03ff38b88fc",
+          "range": {
+            "start_line": 1,
+            "end_line": 353
+          },
+          "symbol": "theme-catalog"
+        },
+        {
+          "path": "src/plugins/theme-catalog.ts",
+          "blob_sha": "97fb1d3b84d9a90c95ae443e180b42364204deb5",
+          "range": {
+            "start_line": 1,
+            "end_line": 172
+          },
+          "symbol": "theme-catalog"
+        },
+        {
+          "path": "src/plugins/toggle-config.ts",
+          "blob_sha": "48b373aaae28a886950dcd2cbb414965751c0964",
+          "range": {
+            "start_line": 1,
+            "end_line": 74
+          },
+          "symbol": "toggle-config"
+        },
+        {
+          "path": "src/plugins/tool-contracts.ts",
+          "blob_sha": "bdb89eaadd6b19de3ff419af5aa387932e3a8964",
+          "range": {
+            "start_line": 1,
+            "end_line": 21
+          },
+          "symbol": "tool-contracts"
+        },
+        {
+          "path": "src/plugins/tool-factory-context.test.ts",
+          "blob_sha": "3d773658d6f091ee4b443422b1d558937cb9c0af",
+          "range": {
+            "start_line": 1,
+            "end_line": 322
+          },
+          "symbol": "tool-factory-context"
+        },
+        {
+          "path": "src/plugins/tool-factory-context.ts",
+          "blob_sha": "e9b197c6d1b8aff7d57c79ad6c380f312e123e9d",
+          "range": {
+            "start_line": 1,
+            "end_line": 98
+          },
+          "symbol": "tool-factory-context"
+        },
+        {
+          "path": "src/plugins/tool-factory-runtime.ts",
+          "blob_sha": "820ceb91a989dbd9e81b0376e216067dcea28e3e",
+          "range": {
+            "start_line": 1,
+            "end_line": 253
+          },
+          "symbol": "tool-factory-runtime"
+        },
+        {
+          "path": "src/plugins/tool-grant-allowlist.ts",
+          "blob_sha": "3b2128dd4e2fb52fa75e73eff67b912db40f94d4",
+          "range": {
+            "start_line": 1,
+            "end_line": 63
+          },
+          "symbol": "tool-grant-allowlist"
+        },
+        {
+          "path": "src/plugins/tool-hook-matcher.test.ts",
+          "blob_sha": "a8b8df97f62807ca8d947184a4604a9e35a8d360",
+          "range": {
+            "start_line": 1,
+            "end_line": 91
+          },
+          "symbol": "tool-hook-matcher"
+        },
+        {
+          "path": "src/plugins/tool-hook-matcher.ts",
+          "blob_sha": "8b72cc907fa2e23bf4e89a46daccf8430dfa2c10",
+          "range": {
+            "start_line": 1,
+            "end_line": 109
+          },
+          "symbol": "tool-hook-matcher"
+        },
+        {
+          "path": "src/plugins/tool-inspection-state.ts",
+          "blob_sha": "135fcf3eb54128aa3d0793acd5e1e09cfc66db12",
+          "range": {
+            "start_line": 1,
+            "end_line": 109
+          },
+          "symbol": "tool-inspection-state"
+        },
+        {
+          "path": "src/plugins/tool-metadata.ts",
+          "blob_sha": "2e1c8d668c290c6c619766dce2e5879522bae343",
+          "range": {
+            "start_line": 1,
+            "end_line": 98
+          },
+          "symbol": "tool-metadata"
+        },
+        {
+          "path": "src/plugins/tool-registry-adoption.test.ts",
+          "blob_sha": "49f1ff99fc42a9da06b16e549670038bff18fcc6",
+          "range": {
+            "start_line": 1,
+            "end_line": 284
+          },
+          "symbol": "tool-registry-adoption"
+        },
+        {
+          "path": "src/plugins/tool-registry-adoption.ts",
+          "blob_sha": "7ef3c18f1e43fba1bae7114e35d6a0dec37fae4c",
+          "range": {
+            "start_line": 1,
+            "end_line": 87
+          },
+          "symbol": "tool-registry-adoption"
+        },
+        {
+          "path": "src/plugins/tool-schema-diagnostics.ts",
+          "blob_sha": "33fe2a345fd0c40b7e6af201e8a13013779dfb30",
+          "range": {
+            "start_line": 1,
+            "end_line": 41
+          },
+          "symbol": "tool-schema-diagnostics"
+        },
+        {
+          "path": "src/plugins/tool-types.ts",
+          "blob_sha": "40b9e9c9d6100a178eec97edc1e152673294f263",
+          "range": {
+            "start_line": 1,
+            "end_line": 230
+          },
+          "symbol": "tool-types"
+        },
+        {
+          "path": "src/plugins/tools.inspection.test.ts",
+          "blob_sha": "bccfd662b5c9d21138caa3bff294ad6f3d4fdfd3",
+          "range": {
+            "start_line": 1,
+            "end_line": 552
+          },
+          "symbol": "tools.inspection"
+        },
+        {
+          "path": "src/plugins/tools.optional.test-helpers.ts",
+          "blob_sha": "a39346054bac39c738b8a8b0d459724b4e85d8a4",
+          "range": {
+            "start_line": 1,
+            "end_line": 124
+          },
+          "symbol": "tools.optional-helpers"
+        },
+        {
+          "path": "src/plugins/tools.optional.test.ts",
+          "blob_sha": "a15c2b58d3ade704e4fae4c912d0aa7b9d9d759f",
+          "range": {
+            "start_line": 1,
+            "end_line": 2606
+          },
+          "symbol": "tools.optional"
+        },
+        {
+          "path": "src/plugins/tools.test-support.ts",
+          "blob_sha": "372189a04230bcb5ae993db5660ba8f7c64077d0",
+          "range": {
+            "start_line": 1,
+            "end_line": 22
+          },
+          "symbol": "tools-support"
+        },
+        {
+          "path": "src/plugins/tools.ts",
+          "blob_sha": "2060d012521059a2619a05d1b0328d20b3b8cb85",
+          "range": {
+            "start_line": 1,
+            "end_line": 769
+          },
+          "symbol": "tools"
+        },
+        {
+          "path": "src/plugins/trusted-approval-install.integration.test.ts",
+          "blob_sha": "68de8134973b14128c56c812fcaeb376e4e1e888",
+          "range": {
+            "start_line": 1,
+            "end_line": 290
+          },
+          "symbol": "trusted-approval-install.integration"
+        },
+        {
+          "path": "src/plugins/trusted-tool-policy.ts",
+          "blob_sha": "c534f18f82ddc9c002418b52915078a943edd153",
+          "range": {
+            "start_line": 1,
+            "end_line": 356
+          },
+          "symbol": "trusted-tool-policy"
+        },
+        {
+          "path": "src/plugins/tsconfig.json",
+          "blob_sha": "33322c9b177c3fc208e653c0d93bbd303b2b24e1",
+          "range": {
+            "start_line": 1,
+            "end_line": 1
+          },
+          "symbol": "tsconfig.json"
+        },
+        {
+          "path": "src/plugins/types.mcp-connection.ts",
+          "blob_sha": "b7249c3883024e328849888a17bb22c421b68042",
+          "range": {
+            "start_line": 1,
+            "end_line": 56
+          },
+          "symbol": "types.mcp-connection"
+        },
+        {
+          "path": "src/plugins/types.node-host.ts",
+          "blob_sha": "268928445f13d5307a07a3a2894354b1b2051500",
+          "range": {
+            "start_line": 1,
+            "end_line": 120
+          },
+          "symbol": "types.node-host"
+        },
+        {
+          "path": "src/plugins/types.ts",
+          "blob_sha": "4b0528c2dc6af9d622522c8d7d1cfebf70a23c34",
+          "range": {
+            "start_line": 1,
+            "end_line": 116
+          },
+          "symbol": "types"
+        },
+        {
+          "path": "src/plugins/uninstall-config.ts",
+          "blob_sha": "defeca9314e09453d45d8f89eab464908b5aaa5d",
+          "range": {
+            "start_line": 1,
+            "end_line": 36
+          },
+          "symbol": "uninstall-config"
+        },
+        {
+          "path": "src/plugins/uninstall-directory-removal.test.ts",
+          "blob_sha": "553d3b1307371986721cfa55590a174be0b41f92",
+          "range": {
+            "start_line": 1,
+            "end_line": 97
+          },
+          "symbol": "uninstall-directory-removal"
+        },
+        {
+          "path": "src/plugins/uninstall-load-paths.test.ts",
+          "blob_sha": "74d06eddd652883d989feb1c435677a045503724",
+          "range": {
+            "start_line": 1,
+            "end_line": 110
+          },
+          "symbol": "uninstall-load-paths"
+        },
+        {
+          "path": "src/plugins/uninstall-managed-npm.ts",
+          "blob_sha": "b97408ccc8f4d3c0c30022f38a74efbd0a15cf6f",
+          "range": {
+            "start_line": 1,
+            "end_line": 64
+          },
+          "symbol": "uninstall-managed-npm"
+        },
+        {
+          "path": "src/plugins/uninstall-package-config.ts",
+          "blob_sha": "f4f2bd2966890c10c8b091b0050291d3bf448a88",
+          "range": {
+            "start_line": 1,
+            "end_line": 211
+          },
+          "symbol": "uninstall-package-config"
+        },
+        {
+          "path": "src/plugins/uninstall-package-plan.ts",
+          "blob_sha": "661aebe2a3846f2d2500f6f4ce87a1eb69c4c3b4",
+          "range": {
+            "start_line": 1,
+            "end_line": 47
+          },
+          "symbol": "uninstall-package-plan"
+        },
+        {
+          "path": "src/plugins/uninstall-policy.test.ts",
+          "blob_sha": "f1c70d8da67abc4e985d5815d950a227cd72ecc3",
+          "range": {
+            "start_line": 1,
+            "end_line": 57
+          },
+          "symbol": "uninstall-policy"
+        },
+        {
+          "path": "src/plugins/uninstall-selection.ts",
+          "blob_sha": "b8832bdca26ae6837c8fe6d7a8f30eeb66c843b8",
+          "range": {
+            "start_line": 1,
+            "end_line": 78
+          },
+          "symbol": "uninstall-selection"
+        },
+        {
+          "path": "src/plugins/uninstall.test.ts",
+          "blob_sha": "b440559dc370a1e99ca35fe890cf03f32d8f127d",
+          "range": {
+            "start_line": 1,
+            "end_line": 2273
+          },
+          "symbol": "uninstall"
+        },
+        {
+          "path": "src/plugins/uninstall.ts",
+          "blob_sha": "070ad030797e20c76aba7c2162cc7dfb56857167",
+          "range": {
+            "start_line": 1,
+            "end_line": 571
+          },
+          "symbol": "uninstall"
+        },
+        {
+          "path": "src/plugins/update-attempt.ts",
+          "blob_sha": "899b9c517033b8c52f31454d94ac9f896e6def6f",
+          "range": {
+            "start_line": 1,
+            "end_line": 470
+          },
+          "symbol": "update-attempt"
+        },
+        {
+          "path": "src/plugins/update-authority.e2e.test.ts",
+          "blob_sha": "830c930b2f15219a5303f4ff5646bba9aa887107",
+          "range": {
+            "start_line": 1,
+            "end_line": 567
+          },
+          "symbol": "update-authority.e2e"
+        },
+        {
+          "path": "src/plugins/update-authority.test-support.ts",
+          "blob_sha": "1ef745e5d425a217dfff68d79d37145b0455c812",
+          "range": {
+            "start_line": 1,
+            "end_line": 82
+          },
+          "symbol": "update-authority-support"
+        },
+        {
+          "path": "src/plugins/update-authority.test.ts",
+          "blob_sha": "2b2c7352108df420652449a97e6450e77f064b6c",
+          "range": {
+            "start_line": 1,
+            "end_line": 220
+          },
+          "symbol": "update-authority"
+        },
+        {
+          "path": "src/plugins/update-capability-consent.ts",
+          "blob_sha": "10ec41a050f3202077da6daa5613ab7cfebe788f",
+          "range": {
+            "start_line": 1,
+            "end_line": 52
+          },
+          "symbol": "update-capability-consent"
+        },
+        {
+          "path": "src/plugins/update-channel.bundled-load-paths.test.ts",
+          "blob_sha": "24c8e2254e934440d895ac11255b553de6ffb52a",
+          "range": {
+            "start_line": 1,
+            "end_line": 66
+          },
+          "symbol": "update-channel.bundled-load-paths"
+        },
+        {
+          "path": "src/plugins/update-channel.consent.test.ts",
+          "blob_sha": "3e2f7effdb7d97d9a2e3d35bee78830179c757ea",
+          "range": {
+            "start_line": 1,
+            "end_line": 217
+          },
+          "symbol": "update-channel.consent"
+        },
+        {
+          "path": "src/plugins/update-channel.ts",
+          "blob_sha": "420126cfa8c234aecbac402b7d9096e84e022177",
+          "range": {
+            "start_line": 1,
+            "end_line": 512
+          },
+          "symbol": "update-channel"
+        },
+        {
+          "path": "src/plugins/update-claw-lifecycle.ts",
+          "blob_sha": "87b2455397fdd5bce44de0ddcf730832275c665d",
+          "range": {
+            "start_line": 1,
+            "end_line": 40
+          },
+          "symbol": "update-claw-lifecycle"
+        },
+        {
+          "path": "src/plugins/update-cohort.integration.test.ts",
+          "blob_sha": "0eaeb0f05cad5c1f8195c5b01d9549f5ffeebe44",
+          "range": {
+            "start_line": 1,
+            "end_line": 326
+          },
+          "symbol": "update-cohort.integration"
+        },
+        {
+          "path": "src/plugins/update-cohort.test-support.ts",
+          "blob_sha": "94e355d5fb009556b0a6cadd31da4c4b11a281e6",
+          "range": {
+            "start_line": 1,
+            "end_line": 46
+          },
+          "symbol": "update-cohort-support"
+        },
+        {
+          "path": "src/plugins/update-cohort.test.ts",
+          "blob_sha": "e678c3e7ef30b5e5562941ddd1b1bf41b25a866f",
+          "range": {
+            "start_line": 1,
+            "end_line": 389
+          },
+          "symbol": "update-cohort"
+        },
+        {
+          "path": "src/plugins/update-cohort.ts",
+          "blob_sha": "46a0d7e3fec2e134857c7163dab145f34dbb7736",
+          "range": {
+            "start_line": 1,
+            "end_line": 273
+          },
+          "symbol": "update-cohort"
+        },
+        {
+          "path": "src/plugins/update-config.ts",
+          "blob_sha": "a140621dc4ebb79ed546447149b0e1e017d29180",
+          "range": {
+            "start_line": 1,
+            "end_line": 316
+          },
+          "symbol": "update-config"
+        },
+        {
+          "path": "src/plugins/update-duplicate-aliases.ts",
+          "blob_sha": "6e037ca8db5c3bd7bce6d062b8c4c68f2eac0ff0",
+          "range": {
+            "start_line": 1,
+            "end_line": 118
+          },
+          "symbol": "update-duplicate-aliases"
+        },
+        {
+          "path": "src/plugins/update-installed.ts",
+          "blob_sha": "7a944878e32044e4109d985cbfb7bd1096934fa5",
+          "range": {
+            "start_line": 1,
+            "end_line": 743
+          },
+          "symbol": "update-installed"
+        },
+        {
+          "path": "src/plugins/update-npm-metadata.test-support.ts",
+          "blob_sha": "ac107de55d77540fc80ab7f104f6c5be8b3c6b3b",
+          "range": {
+            "start_line": 1,
+            "end_line": 316
+          },
+          "symbol": "update-npm-metadata-support"
+        },
+        {
+          "path": "src/plugins/update-npm-metadata.ts",
+          "blob_sha": "c83223da08714b3e4ea11bda93f1e5f44e652263",
+          "range": {
+            "start_line": 1,
+            "end_line": 65
+          },
+          "symbol": "update-npm-metadata"
+        },
+        {
+          "path": "src/plugins/update-source.ts",
+          "blob_sha": "6a67b30c2e2f3691f733478ff963153b1b4d017a",
+          "range": {
+            "start_line": 1,
+            "end_line": 622
+          },
+          "symbol": "update-source"
+        },
+        {
+          "path": "src/plugins/update-summary.ts",
+          "blob_sha": "3eb243432a0534b0466d3aa0b3f1189119655099",
+          "range": {
+            "start_line": 1,
+            "end_line": 104
+          },
+          "symbol": "update-summary"
+        },
+        {
+          "path": "src/plugins/update-unchanged.ts",
+          "blob_sha": "4e12ff038c62853f3069da87b0eb41492c711148",
+          "range": {
+            "start_line": 1,
+            "end_line": 88
+          },
+          "symbol": "update-unchanged"
+        },
+        {
+          "path": "src/plugins/update.test.ts",
+          "blob_sha": "d45659ac2114d793a7afd46e7b5706ebdb783b00",
+          "range": {
+            "start_line": 1,
+            "end_line": 3357
+          },
+          "symbol": "update"
+        },
+        {
+          "path": "src/plugins/update.ts",
+          "blob_sha": "4f44423cdb4dd44149f886445781c88a1a1c0302",
+          "range": {
+            "start_line": 1,
+            "end_line": 16
+          },
+          "symbol": "update"
+        },
+        {
+          "path": "src/plugins/update.work-deadline.test.ts",
+          "blob_sha": "607383d5aa1e4ce2c01772ef9169e4af09ce2bed",
+          "range": {
+            "start_line": 1,
+            "end_line": 332
+          },
+          "symbol": "update.work-deadline"
+        },
+        {
+          "path": "src/plugins/web-content-extractor-types.ts",
+          "blob_sha": "31914161f8ed879f56faec7abbcf7b8dde60598b",
+          "range": {
+            "start_line": 1,
+            "end_line": 24
+          },
+          "symbol": "web-content-extractor-types"
+        },
+        {
+          "path": "src/plugins/web-content-extractors.runtime.test.ts",
+          "blob_sha": "6217ac8272f383040d98ca46df41d603b2f609e6",
+          "range": {
+            "start_line": 1,
+            "end_line": 14
+          },
+          "symbol": "web-content-extractors.runtime"
+        },
+        {
+          "path": "src/plugins/web-content-extractors.runtime.ts",
+          "blob_sha": "00a7a2e22ff3283e699cb01923bbf61265868577",
+          "range": {
+            "start_line": 1,
+            "end_line": 44
+          },
+          "symbol": "web-content-extractors.runtime"
+        },
+        {
+          "path": "src/plugins/web-fetch-providers.runtime.test.ts",
+          "blob_sha": "0ebfc392fabdb52d910e3847524162742130ecf1",
+          "range": {
+            "start_line": 1,
+            "end_line": 330
+          },
+          "symbol": "web-fetch-providers.runtime"
+        },
+        {
+          "path": "src/plugins/web-fetch-providers.runtime.ts",
+          "blob_sha": "1fcf2413eac9128962e400fbd41ddcc26d5c460b",
+          "range": {
+            "start_line": 1,
+            "end_line": 59
+          },
+          "symbol": "web-fetch-providers.runtime"
+        },
+        {
+          "path": "src/plugins/web-provider-capture-lifetime.test.ts",
+          "blob_sha": "9a468249ca56ee400960e623b03e9899217abffd",
+          "range": {
+            "start_line": 1,
+            "end_line": 201
+          },
+          "symbol": "web-provider-capture-lifetime"
+        },
+        {
+          "path": "src/plugins/web-provider-public-artifacts.explicit-fast-path.test.ts",
+          "blob_sha": "d9680474034ac8591a95181c2d91a6594c5d71fa",
+          "range": {
+            "start_line": 1,
+            "end_line": 153
+          },
+          "symbol": "web-provider-public-artifacts.explicit-fast-path"
+        },
+        {
+          "path": "src/plugins/web-provider-public-artifacts.explicit.ts",
+          "blob_sha": "171142b09cb7f627c932131cda1206d01e3749f9",
+          "range": {
+            "start_line": 1,
+            "end_line": 112
+          },
+          "symbol": "web-provider-public-artifacts.explicit"
+        },
+        {
+          "path": "src/plugins/web-provider-public-artifacts.fallback.test.ts",
+          "blob_sha": "fa67eaa6ca8ce917912153983f8208b89d6a8f0f",
+          "range": {
+            "start_line": 1,
+            "end_line": 237
+          },
+          "symbol": "web-provider-public-artifacts.fallback"
+        },
+        {
+          "path": "src/plugins/web-provider-public-artifacts.test.ts",
+          "blob_sha": "fa9fda50e9e0ad349e986dde2eefe562764afcb1",
+          "range": {
+            "start_line": 1,
+            "end_line": 49
+          },
+          "symbol": "web-provider-public-artifacts"
+        },
+        {
+          "path": "src/plugins/web-provider-public-artifacts.ts",
+          "blob_sha": "028a0f7f0e65f63f4c519ef94ed71eac78bf59dd",
+          "range": {
+            "start_line": 1,
+            "end_line": 204
+          },
+          "symbol": "web-provider-public-artifacts"
+        },
+        {
+          "path": "src/plugins/web-provider-resolution-shared.ts",
+          "blob_sha": "937bb729c0cfe6296ba63439cc343a74f68b5916",
+          "range": {
+            "start_line": 1,
+            "end_line": 204
+          },
+          "symbol": "web-provider-resolution-shared"
+        },
+        {
+          "path": "src/plugins/web-provider-runtime-shared.test.ts",
+          "blob_sha": "b16ced1cdd8397a2befa14ea9c5e8540eb21c6c6",
+          "range": {
+            "start_line": 1,
+            "end_line": 461
+          },
+          "symbol": "web-provider-runtime-shared"
+        },
+        {
+          "path": "src/plugins/web-provider-runtime-shared.ts",
+          "blob_sha": "6fe0e4e304a2204c174610ea5d0a2037f611a8a2",
+          "range": {
+            "start_line": 1,
+            "end_line": 336
+          },
+          "symbol": "web-provider-runtime-shared"
+        },
+        {
+          "path": "src/plugins/web-provider-types.ts",
+          "blob_sha": "f70b314ba64345651602c06475247038cdef67b9",
+          "range": {
+            "start_line": 1,
+            "end_line": 132
+          },
+          "symbol": "web-provider-types"
+        },
+        {
+          "path": "src/plugins/web-search-credential-presence.test.ts",
+          "blob_sha": "9a10a1134e5548bb0b9104f041431ee45caf0d84",
+          "range": {
+            "start_line": 1,
+            "end_line": 41
+          },
+          "symbol": "web-search-credential-presence"
+        },
+        {
+          "path": "src/plugins/web-search-credential-presence.ts",
+          "blob_sha": "5ca80d24be4f4606d9ce5076a9a8d72718418dca",
+          "range": {
+            "start_line": 1,
+            "end_line": 70
+          },
+          "symbol": "web-search-credential-presence"
+        },
+        {
+          "path": "src/plugins/web-search-install-catalog.test.ts",
+          "blob_sha": "0ef3dd15981fef78e9ec6f21e3e5c5fe3ab5d45a",
+          "range": {
+            "start_line": 1,
+            "end_line": 49
+          },
+          "symbol": "web-search-install-catalog"
+        },
+        {
+          "path": "src/plugins/web-search-install-catalog.ts",
+          "blob_sha": "0931cf772e85847e4d0160bfe7ae444c6d62a255",
+          "range": {
+            "start_line": 1,
+            "end_line": 195
+          },
+          "symbol": "web-search-install-catalog"
+        },
+        {
+          "path": "src/plugins/web-search-providers.runtime.test.ts",
+          "blob_sha": "1cae77a561ce5be481acd6c1f92efde837191b93",
+          "range": {
+            "start_line": 1,
+            "end_line": 514
+          },
+          "symbol": "web-search-providers.runtime"
+        },
+        {
+          "path": "src/plugins/web-search-providers.runtime.ts",
+          "blob_sha": "7bf0d301896d9c640e3b13f002caa6d881cc8c97",
+          "range": {
+            "start_line": 1,
+            "end_line": 76
+          },
+          "symbol": "web-search-providers.runtime"
+        },
+        {
+          "path": "src/plugins/widget-presenters.ts",
+          "blob_sha": "62e274047a14ce20a687b05ef50edf62263553f0",
+          "range": {
+            "start_line": 1,
+            "end_line": 82
+          },
+          "symbol": "widget-presenters"
+        },
+        {
+          "path": "src/plugins/wired-hooks-after-tool-call.e2e.test.ts",
+          "blob_sha": "810fc3d8fef345b8fbf765ab564a5855e8179fa1",
+          "range": {
+            "start_line": 1,
+            "end_line": 154
+          },
+          "symbol": "wired-hooks-after-tool-call.e2e"
+        },
+        {
+          "path": "src/plugins/wired-hooks-compaction.test.ts",
+          "blob_sha": "fcd319ae59755a0c1de18ee7f3d221ec32a58eaf",
+          "range": {
+            "start_line": 1,
+            "end_line": 283
+          },
+          "symbol": "wired-hooks-compaction"
+        },
+        {
+          "path": "src/plugins/wired-hooks-gateway.test.ts",
+          "blob_sha": "0f7b9bd1efd650a8b9f22b1ec358a191f7a601fb",
+          "range": {
+            "start_line": 1,
+            "end_line": 94
+          },
+          "symbol": "wired-hooks-gateway"
+        },
+        {
+          "path": "src/plugins/wired-hooks-inbound-claim.test.ts",
+          "blob_sha": "eb6ce6f0df20963eb43736769d496eab1797a888",
+          "range": {
+            "start_line": 1,
+            "end_line": 113
+          },
+          "symbol": "wired-hooks-inbound-claim"
+        },
+        {
+          "path": "src/plugins/wired-hooks-llm.test.ts",
+          "blob_sha": "aba698632886b1de6e0a3ad2d4f88a3ec256a053",
+          "range": {
+            "start_line": 1,
+            "end_line": 102
+          },
+          "symbol": "wired-hooks-llm"
+        },
+        {
+          "path": "src/plugins/wired-hooks-reply-dispatch.test.ts",
+          "blob_sha": "48afb01ccf4de93a2ccba0fa90f4d13df61029f2",
+          "range": {
+            "start_line": 1,
+            "end_line": 263
+          },
+          "symbol": "wired-hooks-reply-dispatch"
+        },
+        {
+          "path": "src/plugins/wired-hooks-reply-payload-sending.test.ts",
+          "blob_sha": "0c19c8643ec95b6f2cb37af8adab0303dae2a831",
+          "range": {
+            "start_line": 1,
+            "end_line": 248
+          },
+          "symbol": "wired-hooks-reply-payload-sending"
+        },
+        {
+          "path": "src/plugins/wired-hooks-session.test.ts",
+          "blob_sha": "68dad6c843a65f016a00d8438c0e13f4748e2ebb",
+          "range": {
+            "start_line": 1,
+            "end_line": 194
+          },
+          "symbol": "wired-hooks-session"
+        },
+        {
+          "path": "src/plugins/wired-hooks-subagent.test.ts",
+          "blob_sha": "505c0eadb7eb4b87a2cd29a69bc13154123c7155",
+          "range": {
+            "start_line": 1,
+            "end_line": 91
+          },
+          "symbol": "wired-hooks-subagent"
+        },
+        {
+          "path": "src/plugins/worker-profile-suggestion.types.ts",
+          "blob_sha": "7a3f68768981bd38e79aefdbbe5cb01f545d5b5f",
+          "range": {
+            "start_line": 1,
+            "end_line": 15
+          },
+          "symbol": "worker-profile-suggestion.types"
+        },
+        {
+          "path": "src/plugins/worker-profile-suggestions.test.ts",
+          "blob_sha": "4313c98c7c4561ba7d32d3da2d7f23a057b6fe14",
+          "range": {
+            "start_line": 1,
+            "end_line": 83
+          },
+          "symbol": "worker-profile-suggestions"
+        },
+        {
+          "path": "src/plugins/worker-profile-suggestions.ts",
+          "blob_sha": "1b1fb3de9b58a29a7fe9ebb225fa180c3ac31884",
+          "range": {
+            "start_line": 1,
+            "end_line": 97
+          },
+          "symbol": "worker-profile-suggestions"
+        },
+        {
+          "path": "src/plugins/worker-provider-config.ts",
+          "blob_sha": "f40bc72bca8f76aa94d7787ac20f1244a1d2bb7d",
+          "range": {
+            "start_line": 1,
+            "end_line": 11
+          },
+          "symbol": "worker-provider-config"
+        },
+        {
+          "path": "src/plugins/worker-provider-id.ts",
+          "blob_sha": "67d60dcc938b37ec04610f4e1e3024c34b332dfa",
+          "range": {
+            "start_line": 1,
+            "end_line": 9
+          },
+          "symbol": "worker-provider-id"
+        },
+        {
+          "path": "src/plugins/worker-provider-maintenance.ts",
+          "blob_sha": "fc82473c3bfe5bb7bcb2f02ec2eba55fc1f34943",
+          "range": {
+            "start_line": 1,
+            "end_line": 118
+          },
+          "symbol": "worker-provider-maintenance"
+        },
+        {
+          "path": "src/plugins/worker-provider-manifest.ts",
+          "blob_sha": "70140a968ec84f7e51085137179a78f3f648bdc6",
+          "range": {
+            "start_line": 1,
+            "end_line": 49
+          },
+          "symbol": "worker-provider-manifest"
+        },
+        {
+          "path": "src/plugins/worker-provider-registry.test.ts",
+          "blob_sha": "eaf6be806ad8894fe225a4371193cfeccde30571",
+          "range": {
+            "start_line": 1,
+            "end_line": 342
+          },
+          "symbol": "worker-provider-registry"
+        },
+        {
+          "path": "src/plugins/worker-provider-registry.ts",
+          "blob_sha": "dd4bd06f64805325a9ba4c8ab1b39c2b9446b1c9",
+          "range": {
+            "start_line": 1,
+            "end_line": 88
+          },
+          "symbol": "worker-provider-registry"
+        }
+      ],
+      "evidence_refs": [
+        "source/host/tests/openclaw_process_plugin_contract.rs",
+        "projects/openclaw-rust/dossiers/process-plugin-scoped.md"
+      ],
+      "requirement_ids": [
+        "OCRM-R04",
+        "OCRM-R08",
+        "OCRM-R09",
+        "OCRM-R21",
+        "OCRM-R24",
+        "OCRM-AC08",
+        "OCRM-AC21",
+        "OCRM-AC24"
+      ],
+      "required_gate_ids": [
+        "OCRM-G04-rust-contract",
+        "OCRM-G05-frozen-oracle"
+      ],
+      "oracle_ids": [
+        "OCRM-PLUGINS-RUNTIME-O01"
+      ],
+      "adr_refs": [],
+      "blocker_ids": [
+        "BL-PLUGINS-RUNTIME-WIRING-001"
+      ],
+      "target": {
+        "path": "source/host/src/extensions/plugins/runtime_final.rs",
+        "symbol": "PluginRuntimeManager",
+        "language": "Rust"
+      },
+      "required_evidence_dimensions": [
+        "unit",
+        "format"
+      ],
+      "reviewer": "xuyao@ombhrum.com",
+      "migration_rollback": "Delete plugin files directly without structured uninstallation receipts"
+    },
+    {
+      "id": "OCRM-RESP-PROCESS-CUSTODY-EXECUTION-001",
+      "unit_id": "OCRM-UNIT-PROCESS-001",
+      "responsibility_kind": "business-runtime",
+      "behavior": "Bounded line framer with strict buffer limits, child process tree reaper sending signals (SIGTERM, SIGKILL) to process groups, and command custody capacity groups with deadline timeouts and cancellation tokens.",
+      "risk": "Critical; child process leaks cause orphan processes and zombie accumulation, and unbounded line framers cause memory exhaustion",
+      "status": {
+        "read": "read-complete",
+        "mapping": "reviewed",
+        "wiring": "not-wired",
+        "implementation": "implemented",
+        "verification": "not-run",
+        "acceptance": "pending"
+      },
+      "selected_owner": "source/host/src/extensions/process/command_custody.rs",
+      "existing_owner_candidates": [
+        {
+          "path": "source/host/src/extensions/process/command_custody.rs",
+          "reason": "Host command custody, capacity group, and deadline manager"
+        },
+        {
+          "path": "source/host/src/extensions/process/bounded_framer.rs",
+          "reason": "LF-delimited bounded line framer"
+        },
+        {
+          "path": "source/host/src/extensions/process/tree_reaper.rs",
+          "reason": "Process group tree tracker and signal reaper"
+        }
+      ],
+      "owner_decision": "Native implementation across process extension modules",
+      "dependencies": [
+        "mahayana_host_runtime::extensions::process::command_custody"
+      ],
+      "capability_ids": [
+        "process.custody_execution"
+      ],
+      "preconditions": [
+        "Command dispatched or stdout/stderr stream chunk received"
+      ],
+      "postconditions": [
+        "Capacity group limits strictly enforced; buffer limits respected"
+      ],
+      "invariants": [
+        "Lines exceeding max_bytes produce immediate overflow error; capacity exhaustion rejects command"
+      ],
+      "typed_contracts": [
+        "BoundedLineFramer",
+        "ChildProcessTreeTracker",
+        "CommandProcessCustody",
+        "SlotGuard"
+      ],
+      "tests": [
+        "source/host/tests/openclaw_process_plugin_contract.rs::test_ocrm_process_bounded_line_framer",
+        "source/host/tests/openclaw_process_plugin_contract.rs::test_ocrm_process_custody_and_tree_reaper"
+      ],
+      "integration": {
+        "producer": "source/host/src/extensions/process/bounded_framer.rs",
+        "owner": "source/host/src/extensions/process/command_custody.rs",
+        "consumer": "source/host/src/extensions/process/command_custody.rs",
+        "entrypoint": "source/host/src/extensions/process/command_custody.rs::CommandProcessCustody::acquire_slot"
+      },
+      "source_refs": [
+        {
+          "path": "src/process/appcontainer-spawn.test.ts",
+          "blob_sha": "ea084ac6af2d706fb898cbdf1edd456d67e2bca8",
+          "range": {
+            "start_line": 1,
+            "end_line": 76
+          },
+          "symbol": "appcontainer-spawn"
+        },
+        {
+          "path": "src/process/background-work.test.ts",
+          "blob_sha": "073d2b19ccab9689dacecb85d01fc16ed1f3c274",
+          "range": {
+            "start_line": 1,
+            "end_line": 329
+          },
+          "symbol": "background-work"
+        },
+        {
+          "path": "src/process/background-work.ts",
+          "blob_sha": "faf6c5b0dd453993b5e3b4787cba5133f66ee663",
+          "range": {
+            "start_line": 1,
+            "end_line": 71
+          },
+          "symbol": "background-work"
+        },
+        {
+          "path": "src/process/bounded-line-framer.test.ts",
+          "blob_sha": "ab3f5ca0e06b369c26f496db516e734a4629b547",
+          "range": {
+            "start_line": 1,
+            "end_line": 29
+          },
+          "symbol": "bounded-line-framer"
+        },
+        {
+          "path": "src/process/bounded-line-framer.ts",
+          "blob_sha": "e2395772f795cd0597b854c478f9f1cfb69bb5ea",
+          "range": {
+            "start_line": 1,
+            "end_line": 33
+          },
+          "symbol": "bounded-line-framer"
+        },
+        {
+          "path": "src/process/child-process-bridge.test.ts",
+          "blob_sha": "df3a82b13aef00f114cab28bc1a290ba024c64e4",
+          "range": {
+            "start_line": 1,
+            "end_line": 44
+          },
+          "symbol": "child-process-bridge"
+        },
+        {
+          "path": "src/process/child-process-bridge.ts",
+          "blob_sha": "fc0335648111a1d410294f12b36748c2295387af",
+          "range": {
+            "start_line": 1,
+            "end_line": 41
+          },
+          "symbol": "child-process-bridge"
+        },
+        {
+          "path": "src/process/child-process-tree.reaping.test.ts",
+          "blob_sha": "1c56e4f9a4c2607df4c323893bf3bb844c513114",
+          "range": {
+            "start_line": 1,
+            "end_line": 54
+          },
+          "symbol": "child-process-tree.reaping"
+        },
+        {
+          "path": "src/process/child-process-tree.ts",
+          "blob_sha": "d6d83b61cf67133a2111ed033a3e6f1025eaf2a3",
+          "range": {
+            "start_line": 1,
+            "end_line": 51
+          },
+          "symbol": "child-process-tree"
+        },
+        {
+          "path": "src/process/child-process.test.ts",
+          "blob_sha": "63c253fe56532a571906038bfc1ee109fce8d2b0",
+          "range": {
+            "start_line": 1,
+            "end_line": 107
+          },
+          "symbol": "child-process"
+        },
+        {
+          "path": "src/process/child-process.ts",
+          "blob_sha": "f02b9fd74cdc876d1e04b0c6d3594155ceb2f570",
+          "range": {
+            "start_line": 1,
+            "end_line": 68
+          },
+          "symbol": "child-process"
+        },
+        {
+          "path": "src/process/command-error.test.ts",
+          "blob_sha": "ac948164bea6ed80de8e9f7bff27afc51da221c2",
+          "range": {
+            "start_line": 1,
+            "end_line": 99
+          },
+          "symbol": "command-error"
+        },
+        {
+          "path": "src/process/command-error.ts",
+          "blob_sha": "6a49f9c79278aca9381b11a1323d30e6d351995b",
+          "range": {
+            "start_line": 1,
+            "end_line": 127
+          },
+          "symbol": "command-error"
+        },
+        {
+          "path": "src/process/command-lane-diagnostics.ts",
+          "blob_sha": "4ce9ec1947dcd7c9750cd7a5d5e23bf3449a709e",
+          "range": {
+            "start_line": 1,
+            "end_line": 92
+          },
+          "symbol": "command-lane-diagnostics"
+        },
+        {
+          "path": "src/process/command-process-custody.process.test.ts",
+          "blob_sha": "98d9bd2d280e76400d78b6b5bd8c0567ecd2ca35",
+          "range": {
+            "start_line": 1,
+            "end_line": 163
+          },
+          "symbol": "command-process-custody.process"
+        },
+        {
+          "path": "src/process/command-process-custody.test.ts",
+          "blob_sha": "25658815779658b388bf45307c8c564ea1304993",
+          "range": {
+            "start_line": 1,
+            "end_line": 79
+          },
+          "symbol": "command-process-custody"
+        },
+        {
+          "path": "src/process/command-process-custody.ts",
+          "blob_sha": "bdcd5ca888e5a8ee51c383e7cd93db1e4b44d829",
+          "range": {
+            "start_line": 1,
+            "end_line": 66
+          },
+          "symbol": "command-process-custody"
+        },
+        {
+          "path": "src/process/command-process-custody.types.ts",
+          "blob_sha": "d76990a46dbd7dbf31fb0ae2acba94b0c94f4504",
+          "range": {
+            "start_line": 1,
+            "end_line": 9
+          },
+          "symbol": "command-process-custody.types"
+        },
+        {
+          "path": "src/process/command-queue.cancellation.test.ts",
+          "blob_sha": "9bd739c39b38063a600e28df531ab5943baadcc1",
+          "range": {
+            "start_line": 1,
+            "end_line": 300
+          },
+          "symbol": "command-queue.cancellation"
+        },
+        {
+          "path": "src/process/command-queue.capacity-groups.test.ts",
+          "blob_sha": "83c97a3f41dda1a548f363604d76624fe85fcdef",
+          "range": {
+            "start_line": 1,
+            "end_line": 302
+          },
+          "symbol": "command-queue.capacity-groups"
+        },
+        {
+          "path": "src/process/command-queue.capacity-groups.ts",
+          "blob_sha": "f368cee64aa22e09039118518134147266f53e97",
+          "range": {
+            "start_line": 1,
+            "end_line": 266
+          },
+          "symbol": "command-queue.capacity-groups"
+        },
+        {
+          "path": "src/process/command-queue.failure-logging.test.ts",
+          "blob_sha": "506c1c5fa2f5367673eb82f3188c897c54369a4e",
+          "range": {
+            "start_line": 1,
+            "end_line": 59
+          },
+          "symbol": "command-queue.failure-logging"
+        },
+        {
+          "path": "src/process/command-queue.publish-transaction.test.ts",
+          "blob_sha": "0c3887f436599a756b2fa9878ab5e7378570e710",
+          "range": {
+            "start_line": 1,
+            "end_line": 233
+          },
+          "symbol": "command-queue.publish-transaction"
+        },
+        {
+          "path": "src/process/command-queue.state.ts",
+          "blob_sha": "6a26e75da34e1d13a89b140702ad71f8e779a0fb",
+          "range": {
+            "start_line": 1,
+            "end_line": 160
+          },
+          "symbol": "command-queue.state"
+        },
+        {
+          "path": "src/process/command-queue.test-support.ts",
+          "blob_sha": "99502b169421bbaff5306777644cb6199ff78066",
+          "range": {
+            "start_line": 1,
+            "end_line": 22
+          },
+          "symbol": "command-queue-support"
+        },
+        {
+          "path": "src/process/command-queue.test.ts",
+          "blob_sha": "ccbd0c0625caa6574566e6a509a8547ccecf34fe",
+          "range": {
+            "start_line": 1,
+            "end_line": 701
+          },
+          "symbol": "command-queue"
+        },
+        {
+          "path": "src/process/command-queue.ts",
+          "blob_sha": "288b21a537ab64fb18b868b7a555a30240bae38e",
+          "range": {
+            "start_line": 1,
+            "end_line": 490
+          },
+          "symbol": "command-queue"
+        },
+        {
+          "path": "src/process/command-queue.types.ts",
+          "blob_sha": "107e866cd24da6e3a2ad6fe1ec579b8e75cea6ad",
+          "range": {
+            "start_line": 1,
+            "end_line": 74
+          },
+          "symbol": "command-queue.types"
+        },
+        {
+          "path": "src/process/darwin-process-inspection.native.test.ts",
+          "blob_sha": "f5bdfc5c7346ced536abc620907abd42df569346",
+          "range": {
+            "start_line": 1,
+            "end_line": 165
+          },
+          "symbol": "darwin-process-inspection.native"
+        },
+        {
+          "path": "src/process/darwin-process-inspection.test-support.mjs",
+          "blob_sha": "fbb88af05c78891a54f7756cb0dbfd683bee0882",
+          "range": {
+            "start_line": 1,
+            "end_line": 85
+          },
+          "symbol": "darwin-process-inspection-support.mjs"
+        },
+        {
+          "path": "src/process/darwin-process-inspection.test.ts",
+          "blob_sha": "1a986251cb175b111446369d2f05c103b553dd12",
+          "range": {
+            "start_line": 1,
+            "end_line": 160
+          },
+          "symbol": "darwin-process-inspection"
+        },
+        {
+          "path": "src/process/darwin-process-inspection.ts",
+          "blob_sha": "8098941e8439167e2632972b5a1e8fd3cdcd0e8b",
+          "range": {
+            "start_line": 1,
+            "end_line": 169
+          },
+          "symbol": "darwin-process-inspection"
+        },
+        {
+          "path": "src/process/decoded-output.test.ts",
+          "blob_sha": "c952075f264e33a7361a52d3c85fae664be49dbf",
+          "range": {
+            "start_line": 1,
+            "end_line": 157
+          },
+          "symbol": "decoded-output"
+        },
+        {
+          "path": "src/process/decoded-output.ts",
+          "blob_sha": "adf5bf122a66d6af425c39c914d8761b74d13b38",
+          "range": {
+            "start_line": 1,
+            "end_line": 151
+          },
+          "symbol": "decoded-output"
+        },
+        {
+          "path": "src/process/exec-adopted-reaping.test.ts",
+          "blob_sha": "406b0115778161f9a5d41be275d6f8f5130e19cb",
+          "range": {
+            "start_line": 1,
+            "end_line": 183
+          },
+          "symbol": "exec-adopted-reaping"
+        },
+        {
+          "path": "src/process/exec-buffer-output.test.ts",
+          "blob_sha": "05c39e55c2a4451d5c76ab64079930f0268a5ed4",
+          "range": {
+            "start_line": 1,
+            "end_line": 79
+          },
+          "symbol": "exec-buffer-output"
+        },
+        {
+          "path": "src/process/exec-input-admission.test.ts",
+          "blob_sha": "0ca12eec758b96c669dd73d549a8c6e9fa39b5f1",
+          "range": {
+            "start_line": 1,
+            "end_line": 287
+          },
+          "symbol": "exec-input-admission"
+        },
+        {
+          "path": "src/process/exec-output-observer.test.ts",
+          "blob_sha": "80deb29d071343c6efe70c660098ecb0e32d8218",
+          "range": {
+            "start_line": 1,
+            "end_line": 50
+          },
+          "symbol": "exec-output-observer"
+        },
+        {
+          "path": "src/process/exec-output.retention.test-support.ts",
+          "blob_sha": "3785300a70017168ee212d9bae53911b775c7005",
+          "range": {
+            "start_line": 1,
+            "end_line": 67
+          },
+          "symbol": "exec-output.retention-support"
+        },
+        {
+          "path": "src/process/exec-output.retention.test.ts",
+          "blob_sha": "4da55a604cda46c9e7d2c49e36fbb357950f4a82",
+          "range": {
+            "start_line": 1,
+            "end_line": 32
+          },
+          "symbol": "exec-output.retention"
+        },
+        {
+          "path": "src/process/exec-output.ts",
+          "blob_sha": "65976971d8581271aa7961ab2a9d9cb05f94cdaf",
+          "range": {
+            "start_line": 1,
+            "end_line": 195
+          },
+          "symbol": "exec-output"
+        },
+        {
+          "path": "src/process/exec-result.ts",
+          "blob_sha": "a49237d1ffb41442ef15abdba28a5ae0d83dfef7",
+          "range": {
+            "start_line": 1,
+            "end_line": 200
+          },
+          "symbol": "exec-result"
+        },
+        {
+          "path": "src/process/exec-runner.timeout.test.ts",
+          "blob_sha": "e0e42a03bb784951c517d4961ea7a8242c0f4ce2",
+          "range": {
+            "start_line": 1,
+            "end_line": 214
+          },
+          "symbol": "exec-runner.timeout"
+        },
+        {
+          "path": "src/process/exec-runner.ts",
+          "blob_sha": "e9a9c349eddab54fc6f697f75463bfca858f9708",
+          "range": {
+            "start_line": 1,
+            "end_line": 776
+          },
+          "symbol": "exec-runner"
+        },
+        {
+          "path": "src/process/exec-scope-settlement.test.ts",
+          "blob_sha": "e773579bc3730c72bea6a15388c3b8ce4bfc2e62",
+          "range": {
+            "start_line": 1,
+            "end_line": 465
+          },
+          "symbol": "exec-scope-settlement"
+        },
+        {
+          "path": "src/process/exec-spawn.test.ts",
+          "blob_sha": "9657a870ff66f752a08221570238885cf5c3295a",
+          "range": {
+            "start_line": 1,
+            "end_line": 323
+          },
+          "symbol": "exec-spawn"
+        },
+        {
+          "path": "src/process/exec-spawn.ts",
+          "blob_sha": "441227942b5c411ef411423ae9499eac17f2069a",
+          "range": {
+            "start_line": 1,
+            "end_line": 531
+          },
+          "symbol": "exec-spawn"
+        },
+        {
+          "path": "src/process/exec-stdin-file.test.ts",
+          "blob_sha": "465fde587d93cc2568257936a2e96c0ea424af67",
+          "range": {
+            "start_line": 1,
+            "end_line": 89
+          },
+          "symbol": "exec-stdin-file"
+        },
+        {
+          "path": "src/process/exec-termination.liveness.test.ts",
+          "blob_sha": "74dabf0ca05c5e26420ced9198acf666fadf873f",
+          "range": {
+            "start_line": 1,
+            "end_line": 130
+          },
+          "symbol": "exec-termination.liveness"
+        },
+        {
+          "path": "src/process/exec-termination.test.ts",
+          "blob_sha": "9338c4fc21acc3c2872776fd01fc82e9066c68f5",
+          "range": {
+            "start_line": 1,
+            "end_line": 361
+          },
+          "symbol": "exec-termination"
+        },
+        {
+          "path": "src/process/exec-termination.ts",
+          "blob_sha": "8b799aea4cccb13dd5b76b4b25c49b4c025cf5d1",
+          "range": {
+            "start_line": 1,
+            "end_line": 223
+          },
+          "symbol": "exec-termination"
+        },
+        {
+          "path": "src/process/exec.no-output-timer.test.ts",
+          "blob_sha": "164bab672030e787191d240ff5305bf2ac5db3f9",
+          "range": {
+            "start_line": 1,
+            "end_line": 42
+          },
+          "symbol": "exec.no-output-timer"
+        },
+        {
+          "path": "src/process/exec.test.ts",
+          "blob_sha": "8057c22de46eba1a9b6c19b0780ffb1c90a954ec",
+          "range": {
+            "start_line": 1,
+            "end_line": 745
+          },
+          "symbol": "exec"
+        },
+        {
+          "path": "src/process/exec.ts",
+          "blob_sha": "b46a1511556b7da193b88c6d29fdd9630f4b67d3",
+          "range": {
+            "start_line": 1,
+            "end_line": 405
+          },
+          "symbol": "exec"
+        },
+        {
+          "path": "src/process/exec.windows.integration.test.ts",
+          "blob_sha": "8a0522efba29d4dc2998e84f306aa0c00c550965",
+          "range": {
+            "start_line": 1,
+            "end_line": 230
+          },
+          "symbol": "exec.windows.integration"
+        },
+        {
+          "path": "src/process/exec.windows.test.ts",
+          "blob_sha": "a19fe3480d4d54c80878dc437298d72778bef983",
+          "range": {
+            "start_line": 1,
+            "end_line": 483
+          },
+          "symbol": "exec.windows"
+        },
+        {
+          "path": "src/process/expected-run-cancellation.ts",
+          "blob_sha": "14381fcecf3153ea19cb804e917de33faaba417c",
+          "range": {
+            "start_line": 1,
+            "end_line": 22
+          },
+          "symbol": "expected-run-cancellation"
+        },
+        {
+          "path": "src/process/gateway-work-admission.continuation.test.ts",
+          "blob_sha": "710e278875bb040404d02839c075078db5b865c6",
+          "range": {
+            "start_line": 1,
+            "end_line": 133
+          },
+          "symbol": "gateway-work-admission.continuation"
+        },
+        {
+          "path": "src/process/gateway-work-admission.test-helpers.ts",
+          "blob_sha": "f93670b75c6c470be9a8ab52f45512a7ca25bb54",
+          "range": {
+            "start_line": 1,
+            "end_line": 10
+          },
+          "symbol": "gateway-work-admission-helpers"
+        },
+        {
+          "path": "src/process/gateway-work-admission.test.ts",
+          "blob_sha": "119bfeb1832cfd20bf6ec8aa73ca31207abc0666",
+          "range": {
+            "start_line": 1,
+            "end_line": 817
+          },
+          "symbol": "gateway-work-admission"
+        },
+        {
+          "path": "src/process/gateway-work-admission.ts",
+          "blob_sha": "695465ddf131bb2be90d17f5fa22b01f6d3a7678",
+          "range": {
+            "start_line": 1,
+            "end_line": 827
+          },
+          "symbol": "gateway-work-admission"
+        },
+        {
+          "path": "src/process/kill-tree.test.ts",
+          "blob_sha": "5fba870d269d7b00a0a666183f3dc68509900e17",
+          "range": {
+            "start_line": 1,
+            "end_line": 691
+          },
+          "symbol": "kill-tree"
+        },
+        {
+          "path": "src/process/kill-tree.ts",
+          "blob_sha": "1a0ccc2f9732f307de6f87604fab3fec24d79514",
+          "range": {
+            "start_line": 1,
+            "end_line": 11
+          },
+          "symbol": "kill-tree"
+        },
+        {
+          "path": "src/process/lanes.ts",
+          "blob_sha": "0a83f032bdce0d2a504ef86441b74f73131c1c1c",
+          "range": {
+            "start_line": 1,
+            "end_line": 39
+          },
+          "symbol": "lanes"
+        },
+        {
+          "path": "src/process/linux-oom-score.test.ts",
+          "blob_sha": "167d134bfdc1df1cba3d6f6749138f1bfc6f583f",
+          "range": {
+            "start_line": 1,
+            "end_line": 250
+          },
+          "symbol": "linux-oom-score"
+        },
+        {
+          "path": "src/process/linux-oom-score.ts",
+          "blob_sha": "dae8682866f6a27102779fc4bdc64e5f968276af",
+          "range": {
+            "start_line": 1,
+            "end_line": 268
+          },
+          "symbol": "linux-oom-score"
+        },
+        {
+          "path": "src/process/orphaned-process.test.ts",
+          "blob_sha": "507362fbca5cafc8377c6cfe2394d9db914954a8",
+          "range": {
+            "start_line": 1,
+            "end_line": 257
+          },
+          "symbol": "orphaned-process"
+        },
+        {
+          "path": "src/process/orphaned-process.ts",
+          "blob_sha": "ee0610e508600de043888f9f47a129779ad4a4f2",
+          "range": {
+            "start_line": 1,
+            "end_line": 226
+          },
+          "symbol": "orphaned-process"
+        },
+        {
+          "path": "src/process/output-drain.ts",
+          "blob_sha": "7fb0f5d906e839020e28e88bbdc5a8af4e43462a",
+          "range": {
+            "start_line": 1,
+            "end_line": 17
+          },
+          "symbol": "output-drain"
+        },
+        {
+          "path": "src/process/owned-stdio.real.test.ts",
+          "blob_sha": "33cf9b170a9d44ecbad455a9926c30c0b65f08fa",
+          "range": {
+            "start_line": 1,
+            "end_line": 99
+          },
+          "symbol": "owned-stdio.real"
+        },
+        {
+          "path": "src/process/owned-stdio.test.ts",
+          "blob_sha": "eb3f197d511ecf49c9f035af4f4cb4afd2bc9821",
+          "range": {
+            "start_line": 1,
+            "end_line": 52
+          },
+          "symbol": "owned-stdio"
+        },
+        {
+          "path": "src/process/owned-stdio.ts",
+          "blob_sha": "7a33b6b825ed800ad250301127bfe61adfa906ee",
+          "range": {
+            "start_line": 1,
+            "end_line": 102
+          },
+          "symbol": "owned-stdio"
+        },
+        {
+          "path": "src/process/owned-stdio.windows.test.ts",
+          "blob_sha": "e986a7549ed4d2e7c9719f86939f6399100a3065",
+          "range": {
+            "start_line": 1,
+            "end_line": 330
+          },
+          "symbol": "owned-stdio.windows"
+        },
+        {
+          "path": "src/process/pipe-output.test.ts",
+          "blob_sha": "748cc95f2f9adbc78c044511405be2317c3efbfa",
+          "range": {
+            "start_line": 1,
+            "end_line": 77
+          },
+          "symbol": "pipe-output"
+        },
+        {
+          "path": "src/process/pipe-output.ts",
+          "blob_sha": "21dc72074f8ba0b0dd049688453978f489bd0007",
+          "range": {
+            "start_line": 1,
+            "end_line": 26
+          },
+          "symbol": "pipe-output"
+        },
+        {
+          "path": "src/process/process-deadline.ts",
+          "blob_sha": "f27739e7a74151690bfe2f73e904811b0e1d63d7",
+          "range": {
+            "start_line": 1,
+            "end_line": 16
+          },
+          "symbol": "process-deadline"
+        },
+        {
+          "path": "src/process/process-probes-runtime.test-support.ts",
+          "blob_sha": "caecccd29ae8768a2d21af8b4e73d1a8a91414f0",
+          "range": {
+            "start_line": 1,
+            "end_line": 18
+          },
+          "symbol": "process-probes-runtime-support"
+        },
+        {
+          "path": "src/process/pty-terminal-name.ts",
+          "blob_sha": "61f97d6142a3dfa5b2dc697c98efffcc034c4822",
+          "range": {
+            "start_line": 1,
+            "end_line": 18
+          },
+          "symbol": "pty-terminal-name"
+        },
+        {
+          "path": "src/process/respawn-child-runner.process.test.ts",
+          "blob_sha": "470de16975cf951f2fcf65d25574d65d2e8c10a4",
+          "range": {
+            "start_line": 1,
+            "end_line": 108
+          },
+          "symbol": "respawn-child-runner.process"
+        },
+        {
+          "path": "src/process/respawn-child-runner.test.ts",
+          "blob_sha": "08ac7da056499fdd0993f1abe41f91f150972114",
+          "range": {
+            "start_line": 1,
+            "end_line": 200
+          },
+          "symbol": "respawn-child-runner"
+        },
+        {
+          "path": "src/process/respawn-child-runner.ts",
+          "blob_sha": "6686316ab35237801bff584be554f437c25bec25",
+          "range": {
+            "start_line": 1,
+            "end_line": 127
+          },
+          "symbol": "respawn-child-runner"
+        },
+        {
+          "path": "src/process/retention-runtime.test-support.ts",
+          "blob_sha": "488677120b862af9044c1792aefbbadeb92f7504",
+          "range": {
+            "start_line": 1,
+            "end_line": 6
+          },
+          "symbol": "retention-runtime-support"
+        },
+        {
+          "path": "src/process/scoped-child-reaper.test.ts",
+          "blob_sha": "5901b3779b1312cbf5b61af63c6ed91df39f3e1e",
+          "range": {
+            "start_line": 1,
+            "end_line": 317
+          },
+          "symbol": "scoped-child-reaper"
+        },
+        {
+          "path": "src/process/scoped-child-reaper.ts",
+          "blob_sha": "c5537828b7d86b6316ee7706840803884fd66c36",
+          "range": {
+            "start_line": 1,
+            "end_line": 118
+          },
+          "symbol": "scoped-child-reaper"
+        },
+        {
+          "path": "src/process/spawn-broker/broker-fixture.test-support.ts",
+          "blob_sha": "77d4a4a17640bd0bad6ee7955aa376f72d8c2b09",
+          "range": {
+            "start_line": 1,
+            "end_line": 36
+          },
+          "symbol": "broker-fixture-support"
+        },
+        {
+          "path": "src/process/spawn-broker/callback-context.test.ts",
+          "blob_sha": "916a7640a05d8195c96cf92426f7e171699c416a",
+          "range": {
+            "start_line": 1,
+            "end_line": 60
+          },
+          "symbol": "callback-context"
+        },
+        {
+          "path": "src/process/spawn-broker/child-completion.ts",
+          "blob_sha": "5069bb0d44fd1130596c432b74d14a37a925f7ae",
+          "range": {
+            "start_line": 1,
+            "end_line": 45
+          },
+          "symbol": "child-completion"
+        },
+        {
+          "path": "src/process/spawn-broker/child-diagnostics.ts",
+          "blob_sha": "215b7903ea022a8ac1c25f7bf91a1bb23bec3eb1",
+          "range": {
+            "start_line": 1,
+            "end_line": 32
+          },
+          "symbol": "child-diagnostics"
+        },
+        {
+          "path": "src/process/spawn-broker/child.ts",
+          "blob_sha": "8cffbe5daa7a5b59b8949a88a0769b55231c4e6a",
+          "range": {
+            "start_line": 1,
+            "end_line": 313
+          },
+          "symbol": "child"
+        },
+        {
+          "path": "src/process/spawn-broker/cleanup-attached.test.ts",
+          "blob_sha": "fa8340a25bbef90a0de3f4c6ee462ba8bcc0a8df",
+          "range": {
+            "start_line": 1,
+            "end_line": 94
+          },
+          "symbol": "cleanup-attached"
+        },
+        {
+          "path": "src/process/spawn-broker/cleanup-group.test.ts",
+          "blob_sha": "ac740522fefc7ec5f98a617d073654adc99aa4dc",
+          "range": {
+            "start_line": 1,
+            "end_line": 99
+          },
+          "symbol": "cleanup-group"
+        },
+        {
+          "path": "src/process/spawn-broker/cleanup.test.ts",
+          "blob_sha": "3101111435057750d14a12e603b7ce381a4a50f3",
+          "range": {
+            "start_line": 1,
+            "end_line": 53
+          },
+          "symbol": "cleanup"
+        },
+        {
+          "path": "src/process/spawn-broker/cleanup.ts",
+          "blob_sha": "43a4c5888556869d82436a36750970152117ee96",
+          "range": {
+            "start_line": 1,
+            "end_line": 228
+          },
+          "symbol": "cleanup"
+        },
+        {
+          "path": "src/process/spawn-broker/command-startup.test.ts",
+          "blob_sha": "247813d91ea1d55df174a8dcc22fe4a9e44579fa",
+          "range": {
+            "start_line": 1,
+            "end_line": 164
+          },
+          "symbol": "command-startup"
+        },
+        {
+          "path": "src/process/spawn-broker/context-runtime.test-support.ts",
+          "blob_sha": "5919da97059550c86ed45ac4b2438d5863efbaa0",
+          "range": {
+            "start_line": 1,
+            "end_line": 15
+          },
+          "symbol": "context-runtime-support"
+        },
+        {
+          "path": "src/process/spawn-broker/context.test.ts",
+          "blob_sha": "af833cd47b8eb14f3ab6ebdcf7d959c12fcff1d5",
+          "range": {
+            "start_line": 1,
+            "end_line": 196
+          },
+          "symbol": "context"
+        },
+        {
+          "path": "src/process/spawn-broker/context.ts",
+          "blob_sha": "e0776f519bd9b5f8af0fa9bfd6663fd25738262e",
+          "range": {
+            "start_line": 1,
+            "end_line": 55
+          },
+          "symbol": "context"
+        },
+        {
+          "path": "src/process/spawn-broker/detached-cleanup.test.ts",
+          "blob_sha": "22fe100ea9dc2a4b54f2a0cbaa443b7edc096f4b",
+          "range": {
+            "start_line": 1,
+            "end_line": 111
+          },
+          "symbol": "detached-cleanup"
+        },
+        {
+          "path": "src/process/spawn-broker/event-order.test.ts",
+          "blob_sha": "d3b8c7c99bb7b4911c58d95b2d378ee9dd01ec28",
+          "range": {
+            "start_line": 1,
+            "end_line": 117
+          },
+          "symbol": "event-order"
+        },
+        {
+          "path": "src/process/spawn-broker/execa-client.ts",
+          "blob_sha": "cb5232f90ab9e2e8cef431a372640ad6ab9437f7",
+          "range": {
+            "start_line": 1,
+            "end_line": 129
+          },
+          "symbol": "execa-client"
+        },
+        {
+          "path": "src/process/spawn-broker/execa-protocol.ts",
+          "blob_sha": "b3428c7d2a9281fa170fe5362fdbc2de2c45d89b",
+          "range": {
+            "start_line": 1,
+            "end_line": 137
+          },
+          "symbol": "execa-protocol"
+        },
+        {
+          "path": "src/process/spawn-broker/execa-types.ts",
+          "blob_sha": "61f1c9b8d2a122f386a7e8039cd95ee8fcb840fd",
+          "range": {
+            "start_line": 1,
+            "end_line": 49
+          },
+          "symbol": "execa-types"
+        },
+        {
+          "path": "src/process/spawn-broker/execa-worker.test.ts",
+          "blob_sha": "fba05648e1cd3e421728640272e68b16d72dede9",
+          "range": {
+            "start_line": 1,
+            "end_line": 112
+          },
+          "symbol": "execa-worker"
+        },
+        {
+          "path": "src/process/spawn-broker/execa-worker.ts",
+          "blob_sha": "f88eb5be75be85d0142830a113d8ab768fb30192",
+          "range": {
+            "start_line": 1,
+            "end_line": 300
+          },
+          "symbol": "execa-worker"
+        },
+        {
+          "path": "src/process/spawn-broker/execa.test.ts",
+          "blob_sha": "e7afff064da03c4a4d12bb44149d890da6e27282",
+          "range": {
+            "start_line": 1,
+            "end_line": 400
+          },
+          "symbol": "execa"
+        },
+        {
+          "path": "src/process/spawn-broker/execution-deadline.test.ts",
+          "blob_sha": "00362a80626dd80a72b9620365d70eaac54b1375",
+          "range": {
+            "start_line": 1,
+            "end_line": 80
+          },
+          "symbol": "execution-deadline"
+        },
+        {
+          "path": "src/process/spawn-broker/file-reads.ts",
+          "blob_sha": "4136f78ae25eb19589367c91f13c422f29ef09d3",
+          "range": {
+            "start_line": 1,
+            "end_line": 70
+          },
+          "symbol": "file-reads"
+        },
+        {
+          "path": "src/process/spawn-broker/group-custody.test.ts",
+          "blob_sha": "a55310165b44466d1e611f03353361f9d54ddf57",
+          "range": {
+            "start_line": 1,
+            "end_line": 82
+          },
+          "symbol": "group-custody"
+        },
+        {
+          "path": "src/process/spawn-broker/handoff-crash.test.ts",
+          "blob_sha": "3053e6cdcf7ed7201ae5e3fc9ea3598897ca3709",
+          "range": {
+            "start_line": 1,
+            "end_line": 123
+          },
+          "symbol": "handoff-crash"
+        },
+        {
+          "path": "src/process/spawn-broker/handoff.test.ts",
+          "blob_sha": "c0754975f842cd40274512c52bb6d156709d890a",
+          "range": {
+            "start_line": 1,
+            "end_line": 102
+          },
+          "symbol": "handoff"
+        },
+        {
+          "path": "src/process/spawn-broker/host-native-lifetime.test.ts",
+          "blob_sha": "2ca0d0ee576de088fea69d025c5262099633cf75",
+          "range": {
+            "start_line": 1,
+            "end_line": 96
+          },
+          "symbol": "host-native-lifetime"
+        },
+        {
+          "path": "src/process/spawn-broker/host-scope-settlement.test.ts",
+          "blob_sha": "a0539e4fcc32900141c641aa65c43cb1166b9a3e",
+          "range": {
+            "start_line": 1,
+            "end_line": 340
+          },
+          "symbol": "host-scope-settlement"
+        },
+        {
+          "path": "src/process/spawn-broker/host-stderr.test.ts",
+          "blob_sha": "8d53f7138b9b02a1d4ae3a3efa96825cff7e60f9",
+          "range": {
+            "start_line": 1,
+            "end_line": 178
+          },
+          "symbol": "host-stderr"
+        },
+        {
+          "path": "src/process/spawn-broker/host-transport-retirement.test.ts",
+          "blob_sha": "f574be0b096ce9e31e68ed7399b9ef696c20d032",
+          "range": {
+            "start_line": 1,
+            "end_line": 342
+          },
+          "symbol": "host-transport-retirement"
+        },
+        {
+          "path": "src/process/spawn-broker/host.test-support.ts",
+          "blob_sha": "2c28c094e38f29f9657a3992235c53033a58c56d",
+          "range": {
+            "start_line": 1,
+            "end_line": 15
+          },
+          "symbol": "host-support"
+        },
+        {
+          "path": "src/process/spawn-broker/host.test.ts",
+          "blob_sha": "d65baf1a343b55aec7d3aec4502b858c9638fbdb",
+          "range": {
+            "start_line": 1,
+            "end_line": 573
+          },
+          "symbol": "host"
+        },
+        {
+          "path": "src/process/spawn-broker/host.ts",
+          "blob_sha": "d440d37816a58c89f0cbeb41c0e902ee36c07ece",
+          "range": {
+            "start_line": 1,
+            "end_line": 756
+          },
+          "symbol": "host"
+        },
+        {
+          "path": "src/process/spawn-broker/ipc.test.ts",
+          "blob_sha": "fe0e842a77730766e66311eecc57481ccb9a5929",
+          "range": {
+            "start_line": 1,
+            "end_line": 69
+          },
+          "symbol": "ipc"
+        },
+        {
+          "path": "src/process/spawn-broker/ipc.ts",
+          "blob_sha": "ef7830b750d31bacc017ee5253a74d7d83047564",
+          "range": {
+            "start_line": 1,
+            "end_line": 162
+          },
+          "symbol": "ipc"
+        },
+        {
+          "path": "src/process/spawn-broker/node-runtime.test.ts",
+          "blob_sha": "29e17992a7fc0dc22a299452c9319b50a0bd21a8",
+          "range": {
+            "start_line": 1,
+            "end_line": 111
+          },
+          "symbol": "node-runtime"
+        },
+        {
+          "path": "src/process/spawn-broker/pipe.ts",
+          "blob_sha": "647f4e45b5fa77b8cd04e75ab34fdf6cb555e58a",
+          "range": {
+            "start_line": 1,
+            "end_line": 161
+          },
+          "symbol": "pipe"
+        },
+        {
+          "path": "src/process/spawn-broker/protocol.ts",
+          "blob_sha": "12dd68ee2c2ea954e6d4fa0ca70e31c39c702510",
+          "range": {
+            "start_line": 1,
+            "end_line": 83
+          },
+          "symbol": "protocol"
+        },
+        {
+          "path": "src/process/spawn-broker/proxy-retention.test.ts",
+          "blob_sha": "3e4d0d8cf49c38e5aa807eabf5d5cfa8beeaf34e",
+          "range": {
+            "start_line": 1,
+            "end_line": 54
+          },
+          "symbol": "proxy-retention"
+        },
+        {
+          "path": "src/process/spawn-broker/relay-integration.test.ts",
+          "blob_sha": "bcf1625b8e26f65e8abdafa1680d331dd0543805",
+          "range": {
+            "start_line": 1,
+            "end_line": 112
+          },
+          "symbol": "relay-integration"
+        },
+        {
+          "path": "src/process/spawn-broker/relay-integration.ts",
+          "blob_sha": "b373dd258eab20c8a60a070d05dcd80e35838947",
+          "range": {
+            "start_line": 1,
+            "end_line": 166
+          },
+          "symbol": "relay-integration"
+        },
+        {
+          "path": "src/process/spawn-broker/relay.test.ts",
+          "blob_sha": "81db86a7ca7d688e64de1604c004d0b740be6c52",
+          "range": {
+            "start_line": 1,
+            "end_line": 114
+          },
+          "symbol": "relay"
+        },
+        {
+          "path": "src/process/spawn-broker/resource-authority.ts",
+          "blob_sha": "63781a6c76e7e25aaf1e4428725112abe51c1898",
+          "range": {
+            "start_line": 1,
+            "end_line": 29
+          },
+          "symbol": "resource-authority"
+        },
+        {
+          "path": "src/process/spawn-broker/resource-client.ts",
+          "blob_sha": "dc23545637aa5e8ddd05f5d732fe59d89181738b",
+          "range": {
+            "start_line": 1,
+            "end_line": 211
+          },
+          "symbol": "resource-client"
+        },
+        {
+          "path": "src/process/spawn-broker/resource-host.test.ts",
+          "blob_sha": "fcf165557c3d5f73854c981a92ab7843c9e9f661",
+          "range": {
+            "start_line": 1,
+            "end_line": 303
+          },
+          "symbol": "resource-host"
+        },
+        {
+          "path": "src/process/spawn-broker/resource-host.ts",
+          "blob_sha": "a85633e89ddad5d48ce1c7bce58f960e1ed9a2b7",
+          "range": {
+            "start_line": 1,
+            "end_line": 345
+          },
+          "symbol": "resource-host"
+        },
+        {
+          "path": "src/process/spawn-broker/resource-port.ts",
+          "blob_sha": "563a048e83da407a50c08e88ea876c2c4edcbc0e",
+          "range": {
+            "start_line": 1,
+            "end_line": 25
+          },
+          "symbol": "resource-port"
+        },
+        {
+          "path": "src/process/spawn-broker/resource-protocol.ts",
+          "blob_sha": "e13653ca4f25d994aa62690be2ec58b890ec5f66",
+          "range": {
+            "start_line": 1,
+            "end_line": 70
+          },
+          "symbol": "resource-protocol"
+        },
+        {
+          "path": "src/process/spawn-broker/resource-server.test.ts",
+          "blob_sha": "75096bba5f11a7e3ce36528fe18ae1a45a6c644b",
+          "range": {
+            "start_line": 1,
+            "end_line": 115
+          },
+          "symbol": "resource-server"
+        },
+        {
+          "path": "src/process/spawn-broker/resource-server.ts",
+          "blob_sha": "0ef5a94f886c2e3b956fe2e7d6c8fe9627009fbb",
+          "range": {
+            "start_line": 1,
+            "end_line": 460
+          },
+          "symbol": "resource-server"
+        },
+        {
+          "path": "src/process/spawn-broker/resource-socket.test.ts",
+          "blob_sha": "21a65854982682a1e75ddd7463ef925c9c09f980",
+          "range": {
+            "start_line": 1,
+            "end_line": 151
+          },
+          "symbol": "resource-socket"
+        },
+        {
+          "path": "src/process/spawn-broker/resource-socket.ts",
+          "blob_sha": "84e110c188449a7f1c412f77789521b288a47977",
+          "range": {
+            "start_line": 1,
+            "end_line": 120
+          },
+          "symbol": "resource-socket"
+        },
+        {
+          "path": "src/process/spawn-broker/resource-transport.test.ts",
+          "blob_sha": "357e3ebf7ff94f1039a8fc06e1c1d760cd836186",
+          "range": {
+            "start_line": 1,
+            "end_line": 157
+          },
+          "symbol": "resource-transport"
+        },
+        {
+          "path": "src/process/spawn-broker/restart.test.ts",
+          "blob_sha": "b083f94726c1a975ae7f7651b98dc582067c072c",
+          "range": {
+            "start_line": 1,
+            "end_line": 82
+          },
+          "symbol": "restart"
+        },
+        {
+          "path": "src/process/spawn-broker/spawn-failure.test.ts",
+          "blob_sha": "7db3e616b822f35373ce627d04484c2edd93cd38",
+          "range": {
+            "start_line": 1,
+            "end_line": 142
+          },
+          "symbol": "spawn-failure"
+        },
+        {
+          "path": "src/process/spawn-broker/startup.test.ts",
+          "blob_sha": "88aea23e53c862b26d5ce594b1cd775a3060c902",
+          "range": {
+            "start_line": 1,
+            "end_line": 134
+          },
+          "symbol": "startup"
+        },
+        {
+          "path": "src/process/spawn-broker/stdin-handoff.test.ts",
+          "blob_sha": "828f613c5edddd7e27e646d60a9a4b93e675c5a4",
+          "range": {
+            "start_line": 1,
+            "end_line": 47
+          },
+          "symbol": "stdin-handoff"
+        },
+        {
+          "path": "src/process/spawn-broker/transports.test.ts",
+          "blob_sha": "2f5bcf2259cd2866334c2584dd01fa970a77549e",
+          "range": {
+            "start_line": 1,
+            "end_line": 109
+          },
+          "symbol": "transports"
+        },
+        {
+          "path": "src/process/spawn-broker/worker-admission-settlement.test.ts",
+          "blob_sha": "8adc99b813a2be97285d90c3af1196842a70064b",
+          "range": {
+            "start_line": 1,
+            "end_line": 168
+          },
+          "symbol": "worker-admission-settlement"
+        },
+        {
+          "path": "src/process/spawn-broker/worker-sender.ts",
+          "blob_sha": "8a36e8d5937639a212c35e6ecc404d85f094d9e1",
+          "range": {
+            "start_line": 1,
+            "end_line": 71
+          },
+          "symbol": "worker-sender"
+        },
+        {
+          "path": "src/process/spawn-broker/worker.ts",
+          "blob_sha": "14eb46aec5cf470244d20228a52dee42c4577539",
+          "range": {
+            "start_line": 1,
+            "end_line": 652
+          },
+          "symbol": "worker"
+        },
+        {
+          "path": "src/process/spawn-diagnostics.ts",
+          "blob_sha": "1dec1b04c0247e5de0d172e42c32bfe4c4903110",
+          "range": {
+            "start_line": 1,
+            "end_line": 240
+          },
+          "symbol": "spawn-diagnostics"
+        },
+        {
+          "path": "src/process/spawn-initiation.ts",
+          "blob_sha": "08410196f92808bbc29b6e6319961c0f35add5e2",
+          "range": {
+            "start_line": 1,
+            "end_line": 5
+          },
+          "symbol": "spawn-initiation"
+        },
+        {
+          "path": "src/process/spawn-secret-input.test.ts",
+          "blob_sha": "d682763f060457f9999764d9edcfbb8f3a1acc8c",
+          "range": {
+            "start_line": 1,
+            "end_line": 216
+          },
+          "symbol": "spawn-secret-input"
+        },
+        {
+          "path": "src/process/spawn-secret-input.ts",
+          "blob_sha": "35b5a9e0c09596fe7833b38721335507b364f0d4",
+          "range": {
+            "start_line": 1,
+            "end_line": 123
+          },
+          "symbol": "spawn-secret-input"
+        },
+        {
+          "path": "src/process/spawn-utils.test.ts",
+          "blob_sha": "7666990c853dbf9c50d8b2fedcfe2d150cebb35d",
+          "range": {
+            "start_line": 1,
+            "end_line": 411
+          },
+          "symbol": "spawn-utils"
+        },
+        {
+          "path": "src/process/spawn-utils.ts",
+          "blob_sha": "6895315bc2c6d8ca79b34999f3724183bf3ae2ba",
+          "range": {
+            "start_line": 1,
+            "end_line": 66
+          },
+          "symbol": "spawn-utils"
+        },
+        {
+          "path": "src/process/supervisor/adapters/child-stdin.test.ts",
+          "blob_sha": "e79086ddc32021b2f6174e39ef3f6e3061bbf907",
+          "range": {
+            "start_line": 1,
+            "end_line": 50
+          },
+          "symbol": "child-stdin"
+        },
+        {
+          "path": "src/process/supervisor/adapters/child-stdin.ts",
+          "blob_sha": "747374668658af05e4983870b9ca004e7fb5741d",
+          "range": {
+            "start_line": 1,
+            "end_line": 74
+          },
+          "symbol": "child-stdin"
+        },
+        {
+          "path": "src/process/supervisor/adapters/child.events.test.ts",
+          "blob_sha": "3df1b682de843715c6d3a70cde6002bae0ad7b6f",
+          "range": {
+            "start_line": 1,
+            "end_line": 34
+          },
+          "symbol": "child.events"
+        },
+        {
+          "path": "src/process/supervisor/adapters/child.secret-abort.test.ts",
+          "blob_sha": "96a56da2b913dd6a2ca3865bebe9d07f4bc6e76b",
+          "range": {
+            "start_line": 1,
+            "end_line": 48
+          },
+          "symbol": "child.secret-abort"
+        },
+        {
+          "path": "src/process/supervisor/adapters/child.service-lifecycle.test-support.ts",
+          "blob_sha": "e44e0e6c833efe1515e955fc5f84231d42d8c63e",
+          "range": {
+            "start_line": 1,
+            "end_line": 92
+          },
+          "symbol": "child.service-lifecycle-support"
+        },
+        {
+          "path": "src/process/supervisor/adapters/child.service-lifecycle.test.ts",
+          "blob_sha": "3fdffc47160fb6da710946108baef7b7d2de08c8",
+          "range": {
+            "start_line": 1,
+            "end_line": 594
+          },
+          "symbol": "child.service-lifecycle"
+        },
+        {
+          "path": "src/process/supervisor/adapters/child.test-support.ts",
+          "blob_sha": "a2cc964c23c5f05ce44bdbd22b33375c60917415",
+          "range": {
+            "start_line": 1,
+            "end_line": 104
+          },
+          "symbol": "child-support"
+        },
+        {
+          "path": "src/process/supervisor/adapters/child.test.ts",
+          "blob_sha": "7a2b7cace7940ec5bf85ad0c87f0517089754b07",
+          "range": {
+            "start_line": 1,
+            "end_line": 595
+          },
+          "symbol": "child"
+        },
+        {
+          "path": "src/process/supervisor/adapters/child.ts",
+          "blob_sha": "abe19476cd37d5719251545a8e2d550656bbce9d",
+          "range": {
+            "start_line": 1,
+            "end_line": 714
+          },
+          "symbol": "child"
+        },
+        {
+          "path": "src/process/supervisor/adapters/env.ts",
+          "blob_sha": "4930c58f5c200d825d4fdc3bff713ac9a2160dd0",
+          "range": {
+            "start_line": 1,
+            "end_line": 8
+          },
+          "symbol": "env"
+        },
+        {
+          "path": "src/process/supervisor/adapters/process-events.ts",
+          "blob_sha": "ed793e25b883b48cadbfe4d76c81824164400690",
+          "range": {
+            "start_line": 1,
+            "end_line": 48
+          },
+          "symbol": "process-events"
+        },
+        {
+          "path": "src/process/supervisor/adapters/pty.test.ts",
+          "blob_sha": "8871413b99395cc848ca798000f603709110a2ab",
+          "range": {
+            "start_line": 1,
+            "end_line": 263
+          },
+          "symbol": "pty"
+        },
+        {
+          "path": "src/process/supervisor/adapters/pty.ts",
+          "blob_sha": "da47defc00c3acebae7150737b4aadf27588fe32",
+          "range": {
+            "start_line": 1,
+            "end_line": 175
+          },
+          "symbol": "pty"
+        },
+        {
+          "path": "src/process/supervisor/adapters/test-support.ts",
+          "blob_sha": "f82aa4f9d41c02e9fadba9cf13137222223871ab",
+          "range": {
+            "start_line": 1,
+            "end_line": 60
+          },
+          "symbol": "test-support"
+        },
+        {
+          "path": "src/process/supervisor/anchor-protocol.test-support.ts",
+          "blob_sha": "25a069d6eb4abf9d962f81166f0ad67df0bdc327",
+          "range": {
+            "start_line": 1,
+            "end_line": 72
+          },
+          "symbol": "anchor-protocol-support"
+        },
+        {
+          "path": "src/process/supervisor/cancellation-policy.ts",
+          "blob_sha": "8f5510d696de284499f606cda849e07907bb61e7",
+          "range": {
+            "start_line": 1,
+            "end_line": 3
+          },
+          "symbol": "cancellation-policy"
+        },
+        {
+          "path": "src/process/supervisor/cleanup-budget.ts",
+          "blob_sha": "a6c926d1495a9a915d6d2d4eb8a362d8c8c39593",
+          "range": {
+            "start_line": 1,
+            "end_line": 17
+          },
+          "symbol": "cleanup-budget"
+        },
+        {
+          "path": "src/process/supervisor/darwin-process-command.native.test.ts",
+          "blob_sha": "fe7b37c5814d6d53a3e0a5fbe55afee54756a28d",
+          "range": {
+            "start_line": 1,
+            "end_line": 88
+          },
+          "symbol": "darwin-process-command.native"
+        },
+        {
+          "path": "src/process/supervisor/darwin-process-command.test.ts",
+          "blob_sha": "124f60fd8d09736ccb8a355551d0b54e5f3346fc",
+          "range": {
+            "start_line": 1,
+            "end_line": 128
+          },
+          "symbol": "darwin-process-command"
+        },
+        {
+          "path": "src/process/supervisor/darwin-process-command.ts",
+          "blob_sha": "18c79472af907c17f2b069586f2e622d35826e34",
+          "range": {
+            "start_line": 1,
+            "end_line": 63
+          },
+          "symbol": "darwin-process-command"
+        },
+        {
+          "path": "src/process/supervisor/index.ts",
+          "blob_sha": "043c176fcedcc10e022aceed316fdedc41bb0454",
+          "range": {
+            "start_line": 1,
+            "end_line": 23
+          },
+          "symbol": "index"
+        },
+        {
+          "path": "src/process/supervisor/inherited-process-lineage.ts",
+          "blob_sha": "c45aa9c5f802ec160738572517c20b9a5119907c",
+          "range": {
+            "start_line": 1,
+            "end_line": 20
+          },
+          "symbol": "inherited-process-lineage"
+        },
+        {
+          "path": "src/process/supervisor/linux-child-subreaper.ts",
+          "blob_sha": "2fefc486b6b9ac488bf5a505cd73bae43998310f",
+          "range": {
+            "start_line": 1,
+            "end_line": 129
+          },
+          "symbol": "linux-child-subreaper"
+        },
+        {
+          "path": "src/process/supervisor/service-child-cleanup-deadline.ts",
+          "blob_sha": "fc179287902f116d496bb45b06e88a074c9c7e77",
+          "range": {
+            "start_line": 1,
+            "end_line": 67
+          },
+          "symbol": "service-child-cleanup-deadline"
+        },
+        {
+          "path": "src/process/supervisor/service-child-cleanup.test.ts",
+          "blob_sha": "a5cd498a99ec6d4369dbae56502b947fe8a8383f",
+          "range": {
+            "start_line": 1,
+            "end_line": 97
+          },
+          "symbol": "service-child-cleanup"
+        },
+        {
+          "path": "src/process/supervisor/service-child-control-reader.ts",
+          "blob_sha": "e2a21ea9fc30b6bd7e90bc1bf04cf0596abc812b",
+          "range": {
+            "start_line": 1,
+            "end_line": 21
+          },
+          "symbol": "service-child-control-reader"
+        },
+        {
+          "path": "src/process/supervisor/service-child-group-anchor.input-lifetime.test.ts",
+          "blob_sha": "c8479b9ab654e0a59e15d4c494f98e487bde7870",
+          "range": {
+            "start_line": 1,
+            "end_line": 137
+          },
+          "symbol": "service-child-group-anchor.input-lifetime"
+        },
+        {
+          "path": "src/process/supervisor/service-child-group-anchor.preparation.test-support.ts",
+          "blob_sha": "f9b0019bc1ab3692f24e2ffba022234eaf58a253",
+          "range": {
+            "start_line": 1,
+            "end_line": 285
+          },
+          "symbol": "service-child-group-anchor.preparation-support"
+        },
+        {
+          "path": "src/process/supervisor/service-child-group-anchor.preparation.test.ts",
+          "blob_sha": "1df6219c62d59682e217c92583ffcb989f44ceaf",
+          "range": {
+            "start_line": 1,
+            "end_line": 151
+          },
+          "symbol": "service-child-group-anchor.preparation"
+        },
+        {
+          "path": "src/process/supervisor/service-child-group-anchor.retirement.test.ts",
+          "blob_sha": "a857d0f6c5a5dc6a1890ad4c777fb1b7232312a4",
+          "range": {
+            "start_line": 1,
+            "end_line": 166
+          },
+          "symbol": "service-child-group-anchor.retirement"
+        },
+        {
+          "path": "src/process/supervisor/service-child-group-anchor.ts",
+          "blob_sha": "58011f593783563fc54f44ab3a197fadf837fedb",
+          "range": {
+            "start_line": 1,
+            "end_line": 793
+          },
+          "symbol": "service-child-group-anchor"
+        },
+        {
+          "path": "src/process/supervisor/service-child-group-ownership.test.ts",
+          "blob_sha": "8b15723b9e8634bfdb771ca83dd67a8223b0eaf4",
+          "range": {
+            "start_line": 1,
+            "end_line": 327
+          },
+          "symbol": "service-child-group-ownership"
+        },
+        {
+          "path": "src/process/supervisor/service-child-group-ownership.ts",
+          "blob_sha": "93b662a203234596c862c102051e3e5f23812b92",
+          "range": {
+            "start_line": 1,
+            "end_line": 267
+          },
+          "symbol": "service-child-group-ownership"
+        },
+        {
+          "path": "src/process/supervisor/service-child-output-relay.ts",
+          "blob_sha": "0f13e54954d148f9b8830cb3bdafa5ea15fad31f",
+          "range": {
+            "start_line": 1,
+            "end_line": 88
+          },
+          "symbol": "service-child-output-relay"
+        },
+        {
+          "path": "src/process/supervisor/service-child-protocol.ts",
+          "blob_sha": "c300d32153d991b75611cc8a22c8a4424b6c2921",
+          "range": {
+            "start_line": 1,
+            "end_line": 109
+          },
+          "symbol": "service-child-protocol"
+        },
+        {
+          "path": "src/process/supervisor/service-child-relay-host.awaited-output.test.ts",
+          "blob_sha": "6836959192215bd67707017698057224628ba5da",
+          "range": {
+            "start_line": 1,
+            "end_line": 294
+          },
+          "symbol": "service-child-relay-host.awaited-output"
+        },
+        {
+          "path": "src/process/supervisor/service-child-relay-host.diagnostics.test.ts",
+          "blob_sha": "bd4a818e237d22f8ad28c638dd16563dfffde64c",
+          "range": {
+            "start_line": 1,
+            "end_line": 167
+          },
+          "symbol": "service-child-relay-host.diagnostics"
+        },
+        {
+          "path": "src/process/supervisor/service-child-relay-host.fixture.test-support.ts",
+          "blob_sha": "d5e5a48f609012be725783c6110d1f69d33b87de",
+          "range": {
+            "start_line": 1,
+            "end_line": 71
+          },
+          "symbol": "service-child-relay-host.fixture-support"
+        },
+        {
+          "path": "src/process/supervisor/service-child-relay-host.owned-worker.test.ts",
+          "blob_sha": "fb532eea51e9257145e74ae6051acbf2d2ca16df",
+          "range": {
+            "start_line": 1,
+            "end_line": 302
+          },
+          "symbol": "service-child-relay-host.owned-worker"
+        },
+        {
+          "path": "src/process/supervisor/service-child-relay-host.readiness.real.test.ts",
+          "blob_sha": "a24be7ee34684ca09ccb32dadbdd705d5e94fc1a",
+          "range": {
+            "start_line": 1,
+            "end_line": 101
+          },
+          "symbol": "service-child-relay-host.readiness.real"
+        },
+        {
+          "path": "src/process/supervisor/service-child-relay-host.retirement.test.ts",
+          "blob_sha": "adcd6cbfcb834b9f0f2755159a85c515097dc002",
+          "range": {
+            "start_line": 1,
+            "end_line": 187
+          },
+          "symbol": "service-child-relay-host.retirement"
+        },
+        {
+          "path": "src/process/supervisor/service-child-relay-host.startup.test.ts",
+          "blob_sha": "c3b45a38fea39e2a85804de9369147887415002c",
+          "range": {
+            "start_line": 1,
+            "end_line": 86
+          },
+          "symbol": "service-child-relay-host.startup"
+        },
+        {
+          "path": "src/process/supervisor/service-child-relay-host.test-support.ts",
+          "blob_sha": "39230f2d1636ff7cc3b556b9080270994562851e",
+          "range": {
+            "start_line": 1,
+            "end_line": 151
+          },
+          "symbol": "service-child-relay-host-support"
+        },
+        {
+          "path": "src/process/supervisor/service-child-relay-host.test.ts",
+          "blob_sha": "3c640cecdb3a71a0bba41016e255be5abcf6cd85",
+          "range": {
+            "start_line": 1,
+            "end_line": 889
+          },
+          "symbol": "service-child-relay-host"
+        },
+        {
+          "path": "src/process/supervisor/service-child-relay-host.ts",
+          "blob_sha": "4bb5f8cd974c2509c020cc67411d0436e82be6fe",
+          "range": {
+            "start_line": 1,
+            "end_line": 786
+          },
+          "symbol": "service-child-relay-host"
+        },
+        {
+          "path": "src/process/supervisor/service-child-relay-preparation.ts",
+          "blob_sha": "6194f32f1623dd68992d81bb69b5b7cde9357237",
+          "range": {
+            "start_line": 1,
+            "end_line": 144
+          },
+          "symbol": "service-child-relay-preparation"
+        },
+        {
+          "path": "src/process/supervisor/service-child-relay-retirement.ts",
+          "blob_sha": "4b0872e934d08d5a21cce3fc2f184690d6fc8619",
+          "range": {
+            "start_line": 1,
+            "end_line": 93
+          },
+          "symbol": "service-child-relay-retirement"
+        },
+        {
+          "path": "src/process/supervisor/service-child-relay.ts",
+          "blob_sha": "5fe968190b09c76a773520e45a0887af602ff59e",
+          "range": {
+            "start_line": 1,
+            "end_line": 207
+          },
+          "symbol": "service-child-relay"
+        },
+        {
+          "path": "src/process/supervisor/service-child-stdio.ts",
+          "blob_sha": "b34175d9deaf5cd512270866e35310fd7dc6a64b",
+          "range": {
+            "start_line": 1,
+            "end_line": 13
+          },
+          "symbol": "service-child-stdio"
+        },
+        {
+          "path": "src/process/supervisor/service-child-subreaper.real.test.ts",
+          "blob_sha": "73721e312ad6a68acf54cbb5caa239c3e0a4b4d6",
+          "range": {
+            "start_line": 1,
+            "end_line": 43
+          },
+          "symbol": "service-child-subreaper.real"
+        },
+        {
+          "path": "src/process/supervisor/service-child-subreaper.test-support.ts",
+          "blob_sha": "b7ef530eb447468290849ce43cd7dfa8bfbcc657",
+          "range": {
+            "start_line": 1,
+            "end_line": 228
+          },
+          "symbol": "service-child-subreaper-support"
+        },
+        {
+          "path": "src/process/supervisor/service-child-windows-job-anchor.ts",
+          "blob_sha": "f8562c190515a1165eac36ca28b4ce56298577c4",
+          "range": {
+            "start_line": 1,
+            "end_line": 381
+          },
+          "symbol": "service-child-windows-job-anchor"
+        },
+        {
+          "path": "src/process/supervisor/service-child-windows-job-native.ts",
+          "blob_sha": "b31ac2df7a445fb1761f2feff59df8e93e431119",
+          "range": {
+            "start_line": 1,
+            "end_line": 16
+          },
+          "symbol": "service-child-windows-job-native"
+        },
+        {
+          "path": "src/process/supervisor/service-child-windows-task-launcher.test.ts",
+          "blob_sha": "17f9735fbf4e2de7f703831f13a5ef2b7ff0ec7e",
+          "range": {
+            "start_line": 1,
+            "end_line": 118
+          },
+          "symbol": "service-child-windows-task-launcher"
+        },
+        {
+          "path": "src/process/supervisor/service-child-windows-task-launcher.ts",
+          "blob_sha": "b32b08fa5314c5890757996180b81372b84fc08e",
+          "range": {
+            "start_line": 1,
+            "end_line": 63
+          },
+          "symbol": "service-child-windows-task-launcher"
+        },
+        {
+          "path": "src/process/supervisor/supervisor-log.runtime.ts",
+          "blob_sha": "b2308cca642fc0fedc0f04e7adb40b6af4ed27bf",
+          "range": {
+            "start_line": 1,
+            "end_line": 11
+          },
+          "symbol": "supervisor-log.runtime"
+        },
+        {
+          "path": "src/process/supervisor/supervisor.anchored-shell.real.test.ts",
+          "blob_sha": "c3695f529cd2eead6ae444d7632376ecdbdba32d",
+          "range": {
+            "start_line": 1,
+            "end_line": 393
+          },
+          "symbol": "supervisor.anchored-shell.real"
+        },
+        {
+          "path": "src/process/supervisor/supervisor.fixture-readiness.test-support.ts",
+          "blob_sha": "f531ec2d5d6f6aadccef2df49217ad5401fe4a35",
+          "range": {
+            "start_line": 1,
+            "end_line": 20
+          },
+          "symbol": "supervisor.fixture-readiness-support"
+        },
+        {
+          "path": "src/process/supervisor/supervisor.forced-settlement.real.test.ts",
+          "blob_sha": "d5d0022378fb8f35947b83883807a67fe71b35df",
+          "range": {
+            "start_line": 1,
+            "end_line": 169
+          },
+          "symbol": "supervisor.forced-settlement.real"
+        },
+        {
+          "path": "src/process/supervisor/supervisor.forced-settlement.test-support.ts",
+          "blob_sha": "ff00e21cb02c16e165443430191b973ff7e75cf3",
+          "range": {
+            "start_line": 1,
+            "end_line": 72
+          },
+          "symbol": "supervisor.forced-settlement-support"
+        },
+        {
+          "path": "src/process/supervisor/supervisor.idle-host.test-support.ts",
+          "blob_sha": "0eb25cf4c197d08a326a4bb01bba4408283f9815",
+          "range": {
+            "start_line": 1,
+            "end_line": 19
+          },
+          "symbol": "supervisor.idle-host-support"
+        },
+        {
+          "path": "src/process/supervisor/supervisor.no-detach.real.test.ts",
+          "blob_sha": "578d0d7853d33e08b72a45fc65d90ba59603ac84",
+          "range": {
+            "start_line": 1,
+            "end_line": 190
+          },
+          "symbol": "supervisor.no-detach.real"
+        },
+        {
+          "path": "src/process/supervisor/supervisor.one-shot-tools.test.ts",
+          "blob_sha": "5386c5d1ebc6eb33d4626e7a6abca8a9a58730e8",
+          "range": {
+            "start_line": 1,
+            "end_line": 187
+          },
+          "symbol": "supervisor.one-shot-tools"
+        },
+        {
+          "path": "src/process/supervisor/supervisor.output-activity.real.test.ts",
+          "blob_sha": "2ee193d4ba0e47eb3bddba232ca8f7941dc8bfe3",
+          "range": {
+            "start_line": 1,
+            "end_line": 99
+          },
+          "symbol": "supervisor.output-activity.real"
+        },
+        {
+          "path": "src/process/supervisor/supervisor.readiness.real.test.ts",
+          "blob_sha": "892c9c3fc499e3a17d3dbd8e9d28513e1e8975d9",
+          "range": {
+            "start_line": 1,
+            "end_line": 175
+          },
+          "symbol": "supervisor.readiness.real"
+        },
+        {
+          "path": "src/process/supervisor/supervisor.readiness.test.ts",
+          "blob_sha": "ec92b81f5c56b55f49d1d368b74d295021312210",
+          "range": {
+            "start_line": 1,
+            "end_line": 124
+          },
+          "symbol": "supervisor.readiness"
+        },
+        {
+          "path": "src/process/supervisor/supervisor.test-support.ts",
+          "blob_sha": "0ae1b53fe7bbca21a7386837cbdb7ecdf9d74bac",
+          "range": {
+            "start_line": 1,
+            "end_line": 71
+          },
+          "symbol": "supervisor-support"
+        },
+        {
+          "path": "src/process/supervisor/supervisor.test.ts",
+          "blob_sha": "94ec202fd47ac7cde74cee8fa2053b2aa9b4ae04",
+          "range": {
+            "start_line": 1,
+            "end_line": 805
+          },
+          "symbol": "supervisor"
+        },
+        {
+          "path": "src/process/supervisor/supervisor.ts",
+          "blob_sha": "c905aaa6644d72d22e9e5502e92b3d1773a685fc",
+          "range": {
+            "start_line": 1,
+            "end_line": 778
+          },
+          "symbol": "supervisor"
+        },
+        {
+          "path": "src/process/supervisor/types.ts",
+          "blob_sha": "d0625ccbc64178a447b6ed294b1c7946c85d456a",
+          "range": {
+            "start_line": 1,
+            "end_line": 195
+          },
+          "symbol": "types"
+        },
+        {
+          "path": "src/process/terminal-pty-bun.test.ts",
+          "blob_sha": "b964212580aa1a53c22c0fa5851d1871458deb19",
+          "range": {
+            "start_line": 1,
+            "end_line": 442
+          },
+          "symbol": "terminal-pty-bun"
+        },
+        {
+          "path": "src/process/terminal-pty-bun.ts",
+          "blob_sha": "190482ce830759bde2c435bcbd28e446d773072d",
+          "range": {
+            "start_line": 1,
+            "end_line": 185
+          },
+          "symbol": "terminal-pty-bun"
+        },
+        {
+          "path": "src/process/terminal-pty-node.failure.test.ts",
+          "blob_sha": "711029100d360cbc4c024bb3ba87df850ba55245",
+          "range": {
+            "start_line": 1,
+            "end_line": 122
+          },
+          "symbol": "terminal-pty-node.failure"
+        },
+        {
+          "path": "src/process/terminal-pty-node.test.ts",
+          "blob_sha": "109af6241406466d21d2f2e69eabdbc188afb583",
+          "range": {
+            "start_line": 1,
+            "end_line": 235
+          },
+          "symbol": "terminal-pty-node"
+        },
+        {
+          "path": "src/process/terminal-pty-node.ts",
+          "blob_sha": "e109af5353c4ec0b403c466b9d4effdb2537e62b",
+          "range": {
+            "start_line": 1,
+            "end_line": 201
+          },
+          "symbol": "terminal-pty-node"
+        },
+        {
+          "path": "src/process/terminal-pty-protocol.ts",
+          "blob_sha": "da24614b71a4ea6a4743e0e65906c793fa293192",
+          "range": {
+            "start_line": 1,
+            "end_line": 17
+          },
+          "symbol": "terminal-pty-protocol"
+        },
+        {
+          "path": "src/process/terminal-pty-worker.ts",
+          "blob_sha": "a7a2c6c1b3510847333b5fb05f4695455b763d36",
+          "range": {
+            "start_line": 1,
+            "end_line": 93
+          },
+          "symbol": "terminal-pty-worker"
+        },
+        {
+          "path": "src/process/terminal-pty.test.ts",
+          "blob_sha": "b0dc05484672deee12f9803e5afddefb0d1fb2fa",
+          "range": {
+            "start_line": 1,
+            "end_line": 572
+          },
+          "symbol": "terminal-pty"
+        },
+        {
+          "path": "src/process/terminal-pty.ts",
+          "blob_sha": "d90cb1df0c5025e9d7e65e53b345a87dbbe3d35b",
+          "range": {
+            "start_line": 1,
+            "end_line": 250
+          },
+          "symbol": "terminal-pty"
+        },
+        {
+          "path": "src/process/windows-command-line.test.ts",
+          "blob_sha": "8328d747de5b2f09cbfbca2c7dab96cf4efc0d48",
+          "range": {
+            "start_line": 1,
+            "end_line": 27
+          },
+          "symbol": "windows-command-line"
+        },
+        {
+          "path": "src/process/windows-command-line.ts",
+          "blob_sha": "a204c1e588799a83ce4122d6a964629813add3c7",
+          "range": {
+            "start_line": 1,
+            "end_line": 55
+          },
+          "symbol": "windows-command-line"
+        },
+        {
+          "path": "src/process/windows-command.test.ts",
+          "blob_sha": "0972d4c12e2b294cbd6187be895b60e84af8fd5a",
+          "range": {
+            "start_line": 1,
+            "end_line": 231
+          },
+          "symbol": "windows-command"
+        },
+        {
+          "path": "src/process/windows-command.ts",
+          "blob_sha": "1e3a14f6a3777d6941ed62621be9e1adc9dedb2c",
+          "range": {
+            "start_line": 1,
+            "end_line": 225
+          },
+          "symbol": "windows-command"
+        }
+      ],
+      "evidence_refs": [
+        "source/host/tests/openclaw_process_plugin_contract.rs",
+        "projects/openclaw-rust/dossiers/process-plugin-scoped.md"
+      ],
+      "requirement_ids": [
+        "OCRM-R04",
+        "OCRM-R08",
+        "OCRM-R09",
+        "OCRM-R21",
+        "OCRM-R24",
+        "OCRM-AC08",
+        "OCRM-AC21",
+        "OCRM-AC24"
+      ],
+      "required_gate_ids": [
+        "OCRM-G04-rust-contract",
+        "OCRM-G05-frozen-oracle"
+      ],
+      "oracle_ids": [
+        "OCRM-PROCESS-CUSTODY-O01"
+      ],
+      "adr_refs": [],
+      "blocker_ids": [
+        "BL-PROCESS-CUSTODY-WIRING-001"
+      ],
+      "target": {
+        "path": "source/host/src/extensions/process/command_custody.rs",
+        "symbol": "CommandProcessCustody",
+        "language": "Rust"
+      },
+      "required_evidence_dimensions": [
+        "unit",
+        "format"
+      ],
+      "reviewer": "xuyao@ombhrum.com",
+      "migration_rollback": "Spawn child processes directly with standard library std::process without group management"
     }
   ],
   "schema_version": 1,
