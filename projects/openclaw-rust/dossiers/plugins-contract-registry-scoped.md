@@ -155,3 +155,31 @@
 - **Integrity Selection Precedence**: SSRI `integrity` -> SSRI `npmIntegrity` -> SHA256 `clawpackSha256` -> Git commit `gitCommit`.
 - **Credential Scrubbing**: Sanitizes credentials and sensitive query parameters (`token`, `key`, `secret`) from `git:https://...` specs before review presentation.
 
+## 8. Audited Capability Lease, Provider Acquisition, Runtime Generation, Summary & Captured Registration (11 files)
+- **Primary Responsibility**: `OCRM-RESP-PLUGINS-CAPABILITY-CATALOG-001`
+- **Reviewer**: `xuyao@ombhrum.com`
+- **Native Implementation**: `source/host/src/extensions/plugins/capability_catalog.rs` (`PluginRuntimeCapabilityLease`, `CapabilitySummaryBuilder`, `CapturedPluginRegistration`, `PluginCapabilityAcquisitionScope`)
+- **Contract Tests**: `source/host/tests/openclaw_plugins_contract.rs::test_ocrm_plugins_capability_lease_summary_and_acquisition`
+
+| Path | Lines | Size (bytes) | Git Blob SHA | Mapped Responsibility |
+| --- | --- | --- | --- | --- |
+| `src/plugins/capability-lease.ts` | 38 | 913 | `786f0ec7074715e623a4b46c392cc55f0b7ef781` | `OCRM-RESP-PLUGINS-CAPABILITY-CATALOG-001` |
+| `src/plugins/capability-provider-acquisition.test.ts` | 92 | 3448 | `49c0f4ee3f8355c44b157cdcfe356f1c3f082fdc` | `OCRM-RESP-PLUGINS-CAPABILITY-CATALOG-001` |
+| `src/plugins/capability-provider-acquisition.ts` | 244 | 8517 | `93afbefca47dc0f90a3c5c5b326e5038f7c15fdd` | `OCRM-RESP-PLUGINS-CAPABILITY-CATALOG-001` |
+| `src/plugins/capability-provider-runtime.generation.test.ts` | 641 | 24361 | `20409885191c2b70e11054f5243f47790f87be47` | `OCRM-RESP-PLUGINS-CAPABILITY-CATALOG-001` |
+| `src/plugins/capability-provider-runtime.test.ts` | 747 | 27159 | `377a937472ec863af8d25819355465a2341327b0` | `OCRM-RESP-PLUGINS-CAPABILITY-CATALOG-001` |
+| `src/plugins/capability-provider-runtime.ts` | 660 | 22485 | `4c773ec0ec6a0fb8188a3c2f5ed9c2afcd81ce0d` | `OCRM-RESP-PLUGINS-CAPABILITY-CATALOG-001` |
+| `src/plugins/capability-provider.types.ts` | 559 | 20566 | `eba4c36640e3cd6584d79d258ba6712b104d1ffb` | `OCRM-RESP-PLUGINS-CAPABILITY-CATALOG-001` |
+| `src/plugins/capability-summary.test.ts` | 138 | 5104 | `7debc9aeb2da89e063cf4a99d0e25b8b0f68476c` | `OCRM-RESP-PLUGINS-CAPABILITY-CATALOG-001` |
+| `src/plugins/capability-summary.ts` | 313 | 10815 | `001257ccaee0124a1e7c5c9364a66fb1d172aa74` | `OCRM-RESP-PLUGINS-CAPABILITY-CATALOG-001` |
+| `src/plugins/captured-registration.test.ts` | 359 | 13840 | `8976e5c191b38e6189a00333b10e87caf6be21b4` | `OCRM-RESP-PLUGINS-CAPABILITY-CATALOG-001` |
+| `src/plugins/captured-registration.ts` | 287 | 10419 | `a2064948ff85bd9eab4ff7bce1253cb9895f8217` | `OCRM-RESP-PLUGINS-CAPABILITY-CATALOG-001` |
+
+### 8.1 Invariant Validation Summary
+- **Capability Lease Lifecycle**: `PluginRuntimeCapabilityLease` guards active registrations with atomic lifecycle leases. Cleanups run on revocation. Retaining on an inactive lease triggers immediate cleanup execution and throws.
+- **Surface Merge Semantics**: Multiple declared surfaces are merged across all 10 canonical categories, deduplicating elements and maintaining deterministic lexicographical sort order.
+- **Default Operator Grants Policy**: Bundled plugins default to allowing conversation access (`effective = true`), whereas non-bundled plugins require explicit operator opt-in (`effective = false` by default). Prompt injection always defaults to disabled.
+- **Capability Acquisition & Reload Fence**: `PluginCapabilityAcquisitionScope` tracks generation counters. If provider setup changes during request preparation, `assert_open` fails closed with a retry directive.
+- **Complete Capability Capture**: `CapturedPluginRegistration` collects registrations across all 21 capability families and rejects unregistered families.
+
+

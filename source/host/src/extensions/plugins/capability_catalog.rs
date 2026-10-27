@@ -1393,6 +1393,292 @@ impl CapabilityConsentManager {
     }
 }
 
+// ---------------------------------------------------------------------------
+// Capability Lease
+// ---------------------------------------------------------------------------
+
+#[derive(Clone)]
+pub struct PluginRuntimeCapabilityLease {
+    owner: String,
+    inner: Arc<Mutex<CapabilityLeaseState>>,
+}
+
+struct CapabilityLeaseState {
+    active: bool,
+    cleanups: Vec<Box<dyn FnOnce() + Send + 'static>>,
+}
+
+impl PluginRuntimeCapabilityLease {
+    pub fn new(owner: impl Into<String>) -> Self {
+        Self {
+            owner: owner.into(),
+            inner: Arc::new(Mutex::new(CapabilityLeaseState {
+                active: true,
+                cleanups: Vec::new(),
+            })),
+        }
+    }
+
+    pub fn is_active(&self) -> bool {
+        self.inner.lock().unwrap().active
+    }
+
+    pub fn assert_active(&self, capability: &str) -> Result<(), String> {
+        if !self.is_active() {
+            Err(format!("{} {} is no longer active", self.owner, capability))
+        } else {
+            Ok(())
+        }
+    }
+
+    pub fn retain<F>(&self, cleanup: F) -> Result<(), String>
+    where
+        F: FnOnce() + Send + 'static,
+    {
+        let mut state = self.inner.lock().unwrap();
+        if !state.active {
+            cleanup();
+            return Err(format!("{} capability lease is no longer active", self.owner));
+        }
+        state.cleanups.push(Box::new(cleanup));
+        Ok(())
+    }
+
+    pub fn revoke(&self) {
+        let cleanups_to_run = {
+            let mut state = self.inner.lock().unwrap();
+            if !state.active {
+                return;
+            }
+            state.active = false;
+            std::mem::take(&mut state.cleanups)
+        };
+        for cleanup in cleanups_to_run {
+            cleanup();
+        }
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Operator Grants & Summary Builder
+// ---------------------------------------------------------------------------
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct PluginHookGrant {
+    pub effective: bool,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub configured: Option<bool>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct PluginHookGrants {
+    pub allow_prompt_injection: PluginHookGrant,
+    pub allow_conversation_access: PluginHookGrant,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct PluginOperatorGrants {
+    pub hooks: PluginHookGrants,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub llm: Option<serde_json::Value>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub subagent: Option<serde_json::Value>,
+}
+
+pub struct CapabilitySummaryBuilder;
+impl CapabilitySummaryBuilder {
+    pub fn merge_declared_surfaces(
+        surfaces: &[PluginAcceptedDeclaredSurface],
+    ) -> PluginAcceptedDeclaredSurface {
+        let mut merged = PluginAcceptedDeclaredSurface::default();
+        let mut channels = HashSet::new();
+        let mut providers = HashSet::new();
+        let mut tools = HashSet::new();
+        let mut contracts = HashSet::new();
+        let mut hooks = HashSet::new();
+        let mut mcp = HashSet::new();
+        let mut cli_cmds = HashSet::new();
+        let mut cli_backends = HashSet::new();
+        let mut skills = HashSet::new();
+        let mut flags = HashSet::new();
+
+        for s in surfaces {
+            channels.extend(s.channels.iter().cloned());
+            providers.extend(s.providers.iter().cloned());
+            tools.extend(s.tools.iter().cloned());
+            contracts.extend(s.contracts.iter().cloned());
+            hooks.extend(s.hooks.iter().cloned());
+            mcp.extend(s.mcp_servers.iter().cloned());
+            cli_cmds.extend(s.cli_commands.iter().cloned());
+            cli_backends.extend(s.cli_backends.iter().cloned());
+            skills.extend(s.skills.iter().cloned());
+            flags.extend(s.dangerous_config_flags.iter().cloned());
+        }
+
+        fn to_sorted(set: HashSet<String>) -> Vec<String> {
+            let mut v: Vec<String> = set.into_iter().collect();
+            v.sort();
+            v
+        }
+
+        merged.channels = to_sorted(channels);
+        merged.providers = to_sorted(providers);
+        merged.tools = to_sorted(tools);
+        merged.contracts = to_sorted(contracts);
+        merged.hooks = to_sorted(hooks);
+        merged.mcp_servers = to_sorted(mcp);
+        merged.cli_commands = to_sorted(cli_cmds);
+        merged.cli_backends = to_sorted(cli_backends);
+        merged.skills = to_sorted(skills);
+        merged.dangerous_config_flags = to_sorted(flags);
+        merged
+    }
+
+    pub fn build_operator_grants(
+        origin: &PluginOrigin,
+        allow_prompt_injection: Option<bool>,
+        allow_conversation_access: Option<bool>,
+    ) -> PluginOperatorGrants {
+        let effective_prompt_injection = allow_prompt_injection.unwrap_or(false);
+        let effective_conv_access = match origin {
+            PluginOrigin::Bundled => allow_conversation_access.unwrap_or(true),
+            _ => allow_conversation_access.unwrap_or(false),
+        };
+
+        PluginOperatorGrants {
+            hooks: PluginHookGrants {
+                allow_prompt_injection: PluginHookGrant {
+                    effective: effective_prompt_injection,
+                    configured: allow_prompt_injection,
+                },
+                allow_conversation_access: PluginHookGrant {
+                    effective: effective_conv_access,
+                    configured: allow_conversation_access,
+                },
+            },
+            llm: None,
+            subagent: None,
+        }
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Captured Plugin Registration
+// ---------------------------------------------------------------------------
+
+#[derive(Debug, Default)]
+pub struct CapturedPluginRegistration {
+    pub providers: Vec<String>,
+    pub cli_commands: Vec<String>,
+    pub speech_providers: Vec<String>,
+    pub realtime_transcription_providers: Vec<String>,
+    pub realtime_voice_providers: Vec<String>,
+    pub media_understanding_providers: Vec<String>,
+    pub transcript_source_providers: Vec<String>,
+    pub image_generation_providers: Vec<String>,
+    pub video_generation_providers: Vec<String>,
+    pub music_generation_providers: Vec<String>,
+    pub web_fetch_providers: Vec<String>,
+    pub web_search_providers: Vec<String>,
+    pub worker_providers: Vec<String>,
+    pub storage_providers: Vec<String>,
+    pub migration_providers: Vec<String>,
+    pub embedding_providers: Vec<String>,
+    pub tools: Vec<String>,
+    pub session_scheduler_jobs: Vec<String>,
+    pub session_actions: Vec<String>,
+}
+
+impl CapturedPluginRegistration {
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    pub fn register_capability_provider(
+        &mut self,
+        family: &str,
+        provider_id: &str,
+    ) -> Result<(), String> {
+        match family {
+            "speechProviders" => self.speech_providers.push(provider_id.to_string()),
+            "realtimeTranscriptionProviders" => self
+                .realtime_transcription_providers
+                .push(provider_id.to_string()),
+            "realtimeVoiceProviders" => self.realtime_voice_providers.push(provider_id.to_string()),
+            "mediaUnderstandingProviders" => {
+                self.media_understanding_providers.push(provider_id.to_string())
+            }
+            "transcriptSourceProviders" => self
+                .transcript_source_providers
+                .push(provider_id.to_string()),
+            "imageGenerationProviders" => self
+                .image_generation_providers
+                .push(provider_id.to_string()),
+            "videoGenerationProviders" => self
+                .video_generation_providers
+                .push(provider_id.to_string()),
+            "musicGenerationProviders" => self
+                .music_generation_providers
+                .push(provider_id.to_string()),
+            "webFetchProviders" => self.web_fetch_providers.push(provider_id.to_string()),
+            "webSearchProviders" => self.web_search_providers.push(provider_id.to_string()),
+            "embeddingProviders" => self.embedding_providers.push(provider_id.to_string()),
+            _ => return Err(format!("Unknown capability family: {}", family)),
+        }
+        Ok(())
+    }
+
+    pub fn total_registered_capabilities(&self) -> usize {
+        self.speech_providers.len()
+            + self.realtime_transcription_providers.len()
+            + self.realtime_voice_providers.len()
+            + self.media_understanding_providers.len()
+            + self.transcript_source_providers.len()
+            + self.image_generation_providers.len()
+            + self.video_generation_providers.len()
+            + self.music_generation_providers.len()
+            + self.web_fetch_providers.len()
+            + self.web_search_providers.len()
+            + self.embedding_providers.len()
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Capability Acquisition Scope & Lifetime
+// ---------------------------------------------------------------------------
+
+pub struct PluginCapabilityAcquisitionScope {
+    lease: PluginRuntimeCapabilityLease,
+    generation: u64,
+    current_generation: Arc<std::sync::atomic::AtomicU64>,
+}
+
+impl PluginCapabilityAcquisitionScope {
+    pub fn new(owner: &str, current_generation: Arc<std::sync::atomic::AtomicU64>) -> Self {
+        let generation_id = current_generation.load(std::sync::atomic::Ordering::SeqCst);
+        Self {
+            lease: PluginRuntimeCapabilityLease::new(owner),
+            generation: generation_id,
+            current_generation,
+        }
+    }
+
+    pub fn assert_open(&self) -> Result<(), String> {
+        self.lease.assert_active("acquisition")?;
+        let cur = self
+            .current_generation
+            .load(std::sync::atomic::Ordering::SeqCst);
+        if cur != self.generation {
+            return Err("The provider setup changed while preparing this request. Retry with the current provider setup.".to_string());
+        }
+        Ok(())
+    }
+
+    pub fn release(&self) {
+        self.lease.revoke();
+    }
+}
+
 
 
 

@@ -19,6 +19,8 @@ use mahayana_host_runtime::extensions::plugins::capability_catalog::{
     CandidateInstallOwnerResolver,
     CapabilityCatalogFamily, CapabilityCatalogValidator,
     PluginAcceptedDeclaredSurface, CapabilityConsentManager,
+    PluginRuntimeCapabilityLease, CapabilitySummaryBuilder,
+    CapturedPluginRegistration, PluginCapabilityAcquisitionScope,
 };
 
 #[test]
@@ -1728,6 +1730,107 @@ fn test_ocrm_plugins_bundled_sources_catalog_and_capability_consent() {
     assert!(!redacted.contains("fixture-token"));
     assert!(redacted.contains("***"));
     assert!(redacted.starts_with("git:https://"));
+}
+
+#[test]
+fn test_ocrm_plugins_capability_lease_summary_and_acquisition() {
+    use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
+    use std::sync::Arc;
+
+    // 1. Plugin Runtime Capability Lease
+    let lease = PluginRuntimeCapabilityLease::new("test-owner");
+    assert!(lease.is_active());
+    assert!(lease.assert_active("tts").is_ok());
+
+    let cleanup_called = Arc::new(AtomicBool::new(false));
+    let cleanup_clone = Arc::clone(&cleanup_called);
+    assert!(lease.retain(move || {
+        cleanup_clone.store(true, Ordering::SeqCst);
+    }).is_ok());
+
+    assert!(!cleanup_called.load(Ordering::SeqCst));
+    lease.revoke();
+    assert!(!lease.is_active());
+    assert!(cleanup_called.load(Ordering::SeqCst));
+
+    // After revoke, assert_active fails
+    let err = lease.assert_active("tts");
+    assert!(err.is_err());
+    assert!(err.unwrap_err().contains("test-owner tts is no longer active"));
+
+    // Retain on revoked lease immediately calls cleanup and returns Err
+    let immediate_cleanup = Arc::new(AtomicBool::new(false));
+    let imm_clone = Arc::clone(&immediate_cleanup);
+    let retain_err = lease.retain(move || {
+        imm_clone.store(true, Ordering::SeqCst);
+    });
+    assert!(retain_err.is_err());
+    assert!(immediate_cleanup.load(Ordering::SeqCst));
+
+    // 2. Capability Summary Builder: Surface Merge & Operator Grants
+    let s1 = PluginAcceptedDeclaredSurface {
+        tools: vec!["tool_a".to_string()],
+        channels: vec!["chat".to_string()],
+        ..Default::default()
+    };
+    let s2 = PluginAcceptedDeclaredSurface {
+        tools: vec!["tool_b".to_string()],
+        channels: vec!["chat".to_string()],
+        skills: vec!["skill_x".to_string()],
+        ..Default::default()
+    };
+    let merged = CapabilitySummaryBuilder::merge_declared_surfaces(&[s1, s2]);
+    assert_eq!(merged.tools, vec!["tool_a".to_string(), "tool_b".to_string()]);
+    assert_eq!(merged.channels, vec!["chat".to_string()]);
+    assert_eq!(merged.skills, vec!["skill_x".to_string()]);
+
+    let bundled_grants = CapabilitySummaryBuilder::build_operator_grants(
+        &PluginOrigin::Bundled,
+        None,
+        None,
+    );
+    // Bundled defaults to true for conversation access
+    assert!(bundled_grants.hooks.allow_conversation_access.effective);
+    assert!(!bundled_grants.hooks.allow_prompt_injection.effective);
+
+    let installed_grants = CapabilitySummaryBuilder::build_operator_grants(
+        &PluginOrigin::Installed,
+        None,
+        None,
+    );
+    // Non-bundled defaults to false for conversation access unless explicitly configured
+    assert!(!installed_grants.hooks.allow_conversation_access.effective);
+
+    // 3. Captured Plugin Registration across Capability Families
+    let mut captured = CapturedPluginRegistration::new();
+    assert!(captured.register_capability_provider("speechProviders", "tts.piper").is_ok());
+    assert!(captured.register_capability_provider("realtimeTranscriptionProviders", "stt.whisper").is_ok());
+    assert!(captured.register_capability_provider("realtimeVoiceProviders", "voice.bridge").is_ok());
+    assert!(captured.register_capability_provider("mediaUnderstandingProviders", "vision.ocr").is_ok());
+    assert!(captured.register_capability_provider("transcriptSourceProviders", "transcripts.live").is_ok());
+    assert!(captured.register_capability_provider("imageGenerationProviders", "image.sd").is_ok());
+    assert!(captured.register_capability_provider("videoGenerationProviders", "video.gen").is_ok());
+    assert!(captured.register_capability_provider("musicGenerationProviders", "music.gen").is_ok());
+    assert!(captured.register_capability_provider("webFetchProviders", "fetch.default").is_ok());
+    assert!(captured.register_capability_provider("webSearchProviders", "search.tavily").is_ok());
+    assert!(captured.register_capability_provider("embeddingProviders", "embed.text").is_ok());
+    assert!(captured.register_capability_provider("nonExistentFamily", "dummy").is_err());
+    assert_eq!(captured.total_registered_capabilities(), 11);
+
+    // 4. Plugin Capability Acquisition Scope
+    let current_gen = Arc::new(AtomicU64::new(1));
+    let scope = PluginCapabilityAcquisitionScope::new("acq-owner", Arc::clone(&current_gen));
+    assert!(scope.assert_open().is_ok());
+
+    // Advance generation (simulating reload)
+    current_gen.fetch_add(1, Ordering::SeqCst);
+    let acq_err = scope.assert_open();
+    assert!(acq_err.is_err());
+    assert!(acq_err.unwrap_err().contains("The provider setup changed while preparing this request"));
+
+    // Release closes scope
+    scope.release();
+    assert!(scope.assert_open().is_err());
 }
 
 

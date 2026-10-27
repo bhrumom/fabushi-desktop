@@ -10,10 +10,10 @@
     "ui_accepted": false
   },
   "file_coverage": {
-    "mapped_paths": 582,
+    "mapped_paths": 593,
     "omitted_known": 0,
     "tracked_paths": 58750,
-    "unclassified_paths": 58168
+    "unclassified_paths": 58157
   },
   "inventory_authority": {
     "manifest_source": "GitHub Actions immutable artifact candidate",
@@ -21905,6 +21905,105 @@
             "end_line": 457
           },
           "symbol": "resolvePluginCapabilityConsent"
+        },
+        {
+          "blob_sha": "786f0ec7074715e623a4b46c392cc55f0b7ef781",
+          "path": "src/plugins/capability-lease.ts",
+          "range": {
+            "start_line": 1,
+            "end_line": 38
+          },
+          "symbol": "createPluginRuntimeCapabilityLease"
+        },
+        {
+          "blob_sha": "49c0f4ee3f8355c44b157cdcfe356f1c3f082fdc",
+          "path": "src/plugins/capability-provider-acquisition.test.ts",
+          "range": {
+            "start_line": 1,
+            "end_line": 92
+          },
+          "symbol": "capability provider acquisition test suite"
+        },
+        {
+          "blob_sha": "93afbefca47dc0f90a3c5c5b326e5038f7c15fdd",
+          "path": "src/plugins/capability-provider-acquisition.ts",
+          "range": {
+            "start_line": 1,
+            "end_line": 244
+          },
+          "symbol": "acquirePluginCapabilityProviders"
+        },
+        {
+          "blob_sha": "20409885191c2b70e11054f5243f47790f87be47",
+          "path": "src/plugins/capability-provider-runtime.generation.test.ts",
+          "range": {
+            "start_line": 1,
+            "end_line": 641
+          },
+          "symbol": "capability provider runtime generation test suite"
+        },
+        {
+          "blob_sha": "377a937472ec863af8d25819355465a2341327b0",
+          "path": "src/plugins/capability-provider-runtime.test.ts",
+          "range": {
+            "start_line": 1,
+            "end_line": 747
+          },
+          "symbol": "capability provider runtime test suite"
+        },
+        {
+          "blob_sha": "4c773ec0ec6a0fb8188a3c2f5ed9c2afcd81ce0d",
+          "path": "src/plugins/capability-provider-runtime.ts",
+          "range": {
+            "start_line": 1,
+            "end_line": 660
+          },
+          "symbol": "prepareCapabilityPluginResolution"
+        },
+        {
+          "blob_sha": "eba4c36640e3cd6584d79d258ba6712b104d1ffb",
+          "path": "src/plugins/capability-provider.types.ts",
+          "range": {
+            "start_line": 1,
+            "end_line": 559
+          },
+          "symbol": "CapabilityProviderRegistryKey"
+        },
+        {
+          "blob_sha": "7debc9aeb2da89e063cf4a99d0e25b8b0f68476c",
+          "path": "src/plugins/capability-summary.test.ts",
+          "range": {
+            "start_line": 1,
+            "end_line": 138
+          },
+          "symbol": "capability summary test suite"
+        },
+        {
+          "blob_sha": "001257ccaee0124a1e7c5c9364a66fb1d172aa74",
+          "path": "src/plugins/capability-summary.ts",
+          "range": {
+            "start_line": 1,
+            "end_line": 313
+          },
+          "symbol": "buildPluginCapabilitySummary"
+        },
+        {
+          "blob_sha": "8976e5c191b38e6189a00333b10e87caf6be21b4",
+          "path": "src/plugins/captured-registration.test.ts",
+          "range": {
+            "start_line": 1,
+            "end_line": 359
+          },
+          "symbol": "captured registration test suite"
+        },
+        {
+          "blob_sha": "a2064948ff85bd9eab4ff7bce1253cb9895f8217",
+          "path": "src/plugins/captured-registration.ts",
+          "range": {
+            "start_line": 1,
+            "end_line": 287
+          },
+          "symbol": "createCapturedPluginRegistration"
         }
       ],
       "status": {
@@ -21931,7 +22030,8 @@
         "source/host/tests/openclaw_plugins_contract.rs::test_ocrm_plugins_bundled_capability_metadata_and_subpath_bundle",
         "source/host/tests/openclaw_plugins_contract.rs::test_ocrm_plugins_bundled_channel_metadata_compat_and_dir_resolver",
         "source/host/tests/openclaw_plugins_contract.rs::test_ocrm_plugins_bundled_metadata_scan_compat_and_naming_artwork",
-        "source/host/tests/openclaw_plugins_contract.rs::test_ocrm_plugins_bundled_sources_catalog_and_capability_consent"
+        "source/host/tests/openclaw_plugins_contract.rs::test_ocrm_plugins_bundled_sources_catalog_and_capability_consent",
+        "source/host/tests/openclaw_plugins_contract.rs::test_ocrm_plugins_capability_lease_summary_and_acquisition"
       ],
       "typed_contracts": [
         "PluginCapabilityCatalog",
