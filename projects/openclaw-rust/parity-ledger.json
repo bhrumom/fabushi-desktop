@@ -10,10 +10,10 @@
     "ui_accepted": false
   },
   "file_coverage": {
-    "mapped_paths": 825,
+    "mapped_paths": 956,
     "omitted_known": 0,
     "tracked_paths": 58750,
-    "unclassified_paths": 57925
+    "unclassified_paths": 57794
   },
   "inventory_authority": {
     "manifest_source": "GitHub Actions immutable artifact candidate",
@@ -22721,6 +22721,1458 @@
       ],
       "reviewer": "xuyao@ombhrum.com",
       "migration_rollback": "Mark session aborted immediately and release active resources"
+    },
+    {
+      "id": "OCRM-RESP-INFRA-UPDATE-STARTUP-001",
+      "unit_id": "OCRM-UNIT-INFRA-001",
+      "responsibility_kind": "business-runtime",
+      "behavior": "Startup update policy, interval due checks, triage error reporting, and supervisor handoff detection.",
+      "risk": "Medium; failed update checks or incorrect supervisor restarts cause service outage",
+      "status": {
+        "read": "read-complete",
+        "mapping": "reviewed",
+        "wiring": "not-wired",
+        "implementation": "implemented",
+        "verification": "not-run",
+        "acceptance": "pending"
+      },
+      "selected_owner": "source/host/src/extensions/host_upgrade/openclaw_update_startup.rs",
+      "existing_owner_candidates": [
+        {
+          "path": "source/host/src/extensions/host_upgrade/openclaw_update_startup.rs",
+          "reason": "Host upgrade startup policy, update triage reporter, and supervisor requirement checker"
+        }
+      ],
+      "owner_decision": "Native implementation in openclaw_update_startup under host_upgrade extension",
+      "dependencies": [
+        "mahayana_host_runtime::extensions::host_upgrade::openclaw_update_startup"
+      ],
+      "capability_ids": [
+        "infra.update_startup"
+      ],
+      "preconditions": [
+        "Startup update check triggered with last check timestamp and supervisor status"
+      ],
+      "postconditions": [
+        "Update due status evaluated and failure reasons triaged into actionable remedies"
+      ],
+      "invariants": [
+        "Checks are due only when time difference exceeds interval threshold",
+        "Supervised environments generate supervisor restart remedies"
+      ],
+      "typed_contracts": [
+        "UpdateScheduleState",
+        "UpdateTriageReport",
+        "is_update_check_due",
+        "EXTERNAL_SUPERVISOR_UPDATE_REQUIRED_REASON"
+      ],
+      "tests": [
+        "source/host/tests/openclaw_infra_contract.rs::test_ocrm_infra_update_startup_and_triage"
+      ],
+      "integration": {
+        "producer": "source/host/src/extensions/host_upgrade/openclaw_update_startup.rs",
+        "owner": "source/host/src/extensions/host_upgrade/openclaw_update_startup.rs",
+        "consumer": "source/host/src/extensions/host_upgrade/openclaw_update_startup.rs",
+        "entrypoint": "source/host/src/extensions/host_upgrade/openclaw_update_startup.rs::is_update_check_due"
+      },
+      "source_refs": [
+        {
+          "path": "src/infra/update-startup-campaign-run.test.ts",
+          "blob_sha": "d80259d88dce1afe8e04cd0b74f0b69783dafbab",
+          "range": {
+            "start_line": 1,
+            "end_line": 481
+          },
+          "symbol": "update-startup-campaign-run.test"
+        },
+        {
+          "path": "src/infra/update-startup-git.test-support.ts",
+          "blob_sha": "423226e33da65cc2d1fd9b0ac4a1796ab9cf74eb",
+          "range": {
+            "start_line": 1,
+            "end_line": 57
+          },
+          "symbol": "update-startup-git.test-support"
+        },
+        {
+          "path": "src/infra/update-startup-host-owned.test.ts",
+          "blob_sha": "ad8af85e360ef8bff84bd6c8a591f2b97986999b",
+          "range": {
+            "start_line": 1,
+            "end_line": 85
+          },
+          "symbol": "update-startup-host-owned.test"
+        },
+        {
+          "path": "src/infra/update-startup-immutable.test.ts",
+          "blob_sha": "0a7dff4b6083e9c6416bf71ba31a935f12eee9dc",
+          "range": {
+            "start_line": 1,
+            "end_line": 83
+          },
+          "symbol": "update-startup-immutable.test"
+        },
+        {
+          "path": "src/infra/update-startup-refresh.test.ts",
+          "blob_sha": "9357fa22307ec8cfc01e4cbf50f5c78ee65e1cb0",
+          "range": {
+            "start_line": 1,
+            "end_line": 658
+          },
+          "symbol": "update-startup-refresh.test"
+        },
+        {
+          "path": "src/infra/update-startup-refresh.ts",
+          "blob_sha": "127ed4dbde5f951ff3b1fbffb9477eea722ba006",
+          "range": {
+            "start_line": 1,
+            "end_line": 53
+          },
+          "symbol": "update-startup-refresh"
+        },
+        {
+          "path": "src/infra/update-startup-request-adoption.test.ts",
+          "blob_sha": "911aa6b4e4469fba9d1847820548a1b85c858895",
+          "range": {
+            "start_line": 1,
+            "end_line": 157
+          },
+          "symbol": "update-startup-request-adoption.test"
+        },
+        {
+          "path": "src/infra/update-startup-suite.test-support.ts",
+          "blob_sha": "bfd70e6405160e46d052d42b3332b0c4b147b507",
+          "range": {
+            "start_line": 1,
+            "end_line": 92
+          },
+          "symbol": "update-startup-suite.test-support"
+        },
+        {
+          "path": "src/infra/update-startup.campaign-apply-error.test.ts",
+          "blob_sha": "0125a7ab0bab88d23e2fe8ecfe2b1b8db3bd85ad",
+          "range": {
+            "start_line": 1,
+            "end_line": 198
+          },
+          "symbol": "update-startup.campaign-apply-error.test"
+        },
+        {
+          "path": "src/infra/update-startup.test-support.ts",
+          "blob_sha": "b03ffc964ecc09fb33b3124f671df5b9238624a0",
+          "range": {
+            "start_line": 1,
+            "end_line": 105
+          },
+          "symbol": "update-startup.test-support"
+        },
+        {
+          "path": "src/infra/update-startup.test.ts",
+          "blob_sha": "5f750572dd2db0e5715bf5381003774f3d458042",
+          "range": {
+            "start_line": 1,
+            "end_line": 1546
+          },
+          "symbol": "update-startup.test"
+        },
+        {
+          "path": "src/infra/update-startup.ts",
+          "blob_sha": "84a716df16910235a36e8de22e68f0164760de0b",
+          "range": {
+            "start_line": 1,
+            "end_line": 731
+          },
+          "symbol": "update-startup"
+        },
+        {
+          "path": "src/infra/update-status-schedule.ts",
+          "blob_sha": "8bdf89d504935b1fd355311a981f751b2c6a0850",
+          "range": {
+            "start_line": 1,
+            "end_line": 204
+          },
+          "symbol": "update-status-schedule"
+        },
+        {
+          "path": "src/infra/update-status-state.ts",
+          "blob_sha": "29b7f6e589eed5723c8cc2e70dc1c83e87eca45c",
+          "range": {
+            "start_line": 1,
+            "end_line": 74
+          },
+          "symbol": "update-status-state"
+        },
+        {
+          "path": "src/infra/update-step-identity.ts",
+          "blob_sha": "89047c4bd0b8ef2e321de1eecdb068e1f37facd6",
+          "range": {
+            "start_line": 1,
+            "end_line": 188
+          },
+          "symbol": "update-step-identity"
+        },
+        {
+          "path": "src/infra/update-step-result.ts",
+          "blob_sha": "47161a30666dcd34ec3079f3e453d32a7447fad0",
+          "range": {
+            "start_line": 1,
+            "end_line": 42
+          },
+          "symbol": "update-step-result"
+        },
+        {
+          "path": "src/infra/update-system-package-ownership.ts",
+          "blob_sha": "5d2275458d3da10f0db0e6ef38c90811c98901aa",
+          "range": {
+            "start_line": 1,
+            "end_line": 243
+          },
+          "symbol": "update-system-package-ownership"
+        },
+        {
+          "path": "src/infra/update-timeout-provenance.ts",
+          "blob_sha": "565a05d8afb6d0c6b2d56fe012aec8190a6c6040",
+          "range": {
+            "start_line": 1,
+            "end_line": 37
+          },
+          "symbol": "update-timeout-provenance"
+        },
+        {
+          "path": "src/infra/update-triage-resolution.test.ts",
+          "blob_sha": "70f812aa3a8f3e6114c86271f6daf54d36cce6ca",
+          "range": {
+            "start_line": 1,
+            "end_line": 384
+          },
+          "symbol": "update-triage-resolution.test"
+        },
+        {
+          "path": "src/infra/update-triage-resolution.ts",
+          "blob_sha": "e1ad96a15b49311c298c309e6fafbe8410cbc50c",
+          "range": {
+            "start_line": 1,
+            "end_line": 293
+          },
+          "symbol": "update-triage-resolution"
+        },
+        {
+          "path": "src/infra/update-triage.test.ts",
+          "blob_sha": "5737dd04a3b74d3aa3eedd7114a8ed8873d18b5b",
+          "range": {
+            "start_line": 1,
+            "end_line": 243
+          },
+          "symbol": "update-triage.test"
+        },
+        {
+          "path": "src/infra/update-triage.ts",
+          "blob_sha": "010a27a0b39d7165006b68a17e44f8108dc52861",
+          "range": {
+            "start_line": 1,
+            "end_line": 281
+          },
+          "symbol": "update-triage"
+        }
+      ],
+      "evidence_refs": [
+        "source/host/tests/openclaw_infra_contract.rs",
+        "projects/openclaw-rust/dossiers/infra-worker-platform-scoped.md"
+      ],
+      "requirement_ids": [
+        "OCRM-R04",
+        "OCRM-R08",
+        "OCRM-R11",
+        "OCRM-R24",
+        "OCRM-AC08",
+        "OCRM-AC24"
+      ],
+      "required_gate_ids": [
+        "OCRM-G04-rust-contract",
+        "OCRM-G05-frozen-oracle"
+      ],
+      "oracle_ids": [
+        "OCRM-INFRA-UPDATE-O01"
+      ],
+      "adr_refs": [],
+      "blocker_ids": [
+        "BL-INFRA-UPDATE-WIRING-001"
+      ],
+      "target": {
+        "path": "source/host/src/extensions/host_upgrade/openclaw_update_startup.rs",
+        "symbol": "UpdateTriageReport",
+        "language": "Rust"
+      },
+      "required_evidence_dimensions": [
+        "unit",
+        "format"
+      ],
+      "reviewer": "xuyao@ombhrum.com",
+      "migration_rollback": "Disable automatic startup update check and rely exclusively on manual command invocations"
+    },
+    {
+      "id": "OCRM-RESP-INFRA-PLATFORM-SANDBOX-001",
+      "unit_id": "OCRM-UNIT-INFRA-001",
+      "responsibility_kind": "business-runtime",
+      "behavior": "Platform sandbox abstractions, Windows AppContainer spawn isolation, shell argument escaping, WSL detection, and Zstd magic byte compression validation.",
+      "risk": "High; command injection vulnerabilities or sandbox escapes compromise local host security",
+      "status": {
+        "read": "read-complete",
+        "mapping": "reviewed",
+        "wiring": "not-wired",
+        "implementation": "implemented",
+        "verification": "not-run",
+        "acceptance": "pending"
+      },
+      "selected_owner": "source/host/src/extensions/local_exec/openclaw_platform_sandbox.rs",
+      "existing_owner_candidates": [
+        {
+          "path": "source/host/src/extensions/local_exec/openclaw_platform_sandbox.rs",
+          "reason": "Host platform sandboxing, shell escaping, and binary codec validator"
+        }
+      ],
+      "owner_decision": "Native implementation in openclaw_platform_sandbox under local_exec extension",
+      "dependencies": [
+        "mahayana_host_runtime::extensions::local_exec::openclaw_platform_sandbox"
+      ],
+      "capability_ids": [
+        "infra.platform_sandbox"
+      ],
+      "preconditions": [
+        "Command arguments and file buffers provided for sandbox execution or codec checking"
+      ],
+      "postconditions": [
+        "Arguments escaped for target shell, WSL detected, and Zstd magic bytes verified"
+      ],
+      "invariants": [
+        "Special characters in PowerShell args are backtick-escaped and wrapped in quotes",
+        "Zstd streams begin with magic header [0x28, 0xB5, 0x2F, 0xFD]"
+      ],
+      "typed_contracts": [
+        "WindowsAppContainerOptions",
+        "escape_powershell_argument",
+        "is_wsl_version_output",
+        "is_zstd_compressed"
+      ],
+      "tests": [
+        "source/host/tests/openclaw_infra_contract.rs::test_ocrm_infra_platform_sandbox_and_zstd"
+      ],
+      "integration": {
+        "producer": "source/host/src/extensions/local_exec/openclaw_platform_sandbox.rs",
+        "owner": "source/host/src/extensions/local_exec/openclaw_platform_sandbox.rs",
+        "consumer": "source/host/src/extensions/local_exec/openclaw_platform_sandbox.rs",
+        "entrypoint": "source/host/src/extensions/local_exec/openclaw_platform_sandbox.rs::escape_powershell_argument"
+      },
+      "source_refs": [
+        {
+          "path": "src/infra/utf8-input.ts",
+          "blob_sha": "b2d06a3d786deb77a26c552ddecf1d4077dfb063",
+          "range": {
+            "start_line": 1,
+            "end_line": 7
+          },
+          "symbol": "utf8-input"
+        },
+        {
+          "path": "src/infra/vitest-config.test.ts",
+          "blob_sha": "2027832c79c11c480e29447df8d5ff529179bf8b",
+          "range": {
+            "start_line": 1,
+            "end_line": 23
+          },
+          "symbol": "vitest-config.test"
+        },
+        {
+          "path": "src/infra/vitest-e2e-config.test.ts",
+          "blob_sha": "da31a969b55add5d47edf010309d8f7f81e3c73a",
+          "range": {
+            "start_line": 1,
+            "end_line": 59
+          },
+          "symbol": "vitest-e2e-config.test"
+        },
+        {
+          "path": "src/infra/vitest-live-config.test.ts",
+          "blob_sha": "1e341a27ad7b656358bb922b3adc20c173edd442",
+          "range": {
+            "start_line": 1,
+            "end_line": 33
+          },
+          "symbol": "vitest-live-config.test"
+        },
+        {
+          "path": "src/infra/voicewake-routing.test.ts",
+          "blob_sha": "4b804a0e391fa9a10db45e95738c060d1c6af9a7",
+          "range": {
+            "start_line": 1,
+            "end_line": 42
+          },
+          "symbol": "voicewake-routing.test"
+        },
+        {
+          "path": "src/infra/voicewake-routing.ts",
+          "blob_sha": "e85aeca1d3c61b2fd1105c3e9d3902db23cb2892",
+          "range": {
+            "start_line": 1,
+            "end_line": 125
+          },
+          "symbol": "voicewake-routing"
+        },
+        {
+          "path": "src/infra/voicewake.test.ts",
+          "blob_sha": "c014b784e68b46bc9981b3b0427cf9aece9dd76a",
+          "range": {
+            "start_line": 1,
+            "end_line": 66
+          },
+          "symbol": "voicewake.test"
+        },
+        {
+          "path": "src/infra/voicewake.ts",
+          "blob_sha": "8dcb201173e871f5e041090b8eff9b61efc28af0",
+          "range": {
+            "start_line": 1,
+            "end_line": 57
+          },
+          "symbol": "voicewake"
+        },
+        {
+          "path": "src/infra/wake-concurrency.test-helpers.ts",
+          "blob_sha": "b7873fdb4b5271cad1a9771674cd8a0814504033",
+          "range": {
+            "start_line": 1,
+            "end_line": 99
+          },
+          "symbol": "wake-concurrency.test-helpers"
+        },
+        {
+          "path": "src/infra/warning-filter.test.ts",
+          "blob_sha": "6126bbc46131ef5671f48366701fb5b8d8005dc2",
+          "range": {
+            "start_line": 1,
+            "end_line": 133
+          },
+          "symbol": "warning-filter.test"
+        },
+        {
+          "path": "src/infra/warning-filter.ts",
+          "blob_sha": "c8ee80608144a0209ecc5460f0bbd51a7abdb646",
+          "range": {
+            "start_line": 1,
+            "end_line": 95
+          },
+          "symbol": "warning-filter"
+        },
+        {
+          "path": "src/infra/watch-node-observation.test.ts",
+          "blob_sha": "543077b323b96e81247108b145094a195c09d600",
+          "range": {
+            "start_line": 1,
+            "end_line": 346
+          },
+          "symbol": "watch-node-observation.test"
+        },
+        {
+          "path": "src/infra/watch-node.test.ts",
+          "blob_sha": "8230e779818af47b30d5f64024d8a32a9c1020a0",
+          "range": {
+            "start_line": 1,
+            "end_line": 506
+          },
+          "symbol": "watch-node.test"
+        },
+        {
+          "path": "src/infra/widearea-dns.boundary.test.ts",
+          "blob_sha": "915e7dab5a4b6e0fe19b1910e5bb7e1c1d4d1231",
+          "range": {
+            "start_line": 1,
+            "end_line": 71
+          },
+          "symbol": "widearea-dns.boundary.test"
+        },
+        {
+          "path": "src/infra/widearea-dns.test.ts",
+          "blob_sha": "93e099da0c6d4bfc2e4b8d6083cd36e409f394a5",
+          "range": {
+            "start_line": 1,
+            "end_line": 191
+          },
+          "symbol": "widearea-dns.test"
+        },
+        {
+          "path": "src/infra/widearea-dns.ts",
+          "blob_sha": "85e47ce6d55391647d6162b8b3fa78bdb24c02d1",
+          "range": {
+            "start_line": 1,
+            "end_line": 233
+          },
+          "symbol": "widearea-dns"
+        },
+        {
+          "path": "src/infra/windows-appcontainer-spawn.test.ts",
+          "blob_sha": "6958a2acaebafa2c03bfe41ec6a2a3f1e95eadf8",
+          "range": {
+            "start_line": 1,
+            "end_line": 100
+          },
+          "symbol": "windows-appcontainer-spawn.test"
+        },
+        {
+          "path": "src/infra/windows-appcontainer-spawn.ts",
+          "blob_sha": "634008e32e03543863a32e4d0cdeff37e36d6214",
+          "range": {
+            "start_line": 1,
+            "end_line": 72
+          },
+          "symbol": "windows-appcontainer-spawn"
+        },
+        {
+          "path": "src/infra/windows-diagnostic-env.test.ts",
+          "blob_sha": "de3dee48892b30a2d0d2cd25b1c6a4572d9dab16",
+          "range": {
+            "start_line": 1,
+            "end_line": 279
+          },
+          "symbol": "windows-diagnostic-env.test"
+        },
+        {
+          "path": "src/infra/windows-encoding.test.ts",
+          "blob_sha": "94ce36de0e0ba99b5c15da0a609ba247e6c8ae03",
+          "range": {
+            "start_line": 1,
+            "end_line": 206
+          },
+          "symbol": "windows-encoding.test"
+        },
+        {
+          "path": "src/infra/windows-encoding.ts",
+          "blob_sha": "a9c5efe8a90adb358914490be60410b9d616fc9d",
+          "range": {
+            "start_line": 1,
+            "end_line": 364
+          },
+          "symbol": "windows-encoding"
+        },
+        {
+          "path": "src/infra/windows-gateway-firewall-diagnostics.test.ts",
+          "blob_sha": "886008295f957e13fe69a73e181534cc6e3d8857",
+          "range": {
+            "start_line": 1,
+            "end_line": 280
+          },
+          "symbol": "windows-gateway-firewall-diagnostics.test"
+        },
+        {
+          "path": "src/infra/windows-gateway-firewall-diagnostics.ts",
+          "blob_sha": "23ff40fec10b1843a282fec703e08396ac0195e9",
+          "range": {
+            "start_line": 1,
+            "end_line": 584
+          },
+          "symbol": "windows-gateway-firewall-diagnostics"
+        },
+        {
+          "path": "src/infra/windows-install-roots.test.ts",
+          "blob_sha": "d2dd25e55d4b48ca76550baf9d200d03a41fe330",
+          "range": {
+            "start_line": 1,
+            "end_line": 139
+          },
+          "symbol": "windows-install-roots.test"
+        },
+        {
+          "path": "src/infra/windows-install-roots.ts",
+          "blob_sha": "def4bcd1ba4e51a6110eaf43bff3b50384afec8b",
+          "range": {
+            "start_line": 1,
+            "end_line": 290
+          },
+          "symbol": "windows-install-roots"
+        },
+        {
+          "path": "src/infra/windows-launcher-encoding.test.ts",
+          "blob_sha": "bf8c19bcb70a963547a2638fa9d61af0ecc9423c",
+          "range": {
+            "start_line": 1,
+            "end_line": 138
+          },
+          "symbol": "windows-launcher-encoding.test"
+        },
+        {
+          "path": "src/infra/windows-launcher-encoding.ts",
+          "blob_sha": "9d335aca387dafe9480177307882925f39d48256",
+          "range": {
+            "start_line": 1,
+            "end_line": 122
+          },
+          "symbol": "windows-launcher-encoding"
+        },
+        {
+          "path": "src/infra/windows-port-pids.ts",
+          "blob_sha": "9f4ccb96884223ac9bc41a835ad894270d045c7a",
+          "range": {
+            "start_line": 1,
+            "end_line": 211
+          },
+          "symbol": "windows-port-pids"
+        },
+        {
+          "path": "src/infra/windows-powershell-spawn.ts",
+          "blob_sha": "026314b2ee4fbee54910f35cbb4f397daaad6611",
+          "range": {
+            "start_line": 1,
+            "end_line": 45
+          },
+          "symbol": "windows-powershell-spawn"
+        },
+        {
+          "path": "src/infra/windows-private-directory.ts",
+          "blob_sha": "970ebe3bf2923b7cf2e079edd509112e31463069",
+          "range": {
+            "start_line": 1,
+            "end_line": 31
+          },
+          "symbol": "windows-private-directory"
+        },
+        {
+          "path": "src/infra/windows-process-census.native.test.ts",
+          "blob_sha": "095eee6111f19efa927b343f0d535cffdea6c080",
+          "range": {
+            "start_line": 1,
+            "end_line": 90
+          },
+          "symbol": "windows-process-census.native.test"
+        },
+        {
+          "path": "src/infra/windows-process-census.test.ts",
+          "blob_sha": "3f61554b614f3eed9189b8b410d82ad0b8c28030",
+          "range": {
+            "start_line": 1,
+            "end_line": 169
+          },
+          "symbol": "windows-process-census.test"
+        },
+        {
+          "path": "src/infra/windows-process-census.ts",
+          "blob_sha": "2eef15fea1c6d74d98a5ac2a902ce11bf6fee59a",
+          "range": {
+            "start_line": 1,
+            "end_line": 67
+          },
+          "symbol": "windows-process-census"
+        },
+        {
+          "path": "src/infra/windows-process-start.native.test.ts",
+          "blob_sha": "9e85bc0f25267c9236aca23a7774b6956b89bdd3",
+          "range": {
+            "start_line": 1,
+            "end_line": 63
+          },
+          "symbol": "windows-process-start.native.test"
+        },
+        {
+          "path": "src/infra/windows-process-start.test.ts",
+          "blob_sha": "1433685d6129496f389fef042a9e80ec8775b327",
+          "range": {
+            "start_line": 1,
+            "end_line": 171
+          },
+          "symbol": "windows-process-start.test"
+        },
+        {
+          "path": "src/infra/windows-process-start.ts",
+          "blob_sha": "22e4d307cb2942b920e5b81267fc93288adf5f10",
+          "range": {
+            "start_line": 1,
+            "end_line": 155
+          },
+          "symbol": "windows-process-start"
+        },
+        {
+          "path": "src/infra/windows-shell-command.test.ts",
+          "blob_sha": "c5e25e92cde7a0a6ff3c8503a09ca72ecc805c13",
+          "range": {
+            "start_line": 1,
+            "end_line": 37
+          },
+          "symbol": "windows-shell-command.test"
+        },
+        {
+          "path": "src/infra/windows-shell-command.ts",
+          "blob_sha": "76752557e1e67bcf0802b1c59010d564c61158e3",
+          "range": {
+            "start_line": 1,
+            "end_line": 221
+          },
+          "symbol": "windows-shell-command"
+        },
+        {
+          "path": "src/infra/windows-task-restart.test.ts",
+          "blob_sha": "3abb06a43664546b45fa87e28997a092375ceead",
+          "range": {
+            "start_line": 1,
+            "end_line": 294
+          },
+          "symbol": "windows-task-restart.test"
+        },
+        {
+          "path": "src/infra/windows-task-restart.ts",
+          "blob_sha": "42d9c7321ce0dc8920535fce8d6d2dd20314f84c",
+          "range": {
+            "start_line": 1,
+            "end_line": 147
+          },
+          "symbol": "windows-task-restart"
+        },
+        {
+          "path": "src/infra/windows-user-sid.ts",
+          "blob_sha": "1bcab8bba1e2c67d409896056718808d81aa393a",
+          "range": {
+            "start_line": 1,
+            "end_line": 25
+          },
+          "symbol": "windows-user-sid"
+        },
+        {
+          "path": "src/infra/ws.test.ts",
+          "blob_sha": "e9e27d76d5729800063a55205b2cd365650f096a",
+          "range": {
+            "start_line": 1,
+            "end_line": 14
+          },
+          "symbol": "ws.test"
+        },
+        {
+          "path": "src/infra/ws.ts",
+          "blob_sha": "f9b81015b69374464f54d9996cf915ec6b28aff4",
+          "range": {
+            "start_line": 1,
+            "end_line": 17
+          },
+          "symbol": "ws"
+        },
+        {
+          "path": "src/infra/wsl.test.ts",
+          "blob_sha": "82ca6ac9859c963fa973349ec8ff0c944013559d",
+          "range": {
+            "start_line": 1,
+            "end_line": 84
+          },
+          "symbol": "wsl.test"
+        },
+        {
+          "path": "src/infra/wsl.ts",
+          "blob_sha": "1d6a29435cf5a844f0d8ac1c31d8da2944207215",
+          "range": {
+            "start_line": 1,
+            "end_line": 52
+          },
+          "symbol": "wsl"
+        },
+        {
+          "path": "src/infra/zstd-codec.ts",
+          "blob_sha": "f5f7e1728b9a2150d51556de3a9860ab3dd5cfa3",
+          "range": {
+            "start_line": 1,
+            "end_line": 30
+          },
+          "symbol": "zstd-codec"
+        }
+      ],
+      "evidence_refs": [
+        "source/host/tests/openclaw_infra_contract.rs",
+        "projects/openclaw-rust/dossiers/infra-worker-platform-scoped.md"
+      ],
+      "requirement_ids": [
+        "OCRM-R04",
+        "OCRM-R08",
+        "OCRM-R13",
+        "OCRM-R20",
+        "OCRM-R24",
+        "OCRM-AC08",
+        "OCRM-AC20",
+        "OCRM-AC24"
+      ],
+      "required_gate_ids": [
+        "OCRM-G04-rust-contract",
+        "OCRM-G05-frozen-oracle"
+      ],
+      "oracle_ids": [
+        "OCRM-INFRA-SANDBOX-O01"
+      ],
+      "adr_refs": [],
+      "blocker_ids": [
+        "BL-INFRA-SANDBOX-WIRING-001"
+      ],
+      "target": {
+        "path": "source/host/src/extensions/local_exec/openclaw_platform_sandbox.rs",
+        "symbol": "escape_powershell_argument",
+        "language": "Rust"
+      },
+      "required_evidence_dimensions": [
+        "unit",
+        "format"
+      ],
+      "reviewer": "xuyao@ombhrum.com",
+      "migration_rollback": "Use strict POSIX sh execution mode on non-Windows hosts"
+    },
+    {
+      "id": "OCRM-RESP-INFRA-WORKER-POOL-001",
+      "unit_id": "OCRM-UNIT-INFRA-001",
+      "responsibility_kind": "business-runtime",
+      "behavior": "Worker task pool management, sizing limits, task assignment and completion lifecycle, and idle worker sweeping for memory reclamation.",
+      "risk": "High; memory leaks or task leaks in worker pool lead to CPU exhaustion and process starvation",
+      "status": {
+        "read": "read-complete",
+        "mapping": "reviewed",
+        "wiring": "not-wired",
+        "implementation": "implemented",
+        "verification": "not-run",
+        "acceptance": "pending"
+      },
+      "selected_owner": "source/host/src/extensions/box_lifecycle/openclaw_worker_pool.rs",
+      "existing_owner_candidates": [
+        {
+          "path": "source/host/src/extensions/box_lifecycle/openclaw_worker_pool.rs",
+          "reason": "Host worker task pool manager, capacity controller, and idle GC sweeper"
+        }
+      ],
+      "owner_decision": "Native implementation in openclaw_worker_pool under box_lifecycle extension",
+      "dependencies": [
+        "mahayana_host_runtime::extensions::box_lifecycle::openclaw_worker_pool"
+      ],
+      "capability_ids": [
+        "infra.worker_pool"
+      ],
+      "preconditions": [
+        "Workers registered in pool and tasks dispatched"
+      ],
+      "postconditions": [
+        "Worker active tasks tracked and idle workers swept after timeout expiration"
+      ],
+      "invariants": [
+        "Completing last task transitions worker to idle with recorded timestamp",
+        "Idle sweep identifies workers whose idle duration exceeds configured timeout"
+      ],
+      "typed_contracts": [
+        "WorkerPoolConfig",
+        "WorkerTaskPool",
+        "WorkerInstance",
+        "WorkerTaskKind"
+      ],
+      "tests": [
+        "source/host/tests/openclaw_infra_contract.rs::test_ocrm_infra_worker_pool_lifecycle"
+      ],
+      "integration": {
+        "producer": "source/host/src/extensions/box_lifecycle/openclaw_worker_pool.rs",
+        "owner": "source/host/src/extensions/box_lifecycle/openclaw_worker_pool.rs",
+        "consumer": "source/host/src/extensions/box_lifecycle/openclaw_worker_pool.rs",
+        "entrypoint": "source/host/src/extensions/box_lifecycle/openclaw_worker_pool.rs::sweep_idle_workers"
+      },
+      "source_refs": [
+        {
+          "path": "src/infra/worker-cpu.test-support.ts",
+          "blob_sha": "f2df8375d7eef4f4bab1df29a3bd9ecddc75f117",
+          "range": {
+            "start_line": 1,
+            "end_line": 27
+          },
+          "symbol": "worker-cpu.test-support"
+        },
+        {
+          "path": "src/infra/worker-cpu.test.ts",
+          "blob_sha": "936e30f4663078015696e76640891a19005b021e",
+          "range": {
+            "start_line": 1,
+            "end_line": 663
+          },
+          "symbol": "worker-cpu.test"
+        },
+        {
+          "path": "src/infra/worker-cpu.ts",
+          "blob_sha": "6811c89e6eb629ccbb121ecbe479973bf4210c0b",
+          "range": {
+            "start_line": 1,
+            "end_line": 753
+          },
+          "symbol": "worker-cpu"
+        },
+        {
+          "path": "src/infra/worker-diagnostic-script.ts",
+          "blob_sha": "ed1cf97a7031cac0e261d686ddff111c3c374fb0",
+          "range": {
+            "start_line": 1,
+            "end_line": 29
+          },
+          "symbol": "worker-diagnostic-script"
+        },
+        {
+          "path": "src/infra/worker-env-boundary.test.ts",
+          "blob_sha": "f946a8fc10465eba6b33fd4aa22318e3638c84b4",
+          "range": {
+            "start_line": 1,
+            "end_line": 93
+          },
+          "symbol": "worker-env-boundary.test"
+        },
+        {
+          "path": "src/infra/worker-heap-flag.test.ts",
+          "blob_sha": "1d3cc55f7f63107b5e3974ef7277e8dfac6e68bd",
+          "range": {
+            "start_line": 1,
+            "end_line": 61
+          },
+          "symbol": "worker-heap-flag.test"
+        },
+        {
+          "path": "src/infra/worker-idle-gc.test.ts",
+          "blob_sha": "7a0b983512aa8c5651e351534760649307820064",
+          "range": {
+            "start_line": 1,
+            "end_line": 78
+          },
+          "symbol": "worker-idle-gc.test"
+        },
+        {
+          "path": "src/infra/worker-idle-gc.ts",
+          "blob_sha": "47e4e1c3c1b524ebf1fda62a96bb40893d88cd61",
+          "range": {
+            "start_line": 1,
+            "end_line": 69
+          },
+          "symbol": "worker-idle-gc"
+        },
+        {
+          "path": "src/infra/worker-memory.ts",
+          "blob_sha": "170b808accd38f98a7b82e06a65c3f17a68c8124",
+          "range": {
+            "start_line": 1,
+            "end_line": 169
+          },
+          "symbol": "worker-memory"
+        },
+        {
+          "path": "src/infra/worker-message-metrics.test.ts",
+          "blob_sha": "6a318dfe54ec539408db67ad834fb6431db28d38",
+          "range": {
+            "start_line": 1,
+            "end_line": 116
+          },
+          "symbol": "worker-message-metrics.test"
+        },
+        {
+          "path": "src/infra/worker-message-metrics.ts",
+          "blob_sha": "a0e10b450755b2f98ea5b0c31922bf84ae003fa9",
+          "range": {
+            "start_line": 1,
+            "end_line": 212
+          },
+          "symbol": "worker-message-metrics"
+        },
+        {
+          "path": "src/infra/worker-native-error.test.ts",
+          "blob_sha": "8d038b5f1fdeeb0a7f9115d9b00d3dfb5fd7b07b",
+          "range": {
+            "start_line": 1,
+            "end_line": 43
+          },
+          "symbol": "worker-native-error.test"
+        },
+        {
+          "path": "src/infra/worker-native-error.ts",
+          "blob_sha": "2fcdf0457dce137dbbfc8676290e588887ff8105",
+          "range": {
+            "start_line": 1,
+            "end_line": 132
+          },
+          "symbol": "worker-native-error"
+        },
+        {
+          "path": "src/infra/worker-native-handle.test.ts",
+          "blob_sha": "d43aabb96106941ea5fba41b010ccf59b3cb342f",
+          "range": {
+            "start_line": 1,
+            "end_line": 76
+          },
+          "symbol": "worker-native-handle.test"
+        },
+        {
+          "path": "src/infra/worker-native-handle.ts",
+          "blob_sha": "75cf3cdbf8b494fe9fed5e6df43d3e6372d782e0",
+          "range": {
+            "start_line": 1,
+            "end_line": 480
+          },
+          "symbol": "worker-native-handle"
+        },
+        {
+          "path": "src/infra/worker-native-lifecycle.custody.test-support.ts",
+          "blob_sha": "64baeb8261569877f929f00da4206b10f3a8a0a4",
+          "range": {
+            "start_line": 1,
+            "end_line": 61
+          },
+          "symbol": "worker-native-lifecycle.custody.test-support"
+        },
+        {
+          "path": "src/infra/worker-native-lifecycle.resource.test-support.ts",
+          "blob_sha": "d86babb05b44c73ea9da074b2fe316b1e270742f",
+          "range": {
+            "start_line": 1,
+            "end_line": 85
+          },
+          "symbol": "worker-native-lifecycle.resource.test-support"
+        },
+        {
+          "path": "src/infra/worker-native-lifecycle.runtime.test-support.ts",
+          "blob_sha": "0b3ff005fd25cf0d3e772d5a5f12d125dc0a45af",
+          "range": {
+            "start_line": 1,
+            "end_line": 269
+          },
+          "symbol": "worker-native-lifecycle.runtime.test-support"
+        },
+        {
+          "path": "src/infra/worker-native-lifecycle.test-support.ts",
+          "blob_sha": "60ff600cdf2554290e2d36432fee23881eb2fdc1",
+          "range": {
+            "start_line": 1,
+            "end_line": 551
+          },
+          "symbol": "worker-native-lifecycle.test-support"
+        },
+        {
+          "path": "src/infra/worker-native-lifecycle.test.ts",
+          "blob_sha": "25de99b66282afcc686ed2f79e74dbf7819d100c",
+          "range": {
+            "start_line": 1,
+            "end_line": 90
+          },
+          "symbol": "worker-native-lifecycle.test"
+        },
+        {
+          "path": "src/infra/worker-native-lifecycle.ts",
+          "blob_sha": "4afc06188377ae708c7a9db36a272b650f719086",
+          "range": {
+            "start_line": 1,
+            "end_line": 456
+          },
+          "symbol": "worker-native-lifecycle"
+        },
+        {
+          "path": "src/infra/worker-native-lifecycle.types.ts",
+          "blob_sha": "7360641117d45c3d063fec1445aeb3965f6b5235",
+          "range": {
+            "start_line": 1,
+            "end_line": 109
+          },
+          "symbol": "worker-native-lifecycle.types"
+        },
+        {
+          "path": "src/infra/worker-native-lifecycle.worker.ts",
+          "blob_sha": "d159a0a51e535858345b7c8cbe17e9778f1b451e",
+          "range": {
+            "start_line": 1,
+            "end_line": 312
+          },
+          "symbol": "worker-native-lifecycle.worker"
+        },
+        {
+          "path": "src/infra/worker-native-port.ts",
+          "blob_sha": "997c0f300bb489cbdf67f521d40bd0d0ebb11f57",
+          "range": {
+            "start_line": 1,
+            "end_line": 38
+          },
+          "symbol": "worker-native-port"
+        },
+        {
+          "path": "src/infra/worker-native-resource.ts",
+          "blob_sha": "8e372c9aa7e01f138ddf9ff56876f0520f25b526",
+          "range": {
+            "start_line": 1,
+            "end_line": 100
+          },
+          "symbol": "worker-native-resource"
+        },
+        {
+          "path": "src/infra/worker-native-task-port.test.ts",
+          "blob_sha": "072367649ac76fcecdfa46cd401b95298e611526",
+          "range": {
+            "start_line": 1,
+            "end_line": 153
+          },
+          "symbol": "worker-native-task-port.test"
+        },
+        {
+          "path": "src/infra/worker-native-task-port.ts",
+          "blob_sha": "6803004e94e23fa752d88c09298556f4559b370a",
+          "range": {
+            "start_line": 1,
+            "end_line": 149
+          },
+          "symbol": "worker-native-task-port"
+        },
+        {
+          "path": "src/infra/worker-pool-sizing.ts",
+          "blob_sha": "0389f146ef046775fae6d4039f15c1ecda9b056b",
+          "range": {
+            "start_line": 1,
+            "end_line": 43
+          },
+          "symbol": "worker-pool-sizing"
+        },
+        {
+          "path": "src/infra/worker-request-diagnostics.ts",
+          "blob_sha": "0a3fe3cdb8be124d2c259c5975160c6f5db237c0",
+          "range": {
+            "start_line": 1,
+            "end_line": 242
+          },
+          "symbol": "worker-request-diagnostics"
+        },
+        {
+          "path": "src/infra/worker-request-kind.ts",
+          "blob_sha": "9fb669f301e33c095fbe018ad2cedb9b6c33c0f3",
+          "range": {
+            "start_line": 1,
+            "end_line": 38
+          },
+          "symbol": "worker-request-kind"
+        },
+        {
+          "path": "src/infra/worker-task-capacity.ts",
+          "blob_sha": "4e5ed2cdc6967cee1bb4f50710fc55b923f57afa",
+          "range": {
+            "start_line": 1,
+            "end_line": 15
+          },
+          "symbol": "worker-task-capacity"
+        },
+        {
+          "path": "src/infra/worker-task-host.ts",
+          "blob_sha": "25a837385fd6bbca851c369abf2091cbd798f233",
+          "range": {
+            "start_line": 1,
+            "end_line": 190
+          },
+          "symbol": "worker-task-host"
+        },
+        {
+          "path": "src/infra/worker-task-pool-registry.ts",
+          "blob_sha": "232eab06b4fde0cf0291390f592ac64ff8135d9b",
+          "range": {
+            "start_line": 1,
+            "end_line": 62
+          },
+          "symbol": "worker-task-pool-registry"
+        },
+        {
+          "path": "src/infra/worker-task-pool-runtime.test-support.ts",
+          "blob_sha": "a74598f422380628ad04bd0971ad83389e99c5f5",
+          "range": {
+            "start_line": 1,
+            "end_line": 43
+          },
+          "symbol": "worker-task-pool-runtime.test-support"
+        },
+        {
+          "path": "src/infra/worker-task-pool.cleanup.test.ts",
+          "blob_sha": "8bda7b349b3d98e8ac7a8c31819063eefb261c5e",
+          "range": {
+            "start_line": 1,
+            "end_line": 244
+          },
+          "symbol": "worker-task-pool.cleanup.test"
+        },
+        {
+          "path": "src/infra/worker-task-pool.failure.test-support.ts",
+          "blob_sha": "ba3f1158947f477043ebb416329a1081dccffad2",
+          "range": {
+            "start_line": 1,
+            "end_line": 126
+          },
+          "symbol": "worker-task-pool.failure.test-support"
+        },
+        {
+          "path": "src/infra/worker-task-pool.headless.test-support.ts",
+          "blob_sha": "aac614cd48b43ea8929a640caad908efa29d3ae2",
+          "range": {
+            "start_line": 1,
+            "end_line": 9
+          },
+          "symbol": "worker-task-pool.headless.test-support"
+        },
+        {
+          "path": "src/infra/worker-task-pool.logging.test-support.ts",
+          "blob_sha": "0023efc5c3674e1e30a1c336e8d2026e036d8582",
+          "range": {
+            "start_line": 1,
+            "end_line": 32
+          },
+          "symbol": "worker-task-pool.logging.test-support"
+        },
+        {
+          "path": "src/infra/worker-task-pool.memory.test-support.ts",
+          "blob_sha": "6a3489f284ed439f71ceb1d26ffa919135b8c598",
+          "range": {
+            "start_line": 1,
+            "end_line": 44
+          },
+          "symbol": "worker-task-pool.memory.test-support"
+        },
+        {
+          "path": "src/infra/worker-task-pool.memory.test.ts",
+          "blob_sha": "79e109793cd2010b35e2b0e64b28847a2660178c",
+          "range": {
+            "start_line": 1,
+            "end_line": 67
+          },
+          "symbol": "worker-task-pool.memory.test"
+        },
+        {
+          "path": "src/infra/worker-task-pool.mock.test-support.ts",
+          "blob_sha": "020700990f41e65e9bb158c0198bed11589fba64",
+          "range": {
+            "start_line": 1,
+            "end_line": 32
+          },
+          "symbol": "worker-task-pool.mock.test-support"
+        },
+        {
+          "path": "src/infra/worker-task-pool.native-exchanges.test-support.ts",
+          "blob_sha": "411879617eaecb1408c3e86700f8d2b1e1f51bc0",
+          "range": {
+            "start_line": 1,
+            "end_line": 234
+          },
+          "symbol": "worker-task-pool.native-exchanges.test-support"
+        },
+        {
+          "path": "src/infra/worker-task-pool.native-exchanges.test.ts",
+          "blob_sha": "e376045fea1a5e87b552930c65ffb9de5c2da217",
+          "range": {
+            "start_line": 1,
+            "end_line": 83
+          },
+          "symbol": "worker-task-pool.native-exchanges.test"
+        },
+        {
+          "path": "src/infra/worker-task-pool.native-sections.test-support.ts",
+          "blob_sha": "225a1e61e86fbb0e9488907bde86be88aa7aec32",
+          "range": {
+            "start_line": 1,
+            "end_line": 127
+          },
+          "symbol": "worker-task-pool.native-sections.test-support"
+        },
+        {
+          "path": "src/infra/worker-task-pool.notifications.test.ts",
+          "blob_sha": "7c8198adca67d83d02b29d700df40833bea02827",
+          "range": {
+            "start_line": 1,
+            "end_line": 51
+          },
+          "symbol": "worker-task-pool.notifications.test"
+        },
+        {
+          "path": "src/infra/worker-task-pool.owned.test-support.ts",
+          "blob_sha": "0217b2ca4b2d9d28e723eb3e6b581338168c752b",
+          "range": {
+            "start_line": 1,
+            "end_line": 82
+          },
+          "symbol": "worker-task-pool.owned.test-support"
+        },
+        {
+          "path": "src/infra/worker-task-pool.owned.test.ts",
+          "blob_sha": "ba1ed11184d383c862b8b74ab4a51f4c1ea0e657",
+          "range": {
+            "start_line": 1,
+            "end_line": 687
+          },
+          "symbol": "worker-task-pool.owned.test"
+        },
+        {
+          "path": "src/infra/worker-task-pool.preparation.test.ts",
+          "blob_sha": "bd3b8efb8484ead172400901ad70da07da22db4a",
+          "range": {
+            "start_line": 1,
+            "end_line": 777
+          },
+          "symbol": "worker-task-pool.preparation.test"
+        },
+        {
+          "path": "src/infra/worker-task-pool.reply-retention.test-support.ts",
+          "blob_sha": "57bba5e09a9efd3e02b0051ff63e36313afb7769",
+          "range": {
+            "start_line": 1,
+            "end_line": 81
+          },
+          "symbol": "worker-task-pool.reply-retention.test-support"
+        },
+        {
+          "path": "src/infra/worker-task-pool.resources.test-support.ts",
+          "blob_sha": "9ff96695e68085edbc77328956e46f670a7704cb",
+          "range": {
+            "start_line": 1,
+            "end_line": 73
+          },
+          "symbol": "worker-task-pool.resources.test-support"
+        },
+        {
+          "path": "src/infra/worker-task-pool.retained.test.ts",
+          "blob_sha": "9fdd9f86c95be296a7aec30018184288ba8a2f36",
+          "range": {
+            "start_line": 1,
+            "end_line": 300
+          },
+          "symbol": "worker-task-pool.retained.test"
+        },
+        {
+          "path": "src/infra/worker-task-pool.retention.test-support.ts",
+          "blob_sha": "911884fb9ff6f30b5e2182a4dec0433898309b0f",
+          "range": {
+            "start_line": 1,
+            "end_line": 54
+          },
+          "symbol": "worker-task-pool.retention.test-support"
+        },
+        {
+          "path": "src/infra/worker-task-pool.sqlite-idle.test-support.ts",
+          "blob_sha": "d9f309d9e460bb37e149a0e6880a1fba8d4d2701",
+          "range": {
+            "start_line": 1,
+            "end_line": 74
+          },
+          "symbol": "worker-task-pool.sqlite-idle.test-support"
+        },
+        {
+          "path": "src/infra/worker-task-pool.sqlite-idle.test.ts",
+          "blob_sha": "90b587ed15d2388c703f3b7f4b288b8d1c851d91",
+          "range": {
+            "start_line": 1,
+            "end_line": 58
+          },
+          "symbol": "worker-task-pool.sqlite-idle.test"
+        },
+        {
+          "path": "src/infra/worker-task-pool.test-support.ts",
+          "blob_sha": "6830a6403c662cf27c2d7775c4c896910ef2f26e",
+          "range": {
+            "start_line": 1,
+            "end_line": 74
+          },
+          "symbol": "worker-task-pool.test-support"
+        },
+        {
+          "path": "src/infra/worker-task-pool.test.ts",
+          "blob_sha": "494146e3e2ec9a5aff90dbe5f6903af94ad2c031",
+          "range": {
+            "start_line": 1,
+            "end_line": 482
+          },
+          "symbol": "worker-task-pool.test"
+        },
+        {
+          "path": "src/infra/worker-task-pool.ts",
+          "blob_sha": "5a8565c4678f35b029c24921a62e14c7f026755b",
+          "range": {
+            "start_line": 1,
+            "end_line": 79
+          },
+          "symbol": "worker-task-pool"
+        },
+        {
+          "path": "src/infra/worker-task-pool.types.ts",
+          "blob_sha": "8b06a269e943e66ae199729af65f578df98cf854",
+          "range": {
+            "start_line": 1,
+            "end_line": 26
+          },
+          "symbol": "worker-task-pool.types"
+        },
+        {
+          "path": "src/infra/worker-task-server.test.ts",
+          "blob_sha": "adb184ec3676374dc6b7b34ef41b4cd7965ab76a",
+          "range": {
+            "start_line": 1,
+            "end_line": 258
+          },
+          "symbol": "worker-task-server.test"
+        },
+        {
+          "path": "src/infra/worker-task-server.ts",
+          "blob_sha": "87810a31b38805e1a4929db98d7d998e3319e094",
+          "range": {
+            "start_line": 1,
+            "end_line": 167
+          },
+          "symbol": "worker-task-server"
+        },
+        {
+          "path": "src/infra/worker-task-transport.ts",
+          "blob_sha": "715dc09b3591d0b94ae80c8a26a8ed23236a8e1b",
+          "range": {
+            "start_line": 1,
+            "end_line": 13
+          },
+          "symbol": "worker-task-transport"
+        },
+        {
+          "path": "src/infra/worker-transfer-bytes.test.ts",
+          "blob_sha": "4053fbb2f5afc1a179913488188dc48fe404bc9d",
+          "range": {
+            "start_line": 1,
+            "end_line": 40
+          },
+          "symbol": "worker-transfer-bytes.test"
+        },
+        {
+          "path": "src/infra/worker-transfer-bytes.ts",
+          "blob_sha": "c8a84da07a28d8b3f2c892f80d520ff938c77dfc",
+          "range": {
+            "start_line": 1,
+            "end_line": 14
+          },
+          "symbol": "worker-transfer-bytes"
+        }
+      ],
+      "evidence_refs": [
+        "source/host/tests/openclaw_infra_contract.rs",
+        "projects/openclaw-rust/dossiers/infra-worker-platform-scoped.md"
+      ],
+      "requirement_ids": [
+        "OCRM-R04",
+        "OCRM-R08",
+        "OCRM-R21",
+        "OCRM-R24",
+        "OCRM-AC08",
+        "OCRM-AC21",
+        "OCRM-AC24"
+      ],
+      "required_gate_ids": [
+        "OCRM-G04-rust-contract",
+        "OCRM-G05-frozen-oracle"
+      ],
+      "oracle_ids": [
+        "OCRM-INFRA-WORKER-O01"
+      ],
+      "adr_refs": [],
+      "blocker_ids": [
+        "BL-INFRA-WORKER-WIRING-001"
+      ],
+      "target": {
+        "path": "source/host/src/extensions/box_lifecycle/openclaw_worker_pool.rs",
+        "symbol": "WorkerTaskPool",
+        "language": "Rust"
+      },
+      "required_evidence_dimensions": [
+        "unit",
+        "format"
+      ],
+      "reviewer": "xuyao@ombhrum.com",
+      "migration_rollback": "Use single-threaded synchronous task execution without pool concurrency"
     }
   ],
   "schema_version": 1,

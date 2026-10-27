@@ -1,0 +1,57 @@
+//! OpenClaw Platform Sandbox, Windows AppContainer, Shell Escaping, and Zstd Codec
+//!
+//! Mirrors:
+//! - `src/infra/windows-appcontainer-spawn.ts`
+//! - `src/infra/windows-powershell-spawn.ts`
+//! - `src/infra/windows-shell-command.ts`
+//! - `src/infra/windows-encoding.ts`
+//! - `src/infra/windows-user-sid.ts`
+//! - `src/infra/wsl.ts`
+//! - `src/infra/zstd-codec.ts`
+//! - `src/infra/utf8-input.ts`
+
+use serde::{Deserialize, Serialize};
+
+pub const ZSTD_MAGIC_HEADER: [u8; 4] = [0x28, 0xB5, 0x2F, 0xFD];
+
+pub fn is_zstd_compressed(data: &[u8]) -> bool {
+    data.len() >= 4 && data[0..4] == ZSTD_MAGIC_HEADER
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct WindowsAppContainerOptions {
+    pub package_family_name: String,
+    pub user_sid: Option<String>,
+    pub allow_network_client: bool,
+    pub allow_network_server: bool,
+    pub working_directory: Option<String>,
+}
+
+impl WindowsAppContainerOptions {
+    pub fn new(package_family_name: impl Into<String>) -> Self {
+        Self {
+            package_family_name: package_family_name.into(),
+            user_sid: None,
+            allow_network_client: false,
+            allow_network_server: false,
+            working_directory: None,
+        }
+    }
+}
+
+pub fn escape_powershell_argument(arg: &str) -> String {
+    if arg.is_empty() {
+        return "''".to_string();
+    }
+    if arg.contains(' ') || arg.contains('"') || arg.contains('\'') || arg.contains('$') || arg.contains('`') {
+        let escaped = arg.replace('`', "``").replace('$', "`$").replace('"', "`\"");
+        format!("\"{}\"", escaped)
+    } else {
+        arg.to_string()
+    }
+}
+
+pub fn is_wsl_version_output(version_output: &str) -> bool {
+    let lower = version_output.to_ascii_lowercase();
+    lower.contains("microsoft") || lower.contains("wsl")
+}
