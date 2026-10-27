@@ -66,3 +66,11 @@
     - Verifies absence of deprecated `discovery:` hooks in provider plugins, enforcing static descriptor isolation.
   - `test_ocrm_plugins_auth_choice_contract` (PASSED)
     - Verifies method choice string building and resolution to preferred provider ID.
+  - `test_ocrm_plugins_embedding_provider_registration` (PASSED)
+    - Verifies public SDK helpers are read-only (`registerEmbeddingProvider`, `clearEmbeddingProviders` forbidden from public exposure).
+    - Verifies plugins must declare `contracts.embeddingProviders` before registering adapter.
+    - Verifies duplicate provider IDs and reserved core provider IDs (`openai-compatible`) are rejected.
+  - `test_ocrm_plugins_wizard_choice_resolution_and_model_picker` (PASSED)
+    - Verifies exact provider, method, and wizard resolution across colon, hyphen, and primary default formats.
+    - Verifies wizard model picker entries exposed across shared wizard layer.
+

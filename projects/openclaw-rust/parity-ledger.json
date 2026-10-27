@@ -10,10 +10,10 @@
     "ui_accepted": false
   },
   "file_coverage": {
-    "mapped_paths": 411,
+    "mapped_paths": 418,
     "omitted_known": 0,
     "tracked_paths": 58750,
-    "unclassified_paths": 58339
+    "unclassified_paths": 58332
   },
   "inventory_authority": {
     "manifest_source": "GitHub Actions immutable artifact candidate",
@@ -20756,7 +20756,9 @@
         "source/host/tests/openclaw_plugins_contract.rs::test_ocrm_plugins_registry_public_artifacts_retry_precedence",
         "source/host/tests/openclaw_plugins_contract.rs::test_ocrm_plugins_shared_upstream_model_contract",
         "source/host/tests/openclaw_plugins_contract.rs::test_ocrm_plugins_provider_catalog_deprecation_guard",
-        "source/host/tests/openclaw_plugins_contract.rs::test_ocrm_plugins_auth_choice_contract"
+        "source/host/tests/openclaw_plugins_contract.rs::test_ocrm_plugins_auth_choice_contract",
+        "source/host/tests/openclaw_plugins_contract.rs::test_ocrm_plugins_embedding_provider_registration",
+        "source/host/tests/openclaw_plugins_contract.rs::test_ocrm_plugins_wizard_choice_resolution_and_model_picker"
       ],
       "integration": {
         "producer": "source/host/src/extensions/plugins/capability_catalog.rs",
@@ -20836,6 +20838,33 @@
             "end_line": 81
           },
           "symbol": "provider auth-choice contract"
+        },
+        {
+          "path": "src/plugins/contracts/embedding-provider.contract.test.ts",
+          "blob_sha": "7724402db636bb9d4c51aa7648bc27dc46895d00",
+          "range": {
+            "start_line": 1,
+            "end_line": 84
+          },
+          "symbol": "embedding provider registration"
+        },
+        {
+          "path": "src/plugins/contracts/wizard.choice-resolution.contract.test.ts",
+          "blob_sha": "298c9312eadacbe8246a59d745ee6c526cb60a0a",
+          "range": {
+            "start_line": 1,
+            "end_line": 4
+          },
+          "symbol": "wizard choice resolution contract"
+        },
+        {
+          "path": "src/plugins/contracts/wizard.model-picker.contract.test.ts",
+          "blob_sha": "ca1c32ec0dc6a0a0f08a2acdd6a7a8f7910a2930",
+          "range": {
+            "start_line": 1,
+            "end_line": 4
+          },
+          "symbol": "wizard model picker contract"
         }
       ],
       "evidence_refs": [
@@ -21115,7 +21144,8 @@
       "tests": [
         "source/host/tests/openclaw_plugins_full_contract.rs::test_ocrm_plugins_hook_runner_and_provider_bridge",
         "source/host/tests/openclaw_plugins_full_contract.rs::test_ocrm_plugins_boundary_invariants",
-        "source/host/tests/openclaw_plugins_full_contract.rs::test_ocrm_plugins_agent_event_payload_and_active_run_steering"
+        "source/host/tests/openclaw_plugins_full_contract.rs::test_ocrm_plugins_agent_event_payload_and_active_run_steering",
+        "source/host/tests/openclaw_plugins_full_contract.rs::test_ocrm_plugins_architectural_boundary_guardrails"
       ],
       "integration": {
         "producer": "source/host/src/extensions/plugins/hook_runner.rs",
@@ -21159,6 +21189,42 @@
             "end_line": 131
           },
           "symbol": "agent event subscription payloads"
+        },
+        {
+          "path": "src/plugins/contracts/bundled-extension-config-api-guardrails.test.ts",
+          "blob_sha": "28c61fbedb0f4b7c894efd1ad73d3b803ddb87d1",
+          "range": {
+            "start_line": 1,
+            "end_line": 61
+          },
+          "symbol": "bundled extension config api guardrails"
+        },
+        {
+          "path": "src/plugins/contracts/core-extension-facade-boundary.test.ts",
+          "blob_sha": "50f11181509426f2dabc0e8c0201c806f9d48b24",
+          "range": {
+            "start_line": 1,
+            "end_line": 72
+          },
+          "symbol": "core extension facade boundary"
+        },
+        {
+          "path": "src/plugins/contracts/deprecated-internal-config-api.test.ts",
+          "blob_sha": "ae930e5d4b6a7cc038d4772f119f064b3d3502f3",
+          "range": {
+            "start_line": 1,
+            "end_line": 15
+          },
+          "symbol": "deprecated internal config API guardrails"
+        },
+        {
+          "path": "src/plugins/contracts/model-catalog-core-imports.test.ts",
+          "blob_sha": "9925531bd0c4f798534861070bd47b412d175dc8",
+          "range": {
+            "start_line": 1,
+            "end_line": 82
+          },
+          "symbol": "model catalog core imports"
         }
       ],
       "evidence_refs": [

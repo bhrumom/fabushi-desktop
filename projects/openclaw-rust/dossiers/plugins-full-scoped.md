@@ -33,3 +33,9 @@
   - `test_ocrm_plugins_hook_runner_and_provider_bridge` (PASSED)
   - `test_ocrm_plugins_boundary_invariants` (PASSED)
   - `test_ocrm_plugins_agent_event_payload_and_active_run_steering` (PASSED)
+  - `test_ocrm_plugins_architectural_boundary_guardrails` (PASSED)
+    - Verifies bundled extensions (`telegram`, `discord`, `slack`, etc.) use owned `channel-config-schema` or `../config-api.js` and never `bundled-channel-config-schema`.
+    - Verifies core plugin-sdk contains no Ollama facade modules and generic core fixtures contain no vendor provider terms (`Ollama`, `Moonshot`, `xAI`).
+    - Verifies production code contains no deprecated config load/write internal seams.
+    - Verifies model catalog imports use `@openclaw/model-catalog-core/...` package subpaths instead of legacy internal bridge modules.
+

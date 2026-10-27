@@ -244,3 +244,73 @@ fn test_ocrm_plugins_agent_event_payload_and_active_run_steering() {
     assert!(!res_not_streaming.steered);
     assert_eq!(res_not_streaming.reason.as_deref(), Some("not_streaming"));
 }
+
+#[test]
+fn test_ocrm_plugins_architectural_boundary_guardrails() {
+    // Tests equivalent behavior from bundled-extension-config-api-guardrails, core-extension-facade-boundary,
+    // deprecated-internal-config-api, and model-catalog-core-imports contract test suites.
+    use mahayana_host_runtime::extensions::plugins::hook_runner::{
+        BundledExtensionConfigApiGuard, CoreExtensionFacadeBoundaryGuard,
+        DeprecatedInternalConfigApiGuard, ModelCatalogCoreImportsGuard,
+    };
+
+    // 1. Bundled extension config API guard
+    assert!(BundledExtensionConfigApiGuard::validate_extension_config_schema(
+        "extensions/telegram/src/config-schema.ts",
+        "import { createChannelConfigSchema } from 'openclaw/plugin-sdk/channel-config-schema';"
+    ).is_ok());
+
+    let err_forbidden_bundled = BundledExtensionConfigApiGuard::validate_extension_config_schema(
+        "extensions/telegram/src/config-schema.ts",
+        "import { schema } from 'openclaw/plugin-sdk/bundled-channel-config-schema';"
+    ).unwrap_err();
+    assert!(err_forbidden_bundled.contains("missing allowed openclaw/plugin-sdk/channel-config-schema"));
+
+    assert!(BundledExtensionConfigApiGuard::validate_extension_config_schema(
+        "extensions/whatsapp/src/config-schema.ts",
+        "import { defineChannelConfig } from '../config-api.js';"
+    ).is_ok());
+
+    let err_forbidden_whatsapp = BundledExtensionConfigApiGuard::validate_extension_config_schema(
+        "extensions/whatsapp/src/config-schema.ts",
+        "import { defineChannelConfig } from 'openclaw/plugin-sdk/channel-config-schema';"
+    ).unwrap_err();
+    assert!(err_forbidden_whatsapp.contains("missing allowed ../config-api.js"));
+
+    // 2. Core extension facade boundary guard
+    let clean_paths = ["src/plugin-sdk/index.ts", "src/plugins/registry.ts"];
+    assert!(CoreExtensionFacadeBoundaryGuard::assert_no_ollama_facades(&clean_paths).is_ok());
+
+    let violating_paths = ["src/plugin-sdk/ollama.ts", "src/plugin-sdk/index.ts"];
+    let err_facade = CoreExtensionFacadeBoundaryGuard::assert_no_ollama_facades(&violating_paths).unwrap_err();
+    assert_eq!(err_facade, vec!["src/plugin-sdk/ollama.ts"]);
+
+    let clean_fixtures = [
+        ("auth-choice.test.ts", "export const config = { provider: 'test' };"),
+        ("discovery.test.ts", "test('discovery', () => {});"),
+    ];
+    assert!(CoreExtensionFacadeBoundaryGuard::assert_no_bundled_provider_terms_in_fixtures(&clean_fixtures).is_ok());
+
+    let dirty_fixtures = [
+        ("tts-contract-suites.ts", "const p = 'Ollama';"),
+    ];
+    let err_terms = CoreExtensionFacadeBoundaryGuard::assert_no_bundled_provider_terms_in_fixtures(&dirty_fixtures).unwrap_err();
+    assert!(err_terms[0].contains("contains forbidden term 'Ollama'"));
+
+    // 3. Deprecated internal config API guard
+    let clean_config_sources = [("src/config.ts", "export function loadConfig() {}")];
+    assert!(DeprecatedInternalConfigApiGuard::assert_no_deprecated_config_api(&clean_config_sources).is_ok());
+
+    let deprecated_sources = [("src/legacy.ts", "loadDeprecatedPluginConfig(id);")];
+    let err_deprecated = DeprecatedInternalConfigApiGuard::assert_no_deprecated_config_api(&deprecated_sources).unwrap_err();
+    assert!(err_deprecated[0].contains("loadDeprecatedPluginConfig"));
+
+    // 4. Model catalog core imports guard
+    let clean_catalog_sources = [("src/agents.ts", "import { normalize } from '@openclaw/model-catalog-core/model-catalog-normalize';")];
+    assert!(ModelCatalogCoreImportsGuard::assert_no_legacy_bridge_imports(&clean_catalog_sources).is_ok());
+
+    let dirty_catalog_sources = [("src/agents.ts", "import { normalize } from './src/model-catalog/normalize.js';")];
+    let err_bridges = ModelCatalogCoreImportsGuard::assert_no_legacy_bridge_imports(&dirty_catalog_sources).unwrap_err();
+    assert!(err_bridges[0].contains("imports legacy bridge"));
+}
+

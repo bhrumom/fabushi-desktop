@@ -309,3 +309,143 @@ impl ActiveRunSteeringManager {
         }
     }
 }
+
+// Architectural Boundary Guardrails (from src/plugins/contracts/...)
+
+pub struct BundledExtensionConfigApiGuard;
+
+impl BundledExtensionConfigApiGuard {
+    pub fn validate_extension_config_schema(
+        rel_path: &str,
+        source: &str,
+    ) -> Result<(), String> {
+        let channel_schema_extensions = [
+            "extensions/telegram/src/config-schema.ts",
+            "extensions/discord/src/config-schema.ts",
+            "extensions/slack/src/config-schema.ts",
+            "extensions/signal/src/config-schema.ts",
+            "extensions/imessage/src/config-schema.ts",
+            "extensions/msteams/src/config-schema.ts",
+        ];
+        let local_config_api_extensions = [
+            "extensions/whatsapp/src/config-schema.ts",
+            "extensions/googlechat/src/config-schema.ts",
+        ];
+
+        if channel_schema_extensions.contains(&rel_path) {
+            if !source.contains("openclaw/plugin-sdk/channel-config-schema") {
+                return Err(format!("{}: missing allowed openclaw/plugin-sdk/channel-config-schema", rel_path));
+            }
+            if source.contains("openclaw/plugin-sdk/bundled-channel-config-schema") {
+                return Err(format!("{}: contains forbidden openclaw/plugin-sdk/bundled-channel-config-schema", rel_path));
+            }
+        } else if local_config_api_extensions.contains(&rel_path) {
+            if !source.contains("../config-api.js") {
+                return Err(format!("{}: missing allowed ../config-api.js", rel_path));
+            }
+            if source.contains("openclaw/plugin-sdk/channel-config-schema") {
+                return Err(format!("{}: contains forbidden openclaw/plugin-sdk/channel-config-schema", rel_path));
+            }
+        }
+        Ok(())
+    }
+}
+
+pub struct CoreExtensionFacadeBoundaryGuard;
+
+impl CoreExtensionFacadeBoundaryGuard {
+    pub fn assert_no_ollama_facades(existing_paths: &[&str]) -> Result<(), Vec<String>> {
+        let forbidden = [
+            "src/plugin-sdk/ollama.ts",
+            "src/plugin-sdk/ollama-runtime.ts",
+        ];
+        let mut offenders = Vec::new();
+        for p in existing_paths {
+            if forbidden.contains(p) {
+                offenders.push(p.to_string());
+            }
+        }
+        if offenders.is_empty() {
+            Ok(())
+        } else {
+            offenders.sort();
+            Err(offenders)
+        }
+    }
+
+    pub fn assert_no_bundled_provider_terms_in_fixtures(fixtures: &[(&str, &str)]) -> Result<(), Vec<String>> {
+        let forbidden_terms = ["Ollama", "ollama", "Moonshot", "moonshot", "xAI", "xai", "x-ai"];
+        let mut offenders = Vec::new();
+        for (name, content) in fixtures {
+            for term in &forbidden_terms {
+                if content.contains(term) {
+                    offenders.push(format!("{}: contains forbidden term '{}'", name, term));
+                    break;
+                }
+            }
+        }
+        if offenders.is_empty() {
+            Ok(())
+        } else {
+            offenders.sort();
+            Err(offenders)
+        }
+    }
+}
+
+pub struct DeprecatedInternalConfigApiGuard;
+
+impl DeprecatedInternalConfigApiGuard {
+    pub fn assert_no_deprecated_config_api(sources: &[(&str, &str)]) -> Result<(), Vec<String>> {
+        let deprecated_seams = [
+            "loadDeprecatedPluginConfig",
+            "writeDeprecatedPluginConfig",
+            "legacyPluginConfigAccessor",
+        ];
+        let mut offenders = Vec::new();
+        for (path, content) in sources {
+            for seam in &deprecated_seams {
+                if content.contains(seam) {
+                    offenders.push(format!("{}: uses deprecated config seam '{}'", path, seam));
+                }
+            }
+        }
+        if offenders.is_empty() {
+            Ok(())
+        } else {
+            offenders.sort();
+            Err(offenders)
+        }
+    }
+}
+
+pub struct ModelCatalogCoreImportsGuard;
+
+impl ModelCatalogCoreImportsGuard {
+    pub fn assert_no_legacy_bridge_imports(sources: &[(&str, &str)]) -> Result<(), Vec<String>> {
+        let legacy_bridges = [
+            "src/agents/provider-id.js",
+            "src/model-catalog/refs.js",
+            "src/model-catalog/normalize.js",
+            "src/model-catalog/types.js",
+            "src/config/model-refs.js",
+            "src/shared/provider-model-id-normalization.js",
+            "src/plugin-sdk/provider-model-id-normalize.js",
+        ];
+        let mut offenders = Vec::new();
+        for (path, content) in sources {
+            for bridge in &legacy_bridges {
+                if content.contains(bridge) {
+                    offenders.push(format!("{}: imports legacy bridge '{}'", path, bridge));
+                }
+            }
+        }
+        if offenders.is_empty() {
+            Ok(())
+        } else {
+            offenders.sort();
+            Err(offenders)
+        }
+    }
+}
+

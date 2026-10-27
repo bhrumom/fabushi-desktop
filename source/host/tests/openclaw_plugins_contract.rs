@@ -702,3 +702,146 @@ fn test_ocrm_plugins_auth_choice_contract() {
         None
     );
 }
+
+#[test]
+fn test_ocrm_plugins_embedding_provider_registration() {
+    // Tests equivalent behavior from upstream src/plugins/contracts/embedding-provider.contract.test.ts
+    use mahayana_host_runtime::extensions::plugins::capability_catalog::{
+        EmbeddingProviderRegistry, RegisteredEmbeddingProvider,
+    };
+
+    // Public SDK mutation methods are forbidden
+    assert!(!EmbeddingProviderRegistry::is_public_sdk_mutation_allowed("registerEmbeddingProvider"));
+    assert!(!EmbeddingProviderRegistry::is_public_sdk_mutation_allowed("listRegisteredEmbeddingProviders"));
+    assert!(!EmbeddingProviderRegistry::is_public_sdk_mutation_allowed("clearEmbeddingProviders"));
+    assert!(!EmbeddingProviderRegistry::is_public_sdk_mutation_allowed("restoreEmbeddingProviders"));
+    assert!(!EmbeddingProviderRegistry::is_public_sdk_mutation_allowed("restoreRegisteredEmbeddingProviders"));
+    assert!(EmbeddingProviderRegistry::is_public_sdk_mutation_allowed("getEmbeddingProvider"));
+
+    let mut registry = EmbeddingProviderRegistry::new();
+
+    // Rejects plugins that did not declare the capability contract
+    let err_undeclared = registry.register("not-embedding", "forbidden", false).unwrap_err();
+    assert_eq!(
+        err_undeclared,
+        "plugin must declare contracts.embeddingProviders for adapter: forbidden"
+    );
+    assert_eq!(registry.providers().len(), 0);
+
+    // Allows plugins that declare the capability contract
+    assert!(registry.register("embedding-owner", "embedding-owner", true).is_ok());
+    assert_eq!(
+        registry.providers(),
+        &[RegisteredEmbeddingProvider {
+            provider_id: "embedding-owner".to_string(),
+            plugin_id: "embedding-owner".to_string(),
+        }]
+    );
+
+    // Rejects duplicate provider ids
+    let mut dup_registry = EmbeddingProviderRegistry::new();
+    assert!(dup_registry.register("first-owner", "shared", true).is_ok());
+    let err_dup = dup_registry.register("second-owner", "shared", true).unwrap_err();
+    assert_eq!(
+        err_dup,
+        "embedding provider already registered: shared (owner: first-owner)"
+    );
+
+    // Keeps core embedding provider ids reserved
+    let mut core_registry = EmbeddingProviderRegistry::new();
+    let err_core = core_registry.register("core-shadow", "openai-compatible", true).unwrap_err();
+    assert_eq!(
+        err_core,
+        "embedding provider already registered: openai-compatible (owner: core)"
+    );
+}
+
+#[test]
+fn test_ocrm_plugins_wizard_choice_resolution_and_model_picker() {
+    // Tests equivalent behavior from upstream wizard.choice-resolution.contract.test.ts and wizard.model-picker.contract.test.ts
+    use mahayana_host_runtime::extensions::plugins::capability_catalog::{
+        ProviderWizardChoiceResolver, WizardAuthMethod, WizardProviderEntry,
+    };
+
+    let test_providers = vec![
+        WizardProviderEntry {
+            id: "alpha".to_string(),
+            setup_wizard: Some("alpha-setup-wizard".to_string()),
+            model_picker: false,
+            auth: vec![
+                WizardAuthMethod {
+                    id: "api-key".to_string(),
+                    wizard: Some("alpha-api-key-wizard".to_string()),
+                    model_picker: false,
+                },
+                WizardAuthMethod {
+                    id: "oauth".to_string(),
+                    wizard: Some("alpha-oauth-wizard".to_string()),
+                    model_picker: true,
+                },
+            ],
+        },
+        WizardProviderEntry {
+            id: "beta".to_string(),
+            setup_wizard: Some("beta-setup-wizard".to_string()),
+            model_picker: true,
+            auth: vec![WizardAuthMethod {
+                id: "token".to_string(),
+                wizard: None,
+                model_picker: false,
+            }],
+        },
+        WizardProviderEntry {
+            id: "gamma".to_string(),
+            setup_wizard: Some("gamma-setup-wizard".to_string()),
+            model_picker: false,
+            auth: vec![WizardAuthMethod {
+                id: "alt".to_string(),
+                wizard: None,
+                model_picker: false,
+            }],
+        },
+    ];
+
+    // Choice resolution cases matching upstream it.each matrix
+    let c1 = ProviderWizardChoiceResolver::resolve_choice(&test_providers, "provider-plugin:alpha:api-key").unwrap();
+    assert_eq!(c1.provider_id, "alpha");
+    assert_eq!(c1.method_id, "api-key");
+    assert_eq!(c1.wizard_source, "method");
+    assert_eq!(c1.wizard.as_deref(), Some("alpha-api-key-wizard"));
+
+    let c2 = ProviderWizardChoiceResolver::resolve_choice(&test_providers, "alpha").unwrap();
+    assert_eq!(c2.provider_id, "alpha");
+    assert_eq!(c2.method_id, "api-key");
+    assert_eq!(c2.wizard_source, "method");
+    assert_eq!(c2.wizard.as_deref(), Some("alpha-api-key-wizard"));
+
+    let c3 = ProviderWizardChoiceResolver::resolve_choice(&test_providers, "alpha-oauth").unwrap();
+    assert_eq!(c3.provider_id, "alpha");
+    assert_eq!(c3.method_id, "oauth");
+    assert_eq!(c3.wizard_source, "method");
+    assert_eq!(c3.wizard.as_deref(), Some("alpha-oauth-wizard"));
+
+    let c4 = ProviderWizardChoiceResolver::resolve_choice(&test_providers, "beta").unwrap();
+    assert_eq!(c4.provider_id, "beta");
+    assert_eq!(c4.method_id, "token");
+    assert_eq!(c4.wizard_source, "provider");
+    assert_eq!(c4.wizard.as_deref(), Some("beta-setup-wizard"));
+
+    let c5 = ProviderWizardChoiceResolver::resolve_choice(&test_providers, "gamma-alt").unwrap();
+    assert_eq!(c5.provider_id, "gamma");
+    assert_eq!(c5.method_id, "alt");
+    assert_eq!(c5.wizard_source, "provider");
+    assert_eq!(c5.wizard.as_deref(), Some("gamma-setup-wizard"));
+
+    // Model picker entries
+    let model_picker_entries = ProviderWizardChoiceResolver::resolve_model_picker_entries(&test_providers);
+    assert_eq!(
+        model_picker_entries,
+        vec!["beta".to_string(), "provider-plugin:alpha:oauth".to_string()]
+    );
+    for choice in &model_picker_entries {
+        assert!(ProviderWizardChoiceResolver::resolve_choice(&test_providers, choice).is_some());
+    }
+}
+

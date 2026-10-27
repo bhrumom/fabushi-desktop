@@ -339,3 +339,214 @@ impl ProviderCatalogDeprecationGuard {
         }
     }
 }
+
+// Embedding provider registration (from src/plugins/contracts/embedding-provider.contract.test.ts)
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct RegisteredEmbeddingProvider {
+    pub provider_id: String,
+    pub plugin_id: String,
+}
+
+pub struct EmbeddingProviderRegistry {
+    core_providers: std::collections::HashSet<String>,
+    providers: Vec<RegisteredEmbeddingProvider>,
+    diagnostics: Vec<String>,
+}
+
+impl Default for EmbeddingProviderRegistry {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl EmbeddingProviderRegistry {
+    pub fn new() -> Self {
+        let mut core = std::collections::HashSet::new();
+        core.insert("openai-compatible".to_string());
+        Self {
+            core_providers: core,
+            providers: Vec::new(),
+            diagnostics: Vec::new(),
+        }
+    }
+
+    pub fn is_public_sdk_mutation_allowed(method_name: &str) -> bool {
+        let forbidden = [
+            "registerEmbeddingProvider",
+            "listRegisteredEmbeddingProviders",
+            "clearEmbeddingProviders",
+            "restoreEmbeddingProviders",
+            "restoreRegisteredEmbeddingProviders",
+        ];
+        !forbidden.contains(&method_name)
+    }
+
+    pub fn register(
+        &mut self,
+        plugin_id: &str,
+        provider_id: &str,
+        declared_in_contracts: bool,
+    ) -> Result<(), String> {
+        if !declared_in_contracts {
+            let msg = format!(
+                "plugin must declare contracts.embeddingProviders for adapter: {}",
+                provider_id
+            );
+            self.diagnostics.push(format!("{}: {}", plugin_id, msg));
+            return Err(msg);
+        }
+
+        if self.core_providers.contains(provider_id) {
+            let msg = format!(
+                "embedding provider already registered: {} (owner: core)",
+                provider_id
+            );
+            self.diagnostics.push(format!("{}: {}", plugin_id, msg));
+            return Err(msg);
+        }
+
+        if let Some(existing) = self.providers.iter().find(|p| p.provider_id == provider_id) {
+            let msg = format!(
+                "embedding provider already registered: {} (owner: {})",
+                provider_id, existing.plugin_id
+            );
+            self.diagnostics.push(format!("{}: {}", plugin_id, msg));
+            return Err(msg);
+        }
+
+        self.providers.push(RegisteredEmbeddingProvider {
+            provider_id: provider_id.to_string(),
+            plugin_id: plugin_id.to_string(),
+        });
+        Ok(())
+    }
+
+    pub fn providers(&self) -> &[RegisteredEmbeddingProvider] {
+        &self.providers
+    }
+
+    pub fn diagnostics(&self) -> &[String] {
+        &self.diagnostics
+    }
+}
+
+// Wizard choice resolution and model picker (from wizard.choice-resolution and wizard.model-picker contracts)
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct WizardAuthMethod {
+    pub id: String,
+    pub wizard: Option<String>,
+    pub model_picker: bool,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct WizardProviderEntry {
+    pub id: String,
+    pub setup_wizard: Option<String>,
+    pub model_picker: bool,
+    pub auth: Vec<WizardAuthMethod>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ResolvedProviderChoice {
+    pub provider_id: String,
+    pub method_id: String,
+    pub wizard_source: String, // "method" | "provider"
+    pub wizard: Option<String>,
+}
+
+pub struct ProviderWizardChoiceResolver;
+
+impl ProviderWizardChoiceResolver {
+    pub fn resolve_choice(
+        providers: &[WizardProviderEntry],
+        choice: &str,
+    ) -> Option<ResolvedProviderChoice> {
+        let clean_choice = choice.strip_prefix("provider-plugin:").unwrap_or(choice);
+
+        // Try exact colon separation: provider:method
+        if let Some(idx) = clean_choice.find(':') {
+            let p_id = &clean_choice[..idx];
+            let m_id = &clean_choice[idx + 1..];
+            if let Some(provider) = providers.iter().find(|p| p.id == p_id) {
+                if let Some(method) = provider.auth.iter().find(|m| m.id == m_id) {
+                    let (source, wizard) = if let Some(ref w) = method.wizard {
+                        ("method", Some(w.clone()))
+                    } else if let Some(ref w) = provider.setup_wizard {
+                        ("provider", Some(w.clone()))
+                    } else {
+                        ("none", None)
+                    };
+                    return Some(ResolvedProviderChoice {
+                        provider_id: provider.id.clone(),
+                        method_id: method.id.clone(),
+                        wizard_source: source.to_string(),
+                        wizard,
+                    });
+                }
+            }
+        }
+
+        // Try exact provider match (defaulting to first auth method)
+        if let Some(provider) = providers.iter().find(|p| p.id == clean_choice) {
+            if let Some(first_method) = provider.auth.first() {
+                let (source, wizard) = if let Some(ref w) = first_method.wizard {
+                    ("method", Some(w.clone()))
+                } else if let Some(ref w) = provider.setup_wizard {
+                    ("provider", Some(w.clone()))
+                } else {
+                    ("none", None)
+                };
+                return Some(ResolvedProviderChoice {
+                    provider_id: provider.id.clone(),
+                    method_id: first_method.id.clone(),
+                    wizard_source: source.to_string(),
+                    wizard,
+                });
+            }
+        }
+
+        // Try hyphen separation: provider-method
+        for provider in providers {
+            let prefix = format!("{}-", provider.id);
+            if clean_choice.starts_with(&prefix) {
+                let m_id = &clean_choice[prefix.len()..];
+                if let Some(method) = provider.auth.iter().find(|m| m.id == m_id) {
+                    let (source, wizard) = if let Some(ref w) = method.wizard {
+                        ("method", Some(w.clone()))
+                    } else if let Some(ref w) = provider.setup_wizard {
+                        ("provider", Some(w.clone()))
+                    } else {
+                        ("none", None)
+                    };
+                    return Some(ResolvedProviderChoice {
+                        provider_id: provider.id.clone(),
+                        method_id: method.id.clone(),
+                        wizard_source: source.to_string(),
+                        wizard,
+                    });
+                }
+            }
+        }
+
+        None
+    }
+
+    pub fn resolve_model_picker_entries(providers: &[WizardProviderEntry]) -> Vec<String> {
+        let mut entries = Vec::new();
+        for provider in providers {
+            if provider.model_picker {
+                entries.push(provider.id.clone());
+            }
+            for method in &provider.auth {
+                if method.model_picker {
+                    entries.push(format!("provider-plugin:{}:{}", provider.id, method.id));
+                }
+            }
+        }
+        entries.sort();
+        entries
+    }
+}
+
