@@ -412,7 +412,7 @@ fn shipping_store_db_capture_uses_frozen_mapper_and_unique_host_owner() {
 
 #[test]
 fn shipping_manifest_conflict_uses_frozen_metadata_and_unique_host_owner() {
-    let production = include_str!("../src/extensions/box_store_sync/production.rs");
+    let production = include_str!("../src/extensions/box_store_sync/production.rs").replace("\r\n", "\n");
     assert_eq!(
         production.matches("write_manifest_with_retry_and_conflict_reporter(").count(),
         4,
@@ -456,14 +456,14 @@ fn shipping_manifest_conflict_uses_frozen_metadata_and_unique_host_owner() {
     assert!(manifest.contains("on_manifest_write_conflict(&conflict_info);"));
     assert!(manifest.contains("report_manifest_write_conflict_diagnostic(&conflict_info);"));
 
-    let owner = include_str!("../src/host_production_extensions.rs");
+    let owner = include_str!("../src/host_production_extensions.rs").replace("\r\n", "\n");
     assert!(owner.contains("report_box_store_manifest_conflict: Arc::new"));
     assert!(owner.contains(
         "box_store_manifest_conflict_logs
                         .report_box_store_manifest_conflict(level, metadata)"
     ));
 
-    let telemetry = include_str!("../src/extensions/telemetry/host_telemetry_service.rs");
+    let telemetry = include_str!("../src/extensions/telemetry/host_telemetry_service.rs").replace("\r\n", "\n");
     assert!(telemetry.contains("pub fn report_box_store_manifest_conflict("));
     assert!(telemetry.contains(r#"event: Some("sand.box_store_manifest_conflict")"#));
 
@@ -483,7 +483,7 @@ fn shipping_manifest_conflict_uses_frozen_metadata_and_unique_host_owner() {
 
 #[test]
 fn shipping_chrome_session_stage_uses_frozen_mapper_and_unique_host_owner() {
-    let production = include_str!("../src/extensions/box_store_sync/production.rs");
+    let production = include_str!("../src/extensions/box_store_sync/production.rs").replace("\r\n", "\n");
     assert!(production.contains("stage_box_chrome_session_with_report(|report|"));
     assert!(production.contains("chrome_session_stage_telemetry(&report)"));
     assert!(production.contains(
@@ -491,13 +491,13 @@ fn shipping_chrome_session_stage_uses_frozen_mapper_and_unique_host_owner() {
     ));
     assert!(production.contains("&self.deps.report_chrome_session_stage"));
 
-    let owner = include_str!("../src/host_production_extensions.rs");
+    let owner = include_str!("../src/host_production_extensions.rs").replace("\r\n", "\n");
     assert!(owner.contains("report_chrome_session_stage: Arc::new"));
     assert!(owner.contains(
         "chrome_session_stage_logs.report_chrome_session_stage(level, metadata)"
     ));
 
-    let telemetry = include_str!("../src/extensions/telemetry/host_telemetry_service.rs");
+    let telemetry = include_str!("../src/extensions/telemetry/host_telemetry_service.rs").replace("\r\n", "\n");
     assert!(telemetry.contains("pub fn report_chrome_session_stage("));
     assert!(telemetry.contains(r#"event: Some("sand.chrome_session_stage")"#));
 
