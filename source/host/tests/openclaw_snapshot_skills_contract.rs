@@ -710,6 +710,41 @@ fn test_ocrm_snapshot_postgres_manifest_schema_and_profile_oracles() {
         ])
         .expect("digest expected rows");
     assert_eq!(actual_digest, expected_digest);
+    let export_dir = std::env::temp_dir().join(format!(
+        "fabushi-sqlite-backup-export-{}",
+        uuid::Uuid::new_v4()
+    ));
+    let exported =
+        mahayana_host_runtime::extensions::snapshot::git_backup_manager::export_sqlite_backup_artifacts(
+            &schema_connection,
+            &export_dir,
+            mahayana_host_runtime::extensions::snapshot::git_backup_manager::GitBackupIdentity {
+                role: "generic".into(),
+                agent_id: None,
+                id: Some("store_one".into()),
+            },
+            &BTreeSet::new(),
+        )
+        .expect("export deterministic SQLite backup artifacts");
+    assert_eq!(exported.schema_version, 1);
+    assert_eq!(
+        exported.tables.get("real_table"),
+        Some(&mahayana_host_runtime::extensions::snapshot::git_backup_manager::GitBackupTableEntry {
+            rows: expected_digest.rows,
+            sha256: expected_digest.sha256.clone(),
+        })
+    );
+    let exported_manifest =
+        mahayana_host_runtime::extensions::snapshot::git_backup_manager::read_git_backup_manifest(
+            export_dir.join("manifest.json"),
+        )
+        .expect("read exported SQLite backup manifest");
+    assert_eq!(exported_manifest, exported);
+    assert_eq!(
+        fs::read_to_string(export_dir.join("tables/real_table.jsonl"))
+            .expect("read exported SQLite table"),
+        "{\"id\":1,\"value\":\"first\"}\n{\"id\":2,\"value\":\"second\"}\n"
+    );
     schema_connection
         .execute_batch("CREATE TABLE quoted_table (\"id\"\"part\" INTEGER PRIMARY KEY, value TEXT);")
         .expect("create SQLite table with quoted primary key");

@@ -295,3 +295,11 @@ any upload begins. The production-owner contract rejects a source symlink and
 leaves the manifest unchanged. This closes source-alias custody for the
 adapter; it does not establish the missing OpenClaw caller or PostgreSQL port.
 
+`export_sqlite_backup_artifacts` now provides the first real SQLite producer:
+it reads a live SQLite connection, emits deterministic `schema.sql`, sorted
+JSONL table artifacts, and a schema-v1 manifest whose row counts/digests are
+derived from the emitted owner data. The contract re-reads the emitted
+manifest and bytes and compares them to the live table digest. Publication to
+the BoxStore owner is still a separate caller concern; PostgreSQL remains an
+explicit database-port blocker.
+
