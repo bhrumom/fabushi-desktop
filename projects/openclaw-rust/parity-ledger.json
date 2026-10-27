@@ -24412,6 +24412,12 @@
       },
       "symbol": "agentWorkspaceRuntime"
     },
+    {
+      "blob_sha": "7fb1e4c71e85470d331c8390c5ddb7456bd67fd7",
+      "path": "src/plugin-sdk/allow-from.test.ts",
+      "range": {"end_line": 94, "start_line": 1},
+      "symbol": "allowFromTests"
+    },
         {
           "blob_sha": "130b7472fb1d661082034e766cdba6707077f7c0",
           "path": "src/plugin-sdk/allow-from.ts",
@@ -24421,6 +24427,48 @@
           },
           "symbol": "isNormalizedSenderAllowed"
         },
+    {
+      "blob_sha": "e93a08d4ea4949d0133e68d010eedf67686f56e0",
+      "path": "src/plugin-sdk/allowlist-config-edit.test.ts",
+      "range": {"end_line": 191, "start_line": 1},
+      "symbol": "allowlistConfigEditTests"
+    },
+    {
+      "blob_sha": "bdf6cb7f67fc688ce20609bb237ee0e238e81bac",
+      "path": "src/plugin-sdk/allowlist-config-edit.ts",
+      "range": {"end_line": 447, "start_line": 1},
+      "symbol": "applyAccountScopedAllowlistConfigEdit"
+    },
+    {
+      "blob_sha": "c770b93a1e71e74623199070f9f1ac8ce12382ee",
+      "path": "src/plugin-sdk/api-baseline-declaration-closure.ts",
+      "range": {"end_line": 628, "start_line": 1},
+      "symbol": "collectApiBaselineDeclarationClosure"
+    },
+    {
+      "blob_sha": "9f547365a8d769fa56841e780b4569f054fc5f75",
+      "path": "src/plugin-sdk/api-baseline-declaration-print.ts",
+      "range": {"end_line": 306, "start_line": 1},
+      "symbol": "printApiBaselineDeclaration"
+    },
+    {
+      "blob_sha": "3fe9a00c7df76ddbb5bcfddbfd9a38071e2d6ff5",
+      "path": "src/plugin-sdk/api-baseline-normalization.ts",
+      "range": {"end_line": 72, "start_line": 1},
+      "symbol": "normalizeApiBaseline"
+    },
+    {
+      "blob_sha": "17ae7ae0ba5d24de0db86adf790e9075e9a6f1e5",
+      "path": "src/plugin-sdk/api-baseline.test.ts",
+      "range": {"end_line": 660, "start_line": 1},
+      "symbol": "apiBaselineTests"
+    },
+    {
+      "blob_sha": "eafd6e408bebbdb873b293ed9f75c1bf73d903ec",
+      "path": "src/plugin-sdk/api-baseline.ts",
+      "range": {"end_line": 479, "start_line": 1},
+      "symbol": "loadPluginSdkApiBaseline"
+    },
         {
           "blob_sha": "50187060641f373dd6502cb8f9db49d457362c97",
           "path": "src/plugin-sdk/api-diff.ts",
