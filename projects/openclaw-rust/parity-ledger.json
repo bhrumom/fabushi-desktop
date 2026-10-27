@@ -11435,8 +11435,8 @@
       ],
       "id": "OCRM-RESP-SESSION-KEY-ROUTING-001",
       "integration": {
-        "consumer": "source/host/src/extensions/session/session_conversation_state.rs",
-        "entrypoint": "source/host/src/extensions/session/session_paths.rs::classify_session_kind",
+        "consumer": "source/host/app/src/main.rs::call_openclaw_chat_send/call_openclaw_chat_abort",
+        "entrypoint": "source/host/src/extensions/session/session_paths.rs::reject_public_agent_harness_session_key",
         "owner": "source/host/src/extensions/session/session_paths.rs",
         "producer": "source/host/src/extensions/session/session_paths.rs::is_agent_harness_session_key"
       },
@@ -11447,7 +11447,7 @@
       "oracle_ids": [
         "OCRM-SESSION-O01"
       ],
-      "owner_decision": "Implement session kind classifier and harness namespace guard in session_paths.rs",
+      "owner_decision": "Implement harness namespace guard in session_paths.rs and enforce it on public chat gateway commands",
       "postconditions": [
         "Session keys properly categorized into canonical SessionKind"
       ],
@@ -11489,15 +11489,15 @@
         "mapping": "mapped",
         "read": "read-complete",
         "verification": "not-run",
-        "wiring": "not-wired"
+        "wiring": "wired"
       },
       "target": {
         "language": "Rust",
         "path": "source/host/src/extensions/session/session_paths.rs",
-        "symbol": "classify_session_kind"
+        "symbol": "reject_public_agent_harness_session_key"
       },
       "tests": [
-        "source/host/tests/openclaw_sessions_and_config_contract.rs::test_ocrm_session_o01_session_key_routing"
+        "source/host/tests/session_paths_contract.rs::public_session_commands_reject_harness_owned_namespace"
       ],
       "typed_contracts": [
         "classify_session_kind(key: &str, chat_type: Option<&str>, spawned_by: Option<&str>) -> SessionKind",

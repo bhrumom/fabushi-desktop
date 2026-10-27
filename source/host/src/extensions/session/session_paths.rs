@@ -23,6 +23,8 @@ pub const NATIVE_CONVERSATIONS_DIRNAME: &str = ".conversations";
 pub const HIDDEN_ENTRY_REPAIR_VERSION: u32 = 1;
 pub const LEGACY_GROUP_MEMBERS_DIRNAME: &str = "members";
 pub const CONNECTOR_SECRETS_DIRNAME: &str = "connector-secrets";
+pub const AGENT_HARNESS_SESSION_KEY_RESERVED_MESSAGE: &str =
+    "Session key namespace is reserved for agent harness-owned sessions.";
 
 static PINNED_STALE_ROOT_GC_ENABLED: AtomicBool = AtomicBool::new(false);
 
@@ -206,5 +208,15 @@ pub fn is_agent_harness_session_key(session_key: &str) -> bool {
         trimmed
     };
     rest.to_ascii_lowercase().starts_with("harness:")
+}
+
+/// Public session commands must not create or mutate rows in the harness-owned namespace.
+/// Harness runtimes use a separate trusted owner path to access those sessions.
+pub fn reject_public_agent_harness_session_key(session_key: &str) -> Result<(), &'static str> {
+    if is_agent_harness_session_key(session_key) {
+        Err(AGENT_HARNESS_SESSION_KEY_RESERVED_MESSAGE)
+    } else {
+        Ok(())
+    }
 }
 

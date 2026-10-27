@@ -71,6 +71,7 @@ use mahayana_host_runtime::extensions::cloud_agents::cloud_agents_service::SandC
 use mahayana_host_runtime::extensions::session::agent_session::SandAgentSessionStore;
 use mahayana_host_runtime::extensions::memory::agent_state::AvatarBoxFileReader;
 use mahayana_host_runtime::extensions::session::production::ProductionSessionWorkers;
+use mahayana_host_runtime::extensions::session::session_paths::reject_public_agent_harness_session_key;
 use mahayana_host_runtime::extensions::session::session_profile_files::AgentProfileUpdate;
 use mahayana_host_runtime::agents::agent_messaging::{
     AgentAddress, AgentGroupAddress, AgentMessageImage, build_admin_broadcast_wake_prompt,
@@ -3461,6 +3462,9 @@ impl UnifiedGatewayApi {
             .filter(|s| !s.is_empty())
             .ok_or_else(|| GatewayCommandError::BadRequest("chat.send requires sessionKey".into()))?;
 
+        reject_public_agent_harness_session_key(session_key)
+            .map_err(|message| GatewayCommandError::BadRequest(message.into()))?;
+
         let message = args.get("message")
             .and_then(serde_json::Value::as_str)
             .map(str::trim)
@@ -3519,6 +3523,9 @@ impl UnifiedGatewayApi {
             .map(str::trim)
             .filter(|s| !s.is_empty())
             .ok_or_else(|| GatewayCommandError::BadRequest("chat.abort requires sessionKey".into()))?;
+
+        reject_public_agent_harness_session_key(session_key)
+            .map_err(|message| GatewayCommandError::BadRequest(message.into()))?;
 
         let agent_id = if let Some(stripped) = session_key.strip_prefix("agent:") {
             stripped.split(':').next().unwrap_or(stripped)
