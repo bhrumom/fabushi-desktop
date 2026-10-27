@@ -43,6 +43,7 @@ percent-encoding = "2.3"
 unicode-normalization = "0.1"
 encoding_rs = "0.8"
 qrcode = { version = "0.14.1", default-features = false }
+zstd = "0.13"
 
 [build-dependencies]
 prost-build = "0.13"

@@ -5,8 +5,8 @@ use mahayana_host_runtime::extensions::host_upgrade::openclaw_update_startup::{
     UpdateTriageReport, is_update_check_due,
 };
 use mahayana_host_runtime::extensions::local_exec::openclaw_platform_sandbox::{
-    ZSTD_MAGIC_HEADER, decode_utf8_input, escape_powershell_argument, is_wsl_version_output,
-    is_zstd_compressed,
+    ZSTD_MAGIC_HEADER, compress_zstd, decode_utf8_input, decompress_zstd,
+    escape_powershell_argument, is_wsl_version_output, is_zstd_compressed,
 };
 
 #[test]
@@ -44,6 +44,15 @@ fn test_ocrm_infra_platform_sandbox_and_zstd() {
 
     let non_zstd = b"plain text header payload";
     assert!(!is_zstd_compressed(non_zstd));
+
+    let payload = b"zstd payload with checksum";
+    let compressed = compress_zstd(payload, Some(3), Some(true)).expect("zstd compression");
+    assert!(is_zstd_compressed(&compressed));
+    assert_eq!(
+        decompress_zstd(&compressed, Some(payload.len())),
+        Ok(payload.to_vec())
+    );
+    assert!(decompress_zstd(&compressed, Some(payload.len() - 1)).is_err());
 
     // PowerShell argument escaping
     assert_eq!(escape_powershell_argument("simple"), "simple");

@@ -11,11 +11,50 @@
 //! - `src/infra/utf8-input.ts`
 
 use serde::{Deserialize, Serialize};
+use std::io::Write;
 
 pub const ZSTD_MAGIC_HEADER: [u8; 4] = [0x28, 0xB5, 0x2F, 0xFD];
 
 pub fn is_zstd_compressed(data: &[u8]) -> bool {
     data.len() >= 4 && data[0..4] == ZSTD_MAGIC_HEADER
+}
+
+/// Compress bytes using the native zstd codec. Optional level/checksum mirror
+/// OpenClaw's process-local codec options instead of exposing a second owner.
+pub fn compress_zstd(
+    data: &[u8],
+    level: Option<i32>,
+    checksum: Option<bool>,
+) -> Result<Vec<u8>, String> {
+    let mut encoder = zstd::stream::Encoder::new(Vec::new(), level.unwrap_or(0))
+        .map_err(|error| format!("zstd compression initialization failed: {error}"))?;
+    if let Some(checksum) = checksum {
+        encoder
+            .include_checksum(checksum)
+            .map_err(|error| format!("zstd checksum configuration failed: {error}"))?;
+    }
+    encoder
+        .write_all(data)
+        .map_err(|error| format!("zstd compression failed: {error}"))?;
+    encoder
+        .finish()
+        .map_err(|error| format!("zstd compression finalization failed: {error}"))
+}
+
+/// Decompress a zstd payload and enforce the optional output bound after
+/// decoding. The bound is explicit so callers cannot silently accept an
+/// unbounded decompression expansion.
+pub fn decompress_zstd(data: &[u8], max_output_length: Option<usize>) -> Result<Vec<u8>, String> {
+    let output = zstd::stream::decode_all(data)
+        .map_err(|error| format!("zstd decompression failed: {error}"))?;
+    if let Some(max_output_length) = max_output_length {
+        if output.len() > max_output_length {
+            return Err(format!(
+                "zstd decompressed output exceeds maximum length {max_output_length}"
+            ));
+        }
+    }
+    Ok(output)
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
