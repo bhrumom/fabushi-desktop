@@ -60,3 +60,5 @@ pub mod content_search;
 
 pub mod interactive;
 
+pub mod plugin_sdk;
+

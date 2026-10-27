@@ -10,10 +10,10 @@
     "ui_accepted": false
   },
   "file_coverage": {
-    "mapped_paths": 680,
+    "mapped_paths": 720,
     "omitted_known": 0,
     "tracked_paths": 58750,
-    "unclassified_paths": 58070
+    "unclassified_paths": 58030
   },
   "inventory_authority": {
     "manifest_source": "GitHub Actions immutable artifact candidate",
@@ -20871,6 +20871,638 @@
       ],
       "reviewer": "xuyao@ombhrum.com",
       "migration_rollback": "Disable adaptive memory pressure triggers and retain default fixed caches"
+    },
+    {
+      "id": "OCRM-RESP-PLUGIN-SDK-ACCESS-ACCOUNT-001",
+      "unit_id": "OCRM-UNIT-PLUGIN-SDK-001",
+      "responsibility_kind": "business-runtime",
+      "behavior": "Plugin SDK access group authorization policy, accessGroup: prefix resolution, sender membership lookup, and canonical account ID normalization.",
+      "risk": "High; access group bypass leads to unauthorized sender access to channels and agent capabilities",
+      "status": {
+        "read": "read-complete",
+        "mapping": "reviewed",
+        "wiring": "not-wired",
+        "implementation": "implemented",
+        "verification": "not-run",
+        "acceptance": "pending"
+      },
+      "selected_owner": "source/host/src/extensions/plugin_sdk/access_groups.rs",
+      "existing_owner_candidates": [
+        {
+          "path": "source/host/src/extensions/plugin_sdk/access_groups.rs",
+          "reason": "Plugin SDK access group evaluator and account ID normalizer"
+        }
+      ],
+      "owner_decision": "Native implementation in access_groups under plugin_sdk extension",
+      "dependencies": [
+        "mahayana_host_runtime::extensions::plugin_sdk::access_groups"
+      ],
+      "capability_ids": [
+        "plugin_sdk.access_groups"
+      ],
+      "preconditions": [
+        "Channel inbound message received with sender ID and accessGroup allow entry"
+      ],
+      "postconditions": [
+        "Sender membership evaluated deterministically against access group rules"
+      ],
+      "invariants": [
+        "Prefix accessGroup: is required to select group membership",
+        "Sender evaluation is case-insensitive",
+        "Canonical account keys follow provider:account_id format"
+      ],
+      "typed_contracts": [
+        "AccessGroup",
+        "AccountIdentifier",
+        "parse_access_group_allow_from_entry"
+      ],
+      "tests": [
+        "source/host/tests/openclaw_plugin_sdk_contract.rs::test_ocrm_plugin_sdk_access_groups_and_account_id"
+      ],
+      "integration": {
+        "producer": "source/host/src/extensions/plugin_sdk/access_groups.rs",
+        "owner": "source/host/src/extensions/plugin_sdk/access_groups.rs",
+        "consumer": "source/host/src/extensions/plugin_sdk/access_groups.rs",
+        "entrypoint": "source/host/src/extensions/plugin_sdk/access_groups.rs::is_sender_allowed"
+      },
+      "source_refs": [
+        {
+          "path": "src/plugin-sdk/AGENTS.md",
+          "blob_sha": "7347465329cebd0467501dac08c4611c7b4280c2",
+          "range": {
+            "start_line": 1,
+            "end_line": 63
+          },
+          "symbol": "AGENTS"
+        },
+        {
+          "path": "src/plugin-sdk/access-groups.test.ts",
+          "blob_sha": "b648a0187d8a316908b6a7fed537e2b21dacdd82",
+          "range": {
+            "start_line": 1,
+            "end_line": 62
+          },
+          "symbol": "access-groups.test"
+        },
+        {
+          "path": "src/plugin-sdk/access-groups.ts",
+          "blob_sha": "fc4b72c1287c38113060c19be2994eecd6e6fc25",
+          "range": {
+            "start_line": 1,
+            "end_line": 198
+          },
+          "symbol": "access-groups"
+        },
+        {
+          "path": "src/plugin-sdk/account-configured-ids.ts",
+          "blob_sha": "2ab3c72eb29bc86d8cbc6834cd8ee9fc007d5f1e",
+          "range": {
+            "start_line": 1,
+            "end_line": 17
+          },
+          "symbol": "account-configured-ids"
+        },
+        {
+          "path": "src/plugin-sdk/account-core.ts",
+          "blob_sha": "2cc080d1fb9e3b1dd9b9c9ecf1de3ef9cc698e14",
+          "range": {
+            "start_line": 1,
+            "end_line": 47
+          },
+          "symbol": "account-core"
+        },
+        {
+          "path": "src/plugin-sdk/account-helpers.ts",
+          "blob_sha": "bef2347784e705f8eb557a5f7caa1f2239211fda",
+          "range": {
+            "start_line": 1,
+            "end_line": 10
+          },
+          "symbol": "account-helpers"
+        },
+        {
+          "path": "src/plugin-sdk/account-id.ts",
+          "blob_sha": "c456249cb6900916dcc9728c7338d1a455bcfcea",
+          "range": {
+            "start_line": 1,
+            "end_line": 5
+          },
+          "symbol": "account-id"
+        },
+        {
+          "path": "src/plugin-sdk/account-resolution-runtime.ts",
+          "blob_sha": "bf657d788491498616a8c50f266e2d713a7cc020",
+          "range": {
+            "start_line": 1,
+            "end_line": 3
+          },
+          "symbol": "account-resolution-runtime"
+        },
+        {
+          "path": "src/plugin-sdk/account-resolution.ts",
+          "blob_sha": "80c98b4e84e65ecae45a24831cede2e7068ff219",
+          "range": {
+            "start_line": 1,
+            "end_line": 17
+          },
+          "symbol": "account-resolution"
+        }
+      ],
+      "evidence_refs": [
+        "source/host/tests/openclaw_plugin_sdk_contract.rs",
+        "projects/openclaw-rust/dossiers/plugin-sdk-scoped.md"
+      ],
+      "requirement_ids": [
+        "OCRM-R04",
+        "OCRM-R08",
+        "OCRM-R13",
+        "OCRM-R24",
+        "OCRM-AC08",
+        "OCRM-AC24"
+      ],
+      "required_gate_ids": [
+        "OCRM-G04-rust-contract",
+        "OCRM-G05-frozen-oracle"
+      ],
+      "oracle_ids": [
+        "OCRM-PLUGIN-SDK-ACCESS-O01"
+      ],
+      "adr_refs": [],
+      "blocker_ids": [
+        "BL-PLUGIN-SDK-ACCESS-WIRING-001"
+      ],
+      "target": {
+        "path": "source/host/src/extensions/plugin_sdk/access_groups.rs",
+        "symbol": "AccessGroup",
+        "language": "Rust"
+      },
+      "required_evidence_dimensions": [
+        "unit",
+        "format"
+      ],
+      "reviewer": "xuyao@ombhrum.com",
+      "migration_rollback": "Fallback to direct sender ID allowlist without access group expansion"
+    },
+    {
+      "id": "OCRM-RESP-PLUGIN-SDK-ACP-RUNTIME-001",
+      "unit_id": "OCRM-UNIT-PLUGIN-SDK-001",
+      "responsibility_kind": "business-runtime",
+      "behavior": "Agent Control Plane (ACP) runtime backend, session registry, incognito session termination safety, and doctor diagnostics report generation.",
+      "risk": "High; incognito session leakage or desynchronization violates user privacy and data retention invariants",
+      "status": {
+        "read": "read-complete",
+        "mapping": "reviewed",
+        "wiring": "not-wired",
+        "implementation": "implemented",
+        "verification": "not-run",
+        "acceptance": "pending"
+      },
+      "selected_owner": "source/host/src/extensions/plugin_sdk/acp_runtime.rs",
+      "existing_owner_candidates": [
+        {
+          "path": "source/host/src/extensions/plugin_sdk/acp_runtime.rs",
+          "reason": "Host ACP control plane session manager and incognito session guard"
+        }
+      ],
+      "owner_decision": "Native implementation in acp_runtime under plugin_sdk extension",
+      "dependencies": [
+        "mahayana_host_runtime::extensions::plugin_sdk::acp_runtime"
+      ],
+      "capability_ids": [
+        "plugin_sdk.acp_runtime"
+      ],
+      "preconditions": [
+        "ACP sessions managed and accessed by plugins or internal runners"
+      ],
+      "postconditions": [
+        "Inactive incognito sessions rejected and doctor report aggregated"
+      ],
+      "invariants": [
+        "Incognito sessions that have ended reject subsequent turns with IncognitoSessionEnded",
+        "Sync access to incognito sessions is denied with IncognitoSessionSyncAccessDenied"
+      ],
+      "typed_contracts": [
+        "AcpSessionEntry",
+        "AcpSessionManager",
+        "AcpDoctorReport",
+        "AcpError"
+      ],
+      "tests": [
+        "source/host/tests/openclaw_plugin_sdk_contract.rs::test_ocrm_plugin_sdk_acp_runtime"
+      ],
+      "integration": {
+        "producer": "source/host/src/extensions/plugin_sdk/acp_runtime.rs",
+        "owner": "source/host/src/extensions/plugin_sdk/acp_runtime.rs",
+        "consumer": "source/host/src/extensions/plugin_sdk/acp_runtime.rs",
+        "entrypoint": "source/host/src/extensions/plugin_sdk/acp_runtime.rs::verify_session_access"
+      },
+      "source_refs": [
+        {
+          "path": "src/plugin-sdk/acp-binding-resolve-runtime.ts",
+          "blob_sha": "d9625729cbccdc057aaa02548ee7abe26e6a9c1e",
+          "range": {
+            "start_line": 1,
+            "end_line": 3
+          },
+          "symbol": "acp-binding-resolve-runtime"
+        },
+        {
+          "path": "src/plugin-sdk/acp-binding-runtime.ts",
+          "blob_sha": "d5dddcfef68ae9b5a7ab123073d741dff5f08796",
+          "range": {
+            "start_line": 1,
+            "end_line": 5
+          },
+          "symbol": "acp-binding-runtime"
+        },
+        {
+          "path": "src/plugin-sdk/acp-runtime-backend.ts",
+          "blob_sha": "71047e028ddcef351011847ffec4024afa649c3c",
+          "range": {
+            "start_line": 1,
+            "end_line": 3
+          },
+          "symbol": "acp-runtime-backend"
+        },
+        {
+          "path": "src/plugin-sdk/acp-runtime.manager-api.test.ts",
+          "blob_sha": "3c3d6aafc06bd6d0e8d4a38504f95f8400550828",
+          "range": {
+            "start_line": 1,
+            "end_line": 44
+          },
+          "symbol": "acp-runtime.manager-api.test"
+        },
+        {
+          "path": "src/plugin-sdk/acp-runtime.test.ts",
+          "blob_sha": "6e6306159275cf5a06eb82dfeddafed29aa50252",
+          "range": {
+            "start_line": 1,
+            "end_line": 289
+          },
+          "symbol": "acp-runtime.test"
+        },
+        {
+          "path": "src/plugin-sdk/acp-runtime.ts",
+          "blob_sha": "172b86cd6553d3b0ef15ccc9c64718c4cfee9f17",
+          "range": {
+            "start_line": 1,
+            "end_line": 100
+          },
+          "symbol": "acp-runtime"
+        },
+        {
+          "path": "src/plugin-sdk/acpx.ts",
+          "blob_sha": "ee1e8f0c7053ea55102e4040ba62d28635ab9f86",
+          "range": {
+            "start_line": 1,
+            "end_line": 142
+          },
+          "symbol": "acpx"
+        }
+      ],
+      "evidence_refs": [
+        "source/host/tests/openclaw_plugin_sdk_contract.rs",
+        "projects/openclaw-rust/dossiers/plugin-sdk-scoped.md"
+      ],
+      "requirement_ids": [
+        "OCRM-R04",
+        "OCRM-R08",
+        "OCRM-R09",
+        "OCRM-R13",
+        "OCRM-R24",
+        "OCRM-AC08",
+        "OCRM-AC24"
+      ],
+      "required_gate_ids": [
+        "OCRM-G04-rust-contract",
+        "OCRM-G05-frozen-oracle"
+      ],
+      "oracle_ids": [
+        "OCRM-PLUGIN-SDK-ACP-O01"
+      ],
+      "adr_refs": [],
+      "blocker_ids": [
+        "BL-PLUGIN-SDK-ACP-WIRING-001"
+      ],
+      "target": {
+        "path": "source/host/src/extensions/plugin_sdk/acp_runtime.rs",
+        "symbol": "AcpSessionManager",
+        "language": "Rust"
+      },
+      "required_evidence_dimensions": [
+        "unit",
+        "format"
+      ],
+      "reviewer": "xuyao@ombhrum.com",
+      "migration_rollback": "Bypass ACP control plane layer and dispatch directly to standard session store"
+    },
+    {
+      "id": "OCRM-RESP-PLUGIN-SDK-AGENT-HARNESS-001",
+      "unit_id": "OCRM-UNIT-PLUGIN-SDK-001",
+      "responsibility_kind": "business-runtime",
+      "behavior": "Plugin-owned agent harness runtime, run attempt lifecycle tracking, graceful abort and drain, and structured input form validation.",
+      "risk": "Medium; stranded run attempts and unvalidated structured input forms cause hung agents",
+      "status": {
+        "read": "read-complete",
+        "mapping": "reviewed",
+        "wiring": "not-wired",
+        "implementation": "implemented",
+        "verification": "not-run",
+        "acceptance": "pending"
+      },
+      "selected_owner": "source/host/src/extensions/plugin_sdk/agent_harness.rs",
+      "existing_owner_candidates": [
+        {
+          "path": "source/host/src/extensions/plugin_sdk/agent_harness.rs",
+          "reason": "Host agent harness lifecycle manager and structured input form validator"
+        }
+      ],
+      "owner_decision": "Native implementation in agent_harness under plugin_sdk extension",
+      "dependencies": [
+        "mahayana_host_runtime::extensions::plugin_sdk::agent_harness"
+      ],
+      "capability_ids": [
+        "plugin_sdk.agent_harness"
+      ],
+      "preconditions": [
+        "Agent run attempt launched or structured input questions requested"
+      ],
+      "postconditions": [
+        "Run attempt state tracked, aborted runs drained, and form fields validated"
+      ],
+      "invariants": [
+        "Aborted attempts record terminal status Aborted and terminal error message",
+        "Missing answers for required form fields return validation error"
+      ],
+      "typed_contracts": [
+        "AgentRunAttempt",
+        "AgentHarnessManager",
+        "StructuredInputForm",
+        "AttemptTerminalStatus"
+      ],
+      "tests": [
+        "source/host/tests/openclaw_plugin_sdk_contract.rs::test_ocrm_plugin_sdk_agent_harness"
+      ],
+      "integration": {
+        "producer": "source/host/src/extensions/plugin_sdk/agent_harness.rs",
+        "owner": "source/host/src/extensions/plugin_sdk/agent_harness.rs",
+        "consumer": "source/host/src/extensions/plugin_sdk/agent_harness.rs",
+        "entrypoint": "source/host/src/extensions/plugin_sdk/agent_harness.rs::abort_and_drain"
+      },
+      "source_refs": [
+        {
+          "path": "src/plugin-sdk/agent-core.ts",
+          "blob_sha": "648c84fb73cee5a1413451bd14ad0617d1a9fe92",
+          "range": {
+            "start_line": 1,
+            "end_line": 87
+          },
+          "symbol": "agent-core"
+        },
+        {
+          "path": "src/plugin-sdk/agent-harness-attempt-runtime.ts",
+          "blob_sha": "0a9eb44e4b2ce8528d3a2119a013f6fa023e7591",
+          "range": {
+            "start_line": 1,
+            "end_line": 40
+          },
+          "symbol": "agent-harness-attempt-runtime"
+        },
+        {
+          "path": "src/plugin-sdk/agent-harness-completion.test.ts",
+          "blob_sha": "3aaf162b39bf24469123118f0d2842fc0e261e36",
+          "range": {
+            "start_line": 1,
+            "end_line": 296
+          },
+          "symbol": "agent-harness-completion.test"
+        },
+        {
+          "path": "src/plugin-sdk/agent-harness-completion.ts",
+          "blob_sha": "b9489e14f83104fca97d5ada4b4de34612284c6d",
+          "range": {
+            "start_line": 1,
+            "end_line": 320
+          },
+          "symbol": "agent-harness-completion"
+        },
+        {
+          "path": "src/plugin-sdk/agent-harness-exec-review-runtime.test.ts",
+          "blob_sha": "fa203ee26a164ecc0d659c099b037cceb4e483b2",
+          "range": {
+            "start_line": 1,
+            "end_line": 33
+          },
+          "symbol": "agent-harness-exec-review-runtime.test"
+        },
+        {
+          "path": "src/plugin-sdk/agent-harness-exec-review-runtime.ts",
+          "blob_sha": "bc5b595fc8e13537fa978215eb22833ae64f9233",
+          "range": {
+            "start_line": 1,
+            "end_line": 106
+          },
+          "symbol": "agent-harness-exec-review-runtime"
+        },
+        {
+          "path": "src/plugin-sdk/agent-harness-mcp-forms.test.ts",
+          "blob_sha": "e5e4ebe9be83b9cb09de1522c8fc788b75e72154",
+          "range": {
+            "start_line": 1,
+            "end_line": 79
+          },
+          "symbol": "agent-harness-mcp-forms.test"
+        },
+        {
+          "path": "src/plugin-sdk/agent-harness-operation.contract.test.ts",
+          "blob_sha": "499402c8e8cf0212895113bc4c3104fece499a9b",
+          "range": {
+            "start_line": 1,
+            "end_line": 37
+          },
+          "symbol": "agent-harness-operation.contract.test"
+        },
+        {
+          "path": "src/plugin-sdk/agent-harness-private-options.test.ts",
+          "blob_sha": "6df760be596d02b65217f33d1efc30b2de991519",
+          "range": {
+            "start_line": 1,
+            "end_line": 106
+          },
+          "symbol": "agent-harness-private-options.test"
+        },
+        {
+          "path": "src/plugin-sdk/agent-harness-registration.ts",
+          "blob_sha": "30eff7d653e3a2c06caa449db8c3c430e078b318",
+          "range": {
+            "start_line": 1,
+            "end_line": 5
+          },
+          "symbol": "agent-harness-registration"
+        },
+        {
+          "path": "src/plugin-sdk/agent-harness-runtime.test.ts",
+          "blob_sha": "909e271396b73dfb6652a341123234c6e1745322",
+          "range": {
+            "start_line": 1,
+            "end_line": 661
+          },
+          "symbol": "agent-harness-runtime.test"
+        },
+        {
+          "path": "src/plugin-sdk/agent-harness-runtime.ts",
+          "blob_sha": "6148ad77b8dae5ca39d6f8c4b3ee68bdfeed7686",
+          "range": {
+            "start_line": 1,
+            "end_line": 770
+          },
+          "symbol": "agent-harness-runtime"
+        },
+        {
+          "path": "src/plugin-sdk/agent-harness-session-runtime.ts",
+          "blob_sha": "1788df0a5febdb453b03aa7964b9e54102c95b83",
+          "range": {
+            "start_line": 1,
+            "end_line": 43
+          },
+          "symbol": "agent-harness-session-runtime"
+        },
+        {
+          "path": "src/plugin-sdk/agent-harness-skill-resources.test.ts",
+          "blob_sha": "0c4cc67d7f6fb4226dd394ab75dfb98bc8f707aa",
+          "range": {
+            "start_line": 1,
+            "end_line": 82
+          },
+          "symbol": "agent-harness-skill-resources.test"
+        },
+        {
+          "path": "src/plugin-sdk/agent-harness-tool-runtime.ts",
+          "blob_sha": "d8eddb4f7f4e0d79ffb10047b4f176acb9af57e5",
+          "range": {
+            "start_line": 1,
+            "end_line": 139
+          },
+          "symbol": "agent-harness-tool-runtime"
+        },
+        {
+          "path": "src/plugin-sdk/agent-harness.ts",
+          "blob_sha": "2ea83bd419aa73d3fbe380f2a1ec039de35beed8",
+          "range": {
+            "start_line": 1,
+            "end_line": 29
+          },
+          "symbol": "agent-harness"
+        },
+        {
+          "path": "src/plugin-sdk/agent-media-payload.ts",
+          "blob_sha": "4fe2909062c1364e2e6eead8123de851c6b67175",
+          "range": {
+            "start_line": 1,
+            "end_line": 21
+          },
+          "symbol": "agent-media-payload"
+        },
+        {
+          "path": "src/plugin-sdk/agent-runtime-auth-profile-contract.test.ts",
+          "blob_sha": "6a5769c52c669ab632e710863fcb897498cadd87",
+          "range": {
+            "start_line": 1,
+            "end_line": 65
+          },
+          "symbol": "agent-runtime-auth-profile-contract.test"
+        },
+        {
+          "path": "src/plugin-sdk/agent-runtime-model-catalog-contract.test.ts",
+          "blob_sha": "7512f591560ddc885e8ce042d5d4c1c94149a0ee",
+          "range": {
+            "start_line": 1,
+            "end_line": 86
+          },
+          "symbol": "agent-runtime-model-catalog-contract.test"
+        },
+        {
+          "path": "src/plugin-sdk/agent-runtime-test-contracts.ts",
+          "blob_sha": "d904711f77b085a95abf1de746bcccb7a63d751a",
+          "range": {
+            "start_line": 1,
+            "end_line": 70
+          },
+          "symbol": "agent-runtime-test-contracts"
+        },
+        {
+          "path": "src/plugin-sdk/agent-runtime.ts",
+          "blob_sha": "53ee3aad3a085c2ea8316c3a4f49036272db11b1",
+          "range": {
+            "start_line": 1,
+            "end_line": 184
+          },
+          "symbol": "agent-runtime"
+        },
+        {
+          "path": "src/plugin-sdk/agent-scope-runtime.test.ts",
+          "blob_sha": "66cc186eac60ab3f59ad6cd28444adb01fa46666",
+          "range": {
+            "start_line": 1,
+            "end_line": 93
+          },
+          "symbol": "agent-scope-runtime.test"
+        },
+        {
+          "path": "src/plugin-sdk/agent-scope-runtime.ts",
+          "blob_sha": "18c1a3e5e8a3c5ec266423a709c81e7c512cd7e4",
+          "range": {
+            "start_line": 1,
+            "end_line": 68
+          },
+          "symbol": "agent-scope-runtime"
+        },
+        {
+          "path": "src/plugin-sdk/agent-sessions.ts",
+          "blob_sha": "3694ce676830fdb0aee7c4b97fce3137cee4200d",
+          "range": {
+            "start_line": 1,
+            "end_line": 24
+          },
+          "symbol": "agent-sessions"
+        }
+      ],
+      "evidence_refs": [
+        "source/host/tests/openclaw_plugin_sdk_contract.rs",
+        "projects/openclaw-rust/dossiers/plugin-sdk-scoped.md"
+      ],
+      "requirement_ids": [
+        "OCRM-R04",
+        "OCRM-R08",
+        "OCRM-R14",
+        "OCRM-R24",
+        "OCRM-AC08",
+        "OCRM-AC14",
+        "OCRM-AC24"
+      ],
+      "required_gate_ids": [
+        "OCRM-G04-rust-contract",
+        "OCRM-G05-frozen-oracle"
+      ],
+      "oracle_ids": [
+        "OCRM-PLUGIN-SDK-HARNESS-O01"
+      ],
+      "adr_refs": [],
+      "blocker_ids": [
+        "BL-PLUGIN-SDK-HARNESS-WIRING-001"
+      ],
+      "target": {
+        "path": "source/host/src/extensions/plugin_sdk/agent_harness.rs",
+        "symbol": "AgentHarnessManager",
+        "language": "Rust"
+      },
+      "required_evidence_dimensions": [
+        "unit",
+        "format"
+      ],
+      "reviewer": "xuyao@ombhrum.com",
+      "migration_rollback": "Terminate attempts forcefully without draining in-flight messages"
     }
   ],
   "schema_version": 1,
