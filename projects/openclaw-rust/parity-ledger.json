@@ -4214,8 +4214,8 @@
       ],
       "id": "OCRM-RESP-EXEC-COMMAND-ERROR-001",
       "integration": {
-        "consumer": "source/host/src/runner/mod.rs",
-        "entrypoint": "source/host/src/extensions/local_exec/mod.rs",
+    "consumer": "source/host/src/extensions/local_exec/extension.rs",
+    "entrypoint": "source/host/src/extensions/local_exec/gateway_local_exec_sand_box.rs::GatewayLocalExecSandBox::report_exec_failure",
         "owner": "source/host/src/extensions/local_exec/local_exec_failure_classifier.rs",
         "producer": "source/host/src/extensions/local_exec/gateway_local_exec_sand_box.rs"
       },
@@ -4267,7 +4267,7 @@
         "mapping": "mapped",
         "read": "partial",
         "verification": "not-run",
-        "wiring": "not-wired"
+    "wiring": "wired"
       },
       "target": {
         "language": "Rust",
