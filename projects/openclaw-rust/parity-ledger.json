@@ -10,10 +10,10 @@
     "ui_accepted": false
   },
   "file_coverage": {
-    "mapped_paths": 382,
+    "mapped_paths": 399,
     "omitted_known": 0,
     "tracked_paths": 58750,
-    "unclassified_paths": 58368
+    "unclassified_paths": 58351
   },
   "inventory_authority": {
     "manifest_source": "GitHub Actions immutable artifact candidate",
@@ -16823,6 +16823,336 @@
       ],
       "reviewer": "xuyao@ombhrum.com",
       "migration_rollback": "Fallback to static session default model without dynamic picker overrides"
+    },
+    {
+      "id": "OCRM-RESP-MODEL-CATALOG-PLANNER-001",
+      "unit_id": "OCRM-UNIT-MODEL-CATALOG-001",
+      "responsibility_kind": "business-runtime",
+      "behavior": "Manifest model catalog row planning, trusted transport endpoint overriding, suppression rule evaluation, and catalog conflict detection.",
+      "risk": "Medium; trusted transport precedence prevents remote catalog redirection to unauthorized endpoints",
+      "status": {
+        "read": "read-complete",
+        "mapping": "reviewed",
+        "wiring": "not-wired",
+        "implementation": "implemented",
+        "verification": "not-run",
+        "acceptance": "pending"
+      },
+      "selected_owner": "source/host/src/extensions/inference/model_catalog_service.rs",
+      "existing_owner_candidates": [
+        {
+          "path": "source/host/src/extensions/inference/model_catalog_service.rs",
+          "reason": "Model catalog manifest planning and row aggregation service"
+        }
+      ],
+      "owner_decision": "Native implementation in model_catalog_service under inference extension",
+      "dependencies": [
+        "mahayana_host_runtime::extensions::inference::model_catalog_service"
+      ],
+      "capability_ids": [
+        "inference.model_catalog"
+      ],
+      "preconditions": [
+        "Provider models and suppression declarations provided"
+      ],
+      "postconditions": [
+        "Planned catalog rows generated with trusted transport precedence and duplicate conflicts detected"
+      ],
+      "invariants": [
+        "Local trusted configuration overrides remote base_url and headers",
+        "Suppressed models are omitted from effective catalog plan",
+        "Duplicate provider/model combinations are captured as conflicts without throwing"
+      ],
+      "typed_contracts": [
+        "merge_remote_model_with_trusted_transport",
+        "plan_manifest_model_catalog_rows",
+        "build_model_catalog_merge_key"
+      ],
+      "tests": [
+        "source/host/tests/openclaw_model_catalog_contract.rs::test_ocrm_model_catalog_o03_manifest_planner_and_trusted_transport",
+        "source/host/tests/openclaw_model_catalog_contract.rs::test_ocrm_model_catalog_o04_conflict_detection_and_filtering"
+      ],
+      "integration": {
+        "producer": "source/host/src/extensions/inference/model_catalog_service.rs",
+        "owner": "source/host/src/extensions/inference/model_catalog_service.rs",
+        "consumer": "source/host/src/extensions/inference/model_catalog_service.rs",
+        "entrypoint": "source/host/src/extensions/inference/model_catalog_service.rs::plan_manifest_model_catalog_rows"
+      },
+      "source_refs": [
+        {
+          "path": "src/model-catalog/index.ts",
+          "blob_sha": "c102253f6e4ab69a8bbc596d5ac5da61d211cda0",
+          "range": {
+            "start_line": 1,
+            "end_line": 29
+          },
+          "symbol": "index"
+        },
+        {
+          "path": "src/model-catalog/manifest-planner.ts",
+          "blob_sha": "a7aedbdae784c71d98081a100d920cb7e3caf71d",
+          "range": {
+            "start_line": 1,
+            "end_line": 380
+          },
+          "symbol": "manifest-planner"
+        },
+        {
+          "path": "src/model-catalog/manifest-planner.test.ts",
+          "blob_sha": "fa21ad8c3d088490ec711cc4311ba94da70140c7",
+          "range": {
+            "start_line": 1,
+            "end_line": 582
+          },
+          "symbol": "manifest-planner.test"
+        },
+        {
+          "path": "src/model-catalog/endpoint-eligibility.test.ts",
+          "blob_sha": "5c289ee03049d5d8e02ffa5f4602dcac994c270f",
+          "range": {
+            "start_line": 1,
+            "end_line": 113
+          },
+          "symbol": "endpoint-eligibility.test"
+        }
+      ],
+      "evidence_refs": [
+        "source/host/tests/openclaw_model_catalog_contract.rs",
+        "projects/openclaw-rust/dossiers/model-catalog-scoped.md"
+      ],
+      "requirement_ids": [
+        "OCRM-R06",
+        "OCRM-AC06"
+      ],
+      "required_gate_ids": [
+        "OCRM-G04-rust-contract",
+        "OCRM-G05-frozen-oracle"
+      ],
+      "oracle_ids": [
+        "OCRM-MODEL-CATALOG-O03",
+        "OCRM-MODEL-CATALOG-O04"
+      ],
+      "adr_refs": [],
+      "blocker_ids": [
+        "BL-MODEL-CATALOG-PLANNER-EXEC-WIRING-001"
+      ],
+      "target": {
+        "path": "source/host/src/extensions/inference/model_catalog_service.rs",
+        "symbol": "plan_manifest_model_catalog_rows",
+        "language": "Rust"
+      },
+      "required_evidence_dimensions": [
+        "unit",
+        "format"
+      ],
+      "reviewer": "xuyao@ombhrum.com",
+      "migration_rollback": "Serve static fallback models without manifest planning aggregation"
+    },
+    {
+      "id": "OCRM-RESP-MODEL-CATALOG-REMOTE-001",
+      "unit_id": "OCRM-UNIT-MODEL-CATALOG-001",
+      "responsibility_kind": "business-runtime",
+      "behavior": "Remote model catalog overlay, wire bundle V1/V2/V3 parsing & projection, URL resolution, cache freshness evaluation, and store state management.",
+      "risk": "Medium; manages remote catalog synchronization, wire formats, and TTL caching",
+      "status": {
+        "read": "read-complete",
+        "mapping": "reviewed",
+        "wiring": "not-wired",
+        "implementation": "implemented",
+        "verification": "not-run",
+        "acceptance": "pending"
+      },
+      "selected_owner": "source/host/src/extensions/inference/model_catalog_service.rs",
+      "existing_owner_candidates": [
+        {
+          "path": "source/host/src/extensions/inference/model_catalog_service.rs",
+          "reason": "Remote model catalog wire bundle projection and TTL cache manager"
+        }
+      ],
+      "owner_decision": "Native implementation in model_catalog_service under inference extension",
+      "dependencies": [
+        "mahayana_host_runtime::extensions::inference::model_catalog_service"
+      ],
+      "capability_ids": [
+        "inference.model_catalog_remote"
+      ],
+      "preconditions": [
+        "Remote catalog bundle payload or configured URL provided"
+      ],
+      "postconditions": [
+        "Wire bundle projected into provider definitions, pricing, and recommendations with TTL cache status"
+      ],
+      "invariants": [
+        "Default and retired V1 URLs are recognized as active catalog sources",
+        "Remote catalog TTL is enforced at 6 hours",
+        "Wire bundles V1, V2, and V3 project cleanly into uniform provider and pricing tables"
+      ],
+      "typed_contracts": [
+        "resolve_remote_catalog_url",
+        "is_remote_catalog_source_active",
+        "is_remote_catalog_fresh",
+        "project_remote_model_catalog"
+      ],
+      "tests": [
+        "source/host/tests/openclaw_model_catalog_contract.rs::test_ocrm_model_catalog_o01_config_and_freshness",
+        "source/host/tests/openclaw_model_catalog_contract.rs::test_ocrm_model_catalog_o02_bundle_projection_v1_and_v3"
+      ],
+      "integration": {
+        "producer": "source/host/src/extensions/inference/model_catalog_service.rs",
+        "owner": "source/host/src/extensions/inference/model_catalog_service.rs",
+        "consumer": "source/host/src/extensions/inference/model_catalog_service.rs",
+        "entrypoint": "source/host/src/extensions/inference/model_catalog_service.rs::project_remote_model_catalog"
+      },
+      "source_refs": [
+        {
+          "path": "src/model-catalog/bundled-catalog-stamp.ts",
+          "blob_sha": "24f43a714ea435844f256397dc340518467fc008",
+          "range": {
+            "start_line": 1,
+            "end_line": 27
+          },
+          "symbol": "bundled-catalog-stamp"
+        },
+        {
+          "path": "src/model-catalog/pricing.test.ts",
+          "blob_sha": "971771fa7c5572cb0508847d4863ee308db238b8",
+          "range": {
+            "start_line": 1,
+            "end_line": 817
+          },
+          "symbol": "pricing.test"
+        },
+        {
+          "path": "src/model-catalog/remote-bundle.ts",
+          "blob_sha": "b716a85a5933e09aade0e2c6594c87deba2460ee",
+          "range": {
+            "start_line": 1,
+            "end_line": 110
+          },
+          "symbol": "remote-bundle"
+        },
+        {
+          "path": "src/model-catalog/remote-config.ts",
+          "blob_sha": "f78ad7b3b999202aaf5c601e88a19dbd82603114",
+          "range": {
+            "start_line": 1,
+            "end_line": 25
+          },
+          "symbol": "remote-config"
+        },
+        {
+          "path": "src/model-catalog/remote-overlay.ts",
+          "blob_sha": "e3fdbe5c828af5a98822b02cbe3c070992f5df5b",
+          "range": {
+            "start_line": 1,
+            "end_line": 218
+          },
+          "symbol": "remote-overlay"
+        },
+        {
+          "path": "src/model-catalog/remote-overlay.test.ts",
+          "blob_sha": "394698b45ebefe5572c79f2fa1d30bbf19491778",
+          "range": {
+            "start_line": 1,
+            "end_line": 266
+          },
+          "symbol": "remote-overlay.test"
+        },
+        {
+          "path": "src/model-catalog/remote-overlay.test-support.ts",
+          "blob_sha": "1a848723b753a288dca836ee990f600a1f2d46af",
+          "range": {
+            "start_line": 1,
+            "end_line": 35
+          },
+          "symbol": "remote-overlay.test-support"
+        },
+        {
+          "path": "src/model-catalog/remote-overlay.worker.test-support.ts",
+          "blob_sha": "78093af225383e666703eaac70f665bdf11c0f48",
+          "range": {
+            "start_line": 1,
+            "end_line": 13
+          },
+          "symbol": "remote-overlay.worker.test-support"
+        },
+        {
+          "path": "src/model-catalog/remote-refresh.ts",
+          "blob_sha": "a0674ab7976c1aff4592a3b498cc4353fbceb851",
+          "range": {
+            "start_line": 1,
+            "end_line": 201
+          },
+          "symbol": "remote-refresh"
+        },
+        {
+          "path": "src/model-catalog/remote-refresh.test.ts",
+          "blob_sha": "aa616d45fd77383b19adf4988bdbf2e45b75efd2",
+          "range": {
+            "start_line": 1,
+            "end_line": 394
+          },
+          "symbol": "remote-refresh.test"
+        },
+        {
+          "path": "src/model-catalog/remote-store.ts",
+          "blob_sha": "f8696544b62c861b3ee9033dc358ec87e69559bb",
+          "range": {
+            "start_line": 1,
+            "end_line": 152
+          },
+          "symbol": "remote-store"
+        },
+        {
+          "path": "src/model-catalog/remote-store.test.ts",
+          "blob_sha": "91e3aff3ac79e7861d336cb2f8f3d057eb3abb70",
+          "range": {
+            "start_line": 1,
+            "end_line": 223
+          },
+          "symbol": "remote-store.test"
+        },
+        {
+          "path": "src/model-catalog/remote-store.worker.ts",
+          "blob_sha": "aac4a603f407107c14f200519342d4fd65bd2a94",
+          "range": {
+            "start_line": 1,
+            "end_line": 102
+          },
+          "symbol": "remote-store.worker"
+        }
+      ],
+      "evidence_refs": [
+        "source/host/tests/openclaw_model_catalog_contract.rs",
+        "projects/openclaw-rust/dossiers/model-catalog-scoped.md"
+      ],
+      "requirement_ids": [
+        "OCRM-R06",
+        "OCRM-AC06"
+      ],
+      "required_gate_ids": [
+        "OCRM-G04-rust-contract",
+        "OCRM-G05-frozen-oracle"
+      ],
+      "oracle_ids": [
+        "OCRM-MODEL-CATALOG-O01",
+        "OCRM-MODEL-CATALOG-O02"
+      ],
+      "adr_refs": [],
+      "blocker_ids": [
+        "BL-MODEL-CATALOG-REMOTE-EXEC-WIRING-001"
+      ],
+      "target": {
+        "path": "source/host/src/extensions/inference/model_catalog_service.rs",
+        "symbol": "project_remote_model_catalog",
+        "language": "Rust"
+      },
+      "required_evidence_dimensions": [
+        "unit",
+        "format"
+      ],
+      "reviewer": "xuyao@ombhrum.com",
+      "migration_rollback": "Use bundled static catalog when remote overlay refresh is disabled or offline"
     }
   ],
   "schema_version": 1,

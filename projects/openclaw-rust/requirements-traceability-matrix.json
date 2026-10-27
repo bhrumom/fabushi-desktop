@@ -184,7 +184,9 @@
         "OCRM-RESP-AGENT-MODEL-PRICING-001",
         "OCRM-RESP-AGENT-ACP-COMMANDS-001",
         "OCRM-RESP-AGENT-ACP-POLICY-001",
-        "OCRM-RESP-MODEL-PICKER-001"
+        "OCRM-RESP-MODEL-PICKER-001",
+        "OCRM-RESP-MODEL-CATALOG-PLANNER-001",
+        "OCRM-RESP-MODEL-CATALOG-REMOTE-001"
       ],
       "reviewer": "xuyao@ombhrum.com"
     },
@@ -948,7 +950,9 @@
         "OCRM-RESP-AGENT-MODEL-PRICING-001",
         "OCRM-RESP-AGENT-ACP-COMMANDS-001",
         "OCRM-RESP-AGENT-ACP-POLICY-001",
-        "OCRM-RESP-MODEL-PICKER-001"
+        "OCRM-RESP-MODEL-PICKER-001",
+        "OCRM-RESP-MODEL-CATALOG-PLANNER-001",
+        "OCRM-RESP-MODEL-CATALOG-REMOTE-001"
       ],
       "reviewer": "xuyao@ombhrum.com"
     },
