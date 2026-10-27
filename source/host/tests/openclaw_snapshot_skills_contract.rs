@@ -363,6 +363,20 @@ fn test_ocrm_snapshot_postgres_manifest_schema_and_profile_oracles() {
         SqliteValue::Real(f64::NAN),
     )
     .is_err());
+    let row = mahayana_host_runtime::extensions::snapshot::git_backup_manager::encode_sqlite_row([
+        ("zeta".to_string(), SqliteValue::Text("last".into())),
+        ("alpha".to_string(), SqliteValue::Integer(1)),
+    ])
+    .expect("deterministic row");
+    assert_eq!(
+        String::from_utf8(row).expect("UTF-8 JSONL row"),
+        "{\"alpha\":1,\"zeta\":\"last\"}\n"
+    );
+    assert!(mahayana_host_runtime::extensions::snapshot::git_backup_manager::encode_sqlite_row([
+        ("duplicate".to_string(), SqliteValue::Null),
+        ("duplicate".to_string(), SqliteValue::Null),
+    ])
+    .is_err());
 }
 
 #[test]

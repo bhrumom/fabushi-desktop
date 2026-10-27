@@ -740,6 +740,23 @@ pub fn encode_sqlite_value(value: rusqlite::types::Value) -> Result<Value, Strin
     }
 }
 
+/// Encode one deterministic JSONL row from SQLite columns.
+pub fn encode_sqlite_row(
+    columns: impl IntoIterator<Item = (String, rusqlite::types::Value)>,
+) -> Result<Vec<u8>, String> {
+    let mut encoded = BTreeMap::new();
+    for (name, value) in columns {
+        if encoded.contains_key(&name) {
+            return Err(format!("duplicate SQLite column in backup row: {name}"));
+        }
+        encoded.insert(name, encode_sqlite_value(value)?);
+    }
+    let mut bytes = serde_json::to_vec(&encoded)
+        .map_err(|error| format!("serialize SQLite backup row: {error}"))?;
+    bytes.push(b'\n');
+    Ok(bytes)
+}
+
 fn strip_plugin_model_catalog_credentials(contents: &str) -> Option<String> {
     let mut parsed: Value = serde_json::from_str(contents).ok()?;
     let object = parsed.as_object_mut()?;
