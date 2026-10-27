@@ -9,6 +9,7 @@ pub mod host_read_media_policy;
 pub mod image_ops;
 pub mod input_files;
 pub mod link_preview_image_bounds;
+pub mod link_understanding_service;
 pub mod load_options;
 pub mod local_roots;
 pub mod media_audio_transcode;

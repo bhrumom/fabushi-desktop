@@ -10,10 +10,10 @@
     "ui_accepted": false
   },
   "file_coverage": {
-    "mapped_paths": 367,
+    "mapped_paths": 376,
     "omitted_known": 0,
     "tracked_paths": 58750,
-    "unclassified_paths": 58383
+    "unclassified_paths": 58374
   },
   "inventory_authority": {
     "manifest_source": "GitHub Actions immutable artifact candidate",
@@ -16410,6 +16410,269 @@
         "resolve_reference_image_capability_error"
       ],
       "unit_id": "OCRM-UNIT-MEDIA-GEN-001"
+    },
+    {
+      "adr_refs": [],
+      "behavior": "Link understanding extraction from message contexts, markdown citation link masking, blocked host and loopback SSRF rejection, command template detection, and body context enrichment.",
+      "blocker_ids": [
+        "BL-LINK-UND-EXEC-WIRING-001"
+      ],
+      "capability_ids": [
+        "tools.link_understanding"
+      ],
+      "dependencies": [
+        "mahayana_host_runtime::extensions::attachments::link_understanding_service"
+      ],
+      "evidence_refs": [
+        "source/host/tests/openclaw_link_memory_contract.rs",
+        "projects/openclaw-rust/dossiers/link-understanding-memory-provenance-scoped.md"
+      ],
+      "existing_owner_candidates": [
+        {
+          "path": "source/host/src/extensions/attachments/link_understanding_service.rs",
+          "reason": "Link understanding extraction and body enrichment service"
+        }
+      ],
+      "id": "OCRM-RESP-LINK-UNDERSTANDING-001",
+      "integration": {
+        "consumer": "source/host/src/extensions/attachments/link_understanding_service.rs",
+        "entrypoint": "source/host/src/extensions/attachments/link_understanding_service.rs::extract_bare_links_from_message",
+        "owner": "source/host/src/extensions/attachments/link_understanding_service.rs",
+        "producer": "source/host/src/extensions/attachments/link_understanding_service.rs"
+      },
+      "invariants": [
+        "Markdown inline citations are masked out to avoid unwanted link fetches",
+        "Blocked and loopback hostnames/IPs are strictly rejected",
+        "Extracted links are deduplicated and capped to max_links",
+        "Message body is enriched with link extraction text separated by double newlines"
+      ],
+      "migration_rollback": "Disable link understanding and preserve raw message body without link extraction",
+      "oracle_ids": [
+        "OCRM-LINK-UND-O01",
+        "OCRM-LINK-UND-O02"
+      ],
+      "owner_decision": "Implement link understanding extraction, markdown masking, and body enrichment in link_understanding_service",
+      "postconditions": [
+        "Extracted bare links returned and message body properly enriched"
+      ],
+      "preconditions": [
+        "Message body text and link understanding configuration provided"
+      ],
+      "required_evidence_dimensions": [
+        "unit",
+        "format"
+      ],
+      "required_gate_ids": [
+        "OCRM-G04-rust-contract",
+        "OCRM-G05-frozen-oracle"
+      ],
+      "requirement_ids": [
+        "OCRM-R11",
+        "OCRM-AC11"
+      ],
+      "responsibility_kind": "business-runtime",
+      "reviewer": "xuyao@ombhrum.com",
+      "risk": "Low; parses link tokens and rejects internal hostnames",
+      "selected_owner": "source/host/src/extensions/attachments/link_understanding_service.rs",
+      "source_refs": [
+        {
+          "blob_sha": "8eb665ce28cf8aaacb3ec30041e70c1dc4f7758e",
+          "path": "src/link-understanding/apply.runtime.ts",
+          "range": {
+            "start_line": 1,
+            "end_line": 3
+          },
+          "symbol": "apply.runtime"
+        },
+        {
+          "blob_sha": "597d8f202b23df78bbef21aa73faa7db28619aab",
+          "path": "src/link-understanding/apply.ts",
+          "range": {
+            "start_line": 1,
+            "end_line": 235
+          },
+          "symbol": "apply"
+        },
+        {
+          "blob_sha": "2ee818911a7101d662229a5a8ae2d60323a33901",
+          "path": "src/link-understanding/defaults.ts",
+          "range": {
+            "start_line": 1,
+            "end_line": 5
+          },
+          "symbol": "defaults"
+        },
+        {
+          "blob_sha": "70390a530ee67602dd6f58a28bb7f77c5773f2c4",
+          "path": "src/link-understanding/runner.test.ts",
+          "range": {
+            "start_line": 1,
+            "end_line": 338
+          },
+          "symbol": "runner.test"
+        },
+        {
+          "blob_sha": "f7c7e7594dc2ea6c1f2c3817858d5854fe708a76",
+          "path": "src/link-understanding/runner.transport.test.ts",
+          "range": {
+            "start_line": 1,
+            "end_line": 217
+          },
+          "symbol": "runner.transport.test"
+        }
+      ],
+      "status": {
+        "acceptance": "pending",
+        "implementation": "implemented",
+        "mapping": "reviewed",
+        "read": "read-complete",
+        "verification": "not-run",
+        "wiring": "not-wired"
+      },
+      "target": {
+        "language": "Rust",
+        "path": "source/host/src/extensions/attachments/link_understanding_service.rs",
+        "symbol": "extract_bare_links_from_message"
+      },
+      "tests": [
+        "source/host/tests/openclaw_link_memory_contract.rs::test_ocrm_link_und_o01_markdown_span_exclusion_and_bare_link_extraction",
+        "source/host/tests/openclaw_link_memory_contract.rs::test_ocrm_link_und_o02_template_detection_and_body_enrichment"
+      ],
+      "typed_contracts": [
+        "find_markdown_link_spans",
+        "extract_bare_links_from_message",
+        "is_link_url_template",
+        "enrich_message_body_with_links"
+      ],
+      "unit_id": "OCRM-UNIT-LINK-MEM-001"
+    },
+    {
+      "adr_refs": [],
+      "behavior": "Canonical root memory path resolution, legacy memory and repair directory auxiliary filtering, memory artifact relative path normalization, SHA-256 hash calculation, and write provenance origin class resolution.",
+      "blocker_ids": [
+        "BL-MEMORY-ROOT-PROVENANCE-WIRING-001"
+      ],
+      "capability_ids": [
+        "memory.root_provenance"
+      ],
+      "dependencies": [
+        "mahayana_host_runtime::extensions::memory::root_memory_provenance"
+      ],
+      "evidence_refs": [
+        "source/host/tests/openclaw_link_memory_contract.rs",
+        "projects/openclaw-rust/dossiers/link-understanding-memory-provenance-scoped.md"
+      ],
+      "existing_owner_candidates": [
+        {
+          "path": "source/host/src/extensions/memory/root_memory_provenance.rs",
+          "reason": "Memory root file path resolution and artifact provenance service"
+        }
+      ],
+      "id": "OCRM-RESP-MEMORY-ROOT-PROVENANCE-001",
+      "integration": {
+        "consumer": "source/host/src/extensions/memory/root_memory_provenance.rs",
+        "entrypoint": "source/host/src/extensions/memory/root_memory_provenance.rs::resolve_canonical_root_memory_path",
+        "owner": "source/host/src/extensions/memory/root_memory_provenance.rs",
+        "producer": "source/host/src/extensions/memory/root_memory_provenance.rs"
+      },
+      "invariants": [
+        "Canonical root memory file name is fixed to MEMORY.md",
+        "Auxiliary scan skips legacy memory.md and repair directory contents",
+        "Path normalization prevents traversal and forbids dream directories",
+        "Write provenance origin class degrades to Untrusted on before-hash mismatch"
+      ],
+      "migration_rollback": "Use raw memory file paths without provenance origin validation",
+      "oracle_ids": [
+        "OCRM-MEMORY-ROOT-O01",
+        "OCRM-MEMORY-PROVENANCE-O02"
+      ],
+      "owner_decision": "Implement canonical root memory path resolution and artifact write provenance in root_memory_provenance",
+      "postconditions": [
+        "Canonical root memory paths and normalized artifact write provenance returned"
+      ],
+      "preconditions": [
+        "Workspace directory path and relative artifact paths provided"
+      ],
+      "required_evidence_dimensions": [
+        "unit",
+        "format"
+      ],
+      "required_gate_ids": [
+        "OCRM-G04-rust-contract",
+        "OCRM-G05-frozen-oracle"
+      ],
+      "requirement_ids": [
+        "OCRM-R04",
+        "OCRM-R15",
+        "OCRM-AC19"
+      ],
+      "responsibility_kind": "business-runtime",
+      "reviewer": "xuyao@ombhrum.com",
+      "risk": "Low; validates memory path structure and computes cryptographic hashes",
+      "selected_owner": "source/host/src/extensions/memory/root_memory_provenance.rs",
+      "source_refs": [
+        {
+          "blob_sha": "1556b5aff99fa2e9f8c426ab21a38f749bb9c841",
+          "path": "src/memory/root-memory-files.ts",
+          "range": {
+            "start_line": 1,
+            "end_line": 75
+          },
+          "symbol": "root-memory-files"
+        },
+        {
+          "blob_sha": "efffde4dbb7734ed85163008d28a11e5b524794b",
+          "path": "src/memory/root-memory-files.test.ts",
+          "range": {
+            "start_line": 1,
+            "end_line": 35
+          },
+          "symbol": "root-memory-files.test"
+        },
+        {
+          "blob_sha": "321d287f993fb388aa7994e4c5e9398bd34a595d",
+          "path": "src/memory/memory-artifact-provenance.ts",
+          "range": {
+            "start_line": 1,
+            "end_line": 255
+          },
+          "symbol": "memory-artifact-provenance"
+        },
+        {
+          "blob_sha": "ae84b1841d38dff74ace9645ffb1c1f1558121f2",
+          "path": "src/memory/memory-artifact-provenance.test.ts",
+          "range": {
+            "start_line": 1,
+            "end_line": 227
+          },
+          "symbol": "memory-artifact-provenance.test"
+        }
+      ],
+      "status": {
+        "acceptance": "pending",
+        "implementation": "implemented",
+        "mapping": "reviewed",
+        "read": "read-complete",
+        "verification": "not-run",
+        "wiring": "not-wired"
+      },
+      "target": {
+        "language": "Rust",
+        "path": "source/host/src/extensions/memory/root_memory_provenance.rs",
+        "symbol": "resolve_canonical_root_memory_path"
+      },
+      "tests": [
+        "source/host/tests/openclaw_link_memory_contract.rs::test_ocrm_memory_root_o01_paths_and_auxiliary_filtering",
+        "source/host/tests/openclaw_link_memory_contract.rs::test_ocrm_memory_provenance_o02_relative_paths_and_origin_resolution"
+      ],
+      "typed_contracts": [
+        "resolve_canonical_root_memory_path",
+        "should_skip_root_memory_auxiliary_path",
+        "normalize_memory_artifact_relative_path",
+        "compute_file_content_hash",
+        "resolve_memory_artifact_write_origin"
+      ],
+      "unit_id": "OCRM-UNIT-LINK-MEM-001"
     }
   ],
   "schema_version": 1,
