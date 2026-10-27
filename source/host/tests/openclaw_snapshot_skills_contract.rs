@@ -9,6 +9,7 @@ use mahayana_host_runtime::extensions::snapshot::git_backup_manager::{
     assert_database_artifact, capture_database_artifact, create_export_envelope,
     assert_fresh_restore_target, assert_no_sqlite_sidecars, parse_postgres_export_manifest,
     admit_postgres_export, new_restore_namespace, read_postgres_export_manifest,
+    validate_restore_namespace,
     verify_export_envelope, verify_postgres_anchor_identity, verify_postgres_export_artifacts,
     write_postgres_export_manifest,
     SnapshotGenerationFence,
@@ -85,6 +86,10 @@ fn test_ocrm_snapshot_artifact_admission_and_generation_fence() {
     assert_eq!(namespace_a.len(), "restore_".len() + 32);
     assert!(namespace_a[8..].bytes().all(|byte| byte.is_ascii_hexdigit()));
     assert_ne!(namespace_a, namespace_b, "independent restores need isolated namespaces");
+    validate_restore_namespace(&namespace_a).expect("owner restore namespace");
+    assert!(validate_restore_namespace("public").is_err());
+    assert!(validate_restore_namespace("restore_0123").is_err());
+    assert!(validate_restore_namespace("restore_0000000000000000000000000000000g").is_err());
 
     let _ = fs::remove_dir_all(&root);
 }

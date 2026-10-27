@@ -526,10 +526,24 @@ pub fn new_restore_namespace() -> Result<String, String> {
     let mut bytes = [0_u8; 16];
     getrandom::fill(&mut bytes)
         .map_err(|error| format!("generate restore namespace entropy: {error}"))?;
-    Ok(format!(
+    let namespace = format!(
         "{RESTORE_NAMESPACE_PREFIX}{}",
         bytes.iter().map(|byte| format!("{byte:02x}")).collect::<String>()
-    ))
+    );
+    validate_restore_namespace(&namespace)?;
+    Ok(namespace)
+}
+
+/// Only namespaces allocated by this restore owner may be passed to a
+/// destructive cleanup operation. This validator intentionally does not drop
+/// anything; the database owner must enforce the same predicate before CASCADE.
+pub fn validate_restore_namespace(namespace: &str) -> Result<(), String> {
+    let suffix = namespace.strip_prefix(RESTORE_NAMESPACE_PREFIX).unwrap_or("");
+    if suffix.len() == 32 && suffix.bytes().all(|byte| byte.is_ascii_hexdigit()) {
+        Ok(())
+    } else {
+        Err("refusing a namespace not allocated by PostgreSQL restore".into())
+    }
 }
 
 pub fn create_export_envelope(snapshot_id: &str, manifest: Value) -> SnapshotExportEnvelope {
