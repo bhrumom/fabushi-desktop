@@ -162,6 +162,11 @@ non-terminated lines. The local oracle verifies count, digest shape, and
 malformed-line rejection. It remains a producer-side primitive, not evidence
 of live database scanning or restore publication.
 
+`validate_sqlite_table_name` now matches the exact codec's filesystem-safe
+table-name rule (ASCII letter/underscore first, then ASCII alphanumeric or
+underscore). The local oracle rejects JSONL path names and SQL injection-shaped
+identifiers before future schema/table publication.
+
 ## Responsibility/evidence decision
 
 `OCRM-RESP-SNAPSHOT-BACKUP-CODEC-001` remains `read=partial`,
