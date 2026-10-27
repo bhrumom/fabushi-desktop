@@ -2892,6 +2892,150 @@ fn test_ocrm_plugins_command_registration_execution_and_compaction() {
     assert_eq!(guidance[1], "Use /echo to test connectivity.");
 }
 
+#[test]
+fn test_plugin_compat_registry_validation_and_records() {
+    use mahayana_host_runtime::extensions::plugins::compat::{
+        get_compat_record, list_plugin_compat_records, validate_all_records,
+        PluginCompatOwner, PluginCompatStatus,
+    };
+
+    let records = list_plugin_compat_records();
+    assert_eq!(records.len(), 146);
+
+    // Validate all records against upstream Vitest invariant rules
+    let validation_result = validate_all_records();
+    assert!(
+        validation_result.is_ok(),
+        "Validation failed: {:?}",
+        validation_result.err()
+    );
+
+    // Test specific known records
+    let act_rec = get_compat_record("activation-agent-harness-hint").expect("must exist");
+    assert_eq!(act_rec.status, PluginCompatStatus::Active);
+    assert_eq!(act_rec.owner, PluginCompatOwner::PluginExecution);
+    assert_eq!(act_rec.docs_path, "/plugins/manifest");
+    assert!(act_rec.remove_after.is_none());
+
+    let removed_rec =
+        get_compat_record("plugin-sdk-allowlist-resolution-entry-mapper").expect("must exist");
+    assert_eq!(removed_rec.status, PluginCompatStatus::Removed);
+    assert_eq!(removed_rec.owner, PluginCompatOwner::Channel);
+    assert_eq!(removed_rec.remove_after.as_deref(), Some("2026-10-04"));
+
+    let fallback_rec = get_compat_record("setup-runtime-fallback").expect("must exist");
+    assert_eq!(fallback_rec.status, PluginCompatStatus::Active);
+    assert_eq!(fallback_rec.owner, PluginCompatOwner::Setup);
+
+    let demotion_rec =
+        get_compat_record("plugin-sdk-tool-plugin-public-demotion").expect("must exist");
+    assert_eq!(demotion_rec.status, PluginCompatStatus::Deprecated);
+    assert_eq!(demotion_rec.owner, PluginCompatOwner::Sdk);
+    assert!(demotion_rec.remove_after.is_none()); // Pending removal code
+}
+
+#[test]
+fn test_conversation_read_tools_host_restriction() {
+    use mahayana_host_runtime::extensions::plugins::compat::{
+        is_bundled_conversation_read_tool_registration,
+        is_host_restricted_conversation_read_tool,
+        registration_includes_host_restricted_conversation_read_tool,
+    };
+
+    // Feishu chat is restricted
+    assert!(is_host_restricted_conversation_read_tool("feishu", "feishu_chat"));
+    assert!(is_host_restricted_conversation_read_tool("  FEISHU ", " FEISHU_CHAT  "));
+    // Other tools are not
+    assert!(!is_host_restricted_conversation_read_tool("feishu", "feishu_doc"));
+    assert!(!is_host_restricted_conversation_read_tool("slack", "slack_chat"));
+
+    // Producible names gate takes precedence over declaredNames
+    let entry_doc = vec!["feishu_doc".to_string()];
+    let declared_all = vec!["feishu_chat".to_string(), "feishu_doc".to_string()];
+    assert!(!registration_includes_host_restricted_conversation_read_tool(
+        "feishu",
+        &entry_doc,
+        &declared_all
+    ));
+
+    // Fallback to declaredNames when producible names is empty
+    let entry_empty: Vec<String> = vec![];
+    assert!(registration_includes_host_restricted_conversation_read_tool(
+        "feishu",
+        &entry_empty,
+        &declared_all
+    ));
+
+    // Bundled registration check
+    assert!(is_bundled_conversation_read_tool_registration(true, true));
+    assert!(!is_bundled_conversation_read_tool_registration(true, false));
+    assert!(!is_bundled_conversation_read_tool_registration(false, true));
+}
+
+#[test]
+fn test_plugin_sdk_deprecation_tracker() {
+    use mahayana_host_runtime::extensions::plugins::compat::{
+        warn_mention_inbox_deprecation, warn_model_account_connect_deprecation,
+        warn_session_transcript_preparation_deprecation, PluginSdkDeprecationTracker,
+    };
+
+    let mut tracker = PluginSdkDeprecationTracker::new();
+
+    // Mention inbox warning (non-sqlite removal family)
+    let warn1 = warn_mention_inbox_deprecation(
+        &mut tracker,
+        Some("mention-compat-plugin"),
+        "list",
+    );
+    assert!(warn1.is_some());
+    let w1 = warn1.unwrap();
+    assert_eq!(w1.code, "DEP_SESSION_PERSISTENCE");
+    assert!(w1.message.contains("[mention-compat-plugin]"));
+    assert!(w1.message.contains("mentionInbox.list is deprecated"));
+    assert!(w1.message.contains("mentionInbox.listAsync"));
+    assert!(w1.message.contains("Removal requires an announced ordinary stable release window"));
+
+    // Duplicate call from same plugin & method is deduplicated
+    let warn_dup = warn_mention_inbox_deprecation(
+        &mut tracker,
+        Some("mention-compat-plugin"),
+        "list",
+    );
+    assert!(warn_dup.is_none());
+
+    // Call from another plugin emits
+    let warn2 = warn_mention_inbox_deprecation(
+        &mut tracker,
+        Some("other-plugin"),
+        "list",
+    );
+    assert!(warn2.is_some());
+
+    // Model account connect warning (sqlite removal family: Final compatibility day: 2026-12-31)
+    let warn3 = warn_model_account_connect_deprecation(
+        &mut tracker,
+        Some("model-account-plugin"),
+        "listLinks",
+    );
+    assert!(warn3.is_some());
+    let w3 = warn3.unwrap();
+    assert!(w3.message.contains("modelAccountConnectService.listLinks"));
+    assert!(w3.message.contains("modelAccountConnectService.listLinksAsync"));
+    assert!(w3.message.contains("Final compatibility day: 2026-12-31"));
+
+    // Session transcript preparation warning
+    let warn4 = warn_session_transcript_preparation_deprecation(
+        &mut tracker,
+        Some("transcript-plugin"),
+        "prepareLegacyTranscript",
+        "prepareTranscriptAsync",
+    );
+    assert!(warn4.is_some());
+    let w4 = warn4.unwrap();
+    assert!(w4.message.contains("prepareLegacyTranscript is deprecated; use prepareTranscriptAsync"));
+}
+
+
 
 
 

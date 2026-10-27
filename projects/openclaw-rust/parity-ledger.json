@@ -10,10 +10,10 @@
     "ui_accepted": false
   },
   "file_coverage": {
-    "mapped_paths": 652,
+    "mapped_paths": 687,
     "omitted_known": 0,
     "tracked_paths": 58750,
-    "unclassified_paths": 58098
+    "unclassified_paths": 58063
   },
   "inventory_authority": {
     "manifest_source": "GitHub Actions immutable artifact candidate",
@@ -21280,8 +21280,8 @@
           "blob_sha": "4c9a4fecfbd60fcb7308c21990029167d42ba3aa",
           "path": "src/plugins/bundled-sources.test.ts",
           "range": {
-            "start_line": 1,
-            "end_line": 168
+            "end_line": 168,
+            "start_line": 1
           },
           "symbol": "bundled plugin sources test suite"
         },
@@ -21289,8 +21289,8 @@
           "blob_sha": "9b5c9cea33a0cff056cd640807ff0e1965d90a88",
           "path": "src/plugins/bundled-sources.ts",
           "range": {
-            "start_line": 1,
-            "end_line": 182
+            "end_line": 182,
+            "start_line": 1
           },
           "symbol": "resolveBundledPluginSources"
         }
@@ -21847,8 +21847,8 @@
           "blob_sha": "0e0f3d3648033ea724f2439afe2785b67fa5f891",
           "path": "src/plugins/capability-artifact.ts",
           "range": {
-            "start_line": 1,
-            "end_line": 156
+            "end_line": 156,
+            "start_line": 1
           },
           "symbol": "inspectPluginCapabilityArtifact"
         },
@@ -21856,8 +21856,8 @@
           "blob_sha": "38abda596f14b92784a8f220400357bcd150c560",
           "path": "src/plugins/capability-catalog-context.ts",
           "range": {
-            "start_line": 1,
-            "end_line": 55
+            "end_line": 55,
+            "start_line": 1
           },
           "symbol": "createPluginCapabilityCatalogContext"
         },
@@ -21865,8 +21865,8 @@
           "blob_sha": "0ce2cc58f7b45d31ae305b73e4a44ba9a51b61b0",
           "path": "src/plugins/capability-catalog-context.types.ts",
           "range": {
-            "start_line": 1,
-            "end_line": 42
+            "end_line": 42,
+            "start_line": 1
           },
           "symbol": "PluginCapabilityCatalogHostContext"
         },
@@ -21874,8 +21874,8 @@
           "blob_sha": "00a3c1bc8f8a151fd42d6317b38d65a471a7ddd4",
           "path": "src/plugins/capability-catalog.ts",
           "range": {
-            "start_line": 1,
-            "end_line": 84
+            "end_line": 84,
+            "start_line": 1
           },
           "symbol": "resolvePluginCapabilityCatalog"
         },
@@ -21883,8 +21883,8 @@
           "blob_sha": "8b1febb6db7b871ab16c28a47ba65292dd467fc8",
           "path": "src/plugins/capability-catalog.types.ts",
           "range": {
-            "start_line": 1,
-            "end_line": 12
+            "end_line": 12,
+            "start_line": 1
           },
           "symbol": "PluginCapabilityCatalog"
         },
@@ -21892,8 +21892,8 @@
           "blob_sha": "9e3d50bc6be829173d2b495fa810f0ddd6e61bd0",
           "path": "src/plugins/capability-consent.test.ts",
           "range": {
-            "start_line": 1,
-            "end_line": 467
+            "end_line": 467,
+            "start_line": 1
           },
           "symbol": "plugin capability consent test suite"
         },
@@ -21901,8 +21901,8 @@
           "blob_sha": "98ba3e6afc5d51bb156bf9d39efce21fa03aae9d",
           "path": "src/plugins/capability-consent.ts",
           "range": {
-            "start_line": 1,
-            "end_line": 457
+            "end_line": 457,
+            "start_line": 1
           },
           "symbol": "resolvePluginCapabilityConsent"
         },
@@ -21910,8 +21910,8 @@
           "blob_sha": "786f0ec7074715e623a4b46c392cc55f0b7ef781",
           "path": "src/plugins/capability-lease.ts",
           "range": {
-            "start_line": 1,
-            "end_line": 38
+            "end_line": 38,
+            "start_line": 1
           },
           "symbol": "createPluginRuntimeCapabilityLease"
         },
@@ -21919,8 +21919,8 @@
           "blob_sha": "49c0f4ee3f8355c44b157cdcfe356f1c3f082fdc",
           "path": "src/plugins/capability-provider-acquisition.test.ts",
           "range": {
-            "start_line": 1,
-            "end_line": 92
+            "end_line": 92,
+            "start_line": 1
           },
           "symbol": "capability provider acquisition test suite"
         },
@@ -21928,8 +21928,8 @@
           "blob_sha": "93afbefca47dc0f90a3c5c5b326e5038f7c15fdd",
           "path": "src/plugins/capability-provider-acquisition.ts",
           "range": {
-            "start_line": 1,
-            "end_line": 244
+            "end_line": 244,
+            "start_line": 1
           },
           "symbol": "acquirePluginCapabilityProviders"
         },
@@ -21937,8 +21937,8 @@
           "blob_sha": "20409885191c2b70e11054f5243f47790f87be47",
           "path": "src/plugins/capability-provider-runtime.generation.test.ts",
           "range": {
-            "start_line": 1,
-            "end_line": 641
+            "end_line": 641,
+            "start_line": 1
           },
           "symbol": "capability provider runtime generation test suite"
         },
@@ -21946,8 +21946,8 @@
           "blob_sha": "377a937472ec863af8d25819355465a2341327b0",
           "path": "src/plugins/capability-provider-runtime.test.ts",
           "range": {
-            "start_line": 1,
-            "end_line": 747
+            "end_line": 747,
+            "start_line": 1
           },
           "symbol": "capability provider runtime test suite"
         },
@@ -21955,8 +21955,8 @@
           "blob_sha": "4c773ec0ec6a0fb8188a3c2f5ed9c2afcd81ce0d",
           "path": "src/plugins/capability-provider-runtime.ts",
           "range": {
-            "start_line": 1,
-            "end_line": 660
+            "end_line": 660,
+            "start_line": 1
           },
           "symbol": "prepareCapabilityPluginResolution"
         },
@@ -21964,8 +21964,8 @@
           "blob_sha": "eba4c36640e3cd6584d79d258ba6712b104d1ffb",
           "path": "src/plugins/capability-provider.types.ts",
           "range": {
-            "start_line": 1,
-            "end_line": 559
+            "end_line": 559,
+            "start_line": 1
           },
           "symbol": "CapabilityProviderRegistryKey"
         },
@@ -21973,8 +21973,8 @@
           "blob_sha": "7debc9aeb2da89e063cf4a99d0e25b8b0f68476c",
           "path": "src/plugins/capability-summary.test.ts",
           "range": {
-            "start_line": 1,
-            "end_line": 138
+            "end_line": 138,
+            "start_line": 1
           },
           "symbol": "capability summary test suite"
         },
@@ -21982,8 +21982,8 @@
           "blob_sha": "001257ccaee0124a1e7c5c9364a66fb1d172aa74",
           "path": "src/plugins/capability-summary.ts",
           "range": {
-            "start_line": 1,
-            "end_line": 313
+            "end_line": 313,
+            "start_line": 1
           },
           "symbol": "buildPluginCapabilitySummary"
         },
@@ -21991,8 +21991,8 @@
           "blob_sha": "8976e5c191b38e6189a00333b10e87caf6be21b4",
           "path": "src/plugins/captured-registration.test.ts",
           "range": {
-            "start_line": 1,
-            "end_line": 359
+            "end_line": 359,
+            "start_line": 1
           },
           "symbol": "captured registration test suite"
         },
@@ -22000,8 +22000,8 @@
           "blob_sha": "a2064948ff85bd9eab4ff7bce1253cb9895f8217",
           "path": "src/plugins/captured-registration.ts",
           "range": {
-            "start_line": 1,
-            "end_line": 287
+            "end_line": 287,
+            "start_line": 1
           },
           "symbol": "createCapturedPluginRegistration"
         },
@@ -22009,8 +22009,8 @@
           "blob_sha": "40518ddab7c2b75cc13cd23f154732680baf7c22",
           "path": "src/plugins/catalog-discovery-runtime.ts",
           "range": {
-            "start_line": 1,
-            "end_line": 249
+            "end_line": 249,
+            "start_line": 1
           },
           "symbol": "readCatalogPage"
         },
@@ -22018,8 +22018,8 @@
           "blob_sha": "1928c3092342182e0baaeb0db8f7deb4e41027d0",
           "path": "src/plugins/catalog-discovery.test.ts",
           "range": {
-            "start_line": 1,
-            "end_line": 575
+            "end_line": 575,
+            "start_line": 1
           },
           "symbol": "catalog discovery test suite"
         },
@@ -22027,8 +22027,8 @@
           "blob_sha": "c295c5c1fcedcf54c807a44e01875cb2b28f0853",
           "path": "src/plugins/catalog-discovery.ts",
           "range": {
-            "start_line": 1,
-            "end_line": 445
+            "end_line": 445,
+            "start_line": 1
           },
           "symbol": "joinClawHubPluginCatalog"
         },
@@ -22036,8 +22036,8 @@
           "blob_sha": "a6aa0a38d55ca910bdfa96ae83f53b9b466dfcf4",
           "path": "src/plugins/catalog-icon-registry.test.ts",
           "range": {
-            "start_line": 1,
-            "end_line": 42
+            "end_line": 42,
+            "start_line": 1
           },
           "symbol": "catalog icon registry test suite"
         },
@@ -22045,8 +22045,8 @@
           "blob_sha": "155e191a4094cae973bcabd6737602303ea0725e",
           "path": "src/plugins/catalog-icon-registry.ts",
           "range": {
-            "start_line": 1,
-            "end_line": 34
+            "end_line": 34,
+            "start_line": 1
           },
           "symbol": "registerClawHubCatalogIconUrls"
         },
@@ -22054,8 +22054,8 @@
           "blob_sha": "45dff5df3386a3393ef98b05583e979c9352b362",
           "path": "src/plugins/catalog-search.test.ts",
           "range": {
-            "start_line": 1,
-            "end_line": 80
+            "end_line": 80,
+            "start_line": 1
           },
           "symbol": "catalog search test suite"
         },
@@ -22063,8 +22063,8 @@
           "blob_sha": "f5016e2753dc549a1e651ef3288194fcc1fd1cfb",
           "path": "src/plugins/catalog-search.ts",
           "range": {
-            "start_line": 1,
-            "end_line": 40
+            "end_line": 40,
+            "start_line": 1
           },
           "symbol": "searchInstallablePluginPackages"
         },
@@ -22072,8 +22072,8 @@
           "blob_sha": "c8cf9def2801207dc08872723dec48487d04e25f",
           "path": "src/plugins/channel-catalog-registry.test.ts",
           "range": {
-            "start_line": 1,
-            "end_line": 288
+            "end_line": 288,
+            "start_line": 1
           },
           "symbol": "channel catalog registry test suite"
         },
@@ -22081,8 +22081,8 @@
           "blob_sha": "af8b005acfbde1e7af6c19a71d5215f1766555ec",
           "path": "src/plugins/channel-catalog-registry.ts",
           "range": {
-            "start_line": 1,
-            "end_line": 128
+            "end_line": 128,
+            "start_line": 1
           },
           "symbol": "listChannelCatalogEntries"
         }
@@ -22292,8 +22292,8 @@
           "blob_sha": "fea3646375b475cb3d330f779b30f3c0f9e5e4a3",
           "path": "src/plugins/candidate-install-owner.ts",
           "range": {
-            "start_line": 1,
-            "end_line": 54
+            "end_line": 54,
+            "start_line": 1
           },
           "symbol": "resolveImmutableInstallIdentity"
         }
@@ -24100,6 +24100,102 @@
         "TtsAutoApplyMode"
       ],
       "unit_id": "OCRM-UNIT-TALK-001"
+    },
+    {
+      "adr_refs": [],
+      "behavior": "Plugin compatibility registry, 146 canonical compatibility records, host-restricted conversation read tools (Feishu chat restriction and bundled checks), and per-plugin deprecation warning budget tracking.",
+      "blocker_ids": [],
+      "capability_ids": [
+        "plugins.compat"
+      ],
+      "dependencies": [
+        "mahayana_host_runtime::extensions::plugins::compat"
+      ],
+      "evidence_refs": [
+        "source/host/tests/openclaw_plugins_contract.rs",
+        "projects/openclaw-rust/dossiers/plugins-compat-scoped.md"
+      ],
+      "existing_owner_candidates": [
+        {
+          "path": "source/host/src/extensions/plugins/compat.rs",
+          "reason": "Host native plugin compatibility registry and deprecation warning tracker"
+        }
+      ],
+      "id": "OCRM-RESP-PLUGINS-COMPAT-001",
+      "integration": {
+        "consumer": "source/host/src/extensions/plugins/compat.rs",
+        "entrypoint": "source/host/src/extensions/plugins/compat.rs",
+        "owner": "source/host/src/extensions/plugins/compat.rs",
+        "producer": "source/host/src/extensions/plugins/compat.rs"
+      },
+      "invariants": [
+        "Plugin compatibility records must maintain valid deprecation dates and non-empty surfaces/diagnostics",
+        "Host-restricted conversation read tools gate feishu_chat for non-bundled plugins",
+        "Deprecation warnings deduplicate per plugin, family, and method"
+      ],
+      "migration_rollback": "Fallback to unverified compatibility behavior",
+      "oracle_ids": [
+        "OCRM-PLUGINS-COMPAT-O01"
+      ],
+      "owner_decision": "Unified native plugin compatibility registry in extensions::plugins::compat",
+      "postconditions": [
+        "All 146 records actionable and validated",
+        "Feishu chat restricted to bundled plugins",
+        "Deprecations emit once per plugin/method"
+      ],
+      "preconditions": [
+        "Plugin compatibility registry initialized with plugin_compat_records.json"
+      ],
+      "required_evidence_dimensions": [
+        "unit",
+        "integration"
+      ],
+      "required_gate_ids": [
+        "OCRM-G04-rust-contract"
+      ],
+      "requirement_ids": [
+        "OCRM-R28",
+        "OCRM-AC28"
+      ],
+      "responsibility_kind": "business-runtime",
+      "reviewer": "xuyao@ombhrum.com",
+      "risk": "Medium; backward compatibility for legacy plugins and restricted tools",
+      "selected_owner": "source/host/src/extensions/plugins/compat.rs",
+      "source_refs": [
+        {
+          "blob_sha": "a181156fe45be66efdcfddae5dcfb6ef2b186b51",
+          "path": "src/plugins/compat/registry.ts",
+          "range": {
+            "end_line": 10,
+            "start_line": 1
+          },
+          "symbol": "listPluginCompatRecords"
+        }
+      ],
+      "status": {
+        "acceptance": "pending",
+        "implementation": "implemented",
+        "mapping": "reviewed",
+        "read": "read-complete",
+        "verification": "verified",
+        "wiring": "wired"
+      },
+      "target": {
+        "language": "Rust",
+        "path": "source/host/src/extensions/plugins/compat.rs",
+        "symbol": "list_plugin_compat_records"
+      },
+      "tests": [
+        "source/host/tests/openclaw_plugins_contract.rs::test_plugin_compat_registry_validation_and_records",
+        "source/host/tests/openclaw_plugins_contract.rs::test_conversation_read_tools_host_restriction",
+        "source/host/tests/openclaw_plugins_contract.rs::test_plugin_sdk_deprecation_tracker"
+      ],
+      "typed_contracts": [
+        "list_plugin_compat_records",
+        "is_host_restricted_conversation_read_tool",
+        "warn_mention_inbox_deprecation"
+      ],
+      "unit_id": "OCRM-UNIT-PLUGINS-COMPAT-001"
     }
   ],
   "schema_version": 1,
