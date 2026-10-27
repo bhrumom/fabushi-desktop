@@ -4353,13 +4353,22 @@
             "start_line": 1
           },
           "symbol": "killProcessTree"
+        },
+        {
+          "blob_sha": "1534bb08a6f4530478a8482e028ffe0a0de08e31",
+          "path": "packages/agent-core/src/harness/env/kill-tree.ts",
+          "range": {
+            "end_line": 410,
+            "start_line": 1
+          },
+          "symbol": "killProcessTree, signalProcessTree, signalPtySessionTree"
         }
       ],
       "status": {
         "acceptance": "pending",
         "implementation": "implemented",
         "mapping": "mapped",
-        "read": "partial",
+        "read": "read-complete",
         "verification": "verified",
         "wiring": "wired"
       },
