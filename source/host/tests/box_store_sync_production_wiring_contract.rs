@@ -1,5 +1,4 @@
 use std::collections::BTreeMap;
-use std::path::PathBuf;
 
 use mahayana_host_runtime::extensions::box_store_sync::production::{
     ProductionBoxStoreSyncMode, resolve_production_box_store_sync_mode,
@@ -16,15 +15,19 @@ fn production_mode_is_disabled_without_sync_flag() {
 
 #[test]
 fn production_mode_selects_local_fs_only_with_safe_absolute_configuration() {
+    let local_dir = std::env::temp_dir().join("fabushi-box-store");
     let mut env = BTreeMap::from([
         ("SAND_BOX_STORE_SYNC".to_string(), "1".to_string()),
-        ("SAND_BOX_STORE_LOCAL_DIR".to_string(), "/tmp/fabushi-box-store".to_string()),
+        (
+            "SAND_BOX_STORE_LOCAL_DIR".to_string(),
+            local_dir.to_string_lossy().into_owned(),
+        ),
         ("SAND_BOX_STORE_ID".to_string(), "123e4567-e89b-12d3-a456-426614174000".to_string()),
     ]);
     assert_eq!(
         resolve_production_box_store_sync_mode(&env),
         ProductionBoxStoreSyncMode::LocalFs {
-            base_dir: PathBuf::from("/tmp/fabushi-box-store"),
+            base_dir: local_dir.clone(),
             store_id_override: Some("123e4567-e89b-12d3-a456-426614174000".to_string()),
         }
     );
@@ -33,7 +36,7 @@ fn production_mode_selects_local_fs_only_with_safe_absolute_configuration() {
     assert_eq!(
         resolve_production_box_store_sync_mode(&env),
         ProductionBoxStoreSyncMode::LocalFs {
-            base_dir: PathBuf::from("/tmp/fabushi-box-store"),
+            base_dir: local_dir,
             store_id_override: None,
         }
     );
@@ -41,14 +44,18 @@ fn production_mode_selects_local_fs_only_with_safe_absolute_configuration() {
 
 #[test]
 fn production_mode_uses_source_map_when_local_store_id_is_not_overridden() {
+    let local_dir = std::env::temp_dir().join("fabushi-box-store");
     let env = BTreeMap::from([
         ("SAND_BOX_STORE_SYNC".to_string(), "1".to_string()),
-        ("SAND_BOX_STORE_LOCAL_DIR".to_string(), "/tmp/fabushi-box-store".to_string()),
+        (
+            "SAND_BOX_STORE_LOCAL_DIR".to_string(),
+            local_dir.to_string_lossy().into_owned(),
+        ),
     ]);
     assert_eq!(
         resolve_production_box_store_sync_mode(&env),
         ProductionBoxStoreSyncMode::LocalFs {
-            base_dir: PathBuf::from("/tmp/fabushi-box-store"),
+            base_dir: local_dir,
             store_id_override: None,
         }
     );
@@ -114,7 +121,7 @@ fn shipping_host_starts_box_store_sync_after_mcp_and_stops_it_before_mcp() {
 
 #[test]
 fn production_owner_wires_real_chrome_watcher_periodic_cycle_and_remote_providers() {
-    let production = include_str!("../src/extensions/box_store_sync/production.rs");
+    let production = include_str!("../src/extensions/box_store_sync/production.rs").replace("\r\n", "\n");
     assert!(production.contains("ChromeSessionWatcher::with_logger"));
     assert!(production.contains("run_local_cycle(true, false, false, false, false, true, false)"));
     assert!(production.contains("plan_periodic_cycle("));
@@ -341,11 +348,11 @@ fn shipping_cycle_uses_canonical_frozen_telemetry_mapper_and_host_owner() {
     assert!(production.contains("agent_dir_entries: count_agent_dir_manifest_entries(Some(&entries))"));
     assert!(production.contains("self.report_cycle_telemetry("));
 
-    let owner = include_str!("../src/host_production_extensions.rs");
+    let owner = include_str!("../src/host_production_extensions.rs").replace("\r\n", "\n");
     assert!(owner.contains("report_box_store_sync_cycle: Arc::new"));
     assert!(owner.contains("box_store_sync_logs.report_box_store_sync_cycle(level, metadata)"));
 
-    let telemetry = include_str!("../src/extensions/telemetry/host_telemetry_service.rs");
+    let telemetry = include_str!("../src/extensions/telemetry/host_telemetry_service.rs").replace("\r\n", "\n");
     assert!(telemetry.contains("pub fn report_box_store_sync_cycle("));
     assert!(telemetry.contains("event: Some(\"sand.box_store_sync\")"));
 
@@ -363,7 +370,7 @@ fn shipping_cycle_uses_canonical_frozen_telemetry_mapper_and_host_owner() {
 
 #[test]
 fn shipping_store_db_capture_uses_frozen_mapper_and_unique_host_owner() {
-    let production = include_str!("../src/extensions/box_store_sync/production.rs");
+    let production = include_str!("../src/extensions/box_store_sync/production.rs").replace("\r\n", "\n");
     assert!(production.contains("sync_store_db_snapshots_with_trace("));
     assert!(production.contains("box_store_db_capture_telemetry(&BoxStoreDbCaptureTelemetrySummary"));
     assert!(production.contains("(self.deps.report_box_store_db_capture)(telemetry.level, &telemetry.metadata);"));
@@ -388,11 +395,11 @@ fn shipping_store_db_capture_uses_frozen_mapper_and_unique_host_owner() {
         "canonical turn-end store.db capture telemetry must not fall back to Host-extension diagnostics"
     );
 
-    let owner = include_str!("../src/host_production_extensions.rs");
+    let owner = include_str!("../src/host_production_extensions.rs").replace("\r\n", "\n");
     assert!(owner.contains("report_box_store_db_capture: Arc::new"));
     assert!(owner.contains("box_store_db_capture_logs.report_box_store_db_capture(level, metadata)"));
 
-    let telemetry = include_str!("../src/extensions/telemetry/host_telemetry_service.rs");
+    let telemetry = include_str!("../src/extensions/telemetry/host_telemetry_service.rs").replace("\r\n", "\n");
     assert!(telemetry.contains("pub fn report_box_store_db_capture("));
     assert!(telemetry.contains("event: Some(\"sand.box_store_db_capture\")"));
 
@@ -494,7 +501,7 @@ fn shipping_chrome_session_stage_uses_frozen_mapper_and_unique_host_owner() {
     assert!(telemetry.contains("pub fn report_chrome_session_stage("));
     assert!(telemetry.contains(r#"event: Some("sand.chrome_session_stage")"#));
 
-    let mapper = include_str!("../src/extensions/box_store_sync/chrome_session_stage.rs");
+    let mapper = include_str!("../src/extensions/box_store_sync/chrome_session_stage.rs").replace("\r\n", "\n");
     for field in [
         r#""staged""#,
         r#""skipped""#,
