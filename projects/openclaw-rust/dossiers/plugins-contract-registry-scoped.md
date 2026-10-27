@@ -75,5 +75,27 @@
     - Verifies wizard model picker entries exposed across shared wizard layer.
   - `test_ocrm_plugins_bundled_capability_metadata_and_subpath_bundle` (PASSED)
     - Verifies bundled plugin contract snapshot models across all 21 capability families and setup provider env vars.
+  - `test_ocrm_plugins_bundled_channel_metadata_compat_and_dir_resolver` (PASSED)
+    - Verifies bundled channel metadata validation (history limits, media limits, empty ID check).
+    - Verifies bundled compat ID normalization (`legacy-telegram` -> `telegram`, etc.).
+    - Verifies bundled directory relative path resolution and path traversal rejection.
+
+## 5. Audited Bundled Capability Runtime, Channel Metadata, Compat & Dir Files (9 files)
+- **Responsibility**: `OCRM-RESP-PLUGINS-CAPABILITY-CATALOG-001`
+- **Reviewer**: `xuyao@ombhrum.com`
+- **Native Implementation**: `source/host/src/extensions/plugins/capability_catalog.rs` (`BundledChannelMetadataValidator`, `BundledCompatResolver`, `BundledDirResolver`)
+
+| Path | Lines | Size (bytes) | Git Blob SHA |
+| --- | --- | --- | --- |
+| `src/plugins/bundled-capability-runtime.test.ts` | 185 | 7310 | `3e30f14376483c66f50c05877114b73e51240ce4` |
+| `src/plugins/bundled-capability-runtime.ts` | 114 | 4518 | `369a19d2a6ff4685ff421a169b1778c1872146f4` |
+| `src/plugins/bundled-channel-config-metadata.ts` | 148 | 6364 | `c2cb9848529329007f30cb7ef087ee46ca9f4a5f` |
+| `src/plugins/bundled-channel-runtime.test.ts` | 68 | 2687 | `4a3170e5b8d2c2c0199d255152a5ca386b453a2b` |
+| `src/plugins/bundled-channel-runtime.ts` | 74 | 2704 | `7a8848d61eafe4736fdf3e2b26002f23ef77efd5` |
+| `src/plugins/bundled-compat.test.ts` | 64 | 2467 | `eb341d7cbdd9b25f5a89fb3f338d330eb9cf058d` |
+| `src/plugins/bundled-compat.ts` | 69 | 2468 | `fc59c5d01217e94f061214e21a71966db99d2fef` |
+| `src/plugins/bundled-dir.test.ts` | 468 | 21011 | `fef80f5509a25b3a62888c3a9ec2b10a247ec6ba` |
+| `src/plugins/bundled-dir.ts` | 315 | 12267 | `41f7e0fc21da0c961e6c3be5b078e223ca87efd7` |
+
 
 

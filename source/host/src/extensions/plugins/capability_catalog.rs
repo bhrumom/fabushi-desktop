@@ -601,4 +601,77 @@ impl BundledPluginContractSnapshot {
     }
 }
 
+// ---------------------------------------------------------------------------
+// Bundled Channel Config Metadata, Compat & Dir Resolvers
+// (from src/plugins/bundled-channel-config-metadata.ts, bundled-compat.ts, bundled-dir.ts)
+// ---------------------------------------------------------------------------
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct BundledChannelMetadata {
+    pub channel_id: String,
+    pub stream_mode: Option<String>,
+    pub reply_to_mode: Option<String>,
+    pub history_limit: Option<u32>,
+    pub media_max_mb: Option<u32>,
+    pub provider_skills: Vec<String>,
+}
+
+pub struct BundledChannelMetadataValidator;
+
+impl BundledChannelMetadataValidator {
+    pub fn validate(meta: &BundledChannelMetadata) -> Result<(), String> {
+        if meta.channel_id.is_empty() {
+            return Err("Channel ID cannot be empty".to_string());
+        }
+        if let Some(limit) = meta.history_limit {
+            if limit == 0 || limit > 100_000 {
+                return Err(format!("history_limit {} out of valid range (1..=100000)", limit));
+            }
+        }
+        if let Some(max_mb) = meta.media_max_mb {
+            if max_mb == 0 || max_mb > 2048 {
+                return Err(format!("media_max_mb {} out of valid range (1..=2048)", max_mb));
+            }
+        }
+        Ok(())
+    }
+}
+
+pub struct BundledCompatResolver;
+
+impl BundledCompatResolver {
+    pub fn normalize_plugin_id(id: &str) -> String {
+        let trimmed = id.trim();
+        match trimmed {
+            "legacy-telegram" => "telegram".to_string(),
+            "legacy-discord" => "discord".to_string(),
+            "legacy-slack" => "slack".to_string(),
+            other => other.to_string(),
+        }
+    }
+}
+
+pub struct BundledDirResolver;
+
+impl BundledDirResolver {
+    pub const CANDIDATE_DIRS: &'static [&'static str] = &[
+        "bundled/plugins",
+        "dist/bundled/plugins",
+        "extensions",
+    ];
+
+    pub fn resolve_relative_path(base_dir: &str, relative_path: &str) -> Result<String, String> {
+        if relative_path.contains("..") {
+            return Err(format!(
+                "Path traversal detected in bundled directory path: '{}'",
+                relative_path
+            ));
+        }
+        let clean_base = base_dir.trim_end_matches('/');
+        let clean_rel = relative_path.trim_start_matches('/');
+        Ok(format!("{}/{}", clean_base, clean_rel))
+    }
+}
+
+
 

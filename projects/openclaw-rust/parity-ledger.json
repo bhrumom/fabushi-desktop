@@ -10,10 +10,10 @@
     "ui_accepted": false
   },
   "file_coverage": {
-    "mapped_paths": 543,
+    "mapped_paths": 552,
     "omitted_known": 0,
     "tracked_paths": 58750,
-    "unclassified_paths": 58207
+    "unclassified_paths": 58198
   },
   "inventory_authority": {
     "manifest_source": "GitHub Actions immutable artifact candidate",
@@ -21545,67 +21545,85 @@
       "selected_owner": "source/host/src/extensions/plugins/capability_catalog.rs",
       "source_refs": [
         {
-          "blob_sha": "2244b08b22a6b8a53fdd86fbdd51abd81de86cfc",
-          "path": "src/plugins/contracts/registry.ts",
+          "blob_sha": "5be135982f4b9e61a7eed91ab2c6c45034ea7be9",
+          "path": "src/plugins/bundled-capability-runtime.test.ts",
           "range": {
-            "end_line": 356,
+            "end_line": 178,
             "start_line": 1
           },
-          "symbol": "pluginRegistrationContractRegistry"
+          "symbol": "bundled-capability-runtime.test"
         },
         {
-          "blob_sha": "fb8b4614dac4a4d580a373efeff1575a91db49b1",
-          "path": "src/plugins/contracts/registry.contract.test.ts",
+          "blob_sha": "33a22b047263ea605f7d4697e909a7b089a5089e",
+          "path": "src/plugins/bundled-capability-runtime.ts",
           "range": {
-            "end_line": 201,
+            "end_line": 124,
             "start_line": 1
           },
-          "symbol": "plugin contract registry"
+          "symbol": "bundled-capability-runtime"
         },
         {
-          "blob_sha": "67ac28b12ca8a15ade41dbfea4c18488bc051f86",
-          "path": "src/plugins/contracts/capability-catalog.contract.test.ts",
+          "blob_sha": "eb8db20c47a2f31558a3e5b0f24eb58ec50f51cd",
+          "path": "src/plugins/bundled-channel-config-metadata.ts",
           "range": {
-            "end_line": 109,
+            "end_line": 172,
             "start_line": 1
           },
-          "symbol": "cold capability catalog descriptors"
+          "symbol": "bundled-channel-config-metadata"
         },
         {
-          "blob_sha": "b9d637526ba86496e95bc7c7ea565d4632b99261",
-          "path": "src/plugins/contracts/web-fetch-provider.contract.test.ts",
+          "blob_sha": "c04a6af1e077549d22b91957d049fa3fc27d2891",
+          "path": "src/plugins/bundled-channel-runtime.test.ts",
           "range": {
-            "end_line": 22,
+            "end_line": 76,
             "start_line": 1
           },
-          "symbol": "web fetch provider contract"
+          "symbol": "bundled-channel-runtime.test"
         },
         {
-          "blob_sha": "cf3c45ec802b14969e8e3bf7218e8bfc0da05a3c",
-          "path": "src/plugins/contracts/registry.retry.test.ts",
+          "blob_sha": "477da1514d9bef78cafa88e7fe7a31c18717769d",
+          "path": "src/plugins/bundled-channel-runtime.ts",
           "range": {
-            "end_line": 82,
+            "end_line": 76,
             "start_line": 1
           },
-          "symbol": "plugin contract registry public artifacts"
+          "symbol": "bundled-channel-runtime"
         },
         {
-          "blob_sha": "9dc26ecc0f3241f30af9f6f65af997a29c05af0b",
-          "path": "src/plugins/contracts/shared-upstream-model.contract.test.ts",
+          "blob_sha": "4fc2229d22d41331039fcfb2e01cf6f114d88172",
+          "path": "src/plugins/bundled-compat.test.ts",
           "range": {
-            "end_line": 141,
+            "end_line": 78,
             "start_line": 1
           },
-          "symbol": "bundled shared upstream model catalogs"
+          "symbol": "bundled-compat.test"
         },
         {
-          "blob_sha": "a3d72e37dae910ac9885cffacc519745ca12a312",
-          "path": "src/plugins/contracts/provider-catalog-deprecation.contract.test.ts",
+          "blob_sha": "cf3150ad78cfb06159513ac02286e377348174a8",
+          "path": "src/plugins/bundled-compat.ts",
           "range": {
-            "end_line": 134,
+            "end_line": 65,
             "start_line": 1
           },
-          "symbol": "bundled provider catalog deprecation guard"
+          "symbol": "bundled-compat"
+        },
+        {
+          "blob_sha": "1c8b084cdc7f3d8658c4514e53c1939c06cf75b9",
+          "path": "src/plugins/bundled-dir.test.ts",
+          "range": {
+            "end_line": 512,
+            "start_line": 1
+          },
+          "symbol": "bundled-dir.test"
+        },
+        {
+          "blob_sha": "c6ec73399b7402b0615198139d0ded4e78c703ce",
+          "path": "src/plugins/bundled-dir.ts",
+          "range": {
+            "end_line": 351,
+            "start_line": 1
+          },
+          "symbol": "bundled-dir"
         },
         {
           "blob_sha": "e88e0234fe3772b07fedee0776bd400b93b490c2",
@@ -21617,6 +21635,15 @@
           "symbol": "provider auth-choice contract"
         },
         {
+          "blob_sha": "67ac28b12ca8a15ade41dbfea4c18488bc051f86",
+          "path": "src/plugins/contracts/capability-catalog.contract.test.ts",
+          "range": {
+            "end_line": 109,
+            "start_line": 1
+          },
+          "symbol": "cold capability catalog descriptors"
+        },
+        {
           "blob_sha": "7724402db636bb9d4c51aa7648bc27dc46895d00",
           "path": "src/plugins/contracts/embedding-provider.contract.test.ts",
           "range": {
@@ -21624,6 +21651,69 @@
             "start_line": 1
           },
           "symbol": "embedding provider registration"
+        },
+        {
+          "blob_sha": "fdb0dfe2fb4a7c4e1396cbca097224fd8adc4dfd",
+          "path": "src/plugins/contracts/inventory/bundled-capability-metadata.ts",
+          "range": {
+            "end_line": 165,
+            "start_line": 1
+          },
+          "symbol": "bundled capability metadata snapshot"
+        },
+        {
+          "blob_sha": "a3d72e37dae910ac9885cffacc519745ca12a312",
+          "path": "src/plugins/contracts/provider-catalog-deprecation.contract.test.ts",
+          "range": {
+            "end_line": 134,
+            "start_line": 1
+          },
+          "symbol": "bundled provider catalog deprecation guard"
+        },
+        {
+          "blob_sha": "fb8b4614dac4a4d580a373efeff1575a91db49b1",
+          "path": "src/plugins/contracts/registry.contract.test.ts",
+          "range": {
+            "end_line": 201,
+            "start_line": 1
+          },
+          "symbol": "plugin contract registry"
+        },
+        {
+          "blob_sha": "cf3c45ec802b14969e8e3bf7218e8bfc0da05a3c",
+          "path": "src/plugins/contracts/registry.retry.test.ts",
+          "range": {
+            "end_line": 82,
+            "start_line": 1
+          },
+          "symbol": "plugin contract registry public artifacts"
+        },
+        {
+          "blob_sha": "2244b08b22a6b8a53fdd86fbdd51abd81de86cfc",
+          "path": "src/plugins/contracts/registry.ts",
+          "range": {
+            "end_line": 356,
+            "start_line": 1
+          },
+          "symbol": "pluginRegistrationContractRegistry"
+        },
+        {
+          "blob_sha": "9dc26ecc0f3241f30af9f6f65af997a29c05af0b",
+          "path": "src/plugins/contracts/shared-upstream-model.contract.test.ts",
+          "range": {
+            "end_line": 141,
+            "start_line": 1
+          },
+          "symbol": "bundled shared upstream model catalogs"
+        },
+        {
+          "blob_sha": "b9d637526ba86496e95bc7c7ea565d4632b99261",
+          "path": "src/plugins/contracts/web-fetch-provider.contract.test.ts",
+          "range": {
+            "end_line": 22,
+            "start_line": 1
+          },
+          "symbol": "web fetch provider contract"
         },
         {
           "blob_sha": "298c9312eadacbe8246a59d745ee6c526cb60a0a",
@@ -21642,15 +21732,6 @@
             "start_line": 1
           },
           "symbol": "wizard model picker contract"
-        },
-        {
-          "blob_sha": "fdb0dfe2fb4a7c4e1396cbca097224fd8adc4dfd",
-          "path": "src/plugins/contracts/inventory/bundled-capability-metadata.ts",
-          "range": {
-            "end_line": 165,
-            "start_line": 1
-          },
-          "symbol": "bundled capability metadata snapshot"
         }
       ],
       "status": {
@@ -21674,7 +21755,8 @@
         "source/host/tests/openclaw_plugins_contract.rs::test_ocrm_plugins_auth_choice_contract",
         "source/host/tests/openclaw_plugins_contract.rs::test_ocrm_plugins_embedding_provider_registration",
         "source/host/tests/openclaw_plugins_contract.rs::test_ocrm_plugins_wizard_choice_resolution_and_model_picker",
-        "source/host/tests/openclaw_plugins_contract.rs::test_ocrm_plugins_bundled_capability_metadata_and_subpath_bundle"
+        "source/host/tests/openclaw_plugins_contract.rs::test_ocrm_plugins_bundled_capability_metadata_and_subpath_bundle",
+        "source/host/tests/openclaw_plugins_contract.rs::test_ocrm_plugins_bundled_channel_metadata_compat_and_dir_resolver"
       ],
       "typed_contracts": [
         "PluginCapabilityCatalog",

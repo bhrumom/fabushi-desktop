@@ -1265,6 +1265,59 @@ fn test_ocrm_plugins_bundled_mcp_lsp_capabilities_and_command_scopes() {
     assert!(BundleCommandScopeValidator::assert_command_scope_authorized("delete-db", Some("restricted.write"), &admin_scopes).is_ok());
 }
 
+#[test]
+fn test_ocrm_plugins_bundled_channel_metadata_compat_and_dir_resolver() {
+    use mahayana_host_runtime::extensions::plugins::capability_catalog::{
+        BundledChannelMetadata, BundledChannelMetadataValidator,
+        BundledCompatResolver, BundledDirResolver,
+    };
+
+    // 1. Channel Metadata Validation
+    let valid_channel = BundledChannelMetadata {
+        channel_id: "telegram".into(),
+        stream_mode: Some("block".into()),
+        reply_to_mode: Some("all".into()),
+        history_limit: Some(500),
+        media_max_mb: Some(50),
+        provider_skills: vec!["voice".into()],
+    };
+    assert!(BundledChannelMetadataValidator::validate(&valid_channel).is_ok());
+
+    let empty_id = BundledChannelMetadata {
+        channel_id: "".into(),
+        ..valid_channel.clone()
+    };
+    assert!(BundledChannelMetadataValidator::validate(&empty_id).is_err());
+
+    let bad_history = BundledChannelMetadata {
+        history_limit: Some(200_000),
+        ..valid_channel.clone()
+    };
+    assert!(BundledChannelMetadataValidator::validate(&bad_history).is_err());
+
+    let bad_media = BundledChannelMetadata {
+        media_max_mb: Some(5000),
+        ..valid_channel.clone()
+    };
+    assert!(BundledChannelMetadataValidator::validate(&bad_media).is_err());
+
+    // 2. Bundled Compat ID Normalization
+    assert_eq!(BundledCompatResolver::normalize_plugin_id("legacy-telegram"), "telegram");
+    assert_eq!(BundledCompatResolver::normalize_plugin_id("legacy-discord"), "discord");
+    assert_eq!(BundledCompatResolver::normalize_plugin_id("legacy-slack"), "slack");
+    assert_eq!(BundledCompatResolver::normalize_plugin_id("custom-plugin"), "custom-plugin");
+
+    // 3. Bundled Directory Path Traversal Guard
+    assert_eq!(
+        BundledDirResolver::resolve_relative_path("/app/bundled/plugins", "my-plugin/index.js").unwrap(),
+        "/app/bundled/plugins/my-plugin/index.js"
+    );
+
+    let err_traversal = BundledDirResolver::resolve_relative_path("/app/bundled/plugins", "../../../etc/passwd").unwrap_err();
+    assert!(err_traversal.contains("Path traversal detected"));
+}
+
+
 
 
 
