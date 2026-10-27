@@ -4268,9 +4268,9 @@
         "acceptance": "pending",
         "implementation": "implemented",
         "mapping": "mapped",
-        "read": "partial",
+        "read": "read-complete",
         "verification": "not-run",
-    "wiring": "wired"
+    "wiring": "not-wired"
       },
       "target": {
         "language": "Rust",
@@ -4279,7 +4279,9 @@
       },
       "tests": [
         "source/host/tests/extensions_local_exec_contract.rs::failure_classifier_matches_grok_spawn_errno_contract",
-        "source/host/tests/extensions_local_exec_contract.rs::local_exec_error_preserves_provider_message"
+        "source/host/tests/extensions_local_exec_contract.rs::local_exec_error_preserves_provider_message",
+        "source/host/tests/extensions_local_exec_contract.rs::command_error_merges_bounded_streams_and_preserves_termination_reason",
+        "source/host/tests/extensions_local_exec_contract.rs::command_error_uses_timeout_and_signal_without_raw_command_newlines"
       ],
       "typed_contracts": [
         "classify_local_exec_failure"
