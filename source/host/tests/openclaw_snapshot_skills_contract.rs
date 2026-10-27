@@ -449,6 +449,16 @@ fn test_ocrm_snapshot_postgres_manifest_schema_and_profile_oracles() {
     .is_err());
     let schema_connection = rusqlite::Connection::open_in_memory().expect("SQLite schema DB");
     schema_connection
+        .pragma_update(None, "user_version", 42_i64)
+        .expect("set SQLite user_version");
+    assert_eq!(
+        mahayana_host_runtime::extensions::snapshot::git_backup_manager::read_sqlite_user_version(
+            &schema_connection,
+        )
+        .expect("read SQLite user_version"),
+        42
+    );
+    schema_connection
         .execute_batch(
             "CREATE TABLE real_table (id INTEGER PRIMARY KEY, value TEXT);
              CREATE INDEX real_index ON real_table(value);

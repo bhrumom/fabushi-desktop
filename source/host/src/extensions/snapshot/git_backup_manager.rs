@@ -115,6 +115,13 @@ pub fn read_sqlite_schema_entries(
         .collect()
 }
 
+pub fn read_sqlite_user_version(connection: &Connection) -> Result<u32, String> {
+    let version: i64 = connection
+        .query_row("PRAGMA user_version", [], |row| row.get(0))
+        .map_err(|error| format!("read SQLite user_version: {error}"))?;
+    u32::try_from(version).map_err(|_| format!("SQLite user_version is out of range: {version}"))
+}
+
 pub fn is_git_backup_projection_table(name: &str) -> bool {
     GIT_BACKUP_PROJECTION_TABLES.contains(&name)
 }
