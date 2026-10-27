@@ -10,10 +10,10 @@
     "ui_accepted": false
   },
   "file_coverage": {
-    "mapped_paths": 1953,
+    "mapped_paths": 2189,
     "omitted_known": 0,
     "tracked_paths": 58750,
-    "unclassified_paths": 56797
+    "unclassified_paths": 56561
   },
   "inventory_authority": {
     "manifest_source": "GitHub Actions immutable artifact candidate",
@@ -34061,6 +34061,2402 @@
       ],
       "reviewer": "xuyao@ombhrum.com",
       "migration_rollback": "Allow unvalidated tool execution with raw JSON parameters"
+    },
+    {
+      "id": "OCRM-RESP-PLUGINS-BUNDLE-MANIFEST-001",
+      "unit_id": "OCRM-UNIT-PLUGINS-001",
+      "responsibility_kind": "business-runtime",
+      "behavior": "Plugin bundle manifest detection for Codex (.codex-plugin/plugin.json), Claude (.claude-plugin/plugin.json), Cursor (.cursor-plugin/plugin.json), and Agent (plugin.json) formats, ClawHub package spec parsing, archive size limits (50MB zip, 250MB extracted, 5k entries), and SHA-256 integrity verification.",
+      "risk": "High; archive zip bombs or corrupt manifests crash extension discovery or permit arbitrary bundle loading",
+      "status": {
+        "read": "read-complete",
+        "mapping": "reviewed",
+        "wiring": "not-wired",
+        "implementation": "implemented",
+        "verification": "not-run",
+        "acceptance": "pending"
+      },
+      "selected_owner": "source/host/src/extensions/plugins/bundle_manifest.rs",
+      "existing_owner_candidates": [
+        {
+          "path": "source/host/src/extensions/plugins/bundle_manifest.rs",
+          "reason": "Host plugin bundle manifest parser, ClawHub spec analyzer, and archive integrity verifier"
+        }
+      ],
+      "owner_decision": "Native implementation in bundle_manifest under plugins extension",
+      "dependencies": [
+        "mahayana_host_runtime::extensions::plugins::bundle_manifest"
+      ],
+      "capability_ids": [
+        "plugins.bundle_manifest"
+      ],
+      "preconditions": [
+        "Plugin bundle directory identified or archive bytes supplied"
+      ],
+      "postconditions": [
+        "Manifest parsed according to format; archive limits and integrity checksum verified"
+      ],
+      "invariants": [
+        "Archive entries exceeding 50MB single entry or 250MB extracted size are rejected"
+      ],
+      "typed_contracts": [
+        "PluginBundleFormat",
+        "ClawHubPluginSpec",
+        "verify_archive_limits",
+        "verify_sha256_integrity"
+      ],
+      "tests": [
+        "source/host/tests/openclaw_plugins_contract.rs::test_ocrm_plugins_bundle_manifest"
+      ],
+      "integration": {
+        "producer": "source/host/src/extensions/plugins/bundle_manifest.rs",
+        "owner": "source/host/src/extensions/plugins/bundle_manifest.rs",
+        "consumer": "source/host/src/extensions/plugins/bundle_manifest.rs",
+        "entrypoint": "source/host/src/extensions/plugins/bundle_manifest.rs::parse_clawhub_plugin_spec"
+      },
+      "source_refs": [
+        {
+          "path": "src/plugins/build-smoke-entry.ts",
+          "blob_sha": "2cae6314962efa6fd52bd4c3baa6b905b06f2b5b",
+          "range": {
+            "start_line": 1,
+            "end_line": 16
+          },
+          "symbol": "build-smoke-entry"
+        },
+        {
+          "path": "src/plugins/bundle-capability-support.ts",
+          "blob_sha": "c861447e9b565a1920a1707165326bb6543aac7a",
+          "range": {
+            "start_line": 1,
+            "end_line": 22
+          },
+          "symbol": "bundle-capability-support"
+        },
+        {
+          "path": "src/plugins/bundle-commands.test.ts",
+          "blob_sha": "6c6f336d59a023bd543520f3d2092953e364f1d1",
+          "range": {
+            "start_line": 1,
+            "end_line": 209
+          },
+          "symbol": "bundle-commands"
+        },
+        {
+          "path": "src/plugins/bundle-config-shared.ts",
+          "blob_sha": "974de17f3daea20ae998e9e43e1f11e1a9d41877",
+          "range": {
+            "start_line": 1,
+            "end_line": 138
+          },
+          "symbol": "bundle-config-shared"
+        },
+        {
+          "path": "src/plugins/bundle-lsp.ts",
+          "blob_sha": "60e204c6fea9ff11c2e948eb870c50cf88173238",
+          "range": {
+            "start_line": 1,
+            "end_line": 88
+          },
+          "symbol": "bundle-lsp"
+        },
+        {
+          "path": "src/plugins/bundle-manifest.test.ts",
+          "blob_sha": "33e08c80ac5a62ad4fca3b0209ce664b0f58827d",
+          "range": {
+            "start_line": 1,
+            "end_line": 340
+          },
+          "symbol": "bundle-manifest"
+        },
+        {
+          "path": "src/plugins/bundle-manifest.ts",
+          "blob_sha": "460fbe4817bca9b3d59d317cc151dad16d39cf1e",
+          "range": {
+            "start_line": 1,
+            "end_line": 444
+          },
+          "symbol": "bundle-manifest"
+        },
+        {
+          "path": "src/plugins/bundle-mcp.test-support.ts",
+          "blob_sha": "fb917c6b81c810ff39f89c3f7a6c2bf8ac03d77a",
+          "range": {
+            "start_line": 1,
+            "end_line": 74
+          },
+          "symbol": "bundle-mcp-support"
+        },
+        {
+          "path": "src/plugins/bundle-mcp.test.ts",
+          "blob_sha": "45f841d58bc103a12192f0ca7792127d8de0b92a",
+          "range": {
+            "start_line": 1,
+            "end_line": 492
+          },
+          "symbol": "bundle-mcp"
+        },
+        {
+          "path": "src/plugins/bundle-mcp.ts",
+          "blob_sha": "6bfae6db4526291069d6fb4737107bb28f9c6c27",
+          "range": {
+            "start_line": 1,
+            "end_line": 547
+          },
+          "symbol": "bundle-mcp"
+        },
+        {
+          "path": "src/plugins/bundle-mcp.types.ts",
+          "blob_sha": "f4bb6bcbba4d1c9de5bcfe07e7d81d32948aadfe",
+          "range": {
+            "start_line": 1,
+            "end_line": 15
+          },
+          "symbol": "bundle-mcp.types"
+        },
+        {
+          "path": "src/plugins/bundled-capability-runtime.test.ts",
+          "blob_sha": "5be135982f4b9e61a7eed91ab2c6c45034ea7be9",
+          "range": {
+            "start_line": 1,
+            "end_line": 208
+          },
+          "symbol": "bundled-capability-runtime"
+        },
+        {
+          "path": "src/plugins/bundled-capability-runtime.ts",
+          "blob_sha": "33a22b047263ea605f7d4697e909a7b089a5089e",
+          "range": {
+            "start_line": 1,
+            "end_line": 129
+          },
+          "symbol": "bundled-capability-runtime"
+        },
+        {
+          "path": "src/plugins/bundled-channel-config-metadata.ts",
+          "blob_sha": "eb8db20c47a2f31558a3e5b0f24eb58ec50f51cd",
+          "range": {
+            "start_line": 1,
+            "end_line": 181
+          },
+          "symbol": "bundled-channel-config-metadata"
+        },
+        {
+          "path": "src/plugins/bundled-channel-runtime.test.ts",
+          "blob_sha": "c04a6af1e077549d22b91957d049fa3fc27d2891",
+          "range": {
+            "start_line": 1,
+            "end_line": 76
+          },
+          "symbol": "bundled-channel-runtime"
+        },
+        {
+          "path": "src/plugins/bundled-channel-runtime.ts",
+          "blob_sha": "477da1514d9bef78cafa88e7fe7a31c18717769d",
+          "range": {
+            "start_line": 1,
+            "end_line": 77
+          },
+          "symbol": "bundled-channel-runtime"
+        },
+        {
+          "path": "src/plugins/bundled-compat.test.ts",
+          "blob_sha": "4fc2229d22d41331039fcfb2e01cf6f114d88172",
+          "range": {
+            "start_line": 1,
+            "end_line": 70
+          },
+          "symbol": "bundled-compat"
+        },
+        {
+          "path": "src/plugins/bundled-compat.ts",
+          "blob_sha": "cf3150ad78cfb06159513ac02286e377348174a8",
+          "range": {
+            "start_line": 1,
+            "end_line": 70
+          },
+          "symbol": "bundled-compat"
+        },
+        {
+          "path": "src/plugins/bundled-dir.test.ts",
+          "blob_sha": "1c8b084cdc7f3d8658c4514e53c1939c06cf75b9",
+          "range": {
+            "start_line": 1,
+            "end_line": 600
+          },
+          "symbol": "bundled-dir"
+        },
+        {
+          "path": "src/plugins/bundled-dir.ts",
+          "blob_sha": "c6ec73399b7402b0615198139d0ded4e78c703ce",
+          "range": {
+            "start_line": 1,
+            "end_line": 350
+          },
+          "symbol": "bundled-dir"
+        },
+        {
+          "path": "src/plugins/bundled-discovery-state.admission.test.ts",
+          "blob_sha": "e5f7af1c4deb3bad2c32b3a08200c3839042f8fa",
+          "range": {
+            "start_line": 1,
+            "end_line": 131
+          },
+          "symbol": "bundled-discovery-state.admission"
+        },
+        {
+          "path": "src/plugins/bundled-discovery-state.test.ts",
+          "blob_sha": "9138de857e307549fcf2a5f186e9b0940349ee21",
+          "range": {
+            "start_line": 1,
+            "end_line": 83
+          },
+          "symbol": "bundled-discovery-state"
+        },
+        {
+          "path": "src/plugins/bundled-discovery-state.ts",
+          "blob_sha": "640e78cbf6712229de633ebd70469d2435fae7df",
+          "range": {
+            "start_line": 1,
+            "end_line": 227
+          },
+          "symbol": "bundled-discovery-state"
+        },
+        {
+          "path": "src/plugins/bundled-discovery.test-support.ts",
+          "blob_sha": "58667d9770aa138796601d8ae20b1f935adc507c",
+          "range": {
+            "start_line": 1,
+            "end_line": 23
+          },
+          "symbol": "bundled-discovery-support"
+        },
+        {
+          "path": "src/plugins/bundled-install.ts",
+          "blob_sha": "18fdba970a604bc298152b5a5ea12ec3c3506bb7",
+          "range": {
+            "start_line": 1,
+            "end_line": 114
+          },
+          "symbol": "bundled-install"
+        },
+        {
+          "path": "src/plugins/bundled-load-path-aliases.ts",
+          "blob_sha": "837aa885169c378fc218a69de49fe98aab59b7e6",
+          "range": {
+            "start_line": 1,
+            "end_line": 105
+          },
+          "symbol": "bundled-load-path-aliases"
+        },
+        {
+          "path": "src/plugins/bundled-manifest-contract-plugins.test.ts",
+          "blob_sha": "57d043540fa40df23fb1c2fc63875663b65cc174",
+          "range": {
+            "start_line": 1,
+            "end_line": 43
+          },
+          "symbol": "bundled-manifest-contract-plugins"
+        },
+        {
+          "path": "src/plugins/bundled-manifest-contract-plugins.ts",
+          "blob_sha": "7acd59187bc72105bed1b1701825299da15e6ef1",
+          "range": {
+            "start_line": 1,
+            "end_line": 67
+          },
+          "symbol": "bundled-manifest-contract-plugins"
+        },
+        {
+          "path": "src/plugins/bundled-package-channel-metadata.test.ts",
+          "blob_sha": "a2cb3df36cfe4ba4624a803e991b1d8961b42899",
+          "range": {
+            "start_line": 1,
+            "end_line": 149
+          },
+          "symbol": "bundled-package-channel-metadata"
+        },
+        {
+          "path": "src/plugins/bundled-package-channel-metadata.ts",
+          "blob_sha": "fa67888dc557a985d28b48af7b00e39e53bb768b",
+          "range": {
+            "start_line": 1,
+            "end_line": 8
+          },
+          "symbol": "bundled-package-channel-metadata"
+        },
+        {
+          "path": "src/plugins/bundled-plugin-categories.test.ts",
+          "blob_sha": "1876fce7cf9fae0a56525185c61a2a8d554b5ec9",
+          "range": {
+            "start_line": 1,
+            "end_line": 91
+          },
+          "symbol": "bundled-plugin-categories"
+        },
+        {
+          "path": "src/plugins/bundled-plugin-icons.test.ts",
+          "blob_sha": "5204b88ea5f6f8b1c2cf81862ff16f6e8245a71a",
+          "range": {
+            "start_line": 1,
+            "end_line": 58
+          },
+          "symbol": "bundled-plugin-icons"
+        },
+        {
+          "path": "src/plugins/bundled-plugin-metadata.public-surfaces.test.ts",
+          "blob_sha": "46d059bcee7bfd05bcf134527cf1c7fb305be524",
+          "range": {
+            "start_line": 1,
+            "end_line": 180
+          },
+          "symbol": "bundled-plugin-metadata.public-surfaces"
+        },
+        {
+          "path": "src/plugins/bundled-plugin-metadata.test.ts",
+          "blob_sha": "24b98ca4a2652f9ca601bdae6728ea6fdab8f4fe",
+          "range": {
+            "start_line": 1,
+            "end_line": 350
+          },
+          "symbol": "bundled-plugin-metadata"
+        },
+        {
+          "path": "src/plugins/bundled-plugin-metadata.ts",
+          "blob_sha": "9c40d4733fcd99083b1cf6004513a212fa8e9b69",
+          "range": {
+            "start_line": 1,
+            "end_line": 163
+          },
+          "symbol": "bundled-plugin-metadata"
+        },
+        {
+          "path": "src/plugins/bundled-plugin-naming.test.ts",
+          "blob_sha": "fb47d17be4aeedb7b8d7d1967f097d8d6cd4863b",
+          "range": {
+            "start_line": 1,
+            "end_line": 142
+          },
+          "symbol": "bundled-plugin-naming"
+        },
+        {
+          "path": "src/plugins/bundled-plugin-scan.ts",
+          "blob_sha": "3939d808f00dac1fb934ff24d8978b1a1e45a27e",
+          "range": {
+            "start_line": 1,
+            "end_line": 211
+          },
+          "symbol": "bundled-plugin-scan"
+        },
+        {
+          "path": "src/plugins/bundled-plugin-startup-metadata.ts",
+          "blob_sha": "c11dab1b7e4654bfb4c2f564a6faca1546918b20",
+          "range": {
+            "start_line": 1,
+            "end_line": 21
+          },
+          "symbol": "bundled-plugin-startup-metadata"
+        },
+        {
+          "path": "src/plugins/bundled-provider-compat.ts",
+          "blob_sha": "3a8752d31f277134d16182083fab67736ee11645",
+          "range": {
+            "start_line": 1,
+            "end_line": 40
+          },
+          "symbol": "bundled-provider-compat"
+        },
+        {
+          "path": "src/plugins/bundled-source-overlays.ts",
+          "blob_sha": "94b6b8004b54340a71ed92bc1277f8b9622e0306",
+          "range": {
+            "start_line": 1,
+            "end_line": 105
+          },
+          "symbol": "bundled-source-overlays"
+        },
+        {
+          "path": "src/plugins/bundled-sources.test.ts",
+          "blob_sha": "4c9a4fecfbd60fcb7308c21990029167d42ba3aa",
+          "range": {
+            "start_line": 1,
+            "end_line": 159
+          },
+          "symbol": "bundled-sources"
+        },
+        {
+          "path": "src/plugins/bundled-sources.ts",
+          "blob_sha": "9b5c9cea33a0cff056cd640807ff0e1965d90a88",
+          "range": {
+            "start_line": 1,
+            "end_line": 172
+          },
+          "symbol": "bundled-sources"
+        },
+        {
+          "path": "src/plugins/candidate-install-owner.ts",
+          "blob_sha": "fea3646375b475cb3d330f779b30f3c0f9e5e4a3",
+          "range": {
+            "start_line": 1,
+            "end_line": 54
+          },
+          "symbol": "candidate-install-owner"
+        },
+        {
+          "path": "src/plugins/clawhub-archive-verification.ts",
+          "blob_sha": "51c03f0dd9e123d751f83ca3cc438d12813c2d67",
+          "range": {
+            "start_line": 1,
+            "end_line": 188
+          },
+          "symbol": "clawhub-archive-verification"
+        },
+        {
+          "path": "src/plugins/clawhub-error-codes.ts",
+          "blob_sha": "e3e2e97193b8ac5f457cd56375be34df62bfc46b",
+          "range": {
+            "start_line": 1,
+            "end_line": 60
+          },
+          "symbol": "clawhub-error-codes"
+        },
+        {
+          "path": "src/plugins/clawhub-install-records.ts",
+          "blob_sha": "456b0d79758585478c75121e4aef87f079b0d04e",
+          "range": {
+            "start_line": 1,
+            "end_line": 168
+          },
+          "symbol": "clawhub-install-records"
+        },
+        {
+          "path": "src/plugins/clawhub-official-source.ts",
+          "blob_sha": "431bb5746302f084ff6e257f144a91c8fc996628",
+          "range": {
+            "start_line": 1,
+            "end_line": 13
+          },
+          "symbol": "clawhub-official-source"
+        },
+        {
+          "path": "src/plugins/clawhub-presentation.ts",
+          "blob_sha": "c07fef4a9e7c0123487dbf67cc687974dd83fbe1",
+          "range": {
+            "start_line": 1,
+            "end_line": 69
+          },
+          "symbol": "clawhub-presentation"
+        },
+        {
+          "path": "src/plugins/clawhub.cleanup.test.ts",
+          "blob_sha": "206a146f068a60edb72e8e2d1dd6e03684fbc555",
+          "range": {
+            "start_line": 1,
+            "end_line": 89
+          },
+          "symbol": "clawhub.cleanup"
+        },
+        {
+          "path": "src/plugins/clawhub.test-fixtures.ts",
+          "blob_sha": "8f180a29ef4f92cbaacc78c0a1d9b5c9a62c2161",
+          "range": {
+            "start_line": 1,
+            "end_line": 27
+          },
+          "symbol": "clawhub-fixtures"
+        },
+        {
+          "path": "src/plugins/clawhub.test-support.ts",
+          "blob_sha": "b302a5a5d2832fc10de6fb4eff8fc51f9b7bda23",
+          "range": {
+            "start_line": 1,
+            "end_line": 163
+          },
+          "symbol": "clawhub-support"
+        },
+        {
+          "path": "src/plugins/clawhub.test.ts",
+          "blob_sha": "ddd4d8e6a346b121c4a991d458a7cd4a93102278",
+          "range": {
+            "start_line": 1,
+            "end_line": 1151
+          },
+          "symbol": "clawhub"
+        },
+        {
+          "path": "src/plugins/clawhub.ts",
+          "blob_sha": "286f795de513c1116a43fbb0d804f0b3a04ec62f",
+          "range": {
+            "start_line": 1,
+            "end_line": 1014
+          },
+          "symbol": "clawhub"
+        }
+      ],
+      "evidence_refs": [
+        "source/host/tests/openclaw_plugins_contract.rs",
+        "projects/openclaw-rust/dossiers/plugins-runtime-scoped.md"
+      ],
+      "requirement_ids": [
+        "OCRM-R04",
+        "OCRM-R08",
+        "OCRM-R09",
+        "OCRM-R21",
+        "OCRM-R24",
+        "OCRM-AC08",
+        "OCRM-AC21",
+        "OCRM-AC24"
+      ],
+      "required_gate_ids": [
+        "OCRM-G04-rust-contract",
+        "OCRM-G05-frozen-oracle"
+      ],
+      "oracle_ids": [
+        "OCRM-PLUGINS-MANIFEST-O01"
+      ],
+      "adr_refs": [],
+      "blocker_ids": [
+        "BL-PLUGINS-MANIFEST-WIRING-001"
+      ],
+      "target": {
+        "path": "source/host/src/extensions/plugins/bundle_manifest.rs",
+        "symbol": "PluginBundleFormat",
+        "language": "Rust"
+      },
+      "required_evidence_dimensions": [
+        "unit",
+        "format"
+      ],
+      "reviewer": "xuyao@ombhrum.com",
+      "migration_rollback": "Read only root plugin.json manifests and ignore third-party vendor bundles"
+    },
+    {
+      "id": "OCRM-RESP-PLUGINS-ACTIVATION-PLANNER-001",
+      "unit_id": "OCRM-UNIT-PLUGINS-001",
+      "responsibility_kind": "business-runtime",
+      "behavior": "Activation planner resolving minimal required plugins to activate given triggers (commands, providers, channels, capabilities, routes), enforcing bundled vs untrusted origin policy.",
+      "risk": "Medium; activating untrusted plugins without explicit consent exposes sensitive host tools",
+      "status": {
+        "read": "read-complete",
+        "mapping": "reviewed",
+        "wiring": "not-wired",
+        "implementation": "implemented",
+        "verification": "not-run",
+        "acceptance": "pending"
+      },
+      "selected_owner": "source/host/src/extensions/plugins/activation_planner.rs",
+      "existing_owner_candidates": [
+        {
+          "path": "source/host/src/extensions/plugins/activation_planner.rs",
+          "reason": "Host plugin activation planner and origin trust enforcer"
+        }
+      ],
+      "owner_decision": "Native implementation in activation_planner under plugins extension",
+      "dependencies": [
+        "mahayana_host_runtime::extensions::plugins::activation_planner"
+      ],
+      "capability_ids": [
+        "plugins.activation_planner"
+      ],
+      "preconditions": [
+        "Plugin manifests registered with capabilities, commands, and providers"
+      ],
+      "postconditions": [
+        "Minimal valid set of trusted plugin IDs resolved for activation"
+      ],
+      "invariants": [
+        "Untrusted external plugins are filtered out from activation plan unless explicitly trusted"
+      ],
+      "typed_contracts": [
+        "ActivationPlanner",
+        "ActivationTrigger",
+        "PluginManifestRecord"
+      ],
+      "tests": [
+        "source/host/tests/openclaw_plugins_contract.rs::test_ocrm_plugins_activation_planner"
+      ],
+      "integration": {
+        "producer": "source/host/src/extensions/plugins/activation_planner.rs",
+        "owner": "source/host/src/extensions/plugins/activation_planner.rs",
+        "consumer": "source/host/src/extensions/plugins/activation_planner.rs",
+        "entrypoint": "source/host/src/extensions/plugins/activation_planner.rs::ActivationPlanner::plan_activation"
+      },
+      "source_refs": [
+        {
+          "path": "src/plugins/activation-context.test.ts",
+          "blob_sha": "6f76728b2e029676dbcd644935819f40b06a8247",
+          "range": {
+            "start_line": 1,
+            "end_line": 148
+          },
+          "symbol": "activation-context"
+        },
+        {
+          "path": "src/plugins/activation-context.ts",
+          "blob_sha": "07b956a7115ac4eeece4413f0c361dd9d304f581",
+          "range": {
+            "start_line": 1,
+            "end_line": 148
+          },
+          "symbol": "activation-context"
+        },
+        {
+          "path": "src/plugins/activation-planner.test.ts",
+          "blob_sha": "94dfddf918ad6b41da0e2daaefed87c6ebf07198",
+          "range": {
+            "start_line": 1,
+            "end_line": 164
+          },
+          "symbol": "activation-planner"
+        },
+        {
+          "path": "src/plugins/activation-planner.ts",
+          "blob_sha": "daf82bac45e4c14dd49e4d59e5d88ed13bf629c8",
+          "range": {
+            "start_line": 1,
+            "end_line": 193
+          },
+          "symbol": "activation-planner"
+        },
+        {
+          "path": "src/plugins/activation-source-config.ts",
+          "blob_sha": "ee1c31b45e1bacd40291ad17c9677b8ab17e8ccb",
+          "range": {
+            "start_line": 1,
+            "end_line": 28
+          },
+          "symbol": "activation-source-config"
+        },
+        {
+          "path": "src/plugins/active-payload-verification.test.ts",
+          "blob_sha": "d0d42dd6a9b6eecadf81897a065885af1c5970bb",
+          "range": {
+            "start_line": 1,
+            "end_line": 79
+          },
+          "symbol": "active-payload-verification"
+        },
+        {
+          "path": "src/plugins/active-payload-verification.ts",
+          "blob_sha": "efa07c1ed1bf096daddaeee934edb40763a874da",
+          "range": {
+            "start_line": 1,
+            "end_line": 97
+          },
+          "symbol": "active-payload-verification"
+        },
+        {
+          "path": "src/plugins/active-runtime-registry.import.test.ts",
+          "blob_sha": "9806786b17c147a4d99295c5652102918a6c9e5a",
+          "range": {
+            "start_line": 1,
+            "end_line": 44
+          },
+          "symbol": "active-runtime-registry.import"
+        },
+        {
+          "path": "src/plugins/active-runtime-registry.test.ts",
+          "blob_sha": "5ca870b9af89f4dbd6f7970085f6f95221dfadd6",
+          "range": {
+            "start_line": 1,
+            "end_line": 382
+          },
+          "symbol": "active-runtime-registry"
+        },
+        {
+          "path": "src/plugins/active-runtime-registry.ts",
+          "blob_sha": "38f2cf4c2eaf9b8d3ac74ca3bfe47ec213311dc2",
+          "range": {
+            "start_line": 1,
+            "end_line": 190
+          },
+          "symbol": "active-runtime-registry"
+        },
+        {
+          "path": "src/plugins/agent-executor-controller.test.ts",
+          "blob_sha": "5a7b1531a9888e6156ef247ab1e945f203a74cad",
+          "range": {
+            "start_line": 1,
+            "end_line": 14
+          },
+          "symbol": "agent-executor-controller"
+        },
+        {
+          "path": "src/plugins/agent-executor-controller.ts",
+          "blob_sha": "c9b67fb2f946caa522cff3662ee3e368235566c1",
+          "range": {
+            "start_line": 1,
+            "end_line": 18
+          },
+          "symbol": "agent-executor-controller"
+        },
+        {
+          "path": "src/plugins/agent-executor-controller.types.ts",
+          "blob_sha": "a375b971b16a9c49f88cfbbacd5a3543c7543e0f",
+          "range": {
+            "start_line": 1,
+            "end_line": 29
+          },
+          "symbol": "agent-executor-controller.types"
+        },
+        {
+          "path": "src/plugins/agent-prompt-surface-kind.ts",
+          "blob_sha": "be6e9d9cdad8c194d4bdfac4d3463bc3e10344d9",
+          "range": {
+            "start_line": 1,
+            "end_line": 15
+          },
+          "symbol": "agent-prompt-surface-kind"
+        },
+        {
+          "path": "src/plugins/agent-tool-result-middleware-loader.ts",
+          "blob_sha": "1a316586757985de8db082c87557f2e50dd20966",
+          "range": {
+            "start_line": 1,
+            "end_line": 93
+          },
+          "symbol": "agent-tool-result-middleware-loader"
+        },
+        {
+          "path": "src/plugins/agent-tool-result-middleware-types.ts",
+          "blob_sha": "05338bcd56e3a5a41e9596696e6fefa0d8ec2921",
+          "range": {
+            "start_line": 1,
+            "end_line": 39
+          },
+          "symbol": "agent-tool-result-middleware-types"
+        },
+        {
+          "path": "src/plugins/agent-tool-result-middleware.test.ts",
+          "blob_sha": "2c65970425202a83ce6fddd209d69334f2a1a650",
+          "range": {
+            "start_line": 1,
+            "end_line": 72
+          },
+          "symbol": "agent-tool-result-middleware"
+        },
+        {
+          "path": "src/plugins/agent-tool-result-middleware.ts",
+          "blob_sha": "712b12d08afc67ab53e3ae7ec484f324e834f1dc",
+          "range": {
+            "start_line": 1,
+            "end_line": 121
+          },
+          "symbol": "agent-tool-result-middleware"
+        },
+        {
+          "path": "src/plugins/before-agent-reply.test.ts",
+          "blob_sha": "092e8ddfde3c48eed3fddbf652e553186dfadd8d",
+          "range": {
+            "start_line": 1,
+            "end_line": 180
+          },
+          "symbol": "before-agent-reply"
+        },
+        {
+          "path": "src/plugins/before-agent-reply.ts",
+          "blob_sha": "5c0469af1e491fc9e896083590222d34aa8241f9",
+          "range": {
+            "start_line": 1,
+            "end_line": 123
+          },
+          "symbol": "before-agent-reply"
+        }
+      ],
+      "evidence_refs": [
+        "source/host/tests/openclaw_plugins_contract.rs",
+        "projects/openclaw-rust/dossiers/plugins-runtime-scoped.md"
+      ],
+      "requirement_ids": [
+        "OCRM-R04",
+        "OCRM-R08",
+        "OCRM-R09",
+        "OCRM-R21",
+        "OCRM-R24",
+        "OCRM-AC08",
+        "OCRM-AC21",
+        "OCRM-AC24"
+      ],
+      "required_gate_ids": [
+        "OCRM-G04-rust-contract",
+        "OCRM-G05-frozen-oracle"
+      ],
+      "oracle_ids": [
+        "OCRM-PLUGINS-PLANNER-O01"
+      ],
+      "adr_refs": [],
+      "blocker_ids": [
+        "BL-PLUGINS-PLANNER-WIRING-001"
+      ],
+      "target": {
+        "path": "source/host/src/extensions/plugins/activation_planner.rs",
+        "symbol": "ActivationPlanner",
+        "language": "Rust"
+      },
+      "required_evidence_dimensions": [
+        "unit",
+        "format"
+      ],
+      "reviewer": "xuyao@ombhrum.com",
+      "migration_rollback": "Activate all discovered bundled plugins unconditionally at host startup"
+    },
+    {
+      "id": "OCRM-RESP-PLUGINS-CAPABILITY-CATALOG-001",
+      "unit_id": "OCRM-UNIT-PLUGINS-001",
+      "responsibility_kind": "business-runtime",
+      "behavior": "Capability provider catalog registry across families (speechProviders, realtimeTranscriptionProviders, realtimeVoiceProviders), channel catalog registry, and origin provenance tracking.",
+      "risk": "Medium; catalog corruption prevents speech synthesis or voice channel streaming routing",
+      "status": {
+        "read": "read-complete",
+        "mapping": "reviewed",
+        "wiring": "not-wired",
+        "implementation": "implemented",
+        "verification": "not-run",
+        "acceptance": "pending"
+      },
+      "selected_owner": "source/host/src/extensions/plugins/capability_catalog.rs",
+      "existing_owner_candidates": [
+        {
+          "path": "source/host/src/extensions/plugins/capability_catalog.rs",
+          "reason": "Host plugin capability and channel catalog manager"
+        }
+      ],
+      "owner_decision": "Native implementation in capability_catalog under plugins extension",
+      "dependencies": [
+        "mahayana_host_runtime::extensions::plugins::capability_catalog"
+      ],
+      "capability_ids": [
+        "plugins.capability_catalog"
+      ],
+      "preconditions": [
+        "Capability provider or channel registered with family and provider ID"
+      ],
+      "postconditions": [
+        "Lookups match case-insensitively and filter by family"
+      ],
+      "invariants": [
+        "Provider IDs within a capability family are unique and case-insensitively indexed"
+      ],
+      "typed_contracts": [
+        "PluginCapabilityCatalog",
+        "CapabilityProviderEntry",
+        "ChannelCatalogEntry",
+        "PluginOrigin"
+      ],
+      "tests": [
+        "source/host/tests/openclaw_plugins_contract.rs::test_ocrm_plugins_capability_catalog"
+      ],
+      "integration": {
+        "producer": "source/host/src/extensions/plugins/capability_catalog.rs",
+        "owner": "source/host/src/extensions/plugins/capability_catalog.rs",
+        "consumer": "source/host/src/extensions/plugins/capability_catalog.rs",
+        "entrypoint": "source/host/src/extensions/plugins/capability_catalog.rs::PluginCapabilityCatalog::get_capability"
+      },
+      "source_refs": [
+        {
+          "path": "src/plugins/AGENTS.md",
+          "blob_sha": "91f06de2d130a0f80f747d096f76e439bd84d755",
+          "range": {
+            "start_line": 1,
+            "end_line": 112
+          },
+          "symbol": "AGENTS.md"
+        },
+        {
+          "path": "src/plugins/api-builder.ts",
+          "blob_sha": "7e0de8ce186c7f69263bc5e087867a4632850a33",
+          "range": {
+            "start_line": 1,
+            "end_line": 157
+          },
+          "symbol": "api-builder"
+        },
+        {
+          "path": "src/plugins/api-facades.background.test.ts",
+          "blob_sha": "7cb64deae9d2480a934d1974dd87b83da8dd7021",
+          "range": {
+            "start_line": 1,
+            "end_line": 178
+          },
+          "symbol": "api-facades.background"
+        },
+        {
+          "path": "src/plugins/api-facades.cli.test.ts",
+          "blob_sha": "885a230f49e736277dc49fc81e6802d509593faa",
+          "range": {
+            "start_line": 1,
+            "end_line": 577
+          },
+          "symbol": "api-facades.cli"
+        },
+        {
+          "path": "src/plugins/api-facades.ts",
+          "blob_sha": "a7dcb791facc4b9fcea290a8c113090a2a047ffa",
+          "range": {
+            "start_line": 1,
+            "end_line": 159
+          },
+          "symbol": "api-facades"
+        },
+        {
+          "path": "src/plugins/api-lifecycle.test.ts",
+          "blob_sha": "21c6a820f0dfe8abf8168e0a7bb253f786e96e78",
+          "range": {
+            "start_line": 1,
+            "end_line": 189
+          },
+          "symbol": "api-lifecycle"
+        },
+        {
+          "path": "src/plugins/api-lifecycle.ts",
+          "blob_sha": "b0c300bce930a879ab88d1b304c139eeab66e4ed",
+          "range": {
+            "start_line": 1,
+            "end_line": 74
+          },
+          "symbol": "api-lifecycle"
+        },
+        {
+          "path": "src/plugins/auth-profile-config-refs.ts",
+          "blob_sha": "d5f621a70d477bf6cde06f6949e6f753b630d2c1",
+          "range": {
+            "start_line": 1,
+            "end_line": 38
+          },
+          "symbol": "auth-profile-config-refs"
+        },
+        {
+          "path": "src/plugins/board-widget-content-kind.types.ts",
+          "blob_sha": "a54b8196567f7f8b13b841a9b1b86a1fdf227b26",
+          "range": {
+            "start_line": 1,
+            "end_line": 35
+          },
+          "symbol": "board-widget-content-kind.types"
+        },
+        {
+          "path": "src/plugins/board-widget-content-kinds.ts",
+          "blob_sha": "9f1f5c15a6c3f8035e5f12a0bcc4957b31cb8f4d",
+          "range": {
+            "start_line": 1,
+            "end_line": 165
+          },
+          "symbol": "board-widget-content-kinds"
+        },
+        {
+          "path": "src/plugins/capability-artifact.ts",
+          "blob_sha": "0e0f3d3648033ea724f2439afe2785b67fa5f891",
+          "range": {
+            "start_line": 1,
+            "end_line": 174
+          },
+          "symbol": "capability-artifact"
+        },
+        {
+          "path": "src/plugins/capability-catalog-context.ts",
+          "blob_sha": "38abda596f14b92784a8f220400357bcd150c560",
+          "range": {
+            "start_line": 1,
+            "end_line": 63
+          },
+          "symbol": "capability-catalog-context"
+        },
+        {
+          "path": "src/plugins/capability-catalog-context.types.ts",
+          "blob_sha": "0ce2cc58f7b45d31ae305b73e4a44ba9a51b61b0",
+          "range": {
+            "start_line": 1,
+            "end_line": 98
+          },
+          "symbol": "capability-catalog-context.types"
+        },
+        {
+          "path": "src/plugins/capability-catalog.ts",
+          "blob_sha": "00a3c1bc8f8a151fd42d6317b38d65a471a7ddd4",
+          "range": {
+            "start_line": 1,
+            "end_line": 105
+          },
+          "symbol": "capability-catalog"
+        },
+        {
+          "path": "src/plugins/capability-catalog.types.ts",
+          "blob_sha": "8b1febb6db7b871ab16c28a47ba65292dd467fc8",
+          "range": {
+            "start_line": 1,
+            "end_line": 14
+          },
+          "symbol": "capability-catalog.types"
+        },
+        {
+          "path": "src/plugins/capability-consent.test.ts",
+          "blob_sha": "9e3d50bc6be829173d2b495fa810f0ddd6e61bd0",
+          "range": {
+            "start_line": 1,
+            "end_line": 490
+          },
+          "symbol": "capability-consent"
+        },
+        {
+          "path": "src/plugins/capability-consent.ts",
+          "blob_sha": "98ba3e6afc5d51bb156bf9d39efce21fa03aae9d",
+          "range": {
+            "start_line": 1,
+            "end_line": 532
+          },
+          "symbol": "capability-consent"
+        },
+        {
+          "path": "src/plugins/capability-lease.ts",
+          "blob_sha": "786f0ec7074715e623a4b46c392cc55f0b7ef781",
+          "range": {
+            "start_line": 1,
+            "end_line": 25
+          },
+          "symbol": "capability-lease"
+        },
+        {
+          "path": "src/plugins/capability-provider-acquisition.test.ts",
+          "blob_sha": "49c0f4ee3f8355c44b157cdcfe356f1c3f082fdc",
+          "range": {
+            "start_line": 1,
+            "end_line": 105
+          },
+          "symbol": "capability-provider-acquisition"
+        },
+        {
+          "path": "src/plugins/capability-provider-acquisition.ts",
+          "blob_sha": "93afbefca47dc0f90a3c5c5b326e5038f7c15fdd",
+          "range": {
+            "start_line": 1,
+            "end_line": 253
+          },
+          "symbol": "capability-provider-acquisition"
+        },
+        {
+          "path": "src/plugins/capability-provider-runtime.generation.test.ts",
+          "blob_sha": "20409885191c2b70e11054f5243f47790f87be47",
+          "range": {
+            "start_line": 1,
+            "end_line": 801
+          },
+          "symbol": "capability-provider-runtime.generation"
+        },
+        {
+          "path": "src/plugins/capability-provider-runtime.test.ts",
+          "blob_sha": "377a937472ec863af8d25819355465a2341327b0",
+          "range": {
+            "start_line": 1,
+            "end_line": 809
+          },
+          "symbol": "capability-provider-runtime"
+        },
+        {
+          "path": "src/plugins/capability-provider-runtime.ts",
+          "blob_sha": "4c773ec0ec6a0fb8188a3c2f5ed9c2afcd81ce0d",
+          "range": {
+            "start_line": 1,
+            "end_line": 707
+          },
+          "symbol": "capability-provider-runtime"
+        },
+        {
+          "path": "src/plugins/capability-provider.types.ts",
+          "blob_sha": "eba4c36640e3cd6584d79d258ba6712b104d1ffb",
+          "range": {
+            "start_line": 1,
+            "end_line": 674
+          },
+          "symbol": "capability-provider.types"
+        },
+        {
+          "path": "src/plugins/capability-summary.test.ts",
+          "blob_sha": "7debc9aeb2da89e063cf4a99d0e25b8b0f68476c",
+          "range": {
+            "start_line": 1,
+            "end_line": 156
+          },
+          "symbol": "capability-summary"
+        },
+        {
+          "path": "src/plugins/capability-summary.ts",
+          "blob_sha": "001257ccaee0124a1e7c5c9364a66fb1d172aa74",
+          "range": {
+            "start_line": 1,
+            "end_line": 331
+          },
+          "symbol": "capability-summary"
+        },
+        {
+          "path": "src/plugins/captured-registration.test.ts",
+          "blob_sha": "8976e5c191b38e6189a00333b10e87caf6be21b4",
+          "range": {
+            "start_line": 1,
+            "end_line": 378
+          },
+          "symbol": "captured-registration"
+        },
+        {
+          "path": "src/plugins/captured-registration.ts",
+          "blob_sha": "a2064948ff85bd9eab4ff7bce1253cb9895f8217",
+          "range": {
+            "start_line": 1,
+            "end_line": 346
+          },
+          "symbol": "captured-registration"
+        },
+        {
+          "path": "src/plugins/catalog-discovery-runtime.ts",
+          "blob_sha": "40518ddab7c2b75cc13cd23f154732680baf7c22",
+          "range": {
+            "start_line": 1,
+            "end_line": 275
+          },
+          "symbol": "catalog-discovery-runtime"
+        },
+        {
+          "path": "src/plugins/catalog-discovery.test.ts",
+          "blob_sha": "1928c3092342182e0baaeb0db8f7deb4e41027d0",
+          "range": {
+            "start_line": 1,
+            "end_line": 548
+          },
+          "symbol": "catalog-discovery"
+        },
+        {
+          "path": "src/plugins/catalog-discovery.ts",
+          "blob_sha": "c295c5c1fcedcf54c807a44e01875cb2b28f0853",
+          "range": {
+            "start_line": 1,
+            "end_line": 506
+          },
+          "symbol": "catalog-discovery"
+        },
+        {
+          "path": "src/plugins/catalog-icon-registry.test.ts",
+          "blob_sha": "a6aa0a38d55ca910bdfa96ae83f53b9b466dfcf4",
+          "range": {
+            "start_line": 1,
+            "end_line": 50
+          },
+          "symbol": "catalog-icon-registry"
+        },
+        {
+          "path": "src/plugins/catalog-icon-registry.ts",
+          "blob_sha": "155e191a4094cae973bcabd6737602303ea0725e",
+          "range": {
+            "start_line": 1,
+            "end_line": 30
+          },
+          "symbol": "catalog-icon-registry"
+        },
+        {
+          "path": "src/plugins/catalog-search.test.ts",
+          "blob_sha": "45dff5df3386a3393ef98b05583e979c9352b362",
+          "range": {
+            "start_line": 1,
+            "end_line": 68
+          },
+          "symbol": "catalog-search"
+        },
+        {
+          "path": "src/plugins/catalog-search.ts",
+          "blob_sha": "f5016e2753dc549a1e651ef3288194fcc1fd1cfb",
+          "range": {
+            "start_line": 1,
+            "end_line": 37
+          },
+          "symbol": "catalog-search"
+        },
+        {
+          "path": "src/plugins/channel-catalog-registry.test.ts",
+          "blob_sha": "c8cf9def2801207dc08872723dec48487d04e25f",
+          "range": {
+            "start_line": 1,
+            "end_line": 302
+          },
+          "symbol": "channel-catalog-registry"
+        },
+        {
+          "path": "src/plugins/channel-catalog-registry.ts",
+          "blob_sha": "af8b005acfbde1e7af6c19a71d5215f1766555ec",
+          "range": {
+            "start_line": 1,
+            "end_line": 140
+          },
+          "symbol": "channel-catalog-registry"
+        },
+        {
+          "path": "src/plugins/channel-catalog-registry.workspace.test.ts",
+          "blob_sha": "7fe18a1b1bbf3e9aa2bd43c9e866b4014d2cd188",
+          "range": {
+            "start_line": 1,
+            "end_line": 200
+          },
+          "symbol": "channel-catalog-registry.workspace"
+        },
+        {
+          "path": "src/plugins/channel-plugin-ids.test.ts",
+          "blob_sha": "811b75ca0bba76b002d518354fe3ee2bb1a986de",
+          "range": {
+            "start_line": 1,
+            "end_line": 1711
+          },
+          "symbol": "channel-plugin-ids"
+        },
+        {
+          "path": "src/plugins/channel-plugin-ids.ts",
+          "blob_sha": "520597843dee0d61989c61cb5c25cdb3acedb75e",
+          "range": {
+            "start_line": 1,
+            "end_line": 30
+          },
+          "symbol": "channel-plugin-ids"
+        },
+        {
+          "path": "src/plugins/channel-presence-policy.ts",
+          "blob_sha": "a2f4737d617b981a6d02ca8f810ddcdd9a10a1ac",
+          "range": {
+            "start_line": 1,
+            "end_line": 710
+          },
+          "symbol": "channel-presence-policy"
+        },
+        {
+          "path": "src/plugins/channel-registry-adoption.ts",
+          "blob_sha": "c69791e8b1395b4c709f8e60d2a7afc8e69831f2",
+          "range": {
+            "start_line": 1,
+            "end_line": 139
+          },
+          "symbol": "channel-registry-adoption"
+        },
+        {
+          "path": "src/plugins/channel-registry-state.types.ts",
+          "blob_sha": "e5b58f8424de02920ca6bdb5bf8f7733b11a4623",
+          "range": {
+            "start_line": 1,
+            "end_line": 24
+          },
+          "symbol": "channel-registry-state.types"
+        },
+        {
+          "path": "src/plugins/channel-startup-policy.ts",
+          "blob_sha": "2eaf2e8a65bc6ac13128b2a144591acbe1bff416",
+          "range": {
+            "start_line": 1,
+            "end_line": 51
+          },
+          "symbol": "channel-startup-policy"
+        },
+        {
+          "path": "src/plugins/channel-validation.test.ts",
+          "blob_sha": "feba6bae38e3c93804160bc29ff538c17c5584ed",
+          "range": {
+            "start_line": 1,
+            "end_line": 108
+          },
+          "symbol": "channel-validation"
+        },
+        {
+          "path": "src/plugins/claw-managed-capability-consent.integration.test.ts",
+          "blob_sha": "778cc9bfaa740d05f463155f5d67874f8913100d",
+          "range": {
+            "start_line": 1,
+            "end_line": 356
+          },
+          "symbol": "claw-managed-capability-consent.integration"
+        },
+        {
+          "path": "src/plugins/cli-backend-errors.ts",
+          "blob_sha": "bc4e77186f1d64770d61ea65f487007372d725dd",
+          "range": {
+            "start_line": 1,
+            "end_line": 13
+          },
+          "symbol": "cli-backend-errors"
+        },
+        {
+          "path": "src/plugins/cli-backend-registration.ts",
+          "blob_sha": "2b08320ebc3eccd86a185d539c232a9f40e901a4",
+          "range": {
+            "start_line": 1,
+            "end_line": 13
+          },
+          "symbol": "cli-backend-registration"
+        },
+        {
+          "path": "src/plugins/cli-backend.types.ts",
+          "blob_sha": "cd260fbf964fc171eadf67416883dd9c7ab61b0f",
+          "range": {
+            "start_line": 1,
+            "end_line": 627
+          },
+          "symbol": "cli-backend.types"
+        },
+        {
+          "path": "src/plugins/cli-backends.runtime.test.ts",
+          "blob_sha": "1b11df1dd7d051b68f4aba61bdedea57a2455041",
+          "range": {
+            "start_line": 1,
+            "end_line": 105
+          },
+          "symbol": "cli-backends.runtime"
+        },
+        {
+          "path": "src/plugins/cli-backends.runtime.ts",
+          "blob_sha": "9f7b8e1901f08fb5937614e77d048b58f4c5660a",
+          "range": {
+            "start_line": 1,
+            "end_line": 37
+          },
+          "symbol": "cli-backends.runtime"
+        },
+        {
+          "path": "src/plugins/cli-callback-binding.ts",
+          "blob_sha": "a01f14e0431e7d771078281e754ec1a829c08866",
+          "range": {
+            "start_line": 1,
+            "end_line": 330
+          },
+          "symbol": "cli-callback-binding"
+        },
+        {
+          "path": "src/plugins/cli-config-lifetime.test.ts",
+          "blob_sha": "cbee7d75ef988815ab2b98005548e3937f10b272",
+          "range": {
+            "start_line": 1,
+            "end_line": 397
+          },
+          "symbol": "cli-config-lifetime"
+        },
+        {
+          "path": "src/plugins/cli-gateway-nodes-runtime.test.ts",
+          "blob_sha": "44c0b522ef91088b30ad08b6693aae7d2a937525",
+          "range": {
+            "start_line": 1,
+            "end_line": 63
+          },
+          "symbol": "cli-gateway-nodes-runtime"
+        },
+        {
+          "path": "src/plugins/cli-gateway-nodes-runtime.ts",
+          "blob_sha": "e5d60a5e708013886fdfee6a9051859a6465b684",
+          "range": {
+            "start_line": 1,
+            "end_line": 84
+          },
+          "symbol": "cli-gateway-nodes-runtime"
+        },
+        {
+          "path": "src/plugins/cli-lifetime.test-support.ts",
+          "blob_sha": "46f1b13d28bcd4a90f6a150bfe28b7c4f7523791",
+          "range": {
+            "start_line": 1,
+            "end_line": 52
+          },
+          "symbol": "cli-lifetime-support"
+        },
+        {
+          "path": "src/plugins/cli-metadata-lifetime.test.ts",
+          "blob_sha": "5e1cfaf288ecf67a0c32a64041ac15f39af8d31c",
+          "range": {
+            "start_line": 1,
+            "end_line": 899
+          },
+          "symbol": "cli-metadata-lifetime"
+        },
+        {
+          "path": "src/plugins/cli-registry-loader.ts",
+          "blob_sha": "a530aedef26c801ed975917fff65594c877c33da",
+          "range": {
+            "start_line": 1,
+            "end_line": 417
+          },
+          "symbol": "cli-registry-loader"
+        },
+        {
+          "path": "src/plugins/cli-root-descriptors.ts",
+          "blob_sha": "6ab20188d09298fbce4dbc5df5c3aa1c4ab2356e",
+          "range": {
+            "start_line": 1,
+            "end_line": 113
+          },
+          "symbol": "cli-root-descriptors"
+        },
+        {
+          "path": "src/plugins/cli-service-scheduler.test.ts",
+          "blob_sha": "76873d5f76b433679e2f2cc1efeab1f557022020",
+          "range": {
+            "start_line": 1,
+            "end_line": 127
+          },
+          "symbol": "cli-service-scheduler"
+        },
+        {
+          "path": "src/plugins/cli-service-scheduler.ts",
+          "blob_sha": "b43dcda0006929ecbe866409f405e944dd27050f",
+          "range": {
+            "start_line": 1,
+            "end_line": 56
+          },
+          "symbol": "cli-service-scheduler"
+        },
+        {
+          "path": "src/plugins/cli.browser-plugin.integration.test.ts",
+          "blob_sha": "1e2d903a95f0b0a92973c612493c67513a16f378",
+          "range": {
+            "start_line": 1,
+            "end_line": 66
+          },
+          "symbol": "cli.browser-plugin.integration"
+        },
+        {
+          "path": "src/plugins/cli.test.ts",
+          "blob_sha": "720dc81a778183a704506c4c642be70cc6388f1c",
+          "range": {
+            "start_line": 1,
+            "end_line": 141
+          },
+          "symbol": "cli"
+        },
+        {
+          "path": "src/plugins/cli.ts",
+          "blob_sha": "794636ab8e4aadcd7ad5794732e2344a989f9807",
+          "range": {
+            "start_line": 1,
+            "end_line": 231
+          },
+          "symbol": "cli"
+        },
+        {
+          "path": "src/plugins/code-mode-executor.test.ts",
+          "blob_sha": "ecfa0615c32e18481d237f4daeff7bdbc441f226",
+          "range": {
+            "start_line": 1,
+            "end_line": 137
+          },
+          "symbol": "code-mode-executor"
+        },
+        {
+          "path": "src/plugins/code-mode-executor.ts",
+          "blob_sha": "39356b265e94e9c62b25869a5e5b08440679aa19",
+          "range": {
+            "start_line": 1,
+            "end_line": 86
+          },
+          "symbol": "code-mode-executor"
+        },
+        {
+          "path": "src/plugins/codex-app-server-extension-types.ts",
+          "blob_sha": "7a492647b76a67580b141e4c144bb2f8a5e1fffd",
+          "range": {
+            "start_line": 1,
+            "end_line": 37
+          },
+          "symbol": "codex-app-server-extension-types"
+        },
+        {
+          "path": "src/plugins/command-execution-lock.ts",
+          "blob_sha": "bb9d3d45ab2871b74b7a005fa0bf28b4fe7f3fba",
+          "range": {
+            "start_line": 1,
+            "end_line": 73
+          },
+          "symbol": "command-execution-lock"
+        },
+        {
+          "path": "src/plugins/command-registration.runtime-capabilities.test.ts",
+          "blob_sha": "0e111fa0e794ca2940c7abbec7e15a75eefb3ff3",
+          "range": {
+            "start_line": 1,
+            "end_line": 46
+          },
+          "symbol": "command-registration.runtime-capabilities"
+        },
+        {
+          "path": "src/plugins/command-registration.ts",
+          "blob_sha": "48bc672c5060f30e2cf2bce86335a1accaea6895",
+          "range": {
+            "start_line": 1,
+            "end_line": 430
+          },
+          "symbol": "command-registration"
+        },
+        {
+          "path": "src/plugins/command-registry-state.ts",
+          "blob_sha": "2b14ec0423e630588a9f72d1c7eab419a4e4c4d2",
+          "range": {
+            "start_line": 1,
+            "end_line": 79
+          },
+          "symbol": "command-registry-state"
+        },
+        {
+          "path": "src/plugins/command-specs.ts",
+          "blob_sha": "a7b921af199e35ae1d69467af2a548456df3d2b2",
+          "range": {
+            "start_line": 1,
+            "end_line": 117
+          },
+          "symbol": "command-specs"
+        },
+        {
+          "path": "src/plugins/commands.required-scopes.test.ts",
+          "blob_sha": "18ba779f970493a6a3bf8090060d070d6ffb7fd6",
+          "range": {
+            "start_line": 1,
+            "end_line": 88
+          },
+          "symbol": "commands.required-scopes"
+        },
+        {
+          "path": "src/plugins/commands.test.ts",
+          "blob_sha": "c39a87120cb5e4c0de10b22f7d4a571dcefbd1a2",
+          "range": {
+            "start_line": 1,
+            "end_line": 1209
+          },
+          "symbol": "commands"
+        },
+        {
+          "path": "src/plugins/commands.ts",
+          "blob_sha": "d4b97026163048bcb02f85fb218510d9c3ad4d40",
+          "range": {
+            "start_line": 1,
+            "end_line": 61
+          },
+          "symbol": "commands"
+        },
+        {
+          "path": "src/plugins/compaction-provider.test.ts",
+          "blob_sha": "e7c929a7fad3681666081049a0d84ab15cf0e9f8",
+          "range": {
+            "start_line": 1,
+            "end_line": 116
+          },
+          "symbol": "compaction-provider"
+        },
+        {
+          "path": "src/plugins/compaction-provider.ts",
+          "blob_sha": "e738ceb21b24f470cd55e5b3f9a04410428704d9",
+          "range": {
+            "start_line": 1,
+            "end_line": 22
+          },
+          "symbol": "compaction-provider"
+        },
+        {
+          "path": "src/plugins/compat/activation-hint-records.ts",
+          "blob_sha": "cc90ebd6be99d6cc5300c0a726905dd84792f0ec",
+          "range": {
+            "start_line": 1,
+            "end_line": 52
+          },
+          "symbol": "activation-hint-records"
+        },
+        {
+          "path": "src/plugins/compat/agent-harness-records.ts",
+          "blob_sha": "db1f46d1e7afde78c1879bdb4f84d523b6fa72c0",
+          "range": {
+            "start_line": 1,
+            "end_line": 127
+          },
+          "symbol": "agent-harness-records"
+        },
+        {
+          "path": "src/plugins/compat/agent-list-runtime-projection-records.ts",
+          "blob_sha": "c2329d509eb6fa1b76ad8112946ff22ca3f83ddc",
+          "range": {
+            "start_line": 1,
+            "end_line": 21
+          },
+          "symbol": "agent-list-runtime-projection-records"
+        },
+        {
+          "path": "src/plugins/compat/assistant-text-phase-terminal-hint-record.ts",
+          "blob_sha": "29df36e45e337d1a0b608d7ace76acb6b94759ff",
+          "range": {
+            "start_line": 1,
+            "end_line": 19
+          },
+          "symbol": "assistant-text-phase-terminal-hint-record"
+        },
+        {
+          "path": "src/plugins/compat/async-sqlite-preparation-records.ts",
+          "blob_sha": "0c547f485f78a5a47b5bf4b29848bcb325d782a8",
+          "range": {
+            "start_line": 1,
+            "end_line": 234
+          },
+          "symbol": "async-sqlite-preparation-records"
+        },
+        {
+          "path": "src/plugins/compat/auth-async-record.ts",
+          "blob_sha": "b1df96256d4197a49ff2b98183717d7afbcec9f3",
+          "range": {
+            "start_line": 1,
+            "end_line": 147
+          },
+          "symbol": "auth-async-record"
+        },
+        {
+          "path": "src/plugins/compat/binding-persistence-records.ts",
+          "blob_sha": "d2ef86f03c1066130174618a2c7b089a2574528e",
+          "range": {
+            "start_line": 1,
+            "end_line": 115
+          },
+          "symbol": "binding-persistence-records"
+        },
+        {
+          "path": "src/plugins/compat/channel-pairing-record.ts",
+          "blob_sha": "f645155e275c1a16d3db7f225a0dfdceeee46b94",
+          "range": {
+            "start_line": 1,
+            "end_line": 25
+          },
+          "symbol": "channel-pairing-record"
+        },
+        {
+          "path": "src/plugins/compat/channel-prepared-tool-policy-record.ts",
+          "blob_sha": "9da88b080f376f7e06c40ae310c5e6a57203a9fb",
+          "range": {
+            "start_line": 1,
+            "end_line": 27
+          },
+          "symbol": "channel-prepared-tool-policy-record"
+        },
+        {
+          "path": "src/plugins/compat/conversation-read-tools.ts",
+          "blob_sha": "5e4c42f7db272176882e4bcbb62adcdcde0ba01d",
+          "range": {
+            "start_line": 1,
+            "end_line": 48
+          },
+          "symbol": "conversation-read-tools"
+        },
+        {
+          "path": "src/plugins/compat/cron-store-path-record.ts",
+          "blob_sha": "88d9a1ea22291fb9579b2e22647f6c849ed4f060",
+          "range": {
+            "start_line": 1,
+            "end_line": 23
+          },
+          "symbol": "cron-store-path-record"
+        },
+        {
+          "path": "src/plugins/compat/deprecation-marking.ts",
+          "blob_sha": "95b3ddea3badc17389e63eb5a89b17d7981def91",
+          "range": {
+            "start_line": 1,
+            "end_line": 496
+          },
+          "symbol": "deprecation-marking"
+        },
+        {
+          "path": "src/plugins/compat/media-legacy-projection.ts",
+          "blob_sha": "113cd34050ddfe6b87c5899346e6c9b46ea84cec",
+          "range": {
+            "start_line": 1,
+            "end_line": 45
+          },
+          "symbol": "media-legacy-projection"
+        },
+        {
+          "path": "src/plugins/compat/memory-session-records.ts",
+          "blob_sha": "2103628a6dc9dd4f8c1ecab20919c7a346e15fa1",
+          "range": {
+            "start_line": 1,
+            "end_line": 74
+          },
+          "symbol": "memory-session-records"
+        },
+        {
+          "path": "src/plugins/compat/mention-inbox-deprecation.test.ts",
+          "blob_sha": "5d3167c44fe0511a32853733251a284d93d390dc",
+          "range": {
+            "start_line": 1,
+            "end_line": 54
+          },
+          "symbol": "mention-inbox-deprecation"
+        },
+        {
+          "path": "src/plugins/compat/mention-inbox-deprecation.ts",
+          "blob_sha": "9ced0d758e02f7323e8d77615ea30b4b71df0e07",
+          "range": {
+            "start_line": 1,
+            "end_line": 21
+          },
+          "symbol": "mention-inbox-deprecation"
+        },
+        {
+          "path": "src/plugins/compat/model-account-connect-deprecation.test.ts",
+          "blob_sha": "d30aec15fbb8d8e8e0756f216200e2a45689c963",
+          "range": {
+            "start_line": 1,
+            "end_line": 58
+          },
+          "symbol": "model-account-connect-deprecation"
+        },
+        {
+          "path": "src/plugins/compat/model-account-connect-deprecation.ts",
+          "blob_sha": "4f3a94e4c70c50daf6b72afd03e2021d2633b71d",
+          "range": {
+            "start_line": 1,
+            "end_line": 17
+          },
+          "symbol": "model-account-connect-deprecation"
+        },
+        {
+          "path": "src/plugins/compat/native-exec-approval-record.ts",
+          "blob_sha": "1e02a186a2355fc5e501f3dc2512be3d9e10f117",
+          "range": {
+            "start_line": 1,
+            "end_line": 25
+          },
+          "symbol": "native-exec-approval-record"
+        },
+        {
+          "path": "src/plugins/compat/plugin-sdk-private-runtime-export-record.ts",
+          "blob_sha": "3a95715468d9ad33df1fa120d26b95f674f10209",
+          "range": {
+            "start_line": 1,
+            "end_line": 87
+          },
+          "symbol": "plugin-sdk-private-runtime-export-record"
+        },
+        {
+          "path": "src/plugins/compat/plugin-sdk-removed-export-records.ts",
+          "blob_sha": "071986489a6c3f00c01718ee6c0f9a6872ecec76",
+          "range": {
+            "start_line": 1,
+            "end_line": 193
+          },
+          "symbol": "plugin-sdk-removed-export-records"
+        },
+        {
+          "path": "src/plugins/compat/plugin-sdk-subpath-records.ts",
+          "blob_sha": "14096401a8aa071d46f908d86b9218204ebf6643",
+          "range": {
+            "start_line": 1,
+            "end_line": 247
+          },
+          "symbol": "plugin-sdk-subpath-records"
+        },
+        {
+          "path": "src/plugins/compat/progress-receipt-handoff-record.ts",
+          "blob_sha": "ac462c4a5f7de9020bb29cb8eef43c0088e806ba",
+          "range": {
+            "start_line": 1,
+            "end_line": 28
+          },
+          "symbol": "progress-receipt-handoff-record"
+        },
+        {
+          "path": "src/plugins/compat/registry-records.ts",
+          "blob_sha": "4cae202259682223aad5bc6f6b069599b78ee9ec",
+          "range": {
+            "start_line": 1,
+            "end_line": 928
+          },
+          "symbol": "registry-records"
+        },
+        {
+          "path": "src/plugins/compat/registry.test.ts",
+          "blob_sha": "2b8ac18b9cb5ff5cd723b60c9814d5b0a145f443",
+          "range": {
+            "start_line": 1,
+            "end_line": 50
+          },
+          "symbol": "registry"
+        },
+        {
+          "path": "src/plugins/compat/registry.ts",
+          "blob_sha": "1754196078c09abf24aa217a52c8bcd09f86f694",
+          "range": {
+            "start_line": 1,
+            "end_line": 13
+          },
+          "symbol": "registry"
+        },
+        {
+          "path": "src/plugins/compat/reply-tool-authority-record.ts",
+          "blob_sha": "0ac2a339b3fcdc08d482b4d3849cec06777ed27f",
+          "range": {
+            "start_line": 1,
+            "end_line": 40
+          },
+          "symbol": "reply-tool-authority-record"
+        },
+        {
+          "path": "src/plugins/compat/session-persistence-records.ts",
+          "blob_sha": "9eb9f7243a431dc3019effc2002c3e349ed64221",
+          "range": {
+            "start_line": 1,
+            "end_line": 754
+          },
+          "symbol": "session-persistence-records"
+        },
+        {
+          "path": "src/plugins/compat/session-transcript-preparation-deprecation.ts",
+          "blob_sha": "c87054f4f4cffda4f452230050ff5843454dc658",
+          "range": {
+            "start_line": 1,
+            "end_line": 16
+          },
+          "symbol": "session-transcript-preparation-deprecation"
+        },
+        {
+          "path": "src/plugins/compat/session-transcript-view-record.ts",
+          "blob_sha": "710bcbf9619fef3c58097b87270ef7413f883d1e",
+          "range": {
+            "start_line": 1,
+            "end_line": 24
+          },
+          "symbol": "session-transcript-view-record"
+        },
+        {
+          "path": "src/plugins/compat/sqlite-runtime-records.ts",
+          "blob_sha": "e250f5c619081616fd1d6dc0c5071be33cac951c",
+          "range": {
+            "start_line": 1,
+            "end_line": 64
+          },
+          "symbol": "sqlite-runtime-records"
+        },
+        {
+          "path": "src/plugins/compat/transcript-stats-record.ts",
+          "blob_sha": "eb356c1aec0c85fd16b9e06bae8453e48f97a685",
+          "range": {
+            "start_line": 1,
+            "end_line": 37
+          },
+          "symbol": "transcript-stats-record"
+        },
+        {
+          "path": "src/plugins/compat/types.ts",
+          "blob_sha": "a7d3cee6421c2682993b45e35dbe7b133e1b358c",
+          "range": {
+            "start_line": 1,
+            "end_line": 21
+          },
+          "symbol": "types"
+        },
+        {
+          "path": "src/plugins/compat/web-search-provider-list-record.ts",
+          "blob_sha": "c935d0c95e19e3a4460b1ceb3fdc4a0fc609a7aa",
+          "range": {
+            "start_line": 1,
+            "end_line": 21
+          },
+          "symbol": "web-search-provider-list-record"
+        },
+        {
+          "path": "src/plugins/compat/workspace-mutation-guard.ts",
+          "blob_sha": "ef1b5d5eaf808180a010da00269638708d615a7e",
+          "range": {
+            "start_line": 1,
+            "end_line": 25
+          },
+          "symbol": "workspace-mutation-guard"
+        },
+        {
+          "path": "src/plugins/compiled-sdk-host.test-support.ts",
+          "blob_sha": "f7a1f109f334679e22087d2fd04a365d0665eb17",
+          "range": {
+            "start_line": 1,
+            "end_line": 105
+          },
+          "symbol": "compiled-sdk-host-support"
+        },
+        {
+          "path": "src/plugins/compiled-sdk-host.test.ts",
+          "blob_sha": "fb408c48c630c33be1ef289bda87c1f44e608f3d",
+          "range": {
+            "start_line": 1,
+            "end_line": 134
+          },
+          "symbol": "compiled-sdk-host"
+        },
+        {
+          "path": "src/plugins/computer-use-contract.test.ts",
+          "blob_sha": "6e3f7fd7521653cd72bf07713615e90f9aac0e3b",
+          "range": {
+            "start_line": 1,
+            "end_line": 419
+          },
+          "symbol": "computer-use-contract"
+        },
+        {
+          "path": "src/plugins/computer-use-contract.ts",
+          "blob_sha": "e2bbec1d819bec68ebdd8f4ec17db18c0e4595c4",
+          "range": {
+            "start_line": 1,
+            "end_line": 505
+          },
+          "symbol": "computer-use-contract"
+        },
+        {
+          "path": "src/plugins/computer-use-registration.ts",
+          "blob_sha": "b288e7e93191d5920cea1f0826308ed6957d0692",
+          "range": {
+            "start_line": 1,
+            "end_line": 238
+          },
+          "symbol": "computer-use-registration"
+        },
+        {
+          "path": "src/plugins/config-activation-shared.ts",
+          "blob_sha": "12c1f4b45e696e22ef1cab7c43c774bc01ad17e6",
+          "range": {
+            "start_line": 1,
+            "end_line": 207
+          },
+          "symbol": "config-activation-shared"
+        },
+        {
+          "path": "src/plugins/config-contract-matches.ts",
+          "blob_sha": "5e1510a51ec0064ca86492782a54acaf896b9533",
+          "range": {
+            "start_line": 1,
+            "end_line": 108
+          },
+          "symbol": "config-contract-matches"
+        },
+        {
+          "path": "src/plugins/config-contracts.test.ts",
+          "blob_sha": "90c191c0c3c81ddc058fa149c4d689566118ec67",
+          "range": {
+            "start_line": 1,
+            "end_line": 233
+          },
+          "symbol": "config-contracts"
+        },
+        {
+          "path": "src/plugins/config-contracts.ts",
+          "blob_sha": "48898087937442291fd17d1e81af01396513adf3",
+          "range": {
+            "start_line": 1,
+            "end_line": 177
+          },
+          "symbol": "config-contracts"
+        },
+        {
+          "path": "src/plugins/config-normalization-shared.ts",
+          "blob_sha": "f8ef3480e8ebe63d953eb3083cfe5983b828bc0f",
+          "range": {
+            "start_line": 1,
+            "end_line": 218
+          },
+          "symbol": "config-normalization-shared"
+        },
+        {
+          "path": "src/plugins/config-policy.test.ts",
+          "blob_sha": "2fa9fa52943049f8e8915d4fdb2e68a9ed5043e2",
+          "range": {
+            "start_line": 1,
+            "end_line": 64
+          },
+          "symbol": "config-policy"
+        },
+        {
+          "path": "src/plugins/config-policy.ts",
+          "blob_sha": "9f0365c5452c33c79a3e55d1d627426f45e5bdca",
+          "range": {
+            "start_line": 1,
+            "end_line": 3
+          },
+          "symbol": "config-policy"
+        },
+        {
+          "path": "src/plugins/config-schema.test.ts",
+          "blob_sha": "345bf47325ecd8527e4a0560e01a50c6190a976d",
+          "range": {
+            "start_line": 1,
+            "end_line": 115
+          },
+          "symbol": "config-schema"
+        },
+        {
+          "path": "src/plugins/config-schema.ts",
+          "blob_sha": "e7cf551cca9118e97d05e7cfc64dbcd74b08c69b",
+          "range": {
+            "start_line": 1,
+            "end_line": 145
+          },
+          "symbol": "config-schema"
+        },
+        {
+          "path": "src/plugins/config-state.test.ts",
+          "blob_sha": "1645fddbd6c4d2c6963d198868b21033ba3ce45d",
+          "range": {
+            "start_line": 1,
+            "end_line": 451
+          },
+          "symbol": "config-state"
+        },
+        {
+          "path": "src/plugins/config-state.ts",
+          "blob_sha": "80ab6d3a7c9c0aeafeb59f9247c9eee19b1fdc4e",
+          "range": {
+            "start_line": 1,
+            "end_line": 260
+          },
+          "symbol": "config-state"
+        },
+        {
+          "path": "src/plugins/contracts/active-run-steering.contract.test.ts",
+          "blob_sha": "b893fe0780c1a9a349f72b91f1d3d9f7bea8e2d9",
+          "range": {
+            "start_line": 1,
+            "end_line": 305
+          },
+          "symbol": "active-run-steering.contract"
+        },
+        {
+          "path": "src/plugins/contracts/agent-event-payload.contract.test.ts",
+          "blob_sha": "e1ddfb89b3824e5e0070bb05f720d305d6d3d391",
+          "range": {
+            "start_line": 1,
+            "end_line": 129
+          },
+          "symbol": "agent-event-payload.contract"
+        },
+        {
+          "path": "src/plugins/contracts/auth-choice.contract.test.ts",
+          "blob_sha": "e88e0234fe3772b07fedee0776bd400b93b490c2",
+          "range": {
+            "start_line": 1,
+            "end_line": 103
+          },
+          "symbol": "auth-choice.contract"
+        },
+        {
+          "path": "src/plugins/contracts/boundary-invariants.test.ts",
+          "blob_sha": "670d679bc58abe6044d740e0227bc95c3eaca93c",
+          "range": {
+            "start_line": 1,
+            "end_line": 337
+          },
+          "symbol": "boundary-invariants"
+        },
+        {
+          "path": "src/plugins/contracts/bundled-extension-config-api-guardrails.test.ts",
+          "blob_sha": "28c61fbedb0f4b7c894efd1ad73d3b803ddb87d1",
+          "range": {
+            "start_line": 1,
+            "end_line": 69
+          },
+          "symbol": "bundled-extension-config-api-guardrails"
+        },
+        {
+          "path": "src/plugins/contracts/capability-catalog.contract.test.ts",
+          "blob_sha": "67ac28b12ca8a15ade41dbfea4c18488bc051f86",
+          "range": {
+            "start_line": 1,
+            "end_line": 143
+          },
+          "symbol": "capability-catalog.contract"
+        },
+        {
+          "path": "src/plugins/contracts/channel-config-writes.contract.test.ts",
+          "blob_sha": "659a2a9ef0e6356ad4f42bd638ea68509965a3ba",
+          "range": {
+            "start_line": 1,
+            "end_line": 68
+          },
+          "symbol": "channel-config-writes.contract"
+        },
+        {
+          "path": "src/plugins/contracts/channel-history-limit.contract.test.ts",
+          "blob_sha": "c22571d4906ac46278a4219cb446bc4e607a4e02",
+          "range": {
+            "start_line": 1,
+            "end_line": 31
+          },
+          "symbol": "channel-history-limit.contract"
+        },
+        {
+          "path": "src/plugins/contracts/channel-media-max-mb.contract.test.ts",
+          "blob_sha": "dc7b9fd6b028c0c01a3ecba1b76b0f8ace47bb95",
+          "range": {
+            "start_line": 1,
+            "end_line": 36
+          },
+          "symbol": "channel-media-max-mb.contract"
+        },
+        {
+          "path": "src/plugins/contracts/channel-provider-skills.contract.test.ts",
+          "blob_sha": "a5bc66bff3e5647a321b1a607a8f061fc2b22a16",
+          "range": {
+            "start_line": 1,
+            "end_line": 128
+          },
+          "symbol": "channel-provider-skills.contract"
+        },
+        {
+          "path": "src/plugins/contracts/channel-reply-to-mode.contract.test.ts",
+          "blob_sha": "324dd9bf644a870b553e9224460398c42d2250e2",
+          "range": {
+            "start_line": 1,
+            "end_line": 16
+          },
+          "symbol": "channel-reply-to-mode.contract"
+        },
+        {
+          "path": "src/plugins/contracts/channel-response-prefix.contract.test.ts",
+          "blob_sha": "ffefff86d65f355c09eae03beb244bdcd0d26212",
+          "range": {
+            "start_line": 1,
+            "end_line": 49
+          },
+          "symbol": "channel-response-prefix.contract"
+        },
+        {
+          "path": "src/plugins/contracts/config-boundary-guard.test.ts",
+          "blob_sha": "063a7eeeb4d1e9ef88917f373123ae87a24d2fc2",
+          "range": {
+            "start_line": 1,
+            "end_line": 289
+          },
+          "symbol": "config-boundary-guard"
+        },
+        {
+          "path": "src/plugins/contracts/config-footprint-guardrails.test.ts",
+          "blob_sha": "9a459f0789f9e56c515f5ba517e5841f607a0b11",
+          "range": {
+            "start_line": 1,
+            "end_line": 258
+          },
+          "symbol": "config-footprint-guardrails"
+        },
+        {
+          "path": "src/plugins/contracts/core-extension-facade-boundary.test.ts",
+          "blob_sha": "50f11181509426f2dabc0e8c0201c806f9d48b24",
+          "range": {
+            "start_line": 1,
+            "end_line": 82
+          },
+          "symbol": "core-extension-facade-boundary"
+        },
+        {
+          "path": "src/plugins/contracts/deprecated-internal-config-api.test.ts",
+          "blob_sha": "ae930e5d4b6a7cc038d4772f119f064b3d3502f3",
+          "range": {
+            "start_line": 1,
+            "end_line": 17
+          },
+          "symbol": "deprecated-internal-config-api"
+        },
+        {
+          "path": "src/plugins/contracts/embedding-provider.contract.test.ts",
+          "blob_sha": "7724402db636bb9d4c51aa7648bc27dc46895d00",
+          "range": {
+            "start_line": 1,
+            "end_line": 89
+          },
+          "symbol": "embedding-provider.contract"
+        },
+        {
+          "path": "src/plugins/contracts/extension-package-project-boundaries.test.ts",
+          "blob_sha": "20f03f4ad707438c061eb5a6f72ecf4b9065f97e",
+          "range": {
+            "start_line": 1,
+            "end_line": 538
+          },
+          "symbol": "extension-package-project-boundaries"
+        },
+        {
+          "path": "src/plugins/contracts/extension-runtime-dependencies.contract.test.ts",
+          "blob_sha": "c7cd8217902a5c1570f7b3ffc0028d0bc2b0abff",
+          "range": {
+            "start_line": 1,
+            "end_line": 476
+          },
+          "symbol": "extension-runtime-dependencies.contract"
+        },
+        {
+          "path": "src/plugins/contracts/extension-test-api-consumption.test.ts",
+          "blob_sha": "513c4bb7676ccc231dde4eb9fb8ef69f9f73c9d5",
+          "range": {
+            "start_line": 1,
+            "end_line": 205
+          },
+          "symbol": "extension-test-api-consumption"
+        },
+        {
+          "path": "src/plugins/contracts/host-hook-fixture.ts",
+          "blob_sha": "199053d1532e558b73caf0215f53fe47053e3da4",
+          "range": {
+            "start_line": 1,
+            "end_line": 57
+          },
+          "symbol": "host-hook-fixture"
+        },
+        {
+          "path": "src/plugins/contracts/host-hook-state.identity.test.ts",
+          "blob_sha": "27271822ec435474d1ee7ae990f38d563537cc8e",
+          "range": {
+            "start_line": 1,
+            "end_line": 254
+          },
+          "symbol": "host-hook-state.identity"
+        },
+        {
+          "path": "src/plugins/contracts/host-hooks.contract.test.ts",
+          "blob_sha": "e2c4dfa41d1a1e19c8b98edfd10c000d60c575a6",
+          "range": {
+            "start_line": 1,
+            "end_line": 1874
+          },
+          "symbol": "host-hooks.contract"
+        },
+        {
+          "path": "src/plugins/contracts/inventory/bundled-capability-metadata.ts",
+          "blob_sha": "fdb0dfe2fb4a7c4e1396cbca097224fd8adc4dfd",
+          "range": {
+            "start_line": 1,
+            "end_line": 182
+          },
+          "symbol": "bundled-capability-metadata"
+        },
+        {
+          "path": "src/plugins/contracts/model-catalog-core-imports.test.ts",
+          "blob_sha": "9925531bd0c4f798534861070bd47b412d175dc8",
+          "range": {
+            "start_line": 1,
+            "end_line": 87
+          },
+          "symbol": "model-catalog-core-imports"
+        },
+        {
+          "path": "src/plugins/contracts/package-manifest.contract.test.ts",
+          "blob_sha": "c39502b811e4f1db3c56f9abd6402f039b393476",
+          "range": {
+            "start_line": 1,
+            "end_line": 205
+          },
+          "symbol": "package-manifest.contract"
+        },
+        {
+          "path": "src/plugins/contracts/plugin-entry-guardrails.test.ts",
+          "blob_sha": "c25df98ff3ab82fb99e45bf15cac5cf6a3176a22",
+          "range": {
+            "start_line": 1,
+            "end_line": 337
+          },
+          "symbol": "plugin-entry-guardrails"
+        },
+        {
+          "path": "src/plugins/contracts/plugin-registration.contract.test.ts",
+          "blob_sha": "a2cf20c0aacc41ca4869e87058d673ab49a7dfc2",
+          "range": {
+            "start_line": 1,
+            "end_line": 27
+          },
+          "symbol": "plugin-registration.contract"
+        },
+        {
+          "path": "src/plugins/contracts/plugin-sdk-index.bundle.test.ts",
+          "blob_sha": "10620079bc3e8d4b862fa631cea713db7c1a6007",
+          "range": {
+            "start_line": 1,
+            "end_line": 97
+          },
+          "symbol": "plugin-sdk-index.bundle"
+        },
+        {
+          "path": "src/plugins/contracts/plugin-sdk-package-contract-guardrails.test.ts",
+          "blob_sha": "927920cd0dfeea31347e405e1b4ae8aebdd6c091",
+          "range": {
+            "start_line": 1,
+            "end_line": 806
+          },
+          "symbol": "plugin-sdk-package-contract-guardrails"
+        },
+        {
+          "path": "src/plugins/contracts/plugin-sdk-runtime-api-guardrails.test.ts",
+          "blob_sha": "8c4756ea892618d1fcc3bb2616954ae7c66b97f9",
+          "range": {
+            "start_line": 1,
+            "end_line": 832
+          },
+          "symbol": "plugin-sdk-runtime-api-guardrails"
+        },
+        {
+          "path": "src/plugins/contracts/plugin-sdk-subpaths.test.ts",
+          "blob_sha": "f75eb52e20882e204d0837ae8c522a62ca51eab0",
+          "range": {
+            "start_line": 1,
+            "end_line": 1019
+          },
+          "symbol": "plugin-sdk-subpaths"
+        },
+        {
+          "path": "src/plugins/contracts/plugin-testing-harness.contract.test.ts",
+          "blob_sha": "19eba480e72768750aea34cb62b426a42ea50d81",
+          "range": {
+            "start_line": 1,
+            "end_line": 73
+          },
+          "symbol": "plugin-testing-harness.contract"
+        },
+        {
+          "path": "src/plugins/contracts/plugin-tool-contracts.test.ts",
+          "blob_sha": "e286cf4545c3caaf9525acfc5d143f6b741a0d93",
+          "range": {
+            "start_line": 1,
+            "end_line": 164
+          },
+          "symbol": "plugin-tool-contracts"
+        },
+        {
+          "path": "src/plugins/contracts/provider-catalog-deprecation.contract.test.ts",
+          "blob_sha": "a3d72e37dae910ac9885cffacc519745ca12a312",
+          "range": {
+            "start_line": 1,
+            "end_line": 124
+          },
+          "symbol": "provider-catalog-deprecation.contract"
+        }
+      ],
+      "evidence_refs": [
+        "source/host/tests/openclaw_plugins_contract.rs",
+        "projects/openclaw-rust/dossiers/plugins-runtime-scoped.md"
+      ],
+      "requirement_ids": [
+        "OCRM-R04",
+        "OCRM-R08",
+        "OCRM-R09",
+        "OCRM-R21",
+        "OCRM-R24",
+        "OCRM-AC08",
+        "OCRM-AC21",
+        "OCRM-AC24"
+      ],
+      "required_gate_ids": [
+        "OCRM-G04-rust-contract",
+        "OCRM-G05-frozen-oracle"
+      ],
+      "oracle_ids": [
+        "OCRM-PLUGINS-CATALOG-O01"
+      ],
+      "adr_refs": [],
+      "blocker_ids": [
+        "BL-PLUGINS-CATALOG-WIRING-001"
+      ],
+      "target": {
+        "path": "source/host/src/extensions/plugins/capability_catalog.rs",
+        "symbol": "PluginCapabilityCatalog",
+        "language": "Rust"
+      },
+      "required_evidence_dimensions": [
+        "unit",
+        "format"
+      ],
+      "reviewer": "xuyao@ombhrum.com",
+      "migration_rollback": "Use hardcoded speech provider routes and bypass dynamic plugin capability resolution"
     }
   ],
   "schema_version": 1,
