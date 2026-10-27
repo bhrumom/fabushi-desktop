@@ -5,6 +5,7 @@ use std::thread;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 use flate2::read::GzDecoder;
+use mahayana_host_runtime::device_pairing_owner::DevicePairingOwner;
 use mahayana_host_runtime::gateway_config::{GatewayServerConfig, GatewayTlsConfig};
 use mahayana_host_runtime::gateway_server::{
     GatewayApi, GatewayBridgeHub, GatewayCommandContext, GatewayCommandError,
@@ -76,6 +77,65 @@ impl GatewayApi for TestApi {
     fn prepare_for_upgrade(&self) -> Result<Value, GatewayCommandError> {
         Ok(json!({ "quiescing": true, "runningTurns": 2 }))
     }
+}
+
+struct PairingOwnerApi {
+    owner: Arc<DevicePairingOwner>,
+}
+
+impl GatewayApi for PairingOwnerApi {
+    fn call(&self, method: &str, _args: Value) -> Result<Value, GatewayCommandError> {
+        Err(GatewayCommandError::UnknownMethod(method.to_string()))
+    }
+
+    fn redeem_device_pairing_join_code(
+        &self,
+        shortcode: &str,
+    ) -> Result<Option<Value>, GatewayCommandError> {
+        self.owner.redeem_device_pairing_join_code(shortcode)
+    }
+}
+
+#[test]
+fn gateway_pairing_join_route_reaches_sqlite_owner_and_burns_code() {
+    let owner = Arc::new(DevicePairingOwner::in_memory().expect("pairing owner"));
+    let expires_at_ms = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .expect("system clock")
+        .as_millis() as i64
+        + 60_000;
+    let code = owner
+        .register_device_pairing_join_code(&json!({
+            "deviceId": "device-owner-backed",
+            "setupCode": "secret-payload",
+        }), expires_at_ms)
+        .expect("register owner-backed join code");
+    let server = start_gateway_server(GatewayServerDeps {
+        api: Arc::new(PairingOwnerApi { owner }),
+        events: GatewayEventHub::default(),
+        local_exec: None,
+        webauthn: None,
+        config: config(Some("gateway-token")),
+        started_at: 2,
+    })
+    .expect("gateway server");
+    let port = server.port();
+    let first = request(
+        port,
+        &format!(
+            "GET /j/{code} HTTP/1.1\r\nHost: 127.0.0.1\r\nConnection: close\r\n\r\n"
+        ),
+    );
+    assert!(first.starts_with("HTTP/1.1 200 OK"), "{first}");
+    assert_eq!(json_body(&first)["deviceId"], "device-owner-backed");
+    let second = request(
+        port,
+        &format!(
+            "GET /j/{code} HTTP/1.1\r\nHost: 127.0.0.1\r\nConnection: close\r\n\r\n"
+        ),
+    );
+    assert!(second.starts_with("HTTP/1.1 404 Not Found"), "{second}");
+    server.close();
 }
 
 #[test]

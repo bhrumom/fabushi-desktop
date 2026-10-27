@@ -3457,7 +3457,8 @@
       "tests": [
         "source/host/tests/device_pairing_contract.rs::test_ocrm_pair_o12_setup_code",
         "source/host/tests/device_pairing_contract.rs::test_ocrm_pair_o13_join_code_validation_and_path_parsing",
-        "source/host/tests/gateway_server_contract.rs::gateway_public_pairing_join_route_redeems_once_and_rejects_query_or_empty_code"
+        "source/host/tests/gateway_server_contract.rs::gateway_public_pairing_join_route_redeems_once_and_rejects_query_or_empty_code",
+        "source/host/tests/gateway_server_contract.rs::gateway_pairing_join_route_reaches_sqlite_owner_and_burns_code"
       ],
       "typed_contracts": [
         "Join code verification and generation"
