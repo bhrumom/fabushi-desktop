@@ -399,6 +399,18 @@ fn test_ocrm_snapshot_postgres_manifest_schema_and_profile_oracles() {
         vec![Ok(b"{\"id\":1}".to_vec())],
     )
     .is_err());
+    mahayana_host_runtime::extensions::snapshot::git_backup_manager::validate_sqlite_table_name(
+        "_messages2",
+    )
+    .expect("safe SQLite table name");
+    assert!(mahayana_host_runtime::extensions::snapshot::git_backup_manager::validate_sqlite_table_name(
+        "messages.jsonl",
+    )
+    .is_err());
+    assert!(mahayana_host_runtime::extensions::snapshot::git_backup_manager::validate_sqlite_table_name(
+        "messages;DROP TABLE users",
+    )
+    .is_err());
 }
 
 #[test]

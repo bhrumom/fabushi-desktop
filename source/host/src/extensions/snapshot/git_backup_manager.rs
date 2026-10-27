@@ -21,6 +21,21 @@ const MAX_POSTGRES_SEQUENCE: u64 = 9_223_372_036_854_775_807;
 const MAX_EXPORT_MANIFEST_BYTES: usize = 1024 * 1024;
 const SQLITE_TABLE_BATCH_BYTES: usize = 1024 * 1024;
 
+pub fn validate_sqlite_table_name(value: &str) -> Result<(), String> {
+    let mut chars = value.chars();
+    let Some(first) = chars.next() else {
+        return Err("SQLite backup table name is empty".into());
+    };
+    if !(first.is_ascii_alphabetic() || first == '_')
+        || !chars.all(|ch| ch.is_ascii_alphanumeric() || ch == '_')
+    {
+        return Err(format!(
+            "SQLite backup table name is not filesystem-safe: {value}"
+        ));
+    }
+    Ok(())
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SnapshotExportEnvelope {
     pub version: u32,
