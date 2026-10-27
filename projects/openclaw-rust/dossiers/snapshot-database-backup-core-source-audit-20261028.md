@@ -113,6 +113,12 @@ passes a real manifest and rejects symlink and hard-link aliases. This is still
 an owner-side admission boundary, not proof of database restore or consumer
 wiring.
 
+`admit_postgres_export` now composes the bounded manifest read, artifact
+custody, anchor identity, and generation fence into one owner admission path.
+The contract proves both admission and rejection after a generation advance.
+It deliberately stops before PostgreSQL/SQLite materialization and namespace
+cleanup, which remain the next production frontier.
+
 ## Responsibility/evidence decision
 
 `OCRM-RESP-SNAPSHOT-BACKUP-CODEC-001` remains `read=partial`,

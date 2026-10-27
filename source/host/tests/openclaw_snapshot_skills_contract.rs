@@ -8,7 +8,7 @@ use mahayana_host_runtime::extensions::skills::skill_runtime::{
 use mahayana_host_runtime::extensions::snapshot::git_backup_manager::{
     assert_database_artifact, capture_database_artifact, create_export_envelope,
     assert_fresh_restore_target, assert_no_sqlite_sidecars, parse_postgres_export_manifest,
-    new_restore_namespace, read_postgres_export_manifest,
+    admit_postgres_export, new_restore_namespace, read_postgres_export_manifest,
     verify_export_envelope, verify_postgres_anchor_identity, verify_postgres_export_artifacts,
     write_postgres_export_manifest,
     SnapshotGenerationFence,
@@ -190,6 +190,32 @@ fn test_ocrm_snapshot_postgres_manifest_schema_and_profile_oracles() {
     let wrong_anchor = parse_postgres_export_manifest(&wrong_anchor, "snap-002", Some("exact"))
         .expect("parse wrong-anchor manifest");
     assert!(verify_postgres_anchor_identity(export_dir.join("anchor.sqlite"), &wrong_anchor).is_err());
+
+    let admission_manifest_path = export_dir.join("manifest.json");
+    write_postgres_export_manifest(&admission_manifest_path, &artifact_manifest, "snap-002")
+        .expect("write admission manifest");
+    let admission_fence = SnapshotGenerationFence::new(11);
+    let admitted = admit_postgres_export(
+        &export_dir,
+        &admission_manifest_path,
+        "snap-002",
+        "exact",
+        &admission_fence,
+        11,
+    )
+    .expect("admit complete export");
+    assert_eq!(admitted.snapshot_id, "snap-002");
+    admission_fence.advance();
+    assert!(admit_postgres_export(
+        &export_dir,
+        &admission_manifest_path,
+        "snap-002",
+        "exact",
+        &admission_fence,
+        11,
+    )
+    .is_err());
+    let _ = fs::remove_file(admission_manifest_path);
     let _ = fs::remove_dir_all(&export_root);
 
     let manifest_path = std::env::temp_dir().join(format!(

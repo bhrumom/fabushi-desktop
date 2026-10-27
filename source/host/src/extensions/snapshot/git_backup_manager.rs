@@ -240,6 +240,29 @@ pub fn read_postgres_export_manifest(
     parse_postgres_export_manifest(&value, expected_id, required_profile)
 }
 
+/// Admit a complete Postgres export into the Rust owner without materializing
+/// it yet. Every check is repeated around the read so an account/database
+/// generation transition cannot publish a stale admission result.
+pub fn admit_postgres_export(
+    directory: impl AsRef<Path>,
+    manifest_path: impl AsRef<Path>,
+    expected_id: &str,
+    required_profile: &str,
+    fence: &SnapshotGenerationFence,
+    expected_generation: u64,
+) -> Result<PostgresExportManifest, String> {
+    fence.assert_current(expected_generation)?;
+    let manifest = read_postgres_export_manifest(
+        manifest_path,
+        expected_id,
+        Some(required_profile),
+    )?;
+    verify_postgres_export_artifacts(&directory, &manifest, required_profile)?;
+    verify_postgres_anchor_identity(directory.as_ref().join("anchor.sqlite"), &manifest)?;
+    fence.assert_current(expected_generation)?;
+    Ok(manifest)
+}
+
 fn has_millisecond_timestamp(value: &str) -> bool {
     if value.len() < 24
         || value.as_bytes().get(19) != Some(&b'.')
