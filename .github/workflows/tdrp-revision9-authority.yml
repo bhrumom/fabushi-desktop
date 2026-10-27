@@ -6,6 +6,7 @@ on:
   pull_request:
     paths:
       - "scripts/*tdrp*.mjs"
+      - "scripts/test-tdrp-revision9-identity-contract.mjs"
       - "projects/telegram-desktop-rust/**"
       - ".github/workflows/tdrp-revision9-authority.yml"
   workflow_dispatch:
@@ -33,6 +34,8 @@ jobs:
         run: |
           set -euo pipefail
           test "$(git rev-parse HEAD)" = "${TDRP_TARGET_SHA}"
+      - name: Test historical/candidate source identity separation
+        run: node scripts/test-tdrp-revision9-identity-contract.mjs
       - name: Validate Revision 9 source authority
         env:
           GITHUB_TOKEN: ${{ github.token }}
