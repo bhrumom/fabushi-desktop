@@ -236,3 +236,8 @@ Positive generic-scope and invalid identity/table oracles pass. It is manifest
 admission only; filesystem ownership, staging publication, and restore schema
 migration remain pending.
 
+`read_git_backup_manifest` now holds a bounded unaliased file handle, rejects
+symlink/hardlink/non-regular manifests, caps input at 1 MiB, and delegates to
+the strict parser. Real-file, symlink, and hardlink oracles pass; Git repository
+ownership/preflight and artifact publication remain outside this owner.
+
