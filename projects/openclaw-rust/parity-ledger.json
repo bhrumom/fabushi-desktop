@@ -10,10 +10,10 @@
     "ui_accepted": false
   },
   "file_coverage": {
-    "mapped_paths": 311,
+    "mapped_paths": 323,
     "omitted_known": 0,
     "tracked_paths": 58750,
-    "unclassified_paths": 58439
+    "unclassified_paths": 58427
   },
   "inventory_authority": {
     "manifest_source": "GitHub Actions immutable artifact candidate",
@@ -15379,6 +15379,284 @@
         "disable_reasoning_for_image_retry_payload"
       ],
       "unit_id": "OCRM-UNIT-MEDIA-UND-006"
+    },
+    {
+      "adr_refs": [],
+      "behavior": "Media understanding provider registry assembly, provider metadata lookup, default model resolution, auto-priority sorting, and capability registry construction.",
+      "blocker_ids": [
+        "BL-MEDIA-UND-PROVIDER-REGISTRY-PLUGIN-WIRING-001"
+      ],
+      "capability_ids": [
+        "media.understanding.provider_registry"
+      ],
+      "dependencies": [
+        "mahayana_host_runtime::extensions::attachments::media_understanding_service"
+      ],
+      "evidence_refs": [
+        "source/host/tests/openclaw_media_understanding_contract.rs",
+        "projects/openclaw-rust/dossiers/media-understanding-provider-registry-scoped.md"
+      ],
+      "existing_owner_candidates": [
+        {
+          "path": "source/host/src/extensions/attachments/media_understanding_service.rs",
+          "reason": "Media understanding provider registry and metadata manager"
+        }
+      ],
+      "id": "OCRM-RESP-MEDIA-UND-PROVIDER-REGISTRY-001",
+      "integration": {
+        "consumer": "source/host/src/extensions/attachments/media_understanding_service.rs",
+        "entrypoint": "source/host/src/extensions/attachments/media_understanding_service.rs::resolve_default_media_model_from_registry",
+        "owner": "source/host/src/extensions/attachments/media_understanding_service.rs",
+        "producer": "source/host/src/extensions/attachments/media_understanding_service.rs"
+      },
+      "invariants": [
+        "Provider IDs are case-insensitively trimmed and normalized across all lookups",
+        "Auto-key provider resolution sorts ascending by autoPriority and breaks ties by provider id",
+        "Configured providers advertising image capability are dynamically auto-registered"
+      ],
+      "migration_rollback": "Use static hardcoded provider mapping",
+      "oracle_ids": [
+        "OCRM-MEDIA-UND-O26"
+      ],
+      "owner_decision": "Implement media understanding provider registry, metadata lookups, and auto-priority resolution in media_understanding_service",
+      "postconditions": [
+        "Default model resolved or sorted provider list returned"
+      ],
+      "preconditions": [
+        "Provider registry and target capability provided"
+      ],
+      "required_evidence_dimensions": [
+        "unit",
+        "format"
+      ],
+      "required_gate_ids": [
+        "OCRM-G04-rust-contract",
+        "OCRM-G05-frozen-oracle"
+      ],
+      "requirement_ids": [
+        "OCRM-R24",
+        "OCRM-AC24"
+      ],
+      "responsibility_kind": "business-runtime",
+      "reviewer": "xuyao@ombhrum.com",
+      "risk": "Low; routes media understanding requests to optimal provider models based on configuration",
+      "selected_owner": "source/host/src/extensions/attachments/media_understanding_service.rs",
+      "source_refs": [
+        {
+          "blob_sha": "d7180e060c4bc752fcfa1c68f11d164d1421f14a",
+          "path": "src/media-understanding/provider-registry-metadata.ts",
+          "range": {
+            "end_line": 39,
+            "start_line": 1
+          },
+          "symbol": "resolveDefaultMediaModelFromRegistry, resolveAutoMediaKeyProvidersFromRegistry"
+        },
+        {
+          "blob_sha": "d040a927fa1e48bc8a9eb482a52efc1969a53167",
+          "path": "src/media-understanding/provider-registry.ts",
+          "range": {
+            "end_line": 80,
+            "start_line": 1
+          },
+          "symbol": "buildMediaUnderstandingRegistry, getMediaUnderstandingProvider"
+        },
+        {
+          "blob_sha": "522198031d22ae2a0614820875e5332156891ebc",
+          "path": "src/media-understanding/provider-registry.test.ts",
+          "range": {
+            "end_line": 142,
+            "start_line": 1
+          },
+          "symbol": "provider registry construction test suite"
+        },
+        {
+          "blob_sha": "4a7199c4ebcb983375cb4b3f8863aa992f9b8893",
+          "path": "src/media-understanding/provider-registry.clawrouter.test.ts",
+          "range": {
+            "end_line": 85,
+            "start_line": 1
+          },
+          "symbol": "clawrouter provider registration test suite"
+        },
+        {
+          "blob_sha": "f10cf7a30cf4ad496c098198f3b610cff28114c0",
+          "path": "src/media-understanding/provider-capability-registry.ts",
+          "range": {
+            "end_line": 51,
+            "start_line": 1
+          },
+          "symbol": "buildMediaUnderstandingCapabilityRegistry"
+        },
+        {
+          "blob_sha": "28e21a2245b73678077ceb7ef0063e18a0ffbb64",
+          "path": "src/media-understanding/provider-capability-registry.test.ts",
+          "range": {
+            "end_line": 50,
+            "start_line": 1
+          },
+          "symbol": "provider capability registry test suite"
+        },
+        {
+          "blob_sha": "9e5c4644e5bc1452bc5d63ff2fba4dfa34346908",
+          "path": "src/media-understanding/provider-capability-registry.loading.test.ts",
+          "range": {
+            "end_line": 126,
+            "start_line": 1
+          },
+          "symbol": "capability registry dynamic provider loading test suite"
+        }
+      ],
+      "status": {
+        "acceptance": "pending",
+        "implementation": "implemented",
+        "mapping": "reviewed",
+        "read": "read-complete",
+        "verification": "not-run",
+        "wiring": "not-wired"
+      },
+      "target": {
+        "language": "Rust",
+        "path": "source/host/src/extensions/attachments/media_understanding_service.rs",
+        "symbol": "resolve_default_media_model_from_registry, resolve_auto_media_key_providers_from_registry, build_media_understanding_registry, normalize_media_provider_id"
+      },
+      "tests": [
+        "source/host/tests/openclaw_media_understanding_contract.rs::test_ocrm_media_und_o26_provider_registry_and_auto_priority_sorting"
+      ],
+      "typed_contracts": [
+        "resolve_default_media_model_from_registry",
+        "resolve_auto_media_key_providers_from_registry",
+        "build_media_understanding_registry"
+      ],
+      "unit_id": "OCRM-UNIT-MEDIA-UND-007"
+    },
+    {
+      "adr_refs": [],
+      "behavior": "Media understanding provider execution context formulation, base URL and header hierarchy merging, and JSON response transport management.",
+      "blocker_ids": [
+        "BL-MEDIA-UND-PROVIDER-EXEC-HTTP-WIRING-001"
+      ],
+      "capability_ids": [
+        "media.understanding.provider_execution"
+      ],
+      "dependencies": [
+        "mahayana_host_runtime::extensions::attachments::media_understanding_service"
+      ],
+      "evidence_refs": [
+        "source/host/tests/openclaw_media_understanding_contract.rs",
+        "projects/openclaw-rust/dossiers/media-understanding-provider-registry-scoped.md"
+      ],
+      "existing_owner_candidates": [
+        {
+          "path": "source/host/src/extensions/attachments/media_understanding_service.rs",
+          "reason": "Provider execution context and header merger"
+        }
+      ],
+      "id": "OCRM-RESP-MEDIA-UND-PROVIDER-EXEC-001",
+      "integration": {
+        "consumer": "source/host/src/extensions/attachments/media_understanding_service.rs",
+        "entrypoint": "source/host/src/extensions/attachments/media_understanding_service.rs::resolve_provider_request_context",
+        "owner": "source/host/src/extensions/attachments/media_understanding_service.rs",
+        "producer": "source/host/src/extensions/attachments/media_understanding_service.rs"
+      },
+      "invariants": [
+        "Request context merges base URL along entry -> tools -> provider precedence",
+        "Headers are merged additively with entry overrides taking precedence",
+        "Empty or whitespace-only base URLs are discarded in favor of fallback URLs"
+      ],
+      "migration_rollback": "Use static unmerged provider request headers",
+      "oracle_ids": [
+        "OCRM-MEDIA-UND-O27"
+      ],
+      "owner_decision": "Implement provider request context resolution and header merging in media_understanding_service",
+      "postconditions": [
+        "Resolved base URL and merged headers returned"
+      ],
+      "preconditions": [
+        "Provider, tools, and entry request configurations provided"
+      ],
+      "required_evidence_dimensions": [
+        "unit",
+        "format"
+      ],
+      "required_gate_ids": [
+        "OCRM-G04-rust-contract",
+        "OCRM-G05-frozen-oracle"
+      ],
+      "requirement_ids": [
+        "OCRM-R24",
+        "OCRM-AC24"
+      ],
+      "responsibility_kind": "business-runtime",
+      "reviewer": "xuyao@ombhrum.com",
+      "risk": "Low; coordinates provider HTTP request dispatch without leaking sensitive tokens",
+      "selected_owner": "source/host/src/extensions/attachments/media_understanding_service.rs",
+      "source_refs": [
+        {
+          "blob_sha": "dcf3cbcf47976e105e463a0bfb5cb2b528a4adab",
+          "path": "src/media-understanding/provider-execution.ts",
+          "range": {
+            "end_line": 271,
+            "start_line": 1
+          },
+          "symbol": "resolveProviderRequestContext, hasProviderAuthAvailable"
+        },
+        {
+          "blob_sha": "1c746e8c750e396aa7001402263da393a525f053",
+          "path": "src/media-understanding/provider-json-post.ts",
+          "range": {
+            "end_line": 35,
+            "start_line": 1
+          },
+          "symbol": "postJsonResponse"
+        },
+        {
+          "blob_sha": "2f6e917d84877fe9fc7a0c0e86b24040d7c35581",
+          "path": "src/media-understanding/shared.test.ts",
+          "range": {
+            "end_line": 451,
+            "start_line": 1
+          },
+          "symbol": "shared provider execution test suite"
+        },
+        {
+          "blob_sha": "2e0614867ee4cb6987e9ecbc0195e8067b57bf78",
+          "path": "src/media-understanding/media-config.test-support.ts",
+          "range": {
+            "end_line": 26,
+            "start_line": 1
+          },
+          "symbol": "media config test fixtures"
+        },
+        {
+          "blob_sha": "87e3845b7ee2e9bc238541c6f49962a74c2ae745",
+          "path": "src/media-understanding/media-understanding-url-fallback.test.ts",
+          "range": {
+            "end_line": 85,
+            "start_line": 1
+          },
+          "symbol": "media understanding URL fallback test suite"
+        }
+      ],
+      "status": {
+        "acceptance": "pending",
+        "implementation": "implemented",
+        "mapping": "reviewed",
+        "read": "read-complete",
+        "verification": "not-run",
+        "wiring": "not-wired"
+      },
+      "target": {
+        "language": "Rust",
+        "path": "source/host/src/extensions/attachments/media_understanding_service.rs",
+        "symbol": "resolve_provider_request_context"
+      },
+      "tests": [
+        "source/host/tests/openclaw_media_understanding_contract.rs::test_ocrm_media_und_o27_provider_registry_build_and_request_context"
+      ],
+      "typed_contracts": [
+        "resolve_provider_request_context"
+      ],
+      "unit_id": "OCRM-UNIT-MEDIA-UND-007"
     }
   ],
   "schema_version": 1,

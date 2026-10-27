@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::fs;
 use std::path::{Path, PathBuf};
 
@@ -970,6 +971,121 @@ fn test_ocrm_media_und_o25_image_reasoning_stripping_and_copilot_placement() {
     // 3. Image model no-text error recognition
     assert!(is_image_model_no_text_error("Image model returned no text (status 200)"));
     assert!(!is_image_model_no_text_error("Network timeout connecting to provider"));
+}
+
+#[test]
+fn test_ocrm_media_und_o26_provider_registry_and_auto_priority_sorting() {
+    let mut default_models_a = HashMap::new();
+    default_models_a.insert(MediaUnderstandingCapability::Audio, "whisper-large".to_string());
+    default_models_a.insert(MediaUnderstandingCapability::Image, "vision-pro".to_string());
+
+    let mut auto_prio_a = HashMap::new();
+    auto_prio_a.insert(MediaUnderstandingCapability::Audio, 20);
+    auto_prio_a.insert(MediaUnderstandingCapability::Image, 10);
+
+    let provider_a = MediaUnderstandingProvider {
+        id: "provider-a".to_string(),
+        capabilities: vec![MediaUnderstandingCapability::Audio, MediaUnderstandingCapability::Image],
+        default_models: default_models_a,
+        auto_priority: auto_prio_a,
+        shared_entry_capabilities: None,
+        inherit_configured_image_capability: false,
+    };
+
+    let mut auto_prio_b = HashMap::new();
+    auto_prio_b.insert(MediaUnderstandingCapability::Audio, 10);
+
+    let provider_b = MediaUnderstandingProvider {
+        id: "provider-b".to_string(),
+        capabilities: vec![MediaUnderstandingCapability::Audio],
+        default_models: HashMap::new(),
+        auto_priority: auto_prio_b,
+        shared_entry_capabilities: None,
+        inherit_configured_image_capability: false,
+    };
+
+    let mut registry = HashMap::new();
+    registry.insert("provider-a".to_string(), provider_a);
+    registry.insert("provider-b".to_string(), provider_b);
+
+    // 1. Resolve default models
+    assert_eq!(
+        resolve_default_media_model_from_registry("provider-a", MediaUnderstandingCapability::Audio, &registry),
+        Some("whisper-large".to_string())
+    );
+    assert_eq!(
+        resolve_default_media_model_from_registry("PROVIDER-A", MediaUnderstandingCapability::Image, &registry),
+        Some("vision-pro".to_string())
+    );
+    assert_eq!(
+        resolve_default_media_model_from_registry("provider-b", MediaUnderstandingCapability::Audio, &registry),
+        None
+    );
+
+    // 2. Resolve auto priority sorting (provider-b priority 10 < provider-a priority 20)
+    let sorted_audio = resolve_auto_media_key_providers_from_registry(MediaUnderstandingCapability::Audio, &registry);
+    assert_eq!(sorted_audio, vec!["provider-b", "provider-a"]);
+
+    let sorted_image = resolve_auto_media_key_providers_from_registry(MediaUnderstandingCapability::Image, &registry);
+    assert_eq!(sorted_image, vec!["provider-a"]);
+}
+
+#[test]
+fn test_ocrm_media_und_o27_provider_registry_build_and_request_context() {
+    let base_providers = vec![
+        MediaUnderstandingProvider {
+            id: "base-prov".to_string(),
+            capabilities: vec![MediaUnderstandingCapability::Audio],
+            default_models: HashMap::new(),
+            auto_priority: HashMap::new(),
+            shared_entry_capabilities: None,
+            inherit_configured_image_capability: false,
+        }
+    ];
+
+    let image_capable = vec!["config-vision".to_string()];
+    let mut overrides = HashMap::new();
+    overrides.insert("base-prov".to_string(), MediaUnderstandingProvider {
+        id: "base-prov".to_string(),
+        capabilities: vec![MediaUnderstandingCapability::Audio, MediaUnderstandingCapability::Video],
+        default_models: HashMap::new(),
+        auto_priority: HashMap::new(),
+        shared_entry_capabilities: None,
+        inherit_configured_image_capability: false,
+    });
+
+    let registry = build_media_understanding_registry(&base_providers, &image_capable, &overrides);
+    assert!(registry.contains_key("base-prov"));
+    assert!(registry.contains_key("config-vision"));
+    assert_eq!(
+        registry["base-prov"].capabilities,
+        vec![MediaUnderstandingCapability::Audio, MediaUnderstandingCapability::Video]
+    );
+    assert_eq!(
+        registry["config-vision"].capabilities,
+        vec![MediaUnderstandingCapability::Image]
+    );
+
+    // Context resolution hierarchy
+    let mut prov_headers = HashMap::new();
+    prov_headers.insert("X-Global".to_string(), "1".to_string());
+    prov_headers.insert("X-Auth".to_string(), "old".to_string());
+
+    let mut entry_headers = HashMap::new();
+    entry_headers.insert("X-Auth".to_string(), "new".to_string());
+
+    let (base_url, headers) = resolve_provider_request_context(
+        Some("https://provider.api"),
+        Some("https://tools.api"),
+        Some("https://entry.api"),
+        Some(&prov_headers),
+        None,
+        Some(&entry_headers),
+    );
+
+    assert_eq!(base_url, Some("https://entry.api".to_string()));
+    assert_eq!(headers.get("X-Global").map(String::as_str), Some("1"));
+    assert_eq!(headers.get("X-Auth").map(String::as_str), Some("new"));
 }
 
 

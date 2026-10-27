@@ -1293,5 +1293,115 @@ pub fn is_image_model_no_text_error(message: &str) -> bool {
     message.trim_start().starts_with("Image model returned no text")
 }
 
+// =========================================================================
+// Unit 36: Provider Capability Registry & Execution (OCRM-RESP-MEDIA-UND-PROVIDER-REGISTRY-001 & PROVIDER-EXEC-001)
+// =========================================================================
+
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+pub struct MediaUnderstandingProvider {
+    pub id: String,
+    pub capabilities: Vec<MediaUnderstandingCapability>,
+    pub default_models: HashMap<MediaUnderstandingCapability, String>,
+    pub auto_priority: HashMap<MediaUnderstandingCapability, i32>,
+    pub shared_entry_capabilities: Option<Vec<MediaUnderstandingCapability>>,
+    pub inherit_configured_image_capability: bool,
+}
+
+pub fn normalize_media_provider_id(id: &str) -> String {
+    id.trim().to_ascii_lowercase()
+}
+
+pub fn resolve_default_media_model_from_registry(
+    provider_id: &str,
+    capability: MediaUnderstandingCapability,
+    registry: &HashMap<String, MediaUnderstandingProvider>,
+) -> Option<String> {
+    let normalized = normalize_media_provider_id(provider_id);
+    let provider = registry.get(&normalized)?;
+    provider.default_models.get(&capability).cloned()
+}
+
+pub fn resolve_auto_media_key_providers_from_registry(
+    capability: MediaUnderstandingCapability,
+    registry: &HashMap<String, MediaUnderstandingProvider>,
+) -> Vec<String> {
+    let mut entries: Vec<(&MediaUnderstandingProvider, i32)> = registry
+        .values()
+        .filter(|p| p.capabilities.contains(&capability))
+        .filter_map(|p| p.auto_priority.get(&capability).map(|&prio| (p, prio)))
+        .collect();
+
+    entries.sort_by(|(p1, prio1), (p2, prio2)| {
+        prio1.cmp(prio2).then_with(|| p1.id.cmp(&p2.id))
+    });
+
+    entries
+        .into_iter()
+        .map(|(p, _)| normalize_media_provider_id(&p.id))
+        .collect()
+}
+
+pub fn build_media_understanding_registry(
+    base_providers: &[MediaUnderstandingProvider],
+    image_capable_providers: &[String],
+    overrides: &HashMap<String, MediaUnderstandingProvider>,
+) -> HashMap<String, MediaUnderstandingProvider> {
+    let mut registry = HashMap::new();
+    for p in base_providers {
+        let key = normalize_media_provider_id(&p.id);
+        registry.insert(key, p.clone());
+    }
+    for configured_id in image_capable_providers {
+        let key = normalize_media_provider_id(configured_id);
+        registry.entry(key.clone()).or_insert_with(|| MediaUnderstandingProvider {
+            id: key,
+            capabilities: vec![MediaUnderstandingCapability::Image],
+            default_models: HashMap::new(),
+            auto_priority: HashMap::new(),
+            shared_entry_capabilities: None,
+            inherit_configured_image_capability: false,
+        });
+    }
+    for (k, v) in overrides {
+        let key = normalize_media_provider_id(k);
+        registry.insert(key, v.clone());
+    }
+    registry
+}
+
+pub fn resolve_provider_request_context(
+    provider_base_url: Option<&str>,
+    tools_base_url: Option<&str>,
+    entry_base_url: Option<&str>,
+    provider_headers: Option<&HashMap<String, String>>,
+    tools_headers: Option<&HashMap<String, String>>,
+    entry_headers: Option<&HashMap<String, String>>,
+) -> (Option<String>, HashMap<String, String>) {
+    let base_url = entry_base_url
+        .or(tools_base_url)
+        .or(provider_base_url)
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+        .map(str::to_string);
+
+    let mut merged_headers = HashMap::new();
+    if let Some(h) = provider_headers {
+        for (k, v) in h {
+            merged_headers.insert(k.clone(), v.clone());
+        }
+    }
+    if let Some(h) = tools_headers {
+        for (k, v) in h {
+            merged_headers.insert(k.clone(), v.clone());
+        }
+    }
+    if let Some(h) = entry_headers {
+        for (k, v) in h {
+            merged_headers.insert(k.clone(), v.clone());
+        }
+    }
+    (base_url, merged_headers)
+}
+
 
 
