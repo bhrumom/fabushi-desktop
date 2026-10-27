@@ -343,6 +343,44 @@ pub struct PostgresRestorePlan {
     pub allocations: BTreeMap<String, PostgresSequenceAllocation>,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct GitBackupIdentity {
+    pub role: String,
+    #[serde(rename = "agentId", default)]
+    pub agent_id: Option<String>,
+    #[serde(default)]
+    pub id: Option<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct GitBackupTableEntry {
+    pub rows: u64,
+    pub sha256: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct GitBackupPostgresSource {
+    #[serde(rename = "storeId")]
+    pub store_id: String,
+    pub namespace: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct GitBackupManifest {
+    #[serde(rename = "schemaVersion")]
+    pub schema_version: u32,
+    pub identity: GitBackupIdentity,
+    #[serde(rename = "postgresSource", default)]
+    pub postgres_source: Option<GitBackupPostgresSource>,
+    #[serde(rename = "userVersion")]
+    pub user_version: u64,
+    #[serde(rename = "excludedTables")]
+    pub excluded_tables: Vec<String>,
+    #[serde(rename = "excludedConfigStateKeyPrefixes", default)]
+    pub excluded_config_state_key_prefixes: Vec<String>,
+    pub tables: BTreeMap<String, GitBackupTableEntry>,
+}
+
 const STATE_SECRET_TABLE_NAMES: &[&str] = &[
     "audit_identity_keys",
     "apns_registrations",
@@ -387,6 +425,56 @@ fn valid_digest(value: &str) -> bool {
         && value
             .bytes()
             .all(|byte| byte.is_ascii_hexdigit() && !byte.is_ascii_uppercase())
+}
+
+pub fn parse_git_backup_manifest(value: &Value) -> Result<GitBackupManifest, String> {
+    let manifest: GitBackupManifest = serde_json::from_value(value.clone())
+        .map_err(|error| format!("invalid Git backup manifest: {error}"))?;
+    if !matches!(manifest.schema_version, 1 | 2) || manifest.user_version > MAX_SAFE_INTEGER {
+        return Err("Git backup manifest has an unsupported schema or user version".into());
+    }
+    match manifest.identity.role.as_str() {
+        "global" if manifest.identity.agent_id.is_none() && manifest.identity.id.is_none() => {}
+        "agent"
+            if manifest
+                .identity
+                .agent_id
+                .as_deref()
+                .is_some_and(valid_identifier) => {}
+        "generic"
+            if manifest
+                .identity
+                .id
+                .as_deref()
+                .is_some_and(valid_identifier) => {}
+        _ => return Err("Git backup manifest identity is invalid".into()),
+    }
+    if let Some(source) = &manifest.postgres_source {
+        if uuid::Uuid::parse_str(&source.store_id).is_err() || !valid_identifier(&source.namespace)
+        {
+            return Err("Git backup manifest Postgres source is invalid".into());
+        }
+    }
+    if manifest
+        .excluded_tables
+        .iter()
+        .any(|table| !valid_identifier(table))
+        || manifest
+            .excluded_config_state_key_prefixes
+            .iter()
+            .any(|prefix| prefix.is_empty())
+    {
+        return Err("Git backup manifest exclusions are invalid".into());
+    }
+    for (table, digest) in &manifest.tables {
+        validate_sqlite_table_name(table)?;
+        if digest.rows > MAX_SAFE_INTEGER || !valid_digest(&digest.sha256) {
+            return Err(format!(
+                "Git backup manifest has an invalid table entry: {table}"
+            ));
+        }
+    }
+    Ok(manifest)
 }
 
 fn validate_artifact(label: &str, artifact: &PostgresArtifactDigest) -> Result<(), String> {

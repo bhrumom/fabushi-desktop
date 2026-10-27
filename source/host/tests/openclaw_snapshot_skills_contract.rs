@@ -125,6 +125,37 @@ fn test_ocrm_snapshot_postgres_manifest_schema_and_profile_oracles() {
     let parsed = parse_postgres_export_manifest(&valid, "snap-002", Some("exact"))
         .expect("valid schema-v2 manifest");
     assert_eq!(parsed.export_schema_version, 2);
+    let git_manifest = json!({
+        "schemaVersion": 1,
+        "identity": {"role": "generic", "id": "store_one"},
+        "userVersion": 7,
+        "excludedTables": ["secret_store_entries"],
+        "excludedConfigStateKeyPrefixes": ["authProfiles."],
+        "tables": {
+            "messages": {
+                "rows": 1,
+                "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            }
+        }
+    });
+    let parsed_git =
+        mahayana_host_runtime::extensions::snapshot::git_backup_manager::parse_git_backup_manifest(
+            &git_manifest,
+        )
+        .expect("valid Git backup manifest");
+    assert_eq!(parsed_git.schema_version, 1);
+    let mut invalid_git = git_manifest.clone();
+    invalid_git["identity"]["role"] = json!("agent");
+    assert!(mahayana_host_runtime::extensions::snapshot::git_backup_manager::parse_git_backup_manifest(
+        &invalid_git,
+    )
+    .is_err());
+    let mut invalid_table = git_manifest.clone();
+    invalid_table["tables"]["messages;drop"] = invalid_table["tables"]["messages"].clone();
+    assert!(mahayana_host_runtime::extensions::snapshot::git_backup_manager::parse_git_backup_manifest(
+        &invalid_table,
+    )
+    .is_err());
 
     let mut leading_zero_allocation = valid.clone();
     leading_zero_allocation["verification"]["allocations"]["messages_id_seq"]["value"] =
