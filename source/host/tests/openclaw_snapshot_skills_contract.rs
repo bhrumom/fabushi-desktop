@@ -119,6 +119,18 @@ fn test_ocrm_snapshot_postgres_manifest_schema_and_profile_oracles() {
         .expect("valid schema-v2 manifest");
     assert_eq!(parsed.export_schema_version, 2);
 
+    let mut leading_zero_allocation = valid.clone();
+    leading_zero_allocation["verification"]["allocations"]["messages_id_seq"]["value"] =
+        json!("01");
+    assert!(parse_postgres_export_manifest(&leading_zero_allocation, "snap-002", None).is_err());
+    let mut oversized_allocation = valid.clone();
+    oversized_allocation["verification"]["allocations"]["messages_id_seq"]["value"] =
+        json!("9223372036854775808");
+    assert!(parse_postgres_export_manifest(&oversized_allocation, "snap-002", None).is_err());
+    let mut imprecise_timestamp = valid.clone();
+    imprecise_timestamp["created_at"] = json!("2026-10-28T00:00:00Z");
+    assert!(parse_postgres_export_manifest(&imprecise_timestamp, "snap-002", None).is_err());
+
     let export_root = std::env::temp_dir().join(format!(
         "fabushi-export-{}",
         std::process::id()

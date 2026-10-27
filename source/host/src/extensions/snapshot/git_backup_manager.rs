@@ -16,6 +16,8 @@ use std::os::unix::fs::{MetadataExt, OpenOptionsExt, PermissionsExt};
 pub const SNAPSHOT_EXPORT_ENVELOPE_VERSION: u32 = 1;
 pub const SQLITE_SIDECAR_SUFFIXES: [&str; 3] = ["-wal", "-shm", "-journal"];
 const RESTORE_NAMESPACE_PREFIX: &str = "restore_";
+const MAX_SAFE_INTEGER: u64 = 9_007_199_254_740_991;
+const MAX_POSTGRES_SEQUENCE: u64 = 9_223_372_036_854_775_807;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SnapshotExportEnvelope {
@@ -135,7 +137,7 @@ fn validate_artifact(label: &str, artifact: &PostgresArtifactDigest) -> Result<(
     if !valid_digest(&artifact.sha256) {
         return Err(format!("{label} has an invalid SHA-256 digest"));
     }
-    if artifact.size_bytes == 0 {
+    if artifact.size_bytes == 0 || artifact.size_bytes > MAX_SAFE_INTEGER {
         return Err(format!("{label} must have positive size"));
     }
     Ok(())
@@ -166,7 +168,7 @@ pub fn parse_postgres_export_manifest(
             return Err("export profile does not match the requested restore".into());
         }
     }
-    if manifest.created_at.parse::<chrono::DateTime<chrono::FixedOffset>>().is_err() {
+    if !has_millisecond_timestamp(&manifest.created_at) {
         return Err("createdAt must be an RFC3339 timestamp".into());
     }
     if manifest.source.engine != "postgres"
@@ -187,22 +189,40 @@ pub fn parse_postgres_export_manifest(
     validate_artifact("database.sqlite", &manifest.artifacts.database)?;
     validate_artifact("anchor.sqlite", &manifest.artifacts.anchor)?;
     for (table, digest) in &manifest.verification.tables {
-        if !valid_identifier(table) || !valid_digest(&digest.sha256) {
+        if !valid_identifier(table)
+            || !valid_digest(&digest.sha256)
+            || digest.rows > MAX_SAFE_INTEGER
+        {
             return Err(format!("invalid table verification entry: {table}"));
         }
     }
     for (sequence, allocation) in &manifest.verification.allocations {
-        if !valid_identifier(sequence)
-            || !allocation.value.chars().all(|ch| ch.is_ascii_digit())
-            || allocation.value.is_empty()
-        {
+        if !valid_identifier(sequence) || !valid_sequence_allocation(&allocation.value) {
             return Err(format!("invalid sequence allocation entry: {sequence}"));
-        }
-        if allocation.value.len() > 19 || allocation.value.parse::<u64>().is_err() {
-            return Err(format!("sequence allocation is out of range: {sequence}"));
         }
     }
     Ok(manifest)
+}
+
+fn has_millisecond_timestamp(value: &str) -> bool {
+    if value.len() < 24
+        || value.as_bytes().get(19) != Some(&b'.')
+        || !value.as_bytes()[20..23].iter().all(u8::is_ascii_digit)
+    {
+        return false;
+    }
+    value.parse::<chrono::DateTime<chrono::FixedOffset>>().is_ok()
+}
+
+fn valid_sequence_allocation(value: &str) -> bool {
+    if value == "0" {
+        return true;
+    }
+    if value.is_empty() || value.starts_with('0') || value.len() > 19 {
+        return false;
+    }
+    value.chars().all(|ch| ch.is_ascii_digit())
+        && value.parse::<u64>().is_ok_and(|value| value <= MAX_POSTGRES_SEQUENCE)
 }
 
 #[cfg(unix)]
