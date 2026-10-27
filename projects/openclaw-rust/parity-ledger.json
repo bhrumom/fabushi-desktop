@@ -24995,8 +24995,62 @@
             "end_line": 443,
             "start_line": 1
           },
-          "symbol": "resolveChannelConfigWrites"
-        }
+    "symbol": "resolveChannelConfigWrites"
+  },
+    {
+      "blob_sha": "dc4907f27f87def3809113f9d62ec68e4bdf8d09",
+      "path": "src/plugin-sdk/bundled-channel-config-schema.ts",
+      "range": {"end_line": 1, "start_line": 1},
+      "symbol": "bundled-channel-config-schema"
+    },
+    {
+      "blob_sha": "f18e34bbcf0d6d7a56e7354ced94ab1f167d3a31",
+      "path": "src/plugin-sdk/channel-access-compat.ts",
+      "range": {"end_line": 1, "start_line": 1},
+      "symbol": "channel-access-compat"
+    },
+    {
+      "blob_sha": "eb5ebe641012ea8f965fd5629daf35ef2929515e",
+      "path": "src/plugin-sdk/channel-actions.ts",
+      "range": {"end_line": 1, "start_line": 1},
+      "symbol": "channel-actions"
+    },
+    {
+      "blob_sha": "9744d649e8c896b012e35a9bfe27e23f271c09ea",
+      "path": "src/plugin-sdk/channel-activity-runtime.ts",
+      "range": {"end_line": 1, "start_line": 1},
+      "symbol": "channel-activity-runtime"
+    },
+    {
+      "blob_sha": "887304d0319ae45987abe4efa91c0974aed50f66",
+      "path": "src/plugin-sdk/channel-config-helpers.test.ts",
+      "range": {"end_line": 1, "start_line": 1},
+      "symbol": "channel-config-helpers.test"
+    },
+    {
+      "blob_sha": "d925c48debaeaffa133317f9c57aa66b56f0bf50",
+      "path": "src/plugin-sdk/channel-config-primitives.ts",
+      "range": {"end_line": 1, "start_line": 1},
+      "symbol": "channel-config-primitives"
+    },
+    {
+      "blob_sha": "41fd51b6e5f43318d10fbbb3e81d88f48bb95cce",
+      "path": "src/plugin-sdk/channel-config-schema.ts",
+      "range": {"end_line": 1, "start_line": 1},
+      "symbol": "channel-config-schema"
+    },
+    {
+      "blob_sha": "2ccb45f421e29872922ab780cd0f973d89251d4c",
+      "path": "src/plugin-sdk/channel-config-ui-hints.test.ts",
+      "range": {"end_line": 1, "start_line": 1},
+      "symbol": "channel-config-ui-hints.test"
+    },
+    {
+      "blob_sha": "85d7bc7baa1e737e269231e389aefdd5ccfabe24",
+      "path": "src/plugin-sdk/channel-config-writes.ts",
+      "range": {"end_line": 1, "start_line": 1},
+      "symbol": "channel-config-writes"
+    }
       ],
       "status": {
         "acceptance": "pending",
