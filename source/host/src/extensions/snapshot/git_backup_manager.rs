@@ -764,6 +764,35 @@ pub struct SqliteJsonlBatch {
     bytes: Vec<u8>,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct SqliteTableDigest {
+    pub rows: u64,
+    pub sha256: String,
+}
+
+/// Hash the exact JSONL bytes that would be published for a table.
+pub fn digest_sqlite_rows<I>(rows: I) -> Result<SqliteTableDigest, String>
+where
+    I: IntoIterator<Item = Result<Vec<u8>, String>>,
+{
+    let mut hash = Sha256::new();
+    let mut count = 0_u64;
+    for row in rows {
+        let row = row?;
+        if row.is_empty() || row.last() != Some(&b'\n') {
+            return Err("SQLite backup row must be a non-empty JSONL line".into());
+        }
+        hash.update(&row);
+        count = count
+            .checked_add(1)
+            .ok_or_else(|| "SQLite backup row count overflow".to_string())?;
+    }
+    Ok(SqliteTableDigest {
+        rows: count,
+        sha256: format!("{:x}", hash.finalize()),
+    })
+}
+
 impl SqliteJsonlBatch {
     pub fn new() -> Self {
         Self::default()

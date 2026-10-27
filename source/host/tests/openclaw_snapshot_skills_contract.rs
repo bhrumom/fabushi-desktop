@@ -386,6 +386,19 @@ fn test_ocrm_snapshot_postgres_manifest_schema_and_profile_oracles() {
     assert_eq!(batch.pending_bytes(), 0);
     assert!(batch.finish().is_none());
     assert!(batch.push(&vec![b'c'; 2 * 1024 * 1024]).is_some());
+    let digest = mahayana_host_runtime::extensions::snapshot::git_backup_manager::digest_sqlite_rows(
+        vec![
+            Ok(b"{\"id\":1}\n".to_vec()),
+            Ok(b"{\"id\":2}\n".to_vec()),
+        ],
+    )
+    .expect("table digest");
+    assert_eq!(digest.rows, 2);
+    assert_eq!(digest.sha256.len(), 64);
+    assert!(mahayana_host_runtime::extensions::snapshot::git_backup_manager::digest_sqlite_rows(
+        vec![Ok(b"{\"id\":1}".to_vec())],
+    )
+    .is_err());
 }
 
 #[test]
