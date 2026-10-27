@@ -68,4 +68,7 @@ pub mod plugins;
 pub mod process;
 pub mod proxy_capture;
 pub mod security;
+pub mod shared;
+pub mod skills;
+pub mod snapshot;
 
