@@ -22292,8 +22292,308 @@
             "end_line": 128,
             "start_line": 1
           },
-          "symbol": "listChannelCatalogEntries"
-        }
+    "symbol": "listChannelCatalogEntries"
+  },
+    {
+      "blob_sha": "7fe18a1b1bbf3e9aa2bd43c9e866b4014d2cd188",
+      "path": "src/plugins/channel-catalog-registry.workspace.test.ts",
+      "range": {"end_line": 1, "start_line": 1},
+      "symbol": "channel-catalog-registry.workspace.test"
+    },
+    {
+      "blob_sha": "811b75ca0bba76b002d518354fe3ee2bb1a986de",
+      "path": "src/plugins/channel-plugin-ids.test.ts",
+      "range": {"end_line": 1, "start_line": 1},
+      "symbol": "channel-plugin-ids.test"
+    },
+    {
+      "blob_sha": "520597843dee0d61989c61cb5c25cdb3acedb75e",
+      "path": "src/plugins/channel-plugin-ids.ts",
+      "range": {"end_line": 1, "start_line": 1},
+      "symbol": "channel-plugin-ids"
+    },
+    {
+      "blob_sha": "a2f4737d617b981a6d02ca8f810ddcdd9a10a1ac",
+      "path": "src/plugins/channel-presence-policy.ts",
+      "range": {"end_line": 1, "start_line": 1},
+      "symbol": "channel-presence-policy"
+    },
+    {
+      "blob_sha": "c69791e8b1395b4c709f8e60d2a7afc8e69831f2",
+      "path": "src/plugins/channel-registry-adoption.ts",
+      "range": {"end_line": 1, "start_line": 1},
+      "symbol": "channel-registry-adoption"
+    },
+    {
+      "blob_sha": "e5b58f8424de02920ca6bdb5bf8f7733b11a4623",
+      "path": "src/plugins/channel-registry-state.types.ts",
+      "range": {"end_line": 1, "start_line": 1},
+      "symbol": "channel-registry-state.types"
+    },
+    {
+      "blob_sha": "2eaf2e8a65bc6ac13128b2a144591acbe1bff416",
+      "path": "src/plugins/channel-startup-policy.ts",
+      "range": {"end_line": 1, "start_line": 1},
+      "symbol": "channel-startup-policy"
+    },
+    {
+      "blob_sha": "feba6bae38e3c93804160bc29ff538c17c5584ed",
+      "path": "src/plugins/channel-validation.test.ts",
+      "range": {"end_line": 1, "start_line": 1},
+      "symbol": "channel-validation.test"
+    },
+    {
+      "blob_sha": "778cc9bfaa740d05f463155f5d67874f8913100d",
+      "path": "src/plugins/claw-managed-capability-consent.integration.test.ts",
+      "range": {"end_line": 1, "start_line": 1},
+      "symbol": "claw-managed-capability-consent.integration.test"
+    },
+    {
+      "blob_sha": "51c03f0dd9e123d751f83ca3cc438d12813c2d67",
+      "path": "src/plugins/clawhub-archive-verification.ts",
+      "range": {"end_line": 1, "start_line": 1},
+      "symbol": "clawhub-archive-verification"
+    },
+    {
+      "blob_sha": "e3e2e97193b8ac5f457cd56375be34df62bfc46b",
+      "path": "src/plugins/clawhub-error-codes.ts",
+      "range": {"end_line": 1, "start_line": 1},
+      "symbol": "clawhub-error-codes"
+    },
+    {
+      "blob_sha": "456b0d79758585478c75121e4aef87f079b0d04e",
+      "path": "src/plugins/clawhub-install-records.ts",
+      "range": {"end_line": 1, "start_line": 1},
+      "symbol": "clawhub-install-records"
+    },
+    {
+      "blob_sha": "431bb5746302f084ff6e257f144a91c8fc996628",
+      "path": "src/plugins/clawhub-official-source.ts",
+      "range": {"end_line": 1, "start_line": 1},
+      "symbol": "clawhub-official-source"
+    },
+    {
+      "blob_sha": "c07fef4a9e7c0123487dbf67cc687974dd83fbe1",
+      "path": "src/plugins/clawhub-presentation.ts",
+      "range": {"end_line": 1, "start_line": 1},
+      "symbol": "clawhub-presentation"
+    },
+    {
+      "blob_sha": "206a146f068a60edb72e8e2d1dd6e03684fbc555",
+      "path": "src/plugins/clawhub.cleanup.test.ts",
+      "range": {"end_line": 1, "start_line": 1},
+      "symbol": "clawhub.cleanup.test"
+    },
+    {
+      "blob_sha": "8f180a29ef4f92cbaacc78c0a1d9b5c9a62c2161",
+      "path": "src/plugins/clawhub.test-fixtures.ts",
+      "range": {"end_line": 1, "start_line": 1},
+      "symbol": "clawhub.test-fixtures"
+    },
+    {
+      "blob_sha": "b302a5a5d2832fc10de6fb4eff8fc51f9b7bda23",
+      "path": "src/plugins/clawhub.test-support.ts",
+      "range": {"end_line": 1, "start_line": 1},
+      "symbol": "clawhub.test-support"
+    },
+    {
+      "blob_sha": "ddd4d8e6a346b121c4a991d458a7cd4a93102278",
+      "path": "src/plugins/clawhub.test.ts",
+      "range": {"end_line": 1, "start_line": 1},
+      "symbol": "clawhub.test"
+    },
+    {
+      "blob_sha": "286f795de513c1116a43fbb0d804f0b3a04ec62f",
+      "path": "src/plugins/clawhub.ts",
+      "range": {"end_line": 1, "start_line": 1},
+      "symbol": "clawhub"
+    },
+    {
+      "blob_sha": "bc4e77186f1d64770d61ea65f487007372d725dd",
+      "path": "src/plugins/cli-backend-errors.ts",
+      "range": {"end_line": 1, "start_line": 1},
+      "symbol": "cli-backend-errors"
+    },
+    {
+      "blob_sha": "2b08320ebc3eccd86a185d539c232a9f40e901a4",
+      "path": "src/plugins/cli-backend-registration.ts",
+      "range": {"end_line": 1, "start_line": 1},
+      "symbol": "cli-backend-registration"
+    },
+    {
+      "blob_sha": "cd260fbf964fc171eadf67416883dd9c7ab61b0f",
+      "path": "src/plugins/cli-backend.types.ts",
+      "range": {"end_line": 1, "start_line": 1},
+      "symbol": "cli-backend.types"
+    },
+    {
+      "blob_sha": "1b11df1dd7d051b68f4aba61bdedea57a2455041",
+      "path": "src/plugins/cli-backends.runtime.test.ts",
+      "range": {"end_line": 1, "start_line": 1},
+      "symbol": "cli-backends.runtime.test"
+    },
+    {
+      "blob_sha": "9f7b8e1901f08fb5937614e77d048b58f4c5660a",
+      "path": "src/plugins/cli-backends.runtime.ts",
+      "range": {"end_line": 1, "start_line": 1},
+      "symbol": "cli-backends.runtime"
+    },
+    {
+      "blob_sha": "a01f14e0431e7d771078281e754ec1a829c08866",
+      "path": "src/plugins/cli-callback-binding.ts",
+      "range": {"end_line": 1, "start_line": 1},
+      "symbol": "cli-callback-binding"
+    },
+    {
+      "blob_sha": "cbee7d75ef988815ab2b98005548e3937f10b272",
+      "path": "src/plugins/cli-config-lifetime.test.ts",
+      "range": {"end_line": 1, "start_line": 1},
+      "symbol": "cli-config-lifetime.test"
+    },
+    {
+      "blob_sha": "44c0b522ef91088b30ad08b6693aae7d2a937525",
+      "path": "src/plugins/cli-gateway-nodes-runtime.test.ts",
+      "range": {"end_line": 1, "start_line": 1},
+      "symbol": "cli-gateway-nodes-runtime.test"
+    },
+    {
+      "blob_sha": "e5d60a5e708013886fdfee6a9051859a6465b684",
+      "path": "src/plugins/cli-gateway-nodes-runtime.ts",
+      "range": {"end_line": 1, "start_line": 1},
+      "symbol": "cli-gateway-nodes-runtime"
+    },
+    {
+      "blob_sha": "46f1b13d28bcd4a90f6a150bfe28b7c4f7523791",
+      "path": "src/plugins/cli-lifetime.test-support.ts",
+      "range": {"end_line": 1, "start_line": 1},
+      "symbol": "cli-lifetime.test-support"
+    },
+    {
+      "blob_sha": "5e1cfaf288ecf67a0c32a64041ac15f39af8d31c",
+      "path": "src/plugins/cli-metadata-lifetime.test.ts",
+      "range": {"end_line": 1, "start_line": 1},
+      "symbol": "cli-metadata-lifetime.test"
+    },
+    {
+      "blob_sha": "a530aedef26c801ed975917fff65594c877c33da",
+      "path": "src/plugins/cli-registry-loader.ts",
+      "range": {"end_line": 1, "start_line": 1},
+      "symbol": "cli-registry-loader"
+    },
+    {
+      "blob_sha": "6ab20188d09298fbce4dbc5df5c3aa1c4ab2356e",
+      "path": "src/plugins/cli-root-descriptors.ts",
+      "range": {"end_line": 1, "start_line": 1},
+      "symbol": "cli-root-descriptors"
+    },
+    {
+      "blob_sha": "76873d5f76b433679e2f2cc1efeab1f557022020",
+      "path": "src/plugins/cli-service-scheduler.test.ts",
+      "range": {"end_line": 1, "start_line": 1},
+      "symbol": "cli-service-scheduler.test"
+    },
+    {
+      "blob_sha": "b43dcda0006929ecbe866409f405e944dd27050f",
+      "path": "src/plugins/cli-service-scheduler.ts",
+      "range": {"end_line": 1, "start_line": 1},
+      "symbol": "cli-service-scheduler"
+    },
+    {
+      "blob_sha": "1e2d903a95f0b0a92973c612493c67513a16f378",
+      "path": "src/plugins/cli.browser-plugin.integration.test.ts",
+      "range": {"end_line": 1, "start_line": 1},
+      "symbol": "cli.browser-plugin.integration.test"
+    },
+    {
+      "blob_sha": "720dc81a778183a704506c4c642be70cc6388f1c",
+      "path": "src/plugins/cli.test.ts",
+      "range": {"end_line": 1, "start_line": 1},
+      "symbol": "cli.test"
+    },
+    {
+      "blob_sha": "794636ab8e4aadcd7ad5794732e2344a989f9807",
+      "path": "src/plugins/cli.ts",
+      "range": {"end_line": 1, "start_line": 1},
+      "symbol": "cli"
+    },
+    {
+      "blob_sha": "ecfa0615c32e18481d237f4daeff7bdbc441f226",
+      "path": "src/plugins/code-mode-executor.test.ts",
+      "range": {"end_line": 1, "start_line": 1},
+      "symbol": "code-mode-executor.test"
+    },
+    {
+      "blob_sha": "39356b265e94e9c62b25869a5e5b08440679aa19",
+      "path": "src/plugins/code-mode-executor.ts",
+      "range": {"end_line": 1, "start_line": 1},
+      "symbol": "code-mode-executor"
+    },
+    {
+      "blob_sha": "7a492647b76a67580b141e4c144bb2f8a5e1fffd",
+      "path": "src/plugins/codex-app-server-extension-types.ts",
+      "range": {"end_line": 1, "start_line": 1},
+      "symbol": "codex-app-server-extension-types"
+    },
+    {
+      "blob_sha": "bb9d3d45ab2871b74b7a005fa0bf28b4fe7f3fba",
+      "path": "src/plugins/command-execution-lock.ts",
+      "range": {"end_line": 1, "start_line": 1},
+      "symbol": "command-execution-lock"
+    },
+    {
+      "blob_sha": "0e111fa0e794ca2940c7abbec7e15a75eefb3ff3",
+      "path": "src/plugins/command-registration.runtime-capabilities.test.ts",
+      "range": {"end_line": 1, "start_line": 1},
+      "symbol": "command-registration.runtime-capabilities.test"
+    },
+    {
+      "blob_sha": "48bc672c5060f30e2cf2bce86335a1accaea6895",
+      "path": "src/plugins/command-registration.ts",
+      "range": {"end_line": 1, "start_line": 1},
+      "symbol": "command-registration"
+    },
+    {
+      "blob_sha": "2b14ec0423e630588a9f72d1c7eab419a4e4c4d2",
+      "path": "src/plugins/command-registry-state.ts",
+      "range": {"end_line": 1, "start_line": 1},
+      "symbol": "command-registry-state"
+    },
+    {
+      "blob_sha": "a7b921af199e35ae1d69467af2a548456df3d2b2",
+      "path": "src/plugins/command-specs.ts",
+      "range": {"end_line": 1, "start_line": 1},
+      "symbol": "command-specs"
+    },
+    {
+      "blob_sha": "18ba779f970493a6a3bf8090060d070d6ffb7fd6",
+      "path": "src/plugins/commands.required-scopes.test.ts",
+      "range": {"end_line": 1, "start_line": 1},
+      "symbol": "commands.required-scopes.test"
+    },
+    {
+      "blob_sha": "c39a87120cb5e4c0de10b22f7d4a571dcefbd1a2",
+      "path": "src/plugins/commands.test.ts",
+      "range": {"end_line": 1, "start_line": 1},
+      "symbol": "commands.test"
+    },
+    {
+      "blob_sha": "d4b97026163048bcb02f85fb218510d9c3ad4d40",
+      "path": "src/plugins/commands.ts",
+      "range": {"end_line": 1, "start_line": 1},
+      "symbol": "commands"
+    },
+    {
+      "blob_sha": "e7c929a7fad3681666081049a0d84ab15cf0e9f8",
+      "path": "src/plugins/compaction-provider.test.ts",
+      "range": {"end_line": 1, "start_line": 1},
+      "symbol": "compaction-provider.test"
+    },
+    {
+      "blob_sha": "e738ceb21b24f470cd55e5b3f9a04410428704d9",
+      "path": "src/plugins/compaction-provider.ts",
+      "range": {"end_line": 1, "start_line": 1},
+      "symbol": "compaction-provider"
+    }
       ],
       "status": {
         "acceptance": "pending",
