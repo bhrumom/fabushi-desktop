@@ -211,3 +211,9 @@ Rust design for the missing database-port/restore boundary, followed by a
 real producer→owner→storage consumer path and falsifiable exact/portable,
 tamper, generation-change, namespace-custody, and artifact-admission tests.
 
+`decode_sqlite_value` now provides the strict inverse for portable restore
+cells: JSON NULL/text/number, bounded `$int`, validated hex `$hex`, and
+rejection of booleans, arrays, unknown objects, malformed hex, and out-of-range
+integers. Round-trip and malformed-input oracles pass; this does not yet insert
+decoded rows into a staged SQLite owner.
+
