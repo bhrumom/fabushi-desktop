@@ -1,0 +1,19 @@
+# Round 21 — shipping owner and exact-head evidence (2026-10-28)
+
+## Live identity
+- GitHub main `cfef45568293a22deb32a6cdef17916f3ec19648`.
+- PR #178 open/draft on `work/tdrp-revision9-f985723-rebaseline-20261027`, inspected head `9e6ddce792da7cd674e238ad4e337f7441b377d9`, Git tree `4dd4a94e4fc251c2f5dd0cf019a7e9e90b5bd0c6`; PR base_sha field `3f8e7ae768d71897958198dc4924e10c77098a5c`.
+- Exact-head REST `/actions/runs?head_sha=9e6ddce792da7cd674e238ad4e337f7441b377d9&per_page=100`: `total_count=0`. `/commits/9e6ddce792da7cd674e238ad4e337f7441b377d9/check-runs`: `total_count=0`. Commit PR workflow-runs wrapper: `[]`. Commit combined status: `pending`, `statuses=[]`, `total_count=0`; pending-with-zero-statuses is NOT success.
+- Requests to `/actions/workflows`, `/actions/permissions`, and `/hooks` are explicitly rejected by the connected GitHub fetch API as disallowed endpoints (INVALID_ARGUMENT 400). Neither workflow enabled state nor repository Actions permissions nor PR synchronize webhook deliveries are established. Do not infer root cause from zero runs.
+
+## Workflow configuration and canonical owners
+- `.github/workflows/tdrp-revision9-authority.yml`, blob `4b6821dc0ac3db8323b1956748f0f1c5d0535807`, has `pull_request.paths` including `projects/telegram-desktop-rust/**`; `TDRP_TARGET_SHA` resolves to PR head SHA and candidate-authority checkout asserts that exact SHA, runs identity contract and validator, and asserts fail-closed. Static eligibility is not proof of dispatch.
+- Git tree for the inspected PR head was `truncated=false` with 9,520 entries; that is the **Fabushi repository tree only**, not upstream tdesktop or cppgir recursive inventory.
+- Production renderer composition: `frontend/src/main.tsx` blob `ccb3e932cb9b017742c7d6a6ecb77c2faf5814d7` imports `ProductionRenderer` and `acquireProductionRendererRuntime`, mounts the production shell. `frontend/src/production/bootstrap.tsx` blob `63e272d027a0f1f6fb5ea308a2252f121bb46b19` asserts `window.desktop` and `window.coordinatorPort` bridges.
+- Packaging/build declaration: `desktop/package.json` blob `3d500622ce9b26e3452d98d0c4a7e7dcc019ac84` declares Electron main `dist/electron-main/main.cjs`, host binaries from `source/host/app`, `source/node-agent-coordinator`, `source/box-exec-daemon`, and `electron-builder` packaging. These are inspected *declared* owners, not verified packaged acceptance.
+- Git tree also contains `source/electron-main/` (including coordinator, account, adapters, attachments), `source/host/`, `source/node-agent-coordinator/`, `frontend/src/production/`, `.github/workflows/release-macos-main.yml`, `.github/workflows/rust-desktop-runtime.yml`, `.github/workflows/desktop-chat-parity-ci.yml`, and 19 paths in `projects/fabushi-communication-platform/quality/`. Their presence does not establish that all service and release journeys passed.
+- Root `AGENTS.md` blob `e6a1f21ba5206cdc807b6f9738dad2cec2942100`; FBCP SOURCE_OF_TRUTH blob `283858bb70bab14e240da781a20e749ed1f1359e`; TDRP SOURCE_OF_TRUTH blob `c181c90ac52043975ef508042f4c20181211d9f5`. Both SOTs require source-complete production equivalence and exact-head acceptance rather than research-only closure.
+
+## Blockers and strict disposition
+- No GitLab original project 7705067 read action was exposed in the available connectors. No trustworthy paginated `cppgir@47cf94f83b54cda59018135601e19d7fb0c77776` tree, nested gitlinks, LFS, patch, generator-input or blob-SHA proof was acquired in this round. **Do not update upstream.lock.json, inventory/index.json, parity-ledger.json or dossiers based on this absence.**
+- Source completeness unknown/unread/omitted are **not verified zero**. Production, UI, services, Bot regressions, tests, and independent release acceptance not established. Preserve `accepted=false`, `baseline_ready=false`, and task `status=next`; do not merge/release or reclassify acceptance.
