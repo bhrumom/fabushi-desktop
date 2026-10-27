@@ -10,10 +10,10 @@
     "ui_accepted": false
   },
   "file_coverage": {
-    "mapped_paths": 391,
+    "mapped_paths": 393,
     "omitted_known": 0,
     "tracked_paths": 58750,
-    "unclassified_paths": 58359
+    "unclassified_paths": 58357
   },
   "inventory_authority": {
     "manifest_source": "GitHub Actions immutable artifact candidate",
@@ -20469,6 +20469,15 @@
           "range": {
             "start_line": 1,
             "end_line": 35
+          }
+        },
+        {
+          "path": "src/plugins/contracts/rootdir-boundary-canary.ts",
+          "blob_sha": "56baa096f6d00cd3b26f2b6cc084b0b958ba55cb",
+          "symbol": "ROOTDIR_BOUNDARY_CANARY",
+          "range": {
+            "start_line": 1,
+            "end_line": 6
           }
         }
       ],
