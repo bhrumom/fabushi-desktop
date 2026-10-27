@@ -267,3 +267,17 @@ admitted expected digest and checks row count/hash before transaction commit;
 digest mismatch and row-shape failures leave the target unchanged. This closes
 two local integrity bugs, while real production caller wiring remains absent.
 
+## Fabushi production-owner audit
+
+The existing production storage path is `StoreDbSnapshotUpload` under
+`source/host/src/extensions/box_store_sync/store_db_snapshot_upload.rs`, started
+by `HostProductionExtensions::start_box_store_sync`. It owns the real
+producer-to-object-store-to-manifest consumer path and is covered by separate
+BoxStore contracts. A repository-wide caller audit finds no production caller
+of `digest_sqlite_table`, `restore_sqlite_rows`, `admit_postgres_export`, or
+`prepare_postgres_restore`; current uses are confined to the snapshot contract
+test. Therefore this OpenClaw codec remains an implemented native module but
+is not yet fused into the existing production owner. PostgreSQL port material-
+ization and the authorized API boundary are prerequisites for wiring rather
+than grounds to fabricate a second storage owner.
+
