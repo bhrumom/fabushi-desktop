@@ -13,6 +13,7 @@ use mahayana_host_runtime::extensions::local_exec::{
     local_exec_error::SandLocalExecError,
     local_exec_failure_classifier::{
         LocalExecFailureClass, LocalExecFailureClassification, classify_local_exec_failure,
+        format_command_output_for_user,
     },
 };
 use mahayana_host_runtime::extensions::telemetry::host_telemetry_service::HostTelemetryService;
@@ -107,6 +108,14 @@ fn failure_classifier_matches_grok_spawn_errno_contract() {
 }
 
 #[test]
+fn command_output_formatting_strips_ansi_cr_redraw_and_bounds_tail() {
+    let output = "old\nline\rnew\n\x1b[31mred\x1b[0m";
+    assert_eq!(format_command_output_for_user(output, 100), "old\nnew\nred");
+    let long = "😀abcdef";
+    assert_eq!(format_command_output_for_user(long, 5), "…\n😀abc");
+}
+
+#[test]
 fn local_exec_provider_lifecycle_is_persisted_through_host_telemetry() {
     let unique = SystemTime::now()
         .duration_since(UNIX_EPOCH)
@@ -161,7 +170,6 @@ fn local_exec_provider_lifecycle_is_persisted_through_host_telemetry() {
     assert_eq!(records[2]["payload"]["metadata"]["emptied"], "true");
     let _ = fs::remove_file(path);
 }
-
 
 struct AllowLocalExecGate;
 
@@ -219,10 +227,7 @@ fn production_extension_reports_exec_failure_through_host_telemetry() {
     }));
 
     let gate: Arc<dyn GatewayLocalToolGate> = Arc::new(AllowLocalExecGate);
-    let manager = extension
-        .sandbox(gate)
-        .remote_resource_accessor()
-        .manager();
+    let manager = extension.sandbox(gate).remote_resource_accessor().manager();
     let call_id = format!("failure-call-{unique}");
     let call_id_for_shell = call_id.clone();
     let shell = thread::spawn(move || {
