@@ -3446,7 +3446,7 @@
         "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
+        "verification": "verified",
         "wiring": "wired"
       },
       "target": {
@@ -4267,7 +4267,7 @@
         "implementation": "implemented",
         "mapping": "mapped",
         "read": "partial",
-        "verification": "not-run",
+        "verification": "verified",
     "wiring": "wired"
       },
       "target": {
@@ -4632,7 +4632,7 @@
         "implementation": "implemented",
         "mapping": "mapped",
         "read": "partial",
-        "verification": "not-run",
+        "verification": "verified",
     "wiring": "wired"
       },
       "target": {
@@ -11110,7 +11110,7 @@
         "implementation": "implemented",
         "mapping": "mapped",
         "read": "partial",
-        "verification": "not-run",
+        "verification": "verified",
     "wiring": "wired"
       },
       "target": {
