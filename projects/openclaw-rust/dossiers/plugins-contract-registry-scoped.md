@@ -8,6 +8,7 @@
   - `src/plugins/contracts/providers.contract.test.ts` (31 lines, SHA: `51ec10ea2a99edec388a6f0887594d3e22c0efe2`)
   - `src/plugins/contracts/web-fetch-provider.contract.test.ts` (22 lines, SHA: `b9d637526ba86496e95bc7c7ea565d4632b99261`)
   - `src/plugins/contracts/registry.retry.test.ts` (82 lines, SHA: `cf3c45ec802b14969e8e3bf7218e8bfc0da05a3c`)
+  - `src/plugins/contracts/shared-upstream-model.contract.test.ts` (141 lines, SHA: `9dc26ecc0f3241f30af9f6f65af997a29c05af0b`)
 - **Upstream Commit**: `ad8d12f126d29b0db204187adf5092db80294e70` (tree `04ccce62f1d74dc8e0c88290ae8ded027b7b0f16`).
 - **Module ID**: `OCRM-M28` (plugins).
 - **Reviewer**: `xuyao@ombhrum.com`.
@@ -57,3 +58,5 @@
     - Verifies web search provider resolution with activation-scoped overrides.
   - `test_ocrm_plugins_registry_public_artifacts_retry_precedence` (PASSED)
     - Verifies public artifacts precedence before falling back to bundled runtime registry for providers and web search.
+  - `test_ocrm_plugins_shared_upstream_model_contract` (PASSED)
+    - Verifies upstream model reference integrity and code-mode tier consistency across shared model sibling rows.

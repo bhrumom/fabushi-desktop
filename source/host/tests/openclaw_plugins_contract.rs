@@ -529,3 +529,76 @@ fn test_ocrm_plugins_registry_public_artifacts_retry_precedence() {
     );
     assert_eq!(resolved_web_search, vec!["gemini"]);
 }
+
+#[test]
+fn test_ocrm_plugins_shared_upstream_model_contract() {
+    // Tests equivalent behavior from upstream src/plugins/contracts/shared-upstream-model.contract.test.ts
+    use mahayana_host_runtime::extensions::plugins::capability_catalog::{
+        ModelCatalogRow, SharedUpstreamModelCatalog,
+    };
+
+    let valid_catalog = vec![
+        ModelCatalogRow {
+            provider_id: "openai".to_string(),
+            model_id: "gpt-4o".to_string(),
+            upstream_model: None,
+            code_mode: Some("preferred".to_string()),
+        },
+        ModelCatalogRow {
+            provider_id: "azure".to_string(),
+            model_id: "gpt-4o".to_string(),
+            upstream_model: Some("openai/gpt-4o".to_string()),
+            code_mode: Some("preferred".to_string()),
+        },
+        ModelCatalogRow {
+            provider_id: "anthropic".to_string(),
+            model_id: "claude-3-5-sonnet".to_string(),
+            upstream_model: None,
+            code_mode: None,
+        },
+    ];
+
+    assert!(SharedUpstreamModelCatalog::validate_upstream_model_refs(&valid_catalog).is_ok());
+    assert!(SharedUpstreamModelCatalog::validate_code_mode_tier_consistency(&valid_catalog).is_ok());
+
+    // 1. Unresolved upstream model ref
+    let bad_refs = vec![
+        ModelCatalogRow {
+            provider_id: "openrouter".to_string(),
+            model_id: "nonexistent".to_string(),
+            upstream_model: Some("missing/model".to_string()),
+            code_mode: None,
+        },
+        // Self-referencing upstream model
+        ModelCatalogRow {
+            provider_id: "self".to_string(),
+            model_id: "loop".to_string(),
+            upstream_model: Some("self/loop".to_string()),
+            code_mode: None,
+        },
+    ];
+    let ref_errors = SharedUpstreamModelCatalog::validate_upstream_model_refs(&bad_refs).unwrap_err();
+    assert_eq!(ref_errors.len(), 2);
+    assert!(ref_errors[0].contains("openrouter/nonexistent -> missing/model"));
+    assert!(ref_errors[1].contains("self/loop -> self/loop"));
+
+    // 2. Silent sibling in shared model group missing code-mode tier
+    let silent_sibling_catalog = vec![
+        ModelCatalogRow {
+            provider_id: "openai".to_string(),
+            model_id: "gpt-4o".to_string(),
+            upstream_model: None,
+            code_mode: Some("capable".to_string()),
+        },
+        ModelCatalogRow {
+            provider_id: "azure".to_string(),
+            model_id: "gpt-4o".to_string(),
+            upstream_model: Some("openai/gpt-4o".to_string()),
+            code_mode: None, // Missing!
+        },
+    ];
+    let tier_errors = SharedUpstreamModelCatalog::validate_code_mode_tier_consistency(&silent_sibling_catalog).unwrap_err();
+    assert_eq!(tier_errors.len(), 1);
+    assert!(tier_errors[0].contains("azure/gpt-4o"));
+    assert!(tier_errors[0].contains("shared model gpt-4o"));
+}

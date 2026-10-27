@@ -216,3 +216,87 @@ impl PluginCapabilityCatalog {
         }
     }
 }
+
+// Shared upstream model catalog validations (from src/plugins/contracts/shared-upstream-model.contract.test.ts)
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ModelCatalogRow {
+    pub provider_id: String,
+    pub model_id: String,
+    pub upstream_model: Option<String>,
+    pub code_mode: Option<String>,
+}
+
+impl ModelCatalogRow {
+    pub fn ref_id(&self) -> String {
+        format!("{}/{}", self.provider_id, self.model_id)
+    }
+
+    pub fn group_key(&self) -> String {
+        let target = self.upstream_model.as_deref().unwrap_or(&self.model_id);
+        if let Some(pos) = target.find('/') {
+            target[pos + 1..].to_ascii_lowercase()
+        } else {
+            target.to_ascii_lowercase()
+        }
+    }
+}
+
+pub struct SharedUpstreamModelCatalog;
+
+impl SharedUpstreamModelCatalog {
+    pub fn validate_upstream_model_refs(rows: &[ModelCatalogRow]) -> Result<(), Vec<String>> {
+        let refs: HashSet<String> = rows.iter().map(|r| r.ref_id()).collect();
+        let mut unresolved = Vec::new();
+
+        for row in rows {
+            if let Some(upstream) = &row.upstream_model {
+                if upstream == &row.ref_id() || !refs.contains(upstream) {
+                    unresolved.push(format!("{} -> {}", row.ref_id(), upstream));
+                }
+            }
+        }
+        if unresolved.is_empty() {
+            Ok(())
+        } else {
+            unresolved.sort();
+            Err(unresolved)
+        }
+    }
+
+    pub fn validate_code_mode_tier_consistency(rows: &[ModelCatalogRow]) -> Result<(), Vec<String>> {
+        let mut groups: HashMap<String, Vec<&ModelCatalogRow>> = HashMap::new();
+        for row in rows {
+            groups.entry(row.group_key()).or_default().push(row);
+        }
+
+        let mut silent = Vec::new();
+        for (group_key, group) in groups {
+            if group.len() < 2 || !group.iter().any(|r| r.code_mode.is_some()) {
+                continue;
+            }
+            let mut declared: Vec<String> = group
+                .iter()
+                .filter_map(|r| r.code_mode.as_ref().map(|cm| format!("{}={}", r.ref_id(), cm)))
+                .collect();
+            declared.sort();
+            let declared_str = declared.join(", ");
+
+            for r in group.iter().filter(|r| r.code_mode.is_none()) {
+                silent.push(format!(
+                    "{} (shared model {}; siblings declare {})",
+                    r.ref_id(),
+                    group_key,
+                    declared_str
+                ));
+            }
+        }
+
+        if silent.is_empty() {
+            Ok(())
+        } else {
+            silent.sort();
+            Err(silent)
+        }
+    }
+}
