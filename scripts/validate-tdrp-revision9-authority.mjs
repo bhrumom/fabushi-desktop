@@ -69,7 +69,16 @@ const acquisitionInventory=await readJson('projects/telegram-desktop-rust/invent
 fail(lock.project_id==='TDRP-001' && lock.spec_revision===9,'lock is not TDRP Revision 9');
 fail(schema.properties?.spec_revision?.const===9,'ledger schema is not Revision 9');
 fail(ledger.project_id==='TDRP-001' && ledger.spec_revision===9 && ledger.format_version===3,'ledger instance is not Revision 9');
-fail(ledger.upstream_commit===lock.upstream.commit,'ledger upstream commit does not match accepted baseline identity');
+// Historical migration rows retain their original source identity while a new upstream
+// candidate is being inventoried. They must never be relabelled as candidate evidence.
+const candidateIsAccepted=lock.upstream.accepted===true && lock.acceptance?.baseline_ready===true;
+const ledgerIdentity=candidateIsAccepted ? lock.upstream.commit : lock.previous_historical_baseline?.commit;
+fail(/^[0-9a-f]{40}$/.test(ledgerIdentity||''),'historical/candidate ledger identity authority missing');
+fail(ledger.upstream_commit===ledgerIdentity,'ledger upstream commit does not match its historical/candidate provenance');
+if (!candidateIsAccepted) {
+  fail(lock.upstream.accepted===false && lock.acceptance?.baseline_ready===false && lock.acceptance?.accepted===false,
+    'incomplete candidate must stay explicitly unaccepted');
+}
 fail(ledger.coverage?.source_entries_total===lock.coverage.recursive_source_entries_total,'ledger recursive source count does not match lock');
 fail(ledger.coverage?.unknown>=lock.coverage.unknown_minimum,'ledger unknown count understates lock minimum');
 fail(ledger.coverage?.unread>=lock.coverage.unread_minimum,'ledger unread count understates lock minimum');
