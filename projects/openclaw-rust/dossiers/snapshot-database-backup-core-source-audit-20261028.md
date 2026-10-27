@@ -131,6 +131,13 @@ remain current, and a fresh guarded restore namespace is allocated. Positive
 and mismatch oracles are local only; no rows are materialized and no namespace
 is published to a live PostgreSQL owner.
 
+The exact upstream `git-backup-sanitizer.ts` was also read at the locked tree.
+The Rust owner now carries its table/key redaction policy: state versus agent
+secret-table selection, protected `config_machine_state` prefixes, and
+generated plugin-model catalog credential stripping. Positive and malformed
+row oracles are local only; deterministic SQLite/Postgres row materialization
+and the live database-port consumer remain unimplemented.
+
 ## Responsibility/evidence decision
 
 `OCRM-RESP-SNAPSHOT-BACKUP-CODEC-001` remains `read=partial`,
