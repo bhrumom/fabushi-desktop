@@ -5310,7 +5310,7 @@
       "selected_owner": "source/host/src/extensions/attachments/anthropic_inline_images.rs",
       "source_refs": [
         {
-          "blob_sha": "f1cf59a9e33ea2cf486b72dbead9b92ae17ce9f3",
+          "blob_sha": "84049330c09c297ed5913a9f33905b7162a83a5d",
           "path": "src/media/anthropic-inline-images.ts",
           "range": {
             "end_line": 96,
@@ -5995,7 +5995,7 @@
       "selected_owner": "source/host/src/extensions/attachments/channel_inbound_roots.rs",
       "source_refs": [
         {
-          "blob_sha": "d0be1330fa585c5b597814b7eebfe398adbc2f9e",
+          "blob_sha": "168b948a87dce629e8e43756ecb7665d1b88cc45",
           "path": "src/media/channel-inbound-roots.ts",
           "range": {
             "end_line": 142,
@@ -6825,7 +6825,7 @@
       "selected_owner": "source/host/src/extensions/attachments/host_read_media_policy.rs",
       "source_refs": [
         {
-          "blob_sha": "d6342629b3ae3be5494d13718f62f3f74ce402d4",
+          "blob_sha": "dfe3731a67d3f2d320c0bb67c3aa747cabdee909",
           "path": "src/media/host-read-media-policy.ts",
           "range": {
             "end_line": 234,
@@ -7628,7 +7628,7 @@
       "selected_owner": "source/host/src/extensions/attachments/local_roots.rs",
       "source_refs": [
         {
-          "blob_sha": "d38cf2f026a79883bfad7845fdf2615469f8849b",
+          "blob_sha": "2bc61e92f0c8015aee5dcd8aed0412917a8ee881",
           "path": "src/media/local-roots.ts",
           "range": {
             "end_line": 197,
@@ -8546,7 +8546,7 @@
       "selected_owner": "source/host/src/extensions/attachments/read_capability.rs",
       "source_refs": [
         {
-          "blob_sha": "8ec6046e7f226be8ad679bb8d1ca030626359f4f",
+          "blob_sha": "885e4164aefb9368960cab09f6c85b0cec1f7e07",
           "path": "src/media/read-capability.ts",
           "range": {
             "end_line": 267,
@@ -8851,7 +8851,7 @@
       "selected_owner": "source/host/src/extensions/attachments/remote_workspace_file.rs",
       "source_refs": [
         {
-          "blob_sha": "d040aee0f0195a6dd8d689255755ba9b0a1a0110",
+          "blob_sha": "991814e47ba2c283c814e097726aa8d8251ad071",
           "path": "src/media/remote-workspace-file.ts",
           "range": {
             "end_line": 138,
@@ -9255,7 +9255,7 @@
           "symbol": "cleanOldMedia managed-subtree retention tests"
         },
         {
-          "blob_sha": "ae17ca2fa227656e18fec64f0b7849e798020627",
+          "blob_sha": "9daf7bee5fc044bf23fb4e7ad4d29140269d1ee1",
           "path": "src/media/store.test.ts",
           "range": {
             "end_line": 491,
@@ -10364,7 +10364,7 @@
       "selected_owner": "source/host/src/extensions/attachments/web_media.rs",
       "source_refs": [
         {
-          "blob_sha": "52baea5fca06e309cb9f3ef3c7bc379fc70c17be",
+          "blob_sha": "41ea7a7cedeff9c56eb2badfa9f1d1f6a67e2909",
           "path": "src/media/web-media.ts",
           "range": {
             "end_line": 813,
@@ -13069,7 +13069,7 @@
       "selected_owner": "source/host/src/extensions/attachments/input_files.rs",
       "source_refs": [
         {
-          "blob_sha": "c8a8167f53f9547d2f34936d0a7a0b368731ad8c",
+          "blob_sha": "1b8f2241885a1819e930b5b4a1daec91188ab947",
           "path": "src/media/input-files.ts",
           "range": {
             "end_line": 409,
@@ -13171,7 +13171,7 @@
       "selected_owner": "source/host/src/extensions/attachments/staged_inputs.rs",
       "source_refs": [
         {
-          "blob_sha": "6f92023d537f525bf7845f061ca91307bdfa5e55",
+          "blob_sha": "98e3e0cc8d2fec93d0712cef7901961082d36ab0",
           "path": "src/media/staged-inputs.ts",
           "range": {
             "end_line": 175,
@@ -14916,7 +14916,7 @@
       "selected_owner": "source/host/src/extensions/attachments/media_understanding_service.rs",
       "source_refs": [
         {
-          "blob_sha": "d7180e060c4bc752fcfa1c68f11d164d1421f14a",
+          "blob_sha": "2e17136843aeb803082e0ce1a445e35409e1acba",
           "path": "src/media-understanding/provider-registry-metadata.ts",
           "range": {
             "end_line": 39,
@@ -14925,7 +14925,7 @@
           "symbol": "resolveDefaultMediaModelFromRegistry, resolveAutoMediaKeyProvidersFromRegistry"
         },
         {
-          "blob_sha": "d040a927fa1e48bc8a9eb482a52efc1969a53167",
+          "blob_sha": "8e5bb25f1f02d8fb4470c5971d0a8b6f32f45cad",
           "path": "src/media-understanding/provider-registry.ts",
           "range": {
             "end_line": 80,
@@ -14934,7 +14934,7 @@
           "symbol": "buildMediaUnderstandingRegistry, getMediaUnderstandingProvider"
         },
         {
-          "blob_sha": "522198031d22ae2a0614820875e5332156891ebc",
+          "blob_sha": "6a9fdf61d77b7cf54318affdbd1a4b127dc4880a",
           "path": "src/media-understanding/provider-registry.test.ts",
           "range": {
             "end_line": 142,
@@ -14943,7 +14943,7 @@
           "symbol": "provider registry construction test suite"
         },
         {
-          "blob_sha": "4a7199c4ebcb983375cb4b3f8863aa992f9b8893",
+          "blob_sha": "a686193bc5d57b232aecbbe36783c9dc356dd5bc",
           "path": "src/media-understanding/provider-registry.clawrouter.test.ts",
           "range": {
             "end_line": 85,
@@ -14952,7 +14952,7 @@
           "symbol": "clawrouter provider registration test suite"
         },
         {
-          "blob_sha": "f10cf7a30cf4ad496c098198f3b610cff28114c0",
+          "blob_sha": "73ee1ba1eff48a0b4a2d40ce21ac91de4453fe2b",
           "path": "src/media-understanding/provider-capability-registry.ts",
           "range": {
             "end_line": 51,
@@ -14961,7 +14961,7 @@
           "symbol": "buildMediaUnderstandingCapabilityRegistry"
         },
         {
-          "blob_sha": "28e21a2245b73678077ceb7ef0063e18a0ffbb64",
+          "blob_sha": "b15822db0b3c38e124ee69e318c7ce38c3fe8b9d",
           "path": "src/media-understanding/provider-capability-registry.test.ts",
           "range": {
             "end_line": 50,
@@ -14970,7 +14970,7 @@
           "symbol": "provider capability registry test suite"
         },
         {
-          "blob_sha": "9e5c4644e5bc1452bc5d63ff2fba4dfa34346908",
+          "blob_sha": "e8a57493c39420501e4fb2806843914f491c5d5b",
           "path": "src/media-understanding/provider-capability-registry.loading.test.ts",
           "range": {
             "end_line": 126,
@@ -15065,7 +15065,7 @@
       "selected_owner": "source/host/src/extensions/attachments/media_understanding_service.rs",
       "source_refs": [
         {
-          "blob_sha": "dcf3cbcf47976e105e463a0bfb5cb2b528a4adab",
+          "blob_sha": "c4bc3f9d63219efaab5a978fc6877d8a2555bf7d",
           "path": "src/media-understanding/provider-execution.ts",
           "range": {
             "end_line": 271,
@@ -15074,7 +15074,7 @@
           "symbol": "resolveProviderRequestContext, hasProviderAuthAvailable"
         },
         {
-          "blob_sha": "1c746e8c750e396aa7001402263da393a525f053",
+          "blob_sha": "f566e8437db38bb5c90dbc27433bf26087bcf8b8",
           "path": "src/media-understanding/provider-json-post.ts",
           "range": {
             "end_line": 35,
@@ -15083,7 +15083,7 @@
           "symbol": "postJsonResponse"
         },
         {
-          "blob_sha": "2f6e917d84877fe9fc7a0c0e86b24040d7c35581",
+          "blob_sha": "b7ba24aebec0a5a0cbbed8349288d7c1d789c82f",
           "path": "src/media-understanding/shared.test.ts",
           "range": {
             "end_line": 451,
@@ -15092,7 +15092,7 @@
           "symbol": "shared provider execution test suite"
         },
         {
-          "blob_sha": "2e0614867ee4cb6987e9ecbc0195e8067b57bf78",
+          "blob_sha": "6b37cf4c91ef4622bf5208dec56549a998a508ed",
           "path": "src/media-understanding/media-config.test-support.ts",
           "range": {
             "end_line": 26,
@@ -15101,7 +15101,7 @@
           "symbol": "media config test fixtures"
         },
         {
-          "blob_sha": "87e3845b7ee2e9bc238541c6f49962a74c2ae745",
+          "blob_sha": "59f40010355789e335eb421b8a3d3ab97547cc92",
           "path": "src/media-understanding/media-understanding-url-fallback.test.ts",
           "range": {
             "end_line": 85,
@@ -22412,7 +22412,7 @@
       "selected_owner": "source/host/src/extensions/plugins/manifest_doctor.rs",
       "source_refs": [
         {
-          "blob_sha": "8b3874301fa317208d0dfdafeea1409971842fd7",
+          "blob_sha": "51ec10ea2a99edec388a6f0887594d3e22c0efe2",
           "path": "src/plugins/contracts/providers.contract.test.ts",
           "range": null,
           "symbol": "providers.contract"
@@ -24185,7 +24185,7 @@
       "selected_owner": "source/host/src/extensions/plugins/compat.rs",
       "source_refs": [
         {
-          "blob_sha": "a181156fe45be66efdcfddae5dcfb6ef2b186b51",
+          "blob_sha": "1754196078c09abf24aa217a52c8bcd09f86f694",
           "path": "src/plugins/compat/registry.ts",
           "range": {
             "end_line": 10,
@@ -24287,7 +24287,7 @@
       "selected_owner": "source/host/src/extensions/plugins/mod.rs",
       "source_refs": [
         {
-          "blob_sha": "8ee54fc6561f5f2fe4e8be510ad671c667089b33",
+          "blob_sha": "b288e7e93191d5920cea1f0826308ed6957d0692",
           "path": "src/plugins/computer-use-registration.ts",
           "range": {
             "end_line": 224,
@@ -24296,7 +24296,7 @@
           "symbol": "registerComputerUseProvider"
         },
         {
-          "blob_sha": "9cb6a927a7c50e4a78fa844bf25b0cb907293a90",
+          "blob_sha": "80ab6d3a7c9c0aeafeb59f9247c9eee19b1fdc4e",
           "path": "src/plugins/config-state.ts",
           "range": {
             "end_line": 254,
@@ -24404,7 +24404,7 @@
       "selected_owner": "source/host/src/extensions/plugin_sdk/mod.rs",
       "source_refs": [
         {
-          "blob_sha": "8dfb21ef003aa5d20626359e35a121542f534925",
+          "blob_sha": "130b7472fb1d661082034e766cdba6707077f7c0",
           "path": "src/plugin-sdk/allow-from.ts",
           "range": {
             "end_line": 144,
@@ -24413,7 +24413,7 @@
           "symbol": "isNormalizedSenderAllowed"
         },
         {
-          "blob_sha": "9a31a90c5fa6319888d3e2007823f03b1e32d67a",
+          "blob_sha": "50187060641f373dd6502cb8f9db49d457362c97",
           "path": "src/plugin-sdk/api-diff.ts",
           "range": {
             "end_line": 484,
@@ -24524,7 +24524,7 @@
       "selected_owner": "source/host/src/extensions/plugin_sdk/mod.rs",
       "source_refs": [
         {
-          "blob_sha": "d0496d66e74659b4c0e6e76ef0221379361ad28c",
+          "blob_sha": "5834a9de0900a63e94b0f6957726eae13059d87a",
           "path": "src/plugin-sdk/browser-cdp.ts",
           "range": {
             "end_line": 84,
@@ -24533,7 +24533,7 @@
           "symbol": "parseBrowserHttpUrl"
         },
         {
-          "blob_sha": "a18b2c451db93dc8cceb83e4a3fa0b3eaef7c659",
+          "blob_sha": "0b9100a2bcd45fabae524f5e1b69b2118d40f86a",
           "path": "src/plugin-sdk/archive.ts",
           "range": {
             "end_line": 11,
@@ -24635,7 +24635,7 @@
       "selected_owner": "source/host/src/extensions/plugin_sdk/mod.rs",
       "source_refs": [
         {
-          "blob_sha": "d0411a7a2bfab647e3a890a8a91daae480a42ff9",
+          "blob_sha": "e1e14956790b04d87f0cc8eb9b22ad89215dd838",
           "path": "src/plugin-sdk/channel-config-ui-hints.ts",
           "range": {
             "end_line": 255,
@@ -24644,7 +24644,7 @@
           "symbol": "createChannelConfigUiHints"
         },
         {
-          "blob_sha": "86bc3a595cbcf60655119934fc9b1011400bf1b4",
+          "blob_sha": "7198e2d9a0df8fd0f04525f429566081144239ac",
           "path": "src/plugin-sdk/channel-config-helpers.ts",
           "range": {
             "end_line": 443,
@@ -24747,7 +24747,7 @@
       "selected_owner": "source/host/src/extensions/plugin_sdk/mod.rs",
       "source_refs": [
         {
-          "blob_sha": "d027f6a70e70415a72013f99e320478aa6c74ad3",
+          "blob_sha": "5b8682ace32ea6337b04c62c1ef5face1bb783d7",
           "path": "src/plugin-sdk/channel-entry-contract.ts",
           "range": {
             "end_line": 613,
@@ -24756,7 +24756,7 @@
           "symbol": "defineBundledChannelEntry"
         },
         {
-          "blob_sha": "c135da4bb4851eb329a272782b79a78feeb111da",
+          "blob_sha": "675bb7363d560df6cf3e1b59d5ecab0d7f9b0022",
           "path": "src/plugin-sdk/channel-dm-policy.ts",
           "range": {
             "end_line": 120,
@@ -24865,7 +24865,7 @@
       "selected_owner": "source/host/src/extensions/plugin_sdk/mod.rs",
       "source_refs": [
         {
-          "blob_sha": "d0e1f7bc96c4293f7734495c3cefe8742718e010",
+          "blob_sha": "831d6b0c8af9f576c288e44841fd3ac6a5130614",
           "path": "src/plugin-sdk/channel-inbound.ts",
           "range": {
             "end_line": 335,
@@ -24874,7 +24874,7 @@
           "symbol": "buildChannelInboundEventContext"
         },
         {
-          "blob_sha": "b2f0a1c97a87e0766519ebcecd0dafae4e1a0b36",
+          "blob_sha": "9af0b591191368846da53ef0f2bf8a25d57a5635",
           "path": "src/plugin-sdk/channel-ingress-runtime.ts",
           "range": {
             "end_line": 61,
