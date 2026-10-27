@@ -144,6 +144,12 @@ wide integer (`{"$int": ...}`), and BLOB (`{"$hex": ...}`), while rejecting
 non-finite REAL values. These are cell-level oracles only; table ordering,
 bounded streaming, and materialization are still pending.
 
+`encode_sqlite_row` now builds deterministic JSONL rows from encoded cells,
+rejecting duplicate column names and always appending one newline. The local
+oracle asserts byte ordering and duplicate-column rejection. It is a row-level
+primitive only; table schema extraction, primary-key ordering, bounded batch
+flush, and restore consumer wiring remain pending.
+
 ## Responsibility/evidence decision
 
 `OCRM-RESP-SNAPSHOT-BACKUP-CODEC-001` remains `read=partial`,
