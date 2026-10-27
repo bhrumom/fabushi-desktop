@@ -1335,10 +1335,10 @@
       ],
       "id": "OCRM-RESP-BROWSER-IMAGE-TYPES-001",
       "integration": {
-        "consumer": "source/host/src/runner/tools/sand_browser_tools.rs::ProductionBrowserToolExecutor",
-        "entrypoint": "source/host/src/runner/tools/sand_browser_tools.rs::browser_image_mime_type",
+        "consumer": "source/host/src/runner/production_turn_agent_owner.rs",
+        "entrypoint": "source/host/src/runner/tools/sand_browser_tools.rs",
         "owner": "source/host/src/runner/tools/sand_browser_tools.rs",
-        "producer": "browser driver screenshot bytes"
+        "producer": "source/host/src/runner/sand_browser_tools.rs"
       },
       "invariants": [
         "Screenshots bound to sanitized tool call IDs",
@@ -1387,9 +1387,9 @@
         "acceptance": "pending",
         "implementation": "implemented",
         "mapping": "mapped",
-        "read": "read-complete",
-        "verification": "verified",
-        "wiring": "wired"
+        "read": "partial",
+        "verification": "not-run",
+        "wiring": "not-wired"
       },
       "target": {
         "language": "Rust",
@@ -1398,8 +1398,7 @@
       },
       "tests": [
         "source/host/tests/openclaw_browser_web_contract.rs::test_ocrm_browser_o01_tool_dispatch_and_delimiter_framing",
-        "source/host/tests/openclaw_browser_web_contract.rs::test_ocrm_browser_o04_view_generation_and_envelope_invariants",
-        "source/host/tests/sand_browser_tools_contract.rs::production_browser_executor_uses_only_host_box_port"
+        "source/host/tests/openclaw_browser_web_contract.rs::test_ocrm_browser_o04_view_generation_and_envelope_invariants"
       ],
       "typed_contracts": [
         "encode_envelope",

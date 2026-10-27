@@ -4,13 +4,15 @@ use std::time::{SystemTime, UNIX_EPOCH};
 
 use base64::Engine as _;
 use serde::{Deserialize, Serialize};
-use serde_json::{json, Map, Value};
 use sha2::{Digest, Sha256};
+use serde_json::{Map, Value, json};
 
-use crate::extensions::inference::provider_session::{ProviderSessionError, RoutedToolDefinition};
-use crate::media_mime::detect_supported_image_mime_type;
+use crate::extensions::inference::provider_session::{
+    ProviderSessionError, RoutedToolDefinition,
+};
 use crate::runner::box_tool_access::{
-    RunnerBoxReadRequest, RunnerBoxResourcePort, RunnerBoxShellRequest, RunnerBoxWriteRequest,
+    RunnerBoxReadRequest, RunnerBoxResourcePort, RunnerBoxShellRequest,
+    RunnerBoxWriteRequest,
 };
 use crate::runner::routed_provider_runtime::RoutedToolBridge;
 use crate::runner::sand_action_audit::{
@@ -20,40 +22,12 @@ use crate::runner::sand_browser_auto_review::SandBrowserReviewState;
 use crate::runner::sand_computer_auto_review::SAND_COMPUTER_PAGE_STATE_CHROME_UNREACHABLE;
 
 use super::sand_browser_driver_source::{
-    SAND_BROWSER_DRIVER_BOX_DIR, SAND_BROWSER_DRIVER_BOX_PATH, SAND_BROWSER_DRIVER_SOURCE,
-    SAND_BROWSER_RESULT_MARKER,
+    SAND_BROWSER_DRIVER_BOX_DIR, SAND_BROWSER_DRIVER_BOX_PATH,
+    SAND_BROWSER_DRIVER_SOURCE, SAND_BROWSER_RESULT_MARKER,
 };
 
 pub const BOX_CDP_PORT_BASE: u32 = 9_222;
 pub const PENDING_SCREENSHOT_CAP: usize = 32;
-
-pub fn browser_image_mime_type(bytes: &[u8], path: &str) -> Option<&'static str> {
-    if bytes.len() >= 12
-        && &bytes[4..8] == b"ftyp"
-        && bytes[8..12].windows(4).any(|brand| brand == b"avif")
-    {
-        return Some("image/avif");
-    }
-    if let Some(mime) = detect_supported_image_mime_type(bytes) {
-        return matches!(
-            mime,
-            "image/avif" | "image/gif" | "image/jpeg" | "image/png" | "image/webp"
-        )
-        .then_some(mime);
-    }
-    // Tiny fixtures and streams without a complete header still carry a
-    // trusted driver extension; use it only as a compatibility fallback.
-    (bytes.len() < 8).then(
-        || match path.rsplit('.').next()?.to_ascii_lowercase().as_str() {
-            "avif" => Some("image/avif"),
-            "gif" => Some("image/gif"),
-            "jpeg" | "jpg" => Some("image/jpeg"),
-            "png" => Some("image/png"),
-            "webp" => Some("image/webp"),
-            _ => None,
-        },
-    )?
-}
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -64,8 +38,9 @@ pub struct BrowserEnvelope {
 }
 
 pub fn encode_envelope(envelope: &BrowserEnvelope) -> String {
-    serde_json::to_string(envelope)
-        .unwrap_or_else(|_| serde_json::json!({"text":envelope.text}).to_string())
+    serde_json::to_string(envelope).unwrap_or_else(|_| {
+        serde_json::json!({"text":envelope.text}).to_string()
+    })
 }
 
 pub fn decode_envelope(raw: &str) -> BrowserEnvelope {
@@ -202,8 +177,8 @@ pub fn capture_browser_review_state(
         command: format!("{probe} > {probe_path}"),
         working_directory: "/workspace".into(),
         tool_call_id: format!("{tool_call_id}:auto-review-state"),
-        is_background: false,
-        block_until_ms: None,
+                is_background: false,
+                block_until_ms: None,
     })?;
     if shell_result.get("kind").and_then(Value::as_str) != Some("success") {
         return Err(ProviderSessionError::Tool(
@@ -231,7 +206,8 @@ pub fn capture_browser_review_state(
             "Browser Auto-review could not capture the current page state.".into(),
         )
     })?;
-    let state_path = format!("{SAND_BROWSER_DRIVER_BOX_DIR}/views-{display_number}.json");
+    let state_path =
+        format!("{SAND_BROWSER_DRIVER_BOX_DIR}/views-{display_number}.json");
     let state_json = read_browser_review_text(
         box_resources,
         &state_path,
@@ -258,8 +234,9 @@ pub fn capture_browser_review_state(
     let mut hash = Sha256::new();
     hash.update(page_identity.join("\n").as_bytes());
     let display_state_identity = format!("{:x}", hash.finalize());
-    let target_page_url = view_id
-        .and_then(|view_id| resolve_browser_target_page_url(&probe_stdout, &state_json, view_id));
+    let target_page_url = view_id.and_then(|view_id| {
+        resolve_browser_target_page_url(&probe_stdout, &state_json, view_id)
+    });
 
     Ok(SandBrowserReviewState {
         display_state_identity,
@@ -349,17 +326,13 @@ pub fn to_browser_review_action(
         value: string_field(args, "value"),
         values: string_array(args, "values"),
         key: string_field(args, "key"),
-        cdp_method: (op == "cdp")
-            .then(|| string_field(args, "method"))
-            .flatten(),
+        cdp_method: (op == "cdp").then(|| string_field(args, "method")).flatten(),
         cdp_params: if op == "cdp" {
             args.get("params").map(Value::to_string)
         } else {
             None
         },
-        tabs_action: (op == "tabs")
-            .then(|| string_field(args, "action"))
-            .flatten(),
+        tabs_action: (op == "tabs").then(|| string_field(args, "action")).flatten(),
         tab_index: if op == "tabs" {
             args.get("index").and_then(Value::as_f64)
         } else {
@@ -437,17 +410,14 @@ pub fn validate_browser_arguments(
     args: &Map<String, Value>,
 ) -> Result<(), BrowserDriverError> {
     for key in &schema.required {
-        if args
-            .get(*key)
-            .is_none_or(|value| value.is_null() || value.as_str() == Some(""))
-        {
+        if args.get(*key).is_none_or(|value| value.is_null() || value.as_str() == Some("")) {
             return Err(BrowserDriverError::new(format!("{key} is required")));
         }
     }
     if let Some(value) = args.get("filePath") {
-        let path = value
-            .as_str()
-            .ok_or_else(|| BrowserDriverError::new("filePath must be a non-empty string"))?;
+        let path = value.as_str().ok_or_else(|| {
+            BrowserDriverError::new("filePath must be a non-empty string")
+        })?;
         if path.is_empty() || path.len() > 4096 || path.chars().any(char::is_control) {
             return Err(BrowserDriverError::new(
                 "filePath must be a non-empty string of at most 4096 non-control characters",
@@ -475,19 +445,20 @@ pub fn validate_browser_arguments(
         let generation = value.as_str().ok_or_else(|| {
             BrowserDriverError::new("expectedGeneration must be a non-empty string")
         })?;
-        if generation.is_empty()
-            || generation.len() > 240
-            || generation.chars().any(char::is_control)
-        {
+        if generation.is_empty() || generation.len() > 240 || generation.chars().any(char::is_control) {
             return Err(BrowserDriverError::new(
                 "expectedGeneration must be a non-empty string of at most 240 non-control characters",
             ));
         }
     }
     for (key, values) in &schema.enum_values {
-        let value = args.get(*key).and_then(Value::as_str).ok_or_else(|| {
-            BrowserDriverError::new(format!("{key} must be one of {}", values.join(", ")))
-        })?;
+        let value = args
+            .get(*key)
+            .and_then(Value::as_str)
+            .ok_or_else(|| BrowserDriverError::new(format!(
+                "{key} must be one of {}",
+                values.join(", ")
+            )))?;
         if !values.contains(&value) {
             return Err(BrowserDriverError::new(format!(
                 "{key} must be one of {}",
@@ -532,17 +503,16 @@ pub fn build_browser_driver_invocation(
         "cdpPort".into(),
         Value::from(BOX_CDP_PORT_BASE.saturating_add(window_index)),
     );
-    request.insert(
-        "viewId".into(),
-        Value::String(requested_view_id.to_string()),
-    );
+    request.insert("viewId".into(), Value::String(requested_view_id.to_string()));
     if let Some(path) = screenshot_path.as_deref() {
         request.insert("screenshotPath".into(), Value::String(path.to_string()));
     }
     let request = Value::Object(request);
-    let encoded_request =
-        base64::engine::general_purpose::STANDARD.encode(request.to_string().as_bytes());
-    let shell_command = format!("node {SAND_BROWSER_DRIVER_BOX_PATH} {encoded_request}");
+    let encoded_request = base64::engine::general_purpose::STANDARD
+        .encode(request.to_string().as_bytes());
+    let shell_command = format!(
+        "node {SAND_BROWSER_DRIVER_BOX_PATH} {encoded_request}"
+    );
     BrowserDriverInvocation {
         request,
         screenshot_path,
@@ -613,9 +583,7 @@ pub struct BrowserDriverError {
 
 impl BrowserDriverError {
     pub fn new(message: impl Into<String>) -> Self {
-        Self {
-            message: message.into(),
-        }
+        Self { message: message.into() }
     }
 }
 
@@ -625,7 +593,8 @@ pub type BrowserAutoReviewCallback = Arc<
         + Sync,
 >;
 pub type BrowserPersistImageCallback = Arc<dyn Fn(&[u8], &str) + Send + Sync>;
-pub type BrowserPossibleNavigationCallback = Arc<dyn Fn(&BrowserDriverResponse) + Send + Sync>;
+pub type BrowserPossibleNavigationCallback =
+    Arc<dyn Fn(&BrowserDriverResponse) + Send + Sync>;
 /// Host-owned pre-execution barrier for Browser's internal box shell calls.
 ///
 /// Frozen Grok routes these calls through HostShellExecutor, which asserts
@@ -633,8 +602,9 @@ pub type BrowserPossibleNavigationCallback = Arc<dyn Fn(&BrowserDriverResponse) 
 /// to the generated shell resource with skipApproval. Keep that safety/audit
 /// boundary here without turning Browser's private driver commands into a
 /// second user-facing approval flow.
-pub type BrowserShellSafetyCallback =
-    Arc<dyn Fn(&RunnerBoxShellRequest) -> Result<(), ProviderSessionError> + Send + Sync>;
+pub type BrowserShellSafetyCallback = Arc<
+    dyn Fn(&RunnerBoxShellRequest) -> Result<(), ProviderSessionError> + Send + Sync,
+>;
 
 #[derive(Clone)]
 pub struct ProductionBrowserToolExecutor {
@@ -661,12 +631,18 @@ impl ProductionBrowserToolExecutor {
         }
     }
 
-    pub fn with_auto_review_callback(mut self, callback: BrowserAutoReviewCallback) -> Self {
+    pub fn with_auto_review_callback(
+        mut self,
+        callback: BrowserAutoReviewCallback,
+    ) -> Self {
         self.auto_review = Some(callback);
         self
     }
 
-    pub fn with_persist_image_callback(mut self, callback: BrowserPersistImageCallback) -> Self {
+    pub fn with_persist_image_callback(
+        mut self,
+        callback: BrowserPersistImageCallback,
+    ) -> Self {
         self.persist_image = Some(callback);
         self
     }
@@ -679,12 +655,18 @@ impl ProductionBrowserToolExecutor {
         self
     }
 
-    pub fn with_shell_safety_callback(mut self, callback: BrowserShellSafetyCallback) -> Self {
+    pub fn with_shell_safety_callback(
+        mut self,
+        callback: BrowserShellSafetyCallback,
+    ) -> Self {
         self.shell_safety = Some(callback);
         self
     }
 
-    fn execute_shell(&self, request: RunnerBoxShellRequest) -> Result<Value, ProviderSessionError> {
+    fn execute_shell(
+        &self,
+        request: RunnerBoxShellRequest,
+    ) -> Result<Value, ProviderSessionError> {
         if let Some(safety) = self.shell_safety.as_ref() {
             safety(&request)?;
         }
@@ -752,9 +734,9 @@ impl ProductionBrowserToolExecutor {
             .pointer("/output/content")
             .and_then(Value::as_str)
             .map(str::to_string)
-            .ok_or_else(|| {
-                ProviderSessionError::Tool("Browser driver result file was not textual".into())
-            })
+            .ok_or_else(|| ProviderSessionError::Tool(
+                "Browser driver result file was not textual".into(),
+            ))
     }
 
     fn read_binary_file(
@@ -834,7 +816,9 @@ impl BrowserToolExecutor for ProductionBrowserToolExecutor {
             &format!("{tool_call_id}:browser-driver-result"),
         )?;
         let response = parse_driver_response(&stdout).ok_or_else(|| {
-            ProviderSessionError::Tool("Browser driver produced no parseable result".into())
+            ProviderSessionError::Tool(
+                "Browser driver produced no parseable result".into(),
+            )
         })?;
 
         let image_b64 = if response.ok && response.screenshot == Some(true) {
@@ -844,12 +828,11 @@ impl BrowserToolExecutor for ProductionBrowserToolExecutor {
                         path,
                         &format!("{tool_call_id}:browser-driver-screenshot"),
                     )?;
-                    bytes.and_then(|bytes| {
-                        let mime = browser_image_mime_type(&bytes, path)?;
+                    bytes.map(|bytes| {
                         if let Some(persist_image) = self.persist_image.as_ref() {
-                            persist_image(&bytes, mime);
+                            persist_image(&bytes, "image/png");
                         }
-                        Some(base64::engine::general_purpose::STANDARD.encode(bytes))
+                        base64::engine::general_purpose::STANDARD.encode(bytes)
                     })
                 }
                 None => None,
@@ -896,7 +879,8 @@ impl RoutedToolBridge for SandBrowserToolBridge {
         let names = specs.iter().map(|spec| spec.name).collect::<Vec<_>>();
         let mut delegated = self.delegate.list_tools()?;
         delegated.retain(|tool| {
-            !names.contains(&tool.name.as_str()) && !names.contains(&tool.tool_name.as_str())
+            !names.contains(&tool.name.as_str())
+                && !names.contains(&tool.tool_name.as_str())
         });
         let mut tools = specs
             .iter()
@@ -921,9 +905,12 @@ impl RoutedToolBridge for SandBrowserToolBridge {
         let Some(spec) = specs.iter().find(|spec| spec.name == effective) else {
             return self.delegate.call_tool(tool, args, tool_call_id);
         };
-        let object = args.as_object().ok_or_else(|| {
-            ProviderSessionError::Tool(format!("{} arguments must be an object", spec.name))
-        })?;
+        let object = args
+            .as_object()
+            .ok_or_else(|| ProviderSessionError::Tool(format!(
+                "{} arguments must be an object",
+                spec.name
+            )))?;
         validate_browser_arguments(&spec.schema, object)
             .map_err(|error| ProviderSessionError::Tool(error.to_string()))?;
         let output = self.executor.execute(spec, object, tool_call_id)?;
@@ -947,22 +934,13 @@ fn browser_tool_definition(spec: &BrowserToolSpec) -> RoutedToolDefinition {
     for (key, values) in &spec.schema.enum_values {
         properties.insert((*key).to_string(), json!({"type":"string","enum":values}));
     }
-    properties
-        .entry("viewId")
-        .or_insert_with(|| json!({"type":"string"}));
+    properties.entry("viewId").or_insert_with(|| json!({"type":"string"}));
     properties
         .entry("expectedGeneration")
         .or_insert_with(|| json!({"type":"string","minLength":1,"maxLength":240}));
-    properties
-        .entry("frameName")
-        .or_insert_with(|| json!({"type":"string","minLength":1,"maxLength":240}));
-    properties
-        .entry("frameUrl")
-        .or_insert_with(|| json!({"type":"string","minLength":1,"maxLength":2048}));
-    properties.insert(
-        "filePath".into(),
-        json!({"type":"string","minLength":1,"maxLength":4096}),
-    );
+    properties.entry("frameName").or_insert_with(|| json!({"type":"string","minLength":1,"maxLength":240}));
+    properties.entry("frameUrl").or_insert_with(|| json!({"type":"string","minLength":1,"maxLength":2048}));
+    properties.insert("filePath".into(), json!({"type":"string","minLength":1,"maxLength":4096}));
     RoutedToolDefinition {
         name: spec.name.into(),
         provider_identifier: "fabushi-runner".into(),
