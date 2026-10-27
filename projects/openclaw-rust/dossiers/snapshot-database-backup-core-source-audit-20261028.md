@@ -100,6 +100,12 @@ implementation necessarily reopens the path read-only because no fd-backed
 SQLite adapter exists yet; therefore this is a local identity oracle, not the
 upstream held-FileHandle proof.
 
+`new_restore_namespace` now allocates the upstream-shaped `restore_` plus a
+128-bit cryptographically random suffix. The local oracle checks the shape and
+independence of two allocations. This only supplies the namespace allocator;
+database-owner reservation, materialization, and owned-namespace cleanup are
+still absent and remain pending.
+
 ## Responsibility/evidence decision
 
 `OCRM-RESP-SNAPSHOT-BACKUP-CODEC-001` remains `read=partial`,
