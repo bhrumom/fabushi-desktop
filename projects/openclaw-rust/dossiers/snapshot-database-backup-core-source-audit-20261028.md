@@ -106,6 +106,13 @@ independence of two allocations. This only supplies the namespace allocator;
 database-owner reservation, materialization, and owned-namespace cleanup are
 still absent and remain pending.
 
+`read_postgres_export_manifest` now mirrors the upstream bounded read
+admission: it holds an `O_NOFOLLOW` handle, rejects non-regular and hard-linked
+files, caps input at 1 MiB, then parses the strict schema. The contract test
+passes a real manifest and rejects symlink and hard-link aliases. This is still
+an owner-side admission boundary, not proof of database restore or consumer
+wiring.
+
 ## Responsibility/evidence decision
 
 `OCRM-RESP-SNAPSHOT-BACKUP-CODEC-001` remains `read=partial`,
