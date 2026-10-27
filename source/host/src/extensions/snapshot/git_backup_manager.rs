@@ -1,14 +1,14 @@
+use rusqlite::{Connection, OpenFlags};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use sha2::{Digest, Sha256};
-use rusqlite::{Connection, OpenFlags};
+use std::collections::BTreeMap;
 use std::fs::{File, OpenOptions};
 use std::io::{self, Read, Write};
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::Arc;
 use std::time::{SystemTime, UNIX_EPOCH};
-use std::collections::BTreeMap;
 
 #[cfg(unix)]
 use std::os::unix::fs::{MetadataExt, OpenOptionsExt, PermissionsExt};
@@ -124,14 +124,19 @@ pub struct PostgresExportManifest {
 
 fn valid_identifier(value: &str) -> bool {
     let mut chars = value.chars();
-    let Some(first) = chars.next() else { return false };
+    let Some(first) = chars.next() else {
+        return false;
+    };
     value.len() <= 255
         && first.is_ascii_alphanumeric()
         && chars.all(|ch| ch.is_ascii_alphanumeric() || matches!(ch, '.' | '_' | '-'))
 }
 
 fn valid_digest(value: &str) -> bool {
-    value.len() == 64 && value.bytes().all(|byte| byte.is_ascii_hexdigit() && !byte.is_ascii_uppercase())
+    value.len() == 64
+        && value
+            .bytes()
+            .all(|byte| byte.is_ascii_hexdigit() && !byte.is_ascii_uppercase())
 }
 
 fn validate_artifact(label: &str, artifact: &PostgresArtifactDigest) -> Result<(), String> {
@@ -156,7 +161,10 @@ pub fn parse_postgres_export_manifest(
     let manifest: PostgresExportManifest = serde_json::from_value(value.clone())
         .map_err(|error| format!("invalid Postgres export manifest: {error}"))?;
     if manifest.schema_version != 2 {
-        return Err(format!("unsupported Postgres export schema: {}", manifest.schema_version));
+        return Err(format!(
+            "unsupported Postgres export schema: {}",
+            manifest.schema_version
+        ));
     }
     if manifest.snapshot_id != expected_id || !valid_identifier(&manifest.snapshot_id) {
         return Err("export manifest id does not match its directory".into());
@@ -181,7 +189,11 @@ pub fn parse_postgres_export_manifest(
     {
         return Err("export source identity is invalid".into());
     }
-    if manifest.active_fragments.iter().any(|fragment| !valid_identifier(fragment)) {
+    if manifest
+        .active_fragments
+        .iter()
+        .any(|fragment| !valid_identifier(fragment))
+    {
         return Err("export contains an invalid active fragment".into());
     }
     if manifest.profile == "exact" && !manifest.sanitized_differences.is_empty() {
@@ -252,11 +264,8 @@ pub fn admit_postgres_export(
     expected_generation: u64,
 ) -> Result<PostgresExportManifest, String> {
     fence.assert_current(expected_generation)?;
-    let manifest = read_postgres_export_manifest(
-        manifest_path,
-        expected_id,
-        Some(required_profile),
-    )?;
+    let manifest =
+        read_postgres_export_manifest(manifest_path, expected_id, Some(required_profile))?;
     verify_postgres_export_artifacts(&directory, &manifest, required_profile)?;
     verify_postgres_anchor_identity(directory.as_ref().join("anchor.sqlite"), &manifest)?;
     fence.assert_current(expected_generation)?;
@@ -270,7 +279,9 @@ fn has_millisecond_timestamp(value: &str) -> bool {
     {
         return false;
     }
-    value.parse::<chrono::DateTime<chrono::FixedOffset>>().is_ok()
+    value
+        .parse::<chrono::DateTime<chrono::FixedOffset>>()
+        .is_ok()
 }
 
 fn valid_sequence_allocation(value: &str) -> bool {
@@ -281,7 +292,9 @@ fn valid_sequence_allocation(value: &str) -> bool {
         return false;
     }
     value.chars().all(|ch| ch.is_ascii_digit())
-        && value.parse::<u64>().is_ok_and(|value| value <= MAX_POSTGRES_SEQUENCE)
+        && value
+            .parse::<u64>()
+            .is_ok_and(|value| value <= MAX_POSTGRES_SEQUENCE)
 }
 
 #[cfg(unix)]
@@ -308,12 +321,21 @@ pub fn write_postgres_export_manifest(
     let manifest = parse_postgres_export_manifest(value, expected_id, None)?;
     let bytes = serde_json::to_vec_pretty(&manifest)
         .map_err(|error| format!("serialize Postgres export manifest: {error}"))?;
-    let mut file = create_manifest_file(path)
-        .map_err(|error| format!("create Postgres export manifest {}: {error}", path.display()))?;
+    let mut file = create_manifest_file(path).map_err(|error| {
+        format!(
+            "create Postgres export manifest {}: {error}",
+            path.display()
+        )
+    })?;
     file.write_all(&bytes)
         .and_then(|_| file.write_all(b"\n"))
         .and_then(|_| file.sync_all())
-        .map_err(|error| format!("persist Postgres export manifest {}: {error}", path.display()))
+        .map_err(|error| {
+            format!(
+                "persist Postgres export manifest {}: {error}",
+                path.display()
+            )
+        })
 }
 
 /// Verify the two SQLite artifacts referenced by a parsed manifest.
@@ -511,7 +533,10 @@ pub fn assert_no_sqlite_sidecars(path: impl AsRef<Path>, error_prefix: &str) -> 
 pub fn assert_fresh_restore_target(path: impl AsRef<Path>) -> Result<(), String> {
     let path = path.as_ref();
     if std::fs::symlink_metadata(path).is_ok() {
-        return Err(format!("fresh SQLite restore path already exists: {}", path.display()));
+        return Err(format!(
+            "fresh SQLite restore path already exists: {}",
+            path.display()
+        ));
     }
     assert_no_sqlite_sidecars(path, "fresh SQLite restore path already exists")
 }
@@ -528,7 +553,10 @@ pub fn new_restore_namespace() -> Result<String, String> {
         .map_err(|error| format!("generate restore namespace entropy: {error}"))?;
     let namespace = format!(
         "{RESTORE_NAMESPACE_PREFIX}{}",
-        bytes.iter().map(|byte| format!("{byte:02x}")).collect::<String>()
+        bytes
+            .iter()
+            .map(|byte| format!("{byte:02x}"))
+            .collect::<String>()
     );
     validate_restore_namespace(&namespace)?;
     Ok(namespace)
@@ -538,7 +566,9 @@ pub fn new_restore_namespace() -> Result<String, String> {
 /// destructive cleanup operation. This validator intentionally does not drop
 /// anything; the database owner must enforce the same predicate before CASCADE.
 pub fn validate_restore_namespace(namespace: &str) -> Result<(), String> {
-    let suffix = namespace.strip_prefix(RESTORE_NAMESPACE_PREFIX).unwrap_or("");
+    let suffix = namespace
+        .strip_prefix(RESTORE_NAMESPACE_PREFIX)
+        .unwrap_or("");
     if suffix.len() == 32 && suffix.bytes().all(|byte| byte.is_ascii_hexdigit()) {
         Ok(())
     } else {
