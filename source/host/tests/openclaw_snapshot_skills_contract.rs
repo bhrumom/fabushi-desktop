@@ -465,6 +465,36 @@ fn test_ocrm_snapshot_postgres_manifest_schema_and_profile_oracles() {
         entries.iter().map(|entry| entry.name.as_str()).collect::<Vec<_>>(),
         vec!["real_table", "real_index", "real_trigger"]
     );
+    let selection_entries = vec![
+        mahayana_host_runtime::extensions::snapshot::git_backup_manager::SqliteSchemaEntry {
+            kind: "table".into(),
+            name: "z_data".into(),
+            sql: "CREATE TABLE z_data".into(),
+        },
+        mahayana_host_runtime::extensions::snapshot::git_backup_manager::SqliteSchemaEntry {
+            kind: "table".into(),
+            name: "backup_runs".into(),
+            sql: "CREATE TABLE backup_runs".into(),
+        },
+        mahayana_host_runtime::extensions::snapshot::git_backup_manager::SqliteSchemaEntry {
+            kind: "table".into(),
+            name: "fts_shadow_content".into(),
+            sql: "CREATE TABLE fts_shadow_content".into(),
+        },
+        mahayana_host_runtime::extensions::snapshot::git_backup_manager::SqliteSchemaEntry {
+            kind: "table".into(),
+            name: "a_data".into(),
+            sql: "CREATE TABLE a_data".into(),
+        },
+    ];
+    let selected =
+        mahayana_host_runtime::extensions::snapshot::git_backup_manager::select_sqlite_backup_tables(
+            &selection_entries,
+            &BTreeSet::from(["fts_shadow".to_string()]),
+            &BTreeSet::from(["z_data".to_string()]),
+        )
+        .expect("select backup tables");
+    assert_eq!(selected, vec!["a_data"]);
     schema_connection
         .execute(
             "INSERT INTO real_table (id, value) VALUES (?1, ?2), (?3, ?4)",

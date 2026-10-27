@@ -20,6 +20,11 @@ const MAX_SAFE_INTEGER: u64 = 9_007_199_254_740_991;
 const MAX_POSTGRES_SEQUENCE: u64 = 9_223_372_036_854_775_807;
 const MAX_EXPORT_MANIFEST_BYTES: usize = 1024 * 1024;
 const SQLITE_TABLE_BATCH_BYTES: usize = 1024 * 1024;
+const GIT_BACKUP_PROJECTION_TABLES: &[&str] = &[
+    "backup_runs",
+    "session_transcript_fts_rows",
+    "session_transcript_index_state",
+];
 
 pub fn validate_sqlite_table_name(value: &str) -> Result<(), String> {
     let mut chars = value.chars();
@@ -108,6 +113,35 @@ pub fn read_sqlite_schema_entries(
         .map_err(|error| format!("read SQLite schema entries: {error}"))?;
     rows.map(|row| row.map_err(|error| format!("decode SQLite schema entry: {error}")))
         .collect()
+}
+
+pub fn is_git_backup_projection_table(name: &str) -> bool {
+    GIT_BACKUP_PROJECTION_TABLES.contains(&name)
+}
+
+pub fn select_sqlite_backup_tables(
+    entries: &[SqliteSchemaEntry],
+    virtual_tables: &BTreeSet<String>,
+    excluded: &BTreeSet<String>,
+) -> Result<Vec<String>, String> {
+    let mut tables = entries
+        .iter()
+        .filter(|entry| entry.kind == "table")
+        .filter(|entry| !excluded.contains(&entry.name))
+        .filter(|entry| !is_git_backup_projection_table(&entry.name))
+        .filter(|entry| {
+            !virtual_tables.iter().any(|virtual_table| {
+                entry.name == *virtual_table || entry.name.starts_with(&format!("{virtual_table}_"))
+            })
+        })
+        .map(|entry| {
+            validate_sqlite_table_name(&entry.name)?;
+            Ok(entry.name.clone())
+        })
+        .collect::<Result<Vec<_>, String>>()?;
+    tables.sort();
+    tables.dedup();
+    Ok(tables)
 }
 
 pub fn digest_sqlite_table(
