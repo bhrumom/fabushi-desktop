@@ -183,7 +183,8 @@
         "OCRM-RESP-AGENT-CONTEXT-COMPACTION-001",
         "OCRM-RESP-AGENT-MODEL-PRICING-001",
         "OCRM-RESP-AGENT-ACP-COMMANDS-001",
-        "OCRM-RESP-AGENT-ACP-POLICY-001"
+        "OCRM-RESP-AGENT-ACP-POLICY-001",
+        "OCRM-RESP-MODEL-PICKER-001"
       ],
       "reviewer": "xuyao@ombhrum.com"
     },
@@ -946,7 +947,8 @@
         "OCRM-RESP-AGENT-CONTEXT-COMPACTION-001",
         "OCRM-RESP-AGENT-MODEL-PRICING-001",
         "OCRM-RESP-AGENT-ACP-COMMANDS-001",
-        "OCRM-RESP-AGENT-ACP-POLICY-001"
+        "OCRM-RESP-AGENT-ACP-POLICY-001",
+        "OCRM-RESP-MODEL-PICKER-001"
       ],
       "reviewer": "xuyao@ombhrum.com"
     },

@@ -10,10 +10,10 @@
     "ui_accepted": false
   },
   "file_coverage": {
-    "mapped_paths": 376,
+    "mapped_paths": 382,
     "omitted_known": 0,
     "tracked_paths": 58750,
-    "unclassified_paths": 58374
+    "unclassified_paths": 58368
   },
   "inventory_authority": {
     "manifest_source": "GitHub Actions immutable artifact candidate",
@@ -16673,6 +16673,156 @@
         "resolve_memory_artifact_write_origin"
       ],
       "unit_id": "OCRM-UNIT-LINK-MEM-001"
+    },
+    {
+      "id": "OCRM-RESP-MODEL-PICKER-001",
+      "unit_id": "OCRM-UNIT-MODEL-PICKER-001",
+      "responsibility_kind": "business-runtime",
+      "behavior": "Session model selection resolution, validation against operator policy, model visibility policy, placement execution-mode fence, runtime preparation, session state transition, and switch event dispatch.",
+      "risk": "Medium; controls model override and active cloud-worker placement compatibility fences",
+      "status": {
+        "read": "read-complete",
+        "mapping": "reviewed",
+        "wiring": "not-wired",
+        "implementation": "implemented",
+        "verification": "not-run",
+        "acceptance": "pending"
+      },
+      "selected_owner": "source/host/src/extensions/inference/model_picker_service.rs",
+      "existing_owner_candidates": [
+        {
+          "path": "source/host/src/extensions/inference/model_picker_service.rs",
+          "reason": "Authoritative model picker and session model selection service"
+        }
+      ],
+      "owner_decision": "Native implementation in model_picker_service under inference extension",
+      "dependencies": [
+        "mahayana_host_runtime::extensions::inference::model_picker_service"
+      ],
+      "capability_ids": [
+        "inference.model_picker"
+      ],
+      "preconditions": [
+        "Session entry and model selection request provided"
+      ],
+      "postconditions": [
+        "Model selection validated against operator authority and placement fences, entry mutated if allowed"
+      ],
+      "invariants": [
+        "Locked session entries reject all model selections",
+        "Generation mismatches produce concurrency conflict rejection",
+        "Operator and visibility policies strictly enforce allowed models",
+        "Active non-local cloud worker placement enforces execution-mode compatibility",
+        "Live model switch pending is flagged when selection changes"
+      ],
+      "typed_contracts": [
+        "ModelPickerCapabilityProfile",
+        "SessionModelSelectionRequest",
+        "apply_session_model_selection",
+        "resolve_active_placement_model_selection_error",
+        "format_model_switch_event"
+      ],
+      "tests": [
+        "source/host/tests/openclaw_model_picker_contract.rs::test_ocrm_model_picker_o01_capability_profile_and_event_formatting",
+        "source/host/tests/openclaw_model_picker_contract.rs::test_ocrm_model_picker_o02_locked_and_conflict_rejections",
+        "source/host/tests/openclaw_model_picker_contract.rs::test_ocrm_model_picker_o03_operator_and_visibility_policy",
+        "source/host/tests/openclaw_model_picker_contract.rs::test_ocrm_model_picker_o04_placement_fences_and_successful_mutation"
+      ],
+      "integration": {
+        "producer": "source/host/src/extensions/inference/model_picker_service.rs",
+        "owner": "source/host/src/extensions/inference/model_picker_service.rs",
+        "consumer": "source/host/src/extensions/inference/model_picker_service.rs",
+        "entrypoint": "source/host/src/extensions/inference/model_picker_service.rs::apply_session_model_selection"
+      },
+      "source_refs": [
+        {
+          "path": "src/model-picker/apply-session-model-selection-placement.test.ts",
+          "blob_sha": "aed905f293e6cc5508ddb2ecf2d4e27e465171f9",
+          "range": {
+            "start_line": 1,
+            "end_line": 152
+          },
+          "symbol": "apply-session-model-selection-placement.test"
+        },
+        {
+          "path": "src/model-picker/apply-session-model-selection.operator-context.test.ts",
+          "blob_sha": "6bb2bd106478df0157d8ebb516d0c9133d698a54",
+          "range": {
+            "start_line": 1,
+            "end_line": 191
+          },
+          "symbol": "apply-session-model-selection.operator-context.test"
+        },
+        {
+          "path": "src/model-picker/apply-session-model-selection.test-support.ts",
+          "blob_sha": "d4f79599495b3484e3c6b2e3e6b3d604b0f85b83",
+          "range": {
+            "start_line": 1,
+            "end_line": 242
+          },
+          "symbol": "apply-session-model-selection.test-support"
+        },
+        {
+          "path": "src/model-picker/apply-session-model-selection.test.ts",
+          "blob_sha": "cc86625e00583a9bd8de3559083ab8fedb017e7d",
+          "range": {
+            "start_line": 1,
+            "end_line": 565
+          },
+          "symbol": "apply-session-model-selection.test"
+        },
+        {
+          "path": "src/model-picker/apply-session-model-selection.ts",
+          "blob_sha": "68d56813c325effc12665c4a91ef3c0e9081a77f",
+          "range": {
+            "start_line": 1,
+            "end_line": 466
+          },
+          "symbol": "apply-session-model-selection"
+        },
+        {
+          "path": "src/model-picker/capabilities.ts",
+          "blob_sha": "1d15801b8c9131b1357d9fc3810901cb7e0405ee",
+          "range": {
+            "start_line": 1,
+            "end_line": 14
+          },
+          "symbol": "capabilities"
+        }
+      ],
+      "evidence_refs": [
+        "source/host/tests/openclaw_model_picker_contract.rs",
+        "projects/openclaw-rust/dossiers/model-picker-scoped.md"
+      ],
+      "requirement_ids": [
+        "OCRM-R06",
+        "OCRM-AC06"
+      ],
+      "required_gate_ids": [
+        "OCRM-G04-rust-contract",
+        "OCRM-G05-frozen-oracle"
+      ],
+      "oracle_ids": [
+        "OCRM-MODEL-PICKER-O01",
+        "OCRM-MODEL-PICKER-O02",
+        "OCRM-MODEL-PICKER-O03",
+        "OCRM-MODEL-PICKER-O04"
+      ],
+      "adr_refs": [],
+      "blocker_ids": [
+        "BL-MODEL-PICKER-EXEC-WIRING-001"
+      ],
+      "target": {
+        "path": "source/host/src/extensions/inference/model_picker_service.rs",
+        "symbol": "apply_session_model_selection",
+        "language": "Rust"
+      },
+      "required_evidence_dimensions": [
+        "unit",
+        "boundary"
+      ],
+      "reviewer": "xuyao@ombhrum.com",
+      "migration_rollback": "Fallback to static session default model without dynamic picker overrides"
     }
   ],
   "schema_version": 1,

@@ -9,3 +9,4 @@ pub mod cursor_inference_transport;
 pub mod inference_service;
 pub mod generated_inference_codec;
 pub mod sand_labeling;
+pub mod model_picker_service;
