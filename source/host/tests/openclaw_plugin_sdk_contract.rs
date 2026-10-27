@@ -330,4 +330,225 @@ fn test_ocrm_plugin_sdk_approval_security_and_reactions() {
     assert!(!registry.is_implicit_authorized("chat-1"));
 }
 
+#[test]
+fn test_ocrm_plugin_sdk_boolean_param() {
+    use mahayana_host_runtime::extensions::plugin_sdk::boolean_param::{
+        parse_boolean, read_boolean_param,
+    };
+    use serde_json::json;
+
+    // parse_boolean
+    assert_eq!(parse_boolean(&json!(true)), Some(true));
+    assert_eq!(parse_boolean(&json!(false)), Some(false));
+    assert_eq!(parse_boolean(&json!(1)), Some(true));
+    assert_eq!(parse_boolean(&json!(0)), Some(false));
+    assert_eq!(parse_boolean(&json!("true")), Some(true));
+    assert_eq!(parse_boolean(&json!("yes")), Some(true));
+    assert_eq!(parse_boolean(&json!("on")), Some(true));
+    assert_eq!(parse_boolean(&json!("1")), Some(true));
+    assert_eq!(parse_boolean(&json!("false")), Some(false));
+    assert_eq!(parse_boolean(&json!("no")), Some(false));
+    assert_eq!(parse_boolean(&json!("off")), Some(false));
+    assert_eq!(parse_boolean(&json!("0")), Some(false));
+    assert_eq!(parse_boolean(&json!("random")), None);
+
+    // read_boolean_param snake_case fallback
+    let mut map = serde_json::Map::new();
+    map.insert("dry_run".to_string(), json!(true));
+    assert_eq!(read_boolean_param(&map, "dryRun"), Some(true));
+
+    map.insert("dry_run".to_string(), json!("false"));
+    assert_eq!(read_boolean_param(&map, "dryRun"), Some(false));
+
+    // prefers exact key over snake_case variant
+    map.insert("dryRun".to_string(), json!(false));
+    map.insert("dry_run".to_string(), json!(true));
+    assert_eq!(read_boolean_param(&map, "dryRun"), Some(false));
+}
+
+#[test]
+fn test_ocrm_plugin_sdk_archive_and_blob() {
+    use mahayana_host_runtime::extensions::plugin_sdk::archive_blob::{
+        buffer_to_blob_part, canonicalize_base64, inspect_tar_archive, read_archive_entry,
+        ArchiveEntryKind,
+    };
+
+    // 1. canonicalize_base64
+    assert_eq!(
+        canonicalize_base64("  SGVsbG8gV29ybGQ=  \n").unwrap(),
+        "SGVsbG8gV29ybGQ="
+    );
+    // Missing padding
+    assert_eq!(
+        canonicalize_base64("SGVsbG8gV29ybGQ").unwrap(),
+        "SGVsbG8gV29ybGQ="
+    );
+    // Invalid
+    assert!(canonicalize_base64("???").is_err());
+
+    // 2. buffer_to_blob_part
+    let buf = b"0123456789abcdef";
+    let part = buffer_to_blob_part(buf, 4, 6).unwrap();
+    assert_eq!(part, b"456789");
+    assert!(buffer_to_blob_part(buf, 20, 5).is_err());
+
+    // 3. Tar archive inspect and single read
+    let mut tar_builder = tar::Builder::new(Vec::new());
+    let mut header = tar::Header::new_gnu();
+    let data = b"hello openclaw plugin";
+    header.set_size(data.len() as u64);
+    header.set_cksum();
+    tar_builder
+        .append_data(&mut header, "nested/hello.txt", &data[..])
+        .unwrap();
+    let tar_bytes = tar_builder.into_inner().unwrap();
+
+    let entries = inspect_tar_archive(&tar_bytes).unwrap();
+    assert_eq!(entries.len(), 1);
+    assert_eq!(entries[0].path, "nested/hello.txt");
+    assert_eq!(entries[0].kind, ArchiveEntryKind::File);
+    assert_eq!(entries[0].size, data.len() as u64);
+
+    let read_data = read_archive_entry(&tar_bytes, "nested/hello.txt").unwrap();
+    assert_eq!(read_data, Some(data.to_vec()));
+
+    let missing = read_archive_entry(&tar_bytes, "nonexistent.txt").unwrap();
+    assert_eq!(missing, None);
+}
+
+#[tokio::test]
+async fn test_ocrm_plugin_sdk_async_lock() {
+    use mahayana_host_runtime::extensions::plugin_sdk::archive_blob::AsyncLockRuntime;
+    use std::sync::atomic::{AtomicUsize, Ordering};
+    use std::sync::Arc;
+
+    let runtime = AsyncLockRuntime::new();
+    let counter = Arc::new(AtomicUsize::new(0));
+
+    let lock = runtime.get_lock("resource-1").await;
+    let _guard = lock.lock().await;
+
+    // Mutex works across tasks
+    counter.fetch_add(1, Ordering::SeqCst);
+    assert_eq!(counter.load(Ordering::SeqCst), 1);
+}
+
+#[test]
+fn test_ocrm_plugin_sdk_browser_url_parsing_and_redaction() {
+    use mahayana_host_runtime::extensions::plugin_sdk::browser::{
+        parse_browser_http_url, redact_cdp_url,
+    };
+
+    // Standard port and normalization
+    let parsed = parse_browser_http_url("http://127.0.0.1:9222/", "browser.cdpUrl").unwrap();
+    assert_eq!(parsed.port, 9222);
+    assert_eq!(parsed.normalized, "http://127.0.0.1:9222");
+
+    // Redaction with credentials and query token
+    let creds = parse_browser_http_url("http://user:pass@127.0.0.1:9222/", "browser.cdpUrl").unwrap();
+    assert_eq!(creds.port, 9222);
+    assert_eq!(redact_cdp_url(Some(&creds.normalized)), Some("http://127.0.0.1:9222".to_string()));
+
+    let token_url = "wss://browser.example/cdp?token=browser-token&view=full";
+    assert_eq!(
+        redact_cdp_url(Some(token_url)),
+        Some("wss://browser.example/cdp?token=***&view=full".to_string())
+    );
+
+    // Preserving explicit default ports
+    let explicit_urls = [
+        "http://127.0.0.1:80/json/version",
+        "http://127.0.0.1:80/path@name",
+        "https://browser.example:443/cdp?session=user@example.com",
+        "ws://browser.example:80/cdp#user@example.com",
+        "wss://user:pass@[::1]:443/cdp?session=user@example.com",
+        "http://user:pass@127.0.0.1:80/path@name",
+        "http://127.0.0.1:9222/path@name",
+    ];
+
+    for u in explicit_urls {
+        let p = parse_browser_http_url(u, "browser.cdpUrl").expect(u);
+        assert!(p.has_explicit_port, "Expected explicit port for {}", u);
+        assert_eq!(p.normalized_with_port, u);
+    }
+
+    // Rejection of invalid port 0
+    assert!(parse_browser_http_url("http://127.0.0.1:0", "browser.cdpUrl").is_err());
+}
+
+#[test]
+fn test_ocrm_plugin_sdk_browser_config_and_profiles() {
+    use mahayana_host_runtime::extensions::plugin_sdk::browser::{
+        close_tracked_browser_tabs_for_sessions, ensure_browser_control_auth,
+        resolve_browser_config, resolve_browser_control_auth, resolve_profile,
+        CloseTrackedBrowserTabsParams, DEFAULT_BROWSER_DEFAULT_PROFILE_NAME,
+        DEFAULT_OPENCLAW_BROWSER_COLOR, DEFAULT_OPENCLAW_BROWSER_ENABLED,
+    };
+    use serde_json::json;
+    use std::collections::HashMap;
+    use std::sync::atomic::{AtomicBool, Ordering};
+    use std::sync::Arc;
+
+    assert!(DEFAULT_OPENCLAW_BROWSER_ENABLED);
+    assert_eq!(DEFAULT_BROWSER_DEFAULT_PROFILE_NAME, "openclaw");
+    assert_eq!(DEFAULT_OPENCLAW_BROWSER_COLOR, "#FF4500");
+
+    let mut env = HashMap::new();
+    env.insert("OPENCLAW_BROWSER_TOKEN".to_string(), "env-token".to_string());
+    let auth = resolve_browser_control_auth(None, &env);
+    assert_eq!(auth.token.as_deref(), Some("env-token"));
+
+    // Auto-generate if missing
+    let empty_env = HashMap::new();
+    let (gen_auth, gen_token) = ensure_browser_control_auth(None, &empty_env);
+    assert!(gen_token.is_some());
+    assert_eq!(gen_auth.token, gen_token);
+
+    // Resolve browser config
+    let cfg_json = json!({
+        "enabled": true,
+        "controlPort": 18888,
+        "color": "#112233"
+    });
+    let resolved = resolve_browser_config(Some(&cfg_json), None);
+    assert!(resolved.enabled);
+    assert_eq!(resolved.control_port, 18888);
+    assert_eq!(resolved.color, "#112233");
+
+    // Resolve profile
+    let default_prof = resolve_profile(&resolved, "openclaw").expect("default profile");
+    assert_eq!(default_prof.name, "openclaw");
+    assert_eq!(default_prof.color, "#112233");
+
+    // Close tracked tabs safety checks
+    let warn_called = Arc::new(AtomicBool::new(false));
+    let warn_called_clone = warn_called.clone();
+    let on_warn = move |_: &str| {
+        warn_called_clone.store(true, Ordering::SeqCst);
+    };
+
+    let params_unpaired = CloseTrackedBrowserTabsParams {
+        session_keys: vec!["agent:main:test".to_string()],
+        is_current: None,
+        session_entry_current_valid: true,
+        has_prepare_current: false, // Invalid pairing
+        prepare_current_fn: None,
+    };
+    let closed = close_tracked_browser_tabs_for_sessions(&params_unpaired, Some(&on_warn));
+    assert_eq!(closed, 0);
+    assert!(warn_called.load(Ordering::SeqCst));
+
+    // Valid cleanup
+    let params_valid = CloseTrackedBrowserTabsParams {
+        session_keys: vec!["agent:main:test".to_string()],
+        is_current: Some(Arc::new(|| true)),
+        session_entry_current_valid: false,
+        has_prepare_current: false,
+        prepare_current_fn: None,
+    };
+    let closed_valid = close_tracked_browser_tabs_for_sessions(&params_valid, None);
+    assert_eq!(closed_valid, 1);
+}
+
+
 

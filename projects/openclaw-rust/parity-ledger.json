@@ -10,10 +10,10 @@
     "ui_accepted": false
   },
   "file_coverage": {
-    "mapped_paths": 745,
+    "mapped_paths": 764,
     "omitted_known": 0,
     "tracked_paths": 58750,
-    "unclassified_paths": 58005
+    "unclassified_paths": 57986
   },
   "inventory_authority": {
     "manifest_source": "GitHub Actions immutable artifact candidate",
@@ -24424,6 +24424,130 @@
         "diff_plugin_sdk_api"
       ],
       "unit_id": "OCRM-UNIT-PLUGIN-SDK-ALLOW-API-001"
+    },
+    {
+      "adr_refs": [],
+      "behavior": "Plugin SDK bounded archive inspection and extraction, process-local async locks, blob byte range snapshots, boolean parameter parsing, browser configuration defaults, CDP URL normalization and credential redaction, browser control authentication, profile resolution, safe platform trash operations, and tracked browser tab maintenance.",
+      "blocker_ids": [],
+      "capability_ids": [
+        "plugin_sdk.archive",
+        "plugin_sdk.blob",
+        "plugin_sdk.boolean_param",
+        "plugin_sdk.browser"
+      ],
+      "dependencies": [
+        "mahayana_host_runtime::extensions::plugin_sdk::archive_blob",
+        "mahayana_host_runtime::extensions::plugin_sdk::boolean_param",
+        "mahayana_host_runtime::extensions::plugin_sdk::browser"
+      ],
+      "evidence_refs": [
+        "source/host/tests/openclaw_plugin_sdk_contract.rs",
+        "projects/openclaw-rust/dossiers/plugin-sdk-browser-and-archive-scoped.md"
+      ],
+      "existing_owner_candidates": [
+        {
+          "path": "source/host/src/extensions/plugin_sdk/archive_blob.rs",
+          "reason": "Host native archive extraction, limits enforcement, async locks, and blob utilities"
+        },
+        {
+          "path": "source/host/src/extensions/plugin_sdk/boolean_param.rs",
+          "reason": "Host native boolean parameter parser with snake_case fallback and boolean coercion"
+        },
+        {
+          "path": "source/host/src/extensions/plugin_sdk/browser.rs",
+          "reason": "Host native browser subsystem facade, CDP URL parser and redaction, config and profile resolution, trash ops, and tab cleanup"
+        }
+      ],
+      "id": "OCRM-RESP-PLUGIN-SDK-BROWSER-AND-ARCHIVE-001",
+      "integration": {
+        "consumer": "source/host/src/extensions/plugin_sdk/mod.rs",
+        "entrypoint": "source/host/src/extensions/plugin_sdk/mod.rs",
+        "owner": "source/host/src/extensions/plugin_sdk/mod.rs",
+        "producer": "source/host/src/extensions/plugin_sdk/mod.rs"
+      },
+      "invariants": [
+        "Archive extraction enforces max_files, max_total_bytes, max_file_size, and forbids directory traversal",
+        "Exact camelCase parameter keys take precedence over snake_case keys",
+        "CDP URL parsing normalizes WHATWG URLs while preserving explicit authority ports",
+        "CDP URL logging redacts credentials and token query parameters",
+        "Browser tab cleanup requires sessionEntryCurrent to pair with prepareCurrent"
+      ],
+      "migration_rollback": "Fallback to uninspected archive extraction and unredacted browser endpoints",
+      "oracle_ids": [
+        "OCRM-PLUGIN-SDK-BROWSER-ARCHIVE-O01"
+      ],
+      "owner_decision": "Unified native plugin SDK infrastructure in extensions::plugin_sdk",
+      "postconditions": [
+        "Tar archives safely inspected and extracted within strict limits",
+        "CDP URLs parsed with WHATWG compliance and display-safe redaction",
+        "Tracked browser tabs safely cleaned with session ownership verification"
+      ],
+      "preconditions": [
+        "Valid archive tar bytes or valid browser URL strings"
+      ],
+      "required_evidence_dimensions": [
+        "unit",
+        "integration"
+      ],
+      "required_gate_ids": [
+        "OCRM-G04-rust-contract"
+      ],
+      "requirement_ids": [
+        "OCRM-R28",
+        "OCRM-AC28"
+      ],
+      "responsibility_kind": "business-runtime",
+      "reviewer": "xuyao@ombhrum.com",
+      "risk": "Medium; archive unpacking safety, sensitive token redaction, and browser control surface stability",
+      "selected_owner": "source/host/src/extensions/plugin_sdk/mod.rs",
+      "source_refs": [
+        {
+          "blob_sha": "d0496d66e74659b4c0e6e76ef0221379361ad28c",
+          "path": "src/plugin-sdk/browser-cdp.ts",
+          "range": {
+            "end_line": 84,
+            "start_line": 1
+          },
+          "symbol": "parseBrowserHttpUrl"
+        },
+        {
+          "blob_sha": "a18b2c451db93dc8cceb83e4a3fa0b3eaef7c659",
+          "path": "src/plugin-sdk/archive.ts",
+          "range": {
+            "end_line": 11,
+            "start_line": 1
+          },
+          "symbol": "extractArchive"
+        }
+      ],
+      "status": {
+        "acceptance": "pending",
+        "implementation": "implemented",
+        "mapping": "reviewed",
+        "read": "read-complete",
+        "verification": "not-run",
+        "wiring": "not-wired"
+      },
+      "target": {
+        "language": "Rust",
+        "path": "source/host/src/extensions/plugin_sdk/browser.rs",
+        "symbol": "parse_browser_http_url"
+      },
+      "tests": [
+        "source/host/tests/openclaw_plugin_sdk_contract.rs::test_ocrm_plugin_sdk_boolean_param",
+        "source/host/tests/openclaw_plugin_sdk_contract.rs::test_ocrm_plugin_sdk_archive_and_blob",
+        "source/host/tests/openclaw_plugin_sdk_contract.rs::test_ocrm_plugin_sdk_async_lock",
+        "source/host/tests/openclaw_plugin_sdk_contract.rs::test_ocrm_plugin_sdk_browser_url_parsing_and_redaction",
+        "source/host/tests/openclaw_plugin_sdk_contract.rs::test_ocrm_plugin_sdk_browser_config_and_profiles"
+      ],
+      "typed_contracts": [
+        "parse_browser_http_url",
+        "redact_cdp_url",
+        "read_boolean_param",
+        "extract_archive",
+        "close_tracked_browser_tabs_for_sessions"
+      ],
+      "unit_id": "OCRM-UNIT-PLUGIN-SDK-BROWSER-ARCHIVE-001"
     }
   ],
   "schema_version": 1,
