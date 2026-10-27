@@ -4398,10 +4398,10 @@
       ],
       "id": "OCRM-RESP-EXEC-LINE-FRAMER-001",
       "integration": {
-        "consumer": "source/host/src/runner/mod.rs",
-        "entrypoint": "source/host/src/runner/mod.rs",
-        "owner": "source/host/src/runner/mod.rs",
-        "producer": "source/host/src/runner/mod.rs"
+        "consumer": "source/host/src/box/exec_daemon_process.rs::spawn_log_reader",
+        "entrypoint": "source/host/src/runner/bounded_line_framer.rs::BoundedLineFramer::push",
+        "owner": "source/host/src/runner/bounded_line_framer.rs",
+        "producer": "managed box exec-daemon stdout/stderr byte streams"
       },
       "invariants": [
         "Incomplete trailing line preserved across chunk pushes",
@@ -4434,7 +4434,7 @@
       "responsibility_kind": "business-runtime",
       "reviewer": "xuyao@ombhrum.com",
       "risk": "Medium; protects against memory exhaustion from un-delimited infinite streams",
-      "selected_owner": "source/host/src/runner/mod.rs",
+      "selected_owner": "source/host/src/runner/bounded_line_framer.rs",
       "source_refs": [
         {
           "blob_sha": "e2395772f795cd0597b854c478f9f1cfb69bb5ea",
@@ -4450,17 +4450,18 @@
         "acceptance": "pending",
         "implementation": "implemented",
         "mapping": "mapped",
-        "read": "partial",
-        "verification": "not-run",
-        "wiring": "not-wired"
+        "read": "read-complete",
+        "verification": "verified",
+        "wiring": "wired"
       },
       "target": {
         "language": "Rust",
-        "path": "source/host/src/runner/mod.rs",
+        "path": "source/host/src/runner/bounded_line_framer.rs",
         "symbol": "BoundedLineFramer"
       },
       "tests": [
-        "source/host/tests/production_turn_run_shell_adapter_contract.rs"
+        "source/host/tests/bounded_line_framer_contract.rs",
+        "source/host/tests/box_exec_daemon_process_contract.rs"
       ],
       "typed_contracts": [
         "BoundedLineFramer::push"

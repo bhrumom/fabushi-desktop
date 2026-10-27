@@ -1,22 +1,22 @@
 use std::env;
 use std::fs;
-use std::io::{BufRead, BufReader};
+use std::io::Read;
 use std::net::{TcpStream, ToSocketAddrs};
 use std::path::{Path, PathBuf};
 use std::process::{Child, ChildStdin, Command, Stdio};
 use std::thread;
 use std::time::{Duration, Instant};
 
-use super::box_remote_accessor::{BoxEndpoint, ping_box_transport_classified};
-use super::generated_production::{
-    ProductionBoxTransport, create_production_box_control_client,
-};
+use super::box_remote_accessor::{ping_box_transport_classified, BoxEndpoint};
+use super::generated_production::{create_production_box_control_client, ProductionBoxTransport};
 use super::loopback_sand_box::{DEFAULT_AUTH_TOKEN, EXEC_DAEMON_PORT};
+use crate::runner::bounded_line_framer::BoundedLineFramer;
 
 pub const BOX_EXEC_DAEMON_START_TIMEOUT_MS: u64 = 20_000;
 pub const BOX_EXEC_DAEMON_STOP_TIMEOUT_MS: u64 = 5_000;
 pub const BOX_EXEC_DAEMON_READY_POLL_MS: u64 = 100;
 pub const BOX_EXEC_DAEMON_PING_TIMEOUT_MS: u64 = 500;
+const BOX_EXEC_DAEMON_LOG_LINE_MAX_BYTES: usize = 64 * 1024;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct BoxExecDaemonProcessOptions {
@@ -162,11 +162,7 @@ pub fn start_managed_box_exec_daemon_from_process_env(
 pub fn start_box_exec_daemon_process(
     options: BoxExecDaemonProcessOptions,
 ) -> Result<OwnedBoxExecDaemon, String> {
-    if port_accepts_connections(
-        &options.host,
-        options.port,
-        Duration::from_millis(300),
-    )? {
+    if port_accepts_connections(&options.host, options.port, Duration::from_millis(300))? {
         return Err(format!(
             "refusing contaminated box exec-daemon startup: {}:{} is already bound",
             options.host, options.port
@@ -250,9 +246,7 @@ pub fn start_box_exec_daemon_process(
     let deadline = Instant::now() + Duration::from_millis(options.start_timeout_ms);
     let readiness = loop {
         if let Some(status) = child.try_wait().map_err(|error| error.to_string())? {
-            break Err(format!(
-                "box exec-daemon exited before readiness: {status}"
-            ));
+            break Err(format!("box exec-daemon exited before readiness: {status}"));
         }
         let outcome = ping_box_transport_classified(
             &(),
@@ -300,30 +294,49 @@ pub fn start_box_exec_daemon_process(
     })
 }
 
-fn spawn_log_reader<R>(reader: R, _stderr: bool)
+fn spawn_log_reader<R>(mut reader: R, _stderr: bool)
 where
-    R: std::io::Read + Send + 'static,
+    R: Read + Send + 'static,
 {
+    let mut framer = BoundedLineFramer::new(
+        BOX_EXEC_DAEMON_LOG_LINE_MAX_BYTES,
+        "box exec-daemon log line exceeded the maximum byte length",
+    );
     let _ = thread::Builder::new()
         .name("box-exec-daemon-log".into())
         .spawn(move || {
-            for line in BufReader::new(reader).lines().map_while(Result::ok) {
-                eprintln!("[box-exec-daemon] {line}");
+            let mut buffer = [0_u8; 8192];
+            loop {
+                let read = match reader.read(&mut buffer) {
+                    Ok(0) => break,
+                    Ok(read) => read,
+                    Err(error) => {
+                        eprintln!("[box-exec-daemon] log read failed: {error}");
+                        break;
+                    }
+                };
+                match framer.push(&buffer[..read]) {
+                    Ok(lines) => {
+                        for line in lines {
+                            eprintln!("[box-exec-daemon] {}", String::from_utf8_lossy(&line));
+                        }
+                    }
+                    Err(error) => {
+                        eprintln!("[box-exec-daemon] log framing failed: {error}");
+                        break;
+                    }
+                }
             }
         });
 }
 
-fn port_accepts_connections(
-    host: &str,
-    port: u16,
-    timeout: Duration,
-) -> Result<bool, String> {
+fn port_accepts_connections(host: &str, port: u16, timeout: Duration) -> Result<bool, String> {
     let mut addresses = (host, port)
         .to_socket_addrs()
         .map_err(|error| format!("invalid box exec-daemon endpoint {host}:{port}: {error}"))?;
-    let address = addresses.next().ok_or_else(|| {
-        format!("box exec-daemon endpoint {host}:{port} resolved no addresses")
-    })?;
+    let address = addresses
+        .next()
+        .ok_or_else(|| format!("box exec-daemon endpoint {host}:{port} resolved no addresses"))?;
     Ok(TcpStream::connect_timeout(&address, timeout).is_ok())
 }
 
@@ -337,7 +350,11 @@ fn env_flag(name: &str) -> bool {
 fn wait_for_child_exit(child: &mut Child, timeout: Duration) -> Result<bool, String> {
     let deadline = Instant::now() + timeout;
     loop {
-        if child.try_wait().map_err(|error| error.to_string())?.is_some() {
+        if child
+            .try_wait()
+            .map_err(|error| error.to_string())?
+            .is_some()
+        {
             return Ok(true);
         }
         if Instant::now() >= deadline {
@@ -347,10 +364,6 @@ fn wait_for_child_exit(child: &mut Child, timeout: Duration) -> Result<bool, Str
     }
 }
 
-fn terminate_child(
-    child: &mut Child,
-    pid: u32,
-    timeout: Duration,
-) -> Result<bool, String> {
+fn terminate_child(child: &mut Child, pid: u32, timeout: Duration) -> Result<bool, String> {
     crate::runner::process_tree::terminate_process_tree(child, pid, timeout, "box exec-daemon")
 }

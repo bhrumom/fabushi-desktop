@@ -76,6 +76,7 @@ pub mod box_tool_access;
 pub mod box_reference_docs;
 pub mod production_turn_run_shell_adapter;
 pub mod process_tree;
+pub mod bounded_line_framer;
 pub mod inactive_turn_agent_stream;
 pub mod turn_agent_composition;
 pub mod production_turn_agent_owner;
