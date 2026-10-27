@@ -255,7 +255,7 @@ fn partial_portable_upload_does_not_commit_manifest_entries() {
     let runtime = Arc::new(FakeRuntime::default());
     *runtime.fail_after.lock().unwrap() = Some(2);
     let logs = Arc::new(Mutex::new(Vec::new()));
-    let service = service(runtime, 1024 * 1024, 1024, vec![10; 8], logs);
+    let service = service(runtime.clone(), 1024 * 1024, 1024, vec![10; 8], logs);
     let connection = rusqlite::Connection::open_in_memory().expect("open SQLite producer");
     connection
         .execute_batch("CREATE TABLE messages (id INTEGER PRIMARY KEY, body TEXT); INSERT INTO messages VALUES (1, 'hello');")
@@ -283,6 +283,34 @@ fn partial_portable_upload_does_not_commit_manifest_entries() {
         .is_err());
     assert!(manifest.is_empty(), "partial upload must not commit manifest");
     assert!(!staging.exists(), "partial upload must clean staging");
+
+    // Recovery is a fresh generation: once the backend is healthy, the
+    // producer can be retried and publishes the complete set without
+    // relying on any partially written manifest state.
+    *runtime.fail_after.lock().unwrap() = None;
+    let retry_staging = std::env::temp_dir().join(format!(
+        "fabushi-live-sqlite-partial-retry-{}",
+        uuid::Uuid::new_v4()
+    ));
+    let retry_results = service
+        .export_and_upload_sqlite_backup(
+            "store-1",
+            manifest,
+            &connection,
+            &retry_staging,
+            mahayana_host_runtime::extensions::snapshot::git_backup_manager::GitBackupIdentity {
+                role: "generic".into(),
+                agent_id: None,
+                id: Some("store_one".into()),
+            },
+            &BTreeSet::new(),
+            "stores/store_one/portable",
+            0o600,
+        )
+        .expect("healthy retry should publish a complete generation");
+    assert_eq!(retry_results.len(), 3);
+    assert_eq!(manifest.len(), 3);
+    assert!(!retry_staging.exists());
 }
 
 #[test]
