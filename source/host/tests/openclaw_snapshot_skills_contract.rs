@@ -144,6 +144,36 @@ fn test_ocrm_snapshot_postgres_manifest_schema_and_profile_oracles() {
         )
         .expect("valid Git backup manifest");
     assert_eq!(parsed_git.schema_version, 1);
+    assert_eq!(
+        mahayana_host_runtime::extensions::snapshot::git_backup_manager::git_backup_scope_path(
+            &parsed_git.identity,
+        )
+        .expect("generic backup scope"),
+        std::path::PathBuf::from("stores/store_one")
+    );
+    let agent_identity =
+        mahayana_host_runtime::extensions::snapshot::git_backup_manager::GitBackupIdentity {
+            role: "agent".into(),
+            agent_id: Some("agent_1".into()),
+            id: None,
+        };
+    assert_eq!(
+        mahayana_host_runtime::extensions::snapshot::git_backup_manager::git_backup_scope_path(
+            &agent_identity,
+        )
+        .expect("agent backup scope"),
+        std::path::PathBuf::from("agents/agent_1")
+    );
+    let invalid_identity =
+        mahayana_host_runtime::extensions::snapshot::git_backup_manager::GitBackupIdentity {
+            role: "generic".into(),
+            agent_id: None,
+            id: Some("../escape".into()),
+        };
+    assert!(mahayana_host_runtime::extensions::snapshot::git_backup_manager::git_backup_scope_path(
+        &invalid_identity,
+    )
+    .is_err());
     let mut invalid_git = git_manifest.clone();
     invalid_git["identity"]["role"] = json!("agent");
     assert!(mahayana_host_runtime::extensions::snapshot::git_backup_manager::parse_git_backup_manifest(

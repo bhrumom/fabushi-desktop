@@ -477,6 +477,31 @@ pub fn parse_git_backup_manifest(value: &Value) -> Result<GitBackupManifest, Str
     Ok(manifest)
 }
 
+pub fn git_backup_scope_path(identity: &GitBackupIdentity) -> Result<PathBuf, String> {
+    match identity.role.as_str() {
+        "global" if identity.agent_id.is_none() && identity.id.is_none() => {
+            Ok(PathBuf::from("global"))
+        }
+        "agent" => {
+            let agent_id = identity
+                .agent_id
+                .as_deref()
+                .filter(|value| valid_identifier(value))
+                .ok_or_else(|| "Git backup agent identity is invalid".to_string())?;
+            Ok(PathBuf::from("agents").join(agent_id))
+        }
+        "generic" => {
+            let id = identity
+                .id
+                .as_deref()
+                .filter(|value| valid_identifier(value))
+                .ok_or_else(|| "Git backup generic identity is invalid".to_string())?;
+            Ok(PathBuf::from("stores").join(id))
+        }
+        _ => Err("Git backup identity role is invalid".into()),
+    }
+}
+
 pub fn read_git_backup_manifest(path: impl AsRef<Path>) -> Result<GitBackupManifest, String> {
     let path = path.as_ref();
     let mut file = open_unaliased_readonly(path)
