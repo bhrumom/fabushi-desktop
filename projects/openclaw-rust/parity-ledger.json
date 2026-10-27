@@ -24403,6 +24403,15 @@
       "risk": "Medium; sender access authorization and public plugin SDK surface stability",
       "selected_owner": "source/host/src/extensions/plugin_sdk/mod.rs",
       "source_refs": [
+    {
+      "blob_sha": "ff0d40bdc085b71577b038aa2ea7d7ab29d5fdb5",
+      "path": "src/plugin-sdk/agent-workspace-runtime.ts",
+      "range": {
+        "end_line": 17,
+        "start_line": 1
+      },
+      "symbol": "agentWorkspaceRuntime"
+    },
         {
           "blob_sha": "130b7472fb1d661082034e766cdba6707077f7c0",
           "path": "src/plugin-sdk/allow-from.ts",
