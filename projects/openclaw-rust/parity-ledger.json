@@ -3381,6 +3381,7 @@
       ],
       "evidence_refs": [
         "source/host/tests/device_pairing_contract.rs",
+        "source/host/tests/gateway_server_contract.rs",
         "projects/openclaw-rust/dossiers/gateway-router-device-authority-followup-20261022.md"
       ],
       "existing_owner_candidates": [
@@ -3391,8 +3392,8 @@
       ],
       "id": "OCRM-RESP-DEVICE-PAIRING-JOIN-CODE-001",
       "integration": {
-        "consumer": "source/host/app/src/main.rs",
-        "entrypoint": "source/host/app/src/main.rs",
+        "consumer": "source/host/src/gateway_server.rs",
+        "entrypoint": "source/host/src/gateway_server.rs::GatewayApi::redeem_device_pairing_join_code",
         "owner": "source/host/src/device_pairing_owner.rs",
         "producer": "source/host/app/src/main.rs"
       },
@@ -3446,7 +3447,7 @@
         "mapping": "reviewed",
         "read": "read-complete",
         "verification": "not-run",
-        "wiring": "not-wired"
+        "wiring": "wired"
       },
       "target": {
         "language": "Rust",
@@ -3455,7 +3456,8 @@
       },
       "tests": [
         "source/host/tests/device_pairing_contract.rs::test_ocrm_pair_o12_setup_code",
-        "source/host/tests/device_pairing_contract.rs::test_ocrm_pair_o13_join_code_validation_and_path_parsing"
+        "source/host/tests/device_pairing_contract.rs::test_ocrm_pair_o13_join_code_validation_and_path_parsing",
+        "source/host/tests/gateway_server_contract.rs::gateway_public_pairing_join_route_redeems_once_and_rejects_query_or_empty_code"
       ],
       "typed_contracts": [
         "Join code verification and generation"

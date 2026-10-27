@@ -9624,6 +9624,13 @@ fn start_routed_provider_task(
 }
 
 impl GatewayApi for UnifiedGatewayApi {
+    fn redeem_device_pairing_join_code(
+        &self,
+        shortcode: &str,
+    ) -> Result<Option<serde_json::Value>, GatewayCommandError> {
+        self.device_pairing.redeem_device_pairing_join_code(shortcode)
+    }
+
     fn call(
         &self,
         method: &str,

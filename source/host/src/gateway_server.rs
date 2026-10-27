@@ -19,6 +19,7 @@ use crate::gateway_command_error::{
 };
 pub use crate::gateway_command_error::GatewayCommandError;
 use crate::gateway_config::{GatewayServerConfig, GatewayTlsConfig, is_loopback_host};
+use crate::device_pairing_owner::parse_device_pairing_join_request_path;
 use crate::gateway_protocol::{
     GATEWAY_PREPARE_UPGRADE_PATH, is_grok_gateway_command, parse_command_args,
     slim_command_result, slim_event,
@@ -162,6 +163,15 @@ pub trait GatewayApi: Send + Sync + 'static {
     }
     fn prepare_for_upgrade(&self) -> Result<Value, GatewayCommandError> {
         Ok(json!({ "quiescing": false, "runningTurns": 0 }))
+    }
+
+    /// Redeem a public, single-use device-pairing join code. Implementations
+    /// that do not own pairing storage keep the route disabled by default.
+    fn redeem_device_pairing_join_code(
+        &self,
+        _shortcode: &str,
+    ) -> Result<Option<Value>, GatewayCommandError> {
+        Ok(None)
     }
 }
 
@@ -1153,6 +1163,9 @@ fn handle_connection(
     }
 
     let events = request.method == "GET" && path == GATEWAY_EVENTS_PATH;
+    let pairing_join = request.method == "GET"
+        && query.is_none()
+        && parse_device_pairing_join_request_path(path).is_some();
     let prepare = request.method == "POST" && path == GATEWAY_PREPARE_UPGRADE_PATH;
     let avatar = request.method == "GET" && path.starts_with(&format!("{GATEWAY_AVATARS_PATH}/"));
     let command = request.method == "POST"
@@ -1163,7 +1176,7 @@ fn handle_connection(
     let local_responses = request.method == "POST" && path == GATEWAY_LOCAL_EXEC_RESPONSES_PATH;
     let webauthn_requests = request.method == "GET" && path == GATEWAY_WEBAUTHN_REQUESTS_PATH;
     let webauthn_responses = request.method == "POST" && path == GATEWAY_WEBAUTHN_RESPONSES_PATH;
-    if !(events || prepare || avatar || command || local_requests || local_responses || webauthn_requests || webauthn_responses) {
+    if !(events || pairing_join || prepare || avatar || command || local_requests || local_responses || webauthn_requests || webauthn_responses) {
         return respond_error(
             &mut stream,
             404,
@@ -1187,7 +1200,8 @@ fn handle_connection(
         return respond_error(&mut stream, 401, "webauthn requires gateway authentication");
     }
 
-    let allows_unauthenticated = command && matches!(method, "device.pair.request" | "device.pair.status");
+    let allows_unauthenticated = pairing_join
+        || (command && matches!(method, "device.pair.request" | "device.pair.status"));
     let mut authenticated = false;
 
     if let Some(token) = deps.config.auth_token.as_deref() {
@@ -1286,6 +1300,26 @@ fn handle_connection(
             Ok(value) => respond_json(&mut stream, 200, value),
             Err(error) => respond_error(&mut stream, error.status(), error.to_string()),
         };
+    }
+    if pairing_join {
+        let shortcode = parse_device_pairing_join_request_path(path).unwrap_or_default();
+        if shortcode.is_empty() {
+            return respond_error(&mut stream, 404, "not_found");
+        }
+        let payload = match deps.api.redeem_device_pairing_join_code(shortcode) {
+            Ok(Some(payload)) => payload,
+            Ok(None) => return respond_error(&mut stream, 404, "not_found"),
+            Err(error) => return respond_error(&mut stream, error.status(), error.to_string()),
+        };
+        return write_response(
+            &mut stream,
+            200,
+            "application/json",
+            &serde_json::to_vec(&payload).map_err(|error| {
+                io::Error::other(format!("gateway response serialization failed: {error}"))
+            })?,
+            &[("Cache-Control", "no-store")],
+        );
     }
 
 

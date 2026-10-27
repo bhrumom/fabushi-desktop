@@ -20,6 +20,13 @@ use serde_json::{Value, json};
 struct TestApi;
 
 impl GatewayApi for TestApi {
+    fn redeem_device_pairing_join_code(&self, shortcode: &str) -> Result<Option<Value>, GatewayCommandError> {
+        Ok((shortcode == "A234567890123456789012").then(|| json!({
+            "deviceId": "device-join-1",
+            "token": "single-use-token",
+        })))
+    }
+
     fn call(&self, method: &str, args: Value) -> Result<Value, GatewayCommandError> {
         match method {
             "listAgents" => Ok(args.get("agents").cloned().unwrap_or_else(|| json!([
@@ -69,6 +76,41 @@ impl GatewayApi for TestApi {
     fn prepare_for_upgrade(&self) -> Result<Value, GatewayCommandError> {
         Ok(json!({ "quiescing": true, "runningTurns": 2 }))
     }
+}
+
+#[test]
+fn gateway_public_pairing_join_route_redeems_once_and_rejects_query_or_empty_code() {
+    let server = start_gateway_server(GatewayServerDeps {
+        api: Arc::new(TestApi),
+        events: GatewayEventHub::default(),
+        local_exec: None,
+        webauthn: None,
+        config: config(Some("secret")),
+        started_at: 1,
+    })
+    .expect("gateway server");
+    let port = server.port();
+
+    let redeemed = request(
+        port,
+        "GET /j/A234567890123456789012 HTTP/1.1\r\nHost: 127.0.0.1\r\nConnection: close\r\n\r\n",
+    );
+    assert!(redeemed.starts_with("HTTP/1.1 200 OK"), "{redeemed}");
+    assert_eq!(json_body(&redeemed)["deviceId"], "device-join-1");
+    assert!(redeemed.to_ascii_lowercase().contains("cache-control: no-store"));
+
+    let queried = request(
+        port,
+        "GET /j/A234567890123456789012?x=1 HTTP/1.1\r\nHost: 127.0.0.1\r\nConnection: close\r\n\r\n",
+    );
+    assert!(queried.starts_with("HTTP/1.1 404 Not Found"), "{queried}");
+
+    let empty = request(
+        port,
+        "GET /j HTTP/1.1\r\nHost: 127.0.0.1\r\nConnection: close\r\n\r\n",
+    );
+    assert!(empty.starts_with("HTTP/1.1 404 Not Found"), "{empty}");
+    server.close();
 }
 
 
