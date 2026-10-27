@@ -25490,8 +25490,62 @@
             "end_line": 70,
             "start_line": 1
           },
-          "symbol": "ChannelPairingStore"
-        }
+    "symbol": "ChannelPairingStore"
+  },
+    {
+      "blob_sha": "a993b8cd8ccc8390ae48e50a61a65ac7e9a8afca",
+      "path": "src/plugin-sdk/channel-lifecycle.queue.test.ts",
+      "range": {"end_line": 1, "start_line": 1},
+      "symbol": "channel-lifecycle.queue.test"
+    },
+    {
+      "blob_sha": "20771df1ed91e6adc9e4d19c0b0faff92b0bd1e6",
+      "path": "src/plugin-sdk/channel-lifecycle.test.ts",
+      "range": {"end_line": 1, "start_line": 1},
+      "symbol": "channel-lifecycle.test"
+    },
+    {
+      "blob_sha": "f2ef978392cb0acda34829b7462f186442ffa154",
+      "path": "src/plugin-sdk/channel-mention-gating.ts",
+      "range": {"end_line": 1, "start_line": 1},
+      "symbol": "channel-mention-gating"
+    },
+    {
+      "blob_sha": "075126f0e802190331f65c458084d28994d4d2fd",
+      "path": "src/plugin-sdk/channel-message.test.ts",
+      "range": {"end_line": 1, "start_line": 1},
+      "symbol": "channel-message.test"
+    },
+    {
+      "blob_sha": "cc8200747b6711bebf7ed66bb3816d1664b511f3",
+      "path": "src/plugin-sdk/channel-outbound.reply-pipeline.test.ts",
+      "range": {"end_line": 1, "start_line": 1},
+      "symbol": "channel-outbound.reply-pipeline.test"
+    },
+    {
+      "blob_sha": "d3b0bc81b6ac38e3bad22f2f15078b570d5728f0",
+      "path": "src/plugin-sdk/channel-outbound.stale-install.test.ts",
+      "range": {"end_line": 1, "start_line": 1},
+      "symbol": "channel-outbound.stale-install.test"
+    },
+    {
+      "blob_sha": "2adb62d40b88e31d97a0f646495a94feb11f62a8",
+      "path": "src/plugin-sdk/channel-outbound.streaming.test.ts",
+      "range": {"end_line": 1, "start_line": 1},
+      "symbol": "channel-outbound.streaming.test"
+    },
+    {
+      "blob_sha": "c25d259da70feb3fb7d88b28eafa16dd57e1a63f",
+      "path": "src/plugin-sdk/channel-pairing.store.test.ts",
+      "range": {"end_line": 1, "start_line": 1},
+      "symbol": "channel-pairing.store.test"
+    },
+    {
+      "blob_sha": "73ab039fd6e6bd5df9d04a05dfbde7dc4151fe08",
+      "path": "src/plugin-sdk/channel-pairing.test.ts",
+      "range": {"end_line": 1, "start_line": 1},
+      "symbol": "channel-pairing.test"
+    }
       ],
       "status": {
         "acceptance": "pending",
