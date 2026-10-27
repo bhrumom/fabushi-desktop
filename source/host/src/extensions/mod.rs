@@ -71,4 +71,8 @@ pub mod security;
 pub mod shared;
 pub mod skills;
 pub mod snapshot;
+pub mod state;
+pub mod system_agent;
+pub mod talk;
+pub mod transcripts;
 
