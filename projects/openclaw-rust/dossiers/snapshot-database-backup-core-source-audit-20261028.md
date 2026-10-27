@@ -138,6 +138,12 @@ generated plugin-model catalog credential stripping. Positive and malformed
 row oracles are local only; deterministic SQLite/Postgres row materialization
 and the live database-port consumer remain unimplemented.
 
+The exact `sqlite-cell-codec.ts` was also read. `encode_sqlite_value` now
+matches its portable representation for NULL/text/finite REAL, safe versus
+wide integer (`{"$int": ...}`), and BLOB (`{"$hex": ...}`), while rejecting
+non-finite REAL values. These are cell-level oracles only; table ordering,
+bounded streaming, and materialization are still pending.
+
 ## Responsibility/evidence decision
 
 `OCRM-RESP-SNAPSHOT-BACKUP-CODEC-001` remains `read=partial`,
