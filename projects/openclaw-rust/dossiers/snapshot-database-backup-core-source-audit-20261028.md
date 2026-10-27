@@ -119,6 +119,12 @@ The contract proves both admission and rejection after a generation advance.
 It deliberately stops before PostgreSQL/SQLite materialization and namespace
 cleanup, which remain the next production frontier.
 
+`validate_restore_namespace` now mirrors the upstream cleanup guard and only
+accepts `restore_` plus exactly 32 hexadecimal characters; the local oracle
+rejects `public`, short names, and non-hex suffixes. It is a destructive
+operation precondition only; no PostgreSQL DROP/CASCADE is exposed until the
+database owner is wired.
+
 ## Responsibility/evidence decision
 
 `OCRM-RESP-SNAPSHOT-BACKUP-CODEC-001` remains `read=partial`,
