@@ -484,7 +484,7 @@ fn test_ocrm_plugin_sdk_browser_config_and_profiles() {
         CloseTrackedBrowserTabsParams, DEFAULT_BROWSER_DEFAULT_PROFILE_NAME,
         DEFAULT_OPENCLAW_BROWSER_COLOR, DEFAULT_OPENCLAW_BROWSER_ENABLED,
     };
-    use serde_json::{json, Value};
+    use serde_json::json;
     use std::collections::HashMap;
     use std::sync::atomic::{AtomicBool, Ordering};
     use std::sync::Arc;
@@ -559,7 +559,7 @@ fn test_ocrm_plugin_sdk_channel_config_and_ui_hints() {
         resolve_optional_config_string, set_canonical_dm_allow_from,
         ChannelConfigUiHintsParams, DmPolicyHintParams, ProgressHintParams,
     };
-    use serde_json::{json, Value};
+    use serde_json::json;
     use std::collections::HashMap;
 
     // 1. UI Hints - DM Policy
@@ -958,6 +958,120 @@ fn test_ocrm_plugin_sdk_channel_feedback_inbound_ingress() {
     assert!(join_msg.contains("Joined room !lobby:example.org on channel matrix"));
     assert!(join_msg.contains("invited by @admin:example.org"));
 }
+
+#[test]
+fn test_ocrm_plugin_sdk_channel_lifecycle_outbound_pairing() {
+    use mahayana_host_runtime::extensions::plugin_sdk::channel_lifecycle::{
+        ArmableStallWatchdog, ChannelRunQueue,
+    };
+    use mahayana_host_runtime::extensions::plugin_sdk::channel_outbound::{
+        preserve_reply_payload_media_selection, ChannelDraftStreamingChunking,
+        OutboundEchoTracker, OutboundMessageIdentity, ReplyPayload,
+    };
+    use mahayana_host_runtime::extensions::plugin_sdk::channel_pairing::{
+        strip_pairing_command_prefix, ChannelPairingStore,
+    };
+    use std::sync::atomic::{AtomicUsize, Ordering};
+    use std::sync::Arc;
+    use std::thread::sleep;
+    use std::time::Duration;
+
+    // 1. Channel Run Queue serialization & deactivation
+    let queue = ChannelRunQueue::new();
+    assert!(queue.is_active());
+
+    let count = Arc::new(AtomicUsize::new(0));
+    let count_c1 = count.clone();
+    let count_c2 = count.clone();
+
+    assert!(queue.enqueue("chat-1", move |_| {
+        count_c1.fetch_add(10, Ordering::SeqCst);
+    }));
+    assert!(queue.enqueue("chat-1", move |_| {
+        count_c2.fetch_add(5, Ordering::SeqCst);
+    }));
+
+    // Process chat-1 queue FIFO
+    assert!(queue.run_next("chat-1"));
+    assert_eq!(count.load(Ordering::SeqCst), 10);
+    assert!(queue.run_next("chat-1"));
+    assert_eq!(count.load(Ordering::SeqCst), 15);
+    assert!(!queue.run_next("chat-1")); // empty
+
+    // Deactivation
+    queue.deactivate();
+    assert!(!queue.is_active());
+    assert!(!queue.enqueue("chat-1", |_| {}));
+
+    // 2. Armable Stall Watchdog
+    let watchdog = ArmableStallWatchdog::new(50); // 50ms
+    assert!(!watchdog.is_armed());
+    assert!(!watchdog.is_stalled());
+
+    watchdog.arm();
+    assert!(watchdog.is_armed());
+    assert!(!watchdog.is_stalled());
+    sleep(Duration::from_millis(60));
+    assert!(watchdog.is_stalled());
+
+    watchdog.tick();
+    assert!(!watchdog.is_stalled());
+
+    watchdog.disarm();
+    assert!(!watchdog.is_armed());
+    assert!(!watchdog.is_stalled());
+
+    // 3. Outbound Echo Tracker
+    let tracker = OutboundEchoTracker::new();
+    let msg1 = OutboundMessageIdentity {
+        channel: "telegram".to_string(),
+        message_id: "m-123".to_string(),
+        account_id: Some("work".to_string()),
+    };
+    assert!(!tracker.is_recent(&msg1));
+    tracker.record(msg1.clone());
+    assert!(tracker.is_recent(&msg1));
+
+    tracker.clear();
+    assert!(!tracker.is_recent(&msg1));
+
+    // 4. Draft Streaming Chunking & Media Preservation
+    let chunking = ChannelDraftStreamingChunking {
+        min_chars: 10,
+        max_chars: 50,
+        break_preference: "sentence".to_string(),
+    };
+    assert!(!chunking.should_split_chunk(30));
+    assert!(chunking.should_split_chunk(50));
+
+    let source_payload = ReplyPayload {
+        text: "hello".to_string(),
+        media_paths: vec!["/tmp/image.png".to_string()],
+    };
+    let mut recovered_payload = ReplyPayload {
+        text: "recovered answer".to_string(),
+        media_paths: Vec::new(),
+    };
+    preserve_reply_payload_media_selection(&source_payload, &mut recovered_payload);
+    assert_eq!(recovered_payload.media_paths, vec!["/tmp/image.png"]);
+
+    // 5. Channel Pairing Store & Prefix Stripper
+    let pairing_store = ChannelPairingStore::new(300); // 300s TTL
+    let challenge = pairing_store.issue_challenge("slack", "team-1", "U999");
+    assert_eq!(challenge.code.len(), 6);
+    assert_eq!(challenge.sender_id, "U999");
+
+    let consumed = pairing_store.verify_and_consume(&challenge.code);
+    assert_eq!(consumed, Some(challenge.clone()));
+    // Cannot consume twice
+    assert_eq!(pairing_store.verify_and_consume(&challenge.code), None);
+
+    assert_eq!(strip_pairing_command_prefix("!pair 654321"), Some("654321"));
+    assert_eq!(strip_pairing_command_prefix("/pair 123456"), Some("123456"));
+    assert_eq!(strip_pairing_command_prefix("pair 999000"), Some("999000"));
+    assert_eq!(strip_pairing_command_prefix("hello world"), None);
+}
+
 
 
 

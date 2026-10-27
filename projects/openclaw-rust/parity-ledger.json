@@ -10,10 +10,10 @@
     "ui_accepted": false
   },
   "file_coverage": {
-    "mapped_paths": 793,
+    "mapped_paths": 805,
     "omitted_known": 0,
     "tracked_paths": 58750,
-    "unclassified_paths": 57957
+    "unclassified_paths": 57945
   },
   "inventory_authority": {
     "manifest_source": "GitHub Actions immutable artifact candidate",
@@ -8344,7 +8344,7 @@
     },
     {
       "adr_refs": [],
-      "behavior": "Terminal ANSI QR text renderer supporting compact half-block characters (\u2588, \u2580, \u2584, space), 1-module margin, quiet zone black-on-white formatting, and standard full-block terminal fallback.",
+      "behavior": "Terminal ANSI QR text renderer supporting compact half-block characters (█, ▀, ▄, space), 1-module margin, quiet zone black-on-white formatting, and standard full-block terminal fallback.",
       "blocker_ids": [
         "BL-MEDIA-QR-TERMINAL-CALLER-001"
       ],
@@ -24885,6 +24885,134 @@
         "format_inbound_envelope"
       ],
       "unit_id": "OCRM-UNIT-PLUGIN-SDK-CHANNEL-INBOUND-001"
+    },
+    {
+      "adr_refs": [],
+      "behavior": "Plugin SDK channel lifecycle queueing, stall watchdog monitoring, mention gating, outbound message streaming and chunking, echo tracking deduplication, media selection preservation, and channel pairing store token management.",
+      "blocker_ids": [],
+      "capability_ids": [
+        "plugin_sdk.channel_lifecycle",
+        "plugin_sdk.channel_outbound",
+        "plugin_sdk.channel_pairing"
+      ],
+      "dependencies": [
+        "mahayana_host_runtime::extensions::plugin_sdk::channel_lifecycle",
+        "mahayana_host_runtime::extensions::plugin_sdk::channel_outbound",
+        "mahayana_host_runtime::extensions::plugin_sdk::channel_pairing"
+      ],
+      "evidence_refs": [
+        "source/host/tests/openclaw_plugin_sdk_contract.rs",
+        "projects/openclaw-rust/dossiers/plugin-sdk-channel-lifecycle-and-outbound-scoped.md"
+      ],
+      "existing_owner_candidates": [
+        {
+          "path": "source/host/src/extensions/plugin_sdk/channel_lifecycle.rs",
+          "reason": "Host native channel run queue and armable stall watchdog"
+        },
+        {
+          "path": "source/host/src/extensions/plugin_sdk/channel_outbound.rs",
+          "reason": "Host native channel outbound echo tracker, streaming chunking, and reply payload media selection"
+        },
+        {
+          "path": "source/host/src/extensions/plugin_sdk/channel_pairing.rs",
+          "reason": "Host native channel pairing store and pairing command prefix sanitizer"
+        }
+      ],
+      "id": "OCRM-RESP-PLUGIN-SDK-CHANNEL-LIFECYCLE-OUTBOUND-001",
+      "integration": {
+        "consumer": "source/host/src/extensions/plugin_sdk/mod.rs",
+        "entrypoint": "source/host/src/extensions/plugin_sdk/mod.rs",
+        "owner": "source/host/src/extensions/plugin_sdk/mod.rs",
+        "producer": "source/host/src/extensions/plugin_sdk/mod.rs"
+      },
+      "invariants": [
+        "ChannelRunQueue executes tasks sequentially per channel with concurrency isolation",
+        "ArmableStallWatchdog fires callback if heartbeats stall beyond configured timeout",
+        "OutboundEchoTracker rejects duplicate loopback echoes within TTL window",
+        "ChannelPairingStore provides expiring secure pairing tokens and atomic state transition"
+      ],
+      "migration_rollback": "Fallback to unbuffered outbound messages and unmanaged pairing tokens",
+      "oracle_ids": [
+        "OCRM-PLUGIN-SDK-CHANNEL-LIFECYCLE-O01"
+      ],
+      "owner_decision": "Unified native plugin SDK infrastructure in extensions::plugin_sdk",
+      "postconditions": [
+        "Channel run queues process tasks without deadlock",
+        "Outbound streaming chunks obey per-channel character constraints",
+        "Pairing tokens transition between Pending, Approved, and Rejected states safely"
+      ],
+      "preconditions": [
+        "Valid channel identifiers and pairing store storage runtime"
+      ],
+      "required_evidence_dimensions": [
+        "unit",
+        "integration"
+      ],
+      "required_gate_ids": [
+        "OCRM-G04-rust-contract"
+      ],
+      "requirement_ids": [
+        "OCRM-R28",
+        "OCRM-AC28"
+      ],
+      "responsibility_kind": "business-runtime",
+      "reviewer": "xuyao@ombhrum.com",
+      "risk": "Medium; outbound streaming fragmentation, loopback echo rejection, and device pairing token expiration",
+      "selected_owner": "source/host/src/extensions/plugin_sdk/mod.rs",
+      "source_refs": [
+        {
+          "blob_sha": "45a1d9e08e0cba2a59be528ba259e2e2127e56ae",
+          "path": "src/plugin-sdk/channel-lifecycle.core.ts",
+          "range": {
+            "end_line": 185,
+            "start_line": 1
+          },
+          "symbol": "ChannelRunQueue"
+        },
+        {
+          "blob_sha": "e097a1a6be7f07c2129a3c31569c3ba8520f78df",
+          "path": "src/plugin-sdk/channel-outbound.ts",
+          "range": {
+            "end_line": 308,
+            "start_line": 1
+          },
+          "symbol": "OutboundEchoTracker"
+        },
+        {
+          "blob_sha": "669b55a9f6b84ebc541af6512a4bda460a8ff3ac",
+          "path": "src/plugin-sdk/channel-pairing.ts",
+          "range": {
+            "end_line": 70,
+            "start_line": 1
+          },
+          "symbol": "ChannelPairingStore"
+        }
+      ],
+      "status": {
+        "acceptance": "pending",
+        "implementation": "implemented",
+        "mapping": "reviewed",
+        "read": "read-complete",
+        "verification": "not-run",
+        "wiring": "not-wired"
+      },
+      "target": {
+        "language": "Rust",
+        "path": "source/host/src/extensions/plugin_sdk/channel_lifecycle.rs",
+        "symbol": "ChannelRunQueue"
+      },
+      "tests": [
+        "source/host/tests/openclaw_plugin_sdk_contract.rs::test_ocrm_plugin_sdk_channel_lifecycle_outbound_pairing"
+      ],
+      "typed_contracts": [
+        "ChannelRunQueue",
+        "ArmableStallWatchdog",
+        "OutboundEchoTracker",
+        "ChannelDraftStreamingChunking",
+        "ChannelPairingStore",
+        "strip_pairing_command_prefix"
+      ],
+      "unit_id": "OCRM-UNIT-PLUGIN-SDK-CHANNEL-LIFECYCLE-001"
     }
   ],
   "schema_version": 1,
