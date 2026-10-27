@@ -10,10 +10,10 @@
     "ui_accepted": false
   },
   "file_coverage": {
-    "mapped_paths": 323,
+    "mapped_paths": 346,
     "omitted_known": 0,
     "tracked_paths": 58750,
-    "unclassified_paths": 58427
+    "unclassified_paths": 58404
   },
   "inventory_authority": {
     "manifest_source": "GitHub Actions immutable artifact candidate",
@@ -15657,6 +15657,389 @@
         "resolve_provider_request_context"
       ],
       "unit_id": "OCRM-UNIT-MEDIA-UND-007"
+    },
+    {
+      "adr_refs": [],
+      "behavior": "Orchestrates media understanding across image, audio, and video capabilities with scope policy evaluation, CLI model execution, Sherpa/Whisper/Parakeet output extraction, decision formatting, and native vision/video handoff.",
+      "blocker_ids": [
+        "BL-MEDIA-UND-RUNNER-EXEC-WIRING-001"
+      ],
+      "capability_ids": [
+        "media.understanding.runner"
+      ],
+      "dependencies": [
+        "mahayana_host_runtime::extensions::attachments::media_understanding_service"
+      ],
+      "evidence_refs": [
+        "source/host/tests/openclaw_media_understanding_contract.rs",
+        "projects/openclaw-rust/dossiers/media-understanding-runner-scoped.md"
+      ],
+      "existing_owner_candidates": [
+        {
+          "path": "source/host/src/extensions/attachments/media_understanding_service.rs",
+          "reason": "Media understanding runner and execution service"
+        }
+      ],
+      "id": "OCRM-RESP-MEDIA-UND-RUNNER-001",
+      "integration": {
+        "consumer": "source/host/src/extensions/attachments/media_understanding_service.rs",
+        "entrypoint": "source/host/src/extensions/attachments/media_understanding_service.rs::format_decision_summary",
+        "owner": "source/host/src/extensions/attachments/media_understanding_service.rs",
+        "producer": "source/host/src/extensions/attachments/media_understanding_service.rs"
+      },
+      "invariants": [
+        "Timer-safe timeout clamping within MIN and MAX timer bounds",
+        "Prompt character limit enforcement for vision models",
+        "First-match scope policy evaluation and preference ranking",
+        "Native media deliverability validation"
+      ],
+      "migration_rollback": "Fallback to raw attachment paths without automated understanding summaries.",
+      "oracle_ids": [
+        "OCRM-MEDIA-UND-O28",
+        "OCRM-MEDIA-UND-O29",
+        "OCRM-MEDIA-UND-O30"
+      ],
+      "owner_decision": "Implement runner orchestration, timeout clamping, and CLI output parsing in media_understanding_service",
+      "postconditions": [
+        "Valid media understanding decisions and formatted summaries returned"
+      ],
+      "preconditions": [
+        "Media attachment and capability configurations present"
+      ],
+      "required_evidence_dimensions": [
+        "unit",
+        "format"
+      ],
+      "required_gate_ids": [
+        "OCRM-G04-rust-contract",
+        "OCRM-G05-frozen-oracle"
+      ],
+      "requirement_ids": [
+        "OCRM-R24",
+        "OCRM-AC24"
+      ],
+      "responsibility_kind": "business-runtime",
+      "reviewer": "xuyao@ombhrum.com",
+      "risk": "Low; orchestrates capability attempts and formats non-leaking summaries",
+      "selected_owner": "source/host/src/extensions/attachments/media_understanding_service.rs",
+      "source_refs": [
+        {
+          "blob_sha": "f6a52aad8a66b492f94ad5a843434d595655e3e7",
+          "path": "src/media-understanding/resolve.ts",
+          "range": {
+            "start_line": 1,
+            "end_line": 236
+          },
+          "symbol": "resolve"
+        },
+        {
+          "blob_sha": "383c85bd4527a574ebdb7948343c28aaff2738f8",
+          "path": "src/media-understanding/resolve.test.ts",
+          "range": {
+            "start_line": 1,
+            "end_line": 87
+          },
+          "symbol": "resolve.test"
+        },
+        {
+          "blob_sha": "fe579a1cd9d1e3fa511738ecf59d6724e67be9a4",
+          "path": "src/media-understanding/cli-output.ts",
+          "range": {
+            "start_line": 1,
+            "end_line": 143
+          },
+          "symbol": "cli-output"
+        },
+        {
+          "blob_sha": "c537e99967b2915a1dc400bd014f38ce5ce7bbcf",
+          "path": "src/media-understanding/runner.ts",
+          "range": {
+            "start_line": 1,
+            "end_line": 839
+          },
+          "symbol": "runner"
+        },
+        {
+          "blob_sha": "4e7eadf0992db59742b29fa8363821a883ea55ee",
+          "path": "src/media-understanding/runner.attachments.ts",
+          "range": {
+            "start_line": 1,
+            "end_line": 67
+          },
+          "symbol": "runner.attachments"
+        },
+        {
+          "blob_sha": "d0043dd27684878110b0574fa8c5a633c8751686",
+          "path": "src/media-understanding/runner.attachments.test.ts",
+          "range": {
+            "start_line": 1,
+            "end_line": 28
+          },
+          "symbol": "runner.attachments.test"
+        },
+        {
+          "blob_sha": "891527be016ef9a174ff26d288746f7890ff79f5",
+          "path": "src/media-understanding/runner.entries.ts",
+          "range": {
+            "start_line": 1,
+            "end_line": 664
+          },
+          "symbol": "runner.entries"
+        },
+        {
+          "blob_sha": "d8c70f769286b46a4bfc0e6d3e306f2545e4350c",
+          "path": "src/media-understanding/runner.entries.guards.test.ts",
+          "range": {
+            "start_line": 1,
+            "end_line": 203
+          },
+          "symbol": "runner.entries.guards.test"
+        },
+        {
+          "blob_sha": "4f8a87aba61791275a4522cd26aedbf8fdcdfecc",
+          "path": "src/media-understanding/runner.auto-audio.test.ts",
+          "range": {
+            "start_line": 1,
+            "end_line": 386
+          },
+          "symbol": "runner.auto-audio.test"
+        },
+        {
+          "blob_sha": "5c179757d7d9ef5e351fdabe2c212ea0ca3a5ba8",
+          "path": "src/media-understanding/runner.cli-audio.test.ts",
+          "range": {
+            "start_line": 1,
+            "end_line": 531
+          },
+          "symbol": "runner.cli-audio.test"
+        },
+        {
+          "blob_sha": "869f97d009241c09a513263550e94310fa763a0c",
+          "path": "src/media-understanding/runner.video.test.ts",
+          "range": {
+            "start_line": 1,
+            "end_line": 168
+          },
+          "symbol": "runner.video.test"
+        },
+        {
+          "blob_sha": "1c263c614e7e47554ef61a2e8606bb62c463018b",
+          "path": "src/media-understanding/runner.vision-skip.test.ts",
+          "range": {
+            "start_line": 1,
+            "end_line": 755
+          },
+          "symbol": "runner.vision-skip.test"
+        },
+        {
+          "blob_sha": "39f76ac3f2e77220defd279289a0fec293c42c75",
+          "path": "src/media-understanding/runner.local-no-auth.test.ts",
+          "range": {
+            "start_line": 1,
+            "end_line": 143
+          },
+          "symbol": "runner.local-no-auth.test"
+        },
+        {
+          "blob_sha": "914957c7d2f2e00140cb04a62ccf926573e5e21a",
+          "path": "src/media-understanding/runner.test-mocks.ts",
+          "range": {
+            "start_line": 1,
+            "end_line": 49
+          },
+          "symbol": "runner.test-mocks"
+        },
+        {
+          "blob_sha": "f07086024c20075a9bd00c148a3d97445741bedf",
+          "path": "src/media-understanding/runner.test-utils.ts",
+          "range": {
+            "start_line": 1,
+            "end_line": 88
+          },
+          "symbol": "runner.test-utils"
+        },
+        {
+          "blob_sha": "51c4e52ee07fee947869ecccc45862ec9eae125c",
+          "path": "src/media-understanding/runner-case.test-support.ts",
+          "range": {
+            "start_line": 1,
+            "end_line": 17
+          },
+          "symbol": "runner-case.test-support"
+        }
+      ],
+      "status": {
+        "acceptance": "pending",
+        "implementation": "implemented",
+        "mapping": "reviewed",
+        "read": "read-complete",
+        "verification": "not-run",
+        "wiring": "not-wired"
+      },
+      "target": {
+        "language": "Rust",
+        "path": "source/host/src/extensions/attachments/media_understanding_service.rs",
+        "symbol": "format_decision_summary"
+      },
+      "tests": [
+        "source/host/tests/openclaw_media_understanding_contract.rs::test_ocrm_media_und_o28_cli_entry_and_timeout_resolution",
+        "source/host/tests/openclaw_media_understanding_contract.rs::test_ocrm_media_und_o29_scope_decision_and_preference_ranking",
+        "source/host/tests/openclaw_media_understanding_contract.rs::test_ocrm_media_und_o30_cli_output_parsing_and_sherpa_onnx"
+      ],
+      "typed_contracts": [
+        "format_decision_summary",
+        "resolve_cli_model_entry",
+        "resolve_timeout_ms"
+      ],
+      "unit_id": "OCRM-UNIT-MEDIA-UND-008"
+    },
+    {
+      "adr_refs": [],
+      "behavior": "Provides typed runtime interface for file-based understanding, audio input budget resolution, and media application lifecycle.",
+      "blocker_ids": [
+        "BL-MEDIA-UND-APPLY-RUNTIME-WIRING-001"
+      ],
+      "capability_ids": [
+        "media.understanding.apply_runtime"
+      ],
+      "dependencies": [
+        "mahayana_host_runtime::extensions::attachments::media_understanding_service"
+      ],
+      "evidence_refs": [
+        "source/host/tests/openclaw_media_understanding_contract.rs",
+        "projects/openclaw-rust/dossiers/media-understanding-runner-scoped.md"
+      ],
+      "existing_owner_candidates": [
+        {
+          "path": "source/host/src/extensions/attachments/media_understanding_service.rs",
+          "reason": "Media understanding runtime dispatch and budget service"
+        }
+      ],
+      "id": "OCRM-RESP-MEDIA-UND-APPLY-RUNTIME-001",
+      "integration": {
+        "consumer": "source/host/src/extensions/attachments/media_understanding_service.rs",
+        "entrypoint": "source/host/src/extensions/attachments/media_understanding_service.rs::resolve_audio_input_budget_for_config",
+        "owner": "source/host/src/extensions/attachments/media_understanding_service.rs",
+        "producer": "source/host/src/extensions/attachments/media_understanding_service.rs"
+      },
+      "invariants": [
+        "Deterministic audio budget calculation",
+        "Native media deliverability filtering",
+        "Sticker media exclusion preservation"
+      ],
+      "migration_rollback": "Preserve unextracted file outcomes.",
+      "oracle_ids": [
+        "OCRM-MEDIA-UND-O31"
+      ],
+      "owner_decision": "Implement runtime dispatch, audio budget, and deliverability validation in media_understanding_service",
+      "postconditions": [
+        "Audio input budget and native deliverability properly resolved"
+      ],
+      "preconditions": [
+        "Media understanding runtime parameters provided"
+      ],
+      "required_evidence_dimensions": [
+        "unit",
+        "format"
+      ],
+      "required_gate_ids": [
+        "OCRM-G04-rust-contract",
+        "OCRM-G05-frozen-oracle"
+      ],
+      "requirement_ids": [
+        "OCRM-R24",
+        "OCRM-AC24"
+      ],
+      "responsibility_kind": "business-runtime",
+      "reviewer": "xuyao@ombhrum.com",
+      "risk": "Low; defines pure runtime contracts and input budgets",
+      "selected_owner": "source/host/src/extensions/attachments/media_understanding_service.rs",
+      "source_refs": [
+        {
+          "blob_sha": "47fd4c86a94230e26998884ebcb583253d15f92f",
+          "path": "src/media-understanding/runtime-types.ts",
+          "range": {
+            "start_line": 1,
+            "end_line": 120
+          },
+          "symbol": "runtime-types"
+        },
+        {
+          "blob_sha": "ba20105ae3289991a84323d81e341a60e29244b4",
+          "path": "src/media-understanding/runtime.test.ts",
+          "range": {
+            "start_line": 1,
+            "end_line": 581
+          },
+          "symbol": "runtime.test"
+        },
+        {
+          "blob_sha": "5755d8783942153d72ecbd27cb1db99557aaf64d",
+          "path": "src/media-understanding/runtime.audio-authority.test.ts",
+          "range": {
+            "start_line": 1,
+            "end_line": 156
+          },
+          "symbol": "runtime.audio-authority.test"
+        },
+        {
+          "blob_sha": "7838c81ba2385482d19f1a63979b6dd28a365476",
+          "path": "src/media-understanding/runtime.audio-disposition.test.ts",
+          "range": {
+            "start_line": 1,
+            "end_line": 89
+          },
+          "symbol": "runtime.audio-disposition.test"
+        },
+        {
+          "blob_sha": "c13159f0b4fbf1be26d6fe8d4f92c6d6a573f15b",
+          "path": "src/media-understanding/runtime.local-input.test.ts",
+          "range": {
+            "start_line": 1,
+            "end_line": 35
+          },
+          "symbol": "runtime.local-input.test"
+        },
+        {
+          "blob_sha": "5df1dd11f865b24d5c4eaf72fc82a05ab4288895",
+          "path": "src/media-understanding/apply.runtime.ts",
+          "range": {
+            "start_line": 1,
+            "end_line": 2
+          },
+          "symbol": "apply.runtime"
+        },
+        {
+          "blob_sha": "5b1f3b8b939a2aff3f858d0b438f713378575454",
+          "path": "src/media-understanding/apply.test.ts",
+          "range": {
+            "start_line": 1,
+            "end_line": 929
+          },
+          "symbol": "apply.test"
+        }
+      ],
+      "status": {
+        "acceptance": "pending",
+        "implementation": "implemented",
+        "mapping": "reviewed",
+        "read": "read-complete",
+        "verification": "not-run",
+        "wiring": "not-wired"
+      },
+      "target": {
+        "language": "Rust",
+        "path": "source/host/src/extensions/attachments/media_understanding_service.rs",
+        "symbol": "resolve_audio_input_budget_for_config"
+      },
+      "tests": [
+        "source/host/tests/openclaw_media_understanding_contract.rs::test_ocrm_media_und_o31_decision_summary_and_runtime_disposition"
+      ],
+      "typed_contracts": [
+        "resolve_audio_input_budget_for_config",
+        "is_native_media_deliverable"
+      ],
+      "unit_id": "OCRM-UNIT-MEDIA-UND-008"
     }
   ],
   "schema_version": 1,

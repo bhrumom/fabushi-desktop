@@ -1088,5 +1088,245 @@ fn test_ocrm_media_und_o27_provider_registry_build_and_request_context() {
     assert_eq!(headers.get("X-Auth").map(String::as_str), Some("new"));
 }
 
+#[test]
+fn test_ocrm_media_und_o28_cli_entry_and_timeout_resolution() {
+    // 1. Missing command error
+    let err1 = resolve_cli_model_entry(None, Some(&["arg1".to_string()])).unwrap_err();
+    assert_eq!(err1.reason, MediaCliModelUnavailableReason::MissingCommand);
+
+    // 2. Missing attachment arg error
+    let err2 = resolve_cli_model_entry(Some("whisper-cli"), Some(&[])).unwrap_err();
+    assert_eq!(err2.reason, MediaCliModelUnavailableReason::MissingAttachmentArg);
+
+    // 3. Valid command and args
+    let (cmd, args) = resolve_cli_model_entry(Some("whisper-cli"), Some(&["-otxt".to_string(), "{{AttachmentPath}}".to_string()])).unwrap();
+    assert_eq!(cmd, "whisper-cli");
+    assert_eq!(args.len(), 2);
+
+    // 4. Timeout conversion & clamping
+    assert_eq!(resolve_timeout_ms(Some(f64::MAX), 60.0), MAX_TIMER_TIMEOUT_MS);
+    assert_eq!(resolve_timeout_ms(None, f64::MAX), MAX_TIMER_TIMEOUT_MS);
+    assert_eq!(resolve_timeout_ms(Some(0.0), 30.0), MIN_MEDIA_TIMEOUT_MS);
+    assert_eq!(resolve_timeout_ms(Some(15.0), 30.0), 15000);
+
+    // 5. Runtime timeout clamping
+    assert_eq!(resolve_media_runtime_timeout_ms(Some(u64::MAX)), MAX_TIMER_TIMEOUT_MS);
+    assert_eq!(resolve_media_runtime_timeout_ms(None), DEFAULT_MEDIA_RUNTIME_TIMEOUT_MS);
+    assert_eq!(resolve_media_runtime_timeout_ms(Some(500)), MIN_MEDIA_TIMEOUT_MS);
+
+    // 6. Entry run prompt formatting
+    let (prompt_img, configured_img) = resolve_entry_run_prompt(
+        Some("Describe details."),
+        "Default prompt",
+        Some(500),
+        false,
+    );
+    assert!(configured_img);
+    assert_eq!(prompt_img, "Describe details. Respond in at most 500 characters.");
+
+    let (prompt_audio, configured_audio) = resolve_entry_run_prompt(
+        None,
+        "Transcribe audio",
+        Some(500),
+        true,
+    );
+    assert!(!configured_audio);
+    assert_eq!(prompt_audio, "Transcribe audio");
+}
+
+#[test]
+fn test_ocrm_media_und_o29_scope_decision_and_preference_ranking() {
+    let scope = MediaUnderstandingScopeConfig {
+        default_action: Some("allow".to_string()),
+        rules: vec![
+            MediaScopeRule {
+                match_rule: MediaScopeRuleMatch {
+                    channel: Some("telegram".to_string()),
+                    chat_type: Some("group".to_string()),
+                    key_prefix: None,
+                },
+                action: "deny".to_string(),
+            },
+            MediaScopeRule {
+                match_rule: MediaScopeRuleMatch {
+                    channel: None,
+                    chat_type: None,
+                    key_prefix: Some("cron:".to_string()),
+                },
+                action: "allow".to_string(),
+            },
+        ],
+    };
+
+    // 1. Matches deny rule
+    let ctx_deny = ScopeContext {
+        surface: Some("telegram"),
+        provider: None,
+        chat_type: Some("group"),
+        session_key: Some("agent:123"),
+    };
+    assert_eq!(resolve_scope_decision(Some(&scope), &ctx_deny), "deny");
+
+    // 2. Channel mismatch falls through to default
+    let ctx_discord = ScopeContext {
+        surface: Some("discord"),
+        provider: None,
+        chat_type: Some("group"),
+        session_key: Some("agent:123"),
+    };
+    assert_eq!(resolve_scope_decision(Some(&scope), &ctx_discord), "allow");
+
+    // 3. Preferred model rank ordering
+    // Exact provider/model match -> 2
+    assert_eq!(
+        preferred_media_model_rank(false, None, Some("openai"), Some("gpt-5.4"), "openai/gpt-5.4"),
+        2
+    );
+    // Bare model match -> 1
+    assert_eq!(
+        preferred_media_model_rank(false, None, Some("openai"), Some("gpt-5.4"), "gpt-5.4"),
+        1
+    );
+    // Provider default -> 2
+    assert_eq!(
+        preferred_media_model_rank(false, None, Some("openai"), None, "provider:openai"),
+        2
+    );
+    // CLI command match -> 2
+    assert_eq!(
+        preferred_media_model_rank(true, Some("whisper-cli"), None, None, "cli:whisper-cli"),
+        2
+    );
+    // Non-match -> 0
+    assert_eq!(
+        preferred_media_model_rank(false, None, Some("groq"), Some("whisper-large"), "openai/gpt-5.4"),
+        0
+    );
+
+    // 4. Secret owner ID formatting
+    assert_eq!(resolve_model_entry_secret_owner_id(3), "media-model:shared:3");
+}
+
+#[test]
+fn test_ocrm_media_und_o30_cli_output_parsing_and_sherpa_onnx() {
+    // 1. Sherpa ONNX JSON parsing
+    let direct_json = r#"{"text": "transcribed speech content"}"#;
+    assert_eq!(extract_sherpa_onnx_text(direct_json), Some("transcribed speech content".to_string()));
+
+    let log_with_json = "Loading model...\nProgress: 100%\n{\"text\": \"final speech output\"}\n";
+    assert_eq!(extract_sherpa_onnx_text(log_with_json), Some("final speech output".to_string()));
+
+    let non_json = "Progress 50%\nProgress 100%\nDone.";
+    assert_eq!(extract_sherpa_onnx_text(non_json), None);
+
+    // 2. Whisper.cpp output path
+    let cpp_args = vec!["-otxt".to_string(), "-of".to_string(), "/tmp/whisper_out".to_string()];
+    assert_eq!(resolve_whisper_cpp_output_path(&cpp_args), Some(PathBuf::from("/tmp/whisper_out.txt")));
+
+    let missing_flag = vec!["-of".to_string(), "/tmp/whisper_out".to_string()];
+    assert_eq!(resolve_whisper_cpp_output_path(&missing_flag), None);
+
+    // 3. Python Whisper output path
+    let whisper_args = vec!["--output_dir".to_string(), "/tmp/out_dir".to_string(), "-f".to_string(), "txt".to_string()];
+    assert_eq!(
+        resolve_whisper_output_path(&whisper_args, "/audio/test_speech.mp3"),
+        Some(PathBuf::from("/tmp/out_dir/test_speech.txt"))
+    );
+
+    // 4. Parakeet output path
+    let parakeet_args = vec!["--output-dir".to_string(), "/tmp/p_dir".to_string(), "--output-format".to_string(), "txt".to_string()];
+    assert_eq!(
+        resolve_parakeet_output_path(&parakeet_args, "/audio/voice.wav"),
+        Some(PathBuf::from("/tmp/p_dir/voice.txt"))
+    );
+}
+
+#[test]
+fn test_ocrm_media_und_o31_decision_summary_and_runtime_disposition() {
+    // 1. Normalize and summarize decision reason
+    assert_eq!(
+        normalize_decision_reason(Some("Error: Model timeout")),
+        Some("Model timeout".to_string())
+    );
+    assert_eq!(
+        normalize_decision_reason(Some("ProviderHttpError: 401 Unauthorized")),
+        Some("401 Unauthorized".to_string())
+    );
+    assert_eq!(
+        summarize_decision_reason(Some("ProviderHttpError: 429 Rate Limit [request_id=req_123]")),
+        Some("429 Rate Limit".to_string())
+    );
+
+    // 2. Format decision summary
+    let summary = format_decision_summary(
+        "image",
+        "success",
+        1,
+        1,
+        Some("openai"),
+        Some("gpt-4o"),
+        None,
+        None,
+        None,
+    );
+    assert_eq!(summary, "image: success (1/1) via openai/gpt-4o");
+
+    let failed_summary = format_decision_summary(
+        "audio",
+        "failed",
+        0,
+        1,
+        Some("whisper-cli"),
+        Some("whisper-cli"),
+        Some("Metal"),
+        None,
+        Some("Error: whisper failed: process aborted"),
+    );
+    assert_eq!(
+        failed_summary,
+        "audio: failed (0/1) via whisper-cli observed=Metal reason=whisper failed"
+    );
+
+    // 3. Audio input budget
+    assert_eq!(resolve_audio_input_budget_for_config(true, Some(10 * 1024 * 1024)), Some(10 * 1024 * 1024));
+    assert_eq!(resolve_audio_input_budget_for_config(true, None), Some(25 * 1024 * 1024));
+    assert_eq!(resolve_audio_input_budget_for_config(false, Some(10 * 1024 * 1024)), None);
+
+    // 4. Native media deliverability
+    assert!(is_native_media_deliverable(true, None));
+    assert!(is_native_media_deliverable(false, Some("media://session/image.png")));
+    assert!(!is_native_media_deliverable(false, Some("https://example.com/remote.png")));
+    assert!(!is_native_media_deliverable(false, None));
+
+    // 5. Sticker media exclusion
+    let att1 = NormalizedMediaAttachment {
+        path: Some("/tmp/sticker.webp".to_string()),
+        url: None,
+        mime: Some("image/webp".to_string()),
+        kind: Some("image".to_string()),
+        file_name: Some("sticker.webp".to_string()),
+        workspace_dir: None,
+        index: 0,
+        already_transcribed: false,
+    };
+    let att2 = NormalizedMediaAttachment {
+        path: Some("/tmp/audio.ogg".to_string()),
+        url: None,
+        mime: Some("audio/ogg".to_string()),
+        kind: Some("audio".to_string()),
+        file_name: Some("audio.ogg".to_string()),
+        workspace_dir: None,
+        index: 1,
+        already_transcribed: false,
+    };
+    let kept_all = normalize_media_attachments_with_sticker_rule(vec![att1.clone(), att2.clone()], false);
+    assert_eq!(kept_all.len(), 2);
+
+    let skipped_sticker = normalize_media_attachments_with_sticker_rule(vec![att1, att2], true);
+    assert_eq!(skipped_sticker.len(), 1);
+    assert_eq!(skipped_sticker[0].index, 1);
+}
+
+
 
 

@@ -1,5 +1,5 @@
 use std::collections::{HashMap, HashSet};
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use serde::{Deserialize, Serialize};
 
 use crate::extensions::attachments::input_files::{
@@ -1402,6 +1402,447 @@ pub fn resolve_provider_request_context(
     }
     (base_url, merged_headers)
 }
+
+pub const DEFAULT_MEDIA_RUNTIME_TIMEOUT_MS: u64 = 30_000;
+pub const MIN_MEDIA_TIMEOUT_MS: u64 = 1_000;
+pub const MAX_TIMER_TIMEOUT_MS: u64 = 2_147_483_647;
+pub const DEFAULT_MEDIA_CONCURRENCY: usize = 2;
+pub const MIN_AUDIO_FILE_BYTES: u64 = 100;
+pub const CLI_OUTPUT_MAX_BUFFER: usize = 10 * 1024 * 1024;
+
+#[derive(Debug, PartialEq, Eq, Clone)]
+pub enum MediaCliModelUnavailableReason {
+    MissingCommand,
+    MissingAttachmentArg,
+}
+
+#[derive(Debug, PartialEq, Eq, Clone)]
+pub struct MediaCliModelUnavailableError {
+    pub reason: MediaCliModelUnavailableReason,
+    pub message: String,
+}
+
+pub fn resolve_cli_model_entry(
+    command: Option<&str>,
+    args: Option<&[String]>,
+) -> Result<(String, Vec<String>), MediaCliModelUnavailableError> {
+    let cmd = command.map(str::trim).filter(|s| !s.is_empty());
+    let cmd = match cmd {
+        Some(c) => c.to_string(),
+        None => {
+            return Err(MediaCliModelUnavailableError {
+                reason: MediaCliModelUnavailableReason::MissingCommand,
+                message: "cli-missing-command; Set command to the media executable and args to pass the attachment, for example [\"{{AttachmentPath}}\"].".to_string(),
+            });
+        }
+    };
+    let args_vec = match args {
+        Some(a) if !a.is_empty() => a.to_vec(),
+        _ => {
+            return Err(MediaCliModelUnavailableError {
+                reason: MediaCliModelUnavailableReason::MissingAttachmentArg,
+                message: "cli-missing-attachment-arg; Set args to pass the attachment, for example [\"{{AttachmentPath}}\"]. CLI stdin is not supplied.".to_string(),
+            });
+        }
+    };
+    Ok((cmd, args_vec))
+}
+
+pub fn resolve_timeout_ms(seconds: Option<f64>, fallback_seconds: f64) -> u64 {
+    let val = match seconds {
+        Some(s) if s.is_finite() && s > 0.0 => s,
+        Some(_) => return MIN_MEDIA_TIMEOUT_MS,
+        None if fallback_seconds.is_finite() && fallback_seconds > 0.0 => fallback_seconds,
+        None => return MIN_MEDIA_TIMEOUT_MS,
+    };
+    let ms = (val * 1000.0).floor();
+    if !ms.is_finite() || ms >= MAX_TIMER_TIMEOUT_MS as f64 {
+        MAX_TIMER_TIMEOUT_MS
+    } else if ms <= MIN_MEDIA_TIMEOUT_MS as f64 {
+        MIN_MEDIA_TIMEOUT_MS
+    } else {
+        ms as u64
+    }
+}
+
+pub fn resolve_media_runtime_timeout_ms(timeout_ms: Option<u64>) -> u64 {
+    match timeout_ms {
+        Some(ms) => {
+            if ms > MAX_TIMER_TIMEOUT_MS {
+                MAX_TIMER_TIMEOUT_MS
+            } else if ms < MIN_MEDIA_TIMEOUT_MS {
+                MIN_MEDIA_TIMEOUT_MS
+            } else {
+                ms
+            }
+        }
+        None => DEFAULT_MEDIA_RUNTIME_TIMEOUT_MS,
+    }
+}
+
+pub fn resolve_entry_run_prompt(
+    base_prompt: Option<&str>,
+    capability_default_prompt: &str,
+    max_chars: Option<usize>,
+    is_audio: bool,
+) -> (String, bool) {
+    let configured = base_prompt.map(str::trim).filter(|s| !s.is_empty());
+    let has_configured = configured.is_some();
+    let prompt_body = configured.unwrap_or(capability_default_prompt);
+    let prompt = if let Some(chars) = max_chars {
+        if !is_audio {
+            format!("{} Respond in at most {} characters.", prompt_body, chars)
+        } else {
+            prompt_body.to_string()
+        }
+    } else {
+        prompt_body.to_string()
+    };
+    (prompt, has_configured)
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
+pub struct MediaScopeRuleMatch {
+    pub channel: Option<String>,
+    pub chat_type: Option<String>,
+    pub key_prefix: Option<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct MediaScopeRule {
+    pub match_rule: MediaScopeRuleMatch,
+    pub action: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
+pub struct MediaUnderstandingScopeConfig {
+    pub default_action: Option<String>,
+    pub rules: Vec<MediaScopeRule>,
+}
+
+pub struct ScopeContext<'a> {
+    pub surface: Option<&'a str>,
+    pub provider: Option<&'a str>,
+    pub chat_type: Option<&'a str>,
+    pub session_key: Option<&'a str>,
+}
+
+pub fn resolve_scope_decision(
+    scope: Option<&MediaUnderstandingScopeConfig>,
+    ctx: &ScopeContext,
+) -> &'static str {
+    let scope = match scope {
+        Some(s) => s,
+        None => return "allow",
+    };
+    let channel = ctx.surface.or(ctx.provider).map(|s| s.trim().to_lowercase());
+    let chat_type = ctx.chat_type.map(|s| s.trim().to_lowercase());
+    let session_key = ctx.session_key.map(|s| s.trim().to_lowercase()).unwrap_or_default();
+
+    for rule in &scope.rules {
+        if let Some(ref mc) = rule.match_rule.channel {
+            if channel.as_deref() != Some(mc.trim().to_lowercase().as_str()) {
+                continue;
+            }
+        }
+        if let Some(ref mct) = rule.match_rule.chat_type {
+            if chat_type.as_deref() != Some(mct.trim().to_lowercase().as_str()) {
+                continue;
+            }
+        }
+        if let Some(ref prefix) = rule.match_rule.key_prefix {
+            if !session_key.starts_with(&prefix.trim().to_lowercase()) {
+                continue;
+            }
+        }
+        return if rule.action.eq_ignore_ascii_case("deny") {
+            "deny"
+        } else {
+            "allow"
+        };
+    }
+    match scope.default_action.as_deref() {
+        Some(act) if act.eq_ignore_ascii_case("deny") => "deny",
+        _ => "allow",
+    }
+}
+
+pub fn preferred_media_model_rank(
+    is_cli: bool,
+    command: Option<&str>,
+    provider: Option<&str>,
+    model: Option<&str>,
+    preferred: &str,
+) -> usize {
+    if is_cli || command.is_some() {
+        let cmd = command.unwrap_or("");
+        if preferred == format!("cli:{}", cmd) {
+            return 2;
+        }
+        return 0;
+    }
+    let p = provider.map(str::trim).unwrap_or("");
+    let m = model.map(str::trim).unwrap_or("");
+    if m.is_empty() {
+        if preferred == format!("provider:{}", p) {
+            return 2;
+        }
+        return 0;
+    }
+    if preferred == format!("{}/{}", p, m) {
+        return 2;
+    }
+    if preferred == m {
+        return 1;
+    }
+    0
+}
+
+pub fn resolve_model_entry_secret_owner_id(shared_index: usize) -> String {
+    format!("media-model:shared:{}", shared_index)
+}
+
+pub fn extract_sherpa_onnx_text(raw: &str) -> Option<String> {
+    fn try_parse(value: &str) -> Option<String> {
+        let trimmed = value.trim();
+        if !trimmed.starts_with('{') && !trimmed.starts_with('"') {
+            return None;
+        }
+        if let Ok(val) = serde_json::from_str::<serde_json::Value>(trimmed) {
+            if let Some(s) = val.as_str() {
+                return try_parse(s);
+            }
+            if let Some(text) = val.get("text").and_then(|t| t.as_str()) {
+                let trimmed_text = text.trim();
+                return Some(trimmed_text.to_string());
+            }
+        }
+        None
+    }
+
+    if let Some(direct) = try_parse(raw) {
+        return Some(direct);
+    }
+    for line in raw.lines().rev() {
+        if let Some(parsed) = try_parse(line) {
+            return Some(parsed);
+        }
+    }
+    None
+}
+
+pub fn resolve_whisper_output_path(args: &[String], media_path: &str) -> Option<PathBuf> {
+    let mut output_dir: Option<&str> = None;
+    let mut output_format: Option<&str> = None;
+    let mut idx = 0;
+    while idx < args.len() {
+        let arg = &args[idx];
+        if arg == "--output_dir" || arg == "-o" {
+            if idx + 1 < args.len() {
+                output_dir = Some(&args[idx + 1]);
+                idx += 2;
+                continue;
+            }
+        } else if let Some(stripped) = arg.strip_prefix("--output_dir=") {
+            output_dir = Some(stripped);
+        } else if let Some(stripped) = arg.strip_prefix("-o=") {
+            output_dir = Some(stripped);
+        } else if arg == "--output_format" || arg == "-f" {
+            if idx + 1 < args.len() {
+                output_format = Some(&args[idx + 1]);
+                idx += 2;
+                continue;
+            }
+        } else if let Some(stripped) = arg.strip_prefix("--output_format=") {
+            output_format = Some(stripped);
+        } else if let Some(stripped) = arg.strip_prefix("-f=") {
+            output_format = Some(stripped);
+        }
+        idx += 1;
+    }
+    let dir = output_dir?;
+    let fmt = output_format.unwrap_or("all");
+    if fmt != "txt" && fmt != "all" {
+        return None;
+    }
+    let media_stem = Path::new(media_path).file_stem()?.to_str()?;
+    Some(Path::new(dir).join(format!("{}.txt", media_stem)))
+}
+
+pub fn resolve_whisper_cpp_output_path(args: &[String]) -> Option<PathBuf> {
+    if !args.iter().any(|arg| arg == "-otxt" || arg == "--output-txt") {
+        return None;
+    }
+    let mut output_base: Option<&str> = None;
+    let mut idx = 0;
+    while idx < args.len() {
+        let arg = &args[idx];
+        if arg == "-of" || arg == "--output-file" {
+            if idx + 1 < args.len() {
+                output_base = Some(&args[idx + 1]);
+                idx += 2;
+                continue;
+            }
+        } else if let Some(stripped) = arg.strip_prefix("-of=") {
+            output_base = Some(stripped);
+        } else if let Some(stripped) = arg.strip_prefix("--output-file=") {
+            output_base = Some(stripped);
+        }
+        idx += 1;
+    }
+    let base = output_base?;
+    Some(PathBuf::from(format!("{}.txt", base)))
+}
+
+pub fn resolve_parakeet_output_path(args: &[String], media_path: &str) -> Option<PathBuf> {
+    let mut output_dir: Option<&str> = None;
+    let mut output_format: Option<&str> = None;
+    let mut output_template: Option<&str> = None;
+    let mut idx = 0;
+    while idx < args.len() {
+        let arg = &args[idx];
+        if arg == "--output-dir" {
+            if idx + 1 < args.len() {
+                output_dir = Some(&args[idx + 1]);
+                idx += 2;
+                continue;
+            }
+        } else if let Some(stripped) = arg.strip_prefix("--output-dir=") {
+            output_dir = Some(stripped);
+        } else if arg == "--output-format" {
+            if idx + 1 < args.len() {
+                output_format = Some(&args[idx + 1]);
+                idx += 2;
+                continue;
+            }
+        } else if let Some(stripped) = arg.strip_prefix("--output-format=") {
+            output_format = Some(stripped);
+        } else if arg == "--output-template" {
+            if idx + 1 < args.len() {
+                output_template = Some(&args[idx + 1]);
+                idx += 2;
+                continue;
+            }
+        } else if let Some(stripped) = arg.strip_prefix("--output-template=") {
+            output_template = Some(stripped);
+        }
+        idx += 1;
+    }
+    let dir = output_dir?;
+    let fmt = output_format.unwrap_or("srt");
+    let tmpl = output_template.unwrap_or("{filename}");
+    if (fmt != "txt" && fmt != "all") || tmpl != "{filename}" {
+        return None;
+    }
+    let media_stem = Path::new(media_path).file_stem()?.to_str()?;
+    Some(Path::new(dir).join(format!("{}.txt", media_stem)))
+}
+
+pub fn normalize_decision_reason(reason: Option<&str>) -> Option<String> {
+    let trimmed = reason?.trim();
+    if trimmed.is_empty() {
+        return None;
+    }
+    let normalized = if let Some(rest) = trimmed.strip_prefix("Error:") {
+        rest.trim()
+    } else if let Some(rest) = trimmed.strip_prefix("ProviderHttpError:") {
+        rest.trim()
+    } else {
+        trimmed
+    };
+    if normalized.is_empty() {
+        None
+    } else {
+        Some(normalized.to_string())
+    }
+}
+
+pub fn summarize_decision_reason(reason: Option<&str>) -> Option<String> {
+    let normalized = normalize_decision_reason(reason)?;
+    let first = normalized.split(':').next()?.trim();
+    let first = first.split(" [request_id=").next()?.trim();
+    if first.is_empty() {
+        None
+    } else {
+        Some(first.to_string())
+    }
+}
+
+pub fn format_decision_summary(
+    capability: &str,
+    outcome: &str,
+    success_count: usize,
+    total_count: usize,
+    chosen_provider: Option<&str>,
+    chosen_model: Option<&str>,
+    observed_backend: Option<&str>,
+    requested_backend: Option<&str>,
+    reason: Option<&str>,
+) -> String {
+    let count_label = if total_count > 0 {
+        format!(" ({}/{})", success_count, total_count)
+    } else {
+        String::new()
+    };
+    let model_label = match (chosen_provider, chosen_model) {
+        (Some(p), Some(m)) if !m.is_empty() && m != p => format!("{}/{}", p, m),
+        (Some(p), _) => p.to_string(),
+        _ => String::new(),
+    };
+    let backend_label = if let Some(b) = observed_backend {
+        format!(" observed={}", b)
+    } else if let Some(b) = requested_backend {
+        format!(" requested={}", b)
+    } else {
+        String::new()
+    };
+    let via_label = if !model_label.is_empty() {
+        format!(" via {}{}", model_label, backend_label)
+    } else {
+        String::new()
+    };
+    let reason_label = if let Some(short) = summarize_decision_reason(reason) {
+        format!(" reason={}", short)
+    } else {
+        String::new()
+    };
+    format!("{}: {}{}{}{}", capability, outcome, count_label, via_label, reason_label)
+}
+
+pub fn resolve_audio_input_budget_for_config(
+    audio_enabled: bool,
+    max_bytes: Option<usize>,
+) -> Option<usize> {
+    if !audio_enabled {
+        None
+    } else {
+        Some(max_bytes.unwrap_or(25 * 1024 * 1024))
+    }
+}
+
+pub fn is_native_media_deliverable(has_path: bool, url: Option<&str>) -> bool {
+    if has_path {
+        return true;
+    }
+    if let Some(u) = url {
+        if is_media_store_url(u) {
+            return true;
+        }
+    }
+    false
+}
+
+pub fn normalize_media_attachments_with_sticker_rule(
+    attachments: Vec<NormalizedMediaAttachment>,
+    skip_sticker: bool,
+) -> Vec<NormalizedMediaAttachment> {
+    if skip_sticker {
+        attachments.into_iter().filter(|a| a.index != 0).collect()
+    } else {
+        attachments
+    }
+}
+
 
 
 
