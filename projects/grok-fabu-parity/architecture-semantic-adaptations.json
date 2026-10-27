@@ -1226,7 +1226,7 @@
       "referencePath": "frontend/src/production/command-palette-model.ts",
       "expectedBaseParityMode": "reference-copy",
       "parityMode": "typescript-port",
-      "targetBlobSha": "8f3ac50a132c2b2e050a51ccc911b81dca897b21",
+      "targetBlobSha": "0022ccac258f8f42f70c559dc933959dbb01c746",
       "behavioralEvidence": [
         "frontend/src/production/command-palette-model.ts"
       ],
@@ -1235,7 +1235,7 @@
         ".github/workflows/tdrp-search-responsibility.yml",
         ".github/workflows/rust-desktop-runtime.yml"
       ],
-      "rationale": "Preserves the frozen Grok command-palette search/scoring behavior while adapting canonical participant identity reconciliation required by TDRP Revision 9. The shipping projection deduplicates roster rows by stable participant id, preserves the first slot, and replaces that slot with the newest authoritative row before visible/hidden filtering. This prevents stale and replacement roster objects from appearing as duplicate Search results or projecting contradictory hidden state. The adaptation stays inside the existing command-palette/Search owner and is covered by exact-head focused Search contract evidence plus an independent review job; it does not create a parallel participant or search truth."
+      "rationale": "Preserves the frozen Grok command-palette search/scoring behavior while adapting canonical participant identity reconciliation required by TDRP Revision 9. The shipping projection deduplicates roster rows by stable participant id, preserves the first slot, and replaces that slot with the newest authoritative row before visible/hidden filtering. This prevents stale and replacement roster objects from appearing as duplicate Search results or projecting contradictory hidden state. The adaptation stays inside the existing command-palette/Search owner and is covered by exact-head focused Search contract evidence plus an independent review job; it does not create a parallel participant or search truth. The current target blob additionally iterates Unicode code points during NFKD normalization, avoiding loss of supplementary-plane CJK characters through UTF-16 surrogate splitting. Keep this semantic behavior in the same canonical Search owner; exact-head Actions must independently verify it."
     },
     {
       "referencePath": "source/shared/external-url-policy.ts",
