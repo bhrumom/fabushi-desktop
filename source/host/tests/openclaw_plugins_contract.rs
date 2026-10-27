@@ -13,6 +13,8 @@ use mahayana_host_runtime::extensions::plugins::capability_catalog::{
     CapabilityProviderEntry, ChannelCatalogEntry, PluginCapabilityCatalog,
     PluginContractRegistryEntry, PluginOrigin, ProviderAuthChoice,
     CAPABILITY_FAMILY_SPEECH_PROVIDERS, CAPABILITY_FAMILY_TRANSCRIPTION_PROVIDERS,
+    BundledPluginScanner, BundledProviderCompatValidator, BundledSourceOverlayResolver,
+    BundledPluginNamingAndArtworkValidator,
 };
 
 #[test]
@@ -1316,6 +1318,155 @@ fn test_ocrm_plugins_bundled_channel_metadata_compat_and_dir_resolver() {
     let err_traversal = BundledDirResolver::resolve_relative_path("/app/bundled/plugins", "../../../etc/passwd").unwrap_err();
     assert!(err_traversal.contains("Path traversal detected"));
 }
+
+#[test]
+fn test_ocrm_plugins_bundled_metadata_scan_compat_and_naming_artwork() {
+    use std::collections::{HashMap, HashSet};
+
+    // 1. Bundled Plugin Scanner - entry path rewrite
+    assert_eq!(
+        BundledPluginScanner::rewrite_bundled_plugin_entry_to_built_path("./index.ts"),
+        "index.js"
+    );
+    assert_eq!(
+        BundledPluginScanner::rewrite_bundled_plugin_entry_to_built_path(".\\src\\runner.mts"),
+        "src\\runner.js"
+    );
+    assert_eq!(
+        BundledPluginScanner::rewrite_bundled_plugin_entry_to_built_path("dist/main.js"),
+        "dist/main.js"
+    );
+
+    // 2. Bundled Plugin Scanner - id hint derivation
+    assert_eq!(
+        BundledPluginScanner::derive_bundled_plugin_id_hint(
+            "./index.ts",
+            "telegram",
+            Some("@openclaw/telegram"),
+            false
+        ),
+        "telegram"
+    );
+    assert_eq!(
+        BundledPluginScanner::derive_bundled_plugin_id_hint(
+            "./handlers/worker.ts",
+            "telegram",
+            Some("@openclaw/telegram-worker"),
+            true
+        ),
+        "telegram-worker/worker"
+    );
+
+    // 3. Top-level public surface source validation
+    assert!(BundledPluginScanner::is_top_level_public_surface_source("runtime-api.ts"));
+    assert!(BundledPluginScanner::is_top_level_public_surface_source("helper-api.js"));
+    assert!(!BundledPluginScanner::is_top_level_public_surface_source(".hidden.ts"));
+    assert!(!BundledPluginScanner::is_top_level_public_surface_source("test-utils.ts"));
+    assert!(!BundledPluginScanner::is_top_level_public_surface_source("types.d.ts"));
+    assert!(!BundledPluginScanner::is_top_level_public_surface_source("config-api.ts"));
+    assert!(!BundledPluginScanner::is_top_level_public_surface_source("runner.test.ts"));
+
+    // 4. Runtime sidecar collection
+    let public_surfaces = vec![
+        "runtime-api.js".to_string(),
+        "custom-helper.js".to_string(),
+        "light-runtime-api.js".to_string(),
+    ];
+    let sidecars = BundledPluginScanner::collect_bundled_plugin_runtime_sidecar_artifacts(&public_surfaces);
+    assert_eq!(sidecars, vec!["runtime-api.js", "light-runtime-api.js"]);
+
+    // 5. Startup manifest fast-path resolution
+    assert!(BundledPluginScanner::has_bundled_plugin_startup_manifest(
+        "alpha",
+        Some(r#"{"id":"alpha","name":"Alpha Plugin"}"#)
+    ));
+    assert!(!BundledPluginScanner::has_bundled_plugin_startup_manifest(
+        "alpha",
+        Some(r#"{"id":"beta","name":"Beta Plugin"}"#)
+    ));
+    assert!(!BundledPluginScanner::has_bundled_plugin_startup_manifest("alpha", None));
+
+    // 6. Bundled Provider Compat validation
+    assert!(BundledProviderCompatValidator::is_bundled_provider_compat_contract("speechProviders"));
+    assert!(BundledProviderCompatValidator::is_bundled_provider_compat_contract("migrationProviders"));
+    assert!(!BundledProviderCompatValidator::is_bundled_provider_compat_contract("unknownContract"));
+
+    let mut counts = HashMap::new();
+    counts.insert("speechProviders".to_string(), 1);
+    assert!(BundledProviderCompatValidator::is_bundled_provider_compat_plugin("bundled", 0, &counts));
+    assert!(BundledProviderCompatValidator::is_bundled_provider_compat_plugin("bundled", 2, &HashMap::new()));
+    assert!(!BundledProviderCompatValidator::is_bundled_provider_compat_plugin("installed", 2, &counts));
+
+    // 7. Bundled Source Overlays
+    let mount_info_sample = "36 35 98:0 / /mnt/overlay rw,relatime - ext4 /dev/root rw\n\
+                             37 36 98:1 / /home/user/extensions rw - ext4 /dev/sda1 rw";
+    let mount_points = BundledSourceOverlayResolver::parse_linux_mount_info_mount_points(mount_info_sample);
+    assert!(mount_points.contains("/mnt/overlay"));
+    assert!(mount_points.contains("/home/user/extensions"));
+    assert!(!mount_points.contains("/var/log"));
+
+    assert!(BundledSourceOverlayResolver::source_overlays_disabled(Some("1")));
+    assert!(BundledSourceOverlayResolver::source_overlays_disabled(Some("TRUE")));
+    assert!(!BundledSourceOverlayResolver::source_overlays_disabled(Some("0")));
+    assert!(!BundledSourceOverlayResolver::source_overlays_disabled(None));
+
+    let peers = vec!["discord".to_string(), "telegram".to_string()];
+    let mut custom_mounts = HashSet::new();
+    custom_mounts.insert("/legacy/extensions/discord".to_string());
+    let overlays = BundledSourceOverlayResolver::list_bundled_source_overlay_dirs(
+        "/app/extensions",
+        "/legacy/extensions",
+        &peers,
+        &custom_mounts,
+        false
+    );
+    assert_eq!(overlays, vec!["/legacy/extensions/discord"]);
+
+    // 8. Bundled Plugin Naming & Artwork Validator
+    let cats = vec!["channels".to_string()];
+    assert_eq!(
+        BundledPluginNamingAndArtworkValidator::validate_bundled_plugin_categories(Some(&cats)).unwrap(),
+        "channels"
+    );
+    assert!(BundledPluginNamingAndArtworkValidator::validate_bundled_plugin_categories(None).is_err());
+    let invalid_cats = vec!["channels".to_string(), "tools".to_string()];
+    assert!(BundledPluginNamingAndArtworkValidator::validate_bundled_plugin_categories(Some(&invalid_cats)).is_err());
+
+    // Valid 512x512 PNG header (24 bytes minimum)
+    let mut valid_png = vec![137, 80, 78, 71, 13, 10, 26, 10]; // signature
+    valid_png.extend_from_slice(&[0, 0, 0, 13]); // IHDR chunk length
+    valid_png.extend_from_slice(b"IHDR");
+    valid_png.extend_from_slice(&512u32.to_be_bytes()); // width
+    valid_png.extend_from_slice(&512u32.to_be_bytes()); // height
+    assert!(BundledPluginNamingAndArtworkValidator::validate_bundled_plugin_icon_png(&valid_png).is_ok());
+
+    let mut invalid_dim_png = valid_png.clone();
+    invalid_dim_png[16..20].copy_from_slice(&256u32.to_be_bytes());
+    assert!(BundledPluginNamingAndArtworkValidator::validate_bundled_plugin_icon_png(&invalid_dim_png).is_err());
+
+    // Naming rules (including kimi-coding -> kimi exception)
+    assert!(BundledPluginNamingAndArtworkValidator::validate_bundled_plugin_naming(
+        "telegram",
+        "telegram",
+        "@openclaw/telegram"
+    ).is_ok());
+    assert!(BundledPluginNamingAndArtworkValidator::validate_bundled_plugin_naming(
+        "kimi-coding",
+        "kimi",
+        "@openclaw/kimi-provider"
+    ).is_ok());
+    assert!(BundledPluginNamingAndArtworkValidator::validate_bundled_plugin_naming(
+        "slack",
+        "telegram",
+        "@openclaw/slack"
+    ).is_err());
+    assert!(BundledPluginNamingAndArtworkValidator::validate_bundled_plugin_naming(
+        "slack",
+        "slack",
+        "third-party/slack"
+    ).is_err());
+}
+
 
 
 

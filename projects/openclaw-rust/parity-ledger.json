@@ -10,10 +10,10 @@
     "ui_accepted": false
   },
   "file_coverage": {
-    "mapped_paths": 562,
+    "mapped_paths": 572,
     "omitted_known": 0,
     "tracked_paths": 58750,
-    "unclassified_paths": 58188
+    "unclassified_paths": 58178
   },
   "inventory_authority": {
     "manifest_source": "GitHub Actions immutable artifact candidate",
@@ -21248,6 +21248,33 @@
             "start_line": 1
           },
           "symbol": "resolvePackageExtensionEntries"
+        },
+        {
+          "blob_sha": "1876fce7cf9fae0a56525185c61a2a8d554b5ec9",
+          "path": "src/plugins/bundled-plugin-categories.test.ts",
+          "range": {
+            "end_line": 65,
+            "start_line": 1
+          },
+          "symbol": "bundled plugin categories"
+        },
+        {
+          "blob_sha": "5204b88ea5f6f8b1c2cf81862ff16f6e8245a71a",
+          "path": "src/plugins/bundled-plugin-icons.test.ts",
+          "range": {
+            "end_line": 46,
+            "start_line": 1
+          },
+          "symbol": "bundled plugin icons"
+        },
+        {
+          "blob_sha": "fb47d17be4aeedb7b8d7d1967f097d8d6cd4863b",
+          "path": "src/plugins/bundled-plugin-naming.test.ts",
+          "range": {
+            "end_line": 154,
+            "start_line": 1
+          },
+          "symbol": "bundled plugin naming"
         }
       ],
       "status": {
@@ -21268,7 +21295,8 @@
         "source/host/tests/openclaw_plugins_contract.rs::test_ocrm_plugins_bundled_capability_metadata_and_subpath_bundle",
         "source/host/tests/openclaw_plugins_contract.rs::test_ocrm_plugins_bundle_manifest_guardrails",
         "source/host/tests/openclaw_plugins_contract.rs::test_ocrm_plugins_sdk_package_and_runtime_api_guardrails",
-        "source/host/tests/openclaw_plugins_contract.rs::test_ocrm_plugins_bundled_mcp_lsp_capabilities_and_command_scopes"
+        "source/host/tests/openclaw_plugins_contract.rs::test_ocrm_plugins_bundled_mcp_lsp_capabilities_and_command_scopes",
+        "source/host/tests/openclaw_plugins_contract.rs::test_ocrm_plugins_bundled_metadata_scan_compat_and_naming_artwork"
       ],
       "typed_contracts": [
         "PluginBundleFormat",
@@ -21732,6 +21760,69 @@
             "start_line": 1
           },
           "symbol": "wizard model picker contract"
+        },
+        {
+          "blob_sha": "46d059bcee7bfd05bcf134527cf1c7fb305be524",
+          "path": "src/plugins/bundled-plugin-metadata.public-surfaces.test.ts",
+          "range": {
+            "end_line": 181,
+            "start_line": 1
+          },
+          "symbol": "bundled plugin metadata public surfaces"
+        },
+        {
+          "blob_sha": "24b98ca4a2652f9ca601bdae6728ea6fdab8f4fe",
+          "path": "src/plugins/bundled-plugin-metadata.test.ts",
+          "range": {
+            "end_line": 312,
+            "start_line": 1
+          },
+          "symbol": "bundled plugin metadata"
+        },
+        {
+          "blob_sha": "9c40d4733fcd99083b1cf6004513a212fa8e9b69",
+          "path": "src/plugins/bundled-plugin-metadata.ts",
+          "range": {
+            "end_line": 155,
+            "start_line": 1
+          },
+          "symbol": "listBundledPluginMetadata"
+        },
+        {
+          "blob_sha": "3939d808f00dac1fb934ff24d8978b1a1e45a27e",
+          "path": "src/plugins/bundled-plugin-scan.ts",
+          "range": {
+            "end_line": 224,
+            "start_line": 1
+          },
+          "symbol": "bundled plugin scan"
+        },
+        {
+          "blob_sha": "c11dab1b7e4654bfb4c2f564a6faca1546918b20",
+          "path": "src/plugins/bundled-plugin-startup-metadata.ts",
+          "range": {
+            "end_line": 18,
+            "start_line": 1
+          },
+          "symbol": "hasBundledPluginStartupManifest"
+        },
+        {
+          "blob_sha": "3a8752d31f277134d16182083fab67736ee11645",
+          "path": "src/plugins/bundled-provider-compat.ts",
+          "range": {
+            "end_line": 43,
+            "start_line": 1
+          },
+          "symbol": "bundled provider compat"
+        },
+        {
+          "blob_sha": "94b6b8004b54340a71ed92bc1277f8b9622e0306",
+          "path": "src/plugins/bundled-source-overlays.ts",
+          "range": {
+            "end_line": 115,
+            "start_line": 1
+          },
+          "symbol": "bundled source overlays"
         }
       ],
       "status": {
@@ -21756,7 +21847,8 @@
         "source/host/tests/openclaw_plugins_contract.rs::test_ocrm_plugins_embedding_provider_registration",
         "source/host/tests/openclaw_plugins_contract.rs::test_ocrm_plugins_wizard_choice_resolution_and_model_picker",
         "source/host/tests/openclaw_plugins_contract.rs::test_ocrm_plugins_bundled_capability_metadata_and_subpath_bundle",
-        "source/host/tests/openclaw_plugins_contract.rs::test_ocrm_plugins_bundled_channel_metadata_compat_and_dir_resolver"
+        "source/host/tests/openclaw_plugins_contract.rs::test_ocrm_plugins_bundled_channel_metadata_compat_and_dir_resolver",
+        "source/host/tests/openclaw_plugins_contract.rs::test_ocrm_plugins_bundled_metadata_scan_compat_and_naming_artwork"
       ],
       "typed_contracts": [
         "PluginCapabilityCatalog",

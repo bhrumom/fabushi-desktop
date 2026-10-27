@@ -99,3 +99,30 @@
 
 
 
+
+
+## 6. Audited Bundled Metadata, Scanning, Startup, Compat, Overlays & Naming Files (10 files)
+- **Primary Responsibilities**: `OCRM-RESP-PLUGINS-CAPABILITY-CATALOG-001`, `OCRM-RESP-PLUGINS-BUNDLE-MANIFEST-001`
+- **Reviewer**: `xuyao@ombhrum.com`
+- **Native Implementation**: `source/host/src/extensions/plugins/capability_catalog.rs` (`BundledPluginScanner`, `BundledProviderCompatValidator`, `BundledSourceOverlayResolver`, `BundledPluginNamingAndArtworkValidator`)
+- **Contract Tests**: `source/host/tests/openclaw_plugins_contract.rs::test_ocrm_plugins_bundled_metadata_scan_compat_and_naming_artwork`
+
+| Path | Lines | Size (bytes) | Git Blob SHA | Mapped Responsibility |
+| --- | --- | --- | --- | --- |
+| `src/plugins/bundled-plugin-categories.test.ts` | 65 | 3185 | `1876fce7cf9fae0a56525185c61a2a8d554b5ec9` | `OCRM-RESP-PLUGINS-BUNDLE-MANIFEST-001` |
+| `src/plugins/bundled-plugin-icons.test.ts` | 46 | 2052 | `5204b88ea5f6f8b1c2cf81862ff16f6e8245a71a` | `OCRM-RESP-PLUGINS-BUNDLE-MANIFEST-001` |
+| `src/plugins/bundled-plugin-metadata.public-surfaces.test.ts` | 181 | 6319 | `46d059bcee7bfd05bcf134527cf1c7fb305be524` | `OCRM-RESP-PLUGINS-CAPABILITY-CATALOG-001` |
+| `src/plugins/bundled-plugin-metadata.test.ts` | 312 | 12251 | `24b98ca4a2652f9ca601bdae6728ea6fdab8f4fe` | `OCRM-RESP-PLUGINS-CAPABILITY-CATALOG-001` |
+| `src/plugins/bundled-plugin-metadata.ts` | 155 | 5739 | `9c40d4733fcd99083b1cf6004513a212fa8e9b69` | `OCRM-RESP-PLUGINS-CAPABILITY-CATALOG-001` |
+| `src/plugins/bundled-plugin-naming.test.ts` | 154 | 4985 | `fb47d17be4aeedb7b8d7d1967f097d8d6cd4863b` | `OCRM-RESP-PLUGINS-BUNDLE-MANIFEST-001` |
+| `src/plugins/bundled-plugin-scan.ts` | 224 | 7402 | `3939d808f00dac1fb934ff24d8978b1a1e45a27e` | `OCRM-RESP-PLUGINS-CAPABILITY-CATALOG-001` |
+| `src/plugins/bundled-plugin-startup-metadata.ts` | 18 | 762 | `c11dab1b7e4654bfb4c2f564a6faca1546918b20` | `OCRM-RESP-PLUGINS-CAPABILITY-CATALOG-001` |
+| `src/plugins/bundled-provider-compat.ts` | 43 | 1410 | `3a8752d31f277134d16182083fab67736ee11645` | `OCRM-RESP-PLUGINS-CAPABILITY-CATALOG-001` |
+| `src/plugins/bundled-source-overlays.ts` | 115 | 3678 | `94b6b8004b54340a71ed92bc1277f8b9622e0306` | `OCRM-RESP-PLUGINS-CAPABILITY-CATALOG-001` |
+
+### 6.1 Invariant Validation Summary
+- **Category Slugs**: All bundled plugins require exactly 1 purpose category chosen strictly from `PLUGIN_CATEGORY_SLUGS`.
+- **Artwork Guardrails**: Bundled plugin identity PNG icon must start with `[137, 80, 78, 71, 13, 10, 26, 10]` and have exactly 512x512 resolution.
+- **Naming Conventions**: Directory names correspond directly to manifest ID (with explicit exception `kimi-coding` -> `kimi`), and package names must start with `@openclaw/` plus an allowed suffix (`-provider`, `-plugin`, `-speech`, etc.).
+- **Fast Startup Resolution**: Plugin startup manifest can be checked via fast-path JSON probing without materializing full catalog metadata.
+- **Overlay Security**: Mount points parsed from `/proc/self/mountinfo` are matched against legacy extension paths, with complete disable support via `OPENCLAW_DISABLE_BUNDLED_SOURCE_OVERLAYS`.

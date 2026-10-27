@@ -673,5 +673,320 @@ impl BundledDirResolver {
     }
 }
 
+pub struct BundledPluginScanner;
+
+impl BundledPluginScanner {
+    pub const RUNTIME_SIDECAR_ARTIFACTS: &'static [&'static str] = &[
+        "helper-api.js",
+        "light-runtime-api.js",
+        "qa-runner-api.js",
+        "runtime-api.js",
+        "runtime-setter-api.js",
+        "thread-bindings-runtime.js",
+    ];
+
+    pub const PUBLIC_SURFACE_SOURCE_EXTENSIONS: &'static [&'static str] = &[
+        ".ts", ".mts", ".js", ".mjs", ".cts", ".cjs",
+    ];
+
+    pub fn rewrite_bundled_plugin_entry_to_built_path(entry: &str) -> String {
+        let stripped = entry.strip_prefix("./").or_else(|| entry.strip_prefix(".\\")).unwrap_or(entry);
+        if let Some(dot_idx) = stripped.rfind('.') {
+            format!("{}.js", &stripped[..dot_idx])
+        } else {
+            format!("{}.js", stripped)
+        }
+    }
+
+    pub fn derive_bundled_plugin_id_hint(
+        entry_path: &str,
+        manifest_id: &str,
+        package_name: Option<&str>,
+        has_multiple_extensions: bool,
+    ) -> String {
+        if !has_multiple_extensions {
+            return manifest_id.to_string();
+        }
+        let base = std::path::Path::new(entry_path)
+            .file_stem()
+            .and_then(|s| s.to_str())
+            .unwrap_or(entry_path);
+
+        match package_name.map(|s| s.trim()).filter(|s| !s.is_empty()) {
+            Some(pkg) => {
+                let unscoped = pkg.rsplit('/').next().unwrap_or(pkg);
+                format!("{}/{}", unscoped, base)
+            }
+            None => format!("{}/{}", manifest_id, base),
+        }
+    }
+
+    pub fn is_top_level_public_surface_source(name: &str) -> bool {
+        let ext = match name.rfind('.') {
+            Some(idx) => &name[idx..],
+            None => return false,
+        };
+        if !Self::PUBLIC_SURFACE_SOURCE_EXTENSIONS.contains(&ext) {
+            return false;
+        }
+        if name.starts_with('.') || name.starts_with("test-") || name.contains(".test-") {
+            return false;
+        }
+        if name.ends_with(".d.ts") {
+            return false;
+        }
+        if name.starts_with("config-api.") {
+            return false;
+        }
+        if name.contains(".test.") || name.contains(".spec.") {
+            return false;
+        }
+        true
+    }
+
+    pub fn collect_bundled_plugin_runtime_sidecar_artifacts(
+        public_surfaces: &[String],
+    ) -> Vec<String> {
+        let sidecar_set: HashSet<&str> = Self::RUNTIME_SIDECAR_ARTIFACTS.iter().copied().collect();
+        public_surfaces
+            .iter()
+            .filter(|artifact| sidecar_set.contains(artifact.as_str()))
+            .cloned()
+            .collect()
+    }
+
+    pub fn has_bundled_plugin_startup_manifest(
+        plugin_id: &str,
+        manifest_content: Option<&str>,
+    ) -> bool {
+        let content = match manifest_content {
+            Some(c) => c,
+            None => return false,
+        };
+        if let Ok(val) = serde_json::from_str::<serde_json::Value>(content) {
+            if let Some(id) = val.get("id").and_then(|v| v.as_str()) {
+                return id == plugin_id;
+            }
+        }
+        false
+    }
+}
+
+pub struct BundledProviderCompatValidator;
+
+impl BundledProviderCompatValidator {
+    pub const BUNDLED_PROVIDER_COMPAT_CONTRACT_KEYS: &'static [&'static str] = &[
+        "speechProviders",
+        "externalAuthProviders",
+        "embeddingProviders",
+        "mediaUnderstandingProviders",
+        "transcriptSourceProviders",
+        "realtimeVoiceProviders",
+        "realtimeTranscriptionProviders",
+        "imageGenerationProviders",
+        "videoGenerationProviders",
+        "musicGenerationProviders",
+        "webFetchProviders",
+        "webSearchProviders",
+        "workerProviders",
+        "storageProviders",
+        "usageProviders",
+        "migrationProviders",
+    ];
+
+    pub fn is_bundled_provider_compat_contract(contract: &str) -> bool {
+        Self::BUNDLED_PROVIDER_COMPAT_CONTRACT_KEYS.contains(&contract)
+    }
+
+    pub fn is_bundled_provider_compat_plugin(
+        origin: &str,
+        providers_len: usize,
+        contract_counts: &HashMap<String, usize>,
+    ) -> bool {
+        if origin != "bundled" {
+            return false;
+        }
+        if providers_len > 0 {
+            return true;
+        }
+        Self::BUNDLED_PROVIDER_COMPAT_CONTRACT_KEYS.iter().any(|key| {
+            contract_counts.get(*key).copied().unwrap_or(0) > 0
+        })
+    }
+}
+
+pub struct BundledSourceOverlayResolver;
+
+impl BundledSourceOverlayResolver {
+    pub fn parse_linux_mount_info_mount_points(mount_info: &str) -> HashSet<String> {
+        let mut mount_points = HashSet::new();
+        for line in mount_info.lines() {
+            let trimmed = line.trim();
+            if trimmed.is_empty() {
+                continue;
+            }
+            let fields: Vec<&str> = trimmed.split_whitespace().collect();
+            if fields.len() > 4 {
+                mount_points.insert(fields[4].to_string());
+            }
+        }
+        mount_points
+    }
+
+    pub fn source_overlays_disabled(env_val: Option<&str>) -> bool {
+        match env_val {
+            Some(v) => {
+                let lower = v.trim().to_ascii_lowercase();
+                lower == "1" || lower == "true"
+            }
+            None => false,
+        }
+    }
+
+    pub fn is_bundled_source_overlay_path(
+        source_path: &str,
+        mount_points: &HashSet<String>,
+    ) -> bool {
+        mount_points.contains(source_path)
+    }
+
+    pub fn list_bundled_source_overlay_dirs(
+        bundled_root: &str,
+        legacy_root: &str,
+        peer_dirs: &[String],
+        mount_points: &HashSet<String>,
+        env_disabled: bool,
+    ) -> Vec<String> {
+        if env_disabled || bundled_root.is_empty() || legacy_root.is_empty() {
+            return Vec::new();
+        }
+        let legacy_root_mounted = Self::is_bundled_source_overlay_path(legacy_root, mount_points);
+        let mut overlay_dirs = Vec::new();
+
+        for dir in peer_dirs {
+            let source_dir = format!("{}/{}", legacy_root.trim_end_matches('/'), dir);
+            if legacy_root_mounted || Self::is_bundled_source_overlay_path(&source_dir, mount_points) {
+                overlay_dirs.push(source_dir);
+            }
+        }
+        overlay_dirs.sort();
+        overlay_dirs
+    }
+}
+
+pub struct BundledPluginNamingAndArtworkValidator;
+
+impl BundledPluginNamingAndArtworkValidator {
+    pub const PLUGIN_CATEGORY_SLUGS: &'static [&'static str] = &[
+        "channels",
+        "models",
+        "agent-runtimes",
+        "memory",
+        "context",
+        "voice",
+        "web",
+        "computer-use",
+        "media",
+        "security",
+        "integrations",
+        "developer-tools",
+        "infrastructure",
+        "documents-files",
+        "inbox-collaboration",
+        "productivity",
+        "scheduling",
+        "finance-payments",
+        "sales-marketing",
+        "data-analytics",
+        "agent-orchestration",
+        "research",
+        "other",
+    ];
+
+    pub const ALLOWED_PACKAGE_SUFFIXES: &'static [&'static str] = &[
+        "",
+        "-provider",
+        "-plugin",
+        "-speech",
+        "-sandbox",
+        "-media-understanding",
+    ];
+
+    pub fn validate_bundled_plugin_categories(
+        categories: Option<&[String]>,
+    ) -> Result<String, String> {
+        let cats = categories.ok_or_else(|| "expected exactly one purpose category".to_string())?;
+        if cats.len() != 1 {
+            return Err("expected exactly one purpose category".to_string());
+        }
+        let category = &cats[0];
+        if !Self::PLUGIN_CATEGORY_SLUGS.contains(&category.as_str()) {
+            return Err(format!("contains unknown category '{}'", category));
+        }
+        Ok(category.clone())
+    }
+
+    pub fn validate_bundled_plugin_icon_png(bytes: &[u8]) -> Result<(), String> {
+        const PNG_SIG: [u8; 8] = [137, 80, 78, 71, 13, 10, 26, 10];
+        if bytes.len() < 24 {
+            return Err("File too short for valid PNG header".to_string());
+        }
+        if bytes[0..8] != PNG_SIG {
+            return Err("Invalid PNG signature".to_string());
+        }
+        let width = u32::from_be_bytes([bytes[16], bytes[17], bytes[18], bytes[19]]);
+        let height = u32::from_be_bytes([bytes[20], bytes[21], bytes[22], bytes[23]]);
+        if width != 512 || height != 512 {
+            return Err(format!(
+                "Icon must be 512x512 pixels, got {}x{}",
+                width, height
+            ));
+        }
+        Ok(())
+    }
+
+    pub fn validate_bundled_plugin_naming(
+        dir_name: &str,
+        manifest_id: &str,
+        package_name: &str,
+    ) -> Result<(), String> {
+        let expected_manifest_id = if dir_name == "kimi-coding" {
+            "kimi"
+        } else {
+            dir_name
+        };
+
+        if manifest_id != expected_manifest_id {
+            return Err(format!(
+                "Manifest id '{}' does not match expected '{}' for directory '{}'",
+                manifest_id, expected_manifest_id, dir_name
+            ));
+        }
+
+        if !package_name.starts_with("@openclaw/") {
+            return Err(format!(
+                "Package name '{}' must start with '@openclaw/'",
+                package_name
+            ));
+        }
+
+        let pkg_suffix = &package_name["@openclaw/".len()..];
+        let matches_suffix = Self::ALLOWED_PACKAGE_SUFFIXES.iter().any(|suffix| {
+            let expected_pkg = format!("{}{}", expected_manifest_id, suffix);
+            pkg_suffix == expected_pkg
+        });
+
+        if !matches_suffix {
+            return Err(format!(
+                "Package name '{}' does not conform to expected prefix '@openclaw/{}' with allowed suffixes",
+                package_name, expected_manifest_id
+            ));
+        }
+
+        Ok(())
+    }
+}
+
+
 
 
