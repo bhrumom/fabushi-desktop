@@ -417,3 +417,90 @@ fn test_ocrm_plugins_providers_and_web_fetch_contract() {
         .collect();
     assert_eq!(fetch_plugins, vec!["google-search-plugin"]);
 }
+
+#[test]
+fn test_ocrm_plugins_shape_compatibility_matrix() {
+    // Tests equivalent behavior from upstream src/plugins/contracts/shape.contract.test.ts
+    use mahayana_host_runtime::extensions::plugins::activation_planner::{
+        build_plugin_shape_summary, CapabilityMode, PluginCapabilityEntry, PluginInspectShape,
+        PluginShapeParams,
+    };
+
+    // 1. Hook only
+    let hook_only = build_plugin_shape_summary(&PluginShapeParams {
+        plugin_id: "hook-only".to_string(),
+        has_hooks: true,
+        ..Default::default()
+    });
+    assert_eq!(hook_only.shape, PluginInspectShape::HookOnly);
+    assert_eq!(hook_only.capability_mode, CapabilityMode::None);
+    assert!(hook_only.capabilities.is_empty());
+
+    // 2. Plain capability (text-inference)
+    let plain_provider = build_plugin_shape_summary(&PluginShapeParams {
+        plugin_id: "plain-provider".to_string(),
+        capabilities: vec![PluginCapabilityEntry {
+            kind: "text-inference".to_string(),
+            ids: vec!["plain-provider".to_string()],
+        }],
+        ..Default::default()
+    });
+    assert_eq!(plain_provider.shape, PluginInspectShape::PlainCapability);
+    assert_eq!(plain_provider.capability_mode, CapabilityMode::Plain);
+    assert_eq!(plain_provider.capabilities.len(), 1);
+
+    // 3. Hybrid capability (text-inference + web-search)
+    let hybrid = build_plugin_shape_summary(&PluginShapeParams {
+        plugin_id: "hybrid-company".to_string(),
+        capabilities: vec![
+            PluginCapabilityEntry {
+                kind: "text-inference".to_string(),
+                ids: vec!["hybrid-provider".to_string()],
+            },
+            PluginCapabilityEntry {
+                kind: "web-search".to_string(),
+                ids: vec!["hybrid-search".to_string()],
+            },
+        ],
+        ..Default::default()
+    });
+    assert_eq!(hybrid.shape, PluginInspectShape::HybridCapability);
+    assert_eq!(hybrid.capability_mode, CapabilityMode::Hybrid);
+    assert_eq!(hybrid.capabilities.len(), 2);
+
+    // 4. Channel demo
+    let channel_demo = build_plugin_shape_summary(&PluginShapeParams {
+        plugin_id: "channel-demo".to_string(),
+        capabilities: vec![PluginCapabilityEntry {
+            kind: "channel".to_string(),
+            ids: vec!["channel-demo".to_string()],
+        }],
+        ..Default::default()
+    });
+    assert_eq!(channel_demo.shape, PluginInspectShape::PlainCapability);
+    assert_eq!(channel_demo.capability_mode, CapabilityMode::Plain);
+
+    // 5. Session catalog demo
+    let session_catalog_demo = build_plugin_shape_summary(&PluginShapeParams {
+        plugin_id: "session-catalog-demo".to_string(),
+        capabilities: vec![PluginCapabilityEntry {
+            kind: "session-catalog".to_string(),
+            ids: vec!["session-catalog-demo".to_string()],
+        }],
+        ..Default::default()
+    });
+    assert_eq!(session_catalog_demo.shape, PluginInspectShape::PlainCapability);
+    assert_eq!(session_catalog_demo.capability_mode, CapabilityMode::Plain);
+
+    // 6. Document extractors
+    let doc_extract = build_plugin_shape_summary(&PluginShapeParams {
+        plugin_id: "document-extract-test".to_string(),
+        capabilities: vec![PluginCapabilityEntry {
+            kind: "document-extractors".to_string(),
+            ids: vec!["pdf".to_string()],
+        }],
+        ..Default::default()
+    });
+    assert_eq!(doc_extract.shape, PluginInspectShape::PlainCapability);
+    assert_eq!(doc_extract.capability_mode, CapabilityMode::Plain);
+}

@@ -84,3 +84,91 @@ impl ActivationPlanner {
         activated_plugins
     }
 }
+
+// Plugin shape inspection & compatibility matrix (from src/plugins/inspect-shape.ts)
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum PluginInspectShape {
+    HookOnly,
+    PlainCapability,
+    HybridCapability,
+    NonCapability,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum CapabilityMode {
+    None,
+    Plain,
+    Hybrid,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct PluginCapabilityEntry {
+    pub kind: String,
+    pub ids: Vec<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct PluginShapeSummary {
+    pub shape: PluginInspectShape,
+    pub capability_mode: CapabilityMode,
+    pub capability_count: usize,
+    pub capabilities: Vec<PluginCapabilityEntry>,
+}
+
+#[derive(Debug, Clone, Default)]
+pub struct PluginShapeParams {
+    pub plugin_id: String,
+    pub commands: Vec<String>,
+    pub cli_commands: Vec<String>,
+    pub services: Vec<String>,
+    pub http_routes_count: usize,
+    pub has_hooks: bool,
+    pub has_tools: bool,
+    pub has_gateway_methods: bool,
+    pub capabilities: Vec<PluginCapabilityEntry>,
+}
+
+pub fn build_plugin_shape_summary(params: &PluginShapeParams) -> PluginShapeSummary {
+    let non_empty_caps: Vec<PluginCapabilityEntry> = params
+        .capabilities
+        .iter()
+        .filter(|c| !c.ids.is_empty())
+        .cloned()
+        .collect();
+    let capability_count = non_empty_caps.len();
+
+    let shape = if capability_count > 1 {
+        PluginInspectShape::HybridCapability
+    } else if capability_count == 1 {
+        PluginInspectShape::PlainCapability
+    } else {
+        let has_only_hooks = params.commands.is_empty()
+            && params.cli_commands.is_empty()
+            && params.services.is_empty()
+            && params.http_routes_count == 0
+            && params.has_hooks
+            && !params.has_tools
+            && !params.has_gateway_methods;
+        if has_only_hooks {
+            PluginInspectShape::HookOnly
+        } else {
+            PluginInspectShape::NonCapability
+        }
+    };
+
+    let capability_mode = match capability_count {
+        0 => CapabilityMode::None,
+        1 => CapabilityMode::Plain,
+        _ => CapabilityMode::Hybrid,
+    };
+
+    PluginShapeSummary {
+        shape,
+        capability_mode,
+        capability_count,
+        capabilities: non_empty_caps,
+    }
+}

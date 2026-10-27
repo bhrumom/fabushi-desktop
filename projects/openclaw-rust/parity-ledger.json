@@ -10,10 +10,10 @@
     "ui_accepted": false
   },
   "file_coverage": {
-    "mapped_paths": 393,
+    "mapped_paths": 395,
     "omitted_known": 0,
     "tracked_paths": 58750,
-    "unclassified_paths": 58357
+    "unclassified_paths": 58355
   },
   "inventory_authority": {
     "manifest_source": "GitHub Actions immutable artifact candidate",
@@ -20561,7 +20561,8 @@
         "PluginManifestRecord"
       ],
       "tests": [
-        "source/host/tests/openclaw_plugins_contract.rs::test_ocrm_plugins_activation_planner"
+        "source/host/tests/openclaw_plugins_contract.rs::test_ocrm_plugins_activation_planner",
+        "source/host/tests/openclaw_plugins_contract.rs::test_ocrm_plugins_shape_compatibility_matrix"
       ],
       "integration": {
         "producer": "source/host/src/extensions/plugins/activation_planner.rs",
@@ -20578,6 +20579,24 @@
             "end_line": 148
           },
           "symbol": "activation-context"
+        },
+        {
+          "path": "src/plugins/inspect-shape.ts",
+          "blob_sha": "d99f24acfe5f5e612f44d5eea96b071c607f0db4",
+          "range": {
+            "start_line": 1,
+            "end_line": 113
+          },
+          "symbol": "buildPluginShapeSummary"
+        },
+        {
+          "path": "src/plugins/contracts/shape.contract.test.ts",
+          "blob_sha": "b77201c8337de34f0d68bdfbbcbd1db4aaaf6a70",
+          "range": {
+            "start_line": 1,
+            "end_line": 134
+          },
+          "symbol": "plugin shape compatibility matrix"
         }
       ],
       "evidence_refs": [

@@ -29,4 +29,5 @@
 - **Contract Tests**: `source/host/tests/openclaw_plugins_contract.rs`:
   - `test_ocrm_plugins_bundle_manifest` (PASSED)
   - `test_ocrm_plugins_activation_planner` (PASSED)
+  - `test_ocrm_plugins_shape_compatibility_matrix` (PASSED)
   - `test_ocrm_plugins_capability_catalog` (PASSED)
