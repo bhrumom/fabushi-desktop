@@ -82,6 +82,11 @@ and `-wal`/`-shm`/`-journal` sidecars must be absent before restore, and any
 existing sidecar is rejected. The focused artifact test exercises the positive
 fresh-target and negative-sidecar paths.
 
+The same owner now writes validated schema-v2 manifests with an exclusive
+0600/create-new file and `sync_all`, rejecting duplicate publication. The local
+manifest oracle reads the resulting bytes back and validates them again; this
+still does not prove held-handle anchor inspection or database materialization.
+
 ## Responsibility/evidence decision
 
 `OCRM-RESP-SNAPSHOT-BACKUP-CODEC-001` remains `read=partial`,

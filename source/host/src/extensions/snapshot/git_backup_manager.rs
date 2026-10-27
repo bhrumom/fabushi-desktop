@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use sha2::{Digest, Sha256};
 use std::fs::{File, OpenOptions};
-use std::io::{self, Read};
+use std::io::{self, Read, Write};
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::Arc;
@@ -10,7 +10,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 use std::collections::BTreeMap;
 
 #[cfg(unix)]
-use std::os::unix::fs::{MetadataExt, OpenOptionsExt};
+use std::os::unix::fs::{MetadataExt, OpenOptionsExt, PermissionsExt};
 
 pub const SNAPSHOT_EXPORT_ENVELOPE_VERSION: u32 = 1;
 pub const SQLITE_SIDECAR_SUFFIXES: [&str; 3] = ["-wal", "-shm", "-journal"];
@@ -201,6 +201,38 @@ pub fn parse_postgres_export_manifest(
         }
     }
     Ok(manifest)
+}
+
+#[cfg(unix)]
+fn create_manifest_file(path: &Path) -> io::Result<File> {
+    OpenOptions::new()
+        .write(true)
+        .create_new(true)
+        .mode(0o600)
+        .open(path)
+}
+
+#[cfg(not(unix))]
+fn create_manifest_file(path: &Path) -> io::Result<File> {
+    OpenOptions::new().write(true).create_new(true).open(path)
+}
+
+/// Write a validated schema-v2 manifest without replacing an existing one.
+pub fn write_postgres_export_manifest(
+    path: impl AsRef<Path>,
+    value: &Value,
+    expected_id: &str,
+) -> Result<(), String> {
+    let path = path.as_ref();
+    let manifest = parse_postgres_export_manifest(value, expected_id, None)?;
+    let bytes = serde_json::to_vec_pretty(&manifest)
+        .map_err(|error| format!("serialize Postgres export manifest: {error}"))?;
+    let mut file = create_manifest_file(path)
+        .map_err(|error| format!("create Postgres export manifest {}: {error}", path.display()))?;
+    file.write_all(&bytes)
+        .and_then(|_| file.write_all(b"\n"))
+        .and_then(|_| file.sync_all())
+        .map_err(|error| format!("persist Postgres export manifest {}: {error}", path.display()))
 }
 
 impl SnapshotGenerationFence {

@@ -8,7 +8,7 @@ use mahayana_host_runtime::extensions::skills::skill_runtime::{
 use mahayana_host_runtime::extensions::snapshot::git_backup_manager::{
     assert_database_artifact, capture_database_artifact, create_export_envelope,
     assert_fresh_restore_target, assert_no_sqlite_sidecars, parse_postgres_export_manifest,
-    verify_export_envelope, SnapshotGenerationFence,
+    verify_export_envelope, write_postgres_export_manifest, SnapshotGenerationFence,
 };
 use serde_json::json;
 use std::fs;
@@ -108,6 +108,23 @@ fn test_ocrm_snapshot_postgres_manifest_schema_and_profile_oracles() {
     let parsed = parse_postgres_export_manifest(&valid, "snap-002", Some("exact"))
         .expect("valid schema-v2 manifest");
     assert_eq!(parsed.export_schema_version, 2);
+
+    let manifest_path = std::env::temp_dir().join(format!(
+        "fabushi-snapshot-manifest-{}-{}.json",
+        std::process::id(),
+        parsed.snapshot_id
+    ));
+    let _ = fs::remove_file(&manifest_path);
+    write_postgres_export_manifest(&manifest_path, &valid, "snap-002")
+        .expect("exclusive manifest write");
+    assert!(write_postgres_export_manifest(&manifest_path, &valid, "snap-002").is_err());
+    let written: serde_json::Value = serde_json::from_slice(
+        &fs::read(&manifest_path).expect("read written manifest"),
+    )
+    .expect("parse written manifest");
+    parse_postgres_export_manifest(&written, "snap-002", Some("exact"))
+        .expect("written manifest remains valid");
+    let _ = fs::remove_file(&manifest_path);
 
     let mut sanitized = valid.clone();
     sanitized["sanitized_differences"] = json!(["transient-state"]);
