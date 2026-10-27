@@ -24782,8 +24782,110 @@
             "end_line": 11,
             "start_line": 1
           },
-          "symbol": "extractArchive"
-        }
+    "symbol": "extractArchive"
+  },
+    {
+      "blob_sha": "2370e7ce74d12f5fff37f66c69facaaeca04f382",
+      "path": "src/plugin-sdk/async-lock-runtime.ts",
+      "range": {"end_line": 1, "start_line": 1},
+      "symbol": "async-lock-runtime"
+    },
+    {
+      "blob_sha": "447880ab6d5897585e32852880135c7e0f6968f1",
+      "path": "src/plugin-sdk/blob-runtime.ts",
+      "range": {"end_line": 1, "start_line": 1},
+      "symbol": "blob-runtime"
+    },
+    {
+      "blob_sha": "6c83826c7c96bf575d8eaedd615f09cfe5377674",
+      "path": "src/plugin-sdk/boolean-param.test.ts",
+      "range": {"end_line": 1, "start_line": 1},
+      "symbol": "boolean-param.test"
+    },
+    {
+      "blob_sha": "85d1ff22b2105d27c319880ee0941b4a7ea52368",
+      "path": "src/plugin-sdk/boolean-param.ts",
+      "range": {"end_line": 1, "start_line": 1},
+      "symbol": "boolean-param"
+    },
+    {
+      "blob_sha": "e9f7817f60a90ab10e9a7c519281f0f7d0c359b5",
+      "path": "src/plugin-sdk/browser-bridge.test.ts",
+      "range": {"end_line": 1, "start_line": 1},
+      "symbol": "browser-bridge.test"
+    },
+    {
+      "blob_sha": "e2084c07c5616fd791cced4e1884d18da7d0b544",
+      "path": "src/plugin-sdk/browser-bridge.ts",
+      "range": {"end_line": 1, "start_line": 1},
+      "symbol": "browser-bridge"
+    },
+    {
+      "blob_sha": "5d5602ee8eb068345e791b725b4b227e3c561c61",
+      "path": "src/plugin-sdk/browser-config.test.ts",
+      "range": {"end_line": 1, "start_line": 1},
+      "symbol": "browser-config.test"
+    },
+    {
+      "blob_sha": "e86d03fc99ff017566ae219a6c5d4f352a221c6e",
+      "path": "src/plugin-sdk/browser-config.ts",
+      "range": {"end_line": 1, "start_line": 1},
+      "symbol": "browser-config"
+    },
+    {
+      "blob_sha": "05a48ef24bdb35a1b3fcda08e4096e747ca1c7b4",
+      "path": "src/plugin-sdk/browser-control-auth.ts",
+      "range": {"end_line": 1, "start_line": 1},
+      "symbol": "browser-control-auth"
+    },
+    {
+      "blob_sha": "e4258602b630d3e28bb5de8905d9a5e5271e32fb",
+      "path": "src/plugin-sdk/browser-facades.test.ts",
+      "range": {"end_line": 1, "start_line": 1},
+      "symbol": "browser-facades.test"
+    },
+    {
+      "blob_sha": "c254178815c5a5ab893e50a0a191409416ddf999",
+      "path": "src/plugin-sdk/browser-maintenance.test.ts",
+      "range": {"end_line": 1, "start_line": 1},
+      "symbol": "browser-maintenance.test"
+    },
+    {
+      "blob_sha": "a389c503d715b28b9fcef0747048cc28910fbd61",
+      "path": "src/plugin-sdk/browser-maintenance.ts",
+      "range": {"end_line": 1, "start_line": 1},
+      "symbol": "browser-maintenance"
+    },
+    {
+      "blob_sha": "fb84a2098658833e0e9595922a1c771aaed95754",
+      "path": "src/plugin-sdk/browser-profiles.browser-import.test.ts",
+      "range": {"end_line": 1, "start_line": 1},
+      "symbol": "browser-profiles.browser-import.test"
+    },
+    {
+      "blob_sha": "6e53aeec7803fac2287144203b1de6619b8b8987",
+      "path": "src/plugin-sdk/browser-profiles.ts",
+      "range": {"end_line": 1, "start_line": 1},
+      "symbol": "browser-profiles"
+    },
+    {
+      "blob_sha": "aeae1d7db451360ec70764aed4b1fa2120bc310a",
+      "path": "src/plugin-sdk/browser-subpaths.test.ts",
+      "range": {"end_line": 1, "start_line": 1},
+      "symbol": "browser-subpaths.test"
+    },
+    {
+      "blob_sha": "0700eea92858d2119e418f30138d4ea3d617fce7",
+      "path": "src/plugin-sdk/browser-trash.ts",
+      "range": {"end_line": 1, "start_line": 1},
+      "symbol": "browser-trash"
+    },
+    {
+      "blob_sha": "b51589e0e10911042cc08f261dcb88d613589505",
+      "path": "src/plugin-sdk/browser-types.ts",
+      "range": {"end_line": 1, "start_line": 1},
+      "symbol": "browser-types"
+    }
       ],
       "status": {
         "acceptance": "pending",
