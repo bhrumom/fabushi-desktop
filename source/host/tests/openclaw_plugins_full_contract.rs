@@ -636,6 +636,97 @@ fn test_ocrm_plugins_agent_executor_tool_middleware_and_before_reply() {
     assert_eq!(explicit_payload[0].metadata, Some(json!({"intent": "greeting"})));
 }
 
+#[test]
+fn test_ocrm_plugins_guarded_api_lifecycle_auth_refs_and_widget_kinds() {
+    use std::collections::HashMap;
+    use serde_json::json;
+    use mahayana_host_runtime::extensions::plugins::runtime_final::{
+        GuardedPluginApiLifecycle, PluginAuthProfileRewriter, BoardWidgetContentKindValidator,
+    };
+
+    // 1. Guarded Plugin API Lifecycle
+    assert!(GuardedPluginApiLifecycle::is_late_callable_method("emitAgentEvent"));
+    assert!(GuardedPluginApiLifecycle::is_late_callable_method("sendSessionAttachment"));
+    assert!(GuardedPluginApiLifecycle::assert_method_callable_after_activation("emitAgentEvent").is_ok());
+
+    let err_reg = GuardedPluginApiLifecycle::assert_method_callable_after_activation("registerTool").unwrap_err();
+    assert!(err_reg.contains("cannot be invoked after plugin activation phase has closed"));
+
+    assert!(GuardedPluginApiLifecycle::assert_workspace_generation_match("gen-1", "gen-1", "my-plugin").is_ok());
+    let err_gen = GuardedPluginApiLifecycle::assert_workspace_generation_match("gen-1", "gen-2", "my-plugin").unwrap_err();
+    assert!(err_gen.contains("does not belong to the calling workspace generation"));
+
+    // 2. Auth Profile References Rewriter
+    let mut id_map = HashMap::new();
+    id_map.insert("old-cred-1".into(), "new-cred-1".into());
+
+    let mut cfg = json!({
+        "plugins": {
+            "entries": {
+                "custom-ai": {
+                    "config": {
+                        "authProfileId": "old-cred-1",
+                        "nested": {
+                            "defaultAuthProfileId": "old-cred-1"
+                        }
+                    }
+                }
+            }
+        },
+        "channels": {
+            "telegram": {
+                "authProfileId": "old-cred-1"
+            }
+        }
+    });
+
+    let changed = PluginAuthProfileRewriter::rewrite_auth_profile_refs(&mut cfg, &id_map);
+    assert!(changed);
+    assert_eq!(cfg["plugins"]["entries"]["custom-ai"]["config"]["authProfileId"], "new-cred-1");
+    assert_eq!(cfg["plugins"]["entries"]["custom-ai"]["config"]["nested"]["defaultAuthProfileId"], "new-cred-1");
+    assert_eq!(cfg["channels"]["telegram"]["authProfileId"], "new-cred-1");
+
+    // Second run makes no changes
+    let changed_second = PluginAuthProfileRewriter::rewrite_auth_profile_refs(&mut cfg, &id_map);
+    assert!(!changed_second);
+
+    // 3. Board Widget Content Kind Validation
+    let valid_paths = vec!["/public/widget.js".into(), "/public/widget.css".into()];
+    assert!(BoardWidgetContentKindValidator::validate(
+        "custom-widget",
+        "My Custom Widget",
+        "main.surface",
+        &valid_paths,
+    ).is_ok());
+
+    // Reserved kind rejected
+    let err_res = BoardWidgetContentKindValidator::validate(
+        "html",
+        "HTML Widget",
+        "main.surface",
+        &valid_paths,
+    ).unwrap_err();
+    assert!(err_res.contains("is reserved"));
+
+    // Invalid kind rejected
+    assert!(BoardWidgetContentKindValidator::validate(
+        "123-bad",
+        "Label",
+        "surface",
+        &valid_paths,
+    ).is_err());
+
+    // Bad path rejected
+    let bad_paths = vec!["//double-slash".into()];
+    assert!(BoardWidgetContentKindValidator::validate(
+        "good-kind",
+        "Label",
+        "surface",
+        &bad_paths,
+    ).is_err());
+}
+
+
 
 
 

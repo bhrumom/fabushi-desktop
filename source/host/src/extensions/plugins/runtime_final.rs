@@ -141,3 +141,152 @@ impl RuntimeFacadeSeamManager {
     }
 }
 
+// ---------------------------------------------------------------------------
+// Guarded Plugin API Lifecycle & Late-Callable Methods (from src/plugins/api-lifecycle.ts & api-builder.ts)
+// ---------------------------------------------------------------------------
+
+pub struct GuardedPluginApiLifecycle;
+
+impl GuardedPluginApiLifecycle {
+    pub const LATE_CALLABLE_METHODS: &'static [&'static str] = &[
+        "clearRunContext",
+        "emitAgentEvent",
+        "enqueueNextTurnInjection",
+        "steerActiveRun",
+        "getRunContext",
+        "sendSessionAttachment",
+        "scheduleSessionTurn",
+        "setRunContext",
+        "unscheduleSessionTurnsByTag",
+    ];
+
+    pub fn is_late_callable_method(method: &str) -> bool {
+        Self::LATE_CALLABLE_METHODS.contains(&method)
+    }
+
+    pub fn assert_method_callable_after_activation(method: &str) -> Result<(), String> {
+        if Self::is_late_callable_method(method) {
+            Ok(())
+        } else {
+            Err(format!(
+                "Method '{}' cannot be invoked after plugin activation phase has closed",
+                method
+            ))
+        }
+    }
+
+    pub fn assert_workspace_generation_match(
+        caller_generation: &str,
+        owner_generation: &str,
+        plugin_id: &str,
+    ) -> Result<(), String> {
+        if caller_generation == owner_generation {
+            Ok(())
+        } else {
+            Err(format!(
+                "Plugin {} API registration does not belong to the calling workspace generation",
+                plugin_id
+            ))
+        }
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Plugin Auth Profile Reference Rewriter (from src/plugins/auth-profile-config-refs.ts)
+// ---------------------------------------------------------------------------
+
+pub struct PluginAuthProfileRewriter;
+
+impl PluginAuthProfileRewriter {
+    pub fn rewrite_auth_profile_refs(
+        value: &mut serde_json::Value,
+        id_map: &HashMap<String, String>,
+    ) -> bool {
+        let mut changed = false;
+        match value {
+            serde_json::Value::Object(map) => {
+                for (k, v) in map.iter_mut() {
+                    if (k == "authProfileId" || k == "defaultAuthProfileId") && v.is_string() {
+                        let current = v.as_str().unwrap().trim();
+                        if let Some(replacement) = id_map.get(current) {
+                            if replacement != current {
+                                *v = serde_json::Value::String(replacement.clone());
+                                changed = true;
+                            }
+                        }
+                    } else {
+                        if Self::rewrite_auth_profile_refs(v, id_map) {
+                            changed = true;
+                        }
+                    }
+                }
+            }
+            serde_json::Value::Array(arr) => {
+                for item in arr.iter_mut() {
+                    if Self::rewrite_auth_profile_refs(item, id_map) {
+                        changed = true;
+                    }
+                }
+            }
+            _ => {}
+        }
+        changed
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Board Widget Content Kind Validation (from src/plugins/board-widget-content-kinds.ts)
+// ---------------------------------------------------------------------------
+
+pub struct BoardWidgetContentKindValidator;
+
+impl BoardWidgetContentKindValidator {
+    pub const RESERVED_CONTENT_KINDS: &'static [&'static str] = &["html", "mcp-app", "plugin"];
+
+    pub fn validate(
+        kind: &str,
+        label: &str,
+        surface: &str,
+        paths: &[String],
+    ) -> Result<(), String> {
+        // 1. Kind validation: 1-32 chars, starts with lowercase letter, lowercase alphanumeric or hyphen
+        if kind.is_empty()
+            || kind.len() > 32
+            || !kind.chars().next().unwrap().is_ascii_lowercase()
+            || !kind.chars().all(|c| c.is_ascii_lowercase() || c.is_ascii_digit() || c == '-')
+        {
+            return Err(format!("kind '{}' is invalid", kind));
+        }
+        if Self::RESERVED_CONTENT_KINDS.contains(&kind) {
+            return Err(format!("kind '{}' is reserved", kind));
+        }
+
+        // 2. Label: 1-80 chars
+        if label.is_empty() || label.len() > 80 {
+            return Err("label must contain 1-80 characters".to_string());
+        }
+
+        // 3. Surface: 1-64 chars, starts with lowercase letter, alphanumeric or . _ -
+        if surface.is_empty()
+            || surface.len() > 64
+            || !surface.chars().next().unwrap().is_ascii_lowercase()
+            || !surface.chars().all(|c| c.is_ascii_lowercase() || c.is_ascii_digit() || c == '.' || c == '_' || c == '-')
+        {
+            return Err(format!("resource surface '{}' is invalid", surface));
+        }
+
+        // 4. Paths: 1-8 items, each must start with "/" and not with "//" or "/\"
+        if paths.is_empty() || paths.len() > 8 {
+            return Err("paths must contain between 1 and 8 items".to_string());
+        }
+        for p in paths {
+            if !p.starts_with('/') || p.starts_with("//") || p.starts_with("/\\") {
+                return Err(format!("invalid gateway local resource path: '{}'", p));
+            }
+        }
+
+        Ok(())
+    }
+}
+
+

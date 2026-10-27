@@ -10,10 +10,10 @@
     "ui_accepted": false
   },
   "file_coverage": {
-    "mapped_paths": 523,
+    "mapped_paths": 533,
     "omitted_known": 0,
     "tracked_paths": 58750,
-    "unclassified_paths": 58227
+    "unclassified_paths": 58217
   },
   "inventory_authority": {
     "manifest_source": "GitHub Actions immutable artifact candidate",
@@ -22330,13 +22330,94 @@
       "selected_owner": "source/host/src/extensions/plugins/runtime_final.rs",
       "source_refs": [
         {
-          "blob_sha": "e7cac56b5f95969ab7d8600021147a149f7986ff",
-          "path": "src/plugins/runtime.shutdown-preload.test.ts",
+          "blob_sha": "7e0de8ce186c7f69263bc5e087867a4632850a33",
+          "path": "src/plugins/api-builder.ts",
           "range": {
-            "end_line": 93,
+            "end_line": 146,
             "start_line": 1
           },
-          "symbol": "runtime.shutdown-preload"
+          "symbol": "api-builder"
+        },
+        {
+          "blob_sha": "7cb64deae9d2480a934d1974dd87b83da8dd7021",
+          "path": "src/plugins/api-facades.background.test.ts",
+          "range": {
+            "end_line": 158,
+            "start_line": 1
+          },
+          "symbol": "api-facades.background.test"
+        },
+        {
+          "blob_sha": "885a230f49e736277dc49fc81e6802d509593faa",
+          "path": "src/plugins/api-facades.cli.test.ts",
+          "range": {
+            "end_line": 507,
+            "start_line": 1
+          },
+          "symbol": "api-facades.cli.test"
+        },
+        {
+          "blob_sha": "a7dcb791facc4b9fcea290a8c113090a2a047ffa",
+          "path": "src/plugins/api-facades.ts",
+          "range": {
+            "end_line": 157,
+            "start_line": 1
+          },
+          "symbol": "api-facades"
+        },
+        {
+          "blob_sha": "21c6a820f0dfe8abf8168e0a7bb253f786e96e78",
+          "path": "src/plugins/api-lifecycle.test.ts",
+          "range": {
+            "end_line": 173,
+            "start_line": 1
+          },
+          "symbol": "api-lifecycle.test"
+        },
+        {
+          "blob_sha": "b0c300bce930a879ab88d1b304c139eeab66e4ed",
+          "path": "src/plugins/api-lifecycle.ts",
+          "range": {
+            "end_line": 79,
+            "start_line": 1
+          },
+          "symbol": "api-lifecycle"
+        },
+        {
+          "blob_sha": "d5f621a70d477bf6cde06f6949e6f753b630d2c1",
+          "path": "src/plugins/auth-profile-config-refs.ts",
+          "range": {
+            "end_line": 43,
+            "start_line": 1
+          },
+          "symbol": "auth-profile-config-refs"
+        },
+        {
+          "blob_sha": "a54b8196567f7f8b13b841a9b1b86a1fdf227b26",
+          "path": "src/plugins/board-widget-content-kind.types.ts",
+          "range": {
+            "end_line": 30,
+            "start_line": 1
+          },
+          "symbol": "board-widget-content-kind.types"
+        },
+        {
+          "blob_sha": "9f1f5c15a6c3f8035e5f12a0bcc4957b31cb8f4d",
+          "path": "src/plugins/board-widget-content-kinds.ts",
+          "range": {
+            "end_line": 153,
+            "start_line": 1
+          },
+          "symbol": "board-widget-content-kinds"
+        },
+        {
+          "blob_sha": "2cae6314962efa6fd52bd4c3baa6b905b06f2b5b",
+          "path": "src/plugins/build-smoke-entry.ts",
+          "range": {
+            "end_line": 10,
+            "start_line": 1
+          },
+          "symbol": "build-smoke-entry"
         },
         {
           "blob_sha": "990108625678b399058d56319dde884153888767",
@@ -22355,6 +22436,15 @@
             "start_line": 1
           },
           "symbol": "shared runtime seam contracts"
+        },
+        {
+          "blob_sha": "e7cac56b5f95969ab7d8600021147a149f7986ff",
+          "path": "src/plugins/runtime.shutdown-preload.test.ts",
+          "range": {
+            "end_line": 93,
+            "start_line": 1
+          },
+          "symbol": "runtime.shutdown-preload"
         }
       ],
       "status": {
@@ -22372,7 +22462,8 @@
       },
       "tests": [
         "source/host/tests/openclaw_process_plugin_contract.rs::test_ocrm_plugins_runtime_final",
-        "source/host/tests/openclaw_plugins_full_contract.rs::test_ocrm_plugins_runtime_import_side_effects_and_seams"
+        "source/host/tests/openclaw_plugins_full_contract.rs::test_ocrm_plugins_runtime_import_side_effects_and_seams",
+        "source/host/tests/openclaw_plugins_full_contract.rs::test_ocrm_plugins_guarded_api_lifecycle_auth_refs_and_widget_kinds"
       ],
       "typed_contracts": [
         "PluginRuntimeManager",

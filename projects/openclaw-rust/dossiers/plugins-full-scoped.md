@@ -65,6 +65,12 @@
     - Verifies agent executor controller deprecation error guard (`api.registerAgentExecutorController`).
     - Verifies tool result middleware runtime normalization, tool matching, and execution pipeline.
     - Verifies before-agent-reply payload packaging with `SILENT_REPLY_TOKEN` (`NO_REPLY`).
+  - `test_ocrm_plugins_guarded_api_lifecycle_auth_refs_and_widget_kinds` (PASSED)
+    - Verifies late-callable plugin API method access after activation (`emitAgentEvent`, `clearRunContext`, etc.).
+    - Verifies closed registration error on registration methods called after activation completion.
+    - Verifies cross-workspace generation mismatch rejection.
+    - Verifies recursive rewriting of legacy `authProfileId` and `defaultAuthProfileId` credentials.
+    - Verifies board widget content kind naming constraints, reserved kind rejection (`html`, `mcp-app`, `plugin`), surface pattern, and gateway local resource path boundaries.
 
 ## 4. Audited Agent Executor, Tool Result Middleware & Before Reply Files (11 files)
 - **Responsibility**: `OCRM-RESP-PLUGINS-HOOKS-PIPELINE-001`
@@ -84,6 +90,25 @@
 | `src/plugins/agent-tool-result-middleware.ts` | 120 | 4245 | `712b12d08afc67ab53e3ae7ec484f324e834f1dc` |
 | `src/plugins/before-agent-reply.test.ts` | 176 | 6311 | `092e8ddfde3c48eed3fddbf652e553186dfadd8d` |
 | `src/plugins/before-agent-reply.ts` | 111 | 4316 | `5c0469af1e491fc9e896083590222d34aa8241f9` |
+
+## 5. Audited Plugin API Lifecycle, Facades, Auth Profile & Board Widget Files (10 files)
+- **Responsibility**: `OCRM-RESP-PLUGINS-RUNTIME-FINAL-001`
+- **Reviewer**: `xuyao@ombhrum.com`
+- **Native Implementation**: `source/host/src/extensions/plugins/runtime_final.rs` (`GuardedPluginApiLifecycle`, `PluginAuthProfileRewriter`, `BoardWidgetContentKindValidator`)
+
+| Path | Lines | Size (bytes) | Git Blob SHA |
+| --- | --- | --- | --- |
+| `src/plugins/api-builder.ts` | 146 | 5527 | `26b38c35bb5f2b23a9d7bb36277259166f24d142` |
+| `src/plugins/api-facades.background.test.ts` | 149 | 6246 | `6e5e8e8ae382a893cb62e0867d7a126781cb9f2a` |
+| `src/plugins/api-facades.cli.test.ts` | 451 | 20195 | `2f9d54e4df5e236cbca8ebec886d5fffa8d10332` |
+| `src/plugins/api-facades.ts` | 157 | 5594 | `a492c30310243be4c5e3f53835f8d672ea351b6a` |
+| `src/plugins/api-lifecycle.test.ts` | 160 | 6643 | `49635e985834927f884a44b581c817ea8941fcbb` |
+| `src/plugins/api-lifecycle.ts` | 79 | 2604 | `9dd4251f50e82c5f956c38b2518e381665e77695` |
+| `src/plugins/auth-profile-config-refs.ts` | 43 | 1349 | `f735d4faee2ec4a8ecfcff91ea11fa241aeaf68a` |
+| `src/plugins/board-widget-content-kind.types.ts` | 39 | 1244 | `11d512a83e098fa31a545086d1bfd7a31bdf72fa` |
+| `src/plugins/board-widget-content-kinds.ts` | 153 | 5780 | `60677cb6378e9f2df1e51b3fbc06296181774d75` |
+| `src/plugins/build-smoke-entry.ts` | 10 | 586 | `b783f60f64be7bc15f0eb5e8d5ae399c5be4e526` |
+
 
 
 
