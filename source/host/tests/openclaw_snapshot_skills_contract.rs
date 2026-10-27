@@ -710,6 +710,22 @@ fn test_ocrm_snapshot_postgres_manifest_schema_and_profile_oracles() {
         ])
         .expect("digest expected rows");
     assert_eq!(actual_digest, expected_digest);
+    schema_connection
+        .execute_batch("CREATE TABLE quoted_table (\"id\"\"part\" INTEGER PRIMARY KEY, value TEXT);")
+        .expect("create SQLite table with quoted primary key");
+    schema_connection
+        .execute(
+            "INSERT INTO quoted_table (\"id\"\"part\", value) VALUES (?1, ?2)",
+            rusqlite::params![1_i64, "quoted"],
+        )
+        .expect("insert quoted SQLite row");
+    let quoted_digest =
+        mahayana_host_runtime::extensions::snapshot::git_backup_manager::digest_sqlite_table(
+            &schema_connection,
+            "quoted_table",
+        )
+        .expect("digest table with quoted primary key");
+    assert_eq!(quoted_digest.rows, 1);
     let mut restore_connection =
         rusqlite::Connection::open_in_memory().expect("SQLite restore DB");
     restore_connection
@@ -724,6 +740,7 @@ fn test_ocrm_snapshot_postgres_manifest_schema_and_profile_oracles() {
                 Ok(vec![json!(1), json!("first")]),
                 Ok(vec![json!(2), json!("second")]),
             ],
+            &expected_digest,
         )
         .expect("restore SQLite rows");
     assert_eq!(restored_digest, expected_digest);
@@ -732,12 +749,25 @@ fn test_ocrm_snapshot_postgres_manifest_schema_and_profile_oracles() {
         "real_table",
         &["id".into(), "value".into()],
         vec![Ok(vec![json!(3), json!("partial")]), Ok(vec![json!(1)])],
+        &expected_digest,
     )
     .is_err());
     let restored_count: i64 = restore_connection
         .query_row("SELECT COUNT(*) FROM real_table", [], |row| row.get(0))
         .expect("count rolled-back rows");
     assert_eq!(restored_count, 2, "failed restore must not partially commit");
+    let mismatch = mahayana_host_runtime::extensions::snapshot::git_backup_manager::restore_sqlite_rows(
+        &mut restore_connection,
+        "real_table",
+        &["id".into(), "value".into()],
+        vec![Ok(vec![json!(3), json!("mismatch")])],
+        &expected_digest,
+    );
+    assert!(mismatch.is_err(), "digest mismatch must reject before commit");
+    let restored_count_after_mismatch: i64 = restore_connection
+        .query_row("SELECT COUNT(*) FROM real_table", [], |row| row.get(0))
+        .expect("count after digest mismatch");
+    assert_eq!(restored_count_after_mismatch, 2);
     assert!(mahayana_host_runtime::extensions::snapshot::git_backup_manager::digest_sqlite_table(
         &schema_connection,
         "real_table;DROP TABLE real_table",

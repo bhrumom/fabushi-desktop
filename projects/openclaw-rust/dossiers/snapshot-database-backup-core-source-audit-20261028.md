@@ -260,3 +260,10 @@ absolute or parent-containing escapes. Positive, missing, and traversal
 negative oracles pass. This is an owner-side admission boundary; it still does
 not perform Git index/HEAD preflight or atomic publication.
 
+The SQLite owner boundary was corrected before further expansion. Digest table
+ordering now quotes primary-key identifiers by escaping embedded double quotes;
+the contract covers a legal quoted primary-key name. Restore now receives the
+admitted expected digest and checks row count/hash before transaction commit;
+digest mismatch and row-shape failures leave the target unchanged. This closes
+two local integrity bugs, while real production caller wiring remains absent.
+

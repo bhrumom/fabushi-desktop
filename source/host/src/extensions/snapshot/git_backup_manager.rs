@@ -44,6 +44,10 @@ pub fn validate_sqlite_table_name(value: &str) -> Result<(), String> {
     Ok(())
 }
 
+fn quote_sqlite_identifier(value: &str) -> String {
+    format!("\"{}\"", value.replace('"', "\"\""))
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct SqliteSchemaEntry {
     pub kind: String,
@@ -160,7 +164,10 @@ pub fn digest_sqlite_table(
 ) -> Result<SqliteTableDigest, String> {
     validate_sqlite_table_name(table)?;
     let mut table_info = connection
-        .prepare(&format!("PRAGMA table_info(\"{table}\")"))
+        .prepare(&format!(
+            "PRAGMA table_info({})",
+            quote_sqlite_identifier(table)
+        ))
         .map_err(|error| format!("prepare SQLite table info {table}: {error}"))?;
     let mut primary_keys = table_info
         .query_map([], |row| {
@@ -176,12 +183,15 @@ pub fn digest_sqlite_table(
     } else {
         primary_keys
             .iter()
-            .map(|(name, _)| format!("\"{name}\""))
+            .map(|(name, _)| quote_sqlite_identifier(name))
             .collect::<Vec<_>>()
             .join(", ")
     };
     let mut statement = connection
-        .prepare(&format!("SELECT * FROM \"{table}\" ORDER BY {order_by}"))
+        .prepare(&format!(
+            "SELECT * FROM {} ORDER BY {order_by}",
+            quote_sqlite_identifier(table)
+        ))
         .map_err(|error| format!("prepare SQLite table read {table}: {error}"))?;
     let column_names = statement
         .column_names()
@@ -1209,6 +1219,7 @@ pub fn restore_sqlite_rows(
     table: &str,
     columns: &[String],
     rows: impl IntoIterator<Item = Result<Vec<Value>, String>>,
+    expected_digest: &SqliteTableDigest,
 ) -> Result<SqliteTableDigest, String> {
     validate_sqlite_table_name(table)?;
     if columns.is_empty()
@@ -1261,13 +1272,17 @@ pub fn restore_sqlite_rows(
             .ok_or_else(|| "SQLite restore row count overflow".to_string())?;
     }
     drop(insert);
+    let digest = SqliteTableDigest {
+        rows: count,
+        sha256: format!("{:x}", hash.finalize()),
+    };
+    if &digest != expected_digest {
+        return Err("SQLite restore digest does not match the admitted manifest".into());
+    }
     transaction
         .commit()
         .map_err(|error| format!("commit SQLite restore transaction: {error}"))?;
-    Ok(SqliteTableDigest {
-        rows: count,
-        sha256: format!("{:x}", hash.finalize()),
-    })
+    Ok(digest)
 }
 
 /// Encode one deterministic JSONL row from SQLite columns.
