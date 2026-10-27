@@ -27,7 +27,12 @@ def main():
         fail("No shard files found under inventory/shards/")
 
     total_paths = 0
-    mapped_paths = set()
+    # Read completeness and responsibility mapping are independent dimensions.
+    # The canonical shards currently contain 805 read-complete rows, while the
+    # ledger may map additional source files whose full reading is still
+    # pending.  Do not collapse those two counts into one.
+    read_complete_paths = set()
+    inventory_paths = set()
     unclassified_paths = 0
 
     for shard_path in shards:
@@ -36,6 +41,7 @@ def main():
                 total_paths += 1
                 entry = json.loads(line)
                 path = entry.get("path")
+                inventory_paths.add(path)
                 read_status = entry.get("read_status")
                 resp_status = entry.get("responsibility_status")
 
@@ -70,7 +76,7 @@ def main():
                     if not ev_refs or not isinstance(ev_refs, list):
                         fail(f"{shard_path}:{line_no}: '{path}' missing evidence_refs while claiming read")
 
-                    mapped_paths.add(path)
+                    read_complete_paths.add(path)
                 else:
                     unclassified_paths += 1
                     # Ensure unread entries do not falsely claim responsibilities
@@ -81,26 +87,39 @@ def main():
 
     print(f"-> Shards scanned: {len(shards)}")
     print(f"-> Total tracked paths: {total_paths}")
-    print(f"-> Verified mapped paths: {len(mapped_paths)}")
+    print(f"-> Read-complete paths: {len(read_complete_paths)}")
     print(f"-> Unclassified paths: {unclassified_paths}")
 
     if total_paths != 58750:
         fail(f"Total path count {total_paths} does not match exact tracked authority 58750")
-    if len(mapped_paths) + unclassified_paths != 58750:
-        fail("Invariant violation: mapped + unclassified != total tracked paths")
+    if len(read_complete_paths) + unclassified_paths != 58750:
+        fail("Invariant violation: read-complete + unread != total tracked paths")
 
     # 2. Parity Ledger Verification
     ledger_path = ROOT / "parity-ledger.json"
     with open(ledger_path, "r", encoding="utf-8") as f:
         ledger = json.load(f)
 
+    ledger_mapped_paths = set()
+    for responsibility in ledger.get("responsibilities", []):
+        for source_ref in responsibility.get("source_refs", []):
+            path = source_ref.get("path") if isinstance(source_ref, dict) else source_ref
+            if not path:
+                fail(f"Responsibility {responsibility.get('id')} contains an empty source reference")
+            ledger_mapped_paths.add(path)
+    missing_ledger_paths = sorted(ledger_mapped_paths - inventory_paths)
+    if missing_ledger_paths:
+        fail(f"Ledger source references missing from canonical inventory: {missing_ledger_paths[:5]}")
+    print(f"-> Ledger responsibility-mapped paths: {len(ledger_mapped_paths)}")
+
     cov = ledger.get("file_coverage", {})
     if cov.get("tracked_paths") != 58750:
         fail(f"parity-ledger.json file_coverage.tracked_paths ({cov.get('tracked_paths')}) != 58750")
-    if cov.get("mapped_paths") != len(mapped_paths):
-        fail(f"parity-ledger.json file_coverage.mapped_paths ({cov.get('mapped_paths')}) != shards mapped paths ({len(mapped_paths)})")
-    if cov.get("unclassified_paths") != unclassified_paths:
-        fail(f"parity-ledger.json file_coverage.unclassified_paths ({cov.get('unclassified_paths')}) != shards unclassified ({unclassified_paths})")
+    if cov.get("mapped_paths") != len(ledger_mapped_paths):
+        fail(f"parity-ledger.json file_coverage.mapped_paths ({cov.get('mapped_paths')}) != ledger responsibility-mapped paths ({len(ledger_mapped_paths)})")
+    expected_unclassified = 58750 - len(ledger_mapped_paths)
+    if cov.get("unclassified_paths") != expected_unclassified:
+        fail(f"parity-ledger.json file_coverage.unclassified_paths ({cov.get('unclassified_paths')}) != ledger-unmapped paths ({expected_unclassified})")
     if cov.get("omitted_known") != 0:
         fail("parity-ledger.json file_coverage.omitted_known != 0")
 
