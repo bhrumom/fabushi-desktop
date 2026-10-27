@@ -952,6 +952,58 @@ pub fn encode_sqlite_value(value: rusqlite::types::Value) -> Result<Value, Strin
     }
 }
 
+pub fn decode_sqlite_value(value: &Value) -> Result<rusqlite::types::Value, String> {
+    use rusqlite::types::Value as SqliteValue;
+    match value {
+        Value::Null => Ok(SqliteValue::Null),
+        Value::String(value) => Ok(SqliteValue::Text(value.clone())),
+        Value::Number(value) => {
+            if let Some(integer) = value.as_i64() {
+                Ok(SqliteValue::Integer(integer))
+            } else if let Some(real) = value.as_f64() {
+                if real.is_finite() {
+                    Ok(SqliteValue::Real(real))
+                } else {
+                    Err("SQLite backup number is non-finite".into())
+                }
+            } else {
+                Err("SQLite backup number is not representable".into())
+            }
+        }
+        Value::Object(object) if object.len() == 1 && object.contains_key("$int") => {
+            let Some(Value::String(value)) = object.get("$int") else {
+                return Err("SQLite backup $int must be a string".into());
+            };
+            let value = value
+                .parse::<i64>()
+                .map_err(|error| format!("SQLite backup $int is out of range: {error}"))?;
+            Ok(SqliteValue::Integer(value))
+        }
+        Value::Object(object) if object.len() == 1 && object.contains_key("$hex") => {
+            let Some(Value::String(value)) = object.get("$hex") else {
+                return Err("SQLite backup $hex must be a string".into());
+            };
+            if value.len() % 2 != 0 || !value.bytes().all(|byte| byte.is_ascii_hexdigit()) {
+                return Err("SQLite backup $hex is invalid".into());
+            }
+            let mut bytes = Vec::with_capacity(value.len() / 2);
+            for pair in value.as_bytes().chunks_exact(2) {
+                let high = (pair[0] as char)
+                    .to_digit(16)
+                    .ok_or_else(|| "SQLite backup $hex is invalid".to_string())?;
+                let low = (pair[1] as char)
+                    .to_digit(16)
+                    .ok_or_else(|| "SQLite backup $hex is invalid".to_string())?;
+                bytes.push(((high << 4) | low) as u8);
+            }
+            Ok(SqliteValue::Blob(bytes))
+        }
+        Value::Object(_) | Value::Array(_) | Value::Bool(_) => {
+            Err("SQLite backup row contains an invalid encoded value".into())
+        }
+    }
+}
+
 /// Encode one deterministic JSONL row from SQLite columns.
 pub fn encode_sqlite_row(
     columns: impl IntoIterator<Item = (String, rusqlite::types::Value)>,

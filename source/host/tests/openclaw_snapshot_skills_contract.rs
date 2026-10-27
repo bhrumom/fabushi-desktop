@@ -359,10 +359,36 @@ fn test_ocrm_snapshot_postgres_manifest_schema_and_profile_oracles() {
         .expect("blob"),
         json!({"$hex": "000fff"})
     );
+    assert_eq!(
+        mahayana_host_runtime::extensions::snapshot::git_backup_manager::decode_sqlite_value(
+            &json!({"$int": "9223372036854775807"}),
+        )
+        .expect("wide integer decode"),
+        SqliteValue::Integer(i64::MAX)
+    );
+    assert_eq!(
+        mahayana_host_runtime::extensions::snapshot::git_backup_manager::decode_sqlite_value(
+            &json!({"$hex": "000fff"}),
+        )
+        .expect("blob decode"),
+        SqliteValue::Blob(vec![0, 15, 255])
+    );
     assert!(mahayana_host_runtime::extensions::snapshot::git_backup_manager::encode_sqlite_value(
         SqliteValue::Real(f64::NAN),
     )
     .is_err());
+    for invalid in [
+        json!({"$hex": "0"}),
+        json!({"$hex": "gg"}),
+        json!({"$int": "9223372036854775808"}),
+        json!({"unknown": true}),
+        json!(true),
+    ] {
+        assert!(mahayana_host_runtime::extensions::snapshot::git_backup_manager::decode_sqlite_value(
+            &invalid,
+        )
+        .is_err());
+    }
     let row = mahayana_host_runtime::extensions::snapshot::git_backup_manager::encode_sqlite_row([
         ("zeta".to_string(), SqliteValue::Text("last".into())),
         ("alpha".to_string(), SqliteValue::Integer(1)),
