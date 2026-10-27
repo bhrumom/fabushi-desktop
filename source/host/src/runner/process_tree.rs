@@ -128,6 +128,16 @@ fn signal_tree(root: u32, descendants: &[u32], force: bool) -> Result<(), String
     #[cfg(unix)]
     {
         let signal = if force { libc::SIGKILL } else { libc::SIGTERM };
+        if process_group_id(root) == Some(root) {
+            let result = unsafe { libc::kill(-(root as libc::pid_t), signal) };
+            if result != 0 {
+                let error = std::io::Error::last_os_error();
+                if error.raw_os_error() != Some(libc::ESRCH) {
+                    return Err(format!("could not signal process group {root}: {error}"));
+                }
+            }
+            return Ok(());
+        }
         for pid in descendants
             .iter()
             .rev()
@@ -159,6 +169,18 @@ fn signal_tree(root: u32, descendants: &[u32], force: bool) -> Result<(), String
             Err(format!("taskkill exited with {status}"))
         }
     }
+}
+
+#[cfg(unix)]
+fn process_group_id(pid: u32) -> Option<u32> {
+    let output = Command::new("ps")
+        .args(["-p", &pid.to_string(), "-o", "pgid="])
+        .output()
+        .ok()?;
+    String::from_utf8_lossy(&output.stdout)
+        .split_whitespace()
+        .next()
+        .and_then(|value| value.parse().ok())
 }
 
 #[cfg(test)]
