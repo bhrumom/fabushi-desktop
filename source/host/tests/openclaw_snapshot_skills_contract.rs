@@ -377,6 +377,15 @@ fn test_ocrm_snapshot_postgres_manifest_schema_and_profile_oracles() {
         ("duplicate".to_string(), SqliteValue::Null),
     ])
     .is_err());
+    let mut batch =
+        mahayana_host_runtime::extensions::snapshot::git_backup_manager::SqliteJsonlBatch::new();
+    assert!(batch.push(&vec![b'a'; 512 * 1024]).is_none());
+    assert_eq!(batch.pending_bytes(), 512 * 1024);
+    let flushed = batch.push(&vec![b'b'; 600 * 1024]).expect("threshold flush");
+    assert_eq!(flushed.len(), 1_138_688);
+    assert_eq!(batch.pending_bytes(), 0);
+    assert!(batch.finish().is_none());
+    assert!(batch.push(&vec![b'c'; 2 * 1024 * 1024]).is_some());
 }
 
 #[test]

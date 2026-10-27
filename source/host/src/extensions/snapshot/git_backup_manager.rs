@@ -19,6 +19,7 @@ const RESTORE_NAMESPACE_PREFIX: &str = "restore_";
 const MAX_SAFE_INTEGER: u64 = 9_007_199_254_740_991;
 const MAX_POSTGRES_SEQUENCE: u64 = 9_223_372_036_854_775_807;
 const MAX_EXPORT_MANIFEST_BYTES: usize = 1024 * 1024;
+const SQLITE_TABLE_BATCH_BYTES: usize = 1024 * 1024;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SnapshotExportEnvelope {
@@ -755,6 +756,40 @@ pub fn encode_sqlite_row(
         .map_err(|error| format!("serialize SQLite backup row: {error}"))?;
     bytes.push(b'\n');
     Ok(bytes)
+}
+
+/// Bounded JSONL buffering equivalent to the upstream table serializer.
+#[derive(Debug, Default)]
+pub struct SqliteJsonlBatch {
+    bytes: Vec<u8>,
+}
+
+impl SqliteJsonlBatch {
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    /// Append one complete row. Returns a flushed batch once the threshold is
+    /// reached; a single oversized row is retained as one bounded unit.
+    pub fn push(&mut self, row: &[u8]) -> Option<Vec<u8>> {
+        self.bytes.extend_from_slice(row);
+        if self.bytes.len() >= SQLITE_TABLE_BATCH_BYTES {
+            return Some(std::mem::take(&mut self.bytes));
+        }
+        None
+    }
+
+    pub fn finish(&mut self) -> Option<Vec<u8>> {
+        if self.bytes.is_empty() {
+            None
+        } else {
+            Some(std::mem::take(&mut self.bytes))
+        }
+    }
+
+    pub fn pending_bytes(&self) -> usize {
+        self.bytes.len()
+    }
 }
 
 fn strip_plugin_model_catalog_credentials(contents: &str) -> Option<String> {
