@@ -41,6 +41,16 @@ if shards_manifest.exists():
                     if r.get("read_status") == "read-complete" or r.get("responsibility_status") != "unclassified":
                         shard_map[r["path"]] = r
 
+# The ledger is the canonical responsibility side of the bidirectional map.
+# Reconcile only exact path/blob matches here so stale or dangling references
+# remain visible to validate_p0.py rather than being silently synthesized.
+ledger = json.loads(Path("projects/openclaw-rust/parity-ledger.json").read_text())
+ledger_responsibilities = {}
+for responsibility in ledger.get("responsibilities", []):
+    for source_ref in responsibility.get("source_refs", []):
+        key = (source_ref.get("path"), source_ref.get("blob_sha"))
+        ledger_responsibilities.setdefault(key, []).append(responsibility["id"])
+
 for e in entries:
     shard_rec = shard_map.get(e["path"])
     e.update({
@@ -63,6 +73,13 @@ for e in entries:
         "reviewer": shard_rec.get("reviewer") if shard_rec else None,
         "evidence_refs": shard_rec.get("evidence_refs", []) if shard_rec else [],
     })
+    ledger_ids = ledger_responsibilities.get((e["path"], e["blob_sha"]), [])
+    if ledger_ids:
+        e["responsibility_ids"] = sorted(
+            set(e.get("responsibility_ids", [])) | set(ledger_ids)
+        )
+        if e.get("responsibility_status") == "unclassified":
+            e["responsibility_status"] = "mapped"
     if shard_rec:
         e["read_status"] = shard_rec.get("read_status", e["read_status"])
         e["responsibility_status"] = shard_rec.get("responsibility_status", e["responsibility_status"])
