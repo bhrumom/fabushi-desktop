@@ -61,5 +61,10 @@
     - Verifies cross-package import boundaries forbid private internal plugin-sdk subpaths.
     - Verifies extension runtime dependencies whitelist optional peers (`@a2ui/markdown-it`, `@discordjs/opus`, `crabline`, `zod`, `audio-decode`, `apache-arrow`).
     - Verifies runtime plugin entrypoint files contain no test harness imports (`vitest`, `openclaw/plugin-sdk/testing`, `test-harness`, `test-api`).
+  - `test_ocrm_plugins_sdk_package_and_runtime_api_guardrails` (PASSED)
+    - Verifies public SDK package exports and subpath structure.
+    - Verifies private local-only entrypoint boundaries (`browser-maintenance`, `channel-secret-owner-runtime`, `channel-secret-tts-runtime`).
+    - Verifies runtime API exports across bundled extensions contain no internal test harnesses.
+
 
 

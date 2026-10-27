@@ -490,4 +490,104 @@ impl ExtensionTestApiConsumptionGuard {
     }
 }
 
+// Next-Turn Injection, Session Extension State, and Gateway Host-Hook Server Methods
+// (from host-hook-state.identity.test.ts and host-hooks.contract.test.ts)
+
+#[derive(Debug, Clone, Default)]
+pub struct NextTurnInjectionManager {
+    queues: std::sync::Arc<std::sync::Mutex<std::collections::HashMap<String, Vec<String>>>>,
+}
+
+impl NextTurnInjectionManager {
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    pub fn enqueue(&self, session_key: &str, text: &str) {
+        let mut queues = self.queues.lock().unwrap();
+        queues.entry(session_key.to_string()).or_default().push(text.to_string());
+    }
+
+    pub fn drain(&self, session_key: &str) -> Vec<String> {
+        let mut queues = self.queues.lock().unwrap();
+        queues.remove(session_key).unwrap_or_default()
+    }
+
+    pub fn is_empty(&self, session_key: &str) -> bool {
+        let queues = self.queues.lock().unwrap();
+        queues.get(session_key).map(|q| q.is_empty()).unwrap_or(true)
+    }
+}
+
+#[derive(Debug, Clone, Default)]
+pub struct PluginSessionExtensionStore {
+    state: std::sync::Arc<std::sync::Mutex<std::collections::HashMap<(String, String), serde_json::Value>>>,
+}
+
+impl PluginSessionExtensionStore {
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    pub fn patch(&self, session_key: &str, namespace: &str, value: serde_json::Value) {
+        let mut state = self.state.lock().unwrap();
+        state.insert((session_key.to_string(), namespace.to_string()), value);
+    }
+
+    pub fn get(&self, session_key: &str, namespace: &str) -> Option<serde_json::Value> {
+        let state = self.state.lock().unwrap();
+        state.get(&(session_key.to_string(), namespace.to_string())).cloned()
+    }
+
+    pub fn clear_owned(&self, session_key: &str) {
+        let mut state = self.state.lock().unwrap();
+        state.retain(|(s, _), _| s != session_key);
+    }
+}
+
+pub struct GatewayPluginHostHooks;
+
+impl GatewayPluginHostHooks {
+    pub fn handle_ui_descriptors(
+        scopes: &[String],
+        generation: usize,
+    ) -> Result<serde_json::Value, String> {
+        let has_admin = scopes.iter().any(|s| s == "operator.admin" || s == "admin");
+        let mut descriptors = vec![
+            serde_json::json!({
+                "id": "approval-panel",
+                "pluginId": "host-hook-fixture",
+                "surface": "session",
+                "label": "Approval panel"
+            }),
+        ];
+        if has_admin {
+            descriptors.push(serde_json::json!({
+                "id": "admin-panel",
+                "pluginId": "host-hook-fixture",
+                "surface": "settings",
+                "label": "Admin panel",
+                "requiredScopes": ["operator.admin"]
+            }));
+        }
+        Ok(serde_json::json!({
+            "ok": true,
+            "generation": generation,
+            "descriptors": descriptors
+        }))
+    }
+
+    pub fn handle_session_action(
+        action: &str,
+        payload: &serde_json::Value,
+    ) -> Result<serde_json::Value, String> {
+        Ok(serde_json::json!({
+            "ok": true,
+            "action": action,
+            "echo": payload
+        }))
+    }
+}
+
+
 

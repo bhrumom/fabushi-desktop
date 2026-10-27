@@ -10,10 +10,10 @@
     "ui_accepted": false
   },
   "file_coverage": {
-    "mapped_paths": 431,
+    "mapped_paths": 436,
     "omitted_known": 0,
     "tracked_paths": 58750,
-    "unclassified_paths": 58319
+    "unclassified_paths": 58314
   },
   "inventory_authority": {
     "manifest_source": "GitHub Actions immutable artifact candidate",
@@ -20491,7 +20491,8 @@
       "tests": [
         "source/host/tests/openclaw_plugins_contract.rs::test_ocrm_plugins_bundle_manifest",
         "source/host/tests/openclaw_plugins_contract.rs::test_ocrm_plugins_bundled_capability_metadata_and_subpath_bundle",
-        "source/host/tests/openclaw_plugins_contract.rs::test_ocrm_plugins_bundle_manifest_guardrails"
+        "source/host/tests/openclaw_plugins_contract.rs::test_ocrm_plugins_bundle_manifest_guardrails",
+        "source/host/tests/openclaw_plugins_contract.rs::test_ocrm_plugins_sdk_package_and_runtime_api_guardrails"
       ],
       "integration": {
         "producer": "source/host/src/extensions/plugins/bundle_manifest.rs",
@@ -20607,6 +20608,33 @@
             "end_line": 344
           },
           "symbol": "plugin entry guardrails"
+        },
+        {
+          "path": "src/plugins/contracts/plugin-sdk-package-contract-guardrails.test.ts",
+          "blob_sha": "927920cd0dfeea31347e405e1b4ae8aebdd6c091",
+          "range": {
+            "start_line": 1,
+            "end_line": 761
+          },
+          "symbol": "plugin SDK package guardrails"
+        },
+        {
+          "path": "src/plugins/contracts/plugin-sdk-runtime-api-guardrails.test.ts",
+          "blob_sha": "8c4756ea892618d1fcc3bb2616954ae7c66b97f9",
+          "range": {
+            "start_line": 1,
+            "end_line": 366
+          },
+          "symbol": "plugin SDK runtime API guardrails"
+        },
+        {
+          "path": "src/plugins/contracts/plugin-sdk-subpaths.test.ts",
+          "blob_sha": "f75eb52e20882e204d0837ae8c522a62ca51eab0",
+          "range": {
+            "start_line": 1,
+            "end_line": 802
+          },
+          "symbol": "plugin SDK subpath export contract"
         }
       ],
       "evidence_refs": [
@@ -21213,7 +21241,8 @@
         "source/host/tests/openclaw_plugins_full_contract.rs::test_ocrm_plugins_agent_event_payload_and_active_run_steering",
         "source/host/tests/openclaw_plugins_full_contract.rs::test_ocrm_plugins_architectural_boundary_guardrails",
         "source/host/tests/openclaw_plugins_contract.rs::test_ocrm_plugins_host_hook_fixture_and_ui_projection",
-        "source/host/tests/openclaw_plugins_full_contract.rs::test_ocrm_plugins_config_boundary_and_test_api_consumption"
+        "source/host/tests/openclaw_plugins_full_contract.rs::test_ocrm_plugins_config_boundary_and_test_api_consumption",
+        "source/host/tests/openclaw_plugins_full_contract.rs::test_ocrm_plugins_host_hook_identity_and_gateway_methods"
       ],
       "integration": {
         "producer": "source/host/src/extensions/plugins/hook_runner.rs",
@@ -21329,6 +21358,24 @@
             "end_line": 209
           },
           "symbol": "extension test API consumption guard"
+        },
+        {
+          "path": "src/plugins/contracts/host-hook-state.identity.test.ts",
+          "blob_sha": "27271822ec435474d1ee7ae990f38d563537cc8e",
+          "range": {
+            "start_line": 1,
+            "end_line": 203
+          },
+          "symbol": "next-turn injection identity"
+        },
+        {
+          "path": "src/plugins/contracts/host-hooks.contract.test.ts",
+          "blob_sha": "e2c4dfa41d1a1e19c8b98edfd10c000d60c575a6",
+          "range": {
+            "start_line": 1,
+            "end_line": 1862
+          },
+          "symbol": "plugin host hooks contract suite"
         }
       ],
       "evidence_refs": [

@@ -49,6 +49,11 @@
   - `test_ocrm_plugins_config_boundary_and_test_api_consumption` (PASSED)
     - Verifies channel action runtime helpers do not invoke `loadConfig()` directly and instead receive configuration context.
     - Verifies extension `test-api.ts` can only be imported from test files (`.test.ts`, `.spec.ts`), strictly prohibiting runtime consumption.
+  - `test_ocrm_plugins_host_hook_identity_and_gateway_methods` (PASSED)
+    - Verifies next-turn prompt injection queuing, draining, and empty queue handling per session identity.
+    - Verifies plugin session extension store patching, retrieval, and owned state clearing.
+    - Verifies gateway UI descriptors surface operator.admin required scopes and session action echoes.
+
 
 
 

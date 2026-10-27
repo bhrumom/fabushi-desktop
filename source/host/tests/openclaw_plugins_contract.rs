@@ -981,5 +981,38 @@ fn test_ocrm_plugins_bundle_manifest_guardrails() {
     assert_eq!(err_entry.len(), 2);
 }
 
+#[test]
+fn test_ocrm_plugins_sdk_package_and_runtime_api_guardrails() {
+    // Tests equivalent behavior from plugin-sdk-package-contract-guardrails,
+    // plugin-sdk-runtime-api-guardrails, and plugin-sdk-subpaths contract test suites.
+    use mahayana_host_runtime::extensions::plugins::bundle_manifest::{
+        PluginSdkPackageContractGuard, PluginSdkRuntimeApiGuardrails,
+    };
+
+    // 1. Public plugin SDK entrypoints
+    let public_entrypoints = PluginSdkPackageContractGuard::public_plugin_sdk_entrypoints();
+    assert!(public_entrypoints.contains(&"channel-contract"));
+    assert!(public_entrypoints.contains(&"core"));
+    assert!(public_entrypoints.contains(&"media-runtime"));
+    assert!(public_entrypoints.contains(&"plugin-entry"));
+
+    // 2. Private local-only entrypoint boundary
+    let clean_subpaths = ["openclaw/plugin-sdk/core", "openclaw/plugin-sdk/channel-contract"];
+    assert!(PluginSdkPackageContractGuard::assert_no_private_entrypoint_in_public_subpaths(&clean_subpaths).is_ok());
+
+    let leaky_subpaths = ["openclaw/plugin-sdk/browser-maintenance"];
+    let err_leaky = PluginSdkPackageContractGuard::assert_no_private_entrypoint_in_public_subpaths(&leaky_subpaths).unwrap_err();
+    assert_eq!(err_leaky, vec!["openclaw/plugin-sdk/browser-maintenance"]);
+
+    // 3. Runtime API export guardrails
+    let clean_exports = ["export { createFaceTimeRuntime } from './src/runtime.js';"];
+    assert!(PluginSdkRuntimeApiGuardrails::assert_runtime_api_exports_allowed("facetime", &clean_exports).is_ok());
+
+    let bad_exports = ["export { testHelper } from './test-api.js';"];
+    let err_exports = PluginSdkRuntimeApiGuardrails::assert_runtime_api_exports_allowed("facetime", &bad_exports).unwrap_err();
+    assert!(err_exports[0].contains("exports internal test module"));
+}
+
+
 
 

@@ -393,5 +393,60 @@ fn test_ocrm_plugins_config_boundary_and_test_api_consumption() {
     assert!(err_prod[0].contains("production file imports extension test-api"));
 }
 
+#[test]
+fn test_ocrm_plugins_host_hook_identity_and_gateway_methods() {
+    // Tests equivalent behavior from host-hook-state.identity and host-hooks contract test suites.
+    use mahayana_host_runtime::extensions::plugins::hook_runner::{
+        GatewayPluginHostHooks, NextTurnInjectionManager, PluginSessionExtensionStore,
+    };
+    use serde_json::json;
+
+    // 1. Next turn injection queue
+    let queue = NextTurnInjectionManager::new();
+    assert!(queue.is_empty("agent:main:session-1"));
+    assert_eq!(queue.drain("agent:main:session-1"), Vec::<String>::new());
+
+    queue.enqueue("agent:main:session-1", "injection 1");
+    queue.enqueue("agent:main:session-1", "injection 2");
+    assert!(!queue.is_empty("agent:main:session-1"));
+
+    let drained = queue.drain("agent:main:session-1");
+    assert_eq!(drained, vec!["injection 1", "injection 2"]);
+    assert!(queue.is_empty("agent:main:session-1"));
+
+    // 2. Plugin session extension store
+    let store = PluginSessionExtensionStore::new();
+    assert!(store.get("agent:main:session-1", "workflow").is_none());
+
+    store.patch("agent:main:session-1", "workflow", json!({"step": 1, "approved": true}));
+    assert_eq!(
+        store.get("agent:main:session-1", "workflow").unwrap(),
+        json!({"step": 1, "approved": true})
+    );
+
+    store.clear_owned("agent:main:session-1");
+    assert!(store.get("agent:main:session-1", "workflow").is_none());
+
+    // 3. Gateway UI descriptors and session action
+    // Without admin scope
+    let res_no_admin = GatewayPluginHostHooks::handle_ui_descriptors(&["operator.read".to_string()], 1).unwrap();
+    let descs_no_admin = res_no_admin.get("descriptors").unwrap().as_array().unwrap();
+    assert_eq!(descs_no_admin.len(), 1);
+    assert_eq!(descs_no_admin[0]["id"], "approval-panel");
+
+    // With admin scope
+    let res_admin = GatewayPluginHostHooks::handle_ui_descriptors(&["operator.admin".to_string()], 2).unwrap();
+    let descs_admin = res_admin.get("descriptors").unwrap().as_array().unwrap();
+    assert_eq!(descs_admin.len(), 2);
+    assert!(descs_admin.iter().any(|d| d["id"] == "admin-panel"));
+
+    // Session action echo
+    let action_res = GatewayPluginHostHooks::handle_session_action("approve", &json!({"id": 123})).unwrap();
+    assert!(action_res["ok"].as_bool().unwrap());
+    assert_eq!(action_res["action"], "approve");
+    assert_eq!(action_res["echo"]["id"], 123);
+}
+
+
 
 

@@ -591,4 +591,83 @@ impl PluginEntryGuardrails {
     }
 }
 
+// Plugin SDK Package Contract Guardrails, Runtime API Guards, and Subpaths
+// (from plugin-sdk-package-contract-guardrails, plugin-sdk-runtime-api-guardrails,
+//  and plugin-sdk-subpaths contract test suites)
+
+pub struct PluginSdkPackageContractGuard;
+
+impl PluginSdkPackageContractGuard {
+    pub fn public_plugin_sdk_entrypoints() -> &'static [&'static str] {
+        &[
+            "account-id",
+            "allow-from",
+            "channel-contract",
+            "channel-core",
+            "channel-outbound",
+            "channel-pairing",
+            "channel-status",
+            "config-contracts",
+            "core",
+            "media-runtime",
+            "plugin-entry",
+            "reply-payload",
+            "runtime",
+            "runtime-store",
+            "ssrf-runtime",
+        ]
+    }
+
+    pub fn private_local_only_entrypoints() -> &'static [&'static str] {
+        &[
+            "browser-maintenance",
+            "channel-secret-owner-runtime",
+            "channel-secret-tts-runtime",
+        ]
+    }
+
+    pub fn assert_no_private_entrypoint_in_public_subpaths(
+        subpaths: &[&str],
+    ) -> Result<(), Vec<String>> {
+        let private = Self::private_local_only_entrypoints();
+        let mut offenders = Vec::new();
+        for s in subpaths {
+            for p in private {
+                if s.ends_with(p) || s.contains(p) {
+                    offenders.push(s.to_string());
+                }
+            }
+        }
+        if offenders.is_empty() {
+            Ok(())
+        } else {
+            offenders.sort();
+            Err(offenders)
+        }
+    }
+}
+
+pub struct PluginSdkRuntimeApiGuardrails;
+
+impl PluginSdkRuntimeApiGuardrails {
+    pub fn assert_runtime_api_exports_allowed(
+        plugin_id: &str,
+        exports: &[&str],
+    ) -> Result<(), Vec<String>> {
+        let mut offenders = Vec::new();
+        for exp in exports {
+            if exp.contains("test-api") || exp.contains("vitest") || exp.contains("testing") {
+                offenders.push(format!("{}: exports internal test module '{}'", plugin_id, exp));
+            }
+        }
+        if offenders.is_empty() {
+            Ok(())
+        } else {
+            offenders.sort();
+            Err(offenders)
+        }
+    }
+}
+
+
 
