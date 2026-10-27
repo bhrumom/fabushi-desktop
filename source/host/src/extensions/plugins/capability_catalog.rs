@@ -173,4 +173,46 @@ impl PluginCapabilityCatalog {
         result.sort();
         result
     }
+
+    pub fn resolve_provider_contract_providers_for_plugin_ids(
+        &self,
+        plugin_ids: &[&str],
+        public_artifacts: &HashMap<String, Vec<String>>,
+    ) -> Vec<String> {
+        let mut result = Vec::new();
+        let mut seen = HashSet::new();
+        for plugin_id in plugin_ids {
+            if let Some(providers) = public_artifacts.get(*plugin_id) {
+                for p in providers {
+                    if seen.insert(p.clone()) {
+                        result.push(p.clone());
+                    }
+                }
+            } else {
+                let caps = self.capabilities.lock().unwrap();
+                for entry in caps.values() {
+                    if entry.plugin_id == *plugin_id && seen.insert(entry.provider_id.clone()) {
+                        result.push(entry.provider_id.clone());
+                    }
+                }
+            }
+        }
+        result
+    }
+
+    pub fn resolve_web_search_providers_for_plugin_id(
+        &self,
+        plugin_id: &str,
+        public_artifacts: &HashMap<String, Vec<String>>,
+    ) -> Vec<String> {
+        if let Some(providers) = public_artifacts.get(plugin_id) {
+            providers.clone()
+        } else {
+            let caps = self.capabilities.lock().unwrap();
+            caps.values()
+                .filter(|e| e.plugin_id == plugin_id && e.family == "webSearch")
+                .map(|e| e.provider_id.clone())
+                .collect()
+        }
+    }
 }

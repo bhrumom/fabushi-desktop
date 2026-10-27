@@ -504,3 +504,28 @@ fn test_ocrm_plugins_shape_compatibility_matrix() {
     assert_eq!(doc_extract.shape, PluginInspectShape::PlainCapability);
     assert_eq!(doc_extract.capability_mode, CapabilityMode::Plain);
 }
+
+#[test]
+fn test_ocrm_plugins_registry_public_artifacts_retry_precedence() {
+    // Tests equivalent behavior from upstream src/plugins/contracts/registry.retry.test.ts
+    use std::collections::HashMap;
+
+    let catalog = PluginCapabilityCatalog::new();
+    let mut public_artifacts = HashMap::new();
+    public_artifacts.insert("openai".to_string(), vec!["openai".to_string()]);
+    public_artifacts.insert("google".to_string(), vec!["gemini".to_string()]);
+
+    // 1. Uses provider public artifacts before falling back to bundled runtime registry
+    let resolved_providers = catalog.resolve_provider_contract_providers_for_plugin_ids(
+        &["openai"],
+        &public_artifacts,
+    );
+    assert_eq!(resolved_providers, vec!["openai"]);
+
+    // 2. Uses web search public artifacts before falling back to bundled runtime registry
+    let resolved_web_search = catalog.resolve_web_search_providers_for_plugin_id(
+        "google",
+        &public_artifacts,
+    );
+    assert_eq!(resolved_web_search, vec!["gemini"]);
+}

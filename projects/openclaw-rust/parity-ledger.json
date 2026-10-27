@@ -10,10 +10,10 @@
     "ui_accepted": false
   },
   "file_coverage": {
-    "mapped_paths": 396,
+    "mapped_paths": 397,
     "omitted_known": 0,
     "tracked_paths": 58750,
-    "unclassified_paths": 58354
+    "unclassified_paths": 58353
   },
   "inventory_authority": {
     "manifest_source": "GitHub Actions immutable artifact candidate",
@@ -20680,7 +20680,8 @@
         "PluginOrigin"
       ],
       "tests": [
-        "source/host/tests/openclaw_plugins_contract.rs::test_ocrm_plugins_contract_registry_oracle"
+        "source/host/tests/openclaw_plugins_contract.rs::test_ocrm_plugins_contract_registry_oracle",
+        "source/host/tests/openclaw_plugins_contract.rs::test_ocrm_plugins_registry_public_artifacts_retry_precedence"
       ],
       "integration": {
         "producer": "source/host/src/extensions/plugins/capability_catalog.rs",
@@ -20724,6 +20725,15 @@
             "start_line": 1,
             "end_line": 22
           }
+        },
+        {
+          "path": "src/plugins/contracts/registry.retry.test.ts",
+          "blob_sha": "cf3c45ec802b14969e8e3bf7218e8bfc0da05a3c",
+          "range": {
+            "start_line": 1,
+            "end_line": 82
+          },
+          "symbol": "plugin contract registry public artifacts"
         }
       ],
       "evidence_refs": [
