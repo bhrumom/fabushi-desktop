@@ -484,7 +484,7 @@ fn test_ocrm_plugin_sdk_browser_config_and_profiles() {
         CloseTrackedBrowserTabsParams, DEFAULT_BROWSER_DEFAULT_PROFILE_NAME,
         DEFAULT_OPENCLAW_BROWSER_COLOR, DEFAULT_OPENCLAW_BROWSER_ENABLED,
     };
-    use serde_json::json;
+    use serde_json::{json, Value};
     use std::collections::HashMap;
     use std::sync::atomic::{AtomicBool, Ordering};
     use std::sync::Arc;
@@ -549,6 +549,156 @@ fn test_ocrm_plugin_sdk_browser_config_and_profiles() {
     let closed_valid = close_tracked_browser_tabs_for_sessions(&params_valid, None);
     assert_eq!(closed_valid, 1);
 }
+
+#[test]
+fn test_ocrm_plugin_sdk_channel_config_and_ui_hints() {
+    use mahayana_host_runtime::extensions::plugin_sdk::channel_config::{
+        create_channel_config_ui_hints, ensure_open_dm_policy_allow_from_wildcard,
+        map_allow_from_entries, normalize_channel_dm_policy,
+        resolve_channel_config_writes, resolve_channel_dm_access,
+        resolve_optional_config_string, set_canonical_dm_allow_from,
+        ChannelConfigUiHintsParams, DmPolicyHintParams, ProgressHintParams,
+    };
+    use serde_json::{json, Value};
+    use std::collections::HashMap;
+
+    // 1. UI Hints - DM Policy
+    let dm_params = ChannelConfigUiHintsParams {
+        channel_label: "Example".to_string(),
+        dm_policy: Some(DmPolicyHintParams {
+            channel_key: "example".to_string(),
+            include_legacy_nested_policy: true,
+            legacy_nested_policy_order: None,
+        }),
+        ..Default::default()
+    };
+    let hints = create_channel_config_ui_hints(&dm_params);
+    assert_eq!(
+        hints.get("dmPolicy").unwrap().help,
+        "Direct message access control (\"pairing\" recommended). \"open\" requires channels.example.allowFrom=[\"*\"]."
+    );
+    assert_eq!(
+        hints.get("dm.policy").unwrap().help,
+        "Direct message access control (\"pairing\" recommended). \"open\" requires channels.example.allowFrom=[\"*\"] (legacy: channels.example.dm.allowFrom)."
+    );
+
+    // 2. UI Hints - Progress group
+    let prog_params = ChannelConfigUiHintsParams {
+        channel_label: "Example".to_string(),
+        progress: Some(ProgressHintParams::default()),
+        ..Default::default()
+    };
+    let prog_hints = create_channel_config_ui_hints(&prog_params);
+    assert_eq!(
+        prog_hints.get("streaming.progress.label").unwrap().label,
+        "Example Progress Label"
+    );
+    assert!(prog_hints.contains_key("streaming.progress.maxLines"));
+    assert!(prog_hints.contains_key("streaming.progress.toolProgress"));
+    assert!(prog_hints.contains_key("streaming.progress.commandText"));
+
+    // 3. UI Hints - Streaming group
+    let mut streaming_map = HashMap::new();
+    streaming_map.insert("".to_string(), "Root help".to_string());
+    streaming_map.insert("block.enabled".to_string(), "Block help".to_string());
+    streaming_map.insert("nativeTransport".to_string(), "Native help".to_string());
+    let stream_params = ChannelConfigUiHintsParams {
+        channel_label: "Example".to_string(),
+        streaming: Some(streaming_map),
+        ..Default::default()
+    };
+    let stream_hints = create_channel_config_ui_hints(&stream_params);
+    assert_eq!(stream_hints.get("streaming").unwrap().label, "Example Streaming Mode");
+    assert_eq!(stream_hints.get("streaming.block.enabled").unwrap().help, "Block help");
+    assert_eq!(stream_hints.get("streaming.nativeTransport").unwrap().help, "Native help");
+
+    // 4. UI Hints - Implicit Mentions
+    let mention_params = ChannelConfigUiHintsParams {
+        channel_label: "Example".to_string(),
+        implicit_mentions: true,
+        ..Default::default()
+    };
+    let mention_hints = create_channel_config_ui_hints(&mention_params);
+    assert_eq!(
+        mention_hints.get("implicitMentions.threadParticipation").unwrap().label,
+        "Example Thread Participation"
+    );
+
+    // 5. Config Writes Resolution
+    let cfg_json = json!({
+        "channels": {
+            "telegram": {
+                "configWrites": true,
+                "accounts": {
+                    "work": {
+                        "configWrites": false
+                    }
+                }
+            }
+        }
+    });
+    // Default account uses channel setting (true)
+    assert!(resolve_channel_config_writes(&cfg_json, Some("telegram"), None));
+    // Work account override (false)
+    assert!(!resolve_channel_config_writes(&cfg_json, Some("telegram"), Some("work")));
+    // Non-existent channel defaults to true
+    assert!(resolve_channel_config_writes(&cfg_json, Some("other"), None));
+
+    // 6. DM Access Resolution
+    let account = json!({
+        "dm": {
+            "allowFrom": ["account-legacy"]
+        }
+    });
+    let parent = json!({
+        "allowFrom": ["root"]
+    });
+    let dm_access = resolve_channel_dm_access(&account, Some(&parent));
+    assert_eq!(dm_access.allow_from, vec!["account-legacy"]);
+
+    // 7. Canonical DM allowFrom migration
+    let mut entry_map = serde_json::Map::new();
+    let mut nested_dm = serde_json::Map::new();
+    nested_dm.insert("allowFrom".to_string(), json!(["U1"]));
+    nested_dm.insert("policy".to_string(), json!("allowlist"));
+    entry_map.insert("dm".to_string(), Value::Object(nested_dm));
+
+    let mut changes = Vec::new();
+    set_canonical_dm_allow_from(
+        &mut entry_map,
+        vec!["U2".to_string()],
+        "channels.demo",
+        &mut changes,
+        "normalized by SDK helper",
+    );
+    assert_eq!(
+        entry_map.get("allowFrom").unwrap(),
+        &json!(["U2"])
+    );
+    assert!(entry_map.get("dm").unwrap().get("allowFrom").is_none());
+    assert_eq!(changes.len(), 2);
+
+    // 8. Open DM Policy Wildcard
+    let mut open_entry = serde_json::Map::new();
+    open_entry.insert("dmPolicy".to_string(), json!("open"));
+    open_entry.insert("allowFrom".to_string(), json!(["matrix:@owner"]));
+    let mut open_changes = Vec::new();
+    assert!(ensure_open_dm_policy_allow_from_wildcard(
+        &mut open_entry,
+        "channels.demo",
+        &mut open_changes,
+    ));
+    assert_eq!(
+        map_allow_from_entries(open_entry.get("allowFrom").and_then(|v| v.as_array()).map(|v| v.as_slice())),
+        vec!["matrix:@owner", "*"]
+    );
+
+    // 9. Scalars and normalization
+    assert_eq!(resolve_optional_config_string(Some("   ")), None);
+    assert_eq!(resolve_optional_config_string(Some("  room:123  ")), Some("room:123".to_string()));
+    assert_eq!(normalize_channel_dm_policy("whitelist"), "allowlist");
+}
+
 
 
 

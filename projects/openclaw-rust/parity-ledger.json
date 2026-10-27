@@ -10,10 +10,10 @@
     "ui_accepted": false
   },
   "file_coverage": {
-    "mapped_paths": 764,
+    "mapped_paths": 775,
     "omitted_known": 0,
     "tracked_paths": 58750,
-    "unclassified_paths": 57986
+    "unclassified_paths": 57975
   },
   "inventory_authority": {
     "manifest_source": "GitHub Actions immutable artifact candidate",
@@ -24548,6 +24548,113 @@
         "close_tracked_browser_tabs_for_sessions"
       ],
       "unit_id": "OCRM-UNIT-PLUGIN-SDK-BROWSER-ARCHIVE-001"
+    },
+    {
+      "adr_refs": [],
+      "behavior": "Plugin SDK channel config primitives and schema builders, UI configuration hints (DM policy, config writes, mention patterns, native commands, implicit mentions, progress drafts, streaming options, and retry policies), account-scoped config write permissions, and canonical DM allowlist migration.",
+      "blocker_ids": [],
+      "capability_ids": [
+        "plugin_sdk.channel_config",
+        "plugin_sdk.channel_ui_hints"
+      ],
+      "dependencies": [
+        "mahayana_host_runtime::extensions::plugin_sdk::channel_config"
+      ],
+      "evidence_refs": [
+        "source/host/tests/openclaw_plugin_sdk_contract.rs",
+        "projects/openclaw-rust/dossiers/plugin-sdk-channel-config-and-ui-hints-scoped.md"
+      ],
+      "existing_owner_candidates": [
+        {
+          "path": "source/host/src/extensions/plugin_sdk/channel_config.rs",
+          "reason": "Host native channel config schema, UI hints builder, config writes checker, and DM access resolution"
+        }
+      ],
+      "id": "OCRM-RESP-PLUGIN-SDK-CHANNEL-CONFIG-001",
+      "integration": {
+        "consumer": "source/host/src/extensions/plugin_sdk/mod.rs",
+        "entrypoint": "source/host/src/extensions/plugin_sdk/mod.rs",
+        "owner": "source/host/src/extensions/plugin_sdk/mod.rs",
+        "producer": "source/host/src/extensions/plugin_sdk/mod.rs"
+      },
+      "invariants": [
+        "Account-level configWrites override channel-level settings",
+        "DM open policy requires wildcard * in allowFrom list",
+        "Setting canonical DM allowlist safely migrates legacy nested dm.allowFrom and tracks changes",
+        "UI hint generator preserves exact help text, progress titles, and streaming label lookups"
+      ],
+      "migration_rollback": "Fallback to unverified channel config schemas and missing UI hints",
+      "oracle_ids": [
+        "OCRM-PLUGIN-SDK-CHANNEL-CONFIG-O01"
+      ],
+      "owner_decision": "Unified native plugin SDK infrastructure in extensions::plugin_sdk",
+      "postconditions": [
+        "Channel configuration schemas validated and UI hints cleanly constructed",
+        "Account-scoped config writes correctly resolved",
+        "DM allowlists cleanly normalized and migrated"
+      ],
+      "preconditions": [
+        "Valid channel configuration structures and UI parameters"
+      ],
+      "required_evidence_dimensions": [
+        "unit",
+        "integration"
+      ],
+      "required_gate_ids": [
+        "OCRM-G04-rust-contract"
+      ],
+      "requirement_ids": [
+        "OCRM-R28",
+        "OCRM-AC28"
+      ],
+      "responsibility_kind": "business-runtime",
+      "reviewer": "xuyao@ombhrum.com",
+      "risk": "Low; channel setup UI schema hints and account config resolution",
+      "selected_owner": "source/host/src/extensions/plugin_sdk/mod.rs",
+      "source_refs": [
+        {
+          "blob_sha": "d0411a7a2bfab647e3a890a8a91daae480a42ff9",
+          "path": "src/plugin-sdk/channel-config-ui-hints.ts",
+          "range": {
+            "end_line": 255,
+            "start_line": 1
+          },
+          "symbol": "createChannelConfigUiHints"
+        },
+        {
+          "blob_sha": "86bc3a595cbcf60655119934fc9b1011400bf1b4",
+          "path": "src/plugin-sdk/channel-config-helpers.ts",
+          "range": {
+            "end_line": 443,
+            "start_line": 1
+          },
+          "symbol": "resolveChannelConfigWrites"
+        }
+      ],
+      "status": {
+        "acceptance": "pending",
+        "implementation": "implemented",
+        "mapping": "reviewed",
+        "read": "read-complete",
+        "verification": "not-run",
+        "wiring": "not-wired"
+      },
+      "target": {
+        "language": "Rust",
+        "path": "source/host/src/extensions/plugin_sdk/channel_config.rs",
+        "symbol": "create_channel_config_ui_hints"
+      },
+      "tests": [
+        "source/host/tests/openclaw_plugin_sdk_contract.rs::test_ocrm_plugin_sdk_channel_config_and_ui_hints"
+      ],
+      "typed_contracts": [
+        "create_channel_config_ui_hints",
+        "resolve_channel_config_writes",
+        "resolve_channel_dm_access",
+        "set_canonical_dm_allow_from",
+        "ensure_open_dm_policy_allow_from_wildcard"
+      ],
+      "unit_id": "OCRM-UNIT-PLUGIN-SDK-CHANNEL-CONFIG-001"
     }
   ],
   "schema_version": 1,

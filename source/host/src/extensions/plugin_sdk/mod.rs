@@ -8,6 +8,7 @@ pub mod approval_security;
 pub mod archive_blob;
 pub mod boolean_param;
 pub mod browser;
+pub mod channel_config;
 pub mod channel_runtime;
 pub mod session_memory;
 pub mod tool_runtime;
