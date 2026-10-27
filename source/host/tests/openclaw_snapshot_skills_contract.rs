@@ -7,7 +7,7 @@ use mahayana_host_runtime::extensions::skills::skill_runtime::{
 };
 use mahayana_host_runtime::extensions::snapshot::git_backup_manager::{
     assert_database_artifact, capture_database_artifact, create_export_envelope,
-    verify_export_envelope, SnapshotGenerationFence,
+    parse_postgres_export_manifest, verify_export_envelope, SnapshotGenerationFence,
 };
 use serde_json::json;
 use std::fs;
@@ -70,6 +70,49 @@ fn test_ocrm_snapshot_artifact_admission_and_generation_fence() {
     assert!(fence.assert_current(expected).is_err());
 
     let _ = fs::remove_dir_all(&root);
+}
+
+#[test]
+fn test_ocrm_snapshot_postgres_manifest_schema_and_profile_oracles() {
+    let valid = json!({
+        "schema_version": 2,
+        "snapshot_id": "snap-002",
+        "created_at": "2026-10-28T00:00:00.000Z",
+        "profile": "exact",
+        "source": {
+            "engine": "postgres",
+            "store_id": "123e4567-e89b-12d3-a456-426614174000",
+            "owner": "state",
+            "namespace": "snapshot_002",
+            "schema_version": 2
+        },
+        "export_schema_version": 2,
+        "active_fragments": ["core"],
+        "verification": {
+            "tables": {"messages": {"rows": 1, "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"}},
+            "allocations": {"messages_id_seq": {"value": "1", "called": true}}
+        },
+        "artifacts": {
+            "database.sqlite": {"sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb", "size_bytes": 1},
+            "anchor.sqlite": {"sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc", "size_bytes": 1}
+        },
+        "sanitized_differences": []
+    });
+    let parsed = parse_postgres_export_manifest(&valid, "snap-002", Some("exact"))
+        .expect("valid schema-v2 manifest");
+    assert_eq!(parsed.export_schema_version, 2);
+
+    let mut sanitized = valid.clone();
+    sanitized["sanitized_differences"] = json!(["transient-state"]);
+    assert!(parse_postgres_export_manifest(&sanitized, "snap-002", Some("exact")).is_err());
+
+    let mut wrong_profile = valid.clone();
+    wrong_profile["profile"] = json!("user-backup");
+    assert!(parse_postgres_export_manifest(&wrong_profile, "snap-002", Some("exact")).is_err());
+
+    let mut unknown = valid;
+    unknown["unexpected"] = json!(true);
+    assert!(parse_postgres_export_manifest(&unknown, "snap-002", None).is_err());
 }
 
 #[test]

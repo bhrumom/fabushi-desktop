@@ -7,6 +7,7 @@ use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::Arc;
 use std::time::{SystemTime, UNIX_EPOCH};
+use std::collections::BTreeMap;
 
 #[cfg(unix)]
 use std::os::unix::fs::{MetadataExt, OpenOptionsExt};
@@ -51,6 +52,154 @@ pub struct DatabaseArtifact {
 #[derive(Debug, Clone, Default)]
 pub struct SnapshotGenerationFence {
     generation: Arc<AtomicU64>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct PostgresArtifactDigest {
+    pub sha256: String,
+    pub size_bytes: u64,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct PostgresTableDigest {
+    pub rows: u64,
+    pub sha256: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct PostgresSequenceAllocation {
+    pub value: String,
+    pub called: bool,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct PostgresSourceIdentity {
+    pub engine: String,
+    pub store_id: String,
+    pub owner: String,
+    pub namespace: String,
+    pub schema_version: u32,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct PostgresVerification {
+    pub tables: BTreeMap<String, PostgresTableDigest>,
+    pub allocations: BTreeMap<String, PostgresSequenceAllocation>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct PostgresArtifactSet {
+    #[serde(rename = "database.sqlite")]
+    pub database: PostgresArtifactDigest,
+    #[serde(rename = "anchor.sqlite")]
+    pub anchor: PostgresArtifactDigest,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct PostgresExportManifest {
+    pub schema_version: u32,
+    pub snapshot_id: String,
+    pub created_at: String,
+    pub profile: String,
+    pub source: PostgresSourceIdentity,
+    pub export_schema_version: u32,
+    pub active_fragments: Vec<String>,
+    pub verification: PostgresVerification,
+    pub artifacts: PostgresArtifactSet,
+    pub sanitized_differences: Vec<String>,
+}
+
+fn valid_identifier(value: &str) -> bool {
+    let mut chars = value.chars();
+    let Some(first) = chars.next() else { return false };
+    value.len() <= 255
+        && first.is_ascii_alphanumeric()
+        && chars.all(|ch| ch.is_ascii_alphanumeric() || matches!(ch, '.' | '_' | '-'))
+}
+
+fn valid_digest(value: &str) -> bool {
+    value.len() == 64 && value.bytes().all(|byte| byte.is_ascii_hexdigit() && !byte.is_ascii_uppercase())
+}
+
+fn validate_artifact(label: &str, artifact: &PostgresArtifactDigest) -> Result<(), String> {
+    if !valid_digest(&artifact.sha256) {
+        return Err(format!("{label} has an invalid SHA-256 digest"));
+    }
+    if artifact.size_bytes == 0 {
+        return Err(format!("{label} must have positive size"));
+    }
+    Ok(())
+}
+
+/// Parse and validate OpenClaw's schema-v2 Postgres export envelope.
+///
+/// This is format validation only; it does not materialize a database or
+/// establish that the referenced artifacts are present on disk.
+pub fn parse_postgres_export_manifest(
+    value: &Value,
+    expected_id: &str,
+    required_profile: Option<&str>,
+) -> Result<PostgresExportManifest, String> {
+    let manifest: PostgresExportManifest = serde_json::from_value(value.clone())
+        .map_err(|error| format!("invalid Postgres export manifest: {error}"))?;
+    if manifest.schema_version != 2 {
+        return Err(format!("unsupported Postgres export schema: {}", manifest.schema_version));
+    }
+    if manifest.snapshot_id != expected_id || !valid_identifier(&manifest.snapshot_id) {
+        return Err("export manifest id does not match its directory".into());
+    }
+    if !matches!(manifest.profile.as_str(), "exact" | "user-backup") {
+        return Err(format!("unsupported export profile: {}", manifest.profile));
+    }
+    if let Some(required) = required_profile {
+        if manifest.profile != required {
+            return Err("export profile does not match the requested restore".into());
+        }
+    }
+    if manifest.created_at.parse::<chrono::DateTime<chrono::FixedOffset>>().is_err() {
+        return Err("createdAt must be an RFC3339 timestamp".into());
+    }
+    if manifest.source.engine != "postgres"
+        || uuid::Uuid::parse_str(&manifest.source.store_id).is_err()
+        || !valid_identifier(&manifest.source.owner)
+        || !valid_identifier(&manifest.source.namespace)
+        || manifest.source.schema_version > i32::MAX as u32
+        || manifest.export_schema_version > i32::MAX as u32
+    {
+        return Err("export source identity is invalid".into());
+    }
+    if manifest.active_fragments.iter().any(|fragment| !valid_identifier(fragment)) {
+        return Err("export contains an invalid active fragment".into());
+    }
+    if manifest.profile == "exact" && !manifest.sanitized_differences.is_empty() {
+        return Err("exact exports must not contain sanitization differences".into());
+    }
+    validate_artifact("database.sqlite", &manifest.artifacts.database)?;
+    validate_artifact("anchor.sqlite", &manifest.artifacts.anchor)?;
+    for (table, digest) in &manifest.verification.tables {
+        if !valid_identifier(table) || !valid_digest(&digest.sha256) {
+            return Err(format!("invalid table verification entry: {table}"));
+        }
+    }
+    for (sequence, allocation) in &manifest.verification.allocations {
+        if !valid_identifier(sequence)
+            || !allocation.value.chars().all(|ch| ch.is_ascii_digit())
+            || allocation.value.is_empty()
+        {
+            return Err(format!("invalid sequence allocation entry: {sequence}"));
+        }
+        if allocation.value.len() > 19 || allocation.value.parse::<u64>().is_err() {
+            return Err(format!("sequence allocation is out of range: {sequence}"));
+        }
+    }
+    Ok(manifest)
 }
 
 impl SnapshotGenerationFence {

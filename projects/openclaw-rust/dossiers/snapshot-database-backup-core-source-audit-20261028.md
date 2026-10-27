@@ -32,6 +32,22 @@ and drops only the namespace allocated by this restore owner on failure. The
 fingerprint helper uses a repeatable-read, read-only transaction and always rolls
 back.
 
+Related exact-head source reads sharpen the remaining contract:
+
+- `src/snapshot/export-envelope.ts` (blob `05b2a8746ced9c7a7fd73590f6b2ac743e308fbc`, 137 lines) defines strict schema-version-2
+  Postgres envelopes, identifier/digest bounds, profile/sanitization invariants,
+  exclusive 0600 manifest writes, hardlink/symlink-safe reads, held-handle
+  anchor inspection, artifact hash/size verification, and mutation-fingerprint
+  checks.
+- `src/snapshot/postgres-generation.ts` (blob `74ab0aad636829ab16248dafd67d07ef22a2e732`, 166 lines) locks source relations,
+  validates owned anchor metadata, fingerprints catalog/routines/table rows and
+  sequence allocations without lossy numeric conversion, and exposes a
+  deterministic SHA-256 generation identity.
+- `src/snapshot/git-backup-codec.ts` (blob `c5cee3153c24d0f7ac1ba6634a67bfd8b05dc789`, 735 lines) adds deterministic SQLite
+  schema/table serialization, bounded row batches, safe table identities, secret
+  redaction and restore validation; this is substantially broader than a
+  manifest envelope.
+
 ## Fabushi owner comparison
 
 The current Rust owner is
@@ -46,11 +62,19 @@ artifact admission, tamper rejection, symlink/hardlink rejection on Unix, and
 stale-generation rejection. The local test is
 `source/host/tests/openclaw_snapshot_skills_contract.rs::test_ocrm_snapshot_artifact_admission_and_generation_fence`.
 There is still no demonstrated PostgreSQL/SQLite port materialization,
-exact/portable profile split, session-archive embedding, anchor
-verification/publication, restore namespace custody, or repeatable-read
-fingerprint path in this owner. Therefore the existing owner is a valid
-placement candidate but is not behaviorally equivalent to the exact upstream
-worker.
+schema-v2 envelope parser/writer, held-handle anchor verification, mutation
+fingerprint, exact/portable profile split, session-archive embedding, restore
+namespace custody, or repeatable-read fingerprint path in this owner. Therefore
+the existing owner is a valid placement candidate but is not behaviorally
+equivalent to the exact upstream worker.
+
+The current branch now adds format-only Rust validation through
+`parse_postgres_export_manifest`: strict serde fields, schema/profile checks,
+RFC3339 timestamp, UUID/source identity, safe identifiers, lowercase SHA-256,
+positive artifact sizes, sequence allocation bounds, and the exact-profile
+sanitization invariant. Its negative/positive oracle is
+`test_ocrm_snapshot_postgres_manifest_schema_and_profile_oracles`. This parser
+does not read files, inspect anchors, or materialize PostgreSQL/SQLite state.
 
 ## Responsibility/evidence decision
 
