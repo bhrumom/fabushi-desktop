@@ -25327,8 +25327,44 @@
             "end_line": 61,
             "start_line": 1
           },
-          "symbol": "fanInChannelIngressLifecycles"
-        }
+    "symbol": "fanInChannelIngressLifecycles"
+  },
+    {
+      "blob_sha": "52821f9f2181e12418b10d1de33a62293cf7065d",
+      "path": "src/plugin-sdk/channel-feedback.ts",
+      "range": {"end_line": 1, "start_line": 1},
+      "symbol": "channel-feedback"
+    },
+    {
+      "blob_sha": "7a0e6d432a0ce9b8c824924d070f1d6f57d42f4a",
+      "path": "src/plugin-sdk/channel-inbound-debounce.ts",
+      "range": {"end_line": 1, "start_line": 1},
+      "symbol": "channel-inbound-debounce"
+    },
+    {
+      "blob_sha": "31478cdfb8dd522c68aec1ccfb9b75359a60a56d",
+      "path": "src/plugin-sdk/channel-inbound.test.ts",
+      "range": {"end_line": 1, "start_line": 1},
+      "symbol": "channel-inbound.test"
+    },
+    {
+      "blob_sha": "1621195d008ccda9aeb6d2bfc380fd2db31025ef",
+      "path": "src/plugin-sdk/channel-ingress-runtime.test.ts",
+      "range": {"end_line": 1, "start_line": 1},
+      "symbol": "channel-ingress-runtime.test"
+    },
+    {
+      "blob_sha": "21c3f8075d3f938b7377d1e707feacc473d2553b",
+      "path": "src/plugin-sdk/channel-ingress-test-runtime.ts",
+      "range": {"end_line": 1, "start_line": 1},
+      "symbol": "channel-ingress-test-runtime"
+    },
+    {
+      "blob_sha": "62582839ddb6c20e9cf95f9ce20dadf0678cad84",
+      "path": "src/plugin-sdk/channel-join-intro-runtime.ts",
+      "range": {"end_line": 1, "start_line": 1},
+      "symbol": "channel-join-intro-runtime"
+    }
       ],
       "status": {
         "acceptance": "pending",
