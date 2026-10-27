@@ -53,10 +53,16 @@ jobs:
             }
           }
           if (lock.acceptance.accepted !== false || lock.acceptance.baseline_ready !== false) throw new Error('source closure must remain false until zero-counter closure');
-          for (const key of ['unknown_minimum', 'unread_minimum', 'omitted_known']) {
-            if (!Number.isInteger(lock.coverage[key]) || lock.coverage[key] < 0) throw new Error('source closure coverage must be non-negative integers');
+          if (lock.upstream.accepted === false) {
+            if (lock.coverage.recursive_source_entries_total !== null || lock.coverage.unknown_minimum !== null || lock.coverage.unread_minimum !== null) {
+              throw new Error('unaccepted candidate cannot inherit historical recursive coverage');
+            }
+          } else {
+            for (const key of ['unknown_minimum', 'unread_minimum', 'omitted_known']) {
+              if (!Number.isInteger(lock.coverage[key]) || lock.coverage[key] < 0) throw new Error('accepted coverage must be non-negative integers');
+            }
+            if (lock.coverage.unread_minimum > lock.coverage.unknown_minimum) throw new Error('unread coverage cannot exceed unknown coverage');
           }
-          if (lock.coverage.unread_minimum > lock.coverage.unknown_minimum) throw new Error('unread coverage cannot exceed unknown coverage');
           NODE
       - name: Discover build-time acquisition candidates at exact upstream
         shell: bash
