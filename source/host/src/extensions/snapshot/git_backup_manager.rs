@@ -110,6 +110,66 @@ pub fn read_sqlite_schema_entries(
         .collect()
 }
 
+pub fn digest_sqlite_table(
+    connection: &Connection,
+    table: &str,
+) -> Result<SqliteTableDigest, String> {
+    validate_sqlite_table_name(table)?;
+    let mut statement = connection
+        .prepare(&format!("SELECT * FROM \"{table}\""))
+        .map_err(|error| format!("prepare SQLite table read {table}: {error}"))?;
+    let column_names = statement
+        .column_names()
+        .into_iter()
+        .map(str::to_string)
+        .collect::<Vec<_>>();
+    let mut rows = statement
+        .query([])
+        .map_err(|error| format!("query SQLite table {table}: {error}"))?;
+    let mut hash = Sha256::new();
+    let mut count = 0_u64;
+    while let Some(row) = rows
+        .next()
+        .map_err(|error| format!("iterate SQLite table {table}: {error}"))?
+    {
+        let values = column_names
+            .iter()
+            .enumerate()
+            .map(|(index, name)| {
+                let value = match row
+                    .get_ref(index)
+                    .map_err(|error| format!("read SQLite cell {table}.{name}: {error}"))?
+                {
+                    rusqlite::types::ValueRef::Null => rusqlite::types::Value::Null,
+                    rusqlite::types::ValueRef::Integer(value) => {
+                        rusqlite::types::Value::Integer(value)
+                    }
+                    rusqlite::types::ValueRef::Real(value) => rusqlite::types::Value::Real(value),
+                    rusqlite::types::ValueRef::Text(value) => {
+                        let value = String::from_utf8(value.to_vec()).map_err(|error| {
+                            format!("invalid SQLite text {table}.{name}: {error}")
+                        })?;
+                        rusqlite::types::Value::Text(value)
+                    }
+                    rusqlite::types::ValueRef::Blob(value) => {
+                        rusqlite::types::Value::Blob(value.to_vec())
+                    }
+                };
+                Ok((name.clone(), value))
+            })
+            .collect::<Result<Vec<_>, String>>()?;
+        let encoded = encode_sqlite_row(values)?;
+        hash.update(encoded);
+        count = count
+            .checked_add(1)
+            .ok_or_else(|| "SQLite backup row count overflow".to_string())?;
+    }
+    Ok(SqliteTableDigest {
+        rows: count,
+        sha256: format!("{:x}", hash.finalize()),
+    })
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SnapshotExportEnvelope {
     pub version: u32,

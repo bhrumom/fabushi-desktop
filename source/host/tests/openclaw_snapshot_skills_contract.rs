@@ -465,6 +465,30 @@ fn test_ocrm_snapshot_postgres_manifest_schema_and_profile_oracles() {
         entries.iter().map(|entry| entry.name.as_str()).collect::<Vec<_>>(),
         vec!["real_table", "real_index", "real_trigger"]
     );
+    schema_connection
+        .execute(
+            "INSERT INTO real_table (id, value) VALUES (?1, ?2), (?3, ?4)",
+            rusqlite::params![1_i64, "first", 2_i64, "second"],
+        )
+        .expect("insert SQLite table rows");
+    let actual_digest =
+        mahayana_host_runtime::extensions::snapshot::git_backup_manager::digest_sqlite_table(
+            &schema_connection,
+            "real_table",
+        )
+        .expect("digest real SQLite table");
+    let expected_digest =
+        mahayana_host_runtime::extensions::snapshot::git_backup_manager::digest_sqlite_rows(vec![
+            Ok(b"{\"id\":1,\"value\":\"first\"}\n".to_vec()),
+            Ok(b"{\"id\":2,\"value\":\"second\"}\n".to_vec()),
+        ])
+        .expect("digest expected rows");
+    assert_eq!(actual_digest, expected_digest);
+    assert!(mahayana_host_runtime::extensions::snapshot::git_backup_manager::digest_sqlite_table(
+        &schema_connection,
+        "real_table;DROP TABLE real_table",
+    )
+    .is_err());
 }
 
 #[test]
