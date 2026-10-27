@@ -8,7 +8,7 @@ use mahayana_host_runtime::extensions::skills::skill_runtime::{
 use mahayana_host_runtime::extensions::snapshot::git_backup_manager::{
     assert_database_artifact, capture_database_artifact, create_export_envelope,
     assert_fresh_restore_target, assert_no_sqlite_sidecars, parse_postgres_export_manifest,
-    new_restore_namespace,
+    new_restore_namespace, read_postgres_export_manifest,
     verify_export_envelope, verify_postgres_anchor_identity, verify_postgres_export_artifacts,
     write_postgres_export_manifest,
     SnapshotGenerationFence,
@@ -207,6 +207,20 @@ fn test_ocrm_snapshot_postgres_manifest_schema_and_profile_oracles() {
     .expect("parse written manifest");
     parse_postgres_export_manifest(&written, "snap-002", Some("exact"))
         .expect("written manifest remains valid");
+    read_postgres_export_manifest(&manifest_path, "snap-002", Some("exact"))
+        .expect("bounded manifest read remains valid");
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::symlink;
+        let symlink_path = manifest_path.with_extension("symlink.json");
+        symlink(&manifest_path, &symlink_path).expect("create manifest symlink");
+        assert!(read_postgres_export_manifest(&symlink_path, "snap-002", None).is_err());
+        let hardlink_path = manifest_path.with_extension("hardlink.json");
+        fs::hard_link(&manifest_path, &hardlink_path).expect("create manifest hardlink");
+        assert!(read_postgres_export_manifest(&hardlink_path, "snap-002", None).is_err());
+        let _ = fs::remove_file(symlink_path);
+        let _ = fs::remove_file(hardlink_path);
+    }
     let _ = fs::remove_file(&manifest_path);
 
     let mut sanitized = valid.clone();

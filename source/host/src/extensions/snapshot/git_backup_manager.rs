@@ -18,6 +18,7 @@ pub const SQLITE_SIDECAR_SUFFIXES: [&str; 3] = ["-wal", "-shm", "-journal"];
 const RESTORE_NAMESPACE_PREFIX: &str = "restore_";
 const MAX_SAFE_INTEGER: u64 = 9_007_199_254_740_991;
 const MAX_POSTGRES_SEQUENCE: u64 = 9_223_372_036_854_775_807;
+const MAX_EXPORT_MANIFEST_BYTES: usize = 1024 * 1024;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SnapshotExportEnvelope {
@@ -202,6 +203,41 @@ pub fn parse_postgres_export_manifest(
         }
     }
     Ok(manifest)
+}
+
+/// Read a schema-v2 manifest from an admitted, bounded, unaliased file.
+///
+/// The exact worker reads through a hardlink/symlink rejecting root and caps
+/// the manifest at 1 MiB before JSON parsing. Keeping the file handle open
+/// through the read avoids validating one pathname and reading another file.
+pub fn read_postgres_export_manifest(
+    path: impl AsRef<Path>,
+    expected_id: &str,
+    required_profile: Option<&str>,
+) -> Result<PostgresExportManifest, String> {
+    let path = path.as_ref();
+    let mut file = open_unaliased_readonly(path)
+        .map_err(|error| format!("open Postgres export manifest {}: {error}", path.display()))?;
+    let metadata = file
+        .metadata()
+        .map_err(|error| format!("stat Postgres export manifest {}: {error}", path.display()))?;
+    if !metadata.is_file() {
+        return Err("Postgres export manifest must be a regular file".into());
+    }
+    #[cfg(unix)]
+    if metadata.nlink() != 1 {
+        return Err("Postgres export manifest must not be hard-linked".into());
+    }
+    let mut bytes = Vec::new();
+    file.take((MAX_EXPORT_MANIFEST_BYTES + 1) as u64)
+        .read_to_end(&mut bytes)
+        .map_err(|error| format!("read Postgres export manifest {}: {error}", path.display()))?;
+    if bytes.len() > MAX_EXPORT_MANIFEST_BYTES {
+        return Err("Postgres export manifest exceeds 1 MiB".into());
+    }
+    let value: Value = serde_json::from_slice(&bytes)
+        .map_err(|error| format!("parse Postgres export manifest {}: {error}", path.display()))?;
+    parse_postgres_export_manifest(&value, expected_id, required_profile)
 }
 
 fn has_millisecond_timestamp(value: &str) -> bool {
