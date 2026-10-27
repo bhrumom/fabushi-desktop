@@ -150,6 +150,12 @@ oracle asserts byte ordering and duplicate-column rejection. It is a row-level
 primitive only; table schema extraction, primary-key ordering, bounded batch
 flush, and restore consumer wiring remain pending.
 
+`SqliteJsonlBatch` now bounds serialized row buffering at the upstream 1 MiB
+threshold, flushes complete rows once reached, permits one oversized row as a
+single unit, and retains a final tail batch. The local oracle covers threshold
+flush, oversized-row flush, and empty finish. It does not establish table
+iteration or end-to-end artifact publication.
+
 ## Responsibility/evidence decision
 
 `OCRM-RESP-SNAPSHOT-BACKUP-CODEC-001` remains `read=partial`,
