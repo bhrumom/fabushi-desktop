@@ -80,6 +80,36 @@ pub fn render_sqlite_schema(
     Ok(output)
 }
 
+pub fn read_sqlite_schema_entries(
+    connection: &Connection,
+) -> Result<Vec<SqliteSchemaEntry>, String> {
+    let mut statement = connection
+        .prepare(
+            "SELECT type, name, sql
+             FROM sqlite_master
+             WHERE type IN ('table', 'index', 'trigger')
+               AND name NOT LIKE 'sqlite_%'
+               AND sql IS NOT NULL
+             ORDER BY CASE type
+               WHEN 'table' THEN 0
+               WHEN 'index' THEN 1
+               ELSE 2
+             END, name",
+        )
+        .map_err(|error| format!("prepare SQLite schema read: {error}"))?;
+    let rows = statement
+        .query_map([], |row| {
+            Ok(SqliteSchemaEntry {
+                kind: row.get(0)?,
+                name: row.get(1)?,
+                sql: row.get(2)?,
+            })
+        })
+        .map_err(|error| format!("read SQLite schema entries: {error}"))?;
+    rows.map(|row| row.map_err(|error| format!("decode SQLite schema entry: {error}")))
+        .collect()
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SnapshotExportEnvelope {
     pub version: u32,

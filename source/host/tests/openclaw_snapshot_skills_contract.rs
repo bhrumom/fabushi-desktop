@@ -447,6 +447,24 @@ fn test_ocrm_snapshot_postgres_manifest_schema_and_profile_oracles() {
         1,
     )
     .is_err());
+    let schema_connection = rusqlite::Connection::open_in_memory().expect("SQLite schema DB");
+    schema_connection
+        .execute_batch(
+            "CREATE TABLE real_table (id INTEGER PRIMARY KEY, value TEXT);
+             CREATE INDEX real_index ON real_table(value);
+             CREATE TRIGGER real_trigger AFTER INSERT ON real_table
+             BEGIN UPDATE real_table SET value = value WHERE id = NEW.id; END;",
+        )
+        .expect("create SQLite schema fixtures");
+    let entries =
+        mahayana_host_runtime::extensions::snapshot::git_backup_manager::read_sqlite_schema_entries(
+            &schema_connection,
+        )
+        .expect("read SQLite schema entries");
+    assert_eq!(
+        entries.iter().map(|entry| entry.name.as_str()).collect::<Vec<_>>(),
+        vec!["real_table", "real_index", "real_trigger"]
+    );
 }
 
 #[test]
