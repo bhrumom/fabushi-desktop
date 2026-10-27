@@ -812,6 +812,154 @@ fn test_ocrm_plugin_sdk_channel_dm_policy_and_entry_contract() {
     assert_eq!(recorder.events()[1].direction, "outbound");
 }
 
+#[test]
+fn test_ocrm_plugin_sdk_channel_feedback_inbound_ingress() {
+    use mahayana_host_runtime::extensions::plugin_sdk::channel_feedback::{
+        resolve_tool_emoji, should_ack_reaction_for_whatsapp, WhatsAppAckReactionMode,
+    };
+    use mahayana_host_runtime::extensions::plugin_sdk::channel_inbound::{
+        format_inbound_envelope, format_location_text, report_channel_room_join,
+        ChannelJoinedRoomContext, InboundDebouncer,
+    };
+    use mahayana_host_runtime::extensions::plugin_sdk::channel_ingress::{
+        fan_in_channel_ingress_lifecycles, meets_identifier_authentication,
+        resolve_channel_message_ingress_simple, IdentifierAuthentication, IngressLifecycle,
+    };
+    use std::sync::atomic::{AtomicUsize, Ordering};
+    use std::sync::Arc;
+
+    // 1. WhatsApp ACK reaction policy
+    assert!(!should_ack_reaction_for_whatsapp(
+        "", true, false, true, WhatsAppAckReactionMode::Always, false, false
+    ));
+    assert!(should_ack_reaction_for_whatsapp(
+        "👍", true, false, true, WhatsAppAckReactionMode::Never, false, false
+    ));
+    assert!(!should_ack_reaction_for_whatsapp(
+        "👍", false, true, true, WhatsAppAckReactionMode::Never, true, true
+    ));
+    assert!(should_ack_reaction_for_whatsapp(
+        "👍", false, true, false, WhatsAppAckReactionMode::Always, false, false
+    ));
+    assert!(should_ack_reaction_for_whatsapp(
+        "👍", false, true, false, WhatsAppAckReactionMode::Mentions, true, false
+    ));
+    assert!(!should_ack_reaction_for_whatsapp(
+        "👍", false, true, false, WhatsAppAckReactionMode::Mentions, false, false
+    ));
+
+    // 2. Tool emojis
+    assert_eq!(resolve_tool_emoji("edit_file"), "💻");
+    assert_eq!(resolve_tool_emoji("run_cargo_build"), "🔨");
+    assert_eq!(resolve_tool_emoji("deploy_app"), "🚀");
+    assert_eq!(resolve_tool_emoji("search_docs"), "🔍");
+    assert_eq!(resolve_tool_emoji("web_fetch"), "🌐");
+    assert_eq!(resolve_tool_emoji("unknown_tool"), "⚡");
+
+    // 3. Identifier authentication levels
+    assert!(meets_identifier_authentication(
+        IdentifierAuthentication::Verified,
+        IdentifierAuthentication::Asserted
+    ));
+    assert!(!meets_identifier_authentication(
+        IdentifierAuthentication::Mutable,
+        IdentifierAuthentication::Asserted
+    ));
+    assert!(meets_identifier_authentication(
+        IdentifierAuthentication::Signed,
+        IdentifierAuthentication::Verified
+    ));
+
+    // 4. Ingress Lifecycle Fan-in
+    let adopted_count = Arc::new(AtomicUsize::new(0));
+    let adopted_count_clone1 = adopted_count.clone();
+    let adopted_count_clone2 = adopted_count.clone();
+
+    let l1 = IngressLifecycle {
+        deferred_heartbeat_interval_ms: Some(3000),
+        on_adopted: Arc::new(move || {
+            adopted_count_clone1.fetch_add(1, Ordering::SeqCst);
+            Ok(())
+        }),
+        on_adoption_finalizing: Arc::new(|| {}),
+        on_failed: Arc::new(|_| {}),
+        on_cancelled: Some(Arc::new(|| {})),
+        on_abandoned: Arc::new(|| {}),
+    };
+
+    let l2 = IngressLifecycle {
+        deferred_heartbeat_interval_ms: Some(1000),
+        on_adopted: Arc::new(move || {
+            adopted_count_clone2.fetch_add(1, Ordering::SeqCst);
+            Ok(())
+        }),
+        on_adoption_finalizing: Arc::new(|| {}),
+        on_failed: Arc::new(|_| {}),
+        on_cancelled: Some(Arc::new(|| {})),
+        on_abandoned: Arc::new(|| {}),
+    };
+
+    let fanned = fan_in_channel_ingress_lifecycles(vec![Some(l1), Some(l2)]).expect("fanned in");
+    assert_eq!(fanned.deferred_heartbeat_interval_ms, Some(1000));
+    assert!(fanned.supports_cancellation);
+    fanned.on_adopted().expect("adopted");
+    assert_eq!(adopted_count.load(Ordering::SeqCst), 2);
+
+    // 5. Ingress Message Access Resolution
+    let allowed = resolve_channel_message_ingress_simple(
+        "user-1",
+        &["user-1".to_string()],
+        true,
+        false,
+        "allowlist",
+    );
+    assert_eq!(allowed.admission, "dispatch");
+    assert_eq!(allowed.decision, "allow");
+
+    let blocked_sender = resolve_channel_message_ingress_simple(
+        "intruder",
+        &["user-1".to_string()],
+        true,
+        false,
+        "allowlist",
+    );
+    assert_eq!(blocked_sender.admission, "block");
+    assert_eq!(blocked_sender.reason_code.as_deref(), Some("sender_not_allowed"));
+
+    let blocked_route = resolve_channel_message_ingress_simple(
+        "user-1",
+        &["user-1".to_string()],
+        false,
+        false,
+        "allowlist",
+    );
+    assert_eq!(blocked_route.admission, "block");
+    assert_eq!(blocked_route.reason_code.as_deref(), Some("route_blocked"));
+
+    // 6. Inbound Debouncer
+    let mut debouncer = InboundDebouncer::new(500);
+    assert!(!debouncer.should_debounce("sender-a"));
+    assert!(debouncer.should_debounce("sender-a"));
+    assert!(!debouncer.should_debounce("sender-b"));
+
+    // 7. Envelopes and Locations
+    let env = format_inbound_envelope("Alice", "telegram", "Hi!", 1700000000);
+    assert_eq!(env, "[telegram] Alice (1700000000): Hi!");
+
+    let loc = format_location_text(37.774929, -122.419416, Some("San Francisco"));
+    assert!(loc.contains("San Francisco"));
+    assert!(loc.contains("37.774929"));
+
+    let join_msg = report_channel_room_join(&ChannelJoinedRoomContext {
+        channel: "matrix".to_string(),
+        room_id: "!lobby:example.org".to_string(),
+        inviter_id: Some("@admin:example.org".to_string()),
+    });
+    assert!(join_msg.contains("Joined room !lobby:example.org on channel matrix"));
+    assert!(join_msg.contains("invited by @admin:example.org"));
+}
+
+
 
 
 

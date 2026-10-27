@@ -10,10 +10,10 @@
     "ui_accepted": false
   },
   "file_coverage": {
-    "mapped_paths": 785,
+    "mapped_paths": 793,
     "omitted_known": 0,
     "tracked_paths": 58750,
-    "unclassified_paths": 57965
+    "unclassified_paths": 57957
   },
   "inventory_authority": {
     "manifest_source": "GitHub Actions immutable artifact candidate",
@@ -24767,6 +24767,124 @@
         "recover_current_thread_session_id"
       ],
       "unit_id": "OCRM-UNIT-PLUGIN-SDK-CHANNEL-ENTRY-001"
+    },
+    {
+      "adr_refs": [],
+      "behavior": "Plugin SDK channel feedback, WhatsApp ACK reaction evaluation, tool emoji resolver, ingress lifecycle coordination (fan-in with deferred heartbeat interval resolution and cascade failure release), message admission resolution, inbound debounce management, envelope formatting, and room join reporting.",
+      "blocker_ids": [],
+      "capability_ids": [
+        "plugin_sdk.channel_feedback",
+        "plugin_sdk.channel_inbound",
+        "plugin_sdk.channel_ingress"
+      ],
+      "dependencies": [
+        "mahayana_host_runtime::extensions::plugin_sdk::channel_feedback",
+        "mahayana_host_runtime::extensions::plugin_sdk::channel_inbound",
+        "mahayana_host_runtime::extensions::plugin_sdk::channel_ingress"
+      ],
+      "evidence_refs": [
+        "source/host/tests/openclaw_plugin_sdk_contract.rs",
+        "projects/openclaw-rust/dossiers/plugin-sdk-channel-inbound-and-ingress-scoped.md"
+      ],
+      "existing_owner_candidates": [
+        {
+          "path": "source/host/src/extensions/plugin_sdk/channel_feedback.rs",
+          "reason": "Host native feedback policy, WhatsApp ACK reaction check, and tool emoji resolver"
+        },
+        {
+          "path": "source/host/src/extensions/plugin_sdk/channel_ingress.rs",
+          "reason": "Host native channel message ingress resolver, authentication level evaluator, and fan-in lifecycle coordinator"
+        },
+        {
+          "path": "source/host/src/extensions/plugin_sdk/channel_inbound.rs",
+          "reason": "Host native inbound debouncer, envelope formatting, and room join outcome reporter"
+        }
+      ],
+      "id": "OCRM-RESP-PLUGIN-SDK-CHANNEL-INBOUND-INGRESS-001",
+      "integration": {
+        "consumer": "source/host/src/extensions/plugin_sdk/mod.rs",
+        "entrypoint": "source/host/src/extensions/plugin_sdk/mod.rs",
+        "owner": "source/host/src/extensions/plugin_sdk/mod.rs",
+        "producer": "source/host/src/extensions/plugin_sdk/mod.rs"
+      },
+      "invariants": [
+        "WhatsApp ACK reaction policy strictly respects groupMode (never/always/mentions) and directEnabled flags",
+        "Fanned-in ingress lifecycle selects the minimum positive deferred heartbeat interval",
+        "Adoption failure cascades failure to all remaining unadopted durable claims",
+        "Inbound debouncer prevents duplicate rapid dispatches from the same sender key"
+      ],
+      "migration_rollback": "Fallback to uncoordinated ingress lifecycles and unthrottled inbound message processing",
+      "oracle_ids": [
+        "OCRM-PLUGIN-SDK-CHANNEL-INBOUND-O01"
+      ],
+      "owner_decision": "Unified native plugin SDK infrastructure in extensions::plugin_sdk",
+      "postconditions": [
+        "WhatsApp ACK reactions evaluated according to specification",
+        "Durable ingress claims cleanly settled, abandoned, or cancelled",
+        "Inbound envelopes formatted and debounced cleanly"
+      ],
+      "preconditions": [
+        "Valid inbound channel context and active lifecycle handles"
+      ],
+      "required_evidence_dimensions": [
+        "unit",
+        "integration"
+      ],
+      "required_gate_ids": [
+        "OCRM-G04-rust-contract"
+      ],
+      "requirement_ids": [
+        "OCRM-R28",
+        "OCRM-AC28"
+      ],
+      "responsibility_kind": "business-runtime",
+      "reviewer": "xuyao@ombhrum.com",
+      "risk": "Medium; inbound message gating, durable claim retention, and reaction feedback",
+      "selected_owner": "source/host/src/extensions/plugin_sdk/mod.rs",
+      "source_refs": [
+        {
+          "blob_sha": "d0e1f7bc96c4293f7734495c3cefe8742718e010",
+          "path": "src/plugin-sdk/channel-inbound.ts",
+          "range": {
+            "end_line": 335,
+            "start_line": 1
+          },
+          "symbol": "buildChannelInboundEventContext"
+        },
+        {
+          "blob_sha": "b2f0a1c97a87e0766519ebcecd0dafae4e1a0b36",
+          "path": "src/plugin-sdk/channel-ingress-runtime.ts",
+          "range": {
+            "end_line": 61,
+            "start_line": 1
+          },
+          "symbol": "fanInChannelIngressLifecycles"
+        }
+      ],
+      "status": {
+        "acceptance": "pending",
+        "implementation": "implemented",
+        "mapping": "reviewed",
+        "read": "read-complete",
+        "verification": "not-run",
+        "wiring": "not-wired"
+      },
+      "target": {
+        "language": "Rust",
+        "path": "source/host/src/extensions/plugin_sdk/channel_ingress.rs",
+        "symbol": "fan_in_channel_ingress_lifecycles"
+      },
+      "tests": [
+        "source/host/tests/openclaw_plugin_sdk_contract.rs::test_ocrm_plugin_sdk_channel_feedback_inbound_ingress"
+      ],
+      "typed_contracts": [
+        "should_ack_reaction_for_whatsapp",
+        "resolve_tool_emoji",
+        "fan_in_channel_ingress_lifecycles",
+        "meets_identifier_authentication",
+        "format_inbound_envelope"
+      ],
+      "unit_id": "OCRM-UNIT-PLUGIN-SDK-CHANNEL-INBOUND-001"
     }
   ],
   "schema_version": 1,
