@@ -145,8 +145,9 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          python3 -m pip install --disable-pip-version-check --no-input 'jsonschema==4.25.1'
-          python3 projects/openclaw-rust/scripts/verify_audit_integrity.py
+          python3 -m venv .venv-audit
+          .venv-audit/bin/pip install --disable-pip-version-check --no-input 'jsonschema==4.25.1'
+          .venv-audit/bin/python3 projects/openclaw-rust/scripts/verify_audit_integrity.py
       - name: Test Grok prompt attachment projection contract
         shell: bash
         run: cargo test -p mahayana-feature-host grok_send_prompt_projects_attachment_context_into_user_transcript_event --manifest-path source/mahayana/mahayana-rs/Cargo.toml

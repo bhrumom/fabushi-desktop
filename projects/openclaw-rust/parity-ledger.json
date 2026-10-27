@@ -10,10 +10,10 @@
     "ui_accepted": false
   },
   "file_coverage": {
-    "mapped_paths": 703,
+    "mapped_paths": 714,
     "omitted_known": 0,
     "tracked_paths": 58750,
-    "unclassified_paths": 58047
+    "unclassified_paths": 58036
   },
   "inventory_authority": {
     "manifest_source": "GitHub Actions immutable artifact candidate",
@@ -24177,8 +24177,8 @@
         "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "verified",
-        "wiring": "wired"
+        "verification": "not-run",
+        "wiring": "not-wired"
       },
       "target": {
         "language": "Rust",
@@ -24288,8 +24288,8 @@
         "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "verified",
-        "wiring": "wired"
+        "verification": "not-run",
+        "wiring": "not-wired"
       },
       "target": {
         "language": "Rust",
@@ -24307,6 +24307,123 @@
         "resolve_memory_slot_decision"
       ],
       "unit_id": "OCRM-UNIT-PLUGINS-CU-CONFIG-001"
+    },
+    {
+      "adr_refs": [],
+      "behavior": "Plugin SDK allow-from sender normalization, wildcard matching, account-scoped config path resolution and mutation, API baseline declaration closure diffing, and workspace access runtime policy.",
+      "blocker_ids": [],
+      "capability_ids": [
+        "plugin_sdk.allow_from",
+        "plugin_sdk.api_baseline",
+        "plugin_sdk.workspace"
+      ],
+      "dependencies": [
+        "mahayana_host_runtime::extensions::plugin_sdk::allow_from",
+        "mahayana_host_runtime::extensions::plugin_sdk::api_baseline",
+        "mahayana_host_runtime::extensions::plugin_sdk::agent_workspace_runtime"
+      ],
+      "evidence_refs": [
+        "source/host/tests/openclaw_plugin_sdk_contract.rs",
+        "projects/openclaw-rust/dossiers/plugin-sdk-allow-from-and-api-baseline-scoped.md"
+      ],
+      "existing_owner_candidates": [
+        {
+          "path": "source/host/src/extensions/plugin_sdk/allow_from.rs",
+          "reason": "Host native allow-from normalization and config edit resolver"
+        },
+        {
+          "path": "source/host/src/extensions/plugin_sdk/api_baseline.rs",
+          "reason": "Host native API baseline declaration closure and diffing engine"
+        },
+        {
+          "path": "source/host/src/extensions/plugin_sdk/agent_workspace_runtime.rs",
+          "reason": "Host native workspace access and attachment preparation policies"
+        }
+      ],
+      "id": "OCRM-RESP-PLUGIN-SDK-ALLOW-FROM-API-BASELINE-001",
+      "integration": {
+        "consumer": "source/host/src/extensions/plugin_sdk/mod.rs",
+        "entrypoint": "source/host/src/extensions/plugin_sdk/mod.rs",
+        "owner": "source/host/src/extensions/plugin_sdk/mod.rs",
+        "producer": "source/host/src/extensions/plugin_sdk/mod.rs"
+      },
+      "invariants": [
+        "Allow-from empty allowlists deny senders by default while wildcard allows all",
+        "Case-insensitive prefix stripping normalizes sender handles cleanly",
+        "API diff engine identifies export kind mutations and deletions as breaking changes"
+      ],
+      "migration_rollback": "Fallback to unverified allowlist matching and uninspected API baselines",
+      "oracle_ids": [
+        "OCRM-PLUGIN-SDK-ALLOW-API-O01"
+      ],
+      "owner_decision": "Unified native plugin SDK infrastructure in extensions::plugin_sdk",
+      "postconditions": [
+        "Allowlists parsed and validated with wildcard semantics",
+        "Account-scoped channel config writes cleanly isolated",
+        "API changes classified into breaking and non-breaking sets"
+      ],
+      "preconditions": [
+        "Normalized channel entries and valid compiler declaration inputs"
+      ],
+      "required_evidence_dimensions": [
+        "unit",
+        "integration"
+      ],
+      "required_gate_ids": [
+        "OCRM-G04-rust-contract"
+      ],
+      "requirement_ids": [
+        "OCRM-R28",
+        "OCRM-AC28"
+      ],
+      "responsibility_kind": "business-runtime",
+      "reviewer": "xuyao@ombhrum.com",
+      "risk": "Medium; sender access authorization and public plugin SDK surface stability",
+      "selected_owner": "source/host/src/extensions/plugin_sdk/mod.rs",
+      "source_refs": [
+        {
+          "blob_sha": "8dfb21ef003aa5d20626359e35a121542f534925",
+          "path": "src/plugin-sdk/allow-from.ts",
+          "range": {
+            "end_line": 144,
+            "start_line": 1
+          },
+          "symbol": "isNormalizedSenderAllowed"
+        },
+        {
+          "blob_sha": "9a31a90c5fa6319888d3e2007823f03b1e32d67a",
+          "path": "src/plugin-sdk/api-diff.ts",
+          "range": {
+            "end_line": 484,
+            "start_line": 1
+          },
+          "symbol": "diffPluginSdkApi"
+        }
+      ],
+      "status": {
+        "acceptance": "pending",
+        "implementation": "implemented",
+        "mapping": "reviewed",
+        "read": "read-complete",
+        "verification": "not-run",
+        "wiring": "not-wired"
+      },
+      "target": {
+        "language": "Rust",
+        "path": "source/host/src/extensions/plugin_sdk/allow_from.rs",
+        "symbol": "is_normalized_sender_allowed"
+      },
+      "tests": [
+        "source/host/tests/openclaw_plugin_sdk_contract.rs::test_ocrm_plugin_sdk_allow_from_and_config_edit",
+        "source/host/tests/openclaw_plugin_sdk_contract.rs::test_ocrm_plugin_sdk_api_baseline_and_diff",
+        "source/host/tests/openclaw_plugin_sdk_contract.rs::test_ocrm_plugin_sdk_agent_workspace_runtime"
+      ],
+      "typed_contracts": [
+        "is_normalized_sender_allowed",
+        "apply_account_scoped_allowlist_config_edit",
+        "diff_plugin_sdk_api"
+      ],
+      "unit_id": "OCRM-UNIT-PLUGIN-SDK-ALLOW-API-001"
     }
   ],
   "schema_version": 1,
