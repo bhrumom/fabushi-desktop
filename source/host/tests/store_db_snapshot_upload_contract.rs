@@ -6,7 +6,7 @@ use std::sync::{Arc, Mutex};
 use mahayana_host_runtime::extensions::box_store_sync::box_store_manifest_format::BoxStoreManifestEntry;
 use mahayana_host_runtime::extensions::box_store_sync::store_db_snapshot_upload::{
     BoxManifestMap, SnapshotFailurePhase, SnapshotUploadOutcome,
-    StoreDbSnapshotRuntimePort, StoreDbSnapshotUpload, sha256_bytes,
+    SnapshotArtifact, StoreDbSnapshotRuntimePort, StoreDbSnapshotUpload, sha256_bytes,
 };
 
 #[derive(Default)]
@@ -125,6 +125,51 @@ fn small_snapshot_uploads_content_addressed_bytes_and_updates_manifest() {
     );
 
     let _ = fs::remove_dir_all(path.parent().unwrap());
+}
+
+#[test]
+fn multi_artifact_upload_reuses_owner_and_preflights_paths() {
+    let runtime = Arc::new(FakeRuntime::default());
+    let logs = Arc::new(Mutex::new(Vec::new()));
+    let service = service(runtime.clone(), 1024, 100, vec![10, 20, 30, 40], logs);
+    let manifest = &mut BoxManifestMap::new();
+    let first = temp_file("manifest.json", b"manifest");
+    let second = temp_file("schema.sql", b"schema");
+    let results = service
+        .upload_artifact_set(
+            "store-1",
+            manifest,
+            &[
+                SnapshotArtifact {
+                    rel_path: "global/manifest.json".into(),
+                    path: first,
+                    mode: 0o600,
+                },
+                SnapshotArtifact {
+                    rel_path: "global/schema.sql".into(),
+                    path: second,
+                    mode: 0o600,
+                },
+            ],
+        )
+        .expect("upload admitted artifact set");
+    assert_eq!(results.len(), 2);
+    assert!(results
+        .iter()
+        .all(|result| result.outcome == SnapshotUploadOutcome::Uploaded));
+    assert_eq!(manifest.len(), 2);
+    assert!(service
+        .upload_artifact_set(
+            "store-1",
+            manifest,
+            &[SnapshotArtifact {
+                rel_path: "../escape".into(),
+                path: temp_file("escape", b"x"),
+                mode: 0o600,
+            }],
+        )
+        .is_err());
+    assert_eq!(manifest.len(), 2, "invalid batch must not mutate manifest");
 }
 
 #[test]

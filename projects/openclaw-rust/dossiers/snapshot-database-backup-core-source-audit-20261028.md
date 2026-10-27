@@ -281,3 +281,11 @@ is not yet fused into the existing production owner. PostgreSQL port material-
 ization and the authorized API boundary are prerequisites for wiring rather
 than grounds to fabricate a second storage owner.
 
+The existing owner now exposes `StoreDbSnapshotUpload::upload_artifact_set`:
+it preflights all relative artifact paths and duplicates, then routes each
+validated file through the established BoxStore blob/manifest consumer. The
+owner contract passes for a two-file set and rejects traversal without
+mutating the manifest. The method is deliberately documented as non-atomic
+because the current object-store API has no batch transaction; a future
+OpenClaw caller must supply its own recovery policy and remains unimplemented.
+

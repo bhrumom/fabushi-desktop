@@ -6,12 +6,8 @@ use std::sync::Arc;
 
 use sha2::{Digest, Sha256};
 
-use super::box_store_manifest_format::{
-    BOX_STORE_BLOBS_PREFIX, BoxStoreManifestEntry,
-};
-use super::box_store_vacuum_worker::{
-    BoxStoreVacuumJob, spawn_box_store_vacuum_job,
-};
+use super::box_store_manifest_format::{BoxStoreManifestEntry, BOX_STORE_BLOBS_PREFIX};
+use super::box_store_vacuum_worker::{spawn_box_store_vacuum_job, BoxStoreVacuumJob};
 use crate::storage::store_db::DB_BUSY_TIMEOUT_MS;
 
 pub type BoxManifestMap = BTreeMap<String, BoxStoreManifestEntry>;
@@ -36,6 +32,13 @@ pub struct SnapshotUploadResult {
     pub bytes_uploaded: u64,
     pub blob_upload_duration_ms: u64,
     pub failure_phase: Option<SnapshotFailurePhase>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct SnapshotArtifact {
+    pub rel_path: String,
+    pub path: PathBuf,
+    pub mode: u32,
 }
 
 pub trait StoreDbSnapshotRuntimePort: Send + Sync {
@@ -95,6 +98,46 @@ impl StoreDbSnapshotUpload {
         (self.now_ms)().saturating_sub(started_at)
     }
 
+    /// Upload a pre-admitted multi-file snapshot through the existing
+    /// BoxStore owner. All relative paths are validated before the first
+    /// upload; individual uploads remain observable and are intentionally
+    /// non-atomic because the object store has no batch transaction.
+    pub fn upload_artifact_set(
+        &self,
+        store_id: &str,
+        manifest: &mut BoxManifestMap,
+        artifacts: &[SnapshotArtifact],
+    ) -> Result<Vec<SnapshotUploadResult>, String> {
+        let mut paths = std::collections::BTreeSet::new();
+        for artifact in artifacts {
+            let path = Path::new(&artifact.rel_path);
+            if artifact.rel_path.is_empty()
+                || path.is_absolute()
+                || path
+                    .components()
+                    .any(|component| matches!(component, std::path::Component::ParentDir))
+                || !paths.insert(artifact.rel_path.clone())
+            {
+                return Err(format!(
+                    "snapshot artifact path is invalid or duplicated: {}",
+                    artifact.rel_path
+                ));
+            }
+        }
+        Ok(artifacts
+            .iter()
+            .map(|artifact| {
+                self.upload_agent_db_snapshot(
+                    store_id,
+                    manifest,
+                    &artifact.rel_path,
+                    &artifact.path,
+                    artifact.mode,
+                )
+            })
+            .collect())
+    }
+
     pub fn upload_agent_db_snapshot(
         &self,
         store_id: &str,
@@ -152,8 +195,7 @@ impl StoreDbSnapshotUpload {
             mode: mode & 0o777,
         };
         if manifest_file_matches(manifest.get(rel_path), &sha, size) {
-            self.runtime
-                .set_manifest_entry(manifest, rel_path, entry);
+            self.runtime.set_manifest_entry(manifest, rel_path, entry);
             return SnapshotUploadResult {
                 outcome: SnapshotUploadOutcome::Unchanged,
                 bytes_uploaded: 0,
@@ -165,16 +207,10 @@ impl StoreDbSnapshotUpload {
         let upload_started_at = (self.now_ms)();
         let key = format!("{BOX_STORE_BLOBS_PREFIX}/{sha}");
         let upload = match bytes {
-            Some(bytes) => self
+            Some(bytes) => self.runtime.put_bytes(store_id, &key, &bytes, true),
+            None => self
                 .runtime
-                .put_bytes(store_id, &key, &bytes, true),
-            None => self.runtime.put_from_file(
-                store_id,
-                &key,
-                snapshot_path,
-                &sha,
-                size,
-            ),
+                .put_from_file(store_id, &key, snapshot_path, &sha, size),
         };
         if let Err(error) = upload {
             (self.log)(&format!("upload failed {rel_path}: {error}"));
@@ -186,8 +222,7 @@ impl StoreDbSnapshotUpload {
             };
         }
 
-        self.runtime
-            .set_manifest_entry(manifest, rel_path, entry);
+        self.runtime.set_manifest_entry(manifest, rel_path, entry);
         SnapshotUploadResult {
             outcome: SnapshotUploadOutcome::Uploaded,
             bytes_uploaded: size,
@@ -196,11 +231,7 @@ impl StoreDbSnapshotUpload {
         }
     }
 
-    pub fn run_vacuum_off_thread(
-        &self,
-        src_path: &Path,
-        dest_path: &Path,
-    ) -> Result<(), String> {
+    pub fn run_vacuum_off_thread(&self, src_path: &Path, dest_path: &Path) -> Result<(), String> {
         let worker = spawn_box_store_vacuum_job(BoxStoreVacuumJob {
             src_path: src_path.to_path_buf(),
             dest_path: dest_path.to_path_buf(),
@@ -224,9 +255,7 @@ impl StoreDbSnapshotUpload {
             Ok(()) => {}
             Err(error) if error.kind() == io::ErrorKind::NotFound => {}
             Err(error) => {
-                (self.log)(&format!(
-                    "temp cleanup failed {label}: {error}"
-                ));
+                (self.log)(&format!("temp cleanup failed {label}: {error}"));
             }
         }
     }
@@ -241,11 +270,7 @@ fn capture_error() -> SnapshotUploadResult {
     }
 }
 
-fn manifest_file_matches(
-    existing: Option<&BoxStoreManifestEntry>,
-    sha: &str,
-    size: u64,
-) -> bool {
+fn manifest_file_matches(existing: Option<&BoxStoreManifestEntry>, sha: &str, size: u64) -> bool {
     match existing {
         Some(BoxStoreManifestEntry::File {
             sha: existing_sha,
