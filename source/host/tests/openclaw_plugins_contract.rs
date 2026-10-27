@@ -1013,6 +1013,180 @@ fn test_ocrm_plugins_sdk_package_and_runtime_api_guardrails() {
     assert!(err_exports[0].contains("exports internal test module"));
 }
 
+#[test]
+fn test_ocrm_plugins_activation_context_payload_and_runtime_registry() {
+    use std::collections::HashSet;
+    use serde_json::json;
+    use mahayana_host_runtime::extensions::plugins::activation_planner::{
+        ActivationPlanner, ActivationTrigger, PluginManifestRecord,
+        PluginActivationSourceResolver, ActivePayloadVerification,
+        PluginInstallRecordStub, ActiveRegistryIdentity, ActiveRuntimeRegistryResolver,
+    };
+
+    // 1. Activation planner with scoped plugin IDs
+    let mut planner = ActivationPlanner::new();
+    planner.register_manifest(PluginManifestRecord {
+        plugin_id: "telegram".into(),
+        commands: vec!["tg".into()],
+        providers: vec![],
+        channels: vec!["telegram".into()],
+        capabilities: vec![],
+        is_bundled: true,
+        is_trusted: true,
+    });
+    planner.register_manifest(PluginManifestRecord {
+        plugin_id: "discord".into(),
+        commands: vec!["dc".into()],
+        providers: vec![],
+        channels: vec!["discord".into()],
+        capabilities: vec![],
+        is_bundled: true,
+        is_trusted: true,
+    });
+
+    let triggers = vec![
+        ActivationTrigger::Channel("telegram".into()),
+        ActivationTrigger::Channel("discord".into()),
+    ];
+
+    // Explicit empty scope returns empty
+    let empty_scope: Vec<String> = vec![];
+    assert_eq!(planner.plan_activation_scoped(&triggers, Some(&empty_scope)), Vec::<String>::new());
+
+    // Restricted scope returns only permitted
+    let restricted_scope = vec!["telegram".to_string()];
+    assert_eq!(planner.plan_activation_scoped(&triggers, Some(&restricted_scope)), vec!["telegram"]);
+
+    // Unrestricted returns both
+    assert_eq!(planner.plan_activation_scoped(&triggers, None), vec!["discord", "telegram"]);
+
+    // 2. Activation source config resolution precedence
+    let root_cfg = json!({"root": true});
+    let captured_cfg = json!({"captured": true});
+    let explicit_source = json!({"explicit": true});
+
+    // Explicit source takes highest precedence
+    assert_eq!(
+        PluginActivationSourceResolver::resolve_source_config(Some(&root_cfg), Some(&explicit_source), Some(&captured_cfg)),
+        explicit_source
+    );
+    // Captured takes next precedence
+    assert_eq!(
+        PluginActivationSourceResolver::resolve_source_config(Some(&root_cfg), None, Some(&captured_cfg)),
+        captured_cfg
+    );
+    // Fallback to root
+    assert_eq!(
+        PluginActivationSourceResolver::resolve_source_config(Some(&root_cfg), None, None),
+        root_cfg
+    );
+    // Fallback to empty object
+    assert_eq!(
+        PluginActivationSourceResolver::resolve_source_config(None, None, None),
+        json!({})
+    );
+
+    // 3. Active payload verification filtering
+    let records = vec![
+        PluginInstallRecordStub {
+            plugin_id: "denied-plug".into(),
+            version: "1.0.0".into(),
+            is_operator_managed: false,
+            official_npm_spec: None,
+            official_clawhub_spec: None,
+        },
+        PluginInstallRecordStub {
+            plugin_id: "operator-plug".into(),
+            version: "1.0.0".into(),
+            is_operator_managed: true,
+            official_npm_spec: None,
+            official_clawhub_spec: None,
+        },
+        PluginInstallRecordStub {
+            plugin_id: "disabled-regular".into(),
+            version: "1.0.0".into(),
+            is_operator_managed: false,
+            official_npm_spec: None,
+            official_clawhub_spec: None,
+        },
+        PluginInstallRecordStub {
+            plugin_id: "disabled-official".into(),
+            version: "1.0.0".into(),
+            is_operator_managed: false,
+            official_npm_spec: Some("@openclaw/voice@1.0.0".into()),
+            official_clawhub_spec: None,
+        },
+        PluginInstallRecordStub {
+            plugin_id: "enabled-plug".into(),
+            version: "1.0.0".into(),
+            is_operator_managed: false,
+            official_npm_spec: None,
+            official_clawhub_spec: None,
+        },
+    ];
+
+    let mut denied_ids = HashSet::new();
+    denied_ids.insert("denied-plug".into());
+
+    let mut disabled_ids = HashSet::new();
+    disabled_ids.insert("disabled-regular".into());
+    disabled_ids.insert("disabled-official".into());
+
+    let source_bundled_ids = HashSet::new();
+
+    let active_records = ActivePayloadVerification::filter_records_to_active(
+        &records,
+        &disabled_ids,
+        &denied_ids,
+        &source_bundled_ids,
+    );
+
+    let active_ids: Vec<String> = active_records.into_iter().map(|r| r.plugin_id).collect();
+    // Denied dropped; operator-managed dropped; disabled-regular dropped;
+    // disabled-official preserved; enabled-plug preserved.
+    assert_eq!(active_ids, vec!["disabled-official", "enabled-plug"]);
+
+    // 4. Active runtime registry compatibility
+    let active_id = ActiveRegistryIdentity {
+        cache_key: "cache-key-123".into(),
+        workspace_dir: Some("/workspace/alpha".into()),
+        loaded_plugin_ids: vec!["telegram".into(), "discord".into(), "telegram".into()],
+    };
+
+    // Workspace mismatch rejected
+    assert!(!ActiveRuntimeRegistryResolver::is_compatible(
+        Some(&active_id),
+        "cache-key-123",
+        Some("/workspace/beta"),
+    ));
+    assert!(!ActiveRuntimeRegistryResolver::is_compatible(
+        Some(&active_id),
+        "cache-key-123",
+        None,
+    ));
+
+    // Cache key mismatch rejected
+    assert!(!ActiveRuntimeRegistryResolver::is_compatible(
+        Some(&active_id),
+        "cache-key-456",
+        Some("/workspace/alpha"),
+    ));
+
+    // Exact match accepted
+    assert!(ActiveRuntimeRegistryResolver::is_compatible(
+        Some(&active_id),
+        "cache-key-123",
+        Some("/workspace/alpha"),
+    ));
+
+    // Sorted and deduplicated runtime plugin IDs
+    assert_eq!(
+        ActiveRuntimeRegistryResolver::list_runtime_plugin_ids(&active_id),
+        vec!["discord", "telegram"]
+    );
+}
+
+
 
 
 

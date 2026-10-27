@@ -83,6 +83,156 @@ impl ActivationPlanner {
         activated_plugins.sort();
         activated_plugins
     }
+
+    pub fn plan_activation_scoped(
+        &self,
+        triggers: &[ActivationTrigger],
+        only_plugin_ids: Option<&[String]>,
+    ) -> Vec<String> {
+        if let Some(scope) = only_plugin_ids {
+            if scope.is_empty() {
+                return Vec::new();
+            }
+        }
+        let mut activated = Vec::new();
+        let mut seen = HashSet::new();
+
+        let allowed_scope: Option<HashSet<&str>> =
+            only_plugin_ids.map(|s| s.iter().map(|id| id.as_str()).collect());
+
+        for trigger in triggers {
+            for plugin in self.plugins.values() {
+                if let Some(scope) = &allowed_scope {
+                    if !scope.contains(plugin.plugin_id.as_str()) {
+                        continue;
+                    }
+                }
+                if plugin.matches_trigger(trigger) && plugin.is_activatable() {
+                    if seen.insert(plugin.plugin_id.clone()) {
+                        activated.push(plugin.plugin_id.clone());
+                    }
+                }
+            }
+        }
+
+        activated.sort();
+        activated
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Activation Context & Source Configuration (from src/plugins/activation-source-config.ts & activation-context.ts)
+// ---------------------------------------------------------------------------
+
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+pub struct PluginActivationSourceResolver;
+
+impl PluginActivationSourceResolver {
+    pub fn resolve_source_config(
+        config: Option<&serde_json::Value>,
+        activation_source_config: Option<&serde_json::Value>,
+        runtime_config_capture: Option<&serde_json::Value>,
+    ) -> serde_json::Value {
+        if let Some(source) = activation_source_config {
+            return source.clone();
+        }
+        if let Some(captured) = runtime_config_capture {
+            return captured.clone();
+        }
+        config.cloned().unwrap_or_else(|| serde_json::json!({}))
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Active Payload Verification Filter (from src/plugins/active-payload-verification.ts)
+// ---------------------------------------------------------------------------
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct PluginInstallRecordStub {
+    pub plugin_id: String,
+    pub version: String,
+    pub is_operator_managed: bool,
+    pub official_npm_spec: Option<String>,
+    pub official_clawhub_spec: Option<String>,
+}
+
+#[derive(Debug, Clone, Default)]
+pub struct ActivePayloadVerification;
+
+impl ActivePayloadVerification {
+    pub fn filter_records_to_active(
+        records: &[PluginInstallRecordStub],
+        disabled_ids: &HashSet<String>,
+        denied_ids: &HashSet<String>,
+        source_bundled_ids: &HashSet<String>,
+    ) -> Vec<PluginInstallRecordStub> {
+        let mut filtered = Vec::new();
+
+        for record in records {
+            let id = &record.plugin_id;
+            // 1. Deny list drops record immediately
+            if denied_ids.contains(id) {
+                continue;
+            }
+            // 2. Source-bundled or operator-managed are excluded from payload verification
+            if source_bundled_ids.contains(id) || record.is_operator_managed {
+                continue;
+            }
+            // 3. Disabled plugins: retained only if trusted official npm/clawhub linked
+            if disabled_ids.contains(id) {
+                if record.official_npm_spec.is_some() || record.official_clawhub_spec.is_some() {
+                    filtered.push(record.clone());
+                }
+                continue;
+            }
+            // 4. Enabled plugins are retained
+            filtered.push(record.clone());
+        }
+
+        filtered.sort_by(|a, b| a.plugin_id.cmp(&b.plugin_id));
+        filtered
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Active Runtime Registry & Compatibility Resolution (from src/plugins/active-runtime-registry.ts)
+// ---------------------------------------------------------------------------
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ActiveRegistryIdentity {
+    pub cache_key: String,
+    pub workspace_dir: Option<String>,
+    pub loaded_plugin_ids: Vec<String>,
+}
+
+#[derive(Debug, Clone, Default)]
+pub struct ActiveRuntimeRegistryResolver;
+
+impl ActiveRuntimeRegistryResolver {
+    pub fn is_compatible(
+        active: Option<&ActiveRegistryIdentity>,
+        requested_key: &str,
+        requested_workspace_dir: Option<&str>,
+    ) -> bool {
+        let active = match active {
+            Some(a) => a,
+            None => return false,
+        };
+
+        // Workspace directory must match if specified
+        if active.workspace_dir.as_deref() != requested_workspace_dir {
+            return false;
+        }
+
+        active.cache_key == requested_key
+    }
+
+    pub fn list_runtime_plugin_ids(identity: &ActiveRegistryIdentity) -> Vec<String> {
+        let mut ids = identity.loaded_plugin_ids.clone();
+        ids.sort();
+        ids.dedup();
+        ids
+    }
 }
 
 // Plugin shape inspection & compatibility matrix (from src/plugins/inspect-shape.ts)

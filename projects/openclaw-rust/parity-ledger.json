@@ -10,10 +10,10 @@
     "ui_accepted": false
   },
   "file_coverage": {
-    "mapped_paths": 502,
+    "mapped_paths": 512,
     "omitted_known": 0,
     "tracked_paths": 58750,
-    "unclassified_paths": 58248
+    "unclassified_paths": 58238
   },
   "inventory_authority": {
     "manifest_source": "GitHub Actions immutable artifact candidate",
@@ -21257,19 +21257,91 @@
           "blob_sha": "6f76728b2e029676dbcd644935819f40b06a8247",
           "path": "src/plugins/activation-context.test.ts",
           "range": {
-            "end_line": 148,
+            "end_line": 144,
+            "start_line": 1
+          },
+          "symbol": "activation-context.test"
+        },
+        {
+          "blob_sha": "07b956a7115ac4eeece4413f0c361dd9d304f581",
+          "path": "src/plugins/activation-context.ts",
+          "range": {
+            "end_line": 155,
             "start_line": 1
           },
           "symbol": "activation-context"
         },
         {
-          "blob_sha": "d99f24acfe5f5e612f44d5eea96b071c607f0db4",
-          "path": "src/plugins/inspect-shape.ts",
+          "blob_sha": "94dfddf918ad6b41da0e2daaefed87c6ebf07198",
+          "path": "src/plugins/activation-planner.test.ts",
           "range": {
-            "end_line": 113,
+            "end_line": 152,
             "start_line": 1
           },
-          "symbol": "buildPluginShapeSummary"
+          "symbol": "activation-planner.test"
+        },
+        {
+          "blob_sha": "daf82bac45e4c14dd49e4d59e5d88ed13bf629c8",
+          "path": "src/plugins/activation-planner.ts",
+          "range": {
+            "end_line": 177,
+            "start_line": 1
+          },
+          "symbol": "activation-planner"
+        },
+        {
+          "blob_sha": "ee1c31b45e1bacd40291ad17c9677b8ab17e8ccb",
+          "path": "src/plugins/activation-source-config.ts",
+          "range": {
+            "end_line": 26,
+            "start_line": 1
+          },
+          "symbol": "activation-source-config"
+        },
+        {
+          "blob_sha": "d0d42dd6a9b6eecadf81897a065885af1c5970bb",
+          "path": "src/plugins/active-payload-verification.test.ts",
+          "range": {
+            "end_line": 78,
+            "start_line": 1
+          },
+          "symbol": "active-payload-verification.test"
+        },
+        {
+          "blob_sha": "efa07c1ed1bf096daddaeee934edb40763a874da",
+          "path": "src/plugins/active-payload-verification.ts",
+          "range": {
+            "end_line": 87,
+            "start_line": 1
+          },
+          "symbol": "active-payload-verification"
+        },
+        {
+          "blob_sha": "9806786b17c147a4d99295c5652102918a6c9e5a",
+          "path": "src/plugins/active-runtime-registry.import.test.ts",
+          "range": {
+            "end_line": 41,
+            "start_line": 1
+          },
+          "symbol": "active-runtime-registry.import.test"
+        },
+        {
+          "blob_sha": "5ca870b9af89f4dbd6f7970085f6f95221dfadd6",
+          "path": "src/plugins/active-runtime-registry.test.ts",
+          "range": {
+            "end_line": 356,
+            "start_line": 1
+          },
+          "symbol": "active-runtime-registry.test"
+        },
+        {
+          "blob_sha": "38f2cf4c2eaf9b8d3ac74ca3bfe47ec213311dc2",
+          "path": "src/plugins/active-runtime-registry.ts",
+          "range": {
+            "end_line": 176,
+            "start_line": 1
+          },
+          "symbol": "active-runtime-registry"
         },
         {
           "blob_sha": "b77201c8337de34f0d68bdfbbcbd1db4aaaf6a70",
@@ -21279,6 +21351,15 @@
             "start_line": 1
           },
           "symbol": "plugin shape compatibility matrix"
+        },
+        {
+          "blob_sha": "d99f24acfe5f5e612f44d5eea96b071c607f0db4",
+          "path": "src/plugins/inspect-shape.ts",
+          "range": {
+            "end_line": 113,
+            "start_line": 1
+          },
+          "symbol": "buildPluginShapeSummary"
         }
       ],
       "status": {
@@ -21296,7 +21377,8 @@
       },
       "tests": [
         "source/host/tests/openclaw_plugins_contract.rs::test_ocrm_plugins_activation_planner",
-        "source/host/tests/openclaw_plugins_contract.rs::test_ocrm_plugins_shape_compatibility_matrix"
+        "source/host/tests/openclaw_plugins_contract.rs::test_ocrm_plugins_shape_compatibility_matrix",
+        "source/host/tests/openclaw_plugins_contract.rs::test_ocrm_plugins_activation_context_payload_and_runtime_registry"
       ],
       "typed_contracts": [
         "ActivationPlanner",
