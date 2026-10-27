@@ -140,3 +140,34 @@ fn test_ocrm_plugins_hook_runner_and_provider_bridge() {
     assert_eq!(res.get("audio_len").unwrap().as_u64().unwrap(), 11);
     assert_eq!(res.get("sample_rate").unwrap().as_u64().unwrap(), 24000);
 }
+
+#[test]
+fn test_ocrm_plugins_boundary_invariants() {
+    // Tests equivalent behavior from upstream src/plugins/contracts/boundary-invariants.test.ts
+    use mahayana_host_runtime::extensions::plugins::hook_runner::HookBoundaryInvariantGuard;
+
+    // 1. Allowed bundled typed hooks
+    assert!(HookBoundaryInvariantGuard::is_allowed_typed_hook("agent_end"));
+    assert!(HookBoundaryInvariantGuard::is_allowed_typed_hook("before_prompt_build"));
+    assert!(HookBoundaryInvariantGuard::is_allowed_typed_hook("session_end"));
+    assert!(!HookBoundaryInvariantGuard::is_allowed_typed_hook("unknown_untyped_hook"));
+
+    // 2. Production code off raw registerHook calls
+    let clean_sources = [
+        ("extensions/acpx/index.ts", "api.on('reply_dispatch', () => {})"),
+        ("extensions/codex/index.ts", "api.on('inbound_claim', () => {})"),
+    ];
+    assert!(HookBoundaryInvariantGuard::assert_no_raw_register_hook_calls(&clean_sources).is_ok());
+
+    let bad_sources = [
+        ("extensions/legacy/index.ts", "api.registerHook('reply_dispatch', () => {})"),
+    ];
+    let violations = HookBoundaryInvariantGuard::assert_no_raw_register_hook_calls(&bad_sources).unwrap_err();
+    assert_eq!(violations, vec!["extensions/legacy/index.ts"]);
+
+    // 3. Bundled extension import boundary guards
+    assert!(HookBoundaryInvariantGuard::is_allowed_bundled_extension_import("extensions/browser/api.js"));
+    assert!(HookBoundaryInvariantGuard::is_allowed_bundled_extension_import("extensions/discord/runtime-api.js"));
+    assert!(!HookBoundaryInvariantGuard::is_allowed_bundled_extension_import("extensions/browser/src/internal-helper.js"));
+    assert!(!HookBoundaryInvariantGuard::is_allowed_bundled_extension_import("extensions/discord/subagent-hooks-api.ts"));
+}

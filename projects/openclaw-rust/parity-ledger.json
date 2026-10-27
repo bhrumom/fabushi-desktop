@@ -10,10 +10,10 @@
     "ui_accepted": false
   },
   "file_coverage": {
-    "mapped_paths": 402,
+    "mapped_paths": 403,
     "omitted_known": 0,
     "tracked_paths": 58750,
-    "unclassified_paths": 58348
+    "unclassified_paths": 58347
   },
   "inventory_authority": {
     "manifest_source": "GitHub Actions immutable artifact candidate",
@@ -21059,7 +21059,8 @@
         "RegisteredHook"
       ],
       "tests": [
-        "source/host/tests/openclaw_plugins_full_contract.rs::test_ocrm_plugins_hook_runner_and_provider_bridge"
+        "source/host/tests/openclaw_plugins_full_contract.rs::test_ocrm_plugins_hook_runner_and_provider_bridge",
+        "source/host/tests/openclaw_plugins_full_contract.rs::test_ocrm_plugins_boundary_invariants"
       ],
       "integration": {
         "producer": "source/host/src/extensions/plugins/hook_runner.rs",
@@ -21076,6 +21077,15 @@
             "end_line": 212
           },
           "symbol": "gateway-access-policy-registration-support"
+        },
+        {
+          "path": "src/plugins/contracts/boundary-invariants.test.ts",
+          "blob_sha": "670d679bc58abe6044d740e0227bc95c3eaca93c",
+          "range": {
+            "start_line": 1,
+            "end_line": 291
+          },
+          "symbol": "plugin contract boundary invariants"
         }
       ],
       "evidence_refs": [

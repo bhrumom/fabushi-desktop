@@ -123,3 +123,52 @@ impl ProviderExtensionBridge {
         handler(operation, params)
     }
 }
+
+// Boundary invariant validations (from src/plugins/contracts/boundary-invariants.test.ts)
+
+pub struct HookBoundaryInvariantGuard;
+
+impl HookBoundaryInvariantGuard {
+    pub const ALLOWED_BUNDLED_TYPED_HOOKS: &'static [&'static str] = &[
+        "agent_end",
+        "before_agent_reply",
+        "before_agent_run",
+        "before_prompt_build",
+        "before_tool_call",
+        "cron_changed",
+        "cron_reconciled",
+        "gateway_start",
+        "gateway_stop",
+        "inbound_claim",
+        "reply_dispatch",
+        "session_end",
+        "subagent_delivery_target",
+        "subagent_ended",
+    ];
+
+    pub fn is_allowed_typed_hook(hook_name: &str) -> bool {
+        Self::ALLOWED_BUNDLED_TYPED_HOOKS.contains(&hook_name)
+    }
+
+    pub fn assert_no_raw_register_hook_calls(sources: &[(&str, &str)]) -> Result<(), Vec<String>> {
+        let mut violations = Vec::new();
+        for (file_path, content) in sources {
+            if content.contains("registerHook(") {
+                violations.push(file_path.to_string());
+            }
+        }
+        if violations.is_empty() {
+            Ok(())
+        } else {
+            violations.sort();
+            Err(violations)
+        }
+    }
+
+    pub fn is_allowed_bundled_extension_import(specifier: &str) -> bool {
+        if !specifier.contains("extensions/") {
+            return true;
+        }
+        specifier.ends_with("/api.js") || specifier.ends_with("/runtime-api.js")
+    }
+}

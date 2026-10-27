@@ -31,3 +31,4 @@
   - `test_ocrm_plugins_installed_index_store` (PASSED)
   - `test_ocrm_plugins_manifest_doctor` (PASSED)
   - `test_ocrm_plugins_hook_runner_and_provider_bridge` (PASSED)
+  - `test_ocrm_plugins_boundary_invariants` (PASSED)
