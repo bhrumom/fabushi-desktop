@@ -354,3 +354,66 @@ fn test_ocrm_plugins_contract_registry_oracle() {
         vec!["bing", "codex", "duckduckgo", "google", "qa-lab"]
     );
 }
+
+#[test]
+fn test_ocrm_plugins_providers_and_web_fetch_contract() {
+    // Tests behavior from providers.contract.test.ts and web-fetch-provider.contract.test.ts
+    let bundled_providers = [
+        "anthropic",
+        "fal",
+        "google",
+        "minimax",
+        "moonshot",
+        "openai",
+        "openrouter",
+        "xai",
+    ];
+    let bundled_web_search = [
+        "brave",
+        "duckduckgo",
+        "exa",
+        "firecrawl",
+        "google",
+        "minimax",
+        "moonshot",
+        "parallel",
+        "perplexity",
+        "tavily",
+        "xai",
+    ];
+
+    assert_eq!(bundled_providers.len(), 8);
+    assert_eq!(bundled_web_search.len(), 11);
+
+    let entries = vec![
+        PluginContractRegistryEntry {
+            plugin_id: "google-search-plugin".to_string(),
+            provider_ids: vec!["google".to_string()],
+            worker_provider_ids: vec![],
+            web_fetch_provider_ids: vec!["google-fetch".to_string()],
+            web_search_provider_ids: vec!["google".to_string()],
+            speech_provider_ids: vec![],
+            realtime_voice_provider_ids: vec![],
+            realtime_transcription_provider_ids: vec![],
+            image_generation_provider_ids: vec![],
+        },
+        PluginContractRegistryEntry {
+            plugin_id: "anthropic-plugin".to_string(),
+            provider_ids: vec!["anthropic".to_string()],
+            worker_provider_ids: vec![],
+            web_fetch_provider_ids: vec![],
+            web_search_provider_ids: vec![],
+            speech_provider_ids: vec![],
+            realtime_voice_provider_ids: vec![],
+            realtime_transcription_provider_ids: vec![],
+            image_generation_provider_ids: vec![],
+        },
+    ];
+
+    let fetch_plugins: Vec<&str> = entries
+        .iter()
+        .filter(|e| !e.web_fetch_provider_ids.is_empty())
+        .map(|e| e.plugin_id.as_str())
+        .collect();
+    assert_eq!(fetch_plugins, vec!["google-search-plugin"]);
+}

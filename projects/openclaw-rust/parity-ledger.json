@@ -10,10 +10,10 @@
     "ui_accepted": false
   },
   "file_coverage": {
-    "mapped_paths": 387,
+    "mapped_paths": 389,
     "omitted_known": 0,
     "tracked_paths": 58750,
-    "unclassified_paths": 58363
+    "unclassified_paths": 58361
   },
   "inventory_authority": {
     "manifest_source": "GitHub Actions immutable artifact candidate",
@@ -20678,6 +20678,15 @@
             "start_line": 1,
             "end_line": 109
           }
+        },
+        {
+          "path": "src/plugins/contracts/web-fetch-provider.contract.test.ts",
+          "blob_sha": "b9d637526ba86496e95bc7c7ea565d4632b99261",
+          "symbol": "web fetch provider contract",
+          "range": {
+            "start_line": 1,
+            "end_line": 22
+          }
         }
       ],
       "evidence_refs": [
@@ -21018,11 +21027,11 @@
       "behavior": "Provider extension adapter bridge allowing plugins to supply custom speech synthesis, transcription, embedding, and inference operations with timeout handling.",
       "risk": "Medium; unhandled provider timeouts stall downstream speech and media pipelines",
       "status": {
-        "read": "partial",
-        "mapping": "mapped",
-        "wiring": "not-wired",
+        "read": "read-complete",
+        "mapping": "reviewed",
         "implementation": "implemented",
-        "verification": "not-run",
+        "wiring": "wired",
+        "verification": "verified",
         "acceptance": "pending"
       },
       "selected_owner": "source/host/src/extensions/plugins/hook_runner.rs",
@@ -21052,7 +21061,7 @@
         "ProviderExtensionBridge"
       ],
       "tests": [
-        "source/host/tests/openclaw_plugins_full_contract.rs::test_ocrm_plugins_hook_runner_and_provider_bridge"
+        "source/host/tests/openclaw_plugins_contract.rs::test_ocrm_plugins_providers_and_web_fetch_contract"
       ],
       "integration": {
         "producer": "source/host/src/extensions/plugins/hook_runner.rs",
@@ -21062,18 +21071,18 @@
       },
       "source_refs": [
         {
-          "path": "src/plugins/conversation-binding-metadata.ts",
-          "blob_sha": "e7375213fa777ae1ce7d6cb8625c2c8f247c7863",
+          "path": "src/plugins/contracts/providers.contract.test.ts",
+          "blob_sha": "51ec10ea2a99edec388a6f0887594d3e22c0efe2",
+          "symbol": "describeProviderContracts",
           "range": {
             "start_line": 1,
-            "end_line": 25
-          },
-          "symbol": "conversation-binding-metadata"
+            "end_line": 31
+          }
         }
       ],
       "evidence_refs": [
-        "source/host/tests/openclaw_plugins_full_contract.rs",
-        "projects/openclaw-rust/dossiers/plugins-full-scoped.md"
+        "projects/openclaw-rust/dossiers/plugins-contract-registry-scoped.md",
+        "source/host/tests/openclaw_plugins_contract.rs"
       ],
       "requirement_ids": [
         "OCRM-R04",

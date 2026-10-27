@@ -5,6 +5,8 @@
   - `src/plugins/contracts/registry.ts` (356 lines, SHA: `d866a2cb1e3677ceb22100806495be13ee831cba`)
   - `src/plugins/contracts/registry.contract.test.ts` (201 lines, SHA: `fb8b4614dac4a4d580a373efeff1575a91db49b1`)
   - `src/plugins/contracts/capability-catalog.contract.test.ts` (109 lines, SHA: `67ac28b12ca8a15ade41dbfea4c18488bc051f86`)
+  - `src/plugins/contracts/providers.contract.test.ts` (31 lines, SHA: `51ec10ea2a99edec388a6f0887594d3e22c0efe2`)
+  - `src/plugins/contracts/web-fetch-provider.contract.test.ts` (22 lines, SHA: `b9d637526ba86496e95bc7c7ea565d4632b99261`)
 - **Upstream Commit**: `ad8d12f126d29b0db204187adf5092db80294e70` (tree `04ccce62f1d74dc8e0c88290ae8ded027b7b0f16`).
 - **Module ID**: `OCRM-M28` (plugins).
 - **Reviewer**: `xuyao@ombhrum.com`.
