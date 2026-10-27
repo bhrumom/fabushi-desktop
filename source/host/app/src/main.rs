@@ -3322,6 +3322,9 @@ impl UnifiedGatewayApi {
             return Ok(serde_json::json!({ "messages": [] }));
         }
 
+        reject_public_agent_harness_session_key(raw_key)
+            .map_err(|message| GatewayCommandError::BadRequest(message.into()))?;
+
         let agent_id = if let Some(stripped) = raw_key.strip_prefix("agent:") {
             stripped.split(':').next().unwrap_or(stripped)
         } else {
@@ -3408,6 +3411,9 @@ impl UnifiedGatewayApi {
         if raw_key.is_empty() {
             return Err(GatewayCommandError::BadRequest("sessions.delete requires key or sessionId".into()));
         }
+
+        reject_public_agent_harness_session_key(raw_key)
+            .map_err(|message| GatewayCommandError::BadRequest(message.into()))?;
 
         if raw_key == "global" || raw_key == "agent:global:main" {
             return Err(GatewayCommandError::BadRequest("Cannot delete root main session".into()));

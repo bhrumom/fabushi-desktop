@@ -11435,7 +11435,7 @@
       ],
       "id": "OCRM-RESP-SESSION-KEY-ROUTING-001",
       "integration": {
-        "consumer": "source/host/app/src/main.rs::call_openclaw_chat_send/call_openclaw_chat_abort",
+        "consumer": "source/host/app/src/main.rs::call_openclaw_sessions_get/call_openclaw_sessions_delete/call_openclaw_chat_send/call_openclaw_chat_abort",
         "entrypoint": "source/host/src/extensions/session/session_paths.rs::reject_public_agent_harness_session_key",
         "owner": "source/host/src/extensions/session/session_paths.rs",
         "producer": "source/host/src/extensions/session/session_paths.rs::is_agent_harness_session_key"
