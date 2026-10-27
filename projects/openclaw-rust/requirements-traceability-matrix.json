@@ -304,7 +304,9 @@
         "OCRM-RESP-CONFIG-SINGLE-WRITER-LOCK-001",
         "OCRM-RESP-CONFIG-IO-SNAPSHOT-001",
         "OCRM-RESP-CONFIG-SCHEMA-NORMALIZATION-001",
-        "OCRM-RESP-CONFIG-AGENT-WORKSPACE-DIRS-001"
+        "OCRM-RESP-CONFIG-AGENT-WORKSPACE-DIRS-001",
+        "OCRM-RESP-MCP-CHANNEL-BRIDGE-001",
+        "OCRM-RESP-MCP-TOOLS-STDIO-SERVER-001"
       ],
       "reviewer": "xuyao@ombhrum.com"
     },
@@ -1059,7 +1061,10 @@
       "not_applicable_reason": null,
       "oracle_ids": [],
       "requirement_text_source": "docs/specs/openclaw-rust-equivalence-migration.md#15",
-      "responsibility_ids": [],
+      "responsibility_ids": [
+        "OCRM-RESP-MCP-CHANNEL-BRIDGE-001",
+        "OCRM-RESP-MCP-TOOLS-STDIO-SERVER-001"
+      ],
       "reviewer": null
     },
     {

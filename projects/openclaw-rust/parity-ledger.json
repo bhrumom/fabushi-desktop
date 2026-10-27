@@ -10,10 +10,10 @@
     "ui_accepted": false
   },
   "file_coverage": {
-    "mapped_paths": 445,
+    "mapped_paths": 470,
     "omitted_known": 0,
     "tracked_paths": 58750,
-    "unclassified_paths": 58305
+    "unclassified_paths": 58280
   },
   "inventory_authority": {
     "manifest_source": "GitHub Actions immutable artifact candidate",
@@ -18018,6 +18018,410 @@
       ],
       "reviewer": "xuyao@ombhrum.com",
       "migration_rollback": "Bypass event logging and write directly to memory files without diagnostics"
+    },
+    {
+      "id": "OCRM-RESP-MCP-CHANNEL-BRIDGE-001",
+      "unit_id": "OCRM-UNIT-MCP-001",
+      "responsibility_kind": "business-runtime",
+      "behavior": "MCP channel bridge connecting gateway client, event queueing with 1,000 item capacity, Claude desktop permission reply regex parsing, and pending approval TTL management.",
+      "risk": "Medium; manages event queues and permission authorization for external MCP clients",
+      "status": {
+        "read": "read-complete",
+        "mapping": "reviewed",
+        "wiring": "not-wired",
+        "implementation": "implemented",
+        "verification": "not-run",
+        "acceptance": "pending"
+      },
+      "selected_owner": "source/host/src/extensions/mcp/channel_bridge.rs",
+      "existing_owner_candidates": [
+        {
+          "path": "source/host/src/extensions/mcp/channel_bridge.rs",
+          "reason": "MCP channel bridge and event queue manager"
+        }
+      ],
+      "owner_decision": "Native implementation in channel_bridge under mcp extension",
+      "dependencies": [
+        "mahayana_host_runtime::extensions::mcp::channel_bridge"
+      ],
+      "capability_ids": [
+        "mcp.channel_bridge"
+      ],
+      "preconditions": [
+        "Gateway client event or Claude permission reply text provided"
+      ],
+      "postconditions": [
+        "Events queued with capacity limits and permission shortcodes validated"
+      ],
+      "invariants": [
+        "Queue capacity strictly capped at 1,000 events with oldest eviction",
+        "Claude desktop permission reply matches (yes|no) followed by 5-char alphabet [a-km-z]",
+        "Pending approval entries swept on TTL expiration"
+      ],
+      "typed_contracts": [
+        "McpChannelBridgeState",
+        "McpQueueEvent",
+        "McpPendingApproval",
+        "parse_claude_permission_reply"
+      ],
+      "tests": [
+        "source/host/tests/openclaw_mcp_channel_tools_contract.rs::test_ocrm_mcp_claude_permission_reply_parsing",
+        "source/host/tests/openclaw_mcp_channel_tools_contract.rs::test_ocrm_mcp_queue_bounding_and_approval_sweep"
+      ],
+      "integration": {
+        "producer": "source/host/src/extensions/mcp/channel_bridge.rs",
+        "owner": "source/host/src/extensions/mcp/channel_bridge.rs",
+        "consumer": "source/host/src/extensions/mcp/channel_bridge.rs",
+        "entrypoint": "source/host/src/extensions/mcp/channel_bridge.rs::parse_claude_permission_reply"
+      },
+      "source_refs": [
+        {
+          "path": "src/mcp/channel-bridge.startup.test.ts",
+          "blob_sha": "fcd3627f8853b20c70907939190495504c841534",
+          "range": {
+            "start_line": 1,
+            "end_line": 96
+          },
+          "symbol": "channel-bridge.startup.test"
+        },
+        {
+          "path": "src/mcp/channel-bridge.test.ts",
+          "blob_sha": "0dc86ac5001b8fb8feb92c7d987d90ad66d9de7b",
+          "range": {
+            "start_line": 1,
+            "end_line": 187
+          },
+          "symbol": "channel-bridge.test"
+        },
+        {
+          "path": "src/mcp/channel-bridge.ts",
+          "blob_sha": "7d466346b68035920f6699311ca17320ca4bf00e",
+          "range": {
+            "start_line": 1,
+            "end_line": 624
+          },
+          "symbol": "channel-bridge"
+        },
+        {
+          "path": "src/mcp/channel-server.shutdown-unhandled-rejection.test.ts",
+          "blob_sha": "9d5c9000ac4ef85b44db8b7177a4319a9822aa2f",
+          "range": {
+            "start_line": 1,
+            "end_line": 108
+          },
+          "symbol": "channel-server.shutdown-unhandled-rejection.test"
+        },
+        {
+          "path": "src/mcp/channel-server.test.ts",
+          "blob_sha": "da0cd528d04b22bb073b504f1662763b97accda5",
+          "range": {
+            "start_line": 1,
+            "end_line": 446
+          },
+          "symbol": "channel-server.test"
+        },
+        {
+          "path": "src/mcp/channel-server.ts",
+          "blob_sha": "0dc22f3e46c4c17beeffa5e5b94ef9c0dff53ae2",
+          "range": {
+            "start_line": 1,
+            "end_line": 305
+          },
+          "symbol": "channel-server"
+        },
+        {
+          "path": "src/mcp/channel-shared.ts",
+          "blob_sha": "c323286f63397d59ed4a9d1134b183bb11ed6096",
+          "range": {
+            "start_line": 1,
+            "end_line": 236
+          },
+          "symbol": "channel-shared"
+        }
+      ],
+      "evidence_refs": [
+        "source/host/tests/openclaw_mcp_channel_tools_contract.rs",
+        "projects/openclaw-rust/dossiers/mcp-channel-tools-scoped.md"
+      ],
+      "requirement_ids": [
+        "OCRM-R09",
+        "OCRM-AC09"
+      ],
+      "required_gate_ids": [
+        "OCRM-G04-rust-contract",
+        "OCRM-G05-frozen-oracle"
+      ],
+      "oracle_ids": [
+        "OCRM-MCP-BRIDGE-O01",
+        "OCRM-MCP-BRIDGE-O02"
+      ],
+      "adr_refs": [],
+      "blocker_ids": [
+        "BL-MCP-BRIDGE-EXEC-WIRING-001"
+      ],
+      "target": {
+        "path": "source/host/src/extensions/mcp/channel_bridge.rs",
+        "symbol": "parse_claude_permission_reply",
+        "language": "Rust"
+      },
+      "required_evidence_dimensions": [
+        "unit",
+        "format",
+        "boundary"
+      ],
+      "reviewer": "xuyao@ombhrum.com",
+      "migration_rollback": "Disconnect external MCP channel bridge and rely on native gateway websocket connection"
+    },
+    {
+      "id": "OCRM-RESP-MCP-TOOLS-STDIO-SERVER-001",
+      "unit_id": "OCRM-UNIT-MCP-001",
+      "responsibility_kind": "business-runtime",
+      "behavior": "Stdio MCP tool server hosting registered plugin tools, async work draining on close, request cancellation tracking, and tool policy filtering.",
+      "risk": "Medium; exposes plugin tools to external sub-agents and ACP sessions over stdio",
+      "status": {
+        "read": "read-complete",
+        "mapping": "reviewed",
+        "wiring": "not-wired",
+        "implementation": "implemented",
+        "verification": "not-run",
+        "acceptance": "pending"
+      },
+      "selected_owner": "source/host/src/extensions/mcp/tools_stdio_server.rs",
+      "existing_owner_candidates": [
+        {
+          "path": "source/host/src/extensions/mcp/tools_stdio_server.rs",
+          "reason": "Stdio MCP tool server lifecycle and policy manager"
+        }
+      ],
+      "owner_decision": "Native implementation in tools_stdio_server under mcp extension",
+      "dependencies": [
+        "mahayana_host_runtime::extensions::mcp::tools_stdio_server"
+      ],
+      "capability_ids": [
+        "mcp.tools_stdio_server"
+      ],
+      "preconditions": [
+        "Tool descriptors and execution requests provided over stdio"
+      ],
+      "postconditions": [
+        "Tools filtered according to policy and active work drained gracefully on close"
+      ],
+      "invariants": [
+        "Incoming requests rejected after close is initiated",
+        "Deny policy strictly takes precedence over allow rules",
+        "Draining ensures in-flight tool tasks complete before process termination"
+      ],
+      "typed_contracts": [
+        "McpToolDescriptor",
+        "McpToolPolicy",
+        "McpToolsServerLifecycle",
+        "filter_tools_for_mcp"
+      ],
+      "tests": [
+        "source/host/tests/openclaw_mcp_channel_tools_contract.rs::test_ocrm_mcp_tools_server_lifecycle",
+        "source/host/tests/openclaw_mcp_channel_tools_contract.rs::test_ocrm_mcp_tool_policy_filtering"
+      ],
+      "integration": {
+        "producer": "source/host/src/extensions/mcp/tools_stdio_server.rs",
+        "owner": "source/host/src/extensions/mcp/tools_stdio_server.rs",
+        "consumer": "source/host/src/extensions/mcp/tools_stdio_server.rs",
+        "entrypoint": "source/host/src/extensions/mcp/tools_stdio_server.rs::filter_tools_for_mcp"
+      },
+      "source_refs": [
+        {
+          "path": "src/mcp/agent-session-env.ts",
+          "blob_sha": "1f72b98e8cd954564c0c366c83b4d8545b551ba3",
+          "range": {
+            "start_line": 1,
+            "end_line": 43
+          },
+          "symbol": "agent-session-env"
+        },
+        {
+          "path": "src/mcp/agent-session-owner.test.ts",
+          "blob_sha": "1b0bea81b78f404ed24ed7625fcdc5e4f424a72f",
+          "range": {
+            "start_line": 1,
+            "end_line": 47
+          },
+          "symbol": "agent-session-owner.test"
+        },
+        {
+          "path": "src/mcp/codex-supervision-tools-serve.test.ts",
+          "blob_sha": "273e55f2f2bf0192cb93b033a9f0256871435053",
+          "range": {
+            "start_line": 1,
+            "end_line": 124
+          },
+          "symbol": "codex-supervision-tools-serve.test"
+        },
+        {
+          "path": "src/mcp/codex-supervision-tools-serve.ts",
+          "blob_sha": "87fef4a5685c6b433452acd46c0f1164e2f75564",
+          "range": {
+            "start_line": 1,
+            "end_line": 120
+          },
+          "symbol": "codex-supervision-tools-serve"
+        },
+        {
+          "path": "src/mcp/openclaw-tools-serve-config.ts",
+          "blob_sha": "8a230fc1e5a1a4d8b0278ef28e1b77fa2e6ca3d7",
+          "range": {
+            "start_line": 1,
+            "end_line": 158
+          },
+          "symbol": "openclaw-tools-serve-config"
+        },
+        {
+          "path": "src/mcp/openclaw-tools-serve.test.ts",
+          "blob_sha": "80bb1efeecf8f8a29b2e60b04ecc613492816f6a",
+          "range": {
+            "start_line": 1,
+            "end_line": 177
+          },
+          "symbol": "openclaw-tools-serve.test"
+        },
+        {
+          "path": "src/mcp/openclaw-tools-serve.ts",
+          "blob_sha": "20214325e0a0d04012786923ec98f31475a21b73",
+          "range": {
+            "start_line": 1,
+            "end_line": 104
+          },
+          "symbol": "openclaw-tools-serve"
+        },
+        {
+          "path": "src/mcp/plugin-tools-handlers.cancel.test.ts",
+          "blob_sha": "e3acb64bd2b8b897f8fc50e5c0f8cd7c7b4448f1",
+          "range": {
+            "start_line": 1,
+            "end_line": 292
+          },
+          "symbol": "plugin-tools-handlers.cancel.test"
+        },
+        {
+          "path": "src/mcp/plugin-tools-handlers.ts",
+          "blob_sha": "a4c6ad2286313226007d2527ed5929494dd21aa2",
+          "range": {
+            "start_line": 1,
+            "end_line": 129
+          },
+          "symbol": "plugin-tools-handlers"
+        },
+        {
+          "path": "src/mcp/plugin-tools-mcp-client.test.ts",
+          "blob_sha": "5347d441e34ad7c43ccc6face68ddc0f3e7a31f6",
+          "range": {
+            "start_line": 1,
+            "end_line": 91
+          },
+          "symbol": "plugin-tools-mcp-client.test"
+        },
+        {
+          "path": "src/mcp/plugin-tools-registration.stdio.test.ts",
+          "blob_sha": "ecc05e36e82209356da529aeb0e937f82f64f394",
+          "range": {
+            "start_line": 1,
+            "end_line": 44
+          },
+          "symbol": "plugin-tools-registration.stdio.test"
+        },
+        {
+          "path": "src/mcp/plugin-tools-registration.test.ts",
+          "blob_sha": "64990f960bec0af2f8b7ce0673d49afb63c9ea11",
+          "range": {
+            "start_line": 1,
+            "end_line": 366
+          },
+          "symbol": "plugin-tools-registration.test"
+        },
+        {
+          "path": "src/mcp/plugin-tools-serve.test.ts",
+          "blob_sha": "188ad3e4dd705d3983b50328ba7d1be49b18a8c4",
+          "range": {
+            "start_line": 1,
+            "end_line": 330
+          },
+          "symbol": "plugin-tools-serve.test"
+        },
+        {
+          "path": "src/mcp/plugin-tools-serve.ts",
+          "blob_sha": "22c1360d41eb2aab894518fd0acbc83dab8e6e74",
+          "range": {
+            "start_line": 1,
+            "end_line": 120
+          },
+          "symbol": "plugin-tools-serve"
+        },
+        {
+          "path": "src/mcp/tools-mcp.test-support.ts",
+          "blob_sha": "3d15765c3de31df78aeb9cb62c2593d65801d4e6",
+          "range": {
+            "start_line": 1,
+            "end_line": 57
+          },
+          "symbol": "tools-mcp.test-support"
+        },
+        {
+          "path": "src/mcp/tools-stdio-server.lifecycle.fixture.mjs",
+          "blob_sha": "5cb7d9a6b5813063dc0114653ea4cd70bb5c6a45",
+          "range": {
+            "start_line": 1,
+            "end_line": 248
+          },
+          "symbol": "tools-stdio-server.lifecycle.fixture"
+        },
+        {
+          "path": "src/mcp/tools-stdio-server.lifecycle.test.ts",
+          "blob_sha": "c3d3ee2748857f4915245ce02c07a28860c89478",
+          "range": {
+            "start_line": 1,
+            "end_line": 61
+          },
+          "symbol": "tools-stdio-server.lifecycle.test"
+        },
+        {
+          "path": "src/mcp/tools-stdio-server.ts",
+          "blob_sha": "ef5a603bce25ebe2247966c40932e8539ae80632",
+          "range": {
+            "start_line": 1,
+            "end_line": 203
+          },
+          "symbol": "tools-stdio-server"
+        }
+      ],
+      "evidence_refs": [
+        "source/host/tests/openclaw_mcp_channel_tools_contract.rs",
+        "projects/openclaw-rust/dossiers/mcp-channel-tools-scoped.md"
+      ],
+      "requirement_ids": [
+        "OCRM-R09",
+        "OCRM-AC09"
+      ],
+      "required_gate_ids": [
+        "OCRM-G04-rust-contract",
+        "OCRM-G05-frozen-oracle"
+      ],
+      "oracle_ids": [
+        "OCRM-MCP-TOOLS-O01",
+        "OCRM-MCP-TOOLS-O02"
+      ],
+      "adr_refs": [],
+      "blocker_ids": [
+        "BL-MCP-TOOLS-EXEC-WIRING-001"
+      ],
+      "target": {
+        "path": "source/host/src/extensions/mcp/tools_stdio_server.rs",
+        "symbol": "filter_tools_for_mcp",
+        "language": "Rust"
+      },
+      "required_evidence_dimensions": [
+        "unit",
+        "format"
+      ],
+      "reviewer": "xuyao@ombhrum.com",
+      "migration_rollback": "Disable standalone stdio tools server and use internal runner tool invocation"
     }
   ],
   "schema_version": 1,
