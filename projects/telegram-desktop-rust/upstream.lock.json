@@ -309,12 +309,303 @@
     }
   },
   "recursive_submodule_spot_checks": {
-    "status": "partial-read-only-connector-evidence-not-full-closure",
+    "status": "direct-gitlink-recursive-tree-scans-complete-nested-cppgir-unresolved",
     "authority": "telegramdesktop/tdesktop@f985723b552b30fe1c17d377d57f44e61a15a8c4",
     "checked": [
       {
+        "repository": "Microsoft/GSL",
+        "commit": "87f9d768866548b5b86e72be66c60c5abd4d9b37",
+        "path": "Telegram/ThirdParty/GSL",
+        "entries": 51,
+        "truncated": false,
+        "nested_gitlinks": []
+      },
+      {
+        "repository": "desktop-app/MicroTeX",
+        "commit": "61aaa7cc354de91d5898ffb0b2a6c62628d9a76f",
+        "path": "Telegram/ThirdParty/MicroTeX",
+        "entries": 315,
+        "truncated": false,
+        "nested_gitlinks": []
+      },
+      {
+        "repository": "nayuki/QR-Code-generator",
+        "commit": "720f62bddb7226106071d4728c292cb1df519ceb",
+        "path": "Telegram/ThirdParty/QR",
+        "entries": 73,
+        "truncated": false,
+        "nested_gitlinks": []
+      },
+      {
+        "repository": "tzcnt/TooManyCooks",
+        "commit": "b86af81982860c96295a7e95e4c60cb335615cef",
+        "path": "Telegram/ThirdParty/TooManyCooks",
+        "entries": 135,
+        "truncated": false,
+        "nested_gitlinks": []
+      },
+      {
+        "repository": "google/cld3",
+        "commit": "b48dc46512566f5a2d41118c8c1116c4f96dc661",
+        "path": "Telegram/ThirdParty/cld3",
+        "entries": 94,
+        "truncated": false,
+        "nested_gitlinks": []
+      },
+      {
+        "repository": "desktop-app/cmark-gfm",
+        "commit": "d7d4a24a9ebfa7581994ea6df0297662bfeaf413",
+        "path": "Telegram/ThirdParty/cmark-gfm",
+        "entries": 178,
+        "truncated": false,
+        "nested_gitlinks": []
+      },
+      {
+        "repository": "TartanLlama/expected",
+        "commit": "292eff8bd8ee230a7df1d6a1c00c4ea0eb2f0362",
+        "path": "Telegram/ThirdParty/expected",
+        "entries": 30,
+        "truncated": false,
+        "nested_gitlinks": []
+      },
+      {
+        "repository": "fcitx/fcitx5-qt",
+        "commit": "0285a5d18367d8f3af80dab7e4819d5555982340",
+        "path": "Telegram/ThirdParty/fcitx5-qt",
+        "entries": 241,
+        "truncated": false,
+        "nested_gitlinks": []
+      },
+      {
+        "repository": "hime-ime/hime",
+        "commit": "9b3e6f9ab59d1fe4d9de73d3bf0fed7789f921c5",
+        "path": "Telegram/ThirdParty/hime",
+        "entries": 628,
+        "truncated": false,
+        "nested_gitlinks": []
+      },
+      {
+        "repository": "hunspell/hunspell",
+        "commit": "a698d8b53cab3507d1d619d5fa08a88777abe50b",
+        "path": "Telegram/ThirdParty/hunspell",
+        "entries": 865,
+        "truncated": false,
+        "nested_gitlinks": []
+      },
+      {
+        "repository": "KDE/kcoreaddons",
+        "commit": "fd84da51b554eac25e35b1e3f373edaab3029b15",
+        "path": "Telegram/ThirdParty/kcoreaddons",
+        "entries": 504,
+        "truncated": false,
+        "nested_gitlinks": []
+      },
+      {
+        "repository": "KDE/kimageformats",
+        "commit": "df82311a1081e576c4ac020204578bb8a81b21ec",
+        "path": "Telegram/ThirdParty/kimageformats",
+        "entries": 403,
+        "truncated": false,
+        "nested_gitlinks": []
+      },
+      {
+        "repository": "PJK/libcbor",
+        "commit": "170bee2b82cdb7b2ed25af301f62cb6efdd40ec1",
+        "path": "Telegram/ThirdParty/libcbor",
+        "entries": 201,
+        "truncated": false,
+        "nested_gitlinks": [
+          {
+            "path": "doxygen-theme",
+            "commit": "46111c61a9f49b7a9886127e679d4317478fab1c"
+          }
+        ]
+      },
+      {
+        "repository": "Yubico/libfido2",
+        "commit": "b974e7cf2ee7392134cc12c08b76a068cf250dd8",
+        "path": "Telegram/ThirdParty/libfido2",
+        "entries": 274,
+        "truncated": false,
+        "nested_gitlinks": []
+      },
+      {
+        "repository": "desktop-app/libprisma",
+        "commit": "75f26c17308871bee69f69a2831a8af2bc2f3627",
+        "path": "Telegram/ThirdParty/libprisma",
+        "entries": 22,
+        "truncated": false,
+        "nested_gitlinks": []
+      },
+      {
+        "repository": "lz4/lz4",
+        "commit": "5ff839680134437dbf4678f3d0c7b371d84f4964",
+        "path": "Telegram/ThirdParty/lz4",
+        "entries": 243,
+        "truncated": false,
+        "nested_gitlinks": []
+      },
+      {
+        "repository": "hamonikr/nimf",
+        "commit": "498ec7ffab3ac140c2469638a14451788f03e798",
+        "path": "Telegram/ThirdParty/nimf",
+        "entries": 412,
+        "truncated": false,
+        "nested_gitlinks": []
+      },
+      {
+        "repository": "ericniebler/range-v3",
+        "commit": "5ba39112d2eafbb3c851a16a537f29b445022998",
+        "path": "Telegram/ThirdParty/range-v3",
+        "entries": 719,
+        "truncated": false,
+        "nested_gitlinks": [
+          {
+            "path": "doc/gh-pages",
+            "commit": "2dae74bb693e42d850fb0adcc9045c5b71fbdeae"
+          }
+        ]
+      },
+      {
+        "repository": "TelegramMessenger/tgcalls",
+        "commit": "1c236c09f8d8569fead14bd68000618a52051225",
+        "path": "Telegram/ThirdParty/tgcalls",
+        "entries": 347,
+        "truncated": false,
+        "nested_gitlinks": []
+      },
+      {
+        "repository": "flatpak/xdg-desktop-portal",
+        "commit": "23a76c392170dbbd26230f85ef56c3a57e52b857",
+        "path": "Telegram/ThirdParty/xdg-desktop-portal",
+        "entries": 438,
+        "truncated": false,
+        "nested_gitlinks": []
+      },
+      {
+        "repository": "Cyan4973/xxHash",
+        "commit": "c87183a77d67f7d37e3d2d1b7eaac5e7c695e4f0",
+        "path": "Telegram/ThirdParty/xxHash",
+        "entries": 114,
+        "truncated": false,
+        "nested_gitlinks": []
+      },
+      {
+        "repository": "tsyrogit/zxcvbn-c",
+        "commit": "ab51000506afc1a450557a3608646bc04ba951fa",
+        "path": "Telegram/ThirdParty/zxcvbn",
+        "entries": 19,
+        "truncated": false,
+        "nested_gitlinks": []
+      },
+      {
+        "repository": "desktop-app/codegen",
+        "commit": "dbd1d53137cd581cfdbeebe93bcaf54abf55ec74",
+        "path": "Telegram/codegen",
+        "entries": 61,
+        "truncated": false,
+        "nested_gitlinks": []
+      },
+      {
+        "repository": "desktop-app/lib_base",
+        "commit": "95a543e426e35938dd632139d0bb828b268c3b4c",
+        "path": "Telegram/lib_base",
+        "entries": 254,
+        "truncated": false,
+        "nested_gitlinks": []
+      },
+      {
+        "repository": "desktop-app/lib_crl",
+        "commit": "de724667d7bdfbf906f78fc405af1ee9f7723d49",
+        "path": "Telegram/lib_crl",
+        "entries": 62,
+        "truncated": false,
+        "nested_gitlinks": []
+      },
+      {
+        "repository": "desktop-app/lib_lottie",
+        "commit": "fbb922c30b7c30ba17ad5fd4fcb989eadd620062",
+        "path": "Telegram/lib_lottie",
+        "entries": 35,
+        "truncated": false,
+        "nested_gitlinks": []
+      },
+      {
+        "repository": "desktop-app/lib_qr",
+        "commit": "6fdf60461444ba150e13ac36009c0ffce72c4c83",
+        "path": "Telegram/lib_qr",
+        "entries": 4,
+        "truncated": false,
+        "nested_gitlinks": []
+      },
+      {
+        "repository": "desktop-app/lib_rpl",
+        "commit": "c57cccffb01d85570decd7fccb88419c9a682e63",
+        "path": "Telegram/lib_rpl",
+        "entries": 35,
+        "truncated": false,
+        "nested_gitlinks": []
+      },
+      {
+        "repository": "desktop-app/lib_spellcheck",
+        "commit": "3273fd25c185fb626a9836dafbd644c2bd129ee1",
+        "path": "Telegram/lib_spellcheck",
+        "entries": 46,
+        "truncated": false,
+        "nested_gitlinks": []
+      },
+      {
+        "repository": "desktop-app/lib_storage",
+        "commit": "ccdc72548a5065b5991b4e06e610d76bc4f6023e",
+        "path": "Telegram/lib_storage",
+        "entries": 27,
+        "truncated": false,
+        "nested_gitlinks": []
+      },
+      {
+        "repository": "desktop-app/lib_tl",
+        "commit": "29746d31247c915a9ec870241399a9d103c39f87",
+        "path": "Telegram/lib_tl",
+        "entries": 7,
+        "truncated": false,
+        "nested_gitlinks": []
+      },
+      {
+        "repository": "desktop-app/lib_translate",
+        "commit": "b23983df9dd87b6993afdcefb48daf890beb545e",
+        "path": "Telegram/lib_translate",
+        "entries": 4,
+        "truncated": false,
+        "nested_gitlinks": []
+      },
+      {
+        "repository": "desktop-app/lib_ui",
+        "commit": "79c846fdf0327ff99d3efdc1cc4e11ef50bedc6d",
+        "path": "Telegram/lib_ui",
+        "entries": 459,
+        "truncated": false,
+        "nested_gitlinks": []
+      },
+      {
+        "repository": "desktop-app/lib_webrtc",
+        "commit": "52636e86eaa493de670daf71959d000b281bd153",
+        "path": "Telegram/lib_webrtc",
+        "entries": 46,
+        "truncated": false,
+        "nested_gitlinks": []
+      },
+      {
+        "repository": "desktop-app/lib_webview",
+        "commit": "ef03bbfd696c7527d7cb57ac20c3a5d30feb98fa",
+        "path": "Telegram/lib_webview",
+        "entries": 38,
+        "truncated": false,
+        "nested_gitlinks": []
+      },
+      {
         "repository": "desktop-app/cmake_helpers",
         "commit": "7ceca3019b4750d7a5acb2de0faffd523ee14095",
+        "path": "cmake",
         "entries": 170,
         "truncated": false,
         "nested_gitlinks": [
@@ -323,24 +614,31 @@
             "commit": "47cf94f83b54cda59018135601e19d7fb0c77776"
           }
         ]
-      },
-      {
-        "repository": "desktop-app/lib_base",
-        "commit": "95a543e426e35938dd632139d0bb828b268c3b4c",
-        "entries": 254,
-        "truncated": false,
-        "nested_gitlinks": []
-      },
-      {
-        "repository": "desktop-app/lib_ui",
-        "commit": "79c846fdf0327ff99d3efdc1cc4e11ef50bedc6d",
-        "entries": 459,
-        "truncated": false,
-        "nested_gitlinks": []
       }
     ],
-    "remaining_direct_gitlinks_unchecked": 33,
-    "remaining_nested_gitlinks_and_build_time_acquisitions": "not fully revalidated",
+    "remaining_direct_gitlinks_unchecked": 0,
+    "nested_scans": [
+      {
+        "repository": "nnen/doxygen-theme",
+        "commit": "46111c61a9f49b7a9886127e679d4317478fab1c",
+        "entries": 7,
+        "truncated": false,
+        "nested_gitlinks": []
+      },
+      {
+        "repository": "ericniebler/range-v3",
+        "commit": "2dae74bb693e42d850fb0adcc9045c5b71fbdeae",
+        "entries": 2526,
+        "truncated": false,
+        "nested_gitlinks": []
+      },
+      {
+        "repository": "desktop-app/cppgir",
+        "commit": "47cf94f83b54cda59018135601e19d7fb0c77776",
+        "status": "GitHub REST git/trees 404; repository identity/commit availability unresolved"
+      }
+    ],
+    "remaining_nested_gitlinks_and_build_time_acquisitions": "cppgir and build-time acquisitions / LFS / generated inputs not fully revalidated",
     "closure_status": "open"
   }
 }

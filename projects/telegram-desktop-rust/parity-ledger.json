@@ -12964,5 +12964,17 @@
       "notes": "Recursive authority array index 29, immediately after health_test.py index 28, is .agents/skills/code-health/scripts/history.py. Its direct report.py caller and code-health SKILL measurement/prioritization contract were read. This closure decrements only this independent source entry to unknown=16,172 and unread=16,145, omitted=0.",
       "test_execution_evidence": []
     }
-  ]
+  ],
+  "rebaseline_candidate": {
+    "upstream_commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+    "status": "unaccepted-inventory-open",
+    "direct_gitlinks_checked": 36,
+    "nested_gitlinks_discovered": 3,
+    "nested_gitlinks_resolved": 2,
+    "nested_gitlinks_blocked": 1,
+    "source_responsibility_rows": "historical-source-identity-preserved-not-current-baseline-evidence",
+    "unknown": null,
+    "unread": null,
+    "omitted_known": 0
+  }
 }
