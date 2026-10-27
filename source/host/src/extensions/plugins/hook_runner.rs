@@ -172,3 +172,140 @@ impl HookBoundaryInvariantGuard {
         specifier.ends_with("/api.js") || specifier.ends_with("/runtime-api.js")
     }
 }
+
+// Agent event subscription payloads (from src/plugins/contracts/agent-event-payload.contract.test.ts)
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum EventPayloadMode {
+    Full,
+    Metadata,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct AgentEventSubscription {
+    pub id: String,
+    pub streams: Vec<String>,
+    pub phases: Vec<String>,
+    pub payload_mode: EventPayloadMode,
+}
+
+impl AgentEventSubscription {
+    pub fn matches(&self, stream: &str, phase: Option<&str>) -> bool {
+        if !self.streams.is_empty() && !self.streams.iter().any(|s| s == stream) {
+            return false;
+        }
+        if !self.phases.is_empty() {
+            let p_str = phase.unwrap_or("");
+            if !self.phases.iter().any(|p| p.trim() == p_str) {
+                return false;
+            }
+        }
+        true
+    }
+
+    pub fn filter_payload(&self, raw_data: &Value) -> Value {
+        match self.payload_mode {
+            EventPayloadMode::Full => raw_data.clone(),
+            EventPayloadMode::Metadata => {
+                if let Some(obj) = raw_data.as_object() {
+                    let mut meta = serde_json::Map::new();
+                    for (k, v) in obj {
+                        match v {
+                            Value::String(s) if s.len() <= 256 => {
+                                meta.insert(k.clone(), v.clone());
+                            }
+                            Value::Number(_) | Value::Bool(_) | Value::Null => {
+                                meta.insert(k.clone(), v.clone());
+                            }
+                            _ => {}
+                        }
+                    }
+                    Value::Object(meta)
+                } else {
+                    raw_data.clone()
+                }
+            }
+        }
+    }
+}
+
+// Active run steering (from src/plugins/contracts/active-run-steering.contract.test.ts)
+
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct SteerActiveRunParams {
+    pub session_key: String,
+    pub text: String,
+    pub display_text: Option<String>,
+    pub idempotency_key: Option<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct SteerActiveRunOutcome {
+    pub steered: bool,
+    pub run_id: Option<String>,
+    pub reason: Option<String>,
+}
+
+#[derive(Default)]
+pub struct ActiveRunSteeringManager {
+    seen_idempotency_keys: Mutex<std::collections::HashSet<String>>,
+}
+
+impl ActiveRunSteeringManager {
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    pub fn steer_active_run(
+        &self,
+        allow_prompt_injection: bool,
+        active_run_id: Option<&str>,
+        is_streaming: bool,
+        params: &SteerActiveRunParams,
+    ) -> SteerActiveRunOutcome {
+        if !allow_prompt_injection {
+            return SteerActiveRunOutcome {
+                steered: false,
+                run_id: None,
+                reason: Some("blocked by plugins.entries.steering-plugin.hooks.allowPromptInjection=false".to_string()),
+            };
+        }
+
+        let run_id = match active_run_id {
+            Some(id) => id,
+            None => {
+                return SteerActiveRunOutcome {
+                    steered: false,
+                    run_id: None,
+                    reason: Some("no_active_run".to_string()),
+                };
+            }
+        };
+
+        if !is_streaming {
+            return SteerActiveRunOutcome {
+                steered: false,
+                run_id: None,
+                reason: Some("not_streaming".to_string()),
+            };
+        }
+
+        if let Some(ref idem) = params.idempotency_key {
+            let mut seen = self.seen_idempotency_keys.lock().unwrap();
+            if !seen.insert(idem.clone()) {
+                return SteerActiveRunOutcome {
+                    steered: false,
+                    run_id: None,
+                    reason: Some("duplicate".to_string()),
+                };
+            }
+        }
+
+        SteerActiveRunOutcome {
+            steered: true,
+            run_id: Some(run_id.to_string()),
+            reason: None,
+        }
+    }
+}

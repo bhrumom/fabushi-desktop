@@ -171,3 +171,76 @@ fn test_ocrm_plugins_boundary_invariants() {
     assert!(!HookBoundaryInvariantGuard::is_allowed_bundled_extension_import("extensions/browser/src/internal-helper.js"));
     assert!(!HookBoundaryInvariantGuard::is_allowed_bundled_extension_import("extensions/discord/subagent-hooks-api.ts"));
 }
+
+#[test]
+fn test_ocrm_plugins_agent_event_payload_and_active_run_steering() {
+    // Tests equivalent behavior from agent-event-payload.contract.test.ts and active-run-steering.contract.test.ts
+    use mahayana_host_runtime::extensions::plugins::hook_runner::{
+        ActiveRunSteeringManager, AgentEventSubscription, EventPayloadMode, SteerActiveRunParams,
+    };
+
+    // 1. Agent event subscription filtering & metadata isolation
+    let sub = AgentEventSubscription {
+        id: "events".to_string(),
+        streams: vec!["tool".to_string()],
+        phases: vec![" start ".to_string()], // trimmed matching
+        payload_mode: EventPayloadMode::Metadata,
+    };
+
+    assert!(sub.matches("tool", Some("start")));
+    assert!(!sub.matches("tool", Some("result")));
+    assert!(!sub.matches("chat", Some("start")));
+
+    let full_data = json!({
+        "phase": "result",
+        "count": 42,
+        "enabled": false,
+        "short_string": "hello",
+        "long_string": "a".repeat(300),
+        "nested": {"key": "val"},
+        "arr": [1, 2, 3]
+    });
+
+    let filtered = sub.filter_payload(&full_data);
+    assert_eq!(filtered.get("phase").unwrap().as_str().unwrap(), "result");
+    assert_eq!(filtered.get("count").unwrap().as_i64().unwrap(), 42);
+    assert_eq!(filtered.get("short_string").unwrap().as_str().unwrap(), "hello");
+    // Long string > 256, nested, and arr are excluded in metadata mode
+    assert!(filtered.get("long_string").is_none());
+    assert!(filtered.get("nested").is_none());
+    assert!(filtered.get("arr").is_none());
+
+    // 2. Active run steering
+    let steering = ActiveRunSteeringManager::new();
+
+    // Success on active streaming run
+    let params = SteerActiveRunParams {
+        session_key: "agent:main:steering-test".to_string(),
+        text: "Use the corrected result.".to_string(),
+        display_text: Some("Check the result.".to_string()),
+        idempotency_key: Some("review-1".to_string()),
+    };
+    let res = steering.steer_active_run(true, Some("steered-run"), true, &params);
+    assert!(res.steered);
+    assert_eq!(res.run_id.as_deref(), Some("steered-run"));
+
+    // Duplicate idempotency key rejected
+    let res_dup = steering.steer_active_run(true, Some("steered-run"), true, &params);
+    assert!(!res_dup.steered);
+    assert_eq!(res_dup.reason.as_deref(), Some("duplicate"));
+
+    // Disabled prompt injection
+    let res_disabled = steering.steer_active_run(false, Some("steered-run"), true, &params);
+    assert!(!res_disabled.steered);
+    assert!(res_disabled.reason.unwrap().contains("allowPromptInjection=false"));
+
+    // No active run
+    let res_no_run = steering.steer_active_run(true, None, true, &params);
+    assert!(!res_no_run.steered);
+    assert_eq!(res_no_run.reason.as_deref(), Some("no_active_run"));
+
+    // Not streaming
+    let res_not_streaming = steering.steer_active_run(true, Some("steered-run"), false, &params);
+    assert!(!res_not_streaming.steered);
+    assert_eq!(res_not_streaming.reason.as_deref(), Some("not_streaming"));
+}

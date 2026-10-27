@@ -10,10 +10,10 @@
     "ui_accepted": false
   },
   "file_coverage": {
-    "mapped_paths": 403,
+    "mapped_paths": 405,
     "omitted_known": 0,
     "tracked_paths": 58750,
-    "unclassified_paths": 58347
+    "unclassified_paths": 58345
   },
   "inventory_authority": {
     "manifest_source": "GitHub Actions immutable artifact candidate",
@@ -21060,7 +21060,8 @@
       ],
       "tests": [
         "source/host/tests/openclaw_plugins_full_contract.rs::test_ocrm_plugins_hook_runner_and_provider_bridge",
-        "source/host/tests/openclaw_plugins_full_contract.rs::test_ocrm_plugins_boundary_invariants"
+        "source/host/tests/openclaw_plugins_full_contract.rs::test_ocrm_plugins_boundary_invariants",
+        "source/host/tests/openclaw_plugins_full_contract.rs::test_ocrm_plugins_agent_event_payload_and_active_run_steering"
       ],
       "integration": {
         "producer": "source/host/src/extensions/plugins/hook_runner.rs",
@@ -21086,6 +21087,24 @@
             "end_line": 291
           },
           "symbol": "plugin contract boundary invariants"
+        },
+        {
+          "path": "src/plugins/contracts/active-run-steering.contract.test.ts",
+          "blob_sha": "b893fe0780c1a9a349f72b91f1d3d9f7bea8e2d9",
+          "range": {
+            "start_line": 1,
+            "end_line": 278
+          },
+          "symbol": "plugin active-run steering"
+        },
+        {
+          "path": "src/plugins/contracts/agent-event-payload.contract.test.ts",
+          "blob_sha": "e1ddfb89b3824e5e0070bb05f720d305d6d3d391",
+          "range": {
+            "start_line": 1,
+            "end_line": 131
+          },
+          "symbol": "agent event subscription payloads"
         }
       ],
       "evidence_refs": [
