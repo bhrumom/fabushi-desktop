@@ -172,6 +172,12 @@ upstream order, normalizes statement terminators, and appends the user_version
 pragma marker. Positive byte-level and unsupported-kind negative oracles pass;
 the live SQLite schema scanner and restore consumer are still absent.
 
+`read_sqlite_schema_entries` now reads a real SQLite owner's `sqlite_master`
+with the exact table/index/trigger filter and ordering, then feeds the
+deterministic renderer. The contract creates a temporary table, index, and
+trigger and verifies the returned order. This is SQLite-owner evidence only;
+it is not PostgreSQL port inspection or restore publication.
+
 ## Responsibility/evidence decision
 
 `OCRM-RESP-SNAPSHOT-BACKUP-CODEC-001` remains `read=partial`,
