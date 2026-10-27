@@ -79,10 +79,18 @@ if (!candidateIsAccepted) {
   fail(lock.upstream.accepted===false && lock.acceptance?.baseline_ready===false && lock.acceptance?.accepted===false,
     'incomplete candidate must stay explicitly unaccepted');
 }
-fail(ledger.coverage?.source_entries_total===lock.coverage.recursive_source_entries_total,'ledger recursive source count does not match lock');
-fail(ledger.coverage?.unknown>=lock.coverage.unknown_minimum,'ledger unknown count understates lock minimum');
-fail(ledger.coverage?.unread>=lock.coverage.unread_minimum,'ledger unread count understates lock minimum');
-fail(ledger.coverage?.omitted===lock.coverage.omitted_known,'ledger omitted count disagrees with lock');
+if (candidateIsAccepted) {
+  fail(Number.isInteger(lock.coverage.recursive_source_entries_total),'accepted baseline has no recursive source count');
+  fail(ledger.coverage?.source_entries_total===lock.coverage.recursive_source_entries_total,'ledger recursive source count does not match lock');
+  fail(ledger.coverage?.unknown>=lock.coverage.unknown_minimum,'ledger unknown count understates lock minimum');
+  fail(ledger.coverage?.unread>=lock.coverage.unread_minimum,'ledger unread count understates lock minimum');
+  fail(ledger.coverage?.omitted===lock.coverage.omitted_known,'ledger omitted count disagrees with lock');
+} else {
+  fail(lock.coverage.recursive_source_entries_total===null && lock.coverage.unknown_minimum===null && lock.coverage.unread_minimum===null,
+    'unaccepted candidate must not inherit historical recursive coverage numbers');
+  fail(ledger.coverage?.source_entries_total>0 && ledger.coverage?.unknown>0 && ledger.coverage?.unread>0,
+    'historical ledger evidence is missing or falsely closed');
+}
 fail(Array.isArray(ledger.rows),'ledger rows must be an array');
 fail(acquisitionInventory.project_id==='TDRP-001' && acquisitionInventory.spec_revision===9,'build-time acquisition inventory is not Revision 9');
 fail(acquisitionInventory.upstream_commit===lock.upstream.commit,'build-time acquisition inventory upstream commit drift');
