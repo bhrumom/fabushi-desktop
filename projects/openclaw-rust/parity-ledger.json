@@ -3273,7 +3273,7 @@
         "device.pairing_approval_policy"
       ],
       "dependencies": [
-        "mahayana_host_runtime::network_enrollment_owner"
+        "mahayana_host_runtime::device_pairing_owner"
       ],
       "evidence_refs": [
         "source/host/tests/network_enrollment_owner_contract.rs",
@@ -3281,16 +3281,16 @@
       ],
       "existing_owner_candidates": [
         {
-          "path": "source/host/src/network_enrollment_owner.rs",
-          "reason": "Host network enrollment authorization owner"
+          "path": "source/host/src/device_pairing_owner.rs",
+          "reason": "Canonical Host device pairing authorization owner"
         }
       ],
       "id": "OCRM-RESP-DEVICE-PAIRING-APPROVAL-POLICY-001",
       "integration": {
-        "consumer": "source/host/src/network_enrollment_owner.rs",
-        "entrypoint": "source/host/src/network_enrollment_owner.rs",
-        "owner": "source/host/src/network_enrollment_owner.rs",
-        "producer": "source/host/src/network_enrollment_owner.rs"
+        "consumer": "source/host/app/src/main.rs",
+        "entrypoint": "source/host/app/src/main.rs",
+        "owner": "source/host/src/device_pairing_owner.rs",
+        "producer": "source/host/app/src/main.rs"
       },
       "invariants": [
         "Non-operator roles cannot approve or reject device pairing requests"
@@ -3299,7 +3299,7 @@
       "oracle_ids": [
         "OCRM-DEVICE-PAIRING-O03"
       ],
-      "owner_decision": "Enforce operator privilege requirement for pairing approvals",
+      "owner_decision": "Reuse DevicePairingOwner gateway approval path; operator authorization remains a gateway admission contract",
       "postconditions": [
         "Pairing approved or rejected based on operator command"
       ],
@@ -3324,7 +3324,7 @@
       "responsibility_kind": "business-runtime",
       "reviewer": "xuyao@ombhrum.com",
       "risk": "Low; prevents rogue device self-enrollment",
-      "selected_owner": "source/host/src/network_enrollment_owner.rs",
+      "selected_owner": "source/host/src/device_pairing_owner.rs",
       "source_refs": [
         {
           "blob_sha": "7a563c858c078347587d4bfc6e153be59550393a",
@@ -3347,7 +3347,7 @@
       ],
       "status": {
         "acceptance": "pending",
-        "implementation": "not-started",
+        "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
         "verification": "not-run",
@@ -3355,11 +3355,11 @@
       },
       "target": {
         "language": "Rust",
-        "path": "source/host/src/network_enrollment_owner.rs",
-        "symbol": "network_enrollment_owner"
+        "path": "source/host/src/device_pairing_owner.rs",
+        "symbol": "DevicePairingOwner::handle_pair_approve"
       },
       "tests": [
-        "source/host/tests/network_enrollment_owner_contract.rs::test_ocrm_device_pairing_o03_approval_policy"
+        "source/host/tests/device_pairing_contract.rs::test_ocrm_pair_o05_and_o06_pair_approve"
       ],
       "typed_contracts": [
         "Device pairing approval policy check"
@@ -3377,35 +3377,35 @@
         "device.join_code"
       ],
       "dependencies": [
-        "mahayana_host_runtime::network_enrollment_owner"
+        "mahayana_host_runtime::device_pairing_owner"
       ],
       "evidence_refs": [
-        "source/host/tests/network_enrollment_owner_contract.rs",
+        "source/host/tests/device_pairing_contract.rs",
         "projects/openclaw-rust/dossiers/gateway-router-device-authority-followup-20261022.md"
       ],
       "existing_owner_candidates": [
         {
-          "path": "source/host/src/network_enrollment_owner.rs",
-          "reason": "Host pairing join code manager"
+          "path": "source/host/src/device_pairing_owner.rs",
+          "reason": "Canonical Host pairing setup and join-code owner"
         }
       ],
       "id": "OCRM-RESP-DEVICE-PAIRING-JOIN-CODE-001",
       "integration": {
-        "consumer": "source/host/src/network_enrollment_owner.rs",
-        "entrypoint": "source/host/src/network_enrollment_owner.rs",
-        "owner": "source/host/src/network_enrollment_owner.rs",
-        "producer": "source/host/src/network_enrollment_owner.rs"
+        "consumer": "source/host/app/src/main.rs",
+        "entrypoint": "source/host/app/src/main.rs",
+        "owner": "source/host/src/device_pairing_owner.rs",
+        "producer": "source/host/app/src/main.rs"
       },
       "invariants": [
-        "Join codes must be 8 alphanumeric characters and expire after fixed TTL"
+        "Join codes must be 22-character base64url shortcodes, expire at a future timestamp, and redeem at most once"
       ],
-      "migration_rollback": "Standard 8-character join code verification",
+      "migration_rollback": "DevicePairingOwner join-code table can be retired without changing paired-device rows",
       "oracle_ids": [
         "OCRM-DEVICE-PAIRING-O05"
       ],
-      "owner_decision": "Implement join code format verification in network_enrollment_owner.rs",
+      "owner_decision": "Reuse DevicePairingOwner setup-code persistence and OpenClaw join-code helpers",
       "postconditions": [
-        "Valid join code returns authorized pairing session"
+        "A live shortcode atomically burns and returns its setup payload; invalid or expired codes return no payload"
       ],
       "preconditions": [
         "Candidate join code string"
@@ -3428,7 +3428,7 @@
       "responsibility_kind": "business-runtime",
       "reviewer": "xuyao@ombhrum.com",
       "risk": "Low; provides user-friendly pairing without compromising security",
-      "selected_owner": "source/host/src/network_enrollment_owner.rs",
+      "selected_owner": "source/host/src/device_pairing_owner.rs",
       "source_refs": [
         {
           "blob_sha": "fe6266b798457ae1dd7963f1f629783a10dd6c27",
@@ -3442,7 +3442,7 @@
       ],
       "status": {
         "acceptance": "pending",
-        "implementation": "not-started",
+        "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
         "verification": "not-run",
@@ -3450,11 +3450,12 @@
       },
       "target": {
         "language": "Rust",
-        "path": "source/host/src/network_enrollment_owner.rs",
-        "symbol": "network_enrollment_owner"
+        "path": "source/host/src/device_pairing_owner.rs",
+        "symbol": "register_device_pairing_join_code; redeem_device_pairing_join_code; is_device_pairing_join_code"
       },
       "tests": [
-        "source/host/tests/network_enrollment_owner_contract.rs::test_ocrm_device_pairing_o05_join_code"
+        "source/host/tests/device_pairing_contract.rs::test_ocrm_pair_o12_setup_code",
+        "source/host/tests/device_pairing_contract.rs::test_ocrm_pair_o13_join_code_validation_and_path_parsing"
       ],
       "typed_contracts": [
         "Join code verification and generation"
@@ -3472,7 +3473,7 @@
         "device.node_lifecycle"
       ],
       "dependencies": [
-        "mahayana_host_runtime::network_enrollment_owner"
+        "mahayana_host_runtime::device_pairing_owner"
       ],
       "evidence_refs": [
         "source/host/tests/network_enrollment_owner_contract.rs",
@@ -3480,16 +3481,16 @@
       ],
       "existing_owner_candidates": [
         {
-          "path": "source/host/src/network_enrollment_owner.rs",
-          "reason": "Host network worker and node supervisor"
+          "path": "source/host/src/device_pairing_owner.rs",
+          "reason": "Canonical Host paired-device lifecycle owner"
         }
       ],
       "id": "OCRM-RESP-DEVICE-PAIRING-NODE-LIFECYCLE-001",
       "integration": {
-        "consumer": "source/host/src/network_enrollment_owner.rs",
-        "entrypoint": "source/host/src/network_enrollment_owner.rs",
-        "owner": "source/host/src/network_enrollment_owner.rs",
-        "producer": "source/host/src/network_enrollment_owner.rs"
+        "consumer": "source/host/app/src/main.rs",
+        "entrypoint": "source/host/app/src/main.rs",
+        "owner": "source/host/src/device_pairing_owner.rs",
+        "producer": "source/host/app/src/main.rs"
       },
       "invariants": [
         "Stale nodes failing heartbeat checks are transitioned to disconnected or pruned"
@@ -3498,7 +3499,7 @@
       "oracle_ids": [
         "OCRM-DEVICE-PAIRING-O06"
       ],
-      "owner_decision": "Enforce node supervisor poll and pruning in network_enrollment_owner.rs",
+      "owner_decision": "Reuse DevicePairingOwner paired-device listing/revocation and app gateway lifecycle seam",
       "postconditions": [
         "Active node list reflects live, responsive devices only"
       ],
@@ -3523,7 +3524,7 @@
       "responsibility_kind": "business-runtime",
       "reviewer": "xuyao@ombhrum.com",
       "risk": "Low; keeps node roster accurate and healthy",
-      "selected_owner": "source/host/src/network_enrollment_owner.rs",
+      "selected_owner": "source/host/src/device_pairing_owner.rs",
       "source_refs": [
         {
           "blob_sha": "4cc23766efb819a207bf3b04c596d974a98d93fa",
@@ -3546,7 +3547,7 @@
       ],
       "status": {
         "acceptance": "pending",
-        "implementation": "not-started",
+        "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
         "verification": "not-run",
@@ -3554,11 +3555,12 @@
       },
       "target": {
         "language": "Rust",
-        "path": "source/host/src/network_enrollment_owner.rs",
-        "symbol": "network_enrollment_owner"
+        "path": "source/host/src/device_pairing_owner.rs",
+        "symbol": "DevicePairingOwner::handle_pair_list; handle_pair_revoke"
       },
       "tests": [
-        "source/host/tests/network_enrollment_owner_contract.rs::test_ocrm_device_pairing_o06_node_lifecycle"
+        "source/host/tests/device_pairing_contract.rs::test_ocrm_pair_o08_pair_list",
+        "source/host/tests/device_pairing_contract.rs::test_ocrm_pair_o09_and_o10_pair_revoke"
       ],
       "typed_contracts": [
         "Node pairing lifecycle and supervisor poll"
@@ -3576,7 +3578,7 @@
         "device.pairing_state_machine"
       ],
       "dependencies": [
-        "mahayana_host_runtime::network_enrollment_owner"
+        "mahayana_host_runtime::device_pairing_owner"
       ],
       "evidence_refs": [
         "source/host/tests/network_enrollment_owner_contract.rs",
@@ -3584,16 +3586,16 @@
       ],
       "existing_owner_candidates": [
         {
-          "path": "source/host/src/network_enrollment_owner.rs",
-          "reason": "Authoritative device pairing and network enrollment owner"
+          "path": "source/host/src/device_pairing_owner.rs",
+          "reason": "Canonical device pairing state and admission owner"
         }
       ],
       "id": "OCRM-RESP-DEVICE-PAIRING-STATE-MACHINE-001",
       "integration": {
-        "consumer": "source/host/src/network_enrollment_owner.rs",
-        "entrypoint": "source/host/src/network_enrollment_owner.rs",
-        "owner": "source/host/src/network_enrollment_owner.rs",
-        "producer": "source/host/src/network_enrollment_owner.rs"
+        "consumer": "source/host/app/src/main.rs",
+        "entrypoint": "source/host/app/src/main.rs",
+        "owner": "source/host/src/device_pairing_owner.rs",
+        "producer": "source/host/app/src/main.rs"
       },
       "invariants": [
         "Once revoked, device pairing cannot transition to pending or approved without new request"
@@ -3602,7 +3604,7 @@
       "oracle_ids": [
         "OCRM-DEVICE-PAIRING-O01"
       ],
-      "owner_decision": "Implement pairing state machine in network_enrollment_owner.rs",
+      "owner_decision": "Reuse DevicePairingOwner pending/approved/revoked transitions and revision publication",
       "postconditions": [
         "Device pairing state updated with timestamp and audit record"
       ],
@@ -3627,7 +3629,7 @@
       "responsibility_kind": "business-runtime",
       "reviewer": "xuyao@ombhrum.com",
       "risk": "Low; ensures device admission control",
-      "selected_owner": "source/host/src/network_enrollment_owner.rs",
+      "selected_owner": "source/host/src/device_pairing_owner.rs",
       "source_refs": [
         {
           "blob_sha": "53889a9bed1994c1ca009f0df3dca366a774b907",
@@ -3758,7 +3760,7 @@
       ],
       "status": {
         "acceptance": "pending",
-        "implementation": "not-started",
+        "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
         "verification": "not-run",
@@ -3766,11 +3768,13 @@
       },
       "target": {
         "language": "Rust",
-        "path": "source/host/src/network_enrollment_owner.rs",
-        "symbol": "network_enrollment_owner"
+        "path": "source/host/src/device_pairing_owner.rs",
+        "symbol": "handle_pair_request; handle_pair_approve; handle_pair_revoke"
       },
       "tests": [
-        "source/host/tests/network_enrollment_owner_contract.rs::test_ocrm_device_pairing_o01_state_transitions"
+        "source/host/tests/device_pairing_contract.rs::test_ocrm_pair_o03_and_o04_pair_status",
+        "source/host/tests/device_pairing_contract.rs::test_ocrm_pair_o05_and_o06_pair_approve",
+        "source/host/tests/device_pairing_contract.rs::test_ocrm_pair_o09_and_o10_pair_revoke"
       ],
       "typed_contracts": [
         "Device pairing state transition machine"
@@ -3788,7 +3792,7 @@
         "device.pairing_store"
       ],
       "dependencies": [
-        "mahayana_host_runtime::network_enrollment_owner"
+        "mahayana_host_runtime::device_pairing_owner"
       ],
       "evidence_refs": [
         "source/host/tests/network_enrollment_owner_contract.rs",
@@ -3796,16 +3800,16 @@
       ],
       "existing_owner_candidates": [
         {
-          "path": "source/host/src/network_enrollment_owner.rs",
-          "reason": "Host network enrollment state persistence"
+          "path": "source/host/src/device_pairing_owner.rs",
+          "reason": "Canonical Host SQLite pairing store owner"
         }
       ],
       "id": "OCRM-RESP-DEVICE-PAIRING-STORE-PERSISTENCE-001",
       "integration": {
-        "consumer": "source/host/src/network_enrollment_owner.rs",
-        "entrypoint": "source/host/src/network_enrollment_owner.rs",
-        "owner": "source/host/src/network_enrollment_owner.rs",
-        "producer": "source/host/src/network_enrollment_owner.rs"
+        "consumer": "source/host/app/src/main.rs",
+        "entrypoint": "source/host/app/src/main.rs",
+        "owner": "source/host/src/device_pairing_owner.rs",
+        "producer": "source/host/app/src/main.rs"
       },
       "invariants": [
         "State write must precede external grant request execution"
@@ -3814,7 +3818,7 @@
       "oracle_ids": [
         "OCRM-DEVICE-PAIRING-O02"
       ],
-      "owner_decision": "Persist pairing enrollment state in network_enrollment_owner.rs",
+      "owner_decision": "Reuse DevicePairingOwner SQLite schema and revisioned mutation owner",
       "postconditions": [
         "Durable state written on disk"
       ],
@@ -3839,7 +3843,7 @@
       "responsibility_kind": "business-runtime",
       "reviewer": "xuyao@ombhrum.com",
       "risk": "Low; ensures crash recovery of pairing records",
-      "selected_owner": "source/host/src/network_enrollment_owner.rs",
+      "selected_owner": "source/host/src/device_pairing_owner.rs",
       "source_refs": [
         {
           "blob_sha": "ae9ba870ad19d2034ab31e9458ae4359841d04a3",
@@ -3889,7 +3893,7 @@
       ],
       "status": {
         "acceptance": "pending",
-        "implementation": "not-started",
+        "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
         "verification": "not-run",
@@ -3897,11 +3901,12 @@
       },
       "target": {
         "language": "Rust",
-        "path": "source/host/src/network_enrollment_owner.rs",
-        "symbol": "write_state"
+        "path": "source/host/src/device_pairing_owner.rs",
+        "symbol": "DevicePairingOwner::init_schema; bump_revision"
       },
       "tests": [
-        "source/host/tests/network_enrollment_owner_contract.rs::test_ocrm_device_pairing_o02_durable_persistence"
+        "source/host/tests/device_pairing_contract.rs::test_ocrm_pair_o01_request_success",
+        "source/host/tests/device_pairing_contract.rs::test_ocrm_pair_o05_and_o06_pair_approve"
       ],
       "typed_contracts": [
         "write_state(path: &Path, state: &EnrollmentState) -> io::Result<()>"
@@ -3919,7 +3924,7 @@
         "device.pairing_tokens"
       ],
       "dependencies": [
-        "mahayana_host_runtime::network_enrollment_owner"
+        "mahayana_host_runtime::device_pairing_owner"
       ],
       "evidence_refs": [
         "source/host/tests/network_enrollment_owner_contract.rs",
@@ -3927,16 +3932,16 @@
       ],
       "existing_owner_candidates": [
         {
-          "path": "source/host/src/network_enrollment_owner.rs",
-          "reason": "Host network credential manager"
+          "path": "source/host/src/device_pairing_owner.rs",
+          "reason": "Canonical Host pairing token lifecycle owner"
         }
       ],
       "id": "OCRM-RESP-DEVICE-PAIRING-TOKENS-LIFECYCLE-001",
       "integration": {
-        "consumer": "source/host/src/network_enrollment_owner.rs",
-        "entrypoint": "source/host/src/network_enrollment_owner.rs",
-        "owner": "source/host/src/network_enrollment_owner.rs",
-        "producer": "source/host/src/network_enrollment_owner.rs"
+        "consumer": "source/host/app/src/main.rs",
+        "entrypoint": "source/host/app/src/main.rs",
+        "owner": "source/host/src/device_pairing_owner.rs",
+        "producer": "source/host/app/src/main.rs"
       },
       "invariants": [
         "One-time authentication keys are invalidated immediately after worker start"
@@ -3945,7 +3950,7 @@
       "oracle_ids": [
         "OCRM-DEVICE-PAIRING-O04"
       ],
-      "owner_decision": "Enforce single-use auth key clearing in network_enrollment_owner.rs",
+      "owner_decision": "Reuse DevicePairingOwner rotateToken path with in-band and cross-device delivery policy",
       "postconditions": [
         "Auth key set to None after worker launch"
       ],
@@ -3970,7 +3975,7 @@
       "responsibility_kind": "business-runtime",
       "reviewer": "xuyao@ombhrum.com",
       "risk": "Low; prevents replay attacks with consumed keys",
-      "selected_owner": "source/host/src/network_enrollment_owner.rs",
+      "selected_owner": "source/host/src/device_pairing_owner.rs",
       "source_refs": [
         {
           "blob_sha": "7bb56b799c5945489f60520329d67ea18c06ce75",
@@ -3984,7 +3989,7 @@
       ],
       "status": {
         "acceptance": "pending",
-        "implementation": "not-started",
+        "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
         "verification": "not-run",
@@ -3992,11 +3997,11 @@
       },
       "target": {
         "language": "Rust",
-        "path": "source/host/src/network_enrollment_owner.rs",
-        "symbol": "network_enrollment_owner"
+        "path": "source/host/src/device_pairing_owner.rs",
+        "symbol": "DevicePairingOwner::handle_pair_rotate_token"
       },
       "tests": [
-        "source/host/tests/network_enrollment_owner_contract.rs::test_ocrm_device_pairing_o04_token_lifecycle"
+        "source/host/tests/device_pairing_contract.rs::test_ocrm_pair_o11_rotate_token_in_band_and_cross_device"
       ],
       "typed_contracts": [
         "Single-use token invalidation"
