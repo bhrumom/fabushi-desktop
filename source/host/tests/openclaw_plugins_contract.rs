@@ -137,6 +137,45 @@ fn test_ocrm_plugins_bundle_manifest() {
         runtime_setup_entry: Some("./dist/setup.js".to_string()),
     };
     assert!(validate_package_extension_entries_for_install(&runtime_setup_only).is_err());
+
+    // Tool manifest contracts validation (plugin-tool-contracts.test.ts)
+    use mahayana_host_runtime::extensions::plugins::bundle_manifest::{
+        validate_plugin_manifest_tool_contracts, VirtualTestPluginHarness,
+    };
+
+    // Valid: all registered tools declared
+    assert!(validate_plugin_manifest_tool_contracts(
+        "my-plugin",
+        &["tool_a".to_string(), "tool_b".to_string()],
+        &["tool_a".to_string()],
+    ).is_ok());
+
+    // Invalid: registers tools but has no contracts.tools
+    let err_no_tools = validate_plugin_manifest_tool_contracts(
+        "bad-plugin",
+        &[],
+        &["tool_a".to_string()],
+    ).unwrap_err();
+    assert_eq!(err_no_tools, "bad-plugin: registers agent tools but has no contracts.tools");
+
+    // Invalid: missing contracts.tools for specific tools
+    let err_missing = validate_plugin_manifest_tool_contracts(
+        "bad-plugin",
+        &["tool_a".to_string()],
+        &["tool_a".to_string(), "tool_b".to_string()],
+    ).unwrap_err();
+    assert_eq!(err_missing, "bad-plugin: missing contracts.tools for tool_b");
+
+    // Virtual test plugin tool execution (plugin-testing-harness.contract.test.ts)
+    let outcome = VirtualTestPluginHarness::execute_fixture_echo_tool(
+        "scoped",
+        "/tmp/virtual-home",
+        "call-1",
+        "alpha",
+    );
+    assert_eq!(outcome.text, "scoped:alpha");
+    assert_eq!(outcome.home, "/tmp/virtual-home");
+    assert_eq!(outcome.message, "alpha");
 }
 
 #[test]

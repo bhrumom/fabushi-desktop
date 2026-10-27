@@ -4,6 +4,8 @@
 - **Target Files**:
   - `src/plugins/package-manifest.ts` (68 lines, SHA: `7bfe7039a65c52040c22013333087a0494b9542e`)
   - `src/plugins/contracts/package-manifest.contract.test.ts` (195 lines, SHA: `c39502b811e4f1db3c56f9abd6402f039b393476`)
+  - `src/plugins/contracts/plugin-testing-harness.contract.test.ts` (73 lines, SHA: `19eba480e72768750aea34cb62b426a42ea50d81`)
+  - `src/plugins/contracts/plugin-tool-contracts.test.ts` (164 lines, SHA: `e286cf4545c3caaf9525acfc5d143f6b741a0d93`)
 - **Upstream Commit**: `ad8d12f126d29b0db204187adf5092db80294e70` (tree `04ccce62f1d74dc8e0c88290ae8ded027b7b0f16`).
 - **Module ID**: `OCRM-M28` (plugins).
 - **Reviewer**: `xuyao@ombhrum.com`.
@@ -47,3 +49,5 @@
     - Verifies non-empty string validation per element.
     - Verifies runtime extensions length match requirement.
     - Verifies runtime setup requires source setup entry.
+    - Verifies `validate_plugin_manifest_tool_contracts` enforces that all registered tools are declared in `contracts.tools`.
+    - Verifies virtual test plugin tool fixture execution with configured prefix and environment state.

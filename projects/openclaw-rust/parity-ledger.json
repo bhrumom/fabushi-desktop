@@ -10,10 +10,10 @@
     "ui_accepted": false
   },
   "file_coverage": {
-    "mapped_paths": 399,
+    "mapped_paths": 401,
     "omitted_known": 0,
     "tracked_paths": 58750,
-    "unclassified_paths": 58351
+    "unclassified_paths": 58349
   },
   "inventory_authority": {
     "manifest_source": "GitHub Actions immutable artifact candidate",
@@ -20479,6 +20479,24 @@
             "start_line": 1,
             "end_line": 6
           }
+        },
+        {
+          "path": "src/plugins/contracts/plugin-testing-harness.contract.test.ts",
+          "blob_sha": "19eba480e72768750aea34cb62b426a42ea50d81",
+          "range": {
+            "start_line": 1,
+            "end_line": 73
+          },
+          "symbol": "plugin testing harness contracts"
+        },
+        {
+          "path": "src/plugins/contracts/plugin-tool-contracts.test.ts",
+          "blob_sha": "e286cf4545c3caaf9525acfc5d143f6b741a0d93",
+          "range": {
+            "start_line": 1,
+            "end_line": 164
+          },
+          "symbol": "bundled plugin tool manifest contracts"
         }
       ],
       "evidence_refs": [

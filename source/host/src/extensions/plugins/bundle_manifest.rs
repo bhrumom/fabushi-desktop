@@ -245,3 +245,66 @@ pub fn validate_package_extension_entries_for_install(
 
     Ok(())
 }
+
+// Tool manifest contracts & fixture execution (from plugin-tool-contracts.test.ts & plugin-testing-harness.contract.test.ts)
+
+pub fn validate_plugin_manifest_tool_contracts(
+    plugin_id: &str,
+    declared_tools: &[String],
+    registered_tool_names: &[String],
+) -> Result<(), String> {
+    if registered_tool_names.is_empty() {
+        return Ok(());
+    }
+
+    if declared_tools.is_empty() {
+        return Err(format!(
+            "{}: registers agent tools but has no contracts.tools",
+            plugin_id
+        ));
+    }
+
+    let declared_set: std::collections::HashSet<&str> =
+        declared_tools.iter().map(|s| s.as_str()).collect();
+    let mut missing = Vec::new();
+    for name in registered_tool_names {
+        if !declared_set.contains(name.as_str()) {
+            missing.push(name.clone());
+        }
+    }
+
+    if missing.is_empty() {
+        Ok(())
+    } else {
+        missing.sort();
+        Err(format!(
+            "{}: missing contracts.tools for {}",
+            plugin_id,
+            missing.join(", ")
+        ))
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct VirtualToolCallOutcome {
+    pub text: String,
+    pub home: String,
+    pub message: String,
+}
+
+pub struct VirtualTestPluginHarness;
+
+impl VirtualTestPluginHarness {
+    pub fn execute_fixture_echo_tool(
+        prefix: &str,
+        home: &str,
+        _tool_call_id: &str,
+        message: &str,
+    ) -> VirtualToolCallOutcome {
+        VirtualToolCallOutcome {
+            text: format!("{}:{}", prefix, message),
+            home: home.to_string(),
+            message: message.to_string(),
+        }
+    }
+}
