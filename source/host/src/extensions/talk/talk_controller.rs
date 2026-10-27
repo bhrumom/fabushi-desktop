@@ -79,3 +79,142 @@ impl TalkSessionController {
         Self::compute_audio_rms(pcm_bytes) > self.silence_threshold_rms
     }
 }
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum TtsAutoApplyMode {
+    Off,
+    Inbound,
+    Tagged,
+    Always,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
+pub struct ParsedTtsDirectives {
+    pub cleaned_text: String,
+    pub tts_text: Option<String>,
+    pub provider: Option<String>,
+    pub voice_id: Option<String>,
+    pub speed: Option<f32>,
+    pub stability: Option<f32>,
+}
+
+pub struct TtsDirectiveParser;
+
+impl TtsDirectiveParser {
+    pub fn parse(input: &str, allow_provider_override: bool) -> ParsedTtsDirectives {
+        let mut result = ParsedTtsDirectives::default();
+        let mut work = input.to_string();
+
+        // Check for [[tts:text]]...[[/tts:text]]
+        if let Some(start_tag) = work.find("[[tts:text]]") {
+            if let Some(end_tag) = work.find("[[/tts:text]]") {
+                if start_tag + 12 <= end_tag {
+                    result.tts_text = Some(work[start_tag + 12..end_tag].trim().to_string());
+                }
+            }
+        }
+
+        // Parse directive tags like [[tts:provider=... voice=...]]
+        while let Some(start) = work.find("[[tts:") {
+            if let Some(end) = work[start..].find("]]") {
+                let directive = &work[start + 6..start + end];
+                for token in directive.split_whitespace() {
+                    if let Some((k, v)) = token.split_once('=') {
+                        let k = k.to_lowercase();
+                        match k.as_str() {
+                            "provider" => {
+                                if allow_provider_override {
+                                    let prov = if v == "edge" { "microsoft" } else { v };
+                                    result.provider = Some(prov.to_string());
+                                }
+                            }
+                            "voice" | "voiceid" => {
+                                result.voice_id = Some(v.to_string());
+                            }
+                            "speed" => {
+                                if let Ok(s) = v.parse::<f32>() {
+                                    result.speed = Some(s);
+                                }
+                            }
+                            "stability" => {
+                                if let Ok(s) = v.parse::<f32>() {
+                                    result.stability = Some(s);
+                                }
+                            }
+                            _ => {}
+                        }
+                    }
+                }
+                work.replace_range(start..start + end + 2, "");
+            } else {
+                break;
+            }
+        }
+
+        // Clean out any leftover [[tts:text]] or [[/tts:text]]
+        work = work.replace("[[tts:text]]", "").replace("[[/tts:text]]", "");
+        result.cleaned_text = work.trim().to_string();
+        result
+    }
+
+    pub fn evaluate_auto_tts(
+        mode: TtsAutoApplyMode,
+        raw_text: &str,
+        inbound_audio: bool,
+    ) -> bool {
+        match mode {
+            TtsAutoApplyMode::Off => false,
+            TtsAutoApplyMode::Always => !raw_text.trim().is_empty(),
+            TtsAutoApplyMode::Inbound => {
+                if !inbound_audio {
+                    return false;
+                }
+                // Strip markdown styling to check for meaningful text
+                let cleaned = raw_text
+                    .replace('#', "")
+                    .replace('*', "")
+                    .replace('_', "")
+                    .replace('`', "")
+                    .trim()
+                    .to_string();
+                !cleaned.is_empty()
+            }
+            TtsAutoApplyMode::Tagged => raw_text.contains("[[tts:text]]"),
+        }
+    }
+
+    pub fn format_tts_provider_error(provider: &str, raw_error: &str) -> String {
+        let redacted = Self::redact_sensitive_tokens(raw_error);
+        format!("{}: {}", provider, redacted)
+    }
+
+    pub fn sanitize_tts_error_for_log(raw_error: &str) -> String {
+        let redacted = Self::redact_sensitive_tokens(raw_error);
+        redacted.replace('\n', "\\n").replace('\t', "\\t")
+    }
+
+    fn redact_sensitive_tokens(msg: &str) -> String {
+        let mut res = msg.to_string();
+        for prefix in &["sk-", "Bearer "] {
+            let mut search_idx = 0;
+            while let Some(idx) = res[search_idx..].find(prefix) {
+                let start = search_idx + idx + prefix.len();
+                let end = res[start..]
+                    .find(|c: char| c.is_whitespace() || c == '"' || c == '\'' || c == '\n')
+                    .map(|e| start + e)
+                    .unwrap_or(res.len());
+                if end > start {
+                    res.replace_range(start..end, "[REDACTED]");
+                    search_idx = start + 10;
+                } else {
+                    search_idx = start;
+                }
+                if search_idx >= res.len() {
+                    break;
+                }
+            }
+        }
+        res
+    }
+}

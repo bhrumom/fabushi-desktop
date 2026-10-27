@@ -10,10 +10,10 @@
     "ui_accepted": false
   },
   "file_coverage": {
-    "mapped_paths": 395,
+    "mapped_paths": 396,
     "omitted_known": 0,
     "tracked_paths": 58750,
-    "unclassified_paths": 58355
+    "unclassified_paths": 58354
   },
   "inventory_authority": {
     "manifest_source": "GitHub Actions immutable artifact candidate",
@@ -22147,6 +22147,109 @@
       ],
       "reviewer": "xuyao@ombhrum.com",
       "migration_rollback": "Use standard thread sleeps without tracked async work scopes"
+    },
+    {
+      "id": "OCRM-RESP-TALK-VOICE-SESSION-001",
+      "unit_id": "OCRM-UNIT-TALK-001",
+      "responsibility_kind": "business-runtime",
+      "source_refs": [
+        {
+          "path": "src/plugins/contracts/tts.contract.test.ts",
+          "blob_sha": "3078a3f4e1f3f6613e6cb9a62e5615c0a3742b45",
+          "range": {
+            "start_line": 1,
+            "end_line": 18
+          },
+          "symbol": "describeTtsContract"
+        },
+        {
+          "path": "src/plugins/contracts/tts-contract-suites.ts",
+          "blob_sha": "03b0be316fe63903dc1a1258c42e8929e64025e9",
+          "range": {
+            "start_line": 1,
+            "end_line": 991
+          },
+          "symbol": "describeTtsContractSuites"
+        }
+      ],
+      "behavior": "Voice session phase state machine, talkback mode, audio energy RMS calculation, TTS directive parsing, provider error redaction, and auto-apply gating.",
+      "preconditions": [
+        "Audio PCM buffers or message payloads for TTS synthesis"
+      ],
+      "postconditions": [
+        "Audio RMS computed, TTS directives parsed and stripped, and auto-TTS eligibility evaluated"
+      ],
+      "invariants": [
+        "Directives with [[tts:provider=edge]] normalized to microsoft",
+        "Sensitive tokens in provider errors are redacted from logs"
+      ],
+      "capability_ids": [
+        "talk.voice_session",
+        "talk.tts_directives"
+      ],
+      "requirement_ids": [
+        "OCRM-R12",
+        "OCRM-AC12"
+      ],
+      "oracle_ids": [
+        "OCRM-TALK-VOICE-O01"
+      ],
+      "existing_owner_candidates": [
+        {
+          "path": "source/host/src/extensions/talk/talk_controller.rs",
+          "reason": "Host talk controller and voice session state"
+        }
+      ],
+      "selected_owner": "source/host/src/extensions/talk/talk_controller.rs",
+      "owner_decision": "Native implementation in TalkSessionController and TtsDirectiveParser",
+      "target": {
+        "path": "source/host/src/extensions/talk/talk_controller.rs",
+        "symbol": "TalkSessionController",
+        "language": "Rust"
+      },
+      "typed_contracts": [
+        "TalkSessionController",
+        "TtsDirectiveParser",
+        "ParsedTtsDirectives",
+        "TtsAutoApplyMode"
+      ],
+      "dependencies": [
+        "mahayana_host_runtime::extensions::talk::talk_controller"
+      ],
+      "integration": {
+        "producer": "source/host/src/extensions/talk/talk_controller.rs",
+        "owner": "source/host/src/extensions/talk/talk_controller.rs",
+        "consumer": "source/host/src/extensions/talk/talk_controller.rs",
+        "entrypoint": "source/host/src/extensions/talk/talk_controller.rs::TalkSessionController"
+      },
+      "required_evidence_dimensions": [
+        "unit"
+      ],
+      "required_gate_ids": [
+        "OCRM-G04-rust-contract",
+        "OCRM-G05-frozen-oracle"
+      ],
+      "tests": [
+        "source/host/tests/openclaw_system_talk_transcripts_contract.rs::test_ocrm_talk_voice_session",
+        "source/host/tests/openclaw_system_talk_transcripts_contract.rs::test_ocrm_tts_directives_and_auto_apply_contract"
+      ],
+      "adr_refs": [],
+      "migration_rollback": "Bypass TTS directive parsing and retain raw speech messages",
+      "risk": "Medium; improper redaction could leak API keys in logs",
+      "blocker_ids": [],
+      "status": {
+        "read": "read-complete",
+        "mapping": "reviewed",
+        "wiring": "wired",
+        "implementation": "implemented",
+        "verification": "verified",
+        "acceptance": "pending"
+      },
+      "evidence_refs": [
+        "source/host/tests/openclaw_system_talk_transcripts_contract.rs",
+        "projects/openclaw-rust/dossiers/system-talk-transcripts-scoped.md"
+      ],
+      "reviewer": "xuyao@ombhrum.com"
     }
   ],
   "schema_version": 1,

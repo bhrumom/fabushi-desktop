@@ -40,4 +40,5 @@
 - **Contract Tests**: `source/host/tests/openclaw_system_talk_transcripts_contract.rs`:
   - `test_ocrm_system_agent_runner` (PASSED)
   - `test_ocrm_talk_voice_session` (PASSED)
+  - `test_ocrm_tts_directives_and_auto_apply_contract` (PASSED)
   - `test_ocrm_transcripts_and_state` (PASSED)

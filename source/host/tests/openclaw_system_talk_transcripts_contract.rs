@@ -74,6 +74,79 @@ fn test_ocrm_talk_voice_session() {
 }
 
 #[test]
+fn test_ocrm_tts_directives_and_auto_apply_contract() {
+    use mahayana_host_runtime::extensions::talk::talk_controller::{
+        TtsAutoApplyMode, TtsDirectiveParser,
+    };
+
+    // 1. Directives parsing with provider override allowed
+    let input = "Hello [[tts:provider=elevenlabs voiceid=pMsXgVXv3BLzUgSXRplE stability=0.4 speed=1.1]] world\n\n[[tts:text]](laughs) Read the song once more.[[/tts:text]]";
+    let parsed = TtsDirectiveParser::parse(input, true);
+    assert_eq!(parsed.provider.as_deref(), Some("elevenlabs"));
+    assert_eq!(parsed.voice_id.as_deref(), Some("pMsXgVXv3BLzUgSXRplE"));
+    assert_eq!(parsed.stability, Some(0.4));
+    assert_eq!(parsed.speed, Some(1.1));
+    assert_eq!(parsed.tts_text.as_deref(), Some("(laughs) Read the song once more."));
+    assert_eq!(parsed.cleaned_text, "Hello  world\n\n(laughs) Read the song once more.");
+
+    // 2. Legacy edge provider normalized to microsoft
+    let edge_input = "Hello [[tts:provider=edge]] world";
+    let edge_parsed = TtsDirectiveParser::parse(edge_input, true);
+    assert_eq!(edge_parsed.provider.as_deref(), Some("microsoft"));
+
+    // 3. Provider override disabled by policy
+    let policy_disabled = TtsDirectiveParser::parse(edge_input, false);
+    assert_eq!(policy_disabled.provider, None);
+
+    // 4. Auto TTS gating evaluation
+    // Inbound mode: non-audio blocked
+    assert!(!TtsDirectiveParser::evaluate_auto_tts(
+        TtsAutoApplyMode::Inbound,
+        "Hello world",
+        false
+    ));
+    // Inbound mode: markdown-only noise blocked
+    assert!(!TtsDirectiveParser::evaluate_auto_tts(
+        TtsAutoApplyMode::Inbound,
+        "### ** ** ````",
+        true
+    ));
+    // Inbound mode: audio with real text allowed
+    assert!(TtsDirectiveParser::evaluate_auto_tts(
+        TtsAutoApplyMode::Inbound,
+        "Hello world",
+        true
+    ));
+
+    // Tagged mode: plain text skipped, tagged text synthesized
+    assert!(!TtsDirectiveParser::evaluate_auto_tts(
+        TtsAutoApplyMode::Tagged,
+        "Hello world",
+        false
+    ));
+    assert!(TtsDirectiveParser::evaluate_auto_tts(
+        TtsAutoApplyMode::Tagged,
+        "[[tts:text]]Hello world[[/tts:text]]",
+        false
+    ));
+
+    // 5. Provider error redaction
+    let formatted_err = TtsDirectiveParser::format_tts_provider_error(
+        "openai",
+        "Authorization: Bearer sk-super-secret-token-1234567890",
+    );
+    assert!(formatted_err.contains("openai: Authorization: Bearer [REDACTED]"));
+    assert!(!formatted_err.contains("sk-super-secret-token-1234567890"));
+
+    let sanitized_log = TtsDirectiveParser::sanitize_tts_error_for_log(
+        "failed\nAuthorization: Bearer sk-super-secret-token-1234567890\tboom",
+    );
+    assert!(sanitized_log.contains("\\n"));
+    assert!(sanitized_log.contains("\\t"));
+    assert!(!sanitized_log.contains("sk-super-secret-token-1234567890"));
+}
+
+#[test]
 fn test_ocrm_transcripts_and_state() {
     // 1. Transcript capture store
     let store = TranscriptCaptureStore::new();
