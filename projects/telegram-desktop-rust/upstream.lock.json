@@ -633,12 +633,16 @@
         "nested_gitlinks": []
       },
       {
-        "repository": "desktop-app/cppgir",
+        "repository": "mnauw/cppgir (GitLab source; NOT desktop-app/cppgir GitHub)",
         "commit": "47cf94f83b54cda59018135601e19d7fb0c77776",
-        "status": "GitHub REST git/trees 404; repository identity/commit availability unresolved"
+        "status": "source identity confirmed from exact cmake_helpers .gitmodules; pinned Git tree not yet obtained from GitLab; GitHub 404 is not evidence of absent source",
+        "source_url": "https://gitlab.com/mnauw/cppgir.git",
+        "source_declaration_repository": "desktop-app/cmake_helpers",
+        "source_declaration_commit": "7ceca3019b4750d7a5acb2de0faffd523ee14095",
+        "source_declaration_path": ".gitmodules"
       }
     ],
-    "remaining_nested_gitlinks_and_build_time_acquisitions": "cppgir and build-time acquisitions / LFS / generated inputs not fully revalidated",
+    "remaining_nested_gitlinks_and_build_time_acquisitions": "GitLab mnauw/cppgir pinned Git tree unresolved; build-time acquisitions / LFS / generated inputs not fully revalidated",
     "closure_status": "open"
   }
 }
