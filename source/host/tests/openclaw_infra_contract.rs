@@ -1,11 +1,12 @@
-use mahayana_host_runtime::extensions::host_upgrade::openclaw_update_startup::{
-    is_update_check_due, UpdateTriageReport,
-};
-use mahayana_host_runtime::extensions::local_exec::openclaw_platform_sandbox::{
-    escape_powershell_argument, is_wsl_version_output, is_zstd_compressed, ZSTD_MAGIC_HEADER,
-};
 use mahayana_host_runtime::extensions::box_lifecycle::openclaw_worker_pool::{
     WorkerPoolConfig, WorkerTaskPool,
+};
+use mahayana_host_runtime::extensions::host_upgrade::openclaw_update_startup::{
+    UpdateTriageReport, is_update_check_due,
+};
+use mahayana_host_runtime::extensions::local_exec::openclaw_platform_sandbox::{
+    ZSTD_MAGIC_HEADER, decode_utf8_input, escape_powershell_argument, is_wsl_version_output,
+    is_zstd_compressed,
 };
 
 #[test]
@@ -21,10 +22,15 @@ fn test_ocrm_infra_update_startup_and_triage() {
         true,
     );
     assert!(triage_supervised.requires_supervisor);
-    assert!(triage_supervised.suggested_remedy.contains("systemctl restart openclaw"));
+    assert!(
+        triage_supervised
+            .suggested_remedy
+            .contains("systemctl restart openclaw")
+    );
 
     // Update triage for manual user run
-    let triage_manual = UpdateTriageReport::from_error("Network timeout during fetch", Some(2), false);
+    let triage_manual =
+        UpdateTriageReport::from_error("Network timeout during fetch", Some(2), false);
     assert!(!triage_manual.requires_supervisor);
     assert!(triage_manual.suggested_remedy.contains("openclaw update"));
 }
@@ -46,14 +52,23 @@ fn test_ocrm_infra_platform_sandbox_and_zstd() {
         escape_powershell_argument("arg with space"),
         "\"arg with space\""
     );
-    assert_eq!(
-        escape_powershell_argument("$VAR"),
-        "\"`$VAR\""
-    );
+    assert_eq!(escape_powershell_argument("$VAR"), "\"`$VAR\"");
 
     // WSL version detection
-    assert!(is_wsl_version_output("Linux version 5.15.153.1-microsoft-standard-WSL2"));
-    assert!(!is_wsl_version_output("Linux version 6.1.0-28-amd64 (Debian 6.1.119-1)"));
+    assert!(is_wsl_version_output(
+        "Linux version 5.15.153.1-microsoft-standard-WSL2"
+    ));
+    assert!(!is_wsl_version_output(
+        "Linux version 6.1.0-28-amd64 (Debian 6.1.119-1)"
+    ));
+
+    assert_eq!(
+        decode_utf8_input("hello 世界".as_bytes(), "stdin"),
+        Ok("hello 世界".into())
+    );
+    let invalid = decode_utf8_input(&[0xf0, 0x28, 0x8c, 0xbc], "stdin")
+        .expect_err("malformed UTF-8 must fail closed");
+    assert!(invalid.starts_with("stdin must be valid UTF-8:"));
 }
 
 #[test]

@@ -43,8 +43,16 @@ pub fn escape_powershell_argument(arg: &str) -> String {
     if arg.is_empty() {
         return "''".to_string();
     }
-    if arg.contains(' ') || arg.contains('"') || arg.contains('\'') || arg.contains('$') || arg.contains('`') {
-        let escaped = arg.replace('`', "``").replace('$', "`$").replace('"', "`\"");
+    if arg.contains(' ')
+        || arg.contains('"')
+        || arg.contains('\'')
+        || arg.contains('$')
+        || arg.contains('`')
+    {
+        let escaped = arg
+            .replace('`', "``")
+            .replace('$', "`$")
+            .replace('"', "`\"");
         format!("\"{}\"", escaped)
     } else {
         arg.to_string()
@@ -54,4 +62,13 @@ pub fn escape_powershell_argument(arg: &str) -> String {
 pub fn is_wsl_version_output(version_output: &str) -> bool {
     let lower = version_output.to_ascii_lowercase();
     lower.contains("microsoft") || lower.contains("wsl")
+}
+
+/// Decode an external byte payload with the same fail-closed UTF-8 contract as
+/// OpenClaw's `decodeUtf8Input`: malformed input is rejected with a source-
+/// labeled error instead of being silently replaced.
+pub fn decode_utf8_input(bytes: &[u8], source_label: &str) -> Result<String, String> {
+    std::str::from_utf8(bytes)
+        .map(str::to_owned)
+        .map_err(|error| format!("{source_label} must be valid UTF-8: {error}"))
 }
