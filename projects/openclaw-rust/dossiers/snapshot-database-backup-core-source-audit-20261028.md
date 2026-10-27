@@ -196,6 +196,11 @@ applies explicit exclusions, validates filesystem-safe names, and sorts the
 result. The oracle proves selection against manual schema entries; actual
 artifact staging and publication remain pending.
 
+`read_sqlite_user_version` now reads and range-checks the real owner's
+`PRAGMA user_version`; the temporary SQLite producer oracle sets version 42
+and reads it back successfully. This supplies manifest metadata only and does
+not prove schema compatibility or migration admission.
+
 ## Responsibility/evidence decision
 
 `OCRM-RESP-SNAPSHOT-BACKUP-CODEC-001` remains `read=partial`,
