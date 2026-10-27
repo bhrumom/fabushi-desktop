@@ -72,19 +72,31 @@ fail(ledger.project_id==='TDRP-001' && ledger.spec_revision===9 && ledger.format
 // Historical migration rows retain their original source identity while a new upstream
 // candidate is being inventoried. They must never be relabelled as candidate evidence.
 const candidateIsAccepted=lock.upstream.accepted===true && lock.acceptance?.baseline_ready===true;
-const ledgerIdentity=candidateIsAccepted ? lock.upstream.commit : lock.previous_historical_baseline?.commit;
-fail(/^[0-9a-f]{40}$/.test(ledgerIdentity||''),'historical/candidate ledger identity authority missing');
-fail(ledger.upstream_commit===ledgerIdentity,'ledger upstream commit does not match its historical/candidate provenance');
+const historicalLedgerCommit=lock.previous_historical_baseline?.commit;
+fail(/^[0-9a-f]{40}$/.test(historicalLedgerCommit||''),'historical ledger baseline identity missing');
+fail(ledger.upstream_commit===historicalLedgerCommit,'historical ledger provenance drift');
+fail(Array.isArray(ledger.rows) && ledger.rows.every(row=>row.source_commit===historicalLedgerCommit),
+  'historical ledger rows must retain their historical source identity');
 if (!candidateIsAccepted) {
   fail(lock.upstream.accepted===false && lock.acceptance?.baseline_ready===false && lock.acceptance?.accepted===false,
     'incomplete candidate must stay explicitly unaccepted');
 }
+let candidateLedger=null;
 if (candidateIsAccepted) {
+  const candidateLedgerPath=lock.accepted_candidate_authority?.parity_ledger_path;
+  fail(typeof candidateLedgerPath==='string' && candidateLedgerPath.startsWith('projects/telegram-desktop-rust/') && candidateLedgerPath.endsWith('.json') && candidateLedgerPath!=='projects/telegram-desktop-rust/parity-ledger.json' && !candidateLedgerPath.includes('..'),
+    'accepted candidate requires separate ledger instead of relabelling historical rows');
+  candidateLedger=await readJson(candidateLedgerPath);
+  fail(candidateLedger.project_id==='TDRP-001' && candidateLedger.spec_revision===9 && candidateLedger.upstream_commit===lock.upstream.commit,
+    'accepted candidate ledger source identity drift');
+  fail(Array.isArray(candidateLedger.rows) && candidateLedger.rows.length>0 &&
+    candidateLedger.rows.every(row=>row.source_commit===lock.upstream.commit),
+    'accepted candidate ledger rows must all use candidate source identity');
   fail(Number.isInteger(lock.coverage.recursive_source_entries_total),'accepted baseline has no recursive source count');
-  fail(ledger.coverage?.source_entries_total===lock.coverage.recursive_source_entries_total,'ledger recursive source count does not match lock');
-  fail(ledger.coverage?.unknown>=lock.coverage.unknown_minimum,'ledger unknown count understates lock minimum');
-  fail(ledger.coverage?.unread>=lock.coverage.unread_minimum,'ledger unread count understates lock minimum');
-  fail(ledger.coverage?.omitted===lock.coverage.omitted_known,'ledger omitted count disagrees with lock');
+  fail(candidateLedger.coverage?.source_entries_total===lock.coverage.recursive_source_entries_total,'candidate ledger recursive source count does not match lock');
+  fail(candidateLedger.coverage?.unknown>=lock.coverage.unknown_minimum,'candidate ledger unknown count understates lock minimum');
+  fail(candidateLedger.coverage?.unread>=lock.coverage.unread_minimum,'candidate ledger unread count understates lock minimum');
+  fail(candidateLedger.coverage?.omitted===lock.coverage.omitted_known,'candidate ledger omitted count disagrees with lock');
 } else {
   fail(lock.coverage.recursive_source_entries_total===null && lock.coverage.unknown_minimum===null && lock.coverage.unread_minimum===null,
     'unaccepted candidate must not inherit historical recursive coverage numbers');
@@ -754,11 +766,11 @@ if (requireAccepted) {
   fail(u.accepted===true,'accepted mode requires upstream.accepted=true');
   fail(lock.acceptance.accepted===true,'accepted mode requires acceptance.accepted=true');
   fail(lock.acceptance.baseline_ready===true,'accepted mode requires baseline_ready=true');
-  fail(ledger.coverage.unknown===0,'G-INVENTORY unknown must be 0');
-  fail(ledger.coverage.unread===0,'G-INVENTORY unread must be 0');
-  fail(ledger.coverage.omitted===0,'G-INVENTORY omitted must be 0');
-  fail(ledger.coverage.unmapped_responsibilities===0,'G-TRACEABILITY unmapped responsibilities must be 0');
-  fail(ledger.target_commit===((process.env.TDRP_TARGET_SHA||process.env.GITHUB_SHA)||ledger.target_commit),'G-EVIDENCE ledger target_commit must equal exact GitHub Actions HEAD');
-  fail(ledger.rows.length>0,'G-FILE/G-TRACEABILITY ledger cannot be empty at closure');
+  fail(candidateLedger.coverage.unknown===0,'G-INVENTORY unknown must be 0');
+  fail(candidateLedger.coverage.unread===0,'G-INVENTORY unread must be 0');
+  fail(candidateLedger.coverage.omitted===0,'G-INVENTORY omitted must be 0');
+  fail(candidateLedger.coverage.unmapped_responsibilities===0,'G-TRACEABILITY unmapped responsibilities must be 0');
+  fail(candidateLedger.target_commit===((process.env.TDRP_TARGET_SHA||process.env.GITHUB_SHA)||candidateLedger.target_commit),'G-EVIDENCE ledger target_commit must equal exact GitHub Actions HEAD');
+  fail(candidateLedger.rows.length>0,'G-FILE/G-TRACEABILITY ledger cannot be empty at closure');
 }
 console.log(JSON.stringify(report,null,2));
