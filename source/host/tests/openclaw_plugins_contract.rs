@@ -1985,6 +1985,287 @@ fn test_ocrm_plugins_catalog_discovery_icon_ranking_and_channel_registry() {
     assert_eq!(bundled_only[0].plugin_id, "bundled-tg");
 }
 
+#[test]
+fn test_ocrm_plugins_channel_policy_validation_and_adoption() {
+    use mahayana_host_runtime::extensions::plugins::capability_catalog::{
+        ActivePluginChannelRegistration, ChannelManifestRecord, ChannelPluginConfigHandlers,
+        ChannelPluginMeta, ChannelPluginValidator, ChannelPresencePolicy, ChannelPresenceSource,
+        ChannelRegistryAdoption, ChannelStartupPolicy, NormalizedPluginConfigEntry,
+        NormalizedPluginsConfig, PluginOrigin, RuntimeChannelSource,
+    };
+    use serde_json::json;
+    use std::collections::HashMap;
+
+    // 1. Channel Plugin Validation & Metadata Repair
+    let valid_handlers = ChannelPluginConfigHandlers {
+        has_list_accounts: true,
+        has_resolve_account: true,
+    };
+
+    // 1a. Missing required config helpers -> rejected with error
+    let missing_helpers_res = ChannelPluginValidator::validate_and_normalize(
+        "broken-channel",
+        ChannelPluginMeta::default(),
+        None,
+        "broken-plugin",
+    );
+    assert!(missing_helpers_res.is_err());
+    let err = missing_helpers_res.unwrap_err();
+    assert_eq!(err.level, "error");
+    assert!(err.message.contains("missing required config helpers"));
+
+    // 1b. Incomplete metadata and mismatched meta.id repaired with warnings
+    let incomplete_meta = ChannelPluginMeta {
+        id: "other-id".to_string(), // Mismatched meta.id
+        label: "".to_string(),
+        selection_label: "".to_string(),
+        docs_path: "".to_string(),
+        blurb: "".to_string(),
+        aliases: vec![],
+    };
+    let (normalized_tg, diags) = ChannelPluginValidator::validate_and_normalize(
+        "telegram",
+        incomplete_meta,
+        Some(&valid_handlers),
+        "tg-plugin",
+    )
+    .expect("validation should succeed with repairs");
+
+    assert_eq!(normalized_tg.id, "telegram");
+    assert_eq!(normalized_tg.meta.id, "telegram");
+    assert_eq!(normalized_tg.meta.label, "telegram");
+    assert_eq!(normalized_tg.meta.docs_path, "/channels/telegram");
+    assert_eq!(normalized_tg.meta.blurb, "Telegram bot channel");
+    assert_eq!(diags.len(), 2); // meta.id mismatch warning + incomplete metadata warning
+    assert_eq!(diags[0].level, "warn");
+    assert!(diags[0].message.contains("meta.id mismatch"));
+    assert!(diags[1].message.contains("incomplete metadata"));
+
+    // 1c. Official external channel aliases filled if omitted
+    let (normalized_wx, _) = ChannelPluginValidator::validate_and_normalize(
+        "openclaw-weixin",
+        ChannelPluginMeta {
+            id: "openclaw-weixin".to_string(),
+            label: "Weixin".to_string(),
+            selection_label: "Weixin (long-poll)".to_string(),
+            docs_path: "/channels/openclaw-weixin".to_string(),
+            blurb: "Weixin channel".to_string(),
+            aliases: vec![],
+        },
+        Some(&valid_handlers),
+        "openclaw-weixin",
+    )
+    .unwrap();
+    assert_eq!(
+        normalized_wx.meta.aliases,
+        vec!["weixin".to_string(), "wechat".to_string(), "微信".to_string()]
+    );
+
+    // 2. Channel Registry Adoption
+    let target_channels = vec![ActivePluginChannelRegistration {
+        plugin_id: "demo-plugin".to_string(),
+        channel_id: "demo".to_string(),
+        origin: PluginOrigin::Bundled,
+        source_digest: "sha256-abc".to_string(),
+        accepting_calls: true,
+        borrowed_runtime_record: None,
+    }];
+
+    // 2a. Stale or non-current source rejected
+    let stale_source = RuntimeChannelSource {
+        registry_id: "donor-reg".to_string(),
+        is_current: false,
+    };
+    let adoption_err = ChannelRegistryAdoption::adopt_runtime_channel_registrations(
+        "target-reg",
+        &target_channels,
+        Some(&stale_source),
+        "env-hash",
+        "env-hash",
+        "gw-1",
+        "gw-1",
+        false,
+    );
+    assert!(adoption_err.is_err());
+    assert!(adoption_err
+        .unwrap_err()
+        .contains("Channel runtime owner changed"));
+
+    // 2b. Successful adoption sets borrowed_runtime_record
+    let active_source = RuntimeChannelSource {
+        registry_id: "donor-reg".to_string(),
+        is_current: true,
+    };
+    let adopted = ChannelRegistryAdoption::adopt_runtime_channel_registrations(
+        "target-reg",
+        &target_channels,
+        Some(&active_source),
+        "env-hash",
+        "env-hash",
+        "gw-1",
+        "gw-1",
+        false,
+    )
+    .unwrap();
+    assert_eq!(adopted.len(), 1);
+    assert_eq!(
+        adopted[0].borrowed_runtime_record,
+        Some("demo-plugin:borrowed".to_string())
+    );
+
+    // 3. Channel Startup Policy
+    let mut plugins_config = NormalizedPluginsConfig {
+        enabled: true,
+        allow: vec!["allowed-plugin".to_string()],
+        deny: vec!["denied-plugin".to_string()],
+        entries: HashMap::new(),
+    };
+    plugins_config.entries.insert(
+        "external-plugin".to_string(),
+        NormalizedPluginConfigEntry { enabled: true },
+    );
+
+    // 3a. Denied plugin cannot start
+    assert!(!ChannelStartupPolicy::can_start_configured_channel_plugin(
+        "denied-plugin",
+        &PluginOrigin::Bundled,
+        &["ch1".to_string()],
+        &plugins_config,
+        &[],
+    ));
+
+    // 3b. Bundled plugin in restrictive allowlist with explicit channel config is permitted
+    assert!(ChannelStartupPolicy::can_start_configured_channel_plugin(
+        "bundled-unlisted",
+        &PluginOrigin::Bundled,
+        &["slack".to_string()],
+        &plugins_config,
+        &["slack".to_string()],
+    ));
+
+    // 3c. Bundled plugin without explicit channel config when not in allowlist is blocked
+    assert!(!ChannelStartupPolicy::can_start_configured_channel_plugin(
+        "bundled-unlisted",
+        &PluginOrigin::Bundled,
+        &["slack".to_string()],
+        &plugins_config,
+        &[],
+    ));
+
+    // 3d. Non-bundled plugin explicitly enabled in entries
+    plugins_config.allow.push("external-plugin".to_string());
+    assert!(ChannelStartupPolicy::can_start_configured_channel_plugin(
+        "external-plugin",
+        &PluginOrigin::Installed,
+        &["ext-ch".to_string()],
+        &plugins_config,
+        &[],
+    ));
+
+    // 4. Channel Presence Policy & Configured Channel IDs
+    let mut configured_channels: HashMap<String, serde_json::Value> = HashMap::new();
+    configured_channels.insert(
+        "slack".to_string(),
+        json!({ "enabled": true, "botToken": "xoxb-123" }),
+    );
+    configured_channels.insert(
+        "Discord".to_string(),
+        json!({ "enabled": false, "botToken": "dis-123" }),
+    );
+    configured_channels.insert(
+        "_metadata_key".to_string(),
+        json!({ "some": "val" }),
+    );
+
+    // 4a. has_explicit_channel_config case-insensitive and checks enabled: false
+    assert!(ChannelPresencePolicy::has_explicit_channel_config(
+        &configured_channels,
+        "Slack"
+    ));
+    assert!(!ChannelPresencePolicy::has_explicit_channel_config(
+        &configured_channels,
+        "discord"
+    ));
+
+    // 4b. list_explicit_configured_channel_ids filters disabled and metadata keys
+    let explicit_ids =
+        ChannelPresencePolicy::list_explicit_configured_channel_ids(&configured_channels);
+    assert_eq!(explicit_ids, vec!["slack".to_string()]);
+
+    // 4c. Presence policy resolution from manifests & env
+    let mut env_vars = HashMap::new();
+    env_vars.insert("TG_TOKEN".to_string(), "tg-secret".to_string());
+
+    let manifests = vec![
+        ChannelManifestRecord {
+            plugin_id: "allowed-plugin".to_string(),
+            origin: PluginOrigin::Bundled,
+            channels: vec!["slack".to_string()],
+            enabled_by_default: true,
+            required_env: vec![],
+        },
+        ChannelManifestRecord {
+            plugin_id: "tg-plugin".to_string(),
+            origin: PluginOrigin::Bundled,
+            channels: vec!["telegram".to_string()],
+            enabled_by_default: true,
+            required_env: vec!["TG_TOKEN".to_string()],
+        },
+    ];
+
+    let open_plugins_config = NormalizedPluginsConfig {
+        enabled: true,
+        allow: vec![],
+        deny: vec![],
+        entries: HashMap::new(),
+    };
+
+    let policy_entries = ChannelPresencePolicy::resolve_channel_presence_policy(
+        &configured_channels,
+        &env_vars,
+        &manifests,
+        &open_plugins_config,
+        false,
+    );
+    assert_eq!(policy_entries.len(), 2);
+    assert_eq!(policy_entries[0].channel_id, "slack");
+    assert!(policy_entries[0].effective);
+    assert_eq!(policy_entries[0].plugin_ids, vec!["allowed-plugin"]);
+    assert_eq!(
+        policy_entries[0].sources,
+        vec![ChannelPresenceSource::ExplicitConfig]
+    );
+
+    assert_eq!(policy_entries[1].channel_id, "telegram");
+    assert!(policy_entries[1].effective);
+    assert_eq!(
+        policy_entries[1].sources,
+        vec![ChannelPresenceSource::ManifestEnv]
+    );
+
+    // 4d. Announce channel IDs
+    let announced = ChannelPresencePolicy::list_configured_announce_channel_ids(
+        &configured_channels,
+        &env_vars,
+        &manifests,
+        &open_plugins_config,
+    );
+    assert_eq!(announced, vec!["slack".to_string(), "telegram".to_string()]);
+
+    // 4e. Configured Channel Plugin IDs
+    let plugin_ids = ChannelPresencePolicy::resolve_configured_channel_plugin_ids(
+        &configured_channels,
+        &env_vars,
+        &manifests,
+        &open_plugins_config,
+    );
+    assert_eq!(
+        plugin_ids,
+        vec!["allowed-plugin".to_string(), "tg-plugin".to_string()]
+    );
+}
+
+
 
 
 

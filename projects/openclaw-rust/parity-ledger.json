@@ -10,10 +10,10 @@
     "ui_accepted": false
   },
   "file_coverage": {
-    "mapped_paths": 602,
+    "mapped_paths": 610,
     "omitted_known": 0,
     "tracked_paths": 58750,
-    "unclassified_paths": 58148
+    "unclassified_paths": 58140
   },
   "inventory_authority": {
     "manifest_source": "GitHub Actions immutable artifact candidate",
@@ -8344,7 +8344,7 @@
     },
     {
       "adr_refs": [],
-      "behavior": "Terminal ANSI QR text renderer supporting compact half-block characters (█, ▀, ▄, space), 1-module margin, quiet zone black-on-white formatting, and standard full-block terminal fallback.",
+      "behavior": "Terminal ANSI QR text renderer supporting compact half-block characters (\u2588, \u2580, \u2584, space), 1-module margin, quiet zone black-on-white formatting, and standard full-block terminal fallback.",
       "blocker_ids": [
         "BL-MEDIA-QR-TERMINAL-CALLER-001"
       ],

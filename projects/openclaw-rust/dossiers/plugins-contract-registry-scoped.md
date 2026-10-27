@@ -207,5 +207,30 @@
 - **Search Ranking & Deduplication**: Filter restricted to `code-plugin` and `bundle-plugin` families. Multi-group duplicate packages deduplicate in favor of higher score, with stable tie-breaking on score equality. Search limit clamped between 1 and 100 (default 20).
 - **Channel Catalog Resolution Precedence**: Resolves channel plugins using fallback chain: `bundledManifest.id` -> `bundledManifestId` -> `packageManifest.plugin.id` -> `idHint`. Skips candidate entries missing channel declarations or empty channel IDs.
 
+## 10. Audited Channel Policies, Validation, Registry Adoption & Scoped IDs (8 files)
+- **Primary Responsibility**: `OCRM-RESP-PLUGINS-CAPABILITY-CATALOG-001`
+- **Reviewer**: `xuyao@ombhrum.com`
+- **Native Implementation**: `source/host/src/extensions/plugins/capability_catalog.rs` (`ChannelPluginValidator`, `ChannelRegistryAdoption`, `ChannelStartupPolicy`, `ChannelPresencePolicy`)
+- **Contract Tests**: `source/host/tests/openclaw_plugins_contract.rs::test_ocrm_plugins_channel_policy_validation_and_adoption`
+
+| Path | Lines | Size (bytes) | Git Blob SHA | Mapped Responsibility |
+| --- | --- | --- | --- | --- |
+| `src/plugins/channel-catalog-registry.workspace.test.ts` | 162 | 7025 | `7fe18a1b1bbf3e9aa2bd43c9e866b4014d2cd188` | `OCRM-RESP-PLUGINS-CAPABILITY-CATALOG-001` |
+| `src/plugins/channel-plugin-ids.test.ts` | 1847 | 59889 | `811b75ca0bba76b002d518354fe3ee2bb1a986de` | `OCRM-RESP-PLUGINS-CAPABILITY-CATALOG-001` |
+| `src/plugins/channel-plugin-ids.ts` | 27 | 1058 | `520597843dee0d61989c61cb5c25cdb3acedb75e` | `OCRM-RESP-PLUGINS-CAPABILITY-CATALOG-001` |
+| `src/plugins/channel-presence-policy.ts` | 696 | 24865 | `a2f4737d617b981a6d02ca8f810ddcdd9a10a1ac` | `OCRM-RESP-PLUGINS-CAPABILITY-CATALOG-001` |
+| `src/plugins/channel-registry-adoption.ts` | 125 | 4878 | `c69791e8b1395b4c709f8e60d2a7afc8e69831f2` | `OCRM-RESP-PLUGINS-CAPABILITY-CATALOG-001` |
+| `src/plugins/channel-registry-state.types.ts` | 19 | 866 | `e5b58f8424de02920ca6bdb5bf8f7733b11a4623` | `OCRM-RESP-PLUGINS-CAPABILITY-CATALOG-001` |
+| `src/plugins/channel-startup-policy.ts` | 50 | 1814 | `2eaf2e8a65bc6ac13128b2a144591acbe1bff416` | `OCRM-RESP-PLUGINS-CAPABILITY-CATALOG-001` |
+| `src/plugins/channel-validation.test.ts` | 111 | 3782 | `feba6bae38e3c93804160bc29ff538c17c5584ed` | `OCRM-RESP-PLUGINS-CAPABILITY-CATALOG-001` |
+
+### 10.1 Invariant Validation Summary
+- **Channel Registration Validation & Diagnostics**: Enforces presence of required account configuration helpers (`list_account_ids` and `resolve_account`); registrations lacking them are rejected with error diagnostic.
+- **Metadata Repair & Normalization**: Mismatched `meta.id` emits a warning and is aligned to the registered channel ID. Omitted fields (`label`, `selectionLabel`, `docsPath`, `blurb`) are backfilled with standard fallbacks and emit warning diagnostics. Official external channel aliases (e.g. `openclaw-weixin`) are populated with canonical aliases (`["weixin", "wechat", "微信"]`).
+- **Channel Registry Adoption & Donor Verification**: During prepared registry admission, ensures donor registry is current and verified. Target and donor environment digests and gateway context resolvers must match. If lifecycle authority changed, fails closed with `"Channel runtime owner changed during prepared registry admission"`. Successfully adopted channels are wrapped with `borrowed_runtime_record`.
+- **Channel Startup Policy & Restrictive Allowlist Exceptions**: Evaluates manifest owner policy against deny lists and allowlists. Bundled channel owners gain an explicit bypass to restrictive allowlists if corresponding channel configuration is explicitly provided in root configuration. Non-bundled channel plugins require explicit enablement in authored plugins configuration entries.
+- **Channel Presence Signals & Announce Filtering**: Aggregates presence signals from explicit configuration, environment variables, manifest contracts, and persisted auth. Explicitly disabled channels (`enabled: false`) are suppressed case-insensitively and excluded from announce lists. Ambient-only presence signals are suppressed when requested.
+
+
 
 
