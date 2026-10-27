@@ -257,6 +257,41 @@
 - **Archive Verification & Metadata Guard**: Extracted ZIP archives validate presence and integrity of all declared files. Generated `_meta.json` is validated for JSON validity and exact match of slug and version against target package. Missing files, SHA256 mismatches, or unexpected extra files trigger `archive_integrity_mismatch` with lexicographically first unexpected file reported.
 - **Family & Security Assessment Guardrails**: Enforces family constraints (`code-plugin` and `bundle-plugin` only; skills reject with install guidance; unsupported families fail closed). Malicious or blocked security verdicts halt install immediately with `clawhub_download_blocked`. Risky verdicts emit operator review recommendations. Temporary archive removal failures log warnings without invalidating successful installation.
 
+## 12. Audited CLI Backends, Commands Registration, Nodes RPC & Lifetime Policies (18 files)
+- **Primary Responsibility**: `OCRM-RESP-PLUGINS-CAPABILITY-CATALOG-001`
+- **Reviewer**: `xuyao@ombhrum.com`
+- **Native Implementation**: `source/host/src/extensions/plugins/cli_backend.rs` (`CliBackendAuthProfilePreparationError`, `warn_on_missing_cli_backend_model_provider`, `CliBackendRuntimeRegistry`, `CliGatewayNodesRuntime`, `CliCommandRegistry`)
+- **Contract Tests**: `source/host/tests/openclaw_plugins_contract.rs::test_ocrm_plugins_cli_backends_and_command_runtime`
+
+| Path | Lines | Size (bytes) | Git Blob SHA | Mapped Responsibility |
+| --- | --- | --- | --- | --- |
+| `src/plugins/cli-backend-errors.ts` | 11 | 467 | `bc4e77186f1d64770d61ea65f487007372d725dd` | `OCRM-RESP-PLUGINS-CAPABILITY-CATALOG-001` |
+| `src/plugins/cli-backend-registration.ts` | 12 | 478 | `2b08320ebc3eccd86a185d539c232a9f40e901a4` | `OCRM-RESP-PLUGINS-CAPABILITY-CATALOG-001` |
+| `src/plugins/cli-backend.types.ts` | 577 | 21964 | `cd260fbf964fc171eadf67416883dd9c7ab61b0f` | `OCRM-RESP-PLUGINS-CAPABILITY-CATALOG-001` |
+| `src/plugins/cli-backends.runtime.test.ts` | 85 | 3686 | `1b11df1dd7d051b68f4aba61bdedea57a2455041` | `OCRM-RESP-PLUGINS-CAPABILITY-CATALOG-001` |
+| `src/plugins/cli-backends.runtime.ts` | 33 | 1295 | `9f7b8e1901f08fb5937614e77d048b58f4c5660a` | `OCRM-RESP-PLUGINS-CAPABILITY-CATALOG-001` |
+| `src/plugins/cli-callback-binding.ts` | 301 | 11554 | `a01f14e0431e7d771078281e754ec1a829c08866` | `OCRM-RESP-PLUGINS-CAPABILITY-CATALOG-001` |
+| `src/plugins/cli-config-lifetime.test.ts` | 308 | 13921 | `cbee7d75ef988815ab2b98005548e3937f10b272` | `OCRM-RESP-PLUGINS-CAPABILITY-CATALOG-001` |
+| `src/plugins/cli-gateway-nodes-runtime.test.ts` | 69 | 2229 | `44c0b522ef91088b30ad08b6693aae7d2a937525` | `OCRM-RESP-PLUGINS-CAPABILITY-CATALOG-001` |
+| `src/plugins/cli-gateway-nodes-runtime.ts` | 73 | 2950 | `e5d60a5e708013886fdfee6a9051859a6465b684` | `OCRM-RESP-PLUGINS-CAPABILITY-CATALOG-001` |
+| `src/plugins/cli-lifetime.test-support.ts` | 52 | 1850 | `46f1b13d28bcd4a90f6a150bfe28b7c4f7523791` | `OCRM-RESP-PLUGINS-CAPABILITY-CATALOG-001` |
+| `src/plugins/cli-metadata-lifetime.test.ts` | 739 | 31495 | `5e1cfaf288ecf67a0c32a64041ac15f39af8d31c` | `OCRM-RESP-PLUGINS-CAPABILITY-CATALOG-001` |
+| `src/plugins/cli-registry-loader.ts` | 396 | 14611 | `a530aedef26c801ed975917fff65594c877c33da` | `OCRM-RESP-PLUGINS-CAPABILITY-CATALOG-001` |
+| `src/plugins/cli-root-descriptors.ts` | 104 | 3979 | `6ab20188d09298fbce4dbc5df5c3aa1c4ab2356e` | `OCRM-RESP-PLUGINS-CAPABILITY-CATALOG-001` |
+| `src/plugins/cli-service-scheduler.test.ts` | 105 | 4455 | `76873d5f76b433679e2f2cc1efeab1f557022020` | `OCRM-RESP-PLUGINS-CAPABILITY-CATALOG-001` |
+| `src/plugins/cli-service-scheduler.ts` | 112 | 1989 | `b43dcda0006929ecbe866409f405e944dd27050f` | `OCRM-RESP-PLUGINS-CAPABILITY-CATALOG-001` |
+| `src/plugins/cli.browser-plugin.integration.test.ts` | 128 | 2343 | `1e2d903a95f0b0a92973c612493c67513a16f378` | `OCRM-RESP-PLUGINS-CAPABILITY-CATALOG-001` |
+| `src/plugins/cli.test.ts` | 520 | 4954 | `720dc81a778183a704506c4c642be70cc6388f1c` | `OCRM-RESP-PLUGINS-CAPABILITY-CATALOG-001` |
+| `src/plugins/cli.ts` | 194 | 8089 | `794636ab8e4aadcd7ad5794732e2344a989f9807` | `OCRM-RESP-PLUGINS-CAPABILITY-CATALOG-001` |
+
+### 12.1 Invariant Validation Summary
+- **CLI Backend Registry & Model Bindings**: Supports dynamic registration of CLI backend adapters. Provides case-insensitive provider lookups (`is_cli_provider`) and maps canonical provider IDs. Models resolve through explicit aliases before fallback prefixing (`provider:model`).
+- **Owner Lifecycle Invalidation**: When a CLI backend's owning plugin instance is retired or disposed, retained resolution and execution hooks immediately fail closed with `"Plugin CLI backend instance was retired or disabled"`. Request-scoped backend overrides cleanly take precedence over ambient registries.
+- **Missing Model Provider Diagnostic**: Validates registration descriptors; empty or missing `modelProvider` emits explicit warning advising operators to provide the canonical model provider ID.
+- **CLI Gateway Nodes RPC**: Implements node list and invocation routing. Assigns deterministic UUID idempotency keys if omitted. Enforces operator scope restriction: operator scopes are only passed if the calling plugin is bundled or a trusted official install; third-party callers have scopes stripped. Duplex streaming is explicitly rejected in CLI mode.
+- **Process-Stable Root Descriptors & Lazy Registration**: Manifest-derived root command descriptors are gathered before plugin code executes. Command groups are deduplicated stably, keeping the first occurrence. Lazy registration is permitted only when placeholders cover all declared command names; otherwise registration falls back to eager.
+
+
 
 
 

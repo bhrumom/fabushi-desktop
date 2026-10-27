@@ -2517,6 +2517,187 @@ fn test_ocrm_plugins_clawhub_package_archive_verification_and_install_policy() {
         .contains("Security review recommended"));
 }
 
+#[test]
+fn test_ocrm_plugins_cli_backends_and_command_runtime() {
+    use mahayana_host_runtime::extensions::plugins::cli_backend::{
+        warn_on_missing_cli_backend_model_provider, CliBackendConfig, CliBackendPluginDescriptor,
+        CliBackendRuntimeRegistry, CliCommandRegistry, CliGatewayNodeEntry,
+        CliGatewayNodesRuntime, CliNodeInvokeParams, CliRootCommandDescriptor,
+    };
+    use std::collections::HashMap;
+
+    // 1. Warning on missing modelProvider
+    let missing_warn = warn_on_missing_cli_backend_model_provider("my-backend", None);
+    assert!(missing_warn.is_some());
+    assert!(missing_warn
+        .unwrap()
+        .contains("is missing modelProvider; provider-to-runtime binding will be skipped"));
+
+    let empty_warn = warn_on_missing_cli_backend_model_provider("my-backend", Some("   "));
+    assert!(empty_warn.is_some());
+
+    let valid_warn = warn_on_missing_cli_backend_model_provider("my-backend", Some("anthropic"));
+    assert!(valid_warn.is_none());
+
+    // 2. CliBackendRuntimeRegistry operations
+    let registry = CliBackendRuntimeRegistry::new();
+    let mut model_aliases = HashMap::new();
+    model_aliases.insert("smart".to_string(), "claude-3-5-sonnet".to_string());
+
+    let descriptor = CliBackendPluginDescriptor {
+        id: "fixture-cli".to_string(),
+        model_provider: Some("anthropic".to_string()),
+        config: CliBackendConfig {
+            command: "anthropic-cli".to_string(),
+            args: vec!["--json".to_string()],
+            output: "json".to_string(),
+            input: "arg".to_string(),
+            max_prompt_arg_chars: Some(4096),
+            model_arg: Some("--model".to_string()),
+            model_aliases,
+            session_args: vec!["--session".to_string(), "{sessionId}".to_string()],
+            resume_args: vec!["--resume".to_string(), "{sessionId}".to_string()],
+            session_mode: "existing".to_string(),
+        },
+        subscription_auth_dispatch: true,
+        plugin_id: "anthropic-plugin".to_string(),
+        built_with_version: Some("2026.3.22".to_string()),
+    };
+
+    registry.register(descriptor);
+
+    // 2a. Case-insensitive provider probe
+    assert!(registry.is_cli_provider(" FIXTURE-CLI "));
+    assert!(registry.is_cli_provider("fixture-cli"));
+    assert!(!registry.is_cli_provider("unknown-cli"));
+
+    // 2b. Canonical provider resolution & binding listing
+    assert_eq!(
+        registry.resolve_canonical_provider("fixture-cli"),
+        Some("anthropic".to_string())
+    );
+    let bindings = registry.list_bindings();
+    assert_eq!(bindings.len(), 1);
+    assert_eq!(bindings[0].provider, "anthropic");
+    assert_eq!(bindings[0].runtime, "fixture-cli");
+
+    // 2c. Model ID resolution with alias or prefix
+    assert_eq!(
+        registry.resolve_model_id("fixture-cli", "smart").unwrap(),
+        "claude-3-5-sonnet"
+    );
+    assert_eq!(
+        registry.resolve_model_id("fixture-cli", "haiku").unwrap(),
+        "anthropic:haiku"
+    );
+
+    // 2d. Inactive / retired owner throws error
+    registry.unregister_owner("anthropic-plugin");
+    let retired_err = registry.resolve_config("fixture-cli").unwrap_err();
+    assert!(retired_err.contains("retired or disabled"));
+    let retired_model_err = registry.resolve_model_id("fixture-cli", "smart").unwrap_err();
+    assert!(retired_model_err.contains("retired or disabled"));
+
+    // 3. CliGatewayNodesRuntime
+    let nodes = vec![
+        CliGatewayNodeEntry {
+            node_id: "node-1".to_string(),
+            connected: true,
+        },
+        CliGatewayNodeEntry {
+            node_id: "node-2".to_string(),
+            connected: false,
+        },
+    ];
+    let all_nodes = CliGatewayNodesRuntime::filter_nodes(nodes.clone(), false);
+    assert_eq!(all_nodes.len(), 2);
+    let connected_nodes = CliGatewayNodesRuntime::filter_nodes(nodes, true);
+    assert_eq!(connected_nodes.len(), 1);
+    assert_eq!(connected_nodes[0].node_id, "node-1");
+
+    // 3b. prepare_node_invoke_request
+    let raw_invoke = CliNodeInvokeParams {
+        node_id: "node-1".to_string(),
+        command: "exec".to_string(),
+        params: None,
+        timeout_ms: Some(5000),
+        idempotency_key: None, // Missing idempotency key
+        session_key: Some("sess-1".to_string()),
+        scopes: Some(vec!["admin".to_string()]),
+    };
+    // Non-bundled caller has scopes stripped
+    let prepared_untrusted =
+        CliGatewayNodesRuntime::prepare_node_invoke_request(raw_invoke.clone(), false);
+    assert!(prepared_untrusted.idempotency_key.is_some());
+    assert!(prepared_untrusted.scopes.is_none());
+
+    // Bundled caller preserves scopes
+    let prepared_bundled =
+        CliGatewayNodesRuntime::prepare_node_invoke_request(raw_invoke, true);
+    assert_eq!(prepared_bundled.scopes, Some(vec!["admin".to_string()]));
+
+    // 3c. open_duplex is unavailable in CLI
+    let duplex_res = CliGatewayNodesRuntime::open_duplex();
+    assert!(duplex_res.is_err());
+    assert!(duplex_res.unwrap_err().contains("Node duplex is unavailable in the CLI"));
+
+    // 4. CliCommandRegistry Descriptors & Lazy Registration Policy
+    let group1 = vec![
+        CliRootCommandDescriptor {
+            name: "status".to_string(),
+            description: "Show status".to_string(),
+            aliases: vec!["st".to_string()],
+            machine_output: true,
+        },
+        CliRootCommandDescriptor {
+            name: "help".to_string(),
+            description: "Help".to_string(),
+            aliases: vec![],
+            machine_output: false,
+        },
+    ];
+    let group2 = vec![
+        CliRootCommandDescriptor {
+            name: "status".to_string(), // Duplicate name
+            description: "Duplicate status".to_string(),
+            aliases: vec![],
+            machine_output: false,
+        },
+        CliRootCommandDescriptor {
+            name: "plugins".to_string(),
+            description: "Manage plugins".to_string(),
+            aliases: vec![],
+            machine_output: true,
+        },
+    ];
+
+    let unique = CliCommandRegistry::collect_unique_command_descriptors(vec![group1, group2]);
+    assert_eq!(unique.len(), 3);
+    assert_eq!(unique[0].name, "help");
+    assert_eq!(unique[1].name, "plugins");
+    assert_eq!(unique[2].name, "status");
+    assert_eq!(unique[2].description, "Show status"); // First one kept
+
+    // 4b. Lazy registration test
+    let placeholders = vec![
+        CliRootCommandDescriptor {
+            name: "plugins".to_string(),
+            description: "".to_string(),
+            aliases: vec![],
+            machine_output: false,
+        },
+    ];
+    assert!(CliCommandRegistry::can_register_lazily(
+        &["plugins".to_string()],
+        &placeholders
+    ));
+    assert!(!CliCommandRegistry::can_register_lazily(
+        &["plugins".to_string(), "extra".to_string()],
+        &placeholders
+    ));
+}
+
+
 
 
 
