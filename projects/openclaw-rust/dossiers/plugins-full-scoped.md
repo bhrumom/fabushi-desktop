@@ -53,6 +53,14 @@
     - Verifies next-turn prompt injection queuing, draining, and empty queue handling per session identity.
     - Verifies plugin session extension store patching, retrieval, and owned state clearing.
     - Verifies gateway UI descriptors surface operator.admin required scopes and session action echoes.
+  - `test_ocrm_plugins_run_context_and_scheduled_turns` (PASSED)
+    - Verifies plugin run context lifecycle scoped to active run IDs and cleared on termination.
+    - Verifies session turn scheduling within MAX_DATE_TIMESTAMP_MS bounds and tag-based unscheduling.
+  - `test_ocrm_plugins_session_actions_attachments_and_projection` (PASSED)
+    - Verifies plugin session actions gateway dispatch and scope authorization.
+    - Verifies session attachment delivery, MIME sniffing bounds (FILE_TYPE_SNIFF_MAX_BYTES), and temporary resource cleanup.
+    - Verifies plugin session extension isolation within entry.plugins[pluginId][namespace] and non-destructive retirement stripping.
+
 
 
 

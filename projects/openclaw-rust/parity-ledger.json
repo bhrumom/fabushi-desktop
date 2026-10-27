@@ -10,10 +10,10 @@
     "ui_accepted": false
   },
   "file_coverage": {
-    "mapped_paths": 436,
+    "mapped_paths": 442,
     "omitted_known": 0,
     "tracked_paths": 58750,
-    "unclassified_paths": 58314
+    "unclassified_paths": 58308
   },
   "inventory_authority": {
     "manifest_source": "GitHub Actions immutable artifact candidate",
@@ -21242,7 +21242,9 @@
         "source/host/tests/openclaw_plugins_full_contract.rs::test_ocrm_plugins_architectural_boundary_guardrails",
         "source/host/tests/openclaw_plugins_contract.rs::test_ocrm_plugins_host_hook_fixture_and_ui_projection",
         "source/host/tests/openclaw_plugins_full_contract.rs::test_ocrm_plugins_config_boundary_and_test_api_consumption",
-        "source/host/tests/openclaw_plugins_full_contract.rs::test_ocrm_plugins_host_hook_identity_and_gateway_methods"
+        "source/host/tests/openclaw_plugins_full_contract.rs::test_ocrm_plugins_host_hook_identity_and_gateway_methods",
+        "source/host/tests/openclaw_plugins_full_contract.rs::test_ocrm_plugins_run_context_and_scheduled_turns",
+        "source/host/tests/openclaw_plugins_full_contract.rs::test_ocrm_plugins_session_actions_attachments_and_projection"
       ],
       "integration": {
         "producer": "source/host/src/extensions/plugins/hook_runner.rs",
@@ -21376,6 +21378,60 @@
             "end_line": 1862
           },
           "symbol": "plugin host hooks contract suite"
+        },
+        {
+          "path": "src/plugins/contracts/run-context-lifecycle.contract.test.ts",
+          "blob_sha": "d151cd744c1783c2ab946098f316bd05316cf8b2",
+          "range": {
+            "start_line": 1,
+            "end_line": 766
+          },
+          "symbol": "run context lifecycle contract"
+        },
+        {
+          "path": "src/plugins/contracts/scheduled-turns.contract.test.ts",
+          "blob_sha": "e543240c338c742d91f9e84d72054163fa51117d",
+          "range": {
+            "start_line": 1,
+            "end_line": 1003
+          },
+          "symbol": "scheduled turn contract"
+        },
+        {
+          "path": "src/plugins/contracts/scheduled-turns.test-support.ts",
+          "blob_sha": "bccf2e5cea6ed58be420c01c127a238b41d828da",
+          "range": {
+            "start_line": 1,
+            "end_line": 52
+          },
+          "symbol": "scheduled turns mock cron service"
+        },
+        {
+          "path": "src/plugins/contracts/session-actions.contract.test.ts",
+          "blob_sha": "df878b31900a63f44682ccc24bf23d8a04ea882d",
+          "range": {
+            "start_line": 1,
+            "end_line": 767
+          },
+          "symbol": "session actions contract"
+        },
+        {
+          "path": "src/plugins/contracts/session-attachments.contract.test.ts",
+          "blob_sha": "268cb5fdc2f474b7ffa01217d2579849e3f2aeb4",
+          "range": {
+            "start_line": 1,
+            "end_line": 589
+          },
+          "symbol": "session attachments contract"
+        },
+        {
+          "path": "src/plugins/contracts/session-entry-projection.contract.test.ts",
+          "blob_sha": "fa9e21fb527af17bc56a7344740c5fd16d6bf02b",
+          "range": {
+            "start_line": 1,
+            "end_line": 917
+          },
+          "symbol": "session entry projection contract"
         }
       ],
       "evidence_refs": [

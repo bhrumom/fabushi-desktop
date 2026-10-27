@@ -447,6 +447,108 @@ fn test_ocrm_plugins_host_hook_identity_and_gateway_methods() {
     assert_eq!(action_res["echo"]["id"], 123);
 }
 
+#[test]
+fn test_ocrm_plugins_run_context_and_scheduled_turns() {
+    // Tests equivalent behavior from run-context-lifecycle, scheduled-turns,
+    // and scheduled-turns.test-support contract test suites.
+    use mahayana_host_runtime::extensions::plugins::hook_runner::{
+        PluginRunContextLifecycle, PluginScheduledTurnsManager, MAX_DATE_TIMESTAMP_MS,
+    };
+    use serde_json::json;
+
+    // 1. Run context lifecycle
+    let lifecycle = PluginRunContextLifecycle::new();
+    assert!(lifecycle.get_run_context("run-1", "tool_result").is_none());
+
+    lifecycle.set_run_context("run-1", "tool_result", json!({"status": "success", "count": 1}));
+    assert_eq!(
+        lifecycle.get_run_context("run-1", "tool_result").unwrap(),
+        json!({"status": "success", "count": 1})
+    );
+
+    lifecycle.clear_run_context("run-1");
+    assert!(lifecycle.get_run_context("run-1", "tool_result").is_none());
+
+    // 2. Scheduled turns manager
+    let scheduler = PluginScheduledTurnsManager::new();
+    let job_id = scheduler.schedule_turn("agent:main:main", 1_700_000_000_000, "wake up", Some("reminder")).unwrap();
+    assert!(job_id.contains("agent:main:main"));
+
+    // Exceeding MAX_DATE_TIMESTAMP_MS is rejected
+    let err_max = scheduler.schedule_turn("agent:main:main", MAX_DATE_TIMESTAMP_MS + 1000, "future", None).unwrap_err();
+    assert!(err_max.contains("exceeds MAX_DATE_TIMESTAMP_MS"));
+
+    // Unschedule by tag
+    let removed = scheduler.unschedule_by_tag("agent:main:main", "reminder");
+    assert_eq!(removed, 1);
+    let removed_again = scheduler.unschedule_by_tag("agent:main:main", "reminder");
+    assert_eq!(removed_again, 0);
+}
+
+#[test]
+fn test_ocrm_plugins_session_actions_attachments_and_projection() {
+    // Tests equivalent behavior from session-actions, session-attachments,
+    // and session-entry-projection contract test suites.
+    use mahayana_host_runtime::extensions::plugins::hook_runner::{
+        PluginSessionActionsManager, PluginSessionAttachmentManager, PluginSessionEntryProjection,
+    };
+    use serde_json::json;
+
+    // 1. Session actions
+    let action_ok = PluginSessionActionsManager::execute_action(
+        "agent:main:main",
+        "custom_action",
+        &["operator.write".to_string()],
+        &json!({"key": "val"}),
+    ).unwrap();
+    assert!(action_ok["ok"].as_bool().unwrap());
+    assert_eq!(action_ok["action"], "custom_action");
+
+    let action_err = PluginSessionActionsManager::execute_action(
+        "agent:main:main",
+        "admin_action",
+        &["operator.read".to_string()],
+        &json!({}),
+    ).unwrap_err();
+    assert!(action_err.contains("operator.admin scope required"));
+
+    // 2. Session attachments
+    let att_ok = PluginSessionAttachmentManager::send_attachment(
+        "agent:main:main",
+        "image/png",
+        b"fake_png_binary_data",
+        "telegram:12345",
+    ).unwrap();
+    assert!(att_ok.contains("sent:att-agent:main:main-image/png"));
+
+    let att_err = PluginSessionAttachmentManager::send_attachment(
+        "agent:main:main",
+        "image/png",
+        b"",
+        "telegram:12345",
+    ).unwrap_err();
+    assert!(att_err.contains("cannot be empty"));
+
+    // 3. Session entry projection
+    let mut entry = json!({"sessionId": "session-123"});
+    PluginSessionEntryProjection::project_extension(
+        &mut entry,
+        "workflow-plugin",
+        "state",
+        json!({"step": 2, "complete": true}),
+    );
+    assert_eq!(
+        entry["plugins"]["workflow-plugin"]["state"],
+        json!({"step": 2, "complete": true})
+    );
+    assert_eq!(entry["sessionId"], "session-123");
+
+    PluginSessionEntryProjection::strip_extension(&mut entry, "workflow-plugin");
+    assert!(entry["plugins"]["workflow-plugin"].is_null());
+    assert_eq!(entry["sessionId"], "session-123");
+}
+
+
 
 
 

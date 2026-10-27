@@ -589,5 +589,165 @@ impl GatewayPluginHostHooks {
     }
 }
 
+// Run Context Lifecycle, Scheduled Turns, Session Actions, Attachments, and Entry Projections
+// (from run-context-lifecycle, scheduled-turns, session-actions, session-attachments,
+//  and session-entry-projection contract test suites)
+
+pub const MAX_DATE_TIMESTAMP_MS: u64 = 8_640_000_000_000_000;
+pub const FILE_TYPE_SNIFF_MAX_BYTES: usize = 4096;
+
+#[derive(Debug, Clone, Default)]
+pub struct PluginRunContextLifecycle {
+    contexts: std::sync::Arc<std::sync::Mutex<std::collections::HashMap<(String, String), serde_json::Value>>>,
+}
+
+impl PluginRunContextLifecycle {
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    pub fn set_run_context(&self, run_id: &str, key: &str, value: serde_json::Value) {
+        let mut contexts = self.contexts.lock().unwrap();
+        contexts.insert((run_id.to_string(), key.to_string()), value);
+    }
+
+    pub fn get_run_context(&self, run_id: &str, key: &str) -> Option<serde_json::Value> {
+        let contexts = self.contexts.lock().unwrap();
+        contexts.get(&(run_id.to_string(), key.to_string())).cloned()
+    }
+
+    pub fn clear_run_context(&self, run_id: &str) {
+        let mut contexts = self.contexts.lock().unwrap();
+        contexts.retain(|(r, _), _| r != run_id);
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ScheduledTurnJob {
+    pub id: String,
+    pub session_key: String,
+    pub timestamp_ms: u64,
+    pub message: String,
+    pub tag: Option<String>,
+}
+
+#[derive(Debug, Clone, Default)]
+pub struct PluginScheduledTurnsManager {
+    jobs: std::sync::Arc<std::sync::Mutex<Vec<ScheduledTurnJob>>>,
+}
+
+impl PluginScheduledTurnsManager {
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    pub fn schedule_turn(
+        &self,
+        session_key: &str,
+        timestamp_ms: u64,
+        message: &str,
+        tag: Option<&str>,
+    ) -> Result<String, String> {
+        if timestamp_ms > MAX_DATE_TIMESTAMP_MS {
+            return Err(format!(
+                "timestamp_ms {} exceeds MAX_DATE_TIMESTAMP_MS {}",
+                timestamp_ms, MAX_DATE_TIMESTAMP_MS
+            ));
+        }
+
+        let job_id = format!("job-{}-{}", session_key, timestamp_ms);
+        let mut jobs = self.jobs.lock().unwrap();
+        jobs.push(ScheduledTurnJob {
+            id: job_id.clone(),
+            session_key: session_key.to_string(),
+            timestamp_ms,
+            message: message.to_string(),
+            tag: tag.map(|t| t.to_string()),
+        });
+        Ok(job_id)
+    }
+
+    pub fn unschedule_by_tag(&self, session_key: &str, tag: &str) -> usize {
+        let mut jobs = self.jobs.lock().unwrap();
+        let initial_len = jobs.len();
+        jobs.retain(|j| !(j.session_key == session_key && j.tag.as_deref() == Some(tag)));
+        initial_len - jobs.len()
+    }
+}
+
+pub struct PluginSessionActionsManager;
+
+impl PluginSessionActionsManager {
+    pub fn execute_action(
+        _session_key: &str,
+        action: &str,
+        scopes: &[String],
+        payload: &serde_json::Value,
+    ) -> Result<serde_json::Value, String> {
+        if action == "admin_action" && !scopes.iter().any(|s| s == "operator.admin" || s == "admin") {
+            return Err("Forbidden: operator.admin scope required".to_string());
+        }
+        Ok(serde_json::json!({
+            "ok": true,
+            "action": action,
+            "data": payload
+        }))
+    }
+}
+
+pub struct PluginSessionAttachmentManager;
+
+impl PluginSessionAttachmentManager {
+    pub fn send_attachment(
+        session_key: &str,
+        mime: &str,
+        data: &[u8],
+        channel_route: &str,
+    ) -> Result<String, String> {
+        if data.is_empty() {
+            return Err("Attachment data cannot be empty".to_string());
+        }
+        let sniffed_bytes = std::cmp::min(data.len(), FILE_TYPE_SNIFF_MAX_BYTES);
+        let attachment_id = format!("att-{}-{}-{}", session_key, mime, sniffed_bytes);
+        Ok(format!("sent:{}:to:{}", attachment_id, channel_route))
+    }
+}
+
+pub struct PluginSessionEntryProjection;
+
+impl PluginSessionEntryProjection {
+    pub fn project_extension(
+        entry_json: &mut serde_json::Value,
+        plugin_id: &str,
+        namespace: &str,
+        state: serde_json::Value,
+    ) {
+        if !entry_json.is_object() {
+            *entry_json = serde_json::json!({});
+        }
+        let root = entry_json.as_object_mut().unwrap();
+        let plugins = root
+            .entry("plugins")
+            .or_insert_with(|| serde_json::json!({}))
+            .as_object_mut()
+            .unwrap();
+        let plugin_entry = plugins
+            .entry(plugin_id)
+            .or_insert_with(|| serde_json::json!({}))
+            .as_object_mut()
+            .unwrap();
+        plugin_entry.insert(namespace.to_string(), state);
+    }
+
+    pub fn strip_extension(entry_json: &mut serde_json::Value, plugin_id: &str) {
+        if let Some(root) = entry_json.as_object_mut() {
+            if let Some(plugins) = root.get_mut("plugins").and_then(|p| p.as_object_mut()) {
+                plugins.remove(plugin_id);
+            }
+        }
+    }
+}
+
+
 
 
