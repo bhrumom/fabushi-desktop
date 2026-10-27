@@ -55,4 +55,11 @@
     - Verifies bundled plugin roots resolution across relative subpaths.
     - Verifies never-bundle dependency boundaries (`@lancedb/lancedb`, `@matrix-org/matrix-sdk-crypto-nodejs`, `matrix-js-sdk`).
     - Verifies elimination of bare matrix-js-sdk import crashes in bundled subpath entries.
+  - `test_ocrm_plugins_bundle_manifest_guardrails` (PASSED)
+    - Verifies base config schema footprint excludes retired paths (`talk.*`, `channels.*.streamMode`, `agents.defaults.sandbox.perSession`).
+    - Verifies canonical private-network schema property (`network.dangerouslyAllowPrivateNetwork`).
+    - Verifies cross-package import boundaries forbid private internal plugin-sdk subpaths.
+    - Verifies extension runtime dependencies whitelist optional peers (`@a2ui/markdown-it`, `@discordjs/opus`, `crabline`, `zod`, `audio-decode`, `apache-arrow`).
+    - Verifies runtime plugin entrypoint files contain no test harness imports (`vitest`, `openclaw/plugin-sdk/testing`, `test-harness`, `test-api`).
+
 

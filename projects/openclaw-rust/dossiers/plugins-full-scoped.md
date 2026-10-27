@@ -46,5 +46,9 @@
     - Verifies on-demand markdown table mode resolution.
     - Verifies bundled plugin public surface access requires enabled state in config.
     - Verifies SSRF guard blocks requests to private IPv4 networks.
+  - `test_ocrm_plugins_config_boundary_and_test_api_consumption` (PASSED)
+    - Verifies channel action runtime helpers do not invoke `loadConfig()` directly and instead receive configuration context.
+    - Verifies extension `test-api.ts` can only be imported from test files (`.test.ts`, `.spec.ts`), strictly prohibiting runtime consumption.
+
 
 

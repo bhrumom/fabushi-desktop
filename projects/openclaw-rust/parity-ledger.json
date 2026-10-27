@@ -10,10 +10,10 @@
     "ui_accepted": false
   },
   "file_coverage": {
-    "mapped_paths": 425,
+    "mapped_paths": 431,
     "omitted_known": 0,
     "tracked_paths": 58750,
-    "unclassified_paths": 58325
+    "unclassified_paths": 58319
   },
   "inventory_authority": {
     "manifest_source": "GitHub Actions immutable artifact candidate",
@@ -20490,7 +20490,8 @@
       ],
       "tests": [
         "source/host/tests/openclaw_plugins_contract.rs::test_ocrm_plugins_bundle_manifest",
-        "source/host/tests/openclaw_plugins_contract.rs::test_ocrm_plugins_bundled_capability_metadata_and_subpath_bundle"
+        "source/host/tests/openclaw_plugins_contract.rs::test_ocrm_plugins_bundled_capability_metadata_and_subpath_bundle",
+        "source/host/tests/openclaw_plugins_contract.rs::test_ocrm_plugins_bundle_manifest_guardrails"
       ],
       "integration": {
         "producer": "source/host/src/extensions/plugins/bundle_manifest.rs",
@@ -20570,6 +20571,42 @@
             "end_line": 46
           },
           "symbol": "bundled plugin roots resolver"
+        },
+        {
+          "path": "src/plugins/contracts/config-footprint-guardrails.test.ts",
+          "blob_sha": "9a459f0789f9e56c515f5ba517e5841f607a0b11",
+          "range": {
+            "start_line": 1,
+            "end_line": 207
+          },
+          "symbol": "config footprint guardrails"
+        },
+        {
+          "path": "src/plugins/contracts/extension-package-project-boundaries.test.ts",
+          "blob_sha": "20f03f4ad707438c061eb5a6f72ecf4b9065f97e",
+          "range": {
+            "start_line": 1,
+            "end_line": 444
+          },
+          "symbol": "extension package project boundaries"
+        },
+        {
+          "path": "src/plugins/contracts/extension-runtime-dependencies.contract.test.ts",
+          "blob_sha": "c7cd8217902a5c1570f7b3ffc0028d0bc2b0abff",
+          "range": {
+            "start_line": 1,
+            "end_line": 454
+          },
+          "symbol": "extension runtime dependencies contract"
+        },
+        {
+          "path": "src/plugins/contracts/plugin-entry-guardrails.test.ts",
+          "blob_sha": "c25df98ff3ab82fb99e45bf15cac5cf6a3176a22",
+          "range": {
+            "start_line": 1,
+            "end_line": 344
+          },
+          "symbol": "plugin entry guardrails"
         }
       ],
       "evidence_refs": [
@@ -21175,7 +21212,8 @@
         "source/host/tests/openclaw_plugins_full_contract.rs::test_ocrm_plugins_boundary_invariants",
         "source/host/tests/openclaw_plugins_full_contract.rs::test_ocrm_plugins_agent_event_payload_and_active_run_steering",
         "source/host/tests/openclaw_plugins_full_contract.rs::test_ocrm_plugins_architectural_boundary_guardrails",
-        "source/host/tests/openclaw_plugins_contract.rs::test_ocrm_plugins_host_hook_fixture_and_ui_projection"
+        "source/host/tests/openclaw_plugins_contract.rs::test_ocrm_plugins_host_hook_fixture_and_ui_projection",
+        "source/host/tests/openclaw_plugins_full_contract.rs::test_ocrm_plugins_config_boundary_and_test_api_consumption"
       ],
       "integration": {
         "producer": "source/host/src/extensions/plugins/hook_runner.rs",
@@ -21273,6 +21311,24 @@
             "end_line": 33
           },
           "symbol": "host-hook UI projection"
+        },
+        {
+          "path": "src/plugins/contracts/config-boundary-guard.test.ts",
+          "blob_sha": "063a7eeeb4d1e9ef88917f373123ae87a24d2fc2",
+          "range": {
+            "start_line": 1,
+            "end_line": 268
+          },
+          "symbol": "config boundary guard"
+        },
+        {
+          "path": "src/plugins/contracts/extension-test-api-consumption.test.ts",
+          "blob_sha": "513c4bb7676ccc231dde4eb9fb8ef69f9f73c9d5",
+          "range": {
+            "start_line": 1,
+            "end_line": 209
+          },
+          "symbol": "extension test API consumption guard"
         }
       ],
       "evidence_refs": [

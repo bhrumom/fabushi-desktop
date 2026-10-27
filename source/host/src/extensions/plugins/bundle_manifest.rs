@@ -460,3 +460,135 @@ impl BundledPluginSubpathValidator {
     }
 }
 
+// Config Footprint, Extension Package Boundaries, Runtime Dependencies, and Plugin Entry Guardrails
+// (from config-footprint-guardrails, extension-package-project-boundaries,
+//  extension-runtime-dependencies, and plugin-entry-guardrails contract test suites)
+
+pub struct ConfigFootprintGuardrail;
+
+impl ConfigFootprintGuardrail {
+    pub fn assert_no_retired_legacy_paths(schema_paths: &[&str]) -> Result<(), Vec<String>> {
+        let retired_patterns = [
+            "talk.voiceId",
+            "talk.voiceAliases",
+            "talk.modelId",
+            "talk.outputFormat",
+            "talk.apiKey",
+            "talk.providers.",
+            "agents.defaults.sandbox.perSession",
+            "hooks.internal.handlers",
+            "channels.telegram.streamMode",
+            "channels.slack.streamMode",
+            "channels.discord.streamMode",
+            "channels.googlechat.streamMode",
+        ];
+
+        let mut offenders = Vec::new();
+        for path in schema_paths {
+            for pattern in &retired_patterns {
+                if path.contains(pattern) {
+                    offenders.push(path.to_string());
+                }
+            }
+        }
+        if offenders.is_empty() {
+            Ok(())
+        } else {
+            offenders.sort();
+            Err(offenders)
+        }
+    }
+
+    pub fn assert_canonical_private_network_paths(metadata_paths: &[&str]) -> Result<(), Vec<String>> {
+        let mut offenders = Vec::new();
+        for path in metadata_paths {
+            if path.contains(".allowPrivateNetwork") && !path.contains("dangerouslyAllowPrivateNetwork") {
+                offenders.push(path.to_string());
+            }
+        }
+        if offenders.is_empty() {
+            Ok(())
+        } else {
+            offenders.sort();
+            Err(offenders)
+        }
+    }
+}
+
+pub struct ExtensionPackageBoundaryGuard;
+
+impl ExtensionPackageBoundaryGuard {
+    pub fn assert_allowed_cross_package_imports(
+        extension_path: &str,
+        source: &str,
+    ) -> Result<(), Vec<String>> {
+        let forbidden_private_entrypoints = [
+            "openclaw/plugin-sdk/private/",
+            "openclaw/plugin-sdk/internal/",
+        ];
+        let mut offenders = Vec::new();
+        for entry in &forbidden_private_entrypoints {
+            if source.contains(entry) {
+                offenders.push(format!("{}: imports forbidden private entrypoint '{}'", extension_path, entry));
+            }
+        }
+        if offenders.is_empty() {
+            Ok(())
+        } else {
+            offenders.sort();
+            Err(offenders)
+        }
+    }
+}
+
+pub struct ExtensionRuntimeDependenciesGuard;
+
+impl ExtensionRuntimeDependenciesGuard {
+    pub fn is_whitelisted_optional_peer(extension: &str, module: &str) -> bool {
+        match (extension, module) {
+            ("extensions/canvas", "@a2ui/markdown-it") => true,
+            ("extensions/discord", "@discordjs/opus") => true,
+            ("extensions/qa-lab", "crabline") => true,
+            ("extensions/browser", "zod") => true,
+            ("extensions/whatsapp", "audio-decode") => true,
+            ("extensions/memory-lancedb", "apache-arrow") => true,
+            _ => false,
+        }
+    }
+}
+
+pub struct PluginEntryGuardrails;
+
+impl PluginEntryGuardrails {
+    pub fn assert_no_testing_imports_in_entrypoint(
+        entrypoint_file: &str,
+        source: &str,
+    ) -> Result<(), Vec<String>> {
+        let forbidden_patterns = [
+            "vitest",
+            "openclaw/plugin-sdk/testing",
+            "/test-api",
+            "__tests__",
+            "/test-support",
+            ".test.ts",
+            ".test.js",
+            "test-harness",
+            "test-helper",
+        ];
+
+        let mut offenders = Vec::new();
+        for pattern in &forbidden_patterns {
+            if source.contains(pattern) {
+                offenders.push(format!("{}: imports test module or harness pattern '{}'", entrypoint_file, pattern));
+            }
+        }
+        if offenders.is_empty() {
+            Ok(())
+        } else {
+            offenders.sort();
+            Err(offenders)
+        }
+    }
+}
+
+

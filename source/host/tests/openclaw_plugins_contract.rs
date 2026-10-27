@@ -924,4 +924,62 @@ fn test_ocrm_plugins_host_hook_fixture_and_ui_projection() {
     assert!(approval_desc.required_scopes.is_empty());
 }
 
+#[test]
+fn test_ocrm_plugins_bundle_manifest_guardrails() {
+    // Tests equivalent behavior from config-footprint-guardrails, extension-package-project-boundaries,
+    // extension-runtime-dependencies, and plugin-entry-guardrails contract test suites.
+    use mahayana_host_runtime::extensions::plugins::bundle_manifest::{
+        ConfigFootprintGuardrail, ExtensionPackageBoundaryGuard,
+        ExtensionRuntimeDependenciesGuard, PluginEntryGuardrails,
+    };
+
+    // 1. Config footprint guardrail
+    let clean_paths = ["plugins.entries.*.config", "channels.telegram.botToken"];
+    assert!(ConfigFootprintGuardrail::assert_no_retired_legacy_paths(&clean_paths).is_ok());
+
+    let retired_paths = ["talk.voiceId", "channels.telegram.streamMode"];
+    let err_retired = ConfigFootprintGuardrail::assert_no_retired_legacy_paths(&retired_paths).unwrap_err();
+    assert_eq!(err_retired, vec!["channels.telegram.streamMode", "talk.voiceId"]);
+
+
+    let clean_network_paths = ["network.dangerouslyAllowPrivateNetwork"];
+    assert!(ConfigFootprintGuardrail::assert_canonical_private_network_paths(&clean_network_paths).is_ok());
+
+    let bad_network_paths = ["channels.matrix.allowPrivateNetwork"];
+    let err_network = ConfigFootprintGuardrail::assert_canonical_private_network_paths(&bad_network_paths).unwrap_err();
+    assert_eq!(err_network, vec!["channels.matrix.allowPrivateNetwork"]);
+
+    // 2. Extension package boundary guard
+    let clean_extension_src = "import { createPlugin } from 'openclaw/plugin-sdk/core';";
+    assert!(ExtensionPackageBoundaryGuard::assert_allowed_cross_package_imports(
+        "extensions/telegram/src/index.ts",
+        clean_extension_src
+    ).is_ok());
+
+    let bad_extension_src = "import { secret } from 'openclaw/plugin-sdk/private/secrets';";
+    let err_boundary = ExtensionPackageBoundaryGuard::assert_allowed_cross_package_imports(
+        "extensions/telegram/src/index.ts",
+        bad_extension_src
+    ).unwrap_err();
+    assert!(err_boundary[0].contains("imports forbidden private entrypoint"));
+
+    // 3. Extension runtime dependencies whitelist
+    assert!(ExtensionRuntimeDependenciesGuard::is_whitelisted_optional_peer("extensions/canvas", "@a2ui/markdown-it"));
+    assert!(ExtensionRuntimeDependenciesGuard::is_whitelisted_optional_peer("extensions/discord", "@discordjs/opus"));
+    assert!(ExtensionRuntimeDependenciesGuard::is_whitelisted_optional_peer("extensions/qa-lab", "crabline"));
+    assert!(ExtensionRuntimeDependenciesGuard::is_whitelisted_optional_peer("extensions/browser", "zod"));
+    assert!(ExtensionRuntimeDependenciesGuard::is_whitelisted_optional_peer("extensions/whatsapp", "audio-decode"));
+    assert!(ExtensionRuntimeDependenciesGuard::is_whitelisted_optional_peer("extensions/memory-lancedb", "apache-arrow"));
+    assert!(!ExtensionRuntimeDependenciesGuard::is_whitelisted_optional_peer("extensions/telegram", "random-dep"));
+
+    // 4. Plugin entry guardrails (no test modules in entrypoints)
+    let clean_entry = "export function register(api) { api.registerTool(); }";
+    assert!(PluginEntryGuardrails::assert_no_testing_imports_in_entrypoint("index.ts", clean_entry).is_ok());
+
+    let bad_entry = "import { describe, it } from 'vitest';\nimport { fixture } from './test-harness';";
+    let err_entry = PluginEntryGuardrails::assert_no_testing_imports_in_entrypoint("index.ts", bad_entry).unwrap_err();
+    assert_eq!(err_entry.len(), 2);
+}
+
+
 

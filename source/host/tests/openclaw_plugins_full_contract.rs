@@ -357,4 +357,41 @@ fn test_ocrm_plugins_runtime_import_side_effects_and_seams() {
     assert!(err_ssrf.contains("SSRF blocked access to private network"));
 }
 
+#[test]
+fn test_ocrm_plugins_config_boundary_and_test_api_consumption() {
+    // Tests equivalent behavior from config-boundary-guard and extension-test-api-consumption contract test suites.
+    use mahayana_host_runtime::extensions::plugins::hook_runner::{
+        ConfigBoundaryGuard, ExtensionTestApiConsumptionGuard,
+    };
+
+    // 1. Config boundary guard
+    let clean_action_src = "export async function send(ctx) { return ctx.config; }";
+    assert!(ConfigBoundaryGuard::assert_no_runtime_action_load_config(
+        "extensions/telegram/src/send.ts",
+        clean_action_src
+    ).is_ok());
+
+    let bad_action_src = "export async function send() { return loadConfig(); }";
+    let err_action = ConfigBoundaryGuard::assert_no_runtime_action_load_config(
+        "extensions/telegram/src/send.ts",
+        bad_action_src
+    ).unwrap_err();
+    assert!(err_action[0].contains("runtime action invokes loadConfig()"));
+
+    // 2. Extension test API consumption guard
+    let clean_test_src = "import { testHelper } from '../test-api.js';";
+    assert!(ExtensionTestApiConsumptionGuard::assert_test_api_imported_only_in_tests(
+        "extensions/telegram/tests/send.test.ts",
+        clean_test_src
+    ).is_ok());
+
+    let bad_prod_src = "import { testHelper } from './test-api.js';";
+    let err_prod = ExtensionTestApiConsumptionGuard::assert_test_api_imported_only_in_tests(
+        "extensions/telegram/src/production.ts",
+        bad_prod_src
+    ).unwrap_err();
+    assert!(err_prod[0].contains("production file imports extension test-api"));
+}
+
+
 

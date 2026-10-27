@@ -449,3 +449,45 @@ impl ModelCatalogCoreImportsGuard {
     }
 }
 
+// Config Boundary Guard & Extension Test API Consumption Guard
+// (from config-boundary-guard.test.ts and extension-test-api-consumption.test.ts)
+
+pub struct ConfigBoundaryGuard;
+
+impl ConfigBoundaryGuard {
+    pub fn assert_no_runtime_action_load_config(
+        file_path: &str,
+        source: &str,
+    ) -> Result<(), Vec<String>> {
+        let is_runtime_action = file_path.contains("/src/send.")
+            || file_path.contains("/src/action.")
+            || file_path.contains("/src/dispatch.");
+
+        if is_runtime_action && (source.contains("loadConfig()") || source.contains("loadPluginConfig()")) {
+            return Err(vec![format!("{}: runtime action invokes loadConfig() instead of passed context", file_path)]);
+        }
+        Ok(())
+    }
+}
+
+pub struct ExtensionTestApiConsumptionGuard;
+
+impl ExtensionTestApiConsumptionGuard {
+    pub fn assert_test_api_imported_only_in_tests(
+        file_path: &str,
+        source: &str,
+    ) -> Result<(), Vec<String>> {
+        let is_test_file = file_path.ends_with(".test.ts")
+            || file_path.ends_with(".spec.ts")
+            || file_path.ends_with(".test.js")
+            || file_path.contains("/test/")
+            || file_path.contains("/tests/");
+
+        if !is_test_file && (source.contains("/test-api") || source.contains("/test-api.js")) {
+            return Err(vec![format!("{}: production file imports extension test-api", file_path)]);
+        }
+        Ok(())
+    }
+}
+
+
