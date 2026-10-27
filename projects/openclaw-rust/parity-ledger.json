@@ -10,10 +10,10 @@
     "ui_accepted": false
   },
   "file_coverage": {
-    "mapped_paths": 956,
+    "mapped_paths": 1165,
     "omitted_known": 0,
     "tracked_paths": 58750,
-    "unclassified_paths": 57794
+    "unclassified_paths": 57585
   },
   "inventory_authority": {
     "manifest_source": "GitHub Actions immutable artifact candidate",
@@ -24173,6 +24173,2163 @@
       ],
       "reviewer": "xuyao@ombhrum.com",
       "migration_rollback": "Use single-threaded synchronous task execution without pool concurrency"
+    },
+    {
+      "id": "OCRM-RESP-NODE-HOST-CONNECTION-001",
+      "unit_id": "OCRM-UNIT-NODE-HOST-001",
+      "responsibility_kind": "business-runtime",
+      "behavior": "Node host gateway connection management, gateway origin scope matching, device auth token re-use policy, and local node ID generation.",
+      "risk": "High; token re-use on mismatched gateway scopes leaks node auth credentials across networks",
+      "status": {
+        "read": "read-complete",
+        "mapping": "reviewed",
+        "wiring": "not-wired",
+        "implementation": "implemented",
+        "verification": "not-run",
+        "acceptance": "pending"
+      },
+      "selected_owner": "source/host/src/extensions/node_host/gateway_connection.rs",
+      "existing_owner_candidates": [
+        {
+          "path": "source/host/src/extensions/node_host/gateway_connection.rs",
+          "reason": "Host node connection manager and gateway origin scope validator"
+        }
+      ],
+      "owner_decision": "Native implementation in gateway_connection under node_host extension",
+      "dependencies": [
+        "mahayana_host_runtime::extensions::node_host::gateway_connection"
+      ],
+      "capability_ids": [
+        "node_host.gateway_connection"
+      ],
+      "preconditions": [
+        "Node host connection initiated with target gateway candidate URLs and saved device token"
+      ],
+      "postconditions": [
+        "Device token re-use authorized only when all candidate URLs match saved origin scope"
+      ],
+      "invariants": [
+        "Gateway origin scope strictly isolates scheme, host, and port",
+        "Mismatched candidate scopes invalidate token re-use and trigger fresh device pairing"
+      ],
+      "typed_contracts": [
+        "NodeHostGatewayConfig",
+        "gateway_origin_scope",
+        "can_reuse_node_host_device_token"
+      ],
+      "tests": [
+        "source/host/tests/openclaw_node_host_contract.rs::test_ocrm_node_host_gateway_auth_and_scope"
+      ],
+      "integration": {
+        "producer": "source/host/src/extensions/node_host/gateway_connection.rs",
+        "owner": "source/host/src/extensions/node_host/gateway_connection.rs",
+        "consumer": "source/host/src/extensions/node_host/gateway_connection.rs",
+        "entrypoint": "source/host/src/extensions/node_host/gateway_connection.rs::can_reuse_node_host_device_token"
+      },
+      "source_refs": [
+        {
+          "path": "src/node-host/client.ts",
+          "blob_sha": "fa998d7a2c98c9db4ebc1cc1e891898ca83d15f5",
+          "range": {
+            "start_line": 1,
+            "end_line": 51
+          },
+          "symbol": "client"
+        },
+        {
+          "path": "src/node-host/config-runtime.test-support.ts",
+          "blob_sha": "d724f08f94ae72a9cc64cfbeb4ad0ef40238da79",
+          "range": {
+            "start_line": 1,
+            "end_line": 6
+          },
+          "symbol": "config-runtime.test-support"
+        },
+        {
+          "path": "src/node-host/config-shared.ts",
+          "blob_sha": "3844b92c31a174df10721b1a299a63e2e78744fc",
+          "range": {
+            "start_line": 1,
+            "end_line": 143
+          },
+          "symbol": "config-shared"
+        },
+        {
+          "path": "src/node-host/config-worker.test-support.ts",
+          "blob_sha": "fcf40913ee6a8823ee4d28c79a409be90edcc985",
+          "range": {
+            "start_line": 1,
+            "end_line": 18
+          },
+          "symbol": "config-worker.test-support"
+        },
+        {
+          "path": "src/node-host/config.test.ts",
+          "blob_sha": "8b01a2f1158a4076f3bb0b9f58b2293077345570",
+          "range": {
+            "start_line": 1,
+            "end_line": 388
+          },
+          "symbol": "config.test"
+        },
+        {
+          "path": "src/node-host/config.ts",
+          "blob_sha": "ca24136157c63d656a2d26f2554c79bebe34cd9e",
+          "range": {
+            "start_line": 1,
+            "end_line": 130
+          },
+          "symbol": "config"
+        },
+        {
+          "path": "src/node-host/connection.test.ts",
+          "blob_sha": "347d72bbd4434eae94803c2395ccce1500f38372",
+          "range": {
+            "start_line": 1,
+            "end_line": 776
+          },
+          "symbol": "connection.test"
+        },
+        {
+          "path": "src/node-host/connection.ts",
+          "blob_sha": "7bfed87f318b750e9334ab0ccbff388e9c900a8b",
+          "range": {
+            "start_line": 1,
+            "end_line": 487
+          },
+          "symbol": "connection"
+        },
+        {
+          "path": "src/node-host/gateway-auth.ts",
+          "blob_sha": "c3f893f76e332457059727ca1f02a05d449d1992",
+          "range": {
+            "start_line": 1,
+            "end_line": 28
+          },
+          "symbol": "gateway-auth"
+        },
+        {
+          "path": "src/node-host/gateway-candidate-connection.test.ts",
+          "blob_sha": "62ea86b2e8c5c2ea4d63404568a6b52d30292a24",
+          "range": {
+            "start_line": 1,
+            "end_line": 181
+          },
+          "symbol": "gateway-candidate-connection.test"
+        },
+        {
+          "path": "src/node-host/gateway-candidate-connection.ts",
+          "blob_sha": "cfe88d3bfafbc48d539b8be3bc6a3f803051958c",
+          "range": {
+            "start_line": 1,
+            "end_line": 188
+          },
+          "symbol": "gateway-candidate-connection"
+        },
+        {
+          "path": "src/node-host/gateway-cloudflare-access.test.ts",
+          "blob_sha": "44a1b8d50fc44fda1b73d50f618d79d8a13afecc",
+          "range": {
+            "start_line": 1,
+            "end_line": 52
+          },
+          "symbol": "gateway-cloudflare-access.test"
+        },
+        {
+          "path": "src/node-host/gateway-cloudflare-access.ts",
+          "blob_sha": "c2ba6afac8050c8ad0c09b73f551e5b0e97f491c",
+          "range": {
+            "start_line": 1,
+            "end_line": 123
+          },
+          "symbol": "gateway-cloudflare-access"
+        },
+        {
+          "path": "src/node-host/gateway-platform-identity.test.ts",
+          "blob_sha": "9d7e436c0fac93e87514b0aba67e698d6f33f137",
+          "range": {
+            "start_line": 1,
+            "end_line": 38
+          },
+          "symbol": "gateway-platform-identity.test"
+        },
+        {
+          "path": "src/node-host/gateway-platform-identity.ts",
+          "blob_sha": "87f1a1d7788a34f48a89b3309e6a60695e271d0f",
+          "range": {
+            "start_line": 1,
+            "end_line": 12
+          },
+          "symbol": "gateway-platform-identity"
+        },
+        {
+          "path": "src/node-host/host-stats.test.ts",
+          "blob_sha": "a81836d3115a9995b67ae0170c0b3db3652b2230",
+          "range": {
+            "start_line": 1,
+            "end_line": 76
+          },
+          "symbol": "host-stats.test"
+        },
+        {
+          "path": "src/node-host/host-stats.ts",
+          "blob_sha": "c18c564fbe0b2e4c4f210fcdf06a744e3d28bebd",
+          "range": {
+            "start_line": 1,
+            "end_line": 35
+          },
+          "symbol": "host-stats"
+        },
+        {
+          "path": "src/node-host/local-id.test.ts",
+          "blob_sha": "98ca5bff8b3c48a1ffa9868c9d0ecd53cb6f0547",
+          "range": {
+            "start_line": 1,
+            "end_line": 119
+          },
+          "symbol": "local-id.test"
+        },
+        {
+          "path": "src/node-host/local-id.ts",
+          "blob_sha": "4cf7e60b948123d197a2313fdd93841a472e162f",
+          "range": {
+            "start_line": 1,
+            "end_line": 34
+          },
+          "symbol": "local-id"
+        },
+        {
+          "path": "src/node-host/node-event-params.ts",
+          "blob_sha": "5b4d5ed6f6f3c0d20ee6a8afd280abd9e1a17256",
+          "range": {
+            "start_line": 1,
+            "end_line": 8
+          },
+          "symbol": "node-event-params"
+        },
+        {
+          "path": "src/node-host/node-invoke-input.ts",
+          "blob_sha": "0d269968b36308124fd687bf6d69c5a45c684c43",
+          "range": {
+            "start_line": 1,
+            "end_line": 47
+          },
+          "symbol": "node-invoke-input"
+        },
+        {
+          "path": "src/node-host/node-invoke-progress.test.ts",
+          "blob_sha": "16913388731007c78085acfc3b3a5a5885145bed",
+          "range": {
+            "start_line": 1,
+            "end_line": 112
+          },
+          "symbol": "node-invoke-progress.test"
+        },
+        {
+          "path": "src/node-host/node-invoke-progress.ts",
+          "blob_sha": "26535b827d8bebd549491badea55a7f7cfccd6f6",
+          "range": {
+            "start_line": 1,
+            "end_line": 130
+          },
+          "symbol": "node-invoke-progress"
+        },
+        {
+          "path": "src/node-host/node-stream-transport.test.ts",
+          "blob_sha": "d7007d17601049baea49f0f9eb5a76fa9b8510be",
+          "range": {
+            "start_line": 1,
+            "end_line": 624
+          },
+          "symbol": "node-stream-transport.test"
+        },
+        {
+          "path": "src/node-host/node-stream-transport.ts",
+          "blob_sha": "aaaf11f3114eedc0eb71c0f2f34ef245e1e41ead",
+          "range": {
+            "start_line": 1,
+            "end_line": 343
+          },
+          "symbol": "node-stream-transport"
+        },
+        {
+          "path": "src/node-host/node-worker-bundle-installer.test-support.ts",
+          "blob_sha": "df48f267a03bdc6fc4d85a39cb90d2a39fb01616",
+          "range": {
+            "start_line": 1,
+            "end_line": 94
+          },
+          "symbol": "node-worker-bundle-installer.test-support"
+        },
+        {
+          "path": "src/node-host/node-worker-bundle-installer.test.ts",
+          "blob_sha": "65f9ae58bfd1cb2b5a4497d2b14f6319e052bf8a",
+          "range": {
+            "start_line": 1,
+            "end_line": 925
+          },
+          "symbol": "node-worker-bundle-installer.test"
+        },
+        {
+          "path": "src/node-host/node-worker-bundle-installer.ts",
+          "blob_sha": "4b6067571e06ad73bf485a88fae76068721e0bd4",
+          "range": {
+            "start_line": 1,
+            "end_line": 603
+          },
+          "symbol": "node-worker-bundle-installer"
+        },
+        {
+          "path": "src/node-host/node-worker-capacity.ts",
+          "blob_sha": "04038126673f521db02fbed7b4c307fe16744bd8",
+          "range": {
+            "start_line": 1,
+            "end_line": 273
+          },
+          "symbol": "node-worker-capacity"
+        },
+        {
+          "path": "src/node-host/node-worker-child-lifecycle.ts",
+          "blob_sha": "684e2a059c57ee8ecef42a9ee882c0226d94d1c1",
+          "range": {
+            "start_line": 1,
+            "end_line": 730
+          },
+          "symbol": "node-worker-child-lifecycle"
+        },
+        {
+          "path": "src/node-host/node-worker-child-secrets.ts",
+          "blob_sha": "1107546e27a55ca13405ed85732c4f4cfbe3b454",
+          "range": {
+            "start_line": 1,
+            "end_line": 24
+          },
+          "symbol": "node-worker-child-secrets"
+        },
+        {
+          "path": "src/node-host/node-worker-container-engine.test.ts",
+          "blob_sha": "ada8e1453d532e180b6b791d6cf9cc6d42761082",
+          "range": {
+            "start_line": 1,
+            "end_line": 90
+          },
+          "symbol": "node-worker-container-engine.test"
+        },
+        {
+          "path": "src/node-host/node-worker-container-engine.ts",
+          "blob_sha": "a0e79acbb4c16ffa564f68eacf6549f6cd6e942d",
+          "range": {
+            "start_line": 1,
+            "end_line": 478
+          },
+          "symbol": "node-worker-container-engine"
+        },
+        {
+          "path": "src/node-host/node-worker-container-lifecycle.ts",
+          "blob_sha": "b1c72c38c5ff6eee4589055f2ff21ca7e5b9ea3d",
+          "range": {
+            "start_line": 1,
+            "end_line": 104
+          },
+          "symbol": "node-worker-container-lifecycle"
+        },
+        {
+          "path": "src/node-host/node-worker-device-folder.test.ts",
+          "blob_sha": "4bb19a4bffc896e4b075f2ae24662dce46dc9bf9",
+          "range": {
+            "start_line": 1,
+            "end_line": 245
+          },
+          "symbol": "node-worker-device-folder.test"
+        },
+        {
+          "path": "src/node-host/node-worker-device-folder.ts",
+          "blob_sha": "6d467dfd6fae54da2236e644d4cbe863d07b6a65",
+          "range": {
+            "start_line": 1,
+            "end_line": 115
+          },
+          "symbol": "node-worker-device-folder"
+        },
+        {
+          "path": "src/node-host/node-worker-environment.ts",
+          "blob_sha": "bf07c1bb8ec29b18305cf121e6166b40dbe5443d",
+          "range": {
+            "start_line": 1,
+            "end_line": 93
+          },
+          "symbol": "node-worker-environment"
+        },
+        {
+          "path": "src/node-host/node-worker-journal-worker.ts",
+          "blob_sha": "63a3c7510b8e6b16c502d12019dc75795b4cdfb7",
+          "range": {
+            "start_line": 1,
+            "end_line": 187
+          },
+          "symbol": "node-worker-journal-worker"
+        },
+        {
+          "path": "src/node-host/node-worker-journal.types.ts",
+          "blob_sha": "c110cad09439d9a089bca0abbbd2d84292d837fb",
+          "range": {
+            "start_line": 1,
+            "end_line": 37
+          },
+          "symbol": "node-worker-journal.types"
+        },
+        {
+          "path": "src/node-host/node-worker-journal.worker.ts",
+          "blob_sha": "9afd21bbad095ef4b13b4f6648b5617248949f98",
+          "range": {
+            "start_line": 1,
+            "end_line": 102
+          },
+          "symbol": "node-worker-journal.worker"
+        },
+        {
+          "path": "src/node-host/node-worker-launch-observation.test.ts",
+          "blob_sha": "1f01b2b681139876347fdf3d0d2e49162128f975",
+          "range": {
+            "start_line": 1,
+            "end_line": 359
+          },
+          "symbol": "node-worker-launch-observation.test"
+        },
+        {
+          "path": "src/node-host/node-worker-launch-observation.ts",
+          "blob_sha": "f07bddc20a163888dd5f772285aa32ebe729598e",
+          "range": {
+            "start_line": 1,
+            "end_line": 250
+          },
+          "symbol": "node-worker-launch-observation"
+        },
+        {
+          "path": "src/node-host/node-worker-launch-receipt.ts",
+          "blob_sha": "28b54ba0c8db3857be0cb87b987b4dd221d93bca",
+          "range": {
+            "start_line": 1,
+            "end_line": 151
+          },
+          "symbol": "node-worker-launch-receipt"
+        },
+        {
+          "path": "src/node-host/node-worker-launch-schema.ts",
+          "blob_sha": "9517bb825a678963ce76f1408edfcfb7a24c5a25",
+          "range": {
+            "start_line": 1,
+            "end_line": 42
+          },
+          "symbol": "node-worker-launch-schema"
+        },
+        {
+          "path": "src/node-host/node-worker-launch-store.kernel.ts",
+          "blob_sha": "c01da7c4065d7f492c3faab881df1c123d0a2026",
+          "range": {
+            "start_line": 1,
+            "end_line": 707
+          },
+          "symbol": "node-worker-launch-store.kernel"
+        },
+        {
+          "path": "src/node-host/node-worker-launch-store.test.ts",
+          "blob_sha": "56e40a51da83cbdeb738b4054b88c445cdf4b08f",
+          "range": {
+            "start_line": 1,
+            "end_line": 949
+          },
+          "symbol": "node-worker-launch-store.test"
+        },
+        {
+          "path": "src/node-host/node-worker-launch-store.ts",
+          "blob_sha": "4b7eb454b12b8ebaee4cd9deda4da91d61429048",
+          "range": {
+            "start_line": 1,
+            "end_line": 102
+          },
+          "symbol": "node-worker-launch-store"
+        },
+        {
+          "path": "src/node-host/node-worker-launch-transport.ts",
+          "blob_sha": "ddadad59b0299e2ba2603ffdf9f59f8e56d0f8c8",
+          "range": {
+            "start_line": 1,
+            "end_line": 289
+          },
+          "symbol": "node-worker-launch-transport"
+        },
+        {
+          "path": "src/node-host/node-worker-lineage-completion.ts",
+          "blob_sha": "e84511707a40cec451df92d178869391e9f17126",
+          "range": {
+            "start_line": 1,
+            "end_line": 92
+          },
+          "symbol": "node-worker-lineage-completion"
+        },
+        {
+          "path": "src/node-host/node-worker-native-inference.test.ts",
+          "blob_sha": "a68638343c3109c09cabf84a9f7d10e8b54bc571",
+          "range": {
+            "start_line": 1,
+            "end_line": 99
+          },
+          "symbol": "node-worker-native-inference.test"
+        },
+        {
+          "path": "src/node-host/node-worker-native-inference.ts",
+          "blob_sha": "b85ab9e88d4b18eb4b738cf2b474e14ed6680c09",
+          "range": {
+            "start_line": 1,
+            "end_line": 118
+          },
+          "symbol": "node-worker-native-inference"
+        },
+        {
+          "path": "src/node-host/node-worker-output.test.ts",
+          "blob_sha": "7832a69a1cefb806c8bbc266486e3f5532703d89",
+          "range": {
+            "start_line": 1,
+            "end_line": 30
+          },
+          "symbol": "node-worker-output.test"
+        },
+        {
+          "path": "src/node-host/node-worker-output.ts",
+          "blob_sha": "6f608927b701ded6204a4403b00ca1f1ea27cc2b",
+          "range": {
+            "start_line": 1,
+            "end_line": 72
+          },
+          "symbol": "node-worker-output"
+        },
+        {
+          "path": "src/node-host/node-worker-prepared-workspace-publication.test.ts",
+          "blob_sha": "6e4c57b0f338187bb14e36fda7227e803db4f9bc",
+          "range": {
+            "start_line": 1,
+            "end_line": 55
+          },
+          "symbol": "node-worker-prepared-workspace-publication.test"
+        },
+        {
+          "path": "src/node-host/node-worker-prepared-workspace-publication.ts",
+          "blob_sha": "d5e7c55dfabd7c679302001b25663a066e5f45fe",
+          "range": {
+            "start_line": 1,
+            "end_line": 32
+          },
+          "symbol": "node-worker-prepared-workspace-publication"
+        },
+        {
+          "path": "src/node-host/node-worker-prepared-workspace-store.kernel.ts",
+          "blob_sha": "c4c0830044d813e94adbba3a5bff889da9b5fd2b",
+          "range": {
+            "start_line": 1,
+            "end_line": 247
+          },
+          "symbol": "node-worker-prepared-workspace-store.kernel"
+        },
+        {
+          "path": "src/node-host/node-worker-prepared-workspace-store.test.ts",
+          "blob_sha": "b7dd8640a5e918a459603ffc046819ee2b38a243",
+          "range": {
+            "start_line": 1,
+            "end_line": 74
+          },
+          "symbol": "node-worker-prepared-workspace-store.test"
+        },
+        {
+          "path": "src/node-host/node-worker-prepared-workspace-store.ts",
+          "blob_sha": "30d8168b3d3a8a7a508d911369a8d6a9d74b2075",
+          "range": {
+            "start_line": 1,
+            "end_line": 117
+          },
+          "symbol": "node-worker-prepared-workspace-store"
+        },
+        {
+          "path": "src/node-host/node-worker-prepared-workspace-transfer.ts",
+          "blob_sha": "eb893aa834b042f3a07f42a7807e00cb59c4acd5",
+          "range": {
+            "start_line": 1,
+            "end_line": 183
+          },
+          "symbol": "node-worker-prepared-workspace-transfer"
+        },
+        {
+          "path": "src/node-host/node-worker-prepared-workspace.test.ts",
+          "blob_sha": "4a28cb5d5e508d112c25f4b90eed7be72e832096",
+          "range": {
+            "start_line": 1,
+            "end_line": 893
+          },
+          "symbol": "node-worker-prepared-workspace.test"
+        },
+        {
+          "path": "src/node-host/node-worker-prepared-workspace.ts",
+          "blob_sha": "5766907fad8ccf6d178211be516d2e0a3aea4ffb",
+          "range": {
+            "start_line": 1,
+            "end_line": 258
+          },
+          "symbol": "node-worker-prepared-workspace"
+        },
+        {
+          "path": "src/node-host/node-worker-process-identity.ts",
+          "blob_sha": "63be947061bafd5143ddf7f28950b579c3fdcd69",
+          "range": {
+            "start_line": 1,
+            "end_line": 45
+          },
+          "symbol": "node-worker-process-identity"
+        },
+        {
+          "path": "src/node-host/node-worker-process-observation.ts",
+          "blob_sha": "0c0fae3a5133a1de6ab756998ee858b891a78567",
+          "range": {
+            "start_line": 1,
+            "end_line": 85
+          },
+          "symbol": "node-worker-process-observation"
+        },
+        {
+          "path": "src/node-host/node-worker-repository-transfers.ts",
+          "blob_sha": "16619627035e722d5825654c856b9ce2f223abd1",
+          "range": {
+            "start_line": 1,
+            "end_line": 116
+          },
+          "symbol": "node-worker-repository-transfers"
+        },
+        {
+          "path": "src/node-host/node-worker-supervisor-commands.ts",
+          "blob_sha": "3ca5604333772ff99bdcde81a039720f1f20f171",
+          "range": {
+            "start_line": 1,
+            "end_line": 378
+          },
+          "symbol": "node-worker-supervisor-commands"
+        },
+        {
+          "path": "src/node-host/node-worker-supervisor-contract.ts",
+          "blob_sha": "27d140003d1393326f47a1d6d822b61dfb79f40d",
+          "range": {
+            "start_line": 1,
+            "end_line": 38
+          },
+          "symbol": "node-worker-supervisor-contract"
+        },
+        {
+          "path": "src/node-host/node-worker-supervisor-ownership.ts",
+          "blob_sha": "8f157892aa2f2883b10cc929f5a63fd3702b4e64",
+          "range": {
+            "start_line": 1,
+            "end_line": 216
+          },
+          "symbol": "node-worker-supervisor-ownership"
+        },
+        {
+          "path": "src/node-host/node-worker-supervisor-recovery.ts",
+          "blob_sha": "16f55f376761382a29d7dba57fa718ca747346dc",
+          "range": {
+            "start_line": 1,
+            "end_line": 321
+          },
+          "symbol": "node-worker-supervisor-recovery"
+        },
+        {
+          "path": "src/node-host/node-worker-supervisor.container.test-support.ts",
+          "blob_sha": "af1d0844d97969538abbc9e581517bab3fa1d39c",
+          "range": {
+            "start_line": 1,
+            "end_line": 397
+          },
+          "symbol": "node-worker-supervisor.container.test-support"
+        },
+        {
+          "path": "src/node-host/node-worker-supervisor.container.test.ts",
+          "blob_sha": "570e34c73dc905c8b49df3d435fb07f8bd0dc805",
+          "range": {
+            "start_line": 1,
+            "end_line": 615
+          },
+          "symbol": "node-worker-supervisor.container.test"
+        },
+        {
+          "path": "src/node-host/node-worker-supervisor.device-folder.test.ts",
+          "blob_sha": "9cec82e43e54647dfc4a2012e3f0e15c96b6eccd",
+          "range": {
+            "start_line": 1,
+            "end_line": 124
+          },
+          "symbol": "node-worker-supervisor.device-folder.test"
+        },
+        {
+          "path": "src/node-host/node-worker-supervisor.fixture.test-support.ts",
+          "blob_sha": "11b0de2e3abcb708d780281634bcf28d1b9e0e86",
+          "range": {
+            "start_line": 1,
+            "end_line": 331
+          },
+          "symbol": "node-worker-supervisor.fixture.test-support"
+        },
+        {
+          "path": "src/node-host/node-worker-supervisor.idle.test.ts",
+          "blob_sha": "df61d32129e15e6bb263d8a0487a5d72fd03da66",
+          "range": {
+            "start_line": 1,
+            "end_line": 729
+          },
+          "symbol": "node-worker-supervisor.idle.test"
+        },
+        {
+          "path": "src/node-host/node-worker-supervisor.lifetime.test.ts",
+          "blob_sha": "efaca1a94da395b22945de0c1d66cdf1fa4e6388",
+          "range": {
+            "start_line": 1,
+            "end_line": 772
+          },
+          "symbol": "node-worker-supervisor.lifetime.test"
+        },
+        {
+          "path": "src/node-host/node-worker-supervisor.mock.test-support.ts",
+          "blob_sha": "7a2c92ddc5f914685e504ec7f31c44e1a98cf142",
+          "range": {
+            "start_line": 1,
+            "end_line": 119
+          },
+          "symbol": "node-worker-supervisor.mock.test-support"
+        },
+        {
+          "path": "src/node-host/node-worker-supervisor.reboot.test.ts",
+          "blob_sha": "6d897668407fa16a2c8280bcf11362e547fb5a62",
+          "range": {
+            "start_line": 1,
+            "end_line": 183
+          },
+          "symbol": "node-worker-supervisor.reboot.test"
+        },
+        {
+          "path": "src/node-host/node-worker-supervisor.recovery.test.ts",
+          "blob_sha": "c5189b9a9b303ad2223041d549ac2efb40016a17",
+          "range": {
+            "start_line": 1,
+            "end_line": 932
+          },
+          "symbol": "node-worker-supervisor.recovery.test"
+        },
+        {
+          "path": "src/node-host/node-worker-supervisor.settlement.test-support.ts",
+          "blob_sha": "58fe6ee3ff43b2ad0b3f9a26dc3f5db3e171cce9",
+          "range": {
+            "start_line": 1,
+            "end_line": 318
+          },
+          "symbol": "node-worker-supervisor.settlement.test-support"
+        },
+        {
+          "path": "src/node-host/node-worker-supervisor.settlement.test.ts",
+          "blob_sha": "0403d2d2f21338a06c9233d6f36c64ed0a86e1bf",
+          "range": {
+            "start_line": 1,
+            "end_line": 512
+          },
+          "symbol": "node-worker-supervisor.settlement.test"
+        },
+        {
+          "path": "src/node-host/node-worker-supervisor.startup.test.ts",
+          "blob_sha": "cdf484ab234245fb47a8d64241926d15f87ce669",
+          "range": {
+            "start_line": 1,
+            "end_line": 567
+          },
+          "symbol": "node-worker-supervisor.startup.test"
+        },
+        {
+          "path": "src/node-host/node-worker-supervisor.test-support.ts",
+          "blob_sha": "f56de66e5be31a948687d3631255feef04f0b836",
+          "range": {
+            "start_line": 1,
+            "end_line": 322
+          },
+          "symbol": "node-worker-supervisor.test-support"
+        },
+        {
+          "path": "src/node-host/node-worker-supervisor.test.ts",
+          "blob_sha": "132b42cd52f85eb5afb48ad0d50a54a8de38fcc1",
+          "range": {
+            "start_line": 1,
+            "end_line": 690
+          },
+          "symbol": "node-worker-supervisor.test"
+        },
+        {
+          "path": "src/node-host/node-worker-supervisor.ts",
+          "blob_sha": "f9a0d7d0fab95e3e8fff50f183ad1bca095d49ab",
+          "range": {
+            "start_line": 1,
+            "end_line": 722
+          },
+          "symbol": "node-worker-supervisor"
+        },
+        {
+          "path": "src/node-host/node-worker-transfer-client.fixture.test-support.ts",
+          "blob_sha": "114b422d5b3ad209eb961f7c944ff84beffb73d9",
+          "range": {
+            "start_line": 1,
+            "end_line": 127
+          },
+          "symbol": "node-worker-transfer-client.fixture.test-support"
+        },
+        {
+          "path": "src/node-host/node-worker-transfer-client.git.test.ts",
+          "blob_sha": "3ebe98684bdcf01de7e97f495373e54571e2344e",
+          "range": {
+            "start_line": 1,
+            "end_line": 315
+          },
+          "symbol": "node-worker-transfer-client.git.test"
+        },
+        {
+          "path": "src/node-host/node-worker-transfer-client.lifetime.test.ts",
+          "blob_sha": "17a82254d38b6c27f041d39baac61e422e61871a",
+          "range": {
+            "start_line": 1,
+            "end_line": 305
+          },
+          "symbol": "node-worker-transfer-client.lifetime.test"
+        },
+        {
+          "path": "src/node-host/node-worker-transfer-client.test-support.ts",
+          "blob_sha": "d1786e921de4b86dd1e9ae969f83640f9688713d",
+          "range": {
+            "start_line": 1,
+            "end_line": 14
+          },
+          "symbol": "node-worker-transfer-client.test-support"
+        },
+        {
+          "path": "src/node-host/node-worker-transfer-client.test.ts",
+          "blob_sha": "03a2282c0768b287eae3a2f5fc211aad94cb6ada",
+          "range": {
+            "start_line": 1,
+            "end_line": 670
+          },
+          "symbol": "node-worker-transfer-client.test"
+        },
+        {
+          "path": "src/node-host/node-worker-transfer-client.ts",
+          "blob_sha": "c69b4b6f376eb15af584667e191eb5efb86ea278",
+          "range": {
+            "start_line": 1,
+            "end_line": 687
+          },
+          "symbol": "node-worker-transfer-client"
+        },
+        {
+          "path": "src/node-host/node-worker-transfer-http.ts",
+          "blob_sha": "cf14cf9a5d624c05c414c8371f63a633984c6f9c",
+          "range": {
+            "start_line": 1,
+            "end_line": 275
+          },
+          "symbol": "node-worker-transfer-http"
+        },
+        {
+          "path": "src/node-host/node-worker-tree-control.ts",
+          "blob_sha": "aea3f77b5e2c6c10d4994c75817564fb27aa93cf",
+          "range": {
+            "start_line": 1,
+            "end_line": 117
+          },
+          "symbol": "node-worker-tree-control"
+        },
+        {
+          "path": "src/node-host/node-worker-turn-settlement.worker.ts",
+          "blob_sha": "8809811978679c8824c801779f6b75483191f184",
+          "range": {
+            "start_line": 1,
+            "end_line": 42
+          },
+          "symbol": "node-worker-turn-settlement.worker"
+        },
+        {
+          "path": "src/node-host/node-worker-turn-store.kernel.ts",
+          "blob_sha": "0164d502cf6b1949feef317fa7fca1d89c27efd7",
+          "range": {
+            "start_line": 1,
+            "end_line": 277
+          },
+          "symbol": "node-worker-turn-store.kernel"
+        },
+        {
+          "path": "src/node-host/node-worker-turn-store.test.ts",
+          "blob_sha": "d582dd32a85929d099115f5e97609d3468ce6872",
+          "range": {
+            "start_line": 1,
+            "end_line": 538
+          },
+          "symbol": "node-worker-turn-store.test"
+        },
+        {
+          "path": "src/node-host/node-worker-turn-store.ts",
+          "blob_sha": "eade35ccc97d4a86bab37aff83f8777aad49833d",
+          "range": {
+            "start_line": 1,
+            "end_line": 36
+          },
+          "symbol": "node-worker-turn-store"
+        },
+        {
+          "path": "src/node-host/node-worker-upload-snapshot.test.ts",
+          "blob_sha": "a870ef78ea050c6e39f054043761cffe7f716dd3",
+          "range": {
+            "start_line": 1,
+            "end_line": 140
+          },
+          "symbol": "node-worker-upload-snapshot.test"
+        },
+        {
+          "path": "src/node-host/node-worker-upload-snapshot.ts",
+          "blob_sha": "6d5be607b374901f33c6345a1d23d5605778846b",
+          "range": {
+            "start_line": 1,
+            "end_line": 90
+          },
+          "symbol": "node-worker-upload-snapshot"
+        },
+        {
+          "path": "src/node-host/node-worker-workspace-admission.test.ts",
+          "blob_sha": "90ef0e98652cbf81b02dd504ef40107b9ab6e298",
+          "range": {
+            "start_line": 1,
+            "end_line": 56
+          },
+          "symbol": "node-worker-workspace-admission.test"
+        },
+        {
+          "path": "src/node-host/node-worker-workspace-admission.ts",
+          "blob_sha": "a16851eca5c83015c8da89bb306fa933c0aa1a12",
+          "range": {
+            "start_line": 1,
+            "end_line": 53
+          },
+          "symbol": "node-worker-workspace-admission"
+        },
+        {
+          "path": "src/node-host/node-worker-workspace-commands.ts",
+          "blob_sha": "103819f35801723300d7aa502c6998c66f02f57f",
+          "range": {
+            "start_line": 1,
+            "end_line": 207
+          },
+          "symbol": "node-worker-workspace-commands"
+        },
+        {
+          "path": "src/node-host/node-worker-workspace-git.test.ts",
+          "blob_sha": "fc004e076e1b5f89be2e814f7bf374c1e43f1f47",
+          "range": {
+            "start_line": 1,
+            "end_line": 96
+          },
+          "symbol": "node-worker-workspace-git.test"
+        },
+        {
+          "path": "src/node-host/node-worker-workspace-git.ts",
+          "blob_sha": "1c26196db18c7349c26ec77e7cc6a66e378faf07",
+          "range": {
+            "start_line": 1,
+            "end_line": 91
+          },
+          "symbol": "node-worker-workspace-git"
+        },
+        {
+          "path": "src/node-host/node-worker-workspace-identity.ts",
+          "blob_sha": "0cd6af6d4c372983d26453f5e5b49ff88be288ab",
+          "range": {
+            "start_line": 1,
+            "end_line": 370
+          },
+          "symbol": "node-worker-workspace-identity"
+        },
+        {
+          "path": "src/node-host/node-worker-workspace-manifest.test.ts",
+          "blob_sha": "74a2b87c5aaa1f209d27febaec516f6a5886eb2c",
+          "range": {
+            "start_line": 1,
+            "end_line": 246
+          },
+          "symbol": "node-worker-workspace-manifest.test"
+        },
+        {
+          "path": "src/node-host/node-worker-workspace-processes.test.ts",
+          "blob_sha": "903a60af125f9aaa935c6df39ae61e0b9759e0a6",
+          "range": {
+            "start_line": 1,
+            "end_line": 360
+          },
+          "symbol": "node-worker-workspace-processes.test"
+        },
+        {
+          "path": "src/node-host/node-worker-workspace-processes.ts",
+          "blob_sha": "b4ade5f163278080e610d9632460bc6e0bb83127",
+          "range": {
+            "start_line": 1,
+            "end_line": 451
+          },
+          "symbol": "node-worker-workspace-processes"
+        },
+        {
+          "path": "src/node-host/node-worker-workspace-quiescence.acceptance.test.ts",
+          "blob_sha": "cb6b94b822e1cc29b8b86db6aa82225c6eeb11c6",
+          "range": {
+            "start_line": 1,
+            "end_line": 672
+          },
+          "symbol": "node-worker-workspace-quiescence.acceptance.test"
+        },
+        {
+          "path": "src/node-host/node-worker-workspace-quiescence.test.ts",
+          "blob_sha": "7952e7e3bc85261199364a71fbcbe92a0e8ec56b",
+          "range": {
+            "start_line": 1,
+            "end_line": 377
+          },
+          "symbol": "node-worker-workspace-quiescence.test"
+        },
+        {
+          "path": "src/node-host/node-worker-workspace-quiescence.ts",
+          "blob_sha": "b3ef262e418f21f4c6f42f6858f0eb204722b6bb",
+          "range": {
+            "start_line": 1,
+            "end_line": 415
+          },
+          "symbol": "node-worker-workspace-quiescence"
+        },
+        {
+          "path": "src/node-host/node-worker-workspace-quiescence.windows.test.ts",
+          "blob_sha": "cc8a08550ce54118a50321508f308559382cf063",
+          "range": {
+            "start_line": 1,
+            "end_line": 148
+          },
+          "symbol": "node-worker-workspace-quiescence.windows.test"
+        },
+        {
+          "path": "src/node-host/node-worker-workspace-replacement.ts",
+          "blob_sha": "1a49a19071859b658be6b54f509f19dd42dfe605",
+          "range": {
+            "start_line": 1,
+            "end_line": 102
+          },
+          "symbol": "node-worker-workspace-replacement"
+        },
+        {
+          "path": "src/node-host/node-worker-workspace-retention.test.ts",
+          "blob_sha": "dc417d73f472103e421ce4ea0219043a9d4c6878",
+          "range": {
+            "start_line": 1,
+            "end_line": 502
+          },
+          "symbol": "node-worker-workspace-retention.test"
+        },
+        {
+          "path": "src/node-host/node-worker-workspace-retention.ts",
+          "blob_sha": "332e0f962826c05a44d9fdc47a683c19ef92aaa4",
+          "range": {
+            "start_line": 1,
+            "end_line": 69
+          },
+          "symbol": "node-worker-workspace-retention"
+        },
+        {
+          "path": "src/node-host/node-worker-workspace-seeds.ts",
+          "blob_sha": "588f261bb7807edad50f101224ac26b8bead9cfa",
+          "range": {
+            "start_line": 1,
+            "end_line": 181
+          },
+          "symbol": "node-worker-workspace-seeds"
+        },
+        {
+          "path": "src/node-host/node-worker-workspace.test.ts",
+          "blob_sha": "9513df52dac43fd2af3e39748b2e4545e01679c0",
+          "range": {
+            "start_line": 1,
+            "end_line": 140
+          },
+          "symbol": "node-worker-workspace.test"
+        },
+        {
+          "path": "src/node-host/node-worker-workspace.ts",
+          "blob_sha": "7149e1e7aa3ef6aec7bf2babc0b99c239d0cf3ec",
+          "range": {
+            "start_line": 1,
+            "end_line": 734
+          },
+          "symbol": "node-worker-workspace"
+        },
+        {
+          "path": "src/node-host/startup-state-readiness.test.ts",
+          "blob_sha": "ab64d8ba7e6d6d1a075fa443900a7d7109035e21",
+          "range": {
+            "start_line": 1,
+            "end_line": 245
+          },
+          "symbol": "startup-state-readiness.test"
+        },
+        {
+          "path": "src/node-host/startup-state-readiness.ts",
+          "blob_sha": "3f81c08fa6aa3e535e0ef01d12836f519c15d730",
+          "range": {
+            "start_line": 1,
+            "end_line": 5
+          },
+          "symbol": "startup-state-readiness"
+        },
+        {
+          "path": "src/node-host/system-run-native-binary.test-helpers.ts",
+          "blob_sha": "c574011e335f0b863a6a819516e5ff5c46d5b284",
+          "range": {
+            "start_line": 1,
+            "end_line": 37
+          },
+          "symbol": "system-run-native-binary.test-helpers"
+        }
+      ],
+      "evidence_refs": [
+        "source/host/tests/openclaw_node_host_contract.rs",
+        "projects/openclaw-rust/dossiers/node-host-scoped.md"
+      ],
+      "requirement_ids": [
+        "OCRM-R04",
+        "OCRM-R08",
+        "OCRM-R10",
+        "OCRM-R13",
+        "OCRM-R24",
+        "OCRM-AC08",
+        "OCRM-AC24"
+      ],
+      "required_gate_ids": [
+        "OCRM-G04-rust-contract",
+        "OCRM-G05-frozen-oracle"
+      ],
+      "oracle_ids": [
+        "OCRM-NODE-HOST-CONN-O01"
+      ],
+      "adr_refs": [],
+      "blocker_ids": [
+        "BL-NODE-HOST-CONN-WIRING-001"
+      ],
+      "target": {
+        "path": "source/host/src/extensions/node_host/gateway_connection.rs",
+        "symbol": "can_reuse_node_host_device_token",
+        "language": "Rust"
+      },
+      "required_evidence_dimensions": [
+        "unit",
+        "format"
+      ],
+      "reviewer": "xuyao@ombhrum.com",
+      "migration_rollback": "Require node pairing re-authentication on every gateway reconnection"
+    },
+    {
+      "id": "OCRM-RESP-NODE-HOST-COMMAND-DISPATCH-001",
+      "unit_id": "OCRM-UNIT-NODE-HOST-001",
+      "responsibility_kind": "business-runtime",
+      "behavior": "Node command dispatch for worker computer use, PTY terminal streaming, Claude skill CLI handlers, and generation contract parity checking.",
+      "risk": "Critical; stale computer driver commands or generation mismatches cause invalid desktop actions",
+      "status": {
+        "read": "read-complete",
+        "mapping": "reviewed",
+        "wiring": "not-wired",
+        "implementation": "implemented",
+        "verification": "not-run",
+        "acceptance": "pending"
+      },
+      "selected_owner": "source/host/src/extensions/node_host/command_dispatch.rs",
+      "existing_owner_candidates": [
+        {
+          "path": "source/host/src/extensions/node_host/command_dispatch.rs",
+          "reason": "Host node command dispatcher and computer driver generation checker"
+        }
+      ],
+      "owner_decision": "Native implementation in command_dispatch under node_host extension",
+      "dependencies": [
+        "mahayana_host_runtime::extensions::node_host::command_dispatch"
+      ],
+      "capability_ids": [
+        "node_host.command_dispatch"
+      ],
+      "preconditions": [
+        "Node command received over gateway connection with target operation and generation token"
+      ],
+      "postconditions": [
+        "Command dispatched safely or rejected with generation mismatch contract error"
+      ],
+      "invariants": [
+        "Mismatched generation returns exact error: COMPUTER_CONTRACT_MISMATCH",
+        "Unavailable computer driver rejects non-close operations with COMPUTER_DRIVER_UNAVAILABLE",
+        "Close operation succeeds gracefully without requiring active driver"
+      ],
+      "typed_contracts": [
+        "ComputerOperation",
+        "ComputerCommandInput",
+        "dispatch_node_worker_computer_command",
+        "COMPUTER_CONTRACT_MISMATCH"
+      ],
+      "tests": [
+        "source/host/tests/openclaw_node_host_contract.rs::test_ocrm_node_host_computer_command"
+      ],
+      "integration": {
+        "producer": "source/host/src/extensions/node_host/command_dispatch.rs",
+        "owner": "source/host/src/extensions/node_host/command_dispatch.rs",
+        "consumer": "source/host/src/extensions/node_host/command_dispatch.rs",
+        "entrypoint": "source/host/src/extensions/node_host/command_dispatch.rs::dispatch_node_worker_computer_command"
+      },
+      "source_refs": [
+        {
+          "path": "src/node-host/claude-skill-session.test.ts",
+          "blob_sha": "0ebb0e947ad63235040bc59ce381ea11854132e2",
+          "range": {
+            "start_line": 1,
+            "end_line": 265
+          },
+          "symbol": "claude-skill-session.test"
+        },
+        {
+          "path": "src/node-host/claude-skill-session.ts",
+          "blob_sha": "83e76f7f984671f36a744cc3f0ebd4bbe75e9821",
+          "range": {
+            "start_line": 1,
+            "end_line": 250
+          },
+          "symbol": "claude-skill-session"
+        },
+        {
+          "path": "src/node-host/codex-node-plugin.integration.test.ts",
+          "blob_sha": "831250c2c84384f69aa1eb066e31c77d7e0c636b",
+          "range": {
+            "start_line": 1,
+            "end_line": 49
+          },
+          "symbol": "codex-node-plugin.integration.test"
+        },
+        {
+          "path": "src/node-host/computer-command.ts",
+          "blob_sha": "67dcb7525571e5b24de9fdb279f0219f2705bd86",
+          "range": {
+            "start_line": 1,
+            "end_line": 49
+          },
+          "symbol": "computer-command"
+        },
+        {
+          "path": "src/node-host/desktop-stream-command.test.ts",
+          "blob_sha": "82098e2eb732fb1f6061b2ac46ceb1aa9ed1df73",
+          "range": {
+            "start_line": 1,
+            "end_line": 388
+          },
+          "symbol": "desktop-stream-command.test"
+        },
+        {
+          "path": "src/node-host/desktop-stream-command.ts",
+          "blob_sha": "b60b89bcccc2fd5bfdca048ff65695229ab41984",
+          "range": {
+            "start_line": 1,
+            "end_line": 222
+          },
+          "symbol": "desktop-stream-command"
+        },
+        {
+          "path": "src/node-host/exec-policy.test.ts",
+          "blob_sha": "10b0ccb585315d4bd3767c6e9841c2b17bb7e4ab",
+          "range": {
+            "start_line": 1,
+            "end_line": 76
+          },
+          "symbol": "exec-policy.test"
+        },
+        {
+          "path": "src/node-host/exec-policy.ts",
+          "blob_sha": "ee28a06360c391ba7b03df3460b06a5ae1d4d43e",
+          "range": {
+            "start_line": 1,
+            "end_line": 118
+          },
+          "symbol": "exec-policy"
+        },
+        {
+          "path": "src/node-host/invoke-agent-cli-claude-handler.ts",
+          "blob_sha": "c86bfa63e95f939dcf2a4ccb019c91368d78da6e",
+          "range": {
+            "start_line": 1,
+            "end_line": 194
+          },
+          "symbol": "invoke-agent-cli-claude-handler"
+        },
+        {
+          "path": "src/node-host/invoke-agent-cli-claude-params.ts",
+          "blob_sha": "404a3f66adc2490cca01425e3f1d99f28de2b842",
+          "range": {
+            "start_line": 1,
+            "end_line": 302
+          },
+          "symbol": "invoke-agent-cli-claude-params"
+        },
+        {
+          "path": "src/node-host/invoke-agent-cli-claude.test.ts",
+          "blob_sha": "9a0471bd9cc537333014c007ec38fd49a2c508fc",
+          "range": {
+            "start_line": 1,
+            "end_line": 886
+          },
+          "symbol": "invoke-agent-cli-claude.test"
+        },
+        {
+          "path": "src/node-host/invoke-agent-cli-claude.ts",
+          "blob_sha": "47e96dcfb0fd3b2ad56345bfaeccebc765991d4c",
+          "range": {
+            "start_line": 1,
+            "end_line": 283
+          },
+          "symbol": "invoke-agent-cli-claude"
+        },
+        {
+          "path": "src/node-host/invoke-device-apps.test.ts",
+          "blob_sha": "e824152817b3db71488e76010918d3689c98d9de",
+          "range": {
+            "start_line": 1,
+            "end_line": 56
+          },
+          "symbol": "invoke-device-apps.test"
+        },
+        {
+          "path": "src/node-host/invoke-device-apps.ts",
+          "blob_sha": "e942fe32084e9d149f48bcb9cd66d2c1f83e84a5",
+          "range": {
+            "start_line": 1,
+            "end_line": 73
+          },
+          "symbol": "invoke-device-apps"
+        },
+        {
+          "path": "src/node-host/invoke-mcp-result.test.ts",
+          "blob_sha": "97539aad80d9e74a7472eaa63f83b63720651ebb",
+          "range": {
+            "start_line": 1,
+            "end_line": 50
+          },
+          "symbol": "invoke-mcp-result.test"
+        },
+        {
+          "path": "src/node-host/invoke-mcp-result.ts",
+          "blob_sha": "e21d9719ff4053f298884a5e9660cb93495edcee",
+          "range": {
+            "start_line": 1,
+            "end_line": 118
+          },
+          "symbol": "invoke-mcp-result"
+        },
+        {
+          "path": "src/node-host/invoke-payload.test.ts",
+          "blob_sha": "4207f696f060e04559a5e4de71d85bdcfe047479",
+          "range": {
+            "start_line": 1,
+            "end_line": 58
+          },
+          "symbol": "invoke-payload.test"
+        },
+        {
+          "path": "src/node-host/invoke-payload.ts",
+          "blob_sha": "6d3764be52f39a62f131a56138ccae4956bde905",
+          "range": {
+            "start_line": 1,
+            "end_line": 82
+          },
+          "symbol": "invoke-payload"
+        },
+        {
+          "path": "src/node-host/invoke-plugin-context.ts",
+          "blob_sha": "9fffd45659a7d06e821a990f131aee5665c4be01",
+          "range": {
+            "start_line": 1,
+            "end_line": 76
+          },
+          "symbol": "invoke-plugin-context"
+        },
+        {
+          "path": "src/node-host/invoke-run-command.ts",
+          "blob_sha": "98915d8bff9cba7ff8a7e67ac06b92ec10d43499",
+          "range": {
+            "start_line": 1,
+            "end_line": 126
+          },
+          "symbol": "invoke-run-command"
+        },
+        {
+          "path": "src/node-host/invoke-system-run-allowlist.test.ts",
+          "blob_sha": "391fe4d613ca80a7773b280066892f82dca6df38",
+          "range": {
+            "start_line": 1,
+            "end_line": 303
+          },
+          "symbol": "invoke-system-run-allowlist.test"
+        },
+        {
+          "path": "src/node-host/invoke-system-run-allowlist.ts",
+          "blob_sha": "a128c4dfdec7d535b0c19d4efa92e2708cf8a095",
+          "range": {
+            "start_line": 1,
+            "end_line": 225
+          },
+          "symbol": "invoke-system-run-allowlist"
+        },
+        {
+          "path": "src/node-host/invoke-system-run-denied.ts",
+          "blob_sha": "947af4d8a08e753c939f136bda88eecbb7b6fa63",
+          "range": {
+            "start_line": 1,
+            "end_line": 78
+          },
+          "symbol": "invoke-system-run-denied"
+        },
+        {
+          "path": "src/node-host/invoke-system-run-plan.cwd.test.ts",
+          "blob_sha": "a98b356b34f2108d45b390ee4e62252353da1012",
+          "range": {
+            "start_line": 1,
+            "end_line": 76
+          },
+          "symbol": "invoke-system-run-plan.cwd.test"
+        },
+        {
+          "path": "src/node-host/invoke-system-run-plan.shell-literals.test.ts",
+          "blob_sha": "502ff9de0cde85db29429a08ce6ab0ea4b66452c",
+          "range": {
+            "start_line": 1,
+            "end_line": 116
+          },
+          "symbol": "invoke-system-run-plan.shell-literals.test"
+        },
+        {
+          "path": "src/node-host/invoke-system-run-plan.test.ts",
+          "blob_sha": "4dca174eddd77c3cb362e31a4ac43c5e61785075",
+          "range": {
+            "start_line": 1,
+            "end_line": 743
+          },
+          "symbol": "invoke-system-run-plan.test"
+        },
+        {
+          "path": "src/node-host/invoke-system-run-plan.ts",
+          "blob_sha": "8868b3283c4ac7075ff5c1027db181dc523e5d10",
+          "range": {
+            "start_line": 1,
+            "end_line": 216
+          },
+          "symbol": "invoke-system-run-plan"
+        },
+        {
+          "path": "src/node-host/invoke-system-run.environment.test.ts",
+          "blob_sha": "a7129cef87936ca9e8d82ac66d68564864f6b8ef",
+          "range": {
+            "start_line": 1,
+            "end_line": 81
+          },
+          "symbol": "invoke-system-run.environment.test"
+        },
+        {
+          "path": "src/node-host/invoke-system-run.socket.test.ts",
+          "blob_sha": "f7450e117949318e5967855d59483b4b282b34cc",
+          "range": {
+            "start_line": 1,
+            "end_line": 140
+          },
+          "symbol": "invoke-system-run.socket.test"
+        },
+        {
+          "path": "src/node-host/invoke-system-run.test-support.ts",
+          "blob_sha": "4c4a9b77bd413c4c011a90fb7cc36bf7166f957e",
+          "range": {
+            "start_line": 1,
+            "end_line": 93
+          },
+          "symbol": "invoke-system-run.test-support"
+        },
+        {
+          "path": "src/node-host/invoke-system-run.test.ts",
+          "blob_sha": "6b06540e3541547697058537295abe9c8f159158",
+          "range": {
+            "start_line": 1,
+            "end_line": 1854
+          },
+          "symbol": "invoke-system-run.test"
+        },
+        {
+          "path": "src/node-host/invoke-system-run.ts",
+          "blob_sha": "769e01f6c36e88667140c4680f459556e8bccb70",
+          "range": {
+            "start_line": 1,
+            "end_line": 917
+          },
+          "symbol": "invoke-system-run"
+        },
+        {
+          "path": "src/node-host/invoke-types.ts",
+          "blob_sha": "720a2d16da2c2e653123b89422fa7e501fa92319",
+          "range": {
+            "start_line": 1,
+            "end_line": 54
+          },
+          "symbol": "invoke-types"
+        },
+        {
+          "path": "src/node-host/invoke-worker-supervisor.test.ts",
+          "blob_sha": "0eb35524681c05b974c0de2bba4564d61af77d58",
+          "range": {
+            "start_line": 1,
+            "end_line": 1008
+          },
+          "symbol": "invoke-worker-supervisor.test"
+        },
+        {
+          "path": "src/node-host/invoke-workspace.test.ts",
+          "blob_sha": "155b7d28b68f9ba4590f26e57c3b891ee88521e7",
+          "range": {
+            "start_line": 1,
+            "end_line": 193
+          },
+          "symbol": "invoke-workspace.test"
+        },
+        {
+          "path": "src/node-host/invoke.mcp.test.ts",
+          "blob_sha": "f03ef42537edf4df3a8f2e4dcd07d76d4002710f",
+          "range": {
+            "start_line": 1,
+            "end_line": 234
+          },
+          "symbol": "invoke.mcp.test"
+        },
+        {
+          "path": "src/node-host/invoke.run-command.test.ts",
+          "blob_sha": "b6ef917ed6b0763ca441a1d6f9a5017473344c81",
+          "range": {
+            "start_line": 1,
+            "end_line": 270
+          },
+          "symbol": "invoke.run-command.test"
+        },
+        {
+          "path": "src/node-host/invoke.test.ts",
+          "blob_sha": "cc4379d5321ad7887676e7d044dbe3be3b5c1b78",
+          "range": {
+            "start_line": 1,
+            "end_line": 866
+          },
+          "symbol": "invoke.test"
+        },
+        {
+          "path": "src/node-host/invoke.ts",
+          "blob_sha": "e595f8bf3342ae00dcb0ebf785b9f809619559f7",
+          "range": {
+            "start_line": 1,
+            "end_line": 703
+          },
+          "symbol": "invoke"
+        },
+        {
+          "path": "src/node-host/plugin-exec-policy.test.ts",
+          "blob_sha": "7dcd5750ab22e6742acade9f633484df65c49982",
+          "range": {
+            "start_line": 1,
+            "end_line": 140
+          },
+          "symbol": "plugin-exec-policy.test"
+        },
+        {
+          "path": "src/node-host/plugin-node-host.abort.test.ts",
+          "blob_sha": "800b945ee4d5a87ab74a290749dbcbdf26705799",
+          "range": {
+            "start_line": 1,
+            "end_line": 224
+          },
+          "symbol": "plugin-node-host.abort.test"
+        },
+        {
+          "path": "src/node-host/plugin-node-host.test-support.ts",
+          "blob_sha": "ea8d5ddb64969f9e51828d4ff350f256a26b6d06",
+          "range": {
+            "start_line": 1,
+            "end_line": 21
+          },
+          "symbol": "plugin-node-host.test-support"
+        },
+        {
+          "path": "src/node-host/plugin-node-host.test.ts",
+          "blob_sha": "aad1467a2b51eda83fdfb61aab277b4904db5d76",
+          "range": {
+            "start_line": 1,
+            "end_line": 244
+          },
+          "symbol": "plugin-node-host.test"
+        },
+        {
+          "path": "src/node-host/plugin-node-host.ts",
+          "blob_sha": "73ec0a90b23be2be89dc4bad6aefe743276afebd",
+          "range": {
+            "start_line": 1,
+            "end_line": 376
+          },
+          "symbol": "plugin-node-host"
+        },
+        {
+          "path": "src/node-host/portal-stream-command.test.ts",
+          "blob_sha": "bb39596fef848c653a453888963799b79d50076c",
+          "range": {
+            "start_line": 1,
+            "end_line": 141
+          },
+          "symbol": "portal-stream-command.test"
+        },
+        {
+          "path": "src/node-host/portal-stream-command.ts",
+          "blob_sha": "47dde75cbf3fbdd3a26cdf9b80657ed7d51616d3",
+          "range": {
+            "start_line": 1,
+            "end_line": 47
+          },
+          "symbol": "portal-stream-command"
+        },
+        {
+          "path": "src/node-host/pty-command.test.ts",
+          "blob_sha": "a4dcb1a0a4e346a462f6396f1b818e264a8119f2",
+          "range": {
+            "start_line": 1,
+            "end_line": 214
+          },
+          "symbol": "pty-command.test"
+        },
+        {
+          "path": "src/node-host/pty-command.ts",
+          "blob_sha": "90434f84ef03a2c3658bb4ec2af064ce38b01cfe",
+          "range": {
+            "start_line": 1,
+            "end_line": 203
+          },
+          "symbol": "pty-command"
+        },
+        {
+          "path": "src/node-host/stream-command.test-support.ts",
+          "blob_sha": "d9fd7e8ea85be095aa1da8190be90ecb463aaa0a",
+          "range": {
+            "start_line": 1,
+            "end_line": 106
+          },
+          "symbol": "stream-command.test-support"
+        },
+        {
+          "path": "src/node-host/with-timeout.test.ts",
+          "blob_sha": "b9424f88e8b54e4d9ba5a77dcf4b0e436aee56ff",
+          "range": {
+            "start_line": 1,
+            "end_line": 84
+          },
+          "symbol": "with-timeout.test"
+        },
+        {
+          "path": "src/node-host/with-timeout.ts",
+          "blob_sha": "ecfb05c084a18dae99b738c5deff2b8244f86222",
+          "range": {
+            "start_line": 1,
+            "end_line": 51
+          },
+          "symbol": "with-timeout"
+        }
+      ],
+      "evidence_refs": [
+        "source/host/tests/openclaw_node_host_contract.rs",
+        "projects/openclaw-rust/dossiers/node-host-scoped.md"
+      ],
+      "requirement_ids": [
+        "OCRM-R04",
+        "OCRM-R08",
+        "OCRM-R10",
+        "OCRM-R14",
+        "OCRM-R24",
+        "OCRM-AC08",
+        "OCRM-AC14",
+        "OCRM-AC24"
+      ],
+      "required_gate_ids": [
+        "OCRM-G04-rust-contract",
+        "OCRM-G05-frozen-oracle"
+      ],
+      "oracle_ids": [
+        "OCRM-NODE-HOST-INVOKE-O01"
+      ],
+      "adr_refs": [],
+      "blocker_ids": [
+        "BL-NODE-HOST-INVOKE-WIRING-001"
+      ],
+      "target": {
+        "path": "source/host/src/extensions/node_host/command_dispatch.rs",
+        "symbol": "dispatch_node_worker_computer_command",
+        "language": "Rust"
+      },
+      "required_evidence_dimensions": [
+        "unit",
+        "format"
+      ],
+      "reviewer": "xuyao@ombhrum.com",
+      "migration_rollback": "Drop node command execution and mark node host capability degraded"
+    },
+    {
+      "id": "OCRM-RESP-NODE-HOST-RUNTIME-MANIFEST-001",
+      "unit_id": "OCRM-UNIT-NODE-HOST-001",
+      "responsibility_kind": "business-runtime",
+      "behavior": "Node host runtime manifest generation, dynamic command advertising, capability exposure, and runner worker lifecycle hosting.",
+      "risk": "Medium; incomplete command advertising prevents gateway from routing eligible tasks to node",
+      "status": {
+        "read": "read-complete",
+        "mapping": "reviewed",
+        "wiring": "not-wired",
+        "implementation": "implemented",
+        "verification": "not-run",
+        "acceptance": "pending"
+      },
+      "selected_owner": "source/host/src/extensions/node_host/runtime_manifest.rs",
+      "existing_owner_candidates": [
+        {
+          "path": "source/host/src/extensions/node_host/runtime_manifest.rs",
+          "reason": "Host node manifest builder and capability advertiser"
+        }
+      ],
+      "owner_decision": "Native implementation in runtime_manifest under node_host extension",
+      "dependencies": [
+        "mahayana_host_runtime::extensions::node_host::runtime_manifest"
+      ],
+      "capability_ids": [
+        "node_host.runtime_manifest"
+      ],
+      "preconditions": [
+        "Node host initialized with local environment flags and feature permissions"
+      ],
+      "postconditions": [
+        "Manifest built containing exact advertised commands and capability descriptors"
+      ],
+      "invariants": [
+        "Claude commands advertised only when claude_enabled is true",
+        "Desktop streaming advertised only when desktop_streaming_enabled is true",
+        "Allowlist strictly filters advertised command set"
+      ],
+      "typed_contracts": [
+        "NodeHostManifest",
+        "NODE_AGENT_CLI_CLAUDE_RUN_COMMAND",
+        "NODE_DESKTOP_STREAM_COMMAND",
+        "SYSTEM_RUN_EXECUTION_CONTEXT_CAPABILITY"
+      ],
+      "tests": [
+        "source/host/tests/openclaw_node_host_contract.rs::test_ocrm_node_host_runtime_manifest"
+      ],
+      "integration": {
+        "producer": "source/host/src/extensions/node_host/runtime_manifest.rs",
+        "owner": "source/host/src/extensions/node_host/runtime_manifest.rs",
+        "consumer": "source/host/src/extensions/node_host/runtime_manifest.rs",
+        "entrypoint": "source/host/src/extensions/node_host/runtime_manifest.rs::build"
+      },
+      "source_refs": [
+        {
+          "path": "src/node-host/auto-update-compatibility.test.ts",
+          "blob_sha": "bf6086ee1491e16f8ed710af2994418f9243d68a",
+          "range": {
+            "start_line": 1,
+            "end_line": 499
+          },
+          "symbol": "auto-update-compatibility.test"
+        },
+        {
+          "path": "src/node-host/auto-update-compatibility.ts",
+          "blob_sha": "11069ad380b737b36684d4be85d3207d9c5e59df",
+          "range": {
+            "start_line": 1,
+            "end_line": 211
+          },
+          "symbol": "auto-update-compatibility"
+        },
+        {
+          "path": "src/node-host/auto-update-install.ts",
+          "blob_sha": "aff59777ec886b35baf91ea7cecc60bbf2410f67",
+          "range": {
+            "start_line": 1,
+            "end_line": 366
+          },
+          "symbol": "auto-update-install"
+        },
+        {
+          "path": "src/node-host/auto-update.test-support.ts",
+          "blob_sha": "a5fc7e7639673366fd040902db1e1c9350964c2f",
+          "range": {
+            "start_line": 1,
+            "end_line": 64
+          },
+          "symbol": "auto-update.test-support"
+        },
+        {
+          "path": "src/node-host/auto-update.test.ts",
+          "blob_sha": "101d305fffe1735445e0b8b995898d5d7f61f6ef",
+          "range": {
+            "start_line": 1,
+            "end_line": 365
+          },
+          "symbol": "auto-update.test"
+        },
+        {
+          "path": "src/node-host/auto-update.ts",
+          "blob_sha": "94ae3528ac90e0c3c249450fd054a358b54d9991",
+          "range": {
+            "start_line": 1,
+            "end_line": 219
+          },
+          "symbol": "auto-update"
+        },
+        {
+          "path": "src/node-host/launcher-bootstrap.ts",
+          "blob_sha": "f74b61c13ea05a2471fb0f3439499b223cdca302",
+          "range": {
+            "start_line": 1,
+            "end_line": 31
+          },
+          "symbol": "launcher-bootstrap"
+        },
+        {
+          "path": "src/node-host/launcher-client.ts",
+          "blob_sha": "8d99f2f7a4875541387dddbaf521df5a0206f598",
+          "range": {
+            "start_line": 1,
+            "end_line": 128
+          },
+          "symbol": "launcher-client"
+        },
+        {
+          "path": "src/node-host/linux-node-plugin.integration.test.ts",
+          "blob_sha": "867bab914fd7a7e97cd9eb1a57d3f92524a05b7e",
+          "range": {
+            "start_line": 1,
+            "end_line": 73
+          },
+          "symbol": "linux-node-plugin.integration.test"
+        },
+        {
+          "path": "src/node-host/mac-worker-entry.lifecycle.test.ts",
+          "blob_sha": "5c71011549abc7316090a7f191c67068595cde37",
+          "range": {
+            "start_line": 1,
+            "end_line": 112
+          },
+          "symbol": "mac-worker-entry.lifecycle.test"
+        },
+        {
+          "path": "src/node-host/mac-worker-entry.test.ts",
+          "blob_sha": "a700b2b9bee437f934663846f8be6bd580662bb4",
+          "range": {
+            "start_line": 1,
+            "end_line": 49
+          },
+          "symbol": "mac-worker-entry.test"
+        },
+        {
+          "path": "src/node-host/mac-worker-entry.ts",
+          "blob_sha": "a5bce68b27589d7c684dca51095f39998a549989",
+          "range": {
+            "start_line": 1,
+            "end_line": 111
+          },
+          "symbol": "mac-worker-entry"
+        },
+        {
+          "path": "src/node-host/mcp-manager.test-support.ts",
+          "blob_sha": "20e47ded6cf5a2717c6bfdd4fe6df3268c47abb7",
+          "range": {
+            "start_line": 1,
+            "end_line": 83
+          },
+          "symbol": "mcp-manager.test-support"
+        },
+        {
+          "path": "src/node-host/mcp.cancellation.integration.test.ts",
+          "blob_sha": "e7f101d14bf2c4a27ef6d544a636add7129c4418",
+          "range": {
+            "start_line": 1,
+            "end_line": 58
+          },
+          "symbol": "mcp.cancellation.integration.test"
+        },
+        {
+          "path": "src/node-host/mcp.recovery.test.ts",
+          "blob_sha": "779af32c5a334f2431443fb59b0db6dd439a9850",
+          "range": {
+            "start_line": 1,
+            "end_line": 1028
+          },
+          "symbol": "mcp.recovery.test"
+        },
+        {
+          "path": "src/node-host/mcp.test-support.ts",
+          "blob_sha": "68e8daf5ec16bb37b863bce9aa33afbc39e34a87",
+          "range": {
+            "start_line": 1,
+            "end_line": 78
+          },
+          "symbol": "mcp.test-support"
+        },
+        {
+          "path": "src/node-host/mcp.ts",
+          "blob_sha": "6985c5db381107a9659840bbac0fc18917e811dd",
+          "range": {
+            "start_line": 1,
+            "end_line": 588
+          },
+          "symbol": "mcp"
+        },
+        {
+          "path": "src/node-host/runner.auto-update.test.ts",
+          "blob_sha": "12b70419ebaa9918bcfb37b1a50a60b039ab9bcd",
+          "range": {
+            "start_line": 1,
+            "end_line": 277
+          },
+          "symbol": "runner.auto-update.test"
+        },
+        {
+          "path": "src/node-host/runner.inventory.test.ts",
+          "blob_sha": "41a7a6bab34e044257eb917095c8e9572ef9a225",
+          "range": {
+            "start_line": 1,
+            "end_line": 228
+          },
+          "symbol": "runner.inventory.test"
+        },
+        {
+          "path": "src/node-host/runner.shutdown.test.ts",
+          "blob_sha": "d0cdaf70752846c908598ada00537646bc347da7",
+          "range": {
+            "start_line": 1,
+            "end_line": 93
+          },
+          "symbol": "runner.shutdown.test"
+        },
+        {
+          "path": "src/node-host/runner.test-support.ts",
+          "blob_sha": "a0456314ead4e937cc02e64cdbe6bff078d05a27",
+          "range": {
+            "start_line": 1,
+            "end_line": 324
+          },
+          "symbol": "runner.test-support"
+        },
+        {
+          "path": "src/node-host/runner.test.ts",
+          "blob_sha": "281794f3b04fc27c8c6628ff51f0b5f917f26212",
+          "range": {
+            "start_line": 1,
+            "end_line": 743
+          },
+          "symbol": "runner.test"
+        },
+        {
+          "path": "src/node-host/runner.ts",
+          "blob_sha": "85e32a4e6df9a2753fc468840105ee4617d122da",
+          "range": {
+            "start_line": 1,
+            "end_line": 571
+          },
+          "symbol": "runner"
+        },
+        {
+          "path": "src/node-host/runtime-manifest.ts",
+          "blob_sha": "9e675256c727ce03b2a9820dc65fe991f0cc148d",
+          "range": {
+            "start_line": 1,
+            "end_line": 113
+          },
+          "symbol": "runtime-manifest"
+        },
+        {
+          "path": "src/node-host/runtime-skill-bins.ts",
+          "blob_sha": "416c0720153ea1ff90ddc4ac7243d52160d68e38",
+          "range": {
+            "start_line": 1,
+            "end_line": 73
+          },
+          "symbol": "runtime-skill-bins"
+        },
+        {
+          "path": "src/node-host/runtime.commands.test.ts",
+          "blob_sha": "3911ea8e4b19d9be3b253bc1e208c2f3e0baf225",
+          "range": {
+            "start_line": 1,
+            "end_line": 119
+          },
+          "symbol": "runtime.commands.test"
+        },
+        {
+          "path": "src/node-host/runtime.computer.test.ts",
+          "blob_sha": "26773393b336cf063a211ea64897dd9ae1cca43d",
+          "range": {
+            "start_line": 1,
+            "end_line": 299
+          },
+          "symbol": "runtime.computer.test"
+        },
+        {
+          "path": "src/node-host/runtime.test-support.ts",
+          "blob_sha": "fc3ffba6c7557f7d453f6df34e2487b7e4a2a085",
+          "range": {
+            "start_line": 1,
+            "end_line": 127
+          },
+          "symbol": "runtime.test-support"
+        },
+        {
+          "path": "src/node-host/runtime.test.ts",
+          "blob_sha": "83129535e5c187eb136022c66da3b565c4bc0a25",
+          "range": {
+            "start_line": 1,
+            "end_line": 449
+          },
+          "symbol": "runtime.test"
+        },
+        {
+          "path": "src/node-host/runtime.ts",
+          "blob_sha": "35c5e3aba727291c797534cf7d2e5abcaa05a9e5",
+          "range": {
+            "start_line": 1,
+            "end_line": 719
+          },
+          "symbol": "runtime"
+        },
+        {
+          "path": "src/node-host/runtime.update-pause.test.ts",
+          "blob_sha": "ae2c1321c7505d1771928271f3d69370f225f052",
+          "range": {
+            "start_line": 1,
+            "end_line": 238
+          },
+          "symbol": "runtime.update-pause.test"
+        },
+        {
+          "path": "src/node-host/runtime.worker-hosting.test.ts",
+          "blob_sha": "48de2bb69668c2dc50334b18d30751fecd31f460",
+          "range": {
+            "start_line": 1,
+            "end_line": 354
+          },
+          "symbol": "runtime.worker-hosting.test"
+        },
+        {
+          "path": "src/node-host/runtime.worker-supervisor.test.ts",
+          "blob_sha": "6abab97e57f604b75ce560b5b03352fe1b84405b",
+          "range": {
+            "start_line": 1,
+            "end_line": 128
+          },
+          "symbol": "runtime.worker-supervisor.test"
+        },
+        {
+          "path": "src/node-host/skills.test.ts",
+          "blob_sha": "77571e55fce5f611424521fd5f50047eb3088a10",
+          "range": {
+            "start_line": 1,
+            "end_line": 154
+          },
+          "symbol": "skills.test"
+        },
+        {
+          "path": "src/node-host/skills.ts",
+          "blob_sha": "611c01cb45f006da6468f2733974eb03363fa153",
+          "range": {
+            "start_line": 1,
+            "end_line": 142
+          },
+          "symbol": "skills"
+        },
+        {
+          "path": "src/node-host/worker-runtime.test.ts",
+          "blob_sha": "04cfd31074d2ec31974ab1df024992db17afd120",
+          "range": {
+            "start_line": 1,
+            "end_line": 643
+          },
+          "symbol": "worker-runtime.test"
+        },
+        {
+          "path": "src/node-host/worker-support.ts",
+          "blob_sha": "55f990be2b6a9b803ef11c95e1ad64aa43b5f2b1",
+          "range": {
+            "start_line": 1,
+            "end_line": 128
+          },
+          "symbol": "worker-support"
+        },
+        {
+          "path": "src/node-host/worker.test.ts",
+          "blob_sha": "36323ee5c6e10051b225b9a8ea0aaca39d6e40a8",
+          "range": {
+            "start_line": 1,
+            "end_line": 132
+          },
+          "symbol": "worker.test"
+        },
+        {
+          "path": "src/node-host/worker.ts",
+          "blob_sha": "cfd8885d97b27f3f2c402a12ddefb8436e2cc82c",
+          "range": {
+            "start_line": 1,
+            "end_line": 161
+          },
+          "symbol": "worker"
+        }
+      ],
+      "evidence_refs": [
+        "source/host/tests/openclaw_node_host_contract.rs",
+        "projects/openclaw-rust/dossiers/node-host-scoped.md"
+      ],
+      "requirement_ids": [
+        "OCRM-R04",
+        "OCRM-R08",
+        "OCRM-R10",
+        "OCRM-R20",
+        "OCRM-R24",
+        "OCRM-AC08",
+        "OCRM-AC20",
+        "OCRM-AC24"
+      ],
+      "required_gate_ids": [
+        "OCRM-G04-rust-contract",
+        "OCRM-G05-frozen-oracle"
+      ],
+      "oracle_ids": [
+        "OCRM-NODE-HOST-MANIFEST-O01"
+      ],
+      "adr_refs": [],
+      "blocker_ids": [
+        "BL-NODE-HOST-MANIFEST-WIRING-001"
+      ],
+      "target": {
+        "path": "source/host/src/extensions/node_host/runtime_manifest.rs",
+        "symbol": "NodeHostManifest",
+        "language": "Rust"
+      },
+      "required_evidence_dimensions": [
+        "unit",
+        "format"
+      ],
+      "reviewer": "xuyao@ombhrum.com",
+      "migration_rollback": "Advertise only baseline system run command without optional extensions"
     }
   ],
   "schema_version": 1,

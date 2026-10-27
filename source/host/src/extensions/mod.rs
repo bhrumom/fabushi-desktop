@@ -62,4 +62,5 @@ pub mod interactive;
 
 pub mod plugin_sdk;
 pub mod meeting_bot;
+pub mod node_host;
 
