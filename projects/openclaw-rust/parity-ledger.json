@@ -10,10 +10,10 @@
     "ui_accepted": false
   },
   "file_coverage": {
-    "mapped_paths": 432,
+    "mapped_paths": 445,
     "omitted_known": 0,
     "tracked_paths": 58750,
-    "unclassified_paths": 58318
+    "unclassified_paths": 58305
   },
   "inventory_authority": {
     "manifest_source": "GitHub Actions immutable artifact candidate",
@@ -17724,6 +17724,300 @@
       ],
       "reviewer": "xuyao@ombhrum.com",
       "migration_rollback": "Direct string lookup without automatic snake_case fallback"
+    },
+    {
+      "id": "OCRM-RESP-MEMORY-DREAMING-001",
+      "unit_id": "OCRM-UNIT-MEMORY-HOST-SDK-001",
+      "responsibility_kind": "business-runtime",
+      "behavior": "Memory dreaming promotion cron management, deterministic calibration scoring, recency half-life decay evaluation, and durable memory promotion eligibility.",
+      "risk": "Medium; controls automated promotion of short-term memory into durable root memory",
+      "status": {
+        "read": "read-complete",
+        "mapping": "reviewed",
+        "wiring": "not-wired",
+        "implementation": "implemented",
+        "verification": "not-run",
+        "acceptance": "pending"
+      },
+      "selected_owner": "source/host/src/extensions/memory/dreaming_service.rs",
+      "existing_owner_candidates": [
+        {
+          "path": "source/host/src/extensions/memory/dreaming_service.rs",
+          "reason": "Memory dreaming configuration and promotion evaluation service"
+        }
+      ],
+      "owner_decision": "Native implementation in dreaming_service under memory extension",
+      "dependencies": [
+        "mahayana_host_runtime::extensions::memory::dreaming_service"
+      ],
+      "capability_ids": [
+        "memory.dreaming"
+      ],
+      "preconditions": [
+        "Promotion candidate and dreaming configuration provided"
+      ],
+      "postconditions": [
+        "Decayed score evaluated against calibration thresholds and eligibility returned"
+      ],
+      "invariants": [
+        "Default dreaming cron frequency is 0 3 * * *",
+        "Minimum score threshold defaults to 0.75, minimum recall count to 3, minimum unique queries to 3",
+        "Recency decays with a 14-day half-life"
+      ],
+      "typed_contracts": [
+        "MemoryDreamingConfig",
+        "MemoryPromotionCandidate",
+        "compute_recency_decay",
+        "is_candidate_eligible_for_promotion"
+      ],
+      "tests": [
+        "source/host/tests/openclaw_memory_host_sdk_contract.rs::test_ocrm_memory_dreaming_promotion_and_decay"
+      ],
+      "integration": {
+        "producer": "source/host/src/extensions/memory/dreaming_service.rs",
+        "owner": "source/host/src/extensions/memory/dreaming_service.rs",
+        "consumer": "source/host/src/extensions/memory/dreaming_service.rs",
+        "entrypoint": "source/host/src/extensions/memory/dreaming_service.rs::is_candidate_eligible_for_promotion"
+      },
+      "source_refs": [
+        {
+          "path": "src/memory-host-sdk/dreaming.ts",
+          "blob_sha": "bf9abd9ba827739923a4eb01f9d144466476824e",
+          "range": {
+            "start_line": 1,
+            "end_line": 567
+          },
+          "symbol": "dreaming"
+        },
+        {
+          "path": "src/memory-host-sdk/dreaming.test.ts",
+          "blob_sha": "2993f69cd8a4044fac81d15c26900f6f15f8ad6d",
+          "range": {
+            "start_line": 1,
+            "end_line": 256
+          },
+          "symbol": "dreaming.test"
+        }
+      ],
+      "evidence_refs": [
+        "source/host/tests/openclaw_memory_host_sdk_contract.rs",
+        "projects/openclaw-rust/dossiers/memory-host-sdk-scoped.md"
+      ],
+      "requirement_ids": [
+        "OCRM-R12",
+        "OCRM-AC12"
+      ],
+      "required_gate_ids": [
+        "OCRM-G04-rust-contract",
+        "OCRM-G05-frozen-oracle"
+      ],
+      "oracle_ids": [
+        "OCRM-MEMORY-DREAMING-O01"
+      ],
+      "adr_refs": [],
+      "blocker_ids": [
+        "BL-MEMORY-DREAMING-EXEC-WIRING-001"
+      ],
+      "target": {
+        "path": "source/host/src/extensions/memory/dreaming_service.rs",
+        "symbol": "is_candidate_eligible_for_promotion",
+        "language": "Rust"
+      },
+      "required_evidence_dimensions": [
+        "unit",
+        "format"
+      ],
+      "reviewer": "xuyao@ombhrum.com",
+      "migration_rollback": "Disable scheduled memory dreaming crons and retain static memory files"
+    },
+    {
+      "id": "OCRM-RESP-MEMORY-EVENT-STORE-001",
+      "unit_id": "OCRM-UNIT-MEMORY-HOST-SDK-001",
+      "responsibility_kind": "business-runtime",
+      "behavior": "Memory host event store, bounded diagnostic sanitization, path and query clamping, exact aggregate count retention, and event log resolution.",
+      "risk": "Low; sanitizes diagnostic event logs and bounds SQLite state storage",
+      "status": {
+        "read": "read-complete",
+        "mapping": "reviewed",
+        "wiring": "not-wired",
+        "implementation": "implemented",
+        "verification": "not-run",
+        "acceptance": "pending"
+      },
+      "selected_owner": "source/host/src/extensions/memory/event_store_service.rs",
+      "existing_owner_candidates": [
+        {
+          "path": "source/host/src/extensions/memory/event_store_service.rs",
+          "reason": "Memory host event record normalizer and bound enforcer"
+        }
+      ],
+      "owner_decision": "Native implementation in event_store_service under memory extension",
+      "dependencies": [
+        "mahayana_host_runtime::extensions::memory::event_store_service"
+      ],
+      "capability_ids": [
+        "memory.event_store"
+      ],
+      "preconditions": [
+        "Raw memory host event record provided"
+      ],
+      "postconditions": [
+        "Event normalized and bounded with exact aggregate count retained"
+      ],
+      "invariants": [
+        "Event arrays clamped to 10 items, path to 256 bytes, text to 2048 bytes",
+        "Aggregate result_count strictly remains exact despite array truncation",
+        "Legacy JSONL log path points to memory/.dreams/events.jsonl"
+      ],
+      "typed_contracts": [
+        "MemoryHostEventRecord",
+        "normalize_memory_host_event_for_storage",
+        "apply_memory_host_event_limit",
+        "resolve_memory_host_event_log_path"
+      ],
+      "tests": [
+        "source/host/tests/openclaw_memory_host_sdk_contract.rs::test_ocrm_memory_event_store_normalization_and_truncation",
+        "source/host/tests/openclaw_memory_host_sdk_contract.rs::test_ocrm_memory_event_store_path_truncation_and_slice"
+      ],
+      "integration": {
+        "producer": "source/host/src/extensions/memory/event_store_service.rs",
+        "owner": "source/host/src/extensions/memory/event_store_service.rs",
+        "consumer": "source/host/src/extensions/memory/event_store_service.rs",
+        "entrypoint": "source/host/src/extensions/memory/event_store_service.rs::normalize_memory_host_event_for_storage"
+      },
+      "source_refs": [
+        {
+          "path": "src/memory-host-sdk/event-store.ts",
+          "blob_sha": "1a9c78b187f10a8d2efb89ce3ea6274d0e8ae2fc",
+          "range": {
+            "start_line": 1,
+            "end_line": 324
+          },
+          "symbol": "event-store"
+        },
+        {
+          "path": "src/memory-host-sdk/event-types.ts",
+          "blob_sha": "3672d18efddd2a88e51aaaeaf56530e8aeb96d5d",
+          "range": {
+            "start_line": 1,
+            "end_line": 80
+          },
+          "symbol": "event-types"
+        },
+        {
+          "path": "src/memory-host-sdk/events.ts",
+          "blob_sha": "39dfd2b26f711ac0609663612a0881f1a0c54030",
+          "range": {
+            "start_line": 1,
+            "end_line": 66
+          },
+          "symbol": "events"
+        },
+        {
+          "path": "src/memory-host-sdk/event-export.ts",
+          "blob_sha": "40c28fa742f9de9a33705cb36d9b9b99c3c0c5ec",
+          "range": {
+            "start_line": 1,
+            "end_line": 20
+          },
+          "symbol": "event-export"
+        },
+        {
+          "path": "src/memory-host-sdk/secret.ts",
+          "blob_sha": "b6895314dddde9de0f9f826e5867d72e896627bd",
+          "range": {
+            "start_line": 1,
+            "end_line": 8
+          },
+          "symbol": "secret"
+        },
+        {
+          "path": "src/memory-host-sdk/status.ts",
+          "blob_sha": "2c4ecdf7e94b38c60af24687f9fa5e63ef675315",
+          "range": {
+            "start_line": 1,
+            "end_line": 5
+          },
+          "symbol": "status"
+        },
+        {
+          "path": "src/memory-host-sdk/multimodal.ts",
+          "blob_sha": "b07bc6907a385df897543ca6bc52724a726f2efa",
+          "range": {
+            "start_line": 1,
+            "end_line": 5
+          },
+          "symbol": "multimodal"
+        },
+        {
+          "path": "src/memory-host-sdk/query.ts",
+          "blob_sha": "929445320ec28ba44e5d8464018015c3cbce819b",
+          "range": {
+            "start_line": 1,
+            "end_line": 5
+          },
+          "symbol": "query"
+        },
+        {
+          "path": "src/memory-host-sdk/engine-storage.ts",
+          "blob_sha": "150c6323e17f54a99481e70ae80b3f13f014de2c",
+          "range": {
+            "start_line": 1,
+            "end_line": 2
+          },
+          "symbol": "engine-storage"
+        },
+        {
+          "path": "src/memory-host-sdk/host/config-utils.ts",
+          "blob_sha": "1f0d1b8fc795d7ecf1e78044351c2f287472b388",
+          "range": {
+            "start_line": 1,
+            "end_line": 5
+          },
+          "symbol": "config-utils"
+        },
+        {
+          "path": "src/memory-host-sdk/host/types.ts",
+          "blob_sha": "3314d2305efe8aebae59688fae9ff663e3261d21",
+          "range": {
+            "start_line": 1,
+            "end_line": 5
+          },
+          "symbol": "types"
+        }
+      ],
+      "evidence_refs": [
+        "source/host/tests/openclaw_memory_host_sdk_contract.rs",
+        "projects/openclaw-rust/dossiers/memory-host-sdk-scoped.md"
+      ],
+      "requirement_ids": [
+        "OCRM-R12",
+        "OCRM-AC12"
+      ],
+      "required_gate_ids": [
+        "OCRM-G04-rust-contract",
+        "OCRM-G05-frozen-oracle"
+      ],
+      "oracle_ids": [
+        "OCRM-MEMORY-EVENT-STORE-O01",
+        "OCRM-MEMORY-EVENT-STORE-O02"
+      ],
+      "adr_refs": [],
+      "blocker_ids": [
+        "BL-MEMORY-EVENT-STORE-EXEC-WIRING-001"
+      ],
+      "target": {
+        "path": "source/host/src/extensions/memory/event_store_service.rs",
+        "symbol": "normalize_memory_host_event_for_storage",
+        "language": "Rust"
+      },
+      "required_evidence_dimensions": [
+        "unit",
+        "format",
+        "boundary"
+      ],
+      "reviewer": "xuyao@ombhrum.com",
+      "migration_rollback": "Bypass event logging and write directly to memory files without diagnostics"
     }
   ],
   "schema_version": 1,
