@@ -172,6 +172,29 @@ fn test_ocrm_snapshot_postgres_manifest_schema_and_profile_oracles() {
             std::path::PathBuf::from("postgres/database.sqlite"),
         ]
     );
+    let v1_files =
+        mahayana_host_runtime::extensions::snapshot::git_backup_manager::git_backup_artifact_files(
+            &parsed_git,
+        );
+    mahayana_host_runtime::extensions::snapshot::git_backup_manager::admit_git_backup_artifacts(
+        &parsed_git,
+        &v1_files,
+    )
+    .expect("admit exact schema-v1 artifact set");
+    let mut missing = v1_files.clone();
+    missing.pop();
+    assert!(mahayana_host_runtime::extensions::snapshot::git_backup_manager::admit_git_backup_artifacts(
+        &parsed_git,
+        &missing,
+    )
+    .is_err());
+    let mut traversal = v1_files.clone();
+    traversal.push(std::path::PathBuf::from("../outside"));
+    assert!(mahayana_host_runtime::extensions::snapshot::git_backup_manager::admit_git_backup_artifacts(
+        &parsed_git,
+        &traversal,
+    )
+    .is_err());
     assert_eq!(
         mahayana_host_runtime::extensions::snapshot::git_backup_manager::git_backup_scope_path(
             &parsed_git.identity,

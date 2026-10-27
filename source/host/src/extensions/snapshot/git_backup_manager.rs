@@ -530,6 +530,39 @@ pub fn git_backup_artifact_files(manifest: &GitBackupManifest) -> Vec<PathBuf> {
     files
 }
 
+/// Admits a staged artifact set only when it is exactly the profile-derived
+/// set. Relative paths are required so callers cannot smuggle files outside
+/// the backup scope through an absolute or parent-containing path.
+pub fn admit_git_backup_artifacts(
+    manifest: &GitBackupManifest,
+    actual_paths: &[PathBuf],
+) -> Result<(), String> {
+    let expected: BTreeSet<PathBuf> = git_backup_artifact_files(manifest).into_iter().collect();
+    let mut actual = BTreeSet::new();
+    for path in actual_paths {
+        if path.is_absolute()
+            || path
+                .components()
+                .any(|component| matches!(component, std::path::Component::ParentDir))
+        {
+            return Err(format!(
+                "Git backup artifact path escapes its scope: {}",
+                path.display()
+            ));
+        }
+        if path.as_os_str().is_empty() || !actual.insert(path.clone()) {
+            return Err(format!(
+                "Git backup artifact path is duplicated or empty: {}",
+                path.display()
+            ));
+        }
+    }
+    if actual != expected {
+        return Err("Git backup artifact set does not match its manifest profile".into());
+    }
+    Ok(())
+}
+
 pub fn read_git_backup_manifest(path: impl AsRef<Path>) -> Result<GitBackupManifest, String> {
     let path = path.as_ref();
     let mut file = open_unaliased_readonly(path)

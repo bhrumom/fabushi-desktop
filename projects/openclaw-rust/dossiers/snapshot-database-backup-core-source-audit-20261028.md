@@ -254,3 +254,9 @@ schema-v2 yields the PostgreSQL manifest, anchor, and database bundle. The
 contract exercises both profiles. This is deterministic file-set derivation,
 not yet Git repository preflight or atomic scope publication.
 
+`admit_git_backup_artifacts` now compares a staged set against the exact
+profile-derived artifact paths, rejecting missing/extra/duplicate paths and
+absolute or parent-containing escapes. Positive, missing, and traversal
+negative oracles pass. This is an owner-side admission boundary; it still does
+not perform Git index/HEAD preflight or atomic publication.
+
