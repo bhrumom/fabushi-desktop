@@ -198,11 +198,15 @@ fn test_ocrm_plugins_capability_catalog() {
         family: CAPABILITY_FAMILY_SPEECH_PROVIDERS.to_string(),
         provider_id: "elevenlabs".to_string(),
         plugin_id: "elevenlabs-voice-plugin".to_string(),
+        label: Some("ElevenLabs Text-to-Speech".to_string()),
+        aliases: vec![],
     });
     catalog.register_capability(CapabilityProviderEntry {
         family: CAPABILITY_FAMILY_TRANSCRIPTION_PROVIDERS.to_string(),
         provider_id: "whisper-local".to_string(),
         plugin_id: "whisper-plugin".to_string(),
+        label: Some("Local Whisper".to_string()),
+        aliases: vec!["whisper".to_string()],
     });
 
     let entry = catalog
@@ -212,6 +216,11 @@ fn test_ocrm_plugins_capability_catalog() {
 
     let speech_list = catalog.list_capabilities_for_family(CAPABILITY_FAMILY_SPEECH_PROVIDERS);
     assert_eq!(speech_list.len(), 1);
+
+    // Cold descriptor matching with aliases (capability-catalog.contract.test.ts)
+    assert!(catalog.matches_provider_id_or_alias(CAPABILITY_FAMILY_TRANSCRIPTION_PROVIDERS, "whisper-local"));
+    assert!(catalog.matches_provider_id_or_alias(CAPABILITY_FAMILY_TRANSCRIPTION_PROVIDERS, "whisper"));
+    assert!(!catalog.matches_provider_id_or_alias(CAPABILITY_FAMILY_TRANSCRIPTION_PROVIDERS, "deepgram"));
 
     // Channel catalog
     catalog.register_channel(ChannelCatalogEntry {

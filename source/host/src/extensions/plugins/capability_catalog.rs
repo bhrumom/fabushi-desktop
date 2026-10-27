@@ -19,6 +19,10 @@ pub struct CapabilityProviderEntry {
     pub family: String,
     pub provider_id: String,
     pub plugin_id: String,
+    #[serde(default)]
+    pub label: Option<String>,
+    #[serde(default)]
+    pub aliases: Vec<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -85,6 +89,16 @@ impl PluginCapabilityCatalog {
             .filter(|e| e.family == family)
             .cloned()
             .collect()
+    }
+
+    pub fn matches_provider_id_or_alias(&self, family: &str, candidate: &str) -> bool {
+        let candidate_lower = candidate.to_ascii_lowercase();
+        let caps = self.capabilities.lock().unwrap();
+        caps.values().any(|e| {
+            e.family == family
+                && (e.provider_id.eq_ignore_ascii_case(&candidate_lower)
+                    || e.aliases.iter().any(|a| a.eq_ignore_ascii_case(&candidate_lower)))
+        })
     }
 
     pub fn register_channel(&self, entry: ChannelCatalogEntry) {

@@ -10,10 +10,10 @@
     "ui_accepted": false
   },
   "file_coverage": {
-    "mapped_paths": 386,
+    "mapped_paths": 387,
     "omitted_known": 0,
     "tracked_paths": 58750,
-    "unclassified_paths": 58364
+    "unclassified_paths": 58363
   },
   "inventory_authority": {
     "manifest_source": "GitHub Actions immutable artifact candidate",
@@ -20668,6 +20668,15 @@
           "range": {
             "start_line": 1,
             "end_line": 201
+          }
+        },
+        {
+          "path": "src/plugins/contracts/capability-catalog.contract.test.ts",
+          "blob_sha": "67ac28b12ca8a15ade41dbfea4c18488bc051f86",
+          "symbol": "cold capability catalog descriptors",
+          "range": {
+            "start_line": 1,
+            "end_line": 109
           }
         }
       ],
