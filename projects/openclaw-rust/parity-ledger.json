@@ -4578,8 +4578,8 @@
       ],
       "id": "OCRM-RESP-EXEC-RUNNER-TIMEOUT-001",
       "integration": {
-        "consumer": "source/host/src/runner/production_turn_run_shell_adapter.rs",
-        "entrypoint": "source/host/src/runner/mod.rs",
+    "consumer": "source/host/src/runner/production_turn_agent_owner.rs",
+    "entrypoint": "source/host/src/runner/production_turn_agent_owner.rs::run_production_turn_shell_lifecycle",
         "owner": "source/host/src/runner/production_turn_run_shell_adapter.rs",
         "producer": "source/host/src/runner/production_turn_agent_owner.rs"
       },
@@ -4632,7 +4632,7 @@
         "mapping": "mapped",
         "read": "partial",
         "verification": "not-run",
-        "wiring": "not-wired"
+    "wiring": "wired"
       },
       "target": {
         "language": "Rust",
