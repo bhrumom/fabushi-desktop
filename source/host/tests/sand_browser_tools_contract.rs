@@ -4,24 +4,42 @@ use mahayana_host_runtime::extensions::inference::provider_session::{
     ProviderSessionError, RoutedToolDefinition,
 };
 use mahayana_host_runtime::runner::box_tool_access::{
-    RunnerBoxReadRequest, RunnerBoxResourcePort, RunnerBoxShellRequest,
-    RunnerBoxWriteRequest,
+    RunnerBoxReadRequest, RunnerBoxResourcePort, RunnerBoxShellRequest, RunnerBoxWriteRequest,
 };
 use mahayana_host_runtime::runner::routed_provider_runtime::RoutedToolBridge;
 use mahayana_host_runtime::runner::tools::sand_browser_driver_source::SAND_BROWSER_DRIVER_SOURCE;
 use mahayana_host_runtime::runner::tools::sand_browser_tools::{
-    BOX_CDP_PORT_BASE, BrowserDriverOutput, BrowserEnvelope, BrowserToolExecutor,
-    BrowserShellSafetyCallback, BrowserToolSpec, ProductionBrowserToolExecutor,
-    SandBrowserToolBridge,
-    browser_tool_specs, capture_browser_review_state,
-    build_browser_driver_invocation, decode_envelope, encode_envelope,
-    parse_driver_response, sanitize_for_box_path, stash_screenshot,
-    take_stashed_screenshot, to_browser_review_action, validate_browser_arguments,
+    browser_image_mime_type, browser_tool_specs, build_browser_driver_invocation,
+    capture_browser_review_state, decode_envelope, encode_envelope, parse_driver_response,
+    sanitize_for_box_path, stash_screenshot, take_stashed_screenshot, to_browser_review_action,
+    validate_browser_arguments, BrowserDriverOutput, BrowserEnvelope, BrowserShellSafetyCallback,
+    BrowserToolExecutor, BrowserToolSpec, ProductionBrowserToolExecutor, SandBrowserToolBridge,
+    BOX_CDP_PORT_BASE,
 };
-use serde_json::{Map, Value, json};
+use serde_json::{json, Map, Value};
 
 const BROWSER_AUTO_REVIEW_SOURCE: &str = include_str!("../src/runner/sand_browser_auto_review.rs");
-const AUTO_REVIEW_SUMMARIES_SOURCE: &str = include_str!("../src/runner/sand_auto_review_summaries.rs");
+const AUTO_REVIEW_SUMMARIES_SOURCE: &str =
+    include_str!("../src/runner/sand_auto_review_summaries.rs");
+
+#[test]
+fn browser_screenshot_mime_policy_accepts_locked_raster_set_and_rejects_unknowns() {
+    assert_eq!(
+        browser_image_mime_type(&[137, 80, 78, 71], "/workspace/shot.png"),
+        Some("image/png")
+    );
+    assert_eq!(
+        browser_image_mime_type(
+            &[0, 0, 0, 24, b'f', b't', b'y', b'p', b'a', b'v', b'i', b'f'],
+            "/workspace/shot.bin",
+        ),
+        Some("image/avif")
+    );
+    assert_eq!(
+        browser_image_mime_type(b"not-image", "/workspace/shot.bmp"),
+        None
+    );
+}
 
 struct BaseBridge;
 
@@ -54,18 +72,12 @@ struct ProductionBoxPort {
 }
 
 impl RunnerBoxResourcePort for ProductionBoxPort {
-    fn execute_shell(
-        &self,
-        request: RunnerBoxShellRequest,
-    ) -> Result<Value, ProviderSessionError> {
+    fn execute_shell(&self, request: RunnerBoxShellRequest) -> Result<Value, ProviderSessionError> {
         self.shells.lock().expect("shells").push(request);
         Ok(json!({"kind":"success","exitCode":0,"stderr":""}))
     }
 
-    fn execute_read(
-        &self,
-        request: RunnerBoxReadRequest,
-    ) -> Result<Value, ProviderSessionError> {
+    fn execute_read(&self, request: RunnerBoxReadRequest) -> Result<Value, ProviderSessionError> {
         let path = request.path.clone();
         self.reads.lock().expect("reads").push(request);
         if path.contains("/sand-browser-review-state-") {
@@ -104,10 +116,7 @@ impl RunnerBoxResourcePort for ProductionBoxPort {
         Ok(json!({"kind":"fileNotFound","path":path}))
     }
 
-    fn execute_write(
-        &self,
-        request: RunnerBoxWriteRequest,
-    ) -> Result<(), ProviderSessionError> {
+    fn execute_write(&self, request: RunnerBoxWriteRequest) -> Result<(), ProviderSessionError> {
         self.writes.lock().expect("writes").push(request);
         Ok(())
     }
@@ -199,7 +208,9 @@ fn browser_invocation_projects_display_cdp_view_and_screenshot_path() {
         .screenshot_path
         .as_deref()
         .is_some_and(|path| path.contains("toolcall1")));
-    assert!(invocation.shell_command.starts_with("node /workspace/.sand-browser/driver-v2.mjs "));
+    assert!(invocation
+        .shell_command
+        .starts_with("node /workspace/.sand-browser/driver-v2.mjs "));
     assert!(!invocation.encoded_request.is_empty());
 
     assert_eq!(sanitize_for_box_path("tool/call:1"), "toolcall1");
@@ -214,11 +225,7 @@ fn browser_review_action_matches_operation_specific_projection() {
         "x":12,
         "modifiers":["Shift", 7]
     });
-    let action = to_browser_review_action(
-        "cdp",
-        args.as_object().expect("object"),
-        "default",
-    );
+    let action = to_browser_review_action("cdp", args.as_object().expect("object"), "default");
     assert_eq!(action.op, "cdp");
     assert_eq!(action.view_id, "view-a");
     assert_eq!(action.cdp_method.as_deref(), Some("Runtime.evaluate"));
@@ -232,14 +239,14 @@ fn browser_review_action_matches_operation_specific_projection() {
 
 #[test]
 fn browser_toolset_registers_frozen_inventory_validates_and_delegates() {
-    let bridge = SandBrowserToolBridge::new(
-        Arc::new(BaseBridge),
-        Arc::new(FakeBrowserExecutor),
-    );
+    let bridge = SandBrowserToolBridge::new(Arc::new(BaseBridge), Arc::new(FakeBrowserExecutor));
     let tools = bridge.list_tools().expect("tools");
     let specs = browser_tool_specs();
     assert_eq!(
-        tools.iter().filter(|tool| tool.name.starts_with("browser_")).count(),
+        tools
+            .iter()
+            .filter(|tool| tool.name.starts_with("browser_"))
+            .count(),
         specs.len()
     );
     assert!(tools.iter().any(|tool| tool.name == "base_tool"));
@@ -253,11 +260,9 @@ fn browser_toolset_registers_frozen_inventory_validates_and_delegates() {
         .expect_err("url required");
     assert!(error.to_string().contains("url is required"));
 
-    let result = bridge.call_tool(
-        navigate,
-        json!({"url":"https://example.com"}),
-        "tool-nav",
-    ).expect("navigate result");
+    let result = bridge
+        .call_tool(navigate, json!({"url":"https://example.com"}), "tool-nav")
+        .expect("navigate result");
     assert_eq!(result["text"], "navigate:tool-nav:https://example.com");
     assert_eq!(result["isError"], false);
     assert_eq!(result["viewId"], "view-fake");
@@ -268,12 +273,23 @@ fn browser_toolset_registers_frozen_inventory_validates_and_delegates() {
         navigate.input_schema["properties"]["expectedGeneration"]["type"],
         "string"
     );
-    assert_eq!(navigate.input_schema["properties"]["frameName"]["type"], "string");
-    assert_eq!(navigate.input_schema["properties"]["frameUrl"]["type"], "string");
-
-    let base = tools.iter().find(|tool| tool.name == "base_tool").expect("base");
     assert_eq!(
-        bridge.call_tool(base, json!({}), "tool-base").expect("delegate"),
+        navigate.input_schema["properties"]["frameName"]["type"],
+        "string"
+    );
+    assert_eq!(
+        navigate.input_schema["properties"]["frameUrl"]["type"],
+        "string"
+    );
+
+    let base = tools
+        .iter()
+        .find(|tool| tool.name == "base_tool")
+        .expect("base");
+    assert_eq!(
+        bridge
+            .call_tool(base, json!({}), "tool-base")
+            .expect("delegate"),
         Value::String("delegated".into())
     );
 }
@@ -285,17 +301,11 @@ fn screenshot_cache_returns_stashed_image_once() {
     assert!(take_stashed_screenshot(&key).is_none());
 }
 
-
 #[test]
 fn browser_review_state_uses_host_box_probe_and_view_mapping() {
     let port = ProductionBoxPort::default();
-    let state = capture_browser_review_state(
-        &port,
-        4,
-        Some("agent-browser"),
-        "browser/review:1",
-    )
-    .expect("browser review state");
+    let state = capture_browser_review_state(&port, 4, Some("agent-browser"), "browser/review:1")
+        .expect("browser review state");
     assert_eq!(state.display_state_identity.len(), 64);
     assert_eq!(
         state.target_page_url.as_deref(),
@@ -304,7 +314,9 @@ fn browser_review_state_uses_host_box_probe_and_view_mapping() {
     let shells = port.shells.lock().expect("shells");
     assert!(shells.iter().any(|request| {
         request.command.contains("http://127.0.0.1:9226/json/list")
-            && request.command.contains("/tmp/sand-browser-review-state-browserreview1.json")
+            && request
+                .command
+                .contains("/tmp/sand-browser-review-state-browserreview1.json")
     }));
 }
 
@@ -520,7 +532,10 @@ fn production_browser_executor_uses_only_host_box_port() {
     let guarded_shells = Arc::new(Mutex::new(Vec::<RunnerBoxShellRequest>::new()));
     let guarded_shells_sink = Arc::clone(&guarded_shells);
     let shell_safety: BrowserShellSafetyCallback = Arc::new(move |request| {
-        guarded_shells_sink.lock().expect("guarded shells").push(request.clone());
+        guarded_shells_sink
+            .lock()
+            .expect("guarded shells")
+            .push(request.clone());
         Ok(())
     });
     let executor = ProductionBrowserToolExecutor::new(resources, "agent-browser")
@@ -558,11 +573,7 @@ fn production_browser_executor_uses_only_host_box_port() {
         .expect("navigate spec");
     let args = json!({"url":"https://example.com"});
     let output = executor
-        .execute(
-            &spec,
-            args.as_object().expect("args"),
-            "browser/call:1",
-        )
+        .execute(&spec, args.as_object().expect("args"), "browser/call:1")
         .expect("browser output");
 
     assert!(!output.is_error);
@@ -572,15 +583,24 @@ fn production_browser_executor_uses_only_host_box_port() {
     );
     assert!(output.text.contains("Opened page"));
     assert!(output.text.contains("https://example.com"));
-    assert!(output.image_b64.as_deref().is_some_and(|value| !value.is_empty()));
+    assert!(output
+        .image_b64
+        .as_deref()
+        .is_some_and(|value| !value.is_empty()));
     assert_eq!(output.view_id.as_deref(), Some("agent-browser"));
     assert_eq!(output.generation.as_deref(), Some("generation-7"));
     assert_eq!(
-        persisted_images.lock().expect("persisted images").as_slice(),
+        persisted_images
+            .lock()
+            .expect("persisted images")
+            .as_slice(),
         &[(vec![137, 80, 78, 71], "image/png".to_string())]
     );
     assert_eq!(
-        navigation_events.lock().expect("navigation events").as_slice(),
+        navigation_events
+            .lock()
+            .expect("navigation events")
+            .as_slice(),
         &[("https://example.com".to_string(), "Example".to_string())]
     );
 
@@ -591,9 +611,13 @@ fn production_browser_executor_uses_only_host_box_port() {
     drop(writes);
 
     let shells = port.shells.lock().expect("shells");
-    assert!(shells.iter().any(|request| request.command.contains("mkdir -p /workspace/.sand-browser")));
+    assert!(shells.iter().any(|request| request
+        .command
+        .contains("mkdir -p /workspace/.sand-browser")));
     assert!(shells.iter().any(|request| {
-        request.command.contains("node /workspace/.sand-browser/driver-v2.mjs")
+        request
+            .command
+            .contains("node /workspace/.sand-browser/driver-v2.mjs")
             && request.command.contains("result-browsercall1.txt")
     }));
     let guarded = guarded_shells.lock().expect("guarded shells");
@@ -602,10 +626,13 @@ fn production_browser_executor_uses_only_host_box_port() {
     drop(shells);
 
     let reads = port.reads.lock().expect("reads");
-    assert!(reads.iter().any(|request| request.path.contains("result-browsercall1.txt")));
-    assert!(reads.iter().any(|request| request.path.ends_with("shot-browsercall1.png")));
+    assert!(reads
+        .iter()
+        .any(|request| request.path.contains("result-browsercall1.txt")));
+    assert!(reads
+        .iter()
+        .any(|request| request.path.ends_with("shot-browsercall1.png")));
 }
-
 
 #[test]
 fn production_browser_executor_fails_closed_before_internal_shell_when_host_safety_blocks() {
@@ -618,11 +645,13 @@ fn production_browser_executor_fails_closed_before_internal_shell_when_host_safe
                 request.tool_call_id
             )))
         }));
-    let spec = browser_tool_specs().into_iter()
+    let spec = browser_tool_specs()
+        .into_iter()
         .find(|spec| spec.name == "browser_navigate")
         .expect("navigate spec");
     let args = json!({"url":"https://example.com"});
-    let error = executor.execute(&spec, args.as_object().expect("args"), "browser/blocked:1")
+    let error = executor
+        .execute(&spec, args.as_object().expect("args"), "browser/blocked:1")
         .expect_err("host safety must fail closed");
     assert!(error.to_string().contains("pending approval"));
     assert!(port.shells.lock().expect("shells").is_empty());
