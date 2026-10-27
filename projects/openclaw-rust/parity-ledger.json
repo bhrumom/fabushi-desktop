@@ -10,10 +10,10 @@
     "ui_accepted": false
   },
   "file_coverage": {
-    "mapped_paths": 1165,
+    "mapped_paths": 1225,
     "omitted_known": 0,
     "tracked_paths": 58750,
-    "unclassified_paths": 57585
+    "unclassified_paths": 57525
   },
   "inventory_authority": {
     "manifest_source": "GitHub Actions immutable artifact candidate",
@@ -26330,6 +26330,823 @@
       ],
       "reviewer": "xuyao@ombhrum.com",
       "migration_rollback": "Advertise only baseline system run command without optional extensions"
+    },
+    {
+      "id": "OCRM-RESP-PLUGIN-STATE-BLOB-STORE-001",
+      "unit_id": "OCRM-UNIT-PLUGIN-STATE-001",
+      "responsibility_kind": "business-runtime",
+      "behavior": "Plugin binary blob storage, SQLite storage limits (100MB entry, 512MB per plugin, 50k entries), TTL calculation, and expiration eviction.",
+      "risk": "High; uncontrolled plugin blob storage can exhaust local disk and corrupt state partitions",
+      "status": {
+        "read": "read-complete",
+        "mapping": "reviewed",
+        "wiring": "not-wired",
+        "implementation": "implemented",
+        "verification": "not-run",
+        "acceptance": "pending"
+      },
+      "selected_owner": "source/host/src/extensions/plugin_state/blob_store.rs",
+      "existing_owner_candidates": [
+        {
+          "path": "source/host/src/extensions/plugin_state/blob_store.rs",
+          "reason": "Host plugin blob store, bounds validator, and eviction sweeper"
+        }
+      ],
+      "owner_decision": "Native implementation in blob_store under plugin_state extension",
+      "dependencies": [
+        "mahayana_host_runtime::extensions::plugin_state::blob_store"
+      ],
+      "capability_ids": [
+        "plugin_state.blob_store"
+      ],
+      "preconditions": [
+        "Plugin binary blob writes submitted with namespace, key, and optional TTL"
+      ],
+      "postconditions": [
+        "Blobs written within quotas and expired entries purged on sweep"
+      ],
+      "invariants": [
+        "Single entry cannot exceed 100 MiB limit",
+        "Per-plugin blob bytes cannot exceed 512 MiB limit",
+        "Entries past TTL return NotFound and are purged on delete_expired_blobs"
+      ],
+      "typed_contracts": [
+        "PluginBlobEntry",
+        "PluginBlobStore",
+        "BlobStoreError",
+        "MAX_PLUGIN_BLOB_BYTES_PER_ENTRY"
+      ],
+      "tests": [
+        "source/host/tests/openclaw_plugin_state_contract.rs::test_ocrm_plugin_state_blob_store_bounds"
+      ],
+      "integration": {
+        "producer": "source/host/src/extensions/plugin_state/blob_store.rs",
+        "owner": "source/host/src/extensions/plugin_state/blob_store.rs",
+        "consumer": "source/host/src/extensions/plugin_state/blob_store.rs",
+        "entrypoint": "source/host/src/extensions/plugin_state/blob_store.rs::put_blob"
+      },
+      "source_refs": [
+        {
+          "path": "src/plugin-state/plugin-blob-store.admission.test.ts",
+          "blob_sha": "7c24d1a7e9e6db7015d2537a2b9bf9f38acc42fe",
+          "range": {
+            "start_line": 1,
+            "end_line": 93
+          },
+          "symbol": "plugin-blob-store.admission.test"
+        },
+        {
+          "path": "src/plugin-state/plugin-blob-store.eviction.test.ts",
+          "blob_sha": "8d2fa84536e4e1bd84d76d6af128afb24743ead8",
+          "range": {
+            "start_line": 1,
+            "end_line": 58
+          },
+          "symbol": "plugin-blob-store.eviction.test"
+        },
+        {
+          "path": "src/plugin-state/plugin-blob-store.sqlite.ts",
+          "blob_sha": "25baae3e90909031bea4ccda36fda5b50ac09cdf",
+          "range": {
+            "start_line": 1,
+            "end_line": 568
+          },
+          "symbol": "plugin-blob-store.sqlite"
+        },
+        {
+          "path": "src/plugin-state/plugin-blob-store.test-helpers.ts",
+          "blob_sha": "695b695d8eed5ec5373c52dd5f533d84eb9e3507",
+          "range": {
+            "start_line": 1,
+            "end_line": 83
+          },
+          "symbol": "plugin-blob-store.test-helpers"
+        },
+        {
+          "path": "src/plugin-state/plugin-blob-store.test.ts",
+          "blob_sha": "cab9eb806272076d29efbaed17e168c58d33a3ae",
+          "range": {
+            "start_line": 1,
+            "end_line": 407
+          },
+          "symbol": "plugin-blob-store.test"
+        },
+        {
+          "path": "src/plugin-state/plugin-blob-store.ts",
+          "blob_sha": "7e9936dfc60c991c787c7c97f1457b2177cff03a",
+          "range": {
+            "start_line": 1,
+            "end_line": 243
+          },
+          "symbol": "plugin-blob-store"
+        },
+        {
+          "path": "src/plugin-state/plugin-blob-store.types.ts",
+          "blob_sha": "63aa6f412d5530abc475d2b718156fcdd6dfbd75",
+          "range": {
+            "start_line": 1,
+            "end_line": 100
+          },
+          "symbol": "plugin-blob-store.types"
+        },
+        {
+          "path": "src/plugin-state/plugin-blob-store.worker.ts",
+          "blob_sha": "a0bcc82eb7d0f9a16a38ffe8d72d2e25181cab5a",
+          "range": {
+            "start_line": 1,
+            "end_line": 80
+          },
+          "symbol": "plugin-blob-store.worker"
+        },
+        {
+          "path": "src/plugin-state/plugin-blob-worker-client.ts",
+          "blob_sha": "aac51123eb546b1c645acf70a98b35613a1e2d61",
+          "range": {
+            "start_line": 1,
+            "end_line": 180
+          },
+          "symbol": "plugin-blob-worker-client"
+        },
+        {
+          "path": "src/plugin-state/plugin-blob-worker-contract.ts",
+          "blob_sha": "e7a5924f59ab5a12adb638c4106496a3f1406d20",
+          "range": {
+            "start_line": 1,
+            "end_line": 29
+          },
+          "symbol": "plugin-blob-worker-contract"
+        }
+      ],
+      "evidence_refs": [
+        "source/host/tests/openclaw_plugin_state_contract.rs",
+        "projects/openclaw-rust/dossiers/plugin-state-scoped.md"
+      ],
+      "requirement_ids": [
+        "OCRM-R04",
+        "OCRM-R08",
+        "OCRM-R09",
+        "OCRM-R21",
+        "OCRM-R24",
+        "OCRM-AC08",
+        "OCRM-AC21",
+        "OCRM-AC24"
+      ],
+      "required_gate_ids": [
+        "OCRM-G04-rust-contract",
+        "OCRM-G05-frozen-oracle"
+      ],
+      "oracle_ids": [
+        "OCRM-PLUGIN-STATE-BLOB-O01"
+      ],
+      "adr_refs": [],
+      "blocker_ids": [
+        "BL-PLUGIN-STATE-BLOB-WIRING-001"
+      ],
+      "target": {
+        "path": "source/host/src/extensions/plugin_state/blob_store.rs",
+        "symbol": "PluginBlobStore",
+        "language": "Rust"
+      },
+      "required_evidence_dimensions": [
+        "unit",
+        "format"
+      ],
+      "reviewer": "xuyao@ombhrum.com",
+      "migration_rollback": "Disable plugin binary blob persistence and enforce transient memory-only caches"
+    },
+    {
+      "id": "OCRM-RESP-PLUGIN-STATE-KEYED-STORE-001",
+      "unit_id": "OCRM-UNIT-PLUGIN-STATE-001",
+      "responsibility_kind": "business-runtime",
+      "behavior": "Plugin structured JSON state store, 1MB value size limits, sequenced state journal, and bounded bulk deletions (max 512 entries).",
+      "risk": "Medium; unbounded state writes or massive bulk deletions cause transaction locks and latency spikes",
+      "status": {
+        "read": "read-complete",
+        "mapping": "reviewed",
+        "wiring": "not-wired",
+        "implementation": "implemented",
+        "verification": "not-run",
+        "acceptance": "pending"
+      },
+      "selected_owner": "source/host/src/extensions/plugin_state/state_store.rs",
+      "existing_owner_candidates": [
+        {
+          "path": "source/host/src/extensions/plugin_state/state_store.rs",
+          "reason": "Host plugin keyed state store, journal sequence auditor, and bulk deletion limiter"
+        }
+      ],
+      "owner_decision": "Native implementation in state_store under plugin_state extension",
+      "dependencies": [
+        "mahayana_host_runtime::extensions::plugin_state::state_store"
+      ],
+      "capability_ids": [
+        "plugin_state.state_store"
+      ],
+      "preconditions": [
+        "Plugin JSON state mutations submitted with namespace and key"
+      ],
+      "postconditions": [
+        "State stored under size quota and journal entry appended with monotonic sequence ID"
+      ],
+      "invariants": [
+        "Single state value cannot exceed 1 MiB limit",
+        "Bulk deletion cannot exceed 512 entries per call",
+        "Sequence counter increments monotonically on every mutation"
+      ],
+      "typed_contracts": [
+        "PluginStateKeyedStore",
+        "PluginStateJournalEntry",
+        "StateStoreError",
+        "MAX_PLUGIN_STATE_VALUE_BYTES"
+      ],
+      "tests": [
+        "source/host/tests/openclaw_plugin_state_contract.rs::test_ocrm_plugin_state_keyed_store_and_journal"
+      ],
+      "integration": {
+        "producer": "source/host/src/extensions/plugin_state/state_store.rs",
+        "owner": "source/host/src/extensions/plugin_state/state_store.rs",
+        "consumer": "source/host/src/extensions/plugin_state/state_store.rs",
+        "entrypoint": "source/host/src/extensions/plugin_state/state_store.rs::set_state"
+      },
+      "source_refs": [
+        {
+          "path": "src/plugin-state/plugin-state-error-cause.ts",
+          "blob_sha": "790c0f44d255713ac87125e054826e5ce72a3349",
+          "range": {
+            "start_line": 1,
+            "end_line": 66
+          },
+          "symbol": "plugin-state-error-cause"
+        },
+        {
+          "path": "src/plugin-state/plugin-state-error.ts",
+          "blob_sha": "d4714e19d6f0f1a44b52bdaae1dbf3dec417ba2d",
+          "range": {
+            "start_line": 1,
+            "end_line": 99
+          },
+          "symbol": "plugin-state-error"
+        },
+        {
+          "path": "src/plugin-state/plugin-state-fixtures.test-support.ts",
+          "blob_sha": "6d339f46ddce5b2858a11d9d40a2ac87e5e925c0",
+          "range": {
+            "start_line": 1,
+            "end_line": 39
+          },
+          "symbol": "plugin-state-fixtures.test-support"
+        },
+        {
+          "path": "src/plugin-state/plugin-state-native-binding-codec.ts",
+          "blob_sha": "d561000dc9fdfe7f11c3a5bbee3c88bd5106e4d5",
+          "range": {
+            "start_line": 1,
+            "end_line": 49
+          },
+          "symbol": "plugin-state-native-binding-codec"
+        },
+        {
+          "path": "src/plugin-state/plugin-state-native-binding-facts.test.ts",
+          "blob_sha": "4322de14a2b8e95eea9e50e228e5aaa6ebdfd709",
+          "range": {
+            "start_line": 1,
+            "end_line": 178
+          },
+          "symbol": "plugin-state-native-binding-facts.test"
+        },
+        {
+          "path": "src/plugin-state/plugin-state-native-binding-facts.ts",
+          "blob_sha": "fa24455c0a8528472bc9f83d942e23adeacf5f04",
+          "range": {
+            "start_line": 1,
+            "end_line": 109
+          },
+          "symbol": "plugin-state-native-binding-facts"
+        },
+        {
+          "path": "src/plugin-state/plugin-state-native-binding.types.ts",
+          "blob_sha": "8724c6cf5bc216fa6f3df8fff25dd6b32b11cd7a",
+          "range": {
+            "start_line": 1,
+            "end_line": 29
+          },
+          "symbol": "plugin-state-native-binding.types"
+        },
+        {
+          "path": "src/plugin-state/plugin-state-store.comparison.worker.ts",
+          "blob_sha": "a4cec5320ca78496c9d508b781ee189ac318c0c0",
+          "range": {
+            "start_line": 1,
+            "end_line": 136
+          },
+          "symbol": "plugin-state-store.comparison.worker"
+        },
+        {
+          "path": "src/plugin-state/plugin-state-store.database.test.ts",
+          "blob_sha": "2064f25e4a38de6065a6c524be9cd7c387ff4db3",
+          "range": {
+            "start_line": 1,
+            "end_line": 31
+          },
+          "symbol": "plugin-state-store.database.test"
+        },
+        {
+          "path": "src/plugin-state/plugin-state-store.database.ts",
+          "blob_sha": "2c72678d5174151cd7788374b678b3408b44e0e3",
+          "range": {
+            "start_line": 1,
+            "end_line": 155
+          },
+          "symbol": "plugin-state-store.database"
+        },
+        {
+          "path": "src/plugin-state/plugin-state-store.journal.ts",
+          "blob_sha": "1b60e771fce0df6abe52f7a49d23f20b892e4565",
+          "range": {
+            "start_line": 1,
+            "end_line": 210
+          },
+          "symbol": "plugin-state-store.journal"
+        },
+        {
+          "path": "src/plugin-state/plugin-state-store.kernel.test.ts",
+          "blob_sha": "6e73d0667a3c4fc8a6ae16dbb9c694d8cb0b22b0",
+          "range": {
+            "start_line": 1,
+            "end_line": 32
+          },
+          "symbol": "plugin-state-store.kernel.test"
+        },
+        {
+          "path": "src/plugin-state/plugin-state-store.kernel.ts",
+          "blob_sha": "5c02935c0c8e611ef0adf8b0fcdd88dd888b04c0",
+          "range": {
+            "start_line": 1,
+            "end_line": 425
+          },
+          "symbol": "plugin-state-store.kernel"
+        },
+        {
+          "path": "src/plugin-state/plugin-state-store.legacy.ts",
+          "blob_sha": "1ebeeb382f66bdd4000f720c92bf6245f661a851",
+          "range": {
+            "start_line": 1,
+            "end_line": 162
+          },
+          "symbol": "plugin-state-store.legacy"
+        },
+        {
+          "path": "src/plugin-state/plugin-state-store.migration.ts",
+          "blob_sha": "554118dc910317a7a70c502af5e494b6872d2274",
+          "range": {
+            "start_line": 1,
+            "end_line": 107
+          },
+          "symbol": "plugin-state-store.migration"
+        },
+        {
+          "path": "src/plugin-state/plugin-state-store.moves.worker.ts",
+          "blob_sha": "766a00c3a9e558f403f2ad2eb3224067e26bb110",
+          "range": {
+            "start_line": 1,
+            "end_line": 136
+          },
+          "symbol": "plugin-state-store.moves.worker"
+        },
+        {
+          "path": "src/plugin-state/plugin-state-store.mutations.ts",
+          "blob_sha": "0275c872d5c5378f5ef20ea306eb25ab215afa3b",
+          "range": {
+            "start_line": 1,
+            "end_line": 175
+          },
+          "symbol": "plugin-state-store.mutations"
+        },
+        {
+          "path": "src/plugin-state/plugin-state-store.native-binding.ts",
+          "blob_sha": "ad53214f1628f0d119865ef0648881fb3ff876dc",
+          "range": {
+            "start_line": 1,
+            "end_line": 48
+          },
+          "symbol": "plugin-state-store.native-binding"
+        },
+        {
+          "path": "src/plugin-state/plugin-state-store.prepared.test.ts",
+          "blob_sha": "5f2b852e93ea8480f08ead6ee7ce96d144e9ba96",
+          "range": {
+            "start_line": 1,
+            "end_line": 267
+          },
+          "symbol": "plugin-state-store.prepared.test"
+        },
+        {
+          "path": "src/plugin-state/plugin-state-store.reads.ts",
+          "blob_sha": "de2cbb3157acd70e3ad0c961dca7a438adb86705",
+          "range": {
+            "start_line": 1,
+            "end_line": 179
+          },
+          "symbol": "plugin-state-store.reads"
+        },
+        {
+          "path": "src/plugin-state/plugin-state-store.retained.test.ts",
+          "blob_sha": "9f7003ab1bc04e785a5e25d7c508386dda247325",
+          "range": {
+            "start_line": 1,
+            "end_line": 487
+          },
+          "symbol": "plugin-state-store.retained.test"
+        },
+        {
+          "path": "src/plugin-state/plugin-state-store.retention.test.ts",
+          "blob_sha": "ed9542be3e75f8b330d54a086bf8ef3c951e708e",
+          "range": {
+            "start_line": 1,
+            "end_line": 220
+          },
+          "symbol": "plugin-state-store.retention.test"
+        },
+        {
+          "path": "src/plugin-state/plugin-state-store.retention.ts",
+          "blob_sha": "97af9217687154c6f97092c6014ee3490bbb0df7",
+          "range": {
+            "start_line": 1,
+            "end_line": 282
+          },
+          "symbol": "plugin-state-store.retention"
+        },
+        {
+          "path": "src/plugin-state/plugin-state-store.runtime.test.ts",
+          "blob_sha": "f0d267d040a2cbe05b3b81b5e387860f01a59696",
+          "range": {
+            "start_line": 1,
+            "end_line": 708
+          },
+          "symbol": "plugin-state-store.runtime.test"
+        },
+        {
+          "path": "src/plugin-state/plugin-state-store.sqlite.ts",
+          "blob_sha": "44ef77d050b4bdce2de5e84ca65c06e96dbfe5e4",
+          "range": {
+            "start_line": 1,
+            "end_line": 534
+          },
+          "symbol": "plugin-state-store.sqlite"
+        },
+        {
+          "path": "src/plugin-state/plugin-state-store.test-helpers.ts",
+          "blob_sha": "39c13b96a4e1778ea68cd3d5f8c4fda6b002afbb",
+          "range": {
+            "start_line": 1,
+            "end_line": 58
+          },
+          "symbol": "plugin-state-store.test-helpers"
+        },
+        {
+          "path": "src/plugin-state/plugin-state-store.test.ts",
+          "blob_sha": "c414480996345da5bd23a5afb895c72196eb2a8f",
+          "range": {
+            "start_line": 1,
+            "end_line": 747
+          },
+          "symbol": "plugin-state-store.test"
+        },
+        {
+          "path": "src/plugin-state/plugin-state-store.ts",
+          "blob_sha": "e226bc4e48134c69bcda72fb5d4adec8ec14d0be",
+          "range": {
+            "start_line": 1,
+            "end_line": 682
+          },
+          "symbol": "plugin-state-store"
+        },
+        {
+          "path": "src/plugin-state/plugin-state-store.types.ts",
+          "blob_sha": "7dbad20e23ded6ca447992b862453279c78fb8be",
+          "range": {
+            "start_line": 1,
+            "end_line": 248
+          },
+          "symbol": "plugin-state-store.types"
+        },
+        {
+          "path": "src/plugin-state/plugin-state-store.validation.ts",
+          "blob_sha": "9349969332650e4a6c03e86b16a2de83890770cb",
+          "range": {
+            "start_line": 1,
+            "end_line": 171
+          },
+          "symbol": "plugin-state-store.validation"
+        },
+        {
+          "path": "src/plugin-state/plugin-state-worker-client.ts",
+          "blob_sha": "d52cf25581ecee6dbb3a4c95affea007840faf76",
+          "range": {
+            "start_line": 1,
+            "end_line": 576
+          },
+          "symbol": "plugin-state-worker-client"
+        },
+        {
+          "path": "src/plugin-state/plugin-state-worker-contract.ts",
+          "blob_sha": "32f49e031ba6c708d6a33af736085006f36fffe1",
+          "range": {
+            "start_line": 1,
+            "end_line": 253
+          },
+          "symbol": "plugin-state-worker-contract"
+        },
+        {
+          "path": "src/plugin-state/plugin-state-worker-errors.ts",
+          "blob_sha": "5483ac439717806b3205061da53e62fc6d161ba2",
+          "range": {
+            "start_line": 1,
+            "end_line": 81
+          },
+          "symbol": "plugin-state-worker-errors"
+        },
+        {
+          "path": "src/plugin-state/plugin-state-worker.test.ts",
+          "blob_sha": "d324a14f485f157b8f551e1070461c49278b9441",
+          "range": {
+            "start_line": 1,
+            "end_line": 720
+          },
+          "symbol": "plugin-state-worker.test"
+        },
+        {
+          "path": "src/plugin-state/plugin-state.worker.ts",
+          "blob_sha": "99beb7ae2ddc3dc7c003221e197d980e0521f442",
+          "range": {
+            "start_line": 1,
+            "end_line": 346
+          },
+          "symbol": "plugin-state.worker"
+        },
+        {
+          "path": "src/plugin-state/plugin-store-validation.ts",
+          "blob_sha": "d05f348dcb6f29078110539bc6d896e24ac6f826",
+          "range": {
+            "start_line": 1,
+            "end_line": 225
+          },
+          "symbol": "plugin-store-validation"
+        }
+      ],
+      "evidence_refs": [
+        "source/host/tests/openclaw_plugin_state_contract.rs",
+        "projects/openclaw-rust/dossiers/plugin-state-scoped.md"
+      ],
+      "requirement_ids": [
+        "OCRM-R04",
+        "OCRM-R08",
+        "OCRM-R09",
+        "OCRM-R21",
+        "OCRM-R24",
+        "OCRM-AC08",
+        "OCRM-AC21",
+        "OCRM-AC24"
+      ],
+      "required_gate_ids": [
+        "OCRM-G04-rust-contract",
+        "OCRM-G05-frozen-oracle"
+      ],
+      "oracle_ids": [
+        "OCRM-PLUGIN-STATE-STORE-O01"
+      ],
+      "adr_refs": [],
+      "blocker_ids": [
+        "BL-PLUGIN-STATE-STORE-WIRING-001"
+      ],
+      "target": {
+        "path": "source/host/src/extensions/plugin_state/state_store.rs",
+        "symbol": "PluginStateKeyedStore",
+        "language": "Rust"
+      },
+      "required_evidence_dimensions": [
+        "unit",
+        "format"
+      ],
+      "reviewer": "xuyao@ombhrum.com",
+      "migration_rollback": "Use fallback in-memory key-value store without durable journal sequence"
+    },
+    {
+      "id": "OCRM-RESP-PLUGIN-STATE-RUNTIME-HEALTH-001",
+      "unit_id": "OCRM-UNIT-PLUGIN-STATE-001",
+      "responsibility_kind": "business-runtime",
+      "behavior": "Runtime health record store, unique process lifetime token scoping, stale process record sweeping, and display group deduplication (earliest vs latest picker).",
+      "risk": "Medium; process restarts adopting stale predecessor health errors cause false-positive diagnostics",
+      "status": {
+        "read": "read-complete",
+        "mapping": "reviewed",
+        "wiring": "not-wired",
+        "implementation": "implemented",
+        "verification": "not-run",
+        "acceptance": "pending"
+      },
+      "selected_owner": "source/host/src/extensions/plugin_state/runtime_health.rs",
+      "existing_owner_candidates": [
+        {
+          "path": "source/host/src/extensions/plugin_state/runtime_health.rs",
+          "reason": "Host runtime health store, process lifetime token validator, and display group deduplicator"
+        }
+      ],
+      "owner_decision": "Native implementation in runtime_health under plugin_state extension",
+      "dependencies": [
+        "mahayana_host_runtime::extensions::plugin_state::runtime_health"
+      ],
+      "capability_ids": [
+        "plugin_state.runtime_health"
+      ],
+      "preconditions": [
+        "Runtime health failure records logged with process token and display key"
+      ],
+      "postconditions": [
+        "Stale process records purged and display groups deduplicated deterministically"
+      ],
+      "invariants": [
+        "Process token prevents restarted processes with recycled PIDs from adopting old errors",
+        "Earliest pick retains root-cause failure, latest pick retains most recent symptom"
+      ],
+      "typed_contracts": [
+        "RuntimeHealthRecordEnvelope",
+        "RuntimeHealthStore",
+        "DisplayGroupPick"
+      ],
+      "tests": [
+        "source/host/tests/openclaw_plugin_state_contract.rs::test_ocrm_plugin_state_runtime_health"
+      ],
+      "integration": {
+        "producer": "source/host/src/extensions/plugin_state/runtime_health.rs",
+        "owner": "source/host/src/extensions/plugin_state/runtime_health.rs",
+        "consumer": "source/host/src/extensions/plugin_state/runtime_health.rs",
+        "entrypoint": "source/host/src/extensions/plugin_state/runtime_health.rs::get_deduplicated_records"
+      },
+      "source_refs": [
+        {
+          "path": "src/plugin-state/plugin-state-observation-cache.ts",
+          "blob_sha": "e21146233b4a5cac9b29367bd5b1b5f801ccdff1",
+          "range": {
+            "start_line": 1,
+            "end_line": 191
+          },
+          "symbol": "plugin-state-observation-cache"
+        },
+        {
+          "path": "src/plugin-state/plugin-state-observation.ts",
+          "blob_sha": "8b5c2cce459b8118f244c190b3acedd3d87ec2f3",
+          "range": {
+            "start_line": 1,
+            "end_line": 50
+          },
+          "symbol": "plugin-state-observation"
+        },
+        {
+          "path": "src/plugin-state/plugin-state-operation-contract.ts",
+          "blob_sha": "cb741007f157f02b7eebbe6ee3803e1064debd41",
+          "range": {
+            "start_line": 1,
+            "end_line": 20
+          },
+          "symbol": "plugin-state-operation-contract"
+        },
+        {
+          "path": "src/plugin-state/plugin-state-operation-epochs.ts",
+          "blob_sha": "ce11d357cee6dba6765f83ec40be7763becfd650",
+          "range": {
+            "start_line": 1,
+            "end_line": 107
+          },
+          "symbol": "plugin-state-operation-epochs"
+        },
+        {
+          "path": "src/plugin-state/plugin-state-operation-error.ts",
+          "blob_sha": "da8b407bee0f11a95c804fa8c9a33314768837ab",
+          "range": {
+            "start_line": 1,
+            "end_line": 7
+          },
+          "symbol": "plugin-state-operation-error"
+        },
+        {
+          "path": "src/plugin-state/plugin-state-operation.kernel.ts",
+          "blob_sha": "f88a35d5768e55bb0303be3a6bc197314680c2b5",
+          "range": {
+            "start_line": 1,
+            "end_line": 236
+          },
+          "symbol": "plugin-state-operation.kernel"
+        },
+        {
+          "path": "src/plugin-state/plugin-state-operation.test-support.ts",
+          "blob_sha": "7bbe8521658f60751ac38bad9d53e915959042ef",
+          "range": {
+            "start_line": 1,
+            "end_line": 52
+          },
+          "symbol": "plugin-state-operation.test-support"
+        },
+        {
+          "path": "src/plugin-state/plugin-state-operation.test.ts",
+          "blob_sha": "68d82d8889300252e4ef4be59049b49a8693380d",
+          "range": {
+            "start_line": 1,
+            "end_line": 343
+          },
+          "symbol": "plugin-state-operation.test"
+        },
+        {
+          "path": "src/plugin-state/plugin-state-operation.ts",
+          "blob_sha": "690bca167dcd822cf859df988612605c9d2cee92",
+          "range": {
+            "start_line": 1,
+            "end_line": 218
+          },
+          "symbol": "plugin-state-operation"
+        },
+        {
+          "path": "src/plugin-state/plugin-state-publication.test.ts",
+          "blob_sha": "88969702ec3262256b78abee0986fdc04cc59b94",
+          "range": {
+            "start_line": 1,
+            "end_line": 691
+          },
+          "symbol": "plugin-state-publication.test"
+        },
+        {
+          "path": "src/plugin-state/plugin-state-publication.ts",
+          "blob_sha": "205a0ceacfd4b76776b04f3e00e5c4a31b247e80",
+          "range": {
+            "start_line": 1,
+            "end_line": 349
+          },
+          "symbol": "plugin-state-publication"
+        },
+        {
+          "path": "src/plugin-state/runtime-health-records.ts",
+          "blob_sha": "d21712d94e1cce5ecb6365d04ac7e20436c3e41e",
+          "range": {
+            "start_line": 1,
+            "end_line": 110
+          },
+          "symbol": "runtime-health-records"
+        },
+        {
+          "path": "src/plugin-state/runtime-health-store.kernel.ts",
+          "blob_sha": "8a581498af800ebc3990c78ba8ee2c2ce83cb3ba",
+          "range": {
+            "start_line": 1,
+            "end_line": 38
+          },
+          "symbol": "runtime-health-store.kernel"
+        },
+        {
+          "path": "src/plugin-state/runtime-health-store.ts",
+          "blob_sha": "e62668eb1cda6d6d27ed64287a7dd018aa1ebcc1",
+          "range": {
+            "start_line": 1,
+            "end_line": 128
+          },
+          "symbol": "runtime-health-store"
+        }
+      ],
+      "evidence_refs": [
+        "source/host/tests/openclaw_plugin_state_contract.rs",
+        "projects/openclaw-rust/dossiers/plugin-state-scoped.md"
+      ],
+      "requirement_ids": [
+        "OCRM-R04",
+        "OCRM-R08",
+        "OCRM-R09",
+        "OCRM-R21",
+        "OCRM-R24",
+        "OCRM-AC08",
+        "OCRM-AC21",
+        "OCRM-AC24"
+      ],
+      "required_gate_ids": [
+        "OCRM-G04-rust-contract",
+        "OCRM-G05-frozen-oracle"
+      ],
+      "oracle_ids": [
+        "OCRM-PLUGIN-STATE-HEALTH-O01"
+      ],
+      "adr_refs": [],
+      "blocker_ids": [
+        "BL-PLUGIN-STATE-HEALTH-WIRING-001"
+      ],
+      "target": {
+        "path": "source/host/src/extensions/plugin_state/runtime_health.rs",
+        "symbol": "RuntimeHealthStore",
+        "language": "Rust"
+      },
+      "required_evidence_dimensions": [
+        "unit",
+        "format"
+      ],
+      "reviewer": "xuyao@ombhrum.com",
+      "migration_rollback": "Bypass health store deduplication and output raw failure logs"
     }
   ],
   "schema_version": 1,
