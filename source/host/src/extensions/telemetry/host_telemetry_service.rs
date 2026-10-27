@@ -24,6 +24,7 @@ use crate::extensions::inference::sand_model_experiment::SandModelExperimentArm;
 use crate::host_paths::get_host_crash_marker_path;
 use crate::host_invariant::SandInvariantReport;
 use crate::gateway_server::GatewayCommandReport;
+use crate::process_spawn_diagnostics::SpawnCountRecord;
 use crate::ports::sand_analytics_types::sand_message_length_bucket;
 use crate::ports::telemetry::resolve_sand_box_identity_tags;
 use crate::send_trace_host::set_turn_trace_host_bundle_version;
@@ -1017,6 +1018,21 @@ impl HostStructuredLogTelemetry {
             channel: "structured_log".into(),
             event: "sand.host_extension_diagnostic".into(),
             payload: diagnostic.clone(),
+        })
+    }
+
+    pub fn report_child_process_spawn_sample(
+        &self,
+        sample: &SpawnCountRecord,
+    ) -> io::Result<()> {
+        self.report_projection(&HostTelemetryProjection {
+            level: Some("info"),
+            event: Some("diagnostic.child_process.spawn"),
+            metadata: BTreeMap::from([
+                ("family".into(), sample.family.clone()),
+                ("operation".into(), sample.operation.clone()),
+                ("count".into(), sample.count.to_string()),
+            ]),
         })
     }
 
@@ -2086,11 +2102,17 @@ impl HostTelemetryService {
                 Some(DesktopHealthForwarder::start(self.logs.clone()));
 
             let event_logs = self.logs.clone();
+            let spawn_diagnostic_logs = self.logs.clone();
             let pressure = self.hooks.pressure_profiler.clone();
             let experiments = Arc::clone(&production.experiments);
             runtime.event_loop_telemetry =
                 Some(EventLoopTelemetryRuntime::start(Arc::new(move |report| {
                     let _ = event_logs.report_projection(&event_loop_window_telemetry(report));
+                    for sample in crate::process_spawn_diagnostics::global_child_process_spawn_tracker()
+                        .sample_counts(false)
+                    {
+                        let _ = spawn_diagnostic_logs.report_child_process_spawn_sample(&sample);
+                    }
                     route_pressure_cpu_profiler_event(
                         &experiments,
                         pressure.as_ref(),

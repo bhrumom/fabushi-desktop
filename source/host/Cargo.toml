@@ -39,7 +39,10 @@ thiserror = "2"
 tokio = { version = "1", features = ["rt", "rt-multi-thread", "time", "net", "sync", "macros"] }
 uuid = { version = "1", features = ["v4"] }
 url = "2"
+percent-encoding = "2.3"
 unicode-normalization = "0.1"
+encoding_rs = "0.8"
+qrcode = { version = "0.14.1", default-features = false }
 
 [build-dependencies]
 prost-build = "0.13"

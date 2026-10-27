@@ -108,6 +108,7 @@ use crate::extensions::mcp::production::{
 use crate::extensions::local_exec::extension::{
     HostLocalExecExtension, start_local_exec_extension,
 };
+use crate::extensions::plugins::compat::validate_all_records;
 use crate::extensions::local_tool_permission::extension::{
     HostLocalToolPermissionExtension, start_local_tool_permission_extension,
 };
@@ -510,6 +511,12 @@ pub fn start_production_host_extensions(
     app_data_dir: &Path,
     events: SandHostEventBus,
 ) -> Result<ProductionHostExtensions, String> {
+    validate_all_records().map_err(|errors| {
+        format!(
+            "plugin compatibility registry failed production validation: {}",
+            errors.join("; ")
+        )
+    })?;
     let auth_options = HostAuthServiceOptions::production(|message| {
         eprintln!("mahayana-host-auth {message}");
     })

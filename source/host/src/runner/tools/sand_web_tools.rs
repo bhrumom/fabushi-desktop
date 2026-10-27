@@ -243,7 +243,8 @@ fn validate_web_fetch_url(raw: &str) -> Result<Url, ProviderSessionError> {
             "Cannot fetch from localhost ({host}) because this tool runs from an isolated server."
         )));
     }
-    if let Ok(ip) = host.parse::<IpAddr>()
+    let clean_host = host.trim_start_matches('[').trim_end_matches(']');
+    if let Ok(ip) = clean_host.parse::<IpAddr>()
         && is_non_public_ip(ip)
     {
         return Err(ProviderSessionError::Tool(format!(

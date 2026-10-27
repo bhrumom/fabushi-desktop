@@ -21,10 +21,56 @@ const VERY_SHORT_PROMPT_WORD_THRESHOLD: usize = 3;
 const DEFAULT_SUSPICIOUS_KEYWORDS: &[&str] = &["ignore", "skip", "stop", "noop"];
 const SUPPORTED_ASPECT_RATIOS: &[&str] = &["1:1", "4:3", "3:4", "16:9", "9:16"];
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+pub enum ImageGenerationResolution {
+    #[serde(rename = "1K")]
+    R1K,
+    #[serde(rename = "2K")]
+    R2K,
+    #[serde(rename = "4K")]
+    R4K,
+}
+
+impl ImageGenerationResolution {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Self::R1K => "1K",
+            Self::R2K => "2K",
+            Self::R4K => "4K",
+        }
+    }
+}
+
+pub fn normalize_image_generation_resolution(
+    raw: Option<&str>,
+) -> Result<Option<ImageGenerationResolution>, ProviderSessionError> {
+    let Some(raw_str) = raw else {
+        return Ok(None);
+    };
+    let normalized = raw_str.trim().to_ascii_uppercase();
+    if normalized.is_empty() {
+        return Ok(None);
+    }
+    match normalized.as_str() {
+        "1K" => Ok(Some(ImageGenerationResolution::R1K)),
+        "2K" => Ok(Some(ImageGenerationResolution::R2K)),
+        "4K" => Ok(Some(ImageGenerationResolution::R4K)),
+        _ => Err(ProviderSessionError::Tool(
+            "resolution must be one of 1K, 2K, or 4K".into(),
+        )),
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct GeneratedImageToolOutput {
     pub persisted_path: String,
     pub image_data_base64: String,
+}
+
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct GenerateImageToolOptions {
+    pub resolution: Option<ImageGenerationResolution>,
+    pub aspect_ratio: Option<String>,
 }
 
 pub trait GenerateImageToolExecutor: Send + Sync {
@@ -32,7 +78,22 @@ pub trait GenerateImageToolExecutor: Send + Sync {
         &self,
         description: &str,
         reference_images: &[(String, String)],
-    ) -> Result<GeneratedImageToolOutput, ProviderSessionError>;
+    ) -> Result<GeneratedImageToolOutput, ProviderSessionError> {
+        self.generate_with_options(
+            description,
+            reference_images,
+            &GenerateImageToolOptions::default(),
+        )
+    }
+
+    fn generate_with_options(
+        &self,
+        description: &str,
+        reference_images: &[(String, String)],
+        _options: &GenerateImageToolOptions,
+    ) -> Result<GeneratedImageToolOutput, ProviderSessionError> {
+        self.generate(description, reference_images)
+    }
 }
 
 pub struct SandGenerateImageToolBridge {
@@ -106,8 +167,15 @@ impl RoutedToolBridge for SandGenerateImageToolBridge {
                 SUPPORTED_ASPECT_RATIOS.join(", ")
             )));
         }
+        let resolution = normalize_image_generation_resolution(
+            args.get("resolution").and_then(Value::as_str),
+        )?;
+        let options = GenerateImageToolOptions {
+            resolution,
+            aspect_ratio: args.get("aspect_ratio").and_then(Value::as_str).map(str::to_string),
+        };
         let references = self.read_reference_images(&args, tool_call_id);
-        let generated = self.executor.generate(description, &references)?;
+        let generated = self.executor.generate_with_options(description, &references, &options)?;
         let image_bytes = STANDARD
             .decode(generated.image_data_base64.as_bytes())
             .map_err(|_| ProviderSessionError::Tool(
@@ -124,11 +192,15 @@ impl RoutedToolBridge for SandGenerateImageToolBridge {
             data: image_bytes,
             tool_call_id: tool_call_id.to_string(),
         })?;
+        let mut success_obj = json!({
+            "filePath": output_path,
+            "imageData": generated.image_data_base64,
+        });
+        if let Some(res) = resolution {
+            success_obj["resolution"] = json!(res.as_str());
+        }
         Ok(json!({
-            "success": {
-                "filePath": output_path,
-                "imageData": generated.image_data_base64,
-            }
+            "success": success_obj
         }))
     }
 }
@@ -212,6 +284,11 @@ fn generate_image_tool_definition() -> RoutedToolDefinition {
                     "type": "string",
                     "enum": SUPPORTED_ASPECT_RATIOS,
                     "description": "Optional aspect ratio. The frozen Grok backend currently accepts but does not forward this hint."
+                },
+                "resolution": {
+                    "type": "string",
+                    "enum": ["1K", "2K", "4K"],
+                    "description": "Optional image resolution: 1K, 2K, or 4K."
                 }
             }
         }),

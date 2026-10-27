@@ -126,6 +126,8 @@ fn host_telemetry_service_owns_frozen_runtime_lifecycle_and_extension_stays_thin
         "HostCrashMarkerForwarder::start(self.logs.clone())",
         "DesktopHealthForwarder::start(self.logs.clone())",
         "EventLoopTelemetryRuntime::start(",
+        "global_child_process_spawn_tracker()",
+        "report_child_process_spawn_sample(&sample)",
         "profiler.on_pressure(",
         "profiler.on_tick(",
         "ProductionAnalyticsRuntime::start(",

@@ -13,6 +13,7 @@ use mahayana_host_runtime::runner::tools::sand_browser_tools::{
     BOX_CDP_PORT_BASE, BrowserDriverOutput, BrowserEnvelope, BrowserToolExecutor,
     BrowserShellSafetyCallback, BrowserToolSpec, ProductionBrowserToolExecutor,
     SandBrowserToolBridge,
+    browser_image_mime_type,
     browser_tool_specs, capture_browser_review_state,
     build_browser_driver_invocation, decode_envelope, encode_envelope,
     parse_driver_response, sanitize_for_box_path, stash_screenshot,
@@ -22,6 +23,13 @@ use serde_json::{Map, Value, json};
 
 const BROWSER_AUTO_REVIEW_SOURCE: &str = include_str!("../src/runner/sand_browser_auto_review.rs");
 const AUTO_REVIEW_SUMMARIES_SOURCE: &str = include_str!("../src/runner/sand_auto_review_summaries.rs");
+
+#[test]
+fn browser_screenshot_mime_policy_accepts_locked_raster_set_and_rejects_unknowns() {
+    assert_eq!(browser_image_mime_type(&[137, 80, 78, 71], "/workspace/shot.png"), Some("image/png"));
+    assert_eq!(browser_image_mime_type(&[0, 0, 0, 24, b'f', b't', b'y', b'p', b'a', b'v', b'i', b'f'], "/workspace/shot.bin"), Some("image/avif"));
+    assert_eq!(browser_image_mime_type(b"not-image", "/workspace/shot.bmp"), None);
+}
 
 struct BaseBridge;
 
