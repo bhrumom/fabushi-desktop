@@ -1023,6 +1023,9 @@ impl ProductionBoxStoreSyncInner {
                     &sand_root,
                     skip_live_handle_store_dbs,
                     None,
+                    self.env
+                        .get(FABUSHI_OPENCLAW_PORTABLE_BACKUP_ENV)
+                        .is_some_and(|value| matches!(value.as_str(), "1" | "true" | "TRUE")),
                 )?;
                 store_db_complete = capture.summary.failures == 0
                     && capture.summary.oversize == 0
@@ -1512,6 +1515,9 @@ impl ProductionBoxStoreSyncInner {
             &sand_root,
             false,
             Some(agent_id),
+            self.env
+                .get(FABUSHI_OPENCLAW_PORTABLE_BACKUP_ENV)
+                .is_some_and(|value| matches!(value.as_str(), "1" | "true" | "TRUE")),
         ) {
             Ok(capture) => capture,
             Err(error) => {
@@ -2221,6 +2227,28 @@ fn sync_store_db_snapshots(
         sand_root,
         skip_live_handles,
         only_agent_id,
+        openclaw_portable_backup_enabled(),
+    )
+    .map(|capture| capture.summary)
+}
+
+fn sync_store_db_snapshots_with_options(
+    store: Arc<dyn BoxObjectStore>,
+    store_id: &str,
+    manifest: &mut BoxManifestMap,
+    sand_root: &Path,
+    skip_live_handles: bool,
+    only_agent_id: Option<&str>,
+    portable_backup_enabled: bool,
+) -> Result<CategoryTransferSummary, String> {
+    sync_store_db_snapshots_with_trace(
+        store,
+        store_id,
+        manifest,
+        sand_root,
+        skip_live_handles,
+        only_agent_id,
+        portable_backup_enabled,
     )
     .map(|capture| capture.summary)
 }
@@ -2232,6 +2260,7 @@ fn sync_store_db_snapshots_with_trace(
     sand_root: &Path,
     skip_live_handles: bool,
     only_agent_id: Option<&str>,
+    portable_backup_enabled: bool,
 ) -> Result<ProductionStoreDbCaptureResult, String> {
     let mut capture_trace = create_store_db_capture_trace();
     let mut agent_count = 0_usize;
@@ -2455,7 +2484,7 @@ fn sync_store_db_snapshots_with_trace(
                 }
             }
 
-            if bundle_ok && agent_has_db && openclaw_portable_backup_enabled() {
+            if bundle_ok && agent_has_db && portable_backup_enabled {
                 let source_db = agent_dir.join("store.db");
                 let staging_dir = agent_dir.join(format!(
                     ".openclaw-portable-staging-{}",
@@ -2946,10 +2975,15 @@ mod tests {
         }
         let store = Arc::new(LocalFsObjectStore::new(&store_root));
         let mut manifest = BoxManifestMap::new();
-        unsafe { std::env::set_var(FABUSHI_OPENCLAW_PORTABLE_BACKUP_ENV, "1") };
-        let result =
-            sync_store_db_snapshots(store, "store-a", &mut manifest, &sand_root, false, None);
-        unsafe { std::env::remove_var(FABUSHI_OPENCLAW_PORTABLE_BACKUP_ENV) };
+        let result = sync_store_db_snapshots_with_options(
+            store,
+            "store-a",
+            &mut manifest,
+            &sand_root,
+            false,
+            None,
+            true,
+        );
         let summary = result.expect("portable production snapshot");
         assert_eq!(summary.failures, 0);
         assert!(summary.files_uploaded >= 4);
@@ -3021,13 +3055,14 @@ mod tests {
         }
         let store = Arc::new(LocalFsObjectStore::new(&store_root));
         let mut manifest = BoxManifestMap::new();
-        sync_store_db_snapshots(
+        sync_store_db_snapshots_with_options(
             store.clone(),
             "store-a",
             &mut manifest,
             &sand_root,
             false,
             None,
+            false,
         )
         .expect("initial capture");
         let baseline = manifest.clone();
@@ -3038,13 +3073,14 @@ mod tests {
             db.execute("INSERT INTO state(value) VALUES ('second')", [])
                 .expect("mutate live db");
         }
-        let summary = sync_store_db_snapshots(
+        let summary = sync_store_db_snapshots_with_options(
             store.clone(),
             "store-a",
             &mut manifest,
             &sand_root,
             true,
             None,
+            false,
         )
         .expect("live-handle sweep");
         crate::storage::store_db::release_live_db_handle(&source_db);
@@ -3054,6 +3090,10 @@ mod tests {
         assert_eq!(
             manifest, baseline,
             "live Agent DB must remain durable but untouched"
+        );
+        assert!(
+            manifest.keys().all(|path| !path.contains("/portable/")),
+            "default-off periodic cycles must not publish portable artifacts"
         );
         fs::remove_dir_all(root).expect("cleanup");
     }
