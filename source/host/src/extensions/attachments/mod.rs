@@ -15,6 +15,7 @@ pub mod media_audio_transcode;
 pub mod media_facts;
 pub mod media_fetch;
 pub mod media_file_context;
+pub mod media_generation_service;
 pub mod media_probe;
 pub mod media_qr_png;
 pub mod media_reference;

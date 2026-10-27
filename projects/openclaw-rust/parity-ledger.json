@@ -10,10 +10,10 @@
     "ui_accepted": false
   },
   "file_coverage": {
-    "mapped_paths": 346,
+    "mapped_paths": 367,
     "omitted_known": 0,
     "tracked_paths": 58750,
-    "unclassified_paths": 58404
+    "unclassified_paths": 58383
   },
   "inventory_authority": {
     "manifest_source": "GitHub Actions immutable artifact candidate",
@@ -16040,6 +16040,376 @@
         "is_native_media_deliverable"
       ],
       "unit_id": "OCRM-UNIT-MEDIA-UND-008"
+    },
+    {
+      "adr_refs": [],
+      "behavior": "Media generation runtime candidate resolution, aspect ratio Euclidean GCD reduction and log-distance matching, size and resolution closest-fit normalization, duration and timer clamping, and video asset byte limit enforcement.",
+      "blocker_ids": [
+        "BL-MEDIA-GEN-PROVIDER-WIRING-001"
+      ],
+      "capability_ids": [
+        "media.generation.core"
+      ],
+      "dependencies": [
+        "mahayana_host_runtime::extensions::attachments::media_generation_service"
+      ],
+      "evidence_refs": [
+        "source/host/tests/openclaw_media_generation_contract.rs",
+        "projects/openclaw-rust/dossiers/media-generation-scoped.md"
+      ],
+      "existing_owner_candidates": [
+        {
+          "path": "source/host/src/extensions/attachments/media_generation_service.rs",
+          "reason": "Media generation geometry normalization and runtime service"
+        }
+      ],
+      "id": "OCRM-RESP-MEDIA-GEN-CORE-001",
+      "integration": {
+        "consumer": "source/host/src/extensions/attachments/media_generation_service.rs",
+        "entrypoint": "source/host/src/extensions/attachments/media_generation_service.rs::resolve_closest_aspect_ratio",
+        "owner": "source/host/src/extensions/attachments/media_generation_service.rs",
+        "producer": "source/host/src/extensions/attachments/media_generation_service.rs"
+      },
+      "invariants": [
+        "Aspect ratio reduction via exact Euclidean greatest common divisor",
+        "Resolution tie-breaking favors higher resolution (secondary score 0 < 1)",
+        "Timeout clamped between MIN_MEDIA_TIMEOUT_MS and MAX_TIMER_TIMEOUT_MS",
+        "Video byte overflow falls back cleanly to remote URL"
+      ],
+      "migration_rollback": "Use unnormalized generation geometry and direct error returns on overflow",
+      "oracle_ids": [
+        "OCRM-MEDIA-GEN-O01",
+        "OCRM-MEDIA-GEN-O02",
+        "OCRM-MEDIA-GEN-O03",
+        "OCRM-MEDIA-GEN-O05"
+      ],
+      "owner_decision": "Implement media generation geometry normalization, timeout clamping, and video asset handling in media_generation_service",
+      "postconditions": [
+        "Normalized aspect ratios, sizes, resolutions, durations, and validated video assets returned"
+      ],
+      "preconditions": [
+        "Media generation parameters and candidate configurations provided"
+      ],
+      "required_evidence_dimensions": [
+        "unit",
+        "format"
+      ],
+      "required_gate_ids": [
+        "OCRM-G04-rust-contract",
+        "OCRM-G05-frozen-oracle"
+      ],
+      "requirement_ids": [
+        "OCRM-R24",
+        "OCRM-AC24"
+      ],
+      "responsibility_kind": "business-runtime",
+      "reviewer": "xuyao@ombhrum.com",
+      "risk": "Low; calculates pure mathematical dimension transforms and enforces byte caps",
+      "selected_owner": "source/host/src/extensions/attachments/media_generation_service.rs",
+      "source_refs": [
+        {
+          "blob_sha": "74e74b06cf8e364dbf647dfb0ab0a3558e6b5a8a",
+          "path": "src/media-generation/geometry-normalization.ts",
+          "range": {
+            "start_line": 1,
+            "end_line": 134
+          },
+          "symbol": "geometry-normalization"
+        },
+        {
+          "blob_sha": "e801ecb216b2c724d669e6201313a73988aae4c6",
+          "path": "src/media-generation/live-test-helpers.test.ts",
+          "range": {
+            "start_line": 1,
+            "end_line": 34
+          },
+          "symbol": "live-test-helpers.test"
+        },
+        {
+          "blob_sha": "9611a85735b8f8f1bf0d0df90d2af7c72700fd9b",
+          "path": "src/media-generation/live-test-helpers.ts",
+          "range": {
+            "start_line": 1,
+            "end_line": 87
+          },
+          "symbol": "live-test-helpers"
+        },
+        {
+          "blob_sha": "ea4be27cc2f380fc9527d51430283f49b2471160",
+          "path": "src/media-generation/model-ref.ts",
+          "range": {
+            "start_line": 1,
+            "end_line": 3
+          },
+          "symbol": "model-ref"
+        },
+        {
+          "blob_sha": "6034f59495afc2918401a3e93d8d6d92325211f4",
+          "path": "src/media-generation/provider-assets.test.ts",
+          "range": {
+            "start_line": 1,
+            "end_line": 83
+          },
+          "symbol": "provider-assets.test"
+        },
+        {
+          "blob_sha": "82f78c359a782059d6d44dff7166fedf0a70f686",
+          "path": "src/media-generation/provider-assets.ts",
+          "range": {
+            "start_line": 1,
+            "end_line": 124
+          },
+          "symbol": "provider-assets"
+        },
+        {
+          "blob_sha": "cd75e3d5de550df03b6e403e1df61325de924df1",
+          "path": "src/media-generation/provider-registry.ts",
+          "range": {
+            "start_line": 1,
+            "end_line": 72
+          },
+          "symbol": "provider-registry"
+        },
+        {
+          "blob_sha": "480738325b22af68c155afe7d6bd2ff61794159a",
+          "path": "src/media-generation/registry.test.ts",
+          "range": {
+            "start_line": 1,
+            "end_line": 91
+          },
+          "symbol": "registry.test"
+        },
+        {
+          "blob_sha": "05e8669025ad72e9dfaea95cbfe268d5ab0b13a7",
+          "path": "src/media-generation/registry.ts",
+          "range": {
+            "start_line": 1,
+            "end_line": 30
+          },
+          "symbol": "registry"
+        },
+        {
+          "blob_sha": "b9cd11d7d0e717eb525883a63f6b8f3624a224bc",
+          "path": "src/media-generation/runtime-shared.test.ts",
+          "range": {
+            "start_line": 1,
+            "end_line": 321
+          },
+          "symbol": "runtime-shared.test"
+        },
+        {
+          "blob_sha": "dbdde00b5bcafc6876c565bfc070f3d0bddf0a7e",
+          "path": "src/media-generation/runtime-shared.ts",
+          "range": {
+            "start_line": 1,
+            "end_line": 733
+          },
+          "symbol": "runtime-shared"
+        }
+      ],
+      "status": {
+        "acceptance": "pending",
+        "implementation": "implemented",
+        "mapping": "reviewed",
+        "read": "read-complete",
+        "verification": "not-run",
+        "wiring": "not-wired"
+      },
+      "target": {
+        "language": "Rust",
+        "path": "source/host/src/extensions/attachments/media_generation_service.rs",
+        "symbol": "resolve_closest_aspect_ratio"
+      },
+      "tests": [
+        "source/host/tests/openclaw_media_generation_contract.rs::test_ocrm_media_gen_o01_aspect_ratio_normalization_and_derivation",
+        "source/host/tests/openclaw_media_generation_contract.rs::test_ocrm_media_gen_o02_size_and_resolution_normalization",
+        "source/host/tests/openclaw_media_generation_contract.rs::test_ocrm_media_gen_o03_duration_and_timeout_clamping",
+        "source/host/tests/openclaw_media_generation_contract.rs::test_ocrm_media_gen_o05_video_asset_reading_and_overflow"
+      ],
+      "typed_contracts": [
+        "derive_aspect_ratio_from_size",
+        "resolve_closest_aspect_ratio",
+        "resolve_closest_size",
+        "resolve_closest_resolution",
+        "read_generated_video_asset"
+      ],
+      "unit_id": "OCRM-UNIT-MEDIA-GEN-001"
+    },
+    {
+      "adr_refs": [],
+      "behavior": "Music generation capability enumeration, mode selection (generate/edit), reference image input bounds validation, and output format MIME classification.",
+      "blocker_ids": [
+        "BL-MUSIC-GEN-PROVIDER-WIRING-001"
+      ],
+      "capability_ids": [
+        "music.generation.core"
+      ],
+      "dependencies": [
+        "mahayana_host_runtime::extensions::attachments::media_generation_service"
+      ],
+      "evidence_refs": [
+        "source/host/tests/openclaw_media_generation_contract.rs",
+        "projects/openclaw-rust/dossiers/media-generation-scoped.md"
+      ],
+      "existing_owner_candidates": [
+        {
+          "path": "source/host/src/extensions/attachments/media_generation_service.rs",
+          "reason": "Music generation capability and reference image validation service"
+        }
+      ],
+      "id": "OCRM-RESP-MUSIC-GEN-CORE-001",
+      "integration": {
+        "consumer": "source/host/src/extensions/attachments/media_generation_service.rs",
+        "entrypoint": "source/host/src/extensions/attachments/media_generation_service.rs::list_supported_music_generation_modes",
+        "owner": "source/host/src/extensions/attachments/media_generation_service.rs",
+        "producer": "source/host/src/extensions/attachments/media_generation_service.rs"
+      },
+      "invariants": [
+        "Generate mode is always enabled; edit mode requires explicit capability activation",
+        "Reference images are strictly rejected when edit mode is disabled",
+        "Input image counts exceeding max_input_images are rejected with descriptive errors"
+      ],
+      "migration_rollback": "Disable edit mode and reject reference images unconditionally",
+      "oracle_ids": [
+        "OCRM-MEDIA-GEN-O04"
+      ],
+      "owner_decision": "Implement music generation capabilities, mode selection, and reference image validation in media_generation_service",
+      "postconditions": [
+        "Valid music generation mode and capability contracts returned"
+      ],
+      "preconditions": [
+        "Music generation provider capabilities supplied"
+      ],
+      "required_evidence_dimensions": [
+        "unit",
+        "format"
+      ],
+      "required_gate_ids": [
+        "OCRM-G04-rust-contract",
+        "OCRM-G05-frozen-oracle"
+      ],
+      "requirement_ids": [
+        "OCRM-R24",
+        "OCRM-AC24"
+      ],
+      "responsibility_kind": "business-runtime",
+      "reviewer": "xuyao@ombhrum.com",
+      "risk": "Low; coordinates capability contracts and rejects invalid image edit combinations",
+      "selected_owner": "source/host/src/extensions/attachments/media_generation_service.rs",
+      "source_refs": [
+        {
+          "blob_sha": "24cc0b6629a6fda61db633b649572f8973ebb382",
+          "path": "src/music-generation/capabilities.test.ts",
+          "range": {
+            "start_line": 1,
+            "end_line": 22
+          },
+          "symbol": "capabilities.test"
+        },
+        {
+          "blob_sha": "77469fafd83a346f188b56a7b9e974d1812ea447",
+          "path": "src/music-generation/capabilities.ts",
+          "range": {
+            "start_line": 1,
+            "end_line": 26
+          },
+          "symbol": "capabilities"
+        },
+        {
+          "blob_sha": "e88154f962fe92ad8d36d4a6e05524c420db6588",
+          "path": "src/music-generation/live-test-helpers.ts",
+          "range": {
+            "start_line": 1,
+            "end_line": 16
+          },
+          "symbol": "live-test-helpers"
+        },
+        {
+          "blob_sha": "5185530ae14f6da527c612a76b93d365348731be",
+          "path": "src/music-generation/provider-assets.test.ts",
+          "range": {
+            "start_line": 1,
+            "end_line": 59
+          },
+          "symbol": "provider-assets.test"
+        },
+        {
+          "blob_sha": "298654fdad35f977ed33009bc1e59d47a4d5d04a",
+          "path": "src/music-generation/provider-assets.ts",
+          "range": {
+            "start_line": 1,
+            "end_line": 161
+          },
+          "symbol": "provider-assets"
+        },
+        {
+          "blob_sha": "94ba907b87669507fa6f88e054ed71af2ad6965e",
+          "path": "src/music-generation/runtime-types.ts",
+          "range": {
+            "start_line": 1,
+            "end_line": 20
+          },
+          "symbol": "runtime-types"
+        },
+        {
+          "blob_sha": "0f8f3dea9099b8b32ef37e01ba54d86904e61016",
+          "path": "src/music-generation/runtime.resources.test.ts",
+          "range": {
+            "start_line": 1,
+            "end_line": 325
+          },
+          "symbol": "runtime.resources.test"
+        },
+        {
+          "blob_sha": "1fea4db295ae24eb6906b5c042a4de3ef39ae85f",
+          "path": "src/music-generation/runtime.test.ts",
+          "range": {
+            "start_line": 1,
+            "end_line": 209
+          },
+          "symbol": "runtime.test"
+        },
+        {
+          "blob_sha": "c2ce870fe66eea0a36567159982aa3dba42361f8",
+          "path": "src/music-generation/runtime.ts",
+          "range": {
+            "start_line": 1,
+            "end_line": 173
+          },
+          "symbol": "runtime"
+        },
+        {
+          "blob_sha": "bef51b114d3f1227cc91cc68cfe936cd6a432bbb",
+          "path": "src/music-generation/types.ts",
+          "range": {
+            "start_line": 1,
+            "end_line": 103
+          },
+          "symbol": "types"
+        }
+      ],
+      "status": {
+        "acceptance": "pending",
+        "implementation": "implemented",
+        "mapping": "reviewed",
+        "read": "read-complete",
+        "verification": "not-run",
+        "wiring": "not-wired"
+      },
+      "target": {
+        "language": "Rust",
+        "path": "source/host/src/extensions/attachments/media_generation_service.rs",
+        "symbol": "list_supported_music_generation_modes"
+      },
+      "tests": [
+        "source/host/tests/openclaw_media_generation_contract.rs::test_ocrm_media_gen_o04_music_generation_capabilities_and_reference_images"
+      ],
+      "typed_contracts": [
+        "list_supported_music_generation_modes",
+        "resolve_music_generation_mode_capabilities",
+        "resolve_reference_image_capability_error"
+      ],
+      "unit_id": "OCRM-UNIT-MEDIA-GEN-001"
     }
   ],
   "schema_version": 1,
