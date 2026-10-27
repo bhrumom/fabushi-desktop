@@ -241,3 +241,10 @@ symlink/hardlink/non-regular manifests, caps input at 1 MiB, and delegates to
 the strict parser. Real-file, symlink, and hardlink oracles pass; Git repository
 ownership/preflight and artifact publication remain outside this owner.
 
+`git_backup_scope_path` now binds admitted backup identities to the upstream
+filesystem scope convention: `global`, `agents/<agentId>`, or `stores/<id>`.
+It rejects invalid/traversal-shaped identifiers before a caller can construct a
+staging or publication path. Generic, agent, and traversal-negative oracles
+pass. This closes identity-to-scope derivation only; Git repository ownership,
+atomic publication, and cross-process custody remain unproven.
+
