@@ -15,6 +15,7 @@ use std::os::unix::fs::{MetadataExt, OpenOptionsExt, PermissionsExt};
 
 pub const SNAPSHOT_EXPORT_ENVELOPE_VERSION: u32 = 1;
 pub const SQLITE_SIDECAR_SUFFIXES: [&str; 3] = ["-wal", "-shm", "-journal"];
+const RESTORE_NAMESPACE_PREFIX: &str = "restore_";
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SnapshotExportEnvelope {
@@ -434,6 +435,22 @@ pub fn assert_fresh_restore_target(path: impl AsRef<Path>) -> Result<(), String>
         return Err(format!("fresh SQLite restore path already exists: {}", path.display()));
     }
     assert_no_sqlite_sidecars(path, "fresh SQLite restore path already exists")
+}
+
+/// Allocate the isolated namespace used by a restore attempt.
+///
+/// OpenClaw never restores directly into the source namespace: every attempt
+/// gets a fresh 128-bit random suffix so a failed or concurrent restore cannot
+/// reuse another attempt's tables. The caller must still reserve/check the
+/// namespace in the database owner before materializing rows.
+pub fn new_restore_namespace() -> Result<String, String> {
+    let mut bytes = [0_u8; 16];
+    getrandom::fill(&mut bytes)
+        .map_err(|error| format!("generate restore namespace entropy: {error}"))?;
+    Ok(format!(
+        "{RESTORE_NAMESPACE_PREFIX}{}",
+        bytes.iter().map(|byte| format!("{byte:02x}")).collect::<String>()
+    ))
 }
 
 pub fn create_export_envelope(snapshot_id: &str, manifest: Value) -> SnapshotExportEnvelope {
