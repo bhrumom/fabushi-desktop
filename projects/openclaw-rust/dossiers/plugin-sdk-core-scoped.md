@@ -33,7 +33,29 @@
 
 ## 3. Verification & Oracle Evidence
 - **Contract Tests**: `source/host/tests/openclaw_plugin_sdk_core_contract.rs`:
-  - `test_ocrm_plugin_sdk_channel_runtime` (PASSED)
+  - `test_ocrm_plugin_sdk_channel_runtime` (PASSED: validates replay guard claim, TTL deduplication, channel access policy, and BundledChannelContractValidator).
   - `test_ocrm_plugin_sdk_approval_security` (PASSED)
   - `test_ocrm_plugin_sdk_session_memory` (PASSED)
   - `test_ocrm_plugin_sdk_tool_runtime` (PASSED)
+
+## 4. Audited Bundled Channel Contract Invariants
+The following test suites in `src/plugins/contracts/` have been audited line-by-line and mapped to `OCRM-RESP-PLUGIN-SDK-CHANNEL-RUNTIME-001`:
+1. `channel-config-writes.contract.test.ts` (71 lines):
+   - Validates that non-channel plugins cannot declare or perform channel config writes.
+   - Enforces admitted config write boundaries for bundled channels.
+2. `channel-history-limit.contract.test.ts` (26 lines):
+   - Enforces that channels exposing `historyLimit` support positive message fetching boundaries.
+   - Restricts account-level `historyLimit` support exclusively to `line` and `mattermost`.
+3. `channel-media-max-mb.contract.test.ts` (31 lines):
+   - Enforces that `mediaMaxMb` configuration values must be numbers strictly greater than 0 (`> 0`).
+   - Rejects non-numeric, 0, negative, or string values.
+4. `channel-provider-skills.contract.test.ts` (119 lines):
+   - Enforces skill eligibility based on authentication tokens (root token or named-account tokens).
+   - Enforces disabled state when `skills.entries.<id>.enabled` is explicitly `false`.
+   - Prohibits retired skill patterns in documentation and skill prompts (e.g. `sendMessage`/`pinMessage` for Slack, `feishu_doc_list_blocks`, `owner_open_id`).
+5. `channel-reply-to-mode.contract.test.ts` (15 lines):
+   - Enforces that `replyToMode` is only admitted on compatible channels (`feishu`, `irc`, `nextcloud-talk`).
+6. `channel-response-prefix.contract.test.ts` (39 lines):
+   - Enforces that `responsePrefix` configuration must be a valid string (including empty strings, `"[bot]"`, or `"auto"`).
+   - Rejects booleans, numbers, arrays, and objects.
+

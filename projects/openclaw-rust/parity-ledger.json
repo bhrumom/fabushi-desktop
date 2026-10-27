@@ -10,10 +10,10 @@
     "ui_accepted": false
   },
   "file_coverage": {
-    "mapped_paths": 405,
+    "mapped_paths": 411,
     "omitted_known": 0,
     "tracked_paths": 58750,
-    "unclassified_paths": 58345
+    "unclassified_paths": 58339
   },
   "inventory_authority": {
     "manifest_source": "GitHub Actions immutable artifact candidate",
@@ -20054,6 +20054,60 @@
             "end_line": 3
           },
           "symbol": "channel-access-compat"
+        },
+        {
+          "path": "src/plugins/contracts/channel-config-writes.contract.test.ts",
+          "blob_sha": "659a2a9ef0e6356ad4f42bd638ea68509965a3ba",
+          "range": {
+            "start_line": 1,
+            "end_line": 71
+          },
+          "symbol": "channel-config-writes.contract.test.ts"
+        },
+        {
+          "path": "src/plugins/contracts/channel-history-limit.contract.test.ts",
+          "blob_sha": "c22571d4906ac46278a4219cb446bc4e607a4e02",
+          "range": {
+            "start_line": 1,
+            "end_line": 26
+          },
+          "symbol": "channel-history-limit.contract.test.ts"
+        },
+        {
+          "path": "src/plugins/contracts/channel-media-max-mb.contract.test.ts",
+          "blob_sha": "dc7b9fd6b028c0c01a3ecba1b76b0f8ace47bb95",
+          "range": {
+            "start_line": 1,
+            "end_line": 31
+          },
+          "symbol": "channel-media-max-mb.contract.test.ts"
+        },
+        {
+          "path": "src/plugins/contracts/channel-provider-skills.contract.test.ts",
+          "blob_sha": "a5bc66bff3e5647a321b1a607a8f061fc2b22a16",
+          "range": {
+            "start_line": 1,
+            "end_line": 119
+          },
+          "symbol": "channel-provider-skills.contract.test.ts"
+        },
+        {
+          "path": "src/plugins/contracts/channel-reply-to-mode.contract.test.ts",
+          "blob_sha": "324dd9bf644a870b553e9224460398c42d2250e2",
+          "range": {
+            "start_line": 1,
+            "end_line": 15
+          },
+          "symbol": "channel-reply-to-mode.contract.test.ts"
+        },
+        {
+          "path": "src/plugins/contracts/channel-response-prefix.contract.test.ts",
+          "blob_sha": "ffefff86d65f355c09eae03beb244bdcd0d26212",
+          "range": {
+            "start_line": 1,
+            "end_line": 39
+          },
+          "symbol": "channel-response-prefix.contract.test.ts"
         }
       ],
       "evidence_refs": [

@@ -58,6 +58,49 @@ fn test_ocrm_plugin_sdk_channel_runtime() {
     // Recipient normalization
     let recips = normalize_recipient_list("user:1, user:2; USER:1 \n user:3");
     assert_eq!(recips, vec!["user:1", "user:2", "user:3"]);
+
+    // Bundled channel contract tests (from channel-*.contract.test.ts)
+    use mahayana_host_runtime::extensions::plugin_sdk::channel_runtime::BundledChannelContractValidator;
+
+    // 1. configWrites admission
+    assert!(BundledChannelContractValidator::is_config_writes_admitted(&["token", "configWrites"]));
+    assert!(!BundledChannelContractValidator::is_config_writes_admitted(&["token"]));
+
+    // 2. historyLimit support (root vs account level)
+    assert!(BundledChannelContractValidator::supports_history_limit("line", false));
+    assert!(BundledChannelContractValidator::supports_history_limit("line", true));
+    assert!(BundledChannelContractValidator::supports_history_limit("mattermost", true));
+    assert!(BundledChannelContractValidator::supports_history_limit("twitch", false));
+    assert!(!BundledChannelContractValidator::supports_history_limit("twitch", true));
+    assert!(!BundledChannelContractValidator::supports_history_limit("unsupported", false));
+
+    // 3. mediaMaxMb validation (number > 0)
+    assert!(BundledChannelContractValidator::validate_media_max_mb(&json!(20)));
+    assert!(BundledChannelContractValidator::validate_media_max_mb(&json!(0.5)));
+    assert!(!BundledChannelContractValidator::validate_media_max_mb(&json!(0)));
+    assert!(!BundledChannelContractValidator::validate_media_max_mb(&json!(-1)));
+    assert!(!BundledChannelContractValidator::validate_media_max_mb(&json!("20")));
+
+    // 4. replyToMode support
+    assert!(BundledChannelContractValidator::supports_reply_to_mode("feishu"));
+    assert!(BundledChannelContractValidator::supports_reply_to_mode("irc"));
+    assert!(BundledChannelContractValidator::supports_reply_to_mode("nextcloud-talk"));
+    assert!(!BundledChannelContractValidator::supports_reply_to_mode("discord"));
+
+    // 5. responsePrefix string validation
+    assert!(BundledChannelContractValidator::validate_response_prefix(&json!("[bot]")));
+    assert!(BundledChannelContractValidator::validate_response_prefix(&json!("auto")));
+    assert!(BundledChannelContractValidator::validate_response_prefix(&json!("")));
+    assert!(!BundledChannelContractValidator::validate_response_prefix(&json!(42)));
+
+    // 6. Channel skill eligibility and retired pattern checks
+    assert!(BundledChannelContractValidator::is_channel_skill_eligible(true, true));
+    assert!(!BundledChannelContractValidator::is_channel_skill_eligible(false, true));
+    assert!(!BundledChannelContractValidator::is_channel_skill_eligible(true, false));
+
+    assert!(BundledChannelContractValidator::contains_retired_skill_pattern("use the 'slack' tool to send"));
+    assert!(BundledChannelContractValidator::contains_retired_skill_pattern("calling feishu_doc_list_blocks"));
+    assert!(!BundledChannelContractValidator::contains_retired_skill_pattern("clean skill instructions"));
 }
 
 #[test]

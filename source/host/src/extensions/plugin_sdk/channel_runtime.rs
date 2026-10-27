@@ -170,3 +170,63 @@ pub fn normalize_recipient_list(raw: &str) -> Vec<String> {
     }
     result
 }
+
+// Bundled channel contract validation (from channel-*.contract.test.ts)
+
+pub struct BundledChannelContractValidator;
+
+impl BundledChannelContractValidator {
+    pub fn is_config_writes_admitted(allowed_keys: &[&str]) -> bool {
+        allowed_keys.contains(&"configWrites")
+    }
+
+    pub fn supports_history_limit(channel_id: &str, is_account_level: bool) -> bool {
+        let root_supported = matches!(
+            channel_id,
+            "clickclack" | "line" | "mattermost" | "qa-channel" | "tlon" | "twitch" | "zalo"
+        );
+        if !root_supported {
+            return false;
+        }
+        if is_account_level {
+            matches!(channel_id, "line" | "mattermost")
+        } else {
+            true
+        }
+    }
+
+    pub fn validate_media_max_mb(val: &serde_json::Value) -> bool {
+        match val {
+            serde_json::Value::Number(n) => n.as_f64().map(|f| f > 0.0).unwrap_or(false),
+            _ => false,
+        }
+    }
+
+    pub fn supports_reply_to_mode(channel_id: &str) -> bool {
+        matches!(channel_id, "feishu" | "irc" | "nextcloud-talk")
+    }
+
+    pub fn validate_response_prefix(val: &serde_json::Value) -> bool {
+        val.is_string()
+    }
+
+    pub fn is_channel_skill_eligible(has_token: bool, skills_enabled: bool) -> bool {
+        has_token && skills_enabled
+    }
+
+    pub fn contains_retired_skill_pattern(source: &str) -> bool {
+        let retired = [
+            "use the 'slack' tool",
+            "use the \"slack\" tool",
+            "owner_open_id",
+            "feishu_doc_list_blocks",
+            "feishu_doc_update_block",
+            "feishu_doc_delete_block",
+            "sendMessage",
+            "readMessages",
+            "deleteMessage",
+            "pinMessage",
+        ];
+        retired.iter().any(|pattern| source.contains(pattern))
+    }
+}
