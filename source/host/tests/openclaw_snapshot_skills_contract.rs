@@ -16,6 +16,7 @@ use mahayana_host_runtime::extensions::snapshot::git_backup_manager::{
     SnapshotGenerationFence,
 };
 use serde_json::json;
+use std::collections::BTreeSet;
 use std::fs;
 use std::time::Duration;
 
@@ -305,6 +306,36 @@ fn test_ocrm_snapshot_postgres_manifest_schema_and_profile_oracles() {
     let mut unknown = valid;
     unknown["unexpected"] = json!(true);
     assert!(parse_postgres_export_manifest(&unknown, "snap-002", None).is_err());
+
+    let tables = BTreeSet::from([
+        "secret_store_entries".to_string(),
+        "config_machine_state".to_string(),
+    ]);
+    let (excluded, prefixes) =
+        mahayana_host_runtime::extensions::snapshot::git_backup_manager::git_backup_redaction(
+            "state", &tables, true, Some("state"),
+        );
+    assert_eq!(excluded, vec!["secret_store_entries"]);
+    assert!(prefixes.iter().any(|prefix| prefix == "authProfiles."));
+    let mut secret_state = serde_json::Map::from_iter([
+        ("state_key".into(), json!("authProfiles.primary")),
+        ("value".into(), json!("credential")),
+    ]);
+    assert!(!mahayana_host_runtime::extensions::snapshot::git_backup_manager::redact_git_backup_row(
+        "config_machine_state", &mut secret_state, "global", &prefixes,
+    ));
+    let mut catalog_row = serde_json::Map::from_iter([
+        ("scope".into(), json!("plugin-model-catalog-v1")),
+        (
+            "value_json".into(),
+            json!(r#"{"generatedBy":"openclaw-plugin-model-catalog-v1","providers":{"demo":{"apiKey":"secret","headers":{"Authorization":"Bearer secret"},"models":[{"apiKey":"model-secret"}]}}}"#),
+        ),
+    ]);
+    assert!(mahayana_host_runtime::extensions::snapshot::git_backup_manager::redact_git_backup_row(
+        "cache_entries", &mut catalog_row, "agent", &[],
+    ));
+    let redacted = catalog_row["value_json"].as_str().expect("redacted catalog JSON");
+    assert!(!redacted.contains("secret"));
 }
 
 #[test]

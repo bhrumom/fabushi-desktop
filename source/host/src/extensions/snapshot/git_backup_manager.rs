@@ -2,7 +2,7 @@ use rusqlite::{Connection, OpenFlags};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use sha2::{Digest, Sha256};
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 use std::fs::{File, OpenOptions};
 use std::io::{self, Read, Write};
 use std::path::{Path, PathBuf};
@@ -130,6 +130,35 @@ pub struct PostgresRestorePlan {
     pub active_fragments: Vec<String>,
     pub allocations: BTreeMap<String, PostgresSequenceAllocation>,
 }
+
+const STATE_SECRET_TABLE_NAMES: &[&str] = &[
+    "audit_identity_keys",
+    "apns_registrations",
+    "channel_ingress_events",
+    "channel_pairing_requests",
+    "clawhub_promotion_claims",
+    "config_revision_keys",
+    "device_auth_tokens",
+    "device_bootstrap_tokens",
+    "device_identities",
+    "device_pairing_join_codes",
+    "device_pairing_paired",
+    "gateway_origin_device_tokens",
+    "mcp_oauth_pending_authorizations",
+    "mcp_oauth_stores",
+    "native_hook_relay_bridges",
+    "secret_store_entries",
+    "web_push_approval_deliveries",
+    "web_push_subscriptions",
+    "worker_environment_credentials",
+];
+const AGENT_SECRET_TABLE_NAMES: &[&str] = &[
+    "auth_profile_state",
+    "auth_profile_store",
+    "session_suggestions",
+];
+const STATE_SECRET_CONFIG_STATE_KEY_PREFIXES: &[&str] =
+    &["authProfiles.", "nodeHost.", "webPush.vapidKeys"];
 
 fn valid_identifier(value: &str) -> bool {
     let mut chars = value.chars();
@@ -612,6 +641,112 @@ pub fn prepare_postgres_restore(
         active_fragments: manifest.active_fragments.clone(),
         allocations: manifest.verification.allocations.clone(),
     })
+}
+
+/// Resolve the exact table/key redaction policy used for portable Git backup.
+pub fn git_backup_redaction(
+    role: &str,
+    tables: &BTreeSet<String>,
+    exclude_secrets: bool,
+    postgres_family: Option<&str>,
+) -> (Vec<String>, Vec<String>) {
+    let owner = match postgres_family {
+        Some("state") => "global",
+        Some("agent") => "agent",
+        _ => role,
+    };
+    let secret_tables = if owner == "global" {
+        STATE_SECRET_TABLE_NAMES
+    } else {
+        AGENT_SECRET_TABLE_NAMES
+    };
+    let excluded_tables = if exclude_secrets {
+        secret_tables
+            .iter()
+            .filter(|table| tables.contains(**table))
+            .map(|table| (*table).to_string())
+            .collect()
+    } else {
+        Vec::new()
+    };
+    let excluded_prefixes =
+        if exclude_secrets && owner == "global" && tables.contains("config_machine_state") {
+            STATE_SECRET_CONFIG_STATE_KEY_PREFIXES
+                .iter()
+                .map(|prefix| (*prefix).to_string())
+                .collect()
+        } else {
+            Vec::new()
+        };
+    (excluded_tables, excluded_prefixes)
+}
+
+/// Redact a row before it enters a portable snapshot. `false` means the row
+/// must be omitted because its shape cannot prove that secrets are absent.
+pub fn redact_git_backup_row(
+    table: &str,
+    row: &mut serde_json::Map<String, Value>,
+    role: &str,
+    prefixes: &[String],
+) -> bool {
+    if table == "config_machine_state" && !prefixes.is_empty() {
+        let Some(Value::String(state_key)) = row.get("state_key") else {
+            return false;
+        };
+        if prefixes.iter().any(|prefix| state_key.starts_with(prefix)) {
+            return false;
+        }
+    }
+    if role == "agent" && table == "cache_entries" {
+        let scope = row.get("scope").and_then(Value::as_str);
+        if matches!(
+            scope,
+            Some("plugin-model-catalog-v1" | "plugin-model-catalog-migration-v1")
+        ) {
+            let Some(Value::String(contents)) = row.get("value_json") else {
+                return true;
+            };
+            let Some(redacted) = strip_plugin_model_catalog_credentials(contents) else {
+                return false;
+            };
+            row.insert("value_json".into(), Value::String(redacted));
+        }
+    }
+    true
+}
+
+fn strip_plugin_model_catalog_credentials(contents: &str) -> Option<String> {
+    let mut parsed: Value = serde_json::from_str(contents).ok()?;
+    let object = parsed.as_object_mut()?;
+    if object.get("generatedBy").and_then(Value::as_str) != Some("openclaw-plugin-model-catalog-v1")
+    {
+        return None;
+    }
+    let providers = object.get_mut("providers")?.as_object_mut()?;
+    for provider in providers.values_mut() {
+        let provider = provider.as_object_mut()?;
+        provider.remove("apiKey");
+        if let Some(headers) = provider.get("headers") {
+            if !headers.is_object() {
+                return None;
+            }
+        }
+        provider.remove("headers");
+        if let Some(models) = provider.get_mut("models") {
+            let models = models.as_array_mut()?;
+            for model in models {
+                let model = model.as_object_mut()?;
+                model.remove("apiKey");
+                if let Some(headers) = model.get("headers") {
+                    if !headers.is_object() {
+                        return None;
+                    }
+                }
+                model.remove("headers");
+            }
+        }
+    }
+    serde_json::to_string(&parsed).ok()
 }
 
 pub fn create_export_envelope(snapshot_id: &str, manifest: Value) -> SnapshotExportEnvelope {
