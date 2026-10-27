@@ -125,6 +125,12 @@ rejects `public`, short names, and non-hex suffixes. It is a destructive
 operation precondition only; no PostgreSQL DROP/CASCADE is exposed until the
 database owner is wired.
 
+`prepare_postgres_restore` now mirrors the upstream pre-materialization gate:
+requested profile and family schema versions must match, the generation must
+remain current, and a fresh guarded restore namespace is allocated. Positive
+and mismatch oracles are local only; no rows are materialized and no namespace
+is published to a live PostgreSQL owner.
+
 ## Responsibility/evidence decision
 
 `OCRM-RESP-SNAPSHOT-BACKUP-CODEC-001` remains `read=partial`,
