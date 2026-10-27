@@ -60,10 +60,7 @@ pub fn terminate_process_tree(
 fn descendant_pids(root: u32) -> Vec<u32> {
     #[cfg(unix)]
     {
-        let Ok(output) = Command::new("ps")
-            .args(["-axo", "pid=,ppid="])
-            .output()
-        else {
+        let Ok(output) = Command::new("ps").args(["-axo", "pid=,ppid="]).output() else {
             return Vec::new();
         };
         let mut children = Vec::new();
@@ -105,8 +102,12 @@ fn descendant_pids(root: u32) -> Vec<u32> {
             if fields.len() < 3 {
                 continue;
             }
-            let Some(ppid) = fields[1].trim().parse::<u32>().ok() else { continue };
-            let Some(pid) = fields[2].trim().parse::<u32>().ok() else { continue };
+            let Some(ppid) = fields[1].trim().parse::<u32>().ok() else {
+                continue;
+            };
+            let Some(pid) = fields[2].trim().parse::<u32>().ok() else {
+                continue;
+            };
             children.push((pid, ppid));
         }
         let mut descendants = Vec::new();
@@ -127,7 +128,12 @@ fn signal_tree(root: u32, descendants: &[u32], force: bool) -> Result<(), String
     #[cfg(unix)]
     {
         let signal = if force { libc::SIGKILL } else { libc::SIGTERM };
-        for pid in descendants.iter().rev().copied().chain(std::iter::once(root)) {
+        for pid in descendants
+            .iter()
+            .rev()
+            .copied()
+            .chain(std::iter::once(root))
+        {
             let result = unsafe { libc::kill(pid as libc::pid_t, signal) };
             if result != 0 {
                 let error = std::io::Error::last_os_error();
@@ -147,7 +153,11 @@ fn signal_tree(root: u32, descendants: &[u32], force: bool) -> Result<(), String
             command.arg("/F");
         }
         let status = command.status().map_err(|error| error.to_string())?;
-        if status.success() { Ok(()) } else { Err(format!("taskkill exited with {status}")) }
+        if status.success() {
+            Ok(())
+        } else {
+            Err(format!("taskkill exited with {status}"))
+        }
     }
 }
 
@@ -165,7 +175,10 @@ mod tests {
             .expect("spawn shell");
         std::thread::sleep(std::time::Duration::from_millis(50));
         let descendants = descendant_pids(child.id());
-        assert!(!descendants.is_empty(), "shell descendant was not discovered");
+        assert!(
+            !descendants.is_empty(),
+            "shell descendant was not discovered"
+        );
         let _ = child.kill();
         let _ = child.wait();
     }

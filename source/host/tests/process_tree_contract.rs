@@ -21,6 +21,9 @@ fn production_terminator_kills_real_shell_and_descendant() {
     )
     .expect("terminate process tree");
 
-    assert!(!forced, "SIGTERM should stop the contract shell within grace");
+    assert!(
+        !forced,
+        "SIGTERM should stop the contract shell within grace"
+    );
     assert!(child.try_wait().expect("child status").is_some());
 }
