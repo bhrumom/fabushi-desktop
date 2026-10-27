@@ -699,6 +699,120 @@ fn test_ocrm_plugin_sdk_channel_config_and_ui_hints() {
     assert_eq!(normalize_channel_dm_policy("whitelist"), "allowlist");
 }
 
+#[test]
+fn test_ocrm_plugin_sdk_channel_dm_policy_and_entry_contract() {
+    use mahayana_host_runtime::extensions::plugin_sdk::channel_dm_policy::ChannelDmPolicyDescriptor;
+    use mahayana_host_runtime::extensions::plugin_sdk::channel_entry::{
+        build_channel_outbound_session_route, clear_account_entry_fields,
+        parse_optional_delimited_entries, recover_current_thread_session_id,
+        strip_channel_target_prefix, strip_target_kind_prefix, BundledChannelEntryContract,
+        PluginRegistrationMode, WireRecorder,
+    };
+    use serde_json::json;
+
+    // 1. Channel DM Policy descriptor
+    let dm_policy = ChannelDmPolicyDescriptor::new("Telegram", "telegram");
+    let cfg = json!({});
+
+    let root_keys = dm_policy.resolve_config_keys(&cfg, None);
+    assert_eq!(root_keys.policy_key, "channels.telegram.dmPolicy");
+    assert_eq!(root_keys.allow_from_key, "channels.telegram.allowFrom");
+
+    let account_keys = dm_policy.resolve_config_keys(&cfg, Some("work"));
+    assert_eq!(account_keys.policy_key, "channels.telegram.accounts.work.dmPolicy");
+    assert_eq!(account_keys.allow_from_key, "channels.telegram.accounts.work.allowFrom");
+
+    // Default get_current is "pairing"
+    assert_eq!(dm_policy.get_current(&cfg, None), "pairing");
+
+    // Setting policy to "open" injects wildcard
+    let mut mutate_cfg = json!({
+        "channels": {
+            "telegram": {
+                "allowFrom": ["123"]
+            }
+        }
+    });
+    dm_policy.set_policy(&mut mutate_cfg, "open", None);
+    assert_eq!(
+        mutate_cfg["channels"]["telegram"]["dmPolicy"],
+        "open"
+    );
+    assert_eq!(
+        mutate_cfg["channels"]["telegram"]["allowFrom"],
+        json!(["123", "*"])
+    );
+
+    // Custom paths (e.g. matrix nested)
+    let matrix_dm = ChannelDmPolicyDescriptor::new("Matrix", "matrix")
+        .with_custom_paths("dm.policy", "dm.allowFrom");
+    assert_eq!(matrix_dm.policy_key, "channels.matrix.dm.policy");
+    assert_eq!(matrix_dm.allow_from_key, "channels.matrix.dm.allowFrom");
+
+    let mut matrix_cfg = json!({});
+    matrix_dm.set_policy(&mut matrix_cfg, "open", None);
+    assert_eq!(
+        matrix_cfg["channels"]["matrix"]["dm"]["policy"],
+        "open"
+    );
+    assert_eq!(
+        matrix_cfg["channels"]["matrix"]["dm"]["allowFrom"],
+        json!(["*"])
+    );
+
+    // 2. Outbound Session Route & String Helpers
+    let route = build_channel_outbound_session_route("slack", "slack:C12345", Some("thread-99"));
+    assert_eq!(route.channel, "slack");
+    assert_eq!(route.target, "C12345");
+    assert_eq!(route.session_key, "slack:C12345:thread:thread-99");
+    assert_eq!(route.thread_id.as_deref(), Some("thread-99"));
+
+    assert_eq!(strip_channel_target_prefix("Telegram:9876", "telegram"), "9876");
+    assert_eq!(strip_target_kind_prefix("user:alice"), "alice");
+    assert_eq!(
+        recover_current_thread_session_id("slack:C12345:thread:999"),
+        Some("999".to_string())
+    );
+    assert_eq!(recover_current_thread_session_id("slack:C12345"), None);
+
+    // 3. Delimited entry parsing
+    let parsed = parse_optional_delimited_entries(Some("apple, banana; cherry\norange"));
+    assert_eq!(parsed, vec!["apple", "banana", "cherry", "orange"]);
+    assert!(parse_optional_delimited_entries(None).is_empty());
+
+    // 4. Clear account fields
+    let mut entry_map = serde_json::Map::new();
+    entry_map.insert("token".to_string(), json!("secret"));
+    entry_map.insert("appId".to_string(), json!("app-1"));
+    entry_map.insert("name".to_string(), json!("telegram"));
+    let cleared = clear_account_entry_fields(&mut entry_map, &["token", "appId"]);
+    assert_eq!(cleared, 2);
+    assert_eq!(entry_map.len(), 1);
+    assert!(entry_map.contains_key("name"));
+
+    // 5. Entry Contract Registration Dispatch
+    let contract = BundledChannelEntryContract::new("demo", "Demo Channel", "A test channel")
+        .with_handler(|mode| match mode {
+            PluginRegistrationMode::Full => vec!["registered_full".to_string()],
+            PluginRegistrationMode::CliMetadata => vec!["registered_cli".to_string()],
+            PluginRegistrationMode::Capabilities => vec!["registered_cap".to_string()],
+            PluginRegistrationMode::SetupOnly => vec!["registered_setup".to_string()],
+        });
+
+    assert_eq!(contract.register(PluginRegistrationMode::Full), vec!["registered_full"]);
+    assert_eq!(contract.register(PluginRegistrationMode::CliMetadata), vec!["registered_cli"]);
+
+    // 6. Wire Recorder
+    let mut recorder = WireRecorder::new();
+    assert!(recorder.is_empty());
+    recorder.record("inbound", "message", "Hello bot");
+    recorder.record("outbound", "reply", "Hello user");
+    assert_eq!(recorder.events().len(), 2);
+    assert_eq!(recorder.events()[0].direction, "inbound");
+    assert_eq!(recorder.events()[1].direction, "outbound");
+}
+
+
 
 
 

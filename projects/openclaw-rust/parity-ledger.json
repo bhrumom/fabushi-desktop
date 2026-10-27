@@ -10,10 +10,10 @@
     "ui_accepted": false
   },
   "file_coverage": {
-    "mapped_paths": 775,
+    "mapped_paths": 785,
     "omitted_known": 0,
     "tracked_paths": 58750,
-    "unclassified_paths": 57975
+    "unclassified_paths": 57965
   },
   "inventory_authority": {
     "manifest_source": "GitHub Actions immutable artifact candidate",
@@ -24655,6 +24655,118 @@
         "ensure_open_dm_policy_allow_from_wildcard"
       ],
       "unit_id": "OCRM-UNIT-PLUGIN-SDK-CHANNEL-CONFIG-001"
+    },
+    {
+      "adr_refs": [],
+      "behavior": "Plugin SDK channel entry contract and lifecycle, registration modes (full, cli-metadata, capabilities, setup-only), account-aware setup wizard DM policy descriptor with wildcard open injection, outbound session route synthesis, target prefix stripping, thread session recovery, and delivery trace testkit harness.",
+      "blocker_ids": [],
+      "capability_ids": [
+        "plugin_sdk.channel_entry",
+        "plugin_sdk.channel_dm_policy"
+      ],
+      "dependencies": [
+        "mahayana_host_runtime::extensions::plugin_sdk::channel_dm_policy",
+        "mahayana_host_runtime::extensions::plugin_sdk::channel_entry"
+      ],
+      "evidence_refs": [
+        "source/host/tests/openclaw_plugin_sdk_contract.rs",
+        "projects/openclaw-rust/dossiers/plugin-sdk-channel-entry-and-dm-policy-scoped.md"
+      ],
+      "existing_owner_candidates": [
+        {
+          "path": "source/host/src/extensions/plugin_sdk/channel_dm_policy.rs",
+          "reason": "Host native channel setup DM policy descriptor and account key resolver"
+        },
+        {
+          "path": "source/host/src/extensions/plugin_sdk/channel_entry.rs",
+          "reason": "Host native bundled channel entry contract, outbound session routing, and trace recorder"
+        }
+      ],
+      "id": "OCRM-RESP-PLUGIN-SDK-CHANNEL-ENTRY-001",
+      "integration": {
+        "consumer": "source/host/src/extensions/plugin_sdk/mod.rs",
+        "entrypoint": "source/host/src/extensions/plugin_sdk/mod.rs",
+        "owner": "source/host/src/extensions/plugin_sdk/mod.rs",
+        "producer": "source/host/src/extensions/plugin_sdk/mod.rs"
+      },
+      "invariants": [
+        "Bundled channel registration cleanly segregates registration modes",
+        "Setup wizard DM policy descriptor injects wildcard * when switching to open policy",
+        "Outbound session routing correctly canonicalizes channel prefixes and thread IDs",
+        "Wire recorder maintains chronological order and direction of delivery trace events"
+      ],
+      "migration_rollback": "Fallback to unverified channel entry definitions and unmanaged DM setup policies",
+      "oracle_ids": [
+        "OCRM-PLUGIN-SDK-CHANNEL-ENTRY-O01"
+      ],
+      "owner_decision": "Unified native plugin SDK infrastructure in extensions::plugin_sdk",
+      "postconditions": [
+        "Channel entry contract definition dispatches registration modes accurately",
+        "DM policy setup wizard correctly builds account patches",
+        "Outbound routes formatted with exact channel and thread structure"
+      ],
+      "preconditions": [
+        "Valid channel entry parameters and channel identifier"
+      ],
+      "required_evidence_dimensions": [
+        "unit",
+        "integration"
+      ],
+      "required_gate_ids": [
+        "OCRM-G04-rust-contract"
+      ],
+      "requirement_ids": [
+        "OCRM-R28",
+        "OCRM-AC28"
+      ],
+      "responsibility_kind": "business-runtime",
+      "reviewer": "xuyao@ombhrum.com",
+      "risk": "Low; channel entry lifecycle contract and setup wizard DM policy",
+      "selected_owner": "source/host/src/extensions/plugin_sdk/mod.rs",
+      "source_refs": [
+        {
+          "blob_sha": "d027f6a70e70415a72013f99e320478aa6c74ad3",
+          "path": "src/plugin-sdk/channel-entry-contract.ts",
+          "range": {
+            "end_line": 613,
+            "start_line": 1
+          },
+          "symbol": "defineBundledChannelEntry"
+        },
+        {
+          "blob_sha": "c135da4bb4851eb329a272782b79a78feeb111da",
+          "path": "src/plugin-sdk/channel-dm-policy.ts",
+          "range": {
+            "end_line": 120,
+            "start_line": 1
+          },
+          "symbol": "createChannelDmPolicy"
+        }
+      ],
+      "status": {
+        "acceptance": "pending",
+        "implementation": "implemented",
+        "mapping": "reviewed",
+        "read": "read-complete",
+        "verification": "not-run",
+        "wiring": "not-wired"
+      },
+      "target": {
+        "language": "Rust",
+        "path": "source/host/src/extensions/plugin_sdk/channel_entry.rs",
+        "symbol": "BundledChannelEntryContract"
+      },
+      "tests": [
+        "source/host/tests/openclaw_plugin_sdk_contract.rs::test_ocrm_plugin_sdk_channel_dm_policy_and_entry_contract"
+      ],
+      "typed_contracts": [
+        "BundledChannelEntryContract",
+        "ChannelDmPolicyDescriptor",
+        "build_channel_outbound_session_route",
+        "strip_channel_target_prefix",
+        "recover_current_thread_session_id"
+      ],
+      "unit_id": "OCRM-UNIT-PLUGIN-SDK-CHANNEL-ENTRY-001"
     }
   ],
   "schema_version": 1,
