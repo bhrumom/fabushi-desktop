@@ -411,6 +411,42 @@ fn test_ocrm_snapshot_postgres_manifest_schema_and_profile_oracles() {
         "messages;DROP TABLE users",
     )
     .is_err());
+    let schema = mahayana_host_runtime::extensions::snapshot::git_backup_manager::render_sqlite_schema(
+        vec![
+            mahayana_host_runtime::extensions::snapshot::git_backup_manager::SqliteSchemaEntry {
+                kind: "trigger".into(),
+                name: "z_trigger".into(),
+                sql: "CREATE TRIGGER z_trigger".into(),
+            },
+            mahayana_host_runtime::extensions::snapshot::git_backup_manager::SqliteSchemaEntry {
+                kind: "table".into(),
+                name: "a_table".into(),
+                sql: "CREATE TABLE a_table;".into(),
+            },
+            mahayana_host_runtime::extensions::snapshot::git_backup_manager::SqliteSchemaEntry {
+                kind: "index".into(),
+                name: "m_index".into(),
+                sql: "CREATE INDEX m_index".into(),
+            },
+        ],
+        7,
+    )
+    .expect("deterministic schema text");
+    assert_eq!(
+        schema,
+        "CREATE TABLE a_table;\n\nCREATE INDEX m_index;\n\nCREATE TRIGGER z_trigger;\n\n-- PRAGMA user_version = 7\n"
+    );
+    assert!(mahayana_host_runtime::extensions::snapshot::git_backup_manager::render_sqlite_schema(
+        vec![
+            mahayana_host_runtime::extensions::snapshot::git_backup_manager::SqliteSchemaEntry {
+                kind: "view".into(),
+                name: "unsafe".into(),
+                sql: "CREATE VIEW unsafe".into(),
+            },
+        ],
+        1,
+    )
+    .is_err());
 }
 
 #[test]

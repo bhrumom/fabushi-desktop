@@ -36,6 +36,50 @@ pub fn validate_sqlite_table_name(value: &str) -> Result<(), String> {
     Ok(())
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct SqliteSchemaEntry {
+    pub kind: String,
+    pub name: String,
+    pub sql: String,
+}
+
+pub fn render_sqlite_schema(
+    mut entries: Vec<SqliteSchemaEntry>,
+    user_version: u32,
+) -> Result<String, String> {
+    for entry in &entries {
+        if !matches!(entry.kind.as_str(), "table" | "index" | "trigger") {
+            return Err(format!(
+                "unsupported SQLite schema entry kind: {}",
+                entry.kind
+            ));
+        }
+        if entry.sql.trim().is_empty() {
+            return Err(format!("SQLite schema entry has no SQL: {}", entry.name));
+        }
+    }
+    entries.sort_by_key(|entry| {
+        (
+            match entry.kind.as_str() {
+                "table" => 0_u8,
+                "index" => 1,
+                _ => 2,
+            },
+            entry.name.clone(),
+        )
+    });
+    let mut output = String::new();
+    for entry in entries {
+        output.push_str(entry.sql.trim_end());
+        if !output.ends_with(';') {
+            output.push(';');
+        }
+        output.push_str("\n\n");
+    }
+    output.push_str(&format!("-- PRAGMA user_version = {user_version}\n"));
+    Ok(output)
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SnapshotExportEnvelope {
     pub version: u32,
