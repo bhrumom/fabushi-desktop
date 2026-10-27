@@ -10,7 +10,8 @@ use mahayana_host_runtime::extensions::plugins::bundle_manifest::{
     DEFAULT_MAX_ENTRIES, DEFAULT_MAX_EXTRACTED_BYTES,
 };
 use mahayana_host_runtime::extensions::plugins::capability_catalog::{
-    CapabilityProviderEntry, ChannelCatalogEntry, PluginCapabilityCatalog, PluginOrigin,
+    CapabilityProviderEntry, ChannelCatalogEntry, PluginCapabilityCatalog,
+    PluginContractRegistryEntry, PluginOrigin, ProviderAuthChoice,
     CAPABILITY_FAMILY_SPEECH_PROVIDERS, CAPABILITY_FAMILY_TRANSCRIPTION_PROVIDERS,
 };
 
@@ -159,4 +160,123 @@ fn test_ocrm_plugins_capability_catalog() {
     let channel = catalog.get_channel("DISCORD").expect("Channel lookup");
     assert_eq!(channel.plugin_id, "discord-plugin");
     assert!(channel.trusted_official_install);
+}
+
+#[test]
+fn test_ocrm_plugins_contract_registry_oracle() {
+    // Tests equivalent behavior from upstream src/plugins/contracts/registry.contract.test.ts
+    let catalog = PluginCapabilityCatalog::new();
+
+    // 1. Canonical-first aliases oracle
+    catalog.register_canonical_aliases(
+        "azure-speech:speechProviderIds",
+        vec!["azure-speech".to_string(), "azure".to_string()],
+    );
+    catalog.register_canonical_aliases(
+        "volcengine:speechProviderIds",
+        vec!["volcengine".to_string(), "bytedance".to_string(), "doubao".to_string()],
+    );
+    catalog.register_canonical_aliases(
+        "xai:realtimeVoiceProviderIds",
+        vec!["xai".to_string(), "grok-voice".to_string(), "xai-realtime-voice".to_string()],
+    );
+
+    assert_eq!(
+        catalog.get_canonical_aliases("azure-speech:speechProviderIds"),
+        Some(vec!["azure-speech".to_string(), "azure".to_string()])
+    );
+    assert_eq!(
+        catalog.get_canonical_aliases("volcengine:speechProviderIds"),
+        Some(vec!["volcengine".to_string(), "bytedance".to_string(), "doubao".to_string()])
+    );
+    assert_eq!(
+        catalog.get_canonical_aliases("xai:realtimeVoiceProviderIds"),
+        Some(vec!["xai".to_string(), "grok-voice".to_string(), "xai-realtime-voice".to_string()])
+    );
+
+    // 2. Provider ID uniqueness validator
+    let valid_entries = vec![
+        PluginContractRegistryEntry {
+            plugin_id: "plugin-a".to_string(),
+            provider_ids: vec!["provider-1".to_string(), "provider-2".to_string()],
+            worker_provider_ids: vec![],
+            web_fetch_provider_ids: vec![],
+            web_search_provider_ids: vec![],
+            speech_provider_ids: vec![],
+            realtime_voice_provider_ids: vec![],
+            realtime_transcription_provider_ids: vec![],
+            image_generation_provider_ids: vec![],
+        },
+        PluginContractRegistryEntry {
+            plugin_id: "plugin-b".to_string(),
+            provider_ids: vec!["provider-3".to_string()],
+            worker_provider_ids: vec![],
+            web_fetch_provider_ids: vec![],
+            web_search_provider_ids: vec![],
+            speech_provider_ids: vec![],
+            realtime_voice_provider_ids: vec![],
+            realtime_transcription_provider_ids: vec![],
+            image_generation_provider_ids: vec![],
+        },
+    ];
+    assert!(PluginCapabilityCatalog::validate_unique_provider_ids(&valid_entries).is_ok());
+
+    let duplicate_entries = vec![
+        PluginContractRegistryEntry {
+            plugin_id: "plugin-a".to_string(),
+            provider_ids: vec!["provider-dup".to_string()],
+            worker_provider_ids: vec![],
+            web_fetch_provider_ids: vec![],
+            web_search_provider_ids: vec![],
+            speech_provider_ids: vec![],
+            realtime_voice_provider_ids: vec![],
+            realtime_transcription_provider_ids: vec![],
+            image_generation_provider_ids: vec![],
+        },
+        PluginContractRegistryEntry {
+            plugin_id: "plugin-b".to_string(),
+            provider_ids: vec!["provider-dup".to_string()],
+            worker_provider_ids: vec![],
+            web_fetch_provider_ids: vec![],
+            web_search_provider_ids: vec![],
+            speech_provider_ids: vec![],
+            realtime_voice_provider_ids: vec![],
+            realtime_transcription_provider_ids: vec![],
+            image_generation_provider_ids: vec![],
+        },
+    ];
+    assert!(PluginCapabilityCatalog::validate_unique_provider_ids(&duplicate_entries).is_err());
+
+    // 3. Onboarding separation: video/image-only provider auth choices kept out of text onboarding
+    catalog.register_auth_choice(ProviderAuthChoice {
+        provider: "alibaba".to_string(),
+        method: "api-key".to_string(),
+        choice_id: "alibaba-model-studio-api-key".to_string(),
+        choice_label: "Alibaba Model Studio API key".to_string(),
+        onboarding_scopes: vec!["image-generation".to_string()],
+        cli_flag: Some("--alibaba-model-studio-api-key".to_string()),
+        option_key: Some("alibabaModelStudioApiKey".to_string()),
+    });
+    catalog.register_auth_choice(ProviderAuthChoice {
+        provider: "github-copilot".to_string(),
+        method: "device".to_string(),
+        choice_id: "github-copilot".to_string(),
+        choice_label: "GitHub Copilot".to_string(),
+        onboarding_scopes: vec!["text-chat".to_string(), "code".to_string()],
+        cli_flag: Some("--github-copilot-token".to_string()),
+        option_key: Some("githubCopilotToken".to_string()),
+    });
+
+    let filtered = catalog.filter_text_onboarding_auth_choices();
+    assert_eq!(filtered.len(), 1);
+    assert_eq!(filtered[0].provider, "github-copilot");
+
+    // 4. Shared resolver for web search with activation-scoped overrides
+    let bundled_search = vec!["bing".to_string(), "google".to_string(), "duckduckgo".to_string()];
+    let activation_scoped = vec!["codex".to_string(), "qa-lab".to_string()];
+    let resolved_search = PluginCapabilityCatalog::resolve_web_search_providers(&bundled_search, &activation_scoped);
+    assert_eq!(
+        resolved_search,
+        vec!["bing", "codex", "duckduckgo", "google", "qa-lab"]
+    );
 }

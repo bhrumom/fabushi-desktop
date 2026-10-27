@@ -1,5 +1,5 @@
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::sync::{Arc, Mutex};
 
 pub const CAPABILITY_FAMILY_SPEECH_PROVIDERS: &str = "speechProviders";
@@ -30,10 +30,36 @@ pub struct ChannelCatalogEntry {
     pub trusted_official_install: bool,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ProviderAuthChoice {
+    pub provider: String,
+    pub method: String,
+    pub choice_id: String,
+    pub choice_label: String,
+    pub onboarding_scopes: Vec<String>,
+    pub cli_flag: Option<String>,
+    pub option_key: Option<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct PluginContractRegistryEntry {
+    pub plugin_id: String,
+    pub provider_ids: Vec<String>,
+    pub worker_provider_ids: Vec<String>,
+    pub web_fetch_provider_ids: Vec<String>,
+    pub web_search_provider_ids: Vec<String>,
+    pub speech_provider_ids: Vec<String>,
+    pub realtime_voice_provider_ids: Vec<String>,
+    pub realtime_transcription_provider_ids: Vec<String>,
+    pub image_generation_provider_ids: Vec<String>,
+}
+
 #[derive(Clone, Default)]
 pub struct PluginCapabilityCatalog {
     capabilities: Arc<Mutex<HashMap<(String, String), CapabilityProviderEntry>>>,
     channels: Arc<Mutex<HashMap<String, ChannelCatalogEntry>>>,
+    canonical_aliases: Arc<Mutex<HashMap<String, Vec<String>>>>,
+    auth_choices: Arc<Mutex<Vec<ProviderAuthChoice>>>,
 }
 
 impl PluginCapabilityCatalog {
@@ -71,5 +97,66 @@ impl PluginCapabilityCatalog {
         let key = channel_name.to_ascii_lowercase();
         let channels = self.channels.lock().unwrap();
         channels.get(&key).cloned()
+    }
+
+    pub fn register_canonical_aliases(&self, key: &str, aliases: Vec<String>) {
+        let mut map = self.canonical_aliases.lock().unwrap();
+        map.insert(key.to_string(), aliases);
+    }
+
+    pub fn get_canonical_aliases(&self, key: &str) -> Option<Vec<String>> {
+        let map = self.canonical_aliases.lock().unwrap();
+        map.get(key).cloned()
+    }
+
+    pub fn register_auth_choice(&self, choice: ProviderAuthChoice) {
+        let mut list = self.auth_choices.lock().unwrap();
+        list.push(choice);
+    }
+
+    pub fn filter_text_onboarding_auth_choices(&self) -> Vec<ProviderAuthChoice> {
+        let list = self.auth_choices.lock().unwrap();
+        list.iter()
+            .filter(|choice| {
+                // If onboarding scopes are strictly limited to image-generation or video, exclude from text onboarding
+                if choice.onboarding_scopes.len() == 1 && choice.onboarding_scopes[0] == "image-generation" {
+                    return false;
+                }
+                true
+            })
+            .cloned()
+            .collect()
+    }
+
+    pub fn validate_unique_provider_ids(entries: &[PluginContractRegistryEntry]) -> Result<(), String> {
+        let mut seen_providers = HashSet::new();
+        for entry in entries {
+            for pid in &entry.provider_ids {
+                if !seen_providers.insert(pid.clone()) {
+                    return Err(format!("Duplicate provider id: {}", pid));
+                }
+            }
+        }
+        Ok(())
+    }
+
+    pub fn resolve_web_search_providers(
+        bundled: &[String],
+        activation_scoped: &[String],
+    ) -> Vec<String> {
+        let mut result = Vec::new();
+        let mut seen = HashSet::new();
+        for id in bundled {
+            if !activation_scoped.contains(id) && seen.insert(id.clone()) {
+                result.push(id.clone());
+            }
+        }
+        for id in activation_scoped {
+            if seen.insert(id.clone()) {
+                result.push(id.clone());
+            }
+        }
+        result.sort();
+        result
     }
 }

@@ -1,7 +1,7 @@
 # Plugin SDK Core, Channel Runtime, Approval Security, Session Memory & Tool Runtime Dossier
 
 ## 1. Scope and Responsibilities
-- **Scope**: All remaining 728 files in `src/plugin-sdk/` within `projects/openclaw-rust/inventory/shards/part-0043.jsonl.gz`, bringing `src/plugin-sdk/` to **100% full coverage (768/768 files)**.
+- **Scope**: Native Rust host runtime extensions and contract tests for Plugin SDK channel runtime, approval security, session memory catalog, and tool schema validation. Bulk shard coverage claims for `src/plugin-sdk/` have been revoked and downgraded to unread/unclassified pending individual per-file reading per Spec §6.2-6.3.
 - **Upstream Commit**: `ad8d12f126d29b0db204187adf5092db80294e70` (tree `04ccce62f1d74dc8e0c88290ae8ded027b7b0f16`).
 - **Mapped Responsibilities**:
   1. `OCRM-RESP-PLUGIN-SDK-CHANNEL-RUNTIME-001`: Channel Config Primitives, Replay Guard, Ingress/Outbound Pipeline & Debounce.

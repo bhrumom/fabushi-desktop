@@ -1,12 +1,7 @@
 # Snapshot Backup Codec, Skills Runtime & Session Turns Dossier
 
 ## 1. Scope and Responsibilities
-- **Scope**: All 1,024 files in `projects/openclaw-rust/inventory/shards/part-0046.jsonl.gz`, achieving **100% full coverage of shard `part-0046.jsonl.gz` (1024 / 1024 paths, 0 unclassified)**:
-  - `src/shared/` (293 files, completing **100% across repository**)
-  - `src/skills/` (255 files, completing **100% across repository**)
-  - `src/sessions/` (179 files, completing **100% across repository**, 214 total)
-  - `src/snapshot/` (36 files, completing **100% across repository**)
-  - `src/state/` (261 files)
+- **Scope**: Native Rust host runtime extensions and contract tests for snapshot backup codecs, skills markdown runtime, session turn controllers, and shared async work trackers. Bulk shard coverage claims for `part-0046.jsonl.gz` have been revoked and downgraded to unread/unclassified pending individual per-file reading per Spec §6.2-6.3.
 - **Upstream Commit**: `ad8d12f126d29b0db204187adf5092db80294e70` (tree `04ccce62f1d74dc8e0c88290ae8ded027b7b0f16`).
 - **Mapped Responsibilities**:
   1. `OCRM-RESP-SNAPSHOT-BACKUP-CODEC-001`: Snapshot Export Envelope V1, Database Backup Codec, and Git Backup Manifest Integrity.

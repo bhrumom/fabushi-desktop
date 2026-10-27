@@ -1,7 +1,7 @@
 # Plugins Runtime, Bundle Manifest, Activation Planner & Capability Catalog Dossier
 
 ## 1. Scope and Responsibilities
-- **Scope**: All remaining 236 files in `src/plugins/` within `projects/openclaw-rust/inventory/shards/part-0043.jsonl.gz`, completing **100% of shard `part-0043.jsonl.gz` (1024 / 1024 paths, 0 unclassified)**.
+- **Scope**: Native Rust host runtime extensions and contract tests for bundle manifests, activation planners, and capability provider catalogs. Bulk shard coverage claims for `src/plugins/` have been revoked and downgraded to unread/unclassified pending individual per-file reading per Spec §6.2-6.3.
 - **Upstream Commit**: `ad8d12f126d29b0db204187adf5092db80294e70` (tree `04ccce62f1d74dc8e0c88290ae8ded027b7b0f16`).
 - **Mapped Responsibilities**:
   1. `OCRM-RESP-PLUGINS-BUNDLE-MANIFEST-001`: Bundle Manifest Format Resolution, ClawHub Spec Parser, Archive Limits & Integrity.

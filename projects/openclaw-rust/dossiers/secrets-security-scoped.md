@@ -1,17 +1,7 @@
 # Secrets Audit, Security Policy & Proxy Header Redaction Dossier
 
 ## 1. Scope and Responsibilities
-- **Scope**: All 483 remaining files in `projects/openclaw-rust/inventory/shards/part-0045.jsonl.gz`, achieving **100% full coverage of shard `part-0045.jsonl.gz` (1024 / 1024 paths, 0 unclassified)**:
-  - `src/secrets/` (237 files, completing **100% across repository**)
-  - `src/security/` (89 files, completing **100% across repository**)
-  - `src/proxy-capture/` (43 files, completing **100% across repository**)
-  - `src/sessions/` (35 files)
-  - `src/routing/` (23 files, completing **100% across repository**)
-  - `src/projects/` (17 files, completing **100% across repository**)
-  - `src/scripts/` (14 files, completing **100% across repository**)
-  - `src/session-cards/` (12 files, completing **100% across repository**)
-  - `src/realtime-transcription/` (5 files, completing **100% across repository**)
-  - Root/runtime helpers (8 files)
+- **Scope**: Native Rust host runtime extensions and contract tests for secrets residue audit manager, security execution binary allowlist and symlink protection auditor, and proxy capture HTTP header redaction. Bulk shard coverage claims for `part-0045.jsonl.gz` have been revoked and downgraded to unread/unclassified pending individual per-file reading per Spec §6.2-6.3.
 - **Upstream Commit**: `ad8d12f126d29b0db204187adf5092db80294e70` (tree `04ccce62f1d74dc8e0c88290ae8ded027b7b0f16`).
 - **Mapped Responsibilities**:
   1. `OCRM-RESP-SECRETS-AUDIT-APPLY-001`: Plaintext Secret Residue Detection, Audit Findings, and Channel Credential Environment Variable Map.

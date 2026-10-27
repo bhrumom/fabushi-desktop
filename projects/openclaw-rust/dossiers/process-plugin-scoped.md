@@ -1,9 +1,7 @@
 # Process Custody, Bounded Line Framer & Plugins Final Lifecycle Dossier
 
 ## 1. Scope and Responsibilities
-- **Scope**:
-  - The final 307 files in `src/plugins/` within `projects/openclaw-rust/inventory/shards/part-0045.jsonl.gz`, achieving **100% full coverage of the entire `src/plugins/` directory (1,567 / 1,567 files)** across the repository.
-  - All 234 files in `src/process/` within `part-0045.jsonl.gz`, achieving **100% full coverage of the entire `src/process/` directory (234 / 234 files)** across the repository.
+- **Scope**: Native Rust host runtime extensions and contract tests for process custody execution, bounded line framing, child process tree termination, and plugin runtime uninstallation receipts. Bulk shard coverage claims for `src/plugins/` and `src/process/` have been revoked and downgraded to unread/unclassified pending individual per-file reading per Spec §6.2-6.3.
 - **Upstream Commit**: `ad8d12f126d29b0db204187adf5092db80294e70` (tree `04ccce62f1d74dc8e0c88290ae8ded027b7b0f16`).
 - **Mapped Responsibilities**:
   1. `OCRM-RESP-PLUGINS-RUNTIME-FINAL-001`: Plugin Runtime Finalization, Uninstallation Receipts, Status Reporting & Setup Wizards.
