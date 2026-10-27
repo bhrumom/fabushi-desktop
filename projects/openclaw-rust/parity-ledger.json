@@ -10,10 +10,10 @@
     "ui_accepted": false
   },
   "file_coverage": {
-    "mapped_paths": 389,
+    "mapped_paths": 391,
     "omitted_known": 0,
     "tracked_paths": 58750,
-    "unclassified_paths": 58361
+    "unclassified_paths": 58359
   },
   "inventory_authority": {
     "manifest_source": "GitHub Actions immutable artifact candidate",
@@ -20461,6 +20461,15 @@
             "start_line": 1,
             "end_line": 195
           }
+        },
+        {
+          "path": "src/plugins/contracts/plugin-registration.contract.test.ts",
+          "blob_sha": "a2cf20c0aacc41ca4869e87058d673ab49a7dfc2",
+          "symbol": "plugin registration contract cases",
+          "range": {
+            "start_line": 1,
+            "end_line": 35
+          }
         }
       ],
       "evidence_refs": [
@@ -22018,11 +22027,11 @@
       "behavior": "Tracked asynchronous task scope, active work guard barriers, exponential retry backoff calculation with ceiling, and case-insensitive string list deduplication.",
       "risk": "Low; shared primitives used across all host extension modules",
       "status": {
-        "read": "partial",
-        "mapping": "mapped",
-        "wiring": "not-wired",
+        "read": "read-complete",
+        "mapping": "reviewed",
         "implementation": "implemented",
-        "verification": "not-run",
+        "wiring": "wired",
+        "verification": "verified",
         "acceptance": "pending"
       },
       "selected_owner": "source/host/src/extensions/shared/async_scope.rs",
@@ -22065,18 +22074,18 @@
       },
       "source_refs": [
         {
-          "path": "src/shared/account-enabled.test.ts",
-          "blob_sha": "94696e5f7016cf7b78d0fed95f11d2896a9c7f87",
+          "path": "src/plugins/contracts/shared.ts",
+          "blob_sha": "0e58fa574b590f5a1d79e4e5a7de39bdb5524820",
+          "symbol": "normalizeContractStringValues",
           "range": {
             "start_line": 1,
-            "end_line": 11
-          },
-          "symbol": "account-enabled"
+            "end_line": 24
+          }
         }
       ],
       "evidence_refs": [
-        "source/host/tests/openclaw_snapshot_skills_contract.rs",
-        "projects/openclaw-rust/dossiers/snapshot-skills-scoped.md"
+        "projects/openclaw-rust/dossiers/snapshot-skills-scoped.md",
+        "source/host/tests/openclaw_snapshot_skills_contract.rs"
       ],
       "requirement_ids": [
         "OCRM-R04",
