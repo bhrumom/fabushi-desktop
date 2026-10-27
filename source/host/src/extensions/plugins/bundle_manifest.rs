@@ -308,3 +308,155 @@ impl VirtualTestPluginHarness {
         }
     }
 }
+
+// Bundled Plugin Roots, Host Hook Fixtures, and Subpath Bundle Validator
+// (from host-hook-fixture.ts, test-helpers/host-hook-ui-projection.ts,
+//  test-helpers/bundled-plugin-roots.ts, and plugin-sdk-index.bundle.test.ts)
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct HostHookUiDescriptor {
+    pub id: String,
+    pub plugin_id: String,
+    pub plugin_name: String,
+    pub surface: String,
+    pub label: String,
+    pub required_scopes: Vec<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct HostHookUiProjection {
+    pub ok: bool,
+    pub generation: usize,
+    pub methods: Vec<String>,
+    pub control_ui_tabs: Vec<String>,
+    pub control_ui_widget_kinds: Vec<(String, String, String)>,
+    pub descriptors: Vec<HostHookUiDescriptor>,
+}
+
+impl HostHookUiProjection {
+    pub fn build(generation: usize) -> Self {
+        Self {
+            ok: true,
+            generation,
+            methods: vec![
+                "plugins.uiDescriptors".to_string(),
+                "plugins.sessionAction".to_string(),
+            ],
+            control_ui_tabs: Vec::new(),
+            control_ui_widget_kinds: vec![
+                ("session".to_string(), "session:report".to_string(), "Report".to_string()),
+                ("session".to_string(), "session:progress".to_string(), "Session progress".to_string()),
+                ("session".to_string(), "session:website".to_string(), "Website".to_string()),
+            ],
+            descriptors: vec![
+                HostHookUiDescriptor {
+                    id: "admin-panel".to_string(),
+                    plugin_id: "host-hook-fixture".to_string(),
+                    plugin_name: "Host Hook Fixture".to_string(),
+                    surface: "settings".to_string(),
+                    label: "Admin panel".to_string(),
+                    required_scopes: vec!["operator.admin".to_string()],
+                },
+                HostHookUiDescriptor {
+                    id: "approval-panel".to_string(),
+                    plugin_id: "host-hook-fixture".to_string(),
+                    plugin_name: "Host Hook Fixture".to_string(),
+                    surface: "session".to_string(),
+                    label: "Approval panel".to_string(),
+                    required_scopes: Vec::new(),
+                },
+            ],
+        }
+    }
+}
+
+#[derive(Debug, Clone, Default)]
+pub struct HostHookFixturePlugin {
+    pub session_extensions: Vec<String>,
+    pub tool_metadata_names: Vec<String>,
+    pub control_ui_descriptors: Vec<String>,
+    pub lifecycle_hooks: Vec<String>,
+    pub agent_event_subscriptions: Vec<String>,
+    pub session_scheduler_jobs: Vec<String>,
+    pub command_names: Vec<String>,
+}
+
+impl HostHookFixturePlugin {
+    pub fn register_fixture_defaults() -> Self {
+        Self {
+            session_extensions: vec!["workflow".to_string()],
+            tool_metadata_names: vec!["approval_fixture_tool".to_string()],
+            control_ui_descriptors: vec!["workflow-card".to_string()],
+            lifecycle_hooks: vec!["workflow-cleanup".to_string()],
+            agent_event_subscriptions: vec!["workflow-events".to_string()],
+            session_scheduler_jobs: vec!["workflow-nudge".to_string()],
+            command_names: vec!["host-hook-fixture".to_string()],
+        }
+    }
+
+    pub fn execute_command(&self, args: Option<&str>) -> (String, bool) {
+        (format!("fixture:{}", args.unwrap_or("empty")), true)
+    }
+
+    pub fn turn_prepare_context() -> &'static str {
+        "fixture turn context"
+    }
+
+    pub fn heartbeat_prompt_contribution() -> &'static str {
+        "fixture heartbeat context"
+    }
+}
+
+pub struct BundledPluginRootsManager {
+    roots: std::collections::HashMap<String, String>,
+}
+
+impl BundledPluginRootsManager {
+    pub fn new(roots: &[(&str, &str)]) -> Self {
+        let mut map = std::collections::HashMap::new();
+        for (id, path) in roots {
+            map.insert(id.to_string(), path.to_string());
+        }
+        Self { roots: map }
+    }
+
+    pub fn resolve_file(&self, plugin_id: &str, rel_path: &str) -> Result<String, String> {
+        let root = self
+            .roots
+            .get(plugin_id)
+            .ok_or_else(|| format!("missing bundled plugin root for {}", plugin_id))?;
+        Ok(format!("{}/{}", root.trim_end_matches('/'), rel_path.trim_start_matches('/')))
+    }
+}
+
+pub struct BundledPluginSubpathValidator;
+
+impl BundledPluginSubpathValidator {
+    pub fn never_bundle_dependencies() -> &'static [&'static str] {
+        &[
+            "@lancedb/lancedb",
+            "@matrix-org/matrix-sdk-crypto-nodejs",
+            "matrix-js-sdk",
+        ]
+    }
+
+    pub fn assert_no_bare_matrix_sdk_imports(sources: &[(&str, &str)]) -> Result<(), Vec<String>> {
+        let mut offenders = Vec::new();
+        for (path, content) in sources {
+            if content.contains("from \"matrix-js-sdk\"")
+                || content.contains("from 'matrix-js-sdk'")
+                || content.contains("require(\"matrix-js-sdk\")")
+                || content.contains("require('matrix-js-sdk')")
+            {
+                offenders.push(path.to_string());
+            }
+        }
+        if offenders.is_empty() {
+            Ok(())
+        } else {
+            offenders.sort();
+            Err(offenders)
+        }
+    }
+}
+

@@ -10,10 +10,10 @@
     "ui_accepted": false
   },
   "file_coverage": {
-    "mapped_paths": 418,
+    "mapped_paths": 425,
     "omitted_known": 0,
     "tracked_paths": 58750,
-    "unclassified_paths": 58332
+    "unclassified_paths": 58325
   },
   "inventory_authority": {
     "manifest_source": "GitHub Actions immutable artifact candidate",
@@ -20489,7 +20489,8 @@
         "verify_sha256_integrity"
       ],
       "tests": [
-        "source/host/tests/openclaw_plugins_contract.rs::test_ocrm_plugins_bundle_manifest"
+        "source/host/tests/openclaw_plugins_contract.rs::test_ocrm_plugins_bundle_manifest",
+        "source/host/tests/openclaw_plugins_contract.rs::test_ocrm_plugins_bundled_capability_metadata_and_subpath_bundle"
       ],
       "integration": {
         "producer": "source/host/src/extensions/plugins/bundle_manifest.rs",
@@ -20551,6 +20552,24 @@
             "end_line": 164
           },
           "symbol": "bundled plugin tool manifest contracts"
+        },
+        {
+          "path": "src/plugins/contracts/plugin-sdk-index.bundle.test.ts",
+          "blob_sha": "10620079bc3e8d4b862fa631cea713db7c1a6007",
+          "range": {
+            "start_line": 1,
+            "end_line": 90
+          },
+          "symbol": "plugin-sdk bundle subpath entries"
+        },
+        {
+          "path": "src/plugins/contracts/test-helpers/bundled-plugin-roots.ts",
+          "blob_sha": "7bf2ec22f8c188338a9926351cdac9a84689e3a3",
+          "range": {
+            "start_line": 1,
+            "end_line": 46
+          },
+          "symbol": "bundled plugin roots resolver"
         }
       ],
       "evidence_refs": [
@@ -20758,7 +20777,8 @@
         "source/host/tests/openclaw_plugins_contract.rs::test_ocrm_plugins_provider_catalog_deprecation_guard",
         "source/host/tests/openclaw_plugins_contract.rs::test_ocrm_plugins_auth_choice_contract",
         "source/host/tests/openclaw_plugins_contract.rs::test_ocrm_plugins_embedding_provider_registration",
-        "source/host/tests/openclaw_plugins_contract.rs::test_ocrm_plugins_wizard_choice_resolution_and_model_picker"
+        "source/host/tests/openclaw_plugins_contract.rs::test_ocrm_plugins_wizard_choice_resolution_and_model_picker",
+        "source/host/tests/openclaw_plugins_contract.rs::test_ocrm_plugins_bundled_capability_metadata_and_subpath_bundle"
       ],
       "integration": {
         "producer": "source/host/src/extensions/plugins/capability_catalog.rs",
@@ -20865,6 +20885,15 @@
             "end_line": 4
           },
           "symbol": "wizard model picker contract"
+        },
+        {
+          "path": "src/plugins/contracts/inventory/bundled-capability-metadata.ts",
+          "blob_sha": "fdb0dfe2fb4a7c4e1396cbca097224fd8adc4dfd",
+          "range": {
+            "start_line": 1,
+            "end_line": 165
+          },
+          "symbol": "bundled capability metadata snapshot"
         }
       ],
       "evidence_refs": [
@@ -21145,7 +21174,8 @@
         "source/host/tests/openclaw_plugins_full_contract.rs::test_ocrm_plugins_hook_runner_and_provider_bridge",
         "source/host/tests/openclaw_plugins_full_contract.rs::test_ocrm_plugins_boundary_invariants",
         "source/host/tests/openclaw_plugins_full_contract.rs::test_ocrm_plugins_agent_event_payload_and_active_run_steering",
-        "source/host/tests/openclaw_plugins_full_contract.rs::test_ocrm_plugins_architectural_boundary_guardrails"
+        "source/host/tests/openclaw_plugins_full_contract.rs::test_ocrm_plugins_architectural_boundary_guardrails",
+        "source/host/tests/openclaw_plugins_contract.rs::test_ocrm_plugins_host_hook_fixture_and_ui_projection"
       ],
       "integration": {
         "producer": "source/host/src/extensions/plugins/hook_runner.rs",
@@ -21225,6 +21255,24 @@
             "end_line": 82
           },
           "symbol": "model catalog core imports"
+        },
+        {
+          "path": "src/plugins/contracts/host-hook-fixture.ts",
+          "blob_sha": "199053d1532e558b73caf0215f53fe47053e3da4",
+          "range": {
+            "start_line": 1,
+            "end_line": 61
+          },
+          "symbol": "host hook fixture double"
+        },
+        {
+          "path": "src/plugins/contracts/test-helpers/host-hook-ui-projection.ts",
+          "blob_sha": "b251c07a8fabcb07130255477fe32c5ed42b1056",
+          "range": {
+            "start_line": 1,
+            "end_line": 33
+          },
+          "symbol": "host-hook UI projection"
         }
       ],
       "evidence_refs": [
@@ -21404,7 +21452,8 @@
         "PluginUninstallReceipt"
       ],
       "tests": [
-        "source/host/tests/openclaw_process_plugin_contract.rs::test_ocrm_plugins_runtime_final"
+        "source/host/tests/openclaw_process_plugin_contract.rs::test_ocrm_plugins_runtime_final",
+        "source/host/tests/openclaw_plugins_full_contract.rs::test_ocrm_plugins_runtime_import_side_effects_and_seams"
       ],
       "integration": {
         "producer": "source/host/src/extensions/plugins/runtime_final.rs",
@@ -21421,6 +21470,24 @@
             "end_line": 93
           },
           "symbol": "runtime.shutdown-preload"
+        },
+        {
+          "path": "src/plugins/contracts/runtime-import-side-effects.contract.test.ts",
+          "blob_sha": "990108625678b399058d56319dde884153888767",
+          "range": {
+            "start_line": 1,
+            "end_line": 114
+          },
+          "symbol": "runtime import side-effects contracts"
+        },
+        {
+          "path": "src/plugins/contracts/runtime-seams.contract.test.ts",
+          "blob_sha": "473a44ae095a147d7b21b892f78c4e04d438a8ad",
+          "range": {
+            "start_line": 1,
+            "end_line": 133
+          },
+          "symbol": "shared runtime seam contracts"
         }
       ],
       "evidence_refs": [

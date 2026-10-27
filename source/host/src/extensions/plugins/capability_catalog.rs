@@ -550,3 +550,55 @@ impl ProviderWizardChoiceResolver {
     }
 }
 
+// Bundled Plugin Contract Snapshot (from src/plugins/contracts/inventory/bundled-capability-metadata.ts)
+
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct BundledPluginContractSnapshot {
+    pub plugin_id: String,
+    pub cli_backend_ids: Vec<String>,
+    pub provider_ids: Vec<String>,
+    pub provider_env_vars: std::collections::HashMap<String, Vec<String>>,
+    pub worker_provider_ids: Vec<String>,
+    pub storage_provider_ids: Vec<String>,
+    pub embedding_provider_ids: Vec<String>,
+    pub speech_provider_ids: Vec<String>,
+    pub realtime_transcription_provider_ids: Vec<String>,
+    pub realtime_voice_provider_ids: Vec<String>,
+    pub media_understanding_provider_ids: Vec<String>,
+    pub transcript_source_provider_ids: Vec<String>,
+    pub document_extractor_ids: Vec<String>,
+    pub image_generation_provider_ids: Vec<String>,
+    pub video_generation_provider_ids: Vec<String>,
+    pub music_generation_provider_ids: Vec<String>,
+    pub web_content_extractor_ids: Vec<String>,
+    pub web_fetch_provider_ids: Vec<String>,
+    pub web_search_provider_ids: Vec<String>,
+    pub migration_provider_ids: Vec<String>,
+    pub tool_names: Vec<String>,
+}
+
+impl BundledPluginContractSnapshot {
+    pub fn has_capabilities(&self) -> bool {
+        !self.cli_backend_ids.is_empty()
+            || !self.provider_ids.is_empty()
+            || !self.worker_provider_ids.is_empty()
+            || !self.storage_provider_ids.is_empty()
+            || !self.embedding_provider_ids.is_empty()
+            || !self.speech_provider_ids.is_empty()
+            || !self.realtime_transcription_provider_ids.is_empty()
+            || !self.realtime_voice_provider_ids.is_empty()
+            || !self.media_understanding_provider_ids.is_empty()
+            || !self.transcript_source_provider_ids.is_empty()
+            || !self.document_extractor_ids.is_empty()
+            || !self.image_generation_provider_ids.is_empty()
+            || !self.video_generation_provider_ids.is_empty()
+            || !self.music_generation_provider_ids.is_empty()
+            || !self.web_content_extractor_ids.is_empty()
+            || !self.web_fetch_provider_ids.is_empty()
+            || !self.web_search_provider_ids.is_empty()
+            || !self.migration_provider_ids.is_empty()
+            || !self.tool_names.is_empty()
+    }
+}
+
+

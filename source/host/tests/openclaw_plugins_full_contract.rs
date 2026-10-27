@@ -314,3 +314,47 @@ fn test_ocrm_plugins_architectural_boundary_guardrails() {
     assert!(err_bridges[0].contains("imports legacy bridge"));
 }
 
+#[test]
+fn test_ocrm_plugins_runtime_import_side_effects_and_seams() {
+    // Tests equivalent behavior from runtime-import-side-effects and runtime-seams contract test suites.
+    use mahayana_host_runtime::extensions::plugins::runtime_final::{
+        RuntimeFacadeSeamManager, RuntimeImportSideEffectsGuard,
+    };
+
+    // 1. Runtime import side-effects
+    let clean_runtime_sources = [("src/plugins/runtime/runtime-channel.ts", "export const ok = true;")];
+    assert!(RuntimeImportSideEffectsGuard::assert_no_direct_channel_registry_imports(&clean_runtime_sources).is_ok());
+
+    let dirty_runtime_sources = [("src/plugins/runtime/index.ts", "import '../../channels/plugins/registry';")];
+    let err_direct = RuntimeImportSideEffectsGuard::assert_no_direct_channel_registry_imports(&dirty_runtime_sources).unwrap_err();
+    assert_eq!(err_direct, vec!["src/plugins/runtime/index.ts"]);
+
+    // Markdown table mode resolution
+    assert_eq!(
+        RuntimeImportSideEffectsGuard::resolve_markdown_table_mode("telegram", true, None),
+        "bullets"
+    );
+    assert_eq!(
+        RuntimeImportSideEffectsGuard::resolve_markdown_table_mode("telegram", true, Some("block")),
+        "block"
+    );
+    assert_eq!(
+        RuntimeImportSideEffectsGuard::resolve_markdown_table_mode("discord", true, None),
+        "block"
+    );
+    assert_eq!(
+        RuntimeImportSideEffectsGuard::resolve_markdown_table_mode("discord", false, None),
+        "bullets"
+    );
+
+    // 2. Runtime facade seam
+    assert!(RuntimeFacadeSeamManager::resolve_bundled_plugin_public_surface_access("line", true));
+    assert!(!RuntimeFacadeSeamManager::resolve_bundled_plugin_public_surface_access("line", false));
+
+    // SSRF fetch guard
+    assert!(RuntimeFacadeSeamManager::fetch_with_ssrf_guard("https://public.example/api", false).is_ok());
+    let err_ssrf = RuntimeFacadeSeamManager::fetch_with_ssrf_guard("http://192.168.1.1/admin", true).unwrap_err();
+    assert!(err_ssrf.contains("SSRF blocked access to private network"));
+}
+
+

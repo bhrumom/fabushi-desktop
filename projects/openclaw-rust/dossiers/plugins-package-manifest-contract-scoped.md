@@ -51,3 +51,8 @@
     - Verifies runtime setup requires source setup entry.
     - Verifies `validate_plugin_manifest_tool_contracts` enforces that all registered tools are declared in `contracts.tools`.
     - Verifies virtual test plugin tool fixture execution with configured prefix and environment state.
+  - `test_ocrm_plugins_bundled_capability_metadata_and_subpath_bundle` (PASSED)
+    - Verifies bundled plugin roots resolution across relative subpaths.
+    - Verifies never-bundle dependency boundaries (`@lancedb/lancedb`, `@matrix-org/matrix-sdk-crypto-nodejs`, `matrix-js-sdk`).
+    - Verifies elimination of bare matrix-js-sdk import crashes in bundled subpath entries.
+

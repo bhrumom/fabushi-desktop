@@ -845,3 +845,83 @@ fn test_ocrm_plugins_wizard_choice_resolution_and_model_picker() {
     }
 }
 
+#[test]
+fn test_ocrm_plugins_bundled_capability_metadata_and_subpath_bundle() {
+    // Tests equivalent behavior from bundled-capability-metadata.ts, bundled-plugin-roots.ts,
+    // and plugin-sdk-index.bundle.test.ts
+    use mahayana_host_runtime::extensions::plugins::bundle_manifest::{
+        BundledPluginRootsManager, BundledPluginSubpathValidator,
+    };
+    use mahayana_host_runtime::extensions::plugins::capability_catalog::BundledPluginContractSnapshot;
+
+    // 1. Snapshot has capabilities
+    let mut snapshot = BundledPluginContractSnapshot::default();
+    assert!(!snapshot.has_capabilities());
+    snapshot.speech_provider_ids.push("azure-speech".to_string());
+    assert!(snapshot.has_capabilities());
+
+    // 2. Bundled plugin roots resolution
+    let roots = BundledPluginRootsManager::new(&[("matrix", "/app/extensions/matrix")]);
+    assert_eq!(
+        roots.resolve_file("matrix", "src/matrix/sdk.ts").unwrap(),
+        "/app/extensions/matrix/src/matrix/sdk.ts"
+    );
+    assert!(roots.resolve_file("unknown", "sdk.ts").is_err());
+
+    // 3. Subpath bundle validator never_bundle and bare matrix imports
+    let never_bundle = BundledPluginSubpathValidator::never_bundle_dependencies();
+    assert!(never_bundle.contains(&"@lancedb/lancedb"));
+    assert!(never_bundle.contains(&"@matrix-org/matrix-sdk-crypto-nodejs"));
+    assert!(never_bundle.contains(&"matrix-js-sdk"));
+
+    let clean_sources = [("matrix/src/matrix/sdk.ts", "import { MatrixClient } from './client.js';")];
+    assert!(BundledPluginSubpathValidator::assert_no_bare_matrix_sdk_imports(&clean_sources).is_ok());
+
+    let bare_sources = [("matrix/src/bad.ts", "import * as sdk from 'matrix-js-sdk';")];
+    let err_bare = BundledPluginSubpathValidator::assert_no_bare_matrix_sdk_imports(&bare_sources).unwrap_err();
+    assert_eq!(err_bare, vec!["matrix/src/bad.ts"]);
+}
+
+#[test]
+fn test_ocrm_plugins_host_hook_fixture_and_ui_projection() {
+    // Tests equivalent behavior from host-hook-fixture.ts and test-helpers/host-hook-ui-projection.ts
+    use mahayana_host_runtime::extensions::plugins::bundle_manifest::{
+        HostHookFixturePlugin, HostHookUiProjection,
+    };
+
+    // 1. Fixture plugin doubles
+    let fixture = HostHookFixturePlugin::register_fixture_defaults();
+    assert_eq!(fixture.session_extensions, vec!["workflow"]);
+    assert_eq!(fixture.tool_metadata_names, vec!["approval_fixture_tool"]);
+    assert_eq!(fixture.control_ui_descriptors, vec!["workflow-card"]);
+    assert_eq!(fixture.lifecycle_hooks, vec!["workflow-cleanup"]);
+    assert_eq!(fixture.agent_event_subscriptions, vec!["workflow-events"]);
+    assert_eq!(fixture.session_scheduler_jobs, vec!["workflow-nudge"]);
+    assert_eq!(fixture.command_names, vec!["host-hook-fixture"]);
+
+    let (cmd_text, cont) = fixture.execute_command(Some("test-arg"));
+    assert_eq!(cmd_text, "fixture:test-arg");
+    assert!(cont);
+
+    assert_eq!(HostHookFixturePlugin::turn_prepare_context(), "fixture turn context");
+    assert_eq!(HostHookFixturePlugin::heartbeat_prompt_contribution(), "fixture heartbeat context");
+
+    // 2. UI Projection
+    let projection = HostHookUiProjection::build(42);
+    assert!(projection.ok);
+    assert_eq!(projection.generation, 42);
+    assert!(projection.methods.contains(&"plugins.uiDescriptors".to_string()));
+    assert!(projection.methods.contains(&"plugins.sessionAction".to_string()));
+    assert_eq!(projection.control_ui_widget_kinds.len(), 3);
+    assert_eq!(projection.descriptors.len(), 2);
+
+    let admin_desc = projection.descriptors.iter().find(|d| d.id == "admin-panel").unwrap();
+    assert_eq!(admin_desc.surface, "settings");
+    assert_eq!(admin_desc.required_scopes, vec!["operator.admin"]);
+
+    let approval_desc = projection.descriptors.iter().find(|d| d.id == "approval-panel").unwrap();
+    assert_eq!(approval_desc.surface, "session");
+    assert!(approval_desc.required_scopes.is_empty());
+}
+
+

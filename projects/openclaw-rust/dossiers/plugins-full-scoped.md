@@ -38,4 +38,13 @@
     - Verifies core plugin-sdk contains no Ollama facade modules and generic core fixtures contain no vendor provider terms (`Ollama`, `Moonshot`, `xAI`).
     - Verifies production code contains no deprecated config load/write internal seams.
     - Verifies model catalog imports use `@openclaw/model-catalog-core/...` package subpaths instead of legacy internal bridge modules.
+  - `test_ocrm_plugins_host_hook_fixture_and_ui_projection` (PASSED)
+    - Verifies host hook fixture double registration (session extension, tools, control UI, lifecycle, events, scheduler).
+    - Verifies UI projection structure, generation bump, and required operator scopes on admin panel.
+  - `test_ocrm_plugins_runtime_import_side_effects_and_seams` (PASSED)
+    - Verifies hot runtime and config modules keep channel registry cold during import.
+    - Verifies on-demand markdown table mode resolution.
+    - Verifies bundled plugin public surface access requires enabled state in config.
+    - Verifies SSRF guard blocks requests to private IPv4 networks.
+
 

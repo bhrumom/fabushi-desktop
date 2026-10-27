@@ -73,4 +73,7 @@
   - `test_ocrm_plugins_wizard_choice_resolution_and_model_picker` (PASSED)
     - Verifies exact provider, method, and wizard resolution across colon, hyphen, and primary default formats.
     - Verifies wizard model picker entries exposed across shared wizard layer.
+  - `test_ocrm_plugins_bundled_capability_metadata_and_subpath_bundle` (PASSED)
+    - Verifies bundled plugin contract snapshot models across all 21 capability families and setup provider env vars.
+
 

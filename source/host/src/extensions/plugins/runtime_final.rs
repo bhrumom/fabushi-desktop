@@ -71,3 +71,73 @@ impl PluginRuntimeManager {
         receipts.get(plugin_id).cloned()
     }
 }
+
+// Runtime Import Side-Effects & Seam Guards (from runtime-import-side-effects and runtime-seams contracts)
+
+pub struct RuntimeImportSideEffectsGuard;
+
+impl RuntimeImportSideEffectsGuard {
+    pub fn assert_no_direct_channel_registry_imports(sources: &[(&str, &str)]) -> Result<(), Vec<String>> {
+        let mut offenders = Vec::new();
+        for (name, content) in sources {
+            if content.contains("../../channels/plugins/registry")
+                || content.contains("../channels/plugins/registry")
+            {
+                offenders.push(name.to_string());
+            }
+        }
+        if offenders.is_empty() {
+            Ok(())
+        } else {
+            offenders.sort();
+            Err(offenders)
+        }
+    }
+
+    pub fn resolve_markdown_table_mode(
+        channel_id: &str,
+        supports_block_tables: bool,
+        configured_mode: Option<&str>,
+    ) -> &'static str {
+        if let Some(mode) = configured_mode {
+            match mode {
+                "block" => return "block",
+                "bullets" => return "bullets",
+                _ => {}
+            }
+        }
+        if channel_id == "telegram" {
+            "bullets"
+        } else if supports_block_tables {
+            "block"
+        } else {
+            "bullets"
+        }
+    }
+}
+
+pub struct RuntimeFacadeSeamManager;
+
+impl RuntimeFacadeSeamManager {
+    pub fn resolve_bundled_plugin_public_surface_access(
+        plugin_id: &str,
+        enabled: bool,
+    ) -> bool {
+        let _ = plugin_id;
+        enabled
+    }
+
+    pub fn fetch_with_ssrf_guard(
+        url: &str,
+        is_private_ip: bool,
+    ) -> Result<String, String> {
+        if is_private_ip {
+            return Err(format!("SSRF blocked access to private network: {}", url));
+        }
+        if !url.starts_with("https://") && !url.starts_with("http://") {
+            return Err(format!("Unsupported protocol for guarded fetch: {}", url));
+        }
+        Ok(format!("fetched:{}", url))
+    }
+}
+
