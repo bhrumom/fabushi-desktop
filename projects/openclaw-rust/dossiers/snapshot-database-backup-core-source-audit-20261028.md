@@ -229,3 +229,10 @@ and verifies the target count is unchanged, proving transaction rollback rather
 than partial commit. This is local SQLite atomicity evidence only; it does not
 establish cross-database PostgreSQL cleanup or publication custody.
 
+`parse_git_backup_manifest` now validates the upstream Git backup schema 1/2
+manifest shape, global/agent/generic identity scope, optional Postgres source,
+safe userVersion, exclusions, table names, row bounds, and SHA-256 entries.
+Positive generic-scope and invalid identity/table oracles pass. It is manifest
+admission only; filesystem ownership, staging publication, and restore schema
+migration remain pending.
+
