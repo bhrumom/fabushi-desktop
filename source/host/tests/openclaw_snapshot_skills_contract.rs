@@ -145,6 +145,34 @@ fn test_ocrm_snapshot_postgres_manifest_schema_and_profile_oracles() {
         .expect("valid Git backup manifest");
     assert_eq!(parsed_git.schema_version, 1);
     assert_eq!(
+        mahayana_host_runtime::extensions::snapshot::git_backup_manager::git_backup_artifact_files(
+            &parsed_git,
+        ),
+        vec![
+            std::path::PathBuf::from("manifest.json"),
+            std::path::PathBuf::from("schema.sql"),
+            std::path::PathBuf::from("tables/messages.jsonl"),
+        ]
+    );
+    let mut v2_manifest = git_manifest.clone();
+    v2_manifest["schemaVersion"] = json!(2);
+    let parsed_v2 =
+        mahayana_host_runtime::extensions::snapshot::git_backup_manager::parse_git_backup_manifest(
+            &v2_manifest,
+        )
+        .expect("valid Git backup schema-v2 manifest");
+    assert_eq!(
+        mahayana_host_runtime::extensions::snapshot::git_backup_manager::git_backup_artifact_files(
+            &parsed_v2,
+        ),
+        vec![
+            std::path::PathBuf::from("manifest.json"),
+            std::path::PathBuf::from("postgres/manifest.json"),
+            std::path::PathBuf::from("postgres/anchor.sqlite"),
+            std::path::PathBuf::from("postgres/database.sqlite"),
+        ]
+    );
+    assert_eq!(
         mahayana_host_runtime::extensions::snapshot::git_backup_manager::git_backup_scope_path(
             &parsed_git.identity,
         )

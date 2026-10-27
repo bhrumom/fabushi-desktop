@@ -248,3 +248,9 @@ staging or publication path. Generic, agent, and traversal-negative oracles
 pass. This closes identity-to-scope derivation only; Git repository ownership,
 atomic publication, and cross-process custody remain unproven.
 
+`git_backup_artifact_files` now mirrors the upstream artifact admission list:
+schema-v1 yields `manifest.json`, `schema.sql`, and sorted table JSONL paths;
+schema-v2 yields the PostgreSQL manifest, anchor, and database bundle. The
+contract exercises both profiles. This is deterministic file-set derivation,
+not yet Git repository preflight or atomic scope publication.
+

@@ -25,6 +25,9 @@ const GIT_BACKUP_PROJECTION_TABLES: &[&str] = &[
     "session_transcript_fts_rows",
     "session_transcript_index_state",
 ];
+pub const GIT_BACKUP_MANIFEST: &str = "manifest.json";
+pub const GIT_BACKUP_SCHEMA: &str = "schema.sql";
+pub const GIT_BACKUP_TABLES: &str = "tables";
 
 pub fn validate_sqlite_table_name(value: &str) -> Result<(), String> {
     let mut chars = value.chars();
@@ -500,6 +503,31 @@ pub fn git_backup_scope_path(identity: &GitBackupIdentity) -> Result<PathBuf, St
         }
         _ => Err("Git backup identity role is invalid".into()),
     }
+}
+
+/// Returns the exact artifact-relative paths owned by a parsed Git backup.
+/// Schema-v2 stores the PostgreSQL export bundle; schema-v1 stores the
+/// SQLite schema and deterministic JSONL table streams.
+pub fn git_backup_artifact_files(manifest: &GitBackupManifest) -> Vec<PathBuf> {
+    if manifest.schema_version == 2 {
+        return vec![
+            PathBuf::from(GIT_BACKUP_MANIFEST),
+            PathBuf::from("postgres/manifest.json"),
+            PathBuf::from("postgres/anchor.sqlite"),
+            PathBuf::from("postgres/database.sqlite"),
+        ];
+    }
+    let mut files = vec![
+        PathBuf::from(GIT_BACKUP_MANIFEST),
+        PathBuf::from(GIT_BACKUP_SCHEMA),
+    ];
+    files.extend(
+        manifest
+            .tables
+            .keys()
+            .map(|table| PathBuf::from(GIT_BACKUP_TABLES).join(format!("{table}.jsonl"))),
+    );
+    files
 }
 
 pub fn read_git_backup_manifest(path: impl AsRef<Path>) -> Result<GitBackupManifest, String> {
