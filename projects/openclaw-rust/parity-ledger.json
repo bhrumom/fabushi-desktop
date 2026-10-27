@@ -10,10 +10,10 @@
     "ui_accepted": false
   },
   "file_coverage": {
-    "mapped_paths": 398,
+    "mapped_paths": 399,
     "omitted_known": 0,
     "tracked_paths": 58750,
-    "unclassified_paths": 58352
+    "unclassified_paths": 58351
   },
   "inventory_authority": {
     "manifest_source": "GitHub Actions immutable artifact candidate",
@@ -20682,7 +20682,8 @@
       "tests": [
         "source/host/tests/openclaw_plugins_contract.rs::test_ocrm_plugins_contract_registry_oracle",
         "source/host/tests/openclaw_plugins_contract.rs::test_ocrm_plugins_registry_public_artifacts_retry_precedence",
-        "source/host/tests/openclaw_plugins_contract.rs::test_ocrm_plugins_shared_upstream_model_contract"
+        "source/host/tests/openclaw_plugins_contract.rs::test_ocrm_plugins_shared_upstream_model_contract",
+        "source/host/tests/openclaw_plugins_contract.rs::test_ocrm_plugins_provider_catalog_deprecation_guard"
       ],
       "integration": {
         "producer": "source/host/src/extensions/plugins/capability_catalog.rs",
@@ -20744,6 +20745,15 @@
             "end_line": 141
           },
           "symbol": "bundled shared upstream model catalogs"
+        },
+        {
+          "path": "src/plugins/contracts/provider-catalog-deprecation.contract.test.ts",
+          "blob_sha": "a3d72e37dae910ac9885cffacc519745ca12a312",
+          "range": {
+            "start_line": 1,
+            "end_line": 134
+          },
+          "symbol": "bundled provider catalog deprecation guard"
         }
       ],
       "evidence_refs": [

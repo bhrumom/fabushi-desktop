@@ -602,3 +602,30 @@ fn test_ocrm_plugins_shared_upstream_model_contract() {
     assert!(tier_errors[0].contains("azure/gpt-4o"));
     assert!(tier_errors[0].contains("shared model gpt-4o"));
 }
+
+#[test]
+fn test_ocrm_plugins_provider_catalog_deprecation_guard() {
+    // Tests equivalent behavior from upstream src/plugins/contracts/provider-catalog-deprecation.contract.test.ts
+    use mahayana_host_runtime::extensions::plugins::capability_catalog::ProviderCatalogDeprecationGuard;
+
+    let clean_sources = [
+        (
+            "extensions/openai/src/index.ts",
+            "api.registerProvider({ id: 'openai', label: 'OpenAI', auth: [] })",
+        ),
+        (
+            "extensions/anthropic/src/index.ts",
+            "const plugin: ProviderPlugin = { id: 'anthropic', label: 'Anthropic' }",
+        ),
+    ];
+    assert!(ProviderCatalogDeprecationGuard::assert_no_deprecated_discovery_hooks(&clean_sources).is_ok());
+
+    let deprecated_sources = [
+        (
+            "extensions/legacy/src/index.ts",
+            "api.registerProvider({ id: 'legacy', discovery: async () => [] })",
+        ),
+    ];
+    let err = ProviderCatalogDeprecationGuard::assert_no_deprecated_discovery_hooks(&deprecated_sources).unwrap_err();
+    assert_eq!(err, vec!["extensions/legacy/src/index.ts"]);
+}

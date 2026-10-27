@@ -300,3 +300,26 @@ impl SharedUpstreamModelCatalog {
         }
     }
 }
+
+// Bundled provider catalog deprecation guard (from src/plugins/contracts/provider-catalog-deprecation.contract.test.ts)
+
+pub struct ProviderCatalogDeprecationGuard;
+
+impl ProviderCatalogDeprecationGuard {
+    pub fn assert_no_deprecated_discovery_hooks(sources: &[(&str, &str)]) -> Result<(), Vec<String>> {
+        let mut offenders = Vec::new();
+        for (file_path, content) in sources {
+            if (content.contains("registerProvider") || content.contains("ProviderPlugin"))
+                && content.contains("discovery:")
+            {
+                offenders.push(file_path.to_string());
+            }
+        }
+        if offenders.is_empty() {
+            Ok(())
+        } else {
+            offenders.sort();
+            Err(offenders)
+        }
+    }
+}
