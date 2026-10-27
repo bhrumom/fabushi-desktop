@@ -20749,7 +20749,7 @@
       "selected_owner": "source/host/src/extensions/plugin_sdk/approval_security.rs",
       "source_refs": [
     {
-      "blob_sha": "5b78df2c295de188aceee940a172c70a86052aec5",
+      "blob_sha": "5b78df2c295de188aceee940a172c70a86052aec",
       "path": "src/plugin-sdk/approval-approvers.ts",
       "range": {"end_line": 1, "start_line": 1},
       "symbol": "approval-approvers"
