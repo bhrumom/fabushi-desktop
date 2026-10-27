@@ -571,9 +571,13 @@ fn test_ocrm_snapshot_postgres_manifest_schema_and_profile_oracles() {
         &mut restore_connection,
         "real_table",
         &["id".into(), "value".into()],
-        vec![Ok(vec![json!(1)])],
+        vec![Ok(vec![json!(3), json!("partial")]), Ok(vec![json!(1)])],
     )
     .is_err());
+    let restored_count: i64 = restore_connection
+        .query_row("SELECT COUNT(*) FROM real_table", [], |row| row.get(0))
+        .expect("count rolled-back rows");
+    assert_eq!(restored_count, 2, "failed restore must not partially commit");
     assert!(mahayana_host_runtime::extensions::snapshot::git_backup_manager::digest_sqlite_table(
         &schema_connection,
         "real_table;DROP TABLE real_table",
