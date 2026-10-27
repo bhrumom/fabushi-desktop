@@ -71,6 +71,11 @@
     - Verifies cross-workspace generation mismatch rejection.
     - Verifies recursive rewriting of legacy `authProfileId` and `defaultAuthProfileId` credentials.
     - Verifies board widget content kind naming constraints, reserved kind rejection (`html`, `mcp-app`, `plugin`), surface pattern, and gateway local resource path boundaries.
+  - `test_ocrm_plugins_bundled_discovery_admission_and_install_guards` (PASSED)
+    - Verifies bundled discovery admission rules (duplicate plugin ID rejection, unresolvable path checks).
+    - Verifies immutable core bundled plugin protection (`telegram`, `discord`, etc.) against uninstallation and overwrite in production.
+    - Verifies developer mode bypass for bundled plugin mutation.
+    - Verifies bundled load path alias resolution across symlink and monorepo boundaries.
 
 ## 4. Audited Agent Executor, Tool Result Middleware & Before Reply Files (11 files)
 - **Responsibility**: `OCRM-RESP-PLUGINS-HOOKS-PIPELINE-001`
@@ -108,6 +113,25 @@
 | `src/plugins/board-widget-content-kind.types.ts` | 39 | 1244 | `11d512a83e098fa31a545086d1bfd7a31bdf72fa` |
 | `src/plugins/board-widget-content-kinds.ts` | 153 | 5780 | `60677cb6378e9f2df1e51b3fbc06296181774d75` |
 | `src/plugins/build-smoke-entry.ts` | 10 | 586 | `b783f60f64be7bc15f0eb5e8d5ae399c5be4e526` |
+
+## 6. Audited Bundled Discovery Admission, Install & Alias Files (10 files)
+- **Responsibility**: `OCRM-RESP-PLUGINS-INSTALL-MANAGEMENT-001`
+- **Reviewer**: `xuyao@ombhrum.com`
+- **Native Implementation**: `source/host/src/extensions/plugins/installed_index_store.rs` (`BundledDiscoveryAdmissionValidator`, `BundledInstallGuard`, `BundledLoadPathAliasResolver`)
+
+| Path | Lines | Size (bytes) | Git Blob SHA |
+| --- | --- | --- | --- |
+| `src/plugins/bundled-discovery-state.admission.test.ts` | 114 | 4616 | `141b777a83556093d6ec7c6b757f594537167664` |
+| `src/plugins/bundled-discovery-state.test.ts` | 78 | 2912 | `3f20d6f461cfec1f14ae1935606d15a51cb7e426` |
+| `src/plugins/bundled-discovery-state.ts` | 215 | 7968 | `fc59c5d01217e94f061214e21a71966db99d2fef` |
+| `src/plugins/bundled-discovery.test-support.ts` | 23 | 830 | `fef80f5509a25b3a62888c3a9ec2b10a247ec6ba` |
+| `src/plugins/bundled-install.ts` | 108 | 3993 | `41f7e0fc21da0c961e6c3be5b078e223ca87efd7` |
+| `src/plugins/bundled-load-path-aliases.ts` | 98 | 3694 | `9806786b17c147a4d99295c5652102918a6c9e5a` |
+| `src/plugins/bundled-manifest-contract-plugins.test.ts` | 42 | 1522 | `5ca870b9af89f4dbd6f7970085f6f95221dfadd6` |
+| `src/plugins/bundled-manifest-contract-plugins.ts` | 65 | 2368 | `38f2cf4c2eaf9b8d3ac74ca3bfe47ec213311dc2` |
+| `src/plugins/bundled-package-channel-metadata.test.ts` | 142 | 5227 | `092e8ddfde3c48eed3fddbf652e553186dfadd8d` |
+| `src/plugins/bundled-package-channel-metadata.ts` | 11 | 313 | `5c0469af1e491fc9e896083590222d34aa8241f9` |
+
 
 
 

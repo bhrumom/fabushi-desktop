@@ -96,3 +96,73 @@ impl InstalledPluginIndexStore {
         self.index.lock().unwrap().clone()
     }
 }
+
+// ---------------------------------------------------------------------------
+// Bundled Discovery Admission & Install Guards
+// (from src/plugins/bundled-discovery-state.ts, bundled-install.ts, bundled-load-path-aliases.ts)
+// ---------------------------------------------------------------------------
+
+pub struct BundledDiscoveryAdmissionValidator;
+
+impl BundledDiscoveryAdmissionValidator {
+    pub fn assert_admission_valid(
+        existing_plugin_ids: &std::collections::HashSet<String>,
+        candidate_plugin_id: &str,
+        candidate_path: &str,
+    ) -> Result<(), String> {
+        if candidate_plugin_id.trim().is_empty() {
+            return Err("Candidate plugin ID cannot be empty".to_string());
+        }
+        if candidate_path.trim().is_empty() {
+            return Err("Candidate plugin path cannot be empty".to_string());
+        }
+        if existing_plugin_ids.contains(candidate_plugin_id) {
+            return Err(format!(
+                "Duplicate plugin ID '{}' already admitted into discovery state",
+                candidate_plugin_id
+            ));
+        }
+        Ok(())
+    }
+}
+
+pub struct BundledInstallGuard;
+
+impl BundledInstallGuard {
+    pub const IMMUTABLE_BUNDLED_PLUGINS: &'static [&'static str] = &[
+        "telegram",
+        "discord",
+        "slack",
+        "whatsapp",
+        "signal",
+        "imessage",
+    ];
+
+    pub fn is_immutable_bundled_plugin(plugin_id: &str) -> bool {
+        Self::IMMUTABLE_BUNDLED_PLUGINS.contains(&plugin_id)
+    }
+
+    pub fn assert_can_uninstall_or_overwrite(plugin_id: &str, is_dev_mode: bool) -> Result<(), String> {
+        if !is_dev_mode && Self::is_immutable_bundled_plugin(plugin_id) {
+            return Err(format!(
+                "Plugin '{}' is an immutable core bundled plugin and cannot be uninstalled or overwritten",
+                plugin_id
+            ));
+        }
+        Ok(())
+    }
+}
+
+pub struct BundledLoadPathAliasResolver;
+
+impl BundledLoadPathAliasResolver {
+    pub fn resolve_alias(alias_map: &HashMap<String, String>, requested_path: &str) -> String {
+        let clean = requested_path.trim_end_matches('/');
+        if let Some(target) = alias_map.get(clean) {
+            target.clone()
+        } else {
+            clean.to_string()
+        }
+    }
+}
+

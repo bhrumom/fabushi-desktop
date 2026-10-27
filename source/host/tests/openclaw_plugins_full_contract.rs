@@ -726,6 +726,54 @@ fn test_ocrm_plugins_guarded_api_lifecycle_auth_refs_and_widget_kinds() {
     ).is_err());
 }
 
+#[test]
+fn test_ocrm_plugins_bundled_discovery_admission_and_install_guards() {
+    use std::collections::{HashMap, HashSet};
+    use mahayana_host_runtime::extensions::plugins::installed_index_store::{
+        BundledDiscoveryAdmissionValidator, BundledInstallGuard, BundledLoadPathAliasResolver,
+    };
+
+    // 1. Bundled Discovery Admission
+    let mut admitted = HashSet::new();
+    admitted.insert("telegram".to_string());
+
+    assert!(BundledDiscoveryAdmissionValidator::assert_admission_valid(&admitted, "discord", "bundled/plugins/discord").is_ok());
+    assert!(BundledDiscoveryAdmissionValidator::assert_admission_valid(&admitted, "", "bundled/plugins/empty").is_err());
+    assert!(BundledDiscoveryAdmissionValidator::assert_admission_valid(&admitted, "slack", "").is_err());
+
+    let err_dup = BundledDiscoveryAdmissionValidator::assert_admission_valid(&admitted, "telegram", "bundled/plugins/tg").unwrap_err();
+    assert!(err_dup.contains("Duplicate plugin ID 'telegram' already admitted"));
+
+    // 2. Bundled Install Protection Guard
+    assert!(BundledInstallGuard::is_immutable_bundled_plugin("telegram"));
+    assert!(BundledInstallGuard::is_immutable_bundled_plugin("discord"));
+    assert!(!BundledInstallGuard::is_immutable_bundled_plugin("my-custom-plugin"));
+
+    // Production mode rejects mutating immutable plugins
+    let err_prod = BundledInstallGuard::assert_can_uninstall_or_overwrite("telegram", false).unwrap_err();
+    assert!(err_prod.contains("immutable core bundled plugin and cannot be uninstalled"));
+
+    // Dev mode permits mutation
+    assert!(BundledInstallGuard::assert_can_uninstall_or_overwrite("telegram", true).is_ok());
+
+    // Non-bundled plugin permits mutation in prod
+    assert!(BundledInstallGuard::assert_can_uninstall_or_overwrite("my-custom-plugin", false).is_ok());
+
+    // 3. Bundled Load Path Aliases
+    let mut alias_map = HashMap::new();
+    alias_map.insert("bundled/plugins/tg".into(), "/absolute/path/bundled/plugins/telegram".into());
+
+    assert_eq!(
+        BundledLoadPathAliasResolver::resolve_alias(&alias_map, "bundled/plugins/tg"),
+        "/absolute/path/bundled/plugins/telegram"
+    );
+    assert_eq!(
+        BundledLoadPathAliasResolver::resolve_alias(&alias_map, "bundled/plugins/other"),
+        "bundled/plugins/other"
+    );
+}
+
+
 
 
 

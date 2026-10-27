@@ -10,10 +10,10 @@
     "ui_accepted": false
   },
   "file_coverage": {
-    "mapped_paths": 552,
+    "mapped_paths": 562,
     "omitted_known": 0,
     "tracked_paths": 58750,
-    "unclassified_paths": 58198
+    "unclassified_paths": 58188
   },
   "inventory_authority": {
     "manifest_source": "GitHub Actions immutable artifact candidate",
@@ -21833,6 +21833,96 @@
       "selected_owner": "source/host/src/extensions/plugins/installed_index_store.rs",
       "source_refs": [
         {
+          "blob_sha": "e5f7af1c4deb3bad2c32b3a08200c3839042f8fa",
+          "path": "src/plugins/bundled-discovery-state.admission.test.ts",
+          "range": {
+            "end_line": 110,
+            "start_line": 1
+          },
+          "symbol": "bundled-discovery-state.admission.test"
+        },
+        {
+          "blob_sha": "9138de857e307549fcf2a5f186e9b0940349ee21",
+          "path": "src/plugins/bundled-discovery-state.test.ts",
+          "range": {
+            "end_line": 75,
+            "start_line": 1
+          },
+          "symbol": "bundled-discovery-state.test"
+        },
+        {
+          "blob_sha": "640e78cbf6712229de633ebd70469d2435fae7df",
+          "path": "src/plugins/bundled-discovery-state.ts",
+          "range": {
+            "end_line": 196,
+            "start_line": 1
+          },
+          "symbol": "bundled-discovery-state"
+        },
+        {
+          "blob_sha": "58667d9770aa138796601d8ae20b1f935adc507c",
+          "path": "src/plugins/bundled-discovery.test-support.ts",
+          "range": {
+            "end_line": 16,
+            "start_line": 1
+          },
+          "symbol": "bundled-discovery.test-support"
+        },
+        {
+          "blob_sha": "18fdba970a604bc298152b5a5ea12ec3c3506bb7",
+          "path": "src/plugins/bundled-install.ts",
+          "range": {
+            "end_line": 94,
+            "start_line": 1
+          },
+          "symbol": "bundled-install"
+        },
+        {
+          "blob_sha": "837aa885169c378fc218a69de49fe98aab59b7e6",
+          "path": "src/plugins/bundled-load-path-aliases.ts",
+          "range": {
+            "end_line": 112,
+            "start_line": 1
+          },
+          "symbol": "bundled-load-path-aliases"
+        },
+        {
+          "blob_sha": "57d043540fa40df23fb1c2fc63875663b65cc174",
+          "path": "src/plugins/bundled-manifest-contract-plugins.test.ts",
+          "range": {
+            "end_line": 49,
+            "start_line": 1
+          },
+          "symbol": "bundled-manifest-contract-plugins.test"
+        },
+        {
+          "blob_sha": "7acd59187bc72105bed1b1701825299da15e6ef1",
+          "path": "src/plugins/bundled-manifest-contract-plugins.ts",
+          "range": {
+            "end_line": 57,
+            "start_line": 1
+          },
+          "symbol": "bundled-manifest-contract-plugins"
+        },
+        {
+          "blob_sha": "a2cb3df36cfe4ba4624a803e991b1d8961b42899",
+          "path": "src/plugins/bundled-package-channel-metadata.test.ts",
+          "range": {
+            "end_line": 127,
+            "start_line": 1
+          },
+          "symbol": "bundled-package-channel-metadata.test"
+        },
+        {
+          "blob_sha": "fa67888dc557a985d28b48af7b00e39e53bb768b",
+          "path": "src/plugins/bundled-package-channel-metadata.ts",
+          "range": {
+            "end_line": 6,
+            "start_line": 1
+          },
+          "symbol": "bundled-package-channel-metadata"
+        },
+        {
           "blob_sha": "474aa0186b6615738ade87da836ff3495dc2597a",
           "path": "src/plugins/discovery-availability.blocked.test.ts",
           "range": {
@@ -21856,7 +21946,8 @@
         "symbol": "InstalledPluginIndexStore"
       },
       "tests": [
-        "source/host/tests/openclaw_plugins_full_contract.rs::test_ocrm_plugins_installed_index_store"
+        "source/host/tests/openclaw_plugins_full_contract.rs::test_ocrm_plugins_installed_index_store",
+        "source/host/tests/openclaw_plugins_full_contract.rs::test_ocrm_plugins_bundled_discovery_admission_and_install_guards"
       ],
       "typed_contracts": [
         "InstalledPluginIndexStore",
