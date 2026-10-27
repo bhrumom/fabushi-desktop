@@ -336,6 +336,33 @@ fn test_ocrm_snapshot_postgres_manifest_schema_and_profile_oracles() {
     ));
     let redacted = catalog_row["value_json"].as_str().expect("redacted catalog JSON");
     assert!(!redacted.contains("secret"));
+
+    use rusqlite::types::Value as SqliteValue;
+    assert_eq!(
+        mahayana_host_runtime::extensions::snapshot::git_backup_manager::encode_sqlite_value(
+            SqliteValue::Integer(42),
+        )
+        .expect("safe integer"),
+        json!(42)
+    );
+    assert_eq!(
+        mahayana_host_runtime::extensions::snapshot::git_backup_manager::encode_sqlite_value(
+            SqliteValue::Integer(i64::MAX),
+        )
+        .expect("wide integer"),
+        json!({"$int": "9223372036854775807"})
+    );
+    assert_eq!(
+        mahayana_host_runtime::extensions::snapshot::git_backup_manager::encode_sqlite_value(
+            SqliteValue::Blob(vec![0, 15, 255]),
+        )
+        .expect("blob"),
+        json!({"$hex": "000fff"})
+    );
+    assert!(mahayana_host_runtime::extensions::snapshot::git_backup_manager::encode_sqlite_value(
+        SqliteValue::Real(f64::NAN),
+    )
+    .is_err());
 }
 
 #[test]

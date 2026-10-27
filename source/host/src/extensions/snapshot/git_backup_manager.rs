@@ -715,6 +715,31 @@ pub fn redact_git_backup_row(
     true
 }
 
+/// Encode a SQLite cell using the portable Git-backup representation.
+pub fn encode_sqlite_value(value: rusqlite::types::Value) -> Result<Value, String> {
+    use rusqlite::types::Value as SqliteValue;
+    match value {
+        SqliteValue::Null => Ok(Value::Null),
+        SqliteValue::Integer(value) => {
+            if (-(MAX_SAFE_INTEGER as i64)..=MAX_SAFE_INTEGER as i64).contains(&value) {
+                Ok(Value::Number(value.into()))
+            } else {
+                Ok(serde_json::json!({ "$int": value.to_string() }))
+            }
+        }
+        SqliteValue::Real(value) if value.is_finite() => Ok(serde_json::Number::from_f64(value)
+            .map(Value::Number)
+            .ok_or_else(|| "SQLite REAL cannot be represented as JSON".to_string())?),
+        SqliteValue::Real(_) => {
+            Err("Git backup cannot encode a non-finite SQLite REAL value".into())
+        }
+        SqliteValue::Text(value) => Ok(Value::String(value)),
+        SqliteValue::Blob(value) => Ok(serde_json::json!({
+            "$hex": value.iter().map(|byte| format!("{byte:02x}")).collect::<String>()
+        })),
+    }
+}
+
 fn strip_plugin_model_catalog_credentials(contents: &str) -> Option<String> {
     let mut parsed: Value = serde_json::from_str(contents).ok()?;
     let object = parsed.as_object_mut()?;
