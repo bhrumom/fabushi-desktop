@@ -156,6 +156,12 @@ single unit, and retains a final tail batch. The local oracle covers threshold
 flush, oversized-row flush, and empty finish. It does not establish table
 iteration or end-to-end artifact publication.
 
+`digest_sqlite_rows` now hashes the exact newline-delimited row bytes and
+returns the manifest-compatible row count and SHA-256, rejecting empty or
+non-terminated lines. The local oracle verifies count, digest shape, and
+malformed-line rejection. It remains a producer-side primitive, not evidence
+of live database scanning or restore publication.
+
 ## Responsibility/evidence decision
 
 `OCRM-RESP-SNAPSHOT-BACKUP-CODEC-001` remains `read=partial`,
