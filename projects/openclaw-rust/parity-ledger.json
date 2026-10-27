@@ -24176,8 +24176,8 @@
         "OCRM-G04-rust-contract"
       ],
       "requirement_ids": [
-        "OCRM-R28",
-        "OCRM-AC28"
+        "OCRM-R08",
+        "OCRM-AC08"
       ],
       "responsibility_kind": "business-runtime",
       "reviewer": "xuyao@ombhrum.com",
@@ -24278,8 +24278,8 @@
         "OCRM-G04-rust-contract"
       ],
       "requirement_ids": [
-        "OCRM-R28",
-        "OCRM-AC28"
+        "OCRM-R08",
+        "OCRM-AC08"
       ],
       "responsibility_kind": "business-runtime",
       "reviewer": "xuyao@ombhrum.com",
@@ -24395,8 +24395,8 @@
         "OCRM-G04-rust-contract"
       ],
       "requirement_ids": [
-        "OCRM-R28",
-        "OCRM-AC28"
+        "OCRM-R08",
+        "OCRM-AC08"
       ],
       "responsibility_kind": "business-runtime",
       "reviewer": "xuyao@ombhrum.com",
@@ -24515,8 +24515,8 @@
         "OCRM-G04-rust-contract"
       ],
       "requirement_ids": [
-        "OCRM-R28",
-        "OCRM-AC28"
+        "OCRM-R08",
+        "OCRM-AC08"
       ],
       "responsibility_kind": "business-runtime",
       "reviewer": "xuyao@ombhrum.com",
@@ -24626,8 +24626,8 @@
         "OCRM-G04-rust-contract"
       ],
       "requirement_ids": [
-        "OCRM-R28",
-        "OCRM-AC28"
+        "OCRM-R08",
+        "OCRM-AC08"
       ],
       "responsibility_kind": "business-runtime",
       "reviewer": "xuyao@ombhrum.com",
@@ -24738,8 +24738,8 @@
         "OCRM-G04-rust-contract"
       ],
       "requirement_ids": [
-        "OCRM-R28",
-        "OCRM-AC28"
+        "OCRM-R08",
+        "OCRM-AC08"
       ],
       "responsibility_kind": "business-runtime",
       "reviewer": "xuyao@ombhrum.com",
@@ -24856,8 +24856,8 @@
         "OCRM-G04-rust-contract"
       ],
       "requirement_ids": [
-        "OCRM-R28",
-        "OCRM-AC28"
+        "OCRM-R08",
+        "OCRM-AC08"
       ],
       "responsibility_kind": "business-runtime",
       "reviewer": "xuyao@ombhrum.com",
@@ -24974,8 +24974,8 @@
         "OCRM-G04-rust-contract"
       ],
       "requirement_ids": [
-        "OCRM-R28",
-        "OCRM-AC28"
+        "OCRM-R08",
+        "OCRM-AC08"
       ],
       "responsibility_kind": "business-runtime",
       "reviewer": "xuyao@ombhrum.com",
