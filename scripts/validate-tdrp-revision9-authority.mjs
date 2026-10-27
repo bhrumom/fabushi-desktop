@@ -93,7 +93,16 @@ if (candidateIsAccepted) {
 }
 fail(Array.isArray(ledger.rows),'ledger rows must be an array');
 fail(acquisitionInventory.project_id==='TDRP-001' && acquisitionInventory.spec_revision===9,'build-time acquisition inventory is not Revision 9');
-fail(acquisitionInventory.upstream_commit===lock.upstream.commit,'build-time acquisition inventory upstream commit drift');
+// Acquisition scans and source-blob anchors are immutable historical evidence.
+// Never compare them to an unaccepted discovery candidate or silently retarget them.
+const historicalCommit=lock.previous_historical_baseline?.commit;
+fail(/^[0-9a-f]{40}$/.test(historicalCommit||''),'historical source baseline identity missing');
+fail(acquisitionInventory.upstream_repository===lock.upstream.repository,'historical acquisition repository drift');
+fail(acquisitionInventory.upstream_commit===historicalCommit,'historical acquisition inventory provenance drift');
+if (candidateIsAccepted) {
+  fail(acquisitionInventory.upstream_commit===lock.upstream.commit,
+    'accepted baseline requires a refreshed acquisition inventory; historical evidence is not candidate evidence');
+}
 fail(lock.build_time_acquisition_inventory?.path==='projects/telegram-desktop-rust/inventory/build-time-acquisitions.json','lock missing build-time acquisition inventory authority');
 fail(acquisitionInventory.discovery?.candidate_lines_total===lock.build_time_acquisition_inventory.candidate_lines_total,'build-time candidate count drift');
 fail(acquisitionInventory.discovery?.immutable_commit_pin_occurrences_classified===lock.build_time_acquisition_inventory.immutable_commit_pin_occurrences_classified,'classified immutable acquisition count drift');
@@ -122,7 +131,7 @@ for (const key of dispositionKeys) fail(!immutableKeys.has(key),'candidate dispo
 fail(lock.build_time_acquisition_inventory.closure_status==='open','build-time acquisition closure must remain open while candidate lines are pending');
 for (const acquisition of acquisitionInventory.immutable_commit_pin_occurrences || []) {
   fail(/^[0-9a-f]{40}$/.test(acquisition.commit),'immutable acquisition lacks full commit pin: '+acquisition.id);
-  const raw=await get(`https://raw.githubusercontent.com/${lock.upstream.repository}/${lock.upstream.commit}/${acquisition.source_path}`,false);
+  const raw=await get(`https://raw.githubusercontent.com/${lock.upstream.repository}/${historicalCommit}/${acquisition.source_path}`,false);
   fail(raw.includes(acquisition.repository),'acquisition repository missing at accepted upstream: '+acquisition.id);
   fail(raw.includes(acquisition.commit),'acquisition commit missing at accepted upstream: '+acquisition.id);
 }
@@ -159,7 +168,7 @@ for (const child of recursiveChildren) {
 }
 const recursiveReachability=acquisitionInventory.recursive_build_reachability;
 fail(recursiveReachability?.status==='partial-audited-disposition-open','recursive build reachability status must remain explicitly partial/open');
-fail(recursiveReachability.accepted_upstream_commit===lock.upstream.commit,'recursive build reachability upstream commit drift');
+fail(recursiveReachability.accepted_upstream_commit===historicalCommit,'recursive build reachability upstream commit drift');
 const qtReachability=recursiveReachability.qt_superproject;
 fail(qtReachability?.repository==='https://github.com/qt/qt5','Qt reachability authority missing');
 const qtEvidenceByPath=new Map((qtReachability.accepted_upstream_evidence||[]).map(item=>[item.path,item]));
@@ -171,23 +180,23 @@ const expectedQtEvidence=[
 for (const [sourcePath,blob] of expectedQtEvidence) {
   const evidence=qtEvidenceByPath.get(sourcePath);
   fail(evidence?.blob===blob,'Qt reachability evidence blob drift: '+sourcePath);
-  const tree=await ghTree(lock.upstream.repository,lock.upstream.commit);
+  const tree=await ghTree(lock.upstream.repository,historicalCommit);
   const sourceEntry=(tree.tree||[]).find(item=>item.path===sourcePath);
   fail(sourceEntry?.sha===blob,'Qt reachability source blob does not match accepted upstream: '+sourcePath);
 }
-const prepareQt=await get(`https://raw.githubusercontent.com/${lock.upstream.repository}/${lock.upstream.commit}/Telegram/build/prepare/prepare.py`,false);
-const dockerQt=await get(`https://raw.githubusercontent.com/${lock.upstream.repository}/${lock.upstream.commit}/Telegram/build/docker/centos_env/Dockerfile`,false);
-const snapQt=await get(`https://raw.githubusercontent.com/${lock.upstream.repository}/${lock.upstream.commit}/snap/snapcraft.yaml`,false);
+const prepareQt=await get(`https://raw.githubusercontent.com/${lock.upstream.repository}/${historicalCommit}/Telegram/build/prepare/prepare.py`,false);
+const dockerQt=await get(`https://raw.githubusercontent.com/${lock.upstream.repository}/${historicalCommit}/Telegram/build/docker/centos_env/Dockerfile`,false);
+const snapQt=await get(`https://raw.githubusercontent.com/${lock.upstream.repository}/${historicalCommit}/snap/snapcraft.yaml`,false);
 for (const exact of [
   'git submodule update --init --recursive --progress qtbase qtimageformats qtsvg',
   'git submodule update --init --recursive --progress qtbase qtimageformats qtshadertools qtsvg'
-]) fail(prepareQt.includes(exact),'accepted prepare.py Qt submodule selection drift: '+exact);
+]) fail(prepareQt.includes(exact),'historical prepare.py Qt submodule selection drift: '+exact);
 fail(dockerQt.includes('qtbase qtdeclarative qtwayland qtimageformats qtsvg qtshadertools'),'accepted Docker Qt submodule selection drift');
 for (const module of ['qtbase','qtdeclarative','qtimageformats','qtshadertools','qtsvg','qtwayland']) {
   fail(snapQt.includes('      - '+module),'accepted Snap Qt submodule selection missing '+module);
 }
-fail(prepareQt.includes('git clone https://github.com/desktop-app/qt6_windows7_patches.git qt6_windows7'),'accepted prepare.py Qt 6 Windows compatibility acquisition drift');
-fail(prepareQt.includes('git checkout bf64e7264237ffd371493f1780ef71d3f41373c9'),'accepted prepare.py Qt 6 Windows compatibility pin drift');
+fail(prepareQt.includes('git clone https://github.com/desktop-app/qt6_windows7_patches.git qt6_windows7'),'historical prepare.py Qt 6 Windows compatibility acquisition drift');
+fail(prepareQt.includes('git checkout bf64e7264237ffd371493f1780ef71d3f41373c9'),'historical prepare.py Qt 6 Windows compatibility pin drift');
 fail(!prepareQt.includes('qttools'),'prepare.py unexpectedly initializes qttools');
 fail(!dockerQt.includes('qttools'),'Docker Qt build unexpectedly initializes qttools');
 fail(!snapQt.includes('      - qttools'),'Snap Qt build unexpectedly initializes qttools');
@@ -218,8 +227,8 @@ for (const [kind,value,disposition] of [
 const prepareTgOwtStage=prepareQt.match(/stage\('tg_owt',[\s\S]*?\n"""\)/)?.[0]||'';
 const dockerTgOwtStage=dockerQt.match(/git init tg_owt[\s\S]*?rm -rf tg_owt/)?.[0]||'';
 const snapTgOwtStage=snapQt.match(/\n  webrtc:\n[\s\S]*?\n  tlottie:/)?.[0]||snapQt.match(/\n  webrtc:\n[\s\S]*$/)?.[0]||'';
-fail(prepareTgOwtStage.includes('git checkout 07fb35bc33b3e79125a1beab7690e830f183f5d8'),'accepted prepare.py tg_owt pin drift');
-fail(prepareTgOwtStage.includes('git submodule update --init --recursive'),'accepted prepare.py tg_owt recursive submodule build drift');
+fail(prepareTgOwtStage.includes('git checkout 07fb35bc33b3e79125a1beab7690e830f183f5d8'),'historical prepare.py tg_owt pin drift');
+fail(prepareTgOwtStage.includes('git submodule update --init --recursive'),'historical prepare.py tg_owt recursive submodule build drift');
 fail(dockerTgOwtStage.includes('git fetch --depth=1 origin 07fb35bc33b3e79125a1beab7690e830f183f5d8'),'accepted Docker tg_owt pin drift');
 fail(dockerTgOwtStage.includes('git submodule update --init --recursive --depth=1'),'accepted Docker tg_owt recursive submodule build drift');
 fail(snapTgOwtStage.includes('source-commit: 07fb35bc33b3e79125a1beab7690e830f183f5d8'),'accepted Snap tg_owt pin drift');
@@ -235,9 +244,9 @@ for (const [kind,value] of [
 ]) fail(libjxlPolicy.some(rule=>rule[kind]===value),'libjxl acquisition disposition missing: '+value);
 const prepareLibjxlStage=prepareQt.match(/stage\('libjxl',[\s\S]*?\n"""\)/)?.[0]||'';
 const dockerLibjxlStage=dockerQt.match(/FROM builder AS jxl[\s\S]*?rm -rf libjxl/)?.[0]||'';
-fail(prepareLibjxlStage.includes('git clone -b v0.12.0 --recursive --shallow-submodules'),'accepted prepare.py libjxl acquisition drift');
+fail(prepareLibjxlStage.includes('git clone -b v0.12.0 --recursive --shallow-submodules'),'historical prepare.py libjxl acquisition drift');
 for (const option of ['-DBUILD_TESTING=OFF','-DJPEGXL_ENABLE_DEVTOOLS=OFF','-DJPEGXL_ENABLE_TOOLS=OFF','-DJPEGXL_ENABLE_PLUGINS=OFF']) {
-  fail(prepareLibjxlStage.includes(option),'accepted prepare.py libjxl option drift: '+option);
+  fail(prepareLibjxlStage.includes(option),'historical prepare.py libjxl option drift: '+option);
 }
 fail(dockerLibjxlStage.includes('git clone -b v0.12.0 --depth=1 https://github.com/libjxl/libjxl.git'),'accepted Docker libjxl acquisition drift');
 for (const option of ['-DBUILD_TESTING=OFF','-DJPEGXL_ENABLE_DEVTOOLS=OFF','-DJPEGXL_ENABLE_TOOLS=OFF','-DJPEGXL_ENABLE_BENCHMARK=OFF']) {
@@ -309,7 +318,7 @@ const prepareOpenalStage=prepareQt.match(/stage\('openal-soft',[\s\S]*?\n"""\)/)
 const dockerOpenalStage=dockerQt.match(/FROM builder AS openal[\s\S]*?rm -rf openal-soft/)?.[0]||'';
 const snapOpenalStage=snapQt.match(/\n  openal:\n[\s\S]*?\n  openssl:/)?.[0]||'';
 for (const option of ['ALSOFT_EXAMPLES=OFF','ALSOFT_UTILS=OFF']) {
-  fail(prepareOpenalStage.includes(option),'accepted prepare.py OpenAL option drift: '+option);
+  fail(prepareOpenalStage.includes(option),'historical prepare.py OpenAL option drift: '+option);
   fail(dockerOpenalStage.includes(option),'accepted Docker OpenAL option drift: '+option);
   fail(snapOpenalStage.includes(option),'accepted Snap OpenAL option drift: '+option);
 }
@@ -340,7 +349,7 @@ for (const [name,stage] of [['prepare.py',prepareFfmpegStage],['Dockerfile',dock
   fail(stage.includes('--disable-network'),'accepted FFmpeg build lost --disable-network in '+name);
   fail(stage.includes('--disable-everything'),'accepted FFmpeg build lost --disable-everything in '+name);
 }
-fail(prepareFfmpegStage.includes('git clone -b n8.1.3'),'accepted prepare.py FFmpeg ref drift');
+fail(prepareFfmpegStage.includes('git clone -b n8.1.3'),'historical prepare.py FFmpeg ref drift');
 fail(dockerFfmpegStage.includes('git clone -b n8.1.3 --depth=1'),'accepted Docker FFmpeg ref drift');
 fail(snapFfmpegStage.includes('source-branch: n6.1.6'),'accepted Snap FFmpeg ref drift');
 
@@ -471,7 +480,7 @@ for (const [name,stage] of [['prepare.py',prepareTde2eStage],['Dockerfile',docke
   fail(stage.length>0,'unable to isolate accepted TDE2E stage in '+name);
   fail(stage.includes('TD_E2E_ONLY=ON'),'accepted TDE2E build lost TD_E2E_ONLY=ON in '+name);
 }
-fail(prepareTde2eStage.includes('git checkout 51743df'),'accepted prepare.py TDE2E pin drift');
+fail(prepareTde2eStage.includes('git checkout 51743df'),'historical prepare.py TDE2E pin drift');
 fail(dockerTde2eStage.includes('git fetch --depth=1 origin 51743dfd01dff6179e2d8f7095729caa4e2222e9'),'accepted Docker TDE2E pin drift');
 fail(snapTde2eStage.includes('source-commit: 51743dfd01dff6179e2d8f7095729caa4e2222e9'),'accepted Snap TDE2E pin drift');
 
@@ -488,7 +497,7 @@ const tgOwtTree=await ghTree('desktop-app/tg_owt','07fb35bc33b3e79125a1beab7690e
 const libsrtpEntry=(tgOwtTree.tree||[]).find(item=>item.path==='src/third_party/libsrtp');
 fail(libsrtpEntry?.mode==='160000','accepted tg_owt libsrtp path is no longer a gitlink');
 fail(libsrtpEntry.sha==='a566a9cfcd619e8327784aa7cff4a1276dc1e895','accepted tg_owt libsrtp gitlink commit drift');
-fail(prepareQt.match(/stage\('tg_owt',[\s\S]*?\n"""\)/)?.[0]?.includes('git submodule update --init --recursive'),'accepted prepare.py tg_owt no longer recursively fetches libsrtp');
+fail(prepareQt.match(/stage\('tg_owt',[\s\S]*?\n"""\)/)?.[0]?.includes('git submodule update --init --recursive'),'historical prepare.py tg_owt no longer recursively fetches libsrtp');
 
 const boostRegexReachability=recursiveReachability.boost_regex;
 fail(boostRegexReachability?.repository==='https://github.com/boostorg/regex','Boost.Regex reachability authority missing');
@@ -566,10 +575,10 @@ const responsibilityIds=new Set();
 const targetSymbolOwners=new Map();
 for (const row of ledger.rows) {
   for (const key of rowRequired) fail(Object.prototype.hasOwnProperty.call(row,key),'ledger row '+(row.responsibility_id||'<unknown>')+' missing required field '+key);
-  fail(row.source_commit===lock.upstream.commit,'row '+row.responsibility_id+' source commit differs from accepted upstream');
+  fail(row.source_commit===ledgerIdentity,'row '+row.responsibility_id+' source commit differs from accepted upstream');
   fail(!responsibilityIds.has(row.responsibility_id),'duplicate responsibility id '+row.responsibility_id);
   responsibilityIds.add(row.responsibility_id);
-  const sourceObject=(await ghTree(lock.upstream.repository,lock.upstream.commit)).tree.find(e=>e.path===row.source_path);
+  const sourceObject=(await ghTree(lock.upstream.repository,ledgerIdentity)).tree.find(e=>e.path===row.source_path);
   fail(sourceObject,'row source path absent from accepted upstream tree: '+row.source_path);
   fail(sourceObject.sha===row.source_blob_sha,'row source blob mismatch: '+row.source_path);
   fail(await fs.stat(path.join(root,row.source_analysis_path)).then(()=>true).catch(()=>false),'row dossier missing: '+row.source_analysis_path);
