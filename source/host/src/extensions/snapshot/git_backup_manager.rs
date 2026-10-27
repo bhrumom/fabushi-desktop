@@ -115,8 +115,29 @@ pub fn digest_sqlite_table(
     table: &str,
 ) -> Result<SqliteTableDigest, String> {
     validate_sqlite_table_name(table)?;
+    let mut table_info = connection
+        .prepare(&format!("PRAGMA table_info(\"{table}\")"))
+        .map_err(|error| format!("prepare SQLite table info {table}: {error}"))?;
+    let mut primary_keys = table_info
+        .query_map([], |row| {
+            Ok((row.get::<_, String>(1)?, row.get::<_, i64>(5)?))
+        })
+        .map_err(|error| format!("read SQLite table info {table}: {error}"))?
+        .collect::<Result<Vec<_>, _>>()
+        .map_err(|error| format!("decode SQLite table info {table}: {error}"))?;
+    primary_keys.retain(|(_, position)| *position > 0);
+    primary_keys.sort_by_key(|(_, position)| *position);
+    let order_by = if primary_keys.is_empty() {
+        "rowid".to_string()
+    } else {
+        primary_keys
+            .iter()
+            .map(|(name, _)| format!("\"{name}\""))
+            .collect::<Vec<_>>()
+            .join(", ")
+    };
     let mut statement = connection
-        .prepare(&format!("SELECT * FROM \"{table}\""))
+        .prepare(&format!("SELECT * FROM \"{table}\" ORDER BY {order_by}"))
         .map_err(|error| format!("prepare SQLite table read {table}: {error}"))?;
     let column_names = statement
         .column_names()

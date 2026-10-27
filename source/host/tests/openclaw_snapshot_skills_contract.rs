@@ -468,7 +468,7 @@ fn test_ocrm_snapshot_postgres_manifest_schema_and_profile_oracles() {
     schema_connection
         .execute(
             "INSERT INTO real_table (id, value) VALUES (?1, ?2), (?3, ?4)",
-            rusqlite::params![1_i64, "first", 2_i64, "second"],
+            rusqlite::params![2_i64, "second", 1_i64, "first"],
         )
         .expect("insert SQLite table rows");
     let actual_digest =
