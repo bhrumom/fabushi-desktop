@@ -2265,6 +2265,259 @@ fn test_ocrm_plugins_channel_policy_validation_and_adoption() {
     );
 }
 
+#[test]
+fn test_ocrm_plugins_clawhub_package_archive_verification_and_install_policy() {
+    use mahayana_host_runtime::extensions::plugins::clawhub::{
+        format_clawhub_release_label, format_clawhub_specifier, is_default_official_clawhub_package,
+        resolve_clawhub_plugin_url, ClawHubArchiveVerification, ClawHubFileVerificationEntry,
+        ClawHubInstallErrorCode, ClawHubInstallFailure, ClawHubInstallPipeline,
+        ClawHubSecurityAssessment, CLAWHUB_GENERATED_ARCHIVE_METADATA_FILE,
+    };
+    use std::collections::HashMap;
+
+    // 1. Error Codes & Target Availability
+    let not_found = ClawHubInstallFailure::new(
+        "Package not found",
+        Some(ClawHubInstallErrorCode::PackageNotFound),
+        None,
+        None,
+    );
+    assert!(not_found.is_unavailable_target());
+
+    let version_not_found = ClawHubInstallFailure::new(
+        "Version not found",
+        Some(ClawHubInstallErrorCode::VersionNotFound),
+        None,
+        None,
+    );
+    assert!(version_not_found.is_unavailable_target());
+
+    let download_blocked = ClawHubInstallFailure::new(
+        "Malicious",
+        Some(ClawHubInstallErrorCode::ClawhubDownloadBlocked),
+        None,
+        None,
+    );
+    assert!(!download_blocked.is_unavailable_target());
+
+    // 2. Official ClawHub Source Resolution
+    assert!(is_default_official_clawhub_package(None, Some("official"), false));
+    assert!(is_default_official_clawhub_package(
+        Some("https://clawhub.ai"),
+        None,
+        true
+    ));
+    assert!(!is_default_official_clawhub_package(
+        Some("https://third-party.registry.org"),
+        Some("official"),
+        true
+    ));
+
+    // 3. Presentation Formatting
+    assert_eq!(
+        format_clawhub_specifier("demo", Some("1.2.3")),
+        "clawhub:demo@1.2.3"
+    );
+    assert_eq!(format_clawhub_specifier("demo", None), "clawhub:demo");
+    assert_eq!(format_clawhub_release_label("demo", "1.2.3"), "demo@1.2.3");
+    assert_eq!(
+        resolve_clawhub_plugin_url(None, "demo"),
+        "https://clawhub.ai/plugins/demo"
+    );
+
+    // 4. Archive Verification & _meta.json Validation
+    let valid_meta = serde_json::json!({
+        "slug": "demo-plugin",
+        "version": "2026.3.22"
+    });
+    let valid_meta_bytes = serde_json::to_vec(&valid_meta).unwrap();
+    assert!(ClawHubArchiveVerification::validate_meta_json(
+        "demo-plugin",
+        "2026.3.22",
+        &valid_meta_bytes
+    )
+    .is_ok());
+
+    let invalid_slug_meta = serde_json::json!({
+        "slug": "wrong-slug",
+        "version": "2026.3.22"
+    });
+    let mismatch_res = ClawHubArchiveVerification::validate_meta_json(
+        "demo-plugin",
+        "2026.3.22",
+        &serde_json::to_vec(&invalid_slug_meta).unwrap(),
+    );
+    assert!(mismatch_res.is_err());
+    assert_eq!(
+        mismatch_res.unwrap_err().code,
+        Some(ClawHubInstallErrorCode::ArchiveIntegrityMismatch)
+    );
+
+    // 4b. verify_extracted_files
+    let mut actual_files = HashMap::new();
+    actual_files.insert(
+        CLAWHUB_GENERATED_ARCHIVE_METADATA_FILE.to_string(),
+        (valid_meta_bytes, "sha256-meta".to_string()),
+    );
+    actual_files.insert(
+        "index.js".to_string(),
+        (b"console.log('hi');".to_vec(), "sha256-index".to_string()),
+    );
+    actual_files.insert(
+        "openclaw.plugin.json".to_string(),
+        (b"{}".to_vec(), "sha256-manifest".to_string()),
+    );
+
+    let expected_files = vec![
+        ClawHubFileVerificationEntry {
+            path: "index.js".to_string(),
+            sha256: "sha256-index".to_string(),
+        },
+        ClawHubFileVerificationEntry {
+            path: "openclaw.plugin.json".to_string(),
+            sha256: "sha256-manifest".to_string(),
+        },
+    ];
+
+    let verified_paths = ClawHubArchiveVerification::verify_extracted_files(
+        &actual_files,
+        &expected_files,
+        "demo-plugin",
+        "2026.3.22",
+    )
+    .expect("verification should succeed");
+    assert_eq!(
+        verified_paths,
+        vec![CLAWHUB_GENERATED_ARCHIVE_METADATA_FILE.to_string()]
+    );
+
+    // 4c. verify_extracted_files missing file failure
+    let missing_expected = vec![
+        ClawHubFileVerificationEntry {
+            path: "index.js".to_string(),
+            sha256: "sha256-index".to_string(),
+        },
+        ClawHubFileVerificationEntry {
+            path: "missing.js".to_string(),
+            sha256: "sha256-missing".to_string(),
+        },
+    ];
+    let missing_err = ClawHubArchiveVerification::verify_extracted_files(
+        &actual_files,
+        &missing_expected,
+        "demo-plugin",
+        "2026.3.22",
+    )
+    .unwrap_err();
+    assert!(missing_err.error.contains("missing \"missing.js\""));
+
+    // 4d. verify_extracted_files hash mismatch
+    let mismatch_expected = vec![
+        ClawHubFileVerificationEntry {
+            path: "index.js".to_string(),
+            sha256: "sha256-wrong".to_string(),
+        },
+        ClawHubFileVerificationEntry {
+            path: "openclaw.plugin.json".to_string(),
+            sha256: "sha256-manifest".to_string(),
+        },
+    ];
+    let mismatch_err = ClawHubArchiveVerification::verify_extracted_files(
+        &actual_files,
+        &mismatch_expected,
+        "demo-plugin",
+        "2026.3.22",
+    )
+    .unwrap_err();
+    assert!(mismatch_err.error.contains("expected index.js to hash to"));
+
+    // 4e. verify_extracted_files unexpected file
+    let mut actual_with_extra = actual_files.clone();
+    actual_with_extra.insert(
+        "extra_file.txt".to_string(),
+        (b"extra".to_vec(), "sha256-extra".to_string()),
+    );
+    let extra_err = ClawHubArchiveVerification::verify_extracted_files(
+        &actual_with_extra,
+        &expected_files,
+        "demo-plugin",
+        "2026.3.22",
+    )
+    .unwrap_err();
+    assert!(extra_err.error.contains("unexpected file \"extra_file.txt\""));
+
+    // 5. Install Pipeline Assessment & Guardrails
+    // 5a. Skill family rejected
+    let skill_err =
+        ClawHubInstallPipeline::assess_package_eligibility("skill", None, "my-skill").unwrap_err();
+    assert_eq!(skill_err.code, Some(ClawHubInstallErrorCode::SkillPackage));
+    assert!(skill_err.error.contains("Use \"openclaw skills install"));
+
+    // 5b. Unsupported family rejected
+    let unsupp_err =
+        ClawHubInstallPipeline::assess_package_eligibility("unsupported", None, "pkg").unwrap_err();
+    assert_eq!(
+        unsupp_err.code,
+        Some(ClawHubInstallErrorCode::UnsupportedFamily)
+    );
+
+    // 5c. Private package rejected without auth
+    let priv_err = ClawHubInstallPipeline::assess_package_eligibility(
+        "code-plugin",
+        Some("private"),
+        "corp-plugin",
+    )
+    .unwrap_err();
+    assert_eq!(
+        priv_err.code,
+        Some(ClawHubInstallErrorCode::PrivatePackage)
+    );
+
+    // 5d. Code-plugin and bundle-plugin accepted
+    assert!(
+        ClawHubInstallPipeline::assess_package_eligibility("code-plugin", None, "my-plugin").is_ok()
+    );
+    assert!(ClawHubInstallPipeline::assess_package_eligibility(
+        "bundle-plugin",
+        Some("official"),
+        "my-bundle"
+    )
+    .is_ok());
+
+    // 5e. Security verdict evaluation
+    let blocked_sec = ClawHubSecurityAssessment {
+        package_name: "bad-plugin".to_string(),
+        release_version: "1.0.0".to_string(),
+        verdict: "blocked".to_string(),
+        scan_status: "malicious".to_string(),
+        blocked_from_download: true,
+        reasons: vec!["Contains malware".to_string()],
+        overview: "Known malicious code".to_string(),
+    };
+    let sec_err = ClawHubInstallPipeline::assess_security_verdict(&blocked_sec).unwrap_err();
+    assert_eq!(
+        sec_err.code,
+        Some(ClawHubInstallErrorCode::ClawhubDownloadBlocked)
+    );
+
+    let review_sec = ClawHubSecurityAssessment {
+        package_name: "suspicious-plugin".to_string(),
+        release_version: "1.0.0".to_string(),
+        verdict: "review-recommended".to_string(),
+        scan_status: "warn".to_string(),
+        blocked_from_download: false,
+        reasons: vec!["Obfuscated code".to_string()],
+        overview: "Uses dynamic eval".to_string(),
+    };
+    let review_warning =
+        ClawHubInstallPipeline::assess_security_verdict(&review_sec).expect("should not fail");
+    assert!(review_warning.is_some());
+    assert!(review_warning
+        .unwrap()
+        .contains("Security review recommended"));
+}
+
+
 
 
 

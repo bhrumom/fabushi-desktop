@@ -231,6 +231,33 @@
 - **Channel Startup Policy & Restrictive Allowlist Exceptions**: Evaluates manifest owner policy against deny lists and allowlists. Bundled channel owners gain an explicit bypass to restrictive allowlists if corresponding channel configuration is explicitly provided in root configuration. Non-bundled channel plugins require explicit enablement in authored plugins configuration entries.
 - **Channel Presence Signals & Announce Filtering**: Aggregates presence signals from explicit configuration, environment variables, manifest contracts, and persisted auth. Explicitly disabled channels (`enabled: false`) are suppressed case-insensitively and excluded from announce lists. Ambient-only presence signals are suppressed when requested.
 
+## 11. Audited ClawHub Package Distribution, Archive Verification & Security Assessment (11 files)
+- **Primary Responsibility**: `OCRM-RESP-PLUGINS-CAPABILITY-CATALOG-001`
+- **Reviewer**: `xuyao@ombhrum.com`
+- **Native Implementation**: `source/host/src/extensions/plugins/clawhub.rs` (`ClawHubInstallErrorCode`, `ClawHubInstallFailure`, `ClawHubArchiveVerification`, `ClawHubPluginInstallRecordFields`, `ClawHubSecurityAssessment`, `ClawHubInstallPipeline`)
+- **Contract Tests**: `source/host/tests/openclaw_plugins_contract.rs::test_ocrm_plugins_clawhub_package_archive_verification_and_install_policy`
+
+| Path | Lines | Size (bytes) | Git Blob SHA | Mapped Responsibility |
+| --- | --- | --- | --- | --- |
+| `src/plugins/claw-managed-capability-consent.integration.test.ts` | 329 | 12487 | `778cc9bfaa740d05f463155f5d67874f8913100d` | `OCRM-RESP-PLUGINS-CAPABILITY-CATALOG-001` |
+| `src/plugins/clawhub-archive-verification.ts` | 152 | 6590 | `51c03f0dd9e123d751f83ca3cc438d12813c2d67` | `OCRM-RESP-PLUGINS-CAPABILITY-CATALOG-001` |
+| `src/plugins/clawhub-error-codes.ts` | 59 | 2103 | `e3e2e97193b8ac5f457cd56375be34df62bfc46b` | `OCRM-RESP-PLUGINS-CAPABILITY-CATALOG-001` |
+| `src/plugins/clawhub-install-records.ts` | 144 | 5901 | `456b0d79758585478c75121e4aef87f079b0d04e` | `OCRM-RESP-PLUGINS-CAPABILITY-CATALOG-001` |
+| `src/plugins/clawhub-official-source.ts` | 14 | 459 | `431bb5746302f084ff6e257f144a91c8fc996628` | `OCRM-RESP-PLUGINS-CAPABILITY-CATALOG-001` |
+| `src/plugins/clawhub-presentation.ts` | 65 | 2432 | `c07fef4a9e7c0123487dbf67cc687974dd83fbe1` | `OCRM-RESP-PLUGINS-CAPABILITY-CATALOG-001` |
+| `src/plugins/clawhub.cleanup.test.ts` | 77 | 3115 | `206a146f068a60edb72e8e2d1dd6e03684fbc555` | `OCRM-RESP-PLUGINS-CAPABILITY-CATALOG-001` |
+| `src/plugins/clawhub.test-fixtures.ts` | 38 | 974 | `8f180a29ef4f92cbaacc78c0a1d9b5c9a62c2161` | `OCRM-RESP-PLUGINS-CAPABILITY-CATALOG-001` |
+| `src/plugins/clawhub.test-support.ts` | 176 | 5730 | `b302a5a5d2832fc10de6fb4eff8fc51f9b7bda23` | `OCRM-RESP-PLUGINS-CAPABILITY-CATALOG-001` |
+| `src/plugins/clawhub.test.ts` | 1012 | 40316 | `ddd4d8e6a346b121c4a991d458a7cd4a93102278` | `OCRM-RESP-PLUGINS-CAPABILITY-CATALOG-001` |
+| `src/plugins/clawhub.ts` | 911 | 35524 | `286f795de513c1116a43fbb0d804f0b3a04ec62f` | `OCRM-RESP-PLUGINS-CAPABILITY-CATALOG-001` |
+
+### 11.1 Invariant Validation Summary
+- **ClawHub Stable Error Taxonomy**: Standard error enum covering 17 failure modes (`invalid_spec`, `package_not_found`, `version_not_found`, `no_installable_version`, `skill_package`, `unsupported_family`, `private_package`, `incompatible_plugin_api`, `invalid_gateway_version`, `unknown_gateway_version`, `incompatible_gateway`, `artifact_unavailable`, `missing_archive_integrity`, `artifact_download_unavailable`, `archive_integrity_mismatch`, `clawhub_security_unavailable`, `clawhub_download_blocked`, `plugin_id_mismatch`). Unavailable targets (`package_not_found` and `version_not_found`) are distinguished for selector widening.
+- **Official Package Attribution**: Distinguishes default official registry packages (`https://clawhub.ai` with `channel == "official"` or `isOfficial == true`) from third-party registries.
+- **Archive Verification & Metadata Guard**: Extracted ZIP archives validate presence and integrity of all declared files. Generated `_meta.json` is validated for JSON validity and exact match of slug and version against target package. Missing files, SHA256 mismatches, or unexpected extra files trigger `archive_integrity_mismatch` with lexicographically first unexpected file reported.
+- **Family & Security Assessment Guardrails**: Enforces family constraints (`code-plugin` and `bundle-plugin` only; skills reject with install guidance; unsupported families fail closed). Malicious or blocked security verdicts halt install immediately with `clawhub_download_blocked`. Risky verdicts emit operator review recommendations. Temporary archive removal failures log warnings without invalidating successful installation.
+
+
 
 
 
