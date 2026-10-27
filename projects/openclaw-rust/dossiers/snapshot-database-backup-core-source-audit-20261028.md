@@ -190,6 +190,12 @@ no primary key exists. The real SQLite oracle inserts rows in reverse order yet
 matches the independently assembled sorted digest; this closes an actual
 insert-order nondeterminism in the SQLite producer path.
 
+`select_sqlite_backup_tables` now mirrors the exact backup projection policy:
+it excludes operational projection tables and virtual-table shadow names,
+applies explicit exclusions, validates filesystem-safe names, and sorts the
+result. The oracle proves selection against manual schema entries; actual
+artifact staging and publication remain pending.
+
 ## Responsibility/evidence decision
 
 `OCRM-RESP-SNAPSHOT-BACKUP-CODEC-001` remains `read=partial`,
