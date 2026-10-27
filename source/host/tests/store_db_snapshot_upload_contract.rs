@@ -1,4 +1,4 @@
-use std::collections::VecDeque;
+use std::collections::{BTreeSet, VecDeque};
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
@@ -188,6 +188,47 @@ fn multi_artifact_upload_reuses_owner_and_preflights_paths() {
             .is_err());
         assert_eq!(manifest.len(), 2, "source alias must not mutate manifest");
     }
+}
+
+#[test]
+fn live_sqlite_export_reaches_existing_box_store_owner() {
+    let runtime = Arc::new(FakeRuntime::default());
+    let logs = Arc::new(Mutex::new(Vec::new()));
+    let service = service(runtime.clone(), 1024 * 1024, 1024, vec![10; 8], logs);
+    let connection = rusqlite::Connection::open_in_memory().expect("open SQLite producer");
+    connection
+        .execute_batch("CREATE TABLE messages (id INTEGER PRIMARY KEY, body TEXT); INSERT INTO messages VALUES (1, 'hello');")
+        .expect("seed SQLite producer");
+    let staging = std::env::temp_dir().join(format!(
+        "fabushi-live-sqlite-export-{}",
+        uuid::Uuid::new_v4()
+    ));
+    let manifest = &mut BoxManifestMap::new();
+    let results = service
+        .export_and_upload_sqlite_backup(
+            "store-1",
+            manifest,
+            &connection,
+            &staging,
+            mahayana_host_runtime::extensions::snapshot::git_backup_manager::GitBackupIdentity {
+                role: "generic".into(),
+                agent_id: None,
+                id: Some("store_one".into()),
+            },
+            &BTreeSet::new(),
+            "stores/store_one/portable",
+            0o600,
+        )
+        .expect("export and upload through BoxStore owner");
+    assert_eq!(results.len(), 3, "manifest, schema, and one table artifact");
+    assert!(results
+        .iter()
+        .all(|result| result.outcome == SnapshotUploadOutcome::Uploaded));
+    assert_eq!(manifest.len(), 3);
+    assert!(!staging.exists(), "owner must clean portable staging");
+    assert!(manifest.contains_key("stores/store_one/portable/manifest.json"));
+    assert!(manifest.contains_key("stores/store_one/portable/schema.sql"));
+    assert!(manifest.contains_key("stores/store_one/portable/tables/messages.jsonl"));
 }
 
 #[test]

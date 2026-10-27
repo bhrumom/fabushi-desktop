@@ -311,3 +311,13 @@ work begins. The negative contract proves an existing target is not overwritten.
 The remaining publication gap is now explicit: the staged directory still
 needs a production caller that maps its artifacts into `upload_artifact_set`.
 
+`StoreDbSnapshotUpload::export_and_upload_sqlite_backup` now supplies that
+owner-level path: it exports a live SQLite connection, maps manifest/schema/
+JSONL artifacts into the existing BoxStore manifest namespace, uploads through
+the existing blob consumer, and removes staging afterward. The owner contract
+seeds a real SQLite table and verifies all three artifacts reach the fake
+object store and the manifest, with staging removed. This is a reachable owner
+API and end-to-end contract; the broader BoxStore production cycle still does
+not invoke OpenClaw portable export by default, and PostgreSQL remains outside
+the available Fabushi database-port boundary.
+

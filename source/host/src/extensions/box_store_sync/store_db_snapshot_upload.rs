@@ -1,10 +1,15 @@
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 use std::fs;
 use std::io::{self, Read};
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
+use rusqlite::Connection;
 use sha2::{Digest, Sha256};
+
+use crate::extensions::snapshot::git_backup_manager::{
+    export_sqlite_backup_artifacts, git_backup_artifact_files, GitBackupIdentity,
+};
 
 use super::box_store_manifest_format::{BoxStoreManifestEntry, BOX_STORE_BLOBS_PREFIX};
 use super::box_store_vacuum_worker::{spawn_box_store_vacuum_job, BoxStoreVacuumJob};
@@ -155,6 +160,38 @@ impl StoreDbSnapshotUpload {
                 )
             })
             .collect())
+    }
+
+    /// Export a live SQLite owner and publish its portable artifacts through
+    /// this existing BoxStore owner. The staging directory is always removed;
+    /// callers must treat a partially successful result as non-atomic.
+    pub fn export_and_upload_sqlite_backup(
+        &self,
+        store_id: &str,
+        manifest: &mut BoxManifestMap,
+        connection: &Connection,
+        staging_dir: &Path,
+        identity: GitBackupIdentity,
+        excluded_tables: &BTreeSet<String>,
+        relative_prefix: &str,
+        mode: u32,
+    ) -> Result<Vec<SnapshotUploadResult>, String> {
+        let exported =
+            export_sqlite_backup_artifacts(connection, staging_dir, identity, excluded_tables)?;
+        let artifacts = git_backup_artifact_files(&exported)
+            .into_iter()
+            .map(|relative| SnapshotArtifact {
+                rel_path: format!("{relative_prefix}/{}", relative.display()),
+                path: staging_dir.join(&relative),
+                mode,
+            })
+            .collect::<Vec<_>>();
+        let result = self.upload_artifact_set(store_id, manifest, &artifacts);
+        let cleanup = fs::remove_dir_all(staging_dir);
+        if let Err(error) = cleanup {
+            return Err(format!("remove SQLite backup staging directory: {error}"));
+        }
+        result
     }
 
     pub fn upload_agent_db_snapshot(
