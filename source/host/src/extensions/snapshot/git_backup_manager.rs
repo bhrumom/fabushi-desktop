@@ -1,6 +1,7 @@
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use sha2::{Digest, Sha256};
+use rusqlite::{Connection, OpenFlags};
 use std::fs::{File, OpenOptions};
 use std::io::{self, Read, Write};
 use std::path::{Path, PathBuf};
@@ -262,6 +263,48 @@ pub fn verify_postgres_export_artifacts(
         if actual.sha256 != expected.sha256 || actual.size_bytes != expected.size_bytes {
             return Err(format!("export artifact verification failed: {name}"));
         }
+    }
+    Ok(())
+}
+
+/// Verify the held anchor's OpenClaw engine identity and namespace.
+///
+/// The current owner opens the admitted artifact read-only by path; callers
+/// must retain the artifact admission record and use the surrounding artifact
+/// verification to detect replacement. A future fd-backed SQLite adapter can
+/// remove this pathname reopen while preserving the same oracle.
+pub fn verify_postgres_anchor_identity(
+    path: impl AsRef<Path>,
+    manifest: &PostgresExportManifest,
+) -> Result<(), String> {
+    let path = path.as_ref();
+    assert_no_sqlite_sidecars(path, "Postgres export has unexpected SQLite sidecar")?;
+    let before = capture_database_artifact(path)?;
+    let connection = Connection::open_with_flags(path, OpenFlags::SQLITE_OPEN_READ_ONLY)
+        .map_err(|error| format!("open export anchor {}: {error}", path.display()))?;
+    let identity = connection
+        .query_row(
+            "SELECT store_id, engine, schema FROM openclaw_engine_anchor LIMIT 1",
+            [],
+            |row| {
+                Ok((
+                    row.get::<_, String>(0)?,
+                    row.get::<_, String>(1)?,
+                    row.get::<_, String>(2)?,
+                ))
+            },
+        )
+        .map_err(|error| format!("read export anchor identity: {error}"))?;
+    if identity.0 != manifest.source.store_id
+        || identity.1 != "postgres"
+        || identity.2 != manifest.source.namespace
+    {
+        return Err("export anchor does not match the source store identity".into());
+    }
+    drop(connection);
+    let after = capture_database_artifact(path)?;
+    if before != after {
+        return Err("export anchor changed during verification".into());
     }
     Ok(())
 }

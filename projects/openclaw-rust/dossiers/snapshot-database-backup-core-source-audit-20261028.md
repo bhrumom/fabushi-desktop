@@ -93,6 +93,13 @@ and sidecar absence. The local oracle passes real temporary database/anchor
 files and rejects a newly introduced anchor WAL sidecar; it intentionally does
 not claim anchor identity inspection or restore publication.
 
+`verify_postgres_anchor_identity` now checks the admitted SQLite anchor's
+`openclaw_engine_anchor` row (`store_id`, `engine=postgres`, and namespace) and
+re-captures the artifact after reading to reject mutation. The current Rust
+implementation necessarily reopens the path read-only because no fd-backed
+SQLite adapter exists yet; therefore this is a local identity oracle, not the
+upstream held-FileHandle proof.
+
 ## Responsibility/evidence decision
 
 `OCRM-RESP-SNAPSHOT-BACKUP-CODEC-001` remains `read=partial`,

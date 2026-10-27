@@ -8,7 +8,8 @@ use mahayana_host_runtime::extensions::skills::skill_runtime::{
 use mahayana_host_runtime::extensions::snapshot::git_backup_manager::{
     assert_database_artifact, capture_database_artifact, create_export_envelope,
     assert_fresh_restore_target, assert_no_sqlite_sidecars, parse_postgres_export_manifest,
-    verify_export_envelope, verify_postgres_export_artifacts, write_postgres_export_manifest,
+    verify_export_envelope, verify_postgres_anchor_identity, verify_postgres_export_artifacts,
+    write_postgres_export_manifest,
     SnapshotGenerationFence,
 };
 use serde_json::json;
@@ -138,6 +139,37 @@ fn test_ocrm_snapshot_postgres_manifest_schema_and_profile_oracles() {
     fs::write(export_dir.join("anchor.sqlite-wal"), b"unexpected sidecar")
         .expect("write sidecar");
     assert!(verify_postgres_export_artifacts(&export_dir, &parsed_artifacts, "exact").is_err());
+    fs::remove_file(export_dir.join("anchor.sqlite-wal")).expect("remove sidecar fixture");
+
+    fs::remove_file(export_dir.join("anchor.sqlite")).expect("remove text anchor fixture");
+    let anchor_connection = rusqlite::Connection::open(export_dir.join("anchor.sqlite"))
+        .expect("create SQLite anchor fixture");
+    anchor_connection
+        .execute(
+            "CREATE TABLE openclaw_engine_anchor (store_id TEXT, engine TEXT, schema TEXT)",
+            [],
+        )
+        .expect("create anchor table");
+    anchor_connection
+        .execute(
+            "INSERT INTO openclaw_engine_anchor VALUES (?1, 'postgres', ?2)",
+            rusqlite::params!["123e4567-e89b-12d3-a456-426614174000", "snapshot_002"],
+        )
+        .expect("insert anchor identity");
+    drop(anchor_connection);
+    let anchor_artifact = capture_database_artifact(export_dir.join("anchor.sqlite"))
+        .expect("capture SQLite anchor artifact");
+    artifact_manifest["artifacts"]["anchor.sqlite"]["sha256"] = json!(anchor_artifact.sha256);
+    artifact_manifest["artifacts"]["anchor.sqlite"]["size_bytes"] = json!(anchor_artifact.size_bytes);
+    let parsed_anchor = parse_postgres_export_manifest(&artifact_manifest, "snap-002", Some("exact"))
+        .expect("parse anchor manifest");
+    verify_postgres_anchor_identity(export_dir.join("anchor.sqlite"), &parsed_anchor)
+        .expect("verify anchor identity");
+    let mut wrong_anchor = artifact_manifest.clone();
+    wrong_anchor["source"]["namespace"] = json!("wrong_namespace");
+    let wrong_anchor = parse_postgres_export_manifest(&wrong_anchor, "snap-002", Some("exact"))
+        .expect("parse wrong-anchor manifest");
+    assert!(verify_postgres_anchor_identity(export_dir.join("anchor.sqlite"), &wrong_anchor).is_err());
     let _ = fs::remove_dir_all(&export_root);
 
     let manifest_path = std::env::temp_dir().join(format!(
