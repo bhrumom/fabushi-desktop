@@ -669,5 +669,129 @@ impl PluginSdkRuntimeApiGuardrails {
     }
 }
 
+// ---------------------------------------------------------------------------
+// Bundled MCP Server & LSP Server Validators (from src/plugins/bundle-mcp.ts & bundle-lsp.ts)
+// ---------------------------------------------------------------------------
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub enum BundledMcpTransport {
+    Stdio,
+    Sse,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct BundledMcpServerConfig {
+    pub name: String,
+    pub command: String,
+    pub args: Vec<String>,
+    pub env: std::collections::HashMap<String, String>,
+    pub transport: BundledMcpTransport,
+}
+
+pub struct BundledMcpServerValidator;
+
+impl BundledMcpServerValidator {
+    pub fn validate(config: &BundledMcpServerConfig) -> Result<(), String> {
+        // Name check: 1-64 chars, no path separators or spaces
+        if config.name.is_empty()
+            || config.name.len() > 64
+            || config.name.contains('/')
+            || config.name.contains('\\')
+            || config.name.contains(' ')
+        {
+            return Err(format!("Invalid MCP server name: '{}'", config.name));
+        }
+
+        // Command check: cannot escape bundle root
+        if config.command.contains("../") || config.command.contains("..\\") {
+            return Err(format!(
+                "MCP server command cannot escape bundle root: '{}'",
+                config.command
+            ));
+        }
+
+        // Arguments check: cannot contain relative escape sequences
+        for arg in &config.args {
+            if arg.starts_with("../") || arg.contains("/../") {
+                return Err(format!(
+                    "MCP server argument cannot escape bundle root: '{}'",
+                    arg
+                ));
+            }
+        }
+
+        Ok(())
+    }
+}
+
+pub struct BundledLspServerValidator;
+
+impl BundledLspServerValidator {
+    pub fn validate(server_name: &str, language_id: &str, command: &str) -> Result<(), String> {
+        if server_name.is_empty() {
+            return Err("LSP server name cannot be empty".to_string());
+        }
+        if language_id.is_empty() {
+            return Err("LSP language ID cannot be empty".to_string());
+        }
+        if command.is_empty() || command.contains("../") {
+            return Err(format!("Invalid LSP server command: '{}'", command));
+        }
+        Ok(())
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Bundle Capability Support & Command Scopes (from src/plugins/bundle-capability-support.ts & bundle-commands)
+// ---------------------------------------------------------------------------
+
+#[derive(Debug, Clone, Default)]
+pub struct BundleCapabilitySupport {
+    pub has_mcp: bool,
+    pub has_lsp: bool,
+    pub has_tools: bool,
+    pub has_skills: bool,
+    pub has_channels: bool,
+}
+
+impl BundleCapabilitySupport {
+    pub fn from_manifest(manifest: &serde_json::Value) -> Self {
+        let has_mcp = manifest.get("mcpServers").map(|v| v.is_object() && !v.as_object().unwrap().is_empty()).unwrap_or(false);
+        let has_lsp = manifest.get("lspServers").map(|v| v.is_object() && !v.as_object().unwrap().is_empty()).unwrap_or(false);
+        let has_tools = manifest.get("tools").map(|v| v.is_array() && !v.as_array().unwrap().is_empty()).unwrap_or(false);
+        let has_skills = manifest.get("skills").map(|v| v.is_array() && !v.as_array().unwrap().is_empty()).unwrap_or(false);
+        let has_channels = manifest.get("channels").map(|v| v.is_array() && !v.as_array().unwrap().is_empty()).unwrap_or(false);
+
+        Self {
+            has_mcp,
+            has_lsp,
+            has_tools,
+            has_skills,
+            has_channels,
+        }
+    }
+}
+
+pub struct BundleCommandScopeValidator;
+
+impl BundleCommandScopeValidator {
+    pub fn assert_command_scope_authorized(
+        command_name: &str,
+        required_scope: Option<&str>,
+        user_scopes: &[&str],
+    ) -> Result<(), String> {
+        if let Some(scope) = required_scope {
+            if !user_scopes.contains(&scope) && !user_scopes.contains(&"operator.admin") {
+                return Err(format!(
+                    "Command '{}' requires scope '{}', but caller has scopes: {:?}",
+                    command_name, scope, user_scopes
+                ));
+            }
+        }
+        Ok(())
+    }
+}
+
+
 
 

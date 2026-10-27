@@ -65,6 +65,30 @@
     - Verifies public SDK package exports and subpath structure.
     - Verifies private local-only entrypoint boundaries (`browser-maintenance`, `channel-secret-owner-runtime`, `channel-secret-tts-runtime`).
     - Verifies runtime API exports across bundled extensions contain no internal test harnesses.
+  - `test_ocrm_plugins_bundled_mcp_lsp_capabilities_and_command_scopes` (PASSED)
+    - Verifies bundled MCP server config validation (name syntax, path separators, traversal escape prevention).
+    - Verifies bundled LSP server definition validation (language ID, command).
+    - Verifies manifest capability inspection (`mcpServers`, `lspServers`, `tools`, `skills`, `channels`).
+    - Verifies bundle command scope authorization (`operator.admin` root bypass and exact scope matching).
+
+## 5. Audited Bundle Manifest, Commands, MCP & LSP Files (10 files)
+- **Responsibility**: `OCRM-RESP-PLUGINS-BUNDLE-MANIFEST-001`
+- **Reviewer**: `xuyao@ombhrum.com`
+- **Native Implementation**: `source/host/src/extensions/plugins/bundle_manifest.rs` (`BundledMcpServerValidator`, `BundledLspServerValidator`, `BundleCapabilitySupport`, `BundleCommandScopeValidator`)
+
+| Path | Lines | Size (bytes) | Git Blob SHA |
+| --- | --- | --- | --- |
+| `src/plugins/bundle-capability-support.ts` | 24 | 785 | `2f9d54e4df5e236cbca8ebec886d5fffa8d10332` |
+| `src/plugins/bundle-commands.test.ts` | 185 | 7321 | `30a618335dbf57e8fa134d1bc9ea11c1dfbf251b` |
+| `src/plugins/bundle-config-shared.ts` | 129 | 4863 | `611590409a80e454b525893a72cb3eb8e034e34e` |
+| `src/plugins/bundle-lsp.ts` | 89 | 3111 | `aa4490fa96d4ce03f8373b8893d96924b10da7fc` |
+| `src/plugins/bundle-manifest.test.ts` | 338 | 11902 | `0032aa34ca8a946271a2fc3818e69dbf5c1d6ea5` |
+| `src/plugins/bundle-manifest.ts` | 425 | 15570 | `fba0e300959fbeaa7f603cff9d714e3e3b97b1ca` |
+| `src/plugins/bundle-mcp.test-support.ts` | 74 | 2602 | `83ef59d1872df0d9fc8f6df74681648a0ddcb99f` |
+| `src/plugins/bundle-mcp.test.ts` | 426 | 17248 | `71b4bb6d0c2ee146ba8bbec0707c72f7c222ffda` |
+| `src/plugins/bundle-mcp.ts` | 468 | 19157 | `8ab6f481a539bc2eb6368d5045b35d03c61b2d07` |
+| `src/plugins/bundle-mcp.types.ts` | 21 | 543 | `4ae60bf318eb8ea072aa8ef4c5c703b0c0f99ae9` |
+
 
 
 

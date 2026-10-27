@@ -10,10 +10,10 @@
     "ui_accepted": false
   },
   "file_coverage": {
-    "mapped_paths": 533,
+    "mapped_paths": 543,
     "omitted_known": 0,
     "tracked_paths": 58750,
-    "unclassified_paths": 58217
+    "unclassified_paths": 58207
   },
   "inventory_authority": {
     "manifest_source": "GitHub Actions immutable artifact candidate",
@@ -21025,76 +21025,94 @@
       "selected_owner": "source/host/src/extensions/plugins/bundle_manifest.rs",
       "source_refs": [
         {
-          "blob_sha": "7bfe7039a65c52040c22013333087a0494b9542e",
-          "path": "src/plugins/package-manifest.ts",
+          "blob_sha": "c861447e9b565a1920a1707165326bb6543aac7a",
+          "path": "src/plugins/bundle-capability-support.ts",
           "range": {
-            "end_line": 68,
+            "end_line": 22,
             "start_line": 1
           },
-          "symbol": "resolvePackageExtensionEntries"
+          "symbol": "bundle-capability-support"
         },
         {
-          "blob_sha": "c39502b811e4f1db3c56f9abd6402f039b393476",
-          "path": "src/plugins/contracts/package-manifest.contract.test.ts",
+          "blob_sha": "6c6f336d59a023bd543520f3d2092953e364f1d1",
+          "path": "src/plugins/bundle-commands.test.ts",
           "range": {
-            "end_line": 195,
+            "end_line": 204,
             "start_line": 1
           },
-          "symbol": "package manifest contract"
+          "symbol": "bundle-commands.test"
         },
         {
-          "blob_sha": "a2cf20c0aacc41ca4869e87058d673ab49a7dfc2",
-          "path": "src/plugins/contracts/plugin-registration.contract.test.ts",
+          "blob_sha": "974de17f3daea20ae998e9e43e1f11e1a9d41877",
+          "path": "src/plugins/bundle-config-shared.ts",
           "range": {
-            "end_line": 35,
+            "end_line": 141,
             "start_line": 1
           },
-          "symbol": "plugin registration contract cases"
+          "symbol": "bundle-config-shared"
         },
         {
-          "blob_sha": "56baa096f6d00cd3b26f2b6cc084b0b958ba55cb",
-          "path": "src/plugins/contracts/rootdir-boundary-canary.ts",
+          "blob_sha": "60e204c6fea9ff11c2e948eb870c50cf88173238",
+          "path": "src/plugins/bundle-lsp.ts",
           "range": {
-            "end_line": 6,
+            "end_line": 96,
             "start_line": 1
           },
-          "symbol": "ROOTDIR_BOUNDARY_CANARY"
+          "symbol": "bundle-lsp"
         },
         {
-          "blob_sha": "19eba480e72768750aea34cb62b426a42ea50d81",
-          "path": "src/plugins/contracts/plugin-testing-harness.contract.test.ts",
+          "blob_sha": "33e08c80ac5a62ad4fca3b0209ce664b0f58827d",
+          "path": "src/plugins/bundle-manifest.test.ts",
           "range": {
-            "end_line": 73,
+            "end_line": 361,
             "start_line": 1
           },
-          "symbol": "plugin testing harness contracts"
+          "symbol": "bundle-manifest.test"
         },
         {
-          "blob_sha": "e286cf4545c3caaf9525acfc5d143f6b741a0d93",
-          "path": "src/plugins/contracts/plugin-tool-contracts.test.ts",
+          "blob_sha": "460fbe4817bca9b3d59d317cc151dad16d39cf1e",
+          "path": "src/plugins/bundle-manifest.ts",
           "range": {
-            "end_line": 164,
+            "end_line": 429,
             "start_line": 1
           },
-          "symbol": "bundled plugin tool manifest contracts"
+          "symbol": "bundle-manifest"
         },
         {
-          "blob_sha": "10620079bc3e8d4b862fa631cea713db7c1a6007",
-          "path": "src/plugins/contracts/plugin-sdk-index.bundle.test.ts",
+          "blob_sha": "fb917c6b81c810ff39f89c3f7a6c2bf8ac03d77a",
+          "path": "src/plugins/bundle-mcp.test-support.ts",
           "range": {
-            "end_line": 90,
+            "end_line": 77,
             "start_line": 1
           },
-          "symbol": "plugin-sdk bundle subpath entries"
+          "symbol": "bundle-mcp.test-support"
         },
         {
-          "blob_sha": "7bf2ec22f8c188338a9926351cdac9a84689e3a3",
-          "path": "src/plugins/contracts/test-helpers/bundled-plugin-roots.ts",
+          "blob_sha": "45f841d58bc103a12192f0ca7792127d8de0b92a",
+          "path": "src/plugins/bundle-mcp.test.ts",
           "range": {
-            "end_line": 46,
+            "end_line": 471,
             "start_line": 1
           },
-          "symbol": "bundled plugin roots resolver"
+          "symbol": "bundle-mcp.test"
+        },
+        {
+          "blob_sha": "6bfae6db4526291069d6fb4737107bb28f9c6c27",
+          "path": "src/plugins/bundle-mcp.ts",
+          "range": {
+            "end_line": 567,
+            "start_line": 1
+          },
+          "symbol": "bundle-mcp"
+        },
+        {
+          "blob_sha": "f4bb6bcbba4d1c9de5bcfe07e7d81d32948aadfe",
+          "path": "src/plugins/bundle-mcp.types.ts",
+          "range": {
+            "end_line": 22,
+            "start_line": 1
+          },
+          "symbol": "bundle-mcp.types"
         },
         {
           "blob_sha": "9a459f0789f9e56c515f5ba517e5841f607a0b11",
@@ -21124,6 +21142,15 @@
           "symbol": "extension runtime dependencies contract"
         },
         {
+          "blob_sha": "c39502b811e4f1db3c56f9abd6402f039b393476",
+          "path": "src/plugins/contracts/package-manifest.contract.test.ts",
+          "range": {
+            "end_line": 195,
+            "start_line": 1
+          },
+          "symbol": "package manifest contract"
+        },
+        {
           "blob_sha": "c25df98ff3ab82fb99e45bf15cac5cf6a3176a22",
           "path": "src/plugins/contracts/plugin-entry-guardrails.test.ts",
           "range": {
@@ -21131,6 +21158,24 @@
             "start_line": 1
           },
           "symbol": "plugin entry guardrails"
+        },
+        {
+          "blob_sha": "a2cf20c0aacc41ca4869e87058d673ab49a7dfc2",
+          "path": "src/plugins/contracts/plugin-registration.contract.test.ts",
+          "range": {
+            "end_line": 35,
+            "start_line": 1
+          },
+          "symbol": "plugin registration contract cases"
+        },
+        {
+          "blob_sha": "10620079bc3e8d4b862fa631cea713db7c1a6007",
+          "path": "src/plugins/contracts/plugin-sdk-index.bundle.test.ts",
+          "range": {
+            "end_line": 90,
+            "start_line": 1
+          },
+          "symbol": "plugin-sdk bundle subpath entries"
         },
         {
           "blob_sha": "927920cd0dfeea31347e405e1b4ae8aebdd6c091",
@@ -21158,6 +21203,51 @@
             "start_line": 1
           },
           "symbol": "plugin SDK subpath export contract"
+        },
+        {
+          "blob_sha": "19eba480e72768750aea34cb62b426a42ea50d81",
+          "path": "src/plugins/contracts/plugin-testing-harness.contract.test.ts",
+          "range": {
+            "end_line": 73,
+            "start_line": 1
+          },
+          "symbol": "plugin testing harness contracts"
+        },
+        {
+          "blob_sha": "e286cf4545c3caaf9525acfc5d143f6b741a0d93",
+          "path": "src/plugins/contracts/plugin-tool-contracts.test.ts",
+          "range": {
+            "end_line": 164,
+            "start_line": 1
+          },
+          "symbol": "bundled plugin tool manifest contracts"
+        },
+        {
+          "blob_sha": "56baa096f6d00cd3b26f2b6cc084b0b958ba55cb",
+          "path": "src/plugins/contracts/rootdir-boundary-canary.ts",
+          "range": {
+            "end_line": 6,
+            "start_line": 1
+          },
+          "symbol": "ROOTDIR_BOUNDARY_CANARY"
+        },
+        {
+          "blob_sha": "7bf2ec22f8c188338a9926351cdac9a84689e3a3",
+          "path": "src/plugins/contracts/test-helpers/bundled-plugin-roots.ts",
+          "range": {
+            "end_line": 46,
+            "start_line": 1
+          },
+          "symbol": "bundled plugin roots resolver"
+        },
+        {
+          "blob_sha": "7bfe7039a65c52040c22013333087a0494b9542e",
+          "path": "src/plugins/package-manifest.ts",
+          "range": {
+            "end_line": 68,
+            "start_line": 1
+          },
+          "symbol": "resolvePackageExtensionEntries"
         }
       ],
       "status": {
@@ -21177,7 +21267,8 @@
         "source/host/tests/openclaw_plugins_contract.rs::test_ocrm_plugins_bundle_manifest",
         "source/host/tests/openclaw_plugins_contract.rs::test_ocrm_plugins_bundled_capability_metadata_and_subpath_bundle",
         "source/host/tests/openclaw_plugins_contract.rs::test_ocrm_plugins_bundle_manifest_guardrails",
-        "source/host/tests/openclaw_plugins_contract.rs::test_ocrm_plugins_sdk_package_and_runtime_api_guardrails"
+        "source/host/tests/openclaw_plugins_contract.rs::test_ocrm_plugins_sdk_package_and_runtime_api_guardrails",
+        "source/host/tests/openclaw_plugins_contract.rs::test_ocrm_plugins_bundled_mcp_lsp_capabilities_and_command_scopes"
       ],
       "typed_contracts": [
         "PluginBundleFormat",

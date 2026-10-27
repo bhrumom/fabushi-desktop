@@ -1186,6 +1186,86 @@ fn test_ocrm_plugins_activation_context_payload_and_runtime_registry() {
     );
 }
 
+#[test]
+fn test_ocrm_plugins_bundled_mcp_lsp_capabilities_and_command_scopes() {
+    use std::collections::HashMap;
+    use serde_json::json;
+    use mahayana_host_runtime::extensions::plugins::bundle_manifest::{
+        BundledMcpServerConfig, BundledMcpTransport, BundledMcpServerValidator,
+        BundledLspServerValidator, BundleCapabilitySupport, BundleCommandScopeValidator,
+    };
+
+    // 1. Bundled MCP Server Validation
+    let valid_mcp = BundledMcpServerConfig {
+        name: "local-sqlite".into(),
+        command: "bin/mcp-server".into(),
+        args: vec!["--db".into(), "data/store.db".into()],
+        env: HashMap::new(),
+        transport: BundledMcpTransport::Stdio,
+    };
+    assert!(BundledMcpServerValidator::validate(&valid_mcp).is_ok());
+
+    let bad_name = BundledMcpServerConfig {
+        name: "local/sqlite".into(),
+        ..valid_mcp.clone()
+    };
+    let err_name = BundledMcpServerValidator::validate(&bad_name).unwrap_err();
+    assert!(err_name.contains("Invalid MCP server name"));
+
+    let bad_cmd = BundledMcpServerConfig {
+        command: "../../../bin/sh".into(),
+        ..valid_mcp.clone()
+    };
+    let err_cmd = BundledMcpServerValidator::validate(&bad_cmd).unwrap_err();
+    assert!(err_cmd.contains("cannot escape bundle root"));
+
+    let bad_arg = BundledMcpServerConfig {
+        args: vec!["--target".into(), "../../etc/passwd".into()],
+        ..valid_mcp.clone()
+    };
+    let err_arg = BundledMcpServerValidator::validate(&bad_arg).unwrap_err();
+    assert!(err_arg.contains("cannot escape bundle root"));
+
+    // 2. Bundled LSP Server Validation
+    assert!(BundledLspServerValidator::validate("rust-analyzer", "rust", "bin/ra").is_ok());
+    assert!(BundledLspServerValidator::validate("", "rust", "bin/ra").is_err());
+    assert!(BundledLspServerValidator::validate("ra", "", "bin/ra").is_err());
+    assert!(BundledLspServerValidator::validate("ra", "rust", "../ra").is_err());
+
+    // 3. Bundle Capability Support from Manifest
+    let manifest = json!({
+        "mcpServers": {
+            "sqlite": { "command": "bin/sqlite" }
+        },
+        "tools": [
+            { "name": "search" }
+        ],
+        "skills": [
+            { "name": "web-browsing" }
+        ]
+    });
+    let caps = BundleCapabilitySupport::from_manifest(&manifest);
+    assert!(caps.has_mcp);
+    assert!(caps.has_tools);
+    assert!(caps.has_skills);
+    assert!(!caps.has_lsp);
+    assert!(!caps.has_channels);
+
+    // 4. Bundle Command Scope Validation
+    let user_scopes = ["operator.read", "tool.execute"];
+    assert!(BundleCommandScopeValidator::assert_command_scope_authorized("run-tool", Some("tool.execute"), &user_scopes).is_ok());
+    assert!(BundleCommandScopeValidator::assert_command_scope_authorized("read-info", None, &user_scopes).is_ok());
+
+    // Unauthorized scope fails
+    let err_scope = BundleCommandScopeValidator::assert_command_scope_authorized("delete-db", Some("operator.admin"), &user_scopes).unwrap_err();
+    assert!(err_scope.contains("requires scope 'operator.admin'"));
+
+    // Admin scope bypasses requirement
+    let admin_scopes = ["operator.admin"];
+    assert!(BundleCommandScopeValidator::assert_command_scope_authorized("delete-db", Some("restricted.write"), &admin_scopes).is_ok());
+}
+
+
 
 
 
