@@ -10,10 +10,10 @@
     "ui_accepted": false
   },
   "file_coverage": {
-    "mapped_paths": 384,
+    "mapped_paths": 386,
     "omitted_known": 0,
     "tracked_paths": 58750,
-    "unclassified_paths": 58366
+    "unclassified_paths": 58364
   },
   "inventory_authority": {
     "manifest_source": "GitHub Actions immutable artifact candidate",
@@ -20398,11 +20398,11 @@
       "behavior": "Plugin bundle manifest detection for Codex (.codex-plugin/plugin.json), Claude (.claude-plugin/plugin.json), Cursor (.cursor-plugin/plugin.json), and Agent (plugin.json) formats, ClawHub package spec parsing, archive size limits (50MB zip, 250MB extracted, 5k entries), and SHA-256 integrity verification.",
       "risk": "High; archive zip bombs or corrupt manifests crash extension discovery or permit arbitrary bundle loading",
       "status": {
-        "read": "partial",
-        "mapping": "mapped",
-        "wiring": "not-wired",
+        "read": "read-complete",
+        "mapping": "reviewed",
         "implementation": "implemented",
-        "verification": "not-run",
+        "wiring": "wired",
+        "verification": "verified",
         "acceptance": "pending"
       },
       "selected_owner": "source/host/src/extensions/plugins/bundle_manifest.rs",
@@ -20445,18 +20445,27 @@
       },
       "source_refs": [
         {
-          "path": "src/plugins/build-smoke-entry.ts",
-          "blob_sha": "2cae6314962efa6fd52bd4c3baa6b905b06f2b5b",
+          "path": "src/plugins/package-manifest.ts",
+          "blob_sha": "7bfe7039a65c52040c22013333087a0494b9542e",
+          "symbol": "resolvePackageExtensionEntries",
           "range": {
             "start_line": 1,
-            "end_line": 16
-          },
-          "symbol": "build-smoke-entry"
+            "end_line": 68
+          }
+        },
+        {
+          "path": "src/plugins/contracts/package-manifest.contract.test.ts",
+          "blob_sha": "c39502b811e4f1db3c56f9abd6402f039b393476",
+          "symbol": "package manifest contract",
+          "range": {
+            "start_line": 1,
+            "end_line": 195
+          }
         }
       ],
       "evidence_refs": [
-        "source/host/tests/openclaw_plugins_contract.rs",
-        "projects/openclaw-rust/dossiers/plugins-runtime-scoped.md"
+        "projects/openclaw-rust/dossiers/plugins-package-manifest-contract-scoped.md",
+        "source/host/tests/openclaw_plugins_contract.rs"
       ],
       "requirement_ids": [
         "OCRM-R04",

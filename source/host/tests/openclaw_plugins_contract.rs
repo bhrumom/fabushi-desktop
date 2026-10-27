@@ -72,6 +72,71 @@ fn test_ocrm_plugins_bundle_manifest() {
     let hex_digest = encode_hex(&sha2::Sha256::digest(test_data));
     assert!(verify_sha256_integrity(test_data, &hex_digest).is_ok());
     assert!(verify_sha256_integrity(test_data, "bad-digest").is_err());
+
+    // 5. Package manifest authoring validation (package-manifest.contract.test.ts)
+    use mahayana_host_runtime::extensions::plugins::bundle_manifest::{
+        resolve_package_extension_entries, validate_package_extension_entries_for_install,
+        OpenClawMetadata,
+    };
+    use serde_json::json;
+
+    // Valid package manifest
+    let valid_json = json!({
+        "openclaw": {
+            "extensions": ["./src/index.ts"],
+            "runtimeExtensions": ["./dist/index.js"],
+            "setupEntry": "./src/setup.ts",
+            "runtimeSetupEntry": "./dist/setup.js"
+        }
+    });
+    let res = resolve_package_extension_entries(&valid_json);
+    assert_eq!(res.status, "ok");
+    assert_eq!(res.entries, vec!["./src/index.ts"]);
+
+    // Non-object openclaw metadata
+    let non_obj = json!({"openclaw": "invalid"});
+    let res_non_obj = resolve_package_extension_entries(&non_obj);
+    assert_eq!(res_non_obj.status, "invalid");
+    assert_eq!(
+        res_non_obj.error.as_deref(),
+        Some("package.json openclaw must be an object")
+    );
+
+    // Non-array extensions
+    let non_arr = json!({"openclaw": {"extensions": "./index.js"}});
+    let res_non_arr = resolve_package_extension_entries(&non_arr);
+    assert_eq!(res_non_arr.status, "invalid");
+    assert_eq!(
+        res_non_arr.error.as_deref(),
+        Some("package.json openclaw.extensions must be an array")
+    );
+
+    // Blank extension
+    let blank = json!({"openclaw": {"extensions": [" "]}});
+    let res_blank = resolve_package_extension_entries(&blank);
+    assert_eq!(res_blank.status, "invalid");
+    assert_eq!(
+        res_blank.error.as_deref(),
+        Some("package.json openclaw.extensions[0] must be a non-empty string")
+    );
+
+    // Runtime extensions length mismatch
+    let mismatch_meta = OpenClawMetadata {
+        extensions: vec!["./src/one.ts".to_string(), "./src/two.ts".to_string()],
+        runtime_extensions: vec!["./dist/one.js".to_string()],
+        setup_entry: None,
+        runtime_setup_entry: None,
+    };
+    assert!(validate_package_extension_entries_for_install(&mismatch_meta).is_err());
+
+    // Runtime setup without source setup
+    let runtime_setup_only = OpenClawMetadata {
+        extensions: vec![],
+        runtime_extensions: vec![],
+        setup_entry: None,
+        runtime_setup_entry: Some("./dist/setup.js".to_string()),
+    };
+    assert!(validate_package_extension_entries_for_install(&runtime_setup_only).is_err());
 }
 
 #[test]

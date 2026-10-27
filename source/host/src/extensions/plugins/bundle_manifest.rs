@@ -7,27 +7,25 @@ pub const CLAUDE_BUNDLE_MANIFEST_RELATIVE_PATH: &str = ".claude-plugin/plugin.js
 pub const CURSOR_BUNDLE_MANIFEST_RELATIVE_PATH: &str = ".cursor-plugin/plugin.json";
 pub const AGENT_BUNDLE_MANIFEST_RELATIVE_PATH: &str = "plugin.json";
 
-pub const DEFAULT_MAX_ARCHIVE_BYTES_ZIP: u64 = 50 * 1024 * 1024; // 50 MB
-pub const DEFAULT_MAX_EXTRACTED_BYTES: u64 = 250 * 1024 * 1024; // 250 MB
+pub const DEFAULT_MAX_ARCHIVE_BYTES_ZIP: u64 = 50 * 1024 * 1024; // 50MB
+pub const DEFAULT_MAX_EXTRACTED_BYTES: u64 = 250 * 1024 * 1024; // 250MB
 pub const DEFAULT_MAX_ENTRIES: usize = 5000;
-pub const DEFAULT_MAX_ENTRY_BYTES: u64 = 50 * 1024 * 1024; // 50 MB
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
-#[serde(rename_all = "snake_case")]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum PluginBundleFormat {
-    Agent,
-    Claude,
     Codex,
+    Claude,
     Cursor,
+    Agent,
 }
 
 impl PluginBundleFormat {
     pub fn manifest_relative_path(&self) -> &'static str {
         match self {
-            PluginBundleFormat::Agent => AGENT_BUNDLE_MANIFEST_RELATIVE_PATH,
-            PluginBundleFormat::Claude => CLAUDE_BUNDLE_MANIFEST_RELATIVE_PATH,
-            PluginBundleFormat::Codex => CODEX_BUNDLE_MANIFEST_RELATIVE_PATH,
-            PluginBundleFormat::Cursor => CURSOR_BUNDLE_MANIFEST_RELATIVE_PATH,
+            Self::Codex => CODEX_BUNDLE_MANIFEST_RELATIVE_PATH,
+            Self::Claude => CLAUDE_BUNDLE_MANIFEST_RELATIVE_PATH,
+            Self::Cursor => CURSOR_BUNDLE_MANIFEST_RELATIVE_PATH,
+            Self::Agent => AGENT_BUNDLE_MANIFEST_RELATIVE_PATH,
         }
     }
 }
@@ -39,10 +37,10 @@ pub struct ClawHubPluginSpec {
     pub version: String,
 }
 
-pub fn parse_clawhub_plugin_spec(raw: &str) -> Result<ClawHubPluginSpec, String> {
-    let trimmed = raw.trim();
+pub fn parse_clawhub_plugin_spec(input: &str) -> Result<ClawHubPluginSpec, String> {
+    let trimmed = input.trim();
     if trimmed.is_empty() {
-        return Err("ClawHub plugin spec cannot be empty".to_string());
+        return Err("Plugin spec cannot be empty".to_string());
     }
 
     let (package_part, version) = if let Some(idx) = trimmed.rfind('@') {
@@ -141,4 +139,109 @@ pub fn verify_sha256_integrity(data: &[u8], expected_digest: &str) -> Result<(),
             "Integrity mismatch: expected '{expected_hex}', actual '{actual_hex}'"
         ))
     }
+}
+
+// Package manifest validation conforming to package-manifest.contract.test.ts
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct OpenClawMetadata {
+    pub extensions: Vec<String>,
+    #[serde(default)]
+    pub runtime_extensions: Vec<String>,
+    #[serde(default)]
+    pub setup_entry: Option<String>,
+    #[serde(default)]
+    pub runtime_setup_entry: Option<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct PackageExtensionEntriesResult {
+    pub status: String,
+    pub entries: Vec<String>,
+    #[serde(default)]
+    pub error: Option<String>,
+}
+
+pub fn resolve_package_extension_entries(raw_manifest: &serde_json::Value) -> PackageExtensionEntriesResult {
+    let openclaw = match raw_manifest.get("openclaw") {
+        Some(val) if val.is_object() => val,
+        Some(_) => {
+            return PackageExtensionEntriesResult {
+                status: "invalid".to_string(),
+                entries: vec![],
+                error: Some("package.json openclaw must be an object".to_string()),
+            };
+        }
+        None => {
+            return PackageExtensionEntriesResult {
+                status: "invalid".to_string(),
+                entries: vec![],
+                error: Some("missing openclaw object in package.json".to_string()),
+            };
+        }
+    };
+
+    let extensions = match openclaw.get("extensions") {
+        Some(val) if val.is_array() => val.as_array().unwrap(),
+        Some(_) => {
+            return PackageExtensionEntriesResult {
+                status: "invalid".to_string(),
+                entries: vec![],
+                error: Some("package.json openclaw.extensions must be an array".to_string()),
+            };
+        }
+        None => {
+            return PackageExtensionEntriesResult {
+                status: "ok".to_string(),
+                entries: vec![],
+                error: None,
+            };
+        }
+    };
+
+    let mut result = Vec::new();
+    for (idx, item) in extensions.iter().enumerate() {
+        if let Some(s) = item.as_str() {
+            if s.trim().is_empty() {
+                return PackageExtensionEntriesResult {
+                    status: "invalid".to_string(),
+                    entries: vec![],
+                    error: Some(format!("package.json openclaw.extensions[{idx}] must be a non-empty string")),
+                };
+            }
+            result.push(s.to_string());
+        } else {
+            return PackageExtensionEntriesResult {
+                status: "invalid".to_string(),
+                entries: vec![],
+                error: Some(format!("package.json openclaw.extensions[{idx}] must be a string")),
+            };
+        }
+    }
+
+    PackageExtensionEntriesResult {
+        status: "ok".to_string(),
+        entries: result,
+        error: None,
+    }
+}
+
+pub fn validate_package_extension_entries_for_install(
+    openclaw: &OpenClawMetadata,
+) -> Result<(), String> {
+    if !openclaw.runtime_extensions.is_empty()
+        && openclaw.runtime_extensions.len() != openclaw.extensions.len()
+    {
+        return Err(format!(
+            "package.json openclaw.runtimeExtensions length ({}) must match openclaw.extensions length ({})",
+            openclaw.runtime_extensions.len(),
+            openclaw.extensions.len()
+        ));
+    }
+
+    if openclaw.runtime_setup_entry.is_some() && openclaw.setup_entry.is_none() {
+        return Err("package.json openclaw.runtimeSetupEntry requires openclaw.setupEntry".to_string());
+    }
+
+    Ok(())
 }
