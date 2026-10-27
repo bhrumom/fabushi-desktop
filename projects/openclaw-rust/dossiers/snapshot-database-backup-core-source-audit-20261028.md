@@ -184,6 +184,12 @@ and returns the manifest-compatible count/digest without retaining the full
 table. The contract compares it to an independently assembled JSONL digest and
 rejects injection-shaped table names. PostgreSQL materialization remains absent.
 
+A parity correction now makes `digest_sqlite_table` order rows by composite
+primary-key positions from `PRAGMA table_info`, falling back to `rowid` when
+no primary key exists. The real SQLite oracle inserts rows in reverse order yet
+matches the independently assembled sorted digest; this closes an actual
+insert-order nondeterminism in the SQLite producer path.
+
 ## Responsibility/evidence decision
 
 `OCRM-RESP-SNAPSHOT-BACKUP-CODEC-001` remains `read=partial`,
