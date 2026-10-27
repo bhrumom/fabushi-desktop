@@ -21,6 +21,9 @@ use mahayana_host_runtime::extensions::plugins::capability_catalog::{
     PluginAcceptedDeclaredSurface, CapabilityConsentManager,
     PluginRuntimeCapabilityLease, CapabilitySummaryBuilder,
     CapturedPluginRegistration, PluginCapabilityAcquisitionScope,
+    CatalogDiscoveryCodec, CatalogIconRegistry,
+    CatalogPackageSearchResult, CatalogSearchRanking,
+    ChannelCatalogCandidate, ChannelCatalogResolver,
 };
 
 #[test]
@@ -1831,6 +1834,155 @@ fn test_ocrm_plugins_capability_lease_summary_and_acquisition() {
     // Release closes scope
     scope.release();
     assert!(scope.assert_open().is_err());
+}
+
+#[test]
+fn test_ocrm_plugins_catalog_discovery_icon_ranking_and_channel_registry() {
+    // 1. Catalog Discovery Codec: Encoding, Decoding & Roundtrip
+    let pkg_name = "@openclaw/feishu";
+    let encoded_ch = CatalogDiscoveryCodec::encode_plugin_discovery_id(pkg_name).unwrap();
+    assert!(encoded_ch.starts_with(CatalogDiscoveryCodec::DISCOVERY_ID_PREFIX));
+
+    let resolved_ch = CatalogDiscoveryCodec::resolve_plugin_discovery_identity(&encoded_ch);
+    assert_eq!(resolved_ch, Some(("clawhub", pkg_name.to_string())));
+
+    let local_id = "my-local-plugin";
+    let encoded_local = CatalogDiscoveryCodec::encode_local_plugin_discovery_id(local_id).unwrap();
+    assert!(encoded_local.starts_with(CatalogDiscoveryCodec::LOCAL_DISCOVERY_ID_PREFIX));
+
+    let resolved_local = CatalogDiscoveryCodec::resolve_plugin_discovery_identity(&encoded_local);
+    assert_eq!(resolved_local, Some(("local", local_id.to_string())));
+
+    // Rejection of empty or invalid discovery identities
+    assert!(CatalogDiscoveryCodec::encode_plugin_discovery_id("   ").is_err());
+    assert_eq!(CatalogDiscoveryCodec::resolve_plugin_discovery_identity("invalid_prefix"), None);
+    assert_eq!(CatalogDiscoveryCodec::resolve_plugin_discovery_identity("ch_$$$invalid$$$"), None);
+
+    // Join helper: plugin_catalog_id
+    assert_eq!(
+        CatalogDiscoveryCodec::plugin_catalog_id("ignored-id", Some("@openclaw/pkg")).unwrap(),
+        CatalogDiscoveryCodec::encode_plugin_discovery_id("@openclaw/pkg").unwrap()
+    );
+    assert_eq!(
+        CatalogDiscoveryCodec::plugin_catalog_id("local-id", None).unwrap(),
+        CatalogDiscoveryCodec::encode_local_plugin_discovery_id("local-id").unwrap()
+    );
+
+    // 2. Catalog Icon Registry & Normalization Guardrails
+    let valid_icon = "https://example.com/icons/feishu.png";
+    assert_eq!(
+        CatalogIconRegistry::normalize_catalog_icon_url(valid_icon),
+        Some("https://example.com/icons/feishu.png".to_string())
+    );
+    // Insecure http rejected
+    assert_eq!(CatalogIconRegistry::normalize_catalog_icon_url("http://example.com/icon.png"), None);
+    // Fragment rejected
+    assert_eq!(CatalogIconRegistry::normalize_catalog_icon_url("https://example.com/icon.png#hash"), None);
+    // User/pass credentials rejected
+    assert_eq!(CatalogIconRegistry::normalize_catalog_icon_url("https://user:pass@example.com/icon.png"), None);
+
+    // Icon registry LRU behavior
+    let registry = CatalogIconRegistry::new(2);
+    registry.register_icon_urls(["https://example.com/1.png", "https://example.com/2.png"]);
+    assert_eq!(
+        registry.resolve_icon_url("https://example.com/1.png"),
+        Some("https://example.com/1.png".to_string())
+    );
+    // Eviction on overflow
+    registry.register_icon_urls(["https://example.com/3.png"]);
+    assert_eq!(registry.resolve_icon_url("https://example.com/1.png"), None);
+    assert_eq!(
+        registry.resolve_icon_url("https://example.com/3.png"),
+        Some("https://example.com/3.png".to_string())
+    );
+
+    // 3. Catalog Search Ranking & Deduplication
+    assert_eq!(CatalogSearchRanking::clamp_limit(None), 20);
+    assert_eq!(CatalogSearchRanking::clamp_limit(Some(0)), 20);
+    assert_eq!(CatalogSearchRanking::clamp_limit(Some(5)), 5);
+    assert_eq!(CatalogSearchRanking::clamp_limit(Some(500)), 100);
+
+    let raw_search = vec![
+        CatalogPackageSearchResult {
+            name: "pkg-a".to_string(),
+            family: "code-plugin".to_string(),
+            score: 0.8,
+        },
+        CatalogPackageSearchResult {
+            name: "pkg-a".to_string(),
+            family: "code-plugin".to_string(),
+            score: 0.95, // higher score wins
+        },
+        CatalogPackageSearchResult {
+            name: "pkg-b".to_string(),
+            family: "unsupported-family".to_string(),
+            score: 1.0, // filtered out
+        },
+        CatalogPackageSearchResult {
+            name: "pkg-c".to_string(),
+            family: "bundle-plugin".to_string(),
+            score: 0.95, // tie with pkg-a score
+        },
+    ];
+    let ranked = CatalogSearchRanking::deduplicate_and_rank(raw_search, Some(10));
+    assert_eq!(ranked.len(), 2);
+    // Score 0.95 entries come first, sorted by name: pkg-a then pkg-c
+    assert_eq!(ranked[0].name, "pkg-a");
+    assert_eq!(ranked[0].score, 0.95);
+    assert_eq!(ranked[1].name, "pkg-c");
+    assert_eq!(ranked[1].score, 0.95);
+
+    // 4. Channel Catalog Registry & Candidate Resolution
+    let candidates = vec![
+        ChannelCatalogCandidate {
+            id_hint: Some("hint-plugin".to_string()),
+            bundled_manifest_id: Some("bundled-tg".to_string()),
+            package_plugin_id: Some("pkg-tg".to_string()),
+            package_name: Some("@openclaw/telegram".to_string()),
+            channel_id: Some("telegram".to_string()),
+            channel_name: Some("Telegram".to_string()),
+            origin: PluginOrigin::Bundled,
+            root_dir: "/app/plugins/telegram".to_string(),
+            is_trusted_official: true,
+        },
+        ChannelCatalogCandidate {
+            id_hint: Some("custom-discord".to_string()),
+            bundled_manifest_id: None,
+            package_plugin_id: Some("pkg-discord".to_string()),
+            package_name: Some("@vendor/discord".to_string()),
+            channel_id: Some("discord".to_string()),
+            channel_name: Some("Discord".to_string()),
+            origin: PluginOrigin::Installed,
+            root_dir: "/home/user/.openclaw/discord".to_string(),
+            is_trusted_official: false,
+        },
+        ChannelCatalogCandidate {
+            id_hint: Some("no-channel-plugin".to_string()),
+            bundled_manifest_id: None,
+            package_plugin_id: None,
+            package_name: None,
+            channel_id: None, // No channel id -> skipped
+            channel_name: None,
+            origin: PluginOrigin::Installed,
+            root_dir: "/home/user/.openclaw/dummy".to_string(),
+            is_trusted_official: false,
+        },
+    ];
+
+    let all_channels = ChannelCatalogResolver::resolve_channel_catalog_entries(&candidates, None);
+    assert_eq!(all_channels.len(), 2);
+    assert_eq!(all_channels[0].plugin_id, "bundled-tg");
+    assert_eq!(all_channels[0].channel_name, "telegram");
+    assert!(all_channels[0].trusted_official_install);
+    assert_eq!(all_channels[1].plugin_id, "pkg-discord");
+    assert!(!all_channels[1].trusted_official_install);
+
+    let bundled_only = ChannelCatalogResolver::resolve_channel_catalog_entries(
+        &candidates,
+        Some(&PluginOrigin::Bundled),
+    );
+    assert_eq!(bundled_only.len(), 1);
+    assert_eq!(bundled_only[0].plugin_id, "bundled-tg");
 }
 
 

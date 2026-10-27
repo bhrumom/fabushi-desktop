@@ -10,10 +10,10 @@
     "ui_accepted": false
   },
   "file_coverage": {
-    "mapped_paths": 593,
+    "mapped_paths": 602,
     "omitted_known": 0,
     "tracked_paths": 58750,
-    "unclassified_paths": 58157
+    "unclassified_paths": 58148
   },
   "inventory_authority": {
     "manifest_source": "GitHub Actions immutable artifact candidate",
@@ -22004,6 +22004,87 @@
             "end_line": 287
           },
           "symbol": "createCapturedPluginRegistration"
+        },
+        {
+          "blob_sha": "40518ddab7c2b75cc13cd23f154732680baf7c22",
+          "path": "src/plugins/catalog-discovery-runtime.ts",
+          "range": {
+            "start_line": 1,
+            "end_line": 249
+          },
+          "symbol": "readCatalogPage"
+        },
+        {
+          "blob_sha": "1928c3092342182e0baaeb0db8f7deb4e41027d0",
+          "path": "src/plugins/catalog-discovery.test.ts",
+          "range": {
+            "start_line": 1,
+            "end_line": 575
+          },
+          "symbol": "catalog discovery test suite"
+        },
+        {
+          "blob_sha": "c295c5c1fcedcf54c807a44e01875cb2b28f0853",
+          "path": "src/plugins/catalog-discovery.ts",
+          "range": {
+            "start_line": 1,
+            "end_line": 445
+          },
+          "symbol": "joinClawHubPluginCatalog"
+        },
+        {
+          "blob_sha": "a6aa0a38d55ca910bdfa96ae83f53b9b466dfcf4",
+          "path": "src/plugins/catalog-icon-registry.test.ts",
+          "range": {
+            "start_line": 1,
+            "end_line": 42
+          },
+          "symbol": "catalog icon registry test suite"
+        },
+        {
+          "blob_sha": "155e191a4094cae973bcabd6737602303ea0725e",
+          "path": "src/plugins/catalog-icon-registry.ts",
+          "range": {
+            "start_line": 1,
+            "end_line": 34
+          },
+          "symbol": "registerClawHubCatalogIconUrls"
+        },
+        {
+          "blob_sha": "45dff5df3386a3393ef98b05583e979c9352b362",
+          "path": "src/plugins/catalog-search.test.ts",
+          "range": {
+            "start_line": 1,
+            "end_line": 80
+          },
+          "symbol": "catalog search test suite"
+        },
+        {
+          "blob_sha": "f5016e2753dc549a1e651ef3288194fcc1fd1cfb",
+          "path": "src/plugins/catalog-search.ts",
+          "range": {
+            "start_line": 1,
+            "end_line": 40
+          },
+          "symbol": "searchInstallablePluginPackages"
+        },
+        {
+          "blob_sha": "c8cf9def2801207dc08872723dec48487d04e25f",
+          "path": "src/plugins/channel-catalog-registry.test.ts",
+          "range": {
+            "start_line": 1,
+            "end_line": 288
+          },
+          "symbol": "channel catalog registry test suite"
+        },
+        {
+          "blob_sha": "af8b005acfbde1e7af6c19a71d5215f1766555ec",
+          "path": "src/plugins/channel-catalog-registry.ts",
+          "range": {
+            "start_line": 1,
+            "end_line": 128
+          },
+          "symbol": "listChannelCatalogEntries"
         }
       ],
       "status": {
@@ -22031,7 +22112,8 @@
         "source/host/tests/openclaw_plugins_contract.rs::test_ocrm_plugins_bundled_channel_metadata_compat_and_dir_resolver",
         "source/host/tests/openclaw_plugins_contract.rs::test_ocrm_plugins_bundled_metadata_scan_compat_and_naming_artwork",
         "source/host/tests/openclaw_plugins_contract.rs::test_ocrm_plugins_bundled_sources_catalog_and_capability_consent",
-        "source/host/tests/openclaw_plugins_contract.rs::test_ocrm_plugins_capability_lease_summary_and_acquisition"
+        "source/host/tests/openclaw_plugins_contract.rs::test_ocrm_plugins_capability_lease_summary_and_acquisition",
+        "source/host/tests/openclaw_plugins_contract.rs::test_ocrm_plugins_catalog_discovery_icon_ranking_and_channel_registry"
       ],
       "typed_contracts": [
         "PluginCapabilityCatalog",

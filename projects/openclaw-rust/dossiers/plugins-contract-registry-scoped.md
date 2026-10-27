@@ -182,4 +182,30 @@
 - **Capability Acquisition & Reload Fence**: `PluginCapabilityAcquisitionScope` tracks generation counters. If provider setup changes during request preparation, `assert_open` fails closed with a retry directive.
 - **Complete Capability Capture**: `CapturedPluginRegistration` collects registrations across all 21 capability families and rejects unregistered families.
 
+## 9. Audited Catalog Discovery, Search, Icon Registry & Channel Catalog Registry (9 files)
+- **Primary Responsibility**: `OCRM-RESP-PLUGINS-CAPABILITY-CATALOG-001`
+- **Reviewer**: `xuyao@ombhrum.com`
+- **Native Implementation**: `source/host/src/extensions/plugins/capability_catalog.rs` (`CatalogDiscoveryCodec`, `CatalogIconRegistry`, `CatalogSearchRanking`, `ChannelCatalogResolver`)
+- **Contract Tests**: `source/host/tests/openclaw_plugins_contract.rs::test_ocrm_plugins_catalog_discovery_icon_ranking_and_channel_registry`
+
+| Path | Lines | Size (bytes) | Git Blob SHA | Mapped Responsibility |
+| --- | --- | --- | --- | --- |
+| `src/plugins/catalog-discovery-runtime.ts` | 249 | 8452 | `40518ddab7c2b75cc13cd23f154732680baf7c22` | `OCRM-RESP-PLUGINS-CAPABILITY-CATALOG-001` |
+| `src/plugins/catalog-discovery.test.ts` | 575 | 22442 | `1928c3092342182e0baaeb0db8f7deb4e41027d0` | `OCRM-RESP-PLUGINS-CAPABILITY-CATALOG-001` |
+| `src/plugins/catalog-discovery.ts` | 445 | 16348 | `c295c5c1fcedcf54c807a44e01875cb2b28f0853` | `OCRM-RESP-PLUGINS-CAPABILITY-CATALOG-001` |
+| `src/plugins/catalog-icon-registry.test.ts` | 42 | 1488 | `a6aa0a38d55ca910bdfa96ae83f53b9b466dfcf4` | `OCRM-RESP-PLUGINS-CAPABILITY-CATALOG-001` |
+| `src/plugins/catalog-icon-registry.ts` | 34 | 1083 | `155e191a4094cae973bcabd6737602303ea0725e` | `OCRM-RESP-PLUGINS-CAPABILITY-CATALOG-001` |
+| `src/plugins/catalog-search.test.ts` | 80 | 2776 | `45dff5df3386a3393ef98b05583e979c9352b362` | `OCRM-RESP-PLUGINS-CAPABILITY-CATALOG-001` |
+| `src/plugins/catalog-search.ts` | 40 | 1292 | `f5016e2753dc549a1e651ef3288194fcc1fd1cfb` | `OCRM-RESP-PLUGINS-CAPABILITY-CATALOG-001` |
+| `src/plugins/channel-catalog-registry.test.ts` | 288 | 10186 | `c8cf9def2801207dc08872723dec48487d04e25f` | `OCRM-RESP-PLUGINS-CAPABILITY-CATALOG-001` |
+| `src/plugins/channel-catalog-registry.ts` | 128 | 4459 | `af8b005acfbde1e7af6c19a71d5215f1766555ec` | `OCRM-RESP-PLUGINS-CAPABILITY-CATALOG-001` |
+
+### 9.1 Invariant Validation Summary
+- **Catalog Discovery Route Identities**: Base64URL encoding with `ch_` (ClawHub published package) and `local_` (local/bundled unindexed plugin) prefixes. Bidirectional encoding roundtrip verified. Non-base64url payload characters fail closed.
+- **Catalog Icon Normalization Guardrails**: Validates HTTPS scheme, host presence, max 2048 chars, and forbids embedded credentials (`user:pass@`) or URL fragments (`#`).
+- **Icon LRU Eviction**: FIFO/LRU eviction at capacity (1024 max), retaining only verifiable secure icon URLs.
+- **Search Ranking & Deduplication**: Filter restricted to `code-plugin` and `bundle-plugin` families. Multi-group duplicate packages deduplicate in favor of higher score, with stable tie-breaking on score equality. Search limit clamped between 1 and 100 (default 20).
+- **Channel Catalog Resolution Precedence**: Resolves channel plugins using fallback chain: `bundledManifest.id` -> `bundledManifestId` -> `packageManifest.plugin.id` -> `idHint`. Skips candidate entries missing channel declarations or empty channel IDs.
+
+
 

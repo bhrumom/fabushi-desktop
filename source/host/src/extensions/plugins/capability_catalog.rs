@@ -1,3 +1,4 @@
+use base64::{engine::general_purpose::URL_SAFE_NO_PAD, Engine as _};
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use std::collections::{HashMap, HashSet};
@@ -1676,6 +1677,258 @@ impl PluginCapabilityAcquisitionScope {
 
     pub fn release(&self) {
         self.lease.revoke();
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Catalog Discovery Codec & Identity Join
+// ---------------------------------------------------------------------------
+
+pub struct CatalogDiscoveryCodec;
+impl CatalogDiscoveryCodec {
+    pub const DISCOVERY_ID_PREFIX: &'static str = "ch_";
+    pub const LOCAL_DISCOVERY_ID_PREFIX: &'static str = "local_";
+
+    pub fn encode_discovery_id(prefix: &str, identity: &str) -> Result<String, String> {
+        let normalized = identity.trim();
+        if normalized.is_empty() {
+            return Err("Cannot encode an empty plugin discovery identity.".to_string());
+        }
+        let encoded = URL_SAFE_NO_PAD.encode(normalized.as_bytes());
+        Ok(format!("{}{}", prefix, encoded))
+    }
+
+    pub fn encode_plugin_discovery_id(package_name: &str) -> Result<String, String> {
+        Self::encode_discovery_id(Self::DISCOVERY_ID_PREFIX, package_name)
+    }
+
+    pub fn encode_local_plugin_discovery_id(identity: &str) -> Result<String, String> {
+        Self::encode_discovery_id(Self::LOCAL_DISCOVERY_ID_PREFIX, identity)
+    }
+
+    pub fn plugin_catalog_id(id: &str, clawhub_package: Option<&str>) -> Result<String, String> {
+        if let Some(pkg) = clawhub_package {
+            Self::encode_plugin_discovery_id(pkg)
+        } else {
+            Self::encode_local_plugin_discovery_id(id)
+        }
+    }
+
+    pub fn resolve_plugin_discovery_identity(id: &str) -> Option<(&'static str, String)> {
+        let (prefix, origin) = if id.starts_with(Self::DISCOVERY_ID_PREFIX) {
+            (Self::DISCOVERY_ID_PREFIX, "clawhub")
+        } else if id.starts_with(Self::LOCAL_DISCOVERY_ID_PREFIX) {
+            (Self::LOCAL_DISCOVERY_ID_PREFIX, "local")
+        } else {
+            return None;
+        };
+
+        let payload = &id[prefix.len()..];
+        if payload.is_empty() {
+            return None;
+        }
+
+        if !payload
+            .chars()
+            .all(|c| c.is_ascii_alphanumeric() || c == '_' || c == '-')
+        {
+            return None;
+        }
+
+        let bytes = URL_SAFE_NO_PAD.decode(payload.as_bytes()).ok()?;
+        let identity = String::from_utf8(bytes).ok()?;
+        let re_encoded = Self::encode_discovery_id(prefix, &identity).ok()?;
+        if re_encoded == id {
+            Some((origin, identity))
+        } else {
+            None
+        }
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Catalog Icon Registry
+// ---------------------------------------------------------------------------
+
+pub struct CatalogIconRegistry {
+    urls: Mutex<std::collections::VecDeque<String>>,
+    lookup: Mutex<HashSet<String>>,
+    capacity: usize,
+}
+
+impl CatalogIconRegistry {
+    pub const DEFAULT_MAX_CATALOG_ICON_URLS: usize = 1024;
+
+    pub fn new(capacity: usize) -> Self {
+        Self {
+            urls: Mutex::new(std::collections::VecDeque::new()),
+            lookup: Mutex::new(HashSet::new()),
+            capacity,
+        }
+    }
+
+    pub fn normalize_catalog_icon_url(value: &str) -> Option<String> {
+        if value.is_empty() || value.len() > 2048 {
+            return None;
+        }
+        let parsed = url::Url::parse(value).ok()?;
+        if parsed.scheme() != "https" {
+            return None;
+        }
+        if parsed.host_str().is_none() {
+            return None;
+        }
+        if !parsed.username().is_empty()
+            || parsed.password().is_some()
+            || parsed.fragment().is_some()
+        {
+            return None;
+        }
+        Some(parsed.to_string())
+    }
+
+    pub fn register_icon_urls<'a, I>(&self, values: I)
+    where
+        I: IntoIterator<Item = &'a str>,
+    {
+        let mut urls = self.urls.lock().unwrap();
+        let mut lookup = self.lookup.lock().unwrap();
+        for val in values {
+            if let Some(norm) = Self::normalize_catalog_icon_url(val) {
+                if !lookup.contains(&norm) {
+                    if urls.len() >= self.capacity {
+                        if let Some(oldest) = urls.pop_front() {
+                            lookup.remove(&oldest);
+                        }
+                    }
+                    urls.push_back(norm.clone());
+                    lookup.insert(norm);
+                }
+            }
+        }
+    }
+
+    pub fn resolve_icon_url(&self, value: &str) -> Option<String> {
+        let norm = Self::normalize_catalog_icon_url(value)?;
+        let lookup = self.lookup.lock().unwrap();
+        if lookup.contains(&norm) {
+            Some(norm)
+        } else {
+            None
+        }
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Catalog Search Ranking & Deduplication
+// ---------------------------------------------------------------------------
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct CatalogPackageSearchResult {
+    pub name: String,
+    pub family: String,
+    pub score: f64,
+}
+
+pub struct CatalogSearchRanking;
+impl CatalogSearchRanking {
+    pub const DEFAULT_PLUGIN_SEARCH_LIMIT: usize = 20;
+    pub const MAX_PLUGIN_SEARCH_LIMIT: usize = 100;
+    pub const ALLOWED_FAMILIES: &'static [&'static str] = &["code-plugin", "bundle-plugin"];
+
+    pub fn clamp_limit(limit: Option<usize>) -> usize {
+        match limit {
+            None | Some(0) => Self::DEFAULT_PLUGIN_SEARCH_LIMIT,
+            Some(l) => l.clamp(1, Self::MAX_PLUGIN_SEARCH_LIMIT),
+        }
+    }
+
+    pub fn deduplicate_and_rank(
+        results: Vec<CatalogPackageSearchResult>,
+        limit: Option<usize>,
+    ) -> Vec<CatalogPackageSearchResult> {
+        let effective_limit = Self::clamp_limit(limit);
+        let mut by_name: HashMap<String, CatalogPackageSearchResult> = HashMap::new();
+
+        for entry in results {
+            if !Self::ALLOWED_FAMILIES.contains(&entry.family.as_str()) {
+                continue;
+            }
+            match by_name.get(&entry.name) {
+                Some(existing) if existing.score >= entry.score => {}
+                _ => {
+                    by_name.insert(entry.name.clone(), entry);
+                }
+            }
+        }
+
+        let mut sorted: Vec<CatalogPackageSearchResult> = by_name.into_values().collect();
+        sorted.sort_by(|a, b| {
+            b.score
+                .partial_cmp(&a.score)
+                .unwrap_or(std::cmp::Ordering::Equal)
+                .then_with(|| a.name.cmp(&b.name))
+        });
+
+        sorted.truncate(effective_limit);
+        sorted
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Channel Catalog Resolver
+// ---------------------------------------------------------------------------
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ChannelCatalogCandidate {
+    pub id_hint: Option<String>,
+    pub bundled_manifest_id: Option<String>,
+    pub package_plugin_id: Option<String>,
+    pub package_name: Option<String>,
+    pub channel_id: Option<String>,
+    pub channel_name: Option<String>,
+    pub origin: PluginOrigin,
+    pub root_dir: String,
+    pub is_trusted_official: bool,
+}
+
+pub struct ChannelCatalogResolver;
+impl ChannelCatalogResolver {
+    pub fn resolve_channel_catalog_entries(
+        candidates: &[ChannelCatalogCandidate],
+        origin_filter: Option<&PluginOrigin>,
+    ) -> Vec<ChannelCatalogEntry> {
+        candidates
+            .iter()
+            .filter_map(|c| {
+                if let Some(req_origin) = origin_filter {
+                    if &c.origin != req_origin {
+                        return None;
+                    }
+                }
+                let ch_id = c.channel_id.as_deref()?.trim();
+                if ch_id.is_empty() {
+                    return None;
+                }
+                let plugin_id = c
+                    .bundled_manifest_id
+                    .as_deref()
+                    .or(c.package_plugin_id.as_deref())
+                    .or(c.id_hint.as_deref())?
+                    .trim();
+                if plugin_id.is_empty() {
+                    return None;
+                }
+
+                Some(ChannelCatalogEntry {
+                    plugin_id: plugin_id.to_string(),
+                    origin: c.origin.clone(),
+                    package_name: c.package_name.clone(),
+                    channel_name: ch_id.to_string(),
+                    trusted_official_install: c.is_trusted_official,
+                })
+            })
+            .collect()
     }
 }
 
