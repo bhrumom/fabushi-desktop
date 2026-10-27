@@ -550,6 +550,30 @@ fn test_ocrm_snapshot_postgres_manifest_schema_and_profile_oracles() {
         ])
         .expect("digest expected rows");
     assert_eq!(actual_digest, expected_digest);
+    let mut restore_connection =
+        rusqlite::Connection::open_in_memory().expect("SQLite restore DB");
+    restore_connection
+        .execute_batch("CREATE TABLE real_table (id INTEGER PRIMARY KEY, value TEXT);")
+        .expect("create SQLite restore table");
+    let restored_digest =
+        mahayana_host_runtime::extensions::snapshot::git_backup_manager::restore_sqlite_rows(
+            &mut restore_connection,
+            "real_table",
+            &["id".into(), "value".into()],
+            vec![
+                Ok(vec![json!(1), json!("first")]),
+                Ok(vec![json!(2), json!("second")]),
+            ],
+        )
+        .expect("restore SQLite rows");
+    assert_eq!(restored_digest, expected_digest);
+    assert!(mahayana_host_runtime::extensions::snapshot::git_backup_manager::restore_sqlite_rows(
+        &mut restore_connection,
+        "real_table",
+        &["id".into(), "value".into()],
+        vec![Ok(vec![json!(1)])],
+    )
+    .is_err());
     assert!(mahayana_host_runtime::extensions::snapshot::git_backup_manager::digest_sqlite_table(
         &schema_connection,
         "real_table;DROP TABLE real_table",

@@ -1004,6 +1004,72 @@ pub fn decode_sqlite_value(value: &Value) -> Result<rusqlite::types::Value, Stri
     }
 }
 
+pub fn restore_sqlite_rows(
+    connection: &mut Connection,
+    table: &str,
+    columns: &[String],
+    rows: impl IntoIterator<Item = Result<Vec<Value>, String>>,
+) -> Result<SqliteTableDigest, String> {
+    validate_sqlite_table_name(table)?;
+    if columns.is_empty()
+        || columns
+            .iter()
+            .any(|column| column.is_empty() || column.contains('\0'))
+    {
+        return Err("SQLite restore columns are invalid".into());
+    }
+    let quoted_columns = columns
+        .iter()
+        .map(|column| format!("\"{}\"", column.replace('"', "\"\"")))
+        .collect::<Vec<_>>();
+    let placeholders = (0..columns.len())
+        .map(|_| "?")
+        .collect::<Vec<_>>()
+        .join(", ");
+    let sql = format!(
+        "INSERT INTO \"{table}\" ({}) VALUES ({placeholders})",
+        quoted_columns.join(", ")
+    );
+    let transaction = connection
+        .transaction()
+        .map_err(|error| format!("begin SQLite restore transaction: {error}"))?;
+    let mut insert = transaction
+        .prepare(&sql)
+        .map_err(|error| format!("prepare SQLite restore insert {table}: {error}"))?;
+    let mut hash = Sha256::new();
+    let mut count = 0_u64;
+    for row in rows {
+        let values = row?;
+        if values.len() != columns.len() {
+            return Err(format!(
+                "SQLite restore row has {} values, expected {}",
+                values.len(),
+                columns.len()
+            ));
+        }
+        let decoded = values
+            .iter()
+            .map(decode_sqlite_value)
+            .collect::<Result<Vec<_>, _>>()?;
+        insert
+            .execute(rusqlite::params_from_iter(decoded.iter()))
+            .map_err(|error| format!("insert SQLite restore row {table}: {error}"))?;
+        let encoded = encode_sqlite_row(columns.iter().cloned().zip(decoded))?;
+        hash.update(encoded);
+        count = count
+            .checked_add(1)
+            .ok_or_else(|| "SQLite restore row count overflow".to_string())?;
+    }
+    drop(insert);
+    transaction
+        .commit()
+        .map_err(|error| format!("commit SQLite restore transaction: {error}"))?;
+    Ok(SqliteTableDigest {
+        rows: count,
+        sha256: format!("{:x}", hash.finalize()),
+    })
+}
+
 /// Encode one deterministic JSONL row from SQLite columns.
 pub fn encode_sqlite_row(
     columns: impl IntoIterator<Item = (String, rusqlite::types::Value)>,
