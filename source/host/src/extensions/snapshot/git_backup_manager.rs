@@ -74,7 +74,7 @@ pub struct PostgresTableDigest {
     pub sha256: String,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct PostgresSequenceAllocation {
     pub value: String,
@@ -120,6 +120,15 @@ pub struct PostgresExportManifest {
     pub verification: PostgresVerification,
     pub artifacts: PostgresArtifactSet,
     pub sanitized_differences: Vec<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct PostgresRestorePlan {
+    pub snapshot_id: String,
+    pub profile: String,
+    pub namespace: String,
+    pub active_fragments: Vec<String>,
+    pub allocations: BTreeMap<String, PostgresSequenceAllocation>,
 }
 
 fn valid_identifier(value: &str) -> bool {
@@ -574,6 +583,35 @@ pub fn validate_restore_namespace(namespace: &str) -> Result<(), String> {
     } else {
         Err("refusing a namespace not allocated by PostgreSQL restore".into())
     }
+}
+
+/// Validate restore compatibility and allocate an isolated namespace before
+/// any database-port materialization begins.
+pub fn prepare_postgres_restore(
+    manifest: &PostgresExportManifest,
+    descriptor_schema_version: u32,
+    required_profile: &str,
+    fence: &SnapshotGenerationFence,
+    expected_generation: u64,
+) -> Result<PostgresRestorePlan, String> {
+    fence.assert_current(expected_generation)?;
+    if manifest.profile != required_profile {
+        return Err("PostgreSQL restore profile does not match the request".into());
+    }
+    if manifest.export_schema_version != descriptor_schema_version
+        || manifest.source.schema_version != descriptor_schema_version
+    {
+        return Err("PostgreSQL restore requires its matching family schema version".into());
+    }
+    let namespace = new_restore_namespace()?;
+    fence.assert_current(expected_generation)?;
+    Ok(PostgresRestorePlan {
+        snapshot_id: manifest.snapshot_id.clone(),
+        profile: manifest.profile.clone(),
+        namespace,
+        active_fragments: manifest.active_fragments.clone(),
+        allocations: manifest.verification.allocations.clone(),
+    })
 }
 
 pub fn create_export_envelope(snapshot_id: &str, manifest: Value) -> SnapshotExportEnvelope {

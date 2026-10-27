@@ -8,7 +8,8 @@ use mahayana_host_runtime::extensions::skills::skill_runtime::{
 use mahayana_host_runtime::extensions::snapshot::git_backup_manager::{
     assert_database_artifact, capture_database_artifact, create_export_envelope,
     assert_fresh_restore_target, assert_no_sqlite_sidecars, parse_postgres_export_manifest,
-    admit_postgres_export, new_restore_namespace, read_postgres_export_manifest,
+    admit_postgres_export, new_restore_namespace, prepare_postgres_restore,
+    read_postgres_export_manifest,
     validate_restore_namespace,
     verify_export_envelope, verify_postgres_anchor_identity, verify_postgres_export_artifacts,
     write_postgres_export_manifest,
@@ -218,6 +219,37 @@ fn test_ocrm_snapshot_postgres_manifest_schema_and_profile_oracles() {
         "exact",
         &admission_fence,
         11,
+    )
+    .is_err());
+    let restore_fence = SnapshotGenerationFence::new(20);
+    let restore_plan = prepare_postgres_restore(
+        &parsed_anchor,
+        2,
+        "exact",
+        &restore_fence,
+        20,
+    )
+    .expect("prepare compatible restore");
+    assert_eq!(restore_plan.snapshot_id, "snap-002");
+    validate_restore_namespace(&restore_plan.namespace).expect("planned namespace custody");
+    let mut mismatched_descriptor = parsed_anchor.clone();
+    mismatched_descriptor.export_schema_version = 1;
+    assert!(prepare_postgres_restore(
+        &mismatched_descriptor,
+        2,
+        "exact",
+        &restore_fence,
+        20,
+    )
+    .is_err());
+    let mut wrong_profile_plan = parsed_anchor.clone();
+    wrong_profile_plan.profile = "user-backup".into();
+    assert!(prepare_postgres_restore(
+        &wrong_profile_plan,
+        2,
+        "exact",
+        &restore_fence,
+        20,
     )
     .is_err());
     let _ = fs::remove_file(admission_manifest_path);
