@@ -20748,6 +20748,192 @@
       "risk": "Critical; broken approval or SSRF filters permit unauthorized action elevation and internal cloud metadata exfiltration",
       "selected_owner": "source/host/src/extensions/plugin_sdk/approval_security.rs",
       "source_refs": [
+    {
+      "blob_sha": "5b78df2c295de188aceee940a172c70a86052aec5",
+      "path": "src/plugin-sdk/approval-approvers.ts",
+      "range": {"end_line": 1, "start_line": 1},
+      "symbol": "approval-approvers"
+    },
+    {
+      "blob_sha": "7842c75ff0baf88846dae425c6ebacd3fecdc634",
+      "path": "src/plugin-sdk/approval-auth-helpers.test.ts",
+      "range": {"end_line": 1, "start_line": 1},
+      "symbol": "approval-auth-helpers.test"
+    },
+    {
+      "blob_sha": "c6b72c87882a06283e20940904d49146051f54be",
+      "path": "src/plugin-sdk/approval-auth-helpers.ts",
+      "range": {"end_line": 1, "start_line": 1},
+      "symbol": "approval-auth-helpers"
+    },
+    {
+      "blob_sha": "a6cbbe0b81e6515b3048e096e1ceb2633db5ee95",
+      "path": "src/plugin-sdk/approval-auth-runtime.ts",
+      "range": {"end_line": 1, "start_line": 1},
+      "symbol": "approval-auth-runtime"
+    },
+    {
+      "blob_sha": "3467c06c97a1124fbe721f472d90389465e09d89",
+      "path": "src/plugin-sdk/approval-client-helpers.test.ts",
+      "range": {"end_line": 1, "start_line": 1},
+      "symbol": "approval-client-helpers.test"
+    },
+    {
+      "blob_sha": "8ad8c3fefae1392322874f0e053588ae3022be38",
+      "path": "src/plugin-sdk/approval-client-helpers.ts",
+      "range": {"end_line": 1, "start_line": 1},
+      "symbol": "approval-client-helpers"
+    },
+    {
+      "blob_sha": "86d94fa3373557f3d722a4155d98f2b30be58d98",
+      "path": "src/plugin-sdk/approval-client-runtime.ts",
+      "range": {"end_line": 1, "start_line": 1},
+      "symbol": "approval-client-runtime"
+    },
+    {
+      "blob_sha": "244f8d3aa214f99dbfe8f8cfbeaca10efd76b94d",
+      "path": "src/plugin-sdk/approval-delivery-helpers.test.ts",
+      "range": {"end_line": 1, "start_line": 1},
+      "symbol": "approval-delivery-helpers.test"
+    },
+    {
+      "blob_sha": "1c047aeac843b37a9395d66e3d05b78e6a5a600a",
+      "path": "src/plugin-sdk/approval-delivery-helpers.ts",
+      "range": {"end_line": 1, "start_line": 1},
+      "symbol": "approval-delivery-helpers"
+    },
+    {
+      "blob_sha": "d8f86134319c09f57ac9287e7017523ccf4e68f9",
+      "path": "src/plugin-sdk/approval-delivery-helpers.types.ts",
+      "range": {"end_line": 1, "start_line": 1},
+      "symbol": "approval-delivery-helpers.types"
+    },
+    {
+      "blob_sha": "8f745553cc283706ad2f0e67e12bbe135b6a2973",
+      "path": "src/plugin-sdk/approval-delivery-runtime.ts",
+      "range": {"end_line": 1, "start_line": 1},
+      "symbol": "approval-delivery-runtime"
+    },
+    {
+      "blob_sha": "1d7f07eeae13126a7607de292b5d8f5e52234096",
+      "path": "src/plugin-sdk/approval-gateway-runtime.ts",
+      "range": {"end_line": 1, "start_line": 1},
+      "symbol": "approval-gateway-runtime"
+    },
+    {
+      "blob_sha": "e57e0de2fc0921f6c66a55ccfe1e1fb8438dc90e",
+      "path": "src/plugin-sdk/approval-handler-adapter-runtime.ts",
+      "range": {"end_line": 1, "start_line": 1},
+      "symbol": "approval-handler-adapter-runtime"
+    },
+    {
+      "blob_sha": "7b41fbc93345fc82b2702e8f8f534a16356f553a",
+      "path": "src/plugin-sdk/approval-handler-runtime.test.ts",
+      "range": {"end_line": 1, "start_line": 1},
+      "symbol": "approval-handler-runtime.test"
+    },
+    {
+      "blob_sha": "83aafc595da8a47a14e6969f9bfb1daf218b744c",
+      "path": "src/plugin-sdk/approval-handler-runtime.ts",
+      "range": {"end_line": 1, "start_line": 1},
+      "symbol": "approval-handler-runtime"
+    },
+    {
+      "blob_sha": "9a4420fb59fb4f6db242872230420d4c151fecf5",
+      "path": "src/plugin-sdk/approval-native-controls.test.ts",
+      "range": {"end_line": 1, "start_line": 1},
+      "symbol": "approval-native-controls.test"
+    },
+    {
+      "blob_sha": "51f0d073c886205e7185aaae54484a97e9c93464",
+      "path": "src/plugin-sdk/approval-native-controls.ts",
+      "range": {"end_line": 1, "start_line": 1},
+      "symbol": "approval-native-controls"
+    },
+    {
+      "blob_sha": "3fa082be0fe597e400a25bab7cabeafde707f4ae",
+      "path": "src/plugin-sdk/approval-native-helpers.test.ts",
+      "range": {"end_line": 1, "start_line": 1},
+      "symbol": "approval-native-helpers.test"
+    },
+    {
+      "blob_sha": "6b6781eb79866c5a05bd9aeea55eb91c51d657b9",
+      "path": "src/plugin-sdk/approval-native-helpers.ts",
+      "range": {"end_line": 1, "start_line": 1},
+      "symbol": "approval-native-helpers"
+    },
+    {
+      "blob_sha": "111530b60865f7ad2ec8716a516f1426e6dbbbd6",
+      "path": "src/plugin-sdk/approval-native-helpers.types.ts",
+      "range": {"end_line": 1, "start_line": 1},
+      "symbol": "approval-native-helpers.types"
+    },
+    {
+      "blob_sha": "186cb4e1f3c9fbce945e6a986f6b6bd512f84826",
+      "path": "src/plugin-sdk/approval-native-runtime.ts",
+      "range": {"end_line": 1, "start_line": 1},
+      "symbol": "approval-native-runtime"
+    },
+    {
+      "blob_sha": "9f5c75da5278ab0f8e6a2f1b707b6e029d8ec6b0",
+      "path": "src/plugin-sdk/approval-native-target-resolvers.ts",
+      "range": {"end_line": 1, "start_line": 1},
+      "symbol": "approval-native-target-resolvers"
+    },
+    {
+      "blob_sha": "b5e1de8bca3bef6e216ae59a89f1d671b585df79",
+      "path": "src/plugin-sdk/approval-reaction-binding.ts",
+      "range": {"end_line": 1, "start_line": 1},
+      "symbol": "approval-reaction-binding"
+    },
+    {
+      "blob_sha": "052d7ab9e8b7d6814186a521db488095bec366af",
+      "path": "src/plugin-sdk/approval-reaction-runtime.test.ts",
+      "range": {"end_line": 1, "start_line": 1},
+      "symbol": "approval-reaction-runtime.test"
+    },
+    {
+      "blob_sha": "28326c276e2184ef33cbe7381a911fd39c5768ff",
+      "path": "src/plugin-sdk/approval-reaction-runtime.ts",
+      "range": {"end_line": 1, "start_line": 1},
+      "symbol": "approval-reaction-runtime"
+    },
+    {
+      "blob_sha": "fcea5211ab60a2c432e4808be4522710ece1878a",
+      "path": "src/plugin-sdk/approval-reference-runtime.ts",
+      "range": {"end_line": 1, "start_line": 1},
+      "symbol": "approval-reference-runtime"
+    },
+    {
+      "blob_sha": "fa163baf8c9dde1251f2165ffb218f4a94bbd32f",
+      "path": "src/plugin-sdk/approval-renderers.test.ts",
+      "range": {"end_line": 1, "start_line": 1},
+      "symbol": "approval-renderers.test"
+    },
+    {
+      "blob_sha": "083343376a2456eba18ba9eb46c969a4b92f09dd",
+      "path": "src/plugin-sdk/approval-renderers.ts",
+      "range": {"end_line": 1, "start_line": 1},
+      "symbol": "approval-renderers"
+    },
+    {
+      "blob_sha": "5a3bc84890c2eb549745fd700d0e6e0c498fdf69",
+      "path": "src/plugin-sdk/approval-reply-runtime.ts",
+      "range": {"end_line": 1, "start_line": 1},
+      "symbol": "approval-reply-runtime"
+    },
+    {
+      "blob_sha": "4a2fe89fe546c918361ce18d5a84327b63ac6736",
+      "path": "src/plugin-sdk/approval-runtime.ts",
+      "range": {"end_line": 1, "start_line": 1},
+      "symbol": "approval-runtime"
+    },
+    {
+      "blob_sha": "33ddcbf10929782f5efb20aed8a0707108cfb45b",
+      "path": "src/plugin-sdk/approval-terminal.ts",
+      "range": {"end_line": 1, "start_line": 1},
+      "symbol": "approval-terminal"
+    },
         {
           "blob_sha": "7fb1e4c71e85470d331c8390c5ddb7456bd67fd7",
           "path": "src/plugin-sdk/allow-from.test.ts",
