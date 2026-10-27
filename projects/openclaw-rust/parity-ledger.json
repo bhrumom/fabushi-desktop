@@ -25161,8 +25161,56 @@
             "end_line": 120,
             "start_line": 1
           },
-          "symbol": "createChannelDmPolicy"
-        }
+    "symbol": "createChannelDmPolicy"
+  },
+    {
+      "blob_sha": "950bf8de9051cb38c0e74cdc49de8e99ad1948e9",
+      "path": "src/plugin-sdk/channel-contract-testing.ts",
+      "range": {"end_line": 1, "start_line": 1},
+      "symbol": "channel-contract-testing"
+    },
+    {
+      "blob_sha": "4b3e5ef856f93f2a127420ba15d79d5d2bca3c8a",
+      "path": "src/plugin-sdk/channel-contract.ts",
+      "range": {"end_line": 1, "start_line": 1},
+      "symbol": "channel-contract"
+    },
+    {
+      "blob_sha": "82f1691edf20ccf1ed857b735369e7254d85580f",
+      "path": "src/plugin-sdk/channel-core.ts",
+      "range": {"end_line": 1, "start_line": 1},
+      "symbol": "channel-core"
+    },
+    {
+      "blob_sha": "7f8a137a87ff2abe5117ee4335c2b84bbf21e2ec",
+      "path": "src/plugin-sdk/channel-dm-policy.test.ts",
+      "range": {"end_line": 1, "start_line": 1},
+      "symbol": "channel-dm-policy.test"
+    },
+    {
+      "blob_sha": "325f7d22e589157f859a8ba23c9ba280504c8796",
+      "path": "src/plugin-sdk/channel-entry-contract.lifecycle.test.ts",
+      "range": {"end_line": 1, "start_line": 1},
+      "symbol": "channel-entry-contract.lifecycle.test"
+    },
+    {
+      "blob_sha": "f9430c2e72a9fca9cf08cb25220d852e98e9f6cd",
+      "path": "src/plugin-sdk/channel-entry-contract.test.ts",
+      "range": {"end_line": 1, "start_line": 1},
+      "symbol": "channel-entry-contract.test"
+    },
+    {
+      "blob_sha": "845f502f0678a215941418ad76cad06a21517ebf",
+      "path": "src/plugin-sdk/channel-entry-contract.types.ts",
+      "range": {"end_line": 1, "start_line": 1},
+      "symbol": "channel-entry-contract.types"
+    },
+    {
+      "blob_sha": "2bef49bca0b2c1b0f8c31b819856e73eff11c271",
+      "path": "src/plugin-sdk/channel-entry.test-support.ts",
+      "range": {"end_line": 1, "start_line": 1},
+      "symbol": "channel-entry.test-support"
+    }
       ],
       "status": {
         "acceptance": "pending",
