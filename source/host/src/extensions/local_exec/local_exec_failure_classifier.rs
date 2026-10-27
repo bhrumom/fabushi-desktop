@@ -72,6 +72,106 @@ pub fn format_command_output_for_user(output: &str, max_chars: usize) -> String 
     }
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum CommandTermination {
+    Timeout,
+    NoOutputTimeout,
+    OutputLimit,
+    Exit,
+    Error,
+    Signal,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct CommandErrorResult {
+    pub code: Option<i32>,
+    pub termination: CommandTermination,
+    pub signal: Option<String>,
+    pub output_limit_exceeded: bool,
+}
+
+/// Build the bounded, credential-safe command failure consumed by the local-exec
+/// error path. The command label is metadata only; argv and raw output are never
+/// interpolated without ANSI/newline normalization and UTF-16 bounds.
+pub fn format_command_error(
+    command: &str,
+    result: &CommandErrorResult,
+    stderr: &str,
+    stdout: &str,
+    timeout_ms: u64,
+) -> String {
+    let label = truncate_utf16(
+        &strip_ansi_sequences(command).replace(['\r', '\n'], " "),
+        256,
+    );
+    let stderr = format_command_output_for_user(stderr, 2_000);
+    let stdout = format_command_output_for_user(stdout, 2_000);
+    let mut detail = match (stderr.is_empty(), stdout.is_empty()) {
+        (true, true) => String::new(),
+        (false, true) => format!("stderr: {stderr}"),
+        (true, false) => format!("stdout: {stdout}"),
+        (false, false) => {
+            let budget = 2_000usize.saturating_sub("stderr: \nstdout: ".len());
+            let first = stderr
+                .len()
+                .min((budget.div_ceil(2)).max(budget.saturating_sub(stdout.len())));
+            let second = budget.saturating_sub(first);
+            format!(
+                "stderr: {}\nstdout: {}",
+                suffix_fit(&stderr, first),
+                suffix_fit(&stdout, second)
+            )
+        }
+    };
+    if detail.len() > 2_000 {
+        detail = suffix_fit(&detail, 2_000);
+    }
+    let signal = result
+        .signal
+        .as_deref()
+        .map(|value| format!("signal {value}"));
+    let reason = match result.termination {
+        CommandTermination::Timeout => Some(format!(
+            "timed out after {} seconds",
+            timeout_ms as f64 / 1000.0
+        )),
+        CommandTermination::NoOutputTimeout => Some("timed out waiting for output".to_owned()),
+        CommandTermination::OutputLimit => Some("output limit exceeded".to_owned()),
+        CommandTermination::Exit | CommandTermination::Error => result
+            .output_limit_exceeded
+            .then_some("output limit exceeded".to_owned())
+            .or_else(|| result.code.map(|code| format!("exit code {code}"))),
+        CommandTermination::Signal => result
+            .output_limit_exceeded
+            .then_some("output limit exceeded".to_owned())
+            .or_else(|| (!signal.is_some()).then_some("terminated".to_owned())),
+    };
+    let reason = [reason, signal]
+        .into_iter()
+        .flatten()
+        .collect::<Vec<_>>()
+        .join("; ");
+    format!(
+        "{label} failed{}{}",
+        (!reason.is_empty())
+            .then(|| format!(" ({reason})"))
+            .unwrap_or_default(),
+        (!detail.is_empty())
+            .then(|| format!(":\n{detail}"))
+            .unwrap_or_default()
+    )
+}
+
+fn suffix_fit(text: &str, max_chars: usize) -> String {
+    if text.encode_utf16().count() <= max_chars {
+        return text.to_owned();
+    }
+    if max_chars <= 2 {
+        return truncate_utf16(text, max_chars);
+    }
+    format!("…\n{}", truncate_utf16(text, max_chars - 2))
+}
+
 fn errno_token(message: &str) -> Option<String> {
     message
         .split(|ch: char| !(ch.is_ascii_alphanumeric() || ch == '_'))

@@ -12,7 +12,8 @@ use mahayana_host_runtime::extensions::local_exec::gateway_local_exec_sand_box::
 use mahayana_host_runtime::extensions::local_exec::{
     local_exec_error::SandLocalExecError,
     local_exec_failure_classifier::{
-        LocalExecFailureClass, LocalExecFailureClassification, classify_local_exec_failure,
+        CommandErrorResult, CommandTermination, LocalExecFailureClass,
+        LocalExecFailureClassification, classify_local_exec_failure, format_command_error,
         format_command_output_for_user,
     },
 };
@@ -113,6 +114,46 @@ fn command_output_formatting_strips_ansi_cr_redraw_and_bounds_tail() {
     assert_eq!(format_command_output_for_user(output, 100), "old\nnew\nred");
     let long = "😀abcdef";
     assert_eq!(format_command_output_for_user(long, 5), "…\n😀abc");
+}
+
+#[test]
+fn command_error_merges_bounded_streams_and_preserves_termination_reason() {
+    let error = format_command_error(
+        "\u{1b}[31msecret\u{1b}[0m\narg",
+        &CommandErrorResult {
+            code: Some(17),
+            termination: CommandTermination::Exit,
+            signal: None,
+            output_limit_exceeded: false,
+        },
+        "stderr line",
+        "stdout line",
+        5_000,
+    );
+    assert_eq!(
+        error,
+        "secret arg failed (exit code 17):\nstderr: stderr line\nstdout: stdout line"
+    );
+}
+
+#[test]
+fn command_error_uses_timeout_and_signal_without_raw_command_newlines() {
+    let error = format_command_error(
+        "run\npassword",
+        &CommandErrorResult {
+            code: None,
+            termination: CommandTermination::Timeout,
+            signal: Some("SIGTERM".into()),
+            output_limit_exceeded: false,
+        },
+        "",
+        "",
+        2_500,
+    );
+    assert_eq!(
+        error,
+        "run password failed (timed out after 2.5 seconds; signal SIGTERM)"
+    );
 }
 
 #[test]
