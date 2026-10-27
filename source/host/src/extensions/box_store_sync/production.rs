@@ -1,10 +1,10 @@
-use std::collections::{BTreeMap, HashMap, HashSet};
+use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
 use std::fs::{self, File};
 use std::io::Read;
 use std::path::{Path, PathBuf};
 use std::sync::{
-    Arc, Condvar, Mutex, TryLockError,
     atomic::{AtomicBool, AtomicUsize, Ordering},
+    Arc, Condvar, Mutex, TryLockError,
 };
 use std::thread::{self, JoinHandle};
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
@@ -12,86 +12,86 @@ use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 #[cfg(unix)]
 use std::os::unix::fs::PermissionsExt;
 
-use serde_json::{Map, Value, json};
+use rusqlite::{Connection, OpenFlags};
+use serde_json::{json, Map, Value};
 use sha2::{Digest, Sha256};
 
+use crate::durable_file_policy::BOX_STORE_SAND_DATA_EXCLUDED_FILE_NAMES;
 use crate::extensions::box_store_sync::agent_store_sand_files::AgentStoreClientDependencies;
 use crate::extensions::box_store_sync::box_object_store::{
-    AgentStoreObjectStoreProvider, BoxObjectStore, BoxObjectStoreProvider,
-    BoxObjectStoreProviderDependencies, resolve_box_object_store_provider,
+    resolve_box_object_store_provider, AgentStoreObjectStoreProvider, BoxObjectStore,
+    BoxObjectStoreProvider, BoxObjectStoreProviderDependencies,
+};
+use crate::extensions::box_store_sync::box_store_hydration::{
+    remove_hydration_handoff_marker, BOX_STORE_HYDRATION_HANDOFF_FILE_NAME,
+    BOX_STORE_HYDRATION_HANDOFF_MANIFEST_PATH,
+};
+use crate::extensions::box_store_sync::box_store_manifest::{
+    count_agent_dir_manifest_entries, count_store_db_manifest_entries, load_manifest_for_write,
+    prepare_canonical_manifest_reset, read_manifest_strict, serialize_manifest_bytes,
+    set_manifest_entry, write_manifest_with_retry, write_manifest_with_retry_and_conflict_reporter,
+    BoxManifestMap, BoxStoreManifestConflictInfo, ManifestHydrationUpdate, ManifestSaveOptions,
+    AGENT_STORE_DB_BASENAMES,
+};
+use crate::extensions::box_store_sync::box_store_manifest_format::{
+    BoxStoreManifest, BoxStoreManifestEntry, BOX_STORE_BLOBS_PREFIX, BOX_STORE_MANIFEST_REL_PATH,
+    BOX_STORE_MANIFEST_VERSION, SAND_MANIFEST_V2_ENV,
 };
 use crate::extensions::box_store_sync::box_store_pack::{
-    BOX_STORE_PACK_INDEX_KEY, BOX_STORE_PACK_RETIRED_KEY, BOX_STORE_PACKS_PREFIX,
-    PACK_INDEX_VERSION, PACK_MAX_MEMBER_SIZE_SUM, PACK_MEMBER_MAX_BYTES, PackEntry, PackIndex,
-    PackSource, build_pack_file, is_box_store_pack_build_enabled, parse_pack_index,
-    parse_pack_retired, plan_pack_maintenance, serialize_pack_index, serialize_pack_retired,
+    build_pack_file, is_box_store_pack_build_enabled, parse_pack_index, parse_pack_retired,
+    plan_pack_maintenance, serialize_pack_index, serialize_pack_retired, PackEntry, PackIndex,
+    PackSource, BOX_STORE_PACKS_PREFIX, BOX_STORE_PACK_INDEX_KEY, BOX_STORE_PACK_RETIRED_KEY,
+    PACK_INDEX_VERSION, PACK_MAX_MEMBER_SIZE_SUM, PACK_MEMBER_MAX_BYTES,
 };
 use crate::extensions::box_store_sync::box_store_pack_pipeline::{
     PACK_BUILD_MIN_BYTES, PACK_BUILD_MIN_MEMBERS, PACK_TMP_DIR_NAME, PACK_TMP_MAX_AGE_MS,
 };
-use crate::extensions::box_store_sync::box_store_manifest::{
-    AGENT_STORE_DB_BASENAMES, BoxManifestMap, BoxStoreManifestConflictInfo,
-    ManifestHydrationUpdate, ManifestSaveOptions, count_agent_dir_manifest_entries,
-    count_store_db_manifest_entries, load_manifest_for_write, prepare_canonical_manifest_reset,
-    read_manifest_strict, serialize_manifest_bytes, set_manifest_entry, write_manifest_with_retry,
-    write_manifest_with_retry_and_conflict_reporter,
-};
-use crate::extensions::box_store_sync::box_store_manifest_format::{
-    BOX_STORE_BLOBS_PREFIX, BOX_STORE_MANIFEST_REL_PATH, BOX_STORE_MANIFEST_VERSION,
-    BoxStoreManifest, BoxStoreManifestEntry, SAND_MANIFEST_V2_ENV,
-};
-use crate::extensions::box_store_sync::box_store_transfer::{
-    BOX_STORE_SNAPSHOT_TMP_SUFFIX, BoxStoreTransfer, CategoryTransferSummary, StagedTransferFile,
-    glob_matches_path,
-};
 use crate::extensions::box_store_sync::box_store_sync::{
-    BOX_STORE_WRITER_LOCK_FILE_NAME, BoxStoreCycleSummary, BoxStoreWriterLock,
-    LARGE_OBJECT_THRESHOLD_BYTES, box_store_sync_cycle_telemetry,
+    box_store_sync_cycle_telemetry, BoxStoreCycleSummary, BoxStoreWriterLock,
+    BOX_STORE_WRITER_LOCK_FILE_NAME, LARGE_OBJECT_THRESHOLD_BYTES,
 };
 use crate::extensions::box_store_sync::box_store_sync_service::{
-    BOX_HOME_DIR, BOX_HOME_PRUNE_GUARDED_FOREIGN_TREES, BOX_HOME_REL_PREFIX,
+    build_box_home_category, build_box_home_ignore, is_better_cli_home_enabled,
+    plan_periodic_cycle, BOX_HOME_DIR, BOX_HOME_PRUNE_GUARDED_FOREIGN_TREES, BOX_HOME_REL_PREFIX,
     BOX_STORE_MANIFEST_RETRY_ATTEMPTS, BOX_STORE_MANIFEST_RETRY_DELAY_MS,
-    SAND_STORE_BETTER_CLI_ENV, SAND_USER_NON_ROOT_ENV, build_box_home_category,
-    build_box_home_ignore, is_better_cli_home_enabled, plan_periodic_cycle,
+    SAND_STORE_BETTER_CLI_ENV, SAND_USER_NON_ROOT_ENV,
 };
-use crate::extensions::box_store_sync::box_store_hydration::{
-    BOX_STORE_HYDRATION_HANDOFF_FILE_NAME, BOX_STORE_HYDRATION_HANDOFF_MANIFEST_PATH,
-    remove_hydration_handoff_marker,
-};
-use crate::extensions::box_store_sync::store_db_capture::{
-    BoxStoreDbCaptureTelemetrySummary, StoreDbCaptureOutcome,
-    aggregate_store_db_sweep_outcome, box_store_db_capture_telemetry,
-};
-use crate::extensions::box_store_sync::store_db_snapshot_upload::{
-    SnapshotUploadOutcome, StoreDbSnapshotRuntimePort, StoreDbSnapshotUpload,
+use crate::extensions::box_store_sync::box_store_transfer::{
+    glob_matches_path, BoxStoreTransfer, CategoryTransferSummary, StagedTransferFile,
+    BOX_STORE_SNAPSHOT_TMP_SUFFIX,
 };
 use crate::extensions::box_store_sync::chrome_session_stage::{
-    CHROME_AUTH_STATE_CACHE_EXCLUDE_NAMES, CHROME_AUTH_STATE_REL_DIRS,
-    CHROME_SESSION_DB_DIR, CHROME_SESSION_DB_NAMES, CHROME_SESSION_DB_REL_DIR,
     chrome_session_stage_telemetry, stage_box_chrome_session_with_report,
+    CHROME_AUTH_STATE_CACHE_EXCLUDE_NAMES, CHROME_AUTH_STATE_REL_DIRS, CHROME_SESSION_DB_DIR,
+    CHROME_SESSION_DB_NAMES, CHROME_SESSION_DB_REL_DIR,
 };
 use crate::extensions::box_store_sync::chrome_session_watcher::ChromeSessionWatcher;
 use crate::extensions::box_store_sync::extension::{
     BoxStoreSyncExtensionDeps, BoxStoreSyncService, BoxStoreSyncServiceFactory,
     BoxStoreSyncTelemetryReporter,
 };
-use crate::extensions::box_store_sync::workspace_ignore::{
-    SAND_BOX_WORKSPACE_DEFAULT_IGNORE_PATTERNS, WorkspaceIgnore, load_workspace_ignore,
+use crate::extensions::box_store_sync::store_db_bundle_capture::{
+    create_store_db_capture_trace, record_store_db_capture_failure, AgentDbCaptureQueues,
+    StoreDbCaptureFailurePhase, StoreDbCaptureTrace,
 };
-use crate::durable_file_policy::BOX_STORE_SAND_DATA_EXCLUDED_FILE_NAMES;
+use crate::extensions::box_store_sync::store_db_capture::{
+    aggregate_store_db_sweep_outcome, box_store_db_capture_telemetry,
+    BoxStoreDbCaptureTelemetrySummary, StoreDbCaptureOutcome,
+};
+use crate::extensions::box_store_sync::store_db_snapshot_upload::{
+    SnapshotUploadOutcome, StoreDbSnapshotRuntimePort, StoreDbSnapshotUpload,
+};
+use crate::extensions::box_store_sync::workspace_ignore::{
+    load_workspace_ignore, WorkspaceIgnore, SAND_BOX_WORKSPACE_DEFAULT_IGNORE_PATTERNS,
+};
 use crate::host_paths::get_sand_root_dir;
 use crate::r#box::box_store_backend_policy::{
-    BoxStoreBackendKind, is_box_store_sync_enabled, resolve_box_store_backend_policy,
+    is_box_store_sync_enabled, resolve_box_store_backend_policy, BoxStoreBackendKind,
 };
-use crate::storage::store_db::{
-    get_sand_agent_db_write_generation, has_live_sand_agent_db_handle,
-};
-use crate::extensions::box_store_sync::store_db_bundle_capture::{
-    AgentDbCaptureQueues, StoreDbCaptureFailurePhase, StoreDbCaptureTrace,
-    create_store_db_capture_trace, record_store_db_capture_failure,
-};
+use crate::storage::store_db::{get_sand_agent_db_write_generation, has_live_sand_agent_db_handle};
 
 const SAND_BOX_STORE_ID_ENV: &str = "SAND_BOX_STORE_ID";
+const FABUSHI_OPENCLAW_PORTABLE_BACKUP_ENV: &str = "FABUSHI_OPENCLAW_PORTABLE_BACKUP";
 const WORKSPACE_ROOT: &str = "/workspace";
 const CLI_CONFIG_ROOT: &str = "/home/box/cli-config";
 const SAND_DATA_REL_PREFIX: &str = "home/box/sand-data";
@@ -100,6 +100,13 @@ const CLI_CONFIG_REL_PREFIX: &str = "home/box/cli-config";
 const POLL_SLEEP_SLICE_MS: u64 = 250;
 const DEFAULT_MAX_OBJECT_BYTES: u64 = 32 * 1024 * 1024 * 1024;
 const DEFAULT_SNAPSHOT_OUT_CONCURRENCY: usize = 8;
+
+fn openclaw_portable_backup_enabled() -> bool {
+    matches!(
+        std::env::var(FABUSHI_OPENCLAW_PORTABLE_BACKUP_ENV).as_deref(),
+        Ok("1") | Ok("true") | Ok("TRUE")
+    )
+}
 
 const SAND_DATA_EXCLUDES: &[&str] = &[
     "home/box/sand-data/host.lock",
@@ -124,8 +131,12 @@ pub enum ProductionBoxStoreSyncMode {
     },
     AgentStore,
     SandBoxStoreV2,
-    UnsupportedRemote { backend: BoxStoreBackendKind },
-    InvalidLocalConfiguration { reason: String },
+    UnsupportedRemote {
+        backend: BoxStoreBackendKind,
+    },
+    InvalidLocalConfiguration {
+        reason: String,
+    },
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
@@ -205,15 +216,14 @@ impl ProductionBoxStoreSyncApi {
             || !matches!(
                 &self.inner.mode,
                 ProductionBoxStoreSyncMode::LocalFs { .. }
-                | ProductionBoxStoreSyncMode::AgentStore
-                | ProductionBoxStoreSyncMode::SandBoxStoreV2
+                    | ProductionBoxStoreSyncMode::AgentStore
+                    | ProductionBoxStoreSyncMode::SandBoxStoreV2
             )
         {
             return false;
         }
-        let delay = Duration::from_millis(
-            self.inner.deps.scheduling.store_db_debounce.delay_ms.max(1),
-        );
+        let delay =
+            Duration::from_millis(self.inner.deps.scheduling.store_db_debounce.delay_ms.max(1));
         let mut queue = self
             .inner
             .store_db_debounce
@@ -315,7 +325,8 @@ impl BoxStoreSyncService for ProductionBoxStoreSyncService {
 
         match &self.inner.mode {
             ProductionBoxStoreSyncMode::Disabled => {
-                self.inner.log("box-store sync disabled by SAND_BOX_STORE_SYNC");
+                self.inner
+                    .log("box-store sync disabled by SAND_BOX_STORE_SYNC");
                 self.inner.report_sync_lifecycle("warn", false, "disabled");
                 return;
             }
@@ -349,9 +360,7 @@ impl BoxStoreSyncService for ProductionBoxStoreSyncService {
                 if let Err(error) =
                     chrome_inner.run_local_cycle(true, false, false, false, false, true, false)
                 {
-                    chrome_inner.log(&format!(
-                        "chrome-session snapshot rejected: {error}"
-                    ));
+                    chrome_inner.log(&format!("chrome-session snapshot rejected: {error}"));
                     chrome_inner.diagnostic("chrome-session", &error, false);
                 }
             }),
@@ -378,7 +387,9 @@ impl BoxStoreSyncService for ProductionBoxStoreSyncService {
                     .unwrap_or_else(|poisoned| poisoned.into_inner()) = Some(handle);
             }
             Err(error) => {
-                self.inner.log(&format!("store.db debounce worker failed to start: {error}"));
+                self.inner.log(&format!(
+                    "store.db debounce worker failed to start: {error}"
+                ));
                 self.inner
                     .diagnostic("startup", "store-db-debounce-worker-start-failed", false);
             }
@@ -410,17 +421,15 @@ impl BoxStoreSyncService for ProductionBoxStoreSyncService {
                     if plan.include_idle_only {
                         poll_inner.mark_idle_only_sync();
                     }
-                    if let Err(error) =
-                        poll_inner.run_local_cycle(
-                            false,
-                            plan.include_store_dbs,
-                            plan.skip_live_handle_store_dbs,
-                            plan.include_packs,
-                            plan.include_idle_only,
-                            false,
-                            false,
-                        )
-                    {
+                    if let Err(error) = poll_inner.run_local_cycle(
+                        false,
+                        plan.include_store_dbs,
+                        plan.skip_live_handle_store_dbs,
+                        plan.include_packs,
+                        plan.include_idle_only,
+                        false,
+                        false,
+                    ) {
                         poll_inner.log(&format!("periodic snapshot rejected: {error}"));
                         poll_inner.diagnostic("periodic", &error, false);
                     }
@@ -433,12 +442,16 @@ impl BoxStoreSyncService for ProductionBoxStoreSyncService {
                     .lock()
                     .unwrap_or_else(|poisoned| poisoned.into_inner()) = Some(handle);
                 let backend = mode_name(&self.inner.mode);
-                self.inner.log(&format!("box-store sync {backend} production slice enabled"));
+                self.inner.log(&format!(
+                    "box-store sync {backend} production slice enabled"
+                ));
                 self.inner.report_sync_lifecycle("info", true, "enabled");
             }
             Err(error) => {
-                self.inner.log(&format!("box-store poller failed to start: {error}"));
-                self.inner.diagnostic("startup", "poller-start-failed", false);
+                self.inner
+                    .log(&format!("box-store poller failed to start: {error}"));
+                self.inner
+                    .diagnostic("startup", "poller-start-failed", false);
             }
         }
     }
@@ -645,7 +658,10 @@ impl ProductionBoxStoreSyncInner {
         diagnostic.insert("phase".into(), Value::String(phase.into()));
         diagnostic.insert("reason".into(), Value::String(reason.into()));
         diagnostic.insert("ok".into(), Value::Bool(ok));
-        diagnostic.insert("backend".into(), Value::String(mode_name(&self.mode).into()));
+        diagnostic.insert(
+            "backend".into(),
+            Value::String(mode_name(&self.mode).into()),
+        );
         (self.deps.report_host_extension_diagnostic)(&diagnostic);
     }
 
@@ -865,7 +881,11 @@ impl ProductionBoxStoreSyncInner {
                 .unwrap_or_else(|poisoned| poisoned.into_inner())
                 .clone();
             self.report_cycle_telemetry(
-                if chrome_only { "chrome-session" } else { "periodic" },
+                if chrome_only {
+                    "chrome-session"
+                } else {
+                    "periodic"
+                },
                 &BoxStoreCycleSummary {
                     ok: false,
                     reason: Some("locked".into()),
@@ -1078,7 +1098,10 @@ impl ProductionBoxStoreSyncInner {
 
         if let Some((started_at, capture)) = store_db_capture.as_ref() {
             let outcome = aggregate_store_db_sweep_outcome(
-                capture.summary.failures.saturating_add(capture.summary.metadata_failures),
+                capture
+                    .summary
+                    .failures
+                    .saturating_add(capture.summary.metadata_failures),
                 capture.summary.oversize,
                 capture.summary.files_uploaded,
                 capture.summary.files_scanned,
@@ -1177,7 +1200,11 @@ impl ProductionBoxStoreSyncInner {
             metadata_failures,
         };
         self.report_cycle_telemetry(
-            if chrome_only { "chrome-session" } else { "periodic" },
+            if chrome_only {
+                "chrome-session"
+            } else {
+                "periodic"
+            },
             &summary,
         );
         Ok(())
@@ -1187,23 +1214,20 @@ impl ProductionBoxStoreSyncInner {
         &self,
         source_id: &str,
     ) -> Result<Arc<dyn BoxObjectStore>, String> {
-        let provider = AgentStoreObjectStoreProvider::new(AgentStoreClientDependencies {
-            backend_url: self
-                .deps
-                .backend_url
-                .clone()
-                .ok_or_else(|| "AgentStore backend URL is not configured".to_string())?,
-            get_access_token: self
-                .deps
-                .get_access_token
-                .clone()
-                .ok_or_else(|| "AgentStore auth token resolver is not configured".to_string())?,
-            get_machine_id: self
-                .deps
-                .get_machine_id
-                .clone()
-                .ok_or_else(|| "AgentStore machine id resolver is not configured".to_string())?,
-        })?;
+        let provider =
+            AgentStoreObjectStoreProvider::new(AgentStoreClientDependencies {
+                backend_url: self
+                    .deps
+                    .backend_url
+                    .clone()
+                    .ok_or_else(|| "AgentStore backend URL is not configured".to_string())?,
+                get_access_token: self.deps.get_access_token.clone().ok_or_else(|| {
+                    "AgentStore auth token resolver is not configured".to_string()
+                })?,
+                get_machine_id: self.deps.get_machine_id.clone().ok_or_else(|| {
+                    "AgentStore machine id resolver is not configured".to_string()
+                })?,
+            })?;
         Ok(Arc::from(provider.for_store(source_id)))
     }
 
@@ -1551,12 +1575,19 @@ impl ProductionBoxStoreSyncInner {
         }
 
         let outcome = aggregate_store_db_sweep_outcome(
-            capture.summary.failures.saturating_add(capture.summary.metadata_failures),
+            capture
+                .summary
+                .failures
+                .saturating_add(capture.summary.metadata_failures),
             capture.summary.oversize,
             capture.summary.files_uploaded,
             capture.summary.files_scanned,
         );
-        capture.agent_count = if outcome == StoreDbCaptureOutcome::Skipped { 0 } else { 1 };
+        capture.agent_count = if outcome == StoreDbCaptureOutcome::Skipped {
+            0
+        } else {
+            1
+        };
         let is_committed = manifest_committed
             && matches!(
                 outcome,
@@ -1582,7 +1613,9 @@ impl ProductionBoxStoreSyncInner {
     }
 }
 
-pub fn resolve_production_box_store_sync_mode(env: &BTreeMap<String, String>) -> ProductionBoxStoreSyncMode {
+pub fn resolve_production_box_store_sync_mode(
+    env: &BTreeMap<String, String>,
+) -> ProductionBoxStoreSyncMode {
     if !is_box_store_sync_enabled(env) {
         return ProductionBoxStoreSyncMode::Disabled;
     }
@@ -1627,9 +1660,10 @@ fn is_frozen_agent_store_source_id(value: &str) -> bool {
         if !matches!(bytes[19].to_ascii_lowercase(), b'8' | b'9' | b'a' | b'b') {
             return false;
         }
-        bytes.iter().enumerate().all(|(index, byte)| {
-            matches!(index, 8 | 13 | 18 | 23) || byte.is_ascii_hexdigit()
-        })
+        bytes
+            .iter()
+            .enumerate()
+            .all(|(index, byte)| matches!(index, 8 | 13 | 18 | 23) || byte.is_ascii_hexdigit())
     }
 
     if valid_uuid(value) {
@@ -1831,7 +1865,11 @@ fn sync_box_home_category(
 ) -> Result<CategoryTransferSummary, String> {
     let category = build_box_home_category(BOX_HOME_DIR);
     let ignore = build_box_home_ignore();
-    let exclude_refs = category.excludes.iter().map(String::as_str).collect::<Vec<_>>();
+    let exclude_refs = category
+        .excludes
+        .iter()
+        .map(String::as_str)
+        .collect::<Vec<_>>();
     transfer.sync_tree_category(
         store,
         manifest,
@@ -1844,7 +1882,6 @@ fn sync_box_home_category(
         manifest_v2,
     )
 }
-
 
 fn sync_chrome_session(
     transfer: &BoxStoreTransfer,
@@ -1889,7 +1926,6 @@ fn sync_chrome_session(
     result
 }
 
-
 #[derive(Clone)]
 struct ProductionStoreDbSnapshotRuntime {
     store: Arc<dyn BoxObjectStore>,
@@ -1917,7 +1953,6 @@ impl StoreDbSnapshotRuntimePort for ProductionStoreDbSnapshotRuntime {
         self.store.put_from_file(key, path)
     }
 }
-
 
 fn resolve_pack_source_path(rel_path: &str) -> Option<PathBuf> {
     for (prefix, root) in [
@@ -1970,191 +2005,192 @@ where
         ..CategoryTransferSummary::default()
     };
     let result = (|| -> Result<(), String> {
-    let mut live = HashMap::<String, u64>::new();
-    let mut eligible = HashMap::<String, u64>::new();
-    let mut local_by_sha = HashMap::<String, PathBuf>::new();
+        let mut live = HashMap::<String, u64>::new();
+        let mut eligible = HashMap::<String, u64>::new();
+        let mut local_by_sha = HashMap::<String, PathBuf>::new();
 
-    for (rel_path, entry) in manifest {
-        let (sha, size) = match entry {
-            BoxStoreManifestEntry::LegacyFile { sha, size }
-            | BoxStoreManifestEntry::File { sha, size, .. } => (sha, *size),
-            BoxStoreManifestEntry::Symlink { .. } => continue,
-        };
-        live.insert(sha.clone(), size);
-        if size >= PACK_MEMBER_MAX_BYTES || eligible.contains_key(sha) {
-            continue;
+        for (rel_path, entry) in manifest {
+            let (sha, size) = match entry {
+                BoxStoreManifestEntry::LegacyFile { sha, size }
+                | BoxStoreManifestEntry::File { sha, size, .. } => (sha, *size),
+                BoxStoreManifestEntry::Symlink { .. } => continue,
+            };
+            live.insert(sha.clone(), size);
+            if size >= PACK_MEMBER_MAX_BYTES || eligible.contains_key(sha) {
+                continue;
+            }
+            let Some(abs_path) = resolve_pack_source_path(rel_path) else {
+                continue;
+            };
+            let Ok(metadata) = fs::symlink_metadata(&abs_path) else {
+                continue;
+            };
+            if !metadata.is_file() || metadata.len() != size {
+                continue;
+            }
+            eligible.insert(sha.clone(), size);
+            local_by_sha.insert(sha.clone(), abs_path);
         }
-        let Some(abs_path) = resolve_pack_source_path(rel_path) else {
-            continue;
-        };
-        let Ok(metadata) = fs::symlink_metadata(&abs_path) else {
-            continue;
-        };
-        if !metadata.is_file() || metadata.len() != size {
-            continue;
+
+        let raw_index = store.get(BOX_STORE_PACK_INDEX_KEY)?;
+        let index = raw_index
+            .as_deref()
+            .and_then(|raw| std::str::from_utf8(raw).ok())
+            .and_then(parse_pack_index);
+        let plan = plan_pack_maintenance(
+            index.as_ref(),
+            &live,
+            &eligible,
+            PACK_MAX_MEMBER_SIZE_SUM,
+            PACK_BUILD_MIN_MEMBERS,
+            PACK_BUILD_MIN_BYTES,
+        );
+        summary.skipped_unchanged = plan.kept_packs.len();
+        summary.removed = plan.retired_pack_ids.len();
+        summary.files_scanned = plan.new_packs.len();
+        if plan.new_packs.is_empty() && plan.retired_pack_ids.is_empty() {
+            return Ok(());
         }
-        eligible.insert(sha.clone(), size);
-        local_by_sha.insert(sha.clone(), abs_path);
-    }
 
-    let raw_index = store.get(BOX_STORE_PACK_INDEX_KEY)?;
-    let index = raw_index
-        .as_deref()
-        .and_then(|raw| std::str::from_utf8(raw).ok())
-        .and_then(parse_pack_index);
-    let plan = plan_pack_maintenance(
-        index.as_ref(),
-        &live,
-        &eligible,
-        PACK_MAX_MEMBER_SIZE_SUM,
-        PACK_BUILD_MIN_MEMBERS,
-        PACK_BUILD_MIN_BYTES,
-    );
-    summary.skipped_unchanged = plan.kept_packs.len();
-    summary.removed = plan.retired_pack_ids.len();
-    summary.files_scanned = plan.new_packs.len();
-    if plan.new_packs.is_empty() && plan.retired_pack_ids.is_empty() {
-        return Ok(());
-    }
+        let tmp_dir = std::env::temp_dir().join(PACK_TMP_DIR_NAME);
+        fs::create_dir_all(&tmp_dir).map_err(|error| error.to_string())?;
+        sweep_pack_temp_dir(&tmp_dir);
+        let mut built_packs = Vec::<PackEntry>::new();
 
-    let tmp_dir = std::env::temp_dir().join(PACK_TMP_DIR_NAME);
-    fs::create_dir_all(&tmp_dir).map_err(|error| error.to_string())?;
-    sweep_pack_temp_dir(&tmp_dir);
-    let mut built_packs = Vec::<PackEntry>::new();
+        for (group_index, planned) in plan.new_packs.iter().enumerate() {
+            if should_abort() {
+                return Ok(());
+            }
+            let sources = planned
+                .iter()
+                .filter_map(|member| {
+                    local_by_sha.get(&member.sha).map(|abs_path| PackSource {
+                        abs_path: abs_path.clone(),
+                        sha: member.sha.clone(),
+                        size: member.size,
+                        vmtime: member.vmtime,
+                    })
+                })
+                .collect::<Vec<_>>();
+            let nonce = SystemTime::now()
+                .duration_since(UNIX_EPOCH)
+                .map(|duration| duration.as_nanos())
+                .unwrap_or_default();
+            let tmp_path = tmp_dir.join(format!(
+                "build-{}-{nonce}-{group_index}",
+                std::process::id()
+            ));
+            let built = match build_pack_file(&tmp_path, &sources, || should_abort()) {
+                Ok(Some(value)) => value,
+                Ok(None) => {
+                    let _ = fs::remove_file(&tmp_path);
+                    return Ok(());
+                }
+                Err(error) => {
+                    let _ = fs::remove_file(&tmp_path);
+                    return Err(error);
+                }
+            };
+            let built_size_sum = built.members.iter().map(|member| member.size).sum::<u64>();
+            if built.members.is_empty()
+                || (built.members.len() < PACK_BUILD_MIN_MEMBERS
+                    && built_size_sum < PACK_BUILD_MIN_BYTES)
+            {
+                let _ = fs::remove_file(&tmp_path);
+                continue;
+            }
 
-    for (group_index, planned) in plan.new_packs.iter().enumerate() {
+            let pack_id = sha256_file(&tmp_path)?;
+            let key = format!("{BOX_STORE_PACKS_PREFIX}/{pack_id}");
+            let upload = store.put_from_file(&key, &tmp_path);
+            let _ = fs::remove_file(&tmp_path);
+            upload?;
+            summary.files_uploaded += 1;
+            summary.bytes_uploaded = summary.bytes_uploaded.saturating_add(built.file_bytes);
+            built_packs.push(PackEntry {
+                id: pack_id,
+                bytes: built.file_bytes,
+                members: built.members,
+            });
+        }
+
         if should_abort() {
             return Ok(());
         }
-        let sources = planned
+        if built_packs.is_empty() && plan.retired_pack_ids.is_empty() {
+            return Ok(());
+        }
+
+        let max_built_vmtime = built_packs
             .iter()
-            .filter_map(|member| {
-                local_by_sha.get(&member.sha).map(|abs_path| PackSource {
-                    abs_path: abs_path.clone(),
-                    sha: member.sha.clone(),
-                    size: member.size,
-                    vmtime: member.vmtime,
-                })
-            })
+            .flat_map(|pack| pack.members.iter().map(|member| member.vmtime))
+            .max()
+            .unwrap_or(0);
+        let next_index = PackIndex {
+            version: PACK_INDEX_VERSION,
+            max_vmtime: index
+                .as_ref()
+                .map(|index| index.max_vmtime)
+                .unwrap_or(0)
+                .max(max_built_vmtime),
+            packs: plan.kept_packs.iter().cloned().chain(built_packs).collect(),
+        };
+        let referenced = next_index
+            .packs
+            .iter()
+            .map(|pack| pack.id.as_str())
+            .collect::<HashSet<_>>();
+        let retiring = plan
+            .retired_pack_ids
+            .iter()
+            .filter(|id| !referenced.contains(id.as_str()))
+            .cloned()
             .collect::<Vec<_>>();
-        let nonce = SystemTime::now()
-            .duration_since(UNIX_EPOCH)
-            .map(|duration| duration.as_nanos())
-            .unwrap_or_default();
-        let tmp_path = tmp_dir.join(format!(
-            "build-{}-{nonce}-{group_index}",
-            std::process::id()
-        ));
-        let built = match build_pack_file(&tmp_path, &sources, || should_abort()) {
-            Ok(Some(value)) => value,
-            Ok(None) => {
-                let _ = fs::remove_file(&tmp_path);
-                return Ok(());
-            }
-            Err(error) => {
-                let _ = fs::remove_file(&tmp_path);
-                return Err(error);
+
+        let raw_retired = store.get(BOX_STORE_PACK_RETIRED_KEY)?;
+        let existing_retired = match raw_retired.as_deref() {
+            None => Vec::new(),
+            Some(raw) => {
+                let text = match std::str::from_utf8(raw) {
+                    Ok(value) => value,
+                    Err(_) if retiring.is_empty() => "",
+                    Err(_) => {
+                        return Err(
+                            "packs/retired.json is present but unreadable; refusing to overwrite"
+                                .into(),
+                        );
+                    }
+                };
+                match parse_pack_retired(text) {
+                    Some(value) => value,
+                    None if retiring.is_empty() => Vec::new(),
+                    None => {
+                        return Err(
+                            "packs/retired.json is present but unreadable; refusing to overwrite"
+                                .into(),
+                        );
+                    }
+                }
             }
         };
-        let built_size_sum = built.members.iter().map(|member| member.size).sum::<u64>();
-        if built.members.is_empty()
-            || (built.members.len() < PACK_BUILD_MIN_MEMBERS
-                && built_size_sum < PACK_BUILD_MIN_BYTES)
-        {
-            let _ = fs::remove_file(&tmp_path);
-            continue;
-        }
-
-        let pack_id = sha256_file(&tmp_path)?;
-        let key = format!("{BOX_STORE_PACKS_PREFIX}/{pack_id}");
-        let upload = store.put_from_file(&key, &tmp_path);
-        let _ = fs::remove_file(&tmp_path);
-        upload?;
-        summary.files_uploaded += 1;
-        summary.bytes_uploaded = summary.bytes_uploaded.saturating_add(built.file_bytes);
-        built_packs.push(PackEntry {
-            id: pack_id,
-            bytes: built.file_bytes,
-            members: built.members,
-        });
-    }
-
-    if should_abort() {
-        return Ok(());
-    }
-    if built_packs.is_empty() && plan.retired_pack_ids.is_empty() {
-        return Ok(());
-    }
-
-    let max_built_vmtime = built_packs
-        .iter()
-        .flat_map(|pack| pack.members.iter().map(|member| member.vmtime))
-        .max()
-        .unwrap_or(0);
-    let next_index = PackIndex {
-        version: PACK_INDEX_VERSION,
-        max_vmtime: index
-            .as_ref()
-            .map(|index| index.max_vmtime)
-            .unwrap_or(0)
-            .max(max_built_vmtime),
-        packs: plan
-            .kept_packs
-            .iter()
-            .cloned()
-            .chain(built_packs)
-            .collect(),
-    };
-    let referenced = next_index
-        .packs
-        .iter()
-        .map(|pack| pack.id.as_str())
-        .collect::<HashSet<_>>();
-    let retiring = plan
-        .retired_pack_ids
-        .iter()
-        .filter(|id| !referenced.contains(id.as_str()))
-        .cloned()
-        .collect::<Vec<_>>();
-
-    let raw_retired = store.get(BOX_STORE_PACK_RETIRED_KEY)?;
-    let existing_retired = match raw_retired.as_deref() {
-        None => Vec::new(),
-        Some(raw) => {
-            let text = match std::str::from_utf8(raw) {
-                Ok(value) => value,
-                Err(_) if retiring.is_empty() => "",
-                Err(_) => {
-                    return Err("packs/retired.json is present but unreadable; refusing to overwrite".into());
-                }
-            };
-            match parse_pack_retired(text) {
-                Some(value) => value,
-                None if retiring.is_empty() => Vec::new(),
-                None => {
-                    return Err("packs/retired.json is present but unreadable; refusing to overwrite".into());
-                }
+        let mut merged_retired = existing_retired.clone();
+        for pack_id in &retiring {
+            if !merged_retired.contains(pack_id) {
+                merged_retired.push(pack_id.clone());
             }
         }
-    };
-    let mut merged_retired = existing_retired.clone();
-    for pack_id in &retiring {
-        if !merged_retired.contains(pack_id) {
-            merged_retired.push(pack_id.clone());
+        merged_retired.retain(|id| !referenced.contains(id.as_str()));
+        if merged_retired != existing_retired {
+            let bytes =
+                serialize_pack_retired(&merged_retired).map_err(|error| error.to_string())?;
+            store.put(BOX_STORE_PACK_RETIRED_KEY, bytes.as_bytes())?;
         }
-    }
-    merged_retired.retain(|id| !referenced.contains(id.as_str()));
-    if merged_retired != existing_retired {
-        let bytes = serialize_pack_retired(&merged_retired)
-            .map_err(|error| error.to_string())?;
-        store.put(BOX_STORE_PACK_RETIRED_KEY, bytes.as_bytes())?;
-    }
 
-    let index_bytes = serialize_pack_index(&next_index).map_err(|error| error.to_string())?;
-    store.put(BOX_STORE_PACK_INDEX_KEY, index_bytes.as_bytes())?;
-    for pack_id in retiring {
-        let _ = store.delete(&format!("{BOX_STORE_PACKS_PREFIX}/{pack_id}"));
-    }
+        let index_bytes = serialize_pack_index(&next_index).map_err(|error| error.to_string())?;
+        store.put(BOX_STORE_PACK_INDEX_KEY, index_bytes.as_bytes())?;
+        for pack_id in retiring {
+            let _ = store.delete(&format!("{BOX_STORE_PACKS_PREFIX}/{pack_id}"));
+        }
         Ok(())
     })();
     if result.is_err() {
@@ -2212,19 +2248,21 @@ fn sync_store_db_snapshots_with_trace(
         Err(error) if error.kind() == std::io::ErrorKind::NotFound => None,
         Err(_) => {
             summary.metadata_failures += 1;
-                    record_store_db_capture_failure(
-                        &mut capture_trace,
-                        StoreDbCaptureFailurePhase::Capture,
-                    );
-            record_store_db_capture_failure(&mut capture_trace, StoreDbCaptureFailurePhase::Capture);
+            record_store_db_capture_failure(
+                &mut capture_trace,
+                StoreDbCaptureFailurePhase::Capture,
+            );
+            record_store_db_capture_failure(
+                &mut capture_trace,
+                StoreDbCaptureFailurePhase::Capture,
+            );
             walk_complete = false;
             None
         }
     };
 
-    let runtime: Arc<dyn StoreDbSnapshotRuntimePort> = Arc::new(ProductionStoreDbSnapshotRuntime {
-        store,
-    });
+    let runtime: Arc<dyn StoreDbSnapshotRuntimePort> =
+        Arc::new(ProductionStoreDbSnapshotRuntime { store });
     let uploader = StoreDbSnapshotUpload::new(
         runtime,
         Arc::new(now_ms),
@@ -2265,10 +2303,10 @@ fn sync_store_db_snapshots_with_trace(
             let agent_id = agent_entry.file_name().to_string_lossy().to_string();
             if agent_id.is_empty() {
                 summary.metadata_failures += 1;
-                    record_store_db_capture_failure(
-                        &mut capture_trace,
-                        StoreDbCaptureFailurePhase::Capture,
-                    );
+                record_store_db_capture_failure(
+                    &mut capture_trace,
+                    StoreDbCaptureFailurePhase::Capture,
+                );
                 walk_complete = false;
                 continue;
             }
@@ -2278,14 +2316,10 @@ fn sync_store_db_snapshots_with_trace(
             let agent_dir = agent_entry.path();
             let bundle_paths = AGENT_STORE_DB_BASENAMES
                 .iter()
-                .map(|basename| {
-                    format!("{SAND_DATA_REL_PREFIX}/agents/{agent_id}/{basename}")
-                })
+                .map(|basename| format!("{SAND_DATA_REL_PREFIX}/agents/{agent_id}/{basename}"))
                 .collect::<Vec<_>>();
 
-            if skip_live_handles
-                && has_live_sand_agent_db_handle(&agent_dir.join("store.db"))
-            {
+            if skip_live_handles && has_live_sand_agent_db_handle(&agent_dir.join("store.db")) {
                 blocked_from_prune.extend(bundle_paths);
                 continue;
             }
@@ -2324,27 +2358,25 @@ fn sync_store_db_snapshots_with_trace(
                     Ok(metadata) if metadata.is_file() => metadata,
                     Ok(_) => {
                         summary.metadata_failures += 1;
-                    record_store_db_capture_failure(
-                        &mut capture_trace,
-                        StoreDbCaptureFailurePhase::Capture,
-                    );
+                        record_store_db_capture_failure(
+                            &mut capture_trace,
+                            StoreDbCaptureFailurePhase::Capture,
+                        );
                         bundle_ok = false;
                         continue;
                     }
                     Err(error) if error.kind() == std::io::ErrorKind::NotFound => continue,
                     Err(_) => {
                         summary.metadata_failures += 1;
-                    record_store_db_capture_failure(
-                        &mut capture_trace,
-                        StoreDbCaptureFailurePhase::Capture,
-                    );
+                        record_store_db_capture_failure(
+                            &mut capture_trace,
+                            StoreDbCaptureFailurePhase::Capture,
+                        );
                         bundle_ok = false;
                         continue;
                     }
                 };
-                let rel_path = format!(
-                    "{SAND_DATA_REL_PREFIX}/agents/{agent_id}/{basename}"
-                );
+                let rel_path = format!("{SAND_DATA_REL_PREFIX}/agents/{agent_id}/{basename}");
                 seen.insert(rel_path.clone());
                 present_paths.insert(rel_path.clone());
                 summary.files_scanned += 1;
@@ -2358,10 +2390,17 @@ fn sync_store_db_snapshots_with_trace(
                 ));
                 let capture_started_at = Instant::now();
                 if let Err(error) = uploader.run_vacuum_off_thread(&source_path, &temp_path) {
-                    capture_trace.capture_duration_ms = capture_trace.capture_duration_ms.saturating_add(
-                        capture_started_at.elapsed().as_millis().min(u128::from(u64::MAX)) as u64,
+                    capture_trace.capture_duration_ms =
+                        capture_trace.capture_duration_ms.saturating_add(
+                            capture_started_at
+                                .elapsed()
+                                .as_millis()
+                                .min(u128::from(u64::MAX)) as u64,
+                        );
+                    record_store_db_capture_failure(
+                        &mut capture_trace,
+                        StoreDbCaptureFailurePhase::Capture,
                     );
-                    record_store_db_capture_failure(&mut capture_trace, StoreDbCaptureFailurePhase::Capture);
                     uploader.discard_snapshot_temp(&temp_path, &rel_path);
                     eprintln!(
                         "[box-store-sync] store.db snapshot capture failed {rel_path}: {error}"
@@ -2370,9 +2409,13 @@ fn sync_store_db_snapshots_with_trace(
                     bundle_ok = false;
                     continue;
                 }
-                capture_trace.capture_duration_ms = capture_trace.capture_duration_ms.saturating_add(
-                    capture_started_at.elapsed().as_millis().min(u128::from(u64::MAX)) as u64,
-                );
+                capture_trace.capture_duration_ms =
+                    capture_trace.capture_duration_ms.saturating_add(
+                        capture_started_at
+                            .elapsed()
+                            .as_millis()
+                            .min(u128::from(u64::MAX)) as u64,
+                    );
 
                 let blob_upload_started_at = Instant::now();
                 let result = uploader.upload_agent_db_snapshot(
@@ -2382,16 +2425,19 @@ fn sync_store_db_snapshots_with_trace(
                     &temp_path,
                     file_mode(&metadata),
                 );
-                capture_trace.blob_upload_duration_ms = capture_trace.blob_upload_duration_ms.saturating_add(
-                    blob_upload_started_at.elapsed().as_millis().min(u128::from(u64::MAX)) as u64,
-                );
+                capture_trace.blob_upload_duration_ms =
+                    capture_trace.blob_upload_duration_ms.saturating_add(
+                        blob_upload_started_at
+                            .elapsed()
+                            .as_millis()
+                            .min(u128::from(u64::MAX)) as u64,
+                    );
                 uploader.discard_snapshot_temp(&temp_path, &rel_path);
                 match result.outcome {
                     SnapshotUploadOutcome::Uploaded => {
                         summary.files_uploaded += 1;
-                        summary.bytes_uploaded = summary
-                            .bytes_uploaded
-                            .saturating_add(result.bytes_uploaded);
+                        summary.bytes_uploaded =
+                            summary.bytes_uploaded.saturating_add(result.bytes_uploaded);
                     }
                     SnapshotUploadOutcome::Unchanged => summary.skipped_unchanged += 1,
                     SnapshotUploadOutcome::Oversize => {
@@ -2399,6 +2445,70 @@ fn sync_store_db_snapshots_with_trace(
                         bundle_ok = false;
                     }
                     SnapshotUploadOutcome::Error => {
+                        summary.failures += 1;
+                        record_store_db_capture_failure(
+                            &mut capture_trace,
+                            StoreDbCaptureFailurePhase::BlobUpload,
+                        );
+                        bundle_ok = false;
+                    }
+                }
+            }
+
+            if bundle_ok && agent_has_db && openclaw_portable_backup_enabled() {
+                let source_db = agent_dir.join("store.db");
+                let staging_dir = agent_dir.join(format!(
+                    ".openclaw-portable-staging-{}",
+                    uuid::Uuid::new_v4().simple()
+                ));
+                let connection =
+                    Connection::open_with_flags(&source_db, OpenFlags::SQLITE_OPEN_READ_ONLY);
+                let portable_result = connection
+                    .map_err(|error| format!("open portable backup source: {error}"))
+                    .and_then(|connection| {
+                        uploader.export_and_upload_sqlite_backup(
+                            store_id,
+                            &mut staged_manifest,
+                            &connection,
+                            &staging_dir,
+                            crate::extensions::snapshot::git_backup_manager::GitBackupIdentity {
+                                role: "agent".into(),
+                                agent_id: Some(agent_id.clone()),
+                                id: None,
+                            },
+                            &BTreeSet::new(),
+                            &format!("{SAND_DATA_REL_PREFIX}/agents/{agent_id}/portable"),
+                            fs::metadata(&source_db)
+                                .map(|metadata| file_mode(&metadata))
+                                .unwrap_or(0o600),
+                        )
+                    });
+                match portable_result {
+                    Ok(results)
+                        if results.iter().all(|result| {
+                            matches!(
+                                result.outcome,
+                                SnapshotUploadOutcome::Uploaded | SnapshotUploadOutcome::Unchanged
+                            )
+                        }) =>
+                    {
+                        summary.files_uploaded += results
+                            .iter()
+                            .filter(|result| result.outcome == SnapshotUploadOutcome::Uploaded)
+                            .count();
+                        summary.bytes_uploaded = summary.bytes_uploaded.saturating_add(
+                            results.iter().map(|result| result.bytes_uploaded).sum(),
+                        );
+                        let portable_prefix =
+                            format!("{SAND_DATA_REL_PREFIX}/agents/{agent_id}/portable/");
+                        for (path, entry) in staged_manifest.iter() {
+                            if path.starts_with(&portable_prefix) {
+                                seen.insert(path.clone());
+                                set_manifest_entry(manifest, path, entry.clone());
+                            }
+                        }
+                    }
+                    Ok(_) | Err(_) => {
                         summary.failures += 1;
                         record_store_db_capture_failure(
                             &mut capture_trace,
@@ -2428,8 +2538,7 @@ fn sync_store_db_snapshots_with_trace(
             }
 
             for basename in AGENT_STORE_DB_BASENAMES {
-                let rel_path =
-                    format!("{SAND_DATA_REL_PREFIX}/agents/{agent_id}/{basename}");
+                let rel_path = format!("{SAND_DATA_REL_PREFIX}/agents/{agent_id}/{basename}");
                 if present_paths.contains(&rel_path) {
                     if let Some(entry) = staged_manifest.get(&rel_path).cloned() {
                         set_manifest_entry(manifest, &rel_path, entry);
@@ -2446,7 +2555,7 @@ fn sync_store_db_snapshots_with_trace(
         let stale = manifest
             .keys()
             .filter(|path| path.starts_with(&prefix))
-            .filter(|path| is_agent_store_db_path(path))
+            .filter(|path| is_agent_store_db_path(path) || is_agent_portable_backup_path(path))
             .filter(|path| !seen.contains(*path))
             .filter(|path| !blocked_from_prune.contains(*path))
             .cloned()
@@ -2582,7 +2691,9 @@ fn file_mode(metadata: &fs::Metadata) -> u32 {
 }
 
 fn is_excluded(rel_path: &str, excludes: &[&str]) -> bool {
-    excludes.iter().any(|pattern| glob_matches_path(pattern, rel_path))
+    excludes
+        .iter()
+        .any(|pattern| glob_matches_path(pattern, rel_path))
 }
 
 fn is_agent_store_db_path(rel_path: &str) -> bool {
@@ -2598,6 +2709,10 @@ fn is_agent_store_db_path(rel_path: &str) -> bool {
             || rel_path.contains(&format!("/{basename}.replacement"))
             || rel_path.ends_with(&format!("/{basename}.pending"))
     })
+}
+
+fn is_agent_portable_backup_path(rel_path: &str) -> bool {
+    rel_path.contains("/agents/") && rel_path.contains("/portable/")
 }
 
 fn now_ms() -> u64 {
@@ -2619,7 +2734,6 @@ fn sleep_interruptibly(stopped: &AtomicBool, total_ms: u64) -> bool {
     }
     !stopped.load(Ordering::Acquire)
 }
-
 
 #[cfg(test)]
 mod tests {
@@ -2663,8 +2777,7 @@ mod tests {
                 mode: 0o644,
             },
         );
-        write_manifest(&store, &concurrent, true, "writer-b".into())
-            .expect("concurrent manifest");
+        write_manifest(&store, &concurrent, true, "writer-b".into()).expect("concurrent manifest");
 
         let error = write_manifest_if_unchanged(
             &store,
@@ -2697,10 +2810,7 @@ mod tests {
             .expect("write ignored file");
 
         let store = LocalFsObjectStore::new(store_root.clone());
-        let ignore = load_workspace_ignore(
-            &workspace,
-            SAND_BOX_WORKSPACE_DEFAULT_IGNORE_PATTERNS,
-        );
+        let ignore = load_workspace_ignore(&workspace, SAND_BOX_WORKSPACE_DEFAULT_IGNORE_PATTERNS);
         let mut manifest = BoxManifestMap::new();
         let summary = test_sync_tree_category(
             &store,
@@ -2732,8 +2842,7 @@ mod tests {
         };
         assert!(store_root.join(BOX_STORE_BLOBS_PREFIX).join(&sha).is_file());
 
-        write_manifest(&store, &manifest, true, "test-window".into())
-            .expect("write manifest");
+        write_manifest(&store, &manifest, true, "test-window".into()).expect("write manifest");
         let persisted = load_manifest(&store)
             .expect("read manifest")
             .expect("manifest exists");
@@ -2820,6 +2929,39 @@ mod tests {
     }
 
     #[test]
+    fn production_cycle_can_publish_openclaw_portable_backup_when_enabled() {
+        let root = temp_root("store-db-portable");
+        let sand_root = root.join("sand-data");
+        let agent_dir = sand_root.join("agents/agent-a");
+        let store_root = root.join("store");
+        fs::create_dir_all(&agent_dir).expect("create agent dir");
+        let source_db = agent_dir.join("store.db");
+        {
+            let db = rusqlite::Connection::open(&source_db).expect("open source store.db");
+            db.execute_batch(
+                "CREATE TABLE state (id INTEGER PRIMARY KEY, value TEXT);
+                 INSERT INTO state(value) VALUES ('portable');",
+            )
+            .expect("seed source store.db");
+        }
+        let store = Arc::new(LocalFsObjectStore::new(&store_root));
+        let mut manifest = BoxManifestMap::new();
+        unsafe { std::env::set_var(FABUSHI_OPENCLAW_PORTABLE_BACKUP_ENV, "1") };
+        let result =
+            sync_store_db_snapshots(store, "store-a", &mut manifest, &sand_root, false, None);
+        unsafe { std::env::remove_var(FABUSHI_OPENCLAW_PORTABLE_BACKUP_ENV) };
+        let summary = result.expect("portable production snapshot");
+        assert_eq!(summary.failures, 0);
+        assert!(summary.files_uploaded >= 4);
+        assert!(manifest.contains_key("home/box/sand-data/agents/agent-a/portable/manifest.json"));
+        assert!(manifest.contains_key("home/box/sand-data/agents/agent-a/portable/schema.sql"));
+        assert!(
+            manifest.contains_key("home/box/sand-data/agents/agent-a/portable/tables/state.jsonl")
+        );
+        fs::remove_dir_all(root).expect("cleanup temp root");
+    }
+
+    #[test]
     fn agent_db_bundle_does_not_publish_partial_manifest_on_capture_failure() {
         let root = temp_root("store-db-bundle-failure");
         let sand_root = root.join("sand-data");
@@ -2856,11 +2998,7 @@ mod tests {
             !manifest.contains_key("home/box/sand-data/agents/agent-a/store.db"),
             "a successful first DB must not publish a partial Agent DB bundle"
         );
-        assert!(
-            !manifest.contains_key(
-                "home/box/sand-data/agents/agent-a/conversation-blobs.db"
-            )
-        );
+        assert!(!manifest.contains_key("home/box/sand-data/agents/agent-a/conversation-blobs.db"));
 
         fs::remove_dir_all(root).expect("cleanup temp root");
     }
@@ -2913,7 +3051,10 @@ mod tests {
 
         assert_eq!(summary.files_scanned, 0);
         assert_eq!(summary.files_uploaded, 0);
-        assert_eq!(manifest, baseline, "live Agent DB must remain durable but untouched");
+        assert_eq!(
+            manifest, baseline,
+            "live Agent DB must remain durable but untouched"
+        );
         fs::remove_dir_all(root).expect("cleanup");
     }
 
@@ -2930,7 +3071,10 @@ mod tests {
         let after = agent_db_bundle_identity(&agent_dir).expect("identity after");
         crate::storage::store_db::delete_sand_agent_db_write_generation(&source_db);
 
-        assert_ne!(before, after, "a shipping DB mutation must invalidate capture identity");
+        assert_ne!(
+            before, after,
+            "a shipping DB mutation must invalidate capture identity"
+        );
         fs::remove_dir_all(root).expect("cleanup");
     }
 
@@ -3007,5 +3151,4 @@ mod tests {
             "sand-box-store-v2"
         );
     }
-
 }

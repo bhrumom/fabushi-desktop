@@ -14,6 +14,19 @@ struct FakeRuntime {
     byte_puts: Mutex<Vec<(String, String, Vec<u8>, bool)>>,
     file_puts: Mutex<Vec<(String, String, PathBuf, String, u64)>>,
     fail_upload: Mutex<Option<String>>,
+    upload_count: Mutex<usize>,
+    fail_after: Mutex<Option<usize>>,
+}
+
+impl FakeRuntime {
+    fn should_fail(&self) -> bool {
+        let mut count = self.upload_count.lock().unwrap();
+        *count += 1;
+        self.fail_after
+            .lock()
+            .unwrap()
+            .is_some_and(|limit| *count >= limit)
+    }
 }
 
 impl StoreDbSnapshotRuntimePort for FakeRuntime {
@@ -26,6 +39,9 @@ impl StoreDbSnapshotRuntimePort for FakeRuntime {
     ) -> Result<(), String> {
         if let Some(error) = self.fail_upload.lock().unwrap().clone() {
             return Err(error);
+        }
+        if self.should_fail() {
+            return Err("injected upload failure".into());
         }
         self.byte_puts.lock().unwrap().push((
             store_id.to_string(),
@@ -46,6 +62,9 @@ impl StoreDbSnapshotRuntimePort for FakeRuntime {
     ) -> Result<(), String> {
         if let Some(error) = self.fail_upload.lock().unwrap().clone() {
             return Err(error);
+        }
+        if self.should_fail() {
+            return Err("injected upload failure".into());
         }
         self.file_puts.lock().unwrap().push((
             store_id.to_string(),
@@ -229,6 +248,41 @@ fn live_sqlite_export_reaches_existing_box_store_owner() {
     assert!(manifest.contains_key("stores/store_one/portable/manifest.json"));
     assert!(manifest.contains_key("stores/store_one/portable/schema.sql"));
     assert!(manifest.contains_key("stores/store_one/portable/tables/messages.jsonl"));
+}
+
+#[test]
+fn partial_portable_upload_does_not_commit_manifest_entries() {
+    let runtime = Arc::new(FakeRuntime::default());
+    *runtime.fail_after.lock().unwrap() = Some(2);
+    let logs = Arc::new(Mutex::new(Vec::new()));
+    let service = service(runtime, 1024 * 1024, 1024, vec![10; 8], logs);
+    let connection = rusqlite::Connection::open_in_memory().expect("open SQLite producer");
+    connection
+        .execute_batch("CREATE TABLE messages (id INTEGER PRIMARY KEY, body TEXT); INSERT INTO messages VALUES (1, 'hello');")
+        .expect("seed SQLite producer");
+    let staging = std::env::temp_dir().join(format!(
+        "fabushi-live-sqlite-partial-{}",
+        uuid::Uuid::new_v4()
+    ));
+    let manifest = &mut BoxManifestMap::new();
+    assert!(service
+        .export_and_upload_sqlite_backup(
+            "store-1",
+            manifest,
+            &connection,
+            &staging,
+            mahayana_host_runtime::extensions::snapshot::git_backup_manager::GitBackupIdentity {
+                role: "generic".into(),
+                agent_id: None,
+                id: Some("store_one".into()),
+            },
+            &BTreeSet::new(),
+            "stores/store_one/portable",
+            0o600,
+        )
+        .is_err());
+    assert!(manifest.is_empty(), "partial upload must not commit manifest");
+    assert!(!staging.exists(), "partial upload must clean staging");
 }
 
 #[test]

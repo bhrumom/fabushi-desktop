@@ -186,7 +186,22 @@ impl StoreDbSnapshotUpload {
                 mode,
             })
             .collect::<Vec<_>>();
-        let result = self.upload_artifact_set(store_id, manifest, &artifacts);
+        let mut staged_manifest = manifest.clone();
+        let result = self
+            .upload_artifact_set(store_id, &mut staged_manifest, &artifacts)
+            .and_then(|results| {
+                if results.iter().all(|result| {
+                    matches!(
+                        result.outcome,
+                        SnapshotUploadOutcome::Uploaded | SnapshotUploadOutcome::Unchanged
+                    )
+                }) {
+                    *manifest = staged_manifest;
+                    Ok(results)
+                } else {
+                    Err("portable SQLite backup upload was partially unsuccessful".into())
+                }
+            });
         let cleanup = fs::remove_dir_all(staging_dir);
         if let Err(error) = cleanup {
             return Err(format!("remove SQLite backup staging directory: {error}"));

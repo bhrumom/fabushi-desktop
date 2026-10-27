@@ -321,3 +321,13 @@ API and end-to-end contract; the broader BoxStore production cycle still does
 not invoke OpenClaw portable export by default, and PostgreSQL remains outside
 the available Fabushi database-port boundary.
 
+The BoxStore production cycle now has an explicit opt-in caller controlled by
+`FABUSHI_OPENCLAW_PORTABLE_BACKUP=1|true`: each eligible agent `store.db` is
+opened read-only, exported, and routed through the existing owner under the
+`.../agents/<agent>/portable/` manifest namespace. A production-module test
+exercises this path with the real local filesystem owner. The adapter commits
+the staged manifest only when every artifact is Uploaded/Unchanged; partial
+object uploads return an error, leave the caller manifest unchanged, and clean
+staging. External content-addressed blobs may remain as harmless orphaned
+objects and require later garbage collection; no false atomicity claim is made.
+
