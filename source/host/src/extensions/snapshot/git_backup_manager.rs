@@ -13,6 +13,7 @@ use std::collections::BTreeMap;
 use std::os::unix::fs::{MetadataExt, OpenOptionsExt};
 
 pub const SNAPSHOT_EXPORT_ENVELOPE_VERSION: u32 = 1;
+pub const SQLITE_SIDECAR_SUFFIXES: [&str; 3] = ["-wal", "-shm", "-journal"];
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SnapshotExportEnvelope {
@@ -306,6 +307,27 @@ pub fn assert_database_artifact(expected: &DatabaseArtifact) -> Result<(), Strin
             expected.path.display()
         ))
     }
+}
+
+/// Reject SQLite sidecars before admitting an export or restore target.
+pub fn assert_no_sqlite_sidecars(path: impl AsRef<Path>, error_prefix: &str) -> Result<(), String> {
+    let path = path.as_ref();
+    for suffix in SQLITE_SIDECAR_SUFFIXES {
+        let sidecar = PathBuf::from(format!("{}{}", path.display(), suffix));
+        if std::fs::symlink_metadata(&sidecar).is_ok() {
+            return Err(format!("{error_prefix}: {}", sidecar.display()));
+        }
+    }
+    Ok(())
+}
+
+/// Admit a restore target only when neither the database nor its sidecars exist.
+pub fn assert_fresh_restore_target(path: impl AsRef<Path>) -> Result<(), String> {
+    let path = path.as_ref();
+    if std::fs::symlink_metadata(path).is_ok() {
+        return Err(format!("fresh SQLite restore path already exists: {}", path.display()));
+    }
+    assert_no_sqlite_sidecars(path, "fresh SQLite restore path already exists")
 }
 
 pub fn create_export_envelope(snapshot_id: &str, manifest: Value) -> SnapshotExportEnvelope {

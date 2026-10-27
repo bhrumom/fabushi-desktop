@@ -7,7 +7,8 @@ use mahayana_host_runtime::extensions::skills::skill_runtime::{
 };
 use mahayana_host_runtime::extensions::snapshot::git_backup_manager::{
     assert_database_artifact, capture_database_artifact, create_export_envelope,
-    parse_postgres_export_manifest, verify_export_envelope, SnapshotGenerationFence,
+    assert_fresh_restore_target, assert_no_sqlite_sidecars, parse_postgres_export_manifest,
+    verify_export_envelope, SnapshotGenerationFence,
 };
 use serde_json::json;
 use std::fs;
@@ -68,6 +69,12 @@ fn test_ocrm_snapshot_artifact_admission_and_generation_fence() {
     fence.assert_current(expected).expect("current generation");
     assert_eq!(fence.advance(), 5);
     assert!(fence.assert_current(expected).is_err());
+
+    let restore_target = root.join("restore.sqlite");
+    assert_fresh_restore_target(&restore_target).expect("fresh restore target");
+    fs::write(root.join("restore.sqlite-wal"), b"sidecar").expect("write sidecar fixture");
+    assert!(assert_fresh_restore_target(&restore_target).is_err());
+    assert!(assert_no_sqlite_sidecars(&restore_target, "sidecar detected").is_err());
 
     let _ = fs::remove_dir_all(&root);
 }

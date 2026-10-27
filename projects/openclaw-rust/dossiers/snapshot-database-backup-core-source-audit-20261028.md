@@ -76,6 +76,12 @@ sanitization invariant. Its negative/positive oracle is
 `test_ocrm_snapshot_postgres_manifest_schema_and_profile_oracles`. This parser
 does not read files, inspect anchors, or materialize PostgreSQL/SQLite state.
 
+It also adds SQLite restore-target custody checks matching the exact upstream
+`restore-paths.ts` blob `ceb029c57e960c61830de9a6e8269e5579934b60`: base target
+and `-wal`/`-shm`/`-journal` sidecars must be absent before restore, and any
+existing sidecar is rejected. The focused artifact test exercises the positive
+fresh-target and negative-sidecar paths.
+
 ## Responsibility/evidence decision
 
 `OCRM-RESP-SNAPSHOT-BACKUP-CODEC-001` remains `read=partial`,
