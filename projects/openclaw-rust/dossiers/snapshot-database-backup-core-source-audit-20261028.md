@@ -38,20 +38,25 @@ The current Rust owner is
 `source/host/src/extensions/snapshot/git_backup_manager.rs`. It provides
 `SnapshotExportEnvelope`, `GitBackupMetadata`, `create_export_envelope`, and
 `verify_export_envelope`; it hashes a JSON manifest and rejects a mismatched
-version/checksum. The current contract test covers envelope tampering only:
-`source/host/tests/openclaw_snapshot_skills_contract.rs::test_ocrm_snapshot_git_backup`.
-There is no demonstrated PostgreSQL/SQLite port materialization, artifact
-nlink/no-follow admission, generation guard, exact/portable profile split,
-session-archive embedding, anchor verification/publication, restore namespace
-custody, or repeatable-read fingerprint path in this owner. Therefore the
-existing owner is a valid placement candidate but is not behaviorally equivalent
-to the exact upstream worker.
+version/checksum. This change also adds a narrow, independently testable
+`capture_database_artifact`/`assert_database_artifact` admission boundary
+(regular-file, Unix `O_NOFOLLOW`/single-link checks, byte hash and size) and a
+monotonic `SnapshotGenerationFence`. The focused contract now proves regular
+artifact admission, tamper rejection, symlink/hardlink rejection on Unix, and
+stale-generation rejection. The local test is
+`source/host/tests/openclaw_snapshot_skills_contract.rs::test_ocrm_snapshot_artifact_admission_and_generation_fence`.
+There is still no demonstrated PostgreSQL/SQLite port materialization,
+exact/portable profile split, session-archive embedding, anchor
+verification/publication, restore namespace custody, or repeatable-read
+fingerprint path in this owner. Therefore the existing owner is a valid
+placement candidate but is not behaviorally equivalent to the exact upstream
+worker.
 
 ## Responsibility/evidence decision
 
 `OCRM-RESP-SNAPSHOT-BACKUP-CODEC-001` remains `read=partial`,
 `implementation=implemented`, `wiring=not-wired`, and `verification=not-run`.
-The local envelope test is local evidence only and does not upgrade the
+The local envelope/admission tests are local evidence only and do not upgrade the
 responsibility or any global completion flag. Required next work is a spec-led
 Rust design for the missing database-port/restore boundary, followed by a
 real producer→owner→storage consumer path and falsifiable exact/portable,

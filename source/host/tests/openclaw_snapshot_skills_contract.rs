@@ -6,9 +6,11 @@ use mahayana_host_runtime::extensions::skills::skill_runtime::{
     parse_skill_markdown, SkillRegistry,
 };
 use mahayana_host_runtime::extensions::snapshot::git_backup_manager::{
-    create_export_envelope, verify_export_envelope,
+    assert_database_artifact, capture_database_artifact, create_export_envelope,
+    verify_export_envelope, SnapshotGenerationFence,
 };
 use serde_json::json;
+use std::fs;
 use std::time::Duration;
 
 #[test]
@@ -31,6 +33,43 @@ fn test_ocrm_snapshot_git_backup() {
     let mut tampered_manifest = envelope.clone();
     tampered_manifest.manifest = json!({"tampered": true});
     assert!(verify_export_envelope(&tampered_manifest).is_err());
+}
+
+#[test]
+fn test_ocrm_snapshot_artifact_admission_and_generation_fence() {
+    let root =
+        std::env::temp_dir().join(format!("fabushi-snapshot-artifact-{}", std::process::id()));
+    let _ = fs::remove_dir_all(&root);
+    fs::create_dir_all(&root).expect("create temp root");
+    let artifact = root.join("database.sqlite");
+    fs::write(&artifact, b"snapshot-image-v1").expect("write artifact");
+
+    let admitted = capture_database_artifact(&artifact).expect("admit regular artifact");
+    assert_eq!(admitted.size_bytes, 17);
+    assert_database_artifact(&admitted).expect("unchanged artifact remains valid");
+
+    fs::write(&artifact, b"tampered-image").expect("tamper artifact");
+    assert!(assert_database_artifact(&admitted).is_err());
+
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::symlink;
+        let symlink_path = root.join("database-link.sqlite");
+        symlink(&artifact, &symlink_path).expect("create symlink fixture");
+        assert!(capture_database_artifact(&symlink_path).is_err());
+
+        let hardlink_path = root.join("database-hardlink.sqlite");
+        fs::hard_link(&artifact, &hardlink_path).expect("create hardlink fixture");
+        assert!(capture_database_artifact(&artifact).is_err());
+    }
+
+    let fence = SnapshotGenerationFence::new(4);
+    let expected = fence.current();
+    fence.assert_current(expected).expect("current generation");
+    assert_eq!(fence.advance(), 5);
+    assert!(fence.assert_current(expected).is_err());
+
+    let _ = fs::remove_dir_all(&root);
 }
 
 #[test]
