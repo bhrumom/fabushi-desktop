@@ -255,129 +255,180 @@ pub fn export_sqlite_backup_artifacts(
 ) -> Result<GitBackupManifest, String> {
     let output_dir = output_dir.as_ref();
     git_backup_scope_path(&identity)?;
-    fs::create_dir_all(output_dir.join(GIT_BACKUP_TABLES))
-        .map_err(|error| format!("create SQLite backup artifact directory: {error}"))?;
-    let schema_entries = read_sqlite_schema_entries(connection)?;
-    let schema = render_sqlite_schema(
-        schema_entries.clone(),
-        read_sqlite_user_version(connection)?,
-    )?;
-    fs::write(output_dir.join(GIT_BACKUP_SCHEMA), schema)
-        .map_err(|error| format!("write SQLite backup schema: {error}"))?;
-    let virtual_tables = schema_entries
-        .iter()
-        .filter(|entry| entry.kind == "table" && entry.sql.contains("VIRTUAL TABLE"))
-        .map(|entry| entry.name.clone())
-        .collect::<BTreeSet<_>>();
-    let tables = select_sqlite_backup_tables(&schema_entries, &virtual_tables, excluded_tables)?;
-    let mut manifest_tables = BTreeMap::new();
-    for table in tables {
-        let digest = digest_sqlite_table(connection, &table)?;
-        let mut file = File::create(
-            output_dir
-                .join(GIT_BACKUP_TABLES)
-                .join(format!("{table}.jsonl")),
-        )
-        .map_err(|error| format!("create SQLite backup table {table}: {error}"))?;
-        let mut table_info = connection
-            .prepare(&format!(
-                "PRAGMA table_info({})",
-                quote_sqlite_identifier(&table)
-            ))
-            .map_err(|error| format!("prepare SQLite table info {table}: {error}"))?;
-        let mut primary_keys = table_info
-            .query_map([], |row| {
-                Ok((row.get::<_, String>(1)?, row.get::<_, i64>(5)?))
-            })
-            .map_err(|error| format!("read SQLite table info {table}: {error}"))?
-            .collect::<Result<Vec<_>, _>>()
-            .map_err(|error| format!("decode SQLite table info {table}: {error}"))?;
-        primary_keys.retain(|(_, position)| *position > 0);
-        primary_keys.sort_by_key(|(_, position)| *position);
-        drop(table_info);
-        let order_by = if primary_keys.is_empty() {
-            "rowid".to_string()
-        } else {
-            primary_keys
-                .iter()
-                .map(|(name, _)| quote_sqlite_identifier(name))
-                .collect::<Vec<_>>()
-                .join(", ")
-        };
-        let mut statement = connection
-            .prepare(&format!(
-                "SELECT * FROM {} ORDER BY {order_by}",
-                quote_sqlite_identifier(&table)
-            ))
-            .map_err(|error| format!("prepare SQLite backup table {table}: {error}"))?;
-        let columns = statement
-            .column_names()
-            .into_iter()
-            .map(str::to_string)
-            .collect::<Vec<_>>();
-        let mut rows = statement
-            .query([])
-            .map_err(|error| format!("query SQLite backup table {table}: {error}"))?;
-        while let Some(row) = rows
-            .next()
-            .map_err(|error| format!("iterate SQLite backup table {table}: {error}"))?
-        {
-            let values = columns
-                .iter()
-                .enumerate()
-                .map(|(index, name)| {
-                    let value = match row
-                        .get_ref(index)
-                        .map_err(|error| format!("read SQLite cell {table}.{name}: {error}"))?
-                    {
-                        rusqlite::types::ValueRef::Null => rusqlite::types::Value::Null,
-                        rusqlite::types::ValueRef::Integer(value) => {
-                            rusqlite::types::Value::Integer(value)
-                        }
-                        rusqlite::types::ValueRef::Real(value) => {
-                            rusqlite::types::Value::Real(value)
-                        }
-                        rusqlite::types::ValueRef::Text(value) => rusqlite::types::Value::Text(
-                            String::from_utf8(value.to_vec()).map_err(|error| {
-                                format!("invalid SQLite text {table}.{name}: {error}")
-                            })?,
-                        ),
-                        rusqlite::types::ValueRef::Blob(value) => {
-                            rusqlite::types::Value::Blob(value.to_vec())
-                        }
-                    };
-                    Ok((name.clone(), value))
-                })
-                .collect::<Result<Vec<_>, String>>()?;
-            file.write_all(&encode_sqlite_row(values)?)
-                .map_err(|error| format!("write SQLite backup table {table}: {error}"))?;
-        }
-        manifest_tables.insert(
-            table,
-            GitBackupTableEntry {
-                rows: digest.rows,
-                sha256: digest.sha256,
-            },
-        );
+    if fs::symlink_metadata(output_dir).is_ok() {
+        return Err(format!(
+            "SQLite backup output already exists: {}",
+            output_dir.display()
+        ));
     }
-    let manifest = GitBackupManifest {
-        schema_version: 1,
-        identity,
-        postgres_source: None,
-        user_version: read_sqlite_user_version(connection)? as u64,
-        excluded_tables: excluded_tables.iter().cloned().collect(),
-        excluded_config_state_key_prefixes: Vec::new(),
-        tables: manifest_tables,
-    };
-    let value = serde_json::to_value(&manifest)
-        .map_err(|error| format!("serialize SQLite backup manifest: {error}"))?;
-    fs::write(
-        output_dir.join(GIT_BACKUP_MANIFEST),
-        serde_json::to_vec_pretty(&value)
-            .map_err(|error| format!("serialize SQLite backup manifest: {error}"))?,
-    )
-    .map_err(|error| format!("write SQLite backup manifest: {error}"))?;
-    Ok(manifest)
+    let parent = output_dir
+        .parent()
+        .ok_or_else(|| "SQLite backup output has no parent directory".to_string())?;
+    fs::create_dir_all(parent)
+        .map_err(|error| format!("create SQLite backup output parent: {error}"))?;
+    let parent_metadata = fs::symlink_metadata(parent)
+        .map_err(|error| format!("inspect SQLite backup output parent: {error}"))?;
+    if !parent_metadata.is_dir() {
+        return Err("SQLite backup output parent is not a directory".into());
+    }
+    let staging = parent.join(format!(
+        ".{}-staging-{}",
+        output_dir
+            .file_name()
+            .and_then(|name| name.to_str())
+            .ok_or_else(|| "SQLite backup output name is invalid".to_string())?,
+        uuid::Uuid::new_v4().simple()
+    ));
+    fs::create_dir_all(staging.join(GIT_BACKUP_TABLES))
+        .map_err(|error| format!("create SQLite backup staging directory: {error}"))?;
+    let result = (|| {
+        let transaction = connection
+            .unchecked_transaction()
+            .map_err(|error| format!("begin SQLite backup snapshot: {error}"))?;
+        let user_version = read_sqlite_user_version(&transaction)?;
+        let schema_entries = read_sqlite_schema_entries(&transaction)?;
+        let schema = render_sqlite_schema(schema_entries.clone(), user_version)?;
+        let mut schema_file = File::create(staging.join(GIT_BACKUP_SCHEMA))
+            .map_err(|error| format!("create SQLite backup schema: {error}"))?;
+        schema_file
+            .write_all(schema.as_bytes())
+            .and_then(|_| schema_file.sync_all())
+            .map_err(|error| format!("write SQLite backup schema: {error}"))?;
+        let virtual_tables = schema_entries
+            .iter()
+            .filter(|entry| entry.kind == "table" && entry.sql.contains("VIRTUAL TABLE"))
+            .map(|entry| entry.name.clone())
+            .collect::<BTreeSet<_>>();
+        let tables =
+            select_sqlite_backup_tables(&schema_entries, &virtual_tables, excluded_tables)?;
+        let mut manifest_tables = BTreeMap::new();
+        for table in tables {
+            let mut file = File::create(
+                staging
+                    .join(GIT_BACKUP_TABLES)
+                    .join(format!("{table}.jsonl")),
+            )
+            .map_err(|error| format!("create SQLite backup table {table}: {error}"))?;
+            let mut table_info = transaction
+                .prepare(&format!(
+                    "PRAGMA table_info({})",
+                    quote_sqlite_identifier(&table)
+                ))
+                .map_err(|error| format!("prepare SQLite table info {table}: {error}"))?;
+            let mut primary_keys = table_info
+                .query_map([], |row| {
+                    Ok((row.get::<_, String>(1)?, row.get::<_, i64>(5)?))
+                })
+                .map_err(|error| format!("read SQLite table info {table}: {error}"))?
+                .collect::<Result<Vec<_>, _>>()
+                .map_err(|error| format!("decode SQLite table info {table}: {error}"))?;
+            primary_keys.retain(|(_, position)| *position > 0);
+            primary_keys.sort_by_key(|(_, position)| *position);
+            drop(table_info);
+            let order_by = if primary_keys.is_empty() {
+                "rowid".to_string()
+            } else {
+                primary_keys
+                    .iter()
+                    .map(|(name, _)| quote_sqlite_identifier(name))
+                    .collect::<Vec<_>>()
+                    .join(", ")
+            };
+            let mut statement = transaction
+                .prepare(&format!(
+                    "SELECT * FROM {} ORDER BY {order_by}",
+                    quote_sqlite_identifier(&table)
+                ))
+                .map_err(|error| format!("prepare SQLite backup table {table}: {error}"))?;
+            let columns = statement
+                .column_names()
+                .into_iter()
+                .map(str::to_string)
+                .collect::<Vec<_>>();
+            let mut rows = statement
+                .query([])
+                .map_err(|error| format!("query SQLite backup table {table}: {error}"))?;
+            let mut hash = Sha256::new();
+            let mut count = 0_u64;
+            while let Some(row) = rows
+                .next()
+                .map_err(|error| format!("iterate SQLite backup table {table}: {error}"))?
+            {
+                let values = columns
+                    .iter()
+                    .enumerate()
+                    .map(|(index, name)| {
+                        let value = match row
+                            .get_ref(index)
+                            .map_err(|error| format!("read SQLite cell {table}.{name}: {error}"))?
+                        {
+                            rusqlite::types::ValueRef::Null => rusqlite::types::Value::Null,
+                            rusqlite::types::ValueRef::Integer(value) => {
+                                rusqlite::types::Value::Integer(value)
+                            }
+                            rusqlite::types::ValueRef::Real(value) => {
+                                rusqlite::types::Value::Real(value)
+                            }
+                            rusqlite::types::ValueRef::Text(value) => rusqlite::types::Value::Text(
+                                String::from_utf8(value.to_vec()).map_err(|error| {
+                                    format!("invalid SQLite text {table}.{name}: {error}")
+                                })?,
+                            ),
+                            rusqlite::types::ValueRef::Blob(value) => {
+                                rusqlite::types::Value::Blob(value.to_vec())
+                            }
+                        };
+                        Ok((name.clone(), value))
+                    })
+                    .collect::<Result<Vec<_>, String>>()?;
+                let encoded = encode_sqlite_row(values)?;
+                hash.update(&encoded);
+                file.write_all(&encoded)
+                    .map_err(|error| format!("write SQLite backup table {table}: {error}"))?;
+                count = count
+                    .checked_add(1)
+                    .ok_or_else(|| "SQLite backup row count overflow".to_string())?;
+            }
+            file.sync_all()
+                .map_err(|error| format!("sync SQLite backup table {table}: {error}"))?;
+            manifest_tables.insert(
+                table,
+                GitBackupTableEntry {
+                    rows: count,
+                    sha256: format!("{:x}", hash.finalize()),
+                },
+            );
+        }
+        let manifest = GitBackupManifest {
+            schema_version: 1,
+            identity,
+            postgres_source: None,
+            user_version: user_version as u64,
+            excluded_tables: excluded_tables.iter().cloned().collect(),
+            excluded_config_state_key_prefixes: Vec::new(),
+            tables: manifest_tables,
+        };
+        let value = serde_json::to_value(&manifest)
+            .map_err(|error| format!("serialize SQLite backup manifest: {error}"))?;
+        let bytes = serde_json::to_vec_pretty(&value)
+            .map_err(|error| format!("serialize SQLite backup manifest: {error}"))?;
+        let mut manifest_file = File::create(staging.join(GIT_BACKUP_MANIFEST))
+            .map_err(|error| format!("create SQLite backup manifest: {error}"))?;
+        manifest_file
+            .write_all(&bytes)
+            .and_then(|_| manifest_file.sync_all())
+            .map_err(|error| format!("write SQLite backup manifest: {error}"))?;
+        transaction
+            .commit()
+            .map_err(|error| format!("commit SQLite backup snapshot: {error}"))?;
+        fs::rename(&staging, output_dir)
+            .map_err(|error| format!("publish SQLite backup staging directory: {error}"))?;
+        Ok(manifest)
+    })();
+    if result.is_err() {
+        let _ = fs::remove_dir_all(&staging);
+    }
+    result
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

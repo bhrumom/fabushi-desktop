@@ -745,6 +745,17 @@ fn test_ocrm_snapshot_postgres_manifest_schema_and_profile_oracles() {
             .expect("read exported SQLite table"),
         "{\"id\":1,\"value\":\"first\"}\n{\"id\":2,\"value\":\"second\"}\n"
     );
+    assert!(mahayana_host_runtime::extensions::snapshot::git_backup_manager::export_sqlite_backup_artifacts(
+        &schema_connection,
+        &export_dir,
+        mahayana_host_runtime::extensions::snapshot::git_backup_manager::GitBackupIdentity {
+            role: "generic".into(),
+            agent_id: None,
+            id: Some("store_one".into()),
+        },
+        &BTreeSet::new(),
+    )
+    .is_err(), "existing backup target must not be overwritten");
     schema_connection
         .execute_batch("CREATE TABLE quoted_table (\"id\"\"part\" INTEGER PRIMARY KEY, value TEXT);")
         .expect("create SQLite table with quoted primary key");

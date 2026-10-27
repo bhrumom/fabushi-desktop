@@ -303,3 +303,11 @@ manifest and bytes and compares them to the live table digest. Publication to
 the BoxStore owner is still a separate caller concern; PostgreSQL remains an
 explicit database-port blocker.
 
+The producer now performs all reads and row hashing inside one SQLite
+transaction, writes into a unique fresh staging directory, syncs each artifact,
+commits the read snapshot, and atomically renames staging into a previously
+absent target. Any error removes staging; existing targets are rejected before
+work begins. The negative contract proves an existing target is not overwritten.
+The remaining publication gap is now explicit: the staged directory still
+needs a production caller that maps its artifacts into `upload_artifact_set`.
+
