@@ -126,3 +126,32 @@
 - **Naming Conventions**: Directory names correspond directly to manifest ID (with explicit exception `kimi-coding` -> `kimi`), and package names must start with `@openclaw/` plus an allowed suffix (`-provider`, `-plugin`, `-speech`, etc.).
 - **Fast Startup Resolution**: Plugin startup manifest can be checked via fast-path JSON probing without materializing full catalog metadata.
 - **Overlay Security**: Mount points parsed from `/proc/self/mountinfo` are matched against legacy extension paths, with complete disable support via `OPENCLAW_DISABLE_BUNDLED_SOURCE_OVERLAYS`.
+
+## 7. Audited Bundled Sources, Candidate Install Owner, Capability Catalog Context & Consent (10 files)
+- **Primary Responsibilities**: `OCRM-RESP-PLUGINS-CAPABILITY-CATALOG-001`, `OCRM-RESP-PLUGINS-BUNDLE-MANIFEST-001`, `OCRM-RESP-PLUGINS-INSTALL-MANAGEMENT-001`
+- **Reviewer**: `xuyao@ombhrum.com`
+- **Native Implementation**: `source/host/src/extensions/plugins/capability_catalog.rs` (`BundledPluginSourceResolver`, `CandidateInstallOwnerResolver`, `CapabilityCatalogValidator`, `CapabilityConsentManager`)
+- **Contract Tests**: `source/host/tests/openclaw_plugins_contract.rs::test_ocrm_plugins_bundled_sources_catalog_and_capability_consent`
+
+| Path | Lines | Size (bytes) | Git Blob SHA | Mapped Responsibility |
+| --- | --- | --- | --- | --- |
+| `src/plugins/bundled-sources.test.ts` | 168 | 5587 | `4c9a4fecfbd60fcb7308c21990029167d42ba3aa` | `OCRM-RESP-PLUGINS-BUNDLE-MANIFEST-001` |
+| `src/plugins/bundled-sources.ts` | 182 | 6038 | `9b5c9cea33a0cff056cd640807ff0e1965d90a88` | `OCRM-RESP-PLUGINS-BUNDLE-MANIFEST-001` |
+| `src/plugins/candidate-install-owner.ts` | 54 | 1914 | `fea3646375b475cb3d330f779b30f3c0f9e5e4a3` | `OCRM-RESP-PLUGINS-INSTALL-MANAGEMENT-001` |
+| `src/plugins/capability-artifact.ts` | 156 | 6106 | `0e0f3d3648033ea724f2439afe2785b67fa5f891` | `OCRM-RESP-PLUGINS-CAPABILITY-CATALOG-001` |
+| `src/plugins/capability-catalog-context.ts` | 55 | 2238 | `38abda596f14b92784a8f220400357bcd150c560` | `OCRM-RESP-PLUGINS-CAPABILITY-CATALOG-001` |
+| `src/plugins/capability-catalog-context.types.ts` | 42 | 3441 | `0ce2cc58f7b45d31ae305b73e4a44ba9a51b61b0` | `OCRM-RESP-PLUGINS-CAPABILITY-CATALOG-001` |
+| `src/plugins/capability-catalog.ts` | 84 | 3709 | `00a3c1bc8f8a151fd42d6317b38d65a471a7ddd4` | `OCRM-RESP-PLUGINS-CAPABILITY-CATALOG-001` |
+| `src/plugins/capability-catalog.types.ts` | 12 | 495 | `8b1febb6db7b871ab16c28a47ba65292dd467fc8` | `OCRM-RESP-PLUGINS-CAPABILITY-CATALOG-001` |
+| `src/plugins/capability-consent.test.ts` | 467 | 17156 | `9e3d50bc6be829173d2b495fa810f0ddd6e61bd0` | `OCRM-RESP-PLUGINS-CAPABILITY-CATALOG-001` |
+| `src/plugins/capability-consent.ts` | 457 | 18642 | `98ba3e6afc5d51bb156bf9d39efce21fa03aae9d` | `OCRM-RESP-PLUGINS-CAPABILITY-CATALOG-001` |
+
+### 7.1 Invariant Validation Summary
+- **Bundled Source Precedence & Dormancy**: `resolveBundledPluginSources` projects bundled sources keyed by plugin ID, preserving explicit path overrides. First registration wins, subsequent duplicates are discarded.
+- **Config Requirements Detection**: Checks `configSchema.required` array for non-empty string entries to determine if plugin requires configuration before activation.
+- **Immutable Install Identity**: Global NPM installs produce deterministic JSON array identity `[owner, installPath, spec, integrity, installedAt]`. Editable/path installs yield None, as replacement invalidates identity.
+- **Capability Catalog Shape**: Exactly 3 valid families (`speechProviders`, `realtimeTranscriptionProviders`, `realtimeVoiceProviders`) mapped to required methods (`synthesize`, `createSession`, `createBridge`). All providers require non-empty ID, label, isConfigured check, and family method.
+- **Capability Consent & Declared Surface Widening**: Computes canonical SHA-256 surface hash. Compares declared permissions across 10 dimensions (tools, channels, providers, contracts, hooks, mcpServers, cliCommands, cliBackends, skills, dangerousConfigFlags). Detects widening upon updates.
+- **Integrity Selection Precedence**: SSRI `integrity` -> SSRI `npmIntegrity` -> SHA256 `clawpackSha256` -> Git commit `gitCommit`.
+- **Credential Scrubbing**: Sanitizes credentials and sensitive query parameters (`token`, `key`, `secret`) from `git:https://...` specs before review presentation.
+

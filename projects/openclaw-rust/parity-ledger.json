@@ -10,10 +10,10 @@
     "ui_accepted": false
   },
   "file_coverage": {
-    "mapped_paths": 572,
+    "mapped_paths": 582,
     "omitted_known": 0,
     "tracked_paths": 58750,
-    "unclassified_paths": 58178
+    "unclassified_paths": 58168
   },
   "inventory_authority": {
     "manifest_source": "GitHub Actions immutable artifact candidate",
@@ -8344,7 +8344,7 @@
     },
     {
       "adr_refs": [],
-      "behavior": "Terminal ANSI QR text renderer supporting compact half-block characters (\u2588, \u2580, \u2584, space), 1-module margin, quiet zone black-on-white formatting, and standard full-block terminal fallback.",
+      "behavior": "Terminal ANSI QR text renderer supporting compact half-block characters (█, ▀, ▄, space), 1-module margin, quiet zone black-on-white formatting, and standard full-block terminal fallback.",
       "blocker_ids": [
         "BL-MEDIA-QR-TERMINAL-CALLER-001"
       ],
@@ -21275,6 +21275,24 @@
             "start_line": 1
           },
           "symbol": "bundled plugin naming"
+        },
+        {
+          "blob_sha": "4c9a4fecfbd60fcb7308c21990029167d42ba3aa",
+          "path": "src/plugins/bundled-sources.test.ts",
+          "range": {
+            "start_line": 1,
+            "end_line": 168
+          },
+          "symbol": "bundled plugin sources test suite"
+        },
+        {
+          "blob_sha": "9b5c9cea33a0cff056cd640807ff0e1965d90a88",
+          "path": "src/plugins/bundled-sources.ts",
+          "range": {
+            "start_line": 1,
+            "end_line": 182
+          },
+          "symbol": "resolveBundledPluginSources"
         }
       ],
       "status": {
@@ -21296,7 +21314,8 @@
         "source/host/tests/openclaw_plugins_contract.rs::test_ocrm_plugins_bundle_manifest_guardrails",
         "source/host/tests/openclaw_plugins_contract.rs::test_ocrm_plugins_sdk_package_and_runtime_api_guardrails",
         "source/host/tests/openclaw_plugins_contract.rs::test_ocrm_plugins_bundled_mcp_lsp_capabilities_and_command_scopes",
-        "source/host/tests/openclaw_plugins_contract.rs::test_ocrm_plugins_bundled_metadata_scan_compat_and_naming_artwork"
+        "source/host/tests/openclaw_plugins_contract.rs::test_ocrm_plugins_bundled_metadata_scan_compat_and_naming_artwork",
+        "source/host/tests/openclaw_plugins_contract.rs::test_ocrm_plugins_bundled_sources_catalog_and_capability_consent"
       ],
       "typed_contracts": [
         "PluginBundleFormat",
@@ -21823,6 +21842,69 @@
             "start_line": 1
           },
           "symbol": "bundled source overlays"
+        },
+        {
+          "blob_sha": "0e0f3d3648033ea724f2439afe2785b67fa5f891",
+          "path": "src/plugins/capability-artifact.ts",
+          "range": {
+            "start_line": 1,
+            "end_line": 156
+          },
+          "symbol": "inspectPluginCapabilityArtifact"
+        },
+        {
+          "blob_sha": "38abda596f14b92784a8f220400357bcd150c560",
+          "path": "src/plugins/capability-catalog-context.ts",
+          "range": {
+            "start_line": 1,
+            "end_line": 55
+          },
+          "symbol": "createPluginCapabilityCatalogContext"
+        },
+        {
+          "blob_sha": "0ce2cc58f7b45d31ae305b73e4a44ba9a51b61b0",
+          "path": "src/plugins/capability-catalog-context.types.ts",
+          "range": {
+            "start_line": 1,
+            "end_line": 42
+          },
+          "symbol": "PluginCapabilityCatalogHostContext"
+        },
+        {
+          "blob_sha": "00a3c1bc8f8a151fd42d6317b38d65a471a7ddd4",
+          "path": "src/plugins/capability-catalog.ts",
+          "range": {
+            "start_line": 1,
+            "end_line": 84
+          },
+          "symbol": "resolvePluginCapabilityCatalog"
+        },
+        {
+          "blob_sha": "8b1febb6db7b871ab16c28a47ba65292dd467fc8",
+          "path": "src/plugins/capability-catalog.types.ts",
+          "range": {
+            "start_line": 1,
+            "end_line": 12
+          },
+          "symbol": "PluginCapabilityCatalog"
+        },
+        {
+          "blob_sha": "9e3d50bc6be829173d2b495fa810f0ddd6e61bd0",
+          "path": "src/plugins/capability-consent.test.ts",
+          "range": {
+            "start_line": 1,
+            "end_line": 467
+          },
+          "symbol": "plugin capability consent test suite"
+        },
+        {
+          "blob_sha": "98ba3e6afc5d51bb156bf9d39efce21fa03aae9d",
+          "path": "src/plugins/capability-consent.ts",
+          "range": {
+            "start_line": 1,
+            "end_line": 457
+          },
+          "symbol": "resolvePluginCapabilityConsent"
         }
       ],
       "status": {
@@ -21848,7 +21930,8 @@
         "source/host/tests/openclaw_plugins_contract.rs::test_ocrm_plugins_wizard_choice_resolution_and_model_picker",
         "source/host/tests/openclaw_plugins_contract.rs::test_ocrm_plugins_bundled_capability_metadata_and_subpath_bundle",
         "source/host/tests/openclaw_plugins_contract.rs::test_ocrm_plugins_bundled_channel_metadata_compat_and_dir_resolver",
-        "source/host/tests/openclaw_plugins_contract.rs::test_ocrm_plugins_bundled_metadata_scan_compat_and_naming_artwork"
+        "source/host/tests/openclaw_plugins_contract.rs::test_ocrm_plugins_bundled_metadata_scan_compat_and_naming_artwork",
+        "source/host/tests/openclaw_plugins_contract.rs::test_ocrm_plugins_bundled_sources_catalog_and_capability_consent"
       ],
       "typed_contracts": [
         "PluginCapabilityCatalog",
@@ -22022,6 +22105,15 @@
             "start_line": 1
           },
           "symbol": "discovery-availability.blocked"
+        },
+        {
+          "blob_sha": "fea3646375b475cb3d330f779b30f3c0f9e5e4a3",
+          "path": "src/plugins/candidate-install-owner.ts",
+          "range": {
+            "start_line": 1,
+            "end_line": 54
+          },
+          "symbol": "resolveImmutableInstallIdentity"
         }
       ],
       "status": {
@@ -22039,7 +22131,8 @@
       },
       "tests": [
         "source/host/tests/openclaw_plugins_full_contract.rs::test_ocrm_plugins_installed_index_store",
-        "source/host/tests/openclaw_plugins_full_contract.rs::test_ocrm_plugins_bundled_discovery_admission_and_install_guards"
+        "source/host/tests/openclaw_plugins_full_contract.rs::test_ocrm_plugins_bundled_discovery_admission_and_install_guards",
+        "source/host/tests/openclaw_plugins_contract.rs::test_ocrm_plugins_bundled_sources_catalog_and_capability_consent"
       ],
       "typed_contracts": [
         "InstalledPluginIndexStore",

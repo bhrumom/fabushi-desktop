@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use sha2::{Digest, Sha256};
 use std::collections::{HashMap, HashSet};
 use std::sync::{Arc, Mutex};
 
@@ -984,6 +985,411 @@ impl BundledPluginNamingAndArtworkValidator {
         }
 
         Ok(())
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Bundled Plugin Sources & Resolvers
+// ---------------------------------------------------------------------------
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct BundledPluginSource {
+    pub plugin_id: String,
+    pub local_path: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub npm_spec: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub version: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub config_schema: Option<serde_json::Value>,
+    pub requires_config: bool,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum BundledPluginLookup<'a> {
+    PluginId(&'a str),
+    NpmSpec(&'a str),
+    LocalPath(&'a str),
+}
+
+pub struct BundledPluginSourceResolver;
+impl BundledPluginSourceResolver {
+    pub fn schema_has_required_fields(schema: &serde_json::Value) -> bool {
+        if let Some(obj) = schema.as_object() {
+            if let Some(req) = obj.get("required").and_then(|v| v.as_array()) {
+                return req.iter().any(|item| item.is_string());
+            }
+        }
+        false
+    }
+
+    pub fn find_in_map<'a>(
+        bundled: &'a HashMap<String, BundledPluginSource>,
+        lookup: BundledPluginLookup<'_>,
+    ) -> Option<&'a BundledPluginSource> {
+        match lookup {
+            BundledPluginLookup::PluginId(id) => {
+                let id = id.trim();
+                if id.is_empty() {
+                    None
+                } else {
+                    bundled.get(id)
+                }
+            }
+            BundledPluginLookup::NpmSpec(spec) => {
+                let spec = spec.trim();
+                if spec.is_empty() {
+                    None
+                } else {
+                    bundled.values().find(|s| s.npm_spec.as_deref() == Some(spec))
+                }
+            }
+            BundledPluginLookup::LocalPath(p) => {
+                let p = p.trim();
+                if p.is_empty() {
+                    None
+                } else {
+                    let canonical_target = std::path::Path::new(p);
+                    bundled.values().find(|s| {
+                        let source_p = std::path::Path::new(&s.local_path);
+                        source_p == canonical_target
+                    })
+                }
+            }
+        }
+    }
+
+    pub fn resolve_install_command_hint(source: Option<&BundledPluginSource>) -> Option<String> {
+        source.map(|s| format!("openclaw plugins install {}", s.local_path))
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Candidate Install Owner & Immutable Identity
+// ---------------------------------------------------------------------------
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct CandidateInstallOwner {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub install_owner: Option<String>,
+    #[serde(default)]
+    pub ambiguous: bool,
+}
+
+pub struct CandidateInstallOwnerResolver;
+impl CandidateInstallOwnerResolver {
+    pub fn resolve_immutable_install_identity(
+        origin: &str,
+        install_owner: Option<&str>,
+        source: Option<&str>,
+        install_path: Option<&str>,
+        spec: Option<&str>,
+        resolved_spec: Option<&str>,
+        integrity: Option<&str>,
+        installed_at: Option<&str>,
+    ) -> Option<String> {
+        if origin != "global" || source != Some("npm") {
+            return None;
+        }
+        let integrity = integrity?;
+        let owner = install_owner?;
+        let effective_spec = resolved_spec.or(spec).unwrap_or("");
+        let arr = serde_json::json!([
+            owner,
+            install_path.unwrap_or(""),
+            effective_spec,
+            integrity,
+            installed_at.unwrap_or("")
+        ]);
+        Some(arr.to_string())
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Capability Catalog Families & Descriptors
+// ---------------------------------------------------------------------------
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum CapabilityCatalogFamily {
+    SpeechProviders,
+    RealtimeTranscriptionProviders,
+    RealtimeVoiceProviders,
+}
+
+impl CapabilityCatalogFamily {
+    pub const ALL: &'static [CapabilityCatalogFamily] = &[
+        CapabilityCatalogFamily::SpeechProviders,
+        CapabilityCatalogFamily::RealtimeTranscriptionProviders,
+        CapabilityCatalogFamily::RealtimeVoiceProviders,
+    ];
+
+    pub fn family_name(&self) -> &'static str {
+        match self {
+            CapabilityCatalogFamily::SpeechProviders => "speechProviders",
+            CapabilityCatalogFamily::RealtimeTranscriptionProviders => {
+                "realtimeTranscriptionProviders"
+            }
+            CapabilityCatalogFamily::RealtimeVoiceProviders => "realtimeVoiceProviders",
+        }
+    }
+
+    pub fn required_method(&self) -> &'static str {
+        match self {
+            CapabilityCatalogFamily::SpeechProviders => "synthesize",
+            CapabilityCatalogFamily::RealtimeTranscriptionProviders => "createSession",
+            CapabilityCatalogFamily::RealtimeVoiceProviders => "createBridge",
+        }
+    }
+
+    pub fn from_family_name(name: &str) -> Option<CapabilityCatalogFamily> {
+        match name {
+            "speechProviders" => Some(CapabilityCatalogFamily::SpeechProviders),
+            "realtimeTranscriptionProviders" => {
+                Some(CapabilityCatalogFamily::RealtimeTranscriptionProviders)
+            }
+            "realtimeVoiceProviders" => Some(CapabilityCatalogFamily::RealtimeVoiceProviders),
+            _ => None,
+        }
+    }
+}
+
+pub struct CapabilityCatalogValidator;
+impl CapabilityCatalogValidator {
+    pub fn validate_catalog_shape(catalog_json: &serde_json::Value) -> Result<(), String> {
+        let obj = catalog_json.as_object().ok_or_else(|| {
+            "default export must synchronously provide a capability descriptor collection"
+                .to_string()
+        })?;
+
+        for (family_str, providers_val) in obj {
+            let family = CapabilityCatalogFamily::from_family_name(family_str)
+                .ok_or_else(|| format!("unknown capability catalog family: {}", family_str))?;
+
+            let providers = providers_val.as_array().ok_or_else(|| {
+                format!("{} must contain complete provider descriptors", family_str)
+            })?;
+
+            let req_method = family.required_method();
+            for p in providers {
+                let p_obj = p.as_object().ok_or_else(|| {
+                    format!("{} must contain complete provider descriptors", family_str)
+                })?;
+
+                let id = p_obj
+                    .get("id")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("")
+                    .trim();
+                if id.is_empty() {
+                    return Err(format!(
+                        "{} must contain complete provider descriptors",
+                        family_str
+                    ));
+                }
+
+                if p_obj.get("label").and_then(|v| v.as_str()).is_none() {
+                    return Err(format!(
+                        "{} must contain complete provider descriptors",
+                        family_str
+                    ));
+                }
+
+                if !p_obj.contains_key("isConfigured") || !p_obj.contains_key(req_method) {
+                    return Err(format!(
+                        "{} must contain complete provider descriptors",
+                        family_str
+                    ));
+                }
+            }
+        }
+        Ok(())
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Plugin Accepted Declared Surface & Capability Consent
+// ---------------------------------------------------------------------------
+
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+pub struct PluginAcceptedDeclaredSurface {
+    #[serde(default)]
+    pub channels: Vec<String>,
+    #[serde(default)]
+    pub providers: Vec<String>,
+    #[serde(default)]
+    pub tools: Vec<String>,
+    #[serde(default)]
+    pub contracts: Vec<String>,
+    #[serde(default)]
+    pub hooks: Vec<String>,
+    #[serde(default, rename = "mcpServers")]
+    pub mcp_servers: Vec<String>,
+    #[serde(default, rename = "cliCommands")]
+    pub cli_commands: Vec<String>,
+    #[serde(default, rename = "cliBackends")]
+    pub cli_backends: Vec<String>,
+    #[serde(default)]
+    pub skills: Vec<String>,
+    #[serde(default, rename = "dangerousConfigFlags")]
+    pub dangerous_config_flags: Vec<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct PluginCapabilityConsentReview {
+    pub plugin_id: String,
+    pub review_token: String,
+    pub declared: PluginAcceptedDeclaredSurface,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub previous_declared: Option<PluginAcceptedDeclaredSurface>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub widened: Option<HashMap<String, Vec<String>>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub accepted_at: Option<String>,
+}
+
+pub struct CapabilityConsentManager;
+impl CapabilityConsentManager {
+    pub fn compute_declared_surface_hash(surface: &PluginAcceptedDeclaredSurface) -> String {
+        let mut hasher = Sha256::new();
+        let canonical_json = serde_json::to_string(surface).unwrap_or_default();
+        hasher.update(canonical_json.as_bytes());
+        format!("{:x}", hasher.finalize())
+    }
+
+    pub fn resolve_plugin_install_record_integrity(
+        integrity: Option<&str>,
+        npm_integrity: Option<&str>,
+        clawpack_sha256: Option<&str>,
+        git_commit: Option<&str>,
+    ) -> Option<(String, &'static str)> {
+        if let Some(i) = integrity.filter(|s| !s.is_empty()) {
+            return Some((i.to_string(), "ssri"));
+        }
+        if let Some(i) = npm_integrity.filter(|s| !s.is_empty()) {
+            return Some((i.to_string(), "ssri"));
+        }
+        if let Some(i) = clawpack_sha256.filter(|s| !s.is_empty()) {
+            return Some((i.to_string(), "sha256"));
+        }
+        if let Some(i) = git_commit.filter(|s| !s.is_empty()) {
+            return Some((i.to_string(), "git-commit"));
+        }
+        None
+    }
+
+    pub fn resolve_accepted_surface_current(
+        record_accepted_surface: Option<&PluginAcceptedDeclaredSurface>,
+        record_accepted_surface_hash: Option<&str>,
+        record_integrity: Option<&str>,
+        record_accepted_surface_integrity: Option<&str>,
+        current_surface: &PluginAcceptedDeclaredSurface,
+    ) -> bool {
+        let accepted = match record_accepted_surface {
+            Some(a) => a,
+            None => return false,
+        };
+        if accepted != current_surface {
+            return false;
+        }
+        let expected_hash = Self::compute_declared_surface_hash(current_surface);
+        if record_accepted_surface_hash != Some(expected_hash.as_str()) {
+            return false;
+        }
+        if let Some(accepted_integrity) = record_accepted_surface_integrity {
+            match record_integrity {
+                Some(cur_integrity) if cur_integrity == accepted_integrity => {}
+                _ => return false,
+            }
+        }
+        true
+    }
+
+    pub fn diff_declared_surface_widening(
+        previous: &PluginAcceptedDeclaredSurface,
+        next: &PluginAcceptedDeclaredSurface,
+    ) -> (HashMap<String, Vec<String>>, bool) {
+        let mut widened = HashMap::new();
+
+        fn diff_field(prev: &[String], nxt: &[String]) -> Vec<String> {
+            let prev_set: HashSet<&str> = prev.iter().map(|s| s.as_str()).collect();
+            let mut added: Vec<String> = nxt
+                .iter()
+                .filter(|s| !prev_set.contains(s.as_str()))
+                .cloned()
+                .collect();
+            added.sort();
+            added
+        }
+
+        let tools = diff_field(&previous.tools, &next.tools);
+        if !tools.is_empty() {
+            widened.insert("tools".to_string(), tools);
+        }
+        let channels = diff_field(&previous.channels, &next.channels);
+        if !channels.is_empty() {
+            widened.insert("channels".to_string(), channels);
+        }
+        let providers = diff_field(&previous.providers, &next.providers);
+        if !providers.is_empty() {
+            widened.insert("providers".to_string(), providers);
+        }
+        let contracts = diff_field(&previous.contracts, &next.contracts);
+        if !contracts.is_empty() {
+            widened.insert("contracts".to_string(), contracts);
+        }
+        let hooks = diff_field(&previous.hooks, &next.hooks);
+        if !hooks.is_empty() {
+            widened.insert("hooks".to_string(), hooks);
+        }
+        let mcp = diff_field(&previous.mcp_servers, &next.mcp_servers);
+        if !mcp.is_empty() {
+            widened.insert("mcpServers".to_string(), mcp);
+        }
+        let cli_cmds = diff_field(&previous.cli_commands, &next.cli_commands);
+        if !cli_cmds.is_empty() {
+            widened.insert("cliCommands".to_string(), cli_cmds);
+        }
+        let cli_backends = diff_field(&previous.cli_backends, &next.cli_backends);
+        if !cli_backends.is_empty() {
+            widened.insert("cliBackends".to_string(), cli_backends);
+        }
+        let skills = diff_field(&previous.skills, &next.skills);
+        if !skills.is_empty() {
+            widened.insert("skills".to_string(), skills);
+        }
+        let flags = diff_field(&previous.dangerous_config_flags, &next.dangerous_config_flags);
+        if !flags.is_empty() {
+            widened.insert("dangerousConfigFlags".to_string(), flags);
+        }
+
+        let has_widening = !widened.is_empty();
+        (widened, has_widening)
+    }
+
+    pub fn redact_source_spec(spec: &str) -> String {
+        if let Some(stripped) = spec.strip_prefix("git:") {
+            if let Ok(mut parsed) = url::Url::parse(stripped) {
+                if !parsed.username().is_empty() || parsed.password().is_some() {
+                    let _ = parsed.set_username("***");
+                    let _ = parsed.set_password(Some("***"));
+                }
+                let pairs: Vec<(String, String)> = parsed
+                    .query_pairs()
+                    .map(|(k, v)| {
+                        if k == "token" || k == "key" || k == "secret" {
+                            (k.to_string(), "***".to_string())
+                        } else {
+                            (k.to_string(), v.to_string())
+                        }
+                    })
+                    .collect();
+                parsed.query_pairs_mut().clear().extend_pairs(
+                    pairs.iter().map(|(k, v)| (k.as_str(), v.as_str())),
+                );
+                return format!("git:{}", parsed);
+            }
+        }
+        spec.to_string()
     }
 }
 

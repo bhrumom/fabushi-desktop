@@ -15,6 +15,10 @@ use mahayana_host_runtime::extensions::plugins::capability_catalog::{
     CAPABILITY_FAMILY_SPEECH_PROVIDERS, CAPABILITY_FAMILY_TRANSCRIPTION_PROVIDERS,
     BundledPluginScanner, BundledProviderCompatValidator, BundledSourceOverlayResolver,
     BundledPluginNamingAndArtworkValidator,
+    BundledPluginSource, BundledPluginLookup, BundledPluginSourceResolver,
+    CandidateInstallOwnerResolver,
+    CapabilityCatalogFamily, CapabilityCatalogValidator,
+    PluginAcceptedDeclaredSurface, CapabilityConsentManager,
 };
 
 #[test]
@@ -1465,6 +1469,265 @@ fn test_ocrm_plugins_bundled_metadata_scan_compat_and_naming_artwork() {
         "slack",
         "third-party/slack"
     ).is_err());
+}
+
+#[test]
+fn test_ocrm_plugins_bundled_sources_catalog_and_capability_consent() {
+    use std::collections::HashMap;
+
+    // 1. Bundled Plugin Source Resolver & Config Requirements
+    let empty_schema = serde_json::json!({});
+    assert!(!BundledPluginSourceResolver::schema_has_required_fields(&empty_schema));
+
+    let no_req_schema = serde_json::json!({
+        "type": "object",
+        "properties": { "name": { "type": "string" } }
+    });
+    assert!(!BundledPluginSourceResolver::schema_has_required_fields(&no_req_schema));
+
+    let req_schema = serde_json::json!({
+        "type": "object",
+        "required": ["embedding"]
+    });
+    assert!(BundledPluginSourceResolver::schema_has_required_fields(&req_schema));
+
+    let mut sources_map = HashMap::new();
+    sources_map.insert("feishu".to_string(), BundledPluginSource {
+        plugin_id: "feishu".to_string(),
+        local_path: "/app/plugins/feishu".to_string(),
+        npm_spec: Some("@openclaw/feishu".to_string()),
+        version: Some("1.0.0".to_string()),
+        config_schema: None,
+        requires_config: false,
+    });
+    sources_map.insert("memory-lancedb".to_string(), BundledPluginSource {
+        plugin_id: "memory-lancedb".to_string(),
+        local_path: "/app/plugins/memory-lancedb".to_string(),
+        npm_spec: Some("@openclaw/memory-lancedb".to_string()),
+        version: Some("2.0.0".to_string()),
+        config_schema: Some(req_schema),
+        requires_config: true,
+    });
+
+    // Lookup tests
+    let found_by_id = BundledPluginSourceResolver::find_in_map(
+        &sources_map,
+        BundledPluginLookup::PluginId("feishu"),
+    );
+    assert!(found_by_id.is_some());
+    assert_eq!(found_by_id.unwrap().plugin_id, "feishu");
+
+    let not_found_by_id = BundledPluginSourceResolver::find_in_map(
+        &sources_map,
+        BundledPluginLookup::PluginId("missing"),
+    );
+    assert!(not_found_by_id.is_none());
+
+    let found_by_spec = BundledPluginSourceResolver::find_in_map(
+        &sources_map,
+        BundledPluginLookup::NpmSpec("@openclaw/memory-lancedb"),
+    );
+    assert!(found_by_spec.is_some());
+    assert_eq!(found_by_spec.unwrap().plugin_id, "memory-lancedb");
+
+    let found_by_path = BundledPluginSourceResolver::find_in_map(
+        &sources_map,
+        BundledPluginLookup::LocalPath("/app/plugins/feishu"),
+    );
+    assert!(found_by_path.is_some());
+    assert_eq!(found_by_path.unwrap().plugin_id, "feishu");
+
+    // Command hint
+    let hint = BundledPluginSourceResolver::resolve_install_command_hint(found_by_id);
+    assert_eq!(hint, Some("openclaw plugins install /app/plugins/feishu".to_string()));
+    assert_eq!(BundledPluginSourceResolver::resolve_install_command_hint(None), None);
+
+    // 2. Candidate Install Owner & Immutable Identity
+    let identity = CandidateInstallOwnerResolver::resolve_immutable_install_identity(
+        "global",
+        Some("owner-pkg"),
+        Some("npm"),
+        Some("/var/plugins/owner-pkg"),
+        Some("@openclaw/owner@1.0"),
+        Some("@openclaw/owner@1.0.0"),
+        Some("sha512-testintegrity"),
+        Some("2026-10-27T00:00:00Z"),
+    );
+    assert!(identity.is_some());
+    let id_str = identity.unwrap();
+    assert!(id_str.contains("owner-pkg"));
+    assert!(id_str.contains("sha512-testintegrity"));
+
+    // Origin not global or source not npm -> None
+    assert!(CandidateInstallOwnerResolver::resolve_immutable_install_identity(
+        "bundled",
+        Some("owner-pkg"),
+        Some("npm"),
+        Some("/var/plugins/owner-pkg"),
+        None,
+        None,
+        Some("sha512-testintegrity"),
+        None,
+    ).is_none());
+
+    assert!(CandidateInstallOwnerResolver::resolve_immutable_install_identity(
+        "global",
+        Some("owner-pkg"),
+        Some("git"),
+        Some("/var/plugins/owner-pkg"),
+        None,
+        None,
+        Some("sha512-testintegrity"),
+        None,
+    ).is_none());
+
+    // 3. Capability Catalog Families & Shape Validation
+    assert_eq!(CapabilityCatalogFamily::ALL.len(), 3);
+    assert_eq!(CapabilityCatalogFamily::SpeechProviders.required_method(), "synthesize");
+    assert_eq!(CapabilityCatalogFamily::RealtimeTranscriptionProviders.required_method(), "createSession");
+    assert_eq!(CapabilityCatalogFamily::RealtimeVoiceProviders.required_method(), "createBridge");
+
+    let valid_catalog = serde_json::json!({
+        "speechProviders": [
+            {
+                "id": "mock-tts",
+                "label": "Mock TTS",
+                "isConfigured": true,
+                "synthesize": true
+            }
+        ],
+        "realtimeTranscriptionProviders": [
+            {
+                "id": "mock-stt",
+                "label": "Mock STT",
+                "isConfigured": true,
+                "createSession": true
+            }
+        ]
+    });
+    assert!(CapabilityCatalogValidator::validate_catalog_shape(&valid_catalog).is_ok());
+
+    let invalid_family_catalog = serde_json::json!({
+        "unknownFamily": []
+    });
+    assert!(CapabilityCatalogValidator::validate_catalog_shape(&invalid_family_catalog).is_err());
+
+    let missing_method_catalog = serde_json::json!({
+        "speechProviders": [
+            {
+                "id": "mock-tts",
+                "label": "Mock TTS",
+                "isConfigured": true
+                // missing "synthesize"
+            }
+        ]
+    });
+    assert!(CapabilityCatalogValidator::validate_catalog_shape(&missing_method_catalog).is_err());
+
+    // 4. Capability Consent Manager: Hashes, Integrity & Widening
+    let surface_a = PluginAcceptedDeclaredSurface {
+        tools: vec!["read".to_string()],
+        channels: vec!["chat".to_string()],
+        ..Default::default()
+    };
+    let hash_a = CapabilityConsentManager::compute_declared_surface_hash(&surface_a);
+    assert_eq!(hash_a.len(), 64);
+
+    let surface_b = PluginAcceptedDeclaredSurface {
+        tools: vec!["read".to_string(), "write".to_string()],
+        channels: vec!["chat".to_string()],
+        ..Default::default()
+    };
+    let hash_b = CapabilityConsentManager::compute_declared_surface_hash(&surface_b);
+    assert_ne!(hash_a, hash_b);
+
+    // Widening diff
+    let (widened, has_widening) = CapabilityConsentManager::diff_declared_surface_widening(&surface_a, &surface_b);
+    assert!(has_widening);
+    assert_eq!(widened.get("tools"), Some(&vec!["write".to_string()]));
+
+    let (_widened_rev, has_widening_rev) = CapabilityConsentManager::diff_declared_surface_widening(&surface_b, &surface_a);
+    assert!(!has_widening_rev);
+
+    // Integrity precedence
+    assert_eq!(
+        CapabilityConsentManager::resolve_plugin_install_record_integrity(
+            Some("sha512-primary"),
+            Some("sha512-npm"),
+            Some("clawpack-hash"),
+            Some("gitcommit123"),
+        ),
+        Some(("sha512-primary".to_string(), "ssri"))
+    );
+    assert_eq!(
+        CapabilityConsentManager::resolve_plugin_install_record_integrity(
+            None,
+            Some("sha512-npm"),
+            Some("clawpack-hash"),
+            None,
+        ),
+        Some(("sha512-npm".to_string(), "ssri"))
+    );
+    assert_eq!(
+        CapabilityConsentManager::resolve_plugin_install_record_integrity(
+            None,
+            None,
+            Some("clawpack-hash"),
+            None,
+        ),
+        Some(("clawpack-hash".to_string(), "sha256"))
+    );
+    assert_eq!(
+        CapabilityConsentManager::resolve_plugin_install_record_integrity(
+            None,
+            None,
+            None,
+            Some("gitcommit123"),
+        ),
+        Some(("gitcommit123".to_string(), "git-commit"))
+    );
+
+    // Surface currency checks
+    assert!(CapabilityConsentManager::resolve_accepted_surface_current(
+        Some(&surface_a),
+        Some(&hash_a),
+        Some("sha512-sig"),
+        Some("sha512-sig"),
+        &surface_a,
+    ));
+    // Forged hash
+    assert!(!CapabilityConsentManager::resolve_accepted_surface_current(
+        Some(&surface_a),
+        Some("0000000000000000000000000000000000000000000000000000000000000000"),
+        Some("sha512-sig"),
+        Some("sha512-sig"),
+        &surface_a,
+    ));
+    // Changed surface
+    assert!(!CapabilityConsentManager::resolve_accepted_surface_current(
+        Some(&surface_a),
+        Some(&hash_a),
+        Some("sha512-sig"),
+        Some("sha512-sig"),
+        &surface_b,
+    ));
+    // Changed integrity
+    assert!(!CapabilityConsentManager::resolve_accepted_surface_current(
+        Some(&surface_a),
+        Some(&hash_a),
+        Some("sha512-new"),
+        Some("sha512-old"),
+        &surface_a,
+    ));
+
+    // Redaction
+    let spec = "git:https://fixture-user:fixture-password@example.invalid/plugins/demo.git?token=fixture-token";
+    let redacted = CapabilityConsentManager::redact_source_spec(spec);
+    assert!(!redacted.contains("fixture-user"));
+    assert!(!redacted.contains("fixture-password"));
+    assert!(!redacted.contains("fixture-token"));
+    assert!(redacted.contains("***"));
+    assert!(redacted.starts_with("git:https://"));
 }
 
 
