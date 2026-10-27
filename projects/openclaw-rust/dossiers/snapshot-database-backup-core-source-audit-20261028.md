@@ -217,3 +217,10 @@ rejection of booleans, arrays, unknown objects, malformed hex, and out-of-range
 integers. Round-trip and malformed-input oracles pass; this does not yet insert
 decoded rows into a staged SQLite owner.
 
+`restore_sqlite_rows` now supplies a transactional SQLite consumer for decoded
+rows: it validates table/column shape, decodes portable cells, inserts via a
+prepared statement, hashes the exact restored JSONL bytes, and commits only
+after all rows succeed. An independent in-memory database round-trips the
+producer digest; row-arity failure is rejected. This is SQLite staging only;
+PostgreSQL namespace materialization and publication remain pending.
+
