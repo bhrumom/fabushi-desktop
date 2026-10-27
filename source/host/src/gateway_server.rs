@@ -761,6 +761,22 @@ fn respond_error(stream: &mut GatewayStream, status: u16, message: impl Into<Str
     write_response(stream, status, "application/json", &encoded, &[])
 }
 
+fn respond_pairing_error(
+    stream: &mut GatewayStream,
+    status: u16,
+    message: impl Into<String>,
+) -> io::Result<()> {
+    let encoded = serde_json::to_vec(&json!({ "error": message.into() }))
+        .map_err(|error| io::Error::other(format!("gateway error serialization failed: {error}")))?;
+    write_response(
+        stream,
+        status,
+        "application/json",
+        &encoded,
+        &[("Cache-Control", "no-store")],
+    )
+}
+
 fn parse_channels(query: Option<&str>) -> Option<Vec<String>> {
     let raw = query?
         .split('&')
@@ -1164,7 +1180,6 @@ fn handle_connection(
 
     let events = request.method == "GET" && path == GATEWAY_EVENTS_PATH;
     let pairing_join = request.method == "GET"
-        && query.is_none()
         && parse_device_pairing_join_request_path(path).is_some();
     let prepare = request.method == "POST" && path == GATEWAY_PREPARE_UPGRADE_PATH;
     let avatar = request.method == "GET" && path.starts_with(&format!("{GATEWAY_AVATARS_PATH}/"));
@@ -1302,14 +1317,19 @@ fn handle_connection(
         };
     }
     if pairing_join {
+        if query.is_some() {
+            return respond_pairing_error(&mut stream, 404, "not_found");
+        }
         let shortcode = parse_device_pairing_join_request_path(path).unwrap_or_default();
         if shortcode.is_empty() {
-            return respond_error(&mut stream, 404, "not_found");
+            return respond_pairing_error(&mut stream, 404, "not_found");
         }
         let payload = match deps.api.redeem_device_pairing_join_code(shortcode) {
             Ok(Some(payload)) => payload,
-            Ok(None) => return respond_error(&mut stream, 404, "not_found"),
-            Err(error) => return respond_error(&mut stream, error.status(), error.to_string()),
+            Ok(None) => return respond_pairing_error(&mut stream, 404, "not_found"),
+            Err(error) => {
+                return respond_pairing_error(&mut stream, error.status(), error.to_string());
+            }
         };
         return write_response(
             &mut stream,

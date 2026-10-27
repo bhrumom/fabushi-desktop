@@ -164,12 +164,14 @@ fn gateway_public_pairing_join_route_redeems_once_and_rejects_query_or_empty_cod
         "GET /j/A234567890123456789012?x=1 HTTP/1.1\r\nHost: 127.0.0.1\r\nConnection: close\r\n\r\n",
     );
     assert!(queried.starts_with("HTTP/1.1 404 Not Found"), "{queried}");
+    assert!(queried.to_ascii_lowercase().contains("cache-control: no-store"));
 
     let empty = request(
         port,
         "GET /j HTTP/1.1\r\nHost: 127.0.0.1\r\nConnection: close\r\n\r\n",
     );
     assert!(empty.starts_with("HTTP/1.1 404 Not Found"), "{empty}");
+    assert!(empty.to_ascii_lowercase().contains("cache-control: no-store"));
     server.close();
 }
 
