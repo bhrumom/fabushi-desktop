@@ -1226,7 +1226,7 @@
       "referencePath": "frontend/src/production/command-palette-model.ts",
       "expectedBaseParityMode": "reference-copy",
       "parityMode": "typescript-port",
-      "targetBlobSha": "8f3ac50a132c2b2e050a51ccc911b81dca897b21",
+      "targetBlobSha": "ed7d6a991d32c7a6eb88679ffe89e68a1086e689",
       "behavioralEvidence": [
         "frontend/src/production/command-palette-model.ts"
       ],
