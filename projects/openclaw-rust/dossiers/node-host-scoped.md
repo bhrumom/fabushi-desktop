@@ -214,3 +214,9 @@ Rust now contains NodeInvokeInputBuffer with the same bounded state transitions 
 The pinned Rust node client correlates invocation id and node id, rejects duplicate admission, drains/cancels work on connection retirement, and prevents a predecessor result from settling after its generation is retired. The side-effect owner remains responsible for actually stopping physical work and reporting outcome-unknown transport loss.
 
 Rust now contains NodeHostInvocationRegistry with generation-bound admission, duplicate rejection, one-way cancel/settle transitions, and generation drain. The seam is not yet coupled to a live Gateway connection or side-effect executor, so production wiring and exact-head verification remain pending.
+
+## 27. Current live-main identity refresh (2026-10-29)
+
+The live `openclaw/openclaw` default branch advanced again after the earlier node-host delta read. The current direct GitHub identity is commit `70bf5121704c7a7173722c2bd7e360362e5da165`, tree `3732f45aa4d3a924ac88b4b684f21fbab13b3c79`; the locked implementation source remains `ad8d12f126d29b0db204187adf5092db80294e70`, tree `04ccce62f1d74dc8e0c88290ae8ded027b7b0f16`.
+
+The locked-to-live compare reports 4,851 commits ahead. Because the very large compare response did not provide a usable file list, file absence or equality is not inferred from it. Direct live-tree observations for the node-host surface are recorded for `crates/openclaw-node-host/src/node.rs`, `crates/openclaw-node-host/src/runtime.rs`, `src/node-host/config-shared.ts`, `src/node-host/connection.ts`, `src/node-host/invoke.ts`, and `src/node-host/runtime-manifest.ts` using their current live blob identities. This refresh supersedes the earlier `bf6a97a1`/`3fa25384` observation for live identity only; it does not accept the new tree as the implementation baseline, alter inventory/parity counts, or close source mapping.
