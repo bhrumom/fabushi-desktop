@@ -10,10 +10,10 @@
     "ui_accepted": false
   },
   "file_coverage": {
-    "mapped_paths": 907,
+    "mapped_paths": 944,
     "omitted_known": 0,
     "tracked_paths": 58750,
-    "unclassified_paths": 57843
+    "unclassified_paths": 57806
   },
   "inventory_authority": {
     "manifest_source": "GitHub Actions immutable artifact candidate",
@@ -20124,6 +20124,66 @@
           "path": "src/node-host/node-worker-workspace-commands.ts",
           "range": { "end_line": 207, "start_line": 1 },
           "symbol": "captureManifest"
+        },
+        {
+          "blob_sha": "83e41da6905d8c2a05ba1f0f95e8f05f25c85477",
+          "path": "src/worker/node-workspace-protocol.ts",
+          "range": { "end_line": 342, "start_line": 1 },
+          "symbol": "parseNodeWorkerWorkspaceExecInput"
+        },
+        {
+          "blob_sha": "a0f92f8da5cd70a6589ccbd7c8d5903110430f0f",
+          "path": "src/worker/node-workspace-prepared-protocol.ts",
+          "range": { "end_line": 60, "start_line": 1 },
+          "symbol": "parseNodeWorkerPreparedWorkspaceInput"
+        },
+        {
+          "blob_sha": "7d79779b1e283d079b4273f8497765b83df17df4",
+          "path": "src/worker/node-workspace-retain-protocol.ts",
+          "range": { "end_line": 122, "start_line": 1 },
+          "symbol": "parseNodeWorkerWorkspaceRetainInput"
+        },
+        {
+          "blob_sha": "9446eed61513a4cc6cc423022047341dc52bc505",
+          "path": "src/worker/node-workspace-transfer-protocol.ts",
+          "range": { "end_line": 140, "start_line": 1 },
+          "symbol": "NodeWorkerWorkspaceTransferInputSchema"
+        },
+        {
+          "blob_sha": "3dd47a7c20bb2bf8165e56c2d7196bc8866929d7",
+          "path": "src/worker/node-workspace-transfer-body.ts",
+          "range": { "end_line": 25, "start_line": 1 },
+          "symbol": "boundedWorkspaceTransferChunks"
+        },
+        {
+          "blob_sha": "309580d8bae4d820410d2c410cef39069cb5ef85",
+          "path": "src/worker/node-bundle-install-protocol.ts",
+          "range": { "end_line": 69, "start_line": 1 },
+          "symbol": "parseNodeWorkerBundleInstallInput"
+        },
+        {
+          "blob_sha": "1d05b5e8e45939c9e3327d5745e8a49e29e27844",
+          "path": "src/worker/protocol-record.ts",
+          "range": { "end_line": 59, "start_line": 1 },
+          "symbol": "workerProtocolObject"
+        },
+        {
+          "blob_sha": "d9802794b39234cd7daf11743b40c9225492cbf2",
+          "path": "src/worker/worker-process-protocol.ts",
+          "range": { "end_line": 161, "start_line": 1 },
+          "symbol": "parseWorkerProcessMessage"
+        },
+        {
+          "blob_sha": "0d53f50c438ed0c9a5439710ced29f18daf61b5d",
+          "path": "src/worker/worker-process-observation.ts",
+          "range": { "end_line": 70, "start_line": 1 },
+          "symbol": "WorkerProcessObservationRequestSchema"
+        },
+        {
+          "blob_sha": "3588206ff1829328e7c01a1f965a8a932bb2f1a9",
+          "path": "src/worker/node-supervisor-protocol.ts",
+          "range": { "end_line": 235, "start_line": 1 },
+          "symbol": "validateNodeWorkerLaunchInput"
         },
         {
           "blob_sha": "f2b2b63fb265ddf79e6c66d02c13e687237d7229",
