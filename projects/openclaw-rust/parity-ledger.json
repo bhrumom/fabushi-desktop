@@ -10,10 +10,10 @@
     "ui_accepted": false
   },
   "file_coverage": {
-    "mapped_paths": 960,
+    "mapped_paths": 965,
     "omitted_known": 0,
     "tracked_paths": 58750,
-    "unclassified_paths": 57790
+    "unclassified_paths": 57785
   },
   "inventory_authority": {
     "manifest_source": "GitHub Actions immutable artifact candidate",
@@ -19857,6 +19857,36 @@
             "start_line": 1
           },
           "symbol": "handleInvoke"
+        },
+        {
+          "blob_sha": "769e01f6c36e88667140c4680f459556e8bccb70",
+          "path": "src/node-host/invoke-system-run.ts",
+          "range": {"end_line": 917, "start_line": 1},
+          "symbol": "handleSystemRunInvoke"
+        },
+        {
+          "blob_sha": "98915d8bff9cba7ff8a7e67ac06b92ec10d43499",
+          "path": "src/node-host/invoke-run-command.ts",
+          "range": {"end_line": 126, "start_line": 1},
+          "symbol": "runCommand"
+        },
+        {
+          "blob_sha": "e942fe32084e9d149f48bcb9cd66d2c1f83e84a5",
+          "path": "src/node-host/invoke-device-apps.ts",
+          "range": {"end_line": 73, "start_line": 1},
+          "symbol": "invokeDeviceApps"
+        },
+        {
+          "blob_sha": "e21d9719ff4053f298884a5e9660cb93495edcee",
+          "path": "src/node-host/invoke-mcp-result.ts",
+          "range": {"end_line": 118, "start_line": 1},
+          "symbol": "boundMcpToolResultPayload"
+        },
+        {
+          "blob_sha": "9fffd45659a7d06e821a990f131aee5665c4be01",
+          "path": "src/node-host/invoke-plugin-context.ts",
+          "range": {"end_line": 76, "start_line": 1},
+          "symbol": "withNodeHostPluginInvocation"
         },
         {
           "blob_sha": "67dcb7525571e5b24de9fdb279f0219f2705bd86",
