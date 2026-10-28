@@ -89,3 +89,13 @@ The exact pinned reads of `host.rs` and `runtime.rs` add two important constrain
 - The runtime explicitly refuses duplex commands through its one-shot dispatch path, closes the session on critical delivery saturation/result-task failure, and rejects commands absent from the current connection manifest. These are required lifecycle invariants for any Fabushi adapter.
 
 This narrows the next implementation boundary: an existing Fabushi transport/credential owner must supply the connection factory and token persistence; a node-host runtime owner may compose bounded invocation execution and manifest projection; existing local exec, Computer, PTY, stream, and worker owners remain the only side-effect owners. No product code was changed in this audit.
+
+## 11. Sidecar protocol audit (2026-10-29)
+
+The pinned sidecar sources define an optional out-of-process boundary, not a required node/Gateway path:
+
+- `sidecar_protocol.rs` negotiates additive feature bits and the minimum of both peers' frame/in-flight/bootstrap limits, binds role/direction/session/generation/sequence to one channel instance, authenticates frames with an out-of-band zeroized key, and permanently retires a channel on invalid state or liveness loss.
+- `sidecar_handshake.rs` requires supervisor initiation, binds the handshake to the exact channel instance, verifies the runtime's claimed selection against independently recomputed negotiation, and only lowers the frame ceiling after the final acceptance frame.
+- `sidecar_runtime.rs` exchanges one bounded configuration/manifest, validates portable JSON and reserved command namespaces, adapts admission/invoke/result/cancel to the bounded command runtime, and projects secret-free lifecycle status. It does not own process creation, artifact verification, or key delivery; those belong to the product supervisor.
+
+Fabushi already has process/supervisor and bounded framing owners, but the inspected owner set does not establish that this OpenClaw sidecar contract is the canonical transport for OCRM node hosting. Therefore it is recorded as an optional adapter contract only. It must not be introduced until a concrete existing worker/supervisor caller, artifact/key handoff, and real packaged acceptance path are identified; a plain line framer or existing local bridge is not evidence of authenticated sidecar equivalence.
