@@ -11,3 +11,4 @@ pub mod stream_transport;
 pub mod desktop_stream_protocol;
 pub mod worker_supervisor_protocol;
 pub mod worker_bundle;
+pub mod worker_launch_policy;

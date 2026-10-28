@@ -269,3 +269,5 @@ The locked `node-supervisor-protocol.ts` binds every launch/receipt to `launchId
 The same seam now validates the launch cross-fields that prevent bundle or placement confusion: `environmentSession=1`, safe `gatewayNamespace`, optional bounded `sessionKey`/`idleRetention`, `launchId == descriptor.assignment.turnId`, and `expectedBundleHash == descriptor.admission.handshake.bundleHash`. Full descriptor/schema validation remains outside this seam.
 
 `worker_bundle.rs` now resolves an installed `worker.mjs` only after canonicalizing the configured root, namespace bundle, and entry, then requiring strict containment and a regular file. It rejects unsafe namespace/hash components and symlink escapes. It does not spawn the worker or own process-group/container cleanup.
+
+`worker_launch_policy.rs` now captures the locked launch-mode admission: local inference cannot run in a container and requires a trusted inference snapshot; container mode requires a non-loopback WebSocket endpoint, forbids host browser assignments, and requires a lifecycle owner. The policy returns a mode only; it performs no spawn, container creation, credential materialization, or cleanup.

@@ -19615,7 +19615,10 @@
         "resolve_worker_bundle_entry",
         "validate_namespace",
         "validate_bundle_hash",
-        "WORKER_BUNDLE_ENTRY_PATH"
+        "WORKER_BUNDLE_ENTRY_PATH",
+        "NodeWorkerLaunchMode",
+        "NodeWorkerLaunchPolicyInput",
+        "admit_node_worker_launch"
       ],
       "unit_id": "OCRM-UNIT-NODE-HOST-001"
     },
