@@ -19772,6 +19772,24 @@
           "symbol": "parseNodeWorkerLaunchInput"
         },
         {
+          "blob_sha": "ddadad59b0299e2ba2603ffdf9f59f8e56d0f8c8",
+          "path": "src/node-host/node-worker-launch-transport.ts",
+          "range": {
+            "end_line": 326,
+            "start_line": 1
+          },
+          "symbol": "prepareNodeWorkerLaunchTransport"
+        },
+        {
+          "blob_sha": "359539d729e3100c34f2faba10f3db77dccc0a44",
+          "path": "src/shared/worker-bundle-hash.ts",
+          "range": {
+            "end_line": 104,
+            "start_line": 1
+          },
+          "symbol": "workerBundleArchiveRelativePath"
+        },
+        {
           "blob_sha": "26535b827d8bebd549491badea55a7f7cfccd6f6",
           "path": "src/node-host/node-invoke-progress.ts",
           "range": {
