@@ -295,18 +295,28 @@ fn test_ocrm_plugins_capability_catalog() {
             _ => vec!["telegram-mode".to_string()],
         });
     assert_eq!(
-        catalog.register_bundled_channel_entry(
-            &bundled,
-            PluginOrigin::Bundled,
-            Some("@openclaw/telegram".to_string()),
-            PluginRegistrationMode::Full,
-        ),
+        catalog
+            .register_bundled_channel_entry(
+                &bundled,
+                PluginOrigin::Bundled,
+                Some("@openclaw/telegram".to_string()),
+                PluginRegistrationMode::Full,
+            )
+            .expect("first bundled registration"),
         vec!["telegram-full"]
     );
     let registered = catalog.get_channel("TELEGRAM").expect("Bundled entry registration");
     assert_eq!(registered.plugin_id, "telegram");
     assert_eq!(registered.package_name.as_deref(), Some("@openclaw/telegram"));
     assert!(registered.trusted_official_install);
+    assert!(catalog
+        .register_bundled_channel_entry(
+            &bundled,
+            PluginOrigin::Bundled,
+            Some("@openclaw/telegram".to_string()),
+            PluginRegistrationMode::Full,
+        )
+        .is_err());
     assert_eq!(catalog.unregister_channel("telegram").unwrap().plugin_id, "telegram");
     assert!(catalog.get_channel("telegram").is_none());
 }

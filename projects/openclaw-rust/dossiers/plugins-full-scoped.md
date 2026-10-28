@@ -160,6 +160,8 @@ Production startup now publishes the six existing immutable bundled channel IDs 
 
 The channel lifecycle now also has a Host-owned revoke operation: it removes the provider port before removing the catalog entry, and rejects an unknown channel before either mutation. The catalog contract covers metadata removal; no plugin uninstall, credential revocation, or real adapter call site is present yet, so this remains lifecycle infrastructure rather than external-channel acceptance.
 
+Bundled channel entry registration now rejects an already-present channel before invoking the entry handler, preventing duplicate discovery from silently replacing catalog metadata or running registration side effects twice. Explicit revoke remains the only lifecycle path that removes the entry before a later fresh registration.
+
 
 
 

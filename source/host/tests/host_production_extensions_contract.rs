@@ -83,7 +83,7 @@ fn production_host_owns_the_canonical_plugin_capability_catalog() {
     for needle in [
         "pub plugin_capability_catalog: Arc<PluginCapabilityCatalog>",
         "let plugin_capability_catalog = Arc::new(PluginCapabilityCatalog::new());",
-        "register_bundled_channel_capabilities(&plugin_capability_catalog);",
+        "register_bundled_channel_capabilities(&plugin_capability_catalog)?;",
         "plugin_capability_catalog,",
     ] {
         assert!(

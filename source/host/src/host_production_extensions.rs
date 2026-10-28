@@ -515,7 +515,7 @@ pub struct ProductionHostExtensions {
 /// transport, credentials, session state, or delivery provider. A channel
 /// adapter must still register a real `ChannelDeliveryPort` before delivery
 /// can succeed.
-fn register_bundled_channel_capabilities(catalog: &PluginCapabilityCatalog) {
+fn register_bundled_channel_capabilities(catalog: &PluginCapabilityCatalog) -> Result<(), String> {
     for channel_id in BundledInstallGuard::IMMUTABLE_BUNDLED_PLUGINS {
         let label = match *channel_id {
             "telegram" => "Telegram",
@@ -531,13 +531,14 @@ fn register_bundled_channel_capabilities(catalog: &PluginCapabilityCatalog) {
             label,
             "Bundled channel capability metadata",
         );
-        let _ = catalog.register_bundled_channel_entry(
+        catalog.register_bundled_channel_entry(
             &entry,
             PluginOrigin::Bundled,
             None,
             PluginRegistrationMode::Capabilities,
-        );
+        )?;
     }
+    Ok(())
 }
 
 impl Drop for ProductionHostExtensions {
@@ -701,7 +702,7 @@ pub fn start_production_host_extensions(
     let (_, turn_execution_registry) = turn_execution_extension();
     let turn_execution = Arc::new(Mutex::new(turn_execution_registry));
     let plugin_capability_catalog = Arc::new(PluginCapabilityCatalog::new());
-    register_bundled_channel_capabilities(&plugin_capability_catalog);
+    register_bundled_channel_capabilities(&plugin_capability_catalog)?;
     let channel_delivery_router = ChannelDeliveryRouter::new();
     let channel_delivery = HostChannelDelivery::new(Arc::new(channel_delivery_router.clone()));
 

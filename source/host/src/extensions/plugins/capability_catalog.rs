@@ -123,17 +123,24 @@ impl PluginCapabilityCatalog {
         origin: PluginOrigin,
         package_name: Option<String>,
         mode: PluginRegistrationMode,
-    ) -> Vec<String> {
+    ) -> Result<Vec<String>, String> {
+        let channel_id = entry.id.trim().to_ascii_lowercase();
+        if channel_id.is_empty() {
+            return Err("channel capability registration requires a channel id".into());
+        }
+        let mut channels = self.channels.lock().unwrap();
+        if channels.contains_key(&channel_id) {
+            return Err(format!("channel capability already registered: {channel_id}"));
+        }
         let registration = entry.register(mode);
-        let channel_id = entry.id.clone();
-        self.register_channel(ChannelCatalogEntry {
-            plugin_id: channel_id.clone(),
+        channels.insert(channel_id, ChannelCatalogEntry {
+            plugin_id: entry.id.clone(),
             origin: origin.clone(),
             package_name,
-            channel_name: channel_id,
+            channel_name: entry.id.clone(),
             trusted_official_install: origin == PluginOrigin::Bundled,
         });
-        registration
+        Ok(registration)
     }
 
     pub fn get_channel(&self, channel_name: &str) -> Option<ChannelCatalogEntry> {
