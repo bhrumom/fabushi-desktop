@@ -168,6 +168,8 @@ Channel delivery failure queue entries now retain the same optional `deliveryOpe
 
 Channel failure markers now reuse the existing `SandPendingWakeStore` and `PendingWakeRearm` owner. They persist `ChannelDelivery` kind, operation ID, address, and failure reason; startup re-arms only the in-app failure notice and clears the marker after that notice succeeds. No provider retry or external mutation is performed during rearm, preserving the unknown-outcome boundary.
 
+The failure worker now treats `RevivalExecution::aborted` and `quiesced_for_upgrade` as non-settled outcomes: it requeues the in-memory failure and leaves the durable marker intact. Marker cleanup is restricted to a non-aborted, non-quiesced follow-up result, so a cancellation or upgrade handoff cannot be reported as a delivered recovery notice.
+
 
 
 

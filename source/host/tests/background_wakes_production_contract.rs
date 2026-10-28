@@ -196,6 +196,11 @@ fn shipping_send_message_reaches_host_owned_delivery_failure_broadcast_and_conte
 
     assert!(SHIPPING_HOST.contains("queue_channel_delivery_failure("));
     assert!(SHIPPING_HOST.contains("run_channel_failure_revival_worker"));
+    assert!(SHIPPING_HOST.contains("clear_durable_channel_failure_markers"));
+    assert!(SHIPPING_HOST.contains(
+        "!execution.aborted\n                    && !execution.quiesced_for_upgrade\n                    && execution.sent_message_count > 0"
+    ));
+    assert!(SHIPPING_HOST.contains("requeue_channel_failures(&wakes, &agent_id, failures)"));
     assert!(SHIPPING_HOST.contains("tray.title = \"Message not delivered\""));
     assert!(SHIPPING_HOST.contains("tray.title = \"Delivery-failure follow-up failed\""));
     assert!(SHIPPING_HOST.contains("summary.is_group || summary.remote_room.is_some()"));

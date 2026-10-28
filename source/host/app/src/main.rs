@@ -5173,6 +5173,24 @@ fn requeue_channel_failures(
     );
 }
 
+fn clear_durable_channel_failure_markers(
+    deps: &LocalRoutedRunnerDeps,
+    agent_id: &str,
+    failures: &[serde_json::Value],
+) {
+    let Some(store) = deps.transcript_runtime.pending_wake_store() else {
+        return;
+    };
+    for failure in failures {
+        if let Some(operation_id) = failure
+            .get("deliveryOperationId")
+            .and_then(serde_json::Value::as_str)
+        {
+            let _ = store.clear_one(agent_id, PendingWakeKind::ChannelDelivery, operation_id);
+        }
+    }
+}
+
 fn run_channel_failure_revival_worker(
     deps: LocalRoutedRunnerDeps,
     roster: Arc<ProductionRosterEmit>,
@@ -5203,20 +5221,7 @@ fn run_channel_failure_revival_worker(
             }
         };
         if summary.is_group {
-            if let Some(store) = deps.transcript_runtime.pending_wake_store() {
-                for failure in &failures {
-                    if let Some(operation_id) = failure
-                        .get("deliveryOperationId")
-                        .and_then(serde_json::Value::as_str)
-                    {
-                        let _ = store.clear_one(
-                            &agent_id,
-                            PendingWakeKind::ChannelDelivery,
-                            operation_id,
-                        );
-                    }
-                }
-            }
+            clear_durable_channel_failure_markers(&deps, &agent_id, &failures);
             continue;
         }
         let Some(provider) = configured_routed_provider(&deps.data_dir.join("settings.json")) else {
@@ -5249,22 +5254,17 @@ fn run_channel_failure_revival_worker(
                 ..BackgroundRevivalContext::default()
             },
         ) {
-            Ok(_) => {
-                if let Some(store) = deps.transcript_runtime.pending_wake_store() {
-                    for failure in &failures {
-                        if let Some(operation_id) = failure
-                            .get("deliveryOperationId")
-                            .and_then(serde_json::Value::as_str)
-                        {
-                            let _ = store.clear_one(
-                                &agent_id,
-                                PendingWakeKind::ChannelDelivery,
-                                operation_id,
-                            );
-                        }
-                    }
-                }
+            Ok(execution)
+                if !execution.aborted
+                    && !execution.quiesced_for_upgrade
+                    && execution.sent_message_count > 0 =>
+            {
+                clear_durable_channel_failure_markers(&deps, &agent_id, &failures);
                 let _ = roster.emit_agent_update(&agent_id);
+            }
+            Ok(_) => {
+                requeue_channel_failures(&wakes, &agent_id, failures);
+                break;
             }
             Err(error) => {
                 let classified_error = ProviderSessionError::Tool(error.clone());
