@@ -13748,7 +13748,7 @@ fn main() {
             transcript_manager: Arc::clone(&transcript_manager),
             roster_emit: Arc::clone(&roster_emit),
             background_wakes: Arc::clone(&timeline_event_wakes),
-            channel_delivery: HostChannelDelivery::default(),
+            channel_delivery: production_extensions.channel_delivery.clone(),
             telemetry_logs: host_telemetry.logs.clone(),
             product_analytics: host_telemetry.analytics.clone(),
             telemetry_api: host_telemetry.api(),

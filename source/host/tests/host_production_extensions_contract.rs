@@ -92,6 +92,24 @@ fn production_host_owns_the_canonical_plugin_capability_catalog() {
     }
 }
 
+#[test]
+fn production_host_owns_the_channel_delivery_boundary_consumed_by_gateway() {
+    for needle in [
+        "pub channel_delivery: HostChannelDelivery",
+        "let channel_delivery = HostChannelDelivery::default();",
+        "channel_delivery,",
+    ] {
+        assert!(
+            PRODUCTION_OWNER.contains(needle),
+            "ProductionHostExtensions must own channel delivery: {needle}"
+        );
+    }
+    assert!(
+        SHIPPING_HOST.contains("channel_delivery: production_extensions.channel_delivery.clone()"),
+        "Gateway must consume the canonical ProductionHostExtensions channel delivery"
+    );
+}
+
 
 #[test]
 fn browser_ua_and_wallpaper_have_one_production_lifecycle_owner() {
