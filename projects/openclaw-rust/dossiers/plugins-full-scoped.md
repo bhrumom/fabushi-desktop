@@ -144,6 +144,8 @@ The locked LINE, Reef, Zalo, and X runtime API barrels, Feishu/Nextcloud Talk/Te
 
 The existing Rust `BundledChannelEntryContract` previously had only mode-dispatch contract coverage, while `PluginCapabilityCatalog` accepted channel metadata only through a manual `register_channel` call. The native owner now exposes `register_bundled_channel_entry`, which invokes the entry's selected registration mode and records the same entry in the catalog with origin, package, channel identity, and bundled trust metadata. The added contract oracle proves the producer/handler result and catalog consumer projection share one owner and one channel identity. This is implementation progress for the channel-entry responsibility, not a wired/verified/accepted verdict: no current exact-head Actions receipt or packaged runtime call site has yet proven the bridge reachable in production.
 
+The production composition now also constructs one `HostChannelDelivery` inside `ProductionHostExtensions`, and `UnifiedGatewayApi` consumes that instance rather than constructing a second default boundary. This preserves one lifecycle and registration point for future channel adapters. The default remains explicitly unregistered, so external channel delivery is still pending until a real provider adapter is registered and exercised through the packaged path.
+
 
 
 
