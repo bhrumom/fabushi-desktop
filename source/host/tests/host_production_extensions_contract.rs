@@ -78,6 +78,20 @@ fn shipping_production_extension_owner_remains_send_sync() {
     assert_send_sync::<ProductionInferenceExtension>();
 }
 
+#[test]
+fn production_host_owns_the_canonical_plugin_capability_catalog() {
+    for needle in [
+        "pub plugin_capability_catalog: Arc<PluginCapabilityCatalog>",
+        "let plugin_capability_catalog = Arc::new(PluginCapabilityCatalog::new());",
+        "plugin_capability_catalog,",
+    ] {
+        assert!(
+            PRODUCTION_OWNER.contains(needle),
+            "ProductionHostExtensions must own the plugin capability catalog: {needle}"
+        );
+    }
+}
+
 
 #[test]
 fn browser_ua_and_wallpaper_have_one_production_lifecycle_owner() {
