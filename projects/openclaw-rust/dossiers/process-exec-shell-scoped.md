@@ -26,6 +26,27 @@ The following 6 core process execution, timeout handling, error sanitization, pr
 
 ## 2. Decomposed Runtime Responsibilities
 
+### Locked-source file audit (2026-10-28)
+
+The following files were read in full from the locked authority checkout
+`openclaw/openclaw@ad8d12f126d29b0db204187adf5092db80294e70` (tree
+`04ccce62f1d74dc8e0c88290ae8ded027b7b0f16`). Their canonical inventory rows
+record the complete line ranges, blob identities, module and responsibility
+mapping; this is file-level evidence, not a directory or batch claim.
+
+| File | Blob SHA | Lines | Read/mapping result |
+|---|---|---:|---|
+| `src/process/exec-termination.ts` | `8b799aea4cccb13dd5b76b4b25c49b4c025cf5d1` | 211 | Full controller semantics read; command-exec owner remains pending because Fabushi has no production caller implementing pending-spawn, PID-start identity, grace/force settlement, and Windows taskkill joining. |
+| `src/process/exec-termination.test.ts` | `9338c4fc21acc3c2872776fd01fc82e9066c68f5` | 311 | Full upstream controller oracle read; retained as source behavior evidence only. |
+| `src/process/exec-termination.liveness.test.ts` | `74dabf0ca05c5e26420ced9198acf666fadf873f` | 108 | Full liveness/settlement oracle read; no production wiring inferred. |
+| `src/process/kill-tree.ts` | `1a0ccc2f9732f307de6f87604fab3fec24d79514` | 11 | Full compatibility barrel read; local Rust supervisor cleanup owner is separate from the command controller. |
+| `src/process/kill-tree.test.ts` | `5fba870d269d7b00a0a666183f3dc68509900e17` | 636 | Full recursive-tree/force/Windows test source read; current Rust evidence is explicitly scoped to supervisor cleanup and Unix descendant exit. |
+
+The source rows are `read-complete` and mapped to `OCRM-M25`. The two
+termination-controller rows remain `not-wired` with blocker
+`BL-EXEC-TERMINATION-CONTROLLER-CALLER-001`; the kill-tree row remains scoped
+to the real supervisor callers and does not upgrade command-exec parity.
+
 The audited source code was decomposed into 6 discrete Rust runtime responsibilities registered in `parity-ledger.json`:
 
 1. **`OCRM-RESP-EXEC-PROCESS-SPAWN-001`**:

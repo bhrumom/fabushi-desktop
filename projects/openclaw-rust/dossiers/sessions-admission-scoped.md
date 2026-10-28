@@ -57,6 +57,21 @@ The unit covers the complete session key routing, communication policy, turn set
 
 ## 3. Registered Responsibilities in Parity Ledger
 
+### Locked-source file audit (2026-10-28)
+
+`src/sessions/auth-profile-preservation.ts` (blob
+`5d93e81b6f237a0783e4b3163fbd3a365cf143b7`, 130 lines) and its complete
+`auth-profile-preservation.test.ts` oracle (blob
+`b702853690bbae7b92c5d1b1d0be5eafcb2057c5`, 195 lines) were read from the
+locked authority checkout and recorded as full-range rows in the canonical
+inventory. The implementation resolves the effective provider profile from
+runtime/persisted/config sources, preserves a compatible pinned profile, and
+clears an incompatible cross-provider override. The test source covers
+preservation and pruning decisions. Fabushi's existing session profile owner
+does not yet have a production caller proving this lifecycle, so
+`OCRM-RESP-SESSION-AUTH-PROFILE-LIFECYCLE-001` remains `not-wired`/`not-run`;
+the read is source-closure evidence only, not a production acceptance claim.
+
 1. **`OCRM-RESP-SESSION-KEY-ROUTING-001`**: Classify and route session keys (cron, direct, group, global, spawn-child), reserving `harness:` namespace.
 2. **`OCRM-RESP-SESSION-COMMUNICATION-POLICY-001`**: Inter-session communication admission policy (modes: always, ask, never) with approval requirements.
 3. **`OCRM-RESP-SESSION-CONVERSATION-TURNS-001`**: Conversation turn correlation, pending turn registry, outbound message matching, and turn settlement state machine.
