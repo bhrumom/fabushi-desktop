@@ -10,10 +10,10 @@
     "ui_accepted": false
   },
   "file_coverage": {
-    "mapped_paths": 1050,
+    "mapped_paths": 1055,
     "omitted_known": 0,
     "tracked_paths": 58750,
-    "unclassified_paths": 57700
+    "unclassified_paths": 57695
   },
   "inventory_authority": {
     "manifest_source": "GitHub Actions immutable artifact candidate",
@@ -20874,6 +20874,36 @@
           "path": "src/worker/worker-connection-gateway-tools.suite.ts",
           "range": {"end_line": 268, "start_line": 1},
           "symbol": "Gateway tool transport queue, replay, and cancellation oracle"
+        },
+        {
+          "blob_sha": "4d58225785364b42abb43ab70a9f487fa2f3df92",
+          "path": "src/worker/browser-runtime.test.ts",
+          "range": {"end_line": 88, "start_line": 1},
+          "symbol": "worker Browser runtime attach and launcher oracle"
+        },
+        {
+          "blob_sha": "a5674950afab8bab77b42de4bb65f618dfb6f5c5",
+          "path": "src/worker/computer-observation.runtime.test.ts",
+          "range": {"end_line": 87, "start_line": 1},
+          "symbol": "computer observation image persistence oracle"
+        },
+        {
+          "blob_sha": "77fa96f0254297b87628c9bd83670e17aaa73d25",
+          "path": "src/worker/native-inference-startup.test.ts",
+          "range": {"end_line": 85, "start_line": 1},
+          "symbol": "private native inference startup descriptor oracle"
+        },
+        {
+          "blob_sha": "8594bd478c0c51e2a38403316ce984a9d7a0656f",
+          "path": "src/worker/node-bundle-install-protocol.test.ts",
+          "range": {"end_line": 58, "start_line": 1},
+          "symbol": "worker bundle install protocol oracle"
+        },
+        {
+          "blob_sha": "2e86214f8ed78c4bf6d00e3430391664bdbc27d8",
+          "path": "src/worker/node-workspace-retain-protocol.test.ts",
+          "range": {"end_line": 84, "start_line": 1},
+          "symbol": "workspace retention protocol oracle"
         }
       ],
       "status": {
