@@ -3863,10 +3863,6 @@ impl UnifiedGatewayApi {
                 "unsupported local node command: {command}"
             )));
         }
-        let admission = self
-            .node_host_invocations
-            .admit(&self.node_host_local_session, invoke_id)
-            .map_err(GatewayCommandError::BadRequest)?;
         let params = args.get("params").unwrap_or(&serde_json::Value::Null);
         let shell_command = params
             .get("command")
@@ -3894,6 +3890,10 @@ impl UnifiedGatewayApi {
             tool_call_id: Some(tool_call_id.to_string()),
             action: Some("node.invoke.system.run".into()),
         };
+        let admission = self
+            .node_host_invocations
+            .admit(&self.node_host_local_session, invoke_id)
+            .map_err(GatewayCommandError::BadRequest)?;
         let result = self
             .local_exec
             .sandbox(Arc::clone(&self.local_tool_permission))
