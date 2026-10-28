@@ -150,6 +150,8 @@ The existing channel contract confirms the remaining boundary precisely: `HostCh
 
 The native connector now provides `ChannelDeliveryRouter`, a provider-port multiplexer owned by `ProductionHostExtensions` and installed behind the shared `HostChannelDelivery`. It normalizes channel IDs, routes `channel:target` address tokens, and preserves the existing unregistered error after unregister or missing registration. The router contract is positive/negative only; no provider adapter has been registered yet, so this does not upgrade channel responsibilities to wired or accepted.
 
+`ProductionHostExtensions::register_channel_delivery_provider` now gates provider registration on a matching capability-catalog channel and rejects unknown channel IDs before the port enters the router. This closes the intended discovery→provider-registration authorization seam while preserving pending status until a real adapter invokes it with credentials and a packaged external service path.
+
 
 
 
