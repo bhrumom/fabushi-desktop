@@ -19988,6 +19988,48 @@
           "symbol": "stopOwnedNodeWorkerTree"
         },
         {
+          "blob_sha": "f9a0d7d0fab95e3e8fff50f183ad1bca095d49ab",
+          "path": "src/node-host/node-worker-supervisor.ts",
+          "range": { "end_line": 722, "start_line": 1 },
+          "symbol": "createNodeWorkerSupervisor"
+        },
+        {
+          "blob_sha": "c01da7c4065d7f492c3faab881df1c123d0a2026",
+          "path": "src/node-host/node-worker-launch-store.kernel.ts",
+          "range": { "end_line": 707, "start_line": 1 },
+          "symbol": "NodeWorkerLaunchKernel"
+        },
+        {
+          "blob_sha": "0164d502cf6b1949feef317fa7fca1d89c27efd7",
+          "path": "src/node-host/node-worker-turn-store.kernel.ts",
+          "range": { "end_line": 277, "start_line": 1 },
+          "symbol": "NodeWorkerTurnKernel"
+        },
+        {
+          "blob_sha": "f07bddc20a163888dd5f772285aa32ebe729598e",
+          "path": "src/node-host/node-worker-launch-observation.ts",
+          "range": { "end_line": 250, "start_line": 1 },
+          "symbol": "observeNodeWorkerChild"
+        },
+        {
+          "blob_sha": "e84511707a40cec451df92d178869391e9f17126",
+          "path": "src/node-host/node-worker-lineage-completion.ts",
+          "range": { "end_line": 92, "start_line": 1 },
+          "symbol": "recordNodeWorkerLineageSettled"
+        },
+        {
+          "blob_sha": "9afd21bbad095ef4b13b4f6648b5617248949f98",
+          "path": "src/node-host/node-worker-journal.worker.ts",
+          "range": { "end_line": 102, "start_line": 1 },
+          "symbol": "nodeWorkerJournalOperations"
+        },
+        {
+          "blob_sha": "c110cad09439d9a089bca0abbbd2d84292d837fb",
+          "path": "src/node-host/node-worker-journal.types.ts",
+          "range": { "end_line": 37, "start_line": 1 },
+          "symbol": "NodeWorkerLaunchClaimResult"
+        },
+        {
           "blob_sha": "f2b2b63fb265ddf79e6c66d02c13e687237d7229",
           "path": "crates/openclaw-node-host/src/host.rs",
           "range": {
