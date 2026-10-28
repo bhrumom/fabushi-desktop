@@ -5,8 +5,12 @@ use crate::extensions::transcript::channel_delivery_unregistered_error::SandChan
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum ChannelOutboundMessage {
-    Text { text: String },
-    Attachment { url: String, caption: Option<String> },
+    Text { text: String, operation_id: Option<String> },
+    Attachment {
+        url: String,
+        caption: Option<String>,
+        operation_id: Option<String>,
+    },
 }
 
 pub trait ChannelDeliveryPort: Send + Sync {

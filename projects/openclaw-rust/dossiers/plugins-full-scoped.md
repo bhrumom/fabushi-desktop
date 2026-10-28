@@ -162,6 +162,8 @@ The channel lifecycle now also has a Host-owned revoke operation: it removes the
 
 Bundled channel entry registration now rejects an already-present channel before invoking the entry handler, preventing duplicate discovery from silently replacing catalog metadata or running registration side effects twice. Explicit revoke remains the only lifecycle path that removes the entry before a later fresh registration.
 
+The outbound seam now persists the generated transcript entry before spawning the channel delivery dispatch and propagates that entry ID as `deliveryOperationId` into `ChannelOutboundMessage`. This gives a future provider adapter a stable operation key and prevents a persistence failure from preceding an external send. It is not yet a durable outbox, provider idempotency receipt, retry/reconcile ledger, or packaged channel acceptance; the dispatch remains asynchronous and current external adapters are absent.
+
 
 
 

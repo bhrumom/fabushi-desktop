@@ -796,32 +796,7 @@ impl SendMessageSink for ProductionSendMessageSink {
             .and_then(serde_json::Value::as_str)
             .map(str::trim)
             .filter(|value| !value.is_empty())
-            .map(|address_token| (address_token.to_string(), message.clone()));
-        if let Some((address_token, outbound_message)) = channel_delivery {
-            let host_tx = self.host_tx.clone();
-            let agent_id = self.agent_id.clone();
-            if let Err(error) = thread::Builder::new()
-                .name(format!("mahayana-channel-send-{agent_id}"))
-                .spawn(move || {
-                    if let Err(error) = call_host_lane(
-                        &host_tx,
-                        "deliverToChannel",
-                        serde_json::json!({
-                            "agentId": agent_id,
-                            "addressToken": address_token,
-                            "message": outbound_message,
-                        }),
-                    ) {
-                        eprintln!("mahayana-host channel_delivery_dispatch_failed error={error}");
-                    }
-                })
-            {
-                eprintln!(
-                    "mahayana-host channel_delivery_dispatch_spawn_failed agent={} error={error}",
-                    self.agent_id
-                );
-            }
-        }
+            .map(ToOwned::to_owned);
 
         let entry = self
             .transcript_runtime
@@ -844,6 +819,38 @@ impl SendMessageSink for ProductionSendMessageSink {
             .ok_or_else(|| ProviderSessionError::Tool(
                 "persisted SendMessage entry did not contain an id".to_string()
             ))?;
+        if let Some(address_token) = channel_delivery {
+            let host_tx = self.host_tx.clone();
+            let agent_id = self.agent_id.clone();
+            let mut outbound_message = message.clone();
+            if let Some(object) = outbound_message.as_object_mut() {
+                object.insert(
+                    "deliveryOperationId".to_string(),
+                    serde_json::Value::String(entry_id.clone()),
+                );
+            }
+            if let Err(error) = thread::Builder::new()
+                .name(format!("mahayana-channel-send-{agent_id}"))
+                .spawn(move || {
+                    if let Err(error) = call_host_lane(
+                        &host_tx,
+                        "deliverToChannel",
+                        serde_json::json!({
+                            "agentId": agent_id,
+                            "addressToken": address_token,
+                            "message": outbound_message,
+                        }),
+                    ) {
+                        eprintln!("mahayana-host channel_delivery_dispatch_failed error={error}");
+                    }
+                })
+            {
+                eprintln!(
+                    "mahayana-host channel_delivery_dispatch_spawn_failed agent={} error={error}",
+                    self.agent_id
+                );
+            }
+        }
         self.events.publish(serde_json::json!({
             "channel": "transcript",
             "payload": {

@@ -141,7 +141,7 @@ fn test_ocrm_channel_o03_delivery_port_registration_lifecycle() {
     let host_delivery = HostChannelDelivery::default();
 
     // Default unregistered delivery fails
-    let msg = ChannelOutboundMessage::Text { text: "Hello from Fabushi".into() };
+    let msg = ChannelOutboundMessage::Text { text: "Hello from Fabushi".into(), operation_id: None };
     let unreg_res = host_delivery.deliver("agent-1", "chat-id-42", &msg);
     assert!(unreg_res.is_err());
     assert_eq!(unreg_res.unwrap_err(), SandChannelDeliveryUnregisteredError.to_string());
@@ -193,7 +193,7 @@ impl ChannelDeadLetterQueue {
 fn test_ocrm_channel_o04_dead_letter_fallback() {
     let delivery = HostChannelDelivery::default();
     let mut dlq = ChannelDeadLetterQueue::new();
-    let msg = ChannelOutboundMessage::Text { text: "Queued notification".into() };
+    let msg = ChannelOutboundMessage::Text { text: "Queued notification".into(), operation_id: None };
 
     dlq.dispatch_or_enqueue(&delivery, "agent-lead", "slack-announcements", &msg);
     assert_eq!(dlq.dead_letters.len(), 1);
@@ -207,7 +207,7 @@ fn test_ocrm_channel_router_registers_and_revokes_provider_ports() {
     let port = Arc::new(RecordingChannelDeliveryPort { delivered: records.clone() });
     router.register("Telegram", port).expect("register channel provider");
 
-    let message = ChannelOutboundMessage::Text { text: "hello".into() };
+    let message = ChannelOutboundMessage::Text { text: "hello".into(), operation_id: None };
     let duplicate = Arc::new(RecordingChannelDeliveryPort {
         delivered: Arc::new(Mutex::new(Vec::new())),
     });
@@ -429,8 +429,8 @@ fn test_ocrm_channel_o08_receipt_settlement() {
 #[test]
 fn test_ocrm_channel_o09_dead_letter_replay() {
     let mut dlq = ChannelDeadLetterQueue::new();
-    let msg1 = ChannelOutboundMessage::Text { text: "msg 1".into() };
-    let msg2 = ChannelOutboundMessage::Text { text: "msg 2".into() };
+    let msg1 = ChannelOutboundMessage::Text { text: "msg 1".into(), operation_id: None };
+    let msg2 = ChannelOutboundMessage::Text { text: "msg 2".into(), operation_id: None };
 
     let unreg_delivery = HostChannelDelivery::default();
     dlq.dispatch_or_enqueue(&unreg_delivery, "agent-1", "user-1", &msg1);
