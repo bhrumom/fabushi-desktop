@@ -244,8 +244,9 @@ use mahayana_host_runtime::extensions::host_upgrade::host_bundle_upgrade::{
     SAND_BOX_HOST_VERSION_PATH, read_local_host_version,
 };
 use mahayana_host_runtime::extensions::node_host::session_registry::{
-    NodeHostSessionMetadata, NodeHostSessionRegistry,
+    NodeHostSessionLease, NodeHostSessionMetadata, NodeHostSessionRegistry,
 };
+use mahayana_host_runtime::extensions::node_host::invocation_registry::NodeHostInvocationRegistry;
 use mahayana_host_runtime::host_production_extensions::{
     CURRENT_SHIPPING_PRODUCTION_EXTENSION_IDS, start_production_host_box_extensions,
     start_production_host_extensions,
@@ -1124,6 +1125,8 @@ struct UnifiedGatewayApi {
     last_busy_at_ms: Mutex<u64>,
     device_pairing: Arc<DevicePairingOwner>,
     node_host_sessions: Arc<NodeHostSessionRegistry>,
+    node_host_invocations: Arc<NodeHostInvocationRegistry>,
+    node_host_local_session: NodeHostSessionLease,
 }
 
 #[derive(Clone)]
@@ -3839,7 +3842,7 @@ impl UnifiedGatewayApi {
             .filter(|s| !s.is_empty())
             .ok_or_else(|| GatewayCommandError::BadRequest("node.invoke requires command".into()))?;
 
-        let _ = args.get("idempotencyKey")
+        let invoke_id = args.get("idempotencyKey")
             .and_then(serde_json::Value::as_str)
             .map(str::trim)
             .filter(|s| !s.is_empty())
@@ -3860,6 +3863,10 @@ impl UnifiedGatewayApi {
                 "unsupported local node command: {command}"
             )));
         }
+        let admission = self
+            .node_host_invocations
+            .admit(&self.node_host_local_session, invoke_id)
+            .map_err(GatewayCommandError::BadRequest)?;
         let params = args.get("params").unwrap_or(&serde_json::Value::Null);
         let shell_command = params
             .get("command")
@@ -3891,7 +3898,9 @@ impl UnifiedGatewayApi {
             .local_exec
             .sandbox(Arc::clone(&self.local_tool_permission))
             .execute_shell(&scope, shell_command, working_directory, tool_call_id)
-            .map_err(|error| GatewayCommandError::Internal(error.to_string()))?;
+            .map_err(|error| GatewayCommandError::Internal(error.to_string()));
+        let _ = self.node_host_invocations.settle(&admission);
+        let result = result?;
 
         Ok(serde_json::json!({
             "ok": true,
@@ -13710,6 +13719,7 @@ fn main() {
         gateway_local: true,
     });
     let _ = node_host_sessions.set_active(&local_session, true);
+    let node_host_invocations = Arc::new(NodeHostInvocationRegistry::new());
 
     let gateway_api = Arc::new(UnifiedGatewayApi {
             host_tx: host_tx.clone(),
@@ -13760,6 +13770,8 @@ fn main() {
             last_busy_at_ms: Mutex::new(gateway_started_at),
             device_pairing,
             node_host_sessions,
+            node_host_invocations,
+            node_host_local_session: local_session,
         });
     *host_upgrade_gateway_slot
         .lock()
