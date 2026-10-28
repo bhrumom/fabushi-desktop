@@ -33,10 +33,27 @@ jobs:
         run: |
           set -euo pipefail
           test "$(git rev-parse HEAD)" = "${TDRP_TARGET_SHA}"
+      - name: Verify Revision 9 validator contracts
+        run: node --test scripts/validate-tdrp-revision9-authority.contract.test.mjs scripts/discover-tdrp-upstream-delta.contract.test.mjs scripts/tdrp-upstream-candidate.contract.test.mjs scripts/discover-tdrp-candidate-root-inventory.contract.test.mjs
+      - name: Initialize authority artifact directory
+        run: mkdir -p artifacts/tdrp-authority
+      - name: Discover exact upstream delta
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: node scripts/discover-tdrp-upstream-delta.mjs
+      - name: Record exact candidate root inventory
+        run: node scripts/discover-tdrp-candidate-root-inventory.mjs
       - name: Validate Revision 9 source authority
         env:
           GITHUB_TOKEN: ${{ github.token }}
-        run: node scripts/validate-tdrp-revision9-authority.mjs
+        run: |
+          set -o pipefail
+          # Preserve a machine-readable diagnostic artifact when the
+          # fail-closed validator exits before it can write its success report.
+          cat > artifacts/tdrp-authority/authority-report.json <<JSON
+          {"status":"validator-failed-before-report","target_commit":"${TDRP_TARGET_SHA}"}
+          JSON
+          node scripts/validate-tdrp-revision9-authority.mjs 2>&1 | tee artifacts/tdrp-authority/validator.log
       - name: Assert source closure remains fail-closed
         shell: bash
         run: |
@@ -162,6 +179,13 @@ jobs:
         with:
           ref: ${{ env.TDRP_TARGET_SHA }}
           fetch-depth: 1
+      - name: Assert exact checkout
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${TDRP_TARGET_SHA}"
+      - name: Verify Revision 9 validator contracts
+        run: node --test scripts/validate-tdrp-revision9-authority.contract.test.mjs scripts/discover-tdrp-upstream-delta.contract.test.mjs scripts/tdrp-upstream-candidate.contract.test.mjs scripts/discover-tdrp-candidate-root-inventory.contract.test.mjs
       - name: Verify full source-closure mode rejects current open baseline
         shell: bash
         env:
@@ -173,7 +197,7 @@ jobs:
             echo "full source-closure gate unexpectedly passed before P0 closure" >&2
             exit 1
           fi
-          grep -E 'accepted mode requires|G-INVENTORY' accepted.log
+          grep -E 'accepted mode requires|G-INVENTORY|upstream dev advanced|rebaseline required' accepted.log
           echo "Fail-closed source-closure gate correctly rejected the unclosed baseline."
 
   recursive-root-authority-shards:

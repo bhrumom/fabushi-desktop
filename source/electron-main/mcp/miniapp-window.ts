@@ -210,11 +210,17 @@ function isAllowedReportExport(appId: string, item: MiniAppDownloadItem, content
       : appId === "org.fabushi.chatgpt-auto-confirm"
         ? "chatgpt-auto-confirm-local-report.json"
         : null;
-    return expectedFilename !== null && contents === owner && item.hasUserGesture() && blob.protocol === "blob:" && matchesOrigin(new URL(blob.pathname), origin)
+    const compatibleFilename = filename === expectedFilename
+      || (appId === "org.fabushi.global-dandelion" && filename === "global-dandelion-session.json");
+    const blobOwner = blob.protocol === "blob:" && (blob.origin === origin || blob.pathname.startsWith(`${origin}/`));
+    const totalBytes = item.getTotalBytes();
+    const receivedBytes = item.getReceivedBytes();
+    return expectedFilename !== null && compatibleFilename && contents === owner && item.hasUserGesture() && blobOwner
       && item.getMimeType().split(";")[0]?.trim().toLowerCase() === "application/json"
-      && filename === expectedFilename
-      && item.getTotalBytes() > 0 && item.getTotalBytes() <= MAX_REPORT_BYTES
-      && item.getReceivedBytes() >= 0 && item.getReceivedBytes() <= MAX_REPORT_BYTES;
+      // Chromium may report zero for a blob download before the first update;
+      // the updated handler enforces the bounded size once bytes arrive.
+      && (totalBytes < 0 || totalBytes <= MAX_REPORT_BYTES)
+      && (receivedBytes < 0 || receivedBytes <= MAX_REPORT_BYTES);
   } catch { return false; }
 }
 

@@ -58,7 +58,7 @@ Repository: `bhrumom/fabushi-desktop`
 
 Revision 3 读取：main `860f03a8553c779fe006c7826f190c3014a571dc`；PR #20 已合并（merge `ee66bacdf47f36af2ae96c0a8a8ec401460426e7`）。每次执行重新读取 live refs，不能继续把 PR #20 当作未合并工作分支。
 
-上游 discovery HEAD 已 rebaseline 到 `72b3b71c3d6e450e5ef94a3112dd750a0168aa0b`（tree `b4095fab77f923fca2a4b99d710ec333aa6757ab`）；`f23c37857220eb84f8559f0901ea26fb304b564b` 与 `33261535a0e747f125e0ed25486f01e556330677` 均降为历史证据。机器 lock/inventory/ledger/dossiers 已重绑新 identity，但 source completeness 仍 open，旧 Actions 不得证明新 baseline 完整。
+当前 live `main` exact HEAD 为 `16aae12ea258f6a872a46aa47824766f64e1bdca`。上游 `dev` 的 exact-head candidate 为 `a7f453612f4896ac04d0007a36ab0d377e5bcbcf`（tree `c539eabfb05e7dcaa84821ac44c35cdfb6551ae5`），相对锁定 baseline 有 182 added / 6 removed / 402 modified；它仍是未接受 candidate，不得被旧 Actions 证据隐式接受。机器 candidate authority 位于 `projects/telegram-desktop-rust/upstream.candidate.json`，source completeness 仍 open。
 
 ## Next task / completion
 

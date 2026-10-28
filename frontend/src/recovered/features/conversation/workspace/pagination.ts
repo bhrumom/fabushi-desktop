@@ -86,12 +86,26 @@ function isCapabilityUnavailableFailure(error: unknown): boolean {
     || candidate.failure?.code === "source/capability-unavailable";
 }
 
-function uniqueEntries(entries: readonly ConversationTranscriptEntry[], excludedIds = new Set<string>()): ConversationTranscriptEntry[] {
+function transcriptClientNonce(entry: ConversationTranscriptEntry): string | null {
+  return entry.kind === "message" && entry.clientNonce != null && entry.clientNonce.length > 0
+    ? entry.clientNonce
+    : null;
+}
+
+function uniqueEntries(
+  entries: readonly ConversationTranscriptEntry[],
+  excludedIds = new Set<string>(),
+  excludedClientNonces = new Set<string>()
+): ConversationTranscriptEntry[] {
   const seen = new Set(excludedIds);
+  const seenClientNonces = new Set(excludedClientNonces);
   const result: ConversationTranscriptEntry[] = [];
   for (const entry of entries) {
     if (seen.has(entry.id)) continue;
+    const clientNonce = transcriptClientNonce(entry);
+    if (clientNonce != null && seenClientNonces.has(clientNonce)) continue;
     seen.add(entry.id);
+    if (clientNonce != null) seenClientNonces.add(clientNonce);
     result.push(entry);
   }
   return result;
@@ -102,7 +116,14 @@ export function mergeOlderTranscriptEntries(
   olderEntries: readonly ConversationTranscriptEntry[]
 ): ConversationTranscriptEntry[] {
   const currentIds = new Set(currentEntries.map((entry) => entry.id));
-  return [...uniqueEntries(olderEntries, currentIds), ...uniqueEntries(currentEntries)];
+  const currentClientNonces = new Set(currentEntries.flatMap((entry) => {
+    const clientNonce = transcriptClientNonce(entry);
+    return clientNonce == null ? [] : [clientNonce];
+  }));
+  return [
+    ...uniqueEntries(olderEntries, currentIds, currentClientNonces),
+    ...uniqueEntries(currentEntries)
+  ];
 }
 
 export function createTranscriptPaginationController(

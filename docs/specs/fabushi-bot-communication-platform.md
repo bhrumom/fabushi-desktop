@@ -27,14 +27,14 @@ Implementation status: **requirements updated; full migration not accepted**
 
 ## 2. 当前事实与版本权威
 
-2026-10-07 本次规范修订读取到：
+2026-10-07 本次规范修订读取到（以下历史快照不替代 live authority）：
 
 - Fabushi `main`: `860f03a8553c779fe006c7826f190c3014a571dc`。
 - PR #20 已于 2026-10-04 合并；PR head 为 `798cf51d96cb1cb98cf657af212bb47274ccb701`，merge commit 为 `ee66bacdf47f36af2ae96c0a8a8ec401460426e7`。这记录合并事实，不替代原 Bot 的验收证据。
 - tdesktop `dev` discovery HEAD: `f23c37857220eb84f8559f0901ea26fb304b564b`。
 - 旧迁移文档基线：`33261535a0e747f125e0ed25486f01e556330677`。旧清单与证据不能证明上述新 discovery HEAD 已被覆盖。
 
-上述 SHA 是本次读取快照，不是永远的 latest。每轮执行重新读取 live refs；目标是合并 PR #20 后的当前 canonical Fabushi，而不是回退到旧 PR 分支。TDRP 必须在 GitHub Actions 内把最新确认的上游 exact SHA、完整树和递归依赖锁成一致 baseline，记录与旧 baseline 的新增/删除/修改差异。锁文件、inventory、ledger、行为合同一致前，`baseline_ready=false`。本次仅修订 spec，不宣称已完成 rebaseline。
+上述 SHA 是历史读取快照，不是当前 live authority。当前 `main` exact HEAD 为 `16aae12ea258f6a872a46aa47824766f64e1bdca`；当前 tdesktop `dev` candidate 为 `a7f453612f4896ac04d0007a36ab0d377e5bcbcf`，完整树差异已由 exact-head Actions 记录为 182 added / 6 removed / 402 modified。目标仍是当前 canonical Fabushi，而不是回退到旧 PR 分支。TDRP 必须在 GitHub Actions 内把最新确认的上游 exact SHA、完整树和递归依赖锁成一致 baseline，记录与旧 baseline 的新增/删除/修改差异。锁文件、inventory、ledger、行为合同一致前，`baseline_ready=false`。当前 source authority 仍未完成 rebaseline，本规范不宣称迁移完成。
 
 后续 upstream 更新必须显式 rebaseline，受影响证据失效并重新取得；不得用浮动 `dev` 验收，也不得悄悄继承旧 verified 状态。既有 Bot 完整迁移/合并/验收硬门不能因本规范被绕过。
 

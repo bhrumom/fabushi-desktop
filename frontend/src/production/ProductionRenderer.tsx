@@ -150,6 +150,11 @@ import {
   projectTranscriptEntry,
   projectTranscriptFeedEntries,
   projectTranscriptPageResult,
+  reconcileAuthoritativeTranscriptBaseline,
+  reconcileLateInitialTranscriptPage,
+  reconcileTranscriptFeedBaseline,
+  reconcileTranscriptFeedUpdate,
+  mergeAuthoritativeTranscriptMessage,
   type DeepLinkInfo,
   type RendererAgent
 } from "./model";
@@ -325,99 +330,6 @@ function optimisticAcknowledgementEntries(nonce: string, attachments: readonly {
     { id: `pending-${nonce}`, kind: "message" as const, clientNonce: nonce },
     ...attachments.map((_, index) => ({ id: `pending-${nonce}:attachment-${index}`, kind: "user-attachment" as const, clientNonce: nonce }))
   ];
-}
-
-function mergeTranscriptAttachments(
-  current: readonly DraftAttachment[] | undefined,
-  incoming: readonly DraftAttachment[] | undefined
-): DraftAttachment[] {
-  const merged = [...(current ?? [])];
-  for (const attachment of incoming ?? []) {
-    const index = merged.findIndex((candidate) => candidate.path === attachment.path);
-    if (index < 0) merged.push(attachment);
-    else merged[index] = { ...merged[index], ...attachment };
-  }
-  return merged;
-}
-
-function mergeAuthoritativeTranscriptMessage(
-  current: TranscriptMessage,
-  incoming: TranscriptMessage,
-  options: { preserveCurrentId?: boolean } = {}
-): TranscriptMessage {
-  return {
-    ...current,
-    ...incoming,
-    id: options.preserveCurrentId ? current.id : incoming.id,
-    text: incoming.text.length > 0 ? incoming.text : current.text,
-    attachments: mergeTranscriptAttachments(current.attachments, incoming.attachments),
-    clientNonce: incoming.clientNonce ?? current.clientNonce,
-    delivery: incoming.delivery ?? current.delivery,
-  };
-}
-
-function transcriptEntriesCorrelate(left: ConversationTranscriptEntry, right: ConversationTranscriptEntry): boolean {
-  if (left.id === right.id) return true;
-  return left.kind === "message"
-    && right.kind === "message"
-    && left.clientNonce != null
-    && right.clientNonce != null
-    && left.clientNonce === right.clientNonce;
-}
-
-function reconcileAuthoritativeTranscriptBaseline(
-  current: readonly ConversationTranscriptEntry[],
-  incoming: readonly ConversationTranscriptEntry[],
-): ConversationTranscriptEntry[] {
-  const baseline = incoming.map((entry) => {
-    if (entry.kind !== "message") return entry;
-    const previous = current.find((candidate): candidate is TranscriptMessage =>
-      candidate.kind === "message"
-      && (
-        candidate.id === entry.id
-        || (entry.clientNonce != null && candidate.clientNonce === entry.clientNonce)
-      )
-    );
-    return previous == null ? entry : mergeAuthoritativeTranscriptMessage(previous, entry);
-  });
-  const unresolvedOptimistic = current.filter((entry): entry is TranscriptMessage =>
-    entry.kind === "message"
-    && entry.role === "user"
-    && entry.clientNonce != null
-    && entry.id.startsWith("pending-")
-    && !incoming.some((incomingEntry) => transcriptEntriesCorrelate(incomingEntry, entry))
-  );
-  return [...baseline, ...unresolvedOptimistic];
-}
-
-/**
- * The transcript feed may deliver an appended/updated event before its initial
- * snapshot when the renderer subscribes during an active turn. A snapshot is
- * authoritative for older history, but it must not erase a newer live event
- * that this exact feed subscription already observed.
- */
-function reconcileTranscriptFeedBaseline(
-  current: readonly ConversationTranscriptEntry[],
-  incoming: readonly ConversationTranscriptEntry[],
-  preBaselineEntryIds: ReadonlySet<string>,
-): ConversationTranscriptEntry[] {
-  const baseline = reconcileAuthoritativeTranscriptBaseline(current, incoming);
-  const arrivedAfterSnapshot = current.filter((entry) =>
-    preBaselineEntryIds.has(entry.id)
-    && !baseline.some((candidate) => transcriptEntriesCorrelate(candidate, entry))
-  );
-  return [...baseline, ...arrivedAfterSnapshot];
-}
-
-function reconcileLateInitialTranscriptPage(
-  current: readonly ConversationTranscriptEntry[],
-  incoming: readonly ConversationTranscriptEntry[],
-): ConversationTranscriptEntry[] {
-  const baseline = reconcileAuthoritativeTranscriptBaseline(current, incoming);
-  const arrivedWhileLoading = current.filter((currentEntry) =>
-    !incoming.some((incomingEntry) => transcriptEntriesCorrelate(incomingEntry, currentEntry))
-  );
-  return [...baseline, ...arrivedWhileLoading];
 }
 
 function moveAgentsToSidebarSection(sections: readonly SidebarSection[], agentIds: readonly string[], sectionId: string): SidebarSection[] | null {
@@ -2882,14 +2794,9 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
         rememberPreBaselineFeedEntry(ownerId, projected.id);
         setEntriesByAgent((current) => {
           const existing = current[ownerId] ?? [];
-          if (!existing.some((entry) => entry.id === projected.id)) return current;
           return {
             ...current,
-            [ownerId]: existing.map((entry) =>
-              entry.id === projected.id && entry.kind === "message" && projected.kind === "message"
-                ? mergeAuthoritativeTranscriptMessage(entry, projected)
-                : entry.id === projected.id ? projected : entry
-            )
+            [ownerId]: reconcileTranscriptFeedUpdate(existing, projected)
           };
         });
       },

@@ -35,6 +35,10 @@ During the 2026-10-19 PR #126 exact-head reconciliation, the preceding lock targ
 
 ## Metrics
 
+## 2026-10-26 live candidate update
+
+Exact-head GitHub Actions re-read `refs/heads/dev` at commit `a7f453612f4896ac04d0007a36ab0d377e5bcbcf` (tree `c539eabfb05e7dcaa84821ac44c35cdfb6551ae5`). Complete-tree delta discovery compared it with the locked `351204f3695b4a39bc3f4d2f230c061b9a01fe2a` baseline and found 182 added, 6 removed, and 402 modified non-directory entries (590 changed paths total); the candidate root contains 6,893 non-directory entries. The candidate is recorded in `upstream.candidate.json`, but remains unaccepted: recursive child closure, external acquisition closure, semantic reading, and responsibility decomposition are still pending. The source-authority validator correctly fails closed on this exact drift.
+
 Report separately:
 - accepted upstream baseline completeness;
 - source file read coverage;

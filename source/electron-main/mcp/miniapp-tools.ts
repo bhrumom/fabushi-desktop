@@ -65,6 +65,7 @@ export interface MiniAppToolBackend {
   readState(): Promise<unknown>;
   pick(mode: "files" | "directory", limits: { readonly maxFiles: number; readonly maxBytes: number }): Promise<{ readonly selectionId: string; readonly entries: MiniAppSelectionEntry[] } | null>;
   release(selectionId: string): Promise<void>;
+  compose?(text: string, selectionId?: string): Promise<{ readonly selectionId: string; readonly entries: MiniAppSelectionEntry[] }>;
   send(config: MiniAppTransferSendConfig): Promise<{ readonly operationId: string }>;
   receive?(config: MiniAppReceiveConfig): Promise<{ readonly operationId: string }>;
   status(operationId: string): Promise<unknown>;
@@ -139,6 +140,11 @@ function handlersFor(backend: MiniAppToolBackend): Map<string, { capability: Min
     ["selection.release", MINIAPP_CAPABILITY.SELECTION, false, async (args) => {
       await backend.release(requiredId(args, "selectionId"));
       return { ok: true };
+    }],
+    ["selection.compose", MINIAPP_CAPABILITY.SELECTION, false, async (args) => {
+      if (!backend.compose) return fail("CAPABILITY_UNAVAILABLE", "宿主未提供文字暂存能力");
+      const text = typeof args.text === "string" ? args.text : "";
+      return { ok: true, data: await backend.compose(text, typeof args.selectionId === "string" ? args.selectionId : undefined) };
     }],
     ["transfer.send", MINIAPP_CAPABILITY.TRANSFER, true, async (args) => {
       const transferConfig = {

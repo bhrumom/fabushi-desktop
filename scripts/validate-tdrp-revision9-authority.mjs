@@ -60,6 +60,7 @@ async function gitlabRaw(project, sha, file) {
 }
 
 const lock=await readJson('projects/telegram-desktop-rust/upstream.lock.json');
+const inventoryIndex=await readJson('projects/telegram-desktop-rust/inventory/index.json');
 const schema=await readJson('projects/telegram-desktop-rust/contracts/parity-ledger.schema.json');
 const spec=await read('docs/specs/telegram-desktop-rust-equivalence-migration.md');
 const rtm=await read('projects/fabushi-communication-platform/quality/requirements-traceability-matrix.md');
@@ -67,6 +68,14 @@ const ledger=await readJson('projects/telegram-desktop-rust/parity-ledger.json')
 const acquisitionInventory=await readJson('projects/telegram-desktop-rust/inventory/build-time-acquisitions.json');
 
 fail(lock.project_id==='TDRP-001' && lock.spec_revision===9,'lock is not TDRP Revision 9');
+fail(inventoryIndex.project_id==='TDRP-001' && inventoryIndex.spec_revision===9,'inventory index is not TDRP Revision 9');
+fail(inventoryIndex.upstream?.repository===lock.upstream.repository,'inventory index upstream repository drift');
+fail(inventoryIndex.upstream?.commit===lock.upstream.commit,'inventory index upstream commit drift');
+fail(inventoryIndex.upstream?.tree===lock.upstream.tree,'inventory index upstream tree drift');
+fail(inventoryIndex.inventory?.recursive_non_directory_entries===lock.coverage.recursive_source_entries_total,'inventory index recursive entry count drift');
+fail(lock.coverage.unknown_minimum<=inventoryIndex.inventory?.unknown_minimum,'lock unknown coverage exceeds inventory baseline');
+fail(lock.coverage.unread_minimum<=inventoryIndex.inventory?.unread_minimum,'lock unread coverage exceeds inventory baseline');
+fail(inventoryIndex.inventory?.omitted_known===lock.coverage.omitted_known,'inventory index omitted count drift');
 fail(schema.properties?.spec_revision?.const===9,'ledger schema is not Revision 9');
 fail(ledger.project_id==='TDRP-001' && ledger.spec_revision===9 && ledger.format_version===3,'ledger instance is not Revision 9');
 fail(ledger.upstream_commit===lock.upstream.commit,'ledger upstream commit does not match accepted baseline identity');

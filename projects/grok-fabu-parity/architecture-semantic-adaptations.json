@@ -22,7 +22,7 @@
       "referencePath": "frontend/src/production/ProductionRenderer.tsx",
       "expectedBaseParityMode": "reference-copy",
       "parityMode": "typescript-port",
-      "targetBlobSha": "26dcb2aad353551e6e8f8468f7ce3a63335730ce",
+    "targetBlobSha": "e25e511eb93baf9e54724bfcc4d3caa368b4c54c",
       "behavioralEvidence": [
         "frontend/src/production/ProductionRenderer.tsx",
         "frontend/src/recovered/features/account/session/sign-in-status.tsx",
@@ -66,7 +66,7 @@
       "referencePath": "frontend/src/production/model.ts",
       "expectedBaseParityMode": "reference-copy",
       "parityMode": "typescript-port",
-      "targetBlobSha": "a8607a383ec32f6fba7142bd7ce8ae93f6af7dc5",
+    "targetBlobSha": "6f86a4e6f4dfac6282bf5ff3cdbc17684df98fc2",
       "behavioralEvidence": [
         "frontend/src/production/model.ts",
         "frontend/src/production/coordinator-client.ts"
@@ -1440,6 +1440,51 @@
         ".github/workflows/rust-desktop-runtime.yml"
       ],
       "rationale": "The user explicitly requires removing Cursor services while retaining Fabushi capabilities. Preserve native application menu roles, shortcuts, window ownership and feedback callbacks; change only Help Center navigation to the existing Fabushi repository support entry. This is a source-locked product adaptation, not a service-migration or packaged-release acceptance claim."
+    },
+    {
+      "referencePath": "frontend/src/production/command-palette-provider.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "78891b1f144dbb5b62b00a3b4dca393c29b7e63a",
+      "behavioralEvidence": [
+        "frontend/src/production/command-palette-provider.ts",
+        "frontend/src/production/command-palette-model.ts"
+      ],
+      "testEvidence": [
+        "frontend/src/production/command-palette-provider.contract.test.ts",
+        ".github/workflows/production-transcript-search-contract.yml"
+      ],
+      "rationale": "Keeps the existing canonical Command Palette provider registry while adapting routine projection to a stable agentId plus automation-id key. This prevents duplicate routine rows when providers replay the same automation and does not create a second task or search owner."
+    },
+    {
+      "referencePath": "frontend/src/production/command-palette-search-provider.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "20028dd24944a2312117d0a113d35fc78676cac0",
+      "behavioralEvidence": [
+        "frontend/src/production/command-palette-search-provider.ts",
+        "frontend/src/production/command-palette-model.ts"
+      ],
+      "testEvidence": [
+        "frontend/src/production/command-palette-search-provider.contract.test.ts",
+        ".github/workflows/production-transcript-search-contract.yml"
+      ],
+      "rationale": "Keeps blank-query behavior inside the canonical Search provider: whitespace-only input publishes an empty result set and avoids a remote search request, preserving cancellation and stale-result fencing without introducing a parallel index."
+    },
+    {
+      "referencePath": "frontend/src/recovered/features/conversation/workspace/pagination.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "60bae0ffdd80c64b100729a569fed5fffd128b28",
+      "behavioralEvidence": [
+        "frontend/src/recovered/features/conversation/workspace/pagination.ts",
+        "frontend/src/production/model.ts"
+      ],
+      "testEvidence": [
+        "frontend/src/recovered/features/conversation/workspace/pagination.contract.test.ts",
+        ".github/workflows/production-transcript-search-contract.yml"
+      ],
+      "rationale": "Keeps older-page history on the existing pagination owner while deduplicating both canonical entry ids and message client nonces. Late or overlapping pages therefore cannot duplicate optimistic/authoritative rows in the canonical transcript."
     }
   ]
 }

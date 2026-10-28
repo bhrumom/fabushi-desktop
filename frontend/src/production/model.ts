@@ -287,6 +287,68 @@ export interface ProjectedUserAttachmentMessage extends TranscriptMessage {
 
 export type ProductionTranscriptEntry = ConversationTranscriptEntry | ProjectedUserAttachmentMessage;
 
+export function transcriptEntriesCorrelate(left: ConversationTranscriptEntry, right: ConversationTranscriptEntry): boolean {
+  if (left.id === right.id) return true;
+  return left.kind === "message" && right.kind === "message"
+    && left.clientNonce != null && right.clientNonce != null
+    && left.clientNonce === right.clientNonce;
+}
+
+function mergeTranscriptAttachments(current: readonly DraftAttachment[] | undefined, incoming: readonly DraftAttachment[] | undefined): DraftAttachment[] {
+  const merged = [...(current ?? [])];
+  for (const attachment of incoming ?? []) {
+    const index = merged.findIndex((candidate) => candidate.path === attachment.path);
+    if (index < 0) merged.push(attachment);
+    else merged[index] = { ...merged[index], ...attachment };
+  }
+  return merged;
+}
+
+export function mergeAuthoritativeTranscriptMessage(current: TranscriptMessage, incoming: TranscriptMessage, options: { preserveCurrentId?: boolean } = {}): TranscriptMessage {
+  return {
+    ...current,
+    ...incoming,
+    id: options.preserveCurrentId ? current.id : incoming.id,
+    text: incoming.text.length > 0 ? incoming.text : current.text,
+    attachments: mergeTranscriptAttachments(current.attachments, incoming.attachments),
+    clientNonce: incoming.clientNonce ?? current.clientNonce,
+    delivery: incoming.delivery ?? current.delivery,
+  };
+}
+
+export function reconcileAuthoritativeTranscriptBaseline(current: readonly ConversationTranscriptEntry[], incoming: readonly ConversationTranscriptEntry[]): ConversationTranscriptEntry[] {
+  const baseline = incoming.map((entry) => {
+    if (entry.kind !== "message") return entry;
+    const previous = current.find((candidate): candidate is TranscriptMessage => candidate.kind === "message" && (candidate.id === entry.id || (entry.clientNonce != null && candidate.clientNonce === entry.clientNonce)));
+    return previous == null ? entry : mergeAuthoritativeTranscriptMessage(previous, entry);
+  });
+  const unresolvedOptimistic = current.filter((entry): entry is TranscriptMessage => entry.kind === "message" && entry.role === "user" && entry.clientNonce != null && entry.id.startsWith("pending-") && !incoming.some((incomingEntry) => transcriptEntriesCorrelate(incomingEntry, entry)));
+  return [...baseline, ...unresolvedOptimistic];
+}
+
+export function reconcileTranscriptFeedBaseline(current: readonly ConversationTranscriptEntry[], incoming: readonly ConversationTranscriptEntry[], preBaselineEntryIds: ReadonlySet<string>): ConversationTranscriptEntry[] {
+  const baseline = reconcileAuthoritativeTranscriptBaseline(current, incoming);
+  const arrivedAfterSnapshot = current.filter((entry) => preBaselineEntryIds.has(entry.id) && !baseline.some((candidate) => transcriptEntriesCorrelate(candidate, entry)));
+  return [...baseline, ...arrivedAfterSnapshot];
+}
+
+export function reconcileTranscriptFeedUpdate(current: readonly ConversationTranscriptEntry[], incoming: ConversationTranscriptEntry): ConversationTranscriptEntry[] {
+  const correlatedIndex = current.findIndex((entry) => transcriptEntriesCorrelate(entry, incoming));
+  if (correlatedIndex < 0) return [...current, incoming];
+  const correlated = current[correlatedIndex];
+  const next = [...current];
+  next[correlatedIndex] = correlated.kind === "message" && incoming.kind === "message"
+    ? mergeAuthoritativeTranscriptMessage(correlated, incoming)
+    : incoming;
+  return next;
+}
+
+export function reconcileLateInitialTranscriptPage(current: readonly ConversationTranscriptEntry[], incoming: readonly ConversationTranscriptEntry[]): ConversationTranscriptEntry[] {
+  const baseline = reconcileAuthoritativeTranscriptBaseline(current, incoming);
+  const arrivedWhileLoading = current.filter((currentEntry) => !baseline.some((baselineEntry) => transcriptEntriesCorrelate(baselineEntry, currentEntry)));
+  return [...baseline, ...arrivedWhileLoading];
+}
+
 function projectPermissionRequestEntry(value: Record<string, unknown>, id: string, timestampMs: number): TranscriptPermissionRequest | null {
   const message = isRecord(value.message) && value.message.type === "permission-request" ? value.message : null;
   if (message == null || !isRecord(message.permission) || typeof message.permission.title !== "string" || message.permission.title.trim().length === 0) return null;

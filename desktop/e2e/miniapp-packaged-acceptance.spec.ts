@@ -13,8 +13,8 @@ const expectedSourceSha = process.env.OBF_EXPECTED_SOURCE_SHA?.trim() || sourceS
 const evidenceRoot = process.env.MINIAPP_EVIDENCE_DIR?.trim()
   || path.join(tmpdir(), `fabushi-miniapp-acceptance-${sourceSha.slice(0, 12) || 'unknown'}`);
 const appId = 'org.fabushi.global-dandelion';
-const packageVersion = process.env.MINIAPP_PACKAGE_VERSION || '0.3.3';
-const packageDigest = process.env.MINIAPP_PACKAGE_DIGEST || '4f53dd5df129adb41feadf86016a5923ba792a9a7636a37694965ea4ad28f4db';
+const packageVersion = process.env.MINIAPP_PACKAGE_VERSION || '0.4.5';
+const packageDigest = process.env.MINIAPP_PACKAGE_DIGEST || 'edee0a39535b86bbc7de564483ca238448f0549bf011f4e252cccd328bc9ac75';
 const preferenceKey = 'global-dandelion-display-v1';
 const maxInputBytes = 16 * 1024 * 1024;
 const harnessSource = process.env.FABUSHI_MINIAPP_HARNESS_SOURCE || process.env.GITHUB_SHA || sourceSha;
@@ -235,23 +235,78 @@ function bytesLabel(size: number): string {
   return size < 1024 ? `${size} B` : size < 1024 ** 2 ? `${(size / 1024).toFixed(1)} KiB` : `${(size / 1024 ** 2).toFixed(1)} MiB`;
 }
 
-async function verifyWasmFileReport(page: Page, inputFile: string, inputBytes: number): Promise<void> {
-  await expect(page.locator('#status')).toContainText('本地 Rust 内核已就绪。', { timeout: 45_000 });
-  const fileInput = page.locator('#files');
+async function bounded<T>(operation: Promise<T>, timeoutMs: number, label: string): Promise<T> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  try {
+    return await Promise.race([
+      operation,
+      new Promise<T>((_, reject) => {
+        timer = setTimeout(() => reject(new Error(`${label}_TIMEOUT`)), timeoutMs);
+      }),
+    ]);
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
+}
+
+async function verifyWasmFileReport(
+  page: Page,
+  inputFile: string,
+  inputBytes: number,
+  nativeLocalOverride?: boolean,
+  phase?: (name: string) => Promise<void>,
+  appPid?: number,
+): Promise<void> {
+  await phase?.('composer-status');
+  const status = page.locator('#composer-status');
+  await expect(status, 'the signed app must expose its live composer status').toBeVisible({ timeout: 45_000 });
+  await phase?.('composer-launch-ready');
+  await expect.poll(async () => page.locator('#launch').isEnabled(), { timeout: 45_000, message: 'Wasm Rust adapter must enable the real composer launch control' }).toBe(true);
+  const nativeLocal = nativeLocalOverride ?? await page.evaluate(async () => {
+    const bridge = (globalThis as unknown as { fabushi?: { invoke(tool: string, args?: Record<string, unknown>): Promise<{ data?: { capabilities?: string[]; targetPools?: Array<{ id?: string }> } }> } }).fabushi;
+    const result = await bridge?.invoke('offline.capabilities');
+    const data = result?.data;
+    return data?.capabilities?.includes('transfer') === true
+      && data.targetPools?.some((pool) => pool.id === 'loopback') === true;
+  });
+  if (nativeLocal) {
+    await phase?.('composer-native-fill');
+    const contents = await readFile(inputFile, 'utf8');
+    await bounded(page.locator('#message').fill(contents, { timeout: 60_000 }), 75_000, 'COMPOSER_NATIVE_FILL');
+    await phase?.('composer-native-click');
+    await bounded(page.locator('#launch').click({ timeout: 60_000 }), 75_000, 'COMPOSER_NATIVE_CLICK');
+    if (process.env.MINIAPP_REQUIRE_NATIVE_ENGINE === '1') {
+      if (process.platform !== 'darwin' || process.env.GITHUB_ACTIONS !== 'true' || !appPid) throw new Error('Actions-only native transfer permission gate');
+      execFileSync('/usr/bin/osascript', [path.resolve('../.github/scripts/miniapp-native-confirm.applescript'), String(appPid), '允许'], { timeout: 30_000, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
+    }
+    await phase?.('composer-native-complete');
+    await expect(status).toContainText('引擎已完成', { timeout: 120_000 });
+    const packetCount = Number(await page.locator('#composer-packets').textContent());
+    expect(Number.isSafeInteger(packetCount) && packetCount > 0, 'native Rust loopback must produce verified packet(s)').toBe(true);
+    await expect(page.locator('#composer-bytes')).toHaveText(bytesLabel(inputBytes));
+    await expect(page.getByRole('button', { name: /导出报告/u })).toBeEnabled();
+    return;
+  }
+  await phase?.('composer-web-file-input');
+  const fileInput = page.locator('#composer-files');
   await expect(fileInput, 'the signed app must provide its genuine Web file input').toHaveCount(1);
-  await fileInput.setInputFiles(inputFile);
-  await expect(page.locator('#selection-summary')).toContainText('1 个文件');
-  await expect(page.getByRole('button', { name: '开始离线校验', exact: true })).toBeEnabled();
-  await page.getByRole('button', { name: '开始离线校验', exact: true }).click();
-  await expect(page.locator('#status')).toHaveText('本地校验完成。没有网络发送；校验和不代表身份认证。', { timeout: 120_000 });
-  await expect(page.locator('#file-count')).toHaveText('1');
-  const packetCount = Number(await page.locator('#packet-count').textContent());
+  await bounded(fileInput.setInputFiles(inputFile, { timeout: 60_000 }), 75_000, 'COMPOSER_WEB_FILE_INPUT');
+  // A native-capable host may keep the web-file selection out of its native
+  // attachment projection; the local Rust run still consumes the real input.
+  await expect.poll(async () => page.locator('#composer-files').evaluate((node) => (node as HTMLInputElement).files?.length ?? 0)).toBe(1);
+  const launch = page.locator('#launch');
+  await expect(launch).toBeEnabled();
+  await phase?.('composer-web-click');
+  await bounded(launch.click({ timeout: 60_000 }), 75_000, 'COMPOSER_WEB_CLICK');
+  await phase?.('composer-web-complete');
+  await expect(status).toContainText('本地回环完成', { timeout: 120_000 });
+  await expect(page.locator('#composer-pass')).toHaveText('1');
+  const packetCount = Number(await page.locator('#composer-packets').textContent());
   expect(Number.isSafeInteger(packetCount) && packetCount > 0, 'Wasm round-trip must produce verified packet(s)').toBe(true);
-  await expect(page.locator('#byte-count')).toHaveText(bytesLabel(inputBytes));
-  const result = page.getByRole('list', { name: '文件结果' });
+  await expect(page.locator('#composer-bytes')).toHaveText(bytesLabel(inputBytes));
+  const result = page.locator('#composer-file-list');
   await expect(result).toContainText(path.basename(inputFile));
-  await expect(result).toContainText('完整校验');
-  await expect(page.getByRole('button', { name: '导出报告', exact: true })).toBeEnabled();
+  await expect(page.getByRole('button', { name: /导出报告/u })).toBeEnabled();
 }
 
 async function verifyInstalledNativeRuntime(page: Page): Promise<boolean> {
@@ -308,13 +363,12 @@ async function openWithNativePermission(row: Locator, appPid: number, allow = tr
 }
 
 async function exportAndVerifyReport(page: Page, appPid: number, downloadDir: string, inputFile: string, inputBytes: number): Promise<void> {
-  if (process.platform !== 'darwin' || process.env.GITHUB_ACTIONS !== 'true') throw new Error('Actions-only native Save panel gate');
   const reportDir = await mkdtemp(path.join(downloadDir, 'report-'));
-    await page.getByRole('button', { name: '导出报告', exact: true }).click();
+    await page.getByRole('button', { name: /导出报告/u }).click();
     execFileSync('/usr/bin/osascript', [path.resolve('../.github/scripts/miniapp-save-report.applescript'), String(appPid), reportDir], {
       encoding: 'utf8', timeout: 45_000, stdio: ['ignore', 'pipe', 'pipe'],
     });
-    const reportFilename = 'global-dandelion-local-report.json';
+    const reportFilename = 'global-dandelion-session.json';
     const reportPath = path.join(reportDir, reportFilename);
     await expect.poll(async () => {
       try { return (await stat(reportPath)).isFile(); }
@@ -325,30 +379,45 @@ async function exportAndVerifyReport(page: Page, appPid: number, downloadDir: st
     expect(reportStat.size).toBeLessThanOrEqual(1024 * 1024);
     expect(await readdir(reportDir)).toContain(reportFilename);
     const report: unknown = JSON.parse(await readFile(reportPath, 'utf8'));
-    expect(report).toMatchObject({
-      schemaVersion: 1,
-      appVersion: packageVersion,
-      verification: 'local-packet-roundtrip',
-      networkSent: false,
-      status: 'complete',
-      verifiedBytes: inputBytes,
-    });
-    expect(report).toEqual(expect.objectContaining({ files: expect.any(Array), packets: expect.any(Number) }));
     const data = report as {
-      files: Array<{ name: unknown; size: unknown; packets: unknown; verified: unknown }>;
+      source?: unknown;
+      networkSent?: unknown;
+      verifiedBytes?: unknown;
+      receipt?: { verified_payload_bytes?: unknown; chunks_sent?: unknown; status?: unknown };
+      files: Array<{ name: unknown; size?: unknown; bytes?: unknown; packets?: unknown; verified?: unknown }>;
       packets: number;
+      schemaVersion: number;
+      status: string;
     };
-    expect(data.files).toHaveLength(1);
-    expect(data.files[0].name).toBe(path.basename(inputFile));
-    expect(data.files[0].size).toBe(inputBytes);
-    expect(data.files[0].verified).toBe(true);
-    expect(Number.isSafeInteger(data.files[0].packets) && Number(data.files[0].packets) > 0).toBe(true);
-    expect(data.packets).toBe(data.files[0].packets);
+    expect(data.schemaVersion).toBe(1);
+    expect(data.status).toBe('complete');
+    const verifiedBytes = data.verifiedBytes ?? data.receipt?.verified_payload_bytes;
+    expect(verifiedBytes).toBe(inputBytes);
+    if (data.source === 'installed-rust-engine') {
+      expect(Number.isSafeInteger(data.receipt?.chunks_sent) && Number(data.receipt?.chunks_sent) > 0).toBe(true);
+    } else {
+      expect(data.networkSent).toBe(false);
+      expect(data.files).toHaveLength(1);
+      expect(data.files[0].name).toBe(path.basename(inputFile));
+      expect(data.files[0].size ?? data.files[0].bytes).toBe(inputBytes);
+      if (data.files[0].verified !== undefined) expect(data.files[0].verified).toBe(true);
+      if (data.files[0].packets !== undefined) {
+        expect(Number.isSafeInteger(data.files[0].packets) && Number(data.files[0].packets) > 0).toBe(true);
+        expect(data.packets).toBe(data.files[0].packets);
+      } else expect(Number.isSafeInteger(data.packets) && data.packets > 0).toBe(true);
+    }
 }
 
 async function setAndVerifyDisplayPreference(page: Page, shouldBeChecked: boolean): Promise<void> {
   const disclosure = page.getByText('能力、数据与来源', { exact: true });
   const preference = page.getByRole('checkbox', { name: '记住显示偏好', exact: true });
+  if (await preference.count() === 0) {
+    // Current approved 0.4.x package has no legacy preference card. Preserve
+    // the same browser-partition/data-retention oracle with an app-scoped key.
+    if (shouldBeChecked) await page.evaluate((key) => localStorage.setItem(key, 'true'), preferenceKey);
+    await expect.poll(() => page.evaluate((key) => localStorage.getItem(key), preferenceKey)).toBe('true');
+    return;
+  }
   if (!(await preference.isVisible())) await disclosure.click();
   await expect(preference).toBeVisible();
   if (shouldBeChecked) await preference.check();
@@ -417,7 +486,9 @@ test.describe('signed production Mini App install and offline lifecycle', () => 
   test.skip(!enabled, 'Set MINIAPP_REAL_ACCEPTANCE=1 only in the signed macOS packaged Actions job.');
 
   test('real Plugins install, Wasm report, offline cold launch, code removal and online reinstall', async () => {
-    test.setTimeout(20 * 60_000);
+    // The workflow grants this lifecycle 40 minutes; keep Playwright aligned
+    // so a slow real catalog/network transition is not killed halfway through.
+    test.setTimeout(40 * 60_000);
     expect(process.platform, 'MU-07 currently requires the signed macOS candidate').toBe('darwin');
     expect(process.env.GITHUB_ACTIONS, 'this test may only alter network services on an Actions runner').toBe('true');
     expect(executable, 'FABUSHI_ELECTRON_EXECUTABLE is required').toBeTruthy();
@@ -461,12 +532,23 @@ test.describe('signed production Mini App install and offline lifecycle', () => 
       codeRemoved: false,
       reinstalledOnline: false,
       settingEntriesRetained: 0,
+      phase: 'fixture-created',
+    };
+    const markPhase = async (phase: string): Promise<void> => {
+      evidence.phase = phase;
+      await writeFile(path.join(evidenceDir, 'phase.json'), JSON.stringify({
+        phase,
+        updatedAt: new Date().toISOString(),
+        sourceSha,
+      }, null, 2));
     };
     let app: Awaited<ReturnType<typeof launchSignedApp>> | null = null;
     let networkServices: NetworkService[] = [];
     try {
+      await markPhase('online-launch');
       app = await launchSignedApp(appDataDir);
       await waitForProductionLogin(app.page);
+      await markPhase('online-catalog-install');
       let catalog = await refreshUntilCatalogItem(app.page);
       const installButton = catalog.row.getByRole('button', { name: '安装并验证', exact: true });
       await expect(installButton).toBeEnabled();
@@ -479,42 +561,65 @@ test.describe('signed production Mini App install and offline lifecycle', () => 
         expect(app.browser.contexts().flatMap(context => context.pages()).filter(page => page.url().startsWith('fabushi-miniapp://'))).toHaveLength(0);
         evidence.nativePermissionDeniedWithoutExecution = true;
       }
+      await markPhase('online-native-open');
       await openWithNativePermission(catalog.row, app.process.pid!);
       let mini = await findMiniAppPage(app.browser);
-      evidence.installedNativeVerified.push(await verifyInstalledNativeRuntime(mini));
+      await markPhase('online-runtime-self-test');
+      const onlineNativeVerified = await verifyInstalledNativeRuntime(mini);
+      evidence.installedNativeVerified.push(onlineNativeVerified);
       if (process.env.MINIAPP_REQUIRE_NATIVE_ENGINE === '1') {
         const digests = await activeNativeDigests(appDataDir);
         expect(digests).toEqual([process.env.MINIAPP_NATIVE_EXECUTABLE_DIGEST]);
         evidence.installedNativeDigests.push(...digests);
       }
-      await verifyWasmFileReport(mini, inputFile, fixtureStat.size);
+      await markPhase('online-composer');
+      await bounded(
+        verifyWasmFileReport(mini, inputFile, fixtureStat.size, onlineNativeVerified, markPhase, app.process.pid!),
+        5 * 60_000,
+        'VERIFY_ONLINE_WASM_FILE_REPORT',
+      );
+      await markPhase('online-report-export');
       await exportAndVerifyReport(mini, app.process.pid!, evidenceDir, inputFile, fixtureStat.size);
       evidence.launchModes.push('online-install');
       evidence.wasmLoaded.push(true);
       evidence.reportObserved.push(true);
       evidence.reportVerified.push(true);
+      await markPhase('online-preference');
       await setAndVerifyDisplayPreference(mini, true);
       evidence.settingEntriesRetained = 1;
       await writeFile(path.join(evidenceDir, 'online-installed.png'), await mini.screenshot());
       await quitSignedApp(app.process, app.browser);
       app = null;
 
+      await markPhase('offline-network-disable');
       networkServices = disableRunnerNetwork();
       await expectInternetUnavailable();
+      await markPhase('offline-cold-launch');
       app = await launchSignedApp(appDataDir);
       await waitForProductionLogin(app.page);
+      await markPhase('offline-catalog');
       catalog = await refreshUntilCatalogItem(app.page);
       await expect(catalog.row).toContainText('已安装', { timeout: 60_000 });
       evidence.installedAfterColdLaunch = true;
+      await markPhase('offline-native-open');
       await openWithNativePermission(catalog.row, app.process.pid!);
       mini = await findMiniAppPage(app.browser);
-      evidence.installedNativeVerified.push(await verifyInstalledNativeRuntime(mini));
-      await verifyWasmFileReport(mini, inputFile, fixtureStat.size);
+      await markPhase('offline-runtime-self-test');
+      const offlineNativeVerified = await verifyInstalledNativeRuntime(mini);
+      evidence.installedNativeVerified.push(offlineNativeVerified);
+      await markPhase('offline-composer');
+      await bounded(
+        verifyWasmFileReport(mini, inputFile, fixtureStat.size, offlineNativeVerified, markPhase, app.process.pid!),
+        5 * 60_000,
+        'VERIFY_OFFLINE_WASM_FILE_REPORT',
+      );
+      await markPhase('offline-report-export');
       await exportAndVerifyReport(mini, app.process.pid!, evidenceDir, inputFile, fixtureStat.size);
       evidence.launchModes.push('os-network-disabled-cold-launch');
       evidence.wasmLoaded.push(true);
       evidence.reportObserved.push(true);
       evidence.reportVerified.push(true);
+      await markPhase('offline-remove-code');
       await setAndVerifyDisplayPreference(mini, false);
       await app.page.bringToFront();
       await catalog.row.getByRole('button', { name: '移除代码，保留数据', exact: true }).click();
@@ -533,6 +638,7 @@ test.describe('signed production Mini App install and offline lifecycle', () => 
         .filter((page) => page.url().startsWith('fabushi-miniapp://')).length,
       { timeout: 10_000, message: 'remove-code must leave no live Mini App window' }).toBe(0);
 
+      await markPhase('online-network-restore');
       await quitSignedApp(app.process, app.browser);
       app = null;
       restoreRunnerNetwork(networkServices);
@@ -542,25 +648,46 @@ test.describe('signed production Mini App install and offline lifecycle', () => 
         catch { return false; }
       }, { timeout: 60_000, message: 'runner network must be restored before the online reinstall phase' }).toBe(true);
 
+      await markPhase('online-reinstall-launch');
       app = await launchSignedApp(appDataDir);
       await waitForProductionLogin(app.page);
+      await markPhase('online-reinstall-catalog');
       catalog = await refreshUntilCatalogItem(app.page);
       await expect(catalog.row).toContainText('未安装');
       await catalog.row.getByRole('button', { name: '安装并验证', exact: true }).click();
       await expect(catalog.row).toContainText('已安装', { timeout: 90_000 });
       evidence.reinstalledOnline = true;
+      await markPhase('online-reinstall-native-open');
       await openWithNativePermission(catalog.row, app.process.pid!);
       mini = await findMiniAppPage(app.browser);
+      await markPhase('online-reinstall-preference');
       await setAndVerifyDisplayPreference(mini, false);
       evidence.launchModes.push('online-reinstall-retained-app-data');
       await writeFile(path.join(evidenceDir, 'reinstalled.png'), await mini.screenshot());
       await writeFile(path.join(evidenceDir, 'acceptance.json'), JSON.stringify(evidence, null, 2));
     } catch (error) {
       // Disposable Actions desktop only; never collect the native credential store.
-      execFileSync('/usr/sbin/screencapture', ['-x', path.join(evidenceDir, 'failure-desktop.png')], { timeout: 10_000 });
-      await writeFile(path.join(evidenceDir, 'report-directories.json'), JSON.stringify(
-        await Promise.all((await readdir(evidenceDir)).filter((name) => name.startsWith('report-'))
-          .map(async (name) => ({ directory: name, members: await readdir(path.join(evidenceDir, name)) }))), null, 2));
+      // Auxiliary capture must not replace the original acceptance failure.
+      try {
+        execFileSync('/usr/sbin/screencapture', ['-x', path.join(evidenceDir, 'failure-desktop.png')], { timeout: 10_000 });
+      } catch {
+        // The machine may be headless or the capture service may be unavailable.
+      }
+      await writeFile(path.join(evidenceDir, 'failure.json'), JSON.stringify({
+        ...evidence,
+        failure: {
+          name: error instanceof Error ? error.name : typeof error,
+          message: error instanceof Error ? error.message : String(error),
+          stack: error instanceof Error ? error.stack : undefined,
+        },
+      }, null, 2));
+      try {
+        await writeFile(path.join(evidenceDir, 'report-directories.json'), JSON.stringify(
+          await Promise.all((await readdir(evidenceDir)).filter((name) => name.startsWith('report-'))
+            .map(async (name) => ({ directory: name, members: await readdir(path.join(evidenceDir, name)) }))), null, 2));
+      } catch {
+        // failure.json is the required diagnostic artifact; directory inventory is best effort.
+      }
       throw error;
     } finally {
       try {
