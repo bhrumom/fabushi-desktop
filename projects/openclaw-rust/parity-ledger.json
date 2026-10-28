@@ -10,10 +10,10 @@
     "ui_accepted": false
   },
   "file_coverage": {
-    "mapped_paths": 975,
+    "mapped_paths": 980,
     "omitted_known": 0,
     "tracked_paths": 58750,
-    "unclassified_paths": 57775
+    "unclassified_paths": 57770
   },
   "inventory_authority": {
     "manifest_source": "GitHub Actions immutable artifact candidate",
@@ -19947,6 +19947,36 @@
           "path": "src/node-host/invoke-agent-cli-claude-params.ts",
           "range": {"end_line": 302, "start_line": 1},
           "symbol": "decodeClaudeCliNodeRunParams"
+        },
+        {
+          "blob_sha": "47e96dcfb0fd3b2ad56345bfaeccebc765991d4c",
+          "path": "src/node-host/invoke-agent-cli-claude.ts",
+          "range": {"end_line": 283, "start_line": 1},
+          "symbol": "runClaudeCliNodeCommand"
+        },
+        {
+          "blob_sha": "b85ab9e88d4b18eb4b738cf2b474e14ed6680c09",
+          "path": "src/node-host/node-worker-native-inference.ts",
+          "range": {"end_line": 118, "start_line": 1},
+          "symbol": "projectNodeWorkerNativeInference"
+        },
+        {
+          "blob_sha": "6f608927b701ded6204a4403b00ca1f1ea27cc2b",
+          "path": "src/node-host/node-worker-output.ts",
+          "range": {"end_line": 72, "start_line": 1},
+          "symbol": "parseNodeWorkerOutput"
+        },
+        {
+          "blob_sha": "63be947061bafd5143ddf7f28950b579c3fdcd69",
+          "path": "src/node-host/node-worker-process-identity.ts",
+          "range": {"end_line": 45, "start_line": 1},
+          "symbol": "inspectNodeWorkerProcessIdentity"
+        },
+        {
+          "blob_sha": "0c0fae3a5133a1de6ab756998ee858b891a78567",
+          "path": "src/node-host/node-worker-process-observation.ts",
+          "range": {"end_line": 85, "start_line": 1},
+          "symbol": "NodeWorkerProcessObservations"
         },
         {
           "blob_sha": "67dcb7525571e5b24de9fdb279f0219f2705bd86",
