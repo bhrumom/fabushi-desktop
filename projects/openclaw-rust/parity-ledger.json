@@ -10,10 +10,10 @@
     "ui_accepted": false
   },
   "file_coverage": {
-    "mapped_paths": 992,
+    "mapped_paths": 997,
     "omitted_known": 0,
     "tracked_paths": 58750,
-    "unclassified_paths": 57758
+    "unclassified_paths": 57753
   },
   "inventory_authority": {
     "manifest_source": "GitHub Actions immutable artifact candidate",
@@ -19514,6 +19514,12 @@
           "symbol": "parseWorkerConnectionEndpoint"
         },
         {
+          "blob_sha": "ac6f310d8944261a4ef4910be74ae3076d638fe0",
+          "path": "src/worker/worker-connection.ts",
+          "range": { "end_line": 517, "start_line": 1 },
+          "symbol": "WorkerConnection"
+        },
+        {
           "blob_sha": "fa998d7a2c98c9db4ebc1cc1e891898ca83d15f5",
           "path": "src/node-host/client.ts",
           "range": {
@@ -20418,6 +20424,30 @@
           "path": "src/node-host/node-worker-workspace-git.ts",
           "range": { "end_line": 91, "start_line": 1 },
           "symbol": "initializeNodeWorkerGitWorkspace"
+        },
+        {
+          "blob_sha": "0a236058162ebb28ca26bb8d1b740d1da8453795",
+          "path": "src/worker/worker-rpc-client-shared.ts",
+          "range": { "end_line": 23, "start_line": 1 },
+          "symbol": "fenceForOwnershipError"
+        },
+        {
+          "blob_sha": "500ef12c49261a450dbcf56ceaf658f5f7982682",
+          "path": "src/worker/worker-rpc-inference-client.ts",
+          "range": { "end_line": 215, "start_line": 1 },
+          "symbol": "WorkerInferenceProxyClient"
+        },
+        {
+          "blob_sha": "79539d664db349d90dd8d349994a477c972c9f78",
+          "path": "src/worker/worker-rpc-live-event-client.ts",
+          "range": { "end_line": 255, "start_line": 1 },
+          "symbol": "WorkerLiveEventClient"
+        },
+        {
+          "blob_sha": "730d36e198e5561130be220b0292e0bfe1551cb1",
+          "path": "src/worker/worker-rpc-transcript-client.ts",
+          "range": { "end_line": 150, "start_line": 1 },
+          "symbol": "WorkerTranscriptCommitClient"
         },
         {
           "blob_sha": "a360a20b9a3a479d1cff5fb3ad2cb5a2bfa2f4b0",
