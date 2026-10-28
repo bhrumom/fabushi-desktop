@@ -64,3 +64,17 @@ Fabushi's existing `NativeDesktopRemoteExecutor` is a valid native Computer owne
 The pinned upstream `src/node-host/runtime.ts` prepares the node-local command/plugin manifest, starts the Gateway client, carries `commands`, capabilities and `computerUse` in the node connection, and updates the manifest on availability changes. `src/node-host/client.ts` binds each invoke result to the original invoke id/node id and does not replay a lost mutation. The Gateway-side node registry therefore owns live connection/activity truth; pairing approval alone is not an equivalent substitute.
 
 Fabushi has no shipping Rust node-host client/runtime or live node registry in the inspected owner set. The current `DevicePairingOwner` projection is consequently limited to durable identity and approval. Implementing the missing runtime requires a separate spec covering Gateway protocol, reconnect/cancellation, manifest updates, invoke settlement and real device acceptance; it must not be smuggled into the pairing or node RPC handlers.
+
+## 9. Pinned Rust node-host crate audit (2026-10-29)
+
+The pinned upstream `crates/openclaw-node-host` is contract evidence, not yet an accepted Fabushi implementation. The exact source read so far establishes these owner boundaries:
+
+- `identity.rs` owns Ed25519 device identity and canonical v3 challenge-bound signing metadata, while secure key persistence remains with the embedding host.
+- `reconnect.rs` classifies pairing/auth/protocol/configuration failures into typed pauses, bounds transport backoff, permits one explicitly bounded stored-token retry, sanitizes pairing metadata, and keeps request-scoped errors on a healthy session.
+- `lifecycle.rs` calls the connection factory once per attempt, re-advertises the current manifest, emits secret-free typed events, hands issued device tokens to the embedding persistence callback, closes/drains the old session on shutdown, and retries runtime failures only after the old session is retired.
+- `duplex.rs` bounds and sequences input/output, emits heartbeats without fabricated output, and makes cancellation/stop state observable to the invocation owner.
+- `node.rs` preserves the negotiated V3/V4 dialect, withholds command/capability activation until the connect envelope is finalized, strictly parses `paramsJSON`, rejects direct/ambiguous `params`, preserves received JSON and byte size, and correlates invocation/input/cancel/result by node and invocation identity.
+
+The current Fabushi owner decision is therefore: credential persistence remains in the existing credential owner; live session/connection-generation and remote presence must be a single transport owner; invocation drain and cancellation must be a single runtime owner; and RPC/pairing layers may only project those facts. No upstream crate import, second registry, or production completion is claimed. The durable implementation contract is [node-host-runtime-embedding.md](../../../docs/specs/node-host-runtime-embedding.md).
+
+The remaining exact-source closure includes the rest of `crates/openclaw-node-host` (`host.rs`, `runtime.rs`, sidecar protocol/handshake/runtime, and tests) plus the individually unread `src/node-host` files. Inventory and parity flags remain incomplete until those reads and the corresponding owner mapping are recorded.
