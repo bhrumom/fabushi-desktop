@@ -19497,6 +19497,15 @@
             "start_line": 1
           },
           "symbol": "client"
+        },
+        {
+          "blob_sha": "35c5e3aba727291c797534cf7d2e5abcaa05a9e5",
+          "path": "src/node-host/runtime.ts",
+          "range": {
+            "end_line": 719,
+            "start_line": 1
+          },
+          "symbol": "runtime"
         }
       ],
       "status": {
@@ -19591,13 +19600,31 @@
       "selected_owner": "source/host/src/extensions/node_host/command_dispatch.rs",
       "source_refs": [
         {
-          "blob_sha": "0ebb0e947ad63235040bc59ce381ea11854132e2",
-          "path": "src/node-host/claude-skill-session.test.ts",
+          "blob_sha": "e595f8bf3342ae00dcb0ebf785b9f809619559f7",
+          "path": "src/node-host/invoke.ts",
           "range": {
-            "end_line": 265,
+            "end_line": 703,
             "start_line": 1
           },
-          "symbol": "claude-skill-session.test"
+          "symbol": "handleInvoke"
+        },
+        {
+          "blob_sha": "67dcb7525571e5b24de9fdb279f0219f2705bd86",
+          "path": "src/node-host/computer-command.ts",
+          "range": {
+            "end_line": 49,
+            "start_line": 1
+          },
+          "symbol": "computer-command"
+        },
+        {
+          "blob_sha": "ee28a06360c391ba7b03df3460b06a5ae1d4d43e",
+          "path": "src/node-host/exec-policy.ts",
+          "range": {
+            "end_line": 118,
+            "start_line": 1
+          },
+          "symbol": "exec-policy"
         }
       ],
       "status": {
@@ -19693,13 +19720,22 @@
       "selected_owner": "source/host/src/extensions/node_host/runtime_manifest.rs",
       "source_refs": [
         {
-          "blob_sha": "bf6086ee1491e16f8ed710af2994418f9243d68a",
-          "path": "src/node-host/auto-update-compatibility.test.ts",
+          "blob_sha": "9e675256c727ce03b2a9820dc65fe991f0cc148d",
+          "path": "src/node-host/runtime-manifest.ts",
           "range": {
-            "end_line": 499,
+            "end_line": 113,
             "start_line": 1
           },
-          "symbol": "auto-update-compatibility.test"
+          "symbol": "buildRuntimeManifest"
+        },
+        {
+          "blob_sha": "35c5e3aba727291c797534cf7d2e5abcaa05a9e5",
+          "path": "src/node-host/runtime.ts",
+          "range": {
+            "end_line": 719,
+            "start_line": 1
+          },
+          "symbol": "runtime"
         }
       ],
       "status": {
