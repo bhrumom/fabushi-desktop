@@ -10,10 +10,10 @@
     "ui_accepted": false
   },
   "file_coverage": {
-    "mapped_paths": 1001,
+    "mapped_paths": 1007,
     "omitted_known": 0,
     "tracked_paths": 58750,
-    "unclassified_paths": 57749
+    "unclassified_paths": 57743
   },
   "inventory_authority": {
     "manifest_source": "GitHub Actions immutable artifact candidate",
@@ -20424,6 +20424,42 @@
           "path": "src/node-host/node-worker-workspace-git.ts",
           "range": { "end_line": 91, "start_line": 1 },
           "symbol": "initializeNodeWorkerGitWorkspace"
+        },
+        {
+          "blob_sha": "3f057a54e756aad4a7e84b607e07f8b8ab4d17fe",
+          "path": "src/worker/native-inference-startup.ts",
+          "range": { "end_line": 71, "start_line": 1 },
+          "symbol": "takeNativeInferenceStartup"
+        },
+        {
+          "blob_sha": "017a47f853155951ee03317ef6dd7a54360db7e0",
+          "path": "src/worker/native-inference-stream.ts",
+          "range": { "end_line": 269, "start_line": 1 },
+          "symbol": "createNativeInferenceStreamGuard"
+        },
+        {
+          "blob_sha": "bc10cb3e80f64fadd20ebd4fca03e6b3d09c6394",
+          "path": "src/worker/native-runtime-config.ts",
+          "range": { "end_line": 64, "start_line": 1 },
+          "symbol": "NativeRuntimeConfigSchema"
+        },
+        {
+          "blob_sha": "5009e9c201bed8d662f1b1d6dc7098895d2e0aa4",
+          "path": "src/worker/native-runtime-model-support.ts",
+          "range": { "end_line": 26, "start_line": 1 },
+          "symbol": "nativeRuntimeModelUnsupportedReason"
+        },
+        {
+          "blob_sha": "b05338e9a417e42b13fe5f496c8e413f50a19dd4",
+          "path": "src/worker/native-runtime-transport.ts",
+          "range": { "end_line": 40, "start_line": 1 },
+          "symbol": "buildNativeRuntimeFetch"
+        },
+        {
+          "blob_sha": "5baebfa032a96ed0418216b0670b8a4d6bb9e64d",
+          "path": "src/worker/native-runtime.ts",
+          "range": { "end_line": 313, "start_line": 1 },
+          "symbol": "createNativeRuntime"
         },
         {
           "blob_sha": "0d51c0d04c5bf31562806459ef9a9f2e89ee48a9",
