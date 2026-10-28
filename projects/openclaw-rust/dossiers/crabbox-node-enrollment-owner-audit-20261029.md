@@ -27,6 +27,8 @@ The following reverse/provider callers were subsequently read at the same pinned
 
 The directly invoked helper graph was then read at the same pinned tree: `crabbox-worker-preflight.ts` (`450d6985c8cfbabbcdfe71164a10a2748b9f35e0`), `crabbox-worker-project.ts` (`35a5d4329a405437f076c0955043b411f36199dc`), `crabbox-worker-provision-commands.ts` (`f13913eee2587a64b23c85a2213825f2c7111a26`), `crabbox-worker-setup-egress.ts` (`03b9250850bd2f9210698212156ac210beb7e3b6`), `crabbox-worker-provider-binary.ts` (`a9361ad684143856c5f57336940bdebebb57016d`), `crabbox-worker-snapshot-actions.ts` (`78a412b39bfd4b54b7935049d4a8c3f08e8b4f57`), `crabbox-worker-warm-image-policy.ts` (`6559c442a8b956a6704f52085ff5c0259d901728`), `crabbox-worker-heartbeat.ts` (`f9f39d8ac6df3248532ef6dede7b728aeba6c0f9`), `crabbox-worker-inspect.ts` (`ec9e52f9a146c117bd4ae23a11c5615218137b87`), `crabbox-worker-warm-image.ts` (`af4b96a5fab3adf751864b784981e01c61fb8be5`), and `crabbox-worker-warm-image-store.ts` (`1031bf93f52dc15f65eaacd4e7a0a6197ace60bd`). The warm-image capture/checkpoint/recipe/records helpers and their tests remain open closure work.
 
+The remaining directly invoked implementation helpers were read as well: `crabbox-worker-warm-image-capture.ts` (`12cc2cbcd40a33502927bc1a284216cc66428912`), `crabbox-worker-warm-image-checkpoint.ts` (`4f2c80c517d8be3c075c72fbf6ee40ab39ae9458`), `crabbox-worker-warm-image-recipe.ts` (`094708190c05b5d088a59d94b2989886c524d74a`), `crabbox-worker-warm-image-records.ts` (`c1e56eefef55704a5c3f9124a67412eb3f23ff31`), `crabbox-worker-warm-image-allocation.ts` (`27427bcb41602ad97b157f7f6e736b20b44b1221`), `crabbox-process.ts` (`0ccfe03b9db815de9ea466891396eacc76597203`), `crabbox-managed-binary.ts` (`ac6297fbaaaf821fd1f2f4c9919f36732829c6d8`), and `crabbox-binary.ts` (`27f5952d24b8fd5133acd86e2fc4aeb13a7e22cc`).
+
 ## Observed responsibilities
 
 ### Machine catalog and setup choices
@@ -87,6 +89,8 @@ The helper responsibilities are now explicit. Preflight rejects unsafe AWS insta
 
 Warm-image state is a compare-and-apply keyed store with bounded profile/allocation capacity, generation identity, pinned/previous image ownership, replay identity checks, cold fallback reasons, capture uncertainty recovery, and explicit retirement obligations. Allocation freezes the selected checkpoint or cold choice before the first provider call; publication and demand renewal are generation-fenced. These invariants are source behavior to preserve in any future Rust owner, not justification for adding warm-image state to node RPC or existing FDN identity state.
 
+The capture/checkpoint layer adds further non-negotiable boundaries: checkpoint creation distinguishes not-submitted/native-unsupported from ambiguous provider outcomes; capture claims a compare-and-apply operation before scrubbing credentials, refuses enrollment while capture is unresolved, publishes only matching lease/profile/runtime generations, retains deletion debt, and treats optional teardown capture differently from required project preparation. Managed Crabbox binary acquisition is version-gated, HTTPS/allowlist/size/checksum/archive bounded, published under a file lock with damaged installations preserved, and shared across waiters with last-waiter cancellation. Binary discovery resolves explicit/sibling/PATH candidates without treating a missing candidate as a successful provider.
+
 ## Fabushi owner resolution
 
 | Responsibility | Existing owner | Decision | Reason / boundary |
@@ -102,7 +106,7 @@ The proposed owner is not permission to create an `OpenClawRuntime`, second Agen
 
 - Read and map the imported profile, process, command, script, desktop-setup, timeout, provider helper, and reverse caller/test contracts at the same pinned upstream tree.
 - Read the platform-specific `crabbox-worker-desktop-macos.ts` and `crabbox-worker-desktop-windows.ts` contracts and their tests before any owner/ADR decision.
-- Read the remaining warm-image capture/checkpoint/recipe/records helpers and all reverse/provider tests before any owner/ADR decision.
+- Read and map all remaining warm-image and managed-binary tests, then read the provider's reverse callers and fixtures before any owner/ADR decision.
 - Inspect the current Fabushi Host/Coordinator production composition and determine the narrow typed contract for provider catalog, artifact provenance, worker lease, process lifecycle, and diagnostic evidence.
 - Complete rejected-owner analysis and an ADR before creating a new owner. The current `NetworkEnrollmentOwner`, `remote_computer_target`, Sand connectors, and Runner process owners are candidates but cannot be widened by assumption.
 - Add positive and negative oracle rows for malformed catalogs, incompatible targets, credential non-propagation, archive hash/range/TLS failures, unsafe paths, cancellation cleanup, plugin activation failure, stale runtime pointers, diagnostic truncation/redaction, and node launch outcome-unknown.
