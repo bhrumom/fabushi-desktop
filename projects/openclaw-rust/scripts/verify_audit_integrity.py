@@ -28,9 +28,9 @@ def main():
 
     total_paths = 0
     # Read completeness and responsibility mapping are independent dimensions.
-    # The canonical shards currently contain 805 read-complete rows, while the
-    # ledger may map additional source files whose full reading is still
-    # pending.  Do not collapse those two counts into one.
+    # A fully read oracle/test file may intentionally remain unclassified until
+    # a responsibility source_ref is established. Only mapped rows require a
+    # non-empty responsibility_ids list.
     read_complete_paths = set()
     inventory_paths = set()
     unclassified_paths = 0
@@ -69,8 +69,12 @@ def main():
                         fail(f"{shard_path}:{line_no}: '{path}' missing module_id while claiming read")
 
                     resp_ids = entry.get("responsibility_ids")
-                    if not resp_ids or not isinstance(resp_ids, list):
-                        fail(f"{shard_path}:{line_no}: '{path}' missing responsibility_ids while claiming read")
+                    if not isinstance(resp_ids, list):
+                        fail(f"{shard_path}:{line_no}: '{path}' responsibility_ids must be a list")
+                    if resp_status == "mapped" and not resp_ids:
+                        fail(f"{shard_path}:{line_no}: '{path}' is mapped but has no responsibility_ids")
+                    if resp_status == "unclassified" and resp_ids:
+                        fail(f"{shard_path}:{line_no}: '{path}' is unclassified but has responsibility_ids")
 
                     ev_refs = entry.get("evidence_refs")
                     if not ev_refs or not isinstance(ev_refs, list):

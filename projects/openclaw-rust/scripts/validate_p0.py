@@ -88,6 +88,10 @@ def structural():
             check(bool(e["read_ranges"] or e["content_identity"]) and bool(e["reviewer"]), "Unproved read complete: " + path)
         if e["responsibility_status"] != "unclassified":
             check(bool(e["responsibility_ids"]), "Claimed mapped without responsibility: " + path)
+        elif e["read_status"] == "read-complete":
+            # A fully read oracle/test file may remain unclassified until a
+            # real responsibility source_ref exists; it must not carry IDs.
+            check(not e["responsibility_ids"], "Unclassified read-complete file has responsibility: " + path)
     check(kind_counts["symlink"] == counts["symlink_entries_total"] and kind_counts["gitlink"] == counts["gitlink_entries_total"] and kind_counts["blob"] == counts["blob_entries_total"], "Wrong entry kinds")
     raw_records = [x for x in (EVIDENCE / "ls-tree.z").read_bytes().split(b"\0") if x]
     check(len(raw_records) == len(entries), "Raw recursive git tree differs from inventory")
