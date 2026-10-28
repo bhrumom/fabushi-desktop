@@ -340,3 +340,16 @@ generation check passes, and preserves an existing portable prefix from stale
 pruning when a capture/upload fails. A healthy retry therefore publishes a
 complete new generation without adopting a mixed or partially uploaded set.
 
+The remaining PostgreSQL boundary is a concrete dependency gap, not an
+unverified implementation claim: `source/host/Cargo.toml` currently exposes
+`rusqlite` but no PostgreSQL client/port crate, and the host source has no
+database-port trait or production PostgreSQL owner. The existing
+`BoxObjectStore`/`StoreDbSnapshotUpload` owner only publishes content-addressed
+artifacts; it cannot materialize SQLite schema/rows into a PostgreSQL namespace.
+解除条件为先引入经审计的 PostgreSQL port owner/API (including namespace
+reservation, transaction/rollback, sequence allocation, and generation
+revalidation), then wire `prepare_postgres_restore` to that owner and obtain a
+real provider-backed integration receipt. Until then PostgreSQL
+materialization, restore namespace custody, and exact/portable restore parity
+remain pending/not-wired.
+
