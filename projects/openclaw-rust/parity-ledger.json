@@ -19434,7 +19434,8 @@
       ],
       "dependencies": [
         "mahayana_host_runtime::extensions::node_host::gateway_connection",
-        "mahayana_host_runtime::extensions::node_host::session_registry"
+        "mahayana_host_runtime::extensions::node_host::session_registry",
+        "mahayana_host_runtime::extensions::node_host::candidate_connection"
       ],
       "evidence_refs": [
         "source/host/tests/openclaw_node_host_contract.rs",
@@ -19511,6 +19512,24 @@
             "start_line": 1
           },
           "symbol": "runtime"
+        },
+        {
+          "blob_sha": "c3f893f76e332457059727ca1f02a05d449d1992",
+          "path": "src/node-host/gateway-auth.ts",
+          "range": {
+            "end_line": 28,
+            "start_line": 1
+          },
+          "symbol": "canReuseNodeHostDeviceToken"
+        },
+        {
+          "blob_sha": "cfe88d3bfafbc48d539b8be3bc6a3f803051958c",
+          "path": "src/node-host/gateway-candidate-connection.ts",
+          "range": {
+            "end_line": 188,
+            "start_line": 1
+          },
+          "symbol": "createNodeHostGatewayCandidateConnection"
         }
       ],
       "status": {
@@ -19529,7 +19548,9 @@
       "tests": [
         "source/host/tests/openclaw_node_host_contract.rs::test_ocrm_node_host_gateway_auth_and_scope",
         "source/host/src/extensions/node_host/session_registry.rs::tests::replacement_generation_fences_predecessor_disconnect",
-        "source/host/src/extensions/node_host/session_registry.rs::tests::disconnect_clears_advertised_surface"
+        "source/host/src/extensions/node_host/session_registry.rs::tests::disconnect_clears_advertised_surface",
+        "source/host/src/extensions/node_host/candidate_connection.rs::tests::only_unaccepted_pre_hello_candidates_fail_over",
+        "source/host/src/extensions/node_host/candidate_connection.rs::tests::sent_connect_request_stops_instead_of_switching_candidate"
       ],
       "typed_contracts": [
         "NodeHostGatewayConfig",
@@ -19537,7 +19558,10 @@
         "can_reuse_node_host_device_token",
         "NodeHostSessionMetadata",
         "NodeHostSessionLease",
-        "NodeHostSessionRegistry"
+        "NodeHostSessionRegistry",
+        "NodeHostGatewayCandidateRouter",
+        "CandidateCloseDecision",
+        "format_gateway_candidate_url"
       ],
       "unit_id": "OCRM-UNIT-NODE-HOST-001"
     },

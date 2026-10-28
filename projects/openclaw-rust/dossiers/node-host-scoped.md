@@ -190,3 +190,8 @@ The first production wiring slice adds `source/host/src/extensions/node_host/ses
 ## 21. Gateway token scope correction (2026-10-29)
 
 The locked `gateway-auth.ts` delegates to `gatewayOriginScope`, whose normalized scope includes the URL pathname (with `/` and trailing slashes normalized), not only scheme/host/port. The former Rust helper therefore admitted token reuse across different Gateway context paths. `gateway_connection.rs` now parses absolute URLs, preserves the normalized pathname, removes default ports, handles IPv6 host formatting, and fails back to the trimmed input for unparseable values. The contract fixture now covers matching `/ws` candidates and rejects a different pathname, so this security-sensitive oracle remains explicit.
+## 22. Gateway candidate failover seam (2026-10-29)
+
+The locked gateway candidate connection requires a non-empty candidate list, forwards events only from the current candidate, promotes the first successful hello as the winner, and advances only when a candidate closes pre-hello without sending the connect request. After a winner or stop, late candidate callbacks are inert; stopping drains every candidate client and preserves cleanup failures.
+
+Rust now contains the transport-neutral NodeHostGatewayCandidateRouter and websocket URL formatter. It captures the failover admission and IPv6/context-path formatting rules while leaving sockets, TLS, Cloudflare Access headers, request dispatch, and stop/drain with the future Gateway client owner. It is therefore a parity seam, not a claim that remote transport is wired.

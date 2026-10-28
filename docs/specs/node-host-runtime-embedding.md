@@ -67,6 +67,14 @@ may not call those operations or infer `connected` from approval. Until a real
 transport caller exists, approved remote devices therefore remain
 `paired=true, connected=false, active=false, commands=[]`.
 
+Candidate connection policy is a separate, transport-neutral seam. A
+candidate router may advance only after a pre-hello close where no connect
+request was sent and no winner has been selected. A successful hello promotes
+the current candidate and permanently disables fallback for that connection;
+stopping the router makes all later candidate callbacks inert. The eventual
+Gateway client remains the owner of sockets, TLS, edge-auth headers, and
+drain/cleanup.
+
 The upstream crate may be used as a contract reference or narrowly embedded primitive only after source-to-owner mapping proves it does not introduce a second owner.
 
 ## 8. Interfaces / contracts / data flow
