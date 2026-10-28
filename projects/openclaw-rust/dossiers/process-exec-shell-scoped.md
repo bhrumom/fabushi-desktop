@@ -52,7 +52,9 @@ The audited source code was decomposed into 6 discrete Rust runtime responsibili
 
 5. **`OCRM-RESP-EXEC-KILL-TREE-001`**:
    - **Behavior**: Recursive process-tree discovery and termination, Unix process group signaling, Windows taskkill PID enumeration, and orphan process cleanup.
-   - **Rust Owner**: `source/host/src/runner/mod.rs:kill_process_tree`.
+   - **Rust Owner**: `source/host/src/runner/process_tree.rs:terminate_process_tree`.
+   - **Production Call Chain**: `NetworkWorkerProcess::terminate_child` and `BoxExecDaemonProcess::terminate_child` call the shared owner during managed-service shutdown; the owner captures descendants, signals the Unix process group or Windows taskkill tree, waits the grace interval, then force-signals the captured targets and waits for root settlement.
+   - **Evidence Boundary**: the current Unix contract proves the root and recorded descendant are gone on graceful and force paths. PID-reuse identity protection, Windows taskkill behavior, and command-exec pending-spawn settlement belong to separate contracts and remain unverified here.
    - **Oracle**: `OCRM-EXEC-O08`.
 
 6. **`OCRM-RESP-EXEC-LINE-FRAMER-001`**:

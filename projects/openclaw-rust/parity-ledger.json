@@ -4299,13 +4299,13 @@
         "mahayana_host_runtime::runner"
       ],
       "evidence_refs": [
-        "source/host/tests/gateway_local_exec_sand_box_contract.rs",
+        "source/host/tests/process_tree_contract.rs",
         "projects/openclaw-rust/dossiers/process-exec-shell-scoped.md"
       ],
       "existing_owner_candidates": [
         {
-          "path": "source/host/src/runner/mod.rs",
-          "reason": "Host process tree terminator"
+          "path": "source/host/src/runner/process_tree.rs",
+          "reason": "Shared cross-platform process-tree termination owner"
         }
       ],
       "id": "OCRM-RESP-EXEC-KILL-TREE-001",
@@ -4323,7 +4323,7 @@
       "oracle_ids": [
         "OCRM-EXEC-O08"
       ],
-      "owner_decision": "Implement cross-platform process tree termination in runner",
+      "owner_decision": "Use the shared cross-platform process-tree termination owner for managed supervisor cleanup",
       "postconditions": [
         "Complete process subtree terminated without orphans"
       ],
@@ -4345,7 +4345,7 @@
       "responsibility_kind": "business-runtime",
       "reviewer": "xuyao@ombhrum.com",
       "risk": "High; guarantees clean process isolation and prevents orphan background jobs",
-      "selected_owner": "source/host/src/runner/mod.rs",
+      "selected_owner": "source/host/src/runner/process_tree.rs",
       "source_refs": [
         {
           "blob_sha": "1a0ccc2f9732f307de6f87604fab3fec24d79514",
@@ -4376,16 +4376,17 @@
       },
       "target": {
         "language": "Rust",
-        "path": "source/host/src/runner/mod.rs",
-        "symbol": "kill_process_tree"
+        "path": "source/host/src/runner/process_tree.rs",
+        "symbol": "terminate_process_tree"
       },
       "tests": [
         "source/host/tests/box_exec_daemon_process_contract.rs",
         "source/host/tests/network_worker_process_contract.rs",
-        "source/host/tests/process_tree_contract.rs::production_terminator_kills_real_shell_and_descendant"
+        "source/host/tests/process_tree_contract.rs::production_terminator_kills_real_shell_and_descendant",
+        "source/host/tests/process_tree_contract.rs::production_terminator_escalates_when_root_ignores_graceful_signal"
       ],
       "typed_contracts": [
-        "kill_process_tree"
+        "terminate_process_tree"
       ],
       "unit_id": "OCRM-UNIT-EXEC-001"
     },
