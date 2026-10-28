@@ -20030,6 +20030,54 @@
           "symbol": "NodeWorkerLaunchClaimResult"
         },
         {
+          "blob_sha": "7149e1e7aa3ef6aec7bf2babc0b99c239d0cf3ec",
+          "path": "src/node-host/node-worker-workspace.ts",
+          "range": { "end_line": 734, "start_line": 1 },
+          "symbol": "NodeWorkerWorkspaceRuntime"
+        },
+        {
+          "blob_sha": "a16851eca5c83015c8da89bb306fa933c0aa1a12",
+          "path": "src/node-host/node-worker-workspace-admission.ts",
+          "range": { "end_line": 53, "start_line": 1 },
+          "symbol": "createNodeWorkerTempWorkspace"
+        },
+        {
+          "blob_sha": "0cd6af6d4c372983d26453f5e5b49ff88be288ab",
+          "path": "src/node-host/node-worker-workspace-identity.ts",
+          "range": { "end_line": 370, "start_line": 1 },
+          "symbol": "resolveNodeManagedWorkspaceIdentity"
+        },
+        {
+          "blob_sha": "b3ef262e418f21f4c6f42f6858f0eb204722b6bb",
+          "path": "src/node-host/node-worker-workspace-quiescence.ts",
+          "range": { "end_line": 415, "start_line": 1 },
+          "symbol": "NodeWorkerWorkspaceQuiescence"
+        },
+        {
+          "blob_sha": "b4ade5f163278080e610d9632460bc6e0bb83127",
+          "path": "src/node-host/node-worker-workspace-processes.ts",
+          "range": { "end_line": 451, "start_line": 1 },
+          "symbol": "NodeWorkerWorkspaceProcesses"
+        },
+        {
+          "blob_sha": "1a49a19071859b658be6b54f509f19dd42dfe605",
+          "path": "src/node-host/node-worker-workspace-replacement.ts",
+          "range": { "end_line": 102, "start_line": 1 },
+          "symbol": "replaceNodeWorkerDirectory"
+        },
+        {
+          "blob_sha": "332e0f962826c05a44d9fdc47a683c19ef92aaa4",
+          "path": "src/node-host/node-worker-workspace-retention.ts",
+          "range": { "end_line": 69, "start_line": 1 },
+          "symbol": "listNodeWorkerWorkspaceSessions"
+        },
+        {
+          "blob_sha": "588f261bb7807edad50f101224ac26b8bead9cfa",
+          "path": "src/node-host/node-worker-workspace-seeds.ts",
+          "range": { "end_line": 181, "start_line": 1 },
+          "symbol": "runNodeWorkerWorkspaceSeed"
+        },
+        {
           "blob_sha": "f2b2b63fb265ddf79e6c66d02c13e687237d7229",
           "path": "crates/openclaw-node-host/src/host.rs",
           "range": {
