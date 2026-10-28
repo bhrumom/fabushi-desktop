@@ -10,10 +10,10 @@
     "ui_accepted": false
   },
   "file_coverage": {
-    "mapped_paths": 1064,
+    "mapped_paths": 1066,
     "omitted_known": 0,
     "tracked_paths": 58750,
-    "unclassified_paths": 57686
+    "unclassified_paths": 57684
   },
   "inventory_authority": {
     "manifest_source": "GitHub Actions immutable artifact candidate",
@@ -19797,6 +19797,18 @@
           "path": "src/worker/worker-command.runtime.test.ts",
           "range": {"end_line": 754, "start_line": 1},
           "symbol": "managed worker command lifetime, retention, fencing, and frame-limit oracle"
+        },
+        {
+          "blob_sha": "29ea084be10dffedf22f79d13a27e77b3e690cb8",
+          "path": "src/worker/native-runtime-transport.test.ts",
+          "range": {"end_line": 284, "start_line": 1},
+          "symbol": "native runtime provider transport TLS/auth/redirect oracle"
+        },
+        {
+          "blob_sha": "d76f4bad4d6f44338c7defcb128819acf5619b01",
+          "path": "src/worker/native-worker-authority.test.ts",
+          "range": {"end_line": 149, "start_line": 1},
+          "symbol": "native worker admission authority lifetime oracle"
         }
       ],
       "status": {
