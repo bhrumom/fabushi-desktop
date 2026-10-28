@@ -156,6 +156,8 @@ The router now rejects duplicate registrations by default and exposes explicit `
 
 The production owner keeps the router private and exposes registration, replacement, and unregister operations only through `ProductionHostExtensions`. Replacement and revocation use the same capability-catalog gate as initial registration, so provider lifecycle changes cannot bypass plugin discovery authorization. This remains a local ownership seam pending exact-head Actions evidence and real provider/package acceptance.
 
+Production startup now publishes the six existing immutable bundled channel IDs (`telegram`, `discord`, `slack`, `whatsapp`, `signal`, `imessage`) into that Host-owned catalog through capability-only entry registration. The producer creates discoverability metadata only; it does not create a transport, credential, session, or delivery port. This makes the authorization seam reachable for future real adapters while preserving the explicit pending status for external delivery, provider credentials, reconnect, receipts, and packaged acceptance.
+
 
 
 

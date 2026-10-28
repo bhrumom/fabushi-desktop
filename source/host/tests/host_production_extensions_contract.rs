@@ -83,6 +83,7 @@ fn production_host_owns_the_canonical_plugin_capability_catalog() {
     for needle in [
         "pub plugin_capability_catalog: Arc<PluginCapabilityCatalog>",
         "let plugin_capability_catalog = Arc::new(PluginCapabilityCatalog::new());",
+        "register_bundled_channel_capabilities(&plugin_capability_catalog);",
         "plugin_capability_catalog,",
     ] {
         assert!(
@@ -128,6 +129,14 @@ fn production_host_owns_the_channel_delivery_boundary_consumed_by_gateway() {
             "provider lifecycle operation must be owned by ProductionHostExtensions: {needle}"
         );
     }
+    assert!(
+        PRODUCTION_OWNER.contains("fn register_bundled_channel_capabilities("),
+        "production startup must own bundled channel capability discovery"
+    );
+    assert!(
+        PRODUCTION_OWNER.contains("PluginRegistrationMode::Capabilities"),
+        "bundled startup discovery must remain capability-only"
+    );
 }
 
 

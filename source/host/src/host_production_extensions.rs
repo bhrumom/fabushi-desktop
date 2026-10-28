@@ -109,7 +109,13 @@ use crate::extensions::local_exec::extension::{
     HostLocalExecExtension, start_local_exec_extension,
 };
 use crate::extensions::plugins::compat::validate_all_records;
-use crate::extensions::plugins::capability_catalog::PluginCapabilityCatalog;
+use crate::extensions::plugin_sdk::channel_entry::{
+    BundledChannelEntryContract, PluginRegistrationMode,
+};
+use crate::extensions::plugins::capability_catalog::{
+    PluginCapabilityCatalog, PluginOrigin,
+};
+use crate::extensions::plugins::installed_index_store::BundledInstallGuard;
 use crate::connectors::channel_delivery::{
     ChannelDeliveryPort, ChannelDeliveryRouter, HostChannelDelivery,
 };
@@ -503,6 +509,37 @@ pub struct ProductionHostExtensions {
     _statsig_bootstrap: ProductionStatsigBootstrapRuntime,
 }
 
+/// Publishes bundled channel discoverability to the Host-owned catalog.
+///
+/// This is deliberately capability metadata only: it does not create a
+/// transport, credentials, session state, or delivery provider. A channel
+/// adapter must still register a real `ChannelDeliveryPort` before delivery
+/// can succeed.
+fn register_bundled_channel_capabilities(catalog: &PluginCapabilityCatalog) {
+    for channel_id in BundledInstallGuard::IMMUTABLE_BUNDLED_PLUGINS {
+        let label = match *channel_id {
+            "telegram" => "Telegram",
+            "discord" => "Discord",
+            "slack" => "Slack",
+            "whatsapp" => "WhatsApp",
+            "signal" => "Signal",
+            "imessage" => "iMessage",
+            _ => *channel_id,
+        };
+        let entry = BundledChannelEntryContract::new(
+            *channel_id,
+            label,
+            "Bundled channel capability metadata",
+        );
+        let _ = catalog.register_bundled_channel_entry(
+            &entry,
+            PluginOrigin::Bundled,
+            None,
+            PluginRegistrationMode::Capabilities,
+        );
+    }
+}
+
 impl Drop for ProductionHostExtensions {
     fn drop(&mut self) {
         let _ = self.stop_teach_recording();
@@ -664,6 +701,7 @@ pub fn start_production_host_extensions(
     let (_, turn_execution_registry) = turn_execution_extension();
     let turn_execution = Arc::new(Mutex::new(turn_execution_registry));
     let plugin_capability_catalog = Arc::new(PluginCapabilityCatalog::new());
+    register_bundled_channel_capabilities(&plugin_capability_catalog);
     let channel_delivery_router = ChannelDeliveryRouter::new();
     let channel_delivery = HostChannelDelivery::new(Arc::new(channel_delivery_router.clone()));
 
