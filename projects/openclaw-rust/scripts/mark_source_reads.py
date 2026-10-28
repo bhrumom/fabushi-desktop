@@ -124,6 +124,9 @@ READS = {
     "src/worker/worker-deploy-sqlite-source-revision.ts": (2, "OCRM-RESP-NODE-HOST-COMMAND-DISPATCH-001", "OCRM-M13"),
     "src/worker/worker-deploy-sqlite-store.ts": (8, "OCRM-RESP-NODE-HOST-COMMAND-DISPATCH-001", "OCRM-M13"),
     "src/worker/worker-deploy-state-read.ts": (2, "OCRM-RESP-NODE-HOST-COMMAND-DISPATCH-001", "OCRM-M13"),
+    "src/worker/worker-gateway-tools.test.ts": (168, None, "OCRM-M13", "test-oracle-replaced"),
+    "src/worker/worker-deploy-entry.test.ts": (139, None, "OCRM-M13", "test-oracle-replaced"),
+    "src/worker/repro-worker-connection-closing-window.ts": (181, "OCRM-RESP-NODE-HOST-CONNECTION-001", "OCRM-M13", "test-oracle-replaced"),
     "src/node-host/node-worker-turn-settlement.worker.ts": (42, "OCRM-RESP-NODE-HOST-COMMAND-DISPATCH-001", "OCRM-M13"),
     "src/node-host/node-worker-turn-store.ts": (36, "OCRM-RESP-NODE-HOST-COMMAND-DISPATCH-001", "OCRM-M13"),
     "src/node-host/node-worker-launch-schema.ts": (42, "OCRM-RESP-NODE-HOST-COMMAND-DISPATCH-001", "OCRM-M13"),
@@ -287,7 +290,8 @@ def main():
                 if spec:
                     was_unread = row.get("read_status") != "read-complete"
                     was_unclassified = row.get("responsibility_status") == "unclassified"
-                    end, responsibility, module = spec
+                    end, responsibility, module, *disposition_override = spec
+                    disposition = disposition_override[0] if disposition_override else "native-rust-equivalent"
                     # Tests are source/oracle evidence, not additional ledger
                     # source_refs. Keep them mapped/read-complete without
                     # creating a one-way responsibility edge.
@@ -310,7 +314,7 @@ def main():
                         "read_status": "read-complete",
                         "responsibility_ids": responsibility_ids,
                         "responsibility_status": "mapped" if responsibility_ids else "unclassified",
-                        "disposition": "native-rust-equivalent",
+                        "disposition": disposition,
                         "reviewer": "xuyao@ombhrum.com",
                         "evidence_refs": sorted(ledger_spec["evidence_refs"]) if ledger_spec and ledger_spec["evidence_refs"] else [
                             "projects/openclaw-rust/dossiers/node-host-scoped.md"

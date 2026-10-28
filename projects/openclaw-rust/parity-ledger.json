@@ -10,10 +10,10 @@
     "ui_accepted": false
   },
   "file_coverage": {
-    "mapped_paths": 1037,
+    "mapped_paths": 1040,
     "omitted_known": 0,
     "tracked_paths": 58750,
-    "unclassified_paths": 57713
+    "unclassified_paths": 57710
   },
   "inventory_authority": {
     "manifest_source": "GitHub Actions immutable artifact candidate",
@@ -19743,6 +19743,12 @@
           "path": "src/node-host/skills.ts",
           "range": {"end_line": 142, "start_line": 1},
           "symbol": "scanNodeHostedSkills"
+        },
+        {
+          "blob_sha": "ba0457110b02dd5224aa8e1801c0e5bec04451a3",
+          "path": "src/worker/repro-worker-connection-closing-window.ts",
+          "range": {"end_line": 181, "start_line": 1},
+          "symbol": "worker connection close/reconnect race oracle"
         }
       ],
       "status": {
@@ -20796,6 +20802,18 @@
         "path": "src/worker/worker-deploy-state-read.ts",
         "range": {"end_line": 2, "start_line": 1},
         "symbol": "worker deploy state read entry"
+        },
+        {
+          "blob_sha": "fe4970aa797d739cca6e251d193c801397f5ff59",
+          "path": "src/worker/worker-gateway-tools.test.ts",
+          "range": {"end_line": 168, "start_line": 1},
+          "symbol": "Gateway tool proxy contract oracle"
+        },
+        {
+          "blob_sha": "2547ffa57a8407595ba4cbaaf2393d9196e243e5",
+          "path": "src/worker/worker-deploy-entry.test.ts",
+          "range": {"end_line": 139, "start_line": 1},
+          "symbol": "worker deploy entry contract oracle"
         }
       ],
       "status": {
