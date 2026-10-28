@@ -10,10 +10,10 @@
     "ui_accepted": false
   },
   "file_coverage": {
-    "mapped_paths": 1046,
+    "mapped_paths": 1047,
     "omitted_known": 0,
     "tracked_paths": 58750,
-    "unclassified_paths": 57704
+    "unclassified_paths": 57703
   },
   "inventory_authority": {
     "manifest_source": "GitHub Actions immutable artifact candidate",
@@ -20850,6 +20850,12 @@
           "path": "src/worker/worker-runtime-replay.suite.ts",
           "range": {"end_line": 128, "start_line": 1},
           "symbol": "worker replay-window oracle"
+        },
+        {
+          "blob_sha": "93ac2cf121ea3e772867d715dd077255c8fcc389",
+          "path": "src/worker/worker-runtime-permissions.suite.ts",
+          "range": {"end_line": 276, "start_line": 1},
+          "symbol": "worker permission and containment oracle"
         }
       ],
       "status": {
