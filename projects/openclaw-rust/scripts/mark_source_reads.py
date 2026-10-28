@@ -41,6 +41,7 @@ READS = {
     "src/node-host/launcher-client.ts": (128, "OCRM-RESP-NODE-HOST-CONNECTION-001", "OCRM-M13"),
     "src/node-host/mac-worker-entry.ts": (111, "OCRM-RESP-NODE-HOST-CONNECTION-001", "OCRM-M13"),
     "src/node-host/skills.ts": (142, "OCRM-RESP-NODE-HOST-CONNECTION-001", "OCRM-M13"),
+    "src/node-host/runtime.ts": (719, "OCRM-RESP-NODE-HOST-CONNECTION-001", "OCRM-M13"),
     "src/node-host/runtime-manifest.ts": (113, "OCRM-RESP-NODE-HOST-RUNTIME-MANIFEST-001", "OCRM-M13"),
     "src/node-host/gateway-candidate-connection.ts": (188, "OCRM-RESP-NODE-HOST-CONNECTION-001", "OCRM-M13"),
     "src/node-host/config.ts": (130, "OCRM-RESP-NODE-HOST-CONNECTION-001", "OCRM-M13"),
