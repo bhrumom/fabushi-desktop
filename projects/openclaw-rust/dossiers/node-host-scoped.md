@@ -155,3 +155,13 @@ Therefore the future Rust node runtime should model this as a command-owner regi
 - every invoke response includes the original `id` and `nodeId`, uses the Gateway capability to decide whether permission details may be exposed, and treats result delivery as best-effort without replaying a failed mutation.
 
 The current Fabushi `runtime_manifest.rs` is only a static pure builder and does not yet carry the upstream dynamic plugin/ephemeral/path/Computer surface or a live response transport. The existing `command_dispatch.rs` is likewise only a protocol boundary. These facts remain implementation gaps, not reasons to widen the pairing/RPC owner.
+
+## 17. Live-main delta read for node-host (2026-10-29)
+
+After the live-main drift check, the changed node-host sources were reread at `bf6a97a1761ed7f752544f4934aa708b9d896bd3`:
+
+- `runtime-manifest.ts` now advertises `NODE_CLAUDE_NATIVE_AUTH_CAPABILITY` alongside the existing Claude skills capability when Claude is enabled; this is a live-main capability delta absent from the locked blob.
+- `invoke.ts` now wraps the complete dispatch path inside `handleInvoke`, logs formatted unexpected failures, inlines the MCP branch, and sends `system.run` events through the abort-aware invocation client. The command-owner and late-result fences remain, but the error/observability surface differs from the locked source.
+- `runtime.ts` and `client.ts` retain the locked blob identities in the current live tree, so their prior exact reads remain directly applicable to those two files only.
+
+The live delta is recorded as new source evidence, not silently merged into the locked inventory. A Rust implementation must not omit the native-auth capability or copy the older invoke error path when the final source baseline is re-frozen.
