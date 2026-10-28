@@ -10,10 +10,10 @@
     "ui_accepted": false
   },
   "file_coverage": {
-    "mapped_paths": 1059,
+    "mapped_paths": 1060,
     "omitted_known": 0,
     "tracked_paths": 58750,
-    "unclassified_paths": 57691
+    "unclassified_paths": 57690
   },
   "inventory_authority": {
     "manifest_source": "GitHub Actions immutable artifact candidate",
@@ -19767,6 +19767,12 @@
           "path": "src/worker/worker-connection.test.ts",
           "range": {"end_line": 710, "start_line": 1},
           "symbol": "worker connection lifecycle, failure, backoff, and callback isolation oracle"
+        },
+        {
+          "blob_sha": "fbd08a2b4f9532895ec49d91eb9233d33c661bf0",
+          "path": "src/worker/worker-rpc-clients.test.ts",
+          "range": {"end_line": 418, "start_line": 1},
+          "symbol": "worker inference/live/transcript RPC client oracle"
         }
       ],
       "status": {

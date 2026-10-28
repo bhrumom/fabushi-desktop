@@ -146,6 +146,7 @@ READS = {
     "src/worker/worker-connection-closing-window.test.ts": (58, None, "OCRM-M13", "test-oracle-replaced"),
     "src/worker/worker-connection-endpoint.test.ts": (112, None, "OCRM-M13", "test-oracle-replaced"),
     "src/worker/worker-connection.test.ts": (710, None, "OCRM-M13", "test-oracle-replaced"),
+    "src/worker/worker-rpc-clients.test.ts": (418, None, "OCRM-M13", "test-oracle-replaced"),
     "src/node-host/node-worker-turn-settlement.worker.ts": (42, "OCRM-RESP-NODE-HOST-COMMAND-DISPATCH-001", "OCRM-M13"),
     "src/node-host/node-worker-turn-store.ts": (36, "OCRM-RESP-NODE-HOST-COMMAND-DISPATCH-001", "OCRM-M13"),
     "src/node-host/node-worker-launch-schema.ts": (42, "OCRM-RESP-NODE-HOST-COMMAND-DISPATCH-001", "OCRM-M13"),
