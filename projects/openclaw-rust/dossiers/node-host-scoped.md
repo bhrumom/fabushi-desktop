@@ -52,3 +52,9 @@ The canonical production Computer owner remains `source/host/src/remote_computer
 ## 6. Upstream protocol correction (revalidated 2026-10-29)
 
 The pinned upstream `src/worker/node-computer-protocol.ts` and `src/plugins/computer-use-contract.ts` define `provider.generation` as an opaque non-empty string, and require execution-owner fields on `act`/`snapshot` payloads. The dispatch-owner slice therefore uses string generation fencing and records execution-owner/schema validation as a separate follow-up; it does not claim the current fixture contract is a complete Computer protocol implementation.
+
+## 7. Computer owner decision boundary (revalidated 2026-10-29)
+
+The pinned upstream `src/node-host/computer-command.ts` does not implement desktop side effects itself: it reads the registered provider capabilities, fences the opaque generation, then invokes `computer.act` or `screen.snapshot` and validates the returned contract. Its node-host `system.run` and desktop-stream paths are separate command owners with their own policy, cancellation, and loopback transport rules.
+
+Fabushi's existing `NativeDesktopRemoteExecutor` is a valid native Computer owner for the `Computer` tool, with remote-control policy, `ComputerControlLeaseRequest`, and `execute_with_lease_fenced`; its shipping private target service is already attached through `NetworkEnrollmentSupervisor`. It intentionally rejects other tool names, so it cannot be silently reused as a generic node-host `computer.act`/`screen.snapshot` executor. The remaining production decision is a contract-preserving adapter to that owner, or a separately approved node-host owner, including execution-owner validation, result schema projection, currentness, and real node/device transport. No such adapter is claimed by the current slice.
