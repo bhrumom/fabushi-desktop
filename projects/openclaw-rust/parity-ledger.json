@@ -4676,7 +4676,7 @@
         "mahayana_host_runtime::extensions::local_exec"
       ],
       "evidence_refs": [
-        "source/host/tests/gateway_local_exec_sand_box_contract.rs",
+        "source/host/tests/process_tree_contract.rs",
         "projects/openclaw-rust/dossiers/process-exec-shell-scoped.md"
       ],
       "existing_owner_candidates": [
@@ -4687,10 +4687,10 @@
       ],
       "id": "OCRM-RESP-EXEC-TERMINATION-CONTROLLER-001",
       "integration": {
-        "consumer": "source/host/src/extensions/local_exec/gateway_local_exec_sand_box.rs",
-        "entrypoint": "source/host/src/extensions/local_exec/mod.rs",
-        "owner": "source/host/src/extensions/local_exec/gateway_local_exec_sand_box.rs",
-        "producer": "source/host/src/runner/mod.rs"
+        "consumer": "source/host/src/network_worker_process.rs and source/host/src/box/exec_daemon_process.rs",
+        "entrypoint": "source/host/src/runner/process_tree.rs::terminate_process_tree",
+        "owner": "source/host/src/runner/process_tree.rs",
+        "producer": "managed network-worker and box exec-daemon supervisors"
       },
       "invariants": [
         "Graceful signal sent first; force kill applied if process remains alive past killGraceMs",
@@ -4701,7 +4701,7 @@
         "OCRM-EXEC-O06",
         "OCRM-EXEC-O07"
       ],
-      "owner_decision": "Implement graceful-then-force process termination in local exec sandbox",
+      "owner_decision": "Reuse the shared process-tree owner for graceful-then-force termination across managed supervisors",
       "postconditions": [
         "All descendant processes terminated and resources released"
       ],
@@ -4723,7 +4723,7 @@
       "responsibility_kind": "business-runtime",
       "reviewer": "xuyao@ombhrum.com",
       "risk": "High; prevents zombie processes consuming host CPU and memory",
-      "selected_owner": "source/host/src/extensions/local_exec/gateway_local_exec_sand_box.rs",
+      "selected_owner": "source/host/src/runner/process_tree.rs",
       "source_refs": [
         {
           "blob_sha": "8b799aea4cccb13dd5b76b4b25c49b4c025cf5d1",
@@ -4741,18 +4741,18 @@
         "mapping": "mapped",
         "read": "read-complete",
         "verification": "not-run",
-        "wiring": "not-wired"
+        "wiring": "wired"
       },
       "target": {
         "language": "Rust",
-        "path": "source/host/src/extensions/local_exec/gateway_local_exec_sand_box.rs",
-        "symbol": "GatewayLocalExecSandBox::terminate"
+        "path": "source/host/src/runner/process_tree.rs",
+        "symbol": "terminate_process_tree"
       },
       "tests": [
-        "source/host/tests/gateway_local_exec_sand_box_contract.rs::upload_and_download_enforce_gate_and_use_frozen_frames"
+        "source/host/tests/process_tree_contract.rs::production_terminator_kills_real_shell_and_descendant"
       ],
       "typed_contracts": [
-        "GatewayLocalExecSandBox::terminate"
+        "terminate_process_tree"
       ],
       "unit_id": "OCRM-UNIT-EXEC-001"
     },

@@ -45,7 +45,8 @@ The audited source code was decomposed into 6 discrete Rust runtime responsibili
 
 4. **`OCRM-RESP-EXEC-TERMINATION-CONTROLLER-001`**:
    - **Behavior**: Process termination controller, graceful kill grace window (`killGraceMs`), fallback to SIGKILL / taskkill force kill, and process group reap settlement.
-   - **Rust Owner**: `source/host/src/extensions/local_exec/gateway_local_exec_sand_box.rs:GatewayLocalExecSandBox::terminate`.
+   - **Rust Owner**: `source/host/src/runner/process_tree.rs:terminate_process_tree`.
+   - **Production Call Chain**: managed `NetworkWorkerProcess` and `BoxExecDaemonProcess` supervisors call `terminate_process_tree` during shutdown, which discovers descendants, sends a graceful signal, waits the configured grace window, then force-kills the originally captured process tree and waits for root settlement.
    - **Oracles**: `OCRM-EXEC-O06`, `OCRM-EXEC-O07`.
 
 5. **`OCRM-RESP-EXEC-KILL-TREE-001`**:
