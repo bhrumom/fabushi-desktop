@@ -176,3 +176,7 @@ The live `crates/openclaw-node-host/src/node.rs` at `bf6a97a1761ed7f752544f4934a
 - external-signing coverage now exercises both V3 and V4 and uses protocol-specific Windows metadata (`win32|` for V3 and `windows|windows` for V4).
 
 This is not a documentation-only drift: protocol selection, dependency ownership, and signed device metadata can affect interoperability and identity acceptance. The current Rust implementation and parity evidence remain bound to the locked source until the Actions authority deliberately selects a new exact baseline and regenerates inventory, mapping, and verification receipts.
+
+## 19. Node-host closure surface count (2026-10-29)
+
+The locked upstream tree contains 226 blob files in the node-host scope: 209 under `src/node-host/` and 17 under `crates/openclaw-node-host/`. The three existing node-host parity rows cover only the connection, command-dispatch, and manifest responsibilities; they do not establish file-by-file closure for the remaining worker, stream, update, plugin, protocol, sidecar, and test sources. Accordingly, the node-host source-closure and responsibility-mapping gates remain open even though the three rows now point at production source files rather than test-only anchors.
