@@ -19958,6 +19958,36 @@
           "symbol": "NodeWorkerJournalWorker"
         },
         {
+          "blob_sha": "28b54ba0c8db3857be0cb87b987b4dd221d93bca",
+          "path": "src/node-host/node-worker-launch-receipt.ts",
+          "range": { "end_line": 151, "start_line": 1 },
+          "symbol": "nodeWorkerLaunchReceiptFromRow"
+        },
+        {
+          "blob_sha": "4b7eb454b12b8ebaee4cd9deda4da91d61429048",
+          "path": "src/node-host/node-worker-launch-store.ts",
+          "range": { "end_line": 102, "start_line": 1 },
+          "symbol": "NodeWorkerLaunchStore"
+        },
+        {
+          "blob_sha": "8f157892aa2f2883b10cc929f5a63fd3702b4e64",
+          "path": "src/node-host/node-worker-supervisor-ownership.ts",
+          "range": { "end_line": 216, "start_line": 1 },
+          "symbol": "NodeWorkerRunningChild"
+        },
+        {
+          "blob_sha": "16f55f376761382a29d7dba57fa718ca747346dc",
+          "path": "src/node-host/node-worker-supervisor-recovery.ts",
+          "range": { "end_line": 321, "start_line": 1 },
+          "symbol": "createNodeWorkerLaunchRecovery"
+        },
+        {
+          "blob_sha": "aea3f77b5e2c6c10d4994c75817564fb27aa93cf",
+          "path": "src/node-host/node-worker-tree-control.ts",
+          "range": { "end_line": 117, "start_line": 1 },
+          "symbol": "stopOwnedNodeWorkerTree"
+        },
+        {
           "blob_sha": "f2b2b63fb265ddf79e6c66d02c13e687237d7229",
           "path": "crates/openclaw-node-host/src/host.rs",
           "range": {
