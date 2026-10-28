@@ -10,10 +10,10 @@
     "ui_accepted": false
   },
   "file_coverage": {
-    "mapped_paths": 967,
+    "mapped_paths": 970,
     "omitted_known": 0,
     "tracked_paths": 58750,
-    "unclassified_paths": 57783
+    "unclassified_paths": 57780
   },
   "inventory_authority": {
     "manifest_source": "GitHub Actions immutable artifact candidate",
@@ -19899,6 +19899,24 @@
           "path": "src/node-host/mcp.ts",
           "range": {"end_line": 588, "start_line": 1},
           "symbol": "startNodeHostMcpManager"
+        },
+        {
+          "blob_sha": "a128c4dfdec7d535b0c19d4efa92e2708cf8a095",
+          "path": "src/node-host/invoke-system-run-allowlist.ts",
+          "range": {"end_line": 225, "start_line": 1},
+          "symbol": "resolveSystemRunExecArgv"
+        },
+        {
+          "blob_sha": "8868b3283c4ac7075ff5c1027db181dc523e5d10",
+          "path": "src/node-host/invoke-system-run-plan.ts",
+          "range": {"end_line": 216, "start_line": 1},
+          "symbol": "buildSystemRunApprovalPlan"
+        },
+        {
+          "blob_sha": "947af4d8a08e753c939f136bda88eecbb7b6fa63",
+          "path": "src/node-host/invoke-system-run-denied.ts",
+          "range": {"end_line": 78, "start_line": 1},
+          "symbol": "sendSystemRunDenied"
         },
         {
           "blob_sha": "67dcb7525571e5b24de9fdb279f0219f2705bd86",
