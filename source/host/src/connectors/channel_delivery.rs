@@ -13,6 +13,16 @@ pub enum ChannelOutboundMessage {
     },
 }
 
+impl ChannelOutboundMessage {
+    pub fn operation_id(&self) -> Option<&str> {
+        match self {
+            Self::Text { operation_id, .. } | Self::Attachment { operation_id, .. } => {
+                operation_id.as_deref()
+            }
+        }
+    }
+}
+
 pub trait ChannelDeliveryPort: Send + Sync {
     fn deliver(
         &self,

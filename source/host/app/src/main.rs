@@ -5239,6 +5239,7 @@ fn queue_channel_delivery_failure(
     wakes: Arc<Mutex<BackgroundWakes<serde_json::Value>>>,
     agent_id: String,
     address_token: String,
+    delivery_operation_id: Option<String>,
     reason: String,
 ) {
     let should_spawn = {
@@ -5250,6 +5251,7 @@ fn queue_channel_delivery_failure(
             agent_id.clone(),
             serde_json::json!({
                 "addressToken": address_token,
+                "deliveryOperationId": delivery_operation_id,
                 "reason": reason,
             }),
         );
@@ -9812,6 +9814,7 @@ impl GatewayApi for UnifiedGatewayApi {
             let wakes = Arc::clone(&self.background_wakes);
             let worker_agent_id = agent_id.clone();
             let worker_address = address_token.clone();
+            let delivery_operation_id = outbound.operation_id().map(ToOwned::to_owned);
             if let Err(error) = thread::Builder::new()
                 .name(format!("mahayana-channel-delivery-{agent_id}"))
                 .spawn(move || {
@@ -9833,6 +9836,7 @@ impl GatewayApi for UnifiedGatewayApi {
                             wakes,
                             worker_agent_id,
                             worker_address,
+                            delivery_operation_id,
                             reason,
                         );
                     }

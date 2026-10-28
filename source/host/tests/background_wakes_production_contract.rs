@@ -192,6 +192,7 @@ fn shipping_send_message_reaches_host_owned_delivery_failure_broadcast_and_conte
         .expect("transcript entry persistence");
     assert!(persisted_entry < dispatch, "delivery dispatch must follow transcript persistence");
     assert!(SHIPPING_HOST.contains("deliveryOperationId"));
+    assert!(SHIPPING_HOST.contains("delivery_operation_id: Option<String>"));
 
     assert!(SHIPPING_HOST.contains("queue_channel_delivery_failure("));
     assert!(SHIPPING_HOST.contains("run_channel_failure_revival_worker"));

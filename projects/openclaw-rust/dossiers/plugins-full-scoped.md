@@ -164,6 +164,8 @@ Bundled channel entry registration now rejects an already-present channel before
 
 The outbound seam now persists the generated transcript entry before spawning the channel delivery dispatch and propagates that entry ID as `deliveryOperationId` into `ChannelOutboundMessage`. This gives a future provider adapter a stable operation key and prevents a persistence failure from preceding an external send. It is not yet a durable outbox, provider idempotency receipt, retry/reconcile ledger, or packaged channel acceptance; the dispatch remains asynchronous and current external adapters are absent.
 
+Channel delivery failure queue entries now retain the same optional `deliveryOperationId` alongside address and humanized reason, so the background revival consumer does not discard the identity needed for a future receipt/reconciliation owner. The current revival still only prompts an in-app follow-up and does not retry or prove remote delivery.
+
 
 
 
