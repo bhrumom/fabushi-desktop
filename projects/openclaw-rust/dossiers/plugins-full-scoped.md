@@ -136,6 +136,10 @@
 
 The locked channel entrypoint barrels for A2A, Buzz, Feishu, LINE, Matrix, Nostr, QA Channel, Raft, Reef, SMS, Tlon, Twitch, X, and Zalo were read in full at the frozen upstream commit. Each exports exactly one channel plugin from its narrow implementation module; Matrix additionally documents the deliberate narrow-import boundary that prevents lightweight discovery/bootstrap from loading its broad API barrel. These files preserve plugin discovery reachability and channel-runtime ownership; they contain no independent channel state, transport, credential, or second runtime implementation. They are mapped to the existing `OCRM-RESP-PLUGIN-SDK-CHANNEL-RUNTIME-001` owner and do not by themselves prove Fabushi Rust channel integration, installed plugin reachability, or real provider/device acceptance.
 
+## 2026-10-29 — locked plugin runtime/config/CLI entrypoints
+
+The locked LINE, Reef, Zalo, and X runtime API barrels, Feishu/Nextcloud Talk/Telegram config-doctor barrels, the Nextcloud Talk doctor-contract barrel, the oc-path CLI metadata barrel, and the memory-core CLI barrel were read in full at the frozen upstream commit. Runtime barrels expose only the existing extension runtime setter; config-doctor barrels preserve the extension's doctor contract without duplicating validation; the doctor-contract barrel keeps its compatibility alias; and the CLI barrels expose existing registration/metadata owners. These entrypoints are mapped to the existing channel-entry, channel-config, and plugin activation owners. They do not create new state truth or runtime loops and do not by themselves prove installed plugin, CLI, provider, or device acceptance.
+
 
 
 
