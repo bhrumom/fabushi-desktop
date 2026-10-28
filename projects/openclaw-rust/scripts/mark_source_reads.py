@@ -35,6 +35,7 @@ READS = {
     "src/media/local-roots.ts": (197, "OCRM-RESP-MEDIA-LOCAL-ROOTS-001", "OCRM-M24"),
     "src/media/read-capability.ts": (267, "OCRM-RESP-MEDIA-READ-CAPABILITY-001", "OCRM-M24"),
     "src/media/remote-workspace-file.ts": (138, "OCRM-RESP-MEDIA-REMOTE-WORKSPACE-FILE-001", "OCRM-M24"),
+    "src/media/web-media.ts": (813, "OCRM-RESP-MEDIA-WEB-PIPELINE-001", "OCRM-M24"),
     "src/process/exec.ts": (383, "OCRM-RESP-EXEC-PROCESS-SPAWN-001", "OCRM-M25"),
     "src/process/exec.test.ts": (682, "OCRM-RESP-EXEC-PROCESS-SPAWN-001", "OCRM-M25"),
     "src/process/exec-runner.ts": (720, "OCRM-RESP-EXEC-RUNNER-TIMEOUT-001", "OCRM-M25"),

@@ -19,6 +19,14 @@ timeouts, and rejects size/revision changes during transfer. The canonical row
 maps to the existing Rust remote-workspace owner without claiming live
 consumer acceptance.
 
+It also re-read `src/media/web-media.ts` in full (blob
+`41ea7a7cedeff9c56eb2badfa9f1d1f6a67e2909`, 813 lines). The source resolves
+media-store/file/workspace/HTTP inputs, enforces SSRF and local-root guards,
+requires provenance for generated HTML host reads, bounds source and delivery
+bytes, preserves safe image formats where policy permits, and otherwise runs
+bounded dimension/quality optimization before returning typed media. This is
+source/owner evidence only; no live consumer or verification status is inferred.
+
 The locked-source pass re-read `src/media/anthropic-inline-images.ts` in full
 (blob `84049330c09c297ed5913a9f33905b7162a83a5d`, 96 lines). Its concrete
 behavior is a 10 MiB decoded inbound-image guard, canonical base64 handling,
