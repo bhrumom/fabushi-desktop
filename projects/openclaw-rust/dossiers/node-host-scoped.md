@@ -133,3 +133,15 @@ The current branch recheck finds:
 - Existing MCP and local-exec owners are present, but no current owner exposes the required remote node `connect → manifest → invoke → cancel/result → reconnect` lifecycle.
 
 This is a confirmed owner gap, not permission to add a second registry inside `main.rs`. The next implementation slice must introduce or designate one canonical transport/runtime owner at the host boundary, then adapt the existing owners through it.
+
+## 15. Pinned `src/node-host/invoke.ts` command-owner audit (2026-10-29)
+
+The exact read of `invoke.ts` confirms command dispatch is a policy router over existing owners, with several important fail-closed rules:
+
+- worker supervisor commands, device apps, desktop stream, MCP, Claude CLI, plugin commands, Computer, and `system.run` are separate branches with separate policy/side-effect owners;
+- `system.run.prepare` binds execution context, approval policy, cwd, environment, and allow-always coverage before execution; `system.run` then delegates to the existing exec authorization/runner path;
+- Computer dispatch requires a supplied worker Computer provider and delegates `computer.act`/`screen.snapshot` through the provider/plugin owner; absence of the provider returns unavailable rather than a synthetic success;
+- an abort-aware client suppresses late result/progress/event writes for superseded invocations, while the exact current framed failure may be reported through the current owner only;
+- MCP and desktop-stream failures are typed and bounded, and unknown commands return unavailable.
+
+Therefore the future Rust node runtime should model this as a command-owner registry/admission layer, not merge all commands into one generic executor. The existing Fabushi local exec, Computer lease, MCP, worker supervisor, and stream owners remain the only valid side-effect destinations; the missing work is the live remote node transport and generation fence that invokes them safely.
