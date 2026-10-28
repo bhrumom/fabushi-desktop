@@ -221,6 +221,10 @@ The live `openclaw/openclaw` default branch advanced again after the earlier nod
 
 The locked-to-live compare reports 4,851 commits ahead. Because the very large compare response did not provide a usable file list, file absence or equality is not inferred from it. Direct live-tree observations for the node-host surface are recorded for `crates/openclaw-node-host/src/node.rs`, `crates/openclaw-node-host/src/runtime.rs`, `src/node-host/config-shared.ts`, `src/node-host/connection.ts`, `src/node-host/invoke.ts`, and `src/node-host/runtime-manifest.ts` using their current live blob identities. This refresh supersedes the earlier `bf6a97a1`/`3fa25384` observation for live identity only; it does not accept the new tree as the implementation baseline, alter inventory/parity counts, or close source mapping.
 
+## 31. Live-main refresh after progress/stream read (2026-10-29)
+
+The live default branch advanced again to `29ebbe869cc4b4d085be6f7ef79f0edc3c204ec9`, tree `d2f7823097e89fb26dd27ad3ef6fe42d1451c8a2`; the locked implementation source remains unchanged. The locked-to-live compare now reports 4,853 commits ahead and returns 300 changed files. The current live progress and stream blobs are `2a42164cf8ee933250e63ef7017362c47c99b9bb` and `080cdf9110eb90c1163490475cfe52b03f526e5a`, respectively, so the detailed behavior read and Rust seam just recorded remain explicitly bound to the locked blobs, not to live main. No inventory, baseline, or completion flag is changed by this refresh.
+
 ## 28. Local invocation admission wiring (2026-10-29)
 
 The local `node.invoke system.run` path now admits its idempotency key against the startup local-session lease in `NodeHostInvocationRegistry` before calling the existing `HostLocalExecExtension`, then settles the admission after the executor returns. Duplicate invocation ids therefore fail before a second local side effect. This is a narrow producer-to-owner wiring improvement and does not claim transport parity: remote Gateway admission, cancellation propagation, disconnect generation drain, progress/result publication, and physical side-effect cancellation remain open.
