@@ -486,7 +486,7 @@ pub struct ProductionHostExtensions {
     /// Canonical channel delivery boundary consumed by Gateway and channel adapters.
     pub channel_delivery: HostChannelDelivery,
     /// Provider registration surface behind the canonical channel delivery boundary.
-    pub channel_delivery_router: ChannelDeliveryRouter,
+    channel_delivery_router: ChannelDeliveryRouter,
     pub turn_execution: Arc<Mutex<TurnExecutionRegistry>>,
     session: Mutex<Option<SessionExtension>>,
     auto_review: Mutex<Option<Arc<HostAutoReviewExtension>>>,
@@ -725,6 +725,24 @@ impl ProductionHostExtensions {
             return Err(format!("channel is not registered: {channel_id}"));
         }
         self.channel_delivery_router.register(channel_id, port)
+    }
+
+    pub fn replace_channel_delivery_provider(
+        &self,
+        channel_id: &str,
+        port: Arc<dyn ChannelDeliveryPort>,
+    ) -> Result<(), String> {
+        if self.plugin_capability_catalog.get_channel(channel_id).is_none() {
+            return Err(format!("channel is not registered: {channel_id}"));
+        }
+        self.channel_delivery_router.replace(channel_id, port)
+    }
+
+    pub fn unregister_channel_delivery_provider(&self, channel_id: &str) -> Result<bool, String> {
+        if self.plugin_capability_catalog.get_channel(channel_id).is_none() {
+            return Err(format!("channel is not registered: {channel_id}"));
+        }
+        Ok(self.channel_delivery_router.unregister(channel_id))
     }
 
     pub fn stop_structured_log_domain_reporters(&self) {

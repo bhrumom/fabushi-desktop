@@ -104,7 +104,7 @@ fn production_host_owns_the_canonical_plugin_capability_catalog() {
 fn production_host_owns_the_channel_delivery_boundary_consumed_by_gateway() {
     for needle in [
         "pub channel_delivery: HostChannelDelivery",
-        "pub channel_delivery_router: ChannelDeliveryRouter",
+        "channel_delivery_router: ChannelDeliveryRouter",
         "let channel_delivery_router = ChannelDeliveryRouter::new();",
         "let channel_delivery = HostChannelDelivery::new(Arc::new(channel_delivery_router.clone()));",
         "channel_delivery,",
@@ -119,6 +119,15 @@ fn production_host_owns_the_channel_delivery_boundary_consumed_by_gateway() {
         SHIPPING_HOST.contains("channel_delivery: production_extensions.channel_delivery.clone()"),
         "Gateway must consume the canonical ProductionHostExtensions channel delivery"
     );
+    for needle in [
+        "pub fn replace_channel_delivery_provider(",
+        "pub fn unregister_channel_delivery_provider(",
+    ] {
+        assert!(
+            PRODUCTION_OWNER.contains(needle),
+            "provider lifecycle operation must be owned by ProductionHostExtensions: {needle}"
+        );
+    }
 }
 
 

@@ -154,6 +154,8 @@ The native connector now provides `ChannelDeliveryRouter`, a provider-port multi
 
 The router now rejects duplicate registrations by default and exposes explicit `replace` for controlled reconnect/re-authentication. The oracle covers initial delivery, duplicate rejection, unregister failure, and explicit replacement; it does not constitute a live provider or packaged acceptance result.
 
+The production owner keeps the router private and exposes registration, replacement, and unregister operations only through `ProductionHostExtensions`. Replacement and revocation use the same capability-catalog gate as initial registration, so provider lifecycle changes cannot bypass plugin discovery authorization. This remains a local ownership seam pending exact-head Actions evidence and real provider/package acceptance.
+
 
 
 
