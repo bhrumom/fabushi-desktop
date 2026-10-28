@@ -10,10 +10,10 @@
     "ui_accepted": false
   },
   "file_coverage": {
-    "mapped_paths": 980,
+    "mapped_paths": 986,
     "omitted_known": 0,
     "tracked_paths": 58750,
-    "unclassified_paths": 57770
+    "unclassified_paths": 57764
   },
   "inventory_authority": {
     "manifest_source": "GitHub Actions immutable artifact candidate",
@@ -20400,6 +20400,42 @@
           "path": "src/node-host/node-worker-workspace-git.ts",
           "range": { "end_line": 91, "start_line": 1 },
           "symbol": "initializeNodeWorkerGitWorkspace"
+        },
+        {
+          "blob_sha": "3ca5604333772ff99bdcde81a039720f1f20f171",
+          "path": "src/node-host/node-worker-supervisor-commands.ts",
+          "range": { "end_line": 378, "start_line": 1 },
+          "symbol": "invokeNodeWorkerSupervisorCommand"
+        },
+        {
+          "blob_sha": "8809811978679c8824c801779f6b75483191f184",
+          "path": "src/node-host/node-worker-turn-settlement.worker.ts",
+          "range": { "end_line": 42, "start_line": 1 },
+          "symbol": "settleNodeWorkerActiveTurns"
+        },
+        {
+          "blob_sha": "eade35ccc97d4a86bab37aff83f8777aad49833d",
+          "path": "src/node-host/node-worker-turn-store.ts",
+          "range": { "end_line": 36, "start_line": 1 },
+          "symbol": "NodeWorkerTurnStore"
+        },
+        {
+          "blob_sha": "9517bb825a678963ce76f1408edfcfb7a24c5a25",
+          "path": "src/node-host/node-worker-launch-schema.ts",
+          "range": { "end_line": 42, "start_line": 1 },
+          "symbol": "ensureNodeWorkerLaunchSchema"
+        },
+        {
+          "blob_sha": "d5e7c55dfabd7c679302001b25663a066e5f45fe",
+          "path": "src/node-host/node-worker-prepared-workspace-publication.ts",
+          "range": { "end_line": 32, "start_line": 1 },
+          "symbol": "nodePreparedWorkspacePublication"
+        },
+        {
+          "blob_sha": "ecfb05c084a18dae99b738c5deff2b8244f86222",
+          "path": "src/node-host/with-timeout.ts",
+          "range": { "end_line": 51, "start_line": 1 },
+          "symbol": "runAbortableTimeout"
         },
         {
           "blob_sha": "f2b2b63fb265ddf79e6c66d02c13e687237d7229",
