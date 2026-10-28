@@ -20078,6 +20078,54 @@
           "symbol": "runNodeWorkerWorkspaceSeed"
         },
         {
+          "blob_sha": "5766907fad8ccf6d178211be516d2e0a3aea4ffb",
+          "path": "src/node-host/node-worker-prepared-workspace.ts",
+          "range": { "end_line": 258, "start_line": 1 },
+          "symbol": "NodeWorkerPreparedWorkspaceRuntime"
+        },
+        {
+          "blob_sha": "30d8168b3d3a8a7a508d911369a8d6a9d74b2075",
+          "path": "src/node-host/node-worker-prepared-workspace-store.ts",
+          "range": { "end_line": 117, "start_line": 1 },
+          "symbol": "NodeWorkerPreparedWorkspaceStore"
+        },
+        {
+          "blob_sha": "c4c0830044d813e94adbba3a5bff889da9b5fd2b",
+          "path": "src/node-host/node-worker-prepared-workspace-store.kernel.ts",
+          "range": { "end_line": 247, "start_line": 1 },
+          "symbol": "NodeWorkerPreparedWorkspaceKernel"
+        },
+        {
+          "blob_sha": "eb893aa834b042f3a07f42a7807e00cb59c4acd5",
+          "path": "src/node-host/node-worker-prepared-workspace-transfer.ts",
+          "range": { "end_line": 183, "start_line": 1 },
+          "symbol": "prepareNodeWorkerWorkspaceOverlay"
+        },
+        {
+          "blob_sha": "c69b4b6f376eb15af584667e191eb5efb86ea278",
+          "path": "src/node-host/node-worker-transfer-client.ts",
+          "range": { "end_line": 687, "start_line": 1 },
+          "symbol": "runNodeWorkerWorkspaceTransfer"
+        },
+        {
+          "blob_sha": "cf14cf9a5d624c05c414c8371f63a633984c6f9c",
+          "path": "src/node-host/node-worker-transfer-http.ts",
+          "range": { "end_line": 275, "start_line": 1 },
+          "symbol": "withNodeWorkerTransferHttpRequest"
+        },
+        {
+          "blob_sha": "6d467dfd6fae54da2236e644d4cbe863d07b6a65",
+          "path": "src/node-host/node-worker-device-folder.ts",
+          "range": { "end_line": 115, "start_line": 1 },
+          "symbol": "NodeWorkerDeviceFolders"
+        },
+        {
+          "blob_sha": "103819f35801723300d7aa502c6998c66f02f57f",
+          "path": "src/node-host/node-worker-workspace-commands.ts",
+          "range": { "end_line": 207, "start_line": 1 },
+          "symbol": "captureManifest"
+        },
+        {
           "blob_sha": "f2b2b63fb265ddf79e6c66d02c13e687237d7229",
           "path": "crates/openclaw-node-host/src/host.rs",
           "range": {

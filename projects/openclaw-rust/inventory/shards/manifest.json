@@ -343,14 +343,14 @@
       "uncompressed_sha256": "a70c2e0332bb86027397d5960f397bba1b2ad04fd650ba4faf484a87eae10792"
     },
     {
-      "compressed_sha256": "f38a8f68850af6d4bfceab79b0b597ef846637ee82b7dd3f74695ec37c491feb",
+      "compressed_sha256": "2d10a4b7e346f12d3a07835517717676765e1fde06bdb7eabd1bf47d2d7cc10a",
       "count": 1024,
       "first_path": "src/infra/update-startup-campaign-run.test.ts",
       "last_path": "src/plugin-sdk/agent-sessions.ts",
       "path": "projects/openclaw-rust/inventory/shards/part-0042.jsonl.gz",
       "sha256": "fea4181da60124c0eea91f31f419f14d218a32720e77fb3a8799829e3a1afac2",
       "size_bytes": 48086,
-      "uncompressed_sha256": "c86a04304e86368df5e3bd94a674f47904667bb2c90e930e258424ae3411d396"
+      "uncompressed_sha256": "610ee5841dc8ecfcbbd634d1741e76c5727b71a8db38780a792c5e77e62a72b0"
     },
     {
       "compressed_sha256": "cd0a28caca5d366b85f0653c0135c88a483f6a3cf66740b646491ed7c5e6b241",
