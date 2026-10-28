@@ -23,6 +23,8 @@ The following exact pinned files were read completely in this audit:
 
 The enrollment file imports and inlines behavior from `crabbox-worker-script.ts`, `crabbox-worker-command.ts`, `crabbox-worker-desktop-setup.ts`, and timeout/process helpers. The profile and process contracts plus the macOS/Windows platform bridges are included in this slice; the remaining helper files and reverse callers are not marked complete by this dossier.
 
+The following reverse/provider callers were subsequently read at the same pinned tree: `extensions/crabbox/index.ts`, `extensions/crabbox/src/crabbox-worker-provider.ts` (complete 691-line source), `extensions/crabbox/src/crabbox-worker-warm-image-allocation.ts`, and `extensions/crabbox/src/crabbox-gateway-methods.ts`. Their tests and the remaining provider helper graph are still outside this closure claim.
+
 ## Observed responsibilities
 
 ### Machine catalog and setup choices
@@ -71,6 +73,14 @@ The macOS bridge requires the inspected non-root GUI account, console ownership 
 
 The pinned enrollment tests provide direct positive and negative oracles for: runtime reuse and warm-image upgrade, occupied runtime pointers, plugin activation failure, malformed credential non-disclosure, FIFO archive rejection, concurrent artifact preparation, process identity replay, transient HTTP retry budget, digest/length/redirect/reset/TLS failures before launch, pinned TLS before bearer transmission, desktop setup after launch and replay, exact XFCE environment binding, and invalid desktop-session rejection. The diagnostics test separately proves UTF-8/UTF-16 tail handling, redaction, runtime-path truncation, dead-process markers, and the 2,048-byte cap. These are source oracles only; no local execution is claimed.
 
+### Provider and reverse-caller composition
+
+The plugin entrypoint registers the Crabbox tool, CLI, warm-image gateway methods, worker provider, optional sandbox backend, and cleanup service. It therefore establishes a provider/plugin lifecycle owner rather than a node-RPC implementation detail.
+
+The provider composes binary resolution, machine options, heartbeat renewal, warm-image allocation/capture/maintenance, profile and timeout parsing, project preparation, provider inspection/cleanup, node enrollment setup, desktop preparation, and execution-mode declarations. Provisioning is explicitly node-enrollment-dependent and returns the enrolled `deviceId`; failed or indeterminate phases preserve lease cleanup/replay semantics. Warm-image allocation separately owns checkpoint fork/cold fallback and records operating-system/machine-class invariants. Gateway image methods own snapshot list/recovery/mutation validation and do not provision or execute a node.
+
+This reverse-caller read strengthens the rejected-owner result: the Crabbox provider and plugin lifecycle cannot be recreated inside `call_openclaw_node_register` or `call_openclaw_node_invoke`. Those Fabushi handlers may consume an already-established native device/pairing or local-exec capability, while provider/artifact/bootstrap/process/desktop responsibilities require a separate future owner and ADR.
+
 ## Fabushi owner resolution
 
 | Responsibility | Existing owner | Decision | Reason / boundary |
@@ -84,9 +94,9 @@ The proposed owner is not permission to create an `OpenClawRuntime`, second Agen
 
 ## Required next evidence
 
-- Read and map the imported profile, process, command, script, desktop-setup, timeout, provider, and reverse caller/test contracts at the same pinned upstream tree.
+- Read and map the imported profile, process, command, script, desktop-setup, timeout, provider helper, and reverse caller/test contracts at the same pinned upstream tree.
 - Read the platform-specific `crabbox-worker-desktop-macos.ts` and `crabbox-worker-desktop-windows.ts` contracts and their tests before any owner/ADR decision.
-- Read the remaining helper source (`crabbox-worker-script.ts`, `crabbox-worker-command.ts`, `crabbox-worker-desktop-setup.ts`, timeout/process helpers), provider entrypoint, warm-image callers, and all reverse tests before any owner/ADR decision.
+- Read the remaining helper source (`crabbox-worker-script.ts`, `crabbox-worker-command.ts`, `crabbox-worker-desktop-setup.ts`, timeout/process helpers), provider helper graph and all reverse tests before any owner/ADR decision.
 - Inspect the current Fabushi Host/Coordinator production composition and determine the narrow typed contract for provider catalog, artifact provenance, worker lease, process lifecycle, and diagnostic evidence.
 - Complete rejected-owner analysis and an ADR before creating a new owner. The current `NetworkEnrollmentOwner`, `remote_computer_target`, Sand connectors, and Runner process owners are candidates but cannot be widened by assumption.
 - Add positive and negative oracle rows for malformed catalogs, incompatible targets, credential non-propagation, archive hash/range/TLS failures, unsafe paths, cancellation cleanup, plugin activation failure, stale runtime pointers, diagnostic truncation/redaction, and node launch outcome-unknown.
