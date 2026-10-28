@@ -140,6 +140,10 @@ The locked channel entrypoint barrels for A2A, Buzz, Feishu, LINE, Matrix, Nostr
 
 The locked LINE, Reef, Zalo, and X runtime API barrels, Feishu/Nextcloud Talk/Telegram config-doctor barrels, the Nextcloud Talk doctor-contract barrel, the oc-path CLI metadata barrel, and the memory-core CLI barrel were read in full at the frozen upstream commit. Runtime barrels expose only the existing extension runtime setter; config-doctor barrels preserve the extension's doctor contract without duplicating validation; the doctor-contract barrel keeps its compatibility alias; and the CLI barrels expose existing registration/metadata owners. These entrypoints are mapped to the existing channel-entry, channel-config, and plugin activation owners. They do not create new state truth or runtime loops and do not by themselves prove installed plugin, CLI, provider, or device acceptance.
 
+## 2026-10-29 — channel entry to capability-catalog owner bridge
+
+The existing Rust `BundledChannelEntryContract` previously had only mode-dispatch contract coverage, while `PluginCapabilityCatalog` accepted channel metadata only through a manual `register_channel` call. The native owner now exposes `register_bundled_channel_entry`, which invokes the entry's selected registration mode and records the same entry in the catalog with origin, package, channel identity, and bundled trust metadata. The added contract oracle proves the producer/handler result and catalog consumer projection share one owner and one channel identity. This is implementation progress for the channel-entry responsibility, not a wired/verified/accepted verdict: no current exact-head Actions receipt or packaged runtime call site has yet proven the bridge reachable in production.
+
 
 
 
