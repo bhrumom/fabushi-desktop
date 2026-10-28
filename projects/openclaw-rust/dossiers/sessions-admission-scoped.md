@@ -78,6 +78,18 @@ same lifecycle responsibility as the preservation source, while its removal
 behavior remains source evidence only; no separate test file exists at the
 locked tree and no production caller was inferred.
 
+The pass also completed the five primary session sources already named by the
+ledger: `agent-harness-session-key.ts` (blob
+`374674a13a484c0dc608f1d641f3e438d33fef44`, 261 lines),
+`background-session-result.ts` (`a70b7b04de18bdba5216ece63e50928cd2e6eea2`,
+204 lines), `communication-admission.ts`
+(`72832202551cdcf5884005ac700baa2da30043af`, 89 lines),
+`conversation-turns.ts` (`9e3202483196953131f9f95b7e54c236ae4803f4`, 267
+lines), and `model-overrides.ts`
+(`a8ee87b3130d380fc2123f2687739ac0302a08f9`, 190 lines). Each full-range
+row is mapped to its existing responsibility and no implementation or
+verification status was upgraded by this source read.
+
 1. **`OCRM-RESP-SESSION-KEY-ROUTING-001`**: Classify and route session keys (cron, direct, group, global, spawn-child), reserving `harness:` namespace.
 2. **`OCRM-RESP-SESSION-COMMUNICATION-POLICY-001`**: Inter-session communication admission policy (modes: always, ask, never) with approval requirements.
 3. **`OCRM-RESP-SESSION-CONVERSATION-TURNS-001`**: Conversation turn correlation, pending turn registry, outbound message matching, and turn settlement state machine.
