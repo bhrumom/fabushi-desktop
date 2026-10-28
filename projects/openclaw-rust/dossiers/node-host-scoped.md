@@ -121,3 +121,15 @@ The complete 719-line runtime read confirms that the central OpenClaw node-host 
 - `close()` is re-entrant-safe and joins watcher, supervisor, MCP, disconnect, and pending invocation tails; aborting a signal alone is explicitly not treated as physical process cleanup.
 
 Fabushi already has related worker supervisor, process-observation, MCP, and cleanup owners, but the inspected Rust node-host slice does not yet compose them behind a single live remote node connection-generation owner. This is the concrete production wiring gap behind the earlier fail-closed remote presence decision. A future implementation must preserve these fences and delegate physical worker/process cleanup to the existing owners rather than reimplementing them in RPC handlers.
+
+## 14. Fabushi owner recheck after runtime closure (2026-10-29)
+
+The current branch recheck finds:
+
+- `source/host/app/src/main.rs` still owns only the RPC projection and local `system.run` path; remote invoke remains explicitly unavailable and remote list/status remains paired-but-disconnected.
+- `source/host/src/device_pairing_owner.rs` remains the durable approval/identity owner, not a live Gateway session registry.
+- `source/host/src/network_enrollment_owner.rs`, `source/host/src/network_worker_process.rs`, and the existing worker supervisors own private transport/process lifecycle for their declared products, not OpenClaw node-host connection generation.
+- `source/host/src/remote_computer_target.rs` remains the Computer/lease owner and must not be widened into a generic node-host runtime.
+- Existing MCP and local-exec owners are present, but no current owner exposes the required remote node `connect → manifest → invoke → cancel/result → reconnect` lifecycle.
+
+This is a confirmed owner gap, not permission to add a second registry inside `main.rs`. The next implementation slice must introduce or designate one canonical transport/runtime owner at the host boundary, then adapt the existing owners through it.
