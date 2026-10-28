@@ -10,10 +10,10 @@
     "ui_accepted": false
   },
   "file_coverage": {
-    "mapped_paths": 1063,
+    "mapped_paths": 1064,
     "omitted_known": 0,
     "tracked_paths": 58750,
-    "unclassified_paths": 57687
+    "unclassified_paths": 57686
   },
   "inventory_authority": {
     "manifest_source": "GitHub Actions immutable artifact candidate",
@@ -19791,6 +19791,12 @@
           "path": "src/worker/worker.transcript-failure.test.ts",
           "range": {"end_line": 132, "start_line": 1},
           "symbol": "worker transcript failure retry and no-duplicate oracle"
+        },
+        {
+          "blob_sha": "e8d64afb426d0b892f6b207e71ab2597b201df66",
+          "path": "src/worker/worker-command.runtime.test.ts",
+          "range": {"end_line": 754, "start_line": 1},
+          "symbol": "managed worker command lifetime, retention, fencing, and frame-limit oracle"
         }
       ],
       "status": {
