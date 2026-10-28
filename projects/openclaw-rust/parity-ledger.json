@@ -10,10 +10,10 @@
     "ui_accepted": false
   },
   "file_coverage": {
-    "mapped_paths": 1012,
+    "mapped_paths": 1014,
     "omitted_known": 0,
     "tracked_paths": 58750,
-    "unclassified_paths": 57738
+    "unclassified_paths": 57736
   },
   "inventory_authority": {
     "manifest_source": "GitHub Actions immutable artifact candidate",
@@ -20424,6 +20424,18 @@
           "path": "src/node-host/node-worker-workspace-git.ts",
           "range": { "end_line": 91, "start_line": 1 },
           "symbol": "initializeNodeWorkerGitWorkspace"
+        },
+        {
+          "blob_sha": "e0939f11092ef6254375dba2b3968c7c5d5c45f8",
+          "path": "src/worker/transcript-message.ts",
+          "range": { "end_line": 245, "start_line": 1 },
+          "symbol": "toWorkerTranscriptMessage"
+        },
+        {
+          "blob_sha": "34512f3fb4b8a74314460b752b63903ccf784062",
+          "path": "src/worker/inference-stream.runtime.ts",
+          "range": { "end_line": 390, "start_line": 1 },
+          "symbol": "createWorkerInferenceStreamAdapter"
         },
         {
           "blob_sha": "adfd82e3b4472555be754e4defb38c4e7f8186f9",
