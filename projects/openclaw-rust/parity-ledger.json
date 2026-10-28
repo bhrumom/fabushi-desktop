@@ -10,10 +10,10 @@
     "ui_accepted": false
   },
   "file_coverage": {
-    "mapped_paths": 970,
+    "mapped_paths": 975,
     "omitted_known": 0,
     "tracked_paths": 58750,
-    "unclassified_paths": 57780
+    "unclassified_paths": 57775
   },
   "inventory_authority": {
     "manifest_source": "GitHub Actions immutable artifact candidate",
@@ -19917,6 +19917,36 @@
           "path": "src/node-host/invoke-system-run-denied.ts",
           "range": {"end_line": 78, "start_line": 1},
           "symbol": "sendSystemRunDenied"
+        },
+        {
+          "blob_sha": "b60b89bcccc2fd5bfdca048ff65695229ab41984",
+          "path": "src/node-host/desktop-stream-command.ts",
+          "range": {"end_line": 222, "start_line": 1},
+          "symbol": "invokeNodeDesktopStream"
+        },
+        {
+          "blob_sha": "90434f84ef03a2c3658bb4ec2af064ce38b01cfe",
+          "path": "src/node-host/pty-command.ts",
+          "range": {"end_line": 203, "start_line": 1},
+          "symbol": "runNodePtyCommand"
+        },
+        {
+          "blob_sha": "83e76f7f984671f36a744cc3f0ebd4bbe75e9821",
+          "path": "src/node-host/claude-skill-session.ts",
+          "range": {"end_line": 250, "start_line": 1},
+          "symbol": "prepareNodeClaudeSkillSession"
+        },
+        {
+          "blob_sha": "c86bfa63e95f939dcf2a4ccb019c91368d78da6e",
+          "path": "src/node-host/invoke-agent-cli-claude-handler.ts",
+          "range": {"end_line": 194, "start_line": 1},
+          "symbol": "handleClaudeCliNodeInvoke"
+        },
+        {
+          "blob_sha": "404a3f66adc2490cca01425e3f1d99f28de2b842",
+          "path": "src/node-host/invoke-agent-cli-claude-params.ts",
+          "range": {"end_line": 302, "start_line": 1},
+          "symbol": "decodeClaudeCliNodeRunParams"
         },
         {
           "blob_sha": "67dcb7525571e5b24de9fdb279f0219f2705bd86",
