@@ -47,6 +47,19 @@ termination-controller rows remain `not-wired` with blocker
 `BL-EXEC-TERMINATION-CONTROLLER-CALLER-001`; the kill-tree row remains scoped
 to the real supervisor callers and does not upgrade command-exec parity.
 
+The same locked-source pass also completed the adjacent execution contracts:
+
+| File | Blob SHA | Lines | Read/mapping result |
+|---|---|---:|---|
+| `src/process/exec.ts` | `b46a1511556b7da193b88c6d29fdd9630f4b67d3` | 383 | Full spawn/sandbox/timeout entrypoint read; mapped to `OCRM-RESP-EXEC-PROCESS-SPAWN-001`, with Rust ownership still subject to its existing scoped gateway evidence. |
+| `src/process/exec.test.ts` | `8057c22de46eba1a9b6c19b0780ffb1c90a954ec` | 682 | Full upstream spawn oracle read; source evidence only. |
+| `src/process/exec-runner.ts` | `e9a9c349eddab54fc6f697f75463bfca858f9708` | 720 | Full runner activity/no-output timeout and bounded-output behavior read; mapped to `OCRM-RESP-EXEC-RUNNER-TIMEOUT-001`. |
+| `src/process/exec-runner.timeout.test.ts` | `e0e42a03bb784951c517d4961ea7a8242c0f4ce2` | 213 | Full timeout oracle read; source evidence only. |
+| `src/process/command-error.ts` | `6a49f9c79278aca9381b11a1323d30e6d351995b` | 87 | Full error-tail/ANSI/spawn-classification behavior read; mapped to `OCRM-RESP-EXEC-COMMAND-ERROR-001`. |
+| `src/process/command-error.test.ts` | `ac948164bea6ed80de8e9f7bff27afc51da221c2` | 97 | Full command-error oracle read; source evidence only. |
+| `src/process/bounded-line-framer.ts` | `e2395772f795cd0597b854c478f9f1cfb69bb5ea` | 36 | Full bounded LF framing/overflow behavior read; mapped to `OCRM-RESP-EXEC-LINE-FRAMER-001`. |
+| `src/process/bounded-line-framer.test.ts` | `ab3f5ca0e06b369c26f496db516e734a4629b547` | 29 | Full line-framing oracle read; source evidence only. |
+
 The audited source code was decomposed into 6 discrete Rust runtime responsibilities registered in `parity-ledger.json`:
 
 1. **`OCRM-RESP-EXEC-PROCESS-SPAWN-001`**:

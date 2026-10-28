@@ -18,6 +18,14 @@ READS = {
     "src/process/kill-tree.test.ts": (636, "OCRM-RESP-EXEC-KILL-TREE-001", "OCRM-M25"),
     "src/sessions/auth-profile-preservation.ts": (130, "OCRM-RESP-SESSION-AUTH-PROFILE-LIFECYCLE-001", "OCRM-M11"),
     "src/sessions/auth-profile-preservation.test.ts": (195, "OCRM-RESP-SESSION-AUTH-PROFILE-LIFECYCLE-001", "OCRM-M11"),
+    "src/process/exec.ts": (383, "OCRM-RESP-EXEC-PROCESS-SPAWN-001", "OCRM-M25"),
+    "src/process/exec.test.ts": (682, "OCRM-RESP-EXEC-PROCESS-SPAWN-001", "OCRM-M25"),
+    "src/process/exec-runner.ts": (720, "OCRM-RESP-EXEC-RUNNER-TIMEOUT-001", "OCRM-M25"),
+    "src/process/exec-runner.timeout.test.ts": (213, "OCRM-RESP-EXEC-RUNNER-TIMEOUT-001", "OCRM-M25"),
+    "src/process/command-error.ts": (87, "OCRM-RESP-EXEC-COMMAND-ERROR-001", "OCRM-M25"),
+    "src/process/command-error.test.ts": (97, "OCRM-RESP-EXEC-COMMAND-ERROR-001", "OCRM-M25"),
+    "src/process/bounded-line-framer.ts": (36, "OCRM-RESP-EXEC-LINE-FRAMER-001", "OCRM-M25"),
+    "src/process/bounded-line-framer.test.ts": (29, "OCRM-RESP-EXEC-LINE-FRAMER-001", "OCRM-M25"),
 }
 
 def main():
@@ -29,6 +37,7 @@ def main():
                 row = json.loads(line)
                 spec = READS.get(row.get("path"))
                 if spec:
+                    was_unread = row.get("read_status") != "read-complete"
                     end, responsibility, module = spec
                     row.update({
                         "language_kind": "typescript",
@@ -48,7 +57,8 @@ def main():
                             "source/host/tests/openclaw_sessions_and_config_contract.rs",
                         ],
                     })
-                    changed += 1
+                    if was_unread:
+                        changed += 1
                 rows.append(row)
         data = "".join(json.dumps(row, sort_keys=True, ensure_ascii=False) + "\n" for row in rows).encode()
         shard_path.write_bytes(gzip.compress(data, compresslevel=9, mtime=0))
