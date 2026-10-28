@@ -10,10 +10,10 @@
     "ui_accepted": false
   },
   "file_coverage": {
-    "mapped_paths": 1066,
+    "mapped_paths": 1090,
     "omitted_known": 0,
     "tracked_paths": 58750,
-    "unclassified_paths": 57684
+    "unclassified_paths": 57660
   },
   "inventory_authority": {
     "manifest_source": "GitHub Actions immutable artifact candidate",
@@ -22078,6 +22078,90 @@
             "start_line": 1
           },
           "symbol": "channel-response-prefix.contract.test.ts"
+        },
+        {
+          "blob_sha": "47973a187e5060f9438f84060661a8e8e7a7f8e5",
+          "path": "extensions/a2a/channel-plugin-api.ts",
+          "range": {"end_line": 1, "start_line": 1},
+          "symbol": "a2aChannelPlugin"
+        },
+        {
+          "blob_sha": "ef19149281d62f1d594c1acb4a592296af3d77ae",
+          "path": "extensions/buzz/channel-plugin-api.ts",
+          "range": {"end_line": 1, "start_line": 1},
+          "symbol": "buzzPlugin"
+        },
+        {
+          "blob_sha": "66cb83be02490fc162e35081066dd335ed064ac3",
+          "path": "extensions/feishu/channel-plugin-api.ts",
+          "range": {"end_line": 1, "start_line": 1},
+          "symbol": "feishuPlugin"
+        },
+        {
+          "blob_sha": "bfb3db010aa330575c58f3ef33c09f098859656f",
+          "path": "extensions/line/channel-plugin-api.ts",
+          "range": {"end_line": 1, "start_line": 1},
+          "symbol": "linePlugin"
+        },
+        {
+          "blob_sha": "4129dc75cc53cd8d3c539ad54567a6ad8f4fe558",
+          "path": "extensions/matrix/channel-plugin-api.ts",
+          "range": {"end_line": 3, "start_line": 1},
+          "symbol": "matrixPlugin"
+        },
+        {
+          "blob_sha": "3cdf86a5120f4ca53dab6affe6900417a364ce77",
+          "path": "extensions/nostr/channel-plugin-api.ts",
+          "range": {"end_line": 1, "start_line": 1},
+          "symbol": "nostrPlugin"
+        },
+        {
+          "blob_sha": "08854379e820390143dcc9999f2d5337e2f93966",
+          "path": "extensions/qa-channel/channel-plugin-api.ts",
+          "range": {"end_line": 1, "start_line": 1},
+          "symbol": "qaChannelPlugin"
+        },
+        {
+          "blob_sha": "1cf2e1ca303d5e4c66b02dde540c5385b597d639",
+          "path": "extensions/raft/channel-plugin-api.ts",
+          "range": {"end_line": 1, "start_line": 1},
+          "symbol": "raftPlugin"
+        },
+        {
+          "blob_sha": "dcd1a00e1737b0883ea7a3c199687b72aee9d211",
+          "path": "extensions/reef/channel-plugin-api.ts",
+          "range": {"end_line": 1, "start_line": 1},
+          "symbol": "reefPlugin"
+        },
+        {
+          "blob_sha": "6725831f9777f5fceada823e214659b632c6608c",
+          "path": "extensions/sms/channel-plugin-api.ts",
+          "range": {"end_line": 1, "start_line": 1},
+          "symbol": "smsPlugin"
+        },
+        {
+          "blob_sha": "bb19cd45b55a418f6e6719b253b94fb3b7f7a033",
+          "path": "extensions/tlon/channel-plugin-api.ts",
+          "range": {"end_line": 1, "start_line": 1},
+          "symbol": "tlonPlugin"
+        },
+        {
+          "blob_sha": "556e36458b3ca9416a6626cddd65e027b026e6fe",
+          "path": "extensions/twitch/channel-plugin-api.ts",
+          "range": {"end_line": 1, "start_line": 1},
+          "symbol": "twitchPlugin"
+        },
+        {
+          "blob_sha": "2e776b0951fb251f828e477fcd70b7316109d4ba",
+          "path": "extensions/x/channel-plugin-api.ts",
+          "range": {"end_line": 1, "start_line": 1},
+          "symbol": "xPlugin"
+        },
+        {
+          "blob_sha": "871c01eb4d044986178a037b78d6c0a21d239fb1",
+          "path": "extensions/zalo/channel-plugin-api.ts",
+          "range": {"end_line": 1, "start_line": 1},
+          "symbol": "zaloPlugin"
         }
       ],
       "status": {
@@ -23128,6 +23212,18 @@
             "start_line": 1
           },
           "symbol": "buildPluginShapeSummary"
+        },
+        {
+          "blob_sha": "56175a72ee4166bbd2505f9cd415cda0e379edaa",
+          "path": "extensions/oc-path/cli-metadata.ts",
+          "range": {"end_line": 1, "start_line": 1},
+          "symbol": "default"
+        },
+        {
+          "blob_sha": "f9d71d00b198c069d0eab260b2f5f50bc1f139f6",
+          "path": "extensions/memory-core/cli.ts",
+          "range": {"end_line": 1, "start_line": 1},
+          "symbol": "registerMemoryCli"
         }
       ],
       "status": {
@@ -27060,6 +27156,30 @@
       "path": "src/plugin-sdk/channel-config-writes.ts",
       "range": {"end_line": 1, "start_line": 1},
       "symbol": "channel-config-writes"
+    },
+    {
+      "blob_sha": "777ab9daf3e773ccad40762bbac990c390d60155",
+      "path": "extensions/feishu/config-doctor-api.ts",
+      "range": {"end_line": 1, "start_line": 1},
+      "symbol": "normalizeCompatibilityConfig, legacyConfigRules"
+    },
+    {
+      "blob_sha": "777ab9daf3e773ccad40762bbac990c390d60155",
+      "path": "extensions/nextcloud-talk/config-doctor-api.ts",
+      "range": {"end_line": 1, "start_line": 1},
+      "symbol": "normalizeCompatibilityConfig, legacyConfigRules"
+    },
+    {
+      "blob_sha": "777ab9daf3e773ccad40762bbac990c390d60155",
+      "path": "extensions/telegram/config-doctor-api.ts",
+      "range": {"end_line": 1, "start_line": 1},
+      "symbol": "normalizeCompatibilityConfig, legacyConfigRules"
+    },
+    {
+      "blob_sha": "70f18e68ade84fc540472414546c660b4a1fddbc",
+      "path": "extensions/nextcloud-talk/doctor-contract-api.ts",
+      "range": {"end_line": 1, "start_line": 1},
+      "symbol": "normalizeCompatibilityConfig, legacyConfigRules"
     }
       ],
       "status": {
@@ -27220,6 +27340,30 @@
       "path": "src/plugin-sdk/channel-entry.test-support.ts",
       "range": {"end_line": 1, "start_line": 1},
       "symbol": "channel-entry.test-support"
+    },
+    {
+      "blob_sha": "096bdab63206efd7eace895a10a9bd3d561ed03a",
+      "path": "extensions/line/runtime-api.ts",
+      "range": {"end_line": 1, "start_line": 1},
+      "symbol": "setLineRuntime"
+    },
+    {
+      "blob_sha": "70d6980ee6c5fc40045af43553d12c2a99bac44a",
+      "path": "extensions/reef/runtime-api.ts",
+      "range": {"end_line": 1, "start_line": 1},
+      "symbol": "setReefRuntime"
+    },
+    {
+      "blob_sha": "923813ecd66540f1caec52f9f28188ecc8a74d4c",
+      "path": "extensions/zalo/runtime-api.ts",
+      "range": {"end_line": 1, "start_line": 1},
+      "symbol": "setZaloRuntime"
+    },
+    {
+      "blob_sha": "dc9836925c064a5c8fad35f0f4dc5f36c01e21ce",
+      "path": "extensions/x/runtime-api.ts",
+      "range": {"end_line": 1, "start_line": 1},
+      "symbol": "setXRuntime"
     }
       ],
       "status": {
