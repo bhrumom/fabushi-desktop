@@ -10,10 +10,10 @@
     "ui_accepted": false
   },
   "file_coverage": {
-    "mapped_paths": 1040,
+    "mapped_paths": 1043,
     "omitted_known": 0,
     "tracked_paths": 58750,
-    "unclassified_paths": 57710
+    "unclassified_paths": 57707
   },
   "inventory_authority": {
     "manifest_source": "GitHub Actions immutable artifact candidate",
@@ -20814,6 +20814,24 @@
           "path": "src/worker/worker-deploy-entry.test.ts",
           "range": {"end_line": 139, "start_line": 1},
           "symbol": "worker deploy entry contract oracle"
+        },
+        {
+          "blob_sha": "3218e15f5cc5931b9d23ef8cdca95920e793700e",
+          "path": "src/worker/worker-process.test.ts",
+          "range": {"end_line": 34, "start_line": 1},
+          "symbol": "worker process SQLite admission oracle"
+        },
+        {
+          "blob_sha": "a922d20d0d345ea7e9a7dab305028ebfa1c25061",
+          "path": "src/worker/worker-process-protocol.test.ts",
+          "range": {"end_line": 91, "start_line": 1},
+          "symbol": "worker process protocol boundary oracle"
+        },
+        {
+          "blob_sha": "d204f3b8aeb1451aec732ccf5eaf573ceacc398e",
+          "path": "src/worker/worker-process-observation.runtime.test.ts",
+          "range": {"end_line": 138, "start_line": 1},
+          "symbol": "retained worker process observation oracle"
         }
       ],
       "status": {
