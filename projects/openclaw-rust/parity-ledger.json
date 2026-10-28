@@ -10,10 +10,10 @@
     "ui_accepted": false
   },
   "file_coverage": {
-    "mapped_paths": 997,
+    "mapped_paths": 1001,
     "omitted_known": 0,
     "tracked_paths": 58750,
-    "unclassified_paths": 57753
+    "unclassified_paths": 57749
   },
   "inventory_authority": {
     "manifest_source": "GitHub Actions immutable artifact candidate",
@@ -20424,6 +20424,30 @@
           "path": "src/node-host/node-worker-workspace-git.ts",
           "range": { "end_line": 91, "start_line": 1 },
           "symbol": "initializeNodeWorkerGitWorkspace"
+        },
+        {
+          "blob_sha": "0d51c0d04c5bf31562806459ef9a9f2e89ee48a9",
+          "path": "src/worker/assistant-message-projection.ts",
+          "range": { "end_line": 57, "start_line": 1 },
+          "symbol": "projectWorkerAssistantContent"
+        },
+        {
+          "blob_sha": "ff2b159f54c070b2679dc43d4b4ec44e938e31d3",
+          "path": "src/worker/computer-runtime.ts",
+          "range": { "end_line": 87, "start_line": 1 },
+          "symbol": "createWorkerComputerTool"
+        },
+        {
+          "blob_sha": "cd5165d6a57be9241fd485f9dd0f41ee178dbbf5",
+          "path": "src/worker/device-folder.ts",
+          "range": { "end_line": 2, "start_line": 1 },
+          "symbol": "DEVICE_FOLDER_MANIFEST_REF"
+        },
+        {
+          "blob_sha": "c5ab76c7243a7626929c2f30008ba3145d0cb92a",
+          "path": "src/worker/node-computer-protocol.ts",
+          "range": { "end_line": 67, "start_line": 1 },
+          "symbol": "parseNodeWorkerComputerInput"
         },
         {
           "blob_sha": "0a236058162ebb28ca26bb8d1b740d1da8453795",
