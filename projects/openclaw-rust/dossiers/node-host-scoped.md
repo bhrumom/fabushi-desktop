@@ -109,3 +109,15 @@ The pinned crate tests make the required evidence concrete:
 - `tests/sidecar_process.rs` crosses a real child-process boundary and verifies authenticated offer/accept, configuration/manifest acknowledgement, admission, invoke, and result frames with bounded timeouts.
 
 These are direct oracles for future Actions jobs, not current Fabushi acceptance. The current repository has no evidence yet that its live Gateway/device lane can execute the same node lifecycle or that its existing supervisor can provide the exact sidecar artifact/key handshake. Until those exact-head and real-environment receipts exist, the parity ledger remains pending.
+
+## 13. Pinned `src/node-host/runtime.ts` closure (2026-10-29)
+
+The complete 719-line runtime read confirms that the central OpenClaw node-host responsibility is a connection-generation and cleanup owner, not merely a command switch:
+
+- preparation resolves local plugin/MCP/skill/worker availability into a manifest and inventory; availability changes can publish a new manifest without widening an operator command allowlist;
+- each `start()` owns `connectionGeneration`, exact `activeInvokes`, pending invocation tails, a shared disconnect-cleanup barrier, and worker/MCP/manifest watcher lifetimes;
+- every invoke waits for the prior cleanup barrier, checks generation and current manifest, installs cancellation/input/progress state before the first awaited handler work, and prevents a redelivered id from orphaning the predecessor;
+- `cancelAll()` advances generation before aborting predecessor work, refreshes connection-scoped caches, joins idle-worker and registered-command disconnect cleanup, and latches cleanup failure so later invokes fail closed;
+- `close()` is re-entrant-safe and joins watcher, supervisor, MCP, disconnect, and pending invocation tails; aborting a signal alone is explicitly not treated as physical process cleanup.
+
+Fabushi already has related worker supervisor, process-observation, MCP, and cleanup owners, but the inspected Rust node-host slice does not yet compose them behind a single live remote node connection-generation owner. This is the concrete production wiring gap behind the earlier fail-closed remote presence decision. A future implementation must preserve these fences and delegate physical worker/process cleanup to the existing owners rather than reimplementing them in RPC handlers.
