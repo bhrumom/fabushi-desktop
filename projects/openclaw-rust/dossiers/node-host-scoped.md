@@ -145,3 +145,13 @@ The exact read of `invoke.ts` confirms command dispatch is a policy router over 
 - MCP and desktop-stream failures are typed and bounded, and unknown commands return unavailable.
 
 Therefore the future Rust node runtime should model this as a command-owner registry/admission layer, not merge all commands into one generic executor. The existing Fabushi local exec, Computer lease, MCP, worker supervisor, and stream owners remain the only valid side-effect destinations; the missing work is the live remote node transport and generation fence that invokes them safely.
+
+## 16. Pinned manifest and response transport audit (2026-10-29)
+
+`runtime-manifest.ts` and `client.ts` close two more contracts:
+
+- the manifest is the node-local authority for both commands and capabilities; built-ins are filtered by platform/feature/allowlist/ephemeral policy, plugin capabilities are retained only from the plugin registry owner, and `computerUse`/`pathEnv` are withheld on restricted surfaces;
+- manifest equality includes path environment, ordered capability/command lists, and serialized Computer capability data, so availability changes must publish a new surface only when the effective declaration changes;
+- every invoke response includes the original `id` and `nodeId`, uses the Gateway capability to decide whether permission details may be exposed, and treats result delivery as best-effort without replaying a failed mutation.
+
+The current Fabushi `runtime_manifest.rs` is only a static pure builder and does not yet carry the upstream dynamic plugin/ephemeral/path/Computer surface or a live response transport. The existing `command_dispatch.rs` is likewise only a protocol boundary. These facts remain implementation gaps, not reasons to widen the pairing/RPC owner.
