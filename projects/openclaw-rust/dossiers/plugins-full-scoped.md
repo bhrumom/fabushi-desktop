@@ -148,6 +148,8 @@ The production composition now also constructs one `HostChannelDelivery` inside 
 
 The existing channel contract confirms the remaining boundary precisely: `HostChannelDelivery::set_port`/`reset` is the sole registration lifecycle, `deliverToChannel` consumes that shared port, and the unregistered path queues the failure/dead-letter flow. Current production startup has no provider adapter calling `set_port`; therefore channel provider reachability, credentials, rate limits, receipts, reconnect, and packaged external delivery remain pending rather than being inferred from the contract test.
 
+The native connector now provides `ChannelDeliveryRouter`, a provider-port multiplexer owned by `ProductionHostExtensions` and installed behind the shared `HostChannelDelivery`. It normalizes channel IDs, routes `channel:target` address tokens, and preserves the existing unregistered error after unregister or missing registration. The router contract is positive/negative only; no provider adapter has been registered yet, so this does not upgrade channel responsibilities to wired or accepted.
+
 
 
 
