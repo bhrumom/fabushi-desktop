@@ -19716,6 +19716,24 @@
             "start_line": 1
           },
           "symbol": "dispatchNodeInvokeInput"
+        },
+        {
+          "blob_sha": "26535b827d8bebd549491badea55a7f7cfccd6f6",
+          "path": "src/node-host/node-invoke-progress.ts",
+          "range": {
+            "end_line": 130,
+            "start_line": 1
+          },
+          "symbol": "createNodeInvokeProgressWriter"
+        },
+        {
+          "blob_sha": "aaaf11f3114eedc0eb71c0f2f34ef245e1e41ead",
+          "path": "src/node-host/node-stream-transport.ts",
+          "range": {
+            "end_line": 343,
+            "start_line": 1
+          },
+          "symbol": "runNodeStreamTransport"
         }
       ],
       "status": {
