@@ -10,10 +10,10 @@
     "ui_accepted": false
   },
   "file_coverage": {
-    "mapped_paths": 895,
+    "mapped_paths": 900,
     "omitted_known": 0,
     "tracked_paths": 58750,
-    "unclassified_paths": 57855
+    "unclassified_paths": 57850
   },
   "inventory_authority": {
     "manifest_source": "GitHub Actions immutable artifact candidate",
@@ -19611,6 +19611,36 @@
           "path": "crates/openclaw-node-host/SIDECAR_PROTOCOL.md",
           "range": {"end_line": 229, "start_line": 1},
           "symbol": "sidecar-protocol-contract"
+        },
+        {
+          "blob_sha": "7bfed87f318b750e9334ab0ccbff388e9c900a8b",
+          "path": "src/node-host/connection.ts",
+          "range": {"end_line": 487, "start_line": 1},
+          "symbol": "startNodeHostConnection"
+        },
+        {
+          "blob_sha": "87f1a1d7788a34f48a89b3309e6a60695e271d0f",
+          "path": "src/node-host/gateway-platform-identity.ts",
+          "range": {"end_line": 12, "start_line": 1},
+          "symbol": "resolveNodeHostGatewayPlatformIdentity"
+        },
+        {
+          "blob_sha": "c18c564fbe0b2e4c4f210fcdf06a744e3d28bebd",
+          "path": "src/node-host/host-stats.ts",
+          "range": {"end_line": 35, "start_line": 1},
+          "symbol": "sampleNodeHostStats"
+        },
+        {
+          "blob_sha": "4cf7e60b948123d197a2313fdd93841a472e162f",
+          "path": "src/node-host/local-id.ts",
+          "range": {"end_line": 34, "start_line": 1},
+          "symbol": "resolveLocalNodeId"
+        },
+        {
+          "blob_sha": "5b4d5ed6f6f3c0d20ee6a8afd280abd9e1a17256",
+          "path": "src/node-host/node-event-params.ts",
+          "range": {"end_line": 8, "start_line": 1},
+          "symbol": "buildNodeEventParams"
         }
       ],
       "status": {
