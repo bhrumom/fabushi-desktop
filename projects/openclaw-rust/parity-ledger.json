@@ -19757,6 +19757,15 @@
           "symbol": "parseNodeWorkerPortalStreamInput"
         },
         {
+          "blob_sha": "3588206ff1829328e7c01a1f965a8a932bb2f1a9",
+          "path": "src/worker/node-supervisor-protocol.ts",
+          "range": {
+            "end_line": 238,
+            "start_line": 1
+          },
+          "symbol": "parseNodeWorkerLaunchInput"
+        },
+        {
           "blob_sha": "26535b827d8bebd549491badea55a7f7cfccd6f6",
           "path": "src/node-host/node-invoke-progress.ts",
           "range": {
