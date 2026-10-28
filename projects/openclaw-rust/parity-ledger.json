@@ -10,10 +10,10 @@
     "ui_accepted": false
   },
   "file_coverage": {
-    "mapped_paths": 1055,
+    "mapped_paths": 1058,
     "omitted_known": 0,
     "tracked_paths": 58750,
-    "unclassified_paths": 57695
+    "unclassified_paths": 57692
   },
   "inventory_authority": {
     "manifest_source": "GitHub Actions immutable artifact candidate",
@@ -19749,6 +19749,18 @@
           "path": "src/worker/repro-worker-connection-closing-window.ts",
           "range": {"end_line": 181, "start_line": 1},
           "symbol": "worker connection close/reconnect race oracle"
+        },
+        {
+          "blob_sha": "f94d942d1abd452ffefd4dadefb204d8c8ab42d4",
+          "path": "src/worker/worker-connection-closing-window.test.ts",
+          "range": {"end_line": 58, "start_line": 1},
+          "symbol": "worker connection close-window integration oracle"
+        },
+        {
+          "blob_sha": "920a041142ba1fc17fdf299bb592612e2921b216",
+          "path": "src/worker/worker-connection-endpoint.test.ts",
+          "range": {"end_line": 112, "start_line": 1},
+          "symbol": "worker connection endpoint security oracle"
         }
       ],
       "status": {
@@ -20904,6 +20916,12 @@
           "path": "src/worker/node-workspace-retain-protocol.test.ts",
           "range": {"end_line": 84, "start_line": 1},
           "symbol": "workspace retention protocol oracle"
+        },
+        {
+          "blob_sha": "ab92bb94ad99ab98c1d271080aaf12ef5a8a50a9",
+          "path": "src/worker/node-supervisor-protocol.test.ts",
+          "range": {"end_line": 132, "start_line": 1},
+          "symbol": "node supervisor launch/receipt protocol oracle"
         }
       ],
       "status": {
