@@ -3668,12 +3668,45 @@ impl UnifiedGatewayApi {
             .or_else(|| args.get("client").and_then(|c| c.get("id")))
             .or_else(|| args.get("device").and_then(|d| d.get("id")))
             .and_then(serde_json::Value::as_str)
-            .unwrap_or("sand-node-worker");
+            .map(str::trim)
+            .filter(|value| !value.is_empty())
+            .ok_or_else(|| GatewayCommandError::BadRequest(
+                "node.register requires nodeId, client.id, or device.id".into(),
+            ))?;
+
+        // The local host is the only node that can be admitted without a
+        // pairing request. Remote nodes must enter the canonical pairing
+        // owner so registration cannot manufacture a connected node that is
+        // absent from the durable device roster.
+        if node_id != "sand-local-node" {
+            let mut pairing_args = args.clone();
+            if pairing_args
+                .get("deviceId")
+                .and_then(serde_json::Value::as_str)
+                .is_none()
+            {
+                pairing_args["deviceId"] = serde_json::Value::String(node_id.to_string());
+            }
+            let pending = self.device_pairing.handle_pair_request(&pairing_args)?;
+            return Ok(serde_json::json!({
+                "ok": true,
+                "status": pending
+                    .get("status")
+                    .cloned()
+                    .unwrap_or_else(|| serde_json::json!("pending")),
+                "nodeId": node_id,
+                "requestId": pending.get("requestId").cloned().unwrap_or(serde_json::Value::Null),
+                "pairing": pending,
+            }));
+        }
 
         Ok(serde_json::json!({
             "ok": true,
+            "status": "approved",
             "nodeId": node_id,
-            "pairingGeneration": format!("gen-{}", uuid::Uuid::new_v4()),
+            "paired": true,
+            "connected": true,
+            "active": true,
         }))
     }
 
