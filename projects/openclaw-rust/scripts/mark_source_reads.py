@@ -153,6 +153,8 @@ READS = {
     "src/worker/worker-command.runtime.test.ts": (754, None, "OCRM-M13", "test-oracle-replaced"),
     "src/worker/native-runtime-transport.test.ts": (284, None, "OCRM-M13", "test-oracle-replaced"),
     "src/worker/native-worker-authority.test.ts": (149, None, "OCRM-M13", "test-oracle-replaced"),
+    "src/worker/native-inference-stream.test.ts": (408, None, "OCRM-M13", "test-oracle-replaced"),
+    "src/worker/native-runtime.test.ts": (448, None, "OCRM-M13", "test-oracle-replaced"),
     "src/node-host/node-worker-turn-settlement.worker.ts": (42, "OCRM-RESP-NODE-HOST-COMMAND-DISPATCH-001", "OCRM-M13"),
     "src/node-host/node-worker-turn-store.ts": (36, "OCRM-RESP-NODE-HOST-COMMAND-DISPATCH-001", "OCRM-M13"),
     "src/node-host/node-worker-launch-schema.ts": (42, "OCRM-RESP-NODE-HOST-COMMAND-DISPATCH-001", "OCRM-M13"),
