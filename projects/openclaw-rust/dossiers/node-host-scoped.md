@@ -277,3 +277,9 @@ The same seam now validates the launch cross-fields that prevent bundle or place
 `NodeHostRuntimeState` now composes the existing session-generation registry and invocation-generation registry behind one Host owner. Session replacement drains the predecessor generation before the successor is admitted, while invocation admission and settlement remain generation-fenced. `UnifiedGatewayApi` now reads node status/list projections and admits local `node.invoke system.run` through this composed owner; startup creates the local lease through the same runtime rather than constructing parallel session and invocation owners.
 
 This is a real local producer-to-owner wiring improvement, but it is not remote transport acceptance. The runtime still has no Gateway WebSocket caller, remote manifest refresh, progress publisher, physical disconnect cancellation, worker launch owner, or exact-head Actions receipt. The parity row therefore remains `wiring=not-wired` for the full node-host responsibility and `verification=not-run`/`acceptance=pending`.
+
+## 39. Live-main identity refresh after runtime composition (2026-10-29)
+
+The current direct GitHub identity for `openclaw/openclaw` main is commit `56eba2fae267818e540d9826899c2288cf5aea08`, tree `19327a453b4374bf9fa34855d2c1e5406372ed76`. The locked-to-live compare is `4856` commits ahead with `300` returned files. Current live blob observations include `src/node-host/invoke.ts` at `dd97dd4eed05eb6878bed0024f1a6c9a8b1c56dc` and `src/node-host/node-stream-transport.ts` at `080cdf9110eb90c1163490475cfe52b03f526e5a`.
+
+This refresh does not change `upstream.lock.json`, inventory totals, mapping counts, or any completion flag. The locked revision remains the implementation baseline, and the live-main delta remains evidence for future re-baselining rather than proof of current Fabushi parity.
