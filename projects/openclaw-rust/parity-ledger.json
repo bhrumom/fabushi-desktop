@@ -10,10 +10,10 @@
     "ui_accepted": false
   },
   "file_coverage": {
-    "mapped_paths": 1043,
+    "mapped_paths": 1046,
     "omitted_known": 0,
     "tracked_paths": 58750,
-    "unclassified_paths": 57707
+    "unclassified_paths": 57704
   },
   "inventory_authority": {
     "manifest_source": "GitHub Actions immutable artifact candidate",
@@ -20832,6 +20832,24 @@
           "path": "src/worker/worker-process-observation.runtime.test.ts",
           "range": {"end_line": 138, "start_line": 1},
           "symbol": "retained worker process observation oracle"
+        },
+        {
+          "blob_sha": "1baaf1b4298c6f52fa33252f229ee30f8a6301d0",
+          "path": "src/worker/worker-runtime-native-inference.suite.ts",
+          "range": {"end_line": 79, "start_line": 1},
+          "symbol": "native inference admission-loss oracle"
+        },
+        {
+          "blob_sha": "ffb3d7f07dbef4a34a6cbecee61b5fcac551585e",
+          "path": "src/worker/worker-runtime-github-failures.suite.ts",
+          "range": {"end_line": 70, "start_line": 1},
+          "symbol": "GitHub credential failure oracle"
+        },
+        {
+          "blob_sha": "ea1fd23b52e9e962cdfe478d48dae7e57e1797a5",
+          "path": "src/worker/worker-runtime-replay.suite.ts",
+          "range": {"end_line": 128, "start_line": 1},
+          "symbol": "worker replay-window oracle"
         }
       ],
       "status": {
