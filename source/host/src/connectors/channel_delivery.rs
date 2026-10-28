@@ -42,6 +42,26 @@ impl ChannelDeliveryRouter {
         if channel_id.is_empty() {
             return Err("channel delivery registration requires a channel id".into());
         }
+        let mut ports = self
+            .ports
+            .write()
+            .unwrap_or_else(|poisoned| poisoned.into_inner());
+        if ports.contains_key(&channel_id) {
+            return Err(format!("channel delivery provider already registered: {channel_id}"));
+        }
+        ports.insert(channel_id, port);
+        Ok(())
+    }
+
+    pub fn replace(
+        &self,
+        channel_id: impl Into<String>,
+        port: Arc<dyn ChannelDeliveryPort>,
+    ) -> Result<(), String> {
+        let channel_id = channel_id.into().trim().to_ascii_lowercase();
+        if channel_id.is_empty() {
+            return Err("channel delivery replacement requires a channel id".into());
+        }
         self.ports
             .write()
             .unwrap_or_else(|poisoned| poisoned.into_inner())

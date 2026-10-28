@@ -208,6 +208,10 @@ fn test_ocrm_channel_router_registers_and_revokes_provider_ports() {
     router.register("Telegram", port).expect("register channel provider");
 
     let message = ChannelOutboundMessage::Text { text: "hello".into() };
+    let duplicate = Arc::new(RecordingChannelDeliveryPort {
+        delivered: Arc::new(Mutex::new(Vec::new())),
+    });
+    assert!(router.register("telegram", duplicate).is_err());
     router
         .deliver("agent-1", "telegram:123", &message)
         .expect("route registered channel");
@@ -217,6 +221,15 @@ fn test_ocrm_channel_router_registers_and_revokes_provider_ports() {
         router.deliver("agent-1", "telegram:123", &message),
         Err(SandChannelDeliveryUnregisteredError.to_string())
     );
+    router
+        .replace(
+            "telegram",
+            Arc::new(RecordingChannelDeliveryPort { delivered: records.clone() }),
+        )
+        .expect("replace channel provider");
+    router
+        .deliver("agent-1", "telegram:123", &message)
+        .expect("route replaced channel");
 }
 
 // ---------------------------------------------------------------------------
