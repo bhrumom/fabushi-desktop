@@ -10,10 +10,10 @@
     "ui_accepted": false
   },
   "file_coverage": {
-    "mapped_paths": 1060,
+    "mapped_paths": 1063,
     "omitted_known": 0,
     "tracked_paths": 58750,
-    "unclassified_paths": 57690
+    "unclassified_paths": 57687
   },
   "inventory_authority": {
     "manifest_source": "GitHub Actions immutable artifact candidate",
@@ -19773,6 +19773,24 @@
           "path": "src/worker/worker-rpc-clients.test.ts",
           "range": {"end_line": 418, "start_line": 1},
           "symbol": "worker inference/live/transcript RPC client oracle"
+        },
+        {
+          "blob_sha": "22079b97a86794eb823e66d9e31e0bafcf11408d",
+          "path": "src/worker/worker-runtime-environment.test.ts",
+          "range": {"end_line": 33, "start_line": 1},
+          "symbol": "worker state database cleanup isolation oracle"
+        },
+        {
+          "blob_sha": "1245e4144ba0c2fc96f133a566dac9d1a4770a00",
+          "path": "src/worker/worker.runtime-imports.test.ts",
+          "range": {"end_line": 55, "start_line": 1},
+          "symbol": "worker runtime admission import ordering oracle"
+        },
+        {
+          "blob_sha": "e9fbb0f421852ce090df3ba1e328c3351579c7ed",
+          "path": "src/worker/worker.transcript-failure.test.ts",
+          "range": {"end_line": 132, "start_line": 1},
+          "symbol": "worker transcript failure retry and no-duplicate oracle"
         }
       ],
       "status": {
