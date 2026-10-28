@@ -10,10 +10,10 @@
     "ui_accepted": false
   },
   "file_coverage": {
-    "mapped_paths": 886,
+    "mapped_paths": 893,
     "omitted_known": 0,
     "tracked_paths": 58750,
-    "unclassified_paths": 57864
+    "unclassified_paths": 57857
   },
   "inventory_authority": {
     "manifest_source": "GitHub Actions immutable artifact candidate",
@@ -19557,6 +19557,48 @@
             "start_line": 1
           },
           "symbol": "resolveNodeHostCloudflareAccess"
+        },
+        {
+          "blob_sha": "2202a0f9ac62ac7925b4506ba105ad49a06582e1",
+          "path": "crates/openclaw-node-host/src/duplex.rs",
+          "range": {"end_line": 297, "start_line": 1},
+          "symbol": "InvocationIo"
+        },
+        {
+          "blob_sha": "75a205bd980b7eac0a7a2eeb1e2171b6d2f08196",
+          "path": "crates/openclaw-node-host/src/identity.rs",
+          "range": {"end_line": 285, "start_line": 1},
+          "symbol": "NodeIdentity"
+        },
+        {
+          "blob_sha": "15e2b0bfb9dce2bc88379ed54151d670927a2e05",
+          "path": "crates/openclaw-node-host/src/lifecycle.rs",
+          "range": {"end_line": 552, "start_line": 1},
+          "symbol": "NodeLifecycle"
+        },
+        {
+          "blob_sha": "70b745697d98d9713524cf440498a8b00d92b62f",
+          "path": "crates/openclaw-node-host/src/node.rs",
+          "range": {"end_line": 1427, "start_line": 1},
+          "symbol": "NodeClient"
+        },
+        {
+          "blob_sha": "6cb1dbc8781bc4d74e1b4e04ab300d713f7b0023",
+          "path": "crates/openclaw-node-host/src/reconnect.rs",
+          "range": {"end_line": 703, "start_line": 1},
+          "symbol": "ReconnectPolicy"
+        },
+        {
+          "blob_sha": "1e00f6325cd700d18dce84b56a44975f9c9fb100",
+          "path": "crates/openclaw-node-host/src/lib.rs",
+          "range": {"end_line": 58, "start_line": 1},
+          "symbol": "openclaw_node_host"
+        },
+        {
+          "blob_sha": "490d7c857472fb7a6ee4ff4425be562cca3b8a6e",
+          "path": "crates/openclaw-node-host/src/main.rs",
+          "range": {"end_line": 96, "start_line": 1},
+          "symbol": "run"
         }
       ],
       "status": {

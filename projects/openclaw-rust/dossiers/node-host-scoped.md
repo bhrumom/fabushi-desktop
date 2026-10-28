@@ -306,3 +306,9 @@ Therefore none of these is an approved substitute owner. Adding a sidecar launch
 The canonical row shards were reconciled against the exact path/blob/range references already present in `parity-ledger.json`. This removed stale one-way edges for the audited source set without changing the locked upstream commit/tree or global completion flags. The resulting structural counts are 58,750 tracked, 894 read-complete, 886 responsibility-mapped, 57,856 unread, and 57,864 unclassified; all 886 ledger source paths now have reverse shard responsibility edges and shard/manifest hashes agree.
 
 This is a bookkeeping and traceability correction, not evidence of full source closure or semantic completion. The remaining unread/unclassified denominator, dependency closure, implementation, production wiring, Actions verification, and product acceptance remain open.
+
+## 43. Locked node client lifecycle source read (2026-10-29)
+
+The remaining core Rust crate files `duplex.rs`, `identity.rs`, `lifecycle.rs`, `node.rs`, `reconnect.rs`, `lib.rs`, and `main.rs` were read at their locked blobs and mapped to the NodeHost connection responsibility. The read confirms the upstream contract boundary: Ed25519 device identity and challenge signing; V3/V4 negotiation with bounded connect/challenge/request/write/event buffers; ordered duplex input, progress and cancellation; typed lifecycle events with shutdown drain and runtime restart; retry classification for pairing/auth/protocol/configuration versus transient transport; and a thin binary entrypoint that delegates to the host runner.
+
+These sources strengthen the Rust contract mapping but do not authorize importing the crate as a second runtime. Fabushi still lacks a shipping remote Gateway client, credential persistence adapter, manifest refresh caller, device/transport lane, and current exact-head Actions receipt; node-host connection wiring and acceptance remain pending.

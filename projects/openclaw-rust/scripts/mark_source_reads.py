@@ -12,6 +12,13 @@ from pathlib import Path
 ROOT = Path("projects/openclaw-rust")
 SHARDS = ROOT / "inventory" / "shards"
 READS = {
+    "crates/openclaw-node-host/src/duplex.rs": (297, "OCRM-RESP-NODE-HOST-CONNECTION-001", "OCRM-M13"),
+    "crates/openclaw-node-host/src/identity.rs": (285, "OCRM-RESP-NODE-HOST-CONNECTION-001", "OCRM-M13"),
+    "crates/openclaw-node-host/src/lifecycle.rs": (552, "OCRM-RESP-NODE-HOST-CONNECTION-001", "OCRM-M13"),
+    "crates/openclaw-node-host/src/node.rs": (1427, "OCRM-RESP-NODE-HOST-CONNECTION-001", "OCRM-M13"),
+    "crates/openclaw-node-host/src/reconnect.rs": (703, "OCRM-RESP-NODE-HOST-CONNECTION-001", "OCRM-M13"),
+    "crates/openclaw-node-host/src/lib.rs": (58, "OCRM-RESP-NODE-HOST-CONNECTION-001", "OCRM-M13"),
+    "crates/openclaw-node-host/src/main.rs": (96, "OCRM-RESP-NODE-HOST-CONNECTION-001", "OCRM-M13"),
     "crates/openclaw-node-host/src/host.rs": (951, "OCRM-RESP-NODE-HOST-COMMAND-DISPATCH-001", "OCRM-M13"),
     "crates/openclaw-node-host/src/runtime.rs": (2011, "OCRM-RESP-NODE-HOST-COMMAND-DISPATCH-001", "OCRM-M13"),
     "crates/openclaw-node-host/src/sidecar_handshake.rs": (796, "OCRM-RESP-NODE-HOST-COMMAND-DISPATCH-001", "OCRM-M13"),

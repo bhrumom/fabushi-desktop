@@ -31,12 +31,12 @@
       "uncompressed_sha256": "aa1beb0b5d5c70ae6e3695df212bbb617936cc1d124cb58d0ce617fdf5eaced0"
     },
     {
-      "compressed_sha256": "42cf262c4825d9169c1954c29c72b468b65e9bdcfbf34003ba207d2ac226a2f4",
+      "compressed_sha256": "0cd0c27f8a1dd81695d74028d75ad1c36b06cc75c7836b82e980b5cd8a0fd6b1",
       "count": 1024,
       "first_path": "apps/macos/Tests/OpenClawIPCTests/DeviceSettingsConsentTests.swift",
       "last_path": "docs/channels/slack/threads-and-sessions.md",
       "path": "projects/openclaw-rust/inventory/shards/part-0003.jsonl.gz",
-      "uncompressed_sha256": "0c43e7c3a03aada415347a98fd5aa29c88ed871d8e801e1d596cc37092e217a9"
+      "uncompressed_sha256": "67cf6f15dfd0420b76196f84ed2ddb1de50407d6e4ea40c2bc9272fbbe8ee506"
     },
     {
       "compressed_sha256": "e89c5a4d1446006c54a52ec01c1c40227effe9259111b58e4886571031ba3dd5",
