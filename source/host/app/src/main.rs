@@ -244,9 +244,9 @@ use mahayana_host_runtime::extensions::host_upgrade::host_bundle_upgrade::{
     SAND_BOX_HOST_VERSION_PATH, read_local_host_version,
 };
 use mahayana_host_runtime::extensions::node_host::session_registry::{
-    NodeHostSessionLease, NodeHostSessionMetadata, NodeHostSessionRegistry,
+    NodeHostSessionLease, NodeHostSessionMetadata,
 };
-use mahayana_host_runtime::extensions::node_host::invocation_registry::NodeHostInvocationRegistry;
+use mahayana_host_runtime::extensions::node_host::runtime_state::NodeHostRuntimeState;
 use mahayana_host_runtime::host_production_extensions::{
     CURRENT_SHIPPING_PRODUCTION_EXTENSION_IDS, start_production_host_box_extensions,
     start_production_host_extensions,
@@ -1124,8 +1124,7 @@ struct UnifiedGatewayApi {
     create_agent_nonces: Mutex<CreateAgentNonceLedger<serde_json::Value>>,
     last_busy_at_ms: Mutex<u64>,
     device_pairing: Arc<DevicePairingOwner>,
-    node_host_sessions: Arc<NodeHostSessionRegistry>,
-    node_host_invocations: Arc<NodeHostInvocationRegistry>,
+    node_host_runtime: Arc<NodeHostRuntimeState>,
     node_host_local_session: NodeHostSessionLease,
 }
 
@@ -3709,7 +3708,7 @@ impl UnifiedGatewayApi {
         }
 
         let node = self
-            .node_host_sessions
+            .node_host_runtime
             .get(node_id)
             .ok_or_else(|| GatewayCommandError::Internal("local node session is not admitted".into()))?;
         Ok(serde_json::json!({
@@ -3729,7 +3728,7 @@ impl UnifiedGatewayApi {
         let pair_list = self.device_pairing.handle_pair_list(&serde_json::json!({}))
             .unwrap_or_else(|_| serde_json::json!({ "paired": [] }));
 
-        let live_nodes = self.node_host_sessions.list();
+        let live_nodes = self.node_host_runtime.list();
         let mut nodes = live_nodes
             .iter()
             .map(|node| {
@@ -3794,7 +3793,7 @@ impl UnifiedGatewayApi {
             .filter(|s| !s.is_empty())
             .ok_or_else(|| GatewayCommandError::BadRequest("node.status requires nodeId".into()))?;
 
-        if let Some(node) = self.node_host_sessions.get(node_id) {
+        if let Some(node) = self.node_host_runtime.get(node_id) {
             return Ok(serde_json::json!({
                 "ts": started_at_ms(),
                 "nodeId": node.node_id,
@@ -3891,15 +3890,15 @@ impl UnifiedGatewayApi {
             action: Some("node.invoke.system.run".into()),
         };
         let admission = self
-            .node_host_invocations
-            .admit(&self.node_host_local_session, invoke_id)
+            .node_host_runtime
+            .admit_invocation(&self.node_host_local_session, invoke_id)
             .map_err(GatewayCommandError::BadRequest)?;
         let result = self
             .local_exec
             .sandbox(Arc::clone(&self.local_tool_permission))
             .execute_shell(&scope, shell_command, working_directory, tool_call_id)
             .map_err(|error| GatewayCommandError::Internal(error.to_string()));
-        let _ = self.node_host_invocations.settle(&admission);
+        let _ = self.node_host_runtime.settle_invocation(&admission);
         let result = result?;
 
         Ok(serde_json::json!({
@@ -13702,8 +13701,8 @@ fn main() {
         DevicePairingOwner::new(&device_pairing_db_path)
             .unwrap_or_else(|_| DevicePairingOwner::in_memory().expect("in-memory device pairing db"))
     );
-    let node_host_sessions = Arc::new(NodeHostSessionRegistry::new());
-    let local_session = node_host_sessions.connect(NodeHostSessionMetadata {
+    let node_host_runtime = Arc::new(NodeHostRuntimeState::new());
+    let local_session = node_host_runtime.connect(NodeHostSessionMetadata {
         node_id: "sand-local-node".into(),
         display_name: "Local Host Node".into(),
         platform: std::env::consts::OS.into(),
@@ -13718,8 +13717,7 @@ fn main() {
         paired: true,
         gateway_local: true,
     });
-    let _ = node_host_sessions.set_active(&local_session, true);
-    let node_host_invocations = Arc::new(NodeHostInvocationRegistry::new());
+    let _ = node_host_runtime.set_active(&local_session, true);
 
     let gateway_api = Arc::new(UnifiedGatewayApi {
             host_tx: host_tx.clone(),
@@ -13769,8 +13767,7 @@ fn main() {
             create_agent_nonces: Mutex::new(CreateAgentNonceLedger::default()),
             last_busy_at_ms: Mutex::new(gateway_started_at),
             device_pairing,
-            node_host_sessions,
-            node_host_invocations,
+            node_host_runtime,
             node_host_local_session: local_session,
         });
     *host_upgrade_gateway_slot

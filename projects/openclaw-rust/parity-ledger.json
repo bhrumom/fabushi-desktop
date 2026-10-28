@@ -19835,7 +19835,8 @@
         "source/host/src/extensions/node_host/invoke_progress.rs::tests::heartbeat_interval_is_bounded_and_stop_is_terminal",
         "source/host/src/extensions/node_host/invocation_registry.rs::tests::duplicate_and_late_settlement_are_rejected",
         "source/host/src/extensions/node_host/invocation_registry.rs::tests::stale_generation_cannot_settle_successor_invocation",
-        "source/host/src/extensions/node_host/invocation_registry.rs::tests::disconnect_drain_cancels_only_matching_generation"
+        "source/host/src/extensions/node_host/invocation_registry.rs::tests::disconnect_drain_cancels_only_matching_generation",
+        "source/host/src/extensions/node_host/runtime_state.rs::tests::replacement_drains_predecessor_invocations_before_successor"
       ],
       "typed_contracts": [
         "ComputerOperation",
@@ -19855,7 +19856,8 @@
         "PROGRESS_CHUNK_BYTES",
         "NodeHostInvocationRegistry",
         "NodeInvocationAdmission",
-        "NodeInvocationState"
+        "NodeInvocationState",
+        "NodeHostRuntimeState"
       ],
       "unit_id": "OCRM-UNIT-NODE-HOST-001"
     },

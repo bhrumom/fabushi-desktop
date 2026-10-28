@@ -271,3 +271,9 @@ The same seam now validates the launch cross-fields that prevent bundle or place
 `worker_bundle.rs` now resolves an installed `worker.mjs` only after canonicalizing the configured root, namespace bundle, and entry, then requiring strict containment and a regular file. It rejects unsafe namespace/hash components and symlink escapes. It does not spawn the worker or own process-group/container cleanup.
 
 `worker_launch_policy.rs` now captures the locked launch-mode admission: local inference cannot run in a container and requires a trusted inference snapshot; container mode requires a non-loopback WebSocket endpoint, forbids host browser assignments, and requires a lifecycle owner. The policy returns a mode only; it performs no spawn, container creation, credential materialization, or cleanup.
+
+## 38. Host runtime composition and local projection wiring (2026-10-29)
+
+`NodeHostRuntimeState` now composes the existing session-generation registry and invocation-generation registry behind one Host owner. Session replacement drains the predecessor generation before the successor is admitted, while invocation admission and settlement remain generation-fenced. `UnifiedGatewayApi` now reads node status/list projections and admits local `node.invoke system.run` through this composed owner; startup creates the local lease through the same runtime rather than constructing parallel session and invocation owners.
+
+This is a real local producer-to-owner wiring improvement, but it is not remote transport acceptance. The runtime still has no Gateway WebSocket caller, remote manifest refresh, progress publisher, physical disconnect cancellation, worker launch owner, or exact-head Actions receipt. The parity row therefore remains `wiring=not-wired` for the full node-host responsibility and `verification=not-run`/`acceptance=pending`.
