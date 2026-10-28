@@ -10,10 +10,10 @@
     "ui_accepted": false
   },
   "file_coverage": {
-    "mapped_paths": 1007,
+    "mapped_paths": 1012,
     "omitted_known": 0,
     "tracked_paths": 58750,
-    "unclassified_paths": 57743
+    "unclassified_paths": 57738
   },
   "inventory_authority": {
     "manifest_source": "GitHub Actions immutable artifact candidate",
@@ -20424,6 +20424,36 @@
           "path": "src/node-host/node-worker-workspace-git.ts",
           "range": { "end_line": 91, "start_line": 1 },
           "symbol": "initializeNodeWorkerGitWorkspace"
+        },
+        {
+          "blob_sha": "adfd82e3b4472555be754e4defb38c4e7f8186f9",
+          "path": "src/worker/launch-descriptor.ts",
+          "range": { "end_line": 356, "start_line": 1 },
+          "symbol": "parseWorkerLaunchDescriptor"
+        },
+        {
+          "blob_sha": "1c0179b355a6f73c688bca9c8d6fab2e44ce32fd",
+          "path": "src/worker/worker-process.ts",
+          "range": { "end_line": 184, "start_line": 1 },
+          "symbol": "runWorkerProcess"
+        },
+        {
+          "blob_sha": "4834957390cbcd589ca74514ea83bab4d2b1f91b",
+          "path": "src/worker/worker-placement-tools.ts",
+          "range": { "end_line": 74, "start_line": 1 },
+          "symbol": "createWorkerPlacementTools"
+        },
+        {
+          "blob_sha": "dfa42efa2a51bc4aea38277d3a6528e7c9694fde",
+          "path": "src/worker/workspace-inspection-protocol.ts",
+          "range": { "end_line": 151, "start_line": 1 },
+          "symbol": "parseWorkspaceInspectionInput"
+        },
+        {
+          "blob_sha": "98898e96dd853224686c3971ea21bc6e931e0063",
+          "path": "src/worker/workspace-inspection.ts",
+          "range": { "end_line": 81, "start_line": 1 },
+          "symbol": "inspectSessionWorkspace"
         },
         {
           "blob_sha": "3f057a54e756aad4a7e84b607e07f8b8ab4d17fe",
