@@ -10,10 +10,10 @@
     "ui_accepted": false
   },
   "file_coverage": {
-    "mapped_paths": 987,
+    "mapped_paths": 992,
     "omitted_known": 0,
     "tracked_paths": 58750,
-    "unclassified_paths": 57763
+    "unclassified_paths": 57758
   },
   "inventory_authority": {
     "manifest_source": "GitHub Actions immutable artifact candidate",
@@ -19496,6 +19496,24 @@
       "selected_owner": "source/host/src/extensions/node_host/session_registry.rs",
       "source_refs": [
         {
+          "blob_sha": "e48852feee265976aae7b1323685767daa82727e",
+          "path": "src/worker/worker-connection-admission.ts",
+          "range": { "end_line": 220, "start_line": 1 },
+          "symbol": "connectWorkerConnectionAttempt"
+        },
+        {
+          "blob_sha": "80e6f4793f0d5272ac22e7add91445f027cd5088",
+          "path": "src/worker/worker-connection-contract.ts",
+          "range": { "end_line": 174, "start_line": 1 },
+          "symbol": "WorkerConnectionState"
+        },
+        {
+          "blob_sha": "7e07393f486f51be907cb10f9ba9feef95995d3f",
+          "path": "src/worker/worker-connection-endpoint.ts",
+          "range": { "end_line": 133, "start_line": 1 },
+          "symbol": "parseWorkerConnectionEndpoint"
+        },
+        {
           "blob_sha": "fa998d7a2c98c9db4ebc1cc1e891898ca83d15f5",
           "path": "src/node-host/client.ts",
           "range": {
@@ -20400,6 +20418,18 @@
           "path": "src/node-host/node-worker-workspace-git.ts",
           "range": { "end_line": 91, "start_line": 1 },
           "symbol": "initializeNodeWorkerGitWorkspace"
+        },
+        {
+          "blob_sha": "a360a20b9a3a479d1cff5fb3ad2cb5a2bfa2f4b0",
+          "path": "src/worker/worker-connection-frames.ts",
+          "range": { "end_line": 307, "start_line": 1 },
+          "symbol": "WorkerConnectionFrameDispatcher"
+        },
+        {
+          "blob_sha": "34aca0a3e5d0a106feaa205c2c9393b5700cbce0",
+          "path": "src/worker/worker-node-loss.ts",
+          "range": { "end_line": 16, "start_line": 1 },
+          "symbol": "WorkerNodeLostError"
         },
         {
           "blob_sha": "27d140003d1393326f47a1d6d822b61dfb79f40d",
