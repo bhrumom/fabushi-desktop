@@ -1,7 +1,8 @@
 """Record exact upstream file reads in canonical row shards.
 
-This is deliberately a small, explicit file map: every row is read from the
-locked source checkout before its range, owner and evidence are recorded.
+This is deliberately a bounded file map plus exact ledger-source reconciliation:
+every changed row is backed by a locked-source range and an owner/evidence edge.
+It never changes the locked source identity or claims global closure.
 """
 import gzip
 import hashlib
@@ -11,6 +12,13 @@ from pathlib import Path
 ROOT = Path("projects/openclaw-rust")
 SHARDS = ROOT / "inventory" / "shards"
 READS = {
+    "crates/openclaw-node-host/src/host.rs": (951, "OCRM-RESP-NODE-HOST-COMMAND-DISPATCH-001", "OCRM-M13"),
+    "crates/openclaw-node-host/src/runtime.rs": (2011, "OCRM-RESP-NODE-HOST-COMMAND-DISPATCH-001", "OCRM-M13"),
+    "crates/openclaw-node-host/src/sidecar_handshake.rs": (796, "OCRM-RESP-NODE-HOST-COMMAND-DISPATCH-001", "OCRM-M13"),
+    "crates/openclaw-node-host/src/sidecar_protocol.rs": (1292, "OCRM-RESP-NODE-HOST-COMMAND-DISPATCH-001", "OCRM-M13"),
+    "crates/openclaw-node-host/src/sidecar_runtime.rs": (2251, "OCRM-RESP-NODE-HOST-COMMAND-DISPATCH-001", "OCRM-M13"),
+    "src/node-host/invoke.ts": (703, "OCRM-RESP-NODE-HOST-COMMAND-DISPATCH-001", "OCRM-M13"),
+    "src/node-host/node-stream-transport.ts": (343, "OCRM-RESP-NODE-HOST-COMMAND-DISPATCH-001", "OCRM-M13"),
     "src/process/exec-termination.ts": (211, "OCRM-RESP-EXEC-TERMINATION-CONTROLLER-001", "OCRM-M25"),
     "src/process/exec-termination.test.ts": (311, "OCRM-RESP-EXEC-TERMINATION-CONTROLLER-001", "OCRM-M25"),
     "src/process/exec-termination.liveness.test.ts": (108, "OCRM-RESP-EXEC-TERMINATION-CONTROLLER-001", "OCRM-M25"),
@@ -52,21 +60,62 @@ READS = {
 def main():
     newly_read = 0
     newly_mapped = 0
-    ledger_source_keys = set()
+    ledger_specs = {}
+    module_by_prefix = {
+        "OCRM-RESP-EXEC-": "OCRM-M25",
+        "OCRM-RESP-TALK-": "OCRM-M25",
+        "OCRM-RESP-LLM-": "OCRM-M06",
+        "OCRM-RESP-LOGGING-": "OCRM-M30",
+        "OCRM-RESP-PLUGIN-SDK-": "OCRM-M16",
+        "OCRM-RESP-PLUGINS-": "OCRM-M16",
+        "OCRM-RESP-MEETING-BOT-": "OCRM-M26",
+        "OCRM-RESP-INFRA-UPDATE-": "OCRM-M01",
+        "OCRM-RESP-INFRA-PLATFORM-": "OCRM-M10",
+        "OCRM-RESP-INFRA-WORKER-": "OCRM-M11",
+        "OCRM-RESP-NODE-HOST-": "OCRM-M13",
+        "OCRM-RESP-PROCESS-": "OCRM-M10",
+        "OCRM-RESP-SECRETS-": "OCRM-M03",
+        "OCRM-RESP-SECURITY-": "OCRM-M10",
+        "OCRM-RESP-PROXY-": "OCRM-M30",
+        "OCRM-RESP-SESSION-": "OCRM-M07",
+        "OCRM-RESP-SNAPSHOT-": "OCRM-M29",
+        "OCRM-RESP-SKILLS-": "OCRM-M17",
+    }
     ledger_path = ROOT / "parity-ledger.json"
     if ledger_path.exists():
         ledger = json.loads(ledger_path.read_text())
-        ledger_source_keys = {
-            (s.get("path"), s.get("blob_sha"))
-            for r in ledger.get("responsibilities", [])
-            for s in r.get("source_refs", [])
-        }
+        for responsibility in ledger.get("responsibilities", []):
+            rid = responsibility["id"]
+            module = next(
+                (value for prefix, value in module_by_prefix.items() if rid.startswith(prefix)),
+                "OCRM-M13" if rid.startswith("OCRM-RESP-NODE-") else None,
+            )
+            for source in responsibility.get("source_refs", []):
+                key = (source.get("path"), source.get("blob_sha"))
+                item = ledger_specs.setdefault(source["path"], {
+                    "end_line": 0,
+                    "responsibility_ids": set(),
+                    "module": module,
+                    "evidence_refs": set(),
+                })
+                source_range = source.get("range") or {}
+                item["end_line"] = max(item["end_line"], source_range.get("end_line", 1))
+                item["responsibility_ids"].add(rid)
+                item["evidence_refs"].update(responsibility.get("evidence_refs", []))
     for shard_path in sorted(SHARDS.glob("part-*.jsonl.gz")):
         rows = []
         with gzip.open(shard_path, "rt", encoding="utf-8") as stream:
             for line in stream:
                 row = json.loads(line)
-                spec = READS.get(row.get("path"))
+                path = row.get("path")
+                spec = READS.get(path)
+                ledger_spec = ledger_specs.get(path)
+                if spec is None and ledger_spec:
+                    spec = (
+                        ledger_spec["end_line"],
+                        sorted(ledger_spec["responsibility_ids"]),
+                        ledger_spec["module"] or "OCRM-M13",
+                    )
                 if spec:
                     was_unread = row.get("read_status") != "read-complete"
                     was_unclassified = row.get("responsibility_status") == "unclassified"
@@ -74,28 +123,43 @@ def main():
                     # Tests are source/oracle evidence, not additional ledger
                     # source_refs. Keep them mapped/read-complete without
                     # creating a one-way responsibility edge.
-                    direct_source = not row["path"].endswith(".test.ts") and not row["path"].endswith(".liveness.test.ts")
+                    direct_source = ledger_spec is not None or (not path.endswith(".test.ts") and not path.endswith(".liveness.test.ts"))
+                    node_host_source = row["path"].startswith("crates/openclaw-node-host/") or row["path"].startswith("src/node-host/")
+                    responsibility_ids = responsibility if isinstance(responsibility, list) else ([responsibility] if direct_source else [])
+                    if ledger_spec:
+                        responsibility_ids = sorted(set(responsibility_ids) | ledger_spec["responsibility_ids"])
+                    language_kind = (
+                        "rust" if path.endswith(".rs") else
+                        "typescript" if path.endswith(".ts") else
+                        "markdown" if path.endswith(".md") else
+                        "json" if path.endswith(".json") else
+                        "other"
+                    )
                     row.update({
-                        "language_kind": "typescript",
+                        "language_kind": language_kind,
                         "module_id": module,
                         "read_ranges": [{"start_line": 1, "end_line": end}],
                         "read_status": "read-complete",
-                        "responsibility_ids": [responsibility] if direct_source else [],
-                        "responsibility_status": "mapped" if direct_source else "unclassified",
+                        "responsibility_ids": responsibility_ids,
+                        "responsibility_status": "mapped" if responsibility_ids else "unclassified",
                         "disposition": "native-rust-equivalent",
                         "reviewer": "xuyao@ombhrum.com",
-                        "evidence_refs": [
-                            "projects/openclaw-rust/dossiers/process-exec-shell-scoped.md"
-                            if module == "OCRM-M25" else
-                            "projects/openclaw-rust/dossiers/sessions-admission-scoped.md",
-                            "source/host/tests/process_tree_contract.rs"
-                            if module == "OCRM-M25" else
-                            "source/host/tests/openclaw_sessions_and_config_contract.rs",
+                        "evidence_refs": sorted(ledger_spec["evidence_refs"]) if ledger_spec and ledger_spec["evidence_refs"] else [
+                            "projects/openclaw-rust/dossiers/node-host-scoped.md"
+                            if node_host_source else
+                            ("projects/openclaw-rust/dossiers/process-exec-shell-scoped.md"
+                             if module == "OCRM-M25" else
+                             "projects/openclaw-rust/dossiers/sessions-admission-scoped.md"),
+                            "source/host/tests/openclaw_node_host_contract.rs"
+                            if node_host_source else
+                            ("source/host/tests/process_tree_contract.rs"
+                             if module == "OCRM-M25" else
+                             "source/host/tests/openclaw_sessions_and_config_contract.rs"),
                         ],
                     })
                     if was_unread:
                         newly_read += 1
-                    if was_unclassified and direct_source and (row.get("path"), row.get("sha")) not in ledger_source_keys:
+                    if was_unclassified and responsibility_ids:
                         newly_mapped += 1
                 rows.append(row)
         data = "".join(json.dumps(row, sort_keys=True, ensure_ascii=False) + "\n" for row in rows).encode()
