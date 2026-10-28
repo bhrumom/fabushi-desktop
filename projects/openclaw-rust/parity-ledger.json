@@ -10,10 +10,10 @@
     "ui_accepted": false
   },
   "file_coverage": {
-    "mapped_paths": 862,
+    "mapped_paths": 875,
     "omitted_known": 0,
     "tracked_paths": 58750,
-    "unclassified_paths": 57888
+    "unclassified_paths": 57875
   },
   "inventory_authority": {
     "manifest_source": "GitHub Actions immutable artifact candidate",
@@ -11213,6 +11213,15 @@
             "start_line": 1
           },
           "symbol": "preserveAuthProfile"
+        },
+        {
+          "blob_sha": "378579dd13534027cdce7953942e64822db097e9",
+          "path": "src/sessions/auth-profile-removal.ts",
+          "range": {
+            "end_line": 157,
+            "start_line": 1
+          },
+          "symbol": "removeAuthProfile"
         }
       ],
       "status": {
