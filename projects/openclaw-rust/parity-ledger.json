@@ -19809,6 +19809,51 @@
             "start_line": 1
           },
           "symbol": "runNodeStreamTransport"
+        },
+        {
+          "blob_sha": "f2b2b63fb265ddf79e6c66d02c13e687237d7229",
+          "path": "crates/openclaw-node-host/src/host.rs",
+          "range": {
+            "end_line": 951,
+            "start_line": 1
+          },
+          "symbol": "run_host"
+        },
+        {
+          "blob_sha": "d29d1bd468436cdc7c636427b3ec2e07aa9624e4",
+          "path": "crates/openclaw-node-host/src/runtime.rs",
+          "range": {
+            "end_line": 2011,
+            "start_line": 1
+          },
+          "symbol": "CommandRuntime"
+        },
+        {
+          "blob_sha": "3a10ebe670ad5a2564b6f297123fc8998d6f7298",
+          "path": "crates/openclaw-node-host/src/sidecar_handshake.rs",
+          "range": {
+            "end_line": 796,
+            "start_line": 1
+          },
+          "symbol": "SidecarHandshake"
+        },
+        {
+          "blob_sha": "b2b150bc0ccbe47c1093f2491013a8e61a1436f4",
+          "path": "crates/openclaw-node-host/src/sidecar_protocol.rs",
+          "range": {
+            "end_line": 1292,
+            "start_line": 1
+          },
+          "symbol": "AuthenticatedSidecarChannel"
+        },
+        {
+          "blob_sha": "74a51afae33e373a24210d7d1dc03002c54f409e",
+          "path": "crates/openclaw-node-host/src/sidecar_runtime.rs",
+          "range": {
+            "end_line": 2251,
+            "start_line": 1
+          },
+          "symbol": "SidecarRuntimeBridge"
         }
       ],
       "status": {

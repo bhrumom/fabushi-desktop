@@ -283,3 +283,14 @@ This is a real local producer-to-owner wiring improvement, but it is not remote 
 The current direct GitHub identity for `openclaw/openclaw` main is commit `56eba2fae267818e540d9826899c2288cf5aea08`, tree `19327a453b4374bf9fa34855d2c1e5406372ed76`. The locked-to-live compare is `4856` commits ahead with `300` returned files. Current live blob observations include `src/node-host/invoke.ts` at `dd97dd4eed05eb6878bed0024f1a6c9a8b1c56dc` and `src/node-host/node-stream-transport.ts` at `080cdf9110eb90c1163490475cfe52b03f526e5a`.
 
 This refresh does not change `upstream.lock.json`, inventory totals, mapping counts, or any completion flag. The locked revision remains the implementation baseline, and the live-main delta remains evidence for future re-baselining rather than proof of current Fabushi parity.
+
+## 40. Locked Rust crate host/runtime/sidecar closure read (2026-10-29)
+
+The locked crate files `host.rs`, `runtime.rs`, `sidecar_handshake.rs`, `sidecar_protocol.rs`, and `sidecar_runtime.rs` were read at their exact locked blobs and added to the node-host source ledger. Their responsibilities are distinct:
+
+- `host.rs` owns headless host configuration/secret indirection, health listener bounds, Gateway lifecycle invocation, issued device-token retry/adoption, redacted lifecycle events, and the product command runtime factory.
+- `runtime.rs` owns bounded command registration/admission, cancellation, duplex input/output, timeout/grace handling, concurrency, result delivery, and disconnect cleanup; the embedding host supplies the policy and handlers.
+- `sidecar_handshake.rs` and `sidecar_protocol.rs` own authenticated, generation-bound, sequence-checked framed IPC negotiation and channel retirement, while the product supervisor owns process creation, artifact verification, IPC transport, and session-key delivery.
+- `sidecar_runtime.rs` owns the bounded portable-JSON sidecar manifest/configuration exchange and adapter bridge; its capability adapter is an embedding boundary, not a product process owner or durable state store.
+
+No new Fabushi sidecar or generic command runtime was added. The existing owner decision remains fail-closed: only an identified Fabushi supervisor/worker owner may supply process lifecycle, artifact verification, authenticated IPC transport, and adapter permissions. Until that owner and its production caller are identified, these crate reads are mapping evidence; remote transport, worker launch, sidecar acceptance, and exact-head Actions remain pending.
