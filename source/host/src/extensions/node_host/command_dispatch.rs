@@ -44,6 +44,45 @@ pub struct ComputerCommandInput {
     pub action_params_json: Option<String>,
 }
 
+/// The node-host dispatcher owns protocol validation and generation fencing.
+/// Platform authorization and side effects stay with the injected native owner.
+pub trait NodeWorkerComputerExecutor {
+    fn capabilities(&self, generation: u64) -> Result<String, String>;
+    fn act(&self, generation: u64, params: &serde_json::Value) -> Result<String, String>;
+    fn snapshot(&self, generation: u64, params: &serde_json::Value) -> Result<String, String>;
+}
+
+pub fn dispatch_node_worker_computer_command_with_executor<E: NodeWorkerComputerExecutor>(
+    input: &ComputerCommandInput,
+    current_generation: Option<u64>,
+    executor: &E,
+) -> Result<String, String> {
+    if input.operation == ComputerOperation::Close {
+        return Ok(json!({"status": "closed"}).to_string());
+    }
+
+    let generation = current_generation.ok_or_else(|| COMPUTER_DRIVER_UNAVAILABLE.to_string())?;
+    if input.operation != ComputerOperation::Capabilities {
+        if let Some(req_gen) = input.provider_generation {
+            if req_gen != generation {
+                return Err(COMPUTER_CONTRACT_MISMATCH.to_string());
+            }
+        }
+    }
+
+    let params = match input.action_params_json.as_deref() {
+        Some(raw) => serde_json::from_str(raw)
+            .map_err(|_| "COMPUTER_INVALID_ACTION: action parameters are invalid JSON".to_string())?,
+        None => serde_json::Value::Null,
+    };
+    match input.operation {
+        ComputerOperation::Capabilities => executor.capabilities(generation),
+        ComputerOperation::Act => executor.act(generation, &params),
+        ComputerOperation::Snapshot => executor.snapshot(generation, &params),
+        ComputerOperation::Close => unreachable!(),
+    }
+}
+
 pub fn dispatch_node_worker_computer_command(
     input: &ComputerCommandInput,
     current_generation: Option<u64>,
@@ -51,25 +90,6 @@ pub fn dispatch_node_worker_computer_command(
     if input.operation == ComputerOperation::Close {
         return Ok(json!({"status": "closed"}).to_string());
     }
-
-    let generation = current_generation.ok_or(COMPUTER_DRIVER_UNAVAILABLE)?;
-
-    if input.operation == ComputerOperation::Capabilities {
-        return Ok(json!({
-            "provider": { "generation": generation },
-            "actions": ["mouse_move", "mouse_click", "keyboard_type", "screenshot"]
-        }).to_string());
-    }
-
-    if let Some(req_gen) = input.provider_generation {
-        if req_gen != generation {
-            return Err(COMPUTER_CONTRACT_MISMATCH);
-        }
-    }
-
-    match input.operation {
-        ComputerOperation::Act => Ok(json!({"result": "executed"}).to_string()),
-        ComputerOperation::Snapshot => Ok(json!({"image_base64": "fake-png-snapshot"}).to_string()),
-        _ => unreachable!(),
-    }
+    let _ = current_generation;
+    Err(COMPUTER_DRIVER_UNAVAILABLE)
 }
