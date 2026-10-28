@@ -204,3 +204,8 @@ The locked node-host configuration persists optional TLS fingerprint and WebSock
 The locked Rust node client decodes node.invoke.request with canonical paramsJSON, rejects a direct params field, preserves the original serialized parameter text and byte count, validates optional timeout/idempotency/session metadata, and bounds node.invoke.input payloadJSON at 16 KiB. It also rejects empty correlation identity fields and parses node.invoke.cancel by invoke id plus node id.
 
 Rust now exposes the equivalent transport-neutral invoke_protocol seam with request, input, and cancel parsers plus falsifiable unit oracles for canonical preservation, direct-params rejection, malformed JSON, input bounds, and cancel identity. The parser is not yet called by a remote Gateway transport; the existing public Host node.invoke compatibility path remains unchanged and remote invocation remains fail-closed unavailable.
+## 25. Ordered invoke-input buffer seam (2026-10-29)
+
+The locked node-invoke-input owner advances the expected sequence on any non-stale frame, records gaps without rejecting them, buffers frames received before handler registration, and fails closed when the pending buffer exceeds 64 KiB. Duplicate/late sequence values are ignored and registration drains buffered input in order.
+
+Rust now contains NodeInvokeInputBuffer with the same bounded state transitions and focused oracles. It remains a transport/runtime primitive until the live node invocation owner supplies the handler and couples buffer failure to invocation cancellation.

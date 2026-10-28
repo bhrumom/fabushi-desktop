@@ -19603,7 +19603,8 @@
       ],
       "dependencies": [
         "mahayana_host_runtime::extensions::node_host::command_dispatch",
-        "mahayana_host_runtime::extensions::node_host::invoke_protocol"
+        "mahayana_host_runtime::extensions::node_host::invoke_protocol",
+        "mahayana_host_runtime::extensions::node_host::invoke_input"
       ],
       "evidence_refs": [
         "source/host/tests/openclaw_node_host_contract.rs",
@@ -19733,7 +19734,9 @@
         "source/host/tests/openclaw_node_host_contract.rs::test_ocrm_node_host_computer_command",
         "source/host/src/extensions/node_host/invoke_protocol.rs::tests::request_preserves_canonical_params_json_and_metadata",
         "source/host/src/extensions/node_host/invoke_protocol.rs::tests::direct_params_and_malformed_params_json_fail_closed",
-        "source/host/src/extensions/node_host/invoke_protocol.rs::tests::input_bounds_and_cancel_identity_are_checked"
+        "source/host/src/extensions/node_host/invoke_protocol.rs::tests::input_bounds_and_cancel_identity_are_checked",
+        "source/host/src/extensions/node_host/invoke_input.rs::tests::buffers_until_handler_and_accepts_sequence_gaps",
+        "source/host/src/extensions/node_host/invoke_input.rs::tests::rejects_duplicates_and_fails_closed_on_buffer_overflow"
       ],
       "typed_contracts": [
         "ComputerOperation",
@@ -19745,7 +19748,9 @@
         "NodeInvokeCancel",
         "parse_node_invoke_request",
         "parse_node_invoke_input",
-        "parse_node_invoke_cancel"
+        "parse_node_invoke_cancel",
+        "NodeInvokeInputBuffer",
+        "MAX_PENDING_INPUT_BYTES"
       ],
       "unit_id": "OCRM-UNIT-NODE-HOST-001"
     },
