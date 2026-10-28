@@ -90,6 +90,14 @@ fn production_host_owns_the_canonical_plugin_capability_catalog() {
             "ProductionHostExtensions must own the plugin capability catalog: {needle}"
         );
     }
+    assert!(
+        PRODUCTION_OWNER.contains("pub fn register_channel_delivery_provider("),
+        "provider registration must be owned by ProductionHostExtensions"
+    );
+    assert!(
+        PRODUCTION_OWNER.contains("if self.plugin_capability_catalog.get_channel(channel_id).is_none()"),
+        "provider registration must reject channels absent from the capability catalog"
+    );
 }
 
 #[test]

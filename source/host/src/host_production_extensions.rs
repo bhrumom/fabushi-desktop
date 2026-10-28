@@ -110,7 +110,9 @@ use crate::extensions::local_exec::extension::{
 };
 use crate::extensions::plugins::compat::validate_all_records;
 use crate::extensions::plugins::capability_catalog::PluginCapabilityCatalog;
-use crate::connectors::channel_delivery::{ChannelDeliveryRouter, HostChannelDelivery};
+use crate::connectors::channel_delivery::{
+    ChannelDeliveryPort, ChannelDeliveryRouter, HostChannelDelivery,
+};
 use crate::extensions::local_tool_permission::extension::{
     HostLocalToolPermissionExtension, start_local_tool_permission_extension,
 };
@@ -711,6 +713,20 @@ pub fn start_production_host_extensions(
 
 
 impl ProductionHostExtensions {
+    /// Registers a provider port only after the channel is present in the
+    /// canonical plugin capability catalog. This keeps plugin discovery and
+    /// delivery registration on one Host-owned boundary.
+    pub fn register_channel_delivery_provider(
+        &self,
+        channel_id: &str,
+        port: Arc<dyn ChannelDeliveryPort>,
+    ) -> Result<(), String> {
+        if self.plugin_capability_catalog.get_channel(channel_id).is_none() {
+            return Err(format!("channel is not registered: {channel_id}"));
+        }
+        self.channel_delivery_router.register(channel_id, port)
+    }
+
     pub fn stop_structured_log_domain_reporters(&self) {
         unpin_structured_log_domain_reporters();
     }
