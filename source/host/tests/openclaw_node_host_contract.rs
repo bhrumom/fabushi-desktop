@@ -18,7 +18,7 @@ const COMMAND_DISPATCH_SOURCE: &str =
 struct FixtureComputerExecutor;
 
 impl NodeWorkerComputerExecutor for FixtureComputerExecutor {
-    fn capabilities(&self, generation: u64) -> Result<String, String> {
+    fn capabilities(&self, generation: &str) -> Result<String, String> {
         Ok(serde_json::json!({
             "provider": { "generation": generation },
             "actions": ["mouse_move", "mouse_click", "keyboard_type", "screenshot"]
@@ -26,11 +26,11 @@ impl NodeWorkerComputerExecutor for FixtureComputerExecutor {
         .to_string())
     }
 
-    fn act(&self, generation: u64, params: &serde_json::Value) -> Result<String, String> {
+    fn act(&self, generation: &str, params: &serde_json::Value) -> Result<String, String> {
         Ok(serde_json::json!({ "generation": generation, "params": params, "result": "fixture-executed" }).to_string())
     }
 
-    fn snapshot(&self, generation: u64, _params: &serde_json::Value) -> Result<String, String> {
+    fn snapshot(&self, generation: &str, _params: &serde_json::Value) -> Result<String, String> {
         Ok(serde_json::json!({ "generation": generation, "snapshot": "fixture-owned" }).to_string())
     }
 }
@@ -95,42 +95,46 @@ fn test_ocrm_node_host_computer_command() {
         Err(COMPUTER_DRIVER_UNAVAILABLE)
     );
     assert_eq!(
-        dispatch_node_worker_computer_command(&caps_input, Some(42)),
+        dispatch_node_worker_computer_command(&caps_input, Some("generation-42")),
         Err(COMPUTER_DRIVER_UNAVAILABLE)
     );
 
     // Act operation with matching generation
     let act_input = ComputerCommandInput {
         operation: ComputerOperation::Act,
-        provider_generation: Some(42),
+        provider_generation: Some("generation-42".into()),
         action_params_json: Some(r#"{"action":"mouse_click"}"#.to_string()),
     };
     assert_eq!(
-        dispatch_node_worker_computer_command(&act_input, Some(42)),
+        dispatch_node_worker_computer_command(&act_input, Some("generation-42")),
         Err(COMPUTER_DRIVER_UNAVAILABLE)
     );
 
     // Act operation with mismatched generation
     let act_mismatch = ComputerCommandInput {
         operation: ComputerOperation::Act,
-        provider_generation: Some(99),
+        provider_generation: Some("generation-99".into()),
         action_params_json: None,
     };
     let executor = FixtureComputerExecutor;
     assert_eq!(
-        dispatch_node_worker_computer_command_with_executor(&act_mismatch, Some(42), &executor),
+        dispatch_node_worker_computer_command_with_executor(
+            &act_mismatch,
+            Some("generation-42"),
+            &executor,
+        ),
         Err(COMPUTER_CONTRACT_MISMATCH.to_string())
     );
     let capabilities = dispatch_node_worker_computer_command_with_executor(
         &caps_input,
-        Some(42),
+        Some("generation-42"),
         &executor,
     )
     .expect("fixture capabilities should be delegated");
-    assert!(capabilities.contains("\"generation\":42"));
+    assert!(capabilities.contains("\"generation\":\"generation-42\""));
     let action = dispatch_node_worker_computer_command_with_executor(
         &act_input,
-        Some(42),
+        Some("generation-42"),
         &executor,
     )
     .expect("fixture action should be delegated");
@@ -138,10 +142,10 @@ fn test_ocrm_node_host_computer_command() {
     let snapshot = dispatch_node_worker_computer_command_with_executor(
         &ComputerCommandInput {
             operation: ComputerOperation::Snapshot,
-            provider_generation: Some(42),
+            provider_generation: Some("generation-42".into()),
             action_params_json: None,
         },
-        Some(42),
+        Some("generation-42"),
         &executor,
     )
     .expect("fixture snapshot should be delegated");
@@ -150,10 +154,10 @@ fn test_ocrm_node_host_computer_command() {
         dispatch_node_worker_computer_command_with_executor(
             &ComputerCommandInput {
                 operation: ComputerOperation::Act,
-                provider_generation: Some(42),
+                provider_generation: Some("generation-42".into()),
                 action_params_json: Some("{".into()),
             },
-            Some(42),
+            Some("generation-42"),
             &executor,
         ),
         Err("COMPUTER_INVALID_ACTION: action parameters are invalid JSON".into())

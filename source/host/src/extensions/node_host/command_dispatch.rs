@@ -40,30 +40,33 @@ impl ComputerOperation {
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ComputerCommandInput {
     pub operation: ComputerOperation,
-    pub provider_generation: Option<u64>,
+    /// Opaque upstream provider generation; do not coerce it to a number.
+    pub provider_generation: Option<String>,
     pub action_params_json: Option<String>,
 }
 
 /// The node-host dispatcher owns protocol validation and generation fencing.
 /// Platform authorization and side effects stay with the injected native owner.
 pub trait NodeWorkerComputerExecutor {
-    fn capabilities(&self, generation: u64) -> Result<String, String>;
-    fn act(&self, generation: u64, params: &serde_json::Value) -> Result<String, String>;
-    fn snapshot(&self, generation: u64, params: &serde_json::Value) -> Result<String, String>;
+    fn capabilities(&self, generation: &str) -> Result<String, String>;
+    fn act(&self, generation: &str, params: &serde_json::Value) -> Result<String, String>;
+    fn snapshot(&self, generation: &str, params: &serde_json::Value) -> Result<String, String>;
 }
 
 pub fn dispatch_node_worker_computer_command_with_executor<E: NodeWorkerComputerExecutor>(
     input: &ComputerCommandInput,
-    current_generation: Option<u64>,
+    current_generation: Option<&str>,
     executor: &E,
 ) -> Result<String, String> {
     if input.operation == ComputerOperation::Close {
         return Ok(json!({"status": "closed"}).to_string());
     }
 
-    let generation = current_generation.ok_or_else(|| COMPUTER_DRIVER_UNAVAILABLE.to_string())?;
+    let generation = current_generation
+        .filter(|value| !value.trim().is_empty())
+        .ok_or_else(|| COMPUTER_DRIVER_UNAVAILABLE.to_string())?;
     if input.operation != ComputerOperation::Capabilities {
-        if let Some(req_gen) = input.provider_generation {
+        if let Some(req_gen) = input.provider_generation.as_deref() {
             if req_gen != generation {
                 return Err(COMPUTER_CONTRACT_MISMATCH.to_string());
             }
@@ -85,7 +88,7 @@ pub fn dispatch_node_worker_computer_command_with_executor<E: NodeWorkerComputer
 
 pub fn dispatch_node_worker_computer_command(
     input: &ComputerCommandInput,
-    current_generation: Option<u64>,
+    current_generation: Option<&str>,
 ) -> Result<String, &'static str> {
     if input.operation == ComputerOperation::Close {
         return Ok(json!({"status": "closed"}).to_string());
