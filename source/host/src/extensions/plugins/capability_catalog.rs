@@ -1,4 +1,7 @@
 use base64::{engine::general_purpose::URL_SAFE_NO_PAD, Engine as _};
+use crate::extensions::plugin_sdk::channel_entry::{
+    BundledChannelEntryContract, PluginRegistrationMode,
+};
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use std::collections::{HashMap, HashSet};
@@ -107,6 +110,30 @@ impl PluginCapabilityCatalog {
         let key = entry.channel_name.to_ascii_lowercase();
         let mut channels = self.channels.lock().unwrap();
         channels.insert(key, entry);
+    }
+
+    /// Registers one bundled channel entry through the existing catalog owner.
+    ///
+    /// The entry handler remains responsible for the mode-specific registration
+    /// work; this catalog owns the resulting discoverability metadata. No second
+    /// channel registry or channel state is created by this bridge.
+    pub fn register_bundled_channel_entry(
+        &self,
+        entry: &BundledChannelEntryContract,
+        origin: PluginOrigin,
+        package_name: Option<String>,
+        mode: PluginRegistrationMode,
+    ) -> Vec<String> {
+        let registration = entry.register(mode);
+        let channel_id = entry.id.clone();
+        self.register_channel(ChannelCatalogEntry {
+            plugin_id: channel_id.clone(),
+            origin: origin.clone(),
+            package_name,
+            channel_name: channel_id,
+            trusted_official_install: origin == PluginOrigin::Bundled,
+        });
+        registration
     }
 
     pub fn get_channel(&self, channel_name: &str) -> Option<ChannelCatalogEntry> {

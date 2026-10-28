@@ -241,6 +241,10 @@ fn test_ocrm_plugins_activation_planner() {
 
 #[test]
 fn test_ocrm_plugins_capability_catalog() {
+    use mahayana_host_runtime::extensions::plugin_sdk::channel_entry::{
+        BundledChannelEntryContract, PluginRegistrationMode,
+    };
+
     let catalog = PluginCapabilityCatalog::new();
 
     // Register capability
@@ -284,6 +288,25 @@ fn test_ocrm_plugins_capability_catalog() {
     let channel = catalog.get_channel("DISCORD").expect("Channel lookup");
     assert_eq!(channel.plugin_id, "discord-plugin");
     assert!(channel.trusted_official_install);
+
+    let bundled = BundledChannelEntryContract::new("telegram", "Telegram", "Bundled Telegram")
+        .with_handler(|mode| match mode {
+            PluginRegistrationMode::Full => vec!["telegram-full".to_string()],
+            _ => vec!["telegram-mode".to_string()],
+        });
+    assert_eq!(
+        catalog.register_bundled_channel_entry(
+            &bundled,
+            PluginOrigin::Bundled,
+            Some("@openclaw/telegram".to_string()),
+            PluginRegistrationMode::Full,
+        ),
+        vec!["telegram-full"]
+    );
+    let registered = catalog.get_channel("TELEGRAM").expect("Bundled entry registration");
+    assert_eq!(registered.plugin_id, "telegram");
+    assert_eq!(registered.package_name.as_deref(), Some("@openclaw/telegram"));
+    assert!(registered.trusted_official_install);
 }
 
 #[test]
