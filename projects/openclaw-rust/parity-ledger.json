@@ -18338,10 +18338,10 @@
       ],
       "id": "OCRM-RESP-LOGGING-SECRET-REDACTION-001",
       "integration": {
-        "consumer": "source/host/src/error_diagnostics.rs::DiagnosticError::with_diagnostic",
+        "consumer": "none identified; helper/local contract only",
         "entrypoint": "source/host/src/error_diagnostics.rs::sanitize_error_diagnostic",
         "owner": "source/host/src/extensions/telemetry/openclaw_secret_redactor.rs",
-        "producer": "source/host/src/error_diagnostics.rs::DiagnosticError::with_diagnostic"
+        "producer": "none identified; no production DiagnosticError caller found"
       },
       "invariants": [
         "Tokens with <= 8 chars are masked completely",
