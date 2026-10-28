@@ -19598,7 +19598,12 @@
         "GatewayFrameDecision",
         "TargetDataDecision",
         "TargetCloseDecision",
-        "NodeStreamSpliceState"
+        "NodeStreamSpliceState",
+        "NodeWorkerDesktopStreamRequest",
+        "parse_node_worker_desktop_stream_input",
+        "parse_node_worker_portal_stream_input",
+        "NODE_DESKTOP_ATTACH_PATH",
+        "NODE_PORTAL_ATTACH_PATH"
       ],
       "unit_id": "OCRM-UNIT-NODE-HOST-001"
     },

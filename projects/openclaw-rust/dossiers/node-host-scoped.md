@@ -257,3 +257,7 @@ Live main advanced to `c0f1ba6ba4439a79d2cb91dde9666038fff7ad69`, tree `f80fc842
 ## 35. Live-main refresh after stream splice seam (2026-10-29)
 
 Live main currently resolves to `bf9709250b87bec4a26637046096092ee68d3366`, tree `9daef696c7c912ef65b44f7005c86309f26fd646`; the locked-to-live compare is 4,855 commits ahead with 300 returned changed files. The stream splice seam remains bound to the locked source read and does not change the lock, inventory, mapping totals, or completion flags.
+
+## 36. Desktop and portal stream command admission (2026-10-29)
+
+The locked `node-desktop-protocol.ts` and `portal-stream-command.ts` require a 16 KiB bounded JSON request, exact lower-case 48-hex ticket, fixed attach path, integer port in `1..=65535`, and no unknown fields. Desktop username requires an absolute password-file path; the parser does not read or expose that secret. Rust `desktop_stream_protocol.rs` now preserves these admission rules for desktop and portal requests while leaving RFB probing, password materialization/redaction, WebSocket transport, and ticket ownership to their existing/future owners.
