@@ -31,6 +31,8 @@ The register path now requires a non-empty node identity, preserves the approved
 
 The invoke path now requires a node identity, command, and idempotency key, fences remote calls on the existing pairing status, accepts only `system.run`, and delegates execution to `self.local_exec` with `GatewayLocalToolScope` and `self.local_tool_permission`. It returns the native exit code, stdout, stderr, working directory, abort, outcome-unknown and truncation fields. The former fixture-style success response is not present in the shipping handler.
 
+The existing `production_remote_computer_target_service` was also inspected before deciding the remote branch. Its private transport is lease-, generation-, identity- and sensitive-result-fenced, but its native executor deliberately accepts the product `Computer` contract; it does not expose a generic `system.run` node transport. The current remote `node.invoke` error is therefore an explicit transport boundary, not a hidden fallback to local execution. Extending it to remote shell execution requires a separately specified native capability and owner decision.
+
 This preserves the current ownership boundary:
 
 | Behavior | Owner | Boundary |
@@ -56,6 +58,7 @@ The existing pure contract coverage still provides request-shape and security or
 - Run the focused contract and relevant host/runtime checks in GitHub Actions against the exact accepted branch revision.
 - Confirm the completed Rust host workflow and retain its exact head, job outcomes and logs; an in-progress or unrelated SHA is not acceptance evidence.
 - Verify real private transport/device behavior for remote nodes, including approval, reconnect, generation fencing, timeout and outcome-unknown handling.
+- Specify and implement the missing remote `system.run` capability only after an owner/contract decision; do not reinterpret the existing Computer-only private transport as node shell execution.
 - Complete the remaining Crabbox provider, artifact, process, platform bridge and reverse-caller source closure before creating a new owner or claiming OCRM completion.
 - Keep all global OCRM completion flags false until the full RTM and AC01–AC24 have direct positive evidence.
 
