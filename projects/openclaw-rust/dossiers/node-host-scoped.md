@@ -42,3 +42,9 @@
   - `test_ocrm_node_host_computer_command`
   - `test_ocrm_node_host_runtime_manifest`
 - Evidence: 3/3 passing contract tests with positive and negative assertions.
+
+## 5. Current production gap (revalidated 2026-10-29)
+
+The scoped dossier's pure command-dispatch result is not production-equivalent yet. `source/host/src/extensions/node_host/command_dispatch.rs` currently returns literal fixture payloads for `Act` (`{"result":"executed"}`) and `Snapshot` (`{"image_base64":"fake-png-snapshot"}`); the function has no production executor/permission/lease parameter, and repository search found no shipping caller for it. The existing `openclaw_node_host_contract.rs` therefore proves only the helper's generation branching, not real Computer behavior.
+
+The canonical production Computer owner remains `source/host/src/remote_computer_target.rs` plus `mahayana_computer::execute_with_lease_fenced`, while `UnifiedGatewayApi::call_openclaw_node_invoke` currently owns local `system.run` through `HostLocalExecExtension`. These are distinct valid paths. A future node-host repair must either route through those existing owners or introduce a narrowly specified adapter with real currentness/permission/result fencing; it must not preserve the fake snapshot or create a second Computer state owner. Until that repair is implemented and exact-head Actions-tested, OCRM-M13 and the node-host runtime-manifest responsibility remain pending.
