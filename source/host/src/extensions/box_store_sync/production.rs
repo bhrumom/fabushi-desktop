@@ -3011,6 +3011,27 @@ mod tests {
         assert!(
             manifest.contains_key("home/box/sand-data/agents/agent-a/portable/tables/state.jsonl")
         );
+
+        // A later generation with a removed table must replace, rather than
+        // extend, the portable prefix.
+        {
+            let db = rusqlite::Connection::open(&source_db).expect("reopen portable source");
+            db.execute_batch("DROP TABLE state")
+                .expect("remove source table");
+        }
+        sync_store_db_snapshots_with_options(
+            Arc::new(LocalFsObjectStore::new(&store_root)),
+            "store-a",
+            &mut manifest,
+            &sand_root,
+            false,
+            None,
+            true,
+        )
+        .expect("publish replacement portable generation");
+        assert!(!manifest
+            .keys()
+            .any(|path| path.ends_with("/portable/tables/state.jsonl")));
         fs::remove_dir_all(root).expect("cleanup temp root");
     }
 
