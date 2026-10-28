@@ -11,6 +11,14 @@
 
 ## 1. Upstream Source Audit & Line-by-Line Reading
 
+The locked-source pass re-read `src/media/local-media-access.ts` in full
+(blob `960de1cd63cb989efba972c7ef8bc9c78e6c1cdc`, 290 lines). It freezes
+canonical roots, rejects filesystem-root and Windows-network escapes,
+enforces inbound/workspace containment, excludes remote-workspace aliases,
+rejects hardlinks where required, bounds file size, and rechecks channel read
+authority around open/read operations. The existing Rust owner boundary and
+verification status remain unchanged.
+
 The following 6 core media caps, generated assets, resolution normalization, local access containment, default model resolution, and base64 sniffing files (totaling 904 lines) were audited line-by-line and mapped into canonical shards:
 
 | Shard | Source File | Blob SHA | Lines | Scope | Mapped Responsibility |

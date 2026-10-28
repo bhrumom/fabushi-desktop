@@ -11,6 +11,17 @@
 
 ## 1. Upstream Source Audit & Line-by-Line Reading
 
+The locked-source pass re-read `src/media/input-files.ts` in full (blob
+`1b8f2241885a1819e930b5b4a1daec91188ab947`, 409 lines) and
+`src/media/staged-inputs.ts` in full (blob
+`98e3e0cc8d2fec93d0712cef7901961082d36ab0`, 175 lines). Input extraction
+normalizes MIME allowlists, bounds base64/URL reads, applies SSRF/redirect/
+timeout limits, truncates text with explicit metadata, validates images and
+converts HEIC/HEIF; staged inputs require an exact `.gitignore` ownership
+marker, sanitized names, digest-bound manifests, ambiguity rejection and
+abort-aware creation. These rows map to their existing Rust owners without
+upgrading production verification.
+
 The following 5 core input file and staged input files (totaling 1,666 lines) were audited line-by-line from the locked upstream repository and mapped into canonical inventory shard `part-0042`:
 
 | Shard | Source File | Blob SHA | Lines | Scope | Mapped Responsibility |
