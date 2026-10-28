@@ -42,16 +42,16 @@ fn test_ocrm_node_host_gateway_auth_and_scope() {
 
     assert_eq!(
         gateway_origin_scope("http://localhost:8080/api/v1"),
-        "http://localhost:8080"
+        "http://localhost:8080/api/v1"
     );
     assert_eq!(
         gateway_origin_scope("https://gateway.example.com:443/ws"),
-        "https://gateway.example.com:443"
+        "https://gateway.example.com/ws"
     );
 
     // Matching scope with token
-    let saved = "http://127.0.0.1:8080";
-    let candidates = ["http://127.0.0.1:8080/ws", "http://127.0.0.1:8080/"];
+    let saved = "http://127.0.0.1:8080/ws";
+    let candidates = ["http://127.0.0.1:8080/ws", "http://127.0.0.1:8080/ws/"];
     assert!(can_reuse_node_host_device_token(
         Some(saved),
         &candidates,
@@ -59,7 +59,7 @@ fn test_ocrm_node_host_gateway_auth_and_scope() {
     ));
 
     // Mismatched scope
-    let mismatched = ["http://127.0.0.1:8080", "http://192.168.1.1:8080"];
+    let mismatched = ["http://127.0.0.1:8080/other", "http://192.168.1.1:8080/ws"];
     assert!(!can_reuse_node_host_device_token(
         Some(saved),
         &mismatched,

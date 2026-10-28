@@ -19458,7 +19458,7 @@
         "producer": "transport/session owner (not yet wired for remote Gateway)"
       },
       "invariants": [
-        "Gateway origin scope strictly isolates scheme, host, and port",
+        "Gateway origin scope strictly isolates scheme, host, effective port, and normalized context pathname",
         "Mismatched candidate scopes invalidate token re-use and trigger fresh device pairing"
       ],
       "migration_rollback": "Require node pairing re-authentication on every gateway reconnection",

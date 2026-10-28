@@ -36,14 +36,37 @@ impl NodeHostGatewayConfig {
 
 pub fn gateway_origin_scope(url_str: &str) -> String {
     let trimmed = url_str.trim();
-    if let Some(idx) = trimmed.find("://") {
-        let scheme = &trimmed[..idx];
-        let rest = &trimmed[idx + 3..];
-        let host_port = rest.split('/').next().unwrap_or(rest);
-        format!("{}://{}", scheme.to_ascii_lowercase(), host_port.to_ascii_lowercase())
-    } else {
-        trimmed.to_ascii_lowercase()
+    if trimmed.is_empty() {
+        return "default".into();
     }
+    let Ok(parsed) = url::Url::parse(trimmed) else {
+        return trimmed.to_string();
+    };
+
+    let scheme = parsed.scheme().to_ascii_lowercase();
+    let host = parsed.host_str().unwrap_or_default().to_ascii_lowercase();
+    let host = if host.contains(':') {
+        format!("[{host}]")
+    } else {
+        host
+    };
+    let default_port = match scheme.as_str() {
+        "http" | "ws" => Some(80),
+        "https" | "wss" => Some(443),
+        _ => None,
+    };
+    let port = parsed
+        .port()
+        .filter(|port| Some(*port) != default_port)
+        .map(|port| format!(":{port}"))
+        .unwrap_or_default();
+    let path = parsed.path();
+    let path = if path.is_empty() || path == "/" {
+        String::new()
+    } else {
+        path.trim_end_matches('/').to_string()
+    };
+    format!("{scheme}://{host}{port}{path}")
 }
 
 pub fn can_reuse_node_host_device_token(
