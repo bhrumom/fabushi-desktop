@@ -110,7 +110,7 @@ use crate::extensions::local_exec::extension::{
 };
 use crate::extensions::plugins::compat::validate_all_records;
 use crate::extensions::plugins::capability_catalog::PluginCapabilityCatalog;
-use crate::connectors::channel_delivery::HostChannelDelivery;
+use crate::connectors::channel_delivery::{ChannelDeliveryRouter, HostChannelDelivery};
 use crate::extensions::local_tool_permission::extension::{
     HostLocalToolPermissionExtension, start_local_tool_permission_extension,
 };
@@ -483,6 +483,8 @@ pub struct ProductionHostExtensions {
     pub plugin_capability_catalog: Arc<PluginCapabilityCatalog>,
     /// Canonical channel delivery boundary consumed by Gateway and channel adapters.
     pub channel_delivery: HostChannelDelivery,
+    /// Provider registration surface behind the canonical channel delivery boundary.
+    pub channel_delivery_router: ChannelDeliveryRouter,
     pub turn_execution: Arc<Mutex<TurnExecutionRegistry>>,
     session: Mutex<Option<SessionExtension>>,
     auto_review: Mutex<Option<Arc<HostAutoReviewExtension>>>,
@@ -660,7 +662,8 @@ pub fn start_production_host_extensions(
     let (_, turn_execution_registry) = turn_execution_extension();
     let turn_execution = Arc::new(Mutex::new(turn_execution_registry));
     let plugin_capability_catalog = Arc::new(PluginCapabilityCatalog::new());
-    let channel_delivery = HostChannelDelivery::default();
+    let channel_delivery_router = ChannelDeliveryRouter::new();
+    let channel_delivery = HostChannelDelivery::new(Arc::new(channel_delivery_router.clone()));
 
     pin_structured_log_domain_reporters(telemetry.logs.clone());
 
@@ -689,6 +692,7 @@ pub fn start_production_host_extensions(
         cloud_agents,
         plugin_capability_catalog,
         channel_delivery,
+        channel_delivery_router,
         turn_execution,
         session: Mutex::new(None),
         auto_review: Mutex::new(None),

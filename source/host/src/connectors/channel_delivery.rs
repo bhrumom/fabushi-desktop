@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::sync::{Arc, RwLock};
 
 use crate::extensions::transcript::channel_delivery_unregistered_error::SandChannelDeliveryUnregisteredError;
@@ -15,6 +16,69 @@ pub trait ChannelDeliveryPort: Send + Sync {
         address_token: &str,
         message: &ChannelOutboundMessage,
     ) -> Result<(), String>;
+}
+
+/// Routes channel-prefixed addresses to provider-owned delivery ports.
+///
+/// This is a delivery boundary only: provider ports own transport/auth and the
+/// canonical HostChannelDelivery owner owns lifecycle and registration. It does
+/// not create channel state, sessions, or another agent/runtime loop.
+#[derive(Clone, Default)]
+pub struct ChannelDeliveryRouter {
+    ports: Arc<RwLock<HashMap<String, Arc<dyn ChannelDeliveryPort>>>>,
+}
+
+impl ChannelDeliveryRouter {
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    pub fn register(
+        &self,
+        channel_id: impl Into<String>,
+        port: Arc<dyn ChannelDeliveryPort>,
+    ) -> Result<(), String> {
+        let channel_id = channel_id.into().trim().to_ascii_lowercase();
+        if channel_id.is_empty() {
+            return Err("channel delivery registration requires a channel id".into());
+        }
+        self.ports
+            .write()
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
+            .insert(channel_id, port);
+        Ok(())
+    }
+
+    pub fn unregister(&self, channel_id: &str) -> bool {
+        self.ports
+            .write()
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
+            .remove(&channel_id.trim().to_ascii_lowercase())
+            .is_some()
+    }
+
+    fn resolve(&self, address_token: &str) -> Option<Arc<dyn ChannelDeliveryPort>> {
+        let channel_id = address_token.split_once(':')?.0.trim().to_ascii_lowercase();
+        self.ports
+            .read()
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
+            .get(&channel_id)
+            .cloned()
+    }
+}
+
+impl ChannelDeliveryPort for ChannelDeliveryRouter {
+    fn deliver(
+        &self,
+        agent_id: &str,
+        address_token: &str,
+        message: &ChannelOutboundMessage,
+    ) -> Result<(), String> {
+        let Some(port) = self.resolve(address_token) else {
+            return Err(SandChannelDeliveryUnregisteredError.to_string());
+        };
+        port.deliver(agent_id, address_token, message)
+    }
 }
 
 #[derive(Default)]

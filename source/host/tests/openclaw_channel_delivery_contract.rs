@@ -25,7 +25,7 @@ use mahayana_host_runtime::connectors::channel_attachment::{
     resolve_channel_attachment, to_local_channel_attachment_path, url_looks_like_image,
 };
 use mahayana_host_runtime::connectors::channel_delivery::{
-    ChannelDeliveryPort, ChannelOutboundMessage, HostChannelDelivery,
+    ChannelDeliveryPort, ChannelDeliveryRouter, ChannelOutboundMessage, HostChannelDelivery,
     UnregisteredChannelDeliveryPort,
 };
 use mahayana_host_runtime::extensions::transcript::channel_delivery_unregistered_error::SandChannelDeliveryUnregisteredError;
@@ -198,6 +198,25 @@ fn test_ocrm_channel_o04_dead_letter_fallback() {
     dlq.dispatch_or_enqueue(&delivery, "agent-lead", "slack-announcements", &msg);
     assert_eq!(dlq.dead_letters.len(), 1);
     assert_eq!(dlq.dead_letters[0].0, "agent-lead");
+}
+
+#[test]
+fn test_ocrm_channel_router_registers_and_revokes_provider_ports() {
+    let router = ChannelDeliveryRouter::new();
+    let records = Arc::new(Mutex::new(Vec::new()));
+    let port = Arc::new(RecordingChannelDeliveryPort { delivered: records.clone() });
+    router.register("Telegram", port).expect("register channel provider");
+
+    let message = ChannelOutboundMessage::Text { text: "hello".into() };
+    router
+        .deliver("agent-1", "telegram:123", &message)
+        .expect("route registered channel");
+    assert_eq!(records.lock().unwrap().len(), 1);
+    assert!(router.unregister("TELEGRAM"));
+    assert_eq!(
+        router.deliver("agent-1", "telegram:123", &message),
+        Err(SandChannelDeliveryUnregisteredError.to_string())
+    );
 }
 
 // ---------------------------------------------------------------------------

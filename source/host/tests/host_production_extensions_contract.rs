@@ -96,8 +96,11 @@ fn production_host_owns_the_canonical_plugin_capability_catalog() {
 fn production_host_owns_the_channel_delivery_boundary_consumed_by_gateway() {
     for needle in [
         "pub channel_delivery: HostChannelDelivery",
-        "let channel_delivery = HostChannelDelivery::default();",
+        "pub channel_delivery_router: ChannelDeliveryRouter",
+        "let channel_delivery_router = ChannelDeliveryRouter::new();",
+        "let channel_delivery = HostChannelDelivery::new(Arc::new(channel_delivery_router.clone()));",
         "channel_delivery,",
+        "channel_delivery_router,",
     ] {
         assert!(
             PRODUCTION_OWNER.contains(needle),
