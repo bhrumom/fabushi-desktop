@@ -10,10 +10,10 @@
     "ui_accepted": false
   },
   "file_coverage": {
-    "mapped_paths": 1024,
+    "mapped_paths": 1027,
     "omitted_known": 0,
     "tracked_paths": 58750,
-    "unclassified_paths": 57726
+    "unclassified_paths": 57723
   },
   "inventory_authority": {
     "manifest_source": "GitHub Actions immutable artifact candidate",
@@ -20709,6 +20709,33 @@
             "start_line": 1
           },
           "symbol": "SidecarRuntimeBridge"
+      },
+      {
+        "blob_sha": "7aa4f9860d89fc0158d76060d5ceb9ed5632bf10",
+        "path": "src/worker/worker-gateway-tools.ts",
+        "range": {
+          "end_line": 108,
+          "start_line": 1
+        },
+        "symbol": "createWorkerGatewayToolProxies"
+      },
+      {
+        "blob_sha": "d14463319be81043f36d635dc61c5a24eb914d64",
+        "path": "src/worker/workspace-rsync-receiver.ts",
+        "range": {
+          "end_line": 70,
+          "start_line": 1
+        },
+        "symbol": "workspace rsync receiver"
+      },
+      {
+        "blob_sha": "dae2d78d978af707820b29bfb6b93d83629dd6b2",
+        "path": "src/worker/workspace-seed-retention.ts",
+        "range": {
+          "end_line": 49,
+          "start_line": 1
+        },
+        "symbol": "selectWorkspaceSeedsToPrune"
         }
       ],
       "status": {
