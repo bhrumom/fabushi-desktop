@@ -1529,6 +1529,16 @@ impl PendingWakeRuntimePort for ProductionPendingWakeRuntime {
         Ok(())
     }
 
+    fn revive_channel_delivery_failure(
+        &self,
+        marker: &DurablePendingWakeMarker,
+    ) -> Result<(), String> {
+        let gateway = self
+            .gateway()
+            .ok_or_else(|| "Host gateway is not ready for channel failure rearm".to_string())?;
+        gateway.rearm_channel_delivery_failure(marker)
+    }
+
     fn emit_async_tasks_for_agent(&self, agent_id: &str) {
         if let Some(gateway) = self.gateway() {
             gateway.emit_async_tasks_for_agent(agent_id);
@@ -1546,6 +1556,7 @@ impl PendingWakeRuntimePort for ProductionPendingWakeRuntime {
                 PendingWakeKind::CloudAgent => "cloud-agent",
                 PendingWakeKind::Subagent => "subagent",
                 PendingWakeKind::Shell => "shell",
+                PendingWakeKind::ChannelDelivery => "channel-delivery",
             }.to_string()),
             work_id: Some(report.work_id.clone()),
             age_ms: report.age_ms,
@@ -1817,6 +1828,30 @@ impl CompletionRevivalRuntimePort for ProductionCompletionRevivalRuntime {
 }
 
 impl UnifiedGatewayApi {
+
+    fn rearm_channel_delivery_failure(
+        &self,
+        marker: &DurablePendingWakeMarker,
+    ) -> Result<(), String> {
+        let address_token = marker
+            .address_token
+            .clone()
+            .ok_or_else(|| "channel failure marker has no address token".to_string())?;
+        let reason = marker
+            .failure_reason
+            .clone()
+            .ok_or_else(|| "channel failure marker has no failure reason".to_string())?;
+        queue_channel_delivery_failure(
+            self.local_routed_runner_deps(),
+            Arc::clone(&self.roster_emit),
+            Arc::clone(&self.background_wakes),
+            marker.agent_id.clone(),
+            address_token,
+            marker.delivery_operation_id.clone(),
+            reason,
+        );
+        Ok(())
+    }
 
     fn call_accept_routed_prompt(
         &self,
@@ -5168,6 +5203,20 @@ fn run_channel_failure_revival_worker(
             }
         };
         if summary.is_group {
+            if let Some(store) = deps.transcript_runtime.pending_wake_store() {
+                for failure in &failures {
+                    if let Some(operation_id) = failure
+                        .get("deliveryOperationId")
+                        .and_then(serde_json::Value::as_str)
+                    {
+                        let _ = store.clear_one(
+                            &agent_id,
+                            PendingWakeKind::ChannelDelivery,
+                            operation_id,
+                        );
+                    }
+                }
+            }
             continue;
         }
         let Some(provider) = configured_routed_provider(&deps.data_dir.join("settings.json")) else {
@@ -5201,6 +5250,20 @@ fn run_channel_failure_revival_worker(
             },
         ) {
             Ok(_) => {
+                if let Some(store) = deps.transcript_runtime.pending_wake_store() {
+                    for failure in &failures {
+                        if let Some(operation_id) = failure
+                            .get("deliveryOperationId")
+                            .and_then(serde_json::Value::as_str)
+                        {
+                            let _ = store.clear_one(
+                                &agent_id,
+                                PendingWakeKind::ChannelDelivery,
+                                operation_id,
+                            );
+                        }
+                    }
+                }
                 let _ = roster.emit_agent_update(&agent_id);
             }
             Err(error) => {
@@ -5242,6 +5305,29 @@ fn queue_channel_delivery_failure(
     delivery_operation_id: Option<String>,
     reason: String,
 ) {
+    if let Some(operation_id) = delivery_operation_id.as_deref() {
+        if let Some(store) = deps.transcript_runtime.pending_wake_store() {
+            let written = store.mark_pending(DurablePendingWakeMarker {
+                agent_id: agent_id.clone(),
+                kind: PendingWakeKind::ChannelDelivery,
+                work_id: operation_id.to_string(),
+                marked_at_ms: started_at_ms() as f64,
+                quiet_origin: None,
+                title: Some("Channel delivery failure".into()),
+                subagent_type: None,
+                interrupted_by_recreate: false,
+                delivery_operation_id: Some(operation_id.to_string()),
+                address_token: Some(address_token.clone()),
+                failure_reason: Some(reason.clone()),
+            });
+            if !written {
+                eprintln!(
+                    "mahayana-host channel_failure_persist_failed agent={} operation={}",
+                    agent_id, operation_id
+                );
+            }
+        }
+    }
     let should_spawn = {
         let mut state = wakes
             .lock()
@@ -9052,6 +9138,9 @@ fn start_routed_provider_task(
                             title: Some(pending.title.clone()),
                             subagent_type: Some(pending.subagent_type.clone()),
                             interrupted_by_recreate: false,
+                            delivery_operation_id: None,
+                            address_token: None,
+                            failure_reason: None,
                         });
                         if !written {
                             eprintln!(
@@ -13165,6 +13254,9 @@ fn main() {
                     title: Some(pending.title.clone()),
                     subagent_type: Some("cursor-agent".into()),
                     interrupted_by_recreate: false,
+                    delivery_operation_id: None,
+                    address_token: None,
+                    failure_reason: None,
                 });
                 if !written {
                     eprintln!(
@@ -13278,6 +13370,9 @@ fn main() {
                     title: Some(pending.title.clone()),
                     subagent_type: None,
                     interrupted_by_recreate: false,
+                    delivery_operation_id: None,
+                    address_token: None,
+                    failure_reason: None,
                 });
                 if !written {
                     eprintln!(

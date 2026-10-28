@@ -166,6 +166,8 @@ The outbound seam now persists the generated transcript entry before spawning th
 
 Channel delivery failure queue entries now retain the same optional `deliveryOperationId` alongside address and humanized reason, so the background revival consumer does not discard the identity needed for a future receipt/reconciliation owner. The current revival still only prompts an in-app follow-up and does not retry or prove remote delivery.
 
+Channel failure markers now reuse the existing `SandPendingWakeStore` and `PendingWakeRearm` owner. They persist `ChannelDelivery` kind, operation ID, address, and failure reason; startup re-arms only the in-app failure notice and clears the marker after that notice succeeds. No provider retry or external mutation is performed during rearm, preserving the unknown-outcome boundary.
+
 
 
 

@@ -31,6 +31,9 @@ fn pending(agent_id: &str, kind: PendingWakeKind, work_id: &str, at: f64) -> Dur
         title: None,
         subagent_type: None,
         interrupted_by_recreate: false,
+        delivery_operation_id: None,
+        address_token: None,
+        failure_reason: None,
     }
 }
 
@@ -62,6 +65,23 @@ fn pending_wake_parser_preserves_frozen_coercion_and_filters_invalid_rows() {
     );
     assert!(rows[1].interrupted_by_recreate);
     assert!(parse_pending_wake_file(Some("not-json")).is_empty());
+}
+
+#[test]
+fn channel_delivery_failure_marker_round_trips_operation_identity() {
+    let root = temp_root("channel-delivery");
+    fs::create_dir_all(&root).expect("root");
+    let store = SandPendingWakeStore::new(&root);
+    let mut marker = pending("agent-channel", PendingWakeKind::ChannelDelivery, "op-1", 10.0);
+    marker.delivery_operation_id = Some("op-1".into());
+    marker.address_token = Some("telegram:123".into());
+    marker.failure_reason = Some("provider unavailable".into());
+    assert!(store.mark_pending(marker));
+    let restored = store.list_pending().pop().expect("channel marker");
+    assert_eq!(restored.kind, PendingWakeKind::ChannelDelivery);
+    assert_eq!(restored.delivery_operation_id.as_deref(), Some("op-1"));
+    assert_eq!(restored.address_token.as_deref(), Some("telegram:123"));
+    assert_eq!(restored.failure_reason.as_deref(), Some("provider unavailable"));
 }
 
 #[test]

@@ -27,6 +27,9 @@ fn marker(
         title: title.map(str::to_string),
         subagent_type: subagent_type.map(str::to_string),
         interrupted_by_recreate: false,
+        delivery_operation_id: None,
+        address_token: None,
+        failure_reason: None,
     }
 }
 
