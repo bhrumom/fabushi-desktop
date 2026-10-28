@@ -99,3 +99,13 @@ The pinned sidecar sources define an optional out-of-process boundary, not a req
 - `sidecar_runtime.rs` exchanges one bounded configuration/manifest, validates portable JSON and reserved command namespaces, adapts admission/invoke/result/cancel to the bounded command runtime, and projects secret-free lifecycle status. It does not own process creation, artifact verification, or key delivery; those belong to the product supervisor.
 
 Fabushi already has process/supervisor and bounded framing owners, but the inspected owner set does not establish that this OpenClaw sidecar contract is the canonical transport for OCRM node hosting. Therefore it is recorded as an optional adapter contract only. It must not be introduced until a concrete existing worker/supervisor caller, artifact/key handoff, and real packaged acceptance path are identified; a plain line framer or existing local bridge is not evidence of authenticated sidecar equivalence.
+
+## 12. Upstream integration-test oracle audit (2026-10-29)
+
+The pinned crate tests make the required evidence concrete:
+
+- `tests/node_lifecycle.rs` crosses a real WebSocket Gateway fixture, forces a first transport failure, verifies a fresh second connect/challenge/signature, captures the issued device token with redacted Debug output, and checks the complete typed event sequence through clean shutdown.
+- `tests/node_session.rs` verifies real Gateway invoke/result exchange, manifest-gated command routing, cancellation during admission before handler construction, retirement before buffered work starts, and suppression of native effects after cancellation.
+- `tests/sidecar_process.rs` crosses a real child-process boundary and verifies authenticated offer/accept, configuration/manifest acknowledgement, admission, invoke, and result frames with bounded timeouts.
+
+These are direct oracles for future Actions jobs, not current Fabushi acceptance. The current repository has no evidence yet that its live Gateway/device lane can execute the same node lifecycle or that its existing supervisor can provide the exact sidecar artifact/key handshake. Until those exact-head and real-environment receipts exist, the parity ledger remains pending.
