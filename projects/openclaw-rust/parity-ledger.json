@@ -10,10 +10,10 @@
     "ui_accepted": false
   },
   "file_coverage": {
-    "mapped_paths": 953,
+    "mapped_paths": 960,
     "omitted_known": 0,
     "tracked_paths": 58750,
-    "unclassified_paths": 57797
+    "unclassified_paths": 57790
   },
   "inventory_authority": {
     "manifest_source": "GitHub Actions immutable artifact candidate",
@@ -19671,6 +19671,48 @@
           "path": "src/node-host/startup-state-readiness.ts",
           "range": {"end_line": 5, "start_line": 1},
           "symbol": "ensureNodeHostStateReady"
+        },
+        {
+          "blob_sha": "11069ad380b737b36684d4be85d3207d9c5e59df",
+          "path": "src/node-host/auto-update-compatibility.ts",
+          "range": {"end_line": 211, "start_line": 1},
+          "symbol": "assertNodeRuntimeUpdateCompatible"
+        },
+        {
+          "blob_sha": "94ae3528ac90e0c3c249450fd054a358b54d9991",
+          "path": "src/node-host/auto-update.ts",
+          "range": {"end_line": 219, "start_line": 1},
+          "symbol": "startNodeHostAutoUpdate"
+        },
+        {
+          "blob_sha": "aff59777ec886b35baf91ea7cecc60bbf2410f67",
+          "path": "src/node-host/auto-update-install.ts",
+          "range": {"end_line": 366, "start_line": 1},
+          "symbol": "prepareNodeRuntimeUpdate"
+        },
+        {
+          "blob_sha": "f74b61c13ea05a2471fb0f3439499b223cdca302",
+          "path": "src/node-host/launcher-bootstrap.ts",
+          "range": {"end_line": 31, "start_line": 1},
+          "symbol": "resolveNodeHostLauncherStateDir"
+        },
+        {
+          "blob_sha": "8d99f2f7a4875541387dddbaf521df5a0206f598",
+          "path": "src/node-host/launcher-client.ts",
+          "range": {"end_line": 128, "start_line": 1},
+          "symbol": "requestNodeHostLauncherRestart"
+        },
+        {
+          "blob_sha": "a5bce68b27589d7c684dca51095f39998a549989",
+          "path": "src/node-host/mac-worker-entry.ts",
+          "range": {"end_line": 111, "start_line": 1},
+          "symbol": "runMacNodeWorkerEntry"
+        },
+        {
+          "blob_sha": "611c01cb45f006da6468f2733974eb03363fa153",
+          "path": "src/node-host/skills.ts",
+          "range": {"end_line": 142, "start_line": 1},
+          "symbol": "scanNodeHostedSkills"
         }
       ],
       "status": {
