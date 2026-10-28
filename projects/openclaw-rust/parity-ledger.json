@@ -19733,6 +19733,24 @@
           "symbol": "dispatchNodeInvokeInput"
         },
         {
+          "blob_sha": "ea30bf27b0c04de7c1e7c87c0e21f8560605990b",
+          "path": "src/worker/node-desktop-protocol.ts",
+          "range": {
+            "end_line": 113,
+            "start_line": 1
+          },
+          "symbol": "parseNodeWorkerDesktopStreamInput"
+        },
+        {
+          "blob_sha": "47dde75cbf3fbdd3a26cdf9b80657ed7d51616d3",
+          "path": "src/node-host/portal-stream-command.ts",
+          "range": {
+            "end_line": 43,
+            "start_line": 1
+          },
+          "symbol": "parseNodeWorkerPortalStreamInput"
+        },
+        {
           "blob_sha": "26535b827d8bebd549491badea55a7f7cfccd6f6",
           "path": "src/node-host/node-invoke-progress.ts",
           "range": {
