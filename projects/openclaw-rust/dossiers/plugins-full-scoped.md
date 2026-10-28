@@ -146,6 +146,8 @@ The existing Rust `BundledChannelEntryContract` previously had only mode-dispatc
 
 The production composition now also constructs one `HostChannelDelivery` inside `ProductionHostExtensions`, and `UnifiedGatewayApi` consumes that instance rather than constructing a second default boundary. This preserves one lifecycle and registration point for future channel adapters. The default remains explicitly unregistered, so external channel delivery is still pending until a real provider adapter is registered and exercised through the packaged path.
 
+The existing channel contract confirms the remaining boundary precisely: `HostChannelDelivery::set_port`/`reset` is the sole registration lifecycle, `deliverToChannel` consumes that shared port, and the unregistered path queues the failure/dead-letter flow. Current production startup has no provider adapter calling `set_port`; therefore channel provider reachability, credentials, rate limits, receipts, reconnect, and packaged external delivery remain pending rather than being inferred from the contract test.
+
 
 
 
