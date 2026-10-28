@@ -10,10 +10,10 @@
     "ui_accepted": false
   },
   "file_coverage": {
-    "mapped_paths": 944,
+    "mapped_paths": 948,
     "omitted_known": 0,
     "tracked_paths": 58750,
-    "unclassified_paths": 57806
+    "unclassified_paths": 57802
   },
   "inventory_authority": {
     "manifest_source": "GitHub Actions immutable artifact candidate",
@@ -20184,6 +20184,30 @@
           "path": "src/worker/node-supervisor-protocol.ts",
           "range": { "end_line": 235, "start_line": 1 },
           "symbol": "validateNodeWorkerLaunchInput"
+        },
+        {
+          "blob_sha": "4b6067571e06ad73bf485a88fae76068721e0bd4",
+          "path": "src/node-host/node-worker-bundle-installer.ts",
+          "range": { "end_line": 603, "start_line": 1 },
+          "symbol": "NodeWorkerBundleInstaller"
+        },
+        {
+          "blob_sha": "6d5be607b374901f33c6345a1d23d5605778846b",
+          "path": "src/node-host/node-worker-upload-snapshot.ts",
+          "range": { "end_line": 90, "start_line": 1 },
+          "symbol": "withNodeWorkerUploadSnapshot"
+        },
+        {
+          "blob_sha": "16619627035e722d5825654c856b9ce2f223abd1",
+          "path": "src/node-host/node-worker-repository-transfers.ts",
+          "range": { "end_line": 116, "start_line": 1 },
+          "symbol": "withNodeRepositoryPublication"
+        },
+        {
+          "blob_sha": "1c26196db18c7349c26ec77e7cc6a66e378faf07",
+          "path": "src/node-host/node-worker-workspace-git.ts",
+          "range": { "end_line": 91, "start_line": 1 },
+          "symbol": "initializeNodeWorkerGitWorkspace"
         },
         {
           "blob_sha": "f2b2b63fb265ddf79e6c66d02c13e687237d7229",

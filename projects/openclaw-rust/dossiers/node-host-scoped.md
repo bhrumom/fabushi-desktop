@@ -385,3 +385,13 @@ The shared protocol primitive rejects malformed JSON, oversized payloads, unknow
 The process protocol is a negotiated JSONL boundary: turn descriptors must match turn IDs and expected bundle hashes, optional idle/canonical-workspace/process-change markers require the advertised feature, results are restricted to bounded completed/failed/fenced/deadline envelopes, and observation replies must contain exactly one result or error. Supervisor identities include launch/plan/environment/session/ownerEpoch/placement/run IDs; plan hashing is stable over the descriptor and all admission-affecting fields, while result/error diagnostics have independent byte and newline limits.
 
 These schemas are direct upstream oracle contracts for Rust parsing and negative tests. They do not imply that Fabushi has an equivalent production transport or worker owner; current Rust wiring and exact-head Actions verification remain pending.
+
+## 52. Locked worker bundle and repository transfer sources (2026-10-29)
+
+The locked `node-worker-bundle-installer.ts`, `node-worker-upload-snapshot.ts`, `node-worker-repository-transfers.ts`, and `node-worker-workspace-git.ts` were read in full and mapped to the node-host command-dispatch responsibility.
+
+`NodeWorkerBundleInstaller` serializes every namespace install, validates local or Gateway archive bytes with bounded Range-resume and transient retry handling, verifies exact size/SHA-256, extracts under the archive limits, writes a durable admission receipt, atomically publishes the bundle, revalidates its manifest/entry path, optionally prewarms the exact build, and retains/deletes only validated namespace-owned bundle generations. It treats malformed receipts, unsafe files, unexpected ranges, no-progress retries, TLS/Access failures, and staging residue as missing or failed rather than trusted.
+
+Upload snapshots copy and hash each changed source under a private temporary root before request streaming, so later workspace writes cannot alter the bytes being reconciled. Git initialization fixes SHA-1/SHA-256 object format from the pinned base, imports only the admitted pack, verifies the exact commit, isolates the worker branch/HEAD, skips gitlinks, and checks out only manifest-eligible paths. Repository checkpoints require the same immutable base and conflict-free manifest; publication starts from the explicit empty manifest and a dedicated snapshot directory.
+
+These sources define the artifact and repository compatibility boundary for worker hosting, but Fabushi still lacks a proven Rust bundle installer, Gateway transfer caller, durable bundle-retention consumer, and exact-head Actions/package acceptance. The mapping is not a production-equivalence claim.
