@@ -265,3 +265,5 @@ The locked `node-desktop-protocol.ts` and `portal-stream-command.ts` require a 1
 ## 37. Worker supervisor identity and receipt seam (2026-10-29)
 
 The locked `node-supervisor-protocol.ts` binds every launch/receipt to `launchId`, 64-hex `planHash`, environment/session identity, `ownerEpoch`, `placementGeneration`, and `runId`. Receipt states are constrained to pending/running/completed/failed/interrupted/cancelled; completed result JSON and terminal error text are bounded, with no newline-bearing error diagnostics. Rust `worker_supervisor_protocol.rs` now provides exact-key identity/receipt admission and full-field equality matching. It does not own process/container launch, durable receipts, cleanup, or worker side effects, which remain unresolved owner integration work.
+
+The same seam now validates the launch cross-fields that prevent bundle or placement confusion: `environmentSession=1`, safe `gatewayNamespace`, optional bounded `sessionKey`/`idleRetention`, `launchId == descriptor.assignment.turnId`, and `expectedBundleHash == descriptor.admission.handshake.bundleHash`. Full descriptor/schema validation remains outside this seam.

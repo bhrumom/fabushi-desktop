@@ -19607,8 +19607,10 @@
         "NodeWorkerSupervisorIdentity",
         "NodeWorkerSupervisorReceipt",
         "NodeWorkerSupervisorReceiptState",
+        "NodeWorkerLaunchBinding",
         "parse_worker_identity",
         "parse_worker_receipt",
+        "validate_worker_launch_bindings",
         "worker_turn_matches_identity"
       ],
       "unit_id": "OCRM-UNIT-NODE-HOST-001"

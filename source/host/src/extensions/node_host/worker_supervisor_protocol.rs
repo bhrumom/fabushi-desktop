@@ -36,6 +36,82 @@ pub struct NodeWorkerSupervisorReceipt {
     pub state: NodeWorkerSupervisorReceiptState,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct NodeWorkerLaunchBinding {
+    pub launch_id: String,
+    pub gateway_namespace: String,
+    pub expected_bundle_hash: String,
+    pub placement_generation: u64,
+}
+
+/// Validate only the cross-field bindings that protect a worker launch.
+/// Descriptor feature/schema validation remains with the worker descriptor
+/// owner; this function must not become a second launch-plan parser.
+pub fn validate_worker_launch_bindings(value: &Value) -> Result<NodeWorkerLaunchBinding, String> {
+    let object = value
+        .as_object()
+        .ok_or_else(|| "INVALID_REQUEST: worker launch must be an object".to_string())?;
+    if object.get("environmentSession") != Some(&Value::from(1)) {
+        return Err("INVALID_REQUEST: node worker environment lifetime support required".into());
+    }
+    if object
+        .get("idleRetention")
+        .is_some_and(|value| value != &Value::Bool(true))
+    {
+        return Err("INVALID_REQUEST: idleRetention must be true".into());
+    }
+    if let Some(session_key) = object.get("sessionKey") {
+        let valid = session_key
+            .as_str()
+            .is_some_and(|value| !value.is_empty() && value.len() <= 1_024 && value.trim() == value && !value.contains('\0'));
+        if !valid {
+            return Err("INVALID_REQUEST: invalid worker sessionKey".into());
+        }
+    }
+    let launch_id = identifier(object, "launchId")?;
+    let expected_bundle_hash = plan_hash(object, "expectedBundleHash")?;
+    let gateway_namespace = object
+        .get("gatewayNamespace")
+        .and_then(Value::as_str)
+        .filter(|value| {
+            !value.is_empty()
+                && value.len() <= 128
+                && value.chars().next().is_some_and(|ch| ch.is_ascii_alphanumeric())
+                && value
+                    .chars()
+                    .all(|ch| ch.is_ascii_alphanumeric() || matches!(ch, '.' | '_' | '-'))
+        })
+        .ok_or_else(|| "INVALID_REQUEST: invalid gatewayNamespace".to_string())?
+        .to_string();
+    let placement_generation = non_negative_integer(object, "placementGeneration")?;
+    let descriptor = object
+        .get("descriptor")
+        .and_then(Value::as_object)
+        .ok_or_else(|| "INVALID_REQUEST: invalid worker launch descriptor".to_string())?;
+    let assignment = descriptor
+        .get("assignment")
+        .and_then(Value::as_object)
+        .ok_or_else(|| "INVALID_REQUEST: invalid worker launch assignment".to_string())?;
+    if assignment.get("turnId").and_then(Value::as_str) != Some(launch_id.as_str()) {
+        return Err("INVALID_REQUEST: launchId must match descriptor assignment turnId".into());
+    }
+    let handshake = descriptor
+        .get("admission")
+        .and_then(Value::as_object)
+        .and_then(|admission| admission.get("handshake"))
+        .and_then(Value::as_object)
+        .ok_or_else(|| "INVALID_REQUEST: invalid worker launch handshake".to_string())?;
+    if handshake.get("bundleHash").and_then(Value::as_str) != Some(expected_bundle_hash.as_str()) {
+        return Err("INVALID_REQUEST: descriptor bundle hash does not match expectedBundleHash".into());
+    }
+    Ok(NodeWorkerLaunchBinding {
+        launch_id,
+        gateway_namespace,
+        expected_bundle_hash,
+        placement_generation,
+    })
+}
+
 pub fn parse_worker_identity(value: &Value) -> Result<NodeWorkerSupervisorIdentity, String> {
     let object = value
         .as_object()
@@ -224,5 +300,21 @@ mod tests {
         let parsed = parse_worker_receipt(&receipt).expect("receipt");
         assert!(matches!(parsed.state, super::NodeWorkerSupervisorReceiptState::Completed { .. }));
         assert!(worker_turn_matches_identity(&parsed.identity, &parse_worker_identity(&identity()).expect("identity")));
+    }
+
+    #[test]
+    fn launch_binding_requires_cross_field_identity_matches() {
+        let value = json!({
+            "environmentSession": 1,
+            "launchId": "launch-1",
+            "gatewayNamespace": "gw-main",
+            "expectedBundleHash": "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+            "placementGeneration": 3,
+            "descriptor": {
+                "assignment": {"turnId": "launch-1"},
+                "admission": {"handshake": {"bundleHash": "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"}}
+            }
+        });
+        assert_eq!(validate_worker_launch_bindings(&value).expect("binding").launch_id, "launch-1");
     }
 }
