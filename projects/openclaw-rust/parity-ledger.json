@@ -10,10 +10,10 @@
     "ui_accepted": false
   },
   "file_coverage": {
-    "mapped_paths": 1016,
+    "mapped_paths": 1017,
     "omitted_known": 0,
     "tracked_paths": 58750,
-    "unclassified_paths": 57734
+    "unclassified_paths": 57733
   },
   "inventory_authority": {
     "manifest_source": "GitHub Actions immutable artifact candidate",
@@ -20424,6 +20424,12 @@
           "path": "src/node-host/node-worker-workspace-git.ts",
           "range": { "end_line": 91, "start_line": 1 },
           "symbol": "initializeNodeWorkerGitWorkspace"
+        },
+        {
+          "blob_sha": "33dcc76362c371c19f4fccf222871d35f5c17ef0",
+          "path": "src/worker/embedded-agent.runtime.ts",
+          "range": { "end_line": 532, "start_line": 1 },
+          "symbol": "runWorkerEmbeddedTurn"
         },
         {
           "blob_sha": "8abbb687ff8a1c1c0423753444f22dc5243c0fd4",
