@@ -152,6 +152,8 @@ The native connector now provides `ChannelDeliveryRouter`, a provider-port multi
 
 `ProductionHostExtensions::register_channel_delivery_provider` now gates provider registration on a matching capability-catalog channel and rejects unknown channel IDs before the port enters the router. This closes the intended discovery→provider-registration authorization seam while preserving pending status until a real adapter invokes it with credentials and a packaged external service path.
 
+The router now rejects duplicate registrations by default and exposes explicit `replace` for controlled reconnect/re-authentication. The oracle covers initial delivery, duplicate rejection, unregister failure, and explicit replacement; it does not constitute a live provider or packaged acceptance result.
+
 
 
 
