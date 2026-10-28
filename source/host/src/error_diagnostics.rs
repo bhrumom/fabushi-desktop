@@ -1,6 +1,11 @@
 pub const MAX_ERROR_DIAGNOSTIC_CHARS: usize = 2048;
 
+use crate::extensions::telemetry::openclaw_secret_redactor::{
+    redact_pem_blocks, redact_sensitive_query_params,
+};
+
 pub fn sanitize_error_diagnostic(raw: &str) -> String {
+    let raw = redact_sensitive_query_params(&redact_pem_blocks(raw));
     let mut sanitized = String::with_capacity(raw.len());
     let mut words = raw.split_whitespace().peekable();
     while let Some(word) = words.next() {

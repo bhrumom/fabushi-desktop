@@ -18327,6 +18327,7 @@
       ],
       "evidence_refs": [
         "source/host/tests/openclaw_logging_contract.rs",
+        "source/host/tests/openclaw_crash_guard_media_contract.rs::test_ocrm_crash_o03_error_diagnostics_redaction",
         "projects/openclaw-rust/dossiers/logging-diagnostics-scoped.md"
       ],
       "existing_owner_candidates": [
@@ -18337,10 +18338,10 @@
       ],
       "id": "OCRM-RESP-LOGGING-SECRET-REDACTION-001",
       "integration": {
-        "consumer": "source/host/src/extensions/telemetry/openclaw_secret_redactor.rs",
-        "entrypoint": "source/host/src/extensions/telemetry/openclaw_secret_redactor.rs::redact_sensitive_query_params",
+        "consumer": "source/host/src/error_diagnostics.rs::DiagnosticError::with_diagnostic",
+        "entrypoint": "source/host/src/error_diagnostics.rs::sanitize_error_diagnostic",
         "owner": "source/host/src/extensions/telemetry/openclaw_secret_redactor.rs",
-        "producer": "source/host/src/extensions/telemetry/openclaw_secret_redactor.rs"
+        "producer": "source/host/src/error_diagnostics.rs::DiagnosticError::with_diagnostic"
       },
       "invariants": [
         "Tokens with <= 8 chars are masked completely",

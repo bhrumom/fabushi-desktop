@@ -405,6 +405,13 @@ fn test_ocrm_crash_o03_error_diagnostics_redaction() {
     assert!(sanitized.contains("<redacted-secret>"));
     assert!(sanitized.contains("password=<redacted>"));
 
+    let structured_url = sanitize_error_diagnostic("fetch https://api.example.test/?token=secret123");
+    assert!(structured_url.contains("token=[REDACTED]"));
+    let structured_pem = sanitize_error_diagnostic(
+        "-----BEGIN RSA PRIVATE KEY-----\nsecret\n-----END RSA PRIVATE KEY-----",
+    );
+    assert!(structured_pem.contains("[REDACTED_PRIVATE_KEY]"));
+
     // 2. Length truncation to MAX_ERROR_DIAGNOSTIC_CHARS (2048)
     let long_diag = "x".repeat(3000);
     let sanitized_long = sanitize_error_diagnostic(&long_diag);

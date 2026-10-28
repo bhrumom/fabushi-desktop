@@ -53,6 +53,7 @@
    - Comprehensive URL query parameter sanitizer stripping `api_key`, `token`, `secret`, `password`, `auth`, `credential`.
    - Multiline PEM private key block redaction into `[REDACTED_PRIVATE_KEY]`.
    - Authorization header sanitizer for `Bearer` and `Basic` credentials.
+   - **Production slice now connected**: `DiagnosticError::with_diagnostic` → `error_diagnostics::sanitize_error_diagnostic` → query and PEM redaction owners. This protects the diagnostic display path; the general console/telemetry producers still require a separate caller audit, so `OCRM-RESP-LOGGING-SECRET-REDACTION-001` remains `wiring=not-wired` with `BL-LOGGING-SECRET-WIRING-001`.
 3. **Diagnostic Telemetry & Health Monitoring** (`openclaw_diagnostic_telemetry.rs`):
    - Multi-tier memory pressure evaluator (`Normal`, `Moderate`, `Critical`) triggering GC and memory cache shedding.
    - Session heartbeat registry tracking active controller operations with sweep liveness expiration.
@@ -63,3 +64,4 @@
   - `test_ocrm_logging_secret_redaction`
   - `test_ocrm_logging_diagnostics_and_memory_pressure`
 - Evidence: 3/3 passing contract tests with full positive and negative assertions.
+- Additional production-slice evidence: `source/host/tests/openclaw_crash_guard_media_contract.rs::test_ocrm_crash_o03_error_diagnostics_redaction` covers URL-query and PEM sanitization through `DiagnosticError`.
