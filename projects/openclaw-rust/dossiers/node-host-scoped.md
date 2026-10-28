@@ -199,3 +199,8 @@ Rust now contains the transport-neutral NodeHostGatewayCandidateRouter and webso
 ## 23. Gateway endpoint configuration boundary (2026-10-29)
 
 The locked node-host configuration persists optional TLS fingerprint and WebSocket context-path metadata, while Cloudflare Access remains a pair of SecretInput values resolved by the existing secrets/config owner and redacted before use. Rust NodeHostGatewayConfig now carries the non-sensitive fingerprint/path fields and the candidate formatter consumes the configured context path. No Cloudflare credential, token, or materialized secret was added to the session registry or parity projection; the transport/config owner still needs to wire secret resolution and TLS pin enforcement.
+## 24. Strict invocation frame admission (2026-10-29)
+
+The locked Rust node client decodes node.invoke.request with canonical paramsJSON, rejects a direct params field, preserves the original serialized parameter text and byte count, validates optional timeout/idempotency/session metadata, and bounds node.invoke.input payloadJSON at 16 KiB. It also rejects empty correlation identity fields and parses node.invoke.cancel by invoke id plus node id.
+
+Rust now exposes the equivalent transport-neutral invoke_protocol seam with request, input, and cancel parsers plus falsifiable unit oracles for canonical preservation, direct-params rejection, malformed JSON, input bounds, and cancel identity. The parser is not yet called by a remote Gateway transport; the existing public Host node.invoke compatibility path remains unchanged and remote invocation remains fail-closed unavailable.

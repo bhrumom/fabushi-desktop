@@ -19602,7 +19602,8 @@
         "node_host.command_dispatch"
       ],
       "dependencies": [
-        "mahayana_host_runtime::extensions::node_host::command_dispatch"
+        "mahayana_host_runtime::extensions::node_host::command_dispatch",
+        "mahayana_host_runtime::extensions::node_host::invoke_protocol"
       ],
       "evidence_refs": [
         "source/host/tests/openclaw_node_host_contract.rs",
@@ -19686,6 +19687,33 @@
             "start_line": 1
           },
           "symbol": "exec-policy"
+        },
+        {
+          "blob_sha": "6d3764be52f39a62f131a56138ccae4956bde905",
+          "path": "src/node-host/invoke-payload.ts",
+          "range": {
+            "end_line": 82,
+            "start_line": 1
+          },
+          "symbol": "coerceNodeInvokePayload"
+        },
+        {
+          "blob_sha": "720a2d16da2c2e653123b89422fa7e501fa92319",
+          "path": "src/node-host/invoke-types.ts",
+          "range": {
+            "end_line": 54,
+            "start_line": 1
+          },
+          "symbol": "NodeInvokeRequestPayload"
+        },
+        {
+          "blob_sha": "0d269968b36308124fd687bf6d69c5a45c684c43",
+          "path": "src/node-host/node-invoke-input.ts",
+          "range": {
+            "end_line": 47,
+            "start_line": 1
+          },
+          "symbol": "dispatchNodeInvokeInput"
         }
       ],
       "status": {
@@ -19702,13 +19730,22 @@
         "symbol": "dispatch_node_worker_computer_command"
       },
       "tests": [
-        "source/host/tests/openclaw_node_host_contract.rs::test_ocrm_node_host_computer_command"
+        "source/host/tests/openclaw_node_host_contract.rs::test_ocrm_node_host_computer_command",
+        "source/host/src/extensions/node_host/invoke_protocol.rs::tests::request_preserves_canonical_params_json_and_metadata",
+        "source/host/src/extensions/node_host/invoke_protocol.rs::tests::direct_params_and_malformed_params_json_fail_closed",
+        "source/host/src/extensions/node_host/invoke_protocol.rs::tests::input_bounds_and_cancel_identity_are_checked"
       ],
       "typed_contracts": [
         "ComputerOperation",
         "ComputerCommandInput",
         "dispatch_node_worker_computer_command",
-        "COMPUTER_CONTRACT_MISMATCH"
+        "COMPUTER_CONTRACT_MISMATCH",
+        "NodeInvokeRequest",
+        "NodeInvokeInput",
+        "NodeInvokeCancel",
+        "parse_node_invoke_request",
+        "parse_node_invoke_input",
+        "parse_node_invoke_cancel"
       ],
       "unit_id": "OCRM-UNIT-NODE-HOST-001"
     },
