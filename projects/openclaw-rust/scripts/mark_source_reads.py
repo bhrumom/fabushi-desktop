@@ -39,12 +39,16 @@ def main():
                 if spec:
                     was_unread = row.get("read_status") != "read-complete"
                     end, responsibility, module = spec
+                    # Tests are source/oracle evidence, not additional ledger
+                    # source_refs. Keep them mapped/read-complete without
+                    # creating a one-way responsibility edge.
+                    direct_source = not row["path"].endswith(".test.ts") and not row["path"].endswith(".liveness.test.ts")
                     row.update({
                         "language_kind": "typescript",
                         "module_id": module,
                         "read_ranges": [{"start_line": 1, "end_line": end}],
                         "read_status": "read-complete",
-                        "responsibility_ids": [responsibility],
+                        "responsibility_ids": [responsibility] if direct_source else [],
                         "responsibility_status": "mapped",
                         "disposition": "native-rust-equivalent",
                         "reviewer": "xuyao@ombhrum.com",
