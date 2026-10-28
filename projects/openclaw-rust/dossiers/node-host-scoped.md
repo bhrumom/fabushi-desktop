@@ -209,3 +209,8 @@ Rust now exposes the equivalent transport-neutral invoke_protocol seam with requ
 The locked node-invoke-input owner advances the expected sequence on any non-stale frame, records gaps without rejecting them, buffers frames received before handler registration, and fails closed when the pending buffer exceeds 64 KiB. Duplicate/late sequence values are ignored and registration drains buffered input in order.
 
 Rust now contains NodeInvokeInputBuffer with the same bounded state transitions and focused oracles. It remains a transport/runtime primitive until the live node invocation owner supplies the handler and couples buffer failure to invocation cancellation.
+## 26. Invocation generation-fence seam (2026-10-29)
+
+The pinned Rust node client correlates invocation id and node id, rejects duplicate admission, drains/cancels work on connection retirement, and prevents a predecessor result from settling after its generation is retired. The side-effect owner remains responsible for actually stopping physical work and reporting outcome-unknown transport loss.
+
+Rust now contains NodeHostInvocationRegistry with generation-bound admission, duplicate rejection, one-way cancel/settle transitions, and generation drain. The seam is not yet coupled to a live Gateway connection or side-effect executor, so production wiring and exact-head verification remain pending.
