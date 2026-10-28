@@ -132,6 +132,10 @@
 | `src/plugins/bundled-package-channel-metadata.test.ts` | 142 | 5227 | `092e8ddfde3c48eed3fddbf652e553186dfadd8d` |
 | `src/plugins/bundled-package-channel-metadata.ts` | 11 | 313 | `5c0469af1e491fc9e896083590222d34aa8241f9` |
 
+## 2026-10-29 — locked channel plugin API entrypoints
+
+The locked channel entrypoint barrels for A2A, Buzz, Feishu, LINE, Matrix, Nostr, QA Channel, Raft, Reef, SMS, Tlon, Twitch, X, and Zalo were read in full at the frozen upstream commit. Each exports exactly one channel plugin from its narrow implementation module; Matrix additionally documents the deliberate narrow-import boundary that prevents lightweight discovery/bootstrap from loading its broad API barrel. These files preserve plugin discovery reachability and channel-runtime ownership; they contain no independent channel state, transport, credential, or second runtime implementation. They are mapped to the existing `OCRM-RESP-PLUGIN-SDK-CHANNEL-RUNTIME-001` owner and do not by themselves prove Fabushi Rust channel integration, installed plugin reachability, or real provider/device acceptance.
+
 
 
 
