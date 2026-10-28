@@ -19756,6 +19756,8 @@
         "source/host/src/extensions/node_host/invoke_protocol.rs::tests::input_bounds_and_cancel_identity_are_checked",
         "source/host/src/extensions/node_host/invoke_input.rs::tests::buffers_until_handler_and_accepts_sequence_gaps",
         "source/host/src/extensions/node_host/invoke_input.rs::tests::rejects_duplicates_and_fails_closed_on_buffer_overflow",
+        "source/host/src/extensions/node_host/invoke_progress.rs::tests::chunks_utf8_without_splitting_and_sequences_frames",
+        "source/host/src/extensions/node_host/invoke_progress.rs::tests::heartbeat_interval_is_bounded_and_stop_is_terminal",
         "source/host/src/extensions/node_host/invocation_registry.rs::tests::duplicate_and_late_settlement_are_rejected",
         "source/host/src/extensions/node_host/invocation_registry.rs::tests::stale_generation_cannot_settle_successor_invocation",
         "source/host/src/extensions/node_host/invocation_registry.rs::tests::disconnect_drain_cancels_only_matching_generation"
@@ -19773,6 +19775,9 @@
         "parse_node_invoke_cancel",
         "NodeInvokeInputBuffer",
         "MAX_PENDING_INPUT_BYTES",
+        "NodeInvokeProgressFrame",
+        "NodeInvokeProgressWriter",
+        "PROGRESS_CHUNK_BYTES",
         "NodeHostInvocationRegistry",
         "NodeInvocationAdmission",
         "NodeInvocationState"
