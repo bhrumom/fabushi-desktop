@@ -9,3 +9,4 @@ pub mod invocation_registry;
 pub mod invoke_progress;
 pub mod stream_transport;
 pub mod desktop_stream_protocol;
+pub mod worker_supervisor_protocol;

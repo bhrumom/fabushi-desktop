@@ -19603,7 +19603,13 @@
         "parse_node_worker_desktop_stream_input",
         "parse_node_worker_portal_stream_input",
         "NODE_DESKTOP_ATTACH_PATH",
-        "NODE_PORTAL_ATTACH_PATH"
+        "NODE_PORTAL_ATTACH_PATH",
+        "NodeWorkerSupervisorIdentity",
+        "NodeWorkerSupervisorReceipt",
+        "NodeWorkerSupervisorReceiptState",
+        "parse_worker_identity",
+        "parse_worker_receipt",
+        "worker_turn_matches_identity"
       ],
       "unit_id": "OCRM-UNIT-NODE-HOST-001"
     },

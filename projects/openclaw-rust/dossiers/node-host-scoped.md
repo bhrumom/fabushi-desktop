@@ -261,3 +261,7 @@ Live main currently resolves to `bf9709250b87bec4a26637046096092ee68d3366`, tree
 ## 36. Desktop and portal stream command admission (2026-10-29)
 
 The locked `node-desktop-protocol.ts` and `portal-stream-command.ts` require a 16 KiB bounded JSON request, exact lower-case 48-hex ticket, fixed attach path, integer port in `1..=65535`, and no unknown fields. Desktop username requires an absolute password-file path; the parser does not read or expose that secret. Rust `desktop_stream_protocol.rs` now preserves these admission rules for desktop and portal requests while leaving RFB probing, password materialization/redaction, WebSocket transport, and ticket ownership to their existing/future owners.
+
+## 37. Worker supervisor identity and receipt seam (2026-10-29)
+
+The locked `node-supervisor-protocol.ts` binds every launch/receipt to `launchId`, 64-hex `planHash`, environment/session identity, `ownerEpoch`, `placementGeneration`, and `runId`. Receipt states are constrained to pending/running/completed/failed/interrupted/cancelled; completed result JSON and terminal error text are bounded, with no newline-bearing error diagnostics. Rust `worker_supervisor_protocol.rs` now provides exact-key identity/receipt admission and full-field equality matching. It does not own process/container launch, durable receipts, cleanup, or worker side effects, which remain unresolved owner integration work.
