@@ -9,6 +9,8 @@ use mahayana_host_runtime::extensions::transcript::runner_registry::TranscriptRu
 use mahayana_host_runtime::gateway_command_error::GatewayCommandError;
 use serde_json::{Value, json};
 
+const SHIPPING_HOST_MAIN: &str = include_str!("../app/src/main.rs");
+
 fn temp_root(label: &str) -> std::path::PathBuf {
     let suffix = SystemTime::now()
         .duration_since(UNIX_EPOCH)
@@ -466,4 +468,35 @@ fn test_ocrm_node_o05_node_invoke_contract_and_security() {
         "idempotencyKey": "inv-002"
     })).unwrap_err();
     assert_eq!(err_unconnected.to_string(), "node not connected");
+}
+
+#[test]
+fn test_ocrm_node_o06_shipping_routes_to_unique_native_owners() {
+    let register_start = SHIPPING_HOST_MAIN
+        .find("fn call_openclaw_node_register(")
+        .expect("shipping node.register owner exists");
+    let register_end = SHIPPING_HOST_MAIN[register_start..]
+        .find("\n    fn call_openclaw_node_list(")
+        .map(|offset| register_start + offset)
+        .expect("shipping node.register function boundary exists");
+    let register = &SHIPPING_HOST_MAIN[register_start..register_end];
+    assert!(register.contains("self.device_pairing.handle_pair_request"));
+    assert!(register.contains("node.register requires nodeId"));
+    assert!(!register.contains("pairingGeneration"));
+
+    let invoke_start = SHIPPING_HOST_MAIN
+        .find("fn call_openclaw_node_invoke(")
+        .expect("shipping node.invoke owner exists");
+    let invoke_end = SHIPPING_HOST_MAIN[invoke_start..]
+        .find("\n}\n\nfn post_agent_message_to_group(")
+        .map(|offset| invoke_start + offset)
+        .expect("shipping node.invoke function boundary exists");
+    let invoke = &SHIPPING_HOST_MAIN[invoke_start..invoke_end];
+    assert!(invoke.contains("GatewayLocalToolScope"));
+    assert!(invoke.contains("self.local_exec"));
+    assert!(invoke.contains(".execute_shell("));
+    assert!(invoke.contains("node.invoke system.run requires params.command"));
+    assert!(invoke.contains("unsupported local node command"));
+    assert!(!invoke.contains("\"stdout\": \"ok\""));
+    assert!(!invoke.contains("\"exitCode\": 0"));
 }
