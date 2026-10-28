@@ -25,6 +25,8 @@ The enrollment file imports and inlines behavior from `crabbox-worker-script.ts`
 
 The following reverse/provider callers were subsequently read at the same pinned tree: `extensions/crabbox/index.ts`, `extensions/crabbox/src/crabbox-worker-provider.ts` (complete 691-line source), `extensions/crabbox/src/crabbox-worker-warm-image-allocation.ts`, and `extensions/crabbox/src/crabbox-gateway-methods.ts`. Their tests and the remaining provider helper graph are still outside this closure claim.
 
+The directly invoked helper graph was then read at the same pinned tree: `crabbox-worker-preflight.ts` (`450d6985c8cfbabbcdfe71164a10a2748b9f35e0`), `crabbox-worker-project.ts` (`35a5d4329a405437f076c0955043b411f36199dc`), `crabbox-worker-provision-commands.ts` (`f13913eee2587a64b23c85a2213825f2c7111a26`), `crabbox-worker-setup-egress.ts` (`03b9250850bd2f9210698212156ac210beb7e3b6`), `crabbox-worker-provider-binary.ts` (`a9361ad684143856c5f57336940bdebebb57016d`), `crabbox-worker-snapshot-actions.ts` (`78a412b39bfd4b54b7935049d4a8c3f08e8b4f57`), `crabbox-worker-warm-image-policy.ts` (`6559c442a8b956a6704f52085ff5c0259d901728`), `crabbox-worker-heartbeat.ts` (`f9f39d8ac6df3248532ef6dede7b728aeba6c0f9`), `crabbox-worker-inspect.ts` (`ec9e52f9a146c117bd4ae23a11c5615218137b87`), `crabbox-worker-warm-image.ts` (`af4b96a5fab3adf751864b784981e01c61fb8be5`), and `crabbox-worker-warm-image-store.ts` (`1031bf93f52dc15f65eaacd4e7a0a6197ace60bd`). The warm-image capture/checkpoint/recipe/records helpers and their tests remain open closure work.
+
 ## Observed responsibilities
 
 ### Machine catalog and setup choices
@@ -81,6 +83,10 @@ The provider composes binary resolution, machine options, heartbeat renewal, war
 
 This reverse-caller read strengthens the rejected-owner result: the Crabbox provider and plugin lifecycle cannot be recreated inside `call_openclaw_node_register` or `call_openclaw_node_invoke`. Those Fabushi handlers may consume an already-established native device/pairing or local-exec capability, while provider/artifact/bootstrap/process/desktop responsibilities require a separate future owner and ADR.
 
+The helper responsibilities are now explicit. Preflight rejects unsafe AWS instance profiles and unmanaged Hetzner desktop coordinators. Project preparation keeps Git/project authority with the existing Core/project contract, while only lease transport, setup egress, runtime preparation, and bounded upload are delegated to Crabbox. Provision commands own fixed-lease inspection, security attestation, readiness polling, retry class, setup idempotence, desktop setup, and cleanup-indeterminate errors. Setup egress keeps upstream secret grants in the host child, passes only sentinels/proxy material to the lease, enforces Linux/native-egress capability, and requires process-tree extinction. Binary resolution is provider-owned and cancellation of one waiter cannot cancel shared acquisition. Snapshot actions track operation settlement and resolve all configured binaries without inventing a replacement. Heartbeat renewal observes lease lifetime and stops on provider capability refusal; inspect parsing redacts and bounds failure detail.
+
+Warm-image state is a compare-and-apply keyed store with bounded profile/allocation capacity, generation identity, pinned/previous image ownership, replay identity checks, cold fallback reasons, capture uncertainty recovery, and explicit retirement obligations. Allocation freezes the selected checkpoint or cold choice before the first provider call; publication and demand renewal are generation-fenced. These invariants are source behavior to preserve in any future Rust owner, not justification for adding warm-image state to node RPC or existing FDN identity state.
+
 ## Fabushi owner resolution
 
 | Responsibility | Existing owner | Decision | Reason / boundary |
@@ -96,7 +102,7 @@ The proposed owner is not permission to create an `OpenClawRuntime`, second Agen
 
 - Read and map the imported profile, process, command, script, desktop-setup, timeout, provider helper, and reverse caller/test contracts at the same pinned upstream tree.
 - Read the platform-specific `crabbox-worker-desktop-macos.ts` and `crabbox-worker-desktop-windows.ts` contracts and their tests before any owner/ADR decision.
-- Read the remaining helper source (`crabbox-worker-script.ts`, `crabbox-worker-command.ts`, `crabbox-worker-desktop-setup.ts`, timeout/process helpers), provider helper graph and all reverse tests before any owner/ADR decision.
+- Read the remaining warm-image capture/checkpoint/recipe/records helpers and all reverse/provider tests before any owner/ADR decision.
 - Inspect the current Fabushi Host/Coordinator production composition and determine the narrow typed contract for provider catalog, artifact provenance, worker lease, process lifecycle, and diagnostic evidence.
 - Complete rejected-owner analysis and an ADR before creating a new owner. The current `NetworkEnrollmentOwner`, `remote_computer_target`, Sand connectors, and Runner process owners are candidates but cannot be widened by assumption.
 - Add positive and negative oracle rows for malformed catalogs, incompatible targets, credential non-propagation, archive hash/range/TLS failures, unsafe paths, cancellation cleanup, plugin activation failure, stale runtime pointers, diagnostic truncation/redaction, and node launch outcome-unknown.
