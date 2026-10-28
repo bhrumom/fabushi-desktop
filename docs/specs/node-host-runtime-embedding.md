@@ -91,6 +91,11 @@ The implementation must preserve these externally relevant contracts:
 
 Direct `params` and ambiguous `params` + `paramsJSON` are invalid. A disconnected or retired session cannot advertise commands or settle a result on a successor session.
 
+Gateway endpoint configuration carries non-sensitive TLS fingerprint and
+WebSocket context-path metadata. Cloudflare Access client id/secret values
+remain SecretInput material owned and redacted by the existing secrets/config
+owner; they must not enter the live-session registry or RPC projection.
+
 ## 9. Constraints and non-functional requirements
 
 - Security: TLS/endpoint scope, identity/token secrecy, command authorization, and Computer lease/currentness are fail-closed.

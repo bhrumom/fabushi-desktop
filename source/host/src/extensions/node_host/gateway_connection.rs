@@ -17,6 +17,10 @@ pub struct NodeHostGatewayConfig {
     pub host: String,
     pub port: u16,
     pub tls: bool,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tls_fingerprint: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub context_path: Option<String>,
 }
 
 impl NodeHostGatewayConfig {
@@ -25,7 +29,19 @@ impl NodeHostGatewayConfig {
             host: host.into(),
             port,
             tls,
+            tls_fingerprint: None,
+            context_path: None,
         }
+    }
+
+    pub fn with_tls_fingerprint(mut self, fingerprint: impl Into<String>) -> Self {
+        self.tls_fingerprint = Some(fingerprint.into());
+        self
+    }
+
+    pub fn with_context_path(mut self, context_path: impl Into<String>) -> Self {
+        self.context_path = Some(context_path.into());
+        self
     }
 
     pub fn to_url(&self) -> String {

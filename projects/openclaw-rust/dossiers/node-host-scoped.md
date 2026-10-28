@@ -195,3 +195,7 @@ The locked `gateway-auth.ts` delegates to `gatewayOriginScope`, whose normalized
 The locked gateway candidate connection requires a non-empty candidate list, forwards events only from the current candidate, promotes the first successful hello as the winner, and advances only when a candidate closes pre-hello without sending the connect request. After a winner or stop, late candidate callbacks are inert; stopping drains every candidate client and preserves cleanup failures.
 
 Rust now contains the transport-neutral NodeHostGatewayCandidateRouter and websocket URL formatter. It captures the failover admission and IPv6/context-path formatting rules while leaving sockets, TLS, Cloudflare Access headers, request dispatch, and stop/drain with the future Gateway client owner. It is therefore a parity seam, not a claim that remote transport is wired.
+
+## 23. Gateway endpoint configuration boundary (2026-10-29)
+
+The locked node-host configuration persists optional TLS fingerprint and WebSocket context-path metadata, while Cloudflare Access remains a pair of SecretInput values resolved by the existing secrets/config owner and redacted before use. Rust NodeHostGatewayConfig now carries the non-sensitive fingerprint/path fields and the candidate formatter consumes the configured context path. No Cloudflare credential, token, or materialized secret was added to the session registry or parity projection; the transport/config owner still needs to wire secret resolution and TLS pin enforcement.

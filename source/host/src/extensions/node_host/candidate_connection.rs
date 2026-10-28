@@ -89,6 +89,7 @@ pub fn format_gateway_candidate_url(
     };
     let scheme = if gateway.tls { "wss" } else { "ws" };
     let path = context_path
+        .or(gateway.context_path.as_deref())
         .map(str::trim)
         .filter(|path| !path.is_empty() && *path != "/")
         .map(|path| {
@@ -116,6 +117,12 @@ mod tests {
         assert_eq!(
             format_gateway_candidate_url(&config, Some("gateway/v1")),
             "wss://[2001:db8::1]:18789/gateway/v1"
+        );
+        let configured_path =
+            NodeHostGatewayConfig::new("127.0.0.1", 18789, false).with_context_path("stored");
+        assert_eq!(
+            format_gateway_candidate_url(&configured_path, None),
+            "ws://127.0.0.1:18789/stored"
         );
     }
 

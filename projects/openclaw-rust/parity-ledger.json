@@ -19530,6 +19530,33 @@
             "start_line": 1
           },
           "symbol": "createNodeHostGatewayCandidateConnection"
+        },
+        {
+          "blob_sha": "ca24136157c63d656a2d26f2554c79bebe34cd9e",
+          "path": "src/node-host/config.ts",
+          "range": {
+            "end_line": 130,
+            "start_line": 1
+          },
+          "symbol": "loadNodeHostConfig"
+        },
+        {
+          "blob_sha": "3844b92c31a174df10721b1a299a63e2e78744fc",
+          "path": "src/node-host/config-shared.ts",
+          "range": {
+            "end_line": 143,
+            "start_line": 1
+          },
+          "symbol": "normalizeGatewayConfig"
+        },
+        {
+          "blob_sha": "c2ba6afac8050c8ad0c09b73f551e5b0e97f491c",
+          "path": "src/node-host/gateway-cloudflare-access.ts",
+          "range": {
+            "end_line": 123,
+            "start_line": 1
+          },
+          "symbol": "resolveNodeHostCloudflareAccess"
         }
       ],
       "status": {
