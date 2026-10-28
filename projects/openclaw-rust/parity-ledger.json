@@ -10,10 +10,10 @@
     "ui_accepted": false
   },
   "file_coverage": {
-    "mapped_paths": 948,
+    "mapped_paths": 953,
     "omitted_known": 0,
     "tracked_paths": 58750,
-    "unclassified_paths": 57802
+    "unclassified_paths": 57797
   },
   "inventory_authority": {
     "manifest_source": "GitHub Actions immutable artifact candidate",
@@ -19641,6 +19641,36 @@
           "path": "src/node-host/node-event-params.ts",
           "range": {"end_line": 8, "start_line": 1},
           "symbol": "buildNodeEventParams"
+        },
+        {
+          "blob_sha": "85e32a4e6df9a2753fc468840105ee4617d122da",
+          "path": "src/node-host/runner.ts",
+          "range": {"end_line": 571, "start_line": 1},
+          "symbol": "runNodeHost"
+        },
+        {
+          "blob_sha": "cfd8885d97b27f3f2c402a12ddefb8436e2cc82c",
+          "path": "src/node-host/worker.ts",
+          "range": {"end_line": 161, "start_line": 1},
+          "symbol": "runNodeHostWorker"
+        },
+        {
+          "blob_sha": "55f990be2b6a9b803ef11c95e1ad64aa43b5f2b1",
+          "path": "src/node-host/worker-support.ts",
+          "range": {"end_line": 128, "start_line": 1},
+          "symbol": "NodeHostWorkerBridgeClient"
+        },
+        {
+          "blob_sha": "416c0720153ea1ff90ddc4ac7243d52160d68e38",
+          "path": "src/node-host/runtime-skill-bins.ts",
+          "range": {"end_line": 73, "start_line": 1},
+          "symbol": "SkillBinsCache"
+        },
+        {
+          "blob_sha": "3f81c08fa6aa3e535e0ef01d12836f519c15d730",
+          "path": "src/node-host/startup-state-readiness.ts",
+          "range": {"end_line": 5, "start_line": 1},
+          "symbol": "ensureNodeHostStateReady"
         }
       ],
       "status": {
