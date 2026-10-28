@@ -1,6 +1,6 @@
 # OCRM technical dossier: Crabbox node-enrollment owner audit
 
-Status: scoped audit complete for the three source files listed below; dependent profile/process/script contracts and production acceptance remain pending.
+Status: scoped audit complete for the seven source files listed below; broader provider/process callers and production acceptance remain pending.
 
 Project: OCRM-001  
 Upstream repository: `openclaw/openclaw`  
@@ -14,8 +14,14 @@ The following exact pinned files were read completely in this audit:
 - `extensions/crabbox/src/crabbox-worker-machine-options.ts` (`7c66b6ffab48d9dfca6131ceaef064fc461e3499`)
 - `extensions/crabbox/src/crabbox-worker-node-enrollment-diagnostics.ts` (`1d1b10d90ad31543ab70d27065767daf12050a8d`)
 - `extensions/crabbox/src/crabbox-worker-node-enrollment.ts` (`7860f5b649f05beae18fd848c01dbdda34bb1236`)
+- `extensions/crabbox/src/crabbox-worker-profile.ts` (`e182292b6f4fe4a16e20fa6679e680b0250dbbd1`)
+- `extensions/crabbox/src/crabbox-worker-node-process.ts` (`414d84ab591091511ee6abd66bd12d8b064e4763`)
+- `extensions/crabbox/src/crabbox-worker-desktop-macos.ts` (`1a049d4ec64d0843f0420ade4135cff1525a4fa4`)
+- `extensions/crabbox/src/crabbox-worker-desktop-windows.ts` (`c0146aad36bbe2af0c7ea22ed7744bacbcade9ff`)
+- `extensions/crabbox/src/crabbox-worker-node-enrollment.test.ts` (`b6f534ec508c97c968e9e011d0ab710eb20dab`)
+- `extensions/crabbox/src/crabbox-worker-node-enrollment-diagnostics.test.ts` (`8ed15639eaf6189ad2bd5a4e686316591fb77d88`)
 
-The enrollment file imports and inlines behavior from `crabbox-worker-profile.ts`, `crabbox-worker-node-process.ts`, `crabbox-worker-script.ts`, `crabbox-worker-command.ts`, `crabbox-worker-desktop-setup.ts`, and timeout/process helpers. Those dependencies are not marked complete by this dossier; their exact-source reading and reverse callers are the next closure step.
+The enrollment file imports and inlines behavior from `crabbox-worker-script.ts`, `crabbox-worker-command.ts`, `crabbox-worker-desktop-setup.ts`, and timeout/process helpers. The profile and process contracts plus the macOS/Windows platform bridges are included in this slice; the remaining helper files and reverse callers are not marked complete by this dossier.
 
 ## Observed responsibilities
 
@@ -59,6 +65,12 @@ The command layer owns a separate bounded process/tree custody contract. It rest
 
 The process runtime verifies an existing node by PID, executable/CLI, runtime directory, state directory, start time, environment, and platform-specific process receipt. It refuses replay when the runtime pointer or launch receipt is incomplete, refuses a mismatched live process, and cleans only the owned process tree/desktop host on launch failure. Linux, Windows, Darwin, signed macOS desktop host, Windows desktop launcher, and XFCE/browser/terminal setup are separate platform responsibilities; none can be collapsed into the native FDN worker process.
 
+### Platform bridges and falsifiable tests
+
+The macOS bridge requires the inspected non-root GUI account, console ownership and `launchctl` GUI session, a separately signed `ai.openclaw.cloud-worker` app with the expected host version and bundled CUA driver, lease-scoped private desktop state, and process/browser ownership checks on the loopback CDP port. The Windows bridge requires an active interactive session/SID, a running privileged Crabbox launcher service, lease-scoped ACLs, loopback-only authenticated TightVNC, and process/session/SID/executable identity checks for browser, terminal, and Node. Both bridges preserve cancellation/outcome-unknown handling and never treat a port or PID alone as ownership proof.
+
+The pinned enrollment tests provide direct positive and negative oracles for: runtime reuse and warm-image upgrade, occupied runtime pointers, plugin activation failure, malformed credential non-disclosure, FIFO archive rejection, concurrent artifact preparation, process identity replay, transient HTTP retry budget, digest/length/redirect/reset/TLS failures before launch, pinned TLS before bearer transmission, desktop setup after launch and replay, exact XFCE environment binding, and invalid desktop-session rejection. The diagnostics test separately proves UTF-8/UTF-16 tail handling, redaction, runtime-path truncation, dead-process markers, and the 2,048-byte cap. These are source oracles only; no local execution is claimed.
+
 ## Fabushi owner resolution
 
 | Responsibility | Existing owner | Decision | Reason / boundary |
@@ -74,6 +86,7 @@ The proposed owner is not permission to create an `OpenClawRuntime`, second Agen
 
 - Read and map the imported profile, process, command, script, desktop-setup, timeout, provider, and reverse caller/test contracts at the same pinned upstream tree.
 - Read the platform-specific `crabbox-worker-desktop-macos.ts` and `crabbox-worker-desktop-windows.ts` contracts and their tests before any owner/ADR decision.
+- Read the remaining helper source (`crabbox-worker-script.ts`, `crabbox-worker-command.ts`, `crabbox-worker-desktop-setup.ts`, timeout/process helpers), provider entrypoint, warm-image callers, and all reverse tests before any owner/ADR decision.
 - Inspect the current Fabushi Host/Coordinator production composition and determine the narrow typed contract for provider catalog, artifact provenance, worker lease, process lifecycle, and diagnostic evidence.
 - Complete rejected-owner analysis and an ADR before creating a new owner. The current `NetworkEnrollmentOwner`, `remote_computer_target`, Sand connectors, and Runner process owners are candidates but cannot be widened by assumption.
 - Add positive and negative oracle rows for malformed catalogs, incompatible targets, credential non-propagation, archive hash/range/TLS failures, unsafe paths, cancellation cleanup, plugin activation failure, stale runtime pointers, diagnostic truncation/redaction, and node launch outcome-unknown.
