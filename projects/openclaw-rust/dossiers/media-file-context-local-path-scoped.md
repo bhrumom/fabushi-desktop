@@ -55,9 +55,10 @@ The audited source code was decomposed into 6 discrete Rust runtime responsibili
 4. **`OCRM-RESP-MEDIA-DOC-TRUNCATION-001`**:
    - **Behavior**: Formats structured notice for partial document text or page extractions, reflecting automatic selection limits, explicit user limits, and text/image truncation flags.
    - **Rust Owner**: `source/host/src/extensions/attachments/media_file_context.rs::render_document_truncation_notice`.
-   - **Production Call Chain**: Producer `AttachmentsService::dispatch_gateway("readAttachmentText")` with optional extraction metadata → Owner `AttachmentsService::read_text_with_document_metadata` → `render_document_truncation_notice` → Consumer gateway text preview. The standalone `renderDocumentTruncation` gateway remains available for callers that only need the notice.
+   - **Production Call Chain**: Producer `AttachmentsService::dispatch_gateway("renderDocumentTruncation")` → Owner `render_document_truncation_notice` → Consumer (pending document extraction preview attachment pipeline).
    - **Oracles**: `OCRM-FILE-CTX-O05`, `OCRM-FILE-CTX-O08`.
-   - **Status**: `implementation=implemented`, `wiring=wired`, `verification=not-run` (the current exact-target Actions receipt is still required before verification can change; no global flag is upgraded here).
+   - **Status**: `implementation=implemented`, `wiring=not-wired`, `verification=not-run` (`blocker_ids=["BL-MEDIA-DOC-TRUNCATION-UPSTREAM-CALLER-001"]`: document extraction preview pipeline does not yet invoke `render_document_truncation_notice`).
+   - The Rust service now exposes an optional metadata-aware preview helper and the contract test exercises it with synthetic metadata, but the Electron preload/main bridge still sends only `{path}` and no real extraction result reaches this helper. This is local parameter-contract evidence only, not production wiring.
 
 5. **`OCRM-RESP-MEDIA-PROMPT-IMAGE-PROVENANCE-001`**:
    - **Behavior**: Carries prompt image fact ownership indexes across provider-visible message payload structures without altering provider-visible bytes or schema contracts.

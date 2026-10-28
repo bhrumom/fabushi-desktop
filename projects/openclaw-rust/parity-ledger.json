@@ -6160,7 +6160,9 @@
     {
       "adr_refs": [],
       "behavior": "Formats structured notice for partial document text or page extractions, reflecting automatic selection limits, explicit user limits, and text/image truncation flags.",
-      "blocker_ids": [],
+      "blocker_ids": [
+        "BL-MEDIA-DOC-TRUNCATION-UPSTREAM-CALLER-001"
+      ],
       "capability_ids": [
         "media.doc_truncation"
       ],
@@ -6179,9 +6181,9 @@
       ],
       "id": "OCRM-RESP-MEDIA-DOC-TRUNCATION-001",
       "integration": {
-        "consumer": "source/host/src/extensions/attachments/attachments_service.rs::dispatch_gateway(\"readAttachmentText\") text preview",
-        "entrypoint": "source/host/src/extensions/attachments/attachments_service.rs::read_text_with_document_metadata",
-        "owner": "source/host/src/extensions/attachments/attachments_service.rs::read_text_with_document_metadata -> media_file_context.rs::render_document_truncation_notice",
+        "consumer": "source/host/src/extensions/attachments/attachments_service.rs::read_text (pending document preview truncation notice attachment)",
+        "entrypoint": "source/host/src/extensions/attachments/attachments_service.rs::dispatch_gateway(\"renderDocumentTruncation\")",
+        "owner": "source/host/src/extensions/attachments/media_file_context.rs::render_document_truncation_notice",
         "producer": "source/host/src/extensions/attachments/attachments_service.rs"
       },
       "invariants": [
@@ -6232,7 +6234,7 @@
         "mapping": "reviewed",
         "read": "read-complete",
         "verification": "not-run",
-        "wiring": "wired"
+        "wiring": "not-wired"
       },
       "target": {
         "language": "Rust",
