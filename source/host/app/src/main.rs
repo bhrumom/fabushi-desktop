@@ -3739,7 +3739,7 @@ impl UnifiedGatewayApi {
                         "displayName": p.get("displayName").and_then(serde_json::Value::as_str).unwrap_or(dev_id),
                         "platform": p.get("platform").and_then(serde_json::Value::as_str).unwrap_or("unknown"),
                         "deviceFamily": "remote",
-                        "commands": ["system.run"],
+                        "commands": [],
                         "connected": false,
                         "paired": true,
                         "active": false,

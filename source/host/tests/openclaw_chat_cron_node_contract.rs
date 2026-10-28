@@ -329,7 +329,7 @@ fn test_ocrm_node_o03_node_list_includes_sand_local_node_and_paired_devices() {
                     "displayName": p.get("displayName").and_then(Value::as_str).unwrap_or(dev_id),
                     "platform": p.get("platform").and_then(Value::as_str).unwrap_or("unknown"),
                     "deviceFamily": "remote",
-                    "commands": ["system.run"],
+                    "commands": [],
                     "connected": false,
                     "paired": true,
                     "active": false,
@@ -522,6 +522,7 @@ fn test_ocrm_node_o06_shipping_routes_to_unique_native_owners() {
     assert!(invoke.contains("unsupported local node command"));
     assert!(SHIPPING_HOST_MAIN.contains("\"connected\": false"));
     assert!(SHIPPING_HOST_MAIN.contains("\"active\": false"));
+    assert!(SHIPPING_HOST_MAIN.contains("\"commands\": []"));
     assert!(!invoke.contains("\"stdout\": \"ok\""));
     assert!(!invoke.contains("\"exitCode\": 0"));
 }

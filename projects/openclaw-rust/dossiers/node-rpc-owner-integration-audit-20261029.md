@@ -34,7 +34,7 @@ The invoke path now requires a node identity, command, and idempotency key, fenc
 
 The existing `production_remote_computer_target_service` was also inspected before deciding the remote branch. Its private transport is lease-, generation-, identity- and sensitive-result-fenced, but its native executor deliberately accepts the product `Computer` contract; it does not expose a generic `system.run` node transport. The current remote `node.invoke` error is therefore an explicit transport boundary, not a hidden fallback to local execution. Extending it to remote shell execution requires a separately specified native capability and owner decision.
 
-The remote presence projection is now fail-closed in the current slice: pairing approval makes a remote device visible and `paired`, but `node.list`/`node.status` report `connected=false` and `active=false` until a live node-transport owner supplies those facts. The local `sand-local-node` remains connected and active. This removes the prior contradiction in which `node.list`/`node.status` claimed a live remote node while `node.invoke` reported that transport was unavailable.
+The remote presence projection is now fail-closed in the current slice: pairing approval makes a remote device visible and `paired`, but `node.list`/`node.status` report `connected=false` and `active=false` and advertise no executable commands until a live node-transport owner supplies those facts. The local `sand-local-node` remains connected and active. This removes the prior contradiction in which `node.list`/`node.status` claimed a live remote node while `node.invoke` reported that transport was unavailable.
 
 This preserves the current ownership boundary:
 

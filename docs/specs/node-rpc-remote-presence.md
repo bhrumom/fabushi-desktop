@@ -25,6 +25,7 @@ Make remote node presence fail closed: pairing approval proves `paired`, while `
 - R3: `node.status` uses the same fail-closed remote presence semantics as `node.list`.
 - R4: local node presence remains approved, paired, connected, and active.
 - R5: no new durable state or transport owner is introduced.
+- R6: without a live transport-owner fact, remote entries do not advertise executable node commands.
 
 ## Ownership
 
