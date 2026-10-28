@@ -73,6 +73,7 @@ READS = {
     "src/node-host/gateway-auth.ts": (28, "OCRM-RESP-NODE-HOST-CONNECTION-001", "OCRM-M13"),
     "src/node-host/computer-command.ts": (49, "OCRM-RESP-NODE-HOST-COMMAND-DISPATCH-001", "OCRM-M13"),
     "src/node-host/node-worker-supervisor-commands.ts": (378, "OCRM-RESP-NODE-HOST-COMMAND-DISPATCH-001", "OCRM-M13"),
+    "src/node-host/node-worker-supervisor-contract.ts": (38, "OCRM-RESP-NODE-HOST-COMMAND-DISPATCH-001", "OCRM-M13"),
     "src/node-host/node-worker-turn-settlement.worker.ts": (42, "OCRM-RESP-NODE-HOST-COMMAND-DISPATCH-001", "OCRM-M13"),
     "src/node-host/node-worker-turn-store.ts": (36, "OCRM-RESP-NODE-HOST-COMMAND-DISPATCH-001", "OCRM-M13"),
     "src/node-host/node-worker-launch-schema.ts": (42, "OCRM-RESP-NODE-HOST-COMMAND-DISPATCH-001", "OCRM-M13"),

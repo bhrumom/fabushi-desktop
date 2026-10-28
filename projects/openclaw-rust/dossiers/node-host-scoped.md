@@ -475,3 +475,9 @@ The locked `node-worker-supervisor-commands.ts`, `node-worker-turn-settlement.wo
 The turn settlement worker closes only unfinished turns for the exact physical launch and converts a completed physical launch to `interrupted` rather than fabricating a result. The turn store delegates claim/get/finish to the journal worker and rechecks the full supervisor identity before exposing a receipt. Launch schema selection is engine-aware and uses the admitted state-schema owner; prepared-workspace publication validates the durable row shape before projecting it. The timeout helper bounds each re-armed window by a total deadline and propagates abort reasons with dynamic stage labels.
 
 These sources establish the remaining upstream producer→journal/schema/publication→consumer contracts for this cluster. They do not prove a Rust equivalent, remote worker executor, durable production wiring, or exact-head Actions/device/package acceptance; all such states remain pending.
+
+## 65. Locked node-host supervisor receipt contract source (2026-10-29)
+
+The locked `node-worker-supervisor-contract.ts` was read in full and explicitly bound to command dispatch. It narrows the public supervisor control surface to launch/status/workspace-retention/cancel/environment-stop/process-observation operations and projects only identity-fenced durable launch receipts. Completed receipts expose the recorded result, failed/interrupted/cancelled receipts expose bounded error state, and non-terminal receipts expose neither fabricated result nor terminal error; the projected shape is parsed again and rejects inconsistent durable state.
+
+This closes the upstream receipt projection contract for the cluster. It does not prove the Fabushi Rust supervisor implementation, durable remote worker execution, or exact-head Actions and packaged acceptance.
