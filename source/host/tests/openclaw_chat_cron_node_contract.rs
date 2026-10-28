@@ -330,9 +330,9 @@ fn test_ocrm_node_o03_node_list_includes_sand_local_node_and_paired_devices() {
                     "platform": p.get("platform").and_then(Value::as_str).unwrap_or("unknown"),
                     "deviceFamily": "remote",
                     "commands": ["system.run"],
-                    "connected": true,
+                    "connected": false,
                     "paired": true,
-                    "active": true,
+                    "active": false,
                     "gatewayLocal": false
                 }));
             }
@@ -362,6 +362,15 @@ fn test_ocrm_node_o03_node_list_includes_sand_local_node_and_paired_devices() {
     let paired_items = pair_list_after["paired"].as_array().unwrap();
     assert_eq!(paired_items.len(), 1);
     assert_eq!(paired_items[0]["deviceId"], "dev-peer-01");
+    let remote_projection = json!({
+        "nodeId": paired_items[0]["deviceId"],
+        "connected": false,
+        "paired": true,
+        "active": false,
+    });
+    assert_eq!(remote_projection["paired"], true);
+    assert_eq!(remote_projection["connected"], false);
+    assert_eq!(remote_projection["active"], false);
 }
 
 #[test]
@@ -383,9 +392,9 @@ fn test_ocrm_node_o04_node_status_local_and_remote() {
         if status.get("status").and_then(Value::as_str) == Some("approved") {
             Ok(json!({
                 "nodeId": node_id,
-                "connected": true,
+                "connected": false,
                 "paired": true,
-                "active": true
+                "active": false
             }))
         } else {
             Err(GatewayCommandError::BadRequest(format!("unknown nodeId: {node_id}")))
@@ -396,6 +405,20 @@ fn test_ocrm_node_o04_node_status_local_and_remote() {
     let local = check_status("sand-local-node").unwrap();
     assert_eq!(local["connected"], true);
     assert_eq!(local["active"], true);
+
+    // Approved-without-live-transport is paired but not connected or active.
+    let req = pairing_owner.handle_pairing_command(
+        "device.pair.request",
+        &json!({ "deviceId": "dev-status-01", "publicKey": "pk-status" }),
+    ).unwrap();
+    pairing_owner.handle_pairing_command(
+        "device.pair.approve",
+        &json!({ "requestId": req["requestId"], "role": "operator" }),
+    ).unwrap();
+    let remote = check_status("dev-status-01").unwrap();
+    assert_eq!(remote["paired"], true);
+    assert_eq!(remote["connected"], false);
+    assert_eq!(remote["active"], false);
 
     // Unknown node returns 400 BadRequest
     let err = check_status("unknown-worker-99").unwrap_err();
@@ -497,6 +520,8 @@ fn test_ocrm_node_o06_shipping_routes_to_unique_native_owners() {
     assert!(invoke.contains(".execute_shell("));
     assert!(invoke.contains("node.invoke system.run requires params.command"));
     assert!(invoke.contains("unsupported local node command"));
+    assert!(SHIPPING_HOST_MAIN.contains("\"connected\": false"));
+    assert!(SHIPPING_HOST_MAIN.contains("\"active\": false"));
     assert!(!invoke.contains("\"stdout\": \"ok\""));
     assert!(!invoke.contains("\"exitCode\": 0"));
 }

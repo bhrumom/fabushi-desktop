@@ -16,6 +16,7 @@ Relevant current source:
 - `source/host/app/src/main.rs`, `UnifiedGatewayApi::call_openclaw_node_invoke`
 - `source/host/src/extensions/local_exec/gateway_local_exec_sand_box.rs`
 - `source/host/tests/openclaw_chat_cron_node_contract.rs`
+- `docs/specs/node-rpc-remote-presence.md`
 - `projects/openclaw-rust/dossiers/crabbox-node-enrollment-owner-audit-20261029.md`
 
 The upstream Crabbox enrollment audit remains pinned to OpenClaw commit `ad8d12f126d29b0db204187adf5092db80294e70` and tree `04ccce62f1d74dc8e0c88290ae8ded027b7b0f16`. That audit explicitly keeps Crabbox bootstrap, artifact, plugin, process and desktop-bridge ownership separate from FDN enrollment and Computer execution.
@@ -32,6 +33,8 @@ The register path now requires a non-empty node identity, preserves the approved
 The invoke path now requires a node identity, command, and idempotency key, fences remote calls on the existing pairing status, accepts only `system.run`, and delegates execution to `self.local_exec` with `GatewayLocalToolScope` and `self.local_tool_permission`. It returns the native exit code, stdout, stderr, working directory, abort, outcome-unknown and truncation fields. The former fixture-style success response is not present in the shipping handler.
 
 The existing `production_remote_computer_target_service` was also inspected before deciding the remote branch. Its private transport is lease-, generation-, identity- and sensitive-result-fenced, but its native executor deliberately accepts the product `Computer` contract; it does not expose a generic `system.run` node transport. The current remote `node.invoke` error is therefore an explicit transport boundary, not a hidden fallback to local execution. Extending it to remote shell execution requires a separately specified native capability and owner decision.
+
+The remote presence projection is now fail-closed in the current slice: pairing approval makes a remote device visible and `paired`, but `node.list`/`node.status` report `connected=false` and `active=false` until a live node-transport owner supplies those facts. The local `sand-local-node` remains connected and active. This removes the prior contradiction in which `node.list`/`node.status` claimed a live remote node while `node.invoke` reported that transport was unavailable.
 
 This preserves the current ownership boundary:
 
@@ -59,6 +62,7 @@ The existing pure contract coverage still provides request-shape and security or
 - Confirm the completed Rust host workflow and retain its exact head, job outcomes and logs; an in-progress or unrelated SHA is not acceptance evidence.
 - Verify real private transport/device behavior for remote nodes, including approval, reconnect, generation fencing, timeout and outcome-unknown handling.
 - Specify and implement the missing remote `system.run` capability only after an owner/contract decision; do not reinterpret the existing Computer-only private transport as node shell execution.
+- Add a live node-transport owner before changing remote presence to connected/active or advertising executable remote commands.
 - Complete the remaining Crabbox provider, artifact, process, platform bridge and reverse-caller source closure before creating a new owner or claiming OCRM completion.
 - Keep all global OCRM completion flags false until the full RTM and AC01–AC24 have direct positive evidence.
 

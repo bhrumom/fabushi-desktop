@@ -3740,9 +3740,9 @@ impl UnifiedGatewayApi {
                         "platform": p.get("platform").and_then(serde_json::Value::as_str).unwrap_or("unknown"),
                         "deviceFamily": "remote",
                         "commands": ["system.run"],
-                        "connected": true,
+                        "connected": false,
                         "paired": true,
-                        "active": true,
+                        "active": false,
                         "gatewayLocal": false
                     }));
                 }
@@ -3785,9 +3785,9 @@ impl UnifiedGatewayApi {
                 "nodeId": node_id,
                 "displayName": status.get("device").and_then(|d| d.get("displayName")).and_then(serde_json::Value::as_str).unwrap_or(node_id),
                 "platform": std::env::consts::OS,
-                "connected": true,
+                "connected": false,
                 "paired": true,
-                "active": true
+                "active": false
             }))
         } else {
             Err(GatewayCommandError::BadRequest(format!("unknown nodeId: {node_id}")))
