@@ -10,10 +10,10 @@
     "ui_accepted": false
   },
   "file_coverage": {
-    "mapped_paths": 965,
+    "mapped_paths": 967,
     "omitted_known": 0,
     "tracked_paths": 58750,
-    "unclassified_paths": 57785
+    "unclassified_paths": 57783
   },
   "inventory_authority": {
     "manifest_source": "GitHub Actions immutable artifact candidate",
@@ -19887,6 +19887,18 @@
           "path": "src/node-host/invoke-plugin-context.ts",
           "range": {"end_line": 76, "start_line": 1},
           "symbol": "withNodeHostPluginInvocation"
+        },
+        {
+          "blob_sha": "73ec0a90b23be2be89dc4bad6aefe743276afebd",
+          "path": "src/node-host/plugin-node-host.ts",
+          "range": {"end_line": 376, "start_line": 1},
+          "symbol": "invokeRegisteredNodeHostCommand"
+        },
+        {
+          "blob_sha": "6985c5db381107a9659840bbac0fc18917e811dd",
+          "path": "src/node-host/mcp.ts",
+          "range": {"end_line": 588, "start_line": 1},
+          "symbol": "startNodeHostMcpManager"
         },
         {
           "blob_sha": "67dcb7525571e5b24de9fdb279f0219f2705bd86",
