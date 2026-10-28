@@ -247,6 +247,7 @@ pub struct DocumentPagesMetadata {
 
 /// Metadata describing partial extraction or truncation of document attachments.
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(default)]
 pub struct DocumentExtractionMetadata {
     pub pages: Option<DocumentPagesMetadata>,
     pub text_truncated: bool,

@@ -55,9 +55,9 @@ The audited source code was decomposed into 6 discrete Rust runtime responsibili
 4. **`OCRM-RESP-MEDIA-DOC-TRUNCATION-001`**:
    - **Behavior**: Formats structured notice for partial document text or page extractions, reflecting automatic selection limits, explicit user limits, and text/image truncation flags.
    - **Rust Owner**: `source/host/src/extensions/attachments/media_file_context.rs::render_document_truncation_notice`.
-   - **Production Call Chain**: Producer `AttachmentsService::dispatch_gateway("renderDocumentTruncation")` → Owner `render_document_truncation_notice` → Consumer (pending document extraction preview attachment pipeline).
+   - **Production Call Chain**: Producer `AttachmentsService::dispatch_gateway("readAttachmentText")` with optional extraction metadata → Owner `AttachmentsService::read_text_with_document_metadata` → `render_document_truncation_notice` → Consumer gateway text preview. The standalone `renderDocumentTruncation` gateway remains available for callers that only need the notice.
    - **Oracles**: `OCRM-FILE-CTX-O05`, `OCRM-FILE-CTX-O08`.
-   - **Status**: `implementation=implemented`, `wiring=not-wired`, `verification=not-run` (`blocker_ids=["BL-MEDIA-DOC-TRUNCATION-UPSTREAM-CALLER-001"]`: document extraction preview pipeline does not yet invoke `render_document_truncation_notice`).
+   - **Status**: `implementation=implemented`, `wiring=wired`, `verification=not-run` (the current exact-target Actions receipt is still required before verification can change; no global flag is upgraded here).
 
 5. **`OCRM-RESP-MEDIA-PROMPT-IMAGE-PROVENANCE-001`**:
    - **Behavior**: Carries prompt image fact ownership indexes across provider-visible message payload structures without altering provider-visible bytes or schema contracts.
@@ -78,7 +78,7 @@ The audited source code was decomposed into 6 discrete Rust runtime responsibili
 ## 3. Verification & Evidence
 
 - **Contract Test Suite**: `source/host/tests/openclaw_media_file_context_contract.rs`
-  - 8 passing test cases:
+  - 8 passing test cases, including a live `uploadAttachment` → `readAttachmentText` path that prefixes `[Partial document: ...]` before text when extraction metadata is supplied:
     - `test_ocrm_file_ctx_01_xml_attribute_escaping_and_sanitization`: verifies XML attribute character escaping (`&`, `<`, `>`, `"`, `'`) and filename sanitization against quotes, brackets, slashes, and traversal sequences (`.`, `..`).
     - `test_ocrm_file_ctx_02_render_file_context_block_escaping`: verifies exact parity with upstream `file-context.test.ts` (injection markup stripped, `</file>` replaced with `&lt;/file&gt;`, `<file` replaced with `&lt;file`, compact mode supported, fallback filename and mime attributes applied).
     - `test_ocrm_file_ctx_03_resolve_local_media_path`: verifies remote URL rejection, data URL rejection, file URL traversal rejection (`%2f`, `%5c`), UNC host rejection, valid `file:///` path resolution, absolute path resolution, and `~` home directory expansion.

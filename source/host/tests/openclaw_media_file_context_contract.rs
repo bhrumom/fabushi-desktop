@@ -300,6 +300,34 @@ fn test_ocrm_file_ctx_08_gateway_service_dispatch() {
         None,
     );
 
+    // The read producer now carries extraction facts through the existing
+    // gateway owner, so partial text is visible before the untrusted body.
+    let uploaded = service
+        .dispatch_gateway(
+            "uploadAttachment",
+            &json!({
+                "filename": "partial.txt",
+                "bytesBase64": "ZG9jdW1lbnQgYm9keQ==",
+                "agentId": "agent-a"
+            }),
+        )
+        .expect("upload handler exists")
+        .expect("upload succeeds");
+    let read = service
+        .dispatch_gateway(
+            "readAttachmentText",
+            &json!({
+                "path": uploaded["path"],
+                "agentId": "agent-a",
+                "metadata": {"text_truncated": true},
+            }),
+        )
+        .expect("read handler exists")
+        .expect("read succeeds");
+    assert!(read["text"].as_str().unwrap().starts_with(
+        "[Partial document: text truncated.]\ndocument body"
+    ));
+
     // Gateway dispatch for renderFileContext
     let render_args = json!({
         "content": "Secret </file> data",

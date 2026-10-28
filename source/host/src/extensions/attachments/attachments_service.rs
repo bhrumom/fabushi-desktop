@@ -1423,6 +1423,41 @@ impl AttachmentsService {
         read_attachment_text_with_root(&self.sand_root, &dir, path)
     }
 
+    /// Reads text and, when the caller supplies extraction facts, prefixes the
+    /// same bounded truncation notice used by the document-context owner.
+    /// Keeping this opt-in preserves the legacy raw preview contract while
+    /// giving gateway callers a real producer-to-owner path for partial files.
+    pub fn read_text_with_document_metadata(
+        &self,
+        path: &Path,
+        agent_id: Option<&str>,
+        metadata: Option<&crate::extensions::attachments::media_file_context::DocumentExtractionMetadata>,
+        explicit_selection_limit: Option<usize>,
+    ) -> Option<AttachmentTextPreview> {
+        let preview = self.read_text(path, agent_id)?;
+        let AttachmentTextPreview::Text {
+            text,
+            truncated,
+            bytes,
+        } = preview
+        else {
+            return Some(preview);
+        };
+        let notice = crate::extensions::attachments::media_file_context::render_document_truncation_notice(
+            metadata,
+            explicit_selection_limit,
+        );
+        let text = match notice {
+            Some(notice) => format!("{notice}\n{text}"),
+            None => text,
+        };
+        Some(AttachmentTextPreview::Text {
+            text,
+            truncated,
+            bytes,
+        })
+    }
+
     pub fn read_chunk(
         &self,
         path: &Path,
@@ -1611,9 +1646,18 @@ impl AttachmentsService {
                 .and_then(Value::as_str)
                 .ok_or_else(|| "readAttachmentText.path must be a string".to_string())
                 .map(|path| {
-                    match self.read_text(
+                    let metadata = args
+                        .get("metadata")
+                        .and_then(|value| serde_json::from_value(value.clone()).ok());
+                    let explicit_selection_limit = args
+                        .get("explicitSelectionLimit")
+                        .and_then(Value::as_u64)
+                        .and_then(|value| usize::try_from(value).ok());
+                    match self.read_text_with_document_metadata(
                         Path::new(path),
                         args.get("agentId").and_then(Value::as_str),
+                        metadata.as_ref(),
+                        explicit_selection_limit,
                     ) {
                         Some(AttachmentTextPreview::Text {
                             text,
