@@ -165,3 +165,14 @@ After the live-main drift check, the changed node-host sources were reread at `b
 - `runtime.ts` and `client.ts` retain the locked blob identities in the current live tree, so their prior exact reads remain directly applicable to those two files only.
 
 The live delta is recorded as new source evidence, not silently merged into the locked inventory. A Rust implementation must not omit the native-auth capability or copy the older invoke error path when the final source baseline is re-frozen.
+
+## 18. Live-main Rust node protocol delta (2026-10-29)
+
+The live `crates/openclaw-node-host/src/node.rs` at `bf6a97a1761ed7f752544f4934aa708b9d896bd3` differs from the locked `ad8d12f126d29b0db204187adf5092db80294e70` source in behaviorally relevant ways:
+
+- protocol constants are imported from `openclaw_gateway_client::protocol` rather than maintained as local node-host constants;
+- the V3 comments and framing describe serialized `paramsJSON`, preserving the explicit JSON wire contract;
+- hello negotiation now treats the gateway hello value as the server protocol, requires it to be within the offered range, selects the lower of the server and offered maximum, and validates the final dialect against the selected-to-current range rather than requiring one exact value;
+- external-signing coverage now exercises both V3 and V4 and uses protocol-specific Windows metadata (`win32|` for V3 and `windows|windows` for V4).
+
+This is not a documentation-only drift: protocol selection, dependency ownership, and signed device metadata can affect interoperability and identity acceptance. The current Rust implementation and parity evidence remain bound to the locked source until the Actions authority deliberately selects a new exact baseline and regenerates inventory, mapping, and verification receipts.
