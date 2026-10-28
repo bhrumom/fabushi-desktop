@@ -136,6 +136,7 @@ READS = {
     "src/worker/worker-runtime-permissions.suite.ts": (276, None, "OCRM-M13", "test-oracle-replaced"),
     "src/worker/worker-runtime-prompt.suite.ts": (268, None, "OCRM-M13", "test-oracle-replaced"),
     "src/worker/worker-runtime-background-exec.suite.ts": (573, None, "OCRM-M13", "test-oracle-replaced"),
+    "src/worker/worker-connection-gateway-tools.suite.ts": (268, None, "OCRM-M13", "test-oracle-replaced"),
     "src/node-host/node-worker-turn-settlement.worker.ts": (42, "OCRM-RESP-NODE-HOST-COMMAND-DISPATCH-001", "OCRM-M13"),
     "src/node-host/node-worker-turn-store.ts": (36, "OCRM-RESP-NODE-HOST-COMMAND-DISPATCH-001", "OCRM-M13"),
     "src/node-host/node-worker-launch-schema.ts": (42, "OCRM-RESP-NODE-HOST-COMMAND-DISPATCH-001", "OCRM-M13"),

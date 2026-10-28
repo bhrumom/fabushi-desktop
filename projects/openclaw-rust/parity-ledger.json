@@ -10,10 +10,10 @@
     "ui_accepted": false
   },
   "file_coverage": {
-    "mapped_paths": 1049,
+    "mapped_paths": 1050,
     "omitted_known": 0,
     "tracked_paths": 58750,
-    "unclassified_paths": 57701
+    "unclassified_paths": 57700
   },
   "inventory_authority": {
     "manifest_source": "GitHub Actions immutable artifact candidate",
@@ -20868,6 +20868,12 @@
           "path": "src/worker/worker-runtime-background-exec.suite.ts",
           "range": {"end_line": 573, "start_line": 1},
           "symbol": "background exec lifecycle and environment finalization oracle"
+        },
+        {
+          "blob_sha": "a0d9167da3478039c8499cbcfb481c80a9f0045c",
+          "path": "src/worker/worker-connection-gateway-tools.suite.ts",
+          "range": {"end_line": 268, "start_line": 1},
+          "symbol": "Gateway tool transport queue, replay, and cancellation oracle"
         }
       ],
       "status": {
