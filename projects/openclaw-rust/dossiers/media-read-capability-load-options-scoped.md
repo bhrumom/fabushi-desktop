@@ -11,6 +11,13 @@
 
 ## 1. Upstream Source Audit & Line-by-Line Reading
 
+The locked-source pass re-read `src/media/read-capability.ts` in full (blob
+`885e4164aefb9368960cab09f6c85b0cec1f7e07`, 267 lines). It resolves agent/
+sender/group read policy, managed and workspace roots, remote-reader
+exclusions, bounded host reads, and workspace ownership selection while
+preserving host-workspace denial semantics. The source maps to the existing
+Rust read-capability owner; no wiring or verification status is upgraded.
+
 The following 5 core read capability, workspace access, and load options files (totaling 1,279 lines) were audited line-by-line from the locked upstream repository and mapped into canonical inventory shard `part-0042`:
 
 | Shard | Source File | Blob SHA | Lines | Scope | Mapped Responsibility |

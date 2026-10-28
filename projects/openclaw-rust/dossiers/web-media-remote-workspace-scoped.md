@@ -11,6 +11,14 @@
 
 ## 1. Upstream Source Audit & Line-by-Line Reading
 
+The locked-source pass re-read `src/media/remote-workspace-file.ts` in full
+(blob `991814e47ba2c283c814e097726aa8d8251ad071`, 138 lines). Its bounded
+reader pins each chunk to an opened regular file, rejects symlinks and
+workspace escapes, enforces output/byte caps, propagates cancellation and
+timeouts, and rejects size/revision changes during transfer. The canonical row
+maps to the existing Rust remote-workspace owner without claiming live
+consumer acceptance.
+
 The locked-source pass re-read `src/media/anthropic-inline-images.ts` in full
 (blob `84049330c09c297ed5913a9f33905b7162a83a5d`, 96 lines). Its concrete
 behavior is a 10 MiB decoded inbound-image guard, canonical base64 handling,
