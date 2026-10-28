@@ -246,6 +246,10 @@ The stream implementation is an adapter around the existing Gateway WebSocket/TL
 
 `gateway_connection::attach_gateway_stream_url` now captures the pure URL-admission part of the locked auxiliary stream owner: only `ws`/`wss` transport is accepted, the resolved attach path must match the expected path and remain on the connected Gateway origin, and the Gateway context mount is prepended before delivery. It deliberately does not open sockets, apply TLS pins, materialize Cloudflare credentials, splice bytes, or own close/drain state. Those responsibilities remain pending in the existing transport/config owners.
 
+## 34. Auxiliary stream splice state seam (2026-10-29)
+
+`source/host/src/extensions/node_host/stream_transport.rs` now models the non-I/O stream contract: binary-only Gateway frames, a 1 MiB payload bound, target-to-Gateway pause/resume at 4 MiB buffered bytes, first-trigger preservation, and bounded target-close decisions for close acknowledgement versus buffered flush. It is deliberately not a socket or WebSocket implementation; actual writes, timer ownership, TLS/edge credentials, and resource destruction remain with the future Gateway transport owner.
+
 ## 33. Live-main refresh after stream URL seam (2026-10-29)
 
 Live main advanced to `c0f1ba6ba4439a79d2cb91dde9666038fff7ad69`, tree `f80fc84244c576760b0d36555d9b6849978b6baf`. The locked-to-live compare reports 4,854 commits ahead and 300 returned changed files. The auxiliary stream URL seam remains explicitly based on the locked source read; this live refresh changes no lock, inventory, mapping count, or completion flag.

@@ -19579,7 +19579,9 @@
         "source/host/src/extensions/node_host/candidate_connection.rs::tests::only_unaccepted_pre_hello_candidates_fail_over",
         "source/host/src/extensions/node_host/candidate_connection.rs::tests::sent_connect_request_stops_instead_of_switching_candidate",
         "source/host/src/extensions/node_host/gateway_connection.rs::stream_tests::stream_attach_preserves_gateway_mount_and_rejects_origin_escape",
-        "source/host/src/extensions/node_host/gateway_connection.rs::stream_tests::stream_attach_rejects_non_websocket_gateway"
+        "source/host/src/extensions/node_host/gateway_connection.rs::stream_tests::stream_attach_rejects_non_websocket_gateway",
+        "source/host/src/extensions/node_host/stream_transport.rs::tests::binary_frames_forward_and_text_frames_fail_closed",
+        "source/host/src/extensions/node_host/stream_transport.rs::tests::target_backpressure_and_flush_close_are_bounded"
       ],
       "typed_contracts": [
         "NodeHostGatewayConfig",
@@ -19591,7 +19593,12 @@
         "NodeHostSessionRegistry",
         "NodeHostGatewayCandidateRouter",
         "CandidateCloseDecision",
-        "format_gateway_candidate_url"
+        "format_gateway_candidate_url",
+        "NodeStreamCloseTrigger",
+        "GatewayFrameDecision",
+        "TargetDataDecision",
+        "TargetCloseDecision",
+        "NodeStreamSpliceState"
       ],
       "unit_id": "OCRM-UNIT-NODE-HOST-001"
     },
