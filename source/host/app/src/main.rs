@@ -243,6 +243,9 @@ use mahayana_host_runtime::extensions::host_upgrade::production::{
 use mahayana_host_runtime::extensions::host_upgrade::host_bundle_upgrade::{
     SAND_BOX_HOST_VERSION_PATH, read_local_host_version,
 };
+use mahayana_host_runtime::extensions::node_host::session_registry::{
+    NodeHostSessionMetadata, NodeHostSessionRegistry,
+};
 use mahayana_host_runtime::host_production_extensions::{
     CURRENT_SHIPPING_PRODUCTION_EXTENSION_IDS, start_production_host_box_extensions,
     start_production_host_extensions,
@@ -1120,6 +1123,7 @@ struct UnifiedGatewayApi {
     create_agent_nonces: Mutex<CreateAgentNonceLedger<serde_json::Value>>,
     last_busy_at_ms: Mutex<u64>,
     device_pairing: Arc<DevicePairingOwner>,
+    node_host_sessions: Arc<NodeHostSessionRegistry>,
 }
 
 #[derive(Clone)]
@@ -3701,13 +3705,17 @@ impl UnifiedGatewayApi {
             }));
         }
 
+        let node = self
+            .node_host_sessions
+            .get(node_id)
+            .ok_or_else(|| GatewayCommandError::Internal("local node session is not admitted".into()))?;
         Ok(serde_json::json!({
             "ok": true,
             "status": "approved",
-            "nodeId": node_id,
-            "paired": true,
-            "connected": true,
-            "active": true,
+            "nodeId": node.node_id,
+            "paired": node.paired,
+            "connected": node.connected,
+            "active": node.active,
         }))
     }
 
@@ -3718,22 +3726,39 @@ impl UnifiedGatewayApi {
         let pair_list = self.device_pairing.handle_pair_list(&serde_json::json!({}))
             .unwrap_or_else(|_| serde_json::json!({ "paired": [] }));
 
-        let mut nodes = vec![serde_json::json!({
-            "nodeId": "sand-local-node",
-            "displayName": "Local Host Node",
-            "platform": std::env::consts::OS,
-            "deviceFamily": std::env::consts::OS,
-            "commands": ["system.run", "canvas.navigate", "computer.mouse", "computer.keyboard"],
-            "connected": true,
-            "paired": true,
-            "active": true,
-            "gatewayLocal": true,
-            "capabilities": ["orderedReplicasV1", "sendAcceptanceV1"]
-        })];
+        let live_nodes = self.node_host_sessions.list();
+        let mut nodes = live_nodes
+            .iter()
+            .map(|node| {
+                serde_json::json!({
+                    "nodeId": node.node_id,
+                    "displayName": node.display_name,
+                    "platform": node.platform,
+                    "deviceFamily": node.device_family,
+                    "commands": node.commands,
+                    "connected": node.connected,
+                    "paired": node.paired,
+                    "active": node.active,
+                    "gatewayLocal": node.gateway_local,
+                    "capabilities": node.capabilities
+                })
+            })
+            .collect::<Vec<_>>();
+        let live_node_ids = live_nodes
+            .iter()
+            .map(|node| node.node_id.as_str())
+            .collect::<std::collections::HashSet<_>>();
+        let active_node_id = live_nodes
+            .iter()
+            .find(|node| node.active)
+            .map(|node| node.node_id.clone());
 
         if let Some(paired) = pair_list.get("paired").and_then(serde_json::Value::as_array) {
             for p in paired {
                 if let Some(dev_id) = p.get("deviceId").and_then(serde_json::Value::as_str) {
+                    if live_node_ids.contains(dev_id) {
+                        continue;
+                    }
                     nodes.push(serde_json::json!({
                         "nodeId": dev_id,
                         "displayName": p.get("displayName").and_then(serde_json::Value::as_str).unwrap_or(dev_id),
@@ -3751,7 +3776,7 @@ impl UnifiedGatewayApi {
 
         Ok(serde_json::json!({
             "ts": started_at_ms(),
-            "activeNodeId": "sand-local-node",
+            "activeNodeId": active_node_id,
             "nodes": nodes
         }))
     }
@@ -3766,15 +3791,19 @@ impl UnifiedGatewayApi {
             .filter(|s| !s.is_empty())
             .ok_or_else(|| GatewayCommandError::BadRequest("node.status requires nodeId".into()))?;
 
-        if node_id == "sand-local-node" {
+        if let Some(node) = self.node_host_sessions.get(node_id) {
             return Ok(serde_json::json!({
                 "ts": started_at_ms(),
-                "nodeId": "sand-local-node",
-                "displayName": "Local Host Node",
-                "platform": std::env::consts::OS,
-                "connected": true,
-                "paired": true,
-                "active": true
+                "nodeId": node.node_id,
+                "displayName": node.display_name,
+                "platform": node.platform,
+                "deviceFamily": node.device_family,
+                "commands": node.commands,
+                "capabilities": node.capabilities,
+                "connected": node.connected,
+                "paired": node.paired,
+                "active": node.active,
+                "gatewayLocal": node.gateway_local
             }));
         }
 
@@ -13664,6 +13693,23 @@ fn main() {
         DevicePairingOwner::new(&device_pairing_db_path)
             .unwrap_or_else(|_| DevicePairingOwner::in_memory().expect("in-memory device pairing db"))
     );
+    let node_host_sessions = Arc::new(NodeHostSessionRegistry::new());
+    let local_session = node_host_sessions.connect(NodeHostSessionMetadata {
+        node_id: "sand-local-node".into(),
+        display_name: "Local Host Node".into(),
+        platform: std::env::consts::OS.into(),
+        device_family: std::env::consts::OS.into(),
+        commands: vec![
+            "system.run".into(),
+            "canvas.navigate".into(),
+            "computer.mouse".into(),
+            "computer.keyboard".into(),
+        ],
+        capabilities: vec!["orderedReplicasV1".into(), "sendAcceptanceV1".into()],
+        paired: true,
+        gateway_local: true,
+    });
+    let _ = node_host_sessions.set_active(&local_session, true);
 
     let gateway_api = Arc::new(UnifiedGatewayApi {
             host_tx: host_tx.clone(),
@@ -13713,6 +13759,7 @@ fn main() {
             create_agent_nonces: Mutex::new(CreateAgentNonceLedger::default()),
             last_busy_at_ms: Mutex::new(gateway_started_at),
             device_pairing,
+            node_host_sessions,
         });
     *host_upgrade_gateway_slot
         .lock()

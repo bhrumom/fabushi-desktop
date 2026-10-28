@@ -59,6 +59,14 @@ One Fabushi-owned node-host runtime composes the canonical Gateway/transport own
 - **Policy/side-effect owners:** local exec, Computer, PTY, desktop stream, portal stream, and worker/Claude handlers retain their existing authorization and process lifecycles.
 - **Gateway RPC projection:** reads live registry facts and pairing facts; it owns no node session, heartbeat, or replay state.
 
+The Rust `NodeHostSessionRegistry` is the Host-side projection boundary for the
+transport/session owner. Its `connect`, `set_active`, and generation-fenced
+`disconnect` operations are the only path that can create or retire a live
+session snapshot. `DevicePairingOwner`, `node.register`, and RPC projection
+may not call those operations or infer `connected` from approval. Until a real
+transport caller exists, approved remote devices therefore remain
+`paired=true, connected=false, active=false, commands=[]`.
+
 The upstream crate may be used as a contract reference or narrowly embedded primitive only after source-to-owner mapping proves it does not introduce a second owner.
 
 ## 8. Interfaces / contracts / data flow

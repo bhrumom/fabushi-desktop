@@ -180,3 +180,9 @@ This is not a documentation-only drift: protocol selection, dependency ownership
 ## 19. Node-host closure surface count (2026-10-29)
 
 The locked upstream tree contains 226 blob files in the node-host scope: 209 under `src/node-host/` and 17 under `crates/openclaw-node-host/`. The three existing node-host parity rows cover only the connection, command-dispatch, and manifest responsibilities; they do not establish file-by-file closure for the remaining worker, stream, update, plugin, protocol, sidecar, and test sources. Accordingly, the node-host source-closure and responsibility-mapping gates remain open even though the three rows now point at production source files rather than test-only anchors.
+
+## 20. Host live-session registry seam (2026-10-29)
+
+The first production wiring slice adds `source/host/src/extensions/node_host/session_registry.rs` as the single Host-side live-session fact owner. It provides generation-bearing `connect`, `set_active`, `disconnect`, `get`, and `list` operations; a predecessor lease cannot retire or mark active a successor session. Disconnect clears the advertised command and capability surface.
+
+`UnifiedGatewayApi` now admits the local Host session through this registry at process startup and projects `node.list`, `node.status`, and local `node.register` from the registry. Pairing-backed remote rows remain explicitly paired-but-disconnected until a real transport owner calls `connect`; remote `node.invoke` remains unavailable. This removes the prior RPC-side synthetic local snapshot, but it does not yet implement the remote Gateway transport, invocation runtime, reconnect loop, or exact-head/real-device acceptance.

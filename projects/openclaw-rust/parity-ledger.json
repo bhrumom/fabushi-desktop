@@ -19433,7 +19433,8 @@
         "node_host.gateway_connection"
       ],
       "dependencies": [
-        "mahayana_host_runtime::extensions::node_host::gateway_connection"
+        "mahayana_host_runtime::extensions::node_host::gateway_connection",
+        "mahayana_host_runtime::extensions::node_host::session_registry"
       ],
       "evidence_refs": [
         "source/host/tests/openclaw_node_host_contract.rs",
@@ -19443,14 +19444,18 @@
         {
           "path": "source/host/src/extensions/node_host/gateway_connection.rs",
           "reason": "Host node connection manager and gateway origin scope validator"
+        },
+        {
+          "path": "source/host/src/extensions/node_host/session_registry.rs",
+          "reason": "Generation-fenced live node session registry and presence projection"
         }
       ],
       "id": "OCRM-RESP-NODE-HOST-CONNECTION-001",
       "integration": {
-        "consumer": "source/host/src/extensions/node_host/gateway_connection.rs",
-        "entrypoint": "source/host/src/extensions/node_host/gateway_connection.rs::can_reuse_node_host_device_token",
-        "owner": "source/host/src/extensions/node_host/gateway_connection.rs",
-        "producer": "source/host/src/extensions/node_host/gateway_connection.rs"
+        "consumer": "source/host/app/src/main.rs",
+        "entrypoint": "source/host/src/extensions/node_host/session_registry.rs::NodeHostSessionRegistry::connect",
+        "owner": "source/host/src/extensions/node_host/session_registry.rs",
+        "producer": "transport/session owner (not yet wired for remote Gateway)"
       },
       "invariants": [
         "Gateway origin scope strictly isolates scheme, host, and port",
@@ -19460,7 +19465,7 @@
       "oracle_ids": [
         "OCRM-NODE-HOST-CONN-O01"
       ],
-      "owner_decision": "Native implementation in gateway_connection under node_host extension",
+      "owner_decision": "Native live-session implementation in session_registry under node_host; gateway_connection remains the token-scope helper",
       "postconditions": [
         "Device token re-use authorized only when all candidate URLs match saved origin scope"
       ],
@@ -19487,7 +19492,7 @@
       "responsibility_kind": "business-runtime",
       "reviewer": "xuyao@ombhrum.com",
       "risk": "High; token re-use on mismatched gateway scopes leaks node auth credentials across networks",
-      "selected_owner": "source/host/src/extensions/node_host/gateway_connection.rs",
+      "selected_owner": "source/host/src/extensions/node_host/session_registry.rs",
       "source_refs": [
         {
           "blob_sha": "fa998d7a2c98c9db4ebc1cc1e891898ca83d15f5",
@@ -19518,16 +19523,21 @@
       },
       "target": {
         "language": "Rust",
-        "path": "source/host/src/extensions/node_host/gateway_connection.rs",
-        "symbol": "can_reuse_node_host_device_token"
+        "path": "source/host/src/extensions/node_host/session_registry.rs",
+        "symbol": "NodeHostSessionRegistry"
       },
       "tests": [
-        "source/host/tests/openclaw_node_host_contract.rs::test_ocrm_node_host_gateway_auth_and_scope"
+        "source/host/tests/openclaw_node_host_contract.rs::test_ocrm_node_host_gateway_auth_and_scope",
+        "source/host/src/extensions/node_host/session_registry.rs::tests::replacement_generation_fences_predecessor_disconnect",
+        "source/host/src/extensions/node_host/session_registry.rs::tests::disconnect_clears_advertised_surface"
       ],
       "typed_contracts": [
         "NodeHostGatewayConfig",
         "gateway_origin_scope",
-        "can_reuse_node_host_device_token"
+        "can_reuse_node_host_device_token",
+        "NodeHostSessionMetadata",
+        "NodeHostSessionLease",
+        "NodeHostSessionRegistry"
       ],
       "unit_id": "OCRM-UNIT-NODE-HOST-001"
     },
