@@ -11,6 +11,14 @@
 
 ## 1. Upstream Source Audit & Line-by-Line Reading
 
+The locked-source pass re-read `src/media/anthropic-inline-images.ts` in full
+(blob `84049330c09c297ed5913a9f33905b7162a83a5d`, 96 lines). Its concrete
+behavior is a 10 MiB decoded inbound-image guard, canonical base64 handling,
+prefix MIME sniffing, supported MIME preservation, and BMP/unsupported-image
+conversion through image-ops before emitting normalized Anthropic blocks. The
+canonical row maps this source to the existing Rust owner candidate without
+upgrading production verification.
+
 The following 8 core web media loading, SSRF protection, remote workspace file streaming, and Anthropic inline content block files (totaling 2,168 lines) were audited line-by-line from the locked upstream repository and mapped into canonical inventory shard `part-0042`:
 
 | Shard | Source File | Blob SHA | Lines | Scope | Mapped Responsibility |

@@ -11,6 +11,15 @@
 
 ## 1. Upstream Source Audit & Line-by-Line Reading
 
+The locked-source pass re-read `src/media/channel-inbound-roots.ts` in full
+(blob `168b948a87dce629e8e43756ecb7665d1b88cc45`, 142 lines). It resolves
+only operator-enabled trusted official channel plugin artifacts, uses the
+current metadata snapshot without starting discovery, keeps missing optional
+artifacts non-fatal, propagates non-missing initialization failures, and
+exposes separate local and remote inbound-root resolvers. The source maps to
+the existing Rust channel-inbound-roots owner; no wiring or verification claim
+is changed.
+
 The following 9 core channel inbound roots, local roots isolation, and host read media admission policy files (totaling 1,508 lines) were audited line-by-line from the locked upstream repository and mapped into canonical inventory shard `part-0042`:
 
 | Shard | Source File | Blob SHA | Lines | Scope | Mapped Responsibility |

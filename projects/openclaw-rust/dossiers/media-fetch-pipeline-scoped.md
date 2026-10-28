@@ -11,6 +11,13 @@
 
 ## 1. Upstream Source Audit & Line-by-Line Reading
 
+The locked-source pass re-read `src/media/fetch.read-scope.ts` in full (blob
+`3c90773b2de541ce60104d3c3ac3d6d3b7e9c508`, 39 lines). Its behavior keeps
+channel read authority and cancellation active through MIME detection,
+publication and retries, forwarding the captured scope signal and current
+assertion into guarded fetches. The row maps to the existing Rust media-fetch
+owner; this source read alone does not prove a live consumer.
+
 The following 5 core media fetch pipeline, read scope, and test support files (totaling 1,631 lines) were audited line-by-line from the locked upstream repository and mapped into canonical inventory shard `part-0042`:
 
 | Shard | Source File | Blob SHA | Lines | Scope | Mapped Responsibility |
