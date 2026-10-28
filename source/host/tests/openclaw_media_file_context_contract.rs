@@ -327,6 +327,26 @@ fn test_ocrm_file_ctx_08_gateway_service_dispatch() {
     assert!(read["text"].as_str().unwrap().starts_with(
         "[Partial document: text truncated.]\ndocument body"
     ));
+    let plain_read = service
+        .dispatch_gateway(
+            "readAttachmentText",
+            &json!({"path": uploaded["path"], "agentId": "agent-a"}),
+        )
+        .expect("read handler exists")
+        .expect("plain read succeeds");
+    assert_eq!(plain_read["text"], "document body");
+    let malformed_metadata = service
+        .dispatch_gateway(
+            "readAttachmentText",
+            &json!({
+                "path": uploaded["path"],
+                "agentId": "agent-a",
+                "metadata": {"pages": {"processed": "not-a-list"}},
+            }),
+        )
+        .expect("read handler exists")
+        .expect("malformed metadata remains a safe plain read");
+    assert_eq!(malformed_metadata["text"], "document body");
 
     // Gateway dispatch for renderFileContext
     let render_args = json!({
