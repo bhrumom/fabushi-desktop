@@ -393,12 +393,12 @@
       "uncompressed_sha256": "98356eb4ca53844382d6cfa8b0bb3abc6c721dbef3e34bd5578be9dc29c4aa88"
     },
     {
-      "compressed_sha256": "4cc6629f49e4a3fd468554afff85f97ddf8598e625db14954822e901d1699457",
+      "compressed_sha256": "7311034f4e78935b137858fac63bae65a15dddd7237c3adadacb0071297d8195",
       "count": 1024,
       "first_path": "src/tts/tts-audio-store.test.ts",
       "last_path": "test/gateway-restart.test-support.ts",
       "path": "projects/openclaw-rust/inventory/shards/part-0048.jsonl.gz",
-      "uncompressed_sha256": "8ed5ab31a22876b6cc5fc8148d81d23882976946df3a349d027154c67576e7a6"
+      "uncompressed_sha256": "4a2812f644d57000ff468d4dd17dd8bf9d9e4af264cc3d33b1bdc0a4a460d8eb"
     },
     {
       "compressed_sha256": "4b85b31bb53f90a043ebc6f3eadbe06f74d08a87b1f6543fb82d50772a64c326",
