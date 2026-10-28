@@ -139,20 +139,25 @@ fn non_negative_integer(object: &serde_json::Map<String, Value>, key: &str) -> R
 fn bounded_result_json(value: Option<&Value>) -> Result<String, String> {
     let value = value
         .and_then(Value::as_str)
-        .filter(|value| !value.is_empty() && value.len() <= WORKER_RESULT_JSON_MAX_BYTES)
+        .filter(|value| !value.is_empty() && value.as_bytes().len() <= WORKER_RESULT_JSON_MAX_BYTES)
         .ok_or_else(|| "INVALID_REQUEST: resultJson must be bounded JSON".to_string())?;
     let parsed: Value = serde_json::from_str(value)
         .map_err(|_| "INVALID_REQUEST: resultJson must be valid JSON".to_string())?;
     if !parsed.is_object() {
         return Err("INVALID_REQUEST: resultJson must be a JSON object".into());
     }
-    Ok(value.to_string())
+    Ok(value.to_owned())
 }
 
 fn bounded_error_text(value: Option<&Value>) -> Result<String, String> {
     let value = value
         .and_then(Value::as_str)
-        .filter(|value| !value.is_empty() && value.len() <= WORKER_ERROR_TEXT_MAX_BYTES && !value.contains(['\r', '\n']))
+        .filter(|value| {
+            !value.is_empty()
+                && value.as_bytes().len() <= WORKER_ERROR_TEXT_MAX_BYTES
+                && !value.contains('\r')
+                && !value.contains('\n')
+        })
         .ok_or_else(|| "INVALID_REQUEST: errorText must be bounded single-line text".to_string())?;
     Ok(value.to_string())
 }
