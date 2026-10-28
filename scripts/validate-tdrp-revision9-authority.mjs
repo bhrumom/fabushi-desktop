@@ -60,11 +60,32 @@ async function gitlabRaw(project, sha, file) {
 }
 
 const lock=await readJson('projects/telegram-desktop-rust/upstream.lock.json');
+const liveBranchName=lock.upstream?.discovery_ref?.startsWith('refs/heads/')
+  ? lock.upstream.discovery_ref.slice('refs/heads/'.length)
+  : null;
+fail(Boolean(liveBranchName),'upstream discovery_ref must identify a live branch');
+const liveUpstream=await get(`https://api.github.com/repos/${lock.upstream.repository}/branches/${encodeURIComponent(liveBranchName)}`);
+fail(liveUpstream.commit?.sha===lock.upstream.commit,`live upstream ref moved: ${lock.upstream.discovery_ref} is ${liveUpstream.commit?.sha}, lock pins ${lock.upstream.commit}`);
+fail(liveUpstream.commit?.commit?.tree?.sha===lock.upstream.tree,`live upstream tree moved: ${lock.upstream.tree} != ${liveUpstream.commit?.commit?.tree?.sha}`);
 const schema=await readJson('projects/telegram-desktop-rust/contracts/parity-ledger.schema.json');
 const spec=await read('docs/specs/telegram-desktop-rust-equivalence-migration.md');
 const rtm=await read('projects/fabushi-communication-platform/quality/requirements-traceability-matrix.md');
 const ledger=await readJson('projects/telegram-desktop-rust/parity-ledger.json');
 const acquisitionInventory=await readJson('projects/telegram-desktop-rust/inventory/build-time-acquisitions.json');
+const inventoryIndex=await readJson('projects/telegram-desktop-rust/inventory/index.json');
+if (requireAccepted) {
+  // Reject an open baseline before discovery-only checks can mask the acceptance failure.
+  fail(lock.upstream?.accepted===true,'accepted mode requires upstream.accepted=true');
+  fail(lock.acceptance?.accepted===true,'accepted mode requires acceptance.accepted=true');
+  fail(lock.acceptance?.baseline_ready===true,'accepted mode requires baseline_ready=true');
+  fail(ledger.coverage?.unknown===0,'G-INVENTORY unknown must be 0');
+  fail(ledger.coverage?.unread===0,'G-INVENTORY unread must be 0');
+  fail(ledger.coverage?.omitted===0,'G-INVENTORY omitted must be 0');
+  fail(ledger.coverage?.unmapped_responsibilities===0,'G-TRACEABILITY unmapped responsibilities must be 0');
+  fail(ledger.target_commit===((process.env.TDRP_TARGET_SHA||process.env.GITHUB_SHA)||ledger.target_commit),'G-EVIDENCE ledger target_commit must equal exact GitHub Actions HEAD');
+  fail(Array.isArray(ledger.rows)&&ledger.rows.length>0,'G-FILE/G-TRACEABILITY ledger cannot be empty at closure');
+}
+
 
 fail(lock.project_id==='TDRP-001' && lock.spec_revision===9,'lock is not TDRP Revision 9');
 fail(schema.properties?.spec_revision?.const===9,'ledger schema is not Revision 9');
@@ -120,7 +141,14 @@ for (const scan of externalScans) {
   fail(!externalScanIds.has(scan.id),'duplicate external nested scan id: '+scan.id);
   externalScanIds.add(scan.id);
   fail(/^[0-9a-f]{40}$/.test(scan.commit),'external nested scan commit is not immutable: '+scan.id);
-  fail(scan.status==='complete-live-scan-dispositioned','external nested scan is not closed: '+scan.id);
+  const liveScanComplete=scan.status==='complete-live-scan-dispositioned';
+  const pendingHistoricalScan=scan.status==='historical-only-pending-current-head-revalidation';
+  fail(liveScanComplete || (
+    pendingHistoricalScan
+    && lock.upstream.accepted===false
+    && lock.acceptance?.accepted===false
+    && lock.acceptance?.baseline_ready===false
+  ),'external nested scan is not closed: ' + scan.id);
   const dispositionTotal=Object.values(scan.disposition_counts||{}).reduce((sum,value)=>sum+value,0);
   fail(dispositionTotal===scan.acquisition_candidates,'external nested scan dispositions do not cover every candidate: '+scan.id);
   fail(scan.gitlinks===0,'external nested scan discovered unexpanded gitlinks: '+scan.id);
@@ -147,9 +175,9 @@ const qtReachability=recursiveReachability.qt_superproject;
 fail(qtReachability?.repository==='https://github.com/qt/qt5','Qt reachability authority missing');
 const qtEvidenceByPath=new Map((qtReachability.accepted_upstream_evidence||[]).map(item=>[item.path,item]));
 const expectedQtEvidence=[
-  ['Telegram/build/prepare/prepare.py','4063cc766ffb60c018b7a6ad456453ec585d5566'],
-  ['Telegram/build/docker/centos_env/Dockerfile','f72162089985263493c6e3f7e23b566f5df8e454'],
-  ['snap/snapcraft.yaml','38f0eb362832c3623b868c9aa90c03bc4f426d01']
+  ['Telegram/build/prepare/prepare.py','a9f3dd2d9e4020df958ab5af942376177d66c78b'],
+  ['Telegram/build/docker/centos_env/Dockerfile','3fea9e6866e0ea6351f8a13ebb825ebf49cadfc2'],
+  ['snap/snapcraft.yaml','a181d828f25d901303f7221824ac30b0ff5e773a']
 ];
 for (const [sourcePath,blob] of expectedQtEvidence) {
   const evidence=qtEvidenceByPath.get(sourcePath);
@@ -170,7 +198,8 @@ for (const module of ['qtbase','qtdeclarative','qtimageformats','qtshadertools',
   fail(snapQt.includes('      - '+module),'accepted Snap Qt submodule selection missing '+module);
 }
 fail(prepareQt.includes('git clone https://github.com/desktop-app/qt6_windows7_patches.git qt6_windows7'),'accepted prepare.py Qt 6 Windows compatibility acquisition drift');
-fail(prepareQt.includes('git checkout bf64e7264237ffd371493f1780ef71d3f41373c9'),'accepted prepare.py Qt 6 Windows compatibility pin drift');
+fail(prepareQt.includes('git checkout 9ce1ffe051161a22f7e78f715b042c773f868e59'),'accepted prepare.py Qt 6 Windows compatibility pin drift');
+fail(prepareQt.includes('git checkout 9fd174a91e6155d1006c5f427366b23006f5d899'),'accepted prepare.py tg_angle pin drift');
 fail(!prepareQt.includes('qttools'),'prepare.py unexpectedly initializes qttools');
 fail(!dockerQt.includes('qttools'),'Docker Qt build unexpectedly initializes qttools');
 fail(!snapQt.includes('      - qttools'),'Snap Qt build unexpectedly initializes qttools');
@@ -577,8 +606,8 @@ for (const row of ledger.rows) {
     if (prior && prior!==row.responsibility_id) fail(false,'target symbol has multiple responsibility owners without explicit split: '+key);
     targetSymbolOwners.set(key,row.responsibility_id);
   }
-  const traceText=rtm+'\n'+await read(row.source_analysis_path);
-  for (const id of [...row.requirement_ids,...row.oracle_ids,...row.invariant_ids]) fail(traceText.includes(id),'traceability id '+id+' missing from RTM/dossier for '+row.responsibility_id);
+  const traceText=rtm+'\n'+await read(row.source_analysis_path)+'\n'+combinedTarget;
+  for (const id of [...row.requirement_ids,...row.oracle_ids,...row.invariant_ids]) fail(traceText.includes(id),'traceability id '+id+' missing from RTM/source or target dossier for '+row.responsibility_id);
   if (['implemented','verified'].includes(row.implementation_status)) {
     fail(row.production_entrypoints.length>0,'implemented row lacks shipping entrypoint: '+row.responsibility_id);
     fail(row.production_evidence.length>0,'implemented row lacks production evidence: '+row.responsibility_id);
@@ -603,8 +632,9 @@ fail(commit.tree?.sha===u.tree,'upstream tree mismatch');
 const branch=await get(`https://api.github.com/repos/${u.repository}/branches/dev`);
 fail(branch.commit?.sha===u.commit,`upstream dev advanced to ${branch.commit?.sha}; rebaseline required`);
 
-const rootTree=await ghTree(u.repository,u.commit);
+const rootTree=await ghTree(u.repository,u.tree);
 fail(rootTree.truncated===false,'root recursive tree truncated');
+fail(rootTree.sha===u.tree,'root recursive tree SHA mismatch');
 const tree=rootTree.tree||[];
 const blobs=tree.filter(e=>e.type==='blob');
 const links=tree.filter(e=>e.mode==='160000');
@@ -614,9 +644,39 @@ fail(links.length===lock.observed_root_inventory.direct_gitlink_count,'direct gi
 fail(blobs.filter(e=>e.path.startsWith('Telegram/SourceFiles/')).length===lock.observed_root_inventory.sourcefiles_blob_count,'SourceFiles count drift');
 fail(blobs.filter(e=>e.path.startsWith('Telegram/Resources/')).length===lock.observed_root_inventory.resource_blob_count,'Resources count drift');
 
+const previousRootTree=await ghTree(u.repository,lock.previous_historical_baseline.tree);
+fail(previousRootTree.truncated===false,'previous baseline recursive tree truncated');
+fail(previousRootTree.sha===lock.previous_historical_baseline.tree,'previous baseline tree SHA mismatch');
+const previousRootEntries=previousRootTree.tree||[];
+const previousRootNonDirectoryEntries=previousRootEntries.filter(e=>e.type!=='tree');
+const removedPaths=lock.delta_from_previous_baseline?.removed_paths||[];
+const addedPaths=lock.delta_from_previous_baseline?.added_paths||[];
+fail(lock.delta_from_previous_baseline?.base_commit===lock.previous_historical_baseline.commit,'previous baseline commit mismatch');
+fail(lock.delta_from_previous_baseline?.base_tree===lock.previous_historical_baseline.tree,'previous baseline tree mismatch');
+fail(lock.delta_from_previous_baseline?.current_commit===u.commit&&lock.delta_from_previous_baseline?.current_tree===u.tree,'current upstream delta identity mismatch');
+fail(removedPaths.length===lock.delta_from_previous_baseline.deleted_path_count,'removed path count drift');
+fail(addedPaths.length===lock.delta_from_previous_baseline.added_path_count,'added path count drift');
+for (const added of addedPaths) {
+  fail(typeof added?.path==='string'&&/^[0-9a-f]{40}$/.test(added.current_blob_sha||''),'added root path record malformed');
+  fail(!previousRootEntries.some(e=>e.path===added.path),'added root path already existed in previous authority: '+added.path);
+  const current=tree.find(e=>e.path===added.path);
+  fail(current?.type==='blob'&&current.sha===added.current_blob_sha,'added root blob does not match current authority: '+added.path);
+}
+for (const removed of removedPaths) {
+  const previous=previousRootEntries.find(e=>e.path===removed.path);
+  fail(previous?.type==='blob'&&previous.sha===removed.previous_blob_sha,'removed root blob does not match previous authority: '+removed.path);
+  fail(!tree.some(e=>e.path===removed.path),'removed root path remains in current authority: '+removed.path);
+}
+const currentRootNonDirectoryEntries=tree.filter(e=>e.type!=='tree').length;
+fail(previousRootNonDirectoryEntries.length-currentRootNonDirectoryEntries===removedPaths.length-addedPaths.length,'root non-directory delta is not explained by removed/added path records');
+
 const gmRaw=await get(`https://raw.githubusercontent.com/${u.repository}/${u.commit}/.gitmodules`,false);
 const gm=parseGitmodules(gmRaw);
 const pins=new Map(lock.direct_gitlinks.map(x=>[x.path,x]));
+const previousRootLinks=previousRootEntries.filter(e=>e.mode==='160000');
+const previousLinkPins=new Map(previousRootLinks.map(e=>[e.path,e.sha]));
+fail(previousRootLinks.length===links.length,'previous baseline direct gitlink count drift');
+fail(links.every(g=>previousLinkPins.has(g.path)),'direct gitlink paths changed since previous baseline');
 fail(pins.size===links.length,'lock/direct gitlink cardinality mismatch');
 const nested=[];
 const recursiveInventory=[
@@ -625,6 +685,7 @@ const recursiveInventory=[
   }))
 ];
 const directComponentCounts=[];
+const directTreeByMount=new Map();
 for (const g of links) {
   const p=pins.get(g.path);
   fail(p && p.commit===g.sha,'gitlink pin mismatch '+g.path);
@@ -632,6 +693,7 @@ for (const g of links) {
   fail(repo===p.repository,'gitlink repository mismatch '+g.path);
   const td=await ghTree(repo,g.sha);
   fail(td.truncated===false,'truncated direct gitlink '+g.path);
+  directTreeByMount.set(g.path,td);
   const componentEntries=(td.tree||[]).filter(e=>e.type!=='tree');
   directComponentCounts.push({mount:g.path,repository:repo,commit:g.sha,entries:componentEntries.length});
   recursiveInventory.push(...componentEntries.map(e=>({
@@ -639,11 +701,32 @@ for (const g of links) {
   })));
   for (const e of td.tree||[]) if (e.mode==='160000') nested.push({parent:`${repo}@${g.sha}`,path:e.path,commit:e.sha});
 }
+const currentDirectNonDirectoryCount=directComponentCounts.reduce((sum,item)=>sum+item.entries,0);
+let previousDirectNonDirectoryCount=0;
+const previousNested=[];
+for (const g of links) {
+  const oldSha=previousLinkPins.get(g.path);
+  const componentRepository=ghRepo(gm.get(g.path)||'');
+  let oldTree;
+  if (oldSha===g.sha) {
+    oldTree=directTreeByMount.get(g.path);
+  } else {
+    oldTree=await ghTree(componentRepository,oldSha);
+    fail(oldTree.truncated===false,'truncated previous direct gitlink '+g.path);
+  }
+  const oldEntries=oldTree.tree||[];
+  previousDirectNonDirectoryCount+=oldEntries.filter(e=>e.type!=='tree').length;
+  for (const e of oldEntries) if (e.mode==='160000') previousNested.push({repository:componentRepository,path:e.path,commit:e.sha});
+}
+const nestedSignature=items=>items.map(n=>(n.repository||n.parent.slice(0,n.parent.lastIndexOf('@')))+'|'+n.path+'|'+n.commit).sort();
+fail(JSON.stringify(nestedSignature(previousNested))===JSON.stringify(nestedSignature(nested)),'nested gitlink pins changed since previous baseline; historical recursive count cannot be reused');
+const directComponentDelta=currentDirectNonDirectoryCount-previousDirectNonDirectoryCount;
 for (const k of lock.known_nested_gitlinks.filter(x=>!x.repository.startsWith('gitlab.com/'))) {
   fail(nested.some(n=>n.parent===k.parent&&n.path===k.path&&n.commit===k.commit),'missing known nested gitlink '+k.parent+':'+k.path);
 }
 const unexpected=nested.filter(n=>!lock.known_nested_gitlinks.some(k=>k.parent===n.parent&&k.path===n.path&&k.commit===n.commit));
 fail(unexpected.length===0,'unexpected nested gitlinks '+JSON.stringify(unexpected));
+fail(nested.length===lock.known_nested_gitlinks.length,'nested gitlink count drift');
 
 const githubNestedCounts=[];
 for (const k of lock.known_nested_gitlinks.filter(x=>!x.repository.startsWith('gitlab.com/'))) {
@@ -679,7 +762,37 @@ recursiveInventory.push(...childEntries.map(e=>({
   path:e.path,mode:e.mode,type:e.type,object:e.sha,size:e.size??null
 })));
 
-fail(recursiveInventory.length===lock.coverage.recursive_source_entries_total,`recursive inventory count drift ${recursiveInventory.length} != ${lock.coverage.recursive_source_entries_total}`);
+const recursiveCountBreakdown={
+  root_non_directory_entries:currentRootNonDirectoryEntries,
+  direct_gitlink_non_directory_entries:currentDirectNonDirectoryCount,
+  github_nested_non_directory_entries:githubNestedCounts.reduce((sum,item)=>sum+item.entries,0),
+  gitlab_cppgir_non_directory_entries:cppTree.filter(e=>e.type!=='tree').length,
+  cppgir_child_non_directory_entries:childEntries.length,
+  total:recursiveInventory.length
+};
+const previousEvidence=inventoryIndex.latest_recursive_evidence?.previous_historical_evidence;
+fail(previousEvidence?.upstream_commit===lock.previous_historical_baseline.commit,'historical recursive evidence is not bound to previous baseline');
+fail(previousEvidence?.evidence_status==='historical-only','previous recursive evidence must remain historical-only');
+const previousReconciledTotal=recursiveInventory.length+removedPaths.length-addedPaths.length-directComponentDelta;
+fail(previousReconciledTotal===previousEvidence.recursive_non_directory_entries,'previous recursive count reconciliation drift '+previousReconciledTotal+' != '+previousEvidence.recursive_non_directory_entries+'; breakdown='+JSON.stringify(recursiveCountBreakdown));
+const recursiveCountReconciliation={
+  status:'reconciled-exactly',
+  previous_upstream_commit:lock.previous_historical_baseline.commit,
+  previous_recursive_non_directory_entries:previousEvidence.recursive_non_directory_entries,
+  current_upstream_commit:u.commit,
+  current_recursive_non_directory_entries:recursiveInventory.length,
+  previous_root_non_directory_entries:previousRootNonDirectoryEntries.length,
+  current_root_non_directory_entries:currentRootNonDirectoryEntries,
+  removed_root_paths:removedPaths.map(item=>({path:item.path,previous_blob_sha:item.previous_blob_sha})),
+  added_root_paths:addedPaths,
+  previous_direct_gitlink_non_directory_entries:previousDirectNonDirectoryCount,
+  current_direct_gitlink_non_directory_entries:currentDirectNonDirectoryCount,
+  direct_component_non_directory_delta:directComponentDelta,
+  nested_gitlink_pins_unchanged:true,
+  previous_reconciled_total:previousReconciledTotal,
+  explained_recursive_entry_delta:previousEvidence.recursive_non_directory_entries-recursiveInventory.length
+};
+fail(recursiveInventory.length===lock.coverage.recursive_source_entries_total,'recursive inventory count drift '+recursiveInventory.length+' != '+lock.coverage.recursive_source_entries_total+'; breakdown='+JSON.stringify(recursiveCountBreakdown)+'; reconciliation='+JSON.stringify(recursiveCountReconciliation));
 
 const attrs=await get(`https://raw.githubusercontent.com/${u.repository}/${u.commit}/.gitattributes`,false);
 fail(!/filter=lfs|diff=lfs|merge=lfs/.test(attrs),'Git LFS attributes detected; explicit LFS closure required');
@@ -696,29 +809,20 @@ await fs.writeFile(path.join(root,'artifacts/tdrp-authority/upstream-root-invent
 await fs.writeFile(path.join(root,'artifacts/tdrp-authority/upstream-recursive-inventory.json'),JSON.stringify({
   project_id:'TDRP-001',spec_revision:9,root:{repository:u.repository,commit:u.commit,tree:u.tree},
   counts:{entries:recursiveInventory.length,direct_components:directComponentCounts,github_nested_components:githubNestedCounts,
-    gitlab_cppgir_entries:cppTree.filter(e=>e.type!=='tree').length,cppgir_child_entries:childEntries.length},
+    gitlab_cppgir_entries:cppTree.length,gitlab_cppgir_non_directory_entries:cppTree.filter(e=>e.type!=='tree').length,cppgir_child_entries:childEntries.length,
+    recursive_count_breakdown:recursiveCountBreakdown,recursive_count_reconciliation:recursiveCountReconciliation},
   entries:recursiveInventory
 },null,2)+'\n');
 const report={
   project_id:'TDRP-001',spec_revision:9,target_commit:(process.env.TDRP_TARGET_SHA||process.env.GITHUB_SHA)||null,
   upstream_commit:u.commit,upstream_tree:u.tree,root_tree_truncated:false,
   root_entries:tree.length,root_blobs:blobs.length,direct_gitlinks:links.length,recursive_non_directory_entries:recursiveInventory.length,
+  recursive_count_breakdown:recursiveCountBreakdown,recursive_count_reconciliation:recursiveCountReconciliation,
   direct_component_counts:directComponentCounts,github_nested_gitlinks:nested,github_nested_component_counts:githubNestedCounts,
-  gitlab_cppgir_entries:cppTree.length,cppgir_child:{path:childPath,repository:childRepo,commit:cppNested[0].id,entries:childEntries.length},
+  gitlab_cppgir_entries:cppTree.length,gitlab_cppgir_non_directory_entries:cppTree.filter(e=>e.type!=='tree').length,cppgir_child:{path:childPath,repository:childRepo,commit:cppNested[0].id,entries:childEntries.length},
   build_time_pin_changes:lock.build_time_pin_changes,build_time_acquisition_inventory:acquisitionInventory.discovery,coverage:lock.coverage,ledger_coverage:ledger.coverage,
   baseline_accepted:u.accepted,source_closure_ready:lock.acceptance.baseline_ready
 };
 await fs.writeFile(path.join(root,'artifacts/tdrp-authority/authority-report.json'),JSON.stringify(report,null,2)+'\n');
 
-if (requireAccepted) {
-  fail(u.accepted===true,'accepted mode requires upstream.accepted=true');
-  fail(lock.acceptance.accepted===true,'accepted mode requires acceptance.accepted=true');
-  fail(lock.acceptance.baseline_ready===true,'accepted mode requires baseline_ready=true');
-  fail(ledger.coverage.unknown===0,'G-INVENTORY unknown must be 0');
-  fail(ledger.coverage.unread===0,'G-INVENTORY unread must be 0');
-  fail(ledger.coverage.omitted===0,'G-INVENTORY omitted must be 0');
-  fail(ledger.coverage.unmapped_responsibilities===0,'G-TRACEABILITY unmapped responsibilities must be 0');
-  fail(ledger.target_commit===((process.env.TDRP_TARGET_SHA||process.env.GITHUB_SHA)||ledger.target_commit),'G-EVIDENCE ledger target_commit must equal exact GitHub Actions HEAD');
-  fail(ledger.rows.length>0,'G-FILE/G-TRACEABILITY ledger cannot be empty at closure');
-}
 console.log(JSON.stringify(report,null,2));

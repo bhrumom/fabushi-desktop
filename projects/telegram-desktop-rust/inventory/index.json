@@ -4,90 +4,83 @@
   "spec_revision": 9,
   "upstream": {
     "repository": "telegramdesktop/tdesktop",
-    "commit": "351204f3695b4a39bc3f4d2f230c061b9a01fe2a",
-    "tree": "5151db79560ed40bf3802482fcfb74b950be6c40",
+    "commit": "a7f453612f4896ac04d0007a36ab0d377e5bcbcf",
+    "tree": "c539eabfb05e7dcaa84821ac44c35cdfb6551ae5",
     "baseline_identity_accepted": false
   },
   "inventory": {
-    "root_non_directory_entries": 6717,
-    "recursive_non_directory_entries": 16202,
+    "root_non_directory_entries": 6893,
+    "recursive_non_directory_entries": 16379,
     "semantic_read_complete": false,
     "responsibility_decomposition_complete": false,
-    "unknown_minimum": 16175,
-    "unread_minimum": 16148,
+    "unknown_minimum": 16131,
+    "unread_minimum": 16106,
     "omitted_known": 0
   },
   "latest_recursive_evidence": {
-    "run_id": 39267321482,
+    "run_id": 40099678322,
     "run_attempt": 1,
-    "job_id": 118110183925,
-    "head_sha": "5221b86fe51d7caf0a1c16186cbdc9b4a8daece3",
-    "artifact_id": 12193803207,
-    "artifact_name": "tdrp-revision9-authority-5221b86fe51d7caf0a1c16186cbdc9b4a8daece3",
-    "artifact_digest": "sha256:7526811deaba969c6cf3c4a442a79ba5a2020811a993655c3dac457b146db9e0",
-    "artifact_files": [
-      "upstream-root-inventory.json",
-      "upstream-recursive-inventory.json",
-      "authority-report.json",
-      "build-time-acquisition-candidates.txt",
-      "external-recursive-child-acquisition-candidates.txt",
-      "external-recursive-child-discovery.json",
-      "root-open-authority-discovery.json",
-      "root-tool-authority-discovery.json"
-    ],
-    "supporting_artifacts": [
-      {
-        "kind": "recursive-root-aggregate",
-        "job_id": 118110671436,
-        "artifact_id": 12192619393,
-        "artifact_name": "tdrp-recursive-root-aggregate-5221b86fe51d7caf0a1c16186cbdc9b4a8daece3",
-        "artifact_digest": "sha256:c44a0247eb8977732373d08e06bf8cb52f4a72e2b22d10a587c451162a077b0e"
+    "job_id": 120889067452,
+    "head_sha": "f53ed57daae12397603fd2fbe50c541542a903dc",
+    "artifact_id": 12562720276,
+    "artifact_name": "tdrp-revision9-authority-f53ed57daae12397603fd2fbe50c541542a903dc",
+    "artifact_digest": "sha256:c97b4a54ae59a02f1d144c8c595795d4aa948e3396a1989507de381b3a3d19a2",
+    "recursive_closure_artifact": {
+      "id": 12562491492,
+      "digest": "sha256:ff4401a3b51459a372dd4652fc8977b267dc8a42fb76c55d1b709f61e2b4b1ba"
+    },
+    "recursive_reachability_artifact": {
+      "id": 12561738660,
+      "digest": "sha256:b11f0a350e4f050b00d81792746eb307ba9ff8450d30c0a6b092494355d22910"
+    },
+    "boost_reachability_artifact": {
+      "id": 12561899555,
+      "digest": "sha256:8a595e7e74ff3d2fc0953a3ebb4a0edbcb4562fb7fd51bdbaad6721773333618"
+    },
+    "evidence_status": "historical-only-after-receipt-commit",
+    "upstream_commit": "a7f453612f4896ac04d0007a36ab0d377e5bcbcf",
+    "upstream_tree": "c539eabfb05e7dcaa84821ac44c35cdfb6551ae5",
+    "recursive_non_directory_entries": 16379,
+    "source_closure_ready": false,
+    "rust_run_id": 40099678228,
+    "rust_jobs": "6/6 success",
+    "rust_artifact": {
+      "id": 12561603959,
+      "digest": "sha256:8fce76cd2a6c41ba841e2f1d7cf420d72c095eeaea6688eef51382ac73538352"
+    },
+    "official_mcp_marketplace_run_id": 40099678433,
+    "official_mcp_marketplace_jobs": "1/1 success",
+    "previous_historical_evidence": {
+      "status": "historical-only",
+      "runner": "github-actions",
+      "validation_head_sha": "94de4915c1828a5abc651b4ba282af421d6e23e1",
+      "upstream_commit": "83f9f56347cc3421c1e3ef537c7bb6dd06ce7cd0",
+      "upstream_tree": "bb0159bfedb38dd96e579af4ffe6360b6beb7332",
+      "recursive_non_directory_entries": 16377,
+      "tdrp_run_id": 39898075641,
+      "tdrp_jobs": "61/61 success",
+      "source_authority_artifact": {
+        "id": 12477538096,
+        "digest": "sha256:957966daab1d7907d0cabb9e3410b3d1f8f38f0eb38f4b30f8151f82480626eb"
       },
-      {
-        "kind": "recursive-child-aggregate",
-        "job_id": 118111905184,
-        "artifact_id": 12193158582,
-        "artifact_name": "tdrp-recursive-child-aggregate-5221b86fe51d7caf0a1c16186cbdc9b4a8daece3",
-        "artifact_digest": "sha256:6eaf637f330f01469dee3771e90e904f3f36d079e57217ae67d5373af1164e63"
+      "recursive_closure_artifact": {
+        "id": 12477394597,
+        "digest": "sha256:0a08735564b448a06dd49f6dfcbbd3829ddc28ddb987731362d7c08398bab167"
       },
-      {
-        "kind": "recursive-next-aggregate",
-        "job_id": 118114082297,
-        "artifact_id": 12193324860,
-        "artifact_name": "tdrp-recursive-next-aggregate-5221b86fe51d7caf0a1c16186cbdc9b4a8daece3",
-        "artifact_digest": "sha256:1afe55fae04e55577cc7c35254678f0b5ccfbde8b75b7821c2d47bb09471dd02"
+      "recursive_reachability_artifact": {
+        "id": 12477353200,
+        "digest": "sha256:6d969c50cd781fdf4fd6655415cd2a5a72aae14685775348c4ade2e2db12f228"
       },
-      {
-        "kind": "recursive-fixed-point",
-        "job_id": 118114176711,
-        "artifact_id": 12194136074,
-        "artifact_name": "tdrp-recursive-closure-5221b86fe51d7caf0a1c16186cbdc9b4a8daece3",
-        "artifact_digest": "sha256:87d18391079527ffce7a4d588e8dec08579e354a1ad02612a511e590e31233b2"
+      "rust_run_id": 39898075663,
+      "rust_jobs": "6/6 success",
+      "rust_artifact": {
+        "id": 12477162917,
+        "digest": "sha256:2bd9915e9f3fdf6480f88ef7f5b8df95609c0d9c9897e845616bcba56a15399a"
       },
-      {
-        "kind": "recursive-build-reachability",
-        "job_id": 118114339699,
-        "artifact_id": 12193419380,
-        "artifact_name": "tdrp-recursive-reachability-5221b86fe51d7caf0a1c16186cbdc9b4a8daece3",
-        "artifact_digest": "sha256:1fd0f2411814962d74f2f8b991e6fd9a01bfc7c1da67e9590b8e9c49d5bf6d89"
-      },
-      {
-        "kind": "root-source-archives",
-        "job_id": 118110183972,
-        "artifact_id": 12192789573,
-        "artifact_name": "tdrp-root-source-archives-5221b86fe51d7caf0a1c16186cbdc9b4a8daece3",
-        "artifact_digest": "sha256:d461dd8f78d7e25b5ada127aaf10e08abedb1dc7c77d80d478cd235336a2cb2d"
-      },
-      {
-        "kind": "boost-build-reachability",
-        "job_id": 118110617587,
-        "artifact_id": 12193702905,
-        "artifact_name": "tdrp-boost-reachability-5221b86fe51d7caf0a1c16186cbdc9b4a8daece3",
-        "artifact_digest": "sha256:a5e1383f1a6e51093a92acc383d6bfb52e4e4f9cfec1d99e3739cf92d7b1af33"
-      }
-    ],
-    "evidence_status": "historical-only",
-    "upstream_commit": "0a11537c220df35fe59a96aebe413b1e52bc6e47"
+      "baseline_identity_accepted": false,
+      "source_closure_ready": false,
+      "evidence_status": "historical-only"
+    }
   },
   "closure_rules": {
     "executable_runner": "github-actions",
@@ -97,5 +90,57 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Live rebaseline candidate telegramdesktop/tdesktop@351204f3695b4a39bc3f4d2f230c061b9a01fe2a (tree 5151db79560ed40bf3802482fcfb74b950be6c40) remains source-closure open. Actual recursive array entry 27 .agents/skills/code-health/scripts/cpp_text.py@366f173248add43c34317c8fe17d9ca31d46b1d4 is independently mapped to existing source-neutral repository responsibility/quality/task-evidence governance: line-provenance-preserving comment/text normalization, bounded include/identifier/function/class heuristics, direct metrics/includes/clones/report/review/atlas/health consumer boundaries and explicit non-compiler/unsupported-syntax semantics are preserved without copying Telegram Python code-health runtime or creating a second parser/findings/ownership/task owner. Recursive inventory remains 16,202 with unknown=16,175, unread=16,148, omitted=0; baseline acceptance remains fail-closed."
+  "note": "Strict245 EUFB10 TTF/compiled-Euler-bold-Fraktur-font/metrics/style-link/rendering/license/install/packaging provenance. Counters unknown=16131 unread=16106 omitted=0 responsibilities=263. root/c154-parent=23744-byte blob 0c09926d; c154/pinned=23860-byte blob 935f84bd; c154 changes name plus head checksumAdjustment/modified timestamp bookkeeping while preserving the other 15 sfnt tables. Pinned sfnt has 17 tables/97 glyphs/unitsPerEm=2048/cmap=97, bbox -51,-457..2537,1516, hhea 1487/-473/0, OS/2 weight=400; compiled eufb10.def has 92 metrics/0 kerns/0 next-larger links; eufm10.def declares bold(eufb10), and mathfrak maps to eufm10. Builtin FontSet registers both; OFL marks eufb10/eufm10 Reserved Font Names and c154 uses the TDesktop namespace; bundled.qrc ships eufb10 in external_microtex_bundled.rcc. Parent e40549e8 TDRP 40223320224 61/61 success, Rust 40223320234 6/6 success and MCP 40223320279 1/1 success are terminal-success. Next res/fonts/euler/eufm10.ttf@93c3452962c71ac7364c6184a58b2ef06b337c79.",
+  "current_head_validation_evidence": {
+    "status": "pending-current-head-revalidation",
+    "head_sha": null,
+    "recursive_total": 16379,
+    "open": {
+      "authorities": 95,
+      "gitlinks": 133,
+      "acquisition_candidates": 3865,
+      "generated_inputs": 4674,
+      "resource_inputs": 4602,
+      "tool_inputs": 4255
+    },
+    "baseline_identity_accepted": false,
+    "source_closure_ready": false
+  },
+  "target_commit": "e40549e8cdd408aba2e8c58870f657367c2938d5",
+  "last_completed_parent_head_validation": {
+    "evidence_status": "historical-only-after-receipt-commit",
+    "head_sha": "e40549e8cdd408aba2e8c58870f657367c2938d5",
+    "upstream_commit": "a7f453612f4896ac04d0007a36ab0d377e5bcbcf",
+    "upstream_tree": "c539eabfb05e7dcaa84821ac44c35cdfb6551ae5",
+    "recursive_non_directory_entries": 16379,
+    "tdrp_run_id": 40223320224,
+    "tdrp_jobs": "61/61 success",
+    "source_authority_artifact": {
+      "id": 12610083306,
+      "digest": "sha256:5579f0ce38086dfd2c5d96c3ac002342588716ba408f766dfb54ee1314d0ad10"
+    },
+    "recursive_closure_artifact": {
+      "id": 12609854180,
+      "digest": "sha256:a225cb97b437112c3c6c5259397e46f2149d5e7c88cc2e142f90aae06e68b5f4"
+    },
+    "recursive_reachability_artifact": {
+      "id": 12610143741,
+      "digest": "sha256:92c41352325dd87463779f4cd7a8c61fc9aeb6c906a3fba99c4eba942b3d9a2d"
+    },
+    "boost_reachability_artifact": {
+      "id": 12610706013,
+      "digest": "sha256:457dff07a14d8d5a5368e510ef54a638d8b3fc97b06de3287cb6d132cb9e9b7c"
+    },
+    "rust_run_id": 40223320234,
+    "rust_jobs": "6/6 success",
+    "rust_artifact": {
+      "id": 12610198039,
+      "digest": "sha256:7a4d0349e9506a07056b1cb29b44574201a8e597124d4bb7c633240e804d767b"
+    },
+    "official_mcp_marketplace_run_id": 40223320279,
+    "official_mcp_marketplace_jobs": "1/1 success",
+    "baseline_identity_accepted": false,
+    "source_closure_ready": false,
+    "release_acceptance": "not accepted"
+  }
 }

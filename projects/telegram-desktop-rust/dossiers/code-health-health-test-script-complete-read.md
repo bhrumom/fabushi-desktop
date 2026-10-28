@@ -51,3 +51,6 @@ The equivalent implementation is source-neutral test strategy/evidence, not a co
 ## Failure boundaries
 
 A harness pass cannot establish production/runtime behavior, configured-build truth, packaging, or release acceptance. Missing negative controls, mutable/non-exact authority used as canonical evidence, a test helper mutating canonical state, collapsed warning/error or present/resolved/unknown semantics, unsafe temporary-worktree removal, or copying upstream Python test infrastructure as a Fabushi product owner are non-passing.
+
+## Live rebaseline fe4afa4fbe9f
+The source blob changed to `ae0255931760d6164992e525a502fccca37f5507`. The added regression asserts harness report files are produced and records unavailable coverage in the fixture. Existing integrated-regression qualification remains the owner. The new harness implementation/test sources remain separate unread inventory entries.

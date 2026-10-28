@@ -1,0 +1,51 @@
+# desktop-app/MicroTeX readme/samples/sample_4.svg complete read — strict208
+
+Authority: PR #154 lease e25f2c89b530867f3a5a7abb23667a0f0f62f412; live main 16aae12ea258f6a872a46aa47824766f64e1bdca; accepted/live tdesktop dev a7f453612f4896ac04d0007a36ab0d377e5bcbcf; pinned/live MicroTeX 61aaa7cc354de91d5898ffb0b2a6c62628d9a76f. Fixed MicroTeX tree is truncated=false with 315 entries. Pre-write independent sample_4 responsibility row count is 0. Target is mode 100644, accepted blob 77d65ed8eabdd51063b6a54104f6d5c96d595a7d. Previous sample_3 is strict207; next is sample_5.svg@67e94f41adf1098fc2a083bdd13427ca2aae0c61.
+
+## Complete SVG
+Full accepted blob read: 85,147 ASCII bytes, 555 split-line slots including terminal LF, 476pt x 128pt, viewBox 0 0 476 128; 69 symbol, 86 path, 108 use, 1 rect, 108 g, 69 unique ids; all 108 hrefs are local/resolved; zero text/script/image/foreignObject/style/@font-face/external href/DOCTYPE/comments. The creation state at 95a54b5 is blob 7625bf33c1413b92f34b1bc1dc37b4f934f9b18e, 85,152 ASCII bytes, 555 slots, 478pt x 128pt/viewBox 0 0 478 128, with identical element cardinalities/local-reference topology. Creation and accepted content differ at exactly 116 line slots.
+
+## Stable index-4 source
+The fifth SAMPLES.tex body, mapping to sample index 4, normalizes to exactly 433 characters at 95a54b5 creation, 63555c2 source-change state, 08d9d6b generated update and the accepted pin. At creation it is represented by SAMPLES.tex@7fea73994bec7453fc82f3cb91bab842112cd0ab and samples.md@bed457ee0da253f6ff4a37b0152be6eaaca9c20c. At 63555c2 SAMPLES.tex changes to e03f0088e3fba1d225b90d06d586f32c5f70310b while samples.md remains bed457ee, but that edit affects index 3 only; normalized index 4 remains the same 433 characters. At 08d9d6b/current samples.md@4eb0be8a26e15f098156040366683f4e835631f6 matches the same body. Thus the 478pt→476pt/116-slot output drift occurs under stable same-index source and must not be attributed to the unrelated index-3 edit.
+
+## Exact-path / co-change history
+Target history is exhausted at exactly two commits; page 2 is empty. 95a54b5a493335679f227ed42dbe29660309d9f1 creates sample_4.svg as blob 7625bf33c1413b92f34b1bc1dc37b4f934f9b18e; parent 105a81c58cac19ba3be2d66cd88ba05bf92ebcc1 has no target. Creation co-adds samples.md plus sample_0.svg..sample_11.svg, exactly 13 paths. 08d9d6b3ca060f4923ccf0117565430c865059e9 changes exactly samples.md plus sample_11.svg, sample_2.svg, sample_3.svg, sample_4.svg, sample_6.svg, sample_7.svg and sample_8.svg, eight paths, yielding accepted blob 77d65ed8eabdd51063b6a54104f6d5c96d595a7d.
+
+The 95a54b5..08d9d6b compare spans 34 commits and 155 changed files including formula/atom/render/font/resource/Cairo changes. Stable index-4 input plus output drift does not isolate one renderer/font/resource/toolchain/scour cause.
+
+## Generator lineage
+githooks/pre-push is b426a77d194ac023a93acb57235635608a0d9e04 at creation, update and accepted pin. It runs ./LaTeX -headless with outputdir/prefix, textsize=14, black foreground and white background, reconstructs samples.md from percent-separated SAMPLES.tex bodies, and scour-normalizes generated SVGs with viewboxing/id/comment normalization before staging/optional commit. samples.h is 633cdcc8163f34914d80eb172e1a049f924b81a7 at creation/update and 2e8bcd0d3d8e2461ad12bce4e9e4763124b6b652 current. gtkmm_main.cpp is 3b7b1c8ac7e40c43e948afe9a332d3f9780a975e -> e0dc57832ea7d722e5d089ab8aa87b4f079962fa -> d491af61d05fbcc5d17c48f64e76664f91d5fce8; graphic_cairo.cpp is 5d8c3b465e37a2fba9177088eff20278da214f69 -> ae1535053ade8b3919e32fa69ee1eef34a3af681 -> 16331bfdb1d69926b7e14c7276acb3df052f40a8. Proven source chain: SAMPLES index 4 -> LaTeX::parse -> Cairo::SvgSurface/Cairo::Context/Graphics2D_cairo -> indexed SVG -> scour. This is source provenance, not proof of installed-hook execution or deterministic bytes.
+
+## Build / CI / shipping negative oracles
+MicroTeX CMakeLists.txt@75059dec500cff8114728331eb5cb317abf6daf9, QtLatex.pri@e5f4efcd78ec9d1e808127e414ce5689b44363b7 and bundled.qrc@303fb6bdf780d66a6e8960a095d17be466b909fa have zero sample_4/readme-samples/SAMPLES shipping reference. meson.build@d9968045f0162b8f1f8f518f554fd71199f067d5 installs res/SAMPLES.tex as source/demo data only, not readme/samples/sample_4.svg. ubuntu-gtk.yml@9863f6100fd12d94b21e81e1c5f4859aad3c1764, windows-gdi.yml@4adace4d194d60ffc027a1b5d99fa33d200b07aa and windows-qt.yml@d42c1b75d40fd2b3ce8574cfd90cfc85721ff838 have no target regeneration/byte-compare path; 
+
+Accepted shipping is separate: desktop-app/cmake_helpers external/microtex/CMakeLists.txt@a1f479d2833bbb0cf0e007ee8fd33a40c10d9334 selects BUILD_QT and external_microtex_bundled with bundled.qrc; tdesktop td_iv.cmake@ec39405fc3c7bec58f8acb42aa49ed69c60d1b30 links desktop-app::external_microtex; Telegram/CMakeLists.txt@2ea9badfc5750b9b4eab111052faafe946fea277 and build_mac.py@881a1c212486976b318777b7f6e5c944da2bd5d3 carry external_microtex_bundled.rcc. None references sample_4.svg/readme-samples/SAMPLES.tex. Generated sample_4 is documentation, not accepted shipping content.
+
+## Reproducibility / font / resource / license boundary
+Not proven: installed-hook dispatch at either history point; exact historical executable/compiler/GTK/Cairo/Pango/Freetype/Fontconfig/OS/locale/machine; exact scour version; raw pre-scour bytes; exact font selected for each finalized outline; or bit-for-bit regeneration. MicroTeX LICENSE@78a9eca5ca3514f2fd0a2e81018eeb8ae7d981a2 is project MIT, while README.md@824af04fd8607532efed3f73752b81e5093577ef explicitly excludes fonts/XML resources under res from blanket MIT. res/RES_README@386c018fee9c3fd41cd42860bd0c1c33ef61a9ee plus Knuth@5b03bf8a533e66c79d113b82ba95586f8c7af3b8, dsrom@35e3ff2160fe16cb26f7830f936557ebc44c3e1c, OFL@6836a0be000498319aebcc92a172159b6f80bb52 and Greek/Cyrillic@f288702d2fa16d3cdf0035b15a9fcbc552cd88e7 preserve layered provenance. Final SVG paths do not prove per-outline font identity.
+
+## Existing-owner-first / coverage
+Selected owner: existing TDRP recursive dependency documentation/tooling/license provenance governance. Formula/render, GTK/Cairo/font and accepted shipping remain context owners and are not closed here. No SampleSvgRuntime, duplicate renderer/font owner, CI gate, shipping root or UI root is created. Before: unknown=16169 unread=16144 responsibilities=225. After: unknown=16168 unread=16143 responsibilities=226; omitted=0. baseline_identity_accepted=false; source_closure_ready=false; release acceptance not accepted.
+
+## Parent evidence
+e25f2c89b530867f3a5a7abb23667a0f0f62f412: TDRP 40148044151 completed/success 61/61; authority 12581780387 sha256:61cd9eb3c287e0b7c6a8429cffd52f5f799bdb8e3b31e8c1ccc71b0c30837111; closure 12582370252 sha256:e67aaaf842ca3a09a3ac89781809d7348f3b182c2d06dd8cc1e922d447ecbdec; reachability 12581324889 sha256:053d07ff992c65e8694d8e2bc9b52d4a4efc1d1038d47bdbcc870f4eab0b6613; Boost 12581905534 sha256:ec0c64848ccf59014e765aa284dcadd504374ba9a01ba366e75f8d96a89df575. Rust 40148044150 completed/success 6/6, artifact 12581540105 sha256:a4cbfc4dc63b97886a672049bdfb9ad1c5e388e911d72a2e4aa8e56fbd50b1d8. Official MCP 40148044166 completed/success 1/1. Receipt-head evidence must be fresh.
+
+Responsibility TDRP-R9-MICROTEX-README-SAMPLE-4-SVG-PROVENANCE-001; target symbol TDRP_MICROTEX_README_SAMPLE_4_SVG_PROVENANCE_001; gates G-FILE/G-TRACEABILITY/G-EVIDENCE.
+
+## Machine-readable traceability anchors
+- ORA-TDRP-MICROTEX-SAMPLE-4-SVG-EXACT-SOURCE-001
+- ORA-TDRP-MICROTEX-SAMPLE-4-SVG-PASSIVE-LOCAL-CONTENT-001
+- ORA-TDRP-MICROTEX-SAMPLE-4-STABLE-SOURCE-IDENTITY-001
+- ORA-TDRP-MICROTEX-SAMPLE-4-EXACT-PATH-HISTORY-001
+- ORA-TDRP-MICROTEX-SAMPLE-4-OUTPUT-DELTA-CAUSAL-BOUNDARY-001
+- ORA-TDRP-MICROTEX-SAMPLE-4-HISTORICAL-PREPUSH-001
+- ORA-TDRP-MICROTEX-SAMPLE-4-HISTORICAL-HEADLESS-CAIRO-001
+- ORA-TDRP-MICROTEX-SAMPLE-4-BUILD-CI-SHIPPING-BYPASS-001
+- ORA-TDRP-MICROTEX-SAMPLE-4-REPRODUCIBILITY-BOUNDARY-001
+- ORA-TDRP-MICROTEX-SAMPLE-4-LICENSE-FONT-BOUNDARY-001
+- INV-TDRP-MICROTEX-SAMPLE-4-DOCUMENTATION-NOT-RUNTIME-AUTHORITY-001
+- INV-TDRP-MICROTEX-SAMPLE-4-GENERATOR-SOURCE-NOT-EXECUTION-PROOF-001
+- INV-TDRP-MICROTEX-SAMPLE-4-STABLE-SOURCE-NOT-DETERMINISTIC-OUTPUT-001
+- INV-TDRP-MICROTEX-SAMPLE-4-NOT-SHIPPING-RESOURCE-001
+- INV-TDRP-MICROTEX-SAMPLE-SIBLINGS-REMAIN-INDEPENDENT-001
+- INV-TDRP-MICROTEX-PRODUCTION-RESPONSIBILITIES-NOT-CLOSED-001

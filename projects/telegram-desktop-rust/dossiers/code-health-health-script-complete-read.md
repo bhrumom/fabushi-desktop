@@ -53,3 +53,6 @@ This is workflow-equivalent, not a Python port. Current Fabushi already has the 
 ## Failure and lifecycle boundaries
 
 Fail closed on stale/partial source, missing exact commit, failed fetch/Git/process execution, detached HEAD mismatch, malformed canonical state, atlas coverage negatives, review errors, unresolved/present/changed/unknown findings, or non-move-only evidence. A temporary report/cache is never durable authority. Metrics and clean scanner output remain supporting repository-quality evidence and cannot prove product/runtime/build/release acceptance.
+
+## Live rebaseline fe4afa4fbe9f
+The source blob changed to `4fd8d8013d0efb7103a57e4ff7b1d395c448eb0d`. The command now delegates harness inspection, emits `harness.json`/`harness.md`, and preserves prior retention findings as unverified when coverage is unavailable. This remains command orchestration under the existing quality/evidence owner; the new harness implementation file is a separate unread source authority and is not subsumed by this row.

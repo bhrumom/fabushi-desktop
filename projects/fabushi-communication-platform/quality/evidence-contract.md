@@ -79,6 +79,16 @@ Consumer evidence records the purpose for which each derived fact was used: incl
 
 When a claim crosses from source approximation into configured build truth, evidence must reference the existing Configured-build graph provenance evidence for the exact build directory/generator/configuration/manifest subject. Source-derived CMake text alone cannot prove actual target membership, producer/output identity, PCH consumption, evaluated link operands, compiler definitions, generated inputs, build execution, artifact identity, runtime reachability or release acceptance. Stale source, parser failure or undecidable syntax is non-passing for any claim that depends on that fact and may not be rewritten as a clean result.
 
+## Repository source include-graph evidence
+
+Passing include-graph evidence records the exact scanned source revision, declared source roots, source-text include recognizer identity, source-derived build-model identity, resolution order, unresolved include counts and the complete resolved path/line edge set used by the consumer. Style-import evidence records the bounded `using "<path>";` grammar, originating line and resolved declared-root target. Cyclic input must preserve a finite closure containing every reachable recognized source node.
+
+Build-work evidence preserves each translation unit's recognized target, PCH identity/closure when present, own include closure, PCH-excluded source-line weight, header reach/rebuild contribution and the exact source-line counts from which totals were derived. These are source-level proxies and are labeled separately from wall-clock timings, configured compiler inputs or artifact reachability. A missing/unrecognized PCH or unresolved include remains unavailable/unknown evidence and cannot be silently treated as an empty dependency.
+
+Layering evidence preserves source path/line, resolved include target, recognized source target, recognized included target and the source-derived dependency closure that made the edge pass or fail the bounded check. Caller evidence separately owns the report aggregate or review warning/error/strictness result. The graph itself creates no durable finding, source edit, owner decision, task route, configured-build proof or release verdict.
+
+When a claim concerns evaluated target/link/PCH membership, generated include inputs, actual compiler preprocessing, build execution, linked artifacts, runtime reachability or release acceptance, evidence must reference the existing stronger configured-build/runtime/release owners. Source include-graph evidence alone is non-passing for those claims.
+
 ## Repository responsibility-area-map evidence
 
 Passing area-map evidence records the exact source revision, parent atlas area and exact approved map text, then preserves the map's five semantic parts: Modules file/file-group ownership facts; Placement rules and forbidden homes; checkable Invariants with approval provenance; Leave-alone rationale; and Direction. It records the reviewer/source facts that motivated each material placement or boundary statement, stale-file-reference results, atlas-consistency checks, and the declared owner's approval identity/date or equivalent durable provenance. Unapproved invariant text is explicitly labeled proposal-only.

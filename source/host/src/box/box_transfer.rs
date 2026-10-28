@@ -238,6 +238,10 @@ where
                 let prepared = match prepare_wave(&items[next..end]) {
                     Ok(prepared) => prepared,
                     Err(error) => {
+                        // Keep every Condvar predicate transition under the queue mutex.
+                        // Otherwise a waiter can observe `failed == false`, lose the
+                        // notification, and sleep forever after the flag changes.
+                        let _pending = queue.lock().expect("wave prepare failure queue lock");
                         if !failed.swap(true, Ordering::AcqRel) {
                             *failure.lock().expect("wave prepare failure lock") = Some(error);
                         }
@@ -259,6 +263,10 @@ where
                     wake.notify_all();
                 }
             }
+            // `done` is part of the condition guarded by `queue`; publish it
+            // while holding that mutex so a worker cannot miss this wake-up between
+            // checking the predicate and entering `Condvar::wait`.
+            let _pending = queue.lock().expect("wave done queue lock");
             done.store(true, Ordering::Release);
             wake.notify_all();
         });
@@ -283,6 +291,9 @@ where
                 };
 
                 if let Err(error) = process(work_item) {
+                    // See the producer-side failure path above: changing a predicate
+                    // observed by a Condvar waiter must be serialized by the same mutex.
+                    let _pending = queue.lock().expect("wave process failure queue lock");
                     if !failed.swap(true, Ordering::AcqRel) {
                         *failure.lock().expect("wave process failure lock") = Some(error);
                     }
