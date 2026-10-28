@@ -10,10 +10,10 @@
     "ui_accepted": false
   },
   "file_coverage": {
-    "mapped_paths": 893,
+    "mapped_paths": 895,
     "omitted_known": 0,
     "tracked_paths": 58750,
-    "unclassified_paths": 57857
+    "unclassified_paths": 57855
   },
   "inventory_authority": {
     "manifest_source": "GitHub Actions immutable artifact candidate",
@@ -19599,6 +19599,18 @@
           "path": "crates/openclaw-node-host/src/main.rs",
           "range": {"end_line": 96, "start_line": 1},
           "symbol": "run"
+        },
+        {
+          "blob_sha": "c9a2ef66c7e98fe0e27144bfc49132bff7d7ebf8",
+          "path": "crates/openclaw-node-host/Cargo.toml",
+          "range": {"end_line": 44, "start_line": 1},
+          "symbol": "package-and-dependencies"
+        },
+        {
+          "blob_sha": "d761711c46b9ae817460737246df5c57c8349d81",
+          "path": "crates/openclaw-node-host/SIDECAR_PROTOCOL.md",
+          "range": {"end_line": 229, "start_line": 1},
+          "symbol": "sidecar-protocol-contract"
         }
       ],
       "status": {

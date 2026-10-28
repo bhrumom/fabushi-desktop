@@ -19,6 +19,11 @@ READS = {
     "crates/openclaw-node-host/src/reconnect.rs": (703, "OCRM-RESP-NODE-HOST-CONNECTION-001", "OCRM-M13"),
     "crates/openclaw-node-host/src/lib.rs": (58, "OCRM-RESP-NODE-HOST-CONNECTION-001", "OCRM-M13"),
     "crates/openclaw-node-host/src/main.rs": (96, "OCRM-RESP-NODE-HOST-CONNECTION-001", "OCRM-M13"),
+    "crates/openclaw-node-host/Cargo.toml": (44, "OCRM-RESP-NODE-HOST-CONNECTION-001", "OCRM-M13"),
+    "crates/openclaw-node-host/SIDECAR_PROTOCOL.md": (229, "OCRM-RESP-NODE-HOST-CONNECTION-001", "OCRM-M13"),
+    "crates/openclaw-node-host/tests/node_lifecycle.rs": (185, None, "OCRM-M13"),
+    "crates/openclaw-node-host/tests/node_session.rs": (1183, None, "OCRM-M13"),
+    "crates/openclaw-node-host/tests/sidecar_process.rs": (295, None, "OCRM-M13"),
     "crates/openclaw-node-host/src/host.rs": (951, "OCRM-RESP-NODE-HOST-COMMAND-DISPATCH-001", "OCRM-M13"),
     "crates/openclaw-node-host/src/runtime.rs": (2011, "OCRM-RESP-NODE-HOST-COMMAND-DISPATCH-001", "OCRM-M13"),
     "crates/openclaw-node-host/src/sidecar_handshake.rs": (796, "OCRM-RESP-NODE-HOST-COMMAND-DISPATCH-001", "OCRM-M13"),
@@ -130,7 +135,7 @@ def main():
                     # Tests are source/oracle evidence, not additional ledger
                     # source_refs. Keep them mapped/read-complete without
                     # creating a one-way responsibility edge.
-                    direct_source = ledger_spec is not None or (not path.endswith(".test.ts") and not path.endswith(".liveness.test.ts"))
+                    direct_source = responsibility is not None and (ledger_spec is not None or (not path.endswith(".test.ts") and not path.endswith(".liveness.test.ts")))
                     node_host_source = row["path"].startswith("crates/openclaw-node-host/") or row["path"].startswith("src/node-host/")
                     responsibility_ids = responsibility if isinstance(responsibility, list) else ([responsibility] if direct_source else [])
                     if ledger_spec:
