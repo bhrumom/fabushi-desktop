@@ -55,7 +55,7 @@ def main():
                         "read_ranges": [{"start_line": 1, "end_line": end}],
                         "read_status": "read-complete",
                         "responsibility_ids": [responsibility] if direct_source else [],
-                        "responsibility_status": "mapped",
+                        "responsibility_status": "mapped" if direct_source else "unclassified",
                         "disposition": "native-rust-equivalent",
                         "reviewer": "xuyao@ombhrum.com",
                         "evidence_refs": [
