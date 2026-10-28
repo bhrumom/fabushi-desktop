@@ -188,12 +188,9 @@ def main():
                 path = row.get("path")
                 spec = READS.get(path)
                 ledger_spec = ledger_specs.get(path)
-                if spec is None and ledger_spec:
-                    spec = (
-                        ledger_spec["end_line"],
-                        sorted(ledger_spec["responsibility_ids"]),
-                        ledger_spec["module"] or "OCRM-M13",
-                    )
+                # A reverse ledger edge is not semantic-reading evidence.  It
+                # may reconcile responsibility/evidence metadata only after a
+                # file is present in the explicit, bounded READS table.
                 if spec:
                     was_unread = row.get("read_status") != "read-complete"
                     was_unclassified = row.get("responsibility_status") == "unclassified"
@@ -201,7 +198,7 @@ def main():
                     # Tests are source/oracle evidence, not additional ledger
                     # source_refs. Keep them mapped/read-complete without
                     # creating a one-way responsibility edge.
-                    direct_source = responsibility is not None and (ledger_spec is not None or (not path.endswith(".test.ts") and not path.endswith(".liveness.test.ts")))
+                    direct_source = responsibility is not None and not path.endswith(".test.ts") and not path.endswith(".liveness.test.ts")
                     node_host_source = row["path"].startswith("crates/openclaw-node-host/") or row["path"].startswith("src/node-host/")
                     responsibility_ids = responsibility if isinstance(responsibility, list) else ([responsibility] if direct_source else [])
                     if ledger_spec:

@@ -411,3 +411,7 @@ The locked `auto-update-compatibility.ts`, `auto-update.ts`, `auto-update-instal
 The launcher bootstrap resolves profile-scoped state without loading runtime state; launcher IPC is connected-child-only, acknowledgement-bounded, and retires the node on parent stdin EOF. The sealed macOS worker accepts only `node worker`, applies the CLI/runtime/plugin cleanup scope, routes machine output safely, and owns the worker lifetime. Node skill discovery enforces canonical in-root paths, matching directory/frontmatter names, bounded descriptor size/count/total bytes, and deterministic ordering.
 
 These sources clarify update and entrypoint ownership but do not establish a Fabushi launcher, private-generation updater, skill producer, or exact-head Actions/package/device acceptance. They remain upstream mapping evidence; global completion flags stay false.
+
+## 55. Read-ledger promotion guard (2026-10-29)
+
+The source-read bookkeeping tool now requires every new `read-complete` or responsibility update to originate in its explicit bounded `READS` table. Existing parity-ledger `source_refs` may reconcile an already explicit file's responsibility and evidence metadata, but a reverse edge alone cannot authorize semantic reading, a full-file range, native-equivalent disposition, or a reviewer assertion. This guard is evidence hygiene only; the existing historical rows outside the current explicit table remain a separate audit backlog and are not treated as newly revalidated by this change.
