@@ -78,3 +78,14 @@ The pinned upstream `crates/openclaw-node-host` is contract evidence, not yet an
 The current Fabushi owner decision is therefore: credential persistence remains in the existing credential owner; live session/connection-generation and remote presence must be a single transport owner; invocation drain and cancellation must be a single runtime owner; and RPC/pairing layers may only project those facts. No upstream crate import, second registry, or production completion is claimed. The durable implementation contract is [node-host-runtime-embedding.md](../../../docs/specs/node-host-runtime-embedding.md).
 
 The remaining exact-source closure includes the rest of `crates/openclaw-node-host` (`host.rs`, `runtime.rs`, sidecar protocol/handshake/runtime, and tests) plus the individually unread `src/node-host` files. Inventory and parity flags remain incomplete until those reads and the corresponding owner mapping are recorded.
+
+## 10. Host/runtime boundary audit (2026-10-29)
+
+The exact pinned reads of `host.rs` and `runtime.rs` add two important constraints to the owner map:
+
+- `host.rs` is an embedding adapter, not a product policy owner. It loads non-secret configuration, reads identity/auth through indirections, binds a loopback health surface, creates the bounded command runtime, adopts a returned device token for later attempts, emits redacted lifecycle events, and delegates connection/retry behavior to `NodeLifecycle`/`NodeClient`.
+- `runtime.rs` owns bounded invocation admission and settlement: deterministic command/capability registration, reserved `system.*` namespace protection, embedding admission callbacks, concurrency permits, input/output/deadline limits, duplicate-id detection, ordered duplex control, cancellation, and disconnect cleanup. It does not own credential persistence, pairing approval, or platform side effects.
+- The upstream host sample currently stores an issued device token in process memory. Fabushi must not copy that storage choice where an existing secure credential owner is available; this is an integration seam, not an acceptance receipt.
+- The runtime explicitly refuses duplex commands through its one-shot dispatch path, closes the session on critical delivery saturation/result-task failure, and rejects commands absent from the current connection manifest. These are required lifecycle invariants for any Fabushi adapter.
+
+This narrows the next implementation boundary: an existing Fabushi transport/credential owner must supply the connection factory and token persistence; a node-host runtime owner may compose bounded invocation execution and manifest projection; existing local exec, Computer, PTY, stream, and worker owners remain the only side-effect owners. No product code was changed in this audit.
