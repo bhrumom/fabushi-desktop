@@ -294,3 +294,9 @@ The locked crate files `host.rs`, `runtime.rs`, `sidecar_handshake.rs`, `sidecar
 - `sidecar_runtime.rs` owns the bounded portable-JSON sidecar manifest/configuration exchange and adapter bridge; its capability adapter is an embedding boundary, not a product process owner or durable state store.
 
 No new Fabushi sidecar or generic command runtime was added. The existing owner decision remains fail-closed: only an identified Fabushi supervisor/worker owner may supply process lifecycle, artifact verification, authenticated IPC transport, and adapter permissions. Until that owner and its production caller are identified, these crate reads are mapping evidence; remote transport, worker launch, sidecar acceptance, and exact-head Actions remain pending.
+
+## 41. Existing worker-owner revalidation (2026-10-29)
+
+The current Fabushi candidates were re-read before any worker bridge was attempted. `network_worker_process.rs` owns the enrolled Tailscale/network worker protocol and process tree for network enrollment; `network_enrollment_owner.rs` owns its grant/state lifecycle and secret material. `agent_isolation/agent_worker_pool.rs` owns conversation blob-store workers, not Gateway node workers. `runner/process_tree.rs` only provides generic descendant termination for an already-owned child. CloudAgent and runner watch owners likewise do not expose the combined node-worker launch identity, bundle admission, environment/session, owner epoch, placement generation, and durable receipt lifecycle required by the locked supervisor contract.
+
+Therefore none of these is an approved substitute owner. Adding a sidecar launch or adapting a network/blob worker here would create an ownership collision and cannot be counted as production wiring. The owner boundary decision remains active and the node-worker launch/receipt path stays explicitly pending.
