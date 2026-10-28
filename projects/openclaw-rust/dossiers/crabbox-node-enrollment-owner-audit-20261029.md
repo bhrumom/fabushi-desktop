@@ -45,6 +45,20 @@ The observable contract is therefore provider capability discovery plus determin
 
 The lifecycle has distinct preparation, runtime verification, artifact verification/publication, activation, and completion phases. A successful command construction or local fixture does not prove a real provider, artifact origin, node launch, or packaged desktop path.
 
+### Profile, lease, command and process contracts
+
+The dependent profile contract adds several non-obvious responsibilities that must not be lost in a Rust translation:
+
+- profile keys are closed; unknown keys, inline setup secrets, retired `setupEnv`, unsafe environment names, non-store SecretRefs, invalid absolute binary paths, unsupported desktop providers, invalid targets, and non-positive/overflowing Go durations are rejected;
+- lease IDs are domain-separated and derived from the operation ID; legacy random provision IDs are rejected rather than replayed;
+- warm-image keys include provider, target, setup, protected-secret mode, sorted secret references, desktop mode, and exact machine class; Linux warm preparation and setup-secret capability are independently resolved;
+- setup shell compatibility is tied to the configured target interpreter; WSL2 desktop is rejected, native Windows is required for desktop, and the machine picker preserves a configured class as a default even when it is absent from the current catalog;
+- allocation arguments explicitly select public networking, disable Tailscale, preserve provider/target/windows-mode/market/TTL/idle-timeout/lease identity, and add desktop/browser/XFCE flags only for compatible targets.
+
+The command layer owns a separate bounded process/tree custody contract. It restricts lease scripts to `--no-sync`, forwards only explicitly named environment variables, caps output at 64 KiB, redacts and suffix-truncates diagnostics, distinguishes ordinary process failures from coordinator transport failures, retries only fixed-lease resolution cases within the caller deadline, and treats ambiguous mutation results as non-replayable. Lease stop has a provider-specific Azure recovery path and recognizes an absent lease only from tightly matched inspect/release evidence.
+
+The process runtime verifies an existing node by PID, executable/CLI, runtime directory, state directory, start time, environment, and platform-specific process receipt. It refuses replay when the runtime pointer or launch receipt is incomplete, refuses a mismatched live process, and cleans only the owned process tree/desktop host on launch failure. Linux, Windows, Darwin, signed macOS desktop host, Windows desktop launcher, and XFCE/browser/terminal setup are separate platform responsibilities; none can be collapsed into the native FDN worker process.
+
 ## Fabushi owner resolution
 
 | Responsibility | Existing owner | Decision | Reason / boundary |
@@ -59,6 +73,7 @@ The proposed owner is not permission to create an `OpenClawRuntime`, second Agen
 ## Required next evidence
 
 - Read and map the imported profile, process, command, script, desktop-setup, timeout, provider, and reverse caller/test contracts at the same pinned upstream tree.
+- Read the platform-specific `crabbox-worker-desktop-macos.ts` and `crabbox-worker-desktop-windows.ts` contracts and their tests before any owner/ADR decision.
 - Inspect the current Fabushi Host/Coordinator production composition and determine the narrow typed contract for provider catalog, artifact provenance, worker lease, process lifecycle, and diagnostic evidence.
 - Complete rejected-owner analysis and an ADR before creating a new owner. The current `NetworkEnrollmentOwner`, `remote_computer_target`, Sand connectors, and Runner process owners are candidates but cannot be widened by assumption.
 - Add positive and negative oracle rows for malformed catalogs, incompatible targets, credential non-propagation, archive hash/range/TLS failures, unsafe paths, cancellation cleanup, plugin activation failure, stale runtime pointers, diagnostic truncation/redaction, and node launch outcome-unknown.
