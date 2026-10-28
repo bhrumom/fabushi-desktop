@@ -19577,12 +19577,15 @@
         "source/host/src/extensions/node_host/session_registry.rs::tests::replacement_generation_fences_predecessor_disconnect",
         "source/host/src/extensions/node_host/session_registry.rs::tests::disconnect_clears_advertised_surface",
         "source/host/src/extensions/node_host/candidate_connection.rs::tests::only_unaccepted_pre_hello_candidates_fail_over",
-        "source/host/src/extensions/node_host/candidate_connection.rs::tests::sent_connect_request_stops_instead_of_switching_candidate"
+        "source/host/src/extensions/node_host/candidate_connection.rs::tests::sent_connect_request_stops_instead_of_switching_candidate",
+        "source/host/src/extensions/node_host/gateway_connection.rs::stream_tests::stream_attach_preserves_gateway_mount_and_rejects_origin_escape",
+        "source/host/src/extensions/node_host/gateway_connection.rs::stream_tests::stream_attach_rejects_non_websocket_gateway"
       ],
       "typed_contracts": [
         "NodeHostGatewayConfig",
         "gateway_origin_scope",
         "can_reuse_node_host_device_token",
+        "attach_gateway_stream_url",
         "NodeHostSessionMetadata",
         "NodeHostSessionLease",
         "NodeHostSessionRegistry",

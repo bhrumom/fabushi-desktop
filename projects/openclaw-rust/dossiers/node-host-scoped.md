@@ -241,3 +241,7 @@ The stream implementation is an adapter around the existing Gateway WebSocket/TL
 ## 30. Rust progress framing seam (2026-10-29)
 
 `source/host/src/extensions/node_host/invoke_progress.rs` now implements the transport-neutral part of the locked progress contract: invocation/node correlation, monotonically increasing sequence numbers, UTF-8-safe 16 KiB chunking, 250–5000 ms heartbeat interval clamping, heartbeat scheduling state, and terminal stop behavior. It emits frames for a future Gateway publisher but owns no socket, promise queue, credential, cancellation source, or result settlement. Its focused tests are source-level oracles only; no local test execution or production transport wiring is claimed.
+
+## 32. Auxiliary stream URL admission seam (2026-10-29)
+
+`gateway_connection::attach_gateway_stream_url` now captures the pure URL-admission part of the locked auxiliary stream owner: only `ws`/`wss` transport is accepted, the resolved attach path must match the expected path and remain on the connected Gateway origin, and the Gateway context mount is prepended before delivery. It deliberately does not open sockets, apply TLS pins, materialize Cloudflare credentials, splice bytes, or own close/drain state. Those responsibilities remain pending in the existing transport/config owners.

@@ -110,3 +110,67 @@ pub fn can_reuse_node_host_device_token(
 
     all_match && !token.is_empty()
 }
+
+/// Resolve an auxiliary stream attach path without leaving the enrolled
+/// Gateway origin or mount path. WebSocket ownership and credentials remain
+/// with the eventual stream transport owner.
+pub fn attach_gateway_stream_url(
+    gateway_url: &str,
+    attach_path: &str,
+    expected_attach_path: &str,
+) -> Result<String, String> {
+    let gateway = url::Url::parse(gateway_url.trim())
+        .map_err(|error| format!("invalid node stream gateway URL: {error}"))?;
+    let attached = gateway
+        .join(attach_path)
+        .map_err(|error| format!("invalid node stream attach path: {error}"))?;
+    if !matches!(attached.scheme(), "ws" | "wss") {
+        return Err("node stream gateway URL must use WebSocket transport".into());
+    }
+    if attached.origin() != gateway.origin() || attached.path() != expected_attach_path {
+        return Err("node stream attach path must stay on the connected gateway".into());
+    }
+    let mount = gateway.path().trim_end_matches('/');
+    let path = if mount.is_empty() {
+        attached.path().to_string()
+    } else {
+        format!("{mount}{}", attached.path())
+    };
+    let mut result = attached;
+    result.set_path(&path);
+    Ok(result.to_string())
+}
+
+#[cfg(test)]
+mod stream_tests {
+    use super::attach_gateway_stream_url;
+
+    #[test]
+    fn stream_attach_preserves_gateway_mount_and_rejects_origin_escape() {
+        assert_eq!(
+            attach_gateway_stream_url(
+                "wss://gateway.example/ws/",
+                "/node-stream",
+                "/node-stream",
+            )
+            .expect("attach URL"),
+            "wss://gateway.example/ws/node-stream"
+        );
+        assert!(attach_gateway_stream_url(
+            "wss://gateway.example/ws",
+            "https://other.example/node-stream",
+            "/node-stream",
+        )
+        .is_err());
+    }
+
+    #[test]
+    fn stream_attach_rejects_non_websocket_gateway() {
+        assert!(attach_gateway_stream_url(
+            "https://gateway.example/ws",
+            "/node-stream",
+            "/node-stream",
+        )
+        .is_err());
+    }
+}
