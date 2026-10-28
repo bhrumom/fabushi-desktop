@@ -253,3 +253,7 @@ The stream implementation is an adapter around the existing Gateway WebSocket/TL
 ## 33. Live-main refresh after stream URL seam (2026-10-29)
 
 Live main advanced to `c0f1ba6ba4439a79d2cb91dde9666038fff7ad69`, tree `f80fc84244c576760b0d36555d9b6849978b6baf`. The locked-to-live compare reports 4,854 commits ahead and 300 returned changed files. The auxiliary stream URL seam remains explicitly based on the locked source read; this live refresh changes no lock, inventory, mapping count, or completion flag.
+
+## 35. Live-main refresh after stream splice seam (2026-10-29)
+
+Live main currently resolves to `bf9709250b87bec4a26637046096092ee68d3366`, tree `9daef696c7c912ef65b44f7005c86309f26fd646`; the locked-to-live compare is 4,855 commits ahead with 300 returned changed files. The stream splice seam remains bound to the locked source read and does not change the lock, inventory, mapping totals, or completion flags.
