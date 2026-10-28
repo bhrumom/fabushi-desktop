@@ -142,6 +142,15 @@ impl PluginCapabilityCatalog {
         channels.get(&key).cloned()
     }
 
+    pub fn unregister_channel(&self, channel_name: &str) -> Option<ChannelCatalogEntry> {
+        let key = channel_name.trim().to_ascii_lowercase();
+        if key.is_empty() {
+            return None;
+        }
+        let mut channels = self.channels.lock().unwrap();
+        channels.remove(&key)
+    }
+
     pub fn register_canonical_aliases(&self, key: &str, aliases: Vec<String>) {
         let mut map = self.canonical_aliases.lock().unwrap();
         map.insert(key.to_string(), aliases);

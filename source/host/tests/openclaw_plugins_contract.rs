@@ -307,6 +307,8 @@ fn test_ocrm_plugins_capability_catalog() {
     assert_eq!(registered.plugin_id, "telegram");
     assert_eq!(registered.package_name.as_deref(), Some("@openclaw/telegram"));
     assert!(registered.trusted_official_install);
+    assert_eq!(catalog.unregister_channel("telegram").unwrap().plugin_id, "telegram");
+    assert!(catalog.get_channel("telegram").is_none());
 }
 
 #[test]

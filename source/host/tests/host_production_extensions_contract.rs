@@ -123,6 +123,7 @@ fn production_host_owns_the_channel_delivery_boundary_consumed_by_gateway() {
     for needle in [
         "pub fn replace_channel_delivery_provider(",
         "pub fn unregister_channel_delivery_provider(",
+        "pub fn revoke_bundled_channel(",
     ] {
         assert!(
             PRODUCTION_OWNER.contains(needle),

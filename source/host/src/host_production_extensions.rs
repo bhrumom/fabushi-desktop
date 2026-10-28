@@ -783,6 +783,24 @@ impl ProductionHostExtensions {
         Ok(self.channel_delivery_router.unregister(channel_id))
     }
 
+    /// Revokes a bundled channel's provider and discovery metadata together.
+    ///
+    /// Provider revocation happens first so no new delivery can be admitted
+    /// after the capability entry is removed. The catalog gate rejects unknown
+    /// channels and prevents this lifecycle operation from becoming a second
+    /// plugin registry.
+    pub fn revoke_bundled_channel(&self, channel_id: &str) -> Result<bool, String> {
+        if self.plugin_capability_catalog.get_channel(channel_id).is_none() {
+            return Err(format!("channel is not registered: {channel_id}"));
+        }
+        let provider_removed = self.channel_delivery_router.unregister(channel_id);
+        let catalog_removed = self
+            .plugin_capability_catalog
+            .unregister_channel(channel_id)
+            .is_some();
+        Ok(provider_removed || catalog_removed)
+    }
+
     pub fn stop_structured_log_domain_reporters(&self) {
         unpin_structured_log_domain_reporters();
     }

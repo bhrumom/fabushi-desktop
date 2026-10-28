@@ -158,6 +158,8 @@ The production owner keeps the router private and exposes registration, replacem
 
 Production startup now publishes the six existing immutable bundled channel IDs (`telegram`, `discord`, `slack`, `whatsapp`, `signal`, `imessage`) into that Host-owned catalog through capability-only entry registration. The producer creates discoverability metadata only; it does not create a transport, credential, session, or delivery port. This makes the authorization seam reachable for future real adapters while preserving the explicit pending status for external delivery, provider credentials, reconnect, receipts, and packaged acceptance.
 
+The channel lifecycle now also has a Host-owned revoke operation: it removes the provider port before removing the catalog entry, and rejects an unknown channel before either mutation. The catalog contract covers metadata removal; no plugin uninstall, credential revocation, or real adapter call site is present yet, so this remains lifecycle infrastructure rather than external-channel acceptance.
+
 
 
 
