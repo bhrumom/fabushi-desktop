@@ -24,6 +24,9 @@ READS = {
     "src/sessions/communication-admission.ts": (89, "OCRM-RESP-SESSION-COMMUNICATION-POLICY-001", "OCRM-M07"),
     "src/sessions/conversation-turns.ts": (267, "OCRM-RESP-SESSION-CONVERSATION-TURNS-001", "OCRM-M07"),
     "src/sessions/model-overrides.ts": (190, "OCRM-RESP-SESSION-MODEL-OVERRIDES-001", "OCRM-M07"),
+    "src/security/audit-agent-roster.ts": (49, "OCRM-RESP-AGENT-ROSTER-AUDIT-001", "OCRM-M08"),
+    "src/shared/browser-image-mime-types.ts": (9, "OCRM-RESP-BROWSER-IMAGE-TYPES-001", "OCRM-M11"),
+    "src/process/spawn-diagnostics.ts": (235, "OCRM-RESP-PROCESS-SPAWN-DIAGNOSTICS-001", "OCRM-M08"),
     "src/process/exec.ts": (383, "OCRM-RESP-EXEC-PROCESS-SPAWN-001", "OCRM-M25"),
     "src/process/exec.test.ts": (682, "OCRM-RESP-EXEC-PROCESS-SPAWN-001", "OCRM-M25"),
     "src/process/exec-runner.ts": (720, "OCRM-RESP-EXEC-RUNNER-TIMEOUT-001", "OCRM-M25"),
@@ -35,7 +38,17 @@ READS = {
 }
 
 def main():
-    changed = 0
+    newly_read = 0
+    newly_mapped = 0
+    ledger_source_keys = set()
+    ledger_path = ROOT / "parity-ledger.json"
+    if ledger_path.exists():
+        ledger = json.loads(ledger_path.read_text())
+        ledger_source_keys = {
+            (s.get("path"), s.get("blob_sha"))
+            for r in ledger.get("responsibilities", [])
+            for s in r.get("source_refs", [])
+        }
     for shard_path in sorted(SHARDS.glob("part-*.jsonl.gz")):
         rows = []
         with gzip.open(shard_path, "rt", encoding="utf-8") as stream:
@@ -44,6 +57,7 @@ def main():
                 spec = READS.get(row.get("path"))
                 if spec:
                     was_unread = row.get("read_status") != "read-complete"
+                    was_unclassified = row.get("responsibility_status") == "unclassified"
                     end, responsibility, module = spec
                     # Tests are source/oracle evidence, not additional ledger
                     # source_refs. Keep them mapped/read-complete without
@@ -68,7 +82,9 @@ def main():
                         ],
                     })
                     if was_unread:
-                        changed += 1
+                        newly_read += 1
+                    if was_unclassified and direct_source and (row.get("path"), row.get("sha")) not in ledger_source_keys:
+                        newly_mapped += 1
                 rows.append(row)
         data = "".join(json.dumps(row, sort_keys=True, ensure_ascii=False) + "\n" for row in rows).encode()
         shard_path.write_bytes(gzip.compress(data, compresslevel=9, mtime=0))
@@ -84,10 +100,10 @@ def main():
 
     index_path = ROOT / "inventory" / "index.json"
     index = json.loads(index_path.read_text())
-    index["inventory"]["unread"] -= changed
-    index["inventory"]["unclassified"] -= changed
+    index["inventory"]["unread"] -= newly_read
+    index["inventory"]["unclassified"] -= newly_mapped
     index_path.write_text(json.dumps(index, sort_keys=True, indent=2) + "\n")
-    print(f"recorded {changed} explicit locked-source file reads")
+    print(f"recorded {newly_read} explicit locked-source file reads and {newly_mapped} new responsibility mappings")
 
 if __name__ == "__main__":
     main()

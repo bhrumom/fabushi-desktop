@@ -11,6 +11,11 @@
 
 ## 1. Upstream Source Audit & Line-by-Line Reading
 
+The complete 235-line `src/process/spawn-diagnostics.ts` source (blob
+`1dec1b04c0247e5de0d172e42c32bfe4c4903110`) is now recorded as a locked
+source read and mapped to `OCRM-RESP-PROCESS-SPAWN-DIAGNOSTICS-001`; existing
+Rust owner and evidence boundaries remain unchanged.
+
 The following 6 core crash guard, diagnostics, attachment storage paths, media MIME resolution, and persistence files (totaling 525 lines) were audited line-by-line and mapped into canonical shards:
 
 | Shard | Source File | Blob SHA | Lines | Scope | Mapped Responsibility |

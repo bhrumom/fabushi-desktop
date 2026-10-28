@@ -11,6 +11,13 @@
 
 ## 1. Upstream Source Audit & Line-by-Line Reading
 
+The locked-source audit also recorded the complete 49-line
+`src/security/audit-agent-roster.ts` file (blob
+`97e144954c8138c45af11ef859975217c2f2cdda`) in the canonical inventory,
+mapped to `OCRM-RESP-AGENT-ROSTER-AUDIT-001`. This records source behavior and
+the existing Rust owner candidate only; it does not upgrade runtime wiring or
+verification.
+
 The following 6 core agent roster representation, include provenance, workspace transition, implicit defaults, security audit, and doctor staging files (totaling 572 lines) were audited line-by-line from the locked upstream repository and mapped into canonical inventory shards:
 
 | Shard | Source File | Blob SHA | Lines | Scope | Mapped Responsibility |

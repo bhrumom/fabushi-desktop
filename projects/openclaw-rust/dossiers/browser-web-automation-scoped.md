@@ -11,6 +11,11 @@
 
 ## 1. Upstream Source Audit & Line-by-Line Reading
 
+The complete 9-line `src/shared/browser-image-mime-types.ts` source (blob
+`26f9a040cab5391c86383453a8b457e0a654bbea`) is now recorded as a locked
+source read and mapped to `OCRM-RESP-BROWSER-IMAGE-TYPES-001`; no production
+acceptance status is changed by this source audit.
+
 The following 6 core source files (totaling 2,568 lines) were independently read and mapped into canonical shards:
 
 | Shard | Source File | Blob SHA | Lines | Scope | Mapped Responsibility |

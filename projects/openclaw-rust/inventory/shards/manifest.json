@@ -369,20 +369,20 @@
       "uncompressed_sha256": "f5a9d8f6aec106933383b54c912f283b1c097087a3d884a14b53f7ff02a3ce07"
     },
     {
-      "compressed_sha256": "8101f5ceaec0f83f61b586e9998fe4a4e1a44b1b8ea25272f16848a55396df87",
+      "compressed_sha256": "83737655359266b090636c9769b331255353f09b0610cd90c6ec9edadcfcf706",
       "count": 1024,
       "first_path": "src/plugins/runtime.shutdown-preload.test.ts",
       "last_path": "src/sessions/session-chat-type.ts",
       "path": "projects/openclaw-rust/inventory/shards/part-0045.jsonl.gz",
-      "uncompressed_sha256": "d121d92496ae373be97b99c31b2bca30f32aeaae152612b84408cb32f9788275"
+      "uncompressed_sha256": "a28a30a1a73bfa7242b4c4e0ee0deef891473e1e1099cd2ce95782b92ee09283"
     },
     {
-      "compressed_sha256": "7ca34051fb90b7965cafbdd099bdd7a2627b6fdc2206519f1facf870eddb8691",
+      "compressed_sha256": "4f898481de4f8a3053c0609538fd2873b875344672a1cdc3cd3f15ab9311e535",
       "count": 1024,
       "first_path": "src/sessions/session-controller-model.test-support.ts",
       "last_path": "src/state/openclaw-agent-legacy-acp-schema.test.ts",
       "path": "projects/openclaw-rust/inventory/shards/part-0046.jsonl.gz",
-      "uncompressed_sha256": "802f6b02cc040e6d124d48032fba40e67eb84b0dfe5af1c2584b856d010cb583"
+      "uncompressed_sha256": "b86f89869fd80c45b9a9c56887c6d0b046aa0c78f1c0983f08e56d2ccaaa44d6"
     },
     {
       "compressed_sha256": "684151182f4c1032ec7455e5b3fb27e0f0d74e2e736996f29f2a3f71155f3e54",
