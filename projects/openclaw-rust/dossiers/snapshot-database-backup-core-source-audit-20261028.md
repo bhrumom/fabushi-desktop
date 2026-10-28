@@ -334,4 +334,9 @@ the staged manifest only when every artifact is Uploaded/Unchanged; partial
 object uploads return an error, leave the caller manifest unchanged, and clean
 staging. External content-addressed blobs may remain as harmless orphaned
 objects and require later garbage collection; no false atomicity claim is made.
+The production cycle rebuilds the portable prefix from the current export set,
+delays copying those entries into the live manifest until the final source
+generation check passes, and preserves an existing portable prefix from stale
+pruning when a capture/upload fails. A healthy retry therefore publishes a
+complete new generation without adopting a mixed or partially uploaded set.
 

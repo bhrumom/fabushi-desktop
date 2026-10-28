@@ -2380,6 +2380,7 @@ fn sync_store_db_snapshots_with_trace(
             let mut staged_manifest = manifest.clone();
             let mut bundle_ok = true;
             let mut present_paths = HashSet::new();
+            let mut staged_portable_entries = Vec::new();
             let mut agent_has_db = false;
             for basename in AGENT_STORE_DB_BASENAMES {
                 let source_path = agent_dir.join(basename);
@@ -2486,6 +2487,12 @@ fn sync_store_db_snapshots_with_trace(
 
             if bundle_ok && agent_has_db && portable_backup_enabled {
                 let source_db = agent_dir.join("store.db");
+                let portable_prefix =
+                    format!("{SAND_DATA_REL_PREFIX}/agents/{agent_id}/portable/");
+                // Rebuild this generation from exactly the exported artifact
+                // set. Old table entries must not survive a successful export
+                // when a table was removed from the source database.
+                staged_manifest.retain(|path, _| !path.starts_with(&portable_prefix));
                 let staging_dir = agent_dir.join(format!(
                     ".openclaw-portable-staging-{}",
                     uuid::Uuid::new_v4().simple()
@@ -2528,12 +2535,9 @@ fn sync_store_db_snapshots_with_trace(
                         summary.bytes_uploaded = summary.bytes_uploaded.saturating_add(
                             results.iter().map(|result| result.bytes_uploaded).sum(),
                         );
-                        let portable_prefix =
-                            format!("{SAND_DATA_REL_PREFIX}/agents/{agent_id}/portable/");
                         for (path, entry) in staged_manifest.iter() {
                             if path.starts_with(&portable_prefix) {
-                                seen.insert(path.clone());
-                                set_manifest_entry(manifest, path, entry.clone());
+                                staged_portable_entries.push((path.clone(), entry.clone()));
                             }
                         }
                     }
@@ -2563,7 +2567,22 @@ fn sync_store_db_snapshots_with_trace(
             }
             if !bundle_ok {
                 blocked_from_prune.extend(bundle_paths);
+                blocked_from_prune.extend(
+                    manifest
+                        .keys()
+                        .filter(|path| {
+                            path.starts_with(&format!(
+                                "{SAND_DATA_REL_PREFIX}/agents/{agent_id}/portable/"
+                            ))
+                        })
+                        .cloned(),
+                );
                 continue;
+            }
+
+            for (path, entry) in staged_portable_entries {
+                seen.insert(path.clone());
+                set_manifest_entry(manifest, &path, entry);
             }
 
             for basename in AGENT_STORE_DB_BASENAMES {
