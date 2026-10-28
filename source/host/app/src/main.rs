@@ -86,6 +86,7 @@ use mahayana_host_runtime::extensions::transcript::agent_to_agent_messaging::{
 };
 use mahayana_host_runtime::extensions::telemetry::HostTelemetryProjection;
 use mahayana_host_runtime::extensions::local_exec::extension::HostLocalExecExtension;
+use mahayana_host_runtime::extensions::local_exec::gateway_local_exec_sand_box::GatewayLocalToolScope;
 use mahayana_host_runtime::extensions::local_tool_permission::extension::{
     HostLocalToolPermissionExtension,
 };
@@ -3820,16 +3821,62 @@ impl UnifiedGatewayApi {
             if status.get("status").and_then(serde_json::Value::as_str) != Some("approved") {
                 return Err(GatewayCommandError::Internal("node not connected".into()));
             }
+            return Err(GatewayCommandError::Internal(
+                "remote node transport is not connected to the canonical Host node owner".into(),
+            ));
         }
+
+        if command != "system.run" {
+            return Err(GatewayCommandError::BadRequest(format!(
+                "unsupported local node command: {command}"
+            )));
+        }
+        let params = args.get("params").unwrap_or(&serde_json::Value::Null);
+        let shell_command = params
+            .get("command")
+            .and_then(serde_json::Value::as_str)
+            .map(str::trim)
+            .filter(|value| !value.is_empty())
+            .ok_or_else(|| {
+                GatewayCommandError::BadRequest(
+                    "node.invoke system.run requires params.command".into(),
+                )
+            })?;
+        let working_directory = params
+            .get("workingDirectory")
+            .and_then(serde_json::Value::as_str)
+            .unwrap_or("/workspace");
+        let tool_call_id = args
+            .get("idempotencyKey")
+            .and_then(serde_json::Value::as_str)
+            .unwrap_or("node-invoke");
+        let scope = GatewayLocalToolScope {
+            agent_id: args
+                .get("agentId")
+                .and_then(serde_json::Value::as_str)
+                .map(str::to_string),
+            tool_call_id: Some(tool_call_id.to_string()),
+            action: Some("node.invoke.system.run".into()),
+        };
+        let result = self
+            .local_exec
+            .sandbox(Arc::clone(&self.local_tool_permission))
+            .execute_shell(&scope, shell_command, working_directory, tool_call_id)
+            .map_err(|error| GatewayCommandError::Internal(error.to_string()))?;
 
         Ok(serde_json::json!({
             "ok": true,
             "nodeId": node_id,
             "command": command,
             "payload": {
-                "exitCode": 0,
-                "stdout": "ok",
-                "stderr": ""
+                "exitCode": result.exit_code,
+                "stdout": result.stdout,
+                "stderr": result.stderr,
+                "cwd": result.cwd,
+                "aborted": result.aborted,
+                "outcomeUnknown": result.outcome_unknown,
+                "stdoutTruncated": result.stdout_truncated,
+                "stderrTruncated": result.stderr_truncated,
             },
             "payloadJSON": serde_json::Value::Null
         }))
