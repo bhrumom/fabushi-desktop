@@ -29,6 +29,8 @@ The directly invoked helper graph was then read at the same pinned tree: `crabbo
 
 The remaining directly invoked implementation helpers were read as well: `crabbox-worker-warm-image-capture.ts` (`12cc2cbcd40a33502927bc1a284216cc66428912`), `crabbox-worker-warm-image-checkpoint.ts` (`4f2c80c517d8be3c075c72fbf6ee40ab39ae9458`), `crabbox-worker-warm-image-recipe.ts` (`094708190c05b5d088a59d94b2989886c524d74a`), `crabbox-worker-warm-image-records.ts` (`c1e56eefef55704a5c3f9124a67412eb3f23ff31`), `crabbox-worker-warm-image-allocation.ts` (`27427bcb41602ad97b157f7f6e736b20b44b1221`), `crabbox-process.ts` (`0ccfe03b9db815de9ea466891396eacc76597203`), `crabbox-managed-binary.ts` (`ac6297fbaaaf821fd1f2f4c9919f36732829c6d8`), and `crabbox-binary.ts` (`27f5952d24b8fd5133acd86e2fc4aeb13a7e22cc`).
 
+The directly corresponding oracle files were read at the same tree: `crabbox-worker-warm-image-allocation.test.ts` (`89af0fe6b67238f2605fb960287d56c2e7f3c811`), `crabbox-managed-binary.test.ts` (`384ec9d5792f532401ade5e2ade5d61ceccedcc3`), `crabbox-binary.test.ts` (`09291b712594ad0fbb64e5652718a692b1f77f8f`), and `crabbox-process.test.ts` (`d3c6721a6c3938074e4e08b55b8bb0af49010a77`). These are source oracles; they have not been executed locally.
+
 ## Observed responsibilities
 
 ### Machine catalog and setup choices
@@ -90,6 +92,8 @@ The helper responsibilities are now explicit. Preflight rejects unsafe AWS insta
 Warm-image state is a compare-and-apply keyed store with bounded profile/allocation capacity, generation identity, pinned/previous image ownership, replay identity checks, cold fallback reasons, capture uncertainty recovery, and explicit retirement obligations. Allocation freezes the selected checkpoint or cold choice before the first provider call; publication and demand renewal are generation-fenced. These invariants are source behavior to preserve in any future Rust owner, not justification for adding warm-image state to node RPC or existing FDN identity state.
 
 The capture/checkpoint layer adds further non-negotiable boundaries: checkpoint creation distinguishes not-submitted/native-unsupported from ambiguous provider outcomes; capture claims a compare-and-apply operation before scrubbing credentials, refuses enrollment while capture is unresolved, publishes only matching lease/profile/runtime generations, retains deletion debt, and treats optional teardown capture differently from required project preparation. Managed Crabbox binary acquisition is version-gated, HTTPS/allowlist/size/checksum/archive bounded, published under a file lock with damaged installations preserved, and shared across waiters with last-waiter cancellation. Binary discovery resolves explicit/sibling/PATH candidates without treating a missing candidate as a successful provider.
+
+The focused test oracles cover capture lifetime ordering and scrub suppression after recovery, required versus optional capture failure, cold/snapshot status reporting, failed-fork retirement, unsupported capture receipts, pinned-generation retention, borrower-held deletion debt, exact replay/cache/runtime identity, project authority expiry, uncertain capture fencing across restart, allocation capacity, managed binary checksum/archive/path safety, shared acquisition cancellation, damaged-installation recovery, download idle/total budgets, version admission and redacted probe errors, platform binary discovery precedence, and process working-directory normalization.
 
 ## Fabushi owner resolution
 
