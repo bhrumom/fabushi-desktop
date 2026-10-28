@@ -10,10 +10,10 @@
     "ui_accepted": false
   },
   "file_coverage": {
-    "mapped_paths": 900,
+    "mapped_paths": 907,
     "omitted_known": 0,
     "tracked_paths": 58750,
-    "unclassified_paths": 57850
+    "unclassified_paths": 57843
   },
   "inventory_authority": {
     "manifest_source": "GitHub Actions immutable artifact candidate",
@@ -19893,6 +19893,69 @@
             "start_line": 1
           },
           "symbol": "runNodeStreamTransport"
+        },
+        {
+          "blob_sha": "04038126673f521db02fbed7b4c307fe16744bd8",
+          "path": "src/node-host/node-worker-capacity.ts",
+          "range": {
+            "end_line": 273,
+            "start_line": 1
+          },
+          "symbol": "NodeWorkerCapacity"
+        },
+        {
+          "blob_sha": "684e2a059c57ee8ecef42a9ee882c0226d94d1c1",
+          "path": "src/node-host/node-worker-child-lifecycle.ts",
+          "range": {
+            "end_line": 730,
+            "start_line": 1
+          },
+          "symbol": "NodeWorkerChildLifecycle"
+        },
+        {
+          "blob_sha": "1107546e27a55ca13405ed85732c4f4cfbe3b454",
+          "path": "src/node-host/node-worker-child-secrets.ts",
+          "range": {
+            "end_line": 24,
+            "start_line": 1
+          },
+          "symbol": "nodeWorkerLaunchSecrets"
+        },
+        {
+          "blob_sha": "a0e79acbb4c16ffa564f68eacf6549f6cd6e942d",
+          "path": "src/node-host/node-worker-container-engine.ts",
+          "range": {
+            "end_line": 478,
+            "start_line": 1
+          },
+          "symbol": "resolveNodeWorkerContainerEngine"
+        },
+        {
+          "blob_sha": "b1c72c38c5ff6eee4589055f2ff21ca7e5b9ea3d",
+          "path": "src/node-host/node-worker-container-lifecycle.ts",
+          "range": {
+            "end_line": 104,
+            "start_line": 1
+          },
+          "symbol": "NodeWorkerContainerLifecycle"
+        },
+        {
+          "blob_sha": "bf07c1bb8ec29b18305cf121e6166b40dbe5443d",
+          "path": "src/node-host/node-worker-environment.ts",
+          "range": {
+            "end_line": 93,
+            "start_line": 1
+          },
+          "symbol": "nodeWorkerEnvironment"
+        },
+        {
+          "blob_sha": "63a3c7510b8e6b16c502d12019dc75795b4cdfb7",
+          "path": "src/node-host/node-worker-journal-worker.ts",
+          "range": {
+            "end_line": 187,
+            "start_line": 1
+          },
+          "symbol": "NodeWorkerJournalWorker"
         },
         {
           "blob_sha": "f2b2b63fb265ddf79e6c66d02c13e687237d7229",
