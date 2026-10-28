@@ -72,6 +72,12 @@ does not yet have a production caller proving this lifecycle, so
 `OCRM-RESP-SESSION-AUTH-PROFILE-LIFECYCLE-001` remains `not-wired`/`not-run`;
 the read is source-closure evidence only, not a production acceptance claim.
 
+The same pass read `src/sessions/auth-profile-removal.ts` in full (blob
+`378579dd13534027cdce7953942e64822db097e9`, 157 lines). It is mapped to the
+same lifecycle responsibility as the preservation source, while its removal
+behavior remains source evidence only; no separate test file exists at the
+locked tree and no production caller was inferred.
+
 1. **`OCRM-RESP-SESSION-KEY-ROUTING-001`**: Classify and route session keys (cron, direct, group, global, spawn-child), reserving `harness:` namespace.
 2. **`OCRM-RESP-SESSION-COMMUNICATION-POLICY-001`**: Inter-session communication admission policy (modes: always, ask, never) with approval requirements.
 3. **`OCRM-RESP-SESSION-CONVERSATION-TURNS-001`**: Conversation turn correlation, pending turn registry, outbound message matching, and turn settlement state machine.
