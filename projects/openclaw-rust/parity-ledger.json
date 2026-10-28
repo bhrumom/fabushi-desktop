@@ -19611,7 +19611,11 @@
         "parse_worker_identity",
         "parse_worker_receipt",
         "validate_worker_launch_bindings",
-        "worker_turn_matches_identity"
+        "worker_turn_matches_identity",
+        "resolve_worker_bundle_entry",
+        "validate_namespace",
+        "validate_bundle_hash",
+        "WORKER_BUNDLE_ENTRY_PATH"
       ],
       "unit_id": "OCRM-UNIT-NODE-HOST-001"
     },
