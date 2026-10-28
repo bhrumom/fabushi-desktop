@@ -11,6 +11,15 @@
 
 ## 1. Upstream Source Audit & Line-by-Line Reading
 
+The locked-source pass re-read `src/media/host-read-media-policy.ts` in full
+(blob `dfe3731a67d3f2d320c0bb67c3aa747cabdee909`, 234 lines) and
+`src/media/local-roots.ts` in full (blob
+`2bc61e92f0c8015aee5dcd8aed0412917a8ee881`, 197 lines). The former validates
+text/HTML shape, printable ratios, MIME aliases and declared host-read policy;
+the latter canonicalizes state/config roots, filters shared roots and builds
+session/agent-scoped roots for source access. Both rows map to their existing
+Rust owners; source reading does not imply production acceptance.
+
 The locked-source pass re-read `src/media/channel-inbound-roots.ts` in full
 (blob `168b948a87dce629e8e43756ecb7665d1b88cc45`, 142 lines). It resolves
 only operator-enabled trusted official channel plugin artifacts, uses the

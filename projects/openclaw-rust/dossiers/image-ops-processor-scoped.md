@@ -11,6 +11,13 @@
 
 ## 1. Upstream Source Audit & Line-by-Line Reading
 
+The locked-source pass re-read `src/media/image-ops.ts` in full (blob
+`a3570b0fdbb410f26fc58596910152d45e6832b8`, 236 lines). Its behavior covers
+header metadata probing, animated-WebP/still-PNG detection, resize quality
+fallbacks, byte-bounded encoding, HEIC/JPEG/PNG conversion and optimized PNG
+output. The canonical row maps it to the existing Rust image-ops owner without
+upgrading wiring or verification.
+
 The following 10 core image operations, processor configuration, worker execution, attachment preparation, and image test suite files (totaling 961 lines) were audited line-by-line from the locked upstream repository and mapped into canonical inventory shard `part-0042`:
 
 | Shard | Source File | Blob SHA | Lines | Scope | Mapped Responsibility |
