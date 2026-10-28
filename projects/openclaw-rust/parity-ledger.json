@@ -10,10 +10,10 @@
     "ui_accepted": false
   },
   "file_coverage": {
-    "mapped_paths": 1027,
+    "mapped_paths": 1037,
     "omitted_known": 0,
     "tracked_paths": 58750,
-    "unclassified_paths": 57723
+    "unclassified_paths": 57713
   },
   "inventory_authority": {
     "manifest_source": "GitHub Actions immutable artifact candidate",
@@ -20736,6 +20736,66 @@
           "start_line": 1
         },
         "symbol": "selectWorkspaceSeedsToPrune"
+      },
+      {
+        "blob_sha": "963014da81018e74d57f58bb96ef106ffe5331db",
+        "path": "src/worker/worker-deploy-browser-runtime.ts",
+        "range": {"end_line": 9, "start_line": 1},
+        "symbol": "workerDeployBrowserRuntime"
+      },
+      {
+        "blob_sha": "8fae136772f103bd016dc5397afd3e9a32688acb",
+        "path": "src/worker/worker-deploy-client-credentials.ts",
+        "range": {"end_line": 2, "start_line": 1},
+        "symbol": "worker deploy client credentials entry"
+      },
+      {
+        "blob_sha": "930ab46ba9ce13d3ed58cd801101f172455e0cc6",
+        "path": "src/worker/worker-deploy-entry.ts",
+        "range": {"end_line": 54, "start_line": 1},
+        "symbol": "worker deploy entry"
+      },
+      {
+        "blob_sha": "9eaaff72594868ca2d763f4421fa2438ac11c524",
+        "path": "src/worker/worker-deploy-file-tool-planning.ts",
+        "range": {"end_line": 2, "start_line": 1},
+        "symbol": "worker deploy file-tool planning entry"
+      },
+      {
+        "blob_sha": "d068828c308c292d69ad30c8df378190ac6c6101",
+        "path": "src/worker/worker-deploy-file-tool-read.ts",
+        "range": {"end_line": 2, "start_line": 1},
+        "symbol": "worker deploy file-tool read entry"
+      },
+      {
+        "blob_sha": "d7de2a0f1ffb37addf9567918589692290543497",
+        "path": "src/worker/worker-deploy-image-processor.ts",
+        "range": {"end_line": 2, "start_line": 1},
+        "symbol": "worker deploy image processor entry"
+      },
+      {
+        "blob_sha": "7f5bf2454fe8b42139c12f4aa8164e66926b3dac",
+        "path": "src/worker/worker-deploy-runtime.ts",
+        "range": {"end_line": 29, "start_line": 1},
+        "symbol": "sealed worker runtime entrypoint registry"
+      },
+      {
+        "blob_sha": "cca4e0d487d63828d3b4e0abbe7659a88e7ac6ed",
+        "path": "src/worker/worker-deploy-sqlite-source-revision.ts",
+        "range": {"end_line": 2, "start_line": 1},
+        "symbol": "worker deploy sqlite source revision entry"
+      },
+      {
+        "blob_sha": "24ae90cdc8e431d96ab6cb81b65c44b79701fda3",
+        "path": "src/worker/worker-deploy-sqlite-store.ts",
+        "range": {"end_line": 8, "start_line": 1},
+        "symbol": "worker deploy sqlite store entry"
+      },
+      {
+        "blob_sha": "130eeb3833390e51d1dca3c983e5b09669b9fce4",
+        "path": "src/worker/worker-deploy-state-read.ts",
+        "range": {"end_line": 2, "start_line": 1},
+        "symbol": "worker deploy state read entry"
         }
       ],
       "status": {
