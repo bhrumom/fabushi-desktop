@@ -1002,3 +1002,33 @@ parent evidence. These sources remain one Session Turns Controller execution
 boundary and do not authorize a second run loop, runtime lease, or settlement
 store. Rust implementation, production wiring, and acceptance remain
 unverified.
+
+## 115. Agent content preparation and media admission ownership (2026-10-29)
+
+The locked `agent-content-phase.ts` and focused test were read in full.
+Content preparation normalizes and validates channel hints, applies voice-wake
+routing only for eligible unbound requests, resolves the canonical session and
+agent owner before attachment reads, selects the persisted or explicit model
+for image capability, and parses/offloads media under bounded bytes and live
+admission assertions. It strips image markers only when the selected model
+requires understanding, preserves input provenance, and returns the prepared
+content without creating a media or model authority. The oracle covers global
+session ownership, replacement during read, target refusal, text-only model
+offload, and explicit vision override. This remains an existing Session Turns
+Controller boundary delegating to media/model owners; Rust wiring and
+acceptance remain unverified.
+
+## 116. Agent delivery planning and scoped outbound observation (2026-10-29)
+
+The locked `agent-delivery-phase.ts` and focused test were read in full.
+Delivery planning resolves the active session owner, observes only live RPC
+sources matching the selected session/store/Gateway scope, preserves WebChat
+session ownership, resolves channel/account/thread and target fallbacks through
+the existing outbound delivery owners, and distinguishes strict failure from
+best-effort session-only degradation. Incognito diagnostics suppress private
+provider errors while retaining the caller-visible failure contract. The
+oracle covers local versus foreign Gateway/store source scope and strict or
+best-effort target/channel failures across ordinary and incognito sessions.
+This is a Session Turns Controller orchestration boundary over existing
+outbound channel owners, not a second delivery transport or receipt store;
+Rust implementation, wiring, and acceptance remain unverified.

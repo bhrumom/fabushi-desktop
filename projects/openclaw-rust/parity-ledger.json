@@ -28831,6 +28831,42 @@
             "start_line": 1
           },
           "symbol": "agent execution lineage oracle"
+        },
+        {
+          "blob_sha": "18f6f73320681e224c4111c9e3f2d1bd35b3f29b",
+          "path": "src/gateway/agent-turn/agent-content-phase.ts",
+          "range": {
+            "end_line": 280,
+            "start_line": 1
+          },
+          "symbol": "prepareAgentContentPhase"
+        },
+        {
+          "blob_sha": "8ac27c8ce6bf1e39a31a3764c6e56244a942caf7",
+          "path": "src/gateway/agent-turn/agent-content-phase.test.ts",
+          "range": {
+            "end_line": 223,
+            "start_line": 1
+          },
+          "symbol": "agent content phase image admission oracle"
+        },
+        {
+          "blob_sha": "ea9c8a24d23fe1f1144c8cb9ef0a34a9f93821ea",
+          "path": "src/gateway/agent-turn/agent-delivery-phase.ts",
+          "range": {
+            "end_line": 262,
+            "start_line": 1
+          },
+          "symbol": "resolveAgentDeliveryPhase"
+        },
+        {
+          "blob_sha": "a1117880331487b783d3a8e434d371b894e70346",
+          "path": "src/gateway/agent-turn/agent-delivery-phase.test.ts",
+          "range": {
+            "end_line": 167,
+            "start_line": 1
+          },
+          "symbol": "agent delivery scope and privacy oracle"
         }
       ],
       "status": {
