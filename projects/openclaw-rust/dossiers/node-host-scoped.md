@@ -1157,3 +1157,58 @@ Controller, agent-job, session mailbox, and Gateway context owners; they do
 not create a second wait authority, dedupe cache, replay store, or execution
 runtime. Rust implementation, wiring, runtime execution, and acceptance
 remain unverified.
+
+## 123. Agent run admission and ownership-transfer boundary (2026-10-29)
+
+The locked `agent-run-admission-phase.ts` was read in full. The admission
+phase restores cached pre-registration outcomes, acquires and releases
+Gateway/session work admission, binds the operational run instance and
+provider facts to the exact RPC source, and creates the run abort owner only
+after the session target is authorized. It fences lifecycle generation,
+requester/cron authority, parent-resume and follow-up ownership, model-runtime
+leases, plugin-subagent registration, pending-input custody, operator
+authority, restart recovery, and session identity before acceptance. After
+the synchronous acceptance transfer it publishes the dedupe projection,
+arms cancellation, records the user-turn participant, and transfers cleanup
+to execution; every pre-acceptance failure releases the exact leases,
+operator, subagent, recovery, transcript/media, and Gateway admission owners.
+This is the existing Session Turns admission and execution-custody boundary,
+not a second admission queue, abort registry, model runtime, or subagent
+runtime. Rust implementation, wiring, runtime execution, and acceptance
+remain unverified.
+
+## 124. Agent turn service orchestration and execution handoff (2026-10-29)
+
+The locked `agent-turn-service.ts` was read in full. The service owns the
+single Gateway turn preparation pipeline: cached replay and source identity
+checks, dedupe reservation, request routing, session actor-storage custody,
+content preparation, reset/session preparation and authorization, session
+persistence, delivery resolution, run admission, and asynchronous execution
+handoff. It composes the existing phase owners, keeps source/request/session
+assertions active through every awaited boundary, transfers storage,
+preparation-source, media, cron-continuation, recovery, and Gateway admission
+ownership exactly once, and releases them on non-transfer paths. `agent.wait`
+is a projection through the existing wait owner. The service therefore maps
+to the existing Session Turns Controller, session storage/admission,
+transcript, delivery, and execution owners; it does not create a second
+pipeline, scheduler, transcript store, or runtime. Rust implementation,
+wiring, runtime execution, and acceptance remain unverified.
+
+## 125. Native requester-settle continuation and pending-input oracle (2026-10-29)
+
+The locked `agent-run-settle-continuation.native.test.ts` was read in full.
+The native oracle proves that requester-settle processing survives later user
+turns, replays completed private input without reopening it, preserves
+unconsumed interrupted input, refuses legacy committed input outside the
+current turn, and cannot publish cancellation after completion authority is
+revoked. It keeps timeout input until the producer settles, distinguishes
+hard provider timeout from nonfinal timeout, preserves peer-delivery success
+and duplicate reconciliation, retains the committed child target and session
+metadata, and preserves accepted sender/profile identity through rename and
+replay. The fixture also validates exact RPC-source, lifecycle-generation,
+session-target, pending-input, transcript, and cleanup fencing. This is a
+conformance oracle for the existing Session Turns, pending-input,
+transcript-processing, subagent-settle, and terminal execution owners; it
+does not authorize a second continuation engine or input store. Rust
+implementation, wiring, runtime execution, and acceptance remain
+unverified.

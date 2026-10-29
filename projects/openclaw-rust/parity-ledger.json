@@ -29020,6 +29020,33 @@
             "start_line": 1
           },
           "symbol": "agent wait and dedupe lifecycle oracle"
+        },
+        {
+          "blob_sha": "50285ade699d5afe47112ead6c8a61ab12e9ea61",
+          "path": "src/gateway/agent-turn/agent-run-admission-phase.ts",
+          "range": {
+            "end_line": 713,
+            "start_line": 1
+          },
+          "symbol": "prepareAgentRunDispatch"
+        },
+        {
+          "blob_sha": "c4df8c8550e342eddb4e36944443ade0be1020a4",
+          "path": "src/gateway/agent-turn/agent-run-settle-continuation.native.test.ts",
+          "range": {
+            "end_line": 605,
+            "start_line": 1
+          },
+          "symbol": "native requester-settle continuation custody oracle"
+        },
+        {
+          "blob_sha": "6115ed80c5b9ba62bae949fbe2b76978fcdca684",
+          "path": "src/gateway/agent-turn/agent-turn-service.ts",
+          "range": {
+            "end_line": 727,
+            "start_line": 1
+          },
+          "symbol": "createAgentTurnService"
         }
       ],
       "status": {
