@@ -1602,3 +1602,27 @@ does not interrupt later effects after authority loss. This is read-only
 evidence pending a controlled inventory writer: no generated shard/index state,
 ledger ref, or completion flag was changed. Rust implementation, wiring,
 runtime execution, and acceptance remain unverified.
+
+## 143. Session controller RPC source lifecycle, steer, and tool-authority read-only audit (2026-10-29)
+
+The locked upstream files `session-controller.rpc-sources.ts`
+(`2ed8a2e48efac2363f5c84b3c193aaba2e353311`, 542 lines),
+`session-controller.steer.ts`
+(`dccd72cce94a84b5c9987b12409f50218e9fdb25`, 208 lines), and
+`session-controller.tool-authority.ts`
+(`b6f8cff3f27d7b93369805a9b413b32d71b66d29`, 546 lines) were read in full.
+RPC source ownership is selected by exact run, captured Gateway scope, signal,
+physical controller target, lifecycle generation, and session identity; source
+registration rejects same-Gateway duplicates, retirement remains coupled to
+input settlement, and queue/execution state, deadlines, renewal, cancellation,
+and active-session projection remain owned by the exact source/operation.
+Steer admission reserves behind older inputs, revalidates source and tool
+authority before and during preparation, combines abort custody, and classifies
+accepted, rejected, and indeterminate native outcomes so an unconfirmed commit
+is never replayed. Tool authority retains admitted participants, freezes the
+operation snapshot and route, binds async preparation to the captured owner,
+rechecks lifecycle/backend/route/fingerprint at each await, preserves fallback
+policy, and closes retained authority on operation end. This is read-only
+evidence pending a controlled inventory writer: no generated shard/index state,
+ledger ref, or completion flag was changed. Rust implementation, wiring,
+runtime execution, and acceptance remain unverified.
