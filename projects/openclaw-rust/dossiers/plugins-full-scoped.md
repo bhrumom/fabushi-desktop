@@ -173,16 +173,22 @@ The failure worker now treats `RevivalExecution::aborted` and `quiesced_for_upgr
 ## 2026-10-29 — lifecycle hook production reachability re-audit
 
 The current exact Fabushi target was rechecked at
-`2225400ea73392523586a110301edeb87c986001`. The Rust
+`205cd0e153caf18ed76d55df7c7055e88dc91cfd`. The Rust
 `PluginHookRunner`/`ProviderExtensionBridge` implementation is present in
-`source/host/src/extensions/plugins/hook_runner.rs` and is covered by
-contract tests, but the production owner graph currently has no consumer:
+`source/host/src/extensions/plugins/hook_runner.rs` (blob
+`084626b140e95ee6bc8a97138c2d343b42904a6f`) and is covered by
+`source/host/tests/openclaw_plugins_full_contract.rs` (blob
+`5f2d8e081c66cfc11246951ec88d246b6221b61c`), but the production owner graph
+currently has no consumer:
 
-- `ProductionHostExtensions` owns the plugin capability catalog and channel
-  delivery lifecycle, but does not own or construct a `PluginHookRunner`;
-- `UnifiedGatewayApi` has no hook-runner dependency and no lifecycle hook
-  dispatch at `call_send_prompt`, turn completion, command execution, or
-  channel delivery;
+- `ProductionHostExtensions` at blob
+  `26e4e1860098d2aced6ee0c6df7bc7715fb6797a` owns the plugin capability
+  catalog and channel delivery lifecycle, but does not own or construct a
+  `PluginHookRunner`;
+- `UnifiedGatewayApi` in `source/host/app/src/main.rs` blob
+  `1656649eeac507f2bc4a56b844b5f550ffd3313c` has no hook-runner dependency and
+  no lifecycle hook dispatch at `call_send_prompt`, turn completion, command
+  execution, or channel delivery;
 - the only `PluginHookRunner::run_hooks` and `HookName` references are the
   implementation module itself and contract/test fixtures.
 
