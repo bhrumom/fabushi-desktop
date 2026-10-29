@@ -308,6 +308,12 @@ status projection call that reuses the existing gateway transport and error
 classification; a live event publisher and renderer/CLI consumer are still
 open.
 
+The Coordinator event projection now has a family-scoped decode/encode
+boundary for `cloud-workers.status`: unknown families and malformed payloads
+are rejected, while valid status events round-trip through the typed event.
+This remains a protocol contract only; it does not claim a live publisher,
+renderer, CLI, or provider mutation path.
+
 The owner now exposes an ephemeral `CloudWorkerLeasedCapability` only for an
 enrolled lease whose last mutation completed successfully. The capability is
 fenced by account/device scope, lease ID, owner epoch, generation and runtime

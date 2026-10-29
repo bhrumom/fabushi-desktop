@@ -59,6 +59,18 @@ impl CloudWorkerCoordinatorEvent {
     pub const fn family(&self) -> &'static str {
         CLOUD_WORKERS_STATUS_EVENT_FAMILY
     }
+
+    /// Decode only the registered cloud-worker event family. Unknown families
+    /// and malformed payloads stay outside this projection boundary.
+    pub fn from_event(family: &str, payload: Value) -> Option<Self> {
+        (family == CLOUD_WORKERS_STATUS_EVENT_FAMILY)
+            .then(|| serde_json::from_value(payload).ok())
+            .flatten()
+    }
+
+    pub fn payload(&self) -> Value {
+        serde_json::to_value(self).expect("cloud-worker event is serializable")
+    }
 }
 
 #[cfg(test)]
@@ -92,5 +104,23 @@ mod tests {
         assert!(projection.is_disabled());
         let event = CloudWorkerCoordinatorEvent::StatusChanged { projection };
         assert_eq!(event.family(), "cloud-workers.status");
+    }
+
+    #[test]
+    fn event_round_trip_is_scoped_to_the_registered_family() {
+        let event = CloudWorkerCoordinatorEvent::StatusChanged {
+            projection: CloudWorkerStatusProjection {
+                owner: "cloud-workers".into(),
+                status: "disabled".into(),
+                provider_ready: false,
+                production_mutation: false,
+            },
+        };
+        let decoded = CloudWorkerCoordinatorEvent::from_event(event.family(), event.payload());
+        assert_eq!(decoded, Some(event));
+        assert_eq!(
+            CloudWorkerCoordinatorEvent::from_event("other.status", serde_json::json!({})),
+            None
+        );
     }
 }
