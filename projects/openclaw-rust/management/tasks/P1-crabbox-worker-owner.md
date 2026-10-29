@@ -308,6 +308,13 @@ status projection call that reuses the existing gateway transport and error
 classification; a live event publisher and renderer/CLI consumer are still
 open.
 
+The owner now exposes an ephemeral `CloudWorkerLeasedCapability` only for an
+enrolled lease whose last mutation completed successfully. The capability is
+fenced by account/device scope, lease ID, owner epoch, generation and runtime
+identity, and carries no lifecycle or authorization state of its own. Runner,
+Computer and sandbox adapters remain responsible for consuming this contract;
+provider launch and real consumer wiring remain open.
+
 ## 9. Definition of Done / acceptance criteria
 
 - P1-AC01: ADR is approved and the target symbols/consumers are recorded in

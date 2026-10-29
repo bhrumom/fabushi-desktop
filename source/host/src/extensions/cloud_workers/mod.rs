@@ -44,9 +44,9 @@ pub use platform_bridge::{
 };
 pub use lease::{
     CloudWorkerLease, CloudWorkerLeaseError, CloudWorkerLeaseMutation,
-    CloudWorkerLeaseScope, CloudWorkerLifecycle, CloudWorkerMutationOutcome,
-    CloudWorkerRuntimeIdentity, LeaseGeneration, LeaseId, OwnerEpoch,
-    ReplayKey,
+    CloudWorkerLeaseScope, CloudWorkerLeasedCapability, CloudWorkerLifecycle,
+    CloudWorkerMutationOutcome, CloudWorkerRuntimeIdentity, LeaseGeneration,
+    LeaseId, OwnerEpoch, ReplayKey,
 };
 pub use warm_image::{
     CloudWorkerWarmImage, CloudWorkerWarmImageError, CloudWorkerWarmImageGeneration,

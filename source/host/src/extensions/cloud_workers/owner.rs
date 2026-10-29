@@ -4,7 +4,8 @@ use serde::{Deserialize, Serialize};
 
 use super::{
     CloudWorkerLease, CloudWorkerLeaseError, CloudWorkerLeaseMutation, CloudWorkerLeaseScope,
-    CloudWorkerLifecycle, CloudWorkerMutationOutcome, CloudWorkerRuntimeIdentity,
+    CloudWorkerLeasedCapability, CloudWorkerLifecycle, CloudWorkerMutationOutcome,
+    CloudWorkerRuntimeIdentity,
     CloudWorkerWarmImage, CloudWorkerWarmImageError, CloudWorkerWarmImageGeneration,
     CloudWorkerWarmImageOperation, LeaseId,
 };
@@ -192,6 +193,17 @@ impl CloudWorkerProvisioningOwner {
         self.leases
             .get(lease_id)
             .ok_or(CloudWorkerOwnerError::UnknownLease)
+    }
+
+    /// Returns an ephemeral consumer capability only while the lease is
+    /// enrolled and its last mutation completed successfully.
+    pub fn leased_capability(
+        &self,
+        lease_id: &LeaseId,
+    ) -> Result<CloudWorkerLeasedCapability, CloudWorkerOwnerError> {
+        self.lease(lease_id)?
+            .capability()
+            .map_err(CloudWorkerOwnerError::from)
     }
 
     pub fn settle_lease(

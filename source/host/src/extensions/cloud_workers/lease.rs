@@ -98,7 +98,64 @@ pub struct CloudWorkerLease {
     pub last_outcome: CloudWorkerMutationOutcome,
 }
 
+/// Ephemeral capability handed to an existing Runner, Computer or sandbox
+/// consumer after the provisioning owner has established an enrolled lease.
+/// It carries identity/fencing material only; it is not a second lifecycle
+/// store and cannot launch, authorize, or mutate a worker by itself.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct CloudWorkerLeasedCapability {
+    scope: CloudWorkerLeaseScope,
+    lease_id: LeaseId,
+    owner_epoch: OwnerEpoch,
+    generation: LeaseGeneration,
+    runtime: CloudWorkerRuntimeIdentity,
+}
+
+impl CloudWorkerLeasedCapability {
+    pub fn scope(&self) -> &CloudWorkerLeaseScope {
+        &self.scope
+    }
+
+    pub fn lease_id(&self) -> &LeaseId {
+        &self.lease_id
+    }
+
+    pub fn owner_epoch(&self) -> OwnerEpoch {
+        self.owner_epoch
+    }
+
+    pub fn generation(&self) -> LeaseGeneration {
+        self.generation
+    }
+
+    pub fn runtime(&self) -> &CloudWorkerRuntimeIdentity {
+        &self.runtime
+    }
+}
+
 impl CloudWorkerLease {
+    pub fn capability(&self) -> Result<CloudWorkerLeasedCapability, CloudWorkerLeaseError> {
+        if !matches!(
+            self.lifecycle,
+            CloudWorkerLifecycle::Enrolled
+                | CloudWorkerLifecycle::Inspecting
+                | CloudWorkerLifecycle::Heartbeating
+        ) || self.last_outcome != CloudWorkerMutationOutcome::Completed
+        {
+            return Err(CloudWorkerLeaseError::CapabilityUnavailable {
+                lifecycle: self.lifecycle,
+                outcome: self.last_outcome,
+            });
+        }
+        Ok(CloudWorkerLeasedCapability {
+            scope: self.scope.clone(),
+            lease_id: self.lease_id.clone(),
+            owner_epoch: self.owner_epoch,
+            generation: self.generation,
+            runtime: self.runtime.clone(),
+        })
+    }
+
     pub fn mutation(
         &self,
         owner_epoch: OwnerEpoch,
@@ -215,6 +272,11 @@ pub enum CloudWorkerLeaseError {
     StaleRuntimeIdentity,
     #[error("mutation requires a replay key")]
     MissingReplayKey,
+    #[error("lease capability is unavailable in lifecycle {lifecycle:?} with outcome {outcome:?}")]
+    CapabilityUnavailable {
+        lifecycle: CloudWorkerLifecycle,
+        outcome: CloudWorkerMutationOutcome,
+    },
     #[error("a submitted mutation cannot change lifecycle state")]
     SubmittedStateChanged,
     #[error("an unsettled mutation cannot change lifecycle state")]
@@ -326,5 +388,21 @@ mod tests {
                 to: CloudWorkerLifecycle::Preparing,
             })
         );
+    }
+
+    #[test]
+    fn capability_requires_an_enrolled_completed_lease() {
+        let mut lease = lease();
+        assert!(matches!(
+            lease.capability(),
+            Err(CloudWorkerLeaseError::CapabilityUnavailable { .. })
+        ));
+        lease.lifecycle = CloudWorkerLifecycle::Enrolled;
+        assert!(lease.capability().is_ok());
+        lease.last_outcome = CloudWorkerMutationOutcome::OutcomeUnknown;
+        assert!(matches!(
+            lease.capability(),
+            Err(CloudWorkerLeaseError::CapabilityUnavailable { .. })
+        ));
     }
 }
