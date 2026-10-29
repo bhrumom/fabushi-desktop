@@ -1046,12 +1046,31 @@ fn test_ocrm_plugin_sdk_channel_lifecycle_outbound_pairing() {
     let tracker = OutboundEchoTracker::new();
     let msg1 = OutboundMessageIdentity {
         channel: "telegram".to_string(),
-        message_id: "m-123".to_string(),
+        conversation_id: "chat-1".to_string(),
         account_id: Some("work".to_string()),
+        message_id: Some("m-123".to_string()),
+        source_id: None,
     };
     assert!(!tracker.is_recent(&msg1));
     tracker.record(msg1.clone());
     assert!(tracker.is_recent(&msg1));
+
+    let source_echo = OutboundMessageIdentity {
+        message_id: None,
+        source_id: Some("source-123".to_string()),
+        ..msg1.clone()
+    };
+    tracker.record(source_echo.clone());
+    assert!(tracker.is_recent(&source_echo));
+    assert!(!tracker.is_recent(&OutboundMessageIdentity {
+        conversation_id: "another-chat".to_string(),
+        ..source_echo.clone()
+    }));
+
+    let expiring_tracker = OutboundEchoTracker::with_window(Duration::from_millis(20));
+    expiring_tracker.record(msg1.clone());
+    sleep(Duration::from_millis(30));
+    assert!(!expiring_tracker.is_recent(&msg1));
 
     tracker.clear();
     assert!(!tracker.is_recent(&msg1));

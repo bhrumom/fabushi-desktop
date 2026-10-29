@@ -65,3 +65,9 @@ sink, abort signal, or real channel-provider consumer.
 - Mapped Files: 12 added (Total mapped: 805 / 58,750).
 - Unclassified Remaining: 57,945.
 - Global completion flags: all 8 remaining `false` (fail-closed).
+
+## 7. Outbound echo identity correction (2026-10-29)
+
+The locked `src/channels/message/outbound-echo.ts` source (`7a4439d7618b8441ca284d38ba48c1dfb6928040`) defines a 30-second echo window, scopes identities by normalized channel/account/conversation, accepts either a platform `messageId` or a `sourceId`, and bounds retained identities to 10,000 entries. The previous Rust helper used an unbounded process-local set keyed only by channel/account/message ID.
+
+The existing Rust plugin-SDK owner now uses the same scoped identity dimensions, independently expires entries after the 30-second window, supports both identity kinds, and evicts the oldest entries at the 10,000-entry bound. Its contract fixture covers source-ID matching, conversation isolation, and expiry. This is implementation evidence only: no channel provider registration, inbound consumer, or production delivery wiring is inferred, and the responsibility remains `wiring=not-wired`, `verification=not-run`, `acceptance=pending` until the exact-head Actions receipt and real channel path are obtained.
