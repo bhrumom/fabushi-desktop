@@ -1116,3 +1116,44 @@ tests are conformance evidence for the existing Session Turns Controller,
 session preparation/reuse, database admission, and subagent scheduler owners;
 they do not justify a second preflight queue or session store. Rust wiring,
 runtime execution, and acceptance remain unverified.
+
+## 121. Internal agent-turn facade and Gateway dispatch custody (2026-10-29)
+
+The locked `internal-facade.ts` and `internal-facade.test.ts` were read in
+full. The facade is the frame-free Gateway boundary for agent dispatch and
+`agent.wait`: it performs pre-dispatch authorization and parameter validation,
+enters and releases the request lifetime exactly once, joins the existing
+execution scope, preserves acceptance-before-final ordering, and delegates
+turn execution to the existing agent-turn service. It fences context,
+admission, lifecycle generation, session, agent, and RPC-source identity;
+late cancellation targets the captured source registration rather than a
+later run-id lookup. `agent.wait` uses the same authorization/envelope and
+observation scope, retains private session facts, and converts deadline or
+abort handling through the existing Gateway dispatch wait boundary. The
+facade oracle covers cold-import joining, closure/abort/admission/context
+rechecks, acceptance and post-acceptance errors, cached execution reporting,
+startup-owner fencing, watchdog non-reentrancy, and deadline cancellation
+without aborting an unrelated run. These sources map to the existing Gateway
+dispatch registry and agent-turn service owners; they do not authorize a
+second agent runtime, transport, cancellation registry, or session store.
+Rust implementation, wiring, runtime execution, and acceptance remain
+unverified.
+
+## 122. Agent wait/dedupe observation and replay custody (2026-10-29)
+
+The locked `agent-wait-dedupe.test.ts` was read in full. The oracle binds
+queue observations to the exact Gateway, session, lifecycle generation, and
+RPC source; keeps whitespace-distinct run IDs separate; distinguishes active,
+queued, terminal, retired, and sessionless registrations; and preserves
+terminal reply, delivery, receipt, timeout, cancellation, and retry evidence
+across lifecycle-versus-dedupe publication order. It verifies sticky terminal
+retirement only after an admitted new attempt, expiry from the latest write,
+visible queued waits after cache expiry, session replacement fencing,
+agent/chat abort-source selection, later queue admission without completing
+another Gateway's waiter, concurrent waiter settlement, scope-local observer
+retirement, gateway-draining timeout projection, and timeout/cancellation
+precedence. These are conformance oracles for the existing Session Turns
+Controller, agent-job, session mailbox, and Gateway context owners; they do
+not create a second wait authority, dedupe cache, replay store, or execution
+runtime. Rust implementation, wiring, runtime execution, and acceptance
+remain unverified.

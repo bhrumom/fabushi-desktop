@@ -7284,6 +7284,24 @@
           "symbol": "InternalAgentTurnFacade"
         },
         {
+          "blob_sha": "41048ad324e034326f96085ba1ad21335ba973d3",
+          "path": "src/gateway/agent-turn/internal-facade.ts",
+          "range": {
+            "end_line": 525,
+            "start_line": 1
+          },
+          "symbol": "createInternalAgentTurnFacade"
+        },
+        {
+          "blob_sha": "4125f58c67ae45ead492d165693bfcecb9fcffb6",
+          "path": "src/gateway/agent-turn/internal-facade.test.ts",
+          "range": {
+            "end_line": 651,
+            "start_line": 1
+          },
+          "symbol": "internal agent turn facade lifecycle and ownership oracle"
+        },
+        {
           "blob_sha": "6c359b26c6ee046eb2e675bd085eaa21622bca62",
           "path": "src/gateway/agent-turn/io.ts",
           "range": {
@@ -28993,6 +29011,15 @@
             "start_line": 1
           },
           "symbol": "agent session reuse and rotation oracle"
+        },
+        {
+          "blob_sha": "620c887aa3db3e349d119946718aeab6ce9b7fa5",
+          "path": "src/gateway/agent-turn/agent-wait-dedupe.test.ts",
+          "range": {
+            "end_line": 874,
+            "start_line": 1
+          },
+          "symbol": "agent wait and dedupe lifecycle oracle"
         }
       ],
       "status": {
