@@ -34,6 +34,9 @@ The fix stays inside the existing Coordinator owner:
 - explicit `dispose()` uses the same contained shutdown-post path, so generation
   revocation cannot leave pending callers behind when the endpoint is already
   broken.
+- endpoint close failure is contained after the local phase is marked settled,
+  so cleanup failure cannot prevent callers and the settlement Promise from
+  being released.
 
 This does not claim that a remote side effect did not occur. It only settles
 the local transport call as failed and preserves the existing generation and
@@ -45,8 +48,8 @@ shutdown boundaries.
 asserts the direct negative cases: request post throws, the pending promise
 rejects with `post-failed`, hello post failure does not replace the current
 generation, a protocol-breach shutdown post failure still settles and closes
-the endpoint, and explicit disposal settles pending calls even when its
-shutdown post throws.
+the endpoint, explicit disposal settles pending calls even when its shutdown
+post throws, and endpoint close failure does not prevent settlement.
 
 The oracle has not been executed locally. Required remaining evidence is the
 exact-target GitHub Actions run plus a packaged-equivalent account-transition

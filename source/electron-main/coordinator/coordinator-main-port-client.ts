@@ -5,7 +5,7 @@ export class CoordinatorMainPortCallError extends Error { constructor(readonly c
 export function createCoordinatorMainPortClient(endpoint: { post(frame: CoordinatorFrame): void; close(): void }) {
   let phase: "awaiting-ready" | "serving" | "settled" = "awaiting-ready"; let nextRequestId = 0;
   const pending = new Map<string, { method: string; resolve(value: unknown): void; reject(error: unknown): void }>(); const { promise: settled, resolve: resolveSettled } = Promise.withResolvers<any>();
-  const settle = (settlement: any) => { if (phase === "settled") return; phase = "settled"; for (const call of pending.values()) call.reject(new Error(`coordinator main data port settled (${settlement.outcome}) before the ${call.method} reply`)); pending.clear(); endpoint.close(); resolveSettled(settlement); };
+  const settle = (settlement: any) => { if (phase === "settled") return; phase = "settled"; for (const call of pending.values()) call.reject(new Error(`coordinator main data port settled (${settlement.outcome}) before the ${call.method} reply`)); pending.clear(); try { endpoint.close(); } catch { /* local settlement must not depend on endpoint cleanup */ } resolveSettled(settlement); };
   const breach = (detail: string) => {
     if (phase === "settled") return;
     try {

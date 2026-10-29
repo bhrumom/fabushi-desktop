@@ -81,3 +81,15 @@ test("dispose settles pending calls when the shutdown frame cannot be posted", a
   assert.equal((await client.settled).outcome, "shutdown-requested");
   assert.equal(closed, 1);
 });
+
+test("settlement survives an endpoint close failure", async () => {
+  const client = createCoordinatorMainPortClient({
+    post() {},
+    close() {
+      throw new Error("close failed");
+    },
+  });
+
+  client.handlePortClosed();
+  assert.equal((await client.settled).outcome, "port-closed");
+});
