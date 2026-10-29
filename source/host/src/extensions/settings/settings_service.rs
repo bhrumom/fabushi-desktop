@@ -890,12 +890,16 @@ impl SettingsService {
     }
 
     pub fn get_host_settings(&self) -> Value {
+        let stored = self.load();
         let mut object = Map::new();
         object.insert("version".into(), Value::from(1));
         if self.is_read_only() {
             object.insert("readOnly".into(), Value::Bool(true));
         }
         object.insert("notifications".into(), self.get_notification_config());
+        if let Some(agents) = stored.get("agents") {
+            object.insert("agents".into(), agents.clone());
+        }
         object.insert(
             "mcpCustomInstructions".into(),
             string_map_value(self.get_mcp_custom_instructions()),
@@ -1036,6 +1040,13 @@ impl SettingsService {
                         .collect(),
                 ),
             );
+        }
+        if let Some(value) = update.get("agents") {
+            if value.is_null() {
+                settings.remove("agents");
+            } else if value.is_object() {
+                settings.insert("agents".into(), value.clone());
+            }
         }
         for field in ["userTimeZone", "userTimeZoneOverride"] {
             if let Some(Value::String(zone)) = update.get(field) {

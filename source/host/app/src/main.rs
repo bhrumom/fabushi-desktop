@@ -251,6 +251,9 @@ use mahayana_host_runtime::host_production_extensions::{
     CURRENT_SHIPPING_PRODUCTION_EXTENSION_IDS, start_production_host_box_extensions,
     start_production_host_extensions,
 };
+use mahayana_host_runtime::host_roster_bookkeeping::{
+    HostRosterBookkeeping, production_host_roster_bookkeeping,
+};
 use mahayana_host_runtime::network_enrollment_owner::{
     DEFAULT_FABUSHI_API_BASE_URL, FABUSHI_API_BASE_URL_ENV, NetworkEnrollmentOwner,
     NetworkEnrollmentSupervisor,
@@ -1125,6 +1128,7 @@ struct UnifiedGatewayApi {
     auto_review: Arc<HostAutoReviewExtension>,
     host_runner_composition: Arc<HostRunnerComposition>,
     box_store_sync: ProductionBoxStoreSyncApi,
+    roster_bookkeeping: Arc<Mutex<HostRosterBookkeeping>>,
     cross_user: Arc<ProductionCrossUserRuntime>,
     host_upgrade: Arc<ProductionHostUpgradeExtension>,
     automations_lifecycle: Arc<Mutex<Weak<ProductionAutomationsLifecycle>>>,
@@ -3269,6 +3273,10 @@ impl UnifiedGatewayApi {
         let permission_changed = target.get("localToolPermission").is_some();
         let result = self.settings.set_host_settings(target)
             .map_err(|e| GatewayCommandError::Internal(format!("Failed to persist settings: {e}")))?;
+        self.roster_bookkeeping
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
+            .apply_config(&result);
         if permission_changed {
             self.local_tool_permission.note_permission_changed();
         }
@@ -11301,6 +11309,10 @@ impl GatewayApi for UnifiedGatewayApi {
             let permission_changed = args.get("localToolPermission").is_some();
             let result = self.settings.set_host_settings(&args)
                 .map_err(|error| GatewayCommandError::Internal(format!("Failed to persist settings: {error}")))?;
+            self.roster_bookkeeping
+                .lock()
+                .unwrap_or_else(|poisoned| poisoned.into_inner())
+                .apply_config(&result);
             if permission_changed {
                 self.local_tool_permission.note_permission_changed();
             }
@@ -12365,7 +12377,7 @@ fn main() {
         };
 
     let gateway_events = GatewayEventHub::default();
-    let production_extensions = match start_production_host_extensions(
+    let production_extensions = Arc::new(match start_production_host_extensions(
         &app_data_dir,
         gateway_events.clone(),
     ) {
@@ -12374,7 +12386,7 @@ fn main() {
             eprintln!("failed to start production Host extensions: {error}");
             return;
         }
-    };
+    });
     let mut network_enrollment_supervisor: Option<NetworkEnrollmentSupervisor> = {
         match FileRemoteComputerDeviceSecretProvider::from_environment() {
             Ok(device_provider) => {
@@ -13135,6 +13147,18 @@ fn main() {
     *box_store_sync_deletion_slot
         .lock()
         .unwrap_or_else(|poisoned| poisoned.into_inner()) = Some(box_store_sync_api.clone());
+    let roster_bookkeeping = Arc::new(Mutex::new(production_host_roster_bookkeeping(
+        Arc::clone(&attachments_service),
+        Arc::clone(&transcript_manager),
+        Arc::clone(&forever_box),
+        Arc::clone(&production_extensions),
+        box_store_sync_api.clone(),
+        Arc::clone(&production_extensions.source_map),
+    )));
+    roster_bookkeeping
+        .lock()
+        .unwrap_or_else(|poisoned| poisoned.into_inner())
+        .apply_config(&settings_extension.get_host_settings());
     let lifecycle_host_bundle_version = read_local_host_version(SAND_BOX_HOST_VERSION_PATH)
         .or_else(|| {
             std::env::var("SAND_HOST_BUNDLE_VERSION")
@@ -13871,6 +13895,7 @@ fn main() {
             auto_review: Arc::clone(&auto_review_extension),
             host_runner_composition: Arc::clone(&host_runner_composition),
             box_store_sync: box_store_sync_api.clone(),
+            roster_bookkeeping: Arc::clone(&roster_bookkeeping),
             cross_user: Arc::clone(&cross_user),
             host_upgrade: Arc::clone(&host_upgrade),
             automations_lifecycle: Arc::clone(&automations_lifecycle_slot),

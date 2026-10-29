@@ -1,6 +1,13 @@
 use std::collections::HashSet;
 use std::sync::Arc;
 
+use crate::extensions::attachments::attachments_service::AttachmentsService;
+use crate::extensions::box_store_sync::production::ProductionBoxStoreSyncApi;
+use crate::extensions::forever_box::ForeverBoxService;
+use crate::extensions::source_map::source_map_service::SandSourceMap;
+use crate::extensions::transcript::transcript_manager::TranscriptManager;
+use crate::host_production_extensions::ProductionHostExtensions;
+
 pub trait AttachmentRosterPort: Send + Sync {
     fn set_fallback_agent_id(&self, agent_id: Option<&str>);
 }
@@ -42,6 +49,87 @@ pub struct HostRosterBookkeeping {
     latest_active_agent_id: Option<String>,
     is_busy: bool,
     running_agent_ids: HashSet<String>,
+}
+
+struct ProductionAttachmentsRosterPort(Arc<AttachmentsService>);
+
+impl AttachmentRosterPort for ProductionAttachmentsRosterPort {
+    fn set_fallback_agent_id(&self, agent_id: Option<&str>) {
+        self.0
+            .set_fallback_agent_id(agent_id.map(str::to_string));
+    }
+}
+
+struct ProductionTranscriptRosterPort(Arc<TranscriptManager>);
+
+impl TranscriptRosterPort for ProductionTranscriptRosterPort {
+    fn live_running_agent_ids(&self) -> Vec<String> {
+        self.0.live_running_agent_ids()
+    }
+}
+
+struct ProductionForeverBoxRosterPort(Arc<ForeverBoxService>);
+
+impl ForeverBoxRosterPort for ProductionForeverBoxRosterPort {
+    fn enroll_disk_pressure_reminder(&self, agent_ids: &HashSet<String>) {
+        if let Some(episodes) = self.0.disk_pressure_reminder_episodes() {
+            episodes.enroll(agent_ids.iter().map(String::as_str));
+        }
+    }
+
+    fn set_busy(&self, is_busy: bool) {
+        self.0.set_busy(is_busy);
+    }
+}
+
+struct ProductionStateBackstopRosterPort(Arc<ProductionHostExtensions>);
+
+impl SnapshotBackstopPort for ProductionStateBackstopRosterPort {
+    fn is_enabled(&self) -> bool {
+        self.0.state_backstop_is_enabled().unwrap_or(false)
+    }
+
+    fn schedule_snapshot(&self, agent_id: &str) {
+        let _ = self.0.schedule_state_backstop_snapshot(agent_id);
+    }
+}
+
+struct ProductionBoxStoreRosterPort(ProductionBoxStoreSyncApi);
+
+impl BoxStoreSnapshotPort for ProductionBoxStoreRosterPort {
+    fn is_enabled(&self) -> bool {
+        self.0.is_enabled()
+    }
+
+    fn schedule_store_db_snapshot(&self, agent_id: &str) {
+        let _ = self.0.schedule_store_db_snapshot(agent_id);
+    }
+}
+
+struct ProductionSourceMapRosterPort(Arc<SandSourceMap>);
+
+impl SourceMapRosterPort for ProductionSourceMapRosterPort {
+    fn get_or_create(&self, agent_id: &str) {
+        let _ = self.0.get_or_create(agent_id);
+    }
+}
+
+pub fn production_host_roster_bookkeeping(
+    attachments: Arc<AttachmentsService>,
+    transcript: Arc<TranscriptManager>,
+    forever_box: Arc<ForeverBoxService>,
+    state_backstop_owner: Arc<ProductionHostExtensions>,
+    box_store_sync: ProductionBoxStoreSyncApi,
+    source_map: Arc<SandSourceMap>,
+) -> HostRosterBookkeeping {
+    HostRosterBookkeeping::new(HostRosterPorts {
+        attachments: Arc::new(ProductionAttachmentsRosterPort(attachments)),
+        transcript: Arc::new(ProductionTranscriptRosterPort(transcript)),
+        forever_box: Arc::new(ProductionForeverBoxRosterPort(forever_box)),
+        state_backstop: Arc::new(ProductionStateBackstopRosterPort(state_backstop_owner)),
+        box_store_sync: Arc::new(ProductionBoxStoreRosterPort(box_store_sync)),
+        source_map: Arc::new(ProductionSourceMapRosterPort(source_map)),
+    })
 }
 
 impl HostRosterBookkeeping {

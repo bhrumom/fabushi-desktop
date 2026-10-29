@@ -1416,6 +1416,25 @@ impl ProductionHostExtensions {
         Ok(slot.as_ref().map(|extension| extension.api()))
     }
 
+    pub fn state_backstop_is_enabled(&self) -> Result<bool, String> {
+        let slot = self
+            .state_backstop
+            .lock()
+            .map_err(|_| "production StateBackstop runtime lock poisoned".to_string())?;
+        Ok(slot.as_ref().is_some_and(HostStateBackstopExtension::is_enabled))
+    }
+
+    pub fn schedule_state_backstop_snapshot(&self, agent_id: &str) -> Result<(), String> {
+        let slot = self
+            .state_backstop
+            .lock()
+            .map_err(|_| "production StateBackstop runtime lock poisoned".to_string())?;
+        if let Some(extension) = slot.as_ref() {
+            extension.schedule_snapshot(agent_id.to_string());
+        }
+        Ok(())
+    }
+
     pub fn stop_box_store_sync(&self) -> Result<(), String> {
         let state_backstop = self
             .state_backstop
