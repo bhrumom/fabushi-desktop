@@ -70,3 +70,15 @@ custody. The ledger's `SECRETS-AUDIT-APPLY` row therefore combines a residue
 scanner with an apply-lifecycle oracle that is not implemented by the selected
 owner. The source read is retained, but implementation/wiring/verification and
 acceptance remain pending; no status flag was promoted.
+
+The existing Fabushi `BoxSecretsApplier` is a separate, valid owner at
+`source/host/src/extensions/secrets/secrets_service.rs` (current blob
+`d57be254edb21f9e183e72bd971ae6e07fdc1e9e`, re-read at lines 213–334 and
+355–483). It validates Box environment names and size limits, persists a
+0600 JSON store atomically, applies a generation-fenced environment update,
+retries retryable Box failures with bounded backoff, and exposes apply status.
+Its production extension is started against `ForeverBoxService` and its
+contract is exercised by `secrets_extension_contract.rs`. This proves a Box
+secret lifecycle owner exists, not that it owns OpenClaw auth-profile
+publication or the concurrent auth-store rollback oracle above; no second
+generic auth-store owner should be created by inference.
