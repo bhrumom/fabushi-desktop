@@ -1704,3 +1704,26 @@ size/digest. These are source oracles for existing Fabushi FDN, Gateway,
 Node Host and bundle owners; no generated shard/index state, ledger ref, or
 completion flag was changed. Rust implementation, production wiring,
 packaged execution, and acceptance remain unverified.
+
+## 147. Agent admission, session persistence, and execution-owner oracle detail (2026-10-29)
+
+The locked upstream test/support sources were read in full:
+`src/gateway/agent-turn/agent-admission-controller.test.ts`
+(`0a0db7d9d1a15362587254f9d9a406731acfe8ff`, 133 lines),
+`src/gateway/agent-turn/agent-session-persist.test.ts`
+(`324f34295a4d0c82f8e748ffc9853d6facc3d10e`, 190 lines), and
+`src/gateway/agent-turn/agent-run-execution-phase.owner.test-support.ts`
+(`79a7407e202c94bd87e3c6ecd5d1650f89115cf2`, 232 lines). The admission
+oracle serializes marker admission against same-session replay, refreshes
+after the lifecycle lease while preserving the committed postimage, and
+rejects an archived or changed expected session. The persistence oracle
+ensures sandbox provenance and creator authorization are committed without
+unrelated session-store SQL, retains interrupted recovery ownership only for
+the exact queued/non-queued owner, and reports authority revoked during async
+preparation. The execution support fixture binds one lifecycle generation,
+physical target, RPC source, abort controller, Gateway work admission and
+follow-up completion custody, including cleanup when the source settles. These
+are focused source oracles for existing Session Turns/Gateway owners; no
+generated shard/index state, ledger ref, or completion flag was changed.
+Rust implementation, production wiring, executable verification, and
+acceptance remain unverified.
