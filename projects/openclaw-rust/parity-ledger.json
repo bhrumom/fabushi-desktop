@@ -7248,6 +7248,33 @@
       "selected_owner": "source/host/src/host_gateway_api.rs",
       "source_refs": [
         {
+          "blob_sha": "6c359b26c6ee046eb2e675bd085eaa21622bca62",
+          "path": "src/gateway/agent-turn/io.ts",
+          "range": {
+            "end_line": 15,
+            "start_line": 1
+          },
+          "symbol": "AgentTurnIo response emission adapter"
+        },
+        {
+          "blob_sha": "10eb11b48a2cf1c062ad8fd29a17dda1e46e1573",
+          "path": "src/gateway/agent-turn/principal.ts",
+          "range": {
+            "end_line": 41,
+            "start_line": 1
+          },
+          "symbol": "agent turn transport principal capture"
+        },
+        {
+          "blob_sha": "e6d0b301c288a245b5a29747c1d6957171ef1af6",
+          "path": "src/gateway/agent-turn/types.ts",
+          "range": {
+            "end_line": 80,
+            "start_line": 1
+          },
+          "symbol": "AgentTurnContext and transport contract"
+        },
+        {
           "blob_sha": "91e33f2b97fbed71ea8545a24e9c23ae2085b99e",
           "path": "src/gateway/server-request-entry.test.ts",
           "range": {
@@ -28427,6 +28454,24 @@
       "risk": "High; turn tracking race conditions corrupt session history and drop user turns",
       "selected_owner": "source/host/src/extensions/session/session_turns_controller.rs",
       "source_refs": [
+        {
+          "blob_sha": "f25c4b6096a484bfb95f3a8ad524c6e9cc4d2632",
+          "path": "src/gateway/agent-turn/agent-handler-helpers.ts",
+          "range": {
+            "end_line": 188,
+            "start_line": 1
+          },
+          "symbol": "agent session work/continuation helpers"
+        },
+        {
+          "blob_sha": "fcbefc694c1e8405386362e2fd640aa1d44f0f1e",
+          "path": "src/gateway/agent-turn/agent-run-diagnostics.ts",
+          "range": {
+            "end_line": 30,
+            "start_line": 1
+          },
+          "symbol": "agent run privacy and replay diagnostics"
+        },
         {
           "blob_sha": "6e73ea1fecc15af82444a8b786c26b8c5a9097fb",
           "path": "src/gateway/agent-turn/agent-turn-admission-cleanup.ts",

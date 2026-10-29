@@ -895,3 +895,19 @@ order. The liveness oracle confirms requester custody across default/custom
 stores and early/prepared admission without claiming foreign child ownership.
 These are existing Session Turns Controller boundaries; Rust wiring and
 acceptance remain unverified.
+
+## 109. Agent turn transport, privacy, and context contracts (2026-10-29)
+
+The locked `agent-handler-helpers.ts`, `agent-run-diagnostics.ts`, `io.ts`,
+`principal.ts`, and `types.ts` were read in full. Session helpers preserve
+deleted/archive/harness admission errors, reusable Cron continuation facts,
+inter-session prompt suppression, and bounded continuation-release recovery.
+Diagnostics capture incognito privacy once and apply it consistently to runtime
+logging, replay entries, and RPC metadata. The I/O adapter preserves
+positional response ordering and late final delivery; principal capture
+transfers local-user/operator source identity without rebuilding trusted
+metadata and gates tool-event observation by client capability. The typed
+context contract exposes only the existing Gateway/session services required
+by Agent Turn. These sources map across the existing Session Turns and Gateway
+dispatch owners; they do not create another transport, principal, or privacy
+authority. Rust wiring and acceptance remain unverified.
