@@ -1831,6 +1831,22 @@ impl CompletionRevivalRuntimePort for ProductionCompletionRevivalRuntime {
     }
 }
 
+fn report_agent_roster_security_findings(config: &serde_json::Value) {
+    for finding in mahayana_host_runtime::agents::agent_roster::collect_agent_roster_findings(config)
+    {
+        mahayana_host_runtime::host_diagnostics::report_diagnostic_event(
+            "security.agent_roster.finding",
+            serde_json::json!({
+                "checkId": finding.check_id,
+                "severity": finding.severity,
+                "title": finding.title,
+                "detail": finding.detail,
+                "remediation": finding.remediation,
+            }),
+        );
+    }
+}
+
 impl UnifiedGatewayApi {
 
     fn rearm_channel_delivery_failure(
@@ -3273,6 +3289,7 @@ impl UnifiedGatewayApi {
         let permission_changed = target.get("localToolPermission").is_some();
         let result = self.settings.set_host_settings(target)
             .map_err(|e| GatewayCommandError::Internal(format!("Failed to persist settings: {e}")))?;
+        report_agent_roster_security_findings(&result);
         self.roster_bookkeeping
             .lock()
             .unwrap_or_else(|poisoned| poisoned.into_inner())
@@ -11309,6 +11326,7 @@ impl GatewayApi for UnifiedGatewayApi {
             let permission_changed = args.get("localToolPermission").is_some();
             let result = self.settings.set_host_settings(&args)
                 .map_err(|error| GatewayCommandError::Internal(format!("Failed to persist settings: {error}")))?;
+            report_agent_roster_security_findings(&result);
             self.roster_bookkeeping
                 .lock()
                 .unwrap_or_else(|poisoned| poisoned.into_inner())

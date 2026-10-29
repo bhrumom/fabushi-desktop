@@ -11,7 +11,10 @@ use chrono::{SecondsFormat, Utc};
 use chrono_tz::Tz;
 use serde_json::{Map, Value, json};
 
-use crate::agents::agent_roster::apply_implicit_agent_roster_defaults;
+use crate::agents::agent_roster::{
+    apply_implicit_agent_roster_defaults, collect_agent_entries,
+    pin_survivor_workspace_for_roster_collapse, try_resolve_default_agent_id,
+};
 use crate::host_paths::get_sand_root_dir;
 
 pub const MCP_CUSTOM_INSTRUCTIONS_MAX_LENGTH: usize = 500;
@@ -1046,12 +1049,42 @@ impl SettingsService {
             if value.is_null() {
                 settings.remove("agents");
             } else if value.is_object() {
+                let previous = Value::Object(settings.clone());
                 let candidate = json!({ "agents": value.clone() });
-                let normalized = apply_implicit_agent_roster_defaults(&candidate)
-                    .get("agents")
-                    .cloned()
-                    .unwrap_or_else(|| value.clone());
-                settings.insert("agents".into(), normalized);
+                let normalized = apply_implicit_agent_roster_defaults(&candidate);
+                let mut target = previous.clone();
+                if let Some(normalized_agents) = normalized.get("agents") {
+                    target
+                        .as_object_mut()
+                        .expect("settings object")
+                        .insert("agents".into(), normalized_agents.clone());
+                }
+
+                let source_workspace = try_resolve_default_agent_id(&previous)
+                    .and_then(|active_id| {
+                        collect_agent_entries(&previous, None)
+                            .into_iter()
+                            .find(|entry| entry.id == active_id)
+                            .and_then(|entry| {
+                                entry
+                                    .entry
+                                    .get("workspace")
+                                    .and_then(Value::as_str)
+                                    .map(str::to_string)
+                            })
+                    });
+                let (pinned, _) = pin_survivor_workspace_for_roster_collapse(
+                    &previous,
+                    &target,
+                    source_workspace.as_deref(),
+                );
+                settings.insert(
+                    "agents".into(),
+                    pinned
+                        .get("agents")
+                        .cloned()
+                        .unwrap_or_else(|| value.clone()),
+                );
             }
         }
         for field in ["userTimeZone", "userTimeZoneOverride"] {
