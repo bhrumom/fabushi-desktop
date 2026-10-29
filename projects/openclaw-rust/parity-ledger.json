@@ -28328,7 +28328,7 @@
           "blob_sha": "bf7918df646d0e185f97fc3551a35c06c6cdeafc",
           "path": "src/poll-params.test.ts",
           "range": {
-            "end_line": 54,
+            "end_line": 33,
             "start_line": 1
           },
           "symbol": "poll-params"
