@@ -1,7 +1,7 @@
 pub const MAX_ERROR_DIAGNOSTIC_CHARS: usize = 2048;
 
 use crate::extensions::telemetry::openclaw_secret_redactor::{
-    redact_pem_blocks, redact_sensitive_query_params,
+    redact_auth_header, redact_pem_blocks, redact_sensitive_query_params,
 };
 
 pub fn sanitize_error_diagnostic(raw: &str) -> String {
@@ -15,6 +15,11 @@ pub fn sanitize_error_diagnostic(raw: &str) -> String {
         if word.eq_ignore_ascii_case("bearer") {
             sanitized.push_str("Bearer <redacted>");
             let _ = words.next();
+            continue;
+        }
+        if word.eq_ignore_ascii_case("basic") {
+            let credential = words.next().unwrap_or_default();
+            sanitized.push_str(&redact_auth_header(&format!("Basic {credential}")));
             continue;
         }
         if word.starts_with("sk-") || word.starts_with("ghp_") || word.starts_with("xoxb-") {

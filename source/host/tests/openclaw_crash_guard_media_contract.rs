@@ -396,11 +396,12 @@ fn test_ocrm_crash_o02_spawn_diagnostics_tracker() {
 #[test]
 fn test_ocrm_crash_o03_error_diagnostics_redaction() {
     // 1. Sensitive text redaction
-    let raw = "failed to call backend: Bearer secret_token_xyz123 with sk-live998877665544 and password=supersecret";
+    let raw = "failed to call backend: Bearer secret_token_xyz123 Basic dXNlcjpwYXNz with sk-live998877665544 and password=supersecret";
     let sanitized = sanitize_error_diagnostic(raw);
     assert!(!sanitized.contains("secret_token_xyz123"), "Bearer token must be redacted");
     assert!(!sanitized.contains("sk-live998877665544"), "sk API key must be redacted");
     assert!(!sanitized.contains("supersecret"), "Password must be redacted");
+    assert!(!sanitized.contains("dXNlcjpwYXNz"), "Basic credentials must be redacted");
     assert!(sanitized.contains("Bearer <redacted>"));
     assert!(sanitized.contains("<redacted-secret>"));
     assert!(sanitized.contains("password=<redacted>"));
