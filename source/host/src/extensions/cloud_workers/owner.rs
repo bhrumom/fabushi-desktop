@@ -32,11 +32,30 @@ pub enum CloudWorkerOwnerStatus {
     Enabled,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum CloudWorkerMigrationOutcome {
+    Previewed,
+    Converted,
+    RolledBack,
+    OutcomeUnknown,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct CloudWorkerMigrationReceipt {
+    pub operation_id: String,
+    pub from_schema_version: u32,
+    pub to_schema_version: u32,
+    pub backup_path: String,
+    pub outcome: CloudWorkerMigrationOutcome,
+    pub detail: String,
+}
+
 #[derive(Debug)]
 pub struct CloudWorkerProvisioningOwner {
     config: CloudWorkerProvisioningConfig,
     leases: HashMap<LeaseId, CloudWorkerLease>,
     warm_images: HashMap<String, CloudWorkerWarmImage>,
+    migration_receipts: Vec<CloudWorkerMigrationReceipt>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -44,6 +63,8 @@ pub struct CloudWorkerPersistentSnapshot {
     pub schema_version: u32,
     pub leases: Vec<CloudWorkerLease>,
     pub warm_images: Vec<CloudWorkerWarmImage>,
+    #[serde(default)]
+    pub migration_receipts: Vec<CloudWorkerMigrationReceipt>,
 }
 
 impl CloudWorkerProvisioningOwner {
@@ -55,6 +76,7 @@ impl CloudWorkerProvisioningOwner {
             config,
             leases: HashMap::new(),
             warm_images: HashMap::new(),
+            migration_receipts: Vec::new(),
         })
     }
 
@@ -75,6 +97,7 @@ impl CloudWorkerProvisioningOwner {
             schema_version: CLOUD_WORKER_STATE_SCHEMA_VERSION,
             leases,
             warm_images,
+            migration_receipts: self.migration_receipts.clone(),
         }
     }
 
@@ -108,7 +131,32 @@ impl CloudWorkerProvisioningOwner {
                 return Err(CloudWorkerOwnerError::InvalidSnapshot);
             }
         }
+        let mut operation_ids = std::collections::HashSet::new();
+        for receipt in snapshot.migration_receipts {
+            if receipt.operation_id.trim().is_empty()
+                || !operation_ids.insert(receipt.operation_id.clone())
+            {
+                return Err(CloudWorkerOwnerError::InvalidSnapshot);
+            }
+            owner.migration_receipts.push(receipt);
+        }
         Ok(owner)
+    }
+
+    pub fn record_migration_receipt(
+        &mut self,
+        receipt: CloudWorkerMigrationReceipt,
+    ) -> Result<(), CloudWorkerOwnerError> {
+        if receipt.operation_id.trim().is_empty()
+            || self
+                .migration_receipts
+                .iter()
+                .any(|known| known.operation_id == receipt.operation_id)
+        {
+            return Err(CloudWorkerOwnerError::DuplicateMigrationReceipt);
+        }
+        self.migration_receipts.push(receipt);
+        Ok(())
     }
 
     pub fn admit(
@@ -219,6 +267,8 @@ pub enum CloudWorkerOwnerError {
     UnsupportedSnapshotVersion(u32),
     #[error("cloud-worker snapshot contains invalid or duplicate records")]
     InvalidSnapshot,
+    #[error("migration receipt operation id is empty or already recorded")]
+    DuplicateMigrationReceipt,
     #[error(transparent)]
     Lease(#[from] CloudWorkerLeaseError),
     #[error(transparent)]

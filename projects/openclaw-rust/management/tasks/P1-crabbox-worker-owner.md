@@ -279,7 +279,10 @@ closed; secret payloads, credentials and Fabushi identity stores are not part
 of the snapshot. The production extension now injects
 `app_data_dir/cloud-workers/state.json`, loads existing state fail-closed and
 exposes an atomic `persist()` boundary. Migration/rollback receipts and
-mutation-triggered persistence remain open.
+mutation-triggered persistence remain open. The snapshot now carries
+append-only `CloudWorkerMigrationReceipt` records, and the store exposes an
+explicit non-overwriting `backup_existing` primitive; no legacy conversion is
+claimed until a real source format and migration oracle are supplied.
 
 The Coordinator crate now owns the serializable projection contract in
 `source/node-agent-coordinator/src/cloud_worker_projection.rs`, with the exact

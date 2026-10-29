@@ -33,7 +33,8 @@ pub use node_bootstrap::{
     CloudWorkerSecretRef,
 };
 pub use owner::{
-    CloudWorkerOwnerError, CloudWorkerOwnerStatus, CloudWorkerPersistentSnapshot,
+    CloudWorkerMigrationOutcome, CloudWorkerMigrationReceipt, CloudWorkerOwnerError,
+    CloudWorkerOwnerStatus, CloudWorkerPersistentSnapshot,
     CloudWorkerProvisioningConfig, CloudWorkerProvisioningOwner,
 };
 pub use platform_bridge::{

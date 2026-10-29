@@ -8,6 +8,32 @@ use super::{CloudWorkerPersistentSnapshot, CloudWorkerProvisioningOwner};
 pub struct CloudWorkerProvisioningStore;
 
 impl CloudWorkerProvisioningStore {
+    pub fn backup_existing(
+        &self,
+        source: &Path,
+        backup: &Path,
+    ) -> Result<(), CloudWorkerStoreError> {
+        if source == backup {
+            return Err(CloudWorkerStoreError::InvalidBackupPath);
+        }
+        if !source.exists() {
+            return Err(CloudWorkerStoreError::BackupSourceMissing);
+        }
+        if backup.exists() {
+            return Err(CloudWorkerStoreError::BackupAlreadyExists);
+        }
+        let parent = backup.parent().ok_or(CloudWorkerStoreError::NoParent)?;
+        fs::create_dir_all(parent).map_err(CloudWorkerStoreError::Write)?;
+        fs::copy(source, backup).map_err(CloudWorkerStoreError::Write)?;
+        #[cfg(unix)]
+        fs::set_permissions(
+            backup,
+            std::os::unix::fs::PermissionsExt::from_mode(0o600),
+        )
+        .map_err(CloudWorkerStoreError::Write)?;
+        Ok(())
+    }
+
     pub fn load(
         &self,
         path: &Path,
@@ -79,4 +105,10 @@ pub enum CloudWorkerStoreError {
     Decode(#[source] serde_json::Error),
     #[error("cloud-worker owner lock is poisoned")]
     PoisonedOwner,
+    #[error("backup source does not exist")]
+    BackupSourceMissing,
+    #[error("backup destination already exists")]
+    BackupAlreadyExists,
+    #[error("backup source and destination must differ")]
+    InvalidBackupPath,
 }
