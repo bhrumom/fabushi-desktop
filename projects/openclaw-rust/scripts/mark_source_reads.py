@@ -12,6 +12,23 @@ from pathlib import Path
 ROOT = Path("projects/openclaw-rust")
 SHARDS = ROOT / "inventory" / "shards"
 READS = {
+    "extensions/crabbox/src/crabbox-worker-heartbeat.ts": (200, None, "OCRM-M11", "owner-audit"),
+    "extensions/crabbox/src/crabbox-worker-heartbeat.test.ts": (95, None, "OCRM-M11", "test-oracle-replaced"),
+    "extensions/crabbox/src/crabbox-worker-inspect.ts": (122, None, "OCRM-M11", "owner-audit"),
+    "extensions/crabbox/src/crabbox-worker-inspect.test.ts": (61, None, "OCRM-M11", "test-oracle-replaced"),
+    "extensions/crabbox/src/crabbox-worker-lifetime.ts": (233, None, "OCRM-M11", "owner-audit"),
+    "extensions/crabbox/src/crabbox-worker-lifetime.test.ts": (193, None, "OCRM-M11", "test-oracle-replaced"),
+    "extensions/crabbox/src/crabbox-worker-provider-binary.ts": (59, None, "OCRM-M11", "owner-audit"),
+    "extensions/crabbox/src/crabbox-sandbox-config.ts": (37, None, "OCRM-M10", "owner-audit"),
+    "extensions/crabbox/src/crabbox-sandbox-lease.ts": (9, None, "OCRM-M10", "owner-audit"),
+    "extensions/crabbox/src/crabbox-sandbox-backend.ts": (293, None, "OCRM-M10", "owner-audit"),
+    "extensions/crabbox/src/crabbox-sandbox-backend.test.ts": (300, None, "OCRM-M10", "test-oracle-replaced"),
+    "extensions/crabbox/src/crabbox-gateway-methods.ts": (178, None, "OCRM-M16", "owner-audit"),
+    "extensions/crabbox/src/crabbox-gateway-methods.test.ts": (413, None, "OCRM-M16", "test-oracle-replaced"),
+    "extensions/crabbox/src/crabbox-tool.ts": (354, None, "OCRM-M16", "owner-audit"),
+    "extensions/crabbox/src/crabbox-tool.test.ts": (382, None, "OCRM-M16", "test-oracle-replaced"),
+    "extensions/crabbox/src/doctor.ts": (350, None, "OCRM-M16", "owner-audit"),
+    "extensions/crabbox/src/doctor.test.ts": (363, None, "OCRM-M16", "test-oracle-replaced"),
     "extensions/crabbox/src/crabbox-worker-command.test.ts": (326, None, "OCRM-M11", "test-oracle-replaced"),
     "extensions/crabbox/src/crabbox-worker-command.ts": (317, None, "OCRM-M11", "owner-audit"),
     "extensions/crabbox/src/crabbox-worker-desktop-setup.test.ts": (332, None, "OCRM-M13", "test-oracle-replaced"),

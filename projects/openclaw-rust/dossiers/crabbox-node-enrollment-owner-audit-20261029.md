@@ -1,6 +1,6 @@
 # OCRM technical dossier: Crabbox node-enrollment owner audit
 
-Status: scoped audit complete for the seven source files listed below; broader provider/process callers and production acceptance remain pending.
+Status: scoped audit complete for the current Crabbox source slice; broader provider/process callers and production acceptance remain pending.
 
 Project: OCRM-001  
 Upstream repository: `openclaw/openclaw`  
@@ -223,6 +223,47 @@ interactive identity, and preflight rejects unsafe provider configuration.
 
 These tests prove, as source oracles, catalog projection and bounded recovery, setup-secret separation and revocation, preflight security rejection, readiness/timeout/cleanup classification, diagnostics redaction, fixed-lease replay after lost replies, heartbeat scheduling/fencing, platform/desktop limitations, managed binary sharing, warm-image lifecycle/recovery, compare-and-apply conflict behavior, and config-schema rejection. They do not prove Fabushi packaged behavior or real provider/device acceptance.
 
+The worker-lifetime, sandbox and gateway/tool closure was then read at the same
+locked tree and recorded in the canonical inventory:
+
+| Path | Blob | Lines | Disposition |
+| --- | --- | ---: | --- |
+| `crabbox-worker-heartbeat.ts` | `f9f39d8ac6df3248532ef6dede7b728aeba6c0f9` | 200 | owner-audit |
+| `crabbox-worker-heartbeat.test.ts` | `4dba70b8a4a4443a6ea207fbcff9c1c641f830b3` | 95 | test-oracle-replaced |
+| `crabbox-worker-inspect.ts` | `ec9e52f9a146c117bd4ae23a11c5615218137b87` | 122 | owner-audit |
+| `crabbox-worker-inspect.test.ts` | `ebb0703d532aca7e8c8d3442d087007267f3f02f` | 61 | test-oracle-replaced |
+| `crabbox-worker-lifetime.ts` | `c548faa75d776e6d5b7c3b6ed88a2ba4eb03f808` | 233 | owner-audit |
+| `crabbox-worker-lifetime.test.ts` | `6030e6b830969b27023e947010cddebb9bffe64b` | 193 | test-oracle-replaced |
+| `crabbox-worker-provider-binary.ts` | `a9361ad684143856c5f57336940bdebebb57016d` | 59 | owner-audit |
+| `crabbox-sandbox-config.ts` | `7f904e7871a27749b853443df8570ce82afc09c1` | 37 | owner-audit |
+| `crabbox-sandbox-lease.ts` | `1408b75390c07ef16ec26bdea0a953cafe5c522e` | 9 | owner-audit |
+| `crabbox-sandbox-backend.ts` | `38be0ffb5960095357ca696accdff79e59ff8317` | 293 | owner-audit |
+| `crabbox-sandbox-backend.test.ts` | `9555bbdb51a6e8fe95e7609ee02297a0d23f6889` | 300 | test-oracle-replaced |
+| `crabbox-gateway-methods.ts` | `b55bdd1f79ee96963561a3806c19dc8366251cba` | 178 | owner-audit |
+| `crabbox-gateway-methods.test.ts` | `4b65a6064431dfc96316c99fa2b8589f6e7d2921` | 413 | test-oracle-replaced |
+| `crabbox-tool.ts` | `8879fee7eee95ba233cfb615d03e7f908531b053` | 354 | owner-audit |
+| `crabbox-tool.test.ts` | `3b29199a02f697a93c1ffff36c580f3f79ec0791` | 382 | test-oracle-replaced |
+| `doctor.ts` | `aa26ac1aab70a3f199ab0a8698ad866b4ce9341e` | 350 | owner-audit |
+| `doctor.test.ts` | `79dbcd0f1dd7069c4a9d676d4d005723ead947b8` | 363 | test-oracle-replaced |
+
+The new source facts preserve several distinct owners. Heartbeat is a
+currentness- and generation-fenced singleton per lease; it retries through the
+coordinator and joins child shutdown before deleting its entry. Lifetime is
+admission-only source capture and does not extend or replace a lease. Inspect
+parses strict lease identity/lifetime fields and returns redacted bounded
+failures, while the provider-owned binary resolver shares acquisition without
+letting one caller abort other waiters. Sandbox configuration and fixed `cbx_`
+lease IDs are narrow admission contracts. The shared remote-shell backend owns
+workspace seeding, file operations, workdir and repository-owned cleanup after
+`crabbox exec --check`; it does not become a second agent runtime. Gateway
+methods validate image mutations and recovery acknowledgement, and expose
+secret references without opening the secret store. The tool keeps the Agent
+loop and conversation attachment on the host while routing only leased
+execution/process actions. Doctor registers provider-binary, setup-secret and
+warm-image health checks, with repair explicitly bounded to managed binary or
+protected-secret migration. These are source contracts and test oracles only;
+no Fabushi runtime, provider, device, package or acceptance evidence is claimed.
+
 ## Fabushi owner resolution
 
 | Responsibility | Existing owner | Decision | Reason / boundary |
@@ -236,9 +277,8 @@ The proposed owner is not permission to create an `OpenClawRuntime`, second Agen
 
 ## Required next evidence
 
-- Read and map the imported profile, process, command, script, desktop-setup, timeout, provider helper, and reverse caller/test contracts at the same pinned upstream tree.
-- Read the platform-specific `crabbox-worker-desktop-macos.ts` and `crabbox-worker-desktop-windows.ts` contracts and their tests before any owner/ADR decision.
-- Read and map all remaining warm-image and managed-binary tests, then read the provider's reverse callers and fixtures before any owner/ADR decision.
+- Read and map the remaining imported script, timeout, provider helper, reverse caller and fixture contracts at the same pinned upstream tree.
+- Complete the remaining provider reverse-caller/test closure before any owner/ADR decision.
 - Inspect the current Fabushi Host/Coordinator production composition and determine the narrow typed contract for provider catalog, artifact provenance, worker lease, process lifecycle, and diagnostic evidence.
 - Complete rejected-owner analysis and an ADR before creating a new owner. The current `NetworkEnrollmentOwner`, `remote_computer_target`, Sand connectors, and Runner process owners are candidates but cannot be widened by assumption.
 - Add positive and negative oracle rows for malformed catalogs, incompatible targets, credential non-propagation, archive hash/range/TLS failures, unsafe paths, cancellation cleanup, plugin activation failure, stale runtime pointers, diagnostic truncation/redaction, and node launch outcome-unknown.
