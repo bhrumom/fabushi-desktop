@@ -264,6 +264,46 @@ warm-image health checks, with repair explicitly bounded to managed binary or
 protected-secret migration. These are source contracts and test oracles only;
 no Fabushi runtime, provider, device, package or acceptance evidence is claimed.
 
+The script-transport, timeout-budget, snapshot-action and process-dispatch
+chain was then read at the same locked tree:
+
+| Path | Blob | Lines | Disposition |
+| --- | --- | ---: | --- |
+| `crabbox-worker-script.ts` | `3fa6163aa004fa168b3fcef4abb3ff79658f971c` | 54 | owner-audit |
+| `crabbox-worker-timeouts.ts` | `2d13d497ed213dc8c24b09a86b2c1e7b97368daf` | 148 | owner-audit |
+| `crabbox-worker-snapshot-actions.ts` | `78a412b39bfd4b54b7935049d4a8c3f08e8b4f57` | 83 | owner-audit |
+| `crabbox-process.ts` | `0ccfe03b9db815de9ea466891396eacc76597203` | 13 | owner-audit |
+| `crabbox-binary.ts` | `27f5952d24b8fd5133acd86e2fc4aeb13a7e22cc` | 58 | owner-audit |
+| `crabbox-worker-script.test.ts` | `b7c3437ab1fee4d24193156c4eee9bbedee75026` | 67 | test-oracle-replaced |
+| `crabbox-worker-read-budget.test.ts` | `08443061d24ec0bb3df09d3ecf08752665c5be4a` | 94 | test-oracle-replaced |
+| `crabbox-worker-stop-lifetime.test.ts` | `fed558101bbf741fd293947cd60456cd0dda9e94` | 223 | test-oracle-replaced |
+| `crabbox-worker-stop.test.ts` | `0fc72458a1a29593e38e8e2b8c83504c370dd4b6` | 90 | test-oracle-replaced |
+| `crabbox-worker-provision-cancellation.test.ts` | `1d960cd7fb9f891d8bffb586a1f8259298c5078d` | 195 | test-oracle-replaced |
+| `crabbox-binary.test.ts` | `09291b712594ad0fbb64e5652718a692b1f77f8f` | 86 | test-oracle-replaced |
+| `crabbox-process.test.ts` | `d3c6721a6c3938074e4e08b55b8bb0af49010a77` | 31 | test-oracle-replaced |
+
+The source contract fixes the guest transport and deadline semantics. Linux
+and macOS use a strict POSIX heredoc; bootstrap additionally binds the selected
+Node executable into a private runtime path, while Windows writes a temporary
+UTF-8 PowerShell script and removes it in `finally`. Timeout composition
+includes acquisition, bootstrap, lifecycle, enrollment diagnostics, child/tree
+settlement, stop/release, and optional warm-image phases; Machine0 and desktop
+profiles receive distinct budgets and polling cadences. Snapshot pin/rollback/
+delete operations are signal-fenced and tracked until settlement, and deletion
+resolves all configured provider binaries while tolerating partial discovery
+but failing when none are usable. Binary discovery separates explicit/sibling/
+PATH lookup from the bare dispatch fallback and preserves Windows suffix and
+PATH ordering. Process dispatch resolves path-like executables before leaving
+the caller directory and defaults to the host home directory.
+
+The corresponding oracles pin Unicode transport, bootstrap Node replacement,
+owner-shutdown command custody, provider read budgets, composed provision
+deadlines, Azure recovery within one monotonic deadline, heartbeat custody
+through destroy/dispose/inspection loss, late stop settlement and cleanup debt,
+phase-by-phase cancellation without later work, binary precedence and Windows
+suffix ordering, and process working-directory selection. They remain source
+oracles only and have not been executed locally.
+
 ## Fabushi owner resolution
 
 | Responsibility | Existing owner | Decision | Reason / boundary |

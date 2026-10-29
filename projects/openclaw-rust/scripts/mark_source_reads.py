@@ -12,6 +12,18 @@ from pathlib import Path
 ROOT = Path("projects/openclaw-rust")
 SHARDS = ROOT / "inventory" / "shards"
 READS = {
+    "extensions/crabbox/src/crabbox-worker-script.ts": (54, None, "OCRM-M11", "owner-audit"),
+    "extensions/crabbox/src/crabbox-worker-timeouts.ts": (148, None, "OCRM-M11", "owner-audit"),
+    "extensions/crabbox/src/crabbox-worker-snapshot-actions.ts": (83, None, "OCRM-M11", "owner-audit"),
+    "extensions/crabbox/src/crabbox-process.ts": (13, None, "OCRM-M11", "owner-audit"),
+    "extensions/crabbox/src/crabbox-binary.ts": (58, None, "OCRM-M11", "owner-audit"),
+    "extensions/crabbox/src/crabbox-worker-script.test.ts": (67, None, "OCRM-M11", "test-oracle-replaced"),
+    "extensions/crabbox/src/crabbox-worker-read-budget.test.ts": (94, None, "OCRM-M11", "test-oracle-replaced"),
+    "extensions/crabbox/src/crabbox-worker-stop-lifetime.test.ts": (223, None, "OCRM-M11", "test-oracle-replaced"),
+    "extensions/crabbox/src/crabbox-worker-stop.test.ts": (90, None, "OCRM-M11", "test-oracle-replaced"),
+    "extensions/crabbox/src/crabbox-worker-provision-cancellation.test.ts": (195, None, "OCRM-M11", "test-oracle-replaced"),
+    "extensions/crabbox/src/crabbox-binary.test.ts": (86, None, "OCRM-M11", "test-oracle-replaced"),
+    "extensions/crabbox/src/crabbox-process.test.ts": (31, None, "OCRM-M11", "test-oracle-replaced"),
     "extensions/crabbox/src/crabbox-worker-heartbeat.ts": (200, None, "OCRM-M11", "owner-audit"),
     "extensions/crabbox/src/crabbox-worker-heartbeat.test.ts": (95, None, "OCRM-M11", "test-oracle-replaced"),
     "extensions/crabbox/src/crabbox-worker-inspect.ts": (122, None, "OCRM-M11", "owner-audit"),
