@@ -303,12 +303,12 @@
       "uncompressed_sha256": "78e9183cf05b76b5f429747bade2d5e44282924fe38ad80e048d5c952ff3326a"
     },
     {
-      "compressed_sha256": "f8ff6359c809a54e76c80734e1d544b8ab2467fef43b32adf4402ed5db8bc483",
+      "compressed_sha256": "ba94003d99eb2d1c72008f696c89fd92972e48b073aa8998d135dae5840da0a2",
       "count": 1024,
       "first_path": "src/gateway/server-startup.test.ts",
       "last_path": "src/gateway/session-utils.fs.display-position.test.ts",
       "path": "projects/openclaw-rust/inventory/shards/part-0037.jsonl.gz",
-      "uncompressed_sha256": "3cae6c516a69c71d76a3fcde252a0c0e3df7801746df416cabeb16e1d416f37c"
+      "uncompressed_sha256": "db39567b148946924359154b79ae237b95725be0597982b67161b23440c12587"
     },
     {
       "compressed_sha256": "3f4ecb325b5b6c83934c22850f2d6bda50fdb9cf3ca501bf68bcd65208bc7f8c",

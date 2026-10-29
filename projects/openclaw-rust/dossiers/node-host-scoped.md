@@ -706,3 +706,21 @@ not create a queue. These sources extend the existing NodeHost connection and
 command-dispatch owners and the Gateway auth/pairing owners; they do not prove
 Rust production wiring, exact-head execution, package reachability, or device
 acceptance.
+
+## 98. Gateway hello, capability projection, and pairing-plan sources (2026-10-29)
+
+The locked `connect-hello.ts`, `connect-pairing-approval-plan.ts`,
+`connect-device-metadata.test.ts`, `connect-device-metadata.watch.test.ts`,
+`connect-hello.update-scope.test.ts`, and
+`connect-hello.setup-completion.test.ts` were read in full. Hello projection
+uses effective post-admission scopes, gates sensitive/update details, exposes
+only approved NodeHost capabilities, and binds browser identity routes to their
+live claim lifetime. Bootstrap handoff completion is confirmed only after hello
+delivery; failed delivery emits an uncertain state or restores an uncorrelated
+token, while replaced public keys cannot consume the setup bearer. Pairing-plan
+selection has mutually exclusive silent, trusted-CIDR, trusted-proxy,
+remote-ingress, setup-code, and manual lanes, with same-key scope upgrades and
+device metadata/platform changes remaining approval-bound as appropriate. These
+sources refine the existing NodeHost connection, Gateway auth, DevicePairing
+approval, and token owners; they do not prove Rust implementation or package,
+device, and exact-head acceptance.

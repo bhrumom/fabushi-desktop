@@ -5364,6 +5364,33 @@
           "symbol": "startGatewayNodePairingSshApproval"
         },
         {
+          "blob_sha": "e83274a97c874c18964ff34e0e080ea47bfcf2f7",
+          "path": "src/gateway/server/ws-connection/connect-pairing-approval-plan.ts",
+          "range": {
+            "end_line": 280,
+            "start_line": 1
+          },
+          "symbol": "resolvePairingApprovalPlan"
+        },
+        {
+          "blob_sha": "d3b3a10b36974ffe9d6b45f5db720ab0cf9934ec",
+          "path": "src/gateway/server/ws-connection/connect-device-metadata.test.ts",
+          "range": {
+            "end_line": 143,
+            "start_line": 1
+          },
+          "symbol": "resolvePinnedClientMetadata oracle"
+        },
+        {
+          "blob_sha": "0765676df2c42f85a4d9235097ccbcb2f5d2b0d5",
+          "path": "src/gateway/server/ws-connection/connect-device-metadata.watch.test.ts",
+          "range": {
+            "end_line": 47,
+            "start_line": 1
+          },
+          "symbol": "watch platform pin oracle"
+        },
+        {
           "blob_sha": "cb44fe3cece970c5a2538c85d61fa93233ce34a5",
           "path": "src/gateway/server/ws-connection/connect-device-metadata.ts",
           "range": {
@@ -6098,6 +6125,15 @@
       "risk": "Low; prevents replay attacks with consumed keys",
       "selected_owner": "source/host/src/device_pairing_owner.rs",
       "source_refs": [
+        {
+          "blob_sha": "8bd27c7c5a4ec34f53148bdcf2df73fe5424ee6c",
+          "path": "src/gateway/server/ws-connection/connect-hello.setup-completion.test.ts",
+          "range": {
+            "end_line": 324,
+            "start_line": 1
+          },
+          "symbol": "setup handoff completion and bootstrap restore oracle"
+        },
         {
           "blob_sha": "443df70b1e67d60b14c3041d4d2bef2e3b28f6d9",
           "path": "src/gateway/server/ws-connection/connect-device-tokens.ts",
@@ -21723,6 +21759,24 @@
             "start_line": 1
           },
           "symbol": "resolveGatewayDeviceAuthRoute and buildGatewayConnectionDetailsWithResolvers"
+        },
+        {
+          "blob_sha": "45403cf7dac7a9414b05bac43f5d1f0458de8120",
+          "path": "src/gateway/server/ws-connection/connect-hello.ts",
+          "range": {
+            "end_line": 532,
+            "start_line": 1
+          },
+          "symbol": "sendGatewayHello"
+        },
+        {
+          "blob_sha": "0fafa88f573f26312e1fa7d3900fae9007c4fb4d",
+          "path": "src/gateway/server/ws-connection/connect-hello.update-scope.test.ts",
+          "range": {
+            "end_line": 717,
+            "start_line": 1
+          },
+          "symbol": "hello update-scope and route-lifetime oracle"
         },
         {
           "blob_sha": "f55361c35e36130c420ffa64c42817bedffd5fc2",
