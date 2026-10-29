@@ -13991,6 +13991,33 @@
       "selected_owner": "source/host/src/extensions/session/production.rs",
       "source_refs": [
         {
+          "blob_sha": "739e3e17a084833eea8f2cd16cad6dbefd6e3160",
+          "path": "src/gateway/active-sessions-shutdown-drain.ts",
+          "range": {
+            "end_line": 78,
+            "start_line": 1
+          },
+          "symbol": "drainActiveSessionsForShutdown"
+        },
+        {
+          "blob_sha": "c2b36571d60de0c6bbc269bd1810b0d0b63f2237",
+          "path": "src/gateway/active-sessions-shutdown-tracker.test.ts",
+          "range": {
+            "end_line": 62,
+            "start_line": 1
+          },
+          "symbol": "active-sessions-shutdown-tracker conformance oracle"
+        },
+        {
+          "blob_sha": "9d839b1f509f123eea8f2cd16cad6dbefd6e3160",
+          "path": "src/gateway/active-sessions-shutdown-tracker.ts",
+          "range": {
+            "end_line": 38,
+            "start_line": 1
+          },
+          "symbol": "ActiveSessionForShutdown tracker"
+        },
+        {
           "blob_sha": "a70b7b04de18bdba5216ece63e50928cd2e6eea2",
           "path": "src/sessions/background-session-result.ts",
           "range": {

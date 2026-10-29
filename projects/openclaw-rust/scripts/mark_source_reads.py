@@ -12,6 +12,9 @@ from pathlib import Path
 ROOT = Path("projects/openclaw-rust")
 SHARDS = ROOT / "inventory" / "shards"
 READS = {
+    "src/gateway/active-sessions-shutdown-drain.ts": (78, "OCRM-RESP-SESSION-WORK-ADMISSION-001", "OCRM-M07", "owner-audit"),
+    "src/gateway/active-sessions-shutdown-tracker.test.ts": (62, "OCRM-RESP-SESSION-WORK-ADMISSION-001", "OCRM-M07", "test-oracle-replaced"),
+    "src/gateway/active-sessions-shutdown-tracker.ts": (38, "OCRM-RESP-SESSION-WORK-ADMISSION-001", "OCRM-M07", "owner-audit"),
     "src/gateway/server-request-entry.test.ts": (377, "OCRM-RESP-GW-DISPATCH-REGISTRY-001", "OCRM-M13", "test-oracle-replaced"),
     "src/gateway/server-request-entry.ts": (86, "OCRM-RESP-GW-DISPATCH-REGISTRY-001", "OCRM-M13", "owner-audit"),
     "src/gateway/server/ws-connection/request-diagnostics.ts": (418, "OCRM-RESP-GW-DISPATCH-REGISTRY-001", "OCRM-M13", "owner-audit"),

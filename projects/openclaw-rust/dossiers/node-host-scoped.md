@@ -707,6 +707,22 @@ command-dispatch owners and the Gateway auth/pairing owners; they do not prove
 Rust production wiring, exact-head execution, package reachability, or device
 acceptance.
 
+## 103. Active-session shutdown drain and tracker (2026-10-29)
+
+The locked `active-sessions-shutdown-drain.ts`,
+`active-sessions-shutdown-tracker.ts`, and
+`active-sessions-shutdown-tracker.test.ts` were read in full. The tracker is
+the process-local set of unmatched session starts: session identity is the
+deduplication key, empty identities are ignored, finalized sessions are
+forgotten, and callers receive a snapshot rather than the backing map. The
+shutdown owner snapshots tracked sessions, starts all `session_end` emissions
+before applying one bounded aggregate timeout, forgets each entry before
+emission, preserves stable transcript-source leases until drain settlement,
+revokes those leases after the bounded wait, and reports timeout without
+claiming late hooks settled. This belongs to the existing session production
+owner and plugin hook owner; it does not create a second lifecycle registry or
+upgrade Rust implementation, runtime wiring, or shutdown acceptance.
+
 ## 98. Gateway hello, capability projection, and pairing-plan sources (2026-10-29)
 
 The locked `connect-hello.ts`, `connect-pairing-approval-plan.ts`,
