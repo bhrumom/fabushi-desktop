@@ -24,3 +24,23 @@
   - `test_ocrm_process_bounded_line_framer` (PASSED)
   - `test_ocrm_process_custody_and_tree_reaper` (PASSED)
   - `test_ocrm_plugins_runtime_final` (PASSED)
+
+## 4. AppContainer negative-oracle scope correction (2026-10-29)
+
+The locked `src/process/appcontainer-spawn.test.ts` source reference was read
+directly at blob `ea084ac6af2d706fb898cbdf1edd456d67e2bca8` from the pinned
+OpenClaw commit/tree; its actual length is 76 lines. The test is a Windows
+AppContainer pre-launch boundary oracle: pipe-producing direct spawn,
+synchronous Windows probes, custom supervisor transports, and Execa options
+must throw `AppContainerSpawnUnsupportedError` before the child or launch
+callback exists.
+
+This source reference does not itself establish bounded line framing, process
+group reaping, command-capacity groups, or deadline enforcement. Those are
+separate source responsibilities in the broader ledger row. The current Rust
+`source/host/src/extensions/process/command_custody.rs` owns capacity,
+cancellation, and deadline bookkeeping but has no AppContainer token/stdio
+preflight or Windows production caller; the existing process dossier therefore
+retains `read=partial`, `wiring=not-wired`, and `verification=not-run` for the
+full responsibility. The direct source read strengthens the negative oracle
+only and is not a Windows acceptance receipt.
