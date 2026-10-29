@@ -905,6 +905,8 @@ fn test_ocrm_plugin_sdk_channel_feedback_inbound_ingress() {
     assert!(fanned.supports_cancellation);
     fanned.on_adopted().expect("adopted");
     assert_eq!(adopted_count.load(Ordering::SeqCst), 2);
+    fanned.on_adopted().expect("duplicate adoption is idempotent");
+    assert_eq!(adopted_count.load(Ordering::SeqCst), 2);
 
     // 5. Ingress Message Access Resolution
     let allowed = resolve_channel_message_ingress_simple(

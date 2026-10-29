@@ -58,3 +58,11 @@ allowlist decisions: a sender handle with transport whitespace is equivalent to
 the same trimmed handle, while an empty sender remains denied and wildcard
 semantics remain explicit. This is a local ingress authorization hardening; it
 does not register an external channel or establish production channel delivery.
+
+The locked `channel-ingress-runtime.ts` lifecycle also requires a single
+terminal handoff: repeated settle, abandon, cancel, or direct lifecycle
+callbacks must not release the same durable claim twice. If adoption fails at a
+claim, that claim and every later unadopted claim receive the failure cleanup,
+while the original adoption error is preserved. The Rust fan-in owner now keeps
+that once-only fence in its state machine; this remains scoped lifecycle
+evidence and does not claim external channel production wiring.

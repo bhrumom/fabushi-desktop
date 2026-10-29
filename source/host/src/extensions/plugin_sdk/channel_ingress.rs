@@ -69,11 +69,11 @@ impl FannedInIngressLifecycle {
         }
     }
 
-    pub fn on_adopted(&self) -> Result<(), String> {
-        self.handed_off.store(true, Ordering::SeqCst);
+    fn adopt_all(&self) -> Result<(), String> {
         for (i, l) in self.lifecycles.iter().enumerate() {
             if let Err(e) = (l.on_adopted)() {
-                // Fail remaining lifecycles
+                // Fail the claim that rejected adoption and every later
+                // unadopted claim, preserving the original adoption error.
                 for rem in &self.lifecycles[i..] {
                     (rem.on_failed)(&e);
                 }
@@ -83,8 +83,7 @@ impl FannedInIngressLifecycle {
         Ok(())
     }
 
-    pub fn on_cancelled(&self) {
-        self.handed_off.store(true, Ordering::SeqCst);
+    fn cancel_all(&self) {
         for l in &self.lifecycles {
             if let Some(c) = &l.on_cancelled {
                 c();
@@ -94,46 +93,66 @@ impl FannedInIngressLifecycle {
         }
     }
 
-    pub fn on_failed(&self, error: &str) {
-        self.handed_off.store(true, Ordering::SeqCst);
+    fn fail_all(&self, error: &str) {
         for l in &self.lifecycles {
             (l.on_failed)(error);
         }
     }
 
-    pub fn on_abandoned(&self) {
-        self.handed_off.store(true, Ordering::SeqCst);
+    fn abandon_all(&self) {
         for l in &self.lifecycles {
             (l.on_abandoned)();
         }
     }
 
-    pub fn settle(&self) -> Result<(), String> {
-        if !self.handed_off.swap(true, Ordering::SeqCst) {
-            self.on_adopted()
-        } else {
-            Ok(())
+    pub fn on_adopted(&self) -> Result<(), String> {
+        if self.handed_off.swap(true, Ordering::SeqCst) {
+            return Ok(());
         }
+        self.adopt_all()
+    }
+
+    pub fn on_cancelled(&self) {
+        if self.handed_off.swap(true, Ordering::SeqCst) {
+            return;
+        }
+        self.cancel_all();
+    }
+
+    pub fn on_failed(&self, error: &str) {
+        if self.handed_off.swap(true, Ordering::SeqCst) {
+            return;
+        }
+        self.fail_all(error);
+    }
+
+    pub fn on_abandoned(&self) {
+        if self.handed_off.swap(true, Ordering::SeqCst) {
+            return;
+        }
+        self.abandon_all();
+    }
+
+    pub fn settle(&self) -> Result<(), String> {
+        if self.handed_off.swap(true, Ordering::SeqCst) {
+            return Ok(());
+        }
+        self.adopt_all()
     }
 
     pub fn abandon(&self, error: Option<&str>) {
-        if !self.handed_off.swap(true, Ordering::SeqCst) {
-            if let Some(e) = error {
-                for l in &self.lifecycles {
-                    (l.on_failed)(e);
-                }
-            } else {
-                for l in &self.lifecycles {
-                    (l.on_abandoned)();
-                }
-            }
+        if self.handed_off.swap(true, Ordering::SeqCst) {
+            return;
+        }
+        if let Some(e) = error {
+            self.fail_all(e);
+        } else {
+            self.abandon_all();
         }
     }
 
     pub fn cancel(&self) {
-        if !self.handed_off.swap(true, Ordering::SeqCst) {
-            self.on_cancelled();
-        }
+        self.on_cancelled();
     }
 }
 
