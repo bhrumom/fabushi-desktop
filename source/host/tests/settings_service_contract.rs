@@ -53,6 +53,44 @@ fn host_settings_projects_secret_audit_findings_without_secret_values() {
 }
 
 #[test]
+fn host_settings_updates_skill_entries_without_overwriting_redacted_secrets() {
+    let path = temp_path("skill-mutation");
+    fs::write(
+        &path,
+        r#"{"version":1,"skills":{"entries":{"demo":{"enabled":true,"apiKey":"existing","env":{"KEEP":"old","REMOVE":"gone"}}}}}"#,
+    )
+    .expect("seed skill settings");
+    let service = SettingsService::new(&path);
+
+    let host = service
+        .set_host_settings(&serde_json::json!({
+            "skills": {
+                "entries": {
+                    "demo": {
+                        "enabled": false,
+                        "apiKey": " [REDACTED] ",
+                        "env": {
+                            "KEEP": " [REDACTED] ",
+                            "REMOVE": "",
+                            "NEW": " value "
+                        }
+                    }
+                }
+            }
+        }))
+        .expect("skill settings");
+
+    assert_eq!(host["skills"]["entries"]["demo"]["enabled"], false);
+    assert_eq!(host["skills"]["entries"]["demo"]["apiKey"], "existing");
+    assert_eq!(host["skills"]["entries"]["demo"]["env"]["KEEP"], "old");
+    assert_eq!(host["skills"]["entries"]["demo"]["env"]["NEW"], "value");
+    assert!(host["skills"]["entries"]["demo"]["env"]
+        .get("REMOVE")
+        .is_none());
+    let _ = fs::remove_file(path);
+}
+
+#[test]
 fn timezone_settings_validate_persist_preserve_unknown_fields_and_notify_effective_changes() {
     let path = temp_path("timezone");
     fs::write(

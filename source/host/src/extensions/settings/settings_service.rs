@@ -24,6 +24,7 @@ pub const MCP_CUSTOM_INSTRUCTIONS_MAX_LENGTH: usize = 500;
 pub const SAND_AUTO_REVIEW_INSTRUCTION_MAX_ENTRIES: usize = 20;
 pub const SAND_AUTO_REVIEW_INSTRUCTION_MAX_CHARS: usize = 1_000;
 const INFERENCE_PROVIDERS: [&str; 5] = ["fabushi", "cursor", "claude-code", "codex", "openrouter"];
+const REDACTED_SECRET_SENTINEL: &str = "[REDACTED]";
 
 fn report_secret_audit_findings(settings: &Map<String, Value>) {
     let manager = SecretsAuditManager::new();
@@ -38,6 +39,83 @@ fn report_secret_audit_findings(settings: &Map<String, Value>) {
                 "suggestedSecretRef": finding.suggested_secret_ref,
             }),
         );
+    }
+}
+
+fn apply_skill_config_update(settings: &mut Map<String, Value>, update: &Value) {
+    let Some(skill_update) = update.as_object() else {
+        return;
+    };
+    let Some(skill_entries) = skill_update.get("entries").and_then(Value::as_object) else {
+        return;
+    };
+    let skills = settings
+        .entry("skills".into())
+        .or_insert_with(|| json!({}));
+    if !skills.is_object() {
+        *skills = json!({});
+    }
+    let skills_object = skills.as_object_mut().expect("skills object");
+    let entries = skills_object
+        .entry("entries".into())
+        .or_insert_with(|| json!({}));
+    if !entries.is_object() {
+        *entries = json!({});
+    }
+    let entries_object = entries.as_object_mut().expect("skills entries object");
+
+    for (skill_key, requested) in skill_entries {
+        let Some(requested) = requested.as_object() else {
+            continue;
+        };
+        let current = entries_object
+            .entry(skill_key.clone())
+            .or_insert_with(|| json!({}));
+        if !current.is_object() {
+            *current = json!({});
+        }
+        let current_object = current.as_object_mut().expect("skill entry object");
+
+        if let Some(enabled) = requested.get("enabled").and_then(Value::as_bool) {
+            current_object.insert("enabled".into(), Value::Bool(enabled));
+        }
+        if let Some(api_key) = requested.get("apiKey").and_then(Value::as_str) {
+            let api_key = api_key.trim();
+            if api_key != REDACTED_SECRET_SENTINEL {
+                if api_key.is_empty() {
+                    current_object.remove("apiKey");
+                } else {
+                    current_object.insert("apiKey".into(), Value::String(api_key.into()));
+                }
+            }
+        }
+        if let Some(requested_env) = requested.get("env").and_then(Value::as_object) {
+            let env = current_object
+                .entry("env".into())
+                .or_insert_with(|| json!({}));
+            if !env.is_object() {
+                *env = json!({});
+            }
+            let env_object = env.as_object_mut().expect("skill env object");
+            for (key, value) in requested_env {
+                let Some(value) = value.as_str() else {
+                    continue;
+                };
+                let key = key.trim();
+                if key.is_empty() {
+                    continue;
+                }
+                let value = value.trim();
+                if value == REDACTED_SECRET_SENTINEL {
+                    continue;
+                }
+                if value.is_empty() {
+                    env_object.remove(key);
+                } else {
+                    env_object.insert(key.into(), Value::String(value.into()));
+                }
+            }
+        }
     }
 }
 
@@ -923,6 +1001,9 @@ impl SettingsService {
         if let Some(agents) = stored.get("agents") {
             object.insert("agents".into(), agents.clone());
         }
+        if let Some(skills) = stored.get("skills") {
+            object.insert("skills".into(), skills.clone());
+        }
         object.insert(
             "mcpCustomInstructions".into(),
             string_map_value(self.get_mcp_custom_instructions()),
@@ -1035,6 +1116,9 @@ impl SettingsService {
                         .into(),
                 );
             }
+        }
+        if let Some(value) = update.get("skills") {
+            apply_skill_config_update(&mut settings, value);
         }
 
         settings.insert("notifications".into(), json!({ "isEnabled": false }));

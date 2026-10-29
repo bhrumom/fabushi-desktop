@@ -50,3 +50,24 @@ caller for the mutation contract. The ledger row therefore conflates skill
 runtime parsing with skill configuration mutation; implementation and wiring
 remain pending until the responsibilities are split and mapped to the existing
 settings/config owner. No completion flag was changed.
+
+## 5. Skills config mutation owner implementation (2026-10-29)
+
+The config-mutation portion is now implemented in the existing
+`SettingsService` owner rather than in `SkillRegistry`. `set_host_settings`
+accepts a `skills.entries` update, preserves existing API keys and environment
+values when the incoming value is the exact redacted sentinel, trims and
+stores non-empty replacements, deletes explicitly empty values, merges env
+keys without replacing unrelated entries, and persists the result through the
+existing atomic settings writer. The returned host-settings projection now
+includes the stored skills object.
+
+`source/host/tests/settings_service_contract.rs` adds a focused contract for
+redacted API-key/env preservation, deletion, and normalization. This is a
+real implementation slice for `src/skills/config/mutations.ts`, not evidence
+that the separate skill markdown discovery, permission gating, library
+persistence, prompt injection, or production UI/CLI surfaces are complete.
+The ledger responsibility must still be split so this mutation source is
+mapped to SettingsService while `skill_runtime.rs` retains only the runtime
+library owner; executable verification remains pending for exact-head
+Actions.
