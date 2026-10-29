@@ -30,3 +30,23 @@
   - `test_ocrm_secrets_audit_manager` (PASSED)
   - `test_ocrm_security_policy_auditor` (PASSED)
   - `test_ocrm_proxy_capture_header_redactor` (PASSED)
+
+## 4. Additional locked security oracle reads (2026-10-29)
+
+The locked upstream `src/secrets/apply.test-support.ts`
+(`e4b9ded6712b90cc19af41bfc82ee372cec09686`, 128 recorded lines),
+`src/proxy-capture/ca.openssl.test.ts`
+(`504dc0fe749717a553635ecd3d3f12f6cd494fbb`, 116 recorded lines), and
+`src/process/appcontainer-spawn.test.ts`
+(`ea084ac6af2d706fb898cbdf1edd456d67e2bca8`, 76 recorded lines) were read in
+full. The secrets fixture binds config, auth SQLite, auth JSON, and `.env`
+paths to one state root, exercises an environment-backed provider key, and
+can inject a concurrent writer between commit and runtime-snapshot publication
+so rollback must preserve the newer writer rather than erase it. The proxy
+oracle requires strict TLS-valid CA/leaf identifiers and chain verification,
+while retaining a legacy CA without key identifiers byte-for-byte and still
+issuing a verifiable leaf. The Windows AppContainer oracle rejects direct or
+custom pipe-producing process launches and synchronous service probes before
+Node creates a child, including Execa stdio/input combinations. These are
+source oracles for the existing Fabushi secrets, proxy-capture, and bounded
+process owners; no ledger, shard/index, or completion flag was changed.

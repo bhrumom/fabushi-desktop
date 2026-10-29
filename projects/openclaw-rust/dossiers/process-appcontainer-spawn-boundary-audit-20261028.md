@@ -55,3 +55,14 @@ status was changed: the responsibility remains `read=partial` and
 `verification=not-run` because the full transitive native package source,
 `@openclaw/proc-safe/windows-token`, process supervisor imports, and Rust
 production consumer proof are not yet closed.
+
+## Locked oracle closure note (2026-10-29)
+
+The exact upstream `src/process/appcontainer-spawn.test.ts`
+(`ea084ac6af2d706fb898cbdf1edd456d67e2bca8`, 76 lines) was read in full.
+It independently covers direct pipe spawn, synchronous Windows service probes,
+custom supervisor transports, and Execa options that create pipes, and asserts
+the typed `AppContainerSpawnUnsupportedError` occurs before the spawn callback
+or child creation. This strengthens the pre-launch negative oracle but does
+not change the dossier's `read=partial` or `verification=not-run` state and
+does not prove Fabushi Windows production wiring.
