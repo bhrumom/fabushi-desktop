@@ -4,7 +4,7 @@
 
 - **Unit ID:** `OCRM-UNIT-DEVICE-PAIRING-001`
 - **Module ID:** `OCRM-M03` (Identity, Credentials, Pairing and Account Scope)
-- **Status:** **Scoped candidate admitted into Parity Ledger; 27 audited source files mapped to reviewed; 6 responsibilities registered with implementation/wiring pending; production wiring blocked by OCRM-BLOCK-GW-SCOPED-AUTHORITY-001; acceptance pending**
+- **Status:** **Scoped candidate admitted into Parity Ledger; 30 audited source files mapped to reviewed; 6 responsibilities registered with implementation/wiring pending; production wiring blocked by OCRM-BLOCK-GW-SCOPED-AUTHORITY-001; acceptance pending**
 - **Requirements Traced:** `OCRM-R03`, `OCRM-R04`, `OCRM-AC03`, `OCRM-AC11`
 - **Reviewer:** `xuyao@ombhrum.com`
 - **Upstream Baseline:** `openclaw/openclaw@ad8d12f126d29b0db204187adf5092db80294e70` (tree `04ccce62f1d74dc8e0c88290ae8ded027b7b0f16`)
@@ -31,6 +31,16 @@ inside `DevicePairingOwner`/the existing enrollment owner and must not move
 cleanup claims or mutation dispatch into NodeHost, CloudWorker, or Gateway
 handler code.
 
+The corresponding oracle cluster proves the required negative edges at source
+level: aged capability reapproval survives reads, writes and database reopen;
+changed surfaces supersede older requests; reconnect cleanup claims are
+generation-ordered and cannot delete a replacement request; approval remains
+blocked while any cleanup claim is active; retired pairing generations cannot
+write connection metadata, bins or session-host consent; and stale approval
+policy/token issuance is refused while a pairing lock is held. These are frozen
+oracle expectations only; they do not replace exact-head Actions execution or
+real companion-device acceptance.
+
 ---
 
 ## 3. Blockers & Frontiers
@@ -43,7 +53,7 @@ handler code.
 
 ---
 
-## 4. Itemized Audited Source Files (27 Files)
+## 4. Itemized Audited Source Files (30 Files)
 
 | Upstream Source Path | Blob SHA | Lines | Language | Read Status | Disposition | Target Fabushi Owner |
 |---|---|---|---|---|---|---|
@@ -74,3 +84,6 @@ handler code.
 | `src/infra/device-pairing-node.ts` | `3e032d10f1b2079a22784e8181d14f2eda8e4946` | 331 | TypeScript | read-complete | reuse-and-extend-existing-Rust | `source/host/src/network_enrollment_owner.rs` |
 | `src/infra/device-pairing-core.worker.ts` | `fb60cb2a473a26e1388ea59cc4be840fd33f3110` | 102 | TypeScript | read-complete | reuse-and-extend-existing-Rust | `source/host/src/network_enrollment_owner.rs` |
 | `src/infra/device-pairing-binding.ts` | `5d7b5fc031662b0a9a24466f2f3ea932e7e509b6` | 20 | TypeScript | read-complete | reuse-and-extend-existing-Rust | `source/host/src/network_enrollment_owner.rs` |
+| `src/infra/device-pairing-node.lifecycle.test.ts` | `d632873d782487012c1d36286a61fd88f87a1f44` | 170 | TypeScript | read-complete | test-conformance-oracle | `source/host/tests/network_enrollment_owner_contract.rs` |
+| `src/infra/device-pairing-node.test.ts` | `aebbbab2f441e4c952e2094c1a7d8373819c8995` | 1044 | TypeScript | read-complete | test-conformance-oracle | `source/host/tests/network_enrollment_owner_contract.rs` |
+| `src/infra/device-pairing-approval-policy.test.ts` | `b8edee7f829134a211fbb2c91018fad7c72edca8` | 101 | TypeScript | read-complete | test-conformance-oracle | `source/host/tests/network_enrollment_owner_contract.rs` |

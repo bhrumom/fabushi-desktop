@@ -5353,6 +5353,15 @@
             "start_line": 1
           },
           "symbol": "device-pairing-approval"
+        },
+        {
+          "blob_sha": "b8edee7f829134a211fbb2c91018fad7c72edca8",
+          "path": "src/infra/device-pairing-approval-policy.test.ts",
+          "range": {
+            "end_line": 101,
+            "start_line": 1
+          },
+          "symbol": "approval policy lock and stale-handshake oracle"
         }
       ],
       "status": {
@@ -5565,6 +5574,24 @@
             "start_line": 1
           },
           "symbol": "node pairing cleanup claims and lifecycle operations"
+        },
+        {
+          "blob_sha": "d632873d782487012c1d36286a61fd88f87a1f44",
+          "path": "src/infra/device-pairing-node.lifecycle.test.ts",
+          "range": {
+            "end_line": 170,
+            "start_line": 1
+          },
+          "symbol": "aged node capability lifecycle oracle"
+        },
+        {
+          "blob_sha": "aebbbab2f441e4c952e2094c1a7d8373819c8995",
+          "path": "src/infra/device-pairing-node.test.ts",
+          "range": {
+            "end_line": 1044,
+            "start_line": 1
+          },
+          "symbol": "node capability, reconnect claim and generation fencing oracles"
         }
       ],
       "status": {
