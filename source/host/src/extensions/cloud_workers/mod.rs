@@ -7,6 +7,7 @@
 
 mod lease;
 mod artifact_admission;
+mod doctor;
 mod node_bootstrap;
 mod platform_bridge;
 mod provider_catalog;
@@ -17,6 +18,10 @@ pub use artifact_admission::{
     CloudWorkerArtifactAdmission, CloudWorkerArtifactAdmissionError,
     CloudWorkerArtifactAdmissionState, CloudWorkerArtifactDigest,
     CloudWorkerArtifactKind, CloudWorkerArtifactPolicy, CloudWorkerArtifactSource,
+};
+pub use doctor::{
+    CloudWorkerDoctorAction, CloudWorkerDoctorError, CloudWorkerDoctorRequest,
+    CloudWorkerDoctorResult, CloudWorkerDoctorStatus,
 };
 pub use node_bootstrap::{
     CloudWorkerBootstrapPhase, CloudWorkerBootstrapRecord, CloudWorkerBootstrapRequest,

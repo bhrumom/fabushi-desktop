@@ -247,6 +247,18 @@ bridges and lease-scoped workspace operations. Sandbox requests use explicit
 argv vectors and workspace-relative paths; they do not interpolate shell
 strings, own platform policy, or create a second agent/conversation runtime.
 
+The doctor/recovery projection at
+`source/host/src/extensions/cloud_workers/doctor.rs` distinguishes inspection
+from mutating repair/reconciliation and requires an explicit acknowledgement
+for every mutating action. It is a request/result contract only; no repair,
+migration, lease release or warm-image mutation is executed.
+
+The current Host registry evidence remains an open integration item: the
+frozen `extension_ids.generated.rs`, `extensions/registry.rs` and
+`host_production_extensions.rs` contain no CloudWorkers slot. Adding one
+requires the approved ADR/RTM target symbols, Coordinator producer/consumer
+path and exact Actions/package proof; this task does not claim that wiring.
+
 ## 9. Definition of Done / acceptance criteria
 
 - P1-AC01: ADR is approved and the target symbols/consumers are recorded in
