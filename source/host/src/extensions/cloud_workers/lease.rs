@@ -95,6 +95,7 @@ pub struct CloudWorkerLease {
     pub generation: LeaseGeneration,
     pub runtime: CloudWorkerRuntimeIdentity,
     pub lifecycle: CloudWorkerLifecycle,
+    pub last_outcome: CloudWorkerMutationOutcome,
 }
 
 impl CloudWorkerLease {
@@ -135,6 +136,58 @@ impl CloudWorkerLease {
         }
         Ok(())
     }
+
+    pub fn apply_outcome(
+        &mut self,
+        next: CloudWorkerLifecycle,
+        outcome: CloudWorkerMutationOutcome,
+    ) -> Result<(), CloudWorkerLeaseError> {
+        match outcome {
+            CloudWorkerMutationOutcome::Submitted => {
+                if next != self.lifecycle {
+                    return Err(CloudWorkerLeaseError::SubmittedStateChanged);
+                }
+            }
+            CloudWorkerMutationOutcome::Completed => {
+                if !is_allowed_transition(self.lifecycle, next) {
+                    return Err(CloudWorkerLeaseError::InvalidLifecycleTransition {
+                        from: self.lifecycle,
+                        to: next,
+                    });
+                }
+                self.lifecycle = next;
+            }
+            CloudWorkerMutationOutcome::Failed | CloudWorkerMutationOutcome::Cancelled => {
+                if next != self.lifecycle {
+                    return Err(CloudWorkerLeaseError::UnsettledStateChanged);
+                }
+            }
+            CloudWorkerMutationOutcome::OutcomeUnknown => {
+                self.lifecycle = CloudWorkerLifecycle::OutcomeUnknown;
+            }
+        }
+        self.last_outcome = outcome;
+        Ok(())
+    }
+}
+
+fn is_allowed_transition(from: CloudWorkerLifecycle, to: CloudWorkerLifecycle) -> bool {
+    matches!(
+        (from, to),
+        (CloudWorkerLifecycle::Admitted, CloudWorkerLifecycle::Preparing)
+            | (CloudWorkerLifecycle::Preparing, CloudWorkerLifecycle::Warming)
+            | (CloudWorkerLifecycle::Warming, CloudWorkerLifecycle::Bootstrapping)
+            | (CloudWorkerLifecycle::Bootstrapping, CloudWorkerLifecycle::Enrolled)
+            | (CloudWorkerLifecycle::Enrolled, CloudWorkerLifecycle::Inspecting)
+            | (CloudWorkerLifecycle::Enrolled, CloudWorkerLifecycle::Heartbeating)
+            | (CloudWorkerLifecycle::Enrolled, CloudWorkerLifecycle::Stopping)
+            | (CloudWorkerLifecycle::Inspecting, CloudWorkerLifecycle::Enrolled)
+            | (CloudWorkerLifecycle::Heartbeating, CloudWorkerLifecycle::Enrolled)
+            | (CloudWorkerLifecycle::Stopping, CloudWorkerLifecycle::Disposed)
+            | (CloudWorkerLifecycle::OutcomeUnknown, CloudWorkerLifecycle::Admitted)
+            | (CloudWorkerLifecycle::OutcomeUnknown, CloudWorkerLifecycle::Stopping)
+            | (CloudWorkerLifecycle::OutcomeUnknown, CloudWorkerLifecycle::Disposed)
+    )
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -162,6 +215,15 @@ pub enum CloudWorkerLeaseError {
     StaleRuntimeIdentity,
     #[error("mutation requires a replay key")]
     MissingReplayKey,
+    #[error("a submitted mutation cannot change lifecycle state")]
+    SubmittedStateChanged,
+    #[error("an unsettled mutation cannot change lifecycle state")]
+    UnsettledStateChanged,
+    #[error("invalid worker lifecycle transition from {from:?} to {to:?}")]
+    InvalidLifecycleTransition {
+        from: CloudWorkerLifecycle,
+        to: CloudWorkerLifecycle,
+    },
 }
 
 #[cfg(test)]
@@ -177,6 +239,7 @@ mod tests {
             runtime: CloudWorkerRuntimeIdentity::new("provider", "profile", "runtime")
                 .unwrap(),
             lifecycle: CloudWorkerLifecycle::Admitted,
+            last_outcome: CloudWorkerMutationOutcome::Completed,
         }
     }
 
@@ -219,6 +282,49 @@ mod tests {
         assert_eq!(
             lease.validate(&mutation),
             Err(CloudWorkerLeaseError::MissingReplayKey)
+        );
+    }
+
+    #[test]
+    fn only_completed_results_advance_the_lifecycle() {
+        let mut lease = lease();
+        assert_eq!(
+            lease.apply_outcome(
+                CloudWorkerLifecycle::Preparing,
+                CloudWorkerMutationOutcome::Submitted,
+            ),
+            Err(CloudWorkerLeaseError::SubmittedStateChanged)
+        );
+        assert_eq!(
+            lease.apply_outcome(
+                CloudWorkerLifecycle::Preparing,
+                CloudWorkerMutationOutcome::Completed,
+            ),
+            Ok(())
+        );
+        assert_eq!(lease.lifecycle, CloudWorkerLifecycle::Preparing);
+    }
+
+    #[test]
+    fn ambiguous_results_enter_recovery_state() {
+        let mut lease = lease();
+        assert_eq!(
+            lease.apply_outcome(
+                CloudWorkerLifecycle::Admitted,
+                CloudWorkerMutationOutcome::OutcomeUnknown,
+            ),
+            Ok(())
+        );
+        assert_eq!(lease.lifecycle, CloudWorkerLifecycle::OutcomeUnknown);
+        assert_eq!(
+            lease.apply_outcome(
+                CloudWorkerLifecycle::Preparing,
+                CloudWorkerMutationOutcome::Completed,
+            ),
+            Err(CloudWorkerLeaseError::InvalidLifecycleTransition {
+                from: CloudWorkerLifecycle::OutcomeUnknown,
+                to: CloudWorkerLifecycle::Preparing,
+            })
         );
     }
 }

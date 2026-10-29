@@ -224,6 +224,11 @@ shape, safe archive member paths and explicit pending/damaged/outcome-unknown
 states. It does not download, verify bytes, publish files or mutate a managed
 artifact store.
 
+The lease foundation now also includes an explicit transition guard: only a
+completed mutation may advance the lifecycle, submitted/failed/cancelled
+mutations cannot silently change state, and an ambiguous result enters
+`OutcomeUnknown` until a permitted recovery transition is applied.
+
 ## 9. Definition of Done / acceptance criteria
 
 - P1-AC01: ADR is approved and the target symbols/consumers are recorded in
