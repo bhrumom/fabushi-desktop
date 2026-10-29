@@ -7747,6 +7747,24 @@
       "selected_owner": "source/host/src/extensions/attachments/media_understanding_service.rs",
       "source_refs": [
         {
+          "blob_sha": "6f74912691f87e43b257006c36c41fba85d878d1",
+          "path": "src/gateway/agent-turn/agent-image-understanding.test.ts",
+          "range": {
+            "end_line": 189,
+            "start_line": 1
+          },
+          "symbol": "agent image understanding scope/revocation oracle"
+        },
+        {
+          "blob_sha": "5e1f340b71c414af63b4c73490c309624f0cce38",
+          "path": "src/gateway/agent-turn/agent-image-understanding.ts",
+          "range": {
+            "end_line": 47,
+            "start_line": 1
+          },
+          "symbol": "prepareAgentImageUnderstanding"
+        },
+        {
           "blob_sha": "bd8c0fd0d1efa78cb0d0a0f30ca41ede8f3fbb04",
           "path": "src/media-understanding/apply.ts",
           "range": {
@@ -11814,6 +11832,33 @@
       "risk": "None; fail-closed directory identity assertion",
       "selected_owner": "source/host/src/extensions/attachments/media_store.rs",
       "source_refs": [
+        {
+          "blob_sha": "27a3a65974fad078872b257ee28cafccdad4691f",
+          "path": "src/gateway/agent-turn/agent-run-media.ts",
+          "range": {
+            "end_line": 127,
+            "start_line": 1
+          },
+          "symbol": "dispatchAgentRunWithMedia"
+        },
+        {
+          "blob_sha": "dc7ff02f441189ab579fdf0ef8d37b5cfb1a8d0b",
+          "path": "src/gateway/agent-turn/agent-run-final-media.ts",
+          "range": {
+            "end_line": 227,
+            "start_line": 1
+          },
+          "symbol": "finalizeAgentRunMedia"
+        },
+        {
+          "blob_sha": "cf2180bcd9c50489df8fdf03a646a468d6141b50",
+          "path": "src/gateway/agent-turn/agent-run-media.test.ts",
+          "range": {
+            "end_line": 481,
+            "start_line": 1
+          },
+          "symbol": "agent run media custody and publication oracle"
+        },
         {
           "blob_sha": "d2989e690ec6c530f1355ba6b4f6c03ed59afb8d",
           "path": "src/media/store.read-scope.ts",

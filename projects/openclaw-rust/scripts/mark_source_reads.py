@@ -12,6 +12,11 @@ from pathlib import Path
 ROOT = Path("projects/openclaw-rust")
 SHARDS = ROOT / "inventory" / "shards"
 READS = {
+    "src/gateway/agent-turn/agent-image-understanding.test.ts": (189, "OCRM-RESP-MEDIA-APPLY-UNDERSTANDING-001", "OCRM-M10", "test-oracle-replaced"),
+    "src/gateway/agent-turn/agent-image-understanding.ts": (47, "OCRM-RESP-MEDIA-APPLY-UNDERSTANDING-001", "OCRM-M10", "owner-audit"),
+    "src/gateway/agent-turn/agent-run-final-media.ts": (227, "OCRM-RESP-MEDIA-STORE-READ-SCOPE-001", "OCRM-M10", "owner-audit"),
+    "src/gateway/agent-turn/agent-run-media.test.ts": (481, "OCRM-RESP-MEDIA-STORE-READ-SCOPE-001", "OCRM-M10", "test-oracle-replaced"),
+    "src/gateway/agent-turn/agent-run-media.ts": (127, "OCRM-RESP-MEDIA-STORE-READ-SCOPE-001", "OCRM-M10", "owner-audit"),
     "src/gateway/agent-turn/agent-handler-helpers.ts": (188, "OCRM-RESP-SESSION-TURNS-CONTROLLER-001", "OCRM-M07", "owner-audit"),
     "src/gateway/agent-turn/agent-run-diagnostics.ts": (30, "OCRM-RESP-SESSION-TURNS-CONTROLLER-001", "OCRM-M07", "owner-audit"),
     "src/gateway/agent-turn/io.ts": (15, "OCRM-RESP-GW-DISPATCH-REGISTRY-001", "OCRM-M13", "owner-audit"),

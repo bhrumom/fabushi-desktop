@@ -911,3 +911,21 @@ context contract exposes only the existing Gateway/session services required
 by Agent Turn. These sources map across the existing Session Turns and Gateway
 dispatch owners; they do not create another transport, principal, or privacy
 authority. Rust wiring and acceptance remain unverified.
+
+## 110. Agent turn media understanding and final-media custody (2026-10-29)
+
+The locked `agent-image-understanding.ts`,
+`agent-image-understanding.test.ts`, `agent-run-media.ts`,
+`agent-run-final-media.ts`, and `agent-run-media.test.ts` were read in full.
+Text-only turns reuse the existing media-understanding runtime, preserve image
+facts while suppressing pixel hydration after a successful description, and
+fail closed on missing capability, empty output, scope denial, or revoked
+authority. Final media remains bound to the registered run/source and current
+session placement/database identity; visible payload selection excludes
+sensitive/internal/incognito/external-delivery cases, persists managed media
+and transcript rewrites only under the exact lifecycle revision, and removes
+unretained artifacts after abort or authority change. The focused oracle also
+confirms source-file deletion does not remove committed managed artifacts.
+These sources map to existing media-understanding and media-store read-scope
+owners; they do not add a second media store or transcript authority. Rust
+wiring, package reachability, and acceptance remain unverified.
