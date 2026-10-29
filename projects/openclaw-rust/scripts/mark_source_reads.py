@@ -12,6 +12,15 @@ from pathlib import Path
 ROOT = Path("projects/openclaw-rust")
 SHARDS = ROOT / "inventory" / "shards"
 READS = {
+    "extensions/crabbox/src/crabbox-worker-node-enrollment.test.ts": (931, None, "OCRM-M13", "test-oracle-replaced"),
+    "extensions/crabbox/src/crabbox-worker-node-enrollment.ts": (508, None, "OCRM-M13", "owner-audit"),
+    "extensions/crabbox/src/crabbox-worker-node-process.ts": (245, None, "OCRM-M13", "owner-audit"),
+    "extensions/crabbox/src/crabbox-worker-profile.ts": (550, None, "OCRM-M11", "owner-audit"),
+    "extensions/crabbox/src/crabbox-worker-provider.test.ts": (1269, None, "OCRM-M11", "test-oracle-replaced"),
+    "extensions/crabbox/src/crabbox-worker-provider.ts": (692, None, "OCRM-M11", "owner-audit"),
+    "extensions/crabbox/src/crabbox-worker-warm-image-lifecycle.test.ts": (334, None, "OCRM-M11", "test-oracle-replaced"),
+    "extensions/crabbox/src/crabbox-worker-warm-image-store.ts": (764, None, "OCRM-M11", "owner-audit"),
+    "extensions/crabbox/src/crabbox-worker-warm-image.test.ts": (418, None, "OCRM-M11", "test-oracle-replaced"),
     "extensions/crabbox/src/crabbox-managed-binary.ts": (442, None, "OCRM-M11", "owner-audit"),
     "extensions/crabbox/src/crabbox-managed-binary.test.ts": (629, None, "OCRM-M11", "test-oracle-replaced"),
     "extensions/crabbox/src/crabbox-worker-bootstrap-download.test.ts": (622, None, "OCRM-M11", "test-oracle-replaced"),

@@ -169,6 +169,32 @@ identity, with bounded cancellation and outcome-unknown handling. These are
 source contracts only; no real provider, device, package or platform
 acceptance is claimed.
 
+The provider, profile, node-process/enrollment and canonical warm-image store
+were then re-read against the same exact tree and registered in inventory. The
+provider remains one disposable composition owner for binary resolution,
+heartbeat, allocation/capture, project preparation, node enrollment, desktop
+setup, snapshot maintenance and teardown. It preserves indeterminate leases
+for replay, stops heartbeats when caller ownership ends, and never fabricates a
+device identity. The node enrollment boundary forwards only declared
+bootstrap inputs and waits for the enrolled device result; the warm-image store
+remains the sole compare-and-apply state owner with bounded records, generation
+fences and retirement debt. These source facts narrow the future Rust contract
+but do not establish a Fabushi implementation or acceptance.
+
+Exact source identities for this closure are:
+
+| Path | Blob | Lines | Disposition |
+| --- | --- | ---: | --- |
+| `crabbox-worker-provider.ts` | `a0ef59bbd42ef07b88d3bfb5a5a73fdc507b1b11` | 692 | owner-audit |
+| `crabbox-worker-provider.test.ts` | `de4ae1ab51e3465c51254918df613846025abec9` | 1269 | test-oracle-replaced |
+| `crabbox-worker-profile.ts` | `e182292b6f4fe4a16e20fa6679e680b0250dbbd1` | 550 | owner-audit |
+| `crabbox-worker-node-enrollment.ts` | `7860f5b649f05beae18fd848c01dbdda34bb1236` | 508 | owner-audit |
+| `crabbox-worker-node-enrollment.test.ts` | `b6f534ec508c97ee0cf3624b05a668570eb20dab` | 931 | test-oracle-replaced |
+| `crabbox-worker-node-process.ts` | `414d84ab591091511ee6abd66bd12d8b064e4763` | 245 | owner-audit |
+| `crabbox-worker-warm-image-store.ts` | `1031bf93f52dc15f65eaacd4e7a0a6197ace60bd` | 764 | owner-audit |
+| `crabbox-worker-warm-image.test.ts` | `a6932d2bb9f962379f7c8ee0f7c50d5eccb9ee7c` | 418 | test-oracle-replaced |
+| `crabbox-worker-warm-image-lifecycle.test.ts` | `ce9907a7e82397be46e50e51a2ba9c1d032799c5` | 334 | test-oracle-replaced |
+
 These tests prove, as source oracles, catalog projection and bounded recovery, setup-secret separation and revocation, preflight security rejection, readiness/timeout/cleanup classification, diagnostics redaction, fixed-lease replay after lost replies, heartbeat scheduling/fencing, platform/desktop limitations, managed binary sharing, warm-image lifecycle/recovery, compare-and-apply conflict behavior, and config-schema rejection. They do not prove Fabushi packaged behavior or real provider/device acceptance.
 
 ## Fabushi owner resolution
