@@ -217,6 +217,10 @@ input, explicit provider/profile/machine records, deterministic ordering,
 duplicate rejection and resource/architecture validation. It still does not
 discover a provider, grant permission, select a model or launch a worker.
 
+Catalog profiles now expose deterministic OS/architecture/min-resource
+matching. A match is only a compatibility projection; it does not authorize
+the provider, grant a lease, select a model or launch a worker.
+
 The artifact-admission foundation at
 `source/host/src/extensions/cloud_workers/artifact_admission.rs` is likewise
 pure validation: it enforces HTTPS allowlisted origins, bounded size, SHA-256

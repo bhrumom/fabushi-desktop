@@ -100,6 +100,15 @@ pub struct CloudWorkerProfile {
 }
 
 impl CloudWorkerProfile {
+    pub fn select_machine(
+        &self,
+        requirement: &CloudWorkerMachineRequirement,
+    ) -> Option<&CloudWorkerMachine> {
+        self.machines
+            .iter()
+            .find(|machine| machine.supports(requirement))
+    }
+
     fn normalize_and_validate(&mut self) -> Result<(), CloudWorkerCatalogError> {
         normalize_id(&mut self.id).map_err(|_| CloudWorkerCatalogError::InvalidProfileId)?;
         if self.machines.is_empty() {
@@ -126,6 +135,13 @@ pub struct CloudWorkerMachine {
 }
 
 impl CloudWorkerMachine {
+    pub fn supports(&self, requirement: &CloudWorkerMachineRequirement) -> bool {
+        self.os == requirement.os
+            && self.arch == requirement.arch
+            && self.resources.cpu_cores >= requirement.min_cpu_cores
+            && self.resources.memory_bytes >= requirement.min_memory_bytes
+    }
+
     fn validate(&self) -> Result<(), CloudWorkerCatalogError> {
         if self.arch.trim().is_empty() {
             return Err(CloudWorkerCatalogError::InvalidArchitecture);
@@ -148,6 +164,14 @@ pub enum CloudWorkerOs {
 pub struct CloudWorkerResourceLimits {
     pub cpu_cores: u16,
     pub memory_bytes: u64,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct CloudWorkerMachineRequirement {
+    pub os: CloudWorkerOs,
+    pub arch: String,
+    pub min_cpu_cores: u16,
+    pub min_memory_bytes: u64,
 }
 
 #[derive(Debug, Error)]
@@ -230,5 +254,23 @@ mod tests {
             CloudWorkerCatalogParser::default().parse(input),
             Err(CloudWorkerCatalogError::DuplicateProvider(id)) if id == "same"
         ));
+    }
+
+    #[test]
+    fn selects_only_a_machine_meeting_all_declared_constraints() {
+        let catalog = CloudWorkerCatalogParser::default().parse(VALID).unwrap();
+        let profile = &catalog.providers[0].profiles[0];
+        let requirement = CloudWorkerMachineRequirement {
+            os: CloudWorkerOs::Linux,
+            arch: "x86_64".into(),
+            min_cpu_cores: 2,
+            min_memory_bytes: 1024 * 1024 * 1024,
+        };
+        assert!(profile.select_machine(&requirement).is_some());
+        let too_large = CloudWorkerMachineRequirement {
+            min_memory_bytes: 2 * 1024 * 1024 * 1024,
+            ..requirement
+        };
+        assert!(profile.select_machine(&too_large).is_none());
     }
 }
