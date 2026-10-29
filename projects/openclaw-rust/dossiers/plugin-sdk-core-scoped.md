@@ -83,9 +83,11 @@ production wiring.
 The same slice now exposes `read_visible_transcript_page` over a caller-owned
 snapshot. It validates scope and generation, records reset-window boundaries,
 returns stable reset reasons, enforces message/serialized-byte budgets, and
-continues from the opaque cursor. It intentionally returns no persistence or
-current-turn admission authority; the existing session owner must supply the
-snapshot, generation, reset boundary, and any read fence before production
+continues from the opaque cursor. It now accepts an identity-bound
+`VisibleTranscriptReadFence` from the existing user-turn admission owner and
+stops before the admitted message position. It intentionally returns no
+persistence or admission authority; the existing session owner must supply
+the snapshot, generation, reset boundary, and fence before production
 adaptation.
 
 ## 4. Audited Bundled Channel Contract Invariants

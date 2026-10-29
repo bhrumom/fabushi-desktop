@@ -12,6 +12,7 @@ use mahayana_host_runtime::extensions::plugin_sdk::session_memory::{
     read_visible_transcript_page, visible_reset_boundary_changed, with_visible_reset_boundary,
     SessionCatalogQueryParams, SessionSummary, SessionTranscriptLockRegistry, SessionVisibility,
     VisibleTranscriptReadResult, VisibleTranscriptResetReason, VisibleTranscriptStart,
+    VisibleTranscriptReadFence,
     DEFAULT_PAGE_LIMIT, MAX_CURSOR_LENGTH, MAX_PAGE_LIMIT,
 };
 use mahayana_host_runtime::extensions::plugin_sdk::tool_runtime::{
@@ -294,6 +295,7 @@ fn test_ocrm_plugin_sdk_session_memory() {
         Some(1),
         VisibleTranscriptStart::ResetWindow,
         None,
+        None,
         2,
         10_000,
     )
@@ -312,6 +314,7 @@ fn test_ocrm_plugin_sdk_session_memory() {
         Some(1),
         VisibleTranscriptStart::ResetWindow,
         Some(&next_cursor),
+        None,
         2,
         10_000,
     )
@@ -323,6 +326,36 @@ fn test_ocrm_plugin_sdk_session_memory() {
             ..
         }
     ));
+
+    let fence = VisibleTranscriptReadFence {
+        agent_id: "agent-1".into(),
+        session_id: "session-1".into(),
+        generation: "generation-1".into(),
+        before_message_position: 2,
+    };
+    let fenced = read_visible_transcript_page(
+        &entries,
+        "agent-1",
+        "session-1",
+        "generation-1",
+        Some((42, Some("reset-42"))),
+        Some(1),
+        VisibleTranscriptStart::ResetWindow,
+        None,
+        Some(&fence),
+        10,
+        10_000,
+    )
+    .expect("current-turn fence should bound the page");
+    match fenced {
+        VisibleTranscriptReadResult::Page {
+            entries: fenced_entries,
+            ..
+        } => {
+            assert_eq!(fenced_entries, vec![entries[1].clone(), entries[2].clone()]);
+        }
+        other => panic!("expected fenced page, got {other:?}"),
+    }
 }
 
 #[test]

@@ -25300,6 +25300,7 @@
         "decode_visible_transcript_cursor",
         "read_visible_transcript_page",
         "VisibleTranscriptReadResult",
+        "VisibleTranscriptReadFence",
         "SessionSummary",
         "SessionTranscriptLockRegistry",
         "SessionVisibility"

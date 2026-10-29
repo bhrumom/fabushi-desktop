@@ -330,6 +330,18 @@ pub enum VisibleTranscriptReadResult {
     },
 }
 
+/// A read-only fence captured by the existing user-turn admission owner.
+/// `before_message_position` is exclusive in the already projected visible
+/// snapshot; the fence carries identity so a caller cannot apply it to a
+/// different transcript or generation.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct VisibleTranscriptReadFence {
+    pub agent_id: String,
+    pub session_id: String,
+    pub generation: String,
+    pub before_message_position: usize,
+}
+
 /// Read one bounded visible page from a caller-owned snapshot.
 ///
 /// The snapshot, generation and reset boundary are supplied by the existing
@@ -344,6 +356,7 @@ pub fn read_visible_transcript_page(
     reset_tail_start: Option<usize>,
     start: VisibleTranscriptStart,
     cursor: Option<&str>,
+    read_fence: Option<&VisibleTranscriptReadFence>,
     max_messages: usize,
     max_bytes: usize,
 ) -> Result<VisibleTranscriptReadResult, String> {
@@ -358,6 +371,14 @@ pub fn read_visible_transcript_page(
             "max_bytes must be between 1 and {}",
             MAX_VISIBLE_TRANSCRIPT_MAX_BYTES
         ));
+    }
+    if let Some(fence) = read_fence {
+        if fence.agent_id != agent_id || fence.session_id != session_id {
+            return Err("current-turn transcript fence belongs to another scope".into());
+        }
+        if fence.generation != generation {
+            return Err("current-turn transcript fence belongs to another generation".into());
+        }
     }
 
     let reset_window = matches!(start, VisibleTranscriptStart::ResetWindow);
@@ -416,8 +437,11 @@ pub fn read_visible_transcript_page(
         0
     };
     let visible = select_visible_transcript_messages(entries, Some(start_index));
+    let visible_len = read_fence
+        .map(|fence| fence.before_message_position.min(visible.len()))
+        .unwrap_or(visible.len());
     let next_index = continuation.last_message_position.saturating_add(1) as usize;
-    if next_index >= visible.len() {
+    if next_index >= visible_len {
         return Ok(VisibleTranscriptReadResult::Page {
             cursor: encode_visible_transcript_cursor(&continuation)?,
             entries: Vec::new(),
@@ -430,7 +454,7 @@ pub fn read_visible_transcript_page(
     let mut selected = Vec::new();
     let mut serialized_bytes = 0;
     let mut required_bytes = None;
-    for entry in visible.iter().skip(next_index) {
+    for entry in visible.iter().take(visible_len).skip(next_index) {
         let entry_bytes = serde_json::to_vec(entry)
             .map_err(|error| format!("transcript entry encode failed: {error}"))?;
         if selected.len() >= max_messages || serialized_bytes + entry_bytes.len() > max_bytes {
@@ -454,7 +478,7 @@ pub fn read_visible_transcript_page(
     let last_position = next_index + selected.len() - 1;
     continuation.last_message_position = last_position as i64;
     continuation.last_event_seq = last_position as i64;
-    let has_more = last_position + 1 < visible.len();
+    let has_more = last_position + 1 < visible_len;
     Ok(VisibleTranscriptReadResult::Page {
         cursor: encode_visible_transcript_cursor(&continuation)?,
         entries: selected,
