@@ -17,7 +17,8 @@ fn cloud_workers_has_a_formal_slot_and_explicit_dependencies() {
 
 #[test]
 fn production_boundary_starts_disabled_without_provider_prerequisites() {
-    let extension = start_cloud_worker_provisioning_extension();
+    let state_path = std::env::temp_dir().join("cloud-worker-contract-state.json");
+    let extension = start_cloud_worker_provisioning_extension(state_path).unwrap();
     assert_eq!(extension.status(), CloudWorkerOwnerStatus::Disabled);
 }
 

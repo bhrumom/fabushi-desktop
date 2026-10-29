@@ -654,7 +654,10 @@ pub fn start_production_host_extensions(
         Arc::clone(&auth),
         production_cloud_agent_trace_converter(),
     );
-    let cloud_workers = start_cloud_worker_provisioning_extension();
+    let cloud_workers = start_cloud_worker_provisioning_extension(
+        app_data_dir.join("cloud-workers").join("state.json"),
+    )
+    .map_err(|error| format!("failed to start CloudWorkers extension: {error}"))?;
     let notify_bus = start_notify_bus_extension(
         Arc::clone(&auth),
         Arc::clone(&experiments),

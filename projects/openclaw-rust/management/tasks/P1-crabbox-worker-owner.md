@@ -276,8 +276,10 @@ Versioned persistence is now defined by
 warm-image metadata are serialized deterministically and written through an
 exact-path temporary file plus rename. Corrupt/unsupported snapshots fail
 closed; secret payloads, credentials and Fabushi identity stores are not part
-of the snapshot. Production app-data injection and migration/rollback receipts
-remain open.
+of the snapshot. The production extension now injects
+`app_data_dir/cloud-workers/state.json`, loads existing state fail-closed and
+exposes an atomic `persist()` boundary. Migration/rollback receipts and
+mutation-triggered persistence remain open.
 
 The Coordinator crate now owns the serializable projection contract in
 `source/node-agent-coordinator/src/cloud_worker_projection.rs`, with the exact

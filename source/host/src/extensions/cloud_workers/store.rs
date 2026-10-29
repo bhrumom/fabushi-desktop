@@ -77,4 +77,6 @@ pub enum CloudWorkerStoreError {
     Encode(#[source] serde_json::Error),
     #[error("could not decode cloud-worker state: {0}")]
     Decode(#[source] serde_json::Error),
+    #[error("cloud-worker owner lock is poisoned")]
+    PoisonedOwner,
 }
