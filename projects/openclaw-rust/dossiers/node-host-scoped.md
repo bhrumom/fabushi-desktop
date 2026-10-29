@@ -1626,3 +1626,21 @@ policy, and closes retained authority on operation end. This is read-only
 evidence pending a controlled inventory writer: no generated shard/index state,
 ledger ref, or completion flag was changed. Rust implementation, wiring,
 runtime execution, and acceptance remain unverified.
+
+## 144. Session controller reference-model test support read-only audit (2026-10-29)
+
+The locked upstream `session-controller-model.test-support.ts`
+(`905982150067f05f3dacdef42c41435faee2d0d1`) was read in full. It is a
+test-only reference model rather than a runtime controller: the pilot state
+models one operation generation, phase, slot/writer custody, cancellation,
+live authority, compaction, injection availability, and per-input offered /
+accepted / indeterminate / rejected / failed custody; its transition oracle
+keeps stale generations and revoked authority from becoming replayable. The
+mailbox model covers duplicate suppression, bounded overflow retirement, and
+durable completion deduplication, while deterministic sequence generation
+exercises receipt races and terminal cleanup. The canonical ledger currently
+records this source range as ending at line 238, whereas the locked blob reads
+249 lines; the SHA matches, but the range metadata remains a stale item for a
+controlled writer reconciliation. No generated shard/index state, ledger ref,
+or completion flag was changed. Rust implementation, wiring, runtime
+execution, and acceptance remain unverified.
