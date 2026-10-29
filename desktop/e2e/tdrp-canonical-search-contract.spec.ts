@@ -2,6 +2,8 @@ import { expect, test } from '@playwright/test';
 import {
   commandPaletteEntries,
   dedupeCommandPaletteAgents,
+  fuzzyPaletteScore,
+  normalizePaletteSearch,
   type CommandPaletteAgent,
 } from '../../frontend/src/production/command-palette-model';
 
@@ -52,4 +54,27 @@ test('latest replacement controls hidden/visible projection without parallel par
   expect(entries).toHaveLength(1);
   expect(entries[0]?.kind).toBe('agent');
   if (entries[0]?.kind === 'agent') expect(entries[0].isHidden).not.toBe(true);
+});
+
+// Supplementary-plane characters must survive search normalization: UTF-16
+// code-unit iteration silently dropped these legitimate participant names.
+test('canonical search preserves supplementary CJK and astral letters', () => {
+  expect(normalizePaletteSearch('𠀀 张')).toBe('𠀀 张');
+  expect(normalizePaletteSearch('𐐀')).toBe('𐐨');
+  const entries = commandPaletteEntries({
+    agents: [{ id: 'human:extension-b', name: '𠀀', isGroup: false, isHidden: false }],
+    commands: [],
+    query: '𠀀',
+    tab: 'agents',
+  });
+  expect(entries).toHaveLength(1);
+  expect(entries[0]?.kind).toBe('agent');
+});
+
+
+test('astral queries use the same fuzzy-span budget as BMP queries', () => {
+  expect(fuzzyPaletteScore('𠀀xxa', '𠀀a')).not.toBeNull();
+  expect(fuzzyPaletteScore('𠀀xxxxxxa', '𠀀a')).toBeNull();
+  expect(fuzzyPaletteScore('bxxa', 'ba')).not.toBeNull();
+  expect(fuzzyPaletteScore('bxxxxxxa', 'ba')).toBeNull();
 });

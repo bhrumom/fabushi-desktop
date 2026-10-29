@@ -1,6 +1,7 @@
 use prost::{Message, Oneof};
 
-#[derive(Clone, PartialEq, Message)]
+#[derive(Clone, PartialEq, Message, serde::Serialize, serde::Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct Workflow {
     #[prost(message, repeated, tag = "10")]
     pub triggers: Vec<Trigger>,
@@ -8,13 +9,15 @@ pub struct Workflow {
     pub prompts: Vec<Prompt>,
 }
 
-#[derive(Clone, PartialEq, Message)]
+#[derive(Clone, PartialEq, Message, serde::Serialize, serde::Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct Prompt {
     #[prost(string, tag = "1")]
     pub prompt: String,
 }
 
-#[derive(Clone, PartialEq, Message)]
+#[derive(Clone, PartialEq, Message, serde::Serialize, serde::Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct Trigger {
     #[prost(oneof = "trigger::Trigger", tags = "1, 2, 7, 9, 13, 15, 16, 18, 19, 20")]
     pub trigger: Option<trigger::Trigger>,
@@ -23,7 +26,7 @@ pub struct Trigger {
 pub mod trigger {
     use super::*;
 
-    #[derive(Clone, PartialEq, Oneof)]
+    #[derive(Clone, PartialEq, Oneof, serde::Serialize, serde::Deserialize)]
     pub enum Trigger {
         #[prost(message, tag = "1")]
         Cron(CronTrigger),
@@ -48,13 +51,15 @@ pub mod trigger {
     }
 }
 
-#[derive(Clone, PartialEq, Message)]
+#[derive(Clone, PartialEq, Message, serde::Serialize, serde::Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct CronTrigger {
     #[prost(string, tag = "1")]
     pub cron: String,
 }
 
-#[derive(Clone, PartialEq, Message)]
+#[derive(Clone, PartialEq, Message, serde::Serialize, serde::Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct SlackTrigger {
     #[prost(string, tag = "1")]
     pub channel: String,
@@ -70,7 +75,8 @@ pub struct SlackTrigger {
     pub top_level_only: Option<bool>,
 }
 
-#[derive(Clone, PartialEq, Message)]
+#[derive(Clone, PartialEq, Message, serde::Serialize, serde::Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct SlackMentionTrigger {
     #[prost(string, tag = "1")]
     pub channel: String,
@@ -80,7 +86,8 @@ pub struct SlackMentionTrigger {
     pub block_unauthenticated_slack_users: bool,
 }
 
-#[derive(Clone, PartialEq, Message)]
+#[derive(Clone, PartialEq, Message, serde::Serialize, serde::Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct SlackReactionAddedTrigger {
     #[prost(string, tag = "1")]
     pub channel: String,
@@ -94,7 +101,8 @@ pub struct SlackReactionAddedTrigger {
     pub only_owner_reactions: bool,
 }
 
-#[derive(Clone, PartialEq, Message)]
+#[derive(Clone, PartialEq, Message, serde::Serialize, serde::Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct SlackAnyReactionAddedTrigger {
     #[prost(string, tag = "1")]
     pub channel: String,
@@ -106,7 +114,8 @@ pub struct SlackAnyReactionAddedTrigger {
     pub only_owner_reactions: bool,
 }
 
-#[derive(Clone, PartialEq, Message)]
+#[derive(Clone, PartialEq, Message, serde::Serialize, serde::Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct GitTrigger {
     #[prost(oneof = "git_trigger::Event", tags = "1, 4, 8, 9, 10, 12, 13")]
     pub event: Option<git_trigger::Event>,
@@ -117,7 +126,7 @@ pub struct GitTrigger {
 pub mod git_trigger {
     use super::*;
 
-    #[derive(Clone, PartialEq, Oneof)]
+    #[derive(Clone, PartialEq, Oneof, serde::Serialize, serde::Deserialize)]
     pub enum Event {
         #[prost(message, tag = "1")]
         PullRequest(GitPullRequestEvent),
@@ -136,7 +145,8 @@ pub mod git_trigger {
     }
 }
 
-#[derive(Clone, PartialEq, Message)]
+#[derive(Clone, PartialEq, Message, serde::Serialize, serde::Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct GitPullRequestEvent {
     #[prost(string, repeated, tag = "2")]
     pub repos: Vec<String>,
@@ -144,25 +154,29 @@ pub struct GitPullRequestEvent {
     pub pr_action: i32,
 }
 
-#[derive(Clone, PartialEq, Message)]
+#[derive(Clone, PartialEq, Message, serde::Serialize, serde::Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct GitPullRequestReviewRequestedEvent {
     #[prost(string, repeated, tag = "1")]
     pub repos: Vec<String>,
 }
 
-#[derive(Clone, PartialEq, Message)]
+#[derive(Clone, PartialEq, Message, serde::Serialize, serde::Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct GitIssueAssignedEvent {
     #[prost(string, repeated, tag = "1")]
     pub repos: Vec<String>,
 }
 
-#[derive(Clone, PartialEq, Message)]
+#[derive(Clone, PartialEq, Message, serde::Serialize, serde::Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct GitPullRequestReviewCommentEvent {
     #[prost(string, repeated, tag = "1")]
     pub repos: Vec<String>,
 }
 
-#[derive(Clone, PartialEq, Message)]
+#[derive(Clone, PartialEq, Message, serde::Serialize, serde::Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct GitPullRequestReviewEvent {
     #[prost(string, repeated, tag = "1")]
     pub repos: Vec<String>,
@@ -174,7 +188,8 @@ pub struct GitPullRequestReviewEvent {
     pub on_commented: bool,
 }
 
-#[derive(Clone, PartialEq, Message)]
+#[derive(Clone, PartialEq, Message, serde::Serialize, serde::Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct GitReviewThreadEvent {
     #[prost(string, repeated, tag = "1")]
     pub repos: Vec<String>,
@@ -184,7 +199,8 @@ pub struct GitReviewThreadEvent {
     pub on_unresolved: bool,
 }
 
-#[derive(Clone, PartialEq, Message)]
+#[derive(Clone, PartialEq, Message, serde::Serialize, serde::Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct GitCiCompletedEvent {
     #[prost(string, repeated, tag = "1")]
     pub repos: Vec<String>,
@@ -194,7 +210,8 @@ pub struct GitCiCompletedEvent {
     pub branch: String,
 }
 
-#[derive(Clone, PartialEq, Message)]
+#[derive(Clone, PartialEq, Message, serde::Serialize, serde::Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct MicrosoftTeamsTrigger {
     #[prost(string, tag = "1")]
     pub tenant_id: String,
@@ -212,7 +229,8 @@ pub struct MicrosoftTeamsTrigger {
     pub block_unauthenticated_teams_users: bool,
 }
 
-#[derive(Clone, PartialEq, Message)]
+#[derive(Clone, PartialEq, Message, serde::Serialize, serde::Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct LinearTrigger {
     #[prost(oneof = "linear_trigger::Event", tags = "1, 2, 3")]
     pub event: Option<linear_trigger::Event>,
@@ -225,7 +243,7 @@ pub struct LinearTrigger {
 pub mod linear_trigger {
     use super::*;
 
-    #[derive(Clone, PartialEq, Oneof)]
+    #[derive(Clone, PartialEq, Oneof, serde::Serialize, serde::Deserialize)]
     pub enum Event {
         #[prost(message, tag = "1")]
         IssueCreated(LinearIssueCreatedEvent),
@@ -236,22 +254,26 @@ pub mod linear_trigger {
     }
 }
 
-#[derive(Clone, PartialEq, Message)]
+#[derive(Clone, PartialEq, Message, serde::Serialize, serde::Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct LinearIssueCreatedEvent {}
 
-#[derive(Clone, PartialEq, Message)]
+#[derive(Clone, PartialEq, Message, serde::Serialize, serde::Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct LinearStatusChangedEvent {
     #[prost(string, repeated, tag = "1")]
     pub status_ids: Vec<String>,
 }
 
-#[derive(Clone, PartialEq, Message)]
+#[derive(Clone, PartialEq, Message, serde::Serialize, serde::Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct LinearEndOfCycleEvent {
     #[prost(string, repeated, tag = "1")]
     pub cycle_ids: Vec<String>,
 }
 
-#[derive(Clone, PartialEq, Message)]
+#[derive(Clone, PartialEq, Message, serde::Serialize, serde::Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct SentryTrigger {
     #[prost(oneof = "sentry_trigger::Event", tags = "1, 2, 3, 4, 5, 6")]
     pub event: Option<sentry_trigger::Event>,
@@ -262,7 +284,7 @@ pub struct SentryTrigger {
 pub mod sentry_trigger {
     use super::*;
 
-    #[derive(Clone, PartialEq, Oneof)]
+    #[derive(Clone, PartialEq, Oneof, serde::Serialize, serde::Deserialize)]
     pub enum Event {
         #[prost(message, tag = "1")]
         IssueCreated(SentryIssueCreatedEvent),
@@ -279,20 +301,27 @@ pub mod sentry_trigger {
     }
 }
 
-#[derive(Clone, PartialEq, Message)]
+#[derive(Clone, PartialEq, Message, serde::Serialize, serde::Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct SentryIssueCreatedEvent {}
-#[derive(Clone, PartialEq, Message)]
+#[derive(Clone, PartialEq, Message, serde::Serialize, serde::Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct SentryIssueResolvedEvent {}
-#[derive(Clone, PartialEq, Message)]
+#[derive(Clone, PartialEq, Message, serde::Serialize, serde::Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct SentryIssueAssignedEvent {}
-#[derive(Clone, PartialEq, Message)]
+#[derive(Clone, PartialEq, Message, serde::Serialize, serde::Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct SentryIssueArchivedEvent {}
-#[derive(Clone, PartialEq, Message)]
+#[derive(Clone, PartialEq, Message, serde::Serialize, serde::Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct SentryIssueUnresolvedEvent {}
-#[derive(Clone, PartialEq, Message)]
+#[derive(Clone, PartialEq, Message, serde::Serialize, serde::Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct SentryIssueAnyEvent {}
 
-#[derive(Clone, PartialEq, Message)]
+#[derive(Clone, PartialEq, Message, serde::Serialize, serde::Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct PagerDutyTrigger {
     #[prost(oneof = "pager_duty_trigger::Event", tags = "1, 2, 3, 4, 5")]
     pub event: Option<pager_duty_trigger::Event>,
@@ -303,7 +332,7 @@ pub struct PagerDutyTrigger {
 pub mod pager_duty_trigger {
     use super::*;
 
-    #[derive(Clone, PartialEq, Oneof)]
+    #[derive(Clone, PartialEq, Oneof, serde::Serialize, serde::Deserialize)]
     pub enum Event {
         #[prost(message, tag = "1")]
         IncidentTriggered(PagerDutyIncidentTriggeredEvent),
@@ -318,36 +347,45 @@ pub mod pager_duty_trigger {
     }
 }
 
-#[derive(Clone, PartialEq, Message)]
+#[derive(Clone, PartialEq, Message, serde::Serialize, serde::Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct PagerDutyIncidentTriggeredEvent {}
-#[derive(Clone, PartialEq, Message)]
+#[derive(Clone, PartialEq, Message, serde::Serialize, serde::Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct PagerDutyIncidentAcknowledgedEvent {}
-#[derive(Clone, PartialEq, Message)]
+#[derive(Clone, PartialEq, Message, serde::Serialize, serde::Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct PagerDutyIncidentResolvedEvent {}
-#[derive(Clone, PartialEq, Message)]
+#[derive(Clone, PartialEq, Message, serde::Serialize, serde::Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct PagerDutyIncidentEscalatedEvent {}
-#[derive(Clone, PartialEq, Message)]
+#[derive(Clone, PartialEq, Message, serde::Serialize, serde::Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct PagerDutyIncidentAnyEvent {}
 
-#[derive(Clone, PartialEq, Message)]
+#[derive(Clone, PartialEq, Message, serde::Serialize, serde::Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct ListSandAutomationsRequest {
     #[prost(string, tag = "1")]
     pub sand_agent_id: String,
 }
 
-#[derive(Clone, PartialEq, Message)]
+#[derive(Clone, PartialEq, Message, serde::Serialize, serde::Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct ListAutomationsResponse {
     #[prost(message, repeated, tag = "1")]
     pub workflows: Vec<AutomationWithOwner>,
 }
 
-#[derive(Clone, PartialEq, Message)]
+#[derive(Clone, PartialEq, Message, serde::Serialize, serde::Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct AutomationWithOwner {
     #[prost(message, optional, tag = "1")]
     pub workflow: Option<Automation>,
 }
 
-#[derive(Clone, PartialEq, Message)]
+#[derive(Clone, PartialEq, Message, serde::Serialize, serde::Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct Automation {
     #[prost(bool, tag = "3")]
     pub enabled: bool,
@@ -357,7 +395,8 @@ pub struct Automation {
     pub automation_id: String,
 }
 
-#[derive(Clone, PartialEq, Message)]
+#[derive(Clone, PartialEq, Message, serde::Serialize, serde::Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct CreateAutomationRequest {
     #[prost(string, tag = "1")]
     pub name: String,
@@ -373,10 +412,12 @@ pub struct CreateAutomationRequest {
     pub sand_automation_id: Option<String>,
 }
 
-#[derive(Clone, PartialEq, Message)]
+#[derive(Clone, PartialEq, Message, serde::Serialize, serde::Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct CreateAutomationResponse {}
 
-#[derive(Clone, PartialEq, Message)]
+#[derive(Clone, PartialEq, Message, serde::Serialize, serde::Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct UpdateAutomationRequest {
     #[prost(string, optional, tag = "2")]
     pub name: Option<String>,
@@ -390,14 +431,17 @@ pub struct UpdateAutomationRequest {
     pub automation_id: String,
 }
 
-#[derive(Clone, PartialEq, Message)]
+#[derive(Clone, PartialEq, Message, serde::Serialize, serde::Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct UpdateAutomationResponse {}
 
-#[derive(Clone, PartialEq, Message)]
+#[derive(Clone, PartialEq, Message, serde::Serialize, serde::Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct DeleteAutomationRequest {
     #[prost(string, tag = "2")]
     pub automation_id: String,
 }
 
-#[derive(Clone, PartialEq, Message)]
+#[derive(Clone, PartialEq, Message, serde::Serialize, serde::Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct DeleteAutomationResponse {}

@@ -29,6 +29,7 @@ pub const FABUSHI_CORE_CREDENTIAL_WAITING_MESSAGE: &str =
 #[derive(Clone, PartialEq, Eq)]
 pub struct FabushiCoreCredential {
     access_token: String,
+    issuer: String,
     pub expires_at_ms: u64,
     pub session_id: String,
     pub device_id: String,
@@ -40,6 +41,7 @@ impl std::fmt::Debug for FabushiCoreCredential {
         formatter
             .debug_struct("FabushiCoreCredential")
             .field("access_token", &"<redacted>")
+            .field("issuer", &self.issuer)
             .field("expires_at_ms", &self.expires_at_ms)
             .field("session_id", &self.session_id)
             .field("device_id", &self.device_id)
@@ -51,6 +53,20 @@ impl std::fmt::Debug for FabushiCoreCredential {
 impl FabushiCoreCredential {
     pub fn access_token(&self) -> &str {
         &self.access_token
+    }
+
+    pub fn issuer(&self) -> &str {
+        &self.issuer
+    }
+
+    pub fn authorize_origin(&self, target: &str) -> Result<(), FabushiCoreCredentialError> {
+        let validated = super::credential_renewer::configured_product_backend_url(Some(target), None)
+            .map_err(|_| FabushiCoreCredentialError::unavailable())?;
+        let target = url::Url::parse(&validated).map_err(|_| FabushiCoreCredentialError::unavailable())?;
+        if target.origin().ascii_serialization() != self.issuer {
+            return Err(FabushiCoreCredentialError::unavailable());
+        }
+        Ok(())
     }
 }
 
@@ -78,6 +94,8 @@ impl FabushiCoreCredentialError {
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 struct FabushiCoreCredentialFile {
     version: u32,
+    #[serde(default)]
+    issuer: Option<String>,
     access_token: String,
     expires_at_ms: u64,
     session_id: String,
@@ -433,8 +451,15 @@ impl HostAuthService {
             serde_json::Value::Number(value) => value.to_string(),
             _ => return Err(FabushiCoreCredentialError::unavailable()),
         };
+        let issuer = super::credential_renewer::configured_product_backend_url(
+            parsed.issuer.as_deref(), None,
+        ).map_err(|_| FabushiCoreCredentialError::unavailable())?;
+        let issuer = url::Url::parse(&issuer)
+            .map_err(|_| FabushiCoreCredentialError::unavailable())?
+            .origin().ascii_serialization();
         Ok(FabushiCoreCredential {
             access_token: parsed.access_token,
+            issuer,
             expires_at_ms: parsed.expires_at_ms,
             session_id: parsed.session_id,
             device_id: parsed.device_id,

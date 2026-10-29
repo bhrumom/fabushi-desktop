@@ -4085,9 +4085,9 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
             onOpenAbout={() => setOverlay("about")}
             onOpenChange={setAccountMenuOpen}
             onOpenFeedback={() => setOverlay("feedback")}
-            onOpenHelp={() => void bridge.openExternal("https://cursor.com/help")}
+            onOpenHelp={() => void bridge.openExternal("https://github.com/bhrumom/fabushi-desktop/issues")}
             onOpenSettings={() => { setSettingsSection("general"); setManageSharedRoomId(null); setOverlay("settings"); }}
-            onOpenUsage={() => void bridge.openExternal("https://cursor.com/dashboard/spending")}
+            onOpenUsage={() => { setSettingsSection("usage"); setManageSharedRoomId(null); setOverlay("settings"); }}
             onRequestLogout={() => { setOverlay("confirm-logout"); setAccountMenuOpen(false); }}
             onStatus={setAccount}
             updatePill={<UpdatePill bridge={bridge} labels={UPDATE_PILL_LABELS} />}

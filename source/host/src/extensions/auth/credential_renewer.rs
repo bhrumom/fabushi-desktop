@@ -21,7 +21,8 @@ pub const CREDENTIAL_RETRY_BASE_DELAY_MS: u64 = 5 * 1_000;
 pub const CREDENTIAL_RETRY_MAX_DELAY_MS: u64 = 5 * 60 * 1_000;
 pub const DEFAULT_TTL_MS: u64 = 10 * 60 * 1_000;
 pub const RENEWAL_PATH: &str = "/sand-box/inference-credential";
-pub const DEFAULT_CURSOR_BACKEND_URL: &str = "https://api2.cursor.sh";
+// Historical symbol retained for source compatibility; no foreign service fallback.
+pub const DEFAULT_CURSOR_BACKEND_URL: &str = "https://api.ombhrum.com";
 pub const SAND_CLIENT_TYPE: &str = "sand";
 pub const SAND_CLIENT_FALLBACK_BASE_VERSION: &str = "0.1.0";
 
@@ -125,18 +126,33 @@ pub fn read_dev_inference_credential_file(
 }
 
 pub fn get_configured_backend_url() -> Result<String, SandCredentialRenewalError> {
-    let raw = env::var("SAND_BACKEND_URL")
-        .ok()
-        .filter(|value| !value.trim().is_empty())
-        .or_else(|| {
-            env::var("CURSOR_API_BASE_URL")
-                .ok()
-                .filter(|value| !value.trim().is_empty())
-        })
-        .unwrap_or_else(|| DEFAULT_CURSOR_BACKEND_URL.into());
-    Url::parse(&raw)
-        .map(|url| url.to_string())
-        .map_err(|error| SandCredentialRenewalError::InvalidBackendUrl(error.to_string()))
+    configured_product_backend_url(
+        env::var("FABUSHI_API_BASE_URL").ok().as_deref(),
+        env::var("SAND_BACKEND_URL").ok().as_deref(),
+    )
+}
+
+pub fn configured_product_backend_url(
+    native: Option<&str>,
+    legacy: Option<&str>,
+) -> Result<String, SandCredentialRenewalError> {
+    let raw = native.or(legacy).unwrap_or(DEFAULT_CURSOR_BACKEND_URL).trim();
+    let url = Url::parse(raw)
+        .map_err(|_| SandCredentialRenewalError::InvalidBackendUrl("invalid product service origin".into()))?;
+    let host = url.host_str().unwrap_or_default();
+    let loopback = matches!(host, "localhost" | "127.0.0.1" | "::1" | "[::1]");
+    let approved = matches!(url.origin().ascii_serialization().as_str(),
+        "https://api.ombhrum.com" | "https://fabushi-ci-isolated-auth.bhrumom.workers.dev");
+    if (!url.username().is_empty() || url.password().is_some())
+        || url.query().is_some() || url.fragment().is_some()
+        || (url.scheme() != "https" && !(loopback && url.scheme() == "http"))
+        || (!loopback && (!approved || url.path() != "/" || url.port().is_some()))
+    {
+        return Err(SandCredentialRenewalError::InvalidBackendUrl(
+            "product services require an approved Fabushi origin or loopback".into(),
+        ));
+    }
+    Ok(url.to_string())
 }
 
 pub fn sand_box_namespace() -> &'static str {

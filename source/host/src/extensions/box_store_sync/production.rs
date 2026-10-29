@@ -125,6 +125,7 @@ const CLI_CONFIG_EXCLUDES: &[&str] = &[
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum ProductionBoxStoreSyncMode {
     Disabled,
+    Native,
     LocalFs {
         base_dir: PathBuf,
         store_id_override: Option<String>,
@@ -218,6 +219,7 @@ impl ProductionBoxStoreSyncApi {
                 ProductionBoxStoreSyncMode::LocalFs { .. }
                     | ProductionBoxStoreSyncMode::AgentStore
                     | ProductionBoxStoreSyncMode::SandBoxStoreV2
+                    | ProductionBoxStoreSyncMode::Native
             )
         {
             return false;
@@ -261,6 +263,7 @@ impl ProductionBoxStoreSyncService {
         let enabled = matches!(
             mode,
             ProductionBoxStoreSyncMode::LocalFs { .. }
+                | ProductionBoxStoreSyncMode::Native
                 | ProductionBoxStoreSyncMode::AgentStore
                 | ProductionBoxStoreSyncMode::SandBoxStoreV2
         );
@@ -347,6 +350,7 @@ impl BoxStoreSyncService for ProductionBoxStoreSyncService {
                 return;
             }
             ProductionBoxStoreSyncMode::LocalFs { .. }
+            | ProductionBoxStoreSyncMode::Native
             | ProductionBoxStoreSyncMode::AgentStore
             | ProductionBoxStoreSyncMode::SandBoxStoreV2 => {}
         }
@@ -589,6 +593,7 @@ impl ProductionBoxStoreSyncInner {
         matches!(
             self.mode,
             ProductionBoxStoreSyncMode::LocalFs { .. }
+                | ProductionBoxStoreSyncMode::Native
                 | ProductionBoxStoreSyncMode::AgentStore
                 | ProductionBoxStoreSyncMode::SandBoxStoreV2
         )
@@ -635,6 +640,7 @@ impl ProductionBoxStoreSyncInner {
                 *slot = Some(resolve_box_object_store_provider(
                     &self.env,
                     BoxObjectStoreProviderDependencies {
+                        native_credentials: self.deps.native_credentials.clone(),
                         backend_url: self.deps.backend_url.clone(),
                         get_access_token: self.deps.get_access_token.clone(),
                         get_machine_id: self.deps.get_machine_id.clone(),
@@ -1627,6 +1633,7 @@ pub fn resolve_production_box_store_sync_mode(
     }
     let policy = resolve_box_store_backend_policy(env);
     match policy.kind {
+        BoxStoreBackendKind::Native => ProductionBoxStoreSyncMode::Native,
         BoxStoreBackendKind::LocalFs => {
             let Some(base_dir) = policy.local_dir else {
                 return ProductionBoxStoreSyncMode::InvalidLocalConfiguration {
@@ -1709,6 +1716,7 @@ fn is_frozen_agent_store_source_id(value: &str) -> bool {
 fn mode_name(mode: &ProductionBoxStoreSyncMode) -> &'static str {
     match mode {
         ProductionBoxStoreSyncMode::Disabled => "disabled",
+        ProductionBoxStoreSyncMode::Native => "fabushi-native",
         ProductionBoxStoreSyncMode::LocalFs { .. } => "local-fs",
         ProductionBoxStoreSyncMode::AgentStore => "agent-store",
         ProductionBoxStoreSyncMode::SandBoxStoreV2 => "sand-box-store-v2",
@@ -1721,6 +1729,9 @@ fn mode_name(mode: &ProductionBoxStoreSyncMode) -> &'static str {
         ProductionBoxStoreSyncMode::UnsupportedRemote {
             backend: BoxStoreBackendKind::LocalFs,
         } => "local-fs-unwired",
+        ProductionBoxStoreSyncMode::UnsupportedRemote {
+            backend: BoxStoreBackendKind::Native,
+        } => "fabushi-native-invalid",
         ProductionBoxStoreSyncMode::InvalidLocalConfiguration { .. } => "local-fs-invalid",
     }
 }

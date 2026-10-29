@@ -6,15 +6,31 @@ on:
       - 'source/host/src/extensions/auth/**'
       - 'source/host/src/extensions/automations/**'
       - 'source/host/src/extensions/cross_user_sharing/xuser_sharing_environment.rs'
-      - 'source/host/tests/**'
+      - 'source/host/tests/xuser_sharing_environment_contract.rs'
+      - 'source/host/tests/xuser_service_contract.rs'
+      - 'source/host/src/extensions/box_store_sync/native_account_store.rs'
+      - 'source/host/src/extensions/box_store_sync/native_object_transfer.rs'
+      - 'source/host/src/extensions/box_store_sync/native_box_object_store.rs'
+      - 'source/host/src/extensions/box_store_sync/box_object_store.rs'
+      - 'source/host/src/extensions/box_store_sync/production.rs'
+      - 'source/host/src/extensions/box_store_sync/extension.rs'
+      - 'source/host/src/extensions/box_store_sync/box_copy_in.rs'
+      - 'source/host/src/box/box_store_backend_policy.rs'
+      - 'source/host/src/host_production_extensions.rs'
+      - 'source/host/src/extensions/box_store_sync/mod.rs'
+      - 'source/host/tests/extensions_auth_service_contract.rs'
+      - 'source/host/tests/extensions_auth_credential_renewer_contract.rs'
+      - 'source/host/tests/automations_backend_contract.rs'
+      - 'source/host/tests/native_automation_transport_contract.rs'
+      - 'source/host/tests/native_cloud_sync_contract.rs'
+      - 'source/host/tests/native_account_store_contract.rs'
+      - 'source/host/tests/native_object_transfer_contract.rs'
       - 'source/host/src/host_production_extensions.rs'
       - 'projects/openclaw-rust/scripts/expand_inventory.py'
       - '.github/workflows/native-service-contracts.yml'
   workflow_dispatch:
-
 permissions:
   contents: read
-
 jobs:
   native-auth-and-journal:
     strategy:
@@ -43,7 +59,7 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends libwayland-dev libpipewire-0.3-dev libegl1-mesa-dev libegl-dev libgbm-dev libdrm-dev libxkbcommon-dev
-      - name: Native service contracts available on this exact checkout
+      - name: Native credentials, issuer, HTTP journal, and BoxStore contracts
         shell: bash
         run: |
           set -euo pipefail
@@ -51,7 +67,11 @@ jobs:
             --test extensions_auth_service_contract \
             --test extensions_auth_credential_renewer_contract \
             --test automations_backend_contract \
+            --test native_automation_transport_contract \
+            --test native_cloud_sync_contract \
             --test automations_cloud_sync_contract \
+            --test native_account_store_contract \
+            --test native_object_transfer_contract \
             --test box_store_sync_extension_contract \
             --test box_foundation_contract \
             --test box_store_sync_production_wiring_contract \
@@ -66,13 +86,7 @@ jobs:
           {
             "source_sha": "$(git rev-parse HEAD)",
             "environment": "github-actions/${{ matrix.os }}",
-            "scope": "native-service-contracts-present-in-exact-checkout",
-            "excluded_missing_targets": [
-              "native_automation_transport_contract",
-              "native_cloud_sync_contract",
-              "native_account_store_contract",
-              "native_object_transfer_contract"
-            ],
+            "scope": "native-service-and-box-store-contracts-present-in-exact-checkout",
             "result": "passed"
           }
           EOF

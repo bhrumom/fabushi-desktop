@@ -144,7 +144,7 @@ fn extension_applies_dev_environment_gate_before_feature_gate() {
     let svc = service(serde_json::json!({"rooms":[],"pendingJoinRequests":[]}));
     let ext = CrossUserSharingExtension::new(
         Arc::clone(&svc),
-        "https://api2.cursor.sh",
+        "https://api.ombhrum.com",
         &BTreeMap::new(),
     );
     ext.set_feature_gate(true);
@@ -153,7 +153,7 @@ fn extension_applies_dev_environment_gate_before_feature_gate() {
     let mut env = BTreeMap::new();
     env.insert("SAND_DEV_XUSER_SHARING".into(), "1".into());
     env.insert("SAND_XUSER_SHARING_ALLOW_PROD".into(), "1".into());
-    let ext = CrossUserSharingExtension::new(svc, "https://api2.cursor.sh", &env);
+    let ext = CrossUserSharingExtension::new(svc, "https://api.ombhrum.com", &env);
     ext.set_feature_gate(true);
     assert!(ext.is_enabled());
 }
@@ -180,7 +180,7 @@ fn extension_tracks_multiplayer_gate_and_owns_service_lifecycle() {
 
     let extension = Arc::new(CrossUserSharingExtension::new(
         Arc::clone(&svc),
-        "https://dev.example.invalid",
+        "http://127.0.0.1:4200",
         &env,
     ));
     let experiments = Arc::new(HostExperimentsExtension::new(

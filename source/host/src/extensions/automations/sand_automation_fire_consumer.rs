@@ -80,7 +80,7 @@ pub struct BackendAutomationFire {
 }
 
 impl BackendAutomationFire {
-    fn from_value(value: &Value) -> Option<Self> {
+    pub(super) fn from_value(value: &Value) -> Option<Self> {
         Some(Self {
             id: value.get("id")?.as_str()?.to_string(),
             sand_agent_id: value.get("sandAgentId")?.as_str()?.to_string(),
@@ -196,10 +196,6 @@ impl AutomationFireBackendRuntime {
             .insert(id.to_string(), BackendFireState::Completed(completion.clone()));
         match self.report_completion(id, &completion) {
             Ok(()) => {
-                self.states.insert(id.to_string(), BackendFireState::Reported);
-                Ok(())
-            }
-            Err(error) if matches!(error.status(), Some(404 | 409)) => {
                 self.states.insert(id.to_string(), BackendFireState::Reported);
                 Ok(())
             }
@@ -345,9 +341,6 @@ impl AutomationFireBackendRuntime {
         for (id, completion) in completions {
             match self.report_completion(&id, &completion) {
                 Ok(()) => {
-                    self.states.insert(id, BackendFireState::Reported);
-                }
-                Err(error) if matches!(error.status(), Some(404 | 409)) => {
                     self.states.insert(id, BackendFireState::Reported);
                 }
                 Err(_) => {}

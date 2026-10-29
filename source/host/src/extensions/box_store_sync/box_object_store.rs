@@ -81,6 +81,7 @@ pub trait BoxObjectStoreProvider: Send + Sync {
 
 #[derive(Clone, Default)]
 pub struct BoxObjectStoreProviderDependencies {
+    pub native_credentials: Option<Arc<dyn crate::extensions::auth::auth_service::FabushiCoreCredentialProvider>>,
     pub backend_url: Option<String>,
     pub get_access_token: Option<Arc<dyn Fn() -> Result<String, String> + Send + Sync>>,
     pub get_machine_id: Option<Arc<dyn Fn() -> Result<String, String> + Send + Sync>>,
@@ -92,6 +93,11 @@ pub fn resolve_box_object_store_provider(
 ) -> Result<Arc<dyn BoxObjectStoreProvider>, String> {
     let policy = resolve_box_store_backend_policy(environment);
     match policy.kind {
+        BoxStoreBackendKind::Native => {
+            let base = deps.backend_url.ok_or("Native BoxStore backend URL is not configured")?;
+            let credentials = deps.native_credentials.ok_or("Native BoxStore credential provider is not configured")?;
+            Ok(Arc::new(super::native_box_object_store::NativeBoxObjectStoreProvider::new(&base, credentials)?))
+        }
         BoxStoreBackendKind::LocalFs => {
             let base_dir = policy
                 .local_dir

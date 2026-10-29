@@ -135,6 +135,7 @@ fn fabushi_core_credential_is_first_party_redacted_and_tracks_account_switch() {
         &credential_path,
         serde_json::json!({
             "version": 1,
+            "issuer": "https://api.ombhrum.com",
             "accessToken": token_a,
             "expiresAtMs": 600_000,
             "sessionId": "session-a",
@@ -165,6 +166,11 @@ fn fabushi_core_credential_is_first_party_redacted_and_tracks_account_switch() {
         .get_fabushi_core_credential()
         .expect("read Fabushi Core credential");
     assert_eq!(first.access_token(), token_a);
+    assert_eq!(first.issuer(), "https://api.ombhrum.com");
+    assert!(first.authorize_origin("https://api.ombhrum.com").is_ok());
+    assert!(first.authorize_origin("https://fabushi-ci-isolated-auth.bhrumom.workers.dev").is_err());
+    assert!(first.authorize_origin("https://api2.cursor.sh").is_err());
+    assert!(first.authorize_origin("http://127.0.0.1:4200").is_err());
     assert_eq!(first.session_id, "session-a");
     assert_eq!(first.device_id, "device-a");
     assert_eq!(first.user_id, "account-a");
@@ -194,6 +200,23 @@ fn fabushi_core_credential_is_first_party_redacted_and_tracks_account_switch() {
     assert_eq!(second.device_id, "device-b");
     assert_eq!(second.user_id, "42");
     assert_eq!(second.access_token(), "fabushi-product-token-account-b");
+    fs::write(&credential_path, serde_json::json!({
+        "version": 1,
+        "issuer": "https://fabushi-ci-isolated-auth.bhrumom.workers.dev",
+        "accessToken": "isolated-fixture-token",
+        "expiresAtMs": 700_000,
+        "sessionId": "isolated-session", "deviceId": "device-a", "userId": "account-a"
+    }).to_string()).unwrap();
+    let isolated = service.get_fabushi_core_credential().unwrap();
+    assert!(isolated.authorize_origin("https://fabushi-ci-isolated-auth.bhrumom.workers.dev").is_ok());
+    assert!(isolated.authorize_origin("https://api.ombhrum.com").is_err());
+    fs::write(&credential_path, serde_json::json!({
+        "version": 1, "issuer": "https://api2.cursor.sh", "accessToken": "foreign-fixture-token",
+        "expiresAtMs": 700_000,
+        "sessionId": "foreign-session", "deviceId": "device-a", "userId": "account-a"
+    }).to_string()).unwrap();
+    assert!(service.get_fabushi_core_credential().is_err());
+
 
     let log_text = logs.lock().unwrap().join("\n");
     assert!(!log_text.contains(token_a));
