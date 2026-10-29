@@ -1011,6 +1011,14 @@ fn test_ocrm_plugin_sdk_channel_lifecycle_outbound_pairing() {
     assert_eq!(count.load(Ordering::SeqCst), 15);
     assert!(!queue.run_next("chat-1")); // empty
 
+    let observed_active = Arc::new(AtomicUsize::new(0));
+    let observed_active_task = Arc::clone(&observed_active);
+    assert!(queue.enqueue("chat-2", move |context| {
+        observed_active_task.store(context.is_active as usize, Ordering::SeqCst);
+    }));
+    assert!(queue.run_next("chat-2"));
+    assert_eq!(observed_active.load(Ordering::SeqCst), 1);
+
     // Deactivation
     queue.deactivate();
     assert!(!queue.is_active());

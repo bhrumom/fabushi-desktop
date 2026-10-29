@@ -53,9 +53,11 @@ impl ChannelRunQueue {
             return false;
         }
 
-        let ctx = ChannelRunQueueTaskContext { is_active: true };
+        let active = Arc::clone(&self.active);
         let task_arc = Arc::new(move || {
-            task(ctx.clone());
+            task(ChannelRunQueueTaskContext {
+                is_active: active.load(Ordering::SeqCst),
+            });
         });
 
         let mut queues = self.queues.lock().unwrap();
@@ -79,6 +81,11 @@ impl ChannelRunQueue {
         };
 
         if let Some(t) = task {
+            // Deactivation may race with dequeue. Do not execute work that was
+            // removed from the queue after the lifecycle became inactive.
+            if !self.is_active() {
+                return false;
+            }
             t();
             true
         } else {

@@ -55,6 +55,12 @@ predictable `123456` fallback, and the contract caller must handle the
 correction; the upstream scoped pairing-store/controller and real channel
 provider wiring remain separate pending responsibilities.
 
+The channel run queue also now re-reads its lifecycle state at execution time.
+If deactivation wins a dequeue race, the removed task is discarded instead of
+running with the stale enqueue-time `is_active=true` context. This closes a
+local lifecycle fence; it does not establish the upstream async queue's status
+sink, abort signal, or real channel-provider consumer.
+
 ## 6. Audit Status
 - Mapped Files: 12 added (Total mapped: 805 / 58,750).
 - Unclassified Remaining: 57,945.
