@@ -13991,6 +13991,33 @@
       "selected_owner": "source/host/src/extensions/session/production.rs",
       "source_refs": [
         {
+          "blob_sha": "db33391e3300f6077a3d14cb5977fa0116ec962c",
+          "path": "src/auto-reply/reply/session-hooks.ts",
+          "range": {
+            "end_line": 157,
+            "start_line": 1
+          },
+          "symbol": "reply session lifecycle hook emission"
+        },
+        {
+          "blob_sha": "f85b5ec4ce5737e370a3497d2a96698d0d205654",
+          "path": "src/gateway/session-end-transcript-reader.ts",
+          "range": {
+            "end_line": 127,
+            "start_line": 1
+          },
+          "symbol": "closed/reset/archived transcript source readers"
+        },
+        {
+          "blob_sha": "84410b7f3cdb8e2fb02d89ecf5d59dfebdc26aee",
+          "path": "src/gateway/session-transcript-files.fs.ts",
+          "range": {
+            "end_line": 423,
+            "start_line": 1
+          },
+          "symbol": "session transcript candidate/archive ownership"
+        },
+        {
           "blob_sha": "739e3e17a084833eea8f2cd16cad6dbefd6e3160",
           "path": "src/gateway/active-sessions-shutdown-drain.ts",
           "range": {
@@ -27001,6 +27028,24 @@
       "risk": "High; failing hooks crashing the execution loop break agent conversational replies",
       "selected_owner": "source/host/src/extensions/plugins/hook_runner.rs",
       "source_refs": [
+        {
+          "blob_sha": "b7d21769cb6188e4191ff1c9cd7702b76e0f428d",
+          "path": "src/plugins/hook-runner-global.ts",
+          "range": {
+            "end_line": 96,
+            "start_line": 1
+          },
+          "symbol": "global hook runner registry facade"
+        },
+        {
+          "blob_sha": "9dccc572d0ea84a661f7135761e9a386c87efb9f",
+          "path": "src/plugins/session-end-transcript.ts",
+          "range": {
+            "end_line": 138,
+            "start_line": 1
+          },
+          "symbol": "session_end transcript capability lease"
+        },
         {
           "blob_sha": "91f06de2d130a0f80f747d096f76e439bd84d755",
           "path": "src/plugins/AGENTS.md",

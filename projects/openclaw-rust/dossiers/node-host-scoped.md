@@ -806,3 +806,20 @@ closes transport. These tests are conformance oracles attached to the existing
 Gateway dispatch owner; they do not authorize a second Rust queue/runtime or
 constitute local test execution, Rust parity, packaging, or provider/device
 acceptance.
+
+## 104. Session-end transcript source and hook ownership (2026-10-29)
+
+The locked `session-end-transcript-reader.ts`,
+`session-transcript-files.fs.ts`, `session-hooks.ts`,
+`session-end-transcript.ts`, and `hook-runner-global.ts` were read in full.
+The session owner bounds visible ended-transcript reads by message and JSON
+bytes, distinguishes closed/reset/archived sources, verifies reset archive
+identity before fallback, canonicalizes and bounds archive discovery, and
+keeps archive cleanup path-scoped. Reply lifecycle hooks detach from the
+request writer/controller lanes while retaining bounded Gateway work custody.
+The plugin owner exposes transcript access only through a private, revocable
+capability lease and resolves the live global hook registry on every dispatch;
+conversation access remains explicitly opt-in and lifecycle revocation fences
+late reads. These are existing Session and Plugins Hook Pipeline boundaries,
+not a second transcript store, hook registry, or Rust runtime; implementation,
+production wiring, and acceptance remain unverified.

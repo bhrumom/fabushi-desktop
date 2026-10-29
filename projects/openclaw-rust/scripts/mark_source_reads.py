@@ -12,6 +12,7 @@ from pathlib import Path
 ROOT = Path("projects/openclaw-rust")
 SHARDS = ROOT / "inventory" / "shards"
 READS = {
+    "src/auto-reply/reply/session-hooks.ts": (157, "OCRM-RESP-SESSION-WORK-ADMISSION-001", "OCRM-M07", "owner-audit"),
     "src/gateway/active-sessions-shutdown-drain.ts": (78, "OCRM-RESP-SESSION-WORK-ADMISSION-001", "OCRM-M07", "owner-audit"),
     "src/gateway/active-sessions-shutdown-tracker.test.ts": (62, "OCRM-RESP-SESSION-WORK-ADMISSION-001", "OCRM-M07", "test-oracle-replaced"),
     "src/gateway/active-sessions-shutdown-tracker.ts": (38, "OCRM-RESP-SESSION-WORK-ADMISSION-001", "OCRM-M07", "owner-audit"),
@@ -22,8 +23,12 @@ READS = {
     "src/gateway/server/ws-connection/request-start.test.ts": (362, "OCRM-RESP-GW-DISPATCH-REGISTRY-001", "OCRM-M13", "test-oracle-replaced"),
     "src/gateway/server/ws-policy-close.ts": (146, "OCRM-RESP-GW-DISPATCH-REGISTRY-001", "OCRM-M13", "owner-audit"),
     "src/gateway/server/ws-connection/authenticated-request-dispatch.policy-close.test.ts": (370, "OCRM-RESP-GW-DISPATCH-REGISTRY-001", "OCRM-M13", "test-oracle-replaced"),
+    "src/gateway/session-end-transcript-reader.ts": (127, "OCRM-RESP-SESSION-WORK-ADMISSION-001", "OCRM-M07", "owner-audit"),
+    "src/gateway/session-transcript-files.fs.ts": (423, "OCRM-RESP-SESSION-WORK-ADMISSION-001", "OCRM-M07", "owner-audit"),
     "src/gateway/server/ws-connection/message-handler.ts": (748, "OCRM-RESP-GW-DISPATCH-REGISTRY-001", "OCRM-M13", "owner-audit"),
     "src/gateway/server/ws-connection/authenticated-request-dispatch.ts": (567, "OCRM-RESP-GW-DISPATCH-REGISTRY-001", "OCRM-M13", "owner-audit"),
+    "src/plugins/hook-runner-global.ts": (96, "OCRM-RESP-PLUGINS-HOOKS-PIPELINE-001", "OCRM-M16", "owner-audit"),
+    "src/plugins/session-end-transcript.ts": (138, "OCRM-RESP-PLUGINS-HOOKS-PIPELINE-001", "OCRM-M16", "owner-audit"),
     "src/gateway/server/ws-connection/worker-admission-boundary.ts": (67, "OCRM-RESP-NODE-HOST-CONNECTION-001", "OCRM-M13", "owner-audit"),
     "src/gateway/server/ws-connection/worker-connection-dispatch.ts": (259, "OCRM-RESP-NODE-HOST-COMMAND-DISPATCH-001", "OCRM-M13", "owner-audit"),
     "src/gateway/server/ws-connection/worker-connection-frames.ts": (84, "OCRM-RESP-NODE-HOST-COMMAND-DISPATCH-001", "OCRM-M13", "owner-audit"),
