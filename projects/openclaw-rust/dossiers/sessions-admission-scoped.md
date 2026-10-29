@@ -128,3 +128,10 @@ expiry pruning. O03 now exercises that registry rather than a JSON-only
 simulation. The registry is still process-local and has no shipping inbound
 producer or outbound transcript consumer, so its ledger wiring and verification
 remain pending.
+
+The registry is now retained by the existing `ProductionSessionWorkers` owner
+and exposed through `SandAgentSessionStore`, so separately constructed session
+facades share one process-lifetime pending-turn state instead of creating
+parallel registries. This is owner-lifetime integration only; no inbound
+channel dispatcher, outbound provider, or transcript publication path has been
+invented, so production wiring remains pending.

@@ -24,7 +24,9 @@ use super::agent_db_serde::AwaitingUserResponse;
 use super::agent_db_transcript_pages::{
     TranscriptPage, TranscriptPageQuery, TranscriptWindow, TranscriptWindowQuery,
 };
-use super::session_conversation_state::{ConversationOutlineItem, TranscriptThread};
+use super::session_conversation_state::{
+    ConversationOutlineItem, PendingConversationTurnRegistry, TranscriptThread,
+};
 use super::channel_store::{ChannelConfig, ChannelConnection, FileChannelStore};
 use super::conversation_blobs_path::conversation_blobs_path;
 use super::production::{PreparedAgentBlobStore, ProductionSessionWorkers};
@@ -207,6 +209,10 @@ impl SandAgentSessionStore {
 
     pub fn production(&self) -> &Arc<ProductionSessionWorkers> {
         &self.production
+    }
+
+    pub fn pending_conversation_turns(&self) -> PendingConversationTurnRegistry {
+        self.production.pending_conversation_turns()
     }
 
     pub fn create_memory_store(&self, agent_dir: impl AsRef<Path>) -> FileMemoryStore {

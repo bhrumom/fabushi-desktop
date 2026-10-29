@@ -369,6 +369,27 @@ fn test_ocrm_session_o03_conversation_turn_correlation() {
         PendingConversationTurnClaimResult::NotFound
     ));
     assert!(registry.cancel("agent-1", &second));
+
+    let root = std::env::temp_dir().join(format!("fabushi-session-turn-owner-{}", turn_id));
+    let workers = std::sync::Arc::new(
+        mahayana_host_runtime::extensions::session::production::ProductionSessionWorkers::with_agents_root(
+            root,
+            500,
+        ),
+    );
+    let first_store = mahayana_host_runtime::extensions::session::agent_session::SandAgentSessionStore::new(
+        std::sync::Arc::clone(&workers),
+    );
+    let second_store = mahayana_host_runtime::extensions::session::agent_session::SandAgentSessionStore::new(workers);
+    let shared_turn = first_store
+        .pending_conversation_turns()
+        .register("agent-shared", Some("shared-turn"), "conversation", "session", None, Duration::from_secs(30))
+        .expect("register shared worker turn");
+    assert!(second_store
+        .pending_conversation_turns()
+        .snapshot("agent-shared", &shared_turn)
+        .is_some());
+    assert!(second_store.pending_conversation_turns().cancel("agent-shared", &shared_turn));
 }
 
 // ---------------------------------------------------------------------------
