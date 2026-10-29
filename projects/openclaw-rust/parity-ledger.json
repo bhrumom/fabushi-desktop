@@ -5556,6 +5556,15 @@
             "start_line": 1
           },
           "symbol": "device-pairing-node.records"
+        },
+        {
+          "blob_sha": "3e032d10f1b2079a22784e8181d14f2eda8e4946",
+          "path": "src/infra/device-pairing-node.ts",
+          "range": {
+            "end_line": 331,
+            "start_line": 1
+          },
+          "symbol": "node pairing cleanup claims and lifecycle operations"
         }
       ],
       "status": {
@@ -5769,6 +5778,24 @@
             "start_line": 1
           },
           "symbol": "device-pairing.types"
+        },
+        {
+          "blob_sha": "fb60cb2a473a26e1388ea59cc4be840fd33f3110",
+          "path": "src/infra/device-pairing-core.worker.ts",
+          "range": {
+            "end_line": 102,
+            "start_line": 1
+          },
+          "symbol": "device pairing worker operation registry"
+        },
+        {
+          "blob_sha": "5d7b5fc031662b0a9a24466f2f3ea932e7e509b6",
+          "path": "src/infra/device-pairing-binding.ts",
+          "range": {
+            "end_line": 20,
+            "start_line": 1
+          },
+          "symbol": "prepareDevicePairingBinding"
         }
       ],
       "status": {

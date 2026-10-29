@@ -4,7 +4,7 @@
 
 - **Unit ID:** `OCRM-UNIT-DEVICE-PAIRING-001`
 - **Module ID:** `OCRM-M03` (Identity, Credentials, Pairing and Account Scope)
-- **Status:** **Scoped candidate admitted into Parity Ledger; 24 audited source files mapped to reviewed; 6 responsibilities registered with implementation/wiring pending; production wiring blocked by OCRM-BLOCK-GW-SCOPED-AUTHORITY-001; acceptance pending**
+- **Status:** **Scoped candidate admitted into Parity Ledger; 27 audited source files mapped to reviewed; 6 responsibilities registered with implementation/wiring pending; production wiring blocked by OCRM-BLOCK-GW-SCOPED-AUTHORITY-001; acceptance pending**
 - **Requirements Traced:** `OCRM-R03`, `OCRM-R04`, `OCRM-AC03`, `OCRM-AC11`
 - **Reviewer:** `xuyao@ombhrum.com`
 - **Upstream Baseline:** `openclaw/openclaw@ad8d12f126d29b0db204187adf5092db80294e70` (tree `04ccce62f1d74dc8e0c88290ae8ded027b7b0f16`)
@@ -21,17 +21,29 @@
 5. `OCRM-RESP-DEVICE-PAIRING-STORE-PERSISTENCE-001`: SQLite durable pairing store, row facts mapping, and write generation.
 6. `OCRM-RESP-DEVICE-PAIRING-NODE-LIFECYCLE-001`: Node enrollment lifecycle, capability registration, heartbeat pruner, and revocation fence.
 
+The newly read node cluster closes an important owner boundary: `device-pairing-node.ts`
+keeps reconnect cleanup claims generation-scoped and refuses stale approval or
+cleanup after a newer pending revision; `device-pairing-core.worker.ts` is the
+single mutation-operation registry rather than a second pairing store; and
+`device-pairing-binding.ts` projects the current identity/generation binding
+without owning lifecycle state. The Rust target must preserve these properties
+inside `DevicePairingOwner`/the existing enrollment owner and must not move
+cleanup claims or mutation dispatch into NodeHost, CloudWorker, or Gateway
+handler code.
+
 ---
 
 ## 3. Blockers & Frontiers
 
 - `OCRM-BLOCK-GW-SCOPED-AUTHORITY-001`: Remaining pairing worker communication and background daemons not fully closed; external physical companion device communication unverified.
 - `OCRM-BLOCK-GW-INDEPENDENT-REVIEW-002`: Independent review receipt pending.
-- Current Rust status in `parity-ledger.json` is set to `implementation: pending`, `wiring: pending`, `verification: pending`, and `acceptance: pending`.
+- Current Rust status in `parity-ledger.json` records the scoped state-machine
+  and node-lifecycle contracts as implemented/mapped, while production wiring,
+  executable verification and acceptance remain pending.
 
 ---
 
-## 4. Itemized Audited Source Files (24 Files)
+## 4. Itemized Audited Source Files (27 Files)
 
 | Upstream Source Path | Blob SHA | Lines | Language | Read Status | Disposition | Target Fabushi Owner |
 |---|---|---|---|---|---|---|
@@ -59,3 +71,6 @@
 | `src/infra/device-pairing-worker.test.ts` | `9b360a3a7fca58aa7be03577adccbb98ba03cf8d` | 165 | TypeScript | read-complete | test-conformance-oracle | `source/host/tests/network_enrollment_owner_contract.rs` |
 | `src/infra/device-pairing-worker.ts` | `6643ae7b9e6e8bb81ca7c6f0e95cb5c90b63afbb` | 210 | TypeScript | read-complete | reuse-and-extend-existing-Rust | `source/host/src/network_enrollment_owner.rs` |
 | `src/infra/device-pairing.types.ts` | `37803a6bcde6d44af0f779d71a815a13c9e6bb07` | 55 | TypeScript | read-complete | reuse-and-extend-existing-Rust | `source/host/src/network_enrollment_owner.rs` |
+| `src/infra/device-pairing-node.ts` | `3e032d10f1b2079a22784e8181d14f2eda8e4946` | 331 | TypeScript | read-complete | reuse-and-extend-existing-Rust | `source/host/src/network_enrollment_owner.rs` |
+| `src/infra/device-pairing-core.worker.ts` | `fb60cb2a473a26e1388ea59cc4be840fd33f3110` | 102 | TypeScript | read-complete | reuse-and-extend-existing-Rust | `source/host/src/network_enrollment_owner.rs` |
+| `src/infra/device-pairing-binding.ts` | `5d7b5fc031662b0a9a24466f2f3ea932e7e509b6` | 20 | TypeScript | read-complete | reuse-and-extend-existing-Rust | `source/host/src/network_enrollment_owner.rs` |
