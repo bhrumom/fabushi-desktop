@@ -25114,6 +25114,30 @@
           "symbol": "createAgentRuntimeApprovalAuthorityValidator"
         },
         {
+          "blob_sha": "ff5002ae8ed4dfe4c95f79e86634fa27a28fce51",
+          "path": "src/gateway/agent-runtime-execution-lineage.ts",
+          "range": {"end_line": 197, "start_line": 1},
+          "symbol": "createAgentRuntimeExecutionLineageHandoff"
+        },
+        {
+          "blob_sha": "851d02ddf54b353e450028f78f70a51052369165",
+          "path": "src/gateway/agent-runtime-identity-token.ts",
+          "range": {"end_line": 660, "start_line": 1},
+          "symbol": "mintAgentRuntimeIdentityToken and verifyAgentRuntimeIdentityToken"
+        },
+        {
+          "blob_sha": "1c40da234e177439ea61cb3dbc380ed2b1f1955e",
+          "path": "src/gateway/agent-runtime-identity-token.test.ts",
+          "range": {"end_line": 598, "start_line": 1},
+          "symbol": "agent runtime identity token custody oracle"
+        },
+        {
+          "blob_sha": "a7811cfefd7a8652a4907970c260285146b1e4c1",
+          "path": "src/gateway/agent-runtime-session-spawn-context.ts",
+          "range": {"end_line": 29, "start_line": 1},
+          "symbol": "AgentRuntimeSessionSpawnContext"
+        },
+        {
           "blob_sha": "7fb1e4c71e85470d331c8390c5ddb7456bd67fd7",
           "path": "src/plugin-sdk/allow-from.test.ts",
           "range": {
@@ -29050,6 +29074,12 @@
             "start_line": 1
           },
           "symbol": "agent wait and dedupe lifecycle oracle"
+        },
+        {
+          "blob_sha": "d17c6832ce9bf9a2434d1d3e1e36ba5d7a743f38",
+          "path": "src/gateway/agent-command-policy.ts",
+          "range": {"end_line": 6, "start_line": 1},
+          "symbol": "isAgentSessionResetCommand"
         },
         {
           "blob_sha": "50285ade699d5afe47112ead6c8a61ab12e9ea61",

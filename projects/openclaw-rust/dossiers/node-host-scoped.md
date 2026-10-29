@@ -1235,3 +1235,29 @@ security, session lineage, and run-authority owners; they do not create a
 second approval registry, audience graph, or runtime authority store. Rust
 implementation, wiring, runtime execution, and acceptance remain
 unverified.
+
+## 127. Agent runtime identity, lineage handoff, and command-policy custody (2026-10-29)
+
+The locked `agent-command-policy.ts`, `agent-runtime-execution-lineage.ts`,
+`agent-runtime-session-spawn-context.ts`, `agent-runtime-identity-token.ts`,
+and `agent-runtime-identity-token.test.ts` were read in full. Session reset
+commands remain a narrow existing agent-turn policy surface. Runtime
+identity is a signed, state-directory-bound bearer whose payload binds the
+normalized agent/session, operational run instance, delegated local/worker
+authority, execution identity, UI/source routing, message-action capability,
+cron grants, and bounded session-spawn policy. Minting requires active run
+authority and validates worker claim, original approval claim, grant
+provenance, terminal reply correlation, source exclusivity, and short-lived
+capability TTLs; verification rechecks the local socket secret, schema,
+authority instance, lifecycle, expiry, and execution identity. Spawn lineage
+facts are stripped from the bearer and transferred through a bounded,
+one-shot, expiring handoff whose redemption is tied to the exact parent
+authority and operational run instance. The oracle covers terminal and
+replacement invalidation, worker delayed-use fencing, secret rotation and
+state-directory binding, payload tampering, spawn policy round-trips,
+short-lived cron/message capabilities, approval-write serialization, and
+one-shot lineage redemption. These sources map to the existing Session Turns
+command-policy owner and Plugin SDK approval/run-authority security owner;
+they do not create a second bearer store, authority registry, or spawn
+runtime. Rust implementation, wiring, runtime execution, and acceptance
+remain unverified.
