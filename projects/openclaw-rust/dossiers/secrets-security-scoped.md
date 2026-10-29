@@ -98,3 +98,19 @@ SQLite/.env publication transaction, concurrent-writer rollback, startup
 config audit, or real Actions verification. The combined ledger row therefore
 remains pending for full equivalence and acceptance until those separate
 responsibilities are owned and evidenced.
+
+## 7. Proxy-capture source/owner boundary recheck (2026-10-29)
+
+The locked `src/proxy-capture/ca.openssl.test.ts` oracle was re-read in full
+at blob `504dc0fe749717a553635ecd3d3f12f6cd494fbb` (116 lines). It exercises
+OpenSSL-backed local proxy CA/leaf generation, strict TLS verification, key
+identifier presence, and retention of a legacy CA without key identifiers. It
+does not exercise HTTP header redaction, query scrubbing, capture persistence,
+or session filters.
+
+The current Rust `ProxyHeaderRedactor` is a pure header sanitizer with no
+production caller in the inspected Host or app sources. The ledger row's
+header-redaction behavior is therefore not proven by the attached CA oracle,
+and the pure sanitizer is not shipping proxy-capture wiring. The row remains
+pending for source remapping, a real capture owner/consumer, and exact-head
+verification; no completion flag was changed.
