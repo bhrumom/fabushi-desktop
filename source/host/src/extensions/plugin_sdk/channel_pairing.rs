@@ -30,14 +30,13 @@ impl ChannelPairingStore {
         channel: &str,
         account_id: &str,
         sender_id: &str,
-    ) -> PairingChallenge {
-        // Generate 6-digit numeric challenge code
+    ) -> Result<PairingChallenge, String> {
+        // Pairing codes must never fall back to a predictable value when the
+        // operating system cannot provide cryptographic randomness.
         let mut buf = [0u8; 4];
-        let num = if getrandom::fill(&mut buf).is_ok() {
-            u32::from_le_bytes(buf)
-        } else {
-            123456
-        };
+        getrandom::fill(&mut buf)
+            .map_err(|_| "secure randomness unavailable for channel pairing".to_string())?;
+        let num = u32::from_le_bytes(buf);
         let code = format!("{:06}", (num % 900_000) + 100_000);
         let challenge = PairingChallenge {
             channel: channel.to_string(),
@@ -48,7 +47,7 @@ impl ChannelPairingStore {
 
         let mut map = self.challenges.lock().unwrap();
         map.insert(code, (challenge.clone(), Instant::now()));
-        challenge
+        Ok(challenge)
     }
 
     pub fn verify_and_consume(&self, code: &str) -> Option<PairingChallenge> {

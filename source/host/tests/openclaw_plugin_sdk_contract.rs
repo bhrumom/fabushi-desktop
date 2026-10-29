@@ -1070,7 +1070,9 @@ fn test_ocrm_plugin_sdk_channel_lifecycle_outbound_pairing() {
 
     // 5. Channel Pairing Store & Prefix Stripper
     let pairing_store = ChannelPairingStore::new(300); // 300s TTL
-    let challenge = pairing_store.issue_challenge("slack", "team-1", "U999");
+    let challenge = pairing_store
+        .issue_challenge("slack", "team-1", "U999")
+        .expect("secure pairing challenge");
     assert_eq!(challenge.code.len(), 6);
     assert_eq!(challenge.sender_id, "U999");
 

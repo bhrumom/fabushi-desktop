@@ -46,7 +46,16 @@
 - [`source/host/tests/openclaw_plugin_sdk_contract.rs`](file:///Users/bhrum/.gemini/antigravity/scratch/fabushi-desktop/source/host/tests/openclaw_plugin_sdk_contract.rs):
   - `test_ocrm_plugin_sdk_channel_lifecycle_outbound_pairing`
 
-## 5. Audit Status
+## 5. Pairing randomness boundary (2026-10-29)
+
+`ChannelPairingStore::issue_challenge` now fails explicitly when the operating
+system secure-random source is unavailable. It no longer emits the previous
+predictable `123456` fallback, and the contract caller must handle the
+`Result` before exposing a challenge. This is a local fail-closed security
+correction; the upstream scoped pairing-store/controller and real channel
+provider wiring remain separate pending responsibilities.
+
+## 6. Audit Status
 - Mapped Files: 12 added (Total mapped: 805 / 58,750).
 - Unclassified Remaining: 57,945.
 - Global completion flags: all 8 remaining `false` (fail-closed).
