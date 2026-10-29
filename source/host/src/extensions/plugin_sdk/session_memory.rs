@@ -1,3 +1,4 @@
+use base64::{Engine as _, engine::general_purpose::URL_SAFE_NO_PAD};
 use serde::{Deserialize, Serialize};
 use serde_json::{Map, Value};
 use std::collections::HashMap;
@@ -8,6 +9,8 @@ pub const MAX_PAGE_LIMIT: usize = 100;
 pub const MAX_CURSOR_LENGTH: usize = 128;
 pub const MAX_TRANSCRIPT_ITEM_BYTES: usize = 512 * 1024; // 512 KB
 pub const MAX_TRANSCRIPT_PAGE_BYTES: usize = 20 * 1024 * 1024; // 20 MB
+pub const VISIBLE_TRANSCRIPT_CURSOR_VERSION: u8 = 1;
+pub const MAX_VISIBLE_TRANSCRIPT_CURSOR_LENGTH: usize = 4096;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
@@ -185,6 +188,111 @@ fn tool_call_ids(entry: &Value) -> Vec<&str> {
         .filter(|part| part.get("type").and_then(Value::as_str) == Some("toolCall"))
         .filter_map(|part| part.get("id").and_then(Value::as_str))
         .collect()
+}
+
+/// Opaque, generation-aware continuation state for visible transcript reads.
+/// The transcript/session owner supplies the generation and reset boundary;
+/// this type only validates and transports the continuation hint.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct VisibleTranscriptCursor {
+    #[serde(rename = "agentId")]
+    pub agent_id: String,
+    pub generation: String,
+    #[serde(rename = "sessionId")]
+    pub session_id: String,
+    #[serde(rename = "lastEventSeq")]
+    pub last_event_seq: i64,
+    #[serde(rename = "lastMessagePosition")]
+    pub last_message_position: i64,
+    #[serde(rename = "resetBoundarySeq", skip_serializing_if = "Option::is_none")]
+    pub reset_boundary_seq: Option<i64>,
+    #[serde(rename = "resetBoundaryId", skip_serializing_if = "Option::is_none")]
+    pub reset_boundary_id: Option<String>,
+    pub version: u8,
+}
+
+pub fn new_visible_transcript_cursor(
+    agent_id: impl Into<String>,
+    session_id: impl Into<String>,
+    generation: impl Into<String>,
+) -> VisibleTranscriptCursor {
+    VisibleTranscriptCursor {
+        agent_id: agent_id.into(),
+        generation: generation.into(),
+        session_id: session_id.into(),
+        last_event_seq: -1,
+        last_message_position: -1,
+        reset_boundary_seq: None,
+        reset_boundary_id: None,
+        version: VISIBLE_TRANSCRIPT_CURSOR_VERSION,
+    }
+}
+
+pub fn encode_visible_transcript_cursor(
+    cursor: &VisibleTranscriptCursor,
+) -> Result<String, String> {
+    validate_visible_transcript_cursor(cursor)?;
+    let bytes = serde_json::to_vec(cursor).map_err(|error| format!("cursor encode failed: {error}"))?;
+    Ok(URL_SAFE_NO_PAD.encode(bytes))
+}
+
+pub fn decode_visible_transcript_cursor(value: &str) -> Option<VisibleTranscriptCursor> {
+    if value.is_empty() || value.len() > MAX_VISIBLE_TRANSCRIPT_CURSOR_LENGTH {
+        return None;
+    }
+    let bytes = URL_SAFE_NO_PAD.decode(value).ok()?;
+    let cursor = serde_json::from_slice::<VisibleTranscriptCursor>(&bytes).ok()?;
+    validate_visible_transcript_cursor(&cursor).ok()?;
+    (encode_visible_transcript_cursor(&cursor).ok()?.as_str() == value).then_some(cursor)
+}
+
+fn validate_visible_transcript_cursor(cursor: &VisibleTranscriptCursor) -> Result<(), String> {
+    if cursor.version != VISIBLE_TRANSCRIPT_CURSOR_VERSION
+        || cursor.agent_id.is_empty()
+        || cursor.session_id.is_empty()
+        || cursor.generation.is_empty()
+        || cursor.last_event_seq < -1
+        || cursor.last_message_position < -1
+        || (cursor.last_event_seq == -1) != (cursor.last_message_position == -1)
+        || cursor
+            .reset_boundary_seq
+            .is_some_and(|sequence| sequence < -1)
+        || cursor
+            .reset_boundary_id
+            .as_ref()
+            .is_some_and(|id| id.is_empty() || cursor.reset_boundary_seq.unwrap_or(-1) < 0)
+    {
+        return Err("invalid visible transcript cursor".into());
+    }
+    Ok(())
+}
+
+pub fn with_visible_reset_boundary(
+    mut cursor: VisibleTranscriptCursor,
+    latest: Option<(i64, Option<&str>)>,
+) -> Result<VisibleTranscriptCursor, String> {
+    let (sequence, event_id) = latest.map_or((-1, None), |(sequence, event_id)| {
+        (sequence, event_id)
+    });
+    if sequence < -1 {
+        return Err("invalid visible transcript reset boundary".into());
+    }
+    cursor.reset_boundary_seq = Some(sequence);
+    cursor.reset_boundary_id = event_id.map(str::to_owned);
+    validate_visible_transcript_cursor(&cursor)?;
+    Ok(cursor)
+}
+
+pub fn visible_reset_boundary_changed(
+    cursor: &VisibleTranscriptCursor,
+    latest: Option<(i64, Option<&str>)>,
+    same_generation: bool,
+) -> bool {
+    if same_generation {
+        latest.map_or(-1, |(sequence, _)| sequence) != cursor.reset_boundary_seq.unwrap_or(-1)
+    } else {
+        latest.and_then(|(_, event_id)| event_id) != cursor.reset_boundary_id.as_deref()
+    }
 }
 
 #[derive(Clone, Default)]

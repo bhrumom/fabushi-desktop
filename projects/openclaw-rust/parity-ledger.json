@@ -25287,7 +25287,7 @@
       "target": {
         "language": "Rust",
         "path": "source/host/src/extensions/plugin_sdk/session_memory.rs",
-        "symbol": "SessionTranscriptLockRegistry"
+        "symbol": "VisibleTranscriptCursor and select_visible_transcript_messages"
       },
       "tests": [
         "source/host/tests/openclaw_plugin_sdk_core_contract.rs::test_ocrm_plugin_sdk_session_memory"
@@ -25295,6 +25295,9 @@
       "typed_contracts": [
         "paginate_sessions",
         "select_visible_transcript_messages",
+        "VisibleTranscriptCursor",
+        "encode_visible_transcript_cursor",
+        "decode_visible_transcript_cursor",
         "SessionSummary",
         "SessionTranscriptLockRegistry",
         "SessionVisibility"

@@ -58,14 +58,14 @@ owners.
 The current Rust target
 `source/host/src/extensions/plugin_sdk/session_memory.rs` was re-read for the
 owner comparison. It implements page-limit/cursor validation, title/id search,
-an agent/session transcript mutex registry, and incognito sync denial, but it
-does not implement the oracle's reset-window cursor, paired-result filtering,
-generation/reset invalidation, or current-turn read-fence behavior. The
+an agent/session transcript mutex registry, incognito sync denial, paired
+tool-result visibility projection, and a strict generation/reset-boundary
+cursor codec. It still does not own the transcript store, append/rewrite
+projection, current-turn read fence, or the production delta reader. The
 existing contract-test name therefore cannot be treated as equivalent
 verification of the upstream transcript runtime. The source read is now
-complete and mapped, while implementation remains in progress and production
-wiring/verification/acceptance remain open; no generated shard or completion
-flag was changed.
+complete and mapped, while production wiring/verification/acceptance remain
+open; no generated shard or completion flag was changed.
 
 ## 7. Pure reset-window visibility projection (2026-10-29)
 

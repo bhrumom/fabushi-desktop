@@ -7,9 +7,11 @@ use mahayana_host_runtime::extensions::plugin_sdk::channel_runtime::{
     GroupPolicy, ReplayClaimResult,
 };
 use mahayana_host_runtime::extensions::plugin_sdk::session_memory::{
+    decode_visible_transcript_cursor, encode_visible_transcript_cursor, new_visible_transcript_cursor,
     normalize_page_limit, paginate_sessions, select_visible_transcript_messages,
-    SessionCatalogQueryParams, SessionSummary, SessionTranscriptLockRegistry, SessionVisibility,
-    DEFAULT_PAGE_LIMIT, MAX_CURSOR_LENGTH, MAX_PAGE_LIMIT,
+    visible_reset_boundary_changed, with_visible_reset_boundary, SessionCatalogQueryParams,
+    SessionSummary, SessionTranscriptLockRegistry, SessionVisibility, DEFAULT_PAGE_LIMIT,
+    MAX_CURSOR_LENGTH, MAX_PAGE_LIMIT,
 };
 use mahayana_host_runtime::extensions::plugin_sdk::tool_runtime::{
     BrowserHookBridge, PluginCommandDispatcher, PluginToolDefinition,
@@ -260,6 +262,27 @@ fn test_ocrm_plugin_sdk_session_memory() {
         select_visible_transcript_messages(&entries, Some(1)),
         entries[1..3].to_vec().into_iter().chain(entries[4..5].to_vec()).collect::<Vec<_>>(),
     );
+
+    let cursor = new_visible_transcript_cursor("agent-1", "session-1", "generation-1");
+    let cursor = with_visible_reset_boundary(cursor, Some((42, Some("reset-42"))))
+        .expect("reset boundary should be valid");
+    let encoded = encode_visible_transcript_cursor(&cursor).expect("cursor should encode");
+    assert_eq!(decode_visible_transcript_cursor(&encoded), Some(cursor.clone()));
+    assert!(visible_reset_boundary_changed(
+        &cursor,
+        Some((43, Some("reset-43"))),
+        true,
+    ));
+    assert!(!visible_reset_boundary_changed(
+        &cursor,
+        Some((42, Some("reset-42"))),
+        true,
+    ));
+    assert!(visible_reset_boundary_changed(
+        &cursor,
+        Some((1, Some("reset-new-generation"))),
+        false,
+    ));
 }
 
 #[test]
