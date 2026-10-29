@@ -11,6 +11,10 @@ pub const MAX_TRANSCRIPT_ITEM_BYTES: usize = 512 * 1024; // 512 KB
 pub const MAX_TRANSCRIPT_PAGE_BYTES: usize = 20 * 1024 * 1024; // 20 MB
 pub const VISIBLE_TRANSCRIPT_CURSOR_VERSION: u8 = 1;
 pub const MAX_VISIBLE_TRANSCRIPT_CURSOR_LENGTH: usize = 4096;
+pub const DEFAULT_VISIBLE_TRANSCRIPT_MAX_MESSAGES: usize = 1_000;
+pub const MAX_VISIBLE_TRANSCRIPT_MAX_MESSAGES: usize = 10_000;
+pub const DEFAULT_VISIBLE_TRANSCRIPT_MAX_BYTES: usize = 1_000_000;
+pub const MAX_VISIBLE_TRANSCRIPT_MAX_BYTES: usize = 64 * 1024 * 1024;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
@@ -293,6 +297,171 @@ pub fn visible_reset_boundary_changed(
     } else {
         latest.and_then(|(_, event_id)| event_id) != cursor.reset_boundary_id.as_deref()
     }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum VisibleTranscriptStart {
+    Transcript,
+    ResetWindow,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum VisibleTranscriptResetReason {
+    AnchorMissing,
+    AnchorMoved,
+    GenerationMismatch,
+    InvalidCursor,
+    ScopeMismatch,
+    SessionReset,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum VisibleTranscriptReadResult {
+    Page {
+        cursor: String,
+        entries: Vec<Value>,
+        has_more: bool,
+        serialized_bytes: usize,
+        required_bytes: Option<usize>,
+    },
+    Reset {
+        cursor: String,
+        reason: VisibleTranscriptResetReason,
+    },
+}
+
+/// Read one bounded visible page from a caller-owned snapshot.
+///
+/// The snapshot, generation and reset boundary are supplied by the existing
+/// transcript owner. This function only applies cursor validation, reset-window
+/// selection, paired-result filtering, message/byte budgets, and continuation.
+pub fn read_visible_transcript_page(
+    entries: &[Value],
+    agent_id: &str,
+    session_id: &str,
+    generation: &str,
+    latest_reset: Option<(i64, Option<&str>)>,
+    reset_tail_start: Option<usize>,
+    start: VisibleTranscriptStart,
+    cursor: Option<&str>,
+    max_messages: usize,
+    max_bytes: usize,
+) -> Result<VisibleTranscriptReadResult, String> {
+    if max_messages == 0 || max_messages > MAX_VISIBLE_TRANSCRIPT_MAX_MESSAGES {
+        return Err(format!(
+            "max_messages must be between 1 and {}",
+            MAX_VISIBLE_TRANSCRIPT_MAX_MESSAGES
+        ));
+    }
+    if max_bytes == 0 || max_bytes > MAX_VISIBLE_TRANSCRIPT_MAX_BYTES {
+        return Err(format!(
+            "max_bytes must be between 1 and {}",
+            MAX_VISIBLE_TRANSCRIPT_MAX_BYTES
+        ));
+    }
+
+    let reset_window = matches!(start, VisibleTranscriptStart::ResetWindow);
+    let fresh_cursor = || {
+        let cursor = new_visible_transcript_cursor(agent_id, session_id, generation);
+        if reset_window {
+            with_visible_reset_boundary(cursor, latest_reset).unwrap_or_else(|_| {
+                new_visible_transcript_cursor(agent_id, session_id, generation)
+            })
+        } else {
+            cursor
+        }
+    };
+
+    let mut continuation = match cursor {
+        None => fresh_cursor(),
+        Some(value) => match decode_visible_transcript_cursor(value) {
+            Some(cursor) => cursor,
+            None => {
+                let cursor = encode_visible_transcript_cursor(&fresh_cursor())?;
+                return Ok(VisibleTranscriptReadResult::Reset {
+                    cursor,
+                    reason: VisibleTranscriptResetReason::InvalidCursor,
+                });
+            }
+        },
+    };
+
+    if continuation.agent_id != agent_id || continuation.session_id != session_id {
+        let cursor = encode_visible_transcript_cursor(&fresh_cursor())?;
+        return Ok(VisibleTranscriptReadResult::Reset {
+            cursor,
+            reason: VisibleTranscriptResetReason::ScopeMismatch,
+        });
+    }
+    if continuation.generation != generation {
+        let cursor = encode_visible_transcript_cursor(&fresh_cursor())?;
+        return Ok(VisibleTranscriptReadResult::Reset {
+            cursor,
+            reason: VisibleTranscriptResetReason::GenerationMismatch,
+        });
+    }
+    if continuation.reset_boundary_seq.is_some()
+        && visible_reset_boundary_changed(&continuation, latest_reset, true)
+    {
+        let cursor = encode_visible_transcript_cursor(&fresh_cursor())?;
+        return Ok(VisibleTranscriptReadResult::Reset {
+            cursor,
+            reason: VisibleTranscriptResetReason::SessionReset,
+        });
+    }
+
+    let start_index = if reset_window {
+        reset_tail_start.unwrap_or(0).min(entries.len())
+    } else {
+        0
+    };
+    let visible = select_visible_transcript_messages(entries, Some(start_index));
+    let next_index = continuation.last_message_position.saturating_add(1) as usize;
+    if next_index >= visible.len() {
+        return Ok(VisibleTranscriptReadResult::Page {
+            cursor: encode_visible_transcript_cursor(&continuation)?,
+            entries: Vec::new(),
+            has_more: false,
+            serialized_bytes: 0,
+            required_bytes: None,
+        });
+    }
+
+    let mut selected = Vec::new();
+    let mut serialized_bytes = 0;
+    let mut required_bytes = None;
+    for entry in visible.iter().skip(next_index) {
+        let entry_bytes = serde_json::to_vec(entry)
+            .map_err(|error| format!("transcript entry encode failed: {error}"))?;
+        if selected.len() >= max_messages || serialized_bytes + entry_bytes.len() > max_bytes {
+            if selected.is_empty() {
+                required_bytes = Some(entry_bytes.len());
+            }
+            break;
+        }
+        serialized_bytes += entry_bytes.len();
+        selected.push(entry.clone());
+    }
+    if selected.is_empty() {
+        return Ok(VisibleTranscriptReadResult::Page {
+            cursor: encode_visible_transcript_cursor(&continuation)?,
+            entries: selected,
+            has_more: true,
+            serialized_bytes,
+            required_bytes,
+        });
+    }
+    let last_position = next_index + selected.len() - 1;
+    continuation.last_message_position = last_position as i64;
+    continuation.last_event_seq = last_position as i64;
+    let has_more = last_position + 1 < visible.len();
+    Ok(VisibleTranscriptReadResult::Page {
+        cursor: encode_visible_transcript_cursor(&continuation)?,
+        entries: selected,
+        has_more,
+        serialized_bytes,
+        required_bytes,
+    })
 }
 
 #[derive(Clone, Default)]

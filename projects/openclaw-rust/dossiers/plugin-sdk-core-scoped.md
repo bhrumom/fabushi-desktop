@@ -80,6 +80,14 @@ the existing session/transcript owners. This is an implementation slice for
 the upstream oracle, not completion of the full transcript runtime or
 production wiring.
 
+The same slice now exposes `read_visible_transcript_page` over a caller-owned
+snapshot. It validates scope and generation, records reset-window boundaries,
+returns stable reset reasons, enforces message/serialized-byte budgets, and
+continues from the opaque cursor. It intentionally returns no persistence or
+current-turn admission authority; the existing session owner must supply the
+snapshot, generation, reset boundary, and any read fence before production
+adaptation.
+
 ## 4. Audited Bundled Channel Contract Invariants
 The following test suites in `src/plugins/contracts/` have been audited line-by-line and mapped to `OCRM-RESP-PLUGIN-SDK-CHANNEL-RUNTIME-001`:
 1. `channel-config-writes.contract.test.ts` (71 lines):

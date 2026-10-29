@@ -25298,6 +25298,8 @@
         "VisibleTranscriptCursor",
         "encode_visible_transcript_cursor",
         "decode_visible_transcript_cursor",
+        "read_visible_transcript_page",
+        "VisibleTranscriptReadResult",
         "SessionSummary",
         "SessionTranscriptLockRegistry",
         "SessionVisibility"

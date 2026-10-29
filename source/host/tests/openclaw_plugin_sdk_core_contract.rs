@@ -9,9 +9,10 @@ use mahayana_host_runtime::extensions::plugin_sdk::channel_runtime::{
 use mahayana_host_runtime::extensions::plugin_sdk::session_memory::{
     decode_visible_transcript_cursor, encode_visible_transcript_cursor, new_visible_transcript_cursor,
     normalize_page_limit, paginate_sessions, select_visible_transcript_messages,
-    visible_reset_boundary_changed, with_visible_reset_boundary, SessionCatalogQueryParams,
-    SessionSummary, SessionTranscriptLockRegistry, SessionVisibility, DEFAULT_PAGE_LIMIT,
-    MAX_CURSOR_LENGTH, MAX_PAGE_LIMIT,
+    read_visible_transcript_page, visible_reset_boundary_changed, with_visible_reset_boundary,
+    SessionCatalogQueryParams, SessionSummary, SessionTranscriptLockRegistry, SessionVisibility,
+    VisibleTranscriptReadResult, VisibleTranscriptResetReason, VisibleTranscriptStart,
+    DEFAULT_PAGE_LIMIT, MAX_CURSOR_LENGTH, MAX_PAGE_LIMIT,
 };
 use mahayana_host_runtime::extensions::plugin_sdk::tool_runtime::{
     BrowserHookBridge, PluginCommandDispatcher, PluginToolDefinition,
@@ -282,6 +283,45 @@ fn test_ocrm_plugin_sdk_session_memory() {
         &cursor,
         Some((1, Some("reset-new-generation"))),
         false,
+    ));
+
+    let first = read_visible_transcript_page(
+        &entries,
+        "agent-1",
+        "session-1",
+        "generation-1",
+        Some((42, Some("reset-42"))),
+        Some(1),
+        VisibleTranscriptStart::ResetWindow,
+        None,
+        2,
+        10_000,
+    )
+    .expect("visible page should read");
+    let (next_cursor, first_entries) = match first {
+        VisibleTranscriptReadResult::Page { cursor, entries, .. } => (cursor, entries),
+        other => panic!("expected page, got {other:?}"),
+    };
+    assert_eq!(first_entries, entries[1..3].to_vec());
+    let reset = read_visible_transcript_page(
+        &entries,
+        "agent-1",
+        "session-1",
+        "generation-1",
+        Some((43, Some("reset-43"))),
+        Some(1),
+        VisibleTranscriptStart::ResetWindow,
+        Some(&next_cursor),
+        2,
+        10_000,
+    )
+    .expect("reset response should be returned");
+    assert!(matches!(
+        reset,
+        VisibleTranscriptReadResult::Reset {
+            reason: VisibleTranscriptResetReason::SessionReset,
+            ..
+        }
     ));
 }
 
