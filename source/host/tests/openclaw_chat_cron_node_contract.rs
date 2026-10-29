@@ -519,6 +519,7 @@ fn test_ocrm_node_o06_shipping_routes_to_unique_native_owners() {
     let invoke = &SHIPPING_HOST_MAIN[invoke_start..invoke_end];
     assert!(invoke.contains("GatewayLocalToolScope"));
     assert!(invoke.contains("self.local_exec"));
+    assert!(invoke.contains(".exec_manager()"));
     assert!(invoke.contains(".execute_shell("));
     assert!(invoke.contains("node.invoke system.run requires params.command"));
     assert!(invoke.contains("unsupported local node command"));

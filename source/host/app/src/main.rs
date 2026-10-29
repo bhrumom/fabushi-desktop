@@ -3942,7 +3942,8 @@ impl UnifiedGatewayApi {
             .map_err(GatewayCommandError::BadRequest)?;
         let result = self
             .local_exec
-            .sandbox(Arc::clone(&self.local_tool_permission))
+            .sandbox(self.local_tool_permission.clone())
+            .exec_manager()
             .execute_shell(&scope, shell_command, working_directory, tool_call_id)
             .map_err(|error| GatewayCommandError::Internal(error.to_string()));
         let _ = self.node_host_runtime.settle_invocation(&admission);
