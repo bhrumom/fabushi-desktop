@@ -304,6 +304,41 @@ phase-by-phase cancellation without later work, binary precedence and Windows
 suffix ordering, and process working-directory selection. They remain source
 oracles only and have not been executed locally.
 
+The profile/env and model-run boundary was then read at the same pinned tree:
+
+| Path | Blob | Lines | Disposition |
+| --- | --- | ---: | --- |
+| `crabbox-worker-env-profile.ts` | `f5e5dda10371f2331d9efd7138f15634a23d7384` | 41 | owner-audit |
+| `crabbox-worker-profile-suggestion.ts` | `f3adbe0f0d3ef8d118317ac0ef28ab188e6fd862` | 85 | owner-audit |
+| `crabbox-model-run-cli.ts` | `5914b6490562b567ed515f4adf580897ad39d127` | 175 | owner-audit |
+| `crabbox-worker-profile.test.ts` | `fe92e36ea3102b0f023229c06330194f4b05015a` | 121 | test-oracle-replaced |
+| `crabbox-worker-profile-suggestion.test.ts` | `897085a0c0209c40473fba43294c1ff5276cdd16` | 116 | test-oracle-replaced |
+| `crabbox-model-run.test.ts` | `24a071808a0bfe9e91ec74d3faa9b5e5bf7e6085` | 157 | test-oracle-replaced |
+
+The environment-profile helper writes setup values only to a mode-600,
+lease-scoped temporary file, rejects shell-ambiguous bytes, removes inherited
+names from the child environment, passes only the explicit allow marker, and
+removes the directory in `finally`. Profile suggestion is discovery-only: it
+requires an installed binary, explicitly selected/authenticated provider
+configuration, an advertised Linux class, and caches failures until explicit
+refresh; it never installs or executes a missing CLI. The profile oracle also
+binds warm-image identity to resolved disk inputs and protected secret refs,
+rejects retired plaintext setupEnv and unsafe SecretRefs, and preserves the
+allocation target/network/TTL contract.
+
+The model-run CLI is a bounded foreground command path, not an agent runtime.
+It validates an explicit provider/model reference and timeout, upgrades or
+selects the managed Crabbox binary before credential use, checks native egress
+capability, obtains host-only configured model egress, and sends only a
+sentinel plus loopback proxy material into the remote command. The generated
+remote script uses a temporary CA file, restricted permissions, explicit
+allowlisted hosts and no-sync/no-hydrate flags; process-tree extinction and
+uncertain cleanup are fail-closed. Its oracle proves managed-binary upgrade
+ordering, proxy-secret non-disclosure, sentinel-only remote environment,
+lookalike-flag rejection before credential access, and cleanup uncertainty
+failure. These are source contracts only; no Fabushi CLI, model provider,
+credential store or packaged execution acceptance is claimed.
+
 ## Fabushi owner resolution
 
 | Responsibility | Existing owner | Decision | Reason / boundary |

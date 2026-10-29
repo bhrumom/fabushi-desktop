@@ -12,6 +12,12 @@ from pathlib import Path
 ROOT = Path("projects/openclaw-rust")
 SHARDS = ROOT / "inventory" / "shards"
 READS = {
+    "extensions/crabbox/src/crabbox-worker-env-profile.ts": (41, None, "OCRM-M10", "owner-audit"),
+    "extensions/crabbox/src/crabbox-worker-profile-suggestion.ts": (85, None, "OCRM-M11", "owner-audit"),
+    "extensions/crabbox/src/crabbox-model-run-cli.ts": (175, None, "OCRM-M10", "owner-audit"),
+    "extensions/crabbox/src/crabbox-worker-profile.test.ts": (121, None, "OCRM-M11", "test-oracle-replaced"),
+    "extensions/crabbox/src/crabbox-worker-profile-suggestion.test.ts": (116, None, "OCRM-M11", "test-oracle-replaced"),
+    "extensions/crabbox/src/crabbox-model-run.test.ts": (157, None, "OCRM-M10", "test-oracle-replaced"),
     "extensions/crabbox/src/crabbox-worker-script.ts": (54, None, "OCRM-M11", "owner-audit"),
     "extensions/crabbox/src/crabbox-worker-timeouts.ts": (148, None, "OCRM-M11", "owner-audit"),
     "extensions/crabbox/src/crabbox-worker-snapshot-actions.ts": (83, None, "OCRM-M11", "owner-audit"),
