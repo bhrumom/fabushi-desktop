@@ -419,6 +419,8 @@ fn test_ocrm_node_o04_node_status_local_and_remote() {
     assert_eq!(remote["paired"], true);
     assert_eq!(remote["connected"], false);
     assert_eq!(remote["active"], false);
+    assert_eq!(remote["commands"], json!([]));
+    assert_eq!(remote["capabilities"], json!([]));
 
     // Unknown node returns 400 BadRequest
     let err = check_status("unknown-worker-99").unwrap_err();
@@ -523,6 +525,8 @@ fn test_ocrm_node_o06_shipping_routes_to_unique_native_owners() {
     assert!(SHIPPING_HOST_MAIN.contains("\"connected\": false"));
     assert!(SHIPPING_HOST_MAIN.contains("\"active\": false"));
     assert!(SHIPPING_HOST_MAIN.contains("\"commands\": []"));
+    assert!(SHIPPING_HOST_MAIN.contains("handle_pair_list(&serde_json::json!({}))?"));
+    assert!(SHIPPING_HOST_MAIN.contains("\"deviceFamily\": \"remote\""));
     assert!(!invoke.contains("\"stdout\": \"ok\""));
     assert!(!invoke.contains("\"exitCode\": 0"));
 }

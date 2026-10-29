@@ -3767,8 +3767,7 @@ impl UnifiedGatewayApi {
         &self,
         _args: &serde_json::Value,
     ) -> Result<serde_json::Value, GatewayCommandError> {
-        let pair_list = self.device_pairing.handle_pair_list(&serde_json::json!({}))
-            .unwrap_or_else(|_| serde_json::json!({ "paired": [] }));
+        let pair_list = self.device_pairing.handle_pair_list(&serde_json::json!({}))?;
 
         let live_nodes = self.node_host_runtime.list();
         let mut nodes = live_nodes
@@ -3812,7 +3811,8 @@ impl UnifiedGatewayApi {
                         "connected": false,
                         "paired": true,
                         "active": false,
-                        "gatewayLocal": false
+                        "gatewayLocal": false,
+                        "capabilities": []
                     }));
                 }
             }
@@ -3853,14 +3853,19 @@ impl UnifiedGatewayApi {
 
         let status = self.device_pairing.handle_pair_status(&serde_json::json!({ "deviceId": node_id }))?;
         if status.get("status").and_then(serde_json::Value::as_str) == Some("approved") {
+            let device = status.get("device");
             Ok(serde_json::json!({
                 "ts": started_at_ms(),
                 "nodeId": node_id,
-                "displayName": status.get("device").and_then(|d| d.get("displayName")).and_then(serde_json::Value::as_str).unwrap_or(node_id),
-                "platform": std::env::consts::OS,
+                "displayName": device.and_then(|d| d.get("displayName")).and_then(serde_json::Value::as_str).unwrap_or(node_id),
+                "platform": device.and_then(|d| d.get("platform")).and_then(serde_json::Value::as_str).unwrap_or("unknown"),
+                "deviceFamily": "remote",
+                "commands": [],
+                "capabilities": [],
                 "connected": false,
                 "paired": true,
-                "active": false
+                "active": false,
+                "gatewayLocal": false
             }))
         } else {
             Err(GatewayCommandError::BadRequest(format!("unknown nodeId: {node_id}")))

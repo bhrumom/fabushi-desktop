@@ -26,6 +26,8 @@ Make remote node presence fail closed: pairing approval proves `paired`, while `
 - R4: local node presence remains approved, paired, connected, and active.
 - R5: no new durable state or transport owner is introduced.
 - R6: without a live transport-owner fact, remote entries do not advertise executable node commands.
+- R7: pairing-store read failures are returned as errors; they must not be converted into an empty or healthy node list.
+- R8: remote status projections preserve the pairing record's display name/platform and include explicit empty commands/capabilities while disconnected.
 
 ## Ownership
 

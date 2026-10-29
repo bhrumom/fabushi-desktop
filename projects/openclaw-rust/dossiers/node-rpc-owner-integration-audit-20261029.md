@@ -36,6 +36,12 @@ The existing `production_remote_computer_target_service` was also inspected befo
 
 The remote presence projection is now fail-closed in the current slice: pairing approval makes a remote device visible and `paired`, but `node.list`/`node.status` report `connected=false` and `active=false` and advertise no executable commands until a live node-transport owner supplies those facts. The local `sand-local-node` remains connected and active. This removes the prior contradiction in which `node.list`/`node.status` claimed a live remote node while `node.invoke` reported that transport was unavailable.
 
+The projection also preserves the pairing record's remote platform/display name,
+returns explicit empty `commands` and `capabilities` for disconnected remotes,
+and propagates pairing-store list failures instead of turning them into an
+empty successful inventory. These are projection/error-boundary properties;
+they do not establish a live remote transport.
+
 This preserves the current ownership boundary:
 
 | Behavior | Owner | Boundary |
