@@ -145,3 +145,36 @@ The audited source code was decomposed into 6 discrete Rust runtime responsibili
 - **Unread / Unclassified Paths**: 58,626
 - **Strict Conservation**: $124 + 58626 = 58750$.
 - **All Global Completion Flags**: `false` strictly preserved.
+
+## 5. Exact owner re-audit (2026-10-29)
+
+The locked upstream termination source was re-read at the exact blob
+`8b799aea4cccb13dd5b76b4b25c49b4c025cf5d1` from
+`openclaw/openclaw@ad8d12f126d29b0db204187adf5092db80294e70`. The controller
+does not merely send a cancellation request: it retains pending-spawn state,
+captures the child PID start identity, distinguishes graceful from force
+termination, observes process-group exit, joins Windows `taskkill /T` helpers,
+and returns `normal|cooperative|forced|uncertain` settlement.
+
+The current Fabushi path was re-read on branch HEAD
+`2225400ea73392523586a110301edeb87c986001`:
+
+- `source/host/src/extensions/local_exec/gateway_local_exec_sand_box.rs::GatewayLocalExecManager::cancel_operation`
+  owns operation fencing and calls `LocalExecCancellationHandle::cancel()`;
+- `source/host/src/extensions/local_exec/local_exec_bridge.rs::LocalExecCancellationHandle::cancel`
+  can only deliver one `{kind: "cancel", requestId}` frame to the selected
+  remote provider and reports whether that transport send succeeded;
+- `source/host/src/runner/process_tree.rs::terminate_process_tree` owns
+  cleanup for locally managed Network Worker and Box exec-daemon children,
+  not the remote provider child represented by the local-exec bridge.
+
+Therefore the missing production caller is confirmed, not inferred from a
+negative search: the current Host process has no command-child PID, spawn
+start identity, or provider-side process-group handle on which it could
+safely implement the upstream grace/force controller. Reusing
+`runner::process_tree` here would cross the existing Host/provider ownership
+boundary and could signal an unrelated reused PID. The termination row stays
+`not-wired` with `BL-EXEC-TERMINATION-CONTROLLER-CALLER-001` until the
+canonical local-exec provider/companion owner exposes a typed, identity-bound
+termination contract and a real caller. No ledger status is upgraded by this
+audit.
