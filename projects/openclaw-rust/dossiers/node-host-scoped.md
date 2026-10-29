@@ -877,3 +877,21 @@ These boundaries remain under the existing Session Turns Controller and
 security/agent authorities; they do not create a second execution identity,
 recovery, or terminal store. Rust implementation and acceptance remain
 unverified.
+
+## 108. Agent turn source admission and preparation custody (2026-10-29)
+
+The locked `agent-turn-source-admission.ts`,
+`agent-turn-source-admission.liveness.test.ts`,
+`agent-turn-preparation-source.ts`, and
+`agent-turn-admission-cleanup.ts` were read in full. Source admission first
+authorizes the canonical physical session target, then registers the exact
+abort/source identity with timeout, lifecycle generation, owner connection and
+device facts. Preparation retains an opaque controller mailbox until routing
+selects the physical target, transfers or retires it exactly once, and
+publishes cancellation against the current alias/target. Cleanup discards
+prepared media and clears unaccepted dedupe only after owner release, then
+releases Gateway admission, Cron continuation, and recovery in the declared
+order. The liveness oracle confirms requester custody across default/custom
+stores and early/prepared admission without claiming foreign child ownership.
+These are existing Session Turns Controller boundaries; Rust wiring and
+acceptance remain unverified.

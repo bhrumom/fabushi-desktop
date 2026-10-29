@@ -12,6 +12,10 @@ from pathlib import Path
 ROOT = Path("projects/openclaw-rust")
 SHARDS = ROOT / "inventory" / "shards"
 READS = {
+    "src/gateway/agent-turn/agent-turn-admission-cleanup.ts": (61, "OCRM-RESP-SESSION-TURNS-CONTROLLER-001", "OCRM-M07", "owner-audit"),
+    "src/gateway/agent-turn/agent-turn-preparation-source.ts": (98, "OCRM-RESP-SESSION-TURNS-CONTROLLER-001", "OCRM-M07", "owner-audit"),
+    "src/gateway/agent-turn/agent-turn-source-admission.liveness.test.ts": (135, "OCRM-RESP-SESSION-TURNS-CONTROLLER-001", "OCRM-M07", "test-oracle-replaced"),
+    "src/gateway/agent-turn/agent-turn-source-admission.ts": (153, "OCRM-RESP-SESSION-TURNS-CONTROLLER-001", "OCRM-M07", "owner-audit"),
     "src/gateway/agent-turn/agent-run-dispatch-execution-identity.ts": (7, "OCRM-RESP-SESSION-TURNS-CONTROLLER-001", "OCRM-M07", "owner-audit"),
     "src/gateway/agent-turn/agent-run-dispatch-outcome.ts": (100, "OCRM-RESP-SESSION-TURNS-CONTROLLER-001", "OCRM-M07", "owner-audit"),
     "src/gateway/agent-turn/agent-run-execution-lineage.ts": (123, "OCRM-RESP-SESSION-TURNS-CONTROLLER-001", "OCRM-M07", "owner-audit"),

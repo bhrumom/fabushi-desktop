@@ -28428,6 +28428,42 @@
       "selected_owner": "source/host/src/extensions/session/session_turns_controller.rs",
       "source_refs": [
         {
+          "blob_sha": "6e73ea1fecc15af82444a8b786c26b8c5a9097fb",
+          "path": "src/gateway/agent-turn/agent-turn-admission-cleanup.ts",
+          "range": {
+            "end_line": 61,
+            "start_line": 1
+          },
+          "symbol": "finishAgentTurnPreparation"
+        },
+        {
+          "blob_sha": "5aaea1c61a18f7073a0776c2075da24e60e4e783",
+          "path": "src/gateway/agent-turn/agent-turn-preparation-source.ts",
+          "range": {
+            "end_line": 98,
+            "start_line": 1
+          },
+          "symbol": "createAgentTurnPreparationSource"
+        },
+        {
+          "blob_sha": "6b1bbe7c21d3c334e993f222df6716badd059439",
+          "path": "src/gateway/agent-turn/agent-turn-source-admission.liveness.test.ts",
+          "range": {
+            "end_line": 135,
+            "start_line": 1
+          },
+          "symbol": "agent turn source admission liveness oracle"
+        },
+        {
+          "blob_sha": "ee99efe1a314c736f07731d94f4ea83f0d62173d",
+          "path": "src/gateway/agent-turn/agent-turn-source-admission.ts",
+          "range": {
+            "end_line": 153,
+            "start_line": 1
+          },
+          "symbol": "registerAgentTurnSourceAdmission"
+        },
+        {
           "blob_sha": "5ed74467a7d9a2711e81fe7290c381b1b0de3d1b",
           "path": "src/gateway/agent-turn/agent-run-dispatch-execution-identity.ts",
           "range": {
