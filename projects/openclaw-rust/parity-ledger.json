@@ -28966,6 +28966,33 @@
             "start_line": 1
           },
           "symbol": "tracked dispatch owner fixture"
+        },
+        {
+          "blob_sha": "fe08da48af2730bda7eb1518da5f4e46ec52ab84",
+          "path": "src/gateway/agent-turn/agent-request-preflight.test.ts",
+          "range": {
+            "end_line": 438,
+            "start_line": 1
+          },
+          "symbol": "agent request preflight admission oracle"
+        },
+        {
+          "blob_sha": "abc9035e263a6bda7580b65181257973aa36b6ea",
+          "path": "src/gateway/agent-turn/agent-session-preparation.worker.test.ts",
+          "range": {
+            "end_line": 94,
+            "start_line": 1
+          },
+          "symbol": "agent session preparation worker oracle"
+        },
+        {
+          "blob_sha": "ba4b6f70a9346b0a118d0a2bd18a1d9346bae177",
+          "path": "src/gateway/agent-turn/agent-session-reuse.test.ts",
+          "range": {
+            "end_line": 343,
+            "start_line": 1
+          },
+          "symbol": "agent session reuse and rotation oracle"
         }
       ],
       "status": {

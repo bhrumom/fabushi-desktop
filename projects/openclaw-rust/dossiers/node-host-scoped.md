@@ -1098,3 +1098,21 @@ delivery, and cached replay diagnostics omit private output. These sources map
 to the existing Session Turns Controller, transcript, terminal-producer, and
 agent command owners; no second dispatch loop, replay store, or transport is
 introduced. Rust implementation, wiring, and acceptance remain unverified.
+
+## 120. Agent request preflight and session reuse oracle closure (2026-10-29)
+
+The locked `agent-request-preflight.test.ts`,
+`agent-session-preparation.worker.test.ts`, and `agent-session-reuse.test.ts`
+were read in full. The preflight oracle verifies database-admission refusal
+retry contracts, Swarm collector schema/registration/launch ownership and
+exact cached replay, requester-agent overrides, restart-recovery Code Mode
+authority, explicit bare-session ownership, and reserved exec-completion
+provenance. The preparation oracle verifies active/failed session candidates
+and archived-session rejection without host-row reads. The reuse oracle pins
+failed/killed transcript-window behavior, session-header backfill, lifecycle
+revision preservation, exact UUID allocation, concurrent replacement
+preservation, and expected-session fencing after a worker read yields. These
+tests are conformance evidence for the existing Session Turns Controller,
+session preparation/reuse, database admission, and subagent scheduler owners;
+they do not justify a second preflight queue or session store. Rust wiring,
+runtime execution, and acceptance remain unverified.
