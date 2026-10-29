@@ -78,6 +78,27 @@ mapped to SettingsService while `skill_runtime.rs` retains only the runtime
 library owner; executable verification remains pending for exact-head
 Actions.
 
+## 7. Exact skill-library source read closure (2026-10-29)
+
+The three locked source references attached to
+`OCRM-RESP-SKILLS-RUNTIME-LIBRARY-001` were read in full:
+
+- `src/skills/loading/frontmatter.ts`, blob
+  `27290bd8111b472c995e0284a856530f7f19152a`, 168 lines;
+- `src/skills/loading/workspace-skill-loader.ts`, blob
+  `6368d346df09b8ff3b31d5b745f89b9b7ab17fe9`, 508 lines;
+- `src/skills/loading/workspace-skill-sources.ts`, blob
+  `03384f929713effa425fcf3e0ec39d9047652a40`, 180 lines.
+
+Together they define strict frontmatter/install normalization, source-tier
+precedence, gateway/workspace ownership separation, plugin/bundled/managed/
+personal/workshop roots, bounded cache invalidation, Library preparation,
+binary eligibility filtering, remote execution workspace handling, and
+currentness fencing. The current Rust `skill_runtime.rs` remains a smaller
+in-memory parser/registry and does not implement these filesystem, plugin,
+Library, eligibility, or gateway/workspace split owners; source reading is
+closed but production equivalence and wiring remain pending.
+
 ## 6. Exact snapshot-backup source read closure (2026-10-29)
 
 The sole locked source reference attached to
