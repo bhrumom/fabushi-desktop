@@ -121,6 +121,27 @@ the original row bytes. The focused oracles cover conflict rechecks, capacity,
 indeterminate writes, retirement/borrower fencing, restart recovery, stale
 generation protection and disposal ordering.
 
+The plugin/API boundary was also re-read and recorded in the same inventory:
+
+| Path | Blob | Lines | Disposition |
+| --- | --- | ---: | --- |
+| `index.ts` | `f7b32bbed65069e3a0fcad1d01592f8c154ef487` | 124 | owner-audit |
+| `openclaw.plugin.json` | `4c09ec4e64721e7e9f9de5b4833015a8975745e0` | 110 | owner-audit |
+| `package.json` | `129116e692a6a377f25c0a281c7b602c7ce93306` | 27 | owner-audit |
+| `cli-runtime-api.ts` | `26e66781b4ec4dd972f79dbb273a3aaefadc9b33` | 13 | owner-audit |
+| `doctor-contract-api.ts` | `26bbb1c544e7e1818fdfc17a72491f02d18f13c3` | 306 | owner-audit |
+| `doctor-health-api.ts` | `6f25e0bcff9e6c2786174b7d407df021bdee3ac0` | 22 | owner-audit |
+| `worker-profile-api.ts` | `475c7b12f129f7153c46e1293ce8e5315a1f1dff` | 20 | owner-audit |
+
+The entrypoint confirms one plugin lifecycle boundary: Crabbox registers its
+tool, CLI, admin-scoped image methods, worker provider, optional sandbox
+backend, runtime cleanup and provider disposal. It explicitly keeps the Agent
+loop on the Gateway host and routes only exec/file work through the leased SSH
+backend. The manifest and API exports preserve lazy loading, schema constraints,
+doctor-only state migration, and runtime-store profile discovery. These facts
+support plugin-lifecycle and worker-provider owner analysis; they do not prove
+Fabushi plugin registration, sandbox execution, or release acceptance.
+
 These tests prove, as source oracles, catalog projection and bounded recovery, setup-secret separation and revocation, preflight security rejection, readiness/timeout/cleanup classification, diagnostics redaction, fixed-lease replay after lost replies, heartbeat scheduling/fencing, platform/desktop limitations, managed binary sharing, warm-image lifecycle/recovery, compare-and-apply conflict behavior, and config-schema rejection. They do not prove Fabushi packaged behavior or real provider/device acceptance.
 
 ## Fabushi owner resolution

@@ -12,6 +12,13 @@ from pathlib import Path
 ROOT = Path("projects/openclaw-rust")
 SHARDS = ROOT / "inventory" / "shards"
 READS = {
+    "extensions/crabbox/cli-runtime-api.ts": (13, None, "OCRM-M16", "owner-audit"),
+    "extensions/crabbox/doctor-contract-api.ts": (306, None, "OCRM-M16", "owner-audit"),
+    "extensions/crabbox/doctor-health-api.ts": (22, None, "OCRM-M16", "owner-audit"),
+    "extensions/crabbox/index.ts": (124, None, "OCRM-M16", "owner-audit"),
+    "extensions/crabbox/openclaw.plugin.json": (110, None, "OCRM-M16", "owner-audit"),
+    "extensions/crabbox/package.json": (27, None, "OCRM-M16", "owner-audit"),
+    "extensions/crabbox/worker-profile-api.ts": (20, None, "OCRM-M16", "owner-audit"),
     "extensions/crabbox/src/crabbox-worker-warm-image-capture.ts": (519, None, "OCRM-M11", "owner-audit"),
     "extensions/crabbox/src/crabbox-worker-warm-image-checkpoint.ts": (226, None, "OCRM-M11", "owner-audit"),
     "extensions/crabbox/src/crabbox-worker-warm-image-recipe.ts": (55, None, "OCRM-M11", "owner-audit"),
