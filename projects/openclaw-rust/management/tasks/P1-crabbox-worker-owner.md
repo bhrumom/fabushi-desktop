@@ -229,6 +229,12 @@ completed mutation may advance the lifecycle, submitted/failed/cancelled
 mutations cannot silently change state, and an ambiguous result enters
 `OutcomeUnknown` until a permitted recovery transition is applied.
 
+The warm-image contract at
+`source/host/src/extensions/cloud_workers/warm_image.rs` adds generation-fenced
+compare-and-apply transitions, fork holds, retirement protection, capture
+uncertainty and cleanup debt. It is an in-memory state contract only; no
+snapshot allocation, capture, deletion or persistence is performed.
+
 ## 9. Definition of Done / acceptance criteria
 
 - P1-AC01: ADR is approved and the target symbols/consumers are recorded in

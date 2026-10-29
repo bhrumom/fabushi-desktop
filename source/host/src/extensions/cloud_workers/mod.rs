@@ -8,6 +8,7 @@
 mod lease;
 mod artifact_admission;
 mod provider_catalog;
+mod warm_image;
 
 pub use artifact_admission::{
     CloudWorkerArtifactAdmission, CloudWorkerArtifactAdmissionError,
@@ -19,6 +20,10 @@ pub use lease::{
     CloudWorkerLeaseScope, CloudWorkerLifecycle, CloudWorkerMutationOutcome,
     CloudWorkerRuntimeIdentity, LeaseGeneration, LeaseId, OwnerEpoch,
     ReplayKey,
+};
+pub use warm_image::{
+    CloudWorkerWarmImage, CloudWorkerWarmImageError, CloudWorkerWarmImageGeneration,
+    CloudWorkerWarmImageOperation, CloudWorkerWarmImageState,
 };
 pub use provider_catalog::{
     CloudWorkerCatalog, CloudWorkerCatalogError, CloudWorkerCatalogParser,
