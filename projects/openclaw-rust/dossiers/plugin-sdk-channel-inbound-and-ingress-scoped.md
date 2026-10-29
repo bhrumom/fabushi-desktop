@@ -48,3 +48,13 @@
 - Mapped Files: 8 added (Total mapped: 793 / 58,750).
 - Unclassified Remaining: 57,957.
 - Global completion flags: all 8 remaining `false` (fail-closed).
+
+## 6. Sender-normalization boundary (2026-10-29)
+
+The locked `src/plugin-sdk/allow-from.ts` oracle normalizes the sender value
+through string coercion, trimming and lowercase comparison before applying the
+allowlist. The Host ingress owner must preserve that boundary for direct-message
+allowlist decisions: a sender handle with transport whitespace is equivalent to
+the same trimmed handle, while an empty sender remains denied and wildcard
+semantics remain explicit. This is a local ingress authorization hardening; it
+does not register an external channel or establish production channel delivery.

@@ -2,6 +2,8 @@ use serde::{Deserialize, Serialize};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 
+use super::allow_from::is_normalized_sender_allowed;
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum IdentifierAuthentication {
@@ -169,7 +171,7 @@ pub fn resolve_channel_message_ingress_simple(
         };
     }
 
-    let is_sender_allowed = allow_from.iter().any(|a| a == "*" || a.eq_ignore_ascii_case(sender_id));
+    let is_sender_allowed = is_normalized_sender_allowed(sender_id, allow_from, None);
 
     if !is_group && dm_policy == "allowlist" && !is_sender_allowed {
         return ChannelMessageIngressResult {

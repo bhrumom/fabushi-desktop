@@ -917,6 +917,16 @@ fn test_ocrm_plugin_sdk_channel_feedback_inbound_ingress() {
     assert_eq!(allowed.admission, "dispatch");
     assert_eq!(allowed.decision, "allow");
 
+    let normalized_sender = resolve_channel_message_ingress_simple(
+        "  USER-1  ",
+        &[" user-1 ".to_string()],
+        true,
+        false,
+        "allowlist",
+    );
+    assert_eq!(normalized_sender.admission, "dispatch");
+    assert_eq!(normalized_sender.decision, "allow");
+
     let blocked_sender = resolve_channel_message_ingress_simple(
         "intruder",
         &["user-1".to_string()],
