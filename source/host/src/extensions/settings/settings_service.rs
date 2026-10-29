@@ -11,6 +11,11 @@ use chrono::{SecondsFormat, Utc};
 use chrono_tz::Tz;
 use serde_json::{Map, Value, json};
 
+use crate::agents::agent_roster::{
+    apply_implicit_agent_roster_defaults, collect_agent_entries,
+    can_write_doctor_include,
+    pin_survivor_workspace_for_roster_collapse, try_resolve_default_agent_id,
+};
 use crate::host_paths::get_sand_root_dir;
 
 pub const MCP_CUSTOM_INSTRUCTIONS_MAX_LENGTH: usize = 500;
@@ -26,6 +31,46 @@ pub type FeatureFlagOverrideListener =
 pub fn is_valid_iana_time_zone(value: &str) -> bool {
     value.parse::<Tz>().is_ok()
 }
+
+/// Traverses a nested JSON Value along a dot-separated path (e.g. "foo.bar"),
+/// blocking prototype-bearing keys like "__proto__", "prototype", and "constructor".
+pub fn get_json_value_at_path<'a>(root: &'a Value, path: &str) -> Option<&'a Value> {
+    let mut cursor = root;
+    for part in path.split('.') {
+        let trimmed = part.trim();
+        if trimmed.is_empty() || trimmed == "__proto__" || trimmed == "prototype" || trimmed == "constructor" {
+            return None;
+        }
+        cursor = cursor.as_object()?.get(trimmed)?;
+    }
+    Some(cursor)
+}
+
+/// Mutates a nested JSON Object along a dot-separated path, creating intermediate objects
+/// and rejecting unsafe prototype keys.
+pub fn set_json_value_at_path(root: &mut Value, path: &str, val: Value) -> Result<(), &'static str> {
+    let parts: Vec<&str> = path.split('.').map(str::trim).collect();
+    if parts.is_empty() || parts.iter().any(|p| p.is_empty()) {
+        return Err("Invalid path. Use non-empty dot notation (e.g. foo.bar)");
+    }
+    if parts.iter().any(|p| *p == "__proto__" || *p == "prototype" || *p == "constructor") {
+        return Err("Unsafe path segment: prototype pollution prevented");
+    }
+    if !root.is_object() {
+        *root = Value::Object(Map::new());
+    }
+    let mut cursor = root.as_object_mut().unwrap();
+    let (leaf, ancestors) = parts.split_last().unwrap();
+    for ancestor in ancestors {
+        if !cursor.contains_key(*ancestor) || !cursor[*ancestor].is_object() {
+            cursor.insert((*ancestor).to_string(), Value::Object(Map::new()));
+        }
+        cursor = cursor.get_mut(*ancestor).unwrap().as_object_mut().unwrap();
+    }
+    cursor.insert((*leaf).to_string(), val);
+    Ok(())
+}
+
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct SandAutoReviewInstructions {
@@ -168,6 +213,7 @@ pub struct SettingsService {
     feature_flag_override_listeners:
         Arc<Mutex<BTreeMap<u64, FeatureFlagOverrideListener>>>,
     next_listener_id: AtomicU64,
+    write_lock: Mutex<()>,
 }
 impl SettingsService {
     pub fn production() -> Self {
@@ -180,6 +226,7 @@ impl SettingsService {
             change_listeners: Arc::new(Mutex::new(BTreeMap::new())),
             feature_flag_override_listeners: Arc::new(Mutex::new(BTreeMap::new())),
             next_listener_id: AtomicU64::new(1),
+            write_lock: Mutex::new(()),
         }
     }
     pub fn get_settings_path(&self) -> &Path {
@@ -210,7 +257,25 @@ impl SettingsService {
         }
         value
     }
+    pub fn is_read_only(&self) -> bool {
+        if std::env::var("OPENCLAW_CONFIG_READONLY").map(|v| v == "1").unwrap_or(false)
+            || std::env::var("OPENCLAW_NIX_MODE").map(|v| v == "1").unwrap_or(false)
+        {
+            return true;
+        }
+        self.load()
+            .get("readOnly")
+            .and_then(Value::as_bool)
+            .unwrap_or(false)
+    }
+
     fn persist(&self, value: &Map<String, Value>) -> io::Result<()> {
+        if self.is_read_only() {
+            return Err(io::Error::new(
+                io::ErrorKind::PermissionDenied,
+                "Config is externally managed or marked readOnly; mutations are not allowed",
+            ));
+        }
         if let Some(parent) = self.settings_path.parent() {
             fs::create_dir_all(parent)?;
         }
@@ -252,6 +317,10 @@ impl SettingsService {
         field: &str,
         value: Option<Value>,
     ) -> Result<bool, String> {
+        if self.is_read_only() {
+            return Err("Config is externally managed or marked readOnly; mutations are not allowed".into());
+        }
+        let _guard = self.write_lock.lock().unwrap();
         let mut settings = self.load();
         let changed = match value {
             Some(value) => {
@@ -826,8 +895,16 @@ impl SettingsService {
     }
 
     pub fn get_host_settings(&self) -> Value {
+        let stored = self.load();
         let mut object = Map::new();
+        object.insert("version".into(), Value::from(1));
+        if self.is_read_only() {
+            object.insert("readOnly".into(), Value::Bool(true));
+        }
         object.insert("notifications".into(), self.get_notification_config());
+        if let Some(agents) = stored.get("agents") {
+            object.insert("agents".into(), agents.clone());
+        }
         object.insert(
             "mcpCustomInstructions".into(),
             string_map_value(self.get_mcp_custom_instructions()),
@@ -909,12 +986,38 @@ impl SettingsService {
     }
 
     pub fn set_host_settings(&self, update: &Value) -> Result<Value, String> {
+        if self.is_read_only() {
+            return Err("Config is externally managed or marked readOnly; mutations are not allowed".into());
+        }
         let Some(update) = update.as_object() else {
             return Ok(self.get_host_settings());
         };
+        let _guard = self.write_lock.lock().unwrap();
         let previous_zone = self.get_user_time_zone();
         let mut settings = self.load();
         let changed_fields = update.keys().cloned().collect::<Vec<_>>();
+
+        if let Some(agent_update) = update.get("agents") {
+            let parsed = Value::Object(settings.clone());
+            let mut resolved = parsed.clone();
+            if let Some(object) = resolved.as_object_mut() {
+                if agent_update.is_null() {
+                    object.remove("agents");
+                } else {
+                    object.insert("agents".into(), agent_update.clone());
+                }
+            }
+            let current_roster_is_writable =
+                can_write_doctor_include(&parsed, &resolved, false);
+            let target_roster_is_writable =
+                can_write_doctor_include(&resolved, &resolved, false);
+            if !current_roster_is_writable || !target_roster_is_writable {
+                return Err(
+                    "agent roster is include-owned and cannot be overwritten by this config owner"
+                        .into(),
+                );
+            }
+        }
 
         settings.insert("notifications".into(), json!({ "isEnabled": false }));
 
@@ -964,6 +1067,48 @@ impl SettingsService {
                         .collect(),
                 ),
             );
+        }
+        if let Some(value) = update.get("agents") {
+            if value.is_null() {
+                settings.remove("agents");
+            } else if value.is_object() {
+                let previous = Value::Object(settings.clone());
+                let candidate = json!({ "agents": value.clone() });
+                let normalized = apply_implicit_agent_roster_defaults(&candidate);
+                let mut target = previous.clone();
+                if let Some(normalized_agents) = normalized.get("agents") {
+                    target
+                        .as_object_mut()
+                        .expect("settings object")
+                        .insert("agents".into(), normalized_agents.clone());
+                }
+
+                let source_workspace = try_resolve_default_agent_id(&previous)
+                    .and_then(|active_id| {
+                        collect_agent_entries(&previous, None)
+                            .into_iter()
+                            .find(|entry| entry.id == active_id)
+                            .and_then(|entry| {
+                                entry
+                                    .entry
+                                    .get("workspace")
+                                    .and_then(Value::as_str)
+                                    .map(str::to_string)
+                            })
+                    });
+                let (pinned, _) = pin_survivor_workspace_for_roster_collapse(
+                    &previous,
+                    &target,
+                    source_workspace.as_deref(),
+                );
+                settings.insert(
+                    "agents".into(),
+                    pinned
+                        .get("agents")
+                        .cloned()
+                        .unwrap_or_else(|| value.clone()),
+                );
+            }
         }
         for field in ["userTimeZone", "userTimeZoneOverride"] {
             if let Some(Value::String(zone)) = update.get(field) {

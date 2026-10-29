@@ -1,6 +1,7 @@
 use mahayana_host_runtime::gateway_protocol::{
     FABUSHI_GATEWAY_COMPAT_COMMANDS, GATEWAY_PREPARE_UPGRADE_PATH, GROK_GATEWAY_COMMANDS,
-    is_grok_gateway_command, parse_command_args, slim_command_result, slim_event,
+    OPENCLAW_GATEWAY_METHODS, is_grok_gateway_command, is_openclaw_gateway_command,
+    parse_command_args, slim_command_result, slim_event,
 };
 use serde_json::json;
 use mahayana_host_runtime::host_gateway_api::{
@@ -18,6 +19,17 @@ fn native_mini_app_extensions_preserve_frozen_inventory_and_mcp_owner() {
         assert!(!GROK_GATEWAY_COMMANDS.contains(method));
         assert!(is_grok_gateway_command(method));
         assert_eq!(host_gateway_owner(method), Some(HostGatewayOwner::Mcp));
+    }
+}
+
+#[test]
+fn openclaw_gateway_extensions_preserve_frozen_inventory_and_owners() {
+    assert_eq!(OPENCLAW_GATEWAY_METHODS.len(), 23);
+    for method in OPENCLAW_GATEWAY_METHODS {
+        assert!(!GROK_GATEWAY_COMMANDS.contains(method));
+        assert!(is_openclaw_gateway_command(method));
+        assert!(is_grok_gateway_command(method));
+        assert!(host_gateway_owner(method).is_some());
     }
 }
 

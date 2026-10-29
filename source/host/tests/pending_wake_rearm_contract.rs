@@ -48,6 +48,9 @@ impl PendingWakeRuntimePort for FakeRuntime {
         self.revived.lock().unwrap().push(wake);
         Ok(())
     }
+    fn revive_channel_delivery_failure(&self, _marker: &DurablePendingWakeMarker) -> Result<(), String> {
+        Ok(())
+    }
     fn emit_async_tasks_for_agent(&self, agent_id: &str) { self.emitted.lock().unwrap().push(agent_id.into()); }
     fn report_pending_wake(&self, report: PendingWakeReport) { self.reports.lock().unwrap().push(report); }
 }
@@ -62,6 +65,9 @@ fn marker(agent:&str, kind:PendingWakeKind, work:&str, marked:f64) -> DurablePen
         agent_id: agent.into(), kind, work_id: work.into(), marked_at_ms: marked,
         quiet_origin: None, title: Some("work".into()), subagent_type: Some("task".into()),
         interrupted_by_recreate: false,
+        delivery_operation_id: None,
+        address_token: None,
+        failure_reason: None,
     }
 }
 

@@ -57,3 +57,22 @@ pub mod notifications;
 pub mod teach_recording;
 
 pub mod content_search;
+
+pub mod interactive;
+
+pub mod plugin_sdk;
+pub mod meeting_bot;
+pub mod node_host;
+pub mod plugin_state;
+pub mod plugins;
+pub mod process;
+pub mod proxy_capture;
+pub mod security;
+pub mod shared;
+pub mod skills;
+pub mod snapshot;
+pub mod state;
+pub mod system_agent;
+pub mod talk;
+pub mod transcripts;
+

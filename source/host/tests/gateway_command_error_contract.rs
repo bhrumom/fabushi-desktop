@@ -62,6 +62,8 @@ fn gateway_error_classifier_preserves_grok_box_and_network_reasons() {
 fn gateway_command_error_keeps_http_status_contract() {
     assert_eq!(GatewayCommandError::UnknownMethod("x".into()).status(), 404);
     assert_eq!(GatewayCommandError::BadRequest("x".into()).status(), 400);
+    assert_eq!(GatewayCommandError::Unauthorized("x".into()).status(), 401);
+    assert_eq!(GatewayCommandError::Forbidden("x".into()).status(), 403);
     assert_eq!(GatewayCommandError::Conflict("x".into()).status(), 409);
     assert_eq!(GatewayCommandError::Internal("x".into()).status(), 500);
 }

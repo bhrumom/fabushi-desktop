@@ -5,8 +5,12 @@ use std::path::{Path, PathBuf};
 use url::Url;
 use uuid::Uuid;
 
+use crate::sha256::sha256_hex;
+
 pub const ATTACHMENTS_DIRNAME: &str = "attachments";
 pub const ASSETS_DIRNAME: &str = "assets";
+pub const OUTBOUND_ATTACHMENTS_DIRNAME: &str = "outbound";
+pub const SANDBOX_SUBAGENT_ATTACHMENTS_MOUNT: &str = "/openclaw/attachments";
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum AgentMediaKind {
@@ -22,12 +26,145 @@ pub fn get_agent_assets_dir(agent_dir: impl AsRef<Path>) -> PathBuf {
     agent_dir.as_ref().join(ASSETS_DIRNAME)
 }
 
+pub fn get_agent_outbound_attachments_dir(agent_dir: impl AsRef<Path>) -> PathBuf {
+    agent_dir.as_ref().join(ATTACHMENTS_DIRNAME).join(OUTBOUND_ATTACHMENTS_DIRNAME)
+}
+
 pub fn get_agent_media_store_roots(agent_dir: impl AsRef<Path>) -> [PathBuf; 2] {
     [get_agent_attachments_dir(&agent_dir), get_agent_assets_dir(agent_dir)]
 }
 
-fn safe_media_leaf(source_name: &str) -> String {
-    let leaf = Path::new(source_name)
+pub fn normalize_agent_id(agent_id: &str) -> String {
+    let mut normalized = agent_id
+        .trim()
+        .to_ascii_lowercase()
+        .chars()
+        .map(|ch| if ch.is_ascii_alphanumeric() || matches!(ch, '-' | '_') { ch } else { '_' })
+        .collect::<String>();
+    while normalized.starts_with('_') {
+        normalized.remove(0);
+    }
+    if normalized.is_empty() {
+        normalized.push_str("default");
+    }
+    normalized
+}
+
+pub fn resolve_subagent_session_attachment_root_dir(
+    state_dir: &Path,
+    agent_id: &str,
+    child_session_key: &str,
+) -> PathBuf {
+    let session_hash = sha256_hex(child_session_key.as_bytes());
+    let session_ref = if session_hash.len() > 32 {
+        &session_hash[..32]
+    } else {
+        &session_hash
+    };
+    state_dir
+        .join(ATTACHMENTS_DIRNAME)
+        .join("subagents")
+        .join(normalize_agent_id(agent_id))
+        .join(session_ref)
+}
+
+pub fn subagent_attachment_root_for_run(
+    state_dir: &Path,
+    agent_id: Option<&str>,
+    child_session_key: Option<&str>,
+) -> Option<PathBuf> {
+    match (agent_id, child_session_key) {
+        (Some(agent_id), Some(child_session_key)) => Some(
+            resolve_subagent_session_attachment_root_dir(state_dir, agent_id, child_session_key),
+        ),
+        _ => None,
+    }
+}
+
+pub fn compute_base64_decoded_size(base64: &str) -> usize {
+    let trimmed = base64.trim();
+    if trimmed.is_empty() {
+        return 0;
+    }
+    let padding = if trimmed.ends_with("==") {
+        2
+    } else if trimmed.ends_with('=') {
+        1
+    } else {
+        0
+    };
+    (trimmed.len() * 3 / 4).saturating_sub(padding)
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]
+pub enum AttachmentProcessingError {
+    #[error("attachment {label}: exceeds size limit ({size} > {max_bytes} bytes)")]
+    ExceedsSizeLimit {
+        label: String,
+        size: usize,
+        max_bytes: usize,
+    },
+}
+
+pub fn validate_and_prepare_attachment_payload(
+    label: &str,
+    base64: &str,
+    max_bytes: usize,
+) -> Result<usize, AttachmentProcessingError> {
+    let size = compute_base64_decoded_size(base64);
+    if size > max_bytes {
+        return Err(AttachmentProcessingError::ExceedsSizeLimit {
+            label: label.to_string(),
+            size,
+            max_bytes,
+        });
+    }
+    Ok(size)
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct OutboundAttachmentResult {
+    pub path: PathBuf,
+    pub content_type: Option<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]
+pub enum OutboundAttachmentError {
+    #[error("outbound attachment exceeds max bytes limit ({size} > {max_bytes})")]
+    ExceedsMaxBytes { size: usize, max_bytes: usize },
+    #[error("failed to stage outbound attachment: {0}")]
+    Io(String),
+}
+
+pub fn resolve_outbound_attachment_from_buffer(
+    agent_dir: impl AsRef<Path>,
+    filename: Option<&str>,
+    buffer: &[u8],
+    max_bytes: usize,
+    content_type: Option<&str>,
+) -> Result<OutboundAttachmentResult, OutboundAttachmentError> {
+    if buffer.len() > max_bytes {
+        return Err(OutboundAttachmentError::ExceedsMaxBytes {
+            size: buffer.len(),
+            max_bytes,
+        });
+    }
+    let outbound_dir = get_agent_outbound_attachments_dir(agent_dir);
+    fs::create_dir_all(&outbound_dir)
+        .map_err(|err| OutboundAttachmentError::Io(err.to_string()))?;
+    let safe_leaf = safe_media_leaf(filename.unwrap_or("outbound.bin"));
+    let target = outbound_dir.join(format!("{}-{}", Uuid::new_v4().simple(), safe_leaf));
+    fs::write(&target, buffer)
+        .map_err(|err| OutboundAttachmentError::Io(err.to_string()))?;
+    Ok(OutboundAttachmentResult {
+        path: target,
+        content_type: content_type.map(str::to_string),
+    })
+}
+
+pub fn safe_media_leaf(source_name: &str) -> String {
+    let normalized = source_name.replace('\\', "/");
+    let leaf = Path::new(&normalized)
         .file_name()
         .and_then(|value| value.to_str())
         .unwrap_or("attachment");
@@ -66,7 +203,7 @@ pub fn persist_agent_media_bytes(
     let temporary = root.join(format!(".{}.tmp", Uuid::new_v4().simple()));
     fs::write(&temporary, bytes)?;
     if let Err(error) = fs::rename(&temporary, &target) {
-        let _ = fs::remove_file(&temporary);
+        crate::extensions::attachments::media_file_context::unlink_if_exists(Some(&temporary));
         return Err(error);
     }
     Ok(target)

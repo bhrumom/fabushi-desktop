@@ -3,6 +3,7 @@ use serde_json::{Value, json};
 pub const GATEWAY_PREPARE_UPGRADE_PATH: &str = "/prepare-upgrade";
 
 pub use crate::host_gateway_api::FROZEN_HOST_GATEWAY_METHODS as GROK_GATEWAY_COMMANDS;
+pub use crate::host_gateway_api::{OPENCLAW_GATEWAY_METHODS, openclaw_gateway_owner};
 use crate::host_gateway_api::host_gateway_owner;
 
 /// Fabushi-owned gateway command that intentionally extends the frozen Grok 0.18
@@ -10,8 +11,14 @@ use crate::host_gateway_api::host_gateway_owner;
 /// parity checks cannot silently widen the upstream contract.
 pub const FABUSHI_GATEWAY_COMPAT_COMMANDS: &[&str] = &["resumeAfterRecreate"];
 
+pub fn is_openclaw_gateway_command(method: &str) -> bool {
+    OPENCLAW_GATEWAY_METHODS.contains(&method)
+}
+
 pub fn is_grok_gateway_command(method: &str) -> bool {
-    host_gateway_owner(method).is_some() || FABUSHI_GATEWAY_COMPAT_COMMANDS.contains(&method)
+    host_gateway_owner(method).is_some()
+        || FABUSHI_GATEWAY_COMPAT_COMMANDS.contains(&method)
+        || is_openclaw_gateway_command(method)
 }
 
 pub fn parse_command_args(body: &[u8]) -> Result<Value, serde_json::Error> {

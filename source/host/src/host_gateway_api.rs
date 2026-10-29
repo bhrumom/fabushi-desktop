@@ -30,6 +30,57 @@ pub enum HostGatewayOwner {
     Settings,
     WebAuthn,
     Secrets,
+    DevicePairing,
+}
+
+pub const OPENCLAW_GATEWAY_METHODS: &[&str] = &[
+    "device.pair.request",
+    "device.pair.status",
+    "device.pair.approve",
+    "device.pair.reject",
+    "device.pair.list",
+    "device.pair.revoke",
+    "device.pair.rotateToken",
+    "device.pair.setupCode",
+    "node.register",
+    "node.invoke",
+    "node.status",
+    "node.list",
+    "chat.send",
+    "chat.abort",
+    "sessions.list",
+    "sessions.get",
+    "sessions.create",
+    "sessions.delete",
+    "cron.list",
+    "cron.trigger",
+    "config.get",
+    "config.set",
+    "system.info",
+];
+
+pub fn openclaw_gateway_owner(method: &str) -> Option<HostGatewayOwner> {
+    match method {
+        "device.pair.request"
+        | "device.pair.status"
+        | "device.pair.approve"
+        | "device.pair.reject"
+        | "device.pair.list"
+        | "device.pair.revoke"
+        | "device.pair.rotateToken"
+        | "device.pair.setupCode"
+        | "node.register"
+        | "node.status"
+        | "node.list" => Some(HostGatewayOwner::DevicePairing),
+        "node.invoke" | "system.info" => Some(HostGatewayOwner::HostControl),
+        "chat.send" | "chat.abort" | "sessions.list" | "sessions.get" => {
+            Some(HostGatewayOwner::TranscriptManager)
+        }
+        "sessions.create" | "sessions.delete" => Some(HostGatewayOwner::AgentLifecycle),
+        "cron.list" | "cron.trigger" => Some(HostGatewayOwner::Automations),
+        "config.get" | "config.set" => Some(HostGatewayOwner::Settings),
+        _ => None,
+    }
 }
 
 macro_rules! define_host_gateway_registry {
@@ -45,6 +96,9 @@ macro_rules! define_host_gateway_registry {
         ];
 
         pub fn host_gateway_owner(method: &str) -> Option<HostGatewayOwner> {
+            if let Some(owner) = openclaw_gateway_owner(method) {
+                return Some(owner);
+            }
             match method {
                 $($method => Some(HostGatewayOwner::$owner),)+
                 $($native => Some(HostGatewayOwner::$native_owner),)+

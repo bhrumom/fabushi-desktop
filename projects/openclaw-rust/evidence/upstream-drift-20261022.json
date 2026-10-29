@@ -1,0 +1,24 @@
+{
+  "format_version": 1,
+  "project_id": "OCRM-001",
+  "base": {
+    "commit": "e8cde7518c558f1b4e44cb8139a149289b9719ad",
+    "tree": "25c8ee611b72762ae1a0170124fa1fee9e519704"
+  },
+  "head": {
+    "commit": "ad8d12f126d29b0db204187adf5092db80294e70",
+    "tree": "04ccce62f1d74dc8e0c88290ae8ded027b7b0f16"
+  },
+  "compare": {
+    "status": "ahead",
+    "ahead_by": 13,
+    "total_commits": 13,
+    "changed_paths": 300,
+    "modified": 237,
+    "removed": 43,
+    "added": 20,
+    "renamed": 0
+  },
+  "decision": "freeze-head-for-current-implementation-round",
+  "reason": "The authoritative user instruction requires an explicit rebaseline when live upstream differs from the discovery snapshot. This record freezes the exact live upstream identity before implementation; full per-path inventory is produced by the authority workflow."
+}

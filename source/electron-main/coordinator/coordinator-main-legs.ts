@@ -5,5 +5,48 @@ export function createCoordinatorMainLegs(options: { readonly onProblem: (proble
   let current: ReturnType<typeof createCoordinatorMainPortClient> | null = null; let disposed = false; const methods: Record<string, (first?: unknown) => Promise<unknown>> = {};
   for (const name of Object.keys(COORDINATOR_MAIN_METHOD_TABLE)) methods[name] = (first) => current == null ? Promise.reject(new Error(`Sand coordinator main-data leg "${name}" has no live coordinator session (coordinator not launched).`)) : current.legs[name]!(first);
   const revokeCurrent = () => { const previous = current; current = null; previous?.dispose(); };
-  return { legs: methods, adoptPort(port: MessagePortLike) { if (disposed) return; const previous = current; const client = createCoordinatorMainPortClient({ post: (frame) => { try { port.postMessage(frame); } catch (error) { options.reportFailure?.("leg-post", error); } }, close: () => { try { port.close(); } catch (error) { options.reportFailure?.("close", error); } } }); current = client; previous?.dispose(); void client.settled.then((settlement) => { if (settlement.outcome === "protocol-breach") options.onProblem(`main-data session breach: ${settlement.detail}`); }); port.on("message", (event) => client.handleMessage(event.data)); port.on("close", () => client.handlePortClosed()); port.start(); }, revoke() { if (!disposed) revokeCurrent(); }, dispose() { if (disposed) return; disposed = true; revokeCurrent(); } };
+  return {
+    legs: methods,
+    adoptPort(port: MessagePortLike) {
+      if (disposed) return;
+      const previous = current;
+      let client: ReturnType<typeof createCoordinatorMainPortClient>;
+      try {
+        client = createCoordinatorMainPortClient({
+          post: (frame) => {
+            try {
+              port.postMessage(frame);
+            } catch (error) {
+              options.reportFailure?.("leg-post", error);
+              throw error;
+            }
+          },
+          close: () => {
+            try {
+              port.close();
+            } catch (error) {
+              options.reportFailure?.("close", error);
+            }
+          },
+        });
+      } catch {
+        try {
+          port.close();
+        } catch (closeError) {
+          options.reportFailure?.("close", closeError);
+        }
+        return;
+      }
+      current = client;
+      previous?.dispose();
+      void client.settled.then((settlement) => {
+        if (settlement.outcome === "protocol-breach") options.onProblem(`main-data session breach: ${settlement.detail}`);
+      });
+      port.on("message", (event) => client.handleMessage(event.data));
+      port.on("close", () => client.handlePortClosed());
+      port.start();
+    },
+    revoke() { if (!disposed) revokeCurrent(); },
+    dispose() { if (disposed) return; disposed = true; revokeCurrent(); },
+  };
 }

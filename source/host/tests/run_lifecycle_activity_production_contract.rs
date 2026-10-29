@@ -115,6 +115,9 @@ fn durable_subagent_parent_projects_running_without_claiming_a_parent_turn() {
         title: Some("Research".into()),
         subagent_type: Some("cursor-agent".into()),
         interrupted_by_recreate: false,
+        delivery_operation_id: None,
+        address_token: None,
+        failure_reason: None,
     }));
 
     let mut rows = serde_json::json!([

@@ -64,6 +64,11 @@ pub trait PendingWakeRuntimePort: Send + Sync {
 
     fn revive_lost_subagent(&self, wake: LostSubagentWake) -> Result<(), String>;
 
+    fn revive_channel_delivery_failure(
+        &self,
+        marker: &DurablePendingWakeMarker,
+    ) -> Result<(), String>;
+
     fn emit_async_tasks_for_agent(&self, agent_id: &str);
     fn report_pending_wake(&self, report: PendingWakeReport);
 }
@@ -199,6 +204,7 @@ impl PendingWakeRearm {
                     }
                 }
                 PendingWakeKind::Subagent => unreachable!("filtered above"),
+                PendingWakeKind::ChannelDelivery => unreachable!("filtered above"),
             }
         }
         restored
@@ -295,6 +301,9 @@ impl PendingWakeRearm {
                 marker.quiet_origin.as_ref(),
             ),
             PendingWakeKind::Subagent => self.revive_parent_for_lost_subagent_wake(&marker),
+            PendingWakeKind::ChannelDelivery => {
+                self.runtime.revive_channel_delivery_failure(&marker)
+            }
         };
 
         match result {
@@ -402,5 +411,8 @@ fn marker_shell(
         title: None,
         subagent_type: None,
         interrupted_by_recreate: false,
+        delivery_operation_id: None,
+        address_token: None,
+        failure_reason: None,
     }
 }

@@ -1,0 +1,211 @@
+name: OCRM P0 source authority
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/ocrm-p0-authority.yml'
+      - 'projects/openclaw-rust/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  source-authority:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      UPSTREAM_REPO: openclaw/openclaw
+      UPSTREAM_COMMIT: ad8d12f126d29b0db204187adf5092db80294e70
+      UPSTREAM_TREE: 04ccce62f1d74dc8e0c88290ae8ded027b7b0f16
+      SUBJECT_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+    steps:
+      - name: Checkout exact subject
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 1
+
+      - name: Verify checked-out subject and lock
+        shell: bash
+        run: |
+          set -euo pipefail
+          subject="$(git rev-parse HEAD)"
+          expected="${{ github.event.pull_request.head.sha || github.sha }}"
+          test "$subject" = "$expected"
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          lock=json.loads(Path("projects/openclaw-rust/upstream.lock.json").read_text())
+          assert lock["upstream"]["repository"] == "openclaw/openclaw"
+          assert lock["upstream"]["commit"] == "ad8d12f126d29b0db204187adf5092db80294e70"
+          assert lock["upstream"]["tree"] == "04ccce62f1d74dc8e0c88290ae8ded027b7b0f16"
+          assert lock["closure"]["source_closure_ready"] is False
+          idx=json.loads(Path("projects/openclaw-rust/inventory/index.json").read_text())
+          assert idx["upstream"]["commit"] == lock["upstream"]["commit"]
+          assert idx["authority"]["source_closure_ready"] is False
+          assert idx["inventory"]["omitted_known"] == 0
+          PY
+
+      - name: Acquire exact upstream and verify identity
+        shell: bash
+        run: |
+          set -euo pipefail
+          git init upstream
+          git -C upstream remote add origin "https://github.com/$UPSTREAM_REPO.git"
+          git -C upstream fetch --depth=1 origin "$UPSTREAM_COMMIT"
+          git -C upstream checkout --detach FETCH_HEAD
+          test "$(git -C upstream rev-parse HEAD)" = "$UPSTREAM_COMMIT"
+          test "$(git -C upstream rev-parse HEAD^{tree})" = "$UPSTREAM_TREE"
+
+      - name: Generate recursive tracked-source inventory
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p ocrm-evidence
+          git -C upstream ls-tree -r -z --full-tree "$UPSTREAM_COMMIT" > ocrm-evidence/ls-tree.z
+          python3 - <<'PY'
+          import hashlib, json, os
+          from pathlib import Path
+          raw=Path("ocrm-evidence/ls-tree.z").read_bytes()
+          entries=[]
+          counts={"tracked_entries_total":0,"blob_entries_total":0,"symlink_entries_total":0,"gitlink_entries_total":0}
+          for rec in raw.split(b"\0"):
+            if not rec:
+              continue
+            meta,path=rec.split(b"\t",1)
+            mode,kind,sha=meta.decode().split(" ")
+            p=path.decode("utf-8","surrogateescape")
+            if mode == "160000":
+              cls="gitlink"; counts["gitlink_entries_total"]+=1
+            elif mode == "120000":
+              cls="symlink"; counts["symlink_entries_total"]+=1
+            else:
+              cls="blob"; counts["blob_entries_total"]+=1
+            counts["tracked_entries_total"]+=1
+            entries.append({"path":p,"mode":mode,"git_type":kind,"sha":sha,"entry_kind":cls,"read_status":"unread","responsibility_status":"unclassified"})
+          payload={
+            "format_version":1,
+            "project_id":"OCRM-001",
+            "upstream":{"repository":"openclaw/openclaw","commit":"ad8d12f126d29b0db204187adf5092db80294e70","tree":"04ccce62f1d74dc8e0c88290ae8ded027b7b0f16"},
+            "counts":counts,
+            "entries":entries
+          }
+          out=Path("ocrm-evidence/upstream-recursive-inventory.json")
+          out.write_text(json.dumps(payload,ensure_ascii=False,sort_keys=True,separators=(",",":"))+"\n")
+          Path("ocrm-evidence/upstream-recursive-inventory.sha256").write_text(hashlib.sha256(out.read_bytes()).hexdigest()+"\n")
+          Path("ocrm-evidence/authority-summary.json").write_text(json.dumps({
+            "subject_commit":os.environ["SUBJECT_SHA"],
+            "upstream_commit":payload["upstream"]["commit"],
+            "upstream_tree":payload["upstream"]["tree"],
+            **counts,
+            "source_closure_ready":False,
+            "reason":"Tracked source enumeration is established; dependency/LFS/semantic responsibility closure remains open."
+          },sort_keys=True,indent=2)+"\n")
+          PY
+
+      - name: Scan LFS pointer candidates without claiming closure
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -RIl --exclude-dir=.git '^version https://git-lfs.github.com/spec/v1$' upstream > ocrm-evidence/lfs-pointer-candidates.txt || true
+          wc -l < ocrm-evidence/lfs-pointer-candidates.txt | tr -d ' ' > ocrm-evidence/lfs-pointer-candidates.count
+
+      - name: Record dependency authority inputs
+        shell: bash
+        run: |
+          set -euo pipefail
+          {
+            for f in package.json pnpm-lock.yaml pnpm-workspace.yaml package-lock.json yarn.lock bun.lock bun.lockb Cargo.toml Cargo.lock requirements.txt pyproject.toml go.mod go.sum Gemfile Gemfile.lock; do
+              if [ -e "upstream/$f" ]; then
+                printf '%s\t' "$f"
+                git -C upstream hash-object "$f"
+              fi
+            done
+          } > ocrm-evidence/dependency-root-inputs.tsv
+
+      - name: Expand canonical source records and verify P0 G01/G02 structural
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m pip install --disable-pip-version-check --no-input 'jsonschema==4.25.1'
+          python3 projects/openclaw-rust/scripts/expand_inventory.py ocrm-evidence/upstream-recursive-inventory.json
+          # Rebuild the source-derived shard manifest against this exact inventory
+          # after canonical ledger reconciliation, then let validate_p0.py verify it.
+          python3 projects/openclaw-rust/scripts/shard_inventory.py --write ocrm-evidence/upstream-recursive-inventory.json
+          python3 projects/openclaw-rust/scripts/validate_p0.py ocrm-evidence --negative-probes
+
+      - name: Upload immutable authority evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: ocrm-p0-authority-${{ github.event.pull_request.head.sha || github.sha }}
+          path: ocrm-evidence/
+          if-no-files-found: error
+          retention-days: 30
+
+  persist-verified-inventory:
+    # P0 source-derived files only; never overwrite a moved PR head.
+    needs: source-authority
+    if: ${{ github.event_name == 'pull_request' && github.event.pull_request.number == 169 && github.event.pull_request.head.repo.full_name == 'bhrumom/fabushi-desktop' && github.event.pull_request.head.ref == 'ocrm/p0-source-authority-20261022' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+      actions: read
+    steps:
+      - name: Checkout guarded original subject
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 1
+
+      - name: Download this exact-subject verified canonical manifest
+        uses: actions/download-artifact@v4
+        with:
+          name: ocrm-p0-authority-${{ github.event.pull_request.head.sha }}
+          path: ocrm-evidence
+
+      - name: Materialize deterministic shards and dependency declarations in Actions
+        shell: bash
+        env:
+          EXPECTED_SUBJECT: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$EXPECTED_SUBJECT"
+          python3 - <<'PY'
+          import hashlib, json, os
+          from pathlib import Path
+          root=Path("ocrm-evidence")
+          summary=json.loads((root/"authority-summary.json").read_text())
+          receipt=json.loads((root/"p0-structural-receipt.json").read_text())
+          assert summary["subject_commit"] == receipt["subject_commit"] == os.environ["EXPECTED_SUBJECT"]
+          assert receipt["gate_verdicts"]["OCRM-G01-tracked-tree"] == "success"
+          assert receipt["gate_verdicts"]["OCRM-G02-structural"] == "success"
+          raw=(root/"upstream-recursive-inventory.json").read_bytes()
+          expected=(root/"upstream-recursive-inventory.sha256").read_text().strip()
+          assert hashlib.sha256(raw).hexdigest() == expected == summary["canonical_inventory_sha256"]
+          assert summary["canonical_file_records"] == 58750
+          PY
+          python3 projects/openclaw-rust/scripts/shard_inventory.py --write ocrm-evidence/upstream-recursive-inventory.json
+
+      - name: CAS commit derived source shards to PR branch (non-force)
+        shell: bash
+        env:
+          EXPECTED_SUBJECT: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          git add projects/openclaw-rust/inventory/index.json \
+                  projects/openclaw-rust/inventory/shards \
+                  projects/openclaw-rust/dependencies/source-manifest-inputs.json
+          if git diff --cached --quiet; then
+            echo "No new source-derived shard content"
+            exit 0
+          fi
+          branch="ocrm/p0-source-authority-20261022"
+          current="$(git ls-remote origin "refs/heads/$branch" | cut -f1)"
+          test "$current" = "$EXPECTED_SUBJECT" || { echo "PR lease moved: refusing derived snapshot write"; exit 1; }
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "chore(ocrm): persist locked canonical inventory shards and manifest inputs"
+          git push origin "HEAD:refs/heads/$branch"
+          echo "Committed source-derived shard snapshot; new commit requires its own exact-head Actions receipt"

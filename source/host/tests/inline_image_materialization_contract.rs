@@ -86,3 +86,59 @@ fn invalid_or_empty_images_are_skipped_and_unknown_mime_defaults_to_png() {
 
     let _ = fs::remove_dir_all(root);
 }
+
+#[test]
+fn oversized_inline_image_exceeding_max_bytes_is_rejected_and_writes_no_file() {
+    let root = scratch();
+    let db_path = root.join("agent.db");
+    fs::write(&db_path, b"db").expect("seed db path");
+
+    // MAX_IMAGE_BYTES is 20_000_000.
+    // Construct a base64 payload representing 20_000_004 bytes (exceeding MAX_IMAGE_BYTES by 4 bytes).
+    let quad_count = (20_000_000 / 3) + 2; // 6_666_668 quads -> 26_666_672 chars -> 20_000_004 bytes decoded
+    let b64_oversized = "QUFB".repeat(quad_count);
+
+    let images = vec![InlineImage {
+        base64: b64_oversized,
+        media_type: "image/png".into(),
+        alt: Some("oversized".to_string()),
+    }];
+
+    let materialized = materialize_inline_images(&db_path, &images);
+    assert!(
+        materialized.is_empty(),
+        "oversized image exceeding MAX_IMAGE_BYTES must be rejected on production materialize_one path"
+    );
+
+    // Verify fail-closed invariant: no file is written to xuser-attachments
+    let attachments_dir = root.join("xuser-attachments");
+    if attachments_dir.exists() {
+        let entries: Vec<_> = fs::read_dir(&attachments_dir)
+            .expect("read dir")
+            .filter_map(|e| e.ok())
+            .collect();
+        assert!(entries.is_empty(), "no file should be staged when payload exceeds size limit");
+    }
+
+    let _ = fs::remove_dir_all(root);
+}
+
+#[test]
+fn inline_image_materialization_boundary_admittance() {
+    let root = scratch();
+    let db_path = root.join("agent.db");
+    fs::write(&db_path, b"db").expect("seed db path");
+
+    // Valid image within limit is safely admitted and written
+    let valid_image = image(b"valid image payload within limits", "image/png", Some("Valid"));
+    let res = materialize_inline_images(&db_path, &[valid_image]);
+    assert_eq!(res.len(), 1);
+    let path = Url::parse(&res[0].url)
+        .expect("url")
+        .to_file_path()
+        .expect("file path");
+    assert!(path.is_file());
+    assert_eq!(fs::read(&path).expect("read"), b"valid image payload within limits");
+
+    let _ = fs::remove_dir_all(root);
+}

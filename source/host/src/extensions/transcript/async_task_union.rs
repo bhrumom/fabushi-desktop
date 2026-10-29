@@ -23,6 +23,7 @@ fn kind_name(kind: PendingWakeKind) -> &'static str {
         PendingWakeKind::CloudAgent => "cloud-agent",
         PendingWakeKind::Shell => "shell",
         PendingWakeKind::Subagent => "subagent",
+        PendingWakeKind::ChannelDelivery => "channel-delivery",
     }
 }
 
@@ -34,6 +35,7 @@ pub fn marker_label(marker: &DurablePendingWakeMarker) -> String {
         PendingWakeKind::CloudAgent => format!("Cloud agent {}", marker.work_id),
         PendingWakeKind::Shell => format!("Background command {}", marker.work_id),
         PendingWakeKind::Subagent => format!("Background task {}", marker.work_id),
+        PendingWakeKind::ChannelDelivery => format!("Channel delivery {}", marker.work_id),
     }
 }
 
@@ -48,6 +50,10 @@ pub fn pending_wake_marker_to_async_task(marker: &DurablePendingWakeMarker) -> A
             .filter(|value| !value.is_empty())
             .map(ToOwned::to_owned),
         PendingWakeKind::CloudAgent | PendingWakeKind::Shell => None,
+        PendingWakeKind::ChannelDelivery => marker
+            .failure_reason
+            .clone()
+            .filter(|value| !value.is_empty()),
     };
     AsyncTask {
         kind: kind_name(marker.kind).to_string(),

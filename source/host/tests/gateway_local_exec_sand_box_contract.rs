@@ -304,6 +304,34 @@ fn exec_manager_streams_shell_and_read_through_permissioned_provider() {
     assert!(calls.iter().any(|(_, action, target)| action == "read-file" && target == "/tmp/a.txt"));
 }
 
+#[test]
+fn shell_send_failure_finishes_pre_send_operation_as_failed() {
+    let (bridge, _registration, receive) = bridge_with_provider();
+    drop(receive);
+    let gate = Arc::new(FakeGate::default());
+    let manager = GatewayLocalExecSandBox::new(bridge, gate)
+        .remote_resource_accessor()
+        .manager();
+
+    let error = manager
+        .execute_shell(
+            &GatewayLocalToolScope {
+                agent_id: Some("agent-1".into()),
+                tool_call_id: Some("send-failure".into()),
+                action: Some("run-command".into()),
+            },
+            "pwd",
+            "/tmp",
+            "send-failure",
+        )
+        .expect_err("provider send failure must fail the shell operation");
+    assert!(!error.message.is_empty());
+    let record = manager
+        .operation("send-failure")
+        .expect("failed pre-send operation remains auditable");
+    assert_eq!(record.status, GatewayLocalExecOperationStatus::Failed);
+}
+
 
 #[test]
 fn exec_manager_reports_control_throw_with_frozen_failure_classification() {
@@ -435,6 +463,57 @@ fn exec_manager_journals_stable_operation_id_and_cancels_provider_request() {
     assert!(manager.operation_history_for_agent("other-agent").is_empty());
 }
 
+#[test]
+fn exec_manager_does_not_mark_cancel_when_provider_rejects_delivery() {
+    let (bridge, _registration, receive) = bridge_with_provider();
+    let gate = Arc::new(FakeGate::default());
+    let manager = GatewayLocalExecSandBox::new(bridge.clone(), gate)
+        .remote_resource_accessor()
+        .manager();
+
+    let shell_manager = Arc::clone(&manager);
+    let shell = thread::spawn(move || {
+        shell_manager.execute_shell(
+            &GatewayLocalToolScope {
+                agent_id: Some("agent-undelivered-cancel".into()),
+                tool_call_id: Some("operation-undelivered-cancel".into()),
+                action: Some("run-command".into()),
+            },
+            "echo provider-disconnected",
+            "/tmp",
+            "operation-undelivered-cancel",
+        )
+    });
+
+    let exec = receive
+        .recv_timeout(Duration::from_secs(1))
+        .expect("exec frame");
+    let request_id = exec["requestId"].as_str().expect("request id").to_string();
+    drop(receive);
+
+    assert!(!manager.cancel_operation_for_agent(
+        "agent-undelivered-cancel",
+        "operation-undelivered-cancel"
+    ));
+
+    bridge.submit_responses(json!({"frames":[{
+        "kind":"client",
+        "requestId":request_id,
+        "message":{"id":1,"shellStream":{"exit":{"code":0,"cwd":"/tmp","aborted":false}}}
+    }]}));
+    let result = shell
+        .join()
+        .expect("shell thread")
+        .expect("provider exit remains observable");
+    assert_eq!(result.exit_code, Some(0));
+    assert!(!result.aborted);
+
+    let settled = manager
+        .operation_for_agent("agent-undelivered-cancel", "operation-undelivered-cancel")
+        .expect("settled operation");
+    assert_eq!(settled.status, GatewayLocalExecOperationStatus::Completed);
+}
+
 
 fn real_shell_output(command: &str) -> std::process::Output {
     #[cfg(windows)]
@@ -463,16 +542,24 @@ fn exec_manager_drives_real_os_process_to_bounded_terminal_result() {
     let working_dir = std::env::temp_dir().to_string_lossy().into_owned();
     let shell_manager = Arc::clone(&manager);
     let shell_working_dir = working_dir.clone();
+    let unique = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap()
+        .as_nanos();
+    let agent_id = format!("agent-real-process-{unique}");
+    let op_id = format!("operation-real-process-{unique}");
+    let shell_agent_id = agent_id.clone();
+    let shell_op_id = op_id.clone();
     let shell = thread::spawn(move || {
         shell_manager.execute_shell(
             &GatewayLocalToolScope {
-                agent_id: Some("agent-real-process".into()),
-                tool_call_id: Some("operation-real-process".into()),
+                agent_id: Some(shell_agent_id),
+                tool_call_id: Some(shell_op_id.clone()),
                 action: Some("run-command".into()),
             },
             "echo fabushi-terminal-real-process",
             &shell_working_dir,
-            "operation-real-process",
+            &shell_op_id,
         )
     });
 
@@ -502,7 +589,7 @@ fn exec_manager_drives_real_os_process_to_bounded_terminal_result() {
     assert!(result.stdout.contains("fabushi-terminal-real-process"));
     assert_eq!(result.exit_code, Some(0));
     let settled = manager
-        .operation_for_agent("agent-real-process", "operation-real-process")
+        .operation_for_agent(&agent_id, &op_id)
         .expect("settled real operation");
     assert_eq!(settled.status, GatewayLocalExecOperationStatus::Completed);
     assert!(settled.stdout.contains("fabushi-terminal-real-process"));
@@ -539,16 +626,24 @@ fn exec_manager_cancel_maps_to_real_child_termination_and_history() {
     let working_dir = std::env::temp_dir().to_string_lossy().into_owned();
     let shell_manager = Arc::clone(&manager);
     let shell_working_dir = working_dir.clone();
+    let unique = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap()
+        .as_nanos();
+    let agent_id = format!("agent-real-cancel-{unique}");
+    let op_id = format!("operation-real-cancel-{unique}");
+    let shell_agent_id = agent_id.clone();
+    let shell_op_id = op_id.clone();
     let shell = thread::spawn(move || {
         shell_manager.execute_shell(
             &GatewayLocalToolScope {
-                agent_id: Some("agent-real-cancel".into()),
-                tool_call_id: Some("operation-real-cancel".into()),
+                agent_id: Some(shell_agent_id),
+                tool_call_id: Some(shell_op_id.clone()),
                 action: Some("run-command".into()),
             },
             "echo fabushi-terminal-cancel-started",
             &shell_working_dir,
-            "operation-real-cancel",
+            &shell_op_id,
         )
     });
 
@@ -571,7 +666,7 @@ fn exec_manager_cancel_maps_to_real_child_termination_and_history() {
         "message":{"id":2,"shellStream":{"stdout":{"data":"fabushi-terminal-cancel-started\\n"}}}
     }]}));
 
-    assert!(manager.cancel_operation_for_agent("agent-real-cancel", "operation-real-cancel"));
+    assert!(manager.cancel_operation_for_agent(&agent_id, &op_id));
     let cancel = receive
         .recv_timeout(Duration::from_secs(2))
         .expect("provider cancel frame");
@@ -590,8 +685,8 @@ fn exec_manager_cancel_maps_to_real_child_termination_and_history() {
     assert_eq!(result.exit_code, Some(130));
     assert!(result.aborted);
     let settled = manager
-        .operation_for_agent("agent-real-cancel", "operation-real-cancel")
+        .operation_for_agent(&agent_id, &op_id)
         .expect("settled cancelled operation");
     assert_eq!(settled.status, GatewayLocalExecOperationStatus::Cancelled);
-    assert_eq!(manager.operation_history_for_agent("agent-real-cancel").len(), 1);
+    assert_eq!(manager.operation_history_for_agent(&agent_id).len(), 1);
 }

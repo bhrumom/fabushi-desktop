@@ -22,15 +22,15 @@ pub fn format_channel_address_value(address: &Value) -> Option<String> {
 }
 
 fn channel_platform_display_name(address: &Value) -> String {
-    let platform = address
-        .get("platform")
-        .and_then(Value::as_str)
-        .unwrap_or_default();
-    match platform {
-        "slack" => "Slack".to_string(),
-        "discord" => "Discord".to_string(),
-        other => other.to_string(),
-    }
+    let platform = if let Some(raw) = address.as_str() {
+        channel_platform(raw).unwrap_or_default()
+    } else {
+        address
+            .get("platform")
+            .and_then(Value::as_str)
+            .unwrap_or_default()
+    };
+    channel_platform_name(platform).to_string()
 }
 
 pub fn distinct_inbound_channel_addresses(envelopes: &[Value]) -> Vec<String> {
@@ -124,6 +124,12 @@ pub fn build_channel_inbound_wake_prompt(envelopes: &[Value]) -> String {
 }
 
 pub fn build_channel_outbound_message(message: &Value) -> Option<ChannelOutboundMessage> {
+    let operation_id = message
+        .get("deliveryOperationId")
+        .and_then(Value::as_str)
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+        .map(ToOwned::to_owned);
     match message.get("type").and_then(Value::as_str)? {
         "text" => {
             let content = message.get("content").and_then(Value::as_str).unwrap_or_default();
@@ -142,10 +148,12 @@ pub fn build_channel_outbound_message(message: &Value) -> Option<ChannelOutbound
                 return Some(ChannelOutboundMessage::Attachment {
                     url: url.to_string(),
                     caption: (!content.is_empty()).then(|| content.to_string()),
+                    operation_id,
                 });
             }
             (!content.is_empty()).then(|| ChannelOutboundMessage::Text {
                 text: content.to_string(),
+                operation_id,
             })
         }
         "attachment" => {
@@ -158,10 +166,12 @@ pub fn build_channel_outbound_message(message: &Value) -> Option<ChannelOutbound
                 return Some(ChannelOutboundMessage::Attachment {
                     url: url.to_string(),
                     caption: alt.map(ToOwned::to_owned),
+                    operation_id,
                 });
             }
             alt.map(|text| ChannelOutboundMessage::Text {
                 text: text.to_string(),
+                operation_id,
             })
         }
         _ => None,

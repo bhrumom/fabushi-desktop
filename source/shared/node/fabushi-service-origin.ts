@@ -18,4 +18,3 @@ export function normalizeFabushiApiBaseUrl(raw: string | undefined): string {
   }
   return loopback ? url.toString().replace(/\/+$/, "") : url.origin;
 }
-

@@ -78,6 +78,68 @@ fn shipping_production_extension_owner_remains_send_sync() {
     assert_send_sync::<ProductionInferenceExtension>();
 }
 
+#[test]
+fn production_host_owns_the_canonical_plugin_capability_catalog() {
+    for needle in [
+        "pub plugin_capability_catalog: Arc<PluginCapabilityCatalog>",
+        "let plugin_capability_catalog = Arc::new(PluginCapabilityCatalog::new());",
+        "register_bundled_channel_capabilities(&plugin_capability_catalog)?;",
+        "plugin_capability_catalog,",
+    ] {
+        assert!(
+            PRODUCTION_OWNER.contains(needle),
+            "ProductionHostExtensions must own the plugin capability catalog: {needle}"
+        );
+    }
+    assert!(
+        PRODUCTION_OWNER.contains("pub fn register_channel_delivery_provider("),
+        "provider registration must be owned by ProductionHostExtensions"
+    );
+    assert!(
+        PRODUCTION_OWNER.contains("if self.plugin_capability_catalog.get_channel(channel_id).is_none()"),
+        "provider registration must reject channels absent from the capability catalog"
+    );
+}
+
+#[test]
+fn production_host_owns_the_channel_delivery_boundary_consumed_by_gateway() {
+    for needle in [
+        "pub channel_delivery: HostChannelDelivery",
+        "channel_delivery_router: ChannelDeliveryRouter",
+        "let channel_delivery_router = ChannelDeliveryRouter::new();",
+        "let channel_delivery = HostChannelDelivery::new(Arc::new(channel_delivery_router.clone()));",
+        "channel_delivery,",
+        "channel_delivery_router,",
+    ] {
+        assert!(
+            PRODUCTION_OWNER.contains(needle),
+            "ProductionHostExtensions must own channel delivery: {needle}"
+        );
+    }
+    assert!(
+        SHIPPING_HOST.contains("channel_delivery: production_extensions.channel_delivery.clone()"),
+        "Gateway must consume the canonical ProductionHostExtensions channel delivery"
+    );
+    for needle in [
+        "pub fn replace_channel_delivery_provider(",
+        "pub fn unregister_channel_delivery_provider(",
+        "pub fn revoke_bundled_channel(",
+    ] {
+        assert!(
+            PRODUCTION_OWNER.contains(needle),
+            "provider lifecycle operation must be owned by ProductionHostExtensions: {needle}"
+        );
+    }
+    assert!(
+        PRODUCTION_OWNER.contains("fn register_bundled_channel_capabilities("),
+        "production startup must own bundled channel capability discovery"
+    );
+    assert!(
+        PRODUCTION_OWNER.contains("PluginRegistrationMode::Capabilities"),
+        "bundled startup discovery must remain capability-only"
+    );
+}
+
 
 #[test]
 fn browser_ua_and_wallpaper_have_one_production_lifecycle_owner() {

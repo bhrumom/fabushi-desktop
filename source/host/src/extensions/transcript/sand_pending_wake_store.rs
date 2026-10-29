@@ -13,6 +13,7 @@ pub enum PendingWakeKind {
     CloudAgent,
     Subagent,
     Shell,
+    ChannelDelivery,
 }
 
 impl PendingWakeKind {
@@ -21,6 +22,7 @@ impl PendingWakeKind {
             "cloud-agent" => Some(Self::CloudAgent),
             "subagent" => Some(Self::Subagent),
             "shell" => Some(Self::Shell),
+            "channel-delivery" => Some(Self::ChannelDelivery),
             _ => None,
         }
     }
@@ -55,6 +57,12 @@ pub struct DurablePendingWakeMarker {
     pub subagent_type: Option<String>,
     #[serde(skip_serializing_if = "is_false")]
     pub interrupted_by_recreate: bool,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub delivery_operation_id: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub address_token: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub failure_reason: Option<String>,
 }
 
 fn is_false(value: &bool) -> bool {
@@ -116,6 +124,21 @@ pub fn coerce_marker(entry: &Value) -> Option<DurablePendingWakeMarker> {
             .get("interruptedByRecreate")
             .and_then(Value::as_bool)
             == Some(true),
+        delivery_operation_id: object
+            .get("deliveryOperationId")
+            .and_then(Value::as_str)
+            .filter(|value| !value.is_empty())
+            .map(ToOwned::to_owned),
+        address_token: object
+            .get("addressToken")
+            .and_then(Value::as_str)
+            .filter(|value| !value.is_empty())
+            .map(ToOwned::to_owned),
+        failure_reason: object
+            .get("failureReason")
+            .and_then(Value::as_str)
+            .filter(|value| !value.is_empty())
+            .map(ToOwned::to_owned),
     })
 }
 
