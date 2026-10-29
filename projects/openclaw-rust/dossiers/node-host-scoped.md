@@ -1504,3 +1504,28 @@ sources map to the existing Session Turns Controller storage, query, wait, and
 session-admission owners; they do not create a second registry, wait authority,
 or session reader. Rust implementation, wiring, runtime execution, and
 acceptance remain unverified.
+
+## 139. Session controller message injection, join authority, and delivery custody (2026-10-29)
+
+The locked `session-controller.backend-contracts.ts`,
+`session-controller.message-injection-backend.ts`,
+`session-controller.message-injection-failure.ts`,
+`session-controller.message-injection.ts`, and
+`session-controller.message-join.ts` were read in full. Backend contracts
+separate captured execution identity, requester/tool authority, transcript
+commit, source delivery mode, image/media support, pending-question custody,
+and V1/V2 compatibility. Injection captures the exact physical backend
+attachment, rejects stale/replaced/non-running owners, composes fresh policy
+preparation at the final sink, distinguishes acceptance from transcript
+commitment, shares only idempotent receipts, records participants once, and
+retains indeterminate outcomes without authorizing cancellation or replay.
+Failure classification preserves authority refusals, unsupported sinks,
+policy mismatches, target loss, and unconfirmed commitment as distinct
+outcomes. Join preparation verifies requester provenance and the incumbent
+route, supports only explicitly compatible collaborative steering, preserves
+fallback-route identity, and returns valid input to follow-up custody when the
+captured owner ends. These sources map to the existing Session Turns
+Controller backend, message-injection, join, tool-authority, and delivery
+owners; they do not create a second execution sink, permission authority, or
+transcript commitment path. Rust implementation, wiring, runtime execution,
+and acceptance remain unverified.
