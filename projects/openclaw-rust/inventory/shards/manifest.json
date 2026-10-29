@@ -71,12 +71,12 @@
       "uncompressed_sha256": "315291cd412154feda67f976edbe9e12fb9a1ffb6158d18a370a58c16411905e"
     },
     {
-      "compressed_sha256": "0b1a2e33c846c509c2ea2a661dd9ab8b8af56f893c8b68c29f6f72d3de3ef9bd",
+      "compressed_sha256": "5de40e2f8c9c2df569f97831a36891f7ca4a9520cc322e9194a18c8e2e74cd84",
       "count": 1024,
       "first_path": "extensions/crabbox/src/crabbox-worker-machine-options.ts",
       "last_path": "extensions/discord/test/discord-api-types-payloads-v10-runtime.ts",
       "path": "projects/openclaw-rust/inventory/shards/part-0008.jsonl.gz",
-      "uncompressed_sha256": "d89efcb348d5546b80699d4da3703fc5ab0db9d1135a4b3fe68e5e2621679cdc"
+      "uncompressed_sha256": "287b9d28a40600e817ac5d3d7c0cc20ca7e7ebbfbb97ad0b109bd68da6e26414"
     },
     {
       "compressed_sha256": "1a84dc82f0a53d08bf34cdfbcb79e028382d0f2e50a5c493289933afcd32aac9",
