@@ -63,12 +63,12 @@
       "uncompressed_sha256": "1b4b99fc582fa6fcfdd007eb324a4bda11850bc38f9ff3acd10a78413b34e0eb"
     },
     {
-      "compressed_sha256": "ff57b63332ae572ed6df17d008ef37144c3a275b543553abf8b8e7109e896dbf",
+      "compressed_sha256": "b3ac5a8824d3a873c2f7349b8c2cd5047961d1fb7c92c951f65a893096f5ea2d",
       "count": 1024,
       "first_path": "extensions/codex/src/app-server/dynamic-tool-availability.test.ts",
       "last_path": "extensions/crabbox/src/crabbox-worker-lifetime.ts",
       "path": "projects/openclaw-rust/inventory/shards/part-0007.jsonl.gz",
-      "uncompressed_sha256": "47a5e996ca0c43ca629cbe2207b8263c8f0f8f89fe9a6813741f7bd23a85af24"
+      "uncompressed_sha256": "15d62866a18c96d55e1d378ba50d8009438cb8330c57f44d981b3486d21605bc"
     },
     {
       "compressed_sha256": "2feea8a06ad4deab9c2f552cf12d412a0cce58bccb37c56e1db6a267674dc046",

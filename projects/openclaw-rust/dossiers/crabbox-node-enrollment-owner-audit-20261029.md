@@ -142,6 +142,33 @@ doctor-only state migration, and runtime-store profile discovery. These facts
 support plugin-lifecycle and worker-provider owner analysis; they do not prove
 Fabushi plugin registration, sandbox execution, or release acceptance.
 
+The managed-artifact and desktop-bridge chain was then re-read and added to
+the locked source ledger:
+
+| Path | Blob | Lines | Disposition |
+| --- | --- | ---: | --- |
+| `crabbox-managed-binary.ts` | `ac6297fbaaaf821fd1f2f4c9919f36732829c6d8` | 442 | owner-audit |
+| `crabbox-managed-binary.test.ts` | `384ec9d5792f532401ade5e2ade5d61ceccedcc3` | 629 | test-oracle-replaced |
+| `crabbox-worker-bootstrap-download.test.ts` | `b0b1ebab9cf49992c1221b559b636809c02d5fca` | 622 | test-oracle-replaced |
+| `crabbox-worker-desktop-macos.ts` | `1a049d4ec64d0843f0420ade4135cff1525a4fa4` | 160 | owner-audit |
+| `crabbox-worker-desktop-macos.test.ts` | `cf42b6d056f1ecc0fc91b370a891eadfa82da18f` | 257 | test-oracle-replaced |
+| `crabbox-worker-desktop-windows.ts` | `c0146aad36bbe2af0c7ea22ed7744bacbcade9ff` | 419 | owner-audit |
+| `crabbox-worker-desktop-windows.test.ts` | `1f873e3fdb31140177e84a23e8ee0eb02408f128` | 440 | test-oracle-replaced |
+
+The managed-binary contract uses a fixed minimum release, probes configured
+and managed candidates, downloads only from an HTTPS GitHub allowlist, enforces
+idle/total deadlines and byte limits, verifies the published checksum, rejects
+unsafe archive entries, probes the staged executable, publishes under a lock,
+and preserves a damaged prior installation. Shared acquisition is reference
+counted so only the last waiter cancels the install. The macOS bridge requires
+the inspected non-root GUI account, console ownership, launchctl GUI session,
+signed Developer ID app identity, lease-scoped state and owned browser/CDP
+processes. The Windows bridge binds the active SID/session, launcher service,
+ACLs, loopback-only authenticated VNC, browser identity and node process
+identity, with bounded cancellation and outcome-unknown handling. These are
+source contracts only; no real provider, device, package or platform
+acceptance is claimed.
+
 These tests prove, as source oracles, catalog projection and bounded recovery, setup-secret separation and revocation, preflight security rejection, readiness/timeout/cleanup classification, diagnostics redaction, fixed-lease replay after lost replies, heartbeat scheduling/fencing, platform/desktop limitations, managed binary sharing, warm-image lifecycle/recovery, compare-and-apply conflict behavior, and config-schema rejection. They do not prove Fabushi packaged behavior or real provider/device acceptance.
 
 ## Fabushi owner resolution
