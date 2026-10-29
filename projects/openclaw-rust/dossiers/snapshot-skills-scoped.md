@@ -30,7 +30,7 @@
    - `Producer`: Inbound user messages and turn lifecycle events.
    - `Owner`: `source/host/src/extensions/session/session_turns_controller.rs` (`SessionTurnsController`) and `source/host/src/extensions/shared/async_scope.rs` (`AsyncWorkTracker`).
    - `Storage`: Active turn record journal and atomic task counters.
-   - `Consumer`: Model inference caller and process shutdown barrier.
+   - `Consumer`: The contract fixture `source/host/tests/openclaw_snapshot_skills_contract.rs` only; no production caller currently consumes `SessionTurnsController`. Shipping turn/session state remains owned by the existing session/runner composition and must not be inferred from this helper.
 
 ## 3. Verification & Oracle Evidence
 - **Contract Tests**: `source/host/tests/openclaw_snapshot_skills_contract.rs`:
@@ -77,6 +77,17 @@ The ledger responsibility must still be split so this mutation source is
 mapped to SettingsService while `skill_runtime.rs` retains only the runtime
 library owner; executable verification remains pending for exact-head
 Actions.
+
+## 7a. Session-turn helper wiring boundary (2026-10-29)
+
+Static caller inspection confirms that
+`source/host/src/extensions/session/session_turns_controller.rs::SessionTurnsController`
+has no production call site in `source/host/src` or `source/host/app/src`; its
+only current consumer is the contract fixture. The existing
+`host_runner_composition`/`ProductionSessionWorkers` and persisted
+`session_conversation_state` paths are separate owners for live turn/session
+state. The helper therefore remains a non-wired contract primitive, and the
+ledger no longer describes it as its own producer/consumer runtime chain.
 
 ## 7. Exact skill-library source read closure (2026-10-29)
 

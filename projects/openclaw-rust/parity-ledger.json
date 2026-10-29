@@ -28735,10 +28735,10 @@
       ],
       "id": "OCRM-RESP-SESSION-TURNS-CONTROLLER-001",
       "integration": {
-        "consumer": "source/host/src/extensions/session/session_turns_controller.rs",
+        "consumer": "source/host/tests/openclaw_snapshot_skills_contract.rs (contract fixture only; no production caller)",
         "entrypoint": "source/host/src/extensions/session/session_turns_controller.rs::SessionTurnsController::record_turn_start",
         "owner": "source/host/src/extensions/session/session_turns_controller.rs",
-        "producer": "source/host/src/extensions/session/session_turns_controller.rs"
+        "producer": "locked OpenClaw agent-turn/session lifecycle oracles; no production producer is currently wired"
       },
       "invariants": [
         "Turn indexes must be monotonic and zero-indexed per session"
