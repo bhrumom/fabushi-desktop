@@ -9,9 +9,13 @@ use serde_json::Value;
 use uuid::Uuid;
 
 use super::gateway_reachability::ReachabilityOutcome;
+use super::super::cloud_worker_projection::{
+    CLOUD_WORKERS_STATUS_METHOD, CloudWorkerStatusProjection,
+};
 use super::gateway_request_dispatcher::{
     GatewayDispatchError, GatewayJsonResponse, dispatch_http_json_response,
 };
+use super::gateway_errors::SandGatewayCommandError;
 use super::host_supervisor::GatewayConnection;
 use super::http_transport::parse_gateway_http_base;
 use super::sse_block_decoder::SseBlockDecoder;
@@ -351,6 +355,25 @@ impl CoordinatorGatewayClient {
             self.state.disconnected(*outcome);
         }
         result
+    }
+
+    pub fn dispatch_cloud_worker_status<F>(
+        &mut self,
+        dispatch: F,
+    ) -> Result<CloudWorkerStatusProjection, GatewayDispatchError>
+    where
+        F: FnOnce(&GatewayConnection, &str, Value) -> Result<Value, GatewayDispatchError>,
+    {
+        let value = self.dispatch_command(
+            CLOUD_WORKERS_STATUS_METHOD,
+            Value::Object(Default::default()),
+            dispatch,
+        )?;
+        serde_json::from_value(value).map_err(|error| {
+            GatewayDispatchError::Command(SandGatewayCommandError::new(format!(
+                "cloud worker status projection is invalid: {error}"
+            )))
+        })
     }
 
     pub fn accept_event(

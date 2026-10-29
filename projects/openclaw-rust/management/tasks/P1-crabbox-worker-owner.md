@@ -274,8 +274,10 @@ consumer paths are implemented. Packaged UI/CLI reachability remains open.
 The Coordinator crate now owns the serializable projection contract in
 `source/node-agent-coordinator/src/cloud_worker_projection.rs`, with the exact
 `cloudWorkers.status` method and `cloud-workers.status` event family. It is a
-schema/command boundary only; a live Coordinator dispatch/event publisher and
-renderer/CLI consumer are still open.
+schema/command boundary only. `CoordinatorGatewayClient` now has a dedicated
+status projection call that reuses the existing gateway transport and error
+classification; a live event publisher and renderer/CLI consumer are still
+open.
 
 ## 9. Definition of Done / acceptance criteria
 
