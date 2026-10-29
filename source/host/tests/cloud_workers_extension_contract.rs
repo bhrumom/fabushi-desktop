@@ -4,6 +4,7 @@ use mahayana_host_runtime::extensions::cloud_workers::extension::{
 };
 use mahayana_host_runtime::extensions::cloud_workers::CloudWorkerOwnerStatus;
 use mahayana_host_runtime::extensions::extension_ids_generated::HostExtensionId;
+use mahayana_host_runtime::host_gateway_api::{HostGatewayOwner, host_gateway_owner};
 
 #[test]
 fn cloud_workers_has_a_formal_slot_and_explicit_dependencies() {
@@ -18,4 +19,13 @@ fn cloud_workers_has_a_formal_slot_and_explicit_dependencies() {
 fn production_boundary_starts_disabled_without_provider_prerequisites() {
     let extension = start_cloud_worker_provisioning_extension();
     assert_eq!(extension.status(), CloudWorkerOwnerStatus::Disabled);
+}
+
+#[test]
+fn coordinator_gateway_registry_routes_only_the_read_projection() {
+    assert_eq!(
+        host_gateway_owner("cloudWorkers.status"),
+        Some(HostGatewayOwner::CloudWorkers)
+    );
+    assert_eq!(host_gateway_owner("cloudWorkers.admit"), None);
 }

@@ -459,6 +459,7 @@ use mahayana_host_runtime::gateway_server::{
 use mahayana_host_runtime::host_gateway_api::{
     CreateAgentNonceLedger, sanitize_create_agent_args,
 };
+use mahayana_host_runtime::extensions::cloud_workers::extension::CloudWorkerProvisioningExtension;
 use mahayana_host_runtime::sand_host::{
     BOX_READY_REPORT_ATTEMPTS, BOX_READY_REPORT_RETRY_MS, BOX_READY_STAGE_MARKER_PATH,
     box_ready_duration_ms, compute_host_health, should_report_box_ready,
@@ -1121,6 +1122,7 @@ struct UnifiedGatewayApi {
     telemetry_api: HostTelemetryApi,
     production_action_auditor: ActionAuditExtension,
     cloud_agents: Arc<SandCloudAgentManager>,
+    cloud_workers: CloudWorkerProvisioningExtension,
     cloud_agent_watches: Arc<RunnerCloudAgentWatches>,
     background_shell_watches: Arc<RunnerBackgroundShellWatches>,
     secrets: Arc<HostSecretsExtension>,
@@ -10899,6 +10901,18 @@ impl GatewayApi for UnifiedGatewayApi {
             let handoff = self.transcript_manager.box_handoff(agent_id);
             return Ok(project_forever_box_status(&status, handoff.as_ref()));
         }
+        if method == "cloudWorkers.status" {
+            let status = match self.cloud_workers.status() {
+                mahayana_host_runtime::extensions::cloud_workers::CloudWorkerOwnerStatus::Disabled => "disabled",
+                mahayana_host_runtime::extensions::cloud_workers::CloudWorkerOwnerStatus::Enabled => "enabled",
+            };
+            return Ok(serde_json::json!({
+                "owner": "cloud-workers",
+                "status": status,
+                "providerReady": false,
+                "productionMutation": false,
+            }));
+        }
         if method == "ensureForeverBox" {
             let agent_id = required_box_agent_id(method, &args)?;
             let status = self
@@ -13906,6 +13920,7 @@ fn main() {
             telemetry_api: host_telemetry.api(),
             production_action_auditor: production_extensions.action_audit.clone(),
             cloud_agents: production_extensions.cloud_agents.service(),
+            cloud_workers: production_extensions.cloud_workers.clone(),
             cloud_agent_watches: Arc::clone(&cloud_agent_watches),
             background_shell_watches: Arc::clone(&background_shell_watches),
             secrets: Arc::clone(&secrets_extension),
