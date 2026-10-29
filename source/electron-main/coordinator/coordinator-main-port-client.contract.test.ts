@@ -17,10 +17,33 @@ test("a request post failure settles the pending call and closes the main-data p
     },
   });
 
+  client.handleMessage({ kind: "lifecycle", phase: "ready", protocolVersion: 1 });
   await assert.rejects(client.legs.setHostSettings({ settings: {} }), /post-failed/);
   assert.equal(closed, 1);
   assert.equal((await client.settled).outcome, "post-failed");
   assert.equal(frames.length, 2);
+});
+
+test("a request waits for main-data ready before it is posted", async () => {
+  const frames: unknown[] = [];
+  const client = createCoordinatorMainPortClient({
+    post(frame) { frames.push(frame); },
+    close() {},
+  });
+
+  const pending = client.legs.setHostSettings({ settings: {} });
+  assert.equal(frames.length, 1);
+  client.handleMessage({ kind: "lifecycle", phase: "ready", protocolVersion: 1 });
+  assert.equal(frames.length, 2);
+  client.handleMessage({ kind: "reply", requestId: "m-1", outcome: { status: "ok", value: { accepted: true } } });
+  assert.deepEqual(await pending, { accepted: true });
+});
+
+test("a queued request is rejected when the main-data port settles before ready", async () => {
+  const client = createCoordinatorMainPortClient({ post() {}, close() {} });
+  const pending = client.legs.setHostSettings({ settings: {} });
+  client.handlePortClosed();
+  await assert.rejects(pending, /port-closed/);
 });
 
 test("a hello post failure does not replace the current main-data generation", async () => {
