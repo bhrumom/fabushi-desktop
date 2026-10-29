@@ -135,3 +135,22 @@ facades share one process-lifetime pending-turn state instead of creating
 parallel registries. This is owner-lifetime integration only; no inbound
 channel dispatcher, outbound provider, or transcript publication path has been
 invented, so production wiring remains pending.
+
+## 8. Poll-intent oracle mapping correction (2026-10-29)
+
+The locked source reference attached to
+`OCRM-RESP-SESSION-ROUTING-DISPATCH-001` was read directly from the pinned
+commit/tree: `src/poll-params.test.ts`, blob
+`bf7918df646d0e185f97fc3551a35c06c6cdeafc`, 33 lines. It tests only
+`hasPollCreationParams`: schema-padded duration/multi defaults must not create
+poll intent, while real question/options fields must do so; snake-case duration
+and public metadata alone remain non-intent.
+
+This oracle does not test session routing keys, conversation cards, project
+scope, or realtime transcription dispatch. The current Rust
+`source/host/src/extensions/session/session_conversation_state.rs` owns
+conversation/transcript state and pending-turn correlation, but the current
+repository search found no Rust poll-intent owner or consumer for this source
+contract. The ledger row is therefore a mapping mismatch that remains pending;
+the 33-line read is retained as source evidence but must not be counted as
+Session Routing equivalence or acceptance. No status flag was closed.
