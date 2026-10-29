@@ -6088,6 +6088,15 @@
             "start_line": 1
           },
           "symbol": "device token public lifecycle and last-use recording"
+        },
+        {
+          "blob_sha": "0d7f4087fa156fa0982d996ded64408d7619fd07",
+          "path": "src/infra/pairing-token.test.ts",
+          "range": {
+            "end_line": 47,
+            "start_line": 1
+          },
+          "symbol": "pairing token entropy, encoding and constant-time verification oracle"
         }
       ],
       "status": {

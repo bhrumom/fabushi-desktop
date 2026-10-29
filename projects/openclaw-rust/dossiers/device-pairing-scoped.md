@@ -4,7 +4,7 @@
 
 - **Unit ID:** `OCRM-UNIT-DEVICE-PAIRING-001`
 - **Module ID:** `OCRM-M03` (Identity, Credentials, Pairing and Account Scope)
-- **Status:** **Scoped candidate admitted into Parity Ledger; 34 audited source files mapped to reviewed; 6 responsibilities registered with implementation/wiring pending; production wiring blocked by OCRM-BLOCK-GW-SCOPED-AUTHORITY-001; acceptance pending**
+- **Status:** **Scoped candidate admitted into Parity Ledger; 35 audited source files mapped to reviewed; 6 responsibilities registered with implementation/wiring pending; production wiring blocked by OCRM-BLOCK-GW-SCOPED-AUTHORITY-001; acceptance pending**
 - **Requirements Traced:** `OCRM-R03`, `OCRM-R04`, `OCRM-AC03`, `OCRM-AC11`
 - **Reviewer:** `xuyao@ombhrum.com`
 - **Upstream Baseline:** `openclaw/openclaw@ad8d12f126d29b0db204187adf5092db80294e70` (tree `04ccce62f1d74dc8e0c88290ae8ded027b7b0f16`)
@@ -52,6 +52,12 @@ state and record last use through the existing mutation owner. These behaviors
 must remain under the existing pairing/enrollment owner, not under CloudWorker
 or Gateway transport code.
 
+The low-level pairing-token oracle additionally requires 32 random bytes,
+base64url encoding, constant-time equality semantics and rejection of blank
+tokens even when both inputs are blank. This is a cryptographic source oracle;
+it is not evidence that the shipping Rust path has passed its executable
+security gate.
+
 ---
 
 ## 3. Blockers & Frontiers
@@ -64,7 +70,7 @@ or Gateway transport code.
 
 ---
 
-## 4. Itemized Audited Source Files (34 Files)
+## 4. Itemized Audited Source Files (35 Files)
 
 | Upstream Source Path | Blob SHA | Lines | Language | Read Status | Disposition | Target Fabushi Owner |
 |---|---|---|---|---|---|---|
@@ -102,3 +108,4 @@ or Gateway transport code.
 | `src/infra/device-pairing-token-policy.ts` | `11044c4dfd3e1a1e4146768b85e217f877c44109` | 142 | TypeScript | read-complete | reuse-and-extend-existing-Rust | `source/host/src/network_enrollment_owner.rs` |
 | `src/infra/device-pairing-tokens.kernel.ts` | `5c61ce1a12a816dd5c147a91f66a0f1f837051d4` | 248 | TypeScript | read-complete | reuse-and-extend-existing-Rust | `source/host/src/network_enrollment_owner.rs` |
 | `src/infra/device-pairing-tokens.ts` | `5e2f2662f1401e0f1f40f419a95557b458875027` | 174 | TypeScript | read-complete | reuse-and-extend-existing-Rust | `source/host/src/network_enrollment_owner.rs` |
+| `src/infra/pairing-token.test.ts` | `0d7f4087fa156fa0982d996ded64408d7619fd07` | 47 | TypeScript | read-complete | test-conformance-oracle | `source/host/tests/network_enrollment_owner_contract.rs` |

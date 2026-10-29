@@ -327,12 +327,12 @@
       "uncompressed_sha256": "d8a2d07eedfbc2552ace9eeae8dc99fa137fe23e23052faa12c05c3b8249d065"
     },
     {
-      "compressed_sha256": "cbfec602ca6b45d6c333dd1aa879219e52c85992134d3a8705ad3dbea74f3c8a",
+      "compressed_sha256": "073f8864d3095daffefdbcefdbf0046dc9f8f71e6dbffe8da8d467f9f253444a",
       "count": 1024,
       "first_path": "src/infra/heartbeat-runner.test-harness.ts",
       "last_path": "src/infra/sqlite-native-observer.test.ts",
       "path": "projects/openclaw-rust/inventory/shards/part-0040.jsonl.gz",
-      "uncompressed_sha256": "b3c47d31fe22f4b79a88929b690bcdeebb53ea7e2c0267ffd54bda41b3d9ccd3"
+      "uncompressed_sha256": "8316bcb93c56e755c93a7da4149c62e1fbd709cb317b8437c2ad7b055e6d83f8"
     },
     {
       "compressed_sha256": "ce23396b0163c499d20c9c90d3d3423dd7b2839d1a0b6653c63ee8c765eaf8f6",

@@ -12,6 +12,7 @@ from pathlib import Path
 ROOT = Path("projects/openclaw-rust")
 SHARDS = ROOT / "inventory" / "shards"
 READS = {
+    "src/infra/pairing-token.test.ts": (47, "OCRM-RESP-DEVICE-PAIRING-TOKENS-LIFECYCLE-001", "OCRM-M07", "test-oracle-replaced"),
     "src/infra/device-pairing-migration.ts": (145, "OCRM-RESP-DEVICE-PAIRING-STORE-PERSISTENCE-001", "OCRM-M07", "owner-audit"),
     "src/infra/device-pairing-token-policy.ts": (142, "OCRM-RESP-DEVICE-PAIRING-TOKENS-LIFECYCLE-001", "OCRM-M07", "owner-audit"),
     "src/infra/device-pairing-tokens.kernel.ts": (248, "OCRM-RESP-DEVICE-PAIRING-TOKENS-LIFECYCLE-001", "OCRM-M07", "owner-audit"),
