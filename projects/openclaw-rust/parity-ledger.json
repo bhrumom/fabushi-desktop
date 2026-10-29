@@ -10,10 +10,10 @@
     "ui_accepted": false
   },
   "file_coverage": {
-    "mapped_paths": 1095,
+    "mapped_paths": 1099,
     "omitted_known": 0,
     "tracked_paths": 58750,
-    "unclassified_paths": 57655
+    "unclassified_paths": 57651
   },
   "inventory_authority": {
     "manifest_source": "GitHub Actions immutable artifact candidate",
@@ -145,6 +145,155 @@
         "CloudWorkerCatalogCache",
         "CloudWorkerBinaryIdentity",
         "CloudWorkerMachineRequirement"
+      ],
+      "unit_id": "OCRM-UNIT-INFRA-001"
+    },
+    {
+      "adr_refs": [
+        "projects/openclaw-rust/decisions/2026-10-29-crabbox-worker-owner-boundary.md"
+      ],
+      "behavior": "Crabbox fixed-lease lifecycle, heartbeat renewal, bounded provisioning commands, replay fencing and cleanup-indeterminate handling.",
+      "blocker_ids": [
+        "OCRM-BLOCK-P1-PROVIDER-SIDE-EFFECTS-001",
+        "OCRM-BLOCK-P1-CONSUMER-WIRING-001"
+      ],
+      "capability_ids": [
+        "cloud_workers.lease_lifecycle"
+      ],
+      "dependencies": [
+        "mahayana_host_runtime::extensions::cloud_workers::lease",
+        "mahayana_host_runtime::extensions::cloud_workers::owner",
+        "mahayana_host_runtime::runner::process_tree"
+      ],
+      "evidence_refs": [
+        "source/host/tests/cloud_workers_extension_contract.rs",
+        "projects/openclaw-rust/management/tasks/P1-crabbox-worker-owner.md",
+        "projects/openclaw-rust/dossiers/crabbox-node-enrollment-owner-audit-20261029.md"
+      ],
+      "existing_owner_candidates": [
+        {
+          "path": "source/host/src/extensions/cloud_workers/owner.rs",
+          "reason": "Single native Rust owner for lease records, epoch/generation fencing and mutation settlement"
+        },
+        {
+          "path": "source/host/src/runner/process_tree",
+          "reason": "Existing bounded child cleanup primitive only; it does not own lease state"
+        }
+      ],
+      "id": "OCRM-RESP-INFRA-WORKER-CRABBOX-LIFECYCLE-001",
+      "integration": {
+        "consumer": "existing Runner, Computer and sandbox adapters (not yet wired)",
+        "entrypoint": "source/host/src/extensions/cloud_workers/owner.rs::CloudWorkerProvisioningOwner::settle_lease",
+        "owner": "source/host/src/extensions/cloud_workers/owner.rs",
+        "producer": "typed provider/process adapter (not yet wired)"
+      },
+      "invariants": [
+        "Lease mutations validate lease ID, owner epoch, generation, runtime identity and non-empty replay key before settlement",
+        "Only completed mutations advance lifecycle; submitted, failed and cancelled outcomes cannot silently change state",
+        "Outcome-unknown results remain visible and cannot be retried as a successful non-replayable mutation",
+        "Process cleanup remains bounded and ownership-proven; broad process-name termination is forbidden"
+      ],
+      "migration_rollback": "Disable the capability gate, retain unsettled lease records for explicit reconciliation, and do not release ambiguous workers blindly",
+      "oracle_ids": [
+        "OCRM-P1-F03-O01"
+      ],
+      "owner_decision": "Keep lease/lifecycle truth in CloudWorkerProvisioningOwner; reuse process-tree cleanup only as a narrow dependency",
+      "postconditions": [
+        "A typed lease can be admitted and settled through fenced lifecycle transitions without provider or process side effects"
+      ],
+      "preconditions": [
+        "Account/device scope, provider/profile/runtime identity and replay key are present",
+        "The owner is explicitly enabled by configuration"
+      ],
+      "required_evidence_dimensions": [
+        "unit",
+        "security-negative-test",
+        "recovery"
+      ],
+      "required_gate_ids": [
+        "OCRM-G04-rust-contract",
+        "OCRM-G05-frozen-oracle"
+      ],
+      "requirement_ids": [
+        "OCRM-P1-F03",
+        "OCRM-P1-F08",
+        "OCRM-P1-AC02",
+        "OCRM-P1-AC03"
+      ],
+      "responsibility_kind": "business-runtime",
+      "reviewer": "xuyao@ombhrum.com",
+      "risk": "Critical; stale or replayed lifecycle mutations could leak worker access or cause unsafe cleanup",
+      "selected_owner": "source/host/src/extensions/cloud_workers/owner.rs",
+      "source_refs": [
+        {
+          "blob_sha": "a0ef59bbd42ef07b88d3bfb5a5a73fdc507b1b11",
+          "path": "extensions/crabbox/src/crabbox-worker-provider.ts",
+          "range": {
+            "end_line": 692,
+            "start_line": 1
+          },
+          "symbol": "createCrabboxWorkerProvider"
+        },
+        {
+          "blob_sha": "f9f39d8ac6df3248532ef6dede7b728aeba6c0f9",
+          "path": "extensions/crabbox/src/crabbox-worker-heartbeat.ts",
+          "range": {
+            "end_line": 200,
+            "start_line": 1
+          },
+          "symbol": "renewCrabboxWorkerHeartbeat"
+        },
+        {
+          "blob_sha": "c548faa75d776e6d5b7c3b6ed88a2ba4eb03f808",
+          "path": "extensions/crabbox/src/crabbox-worker-lifetime.ts",
+          "range": {
+            "end_line": 233,
+            "start_line": 1
+          },
+          "symbol": "CrabboxWorkerLifetime"
+        },
+        {
+          "blob_sha": "36a37ad3f476e4baa7ace04e72202942a6c4481d",
+          "path": "extensions/crabbox/src/crabbox-worker-command.ts",
+          "range": {
+            "end_line": 317,
+            "start_line": 1
+          },
+          "symbol": "CrabboxWorkerCommand"
+        },
+        {
+          "blob_sha": "f13913eee2587a64b23c85a2213825f2c7111a26",
+          "path": "extensions/crabbox/src/crabbox-worker-provision-commands.ts",
+          "range": {
+            "end_line": 370,
+            "start_line": 1
+          },
+          "symbol": "provisionCrabboxWorker"
+        }
+      ],
+      "status": {
+        "acceptance": "pending",
+        "implementation": "implementing",
+        "mapping": "mapped",
+        "read": "read-complete",
+        "verification": "not-run",
+        "wiring": "not-wired"
+      },
+      "target": {
+        "language": "Rust",
+        "path": "source/host/src/extensions/cloud_workers/owner.rs",
+        "symbol": "CloudWorkerProvisioningOwner::admit / settle_lease / leased_capability"
+      },
+      "tests": [
+        "source/host/src/extensions/cloud_workers/lease.rs::tests::only_completed_results_advance_the_lifecycle",
+        "source/host/src/extensions/cloud_workers/lease.rs::tests::ambiguous_results_enter_recovery_state",
+        "source/host/tests/cloud_workers_extension_contract.rs::owner_exposes_only_a_fenced_enrolled_consumer_capability"
+      ],
+      "typed_contracts": [
+        "CloudWorkerLease",
+        "CloudWorkerLeaseMutation",
+        "CloudWorkerLeasedCapability",
+        "CloudWorkerProvisioningOwner"
       ],
       "unit_id": "OCRM-UNIT-INFRA-001"
     },
