@@ -28930,6 +28930,42 @@
             "start_line": 1
           },
           "symbol": "subagent admission and follow-up custody oracle"
+        },
+        {
+          "blob_sha": "1075e4cbfb91c0086361af2b45ee0bfd7703e40d",
+          "path": "src/gateway/agent-turn/agent-run-dispatch.ts",
+          "range": {
+            "end_line": 540,
+            "start_line": 1
+          },
+          "symbol": "dispatchAgentRunFromGateway"
+        },
+        {
+          "blob_sha": "e60380357cf976ed5ad7921c615572f6eb4f8be7",
+          "path": "src/gateway/agent-turn/agent-run-dispatch.owner.test.ts",
+          "range": {
+            "end_line": 642,
+            "start_line": 1
+          },
+          "symbol": "Gateway dispatch run ownership oracle"
+        },
+        {
+          "blob_sha": "ecdbdd42f6bd65fb7c2fec6028075be19130643a",
+          "path": "src/gateway/agent-turn/agent-run-dispatch.incognito.test.ts",
+          "range": {
+            "end_line": 154,
+            "start_line": 1
+          },
+          "symbol": "Gateway agent diagnostic privacy oracle"
+        },
+        {
+          "blob_sha": "50e2c2a810d653c64e04583f0e2062e1c66804a2",
+          "path": "src/gateway/agent-turn/agent-run-dispatch.test-support.ts",
+          "range": {
+            "end_line": 54,
+            "start_line": 1
+          },
+          "symbol": "tracked dispatch owner fixture"
         }
       ],
       "status": {

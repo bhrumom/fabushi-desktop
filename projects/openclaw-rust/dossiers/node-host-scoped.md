@@ -1076,3 +1076,25 @@ ownership. These are existing Session Turns, transcript, approval, and
 subagent-registry boundaries; no second input store, subagent registry, or
 runtime is introduced. Rust implementation, wiring, and acceptance remain
 unverified.
+
+## 119. Gateway agent dispatch, terminal producer, and replay ownership (2026-10-29)
+
+The locked `agent-run-dispatch.ts`, its owner support fixture, owner test, and
+incognito test were read in full. Dispatch binds the admitted RPC source,
+operational run instance, lifecycle generation, session identity, abort signal,
+and delegated continuation before invoking the existing agent command owner.
+It keeps media finalization and terminal-producer completion in one settlement
+boundary, completes pending user-turn processing before replay publication,
+projects canonical terminal outcomes separately from wire status, preserves
+request identity while fencing stale replay, and cleans the exact owner before
+emitting the final response. Cron creator authority and skill workspace scopes
+are carried only through their existing capabilities; follow-up settlement
+requires the exact retained owner and successor reply. The owner oracle covers
+startup/producer failures, withdrawn-input confirmation, registration/session/
+instance replacement, settlement-before-replay ordering, follow-up custody,
+yield successor ownership, and canonical terminal classification. The
+incognito oracle proves live caller payloads remain available while runtime,
+delivery, and cached replay diagnostics omit private output. These sources map
+to the existing Session Turns Controller, transcript, terminal-producer, and
+agent command owners; no second dispatch loop, replay store, or transport is
+introduced. Rust implementation, wiring, and acceptance remain unverified.
