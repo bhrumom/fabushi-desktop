@@ -656,3 +656,18 @@ The locked `native-worker-entrypoints.test-support.ts`, `native-worker.integrati
 The locked `launch-descriptor.prompt-context.test.ts`, `native-worker.test-support.ts`, and `worker-fault-session-target.test-support.ts` were read in full and recorded as `test-oracle-replaced`. The prompt-compatibility fixture pins the historical pre-prompt-context parser by blob hash and verifies the negotiated v4 assignment fields remain rejected by that legacy parser. The native-provider fixture supplies a loopback streaming provider with held-response release, request/error capture, exact tool-call framing, and owned server cleanup.
 
 The fault-session fixture binds a claimed worker turn to the durable session leaf, lifecycle/writer identity, delegated run authority, placement tool surface, abort lifetime, and capability settlement; it releases all owned authority on failure or disposal. These fixtures preserve compatibility, provider-boundary, and session-ownership oracles for existing owners without creating a second runtime or proving Rust packaging, provider acceptance, or Actions execution.
+
+## 95. Node-host manifest availability fence (2026-10-29)
+
+`NodeHostManifest::build` now receives an explicit availability set from the
+future manifest/transport owner. Built-in commands are retained only when that
+set names them; Claude and desktop-stream commands additionally require their
+feature gates, and derived capabilities are emitted only when their command is
+actually advertised. The contract oracle covers both an allowlisted positive
+manifest and an empty availability set, which must produce no commands or
+capabilities.
+
+This is a fail-closed manifest-boundary correction, not a live transport
+implementation. No remote command is newly enabled, no pairing state is used
+as availability evidence, and OCRM-M13 remains pending until a production
+transport owner supplies availability and exact-head/device evidence.

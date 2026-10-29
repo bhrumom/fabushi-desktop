@@ -169,7 +169,15 @@ fn test_ocrm_node_host_computer_command() {
 
 #[test]
 fn test_ocrm_node_host_runtime_manifest() {
-    let manifest = NodeHostManifest::build(true, true, None);
+    let available_commands = [
+        NODE_AGENT_CLI_CLAUDE_RUN_COMMAND,
+        NODE_DESKTOP_STREAM_COMMAND,
+        NODE_SYSTEM_RUN_COMMANDS,
+    ]
+    .into_iter()
+    .map(str::to_string)
+    .collect::<HashSet<_>>();
+    let manifest = NodeHostManifest::build(&available_commands, true, true, None);
     assert!(manifest.advertised_commands.iter().any(|c| c == NODE_AGENT_CLI_CLAUDE_RUN_COMMAND));
     assert!(manifest.advertised_commands.iter().any(|c| c == NODE_DESKTOP_STREAM_COMMAND));
     assert!(manifest.advertised_commands.iter().any(|c| c == NODE_SYSTEM_RUN_COMMANDS));
@@ -177,6 +185,13 @@ fn test_ocrm_node_host_runtime_manifest() {
     // With allowlist filter
     let mut allowlist = HashSet::new();
     allowlist.insert(NODE_SYSTEM_RUN_COMMANDS.to_string());
-    let filtered_manifest = NodeHostManifest::build(true, true, Some(&allowlist));
+    let filtered_manifest = NodeHostManifest::build(&available_commands, true, true, Some(&allowlist));
     assert_eq!(filtered_manifest.advertised_commands, vec![NODE_SYSTEM_RUN_COMMANDS.to_string()]);
+}
+
+#[test]
+fn test_ocrm_node_host_manifest_never_advertises_unavailable_commands() {
+    let manifest = NodeHostManifest::build(&HashSet::new(), true, true, None);
+    assert!(manifest.advertised_commands.is_empty());
+    assert!(manifest.capabilities.is_empty());
 }

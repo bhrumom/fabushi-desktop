@@ -31,6 +31,7 @@ pub struct NodeHostManifest {
 
 impl NodeHostManifest {
     pub fn build(
+        available_commands: &HashSet<String>,
         claude_enabled: bool,
         desktop_streaming_enabled: bool,
         allowlist: Option<&HashSet<String>>,
@@ -44,11 +45,13 @@ impl NodeHostManifest {
             NODE_TERMINAL_UPLOAD_COMMAND.to_string(),
         ];
 
-        if claude_enabled {
+        commands.retain(|command| available_commands.contains(command));
+
+        if claude_enabled && available_commands.contains(NODE_AGENT_CLI_CLAUDE_RUN_COMMAND) {
             commands.push(NODE_AGENT_CLI_CLAUDE_RUN_COMMAND.to_string());
         }
 
-        if desktop_streaming_enabled {
+        if desktop_streaming_enabled && available_commands.contains(NODE_DESKTOP_STREAM_COMMAND) {
             commands.push(NODE_DESKTOP_STREAM_COMMAND.to_string());
         }
 
@@ -56,8 +59,11 @@ impl NodeHostManifest {
             commands.retain(|c| allowed.contains(c));
         }
 
-        let mut capabilities = vec![SYSTEM_RUN_EXECUTION_CONTEXT_CAPABILITY.to_string()];
-        if claude_enabled {
+        let mut capabilities = Vec::new();
+        if commands.iter().any(|command| command == NODE_SYSTEM_RUN_COMMANDS) {
+            capabilities.push(SYSTEM_RUN_EXECUTION_CONTEXT_CAPABILITY.to_string());
+        }
+        if commands.iter().any(|command| command == NODE_AGENT_CLI_CLAUDE_RUN_COMMAND) {
             capabilities.push(NODE_CLAUDE_SKILLS_CAPABILITY.to_string());
         }
 
