@@ -10,10 +10,10 @@
     "ui_accepted": false
   },
   "file_coverage": {
-    "mapped_paths": 1180,
+    "mapped_paths": 1226,
     "omitted_known": 0,
     "tracked_paths": 58750,
-    "unclassified_paths": 57570
+    "unclassified_paths": 57524
   },
   "inventory_authority": {
     "manifest_source": "GitHub Actions immutable artifact candidate",
@@ -24,6 +24,411 @@
   },
   "project_id": "OCRM-001",
   "responsibilities": [
+    {
+      "adr_refs": [],
+      "behavior": "Locked OpenClaw Rust crate dependency metadata and gateway-client/node-host test oracles used to compare the native transport/runtime boundaries.",
+      "blocker_ids": [
+        "OCRM-BLOCK-P0-RUST-EXECUTABLE-ORACLES-001"
+      ],
+      "capability_ids": [
+        "openclaw_rust.dependency_authority"
+      ],
+      "dependencies": [
+        "Cargo dependency resolver",
+        "existing Fabushi gateway/node-host owners"
+      ],
+      "evidence_refs": [
+        "projects/openclaw-rust/dossiers/gateway-client-crate-audit-20261029.md",
+        "projects/openclaw-rust/dossiers/node-host-scoped.md"
+      ],
+      "existing_owner_candidates": [
+        {
+          "path": "source/node-agent-coordinator/src/gateway/gateway_client.rs",
+          "reason": "Existing native gateway transport owner"
+        },
+        {
+          "path": "source/host/src/extensions/node_host",
+          "reason": "Existing native node-host lifecycle owner"
+        }
+      ],
+      "id": "OCRM-RESP-INFRA-RUST-OPENCLAW-CRATES-001",
+      "integration": {
+        "consumer": "Rust gateway/node-host contract tests and dependency review (not executed in this local freeze)",
+        "entrypoint": "crates/Cargo.toml",
+        "owner": "existing Fabushi gateway/node-host owners",
+        "producer": "locked OpenClaw Rust crate sources"
+      },
+      "invariants": [
+        "Cargo metadata and lockfile remain bound to the locked upstream tree",
+        "Gateway and node-host tests remain source oracles, not proof of current Fabushi acceptance",
+        "Dependency or test failure cannot be rewritten as a clean compatibility result"
+      ],
+      "migration_rollback": "Retain lockfile and oracle evidence; reject dependency migration until exact-head Actions checks and owner review complete",
+      "oracle_ids": [
+        "OCRM-RUST-CRATES-ORACLE-001"
+      ],
+      "owner_decision": "Use existing Fabushi gateway/node-host owners and inspect the locked crates as evidence; do not ship an OpenClaw sidecar runtime",
+      "postconditions": [
+        "All read-complete crate metadata and test rows have a bidirectional responsibility link"
+      ],
+      "preconditions": [
+        "Locked crate blobs and recorded ranges are present"
+      ],
+      "required_evidence_dimensions": [
+        "unit",
+        "format",
+        "build-release-operations"
+      ],
+      "required_gate_ids": [
+        "OCRM-G04-rust-contract",
+        "OCRM-G05-frozen-oracle"
+      ],
+      "requirement_ids": [
+        "OCRM-R04",
+        "OCRM-R08",
+        "OCRM-AC04",
+        "OCRM-AC08"
+      ],
+      "responsibility_kind": "dependency-authority",
+      "reviewer": "xuyao@ombhrum.com",
+      "risk": "High; stale dependencies or unexecuted Rust oracles could misstate transport and node-host compatibility",
+      "selected_owner": "source/node-agent-coordinator/src/gateway/gateway_client.rs",
+      "source_refs": [
+        { "blob_sha": "b83d22266ac8aa2f8df2edef68082c789727841d", "path": "crates/.gitignore", "range": { "end_line": 2, "start_line": 1 }, "symbol": "crate ignore policy" },
+        { "blob_sha": "8d8bff95536377b71437bc448929390779496651", "path": "crates/Cargo.lock", "range": { "end_line": 1164, "start_line": 1 }, "symbol": "locked crate dependency graph" },
+        { "blob_sha": "ce57a08af0ab09ac6cce4807a5bdd3bb3c8b64f0", "path": "crates/Cargo.toml", "range": { "end_line": 4, "start_line": 1 }, "symbol": "crate workspace metadata" },
+        { "blob_sha": "8cb256da3f6b3640eef33b9bafd5886872ce9548", "path": "crates/openclaw-gateway-client/Cargo.toml", "range": { "end_line": 24, "start_line": 1 }, "symbol": "gateway client crate metadata" },
+        { "blob_sha": "5de3fba1fb1f70e42854d89a71a66ce6a15db18b", "path": "crates/openclaw-gateway-client/tests/session.rs", "range": { "end_line": 1321, "start_line": 1 }, "symbol": "gateway session oracle" },
+        { "blob_sha": "2b106e077f0d32d7ffc146cbb874b2be5e0ded25", "path": "crates/openclaw-gateway-client/tests/tls_policy.rs", "range": { "end_line": 297, "start_line": 1 }, "symbol": "gateway TLS oracle" },
+        { "blob_sha": "599f33bf335fda83049345c14c5575952d4171af", "path": "crates/openclaw-node-host/tests/node_lifecycle.rs", "range": { "end_line": 185, "start_line": 1 }, "symbol": "node lifecycle oracle" },
+        { "blob_sha": "002ceaa3fcace5fca431c9dff73dd62ec3ac9ef8", "path": "crates/openclaw-node-host/tests/node_session.rs", "range": { "end_line": 1183, "start_line": 1 }, "symbol": "node session oracle" },
+        { "blob_sha": "d1fceeab0e0d7eb2bf6ea864ce60473e8a21f05a", "path": "crates/openclaw-node-host/tests/sidecar_process.rs", "range": { "end_line": 295, "start_line": 1 }, "symbol": "sidecar process oracle" }
+      ],
+      "status": {
+        "acceptance": "pending",
+        "implementation": "implemented",
+        "mapping": "mapped",
+        "read": "read-complete",
+        "verification": "not-run",
+        "wiring": "not-wired"
+      },
+      "target": {
+        "language": "Rust",
+        "path": "source/node-agent-coordinator/src/gateway/gateway_client.rs",
+        "symbol": "native gateway/node-host boundaries"
+      },
+      "tests": [
+        "source/node-agent-coordinator/tests/gateway_https.rs",
+        "source/host/tests/openclaw_node_host_contract.rs"
+      ],
+      "typed_contracts": [
+        "CoordinatorGatewayClient",
+        "NodeHostSessionRegistry"
+      ],
+      "unit_id": "OCRM-UNIT-INFRA-001"
+    },
+    {
+      "adr_refs": [],
+      "behavior": "Pinned worker launch, native runtime transport, inference stream and worker fault/session test oracles for the existing Node Host/Runner owners.",
+      "blocker_ids": [
+        "OCRM-BLOCK-NODE-HOST-EXECUTABLE-ORACLES-001"
+      ],
+      "capability_ids": [
+        "node_host.worker_runtime_oracles"
+      ],
+      "dependencies": [
+        "mahayana_host_runtime::extensions::node_host",
+        "mahayana_host_runtime::runner"
+      ],
+      "evidence_refs": [
+        "projects/openclaw-rust/dossiers/node-host-scoped.md"
+      ],
+      "existing_owner_candidates": [
+        {
+          "path": "source/host/src/extensions/node_host",
+          "reason": "Existing Node Host connection/command/runtime owner"
+        },
+        {
+          "path": "source/host/src/runner",
+          "reason": "Existing Runner process composition owner"
+        }
+      ],
+      "id": "OCRM-RESP-NODE-HOST-WORKER-ORACLES-001",
+      "integration": {
+        "consumer": "Rust Node Host/Runner contract tests (not executed in this local freeze)",
+        "entrypoint": "source/host/src/extensions/node_host",
+        "owner": "existing Node Host and Runner owners",
+        "producer": "locked OpenClaw worker test oracle set"
+      },
+      "invariants": [
+        "Worker launch/runtime/session oracle rows remain bound to existing Node Host and Runner ownership",
+        "Native runtime test fixtures do not create a second production worker runtime",
+        "Unexecuted oracles remain non-accepting evidence"
+      ],
+      "migration_rollback": "Retain oracle rows and keep verification not-run until exact-head Actions checks execute",
+      "oracle_ids": [
+        "OCRM-NODE-HOST-WORKER-ORACLE-001"
+      ],
+      "owner_decision": "Reuse existing Node Host/Runner owners; do not embed the OpenClaw worker test runtime in Fabushi production",
+      "postconditions": [
+        "All read-complete worker oracle rows have a bidirectional responsibility link"
+      ],
+      "preconditions": [
+        "Pinned worker source blobs and ranges are present in canonical inventory"
+      ],
+      "required_evidence_dimensions": [
+        "unit",
+        "format",
+        "recovery"
+      ],
+      "required_gate_ids": [
+        "OCRM-G04-rust-contract",
+        "OCRM-G05-frozen-oracle"
+      ],
+      "requirement_ids": [
+        "OCRM-R08",
+        "OCRM-R13",
+        "OCRM-AC08",
+        "OCRM-AC13"
+      ],
+      "responsibility_kind": "test-oracle",
+      "reviewer": "xuyao@ombhrum.com",
+      "risk": "High; unexecuted worker oracles cannot prove node-host lifecycle or runtime compatibility",
+      "selected_owner": "source/host/src/extensions/node_host",
+      "source_refs": [
+        { "blob_sha": "3a040c3ae4d78f307f52a61d0665d0c74f7cff69", "path": "src/worker/launch-descriptor.prompt-context.test.ts", "range": { "end_line": 32, "start_line": 1 }, "symbol": "launch descriptor prompt oracle" },
+        { "blob_sha": "9956f67f2df3fc62f68ad79bab691b2bc09e6884", "path": "src/worker/launch-descriptor.test-support.ts", "range": { "end_line": 16, "start_line": 1 }, "symbol": "launch descriptor fixture" },
+        { "blob_sha": "71c87ae36fdf5aa415dd8a76e5a6df43e2e67247", "path": "src/worker/native-inference-stream.test.ts", "range": { "end_line": 408, "start_line": 1 }, "symbol": "native inference stream oracle" },
+        { "blob_sha": "5c676d963fd04b70c1b01083fdb222ffaa3f3ca1", "path": "src/worker/native-runtime-transport.test-support.ts", "range": { "end_line": 45, "start_line": 1 }, "symbol": "native transport fixture" },
+        { "blob_sha": "cbb50273f5ac5c83344db04ce682919744bccfdd", "path": "src/worker/native-runtime.test-support.ts", "range": { "end_line": 69, "start_line": 1 }, "symbol": "native runtime fixture" },
+        { "blob_sha": "04850f972760e459f8215bda6c543cb68204c75c", "path": "src/worker/native-runtime.test.ts", "range": { "end_line": 448, "start_line": 1 }, "symbol": "native runtime oracle" },
+        { "blob_sha": "3fbafdd9270081e40e7557396bbf7057a9ef33b2", "path": "src/worker/native-worker-entrypoints.test-support.ts", "range": { "end_line": 5, "start_line": 1 }, "symbol": "worker entrypoint fixture" },
+        { "blob_sha": "2fc9ee806ed2e8f39206ebba8a7757effa1fa037", "path": "src/worker/native-worker.integration.test-support.ts", "range": { "end_line": 11, "start_line": 1 }, "symbol": "worker integration fixture" },
+        { "blob_sha": "13e55f25265b5ad3306a433f318dc66ebeef89f9", "path": "src/worker/native-worker.test-support.ts", "range": { "end_line": 105, "start_line": 1 }, "symbol": "worker fixture" },
+        { "blob_sha": "8178bfe354c19782023bcf0e0eefb966604ac0cd", "path": "src/worker/worker-fault-session-target.test-support.ts", "range": { "end_line": 86, "start_line": 1 }, "symbol": "fault session fixture" },
+        { "blob_sha": "726c6a998945f8a55bdc11a9155589c67e5695e4", "path": "src/worker/worker-import-runtime.test-support.ts", "range": { "end_line": 23, "start_line": 1 }, "symbol": "runtime import fixture" }
+      ],
+      "status": {
+        "acceptance": "pending",
+        "implementation": "implemented",
+        "mapping": "mapped",
+        "read": "read-complete",
+        "verification": "not-run",
+        "wiring": "not-wired"
+      },
+      "target": {
+        "language": "Rust",
+        "path": "source/host/src/extensions/node_host",
+        "symbol": "Node Host worker/runtime contracts"
+      },
+      "tests": [
+        "source/host/tests/openclaw_node_host_contract.rs",
+        "source/host/tests/runner_contract.rs"
+      ],
+      "typed_contracts": [
+        "NodeHostSessionRegistry",
+        "NodeHostCommandDispatch",
+        "Runner process composition"
+      ],
+      "unit_id": "OCRM-UNIT-INFRA-001"
+    },
+    {
+      "adr_refs": [],
+      "behavior": "Pinned process timeout, termination, kill-tree, line-framing and command-error test oracles for the existing Fabushi process-custody owner.",
+      "blocker_ids": [
+        "OCRM-BLOCK-P0-EXECUTABLE-ORACLES-001"
+      ],
+      "capability_ids": [
+        "process.custody_oracles"
+      ],
+      "dependencies": [
+        "mahayana_host_runtime::extensions::process"
+      ],
+      "evidence_refs": [
+        "projects/openclaw-rust/dossiers/process-exec-shell-scoped.md"
+      ],
+      "existing_owner_candidates": [
+        {
+          "path": "source/host/src/extensions/process/command_custody.rs",
+          "reason": "Existing bounded process custody and termination owner"
+        }
+      ],
+      "id": "OCRM-RESP-PROCESS-CRABBOX-ORACLES-001",
+      "integration": {
+        "consumer": "Rust process-custody contract tests (not executed in this local freeze)",
+        "entrypoint": "source/host/src/extensions/process/command_custody.rs",
+        "owner": "source/host/src/extensions/process/command_custody.rs",
+        "producer": "locked OpenClaw process oracle sources"
+      },
+      "invariants": [
+        "Timeout and termination behavior remains bounded and cancellation-aware",
+        "Process-tree cleanup requires ownership proof and does not use broad process-name termination",
+        "Source oracles do not upgrade executable verification or acceptance"
+      ],
+      "migration_rollback": "Retain oracle rows and keep verification not-run until exact-head Actions checks execute",
+      "oracle_ids": [
+        "OCRM-PROCESS-ORACLE-001"
+      ],
+      "owner_decision": "Reuse existing Fabushi process-custody owner rather than creating a Crabbox process runtime",
+      "postconditions": [
+        "All read-complete process oracle rows have a mapped owner and explicit execution gap"
+      ],
+      "preconditions": [
+        "Pinned process source blobs are present in canonical inventory"
+      ],
+      "required_evidence_dimensions": [
+        "unit",
+        "recovery",
+        "performance"
+      ],
+      "required_gate_ids": [
+        "OCRM-G04-rust-contract",
+        "OCRM-G05-frozen-oracle"
+      ],
+      "requirement_ids": [
+        "OCRM-R08",
+        "OCRM-AC08",
+        "OCRM-AC24"
+      ],
+      "responsibility_kind": "test-oracle",
+      "reviewer": "xuyao@ombhrum.com",
+      "risk": "High; unexecuted process oracles cannot prove safe timeout or cleanup behavior",
+      "selected_owner": "source/host/src/extensions/process/command_custody.rs",
+      "source_refs": [
+        { "blob_sha": "ab3f5ca0e06b369c26f496db516e734a4629b547", "path": "src/process/bounded-line-framer.test.ts", "range": { "end_line": 29, "start_line": 1 }, "symbol": "bounded line framer oracle" },
+        { "blob_sha": "ac948164bea6ed80de8e9f7bff27afc51da221c2", "path": "src/process/command-error.test.ts", "range": { "end_line": 97, "start_line": 1 }, "symbol": "command error oracle" },
+        { "blob_sha": "e0e42a03bb784951c517d4961ea7a8242c0f4ce2", "path": "src/process/exec-runner.timeout.test.ts", "range": { "end_line": 213, "start_line": 1 }, "symbol": "exec timeout oracle" },
+        { "blob_sha": "74dabf0ca05c5e26420ced9198acf666fadf873f", "path": "src/process/exec-termination.liveness.test.ts", "range": { "end_line": 108, "start_line": 1 }, "symbol": "termination liveness oracle" },
+        { "blob_sha": "9338c4fc21acc3c2872776fd01fc82e9066c68f5", "path": "src/process/exec-termination.test.ts", "range": { "end_line": 311, "start_line": 1 }, "symbol": "termination oracle" },
+        { "blob_sha": "8057c22de46eba1a9b6c19b0780ffb1c90a954ec", "path": "src/process/exec.test.ts", "range": { "end_line": 682, "start_line": 1 }, "symbol": "exec oracle" },
+        { "blob_sha": "5fba870d269d7b00a0a666183f3dc68509900e17", "path": "src/process/kill-tree.test.ts", "range": { "end_line": 636, "start_line": 1 }, "symbol": "kill tree oracle" }
+      ],
+      "status": {
+        "acceptance": "pending",
+        "implementation": "implemented",
+        "mapping": "mapped",
+        "read": "read-complete",
+        "verification": "not-run",
+        "wiring": "not-wired"
+      },
+      "target": {
+        "language": "Rust",
+        "path": "source/host/src/extensions/process/command_custody.rs",
+        "symbol": "process custody contracts"
+      },
+      "tests": [
+        "source/host/tests/process_tree_contract.rs"
+      ],
+      "typed_contracts": [
+        "CommandCustody",
+        "bounded process termination"
+      ],
+      "unit_id": "OCRM-UNIT-INFRA-001"
+    },
+    {
+      "adr_refs": [],
+      "behavior": "Locked OpenGrep rule metadata, precise security policy, workflow and rule-source evidence for artifact download, sandbox upload and raw transport controls.",
+      "blocker_ids": [
+        "OCRM-BLOCK-SECURITY-EXECUTABLE-001"
+      ],
+      "capability_ids": [
+        "security.opengrep_precise_rules"
+      ],
+      "dependencies": [
+        "repository security workflow",
+        "existing Fabushi security policy owner"
+      ],
+      "evidence_refs": [
+        "projects/openclaw-rust/dossiers/security-opengrep-audit-20261029.md"
+      ],
+      "existing_owner_candidates": [
+        {
+          "path": "security/opengrep",
+          "reason": "Pinned OpenGrep rules and workflow evidence"
+        }
+      ],
+      "id": "OCRM-RESP-SECURITY-OPENgrep-CRABBOX-001",
+      "integration": {
+        "consumer": "Actions security workflow (not executed in this local freeze)",
+        "entrypoint": ".github/workflows/opengrep-precise.yml",
+        "owner": "repository security evidence owner",
+        "producer": "locked security rule/workflow sources"
+      },
+      "invariants": [
+        "Rule and workflow sources remain bound to the locked upstream tree",
+        "Security evidence is not acceptance until the declared workflow executes against the accepted exact head",
+        "Unknown or unsupported rule behavior remains non-passing"
+      ],
+      "migration_rollback": "Retain the locked rule set and fail closed when the workflow or rule metadata cannot be inspected",
+      "oracle_ids": [
+        "OCRM-SECURITY-OPENgrep-001"
+      ],
+      "owner_decision": "Security scanning remains repository evidence; it does not become a product runtime or CloudWorker authorization owner",
+      "postconditions": [
+        "All read-complete security evidence rows are classified with explicit non-execution limits"
+      ],
+      "preconditions": [
+        "Exact workflow/rule blobs and their recorded ranges are present"
+      ],
+      "required_evidence_dimensions": [
+        "security-negative-test",
+        "build-release-operations"
+      ],
+      "required_gate_ids": [
+        "OCRM-G05-frozen-oracle"
+      ],
+      "requirement_ids": [
+        "OCRM-R10",
+        "OCRM-AC10",
+        "OCRM-AC24"
+      ],
+      "responsibility_kind": "security-evidence",
+      "reviewer": "xuyao@ombhrum.com",
+      "risk": "Critical; stale or unexecuted security rules cannot prove safe artifact, sandbox or transport behavior",
+      "selected_owner": "security/opengrep",
+      "source_refs": [
+        { "blob_sha": "3481c90d1171265bd34cdd36c499b28cfdff82e9", "path": ".github/workflows/opengrep-precise-full.yml", "range": { "end_line": 93, "start_line": 1 }, "symbol": "OpenGrep full workflow" },
+        { "blob_sha": "d0d8bb498463a3d1bf79294fc34837085c8ea802", "path": ".github/workflows/opengrep-precise.yml", "range": { "end_line": 136, "start_line": 1 }, "symbol": "OpenGrep precise workflow" },
+        { "blob_sha": "e523fe8494b9ee98f84deba0c5e4261cfe52709e", "path": "scripts/run-opengrep.sh", "range": { "end_line": 231, "start_line": 1 }, "symbol": "OpenGrep runner" },
+        { "blob_sha": "2747ce131c423f22ac45869c2a2c832ca846826a", "path": "security/README.md", "range": { "end_line": 137, "start_line": 1 }, "symbol": "Security policy documentation" },
+        { "blob_sha": "b4de5119d1e626f3ba6ff9c5c81471e6ccb5da0d", "path": "security/opengrep/README.md", "range": { "end_line": 136, "start_line": 1 }, "symbol": "OpenGrep policy documentation" },
+        { "blob_sha": "f74dd450b7f2432e85e142ee73faa4cf16439444", "path": "security/opengrep/check-rule-metadata.mjs", "range": { "end_line": 139, "start_line": 1 }, "symbol": "Rule metadata checker" },
+        { "blob_sha": "7872efa4d32365a8b0c35a432b0542be6307e1d4", "path": "security/opengrep/compile-rules.mjs", "range": { "end_line": 677, "start_line": 1 }, "symbol": "Rule compiler" },
+        { "blob_sha": "7579a6a1b2e50fb63af4fbfd6d5d2826081d15d4", "path": "security/opengrep/precise.yml", "range": { "end_line": 4981, "start_line": 1 }, "symbol": "Precise rulepack" },
+        { "blob_sha": "12fd677d8a1937626d229e851b76eb0e4ba6df07", "path": "security/opengrep/rules/ghsa-82g8-464f-2mv7/skill-env.js", "range": { "end_line": 32, "start_line": 1 }, "symbol": "Skill env rule JS" },
+        { "blob_sha": "ce937bc068f5b3471fd20ef32c27fb562c17b28e", "path": "security/opengrep/rules/ghsa-82g8-464f-2mv7/skill-env.ts", "range": { "end_line": 146, "start_line": 1 }, "symbol": "Skill env rule TS" },
+        { "blob_sha": "24a98f003f81059ac75bdc84844613f8ae6cedca", "path": "security/opengrep/rules/ghsa-82g8-464f-2mv7/skill-env.yml", "range": { "end_line": 116, "start_line": 1 }, "symbol": "Skill env rule metadata" },
+        { "blob_sha": "dc02f425cb174383537ed32d87acdc3d7d6e328f", "path": "security/opengrep/rules/ghsa-fv94-qvg8-xqpw/ssh-sandbox-upload.js", "range": { "end_line": 102, "start_line": 1 }, "symbol": "SSH sandbox rule JS" },
+        { "blob_sha": "5de0496ce3ed54b36bac7864080430cb1c50c22b", "path": "security/opengrep/rules/ghsa-fv94-qvg8-xqpw/ssh-sandbox-upload.ts", "range": { "end_line": 108, "start_line": 1 }, "symbol": "SSH sandbox rule TS" },
+        { "blob_sha": "ddd7e41b1603414cba4a918464b4f739a3dbdf38", "path": "security/opengrep/rules/ghsa-fv94-qvg8-xqpw/ssh-sandbox-upload.yml", "range": { "end_line": 33, "start_line": 1 }, "symbol": "SSH sandbox rule metadata" },
+        { "blob_sha": "cf0fdfa92907b2dbddb133c28c14d7a553c5cf5d", "path": "security/opengrep/rules/ghsa-qxgf-hmcj-3xw3/image-download.js", "range": { "end_line": 159, "start_line": 1 }, "symbol": "Image download rule JS" },
+        { "blob_sha": "cf0fdfa92907b2dbddb133c28c14d7a553c5cf5d", "path": "security/opengrep/rules/ghsa-qxgf-hmcj-3xw3/image-download.ts", "range": { "end_line": 159, "start_line": 1 }, "symbol": "Image download rule TS" },
+        { "blob_sha": "4d54874b4538665401986e25f60b155478d1a11f", "path": "security/opengrep/rules/ghsa-qxgf-hmcj-3xw3/image-download.yml", "range": { "end_line": 35, "start_line": 1 }, "symbol": "Image download rule metadata" },
+        { "blob_sha": "531f876f2ac9474b95775f273785998cd117ca43", "path": "security/opengrep/rules/openclaw-policy/no-raw-http2-connect.yml", "range": { "end_line": 33, "start_line": 1 }, "symbol": "Raw HTTP2 policy rule" }
+      ],
+      "status": {
+        "acceptance": "pending",
+        "implementation": "implemented",
+        "mapping": "mapped",
+        "read": "read-complete",
+        "verification": "not-run",
+        "wiring": "not-wired"
+      },
+      "target": {
+        "language": "repository-security",
+        "path": "security/opengrep",
+        "symbol": "locked rulepack and workflow"
+      },
+      "tests": [
+        ".github/workflows/opengrep-precise.yml",
+        ".github/workflows/opengrep-precise-full.yml"
+      ],
+      "typed_contracts": [
+        "OpenGrep precise rule metadata",
+        "OpenGrep workflow contract"
+      ],
+      "unit_id": "OCRM-UNIT-INFRA-001"
+    },
     {
       "adr_refs": [
         "projects/openclaw-rust/decisions/2026-10-29-crabbox-worker-owner-boundary.md"
@@ -12804,6 +13209,15 @@
             "start_line": 1
           },
           "symbol": "removeAuthProfile"
+        },
+        {
+          "blob_sha": "b702853690bbae7b92c5d1b1d0be5eafcb2057c5",
+          "path": "src/sessions/auth-profile-preservation.test.ts",
+          "range": {
+            "end_line": 195,
+            "start_line": 1
+          },
+          "symbol": "auth profile preservation oracle"
         }
       ],
       "status": {
