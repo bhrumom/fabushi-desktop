@@ -3,6 +3,7 @@ use std::path::Component;
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 use url::Url;
+use sha2::{Digest, Sha256};
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum CloudWorkerArtifactKind {
@@ -107,6 +108,40 @@ pub struct CloudWorkerArtifactAdmission {
     pub state: CloudWorkerArtifactAdmissionState,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct CloudWorkerVerifiedArtifact {
+    pub digest: CloudWorkerArtifactDigest,
+    pub size_bytes: u64,
+}
+
+pub fn verify_artifact_bytes(
+    policy: &CloudWorkerArtifactPolicy,
+    source: &CloudWorkerArtifactSource,
+    bytes: &[u8],
+) -> Result<CloudWorkerVerifiedArtifact, CloudWorkerArtifactAdmissionError> {
+    policy.validate_source(source, bytes.len() as u64)?;
+    let actual = CloudWorkerArtifactDigest::new(
+        Sha256::digest(bytes)
+            .iter()
+            .map(|byte| format!("{byte:02x}"))
+            .collect::<String>(),
+    )?;
+    let expected = match source {
+        CloudWorkerArtifactSource::Https { digest, .. }
+        | CloudWorkerArtifactSource::ManagedLocal { digest } => digest,
+    };
+    if &actual != expected {
+        return Err(CloudWorkerArtifactAdmissionError::DigestMismatch {
+            expected: expected.clone(),
+            actual,
+        });
+    }
+    Ok(CloudWorkerVerifiedArtifact {
+        digest: actual,
+        size_bytes: bytes.len() as u64,
+    })
+}
+
 impl CloudWorkerArtifactAdmission {
     pub fn validate(
         &self,
@@ -145,6 +180,11 @@ pub enum CloudWorkerArtifactAdmissionError {
     ArtifactTooLarge { bytes: u64, max_bytes: u64 },
     #[error("archive member path is unsafe")]
     UnsafeArchivePath,
+    #[error("artifact digest mismatch: expected {expected:?}, actual {actual:?}")]
+    DigestMismatch {
+        expected: CloudWorkerArtifactDigest,
+        actual: CloudWorkerArtifactDigest,
+    },
 }
 
 #[cfg(test)]
@@ -189,5 +229,29 @@ mod tests {
             validate_archive_member_path("worker/../secret"),
             Err(CloudWorkerArtifactAdmissionError::UnsafeArchivePath)
         );
+    }
+
+    #[test]
+    fn verifies_bytes_against_the_declared_digest() {
+        let bytes = b"worker";
+        let actual = CloudWorkerArtifactDigest::new(
+            Sha256::digest(bytes)
+                .iter()
+                .map(|byte| format!("{byte:02x}"))
+                .collect::<String>(),
+        )
+        .unwrap();
+        let source = CloudWorkerArtifactSource::ManagedLocal { digest: actual };
+        let verified = verify_artifact_bytes(&policy(), &source, bytes).unwrap();
+        assert_eq!(verified.size_bytes, 6);
+    }
+
+    #[test]
+    fn rejects_a_declared_digest_mismatch() {
+        let source = CloudWorkerArtifactSource::ManagedLocal { digest: digest() };
+        assert!(matches!(
+            verify_artifact_bytes(&policy(), &source, b"worker"),
+            Err(CloudWorkerArtifactAdmissionError::DigestMismatch { .. })
+        ));
     }
 }

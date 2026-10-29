@@ -22,6 +22,7 @@ pub use artifact_admission::{
     CloudWorkerArtifactAdmission, CloudWorkerArtifactAdmissionError,
     CloudWorkerArtifactAdmissionState, CloudWorkerArtifactDigest,
     CloudWorkerArtifactKind, CloudWorkerArtifactPolicy, CloudWorkerArtifactSource,
+    CloudWorkerVerifiedArtifact, verify_artifact_bytes,
 };
 pub use doctor::{
     CloudWorkerDoctorAction, CloudWorkerDoctorError, CloudWorkerDoctorRequest,

@@ -222,7 +222,9 @@ The artifact-admission foundation at
 pure validation: it enforces HTTPS allowlisted origins, bounded size, SHA-256
 shape, safe archive member paths and explicit pending/damaged/outcome-unknown
 states. It does not download, verify bytes, publish files or mutate a managed
-artifact store.
+artifact store. It now also exposes bounded byte-level SHA-256 verification;
+digest mismatch remains a hard admission failure, while download, extraction,
+publication and managed artifact mutation remain outside this slice.
 
 The lease foundation now also includes an explicit transition guard: only a
 completed mutation may advance the lifecycle, submitted/failed/cancelled
