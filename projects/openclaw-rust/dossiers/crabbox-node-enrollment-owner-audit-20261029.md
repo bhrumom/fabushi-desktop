@@ -406,6 +406,46 @@ acceptance.
 
 ## Fabushi owner resolution
 
+The live Fabushi composition was checked before selecting a target owner. The
+following exact working-tree files were read for the relevant contracts (their
+blob identities are the current local target, not upstream identities):
+
+| Fabushi path | Blob | Lines | Evidence-bearing responsibility |
+| --- | --- | ---: | --- |
+| `source/host/src/network_enrollment_owner.rs` | `df5492db2b5c5e42565f63595283f4ea0e96b7a5` | 716 | Fabushi credential-scoped grant issuance, durable enrollment state, generation/outcome-unknown reconciliation and owned tsnet worker lifecycle |
+| `source/host/src/remote_computer_target.rs` | `b4c042cef82dd97411324daf7d3d4903fd200275` | 2713 | Remote Computer tool catalog/authorization, device secret validation, operation claims, sensitive-result vault/chunking and private transport; also the network-service adapter consumed by FDN |
+| `source/host/src/host_runner_composition.rs` | `f1729d4af9a9e3b18431a06e28510252b262f7cf` | 594 | Host composition wiring; resolves turn-scoped Session/Memory/Transcript/permission/computer surfaces without owning their domain state |
+| `source/host/src/runner/process_tree.rs` | `4ed09f9d43e9114f14e612d04622bb4c7baad9aa` | 207 | Generic owned-child descendant discovery and bounded TERM/KILL cleanup |
+| `source/host/src/extensions/cloud_agents/cloud_agents_service.rs` | `8e5c51151abd4dc0aab35febeed30836acc7e9b4` | 1440 | Existing Sand/Cursor cloud-agent backend, background composer launch/poll/reply/cancel/archive/delete/artifact/PR projection and team policy |
+| `source/electron-main/box/box-host-connector.ts` | `1c2a0c61d295dc835fc0100f8a1f9dbbb7868dd2` | 154 | Sand broker/env gateway descriptor connection, blocked/update-required handling, VNC/network-token projection and Sand credential issuance |
+| `source/electron-main/box/local-docker-host-connector.ts` | `a42872f97843a68940fb3dfdef3486f6f4a38c40` | 269 | Owned local Docker Sand VM lifecycle, content-addressed host/daemon bundle staging, readiness, credential mount and runtime routing |
+
+The ownership comparison is now concrete rather than name-based. FDN's
+`NetworkEnrollmentOwner` validates Fabushi-origin credentials, persists only
+its own enrollment state, reconciles grants and completion, and starts the
+Fabushi network worker. It has no provider catalog, remote worker artifact
+provenance, Crabbox lease/heartbeat, plugin activation, node bootstrap or
+desktop-session identity. `remote_computer_target` can consume a resulting
+device/network binding and already owns operation/sensitive-result fencing;
+expanding it to create or supervise a Crabbox worker would violate that
+boundary. `CloudAgentBackend`/`SandCloudAgentManager` already owns a distinct
+background-composer service contract and uses Sand/Cursor wire types; it is not
+a generic cloud-worker or OpenClaw plugin owner. The Electron box connectors
+own Sand gateway/local Docker descriptors and must not become a Rust Crabbox
+provider. `runner/process_tree` is a cleanup primitive, not a launch claim,
+bundle admission, lease store or receipt owner. `HostRunnerComposition` is
+wiring-only and explicitly delegates state to Session/Memory/Transcript.
+
+Resulting bidirectional mapping for the audited Crabbox slice:
+
+| Crabbox responsibility | Candidate Fabushi consumer/owner | Decision |
+| --- | --- | --- |
+| Fabushi account/device/network identity after a worker is admitted | `NetworkEnrollmentOwner` + `remote_computer_target` | Reuse only the resulting typed device/network contract; do not store Crabbox provider or node state there |
+| Remote Computer action/result projection for an admitted device | `remote_computer_target` and Runner Computer tools | Reuse/extend at the consumer seam; Crabbox does not own Computer authorization or sensitive-result state |
+| Sand gateway/local Docker box | Electron box connectors | Keep platform bridge; Crabbox sandbox backend is a separate provider-admission contract |
+| Agent turn/session/transcript/permission/automation state | `HostRunnerComposition` and its existing Session/Memory/Transcript/permission owners | Consume typed worker capability only; no Crabbox shadow state |
+| Crabbox catalog, binary/artifact verification, lease/heartbeat/lifetime, warm-image state, node bootstrap/process/desktop setup, plugin/doctor lifecycle | No complete existing owner | Requires a minimal source-neutral Rust owner/ADR before implementation; process cleanup may call the existing primitive but cannot transfer ownership |
+
 | Responsibility | Existing owner | Decision | Reason / boundary |
 | --- | --- | --- | --- |
 | Fabushi account and device identity, device secret, enrollment grant, FDN control URL, tsnet worker lifecycle | `source/host/src/network_enrollment_owner.rs` | Reuse and extend only for Fabushi-native network enrollment | It owns the canonical Fabushi credential/device scope, persisted enrollment state, generation fencing, outcome-unknown handling, and native network worker. It is not a Crabbox provider catalog or OpenClaw Node bootstrap owner. |
