@@ -7248,6 +7248,42 @@
       "selected_owner": "source/host/src/host_gateway_api.rs",
       "source_refs": [
         {
+          "blob_sha": "2a73f126ae953171a6f7566f3bd4d31cd328da5c",
+          "path": "src/gateway/agent-turn/agent-turn-start-request.types.ts",
+          "range": {
+            "end_line": 23,
+            "start_line": 1
+          },
+          "symbol": "AgentTurnStartRequest"
+        },
+        {
+          "blob_sha": "6a1940ff95d34c7fdad19121b9e91aa8ca3f863b",
+          "path": "src/gateway/agent-turn/agent-wait.ts",
+          "range": {
+            "end_line": 82,
+            "start_line": 1
+          },
+          "symbol": "prepareAgentWaitForTurn"
+        },
+        {
+          "blob_sha": "67168161c7e240377a2e72121cfb4dccdff270f5",
+          "path": "src/gateway/agent-turn/internal-facade.runtime.ts",
+          "range": {
+            "end_line": 1,
+            "start_line": 1
+          },
+          "symbol": "createInternalAgentTurnFacade export"
+        },
+        {
+          "blob_sha": "5740ad0a92a1cb42fb155ff17aaa86b3d5d61d3e",
+          "path": "src/gateway/agent-turn/internal-facade.types.ts",
+          "range": {
+            "end_line": 80,
+            "start_line": 1
+          },
+          "symbol": "InternalAgentTurnFacade"
+        },
+        {
           "blob_sha": "6c359b26c6ee046eb2e675bd085eaa21622bca62",
           "path": "src/gateway/agent-turn/io.ts",
           "range": {
@@ -28554,6 +28590,15 @@
           "symbol": "resolveAgentRestartRecoveryContext"
         },
         {
+          "blob_sha": "564212a1b1530a0beddd2b4c919a59682dff2b9e",
+          "path": "src/gateway/agent-turn/rpc-source.test-support.ts",
+          "range": {
+            "end_line": 79,
+            "start_line": 1
+          },
+          "symbol": "agent turn RPC source test custody support"
+        },
+        {
           "blob_sha": "f25c4b6096a484bfb95f3a8ad524c6e9cc4d2632",
           "path": "src/gateway/agent-turn/agent-handler-helpers.ts",
           "range": {
@@ -30469,6 +30514,24 @@
       "risk": "Medium; outbound streaming fragmentation, loopback echo rejection, and device pairing token expiration",
       "selected_owner": "source/host/src/extensions/plugin_sdk/mod.rs",
       "source_refs": [
+        {
+          "blob_sha": "0a03b044b1cf394e7623d97e25639aa7daaea487",
+          "path": "src/gateway/recovery-typing.ts",
+          "range": {
+            "end_line": 120,
+            "start_line": 1
+          },
+          "symbol": "createRecoveryTypingManager"
+        },
+        {
+          "blob_sha": "b66f4e8a3b5b7f38a16bfd3092c049938f9e45cb",
+          "path": "src/gateway/agent-turn/recovery-typing.test.ts",
+          "range": {
+            "end_line": 130,
+            "start_line": 1
+          },
+          "symbol": "recovery typing lifecycle oracle"
+        },
         {
           "blob_sha": "45a1d9e08e0cba2a59be528ba259e2e2127e56ae",
           "path": "src/plugin-sdk/channel-lifecycle.core.ts",

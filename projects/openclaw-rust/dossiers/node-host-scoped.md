@@ -948,3 +948,21 @@ delivery authority for blank targets, and rehydrates execution identity only
 for the admitted recovery cycle. These boundaries map to the existing Session
 Turns Controller and Gateway session owners; Rust wiring and acceptance remain
 unverified.
+
+## 112. Agent turn wait/facade contracts and recovery typing (2026-10-29)
+
+The locked `agent-turn-start-request.types.ts`, `agent-wait.ts`,
+`internal-facade.runtime.ts`, `internal-facade.types.ts`,
+`rpc-source.test-support.ts`, `recovery-typing.ts`, and
+`recovery-typing.test.ts` were read in full. The internal facade admits only
+trusted controller input and source assertions, exposes start-owner observation
+and abort hooks, and keeps final delivery/settle wake replay out of wire
+requests. Agent wait preserves exact run IDs when required, captures the
+initial session and lifecycle generation, distinguishes queued ownership from
+terminal snapshots, and returns bounded timeout results. RPC test support
+creates exact scoped sources and marks only the matching admitted operation as
+started. Recovery typing is cosmetic only: it shares one run loop, revalidates
+gateway/config/channel authority before each guarded send, honors live typing
+policy and timeout, and always clears typing on retirement or failure. These
+remain existing Gateway dispatch, Session Turns, and channel lifecycle owners;
+no second wait/facade or delivery authority is introduced.

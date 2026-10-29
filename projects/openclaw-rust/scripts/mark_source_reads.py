@@ -12,6 +12,13 @@ from pathlib import Path
 ROOT = Path("projects/openclaw-rust")
 SHARDS = ROOT / "inventory" / "shards"
 READS = {
+    "src/gateway/agent-turn/agent-turn-start-request.types.ts": (23, "OCRM-RESP-GW-DISPATCH-REGISTRY-001", "OCRM-M13", "owner-audit"),
+    "src/gateway/agent-turn/agent-wait.ts": (82, "OCRM-RESP-GW-DISPATCH-REGISTRY-001", "OCRM-M13", "owner-audit"),
+    "src/gateway/agent-turn/internal-facade.runtime.ts": (1, "OCRM-RESP-GW-DISPATCH-REGISTRY-001", "OCRM-M13", "owner-audit"),
+    "src/gateway/agent-turn/internal-facade.types.ts": (80, "OCRM-RESP-GW-DISPATCH-REGISTRY-001", "OCRM-M13", "owner-audit"),
+    "src/gateway/agent-turn/rpc-source.test-support.ts": (79, "OCRM-RESP-SESSION-TURNS-CONTROLLER-001", "OCRM-M07", "test-oracle-replaced"),
+    "src/gateway/agent-turn/recovery-typing.test.ts": (130, "OCRM-RESP-PLUGIN-SDK-CHANNEL-LIFECYCLE-OUTBOUND-001", "OCRM-M16", "test-oracle-replaced"),
+    "src/gateway/recovery-typing.ts": (120, "OCRM-RESP-PLUGIN-SDK-CHANNEL-LIFECYCLE-OUTBOUND-001", "OCRM-M16", "owner-audit"),
     "src/gateway/agent-turn/agent-request-preflight.source-lineage.test.ts": (83, "OCRM-RESP-SESSION-TURNS-CONTROLLER-001", "OCRM-M07", "test-oracle-replaced"),
     "src/gateway/agent-turn/agent-request-preflight.ts": (320, "OCRM-RESP-SESSION-TURNS-CONTROLLER-001", "OCRM-M07", "owner-audit"),
     "src/gateway/agent-turn/agent-request-routing.session-id.test.ts": (122, "OCRM-RESP-SESSION-TURNS-CONTROLLER-001", "OCRM-M07", "test-oracle-replaced"),

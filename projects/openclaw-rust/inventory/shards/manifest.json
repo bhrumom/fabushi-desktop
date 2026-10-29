@@ -279,20 +279,20 @@
       "uncompressed_sha256": "4d613e168dacb0f5e8828260edd58e47f8d03b43acf5acd2533d83b89c39ed39"
     },
     {
-      "compressed_sha256": "9854f0875aad01bb9533fc760752bcd2c6054d200e285874a63b35ba25c64048",
+      "compressed_sha256": "0eb4c24d6085a6b95ef2d18c9fa3998e9707f9f46ff5712628af3ed8ce12bbde",
       "count": 1024,
       "first_path": "src/flows/doctor-startup-channel-maintenance.test.ts",
       "last_path": "src/gateway/model-account-connect.ts",
       "path": "projects/openclaw-rust/inventory/shards/part-0034.jsonl.gz",
-      "uncompressed_sha256": "96201726e2ee0d8172e11790212995d3837aa82ede4974edc279f39548c9e899"
+      "uncompressed_sha256": "0a831f4307a998f0ceb503c67232dd5c21915cc19801504dad5b22341c5bb85c"
     },
     {
-      "compressed_sha256": "7a6af75ef0a8552b465cec148a27cb162d8f67947bda1c2f424dac481a8c3224",
+      "compressed_sha256": "b678802d159ecac27c47ef856e64b52653ac39ea2d4d7a5dbada588103155d5e",
       "count": 1024,
       "first_path": "src/gateway/model-account-connect.worker.test.ts",
       "last_path": "src/gateway/server-methods/environments.pairing-snapshot.test.ts",
       "path": "projects/openclaw-rust/inventory/shards/part-0035.jsonl.gz",
-      "uncompressed_sha256": "f96ba16c90520209a08a6af2034eb7dee8dc2469a262fa9fa885d16adf0839d7"
+      "uncompressed_sha256": "5a3a531c3d4776b2e95baf72ff651e5b5bd13a040b9717b8f7c1c03d56b910a2"
     },
     {
       "compressed_sha256": "8bed61351d608c90d862f5361deacfa9143bcfeb5df6ec8e715d8d90ab90224a",
