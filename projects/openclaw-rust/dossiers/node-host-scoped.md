@@ -688,3 +688,21 @@ unless the explicit break-glass environment contract is enabled. The worker
 oracle pins the no-write/read-only and lazy-storage invariants. These sources
 extend `OCRM-RESP-NODE-HOST-CONNECTION-001`; they do not create a second auth
 owner or prove Fabushi Rust transport, package, device, or Actions acceptance.
+
+## 97. Gateway websocket admission and session attachment (2026-10-29)
+
+The locked `connect-admission.ts`, `connect-device-metadata.ts`,
+`connect-operator-access.ts`, `connect-policy.ts`, `connect-session.ts`, and
+`node-lifecycle-dispatch.ts` were read in full. Admission now has a clear
+producer-to-owner boundary: protocol/version, role, origin, remote-ingress,
+startup and scope ceilings are checked before registration; device metadata and
+bootstrap profiles remain approval-bound; operator authority is attached to one
+socket and revoked without destroying retained run authority; session attach
+captures authenticated node pairing identity/generation, rechecks it after
+awaited work, registers the live NodeHost session, and fences plugin surfaces
+and snapshots to the approved node capability set. The lifecycle tracker drains
+only admitted `node.invoke.progress/result` work with a bounded timeout and does
+not create a queue. These sources extend the existing NodeHost connection and
+command-dispatch owners and the Gateway auth/pairing owners; they do not prove
+Rust production wiring, exact-head execution, package reachability, or device
+acceptance.

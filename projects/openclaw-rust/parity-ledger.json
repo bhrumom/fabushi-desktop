@@ -5364,6 +5364,15 @@
           "symbol": "startGatewayNodePairingSshApproval"
         },
         {
+          "blob_sha": "cb44fe3cece970c5a2538c85d61fa93233ce34a5",
+          "path": "src/gateway/server/ws-connection/connect-device-metadata.ts",
+          "range": {
+            "end_line": 267,
+            "start_line": 1
+          },
+          "symbol": "bootstrap profile admission and resolvePinnedClientMetadata"
+        },
+        {
           "blob_sha": "7a563c858c078347587d4bfc6e153be59550393a",
           "path": "src/infra/device-pairing-approval.kernel.ts",
           "range": {
@@ -6984,6 +6993,24 @@
             "start_line": 1
           },
           "symbol": "emitGatewayAuthSecurityEvent"
+        },
+        {
+          "blob_sha": "e9e777538b720f424872b8e84fd515d8ac44cae7",
+          "path": "src/gateway/server/ws-connection/connect-operator-access.ts",
+          "range": {
+            "end_line": 111,
+            "start_line": 1
+          },
+          "symbol": "prepareGatewayConnectOperatorAccess and bindGatewayConnectOperatorAccess"
+        },
+        {
+          "blob_sha": "fbcd9f470e079f31d20eef3fc2b332431cb2eea0",
+          "path": "src/gateway/server/ws-connection/connect-policy.ts",
+          "range": {
+            "end_line": 98,
+            "start_line": 1
+          },
+          "symbol": "evaluateMissingDeviceIdentity and shouldSkipControlUiPairing"
         },
         {
           "blob_sha": "708e34da5847a31d4d839b7917eeb65ae53c2496",
@@ -21698,6 +21725,24 @@
           "symbol": "resolveGatewayDeviceAuthRoute and buildGatewayConnectionDetailsWithResolvers"
         },
         {
+          "blob_sha": "f55361c35e36130c420ffa64c42817bedffd5fc2",
+          "path": "src/gateway/server/ws-connection/connect-admission.ts",
+          "range": {
+            "end_line": 373,
+            "start_line": 1
+          },
+          "symbol": "admitGatewayConnect and resolveGatewayConnectPolicyFailure"
+        },
+        {
+          "blob_sha": "ec6e6d6064679681d68ffc25684f5a03629c65bc",
+          "path": "src/gateway/server/ws-connection/connect-session.ts",
+          "range": {
+            "end_line": 702,
+            "start_line": 1
+          },
+          "symbol": "attachAuthenticatedGatewayConnect"
+        },
+        {
           "blob_sha": "6ee2e1669f2315ad414383b9153d8ff73f0bffbf",
           "path": "src/gateway/node-registry-pairing.ts",
           "range": {
@@ -22183,6 +22228,15 @@
       "risk": "Critical; stale computer driver commands or generation mismatches cause invalid desktop actions",
       "selected_owner": "source/host/src/extensions/node_host/command_dispatch.rs",
       "source_refs": [
+        {
+          "blob_sha": "f0f950528175f7e526e79f052339a8f2f562948b",
+          "path": "src/gateway/server/ws-connection/node-lifecycle-dispatch.ts",
+          "range": {
+            "end_line": 53,
+            "start_line": 1
+          },
+          "symbol": "GatewayNodeLifecycleDispatchTracker"
+        },
         {
           "blob_sha": "e595f8bf3342ae00dcb0ebf785b9f809619559f7",
           "path": "src/node-host/invoke.ts",
