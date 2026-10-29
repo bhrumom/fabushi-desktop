@@ -27913,10 +27913,10 @@
       ],
       "id": "OCRM-RESP-PROCESS-CUSTODY-EXECUTION-001",
       "integration": {
-        "consumer": "source/host/src/extensions/process/command_custody.rs",
-        "entrypoint": "source/host/src/extensions/process/command_custody.rs::CommandProcessCustody::acquire_slot",
+        "consumer": "source/host/tests/openclaw_process_plugin_contract.rs (contract fixture only; no production caller)",
+        "entrypoint": "source/host/tests/openclaw_process_plugin_contract.rs::test_ocrm_process_custody_and_tree_reaper",
         "owner": "source/host/src/extensions/process/command_custody.rs",
-        "producer": "source/host/src/extensions/process/bounded_framer.rs"
+        "producer": "locked OpenClaw process oracle sources; no production producer is currently wired"
       },
       "invariants": [
         "Lines exceeding max_bytes produce immediate overflow error; capacity exhaustion rejects command"

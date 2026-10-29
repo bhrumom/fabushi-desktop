@@ -17,7 +17,7 @@
    - `Producer`: Raw stdout/stderr byte streams from spawned child processes and command execution requests.
    - `Owner`: `source/host/src/extensions/process/bounded_framer.rs` (`BoundedLineFramer`), `source/host/src/extensions/process/command_custody.rs` (`CommandProcessCustody`), and `source/host/src/extensions/process/tree_reaper.rs` (`ChildProcessTreeTracker`).
    - `Storage`: Line framing buffer and active PID tracker set.
-   - `Consumer`: PTY executors, terminal log sinks, and background command monitors.
+   - `Consumer`: No production consumer is currently wired to these extension owners. The only current consumer is the contract fixture `source/host/tests/openclaw_process_plugin_contract.rs`; the existing Box exec-daemon path has separate child-lifecycle and framing code and must not be treated as an implicit caller.
 
 ## 3. Verification & Oracle Evidence
 - **Contract Tests**: `source/host/tests/openclaw_process_plugin_contract.rs`:
@@ -44,3 +44,21 @@ preflight or Windows production caller; the existing process dossier therefore
 retains `read=partial`, `wiring=not-wired`, and `verification=not-run` for the
 full responsibility. The direct source read strengthens the negative oracle
 only and is not a Windows acceptance receipt.
+
+## 5. Production wiring boundary (2026-10-29)
+
+Static caller inspection confirms that `CommandProcessCustody`,
+`ChildProcessTreeTracker`, and `extensions/process::BoundedLineFramer` have no
+production call site in `source/host/src` or `source/host/app/src`. Their
+current Rust use is limited to the contract test fixture. The separate
+`source/host/src/runner/bounded_line_framer.rs` and
+`source/host/src/box/exec_daemon_process.rs` owners are not interchangeable
+without a reviewed process-execution adapter, because the custody contract
+also owns admission, cancellation, deadline, and process-tree semantics.
+
+Accordingly this responsibility remains `wiring=not-wired`, and no production
+acceptance claim may cite the contract test as runtime evidence. A future
+wiring change must identify the real command-dispatch owner, acquire custody
+before spawn, register/unregister the child with the same lifetime, propagate
+cancellation/deadline outcomes, and add the corresponding exact-head
+verification before changing this status.
