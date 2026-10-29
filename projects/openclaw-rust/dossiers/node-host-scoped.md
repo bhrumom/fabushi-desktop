@@ -1395,3 +1395,25 @@ Controller lifecycle, state, admission, and custody owners; they do not create
 a second registry, scheduler, lifecycle authority, or cancellation truth.
 Rust implementation, wiring, runtime execution, and acceptance remain
 unverified.
+
+## 134. Session controller lifecycle observation, projections, and bounded diagnostics (2026-10-29)
+
+The locked `session-controller.lifecycle-diagnostics.ts`,
+`session-controller.lifecycle-observation.ts`, and
+`session-controller.lifecycle-projections.ts` were read in full. Observation
+waits preserve caller abort reasons, delay activation until retiring sources
+settle, aggregate exact effect/operation/source custody, and treat handoff
+tokens as one-shot references on the existing effect rather than a new
+admission. Projections resolve source-backed identities from captured
+producers, allow only mutation borrowers or finishing captured turns through a
+closure, select claims/effects/operations by physical store and aliases,
+collect active targets for restart and agent-deletion drains, classify
+restart-recoverable owners by exact abort reason and lifecycle generation, and
+capture interruption owners once so a successor cannot be rediscovered during
+abort. Diagnostics remain metadata on the same owner: hashed identities,
+bounded holder/watcher and rate budgets, trace context, queue phases, slow
+waiter/operation records, and phase logs cannot admit, cancel, release, or
+alter cleanup. These sources map to the existing Session Turns Controller
+observation, projection, and diagnostics owners; they do not create a second
+selection, settlement, or observability authority. Rust implementation,
+wiring, runtime execution, and acceptance remain unverified.

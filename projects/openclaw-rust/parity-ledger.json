@@ -29245,6 +29245,24 @@
           "path": "src/sessions/session-controller.lifecycle-work.ts",
           "range": {"end_line": 351, "start_line": 1},
           "symbol": "session effect capture, interruption, and settlement barriers"
+        },
+        {
+          "blob_sha": "710a19ec784667cd9375b9651ebfd3addba12cb6",
+          "path": "src/sessions/session-controller.lifecycle-diagnostics.ts",
+          "range": {"end_line": 400, "start_line": 1},
+          "symbol": "bounded lifecycle diagnostics and phase logging"
+        },
+        {
+          "blob_sha": "8c13ba8e68e1a08bafa3129f832f88f838d2a775",
+          "path": "src/sessions/session-controller.lifecycle-observation.ts",
+          "range": {"end_line": 119, "start_line": 1},
+          "symbol": "settlement observation and one-shot effect handoff custody"
+        },
+        {
+          "blob_sha": "01c45696ad95d9d6cd8452a8ede42cf4b2f40d8d",
+          "path": "src/sessions/session-controller.lifecycle-projections.ts",
+          "range": {"end_line": 402, "start_line": 1},
+          "symbol": "session controller owner projections and interruption selection"
         }
       ],
       "status": {
