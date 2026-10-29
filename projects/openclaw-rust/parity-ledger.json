@@ -28428,6 +28428,24 @@
       "selected_owner": "source/host/src/extensions/session/session_turns_controller.rs",
       "source_refs": [
         {
+          "blob_sha": "0f52e4dc817b2e537580cabc6f5e2f19e5dcb271",
+          "path": "src/gateway/agent-turn/agent-dedupe-lifecycle.ts",
+          "range": {
+            "end_line": 317,
+            "start_line": 1
+          },
+          "symbol": "createAgentDedupeLifecycle"
+        },
+        {
+          "blob_sha": "173a7fd46f5d3c5aafb21bcbddabd5c949505942",
+          "path": "src/gateway/agent-turn/agent-dedupe.ts",
+          "range": {
+            "end_line": 236,
+            "start_line": 1
+          },
+          "symbol": "agent dedupe key/replay/reservation primitives"
+        },
+        {
           "blob_sha": "0a0db7d9d1a15362587254f9d9a406731acfe8ff",
           "path": "src/gateway/agent-turn/agent-admission-controller.test.ts",
           "range": {

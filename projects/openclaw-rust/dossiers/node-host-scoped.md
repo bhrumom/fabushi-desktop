@@ -841,3 +841,19 @@ before releasing runtime, caller, session, and recovery authorities. These
 sources map to the existing Session Turns Controller; they do not authorize a
 second admission queue, model authority, or runtime. Rust implementation,
 production wiring, and exact-head acceptance remain unverified.
+
+## 106. Agent turn dedupe reservation and replay ownership (2026-10-29)
+
+The locked `agent-dedupe.ts` and `agent-dedupe-lifecycle.ts` were read in
+full. Dedupe keys include the request idempotency key and optional execution
+approval follow-up identity; replay distinguishes accepted reservations,
+queued aborts, durable-input reconciliation, live RPC ownership, incognito
+errors, and terminal cache outcomes. Reservation lifecycle preserves an
+intentional Stop, binds the committed session target only while the exact
+reservation owns every key, refuses stale ownership, and records timeout or
+cancellation only after current admission checks. Unaccepted cleanup removes
+only the exact owned keys, while reset completion and durable retry reconcile
+through the existing completion owner. These sources remain under the Session
+Turns Controller and existing Gateway dedupe store; they do not introduce a
+second cache, replay authority, or queue. Rust implementation and runtime
+acceptance remain unverified.
