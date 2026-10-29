@@ -36,6 +36,141 @@ use super::session_profile_files::{
 };
 use super::session_summaries::AgentSummary;
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum SessionCommunicationMode {
+    Always,
+    Ask,
+    Never,
+}
+
+impl SessionCommunicationMode {
+    pub fn parse(value: &str) -> Option<Self> {
+        match value.trim().to_ascii_lowercase().as_str() {
+            "always" => Some(Self::Always),
+            "ask" => Some(Self::Ask),
+            "never" => Some(Self::Never),
+            _ => None,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub struct SessionCommunicationPolicyOverride {
+    pub send: Option<SessionCommunicationMode>,
+    pub receive: Option<SessionCommunicationMode>,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct EffectiveSessionCommunicationPolicy {
+    pub send: SessionCommunicationMode,
+    pub receive: SessionCommunicationMode,
+}
+
+pub fn resolve_session_communication_policy(
+    defaults: Option<SessionCommunicationPolicyOverride>,
+    entry: Option<SessionCommunicationPolicyOverride>,
+) -> EffectiveSessionCommunicationPolicy {
+    let defaults = defaults.unwrap_or_default();
+    let entry = entry.unwrap_or_default();
+    EffectiveSessionCommunicationPolicy {
+        send: entry
+            .send
+            .or(defaults.send)
+            .unwrap_or(SessionCommunicationMode::Always),
+        receive: entry
+            .receive
+            .or(defaults.receive)
+            .unwrap_or(SessionCommunicationMode::Always),
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct CommunicationEndpoint {
+    pub agent_id: String,
+    pub session_key: String,
+    pub store_path: String,
+    pub session_id: Option<String>,
+    pub communication: Option<SessionCommunicationPolicyOverride>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct CommunicationApproval {
+    pub direction: SessionCommunicationDirection,
+    pub endpoint: CommunicationEndpoint,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum SessionCommunicationDirection {
+    Send,
+    Receive,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum SessionCommunicationDecision {
+    Allowed { approvals: Vec<CommunicationApproval> },
+    Denied { error: String },
+}
+
+fn is_same_session(
+    source: Option<&CommunicationEndpoint>,
+    target: Option<&CommunicationEndpoint>,
+) -> bool {
+    let (Some(source), Some(target)) = (source, target) else {
+        return false;
+    };
+    source.session_id.is_some()
+        && source.session_id == target.session_id
+        && source.agent_id == target.agent_id
+        && source.session_key == target.session_key
+        && source.store_path == target.store_path
+}
+
+/// Plan peer communication admission without bypassing the existing session owner.
+pub fn plan_session_communication(
+    defaults: Option<SessionCommunicationPolicyOverride>,
+    source: &[CommunicationEndpoint],
+    target: &[CommunicationEndpoint],
+    owned_task: bool,
+) -> SessionCommunicationDecision {
+    if owned_task || is_same_session(source.first(), target.first()) {
+        return SessionCommunicationDecision::Allowed { approvals: Vec::new() };
+    }
+
+    let mut approvals = Vec::new();
+    for (direction, endpoints) in [
+        (SessionCommunicationDirection::Send, source),
+        (SessionCommunicationDirection::Receive, target),
+    ] {
+        for endpoint in endpoints {
+            let policy = resolve_session_communication_policy(defaults, endpoint.communication);
+            let mode = match direction {
+                SessionCommunicationDirection::Send => policy.send,
+                SessionCommunicationDirection::Receive => policy.receive,
+            };
+            match mode {
+                SessionCommunicationMode::Always => {}
+                SessionCommunicationMode::Ask => approvals.push(CommunicationApproval {
+                    direction,
+                    endpoint: endpoint.clone(),
+                }),
+                SessionCommunicationMode::Never => {
+                    let direction_name = match direction {
+                        SessionCommunicationDirection::Send => "send",
+                        SessionCommunicationDirection::Receive => "receive",
+                    };
+                    return SessionCommunicationDecision::Denied {
+                        error: format!(
+                            "Session communication {direction_name} is disabled for {}.",
+                            endpoint.session_key
+                        ),
+                    };
+                }
+            }
+        }
+    }
+    SessionCommunicationDecision::Allowed { approvals }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct SessionDbStat {
     pub size: u64,

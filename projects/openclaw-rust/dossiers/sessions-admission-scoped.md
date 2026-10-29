@@ -108,3 +108,14 @@ Implemented in `source/host/tests/openclaw_sessions_and_config_contract.rs`:
 - **`OCRM-SESSION-O04`**: `test_ocrm_session_o04_model_overrides`
 - **`OCRM-SESSION-O05`**: `test_ocrm_session_o05_auth_profile_preservation`
 - **`OCRM-SESSION-O06`**: `test_ocrm_session_o06_work_admission_and_archive`
+
+## 5. Communication policy owner boundary (2026-10-29)
+
+The locked `communication-policy.ts` and `communication-admission.ts` sources
+were re-read at the pinned commit. The existing Rust session owner now exposes
+the corresponding independent send/receive resolution and admission planner:
+owned-task and same-session bypass, `never` denial, and ordered `ask`
+approvals for source-send then target-receive. The O02 contract calls these
+owner functions directly instead of an inline policy lambda. This remains
+`not-wired` until a real session communication producer and consumer use the
+planner; no production wiring or acceptance status is upgraded here.

@@ -214,23 +214,81 @@ fn test_ocrm_session_o01_session_key_routing() {
 // ---------------------------------------------------------------------------
 #[test]
 fn test_ocrm_session_o02_communication_policy() {
-    // Mode resolution: always, ask, never
-    let check_policy = |mode: &str, is_owned_task: bool| -> Result<bool, &'static str> {
-        if is_owned_task {
-            return Ok(true); // Owned tasks bypass peer communication constraints
-        }
-        match mode {
-            "never" => Err("Session communication is disabled"),
-            "ask" => Ok(false), // Requires user approval
-            "always" => Ok(true),
-            _ => Err("Invalid mode"),
-        }
+    use mahayana_host_runtime::extensions::session::agent_session::{
+        CommunicationEndpoint, EffectiveSessionCommunicationPolicy,
+        SessionCommunicationDecision, SessionCommunicationDirection, SessionCommunicationMode,
+        SessionCommunicationPolicyOverride, plan_session_communication,
+        resolve_session_communication_policy,
     };
 
-    assert_eq!(check_policy("never", true), Ok(true));
-    assert_eq!(check_policy("never", false), Err("Session communication is disabled"));
-    assert_eq!(check_policy("ask", false), Ok(false));
-    assert_eq!(check_policy("always", false), Ok(true));
+    let defaults = SessionCommunicationPolicyOverride {
+        send: Some(SessionCommunicationMode::Never),
+        receive: Some(SessionCommunicationMode::Ask),
+    };
+    let entry = SessionCommunicationPolicyOverride {
+        send: Some(SessionCommunicationMode::Always),
+        receive: None,
+    };
+    assert_eq!(
+        resolve_session_communication_policy(Some(defaults), Some(entry)),
+        EffectiveSessionCommunicationPolicy {
+            send: SessionCommunicationMode::Always,
+            receive: SessionCommunicationMode::Ask,
+        }
+    );
+    assert_eq!(SessionCommunicationMode::parse(" ASK "), Some(SessionCommunicationMode::Ask));
+    assert_eq!(SessionCommunicationMode::parse("invalid"), None);
+
+    let source = CommunicationEndpoint {
+        agent_id: "agent-a".into(),
+        session_key: "session-a".into(),
+        store_path: "/sessions/a".into(),
+        session_id: Some("sid-a".into()),
+        communication: None,
+    };
+    let target = CommunicationEndpoint {
+        agent_id: "agent-b".into(),
+        session_key: "session-b".into(),
+        store_path: "/sessions/b".into(),
+        session_id: Some("sid-b".into()),
+        communication: Some(SessionCommunicationPolicyOverride {
+            send: None,
+            receive: Some(SessionCommunicationMode::Never),
+        }),
+    };
+    assert_eq!(
+        plan_session_communication(Some(defaults), &[source.clone()], &[target.clone()], true),
+        SessionCommunicationDecision::Allowed { approvals: vec![] }
+    );
+    assert_eq!(
+        plan_session_communication(Some(defaults), &[source.clone()], &[target.clone()], false),
+        SessionCommunicationDecision::Denied {
+            error: "Session communication receive is disabled for session-b.".into(),
+        }
+    );
+
+    let ask_source = CommunicationEndpoint {
+        communication: Some(SessionCommunicationPolicyOverride {
+            send: Some(SessionCommunicationMode::Ask),
+            receive: Some(SessionCommunicationMode::Always),
+        }),
+        ..source.clone()
+    };
+    let ask_target = CommunicationEndpoint {
+        communication: Some(SessionCommunicationPolicyOverride {
+            send: Some(SessionCommunicationMode::Always),
+            receive: Some(SessionCommunicationMode::Ask),
+        }),
+        ..target
+    };
+    let SessionCommunicationDecision::Allowed { approvals } =
+        plan_session_communication(None, &[ask_source], &[ask_target], false)
+    else {
+        panic!("ask policies should produce approvals");
+    };
+    assert_eq!(approvals.len(), 2);
+    assert_eq!(approvals[0].direction, SessionCommunicationDirection::Send);
+    assert_eq!(approvals[1].direction, SessionCommunicationDirection::Receive);
 }
 
 // ---------------------------------------------------------------------------
