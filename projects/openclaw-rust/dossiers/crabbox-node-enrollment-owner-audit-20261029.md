@@ -373,6 +373,37 @@ provider-fork failure, retention/retirement debt and cancellation ordering.
 These facts constrain a future Rust owner but do not prove Fabushi state-store,
 provider, filesystem-scrub or packaged acceptance.
 
+The remaining direct Crabbox provider/UI helpers were then read at the same
+locked tree:
+
+| Path | Blob | Lines | Disposition |
+| --- | --- | ---: | --- |
+| `crabbox-worker-machine-options.ts` | `7c66b6ffab48d9dfca6131ceaef064fc461e3499` | 150 | owner-audit |
+| `crabbox-worker-node-enrollment-diagnostics.ts` | `1d1b10d90ad31543ab70d27065767daf12050a8d` | 90 | owner-audit |
+| `crabbox-worker-wallpaper.ts` | `6216fc833d6fe5969664e08c26a3fa505af49962` | 31 | owner-audit |
+| `crabbox-worker-warm-image-cli.ts` | `28f1b4d2cca8bf199145de123290f680b9fd54dc` | 105 | owner-audit |
+| `crabbox-worker-warm-image-cli.test.ts` | `6dacb5f3d978984ade76c2aa69cae8a6efa07bdf` | 146 | test-oracle-replaced |
+
+Machine catalog discovery runs the provider's bounded `providers --json`
+command, preserves complete catalog JSON, prefers amd64 and valid positive
+resource summaries, caches successful metadata by binary, and removes failed
+loads from the cache. Setup/UI projection filters incompatible targets while
+preserving the configured target as the default. Enrollment diagnostics are
+best-effort and separately timed: they report runtime-link, PID liveness and a
+bounded UTF-8/UTF-16 log tail, redact sensitive output and preserve the
+original enrollment failure when diagnostics fail. The wallpaper helper only
+accepts a PNG with the exact 1024x576 IHDR dimensions.
+
+The warm-image CLI is a read/recovery surface, not a provider execution path.
+It lists local image/legacy allocation state, requires an exact selector plus
+explicit provider-cleanup acknowledgement before recovery, preserves unrelated
+images and retirement debt, and prints bounded next steps without running
+provider commands. Its oracle covers unsupported-capture cold guidance,
+legacy-row migration fencing, exact unchanged-row recovery, stale/uncertain
+capture guidance and pending deletion display. These source facts do not prove
+Fabushi provider catalog UI, enrollment diagnostics, desktop assets or CLI
+acceptance.
+
 ## Fabushi owner resolution
 
 | Responsibility | Existing owner | Decision | Reason / boundary |
