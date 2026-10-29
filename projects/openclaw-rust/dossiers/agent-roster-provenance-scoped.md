@@ -151,3 +151,22 @@ was introduced.
 The roster-specific upstream-caller blocker therefore remains open for
 provenance/doctor include handling. Broader project blockers and all global
 completion flags remain unchanged.
+
+## 6. Current settings caller recheck (2026-10-29)
+
+The current branch was re-read at exact local blobs:
+`source/host/src/extensions/settings/settings_service.rs`
+(`819f87ee2d1506ae8eadd6839ff884bc7cd46de0`, lines 1000–1019) and
+`source/host/src/agents/agent_roster.rs`
+(`d3ed4d97752d2fb1df6266d6055882ed59127fa`, lines 302–316). The settings
+owner does call `can_write_doctor_include` for both the current and target
+roster before mutation, so a local explicit `$include` boundary is genuinely
+connected to the existing settings write path.
+
+Both calls pass `include_contributes_roster=false`, however, and the current
+repository contains no trusted include resolver that can produce the upstream
+`sourceConfigBeforeMigrations` / include-contribution fact. Consequently this
+is a fail-closed local guard, not complete provenance wiring: included roster
+membership/default ownership cannot be positively established from the real
+config source. The responsibility remains `wiring=not-wired` and its blocker
+remains open; no completion flag or acceptance state was changed.
