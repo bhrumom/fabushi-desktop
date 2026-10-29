@@ -1417,3 +1417,28 @@ alter cleanup. These sources map to the existing Session Turns Controller
 observation, projection, and diagnostics owners; they do not create a second
 selection, settlement, or observability authority. Rust implementation,
 wiring, runtime execution, and acceptance remain unverified.
+
+## 135. Session controller async ownership, cleanup escape, and terminal producer fencing (2026-10-29)
+
+The locked `session-controller.context.ts`,
+`session-controller.cleanup-context.ts`,
+`session-controller.execution-custody.ts`,
+`session-controller.native-attempt.ts`,
+`session-controller.owner-context.ts`,
+`session-controller.source-turn.ts`,
+`session-controller.terminal-producer-fences.ts`, and
+`session-controller.test-support.ts` were read in full. One AsyncLocalStorage
+owner carries the exact operation, claim, source, effects, and mutations;
+claim entry validates the live mailbox owner, source cleanup can leave turn
+custody without inheriting it, and queued-source settlement excludes only the
+current turn input. Borrowed execution retains completion until every borrower
+releases; native attachments require the exact operation and preserve only
+bounded backend/presentation facts after detach; source-turn binding refuses
+stale, aborted, or replaced operations. Terminal producer fences capture
+exact persisted writers, revoke them only while the owner is current, retain
+failure details, and mark cleanup blocked when fencing cannot be proven. Test
+support resets the same canonical storage rather than introducing a parallel
+registry. These sources map to the existing Session Turns Controller async
+ownership, native-attempt, cleanup, and producer-fence owners; they do not
+create a second execution authority or settlement truth. Rust implementation,
+wiring, runtime execution, and acceptance remain unverified.

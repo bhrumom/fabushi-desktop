@@ -29263,6 +29263,54 @@
           "path": "src/sessions/session-controller.lifecycle-projections.ts",
           "range": {"end_line": 402, "start_line": 1},
           "symbol": "session controller owner projections and interruption selection"
+        },
+        {
+          "blob_sha": "05f97ceaa69253b86abb6db7415ec12be539168d",
+          "path": "src/sessions/session-controller.context.ts",
+          "range": {"end_line": 150, "start_line": 1},
+          "symbol": "owner, claim, source context and settlement projections"
+        },
+        {
+          "blob_sha": "162240fd45fff32a0d88802275ac24b6fd0a1d96",
+          "path": "src/sessions/session-controller.cleanup-context.ts",
+          "range": {"end_line": 18, "start_line": 1},
+          "symbol": "cleanup context exit boundary"
+        },
+        {
+          "blob_sha": "20b4254e4af1ccccae09393be55ebaf4dfb6ab26",
+          "path": "src/sessions/session-controller.execution-custody.ts",
+          "range": {"end_line": 36, "start_line": 1},
+          "symbol": "borrowed execution retention until completion"
+        },
+        {
+          "blob_sha": "ee9df16165370011e17d97bdfc0a772943c49e86",
+          "path": "src/sessions/session-controller.native-attempt.ts",
+          "range": {"end_line": 44, "start_line": 1},
+          "symbol": "native attempt attach and detach custody"
+        },
+        {
+          "blob_sha": "2f51cb7e793a037b7dbb16977ced27a6de1a874",
+          "path": "src/sessions/session-controller.owner-context.ts",
+          "range": {"end_line": 17, "start_line": 1},
+          "symbol": "single async owner context and cleanup escape"
+        },
+        {
+          "blob_sha": "926ae3d5292b854ebe3b09583754d802a6d95f61",
+          "path": "src/sessions/session-controller.source-turn.ts",
+          "range": {"end_line": 21, "start_line": 1},
+          "symbol": "current operation source-turn binding"
+        },
+        {
+          "blob_sha": "91ddc7e8e3110dc21bd1603704f9d3c1768ee336",
+          "path": "src/sessions/session-controller.terminal-producer-fences.ts",
+          "range": {"end_line": 47, "start_line": 1},
+          "symbol": "terminal persisted-producer fence registry"
+        },
+        {
+          "blob_sha": "2992bcb7719b5da6a08869581743468cc37f396",
+          "path": "src/sessions/session-controller.test-support.ts",
+          "range": {"end_line": 6, "start_line": 1},
+          "symbol": "session controller test storage reset support"
         }
       ],
       "status": {
