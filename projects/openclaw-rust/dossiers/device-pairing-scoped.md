@@ -4,7 +4,7 @@
 
 - **Unit ID:** `OCRM-UNIT-DEVICE-PAIRING-001`
 - **Module ID:** `OCRM-M03` (Identity, Credentials, Pairing and Account Scope)
-- **Status:** **Scoped candidate admitted into Parity Ledger; 30 audited source files mapped to reviewed; 6 responsibilities registered with implementation/wiring pending; production wiring blocked by OCRM-BLOCK-GW-SCOPED-AUTHORITY-001; acceptance pending**
+- **Status:** **Scoped candidate admitted into Parity Ledger; 34 audited source files mapped to reviewed; 6 responsibilities registered with implementation/wiring pending; production wiring blocked by OCRM-BLOCK-GW-SCOPED-AUTHORITY-001; acceptance pending**
 - **Requirements Traced:** `OCRM-R03`, `OCRM-R04`, `OCRM-AC03`, `OCRM-AC11`
 - **Reviewer:** `xuyao@ombhrum.com`
 - **Upstream Baseline:** `openclaw/openclaw@ad8d12f126d29b0db204187adf5092db80294e70` (tree `04ccce62f1d74dc8e0c88290ae8ded027b7b0f16`)
@@ -41,6 +41,17 @@ policy/token issuance is refused while a pairing lock is held. These are frozen
 oracle expectations only; they do not replace exact-head Actions execution or
 real companion-device acceptance.
 
+The token/migration cluster adds two security and compatibility constraints:
+legacy pairing migration imports only validated durable device records, keeps
+existing SQLite rows authoritative, excludes transient pending/bootstrap
+records, archives legacy files only after the import path, and preserves
+retryability on unreadable input. Token verification requires the paired-device
+scope baseline, role approval, issuer-generation freshness and explicit
+revocation checks; issuance, rotation and revocation clear node-generation
+state and record last use through the existing mutation owner. These behaviors
+must remain under the existing pairing/enrollment owner, not under CloudWorker
+or Gateway transport code.
+
 ---
 
 ## 3. Blockers & Frontiers
@@ -53,7 +64,7 @@ real companion-device acceptance.
 
 ---
 
-## 4. Itemized Audited Source Files (30 Files)
+## 4. Itemized Audited Source Files (34 Files)
 
 | Upstream Source Path | Blob SHA | Lines | Language | Read Status | Disposition | Target Fabushi Owner |
 |---|---|---|---|---|---|---|
@@ -87,3 +98,7 @@ real companion-device acceptance.
 | `src/infra/device-pairing-node.lifecycle.test.ts` | `d632873d782487012c1d36286a61fd88f87a1f44` | 170 | TypeScript | read-complete | test-conformance-oracle | `source/host/tests/network_enrollment_owner_contract.rs` |
 | `src/infra/device-pairing-node.test.ts` | `aebbbab2f441e4c952e2094c1a7d8373819c8995` | 1044 | TypeScript | read-complete | test-conformance-oracle | `source/host/tests/network_enrollment_owner_contract.rs` |
 | `src/infra/device-pairing-approval-policy.test.ts` | `b8edee7f829134a211fbb2c91018fad7c72edca8` | 101 | TypeScript | read-complete | test-conformance-oracle | `source/host/tests/network_enrollment_owner_contract.rs` |
+| `src/infra/device-pairing-migration.ts` | `7b0b605e63f3ba7ab97ea00bb200cb5672ee4df1` | 145 | TypeScript | read-complete | reuse-and-extend-existing-Rust | `source/host/src/network_enrollment_owner.rs` |
+| `src/infra/device-pairing-token-policy.ts` | `11044c4dfd3e1a1e4146768b85e217f877c44109` | 142 | TypeScript | read-complete | reuse-and-extend-existing-Rust | `source/host/src/network_enrollment_owner.rs` |
+| `src/infra/device-pairing-tokens.kernel.ts` | `5c61ce1a12a816dd5c147a91f66a0f1f837051d4` | 248 | TypeScript | read-complete | reuse-and-extend-existing-Rust | `source/host/src/network_enrollment_owner.rs` |
+| `src/infra/device-pairing-tokens.ts` | `5e2f2662f1401e0f1f40f419a95557b458875027` | 174 | TypeScript | read-complete | reuse-and-extend-existing-Rust | `source/host/src/network_enrollment_owner.rs` |

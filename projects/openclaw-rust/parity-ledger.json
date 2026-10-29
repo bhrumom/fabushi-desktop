@@ -5956,6 +5956,15 @@
             "start_line": 1
           },
           "symbol": "device-pairing-store"
+        },
+        {
+          "blob_sha": "7b0b605e63f3ba7ab97ea00bb200cb5672ee4df1",
+          "path": "src/infra/device-pairing-migration.ts",
+          "range": {
+            "end_line": 145,
+            "start_line": 1
+          },
+          "symbol": "migrateLegacyDevicePairingStore"
         }
       ],
       "status": {
@@ -6052,6 +6061,33 @@
             "start_line": 1
           },
           "symbol": "device-pairing-token-utils"
+        },
+        {
+          "blob_sha": "11044c4dfd3e1a1e4146768b85e217f877c44109",
+          "path": "src/infra/device-pairing-token-policy.ts",
+          "range": {
+            "end_line": 142,
+            "start_line": 1
+          },
+          "symbol": "verifyPairedDeviceToken and reusablePairedDeviceToken"
+        },
+        {
+          "blob_sha": "5c61ce1a12a816dd5c147a91f66a0f1f837051d4",
+          "path": "src/infra/device-pairing-tokens.kernel.ts",
+          "range": {
+            "end_line": 248,
+            "start_line": 1
+          },
+          "symbol": "device token worker mutation kernel"
+        },
+        {
+          "blob_sha": "5e2f2662f1401e0f1f40f419a95557b458875027",
+          "path": "src/infra/device-pairing-tokens.ts",
+          "range": {
+            "end_line": 174,
+            "start_line": 1
+          },
+          "symbol": "device token public lifecycle and last-use recording"
         }
       ],
       "status": {
