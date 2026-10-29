@@ -29149,6 +29149,24 @@
           "path": "src/sessions/session-controller-sequence.test.ts",
           "range": {"end_line": 680, "start_line": 1},
           "symbol": "session controller model sequence oracle"
+        },
+        {
+          "blob_sha": "fbce36e5ffe37d7701e606ad3f3d8018148102e2",
+          "path": "src/sessions/session-controller.target.ts",
+          "range": {"end_line": 75, "start_line": 1},
+          "symbol": "captureSessionTarget and sessionTargetOwnersMatch"
+        },
+        {
+          "blob_sha": "51c7a77e97b11092812ac52720af96543b5be83c",
+          "path": "src/sessions/session-controller.mailbox-claim.ts",
+          "range": {"end_line": 190, "start_line": 1},
+          "symbol": "releaseSessionControllerClaim"
+        },
+        {
+          "blob_sha": "1384e8fed3bf09e5ff966c34db03b21141880125",
+          "path": "src/sessions/session-controller.operation-admission.ts",
+          "range": {"end_line": 125, "start_line": 1},
+          "symbol": "prepareReplyOperationAdmission"
         }
       ],
       "status": {

@@ -1300,3 +1300,26 @@ entries across generated interleavings. These sources map to the existing
 Session Turns Controller and mailbox/operation owners; they do not create a
 second scheduler, claim registry, or turn reducer. Rust implementation,
 wiring, runtime execution, and acceptance remain unverified.
+
+## 130. Session target identity, mailbox claim release, and operation admission (2026-10-29)
+
+The locked `session-controller.target.ts`,
+`session-controller.mailbox-claim.ts`, and
+`session-controller.operation-admission.ts` were read in full. A captured
+session target binds canonical store scope, aliases, agent owner, optional
+physical store path, and incarnation; matching deliberately treats
+incarnation as evidence rather than live authority and requires the same
+physical store and compatible agent owner. Mailbox claim adoption accepts
+only the current operation and owner, records exact inputs/sources, binds the
+Gateway context, and defers release until operation, adoption, settlement,
+injection, and source-cleanup receipts finish. Retry-before-execution is a
+specific producer receipt and reopens only a still-current, non-aborted source;
+otherwise inputs retire and claim settlement reports aggregate cleanup
+failure. Operation admission validates the canonical key/session ID, applies
+the turn rule, installs the exact owner/target/context, retains lifecycle
+custody, and supports owner adoption without releasing the previous source
+until its producer settles. These sources map to the existing Session Turns
+Controller, mailbox, operation, and target owners; they do not introduce a
+second identity authority, claim registry, or settlement path. Rust
+implementation, wiring, runtime execution, and acceptance remain
+unverified.
