@@ -12,6 +12,13 @@ from pathlib import Path
 ROOT = Path("projects/openclaw-rust")
 SHARDS = ROOT / "inventory" / "shards"
 READS = {
+    "extensions/crabbox/src/crabbox-worker-warm-image.ts": (706, None, "OCRM-M11", "owner-audit"),
+    "extensions/crabbox/src/crabbox-worker-warm-image-scrub.ts": (64, None, "OCRM-M10", "owner-audit"),
+    "extensions/crabbox/src/crabbox-worker-warm-image-policy.ts": (41, None, "OCRM-M11", "owner-audit"),
+    "extensions/crabbox/src/crabbox-worker-warm-image-allocation.ts": (187, None, "OCRM-M11", "owner-audit"),
+    "extensions/crabbox/src/crabbox-worker-warm-image-policy.test.ts": (74, None, "OCRM-M11", "test-oracle-replaced"),
+    "extensions/crabbox/src/crabbox-worker-warm-image-allocation.test.ts": (721, None, "OCRM-M11", "test-oracle-replaced"),
+    "extensions/crabbox/src/crabbox-worker-warm-image.test-support.ts": (238, None, "OCRM-M11", "test-oracle-replaced"),
     "extensions/crabbox/src/crabbox-worker-env-profile.ts": (41, None, "OCRM-M10", "owner-audit"),
     "extensions/crabbox/src/crabbox-worker-profile-suggestion.ts": (85, None, "OCRM-M11", "owner-audit"),
     "extensions/crabbox/src/crabbox-model-run-cli.ts": (175, None, "OCRM-M10", "owner-audit"),

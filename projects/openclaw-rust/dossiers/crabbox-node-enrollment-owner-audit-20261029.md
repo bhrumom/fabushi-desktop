@@ -339,6 +339,40 @@ lookalike-flag rejection before credential access, and cleanup uncertainty
 failure. These are source contracts only; no Fabushi CLI, model provider,
 credential store or packaged execution acceptance is claimed.
 
+The warm-image allocation and credential-scrub chain was then read at the same
+locked tree:
+
+| Path | Blob | Lines | Disposition |
+| --- | --- | ---: | --- |
+| `crabbox-worker-warm-image.ts` | `af4b96a5fab3adf751864b784981e01c61fb8be5` | 706 | owner-audit |
+| `crabbox-worker-warm-image-scrub.ts` | `69b437fddcb2540f7c8e87562d6308bfb56a90c7` | 64 | owner-audit |
+| `crabbox-worker-warm-image-policy.ts` | `6559c442a8b956a6704f52085ff5c0259d901728` | 41 | owner-audit |
+| `crabbox-worker-warm-image-allocation.ts` | `27427bcb41602ad97b157f7f6e736b20b44b1221` | 187 | owner-audit |
+| `crabbox-worker-warm-image-policy.test.ts` | `1a3b29958c3ddd6b78d923c32061b6ae3bfc42d3` | 74 | test-oracle-replaced |
+| `crabbox-worker-warm-image-allocation.test.ts` | `89af0fe6b67238f2605fb960287d56c2e7f3c811` | 721 | test-oracle-replaced |
+| `crabbox-worker-warm-image.test-support.ts` | `16bda6158d6bbb1e6a25039f4b4bb179ffd829fb` | 238 | test-oracle-replaced |
+
+Warm-image management is a stateful provider owner, not a node-RPC or
+conversation store. It uses compare-and-apply rows, generation fencing,
+allocation holds and bounded capacity; freezes checkpoint-versus-cold choice
+before the first provider call; verifies pending checkpoints; retains
+indeterminate retirement/capture obligations; and releases a lease only after
+confirmed stop or explicit absence. Pin, rollback and delete reject active,
+held or pinned snapshots and remain owner-current/signal fenced. Allocation
+keeps runtime identity, preparation/cache keys, project facts and cold reasons
+in the same record, while the provider layer owns actual fork/warmup calls.
+
+The scrub script is a security boundary: it verifies PID, process group,
+runtime path, cwd and `OPENCLAW_STATE_DIR` ownership before terminating a node;
+removes only lease/session state and SSH workspaces; retains machine-level
+runtime/bundle caches; and replaces its shell before deleting uploaded scripts.
+Warm-image policy accepts only bounded whole-unit durations and an explicit
+binary `keepPrevious` flag. The focused oracles cover default/schema policy,
+capacity and eviction, generation/replay fencing, checkpoint availability,
+provider-fork failure, retention/retirement debt and cancellation ordering.
+These facts constrain a future Rust owner but do not prove Fabushi state-store,
+provider, filesystem-scrub or packaged acceptance.
+
 ## Fabushi owner resolution
 
 | Responsibility | Existing owner | Decision | Reason / boundary |
