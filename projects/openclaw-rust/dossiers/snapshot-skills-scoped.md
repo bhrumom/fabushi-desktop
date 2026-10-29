@@ -77,3 +77,21 @@ The ledger responsibility must still be split so this mutation source is
 mapped to SettingsService while `skill_runtime.rs` retains only the runtime
 library owner; executable verification remains pending for exact-head
 Actions.
+
+## 6. Exact snapshot-backup source read closure (2026-10-29)
+
+The sole locked source reference attached to
+`OCRM-RESP-SNAPSHOT-BACKUP-CODEC-001` was read in full:
+`src/snapshot/database-backup-core.worker.ts`, blob
+`f2a914c817028df98d38499abea2e50bcd44578f`, 256 lines. The source owns
+nofollow regular-file capture and SHA-256 artifacts, generation/currentness
+fencing, exact versus sanitized PostgreSQL export profiles, SQLite materialized
+captures, manifest publication, schema-version checks, restore into an
+owner-allocated `restore_<uuid>` namespace, anchor verification, and
+fail-closed namespace discard.
+
+The read closes source evidence only. The selected Rust
+`git_backup_manager.rs` owner is a SQLite/Git backup codec and is not a
+PostgreSQL port/export owner; its existing contract must not be presented as
+equivalent to the full upstream database worker. Production snapshot command
+and restore wiring, executable verification, and acceptance remain pending.
