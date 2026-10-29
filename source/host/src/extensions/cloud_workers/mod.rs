@@ -8,7 +8,9 @@
 mod lease;
 mod artifact_admission;
 mod node_bootstrap;
+mod platform_bridge;
 mod provider_catalog;
+mod sandbox;
 mod warm_image;
 
 pub use artifact_admission::{
@@ -21,6 +23,10 @@ pub use node_bootstrap::{
     CloudWorkerBootstrapRetryClass, CloudWorkerDiagnostic, CloudWorkerNodeBootstrapError,
     CloudWorkerSecretRef,
 };
+pub use platform_bridge::{
+    CloudWorkerDesktopSession, CloudWorkerPlatform, CloudWorkerPlatformBridge,
+    CloudWorkerPlatformBridgeError,
+};
 pub use lease::{
     CloudWorkerLease, CloudWorkerLeaseError, CloudWorkerLeaseMutation,
     CloudWorkerLeaseScope, CloudWorkerLifecycle, CloudWorkerMutationOutcome,
@@ -30,6 +36,10 @@ pub use lease::{
 pub use warm_image::{
     CloudWorkerWarmImage, CloudWorkerWarmImageError, CloudWorkerWarmImageGeneration,
     CloudWorkerWarmImageOperation, CloudWorkerWarmImageState,
+};
+pub use sandbox::{
+    CloudWorkerSandboxCapability, CloudWorkerSandboxError, CloudWorkerSandboxOperation,
+    CloudWorkerSandboxRequest,
 };
 pub use provider_catalog::{
     CloudWorkerCatalog, CloudWorkerCatalogError, CloudWorkerCatalogParser,

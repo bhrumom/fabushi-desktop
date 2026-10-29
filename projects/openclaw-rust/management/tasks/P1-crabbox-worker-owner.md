@@ -242,6 +242,11 @@ runtime and artifact digest, bounds redacted diagnostics, and distinguishes
 safe replay from reconcile-first outcome-unknown handling. It does not resolve
 secrets, enroll a device, launch a process or claim readiness.
 
+The platform and sandbox boundary now has thin descriptors for OS/session
+bridges and lease-scoped workspace operations. Sandbox requests use explicit
+argv vectors and workspace-relative paths; they do not interpolate shell
+strings, own platform policy, or create a second agent/conversation runtime.
+
 ## 9. Definition of Done / acceptance criteria
 
 - P1-AC01: ADR is approved and the target symbols/consumers are recorded in
