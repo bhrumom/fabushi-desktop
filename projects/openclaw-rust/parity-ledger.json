@@ -10,10 +10,10 @@
     "ui_accepted": false
   },
   "file_coverage": {
-    "mapped_paths": 1226,
+    "mapped_paths": 1419,
     "omitted_known": 0,
     "tracked_paths": 58750,
-    "unclassified_paths": 57524
+    "unclassified_paths": 57331
   },
   "inventory_authority": {
     "manifest_source": "GitHub Actions immutable artifact candidate",
@@ -526,7 +526,7 @@
         { "blob_sha": "0fc72458a1a29593e38e8e2b8c83504c370dd4b6", "path": "extensions/crabbox/src/crabbox-worker-stop.test.ts", "range": { "end_line": 90, "start_line": 1 }, "symbol": "Stop oracle" },
         { "blob_sha": "89af0fe6b67238f2605fb960287d56c2e7f3c811", "path": "extensions/crabbox/src/crabbox-worker-warm-image-allocation.test.ts", "range": { "end_line": 721, "start_line": 1 }, "symbol": "Warm-image allocation oracle" },
         { "blob_sha": "6dacb5f3d978984ade76c2aa69cae8a6efa07bdf", "path": "extensions/crabbox/src/crabbox-worker-warm-image-cli.test.ts", "range": { "end_line": 146, "start_line": 1 }, "symbol": "Warm-image CLI oracle" },
-        { "blob_sha": "ce9907a7e82397f7c8ee0f7c50d5eccb9ee7c5", "path": "extensions/crabbox/src/crabbox-worker-warm-image-lifecycle.test.ts", "range": { "end_line": 334, "start_line": 1 }, "symbol": "Warm-image lifecycle oracle" },
+        { "blob_sha": "ce9907a7e82397be46e50e51a2ba9c1d032799c5", "path": "extensions/crabbox/src/crabbox-worker-warm-image-lifecycle.test.ts", "range": { "end_line": 334, "start_line": 1 }, "symbol": "Warm-image lifecycle oracle" },
         { "blob_sha": "dc5e22a5f1e7290cbaa6a5bda1ddd65e8f34de73", "path": "extensions/crabbox/src/crabbox-worker-warm-image-maintenance.test.ts", "range": { "end_line": 420, "start_line": 1 }, "symbol": "Warm-image maintenance oracle" },
         { "blob_sha": "1a3b29958c3ddd6b78d923c32061b6ae3bfc42d3", "path": "extensions/crabbox/src/crabbox-worker-warm-image-policy.test.ts", "range": { "end_line": 74, "start_line": 1 }, "symbol": "Warm-image policy oracle" },
         { "blob_sha": "66ddbed3b5941e17fab48ffa662cdb31a690d296", "path": "extensions/crabbox/src/crabbox-worker-warm-image-recovery.test.ts", "range": { "end_line": 168, "start_line": 1 }, "symbol": "Warm-image recovery oracle" },
@@ -786,7 +786,7 @@
           "symbol": "prepareCrabboxWorkerProject"
         },
         {
-          "blob_sha": "1d1b10d90ad315511ee6abd66bd12d8b064e4763",
+          "blob_sha": "1d1b10d90ad31543ab70d27065767daf12050a8d",
           "path": "extensions/crabbox/src/crabbox-worker-node-enrollment-diagnostics.ts",
           "range": { "end_line": 90, "start_line": 1 },
           "symbol": "formatCrabboxEnrollmentDiagnostics"
@@ -14144,7 +14144,7 @@
           "symbol": "session transcript candidate/archive ownership"
         },
         {
-          "blob_sha": "739e3e17a084833eea8f2cd16cad6dbefd6e3160",
+          "blob_sha": "739e3e17a08483307414844719a9fa5a625dd688",
           "path": "src/gateway/active-sessions-shutdown-drain.ts",
           "range": {
             "end_line": 78,
@@ -25102,7 +25102,7 @@
           "symbol": "approval channel custody oracle"
         },
         {
-          "blob_sha": "d17c6832ce9bf9a2434d1d3e1e36ba5d7a743f38",
+          "blob_sha": "34249d9b662959a222973b10edd4c347339c1d51",
           "path": "src/gateway/approval-channel-custody.ts",
           "range": {"end_line": 214, "start_line": 1},
           "symbol": "prepareApprovalChannelCustody"
@@ -29193,7 +29193,7 @@
           "symbol": "waitForReplyOperationSourceRelease and waitForReplyRunEndBySessionId"
         },
         {
-          "blob_sha": "15c3034a84d4bca4948dd4f74599989f3f8ee06d",
+          "blob_sha": "c7ff720177afc32d6ba510e1e6721cf76d925c28",
           "path": "src/sessions/session-controller.lifecycle-state.ts",
           "range": {"end_line": 165, "start_line": 1},
           "symbol": "lifecycle and retainSessionControllerOperation"
@@ -29289,7 +29289,7 @@
           "symbol": "native attempt attach and detach custody"
         },
         {
-          "blob_sha": "2f51cb7e793a037b7dbb16977ced27a6de1a874",
+          "blob_sha": "2f51cb7e793a037b7dbb16977ced27a6de1a874e",
           "path": "src/sessions/session-controller.owner-context.ts",
           "range": {"end_line": 17, "start_line": 1},
           "symbol": "single async owner context and cleanup escape"
@@ -29307,7 +29307,7 @@
           "symbol": "terminal persisted-producer fence registry"
         },
         {
-          "blob_sha": "2992bcb7719b5da6a08869581743468cc37f396",
+          "blob_sha": "2992bcb7719b5da6a08869581743468cc37f3966",
           "path": "src/sessions/session-controller.test-support.ts",
           "range": {"end_line": 6, "start_line": 1},
           "symbol": "session controller test storage reset support"
@@ -29355,7 +29355,7 @@
           "symbol": "idle and follow-up/successor admission barriers"
         },
         {
-          "blob_sha": "ee44f59ad9250fd2f3a4a5409789708cbc1e424",
+          "blob_sha": "ee44f59ad92514fd2f3a4a5409789708cbc1e424",
           "path": "src/sessions/session-controller.session-reader.ts",
           "range": {"end_line": 32, "start_line": 1},
           "symbol": "exact operation session reader and actor admission"
@@ -29425,6 +29425,18 @@
           "path": "src/sessions/session-controller.producer-custody.ts",
           "range": {"end_line": 108, "start_line": 1},
           "symbol": "independent producer cancellation and source cleanup custody"
+        },
+        {
+          "blob_sha": "405edce1b3b6fd99bd547a4b5bbf890df266670c",
+          "path": "src/gateway/agent-turn/agent-run-execution-phase.ts",
+          "range": {"end_line": 717, "start_line": 1},
+          "symbol": "agent execution phase ownership and session controller settlement"
+        },
+        {
+          "blob_sha": "b4a0930b73b119f5f535b2ecacf984169a8ab386",
+          "path": "src/gateway/agent-turn/agent-session-persist.ts",
+          "range": {"end_line": 558, "start_line": 1},
+          "symbol": "agent session persistence and operation lifecycle"
         }
       ],
       "status": {
