@@ -175,12 +175,12 @@
       "uncompressed_sha256": "7c2782e52747715e6e93acd23b98a7d87abcfcc800e87a9fcba44def6e09fe41"
     },
     {
-      "compressed_sha256": "342b4ac8d26e8cd71e8a4327b3cf54bde3fcbcbfbdb4493b5761d833d3a3a83a",
+      "compressed_sha256": "737d709f5ef0388fc54452646f8347b66cde34e6de1c97f4b897ab1aacbf7de3",
       "count": 1024,
       "first_path": "scripts/release-plan-producer.mts",
       "last_path": "src/agents/auth-profiles/usage.ts",
       "path": "projects/openclaw-rust/inventory/shards/part-0021.jsonl.gz",
-      "uncompressed_sha256": "2c90b4bf79a2b4624f2049c353a22682fb838d92593be5bb6009c61e248e011b"
+      "uncompressed_sha256": "53a2021eb4c96b223b14d1d4b1f65facfe74f3993c3ba1469784eb83904d18ea"
     },
     {
       "compressed_sha256": "c8932feaf78ce628085b0a596fac40a309ea4c89605aa7a3fb3f61b076674d81",

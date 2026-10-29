@@ -12,6 +12,21 @@ from pathlib import Path
 ROOT = Path("projects/openclaw-rust")
 SHARDS = ROOT / "inventory" / "shards"
 READS = {
+    "security/README.md": (137, None, "OCRM-M10", "security-evidence"),
+    "security/opengrep/README.md": (136, None, "OCRM-M10", "security-evidence"),
+    "security/opengrep/check-rule-metadata.mjs": (139, None, "OCRM-M10", "security-evidence"),
+    "security/opengrep/compile-rules.mjs": (677, None, "OCRM-M10", "security-evidence"),
+    "security/opengrep/precise.yml": (4981, None, "OCRM-M10", "security-evidence"),
+    "security/opengrep/rules/ghsa-82g8-464f-2mv7/skill-env.js": (32, None, "OCRM-M10", "security-evidence"),
+    "security/opengrep/rules/ghsa-82g8-464f-2mv7/skill-env.ts": (146, None, "OCRM-M10", "security-evidence"),
+    "security/opengrep/rules/ghsa-82g8-464f-2mv7/skill-env.yml": (116, None, "OCRM-M10", "security-evidence"),
+    "security/opengrep/rules/ghsa-fv94-qvg8-xqpw/ssh-sandbox-upload.js": (102, None, "OCRM-M10", "security-evidence"),
+    "security/opengrep/rules/ghsa-fv94-qvg8-xqpw/ssh-sandbox-upload.ts": (108, None, "OCRM-M10", "security-evidence"),
+    "security/opengrep/rules/ghsa-fv94-qvg8-xqpw/ssh-sandbox-upload.yml": (33, None, "OCRM-M10", "security-evidence"),
+    "security/opengrep/rules/ghsa-qxgf-hmcj-3xw3/image-download.js": (159, None, "OCRM-M10", "security-evidence"),
+    "security/opengrep/rules/ghsa-qxgf-hmcj-3xw3/image-download.ts": (159, None, "OCRM-M10", "security-evidence"),
+    "security/opengrep/rules/ghsa-qxgf-hmcj-3xw3/image-download.yml": (35, None, "OCRM-M10", "security-evidence"),
+    "security/opengrep/rules/openclaw-policy/no-raw-http2-connect.yml": (33, None, "OCRM-M10", "security-evidence"),
     "crates/.gitignore": (2, None, "OCRM-M04", "dependency-authority"),
     "crates/Cargo.lock": (1164, None, "OCRM-M04", "dependency-authority"),
     "crates/Cargo.toml": (4, None, "OCRM-M04", "dependency-authority"),
