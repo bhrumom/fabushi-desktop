@@ -1323,3 +1323,25 @@ Controller, mailbox, operation, and target owners; they do not introduce a
 second identity authority, claim registry, or settlement path. Rust
 implementation, wiring, runtime execution, and acceptance remain
 unverified.
+
+## 131. Session mailbox source custody, selection, operation lifecycle, and settlement (2026-10-29)
+
+The locked `session-controller.mailbox-source.ts`,
+`session-controller.mailbox-dispatch.ts`, `session-controller.operation.ts`,
+and `session-controller.settlement.ts` were read in full. Source custody
+keeps injection order ahead of later reservations, requires live authority
+and exact mailbox ownership before native injection, distinguishes ACK from
+the final native outcome, and retains cleanup/abandonment receipts through
+cancellation, withdrawal, source adoption, and disposal. The mailbox selector
+is the sole successor selector: it applies mutation ownership, priority
+interrupts, follow-up barriers, gateway scope matching, delivery grouping,
+debounce, restart-drain refusal, and capability preparation before creating a
+claim. Reply operations bind the exact owner/target, maintain lifecycle
+state, backend readiness, watchdog phases, tool authority, terminal-producer
+fences, session-id/key adoption, rekey ownership, abort result codes, yield,
+recovery, and cleanup barriers; settlement waits on producer completion or
+owner fencing and provides bounded barrier/end-by-session waits. These sources
+map to the existing Session Turns Controller mailbox, operation, watchdog,
+and settlement owners; they do not create a second scheduler, operation
+state machine, source registry, or wait authority. Rust implementation,
+wiring, runtime execution, and acceptance remain unverified.

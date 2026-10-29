@@ -29167,6 +29167,30 @@
           "path": "src/sessions/session-controller.operation-admission.ts",
           "range": {"end_line": 125, "start_line": 1},
           "symbol": "prepareReplyOperationAdmission"
+        },
+        {
+          "blob_sha": "19049e551707feeb5cca7e45a394dbffc27fa000",
+          "path": "src/sessions/session-controller.mailbox-source.ts",
+          "range": {"end_line": 629, "start_line": 1},
+          "symbol": "retireSessionControllerInput and completeSessionControllerSourceLifecycle"
+        },
+        {
+          "blob_sha": "04bf72dbae79a239fc5a9fa59e07e8f60c74eacf",
+          "path": "src/sessions/session-controller.mailbox-dispatch.ts",
+          "range": {"end_line": 330, "start_line": 1},
+          "symbol": "pumpSessionControllerMailbox"
+        },
+        {
+          "blob_sha": "f01d88e7a1cb0f9e4d8f4eb5883e99c9787b352b",
+          "path": "src/sessions/session-controller.operation.ts",
+          "range": {"end_line": 723, "start_line": 1},
+          "symbol": "createReplyOperation"
+        },
+        {
+          "blob_sha": "24691844388a5b948dc079394750671efe35e6ef",
+          "path": "src/sessions/session-controller.settlement.ts",
+          "range": {"end_line": 92, "start_line": 1},
+          "symbol": "waitForReplyOperationSourceRelease and waitForReplyRunEndBySessionId"
         }
       ],
       "status": {
