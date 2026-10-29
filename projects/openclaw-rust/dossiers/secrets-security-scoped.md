@@ -50,3 +50,23 @@ custom pipe-producing process launches and synchronous service probes before
 Node creates a child, including Execa stdio/input combinations. These are
 source oracles for the existing Fabushi secrets, proxy-capture, and bounded
 process owners; no ledger, shard/index, or completion flag was changed.
+
+## 5. Secrets apply-oracle owner boundary recheck (2026-10-29)
+
+The exact `src/secrets/apply.test-support.ts` source was re-read from the
+locked commit/tree at blob `e4b9ded6712b90cc19af41bfc82ee372cec09686` (128
+lines). Its contract is an apply-fixture boundary: one state root binds
+`openclaw.json`, auth SQLite, `auth.json`, `.env`, and environment-backed
+provider credentials; a concurrent writer can mutate credentials or ordering
+between persistence commit and runtime snapshot publication, and rollback must
+preserve that newer writer.
+
+This is materially broader than the current Rust
+`source/host/src/extensions/secrets/audit_manager.rs` owner, which recursively
+scans a JSON value for plaintext/redacted secret markers and exposes static
+channel environment-variable mappings. It has no auth-store/config/.env
+publication transaction, concurrent-writer snapshot comparison, or rollback
+custody. The ledger's `SECRETS-AUDIT-APPLY` row therefore combines a residue
+scanner with an apply-lifecycle oracle that is not implemented by the selected
+owner. The source read is retained, but implementation/wiring/verification and
+acceptance remain pending; no status flag was promoted.
