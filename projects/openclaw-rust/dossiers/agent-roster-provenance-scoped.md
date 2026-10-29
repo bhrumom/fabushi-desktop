@@ -109,7 +109,7 @@ The audited source code was decomposed into 6 discrete Rust runtime responsibili
 ## 5. Exact-head production reachability re-audit (2026-10-29, refreshed)
 
 The exact Fabushi target under review is
-`f87889df61ca5b3aae49df728e779460635f258f`. The production Host now has a
+`03db1a45e80912aa868516bf00cc45c3862eede4`. The production Host now has a
 real roster bookkeeping owner chain:
 
 - `ProductionHostExtensions::start_box_store_sync` supplies the existing
@@ -121,20 +121,18 @@ real roster bookkeeping owner chain:
   `HostRosterBookkeeping::apply_config`;
 - both existing `config.set` and `setHostSettings` paths persist `agents` and
   reapply the bookkeeping projection;
-- GitHub Rust desktop run `40820864704` passed the shipping Host `cargo check`
-  step at this exact head; the full Host test step is still running.
+- GitHub Rust desktop run `40822328125` completed successfully at the exact
+  implementation head, including the full Host test suite and the OpenClaw
+  audit-integrity check.
 
 The following behavior remains outside the connected path:
-- `apply_implicit_agent_roster_defaults`,
-  `collect_agent_roster_findings`, `can_write_doctor_include`, and
-  `pin_survivor_workspace_for_roster_collapse` have no production consumers;
-- `apply_implicit_agent_roster_defaults`, `collect_agent_roster_findings`,
-  `can_write_doctor_include`, and
+- `collect_agent_roster_findings`, `can_write_doctor_include`, and
   `pin_survivor_workspace_for_roster_collapse` still have no production
   consumer;
-- the persisted `agents` document is now exposed by SettingsService, but its
-  doctor/include provenance and security-audit policy are not yet enforced by
-  that owner.
+- SettingsService now invokes `apply_implicit_agent_roster_defaults` before
+  persisting `agents`; the persisted document is exposed through the existing
+  config owner, but its doctor/include provenance and security-audit policy are
+  not yet enforced by that owner.
 
 The representation/bookkeeping call chain is therefore production-wired, but
 the blocker `BL-AGENT-ROSTER-UPSTREAM-CALLER-001` remains valid for the

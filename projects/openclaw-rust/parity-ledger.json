@@ -314,7 +314,9 @@
       ],
       "evidence_refs": [
         "source/host/tests/openclaw_agent_roster_contract.rs",
-        "projects/openclaw-rust/dossiers/agent-roster-provenance-scoped.md"
+        "projects/openclaw-rust/dossiers/agent-roster-provenance-scoped.md",
+        "source/host/src/extensions/settings/settings_service.rs",
+        "source/host/app/src/main.rs"
       ],
       "existing_owner_candidates": [
         {
@@ -377,7 +379,7 @@
         "mapping": "reviewed",
         "read": "read-complete",
         "verification": "not-run",
-        "wiring": "not-wired"
+        "wiring": "wired"
       },
       "target": {
         "language": "Rust",
