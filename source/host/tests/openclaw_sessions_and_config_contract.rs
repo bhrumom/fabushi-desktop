@@ -244,7 +244,13 @@ fn test_ocrm_session_o02_communication_policy() {
         session_key: "session-a".into(),
         store_path: "/sessions/a".into(),
         session_id: Some("sid-a".into()),
-        communication: None,
+        // The negative admission below is intended to isolate the target's
+        // receive=never override.  Without this source override, the
+        // default send=never policy would deny first by design.
+        communication: Some(SessionCommunicationPolicyOverride {
+            send: Some(SessionCommunicationMode::Always),
+            receive: None,
+        }),
     };
     let target = CommunicationEndpoint {
         agent_id: "agent-b".into(),
