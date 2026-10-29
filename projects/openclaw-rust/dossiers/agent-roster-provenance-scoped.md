@@ -108,8 +108,8 @@ The audited source code was decomposed into 6 discrete Rust runtime responsibili
 
 ## 5. Exact-head production reachability re-audit (2026-10-29, refreshed)
 
-The exact Fabushi target under review is
-`03db1a45e80912aa868516bf00cc45c3862eede4`. The production Host now has a
+The exact Fabushi implementation target under review is
+`919513e1eae83a7021f7444794de9763376eb321`. The production Host now has a
 real roster bookkeeping owner chain:
 
 - `ProductionHostExtensions::start_box_store_sync` supplies the existing
@@ -121,20 +121,28 @@ real roster bookkeeping owner chain:
   `HostRosterBookkeeping::apply_config`;
 - both existing `config.set` and `setHostSettings` paths persist `agents` and
   reapply the bookkeeping projection;
-- GitHub Rust desktop run `40822328125` completed successfully at the exact
-  implementation head, including the full Host test suite and the OpenClaw
-  audit-integrity check.
+- `SettingsService::set_host_settings` now consumes
+  `pin_survivor_workspace_for_roster_collapse` while preserving the existing
+  settings owner and persists the pinned survivor workspace on a real roster
+  collapse.
+- `config.set` and `setHostSettings` now project
+  `collect_agent_roster_findings` into the existing Host diagnostic stream;
+  they do not create a parallel security store.
+- GitHub Rust desktop run `40825741950` completed successfully at this exact
+  implementation head, and OCRM source-authority run `40825742161` completed
+  successfully. The Rust run covered the full Host test suite, attachment,
+  takeover, ownership, credential-handoff, and pressure checks.
 
 The following behavior remains outside the connected path:
-- `collect_agent_roster_findings`, `can_write_doctor_include`, and
-  `pin_survivor_workspace_for_roster_collapse` still have no production
-  consumer;
-- SettingsService now invokes `apply_implicit_agent_roster_defaults` before
-  persisting `agents`; the persisted document is exposed through the existing
-  config owner, but its doctor/include provenance and security-audit policy are
-  not yet enforced by that owner.
+- `can_write_doctor_include` still has no production doctor/include staging
+  consumer. No new doctor runtime was introduced; the existing settings owner
+  still needs an explicitly authorized include-aware write path.
+- SettingsService invokes `apply_implicit_agent_roster_defaults` before
+  persisting `agents`; its security findings are now projected through Host
+  diagnostics, while include-owned doctor writes remain guarded only by the
+  tested helper.
 
 The representation/bookkeeping call chain is therefore production-wired, but
 the blocker `BL-AGENT-ROSTER-UPSTREAM-CALLER-001` remains valid for the
-remaining configuration/doctor/security helper consumers. No global completion
-flag is upgraded by this partial wiring evidence.
+remaining doctor/include consumer. No global completion flag is upgraded by
+this partial wiring evidence.

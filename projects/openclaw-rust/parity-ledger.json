@@ -684,7 +684,8 @@
       ],
       "evidence_refs": [
         "source/host/tests/openclaw_agent_roster_contract.rs",
-        "projects/openclaw-rust/dossiers/agent-roster-provenance-scoped.md"
+        "projects/openclaw-rust/dossiers/agent-roster-provenance-scoped.md",
+        "source/host/app/src/main.rs"
       ],
       "existing_owner_candidates": [
         {
@@ -746,8 +747,8 @@
         "implementation": "implemented",
         "mapping": "mapped",
     "read": "read-complete",
-        "verification": "not-run",
-        "wiring": "not-wired"
+        "verification": "verified",
+        "wiring": "wired"
       },
       "target": {
         "language": "Rust",
@@ -981,7 +982,7 @@
       ],
       "id": "OCRM-RESP-AGENT-WORKSPACE-TRANSITION-001",
       "integration": {
-        "consumer": "source/host/src/agents/settings_file.rs::write_sand_settings_file",
+        "consumer": "source/host/src/extensions/settings/settings_service.rs::set_host_settings",
         "entrypoint": "source/host/src/agents/agent_roster.rs::pin_survivor_workspace_for_roster_collapse",
         "owner": "source/host/src/agents/agent_roster.rs::pin_survivor_workspace_for_roster_collapse",
         "producer": "source/host/src/agents/agent_roster.rs::pin_survivor_workspace_for_roster_collapse"
@@ -1033,8 +1034,8 @@
         "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
-        "wiring": "not-wired"
+        "verification": "verified",
+        "wiring": "wired"
       },
       "target": {
         "language": "Rust",
