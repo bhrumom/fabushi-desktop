@@ -671,3 +671,20 @@ This is a fail-closed manifest-boundary correction, not a live transport
 implementation. No remote command is newly enabled, no pairing state is used
 as availability evidence, and OCRM-M13 remains pending until a production
 transport owner supplies availability and exact-head/device evidence.
+
+## 96. Gateway device-auth and route-binding sources (2026-10-29)
+
+The locked `call-device-auth.ts`, `call-device-auth.worker.test.ts`, and
+`connection-details.ts` were read in full and mapped to the existing NodeHost
+connection/auth boundary. Gateway calls create a device identity only when
+authentication requires local device state; read-only calls may reuse existing
+identity but must not create identity or open writable storage. Stored operator
+tokens are selected by device scope and role, while local loopback shared-auth
+paths intentionally omit device identity only when the supplied auth contract
+actually authenticates the call. Remote route binding derives stable SSH- or
+TLS-fingerprint-scoped credential keys, preserves the selected SSH remote port,
+redacts URLs in diagnostics, and rejects non-loopback plaintext websocket URLs
+unless the explicit break-glass environment contract is enabled. The worker
+oracle pins the no-write/read-only and lazy-storage invariants. These sources
+extend `OCRM-RESP-NODE-HOST-CONNECTION-001`; they do not create a second auth
+owner or prove Fabushi Rust transport, package, device, or Actions acceptance.

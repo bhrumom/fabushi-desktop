@@ -21626,6 +21626,33 @@
       "selected_owner": "source/host/src/extensions/node_host/session_registry.rs",
       "source_refs": [
         {
+          "blob_sha": "1cee7edcdcc2cf3869bec7baa5ac15c9b446b70f",
+          "path": "src/gateway/call-device-auth.ts",
+          "range": {
+            "end_line": 217,
+            "start_line": 1
+          },
+          "symbol": "resolveGatewayCallDeviceAuth and loadStoredOperatorDeviceAuthToken"
+        },
+        {
+          "blob_sha": "712b084cddb62ece43b9ef6e1e6abc31f3f92bde",
+          "path": "src/gateway/call-device-auth.worker.test.ts",
+          "range": {
+            "end_line": 82,
+            "start_line": 1
+          },
+          "symbol": "read-only identity admission and lazy storage selection oracle"
+        },
+        {
+          "blob_sha": "838036b2630c1038a3c459dbe9fa11b28db9bb2f",
+          "path": "src/gateway/connection-details.ts",
+          "range": {
+            "end_line": 241,
+            "start_line": 1
+          },
+          "symbol": "resolveGatewayDeviceAuthRoute and buildGatewayConnectionDetailsWithResolvers"
+        },
+        {
           "blob_sha": "6ee2e1669f2315ad414383b9153d8ff73f0bffbf",
           "path": "src/gateway/node-registry-pairing.ts",
           "range": {
