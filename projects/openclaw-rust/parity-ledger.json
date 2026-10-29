@@ -29311,6 +29311,24 @@
           "path": "src/sessions/session-controller.test-support.ts",
           "range": {"end_line": 6, "start_line": 1},
           "symbol": "session controller test storage reset support"
+        },
+        {
+          "blob_sha": "433c150c720a5eb871a7fe5e14efe59011cd982e",
+          "path": "src/sessions/session-controller.mailbox-cleanup.ts",
+          "range": {"end_line": 236, "start_line": 1},
+          "symbol": "authorized mailbox clear and restart-drain cleanup"
+        },
+        {
+          "blob_sha": "322644d1c79f27d97c21a1fa00ca9238cd11a067",
+          "path": "src/sessions/session-controller.mailbox-predecessor.ts",
+          "range": {"end_line": 164, "start_line": 1},
+          "symbol": "pre-execution claim predecessor reservation and restoration"
+        },
+        {
+          "blob_sha": "676f70b87850a3580914690879c68e81b7b9e257",
+          "path": "src/sessions/session-controller.mailbox-task.ts",
+          "range": {"end_line": 94, "start_line": 1},
+          "symbol": "native producer task claim through mailbox selector"
         }
       ],
       "status": {

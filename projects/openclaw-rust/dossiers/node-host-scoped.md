@@ -1442,3 +1442,23 @@ registry. These sources map to the existing Session Turns Controller async
 ownership, native-attempt, cleanup, and producer-fence owners; they do not
 create a second execution authority or settlement truth. Rust implementation,
 wiring, runtime execution, and acceptance remain unverified.
+
+## 136. Session mailbox cleanup, predecessor restoration, and native task claims (2026-10-29)
+
+The locked `session-controller.mailbox-cleanup.ts`,
+`session-controller.mailbox-predecessor.ts`, and
+`session-controller.mailbox-task.ts` were read in full. Mailbox clearing
+captures only authorized, non-current inputs, detaches matching summary
+sources, preserves reentrant successor generations, aborts and retires each
+source in order, and keeps committed cancellation custody intact; restart
+drain binds to the existing gateway signal and cleans waiting inputs without
+stealing active producer ownership. A pre-execution claim can reserve one
+predecessor, reorder selector and cancellation sequence monotonically, and
+restore the original claim only after the predecessor settles and all claim
+custody invariants still hold; abort or loss of custody fails closed. Native
+task claims reuse the physical mailbox selector, reject consumed/injected or
+already-requested sources, and start only the existing claim without creating
+another runnable input. These sources map to the existing Session Turns
+Controller mailbox cleanup, predecessor, and native-task owners; they do not
+create a second queue, cancellation authority, or task scheduler. Rust
+implementation, wiring, runtime execution, and acceptance remain unverified.
