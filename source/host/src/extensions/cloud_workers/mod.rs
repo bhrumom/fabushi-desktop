@@ -7,6 +7,7 @@
 
 mod lease;
 mod artifact_admission;
+mod node_bootstrap;
 mod provider_catalog;
 mod warm_image;
 
@@ -14,6 +15,11 @@ pub use artifact_admission::{
     CloudWorkerArtifactAdmission, CloudWorkerArtifactAdmissionError,
     CloudWorkerArtifactAdmissionState, CloudWorkerArtifactDigest,
     CloudWorkerArtifactKind, CloudWorkerArtifactPolicy, CloudWorkerArtifactSource,
+};
+pub use node_bootstrap::{
+    CloudWorkerBootstrapPhase, CloudWorkerBootstrapRecord, CloudWorkerBootstrapRequest,
+    CloudWorkerBootstrapRetryClass, CloudWorkerDiagnostic, CloudWorkerNodeBootstrapError,
+    CloudWorkerSecretRef,
 };
 pub use lease::{
     CloudWorkerLease, CloudWorkerLeaseError, CloudWorkerLeaseMutation,

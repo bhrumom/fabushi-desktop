@@ -235,6 +235,13 @@ compare-and-apply transitions, fork holds, retirement protection, capture
 uncertainty and cleanup debt. It is an in-memory state contract only; no
 snapshot allocation, capture, deletion or persistence is performed.
 
+The bootstrap foundation at
+`source/host/src/extensions/cloud_workers/node_bootstrap.rs` keeps credentials
+as opaque secret references, binds bootstrap records to the admitted scope,
+runtime and artifact digest, bounds redacted diagnostics, and distinguishes
+safe replay from reconcile-first outcome-unknown handling. It does not resolve
+secrets, enroll a device, launch a process or claim readiness.
+
 ## 9. Definition of Done / acceptance criteria
 
 - P1-AC01: ADR is approved and the target symbols/consumers are recorded in
