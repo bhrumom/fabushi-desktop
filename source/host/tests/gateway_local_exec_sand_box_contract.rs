@@ -463,6 +463,57 @@ fn exec_manager_journals_stable_operation_id_and_cancels_provider_request() {
     assert!(manager.operation_history_for_agent("other-agent").is_empty());
 }
 
+#[test]
+fn exec_manager_does_not_mark_cancel_when_provider_rejects_delivery() {
+    let (bridge, _registration, receive) = bridge_with_provider();
+    let gate = Arc::new(FakeGate::default());
+    let manager = GatewayLocalExecSandBox::new(bridge.clone(), gate)
+        .remote_resource_accessor()
+        .manager();
+
+    let shell_manager = Arc::clone(&manager);
+    let shell = thread::spawn(move || {
+        shell_manager.execute_shell(
+            &GatewayLocalToolScope {
+                agent_id: Some("agent-undelivered-cancel".into()),
+                tool_call_id: Some("operation-undelivered-cancel".into()),
+                action: Some("run-command".into()),
+            },
+            "echo provider-disconnected",
+            "/tmp",
+            "operation-undelivered-cancel",
+        )
+    });
+
+    let exec = receive
+        .recv_timeout(Duration::from_secs(1))
+        .expect("exec frame");
+    let request_id = exec["requestId"].as_str().expect("request id").to_string();
+    drop(receive);
+
+    assert!(!manager.cancel_operation_for_agent(
+        "agent-undelivered-cancel",
+        "operation-undelivered-cancel"
+    ));
+
+    bridge.submit_responses(json!({"frames":[{
+        "kind":"client",
+        "requestId":request_id,
+        "message":{"id":1,"shellStream":{"exit":{"code":0,"cwd":"/tmp","aborted":false}}}
+    }]}));
+    let result = shell
+        .join()
+        .expect("shell thread")
+        .expect("provider exit remains observable");
+    assert_eq!(result.exit_code, Some(0));
+    assert!(!result.aborted);
+
+    let settled = manager
+        .operation_for_agent("agent-undelivered-cancel", "operation-undelivered-cancel")
+        .expect("settled operation");
+    assert_eq!(settled.status, GatewayLocalExecOperationStatus::Completed);
+}
+
 
 fn real_shell_output(command: &str) -> std::process::Output {
     #[cfg(windows)]

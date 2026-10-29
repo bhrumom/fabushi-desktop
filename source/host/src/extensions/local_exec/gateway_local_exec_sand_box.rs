@@ -853,8 +853,11 @@ impl GatewayLocalExecManager {
         let Some(operation) = active.get_mut(operation_id) else {
             return false;
         };
-        operation.cancel_requested = true;
-        operation.cancellation.cancel()
+        let delivered = operation.cancellation.cancel();
+        if delivered {
+            operation.cancel_requested = true;
+        }
+        delivered
     }
 
     pub fn cancel_operation_for_agent(&self, agent_id: &str, operation_id: &str) -> bool {

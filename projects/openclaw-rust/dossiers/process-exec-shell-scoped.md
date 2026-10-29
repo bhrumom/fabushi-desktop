@@ -64,6 +64,13 @@ controller boundary. This is transport-delivery evidence for the existing
 local-exec owner, not proof that a provider terminated a real process or that
 the upstream termination controller is production-wired.
 
+The manager now applies that same delivery result to its internal settlement
+state: `cancel_requested` is set only after the provider sender accepts the
+cancel frame. A failed send therefore cannot cause a later provider exit or
+throw to be misclassified as `Cancelled`; it remains governed by the observed
+terminal outcome. Termination-controller parity and real provider acceptance
+remain pending.
+
 The same locked-source pass also completed the adjacent execution contracts:
 
 | File | Blob SHA | Lines | Read/mapping result |
