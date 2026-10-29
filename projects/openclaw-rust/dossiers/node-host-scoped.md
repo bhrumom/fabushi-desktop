@@ -1727,3 +1727,49 @@ are focused source oracles for existing Session Turns/Gateway owners; no
 generated shard/index state, ledger ref, or completion flag was changed.
 Rust implementation, production wiring, executable verification, and
 acceptance remain unverified.
+
+## 148. Remaining Agent turn, transcript-fence, and routing oracle closure (2026-10-29)
+
+The remaining locked oracle sources were read in full:
+`agent-run-execution-phase.owner.test.ts`
+(`244bae9f1bd5f18290fbd32cf9f27b513e8f7509`, 789 lines),
+`agent-run-execution-lineage.test.ts`
+(`9ac4626e09e4d647ce571ea9e9ce4aa92663e61e`, 109 lines),
+`agent-content-phase.test.ts`
+(`8ac27c8ce6bf1e39a31a3764c6e56244a942caf7`, 223 lines),
+`agent-delivery-phase.test.ts`
+(`a1117880331487b783d3a8e434d371b894e70346`, 167 lines),
+`agent-run-user-turn.test.ts`
+(`2aaba7e64dc915e33d6c6754cb7f51aedf42e25b`, 263 lines),
+`agent-run-subagent.test.ts`
+(`c96d4da8bac5e266771356b60685367ffb0516d7`, 238 lines),
+`agent-run-dispatch.owner.test.ts`
+(`e60380357cf976ed5ad7921c615572f6eb4f8be7`, 642 lines),
+`agent-run-dispatch.incognito.test.ts`
+(`ecdbdd42f6bd65fb7c2fec6028075be19130643a`, 154 lines),
+`agent-run-dispatch.test-support.ts`
+(`50e2c2a810d653c64e04583e0f2062e1c66804a2`, 54 lines),
+`plugin-sdk/context-engine-transcript-runtime.test.ts`
+(`53843b0ec5c75b554aeacaefa2cf6c7feeb960a7`, 192 fetched lines), and
+`poll-params.test.ts`
+(`bf7918df646d0e185f97fc3551a35c06c6cdeafc`, 33 fetched lines).
+The execution owner oracle keeps captured source/operation ownership through
+terminal publication, disposal, cleanup failures, self-drain, workspace
+resume, provider context, runtime-generation borrowing, follow-up successor
+replacement, and private replay diagnostics. Lineage facts preserve parent
+context/execution/run, grants, policy and runtime-assurance evidence without
+inferring unsupported ACP callbacks. Content admission fences session/model
+selection around asynchronous reads; delivery observes only the selected
+Gateway/store scope and suppresses private diagnostics; user-turn preparation
+refuses stale admission and cleans committed/unknown/unretained media exactly
+once. Subagent and dispatch oracles preserve requester-bound completion,
+successor custody, terminal-save ordering, registration replacement fencing,
+canonical result classification, yield ownership, incognito redaction, and
+primitive-throw preservation. The context-engine oracle verifies reset-window
+tail selection, paired tool results, generation/reset cursor invalidation and
+read fences; the poll oracle rejects schema-padded duration/multi defaults as
+poll intent while accepting real poll question/options. These are focused
+oracles for existing Session Turns, Gateway, Plugin SDK and message-routing
+owners; no generated shard/index state, ledger ref, or completion flag was
+changed. Rust implementation, production wiring, executable verification, and
+acceptance remain unverified.
