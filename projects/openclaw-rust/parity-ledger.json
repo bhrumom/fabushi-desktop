@@ -7248,6 +7248,24 @@
       "selected_owner": "source/host/src/host_gateway_api.rs",
       "source_refs": [
         {
+          "blob_sha": "9a733a06b3cf7c1099548008feb65a95af24e331",
+          "path": "src/gateway/server/ws-connection/message-handler.ts",
+          "range": {
+            "end_line": 748,
+            "start_line": 1
+          },
+          "symbol": "attachGatewayWsMessageHandler"
+        },
+        {
+          "blob_sha": "965068f52f6abd5945d0cd5f0e3ac35ae5c31fc4",
+          "path": "src/gateway/server/ws-connection/authenticated-request-dispatch.ts",
+          "range": {
+            "end_line": 567,
+            "start_line": 1
+          },
+          "symbol": "createGatewayAuthenticatedRequestDispatcher"
+        },
+        {
           "blob_sha": "5bebd34bd2b3e5765947fb58a5b71be98588c10a",
           "path": "src/gateway/server-methods.ts",
           "range": {

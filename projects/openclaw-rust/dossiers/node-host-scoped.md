@@ -725,6 +725,22 @@ sources refine the existing NodeHost connection, Gateway auth, DevicePairing
 approval, and token owners; they do not prove Rust implementation or package,
 device, and exact-head acceptance.
 
+## 100. Gateway websocket frame orchestration and authenticated request dispatch (2026-10-29)
+
+The locked `message-handler.ts` and `authenticated-request-dispatch.ts` were
+read in full and mapped to the existing Gateway dispatch registry. The frame
+owner enforces pre-auth size and handshake shape, remote-ingress freshness,
+root-work admission, pairing-cleanup release, ordered queued handshake frames,
+phase/timing diagnostics, and node-only close-drain continuation. The
+authenticated dispatcher validates frames, retains request authority, fences
+device revocation/shared-auth generation/operator access/runtime identity,
+serializes credential-invalidating mutations, binds expected profile and
+mutation authority, and delegates actual methods to the canonical Gateway
+method owner. It preserves node lifecycle draining and request cancellation
+without making a second agent/session/runtime owner. This closes the
+Gateway-frame producer → authority fences → existing method/NodeHost consumer
+map; Rust production wiring and exact-head acceptance remain unverified.
+
 ## 99. Dedicated worker websocket admission and dispatch (2026-10-29)
 
 The locked `worker-admission-boundary.ts`, `worker-connection-dispatch.ts`,
