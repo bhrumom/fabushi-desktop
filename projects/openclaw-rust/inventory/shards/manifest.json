@@ -7,12 +7,12 @@
   "shard_size_limit": 1024,
   "shards": [
     {
-      "compressed_sha256": "80120a1cf35bea0e0e174f37ab988c264e19b25b635853ea35dd9e2fff4ae79b",
+      "compressed_sha256": "fb39326ba3229ea81881156e99558ab9ab5be88f055a3f9bd795b5772c516847",
       "count": 1024,
       "first_path": ".agents/resume",
       "last_path": "apps/android/app/src/main/java/ai/openclaw/app/ui/CronJobManagementPanel.kt",
       "path": "projects/openclaw-rust/inventory/shards/part-0000.jsonl.gz",
-      "uncompressed_sha256": "c1a1e1a7f082781f4b9ec12efa89a2565b09691deb773ba528414dbe41fbbc15"
+      "uncompressed_sha256": "668880d294c4e08fdf5bd79d0d5be923fc1350908cb0180508786b5b5c2eff5e"
     },
     {
       "compressed_sha256": "40326476c022c74ed24fe56d077203b908300eda3f7447056faaadf53d992f3c",

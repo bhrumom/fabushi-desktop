@@ -1975,6 +1975,33 @@
             "start_line": 1
           },
           "symbol": "provisionCrabboxWorker"
+        },
+        {
+          "blob_sha": "9ae7e803e7274da747085c781976add2af1eeefe",
+          "path": ".crabbox.yaml",
+          "range": {
+            "end_line": 144,
+            "start_line": 1
+          },
+          "symbol": "Crabbox repository/provider profile"
+        },
+        {
+          "blob_sha": "b49283fe0e38bfa33474986a4569708e09797549",
+          "path": ".agents/skills/crabbox/SKILL.md",
+          "range": {
+            "end_line": 232,
+            "start_line": 1
+          },
+          "symbol": "Crabbox routing, authorization and lease policy"
+        },
+        {
+          "blob_sha": "90a07dc4e05ece8a4a39c496653cff9741667836",
+          "path": ".agents/skills/crabbox/references/operations.md",
+          "range": {
+            "end_line": 185,
+            "start_line": 1
+          },
+          "symbol": "Crabbox operations, observability and cleanup policy"
         }
       ],
       "status": {

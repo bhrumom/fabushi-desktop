@@ -25,6 +25,18 @@ implementation unit under the approved source-neutral boundary. It does not
 claim that the OpenClaw extension, a provider, an account, a device, or a
 packaged Fabushi path is currently available.
 
+The locked repository operations sources add a non-optional execution policy:
+`.crabbox.yaml` resolves the repository's provider/profile/workflow/job,
+`.agents/skills/crabbox/SKILL.md` requires a resolved provider and an owned
+bounded lease, and `references/operations.md` requires exact command,
+observability and cleanup handling. They prohibit provider fallback, queue
+waiting, invented consumer commands, secret-bearing output, and treating a
+missing live-list row as proof of cleanup. Therefore the native owner must
+model provider selection, lease lifetime, retained recovery state and
+observability as explicit typed inputs/results; it must not embed these
+operations as an unreviewed local shell wrapper or silently substitute a
+different provider.
+
 ## 2. Goal
 
 Implement and wire the Crabbox worker provisioning capability as a native Rust
