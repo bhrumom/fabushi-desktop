@@ -63,20 +63,20 @@
       "uncompressed_sha256": "1b4b99fc582fa6fcfdd007eb324a4bda11850bc38f9ff3acd10a78413b34e0eb"
     },
     {
-      "compressed_sha256": "f74ab205111595d2a9f3ebf3435b43fdfa9b0392caa298a9b2061e13851a81ac",
+      "compressed_sha256": "acaf9853fd603ba26907fb83ea82f33fc18e3ef5e266cb50420f8f3894cae056",
       "count": 1024,
       "first_path": "extensions/codex/src/app-server/dynamic-tool-availability.test.ts",
       "last_path": "extensions/crabbox/src/crabbox-worker-lifetime.ts",
       "path": "projects/openclaw-rust/inventory/shards/part-0007.jsonl.gz",
-      "uncompressed_sha256": "ba99bb4e8053672cd41ae9f7f0c6f3ff711db15b4d6fb1c03d7fc94925ed743f"
+      "uncompressed_sha256": "e5efc1e36e456df8c3b9c2a13e695cdf33f8c5706c7e75b23d9629395ba85748"
     },
     {
-      "compressed_sha256": "5b36d8608defba5b7fba20813820754716e85be55891dc5e6d98b09cd233d8a7",
+      "compressed_sha256": "11aa599715e8e27172914af867fa1d05a048def0c589afd834f70b7a9e57bcce",
       "count": 1024,
       "first_path": "extensions/crabbox/src/crabbox-worker-machine-options.ts",
       "last_path": "extensions/discord/test/discord-api-types-payloads-v10-runtime.ts",
       "path": "projects/openclaw-rust/inventory/shards/part-0008.jsonl.gz",
-      "uncompressed_sha256": "39878c04b54047039c3627d084ff26a49f0d7b35c98ba8bdfdb5911b7e951859"
+      "uncompressed_sha256": "293d6a8ca7652f4b1a78453097e3761993f1141b40bf8ded77806532367cad83"
     },
     {
       "compressed_sha256": "1a84dc82f0a53d08bf34cdfbcb79e028382d0f2e50a5c493289933afcd32aac9",

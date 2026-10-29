@@ -10,10 +10,10 @@
     "ui_accepted": false
   },
   "file_coverage": {
-    "mapped_paths": 1106,
+    "mapped_paths": 1113,
     "omitted_known": 0,
     "tracked_paths": 58750,
-    "unclassified_paths": 57644
+    "unclassified_paths": 57637
   },
   "inventory_authority": {
     "manifest_source": "GitHub Actions immutable artifact candidate",
@@ -145,6 +145,184 @@
         "CloudWorkerCatalogCache",
         "CloudWorkerBinaryIdentity",
         "CloudWorkerMachineRequirement"
+      ],
+      "unit_id": "OCRM-UNIT-INFRA-001"
+    },
+    {
+      "adr_refs": [
+        "projects/openclaw-rust/decisions/2026-10-29-crabbox-worker-owner-boundary.md"
+      ],
+      "behavior": "Crabbox node enrollment, bounded redacted diagnostics, setup egress, process identity and macOS/Windows interactive desktop session admission.",
+      "blocker_ids": [
+        "OCRM-BLOCK-P1-DEVICE-ENROLLMENT-001",
+        "OCRM-BLOCK-P1-PLATFORM-ACCEPTANCE-001"
+      ],
+      "capability_ids": [
+        "cloud_workers.node_bootstrap",
+        "cloud_workers.platform_bridge"
+      ],
+      "dependencies": [
+        "mahayana_host_runtime::extensions::cloud_workers::node_bootstrap",
+        "mahayana_host_runtime::extensions::cloud_workers::platform_bridge",
+        "mahayana_host_runtime::extensions::cloud_workers::sandbox",
+        "mahayana_host_runtime::network_enrollment"
+      ],
+      "evidence_refs": [
+        "source/host/tests/cloud_workers_extension_contract.rs",
+        "projects/openclaw-rust/management/tasks/P1-crabbox-worker-owner.md",
+        "projects/openclaw-rust/dossiers/crabbox-node-enrollment-owner-audit-20261029.md"
+      ],
+      "existing_owner_candidates": [
+        {
+          "path": "source/host/src/extensions/cloud_workers/node_bootstrap.rs",
+          "reason": "Opaque secret references, phase fencing and bounded diagnostics"
+        },
+        {
+          "path": "source/host/src/extensions/cloud_workers/platform_bridge.rs",
+          "reason": "Thin OS/session descriptor boundary without platform policy ownership"
+        },
+        {
+          "path": "source/host/src/extensions/network_enrollment",
+          "reason": "Existing Fabushi network/device enrollment owner consumed through typed contract"
+        }
+      ],
+      "id": "OCRM-RESP-INFRA-WORKER-CRABBOX-BOOTSTRAP-001",
+      "integration": {
+        "consumer": "FDN enrollment and existing Computer/platform adapters (not yet wired)",
+        "entrypoint": "source/host/src/extensions/cloud_workers/node_bootstrap.rs::CloudWorkerBootstrapRecord::settle",
+        "owner": "source/host/src/extensions/cloud_workers/node_bootstrap.rs",
+        "producer": "verified artifact/process/platform adapters (not yet wired)"
+      },
+      "invariants": [
+        "Secret values remain opaque references and never enter argv, logs, persisted worker state or images",
+        "Bootstrap readiness requires the declared preparation and enrollment phases",
+        "Late, cancelled or outcome-unknown process/device results cannot be presented as ready",
+        "Desktop session and process identity are lease-scoped; PID or port alone is not ownership proof",
+        "Unsupported platform/session combinations fail closed with bounded diagnostics"
+      ],
+      "migration_rollback": "Keep the owner disabled without provider/device prerequisites, preserve outcome-unknown enrollment for reconciliation, and return platform control to existing adapters",
+      "oracle_ids": [
+        "OCRM-P1-F05-O01",
+        "OCRM-P1-F06-O01"
+      ],
+      "owner_decision": "CloudWorker owns bootstrap phase state and platform descriptors; FDN remains the sole Fabushi identity/network owner and Computer remains the sole admitted-device action owner",
+      "postconditions": [
+        "A typed bootstrap/platform contract can be consumed without resolving secrets or launching a process",
+        "Diagnostics are bounded and redacted"
+      ],
+      "preconditions": [
+        "An admitted lease, verified artifact identity and opaque secret references are available"
+      ],
+      "required_evidence_dimensions": [
+        "unit",
+        "security-negative-test",
+        "device",
+        "platform",
+        "recovery"
+      ],
+      "required_gate_ids": [
+        "OCRM-G04-rust-contract",
+        "OCRM-G05-frozen-oracle"
+      ],
+      "requirement_ids": [
+        "OCRM-P1-F05",
+        "OCRM-P1-F06",
+        "OCRM-P1-F08",
+        "OCRM-P1-AC02",
+        "OCRM-P1-AC03"
+      ],
+      "responsibility_kind": "business-runtime",
+      "reviewer": "xuyao@ombhrum.com",
+      "risk": "Critical; credential leakage, wrong-session control or false readiness could compromise a device or remote worker",
+      "selected_owner": "source/host/src/extensions/cloud_workers/node_bootstrap.rs",
+      "source_refs": [
+        {
+          "blob_sha": "7860f5b649f05beae18fd848c01dbdda34bb1236",
+          "path": "extensions/crabbox/src/crabbox-worker-node-enrollment.ts",
+          "range": {
+            "end_line": 508,
+            "start_line": 1
+          },
+          "symbol": "enrollCrabboxWorkerNode"
+        },
+        {
+          "blob_sha": "414d84ab591091511ee6abd66bd12d8b064e4763",
+          "path": "extensions/crabbox/src/crabbox-worker-node-process.ts",
+          "range": {
+            "end_line": 245,
+            "start_line": 1
+          },
+          "symbol": "CrabboxWorkerNodeProcess"
+        },
+        {
+          "blob_sha": "03b9250850bd2f9210698212156ac210beb7e3b6",
+          "path": "extensions/crabbox/src/crabbox-worker-setup-egress.ts",
+          "range": {
+            "end_line": 182,
+            "start_line": 1
+          },
+          "symbol": "prepareCrabboxWorkerSetupEgress"
+        },
+        {
+          "blob_sha": "450d6985c8cfbabbcdfe71164a10a2748b9f35e0",
+          "path": "extensions/crabbox/src/crabbox-worker-preflight.ts",
+          "range": {
+            "end_line": 53,
+            "start_line": 1
+          },
+          "symbol": "validateCrabboxWorkerPreflight"
+        },
+        {
+          "blob_sha": "5fbf9a02dac8c2d16bd6459a6c590465294fcec8",
+          "path": "extensions/crabbox/src/crabbox-worker-desktop-setup.ts",
+          "range": {
+            "end_line": 229,
+            "start_line": 1
+          },
+          "symbol": "setupCrabboxWorkerDesktop"
+        },
+        {
+          "blob_sha": "1a049d4ec64d0843f0420ade4135cff1525a4fa4",
+          "path": "extensions/crabbox/src/crabbox-worker-desktop-macos.ts",
+          "range": {
+            "end_line": 160,
+            "start_line": 1
+          },
+          "symbol": "prepareCrabboxMacosDesktop"
+        },
+        {
+          "blob_sha": "c0146aad36bbe2af0c7ea22ed7744bacbcade9ff",
+          "path": "extensions/crabbox/src/crabbox-worker-desktop-windows.ts",
+          "range": {
+            "end_line": 419,
+            "start_line": 1
+          },
+          "symbol": "prepareCrabboxWindowsDesktop"
+        }
+      ],
+      "status": {
+        "acceptance": "pending",
+        "implementation": "implementing",
+        "mapping": "mapped",
+        "read": "read-complete",
+        "verification": "not-run",
+        "wiring": "not-wired"
+      },
+      "target": {
+        "language": "Rust",
+        "path": "source/host/src/extensions/cloud_workers/node_bootstrap.rs",
+        "symbol": "CloudWorkerBootstrapRecord::pending / settle"
+      },
+      "tests": [
+        "source/host/src/extensions/cloud_workers/node_bootstrap.rs::tests::readiness_requires_preparation_and_enrollment",
+        "source/host/src/extensions/cloud_workers/platform_bridge.rs::tests::rejects_unsupported_linux_vnc_contract"
+      ],
+      "typed_contracts": [
+        "CloudWorkerBootstrapRequest",
+        "CloudWorkerBootstrapRecord",
+        "CloudWorkerSecretRef",
+        "CloudWorkerPlatformBridge",
+        "CloudWorkerDesktopSession"
       ],
       "unit_id": "OCRM-UNIT-INFRA-001"
     },
