@@ -109,7 +109,7 @@ The audited source code was decomposed into 6 discrete Rust runtime responsibili
 ## 5. Exact-head production reachability re-audit (2026-10-29, refreshed)
 
 The exact Fabushi implementation target under review is
-`34601e4c2eba06587c635e9e2b2f11cd61baa3b4`. The production Host now has a
+`97aee5458290d7a94362d4f861870140d4424c78`. The production Host now has a
 real roster bookkeeping owner chain:
 
 - `ProductionHostExtensions::start_box_store_sync` supplies the existing
@@ -132,15 +132,19 @@ real roster bookkeeping owner chain:
   implementation head, and OCRM source-authority run `40825742161` completed
   successfully. The Rust run covered the full Host test suite, attachment,
   takeover, ownership, credential-handoff, and pressure checks.
-- The follow-up exact head with the doctor-fix guard, GitHub Rust desktop run
-  `40827411492`, and OCRM source-authority run `40827411541`, also completed
-  successfully.
+- The server-owned include guard is exercised by the existing SettingsService
+  for both current and target roster documents; client-supplied `doctorFix`,
+  parsed-config, resolved-config, and provenance flags are not trusted.
+- GitHub Rust desktop run `40830275021` completed successfully at this exact
+  implementation head, and OCRM source-authority run `40830275035` completed
+  successfully. The Rust run included the full Host suite and the new
+  fail-closed include-write regression tests.
 
-The remaining roster-specific limitation is not implementation wiring: the
-doctor-fix guard is available only when the caller explicitly supplies the
-parsed/resolved configuration and include-provenance fact. No new doctor
-runtime was introduced; the existing config owner rejects include-owned
-roster writes on that explicit path.
+No roster-specific implementation blocker remains for these six helpers. No
+new doctor runtime was introduced; the existing SettingsService rejects
+include-owned roster writes from ordinary config mutations using server-owned
+current/target configuration facts, while the focused helper contract remains
+covered independently.
 
 The representation/bookkeeping call chain is therefore production-wired, but
 The roster-specific upstream-caller blocker is closed for these six helpers;

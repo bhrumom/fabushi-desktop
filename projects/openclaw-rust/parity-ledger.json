@@ -771,7 +771,9 @@
       ],
       "evidence_refs": [
         "source/host/tests/openclaw_agent_roster_contract.rs",
-        "projects/openclaw-rust/dossiers/agent-roster-provenance-scoped.md"
+        "projects/openclaw-rust/dossiers/agent-roster-provenance-scoped.md",
+        "source/host/src/extensions/settings/settings_service.rs",
+        "source/host/tests/settings_service_contract.rs"
       ],
       "existing_owner_candidates": [
         {
@@ -781,7 +783,7 @@
       ],
       "id": "OCRM-RESP-AGENT-ROSTER-PROVENANCE-001",
       "integration": {
-        "consumer": "source/host/src/agents/agent_roster.rs::can_write_doctor_include",
+        "consumer": "source/host/src/extensions/settings/settings_service.rs::set_host_settings",
         "entrypoint": "source/host/src/agents/agent_roster.rs::config_include_owns_agent_roster_values",
         "owner": "source/host/src/agents/agent_roster.rs::include_contribution_owns_agent_roster",
         "producer": "source/host/src/agents/agent_roster.rs::can_write_doctor_include"
@@ -962,7 +964,9 @@
       ],
       "evidence_refs": [
         "source/host/tests/openclaw_agent_roster_contract.rs",
-        "projects/openclaw-rust/dossiers/agent-roster-provenance-scoped.md"
+        "projects/openclaw-rust/dossiers/agent-roster-provenance-scoped.md",
+        "source/host/src/extensions/settings/settings_service.rs",
+        "source/host/tests/settings_service_contract.rs"
       ],
       "existing_owner_candidates": [
         {
@@ -4021,7 +4025,9 @@
       ],
       "evidence_refs": [
         "source/host/tests/openclaw_agent_roster_contract.rs",
-        "projects/openclaw-rust/dossiers/agent-roster-provenance-scoped.md"
+        "projects/openclaw-rust/dossiers/agent-roster-provenance-scoped.md",
+        "source/host/src/extensions/settings/settings_service.rs",
+        "source/host/tests/settings_service_contract.rs"
       ],
       "existing_owner_candidates": [
         {
@@ -4031,7 +4037,7 @@
       ],
       "id": "OCRM-RESP-DOCTOR-ROSTER-INCLUDE-WRITE-001",
       "integration": {
-        "consumer": "source/host/src/agents/settings_file.rs::write_sand_settings_file",
+        "consumer": "source/host/src/extensions/settings/settings_service.rs::set_host_settings",
         "entrypoint": "source/host/src/agents/agent_roster.rs::can_write_doctor_include",
         "owner": "source/host/src/agents/agent_roster.rs::can_write_doctor_include",
         "producer": "source/host/src/agents/agent_roster.rs::can_write_doctor_include"
