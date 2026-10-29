@@ -156,6 +156,25 @@ Therefore the future Rust node runtime should model this as a command-owner regi
 
 The current Fabushi `runtime_manifest.rs` is only a static pure builder and does not yet carry the upstream dynamic plugin/ephemeral/path/Computer surface or a live response transport. The existing `command_dispatch.rs` is likewise only a protocol boundary. These facts remain implementation gaps, not reasons to widen the pairing/RPC owner.
 
+## 16a. Exact runtime-manifest/runtime read closure (2026-10-29)
+
+The two exact source references attached to
+`OCRM-RESP-NODE-HOST-RUNTIME-MANIFEST-001` were read in full from the locked
+tree: `src/node-host/runtime-manifest.ts` (blob
+`9e675256c727ce03b2a9820dc65fe991f0cc148d`, 113 lines) and
+`src/node-host/runtime.ts` (blob
+`35c5e3aba727291c797534cf7d2e5abcaa05a9e5`, 719 lines). The read confirms
+that manifest construction is feature-, platform-, allowlist- and
+ephemeral-aware, while runtime composition owns generation fencing,
+disconnect cleanup, dynamic availability publication, cancellation/input/
+progress admission, worker/MCP lifetimes and re-entrant close.
+
+This closes source reading only. The Rust manifest remains a static builder
+with no plugin/MCP inventory, dynamic availability watcher, path-environment
+projection, Computer capability projection or live node-host transport, so
+the row remains `wiring=not-wired`, `verification=not-run`, and acceptance
+pending.
+
 ## 17. Live-main delta read for node-host (2026-10-29)
 
 After the live-main drift check, the changed node-host sources were reread at `bf6a97a1761ed7f752544f4934aa708b9d896bd3`:
