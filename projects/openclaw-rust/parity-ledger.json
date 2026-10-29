@@ -10,10 +10,10 @@
     "ui_accepted": false
   },
   "file_coverage": {
-    "mapped_paths": 1123,
+    "mapped_paths": 1128,
     "omitted_known": 0,
     "tracked_paths": 58750,
-    "unclassified_paths": 57627
+    "unclassified_paths": 57622
   },
   "inventory_authority": {
     "manifest_source": "GitHub Actions immutable artifact candidate",
@@ -145,6 +145,142 @@
         "CloudWorkerCatalogCache",
         "CloudWorkerBinaryIdentity",
         "CloudWorkerMachineRequirement"
+      ],
+      "unit_id": "OCRM-UNIT-INFRA-001"
+    },
+    {
+      "adr_refs": [
+        "projects/openclaw-rust/decisions/2026-10-29-crabbox-worker-owner-boundary.md"
+      ],
+      "behavior": "Crabbox bounded script transport, timeout budgets, snapshot action settlement, process/binary identity helpers and redacted worker inspection.",
+      "blocker_ids": [
+        "OCRM-BLOCK-P1-PROVIDER-SIDE-EFFECTS-001"
+      ],
+      "capability_ids": [
+        "cloud_workers.runtime_control"
+      ],
+      "dependencies": [
+        "mahayana_host_runtime::extensions::cloud_workers::owner",
+        "mahayana_host_runtime::runner::process_tree",
+        "mahayana_host_runtime::extensions::cloud_workers::artifact_admission"
+      ],
+      "evidence_refs": [
+        "projects/openclaw-rust/management/tasks/P1-crabbox-worker-owner.md",
+        "projects/openclaw-rust/dossiers/crabbox-node-enrollment-owner-audit-20261029.md"
+      ],
+      "existing_owner_candidates": [
+        {
+          "path": "source/host/src/extensions/cloud_workers/owner.rs",
+          "reason": "Worker lifecycle owner consumes bounded control results"
+        },
+        {
+          "path": "source/host/src/runner/process_tree",
+          "reason": "Existing bounded process cleanup dependency only"
+        }
+      ],
+      "id": "OCRM-RESP-INFRA-WORKER-CRABBOX-RUNTIME-CONTROL-001",
+      "integration": {
+        "consumer": "CloudWorkerProvisioningOwner and future provider/process adapters (not yet wired)",
+        "entrypoint": "source/host/src/extensions/cloud_workers/lease.rs::CloudWorkerLease::apply_outcome",
+        "owner": "source/host/src/extensions/cloud_workers/owner.rs",
+        "producer": "provider/process adapter (not yet wired)"
+      },
+      "invariants": [
+        "Script output and diagnostics are bounded and redacted",
+        "Timeout and retry classification preserves outcome-unknown states",
+        "Snapshot and process actions require identity/replay fencing before settlement",
+        "Binary/process inspection cannot by itself authorize or launch a worker"
+      ],
+      "migration_rollback": "Retain unknown action outcomes for reconciliation and disable provider mutations when control identity is stale",
+      "oracle_ids": [
+        "OCRM-P1-F03-O02",
+        "OCRM-P1-F05-O02"
+      ],
+      "owner_decision": "Keep transport/control helpers subordinate to the single CloudWorker owner and existing process-tree owner",
+      "postconditions": [
+        "Control results are classified into bounded typed outcomes before owner settlement"
+      ],
+      "preconditions": [
+        "A scoped lease, runtime identity and bounded operation budget are supplied"
+      ],
+      "required_evidence_dimensions": [
+        "unit",
+        "security-negative-test",
+        "recovery"
+      ],
+      "required_gate_ids": [
+        "OCRM-G04-rust-contract",
+        "OCRM-G05-frozen-oracle"
+      ],
+      "requirement_ids": [
+        "OCRM-P1-F03",
+        "OCRM-P1-F05",
+        "OCRM-P1-AC02",
+        "OCRM-P1-AC03"
+      ],
+      "responsibility_kind": "business-runtime",
+      "reviewer": "xuyao@ombhrum.com",
+      "risk": "High; unbounded output, stale identity or misclassified lost replies could cause unsafe worker control",
+      "selected_owner": "source/host/src/extensions/cloud_workers/owner.rs",
+      "source_refs": [
+        {
+          "blob_sha": "3fa6163aa004fa168b3fcef4abb3ff79658f971c",
+          "path": "extensions/crabbox/src/crabbox-worker-script.ts",
+          "range": { "end_line": 54, "start_line": 1 },
+          "symbol": "CrabboxWorkerScript"
+        },
+        {
+          "blob_sha": "2d13d497ed213dc8c24b09a86b2c1e7b97368daf",
+          "path": "extensions/crabbox/src/crabbox-worker-timeouts.ts",
+          "range": { "end_line": 148, "start_line": 1 },
+          "symbol": "CrabboxWorkerTimeouts"
+        },
+        {
+          "blob_sha": "78a412b39bfd4b54b7935049d4a8c3f08e8b4f57",
+          "path": "extensions/crabbox/src/crabbox-worker-snapshot-actions.ts",
+          "range": { "end_line": 83, "start_line": 1 },
+          "symbol": "CrabboxWorkerSnapshotActions"
+        },
+        {
+          "blob_sha": "0ccfe03b9db815de9ea466891396eacc76597203",
+          "path": "extensions/crabbox/src/crabbox-process.ts",
+          "range": { "end_line": 13, "start_line": 1 },
+          "symbol": "CrabboxProcess"
+        },
+        {
+          "blob_sha": "27f5952d24b8fd5133acd86e2fc4aeb13a7e22cc",
+          "path": "extensions/crabbox/src/crabbox-binary.ts",
+          "range": { "end_line": 58, "start_line": 1 },
+          "symbol": "resolveCrabboxBinary"
+        },
+        {
+          "blob_sha": "ec9e52f9a146c117bd4ae23a11c5615218137b87",
+          "path": "extensions/crabbox/src/crabbox-worker-inspect.ts",
+          "range": { "end_line": 122, "start_line": 1 },
+          "symbol": "inspectCrabboxWorker"
+        }
+      ],
+      "status": {
+        "acceptance": "pending",
+        "implementation": "implementing",
+        "mapping": "mapped",
+        "read": "read-complete",
+        "verification": "not-run",
+        "wiring": "not-wired"
+      },
+      "target": {
+        "language": "Rust",
+        "path": "source/host/src/extensions/cloud_workers/owner.rs",
+        "symbol": "CloudWorkerProvisioningOwner::settle_lease"
+      },
+      "tests": [
+        "source/host/src/extensions/cloud_workers/lease.rs::tests::ambiguous_results_enter_recovery_state",
+        "source/host/src/extensions/cloud_workers/lease.rs::tests::only_completed_results_advance_the_lifecycle"
+      ],
+      "typed_contracts": [
+        "CloudWorkerLeaseMutation",
+        "CloudWorkerMutationOutcome",
+        "CloudWorkerDiagnostic"
       ],
       "unit_id": "OCRM-UNIT-INFRA-001"
     },
