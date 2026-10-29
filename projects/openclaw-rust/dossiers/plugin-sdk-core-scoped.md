@@ -38,6 +38,35 @@
   - `test_ocrm_plugin_sdk_session_memory` (PASSED)
   - `test_ocrm_plugin_sdk_tool_runtime` (PASSED)
 
+## 6. Session-memory transcript oracle closure (2026-10-29)
+
+The locked upstream source was fetched and read directly from commit
+`ad8d12f126d29b0db204187adf5092db80294e70` / tree
+`04ccce62f1d74dc8e0c88290ae8ded027b7b0f16`:
+`src/plugin-sdk/context-engine-transcript-runtime.test.ts`, blob
+`53843b0ec5c75b554aeacaefa2cf6c7feeb960a7`, 192 lines.
+
+The oracle is not a pagination-only test. It verifies reset-window tail
+selection while preserving paired tool results and excluding orphan results;
+cursor continuation after an append; current-turn read fencing before an
+admitted user entry; reset invalidation of reset-window cursors; generation
+rotation invalidation; and precedence of a newer reset over a generation
+rotation. The source also binds these reads to the existing session-store
+entry lifecycle, transcript identity append, anchor rewrite, and read-fence
+owners.
+
+The current Rust target
+`source/host/src/extensions/plugin_sdk/session_memory.rs` was re-read for the
+owner comparison. It implements page-limit/cursor validation, title/id search,
+an agent/session transcript mutex registry, and incognito sync denial, but it
+does not implement the oracle's reset-window cursor, paired-result filtering,
+generation/reset invalidation, or current-turn read-fence behavior. The
+existing contract-test name therefore cannot be treated as equivalent
+verification of the upstream transcript runtime. The source read is now
+complete and mapped, while implementation remains in progress and production
+wiring/verification/acceptance remain open; no generated shard or completion
+flag was changed.
+
 ## 4. Audited Bundled Channel Contract Invariants
 The following test suites in `src/plugins/contracts/` have been audited line-by-line and mapped to `OCRM-RESP-PLUGIN-SDK-CHANNEL-RUNTIME-001`:
 1. `channel-config-writes.contract.test.ts` (71 lines):

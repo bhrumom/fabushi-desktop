@@ -25252,7 +25252,7 @@
           "blob_sha": "53843b0ec5c75b554aeacaefa2cf6c7feeb960a7",
           "path": "src/plugin-sdk/context-engine-transcript-runtime.test.ts",
           "range": {
-            "end_line": 232,
+            "end_line": 192,
             "start_line": 1
           },
           "symbol": "context-engine-transcript-runtime"
@@ -25260,9 +25260,9 @@
       ],
       "status": {
         "acceptance": "pending",
-        "implementation": "implemented",
+        "implementation": "implementing",
         "mapping": "mapped",
-        "read": "partial",
+        "read": "read-complete",
         "verification": "not-run",
         "wiring": "not-wired"
       },
