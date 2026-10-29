@@ -2,7 +2,12 @@ use mahayana_host_runtime::extensions::cloud_workers::extension::{
     CLOUD_WORKERS_DEPENDENCIES, CLOUD_WORKERS_EXTENSION_ID,
     start_cloud_worker_provisioning_extension,
 };
-use mahayana_host_runtime::extensions::cloud_workers::CloudWorkerOwnerStatus;
+use mahayana_host_runtime::extensions::cloud_workers::{
+    CloudWorkerLeaseScope, CloudWorkerLifecycle, CloudWorkerOwnerStatus,
+    CloudWorkerProvisioningConfig, CloudWorkerProvisioningOwner,
+    CloudWorkerRuntimeIdentity, CloudWorkerMutationOutcome, LeaseGeneration, LeaseId,
+    OwnerEpoch, ReplayKey,
+};
 use mahayana_host_runtime::extensions::extension_ids_generated::HostExtensionId;
 use mahayana_host_runtime::host_gateway_api::{HostGatewayOwner, host_gateway_owner};
 
@@ -29,4 +34,45 @@ fn coordinator_gateway_registry_routes_only_the_read_projection() {
         Some(HostGatewayOwner::CloudWorkers)
     );
     assert_eq!(host_gateway_owner("cloudWorkers.admit"), None);
+}
+
+#[test]
+fn owner_exposes_only_a_fenced_enrolled_consumer_capability() {
+    let mut owner = CloudWorkerProvisioningOwner::new(CloudWorkerProvisioningConfig {
+        enabled: true,
+        max_leases: 1,
+    })
+    .unwrap();
+    let lease_id = LeaseId("lease-contract".into());
+    let runtime = CloudWorkerRuntimeIdentity::new("provider", "profile", "runtime").unwrap();
+    owner
+        .admit(
+            CloudWorkerLeaseScope::new("account", "device").unwrap(),
+            lease_id.clone(),
+            runtime.clone(),
+        )
+        .unwrap();
+
+    for (next, replay) in [
+        (CloudWorkerLifecycle::Preparing, "prepare"),
+        (CloudWorkerLifecycle::Warming, "warm"),
+        (CloudWorkerLifecycle::Bootstrapping, "bootstrap"),
+        (CloudWorkerLifecycle::Enrolled, "enroll"),
+    ] {
+        let current = owner.lease(&lease_id).unwrap().clone();
+        let mutation = current.mutation(
+            OwnerEpoch(0),
+            LeaseGeneration(0),
+            runtime.clone(),
+            ReplayKey(replay.into()),
+        );
+        owner
+            .settle_lease(&mutation, next, CloudWorkerMutationOutcome::Completed)
+            .unwrap();
+    }
+
+    let capability = owner.leased_capability(&lease_id).unwrap();
+    assert_eq!(capability.lease_id(), &lease_id);
+    assert_eq!(capability.scope().account_scope, "account");
+    assert_eq!(capability.runtime().runtime_id, "runtime");
 }
