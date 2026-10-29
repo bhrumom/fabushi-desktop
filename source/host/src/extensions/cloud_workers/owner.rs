@@ -1,11 +1,15 @@
 use std::collections::HashMap;
 
+use serde::{Deserialize, Serialize};
+
 use super::{
     CloudWorkerLease, CloudWorkerLeaseError, CloudWorkerLeaseMutation, CloudWorkerLeaseScope,
     CloudWorkerLifecycle, CloudWorkerMutationOutcome, CloudWorkerRuntimeIdentity,
     CloudWorkerWarmImage, CloudWorkerWarmImageError, CloudWorkerWarmImageGeneration,
     CloudWorkerWarmImageOperation, LeaseId,
 };
+
+pub const CLOUD_WORKER_STATE_SCHEMA_VERSION: u32 = 1;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct CloudWorkerProvisioningConfig {
@@ -35,6 +39,13 @@ pub struct CloudWorkerProvisioningOwner {
     warm_images: HashMap<String, CloudWorkerWarmImage>,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct CloudWorkerPersistentSnapshot {
+    pub schema_version: u32,
+    pub leases: Vec<CloudWorkerLease>,
+    pub warm_images: Vec<CloudWorkerWarmImage>,
+}
+
 impl CloudWorkerProvisioningOwner {
     pub fn new(config: CloudWorkerProvisioningConfig) -> Result<Self, CloudWorkerOwnerError> {
         if config.max_leases == 0 {
@@ -53,6 +64,51 @@ impl CloudWorkerProvisioningOwner {
         } else {
             CloudWorkerOwnerStatus::Disabled
         }
+    }
+
+    pub fn snapshot(&self) -> CloudWorkerPersistentSnapshot {
+        let mut leases = self.leases.values().cloned().collect::<Vec<_>>();
+        leases.sort_by(|left, right| left.lease_id.0.cmp(&right.lease_id.0));
+        let mut warm_images = self.warm_images.values().cloned().collect::<Vec<_>>();
+        warm_images.sort_by(|left, right| left.image_id.cmp(&right.image_id));
+        CloudWorkerPersistentSnapshot {
+            schema_version: CLOUD_WORKER_STATE_SCHEMA_VERSION,
+            leases,
+            warm_images,
+        }
+    }
+
+    pub fn from_snapshot(
+        config: CloudWorkerProvisioningConfig,
+        snapshot: CloudWorkerPersistentSnapshot,
+    ) -> Result<Self, CloudWorkerOwnerError> {
+        if snapshot.schema_version != CLOUD_WORKER_STATE_SCHEMA_VERSION {
+            return Err(CloudWorkerOwnerError::UnsupportedSnapshotVersion(
+                snapshot.schema_version,
+            ));
+        }
+        let mut owner = Self::new(config)?;
+        if snapshot.leases.len() > owner.config.max_leases {
+            return Err(CloudWorkerOwnerError::LeaseLimitReached);
+        }
+        for lease in snapshot.leases {
+            if lease.lease_id.0.trim().is_empty()
+                || owner.leases.insert(lease.lease_id.clone(), lease).is_some()
+            {
+                return Err(CloudWorkerOwnerError::InvalidSnapshot);
+            }
+        }
+        for image in snapshot.warm_images {
+            if image.image_id.trim().is_empty()
+                || owner
+                    .warm_images
+                    .insert(image.image_id.clone(), image)
+                    .is_some()
+            {
+                return Err(CloudWorkerOwnerError::InvalidSnapshot);
+            }
+        }
+        Ok(owner)
     }
 
     pub fn admit(
@@ -159,6 +215,10 @@ pub enum CloudWorkerOwnerError {
     DuplicateWarmImage,
     #[error("warm image was not found")]
     UnknownWarmImage,
+    #[error("unsupported cloud-worker snapshot schema version: {0}")]
+    UnsupportedSnapshotVersion(u32),
+    #[error("cloud-worker snapshot contains invalid or duplicate records")]
+    InvalidSnapshot,
     #[error(transparent)]
     Lease(#[from] CloudWorkerLeaseError),
     #[error(transparent)]

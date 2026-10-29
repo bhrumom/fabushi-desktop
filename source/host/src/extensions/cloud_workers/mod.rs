@@ -15,6 +15,7 @@ mod owner;
 mod platform_bridge;
 mod provider_catalog;
 mod sandbox;
+mod store;
 mod warm_image;
 
 pub use artifact_admission::{
@@ -32,8 +33,8 @@ pub use node_bootstrap::{
     CloudWorkerSecretRef,
 };
 pub use owner::{
-    CloudWorkerOwnerError, CloudWorkerOwnerStatus, CloudWorkerProvisioningConfig,
-    CloudWorkerProvisioningOwner,
+    CloudWorkerOwnerError, CloudWorkerOwnerStatus, CloudWorkerPersistentSnapshot,
+    CloudWorkerProvisioningConfig, CloudWorkerProvisioningOwner,
 };
 pub use platform_bridge::{
     CloudWorkerDesktopSession, CloudWorkerPlatform, CloudWorkerPlatformBridge,
@@ -53,6 +54,7 @@ pub use sandbox::{
     CloudWorkerSandboxCapability, CloudWorkerSandboxError, CloudWorkerSandboxOperation,
     CloudWorkerSandboxRequest,
 };
+pub use store::{CloudWorkerStoreError, CloudWorkerProvisioningStore};
 pub use provider_catalog::{
     CloudWorkerCatalog, CloudWorkerCatalogError, CloudWorkerCatalogParser,
     CloudWorkerMachine, CloudWorkerOs, CloudWorkerProvider, CloudWorkerProfile,

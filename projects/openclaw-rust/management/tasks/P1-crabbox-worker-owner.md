@@ -271,6 +271,14 @@ exposes only the read-only `cloudWorkers.status` projection; mutating commands
 remain unregistered until their real producer, authorization, persistence and
 consumer paths are implemented. Packaged UI/CLI reachability remains open.
 
+Versioned persistence is now defined by
+`CloudWorkerPersistentSnapshot` and `CloudWorkerProvisioningStore`: lease and
+warm-image metadata are serialized deterministically and written through an
+exact-path temporary file plus rename. Corrupt/unsupported snapshots fail
+closed; secret payloads, credentials and Fabushi identity stores are not part
+of the snapshot. Production app-data injection and migration/rollback receipts
+remain open.
+
 The Coordinator crate now owns the serializable projection contract in
 `source/node-agent-coordinator/src/cloud_worker_projection.rs`, with the exact
 `cloudWorkers.status` method and `cloud-workers.status` event family. It is a
