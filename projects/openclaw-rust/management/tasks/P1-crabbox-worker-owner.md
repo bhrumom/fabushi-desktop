@@ -114,6 +114,45 @@ the sole admitted-device action/result owner; Host/Runner remains the sole turn
 and process-composition owner. Every runtime command has a producer, owner and
 consumer recorded in the RTM.
 
+#### P1-F08 implementation seam (source-backed, not yet wired)
+
+The current exact-head consumers are deliberately narrower than the Crabbox
+capability and must remain the integration targets:
+
+- `source/host/src/runner/tools/sand_computer_tool.rs` owns the
+  `ComputerToolExecutor` contract and its `SandComputerToolBridge`; the
+  production implementation in
+  `source/host/src/runner/host_computer_tool_dependencies.rs` owns Box-backed
+  Computer actions and screenshot persistence.
+- `source/host/src/remote_computer_target.rs` owns the
+  `RemoteComputerNativeExecutor`, tool authorization, admitted-device
+  identity, private transport and sensitive-result path.
+- `source/host/src/runner/tools/sand_external_machine_tools.rs` owns the
+  `ExternalMachineExecutor` contract for Sand external shell/read operations,
+  including operation status/history/cancellation and background polling.
+- `source/host/src/runner_production_bridge.rs` and
+  `source/host/src/host_runner_composition.rs` own the Runner turn/process
+  composition boundary; they do not own worker lifecycle or device grants.
+
+The next implementation unit is a typed adapter at these existing trait
+boundaries. It must accept an ephemeral
+`CloudWorkerLeasedCapability`/sandbox request, validate account/device scope,
+lease generation, runtime identity and replay key, then delegate the actual
+action to exactly one existing executor. The adapter may not mint a Computer
+grant, enroll a device, write a sensitive-result store, create a second Runner
+loop, or bypass Sand/FDN/Remote Computer authorization. A capability without a
+completed enrolled lease, a stale generation, a mismatched scope, or an
+outcome-unknown mutation must fail closed before delegation.
+
+The adapter task remains **not started** until the ADR is approved and the
+existing trait owners expose the minimum typed input needed for this validation
+without widening their state ownership. Adding a standalone cloud-worker
+executor, registering a second tool bridge, or changing the disabled-by-default
+production extension into a live provider is explicitly not an acceptable
+substitute. Acceptance requires named producer/owner/consumer rows in the RTM,
+negative tests for scope/generation/replay/outcome-unknown rejection, and an
+exact-head Actions proof of the real production composition path.
+
 ## 5. Target architecture and contracts
 
 Proposed Rust placement:
