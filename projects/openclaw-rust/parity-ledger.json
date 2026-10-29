@@ -10,10 +10,10 @@
     "ui_accepted": false
   },
   "file_coverage": {
-    "mapped_paths": 1113,
+    "mapped_paths": 1123,
     "omitted_known": 0,
     "tracked_paths": 58750,
-    "unclassified_paths": 57637
+    "unclassified_paths": 57627
   },
   "inventory_authority": {
     "manifest_source": "GitHub Actions immutable artifact candidate",
@@ -145,6 +145,399 @@
         "CloudWorkerCatalogCache",
         "CloudWorkerBinaryIdentity",
         "CloudWorkerMachineRequirement"
+      ],
+      "unit_id": "OCRM-UNIT-INFRA-001"
+    },
+    {
+      "adr_refs": [
+        "projects/openclaw-rust/decisions/2026-10-29-crabbox-worker-owner-boundary.md"
+      ],
+      "behavior": "Crabbox plugin registration, doctor health/recovery projections, explicit repair acknowledgement and managed-state migration surface.",
+      "blocker_ids": [
+        "OCRM-BLOCK-P1-PLUGIN-UI-CLI-WIRING-001"
+      ],
+      "capability_ids": [
+        "cloud_workers.doctor_recovery"
+      ],
+      "dependencies": [
+        "mahayana_host_runtime::extensions::cloud_workers::doctor",
+        "mahayana_host_runtime::extensions::plugins",
+        "mahayana_host_runtime::extensions::telemetry"
+      ],
+      "evidence_refs": [
+        "source/host/tests/cloud_workers_extension_contract.rs",
+        "projects/openclaw-rust/management/tasks/P1-crabbox-worker-owner.md",
+        "projects/openclaw-rust/dossiers/crabbox-node-enrollment-owner-audit-20261029.md"
+      ],
+      "existing_owner_candidates": [
+        {
+          "path": "source/host/src/extensions/cloud_workers/doctor.rs",
+          "reason": "Typed inspection/repair acknowledgement boundary with no hidden mutation"
+        },
+        {
+          "path": "source/host/src/extensions/plugins",
+          "reason": "Existing plugin registration and projection owner"
+        }
+      ],
+      "id": "OCRM-RESP-PLUGIN-SDK-CRABBOX-DOCTOR-001",
+      "integration": {
+        "consumer": "existing Host plugin/doctor and Coordinator UI/CLI projections (not yet wired)",
+        "entrypoint": "source/host/src/extensions/cloud_workers/doctor.rs::CloudWorkerDoctorRequest",
+        "owner": "source/host/src/extensions/cloud_workers/doctor.rs",
+        "producer": "Host plugin and doctor registration (not yet wired)"
+      },
+      "invariants": [
+        "Inspection is distinct from repair, migration and reconciliation",
+        "Every mutating recovery action requires explicit acknowledgement",
+        "Doctor output is bounded and redacted and cannot silently mutate unrelated state",
+        "Plugin/UI/CLI projections do not become lifecycle state owners"
+      ],
+      "migration_rollback": "Keep repair disabled until the existing plugin/doctor registration reaches the owner; retain migration receipts and rollback obligations",
+      "oracle_ids": [
+        "OCRM-P1-F07-O01"
+      ],
+      "owner_decision": "Use existing Host plugin and doctor surfaces as projections; CloudWorker owner remains the sole worker-provisioning state owner",
+      "postconditions": [
+        "Recovery requests are typed, acknowledgement-gated and side-effect-free at this contract boundary"
+      ],
+      "preconditions": [
+        "A doctor action, bounded diagnostic context and explicit acknowledgement for mutation are supplied"
+      ],
+      "required_evidence_dimensions": [
+        "unit",
+        "security-negative-test",
+        "migration",
+        "recovery"
+      ],
+      "required_gate_ids": [
+        "OCRM-G04-rust-contract",
+        "OCRM-G05-frozen-oracle"
+      ],
+      "requirement_ids": [
+        "OCRM-P1-F07",
+        "OCRM-P1-F08",
+        "OCRM-P1-AC02",
+        "OCRM-P1-AC03"
+      ],
+      "responsibility_kind": "business-runtime",
+      "reviewer": "xuyao@ombhrum.com",
+      "risk": "High; an unacknowledged repair or duplicate plugin state owner could mutate credentials or worker state unexpectedly",
+      "selected_owner": "source/host/src/extensions/cloud_workers/doctor.rs",
+      "source_refs": [
+        {
+          "blob_sha": "f7b32bbed65069e3a0fcad1d01592f8c154ef487",
+          "path": "extensions/crabbox/index.ts",
+          "range": {
+            "end_line": 124,
+            "start_line": 1
+          },
+          "symbol": "CrabboxPlugin"
+        },
+        {
+          "blob_sha": "4c09ec4e64721e7e9f9de5b4833015a8975745e0",
+          "path": "extensions/crabbox/openclaw.plugin.json",
+          "range": {
+            "end_line": 110,
+            "start_line": 1
+          },
+          "symbol": "Crabbox plugin manifest"
+        },
+        {
+          "blob_sha": "aa26ac1aab70a3f199ab0a8698ad866b4ce9341e",
+          "path": "extensions/crabbox/src/doctor.ts",
+          "range": {
+            "end_line": 350,
+            "start_line": 1
+          },
+          "symbol": "CrabboxDoctor"
+        },
+        {
+          "blob_sha": "26bbb1c544e7e1818fdfc17a72491f02d18f13c3",
+          "path": "extensions/crabbox/doctor-contract-api.ts",
+          "range": {
+            "end_line": 306,
+            "start_line": 1
+          },
+          "symbol": "DoctorContractApi"
+        }
+      ],
+      "status": {
+        "acceptance": "pending",
+        "implementation": "implementing",
+        "mapping": "mapped",
+        "read": "read-complete",
+        "verification": "not-run",
+        "wiring": "not-wired"
+      },
+      "target": {
+        "language": "Rust",
+        "path": "source/host/src/extensions/cloud_workers/doctor.rs",
+        "symbol": "CloudWorkerDoctorRequest / CloudWorkerDoctorResult"
+      },
+      "tests": [
+        "source/host/src/extensions/cloud_workers/doctor.rs::tests::mutations_require_acknowledgement",
+        "source/host/tests/cloud_workers_extension_contract.rs::production_boundary_starts_disabled_without_provider_prerequisites"
+      ],
+      "typed_contracts": [
+        "CloudWorkerDoctorAction",
+        "CloudWorkerDoctorRequest",
+        "CloudWorkerDoctorResult",
+        "CloudWorkerDoctorStatus"
+      ],
+      "unit_id": "OCRM-UNIT-INFRA-001"
+    },
+    {
+      "adr_refs": [
+        "projects/openclaw-rust/decisions/2026-10-29-crabbox-worker-owner-boundary.md"
+      ],
+      "behavior": "Crabbox leased sandbox configuration, fixed lease identity, workspace/file/command boundary and bounded remote execution backend.",
+      "blocker_ids": [
+        "OCRM-BLOCK-P1-CONSUMER-WIRING-001"
+      ],
+      "capability_ids": [
+        "cloud_workers.sandbox"
+      ],
+      "dependencies": [
+        "mahayana_host_runtime::extensions::cloud_workers::sandbox",
+        "mahayana_host_runtime::runner::process_tree",
+        "mahayana_host_runtime::extensions::local_exec"
+      ],
+      "evidence_refs": [
+        "source/host/tests/cloud_workers_extension_contract.rs",
+        "projects/openclaw-rust/management/tasks/P1-crabbox-worker-owner.md",
+        "projects/openclaw-rust/dossiers/crabbox-node-enrollment-owner-audit-20261029.md"
+      ],
+      "existing_owner_candidates": [
+        {
+          "path": "source/host/src/extensions/cloud_workers/sandbox.rs",
+          "reason": "Lease-scoped workspace and explicit argv/file operation contract"
+        },
+        {
+          "path": "source/host/src/extensions/local_exec",
+          "reason": "Existing local execution owner consumed only through typed adapter"
+        }
+      ],
+      "id": "OCRM-RESP-INFRA-WORKER-CRABBOX-SANDBOX-001",
+      "integration": {
+        "consumer": "Runner/Sand/Computer execution adapters (not yet wired)",
+        "entrypoint": "source/host/src/extensions/cloud_workers/sandbox.rs::CloudWorkerSandboxCapability",
+        "owner": "source/host/src/extensions/cloud_workers/sandbox.rs",
+        "producer": "enrolled leased-worker capability (not yet wired)"
+      },
+      "invariants": [
+        "Every operation is bound to an enrolled lease and workspace-relative path",
+        "Execution uses explicit argv vectors and never interpolates shell command strings",
+        "Workspace paths cannot escape the lease-scoped root",
+        "Sandbox capability does not own an Agent loop, conversation, permission truth or process cleanup policy"
+      ],
+      "migration_rollback": "Keep sandbox capability unavailable until an enrolled lease and existing consumer adapter are present; revoke only through the lease owner",
+      "oracle_ids": [
+        "OCRM-P1-F06-O01"
+      ],
+      "owner_decision": "CloudWorker owns admission shape only; Runner, Sand, Computer and local-exec owners retain execution, permission and result state",
+      "postconditions": [
+        "Typed sandbox requests reject unscoped paths and shell-string execution before side effects"
+      ],
+      "preconditions": [
+        "A fenced CloudWorkerLeasedCapability and lease-scoped workspace are supplied"
+      ],
+      "required_evidence_dimensions": [
+        "unit",
+        "security-negative-test",
+        "compatibility"
+      ],
+      "required_gate_ids": [
+        "OCRM-G04-rust-contract",
+        "OCRM-G05-frozen-oracle"
+      ],
+      "requirement_ids": [
+        "OCRM-P1-F06",
+        "OCRM-P1-F08",
+        "OCRM-P1-AC02",
+        "OCRM-P1-AC03"
+      ],
+      "responsibility_kind": "business-runtime",
+      "reviewer": "xuyao@ombhrum.com",
+      "risk": "Critical; path escape or shell interpolation could compromise the host or a remote worker",
+      "selected_owner": "source/host/src/extensions/cloud_workers/sandbox.rs",
+      "source_refs": [
+        {
+          "blob_sha": "7f904e7871a27749b853443df8570ce82afc09c1",
+          "path": "extensions/crabbox/src/crabbox-sandbox-config.ts",
+          "range": {
+            "end_line": 37,
+            "start_line": 1
+          },
+          "symbol": "CrabboxSandboxConfig"
+        },
+        {
+          "blob_sha": "1408b75390c07ef16ec26bdea0a953cafe5c522e",
+          "path": "extensions/crabbox/src/crabbox-sandbox-lease.ts",
+          "range": {
+            "end_line": 9,
+            "start_line": 1
+          },
+          "symbol": "CrabboxSandboxLease"
+        },
+        {
+          "blob_sha": "38be0ffb5960095357ca696accdff79e59ff8317",
+          "path": "extensions/crabbox/src/crabbox-sandbox-backend.ts",
+          "range": {
+            "end_line": 293,
+            "start_line": 1
+          },
+          "symbol": "CrabboxSandboxBackend"
+        }
+      ],
+      "status": {
+        "acceptance": "pending",
+        "implementation": "implementing",
+        "mapping": "mapped",
+        "read": "read-complete",
+        "verification": "not-run",
+        "wiring": "not-wired"
+      },
+      "target": {
+        "language": "Rust",
+        "path": "source/host/src/extensions/cloud_workers/sandbox.rs",
+        "symbol": "CloudWorkerSandboxCapability / CloudWorkerSandboxRequest"
+      },
+      "tests": [
+        "source/host/src/extensions/cloud_workers/sandbox.rs::tests::rejects_workspace_escape",
+        "source/host/src/extensions/cloud_workers/sandbox.rs::tests::requires_explicit_argv"
+      ],
+      "typed_contracts": [
+        "CloudWorkerSandboxCapability",
+        "CloudWorkerSandboxOperation",
+        "CloudWorkerSandboxRequest"
+      ],
+      "unit_id": "OCRM-UNIT-INFRA-001"
+    },
+    {
+      "adr_refs": [
+        "projects/openclaw-rust/decisions/2026-10-29-crabbox-worker-owner-boundary.md"
+      ],
+      "behavior": "Crabbox managed worker-artifact discovery, bounded HTTPS acquisition, checksum/archive admission, version probing and damaged-install recovery state.",
+      "blocker_ids": [
+        "OCRM-BLOCK-P1-ARTIFACT-PROVIDER-001"
+      ],
+      "capability_ids": [
+        "cloud_workers.artifact_admission"
+      ],
+      "dependencies": [
+        "mahayana_host_runtime::extensions::cloud_workers::artifact_admission",
+        "mahayana_host_runtime::extensions::secrets",
+        "mahayana_host_runtime::extensions::local_exec"
+      ],
+      "evidence_refs": [
+        "source/host/tests/cloud_workers_extension_contract.rs",
+        "projects/openclaw-rust/management/tasks/P1-crabbox-worker-owner.md",
+        "projects/openclaw-rust/dossiers/crabbox-node-enrollment-owner-audit-20261029.md"
+      ],
+      "existing_owner_candidates": [
+        {
+          "path": "source/host/src/extensions/cloud_workers/artifact_admission.rs",
+          "reason": "Native Rust origin, digest, archive-path and artifact-state admission contract"
+        },
+        {
+          "path": "source/host/src/extensions/secrets",
+          "reason": "Existing secret-egress owner; artifact owner must consume typed credentials only"
+        }
+      ],
+      "id": "OCRM-RESP-INFRA-WORKER-CRABBOX-ARTIFACT-001",
+      "integration": {
+        "consumer": "CloudWorkerProvisioningOwner and bootstrap adapter (not yet wired)",
+        "entrypoint": "source/host/src/extensions/cloud_workers/artifact_admission.rs::verify_artifact_bytes",
+        "owner": "source/host/src/extensions/cloud_workers/artifact_admission.rs",
+        "producer": "configured HTTPS/managed-local artifact source (not yet wired)"
+      },
+      "invariants": [
+        "Only allowlisted HTTPS or explicitly managed-local sources are admissible",
+        "Declared digest mismatch is a hard failure and never publishes a verified artifact",
+        "Archive members are path-confined and bounded before extraction",
+        "Pending, damaged and outcome-unknown states remain visible for recovery"
+      ],
+      "migration_rollback": "Preserve damaged artifacts and admission receipts, disable publication on failure, and restore only from a verified exact digest",
+      "oracle_ids": [
+        "OCRM-P1-F02-O01"
+      ],
+      "owner_decision": "Artifact provenance and admission remain within CloudWorker provisioning; secrets and egress remain owned by existing Fabushi services",
+      "postconditions": [
+        "Artifact bytes can be admitted or rejected deterministically without download, extraction or publication side effects"
+      ],
+      "preconditions": [
+        "Artifact source, kind, size bound and declared digest are explicitly supplied"
+      ],
+      "required_evidence_dimensions": [
+        "unit",
+        "security-negative-test",
+        "migration",
+        "recovery"
+      ],
+      "required_gate_ids": [
+        "OCRM-G04-rust-contract",
+        "OCRM-G05-frozen-oracle"
+      ],
+      "requirement_ids": [
+        "OCRM-P1-F02",
+        "OCRM-P1-AC02",
+        "OCRM-P1-AC03"
+      ],
+      "responsibility_kind": "business-runtime",
+      "reviewer": "xuyao@ombhrum.com",
+      "risk": "Critical; unsafe origin, archive traversal or digest handling could execute attacker-controlled worker code",
+      "selected_owner": "source/host/src/extensions/cloud_workers/artifact_admission.rs",
+      "source_refs": [
+        {
+          "blob_sha": "ac6297fbaaaf821fd1f2f4c9919f36732829c6d8",
+          "path": "extensions/crabbox/src/crabbox-managed-binary.ts",
+          "range": {
+            "end_line": 442,
+            "start_line": 1
+          },
+          "symbol": "resolveCrabboxManagedBinary"
+        },
+        {
+          "blob_sha": "27f5952d24b8fd5133acd86e2fc4aeb13a7e22cc",
+          "path": "extensions/crabbox/src/crabbox-binary.ts",
+          "range": {
+            "end_line": 58,
+            "start_line": 1
+          },
+          "symbol": "resolveCrabboxBinary"
+        },
+        {
+          "blob_sha": "a9361ad684143856c5f57336940bdebebb57016d",
+          "path": "extensions/crabbox/src/crabbox-worker-provider-binary.ts",
+          "range": {
+            "end_line": 59,
+            "start_line": 1
+          },
+          "symbol": "resolveCrabboxProviderBinary"
+        }
+      ],
+      "status": {
+        "acceptance": "pending",
+        "implementation": "implementing",
+        "mapping": "mapped",
+        "read": "read-complete",
+        "verification": "not-run",
+        "wiring": "not-wired"
+      },
+      "target": {
+        "language": "Rust",
+        "path": "source/host/src/extensions/cloud_workers/artifact_admission.rs",
+        "symbol": "CloudWorkerArtifactAdmission / verify_artifact_bytes"
+      },
+      "tests": [
+        "source/host/src/extensions/cloud_workers/artifact_admission.rs::tests::rejects_digest_mismatch",
+        "source/host/src/extensions/cloud_workers/artifact_admission.rs::tests::rejects_unsafe_archive_member"
+      ],
+      "typed_contracts": [
+        "CloudWorkerArtifactAdmission",
+        "CloudWorkerArtifactPolicy",
+        "CloudWorkerArtifactSource",
+        "CloudWorkerVerifiedArtifact"
       ],
       "unit_id": "OCRM-UNIT-INFRA-001"
     },
