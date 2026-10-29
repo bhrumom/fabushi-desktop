@@ -12,6 +12,12 @@ from pathlib import Path
 ROOT = Path("projects/openclaw-rust")
 SHARDS = ROOT / "inventory" / "shards"
 READS = {
+    "src/gateway/agent-turn/agent-request-preflight.source-lineage.test.ts": (83, "OCRM-RESP-SESSION-TURNS-CONTROLLER-001", "OCRM-M07", "test-oracle-replaced"),
+    "src/gateway/agent-turn/agent-request-preflight.ts": (320, "OCRM-RESP-SESSION-TURNS-CONTROLLER-001", "OCRM-M07", "owner-audit"),
+    "src/gateway/agent-turn/agent-request-routing.session-id.test.ts": (122, "OCRM-RESP-SESSION-TURNS-CONTROLLER-001", "OCRM-M07", "test-oracle-replaced"),
+    "src/gateway/agent-turn/agent-request-routing.ts": (265, "OCRM-RESP-SESSION-TURNS-CONTROLLER-001", "OCRM-M07", "owner-audit"),
+    "src/gateway/agent-turn/agent-restart-recovery-context.test.ts": (170, "OCRM-RESP-SESSION-TURNS-CONTROLLER-001", "OCRM-M07", "test-oracle-replaced"),
+    "src/gateway/agent-turn/agent-restart-recovery-context.ts": (116, "OCRM-RESP-SESSION-TURNS-CONTROLLER-001", "OCRM-M07", "owner-audit"),
     "src/gateway/agent-turn/agent-image-understanding.test.ts": (189, "OCRM-RESP-MEDIA-APPLY-UNDERSTANDING-001", "OCRM-M10", "test-oracle-replaced"),
     "src/gateway/agent-turn/agent-image-understanding.ts": (47, "OCRM-RESP-MEDIA-APPLY-UNDERSTANDING-001", "OCRM-M10", "owner-audit"),
     "src/gateway/agent-turn/agent-run-final-media.ts": (227, "OCRM-RESP-MEDIA-STORE-READ-SCOPE-001", "OCRM-M10", "owner-audit"),

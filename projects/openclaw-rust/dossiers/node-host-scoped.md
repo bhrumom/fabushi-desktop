@@ -929,3 +929,22 @@ confirms source-file deletion does not remove committed managed artifacts.
 These sources map to existing media-understanding and media-store read-scope
 owners; they do not add a second media store or transcript authority. Rust
 wiring, package reachability, and acceptance remain unverified.
+
+## 111. Agent request preflight, routing, and restart recovery context (2026-10-29)
+
+The locked `agent-request-preflight.ts`,
+`agent-request-preflight.source-lineage.test.ts`,
+`agent-request-routing.ts`, `agent-request-routing.session-id.test.ts`,
+`agent-restart-recovery-context.ts`, and its focused test were read in full.
+Preflight fences backend-only controls, model overrides, raw-model/session
+mutation, swarm collector registration, database admission refusal, source
+provenance, restart-recovery fields, and structured-output schema before
+reservation. Routing resolves agent/session identity without opening a
+database during a read-only lookup, reserves before async store/recipient
+resolution, validates expected incarnation, and drops stale exec-approval
+followups after session rebound. Recovery context restores only an exact
+durable claim, preserves channel/control-UI presentation facts, withholds
+delivery authority for blank targets, and rehydrates execution identity only
+for the admitted recovery cycle. These boundaries map to the existing Session
+Turns Controller and Gateway session owners; Rust wiring and acceptance remain
+unverified.

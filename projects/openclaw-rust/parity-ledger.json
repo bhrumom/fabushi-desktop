@@ -28500,6 +28500,60 @@
       "selected_owner": "source/host/src/extensions/session/session_turns_controller.rs",
       "source_refs": [
         {
+          "blob_sha": "018619f4ee00f84a08b845f20b3ffc21fb994489",
+          "path": "src/gateway/agent-turn/agent-request-preflight.source-lineage.test.ts",
+          "range": {
+            "end_line": 83,
+            "start_line": 1
+          },
+          "symbol": "agent request source lineage preflight oracle"
+        },
+        {
+          "blob_sha": "894ea1df2c7a211c59fe1101903424866b2f12f2",
+          "path": "src/gateway/agent-turn/agent-request-preflight.ts",
+          "range": {
+            "end_line": 320,
+            "start_line": 1
+          },
+          "symbol": "prepareAgentRequestPreflight"
+        },
+        {
+          "blob_sha": "6cd4ecb7f4624f88a1d3ccf37f6ee671959161bf",
+          "path": "src/gateway/agent-turn/agent-request-routing.session-id.test.ts",
+          "range": {
+            "end_line": 122,
+            "start_line": 1
+          },
+          "symbol": "agent request session-id routing oracle"
+        },
+        {
+          "blob_sha": "1d1109535b5729431ed6b972e7cec4aa57ef51b2",
+          "path": "src/gateway/agent-turn/agent-request-routing.ts",
+          "range": {
+            "end_line": 265,
+            "start_line": 1
+          },
+          "symbol": "prepareAgentRequestRouting"
+        },
+        {
+          "blob_sha": "0a0571710fd40d34eb26aa35e77a318e133733c2",
+          "path": "src/gateway/agent-turn/agent-restart-recovery-context.test.ts",
+          "range": {
+            "end_line": 170,
+            "start_line": 1
+          },
+          "symbol": "restart recovery context and identity oracle"
+        },
+        {
+          "blob_sha": "75663822e3c613b6db7a20c0876b9c84960cd477",
+          "path": "src/gateway/agent-turn/agent-restart-recovery-context.ts",
+          "range": {
+            "end_line": 116,
+            "start_line": 1
+          },
+          "symbol": "resolveAgentRestartRecoveryContext"
+        },
+        {
           "blob_sha": "f25c4b6096a484bfb95f3a8ad524c6e9cc4d2632",
           "path": "src/gateway/agent-turn/agent-handler-helpers.ts",
           "range": {
