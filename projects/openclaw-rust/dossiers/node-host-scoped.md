@@ -966,3 +966,39 @@ gateway/config/channel authority before each guarded send, honors live typing
 policy and timeout, and always clears typing on retirement or failure. These
 remain existing Gateway dispatch, Session Turns, and channel lifecycle owners;
 no second wait/facade or delivery authority is introduced.
+
+## 113. Agent session persistence and lifecycle mutation ownership (2026-10-29)
+
+The locked `agent-session-persist.ts` and its focused test were read in full.
+Persistence revalidates lifecycle generation, expected session identity, archive
+and restart-recovery quarantine, Cron continuation identity, reusable runtime
+facts, scheduled-tool grants, creator authorization, sandbox provenance, and
+send-policy admission before replacing the canonical session entry. It records
+foreground recovery ownership only for the exact admitted run, preserves
+session-id rotation lineage, emits session-created and end/start plugin hooks
+with bounded transcript custody, and returns the post-admission session target
+without creating another session store. The focused oracle covers synthetic-run
+sandbox provenance, interrupted recovery ownership, queued-peer fencing, and
+authorization revoked during preparation. These sources map to the existing
+Session Turns Controller and session/plugin owners; Rust persistence, wiring,
+and exact-head acceptance remain unverified.
+
+## 114. Agent execution phase ownership and settlement fencing (2026-10-29)
+
+The locked `agent-run-execution-phase.ts`, its owner test support, owner test,
+and execution-lineage oracle were read in full. The execution phase retains
+Gateway work admission and session-controller source custody, binds workspace
+readiness and model-runtime/plugin-generation leases, revalidates operator,
+requester, abort, lifecycle, RPC-source, session, and delegated-authority
+identity before dispatch, and separates undispatched abort/failure settlement
+from terminal publication. It transfers the admitted run through the existing
+agent dispatch owner, preserves media and transcript cleanup ordering, releases
+Cron/restart-recovery ownership exactly once, drains runtime disposal before
+acknowledging cleanup, and keeps final delivery deferred until settlement. The
+owner oracle covers real session drain, preparation-to-dispatch lending,
+runtime-generation freezing, liveness/access fencing, follow-up ownership, and
+pre-dispatch diagnostics; the lineage oracle rejects unsupported or incomplete
+parent evidence. These sources remain one Session Turns Controller execution
+boundary and do not authorize a second run loop, runtime lease, or settlement
+store. Rust implementation, production wiring, and acceptance remain
+unverified.

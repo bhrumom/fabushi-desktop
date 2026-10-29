@@ -28795,6 +28795,42 @@
             "start_line": 1
           },
           "symbol": "session-controller-model-support"
+        },
+        {
+          "blob_sha": "324f34295a4d0c82f8e748ffc9853d6facc3d10e",
+          "path": "src/gateway/agent-turn/agent-session-persist.test.ts",
+          "range": {
+            "end_line": 190,
+            "start_line": 1
+          },
+          "symbol": "agent session persistence lifecycle oracle"
+        },
+        {
+          "blob_sha": "79a7407e202c94bd87e3c6ecd5d1650f89115cf2",
+          "path": "src/gateway/agent-turn/agent-run-execution-phase.owner.test-support.ts",
+          "range": {
+            "end_line": 232,
+            "start_line": 1
+          },
+          "symbol": "agent execution ownership oracle support"
+        },
+        {
+          "blob_sha": "244bae9f1bd5f18290fbd32cf9f27b513e8f7509",
+          "path": "src/gateway/agent-turn/agent-run-execution-phase.owner.test.ts",
+          "range": {
+            "end_line": 789,
+            "start_line": 1
+          },
+          "symbol": "agent execution ownership and settlement oracle"
+        },
+        {
+          "blob_sha": "9ac4626e09e4d647ce571ea9e9ce4aa92663e61e",
+          "path": "src/gateway/agent-turn/agent-run-execution-lineage.test.ts",
+          "range": {
+            "end_line": 109,
+            "start_line": 1
+          },
+          "symbol": "agent execution lineage oracle"
         }
       ],
       "status": {
