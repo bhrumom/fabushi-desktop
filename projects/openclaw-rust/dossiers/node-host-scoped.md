@@ -759,3 +759,19 @@ workers. This maps to existing NodeHost connection and command-dispatch owners
 without introducing a second worker runtime or queue; Rust implementation,
 packaging, exact-head execution, and real provider/device acceptance remain
 unverified.
+
+## 101. Gateway request lifetime, start budget, diagnostics, and policy fencing (2026-10-29)
+
+The locked `server-request-entry.ts`, `request-diagnostics.ts`,
+`request-start.ts`, and `ws-policy-close.ts` were read in full. Preparation
+leases are sealed and joined independently from handler execution; only the
+exact current node completion invoke may cross a closing boundary. Request
+starts use bounded work/control budgets, per-connection caps, FIFO preservation
+with explicitly independent reads, bounded wait expiry, and a preparation
+concurrency limit. Diagnostics retain only bounded classified facts and keep
+response/dispatch/handler outcomes distinct. Policy mutations hold their
+response until completion, invalidate source authority immediately, and notify
+accepted work without confusing transport closure with business settlement.
+These are orchestration/evidence primitives under the existing Gateway dispatch
+owner, not a new queue, findings store, or runtime; Rust wiring and exact-head
+acceptance remain unverified.

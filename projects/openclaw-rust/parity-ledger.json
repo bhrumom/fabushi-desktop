@@ -7248,6 +7248,42 @@
       "selected_owner": "source/host/src/host_gateway_api.rs",
       "source_refs": [
         {
+          "blob_sha": "9c7ae2894d07fe1ff6fe7e4c8caad5182f3dfa3e",
+          "path": "src/gateway/server-request-entry.ts",
+          "range": {
+            "end_line": 86,
+            "start_line": 1
+          },
+          "symbol": "GatewayRequestEntryLifetime"
+        },
+        {
+          "blob_sha": "abcb3f5a364597b8d6a309a325e34bee060ad1e1",
+          "path": "src/gateway/server/ws-connection/request-diagnostics.ts",
+          "range": {
+            "end_line": 418,
+            "start_line": 1
+          },
+          "symbol": "GatewayRpcDiagnostics"
+        },
+        {
+          "blob_sha": "af5a47cf27a27ac150e1c8eac127034097112608",
+          "path": "src/gateway/server/ws-connection/request-start.ts",
+          "range": {
+            "end_line": 216,
+            "start_line": 1
+          },
+          "symbol": "scheduleGatewayRequestStart"
+        },
+        {
+          "blob_sha": "ab125fddfac0f443397cba2512301d728687aaf3",
+          "path": "src/gateway/server/ws-policy-close.ts",
+          "range": {
+            "end_line": 146,
+            "start_line": 1
+          },
+          "symbol": "Gateway policy response and client invalidation"
+        },
+        {
           "blob_sha": "9a733a06b3cf7c1099548008feb65a95af24e331",
           "path": "src/gateway/server/ws-connection/message-handler.ts",
           "range": {
