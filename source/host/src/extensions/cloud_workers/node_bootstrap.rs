@@ -117,6 +117,12 @@ impl CloudWorkerBootstrapRecord {
         retry_class: CloudWorkerBootstrapRetryClass,
         diagnostic: Option<CloudWorkerDiagnostic>,
     ) -> Result<(), CloudWorkerNodeBootstrapError> {
+        if !is_allowed_transition(self.phase, phase) {
+            return Err(CloudWorkerNodeBootstrapError::InvalidPhaseTransition {
+                from: self.phase,
+                to: phase,
+            });
+        }
         if matches!(phase, CloudWorkerBootstrapPhase::Ready)
             && self.request.secret_refs.is_empty()
         {
@@ -131,6 +137,26 @@ impl CloudWorkerBootstrapRecord {
     }
 }
 
+fn is_allowed_transition(
+    from: CloudWorkerBootstrapPhase,
+    to: CloudWorkerBootstrapPhase,
+) -> bool {
+    matches!(
+        (from, to),
+        (CloudWorkerBootstrapPhase::Pending, CloudWorkerBootstrapPhase::Preparing)
+            | (CloudWorkerBootstrapPhase::Pending, CloudWorkerBootstrapPhase::OutcomeUnknown)
+            | (CloudWorkerBootstrapPhase::Preparing, CloudWorkerBootstrapPhase::Enrolling)
+            | (CloudWorkerBootstrapPhase::Preparing, CloudWorkerBootstrapPhase::Failed)
+            | (CloudWorkerBootstrapPhase::Preparing, CloudWorkerBootstrapPhase::Cancelled)
+            | (CloudWorkerBootstrapPhase::Preparing, CloudWorkerBootstrapPhase::OutcomeUnknown)
+            | (CloudWorkerBootstrapPhase::Enrolling, CloudWorkerBootstrapPhase::Ready)
+            | (CloudWorkerBootstrapPhase::Enrolling, CloudWorkerBootstrapPhase::Failed)
+            | (CloudWorkerBootstrapPhase::Enrolling, CloudWorkerBootstrapPhase::Cancelled)
+            | (CloudWorkerBootstrapPhase::Enrolling, CloudWorkerBootstrapPhase::OutcomeUnknown)
+            | (CloudWorkerBootstrapPhase::OutcomeUnknown, CloudWorkerBootstrapPhase::Preparing)
+    )
+}
+
 #[derive(Debug, Error, Clone, PartialEq, Eq)]
 pub enum CloudWorkerNodeBootstrapError {
     #[error("secret reference is empty, too long, or contains control characters")]
@@ -139,6 +165,11 @@ pub enum CloudWorkerNodeBootstrapError {
     MissingSecretRef,
     #[error("bootstrap requires a replay key")]
     MissingReplayKey,
+    #[error("invalid bootstrap phase transition from {from:?} to {to:?}")]
+    InvalidPhaseTransition {
+        from: CloudWorkerBootstrapPhase,
+        to: CloudWorkerBootstrapPhase,
+    },
 }
 
 #[cfg(test)]
@@ -186,5 +217,43 @@ mod tests {
             CloudWorkerSecretRef::new("secret\nvalue"),
             Err(CloudWorkerNodeBootstrapError::InvalidSecretRef)
         ));
+    }
+
+    #[test]
+    fn readiness_requires_preparation_and_enrollment() {
+        let mut record = CloudWorkerBootstrapRecord::pending(request()).unwrap();
+        assert_eq!(
+            record.settle(
+                CloudWorkerBootstrapPhase::Ready,
+                CloudWorkerBootstrapRetryClass::Never,
+                None,
+            ),
+            Err(CloudWorkerNodeBootstrapError::InvalidPhaseTransition {
+                from: CloudWorkerBootstrapPhase::Pending,
+                to: CloudWorkerBootstrapPhase::Ready,
+            })
+        );
+        record
+            .settle(
+                CloudWorkerBootstrapPhase::Preparing,
+                CloudWorkerBootstrapRetryClass::SafeReplay,
+                None,
+            )
+            .unwrap();
+        record
+            .settle(
+                CloudWorkerBootstrapPhase::Enrolling,
+                CloudWorkerBootstrapRetryClass::ReconcileFirst,
+                None,
+            )
+            .unwrap();
+        record
+            .settle(
+                CloudWorkerBootstrapPhase::Ready,
+                CloudWorkerBootstrapRetryClass::Never,
+                None,
+            )
+            .unwrap();
+        assert_eq!(record.phase, CloudWorkerBootstrapPhase::Ready);
     }
 }
