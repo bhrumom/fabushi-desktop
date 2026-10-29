@@ -1529,3 +1529,29 @@ Controller backend, message-injection, join, tool-authority, and delivery
 owners; they do not create a second execution sink, permission authority, or
 transcript commitment path. Rust implementation, wiring, runtime execution,
 and acceptance remain unverified.
+
+## 140. Session controller barriers, mutation preemption, and operation recovery (2026-10-29)
+
+The locked `session-controller.barriers.ts`,
+`session-controller.execution-selection.ts`,
+`session-controller.mutation-preemption.ts`,
+`session-controller.native-runtime.ts`,
+`session-controller.operation-recovery.ts`, and
+`session-controller.producer-custody.ts` were read in full. Follow-up and
+successor barriers retain one source per physical store, publish only after
+the exact owner clear/handoff boundary, keep failed handoffs fenced, and merge
+after-clear delivery callbacks without hiding same-store maintenance. Execution
+selection captures admitted session/config/runtime/auth facts immutably before
+steering. Mutation preemption captures exact claims, inputs, operations, and
+effects, applies the configured wait/abort policy through the existing Stop
+owner, and bounds settlement without releasing the mutation body early. Native
+waits join the captured attempt and controller owner rather than a same-ID
+successor. Operation recovery revalidates owner, key, session, agent, backend,
+lease, and effect custody before watchdog recovery, cleanup, terminal producer
+fencing, or admission retirement; independent producers retain cancellation
+cleanup on exact sources and record failures without borrowing the parent
+turn's cancellation authority. These sources map to the existing Session
+Turns Controller barriers, execution selection, mutation, native runtime,
+watchdog recovery, and producer-custody owners; they do not create a second
+barrier, stop, recovery, or cancellation authority. Rust implementation,
+wiring, runtime execution, and acceptance remain unverified.

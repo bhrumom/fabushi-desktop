@@ -29389,6 +29389,42 @@
           "path": "src/sessions/session-controller.message-join.ts",
           "range": {"end_line": 322, "start_line": 1},
           "symbol": "message join requester and tool-authority preparation"
+        },
+        {
+          "blob_sha": "9c0616df58c41677d0d608790e6167af9ad3058c",
+          "path": "src/sessions/session-controller.barriers.ts",
+          "range": {"end_line": 273, "start_line": 1},
+          "symbol": "follow-up and successor barrier registration"
+        },
+        {
+          "blob_sha": "146a0271fd6eac13078e364ffd4a80f932361371",
+          "path": "src/sessions/session-controller.execution-selection.ts",
+          "range": {"end_line": 132, "start_line": 1},
+          "symbol": "captured session and execution selection"
+        },
+        {
+          "blob_sha": "80e35d9c14391c24a8a8274a004458488722024d",
+          "path": "src/sessions/session-controller.mutation-preemption.ts",
+          "range": {"end_line": 234, "start_line": 1},
+          "symbol": "mutation wait/preempt policy and bounded settlement"
+        },
+        {
+          "blob_sha": "d6a2a110c951200afafbcf83f78510eb731bd031",
+          "path": "src/sessions/session-controller.native-runtime.ts",
+          "range": {"end_line": 78, "start_line": 1},
+          "symbol": "exact native attempt and owner settlement waits"
+        },
+        {
+          "blob_sha": "3291ee90f69e5459d341425c7751d3f277d2c35f",
+          "path": "src/sessions/session-controller.operation-recovery.ts",
+          "range": {"end_line": 245, "start_line": 1},
+          "symbol": "watchdog recovery, cleanup, and admission fencing"
+        },
+        {
+          "blob_sha": "6260c62d9791a872c4abf112c28650b2e2418dbe",
+          "path": "src/sessions/session-controller.producer-custody.ts",
+          "range": {"end_line": 108, "start_line": 1},
+          "symbol": "independent producer cancellation and source cleanup custody"
         }
       ],
       "status": {
