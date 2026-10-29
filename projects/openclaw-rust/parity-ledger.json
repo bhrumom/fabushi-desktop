@@ -10,10 +10,10 @@
     "ui_accepted": false
   },
   "file_coverage": {
-    "mapped_paths": 1090,
+    "mapped_paths": 1092,
     "omitted_known": 0,
     "tracked_paths": 58750,
-    "unclassified_paths": 57660
+    "unclassified_paths": 57658
   },
   "inventory_authority": {
     "manifest_source": "GitHub Actions immutable artifact candidate",
