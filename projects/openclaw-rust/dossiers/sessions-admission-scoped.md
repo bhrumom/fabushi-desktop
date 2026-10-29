@@ -119,3 +119,12 @@ approvals for source-send then target-receive. The O02 contract calls these
 owner functions directly instead of an inline policy lambda. This remains
 `not-wired` until a real session communication producer and consumer use the
 planner; no production wiring or acceptance status is upgraded here.
+
+The locked `conversation-turns.ts` source was also re-read in full. The Rust
+session conversation owner now contains a bounded pending-turn registry with
+agent/id uniqueness, outbound-message reverse indexing, session/thread and
+conversation matching, ready gating, claim/release/complete transitions, and
+expiry pruning. O03 now exercises that registry rather than a JSON-only
+simulation. The registry is still process-local and has no shipping inbound
+producer or outbound transcript consumer, so its ledger wiring and verification
+remain pending.

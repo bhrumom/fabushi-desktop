@@ -296,21 +296,79 @@ fn test_ocrm_session_o02_communication_policy() {
 // ---------------------------------------------------------------------------
 #[test]
 fn test_ocrm_session_o03_conversation_turn_correlation() {
-    let turn_id = "turn-uuid-12345";
-    let correlation_token = "corr-token-abcde";
+    use mahayana_host_runtime::extensions::session::session_conversation_state::{
+        PendingConversationTurnClaimResult, PendingConversationTurnRegistry,
+    };
+    use std::time::Duration;
 
-    // Simulating turn pending -> claimed -> settled lifecycle
-    let turn_record = json!({
-        "id": turn_id,
-        "correlationToken": correlation_token,
-        "status": "pending",
-        "createdAt": 1729900000000_u64,
-        "claimed": false
-    });
+    let registry = PendingConversationTurnRegistry::new();
+    let turn_id = registry
+        .register(
+            "agent-1",
+            Some("turn-uuid-12345"),
+            "conversation-1",
+            "session-1",
+            Some("thread-1"),
+            Duration::from_secs(30),
+        )
+        .expect("register pending turn");
+    assert_eq!(
+        registry.snapshot("agent-1", &turn_id).expect("pending snapshot").claimed,
+        false
+    );
+    assert!(registry.set_outbound_message_id("agent-1", &turn_id, "outbound-1"));
+    assert!(matches!(
+        registry.claim_reply(
+            "agent-1",
+            "conversation-1",
+            None,
+            "session-1",
+            "inbound-1",
+            Some("outbound-1"),
+            Some("thread-1"),
+            "reply",
+            1729900000000,
+        ),
+        PendingConversationTurnClaimResult::NotReady
+    ));
+    assert!(registry.mark_ready("agent-1", &turn_id));
+    assert!(matches!(
+        registry.claim_reply(
+            "agent-1",
+            "conversation-1",
+            None,
+            "session-1",
+            "inbound-1",
+            Some("outbound-1"),
+            Some("thread-1"),
+            "reply",
+            1729900000000,
+        ),
+        PendingConversationTurnClaimResult::Claimed(_)
+    ));
+    assert!(registry.release("agent-1", &turn_id));
+    assert!(matches!(
+        registry.claim_reply(
+            "agent-1", "conversation-1", None, "session-1", "inbound-1b",
+            Some("outbound-1"), Some("thread-1"), "retry", 1729900000001,
+        ),
+        PendingConversationTurnClaimResult::Claimed(_)
+    ));
+    assert!(registry.complete("agent-1", &turn_id));
 
-    assert_eq!(turn_record["status"], "pending");
-    assert_eq!(turn_record["claimed"], false);
-    assert_eq!(turn_record["correlationToken"], correlation_token);
+    let second = registry
+        .register("agent-1", Some("turn-2"), "conversation-1", "session-1", None, Duration::from_secs(30))
+        .expect("register second pending turn");
+    assert!(registry.set_outbound_message_id("agent-1", &second, "outbound-2"));
+    assert!(registry.mark_ready("agent-1", &second));
+    assert!(matches!(
+        registry.claim_reply(
+            "agent-1", "wrong-conversation", None, "session-1", "inbound-2",
+            Some("outbound-2"), None, "reply", 1729900000000,
+        ),
+        PendingConversationTurnClaimResult::NotFound
+    ));
+    assert!(registry.cancel("agent-1", &second));
 }
 
 // ---------------------------------------------------------------------------
