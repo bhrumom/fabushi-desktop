@@ -131,6 +131,7 @@ READS = {
     "src/sessions/session-controller.mailbox-cleanup.ts": (236, "OCRM-RESP-SESSION-TURNS-CONTROLLER-001", "OCRM-M07", "owner-audit"),
     "src/sessions/session-controller.mailbox-predecessor.ts": (164, "OCRM-RESP-SESSION-TURNS-CONTROLLER-001", "OCRM-M07", "owner-audit"),
     "src/sessions/session-controller.mailbox-task.ts": (94, "OCRM-RESP-SESSION-TURNS-CONTROLLER-001", "OCRM-M07", "owner-audit"),
+    "src/sessions/session-controller.mailbox.ts": (510, "OCRM-RESP-SESSION-TURNS-CONTROLLER-001", "OCRM-M07", "owner-audit"),
     "src/auto-reply/reply/session-hooks.ts": (157, "OCRM-RESP-SESSION-WORK-ADMISSION-001", "OCRM-M07", "owner-audit"),
     "src/gateway/active-sessions-shutdown-drain.ts": (78, "OCRM-RESP-SESSION-WORK-ADMISSION-001", "OCRM-M07", "owner-audit"),
     "src/gateway/active-sessions-shutdown-tracker.test.ts": (62, "OCRM-RESP-SESSION-WORK-ADMISSION-001", "OCRM-M07", "test-oracle-replaced"),

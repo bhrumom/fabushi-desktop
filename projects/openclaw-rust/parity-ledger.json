@@ -29329,6 +29329,12 @@
           "path": "src/sessions/session-controller.mailbox-task.ts",
           "range": {"end_line": 94, "start_line": 1},
           "symbol": "native producer task claim through mailbox selector"
+        },
+        {
+          "blob_sha": "61180f8a2a89c491d70581baa4dc984a48e23397",
+          "path": "src/sessions/session-controller.mailbox.ts",
+          "range": {"end_line": 510, "start_line": 1},
+          "symbol": "mailbox identity, source reservation, adoption, and retargeting"
         }
       ],
       "status": {

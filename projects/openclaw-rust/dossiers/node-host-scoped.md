@@ -1462,3 +1462,24 @@ another runnable input. These sources map to the existing Session Turns
 Controller mailbox cleanup, predecessor, and native-task owners; they do not
 create a second queue, cancellation authority, or task scheduler. Rust
 implementation, wiring, runtime execution, and acceptance remain unverified.
+
+## 137. Session mailbox identity, reservation, adoption, and physical retargeting (2026-10-29)
+
+The locked `session-controller.mailbox.ts` was read in full. The mailbox is
+created only on the existing Session Controller entry and exposes one ordered
+sequence for follow-ups and native producers; claim, drain, in-flight, queue
+items, summary state, and recent-source views all derive from that mailbox.
+Reservations capture store scope, agent/session incarnation, protocol/source
+identity, cancellation custody, and immutable queue policy before prompt or
+attachment preparation. Repeated reservation IDs join only an equivalent live
+source; conflicting protocol, policy, physical owner, or target state fails
+closed. Gateway adoption is allowed only for an unbound preparing source with
+matching owner and live authority, while cancellation signals are forwarded
+into the same source controller. Source lookup is physical-store scoped and
+does not create a mailbox for rejected redelivery. Native task submission,
+source binding, and retargeting all reuse the same selector and custody;
+retargeting is limited to an unbound preparing source and preserves store
+boundaries, sequence order, and cancellation identity. These paths map to the
+existing Session Turns Controller mailbox/reservation owner and do not create a
+second queue, identity registry, or native-task scheduler. Rust
+implementation, wiring, runtime execution, and acceptance remain unverified.
