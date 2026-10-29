@@ -58,7 +58,8 @@ pub use sandbox::{
 };
 pub use store::{CloudWorkerStoreError, CloudWorkerProvisioningStore};
 pub use provider_catalog::{
-    CloudWorkerCatalog, CloudWorkerCatalogError, CloudWorkerCatalogParser,
-    CloudWorkerMachine, CloudWorkerMachineRequirement, CloudWorkerOs,
-    CloudWorkerProvider, CloudWorkerProfile, CloudWorkerResourceLimits,
+    CloudWorkerBinaryIdentity, CloudWorkerCatalog, CloudWorkerCatalogCache,
+    CloudWorkerCatalogError, CloudWorkerCatalogParser, CloudWorkerMachine,
+    CloudWorkerMachineRequirement, CloudWorkerOs, CloudWorkerProvider,
+    CloudWorkerProfile, CloudWorkerResourceLimits,
 };

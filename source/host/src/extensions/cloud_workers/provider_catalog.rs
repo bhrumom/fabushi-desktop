@@ -1,4 +1,4 @@
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
@@ -39,6 +39,86 @@ impl CloudWorkerCatalogParser {
         let catalog: CloudWorkerCatalog =
             serde_json::from_slice(output).map_err(CloudWorkerCatalogError::MalformedJson)?;
         catalog.validate()
+    }
+}
+
+/// Exact identity of the executable that produced a provider catalog.
+///
+/// The cache key is deliberately opaque to this contract: the provider/binary
+/// owner supplies a stable digest or equivalent identity, and this module does
+/// not infer identity from a mutable path or advertised catalog contents.
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct CloudWorkerBinaryIdentity(String);
+
+impl CloudWorkerBinaryIdentity {
+    pub fn new(value: impl Into<String>) -> Result<Self, CloudWorkerCatalogError> {
+        let value = value.into();
+        if value.trim().is_empty() || value != value.trim() {
+            return Err(CloudWorkerCatalogError::InvalidBinaryIdentity);
+        }
+        Ok(Self(value))
+    }
+}
+
+/// Side-effect-free catalog cache owned by the provider/binary boundary.
+///
+/// A successful parse is cached only under the exact binary identity. A failed
+/// load always invalidates the identity first, so stale capability data cannot
+/// survive a failed refresh. This type performs no discovery, authorization,
+/// process launch, or provider mutation.
+#[derive(Debug, Default)]
+pub struct CloudWorkerCatalogCache {
+    entries: HashMap<CloudWorkerBinaryIdentity, CloudWorkerCatalog>,
+}
+
+impl CloudWorkerCatalogCache {
+    pub fn get(&self, identity: &CloudWorkerBinaryIdentity) -> Option<&CloudWorkerCatalog> {
+        self.entries.get(identity)
+    }
+
+    pub fn invalidate(&mut self, identity: &CloudWorkerBinaryIdentity) {
+        self.entries.remove(identity);
+    }
+
+    pub fn resolve<F>(
+        &mut self,
+        identity: CloudWorkerBinaryIdentity,
+        load: F,
+    ) -> Result<CloudWorkerCatalog, CloudWorkerCatalogError>
+    where
+        F: FnOnce() -> Result<CloudWorkerCatalog, CloudWorkerCatalogError>,
+    {
+        if let Some(catalog) = self.entries.get(&identity) {
+            return Ok(catalog.clone());
+        }
+
+        self.refresh(identity, load)
+    }
+
+    /// Refresh an identity even when a previous catalog is cached.
+    ///
+    /// The old entry is removed before loading so an error cannot leave stale
+    /// capability data addressable under the identity.
+    pub fn refresh<F>(
+        &mut self,
+        identity: CloudWorkerBinaryIdentity,
+        load: F,
+    ) -> Result<CloudWorkerCatalog, CloudWorkerCatalogError>
+    where
+        F: FnOnce() -> Result<CloudWorkerCatalog, CloudWorkerCatalogError>,
+    {
+        self.entries.remove(&identity);
+
+        match load() {
+            Ok(catalog) => {
+                self.entries.insert(identity, catalog.clone());
+                Ok(catalog)
+            }
+            Err(error) => {
+                self.entries.remove(&identity);
+                Err(error)
+            }
+        }
     }
 }
 
@@ -178,6 +258,8 @@ pub struct CloudWorkerMachineRequirement {
 pub enum CloudWorkerCatalogError {
     #[error("catalog parser limit must be greater than zero")]
     InvalidLimit,
+    #[error("binary identity is empty or contains surrounding whitespace")]
+    InvalidBinaryIdentity,
     #[error("catalog output is {bytes} bytes, above the {max_bytes}-byte limit")]
     OutputTooLarge { bytes: usize, max_bytes: usize },
     #[error("catalog output is not valid JSON: {0}")]
@@ -272,5 +354,41 @@ mod tests {
             ..requirement
         };
         assert!(profile.select_machine(&too_large).is_none());
+    }
+
+    #[test]
+    fn caches_success_by_exact_binary_identity() {
+        let mut cache = CloudWorkerCatalogCache::default();
+        let identity = CloudWorkerBinaryIdentity::new("sha256:abc").unwrap();
+        let first = cache
+            .resolve(identity.clone(), || {
+                CloudWorkerCatalogParser::default().parse(VALID)
+            })
+            .unwrap();
+        let second = cache
+            .resolve(identity.clone(), || {
+                Err(CloudWorkerCatalogError::EmptyCatalog)
+            })
+            .unwrap();
+        assert_eq!(first, second);
+        assert!(cache.get(&identity).is_some());
+    }
+
+    #[test]
+    fn failed_load_invalidates_stale_identity() {
+        let mut cache = CloudWorkerCatalogCache::default();
+        let identity = CloudWorkerBinaryIdentity::new("sha256:abc").unwrap();
+        cache
+            .resolve(identity.clone(), || {
+                CloudWorkerCatalogParser::default().parse(VALID)
+            })
+            .unwrap();
+        assert!(matches!(
+            cache.refresh(identity.clone(), || {
+                Err(CloudWorkerCatalogError::EmptyCatalog)
+            }),
+            Err(CloudWorkerCatalogError::EmptyCatalog)
+        ));
+        assert!(cache.get(&identity).is_none());
     }
 }

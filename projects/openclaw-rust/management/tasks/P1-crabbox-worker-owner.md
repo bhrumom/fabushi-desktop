@@ -221,6 +221,12 @@ Catalog profiles now expose deterministic OS/architecture/min-resource
 matching. A match is only a compatibility projection; it does not authorize
 the provider, grant a lease, select a model or launch a worker.
 
+The catalog contract now also exposes an exact-binary-identity cache. Successful
+catalog loads are reused only for the same opaque binary identity, while every
+failed refresh invalidates that identity before returning the error. This is a
+side-effect-free cache contract; provider discovery, binary probing,
+authorization and launch remain open.
+
 The artifact-admission foundation at
 `source/host/src/extensions/cloud_workers/artifact_admission.rs` is likewise
 pure validation: it enforces HTTPS allowlisted origins, bounded size, SHA-256
