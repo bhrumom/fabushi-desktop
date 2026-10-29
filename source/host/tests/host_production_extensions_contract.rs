@@ -19,7 +19,7 @@ const MEMORY_PRODUCTION: &str = include_str!("../src/extensions/memory/productio
 const SHIPPING_HOST: &str = include_str!("../app/src/main.rs");
 
 #[test]
-fn current_shipping_subset_is_declared_in_the_frozen_35_slot_registry() {
+fn current_shipping_subset_is_declared_in_the_frozen_36_slot_registry() {
     let all = HOST_EXTENSION_ORDER.iter().copied().collect::<BTreeSet<_>>();
     let shipping = CURRENT_SHIPPING_PRODUCTION_EXTENSION_IDS
         .iter()
@@ -34,7 +34,7 @@ fn current_shipping_subset_is_declared_in_the_frozen_35_slot_registry() {
         shipping.iter().all(|id| all.contains(id)),
         "every shipping production extension must occupy a frozen Grok registry slot"
     );
-    assert_eq!(HOST_EXTENSION_ORDER.len(), 35);
+    assert_eq!(HOST_EXTENSION_ORDER.len(), 36);
     assert!(shipping.contains(&HostExtensionId::Auth));
     assert!(shipping.contains(&HostExtensionId::Notifications));
     assert!(shipping.contains(&HostExtensionId::Automations));
@@ -46,6 +46,7 @@ fn current_shipping_subset_is_declared_in_the_frozen_35_slot_registry() {
     assert!(shipping.contains(&HostExtensionId::LocalToolPermission));
     assert!(shipping.contains(&HostExtensionId::LocalExec));
     assert!(shipping.contains(&HostExtensionId::CloudAgents));
+    assert!(shipping.contains(&HostExtensionId::CloudWorkers));
     assert!(shipping.contains(&HostExtensionId::WebauthnProxy));
     assert!(shipping.contains(&HostExtensionId::StateBackstop));
     assert!(shipping.contains(&HostExtensionId::Inference));
@@ -348,14 +349,14 @@ fn cross_user_host_upgrade_and_teach_recording_have_one_shipping_owner() {
 }
 
 #[test]
-fn shipping_production_composition_covers_the_exact_frozen_35_slots() {
+fn shipping_production_composition_covers_the_exact_frozen_36_slots() {
     let frozen = HOST_EXTENSION_ORDER.iter().copied().collect::<BTreeSet<_>>();
     let shipping = CURRENT_SHIPPING_PRODUCTION_EXTENSION_IDS
         .iter()
         .copied()
         .collect::<BTreeSet<_>>();
-    assert_eq!(CURRENT_SHIPPING_PRODUCTION_EXTENSION_IDS.len(), 35);
-    assert_eq!(shipping.len(), 35, "shipping production registry must not duplicate slots");
+    assert_eq!(CURRENT_SHIPPING_PRODUCTION_EXTENSION_IDS.len(), 36);
+    assert_eq!(shipping.len(), 36, "shipping production registry must not duplicate slots");
     assert_eq!(shipping, frozen, "shipping production registry must cover the exact frozen slots");
     assert!(
         !PRODUCTION_OWNER.contains("NoopProductionExtension")

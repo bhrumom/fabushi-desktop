@@ -253,18 +253,21 @@ from mutating repair/reconciliation and requires an explicit acknowledgement
 for every mutating action. It is a request/result contract only; no repair,
 migration, lease release or warm-image mutation is executed.
 
-The current Host registry evidence remains an open integration item: the
-frozen `extension_ids.generated.rs`, `extensions/registry.rs` and
-`host_production_extensions.rs` contain no CloudWorkers slot. Adding one
-requires the approved ADR/RTM target symbols, Coordinator producer/consumer
-path and exact Actions/package proof; this task does not claim that wiring.
+The Host registry now has a formal `CloudWorkers` slot in
+`extension_ids.generated.rs` and `extensions/registry.rs`; production Host
+composition constructs it through
+`start_cloud_worker_provisioning_extension()` and exposes it on
+`ProductionHostExtensions`. The slot starts disabled by default and therefore
+does not claim provider readiness, Coordinator producer/consumer reachability,
+packaged UI/CLI reachability, or exact-head acceptance.
 
 The pure contracts are now composed by
 `source/host/src/extensions/cloud_workers/owner.rs` into a single
 `CloudWorkerProvisioningOwner` with disabled-by-default configuration,
 lease/warm-image maps, capacity fencing and typed mutation delegation. This
-owner is not yet a production extension: it has no persistence, provider
-side-effect adapter, Coordinator slot, or packaged UI/CLI reachability.
+owner. The production extension boundary exists, but the owner still has no
+persistence, provider side-effect adapter, Coordinator commands/events, or
+packaged UI/CLI reachability.
 
 ## 9. Definition of Done / acceptance criteria
 

@@ -29,10 +29,10 @@ impl TurnExecutor for FakeExecutor {
 
 #[test]
 fn extension_ids_and_order_match_frozen_grok_registry() {
-    assert_eq!(HOST_EXTENSION_ORDER.len(), 35);
+    assert_eq!(HOST_EXTENSION_ORDER.len(), 36);
     assert_eq!(HOST_EXTENSION_ORDER[0], HostExtensionId::Notifications);
     assert_eq!(HOST_EXTENSION_ORDER[17], HostExtensionId::TurnExecution);
-    assert_eq!(HOST_EXTENSION_ORDER[34], HostExtensionId::Wallpaper);
+    assert_eq!(HOST_EXTENSION_ORDER[35], HostExtensionId::Wallpaper);
     assert_eq!(HostExtensionId::parse("mcp"), Some(HostExtensionId::Mcp));
     assert_eq!(HostExtensionId::WebauthnProxy.as_str(), "webauthn-proxy");
 }

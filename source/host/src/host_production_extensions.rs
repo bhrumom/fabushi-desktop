@@ -57,6 +57,9 @@ use crate::extensions::browser_ua::{
 use crate::extensions::cloud_agents::extension::{
     CloudAgentsExtension, start_cloud_agents_extension,
 };
+use crate::extensions::cloud_workers::extension::{
+    CloudWorkerProvisioningExtension, start_cloud_worker_provisioning_extension,
+};
 use crate::extensions::content_search::extension::{
     ProductionContentSearchExtension, start_production_content_search_extension,
 };
@@ -231,6 +234,7 @@ pub const CURRENT_SHIPPING_PRODUCTION_EXTENSION_IDS: &[HostExtensionId] = &[
     HostExtensionId::Mcp,
     HostExtensionId::BoxStoreSync,
     HostExtensionId::CloudAgents,
+    HostExtensionId::CloudWorkers,
     HostExtensionId::ActionAudit,
     HostExtensionId::HostUpgrade,
     HostExtensionId::AutoReview,
@@ -487,6 +491,7 @@ pub struct ProductionHostExtensions {
     pub webauthn_proxy: Arc<HostWebAuthnProxyExtension>,
     pub action_audit: ActionAuditExtension,
     pub cloud_agents: CloudAgentsExtension,
+    pub cloud_workers: CloudWorkerProvisioningExtension,
     /// Canonical plugin/channel capability catalog shared by production registration paths.
     pub plugin_capability_catalog: Arc<PluginCapabilityCatalog>,
     /// Canonical channel delivery boundary consumed by Gateway and channel adapters.
@@ -649,6 +654,7 @@ pub fn start_production_host_extensions(
         Arc::clone(&auth),
         production_cloud_agent_trace_converter(),
     );
+    let cloud_workers = start_cloud_worker_provisioning_extension();
     let notify_bus = start_notify_bus_extension(
         Arc::clone(&auth),
         Arc::clone(&experiments),
@@ -731,6 +737,7 @@ pub fn start_production_host_extensions(
         webauthn_proxy,
         action_audit,
         cloud_agents,
+        cloud_workers,
         plugin_capability_catalog,
         channel_delivery,
         channel_delivery_router,

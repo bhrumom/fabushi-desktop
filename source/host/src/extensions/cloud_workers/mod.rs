@@ -5,6 +5,8 @@
 //! Fabushi account/device identity, Computer authorization, Sand state and
 //! Runner composition remain owned by their existing modules.
 
+pub mod extension;
+
 mod lease;
 mod artifact_admission;
 mod doctor;
