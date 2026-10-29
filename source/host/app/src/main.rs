@@ -3274,28 +3274,6 @@ impl UnifiedGatewayApi {
             .or_else(|| args.get("settings"))
             .unwrap_or(args);
 
-        if args
-            .get("doctorFix")
-            .and_then(serde_json::Value::as_bool)
-            == Some(true)
-        {
-            let parsed = args.get("parsedConfig").unwrap_or(target);
-            let resolved = args.get("resolvedConfig").unwrap_or(target);
-            let include_contributes_roster = args
-                .get("includeContributesRoster")
-                .and_then(serde_json::Value::as_bool)
-                .unwrap_or(false);
-            if !mahayana_host_runtime::agents::agent_roster::can_write_doctor_include(
-                parsed,
-                resolved,
-                include_contributes_roster,
-            ) {
-                return Err(GatewayCommandError::Conflict(
-                    "doctor fix cannot overwrite an include-owned agent roster".into(),
-                ));
-            }
-        }
-
         if let Some(base_hash) = args.get("baseHash").and_then(serde_json::Value::as_str) {
             let current = self.settings.get_host_settings();
             let current_str = serde_json::to_string(&current)

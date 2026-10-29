@@ -461,3 +461,40 @@ fn test_ocrm_config_o06_agent_workspace_dirs() {
     assert!(assert_valid_sand_agent_id("agent/sub").is_err());
 }
 
+#[test]
+fn test_ocrm_roster_include_write_guard_is_server_owned_and_fail_closed() {
+    let included_path = temp_path("roster-include-owned");
+    fs::write(
+        &included_path,
+        r#"{"version":1,"agents":{"entries":{"$include":"agents.json"}}}"#,
+    )
+    .expect("seed include-owned settings");
+    let included = SettingsService::new(&included_path);
+
+    // Ordinary settings writes must not bypass the guard merely because no
+    // doctorFix marker was supplied by the caller.
+    assert!(included
+        .set_host_settings(&serde_json::json!({
+            "agents": {"entries": {"local": {}}}
+        }))
+        .is_err());
+    let unchanged: serde_json::Value =
+        serde_json::from_str(&fs::read_to_string(&included_path).expect("read"))
+            .expect("valid json");
+    assert_eq!(
+        unchanged["agents"]["entries"]["$include"],
+        serde_json::json!("agents.json")
+    );
+    let _ = fs::remove_file(included_path);
+
+    let target_include_path = temp_path("roster-include-target");
+    let target_include = SettingsService::new(&target_include_path);
+    // A client cannot smuggle an include-owned roster into a clean config.
+    assert!(target_include
+        .set_host_settings(&serde_json::json!({
+            "agents": {"entries": {"$include": "agents.json"}}
+        }))
+        .is_err());
+    let _ = fs::remove_file(target_include_path);
+}
+

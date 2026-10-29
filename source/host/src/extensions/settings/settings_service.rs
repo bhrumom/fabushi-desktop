@@ -13,6 +13,7 @@ use serde_json::{Map, Value, json};
 
 use crate::agents::agent_roster::{
     apply_implicit_agent_roster_defaults, collect_agent_entries,
+    can_write_doctor_include,
     pin_survivor_workspace_for_roster_collapse, try_resolve_default_agent_id,
 };
 use crate::host_paths::get_sand_root_dir;
@@ -995,6 +996,28 @@ impl SettingsService {
         let previous_zone = self.get_user_time_zone();
         let mut settings = self.load();
         let changed_fields = update.keys().cloned().collect::<Vec<_>>();
+
+        if let Some(agent_update) = update.get("agents") {
+            let parsed = Value::Object(settings.clone());
+            let mut resolved = parsed.clone();
+            if let Some(object) = resolved.as_object_mut() {
+                if agent_update.is_null() {
+                    object.remove("agents");
+                } else {
+                    object.insert("agents".into(), agent_update.clone());
+                }
+            }
+            let current_roster_is_writable =
+                can_write_doctor_include(&parsed, &resolved, false);
+            let target_roster_is_writable =
+                can_write_doctor_include(&resolved, &resolved, false);
+            if !current_roster_is_writable || !target_roster_is_writable {
+                return Err(
+                    "agent roster is include-owned and cannot be overwritten by this config owner"
+                        .into(),
+                );
+            }
+        }
 
         settings.insert("notifications".into(), json!({ "isEnabled": false }));
 
