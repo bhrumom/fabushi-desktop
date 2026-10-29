@@ -28260,6 +28260,24 @@
             "start_line": 1
           },
           "symbol": "ca.openssl"
+        },
+        {
+          "blob_sha": "e051d93b7b85e4c91ae890ceec37210ca0f9843a",
+          "path": "src/proxy-capture/header-redaction.ts",
+          "range": {
+            "end_line": 40,
+            "start_line": 1
+          },
+          "symbol": "redactedCaptureHeaders"
+        },
+        {
+          "blob_sha": "ecc9f3d5fae90153b44bf897dc22f60b99c747b5",
+          "path": "src/proxy-capture/header-redaction.test.ts",
+          "range": {
+            "end_line": 88,
+            "start_line": 1
+          },
+          "symbol": "redactedCaptureHeaders oracle"
         }
       ],
       "status": {
@@ -28279,7 +28297,9 @@
         "source/host/tests/openclaw_secrets_security_contract.rs::test_ocrm_proxy_capture_header_redactor"
       ],
       "typed_contracts": [
-        "ProxyHeaderRedactor"
+        "ProxyHeaderRedactor",
+        "redact_headers_with_additional",
+        "redact_url"
       ],
       "unit_id": "OCRM-UNIT-PROXY-001"
     },

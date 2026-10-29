@@ -114,3 +114,21 @@ header-redaction behavior is therefore not proven by the attached CA oracle,
 and the pure sanitizer is not shipping proxy-capture wiring. The row remains
 pending for source remapping, a real capture owner/consumer, and exact-head
 verification; no completion flag was changed.
+
+## 8. Proxy header/query redaction owner slice (2026-10-29)
+
+The locked `src/proxy-capture/header-redaction.ts` (blob
+`e051d93b7b85e4c91ae890ceec37210ca0f9843a`, 40 lines) and
+`header-redaction.test.ts` (blob
+`ecc9f3d5fae90153b44bf897dc22f60b99c747b5`, 88 lines) were read directly.
+Their contract conservatively redacts authorization/model-provider header
+fragments, session names, caller-declared sensitive names, and array-valued
+headers while preserving innocuous values.
+
+`ProxyHeaderRedactor` now matches those name fragments, accepts additional
+sensitive names, and delegates URL query scrubbing to the existing
+`redact_sensitive_query_params` telemetry owner. The focused contract covers
+token/session fragments, caller-declared names, and `token`/`session_id` query
+parameters. This is still a pure security-owner slice: no proxy capture store,
+runtime caller, or exact-head verification has been added, so wiring and
+acceptance remain pending.

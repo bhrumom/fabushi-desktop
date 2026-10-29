@@ -97,4 +97,22 @@ fn test_ocrm_proxy_capture_header_redactor() {
     assert_eq!(redacted.get("Cookie").unwrap(), "[REDACTED]");
     assert_eq!(redacted.get("Content-Type").unwrap(), "application/json");
     assert_eq!(redacted.get("Accept").unwrap(), "*/*");
+
+    let conservative = redactor.redact_headers_with_additional(
+        &HashMap::from([
+            ("x-vendor-access-token".to_string(), "vendor-secret".to_string()),
+            ("x-session-id".to_string(), "session-123".to_string()),
+            ("X-Routing-Target".to_string(), "private-route".to_string()),
+            ("Accept".to_string(), "text/plain".to_string()),
+        ]),
+        ["x-routing-target"],
+    );
+    assert_eq!(conservative.get("x-vendor-access-token").unwrap(), "[REDACTED]");
+    assert_eq!(conservative.get("x-session-id").unwrap(), "[REDACTED]");
+    assert_eq!(conservative.get("X-Routing-Target").unwrap(), "[REDACTED]");
+    assert_eq!(conservative.get("Accept").unwrap(), "text/plain");
+    assert_eq!(
+        redactor.redact_url("https://gateway.test/capture?token=live&safe=1&session_id=s-1"),
+        "https://gateway.test/capture?token=[REDACTED]&safe=1&session_id=[REDACTED]"
+    );
 }
