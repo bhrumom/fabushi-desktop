@@ -1052,3 +1052,27 @@ retry-grace recovery, multiple waiters, cancellation precedence, and cache
 expiry. This remains the existing Session Turns Controller observation owner;
 it does not create a second dedupe cache, wait authority, or execution store.
 Rust implementation, wiring, and acceptance remain unverified.
+
+## 118. Agent user-turn input custody and subagent follow-up ownership (2026-10-29)
+
+The locked `agent-run-user-turn.ts`, its focused test,
+`agent-run-subagent.ts`, and its focused test were read in full. User-turn
+preparation claims only trusted internal approval handoffs, validates private
+completion and frozen-cohort replay provenance, persists inbound media and
+pending input under the admitted session identity, records sender/owner and
+requester facts, and transfers transcript/media cleanup exactly once across
+abort, timeout, persistence failure, and settlement failure. It rechecks live
+requester authority before dispatch and keeps retained media when durable input
+custody has already transferred. Subagent preparation prioritizes exact
+follow-up successors and parent-resume custody, rejects requester mismatches,
+persists plugin ownership before acceptance, reactivates only eligible child
+sessions, and settles an unstarted parent/follow-up only when the exact RPC
+source, operational run instance, lifecycle generation, and session identity
+still match. Timeout and one-use completion-tool grants inherit only from the
+same admitted child identity. The oracles cover authority revocation during
+input/media staging, cleanup ownership outcomes, plugin registration fencing,
+parent resume, requester matching, and successor adoption without sibling
+ownership. These are existing Session Turns, transcript, approval, and
+subagent-registry boundaries; no second input store, subagent registry, or
+runtime is introduced. Rust implementation, wiring, and acceptance remain
+unverified.

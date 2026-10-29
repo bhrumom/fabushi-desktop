@@ -28894,6 +28894,42 @@
             "start_line": 1
           },
           "symbol": "agent job timeout fallback oracle"
+        },
+        {
+          "blob_sha": "c34ec102b691e696d555ff8205d11cd5a89df572",
+          "path": "src/gateway/agent-turn/agent-run-user-turn.ts",
+          "range": {
+            "end_line": 651,
+            "start_line": 1
+          },
+          "symbol": "prepare and settle agent user turn custody"
+        },
+        {
+          "blob_sha": "2aaba7e64dc915e33d6c6754cb7f51aedf42e25b",
+          "path": "src/gateway/agent-turn/agent-run-user-turn.test.ts",
+          "range": {
+            "end_line": 263,
+            "start_line": 1
+          },
+          "symbol": "agent user turn custody oracle"
+        },
+        {
+          "blob_sha": "95c68881e8b0e7ab94e3771fb0b8280b03fcd7b7",
+          "path": "src/gateway/agent-turn/agent-run-subagent.ts",
+          "range": {
+            "end_line": 351,
+            "start_line": 1
+          },
+          "symbol": "prepare and settle Gateway subagent run"
+        },
+        {
+          "blob_sha": "c96d4da8bac5e266771356b60685367ffb0516d7",
+          "path": "src/gateway/agent-turn/agent-run-subagent.test.ts",
+          "range": {
+            "end_line": 238,
+            "start_line": 1
+          },
+          "symbol": "subagent admission and follow-up custody oracle"
         }
       ],
       "status": {
