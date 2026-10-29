@@ -217,6 +217,13 @@ input, explicit provider/profile/machine records, deterministic ordering,
 duplicate rejection and resource/architecture validation. It still does not
 discover a provider, grant permission, select a model or launch a worker.
 
+The artifact-admission foundation at
+`source/host/src/extensions/cloud_workers/artifact_admission.rs` is likewise
+pure validation: it enforces HTTPS allowlisted origins, bounded size, SHA-256
+shape, safe archive member paths and explicit pending/damaged/outcome-unknown
+states. It does not download, verify bytes, publish files or mutate a managed
+artifact store.
+
 ## 9. Definition of Done / acceptance criteria
 
 - P1-AC01: ADR is approved and the target symbols/consumers are recorded in

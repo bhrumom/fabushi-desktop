@@ -6,8 +6,14 @@
 //! Runner composition remain owned by their existing modules.
 
 mod lease;
+mod artifact_admission;
 mod provider_catalog;
 
+pub use artifact_admission::{
+    CloudWorkerArtifactAdmission, CloudWorkerArtifactAdmissionError,
+    CloudWorkerArtifactAdmissionState, CloudWorkerArtifactDigest,
+    CloudWorkerArtifactKind, CloudWorkerArtifactPolicy, CloudWorkerArtifactSource,
+};
 pub use lease::{
     CloudWorkerLease, CloudWorkerLeaseError, CloudWorkerLeaseMutation,
     CloudWorkerLeaseScope, CloudWorkerLifecycle, CloudWorkerMutationOutcome,
