@@ -1261,3 +1261,42 @@ command-policy owner and Plugin SDK approval/run-authority security owner;
 they do not create a second bearer store, authority registry, or spawn
 runtime. Rust implementation, wiring, runtime execution, and acceptance
 remain unverified.
+
+## 128. Session work admission and agent-deletion fencing (2026-10-29)
+
+The locked `session-agent-work-admission.ts` and its oracle were read in
+full. The work-admission owner canonicalizes agent/state database identity,
+keeps deletion cleanup closures scoped to the exact agent and state path,
+retains terminal writes while deletion cleanup is pending, and replays those
+writes before removing the journal fence. Session writes are rejected by the
+existing deletion ingress cleanup or the durable pending-deletion journal;
+agent/session interruption drains only the matching admitted work, preserves
+other state paths, and refuses self-deletion from the active turn. The oracle
+covers FIFO refusal before a queued write's turn, restart-persisted deletion,
+overlapping session Stop precedence, unseen sessions, retained terminal
+writes, and revalidation while cancellation drains. This maps to the existing
+Session Work Admission/agent deletion owner and does not create a second
+database lock, deletion journal, or session write gate. Rust implementation,
+wiring, runtime execution, and acceptance remain unverified.
+
+## 129. Session turn admission, mailbox claims, and sequence invariants (2026-10-29)
+
+The locked `session-controller.admission.ts`,
+`session-controller.admission.test.ts`, `session-controller.admission-rule.ts`,
+`session-controller.admission-rule.test.ts`, and
+`session-controller-sequence.test.ts` were read in full. Turn admission
+borrows only the exact ambient owner/claim and matching physical session
+target, otherwise claims the mailbox source or submits a new task. It binds
+incarnation and store scope, composes caller/owner cancellation, keeps source
+cleanup receipts ahead of successor admission, retires failed operations,
+and releases claims exactly once. The rule owner distinguishes retired
+entries, clearing mailboxes, stale claims, waiting inputs, follow-up and
+successor barriers, active turns, lifecycle blocks, and mutation-owned turns;
+only a mutation's own fenced turn may bypass its waiting inputs. The model
+sequence oracle independently checks arrival order, one newest interrupt,
+native retry/late detach, raw owner and source settlement, mutation fences,
+backend Stop identity, borrowed native work, and absence of orphaned mailbox
+entries across generated interleavings. These sources map to the existing
+Session Turns Controller and mailbox/operation owners; they do not create a
+second scheduler, claim registry, or turn reducer. Rust implementation,
+wiring, runtime execution, and acceptance remain unverified.

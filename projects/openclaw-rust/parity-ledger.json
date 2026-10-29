@@ -14178,6 +14178,18 @@
             "start_line": 1
           },
           "symbol": "backgroundSessionResult"
+        },
+        {
+          "blob_sha": "7da9e10faaec1bf94044830f7d39d9f65ef3d68a",
+          "path": "src/sessions/session-agent-work-admission.ts",
+          "range": {"end_line": 142, "start_line": 1},
+          "symbol": "assertAgentSessionWriteAdmission"
+        },
+        {
+          "blob_sha": "9dbbfa06440dabe644bbe771a9c9f78d0f36f6b0",
+          "path": "src/sessions/session-agent-work-admission.test.ts",
+          "range": {"end_line": 207, "start_line": 1},
+          "symbol": "session work admission deletion fence oracle"
         }
       ],
       "status": {
@@ -29107,6 +29119,36 @@
             "start_line": 1
           },
           "symbol": "createAgentTurnService"
+        },
+        {
+          "blob_sha": "54eb2d96f46b6d6f32045e271633e2890589520c",
+          "path": "src/sessions/session-controller.admission.ts",
+          "range": {"end_line": 234, "start_line": 1},
+          "symbol": "withSessionTurn"
+        },
+        {
+          "blob_sha": "c6c146952aff602a388a9f86bdbddfd6c109d303",
+          "path": "src/sessions/session-controller.admission.test.ts",
+          "range": {"end_line": 276, "start_line": 1},
+          "symbol": "session controller admission oracle"
+        },
+        {
+          "blob_sha": "72caf6cfd7608c7d8f07d97d7084f643f80f2035",
+          "path": "src/sessions/session-controller.admission-rule.ts",
+          "range": {"end_line": 179, "start_line": 1},
+          "symbol": "evaluateTurnAdmission"
+        },
+        {
+          "blob_sha": "783b734d56a850b4e8b4bcc063ac93e389095c55",
+          "path": "src/sessions/session-controller.admission-rule.test.ts",
+          "range": {"end_line": 92, "start_line": 1},
+          "symbol": "turn admission refusal oracle"
+        },
+        {
+          "blob_sha": "027092e629e0a166ca513fcf17ffea52d029d54d",
+          "path": "src/sessions/session-controller-sequence.test.ts",
+          "range": {"end_line": 680, "start_line": 1},
+          "symbol": "session controller model sequence oracle"
         }
       ],
       "status": {
