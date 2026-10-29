@@ -139,17 +139,56 @@ pub struct ChannelDraftStreamingChunking {
     pub break_preference: String,
 }
 
+#[derive(Debug, Clone, Default)]
+pub struct ChannelDraftStreamingChunkingOverride {
+    pub min_chars: Option<usize>,
+    pub max_chars: Option<usize>,
+    pub break_preference: Option<String>,
+}
+
 impl Default for ChannelDraftStreamingChunking {
     fn default() -> Self {
         Self {
-            min_chars: 100,
-            max_chars: 1000,
+            min_chars: 200,
+            max_chars: 800,
             break_preference: "paragraph".to_string(),
         }
     }
 }
 
 impl ChannelDraftStreamingChunking {
+    /// Resolves the locked OpenClaw draft-streaming contract without owning
+    /// channel configuration or text-limit lookup. Account configuration is
+    /// the complete override when present; otherwise channel configuration is
+    /// used. The caller supplies the already-resolved text limit.
+    pub fn resolve(
+        text_limit: usize,
+        channel: Option<&ChannelDraftStreamingChunkingOverride>,
+        account: Option<&ChannelDraftStreamingChunkingOverride>,
+    ) -> Self {
+        let selected = account.or(channel);
+        let max_requested = selected
+            .and_then(|config| config.max_chars)
+            .unwrap_or(800)
+            .max(1);
+        let max_chars = max_requested.min(text_limit.max(1));
+        let min_chars = selected
+            .and_then(|config| config.min_chars)
+            .unwrap_or(200)
+            .max(1)
+            .min(max_chars);
+        let break_preference = match selected.and_then(|config| config.break_preference.as_deref()) {
+            Some("newline") => "newline",
+            Some("sentence") => "sentence",
+            _ => "paragraph",
+        };
+        Self {
+            min_chars,
+            max_chars,
+            break_preference: break_preference.to_string(),
+        }
+    }
+
     pub fn should_split_chunk(&self, current_len: usize) -> bool {
         current_len >= self.max_chars
     }

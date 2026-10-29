@@ -979,6 +979,7 @@ fn test_ocrm_plugin_sdk_channel_lifecycle_outbound_pairing() {
     };
     use mahayana_host_runtime::extensions::plugin_sdk::channel_outbound::{
         preserve_reply_payload_media_selection, ChannelDraftStreamingChunking,
+        ChannelDraftStreamingChunkingOverride,
         OutboundEchoTracker, OutboundMessageIdentity, ReplyPayload,
     };
     use mahayana_host_runtime::extensions::plugin_sdk::channel_pairing::{
@@ -1083,6 +1084,30 @@ fn test_ocrm_plugin_sdk_channel_lifecycle_outbound_pairing() {
     };
     assert!(!chunking.should_split_chunk(30));
     assert!(chunking.should_split_chunk(50));
+
+    let channel_chunking = ChannelDraftStreamingChunkingOverride {
+        min_chars: Some(120),
+        max_chars: Some(900),
+        break_preference: Some("newline".to_string()),
+    };
+    let account_chunking = ChannelDraftStreamingChunkingOverride {
+        min_chars: Some(700),
+        max_chars: Some(1200),
+        break_preference: Some("sentence".to_string()),
+    };
+    let resolved = ChannelDraftStreamingChunking::resolve(
+        800,
+        Some(&channel_chunking),
+        Some(&account_chunking),
+    );
+    assert_eq!(resolved.min_chars, 700);
+    assert_eq!(resolved.max_chars, 800);
+    assert_eq!(resolved.break_preference, "sentence");
+
+    let default_resolved = ChannelDraftStreamingChunking::resolve(150, None, None);
+    assert_eq!(default_resolved.min_chars, 150);
+    assert_eq!(default_resolved.max_chars, 150);
+    assert_eq!(default_resolved.break_preference, "paragraph");
 
     let source_payload = ReplyPayload {
         text: "hello".to_string(),
