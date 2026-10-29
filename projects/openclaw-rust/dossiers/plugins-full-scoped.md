@@ -170,6 +170,33 @@ Channel failure markers now reuse the existing `SandPendingWakeStore` and `Pendi
 
 The failure worker now treats `RevivalExecution::aborted` and `quiesced_for_upgrade` as non-settled outcomes: it requeues the in-memory failure and leaves the durable marker intact. Marker cleanup is restricted to a non-aborted, non-quiesced follow-up result, so a cancellation or upgrade handoff cannot be reported as a delivered recovery notice.
 
+## 2026-10-29 — lifecycle hook production reachability re-audit
+
+The current exact Fabushi target was rechecked at
+`2225400ea73392523586a110301edeb87c986001`. The Rust
+`PluginHookRunner`/`ProviderExtensionBridge` implementation is present in
+`source/host/src/extensions/plugins/hook_runner.rs` and is covered by
+contract tests, but the production owner graph currently has no consumer:
+
+- `ProductionHostExtensions` owns the plugin capability catalog and channel
+  delivery lifecycle, but does not own or construct a `PluginHookRunner`;
+- `UnifiedGatewayApi` has no hook-runner dependency and no lifecycle hook
+  dispatch at `call_send_prompt`, turn completion, command execution, or
+  channel delivery;
+- the only `PluginHookRunner::run_hooks` and `HookName` references are the
+  implementation module itself and contract/test fixtures.
+
+This is a confirmed producer/owner/consumer gap, not a missing ledger update.
+Calling hooks from `deliverToChannel` would place agent lifecycle policy in
+the delivery connector and would bypass plugin activation/registration
+ownership. Calling hooks from a single Gateway method would likewise cover
+only one ingress and could not prove `beforeInit`, `afterInit`, `beforeReply`,
+`afterReply`, `beforeCommand`, and `afterCommand` semantics. The
+responsibility therefore remains `wiring=not-wired` with
+`BL-PLUGINS-HOOKS-WIRING-001` until the canonical plugin lifecycle owner
+exposes a registered hook runtime and the Host turn/command owners provide
+the complete event boundaries.
+
 
 
 
