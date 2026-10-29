@@ -775,3 +775,18 @@ accepted work without confusing transport closure with business settlement.
 These are orchestration/evidence primitives under the existing Gateway dispatch
 owner, not a new queue, findings store, or runtime; Rust wiring and exact-head
 acceptance remain unverified.
+
+## 102. Gateway request lifecycle conformance oracles (2026-10-29)
+
+The locked `server-request-entry.test.ts`, `request-start.test.ts`, and
+`authenticated-request-dispatch.policy-close.test.ts` were read in full.
+Together they pin the negative and ordering boundaries for request entry:
+preparation failure cannot bypass an already accepted mutation, pending node
+completion may drain only through the exact allowed close path, independent
+reads may bypass parked preparation while connection mutations preserve order,
+start and frame budgets remain bounded, cancellation releases parked waiters,
+and policy writers deliver only accepted results before source invalidation
+closes transport. These tests are conformance oracles attached to the existing
+Gateway dispatch owner; they do not authorize a second Rust queue/runtime or
+constitute local test execution, Rust parity, packaging, or provider/device
+acceptance.

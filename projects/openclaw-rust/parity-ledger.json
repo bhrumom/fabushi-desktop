@@ -7248,6 +7248,15 @@
       "selected_owner": "source/host/src/host_gateway_api.rs",
       "source_refs": [
         {
+          "blob_sha": "91e33f2b97fbed71ea8545a24e9c23ae2085b99e",
+          "path": "src/gateway/server-request-entry.test.ts",
+          "range": {
+            "end_line": 377,
+            "start_line": 1
+          },
+          "symbol": "Gateway request entry lifetime and close-drain oracle"
+        },
+        {
           "blob_sha": "9c7ae2894d07fe1ff6fe7e4c8caad5182f3dfa3e",
           "path": "src/gateway/server-request-entry.ts",
           "range": {
@@ -7275,6 +7284,15 @@
           "symbol": "scheduleGatewayRequestStart"
         },
         {
+          "blob_sha": "176f875e8e2fd4d2e859d0b7142917baa7e5063f",
+          "path": "src/gateway/server/ws-connection/request-start.test.ts",
+          "range": {
+            "end_line": 362,
+            "start_line": 1
+          },
+          "symbol": "Gateway request start fairness and bounded capacity oracle"
+        },
+        {
           "blob_sha": "ab125fddfac0f443397cba2512301d728687aaf3",
           "path": "src/gateway/server/ws-policy-close.ts",
           "range": {
@@ -7282,6 +7300,15 @@
             "start_line": 1
           },
           "symbol": "Gateway policy response and client invalidation"
+        },
+        {
+          "blob_sha": "e9914732be2214645fc7ddaea1095890fe0a5f77",
+          "path": "src/gateway/server/ws-connection/authenticated-request-dispatch.policy-close.test.ts",
+          "range": {
+            "end_line": 370,
+            "start_line": 1
+          },
+          "symbol": "Policy writer response ownership and invalidation oracle"
         },
         {
           "blob_sha": "9a733a06b3cf7c1099548008feb65a95af24e331",
