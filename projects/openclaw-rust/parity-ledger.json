@@ -10,10 +10,10 @@
     "ui_accepted": false
   },
   "file_coverage": {
-    "mapped_paths": 1143,
+    "mapped_paths": 1180,
     "omitted_known": 0,
     "tracked_paths": 58750,
-    "unclassified_paths": 57607
+    "unclassified_paths": 57570
   },
   "inventory_authority": {
     "manifest_source": "GitHub Actions immutable artifact candidate",
@@ -24,6 +24,139 @@
   },
   "project_id": "OCRM-001",
   "responsibilities": [
+    {
+      "adr_refs": [
+        "projects/openclaw-rust/decisions/2026-10-29-crabbox-worker-owner-boundary.md"
+      ],
+      "behavior": "Pinned Crabbox test and support sources used as behavior oracles for artifact, lease, bootstrap, sandbox, warm-image, projection and doctor contracts.",
+      "blocker_ids": [
+        "OCRM-BLOCK-P1-EXECUTABLE-ORACLES-001"
+      ],
+      "capability_ids": [
+        "cloud_workers.source_oracles"
+      ],
+      "dependencies": [
+        "mahayana_host_runtime::extensions::cloud_workers",
+        "mahayana_node_agent_coordinator::cloud_worker_projection"
+      ],
+      "evidence_refs": [
+        "projects/openclaw-rust/management/tasks/P1-crabbox-worker-owner.md",
+        "projects/openclaw-rust/dossiers/crabbox-node-enrollment-owner-audit-20261029.md"
+      ],
+      "existing_owner_candidates": [
+        {
+          "path": "source/host/src/extensions/cloud_workers",
+          "reason": "Rust contract tests and source-oracle mapping remain subordinate to the existing owners"
+        }
+      ],
+      "id": "OCRM-RESP-INFRA-WORKER-CRABBOX-TEST-ORACLES-001",
+      "integration": {
+        "consumer": "Rust contract/unit tests and future Actions verification (not yet executed)",
+        "entrypoint": "source/host/src/extensions/cloud_workers",
+        "owner": "source/host/src/extensions/cloud_workers",
+        "producer": "locked OpenClaw Crabbox test oracle set"
+      },
+      "invariants": [
+        "Every listed oracle remains bound to the locked upstream blob and full recorded source range",
+        "Source-oracle mapping does not imply executable verification or acceptance",
+        "Negative, cancellation, recovery and redaction cases remain visible for future Actions checks",
+        "Test fixtures and support helpers do not become production runtime owners"
+      ],
+      "migration_rollback": "Retain oracle rows and mark executable verification not-run until exact-head Actions evidence exists",
+      "oracle_ids": [
+        "OCRM-P1-ORACLE-CRABBOX-001"
+      ],
+      "owner_decision": "Keep source tests as independent oracles for the native Rust contracts; do not copy the OpenClaw test runtime into production",
+      "postconditions": [
+        "All read-complete Crabbox oracle rows have a responsibility link and remain unaccepted until executable evidence exists"
+      ],
+      "preconditions": [
+        "The pinned source blob and range are present in the canonical inventory"
+      ],
+      "required_evidence_dimensions": [
+        "unit",
+        "security-negative-test",
+        "recovery",
+        "package"
+      ],
+      "required_gate_ids": [
+        "OCRM-G04-rust-contract",
+        "OCRM-G05-frozen-oracle"
+      ],
+      "requirement_ids": [
+        "OCRM-P1-AC02",
+        "OCRM-P1-AC03",
+        "OCRM-P1-AC04"
+      ],
+      "responsibility_kind": "test-oracle",
+      "reviewer": "xuyao@ombhrum.com",
+      "risk": "High; treating unexecuted oracles as acceptance would hide behavioral gaps and false completion",
+      "selected_owner": "source/host/src/extensions/cloud_workers",
+      "source_refs": [
+        { "blob_sha": "09291b712594ad0fbb64e5652718a692b1f77f8f", "path": "extensions/crabbox/src/crabbox-binary.test.ts", "range": { "end_line": 86, "start_line": 1 }, "symbol": "Crabbox binary oracle" },
+        { "blob_sha": "4b65a6064431dfc96316c99fa2b8589f6e7d2921", "path": "extensions/crabbox/src/crabbox-gateway-methods.test.ts", "range": { "end_line": 413, "start_line": 1 }, "symbol": "Crabbox gateway oracle" },
+        { "blob_sha": "384ec9d5792f532401ade5e2ade5d61ceccedcc3", "path": "extensions/crabbox/src/crabbox-managed-binary.test.ts", "range": { "end_line": 629, "start_line": 1 }, "symbol": "Managed binary oracle" },
+        { "blob_sha": "24a071808a0bfe9e91ec74d3faa9b5e5bf7e6085", "path": "extensions/crabbox/src/crabbox-model-run.test.ts", "range": { "end_line": 157, "start_line": 1 }, "symbol": "Model run oracle" },
+        { "blob_sha": "d3c6721a6c3938074e4e08b55b8bb0af49010a77", "path": "extensions/crabbox/src/crabbox-process.test.ts", "range": { "end_line": 31, "start_line": 1 }, "symbol": "Process identity oracle" },
+        { "blob_sha": "9555bbdb51a6e8fe95e7609ee02297a0d23f6889", "path": "extensions/crabbox/src/crabbox-sandbox-backend.test.ts", "range": { "end_line": 300, "start_line": 1 }, "symbol": "Sandbox backend oracle" },
+        { "blob_sha": "3b29199a02f697a93c1ffff36c580f3f79ec0791", "path": "extensions/crabbox/src/crabbox-tool.test.ts", "range": { "end_line": 382, "start_line": 1 }, "symbol": "Crabbox tool oracle" },
+        { "blob_sha": "b0b1ebab9cf49992c1221b559b636809c02d5fca", "path": "extensions/crabbox/src/crabbox-worker-bootstrap-download.test.ts", "range": { "end_line": 622, "start_line": 1 }, "symbol": "Bootstrap download oracle" },
+        { "blob_sha": "ad0aaae43abda4cd3bfe215719c1f5617e5517ac", "path": "extensions/crabbox/src/crabbox-worker-command.test.ts", "range": { "end_line": 326, "start_line": 1 }, "symbol": "Worker command oracle" },
+        { "blob_sha": "cf42b6d056f1ecc0fc91b370a891eadfa82da18f", "path": "extensions/crabbox/src/crabbox-worker-desktop-macos.test.ts", "range": { "end_line": 257, "start_line": 1 }, "symbol": "macOS desktop oracle" },
+        { "blob_sha": "d0b902ea3c7931f81165092ff32b682577676912", "path": "extensions/crabbox/src/crabbox-worker-desktop-setup.test.ts", "range": { "end_line": 332, "start_line": 1 }, "symbol": "Desktop setup oracle" },
+        { "blob_sha": "1f873e3fdb31140177e84a23e8ee0eb02408f128", "path": "extensions/crabbox/src/crabbox-worker-desktop-windows.test.ts", "range": { "end_line": 440, "start_line": 1 }, "symbol": "Windows desktop oracle" },
+        { "blob_sha": "4dba70b8a4a4443a6ea207fbcff9c1c641f830b3", "path": "extensions/crabbox/src/crabbox-worker-heartbeat.test.ts", "range": { "end_line": 95, "start_line": 1 }, "symbol": "Heartbeat oracle" },
+        { "blob_sha": "ebb0703d532aca7e8c8d3442d087007267f3f02f", "path": "extensions/crabbox/src/crabbox-worker-inspect.test.ts", "range": { "end_line": 61, "start_line": 1 }, "symbol": "Inspect oracle" },
+        { "blob_sha": "6030e6b830969b27023e947010cddebb9bffe64b", "path": "extensions/crabbox/src/crabbox-worker-lifetime.test.ts", "range": { "end_line": 193, "start_line": 1 }, "symbol": "Lifetime oracle" },
+        { "blob_sha": "429f844edd2d5c07ae6d7364cd3358dd651c778b", "path": "extensions/crabbox/src/crabbox-worker-node-enrollment-replay.test.ts", "range": { "end_line": 422, "start_line": 1 }, "symbol": "Enrollment replay oracle" },
+        { "blob_sha": "b6f534ec508c97ee0cf3624b05a668570eb20dab", "path": "extensions/crabbox/src/crabbox-worker-node-enrollment.test.ts", "range": { "end_line": 931, "start_line": 1 }, "symbol": "Node enrollment oracle" },
+        { "blob_sha": "897085a0c0209c40473fba43294c1ff5276cdd16", "path": "extensions/crabbox/src/crabbox-worker-profile-suggestion.test.ts", "range": { "end_line": 116, "start_line": 1 }, "symbol": "Profile suggestion oracle" },
+        { "blob_sha": "fe92e36ea3102b0f023229c06330194f4b05015a", "path": "extensions/crabbox/src/crabbox-worker-profile.test.ts", "range": { "end_line": 121, "start_line": 1 }, "symbol": "Profile oracle" },
+        { "blob_sha": "c9501e8785abfa83ff9904e29d4a730cfb13526d", "path": "extensions/crabbox/src/crabbox-worker-project.test.ts", "range": { "end_line": 908, "start_line": 1 }, "symbol": "Project preparation oracle" },
+        { "blob_sha": "de4ae1ab51e3465c51254918df613846025abec9", "path": "extensions/crabbox/src/crabbox-worker-provider.test.ts", "range": { "end_line": 1269, "start_line": 1 }, "symbol": "Provider oracle" },
+        { "blob_sha": "1d960cd7fb9f891d8bffb586a1f8259298c5078d", "path": "extensions/crabbox/src/crabbox-worker-provision-cancellation.test.ts", "range": { "end_line": 195, "start_line": 1 }, "symbol": "Provision cancellation oracle" },
+        { "blob_sha": "08443061d24ec0bb3df09d3ecf08752665c5be4a", "path": "extensions/crabbox/src/crabbox-worker-read-budget.test.ts", "range": { "end_line": 94, "start_line": 1 }, "symbol": "Read budget oracle" },
+        { "blob_sha": "b7c3437ab1fee4d24193156c4eee9bbedee75026", "path": "extensions/crabbox/src/crabbox-worker-script.test.ts", "range": { "end_line": 67, "start_line": 1 }, "symbol": "Script transport oracle" },
+        { "blob_sha": "fed558101bbf741fd293947cd60456cd0dda9e94", "path": "extensions/crabbox/src/crabbox-worker-stop-lifetime.test.ts", "range": { "end_line": 223, "start_line": 1 }, "symbol": "Stop lifetime oracle" },
+        { "blob_sha": "0fc72458a1a29593e38e8e2b8c83504c370dd4b6", "path": "extensions/crabbox/src/crabbox-worker-stop.test.ts", "range": { "end_line": 90, "start_line": 1 }, "symbol": "Stop oracle" },
+        { "blob_sha": "89af0fe6b67238f2605fb960287d56c2e7f3c811", "path": "extensions/crabbox/src/crabbox-worker-warm-image-allocation.test.ts", "range": { "end_line": 721, "start_line": 1 }, "symbol": "Warm-image allocation oracle" },
+        { "blob_sha": "6dacb5f3d978984ade76c2aa69cae8a6efa07bdf", "path": "extensions/crabbox/src/crabbox-worker-warm-image-cli.test.ts", "range": { "end_line": 146, "start_line": 1 }, "symbol": "Warm-image CLI oracle" },
+        { "blob_sha": "ce9907a7e82397f7c8ee0f7c50d5eccb9ee7c5", "path": "extensions/crabbox/src/crabbox-worker-warm-image-lifecycle.test.ts", "range": { "end_line": 334, "start_line": 1 }, "symbol": "Warm-image lifecycle oracle" },
+        { "blob_sha": "dc5e22a5f1e7290cbaa6a5bda1ddd65e8f34de73", "path": "extensions/crabbox/src/crabbox-worker-warm-image-maintenance.test.ts", "range": { "end_line": 420, "start_line": 1 }, "symbol": "Warm-image maintenance oracle" },
+        { "blob_sha": "1a3b29958c3ddd6b78d923c32061b6ae3bfc42d3", "path": "extensions/crabbox/src/crabbox-worker-warm-image-policy.test.ts", "range": { "end_line": 74, "start_line": 1 }, "symbol": "Warm-image policy oracle" },
+        { "blob_sha": "66ddbed3b5941e17fab48ffa662cdb31a690d296", "path": "extensions/crabbox/src/crabbox-worker-warm-image-recovery.test.ts", "range": { "end_line": 168, "start_line": 1 }, "symbol": "Warm-image recovery oracle" },
+        { "blob_sha": "37e850c507874009ab6a62dbf0900ef08de365f0", "path": "extensions/crabbox/src/crabbox-worker-warm-image-retirement.test.ts", "range": { "end_line": 365, "start_line": 1 }, "symbol": "Warm-image retirement oracle" },
+        { "blob_sha": "7018deb0324e0d2cf3ac1eba37fd5b7d06c22f46", "path": "extensions/crabbox/src/crabbox-worker-warm-image-store.test.ts", "range": { "end_line": 243, "start_line": 1 }, "symbol": "Warm-image store oracle" },
+        { "blob_sha": "16bda6158d6bbb1e6a25039f4b4bb179ffd829fb", "path": "extensions/crabbox/src/crabbox-worker-warm-image.test-support.ts", "range": { "end_line": 238, "start_line": 1 }, "symbol": "Warm-image test support" },
+        { "blob_sha": "a6932d2bb9f962379f7c8ee0f7c50d5eccb9ee7c", "path": "extensions/crabbox/src/crabbox-worker-warm-image.test.ts", "range": { "end_line": 418, "start_line": 1 }, "symbol": "Warm-image oracle" },
+        { "blob_sha": "79dbcd0f1dd7069c4a9d676d4d005723ead947b8", "path": "extensions/crabbox/src/doctor.test.ts", "range": { "end_line": 363, "start_line": 1 }, "symbol": "Doctor oracle" }
+      ],
+      "status": {
+        "acceptance": "pending",
+        "implementation": "implementing",
+        "mapping": "mapped",
+        "read": "read-complete",
+        "verification": "not-run",
+        "wiring": "not-wired"
+      },
+      "target": {
+        "language": "Rust",
+        "path": "source/host/src/extensions/cloud_workers",
+        "symbol": "native Rust cloud-worker contract tests"
+      },
+      "tests": [
+        "source/host/tests/cloud_workers_extension_contract.rs",
+        "source/node-agent-coordinator/tests/cloud_worker_projection_contract.rs"
+      ],
+      "typed_contracts": [
+        "CloudWorkerLease",
+        "CloudWorkerArtifactAdmission",
+        "CloudWorkerBootstrapRecord",
+        "CloudWorkerWarmImage",
+        "CloudWorkerDoctorRequest"
+      ],
+      "unit_id": "OCRM-UNIT-INFRA-001"
+    },
     {
       "adr_refs": [
         "projects/openclaw-rust/decisions/2026-10-29-crabbox-worker-owner-boundary.md"
