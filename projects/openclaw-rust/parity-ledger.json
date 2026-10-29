@@ -22277,6 +22277,18 @@
           "symbol": "startNodeHostConnection"
         },
         {
+          "blob_sha": "347d72bbd4434eae94803c2395ccce1500f38372",
+          "path": "src/node-host/connection.test.ts",
+          "range": {"end_line": 776, "start_line": 1},
+          "symbol": "connection lifecycle, publication, capability negotiation, and failure-recovery oracle"
+        },
+        {
+          "blob_sha": "62ea86b2e8c5c2ea4d63404568a6b52d30292a24",
+          "path": "src/node-host/gateway-candidate-connection.test.ts",
+          "range": {"end_line": 181, "start_line": 1},
+          "symbol": "candidate failover, stale-close, credential-scope, and cleanup oracle"
+        },
+        {
           "blob_sha": "87f1a1d7788a34f48a89b3309e6a60695e271d0f",
           "path": "src/node-host/gateway-platform-identity.ts",
           "range": {"end_line": 12, "start_line": 1},
@@ -22293,6 +22305,12 @@
           "path": "src/node-host/local-id.ts",
           "range": {"end_line": 34, "start_line": 1},
           "symbol": "resolveLocalNodeId"
+        },
+        {
+          "blob_sha": "98ca5bff8b3c48a1ffa9868c9d0ecd53cb6f0547",
+          "path": "src/node-host/local-id.test.ts",
+          "range": {"end_line": 119, "start_line": 1},
+          "symbol": "stable identity, no-credential-minting, and retry oracle"
         },
         {
           "blob_sha": "5b4d5ed6f6f3c0d20ee6a8afd280abd9e1a17256",

@@ -325,6 +325,29 @@ The locked `src/node-host/connection.ts`, `gateway-platform-identity.ts`, `host-
 
 The Rust side currently has only transport-neutral pieces and local projection wiring; it does not yet provide this real Gateway publication caller, worker inventory publication, or remote reconnect path. Status remains implementation evidence with production wiring and acceptance pending.
 
+## 145. Node connection and candidate oracle closure (2026-10-29)
+
+The locked `src/node-host/connection.test.ts` (blob
+`347d72bbd4434eae94803c2395ccce1500f38372`, 776 lines) was read in full and
+added to the connection responsibility as a test oracle. It requires cleanup
+to settle before replacement publication, generation-fenced process and stats
+events, capability-gated permission details and worker inventory, bounded
+publication retry with redacted diagnostics, stale-ack rejection, and timer
+retirement on disconnect/close/manifest replacement. The locked
+`gateway-candidate-connection.test.ts` (blob
+`62ea86b2e8c5c2ea4d63404568a6b52d30292a24`, 181 lines) adds pre-hello-only
+failover, winner promotion, stale-close isolation, origin-bound credential
+non-transfer, and all-candidate cleanup failure retention. The locked
+`local-id.test.ts` (blob `98ca5bff8b3c48a1ffa9868c9d0ecd53cb6f0547`, 119
+lines) requires stable canonical device identity reuse, no credential minting
+on a miss, independent state-directory separation, and retry after a failed
+read.
+
+These are now explicit frozen oracle references in the parity ledger. They do
+not change the implementation or wiring state: Fabushi still has no accepted
+remote Gateway caller, worker inventory publication path, or exact-head
+Actions/device receipt for this responsibility.
+
 ## 46. Locked node-worker capacity, child, container, environment, and journal sources (2026-10-29)
 
 The locked worker sources `node-worker-capacity.ts`, `node-worker-child-lifecycle.ts`, `node-worker-child-secrets.ts`, `node-worker-container-engine.ts`, `node-worker-container-lifecycle.ts`, `node-worker-environment.ts`, and `node-worker-journal-worker.ts` were read in full and mapped to the existing node-host command-dispatch responsibility as source evidence. Their contracts are separate but jointly required for a production worker owner:
