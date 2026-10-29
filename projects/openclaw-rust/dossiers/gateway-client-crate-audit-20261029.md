@@ -16,12 +16,15 @@ The following locked files were read against their exact GitHub blob identities:
 | `crates/openclaw-gateway-client/Cargo.toml` | `8cb256da3f6b3640eef33b9bafd5886872ce9548` | 24 | Dependency and runtime feature boundary; not a product owner |
 | `crates/openclaw-gateway-client/tests/session.rs` | `5de3fba1fb1f70e42854d89a71a66ce6a15db18b` | 1321 | Loopback positive/negative session, fallback, queue deadline, event lag, cancellation and disconnect oracles |
 | `crates/openclaw-gateway-client/tests/tls_policy.rs` | `2b106e077f0d32d7ffc146cbb874b2be5e0ded25` | 297 | Native certificate approval/rejection/timeout/cancellation, pin mismatch and handshake-signature negative oracles |
+| `crates/Cargo.toml` | `ce57a08af0ab09ac6cce4807a5bdd3bb3c8b64f0` | 4 | Workspace membership and resolver; dependency authority only |
+| `crates/Cargo.lock` | `8d8bff95536377b71437bc448929390779496651` | 1164 | Locked registry versions, checksums and transitive graph for the two Rust crates |
+| `crates/.gitignore` | `b83d22266ac8aa2f8df2edef68082c789727841d` | 2 | Build-output exclusion; no product behavior |
 
-The workspace lock/config files remain separate P0 closure items until their
-complete contents and dependency consumers are reviewed. The two crate test
-files are read-complete source oracles, but their behavior is recorded as
-`test-oracle-replaced`: they are not Fabushi production tests and no test-only
-evidence is promoted to runtime acceptance here.
+The workspace lock/config files are read-complete dependency-authority inputs;
+they do not create a product owner or prove that Fabushi consumes the upstream
+crate. The two crate test files are read-complete source oracles, but their
+behavior is recorded as `test-oracle-replaced`: they are not Fabushi production
+tests and no test-only evidence is promoted to runtime acceptance here.
 
 ## Responsibility and owner mapping
 
