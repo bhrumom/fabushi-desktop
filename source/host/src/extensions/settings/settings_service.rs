@@ -16,12 +16,30 @@ use crate::agents::agent_roster::{
     can_write_doctor_include,
     pin_survivor_workspace_for_roster_collapse, try_resolve_default_agent_id,
 };
+use crate::extensions::secrets::audit_manager::SecretsAuditManager;
+use crate::host_diagnostics::report_diagnostic_event;
 use crate::host_paths::get_sand_root_dir;
 
 pub const MCP_CUSTOM_INSTRUCTIONS_MAX_LENGTH: usize = 500;
 pub const SAND_AUTO_REVIEW_INSTRUCTION_MAX_ENTRIES: usize = 20;
 pub const SAND_AUTO_REVIEW_INSTRUCTION_MAX_CHARS: usize = 1_000;
 const INFERENCE_PROVIDERS: [&str; 5] = ["fabushi", "cursor", "claude-code", "codex", "openrouter"];
+
+fn report_secret_audit_findings(settings: &Map<String, Value>) {
+    let manager = SecretsAuditManager::new();
+    let findings = manager.audit_json_value(&Value::Object(settings.clone()), "settings");
+    for finding in findings {
+        report_diagnostic_event(
+            "security.secrets.finding",
+            json!({
+                "keyPath": finding.key_path,
+                "findingKind": finding.finding_kind,
+                "message": finding.message,
+                "suggestedSecretRef": finding.suggested_secret_ref,
+            }),
+        );
+    }
+}
 
 pub type UserTimeZoneListener = Arc<dyn Fn(Option<String>) + Send + Sync + 'static>;
 pub type SettingsChangeListener = Arc<dyn Fn(Vec<String>) + Send + Sync + 'static>;
@@ -1193,6 +1211,7 @@ impl SettingsService {
         }
 
         self.persist(&settings).map_err(|error| error.to_string())?;
+        report_secret_audit_findings(&settings);
 
         let next_zone = self.get_user_time_zone();
         if next_zone != previous_zone {

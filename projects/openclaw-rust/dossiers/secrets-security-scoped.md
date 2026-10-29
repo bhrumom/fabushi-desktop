@@ -82,3 +82,19 @@ contract is exercised by `secrets_extension_contract.rs`. This proves a Box
 secret lifecycle owner exists, not that it owns OpenClaw auth-profile
 publication or the concurrent auth-store rollback oracle above; no second
 generic auth-store owner should be created by inference.
+
+## 6. Secrets residue scanner production projection (2026-10-29)
+
+The existing Settings owner now invokes `SecretsAuditManager::audit_json_value`
+after a successful `set_host_settings` persistence and projects each finding
+through the shared `security.secrets.finding` Host diagnostic event. The change
+is confined to `source/host/src/extensions/settings/settings_service.rs` and
+reuses `HostDiagnostic`'s existing recursive sanitization; it introduces no
+secret store, duplicate audit ledger, or second configuration writer.
+
+This closes the previously observed “scanner has no caller” gap for settings
+mutations only. It does not claim the upstream auth-profile apply fixture,
+SQLite/.env publication transaction, concurrent-writer rollback, startup
+config audit, or real Actions verification. The combined ledger row therefore
+remains pending for full equivalence and acceptance until those separate
+responsibilities are owned and evidenced.

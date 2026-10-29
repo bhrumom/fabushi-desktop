@@ -3,6 +3,7 @@ use std::fs;
 use std::sync::{Arc, Mutex};
 use std::time::{SystemTime, UNIX_EPOCH};
 
+use mahayana_host_runtime::host_diagnostics::{HostDiagnostic, pin_host_diagnostics_reporter};
 use mahayana_host_runtime::extensions::settings::settings_service::{
     MCP_CUSTOM_INSTRUCTIONS_MAX_LENGTH, SAND_AUTO_REVIEW_INSTRUCTION_MAX_CHARS,
     SAND_AUTO_REVIEW_INSTRUCTION_MAX_ENTRIES, SandAutoReviewInstructions,
@@ -19,6 +20,36 @@ fn temp_path(label: &str) -> std::path::PathBuf {
         "fabushi-settings-{label}-{}-{suffix}.json",
         std::process::id()
     ))
+}
+
+#[test]
+fn host_settings_projects_secret_audit_findings_without_secret_values() {
+    let path = temp_path("secret-audit");
+    let service = SettingsService::new(&path);
+    let observed = Arc::new(Mutex::new(Vec::<HostDiagnostic>::new()));
+    let sink = Arc::clone(&observed);
+    pin_host_diagnostics_reporter(Some(Arc::new(move |diagnostic| {
+        if diagnostic.kind == "security.secrets.finding" {
+            sink.lock().expect("secret diagnostics").push(diagnostic.clone());
+        }
+    })));
+
+    service
+        .set_host_settings(&serde_json::json!({
+            "agents": {
+                "entries": {
+                    "main": { "apiKey": "sk-settings-plaintext-secret" }
+                }
+            }
+        }))
+        .expect("host settings");
+
+    pin_host_diagnostics_reporter(None);
+    let findings = observed.lock().expect("secret diagnostics");
+    assert_eq!(findings.len(), 1);
+    assert_eq!(findings[0].fields["findingKind"], "plaintext_residue");
+    assert!(!findings[0].fields.to_string().contains("sk-settings-plaintext-secret"));
+    let _ = fs::remove_file(path);
 }
 
 #[test]

@@ -27989,10 +27989,10 @@
       ],
       "id": "OCRM-RESP-SECRETS-AUDIT-APPLY-001",
       "integration": {
-        "consumer": "source/host/src/extensions/secrets/audit_manager.rs",
+        "consumer": "source/host/src/extensions/settings/settings_service.rs::SettingsService::set_host_settings",
         "entrypoint": "source/host/src/extensions/secrets/audit_manager.rs::SecretsAuditManager::audit_json_value",
         "owner": "source/host/src/extensions/secrets/audit_manager.rs",
-        "producer": "source/host/src/extensions/secrets/audit_manager.rs"
+        "producer": "source/host/src/extensions/settings/settings_service.rs::set_host_settings"
       },
       "invariants": [
         "Unindirected API keys with known prefixes must be flagged with PlaintextResidue"
