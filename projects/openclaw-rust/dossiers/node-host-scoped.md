@@ -1555,3 +1555,27 @@ Turns Controller barriers, execution selection, mutation, native runtime,
 watchdog recovery, and producer-custody owners; they do not create a second
 barrier, stop, recovery, or cancellation authority. Rust implementation,
 wiring, runtime execution, and acceptance remain unverified.
+
+## 141. Stop/watchdog owner read-only audit retained pending controlled inventory writer (2026-10-29)
+
+The locked upstream files `session-controller.stop-capture.ts`
+(`75a3fa0ba37d16d2abe84de8b83ddb537ec249fb`, 293 lines),
+`session-controller.stop-runtime.ts`
+(`18db2d67e36691df0e22edf993ceb3ace5a83120`, 156 lines),
+`session-controller.stop.ts`
+(`aa041cd8132b21bcfd82780cc3fedf16c35e1d6c`, 714 lines),
+`session-controller.watchdog-state.ts`
+(`a51606630267f949e75dd3b03b9ba81971037437`, 92 lines), and
+`session-controller.watchdog.ts`
+(`26071e9aaaff0d8653dddfb7a6ce60031af8cf9c`, 631 lines) were read in full.
+The read confirms one captured Stop sequencer for queued inputs, active
+operations, external parents, child cancellation, local-model waits, cutoff
+publication, hooks, and settlement; watchdog state and timers remain attached
+to one exact operation, with semantic/transport progress, owned waits/tools/
+requests, execution and cleanup deadlines, recovery blocking, model recovery,
+and current-owner revalidation at each asynchronous side effect. This section
+is intentionally read-only evidence: because the former local inventory writer
+is frozen, these rows are not promoted here to canonical `read-complete` or
+ledger `source_refs`; no generated shard/index state was altered and no
+completion flag was advanced. Rust implementation, wiring, runtime execution,
+and acceptance remain unverified.
