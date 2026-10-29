@@ -55,6 +55,15 @@ provider-send failure and retained failed history. This remains local-exec
 failure-state evidence, not proof of command termination-controller parity or
 packaged/provider acceptance.
 
+The same bridge boundary now preserves cancellation delivery truth: a
+`cancel_operation` request is reported as requested only when the provider
+channel accepted the cancel frame. A detached provider must not be projected as
+`cancelRequested: true` merely because the local one-shot send was attempted;
+the operation remains subject to the existing `outcome_unknown`/termination
+controller boundary. This is transport-delivery evidence for the existing
+local-exec owner, not proof that a provider terminated a real process or that
+the upstream termination controller is production-wired.
+
 The same locked-source pass also completed the adjacent execution contracts:
 
 | File | Blob SHA | Lines | Read/mapping result |
