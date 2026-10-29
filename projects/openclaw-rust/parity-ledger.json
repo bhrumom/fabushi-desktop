@@ -28521,13 +28521,31 @@
       "selected_owner": "source/host/src/extensions/skills/skill_runtime.rs",
       "source_refs": [
         {
-          "blob_sha": "605d7a0a4e478023e106b306f67a62b7822190ff",
-          "path": "src/skills/config/mutations.ts",
+          "blob_sha": "27290bd8111b472c995e0284a856530f7f19152a",
+          "path": "src/skills/loading/frontmatter.ts",
           "range": {
-            "end_line": 52,
+            "end_line": 168,
             "start_line": 1
           },
-          "symbol": "mutations"
+          "symbol": "parseSkillFrontmatter"
+        },
+        {
+          "blob_sha": "6368d346df09b8ff3b31d5b745f89b9b7ab17fe9",
+          "path": "src/skills/loading/workspace-skill-loader.ts",
+          "range": {
+            "end_line": 508,
+            "start_line": 1
+          },
+          "symbol": "loadWorkspaceSkillSourceEntries"
+        },
+        {
+          "blob_sha": "03384f929713effa425fcf3e0ec39d9047652a40",
+          "path": "src/skills/loading/workspace-skill-sources.ts",
+          "range": {
+            "end_line": 180,
+            "start_line": 1
+          },
+          "symbol": "resolveWorkspaceSkillSourcePlan"
         }
       ],
       "status": {
@@ -28552,6 +28570,101 @@
         "parse_skill_markdown"
       ],
       "unit_id": "OCRM-UNIT-SKILLS-001"
+    },
+    {
+      "adr_refs": [],
+      "behavior": "Atomic skills.entries configuration mutation with enabled updates, redacted-secret preservation, environment merge/delete semantics, and persisted result projection.",
+      "blocker_ids": [],
+      "capability_ids": [
+        "skills.config_mutation"
+      ],
+      "dependencies": [
+        "mahayana_host_runtime::extensions::settings"
+      ],
+      "evidence_refs": [
+        "source/host/src/extensions/settings/settings_service.rs",
+        "source/host/tests/settings_service_contract.rs",
+        "projects/openclaw-rust/dossiers/snapshot-skills-scoped.md"
+      ],
+      "existing_owner_candidates": [
+        {
+          "path": "source/host/src/extensions/settings/settings_service.rs",
+          "reason": "Existing host settings persistence and mutation owner"
+        }
+      ],
+      "id": "OCRM-RESP-SKILLS-CONFIG-MUTATION-001",
+      "integration": {
+        "consumer": "source/host/src/extensions/settings/settings_service.rs::set_host_settings",
+        "entrypoint": "source/host/src/extensions/settings/settings_service.rs::apply_skill_config_update",
+        "owner": "source/host/src/extensions/settings/settings_service.rs",
+        "producer": "source/host/src/extensions/settings/settings_service.rs::set_host_settings"
+      },
+      "invariants": [
+        "The exact redacted sentinel preserves the stored API key or environment value",
+        "Empty API-key or environment values delete only the addressed value",
+        "Unrelated skill entries and environment keys survive an addressed update"
+      ],
+      "migration_rollback": "Stop projecting skills config updates and retain the existing atomic settings writer",
+      "oracle_ids": [
+        "OCRM-SKILLS-CONFIG-O01"
+      ],
+      "owner_decision": "Reuse SettingsService as the single host settings/config mutation owner",
+      "postconditions": [
+        "The skills.entries update is durably persisted and returned through host settings projection"
+      ],
+      "preconditions": [
+        "The host settings service is initialized and the update contains a skills.entries object"
+      ],
+      "required_evidence_dimensions": [
+        "unit",
+        "format"
+      ],
+      "required_gate_ids": [
+        "OCRM-G04-rust-contract",
+        "OCRM-G05-frozen-oracle"
+      ],
+      "requirement_ids": [
+        "OCRM-R08",
+        "OCRM-R21",
+        "OCRM-AC08",
+        "OCRM-AC21"
+      ],
+      "responsibility_kind": "business-runtime",
+      "reviewer": "xuyao@ombhrum.com",
+      "risk": "Medium; incorrect redaction or merge semantics can overwrite user secrets or silently drop skill configuration",
+      "selected_owner": "source/host/src/extensions/settings/settings_service.rs",
+      "source_refs": [
+        {
+          "blob_sha": "605d7a0a4e478023e106b306f67a62b7822190ff",
+          "path": "src/skills/config/mutations.ts",
+          "range": {
+            "end_line": 52,
+            "start_line": 1
+          },
+          "symbol": "updateSkillConfigEntry"
+        }
+      ],
+      "status": {
+        "acceptance": "pending",
+        "implementation": "implemented",
+        "mapping": "mapped",
+        "read": "complete",
+        "verification": "not-run",
+        "wiring": "wired"
+      },
+      "target": {
+        "language": "Rust",
+        "path": "source/host/src/extensions/settings/settings_service.rs",
+        "symbol": "apply_skill_config_update"
+      },
+      "tests": [
+        "source/host/tests/settings_service_contract.rs::host_settings_updates_skill_entries_without_overwriting_redacted_secrets"
+      ],
+      "typed_contracts": [
+        "updateSkillConfigEntry",
+        "apply_skill_config_update"
+      ],
+      "unit_id": "OCRM-UNIT-SKILLS-CONFIG-001"
     },
     {
       "adr_refs": [],

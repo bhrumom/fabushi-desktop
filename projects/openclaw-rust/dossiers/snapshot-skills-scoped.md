@@ -6,8 +6,9 @@
 - **Mapped Responsibilities**:
   1. `OCRM-RESP-SNAPSHOT-BACKUP-CODEC-001`: Snapshot Export Envelope V1, Database Backup Codec, and Git Backup Manifest Integrity.
   2. `OCRM-RESP-SKILLS-RUNTIME-LIBRARY-001`: Skill Frontmatter Parser, Workspace Skill Discovery, Security Permissioning, and System Prompt Injection.
-  3. `OCRM-RESP-SESSION-TURNS-CONTROLLER-001`: Conversation Turn Tracking, Model Override Resolution, and Background Session Result Orchestration.
-  4. `OCRM-RESP-SHARED-ASYNC-SCOPE-001`: Tracked Async Work Scope, Exponential Retry Calculations, and Identifier Normalization Primitives.
+  3. `OCRM-RESP-SKILLS-CONFIG-MUTATION-001`: Atomic `skills.entries` configuration updates, redacted-secret preservation, and environment merge/delete semantics.
+  4. `OCRM-RESP-SESSION-TURNS-CONTROLLER-001`: Conversation Turn Tracking, Model Override Resolution, and Background Session Result Orchestration.
+  5. `OCRM-RESP-SHARED-ASYNC-SCOPE-001`: Tracked Async Work Scope, Exponential Retry Calculations, and Identifier Normalization Primitives.
 
 ## 2. Producer -> Owner -> Storage -> Consumer Traces
 1. **Snapshot Backup & Export Pipeline**:
@@ -20,7 +21,12 @@
    - `Owner`: `source/host/src/extensions/skills/skill_runtime.rs` (`SkillRegistry`, `parse_skill_markdown`).
    - `Storage`: In-memory skill definition catalog.
    - `Consumer`: System instruction generator and tool access router.
-3. **Session Turns & Async Scope Pipeline**:
+3. **Skills Config Mutation Pipeline**:
+   - `Producer`: Host settings updates carrying `skills.entries` changes.
+   - `Owner`: `source/host/src/extensions/settings/settings_service.rs` (`apply_skill_config_update`).
+   - `Storage`: Existing atomic host settings persistence.
+   - `Consumer`: Host settings projection and subsequent skills runtime configuration reads.
+4. **Session Turns & Async Scope Pipeline**:
    - `Producer`: Inbound user messages and turn lifecycle events.
    - `Owner`: `source/host/src/extensions/session/session_turns_controller.rs` (`SessionTurnsController`) and `source/host/src/extensions/shared/async_scope.rs` (`AsyncWorkTracker`).
    - `Storage`: Active turn record journal and atomic task counters.
