@@ -13818,12 +13818,10 @@ fn main() {
         display_name: "Local Host Node".into(),
         platform: std::env::consts::OS.into(),
         device_family: std::env::consts::OS.into(),
-        commands: vec![
-            "system.run".into(),
-            "canvas.navigate".into(),
-            "computer.mouse".into(),
-            "computer.keyboard".into(),
-        ],
+        // Advertise only the command with a real production invoke branch.
+        // Canvas/Computer command names remain unavailable until their
+        // existing owners are wired through this node boundary.
+        commands: vec!["system.run".into()],
         capabilities: vec!["orderedReplicasV1".into(), "sendAcceptanceV1".into()],
         paired: true,
         gateway_local: true,

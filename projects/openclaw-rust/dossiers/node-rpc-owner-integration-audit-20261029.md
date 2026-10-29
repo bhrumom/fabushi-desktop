@@ -42,6 +42,13 @@ and propagates pairing-store list failures instead of turning them into an
 empty successful inventory. These are projection/error-boundary properties;
 they do not establish a live remote transport.
 
+The local `sand-local-node` manifest was also reconciled with the actual
+shipping `node.invoke` dispatch: it now advertises only `system.run`. The
+previous canvas/computer command names had no production branch in this owner
+and therefore represented availability that could not be invoked; they remain
+unadvertised until their existing owners are explicitly wired through the
+node boundary.
+
 This preserves the current ownership boundary:
 
 | Behavior | Owner | Boundary |

@@ -313,7 +313,7 @@ fn test_ocrm_node_o03_node_list_includes_sand_local_node_and_paired_devices() {
         "displayName": "Local Host Node",
         "platform": std::env::consts::OS,
         "deviceFamily": std::env::consts::OS,
-        "commands": ["system.run", "canvas.navigate", "computer.mouse", "computer.keyboard"],
+        "commands": ["system.run"],
         "connected": true,
         "paired": true,
         "active": true,
@@ -342,7 +342,7 @@ fn test_ocrm_node_o03_node_list_includes_sand_local_node_and_paired_devices() {
     assert_eq!(nodes.len(), 1);
     assert_eq!(nodes[0]["nodeId"], "sand-local-node");
     assert_eq!(nodes[0]["gatewayLocal"], true);
-    assert_eq!(nodes[0]["commands"], json!(["system.run", "canvas.navigate", "computer.mouse", "computer.keyboard"]));
+    assert_eq!(nodes[0]["commands"], json!(["system.run"]));
     assert_eq!(nodes[0]["capabilities"], json!(["orderedReplicasV1", "sendAcceptanceV1"]));
 
     // Now approve a remote device and re-check
