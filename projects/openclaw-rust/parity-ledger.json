@@ -29191,6 +29191,24 @@
           "path": "src/sessions/session-controller.settlement.ts",
           "range": {"end_line": 92, "start_line": 1},
           "symbol": "waitForReplyOperationSourceRelease and waitForReplyRunEndBySessionId"
+        },
+        {
+          "blob_sha": "15c3034a84d4bca4948dd4f74599989f3f8ee06d",
+          "path": "src/sessions/session-controller.lifecycle-state.ts",
+          "range": {"end_line": 165, "start_line": 1},
+          "symbol": "lifecycle and retainSessionControllerOperation"
+        },
+        {
+          "blob_sha": "42b234df56a02b1313f7f12450d8cbe7ca2d4364",
+          "path": "src/sessions/session-controller.identity.ts",
+          "range": {"end_line": 91, "start_line": 1},
+          "symbol": "resolveReplyRunForCurrentSessionId"
+        },
+        {
+          "blob_sha": "2ae73b96c53cde27732e097ec49d07f3446867e7",
+          "path": "src/sessions/session-controller.identity.test.ts",
+          "range": {"end_line": 437, "start_line": 1},
+          "symbol": "session controller physical identity and adoption oracle"
         }
       ],
       "status": {

@@ -1345,3 +1345,25 @@ map to the existing Session Turns Controller mailbox, operation, watchdog,
 and settlement owners; they do not create a second scheduler, operation
 state machine, source registry, or wait authority. Rust implementation,
 wiring, runtime execution, and acceptance remain unverified.
+
+## 132. Session controller lifecycle protection and physical identity resolution (2026-10-29)
+
+The locked `session-controller.lifecycle-state.ts`,
+`session-controller.identity.ts`, and `session-controller.identity.test.ts`
+were read in full. Lifecycle state retains captured targets and raw operation
+settlement independently of the current physical key, computes admission
+blocks from mutations/closures/foreign operations, wakes mailbox successors,
+and emits settled-input lifecycle events only when backend and RPC-source
+custody are no longer active. Identity resolution reads the exact reserved or
+adopted source, rejects stale/aborted/non-current operations, preserves
+session-id aliases across incarnation rotation, and returns an explicit
+ambiguous result when the same session ID is active in multiple store scopes
+instead of guessing. The oracle covers equal IDs in different stores,
+selected-owner mutation, alias sharing, cross-agent global sessions,
+reservation dedupe/conflict, exact source adoption and cancellation,
+retargeting without receipt replacement, nested native maintenance borrowing,
+reentrant successor cleanup, and old/new incarnation lookup. These sources
+map to the existing Session Turns Controller lifecycle and identity owners;
+they do not create a second owner registry, identity index, or lifecycle event
+authority. Rust implementation, wiring, runtime execution, and acceptance
+remain unverified.
