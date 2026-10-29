@@ -392,6 +392,8 @@ fn test_ocrm_node_o04_node_status_local_and_remote() {
         if status.get("status").and_then(Value::as_str) == Some("approved") {
             Ok(json!({
                 "nodeId": node_id,
+                "commands": [],
+                "capabilities": [],
                 "connected": false,
                 "paired": true,
                 "active": false
@@ -518,7 +520,7 @@ fn test_ocrm_node_o06_shipping_routes_to_unique_native_owners() {
         .expect("shipping node.invoke function boundary exists");
     let invoke = &SHIPPING_HOST_MAIN[invoke_start..invoke_end];
     assert!(invoke.contains("GatewayLocalToolScope"));
-    assert!(invoke.contains("self.local_exec"));
+    assert!(invoke.contains(".local_exec"));
     assert!(invoke.contains(".exec_manager()"));
     assert!(invoke.contains(".execute_shell("));
     assert!(invoke.contains("node.invoke system.run requires params.command"));
