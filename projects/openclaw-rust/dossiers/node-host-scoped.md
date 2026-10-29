@@ -724,3 +724,22 @@ device metadata/platform changes remaining approval-bound as appropriate. These
 sources refine the existing NodeHost connection, Gateway auth, DevicePairing
 approval, and token owners; they do not prove Rust implementation or package,
 device, and exact-head acceptance.
+
+## 99. Dedicated worker websocket admission and dispatch (2026-10-29)
+
+The locked `worker-admission-boundary.ts`, `worker-connection-dispatch.ts`,
+`worker-connection-frames.ts`, and `worker-connection.ts` were read in full.
+Worker ingress is a separate protocol owner: public admission is rate-limited
+and serialized, credentials are checked before environment availability is
+charged, ownership is claimed once, and the receiver limit is raised only after
+the admitted identity is known. The dispatcher never calls the generic Gateway
+method registry; every worker operation is feature-gated, schema-validated,
+owner-epoch/connection-validated, and projected through typed worker errors.
+Tool and computer work are bounded per connection and survive transport loss
+only through the existing durable turn authority; transcript commit replay is
+distinguished from settled persistence failure. Heartbeat refreshes revalidate
+identity before publishing results, and credential expiry closes unattached
+workers. This maps to existing NodeHost connection and command-dispatch owners
+without introducing a second worker runtime or queue; Rust implementation,
+packaging, exact-head execution, and real provider/device acceptance remain
+unverified.

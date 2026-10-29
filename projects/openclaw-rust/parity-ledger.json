@@ -21761,6 +21761,24 @@
           "symbol": "resolveGatewayDeviceAuthRoute and buildGatewayConnectionDetailsWithResolvers"
         },
         {
+          "blob_sha": "f108c2f0d1877436612df78e23f97f52e7ed2de8",
+          "path": "src/gateway/server/ws-connection/worker-admission-boundary.ts",
+          "range": {
+            "end_line": 67,
+            "start_line": 1
+          },
+          "symbol": "runWorkerAdmissionBoundary"
+        },
+        {
+          "blob_sha": "8dfbdd9e8164747554eade4f3c7028a6ec953baf",
+          "path": "src/gateway/server/ws-connection/worker-connection.ts",
+          "range": {
+            "end_line": 544,
+            "start_line": 1
+          },
+          "symbol": "attachWorkerWsMessageHandler"
+        },
+        {
           "blob_sha": "45403cf7dac7a9414b05bac43f5d1f0458de8120",
           "path": "src/gateway/server/ws-connection/connect-hello.ts",
           "range": {
@@ -22290,6 +22308,24 @@
             "start_line": 1
           },
           "symbol": "GatewayNodeLifecycleDispatchTracker"
+        },
+        {
+          "blob_sha": "f7b2d0054067e37595504c0ed7da1d1a71966fb6",
+          "path": "src/gateway/server/ws-connection/worker-connection-dispatch.ts",
+          "range": {
+            "end_line": 259,
+            "start_line": 1
+          },
+          "symbol": "dispatchWorkerRequest"
+        },
+        {
+          "blob_sha": "ea0931566bdb5d5889e2d71b4ac97ba180943908",
+          "path": "src/gateway/server/ws-connection/worker-connection-frames.ts",
+          "range": {
+            "end_line": 84,
+            "start_line": 1
+          },
+          "symbol": "worker protocol error and hello frames"
         },
         {
           "blob_sha": "e595f8bf3342ae00dcb0ebf785b9f809619559f7",

@@ -12,6 +12,10 @@ from pathlib import Path
 ROOT = Path("projects/openclaw-rust")
 SHARDS = ROOT / "inventory" / "shards"
 READS = {
+    "src/gateway/server/ws-connection/worker-admission-boundary.ts": (67, "OCRM-RESP-NODE-HOST-CONNECTION-001", "OCRM-M13", "owner-audit"),
+    "src/gateway/server/ws-connection/worker-connection-dispatch.ts": (259, "OCRM-RESP-NODE-HOST-COMMAND-DISPATCH-001", "OCRM-M13", "owner-audit"),
+    "src/gateway/server/ws-connection/worker-connection-frames.ts": (84, "OCRM-RESP-NODE-HOST-COMMAND-DISPATCH-001", "OCRM-M13", "owner-audit"),
+    "src/gateway/server/ws-connection/worker-connection.ts": (544, "OCRM-RESP-NODE-HOST-CONNECTION-001", "OCRM-M13", "owner-audit"),
     "src/gateway/server/ws-connection/connect-hello.ts": (532, "OCRM-RESP-NODE-HOST-CONNECTION-001", "OCRM-M13", "owner-audit"),
     "src/gateway/server/ws-connection/connect-pairing-approval-plan.ts": (280, "OCRM-RESP-DEVICE-PAIRING-APPROVAL-POLICY-001", "OCRM-M07", "owner-audit"),
     "src/gateway/server/ws-connection/connect-device-metadata.test.ts": (143, "OCRM-RESP-DEVICE-PAIRING-APPROVAL-POLICY-001", "OCRM-M07", "test-oracle-replaced"),
