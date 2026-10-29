@@ -105,3 +105,26 @@ The audited source code was decomposed into 6 discrete Rust runtime responsibili
   - Active blockers: `BL-CURSOR-BACKEND-IMAGE-RESOLUTION-001` (Cursor AiService proto schema lacks resolution parameter), `BL-AGENT-ROSTER-UPSTREAM-CALLER-001` (Host agent workspace configuration & doctor inspection pipelines do not yet invoke roster collapse, provenance, audit, and doctor include inspection helpers in real production flows).
 - **Global Completion Flags**:
   - All 8 flags remain `false`.
+
+## 5. Exact-head production reachability re-audit (2026-10-29)
+
+The exact Fabushi target under review is
+`2225400ea73392523586a110301edeb87c986001`. A bounded source search of the
+production Host confirms that `agent_roster.rs` is currently a library/test
+surface, not a connected configuration owner:
+
+- `HostRosterBookkeeping::apply_config` has no production call site;
+- `HostRosterBookkeeping` and `HostRosterPorts` are constructed only by
+  contract tests;
+- `apply_implicit_agent_roster_defaults`,
+  `collect_agent_roster_findings`, `can_write_doctor_include`, and
+  `pin_survivor_workspace_for_roster_collapse` have no production consumers;
+- the production `SettingsService` owns Fabushi `settings.json` fields, but
+  does not own or expose an OpenClaw `agents.entries`/`agents.list` resolved
+  configuration document.
+
+The dossier's earlier “Production Call Chain” entries therefore remain
+planned ownership contracts, not evidence of production wiring. No ledger
+status is upgraded. The blocker `BL-AGENT-ROSTER-UPSTREAM-CALLER-001` remains
+valid until a spec-approved configuration/doctor owner supplies the resolved
+document and invokes the helpers through the existing Host lifecycle.
