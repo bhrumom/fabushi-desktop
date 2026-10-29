@@ -82,9 +82,9 @@ jobs:
           test ! -e source/host/target
           export CARGO_TARGET_DIR="$RUNNER_TEMP/fdn-g15-host-cargo-target"
           set +e
-          cargo_lookup="$(rustup which cargo --toolchain 1.97.1 2>&1)"
+          cargo_lookup="$(rustup which --toolchain 1.97.1 cargo 2>&1)"
           cargo_lookup_status=$?
-          rustc_lookup="$(rustup which rustc --toolchain 1.97.1 2>&1)"
+          rustc_lookup="$(rustup which --toolchain 1.97.1 rustc 2>&1)"
           rustc_lookup_status=$?
           printf 'G15 cargo lookup status=%s value=%s\n' "$cargo_lookup_status" "$cargo_lookup"
           printf 'G15 rustc lookup status=%s value=%s\n' "$rustc_lookup_status" "$rustc_lookup"
