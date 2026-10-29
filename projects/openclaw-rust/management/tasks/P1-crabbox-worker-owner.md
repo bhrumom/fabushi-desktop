@@ -259,6 +259,13 @@ frozen `extension_ids.generated.rs`, `extensions/registry.rs` and
 requires the approved ADR/RTM target symbols, Coordinator producer/consumer
 path and exact Actions/package proof; this task does not claim that wiring.
 
+The pure contracts are now composed by
+`source/host/src/extensions/cloud_workers/owner.rs` into a single
+`CloudWorkerProvisioningOwner` with disabled-by-default configuration,
+lease/warm-image maps, capacity fencing and typed mutation delegation. This
+owner is not yet a production extension: it has no persistence, provider
+side-effect adapter, Coordinator slot, or packaged UI/CLI reachability.
+
 ## 9. Definition of Done / acceptance criteria
 
 - P1-AC01: ADR is approved and the target symbols/consumers are recorded in

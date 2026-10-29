@@ -9,6 +9,7 @@ mod lease;
 mod artifact_admission;
 mod doctor;
 mod node_bootstrap;
+mod owner;
 mod platform_bridge;
 mod provider_catalog;
 mod sandbox;
@@ -27,6 +28,10 @@ pub use node_bootstrap::{
     CloudWorkerBootstrapPhase, CloudWorkerBootstrapRecord, CloudWorkerBootstrapRequest,
     CloudWorkerBootstrapRetryClass, CloudWorkerDiagnostic, CloudWorkerNodeBootstrapError,
     CloudWorkerSecretRef,
+};
+pub use owner::{
+    CloudWorkerOwnerError, CloudWorkerOwnerStatus, CloudWorkerProvisioningConfig,
+    CloudWorkerProvisioningOwner,
 };
 pub use platform_bridge::{
     CloudWorkerDesktopSession, CloudWorkerPlatform, CloudWorkerPlatformBridge,
