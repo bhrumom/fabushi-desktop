@@ -25084,6 +25084,36 @@
       "symbol": "approval-terminal"
     },
         {
+          "blob_sha": "7219c5f580beb71f49e8173847e14e10bb796705",
+          "path": "src/gateway/approval-channel-custody.test.ts",
+          "range": {"end_line": 204, "start_line": 1},
+          "symbol": "approval channel custody oracle"
+        },
+        {
+          "blob_sha": "d17c6832ce9bf9a2434d1d3e1e36ba5d7a743f38",
+          "path": "src/gateway/approval-channel-custody.ts",
+          "range": {"end_line": 214, "start_line": 1},
+          "symbol": "prepareApprovalChannelCustody"
+        },
+        {
+          "blob_sha": "3c860e064bf8f991692115d90eea7877cc6831d8",
+          "path": "src/gateway/approval-session-audience.ts",
+          "range": {"end_line": 197, "start_line": 1},
+          "symbol": "resolveApprovalSessionAudienceWithFallback"
+        },
+        {
+          "blob_sha": "339ef91c827d3ba99bf01dfc7e21dbdd26ef3957",
+          "path": "src/gateway/approval-session-audience.test.ts",
+          "range": {"end_line": 218, "start_line": 1},
+          "symbol": "approval session audience oracle"
+        },
+        {
+          "blob_sha": "498ea96652311d14a6317dfb7c4eaa1612489094",
+          "path": "src/gateway/agent-runtime-approval-authority.ts",
+          "range": {"end_line": 43, "start_line": 1},
+          "symbol": "createAgentRuntimeApprovalAuthorityValidator"
+        },
+        {
           "blob_sha": "7fb1e4c71e85470d331c8390c5ddb7456bd67fd7",
           "path": "src/plugin-sdk/allow-from.test.ts",
           "range": {

@@ -1212,3 +1212,26 @@ transcript-processing, subagent-settle, and terminal execution owners; it
 does not authorize a second continuation engine or input store. Rust
 implementation, wiring, runtime execution, and acceptance remain
 unverified.
+
+## 126. Approval channel custody, audience lineage, and runtime authority (2026-10-29)
+
+The locked `approval-channel-custody.ts`, its focused oracle,
+`approval-session-audience.ts`, its focused oracle, and
+`agent-runtime-approval-authority.ts` were read in full. Channel custody
+binds an approval reviewer to the normalized channel/account/sender,
+configured plugin capability, session delivery, eligible account set, and
+current session row; it retains the exact read owner and invalidates approval
+when configuration, plugin capability, delivery, or session identity changes.
+Plugin approval is refused unless the channel explicitly supports scoped
+reviewer policy, while system-agent approval on channels without approver
+settings remains restricted to the configured command owner. Audience
+resolution canonicalizes agent-scoped aliases, follows current registry
+controller/requester lineage before stale session metadata, bounds breadth,
+rechecks incognito/source rows and registry readiness, and falls back to a
+scoped stream key only when lookup is unavailable. Runtime approval further
+requires current worker/run delegated authority and a matching message-action
+turn capability. These sources map to the existing Plugin SDK approval
+security, session lineage, and run-authority owners; they do not create a
+second approval registry, audience graph, or runtime authority store. Rust
+implementation, wiring, runtime execution, and acceptance remain
+unverified.
