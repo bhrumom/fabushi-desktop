@@ -2,9 +2,10 @@ use std::io::{Read, Write};
 use std::net::TcpStream;
 use std::sync::{Arc, Mutex};
 use std::thread;
-use std::time::Duration;
+use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 use flate2::read::GzDecoder;
+use mahayana_host_runtime::device_pairing_owner::DevicePairingOwner;
 use mahayana_host_runtime::gateway_config::{GatewayServerConfig, GatewayTlsConfig};
 use mahayana_host_runtime::gateway_server::{
     GatewayApi, GatewayBridgeHub, GatewayCommandContext, GatewayCommandError,
@@ -20,6 +21,13 @@ use serde_json::{Value, json};
 struct TestApi;
 
 impl GatewayApi for TestApi {
+    fn redeem_device_pairing_join_code(&self, shortcode: &str) -> Result<Option<Value>, GatewayCommandError> {
+        Ok((shortcode == "A234567890123456789012").then(|| json!({
+            "deviceId": "device-join-1",
+            "token": "single-use-token",
+        })))
+    }
+
     fn call(&self, method: &str, args: Value) -> Result<Value, GatewayCommandError> {
         match method {
             "listAgents" => Ok(args.get("agents").cloned().unwrap_or_else(|| json!([
@@ -45,6 +53,13 @@ impl GatewayApi for TestApi {
                 "method": method,
                 "args": args,
             })),
+            method if method.starts_with("device.pair.")
+                || method.starts_with("node.")
+                || method == "getHostSettings"
+                || method == "setHostSettings" => Ok(json!({
+                "method": method,
+                "args": args,
+            })),
             "conflict" => Err(GatewayCommandError::Conflict("conflict".into())),
             other => Err(GatewayCommandError::UnknownMethod(other.to_string())),
         }
@@ -62,6 +77,102 @@ impl GatewayApi for TestApi {
     fn prepare_for_upgrade(&self) -> Result<Value, GatewayCommandError> {
         Ok(json!({ "quiescing": true, "runningTurns": 2 }))
     }
+}
+
+struct PairingOwnerApi {
+    owner: Arc<DevicePairingOwner>,
+}
+
+impl GatewayApi for PairingOwnerApi {
+    fn call(&self, method: &str, _args: Value) -> Result<Value, GatewayCommandError> {
+        Err(GatewayCommandError::UnknownMethod(method.to_string()))
+    }
+
+    fn redeem_device_pairing_join_code(
+        &self,
+        shortcode: &str,
+    ) -> Result<Option<Value>, GatewayCommandError> {
+        self.owner.redeem_device_pairing_join_code(shortcode)
+    }
+}
+
+#[test]
+fn gateway_pairing_join_route_reaches_sqlite_owner_and_burns_code() {
+    let owner = Arc::new(DevicePairingOwner::in_memory().expect("pairing owner"));
+    let expires_at_ms = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .expect("system clock")
+        .as_millis() as i64
+        + 60_000;
+    let code = owner
+        .register_device_pairing_join_code(&json!({
+            "deviceId": "device-owner-backed",
+            "setupCode": "secret-payload",
+        }), expires_at_ms)
+        .expect("register owner-backed join code");
+    let server = start_gateway_server(GatewayServerDeps {
+        api: Arc::new(PairingOwnerApi { owner }),
+        events: GatewayEventHub::default(),
+        local_exec: None,
+        webauthn: None,
+        config: config(Some("gateway-token")),
+        started_at: 2,
+    })
+    .expect("gateway server");
+    let port = server.port();
+    let first = request(
+        port,
+        &format!(
+            "GET /j/{code} HTTP/1.1\r\nHost: 127.0.0.1\r\nConnection: close\r\n\r\n"
+        ),
+    );
+    assert!(first.starts_with("HTTP/1.1 200 OK"), "{first}");
+    assert_eq!(json_body(&first)["deviceId"], "device-owner-backed");
+    let second = request(
+        port,
+        &format!(
+            "GET /j/{code} HTTP/1.1\r\nHost: 127.0.0.1\r\nConnection: close\r\n\r\n"
+        ),
+    );
+    assert!(second.starts_with("HTTP/1.1 404 Not Found"), "{second}");
+    server.close();
+}
+
+#[test]
+fn gateway_public_pairing_join_route_redeems_once_and_rejects_query_or_empty_code() {
+    let server = start_gateway_server(GatewayServerDeps {
+        api: Arc::new(TestApi),
+        events: GatewayEventHub::default(),
+        local_exec: None,
+        webauthn: None,
+        config: config(Some("secret")),
+        started_at: 1,
+    })
+    .expect("gateway server");
+    let port = server.port();
+
+    let redeemed = request(
+        port,
+        "GET /j/A234567890123456789012 HTTP/1.1\r\nHost: 127.0.0.1\r\nConnection: close\r\n\r\n",
+    );
+    assert!(redeemed.starts_with("HTTP/1.1 200 OK"), "{redeemed}");
+    assert_eq!(json_body(&redeemed)["deviceId"], "device-join-1");
+    assert!(redeemed.to_ascii_lowercase().contains("cache-control: no-store"));
+
+    let queried = request(
+        port,
+        "GET /j/A234567890123456789012?x=1 HTTP/1.1\r\nHost: 127.0.0.1\r\nConnection: close\r\n\r\n",
+    );
+    assert!(queried.starts_with("HTTP/1.1 404 Not Found"), "{queried}");
+    assert!(queried.to_ascii_lowercase().contains("cache-control: no-store"));
+
+    let empty = request(
+        port,
+        "GET /j HTTP/1.1\r\nHost: 127.0.0.1\r\nConnection: close\r\n\r\n",
+    );
+    assert!(empty.starts_with("HTTP/1.1 404 Not Found"), "{empty}");
+    assert!(empty.to_ascii_lowercase().contains("cache-control: no-store"));
+    server.close();
 }
 
 
@@ -897,6 +1008,135 @@ fn gateway_command_telemetry_preserves_request_trace_and_server_error_semantics(
     assert_eq!(reports[1].1.reason.as_deref(), Some("application"));
     assert_eq!(reports[1].1.error_class.as_deref(), Some("GatewayCommandError"));
     assert_eq!(reports[1].1.errno, None);
+
+    server.close();
+}
+
+#[test]
+fn openclaw_gateway_device_pairing_handshake_allows_unauthenticated() {
+    let server = start_gateway_server(GatewayServerDeps {
+        api: Arc::new(TestApi),
+        events: GatewayEventHub::default(),
+        local_exec: None,
+        webauthn: None,
+        config: config(Some("configured-secret-token")),
+        started_at: 100,
+    })
+    .expect("gateway server");
+    let port = server.port();
+
+    let pair_req = request(
+        port,
+        "POST /api/device.pair.request HTTP/1.1\r\nHost: 127.0.0.1\r\nContent-Length: 2\r\nConnection: close\r\n\r\n{}",
+    );
+    assert!(pair_req.starts_with("HTTP/1.1 200 OK"), "{pair_req}");
+
+    let pair_status = request(
+        port,
+        "POST /api/device.pair.status HTTP/1.1\r\nHost: 127.0.0.1\r\nContent-Length: 2\r\nConnection: close\r\n\r\n{}",
+    );
+    assert!(pair_status.starts_with("HTTP/1.1 200 OK"), "{pair_status}");
+
+    let pair_list_unauth = request(
+        port,
+        "POST /api/device.pair.list HTTP/1.1\r\nHost: 127.0.0.1\r\nContent-Length: 2\r\nConnection: close\r\n\r\n{}",
+    );
+    assert!(pair_list_unauth.starts_with("HTTP/1.1 401 Unauthorized"), "{pair_list_unauth}");
+
+    let pair_list_auth = request(
+        port,
+        "POST /api/device.pair.list HTTP/1.1\r\nHost: 127.0.0.1\r\nAuthorization: Bearer configured-secret-token\r\nContent-Length: 2\r\nConnection: close\r\n\r\n{}",
+    );
+    assert!(pair_list_auth.starts_with("HTTP/1.1 200 OK"), "{pair_list_auth}");
+
+    server.close();
+}
+
+#[test]
+fn openclaw_gateway_device_timestamp_skew_and_nonce_replay() {
+    let server = start_gateway_server(GatewayServerDeps {
+        api: Arc::new(TestApi),
+        events: GatewayEventHub::default(),
+        local_exec: None,
+        webauthn: None,
+        config: config(Some("configured-secret-token")),
+        started_at: 100,
+    })
+    .expect("gateway server");
+    let port = server.port();
+
+    let skew_req = request(
+        port,
+        "POST /api/device.pair.list HTTP/1.1\r\nHost: 127.0.0.1\r\nx-sand-device-timestamp: 1000\r\nx-sand-device-nonce: nonce-skew-test\r\nContent-Length: 2\r\nConnection: close\r\n\r\n{}",
+    );
+    assert!(skew_req.starts_with("HTTP/1.1 401 Unauthorized"), "{skew_req}");
+    assert!(skew_req.contains("TIMESTAMP_SKEW"), "{skew_req}");
+
+    let now = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap()
+        .as_secs();
+    let valid_req = request(
+        port,
+        &format!(
+            "POST /api/device.pair.list HTTP/1.1\r\nHost: 127.0.0.1\r\nx-sand-device-timestamp: {now}\r\nx-sand-device-nonce: fresh-nonce-999\r\nContent-Length: 2\r\nConnection: close\r\n\r\n{{}}"
+        ),
+    );
+    assert!(valid_req.starts_with("HTTP/1.1 200 OK"), "{valid_req}");
+
+    let replay_req = request(
+        port,
+        &format!(
+            "POST /api/device.pair.list HTTP/1.1\r\nHost: 127.0.0.1\r\nx-sand-device-timestamp: {now}\r\nx-sand-device-nonce: fresh-nonce-999\r\nContent-Length: 2\r\nConnection: close\r\n\r\n{{}}"
+        ),
+    );
+    assert!(replay_req.starts_with("HTTP/1.1 401 Unauthorized"), "{replay_req}");
+    assert!(replay_req.contains("NONCE_REPLAY"), "{replay_req}");
+
+    let stale_req = request(
+        port,
+        &format!(
+            "POST /api/device.pair.list HTTP/1.1\r\nHost: 127.0.0.1\r\nx-sand-device-timestamp: {now}\r\nx-sand-device-nonce: nonce-stale-rev\r\nx-sand-pairing-revision: stale-1\r\nContent-Length: 2\r\nConnection: close\r\n\r\n{{}}"
+        ),
+    );
+    assert!(stale_req.starts_with("HTTP/1.1 401 Unauthorized"), "{stale_req}");
+    assert!(stale_req.contains("PAIRING_CHANGED"), "{stale_req}");
+
+    server.close();
+}
+
+#[test]
+fn openclaw_gateway_role_and_scope_enforcement() {
+    let server = start_gateway_server(GatewayServerDeps {
+        api: Arc::new(TestApi),
+        events: GatewayEventHub::default(),
+        local_exec: None,
+        webauthn: None,
+        config: config(None),
+        started_at: 100,
+    })
+    .expect("gateway server");
+    let port = server.port();
+
+    let role_mismatch = request(
+        port,
+        "POST /api/device.pair.revoke HTTP/1.1\r\nHost: 127.0.0.1\r\nx-sand-role: node\r\nContent-Length: 2\r\nConnection: close\r\n\r\n{}",
+    );
+    assert!(role_mismatch.starts_with("HTTP/1.1 403 Forbidden"), "{role_mismatch}");
+    assert!(role_mismatch.contains("ROLE_MISMATCH"), "{role_mismatch}");
+
+    let scope_insufficient = request(
+        port,
+        "POST /api/device.pair.revoke HTTP/1.1\r\nHost: 127.0.0.1\r\nx-sand-scope: operator.read\r\nContent-Length: 2\r\nConnection: close\r\n\r\n{}",
+    );
+    assert!(scope_insufficient.starts_with("HTTP/1.1 403 Forbidden"), "{scope_insufficient}");
+    assert!(scope_insufficient.contains("INSUFFICIENT_SCOPE"), "{scope_insufficient}");
+
+    let origin_req = request(
+        port,
+        "POST /api/device.pair.list HTTP/1.1\r\nHost: 127.0.0.1\r\nOrigin: http://evil.com\r\nContent-Length: 2\r\nConnection: close\r\n\r\n{}",
+    );
+    assert!(origin_req.starts_with("HTTP/1.1 403 Forbidden"), "{origin_req}");
 
     server.close();
 }

@@ -7,6 +7,7 @@ use mahayana_host_runtime::extensions::settings::settings_service::{
     MCP_CUSTOM_INSTRUCTIONS_MAX_LENGTH, SAND_AUTO_REVIEW_INSTRUCTION_MAX_CHARS,
     SAND_AUTO_REVIEW_INSTRUCTION_MAX_ENTRIES, SandAutoReviewInstructions,
     SandLocalToolPermission, SettingsService, is_valid_iana_time_zone,
+    get_json_value_at_path, set_json_value_at_path,
 };
 
 fn temp_path(label: &str) -> std::path::PathBuf {
@@ -327,3 +328,136 @@ fn frozen_notification_and_default_auto_review_persistence_are_normalized() {
     assert!(persisted.get("autoReviewInstructions").is_none());
     let _ = fs::remove_file(path);
 }
+
+// ---------------------------------------------------------------------------
+// OCRM-CONFIG-O01: Config Path Mutation & Prototype Pollution Defense
+// ---------------------------------------------------------------------------
+#[test]
+fn test_ocrm_config_o01_path_mutation() {
+    let mut config = serde_json::json!({
+        "gateway": {
+            "port": 8080
+        }
+    });
+
+    // Valid path read and update
+    assert_eq!(get_json_value_at_path(&config, "gateway.port"), Some(&serde_json::json!(8080)));
+    assert!(set_json_value_at_path(&mut config, "gateway.auth.mode", serde_json::json!("token")).is_ok());
+    assert_eq!(get_json_value_at_path(&config, "gateway.auth.mode"), Some(&serde_json::json!("token")));
+
+    // Falsifiable: Prototype pollution prevention
+    assert!(set_json_value_at_path(&mut config, "__proto__.polluted", serde_json::json!(true)).is_err());
+    assert!(set_json_value_at_path(&mut config, "gateway.prototype.danger", serde_json::json!(true)).is_err());
+    assert!(set_json_value_at_path(&mut config, "constructor.name", serde_json::json!("bad")).is_err());
+    assert_eq!(get_json_value_at_path(&config, "__proto__.polluted"), None);
+}
+
+// ---------------------------------------------------------------------------
+// OCRM-CONFIG-O02: Immutable Config Mode and Read-Only Guard
+// ---------------------------------------------------------------------------
+#[test]
+fn test_ocrm_config_o02_immutable_mode_guard() {
+    let path = temp_path("immutable-guard");
+    fs::write(&path, r#"{"version":1,"readOnly":true}"#).expect("seed");
+    let service = SettingsService::new(&path);
+
+    // Reading settings works normally
+    let host = service.get_host_settings();
+    assert_eq!(host.get("version"), Some(&serde_json::json!(1)));
+    assert_eq!(host.get("readOnly"), Some(&serde_json::json!(true)));
+    assert!(service.is_read_only());
+
+    // Mutations must fail closed and leave disk untouched
+    assert!(service.set_has_seen_onboarding(true).is_err());
+    assert!(service.set_host_settings(&serde_json::json!({"userTimeZone": "UTC"})).is_err());
+
+    let on_disk = fs::read_to_string(&path).expect("read");
+    assert!(!on_disk.contains("hasSeenOnboarding"), "Disk must remain untouched in readOnly mode");
+
+    let _ = fs::remove_file(path);
+}
+
+// ---------------------------------------------------------------------------
+// OCRM-CONFIG-O03: Single Authoritative Writer Mutex
+// ---------------------------------------------------------------------------
+#[test]
+fn test_ocrm_config_o03_single_writer_lock() {
+    let path = temp_path("writer-lock");
+    fs::write(&path, r#"{"version":1,"counter":0}"#).expect("seed");
+    let service = Arc::new(SettingsService::new(&path));
+
+    // Parallel mutation attempts through single service must serialize safely
+    let mut handles = Vec::new();
+    for i in 0..5 {
+        let svc = Arc::clone(&service);
+        handles.push(std::thread::spawn(move || {
+            let _ = svc.set_host_settings(&serde_json::json!({
+                "mcpCustomInstructionsAccountScope": format!("account-{}", i)
+            }));
+        }));
+    }
+    for h in handles {
+        h.join().expect("thread join");
+    }
+
+    let final_settings = service.get_host_settings();
+    assert!(final_settings.get("mcpCustomInstructionsAccountScope").is_some());
+    let _ = fs::remove_file(path);
+}
+
+// ---------------------------------------------------------------------------
+// OCRM-CONFIG-O04: Atomic Settings IO Snapshot and Staging Rename
+// ---------------------------------------------------------------------------
+#[test]
+fn test_ocrm_config_o04_io_atomic_snapshot() {
+    let path = temp_path("atomic-io");
+    fs::write(&path, r#"{"version":1,"key":"original"}"#).expect("seed");
+    let service = SettingsService::new(&path);
+
+    assert!(service.set_has_seen_onboarding(true).is_ok());
+
+    // Verify file content on disk is valid JSON
+    let text = fs::read_to_string(&path).expect("read");
+    let parsed: serde_json::Value = serde_json::from_str(&text).expect("valid json");
+    assert_eq!(parsed.get("key"), Some(&serde_json::json!("original")));
+    assert_eq!(parsed.get("hasSeenOnboarding"), Some(&serde_json::json!(true)));
+    let _ = fs::remove_file(path);
+}
+
+// ---------------------------------------------------------------------------
+// OCRM-CONFIG-O05: Schema Normalization & Unknown Field Preservation
+// ---------------------------------------------------------------------------
+#[test]
+fn test_ocrm_config_o05_schema_normalization() {
+    let path = temp_path("schema-normalization");
+    fs::write(
+        &path,
+        r#"{"version":1,"customUserField":"keep-me","userTimeZone":"UTC"}"#,
+    )
+    .expect("seed");
+    let service = SettingsService::new(&path);
+
+    // Update known field
+    assert!(service.set_user_time_zone(Some("Asia/Tokyo")).is_ok());
+
+    // Verify unknown field is preserved
+    let on_disk = fs::read_to_string(&path).expect("read");
+    assert!(on_disk.contains("customUserField"), "Unknown field must not be dropped");
+    assert!(on_disk.contains("keep-me"));
+    let _ = fs::remove_file(path);
+}
+
+// ---------------------------------------------------------------------------
+// OCRM-CONFIG-O06: Agent Workspace Directory Bounds
+// ---------------------------------------------------------------------------
+#[test]
+fn test_ocrm_config_o06_agent_workspace_dirs() {
+    use mahayana_host_runtime::storage::agent_paths::{
+        assert_valid_sand_agent_id, resolve_sand_agent_dir,
+    };
+    // Safe directory resolution
+    assert!(assert_valid_sand_agent_id("agent-safe-01").is_ok());
+    assert!(assert_valid_sand_agent_id("../escape").is_err());
+    assert!(assert_valid_sand_agent_id("agent/sub").is_err());
+}
+

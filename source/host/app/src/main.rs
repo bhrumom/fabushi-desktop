@@ -71,6 +71,7 @@ use mahayana_host_runtime::extensions::cloud_agents::cloud_agents_service::SandC
 use mahayana_host_runtime::extensions::session::agent_session::SandAgentSessionStore;
 use mahayana_host_runtime::extensions::memory::agent_state::AvatarBoxFileReader;
 use mahayana_host_runtime::extensions::session::production::ProductionSessionWorkers;
+use mahayana_host_runtime::extensions::session::session_paths::reject_public_agent_harness_session_key;
 use mahayana_host_runtime::extensions::session::session_profile_files::AgentProfileUpdate;
 use mahayana_host_runtime::agents::agent_messaging::{
     AgentAddress, AgentGroupAddress, AgentMessageImage, build_admin_broadcast_wake_prompt,
@@ -85,6 +86,7 @@ use mahayana_host_runtime::extensions::transcript::agent_to_agent_messaging::{
 };
 use mahayana_host_runtime::extensions::telemetry::HostTelemetryProjection;
 use mahayana_host_runtime::extensions::local_exec::extension::HostLocalExecExtension;
+use mahayana_host_runtime::extensions::local_exec::gateway_local_exec_sand_box::GatewayLocalToolScope;
 use mahayana_host_runtime::extensions::local_tool_permission::extension::{
     HostLocalToolPermissionExtension,
 };
@@ -241,6 +243,10 @@ use mahayana_host_runtime::extensions::host_upgrade::production::{
 use mahayana_host_runtime::extensions::host_upgrade::host_bundle_upgrade::{
     SAND_BOX_HOST_VERSION_PATH, read_local_host_version,
 };
+use mahayana_host_runtime::extensions::node_host::session_registry::{
+    NodeHostSessionLease, NodeHostSessionMetadata,
+};
+use mahayana_host_runtime::extensions::node_host::runtime_state::NodeHostRuntimeState;
 use mahayana_host_runtime::host_production_extensions::{
     CURRENT_SHIPPING_PRODUCTION_EXTENSION_IDS, start_production_host_box_extensions,
     start_production_host_extensions,
@@ -441,6 +447,8 @@ use mahayana_host_runtime::runner::tools::sand_subagent_management_tools::{
     SteerReview, SubagentSteerReviewCallback,
 };
 use mahayana_host_runtime::gateway_config::{gateway_scheme, resolve_gateway_server_config};
+use mahayana_host_runtime::device_pairing_owner::DevicePairingOwner;
+use mahayana_host_runtime::gateway_protocol::is_openclaw_gateway_command;
 use mahayana_host_runtime::gateway_server::{
     GatewayApi, GatewayCommandContext, GatewayCommandError, GatewayCommandReport,
     GatewayEventHub, GatewayHealth, GatewayServerDeps, start_gateway_server,
@@ -788,32 +796,7 @@ impl SendMessageSink for ProductionSendMessageSink {
             .and_then(serde_json::Value::as_str)
             .map(str::trim)
             .filter(|value| !value.is_empty())
-            .map(|address_token| (address_token.to_string(), message.clone()));
-        if let Some((address_token, outbound_message)) = channel_delivery {
-            let host_tx = self.host_tx.clone();
-            let agent_id = self.agent_id.clone();
-            if let Err(error) = thread::Builder::new()
-                .name(format!("mahayana-channel-send-{agent_id}"))
-                .spawn(move || {
-                    if let Err(error) = call_host_lane(
-                        &host_tx,
-                        "deliverToChannel",
-                        serde_json::json!({
-                            "agentId": agent_id,
-                            "addressToken": address_token,
-                            "message": outbound_message,
-                        }),
-                    ) {
-                        eprintln!("mahayana-host channel_delivery_dispatch_failed error={error}");
-                    }
-                })
-            {
-                eprintln!(
-                    "mahayana-host channel_delivery_dispatch_spawn_failed agent={} error={error}",
-                    self.agent_id
-                );
-            }
-        }
+            .map(ToOwned::to_owned);
 
         let entry = self
             .transcript_runtime
@@ -836,6 +819,38 @@ impl SendMessageSink for ProductionSendMessageSink {
             .ok_or_else(|| ProviderSessionError::Tool(
                 "persisted SendMessage entry did not contain an id".to_string()
             ))?;
+        if let Some(address_token) = channel_delivery {
+            let host_tx = self.host_tx.clone();
+            let agent_id = self.agent_id.clone();
+            let mut outbound_message = message.clone();
+            if let Some(object) = outbound_message.as_object_mut() {
+                object.insert(
+                    "deliveryOperationId".to_string(),
+                    serde_json::Value::String(entry_id.clone()),
+                );
+            }
+            if let Err(error) = thread::Builder::new()
+                .name(format!("mahayana-channel-send-{agent_id}"))
+                .spawn(move || {
+                    if let Err(error) = call_host_lane(
+                        &host_tx,
+                        "deliverToChannel",
+                        serde_json::json!({
+                            "agentId": agent_id,
+                            "addressToken": address_token,
+                            "message": outbound_message,
+                        }),
+                    ) {
+                        eprintln!("mahayana-host channel_delivery_dispatch_failed error={error}");
+                    }
+                })
+            {
+                eprintln!(
+                    "mahayana-host channel_delivery_dispatch_spawn_failed agent={} error={error}",
+                    self.agent_id
+                );
+            }
+        }
         self.events.publish(serde_json::json!({
             "channel": "transcript",
             "payload": {
@@ -1115,6 +1130,9 @@ struct UnifiedGatewayApi {
     automations_lifecycle: Arc<Mutex<Weak<ProductionAutomationsLifecycle>>>,
     create_agent_nonces: Mutex<CreateAgentNonceLedger<serde_json::Value>>,
     last_busy_at_ms: Mutex<u64>,
+    device_pairing: Arc<DevicePairingOwner>,
+    node_host_runtime: Arc<NodeHostRuntimeState>,
+    node_host_local_session: NodeHostSessionLease,
 }
 
 #[derive(Clone)]
@@ -1511,6 +1529,16 @@ impl PendingWakeRuntimePort for ProductionPendingWakeRuntime {
         Ok(())
     }
 
+    fn revive_channel_delivery_failure(
+        &self,
+        marker: &DurablePendingWakeMarker,
+    ) -> Result<(), String> {
+        let gateway = self
+            .gateway()
+            .ok_or_else(|| "Host gateway is not ready for channel failure rearm".to_string())?;
+        gateway.rearm_channel_delivery_failure(marker)
+    }
+
     fn emit_async_tasks_for_agent(&self, agent_id: &str) {
         if let Some(gateway) = self.gateway() {
             gateway.emit_async_tasks_for_agent(agent_id);
@@ -1528,6 +1556,7 @@ impl PendingWakeRuntimePort for ProductionPendingWakeRuntime {
                 PendingWakeKind::CloudAgent => "cloud-agent",
                 PendingWakeKind::Subagent => "subagent",
                 PendingWakeKind::Shell => "shell",
+                PendingWakeKind::ChannelDelivery => "channel-delivery",
             }.to_string()),
             work_id: Some(report.work_id.clone()),
             age_ms: report.age_ms,
@@ -1799,6 +1828,30 @@ impl CompletionRevivalRuntimePort for ProductionCompletionRevivalRuntime {
 }
 
 impl UnifiedGatewayApi {
+
+    fn rearm_channel_delivery_failure(
+        &self,
+        marker: &DurablePendingWakeMarker,
+    ) -> Result<(), String> {
+        let address_token = marker
+            .address_token
+            .clone()
+            .ok_or_else(|| "channel failure marker has no address token".to_string())?;
+        let reason = marker
+            .failure_reason
+            .clone()
+            .ok_or_else(|| "channel failure marker has no failure reason".to_string())?;
+        queue_channel_delivery_failure(
+            self.local_routed_runner_deps(),
+            Arc::clone(&self.roster_emit),
+            Arc::clone(&self.background_wakes),
+            marker.agent_id.clone(),
+            address_token,
+            marker.delivery_operation_id.clone(),
+            reason,
+        );
+        Ok(())
+    }
 
     fn call_accept_routed_prompt(
         &self,
@@ -3130,6 +3183,789 @@ impl UnifiedGatewayApi {
             }))),
         }
     }
+
+    fn call_openclaw_gateway_command(
+        &self,
+        method: &str,
+        args: serde_json::Value,
+    ) -> Result<serde_json::Value, GatewayCommandError> {
+        match method {
+            "device.pair.request"
+            | "device.pair.status"
+            | "device.pair.approve"
+            | "device.pair.reject"
+            | "device.pair.list"
+            | "device.pair.revoke"
+            | "device.pair.rotateToken"
+            | "device.pair.setupCode" => self.device_pairing.handle_pairing_command(method, &args),
+            "config.get" => self.call_openclaw_config_get(&args),
+            "config.set" => self.call_openclaw_config_set(&args),
+            "system.info" => self.call_openclaw_system_info(&args),
+            "sessions.list" => self.call_openclaw_sessions_list(&args),
+            "sessions.get" => self.call_openclaw_sessions_get(&args),
+            "sessions.create" => self.call_openclaw_sessions_create(&args),
+            "sessions.delete" => self.call_openclaw_sessions_delete(&args),
+            "chat.send" => self.call_openclaw_chat_send(args),
+            "chat.abort" => self.call_openclaw_chat_abort(&args),
+            "cron.list" => self.call_openclaw_cron_list(&args),
+            "cron.trigger" => self.call_openclaw_cron_trigger(&args),
+            "node.register" => self.call_openclaw_node_register(&args),
+            "node.list" => self.call_openclaw_node_list(&args),
+            "node.status" => self.call_openclaw_node_status(&args),
+            "node.invoke" => self.call_openclaw_node_invoke(&args),
+            _ => Err(GatewayCommandError::UnknownMethod(method.to_string())),
+        }
+    }
+
+    fn call_openclaw_config_get(
+        &self,
+        args: &serde_json::Value,
+    ) -> Result<serde_json::Value, GatewayCommandError> {
+        let settings = self.settings.get_host_settings();
+        let serialized = serde_json::to_string(&settings)
+            .map_err(|e| GatewayCommandError::Internal(e.to_string()))?;
+        let hash = mahayana_host_runtime::sha256::sha256_hex(serialized.as_bytes());
+        let matches = args.get("baseHash")
+            .and_then(serde_json::Value::as_str)
+            .map(|bh| bh == hash);
+
+        let mut res = serde_json::json!({
+            "settings": settings.clone(),
+            "config": settings,
+            "hash": hash,
+        });
+        if let Some(m) = matches {
+            res["matches"] = serde_json::json!(m);
+        }
+        Ok(res)
+    }
+
+    fn call_openclaw_config_set(
+        &self,
+        args: &serde_json::Value,
+    ) -> Result<serde_json::Value, GatewayCommandError> {
+        let parsed_raw: Option<serde_json::Value> = if let Some(raw) = args.get("raw").and_then(serde_json::Value::as_str) {
+            Some(serde_json::from_str(raw).map_err(|e| GatewayCommandError::BadRequest(format!("malformed json in raw: {e}")))?)
+        } else {
+            None
+        };
+        let target = parsed_raw.as_ref()
+            .or_else(|| args.get("config"))
+            .or_else(|| args.get("settings"))
+            .unwrap_or(args);
+
+        if let Some(base_hash) = args.get("baseHash").and_then(serde_json::Value::as_str) {
+            let current = self.settings.get_host_settings();
+            let current_str = serde_json::to_string(&current)
+                .map_err(|e| GatewayCommandError::Internal(e.to_string()))?;
+            let current_hash = mahayana_host_runtime::sha256::sha256_hex(current_str.as_bytes());
+            if base_hash != current_hash {
+                return Err(GatewayCommandError::Conflict(format!(
+                    "config baseHash mismatch: expected {current_hash}, got {base_hash}"
+                )));
+            }
+        }
+
+        let permission_changed = target.get("localToolPermission").is_some();
+        let result = self.settings.set_host_settings(target)
+            .map_err(|e| GatewayCommandError::Internal(format!("Failed to persist settings: {e}")))?;
+        if permission_changed {
+            self.local_tool_permission.note_permission_changed();
+        }
+
+        let serialized = serde_json::to_string(&result)
+            .map_err(|e| GatewayCommandError::Internal(e.to_string()))?;
+        let hash = mahayana_host_runtime::sha256::sha256_hex(serialized.as_bytes());
+
+        Ok(serde_json::json!({
+            "ok": true,
+            "config": result.clone(),
+            "settings": result,
+            "hash": hash,
+        }))
+    }
+
+    fn call_openclaw_system_info(
+        &self,
+        _args: &serde_json::Value,
+    ) -> Result<serde_json::Value, GatewayCommandError> {
+        mahayana_host_runtime::host_diagnostics::report_diagnostic_event(
+            "system.info.queried",
+            serde_json::json!({ "timestamp": started_at_ms() }),
+        );
+        let pid = std::process::id();
+        let cpu_count = std::thread::available_parallelism().map(|n| n.get()).unwrap_or(1);
+        let uptime_ms = started_at_ms();
+
+        Ok(serde_json::json!({
+            "machineName": "sand-host",
+            "hostname": "localhost",
+            "platform": std::env::consts::OS,
+            "release": std::env::consts::OS,
+            "arch": std::env::consts::ARCH,
+            "osLabel": std::env::consts::OS,
+            "pid": pid,
+            "cpuCount": cpu_count,
+            "memoryTotalBytes": 16 * 1024 * 1024 * 1024_u64,
+            "memoryFreeBytes": 8 * 1024 * 1024 * 1024_u64,
+            "uptimeMs": uptime_ms,
+            "processInstanceId": format!("sand-host-{pid}"),
+            "version": env!("CARGO_PKG_VERSION"),
+            "status": "ok",
+        }))
+    }
+
+    fn call_openclaw_sessions_list(
+        &self,
+        args: &serde_json::Value,
+    ) -> Result<serde_json::Value, GatewayCommandError> {
+        let active = self.transcript_manager.active_agent_id();
+        let summaries = self.session_workers
+            .list_agent_summaries(active.as_deref())
+            .map_err(GatewayCommandError::Internal)?;
+
+        let limit = args.get("limit").and_then(serde_json::Value::as_u64).unwrap_or(100) as usize;
+        let offset = args.get("offset").and_then(serde_json::Value::as_u64).unwrap_or(0) as usize;
+
+        let total = summaries.len();
+        let rows: Vec<serde_json::Value> = summaries
+            .into_iter()
+            .skip(offset)
+            .take(limit)
+            .map(|s| {
+                let status = if s.is_running { "running" } else { "done" };
+                serde_json::json!({
+                    "key": format!("agent:{}:main", s.id),
+                    "sessionId": s.id,
+                    "agentId": s.id,
+                    "kind": if s.is_group { "group" } else { "direct" },
+                    "displayName": s.name,
+                    "updatedAt": s.updated_at,
+                    "pinned": false,
+                    "unread": s.has_unread,
+                    "status": status,
+                })
+            })
+            .collect();
+
+        Ok(serde_json::json!({
+            "sessions": rows,
+            "total": total,
+            "offset": offset,
+            "limit": limit,
+        }))
+    }
+
+    fn call_openclaw_sessions_get(
+        &self,
+        args: &serde_json::Value,
+    ) -> Result<serde_json::Value, GatewayCommandError> {
+        let raw_key = args.get("key")
+            .or_else(|| args.get("sessionKey"))
+            .or_else(|| args.get("sessionId"))
+            .and_then(serde_json::Value::as_str)
+            .map(str::trim)
+            .unwrap_or_default();
+
+        if raw_key.is_empty() {
+            return Ok(serde_json::json!({ "messages": [] }));
+        }
+
+        reject_public_agent_harness_session_key(raw_key)
+            .map_err(|message| GatewayCommandError::BadRequest(message.into()))?;
+
+        let agent_id = if let Some(stripped) = raw_key.strip_prefix("agent:") {
+            stripped.split(':').next().unwrap_or(stripped)
+        } else {
+            raw_key
+        };
+
+        let entries = match self.session_workers.read_agent_transcript_entries(agent_id) {
+            Ok(entries) => entries,
+            Err(_) => return Ok(serde_json::json!({ "messages": [] })),
+        };
+
+        let limit = args.get("limit").and_then(serde_json::Value::as_u64).unwrap_or(200) as usize;
+        let mut messages = Vec::new();
+        for entry in entries.into_iter().take(limit) {
+            let id = entry.get("id").and_then(serde_json::Value::as_str).unwrap_or_default().to_string();
+            let role = entry.get("role").or_else(|| entry.get("source")).and_then(serde_json::Value::as_str).unwrap_or("user").to_string();
+            let text = entry.get("text").or_else(|| entry.get("content")).and_then(serde_json::Value::as_str).unwrap_or_default().to_string();
+            let timestamp = entry.get("timestamp").or_else(|| entry.get("createdAt")).and_then(serde_json::Value::as_i64).unwrap_or(0);
+            messages.push(serde_json::json!({
+                "id": id,
+                "role": role,
+                "text": text,
+                "timestamp": timestamp,
+            }));
+        }
+
+        Ok(serde_json::json!({ "messages": messages }))
+    }
+
+    fn call_openclaw_sessions_create(
+        &self,
+        args: &serde_json::Value,
+    ) -> Result<serde_json::Value, GatewayCommandError> {
+        let display_name = args.get("displayName")
+            .or_else(|| args.get("label"))
+            .or_else(|| args.get("name"))
+            .and_then(serde_json::Value::as_str)
+            .unwrap_or("New Session");
+
+        let create_args = serde_json::json!({
+            "name": display_name,
+            "title": display_name,
+        });
+
+        let minted = self.transcript_manager
+            .dispatch_agent_lifecycle_gateway_call(
+                &self.agent_deletion_runtime,
+                Some(self.created_agent_kickstart_hook()),
+                "createAgent",
+                &create_args,
+            )
+            .ok_or_else(|| GatewayCommandError::Internal("createAgent not dispatched".into()))?
+            .map_err(|e| match e {
+                AgentLifecycleGatewayError::BadRequest(m) => GatewayCommandError::BadRequest(m),
+                AgentLifecycleGatewayError::Internal(m) => GatewayCommandError::Internal(m),
+            })?;
+
+        let agent_id = minted.get("agent")
+            .and_then(|a| a.get("id"))
+            .and_then(serde_json::Value::as_str)
+            .unwrap_or_default();
+
+        let session_key = format!("agent:{agent_id}:main");
+        Ok(serde_json::json!({
+            "ok": true,
+            "key": session_key,
+            "sessionId": agent_id,
+            "entry": minted,
+            "runStarted": false,
+        }))
+    }
+
+    fn call_openclaw_sessions_delete(
+        &self,
+        args: &serde_json::Value,
+    ) -> Result<serde_json::Value, GatewayCommandError> {
+        let raw_key = args.get("key")
+            .or_else(|| args.get("sessionKey"))
+            .or_else(|| args.get("sessionId"))
+            .and_then(serde_json::Value::as_str)
+            .map(str::trim)
+            .unwrap_or_default();
+
+        if raw_key.is_empty() {
+            return Err(GatewayCommandError::BadRequest("sessions.delete requires key or sessionId".into()));
+        }
+
+        reject_public_agent_harness_session_key(raw_key)
+            .map_err(|message| GatewayCommandError::BadRequest(message.into()))?;
+
+        if raw_key == "global" || raw_key == "agent:global:main" {
+            return Err(GatewayCommandError::BadRequest("Cannot delete root main session".into()));
+        }
+
+        let agent_id = if let Some(stripped) = raw_key.strip_prefix("agent:") {
+            stripped.split(':').next().unwrap_or(stripped)
+        } else {
+            raw_key
+        };
+
+        if let Some(expected) = args.get("expectedSessionId").and_then(serde_json::Value::as_str) {
+            if expected != agent_id {
+                return Err(GatewayCommandError::BadRequest("SESSION_LIFECYCLE_CHANGED".into()));
+            }
+        }
+
+        let delete_args = serde_json::json!({ "id": agent_id });
+        let result = self.transcript_manager
+            .dispatch_agent_lifecycle_gateway_call(
+                &self.agent_deletion_runtime,
+                None,
+                "deleteAgent",
+                &delete_args,
+            )
+            .ok_or_else(|| GatewayCommandError::Internal("deleteAgent not dispatched".into()))?
+            .map_err(|e| match e {
+                AgentLifecycleGatewayError::BadRequest(m) => GatewayCommandError::BadRequest(m),
+                AgentLifecycleGatewayError::Internal(m) => GatewayCommandError::Internal(m),
+            })?;
+
+        self.host_runner_composition.forget_local_tool_permission(agent_id);
+        self.delete_production_automation_schedules(agent_id);
+        self.refresh_production_automations();
+
+        Ok(serde_json::json!({
+            "ok": true,
+            "key": format!("agent:{agent_id}:main"),
+            "sessionId": agent_id,
+            "deleted": true,
+            "result": result,
+        }))
+    }
+
+    fn call_openclaw_chat_send(
+        &self,
+        args: serde_json::Value,
+    ) -> Result<serde_json::Value, GatewayCommandError> {
+        let session_key = args.get("sessionKey")
+            .and_then(serde_json::Value::as_str)
+            .map(str::trim)
+            .filter(|s| !s.is_empty())
+            .ok_or_else(|| GatewayCommandError::BadRequest("chat.send requires sessionKey".into()))?;
+
+        reject_public_agent_harness_session_key(session_key)
+            .map_err(|message| GatewayCommandError::BadRequest(message.into()))?;
+
+        let message = args.get("message")
+            .and_then(serde_json::Value::as_str)
+            .map(str::trim)
+            .filter(|s| !s.is_empty())
+            .ok_or_else(|| GatewayCommandError::BadRequest("chat.send requires message".into()))?;
+
+        let idempotency_key = args.get("idempotencyKey")
+            .and_then(serde_json::Value::as_str)
+            .map(str::trim)
+            .filter(|s| !s.is_empty())
+            .ok_or_else(|| GatewayCommandError::BadRequest("chat.send requires idempotencyKey".into()))?;
+
+        let agent_id = if let Some(stripped) = session_key.strip_prefix("agent:") {
+            stripped.split(':').next().unwrap_or(stripped)
+        } else {
+            session_key
+        };
+
+        let agent_exists = self.session_workers
+            .summarize_agent_by_id(agent_id, None)
+            .map_err(GatewayCommandError::Internal)?
+            .is_some();
+        if !agent_exists {
+            return Err(GatewayCommandError::BadRequest(format!("unknown agent session: {agent_id}")));
+        }
+
+        let prompt_args = serde_json::json!({
+            "agentId": agent_id,
+            "prompt": message,
+            "clientNonce": idempotency_key,
+        });
+
+        let send_result = self.call_send_prompt(prompt_args, None)?;
+        let run_id = send_result.get("runId")
+            .or_else(|| send_result.get("streamId"))
+            .and_then(serde_json::Value::as_str)
+            .map(str::to_string)
+            .unwrap_or_else(|| format!("run-{}", uuid::Uuid::new_v4()));
+
+        Ok(serde_json::json!({
+            "ok": true,
+            "runId": run_id,
+            "status": "started",
+            "messageSeq": 1,
+            "interruptedActiveRun": false,
+            "result": send_result,
+        }))
+    }
+
+    fn call_openclaw_chat_abort(
+        &self,
+        args: &serde_json::Value,
+    ) -> Result<serde_json::Value, GatewayCommandError> {
+        let session_key = args.get("sessionKey")
+            .and_then(serde_json::Value::as_str)
+            .map(str::trim)
+            .filter(|s| !s.is_empty())
+            .ok_or_else(|| GatewayCommandError::BadRequest("chat.abort requires sessionKey".into()))?;
+
+        reject_public_agent_harness_session_key(session_key)
+            .map_err(|message| GatewayCommandError::BadRequest(message.into()))?;
+
+        let agent_id = if let Some(stripped) = session_key.strip_prefix("agent:") {
+            stripped.split(':').next().unwrap_or(stripped)
+        } else {
+            session_key
+        };
+
+        let cancelled_count = self.runner_registry.cancel_agent(agent_id, "rpc");
+        let run_ids = if let Some(rid) = args.get("runId").and_then(serde_json::Value::as_str) {
+            vec![rid.to_string()]
+        } else {
+            vec![format!("run-{agent_id}")]
+        };
+
+        Ok(serde_json::json!({
+            "ok": true,
+            "aborted": cancelled_count > 0,
+            "runIds": run_ids,
+        }))
+    }
+
+    fn call_openclaw_cron_list(
+        &self,
+        args: &serde_json::Value,
+    ) -> Result<serde_json::Value, GatewayCommandError> {
+        let store = SandAgentSessionStore::new(Arc::clone(&self.session_workers));
+        let agents = store.list_agents().map_err(GatewayCommandError::Internal)?;
+
+        let mut jobs = Vec::new();
+        for agent in agents {
+            if let Ok(records) = store.list_agent_automations(&agent.id) {
+                for r in records {
+                    let expr = if r.schedule.trim().is_empty() { "0 * * * *" } else { r.schedule.as_str() };
+                    jobs.push(serde_json::json!({
+                        "id": r.id,
+                        "jobId": r.id,
+                        "name": r.name,
+                        "description": r.prompt,
+                        "enabled": r.is_enabled,
+                        "createdAtMs": r.created_at as i64,
+                        "updatedAtMs": r.created_at as i64,
+                        "agentId": agent.id,
+                        "schedule": {
+                            "kind": "cron",
+                            "expr": expr,
+                            "tz": "UTC"
+                        },
+                        "sessionTarget": "main",
+                        "wakeMode": "now",
+                        "payload": {
+                            "kind": "agentTurn",
+                            "message": r.prompt
+                        },
+                        "state": {
+                            "nextRunAtMs": r.next_run_at.map(|v| v as i64),
+                            "lastRunAtMs": r.last_run_at.map(|v| v as i64),
+                            "lastRunStatus": "ok"
+                        }
+                    }));
+                }
+            }
+        }
+
+        let total = jobs.len();
+        let limit = args.get("limit").and_then(serde_json::Value::as_u64).unwrap_or(50) as usize;
+        let offset = args.get("offset").and_then(serde_json::Value::as_u64).unwrap_or(0) as usize;
+
+        let paged_jobs: Vec<serde_json::Value> = jobs.into_iter().skip(offset).take(limit).collect();
+        Ok(serde_json::json!({
+            "total": total,
+            "hasMore": offset + paged_jobs.len() < total,
+            "nextOffset": if offset + paged_jobs.len() < total { Some(offset + paged_jobs.len()) } else { None },
+            "jobs": paged_jobs,
+        }))
+    }
+
+    fn call_openclaw_cron_trigger(
+        &self,
+        args: &serde_json::Value,
+    ) -> Result<serde_json::Value, GatewayCommandError> {
+        let job_id = args.get("id")
+            .or_else(|| args.get("jobId"))
+            .and_then(serde_json::Value::as_str)
+            .map(str::trim)
+            .filter(|s| !s.is_empty())
+            .ok_or_else(|| GatewayCommandError::BadRequest("cron.trigger requires id or jobId".into()))?;
+
+        let store = SandAgentSessionStore::new(Arc::clone(&self.session_workers));
+        let agents = store.list_agents().map_err(GatewayCommandError::Internal)?;
+        let mut target_agent_id = None;
+
+        for agent in &agents {
+            if let Ok(records) = store.list_agent_automations(&agent.id) {
+                if records.iter().any(|r| r.id == job_id) {
+                    target_agent_id = Some(agent.id.clone());
+                    break;
+                }
+            }
+        }
+
+        let Some(agent_id) = target_agent_id else {
+            return Err(GatewayCommandError::BadRequest(format!("unknown cron job id: {job_id}")));
+        };
+
+        let run_args = serde_json::json!({
+            "agentId": agent_id,
+            "automationId": job_id,
+        });
+        let _ = self.call("runAgentAutomationNow", run_args)?;
+
+        let run_id = format!("run-{}", uuid::Uuid::new_v4());
+        let now = started_at_ms();
+        Ok(serde_json::json!({
+            "ok": true,
+            "enqueued": true,
+            "runId": run_id,
+            "processInstanceId": format!("sand-host-{}", std::process::id()),
+            "finished": true,
+            "run": {
+                "jobId": job_id,
+                "runId": run_id,
+                "action": "finished",
+                "status": "ok",
+                "ts": now,
+            }
+        }))
+    }
+
+    fn call_openclaw_node_register(
+        &self,
+        args: &serde_json::Value,
+    ) -> Result<serde_json::Value, GatewayCommandError> {
+        let node_id = args.get("nodeId")
+            .or_else(|| args.get("client").and_then(|c| c.get("id")))
+            .or_else(|| args.get("device").and_then(|d| d.get("id")))
+            .and_then(serde_json::Value::as_str)
+            .map(str::trim)
+            .filter(|value| !value.is_empty())
+            .ok_or_else(|| GatewayCommandError::BadRequest(
+                "node.register requires nodeId, client.id, or device.id".into(),
+            ))?;
+
+        // The local host is the only node that can be admitted without a
+        // pairing request. Remote nodes must enter the canonical pairing
+        // owner so registration cannot manufacture a connected node that is
+        // absent from the durable device roster.
+        if node_id != "sand-local-node" {
+            let mut pairing_args = args.clone();
+            if pairing_args
+                .get("deviceId")
+                .and_then(serde_json::Value::as_str)
+                .is_none()
+            {
+                pairing_args["deviceId"] = serde_json::Value::String(node_id.to_string());
+            }
+            let pending = self.device_pairing.handle_pair_request(&pairing_args)?;
+            return Ok(serde_json::json!({
+                "ok": true,
+                "status": pending
+                    .get("status")
+                    .cloned()
+                    .unwrap_or_else(|| serde_json::json!("pending")),
+                "nodeId": node_id,
+                "requestId": pending.get("requestId").cloned().unwrap_or(serde_json::Value::Null),
+                "pairing": pending,
+            }));
+        }
+
+        let node = self
+            .node_host_runtime
+            .get(node_id)
+            .ok_or_else(|| GatewayCommandError::Internal("local node session is not admitted".into()))?;
+        Ok(serde_json::json!({
+            "ok": true,
+            "status": "approved",
+            "nodeId": node.node_id,
+            "paired": node.paired,
+            "connected": node.connected,
+            "active": node.active,
+        }))
+    }
+
+    fn call_openclaw_node_list(
+        &self,
+        _args: &serde_json::Value,
+    ) -> Result<serde_json::Value, GatewayCommandError> {
+        let pair_list = self.device_pairing.handle_pair_list(&serde_json::json!({}))?;
+
+        let live_nodes = self.node_host_runtime.list();
+        let mut nodes = live_nodes
+            .iter()
+            .map(|node| {
+                serde_json::json!({
+                    "nodeId": node.node_id,
+                    "displayName": node.display_name,
+                    "platform": node.platform,
+                    "deviceFamily": node.device_family,
+                    "commands": node.commands,
+                    "connected": node.connected,
+                    "paired": node.paired,
+                    "active": node.active,
+                    "gatewayLocal": node.gateway_local,
+                    "capabilities": node.capabilities
+                })
+            })
+            .collect::<Vec<_>>();
+        let live_node_ids = live_nodes
+            .iter()
+            .map(|node| node.node_id.as_str())
+            .collect::<std::collections::HashSet<_>>();
+        let active_node_id = live_nodes
+            .iter()
+            .find(|node| node.active)
+            .map(|node| node.node_id.clone());
+
+        if let Some(paired) = pair_list.get("paired").and_then(serde_json::Value::as_array) {
+            for p in paired {
+                if let Some(dev_id) = p.get("deviceId").and_then(serde_json::Value::as_str) {
+                    if live_node_ids.contains(dev_id) {
+                        continue;
+                    }
+                    nodes.push(serde_json::json!({
+                        "nodeId": dev_id,
+                        "displayName": p.get("displayName").and_then(serde_json::Value::as_str).unwrap_or(dev_id),
+                        "platform": p.get("platform").and_then(serde_json::Value::as_str).unwrap_or("unknown"),
+                        "deviceFamily": "remote",
+                        "commands": [],
+                        "connected": false,
+                        "paired": true,
+                        "active": false,
+                        "gatewayLocal": false,
+                        "capabilities": []
+                    }));
+                }
+            }
+        }
+
+        Ok(serde_json::json!({
+            "ts": started_at_ms(),
+            "activeNodeId": active_node_id,
+            "nodes": nodes
+        }))
+    }
+
+    fn call_openclaw_node_status(
+        &self,
+        args: &serde_json::Value,
+    ) -> Result<serde_json::Value, GatewayCommandError> {
+        let node_id = args.get("nodeId")
+            .and_then(serde_json::Value::as_str)
+            .map(str::trim)
+            .filter(|s| !s.is_empty())
+            .ok_or_else(|| GatewayCommandError::BadRequest("node.status requires nodeId".into()))?;
+
+        if let Some(node) = self.node_host_runtime.get(node_id) {
+            return Ok(serde_json::json!({
+                "ts": started_at_ms(),
+                "nodeId": node.node_id,
+                "displayName": node.display_name,
+                "platform": node.platform,
+                "deviceFamily": node.device_family,
+                "commands": node.commands,
+                "capabilities": node.capabilities,
+                "connected": node.connected,
+                "paired": node.paired,
+                "active": node.active,
+                "gatewayLocal": node.gateway_local
+            }));
+        }
+
+        let status = self.device_pairing.handle_pair_status(&serde_json::json!({ "deviceId": node_id }))?;
+        if status.get("status").and_then(serde_json::Value::as_str) == Some("approved") {
+            let device = status.get("device");
+            Ok(serde_json::json!({
+                "ts": started_at_ms(),
+                "nodeId": node_id,
+                "displayName": device.and_then(|d| d.get("displayName")).and_then(serde_json::Value::as_str).unwrap_or(node_id),
+                "platform": device.and_then(|d| d.get("platform")).and_then(serde_json::Value::as_str).unwrap_or("unknown"),
+                "deviceFamily": "remote",
+                "commands": [],
+                "capabilities": [],
+                "connected": false,
+                "paired": true,
+                "active": false,
+                "gatewayLocal": false
+            }))
+        } else {
+            Err(GatewayCommandError::BadRequest(format!("unknown nodeId: {node_id}")))
+        }
+    }
+
+    fn call_openclaw_node_invoke(
+        &self,
+        args: &serde_json::Value,
+    ) -> Result<serde_json::Value, GatewayCommandError> {
+        let node_id = args.get("nodeId")
+            .and_then(serde_json::Value::as_str)
+            .map(str::trim)
+            .filter(|s| !s.is_empty())
+            .ok_or_else(|| GatewayCommandError::BadRequest("node.invoke requires nodeId".into()))?;
+
+        let command = args.get("command")
+            .and_then(serde_json::Value::as_str)
+            .map(str::trim)
+            .filter(|s| !s.is_empty())
+            .ok_or_else(|| GatewayCommandError::BadRequest("node.invoke requires command".into()))?;
+
+        let invoke_id = args.get("idempotencyKey")
+            .and_then(serde_json::Value::as_str)
+            .map(str::trim)
+            .filter(|s| !s.is_empty())
+            .ok_or_else(|| GatewayCommandError::BadRequest("node.invoke requires idempotencyKey".into()))?;
+
+        if node_id != "sand-local-node" {
+            let status = self.device_pairing.handle_pair_status(&serde_json::json!({ "deviceId": node_id }))?;
+            if status.get("status").and_then(serde_json::Value::as_str) != Some("approved") {
+                return Err(GatewayCommandError::Internal("node not connected".into()));
+            }
+            return Err(GatewayCommandError::Internal(
+                "remote node transport is not connected to the canonical Host node owner".into(),
+            ));
+        }
+
+        if command != "system.run" {
+            return Err(GatewayCommandError::BadRequest(format!(
+                "unsupported local node command: {command}"
+            )));
+        }
+        let params = args.get("params").unwrap_or(&serde_json::Value::Null);
+        let shell_command = params
+            .get("command")
+            .and_then(serde_json::Value::as_str)
+            .map(str::trim)
+            .filter(|value| !value.is_empty())
+            .ok_or_else(|| {
+                GatewayCommandError::BadRequest(
+                    "node.invoke system.run requires params.command".into(),
+                )
+            })?;
+        let working_directory = params
+            .get("workingDirectory")
+            .and_then(serde_json::Value::as_str)
+            .unwrap_or("/workspace");
+        let tool_call_id = args
+            .get("idempotencyKey")
+            .and_then(serde_json::Value::as_str)
+            .unwrap_or("node-invoke");
+        let scope = GatewayLocalToolScope {
+            agent_id: args
+                .get("agentId")
+                .and_then(serde_json::Value::as_str)
+                .map(str::to_string),
+            tool_call_id: Some(tool_call_id.to_string()),
+            action: Some("node.invoke.system.run".into()),
+        };
+        let admission = self
+            .node_host_runtime
+            .admit_invocation(&self.node_host_local_session, invoke_id)
+            .map_err(GatewayCommandError::BadRequest)?;
+        let result = self
+            .local_exec
+            .sandbox(self.local_tool_permission.clone())
+            .exec_manager()
+            .execute_shell(&scope, shell_command, working_directory, tool_call_id)
+            .map_err(|error| GatewayCommandError::Internal(error.to_string()));
+        let _ = self.node_host_runtime.settle_invocation(&admission);
+        let result = result?;
+
+        Ok(serde_json::json!({
+            "ok": true,
+            "nodeId": node_id,
+            "command": command,
+            "payload": {
+                "exitCode": result.exit_code,
+                "stdout": result.stdout,
+                "stderr": result.stderr,
+                "cwd": result.cwd,
+                "aborted": result.aborted,
+                "outcomeUnknown": result.outcome_unknown,
+                "stdoutTruncated": result.stdout_truncated,
+                "stderrTruncated": result.stderr_truncated,
+            },
+            "payloadJSON": serde_json::Value::Null
+        }))
+    }
 }
 
 fn post_agent_message_to_group(
@@ -4343,6 +5179,24 @@ fn requeue_channel_failures(
     );
 }
 
+fn clear_durable_channel_failure_markers(
+    deps: &LocalRoutedRunnerDeps,
+    agent_id: &str,
+    failures: &[serde_json::Value],
+) {
+    let Some(store) = deps.transcript_runtime.pending_wake_store() else {
+        return;
+    };
+    for failure in failures {
+        if let Some(operation_id) = failure
+            .get("deliveryOperationId")
+            .and_then(serde_json::Value::as_str)
+        {
+            let _ = store.clear_one(agent_id, PendingWakeKind::ChannelDelivery, operation_id);
+        }
+    }
+}
+
 fn run_channel_failure_revival_worker(
     deps: LocalRoutedRunnerDeps,
     roster: Arc<ProductionRosterEmit>,
@@ -4373,6 +5227,7 @@ fn run_channel_failure_revival_worker(
             }
         };
         if summary.is_group {
+            clear_durable_channel_failure_markers(&deps, &agent_id, &failures);
             continue;
         }
         let Some(provider) = configured_routed_provider(&deps.data_dir.join("settings.json")) else {
@@ -4405,8 +5260,17 @@ fn run_channel_failure_revival_worker(
                 ..BackgroundRevivalContext::default()
             },
         ) {
-            Ok(_) => {
+            Ok(execution)
+                if !execution.aborted
+                    && !execution.quiesced_for_upgrade
+                    && execution.sent_message_count > 0 =>
+            {
+                clear_durable_channel_failure_markers(&deps, &agent_id, &failures);
                 let _ = roster.emit_agent_update(&agent_id);
+            }
+            Ok(_) => {
+                requeue_channel_failures(&wakes, &agent_id, failures);
+                break;
             }
             Err(error) => {
                 let classified_error = ProviderSessionError::Tool(error.clone());
@@ -4444,8 +5308,32 @@ fn queue_channel_delivery_failure(
     wakes: Arc<Mutex<BackgroundWakes<serde_json::Value>>>,
     agent_id: String,
     address_token: String,
+    delivery_operation_id: Option<String>,
     reason: String,
 ) {
+    if let Some(operation_id) = delivery_operation_id.as_deref() {
+        if let Some(store) = deps.transcript_runtime.pending_wake_store() {
+            let written = store.mark_pending(DurablePendingWakeMarker {
+                agent_id: agent_id.clone(),
+                kind: PendingWakeKind::ChannelDelivery,
+                work_id: operation_id.to_string(),
+                marked_at_ms: started_at_ms() as f64,
+                quiet_origin: None,
+                title: Some("Channel delivery failure".into()),
+                subagent_type: None,
+                interrupted_by_recreate: false,
+                delivery_operation_id: Some(operation_id.to_string()),
+                address_token: Some(address_token.clone()),
+                failure_reason: Some(reason.clone()),
+            });
+            if !written {
+                eprintln!(
+                    "mahayana-host channel_failure_persist_failed agent={} operation={}",
+                    agent_id, operation_id
+                );
+            }
+        }
+    }
     let should_spawn = {
         let mut state = wakes
             .lock()
@@ -4455,6 +5343,7 @@ fn queue_channel_delivery_failure(
             agent_id.clone(),
             serde_json::json!({
                 "addressToken": address_token,
+                "deliveryOperationId": delivery_operation_id,
                 "reason": reason,
             }),
         );
@@ -8255,6 +9144,9 @@ fn start_routed_provider_task(
                             title: Some(pending.title.clone()),
                             subagent_type: Some(pending.subagent_type.clone()),
                             interrupted_by_recreate: false,
+                            delivery_operation_id: None,
+                            address_token: None,
+                            failure_reason: None,
                         });
                         if !written {
                             eprintln!(
@@ -8966,6 +9858,13 @@ fn start_routed_provider_task(
 }
 
 impl GatewayApi for UnifiedGatewayApi {
+    fn redeem_device_pairing_join_code(
+        &self,
+        shortcode: &str,
+    ) -> Result<Option<serde_json::Value>, GatewayCommandError> {
+        self.device_pairing.redeem_device_pairing_join_code(shortcode)
+    }
+
     fn call(
         &self,
         method: &str,
@@ -8974,6 +9873,9 @@ impl GatewayApi for UnifiedGatewayApi {
         self.transcript_runtime
             .session_runtime()
             .note_desktop_contact(started_at_ms() as f64);
+        if is_openclaw_gateway_command(method) {
+            return self.call_openclaw_gateway_command(method, args);
+        }
         if method == "deliverToChannel" {
             let agent_id = args
                 .get("agentId")
@@ -9007,6 +9909,7 @@ impl GatewayApi for UnifiedGatewayApi {
             let wakes = Arc::clone(&self.background_wakes);
             let worker_agent_id = agent_id.clone();
             let worker_address = address_token.clone();
+            let delivery_operation_id = outbound.operation_id().map(ToOwned::to_owned);
             if let Err(error) = thread::Builder::new()
                 .name(format!("mahayana-channel-delivery-{agent_id}"))
                 .spawn(move || {
@@ -9028,6 +9931,7 @@ impl GatewayApi for UnifiedGatewayApi {
                             wakes,
                             worker_agent_id,
                             worker_address,
+                            delivery_operation_id,
                             reason,
                         );
                     }
@@ -10389,9 +11293,14 @@ impl GatewayApi for UnifiedGatewayApi {
                 .map_err(map_local_tool_permission_resolution_error)?;
             return Ok(serde_json::Value::Null);
         }
+        if method == "getHostSettings" {
+            let settings = self.settings.get_host_settings();
+            return Ok(settings);
+        }
         if method == "setHostSettings" {
             let permission_changed = args.get("localToolPermission").is_some();
-            let result = call_host_lane(&self.host_tx, method, args)?;
+            let result = self.settings.set_host_settings(&args)
+                .map_err(|error| GatewayCommandError::Internal(format!("Failed to persist settings: {error}")))?;
             if permission_changed {
                 self.local_tool_permission.note_permission_changed();
             }
@@ -10643,6 +11552,9 @@ fn map_workflow_command_error(error: WorkflowCommandError) -> GatewayCommandErro
 fn map_gateway_send_error(error: GatewayCommandError) -> ProductionSendError {
     match error {
         GatewayCommandError::BadRequest(message) => ProductionSendError::BadRequest(message),
+        GatewayCommandError::Unauthorized(message) | GatewayCommandError::Forbidden(message) => {
+            ProductionSendError::Rejected(message)
+        }
         GatewayCommandError::Conflict(message) => ProductionSendError::Conflict(message),
         GatewayCommandError::UnknownMethod(message) | GatewayCommandError::Internal(message) => {
             ProductionSendError::Internal(message)
@@ -12348,6 +13260,9 @@ fn main() {
                     title: Some(pending.title.clone()),
                     subagent_type: Some("cursor-agent".into()),
                     interrupted_by_recreate: false,
+                    delivery_operation_id: None,
+                    address_token: None,
+                    failure_reason: None,
                 });
                 if !written {
                     eprintln!(
@@ -12461,6 +13376,9 @@ fn main() {
                     title: Some(pending.title.clone()),
                     subagent_type: None,
                     interrupted_by_recreate: false,
+                    delivery_operation_id: None,
+                    address_token: None,
+                    failure_reason: None,
                 });
                 if !written {
                     eprintln!(
@@ -12890,6 +13808,26 @@ fn main() {
     };
 
     let teach_recording_slot = Arc::new(Mutex::new(None::<TeachRecordingApi>));
+    let device_pairing_db_path = app_data_dir.join("device-pairing.db");
+    let device_pairing = Arc::new(
+        DevicePairingOwner::new(&device_pairing_db_path)
+            .unwrap_or_else(|_| DevicePairingOwner::in_memory().expect("in-memory device pairing db"))
+    );
+    let node_host_runtime = Arc::new(NodeHostRuntimeState::new());
+    let local_session = node_host_runtime.connect(NodeHostSessionMetadata {
+        node_id: "sand-local-node".into(),
+        display_name: "Local Host Node".into(),
+        platform: std::env::consts::OS.into(),
+        device_family: std::env::consts::OS.into(),
+        // Advertise only the command with a real production invoke branch.
+        // Canvas/Computer command names remain unavailable until their
+        // existing owners are wired through this node boundary.
+        commands: vec!["system.run".into()],
+        capabilities: vec!["orderedReplicasV1".into(), "sendAcceptanceV1".into()],
+        paired: true,
+        gateway_local: true,
+    });
+    let _ = node_host_runtime.set_active(&local_session, true);
 
     let gateway_api = Arc::new(UnifiedGatewayApi {
             host_tx: host_tx.clone(),
@@ -12920,7 +13858,7 @@ fn main() {
             transcript_manager: Arc::clone(&transcript_manager),
             roster_emit: Arc::clone(&roster_emit),
             background_wakes: Arc::clone(&timeline_event_wakes),
-            channel_delivery: HostChannelDelivery::default(),
+            channel_delivery: production_extensions.channel_delivery.clone(),
             telemetry_logs: host_telemetry.logs.clone(),
             product_analytics: host_telemetry.analytics.clone(),
             telemetry_api: host_telemetry.api(),
@@ -12938,6 +13876,9 @@ fn main() {
             automations_lifecycle: Arc::clone(&automations_lifecycle_slot),
             create_agent_nonces: Mutex::new(CreateAgentNonceLedger::default()),
             last_busy_at_ms: Mutex::new(gateway_started_at),
+            device_pairing,
+            node_host_runtime,
+            node_host_local_session: local_session,
         });
     *host_upgrade_gateway_slot
         .lock()

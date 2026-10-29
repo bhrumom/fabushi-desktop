@@ -62,7 +62,7 @@ jobs:
       - name: Read public production signed trust feed
         run: curl --fail --silent --show-error --retry 2 --max-time 20 https://api.ombhrum.com/v1/extensions/install-trust > signed-fixture/production-trust.json
       - name: Resolve and check Native product dependencies only on the allowed runner
-        run: cargo check --manifest-path source/mahayana/mahayana-rs/Cargo.toml -p mahayana-platform-client --lib
+        run: cargo check --locked --manifest-path source/mahayana/mahayana-rs/Cargo.toml -p mahayana-platform-client --lib
       - name: Require the exact committed Native workspace lock
         run: git diff --exit-code -- source/mahayana/mahayana-rs/Cargo.lock
       - name: Check canonical formatting without modifying exact source

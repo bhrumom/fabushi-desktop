@@ -2,6 +2,8 @@ use std::env;
 use std::fmt;
 use std::fs;
 use std::io::{BufRead, BufReader, Write};
+#[cfg(unix)]
+use std::os::unix::process::CommandExt;
 use std::path::{Path, PathBuf};
 use std::process::{Child, ChildStdin, Command, Stdio};
 use std::sync::mpsc;
@@ -535,6 +537,9 @@ pub fn start_network_worker(
         .stdout(Stdio::piped())
         .stderr(Stdio::piped());
 
+    #[cfg(unix)]
+    command.process_group(0);
+
     copy_required_os_environment(&mut command);
 
     let mut child = command.spawn().map_err(|error| {
@@ -544,6 +549,11 @@ pub fn start_network_worker(
         )
     })?;
     let pid = child.id();
+    crate::process_spawn_diagnostics::global_child_process_spawn_tracker().record_spawn(
+        &options.executable_path.to_string_lossy(),
+        &[],
+        Some("network-worker"),
+    );
 
     let mut parent_pipe = match child.stdin.take() {
         Some(pipe) => pipe,
@@ -743,62 +753,7 @@ fn wait_for_child_exit(child: &mut Child, timeout: Duration) -> Result<bool, Str
 }
 
 fn terminate_child(child: &mut Child, pid: u32, timeout: Duration) -> Result<bool, String> {
-    if child
-        .try_wait()
-        .map_err(|error| error.to_string())?
-        .is_some()
-    {
-        return Ok(false);
-    }
-    if let Err(term_error) = request_graceful_termination(child) {
-        child.kill().map_err(|kill_error| {
-            format!(
-                "could not terminate network worker pid {pid}: {term_error}; force kill failed: {kill_error}"
-            )
-        })?;
-        let _ = child.wait();
-        return Ok(true);
-    }
-    let deadline = Instant::now() + timeout;
-    while Instant::now() < deadline {
-        if child
-            .try_wait()
-            .map_err(|error| error.to_string())?
-            .is_some()
-        {
-            return Ok(false);
-        }
-        thread::sleep(Duration::from_millis(25));
-    }
-    child
-        .kill()
-        .map_err(|error| format!("could not force-stop network worker pid {pid}: {error}"))?;
-    let _ = child.wait();
-    Ok(true)
-}
-
-#[cfg(unix)]
-fn request_graceful_termination(child: &mut Child) -> Result<(), String> {
-    let result = unsafe { libc::kill(child.id() as libc::pid_t, libc::SIGTERM) };
-    if result == 0 {
-        Ok(())
-    } else {
-        Err(format!(
-            "could not send SIGTERM to network worker pid {}: {}",
-            child.id(),
-            std::io::Error::last_os_error()
-        ))
-    }
-}
-
-#[cfg(not(unix))]
-fn request_graceful_termination(child: &mut Child) -> Result<(), String> {
-    child.kill().map_err(|error| {
-        format!(
-            "could not terminate network worker pid {}: {error}",
-            child.id()
-        )
-    })
+    crate::runner::process_tree::terminate_process_tree(child, pid, timeout, "network worker")
 }
 
 #[cfg(test)]

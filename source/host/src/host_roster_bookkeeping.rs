@@ -66,6 +66,11 @@ impl HostRosterBookkeeping {
         self.running_agent_ids.clone()
     }
 
+    pub fn apply_config(&mut self, cfg: &serde_json::Value) {
+        let active = crate::agents::agent_roster::try_resolve_default_agent_id(cfg);
+        self.apply(active.as_deref());
+    }
+
     pub fn apply(&mut self, active_agent_id: Option<&str>) {
         let normalized = active_agent_id
             .filter(|value| !value.is_empty())

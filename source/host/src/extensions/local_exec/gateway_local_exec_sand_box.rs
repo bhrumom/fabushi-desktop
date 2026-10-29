@@ -2,7 +2,10 @@ use std::collections::{HashMap, VecDeque};
 use std::fs::{self, File, OpenOptions};
 use std::io::{self, Write};
 use std::path::{Path, PathBuf};
-use std::sync::{Arc, Mutex, atomic::{AtomicU32, AtomicU64, Ordering}};
+use std::sync::{
+    Arc, Mutex,
+    atomic::{AtomicU32, AtomicU64, Ordering},
+};
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 use base64::{Engine as _, engine::general_purpose::STANDARD as BASE64};
@@ -12,24 +15,25 @@ use sha2::{Digest, Sha256};
 use uuid::Uuid;
 
 use super::local_exec_bridge::{
-    LocalExecCancellationHandle, LocalExecComputer, SandLocalExecBridge,
-    SAND_NO_LOCAL_MACHINE_MESSAGE,
+    LocalExecCancellationHandle, LocalExecComputer, SAND_NO_LOCAL_MACHINE_MESSAGE,
+    SandLocalExecBridge,
 };
 use super::local_exec_error::SandLocalExecError;
 use super::local_exec_failure_classifier::{
-    LocalExecFailureClass, classify_local_exec_failure,
+    CommandErrorResult, CommandTermination, LocalExecFailureClass, classify_local_exec_failure,
+    format_command_error,
 };
 use super::production::{
-    GatewayExecControl, ProductionExecClientPayload, ProductionShellStreamEvent,
-    RemoteResourceAccessor, PRODUCTION_LOCAL_EXEC_CODEC,
+    GatewayExecControl, PRODUCTION_LOCAL_EXEC_CODEC, ProductionExecClientPayload,
+    ProductionShellStreamEvent, RemoteResourceAccessor,
 };
+use crate::r#box::box_transfer::TransferBox;
+use crate::durable_file_policy::SAND_LOCAL_EXEC_OPERATION_JOURNAL_FILE_NAME;
 use crate::extensions::local_tool_permission::extension::HostLocalToolPermissionExtension;
 use crate::extensions::local_tool_permission::local_tool_permission_controller::{
     SandLocalToolRequest, SandLocalToolScope,
 };
-use crate::durable_file_policy::SAND_LOCAL_EXEC_OPERATION_JOURNAL_FILE_NAME;
 use crate::host_paths::get_sand_root_dir;
-use crate::r#box::box_transfer::TransferBox;
 
 pub const FALLBACK_TERMINALS_FOLDER: &str = "terminals";
 pub const DEFAULT_MAX_LOCAL_EXEC_FILE_BYTES: usize = 100 * 1024 * 1024;
@@ -66,8 +70,7 @@ pub struct GatewayLocalExecFailureReport {
     pub conversation_id: Option<String>,
 }
 
-pub type GatewayLocalExecFailureReporter =
-    Arc<dyn Fn(GatewayLocalExecFailureReport) + Send + Sync>;
+pub type GatewayLocalExecFailureReporter = Arc<dyn Fn(GatewayLocalExecFailureReport) + Send + Sync>;
 
 pub trait GatewayLocalToolGate: Send + Sync {
     fn blocked_reason(&self) -> Option<String>;
@@ -101,11 +104,9 @@ fn authorize_host_local_tool(
     if decision.allowed {
         Ok(decision.approval_id)
     } else {
-        Err(SandLocalExecError::new(
-            decision
-                .reason
-                .unwrap_or_else(|| "Local tool permission denied".to_string()),
-        ))
+        Err(SandLocalExecError::new(decision.reason.unwrap_or_else(
+            || "Local tool permission denied".to_string(),
+        )))
     }
 }
 
@@ -135,10 +136,7 @@ pub struct TurnScopedGatewayLocalToolGate {
 }
 
 impl TurnScopedGatewayLocalToolGate {
-    pub fn new(
-        permission: Arc<HostLocalToolPermissionExtension>,
-        direction_epoch: u64,
-    ) -> Self {
+    pub fn new(permission: Arc<HostLocalToolPermissionExtension>, direction_epoch: u64) -> Self {
         Self {
             permission,
             direction_epoch,
@@ -259,10 +257,7 @@ pub struct GatewayLocalExecSandBox {
 }
 
 impl GatewayLocalExecSandBox {
-    pub fn new(
-        bridge: SandLocalExecBridge,
-        gate: Arc<dyn GatewayLocalToolGate>,
-    ) -> Self {
+    pub fn new(bridge: SandLocalExecBridge, gate: Arc<dyn GatewayLocalToolGate>) -> Self {
         Self {
             bridge,
             gate,
@@ -355,12 +350,18 @@ impl GatewayLocalExecSandBox {
             )));
         }
         self.check_blocked()?;
-        self.bridge
-            .assert_computer_available(self.computer_id.as_deref(), "upload", scope.agent_id.as_deref())?;
+        self.bridge.assert_computer_available(
+            self.computer_id.as_deref(),
+            "upload",
+            scope.agent_id.as_deref(),
+        )?;
         let approval_id = self.gate.authorize(scope, "write-file", box_path)?;
         let transfer_id = Uuid::new_v4().to_string();
         let digest = Sha256::digest(data);
-        let sha256 = digest.iter().map(|byte| format!("{byte:02x}")).collect::<String>();
+        let sha256 = digest
+            .iter()
+            .map(|byte| format!("{byte:02x}"))
+            .collect::<String>();
 
         let send_frame = |mut frame: Value| -> Result<(), SandLocalExecError> {
             if let Some(approval_id) = approval_id.as_ref() {
@@ -434,11 +435,12 @@ impl GatewayLocalExecSandBox {
         box_path: &str,
     ) -> Result<Vec<u8>, SandLocalExecError> {
         self.check_blocked()?;
-        self.bridge
-            .assert_computer_available(self.computer_id.as_deref(), "download", scope.agent_id.as_deref())?;
-        let approval_id = self
-            .gate
-            .authorize(scope, "read-file", box_path)?;
+        self.bridge.assert_computer_available(
+            self.computer_id.as_deref(),
+            "download",
+            scope.agent_id.as_deref(),
+        )?;
+        let approval_id = self.gate.authorize(scope, "read-file", box_path)?;
         let mut frame = json!({
             "kind": "download",
             "path": box_path,
@@ -456,14 +458,16 @@ impl GatewayLocalExecSandBox {
                     let encoded = response
                         .get("bytesBase64")
                         .and_then(Value::as_str)
-                        .ok_or_else(|| SandLocalExecError::new(
-                            "local-exec download response is missing bytesBase64",
-                        ))?;
-                    let bytes = BASE64
-                        .decode(encoded)
-                        .map_err(|error| SandLocalExecError::new(format!(
+                        .ok_or_else(|| {
+                            SandLocalExecError::new(
+                                "local-exec download response is missing bytesBase64",
+                            )
+                        })?;
+                    let bytes = BASE64.decode(encoded).map_err(|error| {
+                        SandLocalExecError::new(format!(
                             "local-exec download returned invalid base64: {error}"
-                        )))?;
+                        ))
+                    })?;
                     if bytes.len() > self.max_file_bytes {
                         request.close();
                         return Err(SandLocalExecError::new(local_exec_file_too_large_message(
@@ -507,7 +511,6 @@ impl GatewayLocalExecSandBox {
         }
     }
 }
-
 
 fn append_bounded_output(target: &mut String, chunk: &str, max_bytes: usize) -> bool {
     let remaining = max_bytes.saturating_sub(target.len());
@@ -553,14 +556,13 @@ impl GatewayLocalExecManager {
         sandbox: GatewayLocalExecSandBox,
         operation_journal_path: PathBuf,
     ) -> Self {
-        let (history, operation_journal_error) =
-            match Self::load_operation_history(
-                &operation_journal_path,
-                DEFAULT_LOCAL_EXEC_OPERATION_HISTORY_LIMIT,
-            ) {
-                Ok(history) => (history, None),
-                Err(error) => (VecDeque::new(), Some(error.message)),
-            };
+        let (history, operation_journal_error) = match Self::load_operation_history(
+            &operation_journal_path,
+            DEFAULT_LOCAL_EXEC_OPERATION_HISTORY_LIMIT,
+        ) {
+            Ok(history) => (history, None),
+            Err(error) => (VecDeque::new(), Some(error.message)),
+        };
         Self {
             sandbox,
             next_exec_id: Arc::new(AtomicU32::new(1)),
@@ -594,8 +596,8 @@ impl GatewayLocalExecManager {
                 )));
             }
         };
-        let mut journal =
-            serde_json::from_slice::<GatewayLocalExecOperationJournal>(&bytes).map_err(|error| {
+        let mut journal = serde_json::from_slice::<GatewayLocalExecOperationJournal>(&bytes)
+            .map_err(|error| {
                 SandLocalExecError::new(format!(
                     "local-exec operation journal is corrupt and execution is disabled: {error}"
                 ))
@@ -620,7 +622,8 @@ impl GatewayLocalExecManager {
         for record in &mut journal.records {
             if matches!(
                 record.status,
-                GatewayLocalExecOperationStatus::Accepted | GatewayLocalExecOperationStatus::Running
+                GatewayLocalExecOperationStatus::Accepted
+                    | GatewayLocalExecOperationStatus::Running
             ) {
                 record.status = GatewayLocalExecOperationStatus::OutcomeUnknown;
                 record.settled_at_ms = Some(Self::now_ms());
@@ -696,15 +699,12 @@ impl GatewayLocalExecManager {
             version: LOCAL_EXEC_OPERATION_JOURNAL_VERSION,
             records: history.iter().cloned().collect(),
         };
-        let bytes = serde_json::to_vec(&journal)
-            .map_err(|error| io::Error::other(error.to_string()))?;
+        let bytes =
+            serde_json::to_vec(&journal).map_err(|error| io::Error::other(error.to_string()))?;
         let nonce = LOCAL_EXEC_OPERATION_JOURNAL_TMP_COUNTER.fetch_add(1, Ordering::Relaxed);
         let tmp = path.with_extension(format!("tmp-{}-{nonce}", std::process::id()));
         let write_result = (|| -> io::Result<()> {
-            let mut file = OpenOptions::new()
-                .write(true)
-                .create_new(true)
-                .open(&tmp)?;
+            let mut file = OpenOptions::new().write(true).create_new(true).open(&tmp)?;
             file.write_all(&bytes)?;
             file.sync_all()?;
             drop(file);
@@ -775,9 +775,8 @@ impl GatewayLocalExecManager {
             });
         }
         Self::persist_operation_history(&self.operation_journal_path, &records).map_err(|error| {
-            let message = format!(
-                "local-exec operation journal persistence is fail-closed: {error}"
-            );
+            let message =
+                format!("local-exec operation journal persistence is fail-closed: {error}");
             self.set_operation_journal_error(message.clone());
             SandLocalExecError::new(message)
         })
@@ -854,8 +853,11 @@ impl GatewayLocalExecManager {
         let Some(operation) = active.get_mut(operation_id) else {
             return false;
         };
-        operation.cancel_requested = true;
-        operation.cancellation.cancel()
+        let delivered = operation.cancellation.cancel();
+        if delivered {
+            operation.cancel_requested = true;
+        }
+        delivered
     }
 
     pub fn cancel_operation_for_agent(&self, agent_id: &str, operation_id: &str) -> bool {
@@ -1054,21 +1056,38 @@ impl GatewayLocalExecManager {
     ) -> Result<GatewayLocalExecShellResult, SandLocalExecError> {
         self.ensure_operation_journal_healthy()?;
         let message = PRODUCTION_LOCAL_EXEC_CODEC.shell_stream_server_message(
-            self.next_id(), command, working_directory, tool_call_id,
+            self.next_id(),
+            command,
+            working_directory,
+            tool_call_id,
         );
-        let mut request = self.open_exec_with_before_send(
+        let mut request = match self.open_exec_with_before_send(
             scope,
             "run-command",
             command,
             message,
             |cancellation| {
-                self.register_operation(
-                    tool_call_id,
-                    scope.agent_id.as_deref(),
-                    cancellation,
-                )
+                self.register_operation(tool_call_id, scope.agent_id.as_deref(), cancellation)
             },
-        )?;
+        ) {
+            Ok(request) => request,
+            Err(error) => {
+                // The registration callback runs before the bridge sends the
+                // frame. If that send fails, close the already-journaled
+                // operation instead of leaving it indefinitely Accepted.
+                if let Err(cleanup_error) = self.finish_operation(
+                    tool_call_id,
+                    GatewayLocalExecOperationStatus::Failed,
+                    None,
+                ) {
+                    return Err(SandLocalExecError::new(format!(
+                        "{}; operation cleanup was not safely durable: {}",
+                        error.message, cleanup_error.message
+                    )));
+                }
+                return Err(error);
+            }
+        };
         let mut result = GatewayLocalExecShellResult {
             request_id: tool_call_id.to_string(),
             ..GatewayLocalExecShellResult::default()
@@ -1097,31 +1116,36 @@ impl GatewayLocalExecManager {
                             ProductionExecClientPayload::ShellStream(event) => match event {
                                 ProductionShellStreamEvent::Stdout(data) => {
                                     self.mark_operation_started(tool_call_id)?;
-                                    result.stdout_truncated |= append_bounded_shell_output(&mut result.stdout, data);
+                                    result.stdout_truncated |=
+                                        append_bounded_shell_output(&mut result.stdout, data);
                                 }
                                 ProductionShellStreamEvent::Stderr(data) => {
                                     self.mark_operation_started(tool_call_id)?;
-                                    result.stderr_truncated |= append_bounded_shell_output(&mut result.stderr, data);
+                                    result.stderr_truncated |=
+                                        append_bounded_shell_output(&mut result.stderr, data);
                                 }
                                 ProductionShellStreamEvent::Exit { code, cwd, aborted } => {
                                     result.exit_code = Some(*code);
                                     result.cwd = (!cwd.is_empty()).then(|| cwd.clone());
                                     result.aborted = *aborted;
-                                    terminal_status = Some(if *aborted || self.cancellation_requested(tool_call_id) {
-                                        GatewayLocalExecOperationStatus::Cancelled
-                                    } else {
-                                        GatewayLocalExecOperationStatus::Completed
-                                    });
+                                    terminal_status = Some(
+                                        if *aborted || self.cancellation_requested(tool_call_id) {
+                                            GatewayLocalExecOperationStatus::Cancelled
+                                        } else {
+                                            GatewayLocalExecOperationStatus::Completed
+                                        },
+                                    );
                                     request.close();
                                     return Ok(result.clone());
                                 }
                                 ProductionShellStreamEvent::Rejected(reason)
                                 | ProductionShellStreamEvent::PermissionDenied(reason) => {
-                                    terminal_status = Some(if self.cancellation_requested(tool_call_id) {
-                                        GatewayLocalExecOperationStatus::Cancelled
-                                    } else {
-                                        GatewayLocalExecOperationStatus::Failed
-                                    });
+                                    terminal_status =
+                                        Some(if self.cancellation_requested(tool_call_id) {
+                                            GatewayLocalExecOperationStatus::Cancelled
+                                        } else {
+                                            GatewayLocalExecOperationStatus::Failed
+                                        });
                                     request.close();
                                     return Err(SandLocalExecError::new(reason.clone()));
                                 }
@@ -1145,17 +1169,29 @@ impl GatewayLocalExecManager {
                         {
                             GatewayExecControl::Throw { error, stack_trace } => {
                                 self.sandbox.report_exec_failure(scope, &error);
-                                terminal_status = Some(if self.cancellation_requested(tool_call_id) {
-                                    GatewayLocalExecOperationStatus::Cancelled
-                                } else {
-                                    GatewayLocalExecOperationStatus::Failed
-                                });
+                                terminal_status =
+                                    Some(if self.cancellation_requested(tool_call_id) {
+                                        GatewayLocalExecOperationStatus::Cancelled
+                                    } else {
+                                        GatewayLocalExecOperationStatus::Failed
+                                    });
                                 request.close();
                                 let detail = stack_trace
                                     .filter(|stack| !stack.trim().is_empty())
                                     .map(|stack| format!("{error}\n{stack}"))
                                     .unwrap_or(error);
-                                return Err(SandLocalExecError::new(detail));
+                                return Err(SandLocalExecError::new(format_command_error(
+                                    command,
+                                    &CommandErrorResult {
+                                        code: None,
+                                        termination: CommandTermination::Error,
+                                        signal: None,
+                                        output_limit_exceeded: false,
+                                    },
+                                    &detail,
+                                    "",
+                                    0,
+                                )));
                             }
                             GatewayExecControl::StreamClose => {
                                 let cancelled = self.cancellation_requested(tool_call_id);
@@ -1174,15 +1210,29 @@ impl GatewayLocalExecManager {
                         }
                     }
                     Some("file-error") => {
-                        let error = response.get("error").and_then(Value::as_str)
-                            .unwrap_or(SAND_NO_LOCAL_MACHINE_MESSAGE).to_string();
+                        let error = response
+                            .get("error")
+                            .and_then(Value::as_str)
+                            .unwrap_or(SAND_NO_LOCAL_MACHINE_MESSAGE)
+                            .to_string();
                         terminal_status = Some(if self.cancellation_requested(tool_call_id) {
                             GatewayLocalExecOperationStatus::Cancelled
                         } else {
                             GatewayLocalExecOperationStatus::Failed
                         });
                         request.close();
-                        return Err(SandLocalExecError::new(error));
+                        return Err(SandLocalExecError::new(format_command_error(
+                            command,
+                            &CommandErrorResult {
+                                code: None,
+                                termination: CommandTermination::Error,
+                                signal: None,
+                                output_limit_exceeded: false,
+                            },
+                            &error,
+                            "",
+                            0,
+                        )));
                     }
                     _ => {}
                 }
@@ -1212,7 +1262,12 @@ impl GatewayLocalExecManager {
         encoding_hint: Option<&str>,
     ) -> Result<Value, SandLocalExecError> {
         let message = PRODUCTION_LOCAL_EXEC_CODEC.read_server_message(
-            self.next_id(), path, tool_call_id, offset, limit, encoding_hint,
+            self.next_id(),
+            path,
+            tool_call_id,
+            offset,
+            limit,
+            encoding_hint,
         );
         let mut request = self.open_exec(scope, "read-file", path, message)?;
         loop {
@@ -1260,8 +1315,11 @@ impl GatewayLocalExecManager {
                     }
                 }
                 Some("file-error") => {
-                    let error = response.get("error").and_then(Value::as_str)
-                        .unwrap_or(SAND_NO_LOCAL_MACHINE_MESSAGE).to_string();
+                    let error = response
+                        .get("error")
+                        .and_then(Value::as_str)
+                        .unwrap_or(SAND_NO_LOCAL_MACHINE_MESSAGE)
+                        .to_string();
                     request.close();
                     return Err(SandLocalExecError::new(error));
                 }
@@ -1322,10 +1380,7 @@ pub struct BridgeUserComputers {
 }
 
 impl BridgeUserComputers {
-    pub fn new(
-        bridge: SandLocalExecBridge,
-        gate: Arc<dyn GatewayLocalToolGate>,
-    ) -> Self {
+    pub fn new(bridge: SandLocalExecBridge, gate: Arc<dyn GatewayLocalToolGate>) -> Self {
         Self { bridge, gate }
     }
 
@@ -1333,7 +1388,10 @@ impl BridgeUserComputers {
         self.bridge.list_computers()
     }
 
-    pub fn resolve(&self, id: Option<&str>) -> Option<(LocalExecComputer, GatewayLocalExecSandBox)> {
+    pub fn resolve(
+        &self,
+        id: Option<&str>,
+    ) -> Option<(LocalExecComputer, GatewayLocalExecSandBox)> {
         let selected = match id {
             Some(id) => self
                 .bridge
@@ -1342,11 +1400,8 @@ impl BridgeUserComputers {
                 .find(|computer| computer.id == id),
             None => self.bridge.active_computer(),
         }?;
-        let box_owner = GatewayLocalExecSandBox::new(
-            self.bridge.clone(),
-            Arc::clone(&self.gate),
-        )
-        .for_computer(selected.id.clone());
+        let box_owner = GatewayLocalExecSandBox::new(self.bridge.clone(), Arc::clone(&self.gate))
+            .for_computer(selected.id.clone());
         Some((selected, box_owner))
     }
 }
@@ -1358,7 +1413,6 @@ pub fn create_bridge_user_computers(
     BridgeUserComputers::new(bridge, gate)
 }
 
-
 #[cfg(test)]
 mod operation_journal_fail_closed_tests {
     use super::*;
@@ -1366,8 +1420,12 @@ mod operation_journal_fail_closed_tests {
 
     struct AllowGate;
     impl GatewayLocalToolGate for AllowGate {
-        fn blocked_reason(&self) -> Option<String> { None }
-        fn requires_approval(&self) -> bool { false }
+        fn blocked_reason(&self) -> Option<String> {
+            None
+        }
+        fn requires_approval(&self) -> bool {
+            false
+        }
         fn authorize(
             &self,
             _scope: &GatewayLocalToolScope,
@@ -1386,7 +1444,10 @@ mod operation_journal_fail_closed_tests {
         ))
     }
 
-    fn test_record(operation_id: &str, status: GatewayLocalExecOperationStatus) -> GatewayLocalExecOperationRecord {
+    fn test_record(
+        operation_id: &str,
+        status: GatewayLocalExecOperationStatus,
+    ) -> GatewayLocalExecOperationRecord {
         GatewayLocalExecOperationRecord {
             operation_id: operation_id.to_string(),
             agent_id: Some("agent-test".into()),
@@ -1436,7 +1497,10 @@ mod operation_journal_fail_closed_tests {
         let recovered = GatewayLocalExecManager::load_operation_history(&path, 8)
             .expect("recover accepted journal");
         let record = recovered.front().expect("accepted record");
-        assert_eq!(record.status, GatewayLocalExecOperationStatus::OutcomeUnknown);
+        assert_eq!(
+            record.status,
+            GatewayLocalExecOperationStatus::OutcomeUnknown
+        );
         assert!(record.settled_at_ms.is_some());
 
         let second = GatewayLocalExecManager::load_operation_history(&path, 8)
@@ -1452,14 +1516,20 @@ mod operation_journal_fail_closed_tests {
     fn process_death_recovery_durably_marks_running_as_outcome_unknown() {
         let path = unique_test_path("recovery");
         let mut history = VecDeque::new();
-        history.push_back(test_record("operation-recover", GatewayLocalExecOperationStatus::Running));
+        history.push_back(test_record(
+            "operation-recover",
+            GatewayLocalExecOperationStatus::Running,
+        ));
         GatewayLocalExecManager::persist_operation_history(&path, &history)
             .expect("persist running journal");
 
-        let recovered = GatewayLocalExecManager::load_operation_history(&path, 8)
-            .expect("recover journal");
+        let recovered =
+            GatewayLocalExecManager::load_operation_history(&path, 8).expect("recover journal");
         let record = recovered.front().expect("record");
-        assert_eq!(record.status, GatewayLocalExecOperationStatus::OutcomeUnknown);
+        assert_eq!(
+            record.status,
+            GatewayLocalExecOperationStatus::OutcomeUnknown
+        );
         assert!(record.settled_at_ms.is_some());
 
         let second = GatewayLocalExecManager::load_operation_history(&path, 8)
@@ -1499,7 +1569,9 @@ mod operation_journal_fail_closed_tests {
         );
         let (send, receive) = mpsc::channel();
         let _registration = bridge.register_provider(send);
-        let _ = receive.recv_timeout(Duration::from_secs(1)).expect("welcome");
+        let _ = receive
+            .recv_timeout(Duration::from_secs(1))
+            .expect("welcome");
         bridge.submit_responses(json!({
             "providerId":"provider-test",
             "frames":[{
@@ -1515,7 +1587,8 @@ mod operation_journal_fail_closed_tests {
         fs::write(&parent_file, b"not-a-directory").expect("write parent sentinel");
         let journal_path = parent_file.join("journal.json");
         let sandbox = GatewayLocalExecSandBox::new(bridge, Arc::new(AllowGate));
-        let manager = GatewayLocalExecManager::new_with_operation_journal_path(sandbox, journal_path);
+        let manager =
+            GatewayLocalExecManager::new_with_operation_journal_path(sandbox, journal_path);
         let error = manager
             .execute_shell(
                 &GatewayLocalToolScope {
@@ -1563,8 +1636,12 @@ mod operation_journal_fail_closed_tests {
     fn duplicate_operation_id_from_durable_history_is_not_replayed() {
         let path = unique_test_path("duplicate");
         let mut history = VecDeque::new();
-        history.push_back(test_record("operation-stable", GatewayLocalExecOperationStatus::Completed));
-        GatewayLocalExecManager::persist_operation_history(&path, &history).expect("persist history");
+        history.push_back(test_record(
+            "operation-stable",
+            GatewayLocalExecOperationStatus::Completed,
+        ));
+        GatewayLocalExecManager::persist_operation_history(&path, &history)
+            .expect("persist history");
 
         let bridge = SandLocalExecBridge::with_sources(
             Arc::new(|| 1000),
@@ -1572,7 +1649,9 @@ mod operation_journal_fail_closed_tests {
         );
         let (send, receive) = mpsc::channel();
         let _registration = bridge.register_provider(send);
-        let _ = receive.recv_timeout(Duration::from_secs(1)).expect("welcome");
+        let _ = receive
+            .recv_timeout(Duration::from_secs(1))
+            .expect("welcome");
         bridge.submit_responses(json!({
             "providerId":"provider-test",
             "frames":[{
@@ -1584,7 +1663,8 @@ mod operation_journal_fail_closed_tests {
             }]
         }));
         let sandbox = GatewayLocalExecSandBox::new(bridge, Arc::new(AllowGate));
-        let manager = GatewayLocalExecManager::new_with_operation_journal_path(sandbox, path.clone());
+        let manager =
+            GatewayLocalExecManager::new_with_operation_journal_path(sandbox, path.clone());
         let error = manager
             .execute_shell(
                 &GatewayLocalToolScope {

@@ -1,6 +1,7 @@
 pub mod box_lifecycle_service;
 pub mod extension;
 pub mod production;
+pub mod openclaw_worker_pool;
 
 pub use box_lifecycle_service::{
     BoxLifecycleClient, BoxLifecycleFuture, BoxLifecycleService, BoxRunState,

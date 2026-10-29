@@ -23,6 +23,8 @@ pub const NATIVE_CONVERSATIONS_DIRNAME: &str = ".conversations";
 pub const HIDDEN_ENTRY_REPAIR_VERSION: u32 = 1;
 pub const LEGACY_GROUP_MEMBERS_DIRNAME: &str = "members";
 pub const CONNECTOR_SECRETS_DIRNAME: &str = "connector-secrets";
+pub const AGENT_HARNESS_SESSION_KEY_RESERVED_MESSAGE: &str =
+    "Session key namespace is reserved for agent harness-owned sessions.";
 
 static PINNED_STALE_ROOT_GC_ENABLED: AtomicBool = AtomicBool::new(false);
 
@@ -139,3 +141,82 @@ pub fn stat_if_exists(path: &Path) -> Option<Metadata> {
         }
     }
 }
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum SessionKind {
+    Cron,
+    Direct,
+    Group,
+    Global,
+    SpawnChild,
+    Unknown,
+}
+
+/// Classify session kind equivalent to OpenClaw classifySessionKind.
+pub fn classify_session_kind(
+    key: &str,
+    chat_type: Option<&str>,
+    spawned_by: Option<&str>,
+) -> SessionKind {
+    if key == "global" {
+        return SessionKind::Global;
+    }
+    if key == "unknown" {
+        return SessionKind::Unknown;
+    }
+    if key.starts_with("cron:") || key.contains(":cron:") {
+        return SessionKind::Cron;
+    }
+    if spawned_by.is_some() {
+        return SessionKind::SpawnChild;
+    }
+    if chat_type == Some("group")
+        || chat_type == Some("channel")
+        || key.contains(":group:")
+        || key.contains(":channel:")
+    {
+        return SessionKind::Group;
+    }
+    SessionKind::Direct
+}
+
+/// Parse agent-scoped session key parts into (agent_id, rest) matching OpenClaw parseAgentSessionKey.
+/// Format: agent:<agentId>:<rest>
+pub fn parse_agent_session_key(session_key: &str) -> Option<(&str, &str)> {
+    let trimmed = session_key.trim();
+    if trimmed.len() < 6 || !trimmed[..6].eq_ignore_ascii_case("agent:") {
+        return None;
+    }
+    let after_agent = &trimmed[6..];
+    let colon_idx = after_agent.find(':')?;
+    let agent_id = after_agent[..colon_idx].trim();
+    let rest = &after_agent[colon_idx + 1..];
+    if agent_id.is_empty() || rest.is_empty() || rest.starts_with(':') {
+        None
+    } else {
+        Some((agent_id, rest))
+    }
+}
+
+/// Agent harness session key namespace check equivalent to OpenClaw isAgentHarnessSessionKey.
+/// Evaluates whether the session key (or its rest segment if agent-wrapped) starts with "harness:".
+pub fn is_agent_harness_session_key(session_key: &str) -> bool {
+    let trimmed = session_key.trim();
+    let rest = if let Some((_agent_id, rest)) = parse_agent_session_key(trimmed) {
+        rest
+    } else {
+        trimmed
+    };
+    rest.to_ascii_lowercase().starts_with("harness:")
+}
+
+/// Public session commands must not create or mutate rows in the harness-owned namespace.
+/// Harness runtimes use a separate trusted owner path to access those sessions.
+pub fn reject_public_agent_harness_session_key(session_key: &str) -> Result<(), &'static str> {
+    if is_agent_harness_session_key(session_key) {
+        Err(AGENT_HARNESS_SESSION_KEY_RESERVED_MESSAGE)
+    } else {
+        Ok(())
+    }
+}
+

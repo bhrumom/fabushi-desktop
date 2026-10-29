@@ -9,6 +9,7 @@ use mahayana_host_runtime::extensions::session::session_paths::{
     SAND_CONVERSATION_ROOT_SLOT_ID, STALE_ROOT_CLEANUP_VERSION, STORE_FILENAME,
     get_agent_db_path, get_connector_secrets_root, get_sand_transcripts_dir_with,
     is_stale_root_gc_enabled_from_env, pin_stale_root_gc, stat_if_exists,
+    reject_public_agent_harness_session_key,
 };
 
 #[test]
@@ -85,4 +86,13 @@ fn stat_if_exists_matches_the_frozen_missing_file_contract() {
     assert!(stat_if_exists(&root.join("missing.db")).is_none());
 
     fs::remove_dir_all(root).expect("remove fixture");
+}
+
+#[test]
+fn public_session_commands_reject_harness_owned_namespace() {
+    assert!(reject_public_agent_harness_session_key("agent:main:main").is_ok());
+    assert_eq!(
+        reject_public_agent_harness_session_key("agent:main:harness:codex:run"),
+        Err("Session key namespace is reserved for agent harness-owned sessions.")
+    );
 }

@@ -37,7 +37,8 @@ use super::agent_db_serde::{
     UnreadState,
 };
 use super::session_conversation_state::{
-    ConversationOutlineItem, ResolvedConversationState, SessionConversationState, TranscriptThread,
+    ConversationOutlineItem, PendingConversationTurnRegistry, ResolvedConversationState,
+    SessionConversationState, TranscriptThread,
 };
 use super::conversation_blobs_path::conversation_blobs_path;
 use super::conversation_size_limits::{
@@ -145,6 +146,7 @@ pub struct ProductionSessionWorkers {
     pool: Arc<ProductionAgentWorkerPool>,
     conversation_size_maintenance: ConversationSizeMaintenance,
     conversation_state: SessionConversationState,
+    pending_conversation_turns: PendingConversationTurnRegistry,
     memory_service: Arc<MemoryService>,
     mint_queue: SessionMintQueue,
     db_owners: Mutex<BTreeMap<String, Arc<SandAgentDb>>>,
@@ -301,6 +303,7 @@ impl ProductionSessionWorkers {
             )),
             conversation_size_maintenance: ConversationSizeMaintenance::default(),
             conversation_state: SessionConversationState::new(busy_timeout_ms),
+            pending_conversation_turns: PendingConversationTurnRegistry::new(),
             mint_queue: SessionMintQueue::default(),
             db_owners: Mutex::new(BTreeMap::new()),
             agent_store_owners: Mutex::new(BTreeMap::new()),
@@ -315,6 +318,10 @@ impl ProductionSessionWorkers {
             call_session_store_error,
             busy_timeout_ms,
         }
+    }
+
+    pub fn pending_conversation_turns(&self) -> PendingConversationTurnRegistry {
+        self.pending_conversation_turns.clone()
     }
 
     pub fn call_session_store_path(&self) -> Result<&Path, String> {

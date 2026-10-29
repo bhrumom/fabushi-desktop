@@ -1440,6 +1440,38 @@
         ".github/workflows/rust-desktop-runtime.yml"
       ],
       "rationale": "The user explicitly requires removing Cursor services while retaining Fabushi capabilities. Preserve native application menu roles, shortcuts, window ownership and feedback callbacks; change only Help Center navigation to the existing Fabushi repository support entry. This is a source-locked product adaptation, not a service-migration or packaged-release acceptance claim."
+    },
+    {
+      "referencePath": "source/electron-main/coordinator/coordinator-main-legs.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "5b0bd030392bf8c70141eac7cc6f1e1bd9b0f9db",
+      "behavioralEvidence": [
+        "source/electron-main/coordinator/coordinator-main-legs.ts",
+        "source/electron-main/coordinator/coordinator-main-port-client.ts",
+        "projects/openclaw-rust/dossiers/coordinator-main-port-post-failure-recovery-20261029.md"
+      ],
+      "testEvidence": [
+        "source/electron-main/coordinator/coordinator-main-port-client.contract.test.ts",
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "rationale": "This is an evidence-locked TypeScript adaptation of the frozen Coordinator main-data leg. The existing Electron owner remains authoritative while a failed MessagePort post is reported and rethrown so the paired client can settle pending calls; port close/dispose still owns endpoint cleanup and no new Coordinator or runtime is introduced. The direct contract covers post-failure settlement and leg failure reporting; packaged and renderer acceptance remain separate gates."
+    },
+    {
+      "referencePath": "source/electron-main/coordinator/coordinator-main-port-client.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "7a6db06f2719937d2fda19a7b7c14cc874678223",
+      "behavioralEvidence": [
+        "source/electron-main/coordinator/coordinator-main-port-client.ts",
+        "source/shared/rpc/coordinator-port.ts",
+        "projects/openclaw-rust/dossiers/coordinator-main-port-post-failure-recovery-20261029.md"
+      ],
+      "testEvidence": [
+        "source/electron-main/coordinator/coordinator-main-port-client.contract.test.ts",
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "rationale": "This is an evidence-locked TypeScript adaptation of the frozen main-data port client. It preserves the existing protocol and pending-call owner, but converts a failed request post into an explicit post-failed settlement that rejects pending callers and closes the owned endpoint, avoiding an indefinitely pending Coordinator transition without creating a second state owner. Direct contract coverage exercises post failure, disposal and endpoint lifecycle outcomes."
     }
   ]
 }

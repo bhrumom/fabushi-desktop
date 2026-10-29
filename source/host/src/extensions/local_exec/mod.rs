@@ -7,3 +7,4 @@ pub mod extension;
 pub mod gateway_local_exec_sand_box;
 pub mod production;
 pub mod native_file_sandbox;
+pub mod openclaw_platform_sandbox;

@@ -55,6 +55,7 @@ pub mod watched_directory;
 pub mod groups;
 pub mod attachment_paths;
 pub mod media_mime;
+pub mod media_understanding_defaults;
 pub mod ports;
 pub mod durable_file_policy;
 pub mod sand_user_identity;
@@ -78,5 +79,10 @@ pub mod send_trace_host;
 
 pub mod sand_multitask;
 
+pub mod device_pairing_owner;
+pub use device_pairing_owner::DevicePairingOwner;
+
 pub mod host_gateway_api;
 pub mod sand_host;
+pub mod error_diagnostics;
+pub mod process_spawn_diagnostics;

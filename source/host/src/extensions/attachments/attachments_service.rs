@@ -326,7 +326,12 @@ pub fn read_host_attachment_image_with_root(
         return None;
     }
     let mime = servable_image_mime_from_path(&resolved)?;
-    let data = fs::read(&resolved).ok()?;
+    let limit = attachment_byte_limit_for_name(&resolved) as usize;
+    let data = crate::extensions::attachments::media_reference::read_outbound_media_file_bounded(
+        &resolved,
+        limit,
+    )
+    .ok()?;
     let size = image_size(&data, mime);
     Some(HostAttachmentImage {
         data_url: format!("data:{mime};base64,{}", STANDARD.encode(data)),
@@ -350,11 +355,11 @@ pub fn read_host_attachment_video_bytes_with_root(
     if !path_is_within(sand_root, &resolved, true) || video_mime_from_path(&resolved).is_none() {
         return None;
     }
-    let info = fs::metadata(&resolved).ok()?;
-    if !info.is_file() || info.len() > VIDEO_BYTE_LIMIT {
-        return None;
-    }
-    fs::read(resolved).ok()
+    crate::extensions::attachments::media_reference::read_outbound_media_file_bounded(
+        &resolved,
+        VIDEO_BYTE_LIMIT as usize,
+    )
+    .ok()
 }
 
 pub fn read_host_attachment_video_bytes(file_path: &Path) -> Option<Vec<u8>> {
@@ -604,8 +609,12 @@ pub fn read_attachment_text_with_root(
     if looks_like_binary(&head) {
         return Some(AttachmentTextPreview::Binary { bytes: info.len() });
     }
+    let text = String::from_utf8_lossy(&head).into_owned();
+    if super::media_understanding_service::is_transcript_artifact_text(&text) {
+        return None;
+    }
     Some(AttachmentTextPreview::Text {
-        text: String::from_utf8_lossy(&head).into_owned(),
+        text,
         truncated: info.len()
             > u64::try_from(ATTACHMENT_TEXT_PREVIEW_BYTE_CAP).unwrap_or(u64::MAX),
         bytes: info.len(),
@@ -1382,8 +1391,13 @@ impl AttachmentsService {
         bytes_base64: Option<&str>,
         agent_id: Option<&str>,
     ) -> Result<PathBuf, SandAttachmentError> {
+        let b64 = bytes_base64.unwrap_or_default();
+        if !b64.is_empty() {
+            crate::media_mime::inspect_canonical_base64(b64)
+                .ok_or_else(|| SandAttachmentError::InvalidBase64("non-canonical base64 payload".into()))?;
+        }
         let bytes = STANDARD
-            .decode(bytes_base64.unwrap_or_default())
+            .decode(b64)
             .map_err(|error| SandAttachmentError::InvalidBase64(error.to_string()))?;
         Ok(ingest_attachment_bytes(
             &self.resolve_dir(agent_id)?,
@@ -1407,6 +1421,41 @@ impl AttachmentsService {
             return None;
         };
         read_attachment_text_with_root(&self.sand_root, &dir, path)
+    }
+
+    /// Reads text and, when the caller supplies extraction facts, prefixes the
+    /// same bounded truncation notice used by the document-context owner.
+    /// Keeping this opt-in preserves the legacy raw preview contract while
+    /// giving gateway callers a real producer-to-owner path for partial files.
+    pub fn read_text_with_document_metadata(
+        &self,
+        path: &Path,
+        agent_id: Option<&str>,
+        metadata: Option<&crate::extensions::attachments::media_file_context::DocumentExtractionMetadata>,
+        explicit_selection_limit: Option<usize>,
+    ) -> Option<AttachmentTextPreview> {
+        let preview = self.read_text(path, agent_id)?;
+        let AttachmentTextPreview::Text {
+            text,
+            truncated,
+            bytes,
+        } = preview
+        else {
+            return Some(preview);
+        };
+        let notice = crate::extensions::attachments::media_file_context::render_document_truncation_notice(
+            metadata,
+            explicit_selection_limit,
+        );
+        let text = match notice {
+            Some(notice) => format!("{notice}\n{text}"),
+            None => text,
+        };
+        Some(AttachmentTextPreview::Text {
+            text,
+            truncated,
+            bytes,
+        })
     }
 
     pub fn read_chunk(
@@ -1517,6 +1566,36 @@ impl AttachmentsService {
         read_media_dimensions_with_root(&self.sand_root, path)
     }
 
+    pub fn resolve_media_reference(
+        &self,
+        source: &str,
+    ) -> Result<PathBuf, crate::extensions::attachments::media_reference::MediaReferenceError> {
+        let media_dir = self.sand_root.join("media");
+        let info = crate::extensions::attachments::media_reference::resolve_media_reference_local_path_info(
+            source,
+            &media_dir,
+        )?;
+        match info {
+            crate::extensions::attachments::media_reference::MediaReferenceLocalPathInfo::Inbound { path, .. } => {
+                Ok(path)
+            }
+            crate::extensions::attachments::media_reference::MediaReferenceLocalPathInfo::Local { path } => {
+                Ok(path)
+            }
+        }
+    }
+
+    pub fn parse_inbound_media_uri(
+        &self,
+        source: &str,
+    ) -> Result<Option<crate::extensions::attachments::media_reference::InboundMediaUri>, crate::extensions::attachments::media_reference::MediaReferenceError> {
+        crate::extensions::attachments::media_reference::parse_inbound_media_uri(source)
+    }
+
+    pub fn canonicalize_user_message_media(&self, message: &mut serde_json::Value) -> Result<bool, String> {
+        crate::extensions::attachments::media_facts::canonicalize_persisted_user_message_media(message)
+    }
+
     pub fn persist_image_bytes(
         &self,
         target_dir: &Path,
@@ -1567,9 +1646,18 @@ impl AttachmentsService {
                 .and_then(Value::as_str)
                 .ok_or_else(|| "readAttachmentText.path must be a string".to_string())
                 .map(|path| {
-                    match self.read_text(
+                    let metadata = args
+                        .get("metadata")
+                        .and_then(|value| serde_json::from_value(value.clone()).ok());
+                    let explicit_selection_limit = args
+                        .get("explicitSelectionLimit")
+                        .and_then(Value::as_u64)
+                        .and_then(|value| usize::try_from(value).ok());
+                    match self.read_text_with_document_metadata(
                         Path::new(path),
                         args.get("agentId").and_then(Value::as_str),
+                        metadata.as_ref(),
+                        explicit_selection_limit,
                     ) {
                         Some(AttachmentTextPreview::Text {
                             text,
@@ -1634,6 +1722,498 @@ impl AttachmentsService {
                     })
                     .unwrap_or(Value::Null)
                 }),
+            "renderFileContext" => {
+                let content = args
+                    .get("content")
+                    .and_then(Value::as_str)
+                    .unwrap_or_default();
+                let filename = args.get("filename").and_then(Value::as_str);
+                let fallback_name = args.get("fallbackName").and_then(Value::as_str);
+                let mime_type = args.get("mimeType").and_then(Value::as_str);
+                let surround = args
+                    .get("surroundContentWithNewlines")
+                    .and_then(Value::as_bool)
+                    .unwrap_or(true);
+                let rendered = crate::extensions::attachments::media_file_context::render_file_context_block(
+                    crate::extensions::attachments::media_file_context::RenderFileContextParams {
+                        filename,
+                        fallback_name,
+                        mime_type,
+                        content,
+                        surround_content_with_newlines: surround,
+                    },
+                );
+                Ok(Value::String(rendered))
+            }
+            "resolveLocalMediaPath" => {
+                let source = args
+                    .get("source")
+                    .and_then(Value::as_str)
+                    .ok_or_else(|| "resolveLocalMediaPath.source must be a string".to_string());
+                source.map(|src| {
+                    crate::extensions::attachments::media_file_context::resolve_local_media_path(src)
+                        .map(|p| Value::String(p.to_string_lossy().into_owned()))
+                        .unwrap_or(Value::Null)
+                })
+            }
+            "renderDocumentTruncation" => {
+                let explicit_limit = args
+                    .get("explicitSelectionLimit")
+                    .and_then(Value::as_u64)
+                    .map(|n| n as usize);
+                let meta = args
+                    .get("metadata")
+                    .and_then(|v| serde_json::from_value(v.clone()).ok());
+                let rendered = crate::extensions::attachments::media_file_context::render_document_truncation_notice(
+                    meta.as_ref(),
+                    explicit_limit,
+                );
+                Ok(rendered.map(Value::String).unwrap_or(Value::Null))
+            }
+            "renderQrTerminal" => (|| {
+                let input = args
+                    .get("input")
+                    .and_then(Value::as_str)
+                    .ok_or_else(|| "renderQrTerminal.input must be a string".to_string())?;
+                let small = args
+                    .get("small")
+                    .and_then(Value::as_bool)
+                    .unwrap_or(false);
+                crate::extensions::attachments::media_qr_png::render_qr_terminal(input, small)
+                    .map(Value::String)
+            })(),
+            "renderQrPngDataUrl" => (|| {
+                let input = args
+                    .get("input")
+                    .and_then(Value::as_str)
+                    .ok_or_else(|| "renderQrPngDataUrl.input must be a string".to_string())?;
+                let scale = args.get("scale").and_then(Value::as_u64).map(|n| n as u32);
+                let margin_modules = args.get("marginModules").and_then(Value::as_u64).map(|n| n as u32);
+                let opts = crate::extensions::attachments::media_qr_png::QrPngRenderOptions {
+                    scale,
+                    margin_modules,
+                };
+                crate::extensions::attachments::media_qr_png::render_qr_png_data_url(input, &opts)
+                    .map(Value::String)
+            })(),
+            "convertBmpToPng" => (|| {
+                let b64 = args
+                    .get("bytesBase64")
+                    .or_else(|| args.get("base64"))
+                    .or_else(|| args.get("data"))
+                    .and_then(Value::as_str)
+                    .ok_or_else(|| "convertBmpToPng.base64 must be a string".to_string())?;
+                use base64::Engine;
+                let raw = base64::prelude::BASE64_STANDARD
+                    .decode(b64)
+                    .map_err(|e| format!("Invalid base64 payload: {e}"))?;
+                let png = crate::extensions::attachments::image_ops::convert_bmp_to_png(&raw)?;
+                let encoded = base64::prelude::BASE64_STANDARD.encode(&png);
+                if args.get("base64").is_some() || args.get("data").is_some() {
+                    Ok(serde_json::json!({
+                        "data": encoded,
+                        "mimeType": "image/png"
+                    }))
+                } else {
+                    Ok(Value::String(encoded))
+                }
+            })(),
+            "formatMediaSize" => {
+                let bytes = args
+                    .get("bytes")
+                    .and_then(Value::as_u64)
+                    .unwrap_or(0);
+                Ok(Value::String(crate::extensions::attachments::media_store_shared::format_media_size(bytes)))
+            }
+            "saveMediaBuffer" => (|| {
+                let b64 = args
+                    .get("bufferBase64")
+                    .and_then(Value::as_str)
+                    .ok_or_else(|| "saveMediaBuffer.bufferBase64 must be a string".to_string())?;
+                let content_type = args.get("contentType").and_then(Value::as_str);
+                let subdir = args.get("subdir").and_then(Value::as_str).unwrap_or("inbound");
+                let max_bytes = args.get("maxBytes").and_then(Value::as_u64).unwrap_or(crate::extensions::attachments::media_store::MEDIA_MAX_BYTES);
+                let original_filename = args.get("originalFilename").and_then(Value::as_str);
+
+                use base64::Engine;
+                let raw = base64::prelude::BASE64_STANDARD
+                    .decode(b64)
+                    .map_err(|e| format!("Invalid base64 buffer: {e}"))?;
+
+                let saved = crate::extensions::attachments::media_store::save_media_buffer(
+                    &raw,
+                    content_type,
+                    subdir,
+                    max_bytes,
+                    original_filename,
+                    None,
+                    None,
+                ).map_err(|e| e.to_string())?;
+
+                serde_json::to_value(&saved).map_err(|e| e.to_string())
+            })(),
+            "readMediaBuffer" => (|| {
+                let id = args
+                    .get("id")
+                    .and_then(Value::as_str)
+                    .ok_or_else(|| "readMediaBuffer.id must be a string".to_string())?;
+                let subdir = args.get("subdir").and_then(Value::as_str).unwrap_or("inbound");
+                let max_bytes = args.get("maxBytes").and_then(Value::as_u64).unwrap_or(crate::extensions::attachments::media_store::MEDIA_MAX_BYTES);
+
+                let (bytes, path) = crate::extensions::attachments::media_store::read_media_buffer(
+                    id,
+                    subdir,
+                    max_bytes,
+                    None,
+                ).map_err(|e| e.to_string())?;
+
+                use base64::Engine;
+                let b64 = base64::prelude::BASE64_STANDARD.encode(&bytes);
+
+                Ok(json!({
+                    "id": id,
+                    "path": path.to_string_lossy(),
+                    "size": bytes.len(),
+                    "bufferBase64": b64
+                }))
+            })(),
+            "deleteMediaBuffer" => (|| {
+                let id = args
+                    .get("id")
+                    .and_then(Value::as_str)
+                    .ok_or_else(|| "deleteMediaBuffer.id must be a string".to_string())?;
+                let subdir = args.get("subdir").and_then(Value::as_str).unwrap_or("inbound");
+                crate::extensions::attachments::media_store::delete_media_buffer(id, subdir, None)
+                    .map(|_| Value::Bool(true))
+            })(),
+            "cleanOldMedia" => (|| {
+                let ttl_ms = args.get("ttlMs").and_then(Value::as_u64).unwrap_or(crate::extensions::attachments::media_store::DEFAULT_TTL_MS);
+                let recursive = args.get("recursive").and_then(Value::as_bool);
+                let prune_empty_dirs = args.get("pruneEmptyDirs").and_then(Value::as_bool);
+                let opts = crate::extensions::attachments::media_store::CleanOldMediaOptions {
+                    recursive,
+                    prune_empty_dirs,
+                };
+                crate::extensions::attachments::media_store::clean_old_media(ttl_ms, &opts, None)
+                    .map(|_| Value::Bool(true))
+            })(),
+            "extractOriginalFilename" => {
+                let path = args
+                    .get("path")
+                    .and_then(Value::as_str)
+                    .unwrap_or("");
+                Ok(Value::String(crate::extensions::attachments::media_store::extract_original_filename(path)))
+            }
+            "readImageMetadata" => (|| {
+                let base64_str = args
+                    .get("base64")
+                    .and_then(Value::as_str)
+                    .ok_or_else(|| "readImageMetadata.base64 must be a string".to_string())?;
+                use base64::Engine as _;
+                let bytes = base64::engine::general_purpose::STANDARD
+                    .decode(base64_str)
+                    .map_err(|e| format!("Invalid base64: {e}"))?;
+                let meta = crate::extensions::attachments::image_ops::read_image_metadata_from_header(&bytes);
+                Ok(serde_json::to_value(meta).unwrap_or(Value::Null))
+            })(),
+            "isAnimatedWebp" => (|| {
+                let base64_str = args
+                    .get("base64")
+                    .and_then(Value::as_str)
+                    .ok_or_else(|| "isAnimatedWebp.base64 must be a string".to_string())?;
+                use base64::Engine as _;
+                let bytes = base64::engine::general_purpose::STANDARD
+                    .decode(base64_str)
+                    .map_err(|e| format!("Invalid base64: {e}"))?;
+                Ok(Value::Bool(crate::extensions::attachments::image_ops::is_animated_webp_buffer(&bytes)))
+            })(),
+            "isStillPng" => (|| {
+                let base64_str = args
+                    .get("base64")
+                    .and_then(Value::as_str)
+                    .ok_or_else(|| "isStillPng.base64 must be a string".to_string())?;
+                use base64::Engine as _;
+                let bytes = base64::engine::general_purpose::STANDARD
+                    .decode(base64_str)
+                    .map_err(|e| format!("Invalid base64: {e}"))?;
+                Ok(Value::Bool(crate::extensions::attachments::image_ops::is_still_png_buffer(&bytes)))
+            })(),
+            "buildImageResizeSideGrid" => (|| {
+                let max_side = args.get("maxSide").and_then(Value::as_u64).unwrap_or(0) as u32;
+                let side_start = args.get("sideStart").and_then(Value::as_u64).unwrap_or(0) as u32;
+                let grid = crate::extensions::attachments::image_ops::build_image_resize_side_grid(max_side, side_start);
+                Ok(serde_json::to_value(grid).unwrap_or(Value::Array(Vec::new())))
+            })(),
+            "prepareAttachment" => (|| {
+                let input: crate::extensions::attachments::image_ops::AttachmentInput = serde_json::from_value(args.clone())
+                    .map_err(|e| format!("Invalid AttachmentInput: {e}"))?;
+                let prepared = crate::extensions::attachments::image_ops::prepare_attachment(&input)?;
+                Ok(serde_json::to_value(prepared).unwrap_or(Value::Null))
+            })(),
+            "normalizeAnthropicInlineImage" => (|| {
+                let data = args
+                    .get("data")
+                    .and_then(Value::as_str)
+                    .ok_or_else(|| "normalizeAnthropicInlineImage.data must be a string".to_string())?;
+                let mime = args
+                    .get("mimeType")
+                    .and_then(Value::as_str)
+                    .unwrap_or("image/jpeg");
+                let (norm_data, norm_mime) = crate::extensions::attachments::image_ops::normalize_anthropic_inline_image(data, mime)?;
+                Ok(serde_json::json!({
+                    "data": norm_data,
+                    "mimeType": norm_mime
+                }))
+            })(),
+            "normalizeAnthropicInlineContentBlocks" => (|| {
+                let blocks_val = args
+                    .get("blocks")
+                    .ok_or_else(|| "normalizeAnthropicInlineContentBlocks.blocks is required".to_string())?;
+                let blocks: Vec<crate::extensions::attachments::anthropic_inline_images::AnthropicContentBlock> =
+                    serde_json::from_value(blocks_val.clone())
+                        .map_err(|e| format!("Invalid AnthropicContentBlock array: {e}"))?;
+                let normalized = crate::extensions::attachments::anthropic_inline_images::normalize_anthropic_inline_content_blocks(&blocks)?;
+                Ok(serde_json::to_value(normalized).unwrap_or(Value::Array(Vec::new())))
+            })(),
+            "loadWebMedia" => (|| {
+                let url = args
+                    .get("url")
+                    .and_then(Value::as_str)
+                    .ok_or_else(|| "loadWebMedia.url must be a string".to_string())?;
+                let max_bytes = args.get("maxBytes").and_then(Value::as_u64).map(|v| v as usize);
+                let optimize = args.get("optimizeImages").and_then(Value::as_bool).unwrap_or(true);
+                let opts = crate::extensions::attachments::web_media::WebMediaOptions {
+                    max_bytes,
+                    optimize_images: optimize,
+                    ..Default::default()
+                };
+                let res = crate::extensions::attachments::web_media::load_web_media(url, &opts)
+                    .map_err(|e| format!("{e}"))?;
+                Ok(serde_json::to_value(res).unwrap_or(Value::Null))
+            })(),
+            "resolveChannelInboundRoots" => (|| {
+                let channel_id = args.get("channelId").and_then(Value::as_str);
+                let account_id = args.get("accountId").and_then(Value::as_str);
+                let cfg = crate::extensions::attachments::channel_inbound_roots::ChannelInboundRootsConfig::default();
+                let roots = crate::extensions::attachments::channel_inbound_roots::resolve_channel_inbound_attachment_roots_for_channel(
+                    &cfg,
+                    &[],
+                    channel_id,
+                    account_id,
+                )?;
+                Ok(serde_json::to_value(roots).unwrap_or(Value::Null))
+            })(),
+            "resolveLocalRoots" => (|| {
+                let state_dir_str = args.get("stateDir").and_then(Value::as_str).unwrap_or("/tmp");
+                let config_dir_str = args.get("configDir").and_then(Value::as_str).unwrap_or("/tmp");
+                let agent_id = args.get("agentId").and_then(Value::as_str);
+                let session_ws_str = args.get("sessionWorkspaceDir").and_then(Value::as_str);
+                let state_dir = Path::new(state_dir_str);
+                let config_dir = Path::new(config_dir_str);
+                let session_ws = session_ws_str.map(Path::new);
+                let roots = crate::extensions::attachments::local_roots::get_agent_scoped_media_local_roots(
+                    state_dir,
+                    config_dir,
+                    agent_id,
+                    None,
+                    session_ws,
+                );
+                let str_roots: Vec<String> = roots.into_iter().map(|p| p.to_string_lossy().to_string()).collect();
+                Ok(serde_json::to_value(str_roots).unwrap_or(Value::Null))
+            })(),
+            "assertHostReadMediaAllowed" => (|| {
+                let file_path_str = args.get("filePath").and_then(Value::as_str);
+                let file_path = file_path_str.map(Path::new);
+                let sniffed = args.get("sniffedContentType").and_then(Value::as_str);
+                let content_type = args.get("contentType").and_then(Value::as_str);
+                let kind = args.get("kind").and_then(Value::as_str);
+                let data_base64 = args.get("dataBase64").and_then(Value::as_str);
+                let decoded = data_base64.and_then(|b64| STANDARD.decode(b64).ok());
+                let params = crate::extensions::attachments::host_read_media_policy::AssertHostReadParams {
+                    sniffed_content_type: sniffed,
+                    content_type,
+                    file_path,
+                    kind,
+                    buffer: decoded.as_deref(),
+                    trusted_generated_html_path: None,
+                    explicit_html_publication: false,
+                };
+                crate::extensions::attachments::host_read_media_policy::assert_host_read_media_allowed(&params)
+                    .map_err(|e| e.to_string())?;
+                Ok(serde_json::json!({ "allowed": true }))
+            })(),
+            "readRemoteMediaBuffer" => (|| {
+                let options: crate::extensions::attachments::media_fetch::FetchMediaOptions =
+                    serde_json::from_value(args.clone())
+                        .map_err(|e| format!("Invalid FetchMediaOptions: {e}"))?;
+                let res = crate::extensions::attachments::media_fetch::read_remote_media_buffer(&options)
+                    .map_err(|e| e.to_string())?;
+                Ok(serde_json::to_value(res).unwrap_or(Value::Null))
+            })(),
+            "saveRemoteMedia" => (|| {
+                let options: crate::extensions::attachments::media_fetch::SaveRemoteMediaOptions =
+                    serde_json::from_value(args.clone())
+                        .map_err(|e| format!("Invalid SaveRemoteMediaOptions: {e}"))?;
+                let res = crate::extensions::attachments::media_fetch::save_remote_media(&options)
+                    .map_err(|e| e.to_string())?;
+                Ok(serde_json::to_value(res).unwrap_or(Value::Null))
+            })(),
+            "buildOutboundMediaLoadOptions" => (|| {
+                let params: crate::extensions::attachments::load_options::OutboundMediaLoadParams =
+                    serde_json::from_value(args.clone())
+                        .map_err(|e| format!("Invalid OutboundMediaLoadParams: {e}"))?;
+                let opts = crate::extensions::attachments::load_options::build_outbound_media_load_options(&params)?;
+                Ok(serde_json::to_value(opts).unwrap_or(Value::Null))
+            })(),
+            "resolveAgentScopedOutboundMediaAccess" => (|| {
+                let params: crate::extensions::attachments::read_capability::AgentScopedOutboundMediaAccessParams =
+                    serde_json::from_value(args.clone())
+                        .map_err(|e| format!("Invalid AgentScopedOutboundMediaAccessParams: {e}"))?;
+                let access = crate::extensions::attachments::read_capability::resolve_agent_scoped_outbound_media_access(&params);
+                Ok(serde_json::to_value(access).unwrap_or(Value::Null))
+            })(),
+            "resolveInputFileLimits" => (|| {
+                let config: Option<crate::extensions::attachments::input_files::InputFileLimitsConfig> =
+                    if args.is_null() || (args.is_object() && args.as_object().unwrap().is_empty()) {
+                        None
+                    } else {
+                        Some(serde_json::from_value(args.clone()).map_err(|e| format!("Invalid InputFileLimitsConfig: {e}"))?)
+                    };
+                let limits = crate::extensions::attachments::input_files::resolve_input_file_limits(config.as_ref());
+                Ok(serde_json::to_value(limits).unwrap_or(Value::Null))
+            })(),
+            "extractFileContentFromBuffer" => (|| {
+                let b64 = args.get("bufferBase64").and_then(Value::as_str)
+                    .ok_or_else(|| "extractFileContentFromBuffer requires bufferBase64".to_string())?;
+                let buf = STANDARD.decode(b64).map_err(|e| format!("Invalid base64: {e}"))?;
+                let filename = args.get("filename").and_then(Value::as_str);
+                let mime_type = args.get("mimeType").and_then(Value::as_str);
+                let charset = args.get("charset").and_then(Value::as_str);
+                let limits_val = args.get("limits").cloned().unwrap_or(Value::Null);
+                let limits: crate::extensions::attachments::input_files::InputFileLimits =
+                    serde_json::from_value(limits_val).unwrap_or_else(|_| {
+                        crate::extensions::attachments::input_files::resolve_input_file_limits(None)
+                    });
+                let result = crate::extensions::attachments::input_files::extract_file_content_from_buffer(
+                    &buf,
+                    filename,
+                    mime_type,
+                    charset,
+                    &limits,
+                    None,
+                )?;
+                Ok(serde_json::to_value(result).unwrap_or(Value::Null))
+            })(),
+            "extractFileContentFromSource" => (|| {
+                let source_val = args.get("source").cloned().ok_or_else(|| "extractFileContentFromSource requires source".to_string())?;
+                let source: crate::extensions::attachments::input_files::InputFileSource =
+                    serde_json::from_value(source_val).map_err(|e| format!("Invalid InputFileSource: {e}"))?;
+                let limits_val = args.get("limits").cloned().unwrap_or(Value::Null);
+                let limits: crate::extensions::attachments::input_files::InputFileLimits =
+                    serde_json::from_value(limits_val).unwrap_or_else(|_| {
+                        crate::extensions::attachments::input_files::resolve_input_file_limits(None)
+                    });
+                let result = crate::extensions::attachments::input_files::extract_file_content_from_source(&source, &limits)?;
+                Ok(serde_json::to_value(result).unwrap_or(Value::Null))
+            })(),
+            "extractImageContentFromSource" => (|| {
+                let source_val = args.get("source").cloned().ok_or_else(|| "extractImageContentFromSource requires source".to_string())?;
+                let source: crate::extensions::attachments::input_files::InputImageSource =
+                    serde_json::from_value(source_val).map_err(|e| format!("Invalid InputImageSource: {e}"))?;
+                let limits_val = args.get("limits").cloned().unwrap_or(Value::Null);
+                let limits: crate::extensions::attachments::input_files::InputImageLimits =
+                    serde_json::from_value(limits_val).map_err(|e| format!("Invalid InputImageLimits: {e}"))?;
+                let result = crate::extensions::attachments::input_files::extract_image_content_from_source(&source, &limits)?;
+                Ok(serde_json::to_value(result).unwrap_or(Value::Null))
+            })(),
+            "resolveStagedInputMediaPaths" => (|| {
+                let media: Option<Vec<crate::extensions::attachments::media_facts::MediaFact>> =
+                    if let Some(m) = args.get("media") {
+                        Some(serde_json::from_value(m.clone()).map_err(|e| format!("Invalid MediaFact list: {e}"))?)
+                    } else if args.is_array() {
+                        Some(serde_json::from_value(args.clone()).map_err(|e| format!("Invalid MediaFact array: {e}"))?)
+                    } else {
+                        None
+                    };
+                let resolved = crate::extensions::attachments::staged_inputs::resolve_staged_input_media_paths(media.as_deref());
+                Ok(serde_json::to_value(resolved).unwrap_or(Value::Null))
+            })(),
+            "stagedInputPathDirectory" => (|| {
+                let path = args.get("relativePath").and_then(Value::as_str)
+                    .or_else(|| args.as_str())
+                    .ok_or_else(|| "stagedInputPathDirectory requires relativePath".to_string())?;
+                let dir = crate::extensions::attachments::staged_inputs::staged_input_path_directory(path);
+                Ok(serde_json::to_value(dir).unwrap_or(Value::Null))
+            })(),
+            "isStagedInputPath" => (|| {
+                let path = args.get("relativePath").and_then(Value::as_str)
+                    .ok_or_else(|| "isStagedInputPath requires relativePath".to_string())?;
+                let dirs: std::collections::HashSet<String> = if let Some(d) = args.get("directories") {
+                    serde_json::from_value(d.clone()).unwrap_or_default()
+                } else {
+                    std::collections::HashSet::new()
+                };
+                let matched = crate::extensions::attachments::staged_inputs::is_staged_input_path(path, &dirs);
+                Ok(Value::Bool(matched))
+            })(),
+            "ensureStagedInputDirectory" => (|| {
+                let root_str = args.get("rootDir").and_then(Value::as_str)
+                    .ok_or_else(|| "ensureStagedInputDirectory requires rootDir".to_string())?;
+                let dir_str = args.get("directory").and_then(Value::as_str)
+                    .ok_or_else(|| "ensureStagedInputDirectory requires directory".to_string())?;
+                crate::extensions::attachments::staged_inputs::ensure_staged_input_directory(Path::new(root_str), dir_str)?;
+                Ok(serde_json::json!({ "success": true }))
+            })(),
+            "extractPdfContent" => (|| {
+                let req: crate::extensions::attachments::pdf_extract::PdfExtractionRequest =
+                    serde_json::from_value(args.clone()).map_err(|e| format!("Invalid PdfExtractionRequest: {e}"))?;
+                let res = crate::extensions::attachments::pdf_extract::extract_pdf_content(&req, &[])?;
+                Ok(serde_json::to_value(res).unwrap_or(Value::Null))
+            })(),
+            "validatePdfExtractionMetadata" => (|| {
+                let meta_val = args.get("metadata").ok_or_else(|| "metadata required".to_string())?;
+                let req_val = args.get("request").ok_or_else(|| "request required".to_string())?;
+                let meta: crate::extensions::attachments::pdf_extract::DocumentExtractionMetadata =
+                    serde_json::from_value(meta_val.clone()).map_err(|e| format!("Invalid metadata: {e}"))?;
+                let req: crate::extensions::attachments::pdf_extract::PdfExtractionRequest =
+                    serde_json::from_value(req_val.clone()).map_err(|e| format!("Invalid request: {e}"))?;
+                let trusted = crate::extensions::attachments::pdf_extract::validate_extraction_metadata(&meta, &req);
+                Ok(serde_json::to_value(trusted).unwrap_or(Value::Null))
+            })(),
+            "splitMediaFromOutput" => (|| {
+                let raw = args.get("raw").and_then(Value::as_str)
+                    .or_else(|| args.as_str())
+                    .ok_or_else(|| "splitMediaFromOutput requires raw text".to_string())?;
+                let opts: crate::extensions::attachments::parse_output::SplitMediaFromOutputOptions =
+                    if let Some(o) = args.get("options") {
+                        serde_json::from_value(o.clone()).unwrap_or_default()
+                    } else {
+                        crate::extensions::attachments::parse_output::SplitMediaFromOutputOptions {
+                            extract_media_directives: true,
+                            extract_audio_directives: true,
+                            ..Default::default()
+                        }
+                    };
+                let parsed = crate::extensions::attachments::parse_output::split_media_from_output(raw, &opts);
+                Ok(serde_json::to_value(parsed).unwrap_or(Value::Null))
+            })(),
+            "splitMediaOutput" => (|| {
+                let raw = args.get("raw").and_then(Value::as_str)
+                    .or_else(|| args.as_str())
+                    .ok_or_else(|| "splitMediaOutput requires raw text".to_string())?;
+                let opts: crate::extensions::attachments::parse_output::SplitMediaOutputOptions =
+                    if let Some(o) = args.get("options") {
+                        serde_json::from_value(o.clone()).unwrap_or_default()
+                    } else {
+                        crate::extensions::attachments::parse_output::SplitMediaOutputOptions {
+                            extract_media_directives: true,
+                            extract_audio_directives: true,
+                            ..Default::default()
+                        }
+                    };
+                let parsed = crate::extensions::attachments::parse_output::split_media_output(raw, &opts);
+                Ok(serde_json::to_value(parsed).unwrap_or(Value::Null))
+            })(),
             _ => return None,
         };
         Some(result)
