@@ -11,6 +11,7 @@ pub mod settings;
 pub mod memory;
 pub mod box_store_sync;
 pub mod cloud_agents;
+pub mod cloud_workers;
 pub mod telemetry;
 pub mod trays;
 pub mod source_map;

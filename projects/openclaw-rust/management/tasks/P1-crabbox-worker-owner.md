@@ -1,6 +1,6 @@
 # OCRM P1 — Crabbox worker provisioning owner
 
-Status: planned / not-started
+Status: in-progress / foundation-only
 Task ID: OCRM-P1-CRABBOX-WORKER
 Spec: [OCRM-001](../../../../docs/specs/openclaw-rust-equivalence-migration.md)
 ADR: [Crabbox worker owner boundary](../../decisions/2026-10-29-crabbox-worker-owner-boundary.md)
@@ -199,6 +199,18 @@ dimensions include:
 All executable checks are Actions-only. Local inspection and document checks do
 not upgrade `verified` or `accepted`.
 
+## 8.1 Current implementation slice
+
+The first implementation slice is intentionally limited to the typed lease
+boundary at `source/host/src/extensions/cloud_workers/lease.rs`, exported by
+`cloud_workers/mod.rs` and registered in the Host extension module. It defines
+scope, provider/profile/runtime identity, lease generation, owner epoch,
+replay key, lifecycle and mutation outcome types, plus pre-side-effect
+identity validation. It performs no provider discovery, artifact download,
+process launch, device enrollment, persistence, Coordinator wiring or UI
+projection. The slice is therefore an implementation foundation, not P1
+completion or production reachability.
+
 ## 9. Definition of Done / acceptance criteria
 
 - P1-AC01: ADR is approved and the target symbols/consumers are recorded in
@@ -238,5 +250,7 @@ unbounded provider output.
 - Exact upstream Crabbox source identities recorded in the dossier/inventory.
 - Live Fabushi owner source identities recorded in the dossier.
 
-Current state: task prepared; implementation, wiring, executable verification
-and acceptance are not started by this task.
+Current state: typed lease foundation implemented locally; provider/artifact,
+warm-image, bootstrap, platform, sandbox, doctor/recovery, integration,
+executable verification and acceptance remain open. The ADR remains a proposed
+boundary until owner approval and the required RTM review are recorded.
