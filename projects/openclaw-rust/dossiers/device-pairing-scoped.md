@@ -131,3 +131,22 @@ acceptance remain pending.
 | `src/gateway/node-registry-pairing.ts` | `6ee2e1669f2315ad414383b9153d8ff73f0bffbf` | 59 | TypeScript | read-complete | reuse-and-extend-existing-Rust | `source/host/src/extensions/node_host/session_registry.rs` |
 | `src/gateway/server-methods/nodes.pairing.ts` | `719d56754faf40644c20c24b44a47a7c79ba369e` | 380 | TypeScript | read-complete | reuse-and-extend-existing-Rust | `source/host/src/device_pairing_owner.rs` |
 | `src/gateway/server/ws-connection/connect-node-session.ts` | `51aad1c06c2b8caa84753dfd53c5755767ff10bf` | 221 | TypeScript | read-complete | reuse-and-extend-existing-Rust | `source/host/src/extensions/node_host/session_registry.rs` |
+
+## 5. Gateway websocket auth and pairing admission (2026-10-29)
+
+The locked websocket admission cluster was read in full and mapped to existing
+owners. `connect-auth-security.ts` emits redacted, hashed device identifiers
+and bounded auth attributes through the canonical security-event owner.
+`connect-device-tokens.ts` issues role/scope-bound device grants only when the
+approved baseline and issuance-current fence hold, and emits setup-code
+handoff grants only through the closed bootstrap profile. `connect-existing-device.ts`
+pins platform/device-family metadata, requires pairing for role or scope
+upgrades, and keeps ingress grants distinct from the signed device identity.
+`connect-node-pairing-ssh.ts` limits SSH auto-approval to fresh scopeless node
+requests and rechecks the exact policy immediately before commit. The 1,022-line
+pairing oracle covers authority changes during approval, merged-owner repair,
+token reuse, role/scope fences, reconnect pause, and Tailscale scope caps.
+These responsibilities remain under Gateway auth, DevicePairing approval/token
+owners, and NodeHost connection admission; no second pairing or auth owner is
+introduced. Rust implementation, exact-head execution, and real-device
+acceptance remain pending.

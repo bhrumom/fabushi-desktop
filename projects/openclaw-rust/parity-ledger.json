@@ -5337,6 +5337,33 @@
       "selected_owner": "source/host/src/device_pairing_owner.rs",
       "source_refs": [
         {
+          "blob_sha": "595010b5c47ea3b16e34dc63ec59890e5a55735b",
+          "path": "src/gateway/server/ws-connection/connect-existing-device.ts",
+          "range": {
+            "end_line": 183,
+            "start_line": 1
+          },
+          "symbol": "authorizeExistingGatewayDevice"
+        },
+        {
+          "blob_sha": "e2f67985cd396c649ccc5034bcaf303fde5f1c64",
+          "path": "src/gateway/server/ws-connection/connect-device-pairing.test.ts",
+          "range": {
+            "end_line": 1022,
+            "start_line": 1
+          },
+          "symbol": "gateway connect pairing exemptions oracle"
+        },
+        {
+          "blob_sha": "6a17568e04e1de5160f1c3f3ade95f3f393ed138",
+          "path": "src/gateway/server/ws-connection/connect-node-pairing-ssh.ts",
+          "range": {
+            "end_line": 153,
+            "start_line": 1
+          },
+          "symbol": "startGatewayNodePairingSshApproval"
+        },
+        {
           "blob_sha": "7a563c858c078347587d4bfc6e153be59550393a",
           "path": "src/infra/device-pairing-approval.kernel.ts",
           "range": {
@@ -6062,6 +6089,15 @@
       "risk": "Low; prevents replay attacks with consumed keys",
       "selected_owner": "source/host/src/device_pairing_owner.rs",
       "source_refs": [
+        {
+          "blob_sha": "443df70b1e67d60b14c3041d4d2bef2e3b28f6d9",
+          "path": "src/gateway/server/ws-connection/connect-device-tokens.ts",
+          "range": {
+            "end_line": 88,
+            "start_line": 1
+          },
+          "symbol": "issueGatewayConnectDeviceTokens"
+        },
         {
           "blob_sha": "7bb56b799c5945489f60520329d67ea18c06ce75",
           "path": "src/infra/device-pairing-token-utils.ts",
@@ -6940,6 +6976,15 @@
       "risk": "None; prevents replay attacks on device pairing and authentication channels",
       "selected_owner": "source/host/src/gateway_server.rs",
       "source_refs": [
+        {
+          "blob_sha": "a8fedd3c23b6a8c722334b6b44d97cb3ff3c1703",
+          "path": "src/gateway/server/ws-connection/connect-auth-security.ts",
+          "range": {
+            "end_line": 58,
+            "start_line": 1
+          },
+          "symbol": "emitGatewayAuthSecurityEvent"
+        },
         {
           "blob_sha": "708e34da5847a31d4d839b7917eeb65ae53c2496",
           "path": "src/gateway/server/ws-connection/connect-auth.ts",

@@ -12,6 +12,11 @@ from pathlib import Path
 ROOT = Path("projects/openclaw-rust")
 SHARDS = ROOT / "inventory" / "shards"
 READS = {
+    "src/gateway/server/ws-connection/connect-auth-security.ts": (58, "OCRM-RESP-GW-DEVICE-PAIRING-AUTH-001", "OCRM-M13", "owner-audit"),
+    "src/gateway/server/ws-connection/connect-device-tokens.ts": (88, "OCRM-RESP-DEVICE-PAIRING-TOKENS-LIFECYCLE-001", "OCRM-M07", "owner-audit"),
+    "src/gateway/server/ws-connection/connect-existing-device.ts": (183, "OCRM-RESP-DEVICE-PAIRING-APPROVAL-POLICY-001", "OCRM-M07", "owner-audit"),
+    "src/gateway/server/ws-connection/connect-device-pairing.test.ts": (1022, "OCRM-RESP-DEVICE-PAIRING-APPROVAL-POLICY-001", "OCRM-M07", "test-oracle-replaced"),
+    "src/gateway/server/ws-connection/connect-node-pairing-ssh.ts": (153, "OCRM-RESP-DEVICE-PAIRING-APPROVAL-POLICY-001", "OCRM-M07", "owner-audit"),
     "src/gateway/call-device-auth.ts": (217, "OCRM-RESP-NODE-HOST-CONNECTION-001", "OCRM-M13", "owner-audit"),
     "src/gateway/call-device-auth.worker.test.ts": (82, "OCRM-RESP-NODE-HOST-CONNECTION-001", "OCRM-M13", "test-oracle-replaced"),
     "src/gateway/connection-details.ts": (241, "OCRM-RESP-NODE-HOST-CONNECTION-001", "OCRM-M13", "owner-audit"),
