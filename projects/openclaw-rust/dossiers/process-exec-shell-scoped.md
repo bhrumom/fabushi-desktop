@@ -47,6 +47,14 @@ termination-controller rows remain `not-wired` with blocker
 `BL-EXEC-TERMINATION-CONTROLLER-CALLER-001`; the kill-tree row remains scoped
 to the real supervisor callers and does not upgrade command-exec parity.
 
+The existing Host local-exec owner also now closes the pre-send journal race:
+`execute_shell` registers an operation before the bridge frame is sent, so a
+provider send failure must finish that operation as `Failed` rather than leave
+an indefinitely `Accepted` active record. The focused contract covers the
+provider-send failure and retained failed history. This remains local-exec
+failure-state evidence, not proof of command termination-controller parity or
+packaged/provider acceptance.
+
 The same locked-source pass also completed the adjacent execution contracts:
 
 | File | Blob SHA | Lines | Read/mapping result |

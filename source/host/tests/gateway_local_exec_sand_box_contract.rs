@@ -304,6 +304,34 @@ fn exec_manager_streams_shell_and_read_through_permissioned_provider() {
     assert!(calls.iter().any(|(_, action, target)| action == "read-file" && target == "/tmp/a.txt"));
 }
 
+#[test]
+fn shell_send_failure_finishes_pre_send_operation_as_failed() {
+    let (bridge, _registration, receive) = bridge_with_provider();
+    drop(receive);
+    let gate = Arc::new(FakeGate::default());
+    let manager = GatewayLocalExecSandBox::new(bridge, gate)
+        .remote_resource_accessor()
+        .manager();
+
+    let error = manager
+        .execute_shell(
+            &GatewayLocalToolScope {
+                agent_id: Some("agent-1".into()),
+                tool_call_id: Some("send-failure".into()),
+                action: Some("run-command".into()),
+            },
+            "pwd",
+            "/tmp",
+            "send-failure",
+        )
+        .expect_err("provider send failure must fail the shell operation");
+    assert!(!error.message.is_empty());
+    let record = manager
+        .operation("send-failure")
+        .expect("failed pre-send operation remains auditable");
+    assert_eq!(record.status, GatewayLocalExecOperationStatus::Failed);
+}
+
 
 #[test]
 fn exec_manager_reports_control_throw_with_frozen_failure_classification() {

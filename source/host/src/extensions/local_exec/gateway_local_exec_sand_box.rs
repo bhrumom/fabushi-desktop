@@ -1058,7 +1058,7 @@ impl GatewayLocalExecManager {
             working_directory,
             tool_call_id,
         );
-        let mut request = self.open_exec_with_before_send(
+        let mut request = match self.open_exec_with_before_send(
             scope,
             "run-command",
             command,
@@ -1066,7 +1066,25 @@ impl GatewayLocalExecManager {
             |cancellation| {
                 self.register_operation(tool_call_id, scope.agent_id.as_deref(), cancellation)
             },
-        )?;
+        ) {
+            Ok(request) => request,
+            Err(error) => {
+                // The registration callback runs before the bridge sends the
+                // frame. If that send fails, close the already-journaled
+                // operation instead of leaving it indefinitely Accepted.
+                if let Err(cleanup_error) = self.finish_operation(
+                    tool_call_id,
+                    GatewayLocalExecOperationStatus::Failed,
+                    None,
+                ) {
+                    return Err(SandLocalExecError::new(format!(
+                        "{}; operation cleanup was not safely durable: {}",
+                        error.message, cleanup_error.message
+                    )));
+                }
+                return Err(error);
+            }
+        };
         let mut result = GatewayLocalExecShellResult {
             request_id: tool_call_id.to_string(),
             ..GatewayLocalExecShellResult::default()
