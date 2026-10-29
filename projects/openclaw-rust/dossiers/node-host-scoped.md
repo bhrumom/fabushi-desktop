@@ -1644,3 +1644,39 @@ records this source range as ending at line 238, whereas the locked blob reads
 controlled writer reconciliation. No generated shard/index state, ledger ref,
 or completion flag was changed. Rust implementation, wiring, runtime
 execution, and acceptance remain unverified.
+
+## 145. Worker deploy entrypoints and sealed-runtime registry read-only audit (2026-10-29)
+
+The locked upstream worker deploy files were read in full:
+`worker-deploy-browser-runtime.ts`
+(`963014da81018e74d57f58bb96ef106ffe5331db`, 9 lines),
+`worker-deploy-client-credentials.ts`
+(`8fae136772f103bd016dc5397afd3e9a32688acb`, 2 lines),
+`worker-deploy-entry.ts`
+(`930ab46ba9ce13d3ed58cd801101f172455e0cc6`, 54 lines),
+`worker-deploy-file-tool-planning.ts`
+(`9eaaff72594868ca2d763f4421fa2438ac11c524`, 2 lines),
+`worker-deploy-file-tool-read.ts`
+(`d068828c308c292d69ad30c8df378190ac6c6101`, 2 lines),
+`worker-deploy-image-processor.ts`
+(`d7de2a0f1ffb37addf9567918589692290543497`, 2 lines),
+`worker-deploy-runtime.ts`
+(`7f5bf2454fe8b42139c12f4aa8164e66926b3dac`, 29 lines),
+`worker-deploy-sqlite-source-revision.ts`
+(`cca4e0d487d63828d3b4e0abbe7659a88e7ac6ed`, 2 lines),
+`worker-deploy-sqlite-store.ts`
+(`24ae90cdc8e431d96ab6cb81b65c44b79701fda3`, 8 lines), and
+`worker-deploy-state-read.ts`
+(`130eeb3833390e51d1dca3c983e5b09669b9fce4`, 2 lines).
+The deploy entry accepts only the four declared internal flags, rejects
+duplicates and unknown arguments, requires managed mode for native inference,
+keeps prewarm separate from execution, formats operator-safe failures, and
+destroys/disconnects startup resources on every exit path. The sealed-runtime
+registry maps bundle-hash-controlled entrypoints for credentials, file tools,
+GitHub execution, image processing, SQLite/source revision, state read and
+shared state; the thin deploy modules only bootstrap their one worker owner.
+Browser deployment is explicitly fail-closed when the build has not composed
+its runtime. This is read-only evidence for the existing Node Host/Runner
+bundle and process-composition owners: no generated shard/index state, ledger
+ref, or completion flag was changed. Rust implementation, production wiring,
+packaged execution, and acceptance remain unverified.
