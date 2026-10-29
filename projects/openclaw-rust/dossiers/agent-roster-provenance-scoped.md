@@ -109,30 +109,34 @@ The audited source code was decomposed into 6 discrete Rust runtime responsibili
 ## 5. Exact-head production reachability re-audit (2026-10-29, refreshed)
 
 The exact Fabushi target under review is
-`82d417b82423466706856a40b933f95fbebc3a9c`. The source implementation is
-unchanged from the prior audit; the refreshed exact-head search confirms that
-`agent_roster.rs` is still a library/test surface, not a connected
-configuration owner:
+`f87889df61ca5b3aae49df728e779460635f258f`. The production Host now has a
+real roster bookkeeping owner chain:
 
-- `HostRosterBookkeeping::apply_config` has no production call site;
-- `HostRosterBookkeeping` and `HostRosterPorts` are constructed only by
-  contract tests;
+- `ProductionHostExtensions::start_box_store_sync` supplies the existing
+  BoxStore/StateBackstop owners;
+- `production_host_roster_bookkeeping` constructs adapters for the existing
+  Attachments, Transcript, ForeverBox, BoxStore, StateBackstop, and SourceMap
+  owners;
+- startup applies the persisted resolved settings through
+  `HostRosterBookkeeping::apply_config`;
+- both existing `config.set` and `setHostSettings` paths persist `agents` and
+  reapply the bookkeeping projection;
+- GitHub Rust desktop run `40820864704` passed the shipping Host `cargo check`
+  step at this exact head; the full Host test step is still running.
+
+The following behavior remains outside the connected path:
 - `apply_implicit_agent_roster_defaults`,
   `collect_agent_roster_findings`, `can_write_doctor_include`, and
   `pin_survivor_workspace_for_roster_collapse` have no production consumers;
-- the production `SettingsService` owns Fabushi `settings.json` fields and
-  `config.get`/`config.set`, but does not own or expose an OpenClaw
-  `agents.entries`/`agents.list` resolved configuration document;
-- the only production `config.set` path persists through
-  `SettingsService::set_host_settings`, which has no roster callback or
-  resolved-document handoff;
-- source evidence remains bound to the unchanged implementation blobs:
-  `source/host/src/host_roster_bookkeeping.rs` (library owner),
-  `source/host/src/extensions/settings/settings_service.rs` (settings owner),
-  and `source/host/app/src/main.rs` (`config.set` gateway path).
+- `apply_implicit_agent_roster_defaults`, `collect_agent_roster_findings`,
+  `can_write_doctor_include`, and
+  `pin_survivor_workspace_for_roster_collapse` still have no production
+  consumer;
+- the persisted `agents` document is now exposed by SettingsService, but its
+  doctor/include provenance and security-audit policy are not yet enforced by
+  that owner.
 
-The dossier's earlier “Production Call Chain” entries therefore remain
-planned ownership contracts, not evidence of production wiring. No ledger
-status is upgraded. The blocker `BL-AGENT-ROSTER-UPSTREAM-CALLER-001` remains
-valid until a spec-approved configuration/doctor owner supplies the resolved
-document and invokes the helpers through the existing Host lifecycle.
+The representation/bookkeeping call chain is therefore production-wired, but
+the blocker `BL-AGENT-ROSTER-UPSTREAM-CALLER-001` remains valid for the
+remaining configuration/doctor/security helper consumers. No global completion
+flag is upgraded by this partial wiring evidence.

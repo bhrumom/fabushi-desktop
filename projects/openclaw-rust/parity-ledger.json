@@ -866,7 +866,10 @@
       ],
       "evidence_refs": [
         "source/host/tests/openclaw_agent_roster_contract.rs",
-        "projects/openclaw-rust/dossiers/agent-roster-provenance-scoped.md"
+        "projects/openclaw-rust/dossiers/agent-roster-provenance-scoped.md",
+        "source/host/app/src/main.rs",
+        "source/host/src/extensions/settings/settings_service.rs",
+        "source/host/src/host_roster_bookkeeping.rs"
       ],
       "existing_owner_candidates": [
         {
