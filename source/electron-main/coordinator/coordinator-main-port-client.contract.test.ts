@@ -63,3 +63,21 @@ test("a protocol breach still settles when the shutdown frame cannot be posted",
   assert.equal((await client.settled).outcome, "protocol-breach");
   assert.equal(closed, 1);
 });
+
+test("dispose settles pending calls when the shutdown frame cannot be posted", async () => {
+  let closed = 0;
+  const client = createCoordinatorMainPortClient({
+    post(frame) {
+      if ((frame as { phase?: string }).phase === "shutdown") throw new Error("port is gone");
+    },
+    close() {
+      closed += 1;
+    },
+  });
+
+  const pending = client.legs.setHostSettings({ settings: {} });
+  client.dispose();
+  await assert.rejects(pending, /shutdown-requested/);
+  assert.equal((await client.settled).outcome, "shutdown-requested");
+  assert.equal(closed, 1);
+});

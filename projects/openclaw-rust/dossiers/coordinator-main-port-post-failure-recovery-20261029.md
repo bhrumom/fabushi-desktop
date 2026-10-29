@@ -31,6 +31,9 @@ The fix stays inside the existing Coordinator owner:
 - protocol-breach shutdown-post failure is contained so malformed input still
   reaches the local breach settlement instead of throwing before pending calls
   are released.
+- explicit `dispose()` uses the same contained shutdown-post path, so generation
+  revocation cannot leave pending callers behind when the endpoint is already
+  broken.
 
 This does not claim that a remote side effect did not occur. It only settles
 the local transport call as failed and preserves the existing generation and
@@ -41,8 +44,9 @@ shutdown boundaries.
 `source/electron-main/coordinator/coordinator-main-port-client.contract.test.ts`
 asserts the direct negative cases: request post throws, the pending promise
 rejects with `post-failed`, hello post failure does not replace the current
-generation, and a protocol-breach shutdown post failure still settles and
-closes the endpoint.
+generation, a protocol-breach shutdown post failure still settles and closes
+the endpoint, and explicit disposal settles pending calls even when its
+shutdown post throws.
 
 The oracle has not been executed locally. Required remaining evidence is the
 exact-target GitHub Actions run plus a packaged-equivalent account-transition
