@@ -168,7 +168,7 @@ pub fn parse_worker_receipt(value: &Value) -> Result<NodeWorkerSupervisorReceipt
             }
         }
         "failed" | "interrupted" | "cancelled" => {
-            require_exact_keys(object, &identity_keys_with("state", "errorText"))?;
+            require_exact_keys(object, &identity_keys_with_two("state", "errorText"))?;
             let error_text = bounded_error_text(object.get("errorText"))?;
             match state {
                 "failed" => NodeWorkerSupervisorReceiptState::Failed { error_text },
@@ -251,7 +251,7 @@ fn identity_keys_with(extra: &str) -> Vec<&str> {
     ]
 }
 
-fn identity_keys_with_two(first: &str, second: &str) -> Vec<&str> {
+fn identity_keys_with_two<'a>(first: &'a str, second: &'a str) -> Vec<&'a str> {
     let mut keys = identity_keys_with(first);
     keys.push(second);
     keys
