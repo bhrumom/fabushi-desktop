@@ -6,10 +6,16 @@
 //! Runner composition remain owned by their existing modules.
 
 mod lease;
+mod provider_catalog;
 
 pub use lease::{
     CloudWorkerLease, CloudWorkerLeaseError, CloudWorkerLeaseMutation,
     CloudWorkerLeaseScope, CloudWorkerLifecycle, CloudWorkerMutationOutcome,
     CloudWorkerRuntimeIdentity, LeaseGeneration, LeaseId, OwnerEpoch,
     ReplayKey,
+};
+pub use provider_catalog::{
+    CloudWorkerCatalog, CloudWorkerCatalogError, CloudWorkerCatalogParser,
+    CloudWorkerMachine, CloudWorkerOs, CloudWorkerProvider, CloudWorkerProfile,
+    CloudWorkerResourceLimits,
 };

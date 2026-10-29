@@ -211,6 +211,12 @@ process launch, device enrollment, persistence, Coordinator wiring or UI
 projection. The slice is therefore an implementation foundation, not P1
 completion or production reachability.
 
+The next slice adds the side-effect-free catalog contract at
+`source/host/src/extensions/cloud_workers/provider_catalog.rs`: bounded JSON
+input, explicit provider/profile/machine records, deterministic ordering,
+duplicate rejection and resource/architecture validation. It still does not
+discover a provider, grant permission, select a model or launch a worker.
+
 ## 9. Definition of Done / acceptance criteria
 
 - P1-AC01: ADR is approved and the target symbols/consumers are recorded in
