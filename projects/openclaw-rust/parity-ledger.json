@@ -25294,6 +25294,7 @@
       ],
       "typed_contracts": [
         "paginate_sessions",
+        "select_visible_transcript_messages",
         "SessionSummary",
         "SessionTranscriptLockRegistry",
         "SessionVisibility"

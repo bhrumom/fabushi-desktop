@@ -67,6 +67,19 @@ complete and mapped, while implementation remains in progress and production
 wiring/verification/acceptance remain open; no generated shard or completion
 flag was changed.
 
+## 7. Pure reset-window visibility projection (2026-10-29)
+
+`session_memory.rs` now provides `select_visible_transcript_messages`, a pure
+projection that accepts a reset-tail boundary from the canonical transcript
+owner, retains the selected suffix, and drops `toolResult` messages whose
+`toolCallId` is not paired with an assistant `toolCall` in that same window.
+The focused Rust contract covers a paired result, an orphan result, and a
+reset-tail start. The helper deliberately owns no transcript storage, reset
+generation, cursor, append, rewrite, or current-turn fence; those remain with
+the existing session/transcript owners. This is an implementation slice for
+the upstream oracle, not completion of the full transcript runtime or
+production wiring.
+
 ## 4. Audited Bundled Channel Contract Invariants
 The following test suites in `src/plugins/contracts/` have been audited line-by-line and mapped to `OCRM-RESP-PLUGIN-SDK-CHANNEL-RUNTIME-001`:
 1. `channel-config-writes.contract.test.ts` (71 lines):

@@ -7,9 +7,9 @@ use mahayana_host_runtime::extensions::plugin_sdk::channel_runtime::{
     GroupPolicy, ReplayClaimResult,
 };
 use mahayana_host_runtime::extensions::plugin_sdk::session_memory::{
-    normalize_page_limit, paginate_sessions, SessionCatalogQueryParams, SessionSummary,
-    SessionTranscriptLockRegistry, SessionVisibility, DEFAULT_PAGE_LIMIT, MAX_CURSOR_LENGTH,
-    MAX_PAGE_LIMIT,
+    normalize_page_limit, paginate_sessions, select_visible_transcript_messages,
+    SessionCatalogQueryParams, SessionSummary, SessionTranscriptLockRegistry, SessionVisibility,
+    DEFAULT_PAGE_LIMIT, MAX_CURSOR_LENGTH, MAX_PAGE_LIMIT,
 };
 use mahayana_host_runtime::extensions::plugin_sdk::tool_runtime::{
     BrowserHookBridge, PluginCommandDispatcher, PluginToolDefinition,
@@ -245,6 +245,21 @@ fn test_ocrm_plugin_sdk_session_memory() {
         .enforce_sync_allowed(SessionVisibility::Incognito)
         .unwrap_err();
     assert!(err.contains("IncognitoSessionSyncAccessDenied"));
+
+    let entries = vec![
+        json!({"role": "user", "content": "question"}),
+        json!({
+            "role": "assistant",
+            "content": [{"type": "toolCall", "id": "call-1", "name": "read", "arguments": {}}]
+        }),
+        json!({"role": "toolResult", "toolCallId": "call-1", "content": [{"type": "text", "text": "paired"}]}),
+        json!({"role": "toolResult", "toolCallId": "orphan", "content": [{"type": "text", "text": "orphan"}]}),
+        json!({"role": "assistant", "content": "answer"}),
+    ];
+    assert_eq!(
+        select_visible_transcript_messages(&entries, Some(1)),
+        entries[1..3].to_vec().into_iter().chain(entries[4..5].to_vec()).collect::<Vec<_>>(),
+    );
 }
 
 #[test]

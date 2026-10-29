@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use serde_json::{Map, Value};
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 
@@ -124,6 +125,66 @@ pub fn paginate_sessions(
         next_cursor,
         total_count,
     })
+}
+
+/// Select the visible portion of a transcript after the canonical session
+/// owner has resolved a reset-window boundary.
+///
+/// This is deliberately a pure projection. `reset_tail_start` is supplied by
+/// the existing transcript/session owner; this module does not infer, store,
+/// or mutate reset generations. Tool results are visible only when the same
+/// window contains a corresponding assistant tool call, matching the SDK
+/// context-engine contract and avoiding orphan result injection.
+pub fn select_visible_transcript_messages(
+    entries: &[Value],
+    reset_tail_start: Option<usize>,
+) -> Vec<Value> {
+    let start = reset_tail_start.unwrap_or(0).min(entries.len());
+    let window = &entries[start..];
+    let paired_tool_call_ids = window
+        .iter()
+        .flat_map(tool_call_ids)
+        .collect::<std::collections::HashSet<_>>();
+
+    window
+        .iter()
+        .filter(|entry| {
+            let Some(message) = message_object(entry) else {
+                return true;
+            };
+            if message.get("role").and_then(Value::as_str) != Some("toolResult") {
+                return true;
+            }
+            message
+                .get("toolCallId")
+                .and_then(Value::as_str)
+                .is_some_and(|tool_call_id| paired_tool_call_ids.contains(tool_call_id))
+        })
+        .cloned()
+        .collect()
+}
+
+fn message_object(entry: &Value) -> Option<&Map<String, Value>> {
+    entry
+        .as_object()
+        .and_then(|object| object.get("message").and_then(Value::as_object).or(Some(object)))
+}
+
+fn tool_call_ids(entry: &Value) -> Vec<&str> {
+    let Some(message) = message_object(entry) else {
+        return Vec::new();
+    };
+    if message.get("role").and_then(Value::as_str) != Some("assistant") {
+        return Vec::new();
+    }
+    message
+        .get("content")
+        .and_then(Value::as_array)
+        .into_iter()
+        .flatten()
+        .filter(|part| part.get("type").and_then(Value::as_str) == Some("toolCall"))
+        .filter_map(|part| part.get("id").and_then(Value::as_str))
+        .collect()
 }
 
 #[derive(Clone, Default)]
