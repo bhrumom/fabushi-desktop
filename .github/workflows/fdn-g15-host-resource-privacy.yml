@@ -99,7 +99,7 @@ jobs:
           "$cargo_bin" --version
           "$rustc_bin" --version
           set -e
-          "$cargo_bin" test --locked --manifest-path source/host/Cargo.toml --test network_worker_process_contract
+          RUSTUP_TOOLCHAIN=1.97.1 RUSTC="$rustc_bin" "$cargo_bin" test --locked --manifest-path source/host/Cargo.toml --test network_worker_process_contract
           git diff --exit-code -- source/host/Cargo.lock
           test ! -e source/host/target
           test "$(git status --porcelain)" = ""
