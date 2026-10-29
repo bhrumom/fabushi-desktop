@@ -12,6 +12,13 @@ from pathlib import Path
 ROOT = Path("projects/openclaw-rust")
 SHARDS = ROOT / "inventory" / "shards"
 READS = {
+    "src/gateway/agent-turn/agent-run-dispatch-execution-identity.ts": (7, "OCRM-RESP-SESSION-TURNS-CONTROLLER-001", "OCRM-M07", "owner-audit"),
+    "src/gateway/agent-turn/agent-run-dispatch-outcome.ts": (100, "OCRM-RESP-SESSION-TURNS-CONTROLLER-001", "OCRM-M07", "owner-audit"),
+    "src/gateway/agent-turn/agent-run-execution-lineage.ts": (123, "OCRM-RESP-SESSION-TURNS-CONTROLLER-001", "OCRM-M07", "owner-audit"),
+    "src/gateway/agent-turn/agent-run-execution-types.ts": (63, "OCRM-RESP-SESSION-TURNS-CONTROLLER-001", "OCRM-M07", "owner-audit"),
+    "src/gateway/agent-turn/agent-run-recovery-admission.ts": (90, "OCRM-RESP-SESSION-TURNS-CONTROLLER-001", "OCRM-M07", "owner-audit"),
+    "src/gateway/agent-turn/agent-run-terminal-producer.ts": (95, "OCRM-RESP-SESSION-TURNS-CONTROLLER-001", "OCRM-M07", "owner-audit"),
+    "src/gateway/agent-turn/agent-run-undispatched-outcome.ts": (100, "OCRM-RESP-SESSION-TURNS-CONTROLLER-001", "OCRM-M07", "owner-audit"),
     "src/gateway/agent-turn/agent-dedupe-lifecycle.ts": (317, "OCRM-RESP-SESSION-TURNS-CONTROLLER-001", "OCRM-M07", "owner-audit"),
     "src/gateway/agent-turn/agent-dedupe.ts": (236, "OCRM-RESP-SESSION-TURNS-CONTROLLER-001", "OCRM-M07", "owner-audit"),
     "src/gateway/agent-turn/agent-admission-controller.test.ts": (133, "OCRM-RESP-SESSION-TURNS-CONTROLLER-001", "OCRM-M07", "test-oracle-replaced"),

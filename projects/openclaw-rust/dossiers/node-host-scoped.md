@@ -857,3 +857,23 @@ through the existing completion owner. These sources remain under the Session
 Turns Controller and existing Gateway dedupe store; they do not introduce a
 second cache, replay authority, or queue. Rust implementation and runtime
 acceptance remain unverified.
+
+## 107. Agent execution identity, recovery, and terminal settlement (2026-10-29)
+
+The locked `agent-run-dispatch-execution-identity.ts`,
+`agent-run-dispatch-outcome.ts`, `agent-run-execution-lineage.ts`,
+`agent-run-execution-types.ts`, `agent-run-recovery-admission.ts`,
+`agent-run-terminal-producer.ts`, and `agent-run-undispatched-outcome.ts` were
+read in full. Execution identity facts are carried through a private context
+carrier and authenticated spawn lineage is consumed once at child admission;
+local-user, agent-tool, ACP, represented-subject, grant, and runtime-assurance
+facts stay explicit. Terminal classification preserves restart/rpc/stop/timeout
+semantics and keeps raw provider failures distinct from owner-recorded
+cancellation. Restart recovery is committed durably before execution and
+restored or cancelled exactly once; terminal publication is fenced to the
+registered run instance, lifecycle generation, session identity, and delegated
+authority. Undispatched input settles before replay publication and cleanup.
+These boundaries remain under the existing Session Turns Controller and
+security/agent authorities; they do not create a second execution identity,
+recovery, or terminal store. Rust implementation and acceptance remain
+unverified.

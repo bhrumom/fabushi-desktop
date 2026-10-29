@@ -28428,6 +28428,69 @@
       "selected_owner": "source/host/src/extensions/session/session_turns_controller.rs",
       "source_refs": [
         {
+          "blob_sha": "5ed74467a7d9a2711e81fe7290c381b1b0de3d1b",
+          "path": "src/gateway/agent-turn/agent-run-dispatch-execution-identity.ts",
+          "range": {
+            "end_line": 7,
+            "start_line": 1
+          },
+          "symbol": "agent dispatch execution identity carrier"
+        },
+        {
+          "blob_sha": "dfe09d28337b03d6249fe6500e4538d29621c278",
+          "path": "src/gateway/agent-turn/agent-run-dispatch-outcome.ts",
+          "range": {
+            "end_line": 100,
+            "start_line": 1
+          },
+          "symbol": "Gateway agent terminal classification and status projection"
+        },
+        {
+          "blob_sha": "2b5bf2f4a9dec7a4bb6d87ef544899877c06dc32",
+          "path": "src/gateway/agent-turn/agent-run-execution-lineage.ts",
+          "range": {
+            "end_line": 123,
+            "start_line": 1
+          },
+          "symbol": "agent command execution identity and spawn lineage admission"
+        },
+        {
+          "blob_sha": "b6df5833415cd78cf749348698c74d992e2bdff6",
+          "path": "src/gateway/agent-turn/agent-run-execution-types.ts",
+          "range": {
+            "end_line": 63,
+            "start_line": 1
+          },
+          "symbol": "StartAgentRunExecutionParams"
+        },
+        {
+          "blob_sha": "58b7e9eaafc49b00ef2086e059443244c745effa",
+          "path": "src/gateway/agent-turn/agent-run-recovery-admission.ts",
+          "range": {
+            "end_line": 90,
+            "start_line": 1
+          },
+          "symbol": "admitAgentRestartRecovery"
+        },
+        {
+          "blob_sha": "e03aa8a23c0e9fc0aaeb6ba6b86c7c6ffe890543",
+          "path": "src/gateway/agent-turn/agent-run-terminal-producer.ts",
+          "range": {
+            "end_line": 95,
+            "start_line": 1
+          },
+          "symbol": "bindGatewayAgentTerminalProducer"
+        },
+        {
+          "blob_sha": "f952d62eabbc18b30520d383e16077b5cdabb368",
+          "path": "src/gateway/agent-turn/agent-run-undispatched-outcome.ts",
+          "range": {
+            "end_line": 100,
+            "start_line": 1
+          },
+          "symbol": "createAgentRunUndispatchedOutcome"
+        },
+        {
           "blob_sha": "0f52e4dc817b2e537580cabc6f5e2f19e5dcb271",
           "path": "src/gateway/agent-turn/agent-dedupe-lifecycle.ts",
           "range": {
