@@ -97,6 +97,30 @@ The focused test oracles cover capture lifetime ordering and scrub suppression a
 
 The provider/lifecycle oracle files were also read at the pinned tree: `crabbox-worker-provider.test.ts` (`de4ae1ab51e3465c51254918df613846025abec9`), `crabbox-worker-provider-platforms.test.ts` (`b660cf474d0192e373f40cf9b7e550c03ac86a0b`), `crabbox-worker-provider-desktop.test.ts` (`f4bd5a507f37d20dde71081ac5bf08df3d4c0ebf`), `crabbox-worker-provider-binary.test.ts` (`85f31de011c97c968e9e011d0ab71039677e336a`), `crabbox-worker-warm-image.test.ts` (`a6932d2bb9f962379f7c8ee0f7c50d5eccb9ee7c`), `crabbox-worker-warm-image-lifecycle.test.ts` (`ce9907a7e82397be46e50e51a2ba9c1d032799c5`), `crabbox-worker-warm-image-recovery.test.ts` (`66ddbed3b5941e17fab48ffa662cdb31a690d296`), `crabbox-worker-warm-image-policy.test.ts` (`1a3b29958c3ddd6b78d923c32061b6ae3bfc42d3`), and `crabbox-worker-warm-image-store.test.ts` (`7018deb0324e0d2cf3ac1eba37fd5b7d06c22f46`).
 
+The remaining warm-image source/oracle closure was re-read and recorded in the
+canonical inventory at the locked tree:
+
+| Path | Blob | Lines | Disposition |
+| --- | --- | ---: | --- |
+| `crabbox-worker-warm-image-capture.ts` | `12cc2cbcd40a33502927bc1a284216cc66428912` | 519 | owner-audit |
+| `crabbox-worker-warm-image-checkpoint.ts` | `4f2c80c517d8be3c075c72fbf6ee40ab39ae9458` | 226 | owner-audit |
+| `crabbox-worker-warm-image-recipe.ts` | `094708190c05b5d088a59d94b2989886c524d74a` | 55 | owner-audit |
+| `crabbox-worker-warm-image-records.ts` | `c1e56eefef55704a5c3f9124a67412eb3f23ff31` | 26 | owner-audit |
+| `crabbox-worker-warm-image-maintenance.test.ts` | `dc5e22a5f1e7290cbaa6a5bda1ddd65e8f34de73` | 420 | test-oracle-replaced |
+| `crabbox-worker-warm-image-recovery.test.ts` | `66ddbed3b5941e17fab48ffa662cdb31a690d296` | 168 | test-oracle-replaced |
+| `crabbox-worker-warm-image-retirement.test.ts` | `37e850c507874009ab6a62dbf0900ef08de365f0` | 365 | test-oracle-replaced |
+| `crabbox-worker-warm-image-store.test.ts` | `7018deb0324e0d2cf3ac1eba37fd5b7d06c22f46` | 243 | test-oracle-replaced |
+
+This closure confirms the warm-image boundary: capture claims a compare-and-
+apply operation, scrubs forwarded credentials before native image creation,
+retains unresolved native outcomes for explicit recovery, and refuses required
+project enrollment while capture remains uncertain. Checkpoint parsing requires
+bounded native identities and distinguishes absent, pending and available
+states. Recipe diagnostics are bounded and UTF-8 safe; legacy selectors bind
+the original row bytes. The focused oracles cover conflict rechecks, capacity,
+indeterminate writes, retirement/borrower fencing, restart recovery, stale
+generation protection and disposal ordering.
+
 These tests prove, as source oracles, catalog projection and bounded recovery, setup-secret separation and revocation, preflight security rejection, readiness/timeout/cleanup classification, diagnostics redaction, fixed-lease replay after lost replies, heartbeat scheduling/fencing, platform/desktop limitations, managed binary sharing, warm-image lifecycle/recovery, compare-and-apply conflict behavior, and config-schema rejection. They do not prove Fabushi packaged behavior or real provider/device acceptance.
 
 ## Fabushi owner resolution

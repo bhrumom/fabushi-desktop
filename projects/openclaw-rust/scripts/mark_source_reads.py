@@ -12,6 +12,14 @@ from pathlib import Path
 ROOT = Path("projects/openclaw-rust")
 SHARDS = ROOT / "inventory" / "shards"
 READS = {
+    "extensions/crabbox/src/crabbox-worker-warm-image-capture.ts": (519, None, "OCRM-M11", "owner-audit"),
+    "extensions/crabbox/src/crabbox-worker-warm-image-checkpoint.ts": (226, None, "OCRM-M11", "owner-audit"),
+    "extensions/crabbox/src/crabbox-worker-warm-image-recipe.ts": (55, None, "OCRM-M11", "owner-audit"),
+    "extensions/crabbox/src/crabbox-worker-warm-image-records.ts": (26, None, "OCRM-M11", "owner-audit"),
+    "extensions/crabbox/src/crabbox-worker-warm-image-maintenance.test.ts": (420, None, "OCRM-M11", "test-oracle-replaced"),
+    "extensions/crabbox/src/crabbox-worker-warm-image-recovery.test.ts": (168, None, "OCRM-M11", "test-oracle-replaced"),
+    "extensions/crabbox/src/crabbox-worker-warm-image-retirement.test.ts": (365, None, "OCRM-M11", "test-oracle-replaced"),
+    "extensions/crabbox/src/crabbox-worker-warm-image-store.test.ts": (243, None, "OCRM-M11", "test-oracle-replaced"),
     ".github/workflows/opengrep-precise-full.yml": (93, None, "OCRM-M10", "security-evidence"),
     ".github/workflows/opengrep-precise.yml": (136, None, "OCRM-M10", "security-evidence"),
     "security/README.md": (137, None, "OCRM-M10", "security-evidence"),
