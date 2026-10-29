@@ -109,7 +109,7 @@ The audited source code was decomposed into 6 discrete Rust runtime responsibili
 ## 5. Exact-head production reachability re-audit (2026-10-29, refreshed)
 
 The exact Fabushi implementation target under review is
-`97aee5458290d7a94362d4f861870140d4424c78`. The production Host now has a
+`ba23cbd7631ddcf5e99c513dd2c8b4d4d5050b51`. The production Host now has a
 real roster bookkeeping owner chain:
 
 - `ProductionHostExtensions::start_box_store_sync` supplies the existing
@@ -132,20 +132,22 @@ real roster bookkeeping owner chain:
   implementation head, and OCRM source-authority run `40825742161` completed
   successfully. The Rust run covered the full Host test suite, attachment,
   takeover, ownership, credential-handoff, and pressure checks.
-- The server-owned include guard is exercised by the existing SettingsService
-  for both current and target roster documents; client-supplied `doctorFix`,
-  parsed-config, resolved-config, and provenance flags are not trusted.
-- GitHub Rust desktop run `40830275021` completed successfully at this exact
-  implementation head, and OCRM source-authority run `40830275035` completed
-  successfully. The Rust run included the full Host suite and the new
-  fail-closed include-write regression tests.
+- The SettingsService rejects explicitly include-owned current/target roster
+  documents, and does not trust client-supplied `doctorFix`, parsed-config,
+  resolved-config, or provenance flags. This remains only a local boundary:
+  there is no trusted producer resolving root/external includes into a roster.
+- GitHub Rust desktop run `40834963655` completed successfully at this exact
+  implementation head, and OCRM source-authority run `40834963600` completed
+  successfully. The Rust run included the full Host suite and production
+  diagnostic/redaction checks.
 
-No roster-specific implementation blocker remains for these six helpers. No
-new doctor runtime was introduced; the existing SettingsService rejects
-include-owned roster writes from ordinary config mutations using server-owned
-current/target configuration facts, while the focused helper contract remains
-covered independently.
+The representation, implicit-default, audit, and workspace-transition paths
+are production-wired. Provenance and doctor/include responsibilities remain
+blocked because Fabushi has no trusted include resolver/provenance producer;
+the local helper and explicit `$include` boundary are retained as partial
+evidence, not as full production provenance acceptance. No new doctor runtime
+was introduced.
 
-The representation/bookkeeping call chain is therefore production-wired, but
-The roster-specific upstream-caller blocker is closed for these six helpers;
-broader project blockers and all global completion flags remain unchanged.
+The roster-specific upstream-caller blocker therefore remains open for
+provenance/doctor include handling. Broader project blockers and all global
+completion flags remain unchanged.

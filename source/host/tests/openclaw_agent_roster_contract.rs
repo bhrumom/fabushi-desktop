@@ -188,6 +188,21 @@ fn test_ocrm_roster_o04_include_provenance() {
         }
     });
     assert!(config_include_owns_agent_roster_values(&parsed_with_include, &resolved, false));
+
+    // Root/external include ownership is only decidable when the trusted
+    // resolver supplies the provenance fact; a client omission must not turn
+    // that fact into a safe write.
+    let parsed_root_include = json!({ "$include": "./root.json" });
+    assert!(config_include_owns_agent_roster_values(
+        &parsed_root_include,
+        &resolved,
+        true
+    ));
+    assert!(!config_include_owns_agent_roster_values(
+        &json!({ "unrelated": { "$include": "./other.json" } }),
+        &resolved,
+        false
+    ));
 }
 
 #[test]

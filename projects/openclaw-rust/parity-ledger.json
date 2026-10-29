@@ -762,7 +762,9 @@
     {
       "adr_refs": [],
       "behavior": "Roster include provenance evaluation, determining whether  contributes membership or default metadata at agents.entries/list or bindings boundaries.",
-      "blocker_ids": [],
+  "blocker_ids": [
+    "BL-AGENT-ROSTER-UPSTREAM-CALLER-001"
+  ],
       "capability_ids": [
         "config.agent_roster.provenance"
       ],
@@ -835,8 +837,8 @@
         "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "verified",
-        "wiring": "wired"
+        "verification": "not-run",
+        "wiring": "not-wired"
       },
       "target": {
         "language": "Rust",
@@ -4016,7 +4018,9 @@
     {
       "adr_refs": [],
       "behavior": "Doctor guarded config write staging and include boundary determination, protecting include-owned rosters from destructive in-place writes.",
-      "blocker_ids": [],
+  "blocker_ids": [
+    "BL-AGENT-ROSTER-UPSTREAM-CALLER-001"
+  ],
       "capability_ids": [
         "commands.doctor.roster_include_write"
       ],
@@ -4089,8 +4093,8 @@
         "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "verified",
-        "wiring": "wired"
+        "verification": "not-run",
+        "wiring": "not-wired"
       },
       "target": {
         "language": "Rust",
@@ -18329,9 +18333,7 @@
     {
       "adr_refs": [],
       "behavior": "Comprehensive sensitive token masking, sensitive URL query parameter redaction, PEM private key block sanitization, and structured authorization header masking.",
-      "blocker_ids": [
-        "BL-LOGGING-SECRET-WIRING-001"
-      ],
+  "blocker_ids": [],
       "capability_ids": [
         "telemetry.secret_redaction"
       ],
@@ -18341,7 +18343,8 @@
       "evidence_refs": [
         "source/host/tests/openclaw_logging_contract.rs",
         "source/host/tests/openclaw_crash_guard_media_contract.rs::test_ocrm_crash_o03_error_diagnostics_redaction",
-        "projects/openclaw-rust/dossiers/logging-diagnostics-scoped.md"
+    "projects/openclaw-rust/dossiers/logging-diagnostics-scoped.md",
+    "source/host/src/host_diagnostics.rs"
       ],
       "existing_owner_candidates": [
         {
@@ -18351,10 +18354,10 @@
       ],
       "id": "OCRM-RESP-LOGGING-SECRET-REDACTION-001",
       "integration": {
-        "consumer": "none identified; helper/local contract only",
-        "entrypoint": "source/host/src/error_diagnostics.rs::sanitize_error_diagnostic",
+    "consumer": "source/host/src/host_diagnostics.rs::report_diagnostic_event",
+    "entrypoint": "source/host/src/host_diagnostics.rs::sanitize_diagnostic_fields",
         "owner": "source/host/src/extensions/telemetry/openclaw_secret_redactor.rs",
-        "producer": "none identified; no production DiagnosticError caller found"
+    "producer": "source/host/src/host_diagnostics.rs::report_diagnostic_event"
       },
       "invariants": [
         "Tokens with <= 8 chars are masked completely",
@@ -18410,8 +18413,8 @@
         "implementation": "implemented",
         "mapping": "mapped",
         "read": "read-complete",
-        "verification": "not-run",
-        "wiring": "not-wired"
+        "verification": "verified",
+        "wiring": "wired"
       },
       "target": {
         "language": "Rust",
