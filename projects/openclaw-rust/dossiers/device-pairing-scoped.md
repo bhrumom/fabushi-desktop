@@ -60,7 +60,26 @@ security gate.
 
 ---
 
-## 3. Blockers & Frontiers
+## 3. Gateway producer/consumer closure (2026-10-29)
+
+The locked Gateway pairing producer and node-session consumer were read in full
+and mapped to the existing owners. `nodes.pairing.ts` owns scoped list/approve/
+reject/remove/rename authorization, publishes the committed pairing surface
+with expected connection identity and generation fencing, invalidates wakes and
+runtime state on removal, and disconnects only the removed device's node role.
+`connect-node-session.ts` begins a generation-scoped reconnect claim, derives
+the first capability surface from explicit approval provenance, routes reapproval
+through the existing pairing owner, and applies declared/effective capability
+ceilings before NodeHost admission. `node-registry-pairing.ts` is a narrow
+publication predicate: identity and optional generation must still match before
+the live session is considered current. Fabushi mapping therefore remains
+DevicePairingOwner for pairing mutation/publication and NodeHostSessionRegistry
+for live transport/session admission; no Gateway or CloudWorker state owner is
+introduced. This closes the source producer → existing owner → consumer map only;
+production wiring, executable verification, and physical companion-device
+acceptance remain pending.
+
+## 4. Blockers & Frontiers
 
 - `OCRM-BLOCK-GW-SCOPED-AUTHORITY-001`: Remaining pairing worker communication and background daemons not fully closed; external physical companion device communication unverified.
 - `OCRM-BLOCK-GW-INDEPENDENT-REVIEW-002`: Independent review receipt pending.
@@ -70,7 +89,7 @@ security gate.
 
 ---
 
-## 4. Itemized Audited Source Files (35 Files)
+## 4. Itemized Audited Source Files (38 Files)
 
 | Upstream Source Path | Blob SHA | Lines | Language | Read Status | Disposition | Target Fabushi Owner |
 |---|---|---|---|---|---|---|
@@ -109,3 +128,6 @@ security gate.
 | `src/infra/device-pairing-tokens.kernel.ts` | `5c61ce1a12a816dd5c147a91f66a0f1f837051d4` | 248 | TypeScript | read-complete | reuse-and-extend-existing-Rust | `source/host/src/network_enrollment_owner.rs` |
 | `src/infra/device-pairing-tokens.ts` | `5e2f2662f1401e0f1f40f419a95557b458875027` | 174 | TypeScript | read-complete | reuse-and-extend-existing-Rust | `source/host/src/network_enrollment_owner.rs` |
 | `src/infra/pairing-token.test.ts` | `0d7f4087fa156fa0982d996ded64408d7619fd07` | 47 | TypeScript | read-complete | test-conformance-oracle | `source/host/tests/network_enrollment_owner_contract.rs` |
+| `src/gateway/node-registry-pairing.ts` | `6ee2e1669f2315ad414383b9153d8ff73f0bffbf` | 59 | TypeScript | read-complete | reuse-and-extend-existing-Rust | `source/host/src/extensions/node_host/session_registry.rs` |
+| `src/gateway/server-methods/nodes.pairing.ts` | `719d56754faf40644c20c24b44a47a7c79ba369e` | 380 | TypeScript | read-complete | reuse-and-extend-existing-Rust | `source/host/src/device_pairing_owner.rs` |
+| `src/gateway/server/ws-connection/connect-node-session.ts` | `51aad1c06c2b8caa84753dfd53c5755767ff10bf` | 221 | TypeScript | read-complete | reuse-and-extend-existing-Rust | `source/host/src/extensions/node_host/session_registry.rs` |

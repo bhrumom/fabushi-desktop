@@ -5567,6 +5567,15 @@
           "symbol": "device-pairing-node.records"
         },
         {
+          "blob_sha": "719d56754faf40644c20c24b44a47a7c79ba369e",
+          "path": "src/gateway/server-methods/nodes.pairing.ts",
+          "range": {
+            "end_line": 380,
+            "start_line": 1
+          },
+          "symbol": "nodePairingHandlers"
+        },
+        {
           "blob_sha": "3e032d10f1b2079a22784e8181d14f2eda8e4946",
           "path": "src/infra/device-pairing-node.ts",
           "range": {
@@ -21616,6 +21625,24 @@
       "risk": "High; token re-use on mismatched gateway scopes leaks node auth credentials across networks",
       "selected_owner": "source/host/src/extensions/node_host/session_registry.rs",
       "source_refs": [
+        {
+          "blob_sha": "6ee2e1669f2315ad414383b9153d8ff73f0bffbf",
+          "path": "src/gateway/node-registry-pairing.ts",
+          "range": {
+            "end_line": 59,
+            "start_line": 1
+          },
+          "symbol": "pairingBindingForSession and isPublishedPairingCurrent"
+        },
+        {
+          "blob_sha": "51aad1c06c2b8caa84753dfd53c5755767ff10bf",
+          "path": "src/gateway/server/ws-connection/connect-node-session.ts",
+          "range": {
+            "end_line": 221,
+            "start_line": 1
+          },
+          "symbol": "prepareGatewayNodeConnect"
+        },
         {
           "blob_sha": "bf865be5f9c26e7b4a329645553a79f7e690a761",
           "path": "crates/openclaw-gateway-client/src/lib.rs",

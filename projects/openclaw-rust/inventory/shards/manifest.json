@@ -287,28 +287,28 @@
       "uncompressed_sha256": "df0a94dafbda4d5e55d4a8c9a962a6eb2c1b511798c6fcb298439fe5a62fab90"
     },
     {
-      "compressed_sha256": "030a77b53515f8637ccdf80748ee42e2e0439409434a2bc913ac005a2df007f6",
+      "compressed_sha256": "7a6af75ef0a8552b465cec148a27cb162d8f67947bda1c2f424dac481a8c3224",
       "count": 1024,
       "first_path": "src/gateway/model-account-connect.worker.test.ts",
       "last_path": "src/gateway/server-methods/environments.pairing-snapshot.test.ts",
       "path": "projects/openclaw-rust/inventory/shards/part-0035.jsonl.gz",
-      "uncompressed_sha256": "e56b29bc1e6aa89bd367d76be7fd0d1a49f7d1be261f9e3ad4148fe1c4e7741a"
+      "uncompressed_sha256": "f96ba16c90520209a08a6af2034eb7dee8dc2469a262fa9fa885d16adf0839d7"
     },
     {
-      "compressed_sha256": "39acb88a126f410ef65392b03877c215aca375f853efd4228263ae5699b545cf",
+      "compressed_sha256": "479dbb86df41df7544ed428915475b17f2b8065f977072ec0e383cadffeac743",
       "count": 1024,
       "first_path": "src/gateway/server-methods/environments.pool.test.ts",
       "last_path": "src/gateway/server-startup.test-support.ts",
       "path": "projects/openclaw-rust/inventory/shards/part-0036.jsonl.gz",
-      "uncompressed_sha256": "5a6f67d8cbfe5bee8e1313f4fa3abecac71bcc5507e144e3df13aa963e7d8028"
+      "uncompressed_sha256": "78e9183cf05b76b5f429747bade2d5e44282924fe38ad80e048d5c952ff3326a"
     },
     {
-      "compressed_sha256": "7ff5b5c52500e851d0233ce7676a47eb86acb39e39218193f43e96fb96bcb841",
+      "compressed_sha256": "d62f932a605682e61d2ec167d5546a508a968b8fdd8d8dc89294b44f112c6148",
       "count": 1024,
       "first_path": "src/gateway/server-startup.test.ts",
       "last_path": "src/gateway/session-utils.fs.display-position.test.ts",
       "path": "projects/openclaw-rust/inventory/shards/part-0037.jsonl.gz",
-      "uncompressed_sha256": "9e7e58b1920dcbdb5bb2419686bb5d54457d8289a82d43fce3ae992587b6fb2f"
+      "uncompressed_sha256": "e185b9575a8ecae75a292bfd517aebc24d7659cb149e28e408248d85c626ad0c"
     },
     {
       "compressed_sha256": "3f4ecb325b5b6c83934c22850f2d6bda50fdb9cf3ca501bf68bcd65208bc7f8c",
