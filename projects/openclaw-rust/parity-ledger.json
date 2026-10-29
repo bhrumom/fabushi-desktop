@@ -19432,7 +19432,7 @@
     },
     {
       "adr_refs": [],
-      "behavior": "Node host gateway connection management, gateway origin scope matching, device auth token re-use policy, and local node ID generation.",
+      "behavior": "Node host gateway connection management, Gateway transport/session admission, TLS trust and certificate-pin policy, bounded challenge/request/event lifecycle, gateway origin scope matching, device auth token re-use policy, and local node ID generation.",
       "blocker_ids": [
         "BL-NODE-HOST-CONN-WIRING-001"
       ],
@@ -19502,6 +19502,24 @@
       "risk": "High; token re-use on mismatched gateway scopes leaks node auth credentials across networks",
       "selected_owner": "source/host/src/extensions/node_host/session_registry.rs",
       "source_refs": [
+        {
+          "blob_sha": "bf865be5f9c26e7b4a329645553a79f7e690a761",
+          "path": "crates/openclaw-gateway-client/src/lib.rs",
+          "range": {
+            "end_line": 338,
+            "start_line": 1
+          },
+          "symbol": "TLS trust policy and bounded Gateway recovery metadata"
+        },
+        {
+          "blob_sha": "c0df3638c8b4b7cef97cee5d84eff1277bc9d0f5",
+          "path": "crates/openclaw-gateway-client/src/session.rs",
+          "range": {
+            "end_line": 1701,
+            "start_line": 1
+          },
+          "symbol": "Gateway challenge/session/request/event lifecycle"
+        },
         {
           "blob_sha": "e48852feee265976aae7b1323685767daa82727e",
           "path": "src/worker/worker-connection-admission.ts",

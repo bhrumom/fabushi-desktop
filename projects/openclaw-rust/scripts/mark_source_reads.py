@@ -12,6 +12,9 @@ from pathlib import Path
 ROOT = Path("projects/openclaw-rust")
 SHARDS = ROOT / "inventory" / "shards"
 READS = {
+    "crates/openclaw-gateway-client/src/lib.rs": (338, "OCRM-RESP-NODE-HOST-CONNECTION-001", "OCRM-M13"),
+    "crates/openclaw-gateway-client/src/session.rs": (1701, "OCRM-RESP-NODE-HOST-CONNECTION-001", "OCRM-M13"),
+    "crates/openclaw-gateway-client/Cargo.toml": (24, None, "OCRM-M04"),
     "crates/openclaw-node-host/src/duplex.rs": (297, "OCRM-RESP-NODE-HOST-CONNECTION-001", "OCRM-M13"),
     "crates/openclaw-node-host/src/identity.rs": (285, "OCRM-RESP-NODE-HOST-CONNECTION-001", "OCRM-M13"),
     "crates/openclaw-node-host/src/lifecycle.rs": (552, "OCRM-RESP-NODE-HOST-CONNECTION-001", "OCRM-M13"),
