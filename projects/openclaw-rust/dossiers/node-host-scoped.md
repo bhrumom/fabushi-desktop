@@ -1579,3 +1579,26 @@ is frozen, these rows are not promoted here to canonical `read-complete` or
 ledger `source_refs`; no generated shard/index state was altered and no
 completion flag was advanced. Rust implementation, wiring, runtime execution,
 and acceptance remain unverified.
+
+## 142. Session controller diagnostics, RPC source contracts, and public facade read-only audit (2026-10-29)
+
+The locked upstream files `session-controller.diagnostics.ts`
+(`aa0f5f0af3e918c617a15f77ccf0c949110047f7`, 43 lines),
+`session-controller.rpc-sources.types.ts`
+(`c3c114eb48bcaf43d00d861c0b0cb8191b6bf2b8`, 57 lines),
+`session-controller.ts`
+(`ce4dc474334bc4ba2fd94669009d8046c2bea7bf`, 44 lines), and
+`session-controller.stop-authority.test.ts`
+(`d1094d14b3a170e4f3ac76bed29a5eda36bdeb64`, 42 lines) were read in full.
+Diagnostics report source-claim blockers through the existing bounded phase
+logger. RPC source contracts keep byte-exact input correlation while carrying
+source-local queue deadlines, lifecycle generation, operational instance,
+approval lease, provider/auth identity, terminal persistence state, and abort
+diagnostics; running timeout and cancellation remain owned by the execution
+and input owners. The public facade only re-exports the existing operation,
+injection, steer, wait, barrier, source-turn, and Stop owners. The authority
+oracle proves Stop revalidates requester authority at each captured effect and
+does not interrupt later effects after authority loss. This is read-only
+evidence pending a controlled inventory writer: no generated shard/index state,
+ledger ref, or completion flag was changed. Rust implementation, wiring,
+runtime execution, and acceptance remain unverified.
