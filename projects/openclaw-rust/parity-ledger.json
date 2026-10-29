@@ -28327,10 +28327,10 @@
       ],
       "id": "OCRM-RESP-SESSION-ROUTING-DISPATCH-001",
       "integration": {
-        "consumer": "source/host/src/extensions/session/session_conversation_state.rs",
-        "entrypoint": "source/host/src/extensions/session/session_conversation_state.rs::get_conversation_state",
+        "consumer": "source/host/src/extensions/session/production.rs::SandAgentSessionStore::read_agent_conversation_state",
+        "entrypoint": "source/host/src/extensions/session/production.rs::SandAgentSessionStore::read_agent_conversation_state -> SessionConversationState::read_agent_conversation_state",
         "owner": "source/host/src/extensions/session/session_conversation_state.rs",
-        "producer": "source/host/src/extensions/session/session_conversation_state.rs"
+        "producer": "persisted latest root blob + existing agent-store worker/blob owner"
       },
       "invariants": [
         "Routing keys are deterministically hashed and scoped per project"
@@ -28393,7 +28393,7 @@
         "symbol": "ConversationStructureRefs"
       },
       "tests": [
-        "source/host/tests/openclaw_secrets_security_contract.rs::test_ocrm_secrets_audit_manager"
+        "source/host/tests/session_conversation_state_contract.rs"
       ],
       "typed_contracts": [
         "ConversationStructureRefs"

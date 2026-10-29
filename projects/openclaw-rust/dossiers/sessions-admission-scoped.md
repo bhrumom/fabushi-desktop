@@ -154,3 +154,16 @@ repository search found no Rust poll-intent owner or consumer for this source
 contract. The ledger row is therefore a mapping mismatch that remains pending;
 the 33-line read is retained as source evidence but must not be counted as
 Session Routing equivalence or acceptance. No status flag was closed.
+
+## 9. Session-state production entrypoint correction (2026-10-29)
+
+The ledger entrypoint `get_conversation_state` does not exist in the current
+tree. The real production boundary is
+`source/host/src/extensions/session/production.rs::SandAgentSessionStore::read_agent_conversation_state`,
+which delegates to `SessionConversationState::read_agent_conversation_state`
+and resolves the persisted latest root blob through the existing agent-store
+worker/blob owner. The contract fixture is
+`source/host/tests/session_conversation_state_contract.rs`; it is not evidence
+that the upstream poll-intent oracle is implemented. The ledger now records
+this actual call chain while preserving `wiring=not-wired`, `verification=not-run`,
+and the poll-intent mapping mismatch above.
