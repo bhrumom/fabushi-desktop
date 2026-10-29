@@ -10,10 +10,10 @@
     "ui_accepted": false
   },
   "file_coverage": {
-    "mapped_paths": 1099,
+    "mapped_paths": 1106,
     "omitted_known": 0,
     "tracked_paths": 58750,
-    "unclassified_paths": 57651
+    "unclassified_paths": 57644
   },
   "inventory_authority": {
     "manifest_source": "GitHub Actions immutable artifact candidate",
@@ -145,6 +145,170 @@
         "CloudWorkerCatalogCache",
         "CloudWorkerBinaryIdentity",
         "CloudWorkerMachineRequirement"
+      ],
+      "unit_id": "OCRM-UNIT-INFRA-001"
+    },
+    {
+      "adr_refs": [
+        "projects/openclaw-rust/decisions/2026-10-29-crabbox-worker-owner-boundary.md"
+      ],
+      "behavior": "Crabbox warm-image allocation, checkpoint capture, generation fencing, credential scrub ordering, retirement and cleanup-debt recovery.",
+      "blocker_ids": [
+        "OCRM-BLOCK-P1-WARM-IMAGE-SIDE-EFFECTS-001"
+      ],
+      "capability_ids": [
+        "cloud_workers.warm_image"
+      ],
+      "dependencies": [
+        "mahayana_host_runtime::extensions::cloud_workers::warm_image",
+        "mahayana_host_runtime::extensions::cloud_workers::owner",
+        "mahayana_host_runtime::storage::recovery"
+      ],
+      "evidence_refs": [
+        "source/host/tests/cloud_workers_extension_contract.rs",
+        "projects/openclaw-rust/management/tasks/P1-crabbox-worker-owner.md",
+        "projects/openclaw-rust/dossiers/crabbox-node-enrollment-owner-audit-20261029.md"
+      ],
+      "existing_owner_candidates": [
+        {
+          "path": "source/host/src/extensions/cloud_workers/warm_image.rs",
+          "reason": "Native Rust generation-fenced warm-image state contract"
+        },
+        {
+          "path": "source/host/src/extensions/cloud_workers/owner.rs",
+          "reason": "Single owner for warm-image records and persistence boundary"
+        }
+      ],
+      "id": "OCRM-RESP-INFRA-WORKER-CRABBOX-WARM-IMAGE-001",
+      "integration": {
+        "consumer": "existing Runner/sandbox preparation and recovery projections (not yet wired)",
+        "entrypoint": "source/host/src/extensions/cloud_workers/warm_image.rs::CloudWorkerWarmImage::compare_and_apply",
+        "owner": "source/host/src/extensions/cloud_workers/warm_image.rs",
+        "producer": "provider snapshot adapter (not yet wired)"
+      },
+      "invariants": [
+        "Allocation and capture operations are generation-fenced and stale generations fail closed",
+        "Held or borrowed images cannot be retired or deleted without the declared release/recovery path",
+        "Capture uncertainty remains visible and blocks unsafe enrollment until explicit recovery",
+        "Credential scrub ordering and cleanup debt are preserved across restart and rollback"
+      ],
+      "migration_rollback": "Retain capture-uncertain and deletion-debt records, disable new allocation, and recover by exact image/generation identity",
+      "oracle_ids": [
+        "OCRM-P1-F04-O01"
+      ],
+      "owner_decision": "Keep warm-image state separate from FDN, Computer, Session, Transcript and Sand stores",
+      "postconditions": [
+        "Warm-image state transitions are deterministic and bounded without claiming a snapshot backend"
+      ],
+      "preconditions": [
+        "A scoped lease/profile/runtime identity and expected image generation are present"
+      ],
+      "required_evidence_dimensions": [
+        "unit",
+        "security-negative-test",
+        "recovery",
+        "performance"
+      ],
+      "required_gate_ids": [
+        "OCRM-G04-rust-contract",
+        "OCRM-G05-frozen-oracle"
+      ],
+      "requirement_ids": [
+        "OCRM-P1-F04",
+        "OCRM-P1-AC02",
+        "OCRM-P1-AC03"
+      ],
+      "responsibility_kind": "business-runtime",
+      "reviewer": "xuyao@ombhrum.com",
+      "risk": "Critical; stale snapshot generations or incomplete credential scrubbing could expose credentials or delete a live worker",
+      "selected_owner": "source/host/src/extensions/cloud_workers/warm_image.rs",
+      "source_refs": [
+        {
+          "blob_sha": "af4b96a5fab3adf751864b784981e01c61fb8be5",
+          "path": "extensions/crabbox/src/crabbox-worker-warm-image.ts",
+          "range": {
+            "end_line": 706,
+            "start_line": 1
+          },
+          "symbol": "CrabboxWorkerWarmImageStore"
+        },
+        {
+          "blob_sha": "27427bcb41602ad97b157f7f6e736b20b44b1221",
+          "path": "extensions/crabbox/src/crabbox-worker-warm-image-allocation.ts",
+          "range": {
+            "end_line": 187,
+            "start_line": 1
+          },
+          "symbol": "allocateCrabboxWarmImage"
+        },
+        {
+          "blob_sha": "12cc2cbcd40a33502927bc1a284216cc66428912",
+          "path": "extensions/crabbox/src/crabbox-worker-warm-image-capture.ts",
+          "range": {
+            "end_line": 519,
+            "start_line": 1
+          },
+          "symbol": "captureCrabboxWarmImage"
+        },
+        {
+          "blob_sha": "4f2c80c517d8be3c075c72fbf6ee40ab39ae9458",
+          "path": "extensions/crabbox/src/crabbox-worker-warm-image-checkpoint.ts",
+          "range": {
+            "end_line": 226,
+            "start_line": 1
+          },
+          "symbol": "parseCrabboxWarmImageCheckpoint"
+        },
+        {
+          "blob_sha": "094708190c05b5d088a59d94b2989886c524d74a",
+          "path": "extensions/crabbox/src/crabbox-worker-warm-image-recipe.ts",
+          "range": {
+            "end_line": 55,
+            "start_line": 1
+          },
+          "symbol": "CrabboxWarmImageRecipe"
+        },
+        {
+          "blob_sha": "c1e56eefef55704a5c3f9124a67412eb3f23ff31",
+          "path": "extensions/crabbox/src/crabbox-worker-warm-image-records.ts",
+          "range": {
+            "end_line": 26,
+            "start_line": 1
+          },
+          "symbol": "CrabboxWarmImageRecord"
+        },
+        {
+          "blob_sha": "1031bf93f52dc15f65eaacd4e7a0a6197ace60bd",
+          "path": "extensions/crabbox/src/crabbox-worker-warm-image-store.ts",
+          "range": {
+            "end_line": 764,
+            "start_line": 1
+          },
+          "symbol": "CrabboxWarmImageStore"
+        }
+      ],
+      "status": {
+        "acceptance": "pending",
+        "implementation": "implementing",
+        "mapping": "mapped",
+        "read": "read-complete",
+        "verification": "not-run",
+        "wiring": "not-wired"
+      },
+      "target": {
+        "language": "Rust",
+        "path": "source/host/src/extensions/cloud_workers/warm_image.rs",
+        "symbol": "CloudWorkerWarmImage::compare_and_apply / mark_capture_uncertain"
+      },
+      "tests": [
+        "source/host/src/extensions/cloud_workers/warm_image.rs::tests::fences_generation_and_hold_lifecycle",
+        "source/host/src/extensions/cloud_workers/warm_image.rs::tests::capture_uncertainty_is_recoverable"
+      ],
+      "typed_contracts": [
+        "CloudWorkerWarmImage",
+        "CloudWorkerWarmImageGeneration",
+        "CloudWorkerWarmImageOperation",
+        "CloudWorkerWarmImageState"
       ],
       "unit_id": "OCRM-UNIT-INFRA-001"
     },
