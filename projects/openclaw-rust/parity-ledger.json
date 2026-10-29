@@ -4494,6 +4494,8 @@
       ],
       "evidence_refs": [
         "source/host/tests/gateway_local_exec_sand_box_contract.rs",
+        "source/host/tests/external_machine_shipping_contract.rs",
+        "source/host/tests/openclaw_chat_cron_node_contract.rs",
         "projects/openclaw-rust/dossiers/process-exec-shell-scoped.md"
       ],
       "existing_owner_candidates": [
@@ -4504,10 +4506,10 @@
       ],
       "id": "OCRM-RESP-EXEC-PROCESS-SPAWN-001",
       "integration": {
-        "consumer": "source/host/src/extensions/local_exec/gateway_local_exec_sand_box.rs",
-        "entrypoint": "source/host/src/extensions/local_exec/mod.rs",
+        "consumer": "source/host/src/runner/tools/sand_external_machine_tools.rs + source/host/app/src/main.rs::UnifiedGatewayApi::call_openclaw_node_invoke",
+        "entrypoint": "source/host/src/extensions/local_exec/extension.rs::HostLocalExecExtension::sandbox",
         "owner": "source/host/src/extensions/local_exec/gateway_local_exec_sand_box.rs",
-        "producer": "source/host/src/runner/mod.rs"
+        "producer": "source/host/src/runner/host_external_machine_dependencies.rs + source/host/app/src/main.rs::ProductionExternalMachineExecutor::for_turn"
       },
       "invariants": [
         "Execution timeout aborts child process when elapsed exceeds deadline",
@@ -4558,7 +4560,7 @@
         "mapping": "mapped",
         "read": "read-complete",
         "verification": "not-run",
-        "wiring": "not-wired"
+        "wiring": "wired"
       },
       "target": {
         "language": "Rust",
@@ -4567,7 +4569,9 @@
       },
       "tests": [
         "source/host/tests/gateway_local_exec_sand_box_contract.rs::sandbox_projects_provider_state_and_user_computers",
-        "source/host/tests/gateway_local_exec_sand_box_contract.rs::upload_and_download_enforce_gate_and_use_frozen_frames"
+        "source/host/tests/gateway_local_exec_sand_box_contract.rs::upload_and_download_enforce_gate_and_use_frozen_frames",
+        "source/host/tests/external_machine_shipping_contract.rs::shipping_host_consumes_external_machine_through_runner_bridge",
+        "source/host/tests/openclaw_chat_cron_node_contract.rs::test_ocrm_node_o06_shipping_routes_to_unique_native_owners"
       ],
       "typed_contracts": [
         "GatewayLocalExecSandBox::ensure_ready"

@@ -178,3 +178,51 @@ boundary and could signal an unrelated reused PID. The termination row stays
 canonical local-exec provider/companion owner exposes a typed, identity-bound
 termination contract and a real caller. No ledger status is upgraded by this
 audit.
+
+## 6. Exact-head process-spawn reachability re-audit (2026-10-29)
+
+The process-spawn responsibility was rechecked against Fabushi HEAD
+`5d5b119d03816bbbcc84e92af39f3162bc6e5e50`. The upstream authority remains
+`openclaw/openclaw@ad8d12f126d29b0db204187adf5092db80294e70`, tree
+`04ccce62f1d74dc8e0c88290ae8ded027b7b0f16`, with `src/process/exec.ts`
+blob `b46a1511556b7da193b88c6d29fdd9630f4b67d3` as the locked source.
+
+Unlike the termination-controller row, the current Host has real production
+producer-to-owner-to-consumer paths for the adapted process-spawn behavior:
+
+1. `source/host/app/src/main.rs::UnifiedGatewayApi::call_openclaw_node_invoke`
+   validates `node.invoke`, admits the local node invocation through the
+   canonical node owner, and calls
+   `local_exec.sandbox(...).exec_manager().execute_shell(...)` for the only
+   supported local command, `system.run`. The same path settles the node
+   invocation admission after the manager returns and preserves bounded output
+   and `outcomeUnknown` fields.
+2. The shipping turn composition constructs one
+   `ProductionExternalMachineExecutor::for_turn`, injects it as the sole
+   `ExternalMachineExecutor`, and retains the existing Host-shell review gate.
+   `ProductionExternalMachineExecutor` resolves the same
+   `GatewayLocalExecManager` from `HostLocalExecExtension`, and its shell/read,
+   operation-status/history, and cancellation methods are consumed by the
+   external-machine tool router.
+3. The Host starts exactly one `HostLocalExecExtension` and exposes its
+   provider bridge through the existing authenticated Gateway channel. This is
+   the existing Fabushi provider boundary, not a second process-spawn owner.
+
+The current source anchors are:
+
+| Evidence | Exact HEAD blob / location | Boundary proved |
+|---|---|---|
+| Shipping node route | `source/host/app/src/main.rs` blob `1656649eeac507f2bc4a56b844b5f550ffd3313c`, `call_openclaw_node_invoke` around L3875–L3970 | Gateway node producer → canonical local-exec owner |
+| Turn executor binding | same `main.rs`, around L8877–L9012 | Runner turn producer → one external-machine executor |
+| Executor owner | `source/host/src/runner/host_external_machine_dependencies.rs` blob `28bb0b1a5d54b8aab62b5ee0272b543488129fa6` | External-machine tools → `GatewayLocalExecManager` |
+| Shipping reachability contract | `source/host/tests/external_machine_shipping_contract.rs` blob `4eb79a8e9e4c14c10e5325be18c2fb06bdd9ecb7` | Production binding and terminal-state projection |
+| Node reachability contract | `source/host/tests/openclaw_chat_cron_node_contract.rs` blob `a291bfc701157342229940ea95bd9ac94f5da6a6` | `node.invoke` route reaches `execute_shell` and rejects fake success |
+
+This is sufficient to remove the stale `not-wired` classification for
+`OCRM-RESP-EXEC-PROCESS-SPAWN-001`. It does **not** prove the upstream
+spawn-controller semantics are identical at the remote provider, that all
+provider/platform environments are accepted, or that the locked upstream
+execution and security oracles have a current exact-head receipt. The row
+therefore remains `verification=not-run` and `acceptance=pending`; the
+termination-controller row remains independently `not-wired` with
+`BL-EXEC-TERMINATION-CONTROLLER-CALLER-001`.
