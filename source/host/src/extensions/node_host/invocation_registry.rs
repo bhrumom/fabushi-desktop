@@ -53,8 +53,14 @@ impl NodeHostInvocationRegistry {
             .records
             .lock()
             .unwrap_or_else(|poisoned| poisoned.into_inner());
-        if records.contains_key(&key) {
-            return Err("duplicate node invocation id".into());
+        if let Some(existing) = records.get(&key) {
+            let can_replace_drained_predecessor =
+                existing.state == NodeInvocationState::Cancelled
+                    && existing.generation != lease.generation;
+            if !can_replace_drained_predecessor {
+                return Err("duplicate node invocation id".into());
+            }
+            records.remove(&key);
         }
         records.insert(
             key,
@@ -169,6 +175,35 @@ mod tests {
         assert!(!registry.settle(&old));
         let successor = registry.admit(&new_lease, "new").expect("admit successor");
         assert!(registry.cancel(&successor));
+    }
+
+    #[test]
+    fn drained_predecessor_allows_same_invocation_id_on_new_generation() {
+        let (sessions, old_lease) = lease();
+        let registry = NodeHostInvocationRegistry::new();
+        let old = registry.admit(&old_lease, "same").expect("admit old");
+        assert_eq!(registry.drain_generation(&old.node_id, old.generation), vec!["same"]);
+
+        let new_lease = sessions.connect(NodeHostSessionMetadata {
+            node_id: "node-1".into(),
+            display_name: "Node 1".into(),
+            platform: "test".into(),
+            device_family: "test".into(),
+            commands: vec![],
+            capabilities: vec![],
+            paired: true,
+            gateway_local: false,
+        });
+        assert!(registry.admit(&new_lease, "same").is_ok());
+    }
+
+    #[test]
+    fn cancelled_invocation_cannot_be_reused_in_same_generation() {
+        let (_sessions, lease) = lease();
+        let registry = NodeHostInvocationRegistry::new();
+        let admission = registry.admit(&lease, "same").expect("admit");
+        assert!(registry.cancel(&admission));
+        assert!(registry.admit(&lease, "same").is_err());
     }
 
     #[test]
