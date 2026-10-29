@@ -195,6 +195,32 @@ Exact source identities for this closure are:
 | `crabbox-worker-warm-image.test.ts` | `a6932d2bb9f962379f7c8ee0f7c50d5eccb9ee7c` | 418 | test-oracle-replaced |
 | `crabbox-worker-warm-image-lifecycle.test.ts` | `ce9907a7e82397be46e50e51a2ba9c1d032799c5` | 334 | test-oracle-replaced |
 
+The direct command/provision/project helper closure was also read at the
+locked tree and recorded as follows:
+
+| Path | Blob | Lines | Disposition |
+| --- | --- | ---: | --- |
+| `crabbox-worker-command.ts` | `36a37ad3f476e4baa7ace04e72202942a6c4481d` | 317 | owner-audit |
+| `crabbox-worker-command.test.ts` | `ad0aaae43abda4cd3bfe215719c1f5617e5517ac` | 326 | test-oracle-replaced |
+| `crabbox-worker-provision-commands.ts` | `f13913eee2587a64b23c85a2213825f2c7111a26` | 370 | owner-audit |
+| `crabbox-worker-setup-egress.ts` | `03b9250850bd2f9210698212156ac210beb7e3b6` | 182 | owner-audit |
+| `crabbox-worker-desktop-setup.ts` | `5fbf9a02dac8c2d16bd6459a6c590465294fcec8` | 229 | owner-audit |
+| `crabbox-worker-desktop-setup.test.ts` | `d0b902ea3c7931f81165092ff32b682577676912` | 332 | test-oracle-replaced |
+| `crabbox-worker-project.ts` | `35a5d4329a405437f076c0955043b411f36199dc` | 146 | owner-audit |
+| `crabbox-worker-project.test.ts` | `c9501e8785abfa83ff9904e29d4a730cfb13526` | 908 | test-oracle-replaced |
+| `crabbox-worker-preflight.ts` | `450d6985c8cfbabbcdfe71164a10a2748b9f35e0` | 53 | owner-audit |
+| `crabbox-worker-node-enrollment-replay.test.ts` | `429f844edd2d5c07ae6d7364cd3358dd651c778b` | 422 | test-oracle-replaced |
+
+These helpers establish the remaining control boundaries: command output is
+redacted and bounded, fixed-lease coordinator retries are capped and only
+replay-safe phases retry, malformed or ambiguous inspect output preserves
+cleanup uncertainty, and every failed setup routes through one cleanup owner.
+Setup egress keeps upstream secret grants in the host child and passes only
+sentinels/proxy material to the lease. Project preparation delegates Git and
+workspace authority to Core while Crabbox owns lease transport and bounded
+upload. Desktop setup binds the exact XFCE session or native Windows/macOS
+interactive identity, and preflight rejects unsafe provider configuration.
+
 These tests prove, as source oracles, catalog projection and bounded recovery, setup-secret separation and revocation, preflight security rejection, readiness/timeout/cleanup classification, diagnostics redaction, fixed-lease replay after lost replies, heartbeat scheduling/fencing, platform/desktop limitations, managed binary sharing, warm-image lifecycle/recovery, compare-and-apply conflict behavior, and config-schema rejection. They do not prove Fabushi packaged behavior or real provider/device acceptance.
 
 ## Fabushi owner resolution

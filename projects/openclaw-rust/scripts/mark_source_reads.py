@@ -12,6 +12,16 @@ from pathlib import Path
 ROOT = Path("projects/openclaw-rust")
 SHARDS = ROOT / "inventory" / "shards"
 READS = {
+    "extensions/crabbox/src/crabbox-worker-command.test.ts": (326, None, "OCRM-M11", "test-oracle-replaced"),
+    "extensions/crabbox/src/crabbox-worker-command.ts": (317, None, "OCRM-M11", "owner-audit"),
+    "extensions/crabbox/src/crabbox-worker-desktop-setup.test.ts": (332, None, "OCRM-M13", "test-oracle-replaced"),
+    "extensions/crabbox/src/crabbox-worker-desktop-setup.ts": (229, None, "OCRM-M13", "owner-audit"),
+    "extensions/crabbox/src/crabbox-worker-node-enrollment-replay.test.ts": (422, None, "OCRM-M13", "test-oracle-replaced"),
+    "extensions/crabbox/src/crabbox-worker-preflight.ts": (53, None, "OCRM-M11", "owner-audit"),
+    "extensions/crabbox/src/crabbox-worker-project.test.ts": (908, None, "OCRM-M11", "test-oracle-replaced"),
+    "extensions/crabbox/src/crabbox-worker-project.ts": (146, None, "OCRM-M11", "owner-audit"),
+    "extensions/crabbox/src/crabbox-worker-provision-commands.ts": (370, None, "OCRM-M11", "owner-audit"),
+    "extensions/crabbox/src/crabbox-worker-setup-egress.ts": (182, None, "OCRM-M10", "owner-audit"),
     "extensions/crabbox/src/crabbox-worker-node-enrollment.test.ts": (931, None, "OCRM-M13", "test-oracle-replaced"),
     "extensions/crabbox/src/crabbox-worker-node-enrollment.ts": (508, None, "OCRM-M13", "owner-audit"),
     "extensions/crabbox/src/crabbox-worker-node-process.ts": (245, None, "OCRM-M13", "owner-audit"),
