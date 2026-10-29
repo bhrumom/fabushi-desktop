@@ -2,13 +2,13 @@ use std::env;
 use std::fmt;
 use std::fs;
 use std::io::{BufRead, BufReader, Write};
+#[cfg(unix)]
+use std::os::unix::process::CommandExt;
 use std::path::{Path, PathBuf};
 use std::process::{Child, ChildStdin, Command, Stdio};
 use std::sync::mpsc;
 use std::thread;
 use std::time::{Duration, Instant};
-#[cfg(unix)]
-use std::os::unix::process::CommandExt;
 
 use base64::Engine as _;
 use base64::engine::general_purpose::STANDARD as BASE64_STANDARD;
