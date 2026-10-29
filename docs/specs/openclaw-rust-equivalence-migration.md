@@ -367,6 +367,34 @@ bounded queues/cache/retry、backpressure、cancellation-safe async、timer/task
 
 ## 12. GitHub Actions 验证与证据合同
 
+### 12.0 开发期验证冻结与最终集中验收
+
+为避免开发期每次文档、审读记录、inventory、ledger 或实现小步提交都
+触发并等待同一组长时 OCRM 工作流，本项目采用两阶段验证节奏：
+
+1. **开发期冻结**：在最终受验 target 尚未冻结前，不主动触发、等待或
+   重跑 OCRM P0、Rust desktop runtime 或其他 OCRM 验收工作流；不得使用
+   `workflow_dispatch`，也不得为了等待 CI 推送临时 head。开发期可以继续
+   做锁定源的逐文件审读、依赖闭包、双向映射、Spec/ledger/dossier 修正、
+   Rust/测试实现、真实 owner 生产接线和只读证据分析。所有受影响责任的
+   `verification` 保持 `not-run`/`pending`，`acceptance` 保持 `pending`，
+   八项 global flags 不得因延期验证而升级。
+2. **最终冻结**：当实现、适用 owner/consumer 接线、正反 oracle、UI/生态/
+   数据/平台/服务/打包准备和 blocker 处理完成后，冻结一个 exact target
+   `H`。只对 `H` 集中执行适用的 P0→P5 Actions、真实服务/设备/平台/安装包
+   验收与 OCRM-AC01–AC24 独立终验；每份 receipt 必须绑定 `H`、上游锁和
+   完整 subject inputs。失败项按证据状态修复后重新冻结新的 `H`，不得把
+   旧 head 的结果转移到新 head。
+3. **自动触发边界**：仓库既有 PR 事件可能自动启动非 OCRM 工作流；开发期
+   不把这些运行当作验收，不等待其完成，也不修改 shared workflow 影响其他
+   项目。若本任务 PR 已产生开发期运行，只取消属于本 PR/本分支的运行，
+   不取消 main、其他 PR 或项目级工作流，并在本地记录 run ID 与取消原因。
+
+该节只调整验证时机，不降低 §12.2 gate、§12.3 evidence envelope、§15
+Definition of Done 或 AGENTS.md 的“可执行验证只在 GitHub Actions”要求。
+取消、未运行、失败和缺证据都不是通过；最终冻结前不得把任何状态投影为
+`verified`/`accepted`。
+
 ### 12.1 执行环境
 
 本项目的 build、test、lint、generator、schema check、benchmark、fuzz、integration、E2E、visual/a11y、package、install/upgrade/rollback 和验收执行 **只在 GitHub Actions**。本项目不采用仓库其他地方的 `htch-runtime` 例外；不在 bhrum2、用户 Mac/Windows 或 assistant container 运行这些任务。
