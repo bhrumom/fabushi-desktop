@@ -76,6 +76,7 @@ jobs:
         run: |
           set -euo pipefail
           rustup toolchain install 1.97.1 --profile minimal --component cargo
+          rustup component add rust-src --toolchain 1.97.1
           sudo apt-get update
           sudo apt-get install -y libwayland-dev libpipewire-0.3-dev libegl1-mesa-dev libegl-dev libgbm-dev libdrm-dev libxkbcommon-dev
           test -f source/host/Cargo.lock
