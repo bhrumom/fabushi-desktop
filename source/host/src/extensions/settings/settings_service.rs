@@ -11,6 +11,7 @@ use chrono::{SecondsFormat, Utc};
 use chrono_tz::Tz;
 use serde_json::{Map, Value, json};
 
+use crate::agents::agent_roster::apply_implicit_agent_roster_defaults;
 use crate::host_paths::get_sand_root_dir;
 
 pub const MCP_CUSTOM_INSTRUCTIONS_MAX_LENGTH: usize = 500;
@@ -1045,7 +1046,12 @@ impl SettingsService {
             if value.is_null() {
                 settings.remove("agents");
             } else if value.is_object() {
-                settings.insert("agents".into(), value.clone());
+                let candidate = json!({ "agents": value.clone() });
+                let normalized = apply_implicit_agent_roster_defaults(&candidate)
+                    .get("agents")
+                    .cloned()
+                    .unwrap_or_else(|| value.clone());
+                settings.insert("agents".into(), normalized);
             }
         }
         for field in ["userTimeZone", "userTimeZoneOverride"] {
