@@ -8,6 +8,7 @@ use serde_json::Value;
 use crate::automations::automation_status_reminder::render_automation_cleared_status_reminder;
 
 use crate::extensions::inference::provider_session::ProviderMessage;
+use crate::extensions::attachments::media_understanding_service::append_file_blocks;
 
 use super::sand_agent_profile_prompt::{
     AgentProfileIdentity, agent_profile_identities_equal, render_agent_profile_update,
@@ -707,11 +708,7 @@ pub fn project_provider_messages_for_turn(
         &attachment_sizes,
     );
     if !attachments.is_empty() {
-        text = if text.is_empty() {
-            attachments
-        } else {
-            format!("{text}\n\n{attachments}")
-        };
+        text = append_file_blocks(&text, Some(&attachments));
     }
 
     let hidden = args.get("hidden").and_then(Value::as_bool) == Some(true);

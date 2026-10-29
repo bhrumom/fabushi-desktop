@@ -31,7 +31,8 @@ The audited source code was decomposed into 6 discrete Rust runtime responsibili
 1. **`OCRM-RESP-MEDIA-APPLY-UNDERSTANDING-001`**:
    - **Behavior**: Application of media understanding across attachments in capability order (image, audio, video), voice note placeholder handling (`[Voice note could not be transcribed because the audio attachment was too small]`), and body block concatenation.
    - **Rust Owner**: `source/host/src/extensions/attachments/media_understanding_service.rs::append_file_blocks`.
-   - **Production Call Chain**: Producer `append_file_blocks` → Consumer `source/host/src/extensions/transcript/production_runtime.rs` (pending active upstream caller integration).
+   - **Production Call Chain**: Producer `source/host/src/runner/system_prompt.rs::build_attached_files_note` → Consumer `source/host/src/runner/prompt_collector_glue.rs::project_provider_messages_for_turn` → Owner `source/host/src/extensions/attachments/media_understanding_service.rs::append_file_blocks`.
+   - **Wiring boundary**: The body/file-block concatenation path is now live in the provider-facing prompt projection. The broader upstream `applyMediaUnderstanding` capability-order dispatcher (image/audio/video execution, voice-note fallback, and provider result synthesis) still has no Rust production caller and remains blocked by `BL-MEDIA-UNDERSTANDING-UPSTREAM-CALLER-001`.
    - **Oracles**: `OCRM-MEDIA-UND-O04`, `OCRM-MEDIA-UND-O05`.
    - **Status**: `implementation=implemented`, `wiring=not-wired`, `verification=not-run` (`blocker_ids=["BL-MEDIA-UNDERSTANDING-UPSTREAM-CALLER-001"]`: Production agent inference engine does not yet route inbound attachments through media understanding pre-processing pipeline).
 

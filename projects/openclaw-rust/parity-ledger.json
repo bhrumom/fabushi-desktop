@@ -7762,10 +7762,10 @@
       ],
       "id": "OCRM-RESP-MEDIA-APPLY-UNDERSTANDING-001",
       "integration": {
-        "consumer": "source/host/src/extensions/transcript/production_runtime.rs",
-        "entrypoint": "source/host/src/extensions/attachments/media_understanding_service.rs::append_file_blocks",
+        "consumer": "source/host/src/runner/prompt_collector_glue.rs::project_provider_messages_for_turn",
+        "entrypoint": "source/host/src/runner/prompt_collector_glue.rs::project_provider_messages_for_turn -> source/host/src/extensions/attachments/media_understanding_service.rs::append_file_blocks",
         "owner": "source/host/src/extensions/attachments/media_understanding_service.rs::append_file_blocks",
-        "producer": "source/host/src/extensions/attachments/media_understanding_service.rs::append_file_blocks"
+        "producer": "source/host/src/runner/system_prompt.rs::build_attached_files_note"
       },
       "invariants": [
         "Capability order is image, audio, video",
