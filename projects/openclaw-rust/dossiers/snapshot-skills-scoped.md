@@ -31,3 +31,22 @@
   - `test_ocrm_snapshot_git_backup` (PASSED)
   - `test_ocrm_skills_runtime` (PASSED)
   - `test_ocrm_session_turns_and_shared_async` (PASSED)
+
+## 4. Skills config-mutation source/owner correction (2026-10-29)
+
+The locked source reference attached to
+`OCRM-RESP-SKILLS-RUNTIME-LIBRARY-001` was read directly from the pinned
+commit/tree: `src/skills/config/mutations.ts`, blob
+`605d7a0a4e478023e106b306f67a62b7822190ff`, 52 lines. It implements an
+atomic config mutation for `skills.entries`: enabled flags, normalized API
+keys with redacted-sentinel preservation, per-entry environment merging,
+empty-value deletion, and the existing `mutateConfigFileWithRetry` writer.
+
+The selected Rust target `source/host/src/extensions/skills/skill_runtime.rs`
+only parses `SKILL.md` frontmatter, stores definitions in an in-memory
+registry, and formats prompt injection. It does not own config persistence,
+redacted API-key round trips, environment merging, retry, or a production
+caller for the mutation contract. The ledger row therefore conflates skill
+runtime parsing with skill configuration mutation; implementation and wiring
+remain pending until the responsibilities are split and mapped to the existing
+settings/config owner. No completion flag was changed.
