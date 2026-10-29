@@ -279,12 +279,12 @@
       "uncompressed_sha256": "4d613e168dacb0f5e8828260edd58e47f8d03b43acf5acd2533d83b89c39ed39"
     },
     {
-      "compressed_sha256": "e2b697f5c9338775abfe7f4809c3b89b460b0f2aad86893f35bead061343df33",
+      "compressed_sha256": "8c0d493654f93f93906709b8f40daea2f82511bc7f1c3c19b2276783fd6f3746",
       "count": 1024,
       "first_path": "src/flows/doctor-startup-channel-maintenance.test.ts",
       "last_path": "src/gateway/model-account-connect.ts",
       "path": "projects/openclaw-rust/inventory/shards/part-0034.jsonl.gz",
-      "uncompressed_sha256": "06f3285ad29f4ecdf7f33eb3f7acb716a959d57af22187060fde35360267920b"
+      "uncompressed_sha256": "496c9fa10dba44fcd0f6912895005e4af56f934102a40452c9dda92459bdd980"
     },
     {
       "compressed_sha256": "b678802d159ecac27c47ef856e64b52653ac39ea2d4d7a5dbada588103155d5e",

@@ -1032,3 +1032,23 @@ best-effort target/channel failures across ordinary and incognito sessions.
 This is a Session Turns Controller orchestration boundary over existing
 outbound channel owners, not a second delivery transport or receipt store;
 Rust implementation, wiring, and acceptance remain unverified.
+
+## 117. Agent job cache, terminal settlement, and wait fallback ownership (2026-10-29)
+
+The locked `agent-job.ts`, `agent-job.execution-settlement.test.ts`, and
+`agent-job.timeout-fallback.test.ts` were read in full. The job owner listens
+to lifecycle start/end/error events, retains bounded per-source snapshots with
+TTL and capacity eviction, merges sticky terminal outcomes without erasing
+reply/delivery/receipt evidence, and binds session facts to the exact lifecycle
+generation. Gateway dedupe publication is only a replay projection: it
+preserves request identity, separates active/terminal/untracked states, and
+cannot overwrite an authoritative lifecycle outcome or borrow timing across a
+new attempt, session, or generation. `agent.wait` uses scoped waiters, close
+and lifecycle-reset cancellation, bounded outer timeouts, and retry-grace
+fallbacks that distinguish hard timeout, retryable provider failure, yielded
+execution, and definitive liveness failure. The two oracles cover lifecycle
+versus dedupe ordering, terminal reply/receipt custody, session replacement,
+retry-grace recovery, multiple waiters, cancellation precedence, and cache
+expiry. This remains the existing Session Turns Controller observation owner;
+it does not create a second dedupe cache, wait authority, or execution store.
+Rust implementation, wiring, and acceptance remain unverified.

@@ -28867,6 +28867,33 @@
             "start_line": 1
           },
           "symbol": "agent delivery scope and privacy oracle"
+        },
+        {
+          "blob_sha": "f87de6716a7e052f0e2e47e0c33c9cf99781e54b",
+          "path": "src/gateway/agent-turn/agent-job.ts",
+          "range": {
+            "end_line": 719,
+            "start_line": 1
+          },
+          "symbol": "agent job cache, lifecycle settlement, and wait projection"
+        },
+        {
+          "blob_sha": "81046e3d85ff30391c96d18d718b06ca9c44ce31",
+          "path": "src/gateway/agent-turn/agent-job.execution-settlement.test.ts",
+          "range": {
+            "end_line": 353,
+            "start_line": 1
+          },
+          "symbol": "agent job execution settlement oracle"
+        },
+        {
+          "blob_sha": "0e180dcf2d076906f0b3f673de8af73339882c1a",
+          "path": "src/gateway/agent-turn/agent-job.timeout-fallback.test.ts",
+          "range": {
+            "end_line": 414,
+            "start_line": 1
+          },
+          "symbol": "agent job timeout fallback oracle"
         }
       ],
       "status": {
