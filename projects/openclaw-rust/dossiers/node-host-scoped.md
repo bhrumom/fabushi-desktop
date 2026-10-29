@@ -1367,3 +1367,31 @@ map to the existing Session Turns Controller lifecycle and identity owners;
 they do not create a second owner registry, identity index, or lifecycle event
 authority. Rust implementation, wiring, runtime execution, and acceptance
 remain unverified.
+
+## 133. Session controller lifecycle admission, registry state, and custody contracts (2026-10-29)
+
+The locked `session-controller.lifecycle.ts`,
+`session-controller.state.ts`, `session-controller.contracts.ts`,
+`session-controller.lifecycle-runtime.ts`,
+`session-controller.lifecycle-agent.ts`, and
+`session-controller.lifecycle-work.ts` were read in full. Lifecycle mutation
+and subordinate-effect admission preserve one ordered Session Turns owner:
+mutations close ingress, wait or preempt competing effects, retain writer and
+producer receipts, and release only after cleanup; effects never create a
+second turn queue and are fenced through validation, exclusive store writes,
+gateway context, agent-deletion admission, handoff, interruption, and release.
+The state registry binds physical store and agent ownership, indexes logical
+aliases, rejects ambiguous cross-store lookup, preserves operation identity
+through rekeying and backend detach, tracks execution/cleanup/follow-up
+barriers, and prunes only entries with no remaining custody. The contracts
+make these boundaries explicit for reply operations, mailbox claims and
+inputs, source custody, producer settlement, tool authority, native attempts,
+embedded attachments, lifecycle state, and interruption receipts. Runtime
+rotation evicts stale reply generations and records global-lane wait progress;
+agent deletion closes the same admission boundary and drains retained
+operations; interruption captures exact owners before aborting and exposes
+bounded release receipts. These sources map to the existing Session Turns
+Controller lifecycle, state, admission, and custody owners; they do not create
+a second registry, scheduler, lifecycle authority, or cancellation truth.
+Rust implementation, wiring, runtime execution, and acceptance remain
+unverified.

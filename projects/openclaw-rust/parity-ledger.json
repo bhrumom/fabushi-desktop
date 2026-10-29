@@ -29209,6 +29209,42 @@
           "path": "src/sessions/session-controller.identity.test.ts",
           "range": {"end_line": 437, "start_line": 1},
           "symbol": "session controller physical identity and adoption oracle"
+        },
+        {
+          "blob_sha": "360f8f8134f3c96cad3bc83dba07801889a943e5",
+          "path": "src/sessions/session-controller.lifecycle.ts",
+          "range": {"end_line": 694, "start_line": 1},
+          "symbol": "runSessionMutation and beginSessionEffect lifecycle custody"
+        },
+        {
+          "blob_sha": "2bebcd97915856cb83035383dd10b55df57604e2",
+          "path": "src/sessions/session-controller.state.ts",
+          "range": {"end_line": 609, "start_line": 1},
+          "symbol": "session controller registry and operation state projections"
+        },
+        {
+          "blob_sha": "571dd3be560353da7e5ec34f28ff506a75ae29d7",
+          "path": "src/sessions/session-controller.contracts.ts",
+          "range": {"end_line": 841, "start_line": 1},
+          "symbol": "reply operation, mailbox, lifecycle, and producer custody contracts"
+        },
+        {
+          "blob_sha": "15c3034a84d4bca4948dd4f74599989f3f8ee06d",
+          "path": "src/sessions/session-controller.lifecycle-runtime.ts",
+          "range": {"end_line": 43, "start_line": 1},
+          "symbol": "reply lifecycle generation rotation and global-lane diagnostics"
+        },
+        {
+          "blob_sha": "5f9f0ab07fbc64d271a6dc18f2a060398b01d698",
+          "path": "src/sessions/session-controller.lifecycle-agent.ts",
+          "range": {"end_line": 120, "start_line": 1},
+          "symbol": "agent deletion work-admission closure and interruption"
+        },
+        {
+          "blob_sha": "4cea8b3cb3ca863d20d3b5b72b26b97851f80b01",
+          "path": "src/sessions/session-controller.lifecycle-work.ts",
+          "range": {"end_line": 351, "start_line": 1},
+          "symbol": "session effect capture, interruption, and settlement barriers"
         }
       ],
       "status": {
