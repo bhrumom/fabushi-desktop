@@ -73,6 +73,18 @@ acceptance remain pending; no status flag was promoted.
 
 The existing Fabushi `BoxSecretsApplier` is a separate, valid owner at
 `source/host/src/extensions/secrets/secrets_service.rs` (current blob
+
+## 5. Exact apply-support source read closure (2026-10-29)
+
+The sole locked source reference attached to
+`OCRM-RESP-SECRETS-AUDIT-APPLY-001` was read in full:
+`src/secrets/apply.test-support.ts`, blob
+`e4b9ded6712b90cc19af41bfc82ee372cec09686`, 128 lines. It defines the test
+fixture's state/config/auth-store paths, OpenAI environment reference,
+plaintext-key fixture, JSON/SQLite writers, and a concurrent-writer mutation
+hook used by the upstream apply lifecycle tests. It does not implement the
+publication owner itself, which confirms rather than closes the existing Rust
+gap around auth-store/config/.env transactionality and rollback custody.
 `d57be254edb21f9e183e72bd971ae6e07fdc1e9e`, re-read at lines 213–334 and
 355–483). It validates Box environment names and size limits, persists a
 0600 JSON store atomically, applies a generation-fenced environment update,
