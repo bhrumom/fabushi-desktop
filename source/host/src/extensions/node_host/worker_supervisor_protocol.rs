@@ -266,7 +266,10 @@ fn require_exact_keys(object: &serde_json::Map<String, Value>, keys: &[&str]) ->
 
 #[cfg(test)]
 mod tests {
-    use super::{parse_worker_receipt, parse_worker_identity, worker_turn_matches_identity};
+    use super::{
+        parse_worker_receipt, parse_worker_identity, validate_worker_launch_bindings,
+        worker_turn_matches_identity,
+    };
     use serde_json::json;
 
     fn identity() -> serde_json::Value {
