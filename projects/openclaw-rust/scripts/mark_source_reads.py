@@ -12,6 +12,12 @@ from pathlib import Path
 ROOT = Path("projects/openclaw-rust")
 SHARDS = ROOT / "inventory" / "shards"
 READS = {
+    "src/gateway/agent-turn/agent-admission-controller.test.ts": (133, "OCRM-RESP-SESSION-TURNS-CONTROLLER-001", "OCRM-M07", "test-oracle-replaced"),
+    "src/gateway/agent-turn/agent-admission-controller.ts": (274, "OCRM-RESP-SESSION-TURNS-CONTROLLER-001", "OCRM-M07", "owner-audit"),
+    "src/gateway/agent-turn/agent-run-admission-cleanup.ts": (118, "OCRM-RESP-SESSION-TURNS-CONTROLLER-001", "OCRM-M07", "owner-audit"),
+    "src/gateway/agent-turn/agent-run-admission-model.ts": (51, "OCRM-RESP-SESSION-TURNS-CONTROLLER-001", "OCRM-M07", "owner-audit"),
+    "src/gateway/agent-turn/agent-run-admission-revalidation.ts": (138, "OCRM-RESP-SESSION-TURNS-CONTROLLER-001", "OCRM-M07", "owner-audit"),
+    "src/gateway/agent-turn/agent-run-admission-types.ts": (113, "OCRM-RESP-SESSION-TURNS-CONTROLLER-001", "OCRM-M07", "owner-audit"),
     "src/auto-reply/reply/session-hooks.ts": (157, "OCRM-RESP-SESSION-WORK-ADMISSION-001", "OCRM-M07", "owner-audit"),
     "src/gateway/active-sessions-shutdown-drain.ts": (78, "OCRM-RESP-SESSION-WORK-ADMISSION-001", "OCRM-M07", "owner-audit"),
     "src/gateway/active-sessions-shutdown-tracker.test.ts": (62, "OCRM-RESP-SESSION-WORK-ADMISSION-001", "OCRM-M07", "test-oracle-replaced"),

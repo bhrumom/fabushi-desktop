@@ -823,3 +823,21 @@ conversation access remains explicitly opt-in and lifecycle revocation fences
 late reads. These are existing Session and Plugins Hook Pipeline boundaries,
 not a second transcript store, hook registry, or Rust runtime; implementation,
 production wiring, and acceptance remain unverified.
+
+## 105. Agent turn admission, model selection, and failure revalidation (2026-10-29)
+
+The locked `agent-admission-controller.ts`, its focused test,
+`agent-run-admission-model.ts`, `agent-run-admission-types.ts`,
+`agent-run-admission-revalidation.ts`, and
+`agent-run-admission-cleanup.ts` were read in full. Admission binds the
+resolved session target before side effects, joins the existing session-effect
+lease, rechecks dedupe/session/archive authority after asynchronous preparation,
+preserves expected-session and restart-abort semantics, and emits cached
+outcomes only after releasing the lease. Model selection applies restored
+continuation overrides through the existing runtime resolver. Revalidation
+retains owner-specific errors, fences stale model publication and parent
+resume, records abort dedupe state, and joins rejected preparation cleanup
+before releasing runtime, caller, session, and recovery authorities. These
+sources map to the existing Session Turns Controller; they do not authorize a
+second admission queue, model authority, or runtime. Rust implementation,
+production wiring, and exact-head acceptance remain unverified.

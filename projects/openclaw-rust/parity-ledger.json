@@ -28428,6 +28428,60 @@
       "selected_owner": "source/host/src/extensions/session/session_turns_controller.rs",
       "source_refs": [
         {
+          "blob_sha": "0a0db7d9d1a15362587254f9d9a406731acfe8ff",
+          "path": "src/gateway/agent-turn/agent-admission-controller.test.ts",
+          "range": {
+            "end_line": 133,
+            "start_line": 1
+          },
+          "symbol": "agent admission lifecycle conformance oracle"
+        },
+        {
+          "blob_sha": "6a199a021a9cf3a2ccbf4796f9931ba631c3046b",
+          "path": "src/gateway/agent-turn/agent-admission-controller.ts",
+          "range": {
+            "end_line": 274,
+            "start_line": 1
+          },
+          "symbol": "createAgentAdmissionController"
+        },
+        {
+          "blob_sha": "827899eac455a778e0327ea5b17876f5cce6abda",
+          "path": "src/gateway/agent-turn/agent-run-admission-cleanup.ts",
+          "range": {
+            "end_line": 118,
+            "start_line": 1
+          },
+          "symbol": "cleanupRejectedAgentRunAdmission"
+        },
+        {
+          "blob_sha": "8c10b998ba6fbf756668230f210cf39c2faa3e01",
+          "path": "src/gateway/agent-turn/agent-run-admission-model.ts",
+          "range": {
+            "end_line": 51,
+            "start_line": 1
+          },
+          "symbol": "resolveAgentRunAdmissionModel"
+        },
+        {
+          "blob_sha": "29213458788d6d323dea364a4f9771c54dbd71c3",
+          "path": "src/gateway/agent-turn/agent-run-admission-revalidation.ts",
+          "range": {
+            "end_line": 138,
+            "start_line": 1
+          },
+          "symbol": "createAgentRunAdmissionRevalidator"
+        },
+        {
+          "blob_sha": "9dca054c27835f4c87d1799dfe14016306548a1e",
+          "path": "src/gateway/agent-turn/agent-run-admission-types.ts",
+          "range": {
+            "end_line": 113,
+            "start_line": 1
+          },
+          "symbol": "PreparedAgentRunDispatch"
+        },
+        {
           "blob_sha": "905982150067f05f3dacdef42c41435faee2d0d1",
           "path": "src/sessions/session-controller-model.test-support.ts",
           "range": {
