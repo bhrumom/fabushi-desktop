@@ -1773,3 +1773,27 @@ oracles for existing Session Turns, Gateway, Plugin SDK and message-routing
 owners; no generated shard/index state, ledger ref, or completion flag was
 changed. Rust implementation, production wiring, executable verification, and
 acceptance remain unverified.
+
+## 149. Runtime manifest production-caller audit (2026-10-29)
+
+The exact current Rust owner was re-read at
+`source/host/src/extensions/node_host/runtime_manifest.rs`. `NodeHostManifest::build`
+constructs a deterministic command/capability projection from available-command,
+Claude, desktop-stream, and allowlist inputs, and always sets `is_ephemeral` to
+`false`. The module is exported by `extensions/node_host/mod.rs`.
+
+The production integration search was then performed across the Host extension
+registry, Host production extension assembly, and
+`source/node-agent-coordinator/src`. It found no caller of `NodeHostManifest::build`,
+no `NodeHostManifest` consumer, and no manifest/runtime slot in
+`CURRENT_SHIPPING_PRODUCTION_EXTENSION_IDS`, `HOST_EXTENSION_ORDER`, or the
+coordinator. The existing registry therefore cannot be treated as a manifest
+consumer, and the pure builder cannot be promoted from `wiring=not-wired` to a
+shipping capability advertisement.
+
+This confirms the active `docs/specs/node-host-runtime-embedding.md` boundary:
+manifest construction must be composed by one future live node-host transport /
+invocation owner, while pairing and RPC remain projections and existing local
+exec, Computer, stream, MCP, and worker owners remain the side-effect owners.
+No product code, generated shard/index state, parity-ledger status, completion
+flag, or verification result was changed by this audit.
