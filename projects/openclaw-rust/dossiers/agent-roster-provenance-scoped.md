@@ -106,12 +106,13 @@ The audited source code was decomposed into 6 discrete Rust runtime responsibili
 - **Global Completion Flags**:
   - All 8 flags remain `false`.
 
-## 5. Exact-head production reachability re-audit (2026-10-29)
+## 5. Exact-head production reachability re-audit (2026-10-29, refreshed)
 
 The exact Fabushi target under review is
-`2225400ea73392523586a110301edeb87c986001`. A bounded source search of the
-production Host confirms that `agent_roster.rs` is currently a library/test
-surface, not a connected configuration owner:
+`82d417b82423466706856a40b933f95fbebc3a9c`. The source implementation is
+unchanged from the prior audit; the refreshed exact-head search confirms that
+`agent_roster.rs` is still a library/test surface, not a connected
+configuration owner:
 
 - `HostRosterBookkeeping::apply_config` has no production call site;
 - `HostRosterBookkeeping` and `HostRosterPorts` are constructed only by
@@ -119,9 +120,16 @@ surface, not a connected configuration owner:
 - `apply_implicit_agent_roster_defaults`,
   `collect_agent_roster_findings`, `can_write_doctor_include`, and
   `pin_survivor_workspace_for_roster_collapse` have no production consumers;
-- the production `SettingsService` owns Fabushi `settings.json` fields, but
-  does not own or expose an OpenClaw `agents.entries`/`agents.list` resolved
-  configuration document.
+- the production `SettingsService` owns Fabushi `settings.json` fields and
+  `config.get`/`config.set`, but does not own or expose an OpenClaw
+  `agents.entries`/`agents.list` resolved configuration document;
+- the only production `config.set` path persists through
+  `SettingsService::set_host_settings`, which has no roster callback or
+  resolved-document handoff;
+- source evidence remains bound to the unchanged implementation blobs:
+  `source/host/src/host_roster_bookkeeping.rs` (library owner),
+  `source/host/src/extensions/settings/settings_service.rs` (settings owner),
+  and `source/host/app/src/main.rs` (`config.set` gateway path).
 
 The dossier's earlier “Production Call Chain” entries therefore remain
 planned ownership contracts, not evidence of production wiring. No ledger
