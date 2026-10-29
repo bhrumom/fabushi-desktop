@@ -59,3 +59,14 @@ The following test suites in `src/plugins/contracts/` have been audited line-by-
    - Enforces that `responsePrefix` configuration must be a valid string (including empty strings, `"[bot]"`, or `"auto"`).
    - Rejects booleans, numbers, arrays, and objects.
 
+## 5. Channel-runtime authorization boundary (2026-10-29)
+
+`ChannelConfig::is_user_allowed` now delegates to the shared `allow_from`
+normalization owner. DM and group allowlist decisions therefore trim and
+lowercase both configured entries and the sender, deny an empty sender or
+empty allowlist, and recognize the explicit `*` wildcard consistently with
+the locked `src/plugin-sdk/allow-from.ts` oracle. This removes a duplicate raw
+comparison in the channel-runtime owner; it does not register a provider,
+create channel delivery wiring, or change the ledger's `wiring`/`verification`
+state.
+

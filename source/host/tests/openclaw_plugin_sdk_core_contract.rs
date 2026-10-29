@@ -27,6 +27,9 @@ fn test_ocrm_plugin_sdk_channel_runtime() {
     // Access check
     assert!(config.can_access_dm("alice"));
     assert!(config.can_access_dm("ALICE"));
+    config.allow_from = vec![" alice ".to_string(), "bob".to_string()];
+    assert!(config.can_access_dm("  ALICE  "));
+    assert!(!config.can_access_dm(""));
     assert!(!config.can_access_dm("charlie"));
 
     assert!(config.can_access_group("grp-1", "bob"));

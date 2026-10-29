@@ -3,6 +3,8 @@ use std::collections::{HashMap, HashSet};
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
 
+use super::allow_from::is_normalized_sender_allowed;
+
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum DmPolicy {
@@ -43,10 +45,7 @@ impl ChannelConfig {
     }
 
     pub fn is_user_allowed(&self, user_id: &str) -> bool {
-        if self.allow_from.iter().any(|allowed| allowed == "*" || allowed.eq_ignore_ascii_case(user_id)) {
-            return true;
-        }
-        false
+        is_normalized_sender_allowed(user_id, &self.allow_from, None)
     }
 
     pub fn can_access_dm(&self, user_id: &str) -> bool {
