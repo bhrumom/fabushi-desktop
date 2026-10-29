@@ -1680,3 +1680,27 @@ its runtime. This is read-only evidence for the existing Node Host/Runner
 bundle and process-composition owners: no generated shard/index state, ledger
 ref, or completion flag was changed. Rust implementation, production wiring,
 packaged execution, and acceptance remain unverified.
+
+## 146. Node pairing admission and worker-bundle provenance read-only audit (2026-10-29)
+
+The locked upstream `src/gateway/node-registry-pairing.ts`
+(`6ee2e1669f2315ad414383b9153d8ff73f0bffbf`, 59 lines),
+`src/gateway/server/ws-connection/connect-node-session.ts`
+(`51aad1c06c2b8caa84753dfd53c5755767ff10bf`, 221 lines), and
+`src/shared/worker-bundle-hash.ts`
+(`359539d729e3100c34f2faba10f3db77dccc0a44`, 68 lines) were read in full.
+Pairing leases bind the published node to pairing identity and optional
+generation, reject missing/current-state mismatches, and fail closed when the
+pairing-state oracle throws. Node admission begins one cleanup claim before
+reconciliation, re-reads device approval provenance, rate-limits new pairing
+requests, distinguishes same-host silent / SSH-verified / bootstrap consent
+from network-only trust, and never lets stored local provenance authorize a
+remote or browser connection. Only the initial capability surface may inherit
+eligible approval; later manifest changes remain subject to the declared and
+legacy-protocol-filtered capability/command ceiling. The bundle contract
+defines immutable artifact names and modes, a SHA-256-addressed archive path,
+safe chunk naming, and deterministic manifest hashing over version/path/mode/
+size/digest. These are source oracles for existing Fabushi FDN, Gateway,
+Node Host and bundle owners; no generated shard/index state, ledger ref, or
+completion flag was changed. Rust implementation, production wiring,
+packaged execution, and acceptance remain unverified.
