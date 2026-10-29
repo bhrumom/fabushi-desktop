@@ -1483,3 +1483,24 @@ boundaries, sequence order, and cancellation identity. These paths map to the
 existing Session Turns Controller mailbox/reservation owner and do not create a
 second queue, identity registry, or native-task scheduler. Rust
 implementation, wiring, runtime execution, and acceptance remain unverified.
+
+## 138. Session controller storage, queries, waits, and exact session-reader projection (2026-10-29)
+
+The locked `session-controller.storage.ts`,
+`session-controller.queries.ts`, `session-controller.wait.ts`, and
+`session-controller.session-reader.ts` were read in full. One global storage
+owner holds controller entries, alias/store indexes, RPC source references,
+operation admissions, backend generations, message-injection attempts, and
+after-clear/successor barriers; test cleanup closes watchdogs and waiters
+through that same storage instead of replacing it. Queries distinguish logical
+key busy state from one physical owner, reject ambiguous session IDs, retain
+backend run IDs after detach until settlement, and resolve protocol run IDs
+only when exactly one live operation owns them. Idle and admission waits are
+bounded, abort-aware, prune their waiters, merge database-scoped lineage
+sources across repeated barriers, and preserve the distinction between
+follow-up and successor admission. Session readers borrow only the exact
+admitted operation's reader, target, actor, and transition callback. These
+sources map to the existing Session Turns Controller storage, query, wait, and
+session-admission owners; they do not create a second registry, wait authority,
+or session reader. Rust implementation, wiring, runtime execution, and
+acceptance remain unverified.

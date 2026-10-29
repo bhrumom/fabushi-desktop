@@ -29335,6 +29335,30 @@
           "path": "src/sessions/session-controller.mailbox.ts",
           "range": {"end_line": 510, "start_line": 1},
           "symbol": "mailbox identity, source reservation, adoption, and retargeting"
+        },
+        {
+          "blob_sha": "07a6bfe0ae544e85ff1a9f4023449658b0dac2be",
+          "path": "src/sessions/session-controller.storage.ts",
+          "range": {"end_line": 78, "start_line": 1},
+          "symbol": "singleton controller storage and test cleanup owner"
+        },
+        {
+          "blob_sha": "260046566d3d9f153a9ba3ef527f8108cbc1e424",
+          "path": "src/sessions/session-controller.queries.ts",
+          "range": {"end_line": 111, "start_line": 1},
+          "symbol": "active run, stale evidence, and protocol run-id queries"
+        },
+        {
+          "blob_sha": "216e87a924b6b2aa60d38df2493edc99c802c90f",
+          "path": "src/sessions/session-controller.wait.ts",
+          "range": {"end_line": 155, "start_line": 1},
+          "symbol": "idle and follow-up/successor admission barriers"
+        },
+        {
+          "blob_sha": "ee44f59ad9250fd2f3a4a5409789708cbc1e424",
+          "path": "src/sessions/session-controller.session-reader.ts",
+          "range": {"end_line": 32, "start_line": 1},
+          "symbol": "exact operation session reader and actor admission"
         }
       ],
       "status": {
