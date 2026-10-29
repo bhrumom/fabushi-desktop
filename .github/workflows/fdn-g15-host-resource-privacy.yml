@@ -81,9 +81,13 @@ jobs:
           test ! -e source/host/Cargo.lock
           test ! -e source/host/target
           export CARGO_TARGET_DIR="$RUNNER_TEMP/fdn-g15-host-cargo-target"
-          rustup run 1.97.1 cargo --version
-          rustup run 1.97.1 rustc --version
-          rustup run 1.97.1 cargo test --manifest-path source/host/Cargo.toml --test network_worker_process_contract
+          cargo_bin="$(rustup which cargo --toolchain 1.97.1)"
+          rustc_bin="$(rustup which rustc --toolchain 1.97.1)"
+          test -x "$cargo_bin"
+          test -x "$rustc_bin"
+          "$cargo_bin" --version
+          "$rustc_bin" --version
+          "$cargo_bin" test --manifest-path source/host/Cargo.toml --test network_worker_process_contract
           rm -f source/host/Cargo.lock
           test ! -e source/host/target
           test "$(git status --porcelain)" = ""
