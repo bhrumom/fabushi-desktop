@@ -28,6 +28,9 @@ these artifacts from Fabushi runtime source.
 | `security/opengrep/rules/ghsa-qxgf-hmcj-3xw3/image-download.ts` | `cf0fdfa92907b2dbddb133c28c14d7a553c5cf5d` | 159 | Same image-download fixture oracle in TypeScript surface |
 | `security/opengrep/rules/ghsa-qxgf-hmcj-3xw3/image-download.yml` | `4d54874b4538665401986e25f60b155478d1a11f` | 35 | Rule requiring guarded image download and allowing only narrow pinned GitHub release shape |
 | `security/opengrep/rules/openclaw-policy/no-raw-http2-connect.yml` | `531f876f2ac9474b95775f273785998cd117ca43` | 33 | Policy rule requiring the managed APNs HTTP/2 connector instead of raw `http2.connect` |
+| `scripts/run-opengrep.sh` | `e523fe8494b9ee98f84deba0c5e4261cfe52709e` | 231 | Shared local/CI wrapper, changed-path selection, rulepack loading and fail-on-findings behavior |
+| `.github/workflows/opengrep-precise.yml` | `d0d8bb498463a3d1bf79294fc34837085c8ea802` | 136 | PR-diff workflow, pinned OpenGrep binary digest, SARIF upload and changed-path scan |
+| `.github/workflows/opengrep-precise-full.yml` | `3481c90d1171265bd34cdd36c499b28cfdff82e9` | 93 | Manual full-repository workflow with the same pinned scanner and SARIF publication |
 
 ## Boundary and disposition
 
@@ -66,6 +69,12 @@ These are source-level scanner contracts. They are not evidence of a passing
 OpenGrep run, runtime behavior, deployed security control, or OCRM acceptance.
 Development-stage verification remains frozen under
 `projects/openclaw-rust/evidence/development-verification-freeze-20261029.md`.
+
+The wrapper/workflows reinforce the same boundary: scanner execution is a
+repository quality/security control and its SARIF is external evidence. The
+PR workflow is diff-scoped; the full workflow is manual-only. Neither workflow
+is evidence that the current Fabushi branch has run OpenGrep, and neither is a
+product runtime integration.
 
 ## References
 

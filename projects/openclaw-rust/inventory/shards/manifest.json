@@ -7,12 +7,12 @@
   "shard_size_limit": 1024,
   "shards": [
     {
-      "compressed_sha256": "7718ae0982767ade23e41dca7734ac2d6ae66e467de52d1053401274a41438ef",
+      "compressed_sha256": "ad44e085814cab44ec99baefa4750873f1c97372417cf8e9090c21ecca6f2cfc",
       "count": 1024,
       "first_path": ".agents/resume",
       "last_path": "apps/android/app/src/main/java/ai/openclaw/app/ui/CronJobManagementPanel.kt",
       "path": "projects/openclaw-rust/inventory/shards/part-0000.jsonl.gz",
-      "uncompressed_sha256": "b4789d2e81a97138ff3c4abfcbc720df486df9af31a1080715f3f095b5cacc15"
+      "uncompressed_sha256": "c54044336a9e8e30103b260acaff043231e40d0fefdcc2913c68bd1d1b9992c3"
     },
     {
       "compressed_sha256": "40326476c022c74ed24fe56d077203b908300eda3f7447056faaadf53d992f3c",
@@ -175,12 +175,12 @@
       "uncompressed_sha256": "7c2782e52747715e6e93acd23b98a7d87abcfcc800e87a9fcba44def6e09fe41"
     },
     {
-      "compressed_sha256": "737d709f5ef0388fc54452646f8347b66cde34e6de1c97f4b897ab1aacbf7de3",
+      "compressed_sha256": "81670a5d25baaedc2bb4f3c6b64ea3a8af1678a26f5d7ba3b9b3fe3923270fc9",
       "count": 1024,
       "first_path": "scripts/release-plan-producer.mts",
       "last_path": "src/agents/auth-profiles/usage.ts",
       "path": "projects/openclaw-rust/inventory/shards/part-0021.jsonl.gz",
-      "uncompressed_sha256": "53a2021eb4c96b223b14d1d4b1f65facfe74f3993c3ba1469784eb83904d18ea"
+      "uncompressed_sha256": "36c9e37348018b0724c0cec137d5586aae3e7b1f57a5b2962270f6d880dc6104"
     },
     {
       "compressed_sha256": "c8932feaf78ce628085b0a596fac40a309ea4c89605aa7a3fb3f61b076674d81",

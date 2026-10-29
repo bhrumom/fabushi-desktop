@@ -12,6 +12,8 @@ from pathlib import Path
 ROOT = Path("projects/openclaw-rust")
 SHARDS = ROOT / "inventory" / "shards"
 READS = {
+    ".github/workflows/opengrep-precise-full.yml": (93, None, "OCRM-M10", "security-evidence"),
+    ".github/workflows/opengrep-precise.yml": (136, None, "OCRM-M10", "security-evidence"),
     "security/README.md": (137, None, "OCRM-M10", "security-evidence"),
     "security/opengrep/README.md": (136, None, "OCRM-M10", "security-evidence"),
     "security/opengrep/check-rule-metadata.mjs": (139, None, "OCRM-M10", "security-evidence"),
@@ -27,6 +29,7 @@ READS = {
     "security/opengrep/rules/ghsa-qxgf-hmcj-3xw3/image-download.ts": (159, None, "OCRM-M10", "security-evidence"),
     "security/opengrep/rules/ghsa-qxgf-hmcj-3xw3/image-download.yml": (35, None, "OCRM-M10", "security-evidence"),
     "security/opengrep/rules/openclaw-policy/no-raw-http2-connect.yml": (33, None, "OCRM-M10", "security-evidence"),
+    "scripts/run-opengrep.sh": (231, None, "OCRM-M10", "security-evidence"),
     "crates/.gitignore": (2, None, "OCRM-M04", "dependency-authority"),
     "crates/Cargo.lock": (1164, None, "OCRM-M04", "dependency-authority"),
     "crates/Cargo.toml": (4, None, "OCRM-M04", "dependency-authority"),
