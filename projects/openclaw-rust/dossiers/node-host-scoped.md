@@ -1994,3 +1994,15 @@ contracts for nested Unicode payloads and the absent-payload case.
 This does not select event producers, publish frames, own connection
 generation, or establish remote event delivery; those remain with the future
 Gateway transport/session owner.
+
+## 161. Generation-fenced node.event publication gate (2026-10-30)
+
+`NodeEventPublication` now admits an event only against the current
+`NodeHostSessionLease` and requires a final `is_current` check immediately
+before a future transport sends it. Disconnect or successor-session admission
+retires the publication, matching the live connection owner's generation fence
+for host-stat and worker-process event callbacks.
+
+The gate stores no second session registry and performs no socket I/O. A live
+Gateway caller, event producer selection, retry policy, and remote delivery
+receipt remain unimplemented and are not claimed by this slice.

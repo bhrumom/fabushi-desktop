@@ -107,6 +107,18 @@ impl NodeHostSessionRegistry {
         true
     }
 
+    /// Check that a lease still owns the connected session generation.
+    pub fn is_current(&self, lease: &NodeHostSessionLease) -> bool {
+        let state = self
+            .state
+            .read()
+            .unwrap_or_else(|poisoned| poisoned.into_inner());
+        state
+            .sessions
+            .get(&lease.node_id)
+            .is_some_and(|session| session.connected && session.generation == lease.generation)
+    }
+
     /// Retire only the session represented by this lease. A late predecessor
     /// callback cannot disconnect a successor with a newer generation.
     pub fn disconnect(&self, lease: &NodeHostSessionLease) -> bool {

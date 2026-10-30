@@ -43,6 +43,10 @@ impl NodeHostRuntimeState {
         self.sessions.set_active(lease, active)
     }
 
+    pub fn is_current(&self, lease: &NodeHostSessionLease) -> bool {
+        self.sessions.is_current(lease)
+    }
+
     pub fn get(&self, node_id: &str) -> Option<NodeHostSessionSnapshot> {
         self.sessions.get(node_id)
     }
