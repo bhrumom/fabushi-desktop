@@ -380,6 +380,13 @@ append-only `CloudWorkerMigrationReceipt` records, and the store exposes an
 explicit non-overwriting `backup_existing` primitive; no legacy conversion is
 claimed until a real source format and migration oracle are supplied.
 
+The extension status boundary now treats a poisoned owner lock as an explicit
+`Unavailable` state instead of panicking or misreporting `Disabled`. The
+Coordinator→Host Gateway projection preserves that distinction as
+`"unavailable"`. This is fail-closed fault reporting only: it does not recover
+the owner, enable cloud-worker mutation commands, establish provider
+reachability, or change the disabled-by-default production slot.
+
 The Coordinator crate now owns the serializable projection contract in
 `source/node-agent-coordinator/src/cloud_worker_projection.rs`, with the exact
 `cloudWorkers.status` method and `cloud-workers.status` event family. It is a

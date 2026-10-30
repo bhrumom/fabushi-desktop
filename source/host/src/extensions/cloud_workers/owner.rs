@@ -37,6 +37,7 @@ impl Default for CloudWorkerProvisioningConfig {
 pub enum CloudWorkerOwnerStatus {
     Disabled,
     Enabled,
+    Unavailable,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]

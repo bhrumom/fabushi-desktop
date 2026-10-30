@@ -11083,6 +11083,7 @@ impl GatewayApi for UnifiedGatewayApi {
             let status = match self.cloud_workers.status() {
                 mahayana_host_runtime::extensions::cloud_workers::CloudWorkerOwnerStatus::Disabled => "disabled",
                 mahayana_host_runtime::extensions::cloud_workers::CloudWorkerOwnerStatus::Enabled => "enabled",
+                mahayana_host_runtime::extensions::cloud_workers::CloudWorkerOwnerStatus::Unavailable => "unavailable",
             };
             return Ok(serde_json::json!({
                 "owner": "cloud-workers",

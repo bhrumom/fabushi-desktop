@@ -30,8 +30,8 @@ impl CloudWorkerProvisioningExtension {
     pub fn status(&self) -> CloudWorkerOwnerStatus {
         self.owner
             .lock()
-            .expect("cloud worker provisioning owner lock")
-            .status()
+            .map(|owner| owner.status())
+            .unwrap_or(CloudWorkerOwnerStatus::Unavailable)
     }
 
     pub fn state_path(&self) -> &Path {
