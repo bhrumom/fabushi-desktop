@@ -1932,3 +1932,20 @@ terminal settlement are rejected by focused contracts.
 This composition remains transport-neutral and does not provide socket
 ownership, command execution, result delivery, or remote device acceptance;
 those production responsibilities remain pending.
+
+## 156. Transport-owner boundary audit (2026-10-30)
+
+The current Host crate has no direct WebSocket client dependency or shipping
+Node Host transport caller. `node_host::gateway_connection` owns only URL,
+origin/mount, token-scope, and candidate-admission policy; it deliberately does
+not open a socket, attach TLS or edge credentials, negotiate the Gateway
+session, or publish frames. Existing WebSocket implementations under the
+Codex app-server and messaging owners are separate transport boundaries and
+cannot be silently reused as a Node Host Gateway owner.
+
+Therefore the new invocation lifecycle remains correctly transport-neutral.
+Adding a dependency or caller now would require a repaired owner/contract
+decision covering credential injection, negotiated protocol, request/event
+dispatch, reconnect, and shutdown ownership. No transport wiring or remote
+acceptance is claimed from this audit; the missing owner boundary is an
+explicit next implementation requirement rather than inferred connectivity.

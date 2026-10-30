@@ -1,10 +1,10 @@
 # OCRM P0 — 全量 source baseline 与 existing-owner 审计
 
-Status: ready-to-start / not-executed  
+Status: in-progress / global authority pending
 Task ID: OCRM-P0  
 Spec: [OCRM-001](../../../../docs/specs/openclaw-rust-equivalence-migration.md)  
 Project: [Source of Truth](../../SOURCE_OF_TRUTH.md)  
-Last updated: 2026-10-22（Asia/Shanghai）
+Last updated: 2026-10-30（Asia/Shanghai）
 
 ## 1. 本任务要交付什么
 
@@ -90,4 +90,15 @@ P0-AC 全通过也只完成基线任务；可按主 Spec §15.1 为 baseline ide
 
 ## 8. 本次状态
 
-任务定义已准备，执行尚未开始；没有已生成的 accepted inventory、生产迁移进度或 Actions 测试结果。本文件的退出标准全部 pending。
+P0 仍未退出：最新只读 live candidate 已推进到 OpenClaw
+`c49e07385f8d17601efbed7746381213d5326ba9` / tree
+`fcd6e0b9b42da1e3d39ca89c69ac779294cc3bfb`，但尚未取得针对该 exact subject
+的 GitHub Actions inventory、依赖闭包和 evidence envelope。既有 lock/inventory
+仍绑定上一轮候选，不能编辑性重标为当前来源；对应 drift decision 见
+`decisions/2026-10-30-upstream-rebaseline-required.md`。
+
+已完成的工作包括 schema/门槛修订、live candidate 记录、若干 scoped
+node-host owner 合同与 Rust 实现切片；这些不构成 P0-AC01–AC08、全项目
+source closure 或任何 global flag 的正面证据。OCRM Actions、本机 OCRM
+验证、push 与 PR 更新仍按开发期冻结要求未执行；本文件的退出标准保持
+pending，允许满足主 Spec §11.1 的 scoped 单元继续推进。

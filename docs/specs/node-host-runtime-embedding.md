@@ -2,7 +2,7 @@
 
 Status: active implementation specification, not full OCRM-M13 acceptance  
 Owner: Fabushi host-runtime owner  
-Last updated: 2026-10-29  
+Last updated: 2026-10-30
 Related project: `projects/openclaw-rust` / OCRM-001  
 Related task: P0 source-baseline-and-owner-audit; node-host runtime frontier
 
@@ -44,7 +44,8 @@ Define and implement a Fabushi-native node-host runtime embedding that preserves
 - `source/host/app/src/main.rs` owns local node registration/invocation and currently reports approved remote nodes as paired but disconnected with no remote commands.
 - `source/host/src/extensions/node_host/` contains protocol slices for connection, Computer dispatch, and runtime manifest, but the runtime has no shipping caller or live remote transport.
 - Existing `NativeDesktopRemoteExecutor` and `execute_with_lease_fenced` own native Computer behavior; they are not generic node-host invoke executors.
-- Pinned upstream revision is `ad8d12f126d29b0db204187adf5092db80294e70`, tree `04ccce62f1d74dc8e0c88290ae8ded027b7b0f16`.
+- The implementation oracle remains the prior candidate `ad8d12f126d29b0db204187adf5092db80294e70`, tree `04ccce62f1d74dc8e0c88290ae8ded027b7b0f16`; it is not accepted as the current project-wide source lock.
+- Read-only live discovery has since advanced to OpenClaw `main` commit `c49e07385f8d17601efbed7746381213d5326ba9`, tree `fcd6e0b9b42da1e3d39ca89c69ac779294cc3bfb`. That candidate requires the P0 GitHub Actions rebaseline before source-dependent acceptance or lock/inventory reuse.
 
 ## 6. Target state
 
@@ -156,7 +157,7 @@ Retain redacted lifecycle events, connection generation, negotiated protocol, ma
 - `projects/openclaw-rust/module-map.md` OCRM-M13
 - `docs/specs/node-rpc-remote-presence.md`
 - `docs/specs/node-host-computer-dispatch-owner.md`
-- pinned upstream `openclaw/openclaw@ad8d12f126d29b0db204187adf5092db80294e70`, especially `src/node-host/{runtime,client,invoke}.ts` and `crates/openclaw-node-host/src/{node,lifecycle,reconnect,identity,duplex}.rs`
+- prior implementation oracle `openclaw/openclaw@ad8d12f126d29b0db204187adf5092db80294e70`, especially `src/node-host/{runtime,client,invoke}.ts` and `crates/openclaw-node-host/src/{node,lifecycle,reconnect,identity,duplex}.rs`; the live candidate is recorded in the OCRM rebaseline decision and must be re-read after Actions authority is established.
 
 ## 17. Spec compliance record
 
