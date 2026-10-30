@@ -16,6 +16,7 @@ pub const CLOUD_WORKER_STATE_SCHEMA_VERSION: u32 = 1;
 pub struct CloudWorkerProvisioningConfig {
     pub enabled: bool,
     pub max_leases: usize,
+    pub max_warm_images: usize,
 }
 
 impl Default for CloudWorkerProvisioningConfig {
@@ -23,6 +24,7 @@ impl Default for CloudWorkerProvisioningConfig {
         Self {
             enabled: false,
             max_leases: 64,
+            max_warm_images: 128,
         }
     }
 }
@@ -73,6 +75,9 @@ impl CloudWorkerProvisioningOwner {
         if config.max_leases == 0 {
             return Err(CloudWorkerOwnerError::InvalidLeaseLimit);
         }
+        if config.max_warm_images == 0 {
+            return Err(CloudWorkerOwnerError::InvalidWarmImageLimit);
+        }
         Ok(Self {
             config,
             leases: HashMap::new(),
@@ -114,6 +119,9 @@ impl CloudWorkerProvisioningOwner {
         let mut owner = Self::new(config)?;
         if snapshot.leases.len() > owner.config.max_leases {
             return Err(CloudWorkerOwnerError::LeaseLimitReached);
+        }
+        if snapshot.warm_images.len() > owner.config.max_warm_images {
+            return Err(CloudWorkerOwnerError::WarmImageLimitReached);
         }
         for lease in snapshot.leases {
             if lease.lease_id.0.trim().is_empty()
@@ -227,6 +235,9 @@ impl CloudWorkerProvisioningOwner {
         image: CloudWorkerWarmImage,
     ) -> Result<(), CloudWorkerOwnerError> {
         self.ensure_enabled()?;
+        if self.warm_images.len() >= self.config.max_warm_images {
+            return Err(CloudWorkerOwnerError::WarmImageLimitReached);
+        }
         if self.warm_images.contains_key(&image.image_id) {
             return Err(CloudWorkerOwnerError::DuplicateWarmImage);
         }
@@ -263,12 +274,16 @@ pub enum CloudWorkerOwnerError {
     Disabled,
     #[error("maximum lease count must be greater than zero")]
     InvalidLeaseLimit,
+    #[error("maximum warm-image count must be greater than zero")]
+    InvalidWarmImageLimit,
     #[error("lease id must be non-empty")]
     InvalidLeaseId,
     #[error("lease already exists")]
     DuplicateLease,
     #[error("lease limit reached")]
     LeaseLimitReached,
+    #[error("warm-image limit reached")]
+    WarmImageLimitReached,
     #[error("lease was not found")]
     UnknownLease,
     #[error("warm image already exists")]
@@ -295,6 +310,7 @@ mod tests {
         CloudWorkerProvisioningOwner::new(CloudWorkerProvisioningConfig {
             enabled: true,
             max_leases: 1,
+            max_warm_images: 1,
         })
         .unwrap()
     }
@@ -353,6 +369,19 @@ mod tests {
         assert_eq!(
             owner.admit(scope, LeaseId("lease-2".into()), runtime()),
             Err(CloudWorkerOwnerError::LeaseLimitReached)
+        );
+    }
+
+    #[test]
+    fn owner_rejects_zero_warm_image_capacity() {
+        assert_eq!(
+            CloudWorkerProvisioningOwner::new(CloudWorkerProvisioningConfig {
+                enabled: true,
+                max_leases: 1,
+                max_warm_images: 0,
+            })
+            .unwrap_err(),
+            CloudWorkerOwnerError::InvalidWarmImageLimit
         );
     }
 }

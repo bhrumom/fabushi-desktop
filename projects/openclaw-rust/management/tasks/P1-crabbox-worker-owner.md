@@ -331,7 +331,8 @@ packaged UI/CLI reachability, or exact-head acceptance.
 The pure contracts are now composed by
 `source/host/src/extensions/cloud_workers/owner.rs` into a single
 `CloudWorkerProvisioningOwner` with disabled-by-default configuration,
-lease/warm-image maps, capacity fencing and typed mutation delegation. The
+lease/warm-image maps, independent lease and warm-image capacity fencing, and
+typed mutation delegation. The
 production extension boundary exists, but the owner still has no
 persistence or provider side-effect adapter. The Coordinator→Host Gateway now
 exposes only the read-only `cloudWorkers.status` projection; mutating commands
