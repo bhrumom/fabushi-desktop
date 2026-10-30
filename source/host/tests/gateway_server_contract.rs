@@ -5,7 +5,7 @@ use std::thread;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 use flate2::read::GzDecoder;
-use mahayana_host_runtime::device_pairing_owner::DevicePairingOwner;
+use mahayana_host_runtime::device_pairing_owner::{DevicePairingOwner, DeviceTokenAuthorization};
 use mahayana_host_runtime::gateway_config::{GatewayServerConfig, GatewayTlsConfig};
 use mahayana_host_runtime::gateway_server::{
     GatewayApi, GatewayBridgeHub, GatewayCommandContext, GatewayCommandError,
@@ -79,6 +79,40 @@ impl GatewayApi for TestApi {
     }
 }
 
+struct NodeTokenApi;
+
+impl GatewayApi for NodeTokenApi {
+    fn authenticate_device_token(
+        &self,
+        token: &str,
+    ) -> Result<Option<DeviceTokenAuthorization>, GatewayCommandError> {
+        Ok((token == "node-token").then(|| DeviceTokenAuthorization {
+            device_id: "node-1".into(),
+            role: "node".into(),
+            scopes: vec![],
+        }))
+    }
+
+    fn authorize_device_token_request(
+        &self,
+        authorization: &DeviceTokenAuthorization,
+        method: &str,
+        args: &Value,
+    ) -> Result<(), GatewayCommandError> {
+        if authorization.role == "node"
+            && method == "node.invoke"
+            && args.get("nodeId").and_then(Value::as_str) != Some(authorization.device_id.as_str())
+        {
+            return Err(GatewayCommandError::Forbidden("DEVICE_SCOPE_MISMATCH".into()));
+        }
+        Ok(())
+    }
+
+    fn call(&self, method: &str, args: Value) -> Result<Value, GatewayCommandError> {
+        Ok(json!({"method": method, "args": args}))
+    }
+}
+
 #[test]
 fn device_pairing_owner_authenticates_issued_token_with_role_and_scopes() {
     let owner = DevicePairingOwner::in_memory().expect("pairing owner");
@@ -126,6 +160,29 @@ fn device_pairing_owner_authenticates_issued_token_with_role_and_scopes() {
         .authenticate_device_token("sand-device-tok-invalid")
         .expect("invalid token lookup")
         .is_none());
+}
+
+#[test]
+fn gateway_binds_node_token_to_the_addressed_node_before_dispatch() {
+    let server = start_gateway_server(GatewayServerDeps {
+        api: Arc::new(NodeTokenApi),
+        events: GatewayEventHub::default(),
+        local_exec: None,
+        webauthn: None,
+        config: config(Some("gateway-secret")),
+        started_at: 100,
+    })
+    .expect("gateway server");
+    let port = server.port();
+
+    let rejected = request(
+        port,
+        "POST /api/node.invoke HTTP/1.1\r\nHost: 127.0.0.1\r\nAuthorization: Bearer node-token\r\nContent-Length: 18\r\nConnection: close\r\n\r\n{\"nodeId\":\"node-2\"}",
+    );
+    assert!(rejected.starts_with("HTTP/1.1 403 Forbidden"), "{rejected}");
+    assert!(rejected.contains("DEVICE_SCOPE_MISMATCH"), "{rejected}");
+
+    server.close();
 }
 
 struct PairingOwnerApi {

@@ -10089,6 +10089,46 @@ impl GatewayApi for UnifiedGatewayApi {
         self.device_pairing.authenticate_device_token(token)
     }
 
+    fn authorize_device_token_request(
+        &self,
+        authorization: &mahayana_host_runtime::device_pairing_owner::DeviceTokenAuthorization,
+        method: &str,
+        args: &serde_json::Value,
+    ) -> Result<(), GatewayCommandError> {
+        if authorization.role != "node" {
+            return Ok(());
+        }
+        let target = match method {
+            "node.invoke" => args
+                .get("nodeId")
+                .and_then(serde_json::Value::as_str),
+            "node.register" => args
+                .get("nodeId")
+                .or_else(|| args.get("deviceId"))
+                .or_else(|| args.get("client").and_then(|value| value.get("id")))
+                .or_else(|| args.get("device").and_then(|value| value.get("id")))
+                .and_then(serde_json::Value::as_str),
+            "device.pair.request" | "device.pair.status" => {
+                args.get("deviceId").and_then(serde_json::Value::as_str)
+            }
+            _ => return Ok(()),
+        }
+        .map(str::trim)
+        .filter(|value| !value.is_empty());
+
+        let Some(target) = target else {
+            return Err(GatewayCommandError::Forbidden(
+                "DEVICE_SCOPE_REQUIRED: node device token requires a target device identity".into(),
+            ));
+        };
+        if target != authorization.device_id {
+            return Err(GatewayCommandError::Forbidden(
+                "DEVICE_SCOPE_MISMATCH: node device token cannot address another device".into(),
+            ));
+        }
+        Ok(())
+    }
+
     fn redeem_device_pairing_join_code(
         &self,
         shortcode: &str,

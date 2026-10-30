@@ -155,6 +155,19 @@ pub trait GatewayApi: Send + Sync + 'static {
         Ok(None)
     }
 
+    /// Enforce request-level binding for an authenticated device token after
+    /// the request body has been decoded. The pairing owner remains the sole
+    /// authority for token identity; implementations only bind that identity
+    /// to the command's addressed device.
+    fn authorize_device_token_request(
+        &self,
+        _authorization: &DeviceTokenAuthorization,
+        _method: &str,
+        _args: &Value,
+    ) -> Result<(), GatewayCommandError> {
+        Ok(())
+    }
+
     fn call_with_context(
         &self,
         method: &str,
@@ -1409,6 +1422,14 @@ fn handle_connection(
             return respond_error(&mut stream, 400, format!("invalid JSON body: {error}"));
         }
     };
+    if let Some(authorization) = device_authorization.as_ref() {
+        if let Err(error) = deps
+            .api
+            .authorize_device_token_request(authorization, method, &args)
+        {
+            return respond_error(&mut stream, error.status(), error.to_string());
+        }
+    }
     let started = Instant::now();
     let command_context = gateway_command_context(&request, started);
     match deps.api.call_with_context(method, args, &command_context) {
