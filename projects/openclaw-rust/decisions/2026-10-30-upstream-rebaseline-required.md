@@ -15,7 +15,7 @@ The read-only live checks for this continuation resolved:
 - GitHub recursive-tree API for live tree `f72fbc794bbb23a04bc5afea875d4877048015c9` returned `truncated=false`, with 63,459 tree entries: 61,221 blobs and 2,238 directories.
 - Live root manifest identities are `package.json`=`95a4ad9759adf93239199b0e5f671fb552b6c967`, `pnpm-lock.yaml`=`3d04ffe75adbebb2aa2a536d80acd5ba6e374717`, `pnpm-workspace.yaml`=`c3bddd9f93fec0711312080545cc472fa76f2bc4`, `.gitattributes`=`c6118b226a4a760f7861b6b7b1e7dccd943384e4`, `LICENSE`=`ed064819ab537575d0cad902f7e5af4a3488b1d0`, and `THIRD_PARTY_NOTICES.md`=`0c9c123760188915a384ce7275df4096114e8f90`. The live root has no `.gitmodules`; `.gitattributes` contains no Git-LFS filter rules, but generated/localization paths remain in scope for disposition.
 
-The committed OCRM lock and generated inventory still identify the prior candidate OpenClaw commit/tree `ad8d12f126d29b0db204187adf5092db80294e70` / `04ccce62f1d74dc8e0c88290ae8ded027b7b0f16`. The prior inventory rows contain blob identities for that tree and therefore cannot be relabeled to the live tree by editing only the lock.
+The committed OCRM inventory and generated shards still identify the prior candidate OpenClaw commit/tree `ad8d12f126d29b0db204187adf5092db80294e70` / `04ccce62f1d74dc8e0c88290ae8ded027b7b0f16`. The lock now records the later live candidate below, but the prior inventory rows contain blob identities for the old tree and therefore cannot be relabeled to the live tree by editing only the lock.
 
 The non-truncated API response is useful discovery evidence for the live tree, but it is not yet the required Actions receipt: it does not close submodules/LFS, package integrity, recursive external dependencies, generated-input provenance, license closure or the subject-target evidence envelope.
 
@@ -33,8 +33,17 @@ still absent. This supersedes the earlier live discovery ref as the latest
 candidate only; it does not promote the candidate to lock authority or make
 the prior inventory reusable.
 
+A further read-only check resolved OpenClaw `refs/heads/main` to commit
+`c32556b0cea7f63b33db0ac393affd71ecb0015b`, tree
+`e08d361d83ca9cae55aa93d49462d991d0a39efc`. Its recursive-tree response was
+not truncated and contained 63,485 entries: 61,246 blobs and 2,239
+directories. The root `package.json` and `pnpm-lock.yaml` blob identities were
+`f1a92c3c04328301f0d1b55188846545534ea616` and
+`14ec89238970e23718e93f5f6f160e6db217311`; the candidate remains discovery
+only pending the exact-subject Actions inventory and dependency-closure run.
+
 ## Decision
 
-Keep the prior lock/inventory as historical candidate evidence until a fresh GitHub Actions authority run recursively enumerates the live OpenClaw commit, resolves submodules/LFS and dependency inputs, and produces a new immutable manifest. Do not claim `baseline_identity_accepted`, `source_closure_ready`, or any semantic/implementation flag from the live discovery alone. The next P0 authority run must rebaseline the lock, inventory, shards, ledger/RTM provenance and root-input digests together against one exact subject.
+Keep the prior inventory/shards as historical candidate evidence while the lock records c325 as the current discovery candidate. A fresh GitHub Actions authority run must recursively enumerate that exact OpenClaw commit, resolve submodules/LFS and dependency inputs, and produce a new immutable manifest. Do not claim `baseline_identity_accepted`, `source_closure_ready`, or any semantic/implementation flag from live discovery alone. The next P0 authority run must rebaseline the inventory, shards, ledger/RTM provenance and root-input digests together against one exact subject.
 
 This decision permits read-only source review and implementation work whose source authority is explicitly the prior locked candidate, but any source-dependent acceptance or final receipt must use the new live lock after Actions rebaseline. No CI, push, PR update, or local OCRM executable verification was performed for this decision.
