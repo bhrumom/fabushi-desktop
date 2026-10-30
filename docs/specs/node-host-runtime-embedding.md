@@ -188,6 +188,6 @@ Retain redacted lifecycle events, connection generation, negotiated protocol, ma
 | Requirement / AC | Status | Evidence / reason |
 | --- | --- | --- |
 | R1–R10 | pending | Runtime embedding not yet implemented and wired. |
-| R11–R14 | in progress | Worker admission boundaries and the local identity/signing slice are implemented; origin-scoped token storage, challenge/hello transport use, and production wiring remain open. |
+| R11–R14 | in progress | Worker admission boundaries, local identity/signing, and origin-scoped token storage are implemented; upstream authorization producer, challenge/hello transport use, and production wiring remain open. |
 | AC1 | in progress | Node-host Rust crate closure is being read in exact pinned chunks; inventory remains incomplete. |
 | AC2–AC6 | pending | No live remote transport/device acceptance or exact-head acceptance receipt yet. |

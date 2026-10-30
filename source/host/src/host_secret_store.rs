@@ -1,15 +1,17 @@
-use std::fs;
+use std::fs::{self, OpenOptions};
 use std::io;
 use std::path::{Path, PathBuf};
 use std::sync::{Mutex, OnceLock};
+use std::time::{SystemTime, UNIX_EPOCH};
 
 use base64::{Engine as _, engine::general_purpose::URL_SAFE_NO_PAD};
 use ed25519_dalek::{Signer, SigningKey};
-use sha2::{Digest, Sha256};
+use fs2::FileExt;
 use serde_json::{Value, json};
+use sha2::{Digest, Sha256};
 use uuid::Uuid;
 
-use crate::host_paths::get_host_secrets_path;
+use crate::host_paths::{get_host_node_auth_path, get_host_secrets_path};
 
 static MACHINE_ID_CACHE: OnceLock<Mutex<Option<String>>> = OnceLock::new();
 
@@ -218,6 +220,299 @@ pub fn load_or_create_host_node_identity(
         return Err(io::Error::other("persist node identity failed"));
     }
     Ok(identity_from_signing_key(signing_key))
+}
+
+#[derive(Clone, PartialEq, Eq)]
+pub struct HostNodeDeviceToken {
+    device_id: String,
+    role: String,
+    gateway_scope: Option<String>,
+    token: String,
+    scopes: Vec<String>,
+}
+
+impl HostNodeDeviceToken {
+    pub fn device_id(&self) -> &str {
+        &self.device_id
+    }
+
+    pub fn role(&self) -> &str {
+        &self.role
+    }
+
+    pub fn gateway_scope(&self) -> Option<&str> {
+        self.gateway_scope.as_deref()
+    }
+
+    pub fn secret(&self) -> &str {
+        &self.token
+    }
+
+    pub fn scopes(&self) -> &[String] {
+        &self.scopes
+    }
+}
+
+fn node_auth_path(path: Option<&Path>) -> PathBuf {
+    path.map(Path::to_path_buf)
+        .unwrap_or_else(get_host_node_auth_path)
+}
+
+fn normalized_token_key(
+    device_id: &str,
+    role: &str,
+    gateway_scope: Option<&str>,
+) -> io::Result<(String, String, Option<String>)> {
+    let device_id = device_id.trim();
+    let role = role.trim();
+    if device_id.is_empty()
+        || device_id.len() > 256
+        || role.is_empty()
+        || role.len() > 128
+        || device_id.chars().any(char::is_control)
+        || role.chars().any(char::is_control)
+    {
+        return Err(io::Error::new(
+            io::ErrorKind::InvalidInput,
+            "node token identity fields are invalid",
+        ));
+    }
+    let gateway_scope = gateway_scope
+        .map(str::trim)
+        .filter(|scope| !scope.is_empty())
+        .map(ToOwned::to_owned);
+    if gateway_scope
+        .as_deref()
+        .is_some_and(|scope| scope.len() > 2048 || scope.chars().any(char::is_control))
+    {
+        return Err(io::Error::new(
+            io::ErrorKind::InvalidInput,
+            "node token gateway scope is too long",
+        ));
+    }
+    let key = format!(
+        "{device_id}\u{0}{role}\u{0}{}",
+        gateway_scope.as_deref().unwrap_or_default()
+    );
+    Ok((key, role.to_string(), gateway_scope))
+}
+
+fn token_lock_path(path: &Path) -> PathBuf {
+    PathBuf::from(format!("{}.lock", path.to_string_lossy()))
+}
+
+fn with_node_auth_lock<T>(path: &Path, operation: impl FnOnce() -> io::Result<T>) -> io::Result<T> {
+    if let Some(parent) = path.parent() {
+        fs::create_dir_all(parent)?;
+    }
+    let lock = OpenOptions::new()
+        .create(true)
+        .read(true)
+        .write(true)
+        .open(token_lock_path(path))?;
+    lock.lock_exclusive()?;
+    let result = operation();
+    let unlock_result = lock.unlock();
+    match (result, unlock_result) {
+        (Ok(value), Ok(())) => Ok(value),
+        (Err(error), _) => Err(error),
+        (Ok(_), Err(error)) => Err(error),
+    }
+}
+
+fn read_node_auth_store(path: &Path) -> io::Result<Value> {
+    let raw = match fs::read_to_string(path) {
+        Ok(raw) => raw,
+        Err(error) if error.kind() == io::ErrorKind::NotFound => {
+            return Ok(json!({ "version": 1, "entries": {} }));
+        }
+        Err(error) => return Err(error),
+    };
+    let value: Value = serde_json::from_str(&raw).map_err(|error| {
+        io::Error::new(io::ErrorKind::InvalidData, format!("invalid node auth JSON: {error}"))
+    })?;
+    if value.get("version").and_then(Value::as_u64) != Some(1)
+        || !value.get("entries").is_some_and(Value::is_object)
+    {
+        return Err(io::Error::new(
+            io::ErrorKind::InvalidData,
+            "node auth store version or entries are invalid",
+        ));
+    }
+    Ok(value)
+}
+
+fn persist_node_auth_store(path: &Path, value: &Value) -> io::Result<()> {
+    let temp_path = temp_path_for(path);
+    fs::write(&temp_path, serde_json::to_vec(value).map_err(|error| {
+        io::Error::other(format!("serialize node auth store: {error}"))
+    })?)?;
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt;
+        fs::set_permissions(&temp_path, fs::Permissions::from_mode(0o600))?;
+    }
+    fs::rename(temp_path, path)
+}
+
+fn token_from_entry(
+    key: &str,
+    entry: &Value,
+    expected_device_id: &str,
+    expected_role: &str,
+    expected_scope: Option<&str>,
+) -> io::Result<HostNodeDeviceToken> {
+    let object = entry.as_object().ok_or_else(|| {
+        io::Error::new(io::ErrorKind::InvalidData, "node auth entry is not an object")
+    })?;
+    let device_id = object.get("deviceId").and_then(Value::as_str).ok_or_else(|| {
+        io::Error::new(io::ErrorKind::InvalidData, "node auth entry device id is missing")
+    })?;
+    let role = object.get("role").and_then(Value::as_str).ok_or_else(|| {
+        io::Error::new(io::ErrorKind::InvalidData, "node auth entry role is missing")
+    })?;
+    let gateway_scope = object
+        .get("gatewayScope")
+        .and_then(Value::as_str)
+        .map(ToOwned::to_owned);
+    let token = object.get("token").and_then(Value::as_str).ok_or_else(|| {
+        io::Error::new(io::ErrorKind::InvalidData, "node auth entry token is missing")
+    })?;
+    if token.is_empty()
+        || token.len() > 256
+        || device_id != expected_device_id
+        || role != expected_role
+        || gateway_scope.as_deref() != expected_scope
+        || key != format!("{device_id}\u{0}{role}\u{0}{}", gateway_scope.as_deref().unwrap_or_default())
+    {
+        return Err(io::Error::new(
+            io::ErrorKind::InvalidData,
+            "node auth entry identity does not match its key",
+        ));
+    }
+    let scopes = object
+        .get("scopes")
+        .and_then(Value::as_array)
+        .ok_or_else(|| io::Error::new(io::ErrorKind::InvalidData, "node auth scopes are missing"))?
+        .iter()
+        .map(|scope| {
+            scope.as_str().map(ToOwned::to_owned).ok_or_else(|| {
+                io::Error::new(io::ErrorKind::InvalidData, "node auth scope is not a string")
+            })
+        })
+        .collect::<io::Result<Vec<_>>>()?;
+    Ok(HostNodeDeviceToken {
+        device_id: device_id.to_string(),
+        role: role.to_string(),
+        gateway_scope,
+        token: token.to_string(),
+        scopes,
+    })
+}
+
+pub fn read_host_node_token(
+    path: Option<&Path>,
+    device_id: &str,
+    role: &str,
+    gateway_scope: Option<&str>,
+) -> io::Result<Option<HostNodeDeviceToken>> {
+    let path = node_auth_path(path);
+    let (key, role, gateway_scope) = normalized_token_key(device_id, role, gateway_scope)?;
+    with_node_auth_lock(&path, || {
+        let store = read_node_auth_store(&path)?;
+        let Some(entry) = store.get("entries").and_then(|entries| entries.get(&key)) else {
+            return Ok(None);
+        };
+        token_from_entry(&key, entry, device_id.trim(), &role, gateway_scope.as_deref())
+            .map(Some)
+    })
+}
+
+pub fn write_host_node_token(
+    path: Option<&Path>,
+    device_id: &str,
+    role: &str,
+    gateway_scope: Option<&str>,
+    token: &str,
+    scopes: &[String],
+    expected_token: Option<&str>,
+) -> io::Result<bool> {
+    let path = node_auth_path(path);
+    let (key, role, gateway_scope) = normalized_token_key(device_id, role, gateway_scope)?;
+    let token = token.trim();
+    if token.is_empty() || token.len() > 256 {
+        return Err(io::Error::new(io::ErrorKind::InvalidInput, "node token is invalid"));
+    }
+    let mut normalized_scopes = scopes
+        .iter()
+        .map(|scope| scope.trim().to_string())
+        .filter(|scope| !scope.is_empty())
+        .collect::<Vec<_>>();
+    if normalized_scopes
+        .iter()
+        .any(|scope| scope.len() > 256 || scope.chars().any(char::is_control))
+    {
+        return Err(io::Error::new(
+            io::ErrorKind::InvalidInput,
+            "node token scope is invalid",
+        ));
+    }
+    normalized_scopes.sort();
+    normalized_scopes.dedup();
+    with_node_auth_lock(&path, || {
+        let mut store = read_node_auth_store(&path)?;
+        let entries = store
+            .get_mut("entries")
+            .and_then(Value::as_object_mut)
+            .ok_or_else(|| io::Error::new(io::ErrorKind::InvalidData, "node auth entries are invalid"))?;
+        let current = entries.get(&key).and_then(|entry| entry.get("token")).and_then(Value::as_str);
+        if expected_token.is_some_and(|expected| current != Some(expected)) {
+            return Ok(false);
+        }
+        if expected_token.is_none() && current.is_some() {
+            return Ok(false);
+        }
+        entries.insert(
+            key,
+            json!({
+                "deviceId": device_id.trim(),
+                "role": role,
+                "gatewayScope": gateway_scope,
+                "token": token,
+                "scopes": normalized_scopes,
+                "updatedAtMs": SystemTime::now().duration_since(UNIX_EPOCH).unwrap_or_default().as_millis(),
+            }),
+        );
+        persist_node_auth_store(&path, &store)?;
+        Ok(true)
+    })
+}
+
+pub fn clear_host_node_token(
+    path: Option<&Path>,
+    device_id: &str,
+    role: &str,
+    gateway_scope: Option<&str>,
+    expected_token: Option<&str>,
+) -> io::Result<bool> {
+    let path = node_auth_path(path);
+    let (key, _, _) = normalized_token_key(device_id, role, gateway_scope)?;
+    with_node_auth_lock(&path, || {
+        let mut store = read_node_auth_store(&path)?;
+        let entries = store
+            .get_mut("entries")
+            .and_then(Value::as_object_mut)
+            .ok_or_else(|| io::Error::new(io::ErrorKind::InvalidData, "node auth entries are invalid"))?;
+        let Some(current) = entries.get(&key).and_then(|entry| entry.get("token")).and_then(Value::as_str) else {
+            return Ok(false);
+        };
+        if expected_token.is_some_and(|expected| expected != current) {
+            return Ok(false);
+        }
+        entries.remove(&key);
+        persist_node_auth_store(&path, &store)?;
+        Ok(true)
+    })
 }
 
 fn temp_path_for(path: &Path) -> PathBuf {

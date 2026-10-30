@@ -2305,3 +2305,20 @@ must still receive an injected token-owner interface and must not read pairing
 rows directly or reuse an unrelated bearer token. Remote transport remains
 unwired until this remaining owner contract and its secure rotation semantics
 are implemented and accepted.
+
+## 179. Origin-scoped NodeHost token owner slice (2026-10-30)
+
+The Host credential boundary now also owns a versioned
+`host-node-auth.json` store. Entries are keyed by normalized device id, role,
+and optional Gateway origin scope; reads validate the entry identity against
+its key, and token objects do not implement `Debug`. Writes and clears use an
+exclusive lock plus an atomic replacement and accept an optional
+`expectedToken`, so stale rotation or cleanup cannot overwrite/remove a
+successor credential. Scopes are trimmed, deduplicated, sorted, and bounded;
+the store is owner-readable on Unix.
+
+`host_secret_store_contract.rs` covers origin isolation and stale/correct
+rotation behavior. This closes the persistence/consumer seam for R14 only.
+No upstream Gateway approval/token producer is connected yet, and the future
+transport owner still has to consume this API after exact challenge/hello
+contract closure.

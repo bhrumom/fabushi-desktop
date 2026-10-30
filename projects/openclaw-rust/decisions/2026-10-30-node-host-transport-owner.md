@@ -47,14 +47,14 @@ credential signer, challenge contract, protocol version, TLS policy, or
 server hello is unavailable. Pairing approval remains identity/approval
 input only; it cannot activate the owner or make an RPC projection connected.
 
-The credential input is itself a required existing-owner extension: the
-current Host secret store has only a machine id, and `DevicePairingOwner`
-contains remote pairing/public-key and inbound role-token state, not a local
-NodeHost signing identity or origin-scoped client-token lookup. The transport
-owner must therefore depend on an explicit credential-owner interface for
-installation-local identity, raw public-key encoding, challenge signing, and
-rotation-fenced token reads. It must not create ephemeral keys or inspect
-pairing storage directly.
+The credential input is an existing-owner extension: Host now has a local
+identity/signing slice and an origin-scoped token store with rotation-fenced
+reads/writes, while `DevicePairingOwner` continues to own remote
+pairing/public-key and inbound role-token state. The transport owner must
+depend on this explicit credential-owner interface for installation-local
+identity, raw public-key encoding, challenge signing, and token reads. It must
+not create ephemeral keys or inspect pairing storage directly. The producer
+that receives/approves a Gateway-issued NodeHost token is still not wired.
 
 ## Consequences
 

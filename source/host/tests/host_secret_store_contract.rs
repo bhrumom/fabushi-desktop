@@ -9,7 +9,8 @@ static TEST_LOCK: Mutex<()> = Mutex::new(());
 
 use mahayana_host_runtime::host_secret_store::{
     clear_host_machine_id_cache_for_tests, get_or_create_host_machine_id, read_machine_id,
-    load_or_create_host_node_identity, write_machine_id,
+    clear_host_node_token, load_or_create_host_node_identity, read_host_node_token,
+    write_host_node_token, write_machine_id,
 };
 
 fn temp_root(label: &str) -> std::path::PathBuf {
@@ -97,6 +98,79 @@ fn node_identity_is_persisted_and_signs_without_exposing_private_bytes() {
     assert!(!fs::read_to_string(&path)
         .expect("read persisted identity")
         .contains("signingKey"));
+
+    fs::remove_dir_all(root).expect("remove test root");
+}
+
+#[test]
+fn node_tokens_are_origin_scoped_and_rotation_fenced() {
+    let _guard = TEST_LOCK.lock().expect("test lock");
+    let root = temp_root("node-auth");
+    let path = root.join("node-auth.json");
+    let scopes = vec!["node.invoke".to_string(), "node.read".to_string()];
+
+    assert!(write_host_node_token(
+        Some(&path),
+        "device-1",
+        " node ",
+        Some("wss://gateway.example:443"),
+        "token-a",
+        &scopes,
+        None,
+    )
+    .expect("write token"));
+    let stored = read_host_node_token(
+        Some(&path),
+        "device-1",
+        "node",
+        Some("wss://gateway.example:443"),
+    )
+    .expect("read token")
+    .expect("stored token");
+    assert_eq!(stored.secret(), "token-a");
+    assert_eq!(
+        stored.scopes().iter().map(String::as_str).collect::<Vec<_>>(),
+        vec!["node.invoke", "node.read"]
+    );
+    assert!(read_host_node_token(Some(&path), "device-1", "node", None)
+        .expect("read unscoped token")
+        .is_none());
+    assert!(!write_host_node_token(
+        Some(&path),
+        "device-1",
+        "node",
+        Some("wss://gateway.example:443"),
+        "token-b",
+        &[],
+        Some("stale-token"),
+    )
+    .expect("reject stale rotation"));
+    assert!(write_host_node_token(
+        Some(&path),
+        "device-1",
+        "node",
+        Some("wss://gateway.example:443"),
+        "token-b",
+        &[],
+        Some("token-a"),
+    )
+    .expect("rotate token"));
+    assert!(!clear_host_node_token(
+        Some(&path),
+        "device-1",
+        "node",
+        Some("wss://gateway.example:443"),
+        Some("token-a"),
+    )
+    .expect("reject stale clear"));
+    assert!(clear_host_node_token(
+        Some(&path),
+        "device-1",
+        "node",
+        Some("wss://gateway.example:443"),
+        Some("token-b"),
+    )
+    .expect("clear token"));
 
     fs::remove_dir_all(root).expect("remove test root");
 }
