@@ -71,12 +71,15 @@ impl CloudWorkerProvisioningExtension {
             }
             Err(_) => ("unavailable", None),
         };
+        let state_persisted = fs::symlink_metadata(&self.state_path)
+            .map(|metadata| metadata.file_type().is_file())
+            .unwrap_or(false);
         CloudWorkerStatusSnapshot {
             owner: "cloud-workers",
             status,
             provider_ready: false,
             production_mutation: false,
-            state_persisted: snapshot.is_some(),
+            state_persisted,
             lease_count: snapshot.as_ref().map_or(0, |value| value.leases.len()),
             warm_image_count: snapshot.as_ref().map_or(0, |value| value.warm_images.len()),
             migration_receipt_count: snapshot

@@ -29,13 +29,17 @@ fn production_boundary_starts_disabled_without_provider_prerequisites() {
 
 #[test]
 fn owner_status_snapshot_is_the_read_projection_and_stays_fail_closed() {
-    let state_path = std::env::temp_dir().join("cloud-worker-status-projection-state.json");
+    let state_path = std::env::temp_dir().join(format!(
+        "cloud-worker-status-projection-state-{}.json",
+        std::process::id()
+    ));
     let extension = start_cloud_worker_provisioning_extension(state_path).unwrap();
     let projection = extension.status_snapshot();
     assert_eq!(projection.owner, "cloud-workers");
     assert_eq!(projection.status, "disabled");
     assert!(!projection.provider_ready);
     assert!(!projection.production_mutation);
+    assert!(!projection.state_persisted);
     assert_eq!(projection.lease_count, 0);
     assert_eq!(projection.warm_image_count, 0);
     let value = serde_json::to_value(projection).unwrap();
