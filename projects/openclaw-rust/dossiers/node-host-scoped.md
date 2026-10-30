@@ -2614,3 +2614,13 @@ historical exact-blob observations for `68fbe4a`; they are not silently reused
 as current-source evidence. The new candidate requires fresh NodeHost source
 reads, dependency closure, and P0 authority before any behavior mapping or
 command change is treated as current.
+
+## 197. Current-candidate blob identity revalidation (2026-10-30)
+
+A fresh recursive-tree read for `5310270e46cf020ab1e37204075970f3b2679812`
+confirmed that the seven targeted blobs in §§192 and 195 retain identical SHA
+identities in the new tree: manifest, connection, client, invoke types,
+command catalog, config-shared, and Cloudflare Access config. The prior content
+read is therefore reusable by immutable blob identity for this discovery
+candidate. This does not establish full-tree closure, dependency closure, or
+Actions authority for the new commit.
