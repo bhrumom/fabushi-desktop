@@ -4,6 +4,7 @@ use thiserror::Error;
 const MAX_LEASE_ID_CHARS: usize = 256;
 const MAX_SCOPE_CHARS: usize = 256;
 const MAX_RUNTIME_FIELD_CHARS: usize = 256;
+const MAX_REPLAY_KEY_CHARS: usize = 256;
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct CloudWorkerLeaseScope {
@@ -218,6 +219,9 @@ impl CloudWorkerLease {
         if mutation.replay_key.0.trim().is_empty() {
             return Err(CloudWorkerLeaseError::MissingReplayKey);
         }
+        if !valid_text(&mutation.replay_key.0, MAX_REPLAY_KEY_CHARS) {
+            return Err(CloudWorkerLeaseError::InvalidReplayKey);
+        }
         Ok(())
     }
 
@@ -316,6 +320,8 @@ pub enum CloudWorkerLeaseError {
     StaleRuntimeIdentity,
     #[error("mutation requires a replay key")]
     MissingReplayKey,
+    #[error("mutation replay key is invalid or oversized")]
+    InvalidReplayKey,
     #[error("lease capability is unavailable in lifecycle {lifecycle:?} with outcome {outcome:?}")]
     CapabilityUnavailable {
         lifecycle: CloudWorkerLifecycle,
@@ -399,6 +405,23 @@ mod tests {
             lease.validate(&mutation),
             Err(CloudWorkerLeaseError::MissingReplayKey)
         );
+    }
+
+    #[test]
+    fn rejects_control_and_oversized_replay_keys() {
+        let lease = lease();
+        for replay_key in ["request\n1".into(), "r".repeat(MAX_REPLAY_KEY_CHARS + 1)] {
+            let mutation = lease.mutation(
+                OwnerEpoch(3),
+                LeaseGeneration(7),
+                lease.runtime.clone(),
+                ReplayKey(replay_key),
+            );
+            assert_eq!(
+                lease.validate(&mutation),
+                Err(CloudWorkerLeaseError::InvalidReplayKey)
+            );
+        }
     }
 
     #[test]
