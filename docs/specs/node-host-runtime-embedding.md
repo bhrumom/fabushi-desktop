@@ -39,6 +39,8 @@ Define and implement a Fabushi-native node-host runtime embedding that preserves
 - R10: Any sidecar or worker bridge is introduced only when an existing worker/supervisor owner requires it, with bounded framed protocol, authenticated channel binding, and no new durable product state.
 - R11: Node-worker managed-identity transport is captured by the existing dedicated node owner, redacted at the secret boundary, and supplied only to admitted worker execution; callers and generic launch descriptors cannot inject or persist it.
 - R12: Platform trust settings and managed workspace process environments are restored after generic sanitization under the same workspace/generation lease; release or replacement fences both process use and plugin invocation callbacks.
+- R13: The Host credential owner persists one installation-local Ed25519 NodeHost identity, derives the stable device id from its raw public key, and signs challenge payloads without exposing private key material to transport/RPC callers.
+- R14: NodeHost client-token reads are performed through the credential owner, keyed by device id, normalized role, and optional Gateway origin scope; pairing rows and unrelated account/network bearer credentials are not direct transport inputs.
 
 ## 5. Current state
 
@@ -46,7 +48,7 @@ Define and implement a Fabushi-native node-host runtime embedding that preserves
 - `source/host/app/src/main.rs` owns local node registration/invocation and currently reports approved remote nodes as paired but disconnected with no remote commands.
 - `source/host/src/extensions/node_host/` contains protocol slices for connection, Computer dispatch, and runtime manifest, but the runtime has no shipping caller or live remote transport.
 - Existing `NativeDesktopRemoteExecutor` and `execute_with_lease_fenced` own native Computer behavior; they are not generic node-host invoke executors.
-- The current Host secret store persists a machine id only, and `DevicePairingOwner` stores remote pairing/public-key and inbound role-token state; neither is a local NodeHost device-identity signer or origin-scoped client-token owner.
+- The current Host secret store now has a narrow local NodeHost identity/signing slice; `DevicePairingOwner` still stores remote pairing/public-key and inbound role-token state, and no origin-scoped client-token owner is wired.
 - The implementation oracle remains the prior candidate `ad8d12f126d29b0db204187adf5092db80294e70`, tree `04ccce62f1d74dc8e0c88290ae8ded027b7b0f16`; it is not accepted as the current project-wide source lock. The current discovery candidate is used only for the targeted contract delta below until P0 exact-subject closure is accepted.
 - Read-only live discovery has since advanced to OpenClaw `main` commit `5f6f15fed0d6ba618cf781c9686a8b93f499564b`, tree `ee0af1d3ba415e7763da6759ca47b245031a21c9`. This candidate requires the P0 GitHub Actions rebaseline before source-dependent acceptance or lock/inventory reuse; c325 and earlier candidates remain historical discovery only.
 - A targeted read-only compare from the prior c325 candidate to this live candidate reports 14 commits and 15 changed paths under `src/node-host/` or `crates/openclaw-node-host/`. The changed source adds managed-identity transport custody, platform trust restoration, workspace lease admission/currentness, and invocation-bound process-environment fencing. Existing Rust mapping is therefore not complete for this candidate and must not reuse c325 semantics without targeted re-read.
@@ -186,5 +188,6 @@ Retain redacted lifecycle events, connection generation, negotiated protocol, ma
 | Requirement / AC | Status | Evidence / reason |
 | --- | --- | --- |
 | R1–R10 | pending | Runtime embedding not yet implemented and wired. |
+| R11–R14 | in progress | Worker admission boundaries and the local identity/signing slice are implemented; origin-scoped token storage, challenge/hello transport use, and production wiring remain open. |
 | AC1 | in progress | Node-host Rust crate closure is being read in exact pinned chunks; inventory remains incomplete. |
 | AC2–AC6 | pending | No live remote transport/device acceptance or exact-head acceptance receipt yet. |

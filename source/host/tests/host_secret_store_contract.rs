@@ -2,11 +2,14 @@ use std::fs;
 use std::sync::Mutex;
 use std::time::{SystemTime, UNIX_EPOCH};
 
+use base64::{Engine as _, engine::general_purpose::URL_SAFE_NO_PAD};
+use ed25519_dalek::{Signature, Verifier, VerifyingKey};
+
 static TEST_LOCK: Mutex<()> = Mutex::new(());
 
 use mahayana_host_runtime::host_secret_store::{
     clear_host_machine_id_cache_for_tests, get_or_create_host_machine_id, read_machine_id,
-    write_machine_id,
+    load_or_create_host_node_identity, write_machine_id,
 };
 
 fn temp_root(label: &str) -> std::path::PathBuf {
@@ -59,4 +62,41 @@ fn host_secret_store_creates_uuid_and_ignores_invalid_json() {
 
     fs::remove_dir_all(root).expect("remove test root");
     clear_host_machine_id_cache_for_tests();
+}
+
+#[test]
+fn node_identity_is_persisted_and_signs_without_exposing_private_bytes() {
+    let _guard = TEST_LOCK.lock().expect("test lock");
+    let root = temp_root("node-identity");
+    let path = root.join("node-identity.json");
+
+    let first = load_or_create_host_node_identity(Some(&path)).expect("create node identity");
+    let second = load_or_create_host_node_identity(Some(&path)).expect("reload node identity");
+    assert_eq!(first.device_id(), second.device_id());
+    assert_eq!(
+        first.public_key_raw_base64_url(),
+        second.public_key_raw_base64_url()
+    );
+    let public_key_bytes: [u8; 32] = URL_SAFE_NO_PAD
+        .decode(first.public_key_raw_base64_url())
+        .expect("decode public key")
+        .try_into()
+        .expect("public key length");
+    let public_key = VerifyingKey::from_bytes(&public_key_bytes).expect("public key");
+    let signature_bytes: [u8; 64] = URL_SAFE_NO_PAD
+        .decode(first.sign_payload_base64_url("node-challenge"))
+        .expect("decode signature")
+        .try_into()
+        .expect("signature length");
+    public_key
+        .verify(
+            b"node-challenge",
+            &Signature::from_bytes(&signature_bytes),
+        )
+        .expect("signature verifies");
+    assert!(!fs::read_to_string(&path)
+        .expect("read persisted identity")
+        .contains("signingKey"));
+
+    fs::remove_dir_all(root).expect("remove test root");
 }

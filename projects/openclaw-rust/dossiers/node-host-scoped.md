@@ -2269,22 +2269,39 @@ implementation unit, while explicitly rejecting reuse of the inbound
 `native/mahayana-messaging` WebSocket server as a NodeHost client. No
 production caller or completion evidence is claimed by this ADR.
 
-## 177. Credential-owner gap audit (2026-10-30)
+## 177. Host credential identity slice (2026-10-30)
 
-The Host credential audit found no existing NodeHost client identity owner:
-`host_secret_store` persists only a machine id, while `DevicePairingOwner`
-stores remote-device public keys and issued role tokens for inbound Gateway
-authorization. It exposes no local Ed25519 private identity, public-key
-encoding, challenge signer, origin-scoped token lookup, or rotation-fenced
-client credential API. The existing account/network bearer credentials are
+The existing Host credential boundary now has a narrow local NodeHost identity
+slice in `host_secret_store` and `host_paths`: it persists a versioned,
+installation-local Ed25519 seed in a separate identity file, derives the
+stable SHA-256 public-key device id, exposes only raw public-key encoding and
+base64url signing operations, and rejects version, key-mismatch, and
+device-id-mismatch files. Creation writes a complete temporary file and links
+it into place without replacing a concurrent identity, and Unix permissions
+are restricted to the owner.
+
+`host_secret_store_contract.rs` adds a signature-verification contract for
+reload stability and private-key non-exposure through the public API. This is
+an implementation slice for R13 only; it is not yet connected to a Gateway
+challenge/hello flow. R14 remains open: origin-scoped, role-normalized
+NodeHost token lookup and rotation fencing still require a credential-owner
+store/API rather than direct reads from `DevicePairingOwner`.
+
+## 178. Credential-owner gap audit (2026-10-30)
+
+The Host credential audit found that the pre-existing owners did not provide a
+NodeHost client credential API. The new `host_secret_store` slice now covers
+local identity/signing, while `DevicePairingOwner` still stores remote-device
+public keys and issued role tokens for inbound Gateway authorization. It does
+not provide origin-scoped client-token lookup or rotation-fenced transport
+credential operations. The existing account/network bearer credentials are
 for different services and cannot sign an OpenClaw node challenge.
 
 The current OpenClaw candidate requires installation-local device identity
 loading/creation, raw public-key encoding, payload signing, and device-auth
-token lookup keyed by device id, role, and optionally Gateway origin. This is
-therefore a concrete prerequisite for the transport ADR: the future Host
-transport owner must receive an injected credential-owner interface, and must
-not generate ephemeral signing keys, read pairing rows directly, or reuse an
-unrelated bearer token. Remote transport remains unwired until this owner
-contract and its secure persistence/rotation semantics are implemented and
-accepted.
+token lookup keyed by device id, role, and optionally Gateway origin. The
+identity/signing half is now implemented, but the future Host transport owner
+must still receive an injected token-owner interface and must not read pairing
+rows directly or reuse an unrelated bearer token. Remote transport remains
+unwired until this remaining owner contract and its secure rotation semantics
+are implemented and accepted.
