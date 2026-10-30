@@ -85,9 +85,10 @@ impl NodeHostGatewayConfig {
         Ok(())
     }
 
-    pub fn to_url(&self) -> String {
+    pub fn to_url(&self) -> Result<String, String> {
+        self.validate()?;
         let scheme = if self.tls { "https" } else { "http" };
-        format!("{}://{}:{}", scheme, self.host, self.port)
+        Ok(format!("{}://{}:{}", scheme, self.host, self.port))
     }
 }
 

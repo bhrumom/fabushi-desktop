@@ -38,7 +38,7 @@ impl NodeWorkerComputerExecutor for FixtureComputerExecutor {
 #[test]
 fn test_ocrm_node_host_gateway_auth_and_scope() {
     let cfg = NodeHostGatewayConfig::new("127.0.0.1", 8080, false);
-    assert_eq!(cfg.to_url(), "http://127.0.0.1:8080");
+    assert_eq!(cfg.to_url().unwrap(), "http://127.0.0.1:8080");
 
     assert_eq!(
         gateway_origin_scope("http://localhost:8080/api/v1"),
