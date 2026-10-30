@@ -2115,3 +2115,30 @@ changes under `src/node-host/` and `crates/openclaw-node-host/`. This narrows
 the latest upstream drift: the Node Host source identities and the recorded
 native-auth delta remain applicable to both candidates, while the overall
 source lock and dependency closure still require a project-wide rebaseline.
+
+## 169. Local session manifest boundary audit (2026-10-30)
+
+The shipping Host startup path creates exactly one local session lease for
+`sand-local-node` through `NodeHostRuntimeState`. Its public session surface
+contains only `system.run`; `node.list` and `node.status` project that same
+generation-fenced snapshot, while disconnected retained rows are excluded from
+the live list and do not make an approved remote device appear connected.
+The local invoke producer admits the request against that lease and delegates
+the side effect to the existing `HostLocalExecExtension`; non-local invoke
+continues to fail closed because no canonical remote transport owner is
+connected.
+
+The `orderedReplicasV1` and `sendAcceptanceV1` values on this local snapshot
+are the existing Host gateway capability constants, not evidence that the
+transport-neutral `NodeHostManifest` builder is a live manifest owner. A
+source audit found no production caller for `NodeHostManifest::build` or
+`build_with_plugin_manifest`; the builder remains a future transport/manifest
+composition seam. The `node.system_run` builder constant and the public
+`system.run` session command therefore must not be treated as a completed
+manifest publication path without an explicit protocol adapter and live
+connection owner.
+
+This audit records a truthful local boundary and does not widen commands,
+capabilities, pairing, remote transport, or acceptance claims. Dynamic
+manifest refresh, challenge-bound connection, remote invoke/cancel/result
+transport, and device acceptance remain open.
