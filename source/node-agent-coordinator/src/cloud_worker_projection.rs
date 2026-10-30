@@ -47,6 +47,14 @@ pub struct CloudWorkerStatusProjection {
     pub provider_ready: bool,
     #[serde(rename = "productionMutation")]
     pub production_mutation: bool,
+    #[serde(default, rename = "statePersisted")]
+    pub state_persisted: bool,
+    #[serde(default, rename = "leaseCount")]
+    pub lease_count: usize,
+    #[serde(default, rename = "warmImageCount")]
+    pub warm_image_count: usize,
+    #[serde(default, rename = "migrationReceiptCount")]
+    pub migration_receipt_count: usize,
 }
 
 impl CloudWorkerStatusProjection {
@@ -112,6 +120,10 @@ mod tests {
             status: CloudWorkerCoordinatorStatus::Disabled,
             provider_ready: false,
             production_mutation: false,
+            state_persisted: false,
+            lease_count: 0,
+            warm_image_count: 0,
+            migration_receipt_count: 0,
         };
         assert!(projection.is_disabled());
         let event = CloudWorkerCoordinatorEvent::StatusChanged { projection };
@@ -146,6 +158,10 @@ mod tests {
                 status: CloudWorkerCoordinatorStatus::Disabled,
                 provider_ready: false,
                 production_mutation: false,
+                state_persisted: false,
+                lease_count: 0,
+                warm_image_count: 0,
+                migration_receipt_count: 0,
             },
         };
         let decoded = CloudWorkerCoordinatorEvent::from_event(event.family(), event.payload());
