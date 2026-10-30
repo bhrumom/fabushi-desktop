@@ -30,7 +30,7 @@ Define and implement a Fabushi-native node-host runtime embedding that preserves
 - R1: Each connection attempt produces a challenge-bound node connect envelope with protocol, identity, command manifest, capability surface, and authentication owned by the existing credential/policy boundaries.
 - R2: Device identity keys and issued device tokens remain owned by the existing secure credential/persistence owner; logs and diagnostics never expose secrets.
 - R3: The session parser accepts the canonical `paramsJSON` wire field, preserves original JSON when required for result/provenance handling, rejects direct or ambiguous `params`, and bounds input sizes.
-- R4: Invocation, ordered input, cancellation, and final result remain correlated by the original invocation id and node id; lost result transport is not replayed on a replacement connection.
+- R4: Invocation, ordered input, cancellation, and final result remain correlated by the original invocation id and node id; the session owner admits a terminal result before a single best-effort `node.invoke.result` send, and lost result transport is not replayed on a replacement connection.
 - R5: Command manifest and Computer capability advertising are regenerated from current availability and never advertise unavailable commands.
 - R6: Reconnect classifies retryable transport/runtime failures separately from terminal configuration, identity, protocol, pairing, or authentication pauses; backoff and retry-after are bounded.
 - R7: Shutdown and replacement close the old session, cancel/drain owned invocation work, and prevent predecessor callbacks from mutating successor state.
@@ -50,7 +50,7 @@ Define and implement a Fabushi-native node-host runtime embedding that preserves
 - Existing `NativeDesktopRemoteExecutor` and `execute_with_lease_fenced` own native Computer behavior; they are not generic node-host invoke executors.
 - The current Host secret store now has a narrow local NodeHost identity/signing slice; `DevicePairingOwner` still stores remote pairing/public-key and inbound role-token state, and no origin-scoped client-token owner is wired.
 - `gateway_frames.rs` now provides a bounded, strict `req`/`res`/`event` envelope parser/encoder and a generation-fenced pending-request registry; it remains transport-neutral and is not a WebSocket client or production connection owner.
-- `gateway_transport.rs` now owns the blocking OpenClaw Gateway client socket, challenge-first handshake, supported protocol-window validation, device proof construction, hello validation, token persistence handoff, request correlation, event queue, bounded 30-second stream I/O, and adapters that admit a validated hello and inbound invoke request/input/cancel events into `NodeHostRuntimeState`. No application startup caller or side-effect executor binding has been added yet, and TLS fingerprint pinning remains fail-closed until its owner contract is implemented.
+- `gateway_transport.rs` now owns the blocking OpenClaw Gateway client socket, challenge-first handshake, supported protocol-window validation, device proof construction, hello validation, token persistence handoff, request correlation, event queue, bounded 30-second stream I/O, adapters that admit a validated hello and inbound invoke request/input/cancel events into `NodeHostRuntimeState`, and a single best-effort `node.invoke.result` sender. No application startup caller or side-effect executor binding has been added yet, and TLS fingerprint pinning remains fail-closed until its owner contract is implemented.
 - The implementation oracle remains the prior candidate `ad8d12f126d29b0db204187adf5092db80294e70`, tree `04ccce62f1d74dc8e0c88290ae8ded027b7b0f16`; it is not accepted as the current project-wide source lock. The current discovery candidate is used only for the targeted contract delta below until P0 exact-subject closure is accepted.
 - Read-only live discovery has since advanced to OpenClaw `main` commit `89734994c6c9d3572e2927be0cdae8d7da1998ca`, tree `bcb3914c8418e2f92927dd3e60c635fc4345a858`. This candidate requires the P0 GitHub Actions rebaseline before source-dependent acceptance or lock/inventory reuse; `5f6f15f` and earlier candidates remain historical discovery only.
 - A targeted read-only compare from the prior c325 candidate to this live candidate reports 14 commits and 15 changed paths under `src/node-host/` or `crates/openclaw-node-host/`. The changed source adds managed-identity transport custody, platform trust restoration, workspace lease admission/currentness, and invocation-bound process-environment fencing. Existing Rust mapping is therefore not complete for this candidate and must not reuse c325 semantics without targeted re-read.
@@ -107,7 +107,7 @@ The implementation must preserve these externally relevant contracts:
 2. session manifest/capabilities → live registry projection;
 3. `node.invoke.request` (`id`, `nodeId`, `command`, `paramsJSON`) → bounded parsed invocation;
 4. `node.invoke.input` sequence and `node.invoke.cancel` → owning invocation;
-5. one terminal `node.invoke.result` success/error envelope bound to original ids;
+5. one terminal `node.invoke.result` success/error envelope bound to original ids, sent through the current Gateway session at most once;
 6. connection generation → cancellation/drain fence for predecessor callbacks;
 7. typed lifecycle events → observability and fail-closed RPC presence.
 
@@ -129,7 +129,7 @@ owner; they must not enter the live-session registry or RPC projection.
 ## 10. Failure modes and edge cases
 
 - stale/rejected device token, pairing-required, auth rate limit, protocol mismatch, TLS pin/configuration error;
-- transport loss during invoke result, reconnect, manifest refresh, or shutdown;
+- transport loss during invoke result, reconnect, manifest refresh, or shutdown; a result-send failure is retained as outcome-unknown and is never retried on a replacement session;
 - event lag, malformed frame, oversized `paramsJSON`, invalid sequence, duplicate invocation, and unknown command;
 - stale Computer generation, missing executor, permission denial, lease loss, and invalid result schema;
 - old session callback arriving after successor activation;
@@ -142,7 +142,9 @@ Each case must retain typed failure evidence and must not be converted into a cl
 1. Complete per-file source closure for `src/node-host/` and `crates/openclaw-node-host` against the pinned upstream revision, recording exact refs and rejected duplicate-owner candidates.
 2. Reconcile the mapping with current Fabushi Host, Coordinator, credential, worker, Computer, and transport owners; repair this spec before source changes if ownership changes.
 3. Establish the single Host transport owner described by the ADR, with an
-   injected credential/challenge signer and a bounded request/event pump;
+   injected credential/challenge signer, a bounded request/event pump, and a
+   terminal-result sender that completes the local invocation before one
+   best-effort Gateway delivery;
    start with live transport and generation fencing, then invocation/manifest
    composition, then side-effect adapters. Do not wire it to production
    startup until the current upstream challenge/hello and device-auth
@@ -189,7 +191,8 @@ Retain redacted lifecycle events, connection generation, negotiated protocol, ma
 
 | Requirement / AC | Status | Evidence / reason |
 | --- | --- | --- |
-| R1–R10 | pending | Runtime embedding not yet implemented and wired. |
+| R1–R3, R5–R10 | pending | Runtime embedding is not yet implemented and wired. |
+| R4 | in progress | Strict request/input/cancel/result owners and a one-shot best-effort Gateway result sender exist; live invocation routing, side-effect execution, reconnect, and acceptance remain open. |
 | R11–R14 | in progress | Worker admission boundaries, local identity/signing, origin-scoped token storage, and a challenge/hello transport owner are implemented; production caller, worker/manifest composition, and acceptance remain open. |
 | AC1 | in progress | Node-host Rust crate closure is being read in exact pinned chunks; inventory remains incomplete. |
 | AC2–AC6 | pending | No live remote transport/device acceptance or exact-head acceptance receipt yet. |

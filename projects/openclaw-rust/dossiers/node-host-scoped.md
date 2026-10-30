@@ -1989,6 +1989,19 @@ This is lifecycle ownership only. It does not yet stop an already-running
 side-effect provider, deliver a cancellation frame over a live transport, or
 establish remote device acceptance; those owners remain pending.
 
+## 184. One-shot Gateway invocation-result delivery (2026-10-30)
+
+`NodeHostGatewayTransport::send_invoke_result` now serializes the typed
+`NodeInvokeResult` through the existing Gateway request owner as one
+`node.invoke.result` request. `NodeHostGatewaySession::complete_and_send_result`
+settles the lease-bound invocation first, applies the negotiated
+`node-permission-errors` capability gate, and then attempts delivery once.
+Transport failure is returned as transport error evidence without retry; the
+helper does not retry or replay the result on a replacement connection. This closes
+the transport-neutral-to-one-shot-result seam for R4, but it does not create a
+remote executor, a startup caller, an input-to-runtime registry, reconnect
+loop, or real device acceptance.
+
 ## 160. Canonical node.event payload envelope (2026-10-30)
 
 The live candidate's `node-event-params.ts` builds the event envelope with the

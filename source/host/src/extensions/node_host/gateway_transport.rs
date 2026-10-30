@@ -29,10 +29,11 @@ use super::gateway_frames::{
 };
 use super::hello_auth::persist_hello_ok_device_auth;
 use super::invoke_protocol::{
-    NodeInvokeCancel, NodeInvokeInput, NodeInvokeRequest, parse_node_invoke_cancel,
-    parse_node_invoke_input, parse_node_invoke_request,
+    NodeInvokeCancel, NodeInvokeInput, NodeInvokeRequest, NodeInvokeResult,
+    parse_node_invoke_cancel, parse_node_invoke_input, parse_node_invoke_request,
 };
 use super::invocation_registry::NodeInvocationAdmission;
+use super::invocation_runtime::NodeHostInvocationRuntime;
 use super::runtime_state::NodeHostRuntimeState;
 use super::session_registry::NodeHostSessionLease;
 
@@ -41,6 +42,7 @@ const DEFAULT_PROTOCOL: u16 = 3;
 const MAX_PROTOCOL: u16 = 4;
 const MAX_HELLO_BYTES: usize = 4 * 1024 * 1024;
 const GATEWAY_IO_TIMEOUT_MS: u64 = 30_000;
+const GATEWAY_SERVER_CAP_NODE_PERMISSION_ERRORS: &str = "node-permission-errors";
 
 type GatewaySocket = WebSocket<MaybeTlsStream<TcpStream>>;
 
@@ -405,6 +407,22 @@ impl NodeHostGatewayTransport {
         self.await_response(&id, generation)
     }
 
+    /// Deliver one already-settled node invocation result. The caller owns
+    /// the exactly-once lifecycle decision; this method only performs the
+    /// single Gateway request and never retries it after transport loss.
+    fn send_invoke_result(
+        &mut self,
+        result: NodeInvokeResult,
+    ) -> Result<(), NodeHostGatewayTransportError> {
+        let payload = serde_json::to_value(result).map_err(|error| {
+            NodeHostGatewayTransportError::Protocol(format!(
+                "serialize node.invoke.result: {error}"
+            ))
+        })?;
+        let _ = self.request("node.invoke.result", Some(payload))?;
+        Ok(())
+    }
+
     pub fn next_event(&mut self) -> Option<NodeHostGatewayFrame> {
         self.events.pop_front()
     }
@@ -556,6 +574,29 @@ impl NodeHostGatewaySession {
 
     pub fn transport_mut(&mut self) -> &mut NodeHostGatewayTransport {
         &mut self.transport
+    }
+
+    /// Complete the invocation under the current lease, then attempt exactly
+    /// one result delivery. Completion happens first so a lost result cannot
+    /// be replayed on a replacement connection. The transport error is
+    /// returned for redacted lifecycle evidence; callers must not retry it.
+    pub fn complete_and_send_result(
+        &mut self,
+        invocation: &mut NodeHostInvocationRuntime,
+        result: NodeInvokeResult,
+    ) -> Result<(), String> {
+        if !self.runtime.is_current(&self.lease) {
+            return Err("Gateway session is no longer current".into());
+        }
+        let result = invocation.complete(result)?;
+        let allow_permission_details = self
+            .hello
+            .capabilities
+            .iter()
+            .any(|capability| capability == GATEWAY_SERVER_CAP_NODE_PERMISSION_ERRORS);
+        self.transport
+            .send_invoke_result(result.without_permission_details(allow_permission_details))
+            .map_err(|error| error.to_string())
     }
 
     pub fn admit_event(
