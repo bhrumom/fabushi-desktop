@@ -3,6 +3,8 @@ use thiserror::Error;
 
 use super::{CloudWorkerLeaseScope, ReplayKey};
 
+const MAX_REPLAY_KEY_CHARS: usize = 256;
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum CloudWorkerDoctorAction {
     Inspect,
@@ -28,8 +30,18 @@ pub struct CloudWorkerDoctorRequest {
 
 impl CloudWorkerDoctorRequest {
     pub fn validate(&self) -> Result<(), CloudWorkerDoctorError> {
+        CloudWorkerLeaseScope::new(
+            self.scope.account_scope.clone(),
+            self.scope.device_scope.clone(),
+        )
+        .map_err(|_| CloudWorkerDoctorError::InvalidScope)?;
         if self.replay_key.0.trim().is_empty() {
             return Err(CloudWorkerDoctorError::MissingReplayKey);
+        }
+        if self.replay_key.0.chars().count() > MAX_REPLAY_KEY_CHARS
+            || self.replay_key.0.chars().any(|character| character.is_control())
+        {
+            return Err(CloudWorkerDoctorError::InvalidReplayKey);
         }
         if self.action.requires_acknowledgement() && !self.acknowledged_mutation {
             return Err(CloudWorkerDoctorError::MutationNotAcknowledged);
@@ -66,8 +78,12 @@ impl CloudWorkerDoctorResult {
 
 #[derive(Debug, Error, Clone, PartialEq, Eq)]
 pub enum CloudWorkerDoctorError {
+    #[error("doctor request scope is invalid")]
+    InvalidScope,
     #[error("doctor request requires a replay key")]
     MissingReplayKey,
+    #[error("doctor request replay key is invalid")]
+    InvalidReplayKey,
     #[error("mutating doctor action requires explicit acknowledgement")]
     MutationNotAcknowledged,
 }
@@ -99,6 +115,23 @@ mod tests {
         assert_eq!(
             request(CloudWorkerDoctorAction::RepairManagedArtifact).validate(),
             Err(CloudWorkerDoctorError::MutationNotAcknowledged)
+        );
+    }
+
+    #[test]
+    fn rejects_controlled_or_oversized_replay_identity() {
+        let mut controlled = request(CloudWorkerDoctorAction::Inspect);
+        controlled.replay_key = ReplayKey("doctor\nrequest".into());
+        assert_eq!(
+            controlled.validate(),
+            Err(CloudWorkerDoctorError::InvalidReplayKey)
+        );
+
+        let mut oversized = request(CloudWorkerDoctorAction::Inspect);
+        oversized.replay_key = ReplayKey("x".repeat(257));
+        assert_eq!(
+            oversized.validate(),
+            Err(CloudWorkerDoctorError::InvalidReplayKey)
         );
     }
 }

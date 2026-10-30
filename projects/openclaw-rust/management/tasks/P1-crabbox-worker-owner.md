@@ -327,7 +327,8 @@ create a second agent/conversation runtime.
 The doctor/recovery projection at
 `source/host/src/extensions/cloud_workers/doctor.rs` distinguishes inspection
 from mutating repair/reconciliation and requires an explicit acknowledgement
-for every mutating action. It is a request/result contract only; no repair,
+for every mutating action. It revalidates deserialized scope and bounded replay
+identity before routing. It is a request/result contract only; no repair,
 migration, lease release or warm-image mutation is executed.
 
 The Host registry now has a formal `CloudWorkers` slot in
