@@ -2088,3 +2088,14 @@ complete would omit a candidate capability. This is recorded as an
 implementation-impacting source delta only: the candidate is not the
 implementation lock, and no Rust manifest behavior, inventory row, or flag was
 changed until formal rebaseline and dependency closure are complete.
+
+The candidate dependency read resolves the capability to
+`src/infra/node-commands.ts@cda6b5ce41134002012e421d21ae4f5b37a10faa`, where
+`NODE_CLAUDE_NATIVE_AUTH_CAPABILITY` is the exact wire value
+`claude-cli-native-auth-v1`. The manifest's plugin availability path also
+resolves through `src/node-host/plugin-node-host.ts@332de300280a11173f9eff5db59e1b5bd919ebb1`,
+which loads the active plugin registry and retains command work across
+disconnects. This proves the delta is not merely a display label: the final
+implementation must map native-auth capability admission and plugin lifecycle
+to their existing owners. No Rust constant or plugin consumer was changed
+while the candidate remains unpromoted.
