@@ -99,20 +99,15 @@ pub fn validate_worker_launch_bindings(value: &Value) -> Result<NodeWorkerLaunch
     // Provider identity transport and platform trust are captured by the
     // dedicated node-worker owner. They must never arrive as caller-controlled
     // launch fields or become part of a durable descriptor/receipt.
-    for field in [
-        "managedIdentityTransport",
-        "identityEndpoint",
-        "identityHeader",
-        "platformTrust",
-    ] {
-        if object.contains_key(field) || descriptor.contains_key(field) {
+    for field in PROTECTED_ENVIRONMENT_FIELDS {
+        if object.contains_key(field) || contains_object_key(&Value::Object(descriptor.clone()), field) {
             return Err(format!(
                 "INVALID_REQUEST: {field} must be supplied by the node-worker environment owner"
             ));
         }
     }
-    for field in ["environmentId", "sessionId", "ownerEpoch"] {
-        if descriptor.contains_key(field) {
+    for field in WORKSPACE_IDENTITY_FIELDS {
+        if contains_object_key(&Value::Object(descriptor.clone()), field) {
             return Err(format!(
                 "INVALID_REQUEST: {field} must be bound by the worker owner, not descriptor"
             ));
@@ -176,6 +171,24 @@ fn bounded_workspace_identifier(value: &Value, field: &str) -> Result<String, St
         })
         .ok_or_else(|| format!("INVALID_REQUEST: {field} must be a bounded identifier"))?;
     Ok(value.to_string())
+}
+
+const PROTECTED_ENVIRONMENT_FIELDS: [&str; 4] = [
+    "managedIdentityTransport",
+    "identityEndpoint",
+    "identityHeader",
+    "platformTrust",
+];
+const WORKSPACE_IDENTITY_FIELDS: [&str; 3] = ["environmentId", "sessionId", "ownerEpoch"];
+
+fn contains_object_key(value: &Value, key: &str) -> bool {
+    match value {
+        Value::Object(object) => {
+            object.contains_key(key) || object.values().any(|child| contains_object_key(child, key))
+        }
+        Value::Array(values) => values.iter().any(|child| contains_object_key(child, key)),
+        _ => false,
+    }
 }
 
 pub fn parse_worker_identity(value: &Value) -> Result<NodeWorkerSupervisorIdentity, String> {
@@ -411,6 +424,11 @@ mod tests {
         value["platformTrust"] = json!({"SSL_CERT_FILE": "/caller/ca.pem"});
         let error = validate_worker_launch_bindings(&value).expect_err("caller trust must be rejected");
         assert!(error.contains("platformTrust"));
+
+        value.as_object_mut().expect("launch").remove("platformTrust");
+        value["descriptor"]["admission"]["identityEndpoint"] = json!("http://identity");
+        let error = validate_worker_launch_bindings(&value).expect_err("nested identity must be rejected");
+        assert!(error.contains("identityEndpoint"));
     }
 
     #[test]

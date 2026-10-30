@@ -2150,7 +2150,7 @@ The existing `validate_worker_launch_bindings` owner now fails closed when a
 caller or launch descriptor attempts to provide managed-identity transport or
 platform-trust fields. The focused contract
 `launch_binding_rejects_caller_owned_identity_or_platform_trust` proves the
-negative boundary while the real node-local provider transport and workspace
+negative boundary, including a nested descriptor attempt, while the real node-local provider transport and workspace
 lease caller remain explicitly unwired.
 
 The same owner now preserves an optional complete workspace identity
