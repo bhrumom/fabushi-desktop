@@ -69,7 +69,15 @@ impl NodeHostRuntimeState {
         lease: &NodeHostSessionLease,
         invoke_id: impl Into<String>,
     ) -> Result<NodeInvocationAdmission, String> {
-        self.invocations.admit(lease, invoke_id)
+        if !self.sessions.is_current(lease) {
+            return Err("node invocation session is no longer current".into());
+        }
+        let admission = self.invocations.admit(lease, invoke_id)?;
+        if !self.sessions.is_current(lease) {
+            let _ = self.invocations.cancel(&admission);
+            return Err("node invocation session retired during admission".into());
+        }
+        Ok(admission)
     }
 
     /// Admit a parsed wire request only after binding its node identity to the
@@ -82,6 +90,18 @@ impl NodeHostRuntimeState {
     ) -> Result<NodeInvocationAdmission, String> {
         if request.node_id != lease.node_id {
             return Err("node invocation request does not belong to the session".into());
+        }
+        let session = self
+            .sessions
+            .get(&lease.node_id)
+            .filter(|session| session.connected && session.generation == lease.generation)
+            .ok_or_else(|| "node invocation session is no longer current".to_string())?;
+        if !session
+            .commands
+            .iter()
+            .any(|command| command == &request.command)
+        {
+            return Err("node invocation command is not advertised by the current session".into());
         }
         self.admit_invocation(lease, &request.id)
     }
@@ -195,5 +215,25 @@ mod tests {
         };
 
         assert!(runtime.admit_request(&session, &request).is_err());
+    }
+
+    #[test]
+    fn request_admission_rejects_command_missing_from_live_manifest() {
+        let runtime = NodeHostRuntimeState::new();
+        let session = runtime.connect(metadata("node-1"));
+        let request = NodeInvokeRequest {
+            id: "invoke-1".into(),
+            node_id: "node-1".into(),
+            command: "not-advertised".into(),
+            params: serde_json::Value::Null,
+            received_params_bytes: 0,
+            received_params_json: None,
+            timeout_ms: None,
+            idempotency_key: None,
+            session_key: None,
+        };
+
+        let error = runtime.admit_request(&session, &request).unwrap_err();
+        assert!(error.contains("not advertised"));
     }
 }

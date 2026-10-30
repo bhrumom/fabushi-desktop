@@ -2559,3 +2559,17 @@ producer, worker inventory producer, exact command executor matrix, or live
 publication send/timer owner. The new command spellings are therefore recorded
 as an implementation frontier, not added to the advertised surface before the
 exact-source Actions authority and existing-owner execution mapping are closed.
+
+## 193. Manifest-gated invocation admission (2026-10-30)
+
+`NodeHostRuntimeState::admit_request` now reads the current generation's live
+session snapshot and rejects a request whose command is not in the advertised
+manifest before creating an invocation record. The lower-level admission path
+also checks the session lease immediately before and after registry admission;
+if replacement wins that boundary, the newly-created record is cancelled and
+the request fails. This prevents an unknown or retired command from reaching a
+future side-effect executor through the canonical Host owner.
+
+The rule applies to both the existing local `system.run` producer and future
+Gateway input. It does not create an executor, add new command names, or prove
+remote transport/device acceptance.
