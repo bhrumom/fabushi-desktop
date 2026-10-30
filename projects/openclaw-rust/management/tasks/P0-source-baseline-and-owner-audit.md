@@ -34,7 +34,7 @@ Last updated: 2026-10-22（Asia/Shanghai）
 | OCRM-P0-05 | 逐模块依赖和当前 owner resolution | OCRM-M01..M32 扩展为真实 file/symbol→behavior→owner 图；新发现能力自动加入，不能按分组遗漏 |
 | OCRM-P0-06 | 生态/平台/服务/许可证矩阵 | 全部插件/skills/provider/channel/node/CLI/部署/外部包，来源、版本、owner、权限、配置、验收 lane 与 blocker |
 | OCRM-P0-07 | 首批模块全文阅读和 dossier | 完整 read ranges、责任/状态机/错误边界、source oracle、target symbol、production call path、差异与待实现项 |
-| OCRM-P0-08 | GitHub Actions authority/coverage gate | G01 identity/closure 和 G02 structural 可运行且 fail-closed；global/scoped 集合明确；真实 run/attempt/job/日志/artifact ID/digest 与实际 subject target 一致 |
+| OCRM-P0-08 | GitHub Actions authority/coverage gate | G01 identity/closure 和 G02 structural/final 可运行且 fail-closed；final AC02 使用 `validate_p0.py <evidence-dir> --final-ac02`，global/scoped 集合明确；真实 run/attempt/job/日志/artifact ID/digest 与实际 subject target 一致 |
 | OCRM-P0-09 | 既有能力回归与首批预算定义 | current Bot/FBCP/Computer/Plugins/Automation 的必保留行为、受影响 gate；性能 workload/数值预算和测量计划 |
 | OCRM-P0-10 | 形成首批 Rust 实施任务并交接 | 每任务有 responsibility ID、被选 owner、差异实现、UI/服务/平台 consumer、测试和退出条件；不以 P0 代替项目完成 |
 

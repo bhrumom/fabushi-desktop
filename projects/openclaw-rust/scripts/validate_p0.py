@@ -3,8 +3,8 @@
 
 The structural gate requires a complete exact-path inventory and honest read /
 mapping dimensions. It deliberately does not turn an honest unread count into
-an AC02 failure: final responsibility closure separately requires zero
-undispositioned paths and zero unreviewed applicable product responsibility.
+an AC02 failure: ``--final-ac02`` separately requires zero undispositioned paths
+and zero unreviewed applicable product responsibility.
 """
 import hashlib
 import json
@@ -18,6 +18,7 @@ from jsonschema import Draft202012Validator
 
 ROOT = Path("projects/openclaw-rust")
 EVIDENCE = Path(sys.argv[1])
+FINAL_AC02 = "--final-ac02" in sys.argv
 COMMIT_RE = re.compile(r"^[0-9a-f]{40}$")
 
 def fail(message):
@@ -56,8 +57,9 @@ def structural():
     check(inv["upstream"] == expected, "Source manifest identity mismatch")
     check(ledger["upstream"] == expected and rtm["upstream"] == expected, "Ledger/RTM source drift")
     check(idx["upstream"]["commit"] == up["commit"] and idx["upstream"]["tree"] == up["tree"], "Index/lock drift")
-    check(not lock["closure"]["source_closure_ready"] and not idx["authority"]["source_closure_ready"], "Unproven closure asserted")
-    check(not idx["authority"].get("applicability_disposition_closure", False), "Unproven applicability/disposition closure asserted")
+    if not FINAL_AC02:
+        check(not lock["closure"]["source_closure_ready"] and not idx["authority"]["source_closure_ready"], "Unproven closure asserted")
+        check(not idx["authority"].get("applicability_disposition_closure", False), "Unproven applicability/disposition closure asserted")
     check(not idx["inventory"]["semantic_read_complete"] and not idx["inventory"]["responsibility_decomposition_complete"], "Unproven semantic completion asserted")
     check(idx["inventory"]["omitted_known"] == ledger["file_coverage"]["omitted_known"] == 0, "Known omission")
     counts = inv["counts"]
@@ -67,7 +69,8 @@ def structural():
     check(ledger["file_coverage"]["tracked_paths"] == len(entries), "Ledger file denominator mismatch")
     for key in ("tracked_entries_total","blob_entries_total","symlink_entries_total","gitlink_entries_total"):
         check(idx["inventory"][key] == counts[key] == summary[key], "Counter mismatch: " + key)
-    check(summary["source_closure_ready"] is False, "Authority falsely claims source closure")
+    if not FINAL_AC02:
+        check(summary["source_closure_ready"] is False, "Authority falsely claims source closure")
     subject = os.environ["SUBJECT_SHA"]
     check(summary["subject_commit"] == subject, "Wrong subject tested")
     check(summary["upstream_commit"] == up["commit"] and summary["upstream_tree"] == up["tree"], "Summary upstream drift")
@@ -85,6 +88,17 @@ def structural():
         check(e["source_repository"] == up["repository"] and e["source_commit"] == up["commit"] and e["source_tree"] == up["tree"], "File source identity drift: " + path)
         check(e["applicability_status"] in {"unknown", "product", "non-product", "mixed"}, "Invalid applicability status: " + path)
         check(e["disposition_status"] in {"pending", "deep-read-required", "deep-read", "grouped-evidence", "not-applicable"}, "Invalid disposition status: " + path)
+        if FINAL_AC02:
+            check(e["applicability_status"] != "unknown", "Final AC02 unresolved applicability: " + path)
+            check(e["disposition_status"] not in {"pending", "deep-read-required"}, "Final AC02 undispositioned path: " + path)
+            if e["applicability_status"] in {"product", "mixed"}:
+                check(e["responsibility_status"] in {"mapped", "reviewed"} and bool(e["responsibility_ids"]), "Final AC02 applicable path lacks responsibility mapping: " + path)
+                check(e["disposition_status"] == "deep-read", "Final AC02 applicable path lacks deep-read disposition: " + path)
+            if e["disposition_status"] == "grouped-evidence":
+                check(e["applicability_status"] == "non-product", "Final AC02 grouped evidence is not non-product: " + path)
+                check(bool(e["disposition"] and e["evidence_refs"] and e["reviewer"]), "Final AC02 grouped evidence is incomplete: " + path)
+            if e["disposition_status"] == "not-applicable":
+                check(bool(e["disposition"] and e["evidence_refs"] and e["reviewer"]), "Final AC02 N/A disposition is incomplete: " + path)
         check(COMMIT_RE.fullmatch(e["sha"]) is not None, "Invalid object sha: " + path)
         check((e["blob_sha"] == e["sha"]) if e["git_type"] == "blob" else (e["blob_sha"] is None), "Blob identity mismatch: " + path)
         if e["entry_kind"] == "gitlink":
@@ -256,9 +270,12 @@ receipt = {
     "github_job": os.getenv("GITHUB_JOB"),
     "runner_os": platform.platform(),
     "python_version": platform.python_version(),
-    "gate_verdicts": {"OCRM-G01-tracked-tree": "success", "OCRM-G01-dependency-LFS-closure": "open", "OCRM-G02-structural": "success", "OCRM-G02-final": "not-run"},
+    "gate_verdicts": {"OCRM-G01-tracked-tree": "success", "OCRM-G01-dependency-LFS-closure": "open", "OCRM-G02-structural": "success", "OCRM-G02-final": "success" if FINAL_AC02 else "not-run"},
     "completion_flags": ledger["completion_flags"],
     "independent_review": "pending",
 }
 (EVIDENCE / "p0-structural-receipt.json").write_text(json.dumps(receipt, sort_keys=True, indent=2) + "\n")
-print(f"OCRM-G01 tracked source and OCRM-G02 structural PASS for {len(inv['entries'])} paths; closure/open, unread remains honest, semantic implementation not-started")
+if FINAL_AC02:
+    print(f"OCRM-G01 tracked source and OCRM-G02 final AC02 PASS for {len(inv['entries'])} paths; applicability, disposition, and applicable responsibility mapping closed")
+else:
+    print(f"OCRM-G01 tracked source and OCRM-G02 structural PASS for {len(inv['entries'])} paths; closure/open, unread remains honest, semantic implementation not-started")

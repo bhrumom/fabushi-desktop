@@ -424,7 +424,7 @@ Definition of Done 或 AGENTS.md 的“可执行验证只在 GitHub Actions”�
 | OCRM-G11 Package/release | 每支持平台实际打包/签名/安装/升级/回滚、binary reachability、SBOM/NOTICE/provenance 与无开发 fallback |
 | OCRM-G12 Independent acceptance | 独立阅读 Spec/RTM、审看真实 artifacts/视频/日志、全部 AC 与 release verdict |
 
-G01 可以分别报告根/已声明输入的 identity verdict 与全量枚举/依赖 closure verdict；前者不能推出后者。G02 `structural` mode 用于 P0：验证完整 inventory 集合、schema、引用、责任种类与状态合法性，允许准确列出的 unread/unclassified/not-started，不允许 omitted、断引用或假 accepted。G02 `final` mode 则要求全部路径已读、全部责任分解与映射经审查、所有适用类型合同满足、未完成集合归零。scoped G01/G02 必须显式给出单元和依赖集合；不准复用一个泛化绿色结论抹去阶段与范围差异。
+G01 可以分别报告根/已声明输入的 identity verdict 与全量枚举/依赖 closure verdict；前者不能推出后者。G02 `structural` mode 用于 P0：验证完整 inventory 集合、schema、引用、责任种类与状态合法性，允许准确列出的 unread/unclassified/not-started，不允许 omitted、断引用或假 accepted。G02 `final` mode（Actions 中调用 `validate_p0.py <evidence-dir> --final-ac02`）在同一 exact subject 上强制 0 未分流、0 未评估适用性、0 适用产品责任 orphan/unmapped；`product/mixed` 路径必须有 `deep-read` 与 reviewed responsibility mapping，普通 `non-product` 路径可以用带 reviewer/evidence 的 `grouped-evidence` 或 `not-applicable`，而未知行为不得降级为非产品。它不要求普通非产品路径伪装成逐文件语义深读，也不单独以 unread 数量失败。scoped G01/G02 必须显式给出单元和依赖集合；不准复用一个泛化绿色结论抹去阶段与范围差异。
 
 上游 Node/TS 环境只可在隔离的 Actions oracle lane 为对照运行，不能随生产 Fabushi 分发或被生产 fallback 使用。高风险逻辑采用正反例/property/状态机；真实第三方服务用受控账号与清理策略，不把 mock、record-replay 或 SDK sample 当作外部全流程已通过。
 
