@@ -409,6 +409,16 @@ impl NodeHostGatewayTransport {
         self.events.pop_front()
     }
 
+    /// Read one frame for the owning session loop. The caller must route event
+    /// frames through `NodeHostGatewaySession::admit_event`; this method does
+    /// not project presence or execute side effects.
+    pub fn read_next_frame(&mut self) -> Result<NodeHostGatewayFrame, NodeHostGatewayTransportError> {
+        if self.closed {
+            return Err(NodeHostGatewayTransportError::Protocol("Gateway transport is closed".into()));
+        }
+        self.read_frame()
+    }
+
     pub fn generation(&self) -> u64 {
         self.generation
     }
@@ -614,6 +624,11 @@ fn parse_hello(payload: &Value) -> Result<NodeHostGatewayHello, NodeHostGatewayT
         .and_then(Value::as_u64)
         .and_then(|value| u16::try_from(value).ok())
         .ok_or_else(|| NodeHostGatewayTransportError::Protocol("hello protocol is invalid".into()))?;
+    if !(DEFAULT_PROTOCOL..=MAX_PROTOCOL).contains(&protocol) {
+        return Err(NodeHostGatewayTransportError::Protocol(
+            "hello protocol is outside the supported NodeHost window".into(),
+        ));
+    }
     let features = object
         .get("features")
         .and_then(Value::as_object)

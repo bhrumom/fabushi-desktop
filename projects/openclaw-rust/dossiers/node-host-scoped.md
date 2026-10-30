@@ -2393,5 +2393,8 @@ its `admit_event` path also parses and generation-binds node invoke request,
 input, and cancel events before handing them to the existing invocation/side
 effect owners; the underlying plain/TLS stream now applies a 30-second
 bounded read/write timeout, so a request cannot wait forever in the owner.
+The transport also exposes one generation-owned next-frame read boundary for
+the future session loop, while the protocol window rejects hello versions
+outside v3–v4.
 TLS fingerprint pinning is rejected rather than ignored. No remote command is
 advertised or enabled by this slice alone.
