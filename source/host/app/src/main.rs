@@ -3651,7 +3651,20 @@ impl UnifiedGatewayApi {
         for agent in agents {
             if let Ok(records) = store.list_agent_automations(&agent.id) {
                 for r in records {
-                    let expr = if r.schedule.trim().is_empty() { "0 * * * *" } else { r.schedule.as_str() };
+                    let schedule = if r.schedule.trim().is_empty() {
+                        serde_json::json!({ "kind": "event" })
+                    } else {
+                        serde_json::json!({
+                            "kind": "cron",
+                            "expr": r.schedule,
+                            "tz": "UTC"
+                        })
+                    };
+                    let last_run = r.runs.last();
+                    let updated_at_ms = r
+                        .last_run_at
+                        .unwrap_or(r.created_at)
+                        .clamp(i64::MIN as f64, i64::MAX as f64) as i64;
                     jobs.push(serde_json::json!({
                         "id": r.id,
                         "jobId": r.id,
@@ -3659,13 +3672,9 @@ impl UnifiedGatewayApi {
                         "description": r.prompt,
                         "enabled": r.is_enabled,
                         "createdAtMs": r.created_at as i64,
-                        "updatedAtMs": r.created_at as i64,
+                        "updatedAtMs": updated_at_ms,
                         "agentId": agent.id,
-                        "schedule": {
-                            "kind": "cron",
-                            "expr": expr,
-                            "tz": "UTC"
-                        },
+                        "schedule": schedule,
                         "sessionTarget": "main",
                         "wakeMode": "now",
                         "payload": {
@@ -3675,7 +3684,8 @@ impl UnifiedGatewayApi {
                         "state": {
                             "nextRunAtMs": r.next_run_at.map(|v| v as i64),
                             "lastRunAtMs": r.last_run_at.map(|v| v as i64),
-                            "lastRunStatus": "ok"
+                            "lastRunStatus": last_run.map(|run| run.status.clone()),
+                            "lastRunError": last_run.and_then(|run| run.detail.clone())
                         }
                     }));
                 }
@@ -3709,11 +3719,13 @@ impl UnifiedGatewayApi {
         let store = SandAgentSessionStore::new(Arc::clone(&self.session_workers));
         let agents = store.list_agents().map_err(GatewayCommandError::Internal)?;
         let mut target_agent_id = None;
+        let mut previous_run_id = None;
 
         for agent in &agents {
             if let Ok(records) = store.list_agent_automations(&agent.id) {
-                if records.iter().any(|r| r.id == job_id) {
+                if let Some(record) = records.iter().find(|r| r.id == job_id) {
                     target_agent_id = Some(agent.id.clone());
+                    previous_run_id = record.runs.last().map(|run| run.id.clone());
                     break;
                 }
             }
@@ -3729,19 +3741,34 @@ impl UnifiedGatewayApi {
         });
         let _ = self.call("runAgentAutomationNow", run_args)?;
 
+        let observed = store
+            .list_agent_automations(&agent_id)
+            .map_err(GatewayCommandError::Internal)?
+            .into_iter()
+            .find(|record| record.id == job_id)
+            .and_then(|record| {
+                record
+                    .runs
+                    .last()
+                    .filter(|run| previous_run_id.as_deref() != Some(run.id.as_str()))
+                    .cloned()
+            });
+
         let run_id = format!("run-{}", uuid::Uuid::new_v4());
         let now = started_at_ms();
+        let finished = observed.as_ref().and_then(|run| run.finished_at).is_some();
         Ok(serde_json::json!({
             "ok": true,
             "enqueued": true,
             "runId": run_id,
             "processInstanceId": format!("sand-host-{}", std::process::id()),
-            "finished": true,
+            "finished": finished,
             "run": {
                 "jobId": job_id,
                 "runId": run_id,
-                "action": "finished",
-                "status": "ok",
+                "action": if finished { "finished" } else { "accepted" },
+                "status": observed.as_ref().map(|run| run.status.as_str()).unwrap_or("accepted"),
+                "detail": observed.as_ref().and_then(|run| run.detail.as_deref()),
                 "ts": now,
             }
         }))

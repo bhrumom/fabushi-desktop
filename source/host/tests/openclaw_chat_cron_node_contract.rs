@@ -536,3 +536,27 @@ fn test_ocrm_node_o06_shipping_routes_to_unique_native_owners() {
     assert!(!invoke.contains("\"stdout\": \"ok\""));
     assert!(!invoke.contains("\"exitCode\": 0"));
 }
+
+#[test]
+fn test_ocrm_cron_projection_does_not_invent_schedule_or_terminal_status() {
+    let list_start = SHIPPING_HOST_MAIN
+        .find("fn call_openclaw_cron_list(")
+        .expect("shipping cron.list owner exists");
+    let list_end = SHIPPING_HOST_MAIN[list_start..]
+        .find("\n    fn call_openclaw_cron_trigger(")
+        .map(|offset| list_start + offset)
+        .expect("shipping cron.list function boundary exists");
+    let list = &SHIPPING_HOST_MAIN[list_start..list_end];
+    assert!(list.contains("\"kind\": \"event\""));
+    assert!(list.contains("last_run.map(|run| run.status.clone())"));
+    assert!(!list.contains("0 * * * *"));
+    assert!(!list.contains("\"lastRunStatus\": \"ok\""));
+
+    let trigger_start = SHIPPING_HOST_MAIN
+        .find("fn call_openclaw_cron_trigger(")
+        .expect("shipping cron.trigger owner exists");
+    let trigger = &SHIPPING_HOST_MAIN[trigger_start..];
+    assert!(trigger.contains("previous_run_id"));
+    assert!(trigger.contains("\"action\": if finished"));
+    assert!(trigger.contains("unwrap_or(\"accepted\")"));
+}
