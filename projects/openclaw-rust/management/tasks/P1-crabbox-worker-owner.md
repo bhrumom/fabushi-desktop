@@ -323,7 +323,8 @@ The platform and sandbox boundary now has thin descriptors for OS/session
 bridges and lease-scoped workspace operations. Sandbox requests use explicit
 argv vectors and workspace-relative paths; cross-platform separators, control
 text, identifier sizes and argv/path collection sizes are rejected before
-delegation. Platform launcher descriptors revalidate their identity on use.
+delegation. Both sandbox capabilities and requests expose revalidation before
+use, and platform launcher descriptors revalidate their identity on use.
 These contracts do not interpolate shell strings, own platform policy, or
 create a second agent/conversation runtime.
 

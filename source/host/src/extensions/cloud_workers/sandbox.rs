@@ -43,6 +43,19 @@ impl CloudWorkerSandboxCapability {
             filesystem: true,
         })
     }
+
+    pub fn validate(&self) -> Result<(), CloudWorkerSandboxError> {
+        validate_id(&self.lease_id.0)?;
+        CloudWorkerLeaseScope::new(
+            self.scope.account_scope.clone(),
+            self.scope.device_scope.clone(),
+        )
+        .map_err(|_| CloudWorkerSandboxError::InvalidScope)?;
+        if !valid_text_id(&self.workspace_id) {
+            return Err(CloudWorkerSandboxError::InvalidWorkspace);
+        }
+        Ok(())
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -182,6 +195,24 @@ mod tests {
             })
             .validate(),
             Err(CloudWorkerSandboxError::InvalidArgv)
+        );
+    }
+
+    #[test]
+    fn revalidates_deserialized_capability_identity() {
+        let capability = CloudWorkerSandboxCapability {
+            lease_id: LeaseId("lease-1".into()),
+            scope: CloudWorkerLeaseScope {
+                account_scope: "account\nunsafe".into(),
+                device_scope: "device".into(),
+            },
+            workspace_id: "workspace-1".into(),
+            remote_shell: true,
+            filesystem: true,
+        };
+        assert_eq!(
+            capability.validate(),
+            Err(CloudWorkerSandboxError::InvalidScope)
         );
     }
 }
