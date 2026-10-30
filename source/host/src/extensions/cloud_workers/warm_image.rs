@@ -60,37 +60,38 @@ impl CloudWorkerWarmImage {
             });
         }
 
-        let next = match (self.state, operation) {
+        let (next, next_hold_count, cleanup_debt) = match (self.state, operation) {
             (CloudWorkerWarmImageState::Missing, CloudWorkerWarmImageOperation::Allocate)
             | (CloudWorkerWarmImageState::CaptureUncertain, CloudWorkerWarmImageOperation::Recover) => {
-                CloudWorkerWarmImageState::Pending
+                (CloudWorkerWarmImageState::Pending, self.hold_count, self.cleanup_debt)
             }
             (CloudWorkerWarmImageState::Pending, CloudWorkerWarmImageOperation::Capture) => {
-                CloudWorkerWarmImageState::Available
+                (CloudWorkerWarmImageState::Available, self.hold_count, self.cleanup_debt)
             }
             (CloudWorkerWarmImageState::Available, CloudWorkerWarmImageOperation::Fork) => {
-                self.hold_count = self.hold_count.saturating_add(1);
-                CloudWorkerWarmImageState::Available
+                let hold_count = self
+                    .hold_count
+                    .checked_add(1)
+                    .ok_or(CloudWorkerWarmImageError::HoldLimitReached)?;
+                (CloudWorkerWarmImageState::Available, hold_count, self.cleanup_debt)
             }
             (CloudWorkerWarmImageState::Available, CloudWorkerWarmImageOperation::Release) => {
                 if self.hold_count == 0 {
                     return Err(CloudWorkerWarmImageError::NoActiveHold);
                 }
-                self.hold_count -= 1;
-                CloudWorkerWarmImageState::Available
+                (CloudWorkerWarmImageState::Available, self.hold_count - 1, self.cleanup_debt)
             }
             (CloudWorkerWarmImageState::Available, CloudWorkerWarmImageOperation::Retire) => {
                 if self.hold_count != 0 {
                     return Err(CloudWorkerWarmImageError::HeldImage);
                 }
-                CloudWorkerWarmImageState::Retiring
+                (CloudWorkerWarmImageState::Retiring, self.hold_count, self.cleanup_debt)
             }
             (CloudWorkerWarmImageState::Retiring, CloudWorkerWarmImageOperation::Delete) => {
-                CloudWorkerWarmImageState::Missing
+                (CloudWorkerWarmImageState::Missing, self.hold_count, self.cleanup_debt)
             }
             (CloudWorkerWarmImageState::CaptureUncertain, CloudWorkerWarmImageOperation::Delete) => {
-                self.cleanup_debt = true;
-                CloudWorkerWarmImageState::Missing
+                (CloudWorkerWarmImageState::Missing, self.hold_count, true)
             }
             _ => {
                 return Err(CloudWorkerWarmImageError::InvalidOperation {
@@ -100,8 +101,15 @@ impl CloudWorkerWarmImage {
             }
         };
 
+        let next_generation = self
+            .generation
+            .0
+            .checked_add(1)
+            .ok_or(CloudWorkerWarmImageError::GenerationExhausted)?;
         self.state = next;
-        self.generation.0 = self.generation.0.saturating_add(1);
+        self.hold_count = next_hold_count;
+        self.cleanup_debt = cleanup_debt;
+        self.generation.0 = next_generation;
         Ok(())
     }
 
@@ -115,9 +123,14 @@ impl CloudWorkerWarmImage {
                 actual: self.generation.clone(),
             });
         }
+        let next_generation = self
+            .generation
+            .0
+            .checked_add(1)
+            .ok_or(CloudWorkerWarmImageError::GenerationExhausted)?;
         self.state = CloudWorkerWarmImageState::CaptureUncertain;
         self.cleanup_debt = true;
-        self.generation.0 = self.generation.0.saturating_add(1);
+        self.generation.0 = next_generation;
         Ok(())
     }
 }
@@ -135,6 +148,10 @@ pub enum CloudWorkerWarmImageError {
     HeldImage,
     #[error("warm-image has no active fork hold")]
     NoActiveHold,
+    #[error("warm-image hold count exhausted")]
+    HoldLimitReached,
+    #[error("warm-image generation exhausted")]
+    GenerationExhausted,
     #[error("operation {operation:?} is invalid for state {state:?}")]
     InvalidOperation {
         state: CloudWorkerWarmImageState,
@@ -202,5 +219,34 @@ mod tests {
             .unwrap();
         assert_eq!(image.state, CloudWorkerWarmImageState::CaptureUncertain);
         assert!(image.cleanup_debt);
+    }
+
+    #[test]
+    fn generation_overflow_fails_before_warm_image_mutation() {
+        let mut image = CloudWorkerWarmImage::new("image-1").unwrap();
+        image.generation = CloudWorkerWarmImageGeneration(u64::MAX);
+        assert_eq!(
+            image.compare_and_apply(
+                CloudWorkerWarmImageGeneration(u64::MAX),
+                CloudWorkerWarmImageOperation::Allocate,
+            ),
+            Err(CloudWorkerWarmImageError::GenerationExhausted)
+        );
+        assert_eq!(image.state, CloudWorkerWarmImageState::Missing);
+    }
+
+    #[test]
+    fn hold_overflow_fails_before_warm_image_mutation() {
+        let mut image = CloudWorkerWarmImage::new("image-1").unwrap();
+        image.state = CloudWorkerWarmImageState::Available;
+        image.hold_count = u32::MAX;
+        assert_eq!(
+            image.compare_and_apply(
+                CloudWorkerWarmImageGeneration(0),
+                CloudWorkerWarmImageOperation::Fork,
+            ),
+            Err(CloudWorkerWarmImageError::HoldLimitReached)
+        );
+        assert_eq!(image.generation, CloudWorkerWarmImageGeneration(0));
     }
 }

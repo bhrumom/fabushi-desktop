@@ -298,7 +298,8 @@ cannot be reused.
 The warm-image contract at
 `source/host/src/extensions/cloud_workers/warm_image.rs` adds generation-fenced
 compare-and-apply transitions, fork holds, retirement protection, capture
-uncertainty and cleanup debt. It is an in-memory state contract only; no
+uncertainty and cleanup debt. Hold and generation counters fail closed on
+overflow before state mutation. It is an in-memory state contract only; no
 snapshot allocation, capture, deletion or persistence is performed.
 
 The bootstrap foundation at
