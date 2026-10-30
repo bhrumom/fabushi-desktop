@@ -4,6 +4,8 @@ use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
 const DEFAULT_MAX_CATALOG_BYTES: usize = 256 * 1024;
+const MAX_CATALOG_ID_CHARS: usize = 256;
+const MAX_ARCH_CHARS: usize = 64;
 
 /// A bounded, side-effect-free parser for explicitly configured worker
 /// provider discovery output. It never turns an advertised capability into
@@ -53,7 +55,7 @@ pub struct CloudWorkerBinaryIdentity(String);
 impl CloudWorkerBinaryIdentity {
     pub fn new(value: impl Into<String>) -> Result<Self, CloudWorkerCatalogError> {
         let value = value.into();
-        if value.trim().is_empty() || value != value.trim() {
+        if !valid_text(&value, MAX_CATALOG_ID_CHARS) {
             return Err(CloudWorkerCatalogError::InvalidBinaryIdentity);
         }
         Ok(Self(value))
@@ -223,7 +225,7 @@ impl CloudWorkerMachine {
     }
 
     fn validate(&self) -> Result<(), CloudWorkerCatalogError> {
-        if self.arch.trim().is_empty() {
+        if !valid_text(&self.arch, MAX_ARCH_CHARS) {
             return Err(CloudWorkerCatalogError::InvalidArchitecture);
         }
         if self.resources.cpu_cores == 0 || self.resources.memory_bytes == 0 {
@@ -286,10 +288,16 @@ pub enum CloudWorkerCatalogError {
 
 fn normalize_id(value: &mut String) -> Result<(), ()> {
     let trimmed = value.trim();
-    if trimmed.is_empty() || trimmed != value {
+    if !valid_text(value, MAX_CATALOG_ID_CHARS) || trimmed != value {
         return Err(());
     }
     Ok(())
+}
+
+fn valid_text(value: &str, max_chars: usize) -> bool {
+    !value.trim().is_empty()
+        && value.chars().count() <= max_chars
+        && !value.chars().any(|character| character.is_control())
 }
 
 #[cfg(test)]
@@ -390,5 +398,21 @@ mod tests {
             Err(CloudWorkerCatalogError::EmptyCatalog)
         ));
         assert!(cache.get(&identity).is_none());
+    }
+
+    #[test]
+    fn rejects_controlled_or_oversized_catalog_identities() {
+        assert!(matches!(
+            CloudWorkerBinaryIdentity::new("binary\nidentity"),
+            Err(CloudWorkerCatalogError::InvalidBinaryIdentity)
+        ));
+        let input = format!(
+            r#"{{"providers":[{{"id":"{}","profiles":[{{"id":"default","machines":[{{"os":"Linux","arch":"x86_64","resources":{{"cpu_cores":1,"memory_bytes":1}}}}]}}]}}]}}"#,
+            "p".repeat(257)
+        );
+        assert!(matches!(
+            CloudWorkerCatalogParser::default().parse(input.as_bytes()),
+            Err(CloudWorkerCatalogError::InvalidProviderId)
+        ));
     }
 }

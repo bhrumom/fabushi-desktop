@@ -265,8 +265,9 @@ completion or production reachability.
 The next slice adds the side-effect-free catalog contract at
 `source/host/src/extensions/cloud_workers/provider_catalog.rs`: bounded JSON
 input, explicit provider/profile/machine records, deterministic ordering,
-duplicate rejection and resource/architecture validation. It still does not
-discover a provider, grant permission, select a model or launch a worker.
+duplicate rejection, bounded identity text and resource/architecture
+validation. It still does not discover a provider, grant permission, select a
+model or launch a worker.
 
 Catalog profiles now expose deterministic OS/architecture/min-resource
 matching. A match is only a compatibility projection; it does not authorize
