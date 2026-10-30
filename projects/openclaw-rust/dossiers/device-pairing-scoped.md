@@ -164,3 +164,17 @@ boundary: the current Host Gateway binds a runtime port after
 not yet provide the upstream websocket pairing/session transport. Therefore no
 automatic cross-device URL or live companion reachability is claimed until an
 existing transport owner supplies a real endpoint and consumer path.
+
+## 7. Device-token consumer wiring (2026-10-30)
+
+`DevicePairingOwner::authenticate_device_token` now owns lookup of issued
+device tokens, constant-time token comparison, and projection of the durable
+device identity, role, and scoped grants. `UnifiedGatewayApi` exposes that
+owner through the existing `GatewayApi` boundary; Gateway ingress accepts a
+device bearer only when the pairing owner returns an authorization result and
+enforces the returned role/scope ceiling before dispatch. The configured
+Gateway bearer secret remains a separate compatibility credential. Timestamp
+and nonce headers remain replay fences and are not credentials. This closes the
+local producer → pairing owner → ingress consumer path; websocket challenge,
+remote companion transport, executable Actions evidence, and real-device
+acceptance remain pending.

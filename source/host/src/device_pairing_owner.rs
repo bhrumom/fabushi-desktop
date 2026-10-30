@@ -5,6 +5,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 use base64::{Engine as _, engine::general_purpose::URL_SAFE_NO_PAD};
 use rusqlite::{Connection, params};
 use serde_json::{Value, json};
+use subtle::ConstantTimeEq;
 use uuid::Uuid;
 
 use crate::gateway_command_error::GatewayCommandError;
@@ -12,6 +13,13 @@ use crate::gateway_command_error::GatewayCommandError;
 pub struct DevicePairingOwner {
     conn: Mutex<Connection>,
     db_path: Option<PathBuf>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct DeviceTokenAuthorization {
+    pub device_id: String,
+    pub role: String,
+    pub scopes: Vec<String>,
 }
 
 fn now_ms() -> i64 {
@@ -215,6 +223,73 @@ impl DevicePairingOwner {
         .ok()
         .and_then(|v: String| v.trim_matches('"').parse().ok())
         .unwrap_or(0)
+    }
+
+    /// Resolves a durable device token to its approved role and scopes.
+    ///
+    /// Token verification belongs to the pairing owner; Gateway ingress only
+    /// consumes this authorization result and must not inspect pairing rows.
+    pub fn authenticate_device_token(
+        &self,
+        token: &str,
+    ) -> Result<Option<DeviceTokenAuthorization>, GatewayCommandError> {
+        if token.is_empty() || token.len() > 256 {
+            return Ok(None);
+        }
+
+        let conn = self.conn.lock().unwrap();
+        let mut statement = conn
+            .prepare("SELECT device_id, tokens_json FROM device_pairing_paired")
+            .map_err(|error| {
+                GatewayCommandError::Internal(format!("failed to read device tokens: {error}"))
+            })?;
+        let rows = statement
+            .query_map([], |row| {
+                Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?))
+            })
+            .map_err(|error| {
+                GatewayCommandError::Internal(format!("failed to enumerate device tokens: {error}"))
+            })?;
+
+        for row in rows {
+            let (device_id, tokens_json) = row.map_err(|error| {
+                GatewayCommandError::Internal(format!("failed to read device token row: {error}"))
+            })?;
+            let entries = match serde_json::from_str::<Value>(&tokens_json) {
+                Ok(Value::Object(entries)) => entries,
+                Ok(_) | Err(_) => continue,
+            };
+            for entry in entries.values() {
+                let Some(candidate) = entry.get("token").and_then(Value::as_str) else {
+                    continue;
+                };
+                if candidate.len() != token.len()
+                    || !bool::from(candidate.as_bytes().ct_eq(token.as_bytes()))
+                {
+                    continue;
+                }
+                let Some(role) = entry.get("role").and_then(Value::as_str) else {
+                    continue;
+                };
+                let scopes = entry
+                    .get("scopes")
+                    .and_then(Value::as_array)
+                    .map(|values| {
+                        values
+                            .iter()
+                            .filter_map(Value::as_str)
+                            .map(str::to_owned)
+                            .collect()
+                    })
+                    .unwrap_or_default();
+                return Ok(Some(DeviceTokenAuthorization {
+                    device_id,
+                    role: role.to_string(),
+                    scopes,
+                }));
+            }
+        }
+        Ok(None)
     }
 
     pub fn handle_pair_request(&self, args: &Value) -> Result<Value, GatewayCommandError> {

@@ -10078,6 +10078,13 @@ fn start_routed_provider_task(
 }
 
 impl GatewayApi for UnifiedGatewayApi {
+    fn authenticate_device_token(
+        &self,
+        token: &str,
+    ) -> Result<Option<mahayana_host_runtime::device_pairing_owner::DeviceTokenAuthorization>, GatewayCommandError> {
+        self.device_pairing.authenticate_device_token(token)
+    }
+
     fn redeem_device_pairing_join_code(
         &self,
         shortcode: &str,

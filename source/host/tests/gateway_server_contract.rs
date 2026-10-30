@@ -79,12 +79,61 @@ impl GatewayApi for TestApi {
     }
 }
 
+#[test]
+fn device_pairing_owner_authenticates_issued_token_with_role_and_scopes() {
+    let owner = DevicePairingOwner::in_memory().expect("pairing owner");
+    let pending = owner
+        .handle_pair_request(&json!({
+            "deviceId": "device-auth-1",
+            "publicKey": "public-key-auth-1",
+            "roles": ["operator"],
+            "scopes": ["operator.read", "operator.write"]
+        }))
+        .expect("pair request");
+    let request_id = pending
+        .get("requestId")
+        .and_then(Value::as_str)
+        .expect("request id");
+    owner
+        .handle_pair_approve(&json!({ "requestId": request_id }))
+        .expect("pair approval");
+    let rotated = owner
+        .handle_pair_rotate_token(&json!({ "deviceId": "device-auth-1", "role": "operator" }))
+        .expect("token rotation");
+    let token = rotated
+        .get("token")
+        .and_then(Value::as_str)
+        .expect("rotated token");
+
+    let authorization = owner
+        .authenticate_device_token(token)
+        .expect("token lookup")
+        .expect("issued token authorization");
+    assert_eq!(authorization.device_id, "device-auth-1");
+    assert_eq!(authorization.role, "operator");
+    assert_eq!(authorization.scopes, ["operator.read", "operator.write"]);
+    assert!(owner
+        .authenticate_device_token("sand-device-tok-invalid")
+        .expect("invalid token lookup")
+        .is_none());
+}
+
 struct PairingOwnerApi {
     owner: Arc<DevicePairingOwner>,
 }
 
 impl GatewayApi for PairingOwnerApi {
+    fn authenticate_device_token(
+        &self,
+        token: &str,
+    ) -> Result<Option<mahayana_host_runtime::device_pairing_owner::DeviceTokenAuthorization>, GatewayCommandError> {
+        self.owner.authenticate_device_token(token)
+    }
+
     fn call(&self, method: &str, _args: Value) -> Result<Value, GatewayCommandError> {
+        if method == "device.pair.list" {
+            return Ok(json!({"paired": [], "pending": []}));
+        }
         Err(GatewayCommandError::UnknownMethod(method.to_string()))
     }
 
@@ -94,6 +143,55 @@ impl GatewayApi for PairingOwnerApi {
     ) -> Result<Option<Value>, GatewayCommandError> {
         self.owner.redeem_device_pairing_join_code(shortcode)
     }
+}
+
+#[test]
+fn gateway_accepts_pairing_owner_device_token_without_gateway_secret() {
+    let owner = Arc::new(DevicePairingOwner::in_memory().expect("pairing owner"));
+    let pending = owner
+        .handle_pair_request(&json!({
+            "deviceId": "device-gateway-auth-1",
+            "publicKey": "public-key-gateway-auth-1"
+        }))
+        .expect("pair request");
+    let request_id = pending
+        .get("requestId")
+        .and_then(Value::as_str)
+        .expect("request id");
+    owner
+        .handle_pair_approve(&json!({ "requestId": request_id }))
+        .expect("pair approval");
+    let rotated = owner
+        .handle_pair_rotate_token(&json!({ "deviceId": "device-gateway-auth-1" }))
+        .expect("token rotation");
+    let token = rotated
+        .get("token")
+        .and_then(Value::as_str)
+        .expect("rotated token");
+
+    let server = start_gateway_server(GatewayServerDeps {
+        api: Arc::new(PairingOwnerApi { owner }),
+        events: GatewayEventHub::default(),
+        local_exec: None,
+        webauthn: None,
+        config: config(Some("gateway-token")),
+        started_at: 3,
+    })
+    .expect("gateway server");
+    let port = server.port();
+    let accepted = request(
+        port,
+        &format!(
+            "POST /api/device.pair.list HTTP/1.1\r\nHost: 127.0.0.1\r\nAuthorization: Bearer {token}\r\nContent-Length: 2\r\nConnection: close\r\n\r\n{{}}"
+        ),
+    );
+    assert!(accepted.starts_with("HTTP/1.1 200 OK"), "{accepted}");
+    let rejected = request(
+        port,
+        "POST /api/device.pair.list HTTP/1.1\r\nHost: 127.0.0.1\r\nAuthorization: Bearer invalid-device-token\r\nContent-Length: 2\r\nConnection: close\r\n\r\n{}",
+    );
+    assert!(rejected.starts_with("HTTP/1.1 401 Unauthorized"), "{rejected}");
+    server.close();
 }
 
 #[test]

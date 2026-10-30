@@ -19,7 +19,7 @@ use crate::gateway_command_error::{
 };
 pub use crate::gateway_command_error::GatewayCommandError;
 use crate::gateway_config::{GatewayServerConfig, GatewayTlsConfig, is_loopback_host};
-use crate::device_pairing_owner::parse_device_pairing_join_request_path;
+use crate::device_pairing_owner::{DeviceTokenAuthorization, parse_device_pairing_join_request_path};
 use crate::gateway_protocol::{
     GATEWAY_PREPARE_UPGRADE_PATH, is_grok_gateway_command, parse_command_args,
     slim_command_result, slim_event,
@@ -145,6 +145,15 @@ pub struct GatewayCommandContext {
 
 pub trait GatewayApi: Send + Sync + 'static {
     fn call(&self, method: &str, args: Value) -> Result<Value, GatewayCommandError>;
+
+    /// Resolve a bearer token issued by the canonical device-pairing owner.
+    /// Gateway ingress consumes the result but does not inspect pairing state.
+    fn authenticate_device_token(
+        &self,
+        _token: &str,
+    ) -> Result<Option<DeviceTokenAuthorization>, GatewayCommandError> {
+        Ok(None)
+    }
 
     fn call_with_context(
         &self,
@@ -657,16 +666,18 @@ fn is_operator_only_openclaw_command(method: &str) -> bool {
     )
 }
 
-fn is_authorized(request: &HttpRequest, expected: &str) -> bool {
+fn bearer_token(request: &HttpRequest) -> Option<&str> {
     request
         .headers
         .get("authorization")
         .and_then(|value| value.strip_prefix(&format!("{GATEWAY_AUTH_SCHEME} ")))
-        .is_some_and(|provided| {
-            let provided = provided.as_bytes();
-            let expected = expected.as_bytes();
-            provided.len() == expected.len() && bool::from(provided.ct_eq(expected))
-        })
+        .filter(|token| !token.is_empty())
+}
+
+fn is_authorized_token(provided: &str, expected: &str) -> bool {
+    let provided = provided.as_bytes();
+    let expected = expected.as_bytes();
+    provided.len() == expected.len() && bool::from(provided.ct_eq(expected))
 }
 
 fn write_response(
@@ -1219,13 +1230,31 @@ fn handle_connection(
     let allows_unauthenticated = pairing_join
         || (command && matches!(method, "device.pair.request" | "device.pair.status"));
     let mut authenticated = false;
+    let mut device_authorization = None;
 
-    if let Some(token) = deps.config.auth_token.as_deref() {
-        if is_authorized(&request, token) {
-            authenticated = true;
-        }
-    } else {
+    if deps.config.auth_token.is_none() {
         authenticated = true;
+    }
+    if let Some(token) = bearer_token(&request) {
+        if deps
+            .config
+            .auth_token
+            .as_deref()
+            .is_some_and(|expected| is_authorized_token(token, expected))
+        {
+            authenticated = true;
+        } else {
+            match deps.api.authenticate_device_token(token) {
+                Ok(Some(authorization)) => {
+                    authenticated = true;
+                    device_authorization = Some(authorization);
+                }
+                Ok(None) => {}
+                Err(error) => {
+                    return respond_error(&mut stream, error.status(), error.to_string());
+                }
+            }
+        }
     }
 
     if let (Some(ts), Some(nonce)) = (
@@ -1255,14 +1284,40 @@ fn handle_connection(
         return respond_error(&mut stream, 401, "unauthorized");
     }
 
-    if let Some(role) = request.headers.get("x-sand-role") {
-        if role == "node" && is_operator_only_openclaw_command(method) {
+    let requested_role = request.headers.get("x-sand-role").map(String::as_str);
+    if let Some(authorization) = device_authorization.as_ref() {
+        if requested_role.is_some_and(|role| role != authorization.role) {
             return respond_error(
                 &mut stream,
                 403,
-                format!("ROLE_MISMATCH: node cannot invoke operator method: {method}"),
+                "ROLE_MISMATCH: requested role differs from device token",
             );
         }
+        if authorization.role == "operator"
+            && is_mutating_openclaw_command(method)
+            && !authorization
+                .scopes
+                .iter()
+                .any(|scope| scope == "operator.write")
+        {
+            return respond_error(
+                &mut stream,
+                403,
+                format!("INSUFFICIENT_SCOPE: device token cannot invoke mutating method: {method}"),
+            );
+        }
+    }
+    if (requested_role == Some("node")
+        || device_authorization
+            .as_ref()
+            .is_some_and(|authorization| authorization.role == "node"))
+        && is_operator_only_openclaw_command(method)
+    {
+        return respond_error(
+            &mut stream,
+            403,
+            format!("ROLE_MISMATCH: node cannot invoke operator method: {method}"),
+        );
     }
 
     if let Some(scope) = request.headers.get("x-sand-scope") {
