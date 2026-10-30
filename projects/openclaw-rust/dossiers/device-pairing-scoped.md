@@ -213,4 +213,7 @@ binding at commit, and reapproval clears any retained or pending node surface
 so a successor connection must publish a fresh generation-bound capability
 surface. Token rotation applies the same node-surface reset atomically with
 the bearer replacement, so credential generation and capability generation
-cannot silently diverge.
+cannot silently diverge. The internal contract test
+`token_rotation_clears_retained_node_surfaces` seeds both persisted surfaces
+and verifies that rotation removes them; this remains source-level evidence
+until the declared Actions run executes it.
