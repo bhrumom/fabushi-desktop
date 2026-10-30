@@ -195,3 +195,33 @@ fn test_ocrm_node_host_manifest_never_advertises_unavailable_commands() {
     assert!(manifest.advertised_commands.is_empty());
     assert!(manifest.capabilities.is_empty());
 }
+
+#[test]
+fn test_ocrm_node_host_manifest_composes_plugins_and_ephemeral_surface() {
+    let available_commands = [NODE_SYSTEM_RUN_COMMANDS.to_string()]
+        .into_iter()
+        .collect::<HashSet<_>>();
+    let manifest = NodeHostManifest::build_with_plugin_manifest(
+        &available_commands,
+        &[
+            "plugin.command".into(),
+            "screen.snapshot".into(),
+            "  ".into(),
+        ],
+        &["plugin.capability".into(), "computer".into()],
+        false,
+        false,
+        true,
+        None,
+    );
+
+    assert_eq!(
+        manifest.advertised_commands,
+        vec!["node.system_run".to_string(), "plugin.command".to_string()]
+    );
+    assert!(manifest
+        .capabilities
+        .contains(&"plugin.capability".to_string()));
+    assert!(!manifest.capabilities.contains(&"computer".to_string()));
+    assert!(manifest.is_ephemeral);
+}

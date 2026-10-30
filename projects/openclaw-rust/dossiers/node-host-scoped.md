@@ -1895,3 +1895,14 @@ fences optional publications and timers by connection generation. These are
 latest-candidate discovery facts only: the source lock/inventory still require
 Actions rebaseline, and no Rust result transport, dynamic manifest caller, or
 exact-head acceptance is claimed.
+
+## 153. Dynamic manifest composition seam (2026-10-30)
+
+`NodeHostManifest::build_with_plugin_manifest` now composes available builtin
+commands with current plugin commands/capabilities, applies the command
+allowlist, sorts/deduplicates the result deterministically, and marks an
+ephemeral surface so restricted capabilities are not advertised. The legacy
+builder remains compatible for existing callers. This improves the manifest
+owner contract against the latest live source, but no production caller yet
+feeds the real plugin registry or publishes the snapshot through a live node
+transport; wiring, verification, and acceptance remain pending.
