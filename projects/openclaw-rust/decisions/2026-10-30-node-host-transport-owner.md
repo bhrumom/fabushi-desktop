@@ -62,6 +62,19 @@ Fabushi must resolve and redact those values through an approved secrets owner
 before they can become transport headers. Box secret synchronization and
 unrelated process environment variables are not valid substitutes.
 
+### Secret materializer boundary revalidation (2026-10-30)
+
+The existing Rust redaction surface is pure formatting only: it masks or
+rewrites values already supplied to a diagnostic boundary and does not maintain
+a registration/retirement lifecycle. `HostSecretsExtension` owns Box secret
+application and persistence, not arbitrary `SecretInput` resolution. The
+required NodeHost owner is therefore a separate injected contract: paired,
+origin-scoped opaque references in; ephemeral credentials out only at connect
+time; registration with the canonical redaction lifecycle before use; no
+plaintext persistence, session/RPC projection, arbitrary environment fallback,
+or raw-header logging. This is a design/unblock condition, not a production
+implementation or acceptance claim.
+
 ## Caller reachability revalidation (2026-10-30)
 
 A read-only search of the current checkout found no legitimate production

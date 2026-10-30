@@ -2624,3 +2624,16 @@ command catalog, config-shared, and Cloudflare Access config. The prior content
 read is therefore reusable by immutable blob identity for this discovery
 candidate. This does not establish full-tree closure, dependency closure, or
 Actions authority for the new commit.
+
+## 198. Secret materializer owner boundary revalidation (2026-10-30)
+
+The current Rust `openclaw_secret_redactor` module provides pure masking and
+sanitization helpers only; it does not register secret values for a bounded
+lifecycle. `HostSecretsExtension` is the Box environment synchronization owner
+and persists/applies Box secrets, so it is not a valid NodeHost `SecretInput`
+materializer. The NodeHost transport therefore remains fail-closed for
+Cloudflare Access until a separate injected owner accepts paired,
+origin-scoped opaque references, resolves values only at connection time,
+registers them with a canonical redaction lifecycle, and releases them after
+request construction/teardown. No plaintext, arbitrary environment fallback,
+session projection, or raw header logging is authorized by this evidence.

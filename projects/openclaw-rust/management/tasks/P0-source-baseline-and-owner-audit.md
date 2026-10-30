@@ -125,3 +125,12 @@ inventory/closure，也不改变任何 global flag。
 `acf6bee252bf79ab46e7a4c36ce4cc23e448c885`；此前 exact blob 读取与 SecretInput
 结论仅保留为历史 discovery evidence，不能直接作为新 subject 的 source
 closure 或 implementation authority。
+
+本轮又只读核对了 Fabushi 当前 secret/redaction owner：
+`openclaw_secret_redactor` 仅提供纯脱敏函数，没有 redaction registry；
+`HostSecretsExtension` 仅负责 Box secret application/persistence，不是通用
+`SecretInput` materializer。故 NodeHost Cloudflare Access 仍需独立的注入式
+credential owner contract（成对、origin-scoped opaque refs；connection-time
+materialize；canonical redaction registration；不持久化 plaintext、不读任意
+环境变量、不进入 session/RPC），在该 owner 与真实 caller 出现前保持
+transport fail-closed；这不改变 P0 或任何 global flag。

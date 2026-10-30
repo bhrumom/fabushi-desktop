@@ -67,6 +67,7 @@ Define and implement a Fabushi-native node-host runtime embedding that preserves
 - The upstream pointer has since advanced to `5310270e46cf020ab1e37204075970f3b2679812` / `acf6bee252bf79ab46e7a4c36ce4cc23e448c885`; the preceding SecretInput and command observations are superseded for current-source navigation until the new exact subject is re-read and accepted by P0 authority.
 - A fresh tree read of `5310270e…` revalidated that all seven targeted NodeHost/command blobs retain the exact identities recorded in the preceding dossier sections. Their behavior mapping may therefore be reused by blob identity for this discovery candidate only; recursive inventory, dependency closure, and Actions acceptance remain unproven.
 - A targeted read-only compare from the prior c325 candidate to this live candidate reports 14 commits and 15 changed paths under `src/node-host/` or `crates/openclaw-node-host/`. The changed source adds managed-identity transport custody, platform trust restoration, workspace lease admission/currentness, and invocation-bound process-environment fencing. Existing Rust mapping is therefore not complete for this candidate and must not reuse c325 semantics without targeted re-read.
+- The current Host redaction helper is pure formatting (`mask_token`, query/header/PEM redaction); it has no value-registration lifecycle. `HostSecretsExtension` is specifically the Box environment synchronization boundary and cannot resolve arbitrary origin-bound `SecretInput` values. The NodeHost credential owner must therefore be an explicit injected resolver/materializer contract, not an extension of Box secret application or an environment fallback.
 
 ## 6. Target state
 
@@ -138,6 +139,16 @@ Gateway endpoint configuration carries non-sensitive TLS fingerprint and
 WebSocket context-path metadata. Cloudflare Access client id/secret values
 remain SecretInput material owned and redacted by the existing secrets/config
 owner; they must not enter the live-session registry or RPC projection.
+
+The pending NodeHost credential owner contract is intentionally narrow: it
+accepts paired, origin-scoped opaque references; resolves them only at connect
+time; registers the resolved values with the canonical redaction lifecycle
+before any diagnostic boundary; returns them only to the transport request
+builder; and drops them after request construction/connection teardown. It may
+not persist plaintext, expose values through session state, inspect Box secret
+state, read arbitrary process environment variables, or log raw headers. Until
+an owner provides this contract and a real caller supplies it, Cloudflare
+Access is an explicit configuration error and no Access header is sent.
 
 ## 9. Constraints and non-functional requirements
 
