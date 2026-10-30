@@ -35,6 +35,9 @@ pub fn coordinator_event_family_for_sse_channel(channel: &str) -> Option<&'stati
 /// recorded a dedicated family. Channel-less envelopes are handled by the
 /// caller as the generic runtime family.
 pub fn event_family_for_channel(channel: &str) -> &str {
+    if channel.trim().is_empty() {
+        return "runtime";
+    }
     coordinator_event_family_for_sse_channel(channel).unwrap_or(channel)
 }
 

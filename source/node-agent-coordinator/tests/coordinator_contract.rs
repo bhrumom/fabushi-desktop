@@ -271,6 +271,7 @@ fn gateway_event_families_match_the_frozen_coordinator_contract() {
     assert_eq!(coordinator_event_family_for_sse_channel("unknown"), None);
     assert_eq!(event_family_for_channel("cloud-workers.status"), "cloud-workers.status");
     assert_eq!(event_family_for_channel("channel-activity"), "channel-activity");
+    assert_eq!(event_family_for_channel("  "), "runtime");
 }
 
 #[test]
