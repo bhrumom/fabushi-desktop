@@ -3919,7 +3919,16 @@ impl UnifiedGatewayApi {
     ) -> Result<serde_json::Value, GatewayCommandError> {
         let pair_list = self.device_pairing.handle_pair_list(&serde_json::json!({}))?;
 
-        let live_nodes = self.node_host_runtime.list();
+        // The session registry retains disconnected snapshots so generation
+        // fencing and invocation cleanup can reconcile late callbacks. Those
+        // historical rows are not live transport evidence and must not mask
+        // the authoritative paired-device projection below.
+        let live_nodes = self
+            .node_host_runtime
+            .list()
+            .into_iter()
+            .filter(|node| node.connected)
+            .collect::<Vec<_>>();
         let mut nodes = live_nodes
             .iter()
             .map(|node| {
@@ -3986,19 +3995,25 @@ impl UnifiedGatewayApi {
             .ok_or_else(|| GatewayCommandError::BadRequest("node.status requires nodeId".into()))?;
 
         if let Some(node) = self.node_host_runtime.get(node_id) {
-            return Ok(serde_json::json!({
-                "ts": started_at_ms(),
-                "nodeId": node.node_id,
-                "displayName": node.display_name,
-                "platform": node.platform,
-                "deviceFamily": node.device_family,
-                "commands": node.commands,
-                "capabilities": node.capabilities,
-                "connected": node.connected,
-                "paired": node.paired,
-                "active": node.active,
-                "gatewayLocal": node.gateway_local
-            }));
+            // A retained disconnected remote snapshot is historical transport
+            // state; resolve the durable pairing projection below instead of
+            // reporting stale session metadata. The local node remains owned
+            // by this runtime even if it is temporarily disconnected.
+            if node.connected || node.gateway_local {
+                return Ok(serde_json::json!({
+                    "ts": started_at_ms(),
+                    "nodeId": node.node_id,
+                    "displayName": node.display_name,
+                    "platform": node.platform,
+                    "deviceFamily": node.device_family,
+                    "commands": node.commands,
+                    "capabilities": node.capabilities,
+                    "connected": node.connected,
+                    "paired": node.paired,
+                    "active": node.active,
+                    "gatewayLocal": node.gateway_local
+                }));
+            }
         }
 
         let status = self.device_pairing.handle_pair_status(&serde_json::json!({ "deviceId": node_id }))?;
