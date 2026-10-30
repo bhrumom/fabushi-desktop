@@ -61,6 +61,8 @@ Implementation/acceptance: **未完成**
 随后只读核对发现 OpenClaw `main` 再次漂移到 commit=`68fbe4ac429cdac7a54541df40367d66defd0161`、root tree=`a3c122b99571c0c33ff6a02ca4c4e32f05f9433d`（committer=`2026-10-30T09:42:45Z`）。这是新的 discovery-only candidate；未刷新 compare 计数，不复用 `b7a537eb` 或更早 candidate 的 inventory、依赖闭包、源语义结论或 Actions provenance。必须针对该 exact subject 重新取得完整 inventory、依赖闭包、LFS/完整性与独立审核证据后，才能提升任何 authority/完成 flag。
 随后只读核对发现 OpenClaw `main` 再次漂移到 commit=`5310270e46cf020ab1e37204075970f3b2679812`、root tree=`acf6bee252bf79ab46e7a4c36ce4cc23e448c885`（committer=`2026-10-30T09:50:47Z`）。该 candidate 仍为 discovery-only；compare 计数未刷新，不复用 `68fbe4a` 或更早 candidate 的 inventory、依赖闭包、源语义结论或 Actions provenance。必须针对该 exact subject 重新取得完整 inventory、依赖闭包、LFS/完整性与独立审核证据后，才能提升任何 authority/完成 flag。
 
+2026-10-31 的独立 live-main 核对又解析到 commit=`2c157ed06dff5032da1093cbb6745efeff2b6f33`、root tree=`3fb582f6a1299daa74446ef001cb7cb4fd3c2270`（committer=`2026-10-30T22:39:38Z`）。该 exact subject 的递归 tree 未截断，共 63,740 entries（61,499 blobs、2,241 directories）；root 输入和 live candidate 已同步写入 `upstream.lock.json`。七个已建立 NodeHost/command blob 身份保持不变，但这仍只是 discovery-only，不能提升 source authority、复用旧 closure 或改变任何 global flag。
+
 ## 5. 机器记录的初始化与终态
 
 P0 在 Actions 建立 lock、inventory、parity ledger、RTM、dossiers 和 evidence 索引；本次不提交伪造的完整台账或空清单来充当 baseline。

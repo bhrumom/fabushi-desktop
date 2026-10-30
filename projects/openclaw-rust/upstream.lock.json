@@ -25,18 +25,18 @@
   "live_candidate": {
     "repository": "openclaw/openclaw",
     "ref": "refs/heads/main",
-    "commit": "5310270e46cf020ab1e37204075970f3b2679812",
-    "tree": "acf6bee252bf79ab46e7a4c36ce4cc23e448c885",
-    "observed_at": "2026-10-30T10:03:53Z",
+    "commit": "2c157ed06dff5032da1093cbb6745efeff2b6f33",
+    "tree": "3fb582f6a1299daa74446ef001cb7cb4fd3c2270",
+    "observed_at": "2026-10-30T22:42:59Z",
     "discovery_source": "GitHub commit/tree API",
     "recursive_tree_truncated": false,
-    "recursive_tree_entries": 63521,
-    "recursive_blob_entries": 61281,
-    "recursive_directory_entries": 2240,
+    "recursive_tree_entries": 63740,
+    "recursive_blob_entries": 61499,
+    "recursive_directory_entries": 2241,
     "root_inputs": {
-      "package.json": "f1a92c3c04328301f0d1b55188846545534ea616",
-      "pnpm-lock.yaml": "14ec89238970e23718e93f5f6f160e6db217311",
-      "pnpm-workspace.yaml": "c3bddd9f93fec0711312080545cc472fa76f2bc4",
+      "package.json": "364352af31a34c30943ea7b9e5bb108cae749c51",
+      "pnpm-lock.yaml": "d6ba2d92e5304961493775bcb4ecfe870ed839c5",
+      "pnpm-workspace.yaml": "6a7b13db490b9319015f282b36be48fe2339bbb0",
       ".gitattributes": "c6118b226a4a760f7861b6b7b1e7dccd943384e4",
       "LICENSE": "ed064819ab537575d0cad902f7e5af4a3488b1d0",
       "THIRD_PARTY_NOTICES.md": "0c9c123760188915a384ce7275df4096114e8f90",
@@ -49,7 +49,7 @@
     "behind_by": null,
     "compare_files_returned": null,
     "compare_file_counts_are_not_complete": true,
-    "decision": "live-main-drifted-again-to-5310270; compare-counts-not-refreshed; retain-discovery-only-status-until-fresh-actions-inventory-and-dependency-closure"
+    "decision": "live-main-drifted-again-to-2c157ed; targeted-node-host-blobs-revalidated-by-identity; retain-discovery-only-status-until-fresh-actions-inventory-and-dependency-closure"
   },
   "root_inputs": {
     "AGENTS.md": "c3deeccdb6b1a4c7137d56297e933bbf19f4d3bf",

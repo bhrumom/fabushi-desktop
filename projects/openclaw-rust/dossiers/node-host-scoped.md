@@ -2661,3 +2661,16 @@ The seam also records falsifiable negative oracles for empty/control
 references, mismatched Gateway path scopes, and credential `Debug` output that
 must contain only redaction markers. These tests were added but not executed
 under the development-phase verification freeze.
+
+## 200. Current live candidate revalidation (2026-10-31)
+
+An independent live-main check resolved OpenClaw to
+`2c157ed06dff5032da1093cbb6745efeff2b6f33` / tree
+`3fb582f6a1299daa74446ef001cb7cb4fd3c2270`, with a non-truncated recursive
+tree of 63,740 entries (61,499 blobs and 2,241 directories). The seven
+NodeHost/command blobs used by the scoped mapping retain the same immutable
+identities as the preceding candidate: command catalog, client, config-shared,
+connection, Cloudflare Access config, invoke types, and runtime manifest.
+This is discovery and targeted identity evidence only; the candidate remains
+outside accepted source authority until exact-head Actions inventory,
+dependency closure, and the required negative/omitted evidence exist.

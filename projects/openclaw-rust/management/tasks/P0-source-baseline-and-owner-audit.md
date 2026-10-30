@@ -139,3 +139,10 @@ transport fail-closed；这不改变 P0 或任何 global flag。
 `5310270e46cf020ab1e37204075970f3b2679812`；对应 tree 仍为
 `acf6bee252bf79ab46e7a4c36ce4cc23e448c885`。该核对只刷新 identity freshness，
 不替代 exact-subject Actions inventory、依赖闭包或验收 receipt。
+
+2026-10-31 的 live-main 只读核对又发现上游推进到
+`2c157ed06dff5032da1093cbb6745efeff2b6f33` / tree
+`3fb582f6a1299daa74446ef001cb7cb4fd3c2270`；递归 tree 未截断，计数为
+63,740 entries、61,499 blobs、2,241 directories。七个已映射 NodeHost/command
+blob 身份保持不变，但该新 subject 仍仅为 discovery-only；P0 不得复用旧
+inventory/依赖闭包或将其提升为 authority。

@@ -37,3 +37,15 @@ The node-host dossier remains valid only as pinned-source evidence. It cannot be
 - `projects/openclaw-rust/management/tasks/P0-source-baseline-and-owner-audit.md`
 - live GitHub refs queried on 2026-10-29: `openclaw/openclaw@bf9709250b87bec4a26637046096092ee68d3366`, tree `9daef696c7c912ef65b44f7005c86309f26fd646`
 - prior live-main observations superseded by this refresh: `29ebbe869cc4b4d085be6f7ef79f0edc3c204ec9`/`d2f7823097e89fb26dd27ad3ef6fe42d1451c8a2`, `70bf5121704c7a7173722cbd7e360362e5da165`/`3732f45aa4d3a924ac88b4b684f21fbab13b3c79`, and `bf6a97a1761ed7f752544f4934aa708b9d896bd3`/`3fa25384ab9647485cf8e4293121bbe87e1548f4`
+
+## Live revalidation (2026-10-31)
+
+The current read-only live-main ref is now
+`openclaw/openclaw@2c157ed06dff5032da1093cbb6745efeff2b6f33`, tree
+`3fb582f6a1299daa74446ef001cb7cb4fd3c2270`. Its recursive tree is not
+truncated and contains 63,740 entries. The lock records this as a
+discovery-only candidate with refreshed root-input identities; the historical
+locked baseline, inventory, dependency closure, and Actions evidence remain
+unchanged and are not silently reattributed. Targeted NodeHost/command blob
+identities were re-read and remain unchanged, but that narrow result does not
+establish full source authority.
