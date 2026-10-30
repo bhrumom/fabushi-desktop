@@ -11,6 +11,10 @@ use super::{
 };
 
 pub const CLOUD_WORKER_STATE_SCHEMA_VERSION: u32 = 1;
+const MAX_MIGRATION_RECEIPTS: usize = 256;
+const MAX_MIGRATION_OPERATION_CHARS: usize = 256;
+const MAX_MIGRATION_BACKUP_PATH_CHARS: usize = 4096;
+const MAX_MIGRATION_DETAIL_CHARS: usize = 1024;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct CloudWorkerProvisioningConfig {
@@ -51,6 +55,18 @@ pub struct CloudWorkerMigrationReceipt {
     pub backup_path: String,
     pub outcome: CloudWorkerMigrationOutcome,
     pub detail: String,
+}
+
+impl CloudWorkerMigrationReceipt {
+    fn validate(&self) -> Result<(), CloudWorkerOwnerError> {
+        if !valid_text(&self.operation_id, MAX_MIGRATION_OPERATION_CHARS)
+            || !valid_text(&self.backup_path, MAX_MIGRATION_BACKUP_PATH_CHARS)
+            || !valid_text(&self.detail, MAX_MIGRATION_DETAIL_CHARS)
+        {
+            return Err(CloudWorkerOwnerError::InvalidMigrationReceipt);
+        }
+        Ok(())
+    }
 }
 
 #[derive(Debug)]
@@ -139,11 +155,13 @@ impl CloudWorkerProvisioningOwner {
                 return Err(CloudWorkerOwnerError::InvalidSnapshot);
             }
         }
+        if snapshot.migration_receipts.len() > MAX_MIGRATION_RECEIPTS {
+            return Err(CloudWorkerOwnerError::MigrationReceiptLimitReached);
+        }
         let mut operation_ids = std::collections::HashSet::new();
         for receipt in snapshot.migration_receipts {
-            if receipt.operation_id.trim().is_empty()
-                || !operation_ids.insert(receipt.operation_id.clone())
-            {
+            receipt.validate()?;
+            if !operation_ids.insert(receipt.operation_id.clone()) {
                 return Err(CloudWorkerOwnerError::InvalidSnapshot);
             }
             owner.migration_receipts.push(receipt);
@@ -155,11 +173,14 @@ impl CloudWorkerProvisioningOwner {
         &mut self,
         receipt: CloudWorkerMigrationReceipt,
     ) -> Result<(), CloudWorkerOwnerError> {
-        if receipt.operation_id.trim().is_empty()
-            || self
-                .migration_receipts
-                .iter()
-                .any(|known| known.operation_id == receipt.operation_id)
+        receipt.validate()?;
+        if self.migration_receipts.len() >= MAX_MIGRATION_RECEIPTS {
+            return Err(CloudWorkerOwnerError::MigrationReceiptLimitReached);
+        }
+        if self
+            .migration_receipts
+            .iter()
+            .any(|known| known.operation_id == receipt.operation_id)
         {
             return Err(CloudWorkerOwnerError::DuplicateMigrationReceipt);
         }
@@ -295,6 +316,10 @@ pub enum CloudWorkerOwnerError {
     InvalidSnapshot,
     #[error("migration receipt operation id is empty or already recorded")]
     DuplicateMigrationReceipt,
+    #[error("migration receipt fields are invalid")]
+    InvalidMigrationReceipt,
+    #[error("migration receipt limit reached")]
+    MigrationReceiptLimitReached,
     #[error(transparent)]
     Lease(#[from] CloudWorkerLeaseError),
     #[error(transparent)]
@@ -383,4 +408,10 @@ mod tests {
             CloudWorkerOwnerError::InvalidWarmImageLimit
         );
     }
+}
+
+fn valid_text(value: &str, max_chars: usize) -> bool {
+    !value.trim().is_empty()
+        && value.chars().count() <= max_chars
+        && !value.chars().any(|character| character.is_control())
 }
