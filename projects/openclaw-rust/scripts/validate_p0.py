@@ -57,6 +57,7 @@ def structural():
     check(ledger["upstream"] == expected and rtm["upstream"] == expected, "Ledger/RTM source drift")
     check(idx["upstream"]["commit"] == up["commit"] and idx["upstream"]["tree"] == up["tree"], "Index/lock drift")
     check(not lock["closure"]["source_closure_ready"] and not idx["authority"]["source_closure_ready"], "Unproven closure asserted")
+    check(not idx["authority"].get("applicability_disposition_closure", False), "Unproven applicability/disposition closure asserted")
     check(not idx["inventory"]["semantic_read_complete"] and not idx["inventory"]["responsibility_decomposition_complete"], "Unproven semantic completion asserted")
     check(idx["inventory"]["omitted_known"] == ledger["file_coverage"]["omitted_known"] == 0, "Known omission")
     counts = inv["counts"]
@@ -82,6 +83,8 @@ def structural():
         seen[path] = e
         kind_counts[e["entry_kind"]] += 1
         check(e["source_repository"] == up["repository"] and e["source_commit"] == up["commit"] and e["source_tree"] == up["tree"], "File source identity drift: " + path)
+        check(e["applicability_status"] in {"unknown", "product", "non-product", "mixed"}, "Invalid applicability status: " + path)
+        check(e["disposition_status"] in {"pending", "deep-read-required", "deep-read", "grouped-evidence", "not-applicable"}, "Invalid disposition status: " + path)
         check(COMMIT_RE.fullmatch(e["sha"]) is not None, "Invalid object sha: " + path)
         check((e["blob_sha"] == e["sha"]) if e["git_type"] == "blob" else (e["blob_sha"] is None), "Blob identity mismatch: " + path)
         if e["entry_kind"] == "gitlink":
@@ -258,4 +261,4 @@ receipt = {
     "independent_review": "pending",
 }
 (EVIDENCE / "p0-structural-receipt.json").write_text(json.dumps(receipt, sort_keys=True, indent=2) + "\n")
-    print(f"OCRM-G01 tracked source and OCRM-G02 structural PASS for {len(inv['entries'])} paths; closure/open, unread remains honest, semantic implementation not-started")
+print(f"OCRM-G01 tracked source and OCRM-G02 structural PASS for {len(inv['entries'])} paths; closure/open, unread remains honest, semantic implementation not-started")

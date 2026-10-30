@@ -93,6 +93,8 @@
           "content_identity",
           "responsibility_ids",
           "responsibility_status",
+          "applicability_status",
+          "disposition_status",
           "disposition",
           "license_provenance",
           "reviewer",
@@ -223,6 +225,23 @@
               "unclassified",
               "mapped",
               "reviewed"
+            ]
+          },
+          "applicability_status": {
+            "enum": [
+              "unknown",
+              "product",
+              "non-product",
+              "mixed"
+            ]
+          },
+          "disposition_status": {
+            "enum": [
+              "pending",
+              "deep-read-required",
+              "deep-read",
+              "grouped-evidence",
+              "not-applicable"
             ]
           },
           "disposition": {

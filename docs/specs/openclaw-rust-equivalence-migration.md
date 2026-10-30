@@ -139,7 +139,7 @@ Git tree API 被截断时必须分子树继续枚举并核对集合；GitHub sea
 
 ### 6.2 文件记录
 
-每个路径至少记录：`source_repository`、`source_commit`、`source_tree`、`path`、`blob_sha`、`mode/type`、`size`、`language/kind`、`module_id`、`dependency_edges`、`read_state`、`read_ranges/content_identity`、`responsibility_ids`、`disposition`、`license/provenance`、`reviewer`、`evidence_refs`。
+每个路径至少记录：`source_repository`、`source_commit`、`source_tree`、`path`、`blob_sha`、`mode/type`、`size`、`language/kind`、`module_id`、`dependency_edges`、`read_state`、`read_ranges/content_identity`、`responsibility_ids`、`applicability_status`、`disposition_status`、`disposition`、`license/provenance`、`reviewer`、`evidence_refs`。`applicability_status` 与语义 `read_state` 独立；`disposition_status=grouped-evidence` 必须指向可复核的生成关系、引用、许可证、静态扫描或抽样证据，`unknown/pending` 不能计入 AC02 closure。
 
 同一 blob 位于多个路径时，可引用同一内容阅读记录，但路径用途、caller、构建条件与责任仍分别登记。不能重复计算 source coverage。生成文件必须追溯 schema、template、generator、使用方和生成结果；可以重建实现方式，不能省略生成出来的合同。二进制/资源按完整内容身份、用途、交互/版权/替换关系检查，不伪造行级阅读全文。
 

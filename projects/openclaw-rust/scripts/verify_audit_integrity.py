@@ -46,6 +46,19 @@ def main():
                 inventory_paths.add(path)
                 read_status = entry.get("read_status")
                 resp_status = entry.get("responsibility_status")
+                # Older committed shards predate the AC02 dimensions. Treat
+                # their absence as explicit unknown/pending so the integrity
+                # check remains backward-readable while a fresh Actions
+                # generator upgrades every row.
+                applicability_status = entry.get("applicability_status", "unknown")
+                disposition_status = entry.get("disposition_status", "pending")
+
+                if applicability_status not in {"unknown", "product", "non-product", "mixed"}:
+                    fail(f"{shard_path}:{line_no}: '{path}' has invalid applicability_status={applicability_status!r}")
+                if disposition_status not in {"pending", "deep-read-required", "deep-read", "grouped-evidence", "not-applicable"}:
+                    fail(f"{shard_path}:{line_no}: '{path}' has invalid disposition_status={disposition_status!r}")
+                if disposition_status == "grouped-evidence" and not entry.get("evidence_refs"):
+                    fail(f"{shard_path}:{line_no}: '{path}' grouped disposition has no evidence_refs")
 
                 if read_status in ("read", "read-complete"):
                     # Strict validation for claimed read files

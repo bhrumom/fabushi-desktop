@@ -13,7 +13,8 @@
     "generator": ".github/workflows/ocrm-p0-authority.yml",
     "latest_exact_head_evidence": null,
     "lfs_content_closed": false,
-    "source_closure_ready": false
+    "source_closure_ready": false,
+    "applicability_disposition_closure": false
   },
   "format_version": 1,
   "inventory": {
@@ -26,6 +27,9 @@
     "omitted_known": 0,
     "responsibility_decomposition_complete": false,
     "semantic_read_complete": false,
+    "applicability_assessed": null,
+    "dispositioned": null,
+    "unreviewed_applicable": null,
     "symlink_entries_total": 2,
     "tracked_entries_total": 58750,
     "unclassified": 57331,
