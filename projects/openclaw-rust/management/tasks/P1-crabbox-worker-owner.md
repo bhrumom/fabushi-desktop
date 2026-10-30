@@ -374,7 +374,8 @@ reconciliation. Migration/rollback receipts and
 `backup_existing` now syncs the copied backup and its directory entry before
 returning success; a barrier failure leaves the backup visible but reports a
 non-success outcome for recovery handling. Migration/rollback receipts and
-mutation-triggered persistence remain open. Both load and save reject state
+production producer invocation of the persistence boundary remain open. Both
+load and save reject state
 JSON larger than the explicit 8 MiB private-state bound before decoding or
 publication. Snapshot restore also revalidates lease scope/runtime/lifecycle
 identity and warm-image hold/state invariants instead of trusting public JSON
