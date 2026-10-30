@@ -358,7 +358,7 @@ impl DevicePairingOwner {
                 GatewayCommandError::BadRequest("device.pair.approve requires requestId".into())
             })?;
 
-        let conn = self.conn.lock().unwrap();
+        let mut conn = self.conn.lock().unwrap();
 
         // 1. Fetch pending record
         let pending = conn
@@ -439,8 +439,11 @@ impl DevicePairingOwner {
         }
         let tokens_json = Value::Object(token_entries).to_string();
 
-        // Atomic transaction: delete from pending, upsert into paired, bump revision
-        conn.execute(
+        // Atomic transaction: delete from pending, upsert into paired, bump revision.
+        let tx = conn.transaction().map_err(|error| {
+            GatewayCommandError::Internal(format!("Failed to begin pairing approval: {error}"))
+        })?;
+        tx.execute(
             "DELETE FROM device_pairing_pending WHERE request_id = ?1",
             params![request_id],
         )
@@ -448,7 +451,7 @@ impl DevicePairingOwner {
             GatewayCommandError::Internal(format!("Failed to delete pending request: {e}"))
         })?;
 
-        conn.execute(
+        tx.execute(
             r#"INSERT INTO device_pairing_paired (
                 device_id, public_key, display_name, platform, device_family,
                 client_id, client_mode, role, roles_json, scopes_json, approved_scopes_json,
@@ -465,8 +468,11 @@ impl DevicePairingOwner {
             ],
         ).map_err(|e| GatewayCommandError::Internal(format!("Failed to persist paired device: {e}")))?;
 
-        let new_rev = bump_revision(&conn).map_err(|e| {
+        let new_rev = bump_revision(&tx).map_err(|e| {
             GatewayCommandError::Internal(format!("Failed to bump pairing revision: {e}"))
+        })?;
+        tx.commit().map_err(|error| {
+            GatewayCommandError::Internal(format!("Failed to commit pairing approval: {error}"))
         })?;
 
         Ok(json!({
