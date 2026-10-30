@@ -2694,3 +2694,20 @@ including the registrar-required managed-identity negative path. It does not
 yet own workspace filesystem identity, process launch, cache policy, physical
 cleanup, or a production worker caller; R11/R12 and acceptance therefore
 remain in progress.
+
+## 202. Current command spelling correction in the Rust manifest (2026-10-31)
+
+The Rust `NodeHostManifest` builder previously retained obsolete `node.*`
+aliases and represented the three system-run commands as one synthetic name.
+The builder now uses the current command catalog spellings:
+`system.run.prepare`, `system.run`, `system.which`, `fs.listDir`,
+`terminal.upload`, `mcp.tools.call.v1`, `device.apps`,
+`system.execApprovals.get`, `system.execApprovals.set`,
+`agent.cli.claude.run.v1`, and `worker.desktop.stream.v1`. Every builtin is
+still admitted only when its positive availability entry is present, and the
+existing allowlist/ephemeral/plugin filtering remains in the same builder.
+
+The contract test records that stale `node.*` availability is ignored and that
+the system-run capability is emitted only with the current `system.run`
+command. This is a static contract correction only: no new producer, executor,
+remote transport, plugin inventory, or live acceptance was added.

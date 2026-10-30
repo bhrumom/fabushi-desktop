@@ -10,14 +10,17 @@
 use std::collections::{BTreeSet, HashSet};
 use serde::{Deserialize, Serialize};
 
-pub const NODE_AGENT_CLI_CLAUDE_RUN_COMMAND: &str = "node.agent_cli_claude_run";
-pub const NODE_DEVICE_APPS_COMMAND: &str = "node.device_apps";
-pub const NODE_EXEC_APPROVALS_COMMANDS: &str = "node.exec_approvals";
-pub const NODE_FS_LIST_DIR_COMMAND: &str = "node.fs_list_dir";
-pub const NODE_MCP_TOOLS_CALL_COMMAND: &str = "node.mcp_tools_call";
-pub const NODE_SYSTEM_RUN_COMMANDS: &str = "node.system_run";
-pub const NODE_TERMINAL_UPLOAD_COMMAND: &str = "node.terminal_upload";
-pub const NODE_DESKTOP_STREAM_COMMAND: &str = "node.desktop_stream";
+pub const NODE_AGENT_CLI_CLAUDE_RUN_COMMAND: &str = "agent.cli.claude.run.v1";
+pub const NODE_DEVICE_APPS_COMMAND: &str = "device.apps";
+pub const NODE_EXEC_APPROVALS_COMMANDS: &[&str] =
+    &["system.execApprovals.get", "system.execApprovals.set"];
+pub const NODE_FS_LIST_DIR_COMMAND: &str = "fs.listDir";
+pub const NODE_MCP_TOOLS_CALL_COMMAND: &str = "mcp.tools.call.v1";
+pub const NODE_SYSTEM_RUN_COMMAND: &str = "system.run";
+pub const NODE_SYSTEM_RUN_COMMANDS: &[&str] =
+    &["system.run.prepare", NODE_SYSTEM_RUN_COMMAND, "system.which"];
+pub const NODE_TERMINAL_UPLOAD_COMMAND: &str = "terminal.upload";
+pub const NODE_DESKTOP_STREAM_COMMAND: &str = "worker.desktop.stream.v1";
 
 pub const SYSTEM_RUN_EXECUTION_CONTEXT_CAPABILITY: &str = "system_run.execution_context";
 pub const NODE_CLAUDE_SKILLS_CAPABILITY: &str = "node.claude_skills";
@@ -57,14 +60,17 @@ impl NodeHostManifest {
         allowlist: Option<&HashSet<String>>,
     ) -> Self {
         let mut commands = BTreeSet::new();
-        for command in [
+        let builtin_commands = NODE_SYSTEM_RUN_COMMANDS
+            .iter()
+            .copied()
+            .chain([
             NODE_DEVICE_APPS_COMMAND,
-            NODE_EXEC_APPROVALS_COMMANDS,
             NODE_FS_LIST_DIR_COMMAND,
             NODE_MCP_TOOLS_CALL_COMMAND,
-            NODE_SYSTEM_RUN_COMMANDS,
             NODE_TERMINAL_UPLOAD_COMMAND,
-        ] {
+            ])
+            .chain(NODE_EXEC_APPROVALS_COMMANDS.iter().copied());
+        for command in builtin_commands {
             if available_commands.contains(command) {
                 commands.insert(command.to_string());
             }
@@ -88,7 +94,7 @@ impl NodeHostManifest {
         }
 
         let mut capabilities = BTreeSet::new();
-        if commands.contains(NODE_SYSTEM_RUN_COMMANDS) {
+        if commands.contains(NODE_SYSTEM_RUN_COMMAND) {
             capabilities.insert(SYSTEM_RUN_EXECUTION_CONTEXT_CAPABILITY.to_string());
         }
         if commands.contains(NODE_AGENT_CLI_CLAUDE_RUN_COMMAND) {

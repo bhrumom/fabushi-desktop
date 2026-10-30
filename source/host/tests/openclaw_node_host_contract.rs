@@ -8,7 +8,7 @@ use mahayana_host_runtime::extensions::node_host::command_dispatch::{
 };
 use mahayana_host_runtime::extensions::node_host::runtime_manifest::{
     NodeHostManifest, NODE_AGENT_CLI_CLAUDE_RUN_COMMAND, NODE_DESKTOP_STREAM_COMMAND,
-    NODE_SYSTEM_RUN_COMMANDS,
+    NODE_SYSTEM_RUN_COMMAND, NODE_SYSTEM_RUN_COMMANDS,
 };
 use mahayana_host_runtime::extensions::node_host::protocol_negotiation::{
     NodeHostProtocol, OfferedProtocolRange, negotiate_protocol,
@@ -207,7 +207,7 @@ fn test_ocrm_node_host_runtime_manifest() {
     let available_commands = [
         NODE_AGENT_CLI_CLAUDE_RUN_COMMAND,
         NODE_DESKTOP_STREAM_COMMAND,
-        NODE_SYSTEM_RUN_COMMANDS,
+        NODE_SYSTEM_RUN_COMMAND,
     ]
     .into_iter()
     .map(str::to_string)
@@ -215,13 +215,40 @@ fn test_ocrm_node_host_runtime_manifest() {
     let manifest = NodeHostManifest::build(&available_commands, true, true, None);
     assert!(manifest.advertised_commands.iter().any(|c| c == NODE_AGENT_CLI_CLAUDE_RUN_COMMAND));
     assert!(manifest.advertised_commands.iter().any(|c| c == NODE_DESKTOP_STREAM_COMMAND));
-    assert!(manifest.advertised_commands.iter().any(|c| c == NODE_SYSTEM_RUN_COMMANDS));
+    assert!(manifest.advertised_commands.iter().any(|c| c == NODE_SYSTEM_RUN_COMMAND));
 
     // With allowlist filter
     let mut allowlist = HashSet::new();
-    allowlist.insert(NODE_SYSTEM_RUN_COMMANDS.to_string());
+    allowlist.insert(NODE_SYSTEM_RUN_COMMAND.to_string());
     let filtered_manifest = NodeHostManifest::build(&available_commands, true, true, Some(&allowlist));
-    assert_eq!(filtered_manifest.advertised_commands, vec![NODE_SYSTEM_RUN_COMMANDS.to_string()]);
+    assert_eq!(filtered_manifest.advertised_commands, vec![NODE_SYSTEM_RUN_COMMAND.to_string()]);
+}
+
+#[test]
+fn test_ocrm_node_host_manifest_uses_current_system_command_names() {
+    let available_commands = NODE_SYSTEM_RUN_COMMANDS
+        .iter()
+        .map(|command| (*command).to_string())
+        .chain(["node.system_run".to_string()])
+        .collect::<HashSet<_>>();
+
+    let manifest = NodeHostManifest::build(&available_commands, false, false, None);
+
+    assert_eq!(
+        manifest.advertised_commands,
+        vec![
+            "system.run".to_string(),
+            "system.run.prepare".to_string(),
+            "system.which".to_string(),
+        ]
+    );
+    assert!(!manifest
+        .advertised_commands
+        .iter()
+        .any(|command| command.starts_with("node.")));
+    assert!(manifest
+        .capabilities
+        .contains(&"system_run.execution_context".to_string()));
 }
 
 #[test]
@@ -247,7 +274,7 @@ fn test_ocrm_node_host_manifest_normalizes_plugin_capabilities() {
 
 #[test]
 fn test_ocrm_node_host_manifest_composes_plugins_and_ephemeral_surface() {
-    let available_commands = [NODE_SYSTEM_RUN_COMMANDS.to_string()]
+    let available_commands = [NODE_SYSTEM_RUN_COMMAND.to_string()]
         .into_iter()
         .collect::<HashSet<_>>();
     let manifest = NodeHostManifest::build_with_plugin_manifest(
@@ -266,7 +293,7 @@ fn test_ocrm_node_host_manifest_composes_plugins_and_ephemeral_surface() {
 
     assert_eq!(
         manifest.advertised_commands,
-        vec!["node.system_run".to_string(), "plugin.command".to_string()]
+        vec!["plugin.command".to_string(), "system.run".to_string()]
     );
     assert!(manifest
         .capabilities
