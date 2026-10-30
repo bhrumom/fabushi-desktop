@@ -112,3 +112,11 @@ pending，允许满足主 Spec §11.1 的 scoped 单元继续推进。
 依赖前沿与待验证闭包条件；它不改变 `upstream.lock.json` 的 discovery-only
 状态，也不替代 exact-subject Actions inventory、LFS、integrity、license/
 NOTICE/SBOM 或 omitted/orphan negative evidence。
+
+随后对当前 discovery-only candidate
+`68fbe4ac429cdac7a54541df40367d66defd0161` / tree
+`a3c122b99571c0c33ff6a02ca4c4e32f05f9433d` 完成 NodeHost 关键来源的精确
+blob 读取与责任增量记录（见 `dossiers/node-host-scoped.md` §192）。该读取
+明确补充了当前 command catalog、manifest availability、optional publication
+与 invoke responder 的 mapping，但不提升 source authority、不重标旧
+inventory/closure，也不改变任何 global flag。

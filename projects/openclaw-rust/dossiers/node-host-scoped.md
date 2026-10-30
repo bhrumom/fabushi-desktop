@@ -2529,3 +2529,33 @@ missing certificate, unsupported stream, or mismatch. The fingerprint and
 certificate bytes are not placed in session metadata or logs. This closes the
 transport pinning implementation gap; real endpoint and device acceptance
 remain pending.
+
+## 192. Exact current NodeHost source read (2026-10-30)
+
+The current discovery candidate `openclaw/openclaw@68fbe4ac429cdac7a54541df40367d66defd0161`
+(`a3c122b99571c0c33ff6a02ca4c4e32f05f9433d`) was read directly at these exact
+blob identities:
+
+- `src/node-host/runtime-manifest.ts` — `856e0f728d07421741a8d3f16aade54b12e284cb`;
+- `src/node-host/connection.ts` — `da661abb04c1541fcc58b53a9d25d2aa5d565981`;
+- `src/node-host/client.ts` — `fa998d7a2c98c9db4ebc1cc1e891898ca83d15f5`;
+- `src/node-host/invoke-types.ts` — `720a2d16da2c2e653123b89422fa7e501fa92319`;
+- `src/infra/node-commands.ts` — `cda6b5ce41134002012e421d21ae4f5b37a10faa`.
+
+The manifest owner groups commands under system/mcp/device/native-auth/skills/
+screen capabilities, gates macOS app-exec `system.run`, installed-app sharing,
+desktop streaming, ephemeral restrictions, command allowlists, `pathEnv`, and
+optional `computerUse`. `connection.ts` owns a monotonically fenced generation,
+host-stat publication, runner inventory, plugin-tool and skill publication,
+legacy-unsupported/rejected/transient classification, and bounded 250–5000 ms
+retry timers. The client responder preserves original invoke ids/node ids,
+payload versus payloadJSON, and the server permission-details capability gate.
+The command catalog additionally defines public/private worker command families,
+admin-only browser/file commands, and the exact current command spellings.
+
+Fabushi Rust currently has only a transport-neutral manifest subset and a
+publication state owner; it does not yet have the current source's availability
+producer, worker inventory producer, exact command executor matrix, or live
+publication send/timer owner. The new command spellings are therefore recorded
+as an implementation frontier, not added to the advertised surface before the
+exact-source Actions authority and existing-owner execution mapping are closed.
