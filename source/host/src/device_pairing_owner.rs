@@ -23,6 +23,8 @@ pub struct DeviceTokenAuthorization {
     pub scopes: Vec<String>,
 }
 
+const PENDING_PAIRING_TTL_MS: i64 = 900_000;
+
 fn now_ms() -> i64 {
     SystemTime::now()
         .duration_since(UNIX_EPOCH)
@@ -134,6 +136,18 @@ fn bump_revision(conn: &Connection) -> Result<u64, rusqlite::Error> {
         params![format!("\"{next_rev}\""), now],
     )?;
     Ok(next_rev)
+}
+
+fn purge_expired_pending_requests(
+    conn: &Connection,
+    now: i64,
+) -> Result<(), rusqlite::Error> {
+    conn.execute(
+        "DELETE FROM device_pairing_pending
+         WHERE COALESCE(refreshed_at_ms, ts) <= ?1 - ?2",
+        params![now, PENDING_PAIRING_TTL_MS],
+    )?;
+    Ok(())
 }
 
 impl DevicePairingOwner {
@@ -385,6 +399,9 @@ impl DevicePairingOwner {
 
         let conn = self.conn.lock().unwrap();
         let now = now_ms();
+        purge_expired_pending_requests(&conn, now).map_err(|error| {
+            GatewayCommandError::Internal(format!("Failed to expire pending pairings: {error}"))
+        })?;
 
         // Check if device is already paired (is_repair)
         let is_repair: bool = conn
@@ -478,7 +495,7 @@ impl DevicePairingOwner {
                 "created": false,
                 "refreshedAtMs": now,
                 "isRepair": is_repair,
-                "expiresAtMs": now + 900_000
+                "expiresAtMs": now + PENDING_PAIRING_TTL_MS
             }));
         }
 
@@ -516,7 +533,7 @@ impl DevicePairingOwner {
             "deviceId": device_id,
             "created": true,
             "isRepair": is_repair,
-            "expiresAtMs": now + 900_000
+            "expiresAtMs": now + PENDING_PAIRING_TTL_MS
         }))
     }
 
@@ -525,6 +542,9 @@ impl DevicePairingOwner {
         let device_id = args.get("deviceId").and_then(Value::as_str).map(str::trim);
 
         let conn = self.conn.lock().unwrap();
+        purge_expired_pending_requests(&conn, now_ms()).map_err(|error| {
+            GatewayCommandError::Internal(format!("Failed to expire pending pairings: {error}"))
+        })?;
 
         if let Some(req_id) = request_id {
             let pending_exists: bool = conn
@@ -580,12 +600,15 @@ impl DevicePairingOwner {
             })?;
 
         let mut conn = self.conn.lock().unwrap();
+        purge_expired_pending_requests(&conn, now_ms()).map_err(|error| {
+            GatewayCommandError::Internal(format!("Failed to expire pending pairings: {error}"))
+        })?;
 
         // 1. Fetch pending record
         let pending = conn
             .query_row(
                 r#"SELECT device_id, public_key, display_name, platform, device_family,
-                      client_id, client_mode, role, roles_json, scopes_json, ts
+                      client_id, client_mode, browser_origin, role, roles_json, scopes_json, ts
                FROM device_pairing_pending WHERE request_id = ?1"#,
                 params![request_id],
                 |row| {
@@ -600,7 +623,8 @@ impl DevicePairingOwner {
                         row.get::<_, Option<String>>(7)?,
                         row.get::<_, Option<String>>(8)?,
                         row.get::<_, Option<String>>(9)?,
-                        row.get::<_, i64>(10)?,
+                        row.get::<_, Option<String>>(10)?,
+                        row.get::<_, i64>(11)?,
                     ))
                 },
             )
@@ -616,6 +640,7 @@ impl DevicePairingOwner {
             device_family,
             client_id,
             client_mode,
+            browser_origin,
             role,
             roles_json,
             scopes_json,
@@ -675,16 +700,17 @@ impl DevicePairingOwner {
         tx.execute(
             r#"INSERT INTO device_pairing_paired (
                 device_id, public_key, display_name, platform, device_family,
-                client_id, client_mode, role, roles_json, scopes_json, approved_scopes_json,
+                client_id, client_mode, browser_origin, role, roles_json, scopes_json, approved_scopes_json,
                 tokens_json, approved_via, created_at_ms, approved_at_ms, last_seen_at_ms
-            ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?10, ?11, 'owner', ?12, ?13, ?13)
+            ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?11, ?12, 'owner', ?13, ?14, ?14)
             ON CONFLICT(device_id) DO UPDATE SET
                 public_key = ?2, display_name = ?3, platform = ?4, device_family = ?5,
-                client_id = ?6, client_mode = ?7, role = ?8, roles_json = ?9, scopes_json = ?10,
-                approved_scopes_json = ?10, tokens_json = ?11, approved_at_ms = ?13, last_seen_at_ms = ?13"#,
+                client_id = ?6, client_mode = ?7, browser_origin = ?8, role = ?9,
+                roles_json = ?10, scopes_json = ?11, approved_scopes_json = ?11,
+                tokens_json = ?12, approved_at_ms = ?14, last_seen_at_ms = ?14"#,
             params![
                 device_id, public_key, display_name, platform, device_family,
-                client_id, client_mode, role, roles_json, scopes_json,
+                client_id, client_mode, browser_origin, role, roles_json, scopes_json,
                 tokens_json, created_at, now
             ],
         ).map_err(|e| GatewayCommandError::Internal(format!("Failed to persist paired device: {e}")))?;
@@ -721,6 +747,9 @@ impl DevicePairingOwner {
             })?;
 
         let conn = self.conn.lock().unwrap();
+        purge_expired_pending_requests(&conn, now_ms()).map_err(|error| {
+            GatewayCommandError::Internal(format!("Failed to expire pending pairings: {error}"))
+        })?;
 
         let device_id: String = conn
             .query_row(
@@ -749,6 +778,9 @@ impl DevicePairingOwner {
 
     pub fn handle_pair_list(&self, _args: &Value) -> Result<Value, GatewayCommandError> {
         let conn = self.conn.lock().unwrap();
+        purge_expired_pending_requests(&conn, now_ms()).map_err(|error| {
+            GatewayCommandError::Internal(format!("Failed to expire pending pairings: {error}"))
+        })?;
 
         let mut pending_stmt = conn.prepare(
             "SELECT request_id, device_id, display_name, platform, role, ts FROM device_pairing_pending"
@@ -1253,4 +1285,37 @@ pub fn validate_mobile_pairing_url(url: &str) -> Result<(), String> {
         );
     }
     Err("Invalid mobile pairing URL protocol; expected wss:// or ws://".to_string())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{DevicePairingOwner, PENDING_PAIRING_TTL_MS};
+    use rusqlite::params;
+    use serde_json::json;
+
+    #[test]
+    fn expired_pending_request_is_rejected_before_status_or_approval() {
+        let owner = DevicePairingOwner::in_memory().expect("pairing owner");
+        let expired_at = super::now_ms() - PENDING_PAIRING_TTL_MS - 1;
+        {
+            let conn = owner.conn.lock().expect("pairing database lock");
+            conn.execute(
+                "INSERT INTO device_pairing_pending
+                 (request_id, device_id, public_key, ts, refreshed_at_ms)
+                 VALUES (?1, ?2, ?3, ?4, ?4)",
+                params!["expired-request", "expired-device", "expired-key", expired_at],
+            )
+            .expect("insert expired pending request");
+        }
+
+        let status = owner
+            .handle_pair_status(&json!({ "requestId": "expired-request" }))
+            .expect("status lookup");
+        assert_eq!(status["status"], "rejected");
+
+        let approval = owner.handle_pair_approve(&json!({
+            "requestId": "expired-request"
+        }));
+        assert!(approval.is_err());
+    }
 }

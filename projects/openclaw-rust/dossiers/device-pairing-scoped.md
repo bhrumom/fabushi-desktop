@@ -203,6 +203,10 @@ pending rows before creating a new request. The original request then reports
 `rejected` rather than remaining a usable approval handle.
 
 This closes the local pending producer → SQLite owner → status consumer
-invariant. Pending expiry, approval-worker concurrency, reconnect-generation
-fencing, exact-head execution and companion acceptance remain separate open
-responsibilities.
+invariant, including the five-minute TTL based on the original or refreshed
+timestamp; expired rows are purged before status, approval, rejection, list,
+or a new request can reuse them. Approval-worker concurrency,
+reconnect-generation fencing, and companion acceptance remain separate open
+responsibilities. Approval now also carries the accepted `browserOrigin` from
+the pending row into the paired durable identity instead of dropping that
+binding at commit.
