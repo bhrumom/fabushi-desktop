@@ -2017,3 +2017,21 @@ source navigation by the later read-only candidate
 `SOURCE_OF_TRUTH.md` and main equivalence Spec. This note does not promote the
 candidate to the implementation lock, rewrite prior blob claims, or close
 inventory, dependency, Actions, or production-transport acceptance.
+
+## 163. Local Host event bus is not the node.event transport (2026-10-30)
+
+The current Rust `SandHostEventBus`/`GatewayEventHub` publishes Fabushi
+product events using the existing `channel` plus `payload` envelope and feeds
+the local Gateway/SSE projection. The Node Host `event_protocol.rs` contract
+instead produces the remote node `event` plus optional `payloadJSON` request
+parameters and applies a session-generation fence immediately before a future
+Gateway send. These envelopes have different owners and consumers; routing a
+`NodeEventPublication` through the local event bus would create a second
+protocol or mislabel a local timeline event as remote node delivery.
+
+No producer or live Gateway transport was added from this review. The next
+valid wiring unit remains a real Node Host connection/session owner that takes
+the fenced publication at the send edge, with reconnect, cancellation,
+backpressure and delivery receipts. The current event protocol and generation
+gate therefore remain transport-neutral implementation evidence, not remote
+event acceptance.
