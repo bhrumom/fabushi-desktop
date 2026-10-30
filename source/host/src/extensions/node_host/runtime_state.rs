@@ -58,6 +58,14 @@ impl NodeHostRuntimeState {
         self.invocations.admit(lease, invoke_id)
     }
 
+    /// Cancel an invocation only when the caller still owns the admitted
+    /// session generation. Transport/session owners use this before sending
+    /// a cancel frame; a predecessor or duplicate callback cannot cancel a
+    /// successor invocation with the same id.
+    pub fn cancel_invocation(&self, admission: &NodeInvocationAdmission) -> bool {
+        self.invocations.cancel(admission)
+    }
+
     pub fn settle_invocation(&self, admission: &NodeInvocationAdmission) -> bool {
         self.invocations.settle(admission)
     }
@@ -88,5 +96,18 @@ mod tests {
         let successor = runtime.connect(metadata("node-1"));
         assert!(!runtime.settle_invocation(&admission));
         assert!(runtime.admit_invocation(&successor, "invoke-1").is_ok());
+    }
+
+    #[test]
+    fn cancellation_is_generation_fenced_and_exactly_once() {
+        let runtime = NodeHostRuntimeState::new();
+        let session = runtime.connect(metadata("node-1"));
+        let admission = runtime
+            .admit_invocation(&session, "invoke-1")
+            .expect("admit");
+
+        assert!(runtime.cancel_invocation(&admission));
+        assert!(!runtime.cancel_invocation(&admission));
+        assert!(!runtime.settle_invocation(&admission));
     }
 }

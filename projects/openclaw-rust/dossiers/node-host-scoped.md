@@ -1839,3 +1839,20 @@ invocation owner, while pairing and RPC remain projections and existing local
 exec, Computer, stream, MCP, and worker owners remain the side-effect owners.
 No product code, generated shard/index state, parity-ledger status, completion
 flag, or verification result was changed by this audit.
+
+## 150. Runtime cancellation owner seam (2026-10-30)
+
+`NodeHostInvocationRegistry` already owned generation-fenced cancellation, but
+the canonical `NodeHostRuntimeState` composition exposed only admission and
+settlement. The runtime owner now exposes `cancel_invocation` so a future
+Gateway transport/session owner can cancel through the same lease-bound
+composition before sending `node.invoke.cancel`; a stale predecessor or
+duplicate callback is rejected by the existing generation/state fence. A
+focused contract case records exactly-once cancellation and rejects later
+settlement.
+
+This is an implementation seam only. It does not open a socket, publish a
+manifest, execute a remote command, or establish production transport wiring;
+the node-host responsibilities remain `wiring=not-wired`, verification
+`not-run`, and acceptance `pending` until the live transport owner and exact
+Actions/device evidence exist.
