@@ -62,6 +62,18 @@ impl NodeHostGatewayConfig {
                 return Err("node host gateway host has an invalid colon form".into());
             }
         }
+        if !self.tls {
+            let loopback = host.eq_ignore_ascii_case("localhost")
+                || host
+                    .trim_start_matches('[')
+                    .trim_end_matches(']')
+                    .parse::<std::net::IpAddr>()
+                    .map(|address| address.is_loopback())
+                    .unwrap_or(false);
+            if !loopback {
+                return Err("plaintext node host gateway endpoints must be loopback".into());
+            }
+        }
         if let Some(path) = self.context_path.as_deref() {
             let path = path.trim();
             if path.len() > 2048

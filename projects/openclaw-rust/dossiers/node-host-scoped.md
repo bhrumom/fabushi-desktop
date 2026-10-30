@@ -2044,5 +2044,6 @@ invalid TLS-fingerprint text before candidate selection. The candidate router
 requires every configured endpoint to pass that validation, and the URL
 formatter and base URL helper return explicit errors for unsafe override paths
 instead of constructing a malformed candidate. This is a transport-neutral
-security boundary; it does not open sockets, resolve SecretInput material, pin
-a peer, or claim Gateway/device acceptance.
+security boundary; plaintext is accepted only for loopback hosts, while
+non-loopback candidates require TLS. It does not open sockets, resolve
+SecretInput material, pin a peer, or claim Gateway/device acceptance.

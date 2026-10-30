@@ -181,5 +181,8 @@ mod tests {
 
         let host_with_port = NodeHostGatewayConfig::new("gateway.example:443", 18789, true);
         assert!(NodeHostGatewayCandidateRouter::new(&[host_with_port]).is_err());
+
+        let plaintext_public = NodeHostGatewayConfig::new("gateway.example", 18789, false);
+        assert!(NodeHostGatewayCandidateRouter::new(&[plaintext_public]).is_err());
     }
 }
