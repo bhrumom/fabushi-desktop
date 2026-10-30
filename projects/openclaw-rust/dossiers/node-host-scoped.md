@@ -2142,3 +2142,16 @@ This audit records a truthful local boundary and does not widen commands,
 capabilities, pairing, remote transport, or acceptance claims. Dynamic
 manifest refresh, challenge-bound connection, remote invoke/cancel/result
 transport, and device acceptance remain open.
+
+## 170. Local node registration projection (2026-10-30)
+
+The local `node.register` Gateway branch now returns the complete current
+`NodeHostSessionSnapshot` surface already owned by `NodeHostRuntimeState`:
+display/platform identity, advertised commands and capabilities, paired/
+connected/active state, local-gateway marker, and generation. This removes a
+lossy registration projection without creating a second node-state owner. The
+remote branch remains pairing-only and returns no live command surface until a
+canonical transport session is admitted.
+
+This is a local producer-to-consumer projection correction, not remote Node
+Host transport, dynamic manifest publication, or device acceptance evidence.

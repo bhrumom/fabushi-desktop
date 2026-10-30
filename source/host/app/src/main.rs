@@ -3909,9 +3909,16 @@ impl UnifiedGatewayApi {
             "ok": true,
             "status": "approved",
             "nodeId": node.node_id,
+            "displayName": node.display_name,
+            "platform": node.platform,
+            "deviceFamily": node.device_family,
+            "commands": node.commands,
+            "capabilities": node.capabilities,
             "paired": node.paired,
             "connected": node.connected,
             "active": node.active,
+            "gatewayLocal": node.gateway_local,
+            "generation": node.generation,
         }))
     }
 
