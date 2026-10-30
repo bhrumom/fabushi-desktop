@@ -4024,7 +4024,7 @@ impl UnifiedGatewayApi {
                 "nodeId": node_id,
                 "displayName": device.and_then(|d| d.get("displayName")).and_then(serde_json::Value::as_str).unwrap_or(node_id),
                 "platform": device.and_then(|d| d.get("platform")).and_then(serde_json::Value::as_str).unwrap_or("unknown"),
-                "deviceFamily": "remote",
+                "deviceFamily": device.and_then(|d| d.get("deviceFamily")).and_then(serde_json::Value::as_str).unwrap_or("remote"),
                 "commands": [],
                 "capabilities": [],
                 "connected": false,

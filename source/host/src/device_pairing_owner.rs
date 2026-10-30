@@ -401,20 +401,22 @@ impl DevicePairingOwner {
         }
 
         if let Some(dev_id) = device_id {
-            let paired_row: Option<(String, Option<String>)> = conn
+            let paired_row: Option<(String, Option<String>, Option<String>, Option<String>)> = conn
                 .query_row(
-                    "SELECT device_id, display_name FROM device_pairing_paired WHERE device_id = ?1",
+                    "SELECT device_id, display_name, platform, device_family FROM device_pairing_paired WHERE device_id = ?1",
                     params![dev_id],
-                    |row| Ok((row.get(0)?, row.get(1)?)),
+                    |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?, row.get(3)?)),
                 )
                 .ok();
 
-            if let Some((d_id, name)) = paired_row {
+            if let Some((d_id, name, platform, device_family)) = paired_row {
                 return Ok(json!({
                     "status": "approved",
                     "device": {
                         "deviceId": d_id,
-                        "displayName": name.unwrap_or_else(|| d_id.clone())
+                        "displayName": name.unwrap_or_else(|| d_id.clone()),
+                        "platform": platform,
+                        "deviceFamily": device_family
                     }
                 }));
             }

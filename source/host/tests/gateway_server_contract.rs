@@ -86,6 +86,8 @@ fn device_pairing_owner_authenticates_issued_token_with_role_and_scopes() {
         .handle_pair_request(&json!({
             "deviceId": "device-auth-1",
             "publicKey": "public-key-auth-1",
+            "platform": "macos",
+            "deviceFamily": "desktop",
             "roles": ["operator"],
             "scopes": ["operator.read", "operator.write"]
         }))
@@ -97,6 +99,11 @@ fn device_pairing_owner_authenticates_issued_token_with_role_and_scopes() {
     owner
         .handle_pair_approve(&json!({ "requestId": request_id }))
         .expect("pair approval");
+    let status = owner
+        .handle_pair_status(&json!({ "deviceId": "device-auth-1" }))
+        .expect("pair status");
+    assert_eq!(status["device"]["platform"], "macos");
+    assert_eq!(status["device"]["deviceFamily"], "desktop");
     let rotated = owner
         .handle_pair_rotate_token(&json!({ "deviceId": "device-auth-1", "role": "operator" }))
         .expect("token rotation");
