@@ -551,12 +551,18 @@ fn test_ocrm_cron_projection_does_not_invent_schedule_or_terminal_status() {
     assert!(list.contains("last_run.map(|run| run.status.clone())"));
     assert!(!list.contains("0 * * * *"));
     assert!(!list.contains("\"lastRunStatus\": \"ok\""));
+    assert!(!list.contains("if let Ok(records)"));
 
     let trigger_start = SHIPPING_HOST_MAIN
         .find("fn call_openclaw_cron_trigger(")
         .expect("shipping cron.trigger owner exists");
-    let trigger = &SHIPPING_HOST_MAIN[trigger_start..];
+    let trigger_end = SHIPPING_HOST_MAIN[trigger_start..]
+        .find("\n    fn call_openclaw_node_register(")
+        .map(|offset| trigger_start + offset)
+        .expect("shipping cron.trigger function boundary exists");
+    let trigger = &SHIPPING_HOST_MAIN[trigger_start..trigger_end];
     assert!(trigger.contains("previous_run_id"));
     assert!(trigger.contains("\"action\": if finished"));
     assert!(trigger.contains("unwrap_or(\"accepted\")"));
+    assert!(!trigger.contains("if let Ok(records)"));
 }

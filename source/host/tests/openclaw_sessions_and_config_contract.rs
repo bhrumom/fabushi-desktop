@@ -152,6 +152,18 @@ fn test_sessions_get_empty_messages_200_invariant() {
     let non_existent_result: Result<Value, GatewayCommandError> = Ok(json!({ "messages": [] }));
     let res = non_existent_result.expect("200 OK");
     assert_eq!(res["messages"].as_array().unwrap().len(), 0);
+
+    let shipping_source = include_str!("../app/src/main.rs");
+    let sessions_get = shipping_source
+        .split("fn call_openclaw_sessions_get(")
+        .nth(1)
+        .expect("shipping sessions.get owner exists");
+    let sessions_get = sessions_get
+        .split("fn call_openclaw_sessions_create(")
+        .next()
+        .expect("shipping sessions.get function boundary exists");
+    assert!(sessions_get.contains("map_err(GatewayCommandError::Internal)?"));
+    assert!(!sessions_get.contains("Err(_) => return Ok(serde_json::json!({ \"messages\": [] }))"));
 }
 
 #[test]

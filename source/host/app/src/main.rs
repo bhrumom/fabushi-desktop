@@ -3418,10 +3418,10 @@ impl UnifiedGatewayApi {
             raw_key
         };
 
-        let entries = match self.session_workers.read_agent_transcript_entries(agent_id) {
-            Ok(entries) => entries,
-            Err(_) => return Ok(serde_json::json!({ "messages": [] })),
-        };
+        let entries = self
+            .session_workers
+            .read_agent_transcript_entries(agent_id)
+            .map_err(GatewayCommandError::Internal)?;
 
         let limit = args.get("limit").and_then(serde_json::Value::as_u64).unwrap_or(200) as usize;
         let mut messages = Vec::new();
@@ -3649,8 +3649,10 @@ impl UnifiedGatewayApi {
 
         let mut jobs = Vec::new();
         for agent in agents {
-            if let Ok(records) = store.list_agent_automations(&agent.id) {
-                for r in records {
+            let records = store
+                .list_agent_automations(&agent.id)
+                .map_err(GatewayCommandError::Internal)?;
+            for r in records {
                     let schedule = if r.schedule.trim().is_empty() {
                         serde_json::json!({ "kind": "event" })
                     } else {
@@ -3688,7 +3690,6 @@ impl UnifiedGatewayApi {
                             "lastRunError": last_run.and_then(|run| run.detail.clone())
                         }
                     }));
-                }
             }
         }
 
@@ -3722,12 +3723,13 @@ impl UnifiedGatewayApi {
         let mut previous_run_id = None;
 
         for agent in &agents {
-            if let Ok(records) = store.list_agent_automations(&agent.id) {
-                if let Some(record) = records.iter().find(|r| r.id == job_id) {
-                    target_agent_id = Some(agent.id.clone());
-                    previous_run_id = record.runs.last().map(|run| run.id.clone());
-                    break;
-                }
+            let records = store
+                .list_agent_automations(&agent.id)
+                .map_err(GatewayCommandError::Internal)?;
+            if let Some(record) = records.iter().find(|r| r.id == job_id) {
+                target_agent_id = Some(agent.id.clone());
+                previous_run_id = record.runs.last().map(|run| run.id.clone());
+                break;
             }
         }
 
