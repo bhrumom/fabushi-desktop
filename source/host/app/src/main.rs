@@ -3416,7 +3416,9 @@ impl UnifiedGatewayApi {
             .unwrap_or_default();
 
         if raw_key.is_empty() {
-            return Ok(serde_json::json!({ "messages": [] }));
+            return Err(GatewayCommandError::BadRequest(
+                "sessions.get requires key, sessionKey, or sessionId".into(),
+            ));
         }
 
         reject_public_agent_harness_session_key(raw_key)
