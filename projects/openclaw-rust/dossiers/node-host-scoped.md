@@ -1982,3 +1982,15 @@ settlement, so a failed invocation cannot later publish a normal completion.
 This is lifecycle ownership only. It does not yet stop an already-running
 side-effect provider, deliver a cancellation frame over a live transport, or
 establish remote device acceptance; those owners remain pending.
+
+## 160. Canonical node.event payload envelope (2026-10-30)
+
+The live candidate's `node-event-params.ts` builds the event envelope with the
+event name and `payloadJSON`, using a JSON string for a defined payload and a
+JSON null field when no payload is supplied. Rust now models that exact
+transport-neutral envelope in `event_protocol.rs`, with focused serialization
+contracts for nested Unicode payloads and the absent-payload case.
+
+This does not select event producers, publish frames, own connection
+generation, or establish remote event delivery; those remain with the future
+Gateway transport/session owner.
