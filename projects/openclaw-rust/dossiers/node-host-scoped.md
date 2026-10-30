@@ -2506,10 +2506,13 @@ re-established.
 generation-bound state of optional plugin-tools, skills, and runner-inventory
 publications. It validates bounded JSON payloads, retains the latest attempt per
 publication kind, and applies only a matching current-generation settlement.
-Retiring a generation clears all prior records, so a predecessor callback is
-returned as `Stale` rather than mutating successor state. Retryable outcomes are
-clamped to the declared 30-second decision bound; the owner does not create a
-timer, socket, plugin registry, durable state, or retry loop.
+`NodeHostGatewaySession` now owns this state for its lifetime, checks the
+canonical runtime lease before beginning or settling a publication, and retires
+the state during close. Retiring a generation clears all prior records, so a
+predecessor callback is returned as `Stale` rather than mutating successor
+state. Retryable outcomes are clamped to the declared 30-second decision bound;
+the owner does not create a timer, socket, plugin registry, durable state, or
+retry loop.
 
 This closes the state contract identified for R5 without selecting a real
 availability producer or transport caller. Production publication, refresh

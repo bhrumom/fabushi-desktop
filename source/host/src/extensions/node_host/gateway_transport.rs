@@ -35,6 +35,12 @@ use super::invoke_protocol::{
 use super::invocation_registry::NodeInvocationAdmission;
 use super::invocation_runtime::NodeHostInvocationRuntime;
 use super::invocation_router::NodeHostInvocationRouter;
+use super::optional_publication::{
+    NodeHostOptionalPublicationHandle,
+    NodeHostOptionalPublicationKind, NodeHostOptionalPublicationOutcome,
+    NodeHostOptionalPublicationOwner, NodeHostOptionalPublicationRecord,
+    NodeHostOptionalPublicationSettlement,
+};
 use super::runtime_state::NodeHostRuntimeState;
 use super::runtime_manifest::NodeHostManifest;
 use super::session_registry::NodeHostSessionLease;
@@ -200,6 +206,7 @@ pub struct NodeHostGatewaySession {
     runtime: std::sync::Arc<NodeHostRuntimeState>,
     lease: NodeHostSessionLease,
     hello: NodeHostGatewayHello,
+    optional_publications: NodeHostOptionalPublicationOwner,
 }
 
 pub enum NodeHostGatewayInbound {
@@ -248,11 +255,14 @@ impl NodeHostGatewayTransport {
                 "Gateway session was retired during admission".into(),
             ));
         }
+        let generation = transport.generation();
         Ok(NodeHostGatewaySession {
             transport,
             runtime,
             lease,
             hello,
+            optional_publications: NodeHostOptionalPublicationOwner::new(generation)
+                .map_err(|error| NodeHostGatewayTransportError::Protocol(error.to_string()))?,
         })
     }
 
@@ -588,6 +598,44 @@ impl NodeHostGatewaySession {
         }
     }
 
+    /// Admit a generation-bound optional publication payload. Payload
+    /// selection remains with the future availability/plugin producer.
+    pub fn begin_optional_publication(
+        &mut self,
+        kind: NodeHostOptionalPublicationKind,
+        payload_json: String,
+    ) -> Result<NodeHostOptionalPublicationHandle, String> {
+        if !self.runtime.is_current(&self.lease) {
+            return Err("Gateway session is no longer current".into());
+        }
+        self.optional_publications
+            .begin(kind, payload_json)
+            .map_err(|error| error.to_string())
+    }
+
+    /// Apply a producer/transport outcome only to the current publication
+    /// attempt. This method does not retry or send anything itself.
+    pub fn settle_optional_publication(
+        &mut self,
+        handle: &NodeHostOptionalPublicationHandle,
+        outcome: NodeHostOptionalPublicationOutcome,
+    ) -> NodeHostOptionalPublicationSettlement {
+        if !self.runtime.is_current(&self.lease) {
+            return NodeHostOptionalPublicationSettlement::Stale;
+        }
+        self.optional_publications.settle(handle, outcome)
+    }
+
+    pub fn current_optional_publication(
+        &self,
+        kind: NodeHostOptionalPublicationKind,
+    ) -> Option<&NodeHostOptionalPublicationRecord> {
+        if !self.runtime.is_current(&self.lease) {
+            return None;
+        }
+        self.optional_publications.current(kind)
+    }
+
     pub fn lease(&self) -> &NodeHostSessionLease {
         &self.lease
     }
@@ -728,6 +776,13 @@ impl NodeHostGatewaySession {
     }
 
     pub fn close(mut self) -> Result<(), NodeHostGatewayTransportError> {
+        let retired_generation = self
+            .optional_publications
+            .generation()
+            .saturating_add(1);
+        let _ = self
+            .optional_publications
+            .retire_to(retired_generation);
         let _ = self.runtime.disconnect(&self.lease);
         self.transport.close()
     }
