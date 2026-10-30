@@ -2035,3 +2035,14 @@ the fenced publication at the send edge, with reconnect, cancellation,
 backpressure and delivery receipts. The current event protocol and generation
 gate therefore remain transport-neutral implementation evidence, not remote
 event acceptance.
+
+## 164. Candidate endpoint admission hardening (2026-10-30)
+
+`NodeHostGatewayConfig::validate` now rejects empty/control-bearing hosts,
+URL credential/separator characters, unsafe or oversized context paths, and
+invalid TLS-fingerprint text before candidate selection. The candidate router
+requires every configured endpoint to pass that validation, and the URL
+formatter returns an explicit error for unsafe override paths instead of
+constructing a malformed candidate. This is a transport-neutral security
+boundary; it does not open sockets, resolve SecretInput material, pin a peer,
+or claim Gateway/device acceptance.

@@ -44,6 +44,39 @@ impl NodeHostGatewayConfig {
         self
     }
 
+    pub fn validate(&self) -> Result<(), String> {
+        let host = self.host.trim();
+        if host.is_empty() {
+            return Err("node host gateway host must not be empty".into());
+        }
+        if host.chars().any(|character| character.is_control())
+            || host.chars().any(|character| matches!(character, '/' | '?' | '#' | '@'))
+        {
+            return Err("node host gateway host contains unsafe URL characters".into());
+        }
+        if let Some(path) = self.context_path.as_deref() {
+            let path = path.trim();
+            if path.len() > 2048
+                || path.chars().any(|character| character.is_control())
+                || path.contains('?')
+                || path.contains('#')
+                || path.contains('\\')
+            {
+                return Err("node host gateway context path is unsafe or too long".into());
+            }
+        }
+        if let Some(fingerprint) = self.tls_fingerprint.as_deref() {
+            let fingerprint = fingerprint.trim();
+            if fingerprint.is_empty()
+                || fingerprint.len() > 256
+                || fingerprint.chars().any(|character| character.is_control())
+            {
+                return Err("node host gateway TLS fingerprint is invalid".into());
+            }
+        }
+        Ok(())
+    }
+
     pub fn to_url(&self) -> String {
         let scheme = if self.tls { "https" } else { "http" };
         format!("{}://{}:{}", scheme, self.host, self.port)

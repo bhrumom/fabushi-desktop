@@ -28,6 +28,9 @@ impl NodeHostGatewayCandidateRouter {
         if candidates.is_empty() {
             return Err("node host gateway candidate list cannot be empty".into());
         }
+        for candidate in candidates {
+            candidate.validate()?;
+        }
         Ok(Self {
             candidate_count: candidates.len(),
             current_index: 0,
@@ -79,7 +82,18 @@ impl NodeHostGatewayCandidateRouter {
 pub fn format_gateway_candidate_url(
     gateway: &NodeHostGatewayConfig,
     context_path: Option<&str>,
-) -> String {
+) -> Result<String, String> {
+    gateway.validate()?;
+    if let Some(path) = context_path {
+        if path.len() > 2048
+            || path.chars().any(|character| character.is_control())
+            || path.contains('?')
+            || path.contains('#')
+            || path.contains('\\')
+        {
+            return Err("node host gateway context path is unsafe or too long".into());
+        }
+    }
     let host = if gateway.host.contains(':')
         && !(gateway.host.starts_with('[') && gateway.host.ends_with(']'))
     {
@@ -100,7 +114,7 @@ pub fn format_gateway_candidate_url(
             }
         })
         .unwrap_or_default();
-    format!("{scheme}://{host}:{}{path}", gateway.port)
+    Ok(format!("{scheme}://{host}:{}{path}", gateway.port))
 }
 
 #[cfg(test)]
@@ -115,13 +129,13 @@ mod tests {
         assert!(NodeHostGatewayCandidateRouter::new(&[]).is_err());
         let config = NodeHostGatewayConfig::new("2001:db8::1", 18789, true);
         assert_eq!(
-            format_gateway_candidate_url(&config, Some("gateway/v1")),
+            format_gateway_candidate_url(&config, Some("gateway/v1")).expect("candidate URL"),
             "wss://[2001:db8::1]:18789/gateway/v1"
         );
         let configured_path =
             NodeHostGatewayConfig::new("127.0.0.1", 18789, false).with_context_path("stored");
         assert_eq!(
-            format_gateway_candidate_url(&configured_path, None),
+            format_gateway_candidate_url(&configured_path, None).expect("candidate URL"),
             "ws://127.0.0.1:18789/stored"
         );
     }
@@ -151,5 +165,18 @@ mod tests {
         assert_eq!(router.on_close(true, true), CandidateCloseDecision::Stop);
         router.stop();
         assert_eq!(router.on_close(true, false), CandidateCloseDecision::Ignore);
+    }
+
+    #[test]
+    fn candidate_admission_rejects_unsafe_endpoint_components() {
+        let empty_host = NodeHostGatewayConfig::new("  ", 18789, true);
+        assert!(NodeHostGatewayCandidateRouter::new(&[empty_host]).is_err());
+
+        let unsafe_path = NodeHostGatewayConfig::new("gateway.example", 18789, true)
+            .with_context_path("/gateway?token=leak");
+        assert!(NodeHostGatewayCandidateRouter::new(&[unsafe_path]).is_err());
+
+        let unsafe_host = NodeHostGatewayConfig::new("gateway@example", 18789, true);
+        assert!(format_gateway_candidate_url(&unsafe_host, None).is_err());
     }
 }
