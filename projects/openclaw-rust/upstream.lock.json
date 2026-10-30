@@ -25,9 +25,9 @@
   "live_candidate": {
     "repository": "openclaw/openclaw",
     "ref": "refs/heads/main",
-    "commit": "b7a537eb6833ea16960c227d5fc223fcd08ccef6",
-    "tree": "804b4f9c70d2a24a2575cfe68bc682f6c6c98574",
-    "observed_at": "2026-10-30T09:39:57Z",
+    "commit": "68fbe4ac429cdac7a54541df40367d66defd0161",
+    "tree": "a3c122b99571c0c33ff6a02ca4c4e32f05f9433d",
+    "observed_at": "2026-10-30T09:42:45Z",
     "discovery_source": "GitHub commit/tree API",
     "recursive_tree_truncated": false,
     "recursive_tree_entries": 63521,
@@ -45,11 +45,11 @@
     "authority_status": "discovery-only; requires fresh GitHub Actions inventory and dependency closure"
   },
   "drift_from_discovery": {
-    "ahead_by": 5461,
-    "behind_by": 0,
-    "compare_files_returned": 300,
+    "ahead_by": null,
+    "behind_by": null,
+    "compare_files_returned": null,
     "compare_file_counts_are_not_complete": true,
-    "decision": "new-live-main-observed; retain-discovery-only-status-until-fresh-actions-inventory-and-dependency-closure"
+    "decision": "live-main-drifted-again; compare-counts-not-refreshed; retain-discovery-only-status-until-fresh-actions-inventory-and-dependency-closure"
   },
   "root_inputs": {
     "AGENTS.md": "c3deeccdb6b1a4c7137d56297e933bbf19f4d3bf",
