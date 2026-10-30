@@ -1,6 +1,8 @@
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
+const MAX_IMAGE_ID_CHARS: usize = 256;
+
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct CloudWorkerWarmImageGeneration(pub u64);
 
@@ -36,7 +38,7 @@ pub struct CloudWorkerWarmImage {
 impl CloudWorkerWarmImage {
     pub fn new(image_id: impl Into<String>) -> Result<Self, CloudWorkerWarmImageError> {
         let image_id = image_id.into();
-        if image_id.trim().is_empty() {
+        if !valid_image_id(&image_id) {
             return Err(CloudWorkerWarmImageError::InvalidImageId);
         }
         Ok(Self {
@@ -113,6 +115,15 @@ impl CloudWorkerWarmImage {
         Ok(())
     }
 
+    pub fn validate_persisted(&self) -> Result<(), CloudWorkerWarmImageError> {
+        if !valid_image_id(&self.image_id)
+            || (self.state != CloudWorkerWarmImageState::Available && self.hold_count != 0)
+        {
+            return Err(CloudWorkerWarmImageError::InvalidPersistedRecord);
+        }
+        Ok(())
+    }
+
     pub fn mark_capture_uncertain(
         &mut self,
         expected_generation: CloudWorkerWarmImageGeneration,
@@ -152,11 +163,19 @@ pub enum CloudWorkerWarmImageError {
     HoldLimitReached,
     #[error("warm-image generation exhausted")]
     GenerationExhausted,
+    #[error("persisted warm-image record is invalid")]
+    InvalidPersistedRecord,
     #[error("operation {operation:?} is invalid for state {state:?}")]
     InvalidOperation {
         state: CloudWorkerWarmImageState,
         operation: CloudWorkerWarmImageOperation,
     },
+}
+
+fn valid_image_id(value: &str) -> bool {
+    !value.trim().is_empty()
+        && value.chars().count() <= MAX_IMAGE_ID_CHARS
+        && !value.chars().any(|character| character.is_control())
 }
 
 #[cfg(test)]

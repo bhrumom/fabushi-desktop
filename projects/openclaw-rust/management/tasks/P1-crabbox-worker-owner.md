@@ -369,7 +369,9 @@ returning success; a barrier failure leaves the backup visible but reports a
 non-success outcome for recovery handling. Migration/rollback receipts and
 mutation-triggered persistence remain open. Both load and save reject state
 JSON larger than the explicit 8 MiB private-state bound before decoding or
-publication. The snapshot now carries
+publication. Snapshot restore also revalidates lease scope/runtime/lifecycle
+identity and warm-image hold/state invariants instead of trusting public JSON
+fields. The snapshot now carries
 append-only `CloudWorkerMigrationReceipt` records, and the store exposes an
 explicit non-overwriting `backup_existing` primitive; no legacy conversion is
 claimed until a real source format and migration oracle are supplied.

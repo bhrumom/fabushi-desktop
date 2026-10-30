@@ -1,6 +1,10 @@
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
+const MAX_LEASE_ID_CHARS: usize = 256;
+const MAX_SCOPE_CHARS: usize = 256;
+const MAX_RUNTIME_FIELD_CHARS: usize = 256;
+
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct CloudWorkerLeaseScope {
     pub account_scope: String,
@@ -134,6 +138,29 @@ impl CloudWorkerLeasedCapability {
 }
 
 impl CloudWorkerLease {
+    pub fn validate_persisted(&self) -> Result<(), CloudWorkerLeaseError> {
+        if !valid_text(&self.lease_id.0, MAX_LEASE_ID_CHARS) {
+            return Err(CloudWorkerLeaseError::InvalidPersistedRecord);
+        }
+        if !valid_text(&self.scope.account_scope, MAX_SCOPE_CHARS)
+            || !valid_text(&self.scope.device_scope, MAX_SCOPE_CHARS)
+        {
+            return Err(CloudWorkerLeaseError::InvalidPersistedRecord);
+        }
+        if !valid_text(&self.runtime.provider, MAX_RUNTIME_FIELD_CHARS)
+            || !valid_text(&self.runtime.profile, MAX_RUNTIME_FIELD_CHARS)
+            || !valid_text(&self.runtime.runtime_id, MAX_RUNTIME_FIELD_CHARS)
+        {
+            return Err(CloudWorkerLeaseError::InvalidPersistedRecord);
+        }
+        if (self.lifecycle == CloudWorkerLifecycle::OutcomeUnknown)
+            != (self.last_outcome == CloudWorkerMutationOutcome::OutcomeUnknown)
+        {
+            return Err(CloudWorkerLeaseError::InvalidPersistedRecord);
+        }
+        Ok(())
+    }
+
     pub fn capability(&self) -> Result<CloudWorkerLeasedCapability, CloudWorkerLeaseError> {
         if !matches!(
             self.lifecycle,
@@ -305,6 +332,14 @@ pub enum CloudWorkerLeaseError {
     },
     #[error("lease generation exhausted")]
     GenerationExhausted,
+    #[error("persisted lease record is invalid")]
+    InvalidPersistedRecord,
+}
+
+fn valid_text(value: &str, max_chars: usize) -> bool {
+    !value.trim().is_empty()
+        && value.chars().count() <= max_chars
+        && !value.chars().any(|character| character.is_control())
 }
 
 #[cfg(test)]

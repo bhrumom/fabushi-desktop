@@ -124,18 +124,17 @@ impl CloudWorkerProvisioningOwner {
             return Err(CloudWorkerOwnerError::WarmImageLimitReached);
         }
         for lease in snapshot.leases {
-            if lease.lease_id.0.trim().is_empty()
-                || owner.leases.insert(lease.lease_id.clone(), lease).is_some()
-            {
+            lease.validate_persisted()?;
+            if owner.leases.insert(lease.lease_id.clone(), lease).is_some() {
                 return Err(CloudWorkerOwnerError::InvalidSnapshot);
             }
         }
         for image in snapshot.warm_images {
-            if image.image_id.trim().is_empty()
-                || owner
-                    .warm_images
-                    .insert(image.image_id.clone(), image)
-                    .is_some()
+            image.validate_persisted()?;
+            if owner
+                .warm_images
+                .insert(image.image_id.clone(), image)
+                .is_some()
             {
                 return Err(CloudWorkerOwnerError::InvalidSnapshot);
             }
