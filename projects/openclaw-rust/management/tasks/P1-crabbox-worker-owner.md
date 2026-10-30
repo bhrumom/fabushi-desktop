@@ -5,8 +5,18 @@ Task ID: OCRM-P1-CRABBOX-WORKER
 Spec: [OCRM-001](../../../../docs/specs/openclaw-rust-equivalence-migration.md)
 ADR: [Crabbox worker owner boundary](../../decisions/2026-10-29-crabbox-worker-owner-boundary.md)
 Source dossier: [Crabbox node-enrollment owner audit](../../dossiers/crabbox-node-enrollment-owner-audit-20261029.md)
-Upstream lock: `ad8d12f126d29b0db204187adf5092db80294e70` / `04ccce62f1d74dc8e0c88290ae8ded027b7b0f16`
+Historical scoped source oracle (not current lock):
+`ad8d12f126d29b0db204187adf5092db80294e70` /
+`04ccce62f1d74dc8e0c88290ae8ded027b7b0f16`
 Last updated: 2026-10-29 (Asia/Shanghai)
+
+Current OpenClaw discovery candidate is recorded in
+`projects/openclaw-rust/upstream.lock.json` as commit
+`c32556b0cea7f63b33db0ac393affd71ecb0015b`, tree
+`e08d361d83ca9ca55aa93d49462d991d0a39efc`. It remains discovery-only until
+the exact-subject Actions inventory, dependency closure, and evidence envelope
+are produced; this task must not reuse the historical oracle as current source
+authority or promote the candidate without that rebaseline.
 
 ## 1. Context and problem
 
