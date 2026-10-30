@@ -15,6 +15,9 @@ on `NodeInvokeRequest`. This preserves the source representation for the
 existing node-host owner instead of presenting a fabricated zero-byte,
 unobserved request.
 
+The same adapter applies the node-host parser's 256 KiB `paramsJSON` bound;
+the public legacy entry point cannot bypass the wire-level resource limit.
+
 Evidence is limited to source inspection, static contract updates, and
 `git diff --check`; local OCRM tests/builds, remote node transport, and live
 device acceptance remain pending.

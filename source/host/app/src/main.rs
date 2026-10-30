@@ -247,7 +247,7 @@ use mahayana_host_runtime::extensions::node_host::session_registry::{
     NodeHostSessionLease, NodeHostSessionMetadata,
 };
 use mahayana_host_runtime::extensions::node_host::invoke_protocol::{
-    NodeInvokeRequest, NodeInvokeResult,
+    NodeInvokeRequest, NodeInvokeResult, MAX_PARAMS_JSON_BYTES,
 };
 use mahayana_host_runtime::extensions::node_host::invocation_runtime::NodeHostInvocationRuntime;
 use mahayana_host_runtime::extensions::node_host::runtime_state::NodeHostRuntimeState;
@@ -4044,6 +4044,11 @@ impl UnifiedGatewayApi {
                 "node.invoke system.run params could not be encoded as paramsJSON: {error}"
             ))
         })?;
+        if received_params_json.len() > MAX_PARAMS_JSON_BYTES {
+            return Err(GatewayCommandError::BadRequest(
+                "node.invoke system.run paramsJSON exceeds 256 KiB".into(),
+            ));
+        }
         let shell_command = params
             .get("command")
             .and_then(serde_json::Value::as_str)

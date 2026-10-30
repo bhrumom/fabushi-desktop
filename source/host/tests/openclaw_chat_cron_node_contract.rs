@@ -536,6 +536,8 @@ fn test_ocrm_node_o06_shipping_routes_to_unique_native_owners() {
     assert!(invoke.contains(".complete(terminal_result)"));
     assert!(invoke.contains("received_params_json: Some(received_params_json)"));
     assert!(invoke.contains("received_params_bytes: received_params_json.len()"));
+    assert!(invoke.contains("received_params_json.len() > MAX_PARAMS_JSON_BYTES"));
+    assert!(invoke.contains("paramsJSON exceeds 256 KiB"));
     assert!(invoke.contains("node.invoke system.run requires params.command"));
     assert!(invoke.contains("unsupported local node command"));
     assert!(SHIPPING_HOST_MAIN.contains("\"connected\": false"));
