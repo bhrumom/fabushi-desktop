@@ -568,7 +568,9 @@ fn test_ocrm_cron_projection_does_not_invent_schedule_or_terminal_status() {
         .expect("shipping cron.list function boundary exists");
     let list = &SHIPPING_HOST_MAIN[list_start..list_end];
     assert!(list.contains("\"kind\": \"event\""));
+    assert!(list.contains("last_run = r.runs.first()"));
     assert!(list.contains("last_run.map(|run| run.status.clone())"));
+    assert!(!list.contains("r.runs.last()"));
     assert!(!list.contains("0 * * * *"));
     assert!(!list.contains("\"lastRunStatus\": \"ok\""));
     assert!(!list.contains("if let Ok(records)"));
@@ -582,6 +584,8 @@ fn test_ocrm_cron_projection_does_not_invent_schedule_or_terminal_status() {
         .expect("shipping cron.trigger function boundary exists");
     let trigger = &SHIPPING_HOST_MAIN[trigger_start..trigger_end];
     assert!(trigger.contains("previous_run_id"));
+    assert!(trigger.contains("record.runs.first()"));
+    assert!(trigger.contains(".first()\n                    .filter"));
     assert!(trigger.contains("\"action\": if finished"));
     assert!(trigger.contains("unwrap_or(\"accepted\")"));
     assert!(!trigger.contains("if let Ok(records)"));

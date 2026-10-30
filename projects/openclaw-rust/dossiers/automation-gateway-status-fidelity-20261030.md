@@ -20,6 +20,12 @@ No second automation store or scheduler was added. The existing automation
 runtime remains the producer and lifecycle owner; this change only repairs the
 Gateway consumer projection.
 
+The runtime store orders bounded run history newest-first, so the Gateway
+consumer reads `runs.first()` for both `cron.list`'s last-run projection and
+`cron.trigger`'s before/after observation fence. Reading `runs.last()` would
+report the oldest retained run and could fail to observe a newly accepted
+trigger.
+
 ## Evidence limits
 
 Static source review and `git diff --check` are the only development evidence.

@@ -3744,7 +3744,9 @@ impl UnifiedGatewayApi {
                             "tz": "UTC"
                         })
                     };
-                    let last_run = r.runs.last();
+                    // FileAutomationStore keeps runs newest-first; the first
+                    // entry is therefore the only truthful last-run projection.
+                    let last_run = r.runs.first();
                     let updated_at_ms = r
                         .last_run_at
                         .unwrap_or(r.created_at)
@@ -3810,7 +3812,7 @@ impl UnifiedGatewayApi {
                 .map_err(GatewayCommandError::Internal)?;
             if let Some(record) = records.iter().find(|r| r.id == job_id) {
                 target_agent_id = Some(agent.id.clone());
-                previous_run_id = record.runs.last().map(|run| run.id.clone());
+                previous_run_id = record.runs.first().map(|run| run.id.clone());
                 break;
             }
         }
@@ -3833,7 +3835,7 @@ impl UnifiedGatewayApi {
             .and_then(|record| {
                 record
                     .runs
-                    .last()
+                    .first()
                     .filter(|run| previous_run_id.as_deref() != Some(run.id.as_str()))
                     .cloned()
             });
