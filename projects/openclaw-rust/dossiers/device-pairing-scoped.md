@@ -150,3 +150,16 @@ These responsibilities remain under Gateway auth, DevicePairing approval/token
 owners, and NodeHost connection admission; no second pairing or auth owner is
 introduced. Rust implementation, exact-head execution, and real-device
 acceptance remain pending.
+
+## 6. Setup-code endpoint provenance (2026-10-30)
+
+`DevicePairingOwner::handle_pair_setup_code` no longer emits a fabricated
+`http://127.0.0.1:8080` value. A caller may provide `gatewayUrl`, but the
+existing `validate_mobile_pairing_url` policy rejects public cleartext `ws://`
+and accepts only the declared secure/local forms; an omitted URL is not
+replaced with a guessed endpoint. This is a fail-closed producer/owner
+boundary: the current Host Gateway binds a runtime port after
+`start_gateway_server`, while the inspected Rust ingress is HTTP/TLS and does
+not yet provide the upstream websocket pairing/session transport. Therefore no
+automatic cross-device URL or live companion reachability is claimed until an
+existing transport owner supplies a real endpoint and consumer path.
