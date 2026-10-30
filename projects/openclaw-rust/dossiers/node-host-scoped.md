@@ -2391,6 +2391,7 @@ dispatch. The `connect_with_runtime` adapter admits a validated hello through
 the existing generation-fenced runtime owner and closes through that lease;
 its `admit_event` path also parses and generation-binds node invoke request,
 input, and cancel events before handing them to the existing invocation/side
-effect owners;
+effect owners; the underlying plain/TLS stream now applies a 30-second
+bounded read/write timeout, so a request cannot wait forever in the owner.
 TLS fingerprint pinning is rejected rather than ignored. No remote command is
 advertised or enabled by this slice alone.

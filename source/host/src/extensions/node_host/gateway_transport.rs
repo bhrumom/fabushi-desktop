@@ -40,6 +40,7 @@ const CONNECT_REQUEST_ID_PREFIX: &str = "connect";
 const DEFAULT_PROTOCOL: u16 = 3;
 const MAX_PROTOCOL: u16 = 4;
 const MAX_HELLO_BYTES: usize = 4 * 1024 * 1024;
+const GATEWAY_IO_TIMEOUT_MS: u64 = 30_000;
 
 type GatewaySocket = WebSocket<MaybeTlsStream<TcpStream>>;
 
@@ -258,6 +259,7 @@ impl NodeHostGatewayTransport {
         websocket_config.max_message_size = Some(MAX_HELLO_BYTES);
         websocket_config.max_frame_size = Some(MAX_HELLO_BYTES);
         let (mut socket, _) = connect_with_config(endpoint, Some(websocket_config), 0)?;
+        set_gateway_io_timeout(&mut socket, std::time::Duration::from_millis(GATEWAY_IO_TIMEOUT_MS))?;
         let mut transport = Self {
             socket,
             config,
@@ -509,6 +511,28 @@ impl NodeHostGatewayTransport {
         }
     }
 
+}
+
+fn set_gateway_io_timeout(
+    socket: &mut GatewaySocket,
+    timeout: std::time::Duration,
+) -> Result<(), NodeHostGatewayTransportError> {
+    match socket.get_mut() {
+        MaybeTlsStream::Plain(stream) => {
+            stream.set_read_timeout(Some(timeout))?;
+            stream.set_write_timeout(Some(timeout))?;
+        }
+        MaybeTlsStream::Rustls(stream) => {
+            stream.sock.set_read_timeout(Some(timeout))?;
+            stream.sock.set_write_timeout(Some(timeout))?;
+        }
+        _ => {
+            return Err(NodeHostGatewayTransportError::Config(
+                "unsupported Gateway TLS stream implementation".into(),
+            ));
+        }
+    }
+    Ok(())
 }
 
 impl NodeHostGatewaySession {
