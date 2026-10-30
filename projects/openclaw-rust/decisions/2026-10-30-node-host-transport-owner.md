@@ -75,6 +75,13 @@ plaintext persistence, session/RPC projection, arbitrary environment fallback,
 or raw-header logging. This is a design/unblock condition, not a production
 implementation or acceptance claim.
 
+The Rust slice now exposes this as an injected `NodeHostSecretMaterializer`
+contract and accepts only opaque paired references in transport configuration.
+The transport adds `CF-Access-Client-Id` and `CF-Access-Client-Secret` only to
+the WebSocket upgrade request, then drops the materialized lease from its
+configuration/state. No concrete resolver or production caller exists yet;
+the no-resolver path remains fail-closed.
+
 ## Caller reachability revalidation (2026-10-30)
 
 A read-only search of the current checkout found no legitimate production

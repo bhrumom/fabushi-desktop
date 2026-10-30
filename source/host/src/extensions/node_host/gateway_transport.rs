@@ -11,6 +11,7 @@ use std::path::PathBuf;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use serde_json::{Map, Value, json};
+use tungstenite::http::{HeaderValue, Request};
 use tungstenite::protocol::{Message, WebSocket, WebSocketConfig};
 use tungstenite::stream::MaybeTlsStream;
 use tungstenite::{Error as WebSocketError, connect_with_config};
@@ -44,6 +45,10 @@ use super::optional_publication::{
 };
 use super::runtime_state::NodeHostRuntimeState;
 use super::runtime_manifest::NodeHostManifest;
+use super::secret_materializer::{
+    NodeHostCloudflareAccessCredentials, NodeHostCloudflareAccessInput,
+    NodeHostSecretMaterializer, SharedNodeHostSecretMaterializer,
+};
 use super::session_registry::NodeHostSessionLease;
 
 const CONNECT_REQUEST_ID_PREFIX: &str = "connect";
@@ -58,6 +63,9 @@ type GatewaySocket = WebSocket<MaybeTlsStream<TcpStream>>;
 #[derive(Clone)]
 pub struct NodeHostGatewayTransportConfig {
     pub gateway: NodeHostGatewayConfig,
+    /// Opaque references only. Values are resolved for the WebSocket upgrade
+    /// and never enter the live session state.
+    pub access: Option<NodeHostCloudflareAccessInput>,
     pub identity_path: Option<PathBuf>,
     pub token_path: Option<PathBuf>,
     pub bootstrap_token: Option<String>,
@@ -76,6 +84,9 @@ pub struct NodeHostGatewayTransportConfig {
 impl NodeHostGatewayTransportConfig {
     pub fn validate(&self) -> Result<(), String> {
         self.gateway.validate()?;
+        if self.access.is_some() && !self.gateway.tls {
+            return Err("Cloudflare Access requires a TLS Gateway endpoint".into());
+        }
         for (name, value) in [
             ("client id", self.client_id.as_str()),
             ("client mode", self.client_mode.as_str()),
@@ -224,6 +235,14 @@ impl NodeHostGatewayTransport {
         config: NodeHostGatewayTransportConfig,
         runtime: std::sync::Arc<NodeHostRuntimeState>,
     ) -> Result<NodeHostGatewaySession, NodeHostGatewayTransportError> {
+        Self::connect_with_runtime_and_materializer(config, runtime, None)
+    }
+
+    pub fn connect_with_runtime_and_materializer(
+        config: NodeHostGatewayTransportConfig,
+        runtime: std::sync::Arc<NodeHostRuntimeState>,
+        materializer: Option<&dyn NodeHostSecretMaterializer>,
+    ) -> Result<NodeHostGatewaySession, NodeHostGatewayTransportError> {
         let node_id = load_or_create_host_node_identity(config.identity_path.as_deref())
             .map_err(NodeHostGatewayTransportError::Credential)?
             .device_id()
@@ -242,7 +261,7 @@ impl NodeHostGatewayTransport {
             paired: true,
             gateway_local: false,
         };
-        let (transport, hello) = Self::connect(config)?;
+        let (transport, hello) = Self::connect_with_materializer(config, materializer)?;
         let lease = runtime.connect(metadata);
         if !runtime.set_active(&lease, true) {
             let _ = runtime.disconnect(&lease);
@@ -264,13 +283,29 @@ impl NodeHostGatewayTransport {
     pub fn connect(
         config: NodeHostGatewayTransportConfig,
     ) -> Result<(Self, NodeHostGatewayHello), NodeHostGatewayTransportError> {
+        Self::connect_with_materializer(config, None)
+    }
+
+    pub fn connect_with_shared_materializer(
+        config: NodeHostGatewayTransportConfig,
+        materializer: SharedNodeHostSecretMaterializer,
+    ) -> Result<(Self, NodeHostGatewayHello), NodeHostGatewayTransportError> {
+        Self::connect_with_materializer(config, Some(materializer.as_ref()))
+    }
+
+    fn connect_with_materializer(
+        config: NodeHostGatewayTransportConfig,
+        materializer: Option<&dyn NodeHostSecretMaterializer>,
+    ) -> Result<(Self, NodeHostGatewayHello), NodeHostGatewayTransportError> {
         let endpoint = config.endpoint().map_err(NodeHostGatewayTransportError::Config)?;
         let identity = load_or_create_host_node_identity(config.identity_path.as_deref())
             .map_err(NodeHostGatewayTransportError::Credential)?;
         let mut websocket_config = WebSocketConfig::default();
         websocket_config.max_message_size = Some(MAX_HELLO_BYTES);
         websocket_config.max_frame_size = Some(MAX_HELLO_BYTES);
-        let (mut socket, _) = connect_with_config(endpoint, Some(websocket_config), 0)?;
+        let access = materialize_access(&config, materializer)?;
+        let request = build_gateway_request(&endpoint, access.as_ref())?;
+        let (mut socket, _) = connect_with_config(request, Some(websocket_config), 0)?;
         verify_gateway_tls_fingerprint(
             &socket,
             config.gateway.tls_fingerprint.as_deref(),
@@ -553,6 +588,54 @@ impl NodeHostGatewayTransport {
         }
     }
 
+}
+
+fn materialize_access(
+    config: &NodeHostGatewayTransportConfig,
+    materializer: Option<&dyn NodeHostSecretMaterializer>,
+) -> Result<Option<NodeHostCloudflareAccessCredentials>, NodeHostGatewayTransportError> {
+    let Some(input) = config.access.as_ref() else {
+        return Ok(None);
+    };
+    let Some(materializer) = materializer else {
+        return Err(NodeHostGatewayTransportError::Config(
+            "Cloudflare Access requires an injected NodeHost SecretInput materializer".into(),
+        ));
+    };
+    let origin = config
+        .origin_scope()
+        .map_err(NodeHostGatewayTransportError::Config)?;
+    materializer
+        .materialize_cloudflare_access(&origin, input)
+        .map(Some)
+        .map_err(NodeHostGatewayTransportError::Config)
+}
+
+fn build_gateway_request(
+    endpoint: &str,
+    access: Option<&NodeHostCloudflareAccessCredentials>,
+) -> Result<Request<()>, NodeHostGatewayTransportError> {
+    let mut builder = Request::builder().uri(endpoint);
+    if let Some(access) = access {
+        let client_id = HeaderValue::try_from(access.client_id()).map_err(|_| {
+            NodeHostGatewayTransportError::Config(
+                "Cloudflare Access client id cannot be encoded as a header".into(),
+            )
+        })?;
+        let client_secret = HeaderValue::try_from(access.client_secret()).map_err(|_| {
+            NodeHostGatewayTransportError::Config(
+                "Cloudflare Access client secret cannot be encoded as a header".into(),
+            )
+        })?;
+        builder = builder
+            .header("CF-Access-Client-Id", client_id)
+            .header("CF-Access-Client-Secret", client_secret);
+    }
+    builder.body(()).map_err(|error| {
+        NodeHostGatewayTransportError::Config(format!(
+            "failed to build Gateway WebSocket request: {error}"
+        ))
+    })
 }
 
 fn set_gateway_io_timeout(

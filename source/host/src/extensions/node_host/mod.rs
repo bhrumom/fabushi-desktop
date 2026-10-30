@@ -24,3 +24,4 @@ pub mod runtime_state;
 pub mod reconnect;
 pub mod optional_publication;
 pub mod gateway_lifecycle;
+pub mod secret_materializer;

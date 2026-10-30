@@ -12,6 +12,7 @@ use super::gateway_transport::{
 };
 use super::reconnect::{NodeHostReconnectDecision, NodeHostReconnectPolicy};
 use super::runtime_state::NodeHostRuntimeState;
+use super::secret_materializer::SharedNodeHostSecretMaterializer;
 
 pub struct NodeHostGatewayLifecycle {
     runtime: Arc<NodeHostRuntimeState>,
@@ -35,10 +36,29 @@ impl NodeHostGatewayLifecycle {
         &mut self,
         config: NodeHostGatewayTransportConfig,
     ) -> Result<(), NodeHostGatewayTransportError> {
+        self.connect_once_with_materializer(config, None)
+    }
+
+    pub fn connect_once_with_materializer(
+        &mut self,
+        config: NodeHostGatewayTransportConfig,
+        materializer: Option<SharedNodeHostSecretMaterializer>,
+    ) -> Result<(), NodeHostGatewayTransportError> {
         if let Some(session) = self.session.take() {
             session.close()?;
         }
-        match NodeHostGatewayTransport::connect_with_runtime(config, Arc::clone(&self.runtime)) {
+        let connected = match materializer {
+            Some(materializer) => NodeHostGatewayTransport::connect_with_runtime_and_materializer(
+                config,
+                Arc::clone(&self.runtime),
+                Some(materializer.as_ref()),
+            ),
+            None => NodeHostGatewayTransport::connect_with_runtime(
+                config,
+                Arc::clone(&self.runtime),
+            ),
+        };
+        match connected {
             Ok(session) => {
                 self.policy.on_hello();
                 self.last_decision = None;

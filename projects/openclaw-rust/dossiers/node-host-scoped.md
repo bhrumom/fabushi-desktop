@@ -2637,3 +2637,15 @@ origin-scoped opaque references, resolves values only at connection time,
 registers them with a canonical redaction lifecycle, and releases them after
 request construction/teardown. No plaintext, arbitrary environment fallback,
 session projection, or raw header logging is authorized by this evidence.
+
+## 199. Injected Cloudflare Access transport seam (2026-10-30)
+
+Rust now exposes `NodeHostSecretMaterializer` with paired opaque references and
+an origin-scoped, short-lived credential result. `NodeHostGatewayTransport`
+accepts that resolver only through an explicit caller path and places the
+materialized values in the two Cloudflare Access WebSocket upgrade headers;
+they are not part of `NodeHostGatewayTransportConfig` as plaintext, the live
+session, or the RPC projection. No concrete resolver, redaction registry
+implementation, startup caller, or real Gateway acceptance was added. A
+configured Access pair without the injected owner is rejected before socket
+creation.
