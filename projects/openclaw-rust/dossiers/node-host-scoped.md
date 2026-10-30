@@ -2312,7 +2312,7 @@ The Host credential boundary now also owns a versioned
 `host-node-auth.json` store. Entries are keyed by normalized device id, role,
 and optional Gateway origin scope; reads validate the entry identity against
 its key, and token objects do not implement `Debug`. Writes and clears use an
-exclusive lock plus an atomic replacement and accept an optional
+exclusive lock plus a temporary-file replacement and accept an optional
 `expectedToken`, so stale rotation or cleanup cannot overwrite/remove a
 successor credential. Scopes are trimmed, deduplicated, sorted, and bounded;
 the store is owner-readable on Unix.
