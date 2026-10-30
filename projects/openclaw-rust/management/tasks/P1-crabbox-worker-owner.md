@@ -403,6 +403,12 @@ are rejected, while valid status events round-trip through the typed event.
 This remains a protocol contract only; it does not claim a live publisher,
 renderer, CLI, or provider mutation path.
 
+The Coordinator status projection now uses a closed serializable status enum
+(`disabled`, `enabled`, `unavailable`) rather than an unconstrained string.
+Unknown future status values are rejected at the decode boundary, preserving
+the poisoned-owner `unavailable` signal without implying provider readiness or
+production mutation capability.
+
 The owner now exposes an ephemeral `CloudWorkerLeasedCapability` only for an
 enrolled lease whose last mutation completed successfully. The capability is
 fenced by account/device scope, lease ID, owner epoch, generation and runtime

@@ -32,9 +32,17 @@ impl CloudWorkerCoordinatorCommand {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum CloudWorkerCoordinatorStatus {
+    Disabled,
+    Enabled,
+    Unavailable,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct CloudWorkerStatusProjection {
     pub owner: String,
-    pub status: String,
+    pub status: CloudWorkerCoordinatorStatus,
     #[serde(rename = "providerReady")]
     pub provider_ready: bool,
     #[serde(rename = "productionMutation")]
@@ -43,7 +51,11 @@ pub struct CloudWorkerStatusProjection {
 
 impl CloudWorkerStatusProjection {
     pub fn is_disabled(&self) -> bool {
-        self.status == "disabled"
+        self.status == CloudWorkerCoordinatorStatus::Disabled
+    }
+
+    pub fn is_unavailable(&self) -> bool {
+        self.status == CloudWorkerCoordinatorStatus::Unavailable
     }
 }
 
@@ -97,7 +109,7 @@ mod tests {
     fn status_projection_preserves_disabled_boundary() {
         let projection = CloudWorkerStatusProjection {
             owner: "cloud-workers".into(),
-            status: "disabled".into(),
+            status: CloudWorkerCoordinatorStatus::Disabled,
             provider_ready: false,
             production_mutation: false,
         };
@@ -107,11 +119,31 @@ mod tests {
     }
 
     #[test]
+    fn status_projection_preserves_unavailable_as_a_closed_state() {
+        let projection: CloudWorkerStatusProjection = serde_json::from_value(serde_json::json!({
+            "owner": "cloud-workers",
+            "status": "unavailable",
+            "providerReady": false,
+            "productionMutation": false
+        }))
+        .unwrap();
+        assert!(projection.is_unavailable());
+        assert!(!projection.is_disabled());
+        assert!(serde_json::from_value::<CloudWorkerStatusProjection>(serde_json::json!({
+            "owner": "cloud-workers",
+            "status": "future-status",
+            "providerReady": false,
+            "productionMutation": false
+        }))
+        .is_err());
+    }
+
+    #[test]
     fn event_round_trip_is_scoped_to_the_registered_family() {
         let event = CloudWorkerCoordinatorEvent::StatusChanged {
             projection: CloudWorkerStatusProjection {
                 owner: "cloud-workers".into(),
-                status: "disabled".into(),
+                status: CloudWorkerCoordinatorStatus::Disabled,
                 provider_ready: false,
                 production_mutation: false,
             },
