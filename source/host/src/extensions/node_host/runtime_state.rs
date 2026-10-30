@@ -4,6 +4,7 @@
 //! invocation draining without owning sockets, credentials, or side effects.
 
 use super::invocation_registry::{NodeHostInvocationRegistry, NodeInvocationAdmission};
+use super::invoke_protocol::NodeInvokeCancel;
 use super::session_registry::{
     NodeHostSessionLease, NodeHostSessionMetadata, NodeHostSessionRegistry,
     NodeHostSessionSnapshot,
@@ -66,6 +67,25 @@ impl NodeHostRuntimeState {
         self.invocations.cancel(admission)
     }
 
+    /// Bind a parsed cancel frame to the currently owned session before
+    /// changing invocation state. A frame for another node cannot cross the
+    /// transport/session boundary, even when its invocation id is valid.
+    pub fn cancel_invocation_frame(
+        &self,
+        lease: &NodeHostSessionLease,
+        cancel: &NodeInvokeCancel,
+    ) -> Result<bool, String> {
+        if cancel.node_id != lease.node_id {
+            return Err("node invocation cancel does not belong to the session".into());
+        }
+        let admission = NodeInvocationAdmission {
+            invoke_id: cancel.invoke_id.clone(),
+            node_id: lease.node_id.clone(),
+            generation: lease.generation,
+        };
+        Ok(self.cancel_invocation(&admission))
+    }
+
     pub fn settle_invocation(&self, admission: &NodeInvocationAdmission) -> bool {
         self.invocations.settle(admission)
     }
@@ -109,5 +129,21 @@ mod tests {
         assert!(runtime.cancel_invocation(&admission));
         assert!(!runtime.cancel_invocation(&admission));
         assert!(!runtime.settle_invocation(&admission));
+    }
+
+    #[test]
+    fn cancel_frame_cannot_cross_node_session_boundary() {
+        let runtime = NodeHostRuntimeState::new();
+        let session = runtime.connect(metadata("node-1"));
+        let admission = runtime
+            .admit_invocation(&session, "invoke-1")
+            .expect("admit");
+        let cancel = NodeInvokeCancel {
+            invoke_id: admission.invoke_id.clone(),
+            node_id: "node-2".into(),
+        };
+
+        assert!(runtime.cancel_invocation_frame(&session, &cancel).is_err());
+        assert!(runtime.settle_invocation(&admission));
     }
 }

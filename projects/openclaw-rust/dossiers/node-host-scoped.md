@@ -1844,12 +1844,13 @@ flag, or verification result was changed by this audit.
 
 `NodeHostInvocationRegistry` already owned generation-fenced cancellation, but
 the canonical `NodeHostRuntimeState` composition exposed only admission and
-settlement. The runtime owner now exposes `cancel_invocation` so a future
-Gateway transport/session owner can cancel through the same lease-bound
-composition before sending `node.invoke.cancel`; a stale predecessor or
-duplicate callback is rejected by the existing generation/state fence. A
-focused contract case records exactly-once cancellation and rejects later
-settlement.
+settlement. The runtime owner now exposes `cancel_invocation` and a parsed
+`NodeInvokeCancel` adapter so a future Gateway transport/session owner can
+cancel through the same lease-bound composition before sending
+`node.invoke.cancel`; a stale predecessor, wrong node, or duplicate callback
+is rejected by the existing generation/state fence. Focused contract cases
+record exactly-once cancellation, reject later settlement, and reject a
+cross-node cancel frame.
 
 This is an implementation seam only. It does not open a socket, publish a
 manifest, execute a remote command, or establish production transport wiring;
