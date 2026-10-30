@@ -562,17 +562,32 @@ impl DevicePairingOwner {
             .unwrap_or("operator");
         let conn = self.conn.lock().unwrap();
 
-        let count: i64 = conn
+        let roles_json: Option<String> = conn
             .query_row(
-                "SELECT COUNT(1) FROM device_pairing_paired WHERE device_id = ?1",
+                "SELECT roles_json FROM device_pairing_paired WHERE device_id = ?1",
                 params![device_id],
                 |row| row.get(0),
             )
-            .unwrap_or(0);
+            .map_err(|_| {
+                GatewayCommandError::BadRequest(format!("unknown deviceId: {device_id}"))
+            })?;
 
-        if count == 0 {
+        let approved_roles = roles_json
+            .as_deref()
+            .map(serde_json::from_str::<Value>)
+            .transpose()
+            .map_err(|error| {
+                GatewayCommandError::Internal(format!("invalid approved device roles: {error}"))
+            })?
+            .and_then(|value| value.as_array().cloned())
+            .unwrap_or_default();
+        if !approved_roles
+            .iter()
+            .filter_map(Value::as_str)
+            .any(|approved| approved == role)
+        {
             return Err(GatewayCommandError::BadRequest(format!(
-                "unknown deviceId: {device_id}"
+                "role {role} is not approved for deviceId: {device_id}"
             )));
         }
 

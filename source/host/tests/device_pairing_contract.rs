@@ -267,6 +267,12 @@ fn test_ocrm_pair_o11_rotate_token_in_band_and_cross_device() {
         .unwrap();
     assert_eq!(rot_cross["tokenDelivery"], "withheld-cross-device");
     assert!(rot_cross.get("token").is_none());
+
+    let rejected_role = owner.handle_pairing_command(
+        "device.pair.rotateToken",
+        &json!({ "deviceId": "dev-rotate-target", "role": "node" }),
+    );
+    assert!(rejected_role.is_err());
 }
 
 #[test]
