@@ -18,11 +18,24 @@ impl CloudWorkerProvisioningStore {
         if source == backup {
             return Err(CloudWorkerStoreError::InvalidBackupPath);
         }
-        if !source.exists() {
-            return Err(CloudWorkerStoreError::BackupSourceMissing);
+        let source_metadata = fs::symlink_metadata(source)
+            .map_err(|error| {
+                if error.kind() == io::ErrorKind::NotFound {
+                    CloudWorkerStoreError::BackupSourceMissing
+                } else {
+                    CloudWorkerStoreError::Read(error)
+                }
+            })?;
+        if source_metadata.file_type().is_symlink() || !source_metadata.file_type().is_file() {
+            return Err(CloudWorkerStoreError::InvalidBackupSource);
         }
-        if backup.exists() {
-            return Err(CloudWorkerStoreError::BackupAlreadyExists);
+        match fs::symlink_metadata(backup) {
+            Ok(metadata) if metadata.file_type().is_symlink() => {
+                return Err(CloudWorkerStoreError::InvalidBackupDestination);
+            }
+            Ok(_) => return Err(CloudWorkerStoreError::BackupAlreadyExists),
+            Err(error) if error.kind() == io::ErrorKind::NotFound => {}
+            Err(error) => return Err(CloudWorkerStoreError::Read(error)),
         }
         let parent = backup.parent().ok_or(CloudWorkerStoreError::NoParent)?;
         fs::create_dir_all(parent).map_err(CloudWorkerStoreError::Write)?;
@@ -147,8 +160,12 @@ pub enum CloudWorkerStoreError {
     PoisonedOwner,
     #[error("backup source does not exist")]
     BackupSourceMissing,
+    #[error("backup source must be a regular non-symlink file")]
+    InvalidBackupSource,
     #[error("backup destination already exists")]
     BackupAlreadyExists,
+    #[error("backup destination must not be a symlink")]
+    InvalidBackupDestination,
     #[error("backup source and destination must differ")]
     InvalidBackupPath,
 }
