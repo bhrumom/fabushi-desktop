@@ -622,7 +622,16 @@ impl DevicePairingOwner {
         }
     }
 
-    pub fn handle_pair_setup_code(&self, _args: &Value) -> Result<Value, GatewayCommandError> {
+    pub fn handle_pair_setup_code(&self, args: &Value) -> Result<Value, GatewayCommandError> {
+        let gateway_url = args
+            .get("gatewayUrl")
+            .and_then(Value::as_str)
+            .map(str::trim)
+            .filter(|value| !value.is_empty());
+        if let Some(url) = gateway_url {
+            validate_mobile_pairing_url(url)
+                .map_err(GatewayCommandError::BadRequest)?;
+        }
         let setup_id = format!("setup-{}", Uuid::new_v4());
         let setup_code = format!("sand-setup-{}", Uuid::new_v4());
         let now = now_ms();
@@ -650,12 +659,14 @@ impl DevicePairingOwner {
         let mut res = json!({
             "setupId": setup_id,
             "setupCode": setup_code,
-            "gatewayUrl": "http://127.0.0.1:8080",
             "auth": "token",
             "urlSource": "local",
             "access": "full",
             "expiresAtMs": expires_at
         });
+        if let Some(url) = gateway_url {
+            res["gatewayUrl"] = Value::String(url.to_string());
+        }
         if let Some(qr) = qr_data_url {
             res["qrDataUrl"] = Value::String(qr);
         }

@@ -286,6 +286,17 @@ fn test_ocrm_pair_o12_setup_code() {
     assert_eq!(res["auth"], "token");
     assert_eq!(res["access"], "full");
     assert!(res["expiresAtMs"].as_i64().unwrap() > 0);
+    assert!(res.get("gatewayUrl").is_none());
+
+    let configured = owner
+        .handle_pair_setup_code(&json!({ "gatewayUrl": "wss://gateway.example.test" }))
+        .unwrap();
+    assert_eq!(configured["gatewayUrl"], "wss://gateway.example.test");
+
+    let rejected = owner.handle_pair_setup_code(
+        &json!({ "gatewayUrl": "ws://gateway.example.test" }),
+    );
+    assert!(rejected.is_err());
 }
 
 #[test]
