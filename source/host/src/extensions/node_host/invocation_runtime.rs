@@ -71,6 +71,10 @@ impl NodeHostInvocationRuntime {
         &self.lease.node_id
     }
 
+    pub fn generation(&self) -> u64 {
+        self.lease.generation
+    }
+
     pub fn dispatch_input(&mut self, input: &NodeInvokeInput) -> Result<bool, String> {
         if input.invoke_id != self.invoke_id || input.node_id != self.lease.node_id {
             return Err("node invocation input does not belong to the invocation".into());

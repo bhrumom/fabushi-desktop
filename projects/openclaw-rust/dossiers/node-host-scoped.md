@@ -2449,3 +2449,8 @@ admission and sends input/cancel through the same router. Cancel admission no
 longer mutates the registry in the parser path, preventing a double transition
 when the canonical router receives the frame. This is producer-to-owner
 wiring evidence only; no side-effect executor or startup caller is implied.
+
+The router also provides `drain_generation`, which removes only in-memory
+invocation runtimes carrying the retired node/session generation. Canonical
+runtime-state cancellation remains the state transition; physical process or
+Computer cleanup is deliberately not inferred from dropping the routing entry.

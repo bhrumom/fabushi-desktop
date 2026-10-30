@@ -63,6 +63,27 @@ impl NodeHostInvocationRouter {
             .get_mut(&(node_id.to_string(), invoke_id.to_string()))
     }
 
+    /// Drop only invocation runtimes owned by the retired session generation.
+    /// The canonical `NodeHostRuntimeState` performs the state transition and
+    /// external side-effect owners remain responsible for stopping work.
+    pub fn drain_generation(&mut self, node_id: &str, generation: u64) -> Vec<String> {
+        let keys = self
+            .active
+            .iter()
+            .filter(|((key_node_id, _), invocation)| {
+                key_node_id == node_id && invocation.generation() == generation
+            })
+            .map(|(key, _)| key.clone())
+            .collect::<Vec<_>>();
+        let mut drained = Vec::with_capacity(keys.len());
+        for key in keys {
+            if self.active.remove(&key).is_some() {
+                drained.push(key.1);
+            }
+        }
+        drained
+    }
+
     pub fn dispatch_input(&mut self, input: &NodeInvokeInput) -> Result<bool, String> {
         let invocation = self
             .invocation_mut(&input.node_id, &input.invoke_id)
