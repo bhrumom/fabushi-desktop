@@ -8,6 +8,8 @@ use super::session_registry::NodeHostSessionLease;
 use std::collections::BTreeMap;
 use std::sync::Mutex;
 
+pub const MAX_ACTIVE_INVOCATIONS: usize = 64;
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum NodeInvocationState {
     Running,
@@ -61,6 +63,14 @@ impl NodeHostInvocationRegistry {
                 return Err("duplicate node invocation id".into());
             }
             records.remove(&key);
+        }
+        if records
+            .values()
+            .filter(|record| record.state == NodeInvocationState::Running)
+            .count()
+            >= MAX_ACTIVE_INVOCATIONS
+        {
+            return Err("node invocation concurrency limit reached".into());
         }
         records.insert(
             key,
@@ -126,7 +136,7 @@ impl NodeHostInvocationRegistry {
 
 #[cfg(test)]
 mod tests {
-    use super::NodeHostInvocationRegistry;
+    use super::{NodeHostInvocationRegistry, MAX_ACTIVE_INVOCATIONS};
     use crate::extensions::node_host::session_registry::{
         NodeHostSessionMetadata, NodeHostSessionRegistry,
     };
@@ -216,5 +226,18 @@ mod tests {
         assert_eq!(drained.len(), 2);
         assert!(!registry.settle(&first));
         assert!(!registry.cancel(&second));
+    }
+
+    #[test]
+    fn active_invocation_limit_is_bounded_and_reopens_after_settlement() {
+        let (_sessions, lease) = lease();
+        let registry = NodeHostInvocationRegistry::new();
+        let admissions = (0..MAX_ACTIVE_INVOCATIONS)
+            .map(|index| registry.admit(&lease, format!("invoke-{index}")))
+            .collect::<Result<Vec<_>, _>>()
+            .expect("limit should admit its bounded capacity");
+        assert!(registry.admit(&lease, "over-capacity").is_err());
+        assert!(registry.settle(&admissions[0]));
+        assert!(registry.admit(&lease, "after-settlement").is_ok());
     }
 }

@@ -6,6 +6,7 @@ pub mod candidate_connection;
 pub mod invoke_protocol;
 pub mod invoke_input;
 pub mod invocation_registry;
+pub mod invocation_runtime;
 pub mod invoke_progress;
 pub mod stream_transport;
 pub mod desktop_stream_protocol;

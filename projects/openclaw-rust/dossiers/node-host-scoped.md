@@ -1919,3 +1919,16 @@ coverage preserves IDs and both detailed/redacted outcomes.
 This is still a transport-neutral protocol owner: no Gateway result sender,
 remote invocation executor, best-effort delivery path, or exact-head runtime
 acceptance has been added.
+
+## 155. Bounded invocation lifecycle composition (2026-10-30)
+
+`NodeHostInvocationRegistry` now enforces a 64-active-invocation bound and
+reopens capacity after terminal settlement. `NodeHostInvocationRuntime`
+composes lease-bound request admission, node/id-checked ordered input,
+generation-fenced cancellation, and exactly-once result settlement with
+payload/payloadJSON exclusivity. Cross-node input/result cases and duplicate
+terminal settlement are rejected by focused contracts.
+
+This composition remains transport-neutral and does not provide socket
+ownership, command execution, result delivery, or remote device acceptance;
+those production responsibilities remain pending.
