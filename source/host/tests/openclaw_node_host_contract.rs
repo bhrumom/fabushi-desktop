@@ -221,6 +221,20 @@ fn test_ocrm_node_host_manifest_never_advertises_unavailable_commands() {
 }
 
 #[test]
+fn test_ocrm_node_host_manifest_normalizes_plugin_capabilities() {
+    let manifest = NodeHostManifest::build_with_plugin_manifest(
+        &HashSet::new(),
+        &[],
+        &["  plugin.camera  ".into(), " ".into(), "plugin.camera".into()],
+        false,
+        false,
+        false,
+        None,
+    );
+    assert_eq!(manifest.capabilities, vec!["plugin.camera".to_string()]);
+}
+
+#[test]
 fn test_ocrm_node_host_manifest_composes_plugins_and_ephemeral_surface() {
     let available_commands = [NODE_SYSTEM_RUN_COMMANDS.to_string()]
         .into_iter()

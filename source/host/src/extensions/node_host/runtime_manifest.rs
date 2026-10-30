@@ -86,11 +86,16 @@ impl NodeHostManifest {
         capabilities.extend(
             plugin_capabilities
                 .iter()
-                .filter(|capability| {
-                    !capability.trim().is_empty()
-                        && (!ephemeral || !matches!(capability.as_str(), "computer" | "screen"))
-                })
-                .cloned(),
+                .filter_map(|capability| {
+                    let capability = capability.trim();
+                    if capability.is_empty()
+                        || (ephemeral && matches!(capability, "computer" | "screen"))
+                    {
+                        None
+                    } else {
+                        Some(capability.to_string())
+                    }
+                }),
         );
 
         Self {
