@@ -1848,6 +1848,7 @@ dependencies = [
  "tar",
  "thiserror 2.0.21",
  "tokio",
+ "tungstenite",
  "unicode-normalization",
  "url",
  "uuid",
@@ -3613,8 +3614,11 @@ dependencies = [
  "httparse",
  "log",
  "rand",
+ "rustls 0.23.46",
+ "rustls-pki-types",
  "sha1 0.11.0",
  "thiserror 2.0.21",
+ "webpki-roots",
 ]
 
 [[package]]

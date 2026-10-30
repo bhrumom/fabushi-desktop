@@ -2369,3 +2369,22 @@ requests, and a response from a stale generation cannot settle current work.
 This is only the frame/correlation seam: it does not own sockets, TLS, Gateway
 challenge handling, handshake ordering, reconnect policy, or production
 NodeHost routing.
+
+## 183. Gateway transport owner handshake slice (2026-10-30)
+
+`source/host/src/extensions/node_host/gateway_transport.rs` now owns the
+single OpenClaw Gateway client socket behind the accepted transport boundary.
+It validates the endpoint, connects through `tungstenite` with bounded
+messages, waits for `connect.challenge`, loads the installation identity and
+origin-scoped token through the credential owner, builds the challenge-bound
+device proof, sends the canonical `connect` request, and admits the session
+only after a validated `hello-ok`. The hello token is passed back through the
+existing rotation-fenced persistence owner. Requests and events use the strict
+frame parser and generation-fenced correlation registry; unrelated events are
+queued instead of being silently dropped.
+
+This is the first actual socket-owning NodeHost slice, but it is not yet
+production wiring: no Host startup caller feeds the returned hello into
+`NodeHostRuntimeState`, no reconnect/close drain is composed with invocation
+cleanup, and TLS fingerprint pinning is rejected rather than ignored. No
+remote command is advertised or enabled by this slice alone.

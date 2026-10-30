@@ -8,9 +8,11 @@ Scope: Fabushi Desktop Host / OCRM-M13 Node Host
 
 The current Fabushi Rust NodeHost modules provide endpoint validation, Origin
 scoping, candidate failover policy, frame admission, stream splice decisions,
-session generation fencing, and invocation correlation. They deliberately do
-not create sockets or own TLS, credentials, request deadlines, or disconnect
-cleanup.
+session generation fencing, and invocation correlation. The new
+`gateway_transport.rs` slice now creates the single blocking Gateway socket,
+performs the challenge-first handshake, and owns bounded request/event reads;
+it still has no shipping production caller and does not own the product session
+registry or side-effect executors.
 
 The existing WebSocket implementation in `native/mahayana-messaging` and
 `source/host/src/gateway_server.rs` is an inbound Fabushi messaging server,

@@ -37,6 +37,7 @@ subtle = "2"
 tar = "0.4"
 thiserror = "2"
 tokio = { version = "1", features = ["rt", "rt-multi-thread", "time", "net", "sync", "macros"] }
+tungstenite = { version = "0.30", default-features = false, features = ["handshake", "rustls-tls-webpki-roots"] }
 uuid = { version = "1", features = ["v4"] }
 url = "2"
 percent-encoding = "2.3"
