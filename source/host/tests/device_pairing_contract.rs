@@ -1,3 +1,4 @@
+use base64::Engine as _;
 use mahayana_host_runtime::device_pairing_owner::DevicePairingOwner;
 use serde_json::json;
 
@@ -256,6 +257,18 @@ fn test_ocrm_pair_o11_rotate_token_in_band_and_cross_device() {
             .as_str()
             .unwrap()
             .starts_with("sand-device-tok-")
+    );
+    let token_body = rot_in_band["token"]
+        .as_str()
+        .unwrap()
+        .strip_prefix("sand-device-tok-")
+        .unwrap();
+    assert_eq!(
+        base64::engine::general_purpose::URL_SAFE_NO_PAD
+            .decode(token_body)
+            .unwrap()
+            .len(),
+        32
     );
 
     // Cross-device rotation: withholds token in-band

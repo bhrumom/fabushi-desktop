@@ -21,6 +21,16 @@ fn now_ms() -> i64 {
         .as_millis() as i64
 }
 
+fn new_device_token() -> Result<String, GatewayCommandError> {
+    let mut bytes = [0_u8; 32];
+    getrandom::fill(&mut bytes)
+        .map_err(|_| GatewayCommandError::Internal("failed to generate device token".into()))?;
+    Ok(format!(
+        "sand-device-tok-{}",
+        URL_SAFE_NO_PAD.encode(bytes)
+    ))
+}
+
 fn bump_revision(conn: &Connection) -> Result<u64, rusqlite::Error> {
     let now = now_ms();
     let current_val: Option<String> = conn
@@ -360,7 +370,7 @@ impl DevicePairingOwner {
         ) = pending;
 
         let now = now_ms();
-        let token_string = format!("sand-device-tok-{}", Uuid::new_v4());
+        let token_string = new_device_token()?;
         let tokens_json = json!({
             "operator": {
                 "token": token_string,
@@ -592,7 +602,7 @@ impl DevicePairingOwner {
         }
 
         let now = now_ms();
-        let new_token = format!("sand-device-tok-{}", Uuid::new_v4());
+        let new_token = new_device_token()?;
         let tokens_json = json!({
             role: {
                 "token": new_token,
