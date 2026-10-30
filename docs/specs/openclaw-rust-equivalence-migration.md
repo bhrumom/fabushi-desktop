@@ -85,6 +85,14 @@ OpenClaw 当前协议为 v4；authenticated node 和轻量 probe 有 N-1/v3 窗�
 inventory 的未经重核结论；需在同一 exact subject 上重新生成 inventory、
 依赖闭包与 Actions provenance 后才可提升 authority。
 
+随后只读核对发现 OpenClaw `main` 再次漂移到 commit
+`c32556b0cea7f63b33db0ac393affd71ecb0015b`、root tree
+`e08d361d83ca9cae55aa93d49462d991d0a39efc`；限定
+`src/node-host/` 与 `crates/openclaw-node-host/` 仍为 227 条路径。该结果
+仍为 discovery-only，不替代 lock，也不能复用 d67、c49 或旧 inventory；
+必须对 c325 exact subject 重新取得完整 inventory、依赖闭包与 Actions
+provenance。
+
 ### 4.2 当前 Fabushi 接线事实
 
 - `frontend/src/main.tsx` mount `frontend/src/production/ProductionRenderer.tsx`；`source/electron-main/entry.ts` 装配生产 adapters 和 Coordinator 连接。
@@ -540,6 +548,7 @@ P0 通常只能建立前两个 flags 的正面证据；完整适用责任映射�
 
 - [latest live candidate commit / tree](https://github.com/openclaw/openclaw/commit/c49e07385f8d17601efbed7746381213d5326ba9)（只读 discovery；未取得本轮 Actions authority）。
 - [newer live candidate commit / tree](https://github.com/openclaw/openclaw/commit/d67aa608643f6583a6c6102c522043794aafe064)（只读 discovery；未取得本轮 Actions authority，不能复用旧 inventory）。
+- [latest observed live candidate commit / tree](https://github.com/openclaw/openclaw/commit/c32556b0cea7f63b33db0ac393affd71ecb0015b)（只读 discovery；未取得本轮 Actions authority，不能复用旧 inventory）。
 - [historical discovery commit / tree](https://github.com/openclaw/openclaw/commit/e8cde7518c558f1b4e44cb8139a149289b9719ad)（仅作为早期研究输入，不是当前 source lock）。
 - [README](https://github.com/openclaw/openclaw/blob/c49e07385f8d17601efbed7746381213d5326ba9/README.md)、[源码](https://github.com/openclaw/openclaw/tree/c49e07385f8d17601efbed7746381213d5326ba9/src)、[packages](https://github.com/openclaw/openclaw/tree/c49e07385f8d17601efbed7746381213d5326ba9/packages)。
 - [plugin inventory](https://github.com/openclaw/openclaw/blob/c49e07385f8d17601efbed7746381213d5326ba9/docs/plugins/plugin-inventory.md)、[extensions](https://github.com/openclaw/openclaw/tree/c49e07385f8d17601efbed7746381213d5326ba9/extensions)、[channels](https://github.com/openclaw/openclaw/blob/c49e07385f8d17601efbed7746381213d5326ba9/docs/channels/index.md)。

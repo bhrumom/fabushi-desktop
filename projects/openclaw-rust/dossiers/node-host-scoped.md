@@ -2099,3 +2099,13 @@ disconnects. This proves the delta is not merely a display label: the final
 implementation must map native-auth capability admission and plugin lifecycle
 to their existing owners. No Rust constant or plugin consumer was changed
 while the candidate remains unpromoted.
+
+## 168. Latest live-main candidate drift (2026-10-30)
+
+The read-only upstream check observed OpenClaw `main` at
+`c32556b0cea7f63b33db0ac393affd71ecb0015b` with root tree
+`e08d361d83ca9cae55aa93d49462d991d0a39efc`; the scoped
+`src/node-host/` plus `crates/openclaw-node-host/` listing remains 227 paths.
+This supersedes d67 only as a newer discovery pointer, not as implementation
+authority. No lock, inventory, dependency closure, parity row, Actions
+receipt, or completion flag was changed.
