@@ -4039,6 +4039,11 @@ impl UnifiedGatewayApi {
             )));
         }
         let params = args.get("params").unwrap_or(&serde_json::Value::Null);
+        let received_params_json = serde_json::to_string(params).map_err(|error| {
+            GatewayCommandError::BadRequest(format!(
+                "node.invoke system.run params could not be encoded as paramsJSON: {error}"
+            ))
+        })?;
         let shell_command = params
             .get("command")
             .and_then(serde_json::Value::as_str)
@@ -4074,8 +4079,8 @@ impl UnifiedGatewayApi {
             node_id: node_id.to_string(),
             command: command.to_string(),
             params: params.clone(),
-            received_params_bytes: 0,
-            received_params_json: None,
+            received_params_bytes: received_params_json.len(),
+            received_params_json: Some(received_params_json),
             timeout_ms: args.get("timeoutMs").and_then(serde_json::Value::as_u64),
             idempotency_key: Some(tool_call_id.to_string()),
             session_key: args
