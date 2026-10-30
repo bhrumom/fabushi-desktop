@@ -2109,3 +2109,9 @@ The read-only upstream check observed OpenClaw `main` at
 This supersedes d67 only as a newer discovery pointer, not as implementation
 authority. No lock, inventory, dependency closure, parity row, Actions
 receipt, or completion flag was changed.
+
+The exact path diff between the acquired d67 and c325 objects reports zero
+changes under `src/node-host/` and `crates/openclaw-node-host/`. This narrows
+the latest upstream drift: the Node Host source identities and the recorded
+native-auth delta remain applicable to both candidates, while the overall
+source lock and dependency closure still require a project-wide rebaseline.
