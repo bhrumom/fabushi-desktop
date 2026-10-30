@@ -170,6 +170,15 @@ impl CloudWorkerProvisioningOwner {
         Ok(owner)
     }
 
+    pub fn restore_snapshot(
+        &mut self,
+        snapshot: CloudWorkerPersistentSnapshot,
+    ) -> Result<(), CloudWorkerOwnerError> {
+        let restored = Self::from_snapshot(self.config, snapshot)?;
+        *self = restored;
+        Ok(())
+    }
+
     pub fn record_migration_receipt(
         &mut self,
         receipt: CloudWorkerMigrationReceipt,
@@ -428,6 +437,24 @@ mod tests {
             Err(CloudWorkerOwnerError::Lease(
                 CloudWorkerLeaseError::InvalidPersistedRecord
             ))
+        );
+    }
+
+    #[test]
+    fn owner_can_restore_a_pre_mutation_snapshot() {
+        let mut owner = owner();
+        let before = owner.snapshot();
+        owner
+            .admit(
+                CloudWorkerLeaseScope::new("account", "device").unwrap(),
+                LeaseId("lease-1".into()),
+                runtime(),
+            )
+            .unwrap();
+        owner.restore_snapshot(before).unwrap();
+        assert_eq!(
+            owner.lease(&LeaseId("lease-1".into())),
+            Err(CloudWorkerOwnerError::UnknownLease)
         );
     }
 }

@@ -36,7 +36,7 @@ impl CloudWorkerProvisioningStore {
         File::open(backup)
             .and_then(|file| file.sync_all())
             .map_err(CloudWorkerStoreError::Write)?;
-        sync_parent_directory(parent).map_err(CloudWorkerStoreError::Write)?;
+        sync_parent_directory(parent).map_err(CloudWorkerStoreError::DirectoryBarrierOutcomeUnknown)?;
         Ok(())
     }
 
@@ -98,7 +98,7 @@ impl CloudWorkerProvisioningStore {
         // is not durable until the parent directory is synced.  Treat a
         // failed directory barrier as a write failure so callers do not
         // mistake a crash-vulnerable publication for a durable checkpoint.
-        sync_parent_directory(parent).map_err(CloudWorkerStoreError::Write)?;
+        sync_parent_directory(parent).map_err(CloudWorkerStoreError::DirectoryBarrierOutcomeUnknown)?;
         Ok(())
     }
 }
@@ -135,6 +135,8 @@ pub enum CloudWorkerStoreError {
     Read(#[source] io::Error),
     #[error("could not write cloud-worker state atomically: {0}")]
     Write(#[source] io::Error),
+    #[error("cloud-worker state directory durability barrier outcome is unknown: {0}")]
+    DirectoryBarrierOutcomeUnknown(#[source] io::Error),
     #[error("could not encode cloud-worker state: {0}")]
     Encode(#[source] serde_json::Error),
     #[error("could not decode cloud-worker state: {0}")]

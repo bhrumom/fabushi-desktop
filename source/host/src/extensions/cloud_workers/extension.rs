@@ -45,6 +45,46 @@ impl CloudWorkerProvisioningExtension {
             .map_err(|_| CloudWorkerStoreError::PoisonedOwner)?;
         self.store.save_atomic(&self.state_path, &owner)
     }
+
+    pub fn mutate_and_persist<T, F>(&self, mutate: F) -> Result<T, CloudWorkerMutationError>
+    where
+        F: FnOnce(&mut CloudWorkerProvisioningOwner) -> Result<T, CloudWorkerOwnerError>,
+    {
+        let mut owner = self
+            .owner
+            .lock()
+            .map_err(|_| CloudWorkerMutationError::PoisonedOwner)?;
+        let before = owner.snapshot();
+        let value = mutate(&mut owner).map_err(CloudWorkerMutationError::Owner)?;
+        match self.store.save_atomic(&self.state_path, &owner) {
+            Ok(()) => Ok(value),
+            Err(CloudWorkerStoreError::DirectoryBarrierOutcomeUnknown(error)) => {
+                Err(CloudWorkerMutationError::OutcomeUnknown(
+                    CloudWorkerStoreError::DirectoryBarrierOutcomeUnknown(error),
+                ))
+            }
+            Err(error) => {
+                owner
+                    .restore_snapshot(before)
+                    .map_err(CloudWorkerMutationError::Rollback)?;
+                Err(CloudWorkerMutationError::Persistence(error))
+            }
+        }
+    }
+}
+
+#[derive(Debug, thiserror::Error)]
+pub enum CloudWorkerMutationError {
+    #[error(transparent)]
+    Owner(#[source] CloudWorkerOwnerError),
+    #[error(transparent)]
+    Persistence(#[source] CloudWorkerStoreError),
+    #[error("cloud-worker mutation persistence outcome is unknown: {0}")]
+    OutcomeUnknown(#[source] CloudWorkerStoreError),
+    #[error("cloud-worker mutation rollback failed: {0}")]
+    Rollback(#[source] CloudWorkerOwnerError),
+    #[error("cloud-worker owner lock is poisoned")]
+    PoisonedOwner,
 }
 
 pub fn start_cloud_worker_provisioning_extension(
