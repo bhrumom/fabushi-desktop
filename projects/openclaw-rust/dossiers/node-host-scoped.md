@@ -2412,6 +2412,13 @@ outside v3–v4.
 TLS fingerprint pinning is rejected rather than ignored. No remote command is
 advertised or enabled by this slice alone.
 
+The same session now exposes `next_inbound`: it drains queued events before
+reading the bounded socket, invokes the single generation/currentness admission
+path, ignores unrelated Gateway events, and rejects responses or server
+requests that do not belong to this event pump. This is a caller-facing
+transport/session seam, not a side-effect executor or production startup
+integration.
+
 ## 185. Bounded reconnect classification policy (2026-10-30)
 
 `reconnect.rs` now classifies the existing Gateway transport error boundary:

@@ -576,10 +576,39 @@ impl NodeHostGatewaySession {
         &mut self.transport
     }
 
+    /// Consume the next queued/live Gateway event and admit it through the
+    /// session owner. Non-event frames are not silently ignored: a response
+    /// belongs to a synchronous request owner, while a server request has no
+    /// admitted NodeHost handler in this boundary.
+    pub fn next_inbound(&mut self) -> Result<Option<NodeHostGatewayInbound>, String> {
+        loop {
+            let frame = match self.transport.next_event() {
+                Some(frame) => frame,
+                None => self
+                    .transport
+                    .read_next_frame()
+                    .map_err(|error| error.to_string())?,
+            };
+            match frame {
+                NodeHostGatewayFrame::Event { .. } => {
+                    if let Some(inbound) = self.admit_event(&frame)? {
+                        return Ok(Some(inbound));
+                    }
+                }
+                NodeHostGatewayFrame::Response { .. } => {
+                    return Err("Gateway response reached the event pump".into());
+                }
+                NodeHostGatewayFrame::Request { .. } => {
+                    return Err("Gateway server request is not admitted by NodeHost".into());
+                }
+            }
+        }
+    }
+
     /// Complete the invocation under the current lease, then attempt exactly
     /// one result delivery. Completion happens first so a lost result cannot
     /// be replayed on a replacement connection. The transport error is
-    /// returned for redacted lifecycle evidence; callers must not retry it.
+    /// returned for transport lifecycle evidence; callers must not retry it.
     pub fn complete_and_send_result(
         &mut self,
         invocation: &mut NodeHostInvocationRuntime,
