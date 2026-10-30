@@ -36,7 +36,7 @@
     "unread": 57331
   },
   "project_id": "OCRM-001",
-  "spec_revision": 1,
+  "spec_revision": 2,
   "upstream": {
     "baseline_identity_accepted": false,
     "commit": "ad8d12f126d29b0db204187adf5092db80294e70",
