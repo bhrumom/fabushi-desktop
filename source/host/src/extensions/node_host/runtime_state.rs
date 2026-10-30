@@ -4,7 +4,7 @@
 //! invocation draining without owning sockets, credentials, or side effects.
 
 use super::invocation_registry::{NodeHostInvocationRegistry, NodeInvocationAdmission};
-use super::invoke_protocol::NodeInvokeCancel;
+use super::invoke_protocol::{NodeInvokeCancel, NodeInvokeRequest};
 use super::session_registry::{
     NodeHostSessionLease, NodeHostSessionMetadata, NodeHostSessionRegistry,
     NodeHostSessionSnapshot,
@@ -57,6 +57,20 @@ impl NodeHostRuntimeState {
         invoke_id: impl Into<String>,
     ) -> Result<NodeInvocationAdmission, String> {
         self.invocations.admit(lease, invoke_id)
+    }
+
+    /// Admit a parsed wire request only after binding its node identity to the
+    /// live session lease. Transport callers should prefer this over the
+    /// lower-level id-only method so a request cannot cross node boundaries.
+    pub fn admit_request(
+        &self,
+        lease: &NodeHostSessionLease,
+        request: &NodeInvokeRequest,
+    ) -> Result<NodeInvocationAdmission, String> {
+        if request.node_id != lease.node_id {
+            return Err("node invocation request does not belong to the session".into());
+        }
+        self.admit_invocation(lease, &request.id)
     }
 
     /// Cancel an invocation only when the caller still owns the admitted
@@ -145,5 +159,24 @@ mod tests {
 
         assert!(runtime.cancel_invocation_frame(&session, &cancel).is_err());
         assert!(runtime.settle_invocation(&admission));
+    }
+
+    #[test]
+    fn request_admission_cannot_cross_node_session_boundary() {
+        let runtime = NodeHostRuntimeState::new();
+        let session = runtime.connect(metadata("node-1"));
+        let request = NodeInvokeRequest {
+            id: "invoke-1".into(),
+            node_id: "node-2".into(),
+            command: "system.run".into(),
+            params: serde_json::Value::Null,
+            received_params_bytes: 0,
+            received_params_json: None,
+            timeout_ms: None,
+            idempotency_key: None,
+            session_key: None,
+        };
+
+        assert!(runtime.admit_request(&session, &request).is_err());
     }
 }
