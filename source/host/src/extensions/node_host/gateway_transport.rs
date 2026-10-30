@@ -15,6 +15,7 @@ use tungstenite::protocol::{Message, WebSocket, WebSocketConfig};
 use tungstenite::stream::MaybeTlsStream;
 use tungstenite::{Error as WebSocketError, connect_with_config};
 
+use crate::sha256::sha256_hex;
 use crate::host_secret_store::{
     HostNodeDeviceIdentity, HostNodeDeviceToken, load_or_create_host_node_identity,
     read_host_node_token,
@@ -75,12 +76,6 @@ pub struct NodeHostGatewayTransportConfig {
 impl NodeHostGatewayTransportConfig {
     pub fn validate(&self) -> Result<(), String> {
         self.gateway.validate()?;
-        if self.gateway.tls_fingerprint.is_some() {
-            return Err(
-                "node Gateway TLS fingerprint pinning is not implemented by this transport owner"
-                    .into(),
-            );
-        }
         for (name, value) in [
             ("client id", self.client_id.as_str()),
             ("client mode", self.client_mode.as_str()),
@@ -276,6 +271,10 @@ impl NodeHostGatewayTransport {
         websocket_config.max_message_size = Some(MAX_HELLO_BYTES);
         websocket_config.max_frame_size = Some(MAX_HELLO_BYTES);
         let (mut socket, _) = connect_with_config(endpoint, Some(websocket_config), 0)?;
+        verify_gateway_tls_fingerprint(
+            &socket,
+            config.gateway.tls_fingerprint.as_deref(),
+        )?;
         set_gateway_io_timeout(&mut socket, std::time::Duration::from_millis(GATEWAY_IO_TIMEOUT_MS))?;
         let mut transport = Self {
             socket,
@@ -574,6 +573,46 @@ fn set_gateway_io_timeout(
                 "unsupported Gateway TLS stream implementation".into(),
             ));
         }
+    }
+    Ok(())
+}
+
+fn verify_gateway_tls_fingerprint(
+    socket: &GatewaySocket,
+    expected: Option<&str>,
+) -> Result<(), NodeHostGatewayTransportError> {
+    let Some(expected) = expected else {
+        return Ok(());
+    };
+    let expected = expected.trim();
+    let actual = match socket.get_ref() {
+        MaybeTlsStream::Rustls(stream) => {
+            let certificate = stream
+                .conn
+                .peer_certificates()
+                .and_then(|certificates| certificates.first())
+                .ok_or_else(|| {
+                    NodeHostGatewayTransportError::Protocol(
+                        "Gateway TLS peer certificate is missing".into(),
+                    )
+                })?;
+            sha256_hex(certificate.as_ref())
+        }
+        MaybeTlsStream::Plain(_) => {
+            return Err(NodeHostGatewayTransportError::Config(
+                "Gateway TLS fingerprint was configured for a plaintext connection".into(),
+            ));
+        }
+        _ => {
+            return Err(NodeHostGatewayTransportError::Config(
+                "Gateway TLS fingerprint is unsupported by this stream".into(),
+            ));
+        }
+    };
+    if !actual.eq_ignore_ascii_case(expected) {
+        return Err(NodeHostGatewayTransportError::Protocol(
+            "Gateway TLS peer certificate fingerprint does not match".into(),
+        ));
     }
     Ok(())
 }

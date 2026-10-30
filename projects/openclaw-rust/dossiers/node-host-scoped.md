@@ -2517,3 +2517,15 @@ retry loop.
 This closes the state contract identified for R5 without selecting a real
 availability producer or transport caller. Production publication, refresh
 timing, remote acceptance, and exact-head/device evidence remain open.
+
+## 191. Gateway TLS fingerprint enforcement (2026-10-30)
+
+The Gateway config now accepts only a 64-character hexadecimal SHA-256 leaf
+certificate fingerprint and rejects fingerprint configuration on plaintext
+endpoints. After the WebSocket/TLS handshake and before the NodeHost challenge
+exchange, `gateway_transport.rs` reads the rustls peer certificate, hashes its
+DER bytes through the existing Host SHA-256 helper, and fails closed on a
+missing certificate, unsupported stream, or mismatch. The fingerprint and
+certificate bytes are not placed in session metadata or logs. This closes the
+transport pinning implementation gap; real endpoint and device acceptance
+remain pending.

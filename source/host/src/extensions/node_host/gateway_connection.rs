@@ -87,9 +87,11 @@ impl NodeHostGatewayConfig {
         }
         if let Some(fingerprint) = self.tls_fingerprint.as_deref() {
             let fingerprint = fingerprint.trim();
-            if fingerprint.is_empty()
-                || fingerprint.len() > 256
-                || fingerprint.chars().any(|character| character.is_control())
+            if !self.tls {
+                return Err("node host gateway TLS fingerprint requires TLS".into());
+            }
+            if fingerprint.len() != 64
+                || !fingerprint.bytes().all(|byte| byte.is_ascii_hexdigit())
             {
                 return Err("node host gateway TLS fingerprint is invalid".into());
             }
