@@ -2443,3 +2443,9 @@ settlement. The router owns no command execution, socket, credential, timer,
 or result delivery; those remain injected/owned by the existing Host
 boundaries. This closes the input-to-runtime binding seam but does not claim a
 production caller, executor, reconnect loop, or device acceptance.
+
+The session now exposes `next_routed_inbound`, which reuses the request
+admission and sends input/cancel through the same router. Cancel admission no
+longer mutates the registry in the parser path, preventing a double transition
+when the canonical router receives the frame. This is producer-to-owner
+wiring evidence only; no side-effect executor or startup caller is implied.

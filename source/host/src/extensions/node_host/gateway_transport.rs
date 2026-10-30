@@ -34,6 +34,7 @@ use super::invoke_protocol::{
 };
 use super::invocation_registry::NodeInvocationAdmission;
 use super::invocation_runtime::NodeHostInvocationRuntime;
+use super::invocation_router::NodeHostInvocationRouter;
 use super::runtime_state::NodeHostRuntimeState;
 use super::session_registry::NodeHostSessionLease;
 
@@ -206,10 +207,13 @@ pub enum NodeHostGatewayInbound {
         admission: NodeInvocationAdmission,
     },
     InvokeInput(NodeInvokeInput),
-    InvokeCancel {
-        cancel: NodeInvokeCancel,
-        accepted: bool,
-    },
+    InvokeCancel(NodeInvokeCancel),
+}
+
+pub enum NodeHostGatewayRoutedInbound {
+    InvokeRequest(NodeInvokeRequest),
+    InvokeInput { input: NodeInvokeInput, accepted: bool },
+    InvokeCancel { cancel: NodeInvokeCancel, accepted: bool },
 }
 
 impl NodeHostGatewayTransport {
@@ -605,6 +609,45 @@ impl NodeHostGatewaySession {
         }
     }
 
+    /// Route one admitted inbound item through the single invocation runtime
+    /// owner. The request admission created by `admit_event` is reused; no
+    /// second registry admission is performed.
+    pub fn route_inbound(
+        &self,
+        router: &mut NodeHostInvocationRouter,
+        inbound: NodeHostGatewayInbound,
+    ) -> Result<NodeHostGatewayRoutedInbound, String> {
+        match inbound {
+            NodeHostGatewayInbound::InvokeRequest { request, admission } => {
+                router.admit_request(
+                    std::sync::Arc::clone(&self.runtime),
+                    self.lease.clone(),
+                    &request,
+                    admission,
+                )?;
+                Ok(NodeHostGatewayRoutedInbound::InvokeRequest(request))
+            }
+            NodeHostGatewayInbound::InvokeInput(input) => {
+                let accepted = router.dispatch_input(&input)?;
+                Ok(NodeHostGatewayRoutedInbound::InvokeInput { input, accepted })
+            }
+            NodeHostGatewayInbound::InvokeCancel(cancel) => {
+                let accepted = router.cancel(&cancel)?;
+                Ok(NodeHostGatewayRoutedInbound::InvokeCancel { cancel, accepted })
+            }
+        }
+    }
+
+    /// Read and route the next event in one owner-bound operation.
+    pub fn next_routed_inbound(
+        &mut self,
+        router: &mut NodeHostInvocationRouter,
+    ) -> Result<Option<NodeHostGatewayRoutedInbound>, String> {
+        self.next_inbound()?
+            .map(|inbound| self.route_inbound(router, inbound))
+            .transpose()
+    }
+
     /// Complete the invocation under the current lease, then attempt exactly
     /// one result delivery. Completion happens first so a lost result cannot
     /// be replayed on a replacement connection. The transport error is
@@ -659,8 +702,10 @@ impl NodeHostGatewaySession {
             }
             "node.invoke.cancel" => {
                 let cancel = parse_node_invoke_cancel(payload)?;
-                let accepted = self.runtime.cancel_invocation_frame(&self.lease, &cancel)?;
-                Ok(Some(NodeHostGatewayInbound::InvokeCancel { cancel, accepted }))
+                if cancel.node_id != self.lease.node_id {
+                    return Err("node.invoke.cancel belongs to another node".into());
+                }
+                Ok(Some(NodeHostGatewayInbound::InvokeCancel(cancel)))
             }
             _ => Ok(None),
         }
