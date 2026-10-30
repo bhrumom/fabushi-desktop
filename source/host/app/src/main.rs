@@ -3278,7 +3278,14 @@ impl UnifiedGatewayApi {
         let target = parsed_raw.as_ref()
             .or_else(|| args.get("config"))
             .or_else(|| args.get("settings"))
-            .unwrap_or(args);
+            .ok_or_else(|| GatewayCommandError::BadRequest(
+                "config.set requires raw, config, or settings".into(),
+            ))?;
+        if !target.is_object() {
+            return Err(GatewayCommandError::BadRequest(
+                "config.set target must be a JSON object".into(),
+            ));
+        }
 
         if let Some(base_hash) = args.get("baseHash").and_then(serde_json::Value::as_str) {
             let current = self.settings.get_host_settings();

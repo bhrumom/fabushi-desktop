@@ -77,6 +77,18 @@ fn test_config_set_optimistic_concurrency_rejects_stale_base_hash_with_409_confl
 
     // Valid hash passes
     assert!(check_concurrency(&real_hash).is_ok());
+
+    let shipping_source = include_str!("../app/src/main.rs");
+    let config_set = shipping_source
+        .split("fn call_openclaw_config_set(")
+        .nth(1)
+        .expect("shipping config.set owner exists")
+        .split("fn call_openclaw_system_info(")
+        .next()
+        .expect("shipping config.set function boundary exists");
+    assert!(config_set.contains("config.set requires raw, config, or settings"));
+    assert!(config_set.contains("config.set target must be a JSON object"));
+    assert!(!config_set.contains("unwrap_or(args)"));
 }
 
 #[test]
