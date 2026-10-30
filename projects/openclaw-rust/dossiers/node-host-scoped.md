@@ -2249,3 +2249,22 @@ owner forbidden by the runtime spec. Remote Gateway connection, challenge/
 hello admission, manifest publication, invoke/result routing, reconnect, and
 stream attachment remain unresolved implementation work pending an explicit
 transport-owner design and the current upstream contract closure.
+
+## 176. Current connection-owner contract and ADR (2026-10-30)
+
+The current OpenClaw discovery candidate's `src/node-host/connection.ts` and
+`runtime.ts` make the missing owner contract more precise: the transport
+supplies a request surface and negotiated server capabilities; the runtime
+publishes inventory only after Gateway hello; retirement increments a
+connection generation, clears negotiated state, cancels publication timers,
+and starts invocation cleanup; a replacement connection is admitted only after
+that cleanup barrier. Late optional publications and invoke callbacks must
+prove the same generation before sending or mutating state. The client result
+surface is best-effort and remains bound to the original invoke id/node id.
+
+This contract is now recorded in
+`projects/openclaw-rust/decisions/2026-10-30-node-host-transport-owner.md`.
+It authorizes a single Host transport-boundary owner as the next design and
+implementation unit, while explicitly rejecting reuse of the inbound
+`native/mahayana-messaging` WebSocket server as a NodeHost client. No
+production caller or completion evidence is claimed by this ADR.

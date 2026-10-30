@@ -46,7 +46,7 @@ Define and implement a Fabushi-native node-host runtime embedding that preserves
 - `source/host/app/src/main.rs` owns local node registration/invocation and currently reports approved remote nodes as paired but disconnected with no remote commands.
 - `source/host/src/extensions/node_host/` contains protocol slices for connection, Computer dispatch, and runtime manifest, but the runtime has no shipping caller or live remote transport.
 - Existing `NativeDesktopRemoteExecutor` and `execute_with_lease_fenced` own native Computer behavior; they are not generic node-host invoke executors.
-- The implementation oracle remains the prior candidate `ad8d12f126d29b0db204187adf5092db80294e70`, tree `04ccce62f1d74dc8e0c88290ae8ded027b7b0f16`; it is not accepted as the current project-wide source lock.
+- The implementation oracle remains the prior candidate `ad8d12f126d29b0db204187adf5092db80294e70`, tree `04ccce62f1d74dc8e0c88290ae8ded027b7b0f16`; it is not accepted as the current project-wide source lock. The current discovery candidate is used only for the targeted contract delta below until P0 exact-subject closure is accepted.
 - Read-only live discovery has since advanced to OpenClaw `main` commit `5f6f15fed0d6ba618cf781c9686a8b93f499564b`, tree `ee0af1d3ba415e7763da6759ca47b245031a21c9`. This candidate requires the P0 GitHub Actions rebaseline before source-dependent acceptance or lock/inventory reuse; c325 and earlier candidates remain historical discovery only.
 - A targeted read-only compare from the prior c325 candidate to this live candidate reports 14 commits and 15 changed paths under `src/node-host/` or `crates/openclaw-node-host/`. The changed source adds managed-identity transport custody, platform trust restoration, workspace lease admission/currentness, and invocation-bound process-environment fencing. Existing Rust mapping is therefore not complete for this candidate and must not reuse c325 semantics without targeted re-read.
 
@@ -63,6 +63,18 @@ One Fabushi-owned node-host runtime composes the canonical Gateway/transport own
 - **Policy/side-effect owners:** local exec, Computer, PTY, desktop stream, portal stream, and worker/Claude handlers retain their existing authorization and process lifecycles.
 - **Gateway RPC projection:** reads live registry facts and pairing facts; it owns no node session, heartbeat, or replay state.
 - **Node-worker environment/workspace owner:** captures provider identity transport and platform trust before sanitization, restores only admitted values into the worker environment, and binds workspace leases, process output redaction, and plugin invocation callbacks to the same current generation.
+
+The Host transport boundary currently has no production NodeHost client owner.
+`source/host/src/gateway_server.rs` owns the inbound Fabushi messaging
+WebSocket server, while `native/mahayana-messaging` owns that separate
+messaging protocol; neither may be widened implicitly into the OpenClaw
+NodeHost client. The required owner is therefore a narrowly scoped extension
+of the existing Host transport boundary, recorded in
+`projects/openclaw-rust/decisions/2026-10-30-node-host-transport-owner.md`.
+It must be the sole owner of the WebSocket/TLS client, challenge/hello
+admission, request correlation, transport generation, and disconnect cleanup.
+The protocol slices and RPC projection remain consumers of that owner and may
+not create sockets, infer presence, or retain parallel generation state.
 
 The Rust `NodeHostSessionRegistry` is the Host-side projection boundary for the
 transport/session owner. Its `connect`, `set_active`, and generation-fenced
@@ -124,7 +136,12 @@ Each case must retain typed failure evidence and must not be converted into a cl
 
 1. Complete per-file source closure for `src/node-host/` and `crates/openclaw-node-host` against the pinned upstream revision, recording exact refs and rejected duplicate-owner candidates.
 2. Reconcile the mapping with current Fabushi Host, Coordinator, credential, worker, Computer, and transport owners; repair this spec before source changes if ownership changes.
-3. Implement the narrowest session/lifecycle seam behind existing owners, starting with live transport and generation fencing, then invocation/manifest composition, then side-effect adapters.
+3. Establish the single Host transport owner described by the ADR, with an
+   injected credential/challenge signer and a bounded request/event pump;
+   start with live transport and generation fencing, then invocation/manifest
+   composition, then side-effect adapters. Do not wire it to production
+   startup until the current upstream challenge/hello and device-auth
+   contract has an exact-source closure.
 4. Add contract tests and Actions workflow coverage without fabricating provider/device success.
 5. Verify exact-head Actions, packaged runtime, and real device/transport cells; update the parity ledger only from those receipts.
 

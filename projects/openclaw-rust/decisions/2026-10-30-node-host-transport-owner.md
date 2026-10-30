@@ -1,0 +1,80 @@
+# ADR: Node Host transport owner boundary
+
+Status: accepted for implementation design; production wiring pending exact-source closure
+Date: 2026-10-30
+Scope: Fabushi Desktop Host / OCRM-M13 Node Host
+
+## Context
+
+The current Fabushi Rust NodeHost modules provide endpoint validation, Origin
+scoping, candidate failover policy, frame admission, stream splice decisions,
+session generation fencing, and invocation correlation. They deliberately do
+not create sockets or own TLS, credentials, request deadlines, or disconnect
+cleanup.
+
+The existing WebSocket implementation in `native/mahayana-messaging` and
+`source/host/src/gateway_server.rs` is an inbound Fabushi messaging server,
+not an OpenClaw NodeHost client. Reusing it as if it were the NodeHost
+transport would mix protocols and create false production reachability.
+
+The current OpenClaw discovery candidate requires a NodeHost client contract
+with a request surface, negotiated server capabilities, hello-gated manifest
+publication, connection-generation retirement, and cleanup that prevents late
+callbacks from mutating a replacement connection. The current candidate also
+contains worker/environment responsibilities that must remain behind their
+existing owners.
+
+## Decision
+
+Create one narrowly scoped NodeHost client transport owner at the Host
+transport boundary. It is an extension of the existing Host transport
+ownership area, not a second pairing store, RPC session registry, Computer
+executor, worker environment owner, or generic Agent loop.
+
+The owner is solely responsible for:
+
+1. candidate URL selection and WebSocket/TLS lifecycle;
+2. credential/challenge signing through injected existing credential APIs;
+3. hello/protocol/capability admission before publishing live presence;
+4. bounded request correlation and inbound event dispatch;
+5. one connection generation and ordered disconnect/replacement cleanup;
+6. forwarding admitted facts to `NodeHostRuntimeState`, manifest owner, and
+   invocation runtime without retaining parallel product state.
+
+The owner must expose a transport-neutral request/event interface to the
+existing runtime slices. It must reject or remain disconnected when the
+credential signer, challenge contract, protocol version, TLS policy, or
+server hello is unavailable. Pairing approval remains identity/approval
+input only; it cannot activate the owner or make an RPC projection connected.
+
+## Consequences
+
+- A WebSocket dependency may be added only to this owner and only with the
+  exact source/protocol contract recorded for the accepted upstream subject.
+- `gateway_server.rs` and `native/mahayana-messaging` remain unchanged as
+  separate inbound messaging owners.
+- `node.register`, `node.list`, `node.status`, and `node.invoke` remain
+  projections/consumers; they cannot open transport or synthesize live state.
+- Production startup remains fail-closed until the owner has a real caller,
+  credential binding, and exact-head/real-device evidence.
+- The owner must be removable behind the existing host/runtime gate, leaving
+  approved remote devices paired-but-disconnected on rollback.
+
+## Required implementation evidence
+
+- exact upstream source and dependency closure for the connection/challenge/
+  hello/request/event contract;
+- focused Rust contract tests for generation fencing, hello gating, request
+  correlation, malformed/oversized frame rejection, and cleanup;
+- a production caller that feeds the canonical session registry and runtime;
+- exact-head Actions evidence plus packaged and real Gateway/device transport
+  acceptance before any completion flag changes.
+
+## References
+
+- `docs/specs/node-host-runtime-embedding.md`
+- `projects/openclaw-rust/dossiers/node-host-scoped.md`
+- `source/host/src/extensions/node_host/`
+- `source/host/src/gateway_server.rs`
+- `native/mahayana-messaging/src/gateway.rs`
+- OpenClaw discovery candidate `5f6f15fed0d6ba618cf781c9686a8b93f499564b`
