@@ -585,7 +585,7 @@ impl DevicePairingOwner {
 
         let role = args.get("role").and_then(Value::as_str);
 
-        let conn = self.conn.lock().unwrap();
+        let mut conn = self.conn.lock().unwrap();
 
         let count: i64 = conn
             .query_row(
@@ -601,7 +601,11 @@ impl DevicePairingOwner {
             )));
         }
 
-        conn.execute(
+        let tx = conn.transaction().map_err(|e| {
+            GatewayCommandError::Internal(format!("Failed to begin pairing revoke transaction: {e}"))
+        })?;
+
+        tx.execute(
             "DELETE FROM device_pairing_paired WHERE device_id = ?1",
             params![device_id],
         )
@@ -609,8 +613,11 @@ impl DevicePairingOwner {
             GatewayCommandError::Internal(format!("Failed to delete paired device: {e}"))
         })?;
 
-        let new_rev = bump_revision(&conn).map_err(|e| {
+        let new_rev = bump_revision(&tx).map_err(|e| {
             GatewayCommandError::Internal(format!("Failed to bump pairing revision: {e}"))
+        })?;
+        tx.commit().map_err(|e| {
+            GatewayCommandError::Internal(format!("Failed to commit pairing revoke transaction: {e}"))
         })?;
 
         Ok(json!({
@@ -635,7 +642,7 @@ impl DevicePairingOwner {
             .get("role")
             .and_then(Value::as_str)
             .unwrap_or("operator");
-        let conn = self.conn.lock().unwrap();
+        let mut conn = self.conn.lock().unwrap();
 
         let (roles_json, scopes_json): (Option<String>, Option<String>) = conn
             .query_row(
@@ -680,14 +687,21 @@ impl DevicePairingOwner {
         })
         .to_string();
 
-        conn.execute(
+        let tx = conn.transaction().map_err(|e| {
+            GatewayCommandError::Internal(format!("Failed to begin token rotation transaction: {e}"))
+        })?;
+
+        tx.execute(
             "UPDATE device_pairing_paired SET tokens_json = ?1 WHERE device_id = ?2",
             params![tokens_json, device_id],
         )
         .map_err(|e| GatewayCommandError::Internal(format!("Failed to update tokens: {e}")))?;
 
-        let new_rev = bump_revision(&conn).map_err(|e| {
+        let new_rev = bump_revision(&tx).map_err(|e| {
             GatewayCommandError::Internal(format!("Failed to bump pairing revision: {e}"))
+        })?;
+        tx.commit().map_err(|e| {
+            GatewayCommandError::Internal(format!("Failed to commit token rotation transaction: {e}"))
         })?;
 
         let is_cross_device = args
