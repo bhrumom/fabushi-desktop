@@ -1382,6 +1382,97 @@ mod tests {
     }
 
     #[test]
+    fn repair_request_is_pending_without_overwriting_paired_credentials_or_surface() {
+        let owner = DevicePairingOwner::in_memory().expect("pairing owner");
+        let initial_request = owner
+            .handle_pair_request(&json!({
+                "deviceId": "repair-request-device",
+                "publicKey": "initial-repair-key",
+                "roles": ["operator"]
+            }))
+            .expect("initial pair request");
+        owner
+            .handle_pair_approve(&json!({
+                "requestId": initial_request["requestId"]
+            }))
+            .expect("initial pair approval");
+
+        {
+            let conn = owner.conn.lock().expect("pairing database lock");
+            conn.execute(
+                "UPDATE device_pairing_paired
+                 SET node_surface_json = ?1, pending_node_surface_json = ?2
+                 WHERE device_id = ?3",
+                params![
+                    "{\"generation\":7}",
+                    "{\"generation\":8}",
+                    "repair-request-device"
+                ],
+            )
+            .expect("seed retained node surfaces");
+        }
+
+        let (old_public_key, old_tokens, old_surface, old_pending_surface): (
+            String,
+            String,
+            Option<String>,
+            Option<String>,
+        ) = {
+            let conn = owner.conn.lock().expect("pairing database lock");
+            conn.query_row(
+                "SELECT public_key, tokens_json, node_surface_json, pending_node_surface_json
+                 FROM device_pairing_paired WHERE device_id = ?1",
+                params!["repair-request-device"],
+                |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?, row.get(3)?)),
+            )
+            .expect("read paired identity before repair request")
+        };
+
+        let repair_request = owner
+            .handle_pair_request(&json!({
+                "deviceId": "repair-request-device",
+                "publicKey": "replacement-repair-key",
+                "roles": ["operator"]
+            }))
+            .expect("repair pair request");
+        assert_eq!(repair_request["status"], "pending");
+        assert_eq!(repair_request["isRepair"], true);
+        assert_eq!(repair_request["created"], true);
+
+        let (pending_public_key, paired_public_key, paired_tokens, paired_surface, paired_pending_surface): (
+            String,
+            String,
+            String,
+            Option<String>,
+            Option<String>,
+        ) = {
+            let conn = owner.conn.lock().expect("pairing database lock");
+            let pending_public_key = conn
+                .query_row(
+                    "SELECT public_key FROM device_pairing_pending WHERE request_id = ?1",
+                    params![repair_request["requestId"]],
+                    |row| row.get(0),
+                )
+                .expect("read repair pending identity");
+            let paired = conn
+                .query_row(
+                    "SELECT public_key, tokens_json, node_surface_json, pending_node_surface_json
+                     FROM device_pairing_paired WHERE device_id = ?1",
+                    params!["repair-request-device"],
+                    |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?, row.get(3)?)),
+                )
+                .expect("read paired identity after repair request");
+            (pending_public_key, paired.0, paired.1, paired.2, paired.3)
+        };
+
+        assert_eq!(pending_public_key, "replacement-repair-key");
+        assert_eq!(paired_public_key, old_public_key);
+        assert_eq!(paired_tokens, old_tokens);
+        assert_eq!(paired_surface, old_surface);
+        assert_eq!(paired_pending_surface, old_pending_surface);
+    }
+
+    #[test]
     fn token_rotation_preserves_tokens_for_other_approved_roles() {
         let owner = DevicePairingOwner::in_memory().expect("pairing owner");
         let request = owner

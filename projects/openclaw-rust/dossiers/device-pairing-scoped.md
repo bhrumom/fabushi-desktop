@@ -223,3 +223,7 @@ covers that multi-role invariant at the source level, and the public pairing
 contract exercises operator-token authentication after a node-only rotation.
 The Gateway contract also exercises a real node token against
 `device.pair.list` and requires the operator-surface `ROLE_MISMATCH` refusal.
+The owner-level contract `repair_request_is_pending_without_overwriting_paired_credentials_or_surface`
+also proves that a re-registration of an already approved device is reported
+as `isRepair` pending, while the existing paired public key, token map, and
+retained node surfaces remain unchanged until an explicit approval commit.
