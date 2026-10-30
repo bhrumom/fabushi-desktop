@@ -3328,6 +3328,8 @@ impl UnifiedGatewayApi {
         let cpu_count = std::thread::available_parallelism().map(|n| n.get()).unwrap_or(1);
         let memory = mahayana_host_runtime::host_system_info::sample_host_memory()
             .map_err(GatewayCommandError::Internal)?;
+        let release = mahayana_host_runtime::host_system_info::sample_host_os_release()
+            .map_err(GatewayCommandError::Internal)?;
         let hostname = std::env::var("HOSTNAME")
             .or_else(|_| std::env::var("COMPUTERNAME"))
             .ok()
@@ -3339,7 +3341,7 @@ impl UnifiedGatewayApi {
             "machineName": hostname.clone(),
             "hostname": hostname,
             "platform": std::env::consts::OS,
-            "release": std::env::consts::OS,
+            "release": release,
             "arch": std::env::consts::ARCH,
             "osLabel": std::env::consts::OS,
             "pid": pid,

@@ -10,6 +10,52 @@ pub struct HostMemorySnapshot {
     pub available_bytes: u64,
 }
 
+pub fn sample_host_os_release() -> Result<String, String> {
+    #[cfg(unix)]
+    {
+        let mut value = std::mem::MaybeUninit::<libc::utsname>::zeroed();
+        if unsafe { libc::uname(value.as_mut_ptr()) } != 0 {
+            return Err("host OS release sampling failed".into());
+        }
+        let value = unsafe { value.assume_init() };
+        let bytes = unsafe {
+            std::slice::from_raw_parts(
+                value.release.as_ptr().cast::<u8>(),
+                value.release.len(),
+            )
+        };
+        let end = bytes.iter().position(|byte| *byte == 0).unwrap_or(bytes.len());
+        let release = String::from_utf8(bytes[..end].to_vec())
+            .map_err(|_| "host OS release was not valid UTF-8".to_string())?;
+        if release.trim().is_empty() {
+            return Err("host OS release was empty".into());
+        }
+        return Ok(release);
+    }
+
+    #[cfg(windows)]
+    {
+        let mut value = WindowsOsVersionInfo {
+            size: std::mem::size_of::<WindowsOsVersionInfo>() as u32,
+            major: 0,
+            minor: 0,
+            build: 0,
+            platform: 0,
+            service_pack: [0; 128],
+        };
+        let result = unsafe { RtlGetVersion(&mut value) };
+        if result != 0 {
+            return Err(format!("host OS release sampling failed: status {result}"));
+        }
+        return Ok(format!("{}.{}.{}", value.major, value.minor, value.build));
+    }
+
+    #[cfg(not(any(unix, windows)))]
+    {
+        Err("host OS release sampling is unsupported on this platform".into())
+    }
+}
+
 pub fn sample_host_memory() -> Result<HostMemorySnapshot, String> {
     #[cfg(target_os = "linux")]
     {
@@ -118,6 +164,22 @@ struct MemoryStatusEx {
 }
 
 #[cfg(windows)]
+#[repr(C)]
+struct WindowsOsVersionInfo {
+    size: u32,
+    major: u32,
+    minor: u32,
+    build: u32,
+    platform: u32,
+    service_pack: [u16; 128],
+}
+
+#[cfg(windows)]
+unsafe extern "system" {
+    fn RtlGetVersion(version: *mut WindowsOsVersionInfo) -> i32;
+}
+
+#[cfg(windows)]
 unsafe extern "system" {
     fn GlobalMemoryStatusEx(status: *mut MemoryStatusEx) -> i32;
 }
@@ -147,12 +209,17 @@ fn windows_memory() -> Result<HostMemorySnapshot, String> {
 
 #[cfg(test)]
 mod tests {
-    use super::sample_host_memory;
+    use super::{sample_host_memory, sample_host_os_release};
 
     #[test]
     fn reports_positive_total_and_bounded_available_memory() {
         let memory = sample_host_memory().expect("host memory is available");
         assert!(memory.total_bytes > 0);
         assert!(memory.available_bytes <= memory.total_bytes);
+    }
+
+    #[test]
+    fn reports_non_empty_os_release() {
+        assert!(!sample_host_os_release().expect("host OS release is available").is_empty());
     }
 }
