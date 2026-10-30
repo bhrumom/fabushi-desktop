@@ -13,6 +13,7 @@ The read-only live checks for this continuation resolved:
 - OpenClaw `refs/heads/main`: `87facf07d6b4907846c4a8e4c7ae551f85571420`, tree `f72fbc794bbb23a04bc5afea875d4877048015c9`.
 - OCRM PR heads: #169 `b5db35fa272c83833685d70a730b5f8285fa1176`; #180 `2225400ea73392523586a110301edeb87c986001`; #181 `ab4eaa0560a5b767f46d0c91e36eb6e3cfd4344a`. None is canonical `main`.
 - GitHub recursive-tree API for live tree `f72fbc794bbb23a04bc5afea875d4877048015c9` returned `truncated=false`, with 63,459 tree entries: 61,221 blobs and 2,238 directories.
+- Live root manifest identities are `package.json`=`95a4ad9759adf93239199b0e5f671fb552b6c967`, `pnpm-lock.yaml`=`3d04ffe75adbebb2aa2a536d80acd5ba6e374717`, `pnpm-workspace.yaml`=`c3bddd9f93fec0711312080545cc472fa76f2bc4`, `.gitattributes`=`c6118b226a4a760f7861b6b7b1e7dccd943384e4`, `LICENSE`=`ed064819ab537575d0cad902f7e5af4a3488b1d0`, and `THIRD_PARTY_NOTICES.md`=`0c9c123760188915a384ce7275df4096114e8f90`. The live root has no `.gitmodules`; `.gitattributes` contains no Git-LFS filter rules, but generated/localization paths remain in scope for disposition.
 
 The committed OCRM lock and generated inventory still identify the prior candidate OpenClaw commit/tree `ad8d12f126d29b0db204187adf5092db80294e70` / `04ccce62f1d74dc8e0c88290ae8ded027b7b0f16`. The prior inventory rows contain blob identities for that tree and therefore cannot be relabeled to the live tree by editing only the lock.
 
