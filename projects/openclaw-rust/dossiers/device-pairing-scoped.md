@@ -191,3 +191,18 @@ lookup to current durable pairing state rather than a cached grant.
 The assertions are source-level Rust contract evidence only until the declared
 Actions run executes them. They do not prove websocket reconnect fencing,
 companion delivery, current OpenClaw source closure, or real-device acceptance.
+
+## 9. Pending-request identity and supersession (2026-10-30)
+
+`DevicePairingOwner::handle_pair_request` now preserves one pending identity
+for a compatible retry: the same device/public key/browser origin/role with an
+identical or narrower role/scope surface refreshes `refreshed_at_ms` and
+returns the original `requestId`. An incompatible public key or browser
+origin, or an escalated role/scope surface, supersedes the device's prior
+pending rows before creating a new request. The original request then reports
+`rejected` rather than remaining a usable approval handle.
+
+This closes the local pending producer → SQLite owner → status consumer
+invariant. Pending expiry, approval-worker concurrency, reconnect-generation
+fencing, exact-head execution and companion acceptance remain separate open
+responsibilities.

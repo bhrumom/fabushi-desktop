@@ -26,6 +26,69 @@ fn test_ocrm_pair_o01_request_success() {
 }
 
 #[test]
+fn test_ocrm_pair_request_reuses_compatible_pending_identity() {
+    let owner = DevicePairingOwner::in_memory().expect("pairing owner");
+    let first = owner
+        .handle_pairing_command(
+            "device.pair.request",
+            &json!({
+                "deviceId": "dev-idempotent",
+                "publicKey": "pubkey-idempotent",
+                "browserOrigin": "https://browser-a.example",
+                "roles": ["operator"],
+                "scopes": ["operator.read", "operator.write"]
+            }),
+        )
+        .unwrap();
+    let first_request_id = first["requestId"].as_str().unwrap().to_string();
+
+    let refreshed = owner
+        .handle_pairing_command(
+            "device.pair.request",
+            &json!({
+                "deviceId": "dev-idempotent",
+                "publicKey": "pubkey-idempotent",
+                "browserOrigin": "https://browser-a.example",
+                "roles": ["operator"],
+                "scopes": ["operator.read"]
+            }),
+        )
+        .unwrap();
+    assert_eq!(refreshed["requestId"], first_request_id);
+    assert_eq!(refreshed["created"], false);
+    assert!(refreshed["refreshedAtMs"].as_i64().unwrap() > 0);
+
+    let status = owner
+        .handle_pairing_command(
+            "device.pair.status",
+            &json!({ "requestId": first_request_id }),
+        )
+        .unwrap();
+    assert_eq!(status["status"], "pending");
+
+    let superseding = owner
+        .handle_pairing_command(
+            "device.pair.request",
+            &json!({
+                "deviceId": "dev-idempotent",
+                "publicKey": "pubkey-idempotent",
+                "browserOrigin": "https://browser-b.example",
+                "roles": ["operator"],
+                "scopes": ["operator.read"]
+            }),
+        )
+        .unwrap();
+    assert_ne!(superseding["requestId"], first_request_id);
+    let superseded_status = owner
+        .handle_pairing_command(
+            "device.pair.status",
+            &json!({ "requestId": first_request_id }),
+        )
+        .unwrap();
+    assert_eq!(superseded_status["status"], "rejected");
+}
+
+#[test]
 fn test_ocrm_pair_o02_request_requires_device_id_and_public_key() {
     let owner = DevicePairingOwner::in_memory().expect("in-memory db");
     let err1 = owner

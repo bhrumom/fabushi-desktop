@@ -1,3 +1,4 @@
+use std::collections::BTreeSet;
 use std::path::{Path, PathBuf};
 use std::sync::Mutex;
 use std::time::{SystemTime, UNIX_EPOCH};
@@ -69,6 +70,48 @@ fn scopes_for_role(
     Ok(Value::Array(
         normalized.into_iter().map(Value::String).collect(),
     ))
+}
+
+fn parse_string_set(raw: &str) -> Option<BTreeSet<String>> {
+    let values = serde_json::from_str::<Value>(raw).ok()?.as_array()?.clone();
+    let mut result = BTreeSet::new();
+    for value in values {
+        let value = value.as_str()?.trim();
+        if value.is_empty() {
+            return None;
+        }
+        result.insert(value.to_string());
+    }
+    Some(result)
+}
+
+fn pending_request_is_compatible(
+    existing_public_key: &str,
+    existing_browser_origin: Option<&str>,
+    existing_role: Option<&str>,
+    existing_roles_json: Option<&str>,
+    existing_scopes_json: Option<&str>,
+    public_key: &str,
+    browser_origin: Option<&str>,
+    role: &str,
+    roles_json: &str,
+    scopes_json: &str,
+) -> bool {
+    if existing_public_key != public_key
+        || existing_browser_origin != browser_origin
+        || existing_role != Some(role)
+    {
+        return false;
+    }
+    let (Some(existing_roles), Some(existing_scopes), Some(requested_roles), Some(requested_scopes)) = (
+        existing_roles_json.and_then(parse_string_set),
+        existing_scopes_json.and_then(parse_string_set),
+        parse_string_set(roles_json),
+        parse_string_set(scopes_json),
+    ) else {
+        return false;
+    };
+    requested_roles.is_subset(&existing_roles) && requested_scopes.is_subset(&existing_scopes)
 }
 
 fn bump_revision(conn: &Connection) -> Result<u64, rusqlite::Error> {
@@ -321,6 +364,7 @@ impl DevicePairingOwner {
         let device_family = args.get("deviceFamily").and_then(Value::as_str);
         let client_id = args.get("clientId").and_then(Value::as_str);
         let client_mode = args.get("clientMode").and_then(Value::as_str);
+        let browser_origin = args.get("browserOrigin").and_then(Value::as_str);
         let role = args
             .get("role")
             .and_then(Value::as_str)
@@ -352,17 +396,117 @@ impl DevicePairingOwner {
             .map(|c: i64| c > 0)
             .unwrap_or(false);
 
+        let pending_candidates = {
+            let mut statement = conn
+                .prepare(
+                    "SELECT request_id, public_key, browser_origin, role, roles_json, scopes_json
+                     FROM device_pairing_pending
+                     WHERE device_id = ?1
+                     ORDER BY ts DESC",
+                )
+                .map_err(|error| {
+                    GatewayCommandError::Internal(format!(
+                        "Failed to inspect pending pairing requests: {error}"
+                    ))
+                })?;
+            let rows = statement
+                .query_map(params![device_id], |row| {
+                    Ok((
+                        row.get::<_, String>(0)?,
+                        row.get::<_, String>(1)?,
+                        row.get::<_, Option<String>>(2)?,
+                        row.get::<_, Option<String>>(3)?,
+                        row.get::<_, Option<String>>(4)?,
+                        row.get::<_, Option<String>>(5)?,
+                    ))
+                })
+                .map_err(|error| {
+                    GatewayCommandError::Internal(format!(
+                        "Failed to enumerate pending pairing requests: {error}"
+                    ))
+                })?;
+            rows.collect::<Result<Vec<_>, _>>().map_err(|error| {
+                GatewayCommandError::Internal(format!(
+                    "Failed to read pending pairing request: {error}"
+                ))
+            })?
+        };
+
+        if let Some((request_id, ..)) =
+            pending_candidates.iter().find(|(_, existing_public_key, existing_browser_origin, existing_role, existing_roles, existing_scopes)| {
+                pending_request_is_compatible(
+                    existing_public_key,
+                    existing_browser_origin.as_deref(),
+                    existing_role.as_deref(),
+                    existing_roles.as_deref(),
+                    existing_scopes.as_deref(),
+                    public_key,
+                    browser_origin,
+                    role,
+                    &roles_json,
+                    &scopes_json,
+                )
+            })
+        {
+            conn.execute(
+                "UPDATE device_pairing_pending
+                 SET display_name = ?1, platform = ?2, device_family = ?3,
+                     client_id = ?4, client_mode = ?5, browser_origin = ?6,
+                     silent = ?7, refreshed_at_ms = ?8
+                 WHERE request_id = ?9",
+                params![
+                    display_name,
+                    platform,
+                    device_family,
+                    client_id,
+                    client_mode,
+                    browser_origin,
+                    silent,
+                    now,
+                    request_id,
+                ],
+            )
+            .map_err(|error| {
+                GatewayCommandError::Internal(format!(
+                    "Failed to refresh pending pairing request: {error}"
+                ))
+            })?;
+            return Ok(json!({
+                "status": "pending",
+                "requestId": request_id,
+                "deviceId": device_id,
+                "created": false,
+                "refreshedAtMs": now,
+                "isRepair": is_repair,
+                "expiresAtMs": now + 900_000
+            }));
+        }
+
+        if !pending_candidates.is_empty() {
+            conn.execute(
+                "DELETE FROM device_pairing_pending WHERE device_id = ?1",
+                params![device_id],
+            )
+            .map_err(|error| {
+                GatewayCommandError::Internal(format!(
+                    "Failed to supersede pending pairing requests: {error}"
+                ))
+            })?;
+        }
+
         let request_id = format!("pair-{}", Uuid::new_v4());
         let is_repair_int = if is_repair { 1 } else { 0 };
 
         conn.execute(
             r#"INSERT INTO device_pairing_pending (
                 request_id, device_id, public_key, display_name, platform, device_family,
-                client_id, client_mode, role, roles_json, scopes_json, silent, is_repair, ts, refreshed_at_ms
-            ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?14)"#,
+                client_id, client_mode, browser_origin, role, roles_json, scopes_json,
+                silent, is_repair, ts, refreshed_at_ms
+            ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?15)"#,
             params![
                 request_id, device_id, public_key, display_name, platform, device_family,
-                client_id, client_mode, role, roles_json, scopes_json, silent, is_repair_int, now
+                client_id, client_mode, browser_origin, role, roles_json, scopes_json,
+                silent, is_repair_int, now
             ],
         ).map_err(|e| GatewayCommandError::Internal(format!("Failed to store pending pairing: {e}")))?;
 
