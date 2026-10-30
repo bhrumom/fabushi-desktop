@@ -13,7 +13,7 @@ use mahayana_node_agent_coordinator::gateway::gateway_client::{
     CoordinatorGatewayClient, GatewayCommandExecution, GatewayCommandPolicy,
     GatewayCommandSpan, GatewayTransportStage, dispatch_gateway_command, stream_http_events,
 };
-use mahayana_node_agent_coordinator::gateway::gateway_event_families::coordinator_event_family_for_sse_channel;
+use mahayana_node_agent_coordinator::gateway::gateway_event_families::event_family_for_channel;
 use mahayana_node_agent_coordinator::gateway::gateway_reachability::ReachabilityOutcome;
 use mahayana_node_agent_coordinator::gateway::gateway_request_dispatcher::{
     GatewayDispatchError, dispatch_http_json, failure_for,
@@ -1082,9 +1082,7 @@ fn dispatch_gateway_event(state: &Arc<CoordinatorState>, value: Value) {
     ) {
         (Some(channel), Some(payload)) => (
             channel.to_string(),
-            coordinator_event_family_for_sse_channel(channel)
-                .unwrap_or("runtime")
-                .to_string(),
+            event_family_for_channel(channel).to_string(),
             payload.clone(),
         ),
         _ => ("runtime".into(), "runtime".into(), value),

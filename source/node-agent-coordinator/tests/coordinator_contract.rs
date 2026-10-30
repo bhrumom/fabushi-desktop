@@ -253,7 +253,7 @@ fn crash_is_recorded_in_resync_snapshot() {
 #[test]
 fn gateway_event_families_match_the_frozen_coordinator_contract() {
     use mahayana_node_agent_coordinator::gateway::gateway_event_families::{
-        coordinator_event_family_for_sse_channel, sse_channel_for_family,
+        coordinator_event_family_for_sse_channel, event_family_for_channel, sse_channel_for_family,
     };
 
     assert_eq!(sse_channel_for_family("agents-workflow"), Some("workflows"));
@@ -269,6 +269,8 @@ fn gateway_event_families_match_the_frozen_coordinator_contract() {
         Some("cloud-workers.status")
     );
     assert_eq!(coordinator_event_family_for_sse_channel("unknown"), None);
+    assert_eq!(event_family_for_channel("cloud-workers.status"), "cloud-workers.status");
+    assert_eq!(event_family_for_channel("channel-activity"), "channel-activity");
 }
 
 #[test]

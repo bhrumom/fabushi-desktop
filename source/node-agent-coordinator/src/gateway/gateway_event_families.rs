@@ -31,6 +31,13 @@ pub fn coordinator_event_family_for_sse_channel(channel: &str) -> Option<&'stati
         .find_map(|(family, candidate)| (*candidate == channel).then_some(*family))
 }
 
+/// Preserve a producer's non-empty channel when the frozen table has not yet
+/// recorded a dedicated family. Channel-less envelopes are handled by the
+/// caller as the generic runtime family.
+pub fn event_family_for_channel(channel: &str) -> &str {
+    coordinator_event_family_for_sse_channel(channel).unwrap_or(channel)
+}
+
 pub fn is_known(family: &str) -> bool {
     sse_channel_for_family(family).is_some()
 }
