@@ -2475,3 +2475,20 @@ the Fabushi Sand/backend path, and `gateway_server.rs` plus
 valid OpenClaw NodeHost client owners. This preserves the fail-closed remote
 projection and records the exact missing production caller instead of inferring
 one from pairing rows or unrelated descriptors.
+
+## 189. Current live manifest/publication delta (2026-10-30)
+
+The exact current candidate `openclaw/openclaw@b7a537eb6833ea16960c227d5fc223fcd08ccef6`
+was re-read at `src/node-host/runtime-manifest.ts` and
+`src/node-host/connection.ts`. The live manifest gates `system.run` when the
+macOS app exec host is selected, gates `node.device_apps` on installed-app
+sharing, groups builtin capabilities (`system`, `mcp`, `device`, `screen`,
+Claude/native-auth and execution-context), and carries optional `pathEnv` and
+`computerUse`. The connection owner separately generation-fences host stats,
+runner inventory, plugin-tool and skill publications, with unsupported-method
+classification and bounded 250–5000 ms retry.
+
+Fabushi's current Rust builder/projection covers only the command/capability
+subset and has no live optional-publication producer or retry timer owner. This
+is an exact-source delta and an open R5/R7 implementation boundary, not proof
+of production parity or acceptance.
