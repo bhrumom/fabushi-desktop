@@ -328,6 +328,30 @@ impl SettingsService {
     pub fn get_settings_path(&self) -> &Path {
         &self.settings_path
     }
+
+    /// Returns secret-free provenance for the persisted settings source.
+    pub fn get_config_source_metadata(&self) -> Value {
+        let path = self.settings_path.to_string_lossy().into_owned();
+        let Ok(raw) = fs::read(&self.settings_path) else {
+            return json!({
+                "path": path,
+                "exists": self.settings_path.exists(),
+                "valid": false,
+                "rawHash": Value::Null,
+            });
+        };
+        let valid = serde_json::from_slice::<Value>(&raw)
+            .ok()
+            .and_then(|value| value.as_object().cloned())
+            .and_then(|object| object.get("version").and_then(Value::as_i64))
+            == Some(1);
+        json!({
+            "path": path,
+            "exists": true,
+            "valid": valid,
+            "rawHash": crate::sha256::sha256_hex(raw),
+        })
+    }
     fn empty_settings() -> Map<String, Value> {
         Map::from_iter([
             ("version".into(), Value::from(1)),

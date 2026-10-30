@@ -3259,6 +3259,7 @@ impl UnifiedGatewayApi {
             "settings": settings.clone(),
             "config": settings,
             "hash": hash,
+            "configSource": self.settings.get_config_source_metadata(),
         });
         if let Some(m) = matches {
             res["matches"] = serde_json::json!(m);
@@ -3320,6 +3321,7 @@ impl UnifiedGatewayApi {
             "config": result.clone(),
             "settings": result,
             "hash": hash,
+            "configSource": self.settings.get_config_source_metadata(),
         }))
     }
 
