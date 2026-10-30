@@ -1321,4 +1321,48 @@ mod tests {
         }));
         assert!(approval.is_err());
     }
+
+    #[test]
+    fn token_rotation_clears_retained_node_surfaces() {
+        let owner = DevicePairingOwner::in_memory().expect("pairing owner");
+        let request = owner
+            .handle_pair_request(&json!({
+                "deviceId": "rotation-surface-device",
+                "publicKey": "rotation-surface-key"
+            }))
+            .expect("pair request");
+        owner
+            .handle_pair_approve(&json!({
+                "requestId": request["requestId"]
+            }))
+            .expect("pair approval");
+
+        {
+            let conn = owner.conn.lock().expect("pairing database lock");
+            conn.execute(
+                "UPDATE device_pairing_paired
+                 SET node_surface_json = ?1, pending_node_surface_json = ?2
+                 WHERE device_id = ?3",
+                params!["{\"generation\":1}", "{\"generation\":2}", "rotation-surface-device"],
+            )
+            .expect("seed retained node surfaces");
+        }
+
+        owner
+            .handle_pair_rotate_token(&json!({
+                "deviceId": "rotation-surface-device"
+            }))
+            .expect("token rotation");
+
+        let conn = owner.conn.lock().expect("pairing database lock");
+        let surfaces: (Option<String>, Option<String>) = conn
+            .query_row(
+                "SELECT node_surface_json, pending_node_surface_json
+                 FROM device_pairing_paired WHERE device_id = ?1",
+                params!["rotation-surface-device"],
+                |row| Ok((row.get(0)?, row.get(1)?)),
+            )
+            .expect("read rotated pairing");
+        assert_eq!(surfaces, (None, None));
+    }
 }
