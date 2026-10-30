@@ -37,7 +37,8 @@ The audited sources were mapped to 1 discrete Rust runtime responsibility regist
 1. **`OCRM-RESP-MEDIA-FETCH-PIPELINE-001` (NEW)**:
    - **Behavior**: SSRF-guarded remote media fetch and response buffering/persistence pipeline. Enforces Content-Disposition RFC 5987 / 6266 extended filenames (UTF-8, ISO-8859-1) with apostrophe retention and Windows path reduction, Content-Length header verification with early cancellation on malformed values, streaming payload maxBytes caps, audio/video container hint resolution, HTTP charset retention, bot token redaction, and empty body rejection.
    - **Rust Owner**: `source/host/src/extensions/attachments/media_fetch.rs::read_remote_media_buffer, read_remote_media_buffer_with_headers, save_response_media, save_remote_media, parse_content_disposition_file_name, redact_sensitive_text`.
-   - **Production Call Chain**: Producer `AttachmentsService::dispatch_gateway` → Owner `media_fetch` → Consumer: *Pending agent loop and chat channel attachment fetchers*.
+   - **Production Call Chain**: `source/host/src/extensions/attachments/input_files.rs::read_input_source` → `media_fetch::read_remote_media_buffer`; `source/host/src/extensions/attachments/media_store.rs::save_media_source` → `media_store::save_remote_media_for_store` → `media_fetch`; and `source/host/app/src/main.rs::dispatch_gateway_call` → `AttachmentsService::dispatch_gateway` → `media_fetch`.
+   - **Wiring boundary**: These input-file, media-store, and gateway paths are live Rust production callers. The full OpenClaw chat attachment downlink and agent-loop attachment-fetch coverage is still absent, so the responsibility remains `wiring=not-wired` with `BL-MEDIA-FETCH-PIPELINE-CHAT-WIRING-001`.
    - **Oracles**: `OCRM-FETCH-O01`, `OCRM-FETCH-O02`.
    - **Status**: `implementation=implemented`, `wiring=not-wired`, `verification=not-run`, `blocker_ids=["BL-MEDIA-FETCH-PIPELINE-CHAT-WIRING-001"]`.
 

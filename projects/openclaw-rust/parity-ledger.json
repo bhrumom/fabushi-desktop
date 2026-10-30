@@ -8790,10 +8790,10 @@
       ],
       "id": "OCRM-RESP-MEDIA-FETCH-PIPELINE-001",
       "integration": {
-        "consumer": "Pending agent loop and chat channel attachment fetchers",
-        "entrypoint": "source/host/src/extensions/attachments/attachments_service.rs::dispatch_gateway",
+        "consumer": "source/host/src/extensions/attachments/input_files.rs::read_input_source; source/host/src/extensions/attachments/media_store.rs::save_media_source; source/host/app/src/main.rs::dispatch_gateway_call",
+        "entrypoint": "source/host/src/extensions/attachments/input_files.rs::read_input_source -> media_fetch::read_remote_media_buffer; media_store.rs::save_media_source -> media_store::save_remote_media_for_store; attachments_service.rs::dispatch_gateway",
         "owner": "source/host/src/extensions/attachments/media_fetch.rs",
-        "producer": "AttachmentsService::dispatch_gateway"
+        "producer": "input file, media-store, and attachment gateway callers"
       },
       "invariants": [
         "Content-Disposition filename* RFC 5987 extended values must be decoded with UTF-8 or ISO-8859-1, falling back to plain filename on malformed or unsupported charsets",
