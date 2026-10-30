@@ -2063,3 +2063,16 @@ dialect is bounded by the server and offered maximum. Inverted, future and
 out-of-range values fail closed. The seam does not create the challenge-bound
 connect envelope, sign device metadata, own version persistence, or open a
 Gateway socket; live negotiation and device acceptance remain pending.
+
+## 166. New live-main candidate discovery (2026-10-30)
+
+A read-only `git ls-remote`/object acquisition observed OpenClaw `main` at
+commit `d67aa608643f6583a6c6102c522043794aafe064`; its root tree is
+`1999145af25baef58520f40daf89e0be3b39988a0`, and the fetched recursive listing
+contains 227 paths under `src/node-host/` and `crates/openclaw-node-host/`.
+This differs from the current implementation lock
+`ad8d12f126d29b0db204187adf5092db80294e70` / tree
+`04ccce62f1d74dc8e0c88290ae8ded027b7b0f16` and supersedes neither the lock nor
+its inventory. No source rows, dependency closure, parity disposition,
+Actions receipt, or completion flag was changed; the new commit requires the
+formal rebaseline workflow before it can become implementation authority.
