@@ -283,7 +283,9 @@ The artifact-admission foundation at
 `source/host/src/extensions/cloud_workers/artifact_admission.rs` is likewise
 pure validation: it enforces HTTPS allowlisted origins, bounded size, SHA-256
 shape, safe archive member paths and explicit pending/damaged/outcome-unknown
-states. It does not download, verify bytes, publish files or mutate a managed
+states. Origin comparison is canonicalized so equivalent trailing-slash forms
+remain deterministic, and deserialized digest fields are revalidated before
+use. It does not download, verify bytes, publish files or mutate a managed
 artifact store. It now also exposes bounded byte-level SHA-256 verification;
 digest mismatch remains a hard admission failure, while download, extraction,
 publication and managed artifact mutation remain outside this slice.

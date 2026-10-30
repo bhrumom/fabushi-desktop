@@ -5,6 +5,8 @@ use thiserror::Error;
 use url::Url;
 use sha2::{Digest, Sha256};
 
+const MAX_ARCHIVE_MEMBER_CHARS: usize = 4096;
+
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum CloudWorkerArtifactKind {
     WorkerBinary,
@@ -48,18 +50,7 @@ impl CloudWorkerArtifactPolicy {
             return Err(CloudWorkerArtifactAdmissionError::InvalidSizeLimit);
         }
         for origin in &self.allowed_https_origins {
-            let url = Url::parse(origin)
-                .map_err(|_| CloudWorkerArtifactAdmissionError::InvalidOrigin)?;
-            if url.scheme() != "https"
-                || url.host_str().is_none()
-                || url.username() != ""
-                || url.password().is_some()
-                || url.path() != "/"
-                || url.query().is_some()
-                || url.fragment().is_some()
-            {
-                return Err(CloudWorkerArtifactAdmissionError::InvalidOrigin);
-            }
+            canonical_https_origin(origin)?;
         }
         Ok(())
     }
@@ -76,6 +67,12 @@ impl CloudWorkerArtifactPolicy {
                 max_bytes: self.max_bytes,
             });
         }
+        let expected_digest = match source {
+            CloudWorkerArtifactSource::Https { digest, .. }
+            | CloudWorkerArtifactSource::ManagedLocal { digest } => digest,
+        };
+        CloudWorkerArtifactDigest::new(expected_digest.0.clone())
+            .map_err(|_| CloudWorkerArtifactAdmissionError::InvalidDigest)?;
         if let CloudWorkerArtifactSource::Https { url, .. } = source {
             let parsed = Url::parse(url)
                 .map_err(|_| CloudWorkerArtifactAdmissionError::InvalidOrigin)?;
@@ -84,7 +81,13 @@ impl CloudWorkerArtifactPolicy {
                 return Err(CloudWorkerArtifactAdmissionError::InvalidOrigin);
             }
             let origin = parsed.origin().ascii_serialization();
-            if !self.allowed_https_origins.iter().any(|allowed| allowed == &origin) {
+            if !self
+                .allowed_https_origins
+                .iter()
+                .any(|allowed| {
+                    canonical_https_origin(allowed).ok().as_deref() == Some(origin.as_str())
+                })
+            {
                 return Err(CloudWorkerArtifactAdmissionError::OriginNotAllowed(origin));
             }
         }
@@ -152,7 +155,11 @@ impl CloudWorkerArtifactAdmission {
 }
 
 pub fn validate_archive_member_path(path: &str) -> Result<(), CloudWorkerArtifactAdmissionError> {
-    if path.is_empty() || path.contains('\\') {
+    if path.is_empty()
+        || path.chars().count() > MAX_ARCHIVE_MEMBER_CHARS
+        || path.chars().any(|character| character.is_control())
+        || path.contains('\\')
+    {
         return Err(CloudWorkerArtifactAdmissionError::UnsafeArchivePath);
     }
     let path = std::path::Path::new(path);
@@ -166,7 +173,22 @@ pub fn validate_archive_member_path(path: &str) -> Result<(), CloudWorkerArtifac
     Ok(())
 }
 
-#[derive(Debug, Error)]
+fn canonical_https_origin(value: &str) -> Result<String, CloudWorkerArtifactAdmissionError> {
+    let url = Url::parse(value).map_err(|_| CloudWorkerArtifactAdmissionError::InvalidOrigin)?;
+    if url.scheme() != "https"
+        || url.host_str().is_none()
+        || url.username() != ""
+        || url.password().is_some()
+        || (url.path() != "" && url.path() != "/")
+        || url.query().is_some()
+        || url.fragment().is_some()
+    {
+        return Err(CloudWorkerArtifactAdmissionError::InvalidOrigin);
+    }
+    Ok(url.origin().ascii_serialization())
+}
+
+#[derive(Debug, Error, Clone, PartialEq, Eq)]
 pub enum CloudWorkerArtifactAdmissionError {
     #[error("artifact digest must be exactly 64 hexadecimal characters")]
     InvalidDigest,
@@ -253,5 +275,21 @@ mod tests {
             verify_artifact_bytes(&policy(), &source, b"worker"),
             Err(CloudWorkerArtifactAdmissionError::DigestMismatch { .. })
         ));
+    }
+
+    #[test]
+    fn accepts_origin_without_a_trailing_slash() {
+        assert_eq!(policy().validate(), Ok(()));
+    }
+
+    #[test]
+    fn rejects_deserialized_invalid_digest_before_byte_verification() {
+        let source = CloudWorkerArtifactSource::ManagedLocal {
+            digest: CloudWorkerArtifactDigest("invalid".into()),
+        };
+        assert_eq!(
+            policy().validate_source(&source, 10),
+            Err(CloudWorkerArtifactAdmissionError::InvalidDigest)
+        );
     }
 }
