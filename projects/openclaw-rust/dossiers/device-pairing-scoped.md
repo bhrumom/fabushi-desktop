@@ -178,3 +178,16 @@ and nonce headers remain replay fences and are not credentials. This closes the
 local producer → pairing owner → ingress consumer path; websocket challenge,
 remote companion transport, executable Actions evidence, and real-device
 acceptance remain pending.
+
+## 8. Rotation and revocation invalidation contract (2026-10-30)
+
+The pairing contract now records two negative paths at the owner consumer
+boundary: a token issued by `device.pair.rotateToken` authenticates before the
+next rotation but the prior bearer is rejected after rotation; a bearer that
+authenticates before `device.pair.revoke` is rejected after the paired row is
+deleted and `device.pair.status` becomes `rejected`. These checks bind token
+lookup to current durable pairing state rather than a cached grant.
+
+The assertions are source-level Rust contract evidence only until the declared
+Actions run executes them. They do not prove websocket reconnect fencing,
+companion delivery, current OpenClaw source closure, or real-device acceptance.
