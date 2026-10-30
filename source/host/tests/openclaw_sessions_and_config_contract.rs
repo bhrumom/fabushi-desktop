@@ -91,18 +91,25 @@ fn test_system_info_schema_and_zero_secret_leakage() {
 
     let pid = std::process::id();
     let cpu_count = std::thread::available_parallelism().map(|n| n.get()).unwrap_or(1);
+    let memory = mahayana_host_runtime::host_system_info::sample_host_memory()
+        .expect("host memory observation");
+    let hostname = std::env::var("HOSTNAME")
+        .or_else(|_| std::env::var("COMPUTERNAME"))
+        .ok()
+        .filter(|value| !value.trim().is_empty())
+        .unwrap_or_else(|| "unknown".into());
 
     let info = json!({
-        "machineName": "sand-host",
-        "hostname": "localhost",
+        "machineName": hostname.clone(),
+        "hostname": hostname,
         "platform": std::env::consts::OS,
         "release": std::env::consts::OS,
         "arch": std::env::consts::ARCH,
         "osLabel": std::env::consts::OS,
         "pid": pid,
         "cpuCount": cpu_count,
-        "memoryTotalBytes": 16 * 1024 * 1024 * 1024_u64,
-        "memoryFreeBytes": 8 * 1024 * 1024 * 1024_u64,
+        "memoryTotalBytes": memory.total_bytes,
+        "memoryFreeBytes": memory.available_bytes,
         "uptimeMs": 1000,
         "processInstanceId": format!("sand-host-{pid}"),
         "version": env!("CARGO_PKG_VERSION"),

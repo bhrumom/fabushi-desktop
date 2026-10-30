@@ -493,7 +493,7 @@ use std::fs;
 use std::io::{self, BufRead, Write};
 use std::path::{Path, PathBuf};
 use std::sync::{
-    Arc, Mutex, Weak, mpsc,
+    Arc, Mutex, OnceLock, Weak, mpsc,
     atomic::{AtomicBool, Ordering},
 };
 use signal_hook::consts::signal::{SIGINT, SIGTERM};
@@ -3326,19 +3326,26 @@ impl UnifiedGatewayApi {
         );
         let pid = std::process::id();
         let cpu_count = std::thread::available_parallelism().map(|n| n.get()).unwrap_or(1);
-        let uptime_ms = started_at_ms();
+        let memory = mahayana_host_runtime::host_system_info::sample_host_memory()
+            .map_err(GatewayCommandError::Internal)?;
+        let hostname = std::env::var("HOSTNAME")
+            .or_else(|_| std::env::var("COMPUTERNAME"))
+            .ok()
+            .filter(|value| !value.trim().is_empty())
+            .unwrap_or_else(|| "unknown".into());
+        let uptime_ms = process_uptime_ms();
 
         Ok(serde_json::json!({
-            "machineName": "sand-host",
-            "hostname": "localhost",
+            "machineName": hostname.clone(),
+            "hostname": hostname,
             "platform": std::env::consts::OS,
             "release": std::env::consts::OS,
             "arch": std::env::consts::ARCH,
             "osLabel": std::env::consts::OS,
             "pid": pid,
             "cpuCount": cpu_count,
-            "memoryTotalBytes": 16 * 1024 * 1024 * 1024_u64,
-            "memoryFreeBytes": 8 * 1024 * 1024 * 1024_u64,
+            "memoryTotalBytes": memory.total_bytes,
+            "memoryFreeBytes": memory.available_bytes,
             "uptimeMs": uptime_ms,
             "processInstanceId": format!("sand-host-{pid}"),
             "version": env!("CARGO_PKG_VERSION"),
@@ -12342,6 +12349,18 @@ fn started_at_ms() -> u64 {
         .unwrap_or_default()
 }
 
+fn process_start_instant() -> &'static Instant {
+    static PROCESS_START: OnceLock<Instant> = OnceLock::new();
+    PROCESS_START.get_or_init(Instant::now)
+}
+
+fn process_uptime_ms() -> u64 {
+    process_start_instant()
+        .elapsed()
+        .as_millis()
+        .min(u64::MAX as u128) as u64
+}
+
 fn write_response(stdout: &Mutex<io::Stdout>, response: &str) -> io::Result<()> {
     let mut stdout = stdout
         .lock()
@@ -12397,6 +12416,7 @@ fn main() {
         std::process::exit(exit_code);
     }
 
+    let _ = process_start_instant();
     let host_started_at_ms = started_at_ms();
 
     let _process_crash_guard =
