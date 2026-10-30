@@ -30,6 +30,12 @@ impl CloudWorkerProvisioningExtension {
             .unwrap_or(CloudWorkerOwnerStatus::Unavailable)
     }
 
+    /// Returns a read-only snapshot for the existing Host/Coordinator status
+    /// consumer. The extension remains the only owner of the live state.
+    pub fn snapshot(&self) -> Option<super::CloudWorkerPersistentSnapshot> {
+        self.owner.lock().ok().map(|owner| owner.snapshot())
+    }
+
     pub fn state_path(&self) -> &Path {
         &self.state_path
     }

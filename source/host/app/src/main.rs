@@ -11107,11 +11107,16 @@ impl GatewayApi for UnifiedGatewayApi {
                 mahayana_host_runtime::extensions::cloud_workers::CloudWorkerOwnerStatus::Enabled => "enabled",
                 mahayana_host_runtime::extensions::cloud_workers::CloudWorkerOwnerStatus::Unavailable => "unavailable",
             };
+            let snapshot = self.cloud_workers.snapshot();
             return Ok(serde_json::json!({
                 "owner": "cloud-workers",
                 "status": status,
                 "providerReady": false,
                 "productionMutation": false,
+                "statePersisted": snapshot.is_some(),
+                "leaseCount": snapshot.as_ref().map_or(0, |value| value.leases.len()),
+                "warmImageCount": snapshot.as_ref().map_or(0, |value| value.warm_images.len()),
+                "migrationReceiptCount": snapshot.as_ref().map_or(0, |value| value.migration_receipts.len()),
             }));
         }
         if method == "ensureForeverBox" {
