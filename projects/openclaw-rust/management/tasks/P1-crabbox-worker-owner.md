@@ -386,6 +386,8 @@ Coordinator→Host Gateway projection preserves that distinction as
 `"unavailable"`. This is fail-closed fault reporting only: it does not recover
 the owner, enable cloud-worker mutation commands, establish provider
 reachability, or change the disabled-by-default production slot.
+The host contract suite also includes a poison-lock negative case so this
+projection remains regression-visible when executable verification is enabled.
 
 The Coordinator crate now owns the serializable projection contract in
 `source/node-agent-coordinator/src/cloud_worker_projection.rs`, with the exact

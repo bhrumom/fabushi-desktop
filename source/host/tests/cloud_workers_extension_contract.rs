@@ -28,6 +28,22 @@ fn production_boundary_starts_disabled_without_provider_prerequisites() {
 }
 
 #[test]
+fn poisoned_owner_is_projected_as_unavailable_instead_of_panicking() {
+    let state_path = std::env::temp_dir().join("cloud-worker-poisoned-contract-state.json");
+    let extension = start_cloud_worker_provisioning_extension(state_path).unwrap();
+    let owner = extension.owner();
+    let join = std::thread::spawn(move || {
+        let _guard = owner
+            .lock()
+            .expect("owner lock should be healthy before poisoning");
+        panic!("poison cloud-worker owner for the contract");
+    })
+    .join();
+    assert!(join.is_err());
+    assert_eq!(extension.status(), CloudWorkerOwnerStatus::Unavailable);
+}
+
+#[test]
 fn coordinator_gateway_registry_routes_only_the_read_projection() {
     assert_eq!(
         host_gateway_owner("cloudWorkers.status"),
