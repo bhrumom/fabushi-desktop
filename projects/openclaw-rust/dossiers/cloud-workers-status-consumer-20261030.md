@@ -27,5 +27,6 @@ repeating lease/image/receipt semantics in the Gateway adapter. A focused Host
 contract covers the disabled, provider-not-ready projection and its wire field
 names. `statePersisted` now reflects the canonical regular state-file
 publication, rather than merely successful access to the in-memory owner. This
-is owner-boundary progress only: it does not add mutation commands, provider
-readiness, or a live event publisher.
+is covered in both directions by the focused contract (absent before
+`persist()`, present after it). This is owner-boundary progress only: it does
+not add mutation commands, provider readiness, or a live event publisher.

@@ -45,6 +45,9 @@ fn owner_status_snapshot_is_the_read_projection_and_stays_fail_closed() {
     let value = serde_json::to_value(projection).unwrap();
     assert_eq!(value["providerReady"], false);
     assert_eq!(value["productionMutation"], false);
+
+    extension.persist().unwrap();
+    assert!(extension.status_snapshot().state_persisted);
 }
 
 #[test]
