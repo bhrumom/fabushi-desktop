@@ -52,6 +52,7 @@ Define and implement a Fabushi-native node-host runtime embedding that preserves
 - `gateway_frames.rs` now provides a bounded, strict `req`/`res`/`event` envelope parser/encoder and a generation-fenced pending-request registry; it remains transport-neutral and is not a WebSocket client or production connection owner.
 - `gateway_transport.rs` now owns the blocking OpenClaw Gateway client socket, challenge-first handshake, supported protocol-window validation, device proof construction, hello validation, leaf-certificate SHA-256 fingerprint pinning, token persistence handoff, request correlation, event queue, bounded 30-second stream I/O, a controlled session inbound pump that routes only admitted events, adapters that admit a validated hello and inbound invoke request/input/cancel events into `NodeHostRuntimeState`, and a single best-effort `node.invoke.result` sender. No application startup caller or side-effect executor binding has been added yet.
 - `reconnect.rs` now provides a transport-owner-independent classification and bounded exponential backoff policy. It is not a reconnect task or timer owner; no production caller currently consumes it.
+- `gateway_lifecycle.rs` now composes the explicit transport config, one current Gateway session, reconnect policy, and replacement close/drain boundary. It is caller-facing but still transport-worker neutral: it owns no endpoint discovery, background timer, startup registration, or side-effect executor.
 - `invocation_router.rs` now binds the session owner's existing request admission to one live `NodeHostInvocationRuntime` per node/id and routes later input/cancel frames to that object. `gateway_transport.rs` exposes a session-to-router routed inbound seam; it owns no side effects or result delivery, and no production startup caller currently consumes it.
 - The invocation router also exposes a generation-bound drain seam for session replacement/close; it does not terminate external side effects, which remain with the injected executor owner.
 - `NodeHostRuntimeState` now exposes a generation-fenced manifest projection update, and the Gateway session can publish a `NodeHostManifest` through it; the real plugin/availability producer is still not wired.
@@ -169,6 +170,9 @@ Each case must retain typed failure evidence and must not be converted into a cl
    Keep optional-publication state in the transport-neutral generation-fenced
    owner so a later connection owner can consume its disposition without
    creating a second registry or retry scheduler.
+   Compose that transport with the lifecycle owner so replacement closes the
+   old session before a new explicit config is admitted and retry decisions are
+   returned to the eventual scheduler rather than hidden in the Host runtime.
 4. Add contract tests and Actions workflow coverage without fabricating provider/device success.
 5. Verify exact-head Actions, packaged runtime, and real device/transport cells; update the parity ledger only from those receipts.
 
@@ -217,8 +221,8 @@ Retain redacted lifecycle events, connection generation, negotiated protocol, ma
 | --- | --- | --- |
 | R1–R3, R8–R10 | pending | Runtime embedding is not yet implemented and wired. |
 | R4 | in progress | Strict request/input/cancel/result owners, manifest-gated invocation admission, a controlled inbound pump, a session-to-router routed inbound seam, and a one-shot best-effort Gateway result sender exist; side-effect execution, reconnect, and acceptance remain open. |
-| R6 | in progress | Error classification and bounded backoff policy exist; no lifecycle caller, retry-after source, reconnect loop, or exact-head/runtime acceptance exists. |
-| R7 | in progress | Canonical runtime state drains generation-bound registry records and the invocation router now has a matching in-memory drain seam; production shutdown/replacement caller and external side-effect cancellation remain open. |
+| R6 | in progress | Error classification, bounded backoff, and an explicit-config lifecycle owner exist; no background scheduler, retry-after source, production caller, or exact-head/runtime acceptance exists. |
+| R7 | in progress | Canonical runtime state, invocation-router drain, and lifecycle replacement close now fence predecessor state; production startup/shutdown caller and external side-effect cancellation remain open. |
 | R5 | in progress | A generation-fenced live manifest projection and optional-publication state seam exist; the real plugin/availability producer, refresh caller, transport publication, and remote acceptance remain open. |
 | R11–R14 | in progress | Worker admission boundaries, local identity/signing, origin-scoped token storage, challenge/hello transport, and TLS fingerprint verification are implemented; production caller, worker/manifest composition, and acceptance remain open. |
 | AC1 | in progress | Node-host Rust crate closure is being read in exact pinned chunks; inventory remains incomplete. |

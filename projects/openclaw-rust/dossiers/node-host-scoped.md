@@ -2573,3 +2573,14 @@ future side-effect executor through the canonical Host owner.
 The rule applies to both the existing local `system.run` producer and future
 Gateway input. It does not create an executor, add new command names, or prove
 remote transport/device acceptance.
+
+## 194. Explicit Gateway lifecycle owner (2026-10-30)
+
+`gateway_lifecycle.rs` now composes one explicit
+`NodeHostGatewayTransportConfig`, one current `NodeHostGatewaySession`, the
+canonical `NodeHostRuntimeState`, and `NodeHostReconnectPolicy`. A replacement
+closes the prior session before admitting a new config; a validated hello resets
+retry history, while connect/read/write failures are exposed as bounded
+`NodeHostReconnectDecision` values for the eventual scheduler. The owner has no
+endpoint discovery, startup registration, background timer, or side-effect
+executor, so it does not infer a production caller or remote reachability.
