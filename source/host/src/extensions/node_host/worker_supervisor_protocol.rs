@@ -88,6 +88,21 @@ pub fn validate_worker_launch_bindings(value: &Value) -> Result<NodeWorkerLaunch
         .get("descriptor")
         .and_then(Value::as_object)
         .ok_or_else(|| "INVALID_REQUEST: invalid worker launch descriptor".to_string())?;
+    // Provider identity transport and platform trust are captured by the
+    // dedicated node-worker owner. They must never arrive as caller-controlled
+    // launch fields or become part of a durable descriptor/receipt.
+    for field in [
+        "managedIdentityTransport",
+        "identityEndpoint",
+        "identityHeader",
+        "platformTrust",
+    ] {
+        if object.contains_key(field) || descriptor.contains_key(field) {
+            return Err(format!(
+                "INVALID_REQUEST: {field} must be supplied by the node-worker environment owner"
+            ));
+        }
+    }
     let assignment = descriptor
         .get("assignment")
         .and_then(Value::as_object)
@@ -319,5 +334,31 @@ mod tests {
             }
         });
         assert_eq!(validate_worker_launch_bindings(&value).expect("binding").launch_id, "launch-1");
+    }
+
+    #[test]
+    fn launch_binding_rejects_caller_owned_identity_or_platform_trust() {
+        let mut value = json!({
+            "environmentSession": 1,
+            "launchId": "launch-1",
+            "gatewayNamespace": "gw-main",
+            "expectedBundleHash": "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+            "placementGeneration": 3,
+            "descriptor": {
+                "assignment": {"turnId": "launch-1"},
+                "admission": {"handshake": {"bundleHash": "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"}}
+            }
+        });
+        value["descriptor"]["identityHeader"] = json!("caller-secret");
+        let error = validate_worker_launch_bindings(&value).expect_err("caller identity must be rejected");
+        assert!(error.contains("identityHeader"));
+
+        value["descriptor"]
+            .as_object_mut()
+            .expect("descriptor")
+            .remove("identityHeader");
+        value["platformTrust"] = json!({"SSL_CERT_FILE": "/caller/ca.pem"});
+        let error = validate_worker_launch_bindings(&value).expect_err("caller trust must be rejected");
+        assert!(error.contains("platformTrust"));
     }
 }
