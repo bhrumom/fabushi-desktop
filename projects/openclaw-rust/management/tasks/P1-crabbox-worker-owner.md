@@ -8,7 +8,7 @@ Source dossier: [Crabbox node-enrollment owner audit](../../dossiers/crabbox-nod
 Historical scoped source oracle (not current lock):
 `ad8d12f126d29b0db204187adf5092db80294e70` /
 `04ccce62f1d74dc8e0c88290ae8ded027b7b0f16`
-Last updated: 2026-10-29 (Asia/Shanghai)
+Last updated: 2026-10-30 (Asia/Shanghai)
 
 Current OpenClaw discovery candidate is recorded in
 `projects/openclaw-rust/upstream.lock.json` as commit
@@ -31,7 +31,7 @@ turn/process composition, and Electron connectors own Sand platform bridges.
 
 No current owner can absorb the full Crabbox contract without duplicating state
 or silently dropping behavior. This task defines the first scoped Rust
-implementation unit under the approved source-neutral boundary. It does not
+implementation unit under the declared source-neutral boundary. It does not
 claim that the OpenClaw extension, a provider, an account, a device, or a
 packaged Fabushi path is currently available.
 
