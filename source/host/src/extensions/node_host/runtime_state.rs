@@ -107,6 +107,10 @@ impl NodeHostRuntimeState {
     pub fn settle_invocation(&self, admission: &NodeInvocationAdmission) -> bool {
         self.invocations.settle(admission)
     }
+
+    pub fn is_invocation_current(&self, admission: &NodeInvocationAdmission) -> bool {
+        self.invocations.is_running(admission)
+    }
 }
 
 #[cfg(test)]

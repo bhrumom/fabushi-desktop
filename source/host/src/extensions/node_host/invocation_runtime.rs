@@ -36,6 +36,33 @@ impl NodeHostInvocationRuntime {
         })
     }
 
+    /// Construct from an admission already created by the Gateway session
+    /// owner. This prevents a routing table from admitting the same wire
+    /// request twice while preserving the same generation fence.
+    pub fn start_admitted(
+        runtime: Arc<NodeHostRuntimeState>,
+        lease: NodeHostSessionLease,
+        request: &NodeInvokeRequest,
+        admission: super::invocation_registry::NodeInvocationAdmission,
+    ) -> Result<Self, String> {
+        if admission.invoke_id != request.id
+            || admission.node_id != request.node_id
+            || admission.node_id != lease.node_id
+            || admission.generation != lease.generation
+            || !runtime.is_current(&lease)
+            || !runtime.is_invocation_current(&admission)
+        {
+            return Err("node invocation admission does not match the current request session".into());
+        }
+        Ok(Self {
+            runtime,
+            lease,
+            invoke_id: admission.invoke_id,
+            input: NodeInvokeInputBuffer::new(),
+            terminal_result: None,
+        })
+    }
+
     pub fn invoke_id(&self) -> &str {
         &self.invoke_id
     }

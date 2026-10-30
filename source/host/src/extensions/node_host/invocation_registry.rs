@@ -95,6 +95,18 @@ impl NodeHostInvocationRegistry {
         self.transition(admission, NodeInvocationState::Settled)
     }
 
+    pub fn is_running(&self, admission: &NodeInvocationAdmission) -> bool {
+        let key = (admission.node_id.clone(), admission.invoke_id.clone());
+        self.records
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
+            .get(&key)
+            .is_some_and(|record| {
+                record.generation == admission.generation
+                    && record.state == NodeInvocationState::Running
+            })
+    }
+
     pub fn drain_generation(&self, node_id: &str, generation: u64) -> Vec<String> {
         let mut records = self
             .records

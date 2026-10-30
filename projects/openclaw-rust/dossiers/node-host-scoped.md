@@ -2430,3 +2430,16 @@ socket, session, credential, or retry task, so this is implementation evidence
 for R6 rather than a claim that production reconnect is wired. Server-provided
 retry-after, lifecycle cancellation, reconnect drain, and real-device evidence
 remain open.
+
+## 186. Invocation runtime routing owner (2026-10-30)
+
+`invocation_router.rs` now stores one live `NodeHostInvocationRuntime` per
+node/id, constructs it from the session owner's existing admission without a
+second registry admission, and routes later `node.invoke.input` and
+`node.invoke.cancel` frames to that exact object. It refuses unknown or
+duplicate keys, verifies the admission is still Running in the canonical
+generation-fenced registry, and removes an object only after terminal
+settlement. The router owns no command execution, socket, credential, timer,
+or result delivery; those remain injected/owned by the existing Host
+boundaries. This closes the input-to-runtime binding seam but does not claim a
+production caller, executor, reconnect loop, or device acceptance.
