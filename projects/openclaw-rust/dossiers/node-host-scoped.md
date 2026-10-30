@@ -1949,3 +1949,14 @@ decision covering credential injection, negotiated protocol, request/event
 dispatch, reconnect, and shutdown ownership. No transport wiring or remote
 acceptance is claimed from this audit; the missing owner boundary is an
 explicit next implementation requirement rather than inferred connectivity.
+
+## 157. Local producer uses typed invocation lifecycle (2026-10-30)
+
+The shipping local `node.invoke system.run` path now starts
+`NodeHostInvocationRuntime` with the existing local session lease, executes
+through the existing `HostLocalExecExtension`, builds a typed success or
+`EXECUTION_ERROR` `NodeInvokeResult`, and completes the lifecycle exactly once.
+The public Gateway response remains the existing local compatibility shape;
+the typed envelope is now the canonical invocation terminal record rather than
+an independent response owner. Remote transport/result delivery and real
+device acceptance remain pending.

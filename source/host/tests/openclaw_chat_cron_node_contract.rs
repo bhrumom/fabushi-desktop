@@ -524,7 +524,8 @@ fn test_ocrm_node_o06_shipping_routes_to_unique_native_owners() {
     assert!(invoke.contains(".exec_manager()"));
     assert!(invoke.contains(".execute_shell("));
     assert!(invoke.contains("NodeInvokeRequest"));
-    assert!(invoke.contains(".admit_request(&self.node_host_local_session"));
+    assert!(invoke.contains("NodeHostInvocationRuntime::start"));
+    assert!(invoke.contains(".complete(terminal_result)"));
     assert!(invoke.contains("node.invoke system.run requires params.command"));
     assert!(invoke.contains("unsupported local node command"));
     assert!(SHIPPING_HOST_MAIN.contains("\"connected\": false"));

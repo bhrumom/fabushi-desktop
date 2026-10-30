@@ -246,7 +246,10 @@ use mahayana_host_runtime::extensions::host_upgrade::host_bundle_upgrade::{
 use mahayana_host_runtime::extensions::node_host::session_registry::{
     NodeHostSessionLease, NodeHostSessionMetadata,
 };
-use mahayana_host_runtime::extensions::node_host::invoke_protocol::NodeInvokeRequest;
+use mahayana_host_runtime::extensions::node_host::invoke_protocol::{
+    NodeInvokeRequest, NodeInvokeResult,
+};
+use mahayana_host_runtime::extensions::node_host::invocation_runtime::NodeHostInvocationRuntime;
 use mahayana_host_runtime::extensions::node_host::runtime_state::NodeHostRuntimeState;
 use mahayana_host_runtime::host_production_extensions::{
     CURRENT_SHIPPING_PRODUCTION_EXTENSION_IDS, start_production_host_box_extensions,
@@ -3982,9 +3985,11 @@ impl UnifiedGatewayApi {
                 .and_then(serde_json::Value::as_str)
                 .map(str::to_string),
         };
-        let admission = self
-            .node_host_runtime
-            .admit_request(&self.node_host_local_session, &request)
+        let mut invocation = NodeHostInvocationRuntime::start(
+            Arc::clone(&self.node_host_runtime),
+            self.node_host_local_session.clone(),
+            &request,
+        )
             .map_err(GatewayCommandError::BadRequest)?;
         let result = self
             .local_exec
@@ -3992,7 +3997,32 @@ impl UnifiedGatewayApi {
             .exec_manager()
             .execute_shell(&scope, shell_command, working_directory, tool_call_id)
             .map_err(|error| GatewayCommandError::Internal(error.to_string()));
-        let _ = self.node_host_runtime.settle_invocation(&admission);
+        let terminal_result = match &result {
+            Ok(result) => NodeInvokeResult::success_payload(
+                invoke_id,
+                node_id,
+                serde_json::json!({
+                    "exitCode": result.exit_code,
+                    "stdout": result.stdout,
+                    "stderr": result.stderr,
+                    "cwd": result.cwd,
+                    "aborted": result.aborted,
+                    "outcomeUnknown": result.outcome_unknown,
+                    "stdoutTruncated": result.stdout_truncated,
+                    "stderrTruncated": result.stderr_truncated,
+                }),
+            ),
+            Err(error) => NodeInvokeResult::failure(
+                invoke_id,
+                node_id,
+                "EXECUTION_ERROR",
+                error.to_string(),
+                None,
+            ),
+        };
+        invocation
+            .complete(terminal_result)
+            .map_err(GatewayCommandError::Internal)?;
         let result = result?;
 
         Ok(serde_json::json!({
