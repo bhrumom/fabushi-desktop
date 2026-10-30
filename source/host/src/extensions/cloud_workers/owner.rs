@@ -213,6 +213,7 @@ impl CloudWorkerProvisioningOwner {
             lifecycle: CloudWorkerLifecycle::Admitted,
             last_outcome: CloudWorkerMutationOutcome::Completed,
         };
+        lease.validate_persisted()?;
         self.leases.insert(lease_id, lease.clone());
         Ok(lease)
     }
@@ -258,6 +259,7 @@ impl CloudWorkerProvisioningOwner {
         if self.warm_images.len() >= self.config.max_warm_images {
             return Err(CloudWorkerOwnerError::WarmImageLimitReached);
         }
+        image.validate_persisted()?;
         if self.warm_images.contains_key(&image.image_id) {
             return Err(CloudWorkerOwnerError::DuplicateWarmImage);
         }
@@ -406,6 +408,25 @@ mod tests {
             })
             .unwrap_err(),
             CloudWorkerOwnerError::InvalidWarmImageLimit
+        );
+    }
+
+    #[test]
+    fn owner_rejects_invalid_direct_lease_records() {
+        let mut owner = owner();
+        let invalid_scope = CloudWorkerLeaseScope {
+            account_scope: "account\nunsafe".into(),
+            device_scope: "device".into(),
+        };
+        assert_eq!(
+            owner.admit(
+                invalid_scope,
+                LeaseId("lease-unsafe".into()),
+                runtime(),
+            ),
+            Err(CloudWorkerOwnerError::Lease(
+                CloudWorkerLeaseError::InvalidPersistedRecord
+            ))
         );
     }
 }
