@@ -57,6 +57,8 @@ Implementation/acceptance: **未完成**
 随后再次只读核对 OpenClaw `main` 漂移到 commit=`c32556b0cea7f63b33db0ac393affd71ecb0015b`、root tree=`e08d361d83ca9cae55aa93d49462d991d0a39efc`；限定 Node Host 范围仍为 227 条路径。该结果仍是 discovery-only，不能替代 lock 或复用 d67/c49/旧 inventory；必须对 c325 exact subject 重新取得完整 inventory、依赖闭包和 Actions provenance。
 随后只读核对发现 OpenClaw `main` 再次漂移到 commit=`89734994c6c9d3572e2927be0cdae8d7da1998ca`、root tree=`bcb3914c8418e2f92927dd3e60c635fc4345a858`；递归 tree API 返回 `truncated=false`，共 63,521 条 tree entry（61,281 blobs、2,240 directories）。根 `package.json`、`pnpm-lock.yaml`、`pnpm-workspace.yaml` blob identities 与上一 candidate 相同，但 tree 仍已漂移。该 candidate 仍为 discovery-only；`upstream.lock.json` 已更新其 live-candidate 身份，但未提升 accepted/source-closure-ready，不能复用 5f6 或更早 candidate 的 inventory、依赖闭包或 Actions provenance。
 
+随后只读核对发现 OpenClaw `main` 已漂移到 commit=`b7a537eb6833ea16960c227d5fc223fcd08ccef6`、root tree=`804b4f9c70d2a24a2575cfe68bc682f6c6c98574`（committer=`2026-10-30T09:39:57Z`）；递归 tree API 仍返回 `truncated=false`，共 63,521 条 tree entry（61,281 blobs、2,240 directories）。根 `package.json`、`pnpm-lock.yaml`、`pnpm-workspace.yaml`、`.gitattributes`、`LICENSE` 与 `THIRD_PARTY_NOTICES.md` blob identities 未变。该 candidate 仍为 discovery-only；在同一 exact subject 完成 Actions inventory、依赖闭包、LFS/完整性和独立审核前，不提升 lock authority，也不复用旧 candidate 的 closure 结论。
+
 ## 5. 机器记录的初始化与终态
 
 P0 在 Actions 建立 lock、inventory、parity ledger、RTM、dossiers 和 evidence 索引；本次不提交伪造的完整台账或空清单来充当 baseline。

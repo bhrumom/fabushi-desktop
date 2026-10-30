@@ -21,6 +21,8 @@ Last updated: 2026-10-30（Asia/Shanghai）
 3. 查现有 OpenClaw 任务/分支/lock，避免重复项目或覆盖另一执行者；TDRP PR #154 与 #165/#166/#167/#168 等并行工作独立保留。
 4. 目标状态只按实际合并源码判断，旧 FBCP inventory 和尚未合并 PR 的代码均需标明来源，不能冒领 main 能力。
 
+本轮 live ref 只读核对：OpenClaw `main`=`b7a537eb6833ea16960c227d5fc223fcd08ccef6`，root tree=`804b4f9c70d2a24a2575cfe68bc682f6c6c98574`；递归 tree=`truncated=false`、63,521 entries（61,281 blobs、2,240 directories）。这是 discovery-only rebaseline 输入，不是 Actions source authority；此前 `89734994…` 与更早 candidate 的 inventory/依赖闭包不得直接复用。
+
 所有测试/构建/生成器/schema/可执行盘点验收只在 GitHub Actions。外部只做只读调查、文档/代码编辑和 Git/API 操作。
 
 ## 3. 任务分解与交付合同
