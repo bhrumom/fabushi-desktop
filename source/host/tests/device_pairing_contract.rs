@@ -252,6 +252,11 @@ fn test_ocrm_pair_o11_rotate_token_in_band_and_cross_device() {
         )
         .unwrap();
     assert_eq!(rot_in_band["tokenDelivery"], "in-band");
+    let first_token = rot_in_band["token"].as_str().unwrap().to_string();
+    assert!(owner
+        .authenticate_device_token(&first_token)
+        .unwrap()
+        .is_some());
     assert!(
         rot_in_band["token"]
             .as_str()
@@ -280,6 +285,10 @@ fn test_ocrm_pair_o11_rotate_token_in_band_and_cross_device() {
         .unwrap();
     assert_eq!(rot_cross["tokenDelivery"], "withheld-cross-device");
     assert!(rot_cross.get("token").is_none());
+    assert!(owner
+        .authenticate_device_token(&first_token)
+        .unwrap()
+        .is_none());
 
     let rejected_role = owner.handle_pairing_command(
         "device.pair.rotateToken",
