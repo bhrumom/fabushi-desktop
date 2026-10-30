@@ -537,8 +537,11 @@ fn test_ocrm_node_o06_shipping_routes_to_unique_native_owners() {
     assert!(invoke.contains(".exec_manager()"));
     assert!(invoke.contains(".execute_shell("));
     assert!(invoke.contains("NodeInvokeRequest"));
+    assert!(invoke.contains("NodeInvokeResult::failure"));
     assert!(invoke.contains("NodeHostInvocationRuntime::start"));
     assert!(invoke.contains(".complete(terminal_result)"));
+    assert!(invoke.contains("serde_json::to_value(&terminal_result)"));
+    assert!(!invoke.contains("let _ = result?"));
     assert!(invoke.contains("received_params_json: Some(received_params_json)"));
     assert!(invoke.contains("received_params_bytes: received_params_json.len()"));
     assert!(invoke.contains("received_params_json.len() > MAX_PARAMS_JSON_BYTES"));
