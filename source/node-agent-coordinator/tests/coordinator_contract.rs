@@ -259,7 +259,15 @@ fn gateway_event_families_match_the_frozen_coordinator_contract() {
     assert_eq!(sse_channel_for_family("agents-workflow"), Some("workflows"));
     assert_eq!(sse_channel_for_family("mcp-servers-updated"), Some("mcp-servers"));
     assert_eq!(sse_channel_for_family("host-settings"), Some("host-settings"));
+    assert_eq!(
+        sse_channel_for_family("cloud-workers.status"),
+        Some("cloud-workers.status")
+    );
     assert_eq!(coordinator_event_family_for_sse_channel("automations"), Some("agents-automation"));
+    assert_eq!(
+        coordinator_event_family_for_sse_channel("cloud-workers.status"),
+        Some("cloud-workers.status")
+    );
     assert_eq!(coordinator_event_family_for_sse_channel("unknown"), None);
 }
 

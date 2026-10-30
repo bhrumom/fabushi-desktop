@@ -11,8 +11,12 @@ The typed Coordinator projection now preserves those four additive fields with
 defaults for older Gateway responses. The existing status enum and the explicit
 `providerReady=false` / `productionMutation=false` boundary remain unchanged.
 The event encode/decode path consequently carries the same owner snapshot
-facts without adding a second store or provider mutation path.
+facts without adding a second store or provider mutation path. The Coordinator
+SSE family registry also now maps `cloud-workers.status` to its own consumer
+family instead of silently classifying a future status event as generic
+`runtime`.
 
 Evidence is limited to source inspection and `git diff --check`; local OCRM
 tests/builds, Actions, provider reachability, and live UI/CLI acceptance remain
-pending.
+pending. The Host-side live event publisher and provider mutation path remain
+open.

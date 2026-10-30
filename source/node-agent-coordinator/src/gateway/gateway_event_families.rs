@@ -16,6 +16,7 @@ pub const SSE_CHANNEL_BY_FAMILY: &[(&str, &str)] = &[
     ("outline", "outline"),
     ("sharing", "sharing"),
     ("host-settings", "host-settings"),
+    ("cloud-workers.status", "cloud-workers.status"),
 ];
 
 pub fn sse_channel_for_family(family: &str) -> Option<&'static str> {
