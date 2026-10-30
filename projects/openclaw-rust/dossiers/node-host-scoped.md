@@ -2227,3 +2227,25 @@ second error-state owner.
 
 The envelope is local-only evidence; remote result transport, reconnect
 delivery, and independent acceptance remain open.
+
+## 175. Rust transport-owner availability audit (2026-10-30)
+
+A targeted dependency and composition audit confirms that `source/host` does
+not currently declare a WebSocket client dependency. Its NodeHost connection
+slice provides endpoint validation, Origin scoping, device-token reuse, and
+candidate failover policy; `NodeStreamSpliceState` provides framing,
+backpressure, and close decisions. Both modules explicitly leave socket
+creation, TLS, edge credentials, byte writes, and timers to an existing
+Gateway transport owner.
+
+The shipping composition has no such NodeHost caller: startup creates only
+the generation-fenced `sand-local-node` session, and the remote registration
+branch remains pairing-only. The separate `source/mahayana/codex-rs`
+workspace contains WebSocket code for Codex app-server transports, but that
+is a different product/runtime boundary and is not a NodeHost Gateway owner.
+Therefore no reusable in-scope socket owner was found, and adding a local
+WebSocket client to the protocol slice would create the second transport
+owner forbidden by the runtime spec. Remote Gateway connection, challenge/
+hello admission, manifest publication, invoke/result routing, reconnect, and
+stream attachment remain unresolved implementation work pending an explicit
+transport-owner design and the current upstream contract closure.
