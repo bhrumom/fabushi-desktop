@@ -2411,3 +2411,15 @@ the future session loop, while the protocol window rejects hello versions
 outside v3–v4.
 TLS fingerprint pinning is rejected rather than ignored. No remote command is
 advertised or enabled by this slice alone.
+
+## 185. Bounded reconnect classification policy (2026-10-30)
+
+`reconnect.rs` now classifies the existing Gateway transport error boundary:
+I/O/WebSocket failures are retryable, while configuration, credential, protocol,
+and authentication-shaped failures pause fail-closed. Retry delay is
+deterministic, exponentially bounded from 250 ms to 30 s, and capped at eight
+attempts; only a validated hello resets the counter. The policy owns no timer,
+socket, session, credential, or retry task, so this is implementation evidence
+for R6 rather than a claim that production reconnect is wired. Server-provided
+retry-after, lifecycle cancellation, reconnect drain, and real-device evidence
+remain open.
