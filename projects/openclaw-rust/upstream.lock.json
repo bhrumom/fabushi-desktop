@@ -25,9 +25,9 @@
   "live_candidate": {
     "repository": "openclaw/openclaw",
     "ref": "refs/heads/main",
-    "commit": "68fbe4ac429cdac7a54541df40367d66defd0161",
-    "tree": "a3c122b99571c0c33ff6a02ca4c4e32f05f9433d",
-    "observed_at": "2026-10-30T09:42:45Z",
+    "commit": "5310270e46cf020ab1e37204075970f3b2679812",
+    "tree": "acf6bee252bf79ab46e7a4c36ce4cc23e448c885",
+    "observed_at": "2026-10-30T09:50:47Z",
     "discovery_source": "GitHub commit/tree API",
     "recursive_tree_truncated": false,
     "recursive_tree_entries": 63521,
@@ -49,7 +49,7 @@
     "behind_by": null,
     "compare_files_returned": null,
     "compare_file_counts_are_not_complete": true,
-    "decision": "live-main-drifted-again; compare-counts-not-refreshed; retain-discovery-only-status-until-fresh-actions-inventory-and-dependency-closure"
+    "decision": "live-main-drifted-again-to-5310270; compare-counts-not-refreshed; retain-discovery-only-status-until-fresh-actions-inventory-and-dependency-closure"
   },
   "root_inputs": {
     "AGENTS.md": "c3deeccdb6b1a4c7137d56297e933bbf19f4d3bf",

@@ -2604,3 +2604,13 @@ not arbitrary SecretInput resolution or NodeHost Gateway headers. No transport
 field or fallback environment reader was added; a dedicated existing-owner
 extension and its source/permission contract remain required before Cloudflare
 Access can be wired.
+
+## 196. Live candidate supersession (2026-10-30)
+
+The upstream default branch subsequently advanced to
+`openclaw/openclaw@5310270e46cf020ab1e37204075970f3b2679812` / tree
+`acf6bee252bf79ab46e7a4c36ce4cc23e448c885`. Sections 192 and 195 remain
+historical exact-blob observations for `68fbe4a`; they are not silently reused
+as current-source evidence. The new candidate requires fresh NodeHost source
+reads, dependency closure, and P0 authority before any behavior mapping or
+command change is treated as current.

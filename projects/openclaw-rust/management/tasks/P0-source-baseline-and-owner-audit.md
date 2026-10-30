@@ -120,3 +120,8 @@ blob 读取与责任增量记录（见 `dossiers/node-host-scoped.md` §192）�
 明确补充了当前 command catalog、manifest availability、optional publication
 与 invoke responder 的 mapping，但不提升 source authority、不重标旧
 inventory/closure，也不改变任何 global flag。
+
+随后 live main 漂移至 `5310270e46cf020ab1e37204075970f3b2679812` /
+`acf6bee252bf79ab46e7a4c36ce4cc23e448c885`；此前 exact blob 读取与 SecretInput
+结论仅保留为历史 discovery evidence，不能直接作为新 subject 的 source
+closure 或 implementation authority。
