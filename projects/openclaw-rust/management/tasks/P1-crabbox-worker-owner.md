@@ -365,7 +365,8 @@ than claiming durable success. Corrupt/unsupported snapshots fail closed;
 secret payloads, credentials and Fabushi identity stores are not part of the
 snapshot. The production extension now injects
 `app_data_dir/cloud-workers/state.json`, loads existing state fail-closed and
-exposes an atomic `persist()` boundary. Migration/rollback receipts and
+rejects symlink/non-regular state paths before loading, and exposes an atomic
+`persist()` boundary. Migration/rollback receipts and
 `backup_existing` now syncs the copied backup and its directory entry before
 returning success; a barrier failure leaves the backup visible but reports a
 non-success outcome for recovery handling. Migration/rollback receipts and

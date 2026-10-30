@@ -1,3 +1,4 @@
+use std::fs;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
 
@@ -53,6 +54,11 @@ pub fn start_cloud_worker_provisioning_extension(
     let config = CloudWorkerProvisioningConfig::default();
     let store = CloudWorkerProvisioningStore;
     let owner = if state_path.exists() {
+        let metadata = fs::symlink_metadata(&state_path)
+            .map_err(CloudWorkerStoreError::Read)?;
+        if metadata.file_type().is_symlink() || !metadata.file_type().is_file() {
+            return Err(CloudWorkerExtensionError::InvalidStatePath);
+        }
         let snapshot = store.load(&state_path)?;
         CloudWorkerProvisioningOwner::from_snapshot(config, snapshot)?
     } else {
@@ -67,6 +73,8 @@ pub fn start_cloud_worker_provisioning_extension(
 
 #[derive(Debug, thiserror::Error)]
 pub enum CloudWorkerExtensionError {
+    #[error("cloud-worker state path must be a regular non-symlink file")]
+    InvalidStatePath,
     #[error(transparent)]
     Store(#[from] CloudWorkerStoreError),
     #[error(transparent)]
