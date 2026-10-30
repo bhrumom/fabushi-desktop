@@ -2153,6 +2153,12 @@ platform-trust fields. The focused contract
 negative boundary while the real node-local provider transport and workspace
 lease caller remain explicitly unwired.
 
+The same owner now preserves an optional complete workspace identity
+(`environmentId`, `sessionId`, `ownerEpoch`) and rejects partial or descriptor-
+owned identity fields. `launch_binding_preserves_complete_workspace_identity_and_rejects_partial_identity`
+pins the new admission boundary without claiming that a live workspace lease,
+process environment restoration, or remote worker caller exists yet.
+
 ## 171. Local session manifest boundary audit (2026-10-30)
 
 The shipping Host startup path creates exactly one local session lease for

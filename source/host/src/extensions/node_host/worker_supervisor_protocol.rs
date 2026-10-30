@@ -42,6 +42,14 @@ pub struct NodeWorkerLaunchBinding {
     pub gateway_namespace: String,
     pub expected_bundle_hash: String,
     pub placement_generation: u64,
+    pub workspace: Option<NodeWorkerWorkspaceIdentity>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct NodeWorkerWorkspaceIdentity {
+    pub environment_id: String,
+    pub session_id: String,
+    pub owner_epoch: u64,
 }
 
 /// Validate only the cross-field bindings that protect a worker launch.
@@ -103,6 +111,35 @@ pub fn validate_worker_launch_bindings(value: &Value) -> Result<NodeWorkerLaunch
             ));
         }
     }
+    for field in ["environmentId", "sessionId", "ownerEpoch"] {
+        if descriptor.contains_key(field) {
+            return Err(format!(
+                "INVALID_REQUEST: {field} must be bound by the worker owner, not descriptor"
+            ));
+        }
+    }
+    let workspace = match (
+        object.get("environmentId"),
+        object.get("sessionId"),
+        object.get("ownerEpoch"),
+    ) {
+        (None, None, None) => None,
+        (Some(environment_id), Some(session_id), Some(owner_epoch)) => Some(
+            NodeWorkerWorkspaceIdentity {
+                environment_id: bounded_workspace_identifier(environment_id, "environmentId")?,
+                session_id: bounded_workspace_identifier(session_id, "sessionId")?,
+                owner_epoch: owner_epoch.as_u64().ok_or_else(|| {
+                    "INVALID_REQUEST: ownerEpoch must be a non-negative integer".to_string()
+                })?,
+            },
+        ),
+        _ => {
+            return Err(
+                "INVALID_REQUEST: workspace identity requires environmentId, sessionId, and ownerEpoch"
+                    .into(),
+            )
+        }
+    };
     let assignment = descriptor
         .get("assignment")
         .and_then(Value::as_object)
@@ -124,7 +161,21 @@ pub fn validate_worker_launch_bindings(value: &Value) -> Result<NodeWorkerLaunch
         gateway_namespace,
         expected_bundle_hash,
         placement_generation,
+        workspace,
     })
+}
+
+fn bounded_workspace_identifier(value: &Value, field: &str) -> Result<String, String> {
+    let value = value
+        .as_str()
+        .filter(|value| {
+            !value.is_empty()
+                && value.len() <= 256
+                && value.trim() == *value
+                && !value.contains('\0')
+        })
+        .ok_or_else(|| format!("INVALID_REQUEST: {field} must be a bounded identifier"))?;
+    Ok(value.to_string())
 }
 
 pub fn parse_worker_identity(value: &Value) -> Result<NodeWorkerSupervisorIdentity, String> {
@@ -360,5 +411,29 @@ mod tests {
         value["platformTrust"] = json!({"SSL_CERT_FILE": "/caller/ca.pem"});
         let error = validate_worker_launch_bindings(&value).expect_err("caller trust must be rejected");
         assert!(error.contains("platformTrust"));
+    }
+
+    #[test]
+    fn launch_binding_preserves_complete_workspace_identity_and_rejects_partial_identity() {
+        let mut value = json!({
+            "environmentSession": 1,
+            "launchId": "launch-1",
+            "gatewayNamespace": "gw-main",
+            "expectedBundleHash": "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+            "placementGeneration": 3,
+            "environmentId": "env-1",
+            "sessionId": "session-1",
+            "ownerEpoch": 4,
+            "descriptor": {
+                "assignment": {"turnId": "launch-1"},
+                "admission": {"handshake": {"bundleHash": "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"}}
+            }
+        });
+        let binding = validate_worker_launch_bindings(&value).expect("workspace binding");
+        assert_eq!(binding.workspace.as_ref().map(|identity| identity.owner_epoch), Some(4));
+
+        value.as_object_mut().expect("launch").remove("sessionId");
+        let error = validate_worker_launch_bindings(&value).expect_err("partial workspace identity");
+        assert!(error.contains("workspace identity"));
     }
 }
