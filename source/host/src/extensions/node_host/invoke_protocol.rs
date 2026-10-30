@@ -9,6 +9,7 @@ use serde::Deserialize;
 use serde_json::Value;
 
 pub const MAX_INPUT_FRAME_BYTES: usize = 16 * 1024;
+pub const MAX_PARAMS_JSON_BYTES: usize = 256 * 1024;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct NodeInvokeRequest {
@@ -75,11 +76,16 @@ pub fn parse_node_invoke_request(payload: &Value) -> Result<NodeInvokeRequest, S
         Some(_) => return Err("invalid node.invoke.request: paramsJSON must be a string or null".into()),
     };
     let (params, received_params_bytes) = match received_params_json.as_deref() {
-        Some(raw) => (
-            serde_json::from_str(raw)
-                .map_err(|error| format!("invalid invocation paramsJSON: {error}"))?,
-            raw.len(),
-        ),
+        Some(raw) => {
+            if raw.len() > MAX_PARAMS_JSON_BYTES {
+                return Err("invalid invocation paramsJSON: exceeds 256 KiB".into());
+            }
+            (
+                serde_json::from_str(raw)
+                    .map_err(|error| format!("invalid invocation paramsJSON: {error}"))?,
+                raw.len(),
+            )
+        }
         None => (Value::Null, 0),
     };
     let timeout_ms = match object.get("timeoutMs") {
@@ -166,7 +172,7 @@ pub fn parse_node_invoke_cancel(payload: &Value) -> Result<NodeInvokeCancel, Str
 mod tests {
     use super::{
         parse_node_invoke_cancel, parse_node_invoke_input, parse_node_invoke_request,
-        MAX_INPUT_FRAME_BYTES,
+        MAX_INPUT_FRAME_BYTES, MAX_PARAMS_JSON_BYTES,
     };
     use serde_json::json;
 
@@ -200,6 +206,12 @@ mod tests {
         }))
         .unwrap_err()
         .contains("invalid invocation paramsJSON"));
+        let oversized = "x".repeat(MAX_PARAMS_JSON_BYTES + 1);
+        assert!(parse_node_invoke_request(&json!({
+            "id": "i", "nodeId": "n", "command": "c", "paramsJSON": oversized
+        }))
+        .unwrap_err()
+        .contains("256 KiB"));
     }
 
     #[test]

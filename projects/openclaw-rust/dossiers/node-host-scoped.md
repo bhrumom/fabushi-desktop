@@ -1864,3 +1864,11 @@ request adapter before entering the existing local execution owner. This is a
 real local producer-to-owner generation/identity fence, but it does not widen
 the supported command surface or change the remote-node fail-closed result;
 remote transport, manifest publication, and device acceptance remain pending.
+
+## 151. Invocation parameter-size admission (2026-10-30)
+
+The strict node invocation parser now rejects `paramsJSON` above 256 KiB
+before JSON allocation/parsing, while retaining the existing 16 KiB bound for
+ordered input payloads. This closes the local R3 parser-size negative case;
+transport frame limits, live invocation execution, and exact-head verification
+remain separate pending responsibilities.
