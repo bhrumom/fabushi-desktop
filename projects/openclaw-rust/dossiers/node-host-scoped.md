@@ -2674,3 +2674,23 @@ connection, Cloudflare Access config, invoke types, and runtime manifest.
 This is discovery and targeted identity evidence only; the candidate remains
 outside accepted source authority until exact-head Actions inventory,
 dependency closure, and the required negative/omitted evidence exist.
+
+## 201. Current worker environment custody delta (2026-10-31)
+
+The exact current candidate's `3a195d3336caff813bdcfe9d41f04bb7660142fa`
+worker-host change was read for `node-worker-child-secrets.ts`,
+`node-worker-environment.ts`, `node-worker-workspace-identity.ts`,
+`node-worker-workspace-admission.ts`, and
+`node-worker-supervisor-ownership.ts`. The source requires the dedicated node
+owner to capture paired managed-identity endpoint/header values and register
+the header for redaction; retain only an allowlisted environment; restore
+platform trust and admitted identity after sanitization; and bind workspace
+paths, environment/session identity, owner epoch, process admission, output
+redaction, and release to one lease. Caller descriptors cannot inject these
+protected fields.
+
+Rust now has `worker_environment.rs` for the pure capture/filter/restore seam,
+including the registrar-required managed-identity negative path. It does not
+yet own workspace filesystem identity, process launch, cache policy, physical
+cleanup, or a production worker caller; R11/R12 and acceptance therefore
+remain in progress.
