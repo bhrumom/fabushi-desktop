@@ -2116,7 +2116,17 @@ the latest upstream drift: the Node Host source identities and the recorded
 native-auth delta remain applicable to both candidates, while the overall
 source lock and dependency closure still require a project-wide rebaseline.
 
-## 169. Local session manifest boundary audit (2026-10-30)
+## 169. Latest live-main candidate drift (2026-10-30 continuation)
+
+The read-only upstream check now observes OpenClaw `main` at
+`5f6f15fed0d6ba618cf781c9686a8b93f499564b` with root tree
+`ee0af1d3ba415e7763da6759ca47b245031a21c9`. Its recursive tree response is
+not truncated and contains 63,519 entries (61,279 blobs and 2,240
+directories). This supersedes c325 only as a newer discovery pointer; no
+Node Host path re-read, inventory reuse, dependency closure, Actions receipt,
+or completion flag is inferred from the root-tree observation.
+
+## 170. Local session manifest boundary audit (2026-10-30)
 
 The shipping Host startup path creates exactly one local session lease for
 `sand-local-node` through `NodeHostRuntimeState`. Its public session surface
@@ -2143,7 +2153,7 @@ capabilities, pairing, remote transport, or acceptance claims. Dynamic
 manifest refresh, challenge-bound connection, remote invoke/cancel/result
 transport, and device acceptance remain open.
 
-## 170. Local node registration projection (2026-10-30)
+## 171. Local node registration projection (2026-10-30)
 
 The local `node.register` Gateway branch now returns the complete current
 `NodeHostSessionSnapshot` surface already owned by `NodeHostRuntimeState`:
@@ -2156,7 +2166,7 @@ canonical transport session is admitted.
 This is a local producer-to-consumer projection correction, not remote Node
 Host transport, dynamic manifest publication, or device acceptance evidence.
 
-## 171. Typed local invoke result projection (2026-10-30)
+## 172. Typed local invoke result projection (2026-10-30)
 
 The local `node.invoke` Gateway path now serializes the same typed
 `NodeInvokeResult` that is completed by `NodeHostInvocationRuntime`, then adds
@@ -2171,7 +2181,7 @@ This closes only the local result-consumer projection. It does not establish
 remote result delivery, replay behavior, progress transport, or exact-head
 acceptance.
 
-## 172. Local invoke execution-error envelope (2026-10-30)
+## 173. Local invoke execution-error envelope (2026-10-30)
 
 After local invocation admission, executor failures now remain in the same
 typed `NodeInvokeResult::failure` envelope that is completed by the invocation

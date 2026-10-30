@@ -8,7 +8,7 @@
 - **Requirements Traced:** `OCRM-R03`, `OCRM-R04`, `OCRM-AC03`, `OCRM-AC11`
 - **Reviewer:** `xuyao@ombhrum.com`
 - **Upstream Baseline for this dossier:** `openclaw/openclaw@ad8d12f126d29b0db204187adf5092db80294e70` (tree `04ccce62f1d74dc8e0c88290ae8ded027b7b0f16`), the prior implementation-round lock used for the blob identities below.
-- **Latest live candidate:** `openclaw/openclaw@c32556b0cea7f63b33db0ac393affd71ecb0015b` (tree `e08d361d83ca9cae55aa93d49462d991d0a39efc`), discovery-only pending exact-head Actions inventory and dependency closure; this dossier's old blob rows are not relabeled to it.
+- **Latest live candidate:** `openclaw/openclaw@5f6f15fed0d6ba618cf781c9686a8b93f499564b` (tree `ee0af1d3ba415e7763da6759ca47b245031a21c9`), discovery-only pending exact-head Actions inventory and dependency closure; this dossier's old blob rows are not relabeled to it.
 - **Audit Lineage:** PR #169, `projects/openclaw-rust/dossiers/state-read-snapshot-worker-custody-pairing-round20.md`, `pairing-unknown-reconcile-postgresql-provenance-round19.md`, `transcript-round84-gateway-import-closure-protocol-codegen-pairing-worker-20261024.md`, `transcript-round89-openclaw-device-pairing-sessions-and-config-native-wiring-20261026.md`.
 
 ---

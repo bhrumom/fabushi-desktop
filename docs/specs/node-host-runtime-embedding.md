@@ -45,7 +45,7 @@ Define and implement a Fabushi-native node-host runtime embedding that preserves
 - `source/host/src/extensions/node_host/` contains protocol slices for connection, Computer dispatch, and runtime manifest, but the runtime has no shipping caller or live remote transport.
 - Existing `NativeDesktopRemoteExecutor` and `execute_with_lease_fenced` own native Computer behavior; they are not generic node-host invoke executors.
 - The implementation oracle remains the prior candidate `ad8d12f126d29b0db204187adf5092db80294e70`, tree `04ccce62f1d74dc8e0c88290ae8ded027b7b0f16`; it is not accepted as the current project-wide source lock.
-- Read-only live discovery has since advanced to OpenClaw `main` commit `c32556b0cea7f63b33db0ac393affd71ecb0015b`, tree `e08d361d83ca9cae55aa93d49462d991d0a39efc`. This candidate requires the P0 GitHub Actions rebaseline before source-dependent acceptance or lock/inventory reuse; the earlier c49/d67 candidates remain historical discovery only.
+- Read-only live discovery has since advanced to OpenClaw `main` commit `5f6f15fed0d6ba618cf781c9686a8b93f499564b`, tree `ee0af1d3ba415e7763da6759ca47b245031a21c9`. This candidate requires the P0 GitHub Actions rebaseline before source-dependent acceptance or lock/inventory reuse; c325 and earlier candidates remain historical discovery only.
 
 ## 6. Target state
 
