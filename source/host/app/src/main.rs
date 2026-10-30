@@ -3532,6 +3532,11 @@ impl UnifiedGatewayApi {
         } else {
             raw_key
         };
+        if agent_id.is_empty() {
+            return Err(GatewayCommandError::BadRequest(
+                "sessions.delete requires a non-empty agent identity".into(),
+            ));
+        }
 
         if let Some(expected) = args.get("expectedSessionId").and_then(serde_json::Value::as_str) {
             if expected != agent_id {

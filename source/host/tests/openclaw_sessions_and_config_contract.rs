@@ -221,6 +221,23 @@ fn test_sessions_delete_guards_root_session_and_cas() {
     // Valid delete passes guard
     assert!(guard_delete("agent:agent-correct:main", Some("agent-correct")).is_ok());
     assert!(guard_delete("agent-correct", None).is_ok());
+
+    let empty_agent = "agent::main";
+    let empty_agent_id = empty_agent
+        .strip_prefix("agent:")
+        .and_then(|value| value.split(':').next())
+        .unwrap_or(empty_agent);
+    assert!(empty_agent_id.is_empty());
+
+    let shipping_source = include_str!("../app/src/main.rs");
+    let sessions_delete = shipping_source
+        .split("fn call_openclaw_sessions_delete(")
+        .nth(1)
+        .expect("shipping sessions.delete owner exists")
+        .split("fn call_openclaw_chat_send(")
+        .next()
+        .expect("shipping sessions.delete function boundary exists");
+    assert!(sessions_delete.contains("sessions.delete requires a non-empty agent identity"));
 }
 
 // ---------------------------------------------------------------------------
