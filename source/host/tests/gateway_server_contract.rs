@@ -111,7 +111,10 @@ fn device_pairing_owner_authenticates_issued_token_with_role_and_scopes() {
         .expect("issued token authorization");
     assert_eq!(authorization.device_id, "device-auth-1");
     assert_eq!(authorization.role, "operator");
-    assert_eq!(authorization.scopes, ["operator.read", "operator.write"]);
+    assert_eq!(
+        authorization.scopes,
+        vec!["operator.read".to_string(), "operator.write".to_string()]
+    );
     assert!(owner
         .authenticate_device_token("sand-device-tok-invalid")
         .expect("invalid token lookup")
