@@ -197,6 +197,7 @@ fn test_ocrm_chat_o05_abort_invokes_runner_registry_cancellation() {
     assert!(shipping_abort.contains("cancel_stream(run_id, \"rpc\")"));
     assert!(shipping_abort.contains("requested_run_id"));
     assert!(shipping_abort.contains("is_none_or"));
+    assert!(shipping_abort.contains("chat.abort runId must be a non-empty string"));
     assert!(shipping_abort.contains("chat.abort requires a non-empty agent identity"));
     assert!(!shipping_abort.contains("cancel_agent(agent_id, \"rpc\")"));
     assert!(!shipping_abort.contains("format!(\"run-{agent_id}\")"));

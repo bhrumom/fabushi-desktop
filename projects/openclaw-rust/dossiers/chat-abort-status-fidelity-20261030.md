@@ -17,6 +17,9 @@ filtering the response. Without `runId`, all observed active streams are
 cancelled through the existing per-stream owner, including routed and group
 member streams.
 
+An explicitly supplied `runId` must also be a non-empty string; an empty or
+non-string value is rejected rather than widening into an all-stream abort.
+
 The existing `TranscriptRunnerRegistry` remains the sole cancellation owner.
 Static source review and `git diff --check` are the only development evidence;
 local OCRM tests/builds and live cancellation acceptance remain pending.

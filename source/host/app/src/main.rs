@@ -3681,11 +3681,20 @@ impl UnifiedGatewayApi {
         }
 
         let active_streams = self.runner_registry.active_stream_ids_for_agent(agent_id);
-        let requested_run_id = args
-            .get("runId")
-            .and_then(serde_json::Value::as_str)
-            .map(str::trim)
-            .filter(|value| !value.is_empty());
+        let requested_run_id = match args.get("runId") {
+            None | Some(serde_json::Value::Null) => None,
+            Some(value) => Some(
+                value
+                    .as_str()
+                    .map(str::trim)
+                    .filter(|run_id| !run_id.is_empty())
+                    .ok_or_else(|| {
+                        GatewayCommandError::BadRequest(
+                            "chat.abort runId must be a non-empty string".into(),
+                        )
+                    })?,
+            ),
+        };
         let run_ids = active_streams
             .into_iter()
             .filter(|active_id| requested_run_id.is_none_or(|run_id| active_id == run_id))
