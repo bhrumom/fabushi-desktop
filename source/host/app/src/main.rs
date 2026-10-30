@@ -3489,7 +3489,11 @@ impl UnifiedGatewayApi {
         let agent_id = minted.get("agent")
             .and_then(|a| a.get("id"))
             .and_then(serde_json::Value::as_str)
-            .unwrap_or_default();
+            .map(str::trim)
+            .filter(|id| !id.is_empty())
+            .ok_or_else(|| GatewayCommandError::Internal(
+                "createAgent returned no durable agent identity".into(),
+            ))?;
 
         let session_key = format!("agent:{agent_id}:main");
         Ok(serde_json::json!({

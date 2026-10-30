@@ -169,6 +169,21 @@ fn test_sessions_get_empty_messages_200_invariant() {
 }
 
 #[test]
+fn test_sessions_create_requires_durable_agent_identity() {
+    let shipping_source = include_str!("../app/src/main.rs");
+    let sessions_create = shipping_source
+        .split("fn call_openclaw_sessions_create(")
+        .nth(1)
+        .expect("shipping sessions.create owner exists")
+        .split("fn call_openclaw_sessions_delete(")
+        .next()
+        .expect("shipping sessions.create function boundary exists");
+    assert!(sessions_create.contains("createAgent returned no durable agent identity"));
+    assert!(sessions_create.contains("filter(|id| !id.is_empty())"));
+    assert!(!sessions_create.contains("unwrap_or_default();\n\n        let session_key"));
+}
+
+#[test]
 fn test_sessions_delete_guards_root_session_and_cas() {
     let guard_delete = |key: &str, expected_session_id: Option<&str>| -> Result<(), GatewayCommandError> {
         if key.is_empty() {
