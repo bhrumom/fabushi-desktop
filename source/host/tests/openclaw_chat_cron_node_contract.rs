@@ -476,8 +476,7 @@ fn test_ocrm_node_o05_node_invoke_contract_and_security() {
                 "exitCode": 0,
                 "stdout": "ok",
                 "stderr": ""
-            },
-            "payloadJSON": Value::Null
+            }
         }))
     };
 

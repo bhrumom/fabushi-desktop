@@ -4129,8 +4129,7 @@ impl UnifiedGatewayApi {
                 "outcomeUnknown": result.outcome_unknown,
                 "stdoutTruncated": result.stdout_truncated,
                 "stderrTruncated": result.stderr_truncated,
-            },
-            "payloadJSON": serde_json::Value::Null
+            }
         }))
     }
 }
