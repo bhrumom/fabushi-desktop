@@ -4183,27 +4183,26 @@ impl UnifiedGatewayApi {
                 None,
             ),
         };
+        let public_result = serde_json::to_value(&terminal_result)
+            .map_err(|error| GatewayCommandError::Internal(error.to_string()))?;
         invocation
             .complete(terminal_result)
             .map_err(GatewayCommandError::Internal)?;
-        let result = result?;
+        let _ = result?;
 
-        Ok(serde_json::json!({
-            "ok": true,
-            "nodeId": node_id,
-            "command": command,
-            "payload": {
-                "exitCode": result.exit_code,
-                "stdout": result.stdout,
-                "stderr": result.stderr,
-                "cwd": result.cwd,
-                "aborted": result.aborted,
-                "outcomeUnknown": result.outcome_unknown,
-                "stdoutTruncated": result.stdout_truncated,
-                "stderrTruncated": result.stderr_truncated,
-            },
-            "payloadJSON": serde_json::Value::Null
-        }))
+        let response = match public_result {
+            serde_json::Value::Object(mut object) => {
+                object.insert("command".into(), serde_json::Value::String(command.to_string()));
+                object.insert("payloadJSON".into(), serde_json::Value::Null);
+                serde_json::Value::Object(object)
+            }
+            _ => {
+                return Err(GatewayCommandError::Internal(
+                    "node.invoke result did not serialize as an object".into(),
+                ));
+            }
+        };
+        Ok(response)
     }
 }
 

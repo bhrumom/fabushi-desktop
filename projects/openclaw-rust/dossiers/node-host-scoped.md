@@ -2155,3 +2155,18 @@ canonical transport session is admitted.
 
 This is a local producer-to-consumer projection correction, not remote Node
 Host transport, dynamic manifest publication, or device acceptance evidence.
+
+## 171. Typed local invoke result projection (2026-10-30)
+
+The local `node.invoke` Gateway path now serializes the same typed
+`NodeInvokeResult` that is completed by `NodeHostInvocationRuntime`, then adds
+the legacy Gateway `command` field and explicit `payloadJSON: null` compatibility
+field. The response therefore preserves the original invocation `id` and
+`nodeId` together with the settled typed payload instead of rebuilding a
+second, lossy result object. Execution errors still settle the typed failure
+before the existing Gateway error return, and timeout/unknown outcome fields
+remain owned by `HostLocalExecExtension`.
+
+This closes only the local result-consumer projection. It does not establish
+remote result delivery, replay behavior, progress transport, or exact-head
+acceptance.
