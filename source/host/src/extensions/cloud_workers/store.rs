@@ -31,6 +31,10 @@ impl CloudWorkerProvisioningStore {
             std::os::unix::fs::PermissionsExt::from_mode(0o600),
         )
         .map_err(CloudWorkerStoreError::Write)?;
+        File::open(backup)
+            .and_then(|file| file.sync_all())
+            .map_err(CloudWorkerStoreError::Write)?;
+        sync_parent_directory(parent).map_err(CloudWorkerStoreError::Write)?;
         Ok(())
     }
 
