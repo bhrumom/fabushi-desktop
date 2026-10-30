@@ -137,6 +137,18 @@ fn test_ocrm_node_host_computer_command() {
         ),
         Err(COMPUTER_CONTRACT_MISMATCH.to_string())
     );
+    assert_eq!(
+        dispatch_node_worker_computer_command_with_executor(
+            &ComputerCommandInput {
+                operation: ComputerOperation::Snapshot,
+                provider_generation: Some("   ".into()),
+                action_params_json: None,
+            },
+            Some("generation-42"),
+            &executor,
+        ),
+        Err(COMPUTER_CONTRACT_MISMATCH.to_string())
+    );
     let capabilities = dispatch_node_worker_computer_command_with_executor(
         &caps_input,
         Some("generation-42"),

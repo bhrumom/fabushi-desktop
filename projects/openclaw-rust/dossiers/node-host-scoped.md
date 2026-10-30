@@ -1961,7 +1961,7 @@ the typed envelope is now the canonical invocation terminal record rather than
 an independent response owner. Remote transport/result delivery and real
 device acceptance remain pending.
 
-## 157. Computer side-effect generation admission repair (2026-10-30)
+## 158. Computer side-effect generation admission repair (2026-10-30)
 
 The Computer dispatch owner now rejects `Act` and `Snapshot` requests that
 omit or blank `provider_generation`, using the same opaque-generation mismatch
