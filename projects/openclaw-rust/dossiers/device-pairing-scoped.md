@@ -4,10 +4,11 @@
 
 - **Unit ID:** `OCRM-UNIT-DEVICE-PAIRING-001`
 - **Module ID:** `OCRM-M03` (Identity, Credentials, Pairing and Account Scope)
-- **Status:** **Scoped candidate admitted into Parity Ledger; 35 audited source files mapped to reviewed; 6 responsibilities registered with implementation/wiring pending; production wiring blocked by OCRM-BLOCK-GW-SCOPED-AUTHORITY-001; acceptance pending**
+- **Status:** **Scoped candidate admitted into Parity Ledger; 38 audited source files mapped to reviewed; 6 responsibilities registered with implementation/wiring pending; production wiring blocked by OCRM-BLOCK-GW-SCOPED-AUTHORITY-001; acceptance pending**
 - **Requirements Traced:** `OCRM-R03`, `OCRM-R04`, `OCRM-AC03`, `OCRM-AC11`
 - **Reviewer:** `xuyao@ombhrum.com`
-- **Upstream Baseline:** `openclaw/openclaw@ad8d12f126d29b0db204187adf5092db80294e70` (tree `04ccce62f1d74dc8e0c88290ae8ded027b7b0f16`)
+- **Upstream Baseline for this dossier:** `openclaw/openclaw@ad8d12f126d29b0db204187adf5092db80294e70` (tree `04ccce62f1d74dc8e0c88290ae8ded027b7b0f16`), the prior implementation-round lock used for the blob identities below.
+- **Latest live candidate:** `openclaw/openclaw@c32556b0cea7f63b33db0ac393affd71ecb0015b` (tree `e08d361d83ca9cae55aa93d49462d991d0a39efc`), discovery-only pending exact-head Actions inventory and dependency closure; this dossier's old blob rows are not relabeled to it.
 - **Audit Lineage:** PR #169, `projects/openclaw-rust/dossiers/state-read-snapshot-worker-custody-pairing-round20.md`, `pairing-unknown-reconcile-postgresql-provenance-round19.md`, `transcript-round84-gateway-import-closure-protocol-codegen-pairing-worker-20261024.md`, `transcript-round89-openclaw-device-pairing-sessions-and-config-native-wiring-20261026.md`.
 
 ---
