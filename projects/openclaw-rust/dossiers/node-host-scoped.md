@@ -1872,3 +1872,26 @@ before JSON allocation/parsing, while retaining the existing 16 KiB bound for
 ordered input payloads. This closes the local R3 parser-size negative case;
 transport frame limits, live invocation execution, and exact-head verification
 remain separate pending responsibilities.
+
+## 152. Latest live node-host protocol discovery (2026-10-30)
+
+Read-only inspection of the latest OpenClaw live candidate
+`c49e07385f8d17601efbed7746381213d5326ba9` found the following current
+protocol facts: `src/node-host/client.ts` (`fa998d7a2c98c9db4ebc1cc1e891898ca83d15f5`)
+publishes `node.invoke.result` with the original `id`/`nodeId`, required
+`ok`, optional `payload` or `payloadJSON`, and an optional error object whose
+details are capability-gated; failed result delivery is best-effort. The
+request shape remains `paramsJSON`, `timeoutMs`, `idempotencyKey`, and
+`sessionKey` in `src/node-host/invoke-types.ts`
+(`720a2d16da2c2e653123b89422fa7e501fa92319`).
+
+The same candidate's `runtime-manifest.ts`
+(`856e0f728d07421741a8d3f16aade54b12e284cb`) derives sorted commands and
+capabilities from plugin registration, command allowlists, Claude/apps/desktop
+availability, ephemeral restrictions, and path environment; the simpler Rust
+manifest builder is therefore not yet a complete live manifest owner.
+`connection.ts` (`da661abb04c1541fcc58b53a9d25d2aa5d565981`) additionally
+fences optional publications and timers by connection generation. These are
+latest-candidate discovery facts only: the source lock/inventory still require
+Actions rebaseline, and no Rust result transport, dynamic manifest caller, or
+exact-head acceptance is claimed.
