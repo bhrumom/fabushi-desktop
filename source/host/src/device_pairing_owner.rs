@@ -898,11 +898,16 @@ impl DevicePairingOwner {
             .unwrap_or("operator");
         let mut conn = self.conn.lock().unwrap();
 
-        let (roles_json, scopes_json): (Option<String>, Option<String>) = conn
+        let (roles_json, scopes_json, existing_tokens_json): (
+            Option<String>,
+            Option<String>,
+            String,
+        ) = conn
             .query_row(
-                "SELECT roles_json, scopes_json FROM device_pairing_paired WHERE device_id = ?1",
+                "SELECT roles_json, scopes_json, tokens_json
+                 FROM device_pairing_paired WHERE device_id = ?1",
                 params![device_id],
-                |row| Ok((row.get(0)?, row.get(1)?)),
+                |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?)),
             )
             .map_err(|_| {
                 GatewayCommandError::BadRequest(format!("unknown deviceId: {device_id}"))
@@ -930,16 +935,26 @@ impl DevicePairingOwner {
 
         let now = now_ms();
         let new_token = new_device_token()?;
-        let tokens_json = json!({
-            role: {
+        let mut token_entries = serde_json::from_str::<Value>(&existing_tokens_json)
+            .map_err(|error| {
+                GatewayCommandError::Internal(format!("invalid stored device tokens: {error}"))
+            })?
+            .as_object()
+            .cloned()
+            .ok_or_else(|| {
+                GatewayCommandError::Internal("stored device tokens are not an object".into())
+            })?;
+        token_entries.insert(
+            role.to_string(),
+            json!({
                 "token": new_token,
                 "role": role,
                 "scopes": role_scopes,
                 "createdAtMs": now,
                 "rotatedAtMs": now
-            }
-        })
-        .to_string();
+            }),
+        );
+        let tokens_json = Value::Object(token_entries).to_string();
 
         let tx = conn.transaction().map_err(|e| {
             GatewayCommandError::Internal(format!("Failed to begin token rotation transaction: {e}"))
@@ -1294,7 +1309,7 @@ pub fn validate_mobile_pairing_url(url: &str) -> Result<(), String> {
 mod tests {
     use super::{DevicePairingOwner, PENDING_PAIRING_TTL_MS};
     use rusqlite::params;
-    use serde_json::json;
+    use serde_json::{Value, json};
 
     #[test]
     fn expired_pending_request_is_rejected_before_status_or_approval() {
@@ -1364,5 +1379,56 @@ mod tests {
             )
             .expect("read rotated pairing");
         assert_eq!(surfaces, (None, None));
+    }
+
+    #[test]
+    fn token_rotation_preserves_tokens_for_other_approved_roles() {
+        let owner = DevicePairingOwner::in_memory().expect("pairing owner");
+        let request = owner
+            .handle_pair_request(&json!({
+                "deviceId": "multi-role-rotation-device",
+                "publicKey": "multi-role-rotation-key",
+                "roles": ["operator", "node"]
+            }))
+            .expect("pair request");
+        owner
+            .handle_pair_approve(&json!({
+                "requestId": request["requestId"]
+            }))
+            .expect("pair approval");
+
+        let before: Value = {
+            let conn = owner.conn.lock().expect("pairing database lock");
+            let raw: String = conn
+                .query_row(
+                    "SELECT tokens_json FROM device_pairing_paired WHERE device_id = ?1",
+                    params!["multi-role-rotation-device"],
+                    |row| row.get(0),
+                )
+                .expect("read initial role tokens");
+            serde_json::from_str(&raw).expect("parse initial role tokens")
+        };
+
+        owner
+            .handle_pair_rotate_token(&json!({
+                "deviceId": "multi-role-rotation-device",
+                "role": "node"
+            }))
+            .expect("node token rotation");
+
+        let after: Value = {
+            let conn = owner.conn.lock().expect("pairing database lock");
+            let raw: String = conn
+                .query_row(
+                    "SELECT tokens_json FROM device_pairing_paired WHERE device_id = ?1",
+                    params!["multi-role-rotation-device"],
+                    |row| row.get(0),
+                )
+                .expect("read rotated role tokens");
+            serde_json::from_str(&raw).expect("parse rotated role tokens")
+        };
+
+        assert_eq!(before["operator"]["token"], after["operator"]["token"]);
+        assert_ne!(before["node"]["token"], after["node"]["token"]);
     }
 }
