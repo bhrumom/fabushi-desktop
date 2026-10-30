@@ -103,3 +103,9 @@ node-host owner 合同与 Rust 实现切片；这些不构成 P0-AC01–AC08、�
 source closure 或任何 global flag 的正面证据。OCRM Actions、本机 OCRM
 验证、push 与 PR 更新仍按开发期冻结要求未执行；本文件的退出标准保持
 pending，允许满足主 Spec §11.1 的 scoped 单元继续推进。
+
+本轮新增 `dossiers/upstream-node-host-candidate-20261030.md`，仅记录
+`5f6f15fed0d6ba618cf781c9686a8b93f499564b` 的 NodeHost package/lock/workspace
+依赖前沿与待验证闭包条件；它不改变 `upstream.lock.json` 的 discovery-only
+状态，也不替代 exact-subject Actions inventory、LFS、integrity、license/
+NOTICE/SBOM 或 omitted/orphan negative evidence。
