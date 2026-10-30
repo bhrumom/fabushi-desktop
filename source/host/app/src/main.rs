@@ -3585,7 +3585,9 @@ impl UnifiedGatewayApi {
         &self,
         args: serde_json::Value,
     ) -> Result<serde_json::Value, GatewayCommandError> {
-        let session_key = args.get("sessionKey")
+        let session_key = args
+            .get("sessionKey")
+            .or_else(|| args.get("sessionId"))
             .and_then(serde_json::Value::as_str)
             .map(str::trim)
             .filter(|s| !s.is_empty())
@@ -3660,7 +3662,9 @@ impl UnifiedGatewayApi {
         &self,
         args: &serde_json::Value,
     ) -> Result<serde_json::Value, GatewayCommandError> {
-        let session_key = args.get("sessionKey")
+        let session_key = args
+            .get("sessionKey")
+            .or_else(|| args.get("sessionId"))
             .and_then(serde_json::Value::as_str)
             .map(str::trim)
             .filter(|s| !s.is_empty())

@@ -19,6 +19,8 @@ member streams.
 
 An explicitly supplied `runId` must also be a non-empty string; an empty or
 non-string value is rejected rather than widening into an all-stream abort.
+The projection accepts both `sessionKey` and the protocol-compatible
+`sessionId` alias while retaining the existing session owner.
 
 The existing `TranscriptRunnerRegistry` remains the sole cancellation owner.
 Static source review and `git diff --check` are the only development evidence;

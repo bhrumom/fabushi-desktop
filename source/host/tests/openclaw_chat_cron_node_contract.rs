@@ -194,6 +194,7 @@ fn test_ocrm_chat_o05_abort_invokes_runner_registry_cancellation() {
         .expect("shipping chat.abort function boundary exists");
     let shipping_abort = &SHIPPING_HOST_MAIN[abort_start..abort_end];
     assert!(shipping_abort.contains("active_stream_ids_for_agent"));
+    assert!(shipping_abort.contains("or_else(|| args.get(\"sessionId\"))"));
     assert!(shipping_abort.contains("cancel_stream(run_id, \"rpc\")"));
     assert!(shipping_abort.contains("requested_run_id"));
     assert!(shipping_abort.contains("is_none_or"));
