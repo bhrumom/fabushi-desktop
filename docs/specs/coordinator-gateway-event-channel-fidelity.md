@@ -25,6 +25,8 @@ envelopes and existing special handling for known channels.
 - **CECF-2**: A known channel keeps its existing mapped family.
 - **CECF-3**: A missing or unusable channel keeps the `runtime` family.
 - **CECF-4**: The payload is forwarded unchanged.
+- **CECF-5**: A carrier write failure is observable with the event family but
+  must not log the event payload or claim delivery succeeded.
 
 ## Ownership and implementation
 

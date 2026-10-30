@@ -165,7 +165,11 @@ impl CoordinatorState {
             .ok()
             .and_then(|server| server.post_event(family.to_string(), payload));
         if let Some(ServerAction::Post(frame)) = action {
-            let _ = self.write_frame(CarrierChannel::Data, &frame);
+            if let Err(error) = self.write_frame(CarrierChannel::Data, &frame) {
+                eprintln!(
+                    "coordinator event delivery failed family={family} error={error}"
+                );
+            }
         }
     }
 
