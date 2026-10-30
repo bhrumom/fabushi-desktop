@@ -178,12 +178,23 @@ fn test_ocrm_chat_o05_abort_invokes_runner_registry_cancellation() {
     let abort_res = json!({
         "ok": true,
         "aborted": cancelled > 0,
-        "runIds": vec![format!("run-{agent_id}")]
+        "runIds": Vec::<String>::new()
     });
 
     assert_eq!(abort_res["ok"], true);
     assert_eq!(abort_res["aborted"], false);
-    assert_eq!(abort_res["runIds"][0], "run-agent-test-abort");
+    assert!(abort_res["runIds"].as_array().unwrap().is_empty());
+
+    let abort_start = SHIPPING_HOST_MAIN
+        .find("fn call_openclaw_chat_abort(")
+        .expect("shipping chat.abort owner exists");
+    let abort_end = SHIPPING_HOST_MAIN[abort_start..]
+        .find("\n    fn call_openclaw_cron_list(")
+        .map(|offset| abort_start + offset)
+        .expect("shipping chat.abort function boundary exists");
+    let shipping_abort = &SHIPPING_HOST_MAIN[abort_start..abort_end];
+    assert!(shipping_abort.contains("active_stream_ids_for_agent"));
+    assert!(!shipping_abort.contains("format!(\"run-{agent_id}\")"));
 }
 
 // =========================================================================
