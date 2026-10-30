@@ -2389,5 +2389,8 @@ production wiring: no Host startup caller feeds the returned hello into
 and reconnect/close drain is not yet composed with invocation request/cancel
 dispatch. The `connect_with_runtime` adapter admits a validated hello through
 the existing generation-fenced runtime owner and closes through that lease;
+its `admit_event` path also parses and generation-binds node invoke request,
+input, and cancel events before handing them to the existing invocation/side
+effect owners;
 TLS fingerprint pinning is rejected rather than ignored. No remote command is
 advertised or enabled by this slice alone.

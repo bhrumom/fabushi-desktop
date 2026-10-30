@@ -28,6 +28,11 @@ use super::gateway_frames::{
     encode_gateway_request, parse_gateway_frame,
 };
 use super::hello_auth::persist_hello_ok_device_auth;
+use super::invoke_protocol::{
+    NodeInvokeCancel, NodeInvokeInput, NodeInvokeRequest, parse_node_invoke_cancel,
+    parse_node_invoke_input, parse_node_invoke_request,
+};
+use super::invocation_registry::NodeInvocationAdmission;
 use super::runtime_state::NodeHostRuntimeState;
 use super::session_registry::NodeHostSessionLease;
 
@@ -190,6 +195,18 @@ pub struct NodeHostGatewaySession {
     runtime: std::sync::Arc<NodeHostRuntimeState>,
     lease: NodeHostSessionLease,
     hello: NodeHostGatewayHello,
+}
+
+pub enum NodeHostGatewayInbound {
+    InvokeRequest {
+        request: NodeInvokeRequest,
+        admission: NodeInvocationAdmission,
+    },
+    InvokeInput(NodeInvokeInput),
+    InvokeCancel {
+        cancel: NodeInvokeCancel,
+        accepted: bool,
+    },
 }
 
 impl NodeHostGatewayTransport {
@@ -505,6 +522,44 @@ impl NodeHostGatewaySession {
 
     pub fn transport_mut(&mut self) -> &mut NodeHostGatewayTransport {
         &mut self.transport
+    }
+
+    pub fn admit_event(
+        &self,
+        frame: &NodeHostGatewayFrame,
+    ) -> Result<Option<NodeHostGatewayInbound>, String> {
+        if !self.runtime.is_current(&self.lease) {
+            return Err("Gateway event belongs to a retired session".into());
+        }
+        let NodeHostGatewayFrame::Event { event, payload, .. } = frame else {
+            return Ok(None);
+        };
+        let Some(payload) = payload else {
+            return Err(format!("{event} event payload is missing"));
+        };
+        match event.as_str() {
+            "node.invoke.request" => {
+                let request = parse_node_invoke_request(payload)?;
+                let admission = self.runtime.admit_request(&self.lease, &request)?;
+                Ok(Some(NodeHostGatewayInbound::InvokeRequest {
+                    request,
+                    admission,
+                }))
+            }
+            "node.invoke.input" => {
+                let input = parse_node_invoke_input(payload)?;
+                if input.node_id != self.lease.node_id {
+                    return Err("node.invoke.input belongs to another node".into());
+                }
+                Ok(Some(NodeHostGatewayInbound::InvokeInput(input)))
+            }
+            "node.invoke.cancel" => {
+                let cancel = parse_node_invoke_cancel(payload)?;
+                let accepted = self.runtime.cancel_invocation_frame(&self.lease, &cancel)?;
+                Ok(Some(NodeHostGatewayInbound::InvokeCancel { cancel, accepted }))
+            }
+            _ => Ok(None),
+        }
     }
 
     pub fn close(mut self) -> Result<(), NodeHostGatewayTransportError> {
