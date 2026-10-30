@@ -246,6 +246,7 @@ use mahayana_host_runtime::extensions::host_upgrade::host_bundle_upgrade::{
 use mahayana_host_runtime::extensions::node_host::session_registry::{
     NodeHostSessionLease, NodeHostSessionMetadata,
 };
+use mahayana_host_runtime::extensions::node_host::invoke_protocol::NodeInvokeRequest;
 use mahayana_host_runtime::extensions::node_host::runtime_state::NodeHostRuntimeState;
 use mahayana_host_runtime::host_production_extensions::{
     CURRENT_SHIPPING_PRODUCTION_EXTENSION_IDS, start_production_host_box_extensions,
@@ -3963,9 +3964,27 @@ impl UnifiedGatewayApi {
             tool_call_id: Some(tool_call_id.to_string()),
             action: Some("node.invoke.system.run".into()),
         };
+        // The public Host gateway uses its legacy `params` object, while the
+        // node-host wire protocol uses `paramsJSON`. Adapt that request at
+        // this boundary, then let the canonical runtime bind node identity
+        // and generation before the local side-effect owner runs it.
+        let request = NodeInvokeRequest {
+            id: invoke_id.to_string(),
+            node_id: node_id.to_string(),
+            command: command.to_string(),
+            params: params.clone(),
+            received_params_bytes: 0,
+            received_params_json: None,
+            timeout_ms: args.get("timeoutMs").and_then(serde_json::Value::as_u64),
+            idempotency_key: Some(tool_call_id.to_string()),
+            session_key: args
+                .get("sessionKey")
+                .and_then(serde_json::Value::as_str)
+                .map(str::to_string),
+        };
         let admission = self
             .node_host_runtime
-            .admit_invocation(&self.node_host_local_session, invoke_id)
+            .admit_request(&self.node_host_local_session, &request)
             .map_err(GatewayCommandError::BadRequest)?;
         let result = self
             .local_exec

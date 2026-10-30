@@ -1858,3 +1858,9 @@ manifest, execute a remote command, or establish production transport wiring;
 the node-host responsibilities remain `wiring=not-wired`, verification
 `not-run`, and acceptance `pending` until the live transport owner and exact
 Actions/device evidence exist.
+
+The shipping local `node.invoke(system.run)` producer now uses the typed
+request adapter before entering the existing local execution owner. This is a
+real local producer-to-owner generation/identity fence, but it does not widen
+the supported command surface or change the remote-node fail-closed result;
+remote transport, manifest publication, and device acceptance remain pending.
