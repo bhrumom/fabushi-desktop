@@ -6,7 +6,7 @@ use std::sync::{
     Arc, Mutex,
     atomic::{AtomicU32, AtomicU64, Ordering},
 };
-use std::time::{Duration, SystemTime, UNIX_EPOCH};
+use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
 use base64::{Engine as _, engine::general_purpose::STANDARD as BASE64};
 use serde::{Deserialize, Serialize};
@@ -1054,7 +1054,24 @@ impl GatewayLocalExecManager {
         working_directory: &str,
         tool_call_id: &str,
     ) -> Result<GatewayLocalExecShellResult, SandLocalExecError> {
+        self.execute_shell_with_timeout(scope, command, working_directory, tool_call_id, None)
+    }
+
+    /// Executes a shell operation while preserving the existing operation
+    /// journal and provider cancellation owner. A node-host deadline requests
+    /// cancellation through the same registered operation; if no terminal
+    /// provider frame arrives, the result remains outcome-unknown rather than
+    /// claiming that the side effect was undone.
+    pub fn execute_shell_with_timeout(
+        &self,
+        scope: &GatewayLocalToolScope,
+        command: &str,
+        working_directory: &str,
+        tool_call_id: &str,
+        timeout: Option<Duration>,
+    ) -> Result<GatewayLocalExecShellResult, SandLocalExecError> {
         self.ensure_operation_journal_healthy()?;
+        let started_at = Instant::now();
         let message = PRODUCTION_LOCAL_EXEC_CODEC.shell_stream_server_message(
             self.next_id(),
             command,
@@ -1095,10 +1112,21 @@ impl GatewayLocalExecManager {
         let mut terminal_status = None;
         let outcome = (|| -> Result<GatewayLocalExecShellResult, SandLocalExecError> {
             loop {
-                let response = match request.recv_timeout(Duration::from_secs(10)) {
+                let wait = timeout
+                    .map(|timeout| timeout.saturating_sub(started_at.elapsed()))
+                    .unwrap_or(Duration::from_secs(10))
+                    .min(Duration::from_secs(10));
+                let response = match request.recv_timeout(wait) {
                     Ok(response) => response,
                     Err(_) => {
-                        terminal_status = Some(GatewayLocalExecOperationStatus::OutcomeUnknown);
+                        let timed_out = timeout.is_some_and(|timeout| started_at.elapsed() >= timeout);
+                        let cancelled = timed_out && self.cancel_operation(tool_call_id);
+                        terminal_status = Some(if cancelled {
+                            GatewayLocalExecOperationStatus::Cancelled
+                        } else {
+                            GatewayLocalExecOperationStatus::OutcomeUnknown
+                        });
+                        result.aborted = cancelled;
                         result.outcome_unknown = true;
                         request.close();
                         return Ok(result.clone());

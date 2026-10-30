@@ -4143,7 +4143,15 @@ impl UnifiedGatewayApi {
             .local_exec
             .sandbox(self.local_tool_permission.clone())
             .exec_manager()
-            .execute_shell(&scope, shell_command, working_directory, tool_call_id)
+            .execute_shell_with_timeout(
+                &scope,
+                shell_command,
+                working_directory,
+                tool_call_id,
+                args.get("timeoutMs")
+                    .and_then(serde_json::Value::as_u64)
+                    .map(std::time::Duration::from_millis),
+            )
             .map_err(|error| GatewayCommandError::Internal(error.to_string()));
         let terminal_result = match &result {
             Ok(result) => NodeInvokeResult::success_payload(
