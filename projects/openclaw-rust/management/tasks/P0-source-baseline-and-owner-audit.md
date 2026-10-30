@@ -91,8 +91,8 @@ P0-AC 全通过也只完成基线任务；可按主 Spec §15.1 为 baseline ide
 ## 8. 本次状态
 
 P0 仍未退出：最新只读 live candidate 已推进到 OpenClaw
-`5f6f15fed0d6ba618cf781c9686a8b93f499564b` / tree
-`ee0af1d3ba415e7763da6759ca47b245031a21c9`，但尚未取得针对该 exact subject
+`89734994c6c9d3572e2927be0cdae8d7da1998ca` / tree
+`bcb3914c8418e2f92927dd3e60c635fc4345a858`，但尚未取得针对该 exact subject
 的 GitHub Actions inventory、依赖闭包和 evidence envelope。`upstream.lock.json`
 已保存该 candidate 的 discovery identity；既有 inventory/shards 仍绑定上一轮
 候选，不能编辑性重标为当前来源；对应 drift decision 见

@@ -1,6 +1,6 @@
 # OpenClaw NodeHost candidate dependency frontier — 2026-10-30
 
-## Status and exact subject
+## Initial candidate record (superseded by the live refresh below)
 
 This is discovery evidence for the current candidate, not an accepted source
 authority or dependency-closure receipt.
@@ -92,3 +92,19 @@ owners.
 - exact candidate `packages/gateway-client/package.json`
 - exact candidate `packages/gateway-protocol/package.json`
 - exact candidate `packages/normalization-core/package.json`
+
+## Live ref refresh after initial candidate record
+
+A subsequent read-only `git ls-remote` resolved `refs/heads/main` to
+`89734994c6c9d3572e2927be0cdae8d7da1998ca`; the commit tree is
+`bcb3914c8418e2f92927dd3e60c635fc4345a858`. The recursive tree response is
+not truncated and contains 63,521 entries (61,281 blobs and 2,240
+directories). The root `package.json`, `pnpm-lock.yaml`, and
+`pnpm-workspace.yaml` blob identities remain unchanged from the preceding
+5f6f15f candidate, but the tree identity changed, so the earlier candidate
+cannot remain the current exact subject.
+
+This refresh is still discovery-only. The existing NodeHost implementation was
+not silently re-baselined to the new subject, and Actions inventory,
+dependency-closure, LFS, integrity, license/NOTICE/SBOM, and omitted/orphan
+negative evidence remain required before authority promotion.
