@@ -10,6 +10,9 @@ use mahayana_host_runtime::extensions::node_host::runtime_manifest::{
     NodeHostManifest, NODE_AGENT_CLI_CLAUDE_RUN_COMMAND, NODE_DESKTOP_STREAM_COMMAND,
     NODE_SYSTEM_RUN_COMMANDS,
 };
+use mahayana_host_runtime::extensions::node_host::protocol_negotiation::{
+    NodeHostProtocol, OfferedProtocolRange, negotiate_protocol,
+};
 use std::collections::HashSet;
 
 const COMMAND_DISPATCH_SOURCE: &str =
@@ -72,6 +75,14 @@ fn test_ocrm_node_host_gateway_auth_and_scope() {
         &candidates,
         None
     ));
+}
+
+#[test]
+fn test_ocrm_node_host_protocol_negotiation_is_range_fenced() {
+    let offered = OfferedProtocolRange::new(3, 4).unwrap();
+    assert_eq!(negotiate_protocol(3, offered), Ok(NodeHostProtocol::V3));
+    assert_eq!(negotiate_protocol(4, offered), Ok(NodeHostProtocol::V4));
+    assert!(negotiate_protocol(2, offered).is_err());
 }
 
 #[test]

@@ -2047,3 +2047,13 @@ instead of constructing a malformed candidate. This is a transport-neutral
 security boundary; plaintext is accepted only for loopback hosts, while
 non-loopback candidates require TLS. It does not open sockets, resolve
 SecretInput material, pin a peer, or claim Gateway/device acceptance.
+
+## 165. V3/V4 protocol negotiation seam (2026-10-30)
+
+`protocol_negotiation.rs` now captures the source-backed hello rule for the
+currently audited V3/V4 dialects: an offered range must be ordered and wholly
+supported, the server version must lie inside that range, and the selected
+dialect is bounded by the server and offered maximum. Inverted, future and
+out-of-range values fail closed. The seam does not create the challenge-bound
+connect envelope, sign device metadata, own version persistence, or open a
+Gateway socket; live negotiation and device acceptance remain pending.
