@@ -19,6 +19,20 @@ The committed OCRM lock and generated inventory still identify the prior candida
 
 The non-truncated API response is useful discovery evidence for the live tree, but it is not yet the required Actions receipt: it does not close submodules/LFS, package integrity, recursive external dependencies, generated-input provenance, license closure or the subject-target evidence envelope.
 
+## Latest live observation (2026-10-30)
+
+A later read-only `git ls-remote` and GitHub API check resolved OpenClaw
+`refs/heads/main` to commit `c49e07385f8d17601efbed7746381213d5326ba9`, tree
+`fcd6e0b9b42da1e3d39ca89c69ac779294cc3bfb`, authored at
+`2026-10-30T05:56:33Z`. Its recursive-tree response remained
+`truncated=false`, with 63,469 entries: 61,231 blobs and 2,238 directories.
+The root manifest blob identities remained unchanged from the earlier
+observation (`package.json`, `pnpm-lock.yaml`, `pnpm-workspace.yaml`,
+`.gitattributes`, `LICENSE`, and `THIRD_PARTY_NOTICES.md`); `.gitmodules` was
+still absent. This supersedes the earlier live discovery ref as the latest
+candidate only; it does not promote the candidate to lock authority or make
+the prior inventory reusable.
+
 ## Decision
 
 Keep the prior lock/inventory as historical candidate evidence until a fresh GitHub Actions authority run recursively enumerates the live OpenClaw commit, resolves submodules/LFS and dependency inputs, and produces a new immutable manifest. Do not claim `baseline_identity_accepted`, `source_closure_ready`, or any semantic/implementation flag from the live discovery alone. The next P0 authority run must rebaseline the lock, inventory, shards, ledger/RTM provenance and root-input digests together against one exact subject.
