@@ -3352,8 +3352,7 @@ impl UnifiedGatewayApi {
             "memoryFreeBytes": memory.available_bytes,
             "uptimeMs": uptime_ms,
             "processInstanceId": format!("sand-host-{pid}"),
-            "version": env!("CARGO_PKG_VERSION"),
-            "status": "ok",
+            "nodeVersion": env!("CARGO_PKG_VERSION"),
         }))
     }
 

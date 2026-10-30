@@ -112,12 +112,11 @@ fn test_system_info_schema_and_zero_secret_leakage() {
         "memoryFreeBytes": memory.available_bytes,
         "uptimeMs": 1000,
         "processInstanceId": format!("sand-host-{pid}"),
-        "version": env!("CARGO_PKG_VERSION"),
-        "status": "ok",
+        "nodeVersion": env!("CARGO_PKG_VERSION"),
     });
 
     // Verify schema
-    assert_eq!(info["status"], "ok");
+    assert!(!info["nodeVersion"].as_str().unwrap().is_empty());
     assert!(info["pid"].as_u64().unwrap() > 0);
     assert!(info["cpuCount"].as_u64().unwrap() >= 1);
     assert!(info["processInstanceId"].as_str().unwrap().starts_with("sand-host-"));
@@ -126,6 +125,8 @@ fn test_system_info_schema_and_zero_secret_leakage() {
 
     // Zero secret leakage
     let serialized = serde_json::to_string(&info).unwrap();
+    assert!(!serialized.contains("\"version\""));
+    assert!(!serialized.contains("\"status\""));
     assert!(!serialized.contains("password"));
     assert!(!serialized.contains("token"));
     assert!(!serialized.contains("secret"));
