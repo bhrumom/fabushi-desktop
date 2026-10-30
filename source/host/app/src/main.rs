@@ -3441,8 +3441,12 @@ impl UnifiedGatewayApi {
             .map_err(GatewayCommandError::Internal)?;
 
         let limit = args.get("limit").and_then(serde_json::Value::as_u64).unwrap_or(200) as usize;
+        // Transcript workers expose entries in chronological order. Match the
+        // tail-oriented session owner by selecting the newest bounded window
+        // while retaining chronological order for the Gateway response.
+        let start = entries.len().saturating_sub(limit);
         let mut messages = Vec::new();
-        for entry in entries.into_iter().take(limit) {
+        for entry in entries.into_iter().skip(start) {
             let id = entry.get("id").and_then(serde_json::Value::as_str).unwrap_or_default().to_string();
             let role = entry
                 .get("role")

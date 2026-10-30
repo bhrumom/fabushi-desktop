@@ -196,6 +196,9 @@ fn test_sessions_get_empty_messages_200_invariant() {
     assert!(!sessions_get.contains("return Ok(serde_json::json!({ \"messages\": [] }))"));
     assert!(sessions_get.contains("entry.get(\"message\").and_then(|message| message.get(\"content\"))"));
     assert!(sessions_get.contains("entry.get(\"timestampMs\")"));
+    assert!(sessions_get.contains("let start = entries.len().saturating_sub(limit)"));
+    assert!(sessions_get.contains("entries.into_iter().skip(start)"));
+    assert!(!sessions_get.contains("entries.into_iter().take(limit)"));
 }
 
 #[test]

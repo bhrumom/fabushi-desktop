@@ -14,6 +14,11 @@ The request boundary now rejects a missing/blank session selector instead of
 returning a successful empty history. An explicitly selected session with no
 messages retains the `{ "messages": [] }` result.
 
+The projection also follows the existing transcript-page owner’s tail
+semantics: it selects the newest `limit` entries and preserves their
+chronological order, rather than taking the oldest prefix from the full
+transcript.
+
 Evidence is limited to source inspection, focused source-contract assertions,
 and `git diff --check`; local OCRM tests/builds and live OpenClaw
 `sessions.get` acceptance remain pending.
