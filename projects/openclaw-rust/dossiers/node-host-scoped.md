@@ -1906,3 +1906,16 @@ builder remains compatible for existing callers. This improves the manifest
 owner contract against the latest live source, but no production caller yet
 feeds the real plugin registry or publishes the snapshot through a live node
 transport; wiring, verification, and acceptance remain pending.
+
+## 154. Typed invocation-result envelope (2026-10-30)
+
+`invoke_protocol.rs` now models the live result shape with original `id` and
+`nodeId`, `ok`, mutually selected `payload`/`payloadJSON`, and structured
+errors. `without_permission_details` applies the live capability gate so
+permission details are removed when the peer lacks the dedicated capability;
+stable error code/message remain available. Serialization-focused contract
+coverage preserves IDs and both detailed/redacted outcomes.
+
+This is still a transport-neutral protocol owner: no Gateway result sender,
+remote invocation executor, best-effort delivery path, or exact-head runtime
+acceptance has been added.

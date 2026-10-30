@@ -5,11 +5,98 @@
 //! switch dialects, while the original paramsJSON text and byte count remain
 //! available to the side-effect owner.
 
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
 pub const MAX_INPUT_FRAME_BYTES: usize = 16 * 1024;
 pub const MAX_PARAMS_JSON_BYTES: usize = 256 * 1024;
+
+#[derive(Debug, Clone, PartialEq, Serialize)]
+pub struct NodeInvokeError {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub code: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub message: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub details: Option<Value>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize)]
+pub struct NodeInvokeResult {
+    pub id: String,
+    #[serde(rename = "nodeId")]
+    pub node_id: String,
+    pub ok: bool,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub payload: Option<Value>,
+    #[serde(rename = "payloadJSON", skip_serializing_if = "Option::is_none")]
+    pub payload_json: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub error: Option<NodeInvokeError>,
+}
+
+impl NodeInvokeResult {
+    pub fn success_json(
+        id: impl Into<String>,
+        node_id: impl Into<String>,
+        payload_json: impl Into<String>,
+    ) -> Self {
+        Self {
+            id: id.into(),
+            node_id: node_id.into(),
+            ok: true,
+            payload: None,
+            payload_json: Some(payload_json.into()),
+            error: None,
+        }
+    }
+
+    pub fn success_payload(
+        id: impl Into<String>,
+        node_id: impl Into<String>,
+        payload: Value,
+    ) -> Self {
+        Self {
+            id: id.into(),
+            node_id: node_id.into(),
+            ok: true,
+            payload: Some(payload),
+            payload_json: None,
+            error: None,
+        }
+    }
+
+    pub fn failure(
+        id: impl Into<String>,
+        node_id: impl Into<String>,
+        code: impl Into<String>,
+        message: impl Into<String>,
+        details: Option<Value>,
+    ) -> Self {
+        Self {
+            id: id.into(),
+            node_id: node_id.into(),
+            ok: false,
+            payload: None,
+            payload_json: None,
+            error: Some(NodeInvokeError {
+                code: Some(code.into()),
+                message: Some(message.into()),
+                details,
+            }),
+        }
+    }
+
+    /// Apply the Gateway capability fence used by the live node-host client.
+    pub fn without_permission_details(mut self, allow_permission_details: bool) -> Self {
+        if !allow_permission_details {
+            if let Some(error) = self.error.as_mut() {
+                error.details = None;
+            }
+        }
+        self
+    }
+}
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct NodeInvokeRequest {
@@ -172,7 +259,7 @@ pub fn parse_node_invoke_cancel(payload: &Value) -> Result<NodeInvokeCancel, Str
 mod tests {
     use super::{
         parse_node_invoke_cancel, parse_node_invoke_input, parse_node_invoke_request,
-        MAX_INPUT_FRAME_BYTES, MAX_PARAMS_JSON_BYTES,
+        NodeInvokeResult, MAX_INPUT_FRAME_BYTES, MAX_PARAMS_JSON_BYTES,
     };
     use serde_json::json;
 
@@ -232,5 +319,31 @@ mod tests {
         }))
         .expect("cancel should parse");
         assert_eq!(cancel.invoke_id, "i");
+    }
+
+    #[test]
+    fn result_preserves_ids_and_capability_fences_error_details() {
+        let success = NodeInvokeResult::success_json("invoke-1", "node-1", "{\"ok\":true}");
+        let success_json = serde_json::to_value(&success).expect("serialize result");
+        assert_eq!(success_json["id"], "invoke-1");
+        assert_eq!(success_json["nodeId"], "node-1");
+        assert_eq!(success_json["ok"], true);
+        assert_eq!(success_json["payloadJSON"], "{\"ok\":true}");
+        assert!(success_json.get("payload").is_none());
+
+        let failure = NodeInvokeResult::failure(
+            "invoke-2",
+            "node-1",
+            "PERMISSION_DENIED",
+            "permission denied",
+            Some(json!({"scope": "computer"})),
+        );
+        let redacted = serde_json::to_value(failure.clone().without_permission_details(false))
+            .expect("serialize redacted result");
+        assert_eq!(redacted["error"]["code"], "PERMISSION_DENIED");
+        assert!(redacted["error"].get("details").is_none());
+        let permitted = serde_json::to_value(failure.without_permission_details(true))
+            .expect("serialize detailed result");
+        assert_eq!(permitted["error"]["details"]["scope"], "computer");
     }
 }
