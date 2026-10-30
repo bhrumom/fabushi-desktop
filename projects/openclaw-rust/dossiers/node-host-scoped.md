@@ -2322,3 +2322,19 @@ rotation behavior. This closes the persistence/consumer seam for R14 only.
 No upstream Gateway approval/token producer is connected yet, and the future
 transport owner still has to consume this API after exact challenge/hello
 contract closure.
+
+## 180. Challenge-bound device proof seam (2026-10-30)
+
+`source/host/src/extensions/node_host/device_auth.rs` now provides a
+transport-neutral v3 proof builder. It validates delimiter-sensitive fields,
+normalizes platform/device-family metadata to lowercase, binds the supplied
+challenge nonce and timestamp, and signs the exact v3 payload through the
+Host credential identity. A cached token can be adapted only when its device
+id matches the signing identity; the proof contains the raw public key,
+signature, signed timestamp, and nonce, but not the private key.
+
+This closes the credential-owner → challenge-proof seam for the known v3
+payload contract. It does not open a socket, parse `connect.challenge`,
+select bootstrap versus cached auth, send `connect`, or persist `hello-ok`
+device tokens; those remain transport-owner work pending exact source closure
+and a real Gateway producer/consumer path.
