@@ -370,15 +370,40 @@ impl DevicePairingOwner {
         ) = pending;
 
         let now = now_ms();
-        let token_string = new_device_token()?;
-        let tokens_json = json!({
-            "operator": {
-                "token": token_string,
-                "createdAtMs": now,
-                "rotatedAtMs": now
+        let requested_roles = roles_json
+            .as_deref()
+            .map(serde_json::from_str::<Value>)
+            .transpose()
+            .map_err(|error| {
+                GatewayCommandError::BadRequest(format!("invalid requested device roles: {error}"))
+            })?
+            .and_then(|value| value.as_array().cloned())
+            .unwrap_or_default();
+        let mut token_entries = serde_json::Map::new();
+        for role in requested_roles
+            .iter()
+            .filter_map(Value::as_str)
+            .map(str::trim)
+            .filter(|role| !role.is_empty())
+        {
+            if token_entries.contains_key(role) {
+                continue;
             }
-        })
-        .to_string();
+            token_entries.insert(
+                role.to_string(),
+                json!({
+                    "token": new_device_token()?,
+                    "createdAtMs": now,
+                    "rotatedAtMs": now
+                }),
+            );
+        }
+        if token_entries.is_empty() {
+            return Err(GatewayCommandError::BadRequest(
+                "device pairing approval requires at least one non-empty role".into(),
+            ));
+        }
+        let tokens_json = Value::Object(token_entries).to_string();
 
         // Atomic transaction: delete from pending, upsert into paired, bump revision
         conn.execute(
