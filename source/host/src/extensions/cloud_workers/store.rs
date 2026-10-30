@@ -4,6 +4,8 @@ use std::path::{Path, PathBuf};
 
 use super::{CloudWorkerPersistentSnapshot, CloudWorkerProvisioningOwner};
 
+pub const CLOUD_WORKER_MAX_STATE_BYTES: u64 = 8 * 1024 * 1024;
+
 #[derive(Debug, Default, Clone, Copy)]
 pub struct CloudWorkerProvisioningStore;
 
@@ -44,7 +46,14 @@ impl CloudWorkerProvisioningStore {
     ) -> Result<CloudWorkerPersistentSnapshot, CloudWorkerStoreError> {
         let mut file = File::open(path).map_err(CloudWorkerStoreError::Read)?;
         let mut bytes = Vec::new();
-        file.read_to_end(&mut bytes).map_err(CloudWorkerStoreError::Read)?;
+        file.take(CLOUD_WORKER_MAX_STATE_BYTES + 1)
+            .read_to_end(&mut bytes)
+            .map_err(CloudWorkerStoreError::Read)?;
+        if bytes.len() as u64 > CLOUD_WORKER_MAX_STATE_BYTES {
+            return Err(CloudWorkerStoreError::StateTooLarge {
+                limit: CLOUD_WORKER_MAX_STATE_BYTES,
+            });
+        }
         serde_json::from_slice(&bytes).map_err(CloudWorkerStoreError::Decode)
     }
 
@@ -58,6 +67,11 @@ impl CloudWorkerProvisioningStore {
         let temporary = temporary_path(path);
         let bytes = serde_json::to_vec_pretty(&owner.snapshot())
             .map_err(CloudWorkerStoreError::Encode)?;
+        if bytes.len() as u64 > CLOUD_WORKER_MAX_STATE_BYTES {
+            return Err(CloudWorkerStoreError::StateTooLarge {
+                limit: CLOUD_WORKER_MAX_STATE_BYTES,
+            });
+        }
         let mut file = OpenOptions::new()
             .write(true)
             .create_new(true)
@@ -125,6 +139,8 @@ pub enum CloudWorkerStoreError {
     Encode(#[source] serde_json::Error),
     #[error("could not decode cloud-worker state: {0}")]
     Decode(#[source] serde_json::Error),
+    #[error("cloud-worker state exceeds the {limit}-byte limit")]
+    StateTooLarge { limit: u64 },
     #[error("cloud-worker owner lock is poisoned")]
     PoisonedOwner,
     #[error("backup source does not exist")]

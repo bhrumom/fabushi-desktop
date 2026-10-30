@@ -56,7 +56,9 @@ pub use sandbox::{
     CloudWorkerSandboxCapability, CloudWorkerSandboxError, CloudWorkerSandboxOperation,
     CloudWorkerSandboxRequest,
 };
-pub use store::{CloudWorkerStoreError, CloudWorkerProvisioningStore};
+pub use store::{
+    CloudWorkerProvisioningStore, CloudWorkerStoreError, CLOUD_WORKER_MAX_STATE_BYTES,
+};
 pub use provider_catalog::{
     CloudWorkerBinaryIdentity, CloudWorkerCatalog, CloudWorkerCatalogCache,
     CloudWorkerCatalogError, CloudWorkerCatalogParser, CloudWorkerMachine,

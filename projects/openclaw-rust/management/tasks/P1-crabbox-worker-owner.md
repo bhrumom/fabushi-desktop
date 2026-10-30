@@ -352,7 +352,9 @@ exposes an atomic `persist()` boundary. Migration/rollback receipts and
 `backup_existing` now syncs the copied backup and its directory entry before
 returning success; a barrier failure leaves the backup visible but reports a
 non-success outcome for recovery handling. Migration/rollback receipts and
-mutation-triggered persistence remain open. The snapshot now carries
+mutation-triggered persistence remain open. Both load and save reject state
+JSON larger than the explicit 8 MiB private-state bound before decoding or
+publication. The snapshot now carries
 append-only `CloudWorkerMigrationReceipt` records, and the store exposes an
 explicit non-overwriting `backup_existing` primitive; no legacy conversion is
 claimed until a real source format and migration oracle are supplied.
