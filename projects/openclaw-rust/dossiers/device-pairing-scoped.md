@@ -209,4 +209,6 @@ or a new request can reuse them. Approval-worker concurrency,
 reconnect-generation fencing, and companion acceptance remain separate open
 responsibilities. Approval now also carries the accepted `browserOrigin` from
 the pending row into the paired durable identity instead of dropping that
-binding at commit.
+binding at commit, and reapproval clears any retained or pending node surface
+so a successor connection must publish a fresh generation-bound capability
+surface.

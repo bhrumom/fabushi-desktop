@@ -707,7 +707,8 @@ impl DevicePairingOwner {
                 public_key = ?2, display_name = ?3, platform = ?4, device_family = ?5,
                 client_id = ?6, client_mode = ?7, browser_origin = ?8, role = ?9,
                 roles_json = ?10, scopes_json = ?11, approved_scopes_json = ?11,
-                tokens_json = ?12, approved_at_ms = ?14, last_seen_at_ms = ?14"#,
+                tokens_json = ?12, node_surface_json = NULL, pending_node_surface_json = NULL,
+                approved_at_ms = ?14, last_seen_at_ms = ?14"#,
             params![
                 device_id, public_key, display_name, platform, device_family,
                 client_id, client_mode, browser_origin, role, roles_json, scopes_json,
