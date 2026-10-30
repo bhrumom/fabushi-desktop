@@ -2268,3 +2268,23 @@ It authorizes a single Host transport-boundary owner as the next design and
 implementation unit, while explicitly rejecting reuse of the inbound
 `native/mahayana-messaging` WebSocket server as a NodeHost client. No
 production caller or completion evidence is claimed by this ADR.
+
+## 177. Credential-owner gap audit (2026-10-30)
+
+The Host credential audit found no existing NodeHost client identity owner:
+`host_secret_store` persists only a machine id, while `DevicePairingOwner`
+stores remote-device public keys and issued role tokens for inbound Gateway
+authorization. It exposes no local Ed25519 private identity, public-key
+encoding, challenge signer, origin-scoped token lookup, or rotation-fenced
+client credential API. The existing account/network bearer credentials are
+for different services and cannot sign an OpenClaw node challenge.
+
+The current OpenClaw candidate requires installation-local device identity
+loading/creation, raw public-key encoding, payload signing, and device-auth
+token lookup keyed by device id, role, and optionally Gateway origin. This is
+therefore a concrete prerequisite for the transport ADR: the future Host
+transport owner must receive an injected credential-owner interface, and must
+not generate ephemeral signing keys, read pairing rows directly, or reuse an
+unrelated bearer token. Remote transport remains unwired until this owner
+contract and its secure persistence/rotation semantics are implemented and
+accepted.

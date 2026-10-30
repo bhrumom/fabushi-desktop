@@ -47,6 +47,15 @@ credential signer, challenge contract, protocol version, TLS policy, or
 server hello is unavailable. Pairing approval remains identity/approval
 input only; it cannot activate the owner or make an RPC projection connected.
 
+The credential input is itself a required existing-owner extension: the
+current Host secret store has only a machine id, and `DevicePairingOwner`
+contains remote pairing/public-key and inbound role-token state, not a local
+NodeHost signing identity or origin-scoped client-token lookup. The transport
+owner must therefore depend on an explicit credential-owner interface for
+installation-local identity, raw public-key encoding, challenge signing, and
+rotation-fenced token reads. It must not create ephemeral keys or inspect
+pairing storage directly.
+
 ## Consequences
 
 - A WebSocket dependency may be added only to this owner and only with the
@@ -64,6 +73,8 @@ input only; it cannot activate the owner or make an RPC projection connected.
 
 - exact upstream source and dependency closure for the connection/challenge/
   hello/request/event contract;
+- secure credential-owner contract and persistence/rotation evidence for the
+  local device identity and origin-scoped node token;
 - focused Rust contract tests for generation fencing, hello gating, request
   correlation, malformed/oversized frame rejection, and cleanup;
 - a production caller that feeds the canonical session registry and runtime;
