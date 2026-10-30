@@ -21,6 +21,19 @@ pub const NODE_DESKTOP_STREAM_COMMAND: &str = "node.desktop_stream";
 
 pub const SYSTEM_RUN_EXECUTION_CONTEXT_CAPABILITY: &str = "system_run.execution_context";
 pub const NODE_CLAUDE_SKILLS_CAPABILITY: &str = "node.claude_skills";
+const MAX_MANIFEST_ENTRY_CHARS: usize = 256;
+
+fn valid_manifest_entry(value: &str) -> Option<String> {
+    let value = value.trim();
+    if value.is_empty()
+        || value.chars().count() > MAX_MANIFEST_ENTRY_CHARS
+        || value.chars().any(|character| character.is_control())
+    {
+        None
+    } else {
+        Some(value.to_string())
+    }
+}
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct NodeHostManifest {
@@ -63,13 +76,11 @@ impl NodeHostManifest {
             commands.insert(NODE_DESKTOP_STREAM_COMMAND.to_string());
         }
         commands.extend(plugin_commands.iter().filter_map(|command| {
-            let command = command.trim();
-            if command.is_empty()
-                || (ephemeral && matches!(command, "screen.snapshot" | "computer.act"))
-            {
+            let command = valid_manifest_entry(command)?;
+            if ephemeral && matches!(command.as_str(), "screen.snapshot" | "computer.act") {
                 None
             } else {
-                Some(command.to_string())
+                Some(command)
             }
         }));
         if let Some(allowed) = allowlist {
@@ -87,13 +98,11 @@ impl NodeHostManifest {
             plugin_capabilities
                 .iter()
                 .filter_map(|capability| {
-                    let capability = capability.trim();
-                    if capability.is_empty()
-                        || (ephemeral && matches!(capability, "computer" | "screen"))
-                    {
+                    let capability = valid_manifest_entry(capability)?;
+                    if ephemeral && matches!(capability.as_str(), "computer" | "screen") {
                         None
                     } else {
-                        Some(capability.to_string())
+                        Some(capability)
                     }
                 }),
         );

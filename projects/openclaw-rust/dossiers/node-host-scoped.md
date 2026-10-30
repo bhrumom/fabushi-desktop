@@ -1907,6 +1907,12 @@ owner contract against the latest live source, but no production caller yet
 feeds the real plugin registry or publishes the snapshot through a live node
 transport; wiring, verification, and acceptance remain pending.
 
+Manifest plugin commands and capabilities now also pass a bounded text
+admission check: surrounding whitespace is normalized, empty/control-bearing
+entries and entries over 256 characters are omitted before sorting and
+publication. This keeps the future hello/manifest boundary fail-closed without
+claiming a real plugin registry or remote publication path.
+
 ## 154. Typed invocation-result envelope (2026-10-30)
 
 `invoke_protocol.rs` now models the live result shape with original `id` and

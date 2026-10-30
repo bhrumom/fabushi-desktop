@@ -274,3 +274,18 @@ fn test_ocrm_node_host_manifest_composes_plugins_and_ephemeral_surface() {
     assert!(!manifest.capabilities.contains(&"computer".to_string()));
     assert!(manifest.is_ephemeral);
 }
+
+#[test]
+fn test_ocrm_node_host_manifest_rejects_unbounded_plugin_entries() {
+    let manifest = NodeHostManifest::build_with_plugin_manifest(
+        &HashSet::new(),
+        &["plugin.ok".into(), "plugin\nunsafe".into(), "x".repeat(257)],
+        &["cap.ok".into(), "cap\tunsafe".into(), "y".repeat(257)],
+        false,
+        false,
+        false,
+        None,
+    );
+    assert_eq!(manifest.advertised_commands, vec!["plugin.ok".to_string()]);
+    assert_eq!(manifest.capabilities, vec!["cap.ok".to_string()]);
+}
