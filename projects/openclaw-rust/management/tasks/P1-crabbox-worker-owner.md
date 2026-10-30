@@ -371,7 +371,8 @@ mutation-triggered persistence remain open. Both load and save reject state
 JSON larger than the explicit 8 MiB private-state bound before decoding or
 publication. Snapshot restore also revalidates lease scope/runtime/lifecycle
 identity and warm-image hold/state invariants instead of trusting public JSON
-fields. The snapshot now carries
+fields, and migration receipts are bounded to 256 records with bounded
+operation/backup/detail text. The snapshot now carries
 append-only `CloudWorkerMigrationReceipt` records, and the store exposes an
 explicit non-overwriting `backup_existing` primitive; no legacy conversion is
 claimed until a real source format and migration oracle are supplied.
