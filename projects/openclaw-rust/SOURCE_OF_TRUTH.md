@@ -51,7 +51,7 @@ Implementation/acceptance: **未完成**
 
 目标 main 有大量可复用 owner，但外部 channel default 仍是 unregistered seam；Memory、MCP、Human/Call、Browser 源码存在不等于 OpenClaw parity。未合并的 PR #165/#166/#167/#168 仅作协调依赖；正在进行的 TDRP PR #154 及其 evidence 不被本项目改写。
 
-2026-10-30 live 只读核对：Fabushi `origin/main`=`cfef45568293a22deb32a6cdef17916f3ec19648`；当前专用工作分支起点=`074d17dcd8508ef6ca45bc5932553e7429cf62f9`；PR #169/#180/#181 heads 分别为 `b5db35fa272c83833685d70a730b5f8285fa1176`、`2225400ea73392523586a110301edeb87c986001`、`ab4eaa0560a5b767f46d0c91e36eb6e3cfd4344a`，均未合并。OpenClaw live `main`=`87facf07d6b4907846c4a8e4c7ae551f85571420`，tree=`f72fbc794bbb23a04bc5afea875d4877048015c9`；现有 `upstream.lock.json` 仍是上一轮 `ad8d12f…/04ccce…` 候选，必须在 P0 重新生成并取得 Actions provenance 后才可作为本轮 authority。上述核对不是 CI 或产品验收证据。
+2026-10-30 live 只读核对：Fabushi `origin/main`=`cfef45568293a22deb32a6cdef17916f3ec19648`；当前专用工作分支起点=`074d17dcd8508ef6ca45bc5932553e7429cf62f9`；PR #169/#180/#181 heads 分别为 `b5db35fa272c83833685d70a730b5f8285fa1176`、`2225400ea73392523586a110301edeb87c986001`、`ab4eaa0560a5b767f46d0c91e36eb6e3cfd4344a`，均未合并。OpenClaw live `main`=`87facf07d6b4907846c4a8e4c7ae551f85571420`，tree=`f72fbc794bbb23a04bc5afea875d4877048015c9`；递归 tree API 未截断且有 63,459 entries。现有 `upstream.lock.json` 已明确将上一轮 `ad8d12f…/04ccce…` 标为 `accepted_for_this_implementation_round=false`，并保存 live candidate；必须在 P0 重新生成 inventory、依赖闭包并取得 Actions provenance 后才可提升为本轮 authority。上述核对不是 CI 或产品验收证据。
 
 ## 5. 机器记录的初始化与终态
 

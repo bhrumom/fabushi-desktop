@@ -2,7 +2,7 @@
   "format_version": 1,
   "project_id": "OCRM-001",
   "spec_revision": 2,
-  "status": "p0-source-authority-in-progress",
+  "status": "p0-source-authority-rebaseline-required",
   "target": {
     "repository": "bhrumom/fabushi-desktop",
     "base_ref": "refs/heads/main",
@@ -14,13 +14,35 @@
     "ref": "refs/heads/main",
     "commit": "ad8d12f126d29b0db204187adf5092db80294e70",
     "tree": "04ccce62f1d74dc8e0c88290ae8ded027b7b0f16",
-    "accepted_for_this_implementation_round": true,
+    "accepted_for_this_implementation_round": false,
     "baseline_identity_accepted": false
   },
   "discovery_baseline": {
     "commit": "e8cde7518c558f1b4e44cb8139a149289b9719ad",
     "tree": "25c8ee611b72762ae1a0170124fa1fee9e519704",
     "evidence_status": "historical-only"
+  },
+  "live_candidate": {
+    "repository": "openclaw/openclaw",
+    "ref": "refs/heads/main",
+    "commit": "87facf07d6b4907846c4a8e4c7ae551f85571420",
+    "tree": "f72fbc794bbb23a04bc5afea875d4877048015c9",
+    "observed_at": "2026-10-30",
+    "discovery_source": "GitHub commit/tree API",
+    "recursive_tree_truncated": false,
+    "recursive_tree_entries": 63459,
+    "recursive_blob_entries": 61221,
+    "recursive_directory_entries": 2238,
+    "root_inputs": {
+      "package.json": "95a4ad9759adf93239199b0e5f671fb552b6c967",
+      "pnpm-lock.yaml": "3d04ffe75adbebb2aa2a536d80acd5ba6e374717",
+      "pnpm-workspace.yaml": "c3bddd9f93fec0711312080545cc472fa76f2bc4",
+      ".gitattributes": "c6118b226a4a760f7861b6b7b1e7dccd943384e4",
+      "LICENSE": "ed064819ab537575d0cad902f7e5af4a3488b1d0",
+      "THIRD_PARTY_NOTICES.md": "0c9c123760188915a384ce7275df4096114e8f90",
+      ".gitmodules": null
+    },
+    "authority_status": "discovery-only; requires fresh GitHub Actions inventory and dependency closure"
   },
   "drift_from_discovery": {
     "ahead_by": 13,
