@@ -211,4 +211,6 @@ responsibilities. Approval now also carries the accepted `browserOrigin` from
 the pending row into the paired durable identity instead of dropping that
 binding at commit, and reapproval clears any retained or pending node surface
 so a successor connection must publish a fresh generation-bound capability
-surface.
+surface. Token rotation applies the same node-surface reset atomically with
+the bearer replacement, so credential generation and capability generation
+cannot silently diverge.

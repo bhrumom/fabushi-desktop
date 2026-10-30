@@ -946,7 +946,9 @@ impl DevicePairingOwner {
         })?;
 
         tx.execute(
-            "UPDATE device_pairing_paired SET tokens_json = ?1 WHERE device_id = ?2",
+            "UPDATE device_pairing_paired
+             SET tokens_json = ?1, node_surface_json = NULL, pending_node_surface_json = NULL
+             WHERE device_id = ?2",
             params![tokens_json, device_id],
         )
         .map_err(|e| GatewayCommandError::Internal(format!("Failed to update tokens: {e}")))?;
