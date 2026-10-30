@@ -1,14 +1,13 @@
 # node.invoke Gateway envelope fidelity — 2026-10-30
 
-The typed Rust node-invoke result owner preserves mutually exclusive
-`payload`/`payloadJSON` result representations. The public local
-`node.invoke(system.run)` projection previously emitted a structured `payload`
-and an additional `payloadJSON: null` field, which was not the mutually
-selected wire shape.
+The typed Rust node-invoke result owner preserves the transport result
+representations. The public Gateway compatibility projection is a separate
+boundary: the current OpenClaw Gateway handler emits a decoded structured
+`payload` together with `payloadJSON: null` for this response shape.
 
-The projection now publishes the observed structured payload only. The
-transport-neutral typed result still owns the canonical result envelope; no
-remote transport or second result owner was introduced.
+The local Rust projection retains that observed Gateway response shape, while
+the transport-neutral typed result remains the canonical node-host envelope;
+no remote transport or second result owner was introduced.
 
 Evidence is limited to source inspection, static contract updates, and
 `git diff --check`; local OCRM tests/builds, remote node transport, and live
