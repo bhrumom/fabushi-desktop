@@ -3427,9 +3427,26 @@ impl UnifiedGatewayApi {
         let mut messages = Vec::new();
         for entry in entries.into_iter().take(limit) {
             let id = entry.get("id").and_then(serde_json::Value::as_str).unwrap_or_default().to_string();
-            let role = entry.get("role").or_else(|| entry.get("source")).and_then(serde_json::Value::as_str).unwrap_or("user").to_string();
-            let text = entry.get("text").or_else(|| entry.get("content")).and_then(serde_json::Value::as_str).unwrap_or_default().to_string();
-            let timestamp = entry.get("timestamp").or_else(|| entry.get("createdAt")).and_then(serde_json::Value::as_i64).unwrap_or(0);
+            let role = entry
+                .get("role")
+                .or_else(|| entry.get("source"))
+                .and_then(serde_json::Value::as_str)
+                .or_else(|| (entry.get("kind").and_then(serde_json::Value::as_str) == Some("send-message")).then_some("user"))
+                .unwrap_or("user")
+                .to_string();
+            let text = entry
+                .get("text")
+                .or_else(|| entry.get("content"))
+                .or_else(|| entry.get("message").and_then(|message| message.get("content")))
+                .and_then(serde_json::Value::as_str)
+                .unwrap_or_default()
+                .to_string();
+            let timestamp = entry
+                .get("timestamp")
+                .or_else(|| entry.get("createdAt"))
+                .or_else(|| entry.get("timestampMs"))
+                .and_then(|value| value.as_i64().or_else(|| value.as_f64().map(|value| value as i64)))
+                .unwrap_or(0);
             messages.push(serde_json::json!({
                 "id": id,
                 "role": role,

@@ -164,6 +164,8 @@ fn test_sessions_get_empty_messages_200_invariant() {
         .expect("shipping sessions.get function boundary exists");
     assert!(sessions_get.contains("map_err(GatewayCommandError::Internal)?"));
     assert!(!sessions_get.contains("Err(_) => return Ok(serde_json::json!({ \"messages\": [] }))"));
+    assert!(sessions_get.contains("entry.get(\"message\").and_then(|message| message.get(\"content\"))"));
+    assert!(sessions_get.contains("entry.get(\"timestampMs\")"));
 }
 
 #[test]
