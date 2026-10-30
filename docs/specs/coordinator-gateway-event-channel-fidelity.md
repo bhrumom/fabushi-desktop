@@ -27,6 +27,8 @@ envelopes and existing special handling for known channels.
 - **CECF-4**: The payload is forwarded unchanged.
 - **CECF-5**: A carrier write failure is observable with the event family but
   must not log the event payload or claim delivery succeeded.
+- **CECF-6**: A renderer-port lock failure is observable with the event family
+  and must not be treated as successful delivery.
 
 ## Ownership and implementation
 

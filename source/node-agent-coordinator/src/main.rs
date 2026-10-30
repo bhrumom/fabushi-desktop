@@ -159,11 +159,15 @@ impl CoordinatorState {
     }
 
     fn post_event(&self, family: &str, payload: Value) {
-        let action = self
-            .renderer_port
-            .lock()
-            .ok()
-            .and_then(|server| server.post_event(family.to_string(), payload));
+        let action = match self.renderer_port.lock() {
+            Ok(server) => server.post_event(family.to_string(), payload),
+            Err(_) => {
+                eprintln!(
+                    "coordinator event delivery failed family={family} error=renderer_port_lock_poisoned"
+                );
+                return;
+            }
+        };
         if let Some(ServerAction::Post(frame)) = action {
             if let Err(error) = self.write_frame(CarrierChannel::Data, &frame) {
                 eprintln!(
