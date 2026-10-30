@@ -31,6 +31,38 @@ fn new_device_token() -> Result<String, GatewayCommandError> {
     ))
 }
 
+fn scopes_for_role(
+    scopes_json: Option<&str>,
+    role: &str,
+) -> Result<Value, GatewayCommandError> {
+    let scopes = scopes_json
+        .unwrap_or("[]")
+        .parse::<Value>()
+        .map_err(|error| {
+            GatewayCommandError::BadRequest(format!("invalid approved device scopes: {error}"))
+        })?;
+    let Some(scopes) = scopes.as_array() else {
+        return Err(GatewayCommandError::BadRequest(
+            "approved device scopes must be an array".into(),
+        ));
+    };
+    let mut normalized = Vec::new();
+    for scope in scopes.iter().filter_map(Value::as_str).map(str::trim) {
+        if scope.is_empty()
+            || (role == "operator" && !scope.starts_with("operator."))
+            || (role != "operator" && scope.starts_with("operator."))
+        {
+            continue;
+        }
+        if !normalized.iter().any(|known| known == scope) {
+            normalized.push(scope.to_string());
+        }
+    }
+    Ok(Value::Array(
+        normalized.into_iter().map(Value::String).collect(),
+    ))
+}
+
 fn bump_revision(conn: &Connection) -> Result<u64, rusqlite::Error> {
     let now = now_ms();
     let current_val: Option<String> = conn
@@ -393,6 +425,8 @@ impl DevicePairingOwner {
                 role.to_string(),
                 json!({
                     "token": new_device_token()?,
+                    "role": role,
+                    "scopes": scopes_for_role(scopes_json.as_deref(), role)?,
                     "createdAtMs": now,
                     "rotatedAtMs": now
                 }),
@@ -597,11 +631,11 @@ impl DevicePairingOwner {
             .unwrap_or("operator");
         let conn = self.conn.lock().unwrap();
 
-        let roles_json: Option<String> = conn
+        let (roles_json, scopes_json): (Option<String>, Option<String>) = conn
             .query_row(
-                "SELECT roles_json FROM device_pairing_paired WHERE device_id = ?1",
+                "SELECT roles_json, scopes_json FROM device_pairing_paired WHERE device_id = ?1",
                 params![device_id],
-                |row| row.get(0),
+                |row| Ok((row.get(0)?, row.get(1)?)),
             )
             .map_err(|_| {
                 GatewayCommandError::BadRequest(format!("unknown deviceId: {device_id}"))
@@ -625,12 +659,15 @@ impl DevicePairingOwner {
                 "role {role} is not approved for deviceId: {device_id}"
             )));
         }
+        let role_scopes = scopes_for_role(scopes_json.as_deref(), role)?;
 
         let now = now_ms();
         let new_token = new_device_token()?;
         let tokens_json = json!({
             role: {
                 "token": new_token,
+                "role": role,
+                "scopes": role_scopes,
                 "createdAtMs": now,
                 "rotatedAtMs": now
             }
