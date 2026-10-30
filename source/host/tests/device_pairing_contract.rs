@@ -204,6 +204,14 @@ fn test_ocrm_pair_o09_and_o10_pair_revoke() {
             &json!({ "requestId": req["requestId"].as_str().unwrap() }),
         )
         .unwrap();
+    let rotated = owner
+        .handle_pairing_command(
+            "device.pair.rotateToken",
+            &json!({ "deviceId": "dev-to-revoke" }),
+        )
+        .unwrap();
+    let token = rotated["token"].as_str().unwrap().to_string();
+    assert!(owner.authenticate_device_token(&token).unwrap().is_some());
     let rev_before = owner.current_revision();
 
     // Revoke device (O09)
@@ -225,6 +233,7 @@ fn test_ocrm_pair_o09_and_o10_pair_revoke() {
         )
         .unwrap();
     assert_eq!(status["status"], "rejected");
+    assert!(owner.authenticate_device_token(&token).unwrap().is_none());
 }
 
 #[test]
