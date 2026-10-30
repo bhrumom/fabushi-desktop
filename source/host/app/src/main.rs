@@ -461,7 +461,7 @@ use mahayana_host_runtime::gateway_server::{
     GatewayEventHub, GatewayHealth, GatewayServerDeps, start_gateway_server,
 };
 use mahayana_host_runtime::host_gateway_api::{
-    CreateAgentNonceLedger, sanitize_create_agent_args,
+    CreateAgentNonceLedger, HOST_CAPABILITIES, sanitize_create_agent_args,
 };
 use mahayana_host_runtime::extensions::cloud_workers::extension::CloudWorkerProvisioningExtension;
 use mahayana_host_runtime::sand_host::{
@@ -14138,7 +14138,10 @@ fn main() {
         // Canvas/Computer command names remain unavailable until their
         // existing owners are wired through this node boundary.
         commands: vec!["system.run".into()],
-        capabilities: vec!["orderedReplicasV1".into(), "sendAcceptanceV1".into()],
+        capabilities: HOST_CAPABILITIES
+            .iter()
+            .map(|capability| (*capability).to_string())
+            .collect(),
         paired: true,
         gateway_local: true,
     });
