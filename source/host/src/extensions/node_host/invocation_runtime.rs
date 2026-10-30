@@ -48,7 +48,13 @@ impl NodeHostInvocationRuntime {
         if input.invoke_id != self.invoke_id || input.node_id != self.lease.node_id {
             return Err("node invocation input does not belong to the invocation".into());
         }
-        Ok(self.input.dispatch(input.seq, input.payload_json.clone()))
+        let accepted = self.input.dispatch(input.seq, input.payload_json.clone());
+        if self.input.input_failed() {
+            let admission = self.admission();
+            self.runtime.cancel_invocation(&admission);
+            return Err("node invocation input buffer failed; invocation cancelled".into());
+        }
+        Ok(accepted)
     }
 
     pub fn register_input_handler<F>(&mut self, handler: F)
@@ -73,11 +79,7 @@ impl NodeHostInvocationRuntime {
         if result.payload.is_some() && result.payload_json.is_some() {
             return Err("node invocation result cannot contain payload and payloadJSON".into());
         }
-        let admission = super::invocation_registry::NodeInvocationAdmission {
-            invoke_id: self.invoke_id.clone(),
-            node_id: self.lease.node_id.clone(),
-            generation: self.lease.generation,
-        };
+        let admission = self.admission();
         if !self.runtime.settle_invocation(&admission) {
             return Err("node invocation is no longer active".into());
         }
@@ -88,11 +90,20 @@ impl NodeHostInvocationRuntime {
     pub fn terminal_result(&self) -> Option<&NodeInvokeResult> {
         self.terminal_result.as_ref()
     }
+
+    fn admission(&self) -> super::invocation_registry::NodeInvocationAdmission {
+        super::invocation_registry::NodeInvocationAdmission {
+            invoke_id: self.invoke_id.clone(),
+            node_id: self.lease.node_id.clone(),
+            generation: self.lease.generation,
+        }
+    }
 }
 
 #[cfg(test)]
 mod tests {
     use super::NodeHostInvocationRuntime;
+    use crate::extensions::node_host::invoke_input::MAX_PENDING_INPUT_BYTES;
     use crate::extensions::node_host::invoke_protocol::{
         NodeInvokeInput, NodeInvokeRequest, NodeInvokeResult,
     };
@@ -169,6 +180,38 @@ mod tests {
                 "invoke-1",
                 "node-2",
                 serde_json::json!({}),
+            ))
+            .is_err());
+    }
+
+    #[test]
+    fn input_buffer_overflow_cancels_invocation_before_terminal_result() {
+        let (runtime, lease) = runtime();
+        let mut invocation =
+            NodeHostInvocationRuntime::start(Arc::clone(&runtime), lease, &request("node-1"))
+                .expect("start");
+        assert!(invocation
+            .dispatch_input(&NodeInvokeInput {
+                invoke_id: "invoke-1".into(),
+                node_id: "node-1".into(),
+                seq: 0,
+                payload_json: "x".repeat(MAX_PENDING_INPUT_BYTES),
+            })
+            .expect("capacity-sized input is accepted"));
+        assert!(invocation
+            .dispatch_input(&NodeInvokeInput {
+                invoke_id: "invoke-1".into(),
+                node_id: "node-1".into(),
+                seq: 1,
+                payload_json: "{}".into(),
+            })
+            .is_err());
+        assert!(invocation.input_failed());
+        assert!(invocation
+            .complete(NodeInvokeResult::success_json(
+                "invoke-1",
+                "node-1",
+                "{}",
             ))
             .is_err());
     }

@@ -1969,3 +1969,16 @@ error as stale values. `Capabilities` remains able to query the current
 executor generation without an input generation. This closes the pre-side
 effect currentness gate and adds a negative contract case; it does not choose
 or wire the production Computer executor, remote transport, or device lane.
+
+## 159. Input-buffer failure cancels the invocation (2026-10-30)
+
+`NodeHostInvocationRuntime::dispatch_input` now couples a bounded pre-handler
+input-buffer overflow to cancellation of the same lease and generation-bound
+invocation. Stale or duplicate sequence frames remain non-terminal rejections;
+only the buffer's explicit failure state triggers cancellation. A focused
+contract proves that a capacity overflow is followed by failed terminal result
+settlement, so a failed invocation cannot later publish a normal completion.
+
+This is lifecycle ownership only. It does not yet stop an already-running
+side-effect provider, deliver a cancellation frame over a live transport, or
+establish remote device acceptance; those owners remain pending.
