@@ -2170,3 +2170,17 @@ remain owned by `HostLocalExecExtension`.
 This closes only the local result-consumer projection. It does not establish
 remote result delivery, replay behavior, progress transport, or exact-head
 acceptance.
+
+## 172. Local invoke execution-error envelope (2026-10-30)
+
+After local invocation admission, executor failures now remain in the same
+typed `NodeInvokeResult::failure` envelope that is completed by the invocation
+runtime and returned to the Gateway consumer as `ok: false`. Request parsing,
+session admission, and invocation-completion failures still use the outer
+Gateway error path because no terminal node result has been admitted for those
+cases. This preserves exactly one terminal result for an admitted execution,
+including permission, timeout, and other executor failures, without creating a
+second error-state owner.
+
+The envelope is local-only evidence; remote result transport, reconnect
+delivery, and independent acceptance remain open.

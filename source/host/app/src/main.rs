@@ -4158,8 +4158,7 @@ impl UnifiedGatewayApi {
                 args.get("timeoutMs")
                     .and_then(serde_json::Value::as_u64)
                     .map(std::time::Duration::from_millis),
-            )
-            .map_err(|error| GatewayCommandError::Internal(error.to_string()));
+            );
         let terminal_result = match &result {
             Ok(result) => NodeInvokeResult::success_payload(
                 invoke_id,
@@ -4188,7 +4187,6 @@ impl UnifiedGatewayApi {
         invocation
             .complete(terminal_result)
             .map_err(GatewayCommandError::Internal)?;
-        let _ = result?;
 
         let response = match public_result {
             serde_json::Value::Object(mut object) => {
