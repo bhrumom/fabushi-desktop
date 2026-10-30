@@ -57,6 +57,10 @@ depend on this explicit credential-owner interface for installation-local
 identity, raw public-key encoding, challenge signing, and token reads. It must
 not create ephemeral keys or inspect pairing storage directly. The producer
 that receives/approves a Gateway-issued NodeHost token is still not wired.
+The current upstream Cloudflare Access contract is likewise SecretInput-based;
+Fabushi must resolve and redact those values through an approved secrets owner
+before they can become transport headers. Box secret synchronization and
+unrelated process environment variables are not valid substitutes.
 
 ## Caller reachability revalidation (2026-10-30)
 

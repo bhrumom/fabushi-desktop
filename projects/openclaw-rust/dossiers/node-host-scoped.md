@@ -2584,3 +2584,23 @@ retry history, while connect/read/write failures are exposed as bounded
 `NodeHostReconnectDecision` values for the eventual scheduler. The owner has no
 endpoint discovery, startup registration, background timer, or side-effect
 executor, so it does not infer a production caller or remote reachability.
+
+## 195. Cloudflare Access SecretInput boundary (2026-10-30)
+
+The same exact candidate records these source identities:
+
+- `src/node-host/config-shared.ts` — `3844b92c31a174df10721b1a299a63e2e78744fc`;
+- `src/node-host/gateway-cloudflare-access.ts` — `2c87b3941ab1b7783e42a47cf4c1faf568040d5d`;
+- `src/config/types.secrets.ts` — `d81b0a8bff1c3b078ec7460ef1f9cb3d6234ade1`;
+- `src/secrets/resolve-secret-input-string.ts` — `96e7823db58ceb2036490c2020cbef1772a336f4`.
+
+The upstream config accepts only a complete `clientId`/`clientSecret`
+SecretInput pair, resolves each through the canonical materializer, registers
+the resolved values for redaction, and binds the resulting Access credentials
+to the exact Gateway origin. It may create an environment-backed reference but
+does not copy plaintext into persisted config. Fabushi's existing
+`HostSecretsExtension`/`BoxSecretsApplier` owns Box environment synchronization,
+not arbitrary SecretInput resolution or NodeHost Gateway headers. No transport
+field or fallback environment reader was added; a dedicated existing-owner
+extension and its source/permission contract remain required before Cloudflare
+Access can be wired.
