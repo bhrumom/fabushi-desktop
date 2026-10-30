@@ -2492,3 +2492,25 @@ Fabushi's current Rust builder/projection covers only the command/capability
 subset and has no live optional-publication producer or retry timer owner. This
 is an exact-source delta and an open R5/R7 implementation boundary, not proof
 of production parity or acceptance.
+
+The upstream pointer later advanced to
+`openclaw/openclaw@68fbe4ac429cdac7a54541df40367d66defd0161` / tree
+`a3c122b99571c0c33ff6a02ca4c4e32f05f9433d`. No behavior is attributed to that
+newer candidate in this dossier; the preceding manifest observations remain
+bound to the explicitly named `b7a537eb` blobs until exact-source closure is
+re-established.
+
+## 190. Optional publication lifecycle owner (2026-10-30)
+
+`optional_publication.rs` now provides a transport-neutral owner for the
+generation-bound state of optional plugin-tools, skills, and runner-inventory
+publications. It validates bounded JSON payloads, retains the latest attempt per
+publication kind, and applies only a matching current-generation settlement.
+Retiring a generation clears all prior records, so a predecessor callback is
+returned as `Stale` rather than mutating successor state. Retryable outcomes are
+clamped to the declared 30-second decision bound; the owner does not create a
+timer, socket, plugin registry, durable state, or retry loop.
+
+This closes the state contract identified for R5 without selecting a real
+availability producer or transport caller. Production publication, refresh
+timing, remote acceptance, and exact-head/device evidence remain open.

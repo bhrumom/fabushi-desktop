@@ -55,9 +55,11 @@ Define and implement a Fabushi-native node-host runtime embedding that preserves
 - `invocation_router.rs` now binds the session owner's existing request admission to one live `NodeHostInvocationRuntime` per node/id and routes later input/cancel frames to that object. `gateway_transport.rs` exposes a session-to-router routed inbound seam; it owns no side effects or result delivery, and no production startup caller currently consumes it.
 - The invocation router also exposes a generation-bound drain seam for session replacement/close; it does not terminate external side effects, which remain with the injected executor owner.
 - `NodeHostRuntimeState` now exposes a generation-fenced manifest projection update, and the Gateway session can publish a `NodeHostManifest` through it; the real plugin/availability producer is still not wired.
+- The optional-publication owner is the next scoped R5 seam: it retains only generation-bound pending state and classifies published, legacy-unsupported, rejected, and bounded-retryable outcomes. It does not own a timer, socket, plugin registry, or durable product state; those remain with future connection and availability owners.
 - The current live candidate's `runtime-manifest.ts` additionally gates `system.run` for the macOS app exec host, gates device apps on installed-app sharing, groups builtin capabilities, and carries optional `pathEnv`/`computerUse`; `connection.ts` separately owns generation-fenced optional plugin-tools/skills/runner publications with bounded retry. The Rust manifest seam does not yet claim those publication owners.
 - The implementation oracle remains the prior candidate `ad8d12f126d29b0db204187adf5092db80294e70`, tree `04ccce62f1d74dc8e0c88290ae8ded027b7b0f16`; it is not accepted as the current project-wide source lock. The current discovery candidate is used only for the targeted contract delta below until P0 exact-subject closure is accepted.
 - Read-only live discovery has since advanced to OpenClaw `main` commit `89734994c6c9d3572e2927be0cdae8d7da1998ca`, tree `bcb3914c8418e2f92927dd3e60c635fc4345a858`. This candidate requires the P0 GitHub Actions rebaseline before source-dependent acceptance or lock/inventory reuse; `5f6f15f` and earlier candidates remain historical discovery only.
+- The upstream pointer subsequently advanced again to `68fbe4ac429cdac7a54541df40367d66defd0161`, tree `a3c122b99571c0c33ff6a02ca4c4e32f05f9433d`. This identity update is discovery-only; no behavior or closure conclusion is inferred for this newer commit until its exact-source Actions rebaseline is available.
 - A targeted read-only compare from the prior c325 candidate to this live candidate reports 14 commits and 15 changed paths under `src/node-host/` or `crates/openclaw-node-host/`. The changed source adds managed-identity transport custody, platform trust restoration, workspace lease admission/currentness, and invocation-bound process-environment fencing. Existing Rust mapping is therefore not complete for this candidate and must not reuse c325 semantics without targeted re-read.
 
 ## 6. Target state
@@ -116,6 +118,14 @@ The implementation must preserve these externally relevant contracts:
 6. connection generation → cancellation/drain fence for predecessor callbacks;
 7. typed lifecycle events → observability and fail-closed RPC presence.
 
+Optional plugin-tools, skills, and runner-inventory publication is a separate
+generation-bound state contract. A publication may be admitted only for the
+current connection generation, and completion from a retired generation must
+be ignored. The owner records `pending`, `published`, `unsupported`,
+`rejected`, or bounded `retryable` outcomes; retry delay is a decision value
+for the connection owner, not a timer or retry loop. Payload selection and
+availability production remain outside this state owner.
+
 Direct `params` and ambiguous `params` + `paramsJSON` are invalid. A disconnected or retired session cannot advertise commands or settle a result on a successor session.
 
 Gateway endpoint configuration carries non-sensitive TLS fingerprint and
@@ -154,6 +164,9 @@ Each case must retain typed failure evidence and must not be converted into a cl
    composition, then side-effect adapters. Do not wire it to production
    startup until the current upstream challenge/hello and device-auth
    contract has an exact-source closure.
+   Keep optional-publication state in the transport-neutral generation-fenced
+   owner so a later connection owner can consume its disposition without
+   creating a second registry or retry scheduler.
 4. Add contract tests and Actions workflow coverage without fabricating provider/device success.
 5. Verify exact-head Actions, packaged runtime, and real device/transport cells; update the parity ledger only from those receipts.
 
@@ -161,6 +174,10 @@ Each case must retain typed failure evidence and must not be converted into a cl
 
 - V1: source closure ledger records each in-scope upstream file as read, mapped, omitted with reason, or unresolved; no bulk-read claim substitutes for file evidence.
 - V2: Rust/host contract tests cover connect envelope, strict invocation parsing, input/cancel/result correlation, lifecycle pause/backoff/drain, generation fencing, manifest gating, and redaction.
+- V2a: the optional-publication owner accepts only the current generation,
+  preserves the latest payload per publication kind, rejects stale completion,
+  and classifies unsupported/rejected/retryable outcomes without owning I/O or
+  timers.
 - V3: Actions run the focused tests and relevant regression suites on the exact changed head; local execution is not used as OCRM acceptance evidence.
 - V4: packaged host connects to the real Gateway/device cell, advertises only available commands, completes a real invoke, and demonstrates reconnect/cancellation behavior.
 - V5: negative real-device/provider cells prove stale token, unavailable command, stale generation, transport loss, and predecessor-result rejection fail closed.
@@ -200,7 +217,7 @@ Retain redacted lifecycle events, connection generation, negotiated protocol, ma
 | R4 | in progress | Strict request/input/cancel/result owners, a controlled inbound pump, a session-to-router routed inbound seam, and a one-shot best-effort Gateway result sender exist; side-effect execution, reconnect, and acceptance remain open. |
 | R6 | in progress | Error classification and bounded backoff policy exist; no lifecycle caller, retry-after source, reconnect loop, or exact-head/runtime acceptance exists. |
 | R7 | in progress | Canonical runtime state drains generation-bound registry records and the invocation router now has a matching in-memory drain seam; production shutdown/replacement caller and external side-effect cancellation remain open. |
-| R5 | in progress | A generation-fenced live manifest projection seam exists; the real plugin/availability producer, refresh caller, and remote acceptance remain open. |
+| R5 | in progress | A generation-fenced live manifest projection and optional-publication state seam exist; the real plugin/availability producer, refresh caller, transport publication, and remote acceptance remain open. |
 | R11–R14 | in progress | Worker admission boundaries, local identity/signing, origin-scoped token storage, and a challenge/hello transport owner are implemented; production caller, worker/manifest composition, and acceptance remain open. |
 | AC1 | in progress | Node-host Rust crate closure is being read in exact pinned chunks; inventory remains incomplete. |
 | AC2–AC6 | pending | No live remote transport/device acceptance or exact-head acceptance receipt yet. |

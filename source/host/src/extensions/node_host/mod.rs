@@ -22,3 +22,4 @@ pub mod worker_bundle;
 pub mod worker_launch_policy;
 pub mod runtime_state;
 pub mod reconnect;
+pub mod optional_publication;
