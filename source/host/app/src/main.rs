@@ -11154,22 +11154,10 @@ impl GatewayApi for UnifiedGatewayApi {
             return Ok(project_forever_box_status(&status, handoff.as_ref()));
         }
         if method == "cloudWorkers.status" {
-            let status = match self.cloud_workers.status() {
-                mahayana_host_runtime::extensions::cloud_workers::CloudWorkerOwnerStatus::Disabled => "disabled",
-                mahayana_host_runtime::extensions::cloud_workers::CloudWorkerOwnerStatus::Enabled => "enabled",
-                mahayana_host_runtime::extensions::cloud_workers::CloudWorkerOwnerStatus::Unavailable => "unavailable",
-            };
-            let snapshot = self.cloud_workers.snapshot();
-            return Ok(serde_json::json!({
-                "owner": "cloud-workers",
-                "status": status,
-                "providerReady": false,
-                "productionMutation": false,
-                "statePersisted": snapshot.is_some(),
-                "leaseCount": snapshot.as_ref().map_or(0, |value| value.leases.len()),
-                "warmImageCount": snapshot.as_ref().map_or(0, |value| value.warm_images.len()),
-                "migrationReceiptCount": snapshot.as_ref().map_or(0, |value| value.migration_receipts.len()),
-            }));
+            return serde_json::to_value(self.cloud_workers.status_snapshot())
+                .map_err(|error| GatewayCommandError::Internal(format!(
+                    "cloud worker status projection failed: {error}"
+                )));
         }
         if method == "ensureForeverBox" {
             let agent_id = required_box_agent_id(method, &args)?;

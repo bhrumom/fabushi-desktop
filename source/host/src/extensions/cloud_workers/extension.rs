@@ -2,6 +2,8 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
 
+use serde::Serialize;
+
 use crate::extensions::extension_ids_generated::HostExtensionId;
 
 use super::{
@@ -22,6 +24,27 @@ pub struct CloudWorkerProvisioningExtension {
     store: CloudWorkerProvisioningStore,
 }
 
+/// Read-only projection produced by the Cloud Worker owner for Gateway and
+/// Coordinator consumers. It intentionally exposes readiness and mutation as
+/// false until a real provider producer and side-effect owner are connected.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+pub struct CloudWorkerStatusSnapshot {
+    pub owner: &'static str,
+    pub status: &'static str,
+    #[serde(rename = "providerReady")]
+    pub provider_ready: bool,
+    #[serde(rename = "productionMutation")]
+    pub production_mutation: bool,
+    #[serde(rename = "statePersisted")]
+    pub state_persisted: bool,
+    #[serde(rename = "leaseCount")]
+    pub lease_count: usize,
+    #[serde(rename = "warmImageCount")]
+    pub warm_image_count: usize,
+    #[serde(rename = "migrationReceiptCount")]
+    pub migration_receipt_count: usize,
+}
+
 impl CloudWorkerProvisioningExtension {
     pub fn status(&self) -> CloudWorkerOwnerStatus {
         self.owner
@@ -34,6 +57,27 @@ impl CloudWorkerProvisioningExtension {
     /// consumer. The extension remains the only owner of the live state.
     pub fn snapshot(&self) -> Option<super::CloudWorkerPersistentSnapshot> {
         self.owner.lock().ok().map(|owner| owner.snapshot())
+    }
+
+    pub fn status_snapshot(&self) -> CloudWorkerStatusSnapshot {
+        let status = match self.status() {
+            CloudWorkerOwnerStatus::Disabled => "disabled",
+            CloudWorkerOwnerStatus::Enabled => "enabled",
+            CloudWorkerOwnerStatus::Unavailable => "unavailable",
+        };
+        let snapshot = self.snapshot();
+        CloudWorkerStatusSnapshot {
+            owner: "cloud-workers",
+            status,
+            provider_ready: false,
+            production_mutation: false,
+            state_persisted: snapshot.is_some(),
+            lease_count: snapshot.as_ref().map_or(0, |value| value.leases.len()),
+            warm_image_count: snapshot.as_ref().map_or(0, |value| value.warm_images.len()),
+            migration_receipt_count: snapshot
+                .as_ref()
+                .map_or(0, |value| value.migration_receipts.len()),
+        }
     }
 
     pub fn state_path(&self) -> &Path {

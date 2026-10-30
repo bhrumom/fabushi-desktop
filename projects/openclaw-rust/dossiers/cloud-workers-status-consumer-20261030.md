@@ -20,3 +20,10 @@ Evidence is limited to source inspection and `git diff --check`; local OCRM
 tests/builds, Actions, provider reachability, and live UI/CLI acceptance remain
 pending. The Host-side live event publisher and provider mutation path remain
 open.
+
+The read projection is now produced by `CloudWorkerProvisioningExtension` via
+`status_snapshot`; `UnifiedGatewayApi` serializes that owner result instead of
+repeating lease/image/receipt semantics in the Gateway adapter. A focused Host
+contract covers the disabled, provider-not-ready projection and its wire field
+names. This is owner-boundary progress only: it does not add mutation commands,
+provider readiness, or a live event publisher.
