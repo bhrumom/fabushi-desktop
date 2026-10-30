@@ -36,7 +36,8 @@ The audited source code was decomposed into 5 discrete Rust runtime responsibili
 1. **`OCRM-RESP-MEDIA-STORE-PERSIST-001`**:
    - **Behavior**: Core media persistence engine providing atomic buffer, stream, and local file storage with UUID identifiers, original filename preservation (`extract_original_filename` / `---[uuid]` convention), NFC-normalized cross-platform filename sanitization, traversal protection, fractional size limits (`MEDIA_MAX_BYTES = 5MB` default), and atomic temp file creation with `MEDIA_FILE_MODE` (0o644).
    - **Rust Owner**: `source/host/src/extensions/attachments/media_store.rs::save_media_buffer, save_media_file, save_media_source, read_media_buffer, delete_media_buffer, resolve_media_buffer_path, extract_original_filename, sanitize_filename`.
-   - **Production Call Chain**: Producer `AttachmentsService::dispatch_gateway` → Owner `media_store::save_media_buffer` / `media_store::read_media_buffer` → Consumer: *Pending inbound/outbound channel adapters and chat attachment ingestion pipelines*.
+   - **Production Call Chain**: `source/host/app/src/main.rs::dispatch_gateway_call` → `AttachmentsService::dispatch_gateway("saveMediaBuffer"|"readMediaBuffer"|"deleteMediaBuffer")` → Owner `media_store` (with `media_fetch::read_remote_media_buffer` also persisting fetched buffers).
+   - **Wiring boundary**: The native gateway and remote-fetch persistence paths are live; inbound/outbound channel adapters and chat attachment ingestion are not yet routed through this owner end to end.
    - **Oracles**: `OCRM-MEDIA-STORE-O01`, `OCRM-MEDIA-STORE-O02`, `OCRM-MEDIA-STORE-O03`.
    - **Status**: `implementation=implemented`, `wiring=not-wired`, `verification=not-run`, `blocker_ids=["BL-MEDIA-STORE-PERSIST-CONSUMERS-001"]` (inbound/outbound channel adapters and attachment ingestion pipelines do not yet route attachment storage through `media_store::save_media_buffer` / `media_store::save_media_source`).
 
@@ -50,7 +51,7 @@ The audited source code was decomposed into 5 discrete Rust runtime responsibili
 3. **`OCRM-RESP-MEDIA-STORE-LIFECYCLE-001`**:
    - **Behavior**: Media storage lifecycle retention policies: playback transcode cache capped at 512MB disk budget with oldest-first LRU eviction and 7-day TTL; outbound staging with 24-hour TTL; cleanOldMedia routine with explicit exclusion of playback-transcode and SQLite-managed outgoing chat history.
    - **Rust Owner**: `source/host/src/extensions/attachments/media_store.rs::write_playback_transcode_cache, prune_playback_transcode_cache, prune_playback_transcode_cache_to_size, prune_outbound_media, clean_old_media`.
-   - **Production Call Chain**: Producer `AttachmentsService::dispatch_gateway("cleanOldMedia")` → Owner `media_store::clean_old_media` → Consumer: *Pending host periodic cleanup loop daemon and video playback rendition pipeline*.
+   - **Production Call Chain**: `source/host/app/src/main.rs::dispatch_gateway_call` → `AttachmentsService::dispatch_gateway("cleanOldMedia")` → Owner `media_store::clean_old_media`; playback-cache callers remain separately incomplete.
    - **Oracles**: `OCRM-MEDIA-STORE-O05`, `OCRM-MEDIA-STORE-O06`.
    - **Status**: `implementation=implemented`, `wiring=not-wired`, `verification=not-run`, `blocker_ids=["BL-MEDIA-STORE-LIFECYCLE-DAEMON-001"]` (host periodic cleanup daemon and video playback transcode pipeline do not yet invoke `clean_old_media` and `prune_playback_transcode_cache`).
 

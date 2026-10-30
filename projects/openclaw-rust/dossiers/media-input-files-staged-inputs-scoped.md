@@ -41,7 +41,8 @@ The audited sources were mapped to 2 discrete Rust runtime responsibilities regi
 1. **`OCRM-RESP-MEDIA-INPUT-FILES-EXTRACT-001` (NEW)**:
    - **Behavior**: Input file and image extraction, MIME classification, WHATWG charset normalization, surrogate-safe UTF-16 truncation, and SSRF guard pipeline. Validates buffer size and image dimensions, detects and verifies container formats, decodes multi-byte charsets with streaming chunk state preservation, truncates safely at UTF-16 surrogate boundaries, converts HEIC/HEIF images to JPEG, and enforces network SSRF policies on remote input sources.
    - **Rust Owner**: `source/host/src/extensions/attachments/input_files.rs`.
-   - **Production Call Chain**: Producer `AttachmentsService::dispatch_gateway` → Owner `input_files` → Consumer: *Pending user turn input processing and multi-modal prompt formatting*.
+   - **Production Call Chain**: `AttachmentsService::dispatch_gateway("extractFileContent"|"extractImageContent")` → Owner `input_files`; `input_files::read_input_source` also calls the live `media_fetch` owner for URL sources.
+   - **Wiring boundary**: Gateway extraction and URL-source paths are live; complete user-turn multimodal prompt composition is still pending.
    - **Oracle**: `OCRM-INPUT-FILES-O01`.
    - **Status**: `implementation=implemented`, `wiring=not-wired`, `verification=not-run`, `blocker_ids=["BL-MEDIA-INPUT-FILES-CHAT-WIRING-001"]`.
 

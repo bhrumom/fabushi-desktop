@@ -44,7 +44,7 @@ The following 21 media extraction, parsing, and media test suite files (totaling
 1. **`OCRM-RESP-MEDIA-PDF-EXTRACT-001` (NEW)**:
    - **Behavior**: Native PDF document content extraction via plugin extractors, request composition (buffer, maxPages, maxPixels, minTextChars, password, pageNumbers), and trusted metadata validation. Enforces strict metadata invariants: automatic vs explicit page selection consistency, `maxPages` clamping, positive non-zero page numbers, uniqueness, page <= total bounds, and truncation consistency (`pages.truncated == has_omitted_pages || (has_omitted_pages && text_truncated)`). Untrusted metadata is safely stripped before rendering prompt text. Dispatches clear error when PDF extraction is disabled or plugins fail.
    - **Rust Owner**: `source/host/src/extensions/attachments/pdf_extract.rs`.
-   - **Production Call Chain**: Producer `AttachmentsService::dispatch_gateway` → Owner `pdf_extract` → Consumer: *Inbound document extractor plugins and turn prompt context composition*.
+   - **Production Call Chain**: `source/host/app/src/main.rs::dispatch_gateway_call` → `AttachmentsService::dispatch_gateway("extractPdfContent")` → Owner `pdf_extract::extract_pdf_content` and `validate_extraction_metadata`; turn prompt context composition remains incomplete.
    - **Oracle**: `OCRM-PDF-EXTRACT-O01`.
    - **Status**: `implementation=implemented`, `wiring=not-wired`, `verification=not-run`, `blocker_ids=["BL-MEDIA-PDF-EXTRACT-CHAT-WIRING-001"]`.
 
