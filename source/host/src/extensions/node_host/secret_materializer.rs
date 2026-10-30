@@ -57,6 +57,7 @@ impl NodeHostCloudflareAccessInput {
 
 #[derive(Clone, PartialEq, Eq)]
 pub struct NodeHostCloudflareAccessCredentials {
+    origin_scope: String,
     client_id: String,
     client_secret: String,
 }
@@ -64,8 +65,14 @@ pub struct NodeHostCloudflareAccessCredentials {
 impl NodeHostCloudflareAccessCredentials {
     /// Construct only from a materializer implementation. The returned value
     /// is ephemeral and must not be persisted or placed in session state.
-    pub(crate) fn new(client_id: String, client_secret: String) -> Result<Self, String> {
-        if client_id.trim().is_empty()
+    pub(crate) fn new(
+        origin_scope: String,
+        client_id: String,
+        client_secret: String,
+    ) -> Result<Self, String> {
+        if origin_scope.trim().is_empty()
+            || origin_scope.chars().any(char::is_control)
+            || client_id.trim().is_empty()
             || client_secret.trim().is_empty()
             || client_id.chars().any(char::is_control)
             || client_secret.chars().any(char::is_control)
@@ -73,9 +80,14 @@ impl NodeHostCloudflareAccessCredentials {
             return Err("materialized Cloudflare Access credentials are invalid".into());
         }
         Ok(Self {
+            origin_scope,
             client_id,
             client_secret,
         })
+    }
+
+    pub(crate) fn origin_scope(&self) -> &str {
+        &self.origin_scope
     }
 
     pub(crate) fn client_id(&self) -> &str {
@@ -91,6 +103,7 @@ impl fmt::Debug for NodeHostCloudflareAccessCredentials {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         formatter
             .debug_struct("NodeHostCloudflareAccessCredentials")
+            .field("origin_scope", &self.origin_scope)
             .field("client_id", &"<redacted>")
             .field("client_secret", &"<redacted>")
             .finish()
@@ -122,7 +135,8 @@ pub(crate) fn validate_materializer_origin(
 #[cfg(test)]
 mod tests {
     use super::{
-        NodeHostSecretInputRef, validate_materializer_origin,
+        NodeHostCloudflareAccessCredentials, NodeHostSecretInputRef,
+        validate_materializer_origin,
     };
 
     #[test]
@@ -143,5 +157,34 @@ mod tests {
             "https://gateway.example/other",
         )
         .is_err());
+    }
+
+    #[test]
+    fn returned_lease_with_wrong_origin_is_rejected() {
+        let credentials = NodeHostCloudflareAccessCredentials::new(
+            "wss://gateway.example/other".into(),
+            "client-id".into(),
+            "client-secret".into(),
+        )
+        .expect("credential shape");
+        assert!(validate_materializer_origin(
+            "wss://gateway.example/ws",
+            credentials.origin_scope(),
+        )
+        .is_err());
+    }
+
+    #[test]
+    fn credential_debug_never_contains_materialized_values() {
+        let credentials = NodeHostCloudflareAccessCredentials::new(
+            "wss://gateway.example/ws".into(),
+            "client-id-secret-value".into(),
+            "client-secret-value".into(),
+        )
+        .expect("credential shape");
+        let debug = format!("{credentials:?}");
+        assert!(!debug.contains("client-id-secret-value"));
+        assert!(!debug.contains("client-secret-value"));
+        assert!(debug.contains("<redacted>"));
     }
 }

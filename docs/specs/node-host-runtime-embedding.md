@@ -68,7 +68,7 @@ Define and implement a Fabushi-native node-host runtime embedding that preserves
 - A fresh tree read of `5310270e…` revalidated that all seven targeted NodeHost/command blobs retain the exact identities recorded in the preceding dossier sections. Their behavior mapping may therefore be reused by blob identity for this discovery candidate only; recursive inventory, dependency closure, and Actions acceptance remain unproven.
 - A targeted read-only compare from the prior c325 candidate to this live candidate reports 14 commits and 15 changed paths under `src/node-host/` or `crates/openclaw-node-host/`. The changed source adds managed-identity transport custody, platform trust restoration, workspace lease admission/currentness, and invocation-bound process-environment fencing. Existing Rust mapping is therefore not complete for this candidate and must not reuse c325 semantics without targeted re-read.
 - The current Host redaction helper is pure formatting (`mask_token`, query/header/PEM redaction); it has no value-registration lifecycle. `HostSecretsExtension` is specifically the Box environment synchronization boundary and cannot resolve arbitrary origin-bound `SecretInput` values. The NodeHost credential owner must therefore be an explicit injected resolver/materializer contract, not an extension of Box secret application or an environment fallback.
-- `secret_materializer.rs` now defines the transport-neutral paired/origin-scoped SecretInput contract, and `gateway_transport.rs` can consume an injected short-lived lease to add the two Cloudflare Access WebSocket upgrade headers. No concrete resolver, persistence, environment lookup, production caller, or live acceptance was added; configured Access without an injected resolver remains a configuration error.
+- `secret_materializer.rs` now defines the transport-neutral paired/origin-scoped SecretInput contract, and `gateway_transport.rs` can consume an injected short-lived lease to add the two Cloudflare Access WebSocket upgrade headers. The returned lease carries its origin scope and is rechecked before socket creation. No concrete resolver, persistence, environment lookup, production caller, or live acceptance was added; configured Access without an injected resolver remains a configuration error.
 
 ## 6. Target state
 
@@ -199,6 +199,10 @@ Each case must retain typed failure evidence and must not be converted into a cl
   preserves the latest payload per publication kind, rejects stale completion,
   and classifies unsupported/rejected/retryable outcomes without owning I/O or
   timers.
+- V2b: the SecretInput seam rejects empty/control references, refuses a
+  materialized lease whose normalized origin/path differs from the configured
+  Gateway, and keeps materialized client id/secret values out of `Debug`
+  output; these are contract oracles, not proof of a concrete provider.
 - V3: Actions run the focused tests and relevant regression suites on the exact changed head; local execution is not used as OCRM acceptance evidence.
 - V4: packaged host connects to the real Gateway/device cell, advertises only available commands, completes a real invoke, and demonstrates reconnect/cancellation behavior.
 - V5: negative real-device/provider cells prove stale token, unavailable command, stale generation, transport loss, and predecessor-result rejection fail closed.

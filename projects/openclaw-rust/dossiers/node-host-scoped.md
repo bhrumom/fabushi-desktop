@@ -2647,11 +2647,17 @@ session projection, or raw header logging is authorized by this evidence.
 ## 199. Injected Cloudflare Access transport seam (2026-10-30)
 
 Rust now exposes `NodeHostSecretMaterializer` with paired opaque references and
-an origin-scoped, short-lived credential result. `NodeHostGatewayTransport`
+an origin-bound, short-lived credential result. `NodeHostGatewayTransport`
 accepts that resolver only through an explicit caller path and places the
 materialized values in the two Cloudflare Access WebSocket upgrade headers;
-they are not part of `NodeHostGatewayTransportConfig` as plaintext, the live
-session, or the RPC projection. No concrete resolver, redaction registry
+it rechecks the returned origin scope before the upgrade. They are not part of
+`NodeHostGatewayTransportConfig` as plaintext, the live session, or the RPC
+projection. No concrete resolver, redaction registry
 implementation, startup caller, or real Gateway acceptance was added. A
 configured Access pair without the injected owner is rejected before socket
 creation.
+
+The seam also records falsifiable negative oracles for empty/control
+references, mismatched Gateway path scopes, and credential `Debug` output that
+must contain only redaction markers. These tests were added but not executed
+under the development-phase verification freeze.

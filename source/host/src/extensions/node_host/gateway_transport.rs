@@ -48,6 +48,7 @@ use super::runtime_manifest::NodeHostManifest;
 use super::secret_materializer::{
     NodeHostCloudflareAccessCredentials, NodeHostCloudflareAccessInput,
     NodeHostSecretMaterializer, SharedNodeHostSecretMaterializer,
+    validate_materializer_origin,
 };
 use super::session_registry::NodeHostSessionLease;
 
@@ -605,10 +606,12 @@ fn materialize_access(
     let origin = config
         .origin_scope()
         .map_err(NodeHostGatewayTransportError::Config)?;
-    materializer
+    let credentials = materializer
         .materialize_cloudflare_access(&origin, input)
-        .map(Some)
-        .map_err(NodeHostGatewayTransportError::Config)
+        .map_err(NodeHostGatewayTransportError::Config)?;
+    validate_materializer_origin(&origin, credentials.origin_scope())
+        .map_err(NodeHostGatewayTransportError::Config)?;
+    Ok(Some(credentials))
 }
 
 fn build_gateway_request(
