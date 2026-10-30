@@ -290,7 +290,10 @@ publication and managed artifact mutation remain outside this slice.
 The lease foundation now also includes an explicit transition guard: only a
 completed mutation may advance the lifecycle, submitted/failed/cancelled
 mutations cannot silently change state, and an ambiguous result enters
-`OutcomeUnknown` until a permitted recovery transition is applied.
+`OutcomeUnknown` until a permitted recovery transition is applied. Every
+completed or outcome-unknown lifecycle change advances the lease generation
+before publication; generation exhaustion fails closed so stale capabilities
+cannot be reused.
 
 The warm-image contract at
 `source/host/src/extensions/cloud_workers/warm_image.rs` adds generation-fenced

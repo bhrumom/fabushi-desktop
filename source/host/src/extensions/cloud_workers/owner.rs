@@ -345,7 +345,7 @@ mod tests {
             .unwrap();
         let mutation = lease.mutation(
             super::super::OwnerEpoch(0),
-            super::super::LeaseGeneration(0),
+            lease.generation,
             lease.runtime.clone(),
             super::super::ReplayKey("request-1".into()),
         );

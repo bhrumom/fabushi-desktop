@@ -63,7 +63,7 @@ fn owner_exposes_only_a_fenced_enrolled_consumer_capability() {
         let current = owner.lease(&lease_id).unwrap().clone();
         let mutation = current.mutation(
             OwnerEpoch(0),
-            LeaseGeneration(0),
+            current.generation,
             runtime.clone(),
             ReplayKey(replay.into()),
         );

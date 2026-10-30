@@ -199,6 +199,20 @@ impl CloudWorkerLease {
         next: CloudWorkerLifecycle,
         outcome: CloudWorkerMutationOutcome,
     ) -> Result<(), CloudWorkerLeaseError> {
+        let advances_generation = matches!(
+            outcome,
+            CloudWorkerMutationOutcome::Completed | CloudWorkerMutationOutcome::OutcomeUnknown
+        );
+        let next_generation = if advances_generation {
+            Some(LeaseGeneration(
+                self.generation
+                    .0
+                    .checked_add(1)
+                    .ok_or(CloudWorkerLeaseError::GenerationExhausted)?,
+            ))
+        } else {
+            None
+        };
         match outcome {
             CloudWorkerMutationOutcome::Submitted => {
                 if next != self.lifecycle {
@@ -222,6 +236,9 @@ impl CloudWorkerLease {
             CloudWorkerMutationOutcome::OutcomeUnknown => {
                 self.lifecycle = CloudWorkerLifecycle::OutcomeUnknown;
             }
+        }
+        if let Some(generation) = next_generation {
+            self.generation = generation;
         }
         self.last_outcome = outcome;
         Ok(())
@@ -286,6 +303,8 @@ pub enum CloudWorkerLeaseError {
         from: CloudWorkerLifecycle,
         to: CloudWorkerLifecycle,
     },
+    #[error("lease generation exhausted")]
+    GenerationExhausted,
 }
 
 #[cfg(test)]
@@ -365,6 +384,7 @@ mod tests {
             Ok(())
         );
         assert_eq!(lease.lifecycle, CloudWorkerLifecycle::Preparing);
+        assert_eq!(lease.generation, LeaseGeneration(8));
     }
 
     #[test]
@@ -378,6 +398,7 @@ mod tests {
             Ok(())
         );
         assert_eq!(lease.lifecycle, CloudWorkerLifecycle::OutcomeUnknown);
+        assert_eq!(lease.generation, LeaseGeneration(8));
         assert_eq!(
             lease.apply_outcome(
                 CloudWorkerLifecycle::Preparing,
@@ -404,5 +425,20 @@ mod tests {
             lease.capability(),
             Err(CloudWorkerLeaseError::CapabilityUnavailable { .. })
         ));
+    }
+
+    #[test]
+    fn generation_overflow_fails_before_lifecycle_mutation() {
+        let mut lease = lease();
+        lease.generation = LeaseGeneration(u64::MAX);
+        assert_eq!(
+            lease.apply_outcome(
+                CloudWorkerLifecycle::Preparing,
+                CloudWorkerMutationOutcome::Completed,
+            ),
+            Err(CloudWorkerLeaseError::GenerationExhausted)
+        );
+        assert_eq!(lease.lifecycle, CloudWorkerLifecycle::Admitted);
+        assert_eq!(lease.generation, LeaseGeneration(u64::MAX));
     }
 }
