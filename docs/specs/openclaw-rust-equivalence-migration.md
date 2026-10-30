@@ -62,14 +62,14 @@ Fabushi 已有 React/Electron 产品表面、独立 Rust Coordinator、Host/Runn
 
 | 项目 | 固定身份 | 含义 |
 | --- | --- | --- |
-| OpenClaw `main` | commit `e8cde7518c558f1b4e44cb8139a149289b9719ad` | 本次 discovery 输入，不是未来永远的 latest |
-| OpenClaw tree | `25c8ee611b72762ae1a0170124fa1fee9e519704` | 所有本次上游引用固定于此树 |
+| OpenClaw `main` | commit `e8cde7518c558f1b4e44cb8139a149289b9719ad` | 历史 discovery 输入；不是当前 source authority，也不是未来永远的 latest |
+| OpenClaw tree | `25c8ee611b72762ae1a0170124fa1fee9e519704` | 历史 discovery tree；不代表当前 lock、递归闭包或本轮所有上游引用已固定于此树 |
 | Fabushi `main` | commit `ba9ecce728ef021fee609796c8704d8af6fe4b5a` | 本 Spec 编辑前的目标架构基线；文档提交后须重读 live main |
 | Fabushi tree | `29e6837e6ea9098d64c5de3e0952b3960abbfc86` | 本次 owner 研究输入 |
 | OpenClaw 根 LICENSE | blob `ed064819ab537575d0cad902f7e5af4a3488b1d0` | MIT，另须审计第三方 notices 与依赖 |
 | OpenClaw plugin inventory | blob `e575a2790c20d14b196fd4956619c384e343294c` | 本次文档列 73 core、99 official external、3 source-only 插件 |
 
-本次目录级发现为 `src` 77、`extensions` 176、`skills` 50、`custodian-skills` 4、`packages` 24、`apps` 8、`crates` 2 个直接子目录。`extensions/test-support` 不是第 176 个产品插件；`apps/.i18n` 不是独立平台。上述计数不是递归文件总数，不证明 source completeness。
+本次历史目录级发现为 `src` 77、`extensions` 176、`skills` 50、`custodian-skills` 4、`packages` 24、`apps` 8、`crates` 2 个直接子目录。`extensions/test-support` 不是第 176 个产品插件；`apps/.i18n` 不是独立平台。上述计数不是递归文件总数，不证明 source completeness，也不能覆盖下方 live candidate 的 rebaseline 要求。
 
 ### 4.1.1 2026-10-30 live revalidation
 

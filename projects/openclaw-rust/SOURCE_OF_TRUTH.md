@@ -40,8 +40,8 @@ Implementation/acceptance: **未完成**
 
 | 输入 | 身份 |
 | --- | --- |
-| OpenClaw main | `e8cde7518c558f1b4e44cb8139a149289b9719ad` |
-| OpenClaw tree | `25c8ee611b72762ae1a0170124fa1fee9e519704` |
+| OpenClaw main | `e8cde7518c558f1b4e44cb8139a149289b9719ad`（历史 discovery；非当前 source authority） |
+| OpenClaw tree | `25c8ee611b72762ae1a0170124fa1fee9e519704`（历史 discovery；非当前 source authority） |
 | Fabushi 编辑前 main | `ba9ecce728ef021fee609796c8704d8af6fe4b5a` |
 | Fabushi 编辑前 tree | `29e6837e6ea9098d64c5de3e0952b3960abbfc86` |
 
