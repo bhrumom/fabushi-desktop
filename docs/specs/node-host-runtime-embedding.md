@@ -54,6 +54,7 @@ Define and implement a Fabushi-native node-host runtime embedding that preserves
 - `reconnect.rs` now provides a transport-owner-independent classification and bounded exponential backoff policy. It is not a reconnect task or timer owner; no production caller currently consumes it.
 - `invocation_router.rs` now binds the session owner's existing request admission to one live `NodeHostInvocationRuntime` per node/id and routes later input/cancel frames to that object. `gateway_transport.rs` exposes a session-to-router routed inbound seam; it owns no side effects or result delivery, and no production startup caller currently consumes it.
 - The invocation router also exposes a generation-bound drain seam for session replacement/close; it does not terminate external side effects, which remain with the injected executor owner.
+- `NodeHostRuntimeState` now exposes a generation-fenced manifest projection update, and the Gateway session can publish a `NodeHostManifest` through it; the real plugin/availability producer is still not wired.
 - The implementation oracle remains the prior candidate `ad8d12f126d29b0db204187adf5092db80294e70`, tree `04ccce62f1d74dc8e0c88290ae8ded027b7b0f16`; it is not accepted as the current project-wide source lock. The current discovery candidate is used only for the targeted contract delta below until P0 exact-subject closure is accepted.
 - Read-only live discovery has since advanced to OpenClaw `main` commit `89734994c6c9d3572e2927be0cdae8d7da1998ca`, tree `bcb3914c8418e2f92927dd3e60c635fc4345a858`. This candidate requires the P0 GitHub Actions rebaseline before source-dependent acceptance or lock/inventory reuse; `5f6f15f` and earlier candidates remain historical discovery only.
 - A targeted read-only compare from the prior c325 candidate to this live candidate reports 14 commits and 15 changed paths under `src/node-host/` or `crates/openclaw-node-host/`. The changed source adds managed-identity transport custody, platform trust restoration, workspace lease admission/currentness, and invocation-bound process-environment fencing. Existing Rust mapping is therefore not complete for this candidate and must not reuse c325 semantics without targeted re-read.
@@ -194,10 +195,11 @@ Retain redacted lifecycle events, connection generation, negotiated protocol, ma
 
 | Requirement / AC | Status | Evidence / reason |
 | --- | --- | --- |
-| R1–R3, R5, R8–R10 | pending | Runtime embedding is not yet implemented and wired. |
+| R1–R3, R8–R10 | pending | Runtime embedding is not yet implemented and wired. |
 | R4 | in progress | Strict request/input/cancel/result owners, a controlled inbound pump, a session-to-router routed inbound seam, and a one-shot best-effort Gateway result sender exist; side-effect execution, reconnect, and acceptance remain open. |
 | R6 | in progress | Error classification and bounded backoff policy exist; no lifecycle caller, retry-after source, reconnect loop, or exact-head/runtime acceptance exists. |
 | R7 | in progress | Canonical runtime state drains generation-bound registry records and the invocation router now has a matching in-memory drain seam; production shutdown/replacement caller and external side-effect cancellation remain open. |
+| R5 | in progress | A generation-fenced live manifest projection seam exists; the real plugin/availability producer, refresh caller, and remote acceptance remain open. |
 | R11–R14 | in progress | Worker admission boundaries, local identity/signing, origin-scoped token storage, and a challenge/hello transport owner are implemented; production caller, worker/manifest composition, and acceptance remain open. |
 | AC1 | in progress | Node-host Rust crate closure is being read in exact pinned chunks; inventory remains incomplete. |
 | AC2–AC6 | pending | No live remote transport/device acceptance or exact-head acceptance receipt yet. |

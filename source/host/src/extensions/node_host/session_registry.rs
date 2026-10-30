@@ -107,6 +107,27 @@ impl NodeHostSessionRegistry {
         true
     }
 
+    pub fn update_manifest(
+        &self,
+        lease: &NodeHostSessionLease,
+        commands: Vec<String>,
+        capabilities: Vec<String>,
+    ) -> bool {
+        let mut state = self
+            .state
+            .write()
+            .unwrap_or_else(|poisoned| poisoned.into_inner());
+        let Some(session) = state.sessions.get_mut(&lease.node_id) else {
+            return false;
+        };
+        if session.generation != lease.generation || !session.connected {
+            return false;
+        }
+        session.commands = commands;
+        session.capabilities = capabilities;
+        true
+    }
+
     /// Check that a lease still owns the connected session generation.
     pub fn is_current(&self, lease: &NodeHostSessionLease) -> bool {
         let state = self

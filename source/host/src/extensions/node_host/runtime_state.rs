@@ -43,6 +43,15 @@ impl NodeHostRuntimeState {
         self.sessions.set_active(lease, active)
     }
 
+    pub fn update_manifest(
+        &self,
+        lease: &NodeHostSessionLease,
+        commands: Vec<String>,
+        capabilities: Vec<String>,
+    ) -> bool {
+        self.sessions.update_manifest(lease, commands, capabilities)
+    }
+
     pub fn is_current(&self, lease: &NodeHostSessionLease) -> bool {
         self.sessions.is_current(lease)
     }

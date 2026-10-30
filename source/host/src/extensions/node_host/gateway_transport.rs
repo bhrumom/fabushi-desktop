@@ -36,6 +36,7 @@ use super::invocation_registry::NodeInvocationAdmission;
 use super::invocation_runtime::NodeHostInvocationRuntime;
 use super::invocation_router::NodeHostInvocationRouter;
 use super::runtime_state::NodeHostRuntimeState;
+use super::runtime_manifest::NodeHostManifest;
 use super::session_registry::NodeHostSessionLease;
 
 const CONNECT_REQUEST_ID_PREFIX: &str = "connect";
@@ -570,6 +571,21 @@ fn set_gateway_io_timeout(
 impl NodeHostGatewaySession {
     pub fn hello(&self) -> &NodeHostGatewayHello {
         &self.hello
+    }
+
+    /// Publish the current manifest owner snapshot into the live session
+    /// projection. The caller must supply a freshly composed manifest; this
+    /// method only applies the generation fence and stores its public fields.
+    pub fn publish_manifest(&self, manifest: &NodeHostManifest) -> Result<(), String> {
+        if self.runtime.update_manifest(
+            &self.lease,
+            manifest.advertised_commands.clone(),
+            manifest.capabilities.clone(),
+        ) {
+            Ok(())
+        } else {
+            Err("Gateway session is no longer current for manifest publication".into())
+        }
     }
 
     pub fn lease(&self) -> &NodeHostSessionLease {

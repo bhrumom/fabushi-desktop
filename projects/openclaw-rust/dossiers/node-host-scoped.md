@@ -2454,3 +2454,12 @@ The router also provides `drain_generation`, which removes only in-memory
 invocation runtimes carrying the retired node/session generation. Canonical
 runtime-state cancellation remains the state transition; physical process or
 Computer cleanup is deliberately not inferred from dropping the routing entry.
+
+## 187. Generation-fenced live manifest projection (2026-10-30)
+
+`NodeHostSessionRegistry::update_manifest` and
+`NodeHostGatewaySession::publish_manifest` now provide one currentness-fenced
+projection path from a composed `NodeHostManifest` into live node session
+metadata. A retired or disconnected generation cannot republish commands or
+capabilities. The seam does not invent a plugin registry, refresh schedule, or
+available command; those producers and remote acceptance remain pending.
