@@ -6,6 +6,7 @@ use super::{CloudWorkerArtifactDigest, CloudWorkerLeaseScope, CloudWorkerRuntime
 const MAX_DIAGNOSTIC_CHARS: usize = 512;
 const MAX_DIAGNOSTICS: usize = 32;
 const MAX_SECRET_REF_CHARS: usize = 256;
+const MAX_SECRET_REFS: usize = 32;
 const MAX_REPLAY_KEY_CHARS: usize = 256;
 
 /// An opaque handle resolved by Fabushi's existing secret/credential owner.
@@ -74,6 +75,9 @@ impl CloudWorkerBootstrapRequest {
             .map_err(|_| CloudWorkerNodeBootstrapError::InvalidArtifactDigest)?;
         if self.secret_refs.is_empty() {
             return Err(CloudWorkerNodeBootstrapError::MissingSecretRef);
+        }
+        if self.secret_refs.len() > MAX_SECRET_REFS {
+            return Err(CloudWorkerNodeBootstrapError::SecretRefLimitReached);
         }
         for secret_ref in &self.secret_refs {
             CloudWorkerSecretRef::new(secret_ref.0.clone())
@@ -210,6 +214,8 @@ pub enum CloudWorkerNodeBootstrapError {
     InvalidArtifactDigest,
     #[error("at least one secret reference is required")]
     MissingSecretRef,
+    #[error("bootstrap secret-reference limit reached")]
+    SecretRefLimitReached,
     #[error("bootstrap requires a replay key")]
     MissingReplayKey,
     #[error("bootstrap replay key is invalid")]
@@ -336,5 +342,17 @@ mod tests {
             Err(CloudWorkerNodeBootstrapError::InvalidDiagnostic)
         );
         assert_eq!(record.phase, CloudWorkerBootstrapPhase::Pending);
+    }
+
+    #[test]
+    fn request_validation_bounds_secret_reference_count() {
+        let mut request = request();
+        request.secret_refs = (0..33)
+            .map(|index| CloudWorkerSecretRef::new(format!("secret://{index}")).unwrap())
+            .collect();
+        assert_eq!(
+            request.validate(),
+            Err(CloudWorkerNodeBootstrapError::SecretRefLimitReached)
+        );
     }
 }

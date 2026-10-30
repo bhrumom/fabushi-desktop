@@ -308,9 +308,9 @@ as opaque secret references, binds bootstrap records to the admitted scope,
 runtime and artifact digest, bounds redacted diagnostics, and distinguishes
 safe replay from reconcile-first outcome-unknown handling. Request validation
 rechecks public/deserialized scope, runtime, digest, secret-reference and
-replay-key fields; settlement accepts only bounded, redacted diagnostics and
-fails closed on the diagnostic limit. It does not resolve secrets, enroll a
-device, launch a process or claim readiness.
+replay-key fields; secret-reference and diagnostic collections are bounded,
+and settlement accepts only redacted diagnostics. It does not resolve
+secrets, enroll a device, launch a process or claim readiness.
 
 Bootstrap settlement is now transition-fenced: readiness requires both
 preparation and enrollment, while failed/cancelled/outcome-unknown results
