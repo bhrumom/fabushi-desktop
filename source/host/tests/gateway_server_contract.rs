@@ -1053,7 +1053,7 @@ fn openclaw_gateway_device_pairing_handshake_allows_unauthenticated() {
 }
 
 #[test]
-fn openclaw_gateway_device_timestamp_skew_and_nonce_replay() {
+fn openclaw_gateway_device_timestamp_skew_and_nonce_require_authentication() {
     let server = start_gateway_server(GatewayServerDeps {
         api: Arc::new(TestApi),
         events: GatewayEventHub::default(),
@@ -1082,12 +1082,21 @@ fn openclaw_gateway_device_timestamp_skew_and_nonce_replay() {
             "POST /api/device.pair.list HTTP/1.1\r\nHost: 127.0.0.1\r\nx-sand-device-timestamp: {now}\r\nx-sand-device-nonce: fresh-nonce-999\r\nContent-Length: 2\r\nConnection: close\r\n\r\n{{}}"
         ),
     );
-    assert!(valid_req.starts_with("HTTP/1.1 200 OK"), "{valid_req}");
+    assert!(valid_req.starts_with("HTTP/1.1 401 Unauthorized"), "{valid_req}");
+    assert!(valid_req.contains("unauthorized"), "{valid_req}");
+
+    let authenticated_req = request(
+        port,
+        &format!(
+            "POST /api/device.pair.list HTTP/1.1\r\nHost: 127.0.0.1\r\nAuthorization: Bearer configured-secret-token\r\nx-sand-device-timestamp: {now}\r\nx-sand-device-nonce: fresh-nonce-authenticated\r\nContent-Length: 2\r\nConnection: close\r\n\r\n{{}}"
+        ),
+    );
+    assert!(authenticated_req.starts_with("HTTP/1.1 200 OK"), "{authenticated_req}");
 
     let replay_req = request(
         port,
         &format!(
-            "POST /api/device.pair.list HTTP/1.1\r\nHost: 127.0.0.1\r\nx-sand-device-timestamp: {now}\r\nx-sand-device-nonce: fresh-nonce-999\r\nContent-Length: 2\r\nConnection: close\r\n\r\n{{}}"
+            "POST /api/device.pair.list HTTP/1.1\r\nHost: 127.0.0.1\r\nAuthorization: Bearer configured-secret-token\r\nx-sand-device-timestamp: {now}\r\nx-sand-device-nonce: fresh-nonce-authenticated\r\nContent-Length: 2\r\nConnection: close\r\n\r\n{{}}"
         ),
     );
     assert!(replay_req.starts_with("HTTP/1.1 401 Unauthorized"), "{replay_req}");

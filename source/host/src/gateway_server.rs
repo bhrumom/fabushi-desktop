@@ -1235,10 +1235,14 @@ fn handle_connection(
         if let Err(msg) = check_device_timestamp_skew(ts) {
             return respond_error(&mut stream, 401, msg);
         }
-        if let Err(msg) = check_and_record_nonce(nonce) {
-            return respond_error(&mut stream, 401, msg);
+        // Timestamp/nonce are replay fences for an already authenticated
+        // device request. They are not a device signature or token, so they
+        // must never promote an unauthenticated request to authenticated.
+        if authenticated {
+            if let Err(msg) = check_and_record_nonce(nonce) {
+                return respond_error(&mut stream, 401, msg);
+            }
         }
-        authenticated = true;
     }
 
     if let Some(rev) = request.headers.get("x-sand-pairing-revision") {
