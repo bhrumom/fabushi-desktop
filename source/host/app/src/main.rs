@@ -3681,16 +3681,19 @@ impl UnifiedGatewayApi {
         }
 
         let active_streams = self.runner_registry.active_stream_ids_for_agent(agent_id);
-        let cancelled_count = self.runner_registry.cancel_agent(agent_id, "rpc");
-        let run_ids = if let Some(rid) = args.get("runId").and_then(serde_json::Value::as_str) {
-            active_streams
-                .iter()
-                .filter(|active_id| active_id.as_str() == rid)
-                .cloned()
-                .collect::<Vec<_>>()
-        } else {
-            active_streams
-        };
+        let requested_run_id = args
+            .get("runId")
+            .and_then(serde_json::Value::as_str)
+            .map(str::trim)
+            .filter(|value| !value.is_empty());
+        let run_ids = active_streams
+            .into_iter()
+            .filter(|active_id| requested_run_id.is_none_or(|run_id| active_id == run_id))
+            .collect::<Vec<_>>();
+        let cancelled_count = run_ids
+            .iter()
+            .filter(|run_id| self.runner_registry.cancel_stream(run_id, "rpc"))
+            .count();
 
         Ok(serde_json::json!({
             "ok": true,
