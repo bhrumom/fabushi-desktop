@@ -60,12 +60,17 @@ impl CloudWorkerProvisioningExtension {
     }
 
     pub fn status_snapshot(&self) -> CloudWorkerStatusSnapshot {
-        let status = match self.status() {
-            CloudWorkerOwnerStatus::Disabled => "disabled",
-            CloudWorkerOwnerStatus::Enabled => "enabled",
-            CloudWorkerOwnerStatus::Unavailable => "unavailable",
+        let (status, snapshot) = match self.owner.lock() {
+            Ok(owner) => {
+                let status = match owner.status() {
+                    CloudWorkerOwnerStatus::Disabled => "disabled",
+                    CloudWorkerOwnerStatus::Enabled => "enabled",
+                    CloudWorkerOwnerStatus::Unavailable => "unavailable",
+                };
+                (status, Some(owner.snapshot()))
+            }
+            Err(_) => ("unavailable", None),
         };
-        let snapshot = self.snapshot();
         CloudWorkerStatusSnapshot {
             owner: "cloud-workers",
             status,
