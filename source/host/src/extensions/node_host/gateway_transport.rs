@@ -28,6 +28,8 @@ use super::gateway_frames::{
     encode_gateway_request, parse_gateway_frame,
 };
 use super::hello_auth::persist_hello_ok_device_auth;
+use super::runtime_state::NodeHostRuntimeState;
+use super::session_registry::NodeHostSessionLease;
 
 const CONNECT_REQUEST_ID_PREFIX: &str = "connect";
 const DEFAULT_PROTOCOL: u16 = 3;
@@ -183,7 +185,52 @@ pub struct NodeHostGatewayTransport {
     closed: bool,
 }
 
+pub struct NodeHostGatewaySession {
+    transport: NodeHostGatewayTransport,
+    runtime: std::sync::Arc<NodeHostRuntimeState>,
+    lease: NodeHostSessionLease,
+    hello: NodeHostGatewayHello,
+}
+
 impl NodeHostGatewayTransport {
+    pub fn connect_with_runtime(
+        config: NodeHostGatewayTransportConfig,
+        runtime: std::sync::Arc<NodeHostRuntimeState>,
+    ) -> Result<NodeHostGatewaySession, NodeHostGatewayTransportError> {
+        let node_id = load_or_create_host_node_identity(config.identity_path.as_deref())
+            .map_err(NodeHostGatewayTransportError::Credential)?
+            .device_id()
+            .to_string();
+        let display_name = config
+            .display_name
+            .clone()
+            .unwrap_or_else(|| "OpenClaw Node Host".into());
+        let metadata = super::session_registry::NodeHostSessionMetadata {
+            node_id,
+            display_name,
+            platform: config.platform.clone(),
+            device_family: config.device_family.clone(),
+            commands: config.commands.clone(),
+            capabilities: config.capabilities.clone(),
+            paired: true,
+            gateway_local: false,
+        };
+        let (transport, hello) = Self::connect(config)?;
+        let lease = runtime.connect(metadata);
+        if !runtime.set_active(&lease, true) {
+            let _ = runtime.disconnect(&lease);
+            return Err(NodeHostGatewayTransportError::Protocol(
+                "Gateway session was retired during admission".into(),
+            ));
+        }
+        Ok(NodeHostGatewaySession {
+            transport,
+            runtime,
+            lease,
+            hello,
+        })
+    }
+
     pub fn connect(
         config: NodeHostGatewayTransportConfig,
     ) -> Result<(Self, NodeHostGatewayHello), NodeHostGatewayTransportError> {
@@ -445,6 +492,25 @@ impl NodeHostGatewayTransport {
         }
     }
 
+}
+
+impl NodeHostGatewaySession {
+    pub fn hello(&self) -> &NodeHostGatewayHello {
+        &self.hello
+    }
+
+    pub fn lease(&self) -> &NodeHostSessionLease {
+        &self.lease
+    }
+
+    pub fn transport_mut(&mut self) -> &mut NodeHostGatewayTransport {
+        &mut self.transport
+    }
+
+    pub fn close(mut self) -> Result<(), NodeHostGatewayTransportError> {
+        let _ = self.runtime.disconnect(&self.lease);
+        self.transport.close()
+    }
 }
 
 fn now_millis() -> u64 {

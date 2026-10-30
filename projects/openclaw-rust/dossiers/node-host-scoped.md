@@ -2385,6 +2385,9 @@ queued instead of being silently dropped.
 
 This is the first actual socket-owning NodeHost slice, but it is not yet
 production wiring: no Host startup caller feeds the returned hello into
-`NodeHostRuntimeState`, no reconnect/close drain is composed with invocation
-cleanup, and TLS fingerprint pinning is rejected rather than ignored. No
-remote command is advertised or enabled by this slice alone.
+`NodeHostRuntimeState`, no application startup lifecycle invokes the adapter,
+and reconnect/close drain is not yet composed with invocation request/cancel
+dispatch. The `connect_with_runtime` adapter admits a validated hello through
+the existing generation-fenced runtime owner and closes through that lease;
+TLS fingerprint pinning is rejected rather than ignored. No remote command is
+advertised or enabled by this slice alone.
