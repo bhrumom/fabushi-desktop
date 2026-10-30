@@ -76,6 +76,11 @@ impl CloudWorkerProvisioningStore {
             let _ = fs::remove_file(&temporary);
             return Err(CloudWorkerStoreError::Write(error));
         }
+        // The rename makes the new snapshot visible, but the directory entry
+        // is not durable until the parent directory is synced.  Treat a
+        // failed directory barrier as a write failure so callers do not
+        // mistake a crash-vulnerable publication for a durable checkpoint.
+        sync_parent_directory(parent).map_err(CloudWorkerStoreError::Write)?;
         Ok(())
     }
 }
@@ -83,6 +88,19 @@ impl CloudWorkerProvisioningStore {
 fn write_and_sync(file: &mut File, bytes: &[u8]) -> io::Result<()> {
     file.write_all(bytes)?;
     file.sync_all()
+}
+
+#[cfg(unix)]
+fn sync_parent_directory(parent: &Path) -> io::Result<()> {
+    File::open(parent)?.sync_all()
+}
+
+#[cfg(not(unix))]
+fn sync_parent_directory(_parent: &Path) -> io::Result<()> {
+    // Windows does not expose a portable directory-handle fsync equivalent
+    // through the standard library. The file sync plus atomic rename remains
+    // the strongest std-only publication primitive on that target.
+    Ok(())
 }
 
 fn temporary_path(path: &Path) -> PathBuf {

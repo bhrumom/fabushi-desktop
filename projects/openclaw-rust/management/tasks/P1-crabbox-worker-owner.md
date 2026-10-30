@@ -341,9 +341,12 @@ consumer paths are implemented. Packaged UI/CLI reachability remains open.
 Versioned persistence is now defined by
 `CloudWorkerPersistentSnapshot` and `CloudWorkerProvisioningStore`: lease and
 warm-image metadata are serialized deterministically and written through an
-exact-path temporary file plus rename. Corrupt/unsupported snapshots fail
-closed; secret payloads, credentials and Fabushi identity stores are not part
-of the snapshot. The production extension now injects
+exact-path temporary file, file sync, rename and (on Unix) parent-directory
+sync. A directory-barrier failure is returned as a write failure after the
+rename, preserving the possibility of an outcome-unknown publication rather
+than claiming durable success. Corrupt/unsupported snapshots fail closed;
+secret payloads, credentials and Fabushi identity stores are not part of the
+snapshot. The production extension now injects
 `app_data_dir/cloud-workers/state.json`, loads existing state fail-closed and
 exposes an atomic `persist()` boundary. Migration/rollback receipts and
 mutation-triggered persistence remain open. The snapshot now carries
