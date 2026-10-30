@@ -384,6 +384,9 @@ operation/backup/detail text. The snapshot now carries
 append-only `CloudWorkerMigrationReceipt` records, and the store exposes an
 explicit non-overwriting `backup_existing` primitive; no legacy conversion is
 claimed until a real source format and migration oracle are supplied.
+The production extension no longer exposes its raw owner mutex, so future
+mutations cannot bypass the persistence boundary; the poison-lock regression
+remains covered inside the extension owner module.
 
 The extension status boundary now treats a poisoned owner lock as an explicit
 `Unavailable` state instead of panicking or misreporting `Disabled`. The

@@ -23,10 +23,6 @@ pub struct CloudWorkerProvisioningExtension {
 }
 
 impl CloudWorkerProvisioningExtension {
-    pub fn owner(&self) -> Arc<Mutex<CloudWorkerProvisioningOwner>> {
-        Arc::clone(&self.owner)
-    }
-
     pub fn status(&self) -> CloudWorkerOwnerStatus {
         self.owner
             .lock()
@@ -119,4 +115,25 @@ pub enum CloudWorkerExtensionError {
     Store(#[from] CloudWorkerStoreError),
     #[error(transparent)]
     Owner(#[from] CloudWorkerOwnerError),
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{CloudWorkerOwnerStatus, start_cloud_worker_provisioning_extension};
+
+    #[test]
+    fn poisoned_owner_is_projected_as_unavailable_without_public_owner_access() {
+        let state_path = std::env::temp_dir().join("cloud-worker-poisoned-extension-state.json");
+        let extension = start_cloud_worker_provisioning_extension(state_path).unwrap();
+        let owner = std::sync::Arc::clone(&extension.owner);
+        let join = std::thread::spawn(move || {
+            let _guard = owner
+                .lock()
+                .expect("owner lock should be healthy before poisoning");
+            panic!("poison cloud-worker owner for the contract");
+        })
+        .join();
+        assert!(join.is_err());
+        assert_eq!(extension.status(), CloudWorkerOwnerStatus::Unavailable);
+    }
 }
