@@ -37,6 +37,8 @@ Define and implement a Fabushi-native node-host runtime embedding that preserves
 - R8: A live node registry/transport owner is the sole authority for remote `connected`, `active`, manifest, and invoke routing facts; pairing remains approval/identity only.
 - R9: Node-host Computer dispatch validates opaque generation and delegates side effects to an approved Computer executor with permission, currentness, and result-schema fencing.
 - R10: Any sidecar or worker bridge is introduced only when an existing worker/supervisor owner requires it, with bounded framed protocol, authenticated channel binding, and no new durable product state.
+- R11: Node-worker managed-identity transport is captured by the existing dedicated node owner, redacted at the secret boundary, and supplied only to admitted worker execution; callers and generic launch descriptors cannot inject or persist it.
+- R12: Platform trust settings and managed workspace process environments are restored after generic sanitization under the same workspace/generation lease; release or replacement fences both process use and plugin invocation callbacks.
 
 ## 5. Current state
 
@@ -46,6 +48,7 @@ Define and implement a Fabushi-native node-host runtime embedding that preserves
 - Existing `NativeDesktopRemoteExecutor` and `execute_with_lease_fenced` own native Computer behavior; they are not generic node-host invoke executors.
 - The implementation oracle remains the prior candidate `ad8d12f126d29b0db204187adf5092db80294e70`, tree `04ccce62f1d74dc8e0c88290ae8ded027b7b0f16`; it is not accepted as the current project-wide source lock.
 - Read-only live discovery has since advanced to OpenClaw `main` commit `5f6f15fed0d6ba618cf781c9686a8b93f499564b`, tree `ee0af1d3ba415e7763da6759ca47b245031a21c9`. This candidate requires the P0 GitHub Actions rebaseline before source-dependent acceptance or lock/inventory reuse; c325 and earlier candidates remain historical discovery only.
+- A targeted read-only compare from the prior c325 candidate to this live candidate reports 14 commits and 15 changed paths under `src/node-host/` or `crates/openclaw-node-host/`. The changed source adds managed-identity transport custody, platform trust restoration, workspace lease admission/currentness, and invocation-bound process-environment fencing. Existing Rust mapping is therefore not complete for this candidate and must not reuse c325 semantics without targeted re-read.
 
 ## 6. Target state
 
@@ -59,6 +62,7 @@ One Fabushi-owned node-host runtime composes the canonical Gateway/transport own
 - **Manifest owner:** current command/capability registration and availability changes; it does not own transport truth.
 - **Policy/side-effect owners:** local exec, Computer, PTY, desktop stream, portal stream, and worker/Claude handlers retain their existing authorization and process lifecycles.
 - **Gateway RPC projection:** reads live registry facts and pairing facts; it owns no node session, heartbeat, or replay state.
+- **Node-worker environment/workspace owner:** captures provider identity transport and platform trust before sanitization, restores only admitted values into the worker environment, and binds workspace leases, process output redaction, and plugin invocation callbacks to the same current generation.
 
 The Rust `NodeHostSessionRegistry` is the Host-side projection boundary for the
 transport/session owner. Its `connect`, `set_active`, and generation-fenced

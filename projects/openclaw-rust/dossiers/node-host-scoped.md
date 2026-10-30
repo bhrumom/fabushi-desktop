@@ -2126,7 +2126,27 @@ directories). This supersedes c325 only as a newer discovery pointer; no
 Node Host path re-read, inventory reuse, dependency closure, Actions receipt,
 or completion flag is inferred from the root-tree observation.
 
-## 170. Local session manifest boundary audit (2026-10-30)
+## 170. Node-worker environment and workspace-owner delta (2026-10-30 continuation)
+
+A targeted GitHub compare from the preceding c325 candidate to the current
+`5f6f15fed0d6ba618cf781c9686a8b93f499564b` candidate reports 14 commits and
+15 changed paths under `src/node-host/` or `crates/openclaw-node-host/`. The
+changed source is not a cosmetic drift: it adds node-local managed-identity
+transport custody and secret redaction, restores admitted platform trust
+settings after generic environment sanitization, and introduces a shared
+workspace/process lease with currentness fencing for plugin invocation and
+workspace release.
+
+The existing Fabushi Rust NodeHost slices do not yet provide a production
+caller for these newly observed responsibilities. The applicable mapping is
+therefore extended to the existing NodeHost worker/supervisor, workspace
+admission, secret-redaction, and invocation-context owners; no second identity
+transport, environment store, or workspace lease owner is authorized. This
+is a targeted source-drift finding, not proof of current-candidate semantic
+closure or acceptance; the compare response does not replace the required
+exact-subject Actions inventory and dependency evidence.
+
+## 171. Local session manifest boundary audit (2026-10-30)
 
 The shipping Host startup path creates exactly one local session lease for
 `sand-local-node` through `NodeHostRuntimeState`. Its public session surface
@@ -2153,7 +2173,7 @@ capabilities, pairing, remote transport, or acceptance claims. Dynamic
 manifest refresh, challenge-bound connection, remote invoke/cancel/result
 transport, and device acceptance remain open.
 
-## 171. Local node registration projection (2026-10-30)
+## 172. Local node registration projection (2026-10-30)
 
 The local `node.register` Gateway branch now returns the complete current
 `NodeHostSessionSnapshot` surface already owned by `NodeHostRuntimeState`:
@@ -2166,7 +2186,7 @@ canonical transport session is admitted.
 This is a local producer-to-consumer projection correction, not remote Node
 Host transport, dynamic manifest publication, or device acceptance evidence.
 
-## 172. Typed local invoke result projection (2026-10-30)
+## 173. Typed local invoke result projection (2026-10-30)
 
 The local `node.invoke` Gateway path now serializes the same typed
 `NodeInvokeResult` that is completed by `NodeHostInvocationRuntime`, then adds
@@ -2181,7 +2201,7 @@ This closes only the local result-consumer projection. It does not establish
 remote result delivery, replay behavior, progress transport, or exact-head
 acceptance.
 
-## 173. Local invoke execution-error envelope (2026-10-30)
+## 174. Local invoke execution-error envelope (2026-10-30)
 
 After local invocation admission, executor failures now remain in the same
 typed `NodeInvokeResult::failure` envelope that is completed by the invocation
