@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 """Fail-closed audit & mapping integrity validator.
 Enforces Spec §6.2-§6.3 and AC03: forbids bulk 1-END shortcuts, null reviewers,
-unclassified language kinds, or ledger/shard count discrepancies.
+unclassified language kinds, or ledger/shard count discrepancies. An honest
+unread count is progress evidence, not a global AC02 failure; applicability and
+disposition closure are checked by the exact-head authority gate.
 """
 import glob
 import gzip
@@ -94,10 +96,15 @@ def main():
     print(f"-> Read-complete paths: {len(read_complete_paths)}")
     print(f"-> Unclassified paths: {unclassified_paths}")
 
-    if total_paths != 58750:
-        fail(f"Total path count {total_paths} does not match exact tracked authority 58750")
-    if len(read_complete_paths) + unclassified_paths != 58750:
-        fail("Invariant violation: read-complete + unread != total tracked paths")
+    with open(ROOT / "inventory/index.json", "r", encoding="utf-8") as f:
+        index = json.load(f)
+    expected_total = index.get("inventory", {}).get("tracked_entries_total")
+    if not isinstance(expected_total, int) or expected_total < 0:
+        fail("inventory/index.json must declare a non-negative tracked_entries_total")
+    if total_paths != expected_total:
+        fail(f"Total path count {total_paths} does not match canonical tracked authority {expected_total}")
+    if len(read_complete_paths) + unclassified_paths != expected_total:
+        fail("Invariant violation: read-complete + unread != canonical total tracked paths")
 
     # 2. Parity Ledger Verification
     ledger_path = ROOT / "parity-ledger.json"
@@ -117,11 +124,11 @@ def main():
     print(f"-> Ledger responsibility-mapped paths: {len(ledger_mapped_paths)}")
 
     cov = ledger.get("file_coverage", {})
-    if cov.get("tracked_paths") != 58750:
-        fail(f"parity-ledger.json file_coverage.tracked_paths ({cov.get('tracked_paths')}) != 58750")
+    if cov.get("tracked_paths") != expected_total:
+        fail(f"parity-ledger.json file_coverage.tracked_paths ({cov.get('tracked_paths')}) != canonical total ({expected_total})")
     if cov.get("mapped_paths") != len(ledger_mapped_paths):
         fail(f"parity-ledger.json file_coverage.mapped_paths ({cov.get('mapped_paths')}) != ledger responsibility-mapped paths ({len(ledger_mapped_paths)})")
-    expected_unclassified = 58750 - len(ledger_mapped_paths)
+    expected_unclassified = expected_total - len(ledger_mapped_paths)
     if cov.get("unclassified_paths") != expected_unclassified:
         fail(f"parity-ledger.json file_coverage.unclassified_paths ({cov.get('unclassified_paths')}) != ledger-unmapped paths ({expected_unclassified})")
     if cov.get("omitted_known") != 0:
@@ -130,7 +137,7 @@ def main():
     flags = ledger.get("completion_flags", {})
     for flag, val in flags.items():
         if val is not False:
-            fail(f"Global completion flag '{flag}' must be false until all 58,750 files and AC01-AC24 are complete")
+            fail(f"Global completion flag '{flag}' must be false until the applicable AC01-AC24 evidence is complete")
 
     # Check for misclassified test files
     for r in ledger.get("responsibilities", []):

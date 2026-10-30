@@ -2,8 +2,8 @@
 
 Status: active  
 Project ID: OCRM-001  
-Revision: 1  
-Last updated: 2026-10-22（Asia/Shanghai）  
+Revision: 2
+Last updated: 2026-10-30（Asia/Shanghai）
 Target: `bhrumom/fabushi-desktop` current canonical main  
 Implementation/acceptance: **未完成**
 
@@ -31,7 +31,7 @@ Implementation/acceptance: **未完成**
 - Coordinator、Host、Runner、box-exec、Electron、renderer、服务端与设备边界保留；无第二 Agent loop、Conversation/Transcript store、scheduler、Marketplace、权限真相或 OpenClaw 运行时。
 - 现有 Fabushi Bot 全部功能保留；Human/Agent、资源、插件、工具、自动化、Computer 和通信能力共用 canonical composition。
 - OpenClaw 可选外部渠道和 Gateway/SDK/node 兼容由现有 owner 下的 Rust adapters 承接；Fabushi 原生身份/网络/会话不因此依附外部服务。
-- `read`、`mapped`、`implemented`、`wired`、`verified`、`accepted` 独立，按主 Spec §6.4.1 的责任类型完成合同；业务必须 Rust/生产接线，非运行时职责保留实际消费者和处置证据。目录、文件、crate、manifest、mock、旧 CI 不证明全部功能。
+- `enumerated`、`applicability-assessed`、`dispositioned`、`read`、`mapped`、`implemented`、`wired`、`verified`、`accepted` 独立，按主 Spec §6.4.1 的责任类型完成合同；业务必须 Rust/生产接线，非运行时职责保留实际消费者和处置证据。每条路径必须完成身份、适用性和处置；承载行为、高风险、公开合同、生产 producer/owner/consumer、权限安全、状态迁移、官方插件/渠道/平台和关键上游 oracle 的路径必须深读。普通文档、示例、fixture、重复或研发用途项可用可复核成组证据处置，但 `unread` 不能冒充深读，未知行为必须升级。目录、文件、crate、manifest、mock、旧 CI 不证明全部功能。
 - 所有可执行验证只在 GitHub Actions，包括 generator/schema/lint/build/test/E2E/visual/performance/package/device acceptance；不沿用其他项目的 `htch-runtime` 例外。
 - 凭据、签名、真实设备/渠道/服务未配置是 blocked；保留解除条件并推进无依赖任务，不改变最终目标。
 - 许可证、版权、NOTICE、SBOM 与来源保留；产品统一 Fabushi，外部服务名称和必要兼容字段按合同保留。
@@ -51,11 +51,13 @@ Implementation/acceptance: **未完成**
 
 目标 main 有大量可复用 owner，但外部 channel default 仍是 unregistered seam；Memory、MCP、Human/Call、Browser 源码存在不等于 OpenClaw parity。未合并的 PR #165/#166/#167/#168 仅作协调依赖；正在进行的 TDRP PR #154 及其 evidence 不被本项目改写。
 
+2026-10-30 live 只读核对：Fabushi `origin/main`=`cfef45568293a22deb32a6cdef17916f3ec19648`；当前专用工作分支起点=`074d17dcd8508ef6ca45bc5932553e7429cf62f9`；PR #169/#180/#181 heads 分别为 `b5db35fa272c83833685d70a730b5f8285fa1176`、`2225400ea73392523586a110301edeb87c986001`、`ab4eaa0560a5b767f46d0c91e36eb6e3cfd4344a`，均未合并。OpenClaw live `main`=`87facf07d6b4907846c4a8e4c7ae551f85571420`，tree=`f72fbc794bbb23a04bc5afea875d4877048015c9`；现有 `upstream.lock.json` 仍是上一轮 `ad8d12f…/04ccce…` 候选，必须在 P0 重新生成并取得 Actions provenance 后才可作为本轮 authority。上述核对不是 CI 或产品验收证据。
+
 ## 5. 机器记录的初始化与终态
 
 P0 在 Actions 建立 lock、inventory、parity ledger、RTM、dossiers 和 evidence 索引；本次不提交伪造的完整台账或空清单来充当 baseline。
 
-各 flag 的适用集合、true 谓词、负责 gate 和失效条件以主 Spec §15.1 为唯一规范。`source_closure_ready` 表示完整取得并枚举来源/依赖，不表示已阅读全文；全部语义理解和责任映射归 `responsibility_mapping_complete`。P0 G02 structural 可以保留诚实 unread/unclassified，最终 G02 不能。
+各 flag 的适用集合、true 谓词、负责 gate 和失效条件以主 Spec §15.1 为唯一规范。`source_closure_ready` 表示完整取得并枚举来源/依赖，不表示已阅读全文；AC02 的全量闭合是“0 未分流、0 未评估适用责任”，而不是把 58,750 个路径强行变成全文深读。全部适用产品责任理解、owner/合同/oracle 双向映射和非产品 disposition 证据归 `responsibility_mapping_complete`。P0 G02 structural 可以保留诚实 unread/unclassified；最终 G02 必须消除未分流/未评估适用责任，但仍要如实报告尚未深读的非适用成组路径。
 
 主 Spec §12.3 区分受验 target 与证据载体：仓库保留 source declarations、已知 baseline 和历史 receipt 引用，当前有效状态由同一 subject target 的不可变 Actions receipt 投影。最终 receipt 发布到 artifact/attestation/check，不为回写自身 SHA 再制造一个提交；后续提交是新 target，旧绿色结果不能自动成为当前验收。
 
@@ -69,7 +71,8 @@ P0 在 Actions 建立 lock、inventory、parity ledger、RTM、dossiers 和 evid
 | ecosystem_compatibility_accepted | false |
 | ui_accepted | false |
 | release_accepted | false |
-| recursive_source_total / unread / incomplete | 尚未建立，unknown，不是 0 |
+| recursive_source_total | 尚未建立，unknown，不是 0 |
+| unread / incomplete | 继续如实记录尚未深读/证据不完整的路径；不再作为全量 AC02 的单独硬门槛 |
 
 只有 OCRM-AC01 至 OCRM-AC24 全部取得当前 upstream/target 身份的正面证据并独立接受，才允许宣称完整迁移。当前文档交付不改变任何其他项目的完成标志。
 

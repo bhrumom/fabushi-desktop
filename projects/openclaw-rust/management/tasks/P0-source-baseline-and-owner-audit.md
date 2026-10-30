@@ -10,9 +10,9 @@ Last updated: 2026-10-22（Asia/Shanghai）
 
 建立可以驱动全部后续 Rust 等价实现的真实 source authority、无遗漏 inventory、逐责任 ledger/RTM、当前 owner 解析和首批可实施合同。任务结束后必须能回答任一上游文件“读到哪里、承担什么、由谁实现、还缺什么、如何验收”，不能只产生目录清单和 migration proposal。
 
-本任务不声称一轮已完成所有文件语义阅读。P0 必须完成全量集合与身份校验，并对下一实施单元完成逐文件阅读、依赖/owner/oracle 合同；剩余文件真实保持 unread。全部源码语义阅读、Rust 实现与验收由后续任务持续闭合，最终标准不降低。
+本任务不声称一轮已完成所有文件语义深读。P0 必须完成全量集合与身份校验，并为每条路径建立适用性与 disposition；对下一实施单元完成逐文件阅读、依赖/owner/oracle 合同。承载行为、高风险、公开合同、生产 producer/owner/consumer、权限安全、状态迁移、官方插件/渠道/平台和关键上游 oracle 的路径必须深读；普通文档、示例、fixture、重复或研发用途项可以用可复核成组证据处置。未知行为保持未知并升级深读，未深读路径真实保持 unread。全部源码语义阅读、Rust 实现与验收由后续任务持续闭合，最终标准不降低。
 
-完整枚举/取得来源由 `source_closure_ready` 表达；全部语义阅读与映射由 `responsibility_mapping_complete` 表达，正面谓词见主 Spec §15.1。P0 全局未退出时，满足 §11.1 的单元及其全部相关传递依赖仍可获得 scoped authority 并推进 Rust 实现；不把该单元结论升级为全项目通过。
+完整枚举/取得来源由 `source_closure_ready` 表达；0 未分流路径和 0 未评估适用责任由 OCRM-AC02/G02 final 表达；适用责任理解、映射和 disposition closure 由 `responsibility_mapping_complete` 表达，正面谓词见主 Spec §15.1。`unread` 是深读进度维度，不是把普通非产品路径强行全文阅读的全局门槛。P0 全局未退出时，满足 §11.1 的单元及其全部相关传递依赖仍可获得 scoped authority 并推进 Rust 实现；不把该单元结论升级为全项目通过。
 
 ## 2. 前置读取与并行工作保护
 
@@ -73,14 +73,14 @@ Last updated: 2026-10-22（Asia/Shanghai）
 | --- | --- |
 | OCRM-P0-AC01 | 本任务 receipt 的 upstream、subject target/ref/tree、实际 checkout 与所有机器输入 provenance 一致；baseline/subject/carrier 明确区分，上游 drift 有显式处置。 |
 | OCRM-P0-AC02 | 全量路径集合与必要依赖闭包经过 Actions 校验，无静默截断/过滤；若外部闭包未获证据，P0 整体仍 blocked，已完成子任务可保留。 |
-| OCRM-P0-AC03 | 每文件已入 inventory 且状态诚实；未读项不冒领 read-complete，全部未知集合明确。 |
+| OCRM-P0-AC03 | 每路径已入 inventory 且身份、类型、适用性和 disposition 状态诚实；未读项不冒领 read-complete，未知行为升级深读，全部未分流/未评估集合明确。 |
 | OCRM-P0-AC04 | 下一实施单元满足主 Spec §11.1：相关文件/传递依赖已取得并完整阅读，scoped authority、类型化责任/owner/oracle 与合同经审查；不宣称其他模块同步完成。 |
-| OCRM-P0-AC05 | G02 structural 接受诚实 unread/unclassified/not-started，拒绝漏项、断引用、错误类型/维度处置、身份漂移、伪 verified/accepted；仅已声明实施或验收状态要求对应真实 target/evidence，final 模式另要求未完成集合归零。 |
+| OCRM-P0-AC05 | G02 structural 接受诚实 unread/unclassified/not-started，拒绝漏项、断引用、错误类型/维度处置、身份漂移、伪 verified/accepted；仅已声明实施或验收状态要求对应真实 target/evidence。final 模式要求 0 未分流、0 未评估适用责任、0 适用 orphan/unmapped；不把普通非产品路径的 unread 伪装成深读或把它单独作为 AC02 硬门槛。 |
 | OCRM-P0-AC06 | 外部服务、账号、设备、包、许可证和平台矩阵有逐项 owner/证据/解除条件。 |
 | OCRM-P0-AC07 | 针对已提交 H 的 Actions 完整日志与不可变 receipt/artifact ID/digest 被读取，独立 reviewer 检查 P0 结论和首批任务；结论作为 H 的 receipt 发布，不以新增 carrier 提交冒领 H2 通过。 |
 | OCRM-P0-AC08 | 受验输入 H 已云端原子提交/read-back，随后完成 H 的验证及 receipt 发布；没有变更无关实现分支或他人文件；后续满足准入的任务可继续真实 Rust 实现。 |
 
-P0-AC 全通过也只完成基线任务；可按主 Spec §15.1 为 baseline identity/source closure 提供正面证据。剩余 unread 使 `responsibility_mapping_complete` 保持 false；`rust_implementation_complete`、`production_wiring_complete`、`ecosystem_compatibility_accepted`、`ui_accepted`、`release_accepted` 不因 P0 通过而改变。若 P0-AC02 受阻，项目级 closure 仍 false，满足 scoped authority 的单元按 §11.1 推进，不改变这一全局结论。
+P0-AC 全通过也只完成基线任务；可按主 Spec §15.1 为 baseline identity/source closure 提供正面证据。未分流/未评估适用责任或适用 orphan/unmapped 使 `responsibility_mapping_complete` 保持 false；诚实存在的非适用 unread 不单独改变该 flag。`rust_implementation_complete`、`production_wiring_complete`、`ecosystem_compatibility_accepted`、`ui_accepted`、`release_accepted` 不因 P0 通过而改变。若 P0-AC02 受阻，项目级 closure 仍 false，满足 scoped authority 的单元按 §11.1 推进，不改变这一全局结论。
 
 ## 7. 阻塞与支持请求
 

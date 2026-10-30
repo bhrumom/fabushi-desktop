@@ -80,7 +80,10 @@
         "tracked_paths",
         "unclassified_paths",
         "mapped_paths",
-        "omitted_known"
+        "omitted_known",
+        "applicability_assessed_paths",
+        "dispositioned_paths",
+        "unreviewed_applicable_paths"
       ],
       "properties": {
         "tracked_paths": {
@@ -97,6 +100,27 @@
         },
         "omitted_known": {
           "const": 0
+        },
+        "applicability_assessed_paths": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "dispositioned_paths": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "unreviewed_applicable_paths": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0
         }
       },
       "additionalProperties": false

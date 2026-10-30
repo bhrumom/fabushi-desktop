@@ -13,7 +13,10 @@
     "mapped_paths": 1419,
     "omitted_known": 0,
     "tracked_paths": 58750,
-    "unclassified_paths": 57331
+    "unclassified_paths": 57331,
+    "applicability_assessed_paths": null,
+    "dispositioned_paths": null,
+    "unreviewed_applicable_paths": null
   },
   "inventory_authority": {
     "manifest_source": "GitHub Actions immutable artifact candidate",

@@ -1,5 +1,11 @@
 #!/usr/bin/env python3
-"""Fail-closed P0 structural G01/G02 evidence gate; invoke only from GitHub Actions."""
+"""Fail-closed P0 structural G01/G02 evidence gate; invoke only from GitHub Actions.
+
+The structural gate requires a complete exact-path inventory and honest read /
+mapping dimensions. It deliberately does not turn an honest unread count into
+an AC02 failure: final responsibility closure separately requires zero
+undispositioned paths and zero unreviewed applicable product responsibility.
+"""
 import hashlib
 import json
 import os
@@ -152,6 +158,8 @@ def structural():
     check(ledger["file_coverage"]["mapped_paths"] == mapped_paths, "Mapped file count mismatch")
     check(ledger["file_coverage"]["unclassified_paths"] == len(entries) - mapped_paths, "Unclassified file count mismatch")
     check(idx["inventory"]["unclassified"] == len(entries) - mapped_paths, "Index unclassified count mismatch")
+    # Unread is an honest semantic-depth counter, not a completeness shortcut
+    # or a reason to fabricate read-complete for grouped non-product evidence.
     check(idx["inventory"]["unread"] == sum(e["read_status"] != "read-complete" for e in entries), "Unread/partial count mismatch")
     check(len(rtm["rows"]) == 48, "Incomplete top-level requirements/AC index")
     rtm_ids = [r["id"] for r in rtm["rows"]]
@@ -250,4 +258,4 @@ receipt = {
     "independent_review": "pending",
 }
 (EVIDENCE / "p0-structural-receipt.json").write_text(json.dumps(receipt, sort_keys=True, indent=2) + "\n")
-print(f"OCRM-G01 tracked source and OCRM-G02 structural PASS for {len(inv['entries'])} paths; global closure/open, semantic implementation not-started")
+    print(f"OCRM-G01 tracked source and OCRM-G02 structural PASS for {len(inv['entries'])} paths; closure/open, unread remains honest, semantic implementation not-started")

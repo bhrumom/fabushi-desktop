@@ -2,8 +2,8 @@
 
 Status: active  
 Spec ID: OCRM-001  
-Revision: 1  
-Last updated: 2026-10-22（Asia/Shanghai）  
+Revision: 2
+Last updated: 2026-10-30（Asia/Shanghai）
 Owner: Fabushi Desktop  
 Canonical target: `bhrumom/fabushi-desktop` 当前 `main` 及从它推进的已核验实现分支  
 Project: [`projects/openclaw-rust`](../../projects/openclaw-rust/SOURCE_OF_TRUTH.md)  
@@ -71,6 +71,10 @@ Fabushi 已有 React/Electron 产品表面、独立 Rust Coordinator、Host/Runn
 
 本次目录级发现为 `src` 77、`extensions` 176、`skills` 50、`custodian-skills` 4、`packages` 24、`apps` 8、`crates` 2 个直接子目录。`extensions/test-support` 不是第 176 个产品插件；`apps/.i18n` 不是独立平台。上述计数不是递归文件总数，不证明 source completeness。
 
+### 4.1.1 2026-10-30 live revalidation
+
+本轮只读核对的 Fabushi `origin/main` 为 `cfef45568293a22deb32a6cdef17916f3ec19648`；当前专用工作分支从已结束写手的 clean `074d17dcd8508ef6ca45bc5932553e7429cf62f9` 建立，tree 为 `3529384ecb252ef3cdda85816334c82ed20fb3f6`。远端 PR #169/#180/#181 当前分别为 `b5db35fa272c83833685d70a730b5f8285fa1176`、`2225400ea73392523586a110301edeb87c986001`、`ab4eaa0560a5b767f46d0c91e36eb6e3cfd4344a`，均不是 canonical `main`。OpenClaw 远端 `main` 已到 commit `87facf07d6b4907846c4a8e4c7ae551f85571420`、tree `f72fbc794bbb23a04bc5afea875d4877048015c9`；现有 OCRM lock 的 `ad8d12f126d29b0db204187adf5092db80294e70`/`04ccce62f1d74dc8e0c88290ae8ded027b7b0f16` 只能作为上一轮候选基线，待 P0 重新获取递归 inventory、依赖闭包和 provenance 后才能成为本轮锁定来源。以上 live facts 不构成 Actions 验证或产品验收。
+
 OpenClaw 当前协议为 v4；authenticated node 和轻量 probe 有 N-1/v3 窗口。包版本与 wire version 不同。当前 automation 文档已经移除 shared Tasks ledger、TaskFlow API/webhooks 和 inferred commitments；旧 heartbeat monitors 迁入普通 automation jobs。实现必须以 pinned 源码和合同重新核对，不凭历史印象设计。
 
 ### 4.2 当前 Fabushi 接线事实
@@ -97,7 +101,7 @@ OpenClaw 当前协议为 v4；authenticated node 和轻量 probe 有 N-1/v3 窗�
 | ID | 规范性要求 |
 | --- | --- |
 | OCRM-R01 | 全部 tracked source 与必要递归依赖纳入 inventory，零遗漏；每个文件有明确处置与责任映射。 |
-| OCRM-R02 | 每个文件必须阅读全文或完成与其类型匹配的完整检查，逐函数/类型/状态机/副作用分解；目录级摘要不能替代逐文件理解。 |
+| OCRM-R02 | 每个路径必须完成 exact identity、类型、生成/引用关系、许可证与适用性/处置记录；承载行为、高风险、公开合同、生产 producer/owner/consumer、权限安全、状态迁移、官方插件/渠道/平台和关键上游 oracle 的路径必须完整深读。普通文档、示例、fixture、重复或研发用途项可按生成关系、引用、许可证、静态扫描和必要抽样成组处置；未知行为必须升级深读。目录级摘要不能替代适用责任深读。 |
 | OCRM-R03 | 全部产品能力等价实现；功能矩阵是下界，不允许按“暂时用不到”、复杂度、平台、实验标记或外置发布裁剪。 |
 | OCRM-R04 | 所有迁入的业务、协议、路由、策略、调度、状态、持久化、恢复和执行控制由 Rust 实现并成为真实 owner。 |
 | OCRM-R05 | 保留当前 Fabushi 全部能力，以 existing-owner-first 融合；禁止平行产品/状态/执行真相。 |
@@ -143,7 +147,7 @@ Git tree API 被截断时必须分子树继续枚举并核对集合；GitHub sea
 
 每次完整阅读必须回答：输入/输出；公开与内部语义；顶层副作用；持有状态；调用者/消费者；异步/线程/生命周期；错误/重试/取消；持久化；权限；平台条件；兼容/版本；依赖/许可证；验证 oracle。对有多职责的文件拆分稳定 `OCRM-RESP-*`，覆盖函数/方法、注册器、事件处理、类型约束、默认值、特殊分支及跨文件关系。
 
-不能以 AST 符号数、注释摘要、读取前若干行、仅测试成功、粗粒度目录 row 或自动生成文本证明理解。大型文件按有记录的完整区间阅读，遗漏区间保持 unread。测试文件中的每个独立行为/边界 oracle 也要映射；fixture 与 mock 的能力边界不能被当作生产行为。
+不能以 AST 符号数、注释摘要、读取前若干行、仅测试成功、粗粒度目录 row 或自动生成文本证明理解。路径盘点与语义深读是两个正交维度：每条路径都必须有身份、适用性、处置和证据；只有承载行为或可能影响产品责任的路径才要求逐文件完整深读。生成文件、资源、普通文档示例、fixture、重复或研发用途项可以在可复核的生成关系/引用/许可证/静态扫描/抽样证据下成组处置，但不得把成组处置伪称为全文阅读。未知或无法判定的行为保持 `unknown` 并升级深读。测试文件中的每个独立行为/边界 oracle 也要映射；fixture 与 mock 的能力边界不能被当作生产行为。
 
 合法处置包括 Rust rewrite、reuse-and-extend-existing-Rust、presentation-replaced-with-behavior-preserved、platform-bridge、schema/build/test responsibility、licensed-asset replacement，以及有逐项依据的 non-product disposition。所有处置仍进入 inventory 分母。`not-applicable` 只能用于经源证据和审查确认无本产品责任的具体事项；不能用于缺账号、缺服务、缺平台、工作量大、source-only 或暂未实现。
 
@@ -472,7 +476,7 @@ OpenClaw 导入路径包括配置、workspace instructions、Agent profile、ski
 | ID | 必须满足的结果 |
 | --- | --- |
 | OCRM-AC01 | upstream exact source/dependency closure 经 Actions 接受；§12.3 receipt 绑定实际 subject target/ref/tree、完整输入及 lock/inventory/ledger/dossiers 的一致 provenance，清楚区分 baseline 与 evidence carrier。 |
-| OCRM-AC02 | 全部路径完成类型适配的完整阅读与处置；0 omitted、0 unread/partial、0 未审适用性。 |
+| OCRM-AC02 | 全部路径完成 exact identity、类型、适用性和 disposition；0 omitted、0 未分流路径、0 未评估适用产品责任。承载行为/高风险/公开合同/生产 producer-owner-consumer/权限安全/状态迁移/官方插件渠道平台/关键上游 oracle 的适用路径完成逐文件深读；普通文档示例、fixture、重复或研发用途项可由可复核成组证据处置。`unread` 仅表示尚未完成该路径的语义深读，不再作为全量 AC02 硬门槛；未知行为不得被归入非产品处置，必须升级深读。 |
 | OCRM-AC03 | 全部源 responsibility/capability 双向映射，0 unmapped/orphan/ambiguous owner；非产品处置逐项有证据。 |
 | OCRM-AC04 | 所有业务运行时责任在 canonical Fabushi 真实 Rust 实现或明确复用已有 Rust；表现/薄平台桥接及其他责任满足 §6.4.1 类型合同，mixed 文件无业务漏项；无原 OpenClaw core 生产 fallback。 |
 | OCRM-AC05 | 每运行时责任 production producer→owner→consumer 可达；表现/桥接有真实业务 owner 与产品入口，非运行时责任有对应构建/测试/文档/资源 consumer 或经审查的具体处置；0 stub/no-op/fake/unregistered 代替要求功能。 |
@@ -504,14 +508,14 @@ OpenClaw 导入路径包括配置、workspace instructions、Agent profile、ski
 | --- | --- | --- | --- |
 | `baseline_identity_accepted` | pinned 根来源、已声明依赖和当前 target 的身份/内容/provenance 已验证；只表示这些已声明身份可信，不表示枚举已穷尽 | G01 identity verdict 与 exact-target receipt | ref/内容/身份不匹配、缺 digest、证据不可取得；该 flag 本身不能豁免未知依赖 |
 | `source_closure_ready` | 全部 tracked 路径、gitlink/LFS、生成输入和必要递归依赖完整枚举并取得；零截断/漏项/未取得依赖；可以仍有诚实 unread | 全局 G01 closure、G02 structural；AC01 的源集合部分 | 未知或缺失来源/依赖、集合漂移、闭包不完整；不要求此时所有语义已读 |
-| `responsibility_mapping_complete` | 全部文件完成类型适配阅读、全部责任分解并 reviewed，owner/合同/oracle/依赖/类型处置双向映射完成 | G02 全局语义映射检查；AC02/AC03 | unread/partial/unclassified/unmapped/orphan/owner 歧义或来源/合同变化 |
+| `responsibility_mapping_complete` | 全部适用产品责任完成责任分解并 reviewed，owner/合同/oracle/依赖/类型处置双向映射完成；非产品路径有逐项或可复核成组 disposition 证据。它不要求普通文档/示例/fixture/重复/研发用途路径伪装成逐文件语义深读 | G02 final responsibility/disposition；AC02/AC03 | 未分流路径、未评估适用性、unmapped/orphan/owner 歧义、未知行为被错误降级或来源/合同变化 |
 | `rust_implementation_complete` | 全部业务运行时责任的真实 Rust 实现存在且合同通过，非 Rust 表现/桥接不承载迁入业务；这是实现结论，不代替生产验收 | G03/G04/G05 与 AC04 的 Rust/语言边界部分 | 缺实现、stub、业务留在 TS/原 Node core、相关 source/owner/oracle 变化 |
 | `production_wiring_complete` | 全部运行时/表现/平台责任生产接线真实；全部非运行时责任也完成各自类型合同的实际消费/分发或审定处置 | G02/G03、适用 G07/G09/G11；AC05/AC06 | unregistered、不可达消费者、缺产物/资源、未闭合类型合同或接线变化 |
 | `ecosystem_compatibility_accepted` | 全部 pinned provider/channel/plugin/skill/SDK/MCP/node 与具体外部合同逐行通过兼容及所需真实服务/设备验收 | G06/G07/G08/G12 与 AC09–AC15 的对应集合 | 缺账号/设备/服务证据、unsupported 未解决、版本/身份/合同变化 |
 | `ui_accepted` | 全部产品能力的 canonical UI/CLI/TUI 等适用交互、状态、可访问性和一致性经接受 | G07/G09/G12；AC16 | 缺入口/状态/交互证据、仅开发入口、相关视图/typed contract 变化 |
 | `release_accepted` | 其余 flags 均 true；全部类型责任 accepted，全部 AC01–AC24 通过，零 in-scope blocker，当前 H 的完整发布/独立验收 ACCEPT | 全部适用 G01–G12、当前 H 的聚合 receipt、签名/安装/升级/回滚产物 | 任一必需证据失效/过期、未配置/未测、open blocker/严重缺陷或当前 target 已改变 |
 
-P0 通常只能建立前两个 flags 的正面证据；完整语义映射可以在后续逐模块阅读中完成。G02 structural 的绿色不允许把 `responsibility_mapping_complete` 置 true；Rust 实现通过也不允许提升 wiring、ecosystem、UI 或 release。只有全部完成且证据可核验才能对外宣称完整迁移。
+P0 通常只能建立前两个 flags 的正面证据；完整适用责任映射和 disposition closure 可以在后续逐模块深读中完成。G02 structural 的绿色不允许把 `responsibility_mapping_complete` 置 true；Rust 实现通过也不允许提升 wiring、ecosystem、UI 或 release。只有全部完成且证据可核验才能对外宣称完整迁移。`unread` 统计继续如实保留，用于表示尚未深读的路径集合，不得被改写为 0，也不再被单独当作 AC02 失败理由。
 
 ## 16. References / provenance
 

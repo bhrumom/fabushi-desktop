@@ -11,7 +11,7 @@ Investigated target: `bhrumom/fabushi-desktop` HEAD
 
 A connection/request enters the canonical Gateway → authenticates/authorizes exactly once against current account/role/scope/session generation → the existing Host method owner dispatches a typed request → exactly one success/error/unknown-result settlement is exposed to the correct consumer. The implementation retains current Fabushi native dispatch and supports the complete frozen source-scope compatibility.
 
-**Current readiness:** Unit admitted into `parity-ledger.json` (`OCRM-RESP-GW-ROLE-POLICY-001` .. `OCRM-RESP-GW-DEVICE-REVOCATION-FENCE-001`). 10 source files mapped to reviewed status in Git shards. Rust implementation in `source/host/src/gateway_server.rs` and `source/host/src/host_gateway_api.rs` verified in `source/host/tests/gateway_server_contract.rs` and `source/host/tests/gateway_protocol_contract.rs`. Full project closure and release acceptance remain false until all 58,750 files are mapped and fully accepted.
+**Current readiness:** Unit admitted into `parity-ledger.json` (`OCRM-RESP-GW-ROLE-POLICY-001` .. `OCRM-RESP-GW-DEVICE-REVOCATION-FENCE-001`). 10 source files mapped to reviewed status in Git shards. Rust implementation in `source/host/src/gateway_server.rs` and `source/host/src/host_gateway_api.rs` verified in `source/host/tests/gateway_server_contract.rs` and `source/host/tests/gateway_protocol_contract.rs`. Full project closure and release acceptance remain false until every path is dispositioned and every applicable product responsibility is reviewed, implemented, wired and accepted.
 
 ## Input, state, authority, error and lifecycle contract to establish
 
