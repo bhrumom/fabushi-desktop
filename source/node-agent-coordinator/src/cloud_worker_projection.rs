@@ -171,4 +171,25 @@ mod tests {
             None
         );
     }
+
+    #[test]
+    fn preserves_read_only_owner_snapshot_facts_from_host() {
+        let projection: CloudWorkerStatusProjection = serde_json::from_value(serde_json::json!({
+            "owner": "cloud-workers",
+            "status": "enabled",
+            "providerReady": false,
+            "productionMutation": false,
+            "statePersisted": true,
+            "leaseCount": 2,
+            "warmImageCount": 1,
+            "migrationReceiptCount": 3
+        }))
+        .expect("host status projection should decode");
+        assert!(projection.state_persisted);
+        assert_eq!(projection.lease_count, 2);
+        assert_eq!(projection.warm_image_count, 1);
+        assert_eq!(projection.migration_receipt_count, 3);
+        assert!(!projection.provider_ready);
+        assert!(!projection.production_mutation);
+    }
 }
