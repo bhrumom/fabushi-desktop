@@ -3642,7 +3642,11 @@ impl UnifiedGatewayApi {
         let active_streams = self.runner_registry.active_stream_ids_for_agent(agent_id);
         let cancelled_count = self.runner_registry.cancel_agent(agent_id, "rpc");
         let run_ids = if let Some(rid) = args.get("runId").and_then(serde_json::Value::as_str) {
-            vec![rid.to_string()]
+            active_streams
+                .iter()
+                .filter(|active_id| active_id.as_str() == rid)
+                .cloned()
+                .collect::<Vec<_>>()
         } else {
             active_streams
         };
