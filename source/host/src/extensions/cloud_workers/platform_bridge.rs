@@ -1,6 +1,8 @@
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
+const MAX_LAUNCHER_ID_CHARS: usize = 256;
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum CloudWorkerPlatform {
     Linux,
@@ -30,7 +32,10 @@ impl CloudWorkerPlatformBridge {
         launcher_id: impl Into<String>,
     ) -> Result<Self, CloudWorkerPlatformBridgeError> {
         let launcher_id = launcher_id.into();
-        if launcher_id.trim().is_empty() {
+        if launcher_id.trim().is_empty()
+            || launcher_id.chars().count() > MAX_LAUNCHER_ID_CHARS
+            || launcher_id.chars().any(|character| character.is_control())
+        {
             return Err(CloudWorkerPlatformBridgeError::InvalidLauncherId);
         }
         if matches!(session, CloudWorkerDesktopSession::Vnc)
@@ -43,6 +48,10 @@ impl CloudWorkerPlatformBridge {
             session,
             launcher_id,
         })
+    }
+
+    pub fn validate(&self) -> Result<(), CloudWorkerPlatformBridgeError> {
+        Self::new(self.platform, self.session, self.launcher_id.clone()).map(|_| ())
     }
 }
 
@@ -78,6 +87,26 @@ mod tests {
                 "linux-launcher",
             ),
             Err(CloudWorkerPlatformBridgeError::UnsupportedSession)
+        );
+    }
+
+    #[test]
+    fn rejects_controlled_or_oversized_launcher_identity() {
+        assert_eq!(
+            CloudWorkerPlatformBridge::new(
+                CloudWorkerPlatform::Windows,
+                CloudWorkerDesktopSession::Interactive,
+                "launcher\nidentity",
+            ),
+            Err(CloudWorkerPlatformBridgeError::InvalidLauncherId)
+        );
+        assert_eq!(
+            CloudWorkerPlatformBridge::new(
+                CloudWorkerPlatform::Windows,
+                CloudWorkerDesktopSession::Interactive,
+                "x".repeat(257),
+            ),
+            Err(CloudWorkerPlatformBridgeError::InvalidLauncherId)
         );
     }
 }

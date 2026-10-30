@@ -318,8 +318,11 @@ cannot be overwritten as ready without the declared recovery path.
 
 The platform and sandbox boundary now has thin descriptors for OS/session
 bridges and lease-scoped workspace operations. Sandbox requests use explicit
-argv vectors and workspace-relative paths; they do not interpolate shell
-strings, own platform policy, or create a second agent/conversation runtime.
+argv vectors and workspace-relative paths; cross-platform separators, control
+text, identifier sizes and argv/path collection sizes are rejected before
+delegation. Platform launcher descriptors revalidate their identity on use.
+These contracts do not interpolate shell strings, own platform policy, or
+create a second agent/conversation runtime.
 
 The doctor/recovery projection at
 `source/host/src/extensions/cloud_workers/doctor.rs` distinguishes inspection

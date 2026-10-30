@@ -5,6 +5,11 @@ use thiserror::Error;
 
 use super::{CloudWorkerLeaseScope, LeaseId, ReplayKey};
 
+const MAX_ID_CHARS: usize = 256;
+const MAX_PATH_CHARS: usize = 4096;
+const MAX_ARGV: usize = 128;
+const MAX_ARG_CHARS: usize = 4096;
+
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct CloudWorkerSandboxCapability {
     pub lease_id: LeaseId,
@@ -21,7 +26,13 @@ impl CloudWorkerSandboxCapability {
         workspace_id: impl Into<String>,
     ) -> Result<Self, CloudWorkerSandboxError> {
         let workspace_id = workspace_id.into();
-        if workspace_id.trim().is_empty() {
+        validate_id(&lease_id.0)?;
+        CloudWorkerLeaseScope::new(
+            scope.account_scope.clone(),
+            scope.device_scope.clone(),
+        )
+        .map_err(|_| CloudWorkerSandboxError::InvalidScope)?;
+        if !valid_text_id(&workspace_id) {
             return Err(CloudWorkerSandboxError::InvalidWorkspace);
         }
         Ok(Self {
@@ -51,14 +62,22 @@ pub struct CloudWorkerSandboxRequest {
 
 impl CloudWorkerSandboxRequest {
     pub fn validate(&self) -> Result<(), CloudWorkerSandboxError> {
-        if self.workspace_id.trim().is_empty() || self.replay_key.0.trim().is_empty() {
+        validate_id(&self.lease_id.0)?;
+        if !valid_text_id(&self.workspace_id) || !valid_text_id(&self.replay_key.0) {
             return Err(CloudWorkerSandboxError::InvalidRequest);
         }
         match &self.operation {
             CloudWorkerSandboxOperation::ReadFile { path }
             | CloudWorkerSandboxOperation::WriteFile { path } => validate_workspace_path(path),
             CloudWorkerSandboxOperation::ExecuteArgv { argv } => {
-                if argv.is_empty() || argv.iter().any(|arg| arg.contains('\0')) {
+                if argv.is_empty()
+                    || argv.len() > MAX_ARGV
+                    || argv.iter().any(|arg| {
+                        arg.is_empty()
+                            || arg.chars().count() > MAX_ARG_CHARS
+                            || arg.chars().any(|character| character.is_control())
+                    })
+                {
                     return Err(CloudWorkerSandboxError::InvalidArgv);
                 }
                 Ok(())
@@ -70,6 +89,9 @@ impl CloudWorkerSandboxRequest {
 fn validate_workspace_path(path: &str) -> Result<(), CloudWorkerSandboxError> {
     let path = std::path::Path::new(path);
     if path.as_os_str().is_empty()
+        || path.to_string_lossy().chars().count() > MAX_PATH_CHARS
+        || path.to_string_lossy().chars().any(|character| character.is_control())
+        || path.to_string_lossy().contains('\\')
         || path.is_absolute()
         || path.components().any(|component| {
             matches!(component, Component::ParentDir | Component::Prefix(_))
@@ -80,10 +102,28 @@ fn validate_workspace_path(path: &str) -> Result<(), CloudWorkerSandboxError> {
     Ok(())
 }
 
+fn valid_text_id(value: &str) -> bool {
+    !value.trim().is_empty()
+        && value.chars().count() <= MAX_ID_CHARS
+        && !value.chars().any(|character| character.is_control())
+}
+
+fn validate_id(value: &str) -> Result<(), CloudWorkerSandboxError> {
+    if valid_text_id(value) {
+        Ok(())
+    } else {
+        Err(CloudWorkerSandboxError::InvalidLease)
+    }
+}
+
 #[derive(Debug, Error, Clone, PartialEq, Eq)]
 pub enum CloudWorkerSandboxError {
     #[error("sandbox workspace must be non-empty")]
     InvalidWorkspace,
+    #[error("sandbox lease id is invalid")]
+    InvalidLease,
+    #[error("sandbox lease scope is invalid")]
+    InvalidScope,
     #[error("sandbox request must include workspace and replay identities")]
     InvalidRequest,
     #[error("sandbox path escapes the workspace")]
@@ -124,6 +164,24 @@ mod tests {
             })
             .validate(),
             Err(CloudWorkerSandboxError::UnsafePath)
+        );
+    }
+
+    #[test]
+    fn rejects_cross_platform_path_separators_and_control_text() {
+        assert_eq!(
+            request(CloudWorkerSandboxOperation::ReadFile {
+                path: "dir\\secret".into(),
+            })
+            .validate(),
+            Err(CloudWorkerSandboxError::UnsafePath)
+        );
+        assert_eq!(
+            request(CloudWorkerSandboxOperation::ExecuteArgv {
+                argv: vec!["git\nstatus".into()],
+            })
+            .validate(),
+            Err(CloudWorkerSandboxError::InvalidArgv)
         );
     }
 }
