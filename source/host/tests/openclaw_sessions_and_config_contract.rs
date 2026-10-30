@@ -199,6 +199,21 @@ fn test_sessions_get_empty_messages_200_invariant() {
 }
 
 #[test]
+fn test_sessions_list_projects_exact_active_run_set() {
+    let shipping_source = include_str!("../app/src/main.rs");
+    let sessions_list = shipping_source
+        .split("fn call_openclaw_sessions_list(")
+        .nth(1)
+        .expect("shipping sessions.list owner exists")
+        .split("fn call_openclaw_sessions_get(")
+        .next()
+        .expect("shipping sessions.list function boundary exists");
+    assert!(sessions_list.contains("active_stream_ids_for_agent(&s.id)"));
+    assert!(sessions_list.contains("\"hasActiveRun\": !active_run_ids.is_empty()"));
+    assert!(sessions_list.contains("\"activeRunIds\": active_run_ids"));
+}
+
+#[test]
 fn test_sessions_create_requires_durable_agent_identity() {
     let shipping_source = include_str!("../app/src/main.rs");
     let sessions_create = shipping_source
