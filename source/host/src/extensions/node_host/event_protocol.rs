@@ -51,6 +51,10 @@ pub fn build_node_event_params(
     event: impl Into<String>,
     payload: Option<&Value>,
 ) -> Result<NodeEventParams, String> {
+    let event = event.into();
+    if event.trim().is_empty() {
+        return Err("node.event event name must not be empty".into());
+    }
     let payload_json = payload
         .map(serde_json::to_string)
         .transpose()
@@ -105,6 +109,11 @@ mod tests {
             serde_json::to_value(params).expect("params serialize"),
             serde_json::json!({"event":"node.ready","payloadJSON":null})
         );
+    }
+
+    #[test]
+    fn rejects_blank_event_names() {
+        assert!(build_node_event_params("  ", None).is_err());
     }
 
     #[test]
