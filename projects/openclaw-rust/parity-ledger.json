@@ -2033,7 +2033,9 @@
     {
       "adr_refs": [],
       "behavior": "Agent Client Protocol (ACP) available commands surface, viral turn tainting, and auto-review gate resolution.",
-      "blocker_ids": [],
+      "blocker_ids": [
+        "BL-MEDIA-DOC-TRUNCATION-UPSTREAM-CALLER-001"
+      ],
       "capability_ids": [
         "agent.acp_commands"
       ],
@@ -2106,7 +2108,7 @@
         "mapping": "reviewed",
         "read": "read-complete",
         "verification": "not-run",
-        "wiring": "wired"
+        "wiring": "not-wired"
       },
       "target": {
         "language": "Rust",
@@ -8573,9 +8575,7 @@
     {
       "adr_refs": [],
       "behavior": "Formats structured notice for partial document text or page extractions, reflecting automatic selection limits, explicit user limits, and text/image truncation flags.",
-      "blocker_ids": [
-        "BL-MEDIA-DOC-TRUNCATION-UPSTREAM-CALLER-001"
-      ],
+      "blocker_ids": [],
       "capability_ids": [
         "media.doc_truncation"
       ],
@@ -8594,10 +8594,10 @@
       ],
       "id": "OCRM-RESP-MEDIA-DOC-TRUNCATION-001",
       "integration": {
-        "consumer": "source/host/src/extensions/attachments/attachments_service.rs::read_text (pending document preview truncation notice attachment)",
-        "entrypoint": "source/host/src/extensions/attachments/attachments_service.rs::dispatch_gateway(\"renderDocumentTruncation\")",
+        "consumer": "source/host/app/src/main.rs::dispatch_gateway_call -> source/host/src/extensions/attachments/attachments_service.rs::dispatch_gateway(\"readAttachmentText\")",
+        "entrypoint": "source/host/src/extensions/attachments/attachments_service.rs::dispatch_gateway(\"readAttachmentText\") -> AttachmentsService::read_text_with_document_metadata",
         "owner": "source/host/src/extensions/attachments/media_file_context.rs::render_document_truncation_notice",
-        "producer": "source/host/src/extensions/attachments/attachments_service.rs"
+        "producer": "source/host/src/extensions/attachments/attachments_service.rs::read_text_with_document_metadata"
       },
       "invariants": [
         "Returns None when metadata contains no truncation flags and no explicit selection limit is set",
@@ -8647,7 +8647,7 @@
         "mapping": "reviewed",
         "read": "read-complete",
         "verification": "not-run",
-        "wiring": "not-wired"
+        "wiring": "wired"
       },
       "target": {
         "language": "Rust",

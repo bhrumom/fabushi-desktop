@@ -55,10 +55,9 @@ The audited source code was decomposed into 6 discrete Rust runtime responsibili
 4. **`OCRM-RESP-MEDIA-DOC-TRUNCATION-001`**:
    - **Behavior**: Formats structured notice for partial document text or page extractions, reflecting automatic selection limits, explicit user limits, and text/image truncation flags.
    - **Rust Owner**: `source/host/src/extensions/attachments/media_file_context.rs::render_document_truncation_notice`.
-   - **Production Call Chain**: Producer `AttachmentsService::dispatch_gateway("renderDocumentTruncation")` → Owner `render_document_truncation_notice` → Consumer (pending document extraction preview attachment pipeline).
+   - **Production Call Chain**: Producer `source/host/app/src/main.rs::dispatch_gateway_call` → `source/host/src/extensions/attachments/attachments_service.rs::dispatch_gateway("readAttachmentText")` → `AttachmentsService::read_text_with_document_metadata` → Owner `render_document_truncation_notice`.
    - **Oracles**: `OCRM-FILE-CTX-O05`, `OCRM-FILE-CTX-O08`.
-   - **Status**: `implementation=implemented`, `wiring=not-wired`, `verification=not-run` (`blocker_ids=["BL-MEDIA-DOC-TRUNCATION-UPSTREAM-CALLER-001"]`: document extraction preview pipeline does not yet invoke `render_document_truncation_notice`).
-   - The Rust service now exposes an optional metadata-aware preview helper and the contract test exercises it with synthetic metadata, but the Electron preload/main bridge still sends only `{path}` and no real extraction result reaches this helper. This is local parameter-contract evidence only, not production wiring.
+   - **Status**: `implementation=implemented`, `wiring=not-wired`, `verification=not-run`, `acceptance=pending` (`blocker_ids=["BL-MEDIA-DOC-TRUNCATION-UPSTREAM-CALLER-001"]`: the gateway exposes the metadata-aware helper, but the Electron preload/main bridge still sends only `{path}` and no real extraction result reaches it).
 
 5. **`OCRM-RESP-MEDIA-PROMPT-IMAGE-PROVENANCE-001`**:
    - **Behavior**: Carries prompt image fact ownership indexes across provider-visible message payload structures without altering provider-visible bytes or schema contracts.
