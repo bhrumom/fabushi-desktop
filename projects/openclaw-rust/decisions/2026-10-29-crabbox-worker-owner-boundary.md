@@ -3,7 +3,9 @@
 Status: proposed implementation boundary; does not claim implementation, wiring, verification, or acceptance
 Date: 2026-10-29 (Asia/Shanghai)
 Project: OCRM-001 / OCRM-M10 / OCRM-M11 / OCRM-M13 / OCRM-M16
-Upstream authority: `openclaw/openclaw@ad8d12f126d29b0db204187adf5092db80294e70`, tree `04ccce62f1d74dc8e0c88290ae8ded027b7b0f16`
+Scoped source reference: `openclaw/openclaw@ad8d12f126d29b0db204187adf5092db80294e70`, tree `04ccce62f1d74dc8e0c88290ae8ded027b7b0f16` (historical scoped read, not the current source lock)
+
+Current live-main discovery candidate is `openclaw/openclaw@c32556b0cea7f63b33db0ac393affd71ecb0015b`, tree `e08d361d83ca9cae55aa93d49462d991d0a39efc`; it remains discovery-only until the exact-subject Actions inventory and dependency-closure authority is produced.
 
 ## Decision question
 

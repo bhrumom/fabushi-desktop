@@ -349,8 +349,9 @@ The pure contracts are now composed by
 lease/warm-image maps, independent lease and warm-image capacity fencing, and
 typed mutation delegation. Direct admit/register writes use the same deep
 identity and state validation as snapshot restore. The
-production extension boundary exists, but the owner still has no
-persistence or provider side-effect adapter. The Coordinator→Host Gateway now
+production extension boundary exists and now owns a fail-closed persistence
+adapter, but no provider side-effect adapter or production mutation producer is
+connected. The Coordinator→Host Gateway now
 exposes only the read-only `cloudWorkers.status` projection; mutating commands
 remain unregistered until their real producer, authorization, persistence and
 consumer paths are implemented. Packaged UI/CLI reachability remains open.
