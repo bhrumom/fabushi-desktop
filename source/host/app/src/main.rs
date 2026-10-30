@@ -3942,6 +3942,7 @@ impl UnifiedGatewayApi {
                     "paired": node.paired,
                     "active": node.active,
                     "gatewayLocal": node.gateway_local,
+                    "generation": node.generation,
                     "capabilities": node.capabilities
                 })
             })
@@ -4011,7 +4012,8 @@ impl UnifiedGatewayApi {
                     "connected": node.connected,
                     "paired": node.paired,
                     "active": node.active,
-                    "gatewayLocal": node.gateway_local
+                    "gatewayLocal": node.gateway_local,
+                    "generation": node.generation
                 }));
             }
         }
