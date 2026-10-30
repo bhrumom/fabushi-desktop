@@ -93,17 +93,16 @@ fn test_system_info_schema_and_zero_secret_leakage() {
     let cpu_count = std::thread::available_parallelism().map(|n| n.get()).unwrap_or(1);
     let memory = mahayana_host_runtime::host_system_info::sample_host_memory()
         .expect("host memory observation");
-    let hostname = std::env::var("HOSTNAME")
-        .or_else(|_| std::env::var("COMPUTERNAME"))
-        .ok()
-        .filter(|value| !value.trim().is_empty())
-        .unwrap_or_else(|| "unknown".into());
+    let hostname = mahayana_host_runtime::host_system_info::sample_host_hostname()
+        .expect("host hostname observation");
+    let release = mahayana_host_runtime::host_system_info::sample_host_os_release()
+        .expect("host OS release observation");
 
     let info = json!({
         "machineName": hostname.clone(),
         "hostname": hostname,
         "platform": std::env::consts::OS,
-        "release": std::env::consts::OS,
+        "release": release,
         "arch": std::env::consts::ARCH,
         "osLabel": std::env::consts::OS,
         "pid": pid,
@@ -131,6 +130,21 @@ fn test_system_info_schema_and_zero_secret_leakage() {
     assert!(!serialized.contains("token"));
     assert!(!serialized.contains("secret"));
     assert!(!serialized.contains("apiKey"));
+
+    let shipping_source = include_str!("../app/src/main.rs");
+    let system_info = shipping_source
+        .split("fn call_openclaw_system_info(")
+        .nth(1)
+        .expect("shipping system.info owner exists")
+        .split("fn call_openclaw_sessions_list(")
+        .next()
+        .expect("shipping system.info function boundary exists");
+    assert!(system_info.contains("sample_host_memory"));
+    assert!(system_info.contains("sample_host_os_release"));
+    assert!(system_info.contains("sample_host_hostname"));
+    assert!(system_info.contains("\"nodeVersion\""));
+    assert!(!system_info.contains("\"version\": env!(\"CARGO_PKG_VERSION\")"));
+    assert!(!system_info.contains("\"status\": \"ok\""));
 
     // Verify diagnostics recorded
     assert!(recorded_diagnostics.lock().unwrap().contains(&"system.info.queried".to_string()));
