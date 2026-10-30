@@ -2006,3 +2006,14 @@ for host-stat and worker-process event callbacks.
 The gate stores no second session registry and performs no socket I/O. A live
 Gateway caller, event producer selection, retry policy, and remote delivery
 receipt remain unimplemented and are not claimed by this slice.
+
+## 162. Live-source supersession note (2026-10-30)
+
+The historical live-main observations in earlier sections of this dossier
+remain preserved as dated discovery evidence. They are superseded for current
+source navigation by the later read-only candidate
+`c49e07385f8d17601efbed7746381213d5326ba9` / tree
+`fcd6e0b9b42da1e3d39ca89c69ac779294cc3bfb`, recorded in the project
+`SOURCE_OF_TRUTH.md` and main equivalence Spec. This note does not promote the
+candidate to the implementation lock, rewrite prior blob claims, or close
+inventory, dependency, Actions, or production-transport acceptance.
