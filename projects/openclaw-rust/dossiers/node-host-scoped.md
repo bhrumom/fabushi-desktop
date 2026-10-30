@@ -2353,3 +2353,19 @@ This establishes the upstream hello producer → credential-store seam, with
 contract coverage for scope normalization and stale persistence rejection. It
 still does not parse WebSocket frames, select bootstrap/device-token auth,
 publish live session state, or wire a production transport caller.
+
+## 182. Strict Gateway frame and correlation seam (2026-10-30)
+
+`source/host/src/extensions/node_host/gateway_frames.rs` now defines a bounded
+and fail-closed Gateway envelope for `req`, `res`, and `event` frames. Unknown
+top-level fields, malformed identities, invalid response success/error shapes,
+control characters, and oversized frames are rejected. Request metadata that is
+part of the current upstream envelope is retained rather than silently
+discarded.
+
+The same module provides a monotonic pending-request registry keyed by an
+opaque connection generation. Replacing a generation clears predecessor
+requests, and a response from a stale generation cannot settle current work.
+This is only the frame/correlation seam: it does not own sockets, TLS, Gateway
+challenge handling, handshake ordering, reconnect policy, or production
+NodeHost routing.
