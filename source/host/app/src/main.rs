@@ -3384,7 +3384,8 @@ impl UnifiedGatewayApi {
             .take(limit)
             .map(|s| {
                 let active_run_ids = self.runner_registry.active_stream_ids_for_agent(&s.id);
-                let status = if s.is_running { "running" } else { "done" };
+                let has_active_run = !active_run_ids.is_empty();
+                let status = if s.is_running || has_active_run { "running" } else { "done" };
                 serde_json::json!({
                     "key": format!("agent:{}:main", s.id),
                     "sessionId": s.id,
@@ -3395,7 +3396,7 @@ impl UnifiedGatewayApi {
                     "pinned": false,
                     "unread": s.has_unread,
                     "status": status,
-                    "hasActiveRun": !active_run_ids.is_empty(),
+                    "hasActiveRun": has_active_run,
                     "activeRunIds": active_run_ids,
                 })
             })

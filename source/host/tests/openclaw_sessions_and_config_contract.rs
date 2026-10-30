@@ -212,7 +212,9 @@ fn test_sessions_list_projects_exact_active_run_set() {
         .next()
         .expect("shipping sessions.list function boundary exists");
     assert!(sessions_list.contains("active_stream_ids_for_agent(&s.id)"));
-    assert!(sessions_list.contains("\"hasActiveRun\": !active_run_ids.is_empty()"));
+    assert!(sessions_list.contains("let has_active_run = !active_run_ids.is_empty()"));
+    assert!(sessions_list.contains("s.is_running || has_active_run"));
+    assert!(sessions_list.contains("\"hasActiveRun\": has_active_run"));
     assert!(sessions_list.contains("\"activeRunIds\": active_run_ids"));
 }
 
