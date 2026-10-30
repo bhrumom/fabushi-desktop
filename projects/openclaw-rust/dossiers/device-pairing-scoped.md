@@ -221,3 +221,5 @@ requested role entry in the durable token map, preserving tokens for other
 approved roles; `token_rotation_preserves_tokens_for_other_approved_roles`
 covers that multi-role invariant at the source level, and the public pairing
 contract exercises operator-token authentication after a node-only rotation.
+The Gateway contract also exercises a real node token against
+`device.pair.list` and requires the operator-surface `ROLE_MISMATCH` refusal.

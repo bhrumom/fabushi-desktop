@@ -262,6 +262,54 @@ fn gateway_accepts_pairing_owner_device_token_without_gateway_secret() {
 }
 
 #[test]
+fn gateway_rejects_node_token_on_operator_pairing_surface() {
+    let owner = Arc::new(DevicePairingOwner::in_memory().expect("pairing owner"));
+    let pending = owner
+        .handle_pair_request(&json!({
+            "deviceId": "device-node-only",
+            "publicKey": "public-key-node-only",
+            "roles": ["node"]
+        }))
+        .expect("pair request");
+    let request_id = pending
+        .get("requestId")
+        .and_then(Value::as_str)
+        .expect("request id");
+    owner
+        .handle_pair_approve(&json!({ "requestId": request_id }))
+        .expect("pair approval");
+    let rotated = owner
+        .handle_pair_rotate_token(&json!({
+            "deviceId": "device-node-only",
+            "role": "node"
+        }))
+        .expect("node token rotation");
+    let token = rotated
+        .get("token")
+        .and_then(Value::as_str)
+        .expect("node token");
+
+    let server = start_gateway_server(GatewayServerDeps {
+        api: Arc::new(PairingOwnerApi { owner }),
+        events: GatewayEventHub::default(),
+        local_exec: None,
+        webauthn: None,
+        config: config(None),
+        started_at: 100,
+    })
+    .expect("gateway server");
+    let response = request(
+        server.port(),
+        &format!(
+            "POST /api/device.pair.list HTTP/1.1\r\nHost: 127.0.0.1\r\nAuthorization: Bearer {token}\r\nContent-Length: 2\r\nConnection: close\r\n\r\n{{}}"
+        ),
+    );
+    assert!(response.starts_with("HTTP/1.1 403 Forbidden"), "{response}");
+    assert!(response.contains("ROLE_MISMATCH"), "{response}");
+    server.close();
+}
+
+#[test]
 fn gateway_pairing_join_route_reaches_sqlite_owner_and_burns_code() {
     let owner = Arc::new(DevicePairingOwner::in_memory().expect("pairing owner"));
     let expires_at_ms = SystemTime::now()
