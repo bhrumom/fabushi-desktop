@@ -1,6 +1,6 @@
 # ADR: Node Host transport owner boundary
 
-Status: accepted for implementation design; production wiring pending exact-source closure
+Status: accepted for implementation design; production wiring pending exact-source closure and a legitimate endpoint caller
 Date: 2026-10-30
 Scope: Fabushi Desktop Host / OCRM-M13 Node Host
 
@@ -57,6 +57,19 @@ depend on this explicit credential-owner interface for installation-local
 identity, raw public-key encoding, challenge signing, and token reads. It must
 not create ephemeral keys or inspect pairing storage directly. The producer
 that receives/approves a Gateway-issued NodeHost token is still not wired.
+
+## Caller reachability revalidation (2026-10-30)
+
+A read-only search of the current checkout found no legitimate production
+caller for the OpenClaw NodeHost client. `DevicePairingOwner::handle_pair_setup_code`
+validates an optional `gatewayUrl` and echoes it in a short-lived setup result;
+it does not persist an endpoint or start a NodeHost transport. The Electron
+`GatewayDescriptorStore`/box connector owns the Fabushi Sand box/backend
+connection, while `gateway_server.rs` and `native/mahayana-messaging` own the
+inbound Fabushi messaging server. None is an OpenClaw NodeHost client config
+owner. Pairing rows therefore remain approval/identity input only, and no
+startup caller may infer a NodeHost endpoint from them or from an unrelated
+Sand descriptor.
 
 ## Consequences
 

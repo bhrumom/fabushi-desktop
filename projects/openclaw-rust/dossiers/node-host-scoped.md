@@ -2463,3 +2463,15 @@ projection path from a composed `NodeHostManifest` into live node session
 metadata. A retired or disconnected generation cannot republish commands or
 capabilities. The seam does not invent a plugin registry, refresh schedule, or
 available command; those producers and remote acceptance remain pending.
+
+## 188. NodeHost production-caller reachability audit (2026-10-30)
+
+The current source was re-read for a legitimate endpoint/config caller.
+`DevicePairingOwner::handle_pair_setup_code` only validates and echoes an
+optional setup `gatewayUrl`; it does not persist a NodeHost endpoint or launch
+the transport. Electron's `GatewayDescriptorStore` and box connector belong to
+the Fabushi Sand/backend path, and `gateway_server.rs` plus
+`native/mahayana-messaging` are inbound Fabushi messaging owners. They are not
+valid OpenClaw NodeHost client owners. This preserves the fail-closed remote
+projection and records the exact missing production caller instead of inferring
+one from pairing rows or unrelated descriptors.
