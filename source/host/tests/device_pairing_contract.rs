@@ -384,6 +384,13 @@ fn test_ocrm_pair_o11_rotate_token_in_band_and_cross_device() {
             &json!({ "requestId": multi_role_request["requestId"] }),
         )
         .unwrap();
+    let operator_rotation = owner
+        .handle_pairing_command(
+            "device.pair.rotateToken",
+            &json!({ "deviceId": "dev-multi-role", "role": "operator" }),
+        )
+        .unwrap();
+    let operator_token = operator_rotation["token"].as_str().unwrap().to_string();
     let node_rotation = owner
         .handle_pairing_command(
             "device.pair.rotateToken",
@@ -391,6 +398,7 @@ fn test_ocrm_pair_o11_rotate_token_in_band_and_cross_device() {
         )
         .unwrap();
     assert_eq!(node_rotation["role"], "node");
+    assert!(owner.authenticate_device_token(&operator_token).unwrap().is_some());
 }
 
 #[test]

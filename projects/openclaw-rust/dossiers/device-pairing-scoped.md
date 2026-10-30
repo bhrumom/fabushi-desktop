@@ -219,4 +219,5 @@ and verifies that rotation removes them; this remains source-level evidence
 until the declared Actions run executes it. Rotation also replaces only the
 requested role entry in the durable token map, preserving tokens for other
 approved roles; `token_rotation_preserves_tokens_for_other_approved_roles`
-covers that multi-role invariant at the source level.
+covers that multi-role invariant at the source level, and the public pairing
+contract exercises operator-token authentication after a node-only rotation.
