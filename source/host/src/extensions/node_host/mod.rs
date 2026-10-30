@@ -1,5 +1,6 @@
 pub mod gateway_connection;
 pub mod device_auth;
+pub mod hello_auth;
 pub mod command_dispatch;
 pub mod runtime_manifest;
 pub mod session_registry;

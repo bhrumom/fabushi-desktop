@@ -2338,3 +2338,18 @@ payload contract. It does not open a socket, parse `connect.challenge`,
 select bootstrap versus cached auth, send `connect`, or persist `hello-ok`
 device tokens; those remain transport-owner work pending exact source closure
 and a real Gateway producer/consumer path.
+
+## 181. `hello-ok` device-token persistence seam (2026-10-30)
+
+`source/host/src/extensions/node_host/hello_auth.rs` now strictly parses a
+decoded `hello-ok` payload, accepts only a bounded non-empty
+`auth.deviceToken` with role and scopes, normalizes/deduplicates scopes, and
+passes the result to the credential owner with the Gateway origin and
+`expectedToken` fence. A hello without a device token is treated as no
+persistence work; malformed auth fails closed. The adapter also exposes the
+owner-mediated stale-token clear path without reading pairing rows.
+
+This establishes the upstream hello producer → credential-store seam, with
+contract coverage for scope normalization and stale persistence rejection. It
+still does not parse WebSocket frames, select bootstrap/device-token auth,
+publish live session state, or wire a production transport caller.
