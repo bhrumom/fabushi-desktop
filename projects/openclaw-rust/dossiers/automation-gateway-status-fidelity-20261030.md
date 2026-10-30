@@ -13,7 +13,8 @@ returned `finished: true` and `status: "ok"` without observing a terminal run.
 event schedule, derives update/status/error fields from the existing
 `AutomationRecord` and its bounded run history, and returns `accepted` rather
 than a fabricated terminal result when a post-trigger terminal run is not
-observable.
+observable. It also omits `runId` until a newly observed canonical run exists;
+there is no UUID fallback for an unobserved trigger.
 
 No second automation store or scheduler was added. The existing automation
 runtime remains the producer and lifecycle owner; this change only repairs the

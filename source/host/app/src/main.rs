@@ -3770,24 +3770,27 @@ impl UnifiedGatewayApi {
                     .cloned()
             });
 
-        let run_id = format!("run-{}", uuid::Uuid::new_v4());
         let now = started_at_ms();
         let finished = observed.as_ref().and_then(|run| run.finished_at).is_some();
-        Ok(serde_json::json!({
+        let mut response = serde_json::json!({
             "ok": true,
             "enqueued": true,
-            "runId": run_id,
             "processInstanceId": format!("sand-host-{}", std::process::id()),
             "finished": finished,
             "run": {
                 "jobId": job_id,
-                "runId": run_id,
                 "action": if finished { "finished" } else { "accepted" },
                 "status": observed.as_ref().map(|run| run.status.as_str()).unwrap_or("accepted"),
                 "detail": observed.as_ref().and_then(|run| run.detail.as_deref()),
                 "ts": now,
             }
-        }))
+        });
+        if let Some(run) = observed {
+            let run_id = serde_json::Value::String(run.id);
+            response["runId"] = run_id.clone();
+            response["run"]["runId"] = run_id;
+        }
+        Ok(response)
     }
 
     fn call_openclaw_node_register(

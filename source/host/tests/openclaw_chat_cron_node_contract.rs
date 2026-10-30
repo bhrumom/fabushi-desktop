@@ -571,4 +571,5 @@ fn test_ocrm_cron_projection_does_not_invent_schedule_or_terminal_status() {
     assert!(trigger.contains("\"action\": if finished"));
     assert!(trigger.contains("unwrap_or(\"accepted\")"));
     assert!(!trigger.contains("if let Ok(records)"));
+    assert!(!trigger.contains("format!(\"run-{}\", uuid::Uuid::new_v4())"));
 }
