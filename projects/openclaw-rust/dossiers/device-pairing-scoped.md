@@ -203,7 +203,7 @@ pending rows before creating a new request. The original request then reports
 `rejected` rather than remaining a usable approval handle.
 
 This closes the local pending producer → SQLite owner → status consumer
-invariant, including the five-minute TTL based on the original or refreshed
+invariant, including the fifteen-minute TTL based on the original or refreshed
 timestamp; expired rows are purged before status, approval, rejection, list,
 or a new request can reuse them. Approval-worker concurrency,
 reconnect-generation fencing, and companion acceptance remain separate open
