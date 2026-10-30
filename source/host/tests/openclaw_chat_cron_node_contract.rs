@@ -195,6 +195,7 @@ fn test_ocrm_chat_o05_abort_invokes_runner_registry_cancellation() {
     let shipping_abort = &SHIPPING_HOST_MAIN[abort_start..abort_end];
     assert!(shipping_abort.contains("active_stream_ids_for_agent"));
     assert!(shipping_abort.contains("active_id.as_str() == rid"));
+    assert!(shipping_abort.contains("chat.abort requires a non-empty agent identity"));
     assert!(!shipping_abort.contains("format!(\"run-{agent_id}\")"));
 }
 

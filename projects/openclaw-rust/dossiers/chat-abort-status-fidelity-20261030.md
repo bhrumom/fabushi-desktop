@@ -8,6 +8,9 @@ and returns that observed set; an inactive agent therefore returns an empty
 returned only when it matches a stream observed as active before cancellation;
 the request parameter is not treated as proof that a run existed.
 
+The same boundary rejects a non-empty session key that parses to an empty agent
+identity, such as `agent::main`, before reaching the cancellation owner.
+
 The existing `TranscriptRunnerRegistry` remains the sole cancellation owner.
 Static source review and `git diff --check` are the only development evidence;
 local OCRM tests/builds and live cancellation acceptance remain pending.

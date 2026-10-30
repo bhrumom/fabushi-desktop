@@ -3664,6 +3664,11 @@ impl UnifiedGatewayApi {
         } else {
             session_key
         };
+        if agent_id.is_empty() {
+            return Err(GatewayCommandError::BadRequest(
+                "chat.abort requires a non-empty agent identity".into(),
+            ));
+        }
 
         let active_streams = self.runner_registry.active_stream_ids_for_agent(agent_id);
         let cancelled_count = self.runner_registry.cancel_agent(agent_id, "rpc");
