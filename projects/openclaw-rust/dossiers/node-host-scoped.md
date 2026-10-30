@@ -1960,3 +1960,12 @@ The public Gateway response remains the existing local compatibility shape;
 the typed envelope is now the canonical invocation terminal record rather than
 an independent response owner. Remote transport/result delivery and real
 device acceptance remain pending.
+
+## 157. Computer side-effect generation admission repair (2026-10-30)
+
+The Computer dispatch owner now rejects `Act` and `Snapshot` requests that
+omit or blank `provider_generation`, using the same opaque-generation mismatch
+error as stale values. `Capabilities` remains able to query the current
+executor generation without an input generation. This closes the pre-side
+effect currentness gate and adds a negative contract case; it does not choose
+or wire the production Computer executor, remote transport, or device lane.

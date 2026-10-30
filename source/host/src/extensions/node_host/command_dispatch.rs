@@ -66,10 +66,13 @@ pub fn dispatch_node_worker_computer_command_with_executor<E: NodeWorkerComputer
         .filter(|value| !value.trim().is_empty())
         .ok_or_else(|| COMPUTER_DRIVER_UNAVAILABLE.to_string())?;
     if input.operation != ComputerOperation::Capabilities {
-        if let Some(req_gen) = input.provider_generation.as_deref() {
-            if req_gen != generation {
-                return Err(COMPUTER_CONTRACT_MISMATCH.to_string());
-            }
+        let req_gen = input
+            .provider_generation
+            .as_deref()
+            .filter(|value| !value.trim().is_empty())
+            .ok_or_else(|| COMPUTER_CONTRACT_MISMATCH.to_string())?;
+        if req_gen != generation {
+            return Err(COMPUTER_CONTRACT_MISMATCH.to_string());
         }
     }
 

@@ -21,7 +21,7 @@ Make the node-host dispatch boundary fail closed and executor-driven: preserve c
 ## Requirements
 
 - R1: `Close` returns the existing closed response without requiring a driver.
-- R2: non-close operations require a current opaque provider-generation string; mismatches return `COMPUTER_CONTRACT_MISMATCH` without coercing or numerically interpreting the value.
+- R2: `Act` and `Snapshot` require a non-empty current opaque provider-generation string; missing, blank, or stale values return `COMPUTER_CONTRACT_MISMATCH` without coercing or numerically interpreting the value. `Capabilities` may query the current executor generation without an input generation.
 - R3: capabilities, action, and snapshot are delegated through an explicit executor interface; no hardcoded successful action or fake image payload remains in shipping dispatch code.
 - R4: malformed action parameters and executor failures remain errors; no retry or replay is introduced by the dispatcher.
 - R5: currentness/generation validation occurs before executor side effects.
