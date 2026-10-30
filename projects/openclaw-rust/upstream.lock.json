@@ -25,14 +25,14 @@
   "live_candidate": {
     "repository": "openclaw/openclaw",
     "ref": "refs/heads/main",
-    "commit": "c32556b0cea7f63b33db0ac393affd71ecb0015b",
-    "tree": "e08d361d83ca9cae55aa93d49462d991d0a39efc",
+    "commit": "5f6f15fed0d6ba618cf781c9686a8b93f499564b",
+    "tree": "ee0af1d3ba415e7763da6759ca47b245031a21c9",
     "observed_at": "2026-10-30",
     "discovery_source": "GitHub commit/tree API",
     "recursive_tree_truncated": false,
-    "recursive_tree_entries": 63485,
-    "recursive_blob_entries": 61246,
-    "recursive_directory_entries": 2239,
+    "recursive_tree_entries": 63519,
+    "recursive_blob_entries": 61279,
+    "recursive_directory_entries": 2240,
     "root_inputs": {
       "package.json": "f1a92c3c04328301f0d1b55188846545534ea616",
       "pnpm-lock.yaml": "14ec89238970e23718e93f5f6f160e6db217311",
@@ -45,13 +45,11 @@
     "authority_status": "discovery-only; requires fresh GitHub Actions inventory and dependency closure"
   },
   "drift_from_discovery": {
-    "ahead_by": 13,
-    "changed_paths": 300,
-    "modified": 237,
-    "removed": 43,
-    "added": 20,
-    "renamed": 0,
-    "decision": "rebaseline-to-live-main-and-freeze-exact-commit-for-current-round"
+    "ahead_by": 5461,
+    "behind_by": 0,
+    "compare_files_returned": 300,
+    "compare_file_counts_are_not_complete": true,
+    "decision": "new-live-main-observed; retain-discovery-only-status-until-fresh-actions-inventory-and-dependency-closure"
   },
   "root_inputs": {
     "AGENTS.md": "c3deeccdb6b1a4c7137d56297e933bbf19f4d3bf",
