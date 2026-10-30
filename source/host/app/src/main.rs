@@ -3584,6 +3584,8 @@ impl UnifiedGatewayApi {
             return Err(GatewayCommandError::BadRequest(format!("unknown agent session: {agent_id}")));
         }
 
+        let active_streams_before = self.runner_registry.active_stream_ids_for_agent(agent_id);
+
         let prompt_args = serde_json::json!({
             "agentId": agent_id,
             "prompt": message,
@@ -3591,20 +3593,31 @@ impl UnifiedGatewayApi {
         });
 
         let send_result = self.call_send_prompt(prompt_args, None)?;
-        let run_id = send_result.get("runId")
-            .or_else(|| send_result.get("streamId"))
-            .and_then(serde_json::Value::as_str)
-            .map(str::to_string)
-            .unwrap_or_else(|| format!("run-{}", uuid::Uuid::new_v4()));
-
-        Ok(serde_json::json!({
+        let active_streams_after = self.runner_registry.active_stream_ids_for_agent(agent_id);
+        let new_stream_id = active_streams_after
+            .into_iter()
+            .find(|stream_id| !active_streams_before.iter().any(|before| before == stream_id));
+        let status = send_result
+            .get("status")
+            .cloned()
+            .unwrap_or_else(|| serde_json::json!("accepted"));
+        let message_seq = send_result.get("messageSeq").cloned();
+        let interrupted_active_run = send_result.get("interruptedActiveRun").cloned();
+        let mut response = serde_json::json!({
             "ok": true,
-            "runId": run_id,
-            "status": "started",
-            "messageSeq": 1,
-            "interruptedActiveRun": false,
+            "status": status,
             "result": send_result,
-        }))
+        });
+        if let Some(stream_id) = new_stream_id {
+            response["runId"] = serde_json::Value::String(stream_id);
+        }
+        if let Some(message_seq) = message_seq {
+            response["messageSeq"] = message_seq;
+        }
+        if let Some(interrupted_active_run) = interrupted_active_run {
+            response["interruptedActiveRun"] = interrupted_active_run;
+        }
+        Ok(response)
     }
 
     fn call_openclaw_chat_abort(

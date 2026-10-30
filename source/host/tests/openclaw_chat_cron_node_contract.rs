@@ -125,25 +125,20 @@ fn test_ocrm_chat_o02_session_key_stripping_and_unknown_session_rejection() {
 
 #[test]
 fn test_ocrm_chat_o03_send_response_contract_fields() {
-    let run_id = format!("run-{}", uuid::Uuid::new_v4());
-    let response = json!({
-        "ok": true,
-        "runId": run_id,
-        "status": "started",
-        "messageSeq": 1,
-        "interruptedActiveRun": false,
-        "result": {
-            "accepted": true,
-            "streamId": "stream-123"
-        }
-    });
-
-    assert_eq!(response["ok"], true);
-    assert!(response["runId"].as_str().unwrap().starts_with("run-"));
-    assert_eq!(response["status"], "started");
-    assert_eq!(response["messageSeq"], 1);
-    assert_eq!(response["interruptedActiveRun"], false);
-    assert_eq!(response["result"]["accepted"], true);
+    let send_start = SHIPPING_HOST_MAIN
+        .find("fn call_openclaw_chat_send(")
+        .expect("shipping chat.send owner exists");
+    let send_end = SHIPPING_HOST_MAIN[send_start..]
+        .find("\n    fn call_openclaw_chat_abort(")
+        .map(|offset| send_start + offset)
+        .expect("shipping chat.send function boundary exists");
+    let send = &SHIPPING_HOST_MAIN[send_start..send_end];
+    assert!(send.contains("active_stream_ids_for_agent"));
+    assert!(send.contains("if let Some(stream_id) = new_stream_id"));
+    assert!(send.contains("unwrap_or_else(|| serde_json::json!(\"accepted\"))"));
+    assert!(!send.contains("\"messageSeq\": 1"));
+    assert!(!send.contains("\"interruptedActiveRun\": false"));
+    assert!(!send.contains("format!(\"run-{}\", uuid::Uuid::new_v4())"));
 }
 
 #[test]
