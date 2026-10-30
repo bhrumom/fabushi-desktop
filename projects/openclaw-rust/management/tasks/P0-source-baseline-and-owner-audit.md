@@ -134,3 +134,8 @@ credential owner contract（成对、origin-scoped opaque refs；connection-time
 materialize；canonical redaction registration；不持久化 plaintext、不读任意
 环境变量、不进入 session/RPC），在该 owner 与真实 caller 出现前保持
 transport fail-closed；这不改变 P0 或任何 global flag。
+
+2026-10-30T10:03:53Z 的独立 `git ls-remote` 只读核对仍返回同一
+`5310270e46cf020ab1e37204075970f3b2679812`；对应 tree 仍为
+`acf6bee252bf79ab46e7a4c36ce4cc23e448c885`。该核对只刷新 identity freshness，
+不替代 exact-subject Actions inventory、依赖闭包或验收 receipt。
