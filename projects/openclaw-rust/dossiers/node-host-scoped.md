@@ -2076,3 +2076,15 @@ This differs from the current implementation lock
 its inventory. No source rows, dependency closure, parity disposition,
 Actions receipt, or completion flag was changed; the new commit requires the
 formal rebaseline workflow before it can become implementation authority.
+
+## 167. Candidate manifest native-auth delta (2026-10-30)
+
+The newly acquired candidate's `src/node-host/runtime-manifest.ts`
+(`856e0f728d07421741a8d3f16aade54b12e284cb`) imports and derives
+`NODE_CLAUDE_NATIVE_AUTH_CAPABILITY` in addition to the Claude skills
+capability. The current Rust manifest seam only derives
+`NODE_CLAUDE_SKILLS_CAPABILITY`, so blindly treating the current seam as
+complete would omit a candidate capability. This is recorded as an
+implementation-impacting source delta only: the candidate is not the
+implementation lock, and no Rust manifest behavior, inventory row, or flag was
+changed until formal rebaseline and dependency closure are complete.
