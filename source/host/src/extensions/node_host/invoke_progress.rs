@@ -78,7 +78,9 @@ impl NodeInvokeProgressWriter {
     }
 
     pub fn heartbeat_due(&self, now: Instant) -> bool {
-        !self.stopped && now.duration_since(self.last_progress_at) >= self.heartbeat_interval
+        self.recurring_heartbeats
+            && !self.stopped
+            && now.duration_since(self.last_progress_at) >= self.heartbeat_interval
     }
 
     pub fn queue_heartbeat(&mut self, now: Instant) -> Option<NodeInvokeProgressFrame> {
@@ -146,6 +148,8 @@ mod tests {
         let now = Instant::now();
         let mut writer = NodeInvokeProgressWriter::new("invoke", "node", Duration::from_millis(1), now);
         assert_eq!(writer.heartbeat_interval(), MIN_HEARTBEAT_INTERVAL);
+        assert!(!writer.heartbeat_due(now + MIN_HEARTBEAT_INTERVAL));
+        assert!(writer.queue_heartbeat(now + MIN_HEARTBEAT_INTERVAL).is_none());
         writer.start_heartbeats();
         assert!(writer.queue_heartbeat(now).is_none());
         assert_eq!(writer.queue_heartbeat(now + MIN_HEARTBEAT_INTERVAL).expect("heartbeat").chunk, "");
