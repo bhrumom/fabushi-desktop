@@ -10,6 +10,43 @@ pub struct HostMemorySnapshot {
     pub available_bytes: u64,
 }
 
+pub fn sample_host_hostname() -> Result<String, String> {
+    #[cfg(unix)]
+    {
+        let mut buffer = [0_u8; 256];
+        if unsafe { libc::gethostname(buffer.as_mut_ptr().cast(), buffer.len()) } != 0 {
+            return Err("host hostname sampling failed".into());
+        }
+        let end = buffer.iter().position(|byte| *byte == 0).unwrap_or(buffer.len());
+        let hostname = String::from_utf8(buffer[..end].to_vec())
+            .map_err(|_| "host hostname was not valid UTF-8".to_string())?;
+        if hostname.trim().is_empty() {
+            return Err("host hostname was empty".into());
+        }
+        return Ok(hostname);
+    }
+
+    #[cfg(windows)]
+    {
+        let mut buffer = [0_u16; 256];
+        let mut length = buffer.len() as u32;
+        if unsafe { GetComputerNameW(buffer.as_mut_ptr(), &mut length) } == 0 {
+            return Err("host hostname sampling failed".into());
+        }
+        let hostname = String::from_utf16(&buffer[..length as usize])
+            .map_err(|_| "host hostname was not valid UTF-16".to_string())?;
+        if hostname.trim().is_empty() {
+            return Err("host hostname was empty".into());
+        }
+        return Ok(hostname);
+    }
+
+    #[cfg(not(any(unix, windows)))]
+    {
+        Err("host hostname sampling is unsupported on this platform".into())
+    }
+}
+
 pub fn sample_host_os_release() -> Result<String, String> {
     #[cfg(unix)]
     {
@@ -177,6 +214,7 @@ struct WindowsOsVersionInfo {
 #[cfg(windows)]
 unsafe extern "system" {
     fn RtlGetVersion(version: *mut WindowsOsVersionInfo) -> i32;
+    fn GetComputerNameW(buffer: *mut u16, size: *mut u32) -> i32;
 }
 
 #[cfg(windows)]
@@ -209,7 +247,7 @@ fn windows_memory() -> Result<HostMemorySnapshot, String> {
 
 #[cfg(test)]
 mod tests {
-    use super::{sample_host_memory, sample_host_os_release};
+    use super::{sample_host_hostname, sample_host_memory, sample_host_os_release};
 
     #[test]
     fn reports_positive_total_and_bounded_available_memory() {
@@ -221,5 +259,10 @@ mod tests {
     #[test]
     fn reports_non_empty_os_release() {
         assert!(!sample_host_os_release().expect("host OS release is available").is_empty());
+    }
+
+    #[test]
+    fn reports_non_empty_hostname() {
+        assert!(!sample_host_hostname().expect("host hostname is available").is_empty());
     }
 }

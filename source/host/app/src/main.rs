@@ -3334,7 +3334,9 @@ impl UnifiedGatewayApi {
             .or_else(|_| std::env::var("COMPUTERNAME"))
             .ok()
             .filter(|value| !value.trim().is_empty())
-            .unwrap_or_else(|| "unknown".into());
+            .map(Ok)
+            .unwrap_or_else(|| mahayana_host_runtime::host_system_info::sample_host_hostname())
+            .map_err(GatewayCommandError::Internal)?;
         let uptime_ms = process_uptime_ms();
 
         Ok(serde_json::json!({

@@ -122,6 +122,7 @@ fn test_system_info_schema_and_zero_secret_leakage() {
     assert!(info["cpuCount"].as_u64().unwrap() >= 1);
     assert!(info["processInstanceId"].as_str().unwrap().starts_with("sand-host-"));
     assert!(!info["release"].as_str().unwrap().is_empty());
+    assert!(!info["hostname"].as_str().unwrap().is_empty());
 
     // Zero secret leakage
     let serialized = serde_json::to_string(&info).unwrap();
