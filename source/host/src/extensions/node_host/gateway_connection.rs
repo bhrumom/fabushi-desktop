@@ -54,6 +54,14 @@ impl NodeHostGatewayConfig {
         {
             return Err("node host gateway host contains unsafe URL characters".into());
         }
+        if host.contains(':') {
+            let bracketed = host.starts_with('[') && host.ends_with(']');
+            let ipv6 = host.parse::<std::net::Ipv6Addr>().is_ok()
+                || (bracketed && host[1..host.len() - 1].parse::<std::net::Ipv6Addr>().is_ok());
+            if !ipv6 {
+                return Err("node host gateway host has an invalid colon form".into());
+            }
+        }
         if let Some(path) = self.context_path.as_deref() {
             let path = path.trim();
             if path.len() > 2048

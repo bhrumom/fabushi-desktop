@@ -178,5 +178,8 @@ mod tests {
 
         let unsafe_host = NodeHostGatewayConfig::new("gateway@example", 18789, true);
         assert!(format_gateway_candidate_url(&unsafe_host, None).is_err());
+
+        let host_with_port = NodeHostGatewayConfig::new("gateway.example:443", 18789, true);
+        assert!(NodeHostGatewayCandidateRouter::new(&[host_with_port]).is_err());
     }
 }
