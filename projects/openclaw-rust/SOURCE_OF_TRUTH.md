@@ -194,6 +194,12 @@ dependencies、57 个 devDependencies，以及同树的 lockfile/workspace blob�
 probe 只证明根输入存在与形状，不等价于递归依赖闭包；所有 closure flags 继续
 保持 `false`。
 
+当前 parity ledger 的 10 条 `not-started/not-wired` 责任已在
+`dossiers/not-started-responsibility-frontier-20261031.md` 做了逐条 frontier
+审计：它们缺少生产 producer/consumer、拥有明确 ACP/plugin blocker，或只能从
+contract fixture/metadata 得到间接证据。该 dossier 不改变责任状态，也不把
+helper、fixture 或 capability metadata 升级为生产实现。
+
 当前 `projects/openclaw-rust/evidence/` 有开发冻结说明、本地冻结治理说明与历史
 upstream drift 记录；尚无绑定 `77b08d13…/a52b7278…` 的 Actions run/attempt/job、
 inventory/dependency-closure artifact、不可变 digest、acceptance receipt 或
