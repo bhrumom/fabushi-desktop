@@ -370,11 +370,17 @@ impl CoordinatorGatewayClient {
             Value::Object(Default::default()),
             dispatch,
         )?;
-        serde_json::from_value(value).map_err(|error| {
+        let projection: CloudWorkerStatusProjection = serde_json::from_value(value).map_err(|error| {
             GatewayDispatchError::Command(SandGatewayCommandError::new(format!(
                 "cloud worker status projection is invalid: {error}"
             )))
-        })
+        })?;
+        projection.validate().map_err(|error| {
+            GatewayDispatchError::Command(SandGatewayCommandError::new(format!(
+                "cloud worker status projection is invalid: {error}"
+            )))
+        })?;
+        Ok(projection)
     }
 
     pub fn dispatch_cloud_worker_doctor<F>(
@@ -386,11 +392,17 @@ impl CoordinatorGatewayClient {
         F: FnOnce(&GatewayConnection, &str, Value) -> Result<Value, GatewayDispatchError>,
     {
         let value = self.dispatch_command(CLOUD_WORKERS_DOCTOR_METHOD, args, dispatch)?;
-        serde_json::from_value(value).map_err(|error| {
+        let projection: CloudWorkerDoctorProjection = serde_json::from_value(value).map_err(|error| {
             GatewayDispatchError::Command(SandGatewayCommandError::new(format!(
                 "cloud worker doctor projection is invalid: {error}"
             )))
-        })
+        })?;
+        projection.validate().map_err(|error| {
+            GatewayDispatchError::Command(SandGatewayCommandError::new(format!(
+                "cloud worker doctor projection is invalid: {error}"
+            )))
+        })?;
+        Ok(projection)
     }
 
     pub fn accept_event(

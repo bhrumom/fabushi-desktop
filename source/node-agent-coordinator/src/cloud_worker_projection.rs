@@ -4,6 +4,20 @@ use serde_json::Value;
 pub const CLOUD_WORKERS_STATUS_METHOD: &str = "cloudWorkers.status";
 pub const CLOUD_WORKERS_DOCTOR_METHOD: &str = "cloudWorkers.doctor";
 pub const CLOUD_WORKERS_STATUS_EVENT_FAMILY: &str = "cloud-workers.status";
+const MAX_PROJECTION_TEXT_CHARS: usize = 256;
+
+fn validate_projection_text(field: &str, value: &str) -> Result<(), String> {
+    if value.is_empty() {
+        return Err(format!("{field} must not be empty"));
+    }
+    if value.chars().count() > MAX_PROJECTION_TEXT_CHARS {
+        return Err(format!("{field} exceeds {MAX_PROJECTION_TEXT_CHARS} characters"));
+    }
+    if value.chars().any(char::is_control) {
+        return Err(format!("{field} contains a control character"));
+    }
+    Ok(())
+}
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
@@ -94,12 +108,28 @@ pub struct CloudWorkerDoctorProjection {
 }
 
 impl CloudWorkerStatusProjection {
+    pub fn validate(&self) -> Result<(), String> {
+        if self.owner != "cloud-workers" {
+            return Err(format!("owner must be cloud-workers, got {:?}", self.owner));
+        }
+        Ok(())
+    }
+
     pub fn is_disabled(&self) -> bool {
         self.status == CloudWorkerCoordinatorStatus::Disabled
     }
 
     pub fn is_unavailable(&self) -> bool {
         self.status == CloudWorkerCoordinatorStatus::Unavailable
+    }
+}
+
+impl CloudWorkerDoctorProjection {
+    pub fn validate(&self) -> Result<(), String> {
+        if let Some(diagnostic_code) = &self.diagnostic_code {
+            validate_projection_text("diagnosticCode", diagnostic_code)?;
+        }
+        Ok(())
     }
 }
 
@@ -119,9 +149,14 @@ impl CloudWorkerCoordinatorEvent {
     /// Decode only the registered cloud-worker event family. Unknown families
     /// and malformed payloads stay outside this projection boundary.
     pub fn from_event(family: &str, payload: Value) -> Option<Self> {
-        (family == CLOUD_WORKERS_STATUS_EVENT_FAMILY)
-            .then(|| serde_json::from_value(payload).ok())
-            .flatten()
+        if family != CLOUD_WORKERS_STATUS_EVENT_FAMILY {
+            return None;
+        }
+        let event = serde_json::from_value(payload).ok()?;
+        match &event {
+            Self::StatusChanged { projection } => projection.validate().ok()?,
+        }
+        Some(event)
     }
 
     pub fn payload(&self) -> Value {
@@ -222,6 +257,47 @@ mod tests {
             CloudWorkerCoordinatorEvent::from_event("other.status", serde_json::json!({})),
             None
         );
+    }
+
+    #[test]
+    fn rejects_status_projection_with_a_different_owner() {
+        let payload = serde_json::json!({
+            "kind": "status-changed",
+            "projection": {
+                "owner": "other-owner",
+                "status": "disabled",
+                "providerReady": false,
+                "productionMutation": false
+            }
+        });
+        assert_eq!(
+            CloudWorkerCoordinatorEvent::from_event(
+                CLOUD_WORKERS_STATUS_EVENT_FAMILY,
+                payload
+            ),
+            None
+        );
+    }
+
+    #[test]
+    fn rejects_doctor_diagnostic_codes_that_are_unbounded_or_controlled() {
+        let controlled = CloudWorkerDoctorProjection {
+            status: CloudWorkerDoctorProjectionStatus::Failed,
+            mutation_started: false,
+            diagnostic_code: Some("bad\ncode".into()),
+            state_persisted: false,
+            lease_count: 0,
+            bootstrap_count: 0,
+            artifact_count: 0,
+            warm_image_count: 0,
+        };
+        assert!(controlled.validate().is_err());
+
+        let oversized = CloudWorkerDoctorProjection {
+            diagnostic_code: Some("x".repeat(MAX_PROJECTION_TEXT_CHARS + 1)),
+            ..controlled
+        };
+        assert!(oversized.validate().is_err());
     }
 
     #[test]

@@ -617,8 +617,12 @@ that reuse the existing gateway transport and error classification; a live
 event publisher and renderer/CLI consumer are still open.
 
 The Coordinator event projection now has a family-scoped decode/encode
-boundary for `cloud-workers.status`: unknown families and malformed payloads
-are rejected, while valid status events round-trip through the typed event.
+boundary for `cloud-workers.status`: unknown families, malformed payloads, and
+semantically invalid projections (including a non-canonical owner) are
+rejected, while valid status events round-trip through the typed event. The
+gateway status/doctor response paths apply the same fail-closed validation;
+diagnostic codes are optional but, when present, must be non-empty, bounded,
+and free of control characters.
 This remains a protocol contract only; it does not claim a live publisher,
 renderer, CLI, or provider mutation path.
 
