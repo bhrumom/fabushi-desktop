@@ -189,9 +189,10 @@ callback retains the current `UnifiedGatewayApi`, calls the existing
 The callback is installed only after the Gateway is constructed and returns an
 explicit error if that owner is no longer current.
 
-This changes the source-level wiring assessment from `not-wired` to
-`source-wired`; it does not prove packaged reachability, runtime execution,
-Actions verification, or acceptance. The producer blocker is therefore
-reframed as an evidence blocker rather than silently removed: exact-head
-Actions and real generated-subagent completion/deletion evidence are still
-required before the responsibility can be treated as fully production-wired.
+This adds a source-level generated-subagent cleanup edge, but it does not prove
+packaged reachability, runtime execution, Actions verification, or acceptance.
+The parity row therefore remains `wiring=not-wired`; the producer blocker is
+not silently removed. Exact-head Actions and real generated-subagent
+completion/deletion evidence, plus the remaining isolated-cron producer, are
+still required before the responsibility can be treated as fully
+production-wired.

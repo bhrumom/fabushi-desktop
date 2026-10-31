@@ -5883,7 +5883,7 @@
         "mapping": "reviewed",
         "read": "read-complete",
         "verification": "not-run",
-        "wiring": "wired"
+        "wiring": "not-wired"
       },
       "target": {
         "language": "Rust",
