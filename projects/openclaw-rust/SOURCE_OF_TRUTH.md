@@ -660,6 +660,19 @@ authority/completion flags 不变。
 `dossiers/upstream-current-candidate-dependency-frontier-8c69e8b7-20261031.md`；
 不重写旧 baseline 清单，不提升 dependency closure、source authority 或任何完成 flag。
 
+2026-10-31T12:42:39Z 的只读远端复核发现 OpenClaw `main` 再推进到
+`f8e492f2c9d1cc3768c222b909a82bd3e4f97455` / tree
+`89257a1e739896c29fbc427e43e2c59d95ab02a1`。GitHub recursive-tree API 返回
+`truncated=false`，共 64,090 entries（61,849 blobs、2,241 directories、0
+gitlinks）；commit message 为 `test(ui): expose reconnect service worker
+policy (#189374)`。根 package/lock/workspace/license/notice blob identities
+仍未变化；该 exact subject 仍为 discovery-only，前一 candidate 的 inventory、
+依赖闭包、LFS/integrity、语义阅读和 Actions provenance 均不得复用。exact
+diff 只有 `scripts/README.md` 与 `scripts/bench-control-ui-reconnect.ts`，
+不构成生产运行时或 Rust wiring 证据。lock live candidate 已更新，固定
+implementation subject、ledger 修订及全部 authority/completion flags 不变。
+详见 `dossiers/upstream-current-candidate-probe-f8e492f2-20261031.md`。
+
 2026-10-31T12:40:59Z 的只读远端复核发现 OpenClaw `main` 再推进到
 `ed19b276e1630a14c66ddf8cc4594d2915ba8c56` / tree
 `0f29f49072123eae942faa152907fbbebaab103a`。GitHub recursive-tree API 返回

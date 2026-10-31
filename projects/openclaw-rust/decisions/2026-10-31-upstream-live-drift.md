@@ -477,6 +477,27 @@ authority and completion flags remain unchanged. No CI, push, PR update, local
 OCRM executable verification, build, package, release, or runtime/device
 acceptance was performed.
 
+## Subsequent live recheck — 2026-10-31T12:42:39Z
+
+Read-only GitHub branches/commit/tree API checks resolved
+`openclaw/openclaw` `refs/heads/main` to commit
+`f8e492f2c9d1cc3768c222b909a82bd3e4f97455`, root tree
+`89257a1e739896c29fbc427e43e2c59d95ab02a1`. The recursive tree was not
+truncated and contained 64,090 entries: 61,849 blobs, 2,241 directories, and
+no gitlinks. The commit message is `test(ui): expose reconnect service worker
+policy (#189374)`; its GitHub commit verification is valid and root
+dependency/license input blobs remain unchanged.
+
+This supersedes the `ed19b276...` discovery candidate in the lock. Its exact
+diff is limited to `scripts/README.md` and
+`scripts/bench-control-ui-reconnect.ts`, so it is not production Rust
+implementation or wiring evidence. It remains discovery-only: no prior
+inventory, dependency closure, LFS/integrity result, Actions provenance, or
+source-semantic conclusion is relabeled or reused. All authority and
+completion flags remain unchanged. No CI, push, PR update, local OCRM
+executable verification, build, package, release, or runtime/device
+acceptance was performed.
+
 ## Subsequent live recheck — 2026-10-31T12:40:59Z
 
 Read-only GitHub branches/commit/tree API checks resolved
