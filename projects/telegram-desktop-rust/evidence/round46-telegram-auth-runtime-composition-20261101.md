@@ -3,7 +3,8 @@
 Date: 2026-11-01
 Fixed upstream U: `f985723b552b30fe1c17d377d57f44e61a15a8c4`
 Desktop implementation base: `221a661e17f2ad417e349df6604815d3fbfa946f`
-Platform-core canonical checkpoint: `13f5458aadf19a87c52bfa904f9942d81c88979a`
+Platform-core implementation/test checkpoint: `13f5458aadf19a87c52bfa904f9942d81c88979a`
+Platform-core spec/evidence checkpoint: `de9850f22d3da0686ad81f322c78405e4fe825c2`
 
 ## Composition authority
 

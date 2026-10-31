@@ -14222,7 +14222,8 @@
         "path:source/mahayana/mahayana-rs/providers/telegram-network/src/lib.rs@24e236df503e273490e44645251d757e30712ea3",
         "path:source/mahayana/mahayana-rs/providers/telegram-storage/src/sqlite.rs@e6cc314ec749f8a258bfe0125a25beb3613eb2ca",
         "path:source/mahayana/mahayana-rs/providers/telegram-runtime/src/runtime.rs@10031c5261bb0810ad2df2fca3de2e2fe4f65301",
-        "path:source/mahayana/mahayana-rs/providers/telegram-runtime/src/lib.rs@0c79707ba1e0932de15fad3c57ad00fcb9682aff"
+        "path:source/mahayana/mahayana-rs/providers/telegram-runtime/src/lib.rs@0c79707ba1e0932de15fad3c57ad00fcb9682aff",
+        "platform-core-spec-evidence-commit:de9850f22d3da0686ad81f322c78405e4fe825c2"
       ],
       "test_evidence": [
         "platform-core native/telegram-protocol/tests/protocol_contract.rs authored, not run",
