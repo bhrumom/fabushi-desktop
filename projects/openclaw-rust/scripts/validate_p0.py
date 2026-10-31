@@ -212,10 +212,16 @@ def structural():
             if is_task_local:
                 check(req_id in task_local_requirement_text, "Task-local requirement is not declared by its task: " + req_id)
         if resp["status"]["mapping"] == "reviewed":
-            check(bool(resp["oracle_ids"] and resp["selected_owner"] and resp["reviewer"]), "Review claim missing owner/oracle/reviewer")
+            if resp["responsibility_kind"] == "non-product-disposition":
+                check(bool(resp["reviewer"] and resp["evidence_refs"]), "Disposition review missing evidence/reviewer")
+            else:
+                check(bool(resp["oracle_ids"] and resp["selected_owner"] and resp["reviewer"]), "Review claim missing owner/oracle/reviewer")
         if FINAL_AC02:
             check(resp["status"]["mapping"] == "reviewed", "Final AC02 applicable responsibility is not reviewed: " + rid)
-            check(bool(resp["oracle_ids"] and resp["selected_owner"] and resp["reviewer"]), "Final AC02 responsibility review is incomplete: " + rid)
+            if resp["responsibility_kind"] == "non-product-disposition":
+                check(bool(resp["reviewer"] and resp["evidence_refs"]), "Final AC02 disposition review is incomplete: " + rid)
+            else:
+                check(bool(resp["oracle_ids"] and resp["selected_owner"] and resp["reviewer"]), "Final AC02 responsibility review is incomplete: " + rid)
         if resp["status"]["implementation"] == "implemented":
             check(bool(resp["target"]["path"] and resp["evidence_refs"]), "Unproven implementation")
             if resp["responsibility_kind"] == "business-runtime":
