@@ -3144,7 +3144,7 @@
         "OCRM-AGENT-O01",
         "OCRM-AGENT-O02"
       ],
-      "owner_decision": "Implement TurnRunShell concurrency control in runner",
+      "owner_decision": "Retain TurnRunShell as the active-run owner; select or extend the canonical checkpoint/steering owner for deferred supersedes before implementation",
       "postconditions": [
         "Turn runs exclusively without parallel inference race"
       ],
@@ -3166,7 +3166,7 @@
       "responsibility_kind": "business-runtime",
       "reviewer": "xuyao@ombhrum.com",
       "risk": "High; prevents prompt interleaving and state corruption",
-      "selected_owner": "source/host/src/runner/mod.rs",
+      "selected_owner": "partial active owner source/host/src/runner/mod.rs; deferred supersede owner unselected",
       "source_refs": [
         {
           "blob_sha": "c6d5ce6c43fe0897f47ee71f2e74ac4e93034634",
@@ -3198,7 +3198,7 @@
       "target": {
         "language": "Rust",
         "path": "source/host/src/runner/mod.rs",
-        "symbol": "TurnRunShell"
+        "symbol": "TurnRunShell (active-run lifecycle only; deferred supersede not wired)"
       },
       "tests": [
         "source/host/tests/openclaw_agent_turn_contract.rs::test_ocrm_agent_o01_active_stream_conflict_rejection",
