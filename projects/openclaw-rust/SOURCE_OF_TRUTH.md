@@ -217,6 +217,12 @@ canonical inventory 身份，不能手工改写旧分片来伪造 projection clo
 差异必须在 `002f25a…/553796f…` exact subject 的新 inventory 生成与独立
 验证中闭合。
 
+上述 baseline projection 审计段落保留其当时的 candidate 快照；截至
+2026-10-31T05:51:22Z，当前 discovery identity 已由
+`bcf23b2ea0eee92c8c497c6b1c4d486588e4d5ab` /
+`5d9b96f3208eb2daf4c566fc60865a1850e4c77f` supersede。旧 baseline inventory、
+其 projection 计数和旧 candidate identity 均不得解读为当前 source closure。
+
 对旧 baseline inventory 的只读计数还显示：58,750 条路径中有 57,331 条仍为
 `responsibility_status=unclassified` 且 `disposition=null`；其余 1,419 条已有
 read/disposition 记录。该计数是当前 AC02/G02 final 未闭合的直接证据，不是把
@@ -247,7 +253,7 @@ producer path 纠正为实际的 `source/host/src/runner/tools/` 位置；
 步骤，不能按单一 symbol 文本匹配推断缺失。当前未发现新的 wired 不存在路径；
 该结果仍不替代调用图、Actions receipt 或 packaged runtime 证据。
 
-降级后的反向审计确认其余 80 条 `wiring=wired` 责任均可在生产源码范围
+降级后的反向审计确认其余 79 条 `wiring=wired` 责任均可在生产源码范围
 （`source/host/src`、`source/node-agent-coordinator/src`、
 `source/electron-main` 或 `frontend/src`）定位目标 symbol；未发现第二批仅由
 tests 支撑的 wired 行。该结果只证明静态目标可达性，不证明 Actions exact
