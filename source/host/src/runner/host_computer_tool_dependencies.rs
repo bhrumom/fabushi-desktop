@@ -574,13 +574,14 @@ impl CloudWorkerScopedComputerToolExecutor {
             .map_err(|error| ProviderSessionError::Tool(format!(
                 "cloud-worker Computer capability rejected before delegation: {error}"
             )))?;
+        let replay_key = tool_call_id.trim();
         let mut replay_keys = self.replay_keys.lock().map_err(|_| {
             ProviderSessionError::Tool(
                 "cloud-worker Computer replay-key guard is unavailable".into(),
             )
         })?;
         if replay_keys.len() >= MAX_CLOUD_WORKER_COMPUTER_REPLAY_KEYS
-            || !replay_keys.insert(tool_call_id.to_string())
+            || !replay_keys.insert(replay_key.to_string())
         {
             return Err(ProviderSessionError::Tool(
                 "cloud-worker Computer replay key was already used or capacity is exhausted".into(),
