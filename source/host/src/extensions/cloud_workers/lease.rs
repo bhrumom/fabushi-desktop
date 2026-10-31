@@ -19,7 +19,9 @@ impl CloudWorkerLeaseScope {
     ) -> Result<Self, CloudWorkerLeaseError> {
         let account_scope = account_scope.into();
         let device_scope = device_scope.into();
-        if account_scope.trim().is_empty() || device_scope.trim().is_empty() {
+        if !valid_text(&account_scope, MAX_SCOPE_CHARS)
+            || !valid_text(&device_scope, MAX_SCOPE_CHARS)
+        {
             return Err(CloudWorkerLeaseError::InvalidScope);
         }
         Ok(Self {
@@ -49,7 +51,7 @@ impl CloudWorkerRuntimeIdentity {
         };
         if [&identity.provider, &identity.profile, &identity.runtime_id]
             .iter()
-            .any(|value| value.trim().is_empty())
+            .any(|value| !valid_text(value, MAX_RUNTIME_FIELD_CHARS))
         {
             return Err(CloudWorkerLeaseError::InvalidRuntimeIdentity);
         }
@@ -423,6 +425,30 @@ mod tests {
                 Err(CloudWorkerLeaseError::InvalidReplayKey)
             );
         }
+    }
+
+    #[test]
+    fn constructors_reject_control_and_oversized_identity_fields() {
+        assert_eq!(
+            CloudWorkerLeaseScope::new("account\n", "device"),
+            Err(CloudWorkerLeaseError::InvalidScope)
+        );
+        assert_eq!(
+            CloudWorkerLeaseScope::new("a".repeat(MAX_SCOPE_CHARS + 1), "device"),
+            Err(CloudWorkerLeaseError::InvalidScope)
+        );
+        assert_eq!(
+            CloudWorkerRuntimeIdentity::new("provider", "profile\t", "runtime"),
+            Err(CloudWorkerLeaseError::InvalidRuntimeIdentity)
+        );
+        assert_eq!(
+            CloudWorkerRuntimeIdentity::new(
+                "provider",
+                "profile",
+                "r".repeat(MAX_RUNTIME_FIELD_CHARS + 1)
+            ),
+            Err(CloudWorkerLeaseError::InvalidRuntimeIdentity)
+        );
     }
 
     #[test]
