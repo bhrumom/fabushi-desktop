@@ -322,7 +322,7 @@ Therefore none of these is an approved substitute owner. Adding a sidecar launch
 
 ## 42. Canonical inventory reconciliation for audited source refs (2026-10-29)
 
-The canonical row shards were reconciled against the exact path/blob/range references already present in `parity-ledger.json`. This removed stale one-way edges for the audited source set without changing the locked upstream commit/tree or global completion flags. The resulting structural counts are 58,750 tracked, 894 read-complete, 886 responsibility-mapped, 57,856 unread, and 57,864 unclassified; all 886 ledger source paths now have reverse shard responsibility edges and shard/manifest hashes agree.
+The canonical row shards were reconciled against the exact path/blob/range references already present in `parity-ledger.json`. This removed stale one-way edges for the audited source set without changing the locked upstream commit/tree or global completion flags. The **historical snapshot at this addendum's 2026-10-29 carrier** reported 58,750 tracked, 894 read-complete, 886 responsibility-mapped, 57,856 unread, and 57,864 unclassified; all 886 ledger source paths then had reverse shard responsibility edges and shard/manifest hashes agreed. These counts are not the current inventory materialization and must not replace the fixed-subject current audit (which separately records 1,419 read-complete/mapped rows and the applicability/disposition field gap).
 
 This is a bookkeeping and traceability correction, not evidence of full source closure or semantic completion. The remaining unread/unclassified denominator, dependency closure, implementation, production wiring, Actions verification, and product acceptance remain open.
 
