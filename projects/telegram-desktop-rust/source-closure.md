@@ -757,3 +757,16 @@ Ledger adds `TDRP-R9-MTPROTO-DH-GEN-RESULT-WIRE-001`; coverage becomes
 No executable validation was performed. No GitHub Actions/status/check query or trigger, build, typecheck,
 lint, schema validator, generator, unit/contract/integration/E2E test, package, deployment, installation or
 runtime acceptance was performed.
+
+
+### Round 78 final source-level compliance
+
+Platform-core `3a08f54f8a49c8a8af7a23b252938d1ea4607954` / spec blob
+`d846673483e2b165d7fad7463be0d7720ee6a49b` records source-level R1-R9 and AC-1-AC-6 compliance
+for the constructor-first fixed-U `dh_gen_ok/retry/fail` parser/hash responsibility.
+Canonical handshake/contracts are `87616f4b96a1775455da42b0bbed77711fb3c9f6` /
+`6710d6ef3fd915689792c68d69b3922b446c9bfa`; desktop contracts remain byte-identical and facade
+`abab39e42f100972484191f0e52e9edd9b88c6cf` remains unchanged. The existing RETRY path stays inside
+`AwaitingDhGen` and does not claim binding/persistence or connection scheduling. Ledger remains
+`implemented / not-run / accepted=false`, coverage `88 / 16172 unknown / 16145 unread / 0 omitted`.
+No executable validation was performed.

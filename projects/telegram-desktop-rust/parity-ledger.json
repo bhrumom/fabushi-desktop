@@ -22032,7 +22032,9 @@
         "platform-core-path:native/telegram-protocol/tests/protocol_contract.rs@6710d6ef3fd915689792c68d69b3922b446c9bfa",
         "desktop-sync-commit:965db14afa7104deae0fc63a76d2cc0df35d81fd",
         "path:source/mahayana/mahayana-rs/providers/telegram-protocol/tests/protocol_contract.rs@6710d6ef3fd915689792c68d69b3922b446c9bfa",
-        "path:source/mahayana/mahayana-rs/providers/telegram-protocol/src/lib.rs@abab39e42f100972484191f0e52e9edd9b88c6cf"
+        "path:source/mahayana/mahayana-rs/providers/telegram-protocol/src/lib.rs@abab39e42f100972484191f0e52e9edd9b88c6cf",
+        "platform-core-spec-compliance-commit:3a08f54f8a49c8a8af7a23b252938d1ea4607954",
+        "platform-core-spec-compliance-blob:d846673483e2b165d7fad7463be0d7720ee6a49b"
       ],
       "test_evidence": [
         "canonical and desktop tracked protocol contracts authored for all OK/RETRY/FAIL variants, four-byte unknown constructor, every truncation cut, nonce/server_nonce mismatch, wrong variant tag hash and trailing-byte rejection; not run"
@@ -22158,7 +22160,7 @@
       "acceptance_reviewer": null,
       "reviewer": null,
       "license_and_provenance": "Behavioral responsibility is anchored to fixed-U telegramdesktop/tdesktop Telegram/SourceFiles/mtproto/scheme/mtproto.tl@76225965bfc794388db241f3f760db8ab79e84f8 and shipping DcKeyCreator::dhClientParamsAnswered in Telegram/SourceFiles/mtproto/details/mtproto_dc_key_creator.cpp@13c57454f14b814b5923ea253048fb881ad8cf03. The implementation is source-neutral Rust and copies no upstream C++ implementation.",
-      "notes": "Stage A implementation only. This row closes constructor-first exact dh_gen_ok/retry/fail result parsing, nonce binding and tag-specific new_nonce hash validation in the already-shipping AuthKeyHandshake path. The existing RETRY transition is representable entirely by the current AwaitingDhGen owner and is not expanded into temporary/permanent key binding/persistence or network scheduling. Contracts are authored but not executed; validation_status=not-run and accepted=false.",
+      "notes": "Stage A implementation only. This row closes constructor-first exact dh_gen_ok/retry/fail result parsing, nonce binding and tag-specific new_nonce hash validation in the already-shipping AuthKeyHandshake path. The existing RETRY transition is representable entirely by the current AwaitingDhGen owner and is not expanded into temporary/permanent key binding/persistence or network scheduling. Contracts are authored but not executed; validation_status=not-run and accepted=false. Final source-level compliance is recorded at platform-core commit 3a08f54f8a49c8a8af7a23b252938d1ea4607954/spec blob d846673483e2b165d7fad7463be0d7720ee6a49b; executable validation remains not-run.",
       "test_execution_evidence": [],
       "validation_status": "not-run",
       "accepted": false,
