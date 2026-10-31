@@ -80,6 +80,9 @@ fn community(id: &str) -> CommunityState {
             send_messages: true,
             send_media: true,
             send_polls: true,
+            send_other: true,
+            send_inline: true,
+            send_games: true,
             ..MemberRestrictions::default()
         },
         joined_at_ms: 1,
