@@ -152,3 +152,12 @@ run path confirms that the production cron caller passes the captured
 hook. This strengthens the upstream producer contract, but it is still not a
 Rust producer: the current Fabushi Rust tree has no corresponding isolated-cron
 cleanup caller, so no Rust wiring status is promoted.
+
+The same newer-subject read confirms the subagent cleanup source remains blob
+`1669914996a02fcecd45012811d0a42f18bd32d7` and requires both captured
+`expectedSessionId` and `expectedLifecycleRevision`, while retaining the current
+Gateway owner across dispatch. The Rust generated-subagent path currently
+materializes child sessions and settles `SubagentRuntime` records, but a source
+search finds no completion/cleanup call that dispatches guarded `sessions.delete`
+for the child session. This is direct evidence for
+`BL-SESSION-LIFECYCLE-PRODUCER-001`, not proof that the Rust path is equivalent.
