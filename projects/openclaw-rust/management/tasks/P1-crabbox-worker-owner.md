@@ -613,8 +613,11 @@ The Coordinator crate now owns the serializable projection contract in
 read-only `cloudWorkers.status` and `cloudWorkers.doctor` methods plus the
 `cloud-workers.status` event family. It is a schema/command boundary only.
 `CoordinatorGatewayClient` has dedicated status and doctor projection calls
-that reuse the existing gateway transport and error classification; a live
-event publisher and renderer/CLI consumer are still open.
+that reuse the existing gateway transport and error classification. The shared
+Coordinator RPC table and production client now preserve the doctor request's
+scope, action, acknowledgement, and replay-key contract, with runtime input
+validation before dispatch; a live event publisher and renderer/CLI consumer
+are still open.
 
 The Coordinator event projection now has a family-scoped decode/encode
 boundary for `cloud-workers.status`: unknown families, malformed payloads, and
