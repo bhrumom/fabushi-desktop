@@ -70,3 +70,12 @@ closure, Stage-B executable evidence, and independent release ACCEPT remain open
 
 No GitHub Actions/status/check query or trigger, build, typecheck, lint, schema validator, generator,
 unit/contract/integration/E2E test, package, deployment, installation, or runtime acceptance was performed.
+
+
+## Round 77 final source-level readback
+
+Platform-core compliance commit `8654e737a04900b6cac8c92660fa8a8b84b449bc` updates `docs/specs/telegram-mtproto-server-dh-params-wire.md` to blob `b9b0f486aa47071ad46ba4ff5c238cee4b2bbfce` and records R1-R9 / AC-1-AC-6 source-level compliance. Canonical handshake/contracts remain `ed9eda7732f4753b442de98ebf510b8a7558b823` / `a19c4a14d113e6c82fe3cc801f1764c555f26f76`; desktop tracked contracts are byte-identical and the desktop facade remains `abab39e42f100972484191f0e52e9edd9b88c6cf` with no copied handshake core.
+
+Ledger responsibility `TDRP-R9-MTPROTO-SERVER-DH-PARAMS-WIRE-001` remains `implemented / validation_status=not-run / accepted=false`. Coverage remains `responsibilities_total=87`, `unknown=16172`, `unread=16145`, `omitted=0`. This source-level compliance readback is not executable verification or release acceptance.
+
+No GitHub Actions/status/check query or trigger, build, typecheck, lint, schema validator, generator, unit/contract/integration/E2E test, package, deployment, installation or runtime acceptance was performed. Broader auth-key destruction/binding/persistence/teardown, connection scheduling/racing/send lifecycle, multi-request history, gzip, complete difference decoding/application, broader source/legal closure, Stage-B evidence and independent release ACCEPT remain open/fail-closed.

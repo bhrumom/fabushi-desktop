@@ -21780,7 +21780,9 @@
         "platform-core-path:native/telegram-protocol/tests/protocol_contract.rs@a19c4a14d113e6c82fe3cc801f1764c555f26f76",
         "desktop-sync-commit:000d38bd2db19052766ccf8062eea4a6fb93c7eb",
         "path:source/mahayana/mahayana-rs/providers/telegram-protocol/src/lib.rs@abab39e42f100972484191f0e52e9edd9b88c6cf",
-        "path:source/mahayana/mahayana-rs/providers/telegram-protocol/tests/protocol_contract.rs@a19c4a14d113e6c82fe3cc801f1764c555f26f76"
+        "path:source/mahayana/mahayana-rs/providers/telegram-protocol/tests/protocol_contract.rs@a19c4a14d113e6c82fe3cc801f1764c555f26f76",
+        "platform-core-spec-compliance-commit:8654e737a04900b6cac8c92660fa8a8b84b449bc",
+        "platform-core-spec-compliance-blob:b9b0f486aa47071ad46ba4ff5c238cee4b2bbfce"
       ],
       "test_evidence": [
         "canonical and desktop tracked protocol contracts authored for both fixed-U variants plus unknown-constructor, all truncation cuts, nonce/server_nonce mismatch and trailing-byte rejection; not run"
@@ -21903,7 +21905,7 @@
       "acceptance_reviewer": null,
       "reviewer": null,
       "license_and_provenance": "Behavioral responsibility is anchored to fixed-U telegramdesktop/tdesktop Telegram/SourceFiles/mtproto/scheme/mtproto.tl@76225965bfc794388db241f3f760db8ab79e84f8 and shipping DcKeyCreator::dhParamsAnswered in Telegram/SourceFiles/mtproto/details/mtproto_dc_key_creator.cpp@13c57454f14b814b5923ea253048fb881ad8cf03. mtp_instance.cpp@d25fe3b72298fab371854f80186ee8e4777ea087 was reread as requested adjacent auth-key/service context and does not own this handshake union. The implementation is source-neutral Rust and copies no upstream C++ implementation.",
-      "notes": "Stage A implementation only. This row hardens only constructor-first exact Server_DH_Params outer-union parsing in the already-shipping AuthKeyHandshake path. Existing inner-DH cryptographic validation is preserved but not newly claimed; broader destruction/binding/persistence/connection/history/gzip/difference lifecycles remain fail-closed. Contracts are authored but not executed; validation_status=not-run and accepted=false.",
+      "notes": "Stage A implementation only. This row hardens only constructor-first exact Server_DH_Params outer-union parsing in the already-shipping AuthKeyHandshake path. Existing inner-DH cryptographic validation is preserved but not newly claimed; broader destruction/binding/persistence/connection/history/gzip/difference lifecycles remain fail-closed. Contracts are authored but not executed; validation_status=not-run and accepted=false. Final source-level compliance readback at platform-core 8654e737a04900b6cac8c92660fa8a8b84b449bc records R1-R9/AC-1-AC-6 as source/bookkeeping satisfied while executable Stage-B validation remains not-run.",
       "test_execution_evidence": [],
       "validation_status": "not-run",
       "accepted": false,

@@ -715,3 +715,8 @@ Spec-first platform commit `9a6b687e043bae9f7f40e776ce1d5ec98220a168` defines th
 Ledger adds `TDRP-R9-MTPROTO-SERVER-DH-PARAMS-WIRE-001`; coverage becomes `responsibilities_total=87`, `unknown=16172`, `unread=16145`, `omitted=0`; the new responsibility is `implemented / validation_status=not-run / accepted=false`. Broader auth-key destruction/binding/persistence/teardown, connection scheduling/racing/send lifecycle, multi-request history, gzip, complete difference decoding/application, broader source/legal closure and release acceptance remain fail-closed/open.
 
 No GitHub Actions/status/check query or trigger, build, typecheck, lint, schema validator, generator, unit/contract/integration/E2E test, package, deployment, installation or runtime acceptance was performed.
+
+
+### Round 77 final source-level compliance
+
+Platform-core `8654e737a04900b6cac8c92660fa8a8b84b449bc` / spec blob `b9b0f486aa47071ad46ba4ff5c238cee4b2bbfce` records source-level R1-R9 and AC-1-AC-6 compliance for the constructor-first fixed-U `Server_DH_Params` parser. Canonical handshake/contracts are `ed9eda7732f4753b442de98ebf510b8a7558b823` / `a19c4a14d113e6c82fe3cc801f1764c555f26f76`; desktop contracts remain byte-identical and facade `abab39e42f100972484191f0e52e9edd9b88c6cf` remains unchanged. Ledger stays `implemented / not-run / accepted=false`, coverage `87 / 16172 unknown / 16145 unread / 0 omitted`. No executable validation was performed.
