@@ -53,3 +53,18 @@ composition registration, or cloud mutation path was added. Therefore
 provider/device/package evidence, and OCRM acceptance remain pending. This
 round used source inspection and `git diff --check` only; no local build/test,
 OCRM command, Actions, push, or PR update was run.
+
+## P1-F08 Computer consumer adapter — 2026-10-31
+
+The existing Computer boundary now has a narrow typed adapter at
+`source/host/src/runner/host_computer_tool_dependencies.rs`:
+`CloudWorkerScopedComputerToolExecutor`. It revalidates the ephemeral
+`CloudWorkerLeasedCapability` against the canonical owner and expected scope,
+claims the existing tool-call identity as a bounded replay key, then delegates
+to exactly one existing `ComputerToolExecutor`.
+
+The adapter does not mint a Computer grant, enroll a device, write sensitive
+results, own screenshots, or execute Computer actions itself. The provider,
+physical worker, device enrollment, production Runner composition, package
+reachability, verification and acceptance remain pending; the parity row marks
+only this adapter boundary as wired.

@@ -157,8 +157,10 @@ capability and must remain the integration targets:
   composition boundary; they do not own worker lifecycle or device grants.
 
 The implemented adapter boundary is a typed adapter at the existing external
-machine trait boundary; the remaining Computer/Sand/Electron consumers still
-require their own source-backed adapters. It accepts an ephemeral
+machine trait boundary, and a matching typed ComputerToolExecutor adapter now
+exists at `source/host/src/runner/host_computer_tool_dependencies.rs`; the
+remaining production Computer/Sand/Electron composition still requires its own
+source-backed wiring. It accepts an ephemeral
 `CloudWorkerLeasedCapability`/sandbox request, validate account/device scope,
 lease generation, runtime identity and replay key, then delegate the actual
 action to exactly one existing executor. The adapter may not mint a Computer
@@ -205,6 +207,11 @@ pending Crabbox responsibilities:
   typed `ExternalMachineExecutor` adapter boundary as `wiring=wired`. It does
   not include provider selection, physical worker execution, device
   enrollment, Computer grants, Runner composition or cloud mutation.
+- `OCRM-RESP-INFRA-WORKER-CRABBOX-COMPUTER-ADAPTER-001` records the typed
+  `ComputerToolExecutor` adapter boundary as `wiring=wired`. Existing
+  Computer authorization, screenshot/result persistence and side effects stay
+  with the delegate; this does not establish device enrollment or production
+  worker composition.
 
 The broader Crabbox projection, lifecycle, sandbox, bootstrap, artifact,
 warm-image and runtime-control rows remain pending where their producer or
