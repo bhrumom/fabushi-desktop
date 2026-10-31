@@ -22286,7 +22286,9 @@
         "platform-core-path:native/telegram-protocol/tests/protocol_contract.rs@44d2a5d141e7d7854529379aaaad660853c8cbe3",
         "desktop-sync-commit:c72c7f85c926d05b21842c41a3b11c1313537793",
         "path:source/mahayana/mahayana-rs/providers/telegram-protocol/tests/protocol_contract.rs@44d2a5d141e7d7854529379aaaad660853c8cbe3",
-        "path:source/mahayana/mahayana-rs/providers/telegram-protocol/src/lib.rs@abab39e42f100972484191f0e52e9edd9b88c6cf"
+        "path:source/mahayana/mahayana-rs/providers/telegram-protocol/src/lib.rs@abab39e42f100972484191f0e52e9edd9b88c6cf",
+        "platform-core-spec-compliance-commit:54f1a26231827ac11a1ea0544dc4d1f7c3762c6c",
+        "platform-core-spec-compliance-blob:404bbe591fb514aba732e5b4e8f6481cc2904618"
       ],
       "test_evidence": [
         "canonical and desktop tracked protocol contracts authored for exact positive resPQ, every truncation cut, four-byte unknown constructor, Vector magic/negative/bounded/count failures, trailing byte, active nonce mismatch, empty pq, empty fingerprints and invalid receiver state; not run"
@@ -22411,7 +22413,7 @@
       "acceptance_reviewer": null,
       "reviewer": null,
       "license_and_provenance": "Behavioral responsibility is anchored to fixed-U telegramdesktop/tdesktop Telegram/SourceFiles/mtproto/scheme/mtproto.tl@76225965bfc794388db241f3f760db8ab79e84f8 and shipping DcKeyCreator::pqAnswered in Telegram/SourceFiles/mtproto/details/mtproto_dc_key_creator.cpp@13c57454f14b814b5923ea253048fb881ad8cf03. The implementation is source-neutral Rust and copies no upstream C++ implementation.",
-      "notes": "Stage A implementation bookkeeping only. Remote source review confirms the existing AuthKeyHandshake::receive_res_pq / parse_res_pq owner already satisfies the fixed-U production wire semantics, so no behavior code change was made. Durable spec and exhaustive contracts were added and mirrored but not executed; validation_status=not-run and accepted=false.",
+      "notes": "Stage A implementation bookkeeping only. Remote source review confirms the existing AuthKeyHandshake::receive_res_pq / parse_res_pq owner already satisfies the fixed-U production wire semantics, so no behavior code change was made. Durable spec and exhaustive contracts were added and mirrored but not executed; validation_status=not-run and accepted=false. Final source-level compliance is recorded at platform-core commit 54f1a26231827ac11a1ea0544dc4d1f7c3762c6c/spec blob 404bbe591fb514aba732e5b4e8f6481cc2904618; executable validation remains not-run.",
       "test_execution_evidence": [],
       "validation_status": "not-run",
       "accepted": false,

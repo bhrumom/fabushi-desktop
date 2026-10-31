@@ -632,3 +632,15 @@ broader source/legal closure and release acceptance remain fail-closed/open.
 
 No GitHub Actions/status/check query or trigger, build, typecheck, lint, schema validator, generator,
 unit/contract/integration/E2E test, package, deployment, installation or runtime acceptance was performed.
+
+
+### Round 79 final source-level compliance
+
+Platform-core `54f1a26231827ac11a1ea0544dc4d1f7c3762c6c` / spec blob
+`404bbe591fb514aba732e5b4e8f6481cc2904618` records source-level R1-R9 and AC-1-AC-5 compliance for the
+fixed-U `resPQ#05162463` wire responsibility. Canonical production handshake remains
+`87616f4b96a1775455da42b0bbed77711fb3c9f6` with no behavior delta; canonical/desktop authored contract blob is
+`44d2a5d141e7d7854529379aaaad660853c8cbe3`, and desktop facade
+`abab39e42f100972484191f0e52e9edd9b88c6cf` remains unchanged. Ledger remains
+`implemented / validation_status=not-run / accepted=false`, coverage
+`89 / 16172 unknown / 16145 unread / 0 omitted`. No executable validation was performed.

@@ -90,3 +90,16 @@ Coverage:
 
 No GitHub Actions/status/check query or trigger, build, typecheck, lint, schema validator, generator,
 unit/contract/integration/E2E test, package, deployment, installation or runtime acceptance was performed.
+
+
+## Final source-level compliance readback
+
+Platform-core compliance commit:
+`54f1a26231827ac11a1ea0544dc4d1f7c3762c6c`.
+
+Final spec blob:
+`docs/specs/telegram-mtproto-res-pq-wire.md@404bbe591fb514aba732e5b4e8f6481cc2904618`.
+
+Remote source readback records R1-R9 and AC-1-AC-5 as source/bookkeeping satisfied while executable Stage-B validation remains
+intentionally not run. The responsibility remains
+`implemented / validation_status=not-run / accepted=false`.
