@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import test from "node:test";
 
-import { FabushiAuthService } from "./fabushi-account-service.js";
+import { FabushiAuthService, telegramStorageSecretName } from "./fabushi-account-service.js";
 import {
   DEFAULT_FABUSHI_API_BASE_URL,
   DEFAULT_FABUSHI_RESPONSES_URL,
@@ -115,6 +115,19 @@ test("FDN device-secret scope preserves production keys and separates equal IDs 
     nativeRemoteComputerDeviceScope("123", DEFAULT_FABUSHI_API_BASE_URL, "device-a"),
     nativeRemoteComputerDeviceScope("123", FABUSHI_CI_ISOLATED_AUTH_BASE_URL, "device-a"),
   );
+});
+
+test("Telegram storage secret scope follows the canonical Fabushi account and device identity", () => {
+  const base = boundedCiSession({ userId: "same-user", deviceId: "device-a" });
+  const same = telegramStorageSecretName(base);
+  assert.equal(same, telegramStorageSecretName({ ...base }));
+  assert.notEqual(same, telegramStorageSecretName({ ...base, deviceId: "device-b" }));
+  assert.notEqual(same, telegramStorageSecretName({ ...base, userId: "other-user" }));
+  assert.notEqual(
+    same,
+    telegramStorageSecretName({ ...base, issuer: FABUSHI_CI_ISOLATED_AUTH_BASE_URL }),
+  );
+  assert.match(same, /^fabushi-telegram-storage-key-v1:[0-9a-f]{64}$/u);
 });
 
 test("session issuer is bound by the Native owner and missing stored issuer remains production-only", () => {

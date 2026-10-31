@@ -1,4 +1,4 @@
-import { randomBytes, randomUUID } from "node:crypto";
+import { createHash, randomBytes, randomUUID } from "node:crypto";
 import { promises as fs } from "node:fs";
 import { dirname } from "node:path";
 
@@ -11,6 +11,7 @@ export const FABUSHI_CI_ACCOUNT_SESSION_FILE_ENV = "FABUSHI_CI_ACCOUNT_SESSION_F
 export const FABUSHI_HOST_ACCESS_CREDENTIAL_FILE_ENV = "FABUSHI_HOST_ACCESS_CREDENTIAL_FILE";
 export const FABUSHI_REMOTE_COMPUTER_DEVICE_CREDENTIAL_FILE_ENV = "FABUSHI_REMOTE_COMPUTER_DEVICE_CREDENTIAL_FILE";
 const FABUSHI_REMOTE_COMPUTER_DEVICE_SECRET_PREFIX = "fabushi-remote-computer-device-secret-v1";
+const FABUSHI_TELEGRAM_STORAGE_SECRET_PREFIX = "fabushi-telegram-storage-key-v1";
 const REFRESH_LEEWAY_MS = 60_000;
 const MIN_POLL_MS = 250;
 const MAX_POLL_MS = 5_000;
@@ -43,6 +44,29 @@ import {
   nativeAuthIdForIssuer,
   type FabushiSession,
 } from "./fabushi-account-policy.js";
+
+export function telegramStorageSecretName(
+  session: Pick<FabushiSession, "issuer" | "userId" | "deviceId">,
+): string {
+  const accountId = nativeAuthIdForIssuer(session.userId, session.issuer);
+  const scope = createHash("sha256")
+    .update("fabushi-telegram-storage-key-v1\0", "utf8")
+    .update(accountId, "utf8")
+    .update("\0", "utf8")
+    .update(session.deviceId, "utf8")
+    .digest("hex");
+  return `${FABUSHI_TELEGRAM_STORAGE_SECRET_PREFIX}:${scope}`;
+}
+
+function validTelegramStorageKey(value: string): boolean {
+  if (!/^[A-Za-z0-9_-]{43}$/u.test(value)) return false;
+  try {
+    const decoded = Buffer.from(value, "base64url");
+    return decoded.length === 32 && decoded.toString("base64url") === value;
+  } catch {
+    return false;
+  }
+}
 
 function statusFromSession(session: FabushiSession): SandAuthStatus {
   const user = session.user;
@@ -192,7 +216,18 @@ export class FabushiAuthService implements AuthServicePort {
     await deleteSecret(FABUSHI_ACCOUNT_SESSION_SECRET);
   }
 
+  private async telegramStorageKey(session: FabushiSession): Promise<string> {
+    const secretName = telegramStorageSecretName(session);
+    let encoded = await readSecret(secretName);
+    if (encoded == null || !validTelegramStorageKey(encoded)) {
+      encoded = randomBytes(32).toString("base64url");
+      await writeSecret(secretName, encoded);
+    }
+    return encoded;
+  }
+
   private async writeHostCredential(session: FabushiSession): Promise<void> {
+    const telegramStorageKey = await this.telegramStorageKey(session);
     const path = this.options.hostAccessCredentialFile;
     await fs.mkdir(dirname(path), { recursive: true, mode: 0o700 });
     const temporary = `${path}.${process.pid}.${randomUUID()}.tmp`;
@@ -204,6 +239,7 @@ export class FabushiAuthService implements AuthServicePort {
       sessionId: session.sessionId,
       deviceId: session.deviceId,
       userId: session.userId,
+      telegramStorageKey,
     }), { encoding: "utf8", mode: 0o600, flag: "wx" });
     try {
       await fs.rename(temporary, path);

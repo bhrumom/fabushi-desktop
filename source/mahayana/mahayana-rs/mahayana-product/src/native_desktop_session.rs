@@ -2,6 +2,8 @@
 //! No pipe consumption, credential persistence, refresh, or session cache.
 
 use crate::ProductError;
+use base64::Engine as _;
+use base64::engine::general_purpose::URL_SAFE_NO_PAD;
 use serde::Deserialize;
 use serde_json::{Value, json};
 use sha2::{Digest, Sha256};
@@ -114,6 +116,8 @@ struct WireCredential {
     session_id: String,
     device_id: String,
     user_id: Value,
+    #[serde(default)]
+    telegram_storage_key: Option<String>,
 }
 
 /// Intentionally has no Serialize or derived Debug implementation.
@@ -124,6 +128,7 @@ pub struct NativeCredential {
     session_id: String,
     device_id: String,
     raw_user_id: String,
+    telegram_storage_key: Option<[u8; 32]>,
 }
 
 impl std::fmt::Debug for NativeCredential {
@@ -154,6 +159,10 @@ impl NativeCredential {
         format!("fabushi-ci-isolated:v1:{digest:x}")
     }
 
+    pub fn telegram_storage_key(&self) -> Option<[u8; 32]> {
+        self.telegram_storage_key
+    }
+
     fn binding(&self) -> String {
         let value = json!([
             self.issuer,
@@ -162,6 +171,7 @@ impl NativeCredential {
             self.session_id,
             self.device_id,
             self.raw_user_id,
+            self.telegram_storage_key,
         ]);
         format!("{:x}", Sha256::digest(value.to_string().as_bytes()))
     }
@@ -309,6 +319,18 @@ fn parse(
     if wire.expires_at_ms <= now_ms.saturating_add(EXPIRY_MARGIN_MS) {
         return Err(ProductError::SessionExpired);
     }
+    let telegram_storage_key = wire
+        .telegram_storage_key
+        .as_deref()
+        .map(|encoded| {
+            let decoded = URL_SAFE_NO_PAD
+                .decode(encoded.as_bytes())
+                .map_err(|_| invalid("NATIVE_TELEGRAM_STORAGE_KEY_INVALID"))?;
+            decoded
+                .try_into()
+                .map_err(|_| invalid("NATIVE_TELEGRAM_STORAGE_KEY_INVALID"))
+        })
+        .transpose()?;
     Ok(NativeCredential {
         issuer,
         access_token: wire.access_token,
@@ -316,6 +338,7 @@ fn parse(
         session_id: wire.session_id,
         device_id: wire.device_id,
         raw_user_id: raw_id(&wire.user_id)?,
+        telegram_storage_key,
     })
 }
 
@@ -507,6 +530,17 @@ mod tests {
                 "field {key}"
             );
         }
+        let mut valid_telegram_key = fixture(PRODUCTION_ISSUER);
+        valid_telegram_key["telegramStorageKey"] = json!(URL_SAFE_NO_PAD.encode([7_u8; 32]));
+        assert_eq!(
+            parse(valid_telegram_key.to_string().as_bytes(), PRODUCTION_ISSUER, NOW)
+                .unwrap()
+                .telegram_storage_key(),
+            Some([7_u8; 32])
+        );
+        let mut invalid_telegram_key = fixture(PRODUCTION_ISSUER);
+        invalid_telegram_key["telegramStorageKey"] = json!("not-a-32-byte-storage-key");
+        assert!(parse(invalid_telegram_key.to_string().as_bytes(), PRODUCTION_ISSUER, NOW).is_err());
         assert!(parse(b"{", PRODUCTION_ISSUER, NOW).is_err());
         assert!(parse(&vec![b' '; MAX_BYTES as usize + 1], PRODUCTION_ISSUER, NOW).is_err());
     }

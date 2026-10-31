@@ -28,6 +28,51 @@ use std::sync::atomic::Ordering;
 
 const CONVERSATION_PREFIX: &str = "telegram:chat:";
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct TelegramClientHandoff {
+    pub client_id: u64,
+    pub self_user_id: Option<i64>,
+}
+
+/// Process-lifetime owner for the one embedded Telegram client selected by the
+/// canonical platform account lifecycle. ConversationProvider receives only a
+/// non-owning typed handoff; no second Telegram account/runtime is created.
+pub struct TelegramClientLease {
+    client_id: u64,
+    self_user_id: Option<i64>,
+}
+
+impl TelegramClientLease {
+    pub fn open_persistent(
+        database_path: &Path,
+        storage_key: &[u8],
+        self_user_id: Option<i64>,
+    ) -> Result<Self, ConversationError> {
+        let database_path = database_path.to_str().ok_or_else(|| {
+            ConversationError::Provider("Telegram database path is not UTF-8".into())
+        })?;
+        let client_id = create_persistent_client(database_path, storage_key)
+            .map_err(|error| ConversationError::Provider(error.to_string()))?;
+        Ok(Self {
+            client_id,
+            self_user_id,
+        })
+    }
+
+    pub fn handoff(&self) -> TelegramClientHandoff {
+        TelegramClientHandoff {
+            client_id: self.client_id,
+            self_user_id: self.self_user_id,
+        }
+    }
+}
+
+impl Drop for TelegramClientLease {
+    fn drop(&mut self) {
+        let _ = close_client(self.client_id);
+    }
+}
+
 /// Adapts the embedded Telegram command/event core to the product-level
 /// conversation contract. The client remains alive for the lifetime of this
 /// provider; no helper subprocess or cloud Agent gateway is involved.

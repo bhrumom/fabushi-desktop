@@ -101,6 +101,8 @@ struct FabushiCoreCredentialFile {
     session_id: String,
     device_id: String,
     user_id: serde_json::Value,
+    #[serde(default)]
+    telegram_storage_key: Option<String>,
 }
 
 #[derive(Debug, Error, Clone, PartialEq, Eq)]

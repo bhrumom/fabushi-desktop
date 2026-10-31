@@ -15,9 +15,11 @@ use mahayana_plugin_runtime::{
     PluginState,
 };
 use mahayana_product::MahayanaProductClient;
+use mahayana_telegram::{TelegramClientHandoff, TelegramClientLease};
 use serde::{Deserialize, Serialize};
 use rusqlite::{params, Connection, OptionalExtension};
 use serde_json::{Value, json};
+use sha2::{Digest, Sha256};
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
@@ -90,6 +92,8 @@ pub struct AppHost {
     product: MahayanaProductClient,
     js: Mutex<DeepSeekJsHost>,
     feature: Arc<FeatureHostController>,
+    // Declared after `feature` so the non-owning provider is dropped before the client lease.
+    _telegram_client: Option<TelegramClientLease>,
 }
 
 /// Send-safe event lane for desktop PUSH delivery. It intentionally owns only
@@ -227,10 +231,13 @@ impl AppHost {
         std::fs::create_dir_all(&app_data_dir)
             .map_err(|error| AppHostError::Operation(error.to_string()))?;
         let feature_root = feature_host_root(&app_data_dir);
+        let telegram_client = open_platform_telegram_client(&app_data_dir, feature_mode)?;
+        let telegram_handoff = telegram_client.as_ref().map(TelegramClientLease::handoff);
         let feature = Arc::new(create_feature_host(
             &app_data_dir,
             feature_mode,
             storage_passphrase.clone(),
+            telegram_handoff,
         )?);
         let product = match storage_passphrase {
             Some(passphrase) => {
@@ -261,6 +268,7 @@ impl AppHost {
                     .map_err(|error| AppHostError::Operation(error.to_string()))?,
             ),
             feature,
+            _telegram_client: telegram_client,
         })
     }
 
@@ -1252,10 +1260,47 @@ fn feature_host_root(app_data_dir: &Path) -> PathBuf {
     app_data_dir.join("feature-host")
 }
 
+fn telegram_database_path(app_data_dir: &Path, account_id: &str) -> PathBuf {
+    let mut digest = Sha256::new();
+    digest.update(b"fabushi-telegram-account-v1\0");
+    digest.update(account_id.as_bytes());
+    feature_host_root(app_data_dir)
+        .join("telegram")
+        .join(format!("{:x}.sqlite3", digest.finalize()))
+}
+
+fn open_platform_telegram_client(
+    app_data_dir: &Path,
+    feature_mode: AppHostFeatureMode,
+) -> Result<Option<TelegramClientLease>, AppHostError> {
+    if feature_mode != AppHostFeatureMode::Production
+        || !mahayana_product::native_desktop_session::enabled()
+    {
+        return Ok(None);
+    }
+    let credential = mahayana_product::native_desktop_session::read_current()
+        .map_err(|error| AppHostError::Operation(format!("read platform account credential: {error}")))?;
+    let Some(credential) = credential else {
+        return Ok(None);
+    };
+    let Some(storage_key) = credential.telegram_storage_key() else {
+        return Ok(None);
+    };
+    let database_path = telegram_database_path(app_data_dir, &credential.account_id());
+    if let Some(parent) = database_path.parent() {
+        std::fs::create_dir_all(parent)
+            .map_err(|error| AppHostError::Operation(format!("create Telegram storage directory: {error}")))?;
+    }
+    TelegramClientLease::open_persistent(&database_path, &storage_key, None)
+        .map(Some)
+        .map_err(|error| AppHostError::Operation(format!("open embedded Telegram client: {error}")))
+}
+
 fn create_feature_host(
     app_data_dir: &Path,
     feature_mode: AppHostFeatureMode,
     storage_passphrase: Option<String>,
+    telegram_handoff: Option<TelegramClientHandoff>,
 ) -> Result<FeatureHostController, AppHostError> {
     let root = feature_host_root(app_data_dir);
     std::fs::create_dir_all(&root).map_err(|error| AppHostError::Operation(error.to_string()))?;
@@ -1303,6 +1348,8 @@ fn create_feature_host(
         use_codex_account: std::env::var("MAHAYANA_USE_CODEX_ACCOUNT").as_deref() == Ok("1"),
         codex_home: std::env::var_os("MAHAYANA_CODEX_HOME").map(PathBuf::from),
         product_storage_passphrase: storage_passphrase,
+        telegram_client_id: telegram_handoff.map(|handoff| handoff.client_id),
+        telegram_self_user_id: telegram_handoff.and_then(|handoff| handoff.self_user_id),
         model_bearer_token: None,
         model_wire_api: mahayana_model::responses::ResponsesWireApi::Responses,
         model_routes,
@@ -1429,4 +1476,20 @@ pub fn dispatch_json(host: &AppHost, input: &str) -> String {
     serde_json::to_string(&response).unwrap_or_else(|error| {
         format!("{{\"ok\":false,\"error\":\"serialization failed: {error}\"}}")
     })
+}
+
+#[cfg(test)]
+mod telegram_composition_contract_tests {
+    use super::*;
+
+    #[test]
+    fn telegram_database_path_is_stable_and_account_scoped() {
+        let root = Path::new("/tmp/fabushi-telegram-composition-contract");
+        let first = telegram_database_path(root, "account-a");
+        let expected_parent = feature_host_root(root).join("telegram");
+        assert_eq!(first, telegram_database_path(root, "account-a"));
+        assert_ne!(first, telegram_database_path(root, "account-b"));
+        assert_eq!(first.parent(), Some(expected_parent.as_path()));
+        assert_eq!(first.extension().and_then(|value| value.to_str()), Some("sqlite3"));
+    }
 }
