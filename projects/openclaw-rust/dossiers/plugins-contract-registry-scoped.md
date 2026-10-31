@@ -45,11 +45,11 @@
 - Onboarding Isolation: Video/image-only providers (`alibaba`, `runway`) are filtered out from text-chat onboarding, preventing invalid credential prompts.
 - GitHub Copilot App-Guided Auth: Non-interactive token onboarding requires device-code flow (`appGuidedAuth: "device-code"`) with assistant priority 1 for public GitHub vs priority 2 for Enterprise tenants.
 
-## 3. Producer -> Owner -> Storage -> Consumer Trace
-1. `Producer`: Plugin manifest loader and contract registry scanner (`src/plugins/contracts/registry.ts`).
+## 3. Source-Level Producer -> Owner -> Storage -> Consumer Candidate Trace
+1. `Producer candidate`: Plugin manifest loader and contract registry scanner (`src/plugins/contracts/registry.ts`); a production provider-manifest producer is not wired in the audited Host tree.
 2. `Owner`: `source/host/src/extensions/plugins/capability_catalog.rs` (`PluginCapabilityCatalog`).
 3. `Storage`: Thread-safe catalog maps for capabilities, channels, aliases, and auth choices.
-4. `Consumer`: Onboarding wizard CLI, activation planner, and capability dispatch runtime.
+4. `Consumer candidates`: Onboarding wizard CLI, activation planner, and capability dispatch runtime; only the separately recorded bundled channel metadata and crabbox worker metadata consumers are currently identified as production-connected.
 
 ## 4. Verification & Oracle Evidence
 - **Contract Test Suite**: `source/host/tests/openclaw_plugins_contract.rs`
