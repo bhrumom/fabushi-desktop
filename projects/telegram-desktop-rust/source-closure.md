@@ -1362,3 +1362,16 @@ Platform-core final compliance commit `df3feac4618636cdbc863b19e05106e19ba10446`
 The existing `TDRP-R9-MTPROTO-RPC-DROP-ANSWER-WIRE-001` row stays `implemented / validation_status=not-run / accepted=false`; coverage remains `97 responsibilities / 16172 unknown / 16145 unread / 0 omitted`. Historical request drop/cancel scheduling and arbitrary request mutation, connection scheduling, auth-key binding/persistence, gzip, complete difference decoding/application, broader source/legal closure, Stage-B executable evidence, and independent release ACCEPT remain outside this wire-only closure or open.
 
 No GitHub Actions/status/check query or trigger, build, typecheck, lint, schema validator, generator, unit/contract/integration/E2E test, package, deployment, installation, or runtime acceptance was performed.
+
+
+### Round 92 DestroySessionRes result adjacent revalidation (task round 61, 2026-11-01)
+
+Fixed-U `destroy_session_ok#e22045fc session_id:long` and `destroy_session_none#62d350c9 session_id:long` were reread against `mtproto.tl@76225965bfc794388db241f3f760db8ab79e84f8` and `session_private.cpp@13cbc76ec723386027b5b4dcac79999b791c4614`. The existing ledger row `TDRP-R9-MTPROTO-DESTROY-SESSION-WIRE-001` is reused; no duplicate responsibility is created.
+
+Existing canonical `telegram-protocol` is already exact: `api.rs@ebfb3670b5cd097b9ce288782c7954f5cfe9fc43` parses both variants as exactly constructor 4 + signed `session_id:i64` 8 = 12 bytes; `tl.rs@89256ab35184b6dc06a095ab34abb9f44e95a264` provides bounded little-endian fixed-width reads; strict EOF rejects trailing bytes; `lib.rs@abab39e42f100972484191f0e52e9edd9b88c6cf` exports the same owner. Fixed-U `session_private.cpp` has no direct `destroy_session_*` branch, so no live teardown, request-history mutation, scheduler behavior, auth-key lifecycle, resend/container state, or persistence is inferred.
+
+Disposition: **no production delta**. Platform-core spec commit/blob is `dbcec4027f96605c86c8b1197a5477cc21eebfb4@87f5657bcb413ffbd94ae11d4bb3a42ae5b30daa`; canonical authored-only external contract commit/blob is `d3d8635c69186631396886b086133b7f455ce33b@e414104c28784a1735f7d8b5c1a5cfeb23fe2192`. Contracts cover both exact 12-byte variants, constructor/session-id offsets, signed i64 minimum/maximum, every truncation cut, unknown constructor, and trailing bytes; they were authored only and not run.
+
+The row remains `implemented / validation_status=not-run / accepted=false`. Live teardown/outbound destroy-session lifecycle, arbitrary multi-request history, connection scheduling, auth-key binding/persistence, gzip, complete difference/differenceSlice decoding/application, broader fixed-U source/legal closure, Stage-B executable evidence and independent release ACCEPT remain outside this isolated wire claim or open.
+
+No GitHub Actions/status/check query or trigger, build, typecheck, lint, schema validator, generator, unit/contract/integration/E2E test, package, deployment, installation or runtime acceptance was performed.

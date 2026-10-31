@@ -18189,12 +18189,18 @@
         "platform-core-path:native/telegram-protocol/src/lib.rs@655498ce9db2faf8a76f093250d4a1f02f77ff67",
         "desktop-implementation-commit:b179796344fba3e22bccb1310b74f229d613b531",
         "path:source/mahayana/mahayana-rs/providers/telegram-protocol/src/api.rs@d82cca134274b8d939c1140ec44ee00230e2cfac",
-        "path:source/mahayana/mahayana-rs/providers/telegram-protocol/src/lib.rs@655498ce9db2faf8a76f093250d4a1f02f77ff67"
+        "path:source/mahayana/mahayana-rs/providers/telegram-protocol/src/lib.rs@655498ce9db2faf8a76f093250d4a1f02f77ff67",
+        "platform-core-round61-revalidation-spec-commit:dbcec4027f96605c86c8b1197a5477cc21eebfb4",
+        "platform-core-round61-revalidation-spec-blob:87f5657bcb413ffbd94ae11d4bb3a42ae5b30daa",
+        "platform-core-round61-external-contract-commit:d3d8635c69186631396886b086133b7f455ce33b",
+        "platform-core-path:native/telegram-protocol/tests/protocol_contract.rs@e414104c28784a1735f7d8b5c1a5cfeb23fe2192",
+        "stage-a-round92-evidence:projects/telegram-desktop-rust/evidence/round92-mtproto-destroy-session-result-revalidation-20261101.md"
       ],
       "test_evidence": [
         "platform-core native/telegram-protocol/src/api.rs both-variant exact parse/session-id preservation contract authored, not run",
         "platform-core native/telegram-protocol/src/api.rs unknown-constructor, truncation and trailing rejection contract authored, not run",
-        "desktop synchronized protocol contracts authored, not run"
+        "desktop synchronized protocol contracts authored, not run",
+        "round92 canonical/desktop external DestroySessionRes result-boundary contracts authored, not run"
       ],
       "target_commit": "b179796344fba3e22bccb1310b74f229d613b531",
       "workflow_run": null,
@@ -18313,7 +18319,7 @@
       "acceptance_reviewer": null,
       "reviewer": null,
       "license_and_provenance": "Behavioral responsibility is anchored to fixed-U telegramdesktop/tdesktop Telegram/SourceFiles/mtproto/scheme/mtproto.tl@76225965bfc794388db241f3f760db8ab79e84f8. session_private.cpp has no direct destroy_session_* receive branch. The implementation is source-neutral Rust and copies no upstream C++ implementation.",
-      "notes": "Stage A implementation only. This row closes exact typed DestroySessionRes wire decoding only. Outbound destroy_session request lifecycle and live session teardown semantics remain explicitly blocked/fail-closed. Global unknown/unread source-entry counts remain unchanged because this is a newly mapped responsibility slice within already-open fixed-U source coverage. Contracts are authored but not executed; validation_status=not-run and accepted=false.",
+      "notes": "Stage A implementation only. This row closes exact typed DestroySessionRes wire decoding only. Outbound destroy_session request lifecycle and live session teardown semantics remain explicitly blocked/fail-closed. Global unknown/unread source-entry counts remain unchanged because this is a newly mapped responsibility slice within already-open fixed-U source coverage. Contracts are authored but not executed; validation_status=not-run and accepted=false. Round92 adjacent revalidation confirms the live parser already enforces exact 12-byte destroy_session_ok/none constructor+i64 layouts, signed session_id preservation, all constructor/session-id truncation boundaries, unknown-constructor rejection and strict EOF; no production behavior delta was made. Canonical/desktop external response-boundary contracts were added and remain not run. Live teardown/outbound destroy-session lifecycle and arbitrary request-history/application remain outside this wire-only disposition.",
       "test_execution_evidence": [],
       "validation_status": "not-run",
       "accepted": false
