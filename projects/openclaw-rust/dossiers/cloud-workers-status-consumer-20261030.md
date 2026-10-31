@@ -195,6 +195,22 @@ owner-bound but producer/consumer-unwired. `providerReady=false`,
 and exact-head verification remain pending. This audit used source inspection
 only; no local OCRM build/test/lint, Actions, push or PR update was performed.
 
+## Bundled worker-provider capability metadata — 2026-10-31
+
+The existing Host-owned `PluginCapabilityCatalog` now records the upstream
+Crabbox manifest contract as capability metadata:
+`family=workerProviders`, `provider_id=crabbox`, `plugin_id=crabbox`. The
+registration is performed during `ProductionHostExtensions` startup through
+`register_bundled_worker_capabilities` and is deliberately metadata-only. It
+does not resolve a binary, start a process, resolve secrets, enroll a device,
+register a sandbox backend, or change the Cloud Worker projection's
+`providerReady`/`productionMutation` values.
+
+This closes the narrow bundled-plugin capability discovery edge to the existing
+catalog owner. It does not close the upstream plugin entry, CLI/tool/gateway
+consumer, provider lifecycle, device/platform path, or packaged acceptance;
+the broader Crabbox projection row remains `wiring=not-wired`.
+
 ## Verified artifact to bootstrap binding — 2026-10-31
 
 `CloudWorkerBootstrapRequest` now carries `CloudWorkerVerifiedArtifact` rather

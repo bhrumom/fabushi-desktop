@@ -266,6 +266,7 @@
       ],
       "evidence_refs": [
         "source/host/app/src/main.rs",
+      "source/host/src/host_production_extensions.rs",
         "source/host/src/gateway_server.rs",
         "source/node-agent-coordinator/src/cloud_worker_projection.rs",
         "source/shared/rpc/coordinator.ts",
@@ -1448,10 +1449,10 @@
       ],
       "id": "OCRM-RESP-PLUGIN-SDK-CRABBOX-PROJECTIONS-001",
       "integration": {
-    "consumer": "source/node-agent-coordinator/src/gateway/gateway_client.rs::CoordinatorGatewayClient::dispatch_cloud_worker_status / dispatch_cloud_worker_doctor plus frontend Settings status consumer; CLI and mutation consumers remain absent",
+    "consumer": "Host PluginCapabilityCatalog records bundled workerProviders metadata; source/node-agent-coordinator/src/gateway/gateway_client.rs::CoordinatorGatewayClient::dispatch_cloud_worker_status / dispatch_cloud_worker_doctor plus frontend Settings status consumer; CLI and mutation consumers remain absent",
     "entrypoint": "source/host/app/src/main.rs::UnifiedGatewayApi::call -> cloudWorkers.status / cloudWorkers.doctor -> CoordinatorGatewayClient projection methods",
         "owner": "source/host/app/src/main.rs + source/node-agent-coordinator/src/cloud_worker_projection.rs",
-        "producer": "CloudWorkerProvisioningExtension::status_snapshot through UnifiedGatewayApi and GatewayEventHub startup/status/doctor refresh publication; mutating producers are absent"
+    "producer": "ProductionHostExtensions::register_bundled_worker_capabilities publishes only the bundled workerProviders/crabbox capability metadata; CloudWorkerProvisioningExtension::status_snapshot reaches UnifiedGatewayApi and GatewayEventHub startup/status/doctor refresh publication; mutating producers are absent"
       },
       "invariants": [
         "Gateway and Coordinator projections expose typed status/command boundaries only",

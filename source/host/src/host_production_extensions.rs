@@ -116,7 +116,7 @@ use crate::extensions::plugin_sdk::channel_entry::{
     BundledChannelEntryContract, PluginRegistrationMode,
 };
 use crate::extensions::plugins::capability_catalog::{
-    PluginCapabilityCatalog, PluginOrigin,
+    CapabilityProviderEntry, PluginCapabilityCatalog, PluginOrigin,
 };
 use crate::extensions::plugins::installed_index_store::BundledInstallGuard;
 use crate::connectors::channel_delivery::{
@@ -546,6 +546,21 @@ fn register_bundled_channel_capabilities(catalog: &PluginCapabilityCatalog) -> R
     Ok(())
 }
 
+/// Registers the bundled Crabbox worker-provider contract as capability
+/// metadata only. This mirrors the upstream plugin manifest's
+/// `workerProviders: ["crabbox"]` declaration without creating a provider
+/// process, resolving credentials, enrolling a device, or changing worker
+/// readiness. The Cloud Worker owner remains the sole lifecycle/state owner.
+fn register_bundled_worker_capabilities(catalog: &PluginCapabilityCatalog) {
+    catalog.register_capability(CapabilityProviderEntry {
+        family: "workerProviders".into(),
+        provider_id: "crabbox".into(),
+        plugin_id: "crabbox".into(),
+        label: Some("Crabbox Worker Provider".into()),
+        aliases: Vec::new(),
+    });
+}
+
 impl Drop for ProductionHostExtensions {
     fn drop(&mut self) {
         let _ = self.stop_teach_recording();
@@ -712,6 +727,7 @@ pub fn start_production_host_extensions(
     let turn_execution = Arc::new(Mutex::new(turn_execution_registry));
     let plugin_capability_catalog = Arc::new(PluginCapabilityCatalog::new());
     register_bundled_channel_capabilities(&plugin_capability_catalog)?;
+    register_bundled_worker_capabilities(&plugin_capability_catalog);
     let channel_delivery_router = ChannelDeliveryRouter::new();
     let channel_delivery = HostChannelDelivery::new(Arc::new(channel_delivery_router.clone()));
 

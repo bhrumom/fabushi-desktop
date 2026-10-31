@@ -85,6 +85,7 @@ fn production_host_owns_the_canonical_plugin_capability_catalog() {
         "pub plugin_capability_catalog: Arc<PluginCapabilityCatalog>",
         "let plugin_capability_catalog = Arc::new(PluginCapabilityCatalog::new());",
         "register_bundled_channel_capabilities(&plugin_capability_catalog)?;",
+        "register_bundled_worker_capabilities(&plugin_capability_catalog);",
         "plugin_capability_catalog,",
     ] {
         assert!(
@@ -95,6 +96,12 @@ fn production_host_owns_the_canonical_plugin_capability_catalog() {
     assert!(
         PRODUCTION_OWNER.contains("pub fn register_channel_delivery_provider("),
         "provider registration must be owned by ProductionHostExtensions"
+    );
+    assert!(
+        PRODUCTION_OWNER.contains("family: \"workerProviders\".into()")
+            && PRODUCTION_OWNER.contains("provider_id: \"crabbox\".into()")
+            && PRODUCTION_OWNER.contains("plugin_id: \"crabbox\".into()"),
+        "bundled Crabbox registration must remain capability metadata only"
     );
     assert!(
         PRODUCTION_OWNER.contains("if self.plugin_capability_catalog.get_channel(channel_id).is_none()"),
