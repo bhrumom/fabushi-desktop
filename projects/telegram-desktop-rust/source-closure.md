@@ -1406,3 +1406,16 @@ Platform-core final compliance commit `3e24ea732acd2bcb2fe5bf2e5257f275643384de`
 The existing `TDRP-R9-MTPROTO-NEW-SESSION-WIRE-001` row stays `implemented / validation_status=not-run / accepted=false`. Arbitrary multi-request history, connection scheduling, auth-key binding/persistence, gzip, complete difference decoding/application, broader source/legal closure, Stage-B executable evidence, and independent release ACCEPT remain outside this wire-only closure or open.
 
 No GitHub Actions/status/check query or trigger, build, typecheck, lint, schema validator, generator, unit/contract/integration/E2E test, package, deployment, installation, or runtime acceptance was performed.
+
+
+## Stage-A MTProto Pong exact wire adjacent revalidation (round 94, 2026-11-01)
+
+Fixed U remains `f985723b552b30fe1c17d377d57f44e61a15a8c4`. Live adjacency was reread from `mtproto.tl@76225965bfc794388db241f3f760db8ab79e84f8` and `session_private.cpp@13cbc76ec723386027b5b4dcac79999b791c4614`: after `new_session_created#9ec20908`, the shipping service branch handles `pong#347773c5 msg_id:long ping_id:long = Pong`.
+
+The existing owner already closes this exact wire responsibility, so this round is **no production delta**. Canonical protocol `api.rs@ebfb3670b5cd097b9ce288782c7954f5cfe9fc43` exposes `PONG_CONSTRUCTOR`, typed `Pong`, and `parse_pong`, consuming constructor 4 + signed `msg_id` 8 + signed `ping_id` 8 = exactly 20 bytes and rejecting wrong constructor, truncation, and trailing bytes. Current canonical/desktop network blob `1fc1b1f69e3e37377400d078f916599e0c7b20bc` calls the typed parser before exact current-ping two-ID correlation.
+
+Platform-core spec-first revalidation is commit `8680085af3ef5ba80fa63933a7ce22c36dfc031d`, spec blob `231a89e30087370eb0cf29dc422f47e0322266d6`. Authored-only external contracts are commit `a559782b390f43d5caa28d8eaba1f99a9292059b`, blob `7672b1908bdf8810592e86f8427fd85c49089d7f`, and are mirrored byte-identically into the desktop provider in this round. They pin exact 20-byte length, offsets `0..4 / 4..12 / 12..20`, signed i64 extremes, every truncation cut, wrong-constructor rejection and strict EOF. They were not run.
+
+The existing ledger row `TDRP-R9-MTPROTO-SINGLE-PING-PONG-001` is reused; no duplicate responsibility is created. It remains `implemented / validation_status=not-run / accepted=false`. Coverage remains `responsibilities_total=97`, `unknown=16172`, `unread=16145`, `omitted=0`. Fixed-U `wasSent/requestsFixTimeSalt/requestsAcked` and arbitrary `haveSent/_resendingIds/toSend/_sentContainers` history, connection scheduling, auth-key binding/persistence, gzip, complete difference/differenceSlice decoding/application, broader source/legal closure, Stage-B executable evidence and independent release ACCEPT remain open or outside this isolated wire claim.
+
+No GitHub Actions/status/check query or trigger, build, typecheck, lint, schema validator, generator, unit/contract/integration/E2E test, package, deployment, installation or runtime acceptance was performed.

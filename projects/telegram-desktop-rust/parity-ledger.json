@@ -15796,12 +15796,19 @@
         "desktop-implementation-commit:3e363ccdaf287878f457797442aa97e8b597384b",
         "path:source/mahayana/mahayana-rs/providers/telegram-protocol/src/api.rs@32a7610bfc74835734c1e5c4385e4eb4cb2ee1f3",
         "path:source/mahayana/mahayana-rs/providers/telegram-protocol/src/lib.rs@ffbabc8f66112c2321be75a34928b086d6adf57f",
-        "path:source/mahayana/mahayana-rs/providers/telegram-network/src/lib.rs@e0bf1b5f286ad0f8bc45a36e86074e19b7dde560"
+        "path:source/mahayana/mahayana-rs/providers/telegram-network/src/lib.rs@e0bf1b5f286ad0f8bc45a36e86074e19b7dde560",
+        "platform-core-round63-revalidation-spec-commit:8680085af3ef5ba80fa63933a7ce22c36dfc031d",
+        "platform-core-round63-revalidation-spec-blob:231a89e30087370eb0cf29dc422f47e0322266d6",
+        "platform-core-round63-external-contract-commit:a559782b390f43d5caa28d8eaba1f99a9292059b",
+        "platform-core-path:native/telegram-protocol/tests/protocol_contract.rs@7672b1908bdf8810592e86f8427fd85c49089d7f",
+        "desktop-path:source/mahayana/mahayana-rs/providers/telegram-protocol/tests/protocol_contract.rs@7672b1908bdf8810592e86f8427fd85c49089d7f",
+        "stage-a-round94-evidence:projects/telegram-desktop-rust/evidence/round94-mtproto-pong-wire-revalidation-20261101.md"
       ],
       "test_evidence": [
         "platform-core native/telegram-protocol/src/api.rs pong parse/trailing-byte contracts authored, not run",
         "platform-core native/telegram-network/src/lib.rs current-ping two-id correlation contract authored, not run",
-        "desktop synchronized copies authored, not run"
+        "desktop synchronized copies authored, not run",
+        "platform-core and desktop external Pong contract pins exact 20-byte layout, signed i64 boundaries, every 0..19 truncation cut, wrong constructor and strict EOF; authored, not run"
       ],
       "target_commit": "3e363ccdaf287878f457797442aa97e8b597384b",
       "workflow_run": null,
@@ -15932,8 +15939,10 @@
       "acceptance_reviewer": null,
       "reviewer": null,
       "license_and_provenance": "Behavioral responsibility is anchored to fixed-U telegramdesktop/tdesktop Telegram/SourceFiles/mtproto/session_private.cpp@13cbc76ec723386027b5b4dcac79999b791c4614 and Telegram/SourceFiles/mtproto/scheme/mtproto.tl@76225965bfc794388db241f3f760db8ab79e84f8. The implementation is source-neutral Rust and copies no upstream C++ implementation.",
-      "notes": "Stage A implementation only. This row records only the pong subset exactly representable by the single outstanding ping owner. Arbitrary historical haveSent/_resendingIds/toSend/_sentContainers bookkeeping and multi-ping history remain open and fail-closed. Global unknown/unread source-entry counts are intentionally unchanged; contracts are authored but not executed; validation_status=not-run and accepted=false.",
-      "test_execution_evidence": []
+      "notes": "Stage A implementation only. This row records only the pong subset exactly representable by the single outstanding ping owner. Arbitrary historical haveSent/_resendingIds/toSend/_sentContainers bookkeeping and multi-ping history remain open and fail-closed. Global unknown/unread source-entry counts are intentionally unchanged; contracts are authored but not executed; validation_status=not-run and accepted=false. Round94 adjacent revalidation confirms the live typed Pong parser still enforces exact 20-byte constructor+msg_id+ping_id decoding before current-ping correlation; no production behavior delta was made. Canonical/desktop external boundary contracts were expanded and remain not run. Arbitrary historical request/ACK/resend/container state, connection scheduling, auth-key binding/persistence, gzip and complete difference decoding/application remain outside this wire-only disposition.",
+      "test_execution_evidence": [],
+      "validation_status": "not-run",
+      "accepted": false
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
