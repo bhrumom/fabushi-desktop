@@ -110,6 +110,22 @@ upstream consumer contract, scope token, fallback, or end-to-end producer is
 equivalent. The five ledger rows require semantic reconciliation, not an
 automatic “consumer absent” classification.
 
+The bounded source read resolves the contradiction at the edge level as
+follows:
+
+| Responsibility | Direct native edge confirmed | Boundary still unproven |
+| --- | --- | --- |
+| `OCRM-RESP-MEDIA-FILE-CONTEXT-001` | `AttachmentsService::dispatch_gateway("renderFileContext")` invokes `render_file_context_block` (`source/host/src/extensions/attachments/attachments_service.rs:1725-1751`) | prompt-assembler/provider-message consumer and full attachment-to-agent pipeline |
+| `OCRM-RESP-MEDIA-PHOTON-RUNTIME-001` | `web_media.rs` imports and calls shared image-op probing/resize-grid helpers; the gateway also dispatches image operations (`attachments_service.rs:1916-1962`) | the ledger's Photon/Rastermill/media-understanding runtime equivalence and its complete production consumer |
+| `OCRM-RESP-MEDIA-PNG-ENCODE-001` | `DevicePairingOwner::handle_pair_setup_code` calls `render_qr_png_data_url` (`source/host/src/device_pairing_owner.rs:1028-1032`); gateway PNG rendering is also exposed (`attachments_service.rs:1785-1797`) | all upstream image/canvas consumers and packaged UI projection |
+| `OCRM-RESP-MEDIA-STORE-READ-SCOPE-001` | gateway `readMediaBuffer` reaches `media_store::read_media_buffer` (`attachments_service.rs:1855-1868`) | channel/session read-authority scope tokens and receiver binding |
+| `OCRM-RESP-MEDIA-STORE-REMOTE-001` | `save_media_source` routes HTTP(S) sources to `save_remote_media_for_store` (`source/host/src/extensions/attachments/media_store.rs:487-497`), which performs bounded remote retrieval (`:569-610`) | external URL ingestion through the channel/web attachment pipelines and end-to-end consumer |
+
+These observations are static source evidence only. They justify replacing
+“confirmed absent consumer” with “native edge confirmed; equivalence or
+end-to-end boundary unresolved”; they do not authorize changing any ledger
+`wiring`, `verification`, or `acceptance` state.
+
 ### Source-level evidence for two actual gaps
 
 - `ChannelThreadRouter::resolve_or_create` is defined at
