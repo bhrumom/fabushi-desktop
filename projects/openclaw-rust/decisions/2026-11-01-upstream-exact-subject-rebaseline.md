@@ -28,6 +28,11 @@ keeping source closure and responsibility completion fail-closed. The CAS
 persist job still commits only the exact-subject generated artifacts and
 requires the PR head lease to be unchanged.
 
+When a changed exact tree invalidates a prior ledger `source_ref`, the workflow
+retains that ref under `historical_source_refs` and removes it from the current
+source set. A responsibility with no surviving exact path/blob ref is reset to
+`unclassified`/`unread`; no changed blob is relabeled as reviewed evidence.
+
 ## Evidence boundary
 
 The commit/tree and root input identities were read from the current remote

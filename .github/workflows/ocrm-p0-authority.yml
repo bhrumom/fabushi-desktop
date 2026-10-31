@@ -137,6 +137,8 @@ jobs:
           python3 - <<'PY'
           import json
           from pathlib import Path
+          inventory=json.loads(Path("ocrm-evidence/upstream-recursive-inventory.json").read_text())
+          current_blobs={entry["path"]: entry["sha"] for entry in inventory["entries"] if entry["git_type"] == "blob"}
           lock=json.loads(Path("projects/openclaw-rust/upstream.lock.json").read_text())
           identity={k: lock["upstream"][k] for k in ("repository", "commit", "tree")}
           for name in (
@@ -162,8 +164,22 @@ jobs:
                   data["inventory"]["unread"] = counts["tracked_entries_total"]
                   data["inventory"]["unclassified"] = counts["tracked_entries_total"]
               if name.endswith("parity-ledger.json"):
-                  evidence=json.loads(Path("ocrm-evidence/upstream-recursive-inventory.json").read_text())
-                  data["file_coverage"]["tracked_paths"] = evidence["counts"]["tracked_entries_total"]
+                  data["file_coverage"]["tracked_paths"] = inventory["counts"]["tracked_entries_total"]
+                  for responsibility in data["responsibilities"]:
+                      refs=responsibility.get("source_refs", [])
+                      current=[]
+                      stale=[]
+                      for ref in refs:
+                          if current_blobs.get(ref["path"]) == ref["blob_sha"]:
+                              current.append(ref)
+                          else:
+                              stale.append(ref)
+                      if stale:
+                          responsibility["historical_source_refs"] = responsibility.get("historical_source_refs", []) + stale
+                          responsibility["source_refs"] = current
+                          if not current:
+                              responsibility["status"]["mapping"] = "unclassified"
+                              responsibility["status"]["read"] = "unread"
               path.write_text(json.dumps(data, ensure_ascii=False, sort_keys=True, indent=2) + "\n")
           PY
           python3 projects/openclaw-rust/scripts/expand_inventory.py ocrm-evidence/upstream-recursive-inventory.json
