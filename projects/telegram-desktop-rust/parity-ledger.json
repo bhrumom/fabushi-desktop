@@ -9,7 +9,7 @@
     "unknown": 16172,
     "unread": 16145,
     "omitted": 0,
-    "responsibilities_total": 81,
+    "responsibilities_total": 82,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -20419,6 +20419,245 @@
       "reviewer": null,
       "license_and_provenance": "Behavioral responsibility is anchored to fixed-U telegramdesktop/tdesktop Telegram/SourceFiles/mtproto/scheme/mtproto.tl@76225965bfc794388db241f3f760db8ab79e84f8 and the shipping connection-probe call site AbstractConnection::preparePQFake in Telegram/SourceFiles/mtproto/connection_abstract.cpp@3baabf3f72c7c7edba3151814681fbf167a5ca0a. session_private.cpp@13cbc76ec723386027b5b4dcac79999b791c4614 was reread as adjacent context and has no req_pq branch. The implementation is source-neutral Rust and copies no upstream C++ implementation.",
       "notes": "Stage A implementation only. This row closes exact req_pq request-body serialization only: constructor plus raw caller-owned 16-byte nonce. Connection-probe scheduling/racing, nonce generation, not-secure packet framing, message-id generation, send/retry/timeout, response correlation, req_pq_multi and live auth-key handshake integration remain blocked/fail-closed. Global unknown/unread source-entry counts remain unchanged because this is a newly mapped responsibility slice within already-open fixed-U source coverage; connection_abstract.cpp is cited only as a shipping call-site anchor and is not declared whole-file reviewed/closed. Contracts are authored but not executed; validation_status=not-run and accepted=false. Source-level request compliance is recorded at platform-core commit 893b83679268c9a2e3bd8d867419adb4b5145d26; R1-R5 are source/bookkeeping satisfied while R6 executable Stage-B validation remains not-run.",
+      "test_execution_evidence": [],
+      "validation_status": "not-run",
+      "accepted": false
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+      "source_path": "Telegram/SourceFiles/mtproto/scheme/mtproto.tl",
+      "source_blob_sha": "76225965bfc794388db241f3f760db8ab79e84f8",
+      "source_kind": "schema",
+      "module_id": "tdesktop.mtproto.req-pq-multi-request-wire",
+      "responsibility_id": "TDRP-R9-MTPROTO-REQ-PQ-MULTI-REQUEST-WIRE-001",
+      "source_symbols": [
+        "req_pq_multi#be7e8ef1 nonce:int128 = ResPQ",
+        "DcKeyCreator::pqSend / MTPReq_pq_multi(attempt->data.nonce) in details/mtproto_dc_key_creator.cpp@13c57454f14b814b5923ea253048fb881ad8cf03",
+        "session_private.cpp@13cbc76ec723386027b5b4dcac79999b791c4614 adjacent context reread; no req_pq_multi branch"
+      ],
+      "capability_ids": [
+        "CAP-TELEGRAM-MTPROTO-REQ-PQ-MULTI-REQUEST-WIRE"
+      ],
+      "dependency_ids": [
+        "TelegramClientLease",
+        "RuntimeClient",
+        "telegram-protocol::TlWriter"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/evidence/round72-mtproto-req-pq-multi-request-wire-20261101.md",
+      "behavior_contract": "Given a caller-owned 16-byte MTProto int128 nonce, the canonical request builder emits exactly the req_pq_multi constructor in little-endian order followed by the 16 nonce bytes unchanged; the existing AuthKeyHandshake::begin may reuse this pure body serializer without changing handshake state/envelope semantics.",
+      "state_machine": "caller-owned 16-byte nonce -> exact req_pq_multi body serializer -> 20-byte request body; existing AuthKeyHandshake::begin retains Ready guard -> AwaitingResPq and caller-supplied plaintext message id; connection/auth-key lifecycle remains outside this slice.",
+      "side_effects": [
+        "Allocates and returns the exact 20-byte req_pq_multi request body only",
+        "Existing AuthKeyHandshake::begin delegates serialization only and retains its pre-existing state transition; builder itself has no lifecycle side effects"
+      ],
+      "failure_cases": [
+        "Wrong req_pq_multi constructor bytes",
+        "Nonce byte reordering, truncation, reinterpretation, or TL bytes/string framing",
+        "Unexpected padding or trailing request bytes",
+        "Pure serializer accidentally generating nonce/message id or taking ownership of connection/auth-key lifecycle"
+      ],
+      "ui_disposition": "No UI. This is source-neutral MTProto request-wire serialization inside the existing embedded Telegram protocol owner.",
+      "non_ui_responsibilities": [
+        "Exact fixed-U req_pq_multi constructor serialization",
+        "Raw 16-byte TL int128 nonce preservation",
+        "Strict separation of the pure body builder from connection/not-secure/auth-key lifecycle"
+      ],
+      "platform_delta": "Fixed-U Telegram Desktop's shipping MTPReq_pq_multi wire object is re-expressed as a source-neutral Rust request-body builder in the existing shared telegram-protocol owner; the existing handshake state machine reuses only that serializer.",
+      "existing_owner_candidates": [
+        "bhrumom/fabushi-platform-core:native/telegram-protocol/src/api.rs",
+        "bhrumom/fabushi-platform-core:native/telegram-protocol/src/handshake.rs",
+        "source/mahayana/mahayana-rs/providers/telegram-protocol/src/api.rs",
+        "existing telegram-network/transport owner for later probe/framing lifecycle"
+      ],
+      "existing_owner": "Existing canonical embedded telegram-protocol request-wire serializer with pre-existing AuthKeyHandshake lifecycle",
+      "rejected_existing_owners": [
+        "telegram-network/transport: owns later transport/probe concerns, not the canonical TL request-body serializer",
+        "new handshake owner: rejected because AuthKeyHandshake already owns the higher-level state machine and only needs to reuse the pure serializer"
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "bhrumom/fabushi-platform-core:native/telegram-protocol/src/api.rs",
+        "bhrumom/fabushi-platform-core:native/telegram-protocol/src/handshake.rs",
+        "bhrumom/fabushi-platform-core:native/telegram-protocol/src/lib.rs",
+        "bhrumom/fabushi-platform-core:native/telegram-protocol/tests/protocol_contract.rs",
+        "source/mahayana/mahayana-rs/providers/telegram-protocol/src/api.rs",
+        "source/mahayana/mahayana-rs/providers/telegram-protocol/src/lib.rs",
+        "source/mahayana/mahayana-rs/providers/telegram-protocol/tests/protocol_contract.rs"
+      ],
+      "fabushi_target_symbols": [
+        "REQ_PQ_MULTI_CONSTRUCTOR",
+        "build_req_pq_multi",
+        "AuthKeyHandshake::begin"
+      ],
+      "target_language": "Rust",
+      "language_rationale": "This is protocol wire logic and belongs in the existing Rust telegram-protocol owner; no Telegram C++ core, FFI, sidecar, subprocess, or second protocol runtime is retained.",
+      "command_event_contracts": [
+        "caller-owned &[u8; 16] nonce -> build_req_pq_multi -> exact Vec<u8> request body",
+        "existing AuthKeyHandshake::begin(message_id) -> same body plus existing AwaitingResPq transition/plaintext envelope"
+      ],
+      "state_owner": "The pure builder is stateless; existing AuthKeyHandshake remains the sole owner of auth-key negotiation state.",
+      "lifecycle_owner": "Existing AuthKeyHandshake/TelegramClientLease/runtime remain authoritative; this slice changes only body serialization and claims no connection-probe lifecycle.",
+      "persistence_and_restart": "No new persistence. The serializer derives bytes only from its constructor and caller-supplied nonce; existing handshake/session persistence semantics are unchanged.",
+      "concurrency_and_cancellation": "Pure synchronous serialization; no new asynchronous work, cancellation token, scheduler, callback registry, request history, or shared mutable state.",
+      "security_boundary": "The builder neither generates nor stores the nonce/message id. It preserves caller-provided nonce bytes and cannot broaden transport, account, or auth-key authority.",
+      "network_service_dependencies": [
+        "No network call is performed by the builder; existing AuthKeyHandshake::begin only returns its pre-existing plaintext envelope, and later transport/send behavior remains outside this slice."
+      ],
+      "service_owner": "Canonical embedded Telegram protocol runtime.",
+      "deployment_evidence": [],
+      "implementation_status": "implemented",
+      "coverage_disposition": "rewritten",
+      "blockers": [
+        "Connection-probe scheduling, endpoint/transport racing, attempt nonce generation, MTProto message-id generation, plaintext/not-secure packet framing, send/timeout/retry, and response correlation remain outside this request-wire slice.",
+        "Broader ResPQ application and auth-key RSA/DH creation/persistence/session lifecycle remain owned by existing handshake/runtime and are not declared closed by this serializer.",
+        "Stage B executable build/unit/contract/integration/packaged validation has not run.",
+        "gzip_packed bounded decompression remains blocked.",
+        "Complete updates difference/differenceSlice decoding/application remains open/fail-closed.",
+        "Arbitrary wasSent/haveSent/_resendingIds/toSend/_sentContainers histories remain open/fail-closed.",
+        "Broader fixed-U source/legal/release closure remains open."
+      ],
+      "production_entrypoints": [
+        "canonical telegram-protocol::AuthKeyHandshake::begin -> build_req_pq_multi for request body only",
+        "source/mahayana/mahayana-rs/providers/telegram-protocol public API -> build_req_pq_multi; desktop provider keeps no second handshake owner"
+      ],
+      "production_evidence": [
+        "platform-core-spec-commit:c5b3021a760892eaf05fcd9b40dc35dff4c2c783",
+        "platform-core-initial-implementation-commit:60e4b9165c0f41804bf68e7270aa52f39e824f14",
+        "platform-core-canonicalization-commit:591176a5ba091bb2a00f925d38ed87a1fdae0b11",
+        "platform-core-path:native/telegram-protocol/src/api.rs@3e3b250b709ce2f307f896dda6d1c2da55559f7b",
+        "platform-core-path:native/telegram-protocol/src/handshake.rs@b1b22af0e83b577d6152beb11a75e44eb76ffdbe",
+        "platform-core-path:native/telegram-protocol/src/lib.rs@2d48c2fe1c677b4b4672e7e76d8bd0a29a7ac003",
+        "platform-core-path:native/telegram-protocol/tests/protocol_contract.rs@bf5aeb85f10baeeb7e645a660fd3bf26259e5989",
+        "desktop-implementation-commit:59e08389bae4ab2cdcbb3f67808da44dff452ca9",
+        "path:source/mahayana/mahayana-rs/providers/telegram-protocol/src/api.rs@3e3b250b709ce2f307f896dda6d1c2da55559f7b",
+        "path:source/mahayana/mahayana-rs/providers/telegram-protocol/src/lib.rs@2d48c2fe1c677b4b4672e7e76d8bd0a29a7ac003",
+        "path:source/mahayana/mahayana-rs/providers/telegram-protocol/tests/protocol_contract.rs@bf5aeb85f10baeeb7e645a660fd3bf26259e5989"
+      ],
+      "test_evidence": [
+        "platform-core native/telegram-protocol/tests/protocol_contract.rs exact req_pq_multi layout/raw-nonce/begin-body contracts authored, not run",
+        "desktop synchronized protocol contracts authored, not run"
+      ],
+      "target_commit": "59e08389bae4ab2cdcbb3f67808da44dff452ca9",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Canonical Fabushi account + existing TelegramClientLease/runtime + shared telegram-protocol production composition",
+      "composition_slot": "Embedded Telegram MTProto req_pq_multi request-wire serialization",
+      "capability_component": "Exact fixed-U req_pq_multi request builder",
+      "variation_axes": [
+        "caller-provided 16-byte nonce values",
+        "exact constructor-plus-nonce layout",
+        "existing begin-path body delegation without lifecycle expansion"
+      ],
+      "shared_owner_contracts": [
+        "Existing account-bound TelegramClientLease",
+        "Existing RuntimeClient",
+        "Existing telegram-protocol TlWriter",
+        "Existing Cargo path-dependency composition"
+      ],
+      "duplicate_root_check": "No second account, runtime, provider, transport, connection probe, handshake runtime, request history, callback registry, sent-container store, decompression runtime, difference runtime, message store, UI root, sidecar, subprocess or Web wrapper was introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Not applicable",
+      "primary_navigation_target": "Existing Messages/Conversation navigation",
+      "collection_surface": "Existing ConversationList; no change",
+      "creation_flow": "Existing canonical conversation creation; no change",
+      "object_action_scope": "Not applicable",
+      "detail_section": "Not applicable",
+      "capability_surface": "Existing ConversationWorkspace through the same provider/runtime; no new surface",
+      "route_contract": "No new route.",
+      "search_scope": "Not applicable",
+      "search_provider": "Existing canonical Search owner; unchanged",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Unchanged.",
+      "search_local_remote_contract": "Not applicable.",
+      "responsive_disposition": "No UI change.",
+      "accessibility_contract": "No UI change.",
+      "keyboard_contract": "No UI change.",
+      "state_continuity_contract": "Pure wire serialization adds no state. Existing AuthKeyHandshake::begin keeps its Ready guard, caller message id, AwaitingResPq transition and plaintext envelope; broader connection/auth-key state and persistence are unchanged.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Existing Fabushi design system; no visual changes",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": null,
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "No new icon asset",
+      "avatar_contract": "No change",
+      "content_copy_keys": [],
+      "motion_contract": "No change",
+      "reduced_motion_contract": "No change",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "high",
+      "requirement_ids": [
+        "TDRP-R9-MTPROTO-REQ-PQ-MULTI-REQUEST-WIRE-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-MTPROTO-REQ-PQ-MULTI-REQUEST-WIRE-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-MTPROTO-REQ-PQ-MULTI-REQUEST-EXACT-001",
+        "INV-TDRP-MTPROTO-REQ-PQ-MULTI-RAW-NONCE-001",
+        "INV-TDRP-MTPROTO-REQ-PQ-MULTI-BEGIN-LIFECYCLE-UNCHANGED-001"
+      ],
+      "unit_case_ids": [
+        "UNIT-TDRP-MTPROTO-REQ-PQ-MULTI-REQUEST-LAYOUT-001",
+        "UNIT-TDRP-MTPROTO-REQ-PQ-MULTI-RAW-NONCE-001"
+      ],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-MTPROTO-REQ-PQ-MULTI-REQUEST-WIRE-001"
+      ],
+      "integration_case_ids": [],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "fault_recovery_case_ids": [],
+      "performance_case_ids": [],
+      "security_case_ids": [
+        "SEC-TDRP-MTPROTO-REQ-PQ-MULTI-NO-AUTHORITY-001"
+      ],
+      "soak_case_ids": [],
+      "exploratory_charter_ids": [],
+      "regression_ids": [
+        "REG-TDRP-MTPROTO-REQ-PQ-MULTI-REQUEST-EXACT-001"
+      ],
+      "release_gate_ids": [
+        "G-TRACEABILITY",
+        "G-COMPOSITION",
+        "G-SECURITY",
+        "G-EVIDENCE",
+        "G-RELEASE"
+      ],
+      "test_fixture_ids": [
+        "mtproto-req-pq-multi-request-nonce-pattern",
+        "mtproto-req-pq-multi-request-nonce-zero",
+        "mtproto-req-pq-multi-request-nonce-ff"
+      ],
+      "test_environment_ids": [
+        "GitHub Actions Stage B matrix (not run)"
+      ],
+      "coverage_matrix_status": "pending",
+      "flake_status": "stable",
+      "release_gate_status": "pending",
+      "acceptance_reviewer": null,
+      "reviewer": null,
+      "license_and_provenance": "Behavioral responsibility is anchored to fixed-U telegramdesktop/tdesktop Telegram/SourceFiles/mtproto/scheme/mtproto.tl@76225965bfc794388db241f3f760db8ab79e84f8 and shipping DcKeyCreator::pqSend in Telegram/SourceFiles/mtproto/details/mtproto_dc_key_creator.cpp@13c57454f14b814b5923ea253048fb881ad8cf03. session_private.cpp@13cbc76ec723386027b5b4dcac79999b791c4614 was reread as adjacent context and has no req_pq_multi branch. The implementation is source-neutral Rust and copies no upstream C++ implementation.",
+      "notes": "Stage A implementation only. This row closes exact req_pq_multi request-body serialization and minimal reuse from the pre-existing AuthKeyHandshake::begin path without expanding handshake lifecycle ownership. Connection probing/racing, nonce/message-id generation, not-secure framing, send/retry/timeout, response correlation/application, broader auth-key creation/persistence/session lifecycle and multi-request history remain fail-closed. Global unknown/unread source-entry counts remain unchanged because this is a newly mapped responsibility slice within already-open fixed-U source coverage. Contracts are authored but not executed; validation_status=not-run and accepted=false.",
       "test_execution_evidence": [],
       "validation_status": "not-run",
       "accepted": false
