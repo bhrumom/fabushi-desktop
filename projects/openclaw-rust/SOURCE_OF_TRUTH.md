@@ -216,6 +216,12 @@ unread 强行当作失败门槛，也不能被结构性 inventory 完整或已�
 producer→owner→consumer 接线与 packaged acceptance 仍待完成；本审计未运行
 OCRM 测试或本机构建。
 
+降级后的反向审计确认其余 80 条 `wiring=wired` 责任均可在生产源码范围
+（`source/host/src`、`source/node-agent-coordinator/src`、
+`source/electron-main` 或 `frontend/src`）定位目标 symbol；未发现第二批仅由
+tests 支撑的 wired 行。该结果只证明静态目标可达性，不证明 Actions exact
+receipt、packaged runtime reachability、真实服务/设备或最终验收。
+
 同一只读维度审计通过：1,419 条 `read-complete`/mapped 记录均有 reviewer、
 disposition 与 evidence；57,331 条 `unread`/unclassified 记录没有伪造
 disposition；未发现 mapped-without-disposition、unclassified-with-disposition、
