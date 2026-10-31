@@ -43,3 +43,14 @@ Validation status: not-run.
 Accepted: false.
 
 No GitHub Actions/status/check query or trigger and no executable validation was performed.
+
+
+## Round 74 source-level compliance readback
+
+Platform-core compliance commit `e1b2e5fc59e46b198c07c64845810a73a62b04b4` updates `docs/specs/telegram-mtproto-client-dh-inner-data-wire.md@dc09433a720daa1af5fa7eca4dc641cc542e52cc`. Remote readback confirms canonical `build_client_dh_inner_data`, its public facade export, and `prepare_client_dh` inner-object-only delegation are present; canonical handshake/lib/contracts blobs are `0e5e6c0fa306f75aa1fcb5c26440b1c39f87c9f9` / `7273e030bf02c248d9b592b2578cb5dc9716b485` / `7236df6bec3c832363901034d6a7d1c7cd3df3fc`. Desktop tracked lib/contracts are byte-identical.
+
+Spec R1-R8 are satisfied at source/ownership/bookkeeping level. Ledger responsibility `TDRP-R9-MTPROTO-CLIENT-DH-INNER-DATA-WIRE-001` remains `implemented / validation_status=not-run / accepted=false`; `responsibilities_total=84`, `unknown=16172`, `unread=16145`, `omitted=0`. Adjacent `p_q_inner_data_temp_dc#56fddf88` remains explicitly fail-closed because current canonical handshake lifecycle does not represent temporary-key `expires_in`; no dead serializer is counted as production closure. Stage-B executable evidence is intentionally absent.
+
+Temporary-key p_q_inner_data_temp_dc lifecycle, connection probing/racing, message-id generation, plaintext/not-secure framing, network send/retry/timeout, response correlation/application, broader auth-key persistence/session lifecycle, arbitrary sent/resend/container history, gzip, complete difference decoding/application, broader fixed-U source/legal closure and independent release ACCEPT remain open/fail-closed.
+
+No GitHub Actions/status/check query or trigger, build, typecheck, lint, schema validator, generator, unit/contract/integration/E2E test, package, deployment, installation, or runtime acceptance was performed.
