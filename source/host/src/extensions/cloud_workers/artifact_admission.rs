@@ -206,6 +206,7 @@ pub fn validate_archive_member_path(path: &str) -> Result<(), CloudWorkerArtifac
         || path.chars().count() > MAX_ARCHIVE_MEMBER_CHARS
         || path.chars().any(|character| character.is_control())
         || path.contains('\\')
+        || is_windows_drive_path(path)
     {
         return Err(CloudWorkerArtifactAdmissionError::UnsafeArchivePath);
     }
@@ -218,6 +219,11 @@ pub fn validate_archive_member_path(path: &str) -> Result<(), CloudWorkerArtifac
         return Err(CloudWorkerArtifactAdmissionError::UnsafeArchivePath);
     }
     Ok(())
+}
+
+fn is_windows_drive_path(path: &str) -> bool {
+    let bytes = path.as_bytes();
+    bytes.len() >= 2 && bytes[0].is_ascii_alphabetic() && bytes[1] == b':'
 }
 
 fn canonical_https_origin(value: &str) -> Result<String, CloudWorkerArtifactAdmissionError> {
@@ -298,6 +304,18 @@ mod tests {
     fn rejects_parent_archive_paths() {
         assert_eq!(
             validate_archive_member_path("worker/../secret"),
+            Err(CloudWorkerArtifactAdmissionError::UnsafeArchivePath)
+        );
+    }
+
+    #[test]
+    fn rejects_windows_drive_archive_paths_on_unix_hosts() {
+        assert_eq!(
+            validate_archive_member_path("C:/Windows/System32/worker.exe"),
+            Err(CloudWorkerArtifactAdmissionError::UnsafeArchivePath)
+        );
+        assert_eq!(
+            validate_archive_member_path("C:relative-worker.exe"),
             Err(CloudWorkerArtifactAdmissionError::UnsafeArchivePath)
         );
     }

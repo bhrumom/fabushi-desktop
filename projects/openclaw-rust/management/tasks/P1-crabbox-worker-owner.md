@@ -320,6 +320,9 @@ pending Crabbox responsibilities:
 - Bootstrap owner settlement now accepts that receipt only through the
   lease-fenced `Enrolling` phase, and refuses `Ready` without one; process
   inspection, launch and cleanup remain external producer responsibilities.
+- Artifact archive admission now rejects Windows drive-prefixed members
+  lexically even when validation runs on a Unix host, closing the cross-platform
+  absolute/drive-relative path bypass.
 
 The broader Crabbox projection, lifecycle, sandbox, bootstrap, artifact,
 warm-image and runtime-control rows remain pending where their producer or
