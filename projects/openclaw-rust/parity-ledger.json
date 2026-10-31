@@ -3313,10 +3313,10 @@
       ],
       "id": "OCRM-RESP-AGENT-ROSTER-AUDIT-001",
       "integration": {
-        "consumer": "pending: source/host/src/security_diagnostics.rs is absent; no production security-diagnostics consumer",
-        "entrypoint": "source/host/src/agents/agent_roster.rs::collect_agent_roster_findings",
+        "consumer": "source/host/app/src/main.rs::report_agent_roster_security_findings -> source/host/src/host_diagnostics.rs::report_diagnostic_event",
+        "entrypoint": "source/host/app/src/main.rs::UnifiedGatewayApi::call_openclaw_config_set and setHostSettings",
         "owner": "source/host/src/agents/agent_roster.rs::collect_agent_roster_findings",
-        "producer": "source/host/src/agents/agent_roster.rs::collect_agent_roster_findings"
+        "producer": "source/host/app/src/main.rs::call_openclaw_config_set and UnifiedGatewayApi::call_host_lane setHostSettings"
       },
       "invariants": [
         "Explicit fleet with default=true markers emits warning",
@@ -3366,7 +3366,7 @@
         "mapping": "mapped",
     "read": "read-complete",
         "verification": "verified",
-        "wiring": "not-wired"
+        "wiring": "wired"
       },
       "target": {
         "language": "Rust",

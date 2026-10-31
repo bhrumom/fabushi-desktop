@@ -66,9 +66,9 @@ The audited source code was decomposed into 6 discrete Rust runtime responsibili
 5. **`OCRM-RESP-AGENT-ROSTER-AUDIT-001`**:
    - **Behavior**: Security audit rule `config.agent_roster.invalid_default_count`, detecting invalid default selection counts in explicit vs compatibility fleets.
    - **Rust Owner**: `source/host/src/agents/agent_roster.rs::collect_agent_roster_findings`.
-   - **Production Call Chain**: Producer `collect_agent_roster_findings` → Consumer `security_diagnostics`.
+   - **Production Call Chain**: Producers `UnifiedGatewayApi::call_openclaw_config_set` and `setHostSettings` → `report_agent_roster_security_findings` → existing `host_diagnostics::report_diagnostic_event` consumer.
    - **Oracle**: `OCRM-ROSTER-O06`.
-   - **Status**: `implementation=implemented`, `wiring=not-wired`, `verification=not-run` (`blocker_ids=["BL-AGENT-ROSTER-UPSTREAM-CALLER-001"]`: Host agent workspace configuration & doctor inspection pipelines do not yet invoke roster collapse, provenance, audit, and doctor include inspection helpers in real production flows).
+   - **Status**: `implementation=implemented`, `wiring=wired`, `verification=verified`, `acceptance=pending`; the diagnostic stream is the existing consumer and does not create a parallel security store.
 
 6. **`OCRM-RESP-DOCTOR-ROSTER-INCLUDE-WRITE-001`**:
    - **Behavior**: Doctor guarded config write staging and include boundary determination, protecting include-owned rosters from destructive in-place writes.
