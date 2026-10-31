@@ -830,3 +830,22 @@ The responsibility is recorded as `implemented / validation_status=not-run / acc
 Arbitrary multi-request history, connection scheduling/racing/send retry, auth-key binding/persistence, gzip,
 complete difference/differenceSlice decoding/application, broader source/legal closure and Stage-B executable evidence
 remain open/fail-closed. No executable validation was performed.
+
+
+### Round 83 final source-level compliance
+
+Platform-core `e448cb7307ded83d9c6eab34fff0ef31f48e0e79` / final spec blob
+`89d572a9ec403835f4e1ec9d538dc3fbbe86a32d` records source-level R1-R10 and AC-1-AC-6 compliance for the
+fixed-U `rpc_error#2144ca19 error_code:int error_message:string` response-wire responsibility. Canonical production
+`api.rs/tl.rs/lib.rs` remain
+`ebfb3670b5cd097b9ce288782c7954f5cfe9fc43` /
+`89256ab35184b6dc06a095ab34abb9f44e95a264` /
+`abab39e42f100972484191f0e52e9edd9b88c6cf` with no behavior delta. Canonical/desktop authored contract
+blob remains `d171a3ab9a43955a693c87162f80c2667fc397ce`. The desktop ledger records
+`TDRP-R9-MTPROTO-RPC-ERROR-WIRE-001` as `implemented / validation_status=not-run / accepted=false`, coverage
+`93 / 16172 unknown / 16145 unread / 0 omitted`.
+
+Arbitrary request history, connection scheduling/racing/send retry, temporary/permanent auth-key
+binding/expiry/persistence/teardown, gzip, complete difference/differenceSlice decoding/application, broader fixed-U
+source/legal closure, Stage-B executable evidence and independent release ACCEPT remain open/fail-closed.
+No executable validation was performed.

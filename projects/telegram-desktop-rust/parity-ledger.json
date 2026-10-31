@@ -23323,7 +23323,9 @@
         "desktop-sync-commit:885faac55fc8b7d99e4989b438e1a428ac57c1f8",
         "path:source/mahayana/mahayana-rs/providers/telegram-protocol/src/api.rs@ebfb3670b5cd097b9ce288782c7954f5cfe9fc43",
         "path:source/mahayana/mahayana-rs/providers/telegram-protocol/src/lib.rs@abab39e42f100972484191f0e52e9edd9b88c6cf",
-        "path:source/mahayana/mahayana-rs/providers/telegram-protocol/tests/protocol_contract.rs@d171a3ab9a43955a693c87162f80c2667fc397ce"
+        "path:source/mahayana/mahayana-rs/providers/telegram-protocol/tests/protocol_contract.rs@d171a3ab9a43955a693c87162f80c2667fc397ce",
+        "platform-core-spec-compliance-commit:e448cb7307ded83d9c6eab34fff0ef31f48e0e79",
+        "platform-core-spec-compliance-blob:89d572a9ec403835f4e1ec9d538dc3fbbe86a32d"
       ],
       "test_evidence": [
         "canonical and desktop authored-only contracts cover exact typed parse, non-RpcError discrimination, truncation, invalid UTF-8, trailing bytes and EOF; not run"
@@ -23446,7 +23448,7 @@
       "acceptance_reviewer": null,
       "reviewer": null,
       "license_and_provenance": "Behavioral responsibility is anchored to fixed-U telegramdesktop/tdesktop Telegram/SourceFiles/mtproto/scheme/mtproto.tl@76225965bfc794388db241f3f760db8ab79e84f8 and shipping rpc_result handling in Telegram/SourceFiles/mtproto/session_private.cpp@13cbc76ec723386027b5b4dcac79999b791c4614. Implementation is source-neutral Rust and copies no upstream C++ implementation.",
-      "notes": "Stage A implementation bookkeeping only. Remote source review confirms existing try_parse_rpc_error/TlReader already satisfy exact fixed-U typed parser and trailing validation, so no production behavior change was made. Durable spec and authored-only contracts were added and mirrored but not executed; validation_status=not-run and accepted=false. Arbitrary request history, gzip, connection scheduling and auth-key lifecycle remain open/fail-closed.",
+      "notes": "Stage A implementation bookkeeping only. Remote source review confirms existing try_parse_rpc_error/TlReader already satisfy exact fixed-U typed parser and trailing validation, so no production behavior change was made. Durable spec and authored-only contracts were added and mirrored but not executed; validation_status=not-run and accepted=false. Arbitrary request history, gzip, connection scheduling and auth-key lifecycle remain open/fail-closed. Final source-level compliance is recorded at platform-core commit e448cb7307ded83d9c6eab34fff0ef31f48e0e79/spec blob 89d572a9ec403835f4e1ec9d538dc3fbbe86a32d; executable validation remains not-run.",
       "test_execution_evidence": [],
       "validation_status": "not-run",
       "accepted": false,

@@ -36,3 +36,21 @@ difference decoding/application remain open/fail-closed.
 
 No GitHub Actions/status/check query or trigger, build, typecheck, lint, schema validator, generator,
 unit/contract/integration/E2E test, package, deployment, installation or runtime acceptance was performed.
+
+
+## Final source-level compliance readback
+
+Platform-core compliance commit:
+`e448cb7307ded83d9c6eab34fff0ef31f48e0e79`.
+
+Final spec blob:
+`docs/specs/telegram-mtproto-rpc-error-wire.md@89d572a9ec403835f4e1ec9d538dc3fbbe86a32d`.
+
+Remote source readback records R1-R10 and AC-1-AC-6 as source/bookkeeping satisfied while executable Stage-B
+validation remains intentionally not run. Production api/tl/lib blobs remain unchanged at
+`ebfb3670b5cd097b9ce288782c7954f5cfe9fc43` /
+`89256ab35184b6dc06a095ab34abb9f44e95a264` /
+`abab39e42f100972484191f0e52e9edd9b88c6cf`; canonical/desktop authored contract blob remains
+`d171a3ab9a43955a693c87162f80c2667fc397ce`. The responsibility remains
+`implemented / validation_status=not-run / accepted=false`. Arbitrary request history, connection scheduling,
+auth-key binding/persistence, gzip and complete difference decoding remain open/fail-closed.
