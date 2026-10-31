@@ -121,3 +121,9 @@ and mutation during the pre-delete drain. These oracles are source evidence
 only: they have not been compiled or executed during the development freeze.
 Verification remains `not-run`; cron/subagent wiring remains `not-wired`; and
 Actions, package, runtime, provider and device evidence remain absent.
+
+The responsibility is now registered as
+`OCRM-RESP-SESSION-LIFECYCLE-DELETE-FENCE-001` in `parity-ledger.json` and
+linked from the `OCRM-R21` traceability row. This records the implementation
+and evidence boundary only; it does not change any completion flag or promote
+the upstream discovery subject to accepted authority.

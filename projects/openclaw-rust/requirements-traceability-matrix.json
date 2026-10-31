@@ -735,7 +735,10 @@
       "blocker_ids": [],
       "evidence_refs": [
         "source/host/tests/openclaw_plugins_automations_contract.rs",
-        "projects/openclaw-rust/dossiers/cron-automations-heartbeat-scoped.md"
+        "projects/openclaw-rust/dossiers/cron-automations-heartbeat-scoped.md",
+        "source/host/tests/agent_lifecycle_contract.rs",
+        "projects/openclaw-rust/docs/specs/session-lifecycle-delete-fence.md",
+        "projects/openclaw-rust/dossiers/upstream-current-session-lifecycle-delta-20261031.md"
       ],
       "gate_ids": [],
       "id": "OCRM-R20",
@@ -777,7 +780,8 @@
       "oracle_ids": [
         "OCRM-PLUGIN-O04",
         "OCRM-PLUGIN-O05",
-        "OCRM-PLUGIN-O07"
+        "OCRM-PLUGIN-O07",
+        "OCRM-SESSION-LIFECYCLE-DELETE-FENCE-O01"
       ],
       "requirement_text_source": "docs/specs/openclaw-rust-equivalence-migration.md#5",
       "responsibility_ids": [
@@ -810,6 +814,7 @@
         "OCRM-RESP-SECURITY-EXEC-AUDIT-001",
         "OCRM-RESP-PROXY-CAPTURE-HEADER-001",
         "OCRM-RESP-SESSION-ROUTING-DISPATCH-001",
+        "OCRM-RESP-SESSION-LIFECYCLE-DELETE-FENCE-001",
         "OCRM-RESP-SNAPSHOT-BACKUP-CODEC-001",
         "OCRM-RESP-SKILLS-RUNTIME-LIBRARY-001",
         "OCRM-RESP-SESSION-TURNS-CONTROLLER-001",
