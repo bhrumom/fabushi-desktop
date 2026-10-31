@@ -7,7 +7,7 @@
   - `OCRM-RESP-MEMORY-ROOT-PROVENANCE-001`
 - **Reviewer**: `xuyao@ombhrum.com`
 - **Date**: `2026-10-27`
-- **Status**: `wired/verified`
+- **Status**: `implementation=implemented`, `wiring=not-wired`, `verification=not-run`, `acceptance=pending`
 
 ## 1. Upstream Authority & Source Mapping
 
@@ -62,4 +62,14 @@ Implemented in:
   - `test_ocrm_link_und_o02_template_detection_and_body_enrichment`: tests `LinkUrl` template detection and message body enrichment.
   - `test_ocrm_memory_root_o01_paths_and_auxiliary_filtering`: tests canonical/legacy root paths, repair dir, and auxiliary skipping.
   - `test_ocrm_memory_provenance_o02_relative_paths_and_origin_resolution`: tests relative path normalization, forbidden dream directories, SHA-256 calculation, and agent/untrusted write origin resolution.
-- All 4 tests passed with 0 failures; media understanding (31 tests) and media generation (5 tests) suites continue to pass cleanly.
+- Historical contract record: four link/memory tests and the cited media suites were recorded as passing in an earlier run. This is not current exact-head Actions evidence and does not establish production wiring or acceptance during the active development freeze.
+
+## 5. Current production reachability audit (2026-10-31)
+
+The current non-test Host source has no caller for
+`link_understanding_service::{extract_bare_links_from_message,
+enrich_message_body_with_links}`. The memory root provenance helpers likewise
+remain standalone policy helpers; no production memory artifact writer,
+durable provenance store, or reader consumer was identified. The ledger keeps
+both responsibilities under their existing wiring blockers with
+`wiring=not-wired`, `verification=not-run`, and `acceptance=pending`.

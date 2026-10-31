@@ -7,7 +7,7 @@
   - `OCRM-RESP-MUSIC-GEN-CORE-001`
 - **Reviewer**: `xuyao@ombhrum.com`
 - **Date**: `2026-10-27`
-- **Status**: `wired/verified`
+- **Status**: `implementation=implemented`, `wiring=not-wired`, `verification=not-run`, `acceptance=pending`
 
 ## 1. Upstream Authority & Source Mapping
 
@@ -72,4 +72,13 @@ Implemented in `source/host/src/extensions/attachments/media_generation_service.
   - `test_ocrm_media_gen_o03_duration_and_timeout_clamping`: float duration rounding and ceiling clamping, timeout bounds clamping.
   - `test_ocrm_media_gen_o04_music_generation_capabilities_and_reference_images`: mode enumeration, input image overflow and disabled rejection.
   - `test_ocrm_media_gen_o05_video_asset_reading_and_overflow`: buffer reading, overflow URL fallback, strict overflow error.
-- All 5 tests passed with 0 failures; 31 media understanding tests continue to pass with 0 failures.
+- Historical contract record: five media-generation tests and the cited media-understanding tests were recorded as passing in an earlier run. This is not current exact-head Actions evidence and does not establish provider/tool production wiring or acceptance during the active development freeze.
+
+## 5. Current production reachability audit (2026-10-31)
+
+The current non-test Host source has no caller for the media-generation or
+music-generation capability/geometry helpers in
+`media_generation_service.rs`. No production provider adapter, tool route, or
+generated-asset consumer is established by the current tree. The ledger keeps
+both responsibilities under `BL-MEDIA-GEN-PROVIDER-WIRING-001` with
+`wiring=not-wired`, `verification=not-run`, and `acceptance=pending`.

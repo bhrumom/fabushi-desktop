@@ -16843,10 +16843,10 @@
       ],
       "id": "OCRM-RESP-MEDIA-GENERATED-HTML-PROVENANCE-001",
       "integration": {
-        "consumer": "source/host/src/extensions/attachments/host_read_media_policy.rs",
+        "consumer": "No production generated-HTML provenance consumer identified; host-read provenance helpers have no non-test callers",
         "entrypoint": "source/host/src/extensions/attachments/host_read_media_policy.rs::is_allowed_host_read_html",
         "owner": "source/host/src/extensions/attachments/host_read_media_policy.rs",
-        "producer": "source/host/src/extensions/attachments/host_read_media_policy.rs"
+        "producer": "No production generated-HTML provenance producer identified; provenance inputs are supplied only by contract fixtures"
       },
       "invariants": [
         "Trusted generated HTML markers strictly enforce kind=trusted-generated-html and version=1",
@@ -18796,10 +18796,10 @@
       ],
       "id": "OCRM-RESP-MEDIA-GEN-CORE-001",
       "integration": {
-        "consumer": "source/host/src/extensions/attachments/media_generation_service.rs",
+        "consumer": "No production media-generation provider/tool consumer identified; geometry and asset helpers have no non-test callers",
         "entrypoint": "source/host/src/extensions/attachments/media_generation_service.rs::resolve_closest_aspect_ratio",
         "owner": "source/host/src/extensions/attachments/media_generation_service.rs",
-        "producer": "source/host/src/extensions/attachments/media_generation_service.rs"
+        "producer": "No production media-generation request producer identified; generation options are supplied only by contract fixtures"
       },
       "invariants": [
         "Aspect ratio reduction via exact Euclidean greatest common divisor",
@@ -18990,10 +18990,10 @@
       ],
       "id": "OCRM-RESP-MUSIC-GEN-CORE-001",
       "integration": {
-        "consumer": "source/host/src/extensions/attachments/media_generation_service.rs",
+        "consumer": "No production music-generation provider/tool consumer identified; music capability helpers have no non-test callers",
         "entrypoint": "source/host/src/extensions/attachments/media_generation_service.rs::list_supported_music_generation_modes",
         "owner": "source/host/src/extensions/attachments/media_generation_service.rs",
-        "producer": "source/host/src/extensions/attachments/media_generation_service.rs"
+        "producer": "No production music-generation request producer identified; capability inputs are supplied only by contract fixtures"
       },
       "invariants": [
         "Generate mode is always enabled; edit mode requires explicit capability activation",
@@ -19166,10 +19166,10 @@
       ],
       "id": "OCRM-RESP-LINK-UNDERSTANDING-001",
       "integration": {
-        "consumer": "source/host/src/extensions/attachments/link_understanding_service.rs",
+        "consumer": "No production link-understanding consumer identified; extraction and body-enrichment helpers have no non-test callers",
         "entrypoint": "source/host/src/extensions/attachments/link_understanding_service.rs::extract_bare_links_from_message",
         "owner": "source/host/src/extensions/attachments/link_understanding_service.rs",
-        "producer": "source/host/src/extensions/attachments/link_understanding_service.rs"
+        "producer": "No production link-understanding message producer identified; messages are supplied only by contract fixtures"
       },
       "invariants": [
         "Markdown inline citations are masked out to avoid unwanted link fetches",
