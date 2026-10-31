@@ -39,3 +39,8 @@ The new external contracts pin two exact 20-byte elements, signed i32/i32/i64 bo
 Future-salt installation/rotation, request scheduling, persistence, retry, arbitrary request history, gzip, complete updates difference/differenceSlice decoding/application, broader fixed-U source/legal closure, Stage-B executable evidence and independent release ACCEPT remain open or outside this nested wire slice.
 
 No GitHub Actions/status/check query or trigger, build, typecheck, lint, schema validator, generator, unit/contract/integration/E2E test, package, deployment, installation or runtime acceptance was performed.
+
+## Final source-level compliance
+
+Platform-core final compliance commit `b6c7f4ad9a7e40bc4ffe24b6ee7a5e33ae134b83` / spec blob `c9617bb2c8e40f3ff4d070121ccb95c4d9ddff16` confirms the same no-production-delta disposition. Canonical and desktop external contract blob remains `0f99a2c99b377920792316de433c2229bc781e60`, authored only and not run. The existing ledger responsibility remains implemented/not-run/accepted=false; no future-salt lifecycle/application semantics are claimed.
+

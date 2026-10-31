@@ -17105,7 +17105,9 @@
         "platform-core-path:native/telegram-protocol/tests/protocol_contract.rs@0f99a2c99b377920792316de433c2229bc781e60",
         "desktop-round90-contract-mirror-commit:b5891b2907d6ca72fb1a5385f27f29ad4b0e215e",
         "path:source/mahayana/mahayana-rs/providers/telegram-protocol/tests/protocol_contract.rs@0f99a2c99b377920792316de433c2229bc781e60",
-        "stage-a-round90-evidence:projects/telegram-desktop-rust/evidence/round90-mtproto-future-salt-element-revalidation-20261101.md"
+        "stage-a-round90-evidence:projects/telegram-desktop-rust/evidence/round90-mtproto-future-salt-element-revalidation-20261101.md",
+        "platform-core-round90-final-compliance-commit:b6c7f4ad9a7e40bc4ffe24b6ee7a5e33ae134b83",
+        "platform-core-round90-final-spec-blob:c9617bb2c8e40f3ff4d070121ccb95c4d9ddff16"
       ],
       "test_evidence": [
         "platform-core native/telegram-protocol/src/api.rs exact future_salts/future_salt parse contract authored, not run",
@@ -17243,7 +17245,7 @@
       "acceptance_reviewer": null,
       "reviewer": null,
       "license_and_provenance": "Behavioral responsibility is anchored to fixed-U telegramdesktop/tdesktop Telegram/SourceFiles/mtproto/scheme/mtproto.tl@76225965bfc794388db241f3f760db8ab79e84f8 and the adjacent authenticated service-message handling boundary in Telegram/SourceFiles/mtproto/session_private.cpp@13cbc76ec723386027b5b4dcac79999b791c4614. The implementation is source-neutral Rust and copies no upstream C++ implementation.",
-      "notes": "Stage A implementation only. This row closes complete future_salts/future_salt wire validation and current-one-RPC correlation; it does not claim arbitrary historical request bookkeeping. Global unknown/unread source-entry counts remain unchanged because this is a newly mapped responsibility slice within already-open fixed-U source coverage. Contracts are authored but not executed; validation_status=not-run and accepted=false. Round90 adjacent revalidation confirms the live parser already enforces each future_salt nested constructor plus signed 4/4/8 field widths, fixed 20-byte vector element boundaries, pre-allocation remaining-byte bounds and strict EOF; no production behavior delta was made. Canonical/desktop external element-boundary contracts were added and remain not run. Future-salt adoption/rotation/scheduling/persistence and arbitrary request lifecycle remain outside this wire-only disposition.",
+      "notes": "Stage A implementation only. This row closes complete future_salts/future_salt wire validation and current-one-RPC correlation; it does not claim arbitrary historical request bookkeeping. Global unknown/unread source-entry counts remain unchanged because this is a newly mapped responsibility slice within already-open fixed-U source coverage. Contracts are authored but not executed; validation_status=not-run and accepted=false. Round90 adjacent revalidation confirms the live parser already enforces each future_salt nested constructor plus signed 4/4/8 field widths, fixed 20-byte vector element boundaries, pre-allocation remaining-byte bounds and strict EOF; no production behavior delta was made. Canonical/desktop external element-boundary contracts were added and remain not run. Future-salt adoption/rotation/scheduling/persistence and arbitrary request lifecycle remain outside this wire-only disposition. Final round90 source-level compliance is recorded at platform-core commit b6c7f4ad9a7e40bc4ffe24b6ee7a5e33ae134b83/spec blob c9617bb2c8e40f3ff4d070121ccb95c4d9ddff16; executable validation remains not-run.",
       "test_execution_evidence": [],
       "validation_status": "not-run",
       "accepted": false
