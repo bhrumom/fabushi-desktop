@@ -9,7 +9,7 @@
     "unknown": 16172,
     "unread": 16145,
     "omitted": 0,
-    "responsibilities_total": 83,
+    "responsibilities_total": 84,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -20903,6 +20903,256 @@
       "validation_status": "not-run",
       "accepted": false,
       "id": "TDRP-R9-MTPROTO-SET-CLIENT-DH-PARAMS-REQUEST-WIRE-001",
+      "source_paths": [
+        "Telegram/SourceFiles/mtproto/scheme/mtproto.tl@76225965bfc794388db241f3f760db8ab79e84f8",
+        "Telegram/SourceFiles/mtproto/details/mtproto_dc_key_creator.cpp@13c57454f14b814b5923ea253048fb881ad8cf03",
+        "Telegram/SourceFiles/mtproto/session_private.cpp@13cbc76ec723386027b5b4dcac79999b791c4614"
+      ]
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+      "source_path": "Telegram/SourceFiles/mtproto/scheme/mtproto.tl",
+      "source_blob_sha": "76225965bfc794388db241f3f760db8ab79e84f8",
+      "source_kind": "schema",
+      "module_id": "tdesktop.mtproto.client-dh-inner-data-wire",
+      "responsibility_id": "TDRP-R9-MTPROTO-CLIENT-DH-INNER-DATA-WIRE-001",
+      "source_symbols": [
+        "client_DH_inner_data#6643b654 nonce:int128 server_nonce:int128 retry_id:long g_b:string = Client_DH_Inner_Data",
+        "p_q_inner_data_temp_dc#56fddf88 pq:string p:string q:string nonce:int128 server_nonce:int128 new_nonce:int256 dc:int expires_in:int = P_Q_inner_data",
+        "DcKeyCreator::dhClientParamsSend / MTP_client_DH_inner_data",
+        "DcKeyCreator::pqAnswered / MTP_p_q_inner_data_temp_dc"
+      ],
+      "capability_ids": [
+        "CAP-TELEGRAM-MTPROTO-CLIENT-DH-INNER-DATA-WIRE"
+      ],
+      "dependency_ids": [
+        "TelegramClientLease",
+        "RuntimeClient",
+        "telegram-protocol::TlWriter"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/evidence/round74-mtproto-client-dh-inner-data-wire-20261101.md",
+      "behavior_contract": "Given caller-owned nonce, server_nonce, retry_id and already-derived g_b bytes, the canonical pure builder emits exactly fixed-U client_DH_inner_data#6643b654 in TL field order with raw int128 nonces, little-endian long retry_id and canonical TL string/bytes framing for g_b. Existing prepare_client_dh delegates only this inner-object framing after its unchanged server-DH validation and g_b/auth-key derivation, then retains SHA-1 prefixing, randomized block padding, AES-IGE encryption, salt derivation and final set_client_DH_params framing.",
+      "state_machine": "caller-owned nonce/server_nonce/retry_id/derived g_b -> exact client_DH_inner_data serializer -> existing prepare_client_dh hash/padding/AES path -> existing set_client_DH_params request body; temporary-key p_q_inner_data_temp_dc remains fail-closed because current handshake lifecycle does not represent expires_in.",
+      "side_effects": [
+        "Allocates and returns the exact client_DH_inner_data TL object only",
+        "Existing prepare_client_dh delegates inner-object serialization only; the pure builder has no cryptographic, persistence, network, scheduler or lifecycle side effects"
+      ],
+      "failure_cases": [
+        "Wrong client_DH_inner_data constructor or field order",
+        "Nonce/server_nonce byte reordering or truncation",
+        "retry_id not encoded as the exact little-endian TL long",
+        "g_b not using canonical TL string/bytes framing or carrying unexpected trailing bytes",
+        "Serializer accidentally taking ownership of DH generation, encryption, connection/auth-key lifecycle, or temporary-key expires_in semantics"
+      ],
+      "ui_disposition": "No UI. This is source-neutral MTProto request-wire serialization inside the existing embedded Telegram protocol owner.",
+      "non_ui_responsibilities": [
+        "Exact fixed-U client_DH_inner_data constructor serialization",
+        "Raw nonce/server_nonce TL int128 preservation",
+        "Exact retry_id TL long serialization",
+        "Canonical g_b TL string/bytes framing",
+        "Strict separation of inner-object framing from existing DH/auth-key cryptography and temporary-key lifecycle"
+      ],
+      "platform_delta": "Fixed-U Telegram Desktop's shipping MTP_client_DH_inner_data wire object is re-expressed as a source-neutral Rust pure builder in the existing shared telegram-protocol handshake owner. Existing prepare_client_dh reuses that builder without moving DH validation, randomness, auth-key derivation, hashing, padding, AES-IGE, salt derivation, or set_client_DH_params framing. The adjacent temporary p_q_inner_data_temp_dc branch is intentionally not claimed closed because the current canonical handshake input has no expires_in lifecycle.",
+      "existing_owner_candidates": [
+        "bhrumom/fabushi-platform-core:native/telegram-protocol/src/handshake.rs",
+        "bhrumom/fabushi-platform-core:native/telegram-protocol/src/lib.rs",
+        "source/mahayana/mahayana-rs/providers/telegram-protocol/src/lib.rs",
+        "existing telegram-network/transport owner for later not-secure framing/send lifecycle"
+      ],
+      "existing_owner": "Existing canonical embedded telegram-protocol handshake/request-wire owner with pre-existing prepare_client_dh lifecycle",
+      "rejected_existing_owners": [
+        "telegram-network/transport: owns later envelope/send concerns, not the canonical TL inner-object serializer",
+        "new handshake owner: rejected because prepare_client_dh already owns the DH/auth-key preparation lifecycle and only needs to reuse a pure serializer",
+        "standalone p_q_inner_data_temp_dc serializer: rejected as production closure until existing handshake state can represent temporary-key expires_in"
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "bhrumom/fabushi-platform-core:native/telegram-protocol/src/handshake.rs",
+        "bhrumom/fabushi-platform-core:native/telegram-protocol/src/lib.rs",
+        "bhrumom/fabushi-platform-core:native/telegram-protocol/tests/protocol_contract.rs",
+        "source/mahayana/mahayana-rs/providers/telegram-protocol/src/lib.rs",
+        "source/mahayana/mahayana-rs/providers/telegram-protocol/tests/protocol_contract.rs"
+      ],
+      "fabushi_target_symbols": [
+        "CLIENT_DH_INNER_DATA_CONSTRUCTOR",
+        "build_client_dh_inner_data",
+        "prepare_client_dh",
+        "build_set_client_dh_params"
+      ],
+      "target_language": "Rust",
+      "language_rationale": "This is protocol wire logic and belongs in the existing Rust telegram-protocol owner; no Telegram C++ core, FFI, sidecar, subprocess, or second protocol runtime is retained.",
+      "command_event_contracts": [
+        "caller-owned nonce/server_nonce/retry_id/g_b -> build_client_dh_inner_data -> exact Vec<u8> inner object",
+        "existing prepare_client_dh -> unchanged DH/auth-key preparation -> build_client_dh_inner_data -> existing hash/padding/AES -> build_set_client_dh_params"
+      ],
+      "state_owner": "The pure builder is stateless; existing prepare_client_dh/AuthKeyHandshake remain authoritative for DH/auth-key negotiation state and retry semantics.",
+      "lifecycle_owner": "Existing AuthKeyHandshake/TelegramClientLease/runtime remain authoritative; this slice changes only client_DH_inner_data framing. Temporary-key p_q_inner_data_temp_dc expires_in remains outside current lifecycle representation.",
+      "persistence_and_restart": "No new persistence. The serializer derives bytes only from its constructor and caller-provided fields; existing handshake/session persistence semantics are unchanged.",
+      "concurrency_and_cancellation": "Pure synchronous serialization; no new asynchronous work, cancellation token, scheduler, callback registry, request history, or shared mutable state.",
+      "security_boundary": "The builder neither generates nor stores nonce, server_nonce, retry_id, g_b, auth keys, salts, AES material or message ids. It only frames caller-provided values after existing DH validation/derivation.",
+      "network_service_dependencies": [
+        "No network call is performed by the builder; later not-secure framing/send/retry/timeout behavior remains outside this slice."
+      ],
+      "service_owner": "Canonical embedded Telegram protocol runtime.",
+      "deployment_evidence": [],
+      "implementation_status": "implemented",
+      "coverage_disposition": "rewritten",
+      "blockers": [
+        "p_q_inner_data_temp_dc#56fddf88 remains fail-closed because current canonical AuthKeyHandshake::prepare_req_dh_params* accepts dc_id but does not model temporary-key expires_in; an unused serializer would not close shipping lifecycle parity.",
+        "Connection-probe scheduling, endpoint/transport racing, MTProto message-id generation, plaintext/not-secure packet framing, send/timeout/retry, and server response correlation/application remain outside this wire slice.",
+        "Broader auth-key creation/persistence/session lifecycle remains owned by existing handshake/runtime and is not declared closed by this serializer.",
+        "Stage B executable build/unit/contract/integration/packaged validation has not run.",
+        "gzip_packed bounded decompression remains blocked.",
+        "Complete updates difference/differenceSlice decoding/application remains open/fail-closed.",
+        "Arbitrary wasSent/haveSent/_resendingIds/toSend/_sentContainers histories remain open/fail-closed.",
+        "Broader fixed-U source/legal/release closure remains open."
+      ],
+      "production_entrypoints": [
+        "canonical telegram-protocol::prepare_client_dh -> build_client_dh_inner_data before existing SHA-1 prefix/padding/AES encryption",
+        "source/mahayana/mahayana-rs/providers/telegram-protocol public facade/contracts mirror the canonical API; desktop keeps no second handshake lifecycle owner"
+      ],
+      "production_evidence": [
+        "platform-core-spec-commit:20049ba38728a50239a900a1c0a684527d427b30",
+        "platform-core-implementation-commit:b5e5f9cd85ed663b0c2ab35998bc1fbf116df0e9",
+        "platform-core-path:native/telegram-protocol/src/handshake.rs@0e5e6c0fa306f75aa1fcb5c26440b1c39f87c9f9",
+        "platform-core-path:native/telegram-protocol/src/lib.rs@7273e030bf02c248d9b592b2578cb5dc9716b485",
+        "platform-core-path:native/telegram-protocol/tests/protocol_contract.rs@7236df6bec3c832363901034d6a7d1c7cd3df3fc",
+        "desktop-implementation-commit:1de1da4bf045c405d26ff44c373ad2dd63bf9ce1",
+        "path:source/mahayana/mahayana-rs/providers/telegram-protocol/src/lib.rs@7273e030bf02c248d9b592b2578cb5dc9716b485",
+        "path:source/mahayana/mahayana-rs/providers/telegram-protocol/tests/protocol_contract.rs@7236df6bec3c832363901034d6a7d1c7cd3df3fc"
+      ],
+      "test_evidence": [
+        "platform-core native/telegram-protocol/tests/protocol_contract.rs exact client_DH_inner_data constructor/nonce/server_nonce/retry_id/g_b TL layout and no-trailing contract authored, not run",
+        "desktop synchronized protocol contract authored, not run"
+      ],
+      "target_commit": "1de1da4bf045c405d26ff44c373ad2dd63bf9ce1",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Canonical Fabushi account + existing TelegramClientLease/runtime + shared telegram-protocol production composition",
+      "composition_slot": "Embedded Telegram MTProto client_DH_inner_data wire serialization",
+      "capability_component": "Exact fixed-U client_DH_inner_data builder",
+      "variation_axes": [
+        "caller-provided nonce/server_nonce values",
+        "retry_id values including nonzero retry",
+        "g_b TL string length/padding",
+        "existing prepare_client_dh delegation without lifecycle expansion"
+      ],
+      "shared_owner_contracts": [
+        "Existing account-bound TelegramClientLease",
+        "Existing RuntimeClient",
+        "Existing telegram-protocol TlWriter",
+        "Existing Cargo path-dependency composition"
+      ],
+      "duplicate_root_check": "No second account, runtime, provider, transport, connection probe, handshake runtime, request history, callback registry, sent-container store, decompression runtime, difference runtime, message store, UI root, sidecar, subprocess or Web wrapper was introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Not applicable",
+      "primary_navigation_target": "Existing Messages/Conversation navigation",
+      "collection_surface": "Existing ConversationList; no change",
+      "creation_flow": "Existing canonical conversation creation; no change",
+      "object_action_scope": "Not applicable",
+      "detail_section": "Not applicable",
+      "capability_surface": "Existing ConversationWorkspace through the same provider/runtime; no new surface",
+      "route_contract": "No new route.",
+      "search_scope": "Not applicable",
+      "search_provider": "Existing canonical Search owner; unchanged",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Unchanged.",
+      "search_local_remote_contract": "Not applicable.",
+      "responsive_disposition": "No UI change.",
+      "accessibility_contract": "No UI change.",
+      "keyboard_contract": "No UI change.",
+      "state_continuity_contract": "Pure wire serialization adds no state. Existing prepare_client_dh retains server-DH validation, random exponent generation, g_b/auth-key derivation, SHA-1 prefixing, randomized AES-block padding, AES-IGE encryption, server-salt derivation and PreparedClientDh ownership. Adjacent temporary-key expires_in remains fail-closed.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Existing Fabushi design system; no visual changes",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": null,
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "No new icon asset",
+      "avatar_contract": "No change",
+      "content_copy_keys": [],
+      "motion_contract": "No change",
+      "reduced_motion_contract": "No change",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "high",
+      "requirement_ids": [
+        "TDRP-R9-MTPROTO-CLIENT-DH-INNER-DATA-WIRE-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-MTPROTO-CLIENT-DH-INNER-DATA-WIRE-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-MTPROTO-CLIENT-DH-INNER-DATA-EXACT-001",
+        "INV-TDRP-MTPROTO-CLIENT-DH-INNER-DATA-TL-STRING-001",
+        "INV-TDRP-MTPROTO-CLIENT-DH-INNER-DATA-PREPARE-LIFECYCLE-UNCHANGED-001",
+        "INV-TDRP-MTPROTO-P-Q-INNER-DATA-TEMP-DC-FAIL-CLOSED-001"
+      ],
+      "unit_case_ids": [
+        "UNIT-TDRP-MTPROTO-CLIENT-DH-INNER-DATA-LAYOUT-001",
+        "UNIT-TDRP-MTPROTO-CLIENT-DH-INNER-DATA-TL-STRING-001"
+      ],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-MTPROTO-CLIENT-DH-INNER-DATA-WIRE-001"
+      ],
+      "integration_case_ids": [],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "fault_recovery_case_ids": [],
+      "performance_case_ids": [],
+      "security_case_ids": [
+        "SEC-TDRP-MTPROTO-CLIENT-DH-INNER-DATA-NO-AUTHORITY-001"
+      ],
+      "soak_case_ids": [],
+      "exploratory_charter_ids": [],
+      "regression_ids": [
+        "REG-TDRP-MTPROTO-CLIENT-DH-INNER-DATA-EXACT-001"
+      ],
+      "release_gate_ids": [
+        "G-TRACEABILITY",
+        "G-COMPOSITION",
+        "G-SECURITY",
+        "G-EVIDENCE",
+        "G-RELEASE"
+      ],
+      "test_fixture_ids": [
+        "mtproto-client-dh-inner-data-nonce-pattern",
+        "mtproto-client-dh-inner-data-server-nonce-pattern",
+        "mtproto-client-dh-inner-data-retry-id-pattern",
+        "mtproto-client-dh-inner-data-g-b-five-byte-padding"
+      ],
+      "test_environment_ids": [
+        "GitHub Actions Stage B matrix (not run)"
+      ],
+      "coverage_matrix_status": "pending",
+      "flake_status": "stable",
+      "release_gate_status": "pending",
+      "acceptance_reviewer": null,
+      "reviewer": null,
+      "license_and_provenance": "Behavioral responsibility is anchored to fixed-U telegramdesktop/tdesktop Telegram/SourceFiles/mtproto/scheme/mtproto.tl@76225965bfc794388db241f3f760db8ab79e84f8 and shipping DcKeyCreator::dhClientParamsSend / MTP_client_DH_inner_data plus adjacent temporary-key selection in Telegram/SourceFiles/mtproto/details/mtproto_dc_key_creator.cpp@13c57454f14b814b5923ea253048fb881ad8cf03. session_private.cpp@13cbc76ec723386027b5b4dcac79999b791c4614 was reread as adjacent context and contains no direct inner-object construction. The implementation is source-neutral Rust and copies no upstream C++ implementation.",
+      "notes": "Stage A implementation only. This row closes exact client_DH_inner_data framing and minimal reuse from pre-existing prepare_client_dh without expanding DH/auth-key lifecycle ownership. Adjacent p_q_inner_data_temp_dc is explicitly not closed because current canonical handshake state lacks temporary expires_in. Global unknown/unread source-entry counts remain unchanged because this is a newly mapped responsibility slice within already-open fixed-U source coverage. Contracts are authored but not executed; validation_status=not-run and accepted=false.",
+      "test_execution_evidence": [],
+      "validation_status": "not-run",
+      "accepted": false,
+      "id": "TDRP-R9-MTPROTO-CLIENT-DH-INNER-DATA-WIRE-001",
       "source_paths": [
         "Telegram/SourceFiles/mtproto/scheme/mtproto.tl@76225965bfc794388db241f3f760db8ab79e84f8",
         "Telegram/SourceFiles/mtproto/details/mtproto_dc_key_creator.cpp@13c57454f14b814b5923ea253048fb881ad8cf03",
