@@ -1,6 +1,6 @@
 # OCRM-P0-CONFIG-001 — Configuration, Schema Normalization & Single-Writer Settings Authority
 
-Status: **Scoped unit admitted into parity-ledger (6 responsibilities mapped, 8 source files read-complete); Rust implementation and wiring in settings_service.rs/agent_paths.rs verified by contract tests; acceptance pending**  
+Status: **Scoped unit admitted into parity-ledger (6 responsibilities mapped, 8 source files read-complete); source-level contract assertions are present for settings_service.rs/agent_paths.rs, but no current exact-head Actions receipt proves implementation, production wiring, or acceptance; acceptance pending**
 Unit: `OCRM-UNIT-CONFIG-001`  
 Candidate requirements: `OCRM-R04`, `OCRM-R09`, `OCRM-AC05`, `OCRM-AC17`  
 Dossier: `projects/openclaw-rust/dossiers/config-settings-scoped.md`  
@@ -12,4 +12,4 @@ Investigated target: `bhrumom/fabushi-desktop` HEAD
 
 Configuration reads and mutations enter through canonical Fabushi settings API → check immutability / deployment mode guards → acquire serial writer mutex → traverse or update properties along safe dot notation paths with prototype pollution defense → persist atomically via temporary staging files and sync → notify subscribers of effective field changes.
 
-**Current readiness:** Unit admitted into `parity-ledger.json` (`OCRM-RESP-CONFIG-PATH-MUTATION-001` .. `OCRM-RESP-CONFIG-AGENT-WORKSPACE-DIRS-001`). 8 source files mapped to reviewed status in Git shards. Rust implementation verified in `source/host/tests/settings_service_contract.rs`. Full project closure and release acceptance remain false until every path is dispositioned and every applicable product responsibility is reviewed, implemented, wired and accepted.
+**Current readiness:** Unit admitted into `parity-ledger.json` (`OCRM-RESP-CONFIG-PATH-MUTATION-001` .. `OCRM-RESP-CONFIG-AGENT-WORKSPACE-DIRS-001`). 8 source files mapped to reviewed status in Git shards. `source/host/tests/settings_service_contract.rs` contains source-level contract assertions; this is not a current exact-head Actions receipt and does not by itself prove production wiring. Full project closure and release acceptance remain false until every path is dispositioned and every applicable product responsibility is reviewed, implemented, wired and accepted.

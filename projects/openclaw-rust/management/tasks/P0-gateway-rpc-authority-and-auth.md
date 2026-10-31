@@ -1,6 +1,6 @@
 # OCRM-P0-GW-001 — Gateway ingress authorization and dispatch parity
 
-Status: **Scoped unit admitted into parity-ledger (5 responsibilities mapped, 10 source files read-complete); Rust implementation and wiring in gateway_server.rs/host_gateway_api.rs verified by contract tests; acceptance pending**  
+Status: **Scoped unit admitted into parity-ledger (5 responsibilities mapped, 10 source files read-complete); source-level contract assertions are present for gateway_server.rs/host_gateway_api.rs, but no current exact-head Actions receipt proves implementation, production wiring, or acceptance; acceptance pending**
 Unit: `OCRM-UNIT-GW-INGRESS-001`  
 Candidate requirement: `OCRM-R04`, `OCRM-AC11`  
 Dossier: `projects/openclaw-rust/dossiers/gateway-ingress-scoped.md`  
@@ -12,7 +12,7 @@ Investigated target: `bhrumom/fabushi-desktop` HEAD
 
 A connection/request enters the canonical Gateway → authenticates/authorizes exactly once against current account/role/scope/session generation → the existing Host method owner dispatches a typed request → exactly one success/error/unknown-result settlement is exposed to the correct consumer. The implementation retains current Fabushi native dispatch and supports the complete frozen source-scope compatibility.
 
-**Current readiness:** Unit admitted into `parity-ledger.json` (`OCRM-RESP-GW-ROLE-POLICY-001` .. `OCRM-RESP-GW-DEVICE-REVOCATION-FENCE-001`). 10 source files mapped to reviewed status in Git shards. Rust implementation in `source/host/src/gateway_server.rs` and `source/host/src/host_gateway_api.rs` verified in `source/host/tests/gateway_server_contract.rs` and `source/host/tests/gateway_protocol_contract.rs`. Full project closure and release acceptance remain false until every path is dispositioned and every applicable product responsibility is reviewed, implemented, wired and accepted.
+**Current readiness:** Unit admitted into `parity-ledger.json` (`OCRM-RESP-GW-ROLE-POLICY-001` .. `OCRM-RESP-GW-DEVICE-REVOCATION-FENCE-001`). 10 source files mapped to reviewed status in Git shards. `source/host/tests/gateway_server_contract.rs` and `source/host/tests/gateway_protocol_contract.rs` contain source-level contract assertions; these are not a current exact-head Actions receipt and do not by themselves prove production wiring. Full project closure and release acceptance remain false until every path is dispositioned and every applicable product responsibility is reviewed, implemented, wired and accepted.
 
 ## Input, state, authority, error and lifecycle contract to establish
 
