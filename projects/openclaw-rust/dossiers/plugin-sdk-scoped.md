@@ -46,4 +46,24 @@
   - `test_ocrm_plugin_sdk_access_groups_and_account_id`
   - `test_ocrm_plugin_sdk_acp_runtime`
   - `test_ocrm_plugin_sdk_agent_harness`
-- Evidence: 3/3 passing contract tests with full positive and negative assertions.
+- These are static Rust contract tests, not production ACP wiring or live
+  service acceptance evidence. The current parity row therefore remains
+  `wiring=not-wired`, `verification=not-run`, and `acceptance=pending` for the
+  ACP runtime responsibility.
+
+## 5. Production owner/consumer audit (2026-10-31)
+
+The current checkout was re-read for `AcpSessionManager`,
+`verify_session_access`, and `generate_doctor_report`. The manager is exported
+from `plugin_sdk/mod.rs`, but the only caller of its session methods is
+`source/host/tests/openclaw_plugin_sdk_contract.rs`. No Host/Coordinator/Runner
+ACP transport, session lifecycle producer, plugin dispatcher, or typed doctor
+route reaches this module.
+
+`generate_doctor_report` counts the manager's local in-memory entries and
+always emits `AcpRuntimeStatus::Ready`; it is therefore a local contract
+projection, not evidence of a live ACP backend or production doctor state.
+The parity integration now records the missing production producer and
+consumer explicitly. No second session store, synthetic transport, or
+client-supplied lifecycle was introduced; the existing
+`BL-PLUGIN-SDK-ACP-WIRING-001` blocker and all pending statuses remain.

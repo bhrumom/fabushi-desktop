@@ -21772,10 +21772,10 @@
       ],
       "id": "OCRM-RESP-PLUGIN-SDK-ACP-RUNTIME-001",
       "integration": {
-        "consumer": "source/host/src/extensions/plugin_sdk/acp_runtime.rs",
+        "consumer": "No production ACP/plugin consumer identified; current AcpSessionManager is consumed only by source/host/tests/openclaw_plugin_sdk_contract.rs",
         "entrypoint": "source/host/src/extensions/plugin_sdk/acp_runtime.rs::verify_session_access",
         "owner": "source/host/src/extensions/plugin_sdk/acp_runtime.rs",
-        "producer": "source/host/src/extensions/plugin_sdk/acp_runtime.rs"
+        "producer": "No production ACP session producer identified; AcpSessionManager owns only an in-memory test-facing registry"
       },
       "invariants": [
         "Incognito sessions that have ended reject subsequent turns with IncognitoSessionEnded",
