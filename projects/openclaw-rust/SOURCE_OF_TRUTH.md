@@ -547,3 +547,12 @@ authority flags 继续保持 `false`。
 package roots。该结果消除了此前 workspace count 的歧义，但仍只属于静态
 manifest/importer mapping；外部包 archive/integrity/license provenance、
 source closure 和 exact-head Actions authority 仍未闭合。
+
+对 fixed subject 应用 lock 与 exact Git tree 的进一步只读重核显示：200 个
+importer 路径全部匹配 manifest，263 条 `link:` edge 按 importer 相对路径解析
+后全部落到现有 workspace manifest；1,844 个 package resolution 全部带声明的
+integrity，另有 285 个 platform-qualified package、318 个 optional snapshot、
+131 个带 peerDependencies 的 package，6 个 patched dependency key 均有对应
+`patches/` 文件。这些是静态一致性和声明 provenance，不证明 archive bytes、
+patch 实际应用、native build、peer 环境、license/NOTICE 内容或 exact-head
+Actions reproduction；closure 与 authority flags 继续保持 `false`。

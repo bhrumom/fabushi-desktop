@@ -116,3 +116,19 @@ classified as non-workspace candidates: three `.github`/release entries,
 importer lacks a manifest. This closes the prior workspace-count ambiguity at
 the static mapping layer, while external package provenance and Actions
 authority remain open.
+
+## Workspace and package-edge recheck (2026-10-31)
+
+The exact application lock was checked against the exact Git tree without an
+install. All 200 importer paths matched a manifest with no name/path mismatch;
+all 263 `link:` edges resolved to an existing workspace manifest after
+resolving each link relative to its importer directory. All 1,844 package
+resolution entries carry a declared integrity string. The lock also records
+285 platform-qualified package entries, 318 optional snapshots, and 131
+package entries with peer-dependency declarations. All six patched dependency
+keys have corresponding patch files under `patches/`.
+
+These are static consistency and declared-provenance facts only. They do not
+verify downloaded archive bytes, patch application, native build outputs,
+peer-environment correctness, license/NOTICE contents, or exact-head Actions
+reproduction; closure and authority flags remain false.
