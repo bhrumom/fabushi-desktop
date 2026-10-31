@@ -13,8 +13,48 @@ use mahayana_host_runtime::extensions::attachments::media_store::{
 use mahayana_host_runtime::extensions::attachments::media_store_shared::SaveMediaSourceErrorCode;
 use serde_json::json;
 
+const MEDIA_STORE_SOURCE: &str = include_str!("../src/extensions/attachments/media_store.rs");
+const ATTACHMENTS_EXTENSION_SOURCE: &str = include_str!("../src/extensions/attachments/extension.rs");
+const HOST_PRODUCTION_SOURCE: &str = include_str!("../src/host_production_extensions.rs");
+const HOST_APP_SOURCE: &str = include_str!("../app/src/main.rs");
+
 struct TempTestDir {
     path: PathBuf,
+}
+
+#[test]
+fn test_ocrm_media_store_lifecycle_has_one_production_worker_and_all_consumers() {
+    for needle in [
+        "pub struct MediaStoreLifecycleWorker",
+        "run_media_store_lifecycle_pass",
+        "clean_old_media(DEFAULT_TTL_MS",
+        "prune_playback_transcode_cache(None)",
+        "prune_outbound_media(None)",
+        "MEDIA_STORE_LIFECYCLE_INTERVAL",
+    ] {
+        assert!(MEDIA_STORE_SOURCE.contains(needle), "missing lifecycle owner contract: {needle}");
+    }
+    for needle in [
+        "start_lifecycle_worker",
+        "MediaStoreLifecycleWorker::start(reporter)",
+        "stop_lifecycle_worker",
+        "worker.stop()",
+    ] {
+        assert!(
+            ATTACHMENTS_EXTENSION_SOURCE.contains(needle),
+            "Attachments must own lifecycle worker startup/shutdown: {needle}"
+        );
+    }
+    assert!(
+        HOST_PRODUCTION_SOURCE.contains("start_attachments_extension(")
+            && HOST_PRODUCTION_SOURCE.contains(")?;"),
+        "production Box composition must fail closed when the lifecycle worker cannot start"
+    );
+    assert!(
+        HOST_APP_SOURCE.contains("start_production_host_box_extensions")
+            && HOST_APP_SOURCE.contains("failed to start production Box extensions"),
+        "Host startup must surface lifecycle composition failure"
+    );
 }
 
 impl TempTestDir {

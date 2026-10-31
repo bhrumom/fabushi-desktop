@@ -13061,8 +13061,15 @@ fn main() {
             eprintln!("mahayana-host invariant_violation_telemetry_failed error={error}");
         }
     }));
-    let box_extensions =
-        start_production_host_box_extensions(&production_extensions, production_box);
+    let mut box_extensions = match
+        start_production_host_box_extensions(&production_extensions, production_box)
+    {
+        Ok(extensions) => extensions,
+        Err(error) => {
+            eprintln!("failed to start production Box extensions: {error}");
+            return;
+        }
+    };
     let host_lifecycle_api = host_telemetry.api();
     let lifecycle_now_ms = host_lifecycle_api.monotonic_now_ms();
     let lifecycle_started_at_ms = lifecycle_now_ms

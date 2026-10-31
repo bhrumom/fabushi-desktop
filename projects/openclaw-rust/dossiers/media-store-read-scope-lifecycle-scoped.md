@@ -31,7 +31,7 @@ The following 11 core media store persistence, read scope authority, remote inge
 
 ## 2. Decomposed Runtime Responsibilities & Honest Calibration
 
-The audited source code was decomposed into 5 discrete Rust runtime responsibilities registered in `parity-ledger.json`. Following rigorous scrutiny of actual production callers in `source/host`, all runtime responsibilities lacking production consumer pipelines are strictly marked `wiring=not-wired`, `verification=not-run`, `acceptance=pending` with explicit blocker IDs:
+The audited source code was decomposed into 5 discrete Rust runtime responsibilities registered in `parity-ledger.json`. Following rigorous scrutiny of actual production callers in `source/host`, responsibilities without production consumer pipelines remain strictly marked `wiring=not-wired`, `verification=not-run`, `acceptance=pending` with explicit blocker IDs. The lifecycle responsibility now has a real Attachments-owned periodic producer; its source wiring is recorded as wired, while verification and acceptance remain pending.
 
 1. **`OCRM-RESP-MEDIA-STORE-PERSIST-001`**:
    - **Behavior**: Core media persistence engine providing atomic buffer, stream, and local file storage with UUID identifiers, original filename preservation (`extract_original_filename` / `---[uuid]` convention), NFC-normalized cross-platform filename sanitization, traversal protection, fractional size limits (`MEDIA_MAX_BYTES = 5MB` default), and atomic temp file creation with `MEDIA_FILE_MODE` (0o644).
@@ -51,9 +51,9 @@ The audited source code was decomposed into 5 discrete Rust runtime responsibili
 3. **`OCRM-RESP-MEDIA-STORE-LIFECYCLE-001`**:
    - **Behavior**: Media storage lifecycle retention policies: playback transcode cache capped at 512MB disk budget with oldest-first LRU eviction and 7-day TTL; outbound staging with 24-hour TTL; cleanOldMedia routine with explicit exclusion of playback-transcode and SQLite-managed outgoing chat history.
    - **Rust Owner**: `source/host/src/extensions/attachments/media_store.rs::write_playback_transcode_cache, prune_playback_transcode_cache, prune_playback_transcode_cache_to_size, prune_outbound_media, clean_old_media`.
-   - **Production Call Chain**: `source/host/app/src/main.rs::dispatch_gateway_call` → `AttachmentsService::dispatch_gateway("cleanOldMedia")` → Owner `media_store::clean_old_media`; playback-cache callers remain separately incomplete.
-   - **Oracles**: `OCRM-MEDIA-STORE-O05`, `OCRM-MEDIA-STORE-O06`.
-   - **Status**: `implementation=implemented`, `wiring=not-wired`, `verification=not-run`, `blocker_ids=["BL-MEDIA-STORE-LIFECYCLE-DAEMON-001"]` (host periodic cleanup daemon and video playback transcode pipeline do not yet invoke `clean_old_media` and `prune_playback_transcode_cache`).
+   - **Production Call Chain**: `source/host/app/src/main.rs::main` → `start_production_host_box_extensions` → `HostAttachmentsExtension::start_lifecycle_worker` → `MediaStoreLifecycleWorker` → Owner `media_store::{clean_old_media, prune_playback_transcode_cache, prune_outbound_media}`; manual `cleanOldMedia` Gateway dispatch remains available.
+   - **Oracles**: `OCRM-MEDIA-STORE-O05`, `OCRM-MEDIA-STORE-O06`, `OCRM-MEDIA-STORE-O09` (source-level worker wiring oracle).
+   - **Status**: `implementation=implemented`, `wiring=wired`, `verification=not-run`, `acceptance=pending` (source-level periodic producer is wired; exact-head Actions, packaged/runtime and playback pipeline evidence remain outstanding).
 
 4. **`OCRM-RESP-MEDIA-STORE-REMOTE-001`**:
    - **Behavior**: Remote media ingestion boundary for media store with 30-second bounded timeouts, 5 redirect limits, URL extension fallback without basename leakage, and SavedMedia result mapping.
@@ -94,7 +94,7 @@ The audited source code was decomposed into 5 discrete Rust runtime responsibili
 
 ## 5. Verification & Contract Test Coverage
 
-All contracts verified in `source/host/tests/openclaw_media_store_contract.rs` (9 passed, 0 failed):
+Previously recorded media-store behavior contracts in `source/host/tests/openclaw_media_store_contract.rs` (9 passed, 0 failed) remain historical evidence. The new worker wiring oracle is present but has not been executed in this development freeze:
 - `test_ocrm_media_store_save_and_read_buffer`: Inbound media save, MIME detection, original filename prefixing (`---[uuid]`), buffer readback, and filename extraction.
 - `test_ocrm_media_store_size_limit_rejection`: Enforces exact byte budget and reports fractional unit limits.
 - `test_ocrm_media_store_filename_sanitization_and_truncation`: NFC normalization, cross-platform illegal character filtering, underscore collapsing, and 60 UTF-16 code unit truncation.
@@ -103,4 +103,5 @@ All contracts verified in `source/host/tests/openclaw_media_store_contract.rs` (
 - `test_ocrm_media_store_delete_and_lifecycle`: Media buffer deletion and file removal.
 - `test_ocrm_media_store_playback_cache_and_clean_old_media`: Playback transcode cache LRU oldest-first eviction and exclusion of protected `playback-transcode` and `outgoing` subtrees from mtime sweep.
 - `test_ocrm_media_store_gateway_service_dispatch`: End-to-end AttachmentsService dispatch of `saveMediaBuffer`, `readMediaBuffer`, `extractOriginalFilename`, and `deleteMediaBuffer`.
+- `test_ocrm_media_store_lifecycle_has_one_production_worker_and_all_consumers`: Static source oracle for the single Attachments-owned producer, fail-closed startup, stop/join path, and all three lifecycle consumers (**not run**).
 - `test_ocrm_device_pairing_qr_wiring`: Verifies that `DevicePairingOwner::handle_pair_setup_code` produces `qrDataUrl` and `qrTerminal`.

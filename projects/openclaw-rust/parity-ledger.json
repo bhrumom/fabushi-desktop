@@ -12318,9 +12318,7 @@
     {
       "adr_refs": [],
       "behavior": "Manage media lifecycle retention policies: playback transcode cache capped at 512MB disk budget with oldest-first LRU eviction and 7-day TTL; outbound staging with 24-hour TTL; cleanOldMedia routine with explicit exclusion of playback-transcode and SQLite-managed outgoing chat history.",
-      "blocker_ids": [
-        "BL-MEDIA-STORE-LIFECYCLE-DAEMON-001"
-      ],
+      "blocker_ids": [],
       "capability_ids": [
         "media.store_lifecycle"
       ],
@@ -12338,10 +12336,10 @@
       ],
       "id": "OCRM-RESP-MEDIA-STORE-LIFECYCLE-001",
       "integration": {
-        "consumer": "source/host/app/src/main.rs::dispatch_gateway_call -> source/host/src/extensions/attachments/attachments_service.rs::dispatch_gateway(cleanOldMedia); playback cache callers remain separate",
-        "entrypoint": "AttachmentsService::dispatch_gateway(\"cleanOldMedia\") -> media_store::clean_old_media",
+        "consumer": "HostAttachmentsExtension lifecycle worker -> media_store::{clean_old_media, prune_playback_transcode_cache, prune_outbound_media}; manual dispatch remains available",
+        "entrypoint": "start_production_host_box_extensions -> start_attachments_extension -> MediaStoreLifecycleWorker",
         "owner": "source/host/src/extensions/attachments/media_store.rs",
-        "producer": "AttachmentsService::dispatch_gateway(\"cleanOldMedia\")"
+        "producer": "source/host/src/extensions/attachments/extension.rs::HostAttachmentsExtension::start_lifecycle_worker"
       },
       "invariants": [
         "cleanOldMedia mtime sweep must never delete playback-transcode or outgoing history media",
@@ -12350,9 +12348,10 @@
       "migration_rollback": "Disable automatic periodic pruning",
       "oracle_ids": [
         "OCRM-MEDIA-STORE-O05",
-        "OCRM-MEDIA-STORE-O06"
+        "OCRM-MEDIA-STORE-O06",
+        "OCRM-MEDIA-STORE-O09"
       ],
-      "owner_decision": "Implement playback cache eviction and subtree exclusion in media_store.rs",
+      "owner_decision": "Keep retention logic in media_store.rs and add the single periodic producer to the existing Attachments extension",
       "postconditions": [
         "Expired or excess media pruned according to subtree retention rules"
       ],
@@ -12410,7 +12409,7 @@
         "mapping": "reviewed",
         "read": "read-complete",
         "verification": "not-run",
-        "wiring": "not-wired"
+        "wiring": "wired"
       },
       "target": {
         "language": "Rust",
@@ -12418,7 +12417,8 @@
         "symbol": "write_playback_transcode_cache, prune_playback_transcode_cache, prune_playback_transcode_cache_to_size, prune_outbound_media, clean_old_media"
       },
       "tests": [
-        "source/host/tests/openclaw_media_store_contract.rs::test_ocrm_media_store_playback_cache_and_clean_old_media"
+        "source/host/tests/openclaw_media_store_contract.rs::test_ocrm_media_store_playback_cache_and_clean_old_media",
+        "source/host/tests/openclaw_media_store_contract.rs::test_ocrm_media_store_lifecycle_has_one_production_worker_and_all_consumers"
       ],
       "typed_contracts": [
         "write_playback_transcode_cache(file_name: &str, buffer: &[u8], max_bytes: u64, base_dir: Option<&Path>) -> Result<PathBuf, String>",

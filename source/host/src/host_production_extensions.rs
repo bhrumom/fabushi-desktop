@@ -1493,7 +1493,8 @@ pub struct ProductionHostBoxExtensions {
 }
 
 impl ProductionHostBoxExtensions {
-    pub fn stop(&self) {
+    pub fn stop(&mut self) {
+        self.attachments.stop_lifecycle_worker();
         self.secrets.stop();
         self.forever_box.dispose();
     }
@@ -1502,7 +1503,7 @@ impl ProductionHostBoxExtensions {
 pub fn start_production_host_box_extensions(
     core: &ProductionHostExtensions,
     environment: ProductionBoxEnvironment,
-) -> ProductionHostBoxExtensions {
+) -> Result<ProductionHostBoxExtensions, String> {
     let lifecycle: Arc<dyn ForeverBoxLifecycle> = core.box_lifecycle.clone();
     let forever_box = start_forever_box_extension_with_telemetry(
         environment,
@@ -1517,14 +1518,14 @@ pub fn start_production_host_box_extensions(
         Some(Arc::new(move |diagnostic| {
             let _ = attachment_logs.report_host_extension_diagnostic(&diagnostic);
         })),
-    );
+    )?;
     let secrets = Arc::new(start_secrets_extension(
         Arc::clone(&forever_box),
         production_secrets_log(),
     ));
-    ProductionHostBoxExtensions {
+    Ok(ProductionHostBoxExtensions {
         forever_box,
         attachments,
         secrets,
-    }
+    })
 }

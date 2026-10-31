@@ -3,6 +3,7 @@ use std::fs::{self, File, OpenOptions};
 use std::io::{self, Read, Seek, SeekFrom, Write};
 use std::path::{Component, Path, PathBuf};
 use std::sync::{Arc, Mutex, OnceLock};
+use std::thread::{self, JoinHandle};
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 use serde::{Deserialize, Serialize};
@@ -23,8 +24,88 @@ pub const OUTBOUND_STAGING_TTL_MS: u64 = 24 * 60 * 60 * 1_000;
 pub const PLAYBACK_TRANSCODE_MAX_CACHE_BYTES: u64 = 512 * 1024 * 1024;
 pub const PLAYBACK_TRANSCODE_TTL_MS: u64 = 7 * 24 * 60 * 60 * 1_000;
 pub const DEFAULT_TTL_MS: u64 = 2 * 60 * 1_000;
+pub const MEDIA_STORE_LIFECYCLE_INTERVAL: Duration = Duration::from_secs(60 * 60);
 
 static PLAYBACK_CACHE_LOCK: OnceLock<Mutex<()>> = OnceLock::new();
+
+pub type MediaStoreLifecycleReporter = Arc<dyn Fn(&str, &str) + Send + Sync>;
+
+/// The sole periodic producer for media-store retention work.
+/// The worker owns no media state; each pass delegates to the existing owner.
+pub struct MediaStoreLifecycleWorker {
+    stop: Arc<std::sync::atomic::AtomicBool>,
+    join: Mutex<Option<JoinHandle<()>>>,
+}
+
+impl MediaStoreLifecycleWorker {
+    pub fn start(reporter: Option<MediaStoreLifecycleReporter>) -> Result<Self, String> {
+        let stop = Arc::new(std::sync::atomic::AtomicBool::new(false));
+        let stop_worker = Arc::clone(&stop);
+        let join = thread::Builder::new()
+            .name("fabushi-media-store-lifecycle".into())
+            .spawn(move || {
+                loop {
+                    for (operation, result) in run_media_store_lifecycle_pass() {
+                        if let Err(error) = result {
+                            if let Some(report) = reporter.as_ref() {
+                                report(operation, &error);
+                            }
+                        }
+                    }
+                    if stop_worker.load(std::sync::atomic::Ordering::Acquire) {
+                        break;
+                    }
+                    thread::park_timeout(MEDIA_STORE_LIFECYCLE_INTERVAL);
+                    if stop_worker.load(std::sync::atomic::Ordering::Acquire) {
+                        break;
+                    }
+                }
+            })
+            .map_err(|error| format!("could not start media-store lifecycle worker: {error}"))?;
+        Ok(Self {
+            stop,
+            join: Mutex::new(Some(join)),
+        })
+    }
+
+    pub fn stop(&self) {
+        self.stop.store(true, std::sync::atomic::Ordering::Release);
+        let mut join = self.join.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
+        if let Some(handle) = join.take() {
+            handle.thread().unpark();
+            let _ = handle.join();
+        }
+    }
+}
+
+impl Drop for MediaStoreLifecycleWorker {
+    fn drop(&mut self) {
+        self.stop.store(true, std::sync::atomic::Ordering::Release);
+        if let Some(handle) = self
+            .join
+            .get_mut()
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
+            .take()
+        {
+            handle.thread().unpark();
+            let _ = handle.join();
+        }
+    }
+}
+
+pub fn run_media_store_lifecycle_pass() -> Vec<(&'static str, Result<(), String>)> {
+    vec![
+        (
+            "clean_old_media",
+            clean_old_media(DEFAULT_TTL_MS, &CleanOldMediaOptions::default(), None),
+        ),
+        (
+            "prune_playback_transcode_cache",
+            prune_playback_transcode_cache(None),
+        ),
+        ("prune_outbound_media", prune_outbound_media(None)),
+    ]
+}
 
 fn get_playback_cache_lock() -> &'static Mutex<()> {
     PLAYBACK_CACHE_LOCK.get_or_init(|| Mutex::new(()))
