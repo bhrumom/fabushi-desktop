@@ -93,6 +93,47 @@ impl CloudWorkerArtifactPublisher {
             path: destination,
         })
     }
+
+    /// Re-resolves a previously published artifact without creating or
+    /// repairing anything. The bytes must still verify against the original
+    /// source and the expected proof, otherwise the caller must treat the
+    /// managed artifact as unavailable or damaged.
+    pub fn resolve_verified(
+        &self,
+        kind: CloudWorkerArtifactKind,
+        policy: &CloudWorkerArtifactPolicy,
+        source: &CloudWorkerArtifactSource,
+        expected: &CloudWorkerVerifiedArtifact,
+    ) -> Result<CloudWorkerPublishedArtifact, CloudWorkerArtifactStoreError> {
+        expected.validate()?;
+        let directory = self.root.join(kind_directory(&kind));
+        ensure_existing_regular_directory(&directory)?;
+        let destination = directory.join(format!("{}.artifact", expected.digest.0));
+        let metadata = fs::symlink_metadata(&destination).map_err(|error| {
+            if error.kind() == io::ErrorKind::NotFound {
+                CloudWorkerArtifactStoreError::MissingArtifact
+            } else {
+                CloudWorkerArtifactStoreError::Read(error)
+            }
+        })?;
+        if metadata.file_type().is_symlink() || !metadata.file_type().is_file() {
+            return Err(CloudWorkerArtifactStoreError::InvalidDestination);
+        }
+        let mut bytes = Vec::new();
+        File::open(&destination)
+            .map_err(CloudWorkerArtifactStoreError::Read)?
+            .read_to_end(&mut bytes)
+            .map_err(CloudWorkerArtifactStoreError::Read)?;
+        let proof = verify_artifact_bytes(policy, source, &bytes)
+            .map_err(|_| CloudWorkerArtifactStoreError::ExistingArtifactMismatch)?;
+        if proof != *expected {
+            return Err(CloudWorkerArtifactStoreError::ExistingArtifactMismatch);
+        }
+        Ok(CloudWorkerPublishedArtifact {
+            proof,
+            path: destination,
+        })
+    }
 }
 
 fn kind_directory(kind: &CloudWorkerArtifactKind) -> &'static str {
@@ -112,6 +153,20 @@ fn ensure_regular_directory(path: &Path) -> Result<(), CloudWorkerArtifactStoreE
         Ok(_) => Err(CloudWorkerArtifactStoreError::InvalidDirectory),
         Err(error) if error.kind() == io::ErrorKind::NotFound => {
             fs::create_dir_all(path).map_err(CloudWorkerArtifactStoreError::Write)
+        }
+        Err(error) => Err(CloudWorkerArtifactStoreError::Read(error)),
+    }
+}
+
+fn ensure_existing_regular_directory(path: &Path) -> Result<(), CloudWorkerArtifactStoreError> {
+    match fs::symlink_metadata(path) {
+        Ok(metadata) if metadata.file_type().is_symlink() => {
+            Err(CloudWorkerArtifactStoreError::InvalidDirectory)
+        }
+        Ok(metadata) if metadata.is_dir() => Ok(()),
+        Ok(_) => Err(CloudWorkerArtifactStoreError::InvalidDirectory),
+        Err(error) if error.kind() == io::ErrorKind::NotFound => {
+            Err(CloudWorkerArtifactStoreError::MissingArtifact)
         }
         Err(error) => Err(CloudWorkerArtifactStoreError::Read(error)),
     }
@@ -152,6 +207,8 @@ pub enum CloudWorkerArtifactStoreError {
     InvalidDirectory,
     #[error("managed artifact destination must be a regular non-symlink file")]
     InvalidDestination,
+    #[error("managed artifact is missing")]
+    MissingArtifact,
     #[error("managed artifact already exists with different verified bytes")]
     ExistingArtifactMismatch,
     #[error("could not read managed artifact: {0}")]

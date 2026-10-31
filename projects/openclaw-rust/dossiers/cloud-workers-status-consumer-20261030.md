@@ -231,6 +231,12 @@ that file and owner state are durably reconciled. This is local publication
 and recovery-state composition only; acquisition, extraction, provider launch,
 bootstrap/process consumers and packaged acceptance remain pending.
 
+The extension also exposes read-only
+`resolve_verified_artifact`, which rechecks the canonical `Verified` admission
+and the digest-addressed regular file before a future consumer uses it. A
+missing, replaced or mismatched file returns an explicit failure and is never
+silently repaired or accepted from owner state alone.
+
 Warm-image capture ambiguity now has a typed extension façade that persists
 `CaptureUncertain` and cleanup debt under generation fencing. Provider snapshot
 reconciliation and cleanup consumers remain pending.

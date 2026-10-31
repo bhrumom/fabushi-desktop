@@ -430,6 +430,13 @@ acquire bytes, extract archives, resolve credentials, register a provider
 runtime or wire a bootstrap/process consumer; those production paths remain
 unwired.
 
+The same boundary now exposes a read-only
+`resolve_verified_artifact` check. It re-reads the canonical `Verified`
+admission and then verifies the kind-addressed file's regular-file identity,
+source digest, size and bytes. Missing, replaced or mismatched files fail
+closed without implicit repair, so an owner snapshot cannot be treated as a
+usable artifact proof after its managed bytes disappear.
+
 The lease foundation now also includes an explicit transition guard: only a
 completed mutation may advance the lifecycle, submitted/failed/cancelled
 mutations cannot silently change state, and an ambiguous result enters

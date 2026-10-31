@@ -206,6 +206,31 @@ impl CloudWorkerProvisioningExtension {
         Ok(published)
     }
 
+    /// Revalidates owner admission and the managed bytes before a future
+    /// bootstrap/provider consumer uses a `Verified` artifact. This is a
+    /// read-only check: a missing, replaced or mismatched file fails closed
+    /// and is never repaired implicitly.
+    pub fn resolve_verified_artifact(
+        &self,
+        digest: &CloudWorkerArtifactDigest,
+        policy: &CloudWorkerArtifactPolicy,
+    ) -> Result<CloudWorkerPublishedArtifact, CloudWorkerMutationError> {
+        let owner = self
+            .owner
+            .lock()
+            .map_err(|_| CloudWorkerMutationError::PoisonedOwner)?;
+        let admission = owner
+            .verified_artifact_admission(digest)
+            .map_err(CloudWorkerMutationError::Owner)?;
+        let expected = super::CloudWorkerVerifiedArtifact {
+            digest: digest.clone(),
+            size_bytes: admission.size_bytes,
+        };
+        self.artifact_publisher
+            .resolve_verified(admission.kind, policy, &admission.source, &expected)
+            .map_err(CloudWorkerMutationError::ArtifactStore)
+    }
+
     /// Registers warm-image state through the canonical owner and its atomic
     /// persistence adapter. No provider snapshot or image process is started.
     pub fn register_warm_image(
@@ -775,7 +800,19 @@ mod tests {
                 .state,
             super::super::CloudWorkerArtifactAdmissionState::Verified
         );
+        assert_eq!(
+            extension
+                .resolve_verified_artifact(&published.proof.digest, &artifact_policy())
+                .unwrap(),
+            published
+        );
         let _ = std::fs::remove_file(&published.path);
+        assert!(matches!(
+            extension.resolve_verified_artifact(&published.proof.digest, &artifact_policy()),
+            Err(CloudWorkerMutationError::ArtifactStore(
+                super::super::CloudWorkerArtifactStoreError::MissingArtifact
+            ))
+        ));
         let _ = std::fs::remove_file(state_path);
     }
 

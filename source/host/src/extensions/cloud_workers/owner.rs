@@ -407,6 +407,21 @@ impl CloudWorkerProvisioningOwner {
         Ok(artifact.clone())
     }
 
+    pub fn verified_artifact_admission(
+        &self,
+        digest: &CloudWorkerArtifactDigest,
+    ) -> Result<CloudWorkerArtifactAdmission, CloudWorkerOwnerError> {
+        let admission = self
+            .artifacts
+            .get(&digest.0)
+            .ok_or(CloudWorkerOwnerError::UnknownArtifact)?;
+        admission.validate_persisted()?;
+        if admission.state != CloudWorkerArtifactAdmissionState::Verified {
+            return Err(CloudWorkerOwnerError::ArtifactNotVerified);
+        }
+        Ok(admission.clone())
+    }
+
     pub fn settle_bootstrap(
         &mut self,
         mutation: &CloudWorkerLeaseMutation,

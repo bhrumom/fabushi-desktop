@@ -1991,7 +1991,7 @@
       "id": "OCRM-RESP-INFRA-WORKER-CRABBOX-ARTIFACT-001",
       "integration": {
         "consumer": "CloudWorkerProvisioningOwner and local managed artifact publisher (bootstrap adapter not yet wired)",
-        "entrypoint": "source/host/src/extensions/cloud_workers/extension.rs::CloudWorkerProvisioningExtension::publish_verified_artifact / verify_and_register_artifact / register_artifact / settle_artifact -> artifact_store.rs -> owner.rs -> artifact_admission.rs",
+        "entrypoint": "source/host/src/extensions/cloud_workers/extension.rs::CloudWorkerProvisioningExtension::publish_verified_artifact / resolve_verified_artifact / verify_and_register_artifact / register_artifact / settle_artifact -> artifact_store.rs -> owner.rs -> artifact_admission.rs",
         "owner": "source/host/src/extensions/cloud_workers/extension.rs, owner.rs and artifact_admission.rs",
         "producer": "configured HTTPS/managed-local artifact source (not yet wired)"
       },
@@ -2007,7 +2007,7 @@
       ],
       "owner_decision": "Artifact provenance and admission remain within CloudWorker provisioning; secrets and egress remain owned by existing Fabushi services",
       "postconditions": [
-        "Artifact bytes can be admitted or rejected deterministically; local publication is owner-bound through Pending -> Verified/Damaged/OutcomeUnknown settlement and does not download or extract"
+        "Artifact bytes can be admitted or rejected deterministically; local publication is owner-bound through Pending -> Verified/Damaged/OutcomeUnknown settlement, and later consumers must re-resolve the regular digest-addressed file before use"
       ],
       "preconditions": [
         "Artifact source, kind, size bound and declared digest are explicitly supplied"
