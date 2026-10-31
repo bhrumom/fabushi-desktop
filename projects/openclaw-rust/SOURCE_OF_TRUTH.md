@@ -621,11 +621,11 @@ blob identities 仍未变化；该 exact subject 仍为 discovery-only，前一 
 全部 authority/completion flags 不变。
 
 2026-10-31T11:41:30Z 的只读远端复核发现 OpenClaw `main` 再推进到
-`3a9578d82d516610e75fae5ab9b92e79b2782a8c` / tree
-`22fbf6fceb92b04902c8be866acd28bdc93d492e`。GitHub recursive-tree API 返回
+`84bfd8a445e9d8090b8f0d4532cd8165729b9bb5` / tree
+`b76daf4585d6d77a8a25f804410a787ed78d39ba`。GitHub recursive-tree API 返回
 `truncated=false`，共 64,068 entries（61,827 blobs、2,241 directories、0
-gitlinks）；commit message 为 `refactor(tests): retire duplicate reply boundary
-cases (#189313)`。根 package/lock/workspace/license/notice blob identities
+gitlinks）；commit message 为 `fix(doctor): avoid repeated agent database
+integrity scans (#189247)`。根 package/lock/workspace/license/notice blob identities
 仍未变化；该 exact subject 仍为 discovery-only，前一 candidate 的 inventory、
 依赖闭包、LFS/integrity、语义阅读和 Actions provenance 均不得复用。lock live
 candidate 已更新，固定 implementation subject、ledger 修订及全部

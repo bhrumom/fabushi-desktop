@@ -320,11 +320,11 @@ discovery-only subject; prior inventory, dependency/LFS closure, semantic
 reads, and Actions provenance are not reusable, and no authority or completion
 flag changes.
 
-2026-10-31T11:45:18Z drift amendment: read-only GitHub checks resolved the
-current OpenClaw `main` to commit=`3a9578d82d516610e75fae5ab9b92e79b2782a8c`,
-tree=`22fbf6fceb92b04902c8be866acd28bdc93d492e`, with an untruncated recursive
+2026-10-31T11:47:06Z drift amendment: read-only GitHub checks resolved the
+current OpenClaw `main` to commit=`84bfd8a445e9d8090b8f0d4532cd8165729b9bb5`,
+tree=`b76daf4585d6d77a8a25f804410a787ed78d39ba`, with an untruncated recursive
 tree of 64,068 entries (61,827 blobs, 2,241 directories, 0 gitlinks). The
-commit is `refactor(tests): retire duplicate reply boundary cases (#189313)`.
+commit is `fix(doctor): avoid repeated agent database integrity scans (#189247)`.
 Root dependency/license identities remain unchanged, but this is a fresh
 discovery-only subject; prior inventory, dependency/LFS closure, semantic
 reads, and Actions provenance are not reusable, and no authority or completion
