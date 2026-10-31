@@ -139,13 +139,29 @@ def structural():
             # A fully read oracle/test file may remain unclassified until a
             # real responsibility source_ref exists; it must not carry IDs.
             check(not e["responsibility_ids"], "Unclassified read-complete file has responsibility: " + path)
+    projections = (
+        ("applicability_assessed", applicability_assessed),
+        ("dispositioned", dispositioned),
+        ("unreviewed_applicable", unreviewed_applicable),
+    )
+    for field, expected in projections:
+        actual = idx["inventory"].get(field)
+        if actual is not None:
+            check(actual == expected, "Inventory AC02 projection mismatch: " + field)
+    ledger_projections = (
+        ("applicability_assessed_paths", applicability_assessed),
+        ("dispositioned_paths", dispositioned),
+        ("unreviewed_applicable_paths", unreviewed_applicable),
+    )
+    for field, expected in ledger_projections:
+        actual = ledger["file_coverage"].get(field)
+        if actual is not None:
+            check(actual == expected, "Ledger AC02 projection mismatch: " + field)
     if FINAL_AC02:
-        check(idx["inventory"]["applicability_assessed"] == applicability_assessed, "Final AC02 applicability count projection mismatch")
-        check(idx["inventory"]["dispositioned"] == dispositioned, "Final AC02 disposition count projection mismatch")
-        check(idx["inventory"]["unreviewed_applicable"] == unreviewed_applicable, "Final AC02 unreviewed-applicable count projection mismatch")
-        check(ledger["file_coverage"]["applicability_assessed_paths"] == applicability_assessed, "Final AC02 ledger applicability count mismatch")
-        check(ledger["file_coverage"]["dispositioned_paths"] == dispositioned, "Final AC02 ledger disposition count mismatch")
-        check(ledger["file_coverage"]["unreviewed_applicable_paths"] == unreviewed_applicable, "Final AC02 ledger unreviewed-applicable count mismatch")
+        for field, expected in projections:
+            check(idx["inventory"].get(field) == expected, "Final AC02 inventory projection mismatch: " + field)
+        for field, expected in ledger_projections:
+            check(ledger["file_coverage"].get(field) == expected, "Final AC02 ledger projection mismatch: " + field)
     check(kind_counts["symlink"] == counts["symlink_entries_total"] and kind_counts["gitlink"] == counts["gitlink_entries_total"] and kind_counts["blob"] == counts["blob_entries_total"], "Wrong entry kinds")
     raw_records = [x for x in (EVIDENCE / "ls-tree.z").read_bytes().split(b"\0") if x]
     check(len(raw_records) == len(entries), "Raw recursive git tree differs from inventory")
