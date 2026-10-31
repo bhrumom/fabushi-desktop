@@ -9,7 +9,7 @@
     "unknown": 16172,
     "unread": 16145,
     "omitted": 0,
-    "responsibilities_total": 62,
+    "responsibilities_total": 63,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -15657,6 +15657,260 @@
       "reviewer": null,
       "license_and_provenance": "Behavioral responsibility is anchored to fixed-U telegramdesktop/tdesktop Telegram/SourceFiles/mtproto/session_private.cpp@13cbc76ec723386027b5b4dcac79999b791c4614 and Telegram/SourceFiles/mtproto/scheme/mtproto.tl@76225965bfc794388db241f3f760db8ab79e84f8. The implementation is source-neutral Rust and copies no upstream C++ implementation.",
       "notes": "Stage A implementation only. This row records only the acknowledgement subset exactly representable by the single outstanding callback RPC/ping owner. Arbitrary historical sent/resend/container ACK bookkeeping and fast-request history-based clock correction remain open and fail-closed. Global unknown/unread source-entry counts are intentionally unchanged; contracts are authored but not executed; validation_status=not-run and accepted=false.",
+      "test_execution_evidence": []
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+      "source_path": "Telegram/SourceFiles/mtproto/session_private.cpp",
+      "source_blob_sha": "13cbc76ec723386027b5b4dcac79999b791c4614",
+      "source_kind": "source",
+      "module_id": "tdesktop.mtproto.session.single-ping-pong",
+      "responsibility_id": "TDRP-R9-MTPROTO-SINGLE-PING-PONG-001",
+      "source_symbols": [
+        "SessionPrivate::handleOneReceived / mtpc_pong",
+        "pong#347773c5",
+        "SessionPrivate::_pingId"
+      ],
+      "capability_ids": [
+        "CAP-EMBEDDED-MTPROTO-SESSION-RECOVERY"
+      ],
+      "dependency_ids": [
+        "EmbeddedTelegramProtocol",
+        "EmbeddedTelegramNetwork",
+        "TelegramClientLease",
+        "MTProtoAuthKey"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/evidence/round52-mtproto-single-ping-pong-20261101.md",
+      "behavior_contract": "For Fabushi's existing single outstanding ping, fixed-U pong#347773c5 is fully parsed and correlated against both the current ping request_message_id and ping_id. Only an exact pair match settles that ping; malformed/trailing pong payloads fail closed and either id mismatch returns the existing PingMismatch path. Arbitrary historical haveSent acknowledgement lookup and multi-ping history remain open because they require Telegram Desktop's broader sent-request state.",
+      "state_machine": "same TelegramClientLease -> RuntimeClient -> EstablishedSession::send_ping -> authenticated/decrypted pong -> bounded TL parse -> compare pong.msg_id to current request_message_id and pong.ping_id to current ping_id -> exact match => existing Pong outcome; mismatch => PingMismatch; malformed/trailing payload => InvalidServiceMessage",
+      "side_effects": [
+        "Adds bounded fixed-U pong parsing to the existing shared telegram-protocol owner",
+        "Routes the existing ping service branch through the protocol parser and exact two-id correlation helper",
+        "Synchronizes the canonical shared implementation into the existing desktop provider path chain",
+        "Authors pong parsing/current-ping correlation contracts without executing them in Stage A"
+      ],
+      "failure_cases": [
+        "A pong with a mismatched msg_id settles the current ping",
+        "A pong with a mismatched ping_id settles the current ping",
+        "Malformed or trailing pong bytes are silently accepted",
+        "Implementation introduces haveSent/_resendingIds/toSend/_sentContainers or multi-ping history to emulate Telegram Desktop sent-state lookup",
+        "A pong for historical/unrelated state mutates the current ping"
+      ],
+      "ui_disposition": "No UI change. This is MTProto keepalive/session liveness inside the existing embedded runtime.",
+      "non_ui_responsibilities": [
+        "MTProto pong bounded parsing",
+        "Current outstanding ping msg_id correlation",
+        "Current outstanding ping ping_id correlation",
+        "Exact-match ping settlement",
+        "Fail-closed malformed/mismatched pong handling"
+      ],
+      "platform_delta": "Fixed-U pong semantics are expressed inside the existing source-neutral Rust telegram-protocol/telegram-network owners. The current ping remains the only live ping state represented; no second sent queue, runtime, provider, transport, session, or message store is added.",
+      "existing_owner_candidates": [
+        "bhrumom/fabushi-platform-core:native/telegram-protocol/src/api.rs",
+        "bhrumom/fabushi-platform-core:native/telegram-network/src/lib.rs",
+        "source/mahayana/mahayana-rs/providers/telegram-protocol/src/api.rs",
+        "source/mahayana/mahayana-rs/providers/telegram-network/src/lib.rs"
+      ],
+      "existing_owner": "Canonical shared Telegram protocol parser + telegram-network EstablishedSession::send_ping consumed by the existing desktop lease/runtime chain",
+      "rejected_existing_owners": [
+        "Renderer/AppHost cannot own MTProto keepalive correlation",
+        "Storage cannot own live ping settlement state",
+        "A second sent/ping history would split request-state truth"
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "bhrumom/fabushi-platform-core:native/telegram-protocol/src/api.rs",
+        "bhrumom/fabushi-platform-core:native/telegram-protocol/src/lib.rs",
+        "bhrumom/fabushi-platform-core:native/telegram-network/src/lib.rs",
+        "source/mahayana/mahayana-rs/providers/telegram-protocol/src/api.rs",
+        "source/mahayana/mahayana-rs/providers/telegram-protocol/src/lib.rs",
+        "source/mahayana/mahayana-rs/providers/telegram-network/src/lib.rs"
+      ],
+      "fabushi_target_symbols": [
+        "parse_pong",
+        "Pong",
+        "EstablishedSession::process_service_body",
+        "pong_matches_request"
+      ],
+      "target_language": "Rust",
+      "language_rationale": "MTProto service-message decoding and current ping lifecycle are already owned by the shared Rust protocol/network crates, which can represent this single-ping subset exactly without duplicating Telegram Desktop's multi-request sent history.",
+      "command_event_contracts": [
+        "pong(valid,msg_id=current,ping_id=current) -> parse -> exact correlation -> existing Pong outcome settles current ping",
+        "pong(valid,msg_id!=current or ping_id!=current) -> NetworkError::PingMismatch; current ping is not accepted",
+        "pong(malformed/trailing bytes) -> NetworkError::InvalidServiceMessage",
+        "no historical haveSent/multi-ping state is inferred or introduced"
+      ],
+      "state_owner": "Existing EstablishedSession owns the current ping and service-message dispatch; protocol TlReader owns bounded pong parsing.",
+      "lifecycle_owner": "Existing account-bound TelegramClientLease -> RuntimeClient -> EstablishedSession production chain.",
+      "persistence_and_restart": "No new persistence. Pong correlation is live per-ping state only; historical multi-request/ping state is intentionally not introduced.",
+      "concurrency_and_cancellation": "The existing synchronous EstablishedSession has one outstanding ping. Pong handling neither creates background work nor changes cancellation semantics.",
+      "security_boundary": "Only authenticated/decrypted MTProto service messages reach pong parsing. Bounded TL parsing rejects malformed/trailing data; exact two-id correlation prevents unrelated pong settlement.",
+      "network_service_dependencies": [
+        "Existing embedded Telegram MTProto encrypted transport",
+        "fixed-U pong#347773c5"
+      ],
+      "service_owner": "Canonical embedded Telegram protocol/network runtime; no external pong service or provider.",
+      "deployment_evidence": [],
+      "implementation_status": "implemented",
+      "coverage_disposition": "rewritten",
+      "blockers": [
+        "Stage B executable build/unit/contract/integration/packaged validation has not run.",
+        "Full multi-request haveSent/_resendingIds/toSend/_sentContainers bookkeeping and arbitrary historical sent-message correlation remain open and fail-closed.",
+        "Higher-level new-session update/difference propagation remains open.",
+        "Broader fixed-U source/legal/release closure remains open."
+      ],
+      "production_entrypoints": [
+        "source/mahayana/mahayana-rs/Cargo.toml -> mahayana-telegram -> providers/telegram-runtime -> providers/telegram-network + providers/telegram-protocol",
+        "existing TelegramClientLease/RuntimeClient -> EstablishedSession::send_ping -> process_service_body -> parse_pong -> pong_matches_request"
+      ],
+      "production_evidence": [
+        "platform-core-spec-commit:47246159887072673aff6609fb57f9cbc81ff2a2",
+        "platform-core-implementation-commit:bf6f063b229be43597bddc4231baab24d06a09bd",
+        "platform-core-path:native/telegram-protocol/src/api.rs@32a7610bfc74835734c1e5c4385e4eb4cb2ee1f3",
+        "platform-core-path:native/telegram-protocol/src/lib.rs@ffbabc8f66112c2321be75a34928b086d6adf57f",
+        "platform-core-path:native/telegram-network/src/lib.rs@e0bf1b5f286ad0f8bc45a36e86074e19b7dde560",
+        "desktop-implementation-commit:3e363ccdaf287878f457797442aa97e8b597384b",
+        "path:source/mahayana/mahayana-rs/providers/telegram-protocol/src/api.rs@32a7610bfc74835734c1e5c4385e4eb4cb2ee1f3",
+        "path:source/mahayana/mahayana-rs/providers/telegram-protocol/src/lib.rs@ffbabc8f66112c2321be75a34928b086d6adf57f",
+        "path:source/mahayana/mahayana-rs/providers/telegram-network/src/lib.rs@e0bf1b5f286ad0f8bc45a36e86074e19b7dde560"
+      ],
+      "test_evidence": [
+        "platform-core native/telegram-protocol/src/api.rs pong parse/trailing-byte contracts authored, not run",
+        "platform-core native/telegram-network/src/lib.rs current-ping two-id correlation contract authored, not run",
+        "desktop synchronized copies authored, not run"
+      ],
+      "target_commit": "3e363ccdaf287878f457797442aa97e8b597384b",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Canonical Fabushi account + existing TelegramClientLease/runtime + shared MTProto protocol/network production composition",
+      "composition_slot": "Embedded Telegram encrypted session keepalive pong handling",
+      "capability_component": "Single-current-ping pong validation and exact correlation",
+      "variation_axes": [
+        "pong msg_id matches vs mismatches current ping message id",
+        "pong ping_id matches vs mismatches current ping id",
+        "valid exact pong vs malformed/trailing payload"
+      ],
+      "shared_owner_contracts": [
+        "Existing account-bound TelegramClientLease",
+        "Existing RuntimeClient/EstablishedSession",
+        "Existing telegram-protocol bounded TL reader",
+        "Existing encrypted auth-key transport",
+        "Existing Cargo path-dependency composition"
+      ],
+      "duplicate_root_check": "No second account, runtime, provider, transport, auth key, sent queue, ping history, session product, message store, UI root, sidecar, subprocess or Web wrapper was introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Not applicable",
+      "primary_navigation_target": "Existing Messages/Conversation navigation",
+      "collection_surface": "Existing ConversationList; no change",
+      "creation_flow": "Existing canonical conversation creation; no change",
+      "object_action_scope": "Not applicable",
+      "detail_section": "Not applicable",
+      "capability_surface": "Existing ConversationWorkspace through the same provider/runtime; no new surface",
+      "route_contract": "No new route.",
+      "search_scope": "Not applicable",
+      "search_provider": "Existing canonical Search owner; unchanged",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Unchanged.",
+      "search_local_remote_contract": "Not applicable.",
+      "responsive_disposition": "No UI change.",
+      "accessibility_contract": "No UI change.",
+      "keyboard_contract": "No UI change.",
+      "state_continuity_contract": "Only a pong whose msg_id and ping_id both match the current outstanding ping settles it. Mismatch or malformed payload fails closed without fabricating success.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Existing Fabushi design system; no visual changes",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": null,
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "No new icon asset",
+      "avatar_contract": "No change",
+      "content_copy_keys": [],
+      "motion_contract": "No change",
+      "reduced_motion_contract": "No change",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "high",
+      "requirement_ids": [
+        "TDRP-R9-MTPROTO-SINGLE-PING-PONG-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-MTPROTO-PONG-CORRELATION-001",
+        "ORA-TDRP-MTPROTO-PONG-PARSE-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-MTPROTO-PONG-EXACT-CURRENT-PAIR-001",
+        "INV-TDRP-MTPROTO-PONG-NO-SECOND-SENT-QUEUE-001"
+      ],
+      "unit_case_ids": [
+        "UNIT-TDRP-MTPROTO-PONG-PARSE-001",
+        "UNIT-TDRP-MTPROTO-PONG-TRAILING-BYTES-001"
+      ],
+      "property_state_case_ids": [
+        "PROP-TDRP-MTPROTO-PONG-CORRELATION-001"
+      ],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-MTPROTO-SINGLE-PING-PONG-001"
+      ],
+      "integration_case_ids": [
+        "INT-TDRP-MTPROTO-PING-EXACT-PONG-001",
+        "INT-TDRP-MTPROTO-PING-MISMATCHED-PONG-001"
+      ],
+      "functional_e2e_case_ids": [
+        "E2E-TDRP-MTPROTO-PING-PONG-LIVENESS-001"
+      ],
+      "temporal_case_ids": [
+        "TEMP-TDRP-MTPROTO-PING-WAITS-FOR-EXACT-PONG-001"
+      ],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "fault_recovery_case_ids": [
+        "FAULT-TDRP-MTPROTO-MALFORMED-PONG-001"
+      ],
+      "performance_case_ids": [],
+      "security_case_ids": [
+        "SEC-TDRP-MTPROTO-AUTHENTICATED-PONG-001",
+        "SEC-TDRP-MTPROTO-PONG-CANNOT-SETTLE-UNRELATED-PING-001"
+      ],
+      "soak_case_ids": [],
+      "exploratory_charter_ids": [],
+      "regression_ids": [
+        "REG-TDRP-MTPROTO-PONG-INCORRECT-CORRELATION-001"
+      ],
+      "release_gate_ids": [
+        "G-TRACEABILITY",
+        "G-COMPOSITION",
+        "G-SECURITY",
+        "G-EVIDENCE",
+        "G-RELEASE"
+      ],
+      "test_fixture_ids": [
+        "mtproto-single-ping-pong-fixture"
+      ],
+      "test_environment_ids": [
+        "GitHub Actions Stage B matrix (not run)"
+      ],
+      "coverage_matrix_status": "pending",
+      "flake_status": "stable",
+      "release_gate_status": "pending",
+      "acceptance_reviewer": null,
+      "reviewer": null,
+      "license_and_provenance": "Behavioral responsibility is anchored to fixed-U telegramdesktop/tdesktop Telegram/SourceFiles/mtproto/session_private.cpp@13cbc76ec723386027b5b4dcac79999b791c4614 and Telegram/SourceFiles/mtproto/scheme/mtproto.tl@76225965bfc794388db241f3f760db8ab79e84f8. The implementation is source-neutral Rust and copies no upstream C++ implementation.",
+      "notes": "Stage A implementation only. This row records only the pong subset exactly representable by the single outstanding ping owner. Arbitrary historical haveSent/_resendingIds/toSend/_sentContainers bookkeeping and multi-ping history remain open and fail-closed. Global unknown/unread source-entry counts are intentionally unchanged; contracts are authored but not executed; validation_status=not-run and accepted=false.",
       "test_execution_evidence": []
     }
   ],
