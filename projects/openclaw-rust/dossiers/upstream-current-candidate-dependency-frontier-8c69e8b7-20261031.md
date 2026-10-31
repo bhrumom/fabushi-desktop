@@ -106,6 +106,17 @@ for this exact subject. Registry tarball identity, patch application result,
 native post-patch artifacts, and license provenance remain separate evidence
 requirements.
 
+At `2026-10-31T12:27:49Z`, the second lock document's package-resolution
+projection contained 1,749 `packages` entries and 1,750 `snapshots`. Every one
+of the 1,749 package entries carried an `integrity` value, and the resolution
+objects had no `repo`, `commit`, `tarball`, or `directory` key. The lock also
+records 44 overrides, 17 patched dependencies, `autoInstallPeers=true`,
+`excludeLinksFromLockfile=false`, and a package-extensions checksum of
+`sha256-0IIHieOIUT+o/+0r+0aLcYtVWCtpCxToLdTNWrJI0ZM=`. These are positive
+lock-structure facts; they do not prove that the corresponding registry bytes
+were downloaded, that every integrity value resolves to the intended archive,
+or that native/optional/platform artifacts and licenses are closed.
+
 The exact tree contains 26 native/platform declaration inputs across
 `Cargo.toml`, `Cargo.lock`, `Package.swift`, `Package.resolved`, `Gemfile`,
 `Gemfile.lock`, `build.gradle.kts`, and `gradle.properties`, totaling 323,239
