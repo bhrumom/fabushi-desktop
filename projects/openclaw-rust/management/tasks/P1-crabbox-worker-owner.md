@@ -246,6 +246,10 @@ pending Crabbox responsibilities:
 - Bootstrap requests now carry lease ID, owner epoch and generation, and the
   canonical extension revalidates them with scope/runtime identity through
   `validate_current_bootstrap_request` before any future producer may act.
+  `resolve_current_bootstrap_artifact` additionally returns a managed artifact
+  handle only after that fencing and actual digest-addressed byte revalidation;
+  it does not resolve secrets, enroll a device, launch a process or call a
+  provider.
 - Provider catalog producers must enter through
   `CloudWorkerProvisioningExtension::resolve_provider_catalog`; direct access
   to the owner cache is not a production integration path, and owner lock
@@ -436,6 +440,11 @@ admission and then verifies the kind-addressed file's regular-file identity,
 source digest, size and bytes. Missing, replaced or mismatched files fail
 closed without implicit repair, so an owner snapshot cannot be treated as a
 usable artifact proof after its managed bytes disappear.
+
+Bootstrap consumers can use `resolve_current_bootstrap_artifact` to receive
+that revalidated handle only after lease fencing and managed-byte verification
+agree. Enrollment, secret resolution, process launch and provider consumption
+remain outside this read-only handoff.
 
 The lease foundation now also includes an explicit transition guard: only a
 completed mutation may advance the lifecycle, submitted/failed/cancelled

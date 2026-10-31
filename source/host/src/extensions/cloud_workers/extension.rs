@@ -503,6 +503,21 @@ impl CloudWorkerProvisioningExtension {
         Ok(())
     }
 
+    /// Fences a bootstrap request and then resolves the actual managed
+    /// artifact bytes for a future producer. The returned handle is usable
+    /// only when owner admission and on-disk digest verification agree;
+    /// enrollment, secret resolution, process launch and provider RPC remain
+    /// outside this façade.
+    pub fn resolve_current_bootstrap_artifact(
+        &self,
+        request: &CloudWorkerBootstrapRequest,
+        policy: &CloudWorkerArtifactPolicy,
+    ) -> Result<CloudWorkerPublishedArtifact, CloudWorkerMutationError> {
+        self.validate_current_bootstrap_request(request)
+            .map_err(CloudWorkerMutationError::Owner)?;
+        self.resolve_verified_artifact(&request.artifact.digest, policy)
+    }
+
     pub fn status_snapshot(&self) -> CloudWorkerStatusSnapshot {
         let (status, snapshot) = match self.owner.lock() {
             Ok(owner) => {

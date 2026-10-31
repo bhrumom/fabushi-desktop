@@ -2157,6 +2157,7 @@
       "owner_decision": "CloudWorker owns bootstrap phase state and platform descriptors; FDN remains the sole Fabushi identity/network owner and Computer remains the sole admitted-device action owner",
       "postconditions": [
         "A typed bootstrap/platform contract can be consumed without resolving secrets or launching a process",
+        "Bootstrap producers receive a published artifact handle only after lease fencing and actual managed-byte revalidation",
         "Diagnostics are bounded and redacted"
       ],
       "preconditions": [
@@ -2272,6 +2273,7 @@
         "CloudWorkerVerifiedArtifact",
         "CloudWorkerProvisioningOwner::verified_artifact",
         "CloudWorkerProvisioningExtension::validate_current_bootstrap_request",
+        "CloudWorkerProvisioningExtension::resolve_current_bootstrap_artifact",
         "CloudWorkerSecretRef",
         "CloudWorkerPlatformBridge",
         "CloudWorkerDesktopSession"

@@ -237,6 +237,12 @@ and the digest-addressed regular file before a future consumer uses it. A
 missing, replaced or mismatched file returns an explicit failure and is never
 silently repaired or accepted from owner state alone.
 
+Bootstrap now has a matching
+`resolve_current_bootstrap_artifact` façade that first revalidates lease,
+scope and runtime fencing and then returns the revalidated published handle.
+It remains a producer handoff contract; enrollment, secret resolution, process
+launch and provider consumption are not wired.
+
 Warm-image capture ambiguity now has a typed extension façade that persists
 `CaptureUncertain` and cleanup debt under generation fencing. Provider snapshot
 reconciliation and cleanup consumers remain pending.
