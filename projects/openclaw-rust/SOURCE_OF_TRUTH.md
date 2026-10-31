@@ -660,6 +660,20 @@ authority/completion flags 不变。
 `dossiers/upstream-current-candidate-dependency-frontier-8c69e8b7-20261031.md`；
 不重写旧 baseline 清单，不提升 dependency closure、source authority 或任何完成 flag。
 
+2026-10-31T12:40:59Z 的只读远端复核发现 OpenClaw `main` 再推进到
+`ed19b276e1630a14c66ddf8cc4594d2915ba8c56` / tree
+`0f29f49072123eae942faa152907fbbebaab103a`。GitHub recursive-tree API 返回
+`truncated=false`，共 64,090 entries（61,849 blobs、2,241 directories、0
+gitlinks）；commit message 为 `perf(test): build stock Bun image fixtures
+without ZIP subprocesses (#189359)`。根 package/lock/workspace/license/notice
+blob identities 仍未变化；该 exact subject 仍为 discovery-only，前一
+candidate 的 inventory、依赖闭包、LFS/integrity、语义阅读和 Actions
+provenance 均不得复用。exact diff 只有
+`test/scripts/setup-node-env-bun.test.ts`，不构成生产运行时或 Rust wiring
+证据。lock live candidate 已更新，固定 implementation subject、ledger
+修订及全部 authority/completion flags 不变。详见
+`dossiers/upstream-current-candidate-probe-ed19b276-20261031.md`。
+
 2026-10-31T12:36:43Z 的只读远端复核发现 OpenClaw `main` 再推进到
 `dfd4904312e87674d468d89232180973859e26e0` / tree
 `9cf481d8e97f4428d9d9e2f80f941c9cbb7a410d`。GitHub recursive-tree API 返回

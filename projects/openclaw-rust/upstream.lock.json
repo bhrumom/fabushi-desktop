@@ -25,9 +25,9 @@
   "live_candidate": {
     "repository": "openclaw/openclaw",
     "ref": "refs/heads/main",
-    "commit": "dfd4904312e87674d468d89232180973859e26e0",
-    "tree": "9cf481d8e97f4428d9d9e2f80f941c9cbb7a410d",
-    "observed_at": "2026-10-31T12:36:43Z",
+    "commit": "ed19b276e1630a14c66ddf8cc4594d2915ba8c56",
+    "tree": "0f29f49072123eae942faa152907fbbebaab103a",
+    "observed_at": "2026-10-31T12:40:59Z",
     "discovery_source": "GitHub commit/tree API",
     "recursive_tree_truncated": false,
     "recursive_tree_entries": 64090,
@@ -49,7 +49,7 @@
     "behind_by": null,
     "compare_files_returned": null,
     "compare_file_counts_are_not_complete": true,
-    "decision": "live-main-drifted-to-dfd49043; read-only exact commit/tree and recursive tree revalidated at 2026-10-31T12:36:43Z; recursive tree is 64,090 entries with the same root dependency/license identities, while the commit restores spawn-boundary SDK resource lifecycle; require fresh source reads before reuse and retain discovery-only status until Actions inventory and dependency closure"
+    "decision": "live-main-drifted-to-ed19b276; read-only exact commit/tree and recursive tree revalidated at 2026-10-31T12:40:59Z; recursive tree is 64,090 entries with the same root dependency/license identities, while the commit changes a Bun test fixture; require fresh source reads before reuse and retain discovery-only status until Actions inventory and dependency closure"
   },
   "root_inputs": {
     "AGENTS.md": "c3deeccdb6b1a4c7137d56297e933bbf19f4d3bf",

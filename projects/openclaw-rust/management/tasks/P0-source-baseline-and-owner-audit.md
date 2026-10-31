@@ -388,6 +388,17 @@ fresh discovery-only subject; prior inventory, dependency/LFS closure, semantic
 reads, and Actions provenance are not reusable, and no authority or completion
 flag changes.
 
+2026-10-31T12:40:59Z drift amendment: read-only GitHub checks resolved the
+current OpenClaw `main` to commit=`ed19b276e1630a14c66ddf8cc4594d2915ba8c56`,
+tree=`0f29f49072123eae942faa152907fbbebaab103a`, with an untruncated recursive
+tree of 64,090 entries (61,849 blobs, 2,241 directories, 0 gitlinks). The
+commit is `perf(test): build stock Bun image fixtures without ZIP subprocesses
+(#189359)`. Root dependency/license identities remain unchanged, but this is
+a fresh discovery-only subject; prior inventory, dependency/LFS closure,
+semantic reads, and Actions provenance are not reusable, and no authority or
+completion flag changes. Its exact diff is test-only; the probe is recorded at
+`dossiers/upstream-current-candidate-probe-ed19b276-20261031.md`.
+
 2026-10-31T12:36:43Z drift amendment: read-only GitHub checks resolved the
 current OpenClaw `main` to commit=`dfd4904312e87674d468d89232180973859e26e0`,
 tree=`9cf481d8e97f4428d9d9e2f80f941c9cbb7a410d`, with an untruncated recursive
@@ -414,9 +425,9 @@ completion flag changes. The probe is recorded at
 
 The canonical current discovery pointer is always `upstream.lock.json::live_candidate`.
 At the latest read-only reconciliation it is OpenClaw
-`dfd4904312e87674d468d89232180973859e26e0` / tree
-`9cf481d8e97f4428d9d9e2f80f941c9cbb7a410d`, observed at
-`2026-10-31T12:36:43Z`, with 64,090 untruncated recursive-tree entries
+`ed19b276e1630a14c66ddf8cc4594d2915ba8c56` / tree
+`0f29f49072123eae942faa152907fbbebaab103a`, observed at
+`2026-10-31T12:40:59Z`, with 64,090 untruncated recursive-tree entries
 (61,849 blobs, 2,241 directories, 0 gitlinks). This remains discovery-only;
 the fixed implementation subject, inventory, dependency closure, Actions
 provenance, and all completion flags remain unchanged.

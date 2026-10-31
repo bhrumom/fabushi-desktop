@@ -477,6 +477,26 @@ authority and completion flags remain unchanged. No CI, push, PR update, local
 OCRM executable verification, build, package, release, or runtime/device
 acceptance was performed.
 
+## Subsequent live recheck — 2026-10-31T12:40:59Z
+
+Read-only GitHub branches/commit/tree API checks resolved
+`openclaw/openclaw` `refs/heads/main` to commit
+`ed19b276e1630a14c66ddf8cc4594d2915ba8c56`, root tree
+`0f29f49072123eae942faa152907fbbebaab103a`. The recursive tree was not
+truncated and contained 64,090 entries: 61,849 blobs, 2,241 directories, and
+no gitlinks. The commit message is `perf(test): build stock Bun image fixtures
+without ZIP subprocesses (#189359)`; its GitHub commit verification is valid
+and root dependency/license input blobs remain unchanged.
+
+This supersedes the `dfd49043...` discovery candidate in the lock. Its exact
+diff is limited to `test/scripts/setup-node-env-bun.test.ts`, so it is not
+production Rust implementation or wiring evidence. It remains discovery-only:
+no prior inventory, dependency closure, LFS/integrity result, Actions
+provenance, or source-semantic conclusion is relabeled or reused. All
+authority and completion flags remain unchanged. No CI, push, PR update, local
+OCRM executable verification, build, package, release, or runtime/device
+acceptance was performed.
+
 ## Subsequent live recheck — 2026-10-31T12:36:43Z
 
 Read-only GitHub branches/commit/tree API checks resolved
