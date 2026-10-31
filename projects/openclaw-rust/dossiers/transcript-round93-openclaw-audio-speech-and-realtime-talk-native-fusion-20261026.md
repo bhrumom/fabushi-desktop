@@ -10,7 +10,7 @@
   - `OCRM-UNIT-VAD-BARGE-IN-001` (Module `OCRM-M12/M13/M23 Audio, Voice & Realtime Talk Subsystems`)
   - `OCRM-UNIT-EXACT-SPEECH-001` (Module `OCRM-M12/M13/M23 Audio, Voice & Realtime Talk Subsystems`)
   - `OCRM-UNIT-STT-TTS-PORT-001` (Module `OCRM-M12/M13/M23 Audio, Voice & Realtime Talk Subsystems`)
-- **Core Milestone:** Implemented and integrated native Rust contract test suite `source/host/tests/openclaw_audio_talk_contract.rs` containing 12 falsifiable test oracles (`OCRM-AUDIO-O01` through `OCRM-AUDIO-O12`). Verified CallSession finite state machine with strict generation fencing, monotonic signal sequencing (`seq`), idempotent replay, and media negotiation for Human/Agent conversations. Audited and verified audio buffer queue bounds (320 chunks / 1 MiB boundary), shared-memory 32-bit atomic close fences, exact speech loop prevention against infinite peer consult recursion, server-side Voice Activity Detection (VAD) barge-in cancellation, turn-context silent turn pruning, WebRTC SDP offer validation, empty-audio STT rejection, and Edge TTS CJK dominant voice fallback.
+- **Historical implementation/contract record:** Native Rust contract suite `source/host/tests/openclaw_audio_talk_contract.rs` was authored with 12 falsifiable test oracles (`OCRM-AUDIO-O01` through `OCRM-AUDIO-O12`), covering CallSession generation fencing, monotonic signaling, replay handling, media negotiation, bounded audio buffers, close fences, exact-speech loop prevention, VAD barge-in cancellation, silent-turn pruning, SDP validation, empty-audio rejection, and Edge TTS CJK fallback. The historical claims below are not current exact-head verification or production/live acceptance evidence.
 
 ---
 
@@ -72,8 +72,8 @@ When agents perform multi-agent consultations during an active voice session, sy
 
 ---
 
-## 5. Verification Command & Matrix Status
+## 5. Historical Verification Record (not current acceptance)
 
-- **Tested Commit:** `HEAD` on `ocrm/round20-snapshot-lifecycle-audit-20261023`.
+- **Historical Tested Commit:** `HEAD` on `ocrm/round20-snapshot-lifecycle-audit-20261023`.
 - **Target Test Suite:** `source/host/tests/openclaw_audio_talk_contract.rs`.
-- **GitHub Actions Verification Gate:** Executed via `.github/workflows/rust-desktop-runtime.yml`.
+- **Historical GitHub Actions Gate:** Recorded as executed via `.github/workflows/rust-desktop-runtime.yml`; this is not a current exact-head receipt. Exact-head Actions, packaged/runtime, provider/device, and live talk acceptance evidence remain pending.
