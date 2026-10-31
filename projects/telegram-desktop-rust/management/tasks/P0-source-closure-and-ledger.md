@@ -785,3 +785,23 @@ Those remain open/fail-closed.
 
 No GitHub Actions/status/check query or trigger, build, typecheck, lint, schema validator, generator,
 unit/contract/integration/E2E test, package, deployment, installation or runtime acceptance was performed.
+
+
+### Round 82 final source-level compliance
+
+Platform-core `be950b18eca7e3e6c1e9ffb4833a19fcbd224880` / final spec blob
+`e85d67b0b3b8c7c3d7bee7c08d72a9978903c325` records source-level R1-R9 and AC-1-AC-6 compliance for the
+fixed-U `msg_resend_req#7d861a08 msg_ids:Vector<long>` request-wire responsibility. Canonical production
+`api.rs/tl.rs/lib.rs` remain
+`ebfb3670b5cd097b9ce288782c7954f5cfe9fc43` /
+`89256ab35184b6dc06a095ab34abb9f44e95a264` /
+`abab39e42f100972484191f0e52e9edd9b88c6cf` with no behavior delta. Canonical/desktop authored contract
+blob remains `89692a28620b2d8465703a1335458d5fbd15aee6`. Desktop compliance ledger/evidence commit
+`19e0d2060b64f78e3a44cbb8cb96c4f46f9ca312` records the responsibility as
+`implemented / validation_status=not-run / accepted=false`, coverage
+`92 / 16172 unknown / 16145 unread / 0 omitted`.
+
+Arbitrary multi-request `haveSent/_resendingIds/toSend/_sentContainers` history, resend scheduling/cancellation,
+connection scheduling/racing/send retry, auth-key binding/persistence, gzip, complete difference decoding/application,
+broader fixed-U source/legal closure, Stage-B executable evidence and independent release ACCEPT remain open/fail-closed.
+No executable validation was performed.
