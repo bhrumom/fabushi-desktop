@@ -3,13 +3,13 @@
   "project_id": "TDRP-001",
   "spec_revision": 9,
   "upstream_commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
-  "target_commit": "e7c0da2a654aad9a65e6c7fc545f9cf7d9dd48a8",
+  "target_commit": "169d6cc7798507f0302d6c93fef7deef1a302d28",
   "coverage": {
     "source_entries_total": 16202,
     "unknown": 16172,
     "unread": 16145,
     "omitted": 0,
-    "responsibilities_total": 56,
+    "responsibilities_total": 57,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -14059,6 +14059,276 @@
       "reviewer": null,
       "license_and_provenance": "Behavioral lifecycle/error/backoff responsibility is anchored to fixed-U telegramdesktop/tdesktop exact intro sources: intro_code.cpp@2bed39cf0d696ee642e7d18f3f17bec05e8e4489, intro_password_check.cpp@d08bf88408b29cb5ec7ed31c4e925074bfb8825e, intro_email.cpp@dfb5ceeddeb48ab00773add72e75e0aef8ceb074, intro_phone.cpp@ee14ffa7c6f31e171cdcbdfaf627ea9868af1246 and intro_signup.cpp@1ba7a38379a6ae2febe615783333fd0822e0bb96. The implementation is source-neutral and copies no upstream C++/UI code.",
       "notes": "Stage A implementation only. This row covers the independently implementable canonical auth state/error/backoff contract. It deliberately does not claim resend/cancel/password-recovery/email-verification remote operations as implemented because the current embedded runtime lacks those protocol primitives. No whole upstream file is claimed semantically closed; unknown/unread/omitted counters remain unchanged. Tests are authored but not executed.",
+      "test_execution_evidence": []
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+      "source_path": "Telegram/SourceFiles/mtproto/scheme/api.tl",
+      "source_blob_sha": "8319b7df634d145390c299404129fd161a5dbd2a",
+      "source_kind": "source",
+      "module_id": "tdesktop.intro.authorization-lifecycle-primitives",
+      "responsibility_id": "TDRP-R9-ACCOUNT-TELEGRAM-AUTH-LIFECYCLE-PRIMITIVES-001",
+      "source_symbols": [
+        "auth.resendCode#cae47523",
+        "auth.cancelCode#1f040578",
+        "auth.requestPasswordRecovery#d897bc66",
+        "auth.checkRecoveryPassword#d36bf79",
+        "account.sendVerifyEmailCode#98e037bb",
+        "account.verifyEmail#32da4cf",
+        "account.getPassword#548a30f5"
+      ],
+      "capability_ids": [
+        "CAP-CANONICAL-ACCOUNT-TELEGRAM-AUTH-LIFECYCLE"
+      ],
+      "dependency_ids": [
+        "CanonicalAccountIdentity",
+        "PlatformLogin",
+        "TelegramClientLease",
+        "EmbeddedTelegramProtocol",
+        "EmbeddedTelegramRuntime",
+        "EncryptedTelegramStorage"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/evidence/round44-telegram-auth-lifecycle-error-backoff-20261101.md",
+      "behavior_contract": "The one account-bound embedded Telegram client implements resend/cancel, recovery validation, login-email verification, and explicit SRP challenge refresh using fixed-U TL constructors. Resend/email-login continuation replace the active phone_code_hash; cancel clears pending auth material; recovery-code validation remains WaitPassword; SRP_ID_INVALID is handled by an explicit account.getPassword refresh primitive without recursive retry.",
+      "state_machine": "canonical platform-login -> existing TelegramClientLease -> feature.auth telegram lifecycle command -> same embedded runtime client/session -> fixed-U TL RPC -> same authorization/AuthContext state -> encrypted pending-auth persistence -> live AuthorizationSnapshot/self_user_id projection",
+      "side_effects": [
+        "Adds fixed-U TL builders/parsers in canonical platform-core protocol owner",
+        "Adds encrypted runtime-private authorization state slot in existing Telegram SQLite store",
+        "Adds seven same-client runtime lifecycle commands with no second session/runtime",
+        "Wires seven feature.auth commands through existing TelegramClientLease/AppHost/Coordinator/renderer client",
+        "Keeps Stage-A executable validation not-run"
+      ],
+      "failure_cases": [
+        "resend/cancel use caller-supplied phone hash instead of retained AuthContext",
+        "recovery-code validation fabricates Ready",
+        "SRP_ID_INVALID causes recursive/hot retry rather than explicit challenge refresh",
+        "emailVerifiedLogin fails to replace nested auth.SentCode phone_code_hash",
+        "pending auth secrets are stored plaintext",
+        "desktop creates a second Telegram runtime/account"
+      ],
+      "ui_disposition": "Reuse the existing Fabushi account/platform-login surface. This responsibility supplies typed lifecycle/error/backoff state to that owner and does not add a Telegram-specific route, navigation root, account store, workspace or error UI system.",
+      "non_ui_responsibilities": [
+        "TL lifecycle primitives",
+        "same-client auth lifecycle commands",
+        "encrypted pending AuthContext persistence",
+        "feature.auth command carrier"
+      ],
+      "platform_delta": "Canonical platform-core now contains the missing protocol/runtime/storage primitives on isolated checkpoint a50f33da685506f4e170729a9d11f01f8dda8ec5; desktop checkpoint 169d6cc7798507f0302d6c93fef7deef1a302d28 wires matching commands through the existing lease. The sparse desktop checkpoint contains no dependency manifest, so exact runtime dependency binding remains unproven and fail-closed.",
+      "existing_owner_candidates": [
+        "bhrumom/fabushi-platform-core:native/telegram-protocol",
+        "bhrumom/fabushi-platform-core:native/telegram-runtime",
+        "bhrumom/fabushi-platform-core:native/telegram-storage",
+        "source/mahayana/mahayana-rs/mahayana-telegram/src/lib.rs",
+        "source/mahayana/mahayana-rs/mahayana-app-host/src/lib.rs",
+        "source/shared/rpc/coordinator.ts",
+        "frontend/src/production/coordinator-client.ts"
+      ],
+      "existing_owner": "Canonical shared Telegram protocol/runtime/storage + existing desktop TelegramClientLease/AppHost/Coordinator chain",
+      "rejected_existing_owners": [
+        "Renderer cannot own TL protocol or pending auth state",
+        "AppHost cannot own Telegram wire constructors",
+        "A second Telegram provider/runtime would duplicate canonical account/session ownership"
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "bhrumom/fabushi-platform-core:native/telegram-protocol/src/api.rs",
+        "bhrumom/fabushi-platform-core:native/telegram-storage/src/sqlite.rs",
+        "bhrumom/fabushi-platform-core:native/telegram-runtime/src/runtime.rs",
+        "source/mahayana/mahayana-rs/mahayana-telegram/src/lib.rs",
+        "source/mahayana/mahayana-rs/mahayana-app-host/src/lib.rs",
+        "source/shared/rpc/coordinator.ts",
+        "frontend/src/production/coordinator-client.ts",
+        "source/shared/rpc/coordinator.contract.test.ts"
+      ],
+      "fabushi_target_symbols": [
+        "build_auth_resend_code/build_auth_cancel_code/build_auth_request_password_recovery/build_auth_check_recovery_password",
+        "build_account_send_verify_email_code/build_account_verify_email/parse_account_email_verified",
+        "EncryptedSqliteStore::{load_secure_value,save_secure_value,delete_secure_value}",
+        "resend_authentication_code/cancel_authentication_code/request_password_recovery/check_recovery_password/send_verify_email_code/verify_email/refresh_password_challenge",
+        "TelegramClientLease lifecycle methods",
+        "AppHost feature.auth.telegram* lifecycle methods",
+        "ProductionCoordinatorClient telegram lifecycle methods"
+      ],
+      "target_language": "Rust + TypeScript",
+      "language_rationale": "Network authorization state, error settlement and backoff stay with the existing Rust TelegramClientLease/runtime boundary; renderer contract validation stays in the existing shared TypeScript Coordinator owner. This keeps one state owner and one renderer carrier without adding a source-named subsystem.",
+      "command_event_contracts": [
+        "feature.auth.telegramResendCode -> TelegramClientLease -> telegram.resendAuthenticationCode",
+        "feature.auth.telegramCancelCode -> TelegramClientLease -> telegram.cancelAuthenticationCode",
+        "feature.auth.telegramRequestPasswordRecovery/checkRecoveryPassword -> same runtime WaitPassword lifecycle",
+        "feature.auth.telegramSendVerifyEmailCode/telegramVerifyEmail -> same retained phone/hash context",
+        "feature.auth.telegramRefreshPasswordChallenge -> account.getPassword refresh only, no automatic password retry"
+      ],
+      "state_owner": "Existing embedded AuthorizationMachine/AuthContext in the one account-bound runtime client; desktop lease only invokes and projects it.",
+      "lifecycle_owner": "Existing platform-login -> AppHost retained TelegramClientLease -> canonical embedded runtime.",
+      "persistence_and_restart": "Platform-core checkpoint persists AuthorizationState plus phone/hash/SRP challenge in the existing encrypted SQLite store secure_value slot; plaintext password is never persisted. Exact desktop dependency binding to that checkpoint remains unproven because the sparse checkpoint has no manifest.",
+      "concurrency_and_cancellation": "All commands reuse the same RuntimeClient transport and desktop process-lifetime TelegramClientLease. auth.cancelCode clears pending auth context on success.",
+      "security_boundary": "api_hash remains application-only; renderer sees no application secret. Pending phone/hash/SRP data is encrypted at rest with domain-separated associated data.",
+      "network_service_dependencies": [
+        "Existing embedded Telegram MTProto runtime",
+        "Telegram authorization/account RPCs from fixed-U api.tl"
+      ],
+      "service_owner": "Canonical embedded Telegram runtime; no sidecar/provider fallback.",
+      "deployment_evidence": [],
+      "implementation_status": "implemented",
+      "coverage_disposition": "rewritten",
+      "blockers": [
+        "The sparse desktop checkpoint tree does not contain Cargo/dependency manifests, so exact binding of the desktop fabushi_telegram_runtime dependency to platform-core checkpoint a50f33da685506f4e170729a9d11f01f8dda8ec5 cannot be proven in this round.",
+        "Stage B executable build/unit/contract/integration/packaged validation has not run.",
+        "Broader fixed-U semantic/implementation closure, external-source/legal closure and independent acceptance remain open."
+      ],
+      "production_entrypoints": [
+        "ProductionCoordinatorClient.telegram* -> shared Coordinator method carrier -> AppHost feature.auth.telegram* -> same TelegramClientLease -> embedded runtime command",
+        "Canonical platform-core runtime checkpoint implements matching wire/storage/runtime primitives"
+      ],
+      "production_evidence": [
+        "platform-core-commit:314e8804ddfc997acdde2c19bff831b5e26b1706",
+        "platform-core-commit:bcb8298a4622616f2f8a226899c0e3dc8aa3ba8f",
+        "platform-core-commit:ec854e93fb1523d95225203554600858798e4981",
+        "platform-core-spec-commit:a50f33da685506f4e170729a9d11f01f8dda8ec5",
+        "desktop-commit:169d6cc7798507f0302d6c93fef7deef1a302d28",
+        "path:source/mahayana/mahayana-rs/mahayana-telegram/src/lib.rs@f93afe79d02a2eed2ce131d3cf6533e9d156306e",
+        "path:source/mahayana/mahayana-rs/mahayana-app-host/src/lib.rs@ed69b2b7aa0d87ebd34210e9a13d9c8a8b3e3087",
+        "path:source/shared/rpc/coordinator.ts@35a29e167b38a69924925dbd30fbb658eea23faa",
+        "path:frontend/src/production/coordinator-client.ts@1f9e386e391ec9504c82dbc47662a95a3ef811eb"
+      ],
+      "test_evidence": [
+        "platform-core native/telegram-protocol/tests/protocol_contract.rs authored, not run",
+        "platform-core native/telegram-storage/tests/encrypted_store.rs authored, not run",
+        "platform-core native/telegram-runtime/tests/runtime_ffi.rs authored, not run",
+        "desktop source/shared/rpc/coordinator.contract.test.ts authored, not run"
+      ],
+      "target_commit": "169d6cc7798507f0302d6c93fef7deef1a302d28",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Canonical Fabushi account/platform-login + shared Telegram runtime + existing desktop lease/AppHost/Coordinator",
+      "composition_slot": "Account authorization remaining lifecycle primitives",
+      "capability_component": "Resend/cancel/recovery/email verification/SRP refresh on one embedded Telegram client",
+      "variation_axes": [
+        "resend vs cancel",
+        "recovery request vs code check",
+        "email code send vs verify",
+        "SRP challenge current vs refresh"
+      ],
+      "shared_owner_contracts": [
+        "Canonical account identity",
+        "Existing TelegramClientLease",
+        "Canonical shared Telegram protocol/runtime/storage",
+        "Existing AppHost/Coordinator renderer carrier"
+      ],
+      "duplicate_root_check": "No second account, runtime, provider, state store, session, renderer bridge or Telegram-specific login product was introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Existing account/platform-login capability",
+      "primary_navigation_target": "Existing Account/Settings sign-in surface",
+      "collection_surface": "Not applicable",
+      "creation_flow": "Existing canonical account/platform-login flow",
+      "object_action_scope": "Telegram authorization challenge/error actions",
+      "detail_section": "Existing account/session surface",
+      "capability_surface": "Existing platform-login renderer capability boundary; no Telegram-specific workspace",
+      "route_contract": "No new route. Existing account/session navigation consumes the shared typed authorization projection.",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "No search change.",
+      "search_local_remote_contract": "Not applicable.",
+      "responsive_disposition": "No new visual surface in this responsibility.",
+      "accessibility_contract": "No new visual surface in this responsibility.",
+      "keyboard_contract": "No new visual surface in this responsibility.",
+      "state_continuity_contract": "Every implemented auth status/mutation projection rereads the same runtime AuthorizationSnapshot; same-process flood/backoff remains attached to the same retained client lease.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Existing Fabushi design system; no visual changes",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": null,
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Existing Account/Settings pattern",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "No visual change",
+      "icon_asset_contract": "No new icon asset",
+      "avatar_contract": "No change",
+      "content_copy_keys": [],
+      "motion_contract": "No change",
+      "reduced_motion_contract": "No change",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "high",
+      "requirement_ids": [
+        "TDRP-R9-ACCOUNT-TELEGRAM-AUTH-LIFECYCLE-PRIMITIVES-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-TELEGRAM-AUTH-LIFECYCLE-PRIMITIVES-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-TELEGRAM-AUTH-SAME-LEASE-001",
+        "INV-TDRP-TELEGRAM-AUTH-RECOVERY-NOT-READY-001",
+        "INV-TDRP-TELEGRAM-AUTH-SRP-NO-SPIN-001",
+        "INV-TDRP-TELEGRAM-AUTH-ENCRYPTED-CONTEXT-001"
+      ],
+      "unit_case_ids": [
+        "UNIT-TDRP-TELEGRAM-AUTH-TL-BUILDERS-001",
+        "UNIT-TDRP-TELEGRAM-AUTH-TL-PARSERS-001"
+      ],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-TELEGRAM-AUTH-LIFECYCLE-CARRIER-001"
+      ],
+      "integration_case_ids": [
+        "INT-TDRP-TELEGRAM-AUTH-SAME-LEASE-LIFECYCLE-001"
+      ],
+      "functional_e2e_case_ids": [
+        "E2E-TDRP-TELEGRAM-AUTH-LIFECYCLE-001"
+      ],
+      "temporal_case_ids": [
+        "TEMP-TDRP-TELEGRAM-SRP-REFRESH-NO-SPIN-001"
+      ],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "fault_recovery_case_ids": [
+        "FAULT-TDRP-TELEGRAM-AUTH-CONTEXT-RESTORE-001",
+        "FAULT-TDRP-TELEGRAM-SRP-ID-INVALID-001"
+      ],
+      "performance_case_ids": [],
+      "security_case_ids": [
+        "SEC-TDRP-TELEGRAM-AUTH-CONTEXT-ENCRYPTION-001"
+      ],
+      "soak_case_ids": [],
+      "exploratory_charter_ids": [],
+      "regression_ids": [
+        "REG-TDRP-TELEGRAM-AUTH-RECOVERY-NOT-READY-001",
+        "REG-TDRP-TELEGRAM-AUTH-SRP-REFRESH-SPIN-001"
+      ],
+      "release_gate_ids": [
+        "G-TRACEABILITY",
+        "G-COMPOSITION",
+        "G-SECURITY",
+        "G-EVIDENCE",
+        "G-RELEASE"
+      ],
+      "test_fixture_ids": [
+        "telegram-auth-lifecycle-tl",
+        "telegram-auth-encrypted-runtime-state"
+      ],
+      "test_environment_ids": [
+        "GitHub Actions Stage B matrix (not run)"
+      ],
+      "coverage_matrix_status": "pending",
+      "flake_status": "stable",
+      "release_gate_status": "pending",
+      "acceptance_reviewer": null,
+      "reviewer": null,
+      "license_and_provenance": "Behavioral lifecycle/error/backoff responsibility is anchored to fixed-U telegramdesktop/tdesktop exact intro sources: intro_code.cpp@2bed39cf0d696ee642e7d18f3f17bec05e8e4489, intro_password_check.cpp@d08bf88408b29cb5ec7ed31c4e925074bfb8825e, intro_email.cpp@dfb5ceeddeb48ab00773add72e75e0aef8ceb074, intro_phone.cpp@ee14ffa7c6f31e171cdcbdfaf627ea9868af1246 and intro_signup.cpp@1ba7a38379a6ae2febe615783333fd0822e0bb96. The implementation is source-neutral and copies no upstream C++/UI code.",
+      "notes": "Stage A implementation only. Fixed-U primitives and desktop command wiring are authored and committed; executable validation is not run. Exact desktop dependency-manifest binding to the canonical platform-core checkpoint is not present in this sparse checkpoint and remains an explicit integration-evidence blocker.",
       "test_execution_evidence": []
     }
   ],

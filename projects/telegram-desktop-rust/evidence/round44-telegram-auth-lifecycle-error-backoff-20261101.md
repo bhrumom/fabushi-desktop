@@ -44,4 +44,17 @@ The inline Rust classifier/backoff test and `source/shared/rpc/coordinator.contr
 
 ## Open gates
 
-Resend/cancel/password-recovery/email-verification runtime primitives remain unimplemented; actual Telegram application credentials remain external protected product configuration; broader fixed-U semantic/implementation closure, Boost/libiconv member enumeration, original-host GitLab blockers, adopted/copied-derived legal closure, Stage-B executable evidence and independent ACCEPT remain open. `baseline_ready=false`, `accepted=false`, `validation_status=not-run`.
+Resend/cancel/password-recovery/email-verification and explicit SRP challenge-refresh primitives are implemented in the canonical platform-core Stage-A checkpoint and wired through the existing desktop lease/feature.auth contract. Exact desktop dependency-manifest binding to that platform-core checkpoint is not provable from the sparse desktop ref; actual Telegram application credentials remain external protected product configuration; broader fixed-U semantic/implementation closure, Boost/libiconv member enumeration, original-host GitLab blockers, adopted/copied-derived legal closure, Stage-B executable evidence and independent ACCEPT remain open. `baseline_ready=false`, `accepted=false`, `validation_status=not-run`.
+
+
+## Stage-A remaining Telegram auth lifecycle primitives (round 45, 2026-11-01)
+
+Fixed U remains `f985723b552b30fe1c17d377d57f44e61a15a8c4`. Exact TL authority is `Telegram/SourceFiles/mtproto/scheme/api.tl@8319b7df634d145390c299404129fd161a5dbd2a`; fixed-U intro behavior remains anchored by `intro_code.cpp@2bed39cf0d696ee642e7d18f3f17bec05e8e4489`, `intro_password_check.cpp@d08bf88408b29cb5ec7ed31c4e925074bfb8825e`, and `intro_email.cpp@dfb5ceeddeb48ab00773add72e75e0aef8ceb074`.
+
+Canonical shared owner work is committed on `bhrumom/fabushi-platform-core` checkpoint `checkpoint/tdrp-telegram-auth-lifecycle-7457eb1c-r16`: protocol `314e8804ddfc997acdde2c19bff831b5e26b1706`, encrypted storage `bcb8298a4622616f2f8a226899c0e3dc8aa3ba8f`, runtime `ec854e93fb1523d95225203554600858798e4981`, and spec/evidence `a50f33da685506f4e170729a9d11f01f8dda8ec5`. These add auth.resendCode, auth.cancelCode, auth.requestPasswordRecovery/auth.checkRecoveryPassword, account.sendVerifyEmailCode/account.verifyEmail, explicit account.getPassword challenge refresh, and encrypted pending AuthorizationState/AuthContext persistence.
+
+Desktop implementation `169d6cc7798507f0302d6c93fef7deef1a302d28` wires the matching seven commands through the existing `TelegramClientLease`, AppHost `feature.auth`, shared Coordinator contract and production renderer client. No second account/runtime/provider/state store was added, and no api_hash is exposed to renderer code.
+
+The current desktop checkpoint is a sparse overlay and contains no Cargo/dependency manifest, so exact binding of its `fabushi_telegram_runtime` dependency to the platform-core checkpoint cannot be proven from this ref. That remains fail-closed integration evidence, not silently treated as shipping validation.
+
+All protocol/storage/runtime/coordinator tests are authored only. No build, typecheck, lint, schema validator, generator, test, packaging, deployment, installation, workflow/status query or runtime acceptance was executed. `baseline_ready=false`, `accepted=false`, `validation_status=not-run`.
