@@ -303,7 +303,7 @@ correction.
 
 The committed fixed-subject inventory has a separate materialization gap:
 58,750 unique rows and zero known omissions are present, but the older shard
-rows still carry null applicability/disposition fields. This is neither a
+rows are missing the schema-required applicability/disposition keys. This is neither a
 completed classification nor a zero-unread condition. The Actions-only shard
 materializer now supplies explicit `unknown/pending` defaults; rerunning that
 materializer against the exact subject is required before structural AC02 can

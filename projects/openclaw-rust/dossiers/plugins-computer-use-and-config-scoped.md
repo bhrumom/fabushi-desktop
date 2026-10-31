@@ -66,7 +66,56 @@ consumed by that path: no provider execution ID is handed to the manager and
 no production plugin-config admission call was found. The responsibility
 therefore remains `wiring=not-wired` and acceptance remains pending until the
 single-flight/config contract reaches its intended producer and consumer.
-- **Test Oracles**:
-  - `source/host/tests/openclaw_plugins_contract.rs`:
-    - `test_computer_use_contract_and_execution_manager`
-    - `test_plugin_config_contract_matching_and_activation`
+
+## 3.2 Production recheck — 2026-11-01
+
+The current checkout was re-read at the two candidate boundaries. Worker
+construction still creates `ProductionComputerToolExecutor` and delegates
+through the existing Box/Computer owner, while the production runner already
+uses `ComputerUseCoordination` for its scoped lease and audit lifecycle. No
+production caller passes a provider execution ID to
+`extensions::plugins::computer_use::ComputerExecutionManager`, and no
+production caller invokes the plugin configuration activation/migration
+resolvers before Computer execution. Wiring the plugin manager directly into
+the executor would introduce a second concurrency/configuration authority and
+would contradict the existing owner boundary. The responsibility therefore
+remains `implementation=implemented`, `wiring=not-wired`,
+`verification=not-run`, `acceptance=pending`.
+
+The native execution-id validator was also compared with the fixed upstream
+`COMPUTER_EXECUTION_ID_PATTERN`. It now rejects uppercase hex, unsupported
+version nibbles and unsupported variant nibbles instead of checking only
+length and generic hexadecimal characters. Focused negative contract cases
+were added; they remain unexecuted during the development freeze.
+
+## 3.3 Test Oracles
+
+- `source/host/tests/openclaw_plugins_contract.rs`:
+  - `test_computer_use_contract_and_execution_manager`
+  - `test_plugin_config_contract_matching_and_activation`
+
+## 3.4 Fixed-subject equivalence gap — 2026-11-01
+
+The fixed upstream `src/plugins/computer-use-registration.ts` is a
+node-host registration owner, not merely a UUID validator or mutex. Its
+observable execution lifecycle includes a close barrier that blocks a new
+acquisition until the previous physical close settles, joins concurrent close
+requests, preserves a failed physical close for an explicit retry, and treats
+failed open/failed close ownership differently. The snapshot command also has
+a short-lived execution path when no `executionId` is supplied.
+
+The native `ComputerExecutionManager` currently provides only the synchronous
+single-active-ID portion of that contract. `closed_executions` is write-only,
+there is no pending/closing barrier or close-join state, and the manager is not
+called by the production `ProductionComputerToolExecutor`/Runner/Box path.
+The existing `ComputerUseCoordination` lease is the production owner for the
+current Rust computer-use path, but it does not establish equivalence to the
+upstream node-host provider lifecycle.
+
+This is an explicit unresolved equivalence gap, not production acceptance
+evidence. It does not authorize wiring the plugin manager into the executor or
+introducing a second concurrency owner. Status remains
+`implementation=implemented` for the present native helper slice,
+`wiring=not-wired`, `verification=not-run`, and `acceptance=pending` until a
+spec-backed node-host producer/consumer boundary exists and the lifecycle
+semantics can be verified there.

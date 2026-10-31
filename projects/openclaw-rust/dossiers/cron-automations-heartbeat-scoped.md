@@ -105,3 +105,143 @@ equivalent evidence. The responsibility is therefore reset to
 `implementation=not-started`, `wiring=not-wired`, `verification=not-run`, and
 `acceptance=pending` pending the dedicated
 `docs/specs/cron-session-reaper.md` decisions CRON-REAPER-D01 through D05.
+
+## Current Rust heartbeat policy slice — 2026-10-31
+
+The existing Host runner now owns a pure Rust heartbeat policy module at
+`source/host/src/runner/heartbeat.rs`. It implements conservative scratchpad
+emptiness detection, default/configured prompt resolution with both
+`heartbeat_respond` and fallback instructions, edge-token handling for
+`HEARTBEAT_OK`, exact `NO_REPLY` detection, and bounded acknowledgement
+suppression. Focused in-module tests cover markdown/comment noise, prompt
+instruction de-duplication, silent acknowledgements, visible message text, and
+exact silent-token matching.
+
+This slice does not create a scheduler, timer, heartbeat session, transcript
+store, response tool, notification channel, or second automation loop. A
+current-source search still finds no production heartbeat producer or consumer
+that invokes these policies. Therefore the ledger records
+`implementation=implemented` for the policy slice while retaining
+`wiring=not-wired`, `verification=not-run`, and `acceptance=pending` for the
+full heartbeat responsibility. No heartbeat-specific oracle has been promoted
+from the unrelated historical plugin test.
+
+## Current Automation-owner boundary recheck — 2026-11-01
+
+The existing production Automation owner was re-read before considering a
+Heartbeat binding. `ProductionAutomationsBackendRuntime` in
+`source/host/src/extensions/automations/production.rs` owns one stoppable poll
+worker, but its worker inputs and effects are limited to:
+
+- listener relay polling through `BackendRelayRuntime` and `RelayEventSink`;
+- automation-fire polling through `AutomationFireBackendRuntime` and
+  `FireDispatch`; and
+- NotifyBus wake/suspend/reconcile plus joined shutdown.
+
+`ProductionAutomationsLifecycle` composes that backend with cloud schedule
+reconciliation and listener connection watching. It does not own a heartbeat
+scratch source, heartbeat session admission, `heartbeat_respond` tool result,
+heartbeat transcript filtering, or a user notification consumer. Reusing its
+timer would therefore lose the upstream heartbeat identity and result
+semantics; adding a synthetic fire would create an unowned second contract.
+
+The direct upstream heartbeat responsibility remains split between the
+heartbeat policy/filter, the heartbeat runner scheduler/session target, and the
+heartbeat response-tool/presentation path. The current Rust policy module is
+only the first pure decision slice. The full row remains
+`implementation=implemented` for policy only,
+`wiring=not-wired`, `verification=not-run`, and `acceptance=pending`.
+
+## Fixed-source response/result closure recheck — 2026-11-01
+
+The fixed OpenClaw source was re-read at
+`ad8d12f126d29b0db204187adf5092db80294e70` (tree
+`04ccce62f1d74dc8e0c88290ae8ded027b7b0f16`) for the response and result
+owners behind `heartbeat_respond`:
+
+- `src/auto-reply/heartbeat-tool-response.ts` owns the typed result contract:
+  five outcomes, required `notify`/`summary`, optional notification, reason,
+  priority, next-check, and scratch fields, scratch validation, and public-
+  payload versus private-scratch separation.
+- `src/auto-reply/heartbeat-filter.ts` owns transcript classification and
+  removal. It recognizes internal prompts, silent acknowledgements, silent
+  response-tool calls, tool-result spans, and preserves a completed visible
+  response-tool call rather than filtering it as an acknowledgement.
+- `src/infra/heartbeat-runner-scheduler.ts` owns per-agent cadence, flood and
+  spacing guards, targeted versus enrolled wake admission, and retry/skip
+  outcomes. This is a scheduler/session producer, not a reusable automation
+  poll timer.
+- `src/infra/heartbeat-session-publication.ts` owns admitted final publication:
+  session identity and lifecycle/writer checks, idempotent transcript matching,
+  media receipt matching, guarded commit, and completion publication.
+- `src/infra/heartbeat-outcome-store.ts` owns durable non-notifying outcome
+  persistence and one-user-run claim/context projection. The persisted outcome
+  is model-only provenance and is not transcript text.
+
+This recheck rules out promoting a standalone Rust response normalizer as
+`heartbeat_respond` production equivalence. The current Rust tree still has no
+heartbeat response-tool owner, heartbeat transcript filter, admitted heartbeat
+session publication owner, or durable outcome store/consumer. The existing
+`ProductionAutomationsBackendRuntime` remains limited to relay/fire polling and
+NotifyBus lifecycle work. Reusing that poller would lose the upstream heartbeat
+identity and create an unowned contract boundary.
+
+The full responsibility therefore remains:
+`implementation=implemented` for the policy slice only,
+`wiring=not-wired`, `verification=not-run`, and `acceptance=pending`.
+
+The policy slice now also includes the pure
+`normalize_heartbeat_response` contract in
+`source/host/src/runner/heartbeat.rs`, governed by
+`projects/openclaw-rust/docs/specs/heartbeat-response-policy.md`. It validates
+the fixed-source required fields and outcome enum, handles the documented
+camelCase/snake_case aliases, enforces the 256 KiB scratch limit, and does not
+invent native identities. Its focused tests were added but intentionally not
+executed during the development freeze. This changes neither production wiring
+nor full-responsibility verification/acceptance.
+
+## Cron session-reaper production reachability recheck — 2026-11-01
+
+The current checkout was re-read against `docs/specs/cron-session-reaper.md`.
+The fixed upstream subject is `src/cron/session-reaper.ts`, blob
+`b1d615cf5b6ab55b3f58775aa4251e36eeb7c53a`, at commit
+`ad8d12f126d29b0db204187adf5092db80294e70` (tree
+`04ccce62f1d74dc8e0c88290ae8ded027b7b0f16`). Its production behavior is not
+just age-based `runs.json` pruning: it resolves `sessionRetention` with
+disabled/zero/invalid fallbacks, throttles sweeps per agent/store, discovers
+expired cron session rows through the session-store worker, skips unavailable
+agents, active controller work, pending generated media and unsettled
+subagents, then performs an expected-row/session-id/updated-at guarded removal
+and delegates transcript archival cleanup to the existing lifecycle owner.
+
+`AutomationRun` is an embedded history record (`source/host/src/automations/automation.rs:16`),
+and `FileAutomationStore` persists/truncates those records in an automation's
+`runs.json` (`source/host/src/automations/automation_store.rs:25-46`). It has no
+session identity, lifecycle revision, session updated-at fence, or transcript
+artifact reference that can serve as the required CRON-REAPER-D01 row.
+
+`AutomationRunPath::fire_automation_inner` records `begin_run`, executes the
+provided wake callback, finishes the run, and emits an observation
+(`source/host/src/extensions/transcript/automation_run_path.rs:177-290`). This
+is an execution/history owner, not a per-run session producer or retention
+consumer. The current source search still finds no `TranscriptCleanup` owner,
+cron reaper trigger, expired per-run session discovery, active
+media/subagent-preservation consumer, or guarded transcript archive/delete
+chain.
+
+A reproducible fixed-commit relative-import census rooted at
+`src/cron/session-reaper.ts` reached the same broad exact-tree closure as the
+session-compaction roots: 11,895 files, zero missing Git paths, four unresolved
+relative edges, and 261 lexical external-module candidates. The sorted
+`(path, blob)` digest is
+`c10d9f6fd8dcf4b978309026fd622252884b6ed43dc136eb17292b8a24f3ed07` for the
+locked commit. This demonstrates that the apparent single-file reaper subject
+does not have a safely isolated source closure under the current import graph;
+it does not authorize copying the TypeScript cleanup implementation or treating
+the global graph as a Rust owner boundary.
+
+The direct conclusion is unchanged but now bound to the current Rust sources:
+`OCRM-RESP-CRON-SESSION-REAPER-001` remains
+`implementation=not-started`, `wiring=not-wired`, `verification=not-run`, and
+`acceptance=pending`. Existing automation history, session deletion, and
+subagent cleanup must not be combined into a guessed cron reaper owner.

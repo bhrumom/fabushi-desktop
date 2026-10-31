@@ -162,3 +162,34 @@ node enrollment/process, process lifecycle and gateway-methods sources. The
 scoped result is still discovery-only: recursive imports, generated exports,
 build aliases, package/patch/native closure, LFS/integrity, license/NOTICE and
 Actions evidence remain open and no authority or completion flag is promoted.
+
+## Fixed-subject Rust owner calibration — 2026-10-31
+
+The fixed subject for this work remains
+`openclaw/openclaw@ad8d12f126d29b0db204187adf5092db80294e70`, tree
+`04ccce62f1d74dc8e0c88290ae8ded027b7b0f16`. Against that subject, the
+following existing Fabushi Rust owners now have implementation evidence for
+the scoped responsibilities; this calibrates the ledger's `implementation`
+field only, not production equivalence or acceptance:
+
+| Responsibility slice | Existing owner evidence | What is proven | What remains unproven |
+| --- | --- | --- | --- |
+| Test oracles and auxiliary owner | `source/host/src/extensions/cloud_workers/owner.rs:109-615`, `source/host/src/extensions/cloud_workers/runtime_control.rs:16-159` | bounded owner lifecycle, runtime-control admission/result validation, lease/artifact/bootstrap/warm-image state transitions | real worker/provider producer and packaged execution |
+| Plugin-SDK projections | `source/node-agent-coordinator/src/cloud_worker_projection.rs:32-230` | typed command/event projection, validation and payload boundaries | live Gateway/coordinator registration and packaged UI/NodeHost consumer |
+| Artifact admission | `source/host/src/extensions/cloud_workers/artifact_admission.rs:18-224` | digest/policy validation, archive-member path safety, persisted/settled artifact states | artifact producer, durable store migration and release artifact proof |
+| Node bootstrap | `source/host/src/extensions/cloud_workers/node_bootstrap.rs:19-244` | validated secret reference/request, redacted diagnostics, pending/process-receipt/settled lifecycle | isolated-cron/bootstrap producer and real node process |
+| Warm image | `source/host/src/extensions/cloud_workers/warm_image.rs:7-145` | generation-aware compare/apply and capture-uncertain recovery state | provider warm-image producer, image capture and package/runtime evidence |
+| Runtime control | `source/host/src/extensions/cloud_workers/runtime_control.rs:16-159` | bounded action admission and result matching, including outcome-unknown handling | production control caller, worker availability and provider readiness |
+| Lifecycle | `source/host/src/extensions/cloud_workers/owner.rs:306-615` | existing owner composes lease, artifact, bootstrap, runtime-control and warm-image transitions | complete lifecycle producer chain and exact-head Actions acceptance |
+
+The ledger therefore records these eight implementation fields as
+`implemented`, while retaining `wiring=not-wired`, `verification=not-run` and
+`acceptance=pending`. The source files contain focused Rust tests, but those
+tests are not executed in this phase and do not establish package, provider,
+physical-worker, runtime, or production acceptance. No Crabbox provider was
+registered into a production host composition, no live worker enrollment or
+isolated-cron producer was demonstrated, and no exact frozen-H Actions receipt
+was available. The fixed-source inventory remains incomplete (`1,419` mapped
+and `57,331` unread/unclassified of `58,750` entries), so this calibration
+does not change `source_closure_ready`, `dependency_closure_enumerated`, or
+any global completion flag.

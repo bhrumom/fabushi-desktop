@@ -91,14 +91,14 @@ malformed or cross-session state is rejected, and only an `Applied` model-picker
 result is persisted. This is the implementation slice for the session owner;
 it does not mutate parent agent defaults.
 
-The producer/consumer boundary remains open. No production runner/provider
-caller currently supplies the persisted state to `SandSessionOptions`, and the
-O04 test still only round-trips `modelOverride` and `thinkingLevel` in a JSON
-value. It does not prove session persistence, provider selection, thinking-level
-application, or the negative invariant at runtime. The model override parity
-row therefore advances to `implementation=implementing`, while retaining
+The mutation-producer boundary remains open. The current checkout's later
+reachability audit confirms that the existing Runner/Inference consumer reads
+the persisted state and projects it into `SandSessionOptions`; the O04 test
+still only round-trips `modelOverride` and `thinkingLevel` in a JSON value and
+does not prove that runtime edge. The model override parity row is therefore
+`implementation=implemented` for the owner/state slice while retaining
 `wiring=not-wired`, `verification=not-run`, and `acceptance=pending` until a
-real session mutation route and inference consumer are identified and verified.
+real authenticated session mutation route is connected and verified.
 
 ### Session model-override implementation contract (2026-10-31)
 
@@ -183,6 +183,12 @@ parallel registries. This is owner-lifetime integration only; no inbound
 channel dispatcher, outbound provider, or transcript publication path has been
 invented, so production wiring remains pending.
 
+The missing producer/consumer boundary is now explicit in the ledger as
+`BL-SESSION-COMMUNICATION-PRODUCTION-WIRING-001` for O02 and
+`BL-SESSION-CONVERSATION-TURN-PRODUCTION-WIRING-001` for O03. These blockers
+describe absent production paths; they do not convert the existing contract
+oracles into runtime acceptance.
+
 ## 8. Poll-intent oracle mapping correction (2026-10-29)
 
 The locked source reference attached to
@@ -234,17 +240,98 @@ real lifecycle contract and call chain exist.
 
 ## 11. Session-key classification production reachability recheck (2026-10-31)
 
-`call_openclaw_sessions_list` now uses `classify_session_kind` when projecting
-the canonical `agent:<id>:main` session rows. `sessions.get`, `sessions.delete`,
-`chat.send`, and `chat.abort` also return the classified kind using their
-optional `chatType` and `spawnedBy` metadata. The public Host app session and chat commands also call
-`reject_public_agent_harness_session_key`, which in turn uses
-`is_agent_harness_session_key`, so the reserved `harness:` namespace guard is
-production-reachable. This closes a real projection consumer but does not
+`call_openclaw_sessions_list` now routes each canonical `agent:<id>:main`
+session row through `resolve_gateway_session_route` before projecting its
+kind. `sessions.get`, `sessions.delete`, `chat.send`, and `chat.abort` also
+return the classified kind using their optional `chatType` and `spawnedBy`
+metadata. The public Host app session and chat commands now reach
+`resolve_gateway_session_route`, which delegates to the canonical
+`resolve_public_session_route` owner and its `is_agent_harness_session_key`
+guard, so the reserved `harness:` namespace policy is production-reachable.
+This closes a real projection consumer but does not
 prove complete cron/direct/group/global/spawn-child routing/admission across
 every mutation path; the parity row therefore remains `wiring=not-wired`,
 `verification=not-run`, and `acceptance=pending` until the classifier governs
 the full public routing boundary.
+
+## 11.1 Canonical public selector resolver (2026-11-01)
+
+The existing `session_paths.rs` owner now exposes the pure
+`resolve_public_session_route` boundary. It trims selectors, rejects the
+reserved harness namespace, rejects malformed `agent:<empty>:...` selectors,
+extracts the durable agent identity through `parse_agent_session_key`, and
+classifies the route through the existing `classify_session_kind` function.
+
+`sessions.list`, `sessions.get`, `sessions.delete`, `chat.send`, and `chat.abort`
+now reach that resolver through the small Gateway adapter
+`resolve_gateway_session_route`. Their existing session-worker, lifecycle,
+transcript, and runner owners remain the only state/execution consumers.
+Focused contract assertions cover canonical group routing, harness rejection,
+malformed identity rejection, and static use by all five public projections.
+
+The `sessions.list` projection now also routes each generated canonical
+`agent:<id>:main` row through `resolve_gateway_session_route` before projecting
+its kind, removing the remaining classifier-only public projection path. This
+does not claim that cron/direct/group/global/spawn-child semantics are complete
+across every mutation or channel ingress path. The parity row therefore remains
+`wiring=not-wired`, `verification=not-run`, and `acceptance=pending` until the
+full routing/admission contract is implemented and the frozen exact-head
+verification lane runs. The remaining full-boundary gap is recorded as
+`BL-SESSION-KEY-ROUTING-FULL-WIRING-001`.
+
+The same boundary now lowercases only the structural agent identity extracted
+from canonical `agent:<id>:<rest>` selectors; opaque legacy selectors remain
+unchanged. The undeletable root-main guard is owned by
+`is_root_main_session_key`, which applies case-insensitive matching to
+`global` and `agent:global:main` (including their structural wrapper) and is
+reached by the production `sessions.delete` path. Contract coverage includes
+`GLOBAL` and `AGENT:GLOBAL:MAIN`; this closes a case-normalization guard gap,
+but does not change the parity disposition above.
+
+## 11.2 Internal sendPrompt boundary recheck — 2026-11-01
+
+The remaining full-wiring gap was checked against the actual dispatch graph.
+`call_openclaw_chat_send` resolves the public selector and then passes the
+resolved `agent_id` to the existing `call_send_prompt` owner. The latter is
+also invoked directly by trusted internal producers such as automation,
+upgrade-resume, acknowledgement redrive, and group-member dispatch. Those
+internal calls intentionally carry a canonical agent identity rather than a
+public session selector; they are not additional public routing authorities.
+
+This confirms the current boundary but does not prove the missing
+cron/direct/group/global/spawn-child mutation semantics: the internal
+`sendPrompt` path does not independently carry or re-resolve `SessionKind`,
+and channel/automation producers do not all enter through the public
+`resolve_gateway_session_route` adapter. Promoting the ledger row would
+therefore conflate a resolved public projection with full mutation admission.
+The next implementation instrument is a trusted internal session-admission
+API that accepts the canonical route plus producer context and fences the
+existing send/runner owner consistently across those producers; no second
+session store or public parser is authorized.
+
+## 11.3 Trusted internal session-admission implementation slice — 2026-11-01
+
+The existing session-path owner now exposes `resolve_internal_send_route`.
+`call_send_prompt` and `ProductionTranscriptRuntime::accept_routed_send` use
+that same resolver before durable acceptance or Runner dispatch whenever a
+trusted producer supplies a selector or requires one. The selector is checked
+against the supplied `agentId`; an absent selector is rejected for automation,
+group-member, upgrade-resume, acknowledgement redrive, and subagent sources.
+An explicitly declared `directMainFallback` is the only route that may
+synthesize `agent:<id>:main`.
+
+The production producer edges now carry selectors: automation uses
+`agent:<id>:cron:<automationId>`, group-member uses the existing room context
+under `:group:`, upgrade-resume preserves a cron selector when its marker has
+an automation id and otherwise uses the direct main selector, acknowledgement
+redrive uses direct main, and subagent sends carry `spawnedBy` so the canonical
+route is classified as `SpawnChild`. `chat.send` forwards its resolved public
+selector, `chatType`, and `spawnedBy` into the existing send owner.
+
+This is source-level implementation and contract evidence only. The broader
+producer graph still requires exact-head verification of every channel and
+background path; no local OCRM build/test or CI was run, and the parity row
+remains `verification=not-run` and `acceptance=pending`.
 
 ## 12. Session model-override production consumer (2026-10-31)
 
@@ -264,6 +351,21 @@ found in the current source. The parity row therefore remains
 `wiring=not-wired` until that mutation route is connected with its existing
 visibility/operator/runtime fences.
 
+The same reachability audit is now recorded explicitly in the ledger as
+`BL-SESSION-MODEL-MUTATION-WIRING-001`; it is a missing production mutation
+producer, not a failed model-picker policy implementation.
+
+## 12.1 Fixed-source classification correction — 2026-11-01
+
+The fixed upstream `classifySessionKind` checks `entry?.spawnedBy` by
+truthiness. The Rust classifier previously used `spawned_by.is_some()`, which
+misclassified an explicitly supplied empty string as `SpawnChild`. The active
+session routing spec now records this as `SKR-07`; the existing session-path
+owner uses a non-empty check, and the contract oracle includes empty-string
+spawn ancestry with both direct and group fallbacks. This is a local semantic
+correction only; it does not promote the broader routing responsibility to
+production acceptance or runtime verification.
+
 The inference contract oracle now covers the positive precedence case and the
 negative parent-default invariant: a persisted session override selects its
 own model and thinking parameter while the stored agent default remains
@@ -272,3 +374,26 @@ build/test or packaged acceptance was run in the development phase, so the
 ledger remains `verification=not-run` and `acceptance=pending` until the
 frozen exact-head Actions lane executes the required unit, integration and
 negative checks.
+
+## 12.2 Fixed-source Cron classification correction — 2026-11-01
+
+The fixed upstream `isCronSessionKey` first parses the canonical
+`agent:<agent-id>:<rest>` wrapper and then checks only whether the parsed
+`rest` starts with `cron:`. The Rust classifier previously accepted bare
+`cron:*` keys and arbitrary embedded `:cron:` tokens, which was broader than
+the fixed source. The session-path owner now uses the canonical parser before
+the Cron check; the contract oracle covers a valid agent-scoped Cron key and
+negative bare/embedded-token cases. This remains a local semantic correction;
+no production wiring, build/test execution, or acceptance status is claimed.
+
+## 12.3 Fixed-source agent identity normalization correction — 2026-11-01
+
+The fixed upstream `parseAgentSessionKey` first applies
+`normalizeSessionKeyPreservingOpaquePeerIds`; ordinary structural portions of
+`AGENT:Agent-123:Main` therefore resolve to the canonical agent identity
+`agent-123`, while provider-owned opaque peer spans retain their bytes. The
+Rust public resolver previously preserved the wrapped agent identity's case.
+It now lowercases only the structured agent identity after the existing
+parser, leaving legacy raw selectors opaque. Contract oracles cover the mixed
+case canonical route. This is a local boundary correction only; production
+wiring, verification, and acceptance remain pending.

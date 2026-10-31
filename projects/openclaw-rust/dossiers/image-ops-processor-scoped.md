@@ -59,7 +59,8 @@ The audited sources were mapped to 4 discrete Rust runtime responsibilities regi
 4. **`OCRM-RESP-MEDIA-PHOTON-RUNTIME-001` (UPDATED)**:
    - **Behavior**: Pure Rust BMP-to-PNG fallback decoder and encoder preserving exact RGB/RGBA byte buffers.
    - **Rust Owner**: `source/host/src/extensions/attachments/image_ops.rs::convert_bmp_to_png` and `media_qr_png.rs::convert_bmp_to_png`.
-   - **Status**: `implementation=implemented`, `wiring=not-wired`, `verification=not-run`, `blocker_ids=["BL-MEDIA-PHOTON-BMP-PIPELINE-001"]`.
+   - **Status**: `implementation=implemented`, `wiring=wired`, `verification=not-run`, `acceptance=pending`.
+   - **Production chain**: `AttachmentsService::dispatch_gateway("convertBmpToPng")` and `normalizeAnthropicInlineImage` → `image_ops::convert_bmp_to_png` → `media_qr_png::convert_bmp_to_png`; the 24-bit path reaches `encode_png_rgb` and the 32-bit path reaches `encode_png_rgba`.
 
 ---
 

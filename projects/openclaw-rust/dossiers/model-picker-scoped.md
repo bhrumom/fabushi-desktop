@@ -59,11 +59,10 @@ The following 6 upstream files in `src/model-picker/` (1,328 lines total, 100% o
 The current Host source exposes `SandAgentSessionStore::apply_session_model_selection`
 and persists an applied result in the agent-scoped SQLite `sessionModelSelection`
 key. A non-test caller search found no production session mutation route invoking
-that method, and no inference runner/provider consumer projects the persisted
-selection into `SandSessionOptions` or a live provider request. The pure
-`model_picker_service` function and the persistence method therefore remain
-implementation evidence only; the ledger keeps
-`BL-MODEL-PICKER-EXEC-WIRING-001` with `wiring=not-wired`,
+that method. Separately, `runner.startRoutedProvider` reads the persisted
+selection and projects it into `SandSessionOptions`, so the read-side Runner /
+Inference consumer edge is present. The missing authenticated mutation producer
+keeps `BL-MODEL-PICKER-EXEC-WIRING-001` at `wiring=not-wired`,
 `verification=not-run`, and `acceptance=pending`.
 
 ## 5. Fixed-source producer comparison and safe-wiring boundary
@@ -89,3 +88,47 @@ production mutation path. A route that accepts `visibilityAllow` or
 policy owner and is explicitly out of scope. Wiring remains pending until a
 canonical model catalog/operator-authority producer and an authenticated
 session-action caller are available in existing owners.
+
+## 2026-10-31 current-source correction
+
+The consumer portion of the preceding audit is superseded by the current
+checkout. `start_routed_provider_task` reads the persisted entry at
+`source/host/app/src/main.rs:6434-6436`, and the worker projects its
+`model_override` and `thinking_level` into `SandSessionOptions` at
+`source/host/app/src/main.rs:7296-7312`. The existing Runner/Inference
+consumer edge is therefore confirmed.
+
+The missing edge is the producer: no non-test caller of
+`SandAgentSessionStore::apply_session_model_selection` was found. The model
+picker and SQLite owners remain valid state/mutation owners, but no
+authenticated session-action or gateway/UI mutation ingress reaches them.
+`OCRM-RESP-MODEL-PICKER-001` and
+`OCRM-RESP-SESSION-MODEL-OVERRIDES-001` remain `not-wired`; this correction
+narrows the gap and does not promote verification or acceptance.
+
+## 2026-11-01 exact ingress audit
+
+The negative producer result was rechecked against the current checkout with
+the following source boundaries:
+
+- `source/host/app/src/main.rs::call_openclaw_gateway_command` dispatches
+  `sessions.list/get/create/delete` and `chat.send/abort`, but no model-picker
+  or session-model mutation method.
+- `source/host/src/extensions/session/gateway.rs` owns session/profile/transcript
+  gateway operations; its exposed mutation cases do not call
+  `apply_session_model_selection`.
+- `source/host/src/extensions/interactive/payload_service.rs` validates and
+  fallback-renders `MessagePresentationAction::ModelPicker`, but has no action
+  executor or authenticated session context.
+- A repository search for
+  `SandAgentSessionStore::apply_session_model_selection` and
+  `apply_session_model_selection(` found only the owner definition and the
+  inference implementation; contract tests are not production ingress.
+
+This keeps `BL-MODEL-PICKER-EXEC-WIRING-001` and
+`BL-SESSION-MODEL-MUTATION-WIRING-001` open. The safe next ingress must be an
+existing authenticated session-action producer that derives catalog,
+visibility, operator authority, placement, and generation context from their
+canonical owners. Accepting those policy inputs from request JSON, or adding a
+thin model-selection gateway route solely to reach the existing method, remains
+out of scope under the ADR.

@@ -53,6 +53,30 @@ The audited sources were mapped to 2 discrete Rust runtime responsibilities regi
    - **Oracle**: `OCRM-STAGED-INPUTS-O01`.
    - **Status**: `implementation=implemented`, `wiring=not-wired`, `verification=not-run`, `blocker_ids=["BL-MEDIA-STAGED-INPUTS-CHAT-WIRING-001"]`.
 
+### 2.1 Current exact-head production-path audit (2026-11-01)
+
+The current direct-send path is now recorded precisely for wiring decisions:
+
+- `UnifiedGatewayApi::call_send_prompt` first calls
+  `shape_send_prompt_media_args` (`source/host/app/src/main.rs:2123-2139`),
+  which classifies attachment paths and prepares selected image/video metadata
+  (`source/host/src/extensions/transcript/send_message_shaping.rs:185-213`).
+- The accepted send is persisted, then the shaped arguments are passed through
+  `prepare_direct_turn_runner_args` and `call_host_lane` (`source/host/app/src/main.rs:2200-2207`).
+- The routed turn stages host attachment paths into the agent box
+  (`source/host/app/src/main.rs:6512-6529`) and the provider prompt projection
+  appends a file-location/read guidance block
+  (`source/host/src/runner/prompt_collector_glue.rs:684-712`).
+- The production path does **not** call
+  `input_files::extract_file_content_from_*` or
+  `extract_image_content_from_source`; those remain gateway RPC branches only
+  (`source/host/src/extensions/attachments/attachments_service.rs:2085-2128`).
+
+Therefore the existing `BL-MEDIA-INPUT-FILES-CHAT-WIRING-001` and
+`BL-MEDIA-STAGED-INPUTS-CHAT-WIRING-001` blockers remain valid. Staging and
+prompt guidance are production behavior, but they do not establish extraction,
+content injection, or complete multimodal user-turn composition.
+
 ---
 
 ## 3. Strict Conservation Invariant Verification

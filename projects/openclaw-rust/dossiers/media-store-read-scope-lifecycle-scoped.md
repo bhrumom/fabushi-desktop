@@ -73,8 +73,8 @@ The audited source code was decomposed into 5 discrete Rust runtime responsibili
 
 ## 3. Unit 20 Blocker Status Re-verification & Honest Boundary Definition
 
-- **`BL-MEDIA-STORE-SHARED-PIPELINE-001`**: `OCRM-RESP-MEDIA-STORE-SHARED-001` (`MEDIA_FILE_MODE`, `SaveMediaSourceError`, `format_media_size`) is implemented and consumed by `media_store.rs`, but because `media_store.rs` itself is not yet connected to external production channel consumers, `OCRM-RESP-MEDIA-STORE-SHARED-001` conservatively remains `wiring=not-wired`, `verification=not-run`, `blocker_ids=["BL-MEDIA-STORE-SHARED-PIPELINE-001"]`.
-- **`BL-MEDIA-QR-IMAGE-CALLER-001` & `BL-MEDIA-QR-TERMINAL-CALLER-001`**: `DevicePairingOwner::handle_pair_setup_code` generates `qrDataUrl` and `qrTerminal` in its RPC reply payload, but neither the CLI terminal command nor the desktop frontend React pairing dialog currently consumes and displays this output. Therefore, `OCRM-RESP-MEDIA-QR-IMAGE-001` and `OCRM-RESP-MEDIA-QR-TERMINAL-001` remain conservatively `wiring=not-wired`, `verification=not-run`, preserving their respective blocker IDs.
+- **Shared media-store invariants**: `OCRM-RESP-MEDIA-STORE-SHARED-001` is consumed by the production `media_store` owner: `AttachmentsService::dispatch_gateway("saveMediaBuffer"|"readMediaBuffer"|"deleteMediaBuffer"|"formatMediaSize")` reaches the typed `SaveMediaSourceError`, `MEDIA_FILE_MODE`, and formatter paths. Its ledger state is therefore `implemented/wired/not-run/pending`. This does not promote the separate `OCRM-RESP-MEDIA-STORE-PERSIST-001` row, whose broader channel-ingestion contract remains not wired.
+- **Desktop QR presentation**: `DevicePairingOwner::handle_pair_setup_code` now has a production renderer consumer in `frontend/src/recovered/features/settings/overlay/device-pairing.tsx`, which consumes both `qrDataUrl` and `qrTerminal` through the existing Coordinator call. The desktop path is `wiring=wired`; CLI/chat-assistant presentation, exact-head verification, and packaged/runtime acceptance remain outside this slice and are not claimed.
 
 ---
 

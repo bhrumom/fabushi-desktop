@@ -79,3 +79,20 @@ or channel/group auto-mode suppression gate was found in the production path;
 the responsibility therefore remains `implementing/not-wired/not-run/pending`.
 This correction changes only the owner graph and does not promote a helper,
 search index, or contract test to citation equivalence.
+
+## 5.2 Pure citation-policy slice — 2026-10-31
+
+Following the source-first boundary above, the existing content-search owner now
+contains `source/host/src/extensions/content_search/memory_citations.rs` and
+the durable spec `docs/specs/memory-citations-format.md`. The module formats
+only an explicit `MemorySourceProvenance` record, rejects blank/invalid line
+ranges, and resolves `on`/`off`/`auto` mode with channel/group suppression.
+Focused in-module tests cover single-line/range formatting, invalid provenance,
+automatic suppression, and explicit mode precedence.
+
+This is a pure policy slice. The current production search index still emits no
+verified memory path/line provenance, and no production result consumer invokes
+the formatter. The ledger consequently records the policy implementation while
+retaining `wiring=not-wired`, `verification=not-run`, and
+`acceptance=pending`. No line number is inferred from a transcript snippet,
+entry ID, timestamp, or result ordering.

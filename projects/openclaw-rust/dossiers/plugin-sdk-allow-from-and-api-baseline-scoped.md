@@ -56,3 +56,19 @@
     - `test_ocrm_plugin_sdk_allow_from_and_config_edit`
     - `test_ocrm_plugin_sdk_api_baseline_and_diff`
     - `test_ocrm_plugin_sdk_agent_workspace_runtime`
+
+## 4. Production reachability calibration (2026-11-01)
+
+The fixed-H checkout contains native Rust implementations and contract oracles
+for this unit, but a production caller audit found no Host or Coordinator
+producer for account-scoped allow-from edits, API-baseline declaration/diff
+processing, or workspace access policy. `register_bundled_channel_capabilities`
+and `PluginCapabilityCatalog::register_bundled_channel_entry` publish bundled
+capability metadata only; they do not consume these helpers as a channel
+authorization or plugin lifecycle path.
+
+The parity row therefore remains `implementation=implemented`,
+`wiring=not-wired`, `verification=not-run`, and `acceptance=pending` under
+`BL-PLUGIN-SDK-ALLOW-API-WIRING-001`. This blocker records a missing real
+producer/consumer boundary, not a failed unit oracle, and does not authorize a
+second plugin configuration or installer owner.

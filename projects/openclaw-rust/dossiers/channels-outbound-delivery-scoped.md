@@ -4,7 +4,7 @@
 **Module**: OCRM-M14/M15 (Channel Ingress, Deduplication, Thread Routing & Outbound Delivery Subsystems)  
 **Upstream live discovery subject (not authority)**: `openclaw/openclaw@ce908375fed062dd75abab62d57fc840b96a144e` (tree `f2db36d9a98e23753ce1130a84cdae7a4c57488d`); the file/blob rows below retain their historical source-audit identities and require exact-head revalidation before final closure.
 **Target Repository**: `bhrumom/fabushi-desktop`  
-**Working Branch**: `codex/openclaw-rust-full-fusion-20261030`
+**Working Branch**: `codex/openclaw-rust-fusion-20261031`
 **Reviewer**: `xuyao@ombhrum.com`  
 
 ---
@@ -86,6 +86,53 @@ The connector now also owns the Rust `InboundChannelDeduplicator` and
 idempotently, and a normalized `(channel, thread)` pair resolves to one stable
 conversation scope. These helpers are not marked wired because no production
 inbound channel producer or transcript/session consumer has been identified.
+
+### Exact-source production reachability audit — 2026-10-31
+
+The current Fabushi source was rechecked at the fixed OpenClaw subject recorded
+by the project source-of-truth. The only production construction found for the
+channel delivery owner is `start_production_extensions` in
+`source/host/src/host_production_extensions.rs`, where a fresh
+`ChannelDeliveryRouter` is wrapped by `HostChannelDelivery`. The router's
+provider lifecycle methods are public, but repository search found no production
+caller that registers or replaces a concrete `ChannelDeliveryPort`.
+
+The only application dispatch caller is `deliverToChannel` in
+`source/host/app/src/main.rs`. It constructs an outbound message and invokes
+`HostChannelDelivery::deliver` on a worker thread. This proves an outbound
+failure-aware path only; the default router remains empty and therefore returns
+the unregistered-provider error for every channel address until an external
+provider registration occurs.
+
+No production caller was found for `ChannelAclGate`,
+`verify_webhook_hmac_sha256`, `InboundChannelDeduplicator`,
+`InboundChannelDebounceGate`, or `ChannelThreadRouter`. No channel webhook
+receiver, inbound event adapter, receipt/cursor store, thread-to-session
+binding consumer, or turn-dispatch handoff is present in this target slice.
+Consequently the four inbound responsibilities remain `wiring=not-wired` and
+their acceptance remains pending. The helper implementations are complete as
+source-level Rust contract slices, but helper presence, unit contracts, and the
+outbound `deliverToChannel` path must not be promoted to production inbound
+acceptance.
+
+### Inbound wake path versus thread binding — 2026-11-01
+
+The current Host does have a real inbound wake path, but it is not a thread
+binding path. `wakeForInbound` accepts an opaque envelope and queues it under
+an agent ID. The revival worker persists channel address, sender, text, and
+timestamp into the agent transcript, builds the inbound prompt, and invokes
+the existing background turn owner. The coordinator's
+`agent-inbound-wake-request` route adds admission and redrive behavior.
+
+Neither side calls `ChannelThreadRouter::resolve_or_create`, carries a
+thread identity into `session_conversation_state`, or persists a canonical
+thread-to-conversation scope. Therefore this is evidence of a real
+producer→transcript→runner chain for generic inbound wakes, while the
+thread-affinity producer and session consumer required by
+`OCRM-RESP-CHANNEL-THREAD-BINDINGS-001` remain absent. Adding a call at the
+opaque `wakeForInbound` boundary without a provider-owned thread identity,
+conversation selection contract, and persistence owner would guess the
+missing interface and create an unreviewed routing authority.
 
 ### Inbound debounce implementation slice — 2026-10-31
 

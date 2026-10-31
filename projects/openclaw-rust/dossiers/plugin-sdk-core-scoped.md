@@ -86,6 +86,23 @@ the existing session/transcript owners. This is an implementation slice for
 the upstream oracle, not completion of the full transcript runtime or
 production wiring.
 
+## 7.1 Current implementation status recheck — 2026-10-31
+
+The existing `session_memory.rs` owner now provides the complete pure contract
+slice for the mapped responsibility: bounded session pagination/search,
+opaque generation-aware cursor encoding/decoding, reset-boundary detection,
+scope/generation read fences, paired tool-result filtering, message/byte page
+budgets, transcript lock acquisition, and incognito sync denial. The source
+contains focused tests for these policy surfaces.
+
+This recheck changes only the implementation classification. A repository search
+still finds no production plugin dispatcher or typed Gateway adapter consuming
+`paginate_sessions`, `read_visible_transcript_page`, or
+`SessionTranscriptLockRegistry`; the canonical Session/Transcript owner remains
+the only state authority. The parity ledger therefore records
+`implementation=implemented` while retaining `wiring=not-wired`,
+`verification=not-run`, and `acceptance=pending`.
+
 The same slice now exposes `read_visible_transcript_page` over a caller-owned
 snapshot. It validates scope and generation, records reset-window boundaries,
 returns stable reset reasons, enforces message/serialized-byte budgets, and

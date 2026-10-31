@@ -241,7 +241,7 @@ delete admission/post-hook recheck 已存在；focused oracle source 已加入
 对应的 cron isolated-session 或 subagent cleanup producer，故 producer 接线、
 Actions、packaged/runtime 和 acceptance 仍未闭合；ledger/global flags 不变。
 
-当前 parity ledger 的 9 条 `not-started/not-wired` 责任已在
+当前 parity ledger 的 8 条 `not-started/not-wired` 责任已在
 `dossiers/not-started-responsibility-frontier-20261031.md` 做了逐条 frontier
 审计：它们缺少生产 producer/consumer、拥有明确 ACP/plugin blocker，或只能从
 contract fixture/metadata 得到间接证据。该 dossier 不改变责任状态，也不把
@@ -312,9 +312,9 @@ GitHub Actions inventory、依赖闭包或 LFS scan，因此没有提升 accepte
 也没有改变任何 closure/global flag。
 
 对旧 baseline inventory 的只读计数还显示：58,750 条路径中有 57,331 条仍为
-`responsibility_status=unclassified` 且 `disposition=null`；其余 1,419 条已有
-read-complete/responsibility-mapping 记录，但当前 applicability/disposition 字段仍为
-`null`。该计数是当前 AC02/G02 final 未闭合的直接证据，不是把
+`responsibility_status=unclassified` 且未完成 disposition；其余 1,419 条已有
+read-complete/responsibility-mapping 记录，但当前 applicability/disposition 两个
+schema-required keys 在 committed rows 中仍缺失。该计数是当前 AC02/G02 final 未闭合的直接证据，不是把
 unread 强行当作失败门槛，也不能被结构性 inventory 完整或已完成的 scoped
 责任行抵消。
 
@@ -389,7 +389,7 @@ receipt、packaged runtime reachability、真实服务/设备或最终验收。�
 是该次 scoped reverse-audit 的历史子集计数，不是当前 239 条责任的总 wired
 数；当前总量以
 [`dossiers/ledger-status-audit-20261031.md`](dossiers/ledger-status-audit-20261031.md)
-记录的 83 wired / 156 not-wired 为准。
+记录的 89 wired / 150 not-wired 为准。
 
 RTM 证据完整性审计显示 48 行中 31 行为 `in-progress`，每行至少有 evidence
 与 reviewer；17 行为 `not-started`，其中基础/终验行保留空 evidence、责任或
@@ -415,9 +415,10 @@ global flag or source-closure state.
 P0 在 Actions 建立 lock、inventory、parity ledger、RTM、dossiers 和 evidence 索引；本次不提交伪造的完整台账或空清单来充当 baseline。
 
 本地冻结期间的最新 parity-ledger 状态快照见
-[`dossiers/ledger-status-audit-20261031.md`](dossiers/ledger-status-audit-20261031.md)：239 条责任中
-210 条 `implemented`、20 条 `implementing`、9 条 `not-started`；83 条 `wired`、156 条
-`not-wired`；8 条 `verified`、231 条 `not-run`；239 条 acceptance 仍为 `pending`。
+[`dossiers/ledger-status-audit-20261031.md`](dossiers/ledger-status-audit-20261031.md)：2026-11-01
+重新核对的 239 条责任中，231 条 `implemented`、0 条 `implementing`、8 条
+`not-started`；89 条 `wired`、150 条 `not-wired`；8 条 `verified`、231 条
+`not-run`；239 条 acceptance 仍为 `pending`。
 该快照只固化台账状态，不把 helper、fixture、静态 symbol 或 local oracle 解释为生产接线，
 也不改变任何 completion flag。
 
@@ -583,8 +584,8 @@ source closure 和 exact-head Actions authority 仍未闭合。
 2026-10-31 inventory field audit：当前提交的固定 subject shards 与
 `ad8d12f.../04ccce...` 一致，58,750 行路径唯一、`omitted_known=0`，其中
 57,331 行仍是 `unread/unclassified`，1,419 行是 `read-complete/mapped`。
-但所有行的 `applicability_status` 与 `disposition_status` 仍为旧 materialization
-留下的 `null`，不是已分流或已完成 disposition 的证据；因此
+但所有行都缺少 `applicability_status` 与 `disposition_status` 两个 schema-required
+keys，这不是已分流或已完成 disposition 的证据；因此
 `applicability_disposition_closure` 继续为 `false`。现有
 Actions 中的 `expand_inventory.py` 会在下一次 exact-subject materialization
 时为未复用审查字段发出显式 `unknown/pending`，随后由 `shard_inventory.py`

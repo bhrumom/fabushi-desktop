@@ -12,17 +12,20 @@ There are 58,750 rows and 58,750 unique paths; the inventory index reports
 read-complete/mapped rows. The artifact therefore preserves honest semantic
 read progress and does not claim full source reading.
 
-The field-level audit found exactly two row-state combinations:
+The field-level audit found exactly two row-state combinations, and found that
+the two fields introduced by the current AC02 schema are absent from every
+committed row:
 
-| Rows | Read status | Responsibility status | Applicability | Disposition |
+| Rows | Read status | Responsibility status | Applicability key | Disposition key |
 | ---: | --- | --- | --- | --- |
-| 57,331 | `unread` | `unclassified` | `null` | `null` |
-| 1,419 | `read-complete` | `mapped` | `null` | `null` |
+| 57,331 | `unread` | `unclassified` | absent | absent |
+| 1,419 | `read-complete` | `mapped` | absent | absent |
 
-The null applicability/disposition values are a stale committed materialization
-from before the AC02 field extension. They are not evidence of non-applicability,
-completed disposition, or an omitted path. `applicability_disposition_closure`
-therefore remains `false`.
+The absent `applicability_status` and `disposition_status` keys violate the
+current inventory schema's required row fields. They are a stale committed
+materialization from before the AC02 field extension, not evidence of
+non-applicability, completed disposition, or an omitted path.
+`applicability_disposition_closure` therefore remains `false`.
 
 ## Recovery boundary
 
@@ -40,3 +43,27 @@ The next exact Actions run must preserve the fixed subject identity, keep all
 promote rows with direct applicability/disposition evidence. No global flag,
 AC02 acceptance, source closure, or completion status is promoted by this
 audit.
+
+## Independent shard integrity recheck — 2026-10-31
+
+A read-only reconstruction over all committed `part-*.jsonl.gz` shards found:
+
+| Check | Result |
+| --- | ---: |
+| shards | 58 |
+| rows | 58,750 |
+| unique paths | 58,750 |
+| shard compressed hashes / gzip validation failures | 0 |
+| rows bound to fixed commit | 58,750 |
+| rows bound to fixed tree | 58,750 |
+| rows with required applicability key | 0 |
+| rows with required disposition key | 0 |
+
+This separates two facts that must not be conflated: the committed row
+materialization is internally intact and exactly subject-bound, while the
+current schema-required AC02 applicability/disposition keys and assessment
+have not been materialized. The
+index authority also still has `latest_exact_head_evidence=null`,
+`dependency_closure_enumerated=false`, and
+`applicability_disposition_closure=false`; no completion flag or acceptance
+state is changed by this recheck.

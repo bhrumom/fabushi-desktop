@@ -73,3 +73,22 @@ remain standalone policy helpers; no production memory artifact writer,
 durable provenance store, or reader consumer was identified. The ledger keeps
 both responsibilities under their existing wiring blockers with
 `wiring=not-wired`, `verification=not-run`, and `acceptance=pending`.
+
+## 6. Fixed-source responsibility correction (2026-10-31)
+
+The fixed upstream `src/link-understanding/apply.ts` was re-read at blob
+`597d8f202b23df78bbef21aa73faa7db28619aab`. Its production behavior includes
+scope admission, citation masking, bounded URL extraction, strict
+SSRF-guarded fetching, response-size and timeout control, configured CLI
+processing with abort/process-tree cleanup, and inbound-context
+mutation/finalization. The current Rust module is only a policy/helper
+boundary: it has no network fetch, CLI processor, cancellation owner,
+inbound-context producer, or non-test consumer. The existing
+`safe_link_preview_fetch` module is a distinct HTTPS preview owner and is not
+equivalent to this path.
+
+This correction keeps the implementation claim limited to the helper slice and
+does not promote the responsibility to production wiring or acceptance. A
+future implementation requires a task-specific durable spec selecting the
+existing inbound-context, guarded-fetch, process-custody, and cancellation
+owners before product code changes.

@@ -139,3 +139,15 @@ been identified, so the ledger remains `wiring=not-wired`,
 - `registered_responsibilities`: **48**
 - All 58 inventory shards checksums verified in `manifest.json`.
 - All global completion flags strictly maintained as **false**.
+
+## Current ledger calibration correction — 2026-10-31
+
+The current Rust source recheck confirms that the four pure owner slices named
+above are present: `AudioOutputPort`,
+`classify_realtime_voice_consult_tool_call`, `TurnContextTracker`, and
+`RealtimeVoiceAudioQueue` plus the adjacent SDP/transcription/voice helpers.
+Their implementation status is therefore `implemented`. This is a status
+calibration only; no production realtime audio, VAD, playback, WebSocket, or
+voice-consult producer/consumer was found. All four responsibilities remain
+`wiring=not-wired`, `verification=not-run`, and `acceptance=pending`, and the
+fixture-only historical tests remain non-acceptance evidence.

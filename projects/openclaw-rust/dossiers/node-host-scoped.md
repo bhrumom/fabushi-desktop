@@ -2805,3 +2805,30 @@ plugin-derived commands, dynamic capability refresh, and process/device
 consumers therefore remain pending. The local projection must not be promoted
 to full `OCRM-RESP-NODE-HOST-RUNTIME-MANIFEST-001` production wiring or
 acceptance.
+
+## 208. Command-dispatch fixed-source recheck (2026-10-31)
+
+The fixed upstream command-dispatch set was re-read at
+`ad8d12f126d29b0db204187adf5092db80294e70`. `src/node-host/invoke.ts` is a
+real multiplexer for worker supervisor, device apps, desktop stream, approval
+and filesystem helpers, MCP, Claude CLI, registered plugins, and
+`system.run.prepare`/`system.run`. Its aborted-client wrapper suppresses late
+result/progress/event publication. The adjacent production owners add native
+PTY spawn/input/resize/output backpressure/exit settlement
+(`pty-command.ts`), bounded process execution and process-tree termination
+(`invoke-run-command.ts`), and system-run approval binding, policy
+revalidation, execution, and completion/denial events
+(`invoke-system-run.ts`). The Computer command remains a provider-generation
+fence and delegation boundary, not the desktop side-effect owner.
+
+Fabushi's `command_dispatch.rs` currently supplies only the Computer protocol
+and generation-fenced injected-executor boundary; its no-executor path fails
+closed. `invocation_runtime.rs` supplies admission, ordered input buffering,
+cancellation, and terminal-result fencing, while explicitly leaving sockets,
+side effects, and result delivery to callers. No non-test shipping caller was
+found that composes these pieces with the full upstream command multiplexer,
+PTY stream, Claude handler, system-run approval/executor, or worker/device
+producer path. Contract tests therefore remain boundary evidence rather than
+production command acceptance. The command-dispatch responsibility stays
+`partial`/`not-wired`; no new Rust side-effect owner is introduced by this
+audit.

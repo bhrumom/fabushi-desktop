@@ -6,7 +6,7 @@ This review evaluates the full objective against the current committed
 governance state. It is a read-only compliance review, not an implementation,
 Actions receipt, independent acceptance, or release verdict.
 
-- Fabushi branch: `codex/openclaw-rust-full-fusion-20261030`
+- Fabushi branch: `codex/openclaw-rust-fusion-20261031`
 - Fixed implementation subject: `openclaw/openclaw@ad8d12f126d29b0db204187adf5092db80294e70`
   / tree `04ccce62f1d74dc8e0c88290ae8ded027b7b0f16`
 - Current discovery candidate: `openclaw/openclaw@4b6907d8bdb74ecf3b0206ca75610673ad42690f` (discovery-only; source rebaseline still required)
@@ -21,7 +21,7 @@ Actions receipt, independent acceptance, or release verdict.
 | Exact upstream identity and dependency closure | incomplete | The lock records an exact discovery candidate and the fixed subject remains explicit, but `dependency_closure_enumerated`, `lfs_scan_complete`, and `source_closure_ready` are false. Required instrument: one frozen exact H with Actions inventory, recursive dependency/license/LFS closure and immutable evidence envelope. |
 | OCRM-AC02 / G02 source disposition | incomplete | The old `unread=0` hard gate is removed. Structural progress remains honest, but applicability/disposition closure and unassessed applicable responsibility counts are not closed. Required instrument: exact-subject materializer plus final AC02 disposition evidence. |
 | OCRM-AC03 responsibility mapping | incomplete | 239 ledger responsibilities exist; 228 are in the project RTM and 11 are explicitly P1 task-local. Current mapping is 148 reviewed / 91 mapped, not final accepted bidirectional closure. Required instrument: reviewed responsibility/orphan/ambiguity crosswalk on the final exact subject. |
-| Rust implementation and owner boundaries (AC04–AC06) | incomplete | Ledger has 210 implemented, 20 implementing and 9 not-started; 156 responsibilities remain not-wired. Required instrument: production call graphs proving producer → existing owner → state/storage → consumer for every applicable runtime responsibility. |
+| Rust implementation and owner boundaries (AC04–AC06) | incomplete | Ledger has 231 implemented, 0 implementing and 8 not-started; 150 responsibilities remain not-wired. Required instrument: production call graphs proving producer → existing owner → state/storage → consumer for every applicable runtime responsibility. |
 | Functional parity and ecosystem/channel/plugin/device compatibility (AC07–AC15) | pending | No current-H Actions/runtime/device/service/package evidence proves these broad acceptance cells. Required instrument: scoped owner/oracle admission followed by exact-H Actions and real service/device/platform evidence. |
 | UI, security, recovery, migration and platform behavior (AC16–AC21) | pending | Static source and contract evidence do not establish packaged UI, security negatives, crash/restart recovery, migration rollback, platform matrix or performance budgets. Required instrument: current-H executable receipts plus packaged/runtime acceptance. |
 | Provenance, release and final acceptance (AC22–AC24) | pending | No current-H signed artifact, SBOM/NOTICE closure, packaged release ACCEPT, zero-blocker verdict or independent final ACCEPT exists. Required instrument: release-bound immutable receipts and independent acceptance review. |
@@ -44,6 +44,25 @@ missing, and no local dossier can promote an acceptance flag. The next valid
 completion path is to freeze one exact target H, obtain the required Actions
 authority and closure artifacts, then execute the admitted producer/owner and
 runtime/package/device verification lanes against that same H.
+
+## Current-state recheck — 2026-11-01
+
+The current `parity-ledger.json` was re-derived rather than copied from the
+prior review: 239 responsibilities total; 234 `read-complete` and 5 `partial`;
+148 `reviewed` and 91 `mapped`; 231 `implemented` and 8 `not-started`; 89
+`wired` and 150 `not-wired`; 8 `verified` and 231 `not-run`; and 239
+`acceptance=pending`. These figures do not establish acceptance, because the
+ledger still has no accepted responsibility and all eight completion flags are
+false.
+
+The compressed inventory was independently read at
+`inventory/shards/*.jsonl.gz`: 58 shards, 58,750 valid JSON rows, with both
+`applicability_status` and `disposition_status` absent from all 58,750 rows.
+`inventory/index.json` still records `latest_exact_head_evidence=null`,
+`source_closure_ready=false`, `dependency_closure_enumerated=false`, and
+`applicability_disposition_closure=false`. This is direct evidence that AC02
+and the final exact-H closure remain incomplete; it is not a reason to edit
+generated shards locally.
 
 ## References
 

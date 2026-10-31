@@ -66,6 +66,22 @@ The following 21 media extraction, parsing, and media test suite files (totaling
      - `source/host/tests/openclaw_image_ops_contract.rs::test_ocrm_image_ops_prepare_attachment`.
    - **Status**: Calibrated to `implementation=implemented`, `wiring=wired`, `verification=not-run`, `acceptance=pending`, `blocker_ids=[]` (eliminating `BL-MEDIA-ATTACHMENT-PROCESSOR-CONSUMERS-001`).
 
+### 2.1 Current exact-head production-path audit (2026-11-01)
+
+The direct-send path reaches the provider through attachment-path shaping,
+durable send admission, box staging, and the prompt file-location guidance
+described in the input-files dossier. The current source does not show a
+production caller from that path to either `pdf_extract::extract_pdf_content`
+or `parse_output::{split_media_output,split_media_from_output}`. Their
+`AttachmentsService::dispatch_gateway` branches are callable gateway surfaces,
+but gateway availability is not a chat/provider consumer.
+
+The existing `BL-MEDIA-PDF-EXTRACT-CHAT-WIRING-001` and
+`BL-MEDIA-PARSE-OUTPUT-CHAT-WIRING-001` blockers therefore remain valid. The
+historical contract tests and gateway dispatch checks remain implementation
+evidence only; they do not prove PDF content injection or model-output media
+projection in the production turn.
+
 ---
 
 ## 3. Strict Conservation Invariant Verification

@@ -132,6 +132,30 @@ plugin bundles would cross product ownership and security boundaries. The
 bundle responsibility therefore remains not wired; no Rust implementation or
 ledger promotion is justified by these helpers alone.
 
+## 8. Current-source owner recheck — 2026-11-01
+
+The current checkout was re-read after the previous reachability audit. The
+production plugin module exports `bundle_manifest`, `clawhub`, and
+`installed_index_store`, but a non-test source search finds no caller of the
+manifest parsers, archive/integrity verifiers, `ClawHubInstallPipeline`, or
+`InstalledPluginIndexStore`. The latter is an in-memory helper whose
+`set_record`, `remove_record`, and `list_enabled_records` methods are not
+connected to a persisted installed-plugin index or activation runtime.
+
+`start_production_host_extensions` constructs and populates only the existing
+`PluginCapabilityCatalog` with bundled channel/worker capability metadata
+(`source/host/src/host_production_extensions.rs:729-731`). That metadata path
+does not receive an archive, parse a bundle manifest, verify archive limits or
+SHA-256 integrity, write an install record, or activate a discovered plugin.
+The separate `installable_package` archive path remains a signed Host mini-app
+package owner and cannot be reused as an OpenClaw plugin-bundle owner without
+crossing the declared product/security boundary.
+
+Therefore `OCRM-RESP-PLUGINS-BUNDLE-MANIFEST-001` remains
+`implementation=not-started`, `wiring=not-wired`, `verification=not-run`, and
+`acceptance=pending`; no activation or install status is promoted from helper
+presence or contract fixtures.
+
 
 
 

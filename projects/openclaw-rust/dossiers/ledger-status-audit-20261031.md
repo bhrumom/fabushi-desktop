@@ -1,4 +1,4 @@
-# OCRM parity-ledger status audit — 2026-10-31
+# OCRM parity-ledger status audit — 2026-11-01 revalidation
 
 ## Subject and scope
 
@@ -21,11 +21,11 @@ capability declarations, or static target presence.
 | read | `partial` | 5 |
 | mapping | `reviewed` | 148 |
 | mapping | `mapped` | 91 |
-| implementation | `implemented` | 210 |
-| implementation | `implementing` | 20 |
-| implementation | `not-started` | 9 |
-| wiring | `wired` | 83 |
-| wiring | `not-wired` | 156 |
+| implementation | `implemented` | 231 |
+| implementation | `implementing` | 0 |
+| implementation | `not-started` | 8 |
+| wiring | `wired` | 89 |
+| wiring | `not-wired` | 150 |
 | verification | `verified` | 8 |
 | verification | `not-run` | 231 |
 | acceptance | `pending` | 239 |
@@ -48,8 +48,10 @@ responsibilities therefore remain auditable through their owning P1 task, but
 cannot independently produce project-level verified/accepted state or a
 completion flag.
 
-The ledger contains 1,430 unique `source_refs` path/blob pairs. Every pair is
-present in the fixed-baseline inventory shards bound to the implementation
+The pre-amendment ledger contained 1,434 unique `source_refs` path/blob pairs.
+Following the same-frozen-checkout context-compaction source-closure
+amendment, the live ledger contains 1,440 unique `source_refs` path/blob pairs.
+Every pair is present in the fixed-baseline inventory shards bound to the implementation
 subject above. This proves source-reference identity consistency only; it does
 not prove semantic closure, applicability/disposition closure, implementation,
 wiring, verification, or acceptance.
@@ -80,12 +82,31 @@ The project RTM has 31 `in-progress` rows and 17 `not-started` rows. Every
 unstarted; they are not interpreted as missing proof for an accepted
 requirement and do not promote any completion flag.
 
+## Wiring contradiction correction
+
+A reverse read of the current integration fields found two rows whose
+`wiring=wired` value contradicted their own production-edge evidence:
+
+- `OCRM-RESP-MEDIA-READ-CAPABILITY-001` names its consumer as pending outbound
+  message/agent-response pipelines, and its scoped dossier retains
+  `wiring=not-wired` with `BL-MEDIA-READ-CAPABILITY-CHAT-WIRING-001`.
+- `OCRM-RESP-MEDIA-REF-COMPARISON-001` states that the normalizer has no
+  non-test caller, and its scoped dossier retains
+  `wiring=not-wired` with `BL-MEDIA-REF-COMPARISON-UPSTREAM-001`.
+
+Both rows were corrected to `wiring=not-wired` while retaining
+`implementation=implemented`, `verification=not-run`, and
+`acceptance=pending`. The scoped read-only Cloud Worker status projection was
+not changed: its producer → Host/Coordinator projection → Settings consumer
+edge is explicitly bounded to that read-only capability, while absent CLI or
+mutation consumers remain outside that responsibility's declared scope.
+
 ## Interpretation
 
 The ledger proves honest progress states, not completion. In particular:
 
-- 29 responsibilities do not yet have `implementation=implemented`.
-- 156 responsibilities lack a recorded production wiring state of `wired`.
+- 8 responsibilities do not yet have `implementation=implemented`.
+- 150 responsibilities lack a recorded production wiring state of `wired`.
 - 231 responsibilities lack verification evidence, and no responsibility has
   an accepted terminal state in this snapshot.
 - `OCRM-RESP-EXEC-TERMINATION-CONTROLLER-001` is implemented and verified but
