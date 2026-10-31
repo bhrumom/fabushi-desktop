@@ -161,3 +161,19 @@ materializes child sessions and settles `SubagentRuntime` records, but a source
 search finds no completion/cleanup call that dispatches guarded `sessions.delete`
 for the child session. This is direct evidence for
 `BL-SESSION-LIFECYCLE-PRODUCER-001`, not proof that the Rust path is equivalent.
+
+## 2026-10-31 producer capture slice
+
+The Rust generated-subagent producer now reads the newly materialized child's
+non-empty `AgentSummary.lifecycle_revision` and carries it in the existing
+runner request into `begin_generated_subagent_with_lifecycle`. The existing
+`SubagentRuntime` completion record retains that captured revision, so the
+producer-side identity/fence value is no longer dropped between launch and
+settlement. This is source-only evidence; no build or test was run.
+
+The cleanup edge remains absent: settlement still only clears the runtime
+record/pending wake and invokes completion revival. It does not yet dispatch
+the captured `expectedSessionId` and `expectedLifecycleRevision` through the
+existing Host Gateway lifecycle owner. Therefore wiring remains `not-wired`,
+the blocker remains open, and the capture slice must not be interpreted as
+deletion safety or production acceptance.

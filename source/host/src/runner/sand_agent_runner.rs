@@ -231,6 +231,34 @@ impl SandAgentRunner {
         lineage: Option<SubagentLineage>,
         now_ms: u64,
     ) -> Result<Option<PendingWake>, String> {
+        self.begin_generated_subagent_with_lifecycle(
+            parent_agent_id,
+            box_id,
+            subagent_agent_id,
+            subagent_type,
+            tool_call_id,
+            prompt,
+            lineage,
+            "",
+            now_ms,
+        )
+    }
+
+    pub fn begin_generated_subagent_with_lifecycle(
+        &self,
+        parent_agent_id: &str,
+        box_id: &str,
+        subagent_agent_id: &str,
+        subagent_type: &str,
+        tool_call_id: &str,
+        prompt: &str,
+        lineage: Option<SubagentLineage>,
+        lifecycle_revision: &str,
+        now_ms: u64,
+    ) -> Result<Option<PendingWake>, String> {
+        if lifecycle_revision.trim().is_empty() {
+            return Err("generated subagent lifecycle revision is required".into());
+        }
         let Some(runtime) = self.generated_agent_runtime.as_ref() else {
             return Ok(None);
         };
@@ -238,7 +266,7 @@ impl SandAgentRunner {
             .lock()
             .map_err(|_| "generated Agent runtime lock poisoned".to_string())?;
         runtime.register_session(subagent_agent_id, SubagentSessionSnapshot::default());
-        Ok(runtime.dispatch_background_subagent(
+        Ok(runtime.dispatch_background_subagent_with_lifecycle(
             parent_agent_id,
             box_id,
             subagent_agent_id,
@@ -247,6 +275,7 @@ impl SandAgentRunner {
             prompt,
             lineage,
             None,
+            lifecycle_revision,
             now_ms,
         ))
     }

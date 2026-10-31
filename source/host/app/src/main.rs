@@ -1343,6 +1343,20 @@ impl SubagentTaskSink for ProductionSubagentTaskSink {
             .materialize_new_session(Some(&profile), "subagent", Some(subagent_type))
             .map_err(ProviderSessionError::Tool)?;
         let child_id = child.id.clone();
+        let child_lifecycle_revision = self
+            .deps
+            .session_workers
+            .summarize_agent_by_id(&child_id, None)
+            .map_err(ProviderSessionError::Tool)?
+            .and_then(|summary| {
+                (!summary.lifecycle_revision.trim().is_empty())
+                    .then_some(summary.lifecycle_revision)
+            })
+            .ok_or_else(|| {
+                ProviderSessionError::Tool(
+                    "subagent session lifecycle revision unavailable after materialization".into(),
+                )
+            })?;
         let child_stream_id = uuid::Uuid::new_v4().to_string();
         let normalized_type = subagent_type
             .chars()
@@ -1351,6 +1365,7 @@ impl SubagentTaskSink for ProductionSubagentTaskSink {
         let args = serde_json::json!({
             "provider": self.provider.as_str(),
             "agentId": child_id,
+            "lifecycleRevision": child_lifecycle_revision,
             "streamId": child_stream_id,
             "messages": [{"role":"user","content":prompt}],
             "requestSource": "subagent",
@@ -6411,6 +6426,13 @@ fn start_routed_provider_task(
         .filter(|value| !value.is_empty())
         .unwrap_or("general-purpose")
         .to_string();
+    let generated_lifecycle_revision = args
+        .get("lifecycleRevision")
+        .and_then(serde_json::Value::as_str)
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+        .unwrap_or("")
+        .to_string();
     let generated_tool_call_id = args
         .get("parentAgentToolCallId")
         .and_then(serde_json::Value::as_str)
@@ -9483,7 +9505,7 @@ fn start_routed_provider_task(
                 .unwrap_or_default();
             let generated_parent = worker_generated_parent_agent_id.clone();
             if let Some(parent_agent_id) = generated_parent.as_deref() {
-                if let Ok(Some(pending)) = runner.begin_generated_subagent(
+                if let Ok(Some(pending)) = runner.begin_generated_subagent_with_lifecycle(
                     parent_agent_id,
                     "shipping-runner",
                     &agent_id,
@@ -9491,6 +9513,7 @@ fn start_routed_provider_task(
                     &worker_generated_tool_call_id,
                     &generated_prompt,
                     worker_generated_lineage.clone(),
+                    &generated_lifecycle_revision,
                     started_at_ms(),
                 ) {
                     if let Some(store) = worker_transcript_runtime.pending_wake_store() {

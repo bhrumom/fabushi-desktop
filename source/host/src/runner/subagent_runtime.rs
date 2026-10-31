@@ -74,6 +74,7 @@ pub struct SubagentRecord {
 pub struct BackgroundSubagentCompletion {
     pub parent_agent_id: String,
     pub subagent_agent_id: String,
+    pub lifecycle_revision: String,
     pub subagent_type: String,
     pub tool_call_id: String,
     pub title: String,
@@ -172,6 +173,7 @@ struct RuntimeMeta {
     lineage: Option<SubagentLineage>,
     quiet_origin: Option<String>,
     box_id: String,
+    lifecycle_revision: String,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -234,6 +236,33 @@ impl SubagentRuntime {
         quiet_origin: Option<&str>,
         now_ms: u64,
     ) -> Option<PendingWake> {
+        self.dispatch_background_subagent_with_lifecycle(
+            parent_agent_id,
+            box_id,
+            subagent_agent_id,
+            subagent_type,
+            tool_call_id,
+            prompt,
+            lineage,
+            quiet_origin,
+            "",
+            now_ms,
+        )
+    }
+
+    pub fn dispatch_background_subagent_with_lifecycle(
+        &mut self,
+        parent_agent_id: &str,
+        box_id: &str,
+        subagent_agent_id: &str,
+        subagent_type: &str,
+        tool_call_id: &str,
+        prompt: &str,
+        lineage: Option<SubagentLineage>,
+        quiet_origin: Option<&str>,
+        lifecycle_revision: &str,
+        now_ms: u64,
+    ) -> Option<PendingWake> {
         if self.running.contains(subagent_agent_id) {
             return None;
         }
@@ -249,6 +278,7 @@ impl SubagentRuntime {
                 lineage,
                 quiet_origin: quiet_origin.map(ToOwned::to_owned),
                 box_id: box_id.to_string(),
+                lifecycle_revision: lifecycle_revision.to_string(),
             },
         );
         self.registry.insert(
@@ -412,6 +442,7 @@ impl SubagentRuntime {
         result.completion = Some(BackgroundSubagentCompletion {
             parent_agent_id: meta.parent_agent_id,
             subagent_agent_id: id.to_string(),
+            lifecycle_revision: meta.lifecycle_revision,
             subagent_type: meta.subagent_type,
             tool_call_id: meta.tool_call_id,
             title: meta.title,

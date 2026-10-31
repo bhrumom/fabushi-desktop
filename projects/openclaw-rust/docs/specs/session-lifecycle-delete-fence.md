@@ -80,6 +80,14 @@ conflict to `changed`; they do not retry or report deletion success. Existing
 isolated retirement/survival behavior remains owned by the current cleanup
 caller for non-lifecycle transport failures.
 
+For generated subagents specifically, launch must capture the child's current
+`lifecycleRevision` from the session projection and retain it through the
+existing `SubagentRuntime` completion record. Completion cleanup may invoke the
+existing Host lifecycle owner only after the child run has settled and the
+parent completion/revival handoff has been admitted. The cleanup callback must
+be injected from the Gateway owner; `SubagentRuntime` must not acquire a second
+session/deletion owner or call storage directly.
+
 ### SLD-06 — Ownership and safety
 
 The implementation must preserve the existing Host Gateway, Transcript/Session
