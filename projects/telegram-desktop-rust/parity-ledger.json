@@ -9,7 +9,7 @@
     "unknown": 16172,
     "unread": 16145,
     "omitted": 0,
-    "responsibilities_total": 77,
+    "responsibilities_total": 78,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -19479,6 +19479,247 @@
       "reviewer": null,
       "license_and_provenance": "Behavioral responsibility is anchored to fixed-U telegramdesktop/tdesktop Telegram/SourceFiles/mtproto/scheme/mtproto.tl@76225965bfc794388db241f3f760db8ab79e84f8. session_private.cpp@13cbc76ec723386027b5b4dcac79999b791c4614 was reread for adjacent session/salt lifecycle; no precise live get-future-salts scheduling/install owner is inferred from it. The implementation is source-neutral Rust and copies no upstream C++ implementation.",
       "notes": "Stage A implementation only. This row closes exact get_future_salts request serialization only and is intentionally distinct from TDRP-R9-MTPROTO-FUTURE-SALTS-WIRE-001 response parsing/current-request correlation. Live request scheduling and future-salt installation/rotation remain blocked/fail-closed. Global unknown/unread source-entry counts remain unchanged because this is a newly mapped responsibility slice within already-open fixed-U source coverage. Contracts are authored but not executed; validation_status=not-run and accepted=false. Source-level compliance readback at platform-core eaf1eeefdde1401d820d9fecd15da3b4aa9cfde5 confirms R11-R17 and AC9-AC12 satisfied at source/implementation/bookkeeping level; AC13 executable validation remains blocked/not-run.",
+      "test_execution_evidence": [],
+      "validation_status": "not-run",
+      "accepted": false
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+      "source_path": "Telegram/SourceFiles/mtproto/scheme/mtproto.tl",
+      "source_blob_sha": "76225965bfc794388db241f3f760db8ab79e84f8",
+      "source_kind": "schema",
+      "module_id": "tdesktop.mtproto.ping-request-wire",
+      "responsibility_id": "TDRP-R9-MTPROTO-PING-REQUEST-WIRE-001",
+      "source_symbols": [
+        "ping#7abe77ec ping_id:long = Pong",
+        "SessionPrivate::tryToSend ordinary MTPPing branch"
+      ],
+      "capability_ids": [
+        "CAP-EMBEDDED-MTPROTO-RPC-WIRE"
+      ],
+      "dependency_ids": [
+        "EmbeddedTelegramProtocol",
+        "TelegramClientLease",
+        "MTProtoAuthKey"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/evidence/round68-mtproto-ping-request-wire-20261101.md",
+      "behavior_contract": "The canonical telegram-protocol owner must exactly serialize fixed-U ping#7abe77ec as constructor + one ping_id:long, preserving the complete signed i64 value with no timer/session/connection policy. Request serialization remains strictly separate from Pong response parsing/current-ping correlation and performs no scheduling, message-id assignment, ACK/resend settlement, timeout/reconnect, or historical request mutation.",
+      "state_machine": "typed caller supplies ping_id -> build_ping -> exact 12-byte TL request (constructor + i64) -> no socket/timer/session/history mutation in this slice; ordinary-ping scheduling/selection/message-id/send lifecycle remains fail-closed",
+      "side_effects": [
+        "Adds fixed-U ping request constructor constant to the existing shared telegram-protocol owner",
+        "Adds exact 12-byte build_ping serializer preserving raw signed ping_id",
+        "Keeps request serialization separate from the existing strict Pong parser and current-ping correlation/settlement path",
+        "Synchronizes canonical protocol sources byte-for-byte into the existing desktop provider path",
+        "Authors exact-layout, signed-boundary, and request/Pong-parser separation contracts without executing them in Stage A"
+      ],
+      "failure_cases": [
+        "Request builder emits any constructor other than 7abe77ec",
+        "Request builder changes, rejects, clamps, or reinterprets signed ping_id",
+        "Request builder emits bytes other than constructor + exactly one i64",
+        "Request serialization is conflated with pong#347773c5 response parsing or current-ping correlation/settlement",
+        "Wire-only implementation invents timer/session/main-session selection, message-id assignment, ACK/resend, timeout/reconnect, historical sent/container state, gzip, or difference lifecycle"
+      ],
+      "ui_disposition": "No UI change. This is exact MTProto request serialization inside the existing embedded protocol owner.",
+      "non_ui_responsibilities": [
+        "Exact fixed-U ping request constructor",
+        "Exact ping_id:long serialization",
+        "Signed i64 preservation and exact 12-byte layout",
+        "Strict separation from Pong response decoding/current-ping correlation",
+        "No-side-effect typed protocol representation"
+      ],
+      "platform_delta": "Adds only exact ping request serialization to the existing source-neutral Rust telegram-protocol owner. No ordinary-ping scheduler, main/non-main session selection, message-id assignment, ACK/resend lifecycle, timeout/reconnect policy, historical sent/container registry, gzip runtime, difference decoder, or second Telegram runtime is added.",
+      "existing_owner_candidates": [
+        "bhrumom/fabushi-platform-core:native/telegram-protocol/src/api.rs",
+        "bhrumom/fabushi-platform-core:native/telegram-protocol/src/lib.rs",
+        "source/mahayana/mahayana-rs/providers/telegram-protocol/src/api.rs",
+        "source/mahayana/mahayana-rs/providers/telegram-protocol/src/lib.rs"
+      ],
+      "existing_owner": "Canonical shared telegram-protocol typed MTProto serializer, consumed through the existing desktop provider path",
+      "rejected_existing_owners": [
+        "telegram-network cannot invent the fixed-U SessionPrivate ordinary-ping scheduling/selection lifecycle because main-session/connection/timer/message-id policy is not represented precisely enough for this slice",
+        "Renderer/AppHost cannot own MTProto wire serialization",
+        "A second ping scheduler/session registry/request-history owner would split lifecycle truth",
+        "gzip/difference owners are unrelated to this independent wire request"
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "bhrumom/fabushi-platform-core:native/telegram-protocol/src/api.rs",
+        "bhrumom/fabushi-platform-core:native/telegram-protocol/src/lib.rs",
+        "source/mahayana/mahayana-rs/providers/telegram-protocol/src/api.rs",
+        "source/mahayana/mahayana-rs/providers/telegram-protocol/src/lib.rs"
+      ],
+      "fabushi_target_symbols": [
+        "PING_CONSTRUCTOR",
+        "build_ping"
+      ],
+      "target_language": "Rust",
+      "language_rationale": "The existing Rust telegram-protocol crate already owns exact TL request builders and the separate strict Pong parser; this independent request serializer belongs there without creating a second ping/session lifecycle owner.",
+      "command_event_contracts": [
+        "ping_id:i64 -> build_ping -> 7abe77ec + exact little-endian i64",
+        "i64::MIN/i64::MAX -> exact preservation with no validation, clamp, or policy transformation",
+        "ping request bytes -> not accepted by parse_pong",
+        "serialized request -> no live timer/session/message-id/ACK/resend/timeout/history side effect in this slice"
+      ],
+      "state_owner": "No live mutable state is owned by this wire-only builder; the existing telegram-protocol owner owns exact request bytes.",
+      "lifecycle_owner": "Existing account-bound TelegramClientLease -> RuntimeClient -> telegram-protocol dependency chain; ordinary-ping scheduling/selection/message-id/send/timeout lifecycle remains absent from this request-only implementation.",
+      "persistence_and_restart": "No persistence is introduced.",
+      "concurrency_and_cancellation": "No concurrency or cancellation lifecycle is introduced. Live ordinary-ping scheduling/selection and timeout/reconnect semantics remain blocked pending precise existing-owner production representation.",
+      "security_boundary": "Only exact request serialization is added; possessing ping_id does not grant authority to mutate session timing, sent history, ACK state, or reconnect policy.",
+      "network_service_dependencies": [
+        "Existing embedded Telegram MTProto encrypted transport",
+        "fixed-U ping#7abe77ec schema constructor",
+        "Existing strict Pong receive parser/current-ping correlation remains separate"
+      ],
+      "service_owner": "Canonical embedded Telegram protocol runtime.",
+      "deployment_evidence": [],
+      "implementation_status": "implemented",
+      "coverage_disposition": "rewritten",
+      "blockers": [
+        "No precise canonical ordinary-ping scheduling/selection/message-id/send/timeout lifecycle owner is claimed for the fixed-U SessionPrivate policy; those semantics remain fail-closed.",
+        "Stage B executable build/unit/contract/integration/packaged validation has not run.",
+        "gzip_packed bounded decompression remains blocked.",
+        "Complete updates difference/differenceSlice decoding/application remains open/fail-closed.",
+        "Arbitrary wasSent/haveSent/_resendingIds/toSend/_sentContainers histories remain open/fail-closed.",
+        "Broader fixed-U source/legal/release closure remains open."
+      ],
+      "production_entrypoints": [
+        "source/mahayana/mahayana-rs/Cargo.toml -> mahayana-telegram -> providers/telegram-protocol",
+        "providers/telegram-protocol public API -> build_ping; no live timer/session scheduler caller is claimed"
+      ],
+      "production_evidence": [
+        "platform-core-spec-amendment-commit:cd40329f3fbc39c06599e3b5d4dda63f09ae6b17",
+        "platform-core-implementation-commit:d6ef74975d3541ddb4d187bfb5641773dc01a32d",
+        "platform-core-path:native/telegram-protocol/src/api.rs@714c24a5f1727e13693008ea42676831b3e8d3fd",
+        "platform-core-path:native/telegram-protocol/src/lib.rs@ef44b1bb7fcac0183f1b83cca8c9d994ecc8ce9c",
+        "desktop-implementation-commit:36b425e547509f334453ac5ebf09033e366fe6ae",
+        "path:source/mahayana/mahayana-rs/providers/telegram-protocol/src/api.rs@714c24a5f1727e13693008ea42676831b3e8d3fd",
+        "path:source/mahayana/mahayana-rs/providers/telegram-protocol/src/lib.rs@ef44b1bb7fcac0183f1b83cca8c9d994ecc8ce9c"
+      ],
+      "test_evidence": [
+        "platform-core native/telegram-protocol/src/api.rs exact 12-byte constructor+ping_id contract authored, not run",
+        "platform-core native/telegram-protocol/src/api.rs signed i64 boundary preservation contract authored, not run",
+        "platform-core native/telegram-protocol/src/api.rs request/Pong-parser separation contract authored, not run",
+        "desktop synchronized protocol contracts authored, not run"
+      ],
+      "target_commit": "36b425e547509f334453ac5ebf09033e366fe6ae",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Canonical Fabushi account + existing TelegramClientLease/runtime + shared telegram-protocol production composition",
+      "composition_slot": "Embedded Telegram MTProto service-request wire serialization",
+      "capability_component": "Exact fixed-U get_future_salts request builder",
+      "variation_axes": [
+        "representative vs signed-boundary ping_id",
+        "request serializer vs Pong response parser separation"
+      ],
+      "shared_owner_contracts": [
+        "Existing account-bound TelegramClientLease",
+        "Existing RuntimeClient",
+        "Existing telegram-protocol TlReader/TlWriter",
+        "Existing strict single-outstanding-ping Pong parser/correlation boundary",
+        "Existing Cargo path-dependency composition"
+      ],
+      "duplicate_root_check": "No second account, runtime, provider, transport, auth key, ping scheduler, session registry, request history, callback registry, sent-container store, decompression runtime, difference runtime, message store, UI root, sidecar, subprocess or Web wrapper was introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Not applicable",
+      "primary_navigation_target": "Existing Messages/Conversation navigation",
+      "collection_surface": "Existing ConversationList; no change",
+      "creation_flow": "Existing canonical conversation creation; no change",
+      "object_action_scope": "Not applicable",
+      "detail_section": "Not applicable",
+      "capability_surface": "Existing ConversationWorkspace through the same provider/runtime; no new surface",
+      "route_contract": "No new route.",
+      "search_scope": "Not applicable",
+      "search_provider": "Existing canonical Search owner; unchanged",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Unchanged.",
+      "search_local_remote_contract": "Not applicable.",
+      "responsive_disposition": "No UI change.",
+      "accessibility_contract": "No UI change.",
+      "keyboard_contract": "No UI change.",
+      "state_continuity_contract": "Wire serialization is side-effect free. Live ping scheduling/current-ping state is intentionally unchanged because this slice does not claim the fixed-U timer/session selection lifecycle.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Existing Fabushi design system; no visual changes",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": null,
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "No new icon asset",
+      "avatar_contract": "No change",
+      "content_copy_keys": [],
+      "motion_contract": "No change",
+      "reduced_motion_contract": "No change",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "high",
+      "requirement_ids": [
+        "TDRP-R9-MTPROTO-PING-REQUEST-WIRE-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-MTPROTO-PING-REQUEST-WIRE-001",
+        "ORA-TDRP-MTPROTO-PING-REQUEST-SEPARATION-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-MTPROTO-PING-REQUEST-EXACT-001",
+        "INV-TDRP-MTPROTO-PING-REQUEST-NO-SESSION-MUTATION-001"
+      ],
+      "unit_case_ids": [
+        "UNIT-TDRP-MTPROTO-PING-REQUEST-LAYOUT-001",
+        "UNIT-TDRP-MTPROTO-PING-REQUEST-BOUNDARY-001"
+      ],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-MTPROTO-PING-REQUEST-WIRE-001"
+      ],
+      "integration_case_ids": [],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "fault_recovery_case_ids": [],
+      "performance_case_ids": [],
+      "security_case_ids": [
+        "SEC-TDRP-MTPROTO-PING-REQUEST-NO-AUTHORITY-001"
+      ],
+      "soak_case_ids": [],
+      "exploratory_charter_ids": [],
+      "regression_ids": [
+        "REG-TDRP-MTPROTO-PING-REQUEST-SEPARATION-001"
+      ],
+      "release_gate_ids": [
+        "G-TRACEABILITY",
+        "G-COMPOSITION",
+        "G-SECURITY",
+        "G-EVIDENCE",
+        "G-RELEASE"
+      ],
+      "test_fixture_ids": [
+        "mtproto-ping-request-fixture"
+      ],
+      "test_environment_ids": [
+        "GitHub Actions Stage B matrix (not run)"
+      ],
+      "coverage_matrix_status": "pending",
+      "flake_status": "stable",
+      "release_gate_status": "pending",
+      "acceptance_reviewer": null,
+      "reviewer": null,
+      "license_and_provenance": "Behavioral responsibility is anchored to fixed-U telegramdesktop/tdesktop Telegram/SourceFiles/mtproto/scheme/mtproto.tl@76225965bfc794388db241f3f760db8ab79e84f8. session_private.cpp@13cbc76ec723386027b5b4dcac79999b791c4614 was reread for the ordinary MTPPing vs ping_delay_disconnect session/timer branch; no live scheduling/selection owner is inferred from it. The implementation is source-neutral Rust and copies no upstream C++ implementation.",
+      "notes": "Stage A implementation only. This row closes exact ping request serialization only and is intentionally distinct from TDRP-R9-MTPROTO-SINGLE-PING-PONG-001 response parsing/current-ping correlation and TDRP-R9-MTPROTO-PING-DELAY-DISCONNECT-WIRE-001. Live ordinary-ping scheduling/selection/message-id/send/timeout lifecycle remains blocked/fail-closed. Global unknown/unread source-entry counts remain unchanged because this is a newly mapped responsibility slice within already-open fixed-U source coverage. Contracts are authored but not executed; validation_status=not-run and accepted=false.",
       "test_execution_evidence": [],
       "validation_status": "not-run",
       "accepted": false
