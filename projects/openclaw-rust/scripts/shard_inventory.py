@@ -43,6 +43,16 @@ def canonical(path):
     assert len(data["entries"]) == index["inventory"]["tracked_entries_total"], "Index mismatch"
     assert index["inventory"]["omitted_known"] == 0, "Known paths omitted"
     assert not index["authority"]["source_closure_ready"], "Unproved global closure"
+    # AC02 dimensions are part of every canonical row, even when the honest
+    # value is unknown/pending.  Fail before writing shards if an older or
+    # hand-produced inventory omits either key; validate_p0.py remains the
+    # authority for the allowed values and final closure semantics.
+    for row_number, entry in enumerate(data["entries"], start=1):
+        missing = {
+            "applicability_status",
+            "disposition_status",
+        }.difference(entry)
+        assert not missing, f"Missing AC02 row fields at entry {row_number}: {sorted(missing)}"
     return data, digest(raw), lock
 
 def dependency_declarations(rows, source, lock):

@@ -10,10 +10,10 @@
     "ui_accepted": false
   },
   "file_coverage": {
-    "mapped_paths": 1419,
+    "mapped_paths": 1444,
     "omitted_known": 0,
     "tracked_paths": 58750,
-    "unclassified_paths": 57331,
+    "unclassified_paths": 57306,
     "applicability_assessed_paths": null,
     "dispositioned_paths": null,
     "unreviewed_applicable_paths": null
@@ -1107,7 +1107,7 @@
       ],
       "status": {
         "acceptance": "pending",
-        "implementation": "implementing",
+        "implementation": "implemented",
         "mapping": "mapped",
         "read": "read-complete",
         "verification": "not-run",
@@ -1389,7 +1389,7 @@
       ],
       "status": {
         "acceptance": "pending",
-        "implementation": "implementing",
+        "implementation": "implemented",
         "mapping": "mapped",
         "read": "read-complete",
         "verification": "not-run",
@@ -1542,7 +1542,7 @@
       ],
       "status": {
         "acceptance": "pending",
-        "implementation": "implementing",
+        "implementation": "implemented",
         "mapping": "mapped",
         "read": "read-complete",
         "verification": "not-run",
@@ -1681,7 +1681,7 @@
       ],
       "status": {
         "acceptance": "pending",
-        "implementation": "implementing",
+        "implementation": "implemented",
         "mapping": "mapped",
         "read": "read-complete",
         "verification": "not-run",
@@ -2086,7 +2086,7 @@
       ],
       "status": {
         "acceptance": "pending",
-        "implementation": "implementing",
+        "implementation": "implemented",
         "mapping": "mapped",
         "read": "read-complete",
         "verification": "not-run",
@@ -2270,7 +2270,7 @@
       ],
       "status": {
         "acceptance": "pending",
-        "implementation": "implementing",
+        "implementation": "implemented",
         "mapping": "mapped",
         "read": "read-complete",
         "verification": "not-run",
@@ -2439,7 +2439,7 @@
       ],
       "status": {
         "acceptance": "pending",
-        "implementation": "implementing",
+        "implementation": "implemented",
         "mapping": "mapped",
         "read": "read-complete",
         "verification": "not-run",
@@ -2619,7 +2619,7 @@
       ],
       "status": {
         "acceptance": "pending",
-        "implementation": "implementing",
+        "implementation": "implemented",
         "mapping": "mapped",
         "read": "read-complete",
         "verification": "not-run",
@@ -2658,7 +2658,9 @@
       ],
       "evidence_refs": [
         "source/host/tests/openclaw_agent_turn_contract.rs",
-        "projects/openclaw-rust/dossiers/transcript-round94-openclaw-agent-turn-and-channel-delivery-native-fusion-20261026.md"
+        "projects/openclaw-rust/dossiers/agent-turn-execution-scoped.md",
+        "projects/openclaw-rust/docs/specs/acp-production-boundary.md",
+        "source/host/tests/openclaw_plugin_sdk_contract.rs"
       ],
       "existing_owner_candidates": [
         {
@@ -2668,10 +2670,10 @@
       ],
       "id": "OCRM-RESP-AGENT-ACP-COMMANDS-001",
       "integration": {
-        "consumer": "No production ACP command consumer identified; current AcpSessionManager is consumed only by source/host/tests/openclaw_plugin_sdk_contract.rs",
-        "entrypoint": "source/host/src/runner/mod.rs",
+        "consumer": "No production ACP command consumer identified; AcpSessionManager is consumed only by source/host/tests/openclaw_plugin_sdk_contract.rs and no ACP transport reaches the command projection",
+        "entrypoint": "unselected pending canonical Host/Gateway ACP adapter; source/host/src/runner/mod.rs contains adjacent Runner mechanisms only",
         "owner": "none: no canonical production ACP command/transport owner selected",
-        "producer": "No production AvailableCommand/get_available_commands producer; historical source path moved to the current OpenClaw chat-command registry"
+        "producer": "No production AvailableCommand/get_available_commands producer; fixed upstream server.ts owns the transport/session boundary, while the historical command source is not the current Fabushi chat-command registry"
       },
       "invariants": [
         "Unreviewed arbitrary tool execution virally taints session context",
@@ -2714,6 +2716,24 @@
             "start_line": 1
           },
           "symbol": "getAvailableCommands"
+        },
+        {
+          "blob_sha": "4d63e0c08b9a18eac1825b3ead16cc669e84c8ff",
+          "path": "src/acp/server.ts",
+          "range": {
+            "end_line": 520,
+            "start_line": 1
+          },
+          "symbol": "serveAcpGateway"
+        },
+        {
+          "blob_sha": "91e9a6b6c010ded1356e28e9740a0b876705ea25",
+          "path": "packages/acp-core/src/index.ts",
+          "range": {
+            "end_line": 120,
+            "start_line": 1
+          },
+          "symbol": "ACP contract export barrel"
         }
       ],
       "status": {
@@ -2750,7 +2770,9 @@
       ],
       "evidence_refs": [
         "source/host/tests/openclaw_agent_turn_contract.rs",
-        "projects/openclaw-rust/dossiers/transcript-round94-openclaw-agent-turn-and-channel-delivery-native-fusion-20261026.md"
+        "projects/openclaw-rust/dossiers/agent-turn-execution-scoped.md",
+        "projects/openclaw-rust/docs/specs/acp-production-boundary.md",
+        "source/host/tests/openclaw_plugin_sdk_contract.rs"
       ],
       "existing_owner_candidates": [
         {
@@ -2760,10 +2782,10 @@
       ],
       "id": "OCRM-RESP-AGENT-ACP-POLICY-001",
       "integration": {
-        "consumer": "No production consumer for the historical ACP dispatch-policy contract; source/host/src/extensions/transcript/production_runtime.rs consumes a separate Host turn lease/watchdog path",
-        "entrypoint": "source/host/src/runner/mod.rs::SandAutoReviewDecision (policy-shaped helper) and source/host/src/extensions/transcript/production_runtime.rs::settle_routed_turn (separate runtime path)",
+        "consumer": "No production consumer for the fixed ACP dispatch-policy contract; production_runtime.rs consumes a separate Host turn lease/watchdog path without ACP admission context",
+        "entrypoint": "unselected pending canonical Host/Gateway ACP adapter; SandAutoReviewDecision and settle_routed_turn are adjacent helpers, not ACP policy/settlement consumers",
         "owner": "none: no production ACP policy/settlement owner selected",
-        "producer": "No production ACP dispatch-policy producer is wired; OCRM-AGENT-O11/O12 are contract fixtures"
+        "producer": "No production ACP dispatch-policy producer is wired; OCRM-AGENT-O11/O12 and plugin-SDK manager tests are contract evidence only"
       },
       "invariants": [
         "ACP dispatch disabled by policy rejects explicit turns",
@@ -2806,6 +2828,15 @@
             "start_line": 1
           },
           "symbol": "resolveAcpDispatchPolicyError"
+        },
+        {
+          "blob_sha": "4d63e0c08b9a18eac1825b3ead16cc669e84c8ff",
+          "path": "src/acp/server.ts",
+          "range": {
+            "end_line": 520,
+            "start_line": 1
+          },
+          "symbol": "serveAcpGateway"
         }
       ],
       "status": {
@@ -2842,20 +2873,33 @@
       ],
       "evidence_refs": [
         "source/host/tests/openclaw_agent_turn_contract.rs",
-        "projects/openclaw-rust/dossiers/transcript-round94-openclaw-agent-turn-and-channel-delivery-native-fusion-20261026.md"
+        "projects/openclaw-rust/dossiers/transcript-round94-openclaw-agent-turn-and-channel-delivery-native-fusion-20261026.md",
+        "projects/openclaw-rust/docs/specs/context-compaction-production-boundary.md",
+        "projects/openclaw-rust/decisions/2026-11-01-context-compaction-owner-contract.md",
+        "projects/openclaw-rust/dossiers/not-started-responsibility-frontier-20261031.md",
+        "source/host/src/extensions/session/agent_db.rs",
+        "source/host/src/extensions/session/production.rs",
+        "source/host/app/src/main.rs"
       ],
       "existing_owner_candidates": [
         {
           "path": "source/host/src/runner/mod.rs",
           "reason": "Host ContextWindowTracker"
+        },
+        {
+          "path": "source/host/src/extensions/session/production.rs",
+      "reason": "Canonical ProductionSessionWorkers transcript facade; owner-local guarded compaction commit/replay exists, but the production Runner producer is absent"
         }
+      ],
+      "adr_refs": [
+        "projects/openclaw-rust/decisions/2026-11-01-context-compaction-owner-contract.md"
       ],
       "id": "OCRM-RESP-AGENT-CONTEXT-COMPACTION-001",
       "integration": {
-        "consumer": "No production caller consumes ContextWindowTracker::check_compaction; production prompt code reads persisted compaction epochs through HostRunnerComposition instead",
+        "consumer": "No production next-turn consumer reads the canonical compaction replay projection; runner.startRoutedProvider still builds provider messages from request args at source/host/app/src/main.rs:6771-6772",
         "entrypoint": "source/host/src/runner/conversation_state.rs::ContextWindowTracker",
-        "owner": "none: no production context-compaction owner selected",
-        "producer": "No production context-compaction or tool-schema producer is wired; OCRM-AGENT-O09/O10 use contract-only logic"
+        "owner": "source/host/src/extensions/session/production.rs::ProductionSessionWorkers -> source/host/src/extensions/session/agent_db.rs::SandAgentDb; guarded compaction commit/replay contract implemented, Runner producer absent",
+        "producer": "No pre-run canonical context producer estimates transcript usage, prepares a cut point, invokes the bound summarizer, and commits SandAgentDb; OCRM-AGENT-O09/O10 remain contract-only logic"
       },
       "invariants": [
         "Compaction triggered when token estimate exceeds configured reserve",
@@ -2866,7 +2910,7 @@
         "OCRM-AGENT-O09",
         "OCRM-AGENT-O10"
       ],
-      "owner_decision": "Identify the production compaction producer and prompt/turn consumer before implementation; persisted compaction epochs and the contract tracker are partial evidence only",
+      "owner_decision": "Use ProductionSessionWorkers/SandAgentDb as the canonical transcript owner per decisions/2026-11-01-context-compaction-owner-contract.md; owner-local guarded commit/replay exists, but identify and wire the real Runner producer/next-turn consumer before promotion",
       "postconditions": [
         "Compacted summary replaces historical message slice"
       ],
@@ -2888,7 +2932,7 @@
       "responsibility_kind": "business-runtime",
       "reviewer": "xuyao@ombhrum.com",
       "risk": "Medium; keeps session context within LLM window limits",
-      "selected_owner": "unselected pending context-compaction architecture decision",
+  "selected_owner": "source/host/src/extensions/session/production.rs::ProductionSessionWorkers -> source/host/src/extensions/session/agent_db.rs::SandAgentDb; Runner producer/next-turn consumer pending",
       "source_refs": [
         {
           "blob_sha": "43601859d6ee9f015eb96a60111106d0d6026578",
@@ -2898,6 +2942,60 @@
             "start_line": 1
           },
           "symbol": "generateSummary"
+        },
+        {
+          "blob_sha": "97e8a7837e695f519570d49e8607752d5fe9237e",
+          "path": "packages/agent-core/src/harness/compaction/compaction.ts",
+          "range": {
+            "end_line": 730,
+            "start_line": 1
+          },
+          "symbol": "shouldCompact, prepareCompaction, compact, compactWithoutSummary"
+        },
+        {
+          "blob_sha": "a5995579ac494b118d8dddc8147d1c8dd6ee39c7",
+          "path": "packages/agent-core/src/harness/compaction/compaction-cut-point.ts",
+          "range": {
+            "end_line": 312,
+            "start_line": 1
+          },
+          "symbol": "findCutPoint, estimateTokens"
+        },
+        {
+          "blob_sha": "26f973ce17756ebe0ae6754798b31eabd2773ba8",
+          "path": "packages/agent-core/src/harness/compaction/compaction-details.ts",
+          "range": {
+            "end_line": 35,
+            "start_line": 1
+          },
+          "symbol": "parseCompactionDetails"
+        },
+        {
+          "blob_sha": "1abb82ee55b8501b53ad257863257abdf6899ad5",
+          "path": "packages/agent-core/src/harness/compaction/summarization-completion.ts",
+          "range": {
+            "end_line": 212,
+            "start_line": 1
+          },
+          "symbol": "runSummarizationCompletion"
+        },
+        {
+          "blob_sha": "e04fa9be9e91ae99d40390cc122690905577732e",
+          "path": "packages/agent-core/src/harness/compaction/summary-checkpoint-prompt.ts",
+          "range": {
+            "end_line": 28,
+            "start_line": 1
+          },
+          "symbol": "buildSummaryCheckpointPrompt"
+        },
+        {
+          "blob_sha": "eabba4f7b0d8e1d6ad6b4756e60c4d32c1004487",
+          "path": "packages/agent-core/src/harness/compaction/utils.ts",
+          "range": {
+            "end_line": 612,
+            "start_line": 1
+          },
+          "symbol": "getCompactionContent, computeFileLists, mergeSummaryFileOperations"
         }
       ],
       "status": {
@@ -2910,8 +3008,8 @@
       },
       "target": {
         "language": "Rust",
-        "path": "unselected pending context-compaction owner",
-        "symbol": "not selected; ContextWindowTracker has no production caller"
+    "path": "source/host/src/extensions/session/production.rs::ProductionSessionWorkers -> source/host/src/extensions/session/agent_db.rs::SandAgentDb",
+    "symbol": "owner-local guarded compaction commit/replay; production ContextWindowTracker producer and next-turn consumer absent"
       },
       "tests": [
         "source/host/tests/openclaw_agent_turn_contract.rs::test_ocrm_agent_o09_context_window_compaction_trigger",
@@ -3120,7 +3218,8 @@
       ],
       "evidence_refs": [
         "source/host/tests/openclaw_agent_turn_contract.rs",
-        "projects/openclaw-rust/dossiers/transcript-round94-openclaw-agent-turn-and-channel-delivery-native-fusion-20261026.md"
+        "projects/openclaw-rust/dossiers/transcript-round94-openclaw-agent-turn-and-channel-delivery-native-fusion-20261026.md",
+        "projects/openclaw-rust/dossiers/agent-turn-execution-scoped.md"
       ],
       "existing_owner_candidates": [
         {
@@ -3130,10 +3229,10 @@
       ],
       "id": "OCRM-RESP-AGENT-LOOP-RUNNER-001",
       "integration": {
-        "consumer": "source/host/src/runner/production_turn_run_shell_adapter.rs consumes begin_run/settlement, but no production consumer owns the deferred supersede queue",
-        "entrypoint": "source/host/src/runner/turn_run_shell.rs::TurnRunShell and source/host/src/runner/production_turn_run_shell_adapter.rs",
-        "owner": "source/host/src/runner/mod.rs",
-        "producer": "ProductionTurnRunShellAdapter produces the active-run lifecycle; DeferredTurnQueue is defined only inside source/host/tests/openclaw_agent_turn_contract.rs"
+        "consumer": "source/host/src/extensions/transcript/production_runtime.rs consumes ProductionTurnDispatch queue admission, active generation, watchdog escape, and settle-and-start-next",
+        "entrypoint": "source/host/src/extensions/transcript/send_turn_dispatch.rs::ProductionTurnDispatch -> source/host/src/extensions/transcript/production_runtime.rs::accept_routed_send/settle_routed_turn",
+        "owner": "source/host/src/extensions/transcript/send_turn_dispatch.rs::ProductionTurnDispatch",
+        "producer": "ProductionTranscriptRuntime accepts routed sends and enqueues every admitted turn; the scheduler starts the first turn and defers later turns until settlement or watchdog escape"
       },
       "invariants": [
         "Active run rejects parallel run requests with AlreadyRunning",
@@ -3144,7 +3243,7 @@
         "OCRM-AGENT-O01",
         "OCRM-AGENT-O02"
       ],
-      "owner_decision": "Retain TurnRunShell as the active-run owner; select or extend the canonical checkpoint/steering owner for deferred supersedes before implementation",
+      "owner_decision": "Use the existing ProductionTurnDispatch/RunScheduler as the canonical active-run and deferred-turn owner; retain TurnRunShell as the per-provider-run shell and do not add a second queue",
       "postconditions": [
         "Turn runs exclusively without parallel inference race"
       ],
@@ -3166,7 +3265,7 @@
       "responsibility_kind": "business-runtime",
       "reviewer": "xuyao@ombhrum.com",
       "risk": "High; prevents prompt interleaving and state corruption",
-      "selected_owner": "partial active owner source/host/src/runner/mod.rs; deferred supersede owner unselected",
+      "selected_owner": "source/host/src/extensions/transcript/send_turn_dispatch.rs::ProductionTurnDispatch",
       "source_refs": [
         {
           "blob_sha": "c6d5ce6c43fe0897f47ee71f2e74ac4e93034634",
@@ -3189,16 +3288,16 @@
       ],
       "status": {
         "acceptance": "pending",
-        "implementation": "not-started",
+        "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
         "verification": "not-run",
-        "wiring": "not-wired"
+        "wiring": "wired"
       },
       "target": {
         "language": "Rust",
-        "path": "source/host/src/runner/mod.rs",
-        "symbol": "TurnRunShell (active-run lifecycle only; deferred supersede not wired)"
+        "path": "source/host/src/extensions/transcript/send_turn_dispatch.rs",
+        "symbol": "ProductionTurnDispatch::enqueue_turn_with_start, watchdog_tick, settle_and_start_next"
       },
       "tests": [
         "source/host/tests/openclaw_agent_turn_contract.rs::test_ocrm_agent_o01_active_stream_conflict_rejection",
@@ -3221,7 +3320,9 @@
       ],
       "evidence_refs": [
         "source/host/tests/openclaw_agent_turn_contract.rs",
-        "projects/openclaw-rust/dossiers/transcript-round94-openclaw-agent-turn-and-channel-delivery-native-fusion-20261026.md"
+        "source/host/tests/openclaw_model_catalog_contract.rs",
+        "projects/openclaw-rust/dossiers/transcript-round94-openclaw-agent-turn-and-channel-delivery-native-fusion-20261026.md",
+        "projects/openclaw-rust/dossiers/not-started-responsibility-frontier-20261031.md"
       ],
       "existing_owner_candidates": [
         {
@@ -3231,10 +3332,10 @@
       ],
       "id": "OCRM-RESP-AGENT-MODEL-PRICING-001",
       "integration": {
-        "consumer": "No production consumer for model cost calculation or provider fallback chain; production paths only carry/aggregate TurnUsage and retry transport failures",
-        "entrypoint": "source/host/src/runner/turn_usage.rs::TurnUsage plus source/host/src/extensions/inference/model_catalog_service.rs::project_remote_model_catalog",
-        "owner": "none: no existing Rust pricing/fallback owner selected",
-        "producer": "No production PricingCatalog or provider-fallback producer is wired; OCRM-AGENT-O07/O08 are contract-only oracles"
+        "consumer": "No production consumer for model cost calculation or provider fallback chain; production paths report TurnUsage telemetry and classify/retry transport failures only",
+        "entrypoint": "source/host/src/extensions/inference/model_catalog_service.rs::project_remote_model_catalog plus source/host/src/runner/turn_usage.rs::merge_turn_usage",
+        "owner": "none selected: model-catalog projection, TurnUsage aggregation, and transport rate-limit helpers are adjacent partial owners only",
+        "producer": "No production PricingContext/cost settlement producer or ordered provider-candidate admission producer is wired; OCRM-AGENT-O07/O08 remain contract-only oracles"
       },
       "invariants": [
         "TurnUsage merge aggregates prompt, completion, and cache tokens",
@@ -3245,7 +3346,7 @@
         "OCRM-AGENT-O07",
         "OCRM-AGENT-O08"
       ],
-      "owner_decision": "Select a provider pricing authority and fallback admission owner before implementation; TurnUsage and transport retry helpers are not sufficient",
+      "owner_decision": "Select a provider pricing authority/schema and existing inference/agent fallback admission owner before implementation; TurnUsage, remote catalog projection, and transport retry helpers are not sufficient",
       "postconditions": [
         "Accurate cost accounting and resilient provider failover"
       ],
@@ -3277,6 +3378,24 @@
             "start_line": 1
           },
           "symbol": "ModelPricing"
+        },
+        {
+          "blob_sha": "92e53d1556a7eda2c5487613fe240ab6d5a11c41",
+          "path": "src/agents/model-fallback-candidates.ts",
+          "range": {
+            "end_line": 420,
+            "start_line": 1
+          },
+          "symbol": "model fallback candidate chain"
+        },
+        {
+          "blob_sha": "92e53d1556a7eda2c5487613fe240ab6d5a11c41",
+          "path": "src/llm/provider-rate-limit.ts",
+          "range": {
+            "end_line": 230,
+            "start_line": 1
+          },
+          "symbol": "createProviderRateLimitRequest"
         }
       ],
       "status": {
@@ -3781,7 +3900,8 @@
       ],
       "evidence_refs": [
         "source/host/tests/openclaw_plugins_automations_contract.rs",
-        "projects/openclaw-rust/dossiers/cron-automations-heartbeat-scoped.md"
+        "projects/openclaw-rust/dossiers/cron-automations-heartbeat-scoped.md",
+        "projects/openclaw-rust/docs/specs/heartbeat-response-policy.md"
       ],
       "existing_owner_candidates": [
         {
@@ -3791,10 +3911,10 @@
       ],
       "id": "OCRM-RESP-AUTO-REPLY-HEARTBEAT-001",
       "integration": {
-        "consumer": "source/host/src/runner/mod.rs",
-        "entrypoint": "source/host/src/runner/mod.rs",
-        "owner": "source/host/src/runner/mod.rs",
-        "producer": "source/host/src/automations/mod.rs"
+        "consumer": "source/host/src/runner/heartbeat.rs pure policy functions, including heartbeat response normalization; no production heartbeat consumer yet",
+        "entrypoint": "source/host/src/runner/heartbeat.rs",
+        "owner": "source/host/src/runner/heartbeat.rs",
+        "producer": "No production heartbeat producer identified; timer admission remains pending"
       },
       "invariants": [
         "Effectively empty scratchpad skips inference call completely",
@@ -3838,7 +3958,7 @@
       ],
       "status": {
         "acceptance": "pending",
-        "implementation": "implementing",
+        "implementation": "implemented",
         "mapping": "mapped",
         "read": "read-complete",
         "verification": "not-run",
@@ -3846,11 +3966,19 @@
       },
       "target": {
         "language": "Rust",
-        "path": "source/host/src/runner/mod.rs",
-        "symbol": "HeartbeatService"
+        "path": "source/host/src/runner/heartbeat.rs",
+        "symbol": "is_content_effectively_empty / strip_heartbeat_token / resolve_prompt_for_response_tool / normalize_heartbeat_response"
       },
-      "tests": [],
-      "typed_contracts": [],
+      "tests": [
+        "source/host/src/runner/heartbeat.rs::tests"
+      ],
+      "typed_contracts": [
+        "is_content_effectively_empty",
+        "strip_heartbeat_token",
+        "resolve_prompt_for_response_tool",
+        "is_silent_reply",
+        "normalize_heartbeat_response"
+      ],
       "unit_id": "OCRM-UNIT-AUTOMATION-001"
     },
     {
@@ -4481,7 +4609,7 @@
       ],
       "status": {
         "acceptance": "pending",
-        "implementation": "implementing",
+        "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
         "verification": "not-run",
@@ -4758,7 +4886,7 @@
       ],
       "status": {
         "acceptance": "pending",
-        "implementation": "implementing",
+        "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
         "verification": "not-run",
@@ -4893,10 +5021,10 @@
       ],
       "id": "OCRM-RESP-CHANNEL-THREAD-BINDINGS-001",
       "integration": {
-        "consumer": "ChannelThreadRouter::resolve_or_create is available at the connector boundary; transcript/session consumer is not wired",
+        "consumer": "Generic inbound wake reaches transcript persistence and the background turn owner, but no thread-to-conversation binding consumer is wired; ChannelThreadRouter::resolve_or_create has no production caller",
         "entrypoint": "source/host/src/connectors/channel_delivery.rs::ChannelThreadRouter::resolve_or_create",
         "owner": "source/host/src/connectors/channel_delivery.rs",
-        "producer": "No production inbound channel producer identified; thread affinity remains a pure connector policy helper"
+        "producer": "source/host/app/src/main.rs::wakeForInbound and the coordinator agent-inbound-wake-request route produce generic inbound envelopes, but carry no provider-owned thread identity into the session owner"
       },
       "invariants": [
         "Messages with identical thread id resolve to canonical conversation scope",
@@ -4942,7 +5070,7 @@
       ],
       "status": {
         "acceptance": "pending",
-        "implementation": "implementing",
+        "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
         "verification": "not-run",
@@ -5544,7 +5672,8 @@
       ],
       "evidence_refs": [
         "source/host/tests/openclaw_plugins_automations_contract.rs",
-        "projects/openclaw-rust/dossiers/cron-automations-heartbeat-scoped.md"
+        "projects/openclaw-rust/dossiers/cron-automations-heartbeat-scoped.md",
+        "projects/openclaw-rust/docs/specs/heartbeat-response-policy.md"
       ],
       "existing_owner_candidates": [
         {
@@ -5912,7 +6041,7 @@
       "selected_owner": "source/host/src/extensions/transcript/agent_lifecycle.rs",
       "status": {
         "acceptance": "pending",
-        "implementation": "implementing",
+        "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
         "verification": "not-run",
@@ -5952,7 +6081,8 @@
       "evidence_refs": [
         "source/host/tests/openclaw_plugins_automations_contract.rs",
         "projects/openclaw-rust/dossiers/cron-automations-heartbeat-scoped.md",
-        "projects/openclaw-rust/docs/specs/cron-session-reaper.md"
+        "projects/openclaw-rust/docs/specs/cron-session-reaper.md",
+        "projects/openclaw-rust/dossiers/not-started-responsibility-frontier-20261031.md"
       ],
       "existing_owner_candidates": [
         {
@@ -5966,10 +6096,10 @@
       ],
       "id": "OCRM-RESP-CRON-SESSION-REAPER-001",
       "integration": {
-        "consumer": "Not yet selected; current automation run records are not per-run session rows",
-        "entrypoint": "source/host/src/extensions/transcript/automation_run_path.rs::AutomationRunPath",
-        "owner": "Not yet selected; requires CRON-REAPER-D01 owner decision",
-        "producer": "source/host/src/extensions/transcript/automation_runtime.rs schedules automation execution but no cron session-reaper producer is present"
+        "consumer": "No production consumer for expired per-run cron session rows or guarded transcript artifact cleanup; current automation run records are history only",
+        "entrypoint": "source/host/src/extensions/transcript/automation_run_path.rs::fire_automation_inner plus source/host/src/extensions/session/production.rs session lifecycle owner",
+        "owner": "Not yet selected; requires CRON-REAPER-D01..D05 owner decision between existing session/transcript lifecycle owners",
+        "producer": "source/host/src/extensions/transcript/automation_runtime.rs schedules and fires automation runs, but no producer materializes a cron run session or triggers a guarded reaper sweep"
       },
       "invariants": [
         "Sessions with pending media tasks are exempt from pruning",
@@ -5978,7 +6108,7 @@
       "migration_rollback": "Retain all cron sessions indefinitely",
       "oracle_ids": [
       ],
-      "owner_decision": "Do not claim an existing TranscriptCleanup owner; complete cron-session-reaper spec decisions before implementation",
+      "owner_decision": "Do not claim an existing TranscriptCleanup owner; complete CRON-REAPER-D01..D05 for per-run row identity, retention parsing, sweep fence, media/subagent custody, and guarded cleanup outcomes before implementation",
       "postconditions": [
         "Expired ephemeral cron sessions pruned from SQLite store"
       ],
@@ -10949,9 +11079,7 @@
     {
       "adr_refs": [],
       "behavior": "Fallback BMP-to-PNG transcoder specification and runtime safety isolation with zero-leak buffer lifecycle management for unsupported raster image formats.",
-      "blocker_ids": [
-        "BL-MEDIA-PHOTON-BMP-PIPELINE-001"
-      ],
+      "blocker_ids": [],
       "capability_ids": [
         "media.photon_runtime"
       ],
@@ -10960,7 +11088,8 @@
       ],
       "evidence_refs": [
         "source/host/tests/openclaw_qr_png_contract.rs",
-        "projects/openclaw-rust/dossiers/media-qr-png-store-shared-scoped.md"
+        "projects/openclaw-rust/dossiers/media-qr-png-store-shared-scoped.md",
+        "projects/openclaw-rust/dossiers/image-ops-processor-scoped.md"
       ],
       "existing_owner_candidates": [
         {
@@ -10970,10 +11099,10 @@
       ],
       "id": "OCRM-RESP-MEDIA-PHOTON-RUNTIME-001",
       "integration": {
-        "consumer": "source/host/src/extensions/attachments/attachments_service.rs (pending Rastermill fallback and media understanding transcode consumption)",
+        "consumer": "source/host/src/extensions/attachments/attachments_service.rs::dispatch_gateway(convertBmpToPng, normalizeAnthropicInlineImage); source/host/src/extensions/attachments/anthropic_inline_images.rs::normalize_anthropic_inline_image_block",
         "entrypoint": "source/host/src/extensions/attachments/media_qr_png.rs::convert_bmp_to_png",
         "owner": "source/host/src/extensions/attachments/media_qr_png.rs",
-        "producer": "source/host/src/extensions/attachments/attachments_service.rs::handle_openclaw_media_gateway_call"
+        "producer": "source/host/src/extensions/attachments/image_ops.rs::convert_bmp_to_png; source/host/src/extensions/attachments/anthropic_inline_images.rs::normalize_anthropic_inline_image_block"
       },
       "invariants": [
         "Validates BMP header magic 'BM' and minimum 54-byte header length",
@@ -11023,7 +11152,7 @@
         "mapping": "reviewed",
         "read": "read-complete",
         "verification": "not-run",
-        "wiring": "not-wired"
+        "wiring": "wired"
       },
       "target": {
         "language": "Rust",
@@ -11041,9 +11170,7 @@
     {
       "adr_refs": [],
       "behavior": "Pure Rust PNG chunk encoder (signature, IHDR, IDAT with zlib deflate compression, IEND, CRC32 checksum) supporting tightly packed RGB (3 channels) and RGBA (4 channels) pixel buffers and bounds-checked fill_pixel buffer manipulation.",
-      "blocker_ids": [
-        "BL-MEDIA-PNG-ENCODE-CALLER-001"
-      ],
+      "blocker_ids": [],
       "capability_ids": [
         "media.png_encode"
       ],
@@ -11062,10 +11189,10 @@
       ],
       "id": "OCRM-RESP-MEDIA-PNG-ENCODE-001",
       "integration": {
-        "consumer": "source/host/src/extensions/attachments/media_qr_png.rs (pending upstream image processor and canvas renderer consumption)",
+        "consumer": "source/host/src/device_pairing_owner.rs::handle_pair_setup_code; source/host/src/extensions/attachments/attachments_service.rs::dispatch_gateway(convertBmpToPng); source/host/src/extensions/attachments/anthropic_inline_images.rs::normalize_anthropic_inline_image",
         "entrypoint": "source/host/src/extensions/attachments/media_qr_png.rs::encode_png_rgb",
         "owner": "source/host/src/extensions/attachments/media_qr_png.rs",
-        "producer": "source/host/src/extensions/attachments/media_qr_png.rs::render_qr_png_buffer"
+        "producer": "source/host/src/extensions/attachments/media_qr_png.rs::render_qr_png_buffer; source/host/src/extensions/attachments/image_ops.rs::convert_bmp_to_png"
       },
       "invariants": [
         "Raw scanlines prepend filter byte 0 (None) before width * channels pixel payload",
@@ -11115,7 +11242,7 @@
         "mapping": "reviewed",
         "read": "read-complete",
         "verification": "not-run",
-        "wiring": "not-wired"
+        "wiring": "wired"
       },
       "target": {
         "language": "Rust",
@@ -11430,9 +11557,7 @@
     {
       "adr_refs": [],
       "behavior": "Bounded QR code PNG rendering (scale 1..12, margin 0..16), Data URL generation (data:image/png;base64,), and scoped temporary directory workspace file generation with path segment sanitization.",
-      "blocker_ids": [
-        "BL-MEDIA-QR-IMAGE-CALLER-001"
-      ],
+      "blocker_ids": [],
       "capability_ids": [
         "media.qr_image"
       ],
@@ -11441,7 +11566,8 @@
       ],
       "evidence_refs": [
         "source/host/tests/openclaw_qr_png_contract.rs",
-        "projects/openclaw-rust/dossiers/media-qr-png-store-shared-scoped.md"
+        "projects/openclaw-rust/dossiers/media-qr-png-store-shared-scoped.md",
+        "projects/openclaw-rust/dossiers/image-ops-processor-scoped.md"
       ],
       "existing_owner_candidates": [
         {
@@ -11451,10 +11577,10 @@
       ],
       "id": "OCRM-RESP-MEDIA-QR-IMAGE-001",
       "integration": {
-        "consumer": "source/host/src/device_pairing_owner.rs::handle_pair_setup_code, AttachmentsService",
+        "consumer": "frontend/src/recovered/features/settings/overlay/device-pairing.tsx::DevicePairingPanel",
         "entrypoint": "source/host/src/extensions/attachments/media_qr_png.rs::render_qr_png_data_url",
         "owner": "source/host/src/extensions/attachments/media_qr_png.rs",
-        "producer": "source/host/src/extensions/attachments/attachments_service.rs::handle_openclaw_media_gateway_call"
+        "producer": "source/host/src/device_pairing_owner.rs::handle_pair_setup_code"
       },
       "invariants": [
         "Scale must be finite integer between 1 and 12",
@@ -11515,7 +11641,7 @@
         "mapping": "reviewed",
         "read": "read-complete",
         "verification": "not-run",
-        "wiring": "not-wired"
+        "wiring": "wired"
       },
       "target": {
         "language": "Rust",
@@ -11541,9 +11667,7 @@
     {
       "adr_refs": [],
       "behavior": "Terminal ANSI QR text renderer supporting compact half-block characters (█, ▀, ▄, space), 1-module margin, quiet zone black-on-white formatting, and standard full-block terminal fallback.",
-      "blocker_ids": [
-        "BL-MEDIA-QR-TERMINAL-CALLER-001"
-      ],
+      "blocker_ids": [],
       "capability_ids": [
         "media.qr_terminal"
       ],
@@ -11552,7 +11676,8 @@
       ],
       "evidence_refs": [
         "source/host/tests/openclaw_qr_png_contract.rs",
-        "projects/openclaw-rust/dossiers/media-qr-png-store-shared-scoped.md"
+        "projects/openclaw-rust/dossiers/media-qr-png-store-shared-scoped.md",
+        "docs/specs/device-pairing-qr-presentation.md"
       ],
       "existing_owner_candidates": [
         {
@@ -11562,10 +11687,10 @@
       ],
       "id": "OCRM-RESP-MEDIA-QR-TERMINAL-001",
       "integration": {
-        "consumer": "source/host/src/device_pairing_owner.rs::handle_pair_setup_code, AttachmentsService",
+        "consumer": "frontend/src/recovered/features/settings/overlay/device-pairing.tsx::DevicePairingPanel",
         "entrypoint": "source/host/src/extensions/attachments/media_qr_png.rs::render_qr_terminal",
         "owner": "source/host/src/extensions/attachments/media_qr_png.rs",
-        "producer": "source/host/src/extensions/attachments/attachments_service.rs::handle_openclaw_media_gateway_call"
+        "producer": "source/host/src/device_pairing_owner.rs::handle_pair_setup_code"
       },
       "invariants": [
         "Compact mode uses 1-module quiet-zone margin with half-block row compaction (2 module rows per character line)",
@@ -11633,7 +11758,7 @@
         "mapping": "reviewed",
         "read": "read-complete",
         "verification": "not-run",
-        "wiring": "not-wired"
+        "wiring": "wired"
       },
       "target": {
         "language": "Rust",
@@ -12816,9 +12941,7 @@
     {
       "adr_refs": [],
       "behavior": "Shared media storage invariants (MEDIA_FILE_MODE=0o644), legacy-binary byte size formatting with unit capping at megabytes, and typed SaveMediaSourceError error category dispatch.",
-      "blocker_ids": [
-        "BL-MEDIA-STORE-SHARED-PIPELINE-001"
-      ],
+      "blocker_ids": [],
       "capability_ids": [
         "media.store_shared"
       ],
@@ -12827,7 +12950,8 @@
       ],
       "evidence_refs": [
         "source/host/tests/openclaw_qr_png_contract.rs",
-        "projects/openclaw-rust/dossiers/media-qr-png-store-shared-scoped.md"
+        "projects/openclaw-rust/dossiers/media-qr-png-store-shared-scoped.md",
+        "docs/specs/device-pairing-qr-presentation.md"
       ],
       "existing_owner_candidates": [
         {
@@ -12889,7 +13013,7 @@
         "mapping": "reviewed",
         "read": "read-complete",
         "verification": "not-run",
-        "wiring": "not-wired"
+        "wiring": "wired"
       },
       "target": {
         "language": "Rust",
@@ -13612,7 +13736,8 @@
       ],
       "evidence_refs": [
         "source/host/tests/openclaw_memory_contract.rs",
-        "projects/openclaw-rust/dossiers/memory-knowledge-retrieval-scoped.md"
+        "projects/openclaw-rust/dossiers/memory-knowledge-retrieval-scoped.md",
+        "projects/openclaw-rust/docs/specs/memory-citations-format.md"
       ],
       "existing_owner_candidates": [
         {
@@ -13622,10 +13747,10 @@
       ],
       "id": "OCRM-RESP-MEM-CITATIONS-FORMAT-001",
       "integration": {
-        "consumer": "source/host/src/extensions/transcript/roster_search.rs::search_agents (transcript/session search projection); source/host/src/runner/sand_memory.rs is prompt-memory rendering, not the search-result consumer",
-        "entrypoint": "source/host/src/extensions/content_search/agent_content_search.rs::search_messages",
-        "owner": "source/host/src/extensions/content_search/agent_content_search.rs",
-        "producer": "source/host/src/extensions/content_search/search_index_db.rs"
+        "consumer": "Pure policy module only; no production result consumer has verified memory path/line provenance",
+        "entrypoint": "source/host/src/extensions/content_search/memory_citations.rs",
+        "owner": "source/host/src/extensions/content_search/memory_citations.rs",
+        "producer": "No production memory producer supplies explicit source-line provenance yet"
       },
       "invariants": [
         "Citations format single lines as #L{n} and line ranges as #L{n}-L{m}",
@@ -13669,7 +13794,7 @@
       ],
       "status": {
         "acceptance": "pending",
-        "implementation": "implementing",
+        "implementation": "implemented",
         "mapping": "mapped",
         "read": "read-complete",
         "verification": "not-run",
@@ -13677,11 +13802,17 @@
       },
       "target": {
         "language": "Rust",
-        "path": "source/host/src/extensions/content_search/agent_content_search.rs",
-        "symbol": "search_messages"
+        "path": "source/host/src/extensions/content_search/memory_citations.rs",
+        "symbol": "format_citation / should_include_citations"
       },
-      "tests": [],
-      "typed_contracts": [],
+      "tests": [
+        "source/host/src/extensions/content_search/memory_citations.rs::tests"
+      ],
+      "typed_contracts": [
+        "MemorySourceProvenance",
+        "format_citation",
+        "should_include_citations"
+      ],
       "unit_id": "OCRM-UNIT-MEM-001"
     },
     {
@@ -14345,7 +14476,13 @@
       ],
       "evidence_refs": [
         "source/host/tests/openclaw_sessions_and_config_contract.rs",
-        "source/host/tests/session_conversation_state_contract.rs"
+        "source/host/tests/session_conversation_state_contract.rs",
+        "projects/openclaw-rust/docs/specs/session-work-admission.md",
+        "source/host/src/extensions/session/agent_db.rs",
+        "source/host/src/extensions/session/production.rs",
+        "source/host/app/src/main.rs",
+        "source/host/tests/agent_db_owner_contract.rs",
+        "source/host/tests/agent_session_contract.rs"
       ],
       "existing_owner_candidates": [
         {
@@ -14445,7 +14582,9 @@
     {
       "adr_refs": [],
       "behavior": "Peer-to-peer inter-session communication admission policy, enforcing send/receive approval checks (always, ask, never) across isolated sessions.",
-      "blocker_ids": [],
+      "blocker_ids": [
+        "BL-SESSION-COMMUNICATION-PRODUCTION-WIRING-001"
+      ],
       "capability_ids": [
         "session.communication_policy"
       ],
@@ -14536,7 +14675,9 @@
     {
       "adr_refs": [],
       "behavior": "Conversation turn correlation and pending turn registry, tracking turn settlement, outbound message identity, and cross-process turn correlation.",
-      "blocker_ids": [],
+      "blocker_ids": [
+        "BL-SESSION-CONVERSATION-TURN-PRODUCTION-WIRING-001"
+      ],
       "capability_ids": [
         "session.conversation_turns"
       ],
@@ -14627,7 +14768,9 @@
     {
       "adr_refs": [],
       "behavior": "Parse, classify, and route session keys into closed kinds (cron, direct, group, global, spawn-child), reserving the harness: namespace for trusted agent harness execution.",
-      "blocker_ids": [],
+      "blocker_ids": [
+        "BL-SESSION-KEY-ROUTING-FULL-WIRING-001"
+      ],
       "capability_ids": [
         "session.key_routing"
       ],
@@ -14635,6 +14778,7 @@
         "mahayana_host_runtime::extensions::session"
       ],
       "evidence_refs": [
+        "docs/specs/session-key-routing-production-boundary.md",
         "source/host/tests/openclaw_sessions_and_config_contract.rs",
         "source/host/tests/session_conversation_state_contract.rs"
       ],
@@ -14646,8 +14790,8 @@
       ],
       "id": "OCRM-RESP-SESSION-KEY-ROUTING-001",
       "integration": {
-        "consumer": "source/host/app/src/main.rs::call_openclaw_sessions_list/call_openclaw_sessions_get/call_openclaw_sessions_delete/call_openclaw_chat_send/call_openclaw_chat_abort consume classify_session_kind for session-kind projection; mutation routing semantics remain owned by their existing handlers",
-        "entrypoint": "source/host/app/src/main.rs public sessions/chat Gateway handlers -> source/host/src/extensions/session/session_paths.rs::classify_session_kind",
+        "consumer": "source/host/app/src/main.rs::call_openclaw_sessions_list/call_openclaw_sessions_get/call_openclaw_sessions_delete/call_openclaw_chat_send/call_openclaw_chat_abort consume the canonical public route; mutation routing semantics remain owned by their existing handlers",
+        "entrypoint": "source/host/app/src/main.rs public sessions/chat Gateway handlers -> resolve_gateway_session_route -> source/host/src/extensions/session/session_paths.rs::resolve_public_session_route",
         "owner": "source/host/src/extensions/session/session_paths.rs",
         "producer": "source/host/app/src/main.rs public sessions/chat request and summary projections"
       },
@@ -14705,21 +14849,28 @@
       "target": {
         "language": "Rust",
         "path": "source/host/src/extensions/session/session_paths.rs",
-        "symbol": "reject_public_agent_harness_session_key"
+        "symbol": "resolve_public_session_route"
       },
       "tests": [
-        "source/host/tests/session_paths_contract.rs::public_session_commands_reject_harness_owned_namespace"
+        "source/host/tests/session_paths_contract.rs::public_session_commands_reject_harness_owned_namespace",
+        "source/host/tests/session_paths_contract.rs::public_session_route_resolves_one_canonical_boundary",
+        "source/host/tests/openclaw_sessions_and_config_contract.rs::test_ocrm_session_o01_session_key_routing"
       ],
       "typed_contracts": [
+        "resolve_public_session_route(session_key: &str, chat_type: Option<&str>, spawned_by: Option<&str>) -> Result<PublicSessionRoute, PublicSessionRouteError>",
         "classify_session_kind(key: &str, chat_type: Option<&str>, spawned_by: Option<&str>) -> SessionKind",
         "is_agent_harness_session_key(session_key: &str) -> bool"
       ],
       "unit_id": "OCRM-UNIT-SESSIONS-001"
     },
     {
-      "adr_refs": [],
+      "adr_refs": [
+        "projects/openclaw-rust/decisions/2026-10-31-session-model-selection-ingress.md"
+      ],
       "behavior": "Scoped per-session model overrides and thinking levels, allowing session-specific LLM parameters without mutating global agent configuration.",
-      "blocker_ids": [],
+      "blocker_ids": [
+        "BL-SESSION-MODEL-MUTATION-WIRING-001"
+      ],
       "capability_ids": [
         "session.model_overrides"
       ],
@@ -14741,7 +14892,7 @@
         "consumer": "runner.startRoutedProvider reads the canonical sessionModelSelection state before turn composition; model/thinking state is projected into SandSessionOptions and consumed by ProductionInferenceExtension::cursor_auth_for_session and HostRunnerComposition; routed-provider selection remains owned by the top-level route",
         "entrypoint": "source/host/src/extensions/session/agent_session.rs::SandAgentSessionStore::apply_session_model_selection",
         "owner": "source/host/src/extensions/session/agent_session.rs",
-        "producer": "SandAgentSessionStore::apply_session_model_selection opens the existing SandAgentDb owner and persists the agent-scoped sessionModelSelection KV only after an Applied result; runner.startRoutedProvider is the production turn producer that reads the same state"
+        "producer": "No authenticated production session-model mutation producer identified; SandAgentSessionStore::apply_session_model_selection is the existing policy/storage mutation owner, while runner.startRoutedProvider is the separate production consumer of the persisted state"
       },
       "invariants": [
         "Session model overrides do not alter parent agent profile defaults"
@@ -14805,7 +14956,8 @@
       "evidence_refs": [
         "source/host/tests/openclaw_sessions_and_config_contract.rs",
         "source/host/tests/session_conversation_state_contract.rs",
-        "source/host/tests/inference_session_labeling_contract.rs"
+        "source/host/tests/inference_session_labeling_contract.rs",
+        "projects/openclaw-rust/dossiers/ocrm-closure-state-audit-20261031.md"
       ],
       "typed_contracts": [
         "Session model override resolver",
@@ -14815,6 +14967,9 @@
     },
     {
       "adr_refs": [],
+      "adr_refs": [
+        "projects/openclaw-rust/decisions/2026-11-01-session-work-admission-owner-contract.md"
+      ],
       "behavior": "Session work admission gating, background task completion capture, archive/restore status transitions, and review terminal lifecycle.",
       "blocker_ids": [],
       "capability_ids": [
@@ -14825,7 +14980,12 @@
       ],
       "evidence_refs": [
         "source/host/tests/openclaw_sessions_and_config_contract.rs",
-        "source/host/tests/session_conversation_state_contract.rs"
+        "source/host/tests/session_conversation_state_contract.rs",
+        "projects/openclaw-rust/docs/specs/session-work-admission.md",
+        "source/host/src/extensions/session/agent_db.rs",
+        "source/host/src/extensions/session/production.rs",
+        "source/host/tests/agent_db_owner_contract.rs",
+        "source/host/tests/agent_session_contract.rs"
       ],
       "existing_owner_candidates": [
         {
@@ -14835,10 +14995,10 @@
       ],
       "id": "OCRM-RESP-SESSION-WORK-ADMISSION-001",
       "integration": {
-        "consumer": "No production work-admission/archive/review consumer identified; ProductionSessionWorkers is used for general session storage but does not expose this lifecycle contract",
-        "entrypoint": "source/host/src/extensions/session/production.rs",
-        "owner": "none: no production session work-admission owner selected",
-        "producer": "No production work-admission/archive transition producer identified"
+        "consumer": "Bounded Host Gateway archive/restore, local background-revival receipt, and newly opened session-owner media recovery consumers are wired; typed provider-review continuation admission is wired but fails closed when native continuation identity is unavailable",
+        "entrypoint": "source/host/app/src/main.rs::UnifiedGatewayApi::call_with_context -> call_openclaw_sessions_patch -> source/host/src/extensions/session/production.rs",
+        "owner": "source/host/src/extensions/session/production.rs and source/host/src/extensions/session/agent_db.rs (deletion fence, generation CAS, archive/receipt/media-recovery slices, and typed provider-review admission; full detached lifecycle owner pending)",
+        "producer": "source/host/app/src/main.rs::call_openclaw_sessions_patch is an authenticated canonical-main archive/restore producer with expected identity/revision and active-foreground-stream guards; local background-revival remains a separate bounded producer"
       },
       "invariants": [
         "Archived sessions cannot admit new work until explicitly restored"
@@ -14847,7 +15007,7 @@
       "oracle_ids": [
         "OCRM-SESSION-O06"
       ],
-      "owner_decision": "Identify the owning workboard/task lifecycle and terminal review consumer before implementation; ProductionSessionWorkers storage alone is not work-admission wiring",
+      "owner_decision": "Use ProductionSessionWorkers → SandAgentDb for the durable session admission owner; full archive/restore, background-result, and terminal-review producers/consumers remain required before implementation is complete",
       "postconditions": [
         "Work admitted for active sessions; archived sessions return error"
       ],
@@ -14871,7 +15031,7 @@
       "responsibility_kind": "business-runtime",
       "reviewer": "xuyao@ombhrum.com",
       "risk": "Low; ensures work is only performed on active unarchived sessions",
-      "selected_owner": "unselected pending session work-admission architecture decision",
+  "selected_owner": "source/host/src/extensions/session/production.rs::ProductionSessionWorkers -> source/host/src/extensions/session/agent_db.rs::SandAgentDb (canonical partial owner; full lifecycle pending)",
       "source_refs": [
         {
           "blob_sha": "db33391e3300f6077a3d14cb5977fa0116ec962c",
@@ -14959,11 +15119,14 @@
       },
       "target": {
         "language": "Rust",
-        "path": "unselected pending session work-admission owner",
-        "symbol": "not selected; session storage is partial evidence only"
+    "path": "source/host/src/extensions/session/production.rs::ProductionSessionWorkers -> source/host/src/extensions/session/agent_db.rs::SandAgentDb",
+    "symbol": "deletion fence, generation CAS, archive/receipt/media recovery, and typed provider-review admission; full detached lifecycle owner pending"
       },
       "tests": [
-        "source/host/tests/openclaw_sessions_and_config_contract.rs::test_ocrm_session_o06_work_admission_and_archive"
+        "source/host/tests/openclaw_sessions_and_config_contract.rs::test_ocrm_session_o06_work_admission_and_archive",
+        "source/host/tests/agent_db_owner_contract.rs::background_result_receipt_is_idempotent_and_conflicts_fail_closed",
+        "source/host/tests/agent_session_contract.rs::background_work_generation_recheck_rejects_stale_terminal_result",
+        "source/host/tests/agent_session_contract.rs::background_result_receipt_is_hidden_from_production_transcript_projection"
       ],
       "typed_contracts": [
         "Session work admission and archive lifecycle"
@@ -15798,7 +15961,7 @@
       ],
       "status": {
         "acceptance": "pending",
-        "implementation": "implementing",
+        "implementation": "implemented",
         "mapping": "mapped",
         "read": "read-complete",
         "verification": "not-run",
@@ -15981,7 +16144,7 @@
       ],
       "status": {
         "acceptance": "pending",
-        "implementation": "implementing",
+        "implementation": "implemented",
         "mapping": "mapped",
         "read": "read-complete",
         "verification": "not-run",
@@ -16164,7 +16327,7 @@
       ],
       "status": {
         "acceptance": "pending",
-        "implementation": "implementing",
+        "implementation": "implemented",
         "mapping": "mapped",
         "read": "read-complete",
         "verification": "not-run",
@@ -16257,7 +16420,7 @@
       ],
       "status": {
         "acceptance": "pending",
-        "implementation": "implementing",
+        "implementation": "implemented",
         "mapping": "mapped",
         "read": "read-complete",
         "verification": "not-run",
@@ -19278,7 +19441,7 @@
         "acceptance": "pending",
         "implementation": "implemented",
         "mapping": "reviewed",
-        "read": "read-complete",
+        "read": "partial",
         "verification": "not-run",
         "wiring": "not-wired"
       },
@@ -19428,7 +19591,9 @@
       "unit_id": "OCRM-UNIT-LINK-MEM-001"
     },
     {
-      "adr_refs": [],
+      "adr_refs": [
+        "projects/openclaw-rust/decisions/2026-10-31-session-model-selection-ingress.md"
+      ],
       "behavior": "Session model selection resolution, validation against operator policy, model visibility policy, placement execution-mode fence, runtime preparation, session state transition, and switch event dispatch.",
       "blocker_ids": [
         "BL-MODEL-PICKER-EXEC-WIRING-001"
@@ -19451,7 +19616,7 @@
       ],
       "id": "OCRM-RESP-MODEL-PICKER-001",
       "integration": {
-        "consumer": "No production inference runner/provider consumer identified; the persisted sessionModelSelection is not projected into SandSessionOptions or a live provider request",
+        "consumer": "runner.startRoutedProvider reads the persisted sessionModelSelection at source/host/app/src/main.rs:6434-6436 and projects model_override/thinking_level into SandSessionOptions at :7296-7312; the existing Runner/Inference consumer edge is confirmed",
         "entrypoint": "source/host/src/extensions/session/agent_session.rs::SandAgentSessionStore::apply_session_model_selection -> source/host/src/extensions/inference/model_picker_service.rs::apply_session_model_selection",
         "owner": "source/host/src/extensions/inference/model_picker_service.rs",
         "producer": "No production session-model mutation producer identified; SandAgentSessionStore exposes the mutation method but current non-test search finds no caller"
@@ -23215,7 +23380,7 @@
         "acceptance": "pending",
         "implementation": "implemented",
         "mapping": "mapped",
-        "read": "partial",
+        "read": "read-complete",
         "verification": "not-run",
         "wiring": "not-wired"
       },
@@ -26042,7 +26207,7 @@
       ],
       "status": {
         "acceptance": "pending",
-        "implementation": "implementing",
+        "implementation": "implemented",
         "mapping": "mapped",
         "read": "read-complete",
         "verification": "not-run",
@@ -28720,13 +28885,49 @@
       "selected_owner": "source/host/src/extensions/process/command_custody.rs",
       "source_refs": [
         {
-          "blob_sha": "ea084ac6af2d706fb898cbdf1edd456d67e2bca8",
-          "path": "src/process/appcontainer-spawn.test.ts",
+          "blob_sha": "e2395772f795cd0597b854c478f9f1cfb69bb5ea",
+          "path": "src/process/bounded-line-framer.ts",
           "range": {
-            "end_line": 76,
+            "end_line": 36,
             "start_line": 1
           },
-          "symbol": "appcontainer-spawn"
+          "symbol": "createBoundedLineFramer"
+        },
+        {
+          "blob_sha": "d6d83b61cf67133a2111ed033a3e6f1025eaf2a3",
+          "path": "src/process/child-process-tree.ts",
+          "range": {
+            "end_line": 54,
+            "start_line": 1
+          },
+          "symbol": "signalChildProcessTree / forceKillChildProcessTree"
+        },
+        {
+          "blob_sha": "bdcd5ca888e5a8ee51c383e7cd93db1e4b44d829",
+          "path": "src/process/command-process-custody.ts",
+          "range": {
+            "end_line": 56,
+            "start_line": 1
+          },
+          "symbol": "command process custody"
+        },
+        {
+          "blob_sha": "d76990a46dbd7dbf31fb0ae2acba94b0c94f4504",
+          "path": "src/process/command-process-custody.types.ts",
+          "range": {
+            "end_line": 9,
+            "start_line": 1
+          },
+          "symbol": "CommandProcessCustody"
+        },
+        {
+          "blob_sha": "8b799aea4cccb13dd5b76b4b25c49b4c025cf5d1",
+          "path": "src/process/exec-termination.ts",
+          "range": {
+            "end_line": 211,
+            "start_line": 1
+          },
+          "symbol": "createCommandTerminationController"
         }
       ],
       "status": {
@@ -28767,8 +28968,9 @@
         "mahayana_host_runtime::extensions::secrets::audit_manager"
       ],
       "evidence_refs": [
-        "source/host/tests/openclaw_secrets_security_contract.rs",
-        "projects/openclaw-rust/dossiers/secrets-security-scoped.md"
+        "source/host/tests/openclaw_sessions_and_config_contract.rs",
+        "projects/openclaw-rust/dossiers/sessions-admission-scoped.md",
+        "projects/openclaw-rust/dossiers/ocrm-closure-state-audit-20261031.md"
       ],
       "existing_owner_candidates": [
         {
@@ -28866,8 +29068,9 @@
         "mahayana_host_runtime::extensions::security::policy_auditor"
       ],
       "evidence_refs": [
-        "source/host/tests/openclaw_secrets_security_contract.rs",
-        "projects/openclaw-rust/dossiers/secrets-security-scoped.md"
+        "source/host/tests/openclaw_sessions_and_config_contract.rs",
+        "projects/openclaw-rust/dossiers/sessions-admission-scoped.md",
+        "projects/openclaw-rust/dossiers/ocrm-closure-state-audit-20261031.md"
       ],
       "existing_owner_candidates": [
         {
@@ -29080,8 +29283,9 @@
         "mahayana_host_runtime::extensions::session::session_conversation_state"
       ],
       "evidence_refs": [
-        "source/host/tests/openclaw_secrets_security_contract.rs",
-        "projects/openclaw-rust/dossiers/secrets-security-scoped.md"
+        "source/host/tests/openclaw_sessions_and_config_contract.rs",
+        "projects/openclaw-rust/dossiers/sessions-admission-scoped.md",
+        "projects/openclaw-rust/dossiers/ocrm-closure-state-audit-20261031.md"
       ],
       "existing_owner_candidates": [
         {
@@ -29134,13 +29338,40 @@
       "selected_owner": "source/host/src/extensions/session/session_conversation_state.rs",
       "source_refs": [
         {
-          "blob_sha": "bf7918df646d0e185f97fc3551a35c06c6cdeafc",
-          "path": "src/poll-params.test.ts",
+          "blob_sha": "23e5152bdd2694ed46dc0a5241b2dc194721dc33",
+          "path": "src/sessions/session-key-utils.ts",
           "range": {
-            "end_line": 33,
+            "end_line": 248,
             "start_line": 1
           },
-          "symbol": "poll-params"
+          "symbol": "parseSessionDeliveryRoute / parseRawSessionConversationRef"
+        },
+        {
+          "blob_sha": "77eb2557be7101ab4ec76216c958f988367c4b97",
+          "path": "src/sessions/classify-session-kind.ts",
+          "range": {
+            "end_line": 29,
+            "start_line": 1
+          },
+          "symbol": "classifySessionKind"
+        },
+        {
+          "blob_sha": "9e3202483196953131f9f95b7e54c236ae4803f4",
+          "path": "src/sessions/conversation-turns.ts",
+          "range": {
+            "end_line": 267,
+            "start_line": 1
+          },
+          "symbol": "registerPendingConversationTurn / claimPendingConversationTurnReply"
+        },
+        {
+          "blob_sha": "e8a38864c303736818b0ca759068d2fca2ed9b81",
+          "path": "src/sessions/runtime-context.ts",
+          "range": {
+            "end_line": 38,
+            "start_line": 1
+          },
+          "symbol": "appendSessionRuntimeContext"
         }
       ],
       "status": {
@@ -31084,7 +31315,9 @@
     {
       "adr_refs": [],
       "behavior": "Plugin SDK allow-from sender normalization, wildcard matching, account-scoped config path resolution and mutation, API baseline declaration closure diffing, and workspace access runtime policy.",
-      "blocker_ids": [],
+      "blocker_ids": [
+        "BL-PLUGIN-SDK-ALLOW-API-WIRING-001"
+      ],
       "capability_ids": [
         "plugin_sdk.allow_from",
         "plugin_sdk.api_baseline",
@@ -31115,10 +31348,10 @@
       ],
       "id": "OCRM-RESP-PLUGIN-SDK-ALLOW-FROM-API-BASELINE-001",
       "integration": {
-        "consumer": "source/host/src/extensions/plugins/capability_catalog.rs::PluginCapabilityCatalog::register_bundled_channel_entry",
-        "entrypoint": "source/host/src/host_production_extensions.rs::register_bundled_channel_capabilities",
+        "consumer": "No production allow-from/config-edit, API-baseline, or workspace-policy consumer identified; current callers are contract tests, while capability-catalog registration only publishes metadata",
+        "entrypoint": "source/host/src/extensions/plugin_sdk::{allow_from,api_baseline,agent_workspace_runtime}",
         "owner": "source/host/src/extensions/plugin_sdk/mod.rs",
-        "producer": "source/host/src/host_production_extensions.rs::register_bundled_channel_capabilities"
+        "producer": "No production plugin SDK configuration, API declaration, or workspace ingress producer identified; host_production_extensions registers bundled capability metadata only"
       },
       "invariants": [
         "Allow-from empty allowlists deny senders by default while wildcard allows all",

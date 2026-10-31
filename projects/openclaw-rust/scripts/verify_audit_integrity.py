@@ -46,12 +46,17 @@ def main():
                 inventory_paths.add(path)
                 read_status = entry.get("read_status")
                 resp_status = entry.get("responsibility_status")
-                # Older committed shards predate the AC02 dimensions. Treat
-                # their absence or explicit nulls as unknown/pending so the
-                # integrity check remains backward-readable while a fresh
-                # Actions generator upgrades every row.
-                applicability_status = entry.get("applicability_status") or "unknown"
-                disposition_status = entry.get("disposition_status") or "pending"
+                # AC02 dimensions are schema-required row fields. Do not turn
+                # a stale or hand-edited row with missing keys into an honest
+                # unknown/pending value: that would hide a materialization
+                # defect and let the committed audit surface drift from the
+                # canonical inventory contract.
+                if "applicability_status" not in entry or "disposition_status" not in entry:
+                    fail(
+                        f"{shard_path}:{line_no}: '{path}' is missing required AC02 row fields"
+                    )
+                applicability_status = entry["applicability_status"]
+                disposition_status = entry["disposition_status"]
 
                 if applicability_status not in {"unknown", "product", "non-product", "mixed"}:
                     fail(f"{shard_path}:{line_no}: '{path}' has invalid applicability_status={applicability_status!r}")
