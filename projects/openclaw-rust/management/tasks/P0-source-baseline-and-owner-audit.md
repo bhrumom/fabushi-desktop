@@ -21,7 +21,7 @@ Last updated: 2026-10-30（Asia/Shanghai）
 3. 查现有 OpenClaw 任务/分支/lock，避免重复项目或覆盖另一执行者；TDRP PR #154 与 #165/#166/#167/#168 等并行工作独立保留。
 4. 目标状态只按实际合并源码判断，旧 FBCP inventory 和尚未合并 PR 的代码均需标明来源，不能冒领 main 能力。
 
-本轮 live ref 只读核对：OpenClaw `main`=`b7a537eb6833ea16960c227d5fc223fcd08ccef6`，root tree=`804b4f9c70d2a24a2575cfe68bc682f6c6c98574`；递归 tree=`truncated=false`、63,521 entries（61,281 blobs、2,240 directories）。这是 discovery-only rebaseline 输入，不是 Actions source authority；此前 `89734994…` 与更早 candidate 的 inventory/依赖闭包不得直接复用。
+此前 live ref 只读核对曾解析到 OpenClaw `main`=`b7a537eb6833ea16960c227d5fc223fcd08ccef6`，root tree=`804b4f9c70d2a24a2575cfe68bc682f6c6c98574`；递归 tree=`truncated=false`、63,521 entries（61,281 blobs、2,240 directories）。这是历史 discovery-only rebaseline 输入，不是 Actions source authority；该 identity 与更早 candidate 的 inventory/依赖闭包不得直接复用。
 随后只读核对发现 OpenClaw `main` 再次漂移到 `68fbe4ac429cdac7a54541df40367d66defd0161`、root tree=`a3c122b99571c0c33ff6a02ca4c4e32f05f9433d`（committer=`2026-10-30T09:42:45Z`）。该 exact subject 仍是 discovery-only；compare 计数未刷新，旧 candidate 的 inventory、依赖闭包和 Actions provenance 不得复用。
 
 所有测试/构建/生成器/schema/可执行盘点验收只在 GitHub Actions。外部只做只读调查、文档/代码编辑和 Git/API 操作。
@@ -93,11 +93,12 @@ P0-AC 全通过也只完成基线任务；可按主 Spec §15.1 为 baseline ide
 
 ## 8. 本次状态
 
-P0 仍未退出：最新只读 live candidate 已推进到 OpenClaw
+P0 仍未退出：此前只读 live candidate 曾推进到 OpenClaw
 `68fbe4ac429cdac7a54541df40367d66defd0161` / tree
-`a3c122b99571c0c33ff6a02ca4c4e32f05f9433d`，但尚未取得针对该 exact subject
-的 GitHub Actions inventory、依赖闭包和 evidence envelope。`upstream.lock.json`
-已保存该 candidate 的 discovery identity；既有 inventory/shards 仍绑定上一轮
+`a3c122b99571c0c33ff6a02ca4c4e32f05f9433d`；该 identity 仅保留为历史
+discovery evidence。当前 candidate 以本文件后面的
+`2c157ed…/3fb582…` 为准，但尚未取得针对该 exact subject 的 GitHub Actions
+inventory、依赖闭包和 evidence envelope。既有 inventory/shards 仍绑定上一轮
 候选，不能编辑性重标为当前来源；对应 drift decision 见
 `decisions/2026-10-30-upstream-rebaseline-required.md`。
 
