@@ -23580,7 +23580,9 @@
         "desktop-sync-commit:ae630cf55cb611f9e400b8c5a4bbbbad20654387",
         "path:source/mahayana/mahayana-rs/providers/telegram-protocol/src/api.rs@ebfb3670b5cd097b9ce288782c7954f5cfe9fc43",
         "path:source/mahayana/mahayana-rs/providers/telegram-protocol/src/lib.rs@abab39e42f100972484191f0e52e9edd9b88c6cf",
-        "path:source/mahayana/mahayana-rs/providers/telegram-protocol/tests/protocol_contract.rs@efaa8ac407af5bca430855fbb69c862f9ce793b0"
+        "path:source/mahayana/mahayana-rs/providers/telegram-protocol/tests/protocol_contract.rs@efaa8ac407af5bca430855fbb69c862f9ce793b0",
+        "platform-core-spec-compliance-commit:e99655ad3c06858e60fb7a1bf6a5a12cb1a0b2ff",
+        "platform-core-spec-compliance-blob:4780f4764ae68cbb921177214a05e215b98608fa"
       ],
       "test_evidence": [
         "canonical and desktop tracked authored-only contracts cover signed request id, binary non-UTF8 state bytes, empty and 254-byte long-form TL payloads, wrong constructor, truncation, missing padding, trailing bytes and exact EOF; not run"
@@ -23700,7 +23702,7 @@
       "acceptance_reviewer": null,
       "reviewer": null,
       "license_and_provenance": "Behavioral responsibility is anchored to fixed-U telegramdesktop/tdesktop Telegram/SourceFiles/mtproto/scheme/mtproto.tl@76225965bfc794388db241f3f760db8ab79e84f8 and shipping Telegram/SourceFiles/mtproto/session_private.cpp@13cbc76ec723386027b5b4dcac79999b791c4614. Implementation is source-neutral Rust and copies no upstream C++ implementation.",
-      "notes": "Stage A implementation bookkeeping only. Remote source review confirms existing parse_msgs_state_info/TlReader already satisfy exact fixed-U typed parser, binary TL info framing and trailing validation, so no production behavior change was made. Durable spec and authored-only contracts were added and mirrored but not executed; validation_status=not-run and accepted=false. Request-history/application, connection scheduling, auth-key lifecycle, gzip and complete difference decoding remain open/fail-closed.",
+      "notes": "Stage A implementation bookkeeping only. Remote source review confirms existing parse_msgs_state_info/TlReader already satisfy exact fixed-U typed parser, binary TL info framing and trailing validation, so no production behavior change was made. Durable spec and authored-only contracts were added and mirrored but not executed; validation_status=not-run and accepted=false. Request-history/application, connection scheduling, auth-key lifecycle, gzip and complete difference decoding remain open/fail-closed. Final source-level compliance is recorded at platform-core commit e99655ad3c06858e60fb7a1bf6a5a12cb1a0b2ff/spec blob 4780f4764ae68cbb921177214a05e215b98608fa; executable validation remains not-run.",
       "test_execution_evidence": [],
       "validation_status": "not-run",
       "accepted": false,

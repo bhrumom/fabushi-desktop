@@ -1048,3 +1048,23 @@ Ledger adds `TDRP-R9-MTPROTO-MSGS-STATE-INFO-WIRE-001`; coverage becomes
 Arbitrary request history/application, connection scheduling/racing/send retry, auth-key binding/persistence,
 gzip, complete difference/differenceSlice decoding/application, broader source/legal closure and Stage-B executable
 evidence remain open/fail-closed. No executable validation was performed.
+
+
+### Round 84 final source-level compliance
+
+Platform-core `e99655ad3c06858e60fb7a1bf6a5a12cb1a0b2ff` / final spec blob
+`4780f4764ae68cbb921177214a05e215b98608fa` records source-level R1-R10 and AC-1-AC-6 compliance for the
+fixed-U `msgs_state_info#04deb57d req_msg_id:long info:string` wire responsibility. Canonical production
+`api.rs/tl.rs/lib.rs` remain
+`ebfb3670b5cd097b9ce288782c7954f5cfe9fc43` /
+`89256ab35184b6dc06a095ab34abb9f44e95a264` /
+`abab39e42f100972484191f0e52e9edd9b88c6cf` with no behavior delta. Canonical/desktop authored contract
+blob remains `efaa8ac407af5bca430855fbb69c862f9ce793b0`. The desktop ledger records
+`TDRP-R9-MTPROTO-MSGS-STATE-INFO-WIRE-001` as
+`implemented / validation_status=not-run / accepted=false`, coverage
+`94 / 16172 unknown / 16145 unread / 0 omitted`.
+
+Binary `info` preservation is intentional; arbitrary request history/application, connection scheduling/racing/send
+retry, temporary/permanent auth-key binding/expiry/persistence/teardown, gzip, complete difference/differenceSlice
+decoding/application, broader fixed-U source/legal closure, Stage-B executable evidence and independent release ACCEPT
+remain open/fail-closed. No executable validation was performed.

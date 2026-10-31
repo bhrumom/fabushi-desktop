@@ -44,3 +44,26 @@ source/legal closure, Stage-B executable evidence and independent release ACCEPT
 
 No GitHub Actions/status/check query or trigger, build, typecheck, lint, schema validator, generator,
 unit/contract/integration/E2E test, package, deployment, installation or runtime acceptance was performed.
+
+
+## Final source-level compliance readback
+
+Platform-core compliance commit:
+`e99655ad3c06858e60fb7a1bf6a5a12cb1a0b2ff`.
+
+Final spec blob:
+`docs/specs/telegram-mtproto-msgs-state-info-wire.md@4780f4764ae68cbb921177214a05e215b98608fa`.
+
+Remote source readback records R1-R10 and AC-1-AC-6 as source/bookkeeping satisfied while executable Stage-B
+validation remains intentionally not run. Canonical production api/tl/lib blobs remain unchanged at
+`ebfb3670b5cd097b9ce288782c7954f5cfe9fc43` /
+`89256ab35184b6dc06a095ab34abb9f44e95a264` /
+`abab39e42f100972484191f0e52e9edd9b88c6cf`; canonical/desktop authored contract blob remains
+`efaa8ac407af5bca430855fbb69c862f9ce793b0`. The responsibility remains
+`implemented / validation_status=not-run / accepted=false`, coverage
+`94 / 16172 unknown / 16145 unread / 0 omitted`.
+
+The fixed-U `info:string` payload remains intentionally binary at this parser boundary. Arbitrary request
+history/application, connection scheduling/racing/send retry, auth-key binding/expiry/persistence/teardown, gzip,
+complete difference/differenceSlice decoding/application, broader source/legal closure, Stage-B executable evidence
+and independent release ACCEPT remain open/fail-closed.
