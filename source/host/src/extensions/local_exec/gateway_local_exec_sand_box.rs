@@ -33,6 +33,7 @@ use crate::extensions::local_tool_permission::extension::HostLocalToolPermission
 use crate::extensions::local_tool_permission::local_tool_permission_controller::{
     SandLocalToolRequest, SandLocalToolScope,
 };
+use crate::extensions::process::command_custody::CommandProcessCustody;
 use crate::host_paths::get_sand_root_dir;
 
 pub const FALLBACK_TERMINALS_FOLDER: &str = "terminals";
@@ -239,6 +240,7 @@ struct GatewayLocalExecActiveOperation {
 #[derive(Clone)]
 pub struct GatewayLocalExecManager {
     sandbox: GatewayLocalExecSandBox,
+    process_custody: Arc<CommandProcessCustody>,
     next_exec_id: Arc<AtomicU32>,
     active_operations: Arc<Mutex<HashMap<String, GatewayLocalExecActiveOperation>>>,
     operation_history: Arc<Mutex<VecDeque<GatewayLocalExecOperationRecord>>>,
@@ -251,6 +253,7 @@ pub struct GatewayLocalExecManager {
 pub struct GatewayLocalExecSandBox {
     bridge: SandLocalExecBridge,
     gate: Arc<dyn GatewayLocalToolGate>,
+    process_custody: Arc<CommandProcessCustody>,
     computer_id: Option<String>,
     max_file_bytes: usize,
     failure_reporter: Option<GatewayLocalExecFailureReporter>,
@@ -261,6 +264,7 @@ impl GatewayLocalExecSandBox {
         Self {
             bridge,
             gate,
+            process_custody: Arc::new(CommandProcessCustody::new()),
             computer_id: None,
             max_file_bytes: DEFAULT_MAX_LOCAL_EXEC_FILE_BYTES,
             failure_reporter: None,
@@ -282,6 +286,11 @@ impl GatewayLocalExecSandBox {
         failure_reporter: GatewayLocalExecFailureReporter,
     ) -> Self {
         self.failure_reporter = Some(failure_reporter);
+        self
+    }
+
+    pub fn with_process_custody(mut self, process_custody: Arc<CommandProcessCustody>) -> Self {
+        self.process_custody = process_custody;
         self
     }
 
@@ -556,6 +565,7 @@ impl GatewayLocalExecManager {
         sandbox: GatewayLocalExecSandBox,
         operation_journal_path: PathBuf,
     ) -> Self {
+        let process_custody = Arc::clone(&sandbox.process_custody);
         let (history, operation_journal_error) = match Self::load_operation_history(
             &operation_journal_path,
             DEFAULT_LOCAL_EXEC_OPERATION_HISTORY_LIMIT,
@@ -565,6 +575,7 @@ impl GatewayLocalExecManager {
         };
         Self {
             sandbox,
+            process_custody,
             next_exec_id: Arc::new(AtomicU32::new(1)),
             active_operations: Arc::new(Mutex::new(HashMap::new())),
             operation_history: Arc::new(Mutex::new(history)),
@@ -1071,6 +1082,10 @@ impl GatewayLocalExecManager {
         timeout: Option<Duration>,
     ) -> Result<GatewayLocalExecShellResult, SandLocalExecError> {
         self.ensure_operation_journal_healthy()?;
+        let _process_slot = self
+            .process_custody
+            .acquire_slot("local-exec")
+            .map_err(SandLocalExecError::new)?;
         let started_at = Instant::now();
         let message = PRODUCTION_LOCAL_EXEC_CODEC.shell_stream_server_message(
             self.next_id(),

@@ -17,7 +17,7 @@
    - `Producer`: Raw stdout/stderr byte streams from spawned child processes and command execution requests.
    - `Owner`: `source/host/src/extensions/process/bounded_framer.rs` (`BoundedLineFramer`), `source/host/src/extensions/process/command_custody.rs` (`CommandProcessCustody`), and `source/host/src/extensions/process/tree_reaper.rs` (`ChildProcessTreeTracker`).
    - `Storage`: Line framing buffer and active PID tracker set.
-   - `Consumer`: No production consumer is currently wired to these extension owners. The only current consumer is the contract fixture `source/host/tests/openclaw_process_plugin_contract.rs`; the existing Box exec-daemon path has separate child-lifecycle and framing code and must not be treated as an implicit caller.
+   - `Consumer`: The production local-exec owner now reuses `CommandProcessCustody` for shared `local-exec` capacity admission before sending a provider exec frame (`source/host/src/extensions/local_exec/extension.rs` -> `gateway_local_exec_sand_box.rs`). The bounded framer, child-tree reaper, AppContainer preflight, and their full lifecycle remain without a production adapter; the contract fixture `source/host/tests/openclaw_process_plugin_contract.rs` is still the only consumer for those portions. The existing Box exec-daemon path has separate child-lifecycle and framing code and must not be treated as an implicit caller.
 
 ## 3. Verification & Oracle Evidence
 - **Contract Tests**: `source/host/tests/openclaw_process_plugin_contract.rs`:
@@ -47,18 +47,21 @@ only and is not a Windows acceptance receipt.
 
 ## 5. Production wiring boundary (2026-10-29)
 
-Static caller inspection confirms that `CommandProcessCustody`,
-`ChildProcessTreeTracker`, and `extensions/process::BoundedLineFramer` have no
-production call site in `source/host/src` or `source/host/app/src`. Their
-current Rust use is limited to the contract test fixture. The separate
+Static caller inspection now confirms a narrow production call site for
+`CommandProcessCustody`: the shared Host local-exec extension acquires the
+`local-exec` capacity slot before provider dispatch, and the slot remains held
+through settlement. `ChildProcessTreeTracker`,
+`extensions/process::BoundedLineFramer`, and the AppContainer boundary still
+have no production adapter. The separate
 `source/host/src/runner/bounded_line_framer.rs` and
 `source/host/src/box/exec_daemon_process.rs` owners are not interchangeable
 without a reviewed process-execution adapter, because the custody contract
 also owns admission, cancellation, deadline, and process-tree semantics.
 
-Accordingly this responsibility remains `wiring=not-wired`, and no production
-acceptance claim may cite the contract test as runtime evidence. A future
-wiring change must identify the real command-dispatch owner, acquire custody
-before spawn, register/unregister the child with the same lifetime, propagate
-cancellation/deadline outcomes, and add the corresponding exact-head
-verification before changing this status.
+Accordingly the responsibility remains `wiring=not-wired` for the full
+responsibility: the local-exec capacity sub-contract is wired, but child-tree
+ownership, bounded framing, AppContainer policy, and complete cancellation /
+deadline propagation are not. No production acceptance claim may cite the
+contract test as runtime evidence. A future status change must close the
+remaining process-dispatch adapters and add the corresponding exact-head
+verification.
