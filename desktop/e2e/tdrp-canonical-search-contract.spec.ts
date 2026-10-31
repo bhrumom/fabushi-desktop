@@ -2,6 +2,7 @@ import { expect, test } from '@playwright/test';
 import {
   commandPaletteEntries,
   dedupeCommandPaletteAgents,
+  fuzzyPaletteScore,
   normalizePaletteSearch,
   type CommandPaletteAgent,
 } from '../../frontend/src/production/command-palette-model';
@@ -68,4 +69,12 @@ test('canonical search preserves supplementary CJK and astral letters', () => {
   });
   expect(entries).toHaveLength(1);
   expect(entries[0]?.kind).toBe('agent');
+});
+
+
+test('astral queries use the same fuzzy-span budget as BMP queries', () => {
+  expect(fuzzyPaletteScore('𠀀xxa', '𠀀a')).not.toBeNull();
+  expect(fuzzyPaletteScore('𠀀xxxxxxa', '𠀀a')).toBeNull();
+  expect(fuzzyPaletteScore('bxxa', 'ba')).not.toBeNull();
+  expect(fuzzyPaletteScore('bxxxxxxa', 'ba')).toBeNull();
 });

@@ -72,19 +72,28 @@ export function paletteSearchTokens(value: string): string[] {
 }
 
 export function fuzzyPaletteScore(value: string, query: string): number | null {
-  if (query.length === 0) return 0;
-  const lowerValue = value.toLowerCase();
+  const valueCodePoints = Array.from(value);
+  const queryCodePoints = Array.from(query);
+  if (queryCodePoints.length === 0) return 0;
+
+  // Search distance is a product-level ranking rule, so count Unicode code
+  // points rather than UTF-16 storage units. Otherwise an astral query gets a
+  // larger fuzzy-span budget than an equivalent BMP query and can surface
+  // materially less-relevant participants/messages.
+  const lowerValue = valueCodePoints.map((codePoint) => codePoint.toLowerCase());
+  const lowerQuery = queryCodePoints.map((codePoint) => codePoint.toLowerCase());
   let score = 0;
   let queryIndex = 0;
   let previousMatch = -2;
   let firstMatch = -1;
   let lastMatch = -1;
-  for (let index = 0; index < lowerValue.length && queryIndex < query.length; index += 1) {
-    if (lowerValue[index] !== query[queryIndex]) continue;
+  for (let index = 0; index < lowerValue.length && queryIndex < lowerQuery.length; index += 1) {
+    if (lowerValue[index] !== lowerQuery[queryIndex]) continue;
     if (firstMatch < 0) firstMatch = index;
-    const previousCharacter = value.charAt(index - 1);
+    const previousCharacter = valueCodePoints[index - 1] ?? "";
+    const currentCharacter = valueCodePoints[index] ?? "";
     const isBoundary = index === 0 || previousCharacter === " " || previousCharacter === "-" || previousCharacter === "_" || previousCharacter === "/" || previousCharacter === ".";
-    const isCamelBoundary = previousCharacter >= "a" && previousCharacter <= "z" && value.charAt(index) >= "A" && value.charAt(index) <= "Z";
+    const isCamelBoundary = previousCharacter >= "a" && previousCharacter <= "z" && currentCharacter >= "A" && currentCharacter <= "Z";
     let characterScore = 1;
     if (isBoundary || isCamelBoundary) characterScore += 4;
     if (previousMatch === index - 1) characterScore += 3;
@@ -93,7 +102,10 @@ export function fuzzyPaletteScore(value: string, query: string): number | null {
     lastMatch = index;
     queryIndex += 1;
   }
-  if (queryIndex < query.length || lastMatch - firstMatch + 1 > query.length * MAX_FUZZY_SPAN_MULTIPLIER) return null;
+  if (
+    queryIndex < lowerQuery.length
+    || lastMatch - firstMatch + 1 > lowerQuery.length * MAX_FUZZY_SPAN_MULTIPLIER
+  ) return null;
   return score - firstMatch * 0.1 - lowerValue.length * 0.02;
 }
 
