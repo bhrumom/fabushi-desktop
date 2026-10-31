@@ -59,3 +59,21 @@ The listed OCRM-MEM-O06 and OCRM-MEM-O10 tests are not citation-format oracles: 
 cover ungrounded synthesis rejection and per-agent match capping/recency sorting.
 Until a source-line provenance contract and an independent citation-format oracle are
 added, this responsibility has no valid citation evidence and remains pending.
+
+## 5.1 Production consumer correction — 2026-10-31
+
+The current Fabushi call graph was re-read to correct the integration edge. The
+production search path is `search_index_db::search_messages` →
+`ProductionContentSearchExtension` → `RosterContentSearch` →
+`extensions/transcript/roster_search.rs::search_agents`, which projects
+`MessageSearchResult` into `TranscriptSearchResult`. The search result carries
+only agent/entry identity, role, timestamp and a flattened snippet. It does not
+carry verified source-line ranges.
+
+`runner/sand_memory.rs` renders durable memory into the model system prompt and
+does not consume transcript search results or produce citations. The ledger
+consumer was corrected accordingly. No `#L{start}`/`#L{start}-L{end}` formatter
+or channel/group auto-mode suppression gate was found in the production path;
+the responsibility therefore remains `implementing/not-wired/not-run/pending`.
+This correction changes only the owner graph and does not promote a helper,
+search index, or contract test to citation equivalence.

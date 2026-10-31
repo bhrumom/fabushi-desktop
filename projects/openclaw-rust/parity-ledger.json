@@ -13605,7 +13605,7 @@
       ],
       "id": "OCRM-RESP-MEM-CITATIONS-FORMAT-001",
       "integration": {
-        "consumer": "source/host/src/runner/sand_memory.rs",
+        "consumer": "source/host/src/extensions/transcript/roster_search.rs::search_agents (transcript/session search projection); source/host/src/runner/sand_memory.rs is prompt-memory rendering, not the search-result consumer",
         "entrypoint": "source/host/src/extensions/content_search/agent_content_search.rs::search_messages",
         "owner": "source/host/src/extensions/content_search/agent_content_search.rs",
         "producer": "source/host/src/extensions/content_search/search_index_db.rs"
