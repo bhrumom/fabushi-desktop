@@ -7,7 +7,7 @@
   - `OCRM-RESP-MEDIA-UND-OPENAI-COMPAT-001`
 - **Reviewer**: `xuyao@ombhrum.com`
 - **Date**: `2026-10-27`
-- **Status**: `wired/verified`
+- **Status**: `implementation=implemented`, `wiring=not-wired`, `verification=not-run`, `acceptance=pending`
 
 ## 1. Upstream Authority & Source Mapping
 
@@ -67,4 +67,12 @@ Implemented in `source/host/src/extensions/attachments/media_understanding_servi
   - `test_ocrm_media_und_o20_openai_compatible_video_request_and_coercion`: verifies fallback strings, chat completion video request payload formatting, and message content / reasoning coercion.
   - `test_ocrm_media_und_o21_local_audio_command_and_backend_detection`: verifies command stem normalization, requested backend resolution (sherpa provider, whisper-cli device/no-gpu), and output log observation (Metal, CUDA, CPU fallback).
   - `test_ocrm_media_und_o22_local_audio_candidate_ranking_and_selection_formatting`: verifies priority ranking and selection formatting with fallbacks.
-- All 22 tests in `openclaw_media_understanding_contract.rs` pass cleanly.
+- Historical contract record: 22 tests were recorded as passing in an earlier run; this is not current exact-head Actions evidence or production acceptance evidence.
+
+## 5. Current production reachability audit (2026-10-31)
+
+The current non-test Host source has no caller for the local-audio discovery,
+ranking, or OpenAI-compatible media helpers beyond their defining module. No
+production CLI/audio-provider path consumes these contracts. The ledger retains
+the existing CLI and HTTP wiring blockers with `wiring=not-wired`,
+`verification=not-run`, and `acceptance=pending`.

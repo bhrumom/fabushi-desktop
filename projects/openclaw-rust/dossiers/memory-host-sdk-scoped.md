@@ -7,7 +7,7 @@
   - `OCRM-RESP-MEMORY-EVENT-STORE-001`
 - **Reviewer**: `xuyao@ombhrum.com`
 - **Date**: `2026-10-27`
-- **Status**: `wired/verified`
+- **Status**: `implementation=implemented`, `wiring=not-wired`, `verification=not-run`, `acceptance=pending`
 
 ## 1. Upstream Authority & Source Mapping
 
@@ -55,4 +55,12 @@ The following 13 upstream files in `src/memory-host-sdk/` (1,348 lines total, 10
     - `test_ocrm_memory_dreaming_promotion_and_decay`
     - `test_ocrm_memory_event_store_normalization_and_truncation`
     - `test_ocrm_memory_event_store_path_truncation_and_slice`
-- **Verification Result**: 3 passed; 0 failed.
+- Historical contract record: three tests were recorded as passing in an earlier run; this is not current exact-head Actions evidence or production acceptance evidence.
+
+## 5. Current production reachability audit (2026-10-31)
+
+The current non-test Host source has no caller for the memory dreaming or event
+normalization helpers beyond their defining modules. No production memory
+promotion producer, durable event-store writer, or reader consumer is
+established. The ledger retains both execution wiring blockers with
+`wiring=not-wired`, `verification=not-run`, and `acceptance=pending`.

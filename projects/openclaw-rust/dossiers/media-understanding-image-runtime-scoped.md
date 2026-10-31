@@ -7,7 +7,7 @@
   - `OCRM-RESP-MEDIA-UND-IMAGE-RUNTIME-001`
 - **Reviewer**: `xuyao@ombhrum.com`
 - **Date**: `2026-10-27`
-- **Status**: `wired/verified`
+- **Status**: `implementation=implemented`, `wiring=not-wired`, `verification=not-run`, `acceptance=pending`
 
 ## 1. Upstream Authority & Source Mapping
 
@@ -54,4 +54,12 @@ Implemented in `source/host/src/extensions/attachments/media_understanding_servi
   - `test_ocrm_media_und_o23_image_input_normalization_and_caps`: verifies HEIC/HEIF MIME/extension detection and effective byte cap clamping.
   - `test_ocrm_media_und_o24_image_runtime_model_checks_and_token_resolution`: verifies model image capability validation and token limit resolution.
   - `test_ocrm_media_und_o25_image_reasoning_stripping_and_copilot_placement`: verifies payload reasoning removal, native responses effort manipulation, Copilot user-message placement, and error discrimination.
-- All 25 tests in `openclaw_media_understanding_contract.rs` passed with 0 failures.
+- Historical contract record: 25 tests were recorded as passing in an earlier run; this is not current exact-head Actions evidence or production acceptance evidence.
+
+## 5. Current production reachability audit (2026-10-31)
+
+The current non-test Host source has no caller for the image-input and
+image-runtime helpers beyond their defining module. No active inference
+provider path consumes the image model checks, token policy, or retry payload
+projection. The ledger retains the existing image-runtime wiring blockers with
+`wiring=not-wired`, `verification=not-run`, and `acceptance=pending`.

@@ -7,7 +7,7 @@
   - `OCRM-RESP-PARAM-KEY-NORMALIZATION-001`
 - **Reviewer**: `xuyao@ombhrum.com`
 - **Date**: `2026-10-27`
-- **Status**: `wired/verified`
+- **Status**: `implementation=implemented`, `wiring=not-wired`, `verification=not-run`, `acceptance=pending`
 
 ## 1. Upstream Authority & Source Mapping
 
@@ -53,4 +53,13 @@ The following 8 upstream files (2,116 lines total) are audited, mapped, and nati
     - `test_ocrm_interactive_fallback_select_does_not_leak_callback`
     - `test_ocrm_interactive_fallback_buttons_and_card`
     - `test_ocrm_interactive_action_normalization`
-- **Verification Result**: 4 passed; 0 failed.
+- Historical contract record: four tests were recorded as passing in an earlier run; this is not current exact-head Actions evidence or production acceptance evidence.
+
+## 5. Current production reachability audit (2026-10-31)
+
+The current non-test Host source has no caller for the interactive payload or
+parameter-normalization helpers beyond their defining modules. Registration in
+Rust module barrels is compilation reachability only and does not establish a
+renderer, channel, or Gateway consumer. The ledger retains both execution
+wiring blockers with `wiring=not-wired`, `verification=not-run`, and
+`acceptance=pending`.

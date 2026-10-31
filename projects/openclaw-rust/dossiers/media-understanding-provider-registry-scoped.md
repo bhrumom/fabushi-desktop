@@ -7,7 +7,7 @@
   - `OCRM-RESP-MEDIA-UND-PROVIDER-EXEC-001`
 - **Reviewer**: `xuyao@ombhrum.com`
 - **Date**: `2026-10-27`
-- **Status**: `wired/verified`
+- **Status**: `implementation=implemented`, `wiring=not-wired`, `verification=not-run`, `acceptance=pending`
 
 ## 1. Upstream Authority & Source Mapping
 
@@ -50,4 +50,12 @@ Implemented in `source/host/src/extensions/attachments/media_understanding_servi
 - Contract test suite: `source/host/tests/openclaw_media_understanding_contract.rs`
   - `test_ocrm_media_und_o26_provider_registry_and_auto_priority_sorting`: verifies default model retrieval and ascending priority provider sorting with tie-breaking.
   - `test_ocrm_media_und_o27_provider_registry_build_and_request_context`: verifies registry assembly, image-capable auto-registration, override merging, and hierarchical request context resolution.
-- All 27 tests in `openclaw_media_understanding_contract.rs` pass cleanly with 0 failures.
+- Historical contract record: 27 tests were recorded as passing in an earlier run; this is not current exact-head Actions evidence or production acceptance evidence.
+
+## 5. Current production reachability audit (2026-10-31)
+
+The current non-test Host source has no caller for the media-understanding
+provider registry or request-context helpers beyond their defining module. No
+production plugin/provider registration or HTTP execution path consumes these
+contracts. The ledger retains the existing plugin and HTTP wiring blockers with
+`wiring=not-wired`, `verification=not-run`, and `acceptance=pending`.

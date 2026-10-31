@@ -7,7 +7,7 @@
   - `OCRM-RESP-MEDIA-UND-FILE-CONTEXT-001`
 - **Reviewer**: `xuyao@ombhrum.com`
 - **Date**: `2026-10-27`
-- **Status**: `wired/verified`
+- **Status**: `implementation=implemented`, `wiring=not-wired`, `verification=not-run`, `acceptance=pending`
 
 ## 1. Upstream Authority & Source Mapping
 
@@ -57,4 +57,13 @@ Implemented in `source/host/src/extensions/attachments/media_understanding_servi
   - `test_ocrm_media_und_o16_mime_and_path_security_sanitization`: verifies valid MIME stripping, malformed MIME rejection, path traversal prevention, and safe character set filtering.
   - `test_ocrm_media_und_o17_file_attachment_outcomes_and_fencing`: verifies extracted text wrapping, truncation notices, local path metadata fencing, Office XML zip hints, and policy rejections.
   - `test_ocrm_media_und_o18_inbound_document_context_and_marker_budget`: verifies disposition rendering, 5-marker budget overflow, inbound `<file>` block XML generation, and extracted image metadata stripping.
-- All 18 tests in `openclaw_media_understanding_contract.rs` passed with 0 failures.
+- Historical contract record: 18 tests were recorded as passing in an earlier run; this is not current exact-head Actions evidence or production acceptance evidence.
+
+## 5. Current production reachability audit (2026-10-31)
+
+The current non-test Host source has no caller for the file-outcome and
+document-context helpers beyond their defining module. The active attachment
+and prompt pipelines do not yet route these contracts through a complete
+media-understanding consumer. The ledger therefore retains the two existing
+chat-wiring blockers with `wiring=not-wired`, `verification=not-run`, and
+`acceptance=pending`.

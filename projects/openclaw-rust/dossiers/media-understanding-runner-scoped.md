@@ -7,7 +7,7 @@
   - `OCRM-RESP-MEDIA-UND-APPLY-RUNTIME-001`
 - **Reviewer**: `xuyao@ombhrum.com`
 - **Date**: `2026-10-27`
-- **Status**: `wired/verified`
+- **Status**: `implementation=implemented`, `wiring=not-wired`, `verification=not-run`, `acceptance=pending`
 
 ## 1. Upstream Authority & Source Mapping
 
@@ -76,4 +76,13 @@ Implemented in `source/host/src/extensions/attachments/media_understanding_servi
   - `test_ocrm_media_und_o29_scope_decision_and_preference_ranking`: tests scope rule matching (channel, chat-type, prefix) and preference ranking.
   - `test_ocrm_media_und_o30_cli_output_parsing_and_sherpa_onnx`: tests Sherpa ONNX JSON parsing, Whisper.cpp `-otxt`/`-of` paths, and Python Whisper output dirs.
   - `test_ocrm_media_und_o31_decision_summary_and_runtime_disposition`: tests decision reason normalization, formatted summary strings, audio budget, native deliverability, and sticker skipping.
-- 31 of 31 tests passed cleanly with 0 failures.
+- Historical contract record: 31 tests were recorded as passing in an earlier run; this is not current exact-head Actions evidence or production acceptance evidence.
+
+## 5. Current production reachability audit (2026-10-31)
+
+The current non-test Host source has no caller for the media-understanding
+runner, decision-summary, audio-budget, or apply-runtime helpers beyond their
+defining module. The active inference engine does not route inbound media
+through this dispatcher. The ledger retains the existing execution wiring
+blockers with `wiring=not-wired`, `verification=not-run`, and
+`acceptance=pending`.

@@ -7,7 +7,7 @@
   - `OCRM-RESP-MCP-TOOLS-STDIO-SERVER-001`
 - **Reviewer**: `xuyao@ombhrum.com`
 - **Date**: `2026-10-27`
-- **Status**: `wired/verified`
+- **Status**: `implementation=implemented`, `wiring=not-wired`, `verification=not-run`, `acceptance=pending`
 
 ## 1. Upstream Authority & Source Mapping
 
@@ -67,4 +67,12 @@ The following 25 upstream files in `src/mcp/` (4,716 lines total, 100% of the di
     - `test_ocrm_mcp_queue_bounding_and_approval_sweep`
     - `test_ocrm_mcp_tools_server_lifecycle`
     - `test_ocrm_mcp_tool_policy_filtering`
-- **Verification Result**: 4 passed; 0 failed.
+- Historical contract record: four tests were recorded as passing in an earlier run; this is not current exact-head Actions evidence or production acceptance evidence.
+
+## 5. Current production reachability audit (2026-10-31)
+
+The current non-test Host source has no caller for the MCP channel bridge or
+stdio-tool filtering helpers beyond their defining modules. No production MCP
+transport, permission reply producer, or tool consumer is established. The
+ledger retains both execution wiring blockers with `wiring=not-wired`,
+`verification=not-run`, and `acceptance=pending`.

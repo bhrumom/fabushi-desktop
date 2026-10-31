@@ -6,7 +6,7 @@
   - `OCRM-RESP-PAIRING-CHANNEL-CORE-001`
 - **Reviewer**: `xuyao@ombhrum.com`
 - **Date**: `2026-10-27`
-- **Status**: `wired/verified`
+- **Status**: `implementation=implemented`, `wiring=not-wired`, `verification=not-run`, `acceptance=pending`
 
 ## 1. Upstream Authority & Source Mapping
 
@@ -74,4 +74,13 @@ The following 25 upstream files in `src/pairing/` (3,469 lines total, 100% of th
     - `test_ocrm_pair_o14_safe_keys_and_labels`
     - `test_ocrm_pair_o15_pairing_reply_formatting`
     - `test_ocrm_pair_o16_mobile_pairing_security_policy`
-- **Verification Result**: 13 passed; 0 failed.
+- Historical contract record: 13 tests were recorded as passing in an earlier run; this is not current exact-head Actions, physical-device, packaged UI, or acceptance evidence.
+
+## 5. Current production reachability audit (2026-10-31)
+
+`DevicePairingOwner` is referenced by the Host app, but the current source does
+not prove the complete pairing channel contract: QR/setup-code presentation,
+remote companion transport, physical-device flow, and packaged UI consumers
+remain open. The ledger therefore retains
+`BL-PAIRING-CHANNEL-EXEC-WIRING-001` with `wiring=not-wired`,
+`verification=not-run`, and `acceptance=pending`.
