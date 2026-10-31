@@ -92,6 +92,12 @@ check therefore has no missing patch path. This does not yet prove patch
 content semantics, patch application, registry archive integrity or the
 license/provenance of the patched artifacts.
 
+At `2026-10-31T12:26:00Z`, each of those 17 patch files was fetched from the
+exact commit and hashed as a Git blob. All 17 fetched blob identities matched
+the recursive-tree SHA (`patch_blob_checks=17`, `mismatches=0`). This closes
+the patch path/content-identity check for the exact subject only; it does not
+close application semantics or the external package bytes being patched.
+
 The exact tree contains 26 native/platform declaration inputs across
 `Cargo.toml`, `Cargo.lock`, `Package.swift`, `Package.resolved`, `Gemfile`,
 `Gemfile.lock`, `build.gradle.kts`, and `gradle.properties`, totaling 323,239
