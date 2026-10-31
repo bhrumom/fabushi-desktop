@@ -8,7 +8,7 @@
   - `OCRM-UNIT-MEM-RETRIEVAL-001` (Module `OCRM-M08 Memory, Vault & Knowledge Retrieval`)
   - `OCRM-UNIT-MEM-SHARDING-001` (Module `OCRM-M08 Memory, Vault & Knowledge Retrieval`)
   - `OCRM-UNIT-MEM-SYNTHESIS-001` (Module `OCRM-M08 Memory, Vault & Knowledge Retrieval`)
-- **Core Milestone:** Implemented and integrated full native Rust contract test suite `source/host/tests/openclaw_memory_contract.rs` containing 12 falsifiable test oracles (`OCRM-MEM-O01` through `OCRM-MEM-O12`). Verified single-writer shard isolation, case-insensitive deduplication, strict Markdown fact parsing, precedence resolution, CAS optimistic concurrency control, evidence grounding, tombstone persistence against resurrection, Unicode NFKC FTS query normalization with term truncation, and SQLite content search per-agent capping with recency ordering.
+- **Historical implementation/contract record:** Native Rust contract suite `source/host/tests/openclaw_memory_contract.rs` was authored with 12 falsifiable test oracles (`OCRM-MEM-O01` through `OCRM-MEM-O12`) covering single-writer shard isolation, deduplication, Markdown fact parsing, precedence, CAS concurrency, evidence grounding, tombstones, Unicode FTS normalization, and per-agent search capping. The historical receipt below is not current exact-head verification or live acceptance evidence.
 
 ---
 
@@ -65,11 +65,11 @@ The 12 contract oracles are fully implemented in `source/host/tests/openclaw_mem
 
 ---
 
-## 5. Verification Receipt (GitHub Actions)
+## 5. Historical Verification Receipt (GitHub Actions)
 
 - **Commit:** `40112d048259d6819c99ec987ec8fc885b5974a4`
 - **Workflow Run:** [Run 40223602886](https://github.com/bhrumom/fabushi-desktop/actions/runs/40223602886)
-- **Status:** **Completed (SUCCESS)** across all 6 matrix jobs:
+- **Historical Status:** **Completed (SUCCESS)** across all 6 matrix jobs on the recorded old commit; this receipt is not current exact-head verification:
   - `rust-host`: `completed` (`success`) — All 12 `openclaw_memory_contract` oracles passed cleanly.
   - `renderer`: `completed` (`success`)
   - `platform-worker`: `completed` (`success`)

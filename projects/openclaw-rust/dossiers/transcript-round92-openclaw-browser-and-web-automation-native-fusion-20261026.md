@@ -9,7 +9,7 @@
   - `OCRM-UNIT-BROWSER-SECURITY-001` (Module `OCRM-M11 Browser, Web Search & Fetch Subsystems`)
   - `OCRM-UNIT-WEB-SEARCH-001` (Module `OCRM-M11 Browser, Web Search & Fetch Subsystems`)
   - `OCRM-UNIT-WEB-FETCH-001` (Module `OCRM-M11 Browser, Web Search & Fetch Subsystems`)
-- **Core Milestone:** Implemented and integrated native Rust contract test suite `source/host/tests/openclaw_browser_web_contract.rs` containing 10 falsifiable test oracles (`OCRM-BROWSER-O01` through `OCRM-BROWSER-O10`). Verified granular 20-tool browser dispatch with base64 envelope framing, strict CDP command allowlist (blocking arbitrary `Runtime.evaluate`), concurrency protection via monotonic view generations, workspace file upload isolation, 64 MiB download limits with SHA-256 tracking, robust SSRF protection blocking localhost and RFC 1918 private subnets, userinfo credential stripping, and 100,000-character content bounding.
+- **Historical implementation/contract record:** Native Rust contract suite `source/host/tests/openclaw_browser_web_contract.rs` was authored with 10 falsifiable test oracles (`OCRM-BROWSER-O01` through `OCRM-BROWSER-O10`) covering typed browser dispatch, CDP allowlisting, view generations, workspace upload isolation, download bounds, SSRF protection, credential stripping, and content bounding. The historical receipt below is not current exact-head verification or live acceptance evidence.
 
 ---
 
@@ -72,8 +72,8 @@ The 10 contract oracles are implemented in `source/host/tests/openclaw_browser_w
 
 ---
 
-## 5. Verification Receipt (GitHub Actions)
+## 5. Historical Verification Receipt (GitHub Actions)
 
 - **Commit:** `f757ccd648ebcce6323cfc23a7ef64098952ca2e`
 - **Workflow Run:** [Run 40225041768](https://github.com/bhrumom/fabushi-desktop/actions/runs/40225041768)
-- **Status:** In progress (executing matrix validation across rust-host, platform-worker, renderer, and pressure profilers).
+- **Historical Status:** Recorded as in progress on the old commit; it is not a current run and supplies no current verification or acceptance evidence.
