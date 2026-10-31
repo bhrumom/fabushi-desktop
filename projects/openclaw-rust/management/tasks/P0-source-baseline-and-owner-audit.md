@@ -283,3 +283,20 @@ The root input blobs are unchanged from `d27a8c9d...`, while the exact compare
 shows seven gateway-test/UI session files changed. This carries forward only
 root-input identity; it does not carry forward inventory, semantic reads,
 dependency closure, LFS/integrity, or Actions provenance.
+
+## Fixed-subject lock parser correction (2026-10-31)
+
+The fixed implementation subject's lockfile was re-read with a multi-document
+parser. Its two top-level section sets are separated by a YAML document marker:
+the first is the pnpm package-manager lock and the second is the application
+workspace lock. The application document statically contains 200 importers,
+1,844 packages, 1,846 snapshots, and 6 patched dependencies; its root
+importer matches all 134 root manifest dependency names, and all 3,396 snapshot
+dependency edges resolve after alias handling.
+
+This corrects the prior single-document parser observation; it does not close
+P0-AC02 or promote `dependency_closure_enumerated`, because workspace
+manifest/importer identity, external package archive/integrity/license
+provenance, native/peer semantics, source closure, and exact-head Actions
+evidence remain outstanding. No completion or authority flag changes from this
+correction.

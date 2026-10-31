@@ -525,3 +525,17 @@ subject dependency closure 的直接负证据；在 exact-head Actions 解释/�
 subject 的 canonical lock、完整 importer/package/patch/native/optional/peer/
 integrity/license provenance 前，`dependency_closure_enumerated`、
 `source_closure_ready` 及 authority flags 继续保持 false。
+
+2026-10-31 lock parser correction：上述固定 subject 的 `pnpm-lock.yaml` 并非
+同一 YAML 文档中的重复顶层键，而是第 158 行 `---` 分隔的两个合法文档。
+第一文档是 pnpm 12.15.0 自身的 1 importer/15 packages/15 snapshots；第二
+文档是 OpenClaw 应用 workspace lock，含 200 importers、1,844 packages、
+1,846 snapshots、6 patchedDependencies。对 exact Git object 使用
+`YAML.load_stream` 后，第二文档 root importer 的 75 runtime、58 dev、1
+optional 条目与 root manifest 的 134 个依赖名完全匹配；root resolutions
+全部能落到 package/snapshot key，3,396 条 snapshot dependency edge 在处理
+pnpm alias 后全部可解析。这纠正了单文档 Psych 读取造成的“只有 pnpm lock”
+解释，但不等于 accepted dependency closure；workspace manifest/importer
+身份、patch/native/optional/peer 语义、外部 archive bytes、license/notice
+provenance、source closure 与 exact-head Actions 仍未验证，故所有 closure/
+authority flags 继续保持 `false`。

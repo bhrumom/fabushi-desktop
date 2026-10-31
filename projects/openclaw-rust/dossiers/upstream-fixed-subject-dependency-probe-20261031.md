@@ -73,3 +73,35 @@ the implementation comparison subject, not an accepted source authority.
 No package was installed, downloaded, rehashed, built, or executed by this
 probe. No OCRM workflow, local OCRM check, Rust build/test/formatter/lint,
 push, PR update, or completion flag was changed.
+
+## Parser correction and static graph recheck (2026-10-31)
+
+The earlier wording above treated the repeated section names as an ambiguous
+single YAML document because the first read used a single-document parser. The
+exact lock actually contains two YAML documents: the first document is the
+pnpm `12.15.0` package-manager lock, and the second document is the
+OpenClaw application/workspace lock. The separator is the `---` at line 158;
+the second document starts with its own `lockfileVersion` and contains the
+application `settings`, `overrides`, `patchedDependencies`, `importers`,
+`packages`, and `snapshots` sections.
+
+A read-only `YAML.load_stream` recheck against the exact Git object produced:
+
+| Document | Importers | Packages | Snapshots | Patched dependencies |
+| --- | ---: | ---: | ---: | ---: |
+| pnpm package-manager lock | 1 | 15 | 15 | 0 |
+| OpenClaw application lock | 200 | 1,844 | 1,846 | 6 |
+
+The application root importer has 75 dependencies, 58 devDependencies, and 1
+optional dependency, matching all 134 declared root manifest names. Every root
+importer resolution matched a package/snapshot key, and all 3,396 dependency
+edges in the application snapshot graph resolved after honoring pnpm alias
+values (including platform-optional Codex packages and the domexception
+alias). This is stronger static lock consistency evidence and corrects the
+prior single-document parser interpretation.
+
+The recheck still does not establish accepted dependency closure: workspace
+manifest-to-importer identity, patch/native/optional/peer semantics, external
+archive bytes, license/notice provenance, source closure, and exact-head
+Actions evidence remain unverified. `dependency_closure_enumerated` and
+`source_closure_ready` therefore remain `false`.
