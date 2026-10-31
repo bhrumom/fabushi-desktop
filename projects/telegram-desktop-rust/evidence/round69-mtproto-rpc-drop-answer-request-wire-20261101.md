@@ -28,3 +28,8 @@ This slice does not select a historical outstanding request, schedule a drop, co
 Implementation status: implemented.
 Validation status: not-run.
 Accepted: false.
+
+
+## Source-level compliance readback
+
+Platform-core compliance commit: `510b75727303147a06b6276fa94f7dcd3a7cb31b`. Spec blob: `f8408584b8ac997cad97d213fe90eb18155544f1`. Canonical/desktop protocol blobs remain api `3ec13cd2248e68f55296ed9bbaffa5c10ffce969`, lib `e4705eb4563a087e0bba811948f1244af8f9f5cb`. Request-side R9-R16 and AC7-AC9 are satisfied by source/ownership/blob inspection. AC10 executable validation remains blocked/not-run with `accepted=false`; no historical RPC lifecycle or runtime acceptance is claimed.
