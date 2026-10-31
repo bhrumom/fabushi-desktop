@@ -253,6 +253,15 @@ inventory/dependency-closure artifact、不可变 digest、acceptance receipt �
 OCRM-AC01–AC24 终验记录。相关 dossier 仍属于 discovery/static evidence，不能
 替代 exact-subject evidence envelope；八项 global flags 继续全部为 `false`。
 
+2026-10-31T08:26:10Z 的只读复核又解析到 `openclaw/openclaw` `main` 为
+commit `1d2e685b76b2bb7da964a2d6445cec2e07bf5883`、tree
+`a7f33a87af80c203422677be70f83aebb0857666`。递归 tree 未截断，共 63,996
+entries（61,755 blobs、2,241 directories），无 gitlink；`package.json`、
+`pnpm-lock.yaml`、workspace、license 与 notice 输入身份保持不变。该 subject
+仅更新 `upstream.lock.json::live_candidate`，仍是 discovery-only；旧 inventory、
+依赖闭包、LFS 与 Actions provenance 不得复用，所有 authority/closure/global
+flags 保持不变。
+
 对 `.github/workflows/ocrm-p0-authority.yml` 的只读审阅发现其来源获取步骤使用
 lock 的 `upstream` 字段；已加入 fail-closed preflight，要求该字段与
 `live_candidate` 的 commit/tree 完全一致且 `accepted_for_this_implementation_round`

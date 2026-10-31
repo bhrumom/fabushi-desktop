@@ -347,3 +347,20 @@ The three changed session/cron runtime paths are recorded in
 `dossiers/upstream-current-session-lifecycle-delta-20261031.md`. That dossier is
 discovery evidence only; it does not alter the old-subject ledger or establish
 Rust production wiring.
+
+## Subsequent live recheck — 2026-10-31T08:26:10Z
+
+Read-only `git ls-remote` and GitHub commit/tree API checks resolved
+`openclaw/openclaw` `refs/heads/main` to commit
+`1d2e685b76b2bb7da964a2d6445cec2e07bf5883`, root tree
+`a7f33a87af80c203422677be70f83aebb0857666`. The commit is an upstream Matrix
+durable-final-reply recovery change; this is an upstream drift fact only, not a
+session lifecycle acceptance fact.
+
+The recursive tree response was not truncated and contained 63,996 entries:
+61,755 blobs and 2,241 trees, with no gitlinks. Root package/dependency/license
+inputs remain identity-stable. This supersedes the `1b870b2c...` discovery
+candidate in the lock. It remains discovery-only: no prior inventory,
+dependency closure, LFS result or Actions provenance was relabeled or reused;
+all authority and completion flags remain unchanged. No CI, push, PR update or
+local OCRM executable verification was performed.
