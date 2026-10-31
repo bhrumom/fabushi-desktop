@@ -97,3 +97,17 @@ OCRM build/test/lint, Actions run, push or PR update was performed.
 - `docs/specs/openclaw-rust-equivalence-migration.md`
 - `projects/openclaw-rust/decisions/2026-10-29-crabbox-worker-owner-boundary.md`
 - `projects/openclaw-rust/dossiers/cloud-workers-status-consumer-20261030.md`
+
+## Subject recheck — 2026-10-31T04:08:46Z
+
+The same scoped tree was re-read against the newer live candidate
+`openclaw/openclaw@510e1687e965c1a5e2c372f6622704c88448fb5b`, root tree
+`8260de46bfdd6ac1a78369ebf2343cb255de20e5`. The full recursive tree was not
+truncated; `extensions/crabbox/` still contains `118` entries (`114` blobs,
+`4` directories), and all nine key blob identities listed above are unchanged.
+
+This is an identity-preserving scoped observation, not a closure receipt: the
+candidate's full tree has changed from the earlier `129583af...` subject, so
+the earlier scoped note cannot be relabeled as current full-tree authority.
+The dependency frontier, Actions inventory/closure, LFS/integrity, generated
+inputs, licenses and packaged acceptance remain open for the new subject.
