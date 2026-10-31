@@ -77,6 +77,14 @@ does not establish source import closure, patch application, native/optional
 artifact closure, LFS completeness, license acceptance, or the Fabushi OCRM
 authority contract.
 
+The SPDX projection has purls for all 1,704 packages. Its relationship set is
+1,839 `DEPENDS_ON` plus one `DESCRIBES`, and every package SPDXID appears as a
+relationship target in the projection. License fields remain materially
+incomplete: only one package has `licenseDeclared`, 1,609 have
+`licenseConcluded`, and 95 have no `licenseConcluded` value. This is direct
+evidence that the SBOM cannot by itself satisfy the project's license/NOTICE
+closure gate.
+
 The GitHub Actions runs endpoint returned 262 matching run records for this
 head query, but the captured response did not provide a complete exact-H CI
 receipt for the required inventory/dependency-closure gates. No workflow was
