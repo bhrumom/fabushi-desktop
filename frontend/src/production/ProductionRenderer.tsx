@@ -4,6 +4,7 @@ import computerEntrypoint from "../recovered/features/computer/overlay/entrypoin
 import { ConversationComposer } from "../recovered/features/conversation/workspace/composer";
 import { commitComposerAttachments, stageComposerFiles } from "../recovered/features/conversation/workspace/desktop";
 import type { ComposerDraft, ConversationTranscriptEntry, DraftAttachment, TranscriptMessage } from "../recovered/features/conversation/workspace/model";
+import { beginHumanMessageDelete, beginHumanMessageEdit, canDeleteHumanMessage, canEditHumanMessage, isAuthoritativeHumanMessageMutationSettlement, markHumanMessageEditEditing, markHumanMessageEditSaving, settleHumanMessageMutation, updateHumanMessageEditDraft, type HumanMessageDeleteTarget, type HumanMessageEditState } from "../recovered/features/conversation/workspace/human-message-mutations";
 import { createComposerDraftPersistence, createComposerDraftStateStore } from "../recovered/features/conversation/workspace/draft-state";
 import { createComposerSubmissionQueue, type ComposerSubmission, type ComposerSubmissionQueue } from "../recovered/features/conversation/workspace/submission";
 import { createSendJournalApprovalLifecycle } from "../recovered/features/conversation/workspace/send-journal-approval-lifecycle";
@@ -990,6 +991,9 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
   const [accountMenuOpen, setAccountMenuOpen] = useState(false);
   const [newAgentDialogOpen, setNewAgentDialogOpen] = useState(false);
   const [forwardTarget, setForwardTarget] = useState<{ sourceConversationId: string; message: TranscriptMessage } | null>(null);
+  const [humanMessageEditState, setHumanMessageEditState] = useState<HumanMessageEditState | null>(null);
+  const [humanMessageDeleteTarget, setHumanMessageDeleteTarget] = useState<HumanMessageDeleteTarget | null>(null);
+  const [humanMessageDeletePending, setHumanMessageDeletePending] = useState(false);
   const [newAgentName, setNewAgentName] = useState("New chat");
   const [newAgentDescription, setNewAgentDescription] = useState("");
   const [newAgentAvatarShape, setNewAgentAvatarShape] = useState<(typeof AVATAR_SHAPES)[number]>("wedge");
@@ -1043,6 +1047,7 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
   const accountRef = useRef<CursorAuthStatus | null>(account);
   const spreadsheetTriggerRef = useRef<HTMLElement | null>(null);
   const avatarEditorTriggerRef = useRef<HTMLButtonElement | null>(null);
+  const humanMessageDeleteConfirmRef = useRef<HTMLButtonElement | null>(null);
   const conversationOutlineReturnFocusRef = useRef<HTMLElement | null>(null);
   const asyncTasksReturnFocusRef = useRef<HTMLElement | null>(null);
   const [globalShortcutController] = useState(() => createGlobalKeyboardShortcutController([]));
@@ -1383,6 +1388,14 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
     ...reactionRootCallbacks
   }));
   const activeIsHuman = humanConversations.some((conversation) => conversation.id === activeAgentId);
+  const activeHumanMessageOwnerId = activeIsHuman && typeof activeAgent?.raw.localHumanId === "string"
+    ? activeAgent.raw.localHumanId
+    : null;
+  useEffect(() => {
+    setHumanMessageEditState((current) => current != null && current.conversationId !== activeAgentId ? null : current);
+    setHumanMessageDeleteTarget((current) => current != null && current.conversationId !== activeAgentId ? null : current);
+    setHumanMessageDeletePending(false);
+  }, [activeAgentId]);
   const humanReactionTransport = useMemo(() => activeIsHuman && client != null ? {
     async reactToMessage(input: { entryId: string; emoji: string; agentId: string }) {
       const conversation = humanConversationsRef.current.find((candidate) => candidate.id === input.agentId);
@@ -2285,16 +2298,58 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
     void linkMetadataProvider.setUrls(paletteLinks.map((link) => link.url));
   }, [linkMetadataProvider, paletteLinks]);
   const baseDraft = activeDraftSnapshot.draft ?? activeDraftSnapshot.recovery ?? EMPTY_DRAFT;
-  const draft = replyThreadController.applyReplyToDraft(baseDraft);
+  const activeHumanMessageEdit = humanMessageEditState?.conversationId === activeAgentId ? humanMessageEditState : null;
+  const draft = activeHumanMessageEdit?.draft ?? replyThreadController.applyReplyToDraft(baseDraft);
   const clearReplyTarget = useCallback(() => {
     replyThreadController.clearReply();
     if (activeAgentId.length > 0 && activeDraftSnapshot.draft != null) {
       composerDraftStore.setDraft(activeAgentId, replyThreadController.clearReplyFromDraft(activeDraftSnapshot.draft));
     }
   }, [activeAgentId, activeDraftSnapshot.draft, composerDraftStore, replyThreadController]);
-  const replyTarget: ComposerReplyTarget | undefined = replySelection == null
+  const replyTarget: ComposerReplyTarget | undefined = activeHumanMessageEdit != null || replySelection == null
     ? undefined
     : { targetId: replySelection.targetId, preview: replySelection.preview };
+
+  const startHumanMessageEdit = useCallback((entry: TranscriptMessage) => {
+    if (!activeIsHuman || activeAgent == null || !canEditHumanMessage(entry, activeHumanMessageOwnerId)) return;
+    const next = beginHumanMessageEdit(activeAgent.id, activeHumanMessageOwnerId, entry, makeClientNonce());
+    if (next == null) return;
+    replyThreadController.clearReply();
+    setForwardTarget(null);
+    setHumanMessageDeleteTarget(null);
+    setHumanMessageEditState(next);
+    setNotice(null);
+    const focusComposer = () => document.querySelector<HTMLElement>(".sand-prompt-form [role='textbox'], .sand-prompt-form textarea")?.focus();
+    if (typeof requestAnimationFrame === "function") requestAnimationFrame(focusComposer);
+    else focusComposer();
+  }, [activeAgent, activeHumanMessageOwnerId, activeIsHuman, replyThreadController]);
+
+  const requestHumanMessageDelete = useCallback((entry: TranscriptMessage) => {
+    if (!activeIsHuman || activeAgent == null || !canDeleteHumanMessage(entry, activeHumanMessageOwnerId)) return;
+    const next = beginHumanMessageDelete(activeAgent.id, activeHumanMessageOwnerId, entry, makeClientNonce());
+    if (next == null) return;
+    setHumanMessageEditState(null);
+    setHumanMessageDeleteTarget(next);
+    setHumanMessageDeletePending(false);
+  }, [activeAgent, activeHumanMessageOwnerId, activeIsHuman]);
+
+  const cancelHumanMessageEdit = useCallback(() => {
+    if (activeHumanMessageEdit?.phase === "saving") return;
+    setHumanMessageEditState((current) => current?.conversationId === activeAgentId ? null : current);
+  }, [activeAgentId, activeHumanMessageEdit?.phase]);
+
+  const updateComposerDraft = useCallback((value: ComposerDraft) => {
+    if (activeHumanMessageEdit != null) {
+      setHumanMessageEditState((current) => current != null
+        && current.conversationId === activeHumanMessageEdit.conversationId
+        && current.entryId === activeHumanMessageEdit.entryId
+        ? updateHumanMessageEditDraft(current, value)
+        : current);
+      return;
+    }
+    if (activeAgentId.length > 0) composerDraftStore.setDraft(activeAgentId, value);
+  }, [activeAgentId, activeHumanMessageEdit, composerDraftStore]);
+
   const transcribeAudio = useCallback((audio: Uint8Array, mimeType: string, language?: string) => bridge.transcribeAudio(audio, mimeType, language), [bridge]);
   const resolveAttachmentMedia = useCallback((source: string) => bridge.resolveAttachmentMedia(source), [bridge]);
   const computer = useComputerExperience({ activeAgentId: activeAgent == null || activeAgent.isGroup || activeIsHuman ? null : activeAgent.id, bridge, client });
@@ -3489,7 +3544,7 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
   }, [account?.kind, asyncTasksAgentId, closeAsyncTasks, closeFindInChat, commandPaletteOpen, findInChatController, findInChatOpen, globalShortcutController, overlay]);
 
   const stageFiles = async (files: File[]) => {
-    if (activeAgent == null || bridge == null) return;
+    if (activeHumanMessageEdit != null || activeAgent == null || bridge == null) return;
     const stagingAgentId = activeAgent.id;
     const stagingAccountSlot = acknowledgementScopeRef.current.accountSlot;
     setBusy(true);
@@ -3515,7 +3570,99 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
     }
   };
 
+  const saveHumanMessageEdit = useCallback(async (state: HumanMessageEditState) => {
+    if (client == null || state.phase === "saving") return;
+    const text = state.draft.prompt.trim();
+    if (text.length === 0) return;
+    if (text === state.originalText.trim()) {
+      setHumanMessageEditState((current) => current != null
+        && current.conversationId === state.conversationId
+        && current.entryId === state.entryId
+        ? null
+        : current);
+      return;
+    }
+    setHumanMessageEditState((current) => current != null
+      && current.conversationId === state.conversationId
+      && current.entryId === state.entryId
+      ? markHumanMessageEditSaving(current)
+      : current);
+    try {
+      const conversation = humanConversationsRef.current.find((candidate) => candidate.id === state.conversationId);
+      if (conversation == null) throw new Error("Human edit conversation is unavailable");
+      const value = await client.call("editHumanMessage", {
+        conversationId: state.conversationId,
+        entryId: state.entryId,
+        text,
+        operationId: state.operationId,
+      });
+      const projected = projectTranscriptEntry(value, 0, conversation.name, conversation.id);
+      if (projected == null || projected.kind !== "message"
+        || !isAuthoritativeHumanMessageMutationSettlement(state, projected, "edit")) {
+        throw new Error("Human edit did not return a newer authoritative settlement");
+      }
+      setEntriesByAgent((current) => {
+        const existing = current[state.conversationId] ?? [];
+        const next = settleHumanMessageMutation(existing, projected);
+        return next === existing ? current : { ...current, [state.conversationId]: next };
+      });
+      setHumanMessageEditState((current) => current != null
+        && current.conversationId === state.conversationId
+        && current.entryId === state.entryId
+        ? null
+        : current);
+      setNotice(null);
+    } catch (error) {
+      setHumanMessageEditState((current) => current != null
+        && current.conversationId === state.conversationId
+        && current.entryId === state.entryId
+        ? markHumanMessageEditEditing(current)
+        : current);
+      setNotice(error instanceof Error ? error.message : String(error));
+    }
+  }, [client]);
+
+  const confirmHumanMessageDelete = useCallback(async () => {
+    const target = humanMessageDeleteTarget;
+    if (client == null || target == null || humanMessageDeletePending) return;
+    setHumanMessageDeletePending(true);
+    try {
+      const conversation = humanConversationsRef.current.find((candidate) => candidate.id === target.conversationId);
+      if (conversation == null) throw new Error("Human delete conversation is unavailable");
+      const value = await client.call("deleteHumanMessage", {
+        conversationId: target.conversationId,
+        entryId: target.entryId,
+        operationId: target.operationId,
+      });
+      const projected = projectTranscriptEntry(value, 0, conversation.name, conversation.id);
+      if (projected == null || projected.kind !== "message"
+        || !isAuthoritativeHumanMessageMutationSettlement(target, projected, "delete")) {
+        throw new Error("Human delete did not return a newer authoritative tombstone");
+      }
+      setEntriesByAgent((current) => {
+        const existing = current[target.conversationId] ?? [];
+        const next = settleHumanMessageMutation(existing, projected);
+        return next === existing ? current : { ...current, [target.conversationId]: next };
+      });
+      setHumanMessageEditState((current) => current != null
+        && current.conversationId === target.conversationId
+        && current.entryId === target.entryId
+        ? null
+        : current);
+      setHumanMessageDeleteTarget(null);
+      setNotice(null);
+    } catch (error) {
+      setNotice(error instanceof Error ? error.message : String(error));
+    } finally {
+      setHumanMessageDeletePending(false);
+    }
+  }, [client, humanMessageDeletePending, humanMessageDeleteTarget]);
+
   const submit = () => {
+    if (activeHumanMessageEdit != null) {
+      void saveHumanMessageEdit(activeHumanMessageEdit);
+      return;
+    }
     if (activeAgent == null || client == null) return;
     const liveDraftSnapshot = activeDraftSnapshotStore.get();
     const liveBaseDraft = liveDraftSnapshot.draft ?? liveDraftSnapshot.recovery ?? EMPTY_DRAFT;
@@ -4150,7 +4297,10 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
                 isTransportDown={transport === "down"}
                 loadOlder={loadOlderTranscript}
                 onCancelQueuedSend={cancelQueuedSend}
+                messageMutationOwnerId={activeHumanMessageOwnerId ?? undefined}
                 onDeleteFailedSend={removeTranscriptMessage}
+                onDeleteMessage={activeIsHuman ? requestHumanMessageDelete : undefined}
+                onEditMessage={activeIsHuman ? startHumanMessageEdit : undefined}
                 onOpenReply={(targetId) => replyThreadController.navigate(targetId)}
                 onForward={activeIsHuman ? (entry) => setForwardTarget({ sourceConversationId: activeAgent.id, message: entry }) : undefined}
                 onReply={(entry) => { replyThreadController.selectReply(entry.id); }}
@@ -4175,7 +4325,7 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
           </main>
           <div className="sand-chat-input-dock">
             {activeIsHuman ? null : localToolPermissionDock}
-            <ConversationComposer acceptedSendGeneration={composerClearGeneration} disabled={busy || client == null} draft={draft} editorProviders={activeIsHuman ? undefined : editorProviders} notice={notice} onChange={(value) => composerDraftStore.setDraft(activeAgent.id, value)} onClearReplyTarget={clearReplyTarget} onRemoveAttachment={removeAttachment} onStageFiles={stageFiles} onSubmit={submit} placeholder={`Message ${activeAgent.name}`} replyTarget={replyTarget} scopeKey={`${transcriptAccountSlot ?? "signed-out"}:${activeAgent.id}`} transcribeAudio={transcribeAudio} />
+            <ConversationComposer acceptedSendGeneration={composerClearGeneration} disabled={busy || client == null || activeHumanMessageEdit?.phase === "saving"} draft={draft} editTarget={activeHumanMessageEdit == null ? undefined : { entryId: activeHumanMessageEdit.entryId, preview: activeHumanMessageEdit.originalText }} editorProviders={activeIsHuman ? undefined : editorProviders} notice={notice} onChange={updateComposerDraft} onClearEditTarget={cancelHumanMessageEdit} onClearReplyTarget={clearReplyTarget} onRemoveAttachment={removeAttachment} onStageFiles={stageFiles} onSubmit={submit} placeholder={`Message ${activeAgent.name}`} replyTarget={replyTarget} scopeKey={`${transcriptAccountSlot ?? "signed-out"}:${activeAgent.id}:${activeHumanMessageEdit == null ? "compose" : `edit:${activeHumanMessageEdit.entryId}`}`} transcribeAudio={transcribeAudio} />
           </div>
         </div>}
       </div>
@@ -4189,6 +4339,31 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
         searchRecipients={searchForwardRecipients}
         sourceConversationId={forwardTarget?.sourceConversationId ?? null}
       />
+
+      <OverlayDialog
+        className="fabushi-forward-dialog"
+        initialFocusRef={humanMessageDeleteConfirmRef}
+        label="Delete message"
+        onClose={() => { if (!humanMessageDeletePending) setHumanMessageDeleteTarget(null); }}
+        open={humanMessageDeleteTarget != null}
+      >
+        <form onSubmit={(event) => { event.preventDefault(); void confirmHumanMessageDelete(); }}>
+          <header>
+            <h2>Delete message?</h2>
+            <p>This replaces your sent message with its canonical deleted-message tombstone. This action cannot be undone.</p>
+          </header>
+          <div className="fabushi-forward-dialog__body">
+            <p>{humanMessageDeleteTarget?.preview.length ? `“${humanMessageDeleteTarget.preview}”` : "This message has no text preview."}</p>
+          </div>
+          <footer>
+            <span aria-live="polite">{humanMessageDeletePending ? "Deleting…" : "Only messages sent by you can be deleted."}</span>
+            <SandButton disabled={humanMessageDeletePending} onClick={() => setHumanMessageDeleteTarget(null)} size="sm" variant="secondary">Cancel</SandButton>
+            <SandButton disabled={humanMessageDeletePending} pending={humanMessageDeletePending} ref={humanMessageDeleteConfirmRef} sentiment="danger" size="sm" type="submit">
+              {humanMessageDeletePending ? "Deleting…" : "Delete"}
+            </SandButton>
+          </footer>
+        </form>
+      </OverlayDialog>
 
       <OverlayDialog
         className="sand-new-agent-dialog"

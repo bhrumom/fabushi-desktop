@@ -29,6 +29,28 @@ function ComposerGlyph({ name, hidden = false }: { readonly name: "mic" | "arrow
 // @evidence src/app/dist/renderer/assets/index-UbX-y3il.js#byteOffset=4738296 (e9n prompt editor; UTF-8 region SHA-256 0a96b805946245180330a9bffda0053e11015e9c8fe850dfa62361ab85acee35)
 // @evidence recovered/frontend/app/assets/index-UbX-y3il.js#byteOffset=5948419 (e9n prompt editor; UTF-8 region SHA-256 6f8b718ba4e43704baea5078c9498184b98f82a3ad84d47bf1e5a9f516988f07)
 
+export interface ComposerEditTarget {
+  readonly entryId: string;
+  readonly preview: string;
+}
+
+function ComposerEditPill({ target, onClear }: { target: ComposerEditTarget; onClear(): void }) {
+  const labelId = `sand-composer-edit-${encodeURIComponent(target.entryId)}`;
+  const preview = target.preview.replace(/\s+/gu, " ").trim();
+  const bounded = preview.length <= 72 ? preview : `${preview.slice(0, 71).trimEnd()}…`;
+  return (
+    <div aria-labelledby={labelId} className="sand-prompt-reply-pill sand-1g77sc7 sand-78zum5 sand-6s0dn4 sand-17d4w8g sand-h8yej3 sand-euugli sand-1iorvi4 sand-mzs88n sand-jkvuk6 sand-163pfp sand-1q4ynmn sand-i07v4r sand-19aaqeu sand-fc7y3v sand-1yxxptd" role="region">
+      <span aria-hidden="true" className="sand-prompt-reply-pill__lead sand-2lah0s sand-4b2ntj" data-icon-name="edit" />
+      <span className="sand-prompt-reply-pill__body sand-3nfvp2 sand-6s0dn4 sand-17d4w8g sand-euugli sand-1iyjqo2 sand-b3r6kr" id={labelId}>
+        <span className="sand-reply-quote__label">{bounded.length === 0 ? "Editing message" : `Editing message · ${bounded}`}</span>
+      </span>
+      <button aria-label="Cancel edit" className="sand-prompt-reply-pill__clear sand-2lah0s sand-3nfvp2 sand-6s0dn4 sand-l56j7k sand-w4jnvo sand-1qx5ct2 sand-exx8yu sand-1xpa7k sand-18d9i69 sand-1uhho1l sand-c342km sand-ng3xce sand-149ho13 sand-jbqb8w sand-1kj6vsg sand-4b2ntj sand-7gh5u8 sand-1ypdohk sand-1ge13bo" onClick={onClear} type="button">
+        <span aria-hidden="true" data-icon-name="close" />
+      </button>
+    </div>
+  );
+}
+
 export interface ConversationComposerProps {
   draft: ComposerDraft;
   disabled?: boolean;
@@ -41,6 +63,8 @@ export interface ConversationComposerProps {
   onRemoveAttachment?(attachment: DraftAttachment): void | Promise<void>;
   replyTarget?: ComposerReplyTarget;
   onClearReplyTarget?(): void;
+  editTarget?: ComposerEditTarget;
+  onClearEditTarget?(): void;
   editorProviders?: PromptEditorProviders;
   scopeKey?: string;
   acceptedSendGeneration?: number;
@@ -68,18 +92,19 @@ export function selectComposerFiles(files: readonly File[], existingCount: numbe
   return files.slice(0, remaining);
 }
 
-export function ConversationComposer({ acceptedSendGeneration = 0, draft, disabled = false, notice, placeholder = "Ask anything, or drop a file.", transcribeAudio, onChange, onClearReplyTarget, onRemoveAttachment, onStageFiles, onSubmit, replyTarget, editorProviders, scopeKey }: ConversationComposerProps) {
+export function ConversationComposer({ acceptedSendGeneration = 0, draft, disabled = false, notice, placeholder = "Ask anything, or drop a file.", transcribeAudio, onChange, onClearEditTarget, onClearReplyTarget, onRemoveAttachment, onStageFiles, onSubmit, editTarget, replyTarget, editorProviders, scopeKey }: ConversationComposerProps) {
   const fileInput = useRef<HTMLInputElement>(null);
   const editorControls = useRef<PromptEditorControls | null>(null);
   const dragDepth = useRef(0);
   const [isDragOver, setIsDragOver] = useState(false);
   const draftRef = useRef(draft);
   const hasPayload = !isComposerDraftEmpty(draft);
+  const isEditing = editTarget != null;
   draftRef.current = draft;
   const voiceOptions = useMemo(() => ({ transcribe: transcribeAudio }), [transcribeAudio]);
   const voice = useVoiceSession(voiceOptions, scopeKey);
   const voiceBusy = voice.isRecording || voice.isProcessing || voice.isActivating;
-  const canSend = hasPayload && !disabled && !voiceBusy;
+  const canSend = hasPayload && !disabled && !voiceBusy && (!isEditing || draft.prompt.trim().length > 0);
   const atLimit = draft.attachments.length >= COMPOSER_ATTACHMENT_LIMIT;
 
   useEffect(() => voice.controller.onFinal((text) => {
@@ -117,9 +142,10 @@ export function ConversationComposer({ acceptedSendGeneration = 0, draft, disabl
   }, [onChange]);
 
   const stageFiles = useCallback((files: readonly File[]) => {
+    if (isEditing) return;
     const accepted = selectComposerFiles(files, draft.attachments.length);
     if (accepted.length > 0) void onStageFiles(accepted);
-  }, [draft.attachments.length, onStageFiles]);
+  }, [draft.attachments.length, isEditing, onStageFiles]);
 
   const stageSelectedFiles = (event: ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(event.currentTarget.files ?? []);
@@ -162,7 +188,8 @@ export function ConversationComposer({ acceptedSendGeneration = 0, draft, disabl
       <div className="sand-prompt-shell" data-expanded={hasPayload || undefined} onDragEnter={onDragEnter} onDragLeave={onDragLeave} onDragOver={onDragOver} onDrop={onDrop}>
         {isDragOver ? <div aria-hidden="true" className="sand-chat-drop-overlay"><div className="sand-chat-drop-overlay__badge">Drop files to add to chat</div></div> : null}
         {notice ? <p aria-live="polite" className="sand-prompt-attachment-notice" role="status">{notice}</p> : null}
-        {replyTarget == null || onClearReplyTarget == null ? null : <ComposerReplyPill onClear={onClearReplyTarget} target={replyTarget} />}
+        {editTarget == null || onClearEditTarget == null ? null : <ComposerEditPill onClear={onClearEditTarget} target={editTarget} />}
+        {isEditing || replyTarget == null || onClearReplyTarget == null ? null : <ComposerReplyPill onClear={onClearReplyTarget} target={replyTarget} />}
         {draft.attachments.length > 0 ? (
           <div aria-label="Attachments" className="sand-prompt-attachments" role="list">
             {draft.attachments.map((attachment, index) => {
@@ -185,11 +212,12 @@ export function ConversationComposer({ acceptedSendGeneration = 0, draft, disabl
           onControls={receiveEditorControls}
           onEscape={() => {
             if (voiceBusy) cancelVoiceAndRefocus();
+            else if (isEditing && onClearEditTarget != null) onClearEditTarget();
             else editorControls.current?.blur();
           }}
           onPasteFiles={stageFiles}
           onSubmit={onSubmit}
-          placeholder={replyTarget == null ? placeholder : replyComposerPlaceholder(replyTarget.preview)}
+          placeholder={isEditing ? "Edit message…" : replyTarget == null ? placeholder : replyComposerPlaceholder(replyTarget.preview)}
           prompt={draft.prompt}
           providers={editorProviders}
           richText={draft.richText}
@@ -197,7 +225,7 @@ export function ConversationComposer({ acceptedSendGeneration = 0, draft, disabl
         />
         {voice.isRecording || voice.isActivating ? <span aria-live="polite" className="sand-prompt-voice-status" role="status">Listening…</span> : null}
         <div className="sand-prompt-actions-row">
-          <SandIconButton aria-label="Attach file" className={PROMPT_ATTACH_CLASS} disabled={disabled || atLimit || voiceBusy} icon="plus" onClick={() => fileInput.current?.click()} shape="circle" size="lg" type="button" variant="default" />
+          <SandIconButton aria-label="Attach file" className={PROMPT_ATTACH_CLASS} disabled={disabled || atLimit || voiceBusy || isEditing} icon="plus" onClick={() => fileInput.current?.click()} shape="circle" size="lg" type="button" variant="default" />
           <span className="sand-prompt-actions-trailing sand-prompt-cta-cluster sand-78zum5 sand-6s0dn4 sand-2lah0s">
             {voice.isRecording ? <button aria-label="Stop dictation" className={RECORDING_CHIP_CLASS} onClick={() => voice.handleStopClick()} onKeyDown={(event) => {
               if (event.key === "Escape") {
@@ -209,8 +237,8 @@ export function ConversationComposer({ acceptedSendGeneration = 0, draft, disabl
               <span aria-hidden="true" className="sand-recording-chip__timer sand-2lah0s sand-fc7y3v sand-1yxxptd sand-1bignsj sand-ss6m8b">{voice.recordingDuration}</span>
               <span className="sand-recording-chip__waveform sand-1xp8n7a sand-18gnavp sand-2lah0s sand-78zum5 sand-6s0dn4"><VoiceWaveform stream={voice.stream} /></span>
             </button> : voice.isProcessing ? <span aria-label="Transcribing voice input…" className="sand-prompt-voice-processing sand-2lah0s sand-16w9d4f sand-1th6cxs sand-78zum5 sand-6s0dn4 sand-l56j7k" role="status"><SandSpinner ariaLabel="Transcribing voice input…" size={18} />Transcribing…</span> : <>
-              {hasPayload ? <SandIconButton aria-label="Start voice input" className={PROMPT_MIC_PAYLOAD_CLASS} disabled={disabled || voiceBusy} icon="mic" onClick={() => voice.handleMicClick()} shape="circle" size="lg" type="button" variant="default" /> : null}
-              {hasPayload ? <button aria-label="Send message" className={PROMPT_SEND_CLASS} disabled={!canSend} type="submit"><span className="sand-1n2onr6 sand-1kky2od sand-lup9mm"><ComposerGlyph hidden={hasPayload} name="mic" /><ComposerGlyph hidden={!hasPayload} name="arrow-up" /></span></button> : <SandIconButton aria-label="Start voice input" className={PROMPT_MIC_EMPTY_CLASS} disabled={disabled} icon="mic" onClick={() => voice.handleMicClick()} shape="circle" size="lg" type="button" variant="default" />}
+              {hasPayload && !isEditing ? <SandIconButton aria-label="Start voice input" className={PROMPT_MIC_PAYLOAD_CLASS} disabled={disabled || voiceBusy} icon="mic" onClick={() => voice.handleMicClick()} shape="circle" size="lg" type="button" variant="default" /> : null}
+              {hasPayload || isEditing ? <button aria-label={isEditing ? "Save edited message" : "Send message"} className={PROMPT_SEND_CLASS} disabled={!canSend} type="submit"><span className="sand-1n2onr6 sand-1kky2od sand-lup9mm">{isEditing ? <><ComposerGlyph hidden name="mic" /><ComposerGlyph name="arrow-up" /></> : <><ComposerGlyph hidden={hasPayload} name="mic" /><ComposerGlyph hidden={!hasPayload} name="arrow-up" /></>}</span></button> : <SandIconButton aria-label="Start voice input" className={PROMPT_MIC_EMPTY_CLASS} disabled={disabled} icon="mic" onClick={() => voice.handleMicClick()} shape="circle" size="lg" type="button" variant="default" />}
             </>}
           </span>
         </div>

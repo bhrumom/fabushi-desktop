@@ -2357,6 +2357,7 @@ impl ProductionSessionWorkers {
                 "kind": "human",
                 "title": existing_title,
                 "participantIds": metadata.get("participantIds").cloned().unwrap_or_else(|| serde_json::json!([])),
+                "localHumanId": local_human_id,
             }));
         }
         let conversation_dir = db_path
@@ -2397,6 +2398,7 @@ impl ProductionSessionWorkers {
             "kind": "human",
             "title": display_title,
             "participantIds": [local_human_id, peer_human_id],
+            "localHumanId": local_human_id,
         }))
     }
 
@@ -2436,6 +2438,7 @@ impl ProductionSessionWorkers {
     }
 
     pub fn list_human_conversations(&self) -> Result<Vec<serde_json::Value>, String> {
+        let local_human_id = self.local_human_id()?.to_string();
         let root = get_native_conversations_root(&self.agents_root);
         let entries = match fs::read_dir(&root) {
             Ok(entries) => entries.filter_map(Result::ok).collect::<Vec<_>>(),
@@ -2472,6 +2475,7 @@ impl ProductionSessionWorkers {
                 "kind": "human",
                 "title": title,
                 "participantIds": participant_ids,
+                "localHumanId": local_human_id.clone(),
                 "updatedAt": updated_at,
             }));
         }
