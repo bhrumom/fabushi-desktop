@@ -79,7 +79,7 @@ production sides as absent; the responsibility remains
 `wiring=not-wired`, `verification=not-run`, and `acceptance=pending` under
 `BL-PLUGIN-SDK-APPROVAL-WIRING-001`.
 
-## 3. Native Rust Implementation & Equivalence
+## 4. Native Rust Implementation & Equivalence
 - **Implementation Module**: [`source/host/src/extensions/plugin_sdk/approval_security.rs`](file:///Users/bhrum/.gemini/antigravity/scratch/fabushi-desktop/source/host/src/extensions/plugin_sdk/approval_security.rs).
 - **Test Oracles**:
   - `source/host/tests/openclaw_plugin_sdk_contract.rs`:
