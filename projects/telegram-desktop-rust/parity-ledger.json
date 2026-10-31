@@ -20533,7 +20533,9 @@
         "desktop-implementation-commit:59e08389bae4ab2cdcbb3f67808da44dff452ca9",
         "path:source/mahayana/mahayana-rs/providers/telegram-protocol/src/api.rs@3e3b250b709ce2f307f896dda6d1c2da55559f7b",
         "path:source/mahayana/mahayana-rs/providers/telegram-protocol/src/lib.rs@2d48c2fe1c677b4b4672e7e76d8bd0a29a7ac003",
-        "path:source/mahayana/mahayana-rs/providers/telegram-protocol/tests/protocol_contract.rs@bf5aeb85f10baeeb7e645a660fd3bf26259e5989"
+        "path:source/mahayana/mahayana-rs/providers/telegram-protocol/tests/protocol_contract.rs@bf5aeb85f10baeeb7e645a660fd3bf26259e5989",
+        "platform-core-spec-compliance-commit:492c822360c7dacedef656226386126a41ba5d91",
+        "platform-core-spec-blob:e9cddb463c32ef9c4483a1a7bd57c130fe260f19"
       ],
       "test_evidence": [
         "platform-core native/telegram-protocol/tests/protocol_contract.rs exact req_pq_multi layout/raw-nonce/begin-body contracts authored, not run",
@@ -20657,7 +20659,7 @@
       "acceptance_reviewer": null,
       "reviewer": null,
       "license_and_provenance": "Behavioral responsibility is anchored to fixed-U telegramdesktop/tdesktop Telegram/SourceFiles/mtproto/scheme/mtproto.tl@76225965bfc794388db241f3f760db8ab79e84f8 and shipping DcKeyCreator::pqSend in Telegram/SourceFiles/mtproto/details/mtproto_dc_key_creator.cpp@13c57454f14b814b5923ea253048fb881ad8cf03. session_private.cpp@13cbc76ec723386027b5b4dcac79999b791c4614 was reread as adjacent context and has no req_pq_multi branch. The implementation is source-neutral Rust and copies no upstream C++ implementation.",
-      "notes": "Stage A implementation only. This row closes exact req_pq_multi request-body serialization and minimal reuse from the pre-existing AuthKeyHandshake::begin path without expanding handshake lifecycle ownership. Connection probing/racing, nonce/message-id generation, not-secure framing, send/retry/timeout, response correlation/application, broader auth-key creation/persistence/session lifecycle and multi-request history remain fail-closed. Global unknown/unread source-entry counts remain unchanged because this is a newly mapped responsibility slice within already-open fixed-U source coverage. Contracts are authored but not executed; validation_status=not-run and accepted=false.",
+      "notes": "Stage A implementation only. This row closes exact req_pq_multi request-body serialization and minimal reuse from the pre-existing AuthKeyHandshake::begin path without expanding handshake lifecycle ownership. Connection probing/racing, nonce/message-id generation, not-secure framing, send/retry/timeout, response correlation/application, broader auth-key creation/persistence/session lifecycle and multi-request history remain fail-closed. Global unknown/unread source-entry counts remain unchanged because this is a newly mapped responsibility slice within already-open fixed-U source coverage. Contracts are authored but not executed; validation_status=not-run and accepted=false. Source-level compliance is recorded at platform-core commit 492c822360c7dacedef656226386126a41ba5d91; R1-R7 are satisfied at source/ownership/bookkeeping level while executable Stage-B validation remains not-run.",
       "test_execution_evidence": [],
       "validation_status": "not-run",
       "accepted": false
