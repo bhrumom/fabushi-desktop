@@ -101,6 +101,18 @@ entries（61,499 blobs、2,241 directories）。它 supersede 以上更早的 li
 LFS/完整性、许可证和 evidence envelope；不得复用旧 candidate 的 closure，
 也不得提升任何 global flag。
 
+随后只读核对发现 OpenClaw `main` 漂移到 commit
+`298546d88934bf05bc7e208d13bf6ce2c538e3f2`、tree
+`120f973ab7da856b4bc1c545c437dd94d35ef9eb`。GitHub recursive-tree API 返回
+`truncated=false`，共 63,847 条 tree entry（61,606 blobs、2,241 directories）。
+当前候选根输入 blob 为 `package.json`=`5e468c9625b7670af23096df4588fd5e066c58a8`、
+`pnpm-lock.yaml`=`df897f3361f5968912f27b31971a60c08a1132b4`、
+`pnpm-workspace.yaml`=`32ce4d83de4aac6a1e3665baba09a3aa9582960c`；其余
+`.gitattributes`、LICENSE、THIRD_PARTY_NOTICES 与上一候选相同，根目录仍无
+`.gitmodules`。这仍是 discovery-only：未取得该 exact subject 的 Actions
+inventory、依赖闭包、LFS/完整性、生成输入、许可证和 evidence envelope，旧
+inventory/shards/closure 不得复用或编辑性重标。
+
 此前只读核对曾发现 OpenClaw `main` 漂移到 commit
 `89734994c6c9d3572e2927be0cdae8d7da1998ca`、root tree
 `bcb3914c8418e2f92927dd3e60c635fc4345a858`；递归 tree API 返回
@@ -564,13 +576,13 @@ P0 通常只能建立前两个 flags 的正面证据；完整适用责任映射�
 
 - [historical live candidate c49 commit / tree](https://github.com/openclaw/openclaw/commit/c49e07385f8d17601efbed7746381213d5326ba9)（只读 discovery；已被后续候选 supersede）。
 - [historical live candidate d67 commit / tree](https://github.com/openclaw/openclaw/commit/d67aa608643f6583a6c6102c522043794aafe064)（只读 discovery；已被后续候选 supersede）。
-- [current observed live candidate commit / tree](https://github.com/openclaw/openclaw/commit/2c157ed06dff5032da1093cbb6745efeff2b6f33)（只读 discovery；未取得本轮 Actions authority，不能复用旧 inventory）。
+- [current observed live candidate commit / tree](https://github.com/openclaw/openclaw/commit/298546d88934bf05bc7e208d13bf6ce2c538e3f2)（tree `120f973ab7da856b4bc1c545c437dd94d35ef9eb`；只读 discovery；未取得本轮 Actions authority，不能复用旧 inventory）。
 - [historical discovery commit / tree](https://github.com/openclaw/openclaw/commit/e8cde7518c558f1b4e44cb8139a149289b9719ad)（仅作为早期研究输入，不是当前 source lock）。
-- [README](https://github.com/openclaw/openclaw/blob/2c157ed06dff5032da1093cbb6745efeff2b6f33/README.md)、[源码](https://github.com/openclaw/openclaw/tree/2c157ed06dff5032da1093cbb6745efeff2b6f33/src)、[packages](https://github.com/openclaw/openclaw/tree/2c157ed06dff5032da1093cbb6745efeff2b6f33/packages)。
-- [plugin inventory](https://github.com/openclaw/openclaw/blob/2c157ed06dff5032da1093cbb6745efeff2b6f33/docs/plugins/plugin-inventory.md)、[extensions](https://github.com/openclaw/openclaw/tree/2c157ed06dff5032da1093cbb6745efeff2b6f33/extensions)、[channels](https://github.com/openclaw/openclaw/blob/2c157ed06dff5032da1093cbb6745efeff2b6f33/docs/channels/index.md)。
-- [Gateway architecture](https://github.com/openclaw/openclaw/blob/2c157ed06dff5032da1093cbb6745efeff2b6f33/docs/concepts/architecture.md)、[protocol package](https://github.com/openclaw/openclaw/blob/2c157ed06dff5032da1093cbb6745efeff2b6f33/packages/gateway-protocol/README.md)、[versioning / state owner](https://github.com/openclaw/openclaw/blob/2c157ed06dff5032da1093cbb6745efeff2b6f33/docs/gateway/protocol/versioning.md)。
-- [automation / retired surfaces](https://github.com/openclaw/openclaw/blob/2c157ed06dff5032da1093cbb6745efeff2b6f33/docs/automation/index.md)、[schedule source](https://github.com/openclaw/openclaw/blob/2c157ed06dff5032da1093cbb6745efeff2b6f33/src/cron/schedule.ts)、[node runtime manifest](https://github.com/openclaw/openclaw/blob/2c157ed06dff5032da1093cbb6745efeff2b6f33/src/node-host/runtime-manifest.ts)。
-- [LICENSE](https://github.com/openclaw/openclaw/blob/2c157ed06dff5032da1093cbb6745efeff2b6f33/LICENSE)、[THIRD_PARTY_NOTICES](https://github.com/openclaw/openclaw/blob/2c157ed06dff5032da1093cbb6745efeff2b6f33/THIRD_PARTY_NOTICES.md)。
+- [README](https://github.com/openclaw/openclaw/blob/298546d88934bf05bc7e208d13bf6ce2c538e3f2/README.md)、[源码](https://github.com/openclaw/openclaw/tree/298546d88934bf05bc7e208d13bf6ce2c538e3f2/src)、[packages](https://github.com/openclaw/openclaw/tree/298546d88934bf05bc7e208d13bf6ce2c538e3f2/packages)。
+- [plugin inventory](https://github.com/openclaw/openclaw/blob/298546d88934bf05bc7e208d13bf6ce2c538e3f2/docs/plugins/plugin-inventory.md)、[extensions](https://github.com/openclaw/openclaw/tree/298546d88934bf05bc7e208d13bf6ce2c538e3f2/extensions)、[channels](https://github.com/openclaw/openclaw/blob/298546d88934bf05bc7e208d13bf6ce2c538e3f2/docs/channels/index.md)。
+- [Gateway architecture](https://github.com/openclaw/openclaw/blob/298546d88934bf05bc7e208d13bf6ce2c538e3f2/docs/concepts/architecture.md)、[protocol package](https://github.com/openclaw/openclaw/blob/298546d88934bf05bc7e208d13bf6ce2c538e3f2/packages/gateway-protocol/README.md)、[versioning / state owner](https://github.com/openclaw/openclaw/blob/298546d88934bf05bc7e208d13bf6ce2c538e3f2/docs/gateway/protocol/versioning.md)。
+- [automation / retired surfaces](https://github.com/openclaw/openclaw/blob/298546d88934bf05bc7e208d13bf6ce2c538e3f2/docs/automation/index.md)、[schedule source](https://github.com/openclaw/openclaw/blob/298546d88934bf05bc7e208d13bf6ce2c538e3f2/src/cron/schedule.ts)、[node runtime manifest](https://github.com/openclaw/openclaw/blob/298546d88934bf05bc7e208d13bf6ce2c538e3f2/src/node-host/runtime-manifest.ts)。
+- [LICENSE](https://github.com/openclaw/openclaw/blob/298546d88934bf05bc7e208d13bf6ce2c538e3f2/LICENSE)、[THIRD_PARTY_NOTICES](https://github.com/openclaw/openclaw/blob/298546d88934bf05bc7e208d13bf6ce2c538e3f2/THIRD_PARTY_NOTICES.md)。
 
 ### 16.3 Fabushi 固定来源
 

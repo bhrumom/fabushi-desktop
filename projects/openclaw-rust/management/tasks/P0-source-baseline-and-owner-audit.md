@@ -102,10 +102,10 @@ P0 仍未退出：此前只读 live candidate 曾推进到 OpenClaw
 `68fbe4ac429cdac7a54541df40367d66defd0161` / tree
 `a3c122b99571c0c33ff6a02ca4c4e32f05f9433d`；该 identity 仅保留为历史
 discovery evidence。当前 candidate 以本文件后面的
-`2c157ed…/3fb582…` 为准，但尚未取得针对该 exact subject 的 GitHub Actions
+`298546d…/120f973…` 为准，但尚未取得针对该 exact subject 的 GitHub Actions
 inventory、依赖闭包和 evidence envelope。既有 inventory/shards 仍绑定上一轮
 候选，不能编辑性重标为当前来源；对应 drift decision 见
-`decisions/2026-10-30-upstream-rebaseline-required.md`。
+`decisions/2026-10-31-upstream-live-drift.md`。
 
 已完成的工作包括 schema/门槛修订、live candidate 记录、若干 scoped
 node-host owner 合同与 Rust 实现切片；这些不构成 P0-AC01–AC08、全项目
@@ -157,3 +157,11 @@ inventory/依赖闭包或将其提升为 authority。
 保留为历史 identity 记录，不代表当前 source authority。当前 lock 状态仍为
 `p0-source-authority-rebaseline-required`，因此不得从本段 discovery identity
 提升 `baseline_identity_accepted` 或 `source_closure_ready`。
+
+随后在 2026-10-31T02:34:32Z 重新核对到 OpenClaw
+`298546d88934bf05bc7e208d13bf6ce2c538e3f2` / tree
+`120f973ab7da856b4bc1c545c437dd94d35ef9eb`。递归 tree 未截断，计数为
+63,847 entries、61,606 blobs、2,241 directories；根输入 blob 身份与 lock
+一致。该 subject 仍 discovery-only，旧 inventory、依赖闭包和 Actions
+provenance 不得复用；P0-AC02、source closure 与所有 global flags 继续保持
+未通过/未闭合。

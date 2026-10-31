@@ -69,6 +69,18 @@ candidate 段落仅保留历史证据。当前 `upstream.lock.json` 状态仍要
 Actions evidence envelope；在此之前 `baseline_identity_accepted`、
 `source_closure_ready` 及后续完成 flags 均保持 false。
 
+2026-10-31T02:34:32Z 的新一轮只读核对发现 OpenClaw `main` 已漂移到
+commit=`298546d88934bf05bc7e208d13bf6ce2c538e3f2`、tree
+`120f973ab7da856b4bc1c545c437dd94d35ef9eb`；递归 tree 未截断，共 63,847
+entries（61,606 blobs、2,241 directories）。根输入 blob 已按该 subject
+重读并写入 lock：`package.json`=`5e468c9625b7670af23096df4588fd5e066c58a8`、
+`pnpm-lock.yaml`=`df897f3361f5968912f27b31971a60c08a1132b4`、
+`pnpm-workspace.yaml`=`32ce4d83de4aac6a1e3665baba09a3aa9582960c`；
+`.gitmodules` 仍不存在。该 identity 取代 `2c157ed…/3fb582…` 成为当前
+discovery reference，但不提升 source authority，不使旧 inventory/closure
+可复用，也不改变任何 global flag；必须针对新 exact subject 取得 Actions
+inventory、依赖闭包、LFS/完整性及 evidence envelope。
+
 ## 5. 机器记录的初始化与终态
 
 2026-10-31 governance amendment: AC02/G02 final requires zero omitted,

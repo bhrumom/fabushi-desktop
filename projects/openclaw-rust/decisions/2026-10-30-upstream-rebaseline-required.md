@@ -60,3 +60,10 @@ run must rebaseline the inventory, shards, ledger/RTM provenance and root-input
 digests together against one exact subject.
 
 This decision permits read-only source review and implementation work whose source authority is explicitly the prior locked candidate, but any source-dependent acceptance or final receipt must use the new live lock after Actions rebaseline. No CI, push, PR update, or local OCRM executable verification was performed for this decision.
+
+## Later supersession
+
+The 2026-10-31 live candidate `298546d88934bf05bc7e208d13bf6ce2c538e3f2` /
+`120f973ab7da856b4bc1c545c437dd94d35ef9eb` supersedes the `2c157ed` identity
+recorded above. See `decisions/2026-10-31-upstream-live-drift.md`; this older
+decision remains historical evidence and does not describe the current lock.
