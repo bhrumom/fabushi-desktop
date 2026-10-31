@@ -10,7 +10,8 @@ use uuid::Uuid;
 
 use super::gateway_reachability::ReachabilityOutcome;
 use super::super::cloud_worker_projection::{
-    CLOUD_WORKERS_STATUS_METHOD, CloudWorkerStatusProjection,
+    CLOUD_WORKERS_DOCTOR_METHOD, CLOUD_WORKERS_STATUS_METHOD,
+    CloudWorkerDoctorProjection, CloudWorkerStatusProjection,
 };
 use super::gateway_request_dispatcher::{
     GatewayDispatchError, GatewayJsonResponse, dispatch_http_json_response,
@@ -372,6 +373,22 @@ impl CoordinatorGatewayClient {
         serde_json::from_value(value).map_err(|error| {
             GatewayDispatchError::Command(SandGatewayCommandError::new(format!(
                 "cloud worker status projection is invalid: {error}"
+            )))
+        })
+    }
+
+    pub fn dispatch_cloud_worker_doctor<F>(
+        &mut self,
+        args: Value,
+        dispatch: F,
+    ) -> Result<CloudWorkerDoctorProjection, GatewayDispatchError>
+    where
+        F: FnOnce(&GatewayConnection, &str, Value) -> Result<Value, GatewayDispatchError>,
+    {
+        let value = self.dispatch_command(CLOUD_WORKERS_DOCTOR_METHOD, args, dispatch)?;
+        serde_json::from_value(value).map_err(|error| {
+            GatewayDispatchError::Command(SandGatewayCommandError::new(format!(
+                "cloud worker doctor projection is invalid: {error}"
             )))
         })
     }

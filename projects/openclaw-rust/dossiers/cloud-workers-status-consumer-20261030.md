@@ -204,3 +204,7 @@ actions remain acknowledgement-gated and explicitly unwired.
 The status projection now also carries additive `bootstrapCount` and
 `artifactCount` fields, with Coordinator decoding defaults for older Host
 payloads; provider readiness and production-mutation remain fail-closed.
+
+The Coordinator gateway client now has a typed `cloudWorkers.doctor`
+projection/dispatch. Doctor request arguments remain Host-owned JSON contract
+data; Coordinator stores no recovery state and malformed responses fail closed.

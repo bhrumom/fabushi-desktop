@@ -2,6 +2,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
 pub const CLOUD_WORKERS_STATUS_METHOD: &str = "cloudWorkers.status";
+pub const CLOUD_WORKERS_DOCTOR_METHOD: &str = "cloudWorkers.doctor";
 pub const CLOUD_WORKERS_STATUS_EVENT_FAMILY: &str = "cloud-workers.status";
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -59,6 +60,34 @@ pub struct CloudWorkerStatusProjection {
     pub artifact_count: usize,
     #[serde(default, rename = "migrationReceiptCount")]
     pub migration_receipt_count: usize,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum CloudWorkerDoctorProjectionStatus {
+    InspectionOnly,
+    Pending,
+    Completed,
+    Failed,
+    OutcomeUnknown,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct CloudWorkerDoctorProjection {
+    pub status: CloudWorkerDoctorProjectionStatus,
+    #[serde(rename = "mutationStarted")]
+    pub mutation_started: bool,
+    #[serde(default, rename = "diagnosticCode")]
+    pub diagnostic_code: Option<String>,
+    #[serde(default, rename = "statePersisted")]
+    pub state_persisted: bool,
+    #[serde(default, rename = "leaseCount")]
+    pub lease_count: usize,
+    #[serde(default, rename = "bootstrapCount")]
+    pub bootstrap_count: usize,
+    #[serde(default, rename = "artifactCount")]
+    pub artifact_count: usize,
+    #[serde(default, rename = "warmImageCount")]
+    pub warm_image_count: usize,
 }
 
 impl CloudWorkerStatusProjection {
