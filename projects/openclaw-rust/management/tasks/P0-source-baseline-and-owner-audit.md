@@ -109,6 +109,12 @@ identities are unchanged. This is a fresh discovery-only subject; prior
 inventory, dependency closure, LFS/integrity and Actions provenance remain
 bound to their original subjects and all global flags remain false.
 
+The exact-subject root dependency probe is retained at
+`dossiers/upstream-current-candidate-dependency-probe-e8dade03-20261031.md`.
+It confirms only manifest shape and root input identities; it does not satisfy
+the required recursive dependency closure, LFS/integrity, or Actions evidence
+envelope.
+
 ## 7. 阻塞与支持请求
 
 使用稳定 blocker ID，记录影响范围、已知事实、根因/未知点、owner、解除条件、最后检查、既有通知 thread 和可继续任务。需要用户操作时按用户指定 Gmail 地址通知；先检索是否已发送相同未解决请求，避免重复。地址、token 和账号敏感详情不进入公开仓库。

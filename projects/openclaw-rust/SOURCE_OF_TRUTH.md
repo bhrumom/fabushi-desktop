@@ -426,3 +426,10 @@ identities 与上一 candidate 保持不变。该 subject 已同步写入
 `upstream.lock.json::live_candidate`，仍是 discovery-only；不得复用旧
 inventory、依赖闭包、LFS/完整性或 Actions provenance，也不改变任何
 authority/global flag。
+
+同一 exact subject 的根 dependency input probe 已记录在
+`dossiers/upstream-current-candidate-dependency-probe-e8dade03-20261031.md`：
+确认了 integrity-qualified `pnpm@12.15.0`、六组 workspace pattern、77 个
+root runtime dependencies、57 个 devDependencies，以及同树的
+lock/workspace/license blob。该 probe 只证明根输入存在与形状，不等价于递归
+dependency closure；closure flags 继续保持 `false`。
