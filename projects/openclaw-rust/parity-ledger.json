@@ -5889,6 +5889,26 @@
         "SLD-05",
         "SLD-06"
       ],
+      "source_refs": [
+        {
+          "blob_sha": "02f509ba5f4ef444b6e75447a5d07fcacd06f3b2",
+          "path": "src/agents/subagents/registry/subagent-session-cleanup.ts",
+          "range": {
+            "end_line": 143,
+            "start_line": 1
+          },
+          "symbol": "subagent session cleanup producer"
+        },
+        {
+          "blob_sha": "8e907ae99e5a9a6a5063eb6c72d17e9e4a5d700d",
+          "path": "src/cron/isolated-agent/session-cleanup.ts",
+          "range": {
+            "end_line": 94,
+            "start_line": 1
+          },
+          "symbol": "cron session cleanup producer"
+        }
+      ],
       "responsibility_kind": "business-runtime",
       "reviewer": "xuyao@ombhrum.com",
       "risk": "Critical; stale cleanup could delete a replacement session or bypass the durable lifecycle owner",

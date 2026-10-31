@@ -588,6 +588,17 @@ inventory、依赖闭包、LFS/integrity、语义阅读和 Actions provenance �
 复用。lock 的 live candidate 已更新，固定 implementation subject 与全部
 authority/completion flags 不变。
 
+2026-10-31T11:24:57Z 的只读远端复核发现 OpenClaw `main` 再推进到
+`8487c89fbedd53238f42b34bb446723a5629bb16` / tree
+`16c359a40e19ea69591704bff7d626677673b112`。GitHub recursive-tree API 返回
+`truncated=false`，共 64,062 entries（61,821 blobs、2,241 directories、0
+gitlinks）；commit message 为 `perf(ci): skip unrelated PR test changes on
+Darwin (#189294)`。根 package/lock/workspace/license/notice blob identities
+仍未变化；该 exact subject 仍为 discovery-only，前一 candidate 的
+inventory、依赖闭包、LFS/integrity、语义阅读和 Actions provenance 均不得
+复用。lock live candidate 已更新，固定 implementation subject、ledger 修复
+及全部 authority/completion flags 不变。
+
 对 fixed subject 应用 lock 与 exact Git tree 的进一步只读重核显示：200 个
 importer 路径全部匹配 manifest，263 条 `link:` edge 按 importer 相对路径解析
 后全部落到现有 workspace manifest；1,844 个 package resolution 全部带声明的

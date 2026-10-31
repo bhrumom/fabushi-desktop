@@ -329,3 +329,13 @@ Root dependency/license identities remain unchanged from the prior candidate,
 but this is a fresh discovery-only subject. Prior inventory, dependency/LFS
 closure, semantic reads, and Actions provenance remain bound to their exact
 subjects and are not reusable; no authority or completion flag changes.
+
+2026-10-31T11:24:57Z drift amendment: read-only GitHub checks resolved the
+current OpenClaw `main` to commit=`8487c89fbedd53238f42b34bb446723a5629bb16`,
+tree=`16c359a40e19ea69591704bff7d626677673b112`, with an untruncated recursive
+tree of 64,062 entries (61,821 blobs, 2,241 directories, 0 gitlinks). The
+commit is `perf(ci): skip unrelated PR test changes on Darwin (#189294)`.
+Root dependency/license identities remain unchanged, but this is a fresh
+discovery-only subject; prior inventory, dependency/LFS closure, semantic
+reads, and Actions provenance are not reusable, and no authority or completion
+flag changes.
