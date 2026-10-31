@@ -1,5 +1,6 @@
 use std::collections::{HashMap, HashSet};
 use std::sync::{Arc, RwLock};
+use std::time::{Duration, Instant};
 
 use crate::extensions::transcript::channel_delivery_unregistered_error::SandChannelDeliveryUnregisteredError;
 use sha2::{Digest, Sha256};
@@ -296,6 +297,289 @@ impl InboundChannelDeduplicator {
         *current_cursor = cursor;
         self.seen_messages.insert(key);
         Ok(true)
+    }
+}
+
+const MAX_INBOUND_DEBOUNCE_DELAY: Duration = Duration::from_secs(60);
+const MAX_INBOUND_DEBOUNCE_CHANNELS: usize = 1_024;
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum ChannelInboundMessageKind {
+    Text,
+    ControlCommand(String),
+    Media,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ChannelInboundDebouncePolicy {
+    default_delay: Duration,
+    channel_delays: HashMap<String, Duration>,
+}
+
+impl ChannelInboundDebouncePolicy {
+    pub fn new(default_delay: Duration) -> Result<Self, ChannelInboundDebounceError> {
+        validate_inbound_debounce_delay(default_delay)?;
+        Ok(Self {
+            default_delay,
+            channel_delays: HashMap::new(),
+        })
+    }
+
+    pub fn set_channel_delay(
+        &mut self,
+        channel_id: &str,
+        delay: Duration,
+    ) -> Result<(), ChannelInboundDebounceError> {
+        let channel = normalize_channel_acl_value(channel_id);
+        if channel.is_empty() {
+            return Err(ChannelInboundDebounceError::EmptyChannel);
+        }
+        validate_inbound_debounce_delay(delay)?;
+        if !self.channel_delays.contains_key(&channel)
+            && self.channel_delays.len() >= MAX_INBOUND_DEBOUNCE_CHANNELS
+        {
+            return Err(ChannelInboundDebounceError::ChannelLimitReached);
+        }
+        self.channel_delays.insert(channel, delay);
+        Ok(())
+    }
+
+    fn delay_for(&self, channel_id: &str) -> Duration {
+        self.channel_delays
+            .get(channel_id)
+            .copied()
+            .unwrap_or(self.default_delay)
+    }
+
+    fn max_delay(&self) -> Duration {
+        self.channel_delays
+            .values()
+            .copied()
+            .max()
+            .unwrap_or(self.default_delay)
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ChannelInboundDebounceDecision {
+    Immediate,
+    Debounced { retry_after: Duration },
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum ChannelInboundDebounceError {
+    EmptyChannel,
+    DelayTooLong,
+    ChannelLimitReached,
+    InvalidControlCommand,
+}
+
+fn is_immediate_control_command(command: &str) -> bool {
+    matches!(
+        command
+            .trim()
+            .trim_start_matches('/')
+            .to_ascii_lowercase()
+            .as_str(),
+        "abort" | "stop" | "status"
+    )
+}
+
+#[derive(Debug, Clone, Default)]
+pub struct InboundChannelDebounceGate {
+    last_text_admitted: HashMap<String, Instant>,
+}
+
+impl InboundChannelDebounceGate {
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    /// Applies only the debounce policy. Transport receipt, deduplication,
+    /// timers, and turn dispatch remain owned by their existing boundaries.
+    pub fn admit(
+        &mut self,
+        policy: &ChannelInboundDebouncePolicy,
+        channel_id: &str,
+        kind: &ChannelInboundMessageKind,
+        now: Instant,
+    ) -> Result<ChannelInboundDebounceDecision, ChannelInboundDebounceError> {
+        let channel = normalize_channel_acl_value(channel_id);
+        if channel.is_empty() {
+            return Err(ChannelInboundDebounceError::EmptyChannel);
+        }
+
+        self.last_text_admitted.retain(|_, admitted_at| {
+            now.checked_duration_since(*admitted_at)
+                .is_none_or(|elapsed| elapsed <= policy.max_delay())
+        });
+
+        match kind {
+            ChannelInboundMessageKind::Media => {
+                return Ok(ChannelInboundDebounceDecision::Immediate);
+            }
+            ChannelInboundMessageKind::ControlCommand(command)
+                if is_immediate_control_command(command) =>
+            {
+                return Ok(ChannelInboundDebounceDecision::Immediate);
+            }
+            ChannelInboundMessageKind::ControlCommand(_) => {
+                return Err(ChannelInboundDebounceError::InvalidControlCommand);
+            }
+            ChannelInboundMessageKind::Text => {}
+        }
+
+        let delay = policy.delay_for(&channel);
+        if let Some(admitted_at) = self.last_text_admitted.get(&channel).copied() {
+            if let Some(elapsed) = now.checked_duration_since(admitted_at) {
+                if elapsed < delay {
+                    return Ok(ChannelInboundDebounceDecision::Debounced {
+                        retry_after: delay - elapsed,
+                    });
+                }
+            }
+        }
+
+        if !self.last_text_admitted.contains_key(&channel)
+            && self.last_text_admitted.len() >= MAX_INBOUND_DEBOUNCE_CHANNELS
+        {
+            let oldest = self
+                .last_text_admitted
+                .iter()
+                .min_by_key(|(_, admitted_at)| **admitted_at)
+                .map(|(channel, _)| channel.clone());
+            if let Some(oldest) = oldest {
+                self.last_text_admitted.remove(&oldest);
+            }
+        }
+        self.last_text_admitted.insert(channel, now);
+        Ok(ChannelInboundDebounceDecision::Immediate)
+    }
+}
+
+fn validate_inbound_debounce_delay(
+    delay: Duration,
+) -> Result<(), ChannelInboundDebounceError> {
+    if delay > MAX_INBOUND_DEBOUNCE_DELAY {
+        Err(ChannelInboundDebounceError::DelayTooLong)
+    } else {
+        Ok(())
+    }
+}
+
+#[cfg(test)]
+mod inbound_debounce_tests {
+    use super::*;
+
+    #[test]
+    fn control_and_media_bypass_without_starting_text_window() {
+        let mut policy = ChannelInboundDebouncePolicy::new(Duration::from_secs(5)).unwrap();
+        policy
+            .set_channel_delay("Telegram-General", Duration::from_secs(2))
+            .unwrap();
+        let mut gate = InboundChannelDebounceGate::new();
+        let now = Instant::now();
+
+        assert_eq!(
+            gate.admit(
+                &policy,
+                "telegram-general",
+                &ChannelInboundMessageKind::ControlCommand(" /STOP ".into()),
+                now,
+            )
+            .unwrap(),
+            ChannelInboundDebounceDecision::Immediate
+        );
+        assert_eq!(
+            gate.admit(
+                &policy,
+                "telegram-general",
+                &ChannelInboundMessageKind::Media,
+                now,
+            )
+            .unwrap(),
+            ChannelInboundDebounceDecision::Immediate
+        );
+    }
+
+    #[test]
+    fn text_uses_channel_override_and_expires() {
+        let mut policy = ChannelInboundDebouncePolicy::new(Duration::from_secs(5)).unwrap();
+        policy
+            .set_channel_delay("fast", Duration::from_secs(2))
+            .unwrap();
+        let mut gate = InboundChannelDebounceGate::new();
+        let now = Instant::now();
+
+        assert_eq!(
+            gate.admit(&policy, "fast", &ChannelInboundMessageKind::Text, now)
+                .unwrap(),
+            ChannelInboundDebounceDecision::Immediate
+        );
+        assert_eq!(
+            gate.admit(
+                &policy,
+                "fast",
+                &ChannelInboundMessageKind::Text,
+                now + Duration::from_millis(500),
+            )
+            .unwrap(),
+            ChannelInboundDebounceDecision::Debounced {
+                retry_after: Duration::from_millis(1_500)
+            }
+        );
+        assert_eq!(
+            gate.admit(
+                &policy,
+                "fast",
+                &ChannelInboundMessageKind::Text,
+                now + Duration::from_secs(2),
+            )
+            .unwrap(),
+            ChannelInboundDebounceDecision::Immediate
+        );
+        assert_eq!(
+            gate.admit(
+                &policy,
+                "slow",
+                &ChannelInboundMessageKind::Text,
+                now + Duration::from_millis(500),
+            )
+            .unwrap(),
+            ChannelInboundDebounceDecision::Immediate
+        );
+    }
+
+    #[test]
+    fn invalid_policy_input_fails_closed() {
+        assert_eq!(
+            ChannelInboundDebouncePolicy::new(Duration::from_secs(61)),
+            Err(ChannelInboundDebounceError::DelayTooLong)
+        );
+        let mut policy = ChannelInboundDebouncePolicy::new(Duration::ZERO).unwrap();
+        assert_eq!(
+            policy.set_channel_delay("  ", Duration::from_secs(1)),
+            Err(ChannelInboundDebounceError::EmptyChannel)
+        );
+        let mut gate = InboundChannelDebounceGate::new();
+        assert_eq!(
+            gate.admit(
+                &policy,
+                "  ",
+                &ChannelInboundMessageKind::Text,
+                Instant::now(),
+            ),
+            Err(ChannelInboundDebounceError::EmptyChannel)
+        );
+        assert_eq!(
+            gate.admit(
+                &policy,
+                "channel",
+                &ChannelInboundMessageKind::ControlCommand("/unknown".into()),
+                Instant::now(),
+            ),
+            Err(ChannelInboundDebounceError::InvalidControlCommand)
+        );
     }
 }
 

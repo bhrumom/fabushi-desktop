@@ -4418,7 +4418,9 @@
       ],
       "evidence_refs": [
         "source/host/tests/openclaw_channel_delivery_contract.rs",
-        "projects/openclaw-rust/dossiers/channels-outbound-delivery-scoped.md"
+        "source/host/src/connectors/channel_delivery.rs",
+        "projects/openclaw-rust/dossiers/channels-outbound-delivery-scoped.md",
+        "projects/openclaw-rust/docs/specs/channel-inbound-debounce.md"
       ],
       "existing_owner_candidates": [
         {
@@ -4706,8 +4708,8 @@
       ],
       "id": "OCRM-RESP-CHANNEL-INBOUND-DEBOUNCE-001",
       "integration": {
-        "consumer": "InboundChannelDeduplicator::process_message is available at the connector boundary; no production inbound channel consumer is wired yet",
-        "entrypoint": "source/host/src/connectors/channel_delivery.rs::InboundChannelDeduplicator::process_message",
+        "consumer": "InboundChannelDebounceGate::admit and InboundChannelDeduplicator::process_message are available at the connector boundary; no production inbound channel consumer is wired yet",
+        "entrypoint": "source/host/src/connectors/channel_delivery.rs::InboundChannelDebounceGate::admit",
         "owner": "source/host/src/connectors/channel_delivery.rs",
         "producer": "No production inbound channel producer identified; deduplication remains a pure connector policy helper"
       },
@@ -4769,10 +4771,13 @@
       },
       "tests": [
         "source/host/tests/openclaw_channel_delivery_contract.rs::test_ocrm_channel_o01_inbound_deduplication",
-        "source/host/tests/openclaw_channel_delivery_contract.rs::test_ocrm_channel_o08_receipt_settlement"
+        "source/host/tests/openclaw_channel_delivery_contract.rs::test_ocrm_channel_o08_receipt_settlement",
+        "source/host/src/connectors/channel_delivery.rs::inbound_debounce_tests"
       ],
       "typed_contracts": [
-        "InboundChannelDeduplicator::process_message"
+        "InboundChannelDeduplicator::process_message",
+        "ChannelInboundDebouncePolicy::set_channel_delay",
+        "InboundChannelDebounceGate::admit"
       ],
       "unit_id": "OCRM-UNIT-CHANNELS-001"
     },

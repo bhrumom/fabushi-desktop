@@ -325,6 +325,14 @@ unread 强行当作失败门槛，也不能被结构性 inventory 完整或已�
 producer→owner→consumer 接线与 packaged acceptance 仍待完成；本审计未运行
 OCRM 测试或本机构建。
 
+其中 `OCRM-RESP-CHANNEL-INBOUND-DEBOUNCE-001` 已在既有
+`source/host/src/connectors/channel_delivery.rs` owner 内增加
+`ChannelInboundDebouncePolicy` / `InboundChannelDebounceGate` 的纯策略实现：
+按 normalized channel 解析 bounded delay，`abort`/`stop`/`status` 与 media
+立即放行，text 在窗口内返回 `Debounced`。这只是 implementation/source
+contract evidence；由于尚无真实 inbound producer 与 turn consumer，ledger
+仍保持 `wiring=not-wired`、`verification=not-run`、`acceptance=pending`。
+
 本次 heartbeat 复核还纠正了该责任的 oracle 绑定：`OCRM-PLUGIN-O07` 实际是
 web-search/fetch payload bounds contract，不是 heartbeat 测试；ledger 已移除这条
 错误的 oracle、test 和未实现的 `HeartbeatService::poll` typed contract。heartbeat

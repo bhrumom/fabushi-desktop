@@ -87,6 +87,22 @@ idempotently, and a normalized `(channel, thread)` pair resolves to one stable
 conversation scope. These helpers are not marked wired because no production
 inbound channel producer or transcript/session consumer has been identified.
 
+### Inbound debounce implementation slice — 2026-10-31
+
+The existing connector owner now also contains
+`ChannelInboundDebouncePolicy` and `InboundChannelDebounceGate`. The policy
+resolves a bounded default or normalized per-channel delay, while the gate
+returns deterministic `Immediate` or `Debounced { retry_after }` decisions for
+caller-supplied observation instants. Control-command and media classifications
+bypass the text window; only admitted text updates the per-channel timestamp.
+State is bounded and invalid channels/delays fail closed.
+
+This is implementation/source-contract evidence only. The gate does not own a
+transport timer, inbound adapter, session, or turn dispatch. No production
+inbound producer or downstream consumer has been identified, so
+`OCRM-RESP-CHANNEL-INBOUND-DEBOUNCE-001` remains
+`wiring=not-wired`, `verification=not-run`, and `acceptance=pending`.
+
 ---
 
 ## 3. Falsifiable Test Oracles (`source/host/tests/openclaw_channel_delivery_contract.rs`)
