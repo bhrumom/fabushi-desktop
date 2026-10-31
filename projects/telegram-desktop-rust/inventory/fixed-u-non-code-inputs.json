@@ -866,7 +866,7 @@
       }
     ],
     "root_identity_status": "fixed-u-enumerated",
-    "license_semantic_closure_status": "open-adopted-dependencies-and-copied-derived-content-still-require-release-review; exact GitHub-readable license blob identities above are read-verified",
+    "license_semantic_closure_status": "open-adopted-dependencies-and-copied-derived-content-still-require-release-review; round32 root/recursive priority license identities are blob-read",
     "github_license_blob_reads": [
       {
         "repository": "telegramdesktop/tdesktop",
@@ -947,6 +947,510 @@
         "blob_sha": "4362b49151d7b34ef83b3067a8f9c9f877d72a0e",
         "size_bytes": 26530,
         "read_verified": true
+      },
+      {
+        "repository": "videolan/dav1d",
+        "commit": "54706fc6bc0cdecab7e9593974a4039cc038fca7",
+        "path": "COPYING",
+        "blob_sha": "8d4d6418c1ab4adf0a05bddfc11182216d5238a1",
+        "size_bytes": 1317,
+        "read_verified": true,
+        "evidence_round": 32
+      },
+      {
+        "repository": "AOMediaCodec/libavif",
+        "commit": "1aadfad932c98c069a1204261b1856f81f3bc199",
+        "path": "LICENSE",
+        "blob_sha": "350eb9d15ce1553438b09b8cd14c803e86da316b",
+        "size_bytes": 20415,
+        "read_verified": true,
+        "evidence_round": 32
+      },
+      {
+        "repository": "AOMediaCodec/libavif",
+        "commit": "c5240fc79fe5c2407e10afd35f5505ef6333ea49",
+        "path": "LICENSE",
+        "blob_sha": "350eb9d15ce1553438b09b8cd14c803e86da316b",
+        "size_bytes": 20415,
+        "read_verified": true,
+        "evidence_round": 32
+      },
+      {
+        "repository": "FFmpeg/FFmpeg",
+        "commit": "1041abdc962f4cc4f394aa8de9dc5236c0c3b9e7",
+        "path": "LICENSE.md",
+        "blob_sha": "371b0913ce7c199c4092d9344680c80f78ebeb2a",
+        "size_bytes": 4346,
+        "read_verified": true,
+        "evidence_round": 32
+      },
+      {
+        "repository": "FFmpeg/FFmpeg",
+        "commit": "f1e3a2bf7a2f2cde936d1ed97f09a26853d20125",
+        "path": "LICENSE.md",
+        "blob_sha": "613070e1b631a919a74c862f2a75a0f249a631ff",
+        "size_bytes": 4376,
+        "read_verified": true,
+        "evidence_round": 32
+      },
+      {
+        "repository": "PipeWire/pipewire",
+        "commit": "3a443b4e1c9730675c7de0453a6279ab9ee263fd",
+        "path": "COPYING",
+        "blob_sha": "aa100ce9c02238111b56e394ad5a13311e23a521",
+        "size_bytes": 1218,
+        "read_verified": true,
+        "evidence_round": 32
+      },
+      {
+        "repository": "PipeWire/pipewire",
+        "commit": "3a443b4e1c9730675c7de0453a6279ab9ee263fd",
+        "path": "LICENSE",
+        "blob_sha": "f4c692d0c7cec93ea559edc403fe528b7635ef48",
+        "size_bytes": 349,
+        "read_verified": true,
+        "evidence_round": 32
+      },
+      {
+        "repository": "ada-url/ada",
+        "commit": "6b4612162c34e7ffcee08c03b107b449e07a5683",
+        "path": "LICENSE-APACHE",
+        "blob_sha": "1204b0aabba61db2b8aa888827cd13e05e3066d3",
+        "size_bytes": 11342,
+        "read_verified": true,
+        "evidence_round": 32
+      },
+      {
+        "repository": "ada-url/ada",
+        "commit": "6b4612162c34e7ffcee08c03b107b449e07a5683",
+        "path": "LICENSE-MIT",
+        "blob_sha": "bd2abacfc1dd51abee6d41399ed228d7945dbea3",
+        "size_bytes": 1071,
+        "read_verified": true,
+        "evidence_round": 32
+      },
+      {
+        "repository": "cisco/openh264",
+        "commit": "652bdb7719f30b52b08e506645a7322ff1b2cc6f",
+        "path": "LICENSE",
+        "blob_sha": "8e730c4e2c646c2057326c54c932bdbddf11deea",
+        "size_bytes": 1295,
+        "read_verified": true,
+        "evidence_round": 32
+      },
+      {
+        "repository": "gitlab-freedesktop-mirrors/libxcb",
+        "commit": "c671b9b30aecada4e43cb48e0dee46d19fb5cb9c",
+        "path": "COPYING",
+        "blob_sha": "54bfbe5b02074d0c276959c9140072ccba0dc670",
+        "size_bytes": 1337,
+        "read_verified": true,
+        "evidence_round": 32
+      },
+      {
+        "repository": "gitlab-freedesktop-mirrors/libxcb-image",
+        "commit": "1abfc17b1e08e46dbdf34b4ef36097a8c307a8ec",
+        "path": "COPYING",
+        "blob_sha": "2d91a6f5881cfa5bf9a0af9dd959b206ecc833f0",
+        "size_bytes": 1405,
+        "read_verified": true,
+        "evidence_round": 32
+      },
+      {
+        "repository": "gitlab-freedesktop-mirrors/libxcb-util",
+        "commit": "bffd8df1725c0fae9105a097e75b466e2f49d7bd",
+        "path": "COPYING",
+        "blob_sha": "ce5913eb8c70eef5eebe5dc9cf861bd48130c8ac",
+        "size_bytes": 1508,
+        "read_verified": true,
+        "evidence_round": 32
+      },
+      {
+        "repository": "gitlab-freedesktop-mirrors/libxcb-wm",
+        "commit": "0c6681e465c9cc7b1fbb60778ba1eaa61ab01a14",
+        "path": "COPYING",
+        "blob_sha": "ef4db097b3b7f398ede4b0fe7f74c22d897184ba",
+        "size_bytes": 1441,
+        "read_verified": true,
+        "evidence_round": 32
+      },
+      {
+        "repository": "gitlab-freedesktop-mirrors/libxcomposite",
+        "commit": "cecff847395deb553b6331f31776f9cbfc809add",
+        "path": "COPYING",
+        "blob_sha": "0033809f053e82437de546eb32b48ed49acd2a30",
+        "size_bytes": 2238,
+        "read_verified": true,
+        "evidence_round": 32
+      },
+      {
+        "repository": "gitlab-freedesktop-mirrors/libxdamage",
+        "commit": "1f20df4fd7c132f55e924dc5ec3f270cd54704d0",
+        "path": "COPYING",
+        "blob_sha": "8eaae9d8048a444d9647dd0c1c50eedb1ecced1a",
+        "size_bytes": 1135,
+        "read_verified": true,
+        "evidence_round": 32
+      },
+      {
+        "repository": "gitlab-freedesktop-mirrors/libxext",
+        "commit": "67e82cc395f44faddd83ec3d0d21624fe91c6fc0",
+        "path": "COPYING",
+        "blob_sha": "7203d366ef4cf3bb48302c28e58ad707fd9b062e",
+        "size_bytes": 11101,
+        "read_verified": true,
+        "evidence_round": 32
+      },
+      {
+        "repository": "gitlab-freedesktop-mirrors/libxfixes",
+        "commit": "84df9cb81cc31bbed27ba241a23ae04f61da57db",
+        "path": "COPYING",
+        "blob_sha": "66012a93a90cfe0966d48244814aeb5ea72b68fa",
+        "size_bytes": 2232,
+        "read_verified": true,
+        "evidence_round": 32
+      },
+      {
+        "repository": "gitlab-freedesktop-mirrors/libxrandr",
+        "commit": "512bf0b15b5597c721ff8c61083616ca9040fa72",
+        "path": "COPYING",
+        "blob_sha": "68bffe880fb8661c68b4a0bffd95c4962b458ef7",
+        "size_bytes": 3645,
+        "read_verified": true,
+        "evidence_round": 32
+      },
+      {
+        "repository": "gitlab-freedesktop-mirrors/libxrender",
+        "commit": "46e12ff9e8e4d3f0313a2f097df93dbfdc14f92f",
+        "path": "COPYING",
+        "blob_sha": "7316ea6cb7618512e9bf6fac5b0d592f352e1c6e",
+        "size_bytes": 2164,
+        "read_verified": true,
+        "evidence_round": 32
+      },
+      {
+        "repository": "gitlab-freedesktop-mirrors/libxtst",
+        "commit": "abf3ff74b97c4231d2324d66318bfa1d22e44913",
+        "path": "COPYING",
+        "blob_sha": "010b27099475eda813898bf78e00f3dd2e77f0aa",
+        "size_bytes": 5826,
+        "read_verified": true,
+        "evidence_round": 32
+      },
+      {
+        "repository": "gitlab-freedesktop-mirrors/libxv",
+        "commit": "e1cde54538060c4fd3a3d02e3d2e2b7e5da7bff9",
+        "path": "COPYING",
+        "blob_sha": "83b3df27f3bf5ab449ba4664e848e16495647eba",
+        "size_bytes": 2240,
+        "read_verified": true,
+        "evidence_round": 32
+      },
+      {
+        "repository": "gitlab-freedesktop-mirrors/xcbproto",
+        "commit": "98eeebfc2d7db5377b85437418fb942ea30ffc0d",
+        "path": "COPYING",
+        "blob_sha": "54bfbe5b02074d0c276959c9140072ccba0dc670",
+        "size_bytes": 1337,
+        "read_verified": true,
+        "evidence_round": 32
+      },
+      {
+        "repository": "google/brotli",
+        "commit": "028fb5a23661f123017c060daa546b55cf4bde29",
+        "path": "LICENSE",
+        "blob_sha": "33b7cdd2dbaeddce1e35aa1a13f63d71154dc42f",
+        "size_bytes": 1084,
+        "read_verified": true,
+        "evidence_round": 32
+      },
+      {
+        "repository": "google/googletest",
+        "commit": "e2239ee6043f73722e7aa812a459f54a28552929",
+        "path": "LICENSE",
+        "blob_sha": "1941a11f8ce94389160b458927a29ba217542818",
+        "size_bytes": 1475,
+        "read_verified": true,
+        "evidence_round": 32
+      },
+      {
+        "repository": "google/highway",
+        "commit": "2607d3b5b0113992fe84d3848859eae13b3b52c1",
+        "path": "LICENSE",
+        "blob_sha": "1af4f15ca709c0e74e610c09fe91022f354aea58",
+        "size_bytes": 20785,
+        "read_verified": true,
+        "evidence_round": 32
+      },
+      {
+        "repository": "kcat/openal-soft",
+        "commit": "b2c48f7718ef3fcf67921a8b6534c4914e328970",
+        "path": "COPYING",
+        "blob_sha": "8d5d0000656d57b6fc8118c1078aa3172b7c02ec",
+        "size_bytes": 23330,
+        "read_verified": true,
+        "evidence_round": 32
+      },
+      {
+        "repository": "kcat/openal-soft",
+        "commit": "dc7d7054a5b4f3bec1dc23a42fd616a0847af948",
+        "path": "COPYING",
+        "blob_sha": "8d5d0000656d57b6fc8118c1078aa3172b7c02ec",
+        "size_bytes": 23330,
+        "read_verified": true,
+        "evidence_round": 32
+      },
+      {
+        "repository": "libjxl/libjxl",
+        "commit": "a7a9c787341cf703dede03c2009fa460cae5e5df",
+        "path": "LICENSE",
+        "blob_sha": "c66034b105f23d108a51b45c846d5b5c194cc229",
+        "size_bytes": 1508,
+        "read_verified": true,
+        "evidence_round": 32
+      },
+      {
+        "repository": "mm2/Little-CMS",
+        "commit": "453bafeb85b4ef96498866b7a8eadcc74dff9223",
+        "path": "LICENSE",
+        "blob_sha": "85480b50b0c5860b541dc3b0032084c55ca91dcd",
+        "size_bytes": 1080,
+        "read_verified": true,
+        "evidence_round": 32
+      },
+      {
+        "repository": "mm2/Little-CMS",
+        "commit": "d0752309ff93f62be246ee9bf18338107f30d485",
+        "path": "COPYING",
+        "blob_sha": "e2fe519d919fe460a8e8383c73c7da46bb2131cc",
+        "size_bytes": 1083,
+        "read_verified": true,
+        "evidence_round": 32
+      },
+      {
+        "repository": "mozilla/mozjpeg",
+        "commit": "6c9f0897afa1c2738d7222a0a9ab49e8b536a267",
+        "path": "LICENSE.md",
+        "blob_sha": "bf8a7fda7f57699207fafde0c19c9801fb143e28",
+        "size_bytes": 5213,
+        "read_verified": true,
+        "evidence_round": 32
+      },
+      {
+        "repository": "openssl/openssl",
+        "commit": "45e844fa2a14ec92d146bd8f5778ac130b6625fb",
+        "path": "LICENSE.txt",
+        "blob_sha": "49cc83d2ee29d13453188217f0e4edd70c7f842f",
+        "size_bytes": 10175,
+        "read_verified": true,
+        "evidence_round": 32
+      },
+      {
+        "repository": "qt/qt5",
+        "commit": "713a36536903d172f9e6737584d428753c119496",
+        "path": "LICENSES/BSD-3-Clause.txt",
+        "blob_sha": "b91bbd89468099ae5c3028f176783976ca538187",
+        "size_bytes": 1469,
+        "read_verified": true,
+        "evidence_round": 32
+      },
+      {
+        "repository": "qt/qt5",
+        "commit": "dc2ac680fa9d0ef7b0d9520859593d13951bedea",
+        "path": "LICENSE.FDL",
+        "blob_sha": "938bb8da9e07e20ebf320ed6f7e703a295fe3d62",
+        "size_bytes": 22961,
+        "read_verified": true,
+        "evidence_round": 32
+      },
+      {
+        "repository": "strukturag/libheif",
+        "commit": "413e2a87e6a70b3eccc3a3adc5801179dd2d9e00",
+        "path": "COPYING",
+        "blob_sha": "f80407e7d5827a93d97767679d3521991e62d8cb",
+        "size_bytes": 44366,
+        "read_verified": true,
+        "evidence_round": 32
+      },
+      {
+        "repository": "telegramdesktop/openal-soft",
+        "commit": "00cb9b649c1a6ad1802d88ee4458979164529238",
+        "path": "COPYING",
+        "blob_sha": "8d5d0000656d57b6fc8118c1078aa3172b7c02ec",
+        "size_bytes": 23330,
+        "read_verified": true,
+        "evidence_round": 32
+      },
+      {
+        "repository": "telegramdesktop/openal-soft",
+        "commit": "c2eab43d72890c58d4b51d5d98eafb9f011e1c89",
+        "path": "COPYING",
+        "blob_sha": "8d5d0000656d57b6fc8118c1078aa3172b7c02ec",
+        "size_bytes": 23330,
+        "read_verified": true,
+        "evidence_round": 32
+      },
+      {
+        "repository": "tukaani-project/xz",
+        "commit": "05af863c3166cddeb4ab935829b14e995c8346b4",
+        "path": "COPYING",
+        "blob_sha": "e54eeacfbf3f574705c926ff403214c7973c9de0",
+        "size_bytes": 3330,
+        "read_verified": true,
+        "evidence_round": 32
+      },
+      {
+        "repository": "tukaani-project/xz",
+        "commit": "d3e650e63c110e830fd5391e7f8b45df0b91d3da",
+        "path": "COPYING",
+        "blob_sha": "ef3371389d7d45db6593a146fd9e027347f3122c",
+        "size_bytes": 3119,
+        "read_verified": true,
+        "evidence_round": 32
+      },
+      {
+        "repository": "webmproject/libvpx",
+        "commit": "12f3a2ac603e8f10742105519e0cd03c3b8f71dd",
+        "path": "LICENSE",
+        "blob_sha": "1ce44343c4a325e9e1189fd98bb44a9f2f096da9",
+        "size_bytes": 1537,
+        "read_verified": true,
+        "evidence_round": 32
+      },
+      {
+        "repository": "webmproject/libwebp",
+        "commit": "4fa21912338357f89e4fd51cf2368325b59e9bd9",
+        "path": "COPYING",
+        "blob_sha": "7a6f99547d4d6b4c5e6d5321acfaeba313e08de3",
+        "size_bytes": 1496,
+        "read_verified": true,
+        "evidence_round": 32
+      },
+      {
+        "repository": "xiph/opus",
+        "commit": "ddbe48383984d56acd9e1ab6a090c54ca6b735a6",
+        "path": "COPYING",
+        "blob_sha": "75711467a3eb220f35f72afdb55a4734ee5cdb47",
+        "size_bytes": 1945,
+        "read_verified": true,
+        "evidence_round": 32
+      },
+      {
+        "repository": "xiph/rnnoise",
+        "commit": "904a876dce1f9ab8860c0a5000ed151f9f6eef58",
+        "path": "COPYING",
+        "blob_sha": "59d7d09c80c17e60a972bf730caf6a3e005b17b1",
+        "size_bytes": 1612,
+        "read_verified": true,
+        "evidence_round": 32
+      },
+      {
+        "repository": "xkbcommon/libxkbcommon",
+        "commit": "d2a08f761c796733e42fac4099f5c38d443e88e1",
+        "path": "LICENSE",
+        "blob_sha": "3dcd0391fca95a7bce8647d353b41bf8495166f7",
+        "size_bytes": 10142,
+        "read_verified": true,
+        "evidence_round": 32
+      },
+      {
+        "repository": "mm2/Little-CMS",
+        "commit": "5176347635785e53ee5cee92328f76fda766ecc6",
+        "path": "LICENSE",
+        "blob_sha": "85480b50b0c5860b541dc3b0032084c55ca91dcd",
+        "size_bytes": 1080,
+        "read_verified": true,
+        "evidence_round": 32
+      },
+      {
+        "repository": "google/googletest",
+        "commit": "6910c9d9165801d8827d628cb72eb7ea9dd538c5",
+        "path": "LICENSE",
+        "blob_sha": "1941a11f8ce94389160b458927a29ba217542818",
+        "size_bytes": 1475,
+        "read_verified": true,
+        "evidence_round": 32
+      },
+      {
+        "repository": "webmproject/sjpeg",
+        "commit": "94e0df6d0f8b44228de5be0ff35efb9f946a13c9",
+        "path": "COPYING",
+        "blob_sha": "d645695673349e3947e8e5ae42332d0ac3164cd7",
+        "size_bytes": 11358,
+        "read_verified": true,
+        "evidence_round": 32
+      },
+      {
+        "repository": "google/skcms",
+        "commit": "96d9171c94b937a1b5f0293de7309ac16311b722",
+        "path": "LICENSE",
+        "blob_sha": "6c7c5be360194ef93331dfb2b0c01114ad9c263f",
+        "size_bytes": 1635,
+        "read_verified": true,
+        "evidence_round": 32
+      },
+      {
+        "repository": "google/highway",
+        "commit": "457c891775a7397bdb0376bb1031e6e027af1c48",
+        "path": "LICENSE",
+        "blob_sha": "f49a4e16e68b128803cc2dcea614603632b04eac",
+        "size_bytes": 11356,
+        "read_verified": true,
+        "evidence_round": 32
+      },
+      {
+        "repository": "pnggroup/libpng",
+        "commit": "872555f4ba910252783af1507f9e7fe1653be252",
+        "path": "LICENSE",
+        "blob_sha": "ea6df986cb6a743738771689876215dfdd81dcc5",
+        "size_bytes": 5345,
+        "read_verified": true,
+        "evidence_round": 32
+      },
+      {
+        "repository": "madler/zlib",
+        "commit": "51b7f2abdade71cd9bb0e7a373ef2610ec6f9daf",
+        "path": "LICENSE",
+        "blob_sha": "ab8ee6f71428c3e4646b12b64ad387cde33462e5",
+        "size_bytes": 1002,
+        "read_verified": true,
+        "evidence_round": 32
+      },
+      {
+        "repository": "libjxl/testdata",
+        "commit": "73695d303670c90e4d506ea89d9901b081385089",
+        "path": "LICENSE",
+        "blob_sha": "da6ab6cc8f333d7e89a99812866df8f24374d47c",
+        "size_bytes": 18657,
+        "read_verified": true,
+        "evidence_round": 32
+      },
+      {
+        "repository": "libjpeg-turbo/libjpeg-turbo",
+        "commit": "8ecba3647edb6dd940463fedf38ca33a8e2a73d1",
+        "path": "LICENSE.md",
+        "blob_sha": "bf8a7fda7f57699207fafde0c19c9801fb143e28",
+        "size_bytes": 5213,
+        "read_verified": true,
+        "evidence_round": 32
+      },
+      {
+        "repository": "qt/qtdeclarative-testsuites",
+        "commit": "a0efb7e1ab1cee24c387abe1897ff18fa116c17d",
+        "path": "LICENSE",
+        "blob_sha": "46b55a37b3e4dec8e0a3c29d546545fc2babe3b0",
+        "size_bytes": 2299,
+        "read_verified": true,
+        "evidence_round": 32
+      },
+      {
+        "repository": "boostorg/boost",
+        "commit": "1bed2b0712b2119f20d66c5053def9173c8462a5",
+        "path": "LICENSE_1_0.txt",
+        "blob_sha": "36b7cd93cdfbac762f5be4c6ce276df2ea6305c2",
+        "size_bytes": 1338,
+        "read_verified": true,
+        "evidence_round": 32
       }
     ]
   },
@@ -956,11 +1460,74 @@
       "commit": "47cf94f83b54cda59018135601e19d7fb0c77776",
       "git_tree_verified": false,
       "status": "fail-closed-original-host-unread"
+    },
+    "xcb_util_m4_original_host": {
+      "repository": "gitlab.freedesktop.org/xorg/util/xcb-util-m4",
+      "commit": "c617eee22ae5c285e79e81ec39ce96862fd3262f",
+      "git_tree_verified": false,
+      "status": "github-mirror-object-verified-original-host-unread"
     }
   },
   "acceptance": {
     "baseline_ready": false,
     "accepted": false,
     "validation_status": "not-run"
+  },
+  "round32_build_authority_non_code_closure": {
+    "evidence_mode": "manual-github-tree-and-license-blob-reads-plus-official-release-metadata-stage-a-no-ci",
+    "root_mutable_authorities": {
+      "rows": 48,
+      "unique_github_commit_objects": 47,
+      "recursive_root_scans_complete": 48,
+      "pending": 0
+    },
+    "gitmodules": {
+      "libjxl": {
+        "blob_sha": "e64c474aef79402b0328f448270d3c27c818ca87",
+        "read_verified": true
+      },
+      "openssl": {
+        "blob_sha": "b4c756a67b1796613312e4b547dfabd53e5eb2c6",
+        "read_verified": true
+      },
+      "qt6": {
+        "blob_sha": "b1a23c0548de2e47f620d2c34db063621c7428ba",
+        "read_verified": true
+      },
+      "qt5": {
+        "blob_sha": "452233655f279d4c033a6b0e5fa05f8dae8a9183",
+        "read_verified": true
+      },
+      "xcb_util_family": {
+        "blob_sha": "375bb2ec82a885e5bac5dae4766901099178f176",
+        "read_verified": true,
+        "child_commit": "c617eee22ae5c285e79e81ec39ce96862fd3262f",
+        "github_mirror_tree": "184bbcb9e3b4cad3c68f5c024fb47b34a22ff9ff",
+        "original_host_tree_verified": false
+      }
+    },
+    "archives": {
+      "boost_1_90_0": {
+        "url": "https://archives.boost.io/release/1.90.0/source/boost_1_90_0.tar.gz",
+        "size_bytes": 210975925,
+        "sha256": "5e93d582aff26868d581a52ae78c7d8edf3f3064742c6e77901a1f18a437eea9",
+        "official_source_commit": "1bed2b0712b2119f20d66c5053def9173c8462a5",
+        "raw_member_listing": "unread"
+      },
+      "libiconv_1_18": {
+        "url": "https://ftp.gnu.org/gnu/libiconv/libiconv-1.18.tar.gz",
+        "size_bytes": 5822590,
+        "sha1": "3402aae249ec56e04114767c8f6bdaafc87a048c",
+        "sha256": "3b08f5f4f9b4eb82f151a7040bfd6fe6c6fb922efe4b1659c66ea933276965e8",
+        "signature_size_bytes": 833,
+        "signing_key_fingerprint": "9001 B85A F9E1 B83D F1BD A942 F5BE 8B26 7C6A 406D",
+        "raw_member_listing": "unread"
+      }
+    },
+    "blockers": [
+      "Raw Boost/libiconv compressed member lists cannot be read through current web connector; direct archive downloads in the execution container failed.",
+      "xcb-util-m4 original GitLab tree remains unread even though the pinned commit/tree is independently visible in GitHub mirrors.",
+      "cppgir original GitLab tree/blob remains fail-closed."
+    ]
   }
 }

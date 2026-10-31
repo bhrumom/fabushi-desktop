@@ -18,7 +18,11 @@
       "head_sha": "16f5f04e362a4ef93d0c5f9fb8a61f5b4e3500b1",
       "artifact_id": 11475597885,
       "artifact_digest": "sha256:ac9f74cd2e573de663c149768f6b5a462eb08ae3b2484f2bfaa4a8b9663ae219"
-    }
+    },
+    "github_recursive_root_authorities_scanned": 48,
+    "github_unique_recursive_root_objects_scanned": 47,
+    "github_recursive_scan_pending": 0,
+    "round32_note": "All 48 root-mutable authority rows (47 unique GitHub commit/root-tree objects) now have non-truncated recursive root-tree scans. Build-reachable recursive children are separately closed for libjxl and selected Qt modules; OpenSSL gitlinks are not initialized by fixed-U TDesktop. xcb-util m4 child commit is object-verified through a GitHub mirror but its original GitLab tree remains not independently verified. Live HEAD/branch resolutions remain non-U-pinned."
   },
   "authority_count": 48,
   "occurrence_count": 67,
@@ -36,11 +40,35 @@
           "source_blob_sha": "a9f3dd2d9e4020df958ab5af942376177d66c78b"
         }
       ],
-      "status": "fixed-u-source-ref-resolved-commit-tree-read-recursive-scan-pending",
+      "status": "fixed-u-source-ref-resolved-commit-tree-read-recursive-scan-complete",
       "tree_sha": "37c883895a0fe6cf3fdf3f975525fe8beefdd9c2",
       "pin_semantics": "symbolic-ref-resolved-for-fixed-u-provenance-not-cryptographically-pinned-by-source",
       "verification_repository": "https://github.com/videolan/dav1d",
-      "verification_scope": "github-mirror-commit-and-root-tree-object"
+      "verification_scope": "github-mirror-commit-and-root-tree-object",
+      "recursive_scan": {
+        "evidence_round": 32,
+        "evidence_mode": "manual-github-commit-tree-gitmodules-license-blob-reads-stage-a-no-ci",
+        "commit_verified": true,
+        "root_tree_sha": "37c883895a0fe6cf3fdf3f975525fe8beefdd9c2",
+        "root_tree_matches_recorded": true,
+        "recursive_tree": {
+          "truncated": false,
+          "entries": 390,
+          "blobs": 359,
+          "trees": 31
+        },
+        "direct_gitlink_count": 0,
+        "direct_gitlinks": [],
+        "read_blobs": [
+          {
+            "path": "COPYING",
+            "blob_sha": "8d4d6418c1ab4adf0a05bddfc11182216d5238a1",
+            "size_bytes": 1317,
+            "read_verified": true,
+            "evidence_round": 32
+          }
+        ]
+      }
     },
     {
       "id": "ROOT-MUT-002",
@@ -55,9 +83,33 @@
           "source_blob_sha": "a181d828f25d901303f7221824ac30b0ff5e773a"
         }
       ],
-      "status": "fixed-u-source-ref-resolved-commit-tree-read-recursive-scan-pending",
+      "status": "fixed-u-source-ref-resolved-commit-tree-read-recursive-scan-complete",
       "tree_sha": "4af890bd65f1e26300bf6046a315a7927675c521",
-      "pin_semantics": "symbolic-ref-resolved-for-fixed-u-provenance-not-cryptographically-pinned-by-source"
+      "pin_semantics": "symbolic-ref-resolved-for-fixed-u-provenance-not-cryptographically-pinned-by-source",
+      "recursive_scan": {
+        "evidence_round": 32,
+        "evidence_mode": "manual-github-commit-tree-gitmodules-license-blob-reads-stage-a-no-ci",
+        "commit_verified": true,
+        "root_tree_sha": "4af890bd65f1e26300bf6046a315a7927675c521",
+        "root_tree_matches_recorded": true,
+        "recursive_tree": {
+          "truncated": false,
+          "entries": 456,
+          "blobs": 400,
+          "trees": 56
+        },
+        "direct_gitlink_count": 0,
+        "direct_gitlinks": [],
+        "read_blobs": [
+          {
+            "path": "LICENSE",
+            "blob_sha": "350eb9d15ce1553438b09b8cd14c803e86da316b",
+            "size_bytes": 20415,
+            "read_verified": true,
+            "evidence_round": 32
+          }
+        ]
+      }
     },
     {
       "id": "ROOT-MUT-003",
@@ -79,9 +131,33 @@
           "source_blob_sha": "a9f3dd2d9e4020df958ab5af942376177d66c78b"
         }
       ],
-      "status": "fixed-u-source-ref-resolved-commit-tree-read-recursive-scan-pending",
+      "status": "fixed-u-source-ref-resolved-commit-tree-read-recursive-scan-complete",
       "tree_sha": "b2663cbc9ed4554942f9c5e54f6ffd4ec6a8d608",
-      "pin_semantics": "symbolic-ref-resolved-for-fixed-u-provenance-not-cryptographically-pinned-by-source"
+      "pin_semantics": "symbolic-ref-resolved-for-fixed-u-provenance-not-cryptographically-pinned-by-source",
+      "recursive_scan": {
+        "evidence_round": 32,
+        "evidence_mode": "manual-github-commit-tree-gitmodules-license-blob-reads-stage-a-no-ci",
+        "commit_verified": true,
+        "root_tree_sha": "b2663cbc9ed4554942f9c5e54f6ffd4ec6a8d608",
+        "root_tree_matches_recorded": true,
+        "recursive_tree": {
+          "truncated": false,
+          "entries": 473,
+          "blobs": 417,
+          "trees": 56
+        },
+        "direct_gitlink_count": 0,
+        "direct_gitlinks": [],
+        "read_blobs": [
+          {
+            "path": "LICENSE",
+            "blob_sha": "350eb9d15ce1553438b09b8cd14c803e86da316b",
+            "size_bytes": 20415,
+            "read_verified": true,
+            "evidence_round": 32
+          }
+        ]
+      }
     },
     {
       "id": "ROOT-MUT-004",
@@ -103,9 +179,61 @@
           "source_blob_sha": "a9f3dd2d9e4020df958ab5af942376177d66c78b"
         }
       ],
-      "status": "fixed-u-source-ref-resolved-commit-tree-read-recursive-scan-pending",
+      "status": "fixed-u-source-ref-resolved-commit-tree-read-recursive-scan-complete",
       "tree_sha": "4617f177ba2b559e393d7ca16cb8bba1bbde6ed2",
-      "pin_semantics": "symbolic-ref-resolved-for-fixed-u-provenance-not-cryptographically-pinned-by-source"
+      "pin_semantics": "symbolic-ref-resolved-for-fixed-u-provenance-not-cryptographically-pinned-by-source",
+      "recursive_scan": {
+        "evidence_round": 32,
+        "evidence_mode": "manual-github-commit-tree-gitmodules-license-blob-reads-stage-a-no-ci",
+        "commit_verified": true,
+        "root_tree_sha": "4617f177ba2b559e393d7ca16cb8bba1bbde6ed2",
+        "root_tree_matches_recorded": true,
+        "recursive_tree": {
+          "truncated": false,
+          "entries": 10258,
+          "blobs": 10140,
+          "trees": 118
+        },
+        "direct_gitlink_count": 0,
+        "direct_gitlinks": [],
+        "read_blobs": [
+          {
+            "path": "COPYING.GPLv2",
+            "blob_sha": "d159169d1050894d3ea3b98e1c965c4058208fe1",
+            "size_bytes": 18092,
+            "read_verified": true,
+            "evidence_round": 32
+          },
+          {
+            "path": "COPYING.GPLv3",
+            "blob_sha": "94a9ed024d3859793618152ea559a168bbcbb5e2",
+            "size_bytes": 35147,
+            "read_verified": true,
+            "evidence_round": 32
+          },
+          {
+            "path": "COPYING.LGPLv2.1",
+            "blob_sha": "40924c2a6da76a2b0c639f6fe7ef0b2d095a6adb",
+            "size_bytes": 26517,
+            "read_verified": true,
+            "evidence_round": 32
+          },
+          {
+            "path": "COPYING.LGPLv3",
+            "blob_sha": "65c5ca88a67c30becee01c5a8816d964b03862f9",
+            "size_bytes": 7651,
+            "read_verified": true,
+            "evidence_round": 32
+          },
+          {
+            "path": "LICENSE.md",
+            "blob_sha": "371b0913ce7c199c4092d9344680c80f78ebeb2a",
+            "size_bytes": 4346,
+            "read_verified": true,
+            "evidence_round": 32
+          }
+        ]
+      }
     },
     {
       "id": "ROOT-MUT-005",
@@ -120,9 +248,61 @@
           "source_blob_sha": "a181d828f25d901303f7221824ac30b0ff5e773a"
         }
       ],
-      "status": "fixed-u-source-ref-resolved-commit-tree-read-recursive-scan-pending",
+      "status": "fixed-u-source-ref-resolved-commit-tree-read-recursive-scan-complete",
       "tree_sha": "9aaca04fcc4bb2a56d3a06bab6d262d587956dc2",
-      "pin_semantics": "symbolic-ref-resolved-for-fixed-u-provenance-not-cryptographically-pinned-by-source"
+      "pin_semantics": "symbolic-ref-resolved-for-fixed-u-provenance-not-cryptographically-pinned-by-source",
+      "recursive_scan": {
+        "evidence_round": 32,
+        "evidence_mode": "manual-github-commit-tree-gitmodules-license-blob-reads-stage-a-no-ci",
+        "commit_verified": true,
+        "root_tree_sha": "9aaca04fcc4bb2a56d3a06bab6d262d587956dc2",
+        "root_tree_matches_recorded": true,
+        "recursive_tree": {
+          "truncated": false,
+          "entries": 8295,
+          "blobs": 8195,
+          "trees": 100
+        },
+        "direct_gitlink_count": 0,
+        "direct_gitlinks": [],
+        "read_blobs": [
+          {
+            "path": "COPYING.GPLv2",
+            "blob_sha": "d159169d1050894d3ea3b98e1c965c4058208fe1",
+            "size_bytes": 18092,
+            "read_verified": true,
+            "evidence_round": 32
+          },
+          {
+            "path": "COPYING.GPLv3",
+            "blob_sha": "94a9ed024d3859793618152ea559a168bbcbb5e2",
+            "size_bytes": 35147,
+            "read_verified": true,
+            "evidence_round": 32
+          },
+          {
+            "path": "COPYING.LGPLv2.1",
+            "blob_sha": "40924c2a6da76a2b0c639f6fe7ef0b2d095a6adb",
+            "size_bytes": 26517,
+            "read_verified": true,
+            "evidence_round": 32
+          },
+          {
+            "path": "COPYING.LGPLv3",
+            "blob_sha": "65c5ca88a67c30becee01c5a8816d964b03862f9",
+            "size_bytes": 7651,
+            "read_verified": true,
+            "evidence_round": 32
+          },
+          {
+            "path": "LICENSE.md",
+            "blob_sha": "613070e1b631a919a74c862f2a75a0f249a631ff",
+            "size_bytes": 4376,
+            "read_verified": true,
+            "evidence_round": 32
+          }
+        ]
+      }
     },
     {
       "id": "ROOT-MUT-006",
@@ -137,9 +317,25 @@
           "source_blob_sha": "a9f3dd2d9e4020df958ab5af942376177d66c78b"
         }
       ],
-      "status": "fixed-u-source-anchor-live-resolution-tree-read-recursive-scan-pending",
+      "status": "fixed-u-source-anchor-live-resolution-tree-read-recursive-scan-complete",
       "tree_sha": "4f6f9754556f7bac9e30573638014de612997eba",
-      "pin_semantics": "floating-ref-live-resolution-not-pinned-by-u"
+      "pin_semantics": "floating-ref-live-resolution-not-pinned-by-u",
+      "recursive_scan": {
+        "evidence_round": 32,
+        "evidence_mode": "manual-github-commit-tree-gitmodules-license-blob-reads-stage-a-no-ci",
+        "commit_verified": true,
+        "root_tree_sha": "4f6f9754556f7bac9e30573638014de612997eba",
+        "root_tree_matches_recorded": true,
+        "recursive_tree": {
+          "truncated": false,
+          "entries": 5,
+          "blobs": 5,
+          "trees": 0
+        },
+        "direct_gitlink_count": 0,
+        "direct_gitlinks": [],
+        "read_blobs": []
+      }
     },
     {
       "id": "ROOT-MUT-007",
@@ -168,9 +364,25 @@
           "source_blob_sha": "a181d828f25d901303f7221824ac30b0ff5e773a"
         }
       ],
-      "status": "fixed-u-source-ref-resolved-commit-tree-read-recursive-scan-pending",
+      "status": "fixed-u-source-ref-resolved-commit-tree-read-recursive-scan-complete",
       "tree_sha": "77898959a0d0dd55016d99a8c4c3b1ba88f6ab4f",
-      "pin_semantics": "symbolic-ref-resolved-for-fixed-u-provenance-not-cryptographically-pinned-by-source"
+      "pin_semantics": "symbolic-ref-resolved-for-fixed-u-provenance-not-cryptographically-pinned-by-source",
+      "recursive_scan": {
+        "evidence_round": 32,
+        "evidence_mode": "manual-github-commit-tree-gitmodules-license-blob-reads-stage-a-no-ci",
+        "commit_verified": true,
+        "root_tree_sha": "77898959a0d0dd55016d99a8c4c3b1ba88f6ab4f",
+        "root_tree_matches_recorded": true,
+        "recursive_tree": {
+          "truncated": false,
+          "entries": 11,
+          "blobs": 9,
+          "trees": 2
+        },
+        "direct_gitlink_count": 0,
+        "direct_gitlinks": [],
+        "read_blobs": []
+      }
     },
     {
       "id": "ROOT-MUT-008",
@@ -185,9 +397,40 @@
           "source_blob_sha": "3fea9e6866e0ea6351f8a13ebb825ebf49cadfc2"
         }
       ],
-      "status": "fixed-u-source-ref-resolved-commit-tree-read-recursive-scan-pending",
+      "status": "fixed-u-source-ref-resolved-commit-tree-read-recursive-scan-complete",
       "tree_sha": "829ae65cc388f21e0f0398f4a4eb7da3df279ae8",
-      "pin_semantics": "symbolic-ref-resolved-for-fixed-u-provenance-not-cryptographically-pinned-by-source"
+      "pin_semantics": "symbolic-ref-resolved-for-fixed-u-provenance-not-cryptographically-pinned-by-source",
+      "recursive_scan": {
+        "evidence_round": 32,
+        "evidence_mode": "manual-github-commit-tree-gitmodules-license-blob-reads-stage-a-no-ci",
+        "commit_verified": true,
+        "root_tree_sha": "829ae65cc388f21e0f0398f4a4eb7da3df279ae8",
+        "root_tree_matches_recorded": true,
+        "recursive_tree": {
+          "truncated": false,
+          "entries": 1140,
+          "blobs": 1039,
+          "trees": 101
+        },
+        "direct_gitlink_count": 0,
+        "direct_gitlinks": [],
+        "read_blobs": [
+          {
+            "path": "COPYING",
+            "blob_sha": "aa100ce9c02238111b56e394ad5a13311e23a521",
+            "size_bytes": 1218,
+            "read_verified": true,
+            "evidence_round": 32
+          },
+          {
+            "path": "LICENSE",
+            "blob_sha": "f4c692d0c7cec93ea559edc403fe528b7635ef48",
+            "size_bytes": 349,
+            "read_verified": true,
+            "evidence_round": 32
+          }
+        ]
+      }
     },
     {
       "id": "ROOT-MUT-009",
@@ -216,9 +459,40 @@
           "source_blob_sha": "a181d828f25d901303f7221824ac30b0ff5e773a"
         }
       ],
-      "status": "fixed-u-source-ref-resolved-commit-tree-read-recursive-scan-pending",
+      "status": "fixed-u-source-ref-resolved-commit-tree-read-recursive-scan-complete",
       "tree_sha": "6db8270e55783ac868748dc95df68393fe21f723",
-      "pin_semantics": "symbolic-ref-resolved-for-fixed-u-provenance-not-cryptographically-pinned-by-source"
+      "pin_semantics": "symbolic-ref-resolved-for-fixed-u-provenance-not-cryptographically-pinned-by-source",
+      "recursive_scan": {
+        "evidence_round": 32,
+        "evidence_mode": "manual-github-commit-tree-gitmodules-license-blob-reads-stage-a-no-ci",
+        "commit_verified": true,
+        "root_tree_sha": "6db8270e55783ac868748dc95df68393fe21f723",
+        "root_tree_matches_recorded": true,
+        "recursive_tree": {
+          "truncated": false,
+          "entries": 223,
+          "blobs": 197,
+          "trees": 26
+        },
+        "direct_gitlink_count": 0,
+        "direct_gitlinks": [],
+        "read_blobs": [
+          {
+            "path": "LICENSE-APACHE",
+            "blob_sha": "1204b0aabba61db2b8aa888827cd13e05e3066d3",
+            "size_bytes": 11342,
+            "read_verified": true,
+            "evidence_round": 32
+          },
+          {
+            "path": "LICENSE-MIT",
+            "blob_sha": "bd2abacfc1dd51abee6d41399ed228d7945dbea3",
+            "size_bytes": 1071,
+            "read_verified": true,
+            "evidence_round": 32
+          }
+        ]
+      }
     },
     {
       "id": "ROOT-MUT-010",
@@ -233,9 +507,25 @@
           "source_blob_sha": "a9f3dd2d9e4020df958ab5af942376177d66c78b"
         }
       ],
-      "status": "fixed-u-source-ref-resolved-commit-tree-read-recursive-scan-pending",
+      "status": "fixed-u-source-ref-resolved-commit-tree-read-recursive-scan-complete",
       "tree_sha": "6846eb0f17ae4fa068bac96a3f76019360a6cc67",
-      "pin_semantics": "symbolic-ref-resolved-for-fixed-u-provenance-not-cryptographically-pinned-by-source"
+      "pin_semantics": "symbolic-ref-resolved-for-fixed-u-provenance-not-cryptographically-pinned-by-source",
+      "recursive_scan": {
+        "evidence_round": 32,
+        "evidence_mode": "manual-github-commit-tree-gitmodules-license-blob-reads-stage-a-no-ci",
+        "commit_verified": true,
+        "root_tree_sha": "6846eb0f17ae4fa068bac96a3f76019360a6cc67",
+        "root_tree_matches_recorded": true,
+        "recursive_tree": {
+          "truncated": false,
+          "entries": 453,
+          "blobs": 395,
+          "trees": 58
+        },
+        "direct_gitlink_count": 0,
+        "direct_gitlinks": [],
+        "read_blobs": []
+      }
     },
     {
       "id": "ROOT-MUT-011",
@@ -257,9 +547,33 @@
           "source_blob_sha": "a9f3dd2d9e4020df958ab5af942376177d66c78b"
         }
       ],
-      "status": "fixed-u-source-ref-resolved-commit-tree-read-recursive-scan-pending",
+      "status": "fixed-u-source-ref-resolved-commit-tree-read-recursive-scan-complete",
       "tree_sha": "a13ae6006ce07d60dd6fd3bd7db2912375b839d2",
-      "pin_semantics": "symbolic-ref-resolved-for-fixed-u-provenance-not-cryptographically-pinned-by-source"
+      "pin_semantics": "symbolic-ref-resolved-for-fixed-u-provenance-not-cryptographically-pinned-by-source",
+      "recursive_scan": {
+        "evidence_round": 32,
+        "evidence_mode": "manual-github-commit-tree-gitmodules-license-blob-reads-stage-a-no-ci",
+        "commit_verified": true,
+        "root_tree_sha": "a13ae6006ce07d60dd6fd3bd7db2912375b839d2",
+        "root_tree_matches_recorded": true,
+        "recursive_tree": {
+          "truncated": false,
+          "entries": 917,
+          "blobs": 740,
+          "trees": 177
+        },
+        "direct_gitlink_count": 0,
+        "direct_gitlinks": [],
+        "read_blobs": [
+          {
+            "path": "LICENSE",
+            "blob_sha": "8e730c4e2c646c2057326c54c932bdbddf11deea",
+            "size_bytes": 1295,
+            "read_verified": true,
+            "evidence_round": 32
+          }
+        ]
+      }
     },
     {
       "id": "ROOT-MUT-012",
@@ -274,9 +588,25 @@
           "source_blob_sha": "a9f3dd2d9e4020df958ab5af942376177d66c78b"
         }
       ],
-      "status": "fixed-u-source-anchor-live-resolution-tree-read-recursive-scan-pending",
+      "status": "fixed-u-source-anchor-live-resolution-tree-read-recursive-scan-complete",
       "tree_sha": "753f644741d400d2eb4f09e7345bb0955635bfa1",
-      "pin_semantics": "floating-ref-live-resolution-not-pinned-by-u"
+      "pin_semantics": "floating-ref-live-resolution-not-pinned-by-u",
+      "recursive_scan": {
+        "evidence_round": 32,
+        "evidence_mode": "manual-github-commit-tree-gitmodules-license-blob-reads-stage-a-no-ci",
+        "commit_verified": true,
+        "root_tree_sha": "753f644741d400d2eb4f09e7345bb0955635bfa1",
+        "root_tree_matches_recorded": true,
+        "recursive_tree": {
+          "truncated": false,
+          "entries": 681,
+          "blobs": 625,
+          "trees": 56
+        },
+        "direct_gitlink_count": 0,
+        "direct_gitlinks": [],
+        "read_blobs": []
+      }
     },
     {
       "id": "ROOT-MUT-013",
@@ -291,9 +621,33 @@
           "source_blob_sha": "3fea9e6866e0ea6351f8a13ebb825ebf49cadfc2"
         }
       ],
-      "status": "fixed-u-source-ref-resolved-commit-tree-read-recursive-scan-pending",
+      "status": "fixed-u-source-ref-resolved-commit-tree-read-recursive-scan-complete",
       "tree_sha": "65479177e7048bc5338bc6e5863ee925702922e6",
-      "pin_semantics": "symbolic-ref-resolved-for-fixed-u-provenance-not-cryptographically-pinned-by-source"
+      "pin_semantics": "symbolic-ref-resolved-for-fixed-u-provenance-not-cryptographically-pinned-by-source",
+      "recursive_scan": {
+        "evidence_round": 32,
+        "evidence_mode": "manual-github-commit-tree-gitmodules-license-blob-reads-stage-a-no-ci",
+        "commit_verified": true,
+        "root_tree_sha": "65479177e7048bc5338bc6e5863ee925702922e6",
+        "root_tree_matches_recorded": true,
+        "recursive_tree": {
+          "truncated": false,
+          "entries": 84,
+          "blobs": 76,
+          "trees": 8
+        },
+        "direct_gitlink_count": 0,
+        "direct_gitlinks": [],
+        "read_blobs": [
+          {
+            "path": "COPYING",
+            "blob_sha": "54bfbe5b02074d0c276959c9140072ccba0dc670",
+            "size_bytes": 1337,
+            "read_verified": true,
+            "evidence_round": 32
+          }
+        ]
+      }
     },
     {
       "id": "ROOT-MUT-014",
@@ -308,9 +662,55 @@
           "source_blob_sha": "3fea9e6866e0ea6351f8a13ebb825ebf49cadfc2"
         }
       ],
-      "status": "fixed-u-source-ref-resolved-commit-tree-read-recursive-scan-pending",
+      "status": "fixed-u-source-ref-resolved-commit-tree-read-recursive-scan-complete",
       "tree_sha": "9229e5ca6936f04dae098d36eb7c298427b37f11",
-      "pin_semantics": "symbolic-ref-resolved-for-fixed-u-provenance-not-cryptographically-pinned-by-source"
+      "pin_semantics": "symbolic-ref-resolved-for-fixed-u-provenance-not-cryptographically-pinned-by-source",
+      "recursive_scan": {
+        "evidence_round": 32,
+        "evidence_mode": "manual-github-commit-tree-gitmodules-license-blob-reads-stage-a-no-ci",
+        "commit_verified": true,
+        "root_tree_sha": "9229e5ca6936f04dae098d36eb7c298427b37f11",
+        "root_tree_matches_recorded": true,
+        "recursive_tree": {
+          "truncated": false,
+          "entries": 26,
+          "blobs": 23,
+          "trees": 2
+        },
+        "direct_gitlink_count": 1,
+        "direct_gitlinks": [
+          {
+            "path": "m4",
+            "commit": "c617eee22ae5c285e79e81ec39ce96862fd3262f"
+          }
+        ],
+        "read_blobs": [
+          {
+            "path": ".gitmodules",
+            "blob_sha": "375bb2ec82a885e5bac5dae4766901099178f176",
+            "size_bytes": 92,
+            "read_verified": true,
+            "evidence_round": 32
+          },
+          {
+            "path": "COPYING",
+            "blob_sha": "2d91a6f5881cfa5bf9a0af9dd959b206ecc833f0",
+            "size_bytes": 1405,
+            "read_verified": true,
+            "evidence_round": 32
+          }
+        ],
+        "external_child": {
+          "path": "m4",
+          "original_repository": "https://gitlab.freedesktop.org/xorg/util/xcb-util-m4.git",
+          "commit": "c617eee22ae5c285e79e81ec39ce96862fd3262f",
+          "github_mirror": "https://github.com/GlassOnTin/xcb-util-m4",
+          "mirror_tree": "184bbcb9e3b4cad3c68f5c024fb47b34a22ff9ff",
+          "mirror_recursive_truncated": false,
+          "mirror_gitlinks": 0,
+          "original_host_tree_verified": false
+        }
+      }
     },
     {
       "id": "ROOT-MUT-015",
@@ -325,9 +725,55 @@
           "source_blob_sha": "3fea9e6866e0ea6351f8a13ebb825ebf49cadfc2"
         }
       ],
-      "status": "fixed-u-source-ref-resolved-commit-tree-read-recursive-scan-pending",
+      "status": "fixed-u-source-ref-resolved-commit-tree-read-recursive-scan-complete",
       "tree_sha": "abddedb08d280036739392864870824e34766cb1",
-      "pin_semantics": "symbolic-ref-resolved-for-fixed-u-provenance-not-cryptographically-pinned-by-source"
+      "pin_semantics": "symbolic-ref-resolved-for-fixed-u-provenance-not-cryptographically-pinned-by-source",
+      "recursive_scan": {
+        "evidence_round": 32,
+        "evidence_mode": "manual-github-commit-tree-gitmodules-license-blob-reads-stage-a-no-ci",
+        "commit_verified": true,
+        "root_tree_sha": "abddedb08d280036739392864870824e34766cb1",
+        "root_tree_matches_recorded": true,
+        "recursive_tree": {
+          "truncated": false,
+          "entries": 23,
+          "blobs": 21,
+          "trees": 1
+        },
+        "direct_gitlink_count": 1,
+        "direct_gitlinks": [
+          {
+            "path": "m4",
+            "commit": "c617eee22ae5c285e79e81ec39ce96862fd3262f"
+          }
+        ],
+        "read_blobs": [
+          {
+            "path": ".gitmodules",
+            "blob_sha": "375bb2ec82a885e5bac5dae4766901099178f176",
+            "size_bytes": 92,
+            "read_verified": true,
+            "evidence_round": 32
+          },
+          {
+            "path": "COPYING",
+            "blob_sha": "ce5913eb8c70eef5eebe5dc9cf861bd48130c8ac",
+            "size_bytes": 1508,
+            "read_verified": true,
+            "evidence_round": 32
+          }
+        ],
+        "external_child": {
+          "path": "m4",
+          "original_repository": "https://gitlab.freedesktop.org/xorg/util/xcb-util-m4.git",
+          "commit": "c617eee22ae5c285e79e81ec39ce96862fd3262f",
+          "github_mirror": "https://github.com/GlassOnTin/xcb-util-m4",
+          "mirror_tree": "184bbcb9e3b4cad3c68f5c024fb47b34a22ff9ff",
+          "mirror_recursive_truncated": false,
+          "mirror_gitlinks": 0,
+          "original_host_tree_verified": false
+        }
+      }
     },
     {
       "id": "ROOT-MUT-016",
@@ -342,9 +788,55 @@
           "source_blob_sha": "3fea9e6866e0ea6351f8a13ebb825ebf49cadfc2"
         }
       ],
-      "status": "fixed-u-source-ref-resolved-commit-tree-read-recursive-scan-pending",
+      "status": "fixed-u-source-ref-resolved-commit-tree-read-recursive-scan-complete",
       "tree_sha": "33e6fc3ba82f72170e3929dc278a25ffeb4055a4",
-      "pin_semantics": "symbolic-ref-resolved-for-fixed-u-provenance-not-cryptographically-pinned-by-source"
+      "pin_semantics": "symbolic-ref-resolved-for-fixed-u-provenance-not-cryptographically-pinned-by-source",
+      "recursive_scan": {
+        "evidence_round": 32,
+        "evidence_mode": "manual-github-commit-tree-gitmodules-license-blob-reads-stage-a-no-ci",
+        "commit_verified": true,
+        "root_tree_sha": "33e6fc3ba82f72170e3929dc278a25ffeb4055a4",
+        "root_tree_matches_recorded": true,
+        "recursive_tree": {
+          "truncated": false,
+          "entries": 21,
+          "blobs": 18,
+          "trees": 2
+        },
+        "direct_gitlink_count": 1,
+        "direct_gitlinks": [
+          {
+            "path": "m4",
+            "commit": "c617eee22ae5c285e79e81ec39ce96862fd3262f"
+          }
+        ],
+        "read_blobs": [
+          {
+            "path": ".gitmodules",
+            "blob_sha": "375bb2ec82a885e5bac5dae4766901099178f176",
+            "size_bytes": 92,
+            "read_verified": true,
+            "evidence_round": 32
+          },
+          {
+            "path": "COPYING",
+            "blob_sha": "ef4db097b3b7f398ede4b0fe7f74c22d897184ba",
+            "size_bytes": 1441,
+            "read_verified": true,
+            "evidence_round": 32
+          }
+        ],
+        "external_child": {
+          "path": "m4",
+          "original_repository": "https://gitlab.freedesktop.org/xorg/util/xcb-util-m4.git",
+          "commit": "c617eee22ae5c285e79e81ec39ce96862fd3262f",
+          "github_mirror": "https://github.com/GlassOnTin/xcb-util-m4",
+          "mirror_tree": "184bbcb9e3b4cad3c68f5c024fb47b34a22ff9ff",
+          "mirror_recursive_truncated": false,
+          "mirror_gitlinks": 0,
+          "original_host_tree_verified": false
+        }
+      }
     },
     {
       "id": "ROOT-MUT-017",
@@ -359,9 +851,33 @@
           "source_blob_sha": "3fea9e6866e0ea6351f8a13ebb825ebf49cadfc2"
         }
       ],
-      "status": "fixed-u-source-ref-resolved-commit-tree-read-recursive-scan-pending",
+      "status": "fixed-u-source-ref-resolved-commit-tree-read-recursive-scan-complete",
       "tree_sha": "0c63f2fb514152b8aa07223dc331044bd5d6a19e",
-      "pin_semantics": "symbolic-ref-resolved-for-fixed-u-provenance-not-cryptographically-pinned-by-source"
+      "pin_semantics": "symbolic-ref-resolved-for-fixed-u-provenance-not-cryptographically-pinned-by-source",
+      "recursive_scan": {
+        "evidence_round": 32,
+        "evidence_mode": "manual-github-commit-tree-gitmodules-license-blob-reads-stage-a-no-ci",
+        "commit_verified": true,
+        "root_tree_sha": "0c63f2fb514152b8aa07223dc331044bd5d6a19e",
+        "root_tree_matches_recorded": true,
+        "recursive_tree": {
+          "truncated": false,
+          "entries": 32,
+          "blobs": 27,
+          "trees": 5
+        },
+        "direct_gitlink_count": 0,
+        "direct_gitlinks": [],
+        "read_blobs": [
+          {
+            "path": "COPYING",
+            "blob_sha": "0033809f053e82437de546eb32b48ed49acd2a30",
+            "size_bytes": 2238,
+            "read_verified": true,
+            "evidence_round": 32
+          }
+        ]
+      }
     },
     {
       "id": "ROOT-MUT-018",
@@ -376,9 +892,33 @@
           "source_blob_sha": "3fea9e6866e0ea6351f8a13ebb825ebf49cadfc2"
         }
       ],
-      "status": "fixed-u-source-ref-resolved-commit-tree-read-recursive-scan-pending",
+      "status": "fixed-u-source-ref-resolved-commit-tree-read-recursive-scan-complete",
       "tree_sha": "4ac0dd546f26298104047efbac769c875cd4fa9d",
-      "pin_semantics": "symbolic-ref-resolved-for-fixed-u-provenance-not-cryptographically-pinned-by-source"
+      "pin_semantics": "symbolic-ref-resolved-for-fixed-u-provenance-not-cryptographically-pinned-by-source",
+      "recursive_scan": {
+        "evidence_round": 32,
+        "evidence_mode": "manual-github-commit-tree-gitmodules-license-blob-reads-stage-a-no-ci",
+        "commit_verified": true,
+        "root_tree_sha": "4ac0dd546f26298104047efbac769c875cd4fa9d",
+        "root_tree_matches_recorded": true,
+        "recursive_tree": {
+          "truncated": false,
+          "entries": 18,
+          "blobs": 14,
+          "trees": 4
+        },
+        "direct_gitlink_count": 0,
+        "direct_gitlinks": [],
+        "read_blobs": [
+          {
+            "path": "COPYING",
+            "blob_sha": "8eaae9d8048a444d9647dd0c1c50eedb1ecced1a",
+            "size_bytes": 1135,
+            "read_verified": true,
+            "evidence_round": 32
+          }
+        ]
+      }
     },
     {
       "id": "ROOT-MUT-019",
@@ -393,9 +933,33 @@
           "source_blob_sha": "3fea9e6866e0ea6351f8a13ebb825ebf49cadfc2"
         }
       ],
-      "status": "fixed-u-source-ref-resolved-commit-tree-read-recursive-scan-pending",
+      "status": "fixed-u-source-ref-resolved-commit-tree-read-recursive-scan-complete",
       "tree_sha": "938e5dd03402aa83338f7b88c0a16e85a374878c",
-      "pin_semantics": "symbolic-ref-resolved-for-fixed-u-provenance-not-cryptographically-pinned-by-source"
+      "pin_semantics": "symbolic-ref-resolved-for-fixed-u-provenance-not-cryptographically-pinned-by-source",
+      "recursive_scan": {
+        "evidence_round": 32,
+        "evidence_mode": "manual-github-commit-tree-gitmodules-license-blob-reads-stage-a-no-ci",
+        "commit_verified": true,
+        "root_tree_sha": "938e5dd03402aa83338f7b88c0a16e85a374878c",
+        "root_tree_matches_recorded": true,
+        "recursive_tree": {
+          "truncated": false,
+          "entries": 123,
+          "blobs": 116,
+          "trees": 7
+        },
+        "direct_gitlink_count": 0,
+        "direct_gitlinks": [],
+        "read_blobs": [
+          {
+            "path": "COPYING",
+            "blob_sha": "7203d366ef4cf3bb48302c28e58ad707fd9b062e",
+            "size_bytes": 11101,
+            "read_verified": true,
+            "evidence_round": 32
+          }
+        ]
+      }
     },
     {
       "id": "ROOT-MUT-020",
@@ -410,9 +974,33 @@
           "source_blob_sha": "3fea9e6866e0ea6351f8a13ebb825ebf49cadfc2"
         }
       ],
-      "status": "fixed-u-source-ref-resolved-commit-tree-read-recursive-scan-pending",
+      "status": "fixed-u-source-ref-resolved-commit-tree-read-recursive-scan-complete",
       "tree_sha": "ee7a61fd8de6d3c81bd27d30f563bd0d8c389dd4",
-      "pin_semantics": "symbolic-ref-resolved-for-fixed-u-provenance-not-cryptographically-pinned-by-source"
+      "pin_semantics": "symbolic-ref-resolved-for-fixed-u-provenance-not-cryptographically-pinned-by-source",
+      "recursive_scan": {
+        "evidence_round": 32,
+        "evidence_mode": "manual-github-commit-tree-gitmodules-license-blob-reads-stage-a-no-ci",
+        "commit_verified": true,
+        "root_tree_sha": "ee7a61fd8de6d3c81bd27d30f563bd0d8c389dd4",
+        "root_tree_matches_recorded": true,
+        "recursive_tree": {
+          "truncated": false,
+          "entries": 23,
+          "blobs": 18,
+          "trees": 5
+        },
+        "direct_gitlink_count": 0,
+        "direct_gitlinks": [],
+        "read_blobs": [
+          {
+            "path": "COPYING",
+            "blob_sha": "66012a93a90cfe0966d48244814aeb5ea72b68fa",
+            "size_bytes": 2232,
+            "read_verified": true,
+            "evidence_round": 32
+          }
+        ]
+      }
     },
     {
       "id": "ROOT-MUT-021",
@@ -427,9 +1015,33 @@
           "source_blob_sha": "3fea9e6866e0ea6351f8a13ebb825ebf49cadfc2"
         }
       ],
-      "status": "fixed-u-source-ref-resolved-commit-tree-read-recursive-scan-pending",
+      "status": "fixed-u-source-ref-resolved-commit-tree-read-recursive-scan-complete",
       "tree_sha": "4565436b6a84e20510f47fae77dc4abe7add0267",
-      "pin_semantics": "symbolic-ref-resolved-for-fixed-u-provenance-not-cryptographically-pinned-by-source"
+      "pin_semantics": "symbolic-ref-resolved-for-fixed-u-provenance-not-cryptographically-pinned-by-source",
+      "recursive_scan": {
+        "evidence_round": 32,
+        "evidence_mode": "manual-github-commit-tree-gitmodules-license-blob-reads-stage-a-no-ci",
+        "commit_verified": true,
+        "root_tree_sha": "4565436b6a84e20510f47fae77dc4abe7add0267",
+        "root_tree_matches_recorded": true,
+        "recursive_tree": {
+          "truncated": false,
+          "entries": 43,
+          "blobs": 38,
+          "trees": 5
+        },
+        "direct_gitlink_count": 0,
+        "direct_gitlinks": [],
+        "read_blobs": [
+          {
+            "path": "COPYING",
+            "blob_sha": "68bffe880fb8661c68b4a0bffd95c4962b458ef7",
+            "size_bytes": 3645,
+            "read_verified": true,
+            "evidence_round": 32
+          }
+        ]
+      }
     },
     {
       "id": "ROOT-MUT-022",
@@ -444,9 +1056,33 @@
           "source_blob_sha": "3fea9e6866e0ea6351f8a13ebb825ebf49cadfc2"
         }
       ],
-      "status": "fixed-u-source-ref-resolved-commit-tree-read-recursive-scan-pending",
+      "status": "fixed-u-source-ref-resolved-commit-tree-read-recursive-scan-complete",
       "tree_sha": "aac4c62b08a942773a4c6ca1ebadb51abf49bdb8",
-      "pin_semantics": "symbolic-ref-resolved-for-fixed-u-provenance-not-cryptographically-pinned-by-source"
+      "pin_semantics": "symbolic-ref-resolved-for-fixed-u-provenance-not-cryptographically-pinned-by-source",
+      "recursive_scan": {
+        "evidence_round": 32,
+        "evidence_mode": "manual-github-commit-tree-gitmodules-license-blob-reads-stage-a-no-ci",
+        "commit_verified": true,
+        "root_tree_sha": "aac4c62b08a942773a4c6ca1ebadb51abf49bdb8",
+        "root_tree_matches_recorded": true,
+        "recursive_tree": {
+          "truncated": false,
+          "entries": 33,
+          "blobs": 28,
+          "trees": 5
+        },
+        "direct_gitlink_count": 0,
+        "direct_gitlinks": [],
+        "read_blobs": [
+          {
+            "path": "COPYING",
+            "blob_sha": "7316ea6cb7618512e9bf6fac5b0d592f352e1c6e",
+            "size_bytes": 2164,
+            "read_verified": true,
+            "evidence_round": 32
+          }
+        ]
+      }
     },
     {
       "id": "ROOT-MUT-023",
@@ -461,9 +1097,33 @@
           "source_blob_sha": "3fea9e6866e0ea6351f8a13ebb825ebf49cadfc2"
         }
       ],
-      "status": "fixed-u-source-ref-resolved-commit-tree-read-recursive-scan-pending",
+      "status": "fixed-u-source-ref-resolved-commit-tree-read-recursive-scan-complete",
       "tree_sha": "03b2632dfbaf64184b88b5ec6936825dab47df5a",
-      "pin_semantics": "symbolic-ref-resolved-for-fixed-u-provenance-not-cryptographically-pinned-by-source"
+      "pin_semantics": "symbolic-ref-resolved-for-fixed-u-provenance-not-cryptographically-pinned-by-source",
+      "recursive_scan": {
+        "evidence_round": 32,
+        "evidence_mode": "manual-github-commit-tree-gitmodules-license-blob-reads-stage-a-no-ci",
+        "commit_verified": true,
+        "root_tree_sha": "03b2632dfbaf64184b88b5ec6936825dab47df5a",
+        "root_tree_matches_recorded": true,
+        "recursive_tree": {
+          "truncated": false,
+          "entries": 27,
+          "blobs": 21,
+          "trees": 6
+        },
+        "direct_gitlink_count": 0,
+        "direct_gitlinks": [],
+        "read_blobs": [
+          {
+            "path": "COPYING",
+            "blob_sha": "010b27099475eda813898bf78e00f3dd2e77f0aa",
+            "size_bytes": 5826,
+            "read_verified": true,
+            "evidence_round": 32
+          }
+        ]
+      }
     },
     {
       "id": "ROOT-MUT-024",
@@ -478,9 +1138,33 @@
           "source_blob_sha": "3fea9e6866e0ea6351f8a13ebb825ebf49cadfc2"
         }
       ],
-      "status": "fixed-u-source-ref-resolved-commit-tree-read-recursive-scan-pending",
+      "status": "fixed-u-source-ref-resolved-commit-tree-read-recursive-scan-complete",
       "tree_sha": "46e5db2902dc397264de1839e9bf8b31c8a8f14e",
-      "pin_semantics": "symbolic-ref-resolved-for-fixed-u-provenance-not-cryptographically-pinned-by-source"
+      "pin_semantics": "symbolic-ref-resolved-for-fixed-u-provenance-not-cryptographically-pinned-by-source",
+      "recursive_scan": {
+        "evidence_round": 32,
+        "evidence_mode": "manual-github-commit-tree-gitmodules-license-blob-reads-stage-a-no-ci",
+        "commit_verified": true,
+        "root_tree_sha": "46e5db2902dc397264de1839e9bf8b31c8a8f14e",
+        "root_tree_matches_recorded": true,
+        "recursive_tree": {
+          "truncated": false,
+          "entries": 49,
+          "blobs": 44,
+          "trees": 5
+        },
+        "direct_gitlink_count": 0,
+        "direct_gitlinks": [],
+        "read_blobs": [
+          {
+            "path": "COPYING",
+            "blob_sha": "83b3df27f3bf5ab449ba4664e848e16495647eba",
+            "size_bytes": 2240,
+            "read_verified": true,
+            "evidence_round": 32
+          }
+        ]
+      }
     },
     {
       "id": "ROOT-MUT-025",
@@ -495,9 +1179,33 @@
           "source_blob_sha": "3fea9e6866e0ea6351f8a13ebb825ebf49cadfc2"
         }
       ],
-      "status": "fixed-u-source-ref-resolved-commit-tree-read-recursive-scan-pending",
+      "status": "fixed-u-source-ref-resolved-commit-tree-read-recursive-scan-complete",
       "tree_sha": "c8579e5127880fe79709a791554b7ad6e1f52326",
-      "pin_semantics": "symbolic-ref-resolved-for-fixed-u-provenance-not-cryptographically-pinned-by-source"
+      "pin_semantics": "symbolic-ref-resolved-for-fixed-u-provenance-not-cryptographically-pinned-by-source",
+      "recursive_scan": {
+        "evidence_round": 32,
+        "evidence_mode": "manual-github-commit-tree-gitmodules-license-blob-reads-stage-a-no-ci",
+        "commit_verified": true,
+        "root_tree_sha": "c8579e5127880fe79709a791554b7ad6e1f52326",
+        "root_tree_matches_recorded": true,
+        "recursive_tree": {
+          "truncated": false,
+          "entries": 59,
+          "blobs": 56,
+          "trees": 3
+        },
+        "direct_gitlink_count": 0,
+        "direct_gitlinks": [],
+        "read_blobs": [
+          {
+            "path": "COPYING",
+            "blob_sha": "54bfbe5b02074d0c276959c9140072ccba0dc670",
+            "size_bytes": 1337,
+            "read_verified": true,
+            "evidence_round": 32
+          }
+        ]
+      }
     },
     {
       "id": "ROOT-MUT-026",
@@ -512,9 +1220,33 @@
           "source_blob_sha": "3fea9e6866e0ea6351f8a13ebb825ebf49cadfc2"
         }
       ],
-      "status": "fixed-u-source-ref-resolved-commit-tree-read-recursive-scan-pending",
+      "status": "fixed-u-source-ref-resolved-commit-tree-read-recursive-scan-complete",
       "tree_sha": "ba309704f7d9ef312a8daea1cdb5d20a29ebed94",
-      "pin_semantics": "symbolic-ref-resolved-for-fixed-u-provenance-not-cryptographically-pinned-by-source"
+      "pin_semantics": "symbolic-ref-resolved-for-fixed-u-provenance-not-cryptographically-pinned-by-source",
+      "recursive_scan": {
+        "evidence_round": 32,
+        "evidence_mode": "manual-github-commit-tree-gitmodules-license-blob-reads-stage-a-no-ci",
+        "commit_verified": true,
+        "root_tree_sha": "ba309704f7d9ef312a8daea1cdb5d20a29ebed94",
+        "root_tree_matches_recorded": true,
+        "recursive_tree": {
+          "truncated": false,
+          "entries": 444,
+          "blobs": 403,
+          "trees": 41
+        },
+        "direct_gitlink_count": 0,
+        "direct_gitlinks": [],
+        "read_blobs": [
+          {
+            "path": "LICENSE",
+            "blob_sha": "33b7cdd2dbaeddce1e35aa1a13f63d71154dc42f",
+            "size_bytes": 1084,
+            "read_verified": true,
+            "evidence_round": 32
+          }
+        ]
+      }
     },
     {
       "id": "ROOT-MUT-027",
@@ -536,9 +1268,33 @@
           "source_blob_sha": "a9f3dd2d9e4020df958ab5af942376177d66c78b"
         }
       ],
-      "status": "fixed-u-source-ref-resolved-commit-tree-read-recursive-scan-pending",
+      "status": "fixed-u-source-ref-resolved-commit-tree-read-recursive-scan-complete",
       "tree_sha": "8cf1e36614fc6ca89eb70fa2aeaad0b4ebf0c34a",
-      "pin_semantics": "symbolic-ref-resolved-for-fixed-u-provenance-not-cryptographically-pinned-by-source"
+      "pin_semantics": "symbolic-ref-resolved-for-fixed-u-provenance-not-cryptographically-pinned-by-source",
+      "recursive_scan": {
+        "evidence_round": 32,
+        "evidence_mode": "manual-github-commit-tree-gitmodules-license-blob-reads-stage-a-no-ci",
+        "commit_verified": true,
+        "root_tree_sha": "8cf1e36614fc6ca89eb70fa2aeaad0b4ebf0c34a",
+        "root_tree_matches_recorded": true,
+        "recursive_tree": {
+          "truncated": false,
+          "entries": 293,
+          "blobs": 259,
+          "trees": 34
+        },
+        "direct_gitlink_count": 0,
+        "direct_gitlinks": [],
+        "read_blobs": [
+          {
+            "path": "LICENSE",
+            "blob_sha": "1941a11f8ce94389160b458927a29ba217542818",
+            "size_bytes": 1475,
+            "read_verified": true,
+            "evidence_round": 32
+          }
+        ]
+      }
     },
     {
       "id": "ROOT-MUT-028",
@@ -553,9 +1309,33 @@
           "source_blob_sha": "3fea9e6866e0ea6351f8a13ebb825ebf49cadfc2"
         }
       ],
-      "status": "fixed-u-source-ref-resolved-commit-tree-read-recursive-scan-pending",
+      "status": "fixed-u-source-ref-resolved-commit-tree-read-recursive-scan-complete",
       "tree_sha": "e240dc0bc54afd953256adbe67eb2f267beb9d86",
-      "pin_semantics": "symbolic-ref-resolved-for-fixed-u-provenance-not-cryptographically-pinned-by-source"
+      "pin_semantics": "symbolic-ref-resolved-for-fixed-u-provenance-not-cryptographically-pinned-by-source",
+      "recursive_scan": {
+        "evidence_round": 32,
+        "evidence_mode": "manual-github-commit-tree-gitmodules-license-blob-reads-stage-a-no-ci",
+        "commit_verified": true,
+        "root_tree_sha": "e240dc0bc54afd953256adbe67eb2f267beb9d86",
+        "root_tree_matches_recorded": true,
+        "recursive_tree": {
+          "truncated": false,
+          "entries": 309,
+          "blobs": 278,
+          "trees": 31
+        },
+        "direct_gitlink_count": 0,
+        "direct_gitlinks": [],
+        "read_blobs": [
+          {
+            "path": "LICENSE",
+            "blob_sha": "1af4f15ca709c0e74e610c09fe91022f354aea58",
+            "size_bytes": 20785,
+            "read_verified": true,
+            "evidence_round": 32
+          }
+        ]
+      }
     },
     {
       "id": "ROOT-MUT-029",
@@ -570,9 +1350,40 @@
           "source_blob_sha": "3fea9e6866e0ea6351f8a13ebb825ebf49cadfc2"
         }
       ],
-      "status": "fixed-u-source-ref-resolved-commit-tree-read-recursive-scan-pending",
+      "status": "fixed-u-source-ref-resolved-commit-tree-read-recursive-scan-complete",
       "tree_sha": "6db1a18dffdcd9a7022c979354f99417581e5dd0",
-      "pin_semantics": "symbolic-ref-resolved-for-fixed-u-provenance-not-cryptographically-pinned-by-source"
+      "pin_semantics": "symbolic-ref-resolved-for-fixed-u-provenance-not-cryptographically-pinned-by-source",
+      "recursive_scan": {
+        "evidence_round": 32,
+        "evidence_mode": "manual-github-commit-tree-gitmodules-license-blob-reads-stage-a-no-ci",
+        "commit_verified": true,
+        "root_tree_sha": "6db1a18dffdcd9a7022c979354f99417581e5dd0",
+        "root_tree_matches_recorded": true,
+        "recursive_tree": {
+          "truncated": false,
+          "entries": 517,
+          "blobs": 461,
+          "trees": 56
+        },
+        "direct_gitlink_count": 0,
+        "direct_gitlinks": [],
+        "read_blobs": [
+          {
+            "path": "COPYING",
+            "blob_sha": "8d5d0000656d57b6fc8118c1078aa3172b7c02ec",
+            "size_bytes": 23330,
+            "read_verified": true,
+            "evidence_round": 32
+          },
+          {
+            "path": "LICENSE-pffft",
+            "blob_sha": "5f1a8493f23e2823e9f27f05215954da158b760c",
+            "size_bytes": 1669,
+            "read_verified": true,
+            "evidence_round": 32
+          }
+        ]
+      }
     },
     {
       "id": "ROOT-MUT-030",
@@ -587,9 +1398,40 @@
           "source_blob_sha": "a181d828f25d901303f7221824ac30b0ff5e773a"
         }
       ],
-      "status": "fixed-u-source-ref-resolved-commit-tree-read-recursive-scan-pending",
+      "status": "fixed-u-source-ref-resolved-commit-tree-read-recursive-scan-complete",
       "tree_sha": "6f92c75b45d43b8c92ad492ee6f64b2d49605dc5",
-      "pin_semantics": "symbolic-ref-resolved-for-fixed-u-provenance-not-cryptographically-pinned-by-source"
+      "pin_semantics": "symbolic-ref-resolved-for-fixed-u-provenance-not-cryptographically-pinned-by-source",
+      "recursive_scan": {
+        "evidence_round": 32,
+        "evidence_mode": "manual-github-commit-tree-gitmodules-license-blob-reads-stage-a-no-ci",
+        "commit_verified": true,
+        "root_tree_sha": "6f92c75b45d43b8c92ad492ee6f64b2d49605dc5",
+        "root_tree_matches_recorded": true,
+        "recursive_tree": {
+          "truncated": false,
+          "entries": 460,
+          "blobs": 414,
+          "trees": 46
+        },
+        "direct_gitlink_count": 0,
+        "direct_gitlinks": [],
+        "read_blobs": [
+          {
+            "path": "COPYING",
+            "blob_sha": "8d5d0000656d57b6fc8118c1078aa3172b7c02ec",
+            "size_bytes": 23330,
+            "read_verified": true,
+            "evidence_round": 32
+          },
+          {
+            "path": "LICENSE-pffft",
+            "blob_sha": "5f1a8493f23e2823e9f27f05215954da158b760c",
+            "size_bytes": 1669,
+            "read_verified": true,
+            "evidence_round": 32
+          }
+        ]
+      }
     },
     {
       "id": "ROOT-MUT-031",
@@ -611,9 +1453,91 @@
           "source_blob_sha": "a9f3dd2d9e4020df958ab5af942376177d66c78b"
         }
       ],
-      "status": "fixed-u-source-ref-resolved-commit-tree-read-recursive-scan-pending",
+      "status": "fixed-u-source-ref-resolved-commit-tree-read-recursive-scan-complete",
       "tree_sha": "d56a2e4387ca5bf74ec08dbe682a0cfbedd45818",
-      "pin_semantics": "symbolic-ref-resolved-for-fixed-u-provenance-not-cryptographically-pinned-by-source"
+      "pin_semantics": "symbolic-ref-resolved-for-fixed-u-provenance-not-cryptographically-pinned-by-source",
+      "recursive_scan": {
+        "evidence_round": 32,
+        "evidence_mode": "manual-github-commit-tree-gitmodules-license-blob-reads-stage-a-no-ci",
+        "commit_verified": true,
+        "root_tree_sha": "d56a2e4387ca5bf74ec08dbe682a0cfbedd45818",
+        "root_tree_matches_recorded": true,
+        "recursive_tree": {
+          "truncated": false,
+          "entries": 933,
+          "blobs": 868,
+          "trees": 55
+        },
+        "direct_gitlink_count": 10,
+        "direct_gitlinks": [
+          {
+            "path": "testdata",
+            "commit": "73695d303670c90e4d506ea89d9901b081385089"
+          },
+          {
+            "path": "third_party/brotli",
+            "commit": "028fb5a23661f123017c060daa546b55cf4bde29"
+          },
+          {
+            "path": "third_party/googletest",
+            "commit": "6910c9d9165801d8827d628cb72eb7ea9dd538c5"
+          },
+          {
+            "path": "third_party/highway",
+            "commit": "457c891775a7397bdb0376bb1031e6e027af1c48"
+          },
+          {
+            "path": "third_party/lcms",
+            "commit": "5176347635785e53ee5cee92328f76fda766ecc6"
+          },
+          {
+            "path": "third_party/libjpeg-turbo",
+            "commit": "8ecba3647edb6dd940463fedf38ca33a8e2a73d1"
+          },
+          {
+            "path": "third_party/libpng",
+            "commit": "872555f4ba910252783af1507f9e7fe1653be252"
+          },
+          {
+            "path": "third_party/sjpeg",
+            "commit": "94e0df6d0f8b44228de5be0ff35efb9f946a13c9"
+          },
+          {
+            "path": "third_party/skcms",
+            "commit": "96d9171c94b937a1b5f0293de7309ac16311b722"
+          },
+          {
+            "path": "third_party/zlib",
+            "commit": "51b7f2abdade71cd9bb0e7a373ef2610ec6f9daf"
+          }
+        ],
+        "read_blobs": [
+          {
+            "path": ".gitmodules",
+            "blob_sha": "e64c474aef79402b0328f448270d3c27c818ca87",
+            "size_bytes": 1044,
+            "read_verified": true,
+            "evidence_round": 32
+          },
+          {
+            "path": "LICENSE",
+            "blob_sha": "c66034b105f23d108a51b45c846d5b5c194cc229",
+            "size_bytes": 1508,
+            "read_verified": true,
+            "evidence_round": 32
+          },
+          {
+            "path": "debian/copyright",
+            "blob_sha": "7786a8775b058b5fa7ef428f6e652301e7dd9aa1",
+            "size_bytes": 10405,
+            "read_verified": true,
+            "evidence_round": 32
+          }
+        ],
+        "build_reachable_child_count": 10,
+        "all_children_recursive_trees_non_truncated": true,
+        "all_children_further_gitlinks_zero": true
+      }
     },
     {
       "id": "ROOT-MUT-032",
@@ -628,9 +1552,33 @@
           "source_blob_sha": "a9f3dd2d9e4020df958ab5af942376177d66c78b"
         }
       ],
-      "status": "fixed-u-source-ref-resolved-commit-tree-read-recursive-scan-pending",
+      "status": "fixed-u-source-ref-resolved-commit-tree-read-recursive-scan-complete",
       "tree_sha": "75fc644ec04177c3902e63eee601e0ead2cc3289",
-      "pin_semantics": "symbolic-ref-resolved-for-fixed-u-provenance-not-cryptographically-pinned-by-source"
+      "pin_semantics": "symbolic-ref-resolved-for-fixed-u-provenance-not-cryptographically-pinned-by-source",
+      "recursive_scan": {
+        "evidence_round": 32,
+        "evidence_mode": "manual-github-commit-tree-gitmodules-license-blob-reads-stage-a-no-ci",
+        "commit_verified": true,
+        "root_tree_sha": "75fc644ec04177c3902e63eee601e0ead2cc3289",
+        "root_tree_matches_recorded": true,
+        "recursive_tree": {
+          "truncated": false,
+          "entries": 427,
+          "blobs": 334,
+          "trees": 93
+        },
+        "direct_gitlink_count": 0,
+        "direct_gitlinks": [],
+        "read_blobs": [
+          {
+            "path": "LICENSE",
+            "blob_sha": "85480b50b0c5860b541dc3b0032084c55ca91dcd",
+            "size_bytes": 1080,
+            "read_verified": true,
+            "evidence_round": 32
+          }
+        ]
+      }
     },
     {
       "id": "ROOT-MUT-033",
@@ -645,9 +1593,33 @@
           "source_blob_sha": "3fea9e6866e0ea6351f8a13ebb825ebf49cadfc2"
         }
       ],
-      "status": "fixed-u-source-ref-resolved-commit-tree-read-recursive-scan-pending",
+      "status": "fixed-u-source-ref-resolved-commit-tree-read-recursive-scan-complete",
       "tree_sha": "ec1a5d20c14612899d070b11576dfa350046aac8",
-      "pin_semantics": "symbolic-ref-resolved-for-fixed-u-provenance-not-cryptographically-pinned-by-source"
+      "pin_semantics": "symbolic-ref-resolved-for-fixed-u-provenance-not-cryptographically-pinned-by-source",
+      "recursive_scan": {
+        "evidence_round": 32,
+        "evidence_mode": "manual-github-commit-tree-gitmodules-license-blob-reads-stage-a-no-ci",
+        "commit_verified": true,
+        "root_tree_sha": "ec1a5d20c14612899d070b11576dfa350046aac8",
+        "root_tree_matches_recorded": true,
+        "recursive_tree": {
+          "truncated": false,
+          "entries": 412,
+          "blobs": 326,
+          "trees": 86
+        },
+        "direct_gitlink_count": 0,
+        "direct_gitlinks": [],
+        "read_blobs": [
+          {
+            "path": "COPYING",
+            "blob_sha": "e2fe519d919fe460a8e8383c73c7da46bb2131cc",
+            "size_bytes": 1083,
+            "read_verified": true,
+            "evidence_round": 32
+          }
+        ]
+      }
     },
     {
       "id": "ROOT-MUT-034",
@@ -676,9 +1648,33 @@
           "source_blob_sha": "a181d828f25d901303f7221824ac30b0ff5e773a"
         }
       ],
-      "status": "fixed-u-source-ref-resolved-commit-tree-read-recursive-scan-pending",
+      "status": "fixed-u-source-ref-resolved-commit-tree-read-recursive-scan-complete",
       "tree_sha": "7f059bee4e093863e491e12fb5a249548d762eb2",
-      "pin_semantics": "symbolic-ref-resolved-for-fixed-u-provenance-not-cryptographically-pinned-by-source"
+      "pin_semantics": "symbolic-ref-resolved-for-fixed-u-provenance-not-cryptographically-pinned-by-source",
+      "recursive_scan": {
+        "evidence_round": 32,
+        "evidence_mode": "manual-github-commit-tree-gitmodules-license-blob-reads-stage-a-no-ci",
+        "commit_verified": true,
+        "root_tree_sha": "7f059bee4e093863e491e12fb5a249548d762eb2",
+        "root_tree_matches_recorded": true,
+        "recursive_tree": {
+          "truncated": false,
+          "entries": 565,
+          "blobs": 533,
+          "trees": 32
+        },
+        "direct_gitlink_count": 0,
+        "direct_gitlinks": [],
+        "read_blobs": [
+          {
+            "path": "LICENSE.md",
+            "blob_sha": "bf8a7fda7f57699207fafde0c19c9801fb143e28",
+            "size_bytes": 5213,
+            "read_verified": true,
+            "evidence_round": 32
+          }
+        ]
+      }
     },
     {
       "id": "ROOT-MUT-035",
@@ -707,9 +1703,87 @@
           "source_blob_sha": "a181d828f25d901303f7221824ac30b0ff5e773a"
         }
       ],
-      "status": "fixed-u-source-ref-resolved-commit-tree-read-recursive-scan-pending",
+      "status": "fixed-u-source-ref-resolved-commit-tree-read-recursive-scan-complete",
       "tree_sha": "475b3b8ea9a6f77232dd789e1821539e2c501f9e",
-      "pin_semantics": "symbolic-ref-resolved-for-fixed-u-provenance-not-cryptographically-pinned-by-source"
+      "pin_semantics": "symbolic-ref-resolved-for-fixed-u-provenance-not-cryptographically-pinned-by-source",
+      "recursive_scan": {
+        "evidence_round": 32,
+        "evidence_mode": "manual-github-commit-tree-gitmodules-license-blob-reads-stage-a-no-ci",
+        "commit_verified": true,
+        "root_tree_sha": "475b3b8ea9a6f77232dd789e1821539e2c501f9e",
+        "root_tree_matches_recorded": true,
+        "recursive_tree": {
+          "truncated": false,
+          "entries": 6144,
+          "blobs": 5838,
+          "trees": 295
+        },
+        "direct_gitlink_count": 11,
+        "direct_gitlinks": [
+          {
+            "path": "cloudflare-quiche",
+            "commit": "7ab6a55cfe471267d61e4d28ba43d41defcd87e0"
+          },
+          {
+            "path": "fuzz/corpora",
+            "commit": "ce771805c094d098c25a218bc8e9f7344eccbc5a"
+          },
+          {
+            "path": "gost-engine",
+            "commit": "74b1f4fddbc2d6de969815b1992ddc1ae7c643fe"
+          },
+          {
+            "path": "krb5",
+            "commit": "784c38f50e70a739400cdd3f2620bac2e2788e6c"
+          },
+          {
+            "path": "oqs-provider",
+            "commit": "7bc597c04b534ddea9b6654481deb31ded8e1bbc"
+          },
+          {
+            "path": "pkcs11-provider",
+            "commit": "64fc325ac0f91d03d76b3546df2998d3a38c525b"
+          },
+          {
+            "path": "pyca-cryptography",
+            "commit": "7e33b0e7739d633c77b8c478620167f693ed13f4"
+          },
+          {
+            "path": "python-ecdsa",
+            "commit": "4096fa01715929e08b97e73f3173aee9d57f2a3f"
+          },
+          {
+            "path": "tlsfuzzer",
+            "commit": "61f45d9701294fd87ef92d2a7e3dfb076653a562"
+          },
+          {
+            "path": "tlslite-ng",
+            "commit": "77ef321dde1a9e6bcf94d73c80f8789a770d8031"
+          },
+          {
+            "path": "wycheproof",
+            "commit": "2196000605e45d91097147c9c71f26b72af58003"
+          }
+        ],
+        "read_blobs": [
+          {
+            "path": ".gitmodules",
+            "blob_sha": "b4c756a67b1796613312e4b547dfabd53e5eb2c6",
+            "size_bytes": 1078,
+            "read_verified": true,
+            "evidence_round": 32
+          },
+          {
+            "path": "LICENSE.txt",
+            "blob_sha": "49cc83d2ee29d13453188217f0e4edd70c7f842f",
+            "size_bytes": 10175,
+            "read_verified": true,
+            "evidence_round": 32
+          }
+        ],
+        "build_reachable_gitlinks": 0,
+        "gitlinks_excluded_by_fixed_u_build": 11
+      }
     },
     {
       "id": "ROOT-MUT-036",
@@ -738,9 +1812,57 @@
           "source_blob_sha": "a181d828f25d901303f7221824ac30b0ff5e773a"
         }
       ],
-      "status": "fixed-u-source-ref-resolved-commit-tree-read-recursive-scan-pending",
+      "status": "fixed-u-source-ref-resolved-commit-tree-read-recursive-scan-complete",
       "tree_sha": "0d490d635143afa695379c3d5d51ab11947612df",
-      "pin_semantics": "symbolic-ref-resolved-for-fixed-u-provenance-not-cryptographically-pinned-by-source"
+      "pin_semantics": "symbolic-ref-resolved-for-fixed-u-provenance-not-cryptographically-pinned-by-source",
+      "recursive_scan": {
+        "evidence_round": 32,
+        "evidence_mode": "manual-github-commit-tree-gitmodules-license-blob-reads-stage-a-no-ci",
+        "commit_verified": true,
+        "root_tree_sha": "0d490d635143afa695379c3d5d51ab11947612df",
+        "root_tree_matches_recorded": true,
+        "recursive_tree": {
+          "truncated": false,
+          "entries": 3526,
+          "blobs": 3252,
+          "trees": 227
+        },
+        "direct_gitlink_count": 47,
+        "direct_gitlinks": [],
+        "read_blobs": [
+          {
+            "path": ".gitmodules",
+            "blob_sha": "b1a23c0548de2e47f620d2c34db063621c7428ba",
+            "size_bytes": 7024,
+            "read_verified": true,
+            "evidence_round": 32
+          },
+          {
+            "path": "LICENSES/BSD-3-Clause.txt",
+            "blob_sha": "b91bbd89468099ae5c3028f176783976ca538187",
+            "size_bytes": 1469,
+            "read_verified": true,
+            "evidence_round": 32
+          }
+        ],
+        "selected_qt_modules": [
+          "qtbase",
+          "qtdeclarative",
+          "qtwayland",
+          "qtimageformats",
+          "qtsvg",
+          "qtshadertools"
+        ],
+        "selected_module_trees_verified": true,
+        "nested_qtdeclarative_testsuite": {
+          "commit": "a0efb7e1ab1cee24c387abe1897ff18fa116c17d",
+          "tree": "c6d9e4b5352d5900b79a77d5d8a919d7b34ae3c0",
+          "truncated": false,
+          "gitlinks": 0
+        },
+        "direct_gitlinks_list_elided": true,
+        "direct_gitlinks_record": "Exact complete direct gitlink set is established by the non-truncated root tree read; only fixed-U selected children are expanded in build-time-acquisitions round32 closure."
+      }
     },
     {
       "id": "ROOT-MUT-037",
@@ -755,9 +1877,48 @@
           "source_blob_sha": "a9f3dd2d9e4020df958ab5af942376177d66c78b"
         }
       ],
-      "status": "fixed-u-source-ref-resolved-commit-tree-read-recursive-scan-pending",
+      "status": "fixed-u-source-ref-resolved-commit-tree-read-recursive-scan-complete",
       "tree_sha": "93774844c9d770e2550cdc07285ff33578389228",
-      "pin_semantics": "symbolic-ref-resolved-for-fixed-u-provenance-not-cryptographically-pinned-by-source"
+      "pin_semantics": "symbolic-ref-resolved-for-fixed-u-provenance-not-cryptographically-pinned-by-source",
+      "recursive_scan": {
+        "evidence_round": 32,
+        "evidence_mode": "manual-github-commit-tree-gitmodules-license-blob-reads-stage-a-no-ci",
+        "commit_verified": true,
+        "root_tree_sha": "93774844c9d770e2550cdc07285ff33578389228",
+        "root_tree_matches_recorded": true,
+        "recursive_tree": {
+          "truncated": false,
+          "entries": 1108,
+          "blobs": 847,
+          "trees": 212
+        },
+        "direct_gitlink_count": 49,
+        "direct_gitlinks": [],
+        "read_blobs": [
+          {
+            "path": ".gitmodules",
+            "blob_sha": "452233655f279d4c033a6b0e5fa05f8dae8a9183",
+            "size_bytes": 7224,
+            "read_verified": true,
+            "evidence_round": 32
+          },
+          {
+            "path": "LICENSE.FDL",
+            "blob_sha": "938bb8da9e07e20ebf320ed6f7e703a295fe3d62",
+            "size_bytes": 22961,
+            "read_verified": true,
+            "evidence_round": 32
+          }
+        ],
+        "selected_qt_modules": [
+          "qtbase",
+          "qtimageformats",
+          "qtsvg"
+        ],
+        "selected_module_trees_verified": true,
+        "direct_gitlinks_list_elided": true,
+        "direct_gitlinks_record": "Exact complete direct gitlink set is established by the non-truncated root tree read; only fixed-U selected children are expanded in build-time-acquisitions round32 closure."
+      }
     },
     {
       "id": "ROOT-MUT-038",
@@ -779,9 +1940,33 @@
           "source_blob_sha": "a9f3dd2d9e4020df958ab5af942376177d66c78b"
         }
       ],
-      "status": "fixed-u-source-ref-resolved-commit-tree-read-recursive-scan-pending",
+      "status": "fixed-u-source-ref-resolved-commit-tree-read-recursive-scan-complete",
       "tree_sha": "e4c11acc3ed48b8055bc6920e5d30a7e76d4eb71",
-      "pin_semantics": "symbolic-ref-resolved-for-fixed-u-provenance-not-cryptographically-pinned-by-source"
+      "pin_semantics": "symbolic-ref-resolved-for-fixed-u-provenance-not-cryptographically-pinned-by-source",
+      "recursive_scan": {
+        "evidence_round": 32,
+        "evidence_mode": "manual-github-commit-tree-gitmodules-license-blob-reads-stage-a-no-ci",
+        "commit_verified": true,
+        "root_tree_sha": "e4c11acc3ed48b8055bc6920e5d30a7e76d4eb71",
+        "root_tree_matches_recorded": true,
+        "recursive_tree": {
+          "truncated": false,
+          "entries": 817,
+          "blobs": 785,
+          "trees": 32
+        },
+        "direct_gitlink_count": 0,
+        "direct_gitlinks": [],
+        "read_blobs": [
+          {
+            "path": "COPYING",
+            "blob_sha": "f80407e7d5827a93d97767679d3521991e62d8cb",
+            "size_bytes": 44366,
+            "read_verified": true,
+            "evidence_round": 32
+          }
+        ]
+      }
     },
     {
       "id": "ROOT-MUT-039",
@@ -796,9 +1981,40 @@
           "source_blob_sha": "a9f3dd2d9e4020df958ab5af942376177d66c78b"
         }
       ],
-      "status": "fixed-u-source-exact-checkout-commit-tree-read-recursive-scan-pending",
+      "status": "fixed-u-source-exact-checkout-commit-tree-read-recursive-scan-complete",
       "tree_sha": "8afbc90b1c250af9f610a36e86f536b5e224f249",
-      "pin_semantics": "source-exact-checkout-after-clone"
+      "pin_semantics": "source-exact-checkout-after-clone",
+      "recursive_scan": {
+        "evidence_round": 32,
+        "evidence_mode": "manual-github-commit-tree-gitmodules-license-blob-reads-stage-a-no-ci",
+        "commit_verified": true,
+        "root_tree_sha": "8afbc90b1c250af9f610a36e86f536b5e224f249",
+        "root_tree_matches_recorded": true,
+        "recursive_tree": {
+          "truncated": false,
+          "entries": 453,
+          "blobs": 409,
+          "trees": 44
+        },
+        "direct_gitlink_count": 0,
+        "direct_gitlinks": [],
+        "read_blobs": [
+          {
+            "path": "COPYING",
+            "blob_sha": "8d5d0000656d57b6fc8118c1078aa3172b7c02ec",
+            "size_bytes": 23330,
+            "read_verified": true,
+            "evidence_round": 32
+          },
+          {
+            "path": "LICENSE-pffft",
+            "blob_sha": "5f1a8493f23e2823e9f27f05215954da158b760c",
+            "size_bytes": 1669,
+            "read_verified": true,
+            "evidence_round": 32
+          }
+        ]
+      }
     },
     {
       "id": "ROOT-MUT-040",
@@ -813,9 +2029,33 @@
           "source_blob_sha": "a9f3dd2d9e4020df958ab5af942376177d66c78b"
         }
       ],
-      "status": "fixed-u-source-anchor-live-resolution-tree-read-recursive-scan-pending",
+      "status": "fixed-u-source-anchor-live-resolution-tree-read-recursive-scan-complete",
       "tree_sha": "43a987091d03016a23de03ebd8189a8f05e84c9c",
-      "pin_semantics": "floating-ref-live-resolution-not-pinned-by-u"
+      "pin_semantics": "floating-ref-live-resolution-not-pinned-by-u",
+      "recursive_scan": {
+        "evidence_round": 32,
+        "evidence_mode": "manual-github-commit-tree-gitmodules-license-blob-reads-stage-a-no-ci",
+        "commit_verified": true,
+        "root_tree_sha": "43a987091d03016a23de03ebd8189a8f05e84c9c",
+        "root_tree_matches_recorded": true,
+        "recursive_tree": {
+          "truncated": false,
+          "entries": 350,
+          "blobs": 323,
+          "trees": 27
+        },
+        "direct_gitlink_count": 0,
+        "direct_gitlinks": [],
+        "read_blobs": [
+          {
+            "path": "COPYING",
+            "blob_sha": "8d5d0000656d57b6fc8118c1078aa3172b7c02ec",
+            "size_bytes": 23330,
+            "read_verified": true,
+            "evidence_round": 32
+          }
+        ]
+      }
     },
     {
       "id": "ROOT-MUT-041",
@@ -830,9 +2070,47 @@
           "source_blob_sha": "a9f3dd2d9e4020df958ab5af942376177d66c78b"
         }
       ],
-      "status": "fixed-u-source-exact-checkout-commit-tree-read-recursive-scan-pending",
+      "status": "fixed-u-source-exact-checkout-commit-tree-read-recursive-scan-complete",
       "tree_sha": "82f6f57a4602aab0be4dbe04175621cc0c777151",
-      "pin_semantics": "source-exact-checkout-after-clone"
+      "pin_semantics": "source-exact-checkout-after-clone",
+      "recursive_scan": {
+        "evidence_round": 32,
+        "evidence_mode": "manual-github-commit-tree-gitmodules-license-blob-reads-stage-a-no-ci",
+        "commit_verified": true,
+        "root_tree_sha": "82f6f57a4602aab0be4dbe04175621cc0c777151",
+        "root_tree_matches_recorded": true,
+        "recursive_tree": {
+          "truncated": false,
+          "entries": 530,
+          "blobs": 490,
+          "trees": 40
+        },
+        "direct_gitlink_count": 0,
+        "direct_gitlinks": [],
+        "read_blobs": [
+          {
+            "path": "COPYING",
+            "blob_sha": "e54eeacfbf3f574705c926ff403214c7973c9de0",
+            "size_bytes": 3330,
+            "read_verified": true,
+            "evidence_round": 32
+          },
+          {
+            "path": "COPYING.GPLv2",
+            "blob_sha": "d159169d1050894d3ea3b98e1c965c4058208fe1",
+            "size_bytes": 18092,
+            "read_verified": true,
+            "evidence_round": 32
+          },
+          {
+            "path": "COPYING.GPLv3",
+            "blob_sha": "f288702d2fa16d3cdf0035b15a9fcbc552cd88e7",
+            "size_bytes": 35149,
+            "read_verified": true,
+            "evidence_round": 32
+          }
+        ]
+      }
     },
     {
       "id": "ROOT-MUT-042",
@@ -847,9 +2125,47 @@
           "source_blob_sha": "3fea9e6866e0ea6351f8a13ebb825ebf49cadfc2"
         }
       ],
-      "status": "fixed-u-source-ref-resolved-commit-tree-read-recursive-scan-pending",
+      "status": "fixed-u-source-ref-resolved-commit-tree-read-recursive-scan-complete",
       "tree_sha": "c61bcc5e09ba6a6a980c4227ea5cbe995508c5b8",
-      "pin_semantics": "symbolic-ref-resolved-for-fixed-u-provenance-not-cryptographically-pinned-by-source"
+      "pin_semantics": "symbolic-ref-resolved-for-fixed-u-provenance-not-cryptographically-pinned-by-source",
+      "recursive_scan": {
+        "evidence_round": 32,
+        "evidence_mode": "manual-github-commit-tree-gitmodules-license-blob-reads-stage-a-no-ci",
+        "commit_verified": true,
+        "root_tree_sha": "c61bcc5e09ba6a6a980c4227ea5cbe995508c5b8",
+        "root_tree_matches_recorded": true,
+        "recursive_tree": {
+          "truncated": false,
+          "entries": 564,
+          "blobs": 527,
+          "trees": 37
+        },
+        "direct_gitlink_count": 0,
+        "direct_gitlinks": [],
+        "read_blobs": [
+          {
+            "path": "COPYING",
+            "blob_sha": "ef3371389d7d45db6593a146fd9e027347f3122c",
+            "size_bytes": 3119,
+            "read_verified": true,
+            "evidence_round": 32
+          },
+          {
+            "path": "COPYING.0BSD",
+            "blob_sha": "4322122aecf1aecff317bd50334ba206dcb9ac41",
+            "size_bytes": 607,
+            "read_verified": true,
+            "evidence_round": 32
+          },
+          {
+            "path": "COPYING.GPLv2",
+            "blob_sha": "9efa6fbc962836e243e20f7f23db062e2c077d28",
+            "size_bytes": 17984,
+            "read_verified": true,
+            "evidence_round": 32
+          }
+        ]
+      }
     },
     {
       "id": "ROOT-MUT-043",
@@ -864,9 +2180,33 @@
           "source_blob_sha": "3fea9e6866e0ea6351f8a13ebb825ebf49cadfc2"
         }
       ],
-      "status": "fixed-u-source-ref-resolved-commit-tree-read-recursive-scan-pending",
+      "status": "fixed-u-source-ref-resolved-commit-tree-read-recursive-scan-complete",
       "tree_sha": "37c883895a0fe6cf3fdf3f975525fe8beefdd9c2",
-      "pin_semantics": "symbolic-ref-resolved-for-fixed-u-provenance-not-cryptographically-pinned-by-source"
+      "pin_semantics": "symbolic-ref-resolved-for-fixed-u-provenance-not-cryptographically-pinned-by-source",
+      "recursive_scan": {
+        "evidence_round": 32,
+        "evidence_mode": "manual-github-commit-tree-gitmodules-license-blob-reads-stage-a-no-ci",
+        "commit_verified": true,
+        "root_tree_sha": "37c883895a0fe6cf3fdf3f975525fe8beefdd9c2",
+        "root_tree_matches_recorded": true,
+        "recursive_tree": {
+          "truncated": false,
+          "entries": 390,
+          "blobs": 359,
+          "trees": 31
+        },
+        "direct_gitlink_count": 0,
+        "direct_gitlinks": [],
+        "read_blobs": [
+          {
+            "path": "COPYING",
+            "blob_sha": "8d4d6418c1ab4adf0a05bddfc11182216d5238a1",
+            "size_bytes": 1317,
+            "read_verified": true,
+            "evidence_round": 32
+          }
+        ]
+      }
     },
     {
       "id": "ROOT-MUT-044",
@@ -881,9 +2221,33 @@
           "source_blob_sha": "a9f3dd2d9e4020df958ab5af942376177d66c78b"
         }
       ],
-      "status": "fixed-u-source-ref-resolved-commit-tree-read-recursive-scan-pending",
+      "status": "fixed-u-source-ref-resolved-commit-tree-read-recursive-scan-complete",
       "tree_sha": "e7ea45f0fc41e4dd3a9768b1f3639285a8eeead9",
-      "pin_semantics": "symbolic-ref-resolved-for-fixed-u-provenance-not-cryptographically-pinned-by-source"
+      "pin_semantics": "symbolic-ref-resolved-for-fixed-u-provenance-not-cryptographically-pinned-by-source",
+      "recursive_scan": {
+        "evidence_round": 32,
+        "evidence_mode": "manual-github-commit-tree-gitmodules-license-blob-reads-stage-a-no-ci",
+        "commit_verified": true,
+        "root_tree_sha": "e7ea45f0fc41e4dd3a9768b1f3639285a8eeead9",
+        "root_tree_matches_recorded": true,
+        "recursive_tree": {
+          "truncated": false,
+          "entries": 1321,
+          "blobs": 1237,
+          "trees": 84
+        },
+        "direct_gitlink_count": 0,
+        "direct_gitlinks": [],
+        "read_blobs": [
+          {
+            "path": "LICENSE",
+            "blob_sha": "1ce44343c4a325e9e1189fd98bb44a9f2f096da9",
+            "size_bytes": 1537,
+            "read_verified": true,
+            "evidence_round": 32
+          }
+        ]
+      }
     },
     {
       "id": "ROOT-MUT-045",
@@ -905,9 +2269,33 @@
           "source_blob_sha": "a9f3dd2d9e4020df958ab5af942376177d66c78b"
         }
       ],
-      "status": "fixed-u-source-ref-resolved-commit-tree-read-recursive-scan-pending",
+      "status": "fixed-u-source-ref-resolved-commit-tree-read-recursive-scan-complete",
       "tree_sha": "3a7830b9713d9187cf1211862d4571ff58b0d507",
-      "pin_semantics": "symbolic-ref-resolved-for-fixed-u-provenance-not-cryptographically-pinned-by-source"
+      "pin_semantics": "symbolic-ref-resolved-for-fixed-u-provenance-not-cryptographically-pinned-by-source",
+      "recursive_scan": {
+        "evidence_round": 32,
+        "evidence_mode": "manual-github-commit-tree-gitmodules-license-blob-reads-stage-a-no-ci",
+        "commit_verified": true,
+        "root_tree_sha": "3a7830b9713d9187cf1211862d4571ff58b0d507",
+        "root_tree_matches_recorded": true,
+        "recursive_tree": {
+          "truncated": false,
+          "entries": 367,
+          "blobs": 343,
+          "trees": 24
+        },
+        "direct_gitlink_count": 0,
+        "direct_gitlinks": [],
+        "read_blobs": [
+          {
+            "path": "COPYING",
+            "blob_sha": "7a6f99547d4d6b4c5e6d5321acfaeba313e08de3",
+            "size_bytes": 1496,
+            "read_verified": true,
+            "evidence_round": 32
+          }
+        ]
+      }
     },
     {
       "id": "ROOT-MUT-046",
@@ -929,9 +2317,47 @@
           "source_blob_sha": "a9f3dd2d9e4020df958ab5af942376177d66c78b"
         }
       ],
-      "status": "fixed-u-source-ref-resolved-commit-tree-read-recursive-scan-pending",
+      "status": "fixed-u-source-ref-resolved-commit-tree-read-recursive-scan-complete",
       "tree_sha": "0aba3f87ec9da9f71045c215e13d2aa7c8abba7c",
-      "pin_semantics": "symbolic-ref-resolved-for-fixed-u-provenance-not-cryptographically-pinned-by-source"
+      "pin_semantics": "symbolic-ref-resolved-for-fixed-u-provenance-not-cryptographically-pinned-by-source",
+      "recursive_scan": {
+        "evidence_round": 32,
+        "evidence_mode": "manual-github-commit-tree-gitmodules-license-blob-reads-stage-a-no-ci",
+        "commit_verified": true,
+        "root_tree_sha": "0aba3f87ec9da9f71045c215e13d2aa7c8abba7c",
+        "root_tree_matches_recorded": true,
+        "recursive_tree": {
+          "truncated": false,
+          "entries": 789,
+          "blobs": 715,
+          "trees": 74
+        },
+        "direct_gitlink_count": 0,
+        "direct_gitlinks": [],
+        "read_blobs": [
+          {
+            "path": ".gitmodules",
+            "blob_sha": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391",
+            "size_bytes": 0,
+            "read_verified": true,
+            "evidence_round": 32
+          },
+          {
+            "path": "COPYING",
+            "blob_sha": "75711467a3eb220f35f72afdb55a4734ee5cdb47",
+            "size_bytes": 1945,
+            "read_verified": true,
+            "evidence_round": 32
+          },
+          {
+            "path": "LICENSE_PLEASE_READ.txt",
+            "blob_sha": "bc88efa6cb05789a6a6e697577ae6d8e5532e5df",
+            "size_bytes": 703,
+            "read_verified": true,
+            "evidence_round": 32
+          }
+        ]
+      }
     },
     {
       "id": "ROOT-MUT-047",
@@ -953,9 +2379,33 @@
           "source_blob_sha": "a181d828f25d901303f7221824ac30b0ff5e773a"
         }
       ],
-      "status": "fixed-u-source-ref-resolved-commit-tree-read-recursive-scan-pending",
+      "status": "fixed-u-source-ref-resolved-commit-tree-read-recursive-scan-complete",
       "tree_sha": "b5670dc5ed6c435e42289da4ac62118e90c6ead8",
-      "pin_semantics": "symbolic-ref-resolved-for-fixed-u-provenance-not-cryptographically-pinned-by-source"
+      "pin_semantics": "symbolic-ref-resolved-for-fixed-u-provenance-not-cryptographically-pinned-by-source",
+      "recursive_scan": {
+        "evidence_round": 32,
+        "evidence_mode": "manual-github-commit-tree-gitmodules-license-blob-reads-stage-a-no-ci",
+        "commit_verified": true,
+        "root_tree_sha": "b5670dc5ed6c435e42289da4ac62118e90c6ead8",
+        "root_tree_matches_recorded": true,
+        "recursive_tree": {
+          "truncated": false,
+          "entries": 94,
+          "blobs": 78,
+          "trees": 16
+        },
+        "direct_gitlink_count": 0,
+        "direct_gitlinks": [],
+        "read_blobs": [
+          {
+            "path": "COPYING",
+            "blob_sha": "59d7d09c80c17e60a972bf730caf6a3e005b17b1",
+            "size_bytes": 1612,
+            "read_verified": true,
+            "evidence_round": 32
+          }
+        ]
+      }
     },
     {
       "id": "ROOT-MUT-048",
@@ -970,9 +2420,33 @@
           "source_blob_sha": "3fea9e6866e0ea6351f8a13ebb825ebf49cadfc2"
         }
       ],
-      "status": "fixed-u-source-ref-resolved-commit-tree-read-recursive-scan-pending",
+      "status": "fixed-u-source-ref-resolved-commit-tree-read-recursive-scan-complete",
       "tree_sha": "f8da634e06aa441614eba87a2e4ca8c6129bbc08",
-      "pin_semantics": "symbolic-ref-resolved-for-fixed-u-provenance-not-cryptographically-pinned-by-source"
+      "pin_semantics": "symbolic-ref-resolved-for-fixed-u-provenance-not-cryptographically-pinned-by-source",
+      "recursive_scan": {
+        "evidence_round": 32,
+        "evidence_mode": "manual-github-commit-tree-gitmodules-license-blob-reads-stage-a-no-ci",
+        "commit_verified": true,
+        "root_tree_sha": "f8da634e06aa441614eba87a2e4ca8c6129bbc08",
+        "root_tree_matches_recorded": true,
+        "recursive_tree": {
+          "truncated": false,
+          "entries": 305,
+          "blobs": 276,
+          "trees": 29
+        },
+        "direct_gitlink_count": 0,
+        "direct_gitlinks": [],
+        "read_blobs": [
+          {
+            "path": "LICENSE",
+            "blob_sha": "3dcd0391fca95a7bce8647d353b41bf8495166f7",
+            "size_bytes": 10142,
+            "read_verified": true,
+            "evidence_round": 32
+          }
+        ]
+      }
     }
   ]
 }

@@ -16,7 +16,7 @@
     "note": "Fixed U f985723b552b30fe1c17d377d57f44e61a15a8c4 manually revalidated from GitHub source without running CI. Across the 28 authority source paths referenced by this inventory, 24 blobs are unchanged from historical 351204f3695b4a39bc3f4d2f230c061b9a01fe2a; four changed blobs are canary-bot-api.yml, the Linux Dockerfile, prepare.py and snapcraft.yaml. Registered source-line deltas preserve their dispositions: docker/login-action remains a full GitHub Action SHA pin; Docker and Snap desktop-app/patches remain full commit pins. prepare.py keeps the same acquisition structure but advances desktop-app/patches to 845a383f7abe8e44f92dfdcd566d603066ec2696, qt6_windows7_patches to 9ce1ffe051161a22f7e78f715b042c773f868e59, and tg_angle to 9fd174a91e6155d1006c5f427366b23006f5d899. Candidate cardinality/classification is retained because all other registered source blobs are byte-identical and the changed registered lines remain in the same acquisition/disposition class. Recursive authority closure remains open independently.",
     "candidate_lines_classified": 331,
     "disposition_closure_status": "complete",
-    "recursive_authority_closure_status": "open",
+    "recursive_authority_closure_status": "github-root-recursive-scans-complete; selected-github-build-chains-closed; non-github-original-host-and-raw-archive-member-blockers-open",
     "recursive_child_input_occurrences_recorded": 11,
     "recursive_child_unique_repositories_recorded": 9,
     "recursive_child_unique_external_nested_scans_pending": 0,
@@ -1167,17 +1167,17 @@
       "accepted_upstream_evidence": [
         {
           "path": "Telegram/build/prepare/prepare.py",
-          "blob": "4063cc766ffb60c018b7a6ad456453ec585d5566",
+          "blob": "a9f3dd2d9e4020df958ab5af942376177d66c78b",
           "evidence": "Qt 5 initializes only qtbase qtimageformats qtsvg; Qt 6 prepare initializes only qtbase qtimageformats qtshadertools qtsvg."
         },
         {
           "path": "Telegram/build/docker/centos_env/Dockerfile",
-          "blob": "f72162089985263493c6e3f7e23b566f5df8e454",
+          "blob": "3fea9e6866e0ea6351f8a13ebb825ebf49cadfc2",
           "evidence": "Qt 6 Linux image initializes only qtbase qtdeclarative qtwayland qtimageformats qtsvg qtshadertools."
         },
         {
           "path": "snap/snapcraft.yaml",
-          "blob": "38f0eb362832c3623b868c9aa90c03bc4f426d01",
+          "blob": "a181d828f25d901303f7221824ac30b0ff5e773a",
           "evidence": "Snap Qt source-submodules lists only qtbase qtdeclarative qtimageformats qtshadertools qtsvg qtwayland."
         }
       ],
@@ -1254,8 +1254,8 @@
     },
     "openssl": {
       "repository": "https://github.com/openssl/openssl",
-      "commit": "a7e992847de83aa36be0c399c89db3fb827b0be2",
-      "ref": "openssl-3.2.1",
+      "commit": "45e844fa2a14ec92d146bd8f5778ac130b6625fb",
+      "ref": "openssl-3.5.9",
       "build_entries": [
         "Telegram/build/prepare/prepare.py",
         "Telegram/build/docker/centos_env/Dockerfile",
@@ -1264,17 +1264,17 @@
       "accepted_upstream_evidence": [
         {
           "path": "Telegram/build/prepare/prepare.py",
-          "blob": "a8bd8d6a5c1e190a27702cbcf7f00d10ce6f9dda",
+          "blob": "a9f3dd2d9e4020df958ab5af942376177d66c78b",
           "evidence": "Clones OpenSSL and builds libraries directly; no git submodule init/update in the OpenSSL stage."
         },
         {
           "path": "Telegram/build/docker/centos_env/Dockerfile",
-          "blob": "39b185c7277b1bb1819761d112a6799d4152ff04",
+          "blob": "3fea9e6866e0ea6351f8a13ebb825ebf49cadfc2",
           "evidence": "Shallow clones OpenSSL, configures no-tests/no-dso, builds and installs; no submodule init/update."
         },
         {
           "path": "snap/snapcraft.yaml",
-          "blob": "618110dba69e4f18c78fe65f282f1342a631cbfb",
+          "blob": "a181d828f25d901303f7221824ac30b0ff5e773a",
           "evidence": "Snap OpenSSL part uses source-tag/plugin make and does not request source-submodules."
         }
       ],
@@ -1287,22 +1287,27 @@
         [
           "fuzz/corpora",
           "https://github.com/openssl/fuzz-corpora",
-          "8663e2d71fa934e7846fa4c5fb6de7cb3afc53fd"
+          "ce771805c094d098c25a218bc8e9f7344eccbc5a"
         ],
         [
           "gost-engine",
           "https://github.com/gost-engine/engine",
-          "2a8a5e0ecaa3e3d6f4ec722a49aa72476755c2b7"
+          "74b1f4fddbc2d6de969815b1992ddc1ae7c643fe"
         ],
         [
           "krb5",
           "https://github.com/krb5/krb5",
-          "aa9b4a2a64046afd2fab7cb49c346295874a5fb6"
+          "784c38f50e70a739400cdd3f2620bac2e2788e6c"
         ],
         [
           "oqs-provider",
           "https://github.com/open-quantum-safe/oqs-provider",
-          "8c746d7e294d6948c2f361a8f2fa376a63a2db30"
+          "7bc597c04b534ddea9b6654481deb31ded8e1bbc"
+        ],
+        [
+          "pkcs11-provider",
+          "https://github.com/latchset/pkcs11-provider",
+          "64fc325ac0f91d03d76b3546df2998d3a38c525b"
         ],
         [
           "pyca-cryptography",
@@ -1312,17 +1317,17 @@
         [
           "python-ecdsa",
           "https://github.com/tlsfuzzer/python-ecdsa",
-          "4de8d5bf89089d1140eb99aa5d7eb2dc8e6337b6"
+          "4096fa01715929e08b97e73f3173aee9d57f2a3f"
         ],
         [
           "tlsfuzzer",
           "https://github.com/tlsfuzzer/tlsfuzzer",
-          "dbd56c149072e656ca8d6a43a59588f3e7513da2"
+          "61f45d9701294fd87ef92d2a7e3dfb076653a562"
         ],
         [
           "tlslite-ng",
           "https://github.com/tlsfuzzer/tlslite-ng",
-          "771e9f59d639dbb0e2fa8e646c8e588405d3903e"
+          "77ef321dde1a9e6bcf94d73c80f8789a770d8031"
         ],
         [
           "wycheproof",
@@ -1394,15 +1399,18 @@
       "accepted_upstream_evidence": [
         {
           "path": "Telegram/build/prepare/prepare.py",
-          "evidence": "Clones tg_owt, checks out exact 07fb35bc33b3e79125a1beab7690e830f183f5d8, recursively initializes its pinned submodules, then invokes CMake build."
+          "evidence": "Clones tg_owt, checks out exact 07fb35bc33b3e79125a1beab7690e830f183f5d8, recursively initializes its pinned submodules, then invokes CMake build.",
+          "blob": "a9f3dd2d9e4020df958ab5af942376177d66c78b"
         },
         {
           "path": "Telegram/build/docker/centos_env/Dockerfile",
-          "evidence": "Initializes tg_owt at exact 07fb35bc33b3e79125a1beab7690e830f183f5d8, recursively initializes submodules, configures CMake, builds, and installs."
+          "evidence": "Initializes tg_owt at exact 07fb35bc33b3e79125a1beab7690e830f183f5d8, recursively initializes submodules, configures CMake, builds, and installs.",
+          "blob": "3fea9e6866e0ea6351f8a13ebb825ebf49cadfc2"
         },
         {
           "path": "snap/snapcraft.yaml",
-          "evidence": "The webrtc part pins tg_owt source-commit 07fb35bc33b3e79125a1beab7690e830f183f5d8 and builds it with the CMake plugin."
+          "evidence": "The webrtc part pins tg_owt source-commit 07fb35bc33b3e79125a1beab7690e830f183f5d8 and builds it with the CMake plugin.",
+          "blob": "a181d828f25d901303f7221824ac30b0ff5e773a"
         }
       ],
       "root_candidate_disposition_policy": [
@@ -1436,11 +1444,13 @@
       "accepted_upstream_evidence": [
         {
           "path": "Telegram/build/prepare/prepare.py",
-          "evidence": "Clones libjxl v0.12.0 recursively with shallow submodules, then configures CMake with BUILD_TESTING/FUZZERS/DEVTOOLS/TOOLS/DOXYGEN/MANPAGES/EXAMPLES/JNI/SJPEG/OPENEXR/VIEWERS/TCMALLOC/PLUGINS/COVERAGE disabled."
+          "evidence": "Clones libjxl v0.12.0 recursively with shallow submodules, then configures CMake with BUILD_TESTING/FUZZERS/DEVTOOLS/TOOLS/DOXYGEN/MANPAGES/EXAMPLES/JNI/SJPEG/OPENEXR/VIEWERS/TCMALLOC/PLUGINS/COVERAGE disabled.",
+          "blob": "a9f3dd2d9e4020df958ab5af942376177d66c78b"
         },
         {
           "path": "Telegram/build/docker/centos_env/Dockerfile",
-          "evidence": "Clones libjxl v0.12.0 shallow without recursive submodules, supplies lcms2/brotli/highway from prior build stages, disables testing/devtools/tools/docs/benchmarks/examples/JNI/SJPEG/OpenEXR, then builds and installs with CMake."
+          "evidence": "Clones libjxl v0.12.0 shallow without recursive submodules, supplies lcms2/brotli/highway from prior build stages, disables testing/devtools/tools/docs/benchmarks/examples/JNI/SJPEG/OpenEXR, then builds and installs with CMake.",
+          "blob": "3fea9e6866e0ea6351f8a13ebb825ebf49cadfc2"
         }
       ],
       "root_candidate_disposition_policy": [
@@ -1531,15 +1541,18 @@
       "accepted_upstream_evidence": [
         {
           "path": "Telegram/build/prepare/prepare.py",
-          "evidence": "Clones libavif v1.4.2 and configures AVIF_CODEC_DAV1D=SYSTEM, AVIF_LIBYUV=OFF, BUILD_SHARED_LIBS=OFF; it does not select LOCAL codec/dependency acquisition."
+          "evidence": "Clones libavif v1.4.2 and configures AVIF_CODEC_DAV1D=SYSTEM, AVIF_LIBYUV=OFF, BUILD_SHARED_LIBS=OFF; it does not select LOCAL codec/dependency acquisition.",
+          "blob": "a9f3dd2d9e4020df958ab5af942376177d66c78b"
         },
         {
           "path": "Telegram/build/docker/centos_env/Dockerfile",
-          "evidence": "Clones libavif v1.4.2 shallow and uses system dav1d with AVIF_LIBYUV=OFF; no libavif ext helper or LOCAL dependency mode is invoked."
+          "evidence": "Clones libavif v1.4.2 shallow and uses system dav1d with AVIF_LIBYUV=OFF; no libavif ext helper or LOCAL dependency mode is invoked.",
+          "blob": "3fea9e6866e0ea6351f8a13ebb825ebf49cadfc2"
         },
         {
           "path": "snap/snapcraft.yaml",
-          "evidence": "Pins libavif v1.3.0 and configures AVIF_CODEC_DAV1D=SYSTEM and AVIF_LIBYUV=OFF with libdav1d-dev as a build package."
+          "evidence": "Pins libavif v1.3.0 and configures AVIF_CODEC_DAV1D=SYSTEM and AVIF_LIBYUV=OFF with libdav1d-dev as a build package.",
+          "blob": "a181d828f25d901303f7221824ac30b0ff5e773a"
         }
       ],
       "root_candidate_disposition_policy": [
@@ -1605,15 +1618,18 @@
       "accepted_upstream_evidence": [
         {
           "path": "Telegram/build/prepare/prepare.py",
-          "evidence": "Clones ada v3.2.4 and configures ADA_TESTING=OFF, ADA_TOOLS=OFF, ADA_INCLUDE_URL_PATTERN=OFF before building/installing."
+          "evidence": "Clones ada v3.2.4 and configures ADA_TESTING=OFF, ADA_TOOLS=OFF, ADA_INCLUDE_URL_PATTERN=OFF before building/installing.",
+          "blob": "a9f3dd2d9e4020df958ab5af942376177d66c78b"
         },
         {
           "path": "Telegram/build/docker/centos_env/Dockerfile",
-          "evidence": "Clones ada v3.2.4 shallow and configures ADA_TESTING=OFF, ADA_TOOLS=OFF, ADA_INCLUDE_URL_PATTERN=OFF."
+          "evidence": "Clones ada v3.2.4 shallow and configures ADA_TESTING=OFF, ADA_TOOLS=OFF, ADA_INCLUDE_URL_PATTERN=OFF.",
+          "blob": "3fea9e6866e0ea6351f8a13ebb825ebf49cadfc2"
         },
         {
           "path": "snap/snapcraft.yaml",
-          "evidence": "Pins ada v3.2.9 and passes ADA_TESTING=OFF, ADA_TOOLS=OFF, ADA_INCLUDE_URL_PATTERN=OFF."
+          "evidence": "Pins ada v3.2.9 and passes ADA_TESTING=OFF, ADA_TOOLS=OFF, ADA_INCLUDE_URL_PATTERN=OFF.",
+          "blob": "a181d828f25d901303f7221824ac30b0ff5e773a"
         }
       ],
       "root_candidate_disposition_policy": [
@@ -1691,15 +1707,18 @@
       "accepted_upstream_evidence": [
         {
           "path": "Telegram/build/prepare/prepare.py",
-          "evidence": "Builds the Telegram Desktop OpenAL fork from immutable Windows/Mac snapshots with CMake; utilities/examples/tests are disabled and no dependency download command is invoked."
+          "evidence": "Builds the Telegram Desktop OpenAL fork from immutable Windows/Mac snapshots with CMake; utilities/examples/tests are disabled and no dependency download command is invoked.",
+          "blob": "a9f3dd2d9e4020df958ab5af942376177d66c78b"
         },
         {
           "path": "Telegram/build/docker/centos_env/Dockerfile",
-          "evidence": "Clones kcat/openal-soft 1.25.2 shallow and builds the checked-out tree with utilities/examples/config install disabled."
+          "evidence": "Clones kcat/openal-soft 1.25.2 shallow and builds the checked-out tree with utilities/examples/config install disabled.",
+          "blob": "3fea9e6866e0ea6351f8a13ebb825ebf49cadfc2"
         },
         {
           "path": "snap/snapcraft.yaml",
-          "evidence": "Pins kcat/openal-soft 1.24.3 and builds via CMake with utilities/examples/config disabled."
+          "evidence": "Pins kcat/openal-soft 1.24.3 and builds via CMake with utilities/examples/config disabled.",
+          "blob": "a181d828f25d901303f7221824ac30b0ff5e773a"
         }
       ],
       "root_candidate_disposition_policy": [
@@ -1755,15 +1774,18 @@
       "accepted_upstream_evidence": [
         {
           "path": "Telegram/build/prepare/prepare.py",
-          "evidence": "Builds FFmpeg n8.1.3 with programs/docs/network/everything disabled and only an explicit codec/protocol/filter subset re-enabled; external libraries are supplied by TDesktop's prior dependency stages."
+          "evidence": "Builds FFmpeg n8.1.3 with programs/docs/network/everything disabled and only an explicit codec/protocol/filter subset re-enabled; external libraries are supplied by TDesktop's prior dependency stages.",
+          "blob": "a9f3dd2d9e4020df958ab5af942376177d66c78b"
         },
         {
           "path": "Telegram/build/docker/centos_env/Dockerfile",
-          "evidence": "Builds FFmpeg n8.1.3 shallow with --disable-programs --disable-doc --disable-network --disable-autodetect --disable-everything and explicit local/system dependency inputs."
+          "evidence": "Builds FFmpeg n8.1.3 shallow with --disable-programs --disable-doc --disable-network --disable-autodetect --disable-everything and explicit local/system dependency inputs.",
+          "blob": "3fea9e6866e0ea6351f8a13ebb825ebf49cadfc2"
         },
         {
           "path": "snap/snapcraft.yaml",
-          "evidence": "Pins FFmpeg n6.1.6 and configures --disable-programs --disable-doc --disable-network --disable-autodetect --disable-everything with explicit build packages/features."
+          "evidence": "Pins FFmpeg n6.1.6 and configures --disable-programs --disable-doc --disable-network --disable-autodetect --disable-everything with explicit build packages/features.",
+          "blob": "a181d828f25d901303f7221824ac30b0ff5e773a"
         }
       ],
       "root_candidate_disposition_policy": [
@@ -1828,11 +1850,13 @@
       "accepted_upstream_evidence": [
         {
           "path": "Telegram/build/prepare/prepare.py",
-          "evidence": "Clones libheif v1.23.5, applies the accepted TDesktop patch, disables documentation/tests/plugin loading/examples and unselected codec integrations, enables the existing FFmpeg decoder, then builds/installs with CMake. It does not invoke libheif CI/fuzz/bootstrap or third-party/*.cmd fetch helpers."
+          "evidence": "Clones libheif v1.23.5, applies the accepted TDesktop patch, disables documentation/tests/plugin loading/examples and unselected codec integrations, enables the existing FFmpeg decoder, then builds/installs with CMake. It does not invoke libheif CI/fuzz/bootstrap or third-party/*.cmd fetch helpers.",
+          "blob": "a9f3dd2d9e4020df958ab5af942376177d66c78b"
         },
         {
           "path": "Telegram/build/docker/centos_env/Dockerfile",
-          "evidence": "The heif stage clones libheif v1.23.5 shallow, applies the accepted patch, consumes the prior FFmpeg stage, disables documentation/tests/plugin loading/examples and unselected codecs, enables WITH_FFMPEG_DECODER, and builds/installs directly with CMake."
+          "evidence": "The heif stage clones libheif v1.23.5 shallow, applies the accepted patch, consumes the prior FFmpeg stage, disables documentation/tests/plugin loading/examples and unselected codecs, enables WITH_FFMPEG_DECODER, and builds/installs directly with CMake.",
+          "blob": "3fea9e6866e0ea6351f8a13ebb825ebf49cadfc2"
         }
       ],
       "root_candidate_disposition_policy": [
@@ -1902,11 +1926,13 @@
       "accepted_upstream_evidence": [
         {
           "path": "Telegram/build/prepare/prepare.py",
-          "evidence": "The accepted stackwalk/breakpad stages clone Breakpad and pin dfcb7b6799, apply the pinned TDesktop breakpad.diff input, manually acquire googletest release-1.11.0, and on the applicable mac paths manually acquire linux-syscall-support at e1e7b0ad8e. The stages build with TDesktop-provided gyp/Xcode/CMake flows and do not run Breakpad DEPS/gclient, upstream GitHub Actions, or SWIG helper Makefiles."
+          "evidence": "The accepted stackwalk/breakpad stages clone Breakpad and pin dfcb7b6799, apply the pinned TDesktop breakpad.diff input, manually acquire googletest release-1.11.0, and on the applicable mac paths manually acquire linux-syscall-support at e1e7b0ad8e. The stages build with TDesktop-provided gyp/Xcode/CMake flows and do not run Breakpad DEPS/gclient, upstream GitHub Actions, or SWIG helper Makefiles.",
+          "blob": "a9f3dd2d9e4020df958ab5af942376177d66c78b"
         },
         {
           "path": "Telegram/build/docker/centos_env/Dockerfile",
-          "evidence": "The accepted Docker breakpad stage fetches exact Breakpad commit 9aebd3d8ef5a246deb2c929b5666aaba160ebce6, manually initializes only src/third_party/lss at exact commit 29164a80da4d41134950d76d55199ea33fbb9613, then runs ./configure, make, and make install. It does not initialize src/testing, execute DEPS/gclient, or invoke Breakpad upstream CI/bootstrap dependency fetches."
+          "evidence": "The accepted Docker breakpad stage fetches exact Breakpad commit 9aebd3d8ef5a246deb2c929b5666aaba160ebce6, manually initializes only src/third_party/lss at exact commit 29164a80da4d41134950d76d55199ea33fbb9613, then runs ./configure, make, and make install. It does not initialize src/testing, execute DEPS/gclient, or invoke Breakpad upstream CI/bootstrap dependency fetches.",
+          "blob": "3fea9e6866e0ea6351f8a13ebb825ebf49cadfc2"
         }
       ],
       "root_candidate_disposition_policy": [
@@ -1957,7 +1983,8 @@
       "accepted_upstream_evidence": [
         {
           "path": "Telegram/build/docker/centos_env/Dockerfile",
-          "evidence": "The accepted highway stage shallow-clones tag 1.4.0, configures CMake with BUILD_TESTING=OFF, HWY_ENABLE_CONTRIB=OFF and HWY_ENABLE_EXAMPLES=OFF, builds and installs directly, and does not invoke Highway CI, docs, Bazel workspace acquisition, contrib helpers or test dependency templates."
+          "evidence": "The accepted highway stage shallow-clones tag 1.4.0, configures CMake with BUILD_TESTING=OFF, HWY_ENABLE_CONTRIB=OFF and HWY_ENABLE_EXAMPLES=OFF, builds and installs directly, and does not invoke Highway CI, docs, Bazel workspace acquisition, contrib helpers or test dependency templates.",
+          "blob": "3fea9e6866e0ea6351f8a13ebb825ebf49cadfc2"
         }
       ],
       "root_candidate_disposition_policy": [
@@ -2015,7 +2042,8 @@
       "accepted_upstream_evidence": [
         {
           "path": "Telegram/build/docker/centos_env/Dockerfile",
-          "evidence": "The accepted brotli stage shallow-clones v1.2.0, configures a static CMake build with BROTLI_DISABLE_TESTS=ON, builds and installs directly, and does not invoke upstream CI, language transpilers, testdata download scripts or README/package installation examples."
+          "evidence": "The accepted brotli stage shallow-clones v1.2.0, configures a static CMake build with BROTLI_DISABLE_TESTS=ON, builds and installs directly, and does not invoke upstream CI, language transpilers, testdata download scripts or README/package installation examples.",
+          "blob": "3fea9e6866e0ea6351f8a13ebb825ebf49cadfc2"
         }
       ],
       "root_candidate_disposition_policy": [
@@ -2063,11 +2091,13 @@
       "accepted_upstream_evidence": [
         {
           "path": "Telegram/build/prepare/prepare.py",
-          "evidence": "The accepted Opus stage clones v1.5.2 and invokes CMake directly for the library. Upstream CMake defaults OPUS_BUILD_TESTING, OPUS_BUILD_PROGRAMS, OPUS_DRED and OPUS_OSCE to OFF; the TDesktop stage does not invoke Opus CI, local_build.py, documentation generators, DNN model download/training helpers or alternate package-manager instructions."
+          "evidence": "The accepted Opus stage clones v1.5.2 and invokes CMake directly for the library. Upstream CMake defaults OPUS_BUILD_TESTING, OPUS_BUILD_PROGRAMS, OPUS_DRED and OPUS_OSCE to OFF; the TDesktop stage does not invoke Opus CI, local_build.py, documentation generators, DNN model download/training helpers or alternate package-manager instructions.",
+          "blob": "a9f3dd2d9e4020df958ab5af942376177d66c78b"
         },
         {
           "path": "Telegram/build/docker/centos_env/Dockerfile",
-          "evidence": "The accepted Docker opus stage shallow-clones v1.5.2, runs plain CMake build/install, and does not invoke Opus CI, docs, neural-training download helpers or local multi-build tooling."
+          "evidence": "The accepted Docker opus stage shallow-clones v1.5.2, runs plain CMake build/install, and does not invoke Opus CI, docs, neural-training download helpers or local multi-build tooling.",
+          "blob": "3fea9e6866e0ea6351f8a13ebb825ebf49cadfc2"
         }
       ],
       "root_candidate_disposition_policy": [
@@ -2129,15 +2159,18 @@
       "accepted_upstream_evidence": [
         {
           "path": "Telegram/build/prepare/prepare.py",
-          "evidence": "The accepted tde2e stage pins 51743df, configures TD_E2E_ONLY=ON, and builds the E2E library surface. It does not invoke TDLib examples, build-instruction generator, mobile/web helper scripts, benchmark utilities or example/ios patch acquisition."
+          "evidence": "The accepted tde2e stage pins 51743df, configures TD_E2E_ONLY=ON, and builds the E2E library surface. It does not invoke TDLib examples, build-instruction generator, mobile/web helper scripts, benchmark utilities or example/ios patch acquisition.",
+          "blob": "a9f3dd2d9e4020df958ab5af942376177d66c78b"
         },
         {
           "path": "Telegram/build/docker/centos_env/Dockerfile",
-          "evidence": "The accepted Docker tde2e stage fetches exact commit 51743dfd01dff6179e2d8f7095729caa4e2222e9 and configures TD_E2E_ONLY=ON before build/install."
+          "evidence": "The accepted Docker tde2e stage fetches exact commit 51743dfd01dff6179e2d8f7095729caa4e2222e9 and configures TD_E2E_ONLY=ON before build/install.",
+          "blob": "3fea9e6866e0ea6351f8a13ebb825ebf49cadfc2"
         },
         {
           "path": "snap/snapcraft.yaml",
-          "evidence": "The accepted Snap tde2e part pins exact commit 51743dfd01dff6179e2d8f7095729caa4e2222e9 and configures TD_E2E_ONLY=ON."
+          "evidence": "The accepted Snap tde2e part pins exact commit 51743dfd01dff6179e2d8f7095729caa4e2222e9 and configures TD_E2E_ONLY=ON.",
+          "blob": "a181d828f25d901303f7221824ac30b0ff5e773a"
         }
       ],
       "root_candidate_disposition_policy": [
@@ -2193,7 +2226,8 @@
       "accepted_upstream_evidence": [
         {
           "path": "Telegram/build/prepare/prepare.py",
-          "evidence": "Accepted tg_owt is pinned to 07fb35bc33b3e79125a1beab7690e830f183f5d8 and fetched with git submodule update --init --recursive; its src/third_party/libsrtp gitlink resolves to a566a9cfcd619e8327784aa7cff4a1276dc1e895. TDesktop does not execute libsrtp's own GitHub/Travis CI, Coverity, config update URLs or test download comments."
+          "evidence": "Accepted tg_owt is pinned to 07fb35bc33b3e79125a1beab7690e830f183f5d8 and fetched with git submodule update --init --recursive; its src/third_party/libsrtp gitlink resolves to a566a9cfcd619e8327784aa7cff4a1276dc1e895. TDesktop does not execute libsrtp's own GitHub/Travis CI, Coverity, config update URLs or test download comments.",
+          "blob": "a9f3dd2d9e4020df958ab5af942376177d66c78b"
         }
       ],
       "root_candidate_disposition_policy": [
@@ -2235,7 +2269,8 @@
       "accepted_upstream_evidence": [
         {
           "path": "Telegram/build/prepare/prepare.py",
-          "evidence": "The accepted regex stage clones Boost.Regex tag boost-1.83.0 as a source input only. It does not execute Boost.Regex's upstream GitHub Actions workflow, clone the Boost superproject, initialize boostdep, or follow README installation examples."
+          "evidence": "The accepted regex stage clones Boost.Regex tag boost-1.83.0 as a source input only. It does not execute Boost.Regex's upstream GitHub Actions workflow, clone the Boost superproject, initialize boostdep, or follow README installation examples.",
+          "blob": "a9f3dd2d9e4020df958ab5af942376177d66c78b"
         }
       ],
       "root_candidate_disposition_policy": [
@@ -2260,7 +2295,8 @@
       "accepted_upstream_evidence": [
         {
           "path": "Telegram/build/docker/centos_env/Dockerfile",
-          "evidence": "Accepted builder fetches exact Implib.so commit ecf7bb51..., then invokes only implib-gen.py plus compiler/archive commands for selected system libraries. Upstream CI, specs and architecture comments are not executed source acquisitions."
+          "evidence": "Accepted builder fetches exact Implib.so commit ecf7bb51..., then invokes only implib-gen.py plus compiler/archive commands for selected system libraries. Upstream CI, specs and architecture comments are not executed source acquisitions.",
+          "blob": "3fea9e6866e0ea6351f8a13ebb825ebf49cadfc2"
         }
       ],
       "root_candidate_disposition_policy": [
@@ -2291,11 +2327,13 @@
       "accepted_upstream_evidence": [
         {
           "path": "Telegram/build/prepare/prepare.py",
-          "evidence": "Accepted zlib stage pins e3dc0a85..., builds zlib and contrib/minizip directly; Windows disables zlib/minizip tests, while macOS enters contrib/minizip explicitly and never enters contrib/ada."
+          "evidence": "Accepted zlib stage pins e3dc0a85..., builds zlib and contrib/minizip directly; Windows disables zlib/minizip tests, while macOS enters contrib/minizip explicitly and never enters contrib/ada.",
+          "blob": "a9f3dd2d9e4020df958ab5af942376177d66c78b"
         },
         {
           "path": "Telegram/build/docker/centos_env/Dockerfile",
-          "evidence": "Accepted Docker zlib stage fetches exact e3dc0a85..., sets ZLIB_BUILD_TESTING=OFF and ZLIB_MINIZIP_BUILD_TESTING=OFF, and builds zlib/minizip directly."
+          "evidence": "Accepted Docker zlib stage fetches exact e3dc0a85..., sets ZLIB_BUILD_TESTING=OFF and ZLIB_MINIZIP_BUILD_TESTING=OFF, and builds zlib/minizip directly.",
+          "blob": "3fea9e6866e0ea6351f8a13ebb825ebf49cadfc2"
         }
       ],
       "root_candidate_disposition_policy": [
@@ -2323,11 +2361,13 @@
       "accepted_upstream_evidence": [
         {
           "path": "Telegram/build/prepare/prepare.py",
-          "evidence": "Accepted OpenH264 stage clones v2.6.0 and builds with Meson; it does not invoke the upstream Makefile targets that clone gmp-api/googletest, upstream CI, or upstream build/Dockerfile."
+          "evidence": "Accepted OpenH264 stage clones v2.6.0 and builds with Meson; it does not invoke the upstream Makefile targets that clone gmp-api/googletest, upstream CI, or upstream build/Dockerfile.",
+          "blob": "a9f3dd2d9e4020df958ab5af942376177d66c78b"
         },
         {
           "path": "Telegram/build/docker/centos_env/Dockerfile",
-          "evidence": "Accepted Docker OpenH264 stage shallow-clones v2.6.0 and uses Meson compile/install directly."
+          "evidence": "Accepted Docker OpenH264 stage shallow-clones v2.6.0 and uses Meson compile/install directly.",
+          "blob": "3fea9e6866e0ea6351f8a13ebb825ebf49cadfc2"
         }
       ],
       "root_candidate_disposition_policy": [
@@ -2362,7 +2402,8 @@
       "accepted_upstream_evidence": [
         {
           "path": "Telegram/build/docker/centos_env/Dockerfile",
-          "evidence": "Accepted xkbcommon stage shallow-clones xkbcommon-1.6.0 and uses Meson with docs/Wayland/xkbregistry disabled. It does not execute upstream GitHub workflows or key-table update URL comments."
+          "evidence": "Accepted xkbcommon stage shallow-clones xkbcommon-1.6.0 and uses Meson with docs/Wayland/xkbregistry disabled. It does not execute upstream GitHub workflows or key-table update URL comments.",
+          "blob": "3fea9e6866e0ea6351f8a13ebb825ebf49cadfc2"
         }
       ],
       "root_candidate_disposition_policy": [
@@ -2463,7 +2504,7 @@
       "docker/login-action@81c6f93d4bc991e510b342a00b419b3bb4efc5c6"
     ],
     "classification_status": "fixed-u-primary-authority-lines-revalidated",
-    "recursive_authority_closure_status": "open"
+    "recursive_authority_closure_status": "github-root-recursive-scans-complete; selected-github-build-chains-closed; non-github-original-host-and-raw-archive-member-blockers-open"
   },
   "round31_github_exact_object_closure": {
     "evidence_mode": "manual-github-commit-tree-blob-reads-stage-a-no-ci",
@@ -2608,5 +2649,295 @@
     ],
     "closure_statement": "All GitHub-readable descendants listed here have exact commit/root-tree identity. crc32c has three pinned gitlinks and each listed child has a non-truncated tree with zero further gitlinks. This does not close non-GitHub original-host inputs or package-manager/toolchain resolution.",
     "cppgir_effect": "none; cppgir original GitLab tree/blob remains independently fail-closed"
+  },
+  "round32_github_recursive_authority_closure": {
+    "evidence_mode": "manual-github-commit-tree-gitmodules-license-blob-reads-stage-a-no-ci",
+    "upstream_commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+    "root_authorities": {
+      "rows": 48,
+      "unique_github_commit_objects": 47,
+      "recursive_root_scans_complete": 48,
+      "recursive_scan_pending": 0,
+      "all_root_recursive_trees_truncated_false": true,
+      "authority_inventory": "inventory/root-mutable-authorities.json"
+    },
+    "priority_chains": {
+      "libavif": [
+        {
+          "commit": "1aadfad932c98c069a1204261b1856f81f3bc199",
+          "tree": "4af890bd65f1e26300bf6046a315a7927675c521",
+          "truncated": false,
+          "gitlinks": 0
+        },
+        {
+          "commit": "c5240fc79fe5c2407e10afd35f5505ef6333ea49",
+          "tree": "b2663cbc9ed4554942f9c5e54f6ffd4ec6a8d608",
+          "truncated": false,
+          "gitlinks": 0
+        }
+      ],
+      "ffmpeg": [
+        {
+          "commit": "1041abdc962f4cc4f394aa8de9dc5236c0c3b9e7",
+          "tree": "4617f177ba2b559e393d7ca16cb8bba1bbde6ed2",
+          "truncated": false,
+          "gitlinks": 0
+        },
+        {
+          "commit": "f1e3a2bf7a2f2cde936d1ed97f09a26853d20125",
+          "tree": "9aaca04fcc4bb2a56d3a06bab6d262d587956dc2",
+          "truncated": false,
+          "gitlinks": 0
+        }
+      ],
+      "libjxl": {
+        "commit": "a7a9c787341cf703dede03c2009fa460cae5e5df",
+        "tree": "d56a2e4387ca5bf74ec08dbe682a0cfbedd45818",
+        "truncated": false,
+        "gitmodules_blob": "e64c474aef79402b0328f448270d3c27c818ca87",
+        "children": [
+          {
+            "path": "third_party/brotli",
+            "repository": "google/brotli",
+            "commit": "028fb5a23661f123017c060daa546b55cf4bde29",
+            "tree": "ba309704f7d9ef312a8daea1cdb5d20a29ebed94",
+            "truncated": false,
+            "entries": 444,
+            "gitlinks": 0
+          },
+          {
+            "path": "third_party/lcms",
+            "repository": "mm2/Little-CMS",
+            "commit": "5176347635785e53ee5cee92328f76fda766ecc6",
+            "tree": "01d9f13d80bbad5690fbba272510b755a76f2f3b",
+            "truncated": false,
+            "entries": 402,
+            "gitlinks": 0
+          },
+          {
+            "path": "third_party/googletest",
+            "repository": "google/googletest",
+            "commit": "6910c9d9165801d8827d628cb72eb7ea9dd538c5",
+            "tree": "48aa5a94a57e8768f1189f5079844b71b3199658",
+            "truncated": false,
+            "entries": 276,
+            "gitlinks": 0
+          },
+          {
+            "path": "third_party/sjpeg",
+            "repository": "webmproject/sjpeg",
+            "commit": "94e0df6d0f8b44228de5be0ff35efb9f946a13c9",
+            "tree": "576830596e53719d15adb9055d68a2c249468817",
+            "truncated": false,
+            "entries": 56,
+            "gitlinks": 0
+          },
+          {
+            "path": "third_party/skcms",
+            "repository": "google/skcms",
+            "commit": "96d9171c94b937a1b5f0293de7309ac16311b722",
+            "tree": "c122f626ca183e7996ab5e601b7904ec96c6b6a1",
+            "truncated": false,
+            "entries": 358,
+            "gitlinks": 0
+          },
+          {
+            "path": "third_party/highway",
+            "repository": "google/highway",
+            "commit": "457c891775a7397bdb0376bb1031e6e027af1c48",
+            "tree": "606dd7ee4458921c9a7027fc95d12eb86e604f74",
+            "truncated": false,
+            "entries": 262,
+            "gitlinks": 0
+          },
+          {
+            "path": "third_party/libpng",
+            "repository": "pnggroup/libpng",
+            "commit": "872555f4ba910252783af1507f9e7fe1653be252",
+            "tree": "a5611ed79a18f8f4b9f2f21724499172d92896b0",
+            "truncated": false,
+            "entries": 644,
+            "gitlinks": 0
+          },
+          {
+            "path": "third_party/zlib",
+            "repository": "madler/zlib",
+            "commit": "51b7f2abdade71cd9bb0e7a373ef2610ec6f9daf",
+            "tree": "16b86ef85c591c244523c98c71508be7908d1189",
+            "truncated": false,
+            "entries": 295,
+            "gitlinks": 0
+          },
+          {
+            "path": "testdata",
+            "repository": "libjxl/testdata",
+            "commit": "73695d303670c90e4d506ea89d9901b081385089",
+            "tree": "30d35221974f5fbb8745ca4f54a129d268d15dbf",
+            "truncated": false,
+            "entries": 304,
+            "gitlinks": 0
+          },
+          {
+            "path": "third_party/libjpeg-turbo",
+            "repository": "libjpeg-turbo/libjpeg-turbo",
+            "commit": "8ecba3647edb6dd940463fedf38ca33a8e2a73d1",
+            "tree": "935529be5e36f356ff176700465cc10555be466e",
+            "truncated": false,
+            "entries": 555,
+            "gitlinks": 0
+          }
+        ],
+        "all_children_further_gitlinks_zero": true
+      },
+      "openssl": {
+        "commit": "45e844fa2a14ec92d146bd8f5778ac130b6625fb",
+        "tree": "475b3b8ea9a6f77232dd789e1821539e2c501f9e",
+        "truncated": false,
+        "gitmodules_blob": "b4c756a67b1796613312e4b547dfabd53e5eb2c6",
+        "direct_gitlinks": 11,
+        "build_reachable_gitlinks": 0,
+        "disposition": "fixed-u TDesktop OpenSSL stages never initialize submodules"
+      },
+      "qt6": {
+        "superproject_commit": "713a36536903d172f9e6737584d428753c119496",
+        "tree": "0d490d635143afa695379c3d5d51ab11947612df",
+        "gitmodules_blob": "b1a23c0548de2e47f620d2c34db063621c7428ba",
+        "selected_children": [
+          {
+            "path": "qtbase",
+            "repository": "qt/qtbase",
+            "commit": "ef55f427f2c8b410d34f8a7681020a3000cf6866",
+            "tree": "e414f40795dfc79c4a13e0c03ce37b2145ed33be",
+            "truncated": false,
+            "entries": 27251,
+            "gitlinks": 0
+          },
+          {
+            "path": "qtdeclarative",
+            "repository": "qt/qtdeclarative",
+            "commit": "4e3399c26ec57246c08de019cfcbda8d23604cfa",
+            "tree": "40f29cb023c69ba60fee18c320b18bfd79a200d9",
+            "truncated": false,
+            "entries": 25919,
+            "gitlinks": 1
+          },
+          {
+            "path": "qtwayland",
+            "repository": "qt/qtwayland",
+            "commit": "fd0456558bc1766da85aee42f6a87f79092cbb13",
+            "tree": "55c21afd874d9c27961adba5577d501acc1fd3e0",
+            "truncated": false,
+            "entries": 866,
+            "gitlinks": 0
+          },
+          {
+            "path": "qtimageformats",
+            "repository": "qt/qtimageformats",
+            "commit": "47b6139dda3b84d1d3ec15caf8d04eff8d744c8d",
+            "tree": "9e5e1a1809a8a2fb64c4904757a54e5a404d3461",
+            "truncated": false,
+            "entries": 627,
+            "gitlinks": 0
+          },
+          {
+            "path": "qtsvg",
+            "repository": "qt/qtsvg",
+            "commit": "17ca512f903f935282ebeca496aac5d11ba4199a",
+            "tree": "bc11fdd8ad0c6e5b7987048ccd3ba4a987b7d94a",
+            "truncated": false,
+            "entries": 735,
+            "gitlinks": 0
+          },
+          {
+            "path": "qtshadertools",
+            "repository": "qt/qtshadertools",
+            "commit": "c70b59ea4a47ccbee7e0d0353b9e91d719120bfd",
+            "tree": "bbe095f7ce3035815fcefc969d00178732a376bc",
+            "truncated": false,
+            "entries": 377,
+            "gitlinks": 0
+          }
+        ],
+        "nested": [
+          {
+            "parent": "qtdeclarative",
+            "path": "tests/auto/qml/ecmascripttests/test262",
+            "repository": "qt/qtdeclarative-testsuites",
+            "commit": "a0efb7e1ab1cee24c387abe1897ff18fa116c17d",
+            "tree": "c6d9e4b5352d5900b79a77d5d8a919d7b34ae3c0",
+            "truncated": false,
+            "gitlinks": 0
+          }
+        ]
+      },
+      "qt5": {
+        "superproject_commit": "dc2ac680fa9d0ef7b0d9520859593d13951bedea",
+        "tree": "93774844c9d770e2550cdc07285ff33578389228",
+        "gitmodules_blob": "452233655f279d4c033a6b0e5fa05f8dae8a9183",
+        "selected_children": [
+          {
+            "path": "qtbase",
+            "repository": "qt/qtbase",
+            "commit": "c68297f66533200c9ff626b056d096c78b4b94db",
+            "tree": "19a10eb0e9bf5e9c7a9aedff03ac1e03f85352f3",
+            "truncated": false,
+            "entries": 26424,
+            "gitlinks": 0
+          },
+          {
+            "path": "qtimageformats",
+            "repository": "qt/qtimageformats",
+            "commit": "ba9056b12830318729e88d7444ea6a13e3f38e43",
+            "tree": "3c0893c24bd6f9224e80d85a0fd2eb91c1d90530",
+            "truncated": false,
+            "entries": 610,
+            "gitlinks": 0
+          },
+          {
+            "path": "qtsvg",
+            "repository": "qt/qtsvg",
+            "commit": "62c4a8da3114174ea5b2c4ea46d2ab848066d534",
+            "tree": "56bc505c59477f882b1539976c781a0fd426306e",
+            "truncated": false,
+            "entries": 418,
+            "gitlinks": 0
+          }
+        ]
+      },
+      "xcb_util_m4": {
+        "parent_authorities": [
+          "ROOT-MUT-014",
+          "ROOT-MUT-015",
+          "ROOT-MUT-016"
+        ],
+        "original_repository": "https://gitlab.freedesktop.org/xorg/util/xcb-util-m4.git",
+        "commit": "c617eee22ae5c285e79e81ec39ce96862fd3262f",
+        "github_mirror": "GlassOnTin/xcb-util-m4",
+        "mirror_tree": "184bbcb9e3b4cad3c68f5c024fb47b34a22ff9ff",
+        "mirror_truncated": false,
+        "mirror_gitlinks": 0,
+        "original_host_tree_verified": false
+      }
+    },
+    "archive_accounting": {
+      "boost_1_90_0": {
+        "sha256": "5e93d582aff26868d581a52ae78c7d8edf3f3064742c6e77901a1f18a437eea9",
+        "size_bytes": 210975925,
+        "official_source_commit": "1bed2b0712b2119f20d66c5053def9173c8462a5",
+        "github_superproject_tree": "b4d30083f05439b4f2855d44e36bbe632c3985e2",
+        "raw_members": "unread"
+      },
+      "libiconv_1_18": {
+        "sha256": "3b08f5f4f9b4eb82f151a7040bfd6fe6c6fb922efe4b1659c66ea933276965e8",
+        "size_bytes": 5822590,
+        "signature_size_bytes": 833,
+        "raw_members": "unread"
+      }
+    },
+    "remaining_blockers": [
+      "Boost/libiconv compressed archive member listings are unread through current web/container source-read paths; official checksum/size/source metadata is recorded.",
+      "xcb-util-m4 original GitLab object is not independently read; exact pinned object is verified only through a GitHub mirror.",
+      "cppgir original GitLab tree/blob remains fail-closed."
+    ]
   }
 }

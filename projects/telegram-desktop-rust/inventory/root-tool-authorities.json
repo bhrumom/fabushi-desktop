@@ -19,7 +19,8 @@
       "head_sha": "16f5f04e362a4ef93d0c5f9fb8a61f5b4e3500b1",
       "artifact_id": 11475597885,
       "artifact_digest": "sha256:ac9f74cd2e573de663c149768f6b5a462eb08ae3b2484f2bfaa4a8b9663ae219"
-    }
+    },
+    "round32_archive_accounting": "Official size/checksum/source-identity metadata recorded for both versioned archives. Raw compressed member enumeration remains fail-closed/unread in the current read-only access paths and is not promoted to complete content-tree closure."
   },
   "candidate_lines_total": 16,
   "tool_bootstrap_lines": 14,
@@ -33,9 +34,40 @@
       "url": "https://archives.boost.io/release/1.90.0/source/boost_1_90_0.tar.gz",
       "version": "1.90.0",
       "sha256": "5e93d582aff26868d581a52ae78c7d8edf3f3064742c6e77901a1f18a437eea9",
-      "status": "pending-recursive-content-accounting",
+      "status": "official-release-identity-and-github-source-topology-accounted-raw-archive-members-unread",
       "source_commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
-      "source_blob_sha": "3fea9e6866e0ea6351f8a13ebb825ebf49cadfc2"
+      "source_blob_sha": "3fea9e6866e0ea6351f8a13ebb825ebf49cadfc2",
+      "content_accounting": {
+        "evidence_round": 32,
+        "official_index_url": "https://archives.boost.io/release/1.90.0/source/",
+        "official_sidecar_url": "https://archives.boost.io/release/1.90.0/source/boost_1_90_0.tar.gz.json",
+        "archive_size_bytes": 210975925,
+        "sha256": "5e93d582aff26868d581a52ae78c7d8edf3f3064742c6e77901a1f18a437eea9",
+        "source_commit": "1bed2b0712b2119f20d66c5053def9173c8462a5",
+        "github_superproject": {
+          "repository": "boostorg/boost",
+          "tree": "b4d30083f05439b4f2855d44e36bbe632c3985e2",
+          "recursive_tree_truncated": false,
+          "entries": 444,
+          "blobs": 242,
+          "trees": 31,
+          "direct_gitlinks": 171,
+          "gitmodules_blob_sha": "da81677f9ab1ccf8dcead1543150a70f3a36eb95",
+          "license_blob_sha": "36b7cd93cdfbac762f5be4c6ce276df2ea6305c2"
+        },
+        "regex_gitlink": {
+          "path": "libs/regex",
+          "repository": "boostorg/regex",
+          "commit": "f439e22ae41fa647bd7de16c2d92deb232593985",
+          "tree": "f1f65f8834061dcb548f75fda91707be838926ab",
+          "recursive_tree_truncated": false,
+          "gitlinks": 0
+        },
+        "raw_archive_member_listing": {
+          "status": "unread",
+          "reason": "web connector rejects application/x-gzip body; direct container downloads from both official Boost and GNU archive URLs failed; no CI/build/test/generator was used"
+        }
+      }
     },
     {
       "id": "ROOT-ARCHIVE-LIBICONV-118",
@@ -44,9 +76,24 @@
       "url": "https://ftp.gnu.org/pub/gnu/libiconv/libiconv-1.18.tar.gz",
       "version": "1.18",
       "sha256": "3b08f5f4f9b4eb82f151a7040bfd6fe6c6fb922efe4b1659c66ea933276965e8",
-      "status": "pending-recursive-content-accounting",
+      "status": "official-release-checksum-size-signature-accounted-raw-archive-members-unread",
       "source_commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
-      "source_blob_sha": "a9f3dd2d9e4020df958ab5af942376177d66c78b"
+      "source_blob_sha": "a9f3dd2d9e4020df958ab5af942376177d66c78b",
+      "content_accounting": {
+        "evidence_round": 32,
+        "official_index_url": "https://ftp.gnu.org/gnu/libiconv/",
+        "official_release_announcement": "https://lists.gnu.org/archive/html/info-gnu/2024-12/msg00004.html",
+        "archive_size_bytes": 5822590,
+        "sha1": "3402aae249ec56e04114767c8f6bdaafc87a048c",
+        "sha256": "3b08f5f4f9b4eb82f151a7040bfd6fe6c6fb922efe4b1659c66ea933276965e8",
+        "detached_signature_url": "https://ftp.gnu.org/gnu/libiconv/libiconv-1.18.tar.gz.sig",
+        "detached_signature_size_bytes": 833,
+        "signing_key_fingerprint": "9001 B85A F9E1 B83D F1BD A942 F5BE 8B26 7C6A 406D",
+        "raw_archive_member_listing": {
+          "status": "unread",
+          "reason": "web connector rejects application/x-gzip body; direct container download from official GNU archive URL failed; no CI/build/test/generator was used"
+        }
+      }
     }
   ],
   "non_product_source_toolchain": [
