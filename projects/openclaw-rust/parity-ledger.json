@@ -19429,10 +19429,10 @@
       ],
       "id": "OCRM-RESP-MODEL-PICKER-001",
       "integration": {
-        "consumer": "source/host/src/extensions/inference/model_picker_service.rs",
-        "entrypoint": "source/host/src/extensions/inference/model_picker_service.rs::apply_session_model_selection",
+        "consumer": "No production inference runner/provider consumer identified; the persisted sessionModelSelection is not projected into SandSessionOptions or a live provider request",
+        "entrypoint": "source/host/src/extensions/session/agent_session.rs::SandAgentSessionStore::apply_session_model_selection -> source/host/src/extensions/inference/model_picker_service.rs::apply_session_model_selection",
         "owner": "source/host/src/extensions/inference/model_picker_service.rs",
-        "producer": "source/host/src/extensions/inference/model_picker_service.rs"
+        "producer": "No production session-model mutation producer identified; SandAgentSessionStore exposes the mutation method but current non-test search finds no caller"
       },
       "invariants": [
         "Locked session entries reject all model selections",
@@ -19579,10 +19579,10 @@
       ],
       "id": "OCRM-RESP-MODEL-CATALOG-PLANNER-001",
       "integration": {
-        "consumer": "source/host/src/extensions/inference/model_catalog_service.rs",
+        "consumer": "No production model-catalog consumer identified; planner helpers have no non-test callers",
         "entrypoint": "source/host/src/extensions/inference/model_catalog_service.rs::plan_manifest_model_catalog_rows",
         "owner": "source/host/src/extensions/inference/model_catalog_service.rs",
-        "producer": "source/host/src/extensions/inference/model_catalog_service.rs"
+        "producer": "No production manifest/remote model-catalog producer identified; planner input is supplied only by contract fixtures"
       },
       "invariants": [
         "Local trusted configuration overrides remote base_url and headers",
@@ -19703,10 +19703,10 @@
       ],
       "id": "OCRM-RESP-MODEL-CATALOG-REMOTE-001",
       "integration": {
-        "consumer": "source/host/src/extensions/inference/model_catalog_service.rs",
+        "consumer": "No production model-catalog consumer identified; remote projection and freshness helpers have no non-test callers",
         "entrypoint": "source/host/src/extensions/inference/model_catalog_service.rs::project_remote_model_catalog",
         "owner": "source/host/src/extensions/inference/model_catalog_service.rs",
-        "producer": "source/host/src/extensions/inference/model_catalog_service.rs"
+        "producer": "No production remote catalog fetch/store producer identified; wire bundles and store state are supplied only by contract fixtures"
       },
       "invariants": [
         "Default and retired V1 URLs are recognized as active catalog sources",
@@ -21178,10 +21178,10 @@
       ],
       "id": "OCRM-RESP-LLM-TRANSPORT-RATE-LIMIT-001",
       "integration": {
-        "consumer": "source/host/src/extensions/inference/llm_transport_rate_limit.rs",
+        "consumer": "No production LLM transport consumer identified; RateLimitAdmissionController is consumed only by source/host/tests/openclaw_llm_contract.rs",
         "entrypoint": "source/host/src/extensions/inference/llm_transport_rate_limit.rs::admit_request",
         "owner": "source/host/src/extensions/inference/llm_transport_rate_limit.rs",
-        "producer": "source/host/src/extensions/inference/llm_transport_rate_limit.rs"
+        "producer": "No production LLM request producer identified; route requests and retry feedback are supplied only by contract fixtures"
       },
       "invariants": [
         "Interactive requests strictly precede background requests in rate-limit queue",
@@ -21282,10 +21282,10 @@
       ],
       "id": "OCRM-RESP-LLM-PROVIDER-STREAM-WRAPPERS-001",
       "integration": {
-        "consumer": "source/host/src/extensions/inference/stream_wrappers_service.rs",
+        "consumer": "No production provider-stream consumer identified; stream wrapper helpers are consumed only by source/host/tests/openclaw_llm_contract.rs",
         "entrypoint": "source/host/src/extensions/inference/stream_wrappers_service.rs::normalize_anthropic_tool_schema",
         "owner": "source/host/src/extensions/inference/stream_wrappers_service.rs",
-        "producer": "source/host/src/extensions/inference/stream_wrappers_service.rs"
+        "producer": "No production provider-stream producer identified; provider payloads and observations are supplied only by contract fixtures"
       },
       "invariants": [
         "Empty tool schemas are projected into valid typed object schemas",
@@ -21385,10 +21385,10 @@
       ],
       "id": "OCRM-RESP-LLM-OAUTH-REGISTRY-001",
       "integration": {
-        "consumer": "source/host/src/extensions/inference/oauth_registry_service.rs",
+        "consumer": "No production LLM OAuth consumer identified; OAuthProviderRegistry is consumed only by source/host/tests/openclaw_llm_contract.rs",
         "entrypoint": "source/host/src/extensions/inference/oauth_registry_service.rs::get_api_key",
         "owner": "source/host/src/extensions/inference/oauth_registry_service.rs",
-        "producer": "source/host/src/extensions/inference/oauth_registry_service.rs"
+        "producer": "No production OAuth callback/credential producer identified; provider credentials and callback inputs are supplied only by contract fixtures"
       },
       "invariants": [
         "Non-loopback callback hosts are strictly rejected",
@@ -24562,10 +24562,10 @@
       ],
       "id": "OCRM-RESP-PLUGIN-STATE-BLOB-STORE-001",
       "integration": {
-        "consumer": "source/host/src/extensions/plugin_state/blob_store.rs",
+        "consumer": "No production plugin-state blob consumer identified; PluginBlobStore is consumed only by source/host/tests/openclaw_plugin_state_contract.rs",
         "entrypoint": "source/host/src/extensions/plugin_state/blob_store.rs::put_blob",
         "owner": "source/host/src/extensions/plugin_state/blob_store.rs",
-        "producer": "source/host/src/extensions/plugin_state/blob_store.rs"
+        "producer": "No production plugin-state blob producer identified; blob inputs are supplied only by contract fixtures"
       },
       "invariants": [
         "Single entry cannot exceed 100 MiB limit",
@@ -24745,10 +24745,10 @@
       ],
       "id": "OCRM-RESP-PLUGIN-STATE-KEYED-STORE-001",
       "integration": {
-        "consumer": "source/host/src/extensions/plugin_state/state_store.rs",
+        "consumer": "No production plugin-state keyed-store consumer identified; PluginStateKeyedStore is consumed only by source/host/tests/openclaw_plugin_state_contract.rs",
         "entrypoint": "source/host/src/extensions/plugin_state/state_store.rs::set_state",
         "owner": "source/host/src/extensions/plugin_state/state_store.rs",
-        "producer": "source/host/src/extensions/plugin_state/state_store.rs"
+        "producer": "No production plugin-state keyed-store producer identified; state mutations are supplied only by contract fixtures"
       },
       "invariants": [
         "Single state value cannot exceed 1 MiB limit",
@@ -25162,10 +25162,10 @@
       ],
       "id": "OCRM-RESP-PLUGIN-STATE-RUNTIME-HEALTH-001",
       "integration": {
-        "consumer": "source/host/src/extensions/plugin_state/runtime_health.rs",
+        "consumer": "No production runtime-health consumer identified; RuntimeHealthStore is consumed only by source/host/tests/openclaw_plugin_state_contract.rs",
         "entrypoint": "source/host/src/extensions/plugin_state/runtime_health.rs::get_deduplicated_records",
         "owner": "source/host/src/extensions/plugin_state/runtime_health.rs",
-        "producer": "source/host/src/extensions/plugin_state/runtime_health.rs"
+        "producer": "No production runtime-health producer identified; process records are supplied only by contract fixtures"
       },
       "invariants": [
         "Process token prevents restarted processes with recycled PIDs from adopting old errors",
@@ -26539,10 +26539,10 @@
       ],
       "id": "OCRM-RESP-PLUGINS-ACTIVATION-PLANNER-001",
       "integration": {
-        "consumer": "source/host/src/extensions/plugins/activation_planner.rs",
+        "consumer": "No production plugin activation consumer identified; ActivationPlanner is consumed only by source/host/tests/openclaw_plugins_contract.rs",
         "entrypoint": "source/host/src/extensions/plugins/activation_planner.rs::ActivationPlanner::plan_activation",
         "owner": "source/host/src/extensions/plugins/activation_planner.rs",
-        "producer": "source/host/src/extensions/plugins/activation_planner.rs"
+        "producer": "No production activation-trigger producer identified; trigger and manifest inputs are supplied only by contract fixtures"
       },
       "invariants": [
         "Untrusted external plugins are filtered out from activation plan unless explicitly trusted"
@@ -27649,10 +27649,10 @@
       ],
       "id": "OCRM-RESP-PLUGINS-INSTALL-MANAGEMENT-001",
       "integration": {
-        "consumer": "source/host/src/extensions/plugins/installed_index_store.rs",
+        "consumer": "No production installed-plugin index consumer identified; the only non-test use is BundledInstallGuard's immutable constant, not index persistence",
         "entrypoint": "source/host/src/extensions/plugins/installed_index_store.rs::InstalledPluginIndexStore::set_record",
         "owner": "source/host/src/extensions/plugins/installed_index_store.rs",
-        "producer": "source/host/src/extensions/plugins/installed_index_store.rs"
+        "producer": "No production plugin install/uninstall producer identified; index mutations are supplied only by contract fixtures"
       },
       "invariants": [
         "Disabled plugins excluded from active discovery; schema version strictly 1"
@@ -27849,10 +27849,10 @@
       ],
       "id": "OCRM-RESP-PLUGINS-MANIFEST-DOCTOR-001",
       "integration": {
-        "consumer": "source/host/src/extensions/plugins/manifest_doctor.rs",
+        "consumer": "No production plugin-manifest doctor consumer identified; check_plugin_manifest_health is consumed only by source/host/tests/openclaw_plugins_contract.rs",
         "entrypoint": "source/host/src/extensions/plugins/manifest_doctor.rs::check_plugin_manifest_health",
         "owner": "source/host/src/extensions/plugins/manifest_doctor.rs",
-        "producer": "source/host/src/extensions/plugins/manifest_doctor.rs"
+        "producer": "No production plugin-manifest doctor producer identified; manifest inputs are supplied only by contract fixtures"
       },
       "invariants": [
         "Missing manifest files or empty entry points produce Error severity diagnostics"
@@ -27945,10 +27945,10 @@
       ],
       "id": "OCRM-RESP-PLUGINS-HOOKS-PIPELINE-001",
       "integration": {
-        "consumer": "source/host/src/extensions/plugins/hook_runner.rs",
+        "consumer": "No production plugin hook consumer identified; PluginHookRunner is consumed only by source/host/tests/openclaw_plugins_full_contract.rs",
         "entrypoint": "source/host/src/extensions/plugins/hook_runner.rs::PluginHookRunner::run_hooks",
         "owner": "source/host/src/extensions/plugins/hook_runner.rs",
-        "producer": "source/host/src/extensions/plugins/hook_runner.rs"
+        "producer": "No production plugin lifecycle-event producer identified; hook registrations and events are supplied only by contract fixtures"
       },
       "invariants": [
         "Higher priority hook executes strictly before lower priority hook; pipeline is fail-soft"
@@ -28438,10 +28438,10 @@
       ],
       "id": "OCRM-RESP-PLUGINS-RUNTIME-FINAL-001",
       "integration": {
-        "consumer": "source/host/src/extensions/plugins/runtime_final.rs",
+        "consumer": "No production plugin runtime consumer identified; PluginRuntimeManager is consumed only by source/host/tests/openclaw_plugins_full_contract.rs",
         "entrypoint": "source/host/src/extensions/plugins/runtime_final.rs::PluginRuntimeManager::uninstall_plugin",
         "owner": "source/host/src/extensions/plugins/runtime_final.rs",
-        "producer": "source/host/src/extensions/plugins/runtime_final.rs"
+        "producer": "No production plugin runtime lifecycle producer identified; runtime inputs are supplied only by contract fixtures"
       },
       "invariants": [
         "Uninstalled plugins must not be returned in active plugin enumeration"

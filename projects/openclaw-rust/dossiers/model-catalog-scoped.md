@@ -7,7 +7,7 @@
   - `OCRM-RESP-MODEL-CATALOG-REMOTE-001`
 - **Reviewer**: `xuyao@ombhrum.com`
 - **Date**: `2026-10-27`
-- **Status**: `wired/verified`
+- **Status**: `implementation=implemented`, `wiring=not-wired`, `verification=not-run`, `acceptance=pending`
 
 ## 1. Upstream Authority & Source Mapping
 
@@ -69,4 +69,14 @@ The following 17 upstream files in `src/model-catalog/` (3,687 lines total) are 
     - `test_ocrm_model_catalog_o02_bundle_projection_v1_and_v3`
     - `test_ocrm_model_catalog_o03_manifest_planner_and_trusted_transport`
     - `test_ocrm_model_catalog_o04_conflict_detection_and_filtering`
-- **Verification Result**: 4 passed; 0 failed.
+- **Historical contract record**: the dossier records four contract tests as passed in an earlier run. That record is not current exact-head Actions evidence and does not establish production wiring or acceptance during the active development freeze.
+
+## 4. Current production reachability audit (2026-10-31)
+
+The current Host source search found no non-test caller for
+`plan_manifest_model_catalog_rows`, `project_remote_model_catalog`, or the
+associated freshness and wire-bundle helpers. The Rust module and contract
+fixtures therefore do not establish a production manifest producer, remote
+catalog fetch/store producer, or inference consumer. The ledger keeps both
+catalog responsibilities under their execution-wiring blockers with
+`wiring=not-wired`, `verification=not-run`, and `acceptance=pending`.

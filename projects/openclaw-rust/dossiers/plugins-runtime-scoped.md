@@ -27,6 +27,18 @@
 
 The catalog implementation and its contract fixtures exist, but this responsibility is not fully production-wired. The parity ledger therefore keeps `implementation=implemented` while recording `wiring=not-wired` until every declared provider family has a real producer and consumer.
 
+## 3. Current production reachability audit (2026-10-31)
+
+The current non-test Host source has no caller for `ActivationPlanner`,
+`InstalledPluginIndexStore` mutation methods, `check_plugin_manifest_health`,
+or `PluginRuntimeManager`. The one non-test reference to
+`BundledInstallGuard` is an immutable bundled-plugin constant and is not
+installed-index persistence. Hook-runner reachability is separately recorded
+in `plugins-full-scoped.md`; its only current callers are contract fixtures.
+These responsibilities remain implementation evidence only with
+`wiring=not-wired`, `verification=not-run`, and `acceptance=pending` under
+their existing blockers.
+
 ## 3. Verification & Oracle Evidence
 - **Contract Tests**: `source/host/tests/openclaw_plugins_contract.rs`:
   - `test_ocrm_plugins_bundle_manifest` (PASSED)

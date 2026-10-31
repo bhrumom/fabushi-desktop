@@ -87,4 +87,14 @@
   - `test_ocrm_llm_terminal_error_and_secret_redaction`
   - `test_ocrm_llm_stream_wrappers_cache_and_tools`
   - `test_ocrm_llm_oauth_registry_and_pkce`
-- Evidence: 4/4 passing contract tests with positive and negative cases.
+- Historical contract record: 4/4 contract tests were recorded as passing in an earlier run. This is not current exact-head Actions evidence and does not establish production wiring or acceptance during the active development freeze.
+
+## 5. Current production reachability audit (2026-10-31)
+
+The current non-test Host source has no caller for `RateLimitAdmissionController`,
+the provider stream-wrapper helpers, or `OAuthProviderRegistry`. The existing
+inference transport and provider paths therefore do not consume these owners;
+the current ledger records no production request producer, provider-stream
+consumer, or OAuth callback/credential lifecycle for these three responsibilities.
+They remain `wiring=not-wired`, `verification=not-run`, and
+`acceptance=pending` under their existing wiring blockers.

@@ -109,4 +109,14 @@ Responsibility: `OCRM-RESP-PLUGIN-STATE-RUNTIME-HEALTH-001`
   - `test_ocrm_plugin_state_blob_store_bounds`
   - `test_ocrm_plugin_state_keyed_store_and_journal`
   - `test_ocrm_plugin_state_runtime_health`
-- Evidence: 3/3 passing contract tests with full positive and negative assertions.
+- Historical contract record: 3/3 contract tests were recorded as passing in an earlier run. This is not current exact-head Actions evidence and does not establish production wiring or acceptance during the active development freeze.
+
+## 5. Current production reachability audit (2026-10-31)
+
+The current non-test Host source has no caller for `PluginBlobStore`,
+`PluginStateKeyedStore`, or `RuntimeHealthStore`. Their SQLite-like state,
+quota and process-health inputs are supplied only by the focused contract
+fixtures. `BundledInstallGuard` is a separate immutable bundled-plugin guard
+and does not constitute an installed-index or plugin-state store consumer.
+The ledger therefore retains the three existing wiring blockers with
+`wiring=not-wired`, `verification=not-run`, and `acceptance=pending`.

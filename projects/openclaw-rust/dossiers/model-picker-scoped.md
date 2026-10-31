@@ -6,7 +6,7 @@
   - `OCRM-RESP-MODEL-PICKER-001`
 - **Reviewer**: `xuyao@ombhrum.com`
 - **Date**: `2026-10-27`
-- **Status**: `wired/verified`
+- **Status**: `implementation=implemented`, `wiring=not-wired`, `verification=not-run`, `acceptance=pending`
 
 ## 1. Upstream Authority & Source Mapping
 
@@ -52,4 +52,16 @@ The following 6 upstream files in `src/model-picker/` (1,328 lines total, 100% o
     - `test_ocrm_model_picker_o02_locked_and_conflict_rejections`
     - `test_ocrm_model_picker_o03_operator_and_visibility_policy`
     - `test_ocrm_model_picker_o04_placement_fences_and_successful_mutation`
-- **Verification Result**: 4 passed; 0 failed.
+- **Historical contract record**: the dossier records four contract tests as passed in an earlier run. That record is not current exact-head Actions evidence and does not establish production wiring or acceptance during the active development freeze.
+
+## 4. Current production reachability audit (2026-10-31)
+
+The current Host source exposes `SandAgentSessionStore::apply_session_model_selection`
+and persists an applied result in the agent-scoped SQLite `sessionModelSelection`
+key. A non-test caller search found no production session mutation route invoking
+that method, and no inference runner/provider consumer projects the persisted
+selection into `SandSessionOptions` or a live provider request. The pure
+`model_picker_service` function and the persistence method therefore remain
+implementation evidence only; the ledger keeps
+`BL-MODEL-PICKER-EXEC-WIRING-001` with `wiring=not-wired`,
+`verification=not-run`, and `acceptance=pending`.
