@@ -74,4 +74,5 @@ pub use provider_catalog::{
 pub use runtime_control::{
     CloudWorkerRuntimeControlAction, CloudWorkerRuntimeControlBudget,
     CloudWorkerRuntimeControlError, CloudWorkerRuntimeControlRequest,
+    CloudWorkerRuntimeControlResult,
 };

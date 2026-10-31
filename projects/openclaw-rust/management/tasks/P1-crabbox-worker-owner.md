@@ -598,6 +598,14 @@ Zero or over-limit execution material is rejected before a lease mutation is
 admitted. The budget is typed producer input only: no timer, process,
 transport, provider RPC or output capture is implemented by this slice.
 
+`CloudWorkerRuntimeControlResult` and
+`CloudWorkerProvisioningExtension::settle_bounded_runtime_control` now bind a
+producer result to the admitted action and mutation, reject elapsed time over
+the declared timeout unless the producer explicitly classifies the lost result
+as `OutcomeUnknown`, and require existing redacted diagnostics before owner
+settlement. The result is classified but raw output is neither persisted nor
+executed by the Host owner.
+
 ## 9. Definition of Done / acceptance criteria
 
 - P1-AC01: ADR is approved and the target symbols/consumers are recorded in

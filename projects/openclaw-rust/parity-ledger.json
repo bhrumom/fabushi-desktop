@@ -1589,7 +1589,7 @@
       },
       "invariants": [
         "Script output and diagnostics are bounded and redacted",
-        "Timeout and retry classification preserves outcome-unknown states",
+        "Timeout overruns require explicit outcome-unknown classification and preserve retry/recovery state",
         "Snapshot and process actions require identity/replay fencing before settlement",
         "Binary/process inspection cannot by itself authorize or launch a worker"
       ],
@@ -1683,6 +1683,7 @@
         "source/host/src/extensions/cloud_workers/runtime_control.rs::tests::admission_rejects_invalid_replay_key_before_side_effects",
         "source/host/src/extensions/cloud_workers/runtime_control.rs::tests::bounded_request_rejects_unbounded_execution_material_before_admission",
         "source/host/src/extensions/cloud_workers/runtime_control.rs::tests::bounded_request_preserves_fenced_mutation_identity",
+        "source/host/src/extensions/cloud_workers/runtime_control.rs::tests::result_validation_binds_action_mutation_timeout_and_redaction",
         "source/host/src/extensions/cloud_workers/owner.rs::tests::runtime_control_completion_returns_read_capability_to_enrolled"
       ],
       "typed_contracts": [
@@ -1690,6 +1691,7 @@
         "CloudWorkerMutationOutcome",
         "CloudWorkerRuntimeControlBudget",
         "CloudWorkerRuntimeControlRequest",
+        "CloudWorkerRuntimeControlResult",
         "CloudWorkerDiagnostic"
       ],
       "unit_id": "OCRM-UNIT-INFRA-001"

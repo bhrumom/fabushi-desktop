@@ -131,7 +131,7 @@ impl CloudWorkerDiagnostic {
         }
     }
 
-    fn validate(&self) -> Result<(), CloudWorkerNodeBootstrapError> {
+    pub(crate) fn validate(&self) -> Result<(), CloudWorkerNodeBootstrapError> {
         if self.code.trim().is_empty()
             || self.code.chars().count() > MAX_DIAGNOSTIC_CHARS
             || self.code.chars().any(|character| character.is_control())

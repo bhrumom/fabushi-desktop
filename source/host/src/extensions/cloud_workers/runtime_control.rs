@@ -2,8 +2,8 @@ use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
 use super::{
-    CloudWorkerLease, CloudWorkerLeaseError, CloudWorkerLeaseMutation,
-    CloudWorkerLifecycle, ReplayKey,
+    CloudWorkerDiagnostic, CloudWorkerLease, CloudWorkerLeaseError,
+    CloudWorkerLeaseMutation, CloudWorkerLifecycle, CloudWorkerMutationOutcome, ReplayKey,
 };
 
 const MAX_CONTROL_TIMEOUT_MS: u64 = 15 * 60 * 1000;
@@ -44,6 +44,45 @@ impl CloudWorkerRuntimeControlRequest {
     ) -> Result<CloudWorkerLeaseMutation, CloudWorkerRuntimeControlError> {
         self.budget.validate()?;
         self.action.admit(lease, self.replay_key.clone())
+    }
+}
+
+/// A bounded, already-classified observation returned by a future producer.
+/// Validation is pure and must complete before the owner applies the
+/// lifecycle outcome; the result itself does not perform or retry work.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct CloudWorkerRuntimeControlResult {
+    pub action: CloudWorkerRuntimeControlAction,
+    pub mutation: CloudWorkerLeaseMutation,
+    pub outcome: CloudWorkerMutationOutcome,
+    pub elapsed_ms: u64,
+    pub diagnostic: Option<CloudWorkerDiagnostic>,
+}
+
+impl CloudWorkerRuntimeControlResult {
+    pub fn validate_against(
+        &self,
+        request: &CloudWorkerRuntimeControlRequest,
+        expected_mutation: &CloudWorkerLeaseMutation,
+    ) -> Result<(), CloudWorkerRuntimeControlError> {
+        request.budget.validate()?;
+        if self.action != request.action {
+            return Err(CloudWorkerRuntimeControlError::ActionMismatch);
+        }
+        if self.mutation != *expected_mutation {
+            return Err(CloudWorkerRuntimeControlError::MutationMismatch);
+        }
+        if self.elapsed_ms > request.budget.timeout_ms
+            && self.outcome != CloudWorkerMutationOutcome::OutcomeUnknown
+        {
+            return Err(CloudWorkerRuntimeControlError::ElapsedExceedsTimeout);
+        }
+        if let Some(diagnostic) = &self.diagnostic {
+            diagnostic
+                .validate()
+                .map_err(|_| CloudWorkerRuntimeControlError::InvalidDiagnostic)?;
+        }
+        Ok(())
     }
 }
 
@@ -127,6 +166,14 @@ pub enum CloudWorkerRuntimeControlError {
     InvalidTimeoutBudget,
     #[error("runtime control output budget is outside the allowed bounds")]
     InvalidOutputBudget,
+    #[error("runtime control result action does not match its request")]
+    ActionMismatch,
+    #[error("runtime control result mutation does not match the admitted mutation")]
+    MutationMismatch,
+    #[error("runtime control result exceeded its admitted timeout budget")]
+    ElapsedExceedsTimeout,
+    #[error("runtime control result diagnostic is missing redaction or contains invalid text")]
+    InvalidDiagnostic,
     #[error(transparent)]
     Lease(#[from] CloudWorkerLeaseError),
 }
@@ -288,5 +335,63 @@ mod tests {
         assert_eq!(mutation.generation, lease.generation);
         assert_eq!(mutation.runtime, lease.runtime);
         assert_eq!(mutation.replay_key, request.replay_key);
+    }
+
+    #[test]
+    fn result_validation_binds_action_mutation_timeout_and_redaction() {
+        let lease = lease(CloudWorkerLifecycle::Enrolled);
+        let request = CloudWorkerRuntimeControlRequest {
+            action: CloudWorkerRuntimeControlAction::Heartbeat,
+            replay_key: ReplayKey("heartbeat-result".into()),
+            budget: CloudWorkerRuntimeControlBudget {
+                timeout_ms: 30_000,
+                max_output_bytes: 64 * 1024,
+            },
+        };
+        let mutation = request.admit(&lease).unwrap();
+        let result = CloudWorkerRuntimeControlResult {
+            action: request.action,
+            mutation: mutation.clone(),
+            outcome: CloudWorkerMutationOutcome::Completed,
+            elapsed_ms: 250,
+            diagnostic: Some(CloudWorkerDiagnostic::redacted(
+                "heartbeat",
+                "worker responded",
+            )),
+        };
+        assert_eq!(result.validate_against(&request, &mutation), Ok(()));
+
+        let mut invalid = result.clone();
+        invalid.elapsed_ms = request.budget.timeout_ms + 1;
+        assert_eq!(
+            invalid.validate_against(&request, &mutation),
+            Err(CloudWorkerRuntimeControlError::ElapsedExceedsTimeout)
+        );
+
+        invalid = result;
+        invalid.diagnostic = Some(CloudWorkerDiagnostic {
+            code: "raw".into(),
+            message: "unredacted".into(),
+            redacted: false,
+        });
+        assert_eq!(
+            invalid.validate_against(&request, &mutation),
+            Err(CloudWorkerRuntimeControlError::InvalidDiagnostic)
+        );
+
+        let timed_out = CloudWorkerRuntimeControlResult {
+            action: request.action,
+            mutation,
+            outcome: CloudWorkerMutationOutcome::OutcomeUnknown,
+            elapsed_ms: request.budget.timeout_ms + 1,
+            diagnostic: Some(CloudWorkerDiagnostic::redacted(
+                "timeout",
+                "control response was not observed",
+            )),
+        };
+        assert_eq!(
+            timed_out.validate_against(&request, &timed_out.mutation),
+            Ok(())
+        );
     }
 }

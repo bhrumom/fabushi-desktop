@@ -26,6 +26,7 @@ use super::{
     CloudWorkerProvisioningOwner, CloudWorkerProvisioningStore, CloudWorkerStoreError,
     CloudWorkerRuntimeControlAction,
     CloudWorkerRuntimeControlRequest,
+    CloudWorkerRuntimeControlResult,
     CloudWorkerWarmImage, CloudWorkerWarmImageGeneration, CloudWorkerWarmImageOperation,
     verify_artifact_bytes,
 };
@@ -339,6 +340,24 @@ impl CloudWorkerProvisioningExtension {
         self.mutate_and_persist(|owner| {
             owner.settle_runtime_control(mutation, action, outcome)
         })
+    }
+
+    /// Validates a bounded producer result and then settles the same
+    /// action-specific lifecycle through the canonical owner. Diagnostics are
+    /// accepted only in the existing redacted form; this method still does
+    /// not persist raw output, launch a process or retry an ambiguous result.
+    pub fn settle_bounded_runtime_control(
+        &self,
+        request: &CloudWorkerRuntimeControlRequest,
+        mutation: &CloudWorkerLeaseMutation,
+        result: &CloudWorkerRuntimeControlResult,
+    ) -> Result<CloudWorkerLease, CloudWorkerMutationError> {
+        result
+            .validate_against(request, mutation)
+            .map_err(|error| CloudWorkerMutationError::Owner(
+                super::CloudWorkerOwnerError::RuntimeControl(error),
+            ))?;
+        self.settle_runtime_control(mutation, request.action, result.outcome)
     }
 
     /// Registers a validated bootstrap record in the canonical owner snapshot.

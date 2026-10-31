@@ -277,3 +277,10 @@ The admission request now also carries validated timeout and output bounds;
 zero or excessive values fail closed before the fenced mutation is returned.
 These are typed producer inputs only, with no timer, process transport,
 provider RPC or output capture wired.
+
+`CloudWorkerRuntimeControlResult` and
+`settle_bounded_runtime_control` now validate action/mutation identity,
+elapsed-time bounds (with timeout overruns requiring explicit
+`OutcomeUnknown`) and diagnostic redaction before lifecycle settlement. This
+classifies a producer observation without persisting raw output or creating a
+provider/process executor.
