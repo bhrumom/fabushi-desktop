@@ -31268,10 +31268,10 @@
       ],
       "id": "OCRM-RESP-PLUGIN-SDK-BROWSER-AND-ARCHIVE-001",
       "integration": {
-        "consumer": "source/host/src/extensions/plugin_sdk/mod.rs",
-        "entrypoint": "source/host/src/extensions/plugin_sdk/mod.rs",
+        "consumer": "No production Plugin SDK browser/archive consumer identified; browser and archive helpers are consumed only by source/host/tests/openclaw_plugin_sdk_contract.rs",
+        "entrypoint": "source/host/src/extensions/plugin_sdk/archive_blob.rs::extract_archive / source/host/src/extensions/plugin_sdk/browser.rs::parse_browser_http_url",
         "owner": "source/host/src/extensions/plugin_sdk/mod.rs",
-        "producer": "source/host/src/extensions/plugin_sdk/mod.rs"
+        "producer": "No production Plugin SDK browser/archive producer identified; the module exposes standalone bounded archive, blob and browser-policy helpers"
       },
       "invariants": [
         "Archive extraction enforces max_files, max_total_bytes, max_file_size, and forbids directory traversal",
@@ -31482,10 +31482,10 @@
       ],
       "id": "OCRM-RESP-PLUGIN-SDK-CHANNEL-CONFIG-001",
       "integration": {
-        "consumer": "source/host/src/extensions/plugin_sdk/mod.rs",
-        "entrypoint": "source/host/src/extensions/plugin_sdk/mod.rs",
+        "consumer": "No production Plugin SDK channel-config consumer identified; config schemas and UI hints are consumed only by source/host/tests/openclaw_plugin_sdk_contract.rs",
+        "entrypoint": "source/host/src/extensions/plugin_sdk/channel_config.rs::resolve_channel_config_ui_hints",
         "owner": "source/host/src/extensions/plugin_sdk/mod.rs",
-        "producer": "source/host/src/extensions/plugin_sdk/mod.rs"
+        "producer": "No production Plugin SDK channel-config producer identified; the module exposes standalone schema, UI-hint and DM-policy helpers"
       },
       "invariants": [
         "Account-level configWrites override channel-level settings",
@@ -31672,10 +31672,10 @@
       ],
       "id": "OCRM-RESP-PLUGIN-SDK-CHANNEL-ENTRY-001",
       "integration": {
-        "consumer": "source/host/src/extensions/plugin_sdk/mod.rs",
-        "entrypoint": "source/host/src/extensions/plugin_sdk/mod.rs",
+        "consumer": "PluginCapabilityCatalog consumes bundled channel-entry capability metadata through source/host/src/host_production_extensions.rs::register_bundled_channel_capabilities; no production transport, credential, inbound or outbound consumer is wired",
+        "entrypoint": "source/host/src/host_production_extensions.rs::register_bundled_channel_capabilities -> source/host/src/extensions/plugins/capability_catalog.rs::PluginCapabilityCatalog::register_bundled_channel_entry",
         "owner": "source/host/src/extensions/plugin_sdk/mod.rs",
-        "producer": "source/host/src/extensions/plugin_sdk/mod.rs"
+        "producer": "source/host/src/host_production_extensions.rs::register_bundled_channel_capabilities"
       },
       "invariants": [
         "Bundled channel registration cleanly segregates registration modes",
@@ -31862,10 +31862,10 @@
       ],
       "id": "OCRM-RESP-PLUGIN-SDK-CHANNEL-INBOUND-INGRESS-001",
       "integration": {
-        "consumer": "source/host/src/extensions/plugin_sdk/mod.rs",
-        "entrypoint": "source/host/src/extensions/plugin_sdk/mod.rs",
+        "consumer": "No production inbound channel consumer identified; feedback, ingress and debounce helpers are consumed only by source/host/tests/openclaw_plugin_sdk_contract.rs",
+        "entrypoint": "source/host/src/extensions/plugin_sdk/channel_ingress.rs::fan_in_channel_ingress_lifecycles",
         "owner": "source/host/src/extensions/plugin_sdk/mod.rs",
-        "producer": "source/host/src/extensions/plugin_sdk/mod.rs"
+        "producer": "No production inbound channel producer identified; the module exposes standalone connector-policy and lifecycle helpers"
       },
       "invariants": [
         "WhatsApp ACK reaction policy strictly respects groupMode (never/always/mentions) and directEnabled flags",
@@ -32016,10 +32016,10 @@
       ],
       "id": "OCRM-RESP-PLUGIN-SDK-CHANNEL-LIFECYCLE-OUTBOUND-001",
       "integration": {
-        "consumer": "source/host/src/extensions/plugin_sdk/mod.rs",
-        "entrypoint": "source/host/src/extensions/plugin_sdk/mod.rs",
+        "consumer": "No production channel lifecycle/outbound consumer identified; queue, watchdog, outbound echo, chunking and pairing helpers are consumed only by source/host/tests/openclaw_plugin_sdk_contract.rs",
+        "entrypoint": "source/host/src/extensions/plugin_sdk/channel_lifecycle.rs::ChannelRunQueue::enqueue",
         "owner": "source/host/src/extensions/plugin_sdk/mod.rs",
-        "producer": "source/host/src/extensions/plugin_sdk/mod.rs"
+        "producer": "No production channel lifecycle/outbound producer identified; the module exposes standalone channel lifecycle and delivery-policy helpers"
       },
       "invariants": [
         "ChannelRunQueue executes tasks sequentially per channel with concurrency isolation",
