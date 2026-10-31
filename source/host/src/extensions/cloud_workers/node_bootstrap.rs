@@ -6,7 +6,7 @@ use super::{
     CloudWorkerVerifiedArtifact, LeaseGeneration, LeaseId, OwnerEpoch, ReplayKey,
 };
 
-const MAX_DIAGNOSTIC_CHARS: usize = 512;
+const MAX_DIAGNOSTIC_CHARS: usize = 2048;
 const MAX_DIAGNOSTICS: usize = 32;
 const MAX_SECRET_REF_CHARS: usize = 256;
 const MAX_SECRET_REFS: usize = 32;
@@ -120,10 +120,7 @@ pub struct CloudWorkerDiagnostic {
 
 impl CloudWorkerDiagnostic {
     pub fn redacted(code: impl Into<String>, message: impl Into<String>) -> Self {
-        let mut message = message.into();
-        if message.chars().count() > MAX_DIAGNOSTIC_CHARS {
-            message = message.chars().take(MAX_DIAGNOSTIC_CHARS).collect();
-        }
+        let message = crate::error_diagnostics::sanitize_error_diagnostic(&message.into());
         Self {
             code: code.into(),
             message,
@@ -398,6 +395,21 @@ mod tests {
             Err(CloudWorkerNodeBootstrapError::InvalidDiagnostic)
         );
         assert_eq!(record.phase, CloudWorkerBootstrapPhase::Pending);
+    }
+
+    #[test]
+    fn redacted_diagnostics_use_the_host_secret_sanitizer_and_bound() {
+        let message = format!(
+            "Bearer token123 password=secret https://example.test/?token=query-secret {}",
+            "x".repeat(MAX_DIAGNOSTIC_CHARS + 100)
+        );
+        let diagnostic = CloudWorkerDiagnostic::redacted("provider", message);
+        assert!(diagnostic.redacted);
+        assert!(!diagnostic.message.contains("token123"));
+        assert!(!diagnostic.message.contains("query-secret"));
+        assert!(!diagnostic.message.contains("password=secret"));
+        assert!(diagnostic.message.chars().count() <= MAX_DIAGNOSTIC_CHARS);
+        assert!(diagnostic.validate().is_ok());
     }
 
     #[test]

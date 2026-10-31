@@ -264,6 +264,13 @@ The current implementation boundary therefore contains persistence and
 fencing contracts only; it has no runtime-control producer, process launcher,
 device enrollment caller or packaged consumer acceptance.
 
+Bootstrap diagnostics now pass through the existing Host error sanitizer before
+they are marked redacted and persisted. Bearer/basic credentials, known secret
+prefixes, sensitive query parameters and PEM blocks therefore use the canonical
+redaction path, with the source-backed 2,048-character bound retained. This is
+diagnostic admission hardening only; it does not establish provider, process,
+device or packaged acceptance.
+
 The read-only doctor Inspect route now projects live canonical snapshot counts
 and whether the state path exists. Repair, secret migration and reconciliation
 actions remain acknowledgement-gated and explicitly unwired.

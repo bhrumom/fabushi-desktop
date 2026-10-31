@@ -2149,7 +2149,8 @@
         "Bootstrap readiness requires the declared preparation and enrollment phases",
         "Late, cancelled or outcome-unknown process/device results cannot be presented as ready",
         "Desktop session and process identity are lease-scoped; PID or port alone is not ownership proof",
-        "Unsupported platform/session combinations fail closed with bounded diagnostics"
+        "Unsupported platform/session combinations fail closed with bounded diagnostics",
+        "Diagnostic construction reuses the canonical Host secret sanitizer"
       ],
       "migration_rollback": "Keep the owner disabled without provider/device prerequisites, preserve outcome-unknown enrollment for reconciliation, and return platform control to existing adapters",
       "oracle_ids": [
