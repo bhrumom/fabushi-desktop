@@ -67,3 +67,13 @@ The parity integration now records the missing production producer and
 consumer explicitly. No second session store, synthetic transport, or
 client-supplied lifecycle was introduced; the existing
 `BL-PLUGIN-SDK-ACP-WIRING-001` blocker and all pending statuses remain.
+
+The same source/caller audit found that `AgentHarnessManager`,
+`abort_and_drain`, and `StructuredInputForm` are only called by
+`source/host/tests/openclaw_plugin_sdk_contract.rs`. The production session
+namespace guard in `source/host/src/extensions/session/session_paths.rs` is a
+separate boundary and does not launch, own, drain, or consume
+`AgentHarnessManager` attempts. The parity integration therefore records no
+production harness producer or consumer and retains
+`BL-PLUGIN-SDK-HARNESS-WIRING-001`; the static contract implementation is not
+production harness equivalence evidence.

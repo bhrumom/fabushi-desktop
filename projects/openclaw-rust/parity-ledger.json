@@ -21872,10 +21872,10 @@
       ],
       "id": "OCRM-RESP-PLUGIN-SDK-AGENT-HARNESS-001",
       "integration": {
-        "consumer": "source/host/src/extensions/plugin_sdk/agent_harness.rs",
+        "consumer": "No production Plugin SDK harness consumer identified; AgentHarnessManager is consumed only by source/host/tests/openclaw_plugin_sdk_contract.rs",
         "entrypoint": "source/host/src/extensions/plugin_sdk/agent_harness.rs::abort_and_drain",
         "owner": "source/host/src/extensions/plugin_sdk/agent_harness.rs",
-        "producer": "source/host/src/extensions/plugin_sdk/agent_harness.rs"
+        "producer": "No production agent-harness attempt producer identified; the manager owns only an in-memory test-facing attempt map"
       },
       "invariants": [
         "Aborted attempts record terminal status Aborted and terminal error message",
