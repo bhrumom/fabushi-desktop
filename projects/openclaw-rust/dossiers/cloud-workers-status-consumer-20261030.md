@@ -227,6 +227,23 @@ the same generation/authorization fencing as the Host request. Until then,
 `cloudWorkers.doctor` remains a typed route and read-only Host consumer seam,
 not a packaged doctor-button acceptance claim.
 
+## Profile suggestion consumer audit — 2026-10-31
+
+`CloudWorkerProvisioningExtension::suggest_profile` is an existing owner-bound
+pure projection. It is disabled when the canonical owner is disabled and emits
+the bounded `cloud`/`crabbox`/bundle/Linux setup suggestion only after the
+owner accepts the supplied provider-display and machine-class inputs. It does
+not discover a provider, authorize a lease, resolve credentials, or launch a
+worker.
+
+The current Host Gateway registry, Coordinator RPC table, production client,
+and Settings surface have no `cloudWorkers.profileSuggestion` consumer. The
+Settings panel also has no authoritative configured provider-display ID or
+machine-class input. Adding a route with invented defaults would create a
+configuration contract without a real producer/consumer requirement. The
+profile suggestion therefore remains an owner façade only; its production
+projection, UI/CLI consumer, provider readiness, and acceptance are pending.
+
 ## Verified artifact to bootstrap binding — 2026-10-31
 
 `CloudWorkerBootstrapRequest` now carries `CloudWorkerVerifiedArtifact` rather
