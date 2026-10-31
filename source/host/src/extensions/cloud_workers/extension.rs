@@ -10,6 +10,7 @@ use super::{
     CloudWorkerDoctorAction, CloudWorkerDoctorError, CloudWorkerDoctorRequest,
     CloudWorkerDoctorResult,
     CloudWorkerLeasedCapability, CloudWorkerOwnerError, CloudWorkerOwnerStatus,
+    CloudWorkerSandboxCapability, CloudWorkerSandboxError,
     CloudWorkerProvisioningConfig,
     CloudWorkerProvisioningOwner, CloudWorkerProvisioningStore, CloudWorkerStoreError,
 };
@@ -95,6 +96,30 @@ impl CloudWorkerProvisioningExtension {
             return Err(CloudWorkerOwnerError::StaleCapability);
         }
         Ok(current)
+    }
+
+    /// Re-reads the canonical lease before a future sandbox consumer uses a
+    /// serialized capability. The sandbox descriptor owns no lifecycle state;
+    /// stale, disabled or outcome-unknown leases fail closed here.
+    pub fn validate_current_sandbox_capability(
+        &self,
+        capability: &CloudWorkerSandboxCapability,
+    ) -> Result<CloudWorkerSandboxCapability, CloudWorkerOwnerError> {
+        let owner = self
+            .owner
+            .lock()
+            .map_err(|_| CloudWorkerOwnerError::Unavailable)?;
+        if owner.status() != super::CloudWorkerOwnerStatus::Enabled {
+            return Err(CloudWorkerOwnerError::Disabled);
+        }
+        let current = owner.leased_capability(&capability.lease_id)?;
+        capability
+            .validate_against(&current)
+            .map_err(|error| match error {
+                CloudWorkerSandboxError::StaleCapability => CloudWorkerOwnerError::StaleCapability,
+                _ => CloudWorkerOwnerError::StaleCapability,
+            })?;
+        Ok(capability.clone())
     }
 
     pub fn status_snapshot(&self) -> CloudWorkerStatusSnapshot {

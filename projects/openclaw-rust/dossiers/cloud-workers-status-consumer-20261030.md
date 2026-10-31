@@ -121,3 +121,9 @@ deserialized capability before any future sandbox consumer can use it. The
 workspace/path/argv contract remains side-effect-free and no sandbox executor
 or remote provider is connected; the parity row therefore remains
 `wiring=not-wired`, `verification=not-run`, `acceptance=pending`.
+
+The canonical extension now exposes
+`validate_current_sandbox_capability`, which re-reads the owner lease and
+rejects disabled, stale, invalid or outcome-unknown capabilities before a
+future consumer can delegate. This is still an owner-validation seam, not a
+remote sandbox execution path.

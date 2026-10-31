@@ -226,7 +226,9 @@ pending Crabbox responsibilities:
 - `OCRM-RESP-INFRA-WORKER-CRABBOX-SANDBOX-001` now binds sandbox descriptors to
   an enrolled `CloudWorkerLeasedCapability` and rechecks lease scope, owner
   epoch, generation and runtime identity. This is fencing at the contract
-  boundary only; no remote sandbox executor or provider path is wired.
+  boundary only; `CloudWorkerProvisioningExtension::validate_current_sandbox_capability`
+  also re-reads the canonical owner before use. No remote sandbox executor or
+  provider path is wired.
 
 The broader Crabbox projection, lifecycle, sandbox, bootstrap, artifact,
 warm-image and runtime-control rows remain pending where their producer or
