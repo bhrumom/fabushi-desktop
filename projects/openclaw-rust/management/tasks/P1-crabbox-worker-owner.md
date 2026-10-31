@@ -208,6 +208,14 @@ executor contract.
 The current ledger keeps the following narrow paths separate from the broader
 pending Crabbox responsibilities:
 
+The eleven broader Crabbox responsibility rows whose `requirement_ids` are
+only `OCRM-P1-Fxx` / `OCRM-P1-ACxx` remain task-local by design. The project RTM
+schema accepts only `OCRM-Rxx` and `OCRM-ACxx` row IDs, so those task-local
+references do not create RTM rows and are not treated as dangling RTM edges or
+as an acceptance claim. If P1-specific criteria later become project-level RTM
+criteria, that schema change and the corresponding rows must be reviewed and
+introduced explicitly.
+
 - `OCRM-RESP-INFRA-WORKER-CRABBOX-STATUS-PROJECTION-001` records the existing
   read-only `CloudWorkerProvisioningExtension::status_snapshot` → Host Gateway
   → Coordinator status consumer path as `implementation=implemented` and
