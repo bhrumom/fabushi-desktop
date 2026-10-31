@@ -1,6 +1,6 @@
 # OpenClaw Crabbox scoped closure frontier — 2026-10-31
 
-This is a read-only, exact-subject closure note for the current live candidate
+This is a read-only, exact-subject closure note for the original scoped candidate
 `openclaw/openclaw@129583af012bf4177b37ba6d88e8b2e5fa0d532f`, root tree
 `84860d166bdddef60cbc3ede3909d1a28696b4d9`. It is discovery evidence only. It
 does not promote the candidate to `upstream.lock.json` authority, does not
