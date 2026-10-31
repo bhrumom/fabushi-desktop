@@ -31,3 +31,25 @@ is covered in both directions by the focused contract (absent before
 `persist()`, present after it), including the serialized `statePersisted` wire
 field. This is owner-boundary progress only: it does not add mutation
 commands, provider readiness, or a live event publisher.
+
+## P1-F08 typed consumer adapter — 2026-10-31
+
+The next P1-F08 seam now has a narrow Rust adapter at
+`source/host/src/runner/host_external_machine_dependencies.rs`:
+`CloudWorkerScopedExternalMachineExecutor`. Its producer is still an
+ephemeral `CloudWorkerLeasedCapability` supplied by the canonical
+`CloudWorkerProvisioningExtension`; its owner remains the Cloud Worker lease
+owner; its consumer delegate is exactly one existing `ExternalMachineExecutor`.
+Before shell/read/status/history/cancel delegation, the adapter checks the
+expected account/device scope and re-reads the current owner capability, so a
+disabled owner, stale lease/generation/epoch/runtime, capability unavailable
+because of outcome-unknown, or scope mismatch fails closed. Shell/read calls
+also retain bounded tool-call replay keys and reject reuse before delegation.
+
+This is adapter-boundary wiring only. No provider producer, physical worker,
+device enrollment, Computer grant, sensitive-result writer, Runner loop, live
+composition registration, or cloud mutation path was added. Therefore
+`providerReady=false`, `productionMutation=false`, exact-head Actions,
+provider/device/package evidence, and OCRM acceptance remain pending. This
+round used source inspection and `git diff --check` only; no local build/test,
+OCRM command, Actions, push, or PR update was run.

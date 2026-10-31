@@ -1,8 +1,13 @@
-use std::sync::Arc;
+use std::collections::HashSet;
+use std::sync::{Arc, Mutex};
 
 use serde_json::{Value, json};
 
 use crate::extensions::inference::provider_session::ProviderSessionError;
+use crate::extensions::cloud_workers::{
+    CloudWorkerLeaseScope, CloudWorkerLeasedCapability,
+};
+use crate::extensions::cloud_workers::extension::CloudWorkerProvisioningExtension;
 use crate::extensions::local_exec::extension::HostLocalExecExtension;
 use crate::extensions::local_exec::gateway_local_exec_sand_box::{
     GatewayLocalExecManager, GatewayLocalExecOperationRecord, GatewayLocalExecOperationStatus,
@@ -19,6 +24,128 @@ use crate::runner::tools::sand_external_machine_tools::{
 pub struct ProductionExternalMachineExecutor {
     manager: Arc<GatewayLocalExecManager>,
     agent_id: String,
+}
+
+const MAX_CLOUD_WORKER_REPLAY_KEYS: usize = 1024;
+
+/// Fenced consumer adapter for an already enrolled Cloud Worker capability.
+///
+/// This type owns no worker lifecycle, device grant, sensitive-result store or
+/// provider executor. It revalidates the ephemeral capability against the
+/// canonical Cloud Worker owner before every operation and delegates the
+/// action to exactly one existing `ExternalMachineExecutor`.
+pub struct CloudWorkerScopedExternalMachineExecutor {
+    extension: Arc<CloudWorkerProvisioningExtension>,
+    capability: CloudWorkerLeasedCapability,
+    expected_scope: CloudWorkerLeaseScope,
+    delegate: Arc<dyn ExternalMachineExecutor>,
+    replay_keys: Mutex<HashSet<String>>,
+}
+
+impl CloudWorkerScopedExternalMachineExecutor {
+    pub fn new(
+        extension: Arc<CloudWorkerProvisioningExtension>,
+        capability: CloudWorkerLeasedCapability,
+        expected_scope: CloudWorkerLeaseScope,
+        delegate: Arc<dyn ExternalMachineExecutor>,
+    ) -> Self {
+        Self {
+            extension,
+            capability,
+            expected_scope,
+            delegate,
+            replay_keys: Mutex::new(HashSet::new()),
+        }
+    }
+
+    fn validate(&self) -> Result<(), ProviderSessionError> {
+        if self.capability.scope() != &self.expected_scope {
+            return Err(ProviderSessionError::Tool(
+                "cloud-worker capability scope does not match the consumer scope".into(),
+            ));
+        }
+        self.extension
+            .validate_current_capability(&self.capability)
+            .map(|_| ())
+            .map_err(|error| ProviderSessionError::Tool(format!(
+                "cloud-worker capability rejected before delegation: {error}"
+            )))
+    }
+
+    fn claim_replay_key(&self, value: &str) -> Result<(), ProviderSessionError> {
+        let key = value.trim();
+        if key.is_empty() {
+            return Err(ProviderSessionError::Tool(
+                "cloud-worker operation requires a replay key".into(),
+            ));
+        }
+        let mut keys = self.replay_keys.lock().map_err(|_| {
+            ProviderSessionError::Tool("cloud-worker replay-key guard is unavailable".into())
+        })?;
+        if keys.len() >= MAX_CLOUD_WORKER_REPLAY_KEYS {
+            return Err(ProviderSessionError::Tool(
+                "cloud-worker replay-key capacity is exhausted".into(),
+            ));
+        }
+        if !keys.insert(key.to_string()) {
+            return Err(ProviderSessionError::Tool(
+                "cloud-worker replay key was already used".into(),
+            ));
+        }
+        Ok(())
+    }
+}
+
+impl ExternalMachineExecutor for CloudWorkerScopedExternalMachineExecutor {
+    fn execute_shell(
+        &self,
+        args: &ExternalMachineShellArgs,
+    ) -> Result<Value, ProviderSessionError> {
+        self.validate()?;
+        self.claim_replay_key(&args.tool_call_id)?;
+        self.delegate.execute_shell(args)
+    }
+
+    fn execute_read(
+        &self,
+        args: &ExternalMachineReadArgs,
+    ) -> Result<Value, ProviderSessionError> {
+        self.validate()?;
+        self.claim_replay_key(&args.tool_call_id)?;
+        self.delegate.execute_read(args)
+    }
+
+    fn operation_status(&self, operation_id: &str) -> Result<Value, ProviderSessionError> {
+        self.validate()?;
+        self.delegate.operation_status(operation_id)
+    }
+
+    fn operation_history(&self) -> Result<Value, ProviderSessionError> {
+        self.validate()?;
+        self.delegate.operation_history()
+    }
+
+    fn cancel_operation(&self, operation_id: &str) -> Result<Value, ProviderSessionError> {
+        self.validate()?;
+        if operation_id.trim().is_empty() {
+            return Err(ProviderSessionError::Tool(
+                "cloud-worker cancellation requires an operation id".into(),
+            ));
+        }
+        self.delegate.cancel_operation(operation_id)
+    }
+
+    fn poll_background_shell_terminal(
+        &self,
+        shell_id: &str,
+        tool_call_id: &str,
+    ) -> ShellTerminalPollRead {
+        if let Err(error) = self.validate() {
+            return ShellTerminalPollRead::TransientFailure(error.to_string());
+        }
+        self.delegate
+            .poll_background_shell_terminal(shell_id, tool_call_id)
+    }
 }
 
 impl ProductionExternalMachineExecutor {

@@ -7,7 +7,8 @@ use serde::Serialize;
 use crate::extensions::extension_ids_generated::HostExtensionId;
 
 use super::{
-    CloudWorkerOwnerError, CloudWorkerOwnerStatus, CloudWorkerProvisioningConfig,
+    CloudWorkerLeasedCapability, CloudWorkerOwnerError, CloudWorkerOwnerStatus,
+    CloudWorkerProvisioningConfig,
     CloudWorkerProvisioningOwner, CloudWorkerProvisioningStore, CloudWorkerStoreError,
 };
 
@@ -57,6 +58,27 @@ impl CloudWorkerProvisioningExtension {
     /// consumer. The extension remains the only owner of the live state.
     pub fn snapshot(&self) -> Option<super::CloudWorkerPersistentSnapshot> {
         self.owner.lock().ok().map(|owner| owner.snapshot())
+    }
+
+    /// Re-reads the canonical owner record before an existing executor acts.
+    /// The returned capability is still ephemeral; this method does not grant
+    /// a device, start a provider, or create another lease store.
+    pub fn validate_current_capability(
+        &self,
+        capability: &CloudWorkerLeasedCapability,
+    ) -> Result<CloudWorkerLeasedCapability, CloudWorkerOwnerError> {
+        let owner = self
+            .owner
+            .lock()
+            .map_err(|_| CloudWorkerOwnerError::Unavailable)?;
+        if owner.status() != super::CloudWorkerOwnerStatus::Enabled {
+            return Err(CloudWorkerOwnerError::Disabled);
+        }
+        let current = owner.leased_capability(capability.lease_id())?;
+        if current != *capability {
+            return Err(CloudWorkerOwnerError::StaleCapability);
+        }
+        Ok(current)
     }
 
     pub fn status_snapshot(&self) -> CloudWorkerStatusSnapshot {

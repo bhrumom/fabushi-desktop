@@ -304,6 +304,10 @@ impl CloudWorkerProvisioningOwner {
 pub enum CloudWorkerOwnerError {
     #[error("cloud-worker provisioning owner is disabled")]
     Disabled,
+    #[error("cloud-worker owner is unavailable")]
+    Unavailable,
+    #[error("cloud-worker leased capability is stale")]
+    StaleCapability,
     #[error("maximum lease count must be greater than zero")]
     InvalidLeaseLimit,
     #[error("maximum warm-image count must be greater than zero")]

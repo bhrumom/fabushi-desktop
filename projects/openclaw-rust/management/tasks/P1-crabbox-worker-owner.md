@@ -166,14 +166,29 @@ loop, or bypass Sand/FDN/Remote Computer authorization. A capability without a
 completed enrolled lease, a stale generation, a mismatched scope, or an
 outcome-unknown mutation must fail closed before delegation.
 
-The adapter task remains **not started** until the ADR is approved and the
-existing trait owners expose the minimum typed input needed for this validation
-without widening their state ownership. Adding a standalone cloud-worker
-executor, registering a second tool bridge, or changing the disabled-by-default
-production extension into a live provider is explicitly not an acceptable
-substitute. Acceptance requires named producer/owner/consumer rows in the RTM,
-negative tests for scope/generation/replay/outcome-unknown rejection, and an
-exact-head Actions proof of the real production composition path.
+The adapter task is now the next narrow implementation slice at
+`source/host/src/runner/host_external_machine_dependencies.rs`. It receives an
+ephemeral enrolled `CloudWorkerLeasedCapability`, the expected account/device
+scope, the canonical `CloudWorkerProvisioningExtension`, and exactly one
+existing `ExternalMachineExecutor` delegate. Before every shell/read/status/
+history/cancel operation it must revalidate the capability against the current
+owner record; it must reject a disabled/unavailable owner, stale lease
+generation, owner epoch or runtime identity, scope mismatch, and a capability
+whose last mutation is outcome-unknown. Shell/read calls use the existing
+tool-call identity as the bounded replay key; a replayed shell key is rejected
+before delegation and a key is retained after any delegate error so an
+ambiguous delivery cannot silently retry. The adapter never mints a Computer
+grant, enrolls a device, writes sensitive results, starts a provider, creates a
+Runner loop, or becomes a second executor. The production owner remains
+`provider_ready=false` and `production_mutation=false` until a real provider
+producer and side-effect path are separately wired.
+
+This slice does not promote the ADR or any OCRM flag. Acceptance still requires
+named producer/owner/consumer rows in the RTM, negative tests for
+scope/generation/replay/outcome-unknown rejection, and an exact-head Actions
+proof of the real production composition path. The existing trait owners do
+not need to expose their state stores; the adapter consumes only their typed
+executor contract.
 
 ## 5. Target architecture and contracts
 
