@@ -25,9 +25,9 @@
   "live_candidate": {
     "repository": "openclaw/openclaw",
     "ref": "refs/heads/main",
-    "commit": "d27a8c9d9fec49a81084993bf16c3fefc4efd508",
-    "tree": "e378a64af5f7409473636e6758cca43f4a204fcc",
-    "observed_at": "2026-10-31T09:38:43Z",
+    "commit": "2464bd85e0bc2927701c3147bf3dfc6993daaae3",
+    "tree": "08b1e6627c310e8640a340be49838e2936b44346",
+    "observed_at": "2026-10-31T09:47:18Z",
     "discovery_source": "GitHub commit/tree API",
     "recursive_tree_truncated": false,
     "recursive_tree_entries": 64009,

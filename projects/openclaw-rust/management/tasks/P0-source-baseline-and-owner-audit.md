@@ -265,3 +265,14 @@ identities 保持不变。该 subject 已同步到 `upstream.lock.json::live_can
 递归 tree 还列出 206 个位于声明 workspace pattern 下的 `package.json`
 候选，而 lock 只有一个 importer；这进一步要求对 workspace manifests 做
 逐项分类和 provenance 绑定，不能把 root-only lock 解析当作完整闭包。
+
+2026-10-31T09:47:18Z drift amendment: read-only GitHub checks resolved the
+current OpenClaw `main` to commit=`2464bd85e0bc2927701c3147bf3dfc6993daaae3`,
+root tree=`08b1e6627c310e8640a340be49838e2936b44346`, with an untruncated
+recursive tree of 64,009 entries (61,768 blobs, 2,241 directories, 0 gitlinks).
+The commit message is `fix(test): bind SDK hosts in direct Gateway fixtures
+(#189244)`, and root dependency/license inputs remain unchanged. This is a
+fresh discovery-only subject; prior inventory, dependency closure, LFS/
+integrity and Actions provenance remain bound to their exact subjects. The
+lock was refreshed only as `live_candidate`; no authority or completion flag
+changed, and the fixed `ad8d12f...` implementation subject remains in use.

@@ -493,3 +493,15 @@ default；协议包是唯一 limit owner，server constants 仅 re-export。Fabu
 WebSocket handshake/pending-request negotiated consumer。详见
 `dossiers/gateway-client-payload-limit-current-ad57b613-20261031.md`；不提升
 任何 ledger/flag，且不创建第二 Gateway transport owner。
+
+2026-10-31T09:47:18Z 的最新只读远端复核将 OpenClaw `main` 更新为
+`2464bd85e0bc2927701c3147bf3dfc6993daaae3` / tree
+`08b1e6627c310e8640a340be49838e2936b44346`。递归 tree 未截断，共 64,009
+entries（61,768 blobs、2,241 directories、0 gitlinks）；commit message 为
+`fix(test): bind SDK hosts in direct Gateway fixtures (#189244)`。根
+package/lock/workspace/license/notice identities 与上一 candidate 保持不变。
+该 subject 已同步写入 `upstream.lock.json::live_candidate`，仍为
+discovery-only；不得复用上一 candidate 的 inventory、dependency closure、
+LFS/integrity 或 Actions provenance，`baseline_identity_accepted`、
+`source_closure_ready` 与所有 global flags 继续保持 false。固定
+`ad8d12f...` implementation subject 不变。

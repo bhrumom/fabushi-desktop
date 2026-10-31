@@ -363,7 +363,24 @@ inputs remain identity-stable. This supersedes the `1b870b2c...` discovery
 candidate in the lock. It remains discovery-only: no prior inventory,
 dependency closure, LFS result or Actions provenance was relabeled or reused;
 all authority and completion flags remain unchanged. No CI, push, PR update or
-local OCRM executable verification was performed.
+  local OCRM executable verification was performed.
+
+## Subsequent live recheck — 2026-10-31T09:47:18Z
+
+Read-only GitHub ref and commit/tree API checks resolved
+`openclaw/openclaw` `refs/heads/main` to commit
+`2464bd85e0bc2927701c3147bf3dfc6993daaae3`, root tree
+`08b1e6627c310e8640a340be49838e2936b44346`, with commit message
+`fix(test): bind SDK hosts in direct Gateway fixtures (#189244)`.
+The recursive tree was not truncated and contained 64,009 entries: 61,768
+blobs, 2,241 directories, and no gitlinks. Root dependency/license inputs are
+unchanged from the preceding candidate.
+
+This supersedes `d27a8c9d...` as the live discovery candidate in
+`upstream.lock.json`. It remains discovery-only: no inventory, dependency
+closure, LFS/integrity result, Actions provenance, or source-semantic
+conclusion was relabeled or reused. All authority and completion flags remain
+unchanged. The fixed `ad8d12f...` implementation subject remains unchanged.
 
 ## Subsequent live recheck — 2026-10-31T08:42:15Z
 
