@@ -1863,7 +1863,12 @@ pub fn read_persisted_agent_metadata_projection(
     db_path: &Path,
     busy_timeout_ms: u64,
 ) -> Result<Option<AgentMetadataProjection>, AgentDbProjectionError> {
-    let owner = SandAgentDb::open(db_path, busy_timeout_ms)?;
+    let mut options = SandAgentDbOptions::default();
+    options.recovery.busy_timeout_ms = busy_timeout_ms;
+    let owner = SandAgentDb::open_with_options_and_seed(db_path, options, false)?;
+    if owner.read_kv("metadata")?.is_none() {
+        return Ok(None);
+    }
     let metadata = owner.read_metadata()?;
     let lifecycle_revision = owner.ensure_lifecycle_revision()?;
     let agent_id = metadata
