@@ -4,6 +4,7 @@ Date: 2026-10-31
 Task: 7457eb1c-11a3-4626-8563-a3e495872536 round 2
 Checkpoint: `checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1`
 Parent exact HEAD: `1ffdaac1168a23180727e1f90e7a80a2a3b80226`
+Implementation commits before this evidence seal: `dd67274e60fc602c27c1a6f33a63ce9b743a7818`, `c79e0fa9a6b03b6fb8d29aa33e7510d9f7d6d308`
 
 ## Implemented in this checkpoint candidate
 
@@ -13,6 +14,7 @@ Parent exact HEAD: `1ffdaac1168a23180727e1f90e7a80a2a3b80226`
 - `ProductionRenderer` calls the existing `editHumanMessage` / `deleteHumanMessage` Session commands with a stable operation id reused on retry. It does not optimistically replace canonical message content; it waits for a newer authoritative revision/tombstone, rejects stale/mismatched settlement, and then replaces the stable transcript row in place.
 - Delete confirmation reuses the existing `OverlayDialog` and `SandButton` primitives with danger sentiment and focus restoration.
 - UI and temporal contract tests were authored for owner gating, composer isolation, stable operation identity, stale-revision fencing, edit authoritative settlement, and delete tombstone settlement.
+- Manual source readback additionally hardened the action anchor so Edit/Delete remain reachable even when Copy/Forward are absent, and aligned the danger fallback token with the existing renderer token family.
 
 ## Stage A validation state
 
