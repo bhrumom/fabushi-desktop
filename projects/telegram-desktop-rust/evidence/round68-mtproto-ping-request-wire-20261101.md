@@ -42,3 +42,8 @@ Implementation status: implemented. Validation status: not-run. Accepted: false.
 - Complete updates.difference / updates.differenceSlice decoding and canonical application.
 - Remaining fixed-U unknown/unread source responsibilities and source/legal closure.
 - Stage-B executable evidence and independent release ACCEPT.
+
+
+## Source-level compliance readback
+
+Platform-core compliance commit: `bf654c6501776fb46a8e40bad5f9aacea4612514`. Spec blob: `4faf7eb9c9a6c7b9e5988c850c9068c9a0a21d79`. Request-side R9-R16 and AC-6 through AC-9 are satisfied by source/ownership/blob inspection. AC-10 executable validation remains blocked/not-run with `accepted=false`; no runtime acceptance is claimed.
