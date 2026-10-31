@@ -25824,7 +25824,9 @@
         "plugin_sdk.session_memory"
       ],
       "dependencies": [
-        "mahayana_host_runtime::extensions::plugin_sdk::session_memory"
+        "mahayana_host_runtime::extensions::plugin_sdk::session_memory",
+        "mahayana_host_runtime::extensions::session::production::ProductionSessionWorkers",
+        "mahayana_host_runtime::extensions::session::gateway"
       ],
       "evidence_refs": [
         "source/host/tests/openclaw_plugin_sdk_core_contract.rs",
@@ -25834,14 +25836,22 @@
         {
           "path": "source/host/src/extensions/plugin_sdk/session_memory.rs",
           "reason": "Host session catalog paginator, transcript locking manager, and visibility enforcer"
+        },
+        {
+          "path": "source/host/src/extensions/session/production.rs",
+          "reason": "Canonical production owner for session roster, transcript storage, append/update/delete, and page/window/tail reads"
+        },
+        {
+          "path": "source/host/src/extensions/session/gateway.rs",
+          "reason": "Existing typed gateway consumer for session catalog and transcript read operations; does not yet consume plugin_sdk session-memory projections"
         }
       ],
       "id": "OCRM-RESP-PLUGIN-SDK-SESSION-MEMORY-001",
       "integration": {
-        "consumer": "source/host/src/extensions/plugin_sdk/session_memory.rs",
+        "consumer": "No production consumer; existing session gateway is the candidate consumer but has no typed adapter",
         "entrypoint": "source/host/src/extensions/plugin_sdk/session_memory.rs::paginate_sessions",
         "owner": "source/host/src/extensions/plugin_sdk/session_memory.rs",
-        "producer": "source/host/src/extensions/plugin_sdk/session_memory.rs"
+        "producer": "No legal producer for generation/reset-boundary/read-fence inputs is wired"
       },
       "invariants": [
         "Incognito sessions must return IncognitoSessionSyncAccessDenied on sync attempt"
@@ -25850,7 +25860,7 @@
       "oracle_ids": [
         "OCRM-PLUGIN-SDK-SESSION-O01"
       ],
-      "owner_decision": "Native implementation in session_memory under plugin_sdk extension",
+      "owner_decision": "Keep pure SDK projections in session_memory and preserve ProductionSessionWorkers as the sole session/transcript state owner; defer wiring until a typed gateway adapter and real generation/reset/read-fence producers exist",
       "postconditions": [
         "Paginated output adheres to 100-item ceiling and cursor formatting"
       ],
