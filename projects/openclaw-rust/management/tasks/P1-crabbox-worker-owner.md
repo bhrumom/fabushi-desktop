@@ -302,6 +302,9 @@ pending Crabbox responsibilities:
 - Persisted lease validation now rejects a `Disposed` record unless its last
   mutation is explicitly `Completed`, preserving the distinction between
   confirmed release and stop outcome uncertainty.
+- Bootstrap persistence and settlement now require `Ready` to use `Never` and
+  `OutcomeUnknown` to use `ReconcileFirst`, preventing inconsistent retry
+  semantics from being restored or published.
 
 The broader Crabbox projection, lifecycle, sandbox, bootstrap, artifact,
 warm-image and runtime-control rows remain pending where their producer or

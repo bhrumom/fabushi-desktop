@@ -174,6 +174,7 @@ impl CloudWorkerBootstrapRecord {
         retry_class: CloudWorkerBootstrapRetryClass,
         diagnostic: Option<CloudWorkerDiagnostic>,
     ) -> Result<(), CloudWorkerNodeBootstrapError> {
+        validate_retry_class(phase, retry_class)?;
         if !is_allowed_transition(self.phase, phase) {
             return Err(CloudWorkerNodeBootstrapError::InvalidPhaseTransition {
                 from: self.phase,
@@ -199,6 +200,7 @@ impl CloudWorkerBootstrapRecord {
 
     pub fn validate_persisted(&self) -> Result<(), CloudWorkerNodeBootstrapError> {
         self.request.validate()?;
+        validate_retry_class(self.phase, self.retry_class)?;
         if self.runtime_identity != self.request.runtime.runtime_id {
             return Err(CloudWorkerNodeBootstrapError::InvalidRuntimeIdentity);
         }
@@ -209,6 +211,29 @@ impl CloudWorkerBootstrapRecord {
             diagnostic.validate()?;
         }
         Ok(())
+    }
+}
+
+fn validate_retry_class(
+    phase: CloudWorkerBootstrapPhase,
+    retry_class: CloudWorkerBootstrapRetryClass,
+) -> Result<(), CloudWorkerNodeBootstrapError> {
+    let valid = match phase {
+        CloudWorkerBootstrapPhase::Ready => {
+            retry_class == CloudWorkerBootstrapRetryClass::Never
+        }
+        CloudWorkerBootstrapPhase::OutcomeUnknown => {
+            retry_class == CloudWorkerBootstrapRetryClass::ReconcileFirst
+        }
+        _ => true,
+    };
+    if valid {
+        Ok(())
+    } else {
+        Err(CloudWorkerNodeBootstrapError::InvalidRetryClass {
+            phase,
+            retry_class,
+        })
     }
 }
 
@@ -258,6 +283,11 @@ pub enum CloudWorkerNodeBootstrapError {
     InvalidDiagnostic,
     #[error("bootstrap diagnostic limit reached")]
     DiagnosticLimitReached,
+    #[error("retry class {retry_class:?} is invalid for bootstrap phase {phase:?}")]
+    InvalidRetryClass {
+        phase: CloudWorkerBootstrapPhase,
+        retry_class: CloudWorkerBootstrapRetryClass,
+    },
     #[error("invalid bootstrap phase transition from {from:?} to {to:?}")]
     InvalidPhaseTransition {
         from: CloudWorkerBootstrapPhase,
@@ -360,6 +390,56 @@ mod tests {
             )
             .unwrap();
         assert_eq!(record.phase, CloudWorkerBootstrapPhase::Ready);
+    }
+
+    #[test]
+    fn retry_class_matches_ready_and_unknown_outcomes() {
+        let mut record = CloudWorkerBootstrapRecord::pending(request()).unwrap();
+        record
+            .settle(
+                CloudWorkerBootstrapPhase::Preparing,
+                CloudWorkerBootstrapRetryClass::SafeReplay,
+                None,
+            )
+            .unwrap();
+        record
+            .settle(
+                CloudWorkerBootstrapPhase::Enrolling,
+                CloudWorkerBootstrapRetryClass::ReconcileFirst,
+                None,
+            )
+            .unwrap();
+        assert_eq!(
+            record.settle(
+                CloudWorkerBootstrapPhase::Ready,
+                CloudWorkerBootstrapRetryClass::ReconcileFirst,
+                None,
+            ),
+            Err(CloudWorkerNodeBootstrapError::InvalidRetryClass {
+                phase: CloudWorkerBootstrapPhase::Ready,
+                retry_class: CloudWorkerBootstrapRetryClass::ReconcileFirst,
+            })
+        );
+        record
+            .settle(
+                CloudWorkerBootstrapPhase::Ready,
+                CloudWorkerBootstrapRetryClass::Never,
+                None,
+            )
+            .unwrap();
+
+        let mut uncertain = CloudWorkerBootstrapRecord::pending(request()).unwrap();
+        assert_eq!(
+            uncertain.settle(
+                CloudWorkerBootstrapPhase::OutcomeUnknown,
+                CloudWorkerBootstrapRetryClass::Never,
+                None,
+            ),
+            Err(CloudWorkerNodeBootstrapError::InvalidRetryClass {
+                phase: CloudWorkerBootstrapPhase::OutcomeUnknown,
+                retry_class: CloudWorkerBootstrapRetryClass::Never,
+            })
+        );
     }
 
     #[test]
