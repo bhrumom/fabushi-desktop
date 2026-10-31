@@ -106,7 +106,7 @@ discovery-only；未取得绑定本 exact subject 的 Actions inventory、递归
 2026-10-31 当前治理快照以 `upstream.lock.json::live_candidate` 为准：
 OpenClaw `main` commit=`447e14d02460342af4fe2c98dbd5475b15b938d2`、tree
 `3b066eb5f2eddd08ea7a74f124395248fbdcd384`，递归 tree 未截断，共 64,072
-entries（61,827 blobs、2,241 directories、0 gitlinks）。它 supersede 以上
+entries（61,831 blobs、2,241 directories、0 gitlinks）。它 supersede 以上
 更早的 live 候选作为当前 discovery reference，但仍未取得绑定该 exact
 subject 的 Actions inventory、递归依赖闭包、LFS/完整性、许可证和 evidence
 envelope；不得复用旧 candidate 的 closure，也不得提升任何 global flag。

@@ -379,3 +379,14 @@ commit is `fix: keep background process launches from stalling the Gateway
 fresh discovery-only subject; prior inventory, dependency/LFS closure, semantic
 reads, and Actions provenance are not reusable, and no authority or completion
 flag changes.
+
+## Current discovery pointer
+
+The canonical current discovery pointer is always `upstream.lock.json::live_candidate`.
+At the latest read-only reconciliation it is OpenClaw
+`447e14d02460342af4fe2c98dbd5475b15b938d2` / tree
+`3b066eb5f2eddd08ea7a74f124395248fbdcd384`, observed at
+`2026-10-31T11:48:58Z`, with 64,072 untruncated recursive-tree entries
+(61,831 blobs, 2,241 directories, 0 gitlinks). This remains discovery-only;
+the fixed implementation subject, inventory, dependency closure, Actions
+provenance, and all completion flags remain unchanged.
