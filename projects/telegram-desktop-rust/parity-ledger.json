@@ -9,7 +9,7 @@
     "unknown": 16172,
     "unread": 16145,
     "omitted": 0,
-    "responsibilities_total": 94,
+    "responsibilities_total": 95,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -23707,6 +23707,273 @@
       "validation_status": "not-run",
       "accepted": false,
       "id": "TDRP-R9-MTPROTO-MSGS-STATE-INFO-WIRE-001",
+      "source_paths": [
+        "Telegram/SourceFiles/mtproto/scheme/mtproto.tl@76225965bfc794388db241f3f760db8ab79e84f8",
+        "Telegram/SourceFiles/mtproto/session_private.cpp@13cbc76ec723386027b5b4dcac79999b791c4614"
+      ]
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+      "source_path": "Telegram/SourceFiles/mtproto/scheme/mtproto.tl",
+      "source_blob_sha": "76225965bfc794388db241f3f760db8ab79e84f8",
+      "source_kind": "schema",
+      "module_id": "tdesktop.mtproto.msgs-all-info-wire",
+      "responsibility_id": "TDRP-R9-MTPROTO-MSGS-ALL-INFO-WIRE-001",
+      "source_symbols": [
+        "msgs_all_info#8cc0d131 msg_ids:Vector<long> info:string = MsgsAllInfo",
+        "SessionPrivate::handle / mtpc_msgs_all_info -> MTPMsgsAllInfo::read(from,end) -> handleMsgsStates",
+        "SessionPrivate::handleMsgsStates cardinality precondition before haveSent/_resendingIds access",
+        "parse_msgs_all_info",
+        "TlReader::read_vector_length",
+        "TlReader::read_bytes"
+      ],
+      "capability_ids": [
+        "CAP-TELEGRAM-MTPROTO-MSGS-ALL-INFO-WIRE"
+      ],
+      "dependency_ids": [
+        "telegram-protocol::TlReader",
+        "fixed-U handleMsgsStates state/vector cardinality precondition"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/evidence/round85-mtproto-msgs-all-info-wire-20261101.md",
+      "behavior_contract": "The existing shared telegram-protocol owner parses fixed-U msgs_all_info#8cc0d131 as exactly one constructor, one bounded Vector<long> of signed message ids and one TL-framed binary info:string payload, requires one state byte per message id, and then requires exact EOF. The parser is side-effect free. Telegram Desktop haveSent/_resendingIds lookup, resend/ack application and arbitrary request-history semantics remain outside this wire/state-shape boundary.",
+      "state_machine": "authenticated service-message body -> exact msgs_all_info constructor -> canonical bounded TL vector -> signed i64 message ids -> binary TL info bytes -> state/id cardinality validation -> exact EOF -> typed MsgsAllInfo; arbitrary request-history/application remains outside",
+      "side_effects": [
+        "No production behavior change; existing parse_msgs_all_info/TlReader already close the exact wire/state-shape responsibility",
+        "Authors canonical exact/vector-boundary/binary/long-form/truncation/padding/cardinality/trailing contracts without executing them in Stage A",
+        "Mirrors the canonical authored contract into the existing desktop telegram-protocol provider",
+        "Records the isolated responsibility in the existing parity/P0/source-closure evidence surfaces"
+      ],
+      "failure_cases": [
+        "Wrong msgs_all_info constructor is accepted",
+        "Wrong TL vector constructor is accepted",
+        "Negative or over-limit vector count is accepted",
+        "message ids are parsed with wrong width/endian or unsigned semantics",
+        "Binary info bytes are rejected or normalized as UTF-8 text",
+        "Short-form or 254-byte long-form TL string framing/padding is decoded incorrectly",
+        "Vector/message-id or TL string header/body/padding truncation is accepted",
+        "State byte count differs from message-id count but returns a typed value",
+        "Trailing bytes are ignored",
+        "The pure parser consults or mutates arbitrary request-history/application state",
+        "Parser closure is used to claim connection, auth-key, gzip or complete difference parity"
+      ],
+      "ui_disposition": "No UI change. This is exact MTProto service-message wire parsing inside the existing embedded protocol owner.",
+      "non_ui_responsibilities": [
+        "msgs_all_info constructor discrimination",
+        "canonical bounded Vector<long> framing and signed message-id decoding",
+        "binary TL info:string framing and padding validation",
+        "state/id cardinality fail-closed boundary",
+        "strict truncation and trailing-body rejection",
+        "separation from arbitrary request-history/application semantics"
+      ],
+      "platform_delta": "None. Existing source-neutral Rust parse_msgs_all_info + TlReader already implement the fixed-U wire/state-shape boundary; only durable spec, authored-only contracts and bookkeeping are added.",
+      "existing_owner_candidates": [
+        "bhrumom/fabushi-platform-core:native/telegram-protocol/src/api.rs",
+        "bhrumom/fabushi-platform-core:native/telegram-protocol/src/tl.rs",
+        "bhrumom/fabushi-platform-core:native/telegram-protocol/src/lib.rs",
+        "source/mahayana/mahayana-rs/providers/telegram-protocol/src/api.rs",
+        "source/mahayana/mahayana-rs/providers/telegram-protocol/src/lib.rs"
+      ],
+      "existing_owner": "Canonical shared telegram-protocol MsgsAllInfo parser/TL codec with desktop tracked facade/contracts",
+      "rejected_existing_owners": [
+        "telegram-network/runtime: arbitrary haveSent/_resendingIds history, replay and ack application are deliberately outside this wire-only slice",
+        "a second service-message parser owner: rejected because telegram-protocol already owns the exact TL object",
+        "desktop-only parser: rejected because desktop tracks the canonical shared protocol owner"
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "bhrumom/fabushi-platform-core:native/telegram-protocol/src/api.rs",
+        "bhrumom/fabushi-platform-core:native/telegram-protocol/src/tl.rs",
+        "bhrumom/fabushi-platform-core:native/telegram-protocol/src/lib.rs",
+        "bhrumom/fabushi-platform-core:native/telegram-protocol/tests/protocol_contract.rs",
+        "source/mahayana/mahayana-rs/providers/telegram-protocol/src/api.rs",
+        "source/mahayana/mahayana-rs/providers/telegram-protocol/src/lib.rs",
+        "source/mahayana/mahayana-rs/providers/telegram-protocol/tests/protocol_contract.rs"
+      ],
+      "fabushi_target_symbols": [
+        "MSGS_ALL_INFO_CONSTRUCTOR",
+        "MsgsAllInfo",
+        "parse_msgs_all_info",
+        "TlReader::read_vector_length",
+        "TlReader::read_bytes"
+      ],
+      "target_language": "Rust",
+      "language_rationale": "Exact MTProto TL parsing is already owned by the source-neutral Rust telegram-protocol crate; keeping vector framing and binary state bytes there preserves one protocol owner and avoids importing Telegram Desktop arbitrary request-history architecture.",
+      "command_event_contracts": [
+        "0x8cc0d131 + bounded Vector<i64> + one TL-framed binary info payload + matching cardinality + EOF -> MsgsAllInfo",
+        "wrong top-level or vector constructor -> UnexpectedConstructor",
+        "negative/over-limit vector count -> existing TlError fail-closed path",
+        "truncated vector/id/TL header/body/padding -> existing TlError fail-closed path",
+        "state/id cardinality mismatch or valid body + trailing bytes -> ApiRequestError::InvalidMessageState",
+        "wire parse success does not imply or execute arbitrary request-history lookup/replay/ack application"
+      ],
+      "state_owner": "None for arbitrary request history. This pure parser owns only the typed wire/state-shape value; the existing session owner remains responsible for any later history correlation/application.",
+      "lifecycle_owner": "Existing account-bound Telegram runtime/network lifecycle; this parser only decodes one service-message body and owns no history or scheduling.",
+      "persistence_and_restart": "No persistence is introduced or mutated.",
+      "concurrency_and_cancellation": "Pure synchronous parsing only; no scheduler, callback registry, request queue or cancellation owner is added.",
+      "security_boundary": "Malformed constructor, vector framing/count, signed-long/TL bytes framing, cardinality, padding, truncation or trailing input fails closed before arbitrary request-history/application semantics are considered.",
+      "network_service_dependencies": [
+        "Existing embedded Telegram MTProto service-message transport",
+        "fixed-U msgs_all_info schema constructor"
+      ],
+      "service_owner": "Canonical embedded telegram-protocol wire codec.",
+      "deployment_evidence": [],
+      "implementation_status": "implemented",
+      "coverage_disposition": "rewritten",
+      "blockers": [
+        "Stage B executable build/unit/contract/integration/packaged validation has not run.",
+        "Arbitrary wasSent/haveSent/_resendingIds/toSend/_sentContainers history plus resend/ack application remain outside this isolated wire slice.",
+        "Connection scheduling/racing/send retry, auth-key binding/expiry/persistence/teardown, gzip and complete difference/differenceSlice decoding/application remain open/fail-closed.",
+        "Broader fixed-U source/legal/release closure remains open."
+      ],
+      "production_entrypoints": [
+        "fixed-U SessionPrivate::handle -> mtpc_msgs_all_info -> MTPMsgsAllInfo::read(from,end) -> handleMsgsStates",
+        "fixed-U handleMsgsStates validates state/id cardinality before consulting haveSent/_resendingIds",
+        "existing shared telegram-protocol parse_msgs_all_info/TlReader exact wire/state-shape boundary",
+        "desktop tracked telegram-protocol public facade/contracts mirror the canonical owner; no second parser runtime"
+      ],
+      "production_evidence": [
+        "platform-core-spec-commit:9f8ed1934fbd35e6a4e6ad9243c686431a84bdee",
+        "platform-core-spec-blob:8d4b04886141bf16bc36fe045d8997a472fae545",
+        "platform-core-production-path:native/telegram-protocol/src/api.rs@ebfb3670b5cd097b9ce288782c7954f5cfe9fc43",
+        "platform-core-tl-path:native/telegram-protocol/src/tl.rs@89256ab35184b6dc06a095ab34abb9f44e95a264",
+        "platform-core-lib-path:native/telegram-protocol/src/lib.rs@abab39e42f100972484191f0e52e9edd9b88c6cf",
+        "platform-core-authored-contract-commit:5e961490ebad8971a44ba91253797408c959ca93",
+        "platform-core-contract-path:native/telegram-protocol/tests/protocol_contract.rs@d1a86cb35d6e27ed94c911750190c627fc7764cf",
+        "desktop-sync-commit:822ed21752b28b435f55c2c711215fc01b15551c",
+        "path:source/mahayana/mahayana-rs/providers/telegram-protocol/src/api.rs@ebfb3670b5cd097b9ce288782c7954f5cfe9fc43",
+        "path:source/mahayana/mahayana-rs/providers/telegram-protocol/src/lib.rs@abab39e42f100972484191f0e52e9edd9b88c6cf",
+        "path:source/mahayana/mahayana-rs/providers/telegram-protocol/tests/protocol_contract.rs@d1a86cb35d6e27ed94c911750190c627fc7764cf"
+      ],
+      "test_evidence": [
+        "canonical and desktop tracked authored-only contracts cover signed ids, non-UTF8 binary state bytes, empty and 254-byte long-form state, wrong constructor/vector constructor, negative/over-limit vector counts, truncation, missing padding, state/id mismatch, trailing bytes and exact EOF; not run"
+      ],
+      "target_commit": "822ed21752b28b435f55c2c711215fc01b15551c",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Canonical Fabushi account + existing TelegramClientLease/runtime + shared telegram-protocol service-message wire codec",
+      "composition_slot": "Embedded Telegram MTProto msgs_all_info service-message parsing",
+      "capability_component": "Exact fixed-U MsgsAllInfo parser",
+      "variation_axes": [
+        "signed message-id extremes",
+        "empty / two-id binary short-form / 254-id long-form info payload",
+        "valid / wrong top-level constructor / wrong vector constructor / negative or over-limit vector count",
+        "matching vs mismatched state/id cardinality",
+        "complete vs truncated / missing-padding / trailing input"
+      ],
+      "shared_owner_contracts": [
+        "Existing telegram-protocol TlReader",
+        "Existing desktop tracked protocol facade/contracts",
+        "Existing Cargo path-dependency composition"
+      ],
+      "duplicate_root_check": "No second account, runtime, provider, transport, request-history store, callback registry, decompression runtime, difference runtime, message store, UI root, sidecar, subprocess or Web wrapper was introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Not applicable",
+      "primary_navigation_target": "Existing Messages/Conversation navigation",
+      "collection_surface": "Existing ConversationList; no change",
+      "creation_flow": "Existing canonical conversation creation; no change",
+      "object_action_scope": "Not applicable",
+      "detail_section": "Not applicable",
+      "capability_surface": "Existing ConversationWorkspace through the same provider/runtime; no new surface",
+      "route_contract": "No new route.",
+      "search_scope": "Not applicable",
+      "search_provider": "Existing canonical Search owner; unchanged",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Unchanged.",
+      "search_local_remote_contract": "Not applicable.",
+      "responsive_disposition": "No UI change.",
+      "accessibility_contract": "No UI change.",
+      "keyboard_contract": "No UI change.",
+      "state_continuity_contract": "Parsing is side-effect free; any haveSent/_resendingIds lookup, resend/ack application or other request-history semantics remain with the existing session owner after successful wire/state-shape decoding.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Existing Fabushi design system; no visual changes",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": null,
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "No new icon asset",
+      "avatar_contract": "No change",
+      "content_copy_keys": [],
+      "motion_contract": "No change",
+      "reduced_motion_contract": "No change",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "high",
+      "requirement_ids": [
+        "TDRP-R9-MTPROTO-MSGS-ALL-INFO-WIRE-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-MTPROTO-MSGS-ALL-INFO-WIRE-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-MTPROTO-MSGS-ALL-INFO-EXACT-001",
+        "INV-TDRP-MTPROTO-MSGS-ALL-INFO-VECTOR-BOUNDARY-001",
+        "INV-TDRP-MTPROTO-MSGS-ALL-INFO-BINARY-001",
+        "INV-TDRP-MTPROTO-MSGS-ALL-INFO-CARDINALITY-001",
+        "INV-TDRP-MTPROTO-MSGS-ALL-INFO-NO-HISTORY-MUTATION-001"
+      ],
+      "unit_case_ids": [
+        "UNIT-TDRP-MTPROTO-MSGS-ALL-INFO-PARSE-001",
+        "UNIT-TDRP-MTPROTO-MSGS-ALL-INFO-VECTOR-BOUNDARY-001",
+        "UNIT-TDRP-MTPROTO-MSGS-ALL-INFO-FAIL-CLOSED-001"
+      ],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-MTPROTO-MSGS-ALL-INFO-WIRE-001"
+      ],
+      "integration_case_ids": [],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "fault_recovery_case_ids": [],
+      "performance_case_ids": [],
+      "security_case_ids": [
+        "SEC-TDRP-MTPROTO-MSGS-ALL-INFO-MALFORMED-INPUT-001"
+      ],
+      "soak_case_ids": [],
+      "exploratory_charter_ids": [],
+      "regression_ids": [
+        "REG-TDRP-MTPROTO-MSGS-ALL-INFO-BINARY-VECTOR-001"
+      ],
+      "release_gate_ids": [
+        "G-TRACEABILITY",
+        "G-COMPOSITION",
+        "G-SECURITY",
+        "G-EVIDENCE",
+        "G-RELEASE"
+      ],
+      "test_fixture_ids": [
+        "mtproto-msgs-all-info-binary-vector-wire"
+      ],
+      "test_environment_ids": [
+        "GitHub Actions Stage B matrix (not run)"
+      ],
+      "coverage_matrix_status": "pending",
+      "flake_status": "stable",
+      "release_gate_status": "pending",
+      "acceptance_reviewer": null,
+      "reviewer": null,
+      "license_and_provenance": "Behavioral responsibility is anchored to fixed-U telegramdesktop/tdesktop Telegram/SourceFiles/mtproto/scheme/mtproto.tl@76225965bfc794388db241f3f760db8ab79e84f8 and shipping Telegram/SourceFiles/mtproto/session_private.cpp@13cbc76ec723386027b5b4dcac79999b791c4614. Implementation is source-neutral Rust and copies no upstream C++ implementation.",
+      "notes": "Stage A implementation bookkeeping only. Remote source review confirms existing parse_msgs_all_info/TlReader already satisfy exact fixed-U typed parser, bounded vector, binary TL info framing, state/id cardinality and trailing validation, so no production behavior change was made. Durable spec and authored-only contracts were added and mirrored but not executed; validation_status=not-run and accepted=false. Arbitrary request history/application, connection scheduling, auth-key lifecycle, gzip and complete difference decoding remain open/fail-closed. Final source-level compliance will be recorded after platform spec readback; executable validation remains not-run.",
+      "test_execution_evidence": [],
+      "validation_status": "not-run",
+      "accepted": false,
+      "id": "TDRP-R9-MTPROTO-MSGS-ALL-INFO-WIRE-001",
       "source_paths": [
         "Telegram/SourceFiles/mtproto/scheme/mtproto.tl@76225965bfc794388db241f3f760db8ab79e84f8",
         "Telegram/SourceFiles/mtproto/session_private.cpp@13cbc76ec723386027b5b4dcac79999b791c4614"

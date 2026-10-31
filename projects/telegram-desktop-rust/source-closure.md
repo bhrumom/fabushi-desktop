@@ -1068,3 +1068,39 @@ Binary `info` preservation is intentional; arbitrary request history/application
 retry, temporary/permanent auth-key binding/expiry/persistence/teardown, gzip, complete difference/differenceSlice
 decoding/application, broader fixed-U source/legal closure, Stage-B executable evidence and independent release ACCEPT
 remain open/fail-closed. No executable validation was performed.
+
+
+### Round 85 — msgs_all_info exact typed parser / vector boundary / binary TL string
+
+Fixed U remains `f985723b552b30fe1c17d377d57f44e61a15a8c4`. Fixed-U
+`msgs_all_info#8cc0d131 msg_ids:Vector<long> info:string` is shipping-reachable in
+`SessionPrivate::handle`: `MTPMsgsAllInfo::read(from,end)` first performs typed wire decoding, then
+`handleMsgsStates(ids, states)` validates `states.size() == ids.size()` before consulting
+`haveSent/_resendingIds` or performing resend/ack application.
+
+Remote source review confirms the existing canonical `telegram-protocol` owner already closes the independent
+wire/state-shape boundary with no production delta:
+`api.rs@ebfb3670b5cd097b9ce288782c7954f5cfe9fc43` defines constructor `0x8cc0d131`,
+`MsgsAllInfo` and `parse_msgs_all_info`; `tl.rs@89256ab35184b6dc06a095ab34abb9f44e95a264`
+owns canonical vector constructor/count validation, signed `i64` reads, TL bytes/string short/long framing,
+64MiB bytes limit, 1,000,000-element vector bound, padding consumption and truncation; and
+`lib.rs@abab39e42f100972484191f0e52e9edd9b88c6cf` exports the same parser/type/constructor.
+The parser preserves `info` as binary bytes, requires one state byte per id, and rejects trailing bytes.
+
+Spec-first platform commit `9f8ed1934fbd35e6a4e6ad9243c686431a84bdee` /
+spec blob `8d4b04886141bf16bc36fe045d8997a472fae545` records the no-production-delta disposition.
+Canonical authored-only contract commit `5e961490ebad8971a44ba91253797408c959ca93` and desktop sync
+`822ed21752b28b435f55c2c711215fc01b15551c` share contract blob
+`d1a86cb35d6e27ed94c911750190c627fc7764cf`. Authored cases cover signed-id extremes,
+non-UTF8 binary short-form state, empty and 254-byte long-form state, wrong top-level/vector constructors,
+negative and over-limit vector counts, truncated vector/id/TL body, missing padding, state/id mismatch,
+trailing bytes and exact EOF; they were not run.
+
+Ledger adds `TDRP-R9-MTPROTO-MSGS-ALL-INFO-WIRE-001`; coverage becomes
+`95 / 16172 unknown / 16145 unread / 0 omitted`, and the responsibility is
+`implemented / validation_status=not-run / accepted=false`.
+
+Arbitrary `wasSent/haveSent/_resendingIds/toSend/_sentContainers` history, resend/ack application,
+connection scheduling/racing/send retry, temporary/permanent auth-key binding/expiry/persistence/teardown,
+gzip, complete difference/differenceSlice decoding/application, broader source/legal closure and Stage-B executable
+evidence remain open/fail-closed. No executable validation was performed.
