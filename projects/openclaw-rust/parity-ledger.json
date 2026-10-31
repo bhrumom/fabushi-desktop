@@ -2718,7 +2718,7 @@
       ],
       "status": {
         "acceptance": "pending",
-        "implementation": "implemented",
+        "implementation": "not-started",
         "mapping": "reviewed",
         "read": "read-complete",
         "verification": "not-run",
@@ -2810,7 +2810,7 @@
       ],
       "status": {
         "acceptance": "pending",
-        "implementation": "implemented",
+        "implementation": "not-started",
         "mapping": "reviewed",
         "read": "read-complete",
         "verification": "not-run",

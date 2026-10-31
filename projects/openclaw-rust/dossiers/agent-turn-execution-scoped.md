@@ -106,7 +106,8 @@ command registry without creating a second session store or treating a test
 manager as a production doctor.
 
 Disposition: keep the ACP command responsibility
-`wiring=not-wired`, `verification=not-run`, and `acceptance=pending`; retain
+`implementation=not-started`, `wiring=not-wired`, `verification=not-run`, and
+`acceptance=pending`; retain
 the historical source and implementation contract until exact-subject source
 closure permits a rebaseline. The standalone `AcpSessionManager` contract
 does not satisfy production consumer, security-context, or packaged ACP
@@ -120,7 +121,8 @@ owns a separate Host turn lease and watchdog lifecycle. The O11 settlement and
 O12 zombie checks in `openclaw_agent_turn_contract.rs` construct local
 `TurnSettlement`/`TurnWatchdogLease` fixtures and do not establish an ACP
 transport or dispatch-policy call chain. Therefore the parity row
-`OCRM-RESP-AGENT-ACP-POLICY-001` retains `wiring=not-wired`,
+`OCRM-RESP-AGENT-ACP-POLICY-001` retains `implementation=not-started`,
+`wiring=not-wired`,
 `verification=not-run`, and `acceptance=pending`; the independent Transcript
 runtime must not be counted as ACP compatibility.
 
