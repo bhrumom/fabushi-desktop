@@ -396,3 +396,14 @@ Live ordinary-ping scheduling/selection, message-id assignment, send/ACK settlem
 ### Round 68 source-level compliance readback
 
 Platform-core compliance commit `bf654c6501776fb46a8e40bad5f9aacea4612514` updates `docs/specs/telegram-mtproto-single-ping-pong.md@4faf7eb9c9a6c7b9e5988c850c9068c9a0a21d79`. Source inspection records request-side R9-R16 and AC-6 through AC-9 satisfied at source/implementation/bookkeeping level; AC-10 keeps executable validation blocked/not-run with `accepted=false`. Remote source identities are canonical/desktop api `714c24a5f1727e13693008ea42676831b3e8d3fd` and lib `ef44b1bb7fcac0183f1b83cca8c9d994ecc8ce9c`. Live ordinary-ping scheduling/selection, message-id assignment, send/ACK settlement, timeout/reconnect, arbitrary historical sent/resend/container state, TLS camouflage, gzip and complete difference decoding remain explicit fail-closed scope.
+
+
+### Round 69 — rpc_drop_answer request wire serializer
+
+Fixed U remains `f985723b552b30fe1c17d377d57f44e61a15a8c4`. `mtproto.tl@76225965bfc794388db241f3f760db8ab79e84f8` defines `rpc_drop_answer#58e4a740 req_msg_id:long = RpcDropAnswer`; reread `session_private.cpp@13cbc76ec723386027b5b4dcac79999b791c4614` has no direct `rpc_drop_answer` branch, so no historical scheduling/correlation lifecycle is inferred.
+
+Platform-core spec-first amendment `fde4b1eadc3d03c1dd943bcb5170e3434ff2771a` and implementation `37fff2cb24658b6e0f738bbbd23cecdf075f4bb1` add only `RPC_DROP_ANSWER_CONSTRUCTOR=0x58e4a740` plus exact `build_rpc_drop_answer(req_msg_id:i64)`. Canonical blobs are api `3ec13cd2248e68f55296ed9bbaffa5c10ffce969`, lib `e4705eb4563a087e0bba811948f1244af8f9f5cb`; desktop synchronization `7c17952b90cc89d575345e192733c2e6c23deb03` copies them byte-for-byte.
+
+Ledger adds independent request responsibility `TDRP-R9-MTPROTO-RPC-DROP-ANSWER-REQUEST-WIRE-001` while retaining `TDRP-R9-MTPROTO-RPC-DROP-ANSWER-WIRE-001` as the response-parser responsibility; `responsibilities_total=79`, `unknown=16172`, `unread=16145`, `omitted=0`. Exact 12-byte layout, signed-`i64` boundary preservation, and request/response-parser separation contracts are authored only. `validation_status=not-run`, `accepted=false`.
+
+No Actions/status/check query or trigger, build, typecheck, lint, schema validator, generator, unit/contract/integration/E2E test, package, deployment, installation, or runtime acceptance was performed. Historical outstanding-RPC selection/correlation/drop mutation and arbitrary `wasSent/haveSent/_resendingIds/toSend/_sentContainers` state remain fail-closed; gzip, complete difference/differenceSlice decoding/application, broader fixed-U source/legal closure, Stage-B evidence and independent release ACCEPT remain open.

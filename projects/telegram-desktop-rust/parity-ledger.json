@@ -9,7 +9,7 @@
     "unknown": 16172,
     "unread": 16145,
     "omitted": 0,
-    "responsibilities_total": 78,
+    "responsibilities_total": 79,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -19720,6 +19720,246 @@
       "reviewer": null,
       "license_and_provenance": "Behavioral responsibility is anchored to fixed-U telegramdesktop/tdesktop Telegram/SourceFiles/mtproto/scheme/mtproto.tl@76225965bfc794388db241f3f760db8ab79e84f8. session_private.cpp@13cbc76ec723386027b5b4dcac79999b791c4614 was reread for the ordinary MTPPing vs ping_delay_disconnect session/timer branch; no live scheduling/selection owner is inferred from it. The implementation is source-neutral Rust and copies no upstream C++ implementation.",
       "notes": "Stage A implementation only. This row closes exact ping request serialization only and is intentionally distinct from TDRP-R9-MTPROTO-SINGLE-PING-PONG-001 response parsing/current-ping correlation and TDRP-R9-MTPROTO-PING-DELAY-DISCONNECT-WIRE-001. Live ordinary-ping scheduling/selection/message-id/send/timeout lifecycle remains blocked/fail-closed. Global unknown/unread source-entry counts remain unchanged because this is a newly mapped responsibility slice within already-open fixed-U source coverage. Contracts are authored but not executed; validation_status=not-run and accepted=false.",
+      "test_execution_evidence": [],
+      "validation_status": "not-run",
+      "accepted": false
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+      "source_path": "Telegram/SourceFiles/mtproto/scheme/mtproto.tl",
+      "source_blob_sha": "76225965bfc794388db241f3f760db8ab79e84f8",
+      "source_kind": "schema",
+      "module_id": "tdesktop.mtproto.rpc-drop-answer-request-wire",
+      "responsibility_id": "TDRP-R9-MTPROTO-RPC-DROP-ANSWER-REQUEST-WIRE-001",
+      "source_symbols": [
+        "rpc_drop_answer#58e4a740 req_msg_id:long = RpcDropAnswer"
+      ],
+      "capability_ids": [
+        "CAP-EMBEDDED-MTPROTO-RPC-WIRE"
+      ],
+      "dependency_ids": [
+        "EmbeddedTelegramProtocol",
+        "TelegramClientLease",
+        "MTProtoAuthKey"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/evidence/round69-mtproto-rpc-drop-answer-request-wire-20261101.md",
+      "behavior_contract": "The canonical telegram-protocol owner must exactly serialize fixed-U rpc_drop_answer#58e4a740 as constructor + one req_msg_id:long, preserving the complete signed i64 value with no historical RPC lookup or mutation. Request serialization remains strictly separate from the existing parse_rpc_drop_answer response parser and performs no scheduling, correlation, callback, ACK/resend/container, timeout/reconnect, gzip, or difference lifecycle.",
+      "state_machine": "typed caller supplies req_msg_id -> build_rpc_drop_answer -> exact 12-byte TL request (constructor + i64) -> no socket/scheduler/history mutation in this slice; historical RPC selection/correlation/drop lifecycle remains fail-closed",
+      "side_effects": [
+        "Adds fixed-U rpc_drop_answer request constructor constant to the existing shared telegram-protocol owner",
+        "Adds exact 12-byte build_rpc_drop_answer serializer preserving raw signed req_msg_id",
+        "Keeps request serialization strictly separate from the existing RpcDropAnswer response parser",
+        "Synchronizes canonical protocol sources byte-for-byte into the existing desktop provider path",
+        "Authors exact-layout, signed-boundary, and request/response-parser separation contracts without executing them in Stage A"
+      ],
+      "failure_cases": [
+        "Request builder emits any constructor other than 58e4a740",
+        "Request builder changes, rejects, clamps, reinterprets, or looks up signed req_msg_id",
+        "Request builder emits bytes other than constructor + exactly one i64",
+        "Request serialization is conflated with rpc_answer_unknown/rpc_answer_dropped_running/rpc_answer_dropped parsing",
+        "Wire-only implementation invents historical outstanding-RPC selection, callback/drop mutation, wasSent/haveSent/_resendingIds/toSend/_sentContainers history, gzip, or difference lifecycle"
+      ],
+      "ui_disposition": "No UI change. This is exact MTProto request serialization inside the existing embedded protocol owner.",
+      "non_ui_responsibilities": [
+        "Exact fixed-U rpc_drop_answer request constructor",
+        "Exact req_msg_id:long serialization",
+        "Signed i64 preservation and exact 12-byte layout",
+        "Strict separation from RpcDropAnswer response decoding",
+        "No-side-effect typed protocol representation"
+      ],
+      "platform_delta": "Adds only exact rpc_drop_answer request serialization to the existing source-neutral Rust telegram-protocol owner. No drop scheduler, historical outstanding-request registry, callback mutation, ACK/resend/container lifecycle, timeout/reconnect policy, gzip runtime, difference decoder, or second Telegram runtime is added.",
+      "existing_owner_candidates": [
+        "bhrumom/fabushi-platform-core:native/telegram-protocol/src/api.rs",
+        "bhrumom/fabushi-platform-core:native/telegram-protocol/src/lib.rs",
+        "source/mahayana/mahayana-rs/providers/telegram-protocol/src/api.rs",
+        "source/mahayana/mahayana-rs/providers/telegram-protocol/src/lib.rs"
+      ],
+      "existing_owner": "Canonical shared telegram-protocol typed MTProto serializer, consumed through the existing desktop provider path",
+      "rejected_existing_owners": [
+        "telegram-network cannot invent historical outstanding-RPC selection/correlation/drop semantics because no exact canonical multi-request history owner exists for this slice",
+        "Renderer/AppHost cannot own MTProto wire serialization",
+        "A second request-history/callback/sent-container owner would split lifecycle truth",
+        "gzip/difference owners are unrelated to this independent wire request"
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "bhrumom/fabushi-platform-core:native/telegram-protocol/src/api.rs",
+        "bhrumom/fabushi-platform-core:native/telegram-protocol/src/lib.rs",
+        "source/mahayana/mahayana-rs/providers/telegram-protocol/src/api.rs",
+        "source/mahayana/mahayana-rs/providers/telegram-protocol/src/lib.rs"
+      ],
+      "fabushi_target_symbols": [
+        "RPC_DROP_ANSWER_CONSTRUCTOR",
+        "build_rpc_drop_answer"
+      ],
+      "target_language": "Rust",
+      "language_rationale": "The existing Rust telegram-protocol crate already owns exact TL request builders and the separate strict RpcDropAnswer parser; this independent request serializer belongs there without creating a request-history subsystem.",
+      "command_event_contracts": [
+        "req_msg_id:i64 -> build_rpc_drop_answer -> 58e4a740 + exact little-endian i64",
+        "i64::MIN/i64::MAX -> exact preservation with no validation, clamp, lookup, or policy transformation",
+        "rpc_drop_answer request bytes -> not accepted by parse_rpc_drop_answer",
+        "serialized request -> no historical RPC selection/correlation/drop or sent/resend/container side effect in this slice"
+      ],
+      "state_owner": "No live mutable state is owned by this wire-only builder; the existing telegram-protocol owner owns exact request bytes.",
+      "lifecycle_owner": "Existing account-bound TelegramClientLease -> RuntimeClient -> telegram-protocol dependency chain; drop-answer scheduling, historical RPC selection/correlation, callback mutation, timeout/reconnect, and sent/resend/container lifecycle remain absent/fail-closed.",
+      "persistence_and_restart": "No persistence is introduced.",
+      "concurrency_and_cancellation": "No concurrency or cancellation lifecycle is introduced. Historical outstanding-RPC selection and drop/cancel semantics remain blocked pending a precise existing-owner production path.",
+      "security_boundary": "Only exact request serialization is added; possessing a req_msg_id does not grant authority to locate, cancel, drop, resend, settle, or mutate historical requests.",
+      "network_service_dependencies": [
+        "Existing embedded Telegram MTProto encrypted transport",
+        "fixed-U rpc_drop_answer#58e4a740 schema constructor",
+        "Existing strict RpcDropAnswer response parser remains separate"
+      ],
+      "service_owner": "Canonical embedded Telegram protocol runtime.",
+      "deployment_evidence": [],
+      "implementation_status": "implemented",
+      "coverage_disposition": "rewritten",
+      "blockers": [
+        "No precise canonical multi-request historical RPC owner is claimed for selecting/correlating/dropping an outstanding request; those semantics remain fail-closed.",
+        "Stage B executable build/unit/contract/integration/packaged validation has not run.",
+        "gzip_packed bounded decompression remains blocked.",
+        "Complete updates difference/differenceSlice decoding/application remains open/fail-closed.",
+        "Arbitrary wasSent/haveSent/_resendingIds/toSend/_sentContainers histories remain open/fail-closed.",
+        "Broader fixed-U source/legal/release closure remains open."
+      ],
+      "production_entrypoints": [
+        "source/mahayana/mahayana-rs/Cargo.toml -> mahayana-telegram -> providers/telegram-protocol",
+        "providers/telegram-protocol public API -> build_rpc_drop_answer; no historical RPC scheduler/call site is claimed"
+      ],
+      "production_evidence": [
+        "platform-core-spec-amendment-commit:fde4b1eadc3d03c1dd943bcb5170e3434ff2771a",
+        "platform-core-implementation-commit:37fff2cb24658b6e0f738bbbd23cecdf075f4bb1",
+        "platform-core-path:native/telegram-protocol/src/api.rs@3ec13cd2248e68f55296ed9bbaffa5c10ffce969",
+        "platform-core-path:native/telegram-protocol/src/lib.rs@e4705eb4563a087e0bba811948f1244af8f9f5cb",
+        "desktop-implementation-commit:7c17952b90cc89d575345e192733c2e6c23deb03",
+        "path:source/mahayana/mahayana-rs/providers/telegram-protocol/src/api.rs@3ec13cd2248e68f55296ed9bbaffa5c10ffce969",
+        "path:source/mahayana/mahayana-rs/providers/telegram-protocol/src/lib.rs@e4705eb4563a087e0bba811948f1244af8f9f5cb"
+      ],
+      "test_evidence": [
+        "platform-core native/telegram-protocol/src/api.rs exact 12-byte constructor+req_msg_id contract authored, not run",
+        "platform-core native/telegram-protocol/src/api.rs signed i64 boundary preservation contract authored, not run",
+        "platform-core native/telegram-protocol/src/api.rs request/RpcDropAnswer-parser separation contract authored, not run",
+        "desktop synchronized protocol contracts authored, not run"
+      ],
+      "target_commit": "7c17952b90cc89d575345e192733c2e6c23deb03",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Canonical Fabushi account + existing TelegramClientLease/runtime + shared telegram-protocol production composition",
+      "composition_slot": "Embedded Telegram MTProto service-request wire serialization",
+      "capability_component": "Exact fixed-U rpc_drop_answer request builder",
+      "variation_axes": [
+        "representative vs signed-boundary req_msg_id",
+        "request serializer vs RpcDropAnswer response parser separation"
+      ],
+      "shared_owner_contracts": [
+        "Existing account-bound TelegramClientLease",
+        "Existing RuntimeClient",
+        "Existing telegram-protocol TlReader/TlWriter",
+        "Existing strict RpcDropAnswer response parser boundary",
+        "Existing Cargo path-dependency composition"
+      ],
+      "duplicate_root_check": "No second account, runtime, provider, transport, auth key, request-history registry, callback registry, sent-container store, decompression runtime, difference runtime, message store, UI root, sidecar, subprocess or Web wrapper was introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Not applicable",
+      "primary_navigation_target": "Existing Messages/Conversation navigation",
+      "collection_surface": "Existing ConversationList; no change",
+      "creation_flow": "Existing canonical conversation creation; no change",
+      "object_action_scope": "Not applicable",
+      "detail_section": "Not applicable",
+      "capability_surface": "Existing ConversationWorkspace through the same provider/runtime; no new surface",
+      "route_contract": "No new route.",
+      "search_scope": "Not applicable",
+      "search_provider": "Existing canonical Search owner; unchanged",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Unchanged.",
+      "search_local_remote_contract": "Not applicable.",
+      "responsive_disposition": "No UI change.",
+      "accessibility_contract": "No UI change.",
+      "keyboard_contract": "No UI change.",
+      "state_continuity_contract": "Wire serialization is side-effect free. Historical request state is intentionally unchanged because this slice does not claim multi-request drop-answer scheduling/correlation lifecycle.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Existing Fabushi design system; no visual changes",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": null,
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "No new icon asset",
+      "avatar_contract": "No change",
+      "content_copy_keys": [],
+      "motion_contract": "No change",
+      "reduced_motion_contract": "No change",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "high",
+      "requirement_ids": [
+        "TDRP-R9-MTPROTO-RPC-DROP-ANSWER-REQUEST-WIRE-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-MTPROTO-RPC-DROP-ANSWER-REQUEST-WIRE-001",
+        "ORA-TDRP-MTPROTO-RPC-DROP-ANSWER-REQUEST-SEPARATION-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-MTPROTO-RPC-DROP-ANSWER-REQUEST-EXACT-001",
+        "INV-TDRP-MTPROTO-RPC-DROP-ANSWER-REQUEST-NO-HISTORY-MUTATION-001"
+      ],
+      "unit_case_ids": [
+        "UNIT-TDRP-MTPROTO-RPC-DROP-ANSWER-REQUEST-LAYOUT-001",
+        "UNIT-TDRP-MTPROTO-RPC-DROP-ANSWER-REQUEST-BOUNDARY-001"
+      ],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-MTPROTO-RPC-DROP-ANSWER-REQUEST-WIRE-001"
+      ],
+      "integration_case_ids": [],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "fault_recovery_case_ids": [],
+      "performance_case_ids": [],
+      "security_case_ids": [
+        "SEC-TDRP-MTPROTO-RPC-DROP-ANSWER-REQUEST-NO-AUTHORITY-001"
+      ],
+      "soak_case_ids": [],
+      "exploratory_charter_ids": [],
+      "regression_ids": [
+        "REG-TDRP-MTPROTO-RPC-DROP-ANSWER-REQUEST-SEPARATION-001"
+      ],
+      "release_gate_ids": [
+        "G-TRACEABILITY",
+        "G-COMPOSITION",
+        "G-SECURITY",
+        "G-EVIDENCE",
+        "G-RELEASE"
+      ],
+      "test_fixture_ids": [
+        "mtproto-rpc-drop-answer-request-fixture"
+      ],
+      "test_environment_ids": [
+        "GitHub Actions Stage B matrix (not run)"
+      ],
+      "coverage_matrix_status": "pending",
+      "flake_status": "stable",
+      "release_gate_status": "pending",
+      "acceptance_reviewer": null,
+      "reviewer": null,
+      "license_and_provenance": "Behavioral responsibility is anchored to fixed-U telegramdesktop/tdesktop Telegram/SourceFiles/mtproto/scheme/mtproto.tl@76225965bfc794388db241f3f760db8ab79e84f8. session_private.cpp@13cbc76ec723386027b5b4dcac79999b791c4614 was reread and contains no direct rpc_drop_answer branch; no lifecycle semantics are inferred from absent code. The implementation is source-neutral Rust and copies no upstream C++ implementation.",
+      "notes": "Stage A implementation only. This row closes exact rpc_drop_answer request serialization only and is intentionally distinct from TDRP-R9-MTPROTO-RPC-DROP-ANSWER-WIRE-001 response parsing. Historical outstanding-RPC selection/correlation/drop lifecycle remains blocked/fail-closed. Global unknown/unread source-entry counts remain unchanged because this is a newly mapped responsibility slice within already-open fixed-U source coverage. Contracts are authored but not executed; validation_status=not-run and accepted=false.",
       "test_execution_evidence": [],
       "validation_status": "not-run",
       "accepted": false
