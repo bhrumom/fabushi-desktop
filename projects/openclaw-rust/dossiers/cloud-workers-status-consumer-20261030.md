@@ -107,4 +107,7 @@ the typed `Inspect` action from the canonical extension boundary. Repair,
 secret-reference migration and lease/warm-image reconciliation actions return
 an explicit `mutation-not-wired` error even when acknowledged, so the
 projection cannot accidentally become a second recovery owner. Plugin/UI/CLI
-registration, provider mutation and recovery receipts remain pending.
+registration, provider mutation and recovery receipts remain pending. The
+read-only result is now reachable through the `cloudWorkers.doctor` Host
+Gateway registry/route; this does not make the broader doctor responsibility
+production-wired because mutating and packaged consumer paths remain absent.

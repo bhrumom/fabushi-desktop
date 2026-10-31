@@ -59,6 +59,10 @@ fn coordinator_gateway_registry_routes_only_the_read_projection() {
         Some(HostGatewayOwner::CloudWorkers)
     );
     assert_eq!(host_gateway_owner("cloudWorkers.admit"), None);
+    assert_eq!(
+        host_gateway_owner("cloudWorkers.doctor"),
+        Some(HostGatewayOwner::CloudWorkers)
+    );
 }
 
 #[test]

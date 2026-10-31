@@ -467,6 +467,7 @@ use mahayana_host_runtime::host_gateway_api::{
     CreateAgentNonceLedger, HOST_CAPABILITIES, sanitize_create_agent_args,
 };
 use mahayana_host_runtime::extensions::cloud_workers::extension::CloudWorkerProvisioningExtension;
+use mahayana_host_runtime::extensions::cloud_workers::CloudWorkerDoctorRequest;
 use mahayana_host_runtime::sand_host::{
     BOX_READY_REPORT_ATTEMPTS, BOX_READY_REPORT_RETRY_MS, BOX_READY_STAGE_MARKER_PATH,
     box_ready_duration_ms, compute_host_health, should_report_box_ready,
@@ -11172,6 +11173,20 @@ impl GatewayApi for UnifiedGatewayApi {
                 .map_err(|error| GatewayCommandError::Internal(format!(
                     "cloud worker status projection failed: {error}"
                 )));
+        }
+        if method == "cloudWorkers.doctor" {
+            let request: CloudWorkerDoctorRequest = serde_json::from_value(args)
+                .map_err(|error| GatewayCommandError::BadRequest(format!(
+                    "cloud worker doctor request is invalid: {error}"
+                )))?;
+            let result = self
+                .cloud_workers
+                .inspect_doctor(request)
+                .map_err(|error| GatewayCommandError::BadRequest(error.to_string()))?;
+            return serde_json::to_value(result)
+                .map_err(|error| GatewayCommandError::Internal(format!(
+                    "cloud worker doctor projection failed: {error}"
+                )))?;
         }
         if method == "ensureForeverBox" {
             let agent_id = required_box_agent_id(method, &args)?;

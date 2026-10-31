@@ -221,7 +221,8 @@ pending Crabbox responsibilities:
 - `OCRM-RESP-PLUGIN-SDK-CRABBOX-DOCTOR-001` now has a read-only owner projection
   through `CloudWorkerProvisioningExtension::inspect_doctor`. Mutating repair,
   migration and reconciliation remain explicitly `mutation-not-wired` until a
-  real recovery owner and plugin/UI/CLI consumer exist.
+  real recovery owner and plugin/UI/CLI consumer exist. The read-only path is
+  exposed through the `cloudWorkers.doctor` Host Gateway route only.
 
 The broader Crabbox projection, lifecycle, sandbox, bootstrap, artifact,
 warm-image and runtime-control rows remain pending where their producer or

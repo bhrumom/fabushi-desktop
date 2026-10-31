@@ -1716,7 +1716,7 @@
       ],
       "id": "OCRM-RESP-PLUGIN-SDK-CRABBOX-DOCTOR-001",
       "integration": {
-    "consumer": "CloudWorkerProvisioningExtension::inspect_doctor for read-only inspection; plugin/UI/CLI mutation consumers remain not wired",
+    "consumer": "cloudWorkers.doctor Host Gateway route reaches CloudWorkerProvisioningExtension::inspect_doctor for read-only inspection; plugin/UI/CLI mutation consumers remain not wired",
     "entrypoint": "source/host/src/extensions/cloud_workers/extension.rs::CloudWorkerProvisioningExtension::inspect_doctor",
     "owner": "source/host/src/extensions/cloud_workers/extension.rs",
         "producer": "Host plugin and doctor registration (not yet wired)"
