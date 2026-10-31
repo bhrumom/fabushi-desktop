@@ -55,6 +55,18 @@ chain:
 - subagent cleanup outside the parent admitted generation while preserving the
   captured child and Gateway authority.
 
+The current Rust boundary is narrower: `source/host/app/src/main.rs:3619-3623`
+checks only that `expectedSessionId` equals the derived agent ID, then
+`3619-3631` dispatches `deleteAgent` without forwarding
+`expectedLifecycleRevision` or `expectedSessionUpdatedAt`. The destructive owner
+at `source/host/src/extensions/transcript/agent_lifecycle.rs:601-635` deletes
+the session through `store.delete_session` after deletion hooks, and the public
+`AgentSummary` currently exposes `updated_at` but no lifecycle revision
+(`source/host/src/extensions/session/session_summaries.rs:54-85`). This is direct
+evidence of the remaining Rust contract gap; it is not a reason to substitute
+`updated_at` for a lifecycle revision without an approved storage/ownership
+design.
+
 Therefore this delta does not upgrade
 `OCRM-RESP-CRON-SESSION-REAPER-001`, `OCRM-RESP-SESSION-ROUTING-DISPATCH-001`,
 or any session responsibility to implemented, wired, verified or accepted. It
