@@ -9,7 +9,7 @@
     "unknown": 16172,
     "unread": 16145,
     "omitted": 0,
-    "responsibilities_total": 79,
+    "responsibilities_total": 80,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -19960,6 +19960,232 @@
       "reviewer": null,
       "license_and_provenance": "Behavioral responsibility is anchored to fixed-U telegramdesktop/tdesktop Telegram/SourceFiles/mtproto/scheme/mtproto.tl@76225965bfc794388db241f3f760db8ab79e84f8. session_private.cpp@13cbc76ec723386027b5b4dcac79999b791c4614 was reread and contains no direct rpc_drop_answer branch; no lifecycle semantics are inferred from absent code. The implementation is source-neutral Rust and copies no upstream C++ implementation.",
       "notes": "Stage A implementation only. This row closes exact rpc_drop_answer request serialization only and is intentionally distinct from TDRP-R9-MTPROTO-RPC-DROP-ANSWER-WIRE-001 response parsing. Historical outstanding-RPC selection/correlation/drop lifecycle remains blocked/fail-closed. Global unknown/unread source-entry counts remain unchanged because this is a newly mapped responsibility slice within already-open fixed-U source coverage. Contracts are authored but not executed; validation_status=not-run and accepted=false.",
+      "test_execution_evidence": [],
+      "validation_status": "not-run",
+      "accepted": false
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+      "source_path": "Telegram/SourceFiles/mtproto/scheme/mtproto.tl",
+      "source_blob_sha": "76225965bfc794388db241f3f760db8ab79e84f8",
+      "source_kind": "schema",
+      "module_id": "tdesktop.mtproto.destroy-auth-key-request-wire",
+      "responsibility_id": "TDRP-R9-MTPROTO-DESTROY-AUTH-KEY-REQUEST-WIRE-001",
+      "source_symbols": [
+        "destroy_auth_key#d1435160 = DestroyAuthKeyRes"
+      ],
+      "capability_ids": [
+        "CAP-EMBEDDED-MTPROTO-RPC-WIRE"
+      ],
+      "dependency_ids": [
+        "EmbeddedTelegramProtocol",
+        "TelegramClientLease",
+        "MTProtoAuthKey"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/evidence/round70-mtproto-destroy-auth-key-request-wire-20261101.md",
+      "behavior_contract": "The canonical telegram-protocol owner must exactly serialize fixed-U destroy_auth_key#d1435160 as the zero-field constructor only. Request serialization performs no auth-key eligibility decision, local key deletion, persistence mutation, transport teardown, reconnect, request-history mutation, gzip handling, or updates-difference lifecycle.",
+      "state_machine": "typed caller -> build_destroy_auth_key -> exact 4-byte TL request constructor -> no socket/key/session/history mutation in this slice; live auth-key destruction lifecycle remains fail-closed",
+      "side_effects": [
+        "Adds fixed-U destroy_auth_key request constructor constant to the existing shared telegram-protocol owner",
+        "Adds exact zero-field build_destroy_auth_key serializer emitting only four constructor bytes",
+        "Synchronizes canonical protocol sources byte-for-byte into the existing desktop provider path",
+        "Authors exact-layout/no-payload contract without executing it in Stage A"
+      ],
+      "failure_cases": [
+        "Request builder emits any constructor other than d1435160",
+        "Request builder emits payload or trailing request fields beyond the four-byte constructor",
+        "Wire-only implementation invents auth-key eligibility, local deletion, persistence, transport teardown/reconnect, sent/resend/container history, gzip, or difference lifecycle"
+      ],
+      "ui_disposition": "No UI change. This is exact MTProto request serialization inside the existing embedded protocol owner.",
+      "non_ui_responsibilities": [
+        "Exact fixed-U destroy_auth_key request constructor",
+        "Exact zero-field four-byte serialization",
+        "No-side-effect typed protocol representation"
+      ],
+      "platform_delta": "Adds only exact destroy_auth_key request serialization to the existing source-neutral Rust telegram-protocol owner. No auth-key destruction policy, key store mutation, session teardown orchestration, request-history registry, gzip runtime, difference decoder, or second Telegram runtime is added.",
+      "existing_owner_candidates": [
+        "bhrumom/fabushi-platform-core:native/telegram-protocol/src/api.rs",
+        "bhrumom/fabushi-platform-core:native/telegram-protocol/src/lib.rs",
+        "source/mahayana/mahayana-rs/providers/telegram-protocol/src/api.rs",
+        "source/mahayana/mahayana-rs/providers/telegram-protocol/src/lib.rs"
+      ],
+      "existing_owner": "Canonical shared telegram-protocol typed MTProto serializer, consumed through the existing desktop provider path",
+      "rejected_existing_owners": [
+        "telegram-network cannot invent auth-key destruction eligibility, local deletion, or teardown semantics because no exact canonical lifecycle owner is proven for this slice",
+        "Renderer/AppHost cannot own MTProto wire serialization",
+        "A second auth-key/session registry would split lifecycle truth",
+        "gzip/difference owners are unrelated to this independent zero-field request"
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "bhrumom/fabushi-platform-core:native/telegram-protocol/src/api.rs",
+        "bhrumom/fabushi-platform-core:native/telegram-protocol/src/lib.rs",
+        "source/mahayana/mahayana-rs/providers/telegram-protocol/src/api.rs",
+        "source/mahayana/mahayana-rs/providers/telegram-protocol/src/lib.rs"
+      ],
+      "fabushi_target_symbols": [
+        "DESTROY_AUTH_KEY_CONSTRUCTOR",
+        "build_destroy_auth_key"
+      ],
+      "target_language": "Rust",
+      "language_rationale": "The existing Rust telegram-protocol api owner already contains byte-identical desktop-shipped MTProto service request builders; this independent zero-field serializer belongs there without introducing an auth-key destruction subsystem.",
+      "command_event_contracts": [
+        "build_destroy_auth_key -> exactly d1435160 little-endian and no payload",
+        "serialized request -> no auth-key/session/persistence/network/history mutation in this slice"
+      ],
+      "state_owner": "No live mutable state is owned by this wire-only builder; the existing telegram-protocol owner owns exact request bytes.",
+      "lifecycle_owner": "Existing account-bound TelegramClientLease -> RuntimeClient -> telegram-protocol dependency chain; auth-key destruction eligibility, remote result interpretation, local key deletion and transport/session teardown remain absent/fail-closed.",
+      "persistence_and_restart": "No persistence is introduced.",
+      "concurrency_and_cancellation": "No concurrency or cancellation lifecycle is introduced. Auth-key destruction and teardown semantics remain blocked pending a precise existing-owner production lifecycle.",
+      "security_boundary": "Only exact request serialization is added; the presence of a builder does not grant authority to destroy, delete, revoke, rotate, or persistently mutate an auth key.",
+      "network_service_dependencies": [
+        "Existing embedded Telegram MTProto encrypted transport",
+        "fixed-U destroy_auth_key#d1435160 schema constructor"
+      ],
+      "service_owner": "Canonical embedded Telegram protocol runtime.",
+      "deployment_evidence": [],
+      "implementation_status": "implemented",
+      "coverage_disposition": "rewritten",
+      "blockers": [
+        "No precise canonical live auth-key destruction eligibility/result/local-deletion/teardown lifecycle owner is claimed; those semantics remain fail-closed.",
+        "Stage B executable build/unit/contract/integration/packaged validation has not run.",
+        "gzip_packed bounded decompression remains blocked.",
+        "Complete updates difference/differenceSlice decoding/application remains open/fail-closed.",
+        "Arbitrary wasSent/haveSent/_resendingIds/toSend/_sentContainers histories remain open/fail-closed.",
+        "Broader fixed-U source/legal/release closure remains open."
+      ],
+      "production_entrypoints": [
+        "source/mahayana/mahayana-rs/Cargo.toml -> mahayana-telegram -> providers/telegram-protocol",
+        "providers/telegram-protocol public API -> build_destroy_auth_key; no live auth-key destruction caller is claimed"
+      ],
+      "production_evidence": [
+        "platform-core-spec-amendment-commit:529f5c9147f0144b67eb077733b52d61b469f55d",
+        "platform-core-implementation-commit:8eafd0cc7a84ab9af6b402665670b38f3ad72406",
+        "platform-core-path:native/telegram-protocol/src/api.rs@fbca9b0ebb85d0edd5c01ceea9896d0977294b53",
+        "platform-core-path:native/telegram-protocol/src/lib.rs@ed581d8356375e264fabe85a2e5cccbd9b772f21",
+        "desktop-implementation-commit:fe0093d767ad2a12e049b4d0a474c0145d3468ab",
+        "path:source/mahayana/mahayana-rs/providers/telegram-protocol/src/api.rs@fbca9b0ebb85d0edd5c01ceea9896d0977294b53",
+        "path:source/mahayana/mahayana-rs/providers/telegram-protocol/src/lib.rs@ed581d8356375e264fabe85a2e5cccbd9b772f21"
+      ],
+      "test_evidence": [
+        "platform-core native/telegram-protocol/src/api.rs exact four-byte zero-field constructor contract authored, not run",
+        "desktop synchronized protocol contract authored, not run"
+      ],
+      "target_commit": "fe0093d767ad2a12e049b4d0a474c0145d3468ab",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Canonical Fabushi account + existing TelegramClientLease/runtime + shared telegram-protocol production composition",
+      "composition_slot": "Embedded Telegram MTProto service-request wire serialization",
+      "capability_component": "Exact fixed-U destroy_auth_key request builder",
+      "variation_axes": [
+        "zero-field exact constructor layout"
+      ],
+      "shared_owner_contracts": [
+        "Existing account-bound TelegramClientLease",
+        "Existing RuntimeClient",
+        "Existing telegram-protocol TlWriter",
+        "Existing Cargo path-dependency composition"
+      ],
+      "duplicate_root_check": "No second account, runtime, provider, transport, auth key, session registry, request history, callback registry, sent-container store, decompression runtime, difference runtime, message store, UI root, sidecar, subprocess or Web wrapper was introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Not applicable",
+      "primary_navigation_target": "Existing Messages/Conversation navigation",
+      "collection_surface": "Existing ConversationList; no change",
+      "creation_flow": "Existing canonical conversation creation; no change",
+      "object_action_scope": "Not applicable",
+      "detail_section": "Not applicable",
+      "capability_surface": "Existing ConversationWorkspace through the same provider/runtime; no new surface",
+      "route_contract": "No new route.",
+      "search_scope": "Not applicable",
+      "search_provider": "Existing canonical Search owner; unchanged",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Unchanged.",
+      "search_local_remote_contract": "Not applicable.",
+      "responsive_disposition": "No UI change.",
+      "accessibility_contract": "No UI change.",
+      "keyboard_contract": "No UI change.",
+      "state_continuity_contract": "Wire serialization is side-effect free. Auth-key/session/persistence state is intentionally unchanged because this slice does not claim destruction lifecycle authority.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Existing Fabushi design system; no visual changes",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": null,
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "No new icon asset",
+      "avatar_contract": "No change",
+      "content_copy_keys": [],
+      "motion_contract": "No change",
+      "reduced_motion_contract": "No change",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "high",
+      "requirement_ids": [
+        "TDRP-R9-MTPROTO-DESTROY-AUTH-KEY-REQUEST-WIRE-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-MTPROTO-DESTROY-AUTH-KEY-REQUEST-WIRE-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-MTPROTO-DESTROY-AUTH-KEY-REQUEST-EXACT-001",
+        "INV-TDRP-MTPROTO-DESTROY-AUTH-KEY-REQUEST-NO-LIFECYCLE-MUTATION-001"
+      ],
+      "unit_case_ids": [
+        "UNIT-TDRP-MTPROTO-DESTROY-AUTH-KEY-REQUEST-LAYOUT-001"
+      ],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-MTPROTO-DESTROY-AUTH-KEY-REQUEST-WIRE-001"
+      ],
+      "integration_case_ids": [],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "fault_recovery_case_ids": [],
+      "performance_case_ids": [],
+      "security_case_ids": [
+        "SEC-TDRP-MTPROTO-DESTROY-AUTH-KEY-REQUEST-NO-AUTHORITY-001"
+      ],
+      "soak_case_ids": [],
+      "exploratory_charter_ids": [],
+      "regression_ids": [
+        "REG-TDRP-MTPROTO-DESTROY-AUTH-KEY-REQUEST-EXACT-001"
+      ],
+      "release_gate_ids": [
+        "G-TRACEABILITY",
+        "G-COMPOSITION",
+        "G-SECURITY",
+        "G-EVIDENCE",
+        "G-RELEASE"
+      ],
+      "test_fixture_ids": [
+        "mtproto-destroy-auth-key-request-fixture"
+      ],
+      "test_environment_ids": [
+        "GitHub Actions Stage B matrix (not run)"
+      ],
+      "coverage_matrix_status": "pending",
+      "flake_status": "stable",
+      "release_gate_status": "pending",
+      "acceptance_reviewer": null,
+      "reviewer": null,
+      "license_and_provenance": "Behavioral responsibility is anchored to fixed-U telegramdesktop/tdesktop Telegram/SourceFiles/mtproto/scheme/mtproto.tl@76225965bfc794388db241f3f760db8ab79e84f8. session_private.cpp@13cbc76ec723386027b5b4dcac79999b791c4614 was reread as adjacent lifecycle context; no auth-key destruction lifecycle semantics are inferred into this wire-only builder. The implementation is source-neutral Rust and copies no upstream C++ implementation.",
+      "notes": "Stage A implementation only. This row closes exact destroy_auth_key zero-field request serialization only. Auth-key destruction eligibility, remote result handling, local deletion, teardown/reconnect and persistence remain blocked/fail-closed. Global unknown/unread source-entry counts remain unchanged because this is a newly mapped responsibility slice within already-open fixed-U source coverage. Contract is authored but not executed; validation_status=not-run and accepted=false.",
       "test_execution_evidence": [],
       "validation_status": "not-run",
       "accepted": false

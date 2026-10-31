@@ -444,3 +444,14 @@ No Actions/status/check query or trigger, build, typecheck, lint, schema validat
 ### Round 69 source-level compliance readback
 
 Platform-core compliance commit `510b75727303147a06b6276fa94f7dcd3a7cb31b` updates `docs/specs/telegram-mtproto-rpc-drop-answer-wire.md@f8408584b8ac997cad97d213fe90eb18155544f1`. Remote readback confirms canonical and desktop provider api/lib blobs are byte-identical at `3ec13cd2248e68f55296ed9bbaffa5c10ffce969` / `e4705eb4563a087e0bba811948f1244af8f9f5cb`; `RPC_DROP_ANSWER_CONSTRUCTOR=0x58e4a740`, public `build_rpc_drop_answer(req_msg_id:i64)`, and the pre-existing `parse_rpc_drop_answer` response parser are all present. Request-side R9-R16 and AC7-AC9 are satisfied at source/implementation/bookkeeping level; AC10 executable validation remains blocked/not-run with `accepted=false`. Historical outstanding-RPC selection/correlation/drop mutation, arbitrary sent/resend/container history, gzip, complete difference decoding, broader source/legal closure, Stage-B evidence and independent release ACCEPT remain open.
+
+
+### Round 70 — destroy_auth_key request wire serializer
+
+Fixed U remains `f985723b552b30fe1c17d377d57f44e61a15a8c4`. `mtproto.tl@76225965bfc794388db241f3f760db8ab79e84f8` defines `destroy_auth_key#d1435160 = DestroyAuthKeyRes`. The existing shared `telegram-protocol` api owner can represent this zero-field request independently; auth-key eligibility, result handling, local key deletion, persistence and teardown/reconnect lifecycle remain fail-closed.
+
+Platform-core spec-first commit `529f5c9147f0144b67eb077733b52d61b469f55d` and implementation `8eafd0cc7a84ab9af6b402665670b38f3ad72406` add only `DESTROY_AUTH_KEY_CONSTRUCTOR=0xd1435160` plus exact `build_destroy_auth_key()`. Canonical blobs are api `fbca9b0ebb85d0edd5c01ceea9896d0977294b53`, lib `ed581d8356375e264fabe85a2e5cccbd9b772f21`; desktop synchronization `fe0093d767ad2a12e049b4d0a474c0145d3468ab` copies them byte-for-byte.
+
+Ledger adds `TDRP-R9-MTPROTO-DESTROY-AUTH-KEY-REQUEST-WIRE-001`; `responsibilities_total=80`, `unknown=16172`, `unread=16145`, `omitted=0`. Exact four-byte/no-payload contract is authored only. `validation_status=not-run`, `accepted=false`.
+
+No Actions/status/check query or trigger, build, typecheck, lint, schema validator, generator, unit/contract/integration/E2E test, package, deployment, installation, or runtime acceptance was performed. Auth-key destruction lifecycle, arbitrary sent/resend/container history, gzip, complete difference/differenceSlice decoding/application, broader fixed-U source/legal closure, Stage-B evidence and independent release ACCEPT remain open.
