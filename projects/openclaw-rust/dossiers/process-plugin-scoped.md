@@ -25,6 +25,11 @@
   - `test_ocrm_process_custody_and_tree_reaper` (PASSED)
   - `test_ocrm_plugins_runtime_final` (PASSED)
 
+The `PASSED` labels above are recorded source-level contract assertions from
+an earlier run, not current exact-head Actions execution receipts. They do not
+establish production wiring, verification, or acceptance during the active
+development freeze.
+
 ## 4. AppContainer negative-oracle scope correction (2026-10-29)
 
 The locked `src/process/appcontainer-spawn.test.ts` source reference was read

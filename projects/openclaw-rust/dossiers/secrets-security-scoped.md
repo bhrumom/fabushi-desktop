@@ -31,6 +31,11 @@
   - `test_ocrm_security_policy_auditor` (PASSED)
   - `test_ocrm_proxy_capture_header_redactor` (PASSED)
 
+The `PASSED` labels above are recorded source-level contract assertions from
+an earlier run, not current exact-head Actions execution receipts. They do not
+establish production wiring, verification, or acceptance during the active
+development freeze.
+
 ## 4. Additional locked security oracle reads (2026-10-29)
 
 The locked upstream `src/secrets/apply.test-support.ts`

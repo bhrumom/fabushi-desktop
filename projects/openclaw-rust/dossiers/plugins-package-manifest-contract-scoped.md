@@ -71,6 +71,11 @@
     - Verifies manifest capability inspection (`mcpServers`, `lspServers`, `tools`, `skills`, `channels`).
     - Verifies bundle command scope authorization (`operator.admin` root bypass and exact scope matching).
 
+The `PASSED` labels above are recorded source-level contract assertions from
+an earlier run, not current exact-head Actions execution receipts. They do not
+establish production wiring, verification, or acceptance during the active
+development freeze.
+
 ## 5. Audited Bundle Manifest, Commands, MCP & LSP Files (10 files)
 - **Responsibility**: `OCRM-RESP-PLUGINS-BUNDLE-MANIFEST-001`
 - **Reviewer**: `xuyao@ombhrum.com`

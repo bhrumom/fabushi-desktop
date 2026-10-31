@@ -77,6 +77,11 @@
     - Verifies developer mode bypass for bundled plugin mutation.
     - Verifies bundled load path alias resolution across symlink and monorepo boundaries.
 
+The `PASSED` labels above are recorded source-level contract assertions from
+an earlier run, not current exact-head Actions execution receipts. They do not
+establish production wiring, verification, or acceptance during the active
+development freeze.
+
 ## 4. Audited Agent Executor, Tool Result Middleware & Before Reply Files (11 files)
 - **Responsibility**: `OCRM-RESP-PLUGINS-HOOKS-PIPELINE-001`
 - **Reviewer**: `xuyao@ombhrum.com`

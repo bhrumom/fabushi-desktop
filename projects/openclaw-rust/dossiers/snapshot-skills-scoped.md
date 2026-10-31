@@ -40,6 +40,11 @@ The shared async-scope implementation is present and contract-tested, but it is 
   - `test_ocrm_skills_runtime` (PASSED)
   - `test_ocrm_session_turns_and_shared_async` (PASSED)
 
+These `PASSED` labels are recorded source-level contract assertions from an
+earlier run, not a current exact-head Actions execution receipt. They do not
+establish production wiring, verification, or acceptance during the active
+development freeze.
+
 ## 4. Skills config-mutation source/owner correction (2026-10-29)
 
 The locked source reference attached to

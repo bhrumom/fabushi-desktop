@@ -47,6 +47,11 @@ their existing blockers.
   - `test_ocrm_plugins_capability_catalog` (PASSED)
   - `test_ocrm_plugins_activation_context_payload_and_runtime_registry` (PASSED)
 
+The `PASSED` labels above are recorded source-level contract assertions from
+an earlier run, not current exact-head Actions execution receipts. They do not
+establish production wiring, verification, or acceptance during the active
+development freeze.
+
 ## 4. Audited Activation & Active Runtime Files (10 files)
 - **Responsibility**: `OCRM-RESP-PLUGINS-ACTIVATION-PLANNER-001`
 - **Reviewer**: `xuyao@ombhrum.com`

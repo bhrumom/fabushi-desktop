@@ -42,3 +42,8 @@
   - `test_ocrm_talk_voice_session` (PASSED)
   - `test_ocrm_tts_directives_and_auto_apply_contract` (PASSED)
   - `test_ocrm_transcripts_and_state` (PASSED)
+
+The `PASSED` labels above are recorded source-level contract assertions from
+an earlier run, not current exact-head Actions execution receipts. They do not
+establish production wiring, verification, or acceptance during the active
+development freeze.
