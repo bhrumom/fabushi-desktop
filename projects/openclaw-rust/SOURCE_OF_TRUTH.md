@@ -134,6 +134,15 @@ blob identities 与上一 candidate 相同，`.gitmodules` 仍不存在。该 id
 不得复用旧 inventory、依赖闭包、LFS/完整性或 Actions provenance，亦不得提升
 任何 authority 或 global flag。
 
+2026-10-31T04:25:12Z 的再次只读核对发现 OpenClaw `main` 已漂移到
+commit=`10d93efc9c8730b7a2fad831c20c649adec7176b`、root tree
+`d33ed7c344544baf60148a41afab9e9a9547e9f4`；递归 tree 未截断，共 63,881
+entries（61,640 blobs、2,241 directories）。该 exact subject 的根输入
+blob identities 与上一 candidate 相同，`.gitmodules` 仍不存在。该 identity
+已同步写入 `upstream.lock.json` 的 `live_candidate`，但仍是 discovery-only；
+不得复用旧 inventory、依赖闭包、LFS/完整性或 Actions provenance，亦不得提升
+任何 authority 或 global flag。
+
 ## 5. 机器记录的初始化与终态
 
 2026-10-31 governance amendment: AC02/G02 final requires zero omitted,

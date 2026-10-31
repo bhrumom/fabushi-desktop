@@ -102,7 +102,7 @@ P0 仍未退出：此前只读 live candidate 曾推进到 OpenClaw
 `68fbe4ac429cdac7a54541df40367d66defd0161` / tree
 `a3c122b99571c0c33ff6a02ca4c4e32f05f9433d`；该 identity 仅保留为历史
 discovery evidence。当前 candidate 以 `upstream.lock.json` 的
-`8e61893b…/4e9cca11…` 为准，但尚未取得针对该 exact subject 的 GitHub Actions
+`10d93efc…/d33ed7c3…` 为准，但尚未取得针对该 exact subject 的 GitHub Actions
 inventory、依赖闭包和 evidence envelope。既有 inventory/shards 仍绑定上一轮
 候选，不能编辑性重标为当前来源；对应 drift decision 见
 `decisions/2026-10-31-upstream-live-drift.md`。

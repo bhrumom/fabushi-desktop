@@ -130,6 +130,18 @@ These are direct identity edges only. Their own imports, generated exports,
 build-time aliases and transitive package/runtime dependencies remain outside
 this scoped note and must be closed by the exact-subject authority run.
 
+## Subject recheck — 2026-10-31T04:25:12Z
+
+The same scoped tree was re-read against the newer live candidate
+`openclaw/openclaw@10d93efc9c8730b7a2fad831c20c649adec7176b`, root tree
+`d33ed7c344544baf60148a41afab9e9a9547e9f4`. The recursive tree remained
+untruncated with 63,881 entries (61,640 blobs and 2,241 directories).
+`extensions/crabbox/` remains 118 entries: 114 blobs and 4 directories, and the
+nine previously recorded implementation identities remain unchanged. The
+scoped result is still discovery-only; recursive imports, generated exports,
+package/patch/native closure, LFS/integrity, license/NOTICE and Actions evidence
+remain open.
+
 ## Subject recheck — 2026-10-31T04:20:22Z
 
 The same scoped tree was re-read against the newer live candidate
