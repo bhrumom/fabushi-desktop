@@ -8,8 +8,8 @@ replace the required GitHub Actions inventory/closure receipt, and does not
 authorize new product implementation or acceptance flags.
 
 The repository lock now points to the newer discovery candidate
-`openclaw/openclaw@622fa3fab8e154819a329d3c288d13491facea7b`, root tree
-`2590235af3db54166cf88801806e2b63b3f4688b`. The scoped identities and
+`openclaw/openclaw@b924498923dff81a02fb8a89d57828717c6e160d`, root tree
+`af9b32fcb093badf0e05912411f5acfa65698e79`. The scoped identities and
 observations below remain bound to their explicitly named historical subjects;
 they are not relabeled as closure evidence for the newer candidate.
 
