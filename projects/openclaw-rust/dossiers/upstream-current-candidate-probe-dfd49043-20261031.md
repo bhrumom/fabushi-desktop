@@ -63,3 +63,19 @@ These are upstream repository runs, not the Fabushi OCRM exact-H inventory,
 dependency/LFS closure, or acceptance receipt. Their presence does not promote
 the candidate or change any project flag. The pending CI run remains an
 external observation and was not triggered, modified, or treated as approval.
+
+## Exact commit diff scope
+
+The GitHub commit API reports three changed paths relative to parent
+`159fd3234e928371bcd66a9ece79b665607b343b`:
+
+| Status | Path |
+| --- | --- |
+| added | `config/test-lines-allocations/spawn-boundary-resource-host.txt` |
+| modified | `src/agents/subagents/spawn/subagent-spawn.access-request.test-support.ts` |
+| modified | `src/agents/subagents/spawn/subagent-spawn.production-boundary.test.ts` |
+
+This is a test/support-fixture scope observation, not proof of a production
+runtime change or a Rust owner/wiring change. It does not authorize relabeling
+fixed-subject inventory rows, responsibility mapping, implementation, or
+acceptance state.
