@@ -36,3 +36,14 @@ No authored contract was executed.
 `implementation_status=implemented`; `validation_status=not-run`; `accepted=false`. Coverage remains `responsibilities_total=97, unknown=16172, unread=16145, omitted=0, unmapped_responsibilities=0`.
 
 No GitHub Actions/status/check query or trigger, build, typecheck, lint, schema validator, generator, test, package, deployment, installation, or runtime acceptance was performed.
+
+
+## Final source-level readback
+
+- Desktop sync commit: `a05f05cacac7402762f91915adb5664b6178ec7d`.
+- Platform-core final compliance commit: `1542bb5e40d2b3c9d4b21ac59f99cb420d7fdbb7`.
+- Platform-core final spec blob: `979c5340ce456542e0a4f7dc40a13e85135102f3`.
+- Canonical/desktop external contract blob: `7672b1908bdf8810592e86f8427fd85c49089d7f`.
+- Source-level disposition remains no-production-delta; executable validation remains not-run and acceptance remains false.
+
+No GitHub Actions/status/check query or trigger and no executable validation was performed.

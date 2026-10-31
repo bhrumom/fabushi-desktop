@@ -1254,3 +1254,12 @@ Platform-core spec-first revalidation is commit `8680085af3ef5ba80fa63933a7ce22c
 The existing ledger row `TDRP-R9-MTPROTO-SINGLE-PING-PONG-001` is reused; no duplicate responsibility is created. It remains `implemented / validation_status=not-run / accepted=false`. Coverage remains `responsibilities_total=97`, `unknown=16172`, `unread=16145`, `omitted=0`. Fixed-U `wasSent/requestsFixTimeSalt/requestsAcked` and arbitrary `haveSent/_resendingIds/toSend/_sentContainers` history, connection scheduling, auth-key binding/persistence, gzip, complete difference/differenceSlice decoding/application, broader source/legal closure, Stage-B executable evidence and independent release ACCEPT remain open or outside this isolated wire claim.
 
 No GitHub Actions/status/check query or trigger, build, typecheck, lint, schema validator, generator, unit/contract/integration/E2E test, package, deployment, installation or runtime acceptance was performed.
+
+
+### Round 94 final source-level compliance
+
+Platform-core final compliance commit `1542bb5e40d2b3c9d4b21ac59f99cb420d7fdbb7` / spec blob `979c5340ce456542e0a4f7dc40a13e85135102f3` records the fixed-U `Pong` wire revalidation as source-level closed with **no production delta**. Canonical production protocol api/lib/network blobs remain `ebfb3670b5cd097b9ce288782c7954f5cfe9fc43` / `abab39e42f100972484191f0e52e9edd9b88c6cf` / `1fc1b1f69e3e37377400d078f916599e0c7b20bc`. Canonical and desktop authored-only external contract blob is `7672b1908bdf8810592e86f8427fd85c49089d7f` and remains not run.
+
+The existing `TDRP-R9-MTPROTO-SINGLE-PING-PONG-001` row stays `implemented / validation_status=not-run / accepted=false`. Historical `wasSent/requestsFixTimeSalt/requestsAcked`, arbitrary multi-request sent/resend/container state, connection scheduling, auth-key binding/persistence, gzip, complete difference decoding/application, broader source/legal closure, Stage-B executable evidence, and independent release ACCEPT remain outside this wire-only closure or open.
+
+No GitHub Actions/status/check query or trigger, build, typecheck, lint, schema validator, generator, unit/contract/integration/E2E test, package, deployment, installation, or runtime acceptance was performed.

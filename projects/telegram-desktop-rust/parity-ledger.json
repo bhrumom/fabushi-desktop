@@ -15802,7 +15802,10 @@
         "platform-core-round63-external-contract-commit:a559782b390f43d5caa28d8eaba1f99a9292059b",
         "platform-core-path:native/telegram-protocol/tests/protocol_contract.rs@7672b1908bdf8810592e86f8427fd85c49089d7f",
         "desktop-path:source/mahayana/mahayana-rs/providers/telegram-protocol/tests/protocol_contract.rs@7672b1908bdf8810592e86f8427fd85c49089d7f",
-        "stage-a-round94-evidence:projects/telegram-desktop-rust/evidence/round94-mtproto-pong-wire-revalidation-20261101.md"
+        "stage-a-round94-evidence:projects/telegram-desktop-rust/evidence/round94-mtproto-pong-wire-revalidation-20261101.md",
+        "desktop-round63-sync-commit:a05f05cacac7402762f91915adb5664b6178ec7d",
+        "platform-core-round63-final-compliance-commit:1542bb5e40d2b3c9d4b21ac59f99cb420d7fdbb7",
+        "platform-core-round63-final-spec-blob:979c5340ce456542e0a4f7dc40a13e85135102f3"
       ],
       "test_evidence": [
         "platform-core native/telegram-protocol/src/api.rs pong parse/trailing-byte contracts authored, not run",
@@ -15810,7 +15813,7 @@
         "desktop synchronized copies authored, not run",
         "platform-core and desktop external Pong contract pins exact 20-byte layout, signed i64 boundaries, every 0..19 truncation cut, wrong constructor and strict EOF; authored, not run"
       ],
-      "target_commit": "3e363ccdaf287878f457797442aa97e8b597384b",
+      "target_commit": "a05f05cacac7402762f91915adb5664b6178ec7d",
       "workflow_run": null,
       "run_attempt": null,
       "job": null,
@@ -15939,7 +15942,7 @@
       "acceptance_reviewer": null,
       "reviewer": null,
       "license_and_provenance": "Behavioral responsibility is anchored to fixed-U telegramdesktop/tdesktop Telegram/SourceFiles/mtproto/session_private.cpp@13cbc76ec723386027b5b4dcac79999b791c4614 and Telegram/SourceFiles/mtproto/scheme/mtproto.tl@76225965bfc794388db241f3f760db8ab79e84f8. The implementation is source-neutral Rust and copies no upstream C++ implementation.",
-      "notes": "Stage A implementation only. This row records only the pong subset exactly representable by the single outstanding ping owner. Arbitrary historical haveSent/_resendingIds/toSend/_sentContainers bookkeeping and multi-ping history remain open and fail-closed. Global unknown/unread source-entry counts are intentionally unchanged; contracts are authored but not executed; validation_status=not-run and accepted=false. Round94 adjacent revalidation confirms the live typed Pong parser still enforces exact 20-byte constructor+msg_id+ping_id decoding before current-ping correlation; no production behavior delta was made. Canonical/desktop external boundary contracts were expanded and remain not run. Arbitrary historical request/ACK/resend/container state, connection scheduling, auth-key binding/persistence, gzip and complete difference decoding/application remain outside this wire-only disposition.",
+      "notes": "Stage A implementation only. This row records only the pong subset exactly representable by the single outstanding ping owner. Arbitrary historical haveSent/_resendingIds/toSend/_sentContainers bookkeeping and multi-ping history remain open and fail-closed. Global unknown/unread source-entry counts are intentionally unchanged; contracts are authored but not executed; validation_status=not-run and accepted=false. Round94 adjacent revalidation confirms the live typed Pong parser still enforces exact 20-byte constructor+msg_id+ping_id decoding before current-ping correlation; no production behavior delta was made. Canonical/desktop external boundary contracts were expanded and remain not run. Arbitrary historical request/ACK/resend/container state, connection scheduling, auth-key binding/persistence, gzip and complete difference decoding/application remain outside this wire-only disposition. Final round94 source-level compliance is recorded at platform-core commit 1542bb5e40d2b3c9d4b21ac59f99cb420d7fdbb7/spec blob 979c5340ce456542e0a4f7dc40a13e85135102f3; executable validation remains not-run.",
       "test_execution_evidence": [],
       "validation_status": "not-run",
       "accepted": false
