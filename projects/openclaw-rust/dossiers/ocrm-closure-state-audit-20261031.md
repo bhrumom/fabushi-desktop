@@ -47,6 +47,27 @@ These are ledger status fields, not independent proof of implementation,
 production behavior, or acceptance. In particular, a wired status without a
 verification receipt does not establish a passing runtime path.
 
+### Mapped-only frontier
+
+The 91 responsibilities with `mapping=mapped` (rather than
+`mapping=reviewed`) all have non-empty source-reference, evidence-reference,
+and selected-owner fields. That is schema-shape completeness only. Their
+semantic distribution is:
+
+| Responsibility kind | Count | Implemented | Implementing | Not-started | Wired | Not-wired |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| `business-runtime` | 81 | 63 | 15 | 3 | 10 | 71 |
+| `dependency-authority` | 1 | 1 | 0 | 0 | 0 | 1 |
+| `integration-adapter` | 3 | 3 | 0 | 0 | 1 | 2 |
+| `platform-adapter` | 1 | 1 | 0 | 0 | 0 | 1 |
+| `projection` | 1 | 1 | 0 | 0 | 1 | 0 |
+| `security-evidence` | 1 | 1 | 0 | 0 | 0 | 1 |
+| `test-oracle` | 3 | 2 | 1 | 0 | 0 | 3 |
+
+The business-runtime mapped-only frontier is therefore the dominant remaining
+responsibility review and production-wiring risk. It must not be promoted to
+reviewed or accepted from field presence alone.
+
 ## Requirements traceability state
 
 | State | Count |
