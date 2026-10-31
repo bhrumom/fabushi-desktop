@@ -196,7 +196,18 @@ impl CloudWorkerProvisioningExtension {
         if !matches!(request.action, CloudWorkerDoctorAction::Inspect) {
             return Err(CloudWorkerDoctorError::MutationNotWired);
         }
-        Ok(CloudWorkerDoctorResult::inspection())
+        let owner = self
+            .owner
+            .lock()
+            .map_err(|_| CloudWorkerDoctorError::OwnerUnavailable)?;
+        let snapshot = owner.snapshot();
+        Ok(CloudWorkerDoctorResult::inspection_with_snapshot(
+            self.state_path.exists(),
+            snapshot.leases.len(),
+            snapshot.bootstrap_records.len(),
+            snapshot.artifacts.len(),
+            snapshot.warm_images.len(),
+        ))
     }
 
     /// Returns a read-only snapshot for the existing Host/Coordinator status

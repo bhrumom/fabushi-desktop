@@ -196,3 +196,7 @@ reconciliation and cleanup consumers remain pending.
 The current implementation boundary therefore contains persistence and
 fencing contracts only; it has no runtime-control producer, process launcher,
 device enrollment caller or packaged consumer acceptance.
+
+The read-only doctor Inspect route now projects live canonical snapshot counts
+and whether the state path exists. Repair, secret migration and reconciliation
+actions remain acknowledgement-gated and explicitly unwired.

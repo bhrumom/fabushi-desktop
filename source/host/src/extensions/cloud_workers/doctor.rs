@@ -64,6 +64,16 @@ pub struct CloudWorkerDoctorResult {
     pub status: CloudWorkerDoctorStatus,
     pub mutation_started: bool,
     pub diagnostic_code: Option<String>,
+    #[serde(default)]
+    pub state_persisted: bool,
+    #[serde(default)]
+    pub lease_count: usize,
+    #[serde(default)]
+    pub bootstrap_count: usize,
+    #[serde(default)]
+    pub artifact_count: usize,
+    #[serde(default)]
+    pub warm_image_count: usize,
 }
 
 impl CloudWorkerDoctorResult {
@@ -72,6 +82,30 @@ impl CloudWorkerDoctorResult {
             status: CloudWorkerDoctorStatus::InspectionOnly,
             mutation_started: false,
             diagnostic_code: None,
+            state_persisted: false,
+            lease_count: 0,
+            bootstrap_count: 0,
+            artifact_count: 0,
+            warm_image_count: 0,
+        }
+    }
+
+    pub fn inspection_with_snapshot(
+        state_persisted: bool,
+        lease_count: usize,
+        bootstrap_count: usize,
+        artifact_count: usize,
+        warm_image_count: usize,
+    ) -> Self {
+        Self {
+            status: CloudWorkerDoctorStatus::InspectionOnly,
+            mutation_started: false,
+            diagnostic_code: None,
+            state_persisted,
+            lease_count,
+            bootstrap_count,
+            artifact_count,
+            warm_image_count,
         }
     }
 }
@@ -88,6 +122,8 @@ pub enum CloudWorkerDoctorError {
     MutationNotAcknowledged,
     #[error("mutating doctor action is not wired to a recovery owner")]
     MutationNotWired,
+    #[error("cloud-worker doctor owner snapshot is unavailable")]
+    OwnerUnavailable,
 }
 
 #[cfg(test)]
