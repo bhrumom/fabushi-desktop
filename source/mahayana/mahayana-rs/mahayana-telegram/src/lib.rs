@@ -3,10 +3,12 @@
 use async_trait::async_trait;
 use fabushi_telegram_core::MessageContent;
 use fabushi_telegram_core::TelegramState;
+use fabushi_telegram_runtime::authorization_snapshot;
 use fabushi_telegram_runtime::close_client;
 use fabushi_telegram_runtime::create_client;
 use fabushi_telegram_runtime::create_persistent_client;
 use fabushi_telegram_runtime::execute_json;
+pub use fabushi_telegram_runtime::AuthorizationState as TelegramAuthorizationState;
 use mahayana_conversation::ConversationError;
 use mahayana_conversation::ConversationProvider;
 use mahayana_conversation::ResolveApprovalRequest;
@@ -28,9 +30,10 @@ use std::sync::atomic::Ordering;
 
 const CONVERSATION_PREFIX: &str = "telegram:chat:";
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct TelegramClientHandoff {
     pub client_id: u64,
+    pub authorization_state: TelegramAuthorizationState,
     pub self_user_id: Option<i64>,
 }
 
@@ -39,31 +42,29 @@ pub struct TelegramClientHandoff {
 /// non-owning typed handoff; no second Telegram account/runtime is created.
 pub struct TelegramClientLease {
     client_id: u64,
-    self_user_id: Option<i64>,
 }
 
 impl TelegramClientLease {
     pub fn open_persistent(
         database_path: &Path,
         storage_key: &[u8],
-        self_user_id: Option<i64>,
     ) -> Result<Self, ConversationError> {
         let database_path = database_path.to_str().ok_or_else(|| {
             ConversationError::Provider("Telegram database path is not UTF-8".into())
         })?;
         let client_id = create_persistent_client(database_path, storage_key)
             .map_err(|error| ConversationError::Provider(error.to_string()))?;
-        Ok(Self {
-            client_id,
-            self_user_id,
-        })
+        Ok(Self { client_id })
     }
 
-    pub fn handoff(&self) -> TelegramClientHandoff {
-        TelegramClientHandoff {
+    pub fn handoff(&self) -> Result<TelegramClientHandoff, ConversationError> {
+        let authorization = authorization_snapshot(self.client_id)
+            .map_err(|error| ConversationError::Provider(error.to_string()))?;
+        Ok(TelegramClientHandoff {
             client_id: self.client_id,
-            self_user_id: self.self_user_id,
-        }
+            authorization_state: authorization.state,
+            self_user_id: authorization.self_user_id,
+        })
     }
 }
 

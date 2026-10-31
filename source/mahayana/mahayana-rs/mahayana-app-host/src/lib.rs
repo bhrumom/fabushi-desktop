@@ -232,7 +232,13 @@ impl AppHost {
             .map_err(|error| AppHostError::Operation(error.to_string()))?;
         let feature_root = feature_host_root(&app_data_dir);
         let telegram_client = open_platform_telegram_client(&app_data_dir, feature_mode)?;
-        let telegram_handoff = telegram_client.as_ref().map(TelegramClientLease::handoff);
+        let telegram_handoff = telegram_client
+            .as_ref()
+            .map(TelegramClientLease::handoff)
+            .transpose()
+            .map_err(|error| {
+                AppHostError::Operation(format!("read embedded Telegram authorization: {error}"))
+            })?;
         let feature = Arc::new(create_feature_host(
             &app_data_dir,
             feature_mode,
@@ -1291,7 +1297,7 @@ fn open_platform_telegram_client(
         std::fs::create_dir_all(parent)
             .map_err(|error| AppHostError::Operation(format!("create Telegram storage directory: {error}")))?;
     }
-    TelegramClientLease::open_persistent(&database_path, &storage_key, None)
+    TelegramClientLease::open_persistent(&database_path, &storage_key)
         .map(Some)
         .map_err(|error| AppHostError::Operation(format!("open embedded Telegram client: {error}")))
 }
@@ -1348,8 +1354,13 @@ fn create_feature_host(
         use_codex_account: std::env::var("MAHAYANA_USE_CODEX_ACCOUNT").as_deref() == Ok("1"),
         codex_home: std::env::var_os("MAHAYANA_CODEX_HOME").map(PathBuf::from),
         product_storage_passphrase: storage_passphrase,
-        telegram_client_id: telegram_handoff.map(|handoff| handoff.client_id),
-        telegram_self_user_id: telegram_handoff.and_then(|handoff| handoff.self_user_id),
+        telegram_client_id: telegram_handoff.as_ref().map(|handoff| handoff.client_id),
+        telegram_authorization_state: telegram_handoff
+            .as_ref()
+            .map(|handoff| handoff.authorization_state.clone()),
+        telegram_self_user_id: telegram_handoff
+            .as_ref()
+            .and_then(|handoff| handoff.self_user_id),
         model_bearer_token: None,
         model_wire_api: mahayana_model::responses::ResponsesWireApi::Responses,
         model_routes,

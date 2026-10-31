@@ -2,11 +2,14 @@
 
 mod runtime;
 
+pub use runtime::authorization_snapshot;
 pub use runtime::close_client;
 pub use runtime::create_client;
 pub use runtime::create_persistent_client;
 pub use runtime::execute_json;
+pub use runtime::AuthorizationSnapshot;
 pub use runtime::RuntimeError;
+pub use fabushi_telegram_protocol::AuthorizationState;
 
 use serde_json::json;
 use std::ffi::CStr;
@@ -55,12 +58,15 @@ pub unsafe extern "C" fn fabushi_telegram_create_persistent_client(
         // SAFETY: upheld by this function's FFI contract.
         let key = unsafe { std::slice::from_raw_parts(storage_key, storage_key_length) };
         let client_id = create_persistent_client(path, key)?;
+        let authorization = authorization_snapshot(client_id)?;
         Ok::<_, RuntimeError>(json!({
             "ok": true,
             "data": {
                 "@type": "client.created",
                 "clientId": client_id,
                 "persistentStorage": true,
+                "authorizationState": authorization.state,
+                "selfUserId": authorization.self_user_id,
             }
         }))
     }));

@@ -56,6 +56,7 @@ pub use mahayana_runtime_core::{MiniAppRuntimeStorePort, RuntimeStoreError};
 use mahayana_runtime_core::RuntimeBuilder;
 use mahayana_runtime_core::RuntimeError;
 use mahayana_social::MahayanaSocialConversationProvider;
+use mahayana_telegram::TelegramAuthorizationState;
 use mahayana_telegram::TelegramConversationProvider;
 use std::collections::BTreeMap;
 use std::collections::HashMap;
@@ -93,6 +94,7 @@ pub struct HostCreateConfig {
     pub cwd: Option<PathBuf>,
     /// Existing embedded Telegram client created by the platform login flow.
     pub telegram_client_id: Option<u64>,
+    pub telegram_authorization_state: Option<TelegramAuthorizationState>,
     pub telegram_self_user_id: Option<i64>,
     pub host_platform: Option<HostPlatform>,
     pub mini_apps: Vec<MiniAppDefinition>,
@@ -137,6 +139,27 @@ impl HostError {
 impl From<RuntimeError> for HostError {
     fn from(error: RuntimeError) -> Self {
         Self::new(error.to_string())
+    }
+}
+
+fn authorized_telegram_identity(
+    create: &HostCreateConfig,
+) -> Result<Option<(u64, i64)>, HostError> {
+    match (
+        create.telegram_authorization_state.as_ref(),
+        create.telegram_client_id,
+        create.telegram_self_user_id,
+    ) {
+        (Some(TelegramAuthorizationState::Ready), Some(client_id), Some(self_user_id)) => {
+            Ok(Some((client_id, self_user_id)))
+        }
+        (Some(TelegramAuthorizationState::Ready), _, _) => Err(HostError::new(
+            "authorized Telegram handoff requires client id and canonical self user id",
+        )),
+        (_, _, Some(_)) => Err(HostError::new(
+            "Telegram self user id is invalid before authorization is Ready",
+        )),
+        _ => Ok(None),
     }
 }
 
@@ -404,10 +427,12 @@ fn build_runtime(
             .push(Arc::clone(&provider) as Arc<dyn ConversationProvider>);
         builder = builder.with_provider(provider)?;
     }
-    if let Some(telegram_client_id) = create.telegram_client_id {
+    if let Some((telegram_client_id, telegram_self_user_id)) =
+        authorized_telegram_identity(&create)?
+    {
         let provider = Arc::new(TelegramConversationProvider::from_client_id(
             telegram_client_id,
-            create.telegram_self_user_id.unwrap_or_default(),
+            telegram_self_user_id,
         ));
         #[cfg(feature = "codex-compat")]
         compatibility_conversation_providers
@@ -778,6 +803,23 @@ mod tests {
             inherit_installed_plugins: Some(false),
             ..HostCreateConfig::default()
         }
+    }
+
+    #[test]
+    fn telegram_provider_requires_ready_canonical_identity() {
+        let mut config = HostCreateConfig::default();
+        config.telegram_client_id = Some(41);
+        config.telegram_authorization_state = Some(TelegramAuthorizationState::WaitParameters);
+        assert_eq!(authorized_telegram_identity(&config).unwrap(), None);
+
+        config.telegram_authorization_state = Some(TelegramAuthorizationState::Ready);
+        assert!(authorized_telegram_identity(&config).is_err());
+
+        config.telegram_self_user_id = Some(99);
+        assert_eq!(
+            authorized_telegram_identity(&config).unwrap(),
+            Some((41, 99))
+        );
     }
 
     #[test]

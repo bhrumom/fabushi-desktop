@@ -20,7 +20,7 @@ use serde::Serialize;
 use std::collections::BTreeSet;
 use std::path::Path;
 
-const SCHEMA_VERSION: i64 = 2;
+const SCHEMA_VERSION: i64 = 3;
 const SNAPSHOT_ID: i64 = 1;
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -103,6 +103,45 @@ impl EncryptedSqliteStore {
             state,
             updated_at_unix_ms,
         }))
+    }
+
+    pub fn load_private_metadata(&self, key: &str) -> Result<Option<Vec<u8>>, StorageError> {
+        let payload = self
+            .connection
+            .query_row(
+                "SELECT payload FROM private_metadata WHERE key = ?1",
+                [key],
+                |row| row.get::<_, Vec<u8>>(0),
+            )
+            .optional()?;
+        let Some(payload) = payload else {
+            return Ok(None);
+        };
+        let plaintext = self.cipher.decrypt(
+            &EncryptedPayload(payload),
+            private_metadata_associated_data(key).as_bytes(),
+        )?;
+        Ok(Some(plaintext))
+    }
+
+    pub fn save_private_metadata(
+        &mut self,
+        key: &str,
+        plaintext: &[u8],
+        updated_at_unix_ms: i64,
+    ) -> Result<(), StorageError> {
+        let payload = self
+            .cipher
+            .encrypt(plaintext, private_metadata_associated_data(key).as_bytes())?;
+        self.connection.execute(
+            "INSERT INTO private_metadata (key, payload, updated_at_unix_ms)
+             VALUES (?1, ?2, ?3)
+             ON CONFLICT(key) DO UPDATE SET
+               payload = excluded.payload,
+               updated_at_unix_ms = excluded.updated_at_unix_ms",
+            params![key, payload.0, updated_at_unix_ms],
+        )?;
+        Ok(())
     }
 
     pub fn save_snapshot(
@@ -501,7 +540,12 @@ impl EncryptedSqliteStore {
                    FOREIGN KEY (chat_id, message_id)
                      REFERENCES message_index(chat_id, message_id) ON DELETE CASCADE
                  ) WITHOUT ROWID;
-                 PRAGMA user_version = 2;",
+                 CREATE TABLE private_metadata (
+                   key TEXT PRIMARY KEY,
+                   payload BLOB NOT NULL,
+                   updated_at_unix_ms INTEGER NOT NULL
+                 ) WITHOUT ROWID;
+                 PRAGMA user_version = 3;",
             )?;
             transaction.commit()?;
         } else if current == 1 {
@@ -524,7 +568,23 @@ impl EncryptedSqliteStore {
                    FOREIGN KEY (chat_id, message_id)
                      REFERENCES message_index(chat_id, message_id) ON DELETE CASCADE
                  ) WITHOUT ROWID;
-                 PRAGMA user_version = 2;",
+                 CREATE TABLE private_metadata (
+                   key TEXT PRIMARY KEY,
+                   payload BLOB NOT NULL,
+                   updated_at_unix_ms INTEGER NOT NULL
+                 ) WITHOUT ROWID;
+                 PRAGMA user_version = 3;",
+            )?;
+            transaction.commit()?;
+        } else if current == 2 {
+            let transaction = self.connection.transaction()?;
+            transaction.execute_batch(
+                "CREATE TABLE private_metadata (
+                   key TEXT PRIMARY KEY,
+                   payload BLOB NOT NULL,
+                   updated_at_unix_ms INTEGER NOT NULL
+                 ) WITHOUT ROWID;
+                 PRAGMA user_version = 3;",
             )?;
             transaction.commit()?;
         }
@@ -674,6 +734,10 @@ fn is_cjk(character: char) -> bool {
     )
 }
 
+fn private_metadata_associated_data(key: &str) -> String {
+    format!("fabushi.telegram.private-metadata.v1:{key}")
+}
+
 fn snapshot_associated_data(revision: u64) -> String {
     format!("fabushi.telegram.snapshot.v1:{revision}")
 }
@@ -706,6 +770,21 @@ mod tests {
             .connection()
             .pragma_query_value(None, "user_version", |row| row.get(0))
             .unwrap();
-        assert_eq!(version, 2);
+        assert_eq!(version, 3);
+    }
+
+    #[test]
+    fn private_metadata_round_trips_under_storage_encryption() {
+        let mut store =
+            EncryptedSqliteStore::open_in_memory(StorageKey::from_slice(&[9; 32]).unwrap())
+                .unwrap();
+        assert_eq!(store.load_private_metadata("authorization.v1").unwrap(), None);
+        store
+            .save_private_metadata("authorization.v1", br#"{"ready":true}"#, 42)
+            .unwrap();
+        assert_eq!(
+            store.load_private_metadata("authorization.v1").unwrap(),
+            Some(br#"{"ready":true}"#.to_vec())
+        );
     }
 }
