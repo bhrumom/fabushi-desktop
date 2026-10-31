@@ -3313,7 +3313,7 @@
       ],
       "id": "OCRM-RESP-AGENT-ROSTER-AUDIT-001",
       "integration": {
-        "consumer": "source/host/src/security_diagnostics.rs",
+        "consumer": "pending: source/host/src/security_diagnostics.rs is absent; no production security-diagnostics consumer",
         "entrypoint": "source/host/src/agents/agent_roster.rs::collect_agent_roster_findings",
         "owner": "source/host/src/agents/agent_roster.rs::collect_agent_roster_findings",
         "producer": "source/host/src/agents/agent_roster.rs::collect_agent_roster_findings"
@@ -3366,7 +3366,7 @@
         "mapping": "mapped",
     "read": "read-complete",
         "verification": "verified",
-        "wiring": "wired"
+        "wiring": "not-wired"
       },
       "target": {
         "language": "Rust",
@@ -3873,7 +3873,7 @@
         "consumer": "source/host/src/runner/production_turn_agent_owner.rs",
         "entrypoint": "source/host/src/runner/tools/sand_web_tools.rs",
         "owner": "source/host/src/runner/tools/sand_web_tools.rs",
-        "producer": "source/host/src/runner/sand_web_tools.rs"
+        "producer": "source/host/src/runner/tools/sand_web_tools.rs"
       },
       "invariants": [
         "Provider execution isolated and errors framed as ProviderSessionError"
@@ -4057,7 +4057,7 @@
         "consumer": "source/host/src/runner/production_turn_agent_owner.rs",
         "entrypoint": "source/host/src/runner/tools/sand_web_tools.rs",
         "owner": "source/host/src/runner/tools/sand_web_tools.rs",
-        "producer": "source/host/src/runner/sand_web_tools.rs"
+        "producer": "source/host/src/runner/tools/sand_web_tools.rs"
       },
       "invariants": [
         "Rejects non-HTTP/HTTPS protocols",
@@ -4151,7 +4151,7 @@
         "consumer": "source/host/src/runner/production_turn_agent_owner.rs",
         "entrypoint": "source/host/src/runner/tools/sand_web_tools.rs",
         "owner": "source/host/src/runner/tools/sand_web_tools.rs",
-        "producer": "source/host/src/runner/sand_web_tools.rs"
+        "producer": "source/host/src/runner/tools/sand_web_tools.rs"
       },
       "invariants": [
         "Content strictly truncated at 100,000 characters",
@@ -4241,7 +4241,7 @@
         "consumer": "source/host/src/runner/production_turn_agent_owner.rs",
         "entrypoint": "source/host/src/runner/tools/sand_web_tools.rs",
         "owner": "source/host/src/runner/tools/sand_web_tools.rs",
-        "producer": "source/host/src/runner/sand_web_tools.rs"
+        "producer": "source/host/src/runner/tools/sand_web_tools.rs"
       },
       "invariants": [
         "Search term normalized and stripped of ASCII control chars",
@@ -4333,7 +4333,7 @@
         "consumer": "source/host/src/runner/production_turn_agent_owner.rs",
         "entrypoint": "source/host/src/runner/tools/sand_browser_tools.rs",
         "owner": "source/host/src/runner/tools/sand_browser_tools.rs",
-        "producer": "source/host/src/runner/sand_browser_tools.rs"
+        "producer": "source/host/src/runner/tools/sand_browser_tools.rs"
       },
       "invariants": [
         "CDP commands outside explicit 7-method observation allowlist are denied",

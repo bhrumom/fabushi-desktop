@@ -216,6 +216,13 @@ unread 强行当作失败门槛，也不能被结构性 inventory 完整或已�
 producer→owner→consumer 接线与 packaged acceptance 仍待完成；本审计未运行
 OCRM 测试或本机构建。
 
+随后对 320 条 wired integration path claim 做了只读存在性检查：5 条 Browser
+producer path 纠正为实际的 `source/host/src/runner/tools/` 位置；
+`OCRM-RESP-AGENT-ROSTER-AUDIT-001` 的声明 consumer
+`source/host/src/security_diagnostics.rs` 不存在，且全仓没有其生产调用者，
+因此已将该行降为 `not-wired` 并保留明确 pending consumer。该修订只纠正
+接线台账，不创建新的 owner 或替代 packaged/Actions 证据。
+
 降级后的反向审计确认其余 80 条 `wiring=wired` 责任均可在生产源码范围
 （`source/host/src`、`source/node-agent-coordinator/src`、
 `source/electron-main` 或 `frontend/src`）定位目标 symbol；未发现第二批仅由
