@@ -2768,3 +2768,19 @@ existing protocol limits.
 This is lifecycle state and currentness fencing only. It is not the durable
 SQLite supervisor/journal, process or container launcher, cleanup observer,
 retention policy, or production command caller; those remain pending.
+
+## 206. Local projection responsibility split (2026-10-31)
+
+The parity ledger now records the local NodeHost producer/state/consumer seam
+separately as `OCRM-RESP-NODE-HOST-LOCAL-RUNTIME-PROJECTION-001`. The local
+`system.run` producer enters the canonical `NodeHostRuntimeState`, and the
+existing `node.register`, `node.list`, `node.status`, and local `node.invoke`
+branches consume that same generation-fenced state. This responsibility is
+marked `implementation=implemented` and `wiring=wired`, while verification and
+acceptance remain `not-run`/`pending`.
+
+That split does not change the broader NodeHost rows: a legitimate remote
+Gateway endpoint caller, credential materializer, reconnect scheduler, remote
+manifest publication, physical worker/process executor, package reachability,
+and exact-head Actions proof are still absent. Pairing or the local projection
+cannot be used as evidence for those remote capabilities.
