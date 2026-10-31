@@ -596,6 +596,7 @@ fn retry_error_type(
         ProviderSessionError::Configuration(_) => "ConfigurationError",
         ProviderSessionError::Protocol(_) => "ProtocolError",
         ProviderSessionError::Tool(_) => "ToolError",
+        ProviderSessionError::ProviderRefusal(_) => "ProviderRefusalError",
         ProviderSessionError::Transport(_) => "TransportError",
     }
 }
@@ -642,7 +643,9 @@ fn classify_provider_failure(
             message,
             retry_after_ms: None,
         },
-        ProviderSessionError::Protocol(_) | ProviderSessionError::Tool(_) => {
+        ProviderSessionError::Protocol(_)
+        | ProviderSessionError::Tool(_)
+        | ProviderSessionError::ProviderRefusal(_) => {
             TransientStreamError {
                 kind: StreamFailureKind::Protocol,
                 message,

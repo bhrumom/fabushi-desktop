@@ -37,7 +37,7 @@ impl HostAttachmentsExtension {
         report: Option<AttachmentDiagnosticReporter>,
     ) -> Result<(), String> {
         let reporter: Option<MediaStoreLifecycleReporter> = report.map(|report| {
-            Arc::new(move |operation, error| {
+            Arc::new(move |operation: &str, error: &str| {
                 report(serde_json::json!({
                     "extension": "attachments",
                     "kind": "media_store_lifecycle_failed",

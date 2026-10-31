@@ -50,14 +50,14 @@ fn apply_skill_config_update(settings: &mut Map<String, Value>, update: &Value) 
         return;
     };
     let skills = settings
-        .entry("skills".into())
+        .entry("skills")
         .or_insert_with(|| json!({}));
     if !skills.is_object() {
         *skills = json!({});
     }
     let skills_object = skills.as_object_mut().expect("skills object");
     let entries = skills_object
-        .entry("entries".into())
+        .entry("entries")
         .or_insert_with(|| json!({}));
     if !entries.is_object() {
         *entries = json!({});
@@ -91,7 +91,7 @@ fn apply_skill_config_update(settings: &mut Map<String, Value>, update: &Value) 
         }
         if let Some(requested_env) = requested.get("env").and_then(Value::as_object) {
             let env = current_object
-                .entry("env".into())
+                .entry("env")
                 .or_insert_with(|| json!({}));
             if !env.is_object() {
                 *env = json!({});

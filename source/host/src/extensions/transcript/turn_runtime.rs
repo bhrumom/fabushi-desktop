@@ -259,6 +259,11 @@ pub fn classify_agent_error(error: &ProviderSessionError) -> SandErrorValue {
             message,
             retry_after_ms: None,
         },
+        ProviderSessionError::ProviderRefusal(_) => TransientStreamError {
+            kind: StreamFailureKind::Protocol,
+            message,
+            retry_after_ms: None,
+        },
         ProviderSessionError::Transport(_) => {
             TransientStreamError::classify(message, None, None)
         }

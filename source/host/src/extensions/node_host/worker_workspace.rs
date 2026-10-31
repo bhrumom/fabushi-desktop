@@ -15,7 +15,7 @@ const MAX_WORKSPACE_IDENTIFIER_BYTES: usize = 256;
 
 #[derive(Debug, Clone)]
 pub struct NodeWorkerWorkspaceLease {
-    owner: Arc<NodeWorkerWorkspaceState>,
+    owner: NodeWorkerWorkspaceOwner,
     identity: NodeWorkerWorkspaceIdentity,
     root: PathBuf,
     generation: u64,
@@ -97,7 +97,7 @@ impl NodeWorkerWorkspaceOwner {
         if let Some(current) = state.current.get(&identity.environment_id) {
             if current.identity == identity && current.root == root {
                 return Ok(NodeWorkerWorkspaceLease {
-                    owner: Arc::clone(&self.state),
+                    owner: self.clone(),
                     identity: current.identity.clone(),
                     root: current.root.clone(),
                     generation: current.generation,
@@ -116,7 +116,7 @@ impl NodeWorkerWorkspaceOwner {
             },
         );
         Ok(NodeWorkerWorkspaceLease {
-            owner: Arc::clone(&self.state),
+            owner: self.clone(),
             identity,
             root,
             generation,

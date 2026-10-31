@@ -574,7 +574,7 @@ impl SandAgentDb {
         record.provider_review_phase = Some("pending".into());
         record.provider_review = Some(review.clone());
         if !self.compare_and_set_session_work_admission(
-            expected_lifecycle_revision,
+            Some(expected_lifecycle_revision),
             &record,
         )? {
             return Err(AgentDbProjectionError::WorkAdmissionInvalid(

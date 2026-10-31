@@ -105,7 +105,7 @@ fn read_bounded_text(value: Option<&Value>, max_bytes: usize) -> Option<String> 
 pub fn parse_codex_provider_refusal(value: &Value) -> Option<CodexProviderRefusal> {
     let error = value
         .get("error")
-        .filter(Value::is_object)
+        .filter(|value| value.is_object())
         .unwrap_or(value);
     if error.get("code").and_then(Value::as_str) != Some("misalignment_policy_violation") {
         return None;

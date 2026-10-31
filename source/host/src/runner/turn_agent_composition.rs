@@ -145,7 +145,7 @@ impl RoutedToolBridge for CheckpointRecordingRoutedToolBridge {
                 ToolLoopDecision::Continue { .. } => {}
                 ToolLoopDecision::Cancel { reason } => {
                     self.cancellation.cancel(reason);
-                    return self.cancellation.check();
+                    return Err(self.cancellation.check().expect_err("cancellation was just requested"));
                 }
             }
         }

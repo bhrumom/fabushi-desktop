@@ -229,6 +229,15 @@ impl CloudWorkerProvisioningExtension {
                             settlement,
                         },
                     ),
+                    (CloudWorkerArtifactAdmissionState::Pending, Ok(_))
+                    | (CloudWorkerArtifactAdmissionState::Verified, Ok(_)) => Err(
+                        CloudWorkerArtifactPublicationError::SettlementAfterFailure {
+                            publication: error,
+                            settlement: CloudWorkerMutationError::Owner(
+                                super::CloudWorkerOwnerError::ArtifactNotVerified,
+                            ),
+                        },
+                    ),
                 };
             }
         };
@@ -238,7 +247,7 @@ impl CloudWorkerProvisioningExtension {
             CloudWorkerArtifactAdmissionState::Verified,
         )
         .map_err(|settlement| CloudWorkerArtifactPublicationError::SettlementAfterPublication {
-            publication: published,
+            publication: published.clone(),
             settlement,
         })?;
         Ok(published)
@@ -681,13 +690,13 @@ impl CloudWorkerProvisioningExtension {
 #[derive(Debug, thiserror::Error)]
 pub enum CloudWorkerMutationError {
     #[error(transparent)]
-    Owner(#[source] CloudWorkerOwnerError),
+    Owner(CloudWorkerOwnerError),
     #[error(transparent)]
-    Artifact(#[source] CloudWorkerArtifactAdmissionError),
+    Artifact(CloudWorkerArtifactAdmissionError),
     #[error(transparent)]
-    ArtifactStore(#[source] CloudWorkerArtifactStoreError),
+    ArtifactStore(CloudWorkerArtifactStoreError),
     #[error(transparent)]
-    Persistence(#[source] CloudWorkerStoreError),
+    Persistence(CloudWorkerStoreError),
     #[error("cloud-worker mutation persistence outcome is unknown: {0}")]
     OutcomeUnknown(#[source] CloudWorkerStoreError),
     #[error("cloud-worker mutation rollback failed: {0}")]

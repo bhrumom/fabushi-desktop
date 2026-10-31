@@ -14,7 +14,8 @@ use serde_json::{Map, Value, json};
 use tungstenite::http::{HeaderValue, Request};
 use tungstenite::protocol::{Message, WebSocket, WebSocketConfig};
 use tungstenite::stream::MaybeTlsStream;
-use tungstenite::{Error as WebSocketError, connect_with_config};
+use tungstenite::client::connect_with_config;
+use tungstenite::Error as WebSocketError;
 
 use crate::sha256::sha256_hex;
 use crate::host_secret_store::{

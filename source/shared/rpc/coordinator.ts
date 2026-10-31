@@ -107,14 +107,14 @@ export function parseCloudWorkerDoctorRequest(value: unknown): CloudWorkerDoctor
   if (!isBoundedWireText(value.scope.account_scope) || !isBoundedWireText(value.scope.device_scope)) return null;
   if (!["Inspect", "RepairManagedArtifact", "MigrateSecretRefs", "ReconcileLease", "ReconcileWarmImage"].includes(String(value.action))) return null;
   if (typeof value.acknowledged_mutation !== "boolean" || !isBoundedWireText(value.replay_key)) return null;
-  return value as CloudWorkerDoctorRequest;
+  return value as unknown as CloudWorkerDoctorRequest;
 }
 
 export function parseCloudWorkerStatusProjection(value: unknown): CloudWorkerStatusProjection | null {
   if (!isRecord(value) || value.owner !== "cloud-workers" || !["disabled", "enabled", "unavailable"].includes(String(value.status))) return null;
   if (typeof value.providerReady !== "boolean" || typeof value.productionMutation !== "boolean" || typeof value.statePersisted !== "boolean") return null;
   if (!["leaseCount", "warmImageCount", "bootstrapCount", "artifactCount", "migrationReceiptCount"].every((key) => isNonNegativeInteger(value[key]))) return null;
-  return value as CloudWorkerStatusProjection;
+  return value as unknown as CloudWorkerStatusProjection;
 }
 
 export function parseCloudWorkerCapabilitiesProjection(value: unknown): CloudWorkerCapabilitiesProjection | null {
@@ -122,7 +122,7 @@ export function parseCloudWorkerCapabilitiesProjection(value: unknown): CloudWor
   if (!value.providers.every((provider) => isRecord(provider) && isBoundedWireText(provider.providerId) && isBoundedWireText(provider.pluginId) && (provider.label === undefined || isBoundedWireText(provider.label)))) return null;
   const identities = new Set(value.providers.map((provider) => `${(provider as Record<string, unknown>).providerId}\u0000${(provider as Record<string, unknown>).pluginId}`));
   if (identities.size !== value.providers.length) return null;
-  return value as CloudWorkerCapabilitiesProjection;
+  return value as unknown as CloudWorkerCapabilitiesProjection;
 }
 
 export function parseCloudWorkerStatusEvent(value: unknown): CloudWorkerStatusProjection | null {
@@ -135,7 +135,7 @@ export function parseCloudWorkerDoctorProjection(value: unknown): CloudWorkerDoc
   if (!isRecord(value) || !["inspection-only", "pending", "completed", "failed", "outcome-unknown"].includes(String(value.status))) return null;
   if (typeof value.mutationStarted !== "boolean" || (value.diagnosticCode !== undefined && !isBoundedProjectionText(value.diagnosticCode)) || typeof value.statePersisted !== "boolean") return null;
   if (!["leaseCount", "bootstrapCount", "artifactCount", "warmImageCount"].every((key) => isNonNegativeInteger(value[key]))) return null;
-  return value as CloudWorkerDoctorProjection;
+  return value as unknown as CloudWorkerDoctorProjection;
 }
 
 export function parseCoordinatorTranscriptWindowResponse(value: unknown): CoordinatorTranscriptWindowResponse | null {
