@@ -523,9 +523,12 @@ impl<S: MessagingStateStore> MessagingService<S> {
                     .is_some_and(|member| member.restrictions.send_media),
                 community_restrict_polls: restricted
                     .is_some_and(|member| member.restrictions.send_polls),
-                community_restrict_other: false,
-                community_restrict_inline: false,
-                community_restrict_games: false,
+                community_restrict_other: restricted
+                    .is_some_and(|member| member.restrictions.send_other),
+                community_restrict_inline: restricted
+                    .is_some_and(|member| member.restrictions.send_inline),
+                community_restrict_games: restricted
+                    .is_some_and(|member| member.restrictions.send_games),
                 channel_posting_allowed,
             },
             requirements,
