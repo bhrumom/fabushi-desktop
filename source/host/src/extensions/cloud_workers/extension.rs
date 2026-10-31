@@ -22,6 +22,7 @@ use super::{
     CloudWorkerSandboxRequest,
     CloudWorkerProvisioningConfig,
     CloudWorkerProvisioningOwner, CloudWorkerProvisioningStore, CloudWorkerStoreError,
+    CloudWorkerRuntimeControlAction,
     CloudWorkerWarmImage, CloudWorkerWarmImageGeneration, CloudWorkerWarmImageOperation,
     verify_artifact_bytes,
 };
@@ -178,6 +179,23 @@ impl CloudWorkerProvisioningExtension {
         runtime: CloudWorkerRuntimeIdentity,
     ) -> Result<CloudWorkerLease, CloudWorkerMutationError> {
         self.mutate_and_persist(|owner| owner.admit(scope, lease_id, runtime))
+    }
+
+    /// Builds a lease-fenced runtime-control mutation through the canonical
+    /// owner. It does not call a provider or change persisted state.
+    pub fn admit_runtime_control(
+        &self,
+        lease_id: &LeaseId,
+        action: CloudWorkerRuntimeControlAction,
+        replay_key: super::ReplayKey,
+    ) -> Result<super::CloudWorkerLeaseMutation, CloudWorkerMutationError> {
+        let owner = self
+            .owner
+            .lock()
+            .map_err(|_| CloudWorkerMutationError::PoisonedOwner)?;
+        owner
+            .admit_runtime_control(lease_id, action, replay_key)
+            .map_err(CloudWorkerMutationError::Owner)
     }
 
     /// Settles one fenced lease mutation and persists its lifecycle outcome,

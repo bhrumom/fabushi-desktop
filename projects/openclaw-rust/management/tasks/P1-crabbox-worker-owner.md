@@ -544,6 +544,24 @@ identity, and carries no lifecycle or authorization state of its own. Runner,
 Computer and sandbox adapters remain responsible for consuming this contract;
 provider launch and real consumer wiring remain open.
 
+The next F03 foundation slice is the side-effect-free runtime-control admission
+contract in `source/host/src/extensions/cloud_workers/runtime_control.rs`.
+`Inspect`, `Heartbeat`, `Stop` and `Dispose` commands derive a
+`CloudWorkerLeaseMutation` only after checking the current lease lifecycle and
+preserving lease ID, owner epoch, generation, runtime identity and replay key.
+The command contract does not perform provider RPC, process cleanup, device
+enrollment, persistence or consumer dispatch; a future producer must still
+settle the mutation through the canonical owner and retain outcome-unknown
+recovery. The extension exposes this as an owner admission façade so no caller
+needs direct access to the owner map.
+
+The slice's negative contract is explicit: inspect/heartbeat require an
+enrolled lease, stop requires an enrolled or outcome-unknown lease, dispose
+requires a stopping or outcome-unknown lease, and every command rejects stale
+lease identity or an invalid replay key before any future side effect. This
+does not promote the runtime-control responsibility to `wired`, `verified` or
+`accepted`; provider/process producers and packaged consumers remain pending.
+
 ## 9. Definition of Done / acceptance criteria
 
 - P1-AC01: ADR is approved and the target symbols/consumers are recorded in

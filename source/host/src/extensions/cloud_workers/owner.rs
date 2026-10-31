@@ -15,6 +15,7 @@ use super::{
     CloudWorkerRuntimeIdentity,
     CloudWorkerWarmImage, CloudWorkerWarmImageError, CloudWorkerWarmImageGeneration,
     CloudWorkerWarmImageOperation, LeaseId,
+    CloudWorkerRuntimeControlAction, CloudWorkerRuntimeControlError,
 };
 
 pub const CLOUD_WORKER_STATE_SCHEMA_VERSION: u32 = 1;
@@ -320,6 +321,21 @@ impl CloudWorkerProvisioningOwner {
             .map_err(CloudWorkerOwnerError::from)
     }
 
+    /// Admits a lease-fenced runtime-control mutation without performing it.
+    /// The future provider producer must settle the returned identity through
+    /// `settle_lease`; this owner remains the only state writer.
+    pub fn admit_runtime_control(
+        &self,
+        lease_id: &LeaseId,
+        action: CloudWorkerRuntimeControlAction,
+        replay_key: super::ReplayKey,
+    ) -> Result<CloudWorkerLeaseMutation, CloudWorkerOwnerError> {
+        self.ensure_enabled()?;
+        action
+            .admit(self.lease(lease_id)?, replay_key)
+            .map_err(CloudWorkerOwnerError::from)
+    }
+
     pub fn register_bootstrap(
         &mut self,
         record: CloudWorkerBootstrapRecord,
@@ -543,6 +559,8 @@ pub enum CloudWorkerOwnerError {
     Bootstrap(#[from] CloudWorkerNodeBootstrapError),
     #[error(transparent)]
     Artifact(#[from] CloudWorkerArtifactAdmissionError),
+    #[error(transparent)]
+    RuntimeControl(#[from] CloudWorkerRuntimeControlError),
 }
 
 fn artifact_key(artifact: &CloudWorkerArtifactAdmission) -> String {

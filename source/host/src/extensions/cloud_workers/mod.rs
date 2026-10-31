@@ -14,6 +14,7 @@ mod node_bootstrap;
 mod owner;
 mod platform_bridge;
 mod provider_catalog;
+mod runtime_control;
 mod sandbox;
 mod store;
 mod warm_image;
@@ -64,4 +65,7 @@ pub use provider_catalog::{
     CloudWorkerCatalogError, CloudWorkerCatalogParser, CloudWorkerMachine,
     CloudWorkerMachineRequirement, CloudWorkerOs, CloudWorkerProvider,
     CloudWorkerProfile, CloudWorkerResourceLimits,
+};
+pub use runtime_control::{
+    CloudWorkerRuntimeControlAction, CloudWorkerRuntimeControlError,
 };

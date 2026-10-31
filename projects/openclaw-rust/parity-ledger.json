@@ -1567,7 +1567,8 @@
       ],
       "evidence_refs": [
         "projects/openclaw-rust/management/tasks/P1-crabbox-worker-owner.md",
-        "projects/openclaw-rust/dossiers/crabbox-node-enrollment-owner-audit-20261029.md"
+        "projects/openclaw-rust/dossiers/crabbox-node-enrollment-owner-audit-20261029.md",
+        "source/host/src/extensions/cloud_workers/runtime_control.rs"
       ],
       "existing_owner_candidates": [
         {
@@ -1671,12 +1672,14 @@
       },
       "target": {
         "language": "Rust",
-        "path": "source/host/src/extensions/cloud_workers/owner.rs",
-        "symbol": "CloudWorkerProvisioningOwner::settle_lease"
+        "path": "source/host/src/extensions/cloud_workers/runtime_control.rs",
+        "symbol": "CloudWorkerRuntimeControlAction::admit"
       },
       "tests": [
         "source/host/src/extensions/cloud_workers/lease.rs::tests::ambiguous_results_enter_recovery_state",
-        "source/host/src/extensions/cloud_workers/lease.rs::tests::only_completed_results_advance_the_lifecycle"
+        "source/host/src/extensions/cloud_workers/lease.rs::tests::only_completed_results_advance_the_lifecycle",
+        "source/host/src/extensions/cloud_workers/runtime_control.rs::tests::stop_and_dispose_preserve_outcome_unknown_recovery",
+        "source/host/src/extensions/cloud_workers/runtime_control.rs::tests::admission_rejects_invalid_replay_key_before_side_effects"
       ],
       "typed_contracts": [
         "CloudWorkerLeaseMutation",

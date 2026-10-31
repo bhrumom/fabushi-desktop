@@ -225,3 +225,17 @@ payloads; provider readiness and production-mutation remain fail-closed.
 The Coordinator gateway client now has a typed `cloudWorkers.doctor`
 projection/dispatch. Doctor request arguments remain Host-owned JSON contract
 data; Coordinator stores no recovery state and malformed responses fail closed.
+
+## Runtime-control admission foundation — 2026-10-31
+
+`source/host/src/extensions/cloud_workers/runtime_control.rs` now defines the
+side-effect-free F03 admission contract for `Inspect`, `Heartbeat`, `Stop` and
+`Dispose`. It maps only valid current lease lifecycles to completed target
+states, preserves the lease ID/owner epoch/generation/runtime identity and
+validates the replay key before returning a `CloudWorkerLeaseMutation`.
+`CloudWorkerProvisioningOwner::admit_runtime_control` and the Host extension
+provide the single owner façade. No provider RPC, process cleanup, device
+enrollment or persistence is performed by this slice; a future producer must
+settle the mutation through the existing owner and preserve outcome-unknown
+recovery. The runtime-control row therefore remains `wiring=not-wired`,
+`verification=not-run`, `acceptance=pending`.
