@@ -59,3 +59,7 @@ A separate GitHub read confirms `nonstd-lite/expected-lite@95b9cb015fa17baa749c2
 ## Result
 
 Only source identities supported by exact commit/tree/blob evidence were updated. No changed upstream blob was treated as semantically equivalent without reread. Fixed-U recursive source completeness, cppgir original-host closure, build-time acquisitions, LFS/generated inputs, resources/assets/locales, packaging/update inputs, and behavior-level unknown/unread closure remain open.
+
+## Post-publication provenance correction
+
+A remote readback exposed two stale lock fields that were corrected with a second non-forced lease update: fixed U commit time is `2026-10-26T18:17:45Z`, and GitHub compare from historical ledger root `351204f3695b4a39bc3f4d2f230c061b9a01fe2a` to fixed U reports `ahead_by=245`, `behind_by=0`, `total_commits=245`. The compare returned 300 file records, so the lock records that list as incomplete rather than claiming an exact changed-path count.

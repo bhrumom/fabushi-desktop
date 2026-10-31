@@ -10,7 +10,7 @@
     "discovery_ref": "refs/heads/dev",
     "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
     "tree": "91f2b083ab2877c0a17d07868eabec362a5cfca6",
-    "committed_at": "2026-10-19T19:08:59Z",
+    "committed_at": "2026-10-26T18:17:45Z",
     "accepted": false
   },
   "previous_historical_baseline": {
@@ -28,8 +28,15 @@
     "resource_blob_count": null
   },
   "delta_from_previous_baseline": {
-    "ahead_by": 1,
-    "changed_paths": 1
+    "base_commit": "351204f3695b4a39bc3f4d2f230c061b9a01fe2a",
+    "head_commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+    "status": "ahead",
+    "ahead_by": 245,
+    "behind_by": 0,
+    "total_commits": 245,
+    "changed_paths_returned": 300,
+    "changed_paths_complete": false,
+    "note": "GitHub compare returned 300 file records; do not treat this capped file list as a complete changed-path count."
   },
   "direct_gitlinks": [
     {
