@@ -29317,7 +29317,7 @@
         "acceptance": "pending",
         "implementation": "implemented",
         "mapping": "mapped",
-        "read": "complete",
+        "read": "read-complete",
         "verification": "not-run",
         "wiring": "wired"
       },
