@@ -2790,3 +2790,18 @@ Gateway endpoint caller, credential materializer, reconnect scheduler, remote
 manifest publication, physical worker/process executor, package reachability,
 and exact-head Actions proof are still absent. Pairing or the local projection
 cannot be used as evidence for those remote capabilities.
+## 207. Runtime-manifest reachability boundary (2026-10-31)
+
+The current production Host app constructs `NodeHostManifest` from the locally
+available `system.run` command and stores it in the local
+`NodeHostRuntimeState` session (`source/host/app/src/main.rs:14421-14449`).
+This is a real local producer/state path, but it deliberately advertises only
+a command with an existing invoke branch.
+
+`NodeHostGatewaySession::publish_manifest` exists at
+`source/host/src/extensions/node_host/gateway_transport.rs:711-723`, but the
+current target has no production caller for it. Remote Gateway publication,
+plugin-derived commands, dynamic capability refresh, and process/device
+consumers therefore remain pending. The local projection must not be promoted
+to full `OCRM-RESP-NODE-HOST-RUNTIME-MANIFEST-001` production wiring or
+acceptance.
