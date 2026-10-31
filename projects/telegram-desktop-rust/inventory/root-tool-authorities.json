@@ -66,6 +66,12 @@
         "raw_archive_member_listing": {
           "status": "unread",
           "reason": "web connector rejects application/x-gzip body; direct container downloads from both official Boost and GNU archive URLs failed; no CI/build/test/generator was used"
+        },
+        "round33_official_content_evidence": {
+          "release_announcement": "https://lists.boost.org/archives/list/boost%40lists.boost.org/message/2ZRVI2VWDHCQS7NXDHDITIW7SZMZWATS/",
+          "evidence_scope": "official release/package-level description only",
+          "raw_file_member_manifest_status": "unread",
+          "caveat": "Boost release/library documentation is not treated as an archive file-member manifest or complete content-tree proof"
         }
       }
     },
@@ -92,6 +98,12 @@
         "raw_archive_member_listing": {
           "status": "unread",
           "reason": "web connector rejects application/x-gzip body; direct container download from official GNU archive URL failed; no CI/build/test/generator was used"
+        },
+        "round33_official_content_evidence": {
+          "release_announcement": "https://lists.gnu.org/archive/html/info-gnu/2024-12/msg00004.html",
+          "evidence_scope": "official release/checksum/signature metadata only",
+          "raw_file_member_manifest_status": "unread",
+          "caveat": "release notes do not enumerate the archive file members"
         }
       }
     }
@@ -207,7 +219,17 @@
           "source_blob_sha": "a9f3dd2d9e4020df958ab5af942376177d66c78b"
         }
       ],
-      "commit_resolution_scope": "historical-resolution-only-not-reattributed-to-fixed-u-master"
+      "commit_resolution_scope": "historical-resolution-only-not-reattributed-to-fixed-u-master",
+      "round33_original_host_observation": {
+        "observed_on": "2026-10-31",
+        "host": "chromium.googlesource.com",
+        "observed_ref": "master",
+        "observed_commit": "1615ec326858f8c2bd8f30b3a86ea71830409ce4",
+        "root_tree_sha": "ad3372d5851410812eb88c8f477fd716766982d5",
+        "license_blob_sha": "ab6b011a109335d7bb8604d49be0d185f34d1744",
+        "status": "current-original-host-observation-not-u-pinned",
+        "caveat": "fixed-U prepare.py names mutable @master; this current observation does not retroactively convert that mutable toolchain ref into an immutable fixed-U source pin"
+      }
     },
     {
       "id": "TOOL-ROCKY-DNF-PIP",
@@ -297,5 +319,17 @@
         }
       ]
     }
-  ]
+  ],
+  "round33_non_github_toolchain_and_archive_accounting": {
+    "upstream_commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+    "gyp_master": {
+      "current_original_host_commit": "1615ec326858f8c2bd8f30b3a86ea71830409ce4",
+      "current_original_host_tree": "ad3372d5851410812eb88c8f477fd716766982d5",
+      "license_blob_sha": "ab6b011a109335d7bb8604d49be0d185f34d1744",
+      "fixed_u_pin_status": "mutable-master-not-u-pinned"
+    },
+    "boost_1_90_0_raw_members": "unread",
+    "libiconv_1_18_raw_members": "unread",
+    "evidence_mode": "manual-source-and-original-host-reads-stage-a-no-ci"
+  }
 }

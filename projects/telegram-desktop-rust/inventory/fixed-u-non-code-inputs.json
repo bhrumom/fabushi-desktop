@@ -866,7 +866,7 @@
       }
     ],
     "root_identity_status": "fixed-u-enumerated",
-    "license_semantic_closure_status": "open-adopted-dependencies-and-copied-derived-content-still-require-release-review; round32 root/recursive priority license identities are blob-read",
+    "license_semantic_closure_status": "open-adopted-dependencies-and-copied-derived-content-still-require-release-review; round33 adds original-host Breakpad/LSS/GYP license identities and composite-license facts without inferring release acceptance",
     "github_license_blob_reads": [
       {
         "repository": "telegramdesktop/tdesktop",
@@ -1452,6 +1452,48 @@
         "read_verified": true,
         "evidence_round": 32
       }
+    ],
+    "non_github_original_host_license_blob_reads": [
+      {
+        "repository": "chromium.googlesource.com/breakpad/breakpad",
+        "commit": "9aebd3d8ef5a246deb2c929b5666aaba160ebce6",
+        "path": "LICENSE",
+        "blob_sha": "d6435f048b9326dd3bb965e20c68f4f981a0cb78",
+        "read_verified": true,
+        "evidence_round": 33,
+        "build_scope": "fixed-U Docker Breakpad source input",
+        "semantic_note": "Composite license file: top-level Google BSD-style terms plus file-specific Unicode, libunwind/MIT-style, Apple Public Source License and additional notices; exact downstream copied/adopted file mapping remains required."
+      },
+      {
+        "repository": "chromium.googlesource.com/linux-syscall-support",
+        "commit": "29164a80da4d41134950d76d55199ea33fbb9613",
+        "path": "LICENSE",
+        "blob_sha": "b66a6b273d6b334c5197222573185b4e320190ea",
+        "read_verified": true,
+        "evidence_round": 33,
+        "build_scope": "fixed-U Docker Breakpad child source input",
+        "semantic_note": "BSD-style redistribution conditions are present; this records source identity and notice text, not Fabushi release legal acceptance."
+      },
+      {
+        "repository": "chromium.googlesource.com/linux-syscall-support",
+        "commit": "e1e7b0ad8ee99a875b272c8e33e308472e897660",
+        "path": "LICENSE",
+        "blob_sha": "58ab3fba9d4c3318ea545f451bb3ecbfdd5d8f6f",
+        "read_verified": true,
+        "evidence_round": 33,
+        "build_scope": "fixed-U prepare.py Breakpad/stackwalk child source input",
+        "semantic_note": "BSD-style redistribution conditions are present; this records source identity and notice text, not Fabushi release legal acceptance."
+      },
+      {
+        "repository": "chromium.googlesource.com/external/gyp",
+        "commit": "1615ec326858f8c2bd8f30b3a86ea71830409ce4",
+        "path": "LICENSE",
+        "blob_sha": "ab6b011a109335d7bb8604d49be0d185f34d1744",
+        "read_verified": true,
+        "evidence_round": 33,
+        "build_scope": "current observation of mutable fixed-U toolchain ref @master; non-product-source toolchain",
+        "semantic_note": "BSD-style redistribution conditions are present; mutable master remains non-U-pinned and this license read does not freeze the fixed-U tool input."
+      }
     ]
   },
   "blockers": {
@@ -1529,5 +1571,18 @@
       "xcb-util-m4 original GitLab tree remains unread even though the pinned commit/tree is independently visible in GitHub mirrors.",
       "cppgir original GitLab tree/blob remains fail-closed."
     ]
+  },
+  "round33_non_github_license_and_archive_closure": {
+    "evidence_mode": "manual-original-host-license-blob-and-official-release-metadata-reads-stage-a-no-ci",
+    "upstream_commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+    "original_host_license_blob_reads_added": 4,
+    "breakpad_license_character": "composite-file-specific-notices; downstream adopted/copied file mapping remains open",
+    "boost_raw_archive_member_listing": "unread",
+    "libiconv_raw_archive_member_listing": "unread",
+    "xcb_util_m4_original_host_status": "github-mirror-object-verified-original-host-unread",
+    "cppgir_original_host_status": "fail-closed-original-host-unread",
+    "baseline_ready": false,
+    "accepted": false,
+    "validation_status": "not-run"
   }
 }

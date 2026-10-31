@@ -120,7 +120,17 @@
       "commit": "9aebd3d8ef5a246deb2c929b5666aaba160ebce6",
       "disposition": "build-input-exact-pin",
       "status": "classified",
-      "source_scope": "accepted-upstream"
+      "source_scope": "accepted-upstream",
+      "original_host_object_read": {
+        "evidence_round": 33,
+        "host": "chromium.googlesource.com",
+        "commit": "9aebd3d8ef5a246deb2c929b5666aaba160ebce6",
+        "root_tree_sha": "1844a145a10b0463859aa3db4a3a41e4305108a9",
+        "gitmodules_blob_sha": "066cbb36c715e82b7658f074e9e458579f30e13f",
+        "license_blob_sha": "d6435f048b9326dd3bb965e20c68f4f981a0cb78",
+        "read_verified": true,
+        "build_reachability": "fixed-U Docker Breakpad stage fetches this exact root and manually initializes only src/third_party/lss; upstream DEPS/gclient and src/testing submodule initialization are not invoked"
+      }
     },
     {
       "id": "ACQ-R9-IMMUTABLE-009",
@@ -131,7 +141,16 @@
       "commit": "29164a80da4d41134950d76d55199ea33fbb9613",
       "disposition": "build-input-exact-pin",
       "status": "classified",
-      "source_scope": "accepted-upstream"
+      "source_scope": "accepted-upstream",
+      "original_host_object_read": {
+        "evidence_round": 33,
+        "host": "chromium.googlesource.com",
+        "commit": "29164a80da4d41134950d76d55199ea33fbb9613",
+        "root_tree_sha": "e1fffd0f09e0d2379e87296f2bef0bc5929b4b7b",
+        "license_blob_sha": "b66a6b273d6b334c5197222573185b4e320190ea",
+        "read_verified": true,
+        "build_reachability": "fixed-U Docker Breakpad stage explicitly fetches this exact LSS commit into src/third_party/lss"
+      }
     },
     {
       "id": "ACQ-R9-IMMUTABLE-010",
@@ -899,8 +918,12 @@
       "repository": "https://chromium.googlesource.com/linux-syscall-support",
       "observed_short_ref": "e1e7b0ad8e",
       "resolved_commit": "e1e7b0ad8ee99a875b272c8e33e308472e897660",
-      "status": "resolved-via-independent-packaging-authority",
-      "resolution_evidence": "GitHub code search found Buildroot linux-syscall-support package pin with the same short prefix and full 40-hex commit."
+      "status": "resolved-via-original-host-gitiles",
+      "resolution_evidence": "Chromium Gitiles original-host exact commit page independently resolves the fixed-U short prefix e1e7b0ad8e to e1e7b0ad8ee99a875b272c8e33e308472e897660; root tree c2034bc1106379848e2c8c7b68f40d13b3c09097 and LICENSE blob 58ab3fba9d4c3318ea545f451bb3ecbfdd5d8f6f were read.",
+      "original_host_tree_sha": "c2034bc1106379848e2c8c7b68f40d13b3c09097",
+      "original_host_license_blob_sha": "58ab3fba9d4c3318ea545f451bb3ecbfdd5d8f6f",
+      "original_host_read_verified": true,
+      "evidence_round": 33
     },
     {
       "source_path": "Telegram/build/prepare/prepare.py",
@@ -916,8 +939,12 @@
       "repository": "https://chromium.googlesource.com/linux-syscall-support",
       "observed_short_ref": "e1e7b0ad8e",
       "resolved_commit": "e1e7b0ad8ee99a875b272c8e33e308472e897660",
-      "status": "resolved-via-independent-packaging-authority",
-      "resolution_evidence": "GitHub code search found Buildroot linux-syscall-support package pin with the same short prefix and full 40-hex commit."
+      "status": "resolved-via-original-host-gitiles",
+      "resolution_evidence": "Chromium Gitiles original-host exact commit page independently resolves the fixed-U short prefix e1e7b0ad8e to e1e7b0ad8ee99a875b272c8e33e308472e897660; root tree c2034bc1106379848e2c8c7b68f40d13b3c09097 and LICENSE blob 58ab3fba9d4c3318ea545f451bb3ecbfdd5d8f6f were read.",
+      "original_host_tree_sha": "c2034bc1106379848e2c8c7b68f40d13b3c09097",
+      "original_host_license_blob_sha": "58ab3fba9d4c3318ea545f451bb3ecbfdd5d8f6f",
+      "original_host_read_verified": true,
+      "evidence_round": 33
     }
   ],
   "recursive_child_inputs": [
@@ -2938,6 +2965,58 @@
       "Boost/libiconv compressed archive member listings are unread through current web/container source-read paths; official checksum/size/source metadata is recorded.",
       "xcb-util-m4 original GitLab object is not independently read; exact pinned object is verified only through a GitHub mirror.",
       "cppgir original GitLab tree/blob remains fail-closed."
+    ]
+  },
+  "round33_non_github_original_host_closure": {
+    "evidence_mode": "manual-public-original-host-gitiles-and-official-release-metadata-stage-a-no-ci",
+    "upstream_commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+    "original_host_objects": {
+      "breakpad_docker": {
+        "repository": "https://chromium.googlesource.com/breakpad/breakpad",
+        "commit": "9aebd3d8ef5a246deb2c929b5666aaba160ebce6",
+        "root_tree_sha": "1844a145a10b0463859aa3db4a3a41e4305108a9",
+        "gitmodules_blob_sha": "066cbb36c715e82b7658f074e9e458579f30e13f",
+        "license_blob_sha": "d6435f048b9326dd3bb965e20c68f4f981a0cb78",
+        "status": "original-host-object-and-license-read",
+        "build_reachability": "exact Docker Breakpad root; fixed-U stage manually fetches LSS and does not execute DEPS/gclient or initialize src/testing"
+      },
+      "linux_syscall_support_docker": {
+        "repository": "https://chromium.googlesource.com/linux-syscall-support",
+        "commit": "29164a80da4d41134950d76d55199ea33fbb9613",
+        "root_tree_sha": "e1fffd0f09e0d2379e87296f2bef0bc5929b4b7b",
+        "license_blob_sha": "b66a6b273d6b334c5197222573185b4e320190ea",
+        "status": "original-host-object-and-license-read",
+        "build_reachability": "explicit exact child fetched by fixed-U Docker Breakpad stage"
+      },
+      "linux_syscall_support_prepare": {
+        "repository": "https://chromium.googlesource.com/linux-syscall-support",
+        "fixed_u_short_ref": "e1e7b0ad8e",
+        "resolved_commit": "e1e7b0ad8ee99a875b272c8e33e308472e897660",
+        "root_tree_sha": "c2034bc1106379848e2c8c7b68f40d13b3c09097",
+        "license_blob_sha": "58ab3fba9d4c3318ea545f451bb3ecbfdd5d8f6f",
+        "status": "short-ref-resolved-via-original-host-object-read",
+        "build_reachability": "explicit child fetched by fixed-U prepare.py Breakpad/stackwalk paths where applicable"
+      }
+    },
+    "archive_member_closure": {
+      "boost_1_90_0": {
+        "raw_member_listing": "unread",
+        "official_release_sha256": "5e93d582aff26868d581a52ae78c7d8edf3f3064742c6e77901a1f18a437eea9",
+        "official_source_commit": "1bed2b0712b2119f20d66c5053def9173c8462a5",
+        "note": "Official release index/sidecar and release announcement identify the archive and source commit, but no independently readable official file-level member manifest was found; release/library documentation is not treated as a tar member list."
+      },
+      "libiconv_1_18": {
+        "raw_member_listing": "unread",
+        "official_release_sha256": "3b08f5f4f9b4eb82f151a7040bfd6fe6c6fb922efe4b1659c66ea933276965e8",
+        "note": "Official GNU checksum/signature/release metadata remains verified, but no independently readable official file-level member manifest was found."
+      }
+    },
+    "blockers_unchanged": [
+      "xcb-util-m4-original-gitlab-object",
+      "cppgir-original-gitlab-tree-and-blobs",
+      "boost-1.90.0-raw-archive-members",
+      "libiconv-1.18-raw-archive-members",
+      "adopted-and-copied-derived-release-legal-review"
     ]
   }
 }
