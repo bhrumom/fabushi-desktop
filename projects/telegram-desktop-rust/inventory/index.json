@@ -35,5 +35,16 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Nested cppgir source identity corrected to GitLab mnauw/cppgir, but exact tree and build-time/LFS/generated-input closure remain unresolved; historical ledger provenance remains historical only; accepted=false, baseline_ready=false."
+  "note": "Fixed-U root non-code provenance has fresh manual Git/API identity evidence (resources, LFS root scan, generated inputs, packaging/updater/tests/tooling/docs/licenses). Nested cppgir source identity remains GitLab mnauw/cppgir and its exact original-host tree/blob set is unread; broader recursive/license/semantic closure remains open; accepted=false, baseline_ready=false.",
+  "non_code_input_evidence": {
+    "upstream_commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+    "path": "projects/telegram-desktop-rust/inventory/fixed-u-non-code-inputs.json",
+    "resource_inventory": "projects/telegram-desktop-rust/research/telegram-resources-blob-inventory.tsv",
+    "resources_blob_count": 3134,
+    "root_lfs_pointer_hits": 0,
+    "generated_input_identity_status": "fixed-u-root-enumerated",
+    "packaging_updater_tests_tooling_docs_licenses_identity_status": "fixed-u-root-enumerated",
+    "cppgir_git_tree_verified": false,
+    "acceptance_effect": "none-stage-a-validation-not-run"
+  }
 }

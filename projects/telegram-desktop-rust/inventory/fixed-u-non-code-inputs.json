@@ -1,0 +1,820 @@
+{
+  "format_version": 1,
+  "project_id": "TDRP-001",
+  "spec_revision": 9,
+  "evidence_mode": "stage-a-manual-git-api-no-ci",
+  "upstream": {
+    "repository": "telegramdesktop/tdesktop",
+    "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+    "tree": "91f2b083ab2877c0a17d07868eabec362a5cfca6",
+    "accepted": false
+  },
+  "root_tree": {
+    "truncated": false,
+    "entries_total": 7194,
+    "blobs_total": 6859,
+    "trees_total": 299,
+    "direct_gitlinks_total": 36
+  },
+  "lfs": {
+    "scope": "telegramdesktop/tdesktop fixed-U root tree only",
+    "gitattributes": [
+      {
+        "path": ".gitattributes",
+        "blob_sha": "d7f1c6218bd3bd6b595385b1308c86ba9923fa14",
+        "size_bytes": 419
+      },
+      {
+        "path": "Telegram/Resources/update/.gitattributes",
+        "blob_sha": "f0af3029f5c3824c8caae12a4a3c3320880136c5",
+        "size_bytes": 42
+      }
+    ],
+    "gitattributes_declares_lfs": false,
+    "standard_pointer_scan": {
+      "size_window_bytes": [
+        90,
+        220
+      ],
+      "candidate_blobs": 83,
+      "pointer_signature": "version https://git-lfs.github.com/spec/v1",
+      "pointer_hits": 0,
+      "status": "manual-complete-for-standard-root-pointer-shape"
+    },
+    "recursive_external_objects_status": "open",
+    "caveat": "Root result does not substitute for recursive gitlink/external-object evidence; cppgir original-host recursion remains unread."
+  },
+  "resources_locales_assets": {
+    "resources_prefix": "Telegram/Resources/",
+    "resources_blob_count": 3134,
+    "full_blob_inventory": "projects/telegram-desktop-rust/research/telegram-resources-blob-inventory.tsv",
+    "locale_prefix": "Telegram/Resources/langs/",
+    "locale_blob_count": 12,
+    "qrc_prefix": "Telegram/Resources/qrc/",
+    "qrc_blob_count": 17,
+    "update_resource_prefix": "Telegram/Resources/update/",
+    "update_resource_blob_count": 4,
+    "model_source_obj_count": 5,
+    "shader_source_count": 37,
+    "shader_extensions": {
+      ".frag": 25,
+      ".vert": 10,
+      ".comp": 2
+    },
+    "identity_status": "fixed-u-root-path-blob-size-enumerated",
+    "copied_or_derived_license_review_status": "open"
+  },
+  "generated_inputs": {
+    "root_local_inputs_and_contracts": [
+      {
+        "path": "Telegram/Resources/langs/lang.strings",
+        "blob_sha": "d01d426e5e943951c025433859cca380179c6958",
+        "size_bytes": 595877
+      },
+      {
+        "path": "Telegram/SourceFiles/mtproto/scheme/api.tl",
+        "blob_sha": "8319b7df634d145390c299404129fd161a5dbd2a",
+        "size_bytes": 294194
+      },
+      {
+        "path": "Telegram/SourceFiles/mtproto/scheme/mtproto.tl",
+        "blob_sha": "76225965bfc794388db241f3f760db8ab79e84f8",
+        "size_bytes": 5663
+      },
+      {
+        "path": "Telegram/SourceFiles/codegen/scheme/codegen_scheme.py",
+        "blob_sha": "568fe93e51cba459a62d8785da8d290f5000b7be",
+        "size_bytes": 2403
+      },
+      {
+        "path": "Telegram/SourceFiles/platform/win/windows_quiethours.idl",
+        "blob_sha": "15e6e85bb4dd046e7c3c9a24d38702fd39c57daf",
+        "size_bytes": 3367
+      },
+      {
+        "path": "Telegram/SourceFiles/platform/win/windows_toastactivator.idl",
+        "blob_sha": "7d9dbd6b44fce03ade54d65244e8e7d3fc384272",
+        "size_bytes": 743
+      },
+      {
+        "path": "Telegram/SourceFiles/platform/linux/org.freedesktop.portal.Flatpak.xml",
+        "blob_sha": "4f2139355af455e91ffffcbfaa1a2b0f15530cfe",
+        "size_bytes": 24398
+      },
+      {
+        "path": "Telegram/SourceFiles/platform/linux/org.freedesktop.Notifications.xml",
+        "blob_sha": "c969a61f9bb819a711f81d2005f5a445aa6fb7bf",
+        "size_bytes": 2460
+      },
+      {
+        "path": "Telegram/SourceFiles/platform/linux/org.freedesktop.login1.Manager.xml",
+        "blob_sha": "0059cb783fac801becff7cdc4c453756068b6e27",
+        "size_bytes": 478
+      },
+      {
+        "path": "Telegram/cmake/td_lang.cmake",
+        "blob_sha": "b7b3acc3c77ade7a0d582f1be2db11b28f43a102",
+        "size_bytes": 963
+      },
+      {
+        "path": "Telegram/cmake/generate_lang.cmake",
+        "blob_sha": "ec8518b606017461740a10562f3ae79c1adc1f46",
+        "size_bytes": 2531
+      },
+      {
+        "path": "Telegram/cmake/td_scheme.cmake",
+        "blob_sha": "cf241941b080c3edfde8ae560969a37dcb8a8dae",
+        "size_bytes": 1065
+      },
+      {
+        "path": "Telegram/cmake/generate_scheme.cmake",
+        "blob_sha": "310e49d6874e0786e13b27a561027fc7ad3ae62e",
+        "size_bytes": 1110
+      },
+      {
+        "path": "Telegram/cmake/generate_midl.cmake",
+        "blob_sha": "d3ec53cc59ec9c00698c4bd30868ed22b9863175",
+        "size_bytes": 1539
+      },
+      {
+        "path": "Telegram/cmake/generate_update_keys.cmake",
+        "blob_sha": "c578c239bf1788fce5279437dec846696045f395",
+        "size_bytes": 1126
+      },
+      {
+        "path": "Telegram/cmake/generate_models.cmake",
+        "blob_sha": "b15053479d35fc51b91733c5af6046efae3ef7c1",
+        "size_bytes": 2729
+      },
+      {
+        "path": "Telegram/cmake/obj2binobj.py",
+        "blob_sha": "c6c676c2f209cd880a21aa6ea7d96f294270c676",
+        "size_bytes": 2822
+      },
+      {
+        "path": "Telegram/cmake/qrhi_shaders.cmake",
+        "blob_sha": "2438904c0c96452fc2c967ec1976bed0425e1827",
+        "size_bytes": 3298
+      },
+      {
+        "path": "Telegram/cmake/generate_appstream_changelog.cmake",
+        "blob_sha": "fe0694e647c014e6b794111b2b010c9120cca442",
+        "size_bytes": 1138
+      },
+      {
+        "path": "Telegram/CMakeLists.txt",
+        "blob_sha": "2358874f43d8db4a2f30edae324c12240fb78e8f",
+        "size_bytes": 113338
+      },
+      {
+        "path": "changelog.txt",
+        "blob_sha": "41b7466f8a11a1866a66ff583809dfe74ad9a3c3",
+        "size_bytes": 157914
+      },
+      {
+        "path": "lib/xdg/org.telegram.desktop.metainfo.xml",
+        "blob_sha": "c8b26f262bfdfa93f97b22f9aba4131073504223",
+        "size_bytes": 8227
+      },
+      {
+        "path": "lib/xdg/org.telegram.desktop.service",
+        "blob_sha": "8935a4fa834df4e12cbf4f5f466758a14d2c2357",
+        "size_bytes": 84
+      }
+    ],
+    "qrc_inputs": [
+      {
+        "path": "Telegram/Resources/qrc/emoji_1.qrc",
+        "blob_sha": "867322745728edd4d07bee9af8bde4476c1bf8c0",
+        "size_bytes": 122
+      },
+      {
+        "path": "Telegram/Resources/qrc/emoji_2.qrc",
+        "blob_sha": "3698dd36b5a43d417ef25d963f2337a54edbc5ae",
+        "size_bytes": 122
+      },
+      {
+        "path": "Telegram/Resources/qrc/emoji_3.qrc",
+        "blob_sha": "2e5bd0b071943e2d9fbf4213dd8cfd17f33a1172",
+        "size_bytes": 122
+      },
+      {
+        "path": "Telegram/Resources/qrc/emoji_4.qrc",
+        "blob_sha": "a5c16afd85a99ebf0ada000858516cd4d0649a9f",
+        "size_bytes": 122
+      },
+      {
+        "path": "Telegram/Resources/qrc/emoji_5.qrc",
+        "blob_sha": "d0905627755f1570a92d7436d889d531e949ad7e",
+        "size_bytes": 122
+      },
+      {
+        "path": "Telegram/Resources/qrc/emoji_6.qrc",
+        "blob_sha": "de19569bd9031b30f0de47ef2501bea97977e8bd",
+        "size_bytes": 122
+      },
+      {
+        "path": "Telegram/Resources/qrc/emoji_7.qrc",
+        "blob_sha": "744094fba06ea2430f7f5bb6cff5f1cd1782a329",
+        "size_bytes": 122
+      },
+      {
+        "path": "Telegram/Resources/qrc/emoji_8.qrc",
+        "blob_sha": "51765a39b6242488458f3f1d3d5725e907e29c30",
+        "size_bytes": 122
+      },
+      {
+        "path": "Telegram/Resources/qrc/emoji_preview.qrc",
+        "blob_sha": "238abec17e92f47988ec079618a0c3e897d715c1",
+        "size_bytes": 360
+      },
+      {
+        "path": "Telegram/Resources/qrc/telegram/animations.qrc",
+        "blob_sha": "5c63bb3df9489f3285ce0ef0d79172b81839087d",
+        "size_bytes": 9942
+      },
+      {
+        "path": "Telegram/Resources/qrc/telegram/bot_webview_shell.qrc",
+        "blob_sha": "c19383ac04905224a5cdd1843ed4cbfc1c8b16ca",
+        "size_bytes": 286
+      },
+      {
+        "path": "Telegram/Resources/qrc/telegram/export_rich.qrc",
+        "blob_sha": "25ad8decdf81d14f91c10bdbd5c21b07ba2af504",
+        "size_bytes": 230
+      },
+      {
+        "path": "Telegram/Resources/qrc/telegram/export.qrc",
+        "blob_sha": "e3656ae94415ba40728bd994171b068b99441e7c",
+        "size_bytes": 4159
+      },
+      {
+        "path": "Telegram/Resources/qrc/telegram/mac_icons.qrc",
+        "blob_sha": "977b0c8ed40525587554117c5d0e607759b49613",
+        "size_bytes": 137
+      },
+      {
+        "path": "Telegram/Resources/qrc/telegram/picker.qrc",
+        "blob_sha": "10a810aa919ce9060884023118a77c866c96b6ba",
+        "size_bytes": 187
+      },
+      {
+        "path": "Telegram/Resources/qrc/telegram/sounds.qrc",
+        "blob_sha": "1ffc48b05210e6e507daa9cabdf414359fd4cc13",
+        "size_bytes": 905
+      },
+      {
+        "path": "Telegram/Resources/qrc/telegram/telegram.qrc",
+        "blob_sha": "5799e6664e34ec0be787819fd3acc9264a0a4fa5",
+        "size_bytes": 8220
+      }
+    ],
+    "update_key_inputs": [
+      {
+        "path": "Telegram/Resources/update/.gitattributes",
+        "blob_sha": "f0af3029f5c3824c8caae12a4a3c3320880136c5",
+        "size_bytes": 42
+      },
+      {
+        "path": "Telegram/Resources/update/manifest.min.json",
+        "blob_sha": "c7e2beb0fa25864c6ac6835879abb94c18973bab",
+        "size_bytes": 818
+      },
+      {
+        "path": "Telegram/Resources/update/manifest.sig",
+        "blob_sha": "614df02dd3e2ec64fe36026221ca334905af0d37",
+        "size_bytes": 64
+      },
+      {
+        "path": "Telegram/Resources/update/root-public.pem",
+        "blob_sha": "a5028f6d605fcb57d6240708720dc839954fbd94",
+        "size_bytes": 113
+      }
+    ],
+    "model_sources": [
+      {
+        "path": "Telegram/Resources/art/premium/coin_inner.obj",
+        "blob_sha": "03b7f0fabc0efb8ffba54e8448973fd48f5ded5e",
+        "size_bytes": 8612
+      },
+      {
+        "path": "Telegram/Resources/art/premium/coin_logo.obj",
+        "blob_sha": "66b2ba732c28eb84bf657168f15d6aebc27da62b",
+        "size_bytes": 75450
+      },
+      {
+        "path": "Telegram/Resources/art/premium/coin_outer.obj",
+        "blob_sha": "de81610f687952d7964da265f9a647f1d587a7b2",
+        "size_bytes": 84430
+      },
+      {
+        "path": "Telegram/Resources/art/premium/coin_stars.obj",
+        "blob_sha": "df345a485650cc36f04234d8057d1cfc7aef782e",
+        "size_bytes": 73744
+      },
+      {
+        "path": "Telegram/Resources/art/premium/star.obj",
+        "blob_sha": "a8cc84093cbe64be11710232325d8a5553a3b6e2",
+        "size_bytes": 694188
+      }
+    ],
+    "shader_sources": [
+      {
+        "path": "Telegram/shaders/argb32.frag",
+        "blob_sha": "4b4deb01e408b5f441808dc104488e3b8eeabfe2",
+        "size_bytes": 208
+      },
+      {
+        "path": "Telegram/shaders/argb32.vert",
+        "blob_sha": "9563e0685ee2860e5c12c9407bfddfae32c9914f",
+        "size_bytes": 454
+      },
+      {
+        "path": "Telegram/shaders/blur_h.frag",
+        "blob_sha": "9999d53fde668404f850ec2249fced72a433605e",
+        "size_bytes": 1099
+      },
+      {
+        "path": "Telegram/shaders/blur_v.frag",
+        "blob_sha": "cd94ea44d26b0a0f16b602c2dfcedf15226aa4bf",
+        "size_bytes": 1099
+      },
+      {
+        "path": "Telegram/shaders/controls.frag",
+        "blob_sha": "f1cb5457ce69f56fd514e56dc97618bda5c674f8",
+        "size_bytes": 326
+      },
+      {
+        "path": "Telegram/shaders/fill.frag",
+        "blob_sha": "172d68ccc05d82c52396cbe4c923157385f06aca",
+        "size_bytes": 174
+      },
+      {
+        "path": "Telegram/shaders/fill.vert",
+        "blob_sha": "82954149ee45f33fe969d0b1442d270f7bd43f77",
+        "size_bytes": 340
+      },
+      {
+        "path": "Telegram/shaders/group_frame.frag",
+        "blob_sha": "e9ddee05a2bb73f89fa454b1ff5331cc0b14dff0",
+        "size_bytes": 2772
+      },
+      {
+        "path": "Telegram/shaders/group_frame.vert",
+        "blob_sha": "bd88095d0633cee327d3c8c09869e7f09516a967",
+        "size_bytes": 747
+      },
+      {
+        "path": "Telegram/shaders/incoming_shadow.frag",
+        "blob_sha": "8be303fd913ae8c13d4e657e2bd49ed605e7221e",
+        "size_bytes": 686
+      },
+      {
+        "path": "Telegram/shaders/incoming_yuv420.frag",
+        "blob_sha": "93986780d7c53c723232f5faeabb3c4137534a3f",
+        "size_bytes": 1009
+      },
+      {
+        "path": "Telegram/shaders/noise.frag",
+        "blob_sha": "6517d0a7660467c8d580076eb9656374bf3f93aa",
+        "size_bytes": 2680
+      },
+      {
+        "path": "Telegram/shaders/nv12_content.frag",
+        "blob_sha": "eabd27aaae0918e06beee1fa77aab0aabb8712d9",
+        "size_bytes": 2264
+      },
+      {
+        "path": "Telegram/shaders/nv12.frag",
+        "blob_sha": "0d2d3f0e663c33a5af5e6d3e4420baa6de1988ad",
+        "size_bytes": 479
+      },
+      {
+        "path": "Telegram/shaders/passthrough.vert",
+        "blob_sha": "d3389cfde7144981a5cefed8f32df308331f2227",
+        "size_bytes": 225
+      },
+      {
+        "path": "Telegram/shaders/pip_argb32.frag",
+        "blob_sha": "4323b379801b0d4b3f098bb85008bbf0016ac431",
+        "size_bytes": 2061
+      },
+      {
+        "path": "Telegram/shaders/pip_controls.frag",
+        "blob_sha": "f30a0410eca7e0ba8dcf05c97a96fefd25e67d46",
+        "size_bytes": 536
+      },
+      {
+        "path": "Telegram/shaders/pip_controls.vert",
+        "blob_sha": "94a6ed215def5af7eb20887325c9ec23211d3a08",
+        "size_bytes": 589
+      },
+      {
+        "path": "Telegram/shaders/pip_nv12.frag",
+        "blob_sha": "ba628e7b832cf3a967d55b5595c3a44cab835689",
+        "size_bytes": 2332
+      },
+      {
+        "path": "Telegram/shaders/pip_yuv420.frag",
+        "blob_sha": "363f89d6e844d91bc41baa812846e5540e56ef00",
+        "size_bytes": 2384
+      },
+      {
+        "path": "Telegram/shaders/premium_coin.frag",
+        "blob_sha": "8cbdb580a4772dfadfa7ec4459ab7a7b906fcd22",
+        "size_bytes": 2834
+      },
+      {
+        "path": "Telegram/shaders/premium_coin.vert",
+        "blob_sha": "bf9b3b172e7d6ea6683cda2f53f36a678e2d1a10",
+        "size_bytes": 491
+      },
+      {
+        "path": "Telegram/shaders/premium_diamond_sparkle.frag",
+        "blob_sha": "2a88d30fbb5376f337ef9fb94a3c49da6be97304",
+        "size_bytes": 1406
+      },
+      {
+        "path": "Telegram/shaders/premium_diamond_sparkle.vert",
+        "blob_sha": "0ee096cca79d92447476e8f5ac893428accb9bd2",
+        "size_bytes": 3391
+      },
+      {
+        "path": "Telegram/shaders/premium_diamond.frag",
+        "blob_sha": "a695e36f6142ac3deb02d0dea56f8ffe74bc1c5d",
+        "size_bytes": 24359
+      },
+      {
+        "path": "Telegram/shaders/premium_diamond.vert",
+        "blob_sha": "f2838840cec21c0a84833cc723f98861092ea3c2",
+        "size_bytes": 1882
+      },
+      {
+        "path": "Telegram/shaders/premium_star.frag",
+        "blob_sha": "17b81bc34584dafa7be2fda54c3c5cc7a79a8537",
+        "size_bytes": 4477
+      },
+      {
+        "path": "Telegram/shaders/premium_star.vert",
+        "blob_sha": "d3d6a4294d2fbbc8229357769347212bf51f3765",
+        "size_bytes": 487
+      },
+      {
+        "path": "Telegram/shaders/rounded_corners.frag",
+        "blob_sha": "cc51d3e5807dd3f7fb45886d27df57f909406102",
+        "size_bytes": 880
+      },
+      {
+        "path": "Telegram/shaders/static_content.frag",
+        "blob_sha": "6ead40677b46bc1d13eb57137d0c30e9c7c5ccae",
+        "size_bytes": 1993
+      },
+      {
+        "path": "Telegram/shaders/thanos_init.comp",
+        "blob_sha": "4b6223e6a7f1f82c65ea70981ff32e350417b0a6",
+        "size_bytes": 1530
+      },
+      {
+        "path": "Telegram/shaders/thanos_update.comp",
+        "blob_sha": "aa88d685b90dc280be05e4a8aa237196f7817a84",
+        "size_bytes": 2183
+      },
+      {
+        "path": "Telegram/shaders/thanos.frag",
+        "blob_sha": "3510c87a1a144aed4c57618442052f2fa1b2f8aa",
+        "size_bytes": 332
+      },
+      {
+        "path": "Telegram/shaders/thanos.vert",
+        "blob_sha": "bedb2ea6ca1ed15a079c4ed98ba2b6848a3fe431",
+        "size_bytes": 1527
+      },
+      {
+        "path": "Telegram/shaders/transparent_content.frag",
+        "blob_sha": "c9c8d224542bace5e856435c5c0dba3bc8b72ddd",
+        "size_bytes": 1828
+      },
+      {
+        "path": "Telegram/shaders/yuv420_content.frag",
+        "blob_sha": "47c3812a05e4e3a8c9c1ae14e7a50bcd008f3798",
+        "size_bytes": 2316
+      },
+      {
+        "path": "Telegram/shaders/yuv420.frag",
+        "blob_sha": "3a070a0de8cbc7205aa2b34c167dea3332c58f0f",
+        "size_bytes": 531
+      }
+    ],
+    "direct_generator_gitlinks": [
+      {
+        "path": "Telegram/codegen",
+        "repository": "desktop-app/codegen",
+        "commit": "dbd1d53137cd581cfdbeebe93bcaf54abf55ec74"
+      },
+      {
+        "path": "Telegram/lib_tl",
+        "repository": "desktop-app/lib_tl",
+        "commit": "29746d31247c915a9ec870241399a9d103c39f87"
+      },
+      {
+        "path": "Telegram/ThirdParty/xdg-desktop-portal",
+        "repository": "flatpak/xdg-desktop-portal",
+        "commit": "23a76c392170dbbd26230f85ef56c3a57e52b857",
+        "consumed_input": {
+          "path": "data/org.freedesktop.portal.Background.xml",
+          "blob_sha": "1b83fcd1f65ac3e34ab6f869fd3bee8244cb9c3a"
+        }
+      }
+    ],
+    "contracts": [
+      "td_lang.cmake -> generate_lang.cmake consumes Resources/langs/lang.strings and codegen_lang",
+      "td_scheme.cmake -> generate_scheme.cmake consumes api.tl, mtproto.tl, SourceFiles/codegen/scheme/codegen_scheme.py and lib_tl/tl/generate_tl.py",
+      "generate_midl.cmake consumes windows_quiethours.idl and windows_toastactivator.idl on Windows",
+      "generate_update_keys.cmake consumes root-public.pem, manifest.min.json and manifest.sig",
+      "generate_models.cmake consumes all Resources/art/**/*.obj and obj2binobj.py to produce .binobj/QRC",
+      "qrhi_shaders.cmake consumes all Telegram/shaders/*.{vert,frag,comp} and qsb to produce .qsb/QRC",
+      "Linux DBus generation consumes three root-local XMLs plus xdg-desktop-portal Background.xml at its pinned gitlink",
+      "generate_appstream_changelog.cmake consumes changelog.txt and configured org.telegram.desktop.metainfo.xml"
+    ],
+    "status": "fixed-u-root-generated-input-identities-enumerated-recursive-toolchain-closure-open"
+  },
+  "packaging_updater_tests_tooling_docs_licenses": {
+    "tracked_roots": {
+      "Telegram/build": 36,
+      "Telegram/cmake": 33,
+      "snap": 1,
+      ".github/workflows": 20,
+      ".agents": 60
+    },
+    "updater_related_selector": "/(^|\\/)(updater|update)(\\/|_|\\.|$)/i",
+    "updater_related_blob_count": 22,
+    "updater_related": [
+      {
+        "path": "Telegram/build/update_dictionaries.py",
+        "blob_sha": "f87ec627ff087f0cbcd2e8dea4703298557083fd",
+        "size_bytes": 26090
+      },
+      {
+        "path": "Telegram/cmake/update_keys_header.cmake",
+        "blob_sha": "ffcbda7a630989238d52a26b8d5a2d8d5bd5de52",
+        "size_bytes": 1447
+      },
+      {
+        "path": "Telegram/Resources/update/.gitattributes",
+        "blob_sha": "f0af3029f5c3824c8caae12a4a3c3320880136c5",
+        "size_bytes": 42
+      },
+      {
+        "path": "Telegram/Resources/update/manifest.min.json",
+        "blob_sha": "c7e2beb0fa25864c6ac6835879abb94c18973bab",
+        "size_bytes": 818
+      },
+      {
+        "path": "Telegram/Resources/update/manifest.sig",
+        "blob_sha": "614df02dd3e2ec64fe36026221ca334905af0d37",
+        "size_bytes": 64
+      },
+      {
+        "path": "Telegram/Resources/update/root-public.pem",
+        "blob_sha": "a5028f6d605fcb57d6240708720dc839954fbd94",
+        "size_bytes": 113
+      },
+      {
+        "path": "Telegram/Resources/winrc/Updater.rc",
+        "blob_sha": "f2f45897feb96c0d2a98fccbf6cfc368dcc2142d",
+        "size_bytes": 1769
+      },
+      {
+        "path": "Telegram/SourceFiles/_other/updater_linux.cpp",
+        "blob_sha": "d6570d0a41a2e0e703a3502637c62027de57568e",
+        "size_bytes": 15449
+      },
+      {
+        "path": "Telegram/SourceFiles/_other/updater_osx.m",
+        "blob_sha": "62aedabc32981809a20ce2b796a993547619bc09",
+        "size_bytes": 12204
+      },
+      {
+        "path": "Telegram/SourceFiles/_other/updater_win.cpp",
+        "blob_sha": "bf935373b2577570c0268de1c151ba479206569d",
+        "size_bytes": 24718
+      },
+      {
+        "path": "Telegram/SourceFiles/_other/updater.h",
+        "blob_sha": "128e9abdc7996be975ecce674b53f1f379d31ff8",
+        "size_bytes": 1225
+      },
+      {
+        "path": "Telegram/SourceFiles/core/update_channel.h",
+        "blob_sha": "342e385f07b771303a112a15895e7cfb2bb612de",
+        "size_bytes": 2969
+      },
+      {
+        "path": "Telegram/SourceFiles/core/update_checker.cpp",
+        "blob_sha": "73eee14f179d769854237640b246858959808736",
+        "size_bytes": 60926
+      },
+      {
+        "path": "Telegram/SourceFiles/core/update_checker.h",
+        "blob_sha": "458ffc75a972bcf39039413ec1e22e854cce2cc3",
+        "size_bytes": 1177
+      },
+      {
+        "path": "Telegram/SourceFiles/core/update_keys.cpp",
+        "blob_sha": "68f0dc1ca464ae59864dd73c40672cb421b46f1c",
+        "size_bytes": 877
+      },
+      {
+        "path": "Telegram/SourceFiles/core/update_keys.h",
+        "blob_sha": "fe18cb9a8a9d50254c1c4cdb252eb340aa745ef4",
+        "size_bytes": 690
+      },
+      {
+        "path": "Telegram/SourceFiles/core/update_unpack.cpp",
+        "blob_sha": "9cd978ccdd437e8afb2ed6f8f7bba1f906806119",
+        "size_bytes": 8920
+      },
+      {
+        "path": "Telegram/SourceFiles/core/update_unpack.h",
+        "blob_sha": "918fd19ffe364150c5fb5430db964536c9efbcc7",
+        "size_bytes": 752
+      },
+      {
+        "path": "Telegram/SourceFiles/core/update_verify.cpp",
+        "blob_sha": "5d970cf882ec3870fa36d079ff94bd50eb703a37",
+        "size_bytes": 24862
+      },
+      {
+        "path": "Telegram/SourceFiles/core/update_verify.h",
+        "blob_sha": "8df2d4b3306805b63ee90e58e431ca5456e75872",
+        "size_bytes": 6090
+      },
+      {
+        "path": "Telegram/SourceFiles/platform/linux/update_install_linux.cpp",
+        "blob_sha": "45d81625f43196fb990ef231704ac076be173cc9",
+        "size_bytes": 37204
+      },
+      {
+        "path": "Telegram/SourceFiles/platform/linux/update_install_linux.h",
+        "blob_sha": "e5edf6d427fc66bd423ec1c0334751b7fa536029",
+        "size_bytes": 1291
+      }
+    ],
+    "tests": {
+      "test_like_blob_count": 228,
+      "sourcefiles_test_blob_count": 167,
+      "gram_tests_blob_count": 55,
+      "other_test_like": [
+        {
+          "path": "Telegram/SourceFiles/tests/test_main.cpp",
+          "blob_sha": "fc3b364827d1f4e60a92a2ae7348229ac31af293",
+          "size_bytes": 5713
+        },
+        {
+          "path": "Telegram/SourceFiles/tests/test_main.h",
+          "blob_sha": "4723e70d8f2d40460759bfc3d7340242da7f1b5e",
+          "size_bytes": 2887
+        },
+        {
+          "path": "Telegram/SourceFiles/tests/test_text.cpp",
+          "blob_sha": "05bf6ce58fd436d7b48f6826b6141fda52bacc74",
+          "size_bytes": 25133
+        },
+        {
+          "path": "Telegram/SourceFiles/tests/test_update_unpack.cpp",
+          "blob_sha": "0692094ea42e838d0bf3b7f23c31c13eda4b1ace",
+          "size_bytes": 12238
+        },
+        {
+          "path": "Telegram/SourceFiles/tests/test_update_verify.cpp",
+          "blob_sha": "be99b63c8c7152a92a3ebc9dfaf4d72b42bd1490",
+          "size_bytes": 25984
+        },
+        {
+          "path": "Telegram/SourceFiles/tests/test_updater_win.cpp",
+          "blob_sha": "0602e8c11d0d96d8626c05b022941e781f588301",
+          "size_bytes": 6713
+        }
+      ]
+    },
+    "docs_root": [
+      {
+        "path": ".github/CONTRIBUTING.md",
+        "blob_sha": "4265e974d0b87622af223d5b8096b67edcbd4aab",
+        "size_bytes": 6074
+      },
+      {
+        "path": "changelog.txt",
+        "blob_sha": "41b7466f8a11a1866a66ff583809dfe74ad9a3c3",
+        "size_bytes": 157914
+      },
+      {
+        "path": "docs/api_credentials.md",
+        "blob_sha": "0d2819bd3cd6b6407ced257edbbd6623b438f262",
+        "size_bytes": 695
+      },
+      {
+        "path": "docs/assets/preview.png",
+        "blob_sha": "808d016f34fe2d4156a2bd26e8cdbe384f888b65",
+        "size_bytes": 1241708
+      },
+      {
+        "path": "docs/assets/slide.01.jpg",
+        "blob_sha": "07ed727d48e286f9a04d933ac7203bdb7205ff4a",
+        "size_bytes": 477277
+      },
+      {
+        "path": "docs/assets/slide.02.jpg",
+        "blob_sha": "2a19cfdeb4a831d8bbe553dede2b1cdae7aec40f",
+        "size_bytes": 430861
+      },
+      {
+        "path": "docs/assets/slide.03.jpg",
+        "blob_sha": "588f2950d5f6fdd2625f2bd250db82761ce0e6f1",
+        "size_bytes": 466747
+      },
+      {
+        "path": "docs/assets/slide.04.jpg",
+        "blob_sha": "d0598198b67a87638865f775f69a34fda792d493",
+        "size_bytes": 602137
+      },
+      {
+        "path": "docs/building-linux.md",
+        "blob_sha": "fbdf25355734f35617849224da106f1b9fafb3c9",
+        "size_bytes": 2463
+      },
+      {
+        "path": "docs/building-mac.md",
+        "blob_sha": "b8c6b6bae95b87f94d090fc73acd774d6307ef12",
+        "size_bytes": 1500
+      },
+      {
+        "path": "docs/building-mas.md",
+        "blob_sha": "da7be145bb0a9cbd3c322fa7efe0c1f5729ae1bf",
+        "size_bytes": 921
+      },
+      {
+        "path": "docs/building-win.md",
+        "blob_sha": "d333539fc0709be6f98a8ef719f22fac0346b49a",
+        "size_bytes": 3342
+      },
+      {
+        "path": "docs/web-proxy-plan.md",
+        "blob_sha": "9c805e32d33e8e1ac6b0417b26242b4a09198bd9",
+        "size_bytes": 34990
+      },
+      {
+        "path": "docs/web-proxy-test-plan.md",
+        "blob_sha": "aa5752bf7a9cf57bafd0489961f8fa49265d238b",
+        "size_bytes": 25526
+      },
+      {
+        "path": "LEGAL",
+        "blob_sha": "09c9e383db122fe0694e73c48d6224676afe60f6",
+        "size_bytes": 925
+      },
+      {
+        "path": "LICENSE",
+        "blob_sha": "d70f4d6a87eece19c4ec184de36a8aba72b4a639",
+        "size_bytes": 35850
+      },
+      {
+        "path": "README.md",
+        "blob_sha": "15a6194f73ae6084a2ab25d14005dc10262cdfb3",
+        "size_bytes": 5977
+      }
+    ],
+    "license_authorities": [
+      {
+        "path": "LEGAL",
+        "blob_sha": "09c9e383db122fe0694e73c48d6224676afe60f6",
+        "size_bytes": 925
+      },
+      {
+        "path": "LICENSE",
+        "blob_sha": "d70f4d6a87eece19c4ec184de36a8aba72b4a639",
+        "size_bytes": 35850
+      },
+      {
+        "path": "README.md",
+        "blob_sha": "15a6194f73ae6084a2ab25d14005dc10262cdfb3",
+        "size_bytes": 5977
+      }
+    ],
+    "root_identity_status": "fixed-u-enumerated",
+    "license_semantic_closure_status": "open-adopted-dependencies-and-copied-derived-content-still-require-release-review"
+  },
+  "blockers": {
+    "cppgir": {
+      "repository": "gitlab.com/mnauw/cppgir",
+      "commit": "47cf94f83b54cda59018135601e19d7fb0c77776",
+      "git_tree_verified": false,
+      "status": "fail-closed-original-host-unread"
+    }
+  },
+  "acceptance": {
+    "baseline_ready": false,
+    "accepted": false,
+    "validation_status": "not-run"
+  }
+}

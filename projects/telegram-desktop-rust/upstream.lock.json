@@ -244,22 +244,49 @@
     {
       "path": "Telegram/build/prepare/prepare.py",
       "dependency": "desktop-app/patches",
-      "commit": "fe957833b84525e634a8d776a7f834ed536d9a21"
+      "previous_commit": "fe957833b84525e634a8d776a7f834ed536d9a21",
+      "commit": "845a383f7abe8e44f92dfdcd566d603066ec2696"
+    },
+    {
+      "path": "Telegram/build/prepare/prepare.py",
+      "dependency": "desktop-app/qt6_windows7_patches",
+      "previous_commit": "bf64e7264237ffd371493f1780ef71d3f41373c9",
+      "commit": "9ce1ffe051161a22f7e78f715b042c773f868e59"
+    },
+    {
+      "path": "Telegram/build/prepare/prepare.py",
+      "dependency": "desktop-app/tg_angle",
+      "previous_commit": "b34c4dc879d115d34794a657c7fa5f6bb34bc10a",
+      "commit": "9fd174a91e6155d1006c5f427366b23006f5d899"
     },
     {
       "path": "Telegram/build/docker/centos_env/Dockerfile",
       "dependency": "desktop-app/patches",
-      "commit": "fe957833b84525e634a8d776a7f834ed536d9a21"
+      "previous_commit": "fe957833b84525e634a8d776a7f834ed536d9a21",
+      "commit": "845a383f7abe8e44f92dfdcd566d603066ec2696"
     },
     {
       "path": "snap/snapcraft.yaml",
       "dependency": "desktop-app/patches",
-      "commit": "fe957833b84525e634a8d776a7f834ed536d9a21"
+      "previous_commit": "fe957833b84525e634a8d776a7f834ed536d9a21",
+      "commit": "845a383f7abe8e44f92dfdcd566d603066ec2696"
     }
   ],
   "lfs": {
     "gitattributes_declares_lfs": false,
-    "pointer_scan_required_in_github_actions": true
+    "pointer_scan_required_in_github_actions": true,
+    "root_standard_pointer_scan": {
+      "status": "manual-complete-stage-a-no-ci",
+      "size_window_bytes": [
+        90,
+        220
+      ],
+      "candidate_blobs": 83,
+      "pointer_hits": 0,
+      "upstream_commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4"
+    },
+    "recursive_external_object_scan_status": "open",
+    "note": "Root fixed-U .gitattributes has no LFS filter and all 83 standard-pointer-sized root blobs were read or identified as native non-UTF8 binary with zero Git LFS pointer signatures. Stage-B exact-candidate validation is still required; recursive external-object closure remains separate."
   },
   "coverage": {
     "root_source_entries_total": 6895,
@@ -281,7 +308,7 @@
     "requires_generated_inputs": true,
     "requires_resources_locales_assets": true,
     "requires_packaging_updater_tests_tooling_docs_licenses": true,
-    "note": "Fixed Stage A authority is telegramdesktop/tdesktop@f985723b552b30fe1c17d377d57f44e61a15a8c4 (tree 91f2b083ab2877c0a17d07868eabec362a5cfca6); root identity was manually revalidated from GitHub without executing CI. Historical recursive coverage counts are not current-U acceptance evidence. Source closure remains open, including original-host recursive cppgir provenance, build-time acquisitions, LFS/generated inputs, resources/locales/assets, packaging/updater/tests/tooling/docs/licenses."
+    "note": "Fixed Stage A authority remains telegramdesktop/tdesktop@f985723b552b30fe1c17d377d57f44e61a15a8c4 (tree 91f2b083ab2877c0a17d07868eabec362a5cfca6). Root resource/LFS/generated-input/build/package/updater/test/tool/docs/license identities now have fresh fixed-U manual Git/API evidence, including 3,134 Resources blobs and zero standard root LFS pointers; this is not CI validation. Source closure remains open for original-host cppgir recursion, recursive external-object/toolchain closure, copied/derived/adopted-dependency license review, and the broader full-source semantic closure."
   },
   "baseline_identity_evidence": {
     "status": "manually-revalidated-stage-a-no-ci",
@@ -319,7 +346,9 @@
       "validation_head_sha": "7e1f2dbfb5c543ab05231a0e271f11d48232ca94",
       "artifact_id": 11474492724,
       "artifact_digest": "sha256:ab52d74cadbc20427e8183fd0963a955d7a7a4f91a478744688fb6c299442d38"
-    }
+    },
+    "upstream_commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+    "fixed_u_revalidation_status": "primary-authority-lines-manually-revalidated-no-ci"
   },
   "recursive_submodule_spot_checks": {
     "status": "direct-gitlink-recursive-tree-scans-complete-nested-cppgir-original-host-unresolved",
@@ -657,5 +686,18 @@
     ],
     "remaining_nested_gitlinks_and_build_time_acquisitions": "GitLab mnauw/cppgir pinned Git tree/blob recursion remains unverified from the original host after a 2026-10-31 retry was blocked by the execution network layer; build-time acquisitions / LFS / generated inputs are not fully revalidated.",
     "closure_status": "open"
+  },
+  "non_code_input_inventory": {
+    "path": "projects/telegram-desktop-rust/inventory/fixed-u-non-code-inputs.json",
+    "upstream_commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+    "resources_blob_count": 3134,
+    "locales_blob_count": 12,
+    "qrc_blob_count": 17,
+    "shader_source_count": 37,
+    "model_obj_source_count": 5,
+    "tests_root_blob_count": 228,
+    "root_lfs_pointer_hits": 0,
+    "identity_status": "fixed-u-root-non-code-identities-enumerated",
+    "closure_status": "open-recursive-license-and-semantic-review-remain"
   }
 }

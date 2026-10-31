@@ -3,7 +3,7 @@
   "project_id": "TDRP-001",
   "spec_revision": 9,
   "upstream_repository": "telegramdesktop/tdesktop",
-  "upstream_commit": "351204f3695b4a39bc3f4d2f230c061b9a01fe2a",
+  "upstream_commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
   "discovery": {
     "evidence_run_id": 38547900810,
     "evidence_head_sha": "9a3e22f5ab8e3522bb27ff682f29703870e2f802",
@@ -13,7 +13,7 @@
     "candidate_lines_total": 331,
     "immutable_commit_pin_occurrences_classified": 19,
     "candidate_lines_pending_classification": 0,
-    "note": "Live upstream 351204f3695b4a39bc3f4d2f230c061b9a01fe2a is one commit / one prepare.py path ahead of 392b83b3091edaaaf0637ff92526db90ce6542e8. The Qt cache-key change inserts two net lines after prepare.py line 1675; eight registered acquisition anchors are shifted +2 with zero content mismatches. Candidate cardinality remains 331/19/0, direct gitlinks are unchanged, and accepted prepare.py blob is 4063cc766ffb60c018b7a6ad456453ec585d5566. Windows OpenAL short-ref resolution is 00cb9b649c -> 00cb9b649c1a6ad1802d88ee4458979164529238.",
+    "note": "Fixed U f985723b552b30fe1c17d377d57f44e61a15a8c4 manually revalidated from GitHub source without running CI. Across the 28 authority source paths referenced by this inventory, 24 blobs are unchanged from historical 351204f3695b4a39bc3f4d2f230c061b9a01fe2a; four changed blobs are canary-bot-api.yml, the Linux Dockerfile, prepare.py and snapcraft.yaml. Registered source-line deltas preserve their dispositions: docker/login-action remains a full GitHub Action SHA pin; Docker and Snap desktop-app/patches remain full commit pins. prepare.py keeps the same acquisition structure but advances desktop-app/patches to 845a383f7abe8e44f92dfdcd566d603066ec2696, qt6_windows7_patches to 9ce1ffe051161a22f7e78f715b042c773f868e59, and tg_angle to 9fd174a91e6155d1006c5f427366b23006f5d899. Candidate cardinality/classification is retained because all other registered source blobs are byte-identical and the changed registered lines remain in the same acquisition/disposition class. Recursive authority closure remains open independently.",
     "candidate_lines_classified": 331,
     "disposition_closure_status": "complete",
     "recursive_authority_closure_status": "open",
@@ -21,7 +21,7 @@
     "recursive_child_unique_repositories_recorded": 9,
     "recursive_child_unique_external_nested_scans_pending": 0,
     "recursive_child_unique_external_nested_scans_complete": 3,
-    "evidence_status": "pending-current-head-revalidation",
+    "evidence_status": "fixed-u-manual-source-revalidated-stage-a-no-ci",
     "previous_historical_evidence": {
       "runner": "github-actions",
       "run_id": 38547900810,
@@ -51,7 +51,7 @@
       "source_line": 164,
       "repository": "https://github.com/desktop-app/patches.git",
       "ref_kind": "commit",
-      "commit": "fe957833b84525e634a8d776a7f834ed536d9a21",
+      "commit": "845a383f7abe8e44f92dfdcd566d603066ec2696",
       "disposition": "build-input-exact-pin",
       "status": "classified",
       "source_scope": "accepted-upstream"
@@ -172,7 +172,7 @@
       "source_line": 127,
       "repository": "https://github.com/desktop-app/patches.git",
       "ref_kind": "commit",
-      "commit": "fe957833b84525e634a8d776a7f834ed536d9a21",
+      "commit": "845a383f7abe8e44f92dfdcd566d603066ec2696",
       "disposition": "build-input-exact-pin",
       "status": "classified",
       "source_scope": "accepted-upstream"
@@ -2382,5 +2382,87 @@
       "root_candidate_policy_status": "complete-for-current-xkbcommon-authority",
       "note": "Closes acquisition-pattern candidates for xkbcommon-1.6.0; keyboard mapping/runtime behavior remains in semantic scope."
     }
+  },
+  "fixed_u_revalidation": {
+    "upstream_commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+    "method": "manual GitHub tree/file/commit reads; no CI/build/test/schema/lint/package/deploy",
+    "authority_source_paths_total": 28,
+    "unchanged_source_blobs": 24,
+    "changed_source_blobs": [
+      {
+        "path": ".github/workflows/canary-bot-api.yml",
+        "old_blob": "7285f29ed2a09695a02b8f7821c10df5aa50bc44",
+        "new_blob": "3ef5e601948c8f3256464d0d31816eebf4ba41a9"
+      },
+      {
+        "path": "Telegram/build/docker/centos_env/Dockerfile",
+        "old_blob": "f72162089985263493c6e3f7e23b566f5df8e454",
+        "new_blob": "3fea9e6866e0ea6351f8a13ebb825ebf49cadfc2"
+      },
+      {
+        "path": "Telegram/build/prepare/prepare.py",
+        "old_blob": "4063cc766ffb60c018b7a6ad456453ec585d5566",
+        "new_blob": "a9f3dd2d9e4020df958ab5af942376177d66c78b"
+      },
+      {
+        "path": "snap/snapcraft.yaml",
+        "old_blob": "38f0eb362832c3623b868c9aa90c03bc4f426d01",
+        "new_blob": "a181d828f25d901303f7221824ac30b0ff5e773a"
+      }
+    ],
+    "changed_registered_anchors": [
+      {
+        "path": ".github/workflows/canary-bot-api.yml",
+        "line": 46,
+        "old": "docker/login-action@dbcb813823bdd20940b903addbd779551569679f",
+        "new": "docker/login-action@81c6f93d4bc991e510b342a00b419b3bb4efc5c6",
+        "disposition": "ci-only"
+      },
+      {
+        "path": "Telegram/build/docker/centos_env/Dockerfile",
+        "line": 164,
+        "old_commit": "fe957833b84525e634a8d776a7f834ed536d9a21",
+        "new_commit": "845a383f7abe8e44f92dfdcd566d603066ec2696",
+        "disposition": "build-input-exact-pin"
+      },
+      {
+        "path": "snap/snapcraft.yaml",
+        "line": 127,
+        "old_commit": "fe957833b84525e634a8d776a7f834ed536d9a21",
+        "new_commit": "845a383f7abe8e44f92dfdcd566d603066ec2696",
+        "disposition": "build-input-exact-pin"
+      }
+    ],
+    "changed_nearby_content_pins": [
+      {
+        "path": "Telegram/build/prepare/prepare.py",
+        "clone_line": 522,
+        "checkout_line": 524,
+        "repository": "desktop-app/patches",
+        "commit": "845a383f7abe8e44f92dfdcd566d603066ec2696"
+      },
+      {
+        "path": "Telegram/build/prepare/prepare.py",
+        "clone_line": 1589,
+        "checkout_line": 1591,
+        "repository": "desktop-app/qt6_windows7_patches",
+        "commit": "9ce1ffe051161a22f7e78f715b042c773f868e59"
+      },
+      {
+        "path": "Telegram/build/prepare/prepare.py",
+        "clone_line": 1597,
+        "checkout_line": 1599,
+        "repository": "desktop-app/tg_angle",
+        "commit": "9fd174a91e6155d1006c5f427366b23006f5d899"
+      }
+    ],
+    "verified_github_objects": [
+      "desktop-app/patches@845a383f7abe8e44f92dfdcd566d603066ec2696",
+      "desktop-app/qt6_windows7_patches@9ce1ffe051161a22f7e78f715b042c773f868e59",
+      "desktop-app/tg_angle@9fd174a91e6155d1006c5f427366b23006f5d899",
+      "docker/login-action@81c6f93d4bc991e510b342a00b419b3bb4efc5c6"
+    ],
+    "classification_status": "fixed-u-primary-authority-lines-revalidated",
+    "recursive_authority_closure_status": "open"
   }
 }
