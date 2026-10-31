@@ -187,6 +187,13 @@ entries（61,752 blobs、2,241 directories）。`upstream.lock.json` 已同步�
 `live_candidate`；它仍是 discovery-only，未取得绑定该 exact subject 的 Actions
 inventory、依赖闭包、LFS scan、acceptance receipt 或终验记录。
 
+同一 exact subject 的 root dependency input probe 已记录在
+`dossiers/upstream-current-candidate-dependency-probe-20261031.md`：确认了
+integrity-qualified `pnpm@12.15.0`、六组 workspace pattern、77 个 root runtime
+dependencies、57 个 devDependencies，以及同树的 lockfile/workspace blob。该
+probe 只证明根输入存在与形状，不等价于递归依赖闭包；所有 closure flags 继续
+保持 `false`。
+
 当前 `projects/openclaw-rust/evidence/` 有开发冻结说明、本地冻结治理说明与历史
 upstream drift 记录；尚无绑定 `77b08d13…/a52b7278…` 的 Actions run/attempt/job、
 inventory/dependency-closure artifact、不可变 digest、acceptance receipt 或
