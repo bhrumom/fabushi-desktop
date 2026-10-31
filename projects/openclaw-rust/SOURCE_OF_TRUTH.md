@@ -421,6 +421,11 @@ P0 在 Actions 建立 lock、inventory、parity ledger、RTM、dossiers 和 evid
 该快照只固化台账状态，不把 helper、fixture、静态 symbol 或 local oracle 解释为生产接线，
 也不改变任何 completion flag。
 
+完整 objective 的只读 Spec compliance review 见
+[`dossiers/spec-compliance-review-20261031.md`](dossiers/spec-compliance-review-20261031.md)。该 review
+逐组列出 AC01–AC24 的当前 verdict 与下一直接仪器；结论仍是 incomplete/pending，未把缺失的
+Actions、运行时、设备、平台、签名包或独立 ACCEPT 证据降级为 N/A。
+
 冻结期本地治理载体见
 [`evidence/development-freeze-local-governance-20261031.md`](evidence/development-freeze-local-governance-20261031.md)。
 它只记录未推送 local subject、远端 ref 状态和冻结策略，不是 Actions
