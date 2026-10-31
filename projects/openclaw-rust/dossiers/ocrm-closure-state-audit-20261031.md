@@ -142,6 +142,16 @@ All eight global flags remain `false`: baseline identity, source closure,
 responsibility mapping, Rust implementation, production wiring, ecosystem
 compatibility, UI acceptance, and release acceptance.
 
+## AC02 hard-gate residue check
+
+A read-only case-insensitive search across `projects/openclaw-rust` found no
+active rule requiring `unread=0`, `unread == 0`, or an equivalent zero-unread
+gate. The matches are limited to historical review language, P0 text that
+explicitly rejects fabricated zero-unread counts, and current audit/compliance
+text explaining that the old gate was removed. This negative search confirms
+the governance wording is aligned with the revised AC02 rule; it does not
+close the still-null applicability/disposition fields or prove final AC02.
+
 ## Disposition
 
 This audit is read-only evidence. It does not mutate generated inventory
