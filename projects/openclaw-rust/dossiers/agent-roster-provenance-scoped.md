@@ -45,7 +45,7 @@ The audited source code was decomposed into 6 discrete Rust runtime responsibili
 2. **`OCRM-RESP-AGENT-ROSTER-PROVENANCE-001`**:
    - **Behavior**: Roster include provenance evaluation, determining whether `$include` contributes membership or default metadata at `agents.entries`, `agents.list`, `id`, `default`, or `bindings` boundaries.
    - **Rust Owner**: `source/host/src/agents/agent_roster.rs::config_include_owns_agent_roster_values`.
-   - **Production Call Chain**: Producer `can_write_doctor_include` → Owner `include_contribution_owns_agent_roster` → Consumer `can_write_doctor_include`.
+   - **Production Call Chain**: No trusted production producer currently resolves root/external includes or supplies include-contribution provenance. The existing `SettingsService::set_host_settings` consumer invokes `can_write_doctor_include`, which delegates to `config_include_owns_agent_roster_values` and the local `include_contribution_owns_agent_roster` boundary helper; this is a local fail-closed guard, not complete producer→owner→consumer provenance wiring.
    - **Oracle**: `OCRM-ROSTER-O04`.
    - **Status**: `implementation=implemented`, `wiring=not-wired`, `verification=not-run` (`blocker_ids=["BL-AGENT-ROSTER-UPSTREAM-CALLER-001"]`: Host agent workspace configuration & doctor inspection pipelines do not yet invoke roster collapse, provenance, audit, and doctor include inspection helpers in real production flows).
 
@@ -73,7 +73,7 @@ The audited source code was decomposed into 6 discrete Rust runtime responsibili
 6. **`OCRM-RESP-DOCTOR-ROSTER-INCLUDE-WRITE-001`**:
    - **Behavior**: Doctor guarded config write staging and include boundary determination, protecting include-owned rosters from destructive in-place writes.
    - **Rust Owner**: `source/host/src/agents/agent_roster.rs::can_write_doctor_include`.
-   - **Production Call Chain**: Producer `can_write_doctor_include` → Consumer `source/host/src/agents/settings_file.rs::write_sand_settings_file`.
+   - **Production Call Chain**: No trusted production producer currently resolves include ownership for doctor writes. The existing `SettingsService::set_host_settings` consumer invokes `can_write_doctor_include` with `include_contributes_roster=false` for current and target documents; `source/host/src/agents/settings_file.rs::write_sand_settings_file` is not reached through a verified include-aware doctor producer in the current Rust runtime. This remains a local fail-closed guard, not complete doctor/include-write wiring.
    - **Oracle**: `OCRM-ROSTER-O08`.
    - **Status**: `implementation=implemented`, `wiring=not-wired`, `verification=not-run` (`blocker_ids=["BL-AGENT-ROSTER-UPSTREAM-CALLER-001"]`: Host agent workspace configuration & doctor inspection pipelines do not yet invoke roster collapse, provenance, audit, and doctor include inspection helpers in real production flows).
 
