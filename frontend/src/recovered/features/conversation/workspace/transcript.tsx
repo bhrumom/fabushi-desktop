@@ -67,6 +67,7 @@ function isOrdinaryMessageActionable(
   onCopy?: (entry: TranscriptMessage) => void | Promise<void>,
   onForward?: (entry: TranscriptMessage) => void,
 ): boolean {
+  if (entry.isDeleted === true) return false;
   const hasActionableContent = entry.text.length > 0 || (entry.attachments?.length ?? 0) > 0;
   const deliveryActionable = entry.delivery !== "failed" && entry.delivery !== "pending" && entry.delivery !== "queued";
   return hasActionableContent && deliveryActionable && (!isReadOnly || onCopy != null || onForward != null);
@@ -789,7 +790,7 @@ export function ConversationTranscript({ entries, hasOlder = false, isLoadingOld
                   targetId={entry.replyToId ?? ""}
                   timestampMs={referencedEntry != null && "timestampMs" in referencedEntry ? referencedEntry.timestampMs : undefined}
                 /> : null}
-                {messageLink != null && messageUrlCards != null ? <LinkCardView isGroupStart={messageAdjacency.isGroupStart} provider={messageUrlCards} url={messageLink} /> : entry.isStreaming && entry.role === "assistant" && !entry.text ? <StreamingMessage /> : entry.role === "assistant" ? <AssistantMessageContent channel={entry.channel} images={entry.images} isSourceTrusted={entry.isSourceTrusted} isStreaming={entry.isStreaming} text={entry.text} /> : <UserMessageContent richText={entry.richText} text={entry.text} />}
+                {messageLink != null && messageUrlCards != null ? <LinkCardView isGroupStart={messageAdjacency.isGroupStart} provider={messageUrlCards} url={messageLink} /> : entry.isStreaming && entry.role === "assistant" && !entry.text ? <StreamingMessage /> : entry.role === "assistant" ? <AssistantMessageContent channel={entry.channel} images={entry.images} isSourceTrusted={entry.isSourceTrusted} isStreaming={entry.isStreaming} text={entry.text} /> : entry.isDeleted === true ? <p aria-label="Deleted message" className="sand-message-content">Message deleted</p> : <UserMessageContent richText={entry.richText} text={entry.text} />}
                 {renderMessageReactionPills?.(reactionPillProps)}
                 {entry.attachments?.length ? <TranscriptAttachmentGallery adjacency={messageAdjacency} attachments={entry.attachments} downloadAttachment={downloadAttachment} readAttachmentBytes={readAttachmentBytes} resolveMedia={resolveAttachmentMedia} role={entry.role} /> : null}
                 {entry.delivery === "queued" && entry.composedAtMs == null ? <QueuedSendNotice entry={entry} isTransportDown={isTransportDown} onCancel={onCancelQueuedSend} /> : null}
