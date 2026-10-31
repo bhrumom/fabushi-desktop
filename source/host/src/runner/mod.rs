@@ -15,6 +15,45 @@ mod transient_stream_error;
 mod turn_settle;
 mod turn_run_shell;
 
+pub const EXACT_SPEECH_PREFIX: &str = "Internal OpenClaw voice playback result.";
+pub const EXACT_SPEECH_DIRECTIVE: &str =
+    "Do not call openclaw_agent_consult or any other tool for this message.";
+pub const EXACT_SPEECH_INSTRUCTION: &str = "Speak this exact OpenClaw answer to ";
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum ExactSpeechClassification {
+    ExactSpeechEcho(String),
+    PeerConsult(String),
+    Malformed(&'static str),
+}
+
+/// Classify a voice-consult payload without owning dispatch or retained state.
+pub fn classify_realtime_voice_consult_tool_call(
+    text: &str,
+    retained_exact_speech: &[String],
+) -> ExactSpeechClassification {
+    if !text.contains(EXACT_SPEECH_PREFIX) {
+        return ExactSpeechClassification::PeerConsult(text.to_string());
+    }
+    if !text.contains(EXACT_SPEECH_DIRECTIVE) || !text.contains(EXACT_SPEECH_INSTRUCTION) {
+        return ExactSpeechClassification::Malformed("missing required exact speech sentinels");
+    }
+
+    let Some(answer_pos) = text.find("Answer: \"") else {
+        return ExactSpeechClassification::Malformed("missing Answer: delimiter");
+    };
+    let rest = &text[answer_pos + "Answer: \"".len()..];
+    let Some(end_quote) = rest.rfind('"') else {
+        return ExactSpeechClassification::Malformed("unterminated Answer string");
+    };
+    let answer = &rest[..end_quote];
+    if retained_exact_speech.iter().any(|retained| retained == answer) {
+        ExactSpeechClassification::ExactSpeechEcho(answer.to_string())
+    } else {
+        ExactSpeechClassification::PeerConsult(answer.to_string())
+    }
+}
+
 pub use checkpoint::AttemptCheckpoint;
 pub use stream_attempt::{
     AttemptProgress, OuterCheckpointDisposition, OuterStreamFuture,

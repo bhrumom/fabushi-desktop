@@ -62,15 +62,22 @@ The audited source code was decomposed into 6 discrete Rust runtime responsibili
 
 The historical Unit 8 mapping treated the private classifier inside
 `source/host/tests/openclaw_audio_talk_contract.rs` as if it were the declared
-Runner owner. A current source re-read finds no
-`classify_realtime_voice_consult_tool_call` symbol in `source/host/src/runner`
-or `source/host/app/src/main.rs`, no retained exact-speech session state, and
-no production voice-consult producer/consumer path. The test helper therefore
-remains fixture-only evidence. `OCRM-RESP-TALK-EXACT-SPEECH-001` is calibrated
-to `implementation=not-started`, `wiring=not-wired`, `verification=not-run`,
-and `acceptance=pending` until ESP-D01 through ESP-D04 in
+Runner owner. A current source re-read found no retained exact-speech session
+state and no production voice-consult producer/consumer path. The test helper
+therefore remains fixture-only evidence. `OCRM-RESP-TALK-EXACT-SPEECH-001`
+now has a pure classifier implementation in `source/host/src/runner/mod.rs`,
+but remains `wiring=not-wired`, `verification=not-run`, and `acceptance=pending`
+until ESP-D01 through ESP-D04 in
 `docs/specs/exact-speech-protocol.md` are resolved. The historical OCRM-AUDIO-O07
 test is not a production oracle until it is moved behind the real Runner path.
+
+### Exact-speech implementation slice (2026-10-31)
+
+`runner::classify_realtime_voice_consult_tool_call` now owns the deterministic
+sentinel, delimiter, retained-answer match, and malformed-payload decisions.
+It performs no I/O or dispatch and does not own retained state. This advances
+implementation only; the absence of a real voice-consult producer, retained
+session state owner, and consumer prevents any wiring or acceptance upgrade.
 
 The same exact-source re-read found no `TurnContextTracker`,
 or `RealtimeVoiceAudioQueue` in the declared Rust targets. The O05/O06, O08/O09,

@@ -15897,9 +15897,9 @@
       ],
       "id": "OCRM-RESP-TALK-EXACT-SPEECH-001",
       "integration": {
-        "consumer": "No production voice-consult consumer identified; production_turn_agent_owner has no exact-speech classifier call",
-        "entrypoint": "pending ESP-D01 producer and Runner consumer selection",
-        "owner": "pending existing Runner voice-consult owner selection",
+        "consumer": "No production voice-consult consumer identified; the pure classifier is currently uncalled",
+        "entrypoint": "source/host/src/runner/mod.rs::classify_realtime_voice_consult_tool_call",
+        "owner": "source/host/src/runner/mod.rs",
         "producer": "No production voice-consult tool-call producer identified"
       },
       "invariants": [
@@ -15943,7 +15943,7 @@
       ],
       "status": {
         "acceptance": "pending",
-        "implementation": "not-started",
+        "implementation": "implementing",
         "mapping": "mapped",
         "read": "read-complete",
         "verification": "not-run",
@@ -15958,7 +15958,10 @@
         "source/host/tests/openclaw_audio_talk_contract.rs::test_ocrm_audio_o07_exact_speech_loop_prevention (fixture-only; not production evidence)"
       ],
       "typed_contracts": [
-        "pending ESP-D01 through ESP-D04"
+        "EXACT_SPEECH_PREFIX",
+        "EXACT_SPEECH_DIRECTIVE",
+        "EXACT_SPEECH_INSTRUCTION",
+        "ExactSpeechClassification"
       ],
       "unit_id": "OCRM-UNIT-TALK-001"
     },
