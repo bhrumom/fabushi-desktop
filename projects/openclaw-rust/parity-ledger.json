@@ -4423,10 +4423,10 @@
       ],
       "id": "OCRM-RESP-CHANNEL-ACCESS-CONTROL-001",
       "integration": {
-        "consumer": "ChannelAclGate::is_authorized is available at the connector boundary; no production inbound channel consumer is wired yet",
+        "consumer": "ChannelAclGate::is_authorized and verify_webhook_hmac_sha256 are available at the connector boundary; no production inbound channel consumer is wired yet",
         "entrypoint": "source/host/src/connectors/channel_delivery.rs",
         "owner": "source/host/src/connectors/channel_delivery.rs",
-        "producer": "No production inbound channel producer identified; ACL currently remains a pure connector policy helper"
+        "producer": "No production inbound channel producer identified; ACL and HMAC remain pure connector policy helpers"
       },
       "invariants": [
         "Denylisted senders strictly rejected even if present on allowlist",
