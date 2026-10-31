@@ -15,6 +15,7 @@ use super::{
     CloudWorkerSandboxRequest,
     CloudWorkerProvisioningConfig,
     CloudWorkerProvisioningOwner, CloudWorkerProvisioningStore, CloudWorkerStoreError,
+    CloudWorkerWarmImage, CloudWorkerWarmImageGeneration, CloudWorkerWarmImageOperation,
 };
 
 pub const CLOUD_WORKERS_EXTENSION_ID: HostExtensionId = HostExtensionId::CloudWorkers;
@@ -75,6 +76,29 @@ impl CloudWorkerProvisioningExtension {
             .lock()
             .map_err(|_| CloudWorkerCatalogError::OwnerUnavailable)?;
         owner.resolve_catalog(identity, load)
+    }
+
+    /// Registers warm-image state through the canonical owner and its atomic
+    /// persistence adapter. No provider snapshot or image process is started.
+    pub fn register_warm_image(
+        &self,
+        image: CloudWorkerWarmImage,
+    ) -> Result<(), CloudWorkerMutationError> {
+        self.mutate_and_persist(|owner| owner.register_warm_image(image))
+    }
+
+    /// Applies one generation-fenced warm-image transition and persists the
+    /// resulting owner snapshot. Provider side effects remain a separate
+    /// adapter and are intentionally not implied by this method.
+    pub fn apply_warm_image(
+        &self,
+        image_id: &str,
+        expected_generation: CloudWorkerWarmImageGeneration,
+        operation: CloudWorkerWarmImageOperation,
+    ) -> Result<CloudWorkerWarmImage, CloudWorkerMutationError> {
+        self.mutate_and_persist(|owner| {
+            owner.apply_warm_image(image_id, expected_generation, operation)
+        })
     }
 
     /// Provides the read-only doctor projection from the canonical owner.

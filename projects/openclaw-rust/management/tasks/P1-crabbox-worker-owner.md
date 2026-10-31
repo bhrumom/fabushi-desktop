@@ -241,6 +241,10 @@ pending Crabbox responsibilities:
   `CloudWorkerProvisioningExtension::resolve_provider_catalog`; direct access
   to the owner cache is not a production integration path, and owner lock
   failure remains an explicit unavailable result.
+- Warm-image state mutations now have typed extension façades
+  `register_warm_image` and `apply_warm_image`, both using the canonical owner
+  and atomic store. Provider snapshot, credential scrub and recovery consumers
+  remain pending and are not inferred from this persistence path.
 
 The broader Crabbox projection, lifecycle, sandbox, bootstrap, artifact,
 warm-image and runtime-control rows remain pending where their producer or

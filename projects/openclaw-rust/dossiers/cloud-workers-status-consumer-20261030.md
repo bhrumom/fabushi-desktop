@@ -151,3 +151,12 @@ The bootstrap request now also carries lease ID, owner epoch and generation.
 those fields, scope and runtime identity against the canonical owner before a
 future producer can act, preserving stale/outcome-unknown fencing without
 adding enrollment or process side effects.
+
+## Warm-image owner persistence façade — 2026-10-31
+
+The Host extension now exposes typed `register_warm_image` and
+`apply_warm_image` methods. Both route through the single provisioning owner
+and its atomic persistence adapter; generation fencing and rollback/outcome
+unknown handling remain centralized in that owner. No provider snapshot,
+credential scrub, image process or recovery consumer is connected by these
+methods.
