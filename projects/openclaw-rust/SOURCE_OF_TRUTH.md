@@ -434,6 +434,15 @@ pnpm-workspace.yaml、.gitattributes、LICENSE 和 THIRD_PARTY_NOTICES.md 的 bl
 身份不等价于依赖闭包，仍需 exact-head Actions inventory、包 integrity/LFS 和
 递归 dependency closure 才能提升任何 authority flag。
 
+对上一 candidate `b7cc7ebc9b442ed7eb73a92336c2a9886b578f7b` 的只读 compare
+显示当前 subject ahead 4、behind 0，共 25 个文件变化。变化覆盖 Gateway
+protocol/client handshake 与 pending-request、TTS preference/fallback、UI
+Gateway/session/chat history/send queue，以及 Plugins 页面/生成测试；另有
+少量 gateway/TTS allocation 配置和文档变更。该 compare 只建立 drift frontier，
+不证明新 subject 的递归闭包或语义读取；受影响责任必须绑定
+`ad57b6135a55a6792b6d703bc1750954d854d6aa` 重新读取，旧 subject 的对应
+inventory、dossier、Actions provenance 不得直接复用。
+
 2026-10-31T09:14:47Z 的最新只读核对将当前 OpenClaw `main` 更新为
 `e0f1e0a6af388d18fcfcda210f39f5106c7f7c10` / tree
 `63d39e4b31fbb462aab29ff0f8b728597bb3ca20`（committer
