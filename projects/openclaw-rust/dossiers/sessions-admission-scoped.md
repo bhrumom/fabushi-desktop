@@ -251,9 +251,9 @@ the full public routing boundary.
 The inference consumer edge is now explicit. The existing
 `SandAgentSessionStore::apply_session_model_selection` remains the only writer
 of the agent-scoped `sessionModelSelection` KV. `runner.startRoutedProvider`
-reads that same record before provider authorization, rejects malformed or
-cross-agent state through the existing reader, and projects provider/model/
-thinking values into the one `SandSessionOptions` passed to
+reads that same record before turn composition, rejects malformed or
+cross-agent state through the existing reader, and projects model/thinking
+values into the one `SandSessionOptions` passed to
 `ProductionInferenceExtension::cursor_auth_for_session`. The resulting
 `RequestedModel` is consumed by the existing Cursor inference transport and
 `HostRunnerComposition` turn; no second session or inference owner is added.

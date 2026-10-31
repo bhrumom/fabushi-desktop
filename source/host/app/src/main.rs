@@ -6434,12 +6434,9 @@ fn start_routed_provider_task(
     let persisted_session_model = SandAgentSessionStore::new(Arc::clone(&session_workers))
         .read_session_model_entry(&agent_id)
         .map_err(GatewayCommandError::Internal)?;
-    let provider_name = persisted_session_model
-        .provider_override
-        .as_deref()
-        .map(str::trim)
-        .filter(|value| !value.is_empty())
-        .or_else(|| args.get("provider").and_then(serde_json::Value::as_str))
+    let provider_name = args
+        .get("provider")
+        .and_then(serde_json::Value::as_str)
         .unwrap_or("");
     let requested_provider = RoutedProvider::parse(provider_name)
         .ok_or_else(|| GatewayCommandError::Internal(format!(

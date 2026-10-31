@@ -14738,7 +14738,7 @@
       ],
       "id": "OCRM-RESP-SESSION-MODEL-OVERRIDES-001",
       "integration": {
-        "consumer": "runner.startRoutedProvider reads the canonical sessionModelSelection state before provider authorization; the resulting SandSessionOptions is consumed by ProductionInferenceExtension::cursor_auth_for_session and HostRunnerComposition",
+        "consumer": "runner.startRoutedProvider reads the canonical sessionModelSelection state before turn composition; model/thinking state is projected into SandSessionOptions and consumed by ProductionInferenceExtension::cursor_auth_for_session and HostRunnerComposition; routed-provider selection remains owned by the top-level route",
         "entrypoint": "source/host/src/extensions/session/agent_session.rs::SandAgentSessionStore::apply_session_model_selection",
         "owner": "source/host/src/extensions/session/agent_session.rs",
         "producer": "SandAgentSessionStore::apply_session_model_selection opens the existing SandAgentDb owner and persists the agent-scoped sessionModelSelection KV only after an Applied result; runner.startRoutedProvider is the production turn producer that reads the same state"
