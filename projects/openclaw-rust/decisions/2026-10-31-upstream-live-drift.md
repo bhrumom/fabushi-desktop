@@ -364,3 +364,32 @@ candidate in the lock. It remains discovery-only: no prior inventory,
 dependency closure, LFS result or Actions provenance was relabeled or reused;
 all authority and completion flags remain unchanged. No CI, push, PR update or
 local OCRM executable verification was performed.
+
+## Subsequent live recheck — 2026-10-31T08:42:15Z
+
+Read-only `git ls-remote` and GitHub commit/tree API checks resolved
+`openclaw/openclaw` `refs/heads/main` to commit
+`54a2fe137a70a5d2c0c0187ba27294c5ba74d3a0`, root tree
+`4e8c368864db959f8a188bc23333a6d24dd221a0`. The recursive tree response was
+not truncated and contained 63,998 entries: 61,757 blobs and 2,241 trees, with
+no gitlinks. Compared with the preceding `1d2e685...` candidate, the ref is
+ahead by seven commits and has 30 changed files. Root package/dependency/license
+inputs remain identity-stable.
+
+This supersedes the `1d2e685...` discovery candidate in the lock. It remains
+discovery-only: no prior inventory, dependency closure, LFS result or Actions
+provenance was relabeled or reused; all authority and completion flags remain
+unchanged. No CI, push, PR update or local OCRM executable verification was
+performed.
+
+The four lifecycle paths were also re-read by exact blob identity at this
+subject: `src/cron/isolated-agent/run.ts`
+(`617257faccf4b8cb7d696e0a8890d77916e83fa5`),
+`src/cron/isolated-agent/session-cleanup.ts`
+(`5cdeb385daf097dd9d7b87febdc7178dd4a91050`),
+`src/agents/subagents/registry/subagent-session-cleanup.ts`
+(`1669914996a02fcecd45012811d0a42f18bd32d7`), and
+`src/config/sessions/lifecycle.ts`
+(`7e3c7a6999cb44417ec634b0e77d1299c672f8c1`). Their behavior evidence may be
+carried forward as same-blob evidence only; no broader inventory or dependency
+closure is implied.
