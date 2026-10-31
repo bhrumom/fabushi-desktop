@@ -4445,7 +4445,7 @@
         "OCRM-CHANNEL-O11",
         "OCRM-CHANNEL-O12"
       ],
-      "owner_decision": "Implement channel ACL gating and webhook signature verification in connectors",
+      "owner_decision": "Retain ACL and webhook-signature helpers in the connector owner; identify the real inbound channel ingress and consumer before production wiring",
       "postconditions": [
         "Access authorized or denied with security audit log"
       ],
@@ -4722,7 +4722,7 @@
         "OCRM-CHANNEL-O01",
         "OCRM-CHANNEL-O08"
       ],
-      "owner_decision": "Implement inbound message deduplication and debounce control in host channel delivery",
+      "owner_decision": "Retain debounce and deduplication helpers in the connector owner; identify the real inbound channel producer and transcript/session consumer before production wiring",
       "postconditions": [
         "Unique message admitted into conversation turn pipeline"
       ],
@@ -4906,7 +4906,7 @@
       "oracle_ids": [
         "OCRM-CHANNEL-O02"
       ],
-      "owner_decision": "Implement thread routing and conversation affinity in host channel delivery",
+      "owner_decision": "Retain thread-affinity resolution in the connector owner; identify the real inbound ingress and transcript/session consumer before production wiring",
       "postconditions": [
         "Conversation scope isolated and preserved across thread lifetime"
       ],
