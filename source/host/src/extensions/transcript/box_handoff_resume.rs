@@ -89,6 +89,7 @@ pub fn build_hidden_handoff_resume_send_args(
 ) -> Value {
     json!({
         "agentId": agent_id,
+        "sessionKey": format!("agent:{agent_id}:main"),
         "prompt": prompt,
         "appendUserMessage": false,
         "awaitTurn": false,

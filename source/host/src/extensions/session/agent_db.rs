@@ -5,6 +5,7 @@ use std::sync::{Arc, Mutex, OnceLock};
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use rusqlite::{OptionalExtension, params};
+use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
 use crate::storage::sqlite_busy::{is_sqlite_busy_error, is_sqlite_corrupt_error};
@@ -50,6 +51,12 @@ pub enum AgentDbProjectionError {
     MetadataJson(#[from] serde_json::Error),
     #[error("agent lifecycle revision unavailable: {0}")]
     LifecycleRevisionUnavailable(String),
+    #[error("agent compaction entry is invalid: {0}")]
+    CompactionInvalid(String),
+    #[error("agent compaction entry conflicts with an existing identity: {0}")]
+    CompactionConflict(String),
+    #[error("agent session work-admission record is invalid: {0}")]
+    WorkAdmissionInvalid(String),
     #[error("latestRootBlobId hex is invalid: {0}")]
     LatestRootHex(String),
     #[error("agent db owner mutex poisoned")]
@@ -73,6 +80,7 @@ const KV_ORIGIN: &str = "origin";
 const KV_INTRODUCTION: &str = "introductionPending";
 const KV_PURPOSE: &str = "purpose";
 const KV_PARTNERS: &str = "conversationPartners";
+const KV_SESSION_WORK_ADMISSION: &str = "sessionWorkAdmission";
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct AgentMetadataProjection {
@@ -91,6 +99,100 @@ pub struct AgentDbSerdeSnapshot {
     pub request_ids: Vec<RequestRecord>,
     pub pending_episode_turns: Vec<EpisodeTurn>,
     pub memory_prompt_snapshot: Option<MemoryPromptSnapshot>,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct CompactionCommit {
+    pub entry_id: String,
+    pub first_kept_entry_id: Option<String>,
+    pub summary: String,
+    pub tokens_before: u64,
+    pub details: Option<serde_json::Value>,
+    pub source_turn_id: String,
+    pub expected_lifecycle_revision: String,
+}
+
+/// Durable generation and lifecycle facts used by the session work-admission
+/// owner. This is intentionally agent-DB local until the full session catalog
+/// migration exists.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct SessionWorkAdmissionRecord {
+    pub session_key: String,
+    pub session_id: String,
+    pub lifecycle_revision: String,
+    #[serde(default)]
+    pub archived_at_ms: Option<f64>,
+    #[serde(default)]
+    pub archived_by: Option<String>,
+    #[serde(default)]
+    pub archive_reason: Option<String>,
+    #[serde(default)]
+    pub admitted_work_id: Option<String>,
+    /// Durable fence for materialized outgoing media that has not yet reached
+    /// the transcript owner. This is separate from background work because a
+    /// foreground turn may own both identities at once.
+    #[serde(default)]
+    pub admitted_media_work_id: Option<String>,
+    /// Absolute paths materialized for the fenced media work. This is durable
+    /// recovery input; it is not itself permission to publish or delete media.
+    #[serde(default)]
+    pub admitted_media_paths: Vec<String>,
+    #[serde(default)]
+    pub terminal_result_idempotency_key: Option<String>,
+    #[serde(default)]
+    pub provider_review_id: Option<String>,
+    #[serde(default)]
+    pub provider_review_phase: Option<String>,
+    #[serde(default)]
+    pub provider_review: Option<SessionProviderReview>,
+}
+
+/// Provider-authored refusal facts retained by the session admission owner.
+/// This record contains no continuation capability.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct SessionProviderReview {
+    pub id: String,
+    pub session_id: String,
+    pub run_id: String,
+    pub provider: String,
+    pub model: String,
+    pub runtime_id: String,
+    #[serde(default)]
+    pub api: Option<String>,
+    #[serde(default)]
+    pub native_thread_id: Option<String>,
+    #[serde(default)]
+    pub native_turn_id: Option<String>,
+    pub explanation: String,
+    #[serde(default)]
+    pub continuation_message: Option<String>,
+    #[serde(default)]
+    pub error_type: Option<String>,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct SessionWorkResultReceipt {
+    pub session_key: String,
+    pub lifecycle_revision: String,
+    pub work_id: String,
+    pub idempotency_key: String,
+    pub content: String,
+    pub sent_message_count: usize,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum SessionWorkResultCommitOutcome {
+    Committed(SessionWorkResultReceipt),
+    AlreadyCommitted(SessionWorkResultReceipt),
+    RejectedStale,
+    ConflictingResult,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum CompactionCommitOutcome {
+    Committed(serde_json::Value),
+    AlreadyCommitted(serde_json::Value),
+    RejectedStale,
 }
 
 pub type AgentDbListener = Arc<dyn Fn() + Send + Sync + 'static>;
@@ -330,6 +432,386 @@ impl SandAgentDb {
         self.run_write(&format!("deleteKv:{key}"), |db| {
             db.execute(DELETE_KV_SQL, params![key]).map(|changes| changes > 0)
         })
+    }
+
+    pub fn read_session_work_admission(
+        &self,
+    ) -> Result<Option<SessionWorkAdmissionRecord>, AgentDbProjectionError> {
+        let Some(raw) = self.read_kv(KV_SESSION_WORK_ADMISSION)? else {
+            return Ok(None);
+        };
+        serde_json::from_str(&raw)
+            .map(Some)
+            .map_err(AgentDbProjectionError::MetadataJson)
+    }
+
+    /// Compare-and-set the agent-local work-admission record. A missing
+    /// expected revision means create-only; a supplied revision means update
+    /// only when the currently stored generation still matches.
+    pub fn compare_and_set_session_work_admission(
+        &self,
+        expected_lifecycle_revision: Option<&str>,
+        next: &SessionWorkAdmissionRecord,
+    ) -> Result<bool, AgentDbProjectionError> {
+        if next.session_key.trim().is_empty()
+            || next.session_id.trim().is_empty()
+            || next.lifecycle_revision.trim().is_empty()
+        {
+            return Err(AgentDbProjectionError::WorkAdmissionInvalid(
+                "session work admission requires session key, session id, and lifecycle revision"
+                    .into(),
+            ));
+        }
+        let encoded = serde_json::to_string(next)?;
+        let mut guard = self
+            .connection
+            .lock()
+            .map_err(|_| AgentDbProjectionError::OwnerPoisoned)?;
+        let Some(db) = guard.as_mut() else {
+            return Ok(false);
+        };
+        let current = db
+            .query_row(GET_KV_SQL, params![KV_SESSION_WORK_ADMISSION], |row| {
+                row.get::<_, String>(0)
+            })
+            .optional()?;
+        let matches = match (expected_lifecycle_revision, current.as_deref()) {
+            (None, None) => true,
+            (Some(expected), Some(raw)) => serde_json::from_str::<SessionWorkAdmissionRecord>(raw)
+                .ok()
+                .is_some_and(|record| record.lifecycle_revision == expected),
+            _ => false,
+        };
+        if !matches {
+            return Ok(false);
+        }
+        let changed = match current {
+            Some(previous) => db.execute(
+                COMPARE_AND_SET_KV_SQL,
+                params![encoded, KV_SESSION_WORK_ADMISSION, previous],
+            )?,
+            None => db.execute(
+                SET_KV_SQL,
+                params![KV_SESSION_WORK_ADMISSION, encoded],
+            )?,
+        };
+        drop(guard);
+        if changed == 1 {
+            notify_agent_db_listeners(
+                &self.db_path,
+                AgentDbListenerChannel::Metadata(KV_SESSION_WORK_ADMISSION.into()),
+            );
+        }
+        Ok(changed == 1)
+    }
+
+    pub fn read_session_provider_review(
+        &self,
+    ) -> Result<Option<SessionProviderReview>, AgentDbProjectionError> {
+        Ok(self
+            .read_session_work_admission()?
+            .and_then(|record| record.provider_review))
+    }
+
+    /// Record one provider-authored refusal against the captured admission
+    /// generation. Identical terminal notifications retain the first review
+    /// identity; conflicting facts fail closed.
+    pub fn record_session_provider_review(
+        &self,
+        expected_lifecycle_revision: &str,
+        review: &SessionProviderReview,
+    ) -> Result<SessionProviderReview, AgentDbProjectionError> {
+        let expected_lifecycle_revision = expected_lifecycle_revision.trim();
+        if expected_lifecycle_revision.is_empty()
+            || review.id.trim().is_empty()
+            || review.session_id.trim().is_empty()
+            || review.run_id.trim().is_empty()
+            || review.provider.trim().is_empty()
+            || review.model.trim().is_empty()
+            || review.runtime_id.trim().is_empty()
+            || review.explanation.trim().is_empty()
+            || review.explanation.len() > 64 * 1024
+            || review
+                .continuation_message
+                .as_ref()
+                .is_some_and(|message| message.trim().is_empty() || message.len() > 1024)
+        {
+            return Err(AgentDbProjectionError::WorkAdmissionInvalid(
+                "provider review is missing bounded identity or explanation".into(),
+            ));
+        }
+        let Some(mut record) = self.read_session_work_admission()? else {
+            return Err(AgentDbProjectionError::WorkAdmissionInvalid(
+                "session work admission record is unavailable".into(),
+            ));
+        };
+        if record.lifecycle_revision != expected_lifecycle_revision
+            || record.session_id != review.session_id
+            || record.archived_at_ms.is_some()
+        {
+            return Err(AgentDbProjectionError::WorkAdmissionInvalid(
+                "provider review admission generation changed".into(),
+            ));
+        }
+        if let Some(previous) = record.provider_review.as_ref() {
+            let mut previous_identity_free = previous.clone();
+            previous_identity_free.id.clear();
+            let mut next_identity_free = review.clone();
+            next_identity_free.id.clear();
+            if previous_identity_free == next_identity_free {
+                return Ok(previous.clone());
+            }
+            if record.provider_review_phase.as_deref() != Some("accepted") {
+                return Err(AgentDbProjectionError::WorkAdmissionInvalid(
+                    "provider review conflicts with the existing terminal facts".into(),
+                ));
+            }
+            // An accepted continuation may produce a new terminal refusal. It
+            // replaces the consumed review under the same session generation;
+            // pending reviews remain strict idempotent/conflict-safe CAS.
+        }
+        record.provider_review_id = Some(review.id.clone());
+        record.provider_review_phase = Some("pending".into());
+        record.provider_review = Some(review.clone());
+        if !self.compare_and_set_session_work_admission(
+            expected_lifecycle_revision,
+            &record,
+        )? {
+            return Err(AgentDbProjectionError::WorkAdmissionInvalid(
+                "provider review lost its lifecycle race".into(),
+            ));
+        }
+        Ok(review.clone())
+    }
+
+    /// Atomically transition archive state for one canonical session
+    /// generation. Active admitted work is preserved and blocks archiving;
+    /// callers must settle it before retrying.
+    pub fn transition_session_work_archive(
+        &self,
+        expected_session_id: &str,
+        expected_lifecycle_revision: Option<&str>,
+        archived: bool,
+        archived_by: Option<&str>,
+        archive_reason: Option<&str>,
+        archived_at_ms: f64,
+    ) -> Result<SessionWorkAdmissionRecord, AgentDbProjectionError> {
+        let expected_session_id = expected_session_id.trim();
+        if expected_session_id.is_empty() || !archived_at_ms.is_finite() {
+            return Err(AgentDbProjectionError::WorkAdmissionInvalid(
+                "session archive transition requires a valid session identity and timestamp".into(),
+            ));
+        }
+        let mut guard = self
+            .connection
+            .lock()
+            .map_err(|_| AgentDbProjectionError::OwnerPoisoned)?;
+        let Some(db) = guard.as_mut() else {
+            return Err(AgentDbProjectionError::WorkAdmissionInvalid(
+                "agent database is closed".into(),
+            ));
+        };
+        let raw = db
+            .query_row(GET_KV_SQL, params![KV_SESSION_WORK_ADMISSION], |row| {
+                row.get::<_, String>(0)
+            })
+            .optional()?
+            .ok_or_else(|| AgentDbProjectionError::WorkAdmissionInvalid(
+                "session work admission record is unavailable".into(),
+            ))?;
+        let mut record: SessionWorkAdmissionRecord = serde_json::from_str(&raw)?;
+        if record.session_id != expected_session_id {
+            return Err(AgentDbProjectionError::WorkAdmissionInvalid(
+                "session archive transition identity changed".into(),
+            ));
+        }
+        if expected_lifecycle_revision.is_some_and(|expected| {
+            record.lifecycle_revision != expected.trim()
+        }) {
+            return Err(AgentDbProjectionError::WorkAdmissionInvalid(
+                "session archive transition lifecycle changed".into(),
+            ));
+        }
+        if record.archived_at_ms.is_some() == archived {
+            return Ok(record);
+        }
+        if archived && record.admitted_work_id.is_some() {
+            return Err(AgentDbProjectionError::WorkAdmissionInvalid(
+                "session has admitted work; archive requires settlement before retry".into(),
+            ));
+        }
+        if archived && record.admitted_media_work_id.is_some() {
+            return Err(AgentDbProjectionError::WorkAdmissionInvalid(
+                "session has pending outgoing media; archive requires settlement before retry"
+                    .into(),
+            ));
+        }
+        if archived {
+            record.archived_at_ms = Some(archived_at_ms);
+            record.archived_by = archived_by
+                .map(str::trim)
+                .filter(|value| !value.is_empty())
+                .map(ToOwned::to_owned);
+            record.archive_reason = archive_reason
+                .map(str::trim)
+                .filter(|value| !value.is_empty())
+                .map(ToOwned::to_owned)
+                .or_else(|| Some("manual".into()));
+        } else {
+            record.archived_at_ms = None;
+            record.archived_by = None;
+            record.archive_reason = None;
+        }
+        let encoded = serde_json::to_string(&record)?;
+        if db.execute(
+            COMPARE_AND_SET_KV_SQL,
+            params![encoded, KV_SESSION_WORK_ADMISSION, raw],
+        )? != 1
+        {
+            return Err(AgentDbProjectionError::WorkAdmissionInvalid(
+                "session archive transition lost its lifecycle race".into(),
+            ));
+        }
+        drop(guard);
+        notify_agent_db_listeners(
+            &self.db_path,
+            AgentDbListenerChannel::Metadata(KV_SESSION_WORK_ADMISSION.into()),
+        );
+        Ok(record)
+    }
+
+    /// Commit one background terminal receipt and the admission transition in
+    /// the same SQLite transaction. The receipt is a hidden transcript entry
+    /// so retries can recover the original payload rather than re-stage it.
+    pub fn commit_session_work_result(
+        &self,
+        session_key: &str,
+        expected_lifecycle_revision: &str,
+        work_id: &str,
+        idempotency_key: &str,
+        content: &str,
+        sent_message_count: usize,
+    ) -> Result<SessionWorkResultCommitOutcome, AgentDbProjectionError> {
+        let session_key = session_key.trim();
+        let expected_lifecycle_revision = expected_lifecycle_revision.trim();
+        let work_id = work_id.trim();
+        let idempotency_key = idempotency_key.trim();
+        if session_key.is_empty()
+            || expected_lifecycle_revision.is_empty()
+            || work_id.is_empty()
+            || idempotency_key.is_empty()
+        {
+            return Err(AgentDbProjectionError::WorkAdmissionInvalid(
+                "background result requires session identity, generation, work, and idempotency"
+                    .into(),
+            ));
+        }
+
+        let mut guard = self
+            .connection
+            .lock()
+            .map_err(|_| AgentDbProjectionError::OwnerPoisoned)?;
+        let Some(db) = guard.as_ref() else {
+            return Err(AgentDbProjectionError::WorkAdmissionInvalid(
+                "agent database is closed".into(),
+            ));
+        };
+        db.execute_batch("BEGIN IMMEDIATE")?;
+        let result = (|| -> Result<SessionWorkResultCommitOutcome, AgentDbProjectionError> {
+            let receipt_id = format!("background-result:{idempotency_key}");
+            if let Some(raw) = db
+                .query_row(GET_TRANSCRIPT_ENTRY_SQL, params![receipt_id], |row| {
+                    row.get::<_, String>(0)
+                })
+                .optional()?
+            {
+                let Some(entry) = parse_transcript_entry(&raw) else {
+                    return Err(AgentDbProjectionError::WorkAdmissionInvalid(
+                        "background result receipt contains malformed JSON".into(),
+                    ));
+                };
+                let receipt = parse_session_work_result_receipt(&entry).ok_or_else(|| {
+                    AgentDbProjectionError::WorkAdmissionInvalid(
+                        "background result receipt is missing required identity".into(),
+                    )
+                })?;
+                if receipt.session_key == session_key
+                    && receipt.work_id == work_id
+                    && receipt.content == content
+                    && receipt.sent_message_count == sent_message_count
+                {
+                    return Ok(SessionWorkResultCommitOutcome::AlreadyCommitted(receipt));
+                }
+                return Ok(SessionWorkResultCommitOutcome::ConflictingResult);
+            }
+
+            let raw_admission = db
+                .query_row(GET_KV_SQL, params![KV_SESSION_WORK_ADMISSION], |row| {
+                    row.get::<_, String>(0)
+                })
+                .optional()?;
+            let Some(raw_admission) = raw_admission else {
+                return Ok(SessionWorkResultCommitOutcome::RejectedStale);
+            };
+            let mut admission: SessionWorkAdmissionRecord = serde_json::from_str(&raw_admission)?;
+            if admission.session_key != session_key
+                || admission.lifecycle_revision != expected_lifecycle_revision
+                || admission.archived_at_ms.is_some()
+                || admission.admitted_work_id.as_deref() != Some(work_id)
+            {
+                return Ok(SessionWorkResultCommitOutcome::RejectedStale);
+            }
+
+            let receipt = SessionWorkResultReceipt {
+                session_key: session_key.to_string(),
+                lifecycle_revision: expected_lifecycle_revision.to_string(),
+                work_id: work_id.to_string(),
+                idempotency_key: idempotency_key.to_string(),
+                content: content.to_string(),
+                sent_message_count,
+            };
+            let entry = session_work_result_receipt_entry(&receipt, &receipt_id);
+            db.execute(
+                INSERT_TRANSCRIPT_ENTRY_SQL,
+                params![receipt_id, entry.to_string()],
+            )?;
+            admission.admitted_work_id = None;
+            admission.terminal_result_idempotency_key = Some(idempotency_key.to_string());
+            let encoded = serde_json::to_string(&admission)?;
+            if db.execute(
+                COMPARE_AND_SET_KV_SQL,
+                params![encoded, KV_SESSION_WORK_ADMISSION, raw_admission],
+            )? != 1
+            {
+                return Ok(SessionWorkResultCommitOutcome::RejectedStale);
+            }
+            Ok(SessionWorkResultCommitOutcome::Committed(receipt))
+        })();
+
+        match result {
+            Ok(outcome) => {
+                db.execute_batch("COMMIT")?;
+                if let SessionWorkResultCommitOutcome::Committed(receipt) = &outcome {
+                    let entry_id = format!("background-result:{}", receipt.idempotency_key);
+                    let entry = db
+                        .query_row(GET_TRANSCRIPT_ENTRY_SQL, params![entry_id], |row| {
+                            row.get::<_, String>(0)
+                        })?;
+                    if let Some(entry) = parse_transcript_entry(&entry) {
+                        publish_entries_upserted(&self.db_path, vec![entry]);
+                    }
+                    notify_agent_db_listeners(
+                        &self.db_path,
+                        AgentDbListenerChannel::Metadata(KV_SESSION_WORK_ADMISSION.into()),
+                    );
+                }
+                Ok(outcome)
+            }
+            Err(error) => {
+                let _ = db.execute_batch("ROLLBACK");
+                Err(error)
+            }
+        }
     }
 
     pub fn read_metadata(&self) -> Result<serde_json::Value, AgentDbProjectionError> {
@@ -1308,6 +1790,333 @@ impl SandAgentDb {
         Ok(inserted.len())
     }
 
+    /// Atomically append transcript entries and clear one captured outgoing
+    /// media fence. A stale or rebound fence rolls back the transcript write.
+    pub fn append_transcript_entries_and_release_media(
+        &self,
+        entries: &[serde_json::Value],
+        expected_lifecycle_revision: &str,
+        media_work_id: &str,
+    ) -> Result<usize, AgentDbProjectionError> {
+        if entries.is_empty()
+            || expected_lifecycle_revision.trim().is_empty()
+            || media_work_id.trim().is_empty()
+        {
+            return Err(AgentDbProjectionError::WorkAdmissionInvalid(
+                "media settlement requires transcript entries, generation, and work identity"
+                    .into(),
+            ));
+        }
+        let mut guard = self
+            .connection
+            .lock()
+            .map_err(|_| AgentDbProjectionError::OwnerPoisoned)?;
+        let Some(db) = guard.as_mut() else {
+            return Err(AgentDbProjectionError::WorkAdmissionInvalid(
+                "agent database is closed".into(),
+            ));
+        };
+        db.execute_batch("BEGIN IMMEDIATE")?;
+        let result = (|| -> Result<Vec<serde_json::Value>, AgentDbProjectionError> {
+            let raw_admission = db
+                .query_row(GET_KV_SQL, params![KV_SESSION_WORK_ADMISSION], |row| {
+                    row.get::<_, String>(0)
+                })
+                .optional()?
+                .ok_or_else(|| {
+                    AgentDbProjectionError::WorkAdmissionInvalid(
+                        "session work admission record is unavailable".into(),
+                    )
+                })?;
+            let mut admission: SessionWorkAdmissionRecord = serde_json::from_str(&raw_admission)?;
+            if admission.lifecycle_revision != expected_lifecycle_revision.trim()
+                || admission.admitted_media_work_id.as_deref() != Some(media_work_id.trim())
+                || admission.archived_at_ms.is_some()
+            {
+                return Err(AgentDbProjectionError::WorkAdmissionInvalid(
+                    "media settlement generation or identity is stale".into(),
+                ));
+            }
+            let mut inserted = Vec::new();
+            {
+                let mut statement = db.prepare(INSERT_TRANSCRIPT_ENTRY_SQL)?;
+                for entry in entries {
+                    let Some(id) = entry.get("id").and_then(serde_json::Value::as_str) else {
+                        continue;
+                    };
+                    if entry.get("kind").and_then(serde_json::Value::as_str).is_none() {
+                        continue;
+                    }
+                    if statement.execute(params![id, entry.to_string()])? > 0 {
+                        inserted.push(entry.clone());
+                    }
+                }
+            }
+            let receipt_id = format!("outgoing-media-settlement:{}", media_work_id.trim());
+            let receipt = media_settlement_receipt_entry(
+                &receipt_id,
+                media_work_id.trim(),
+                expected_lifecycle_revision.trim(),
+                &admission.admitted_media_paths,
+                &inserted,
+            );
+            db.execute(
+                INSERT_TRANSCRIPT_ENTRY_SQL,
+                params![receipt_id, receipt.to_string()],
+            )?;
+            admission.admitted_media_work_id = None;
+            admission.admitted_media_paths.clear();
+            let encoded = serde_json::to_string(&admission)?;
+            if db.execute(
+                COMPARE_AND_SET_KV_SQL,
+                params![encoded, KV_SESSION_WORK_ADMISSION, raw_admission],
+            )? != 1
+            {
+                return Err(AgentDbProjectionError::WorkAdmissionInvalid(
+                    "media settlement lost its lifecycle race".into(),
+                ));
+            }
+            Ok(inserted)
+        })();
+        match result {
+            Ok(inserted) => {
+                if let Err(error) = db.execute_batch("COMMIT") {
+                    let _ = db.execute_batch("ROLLBACK");
+                    return Err(error.into());
+                }
+                let count = inserted.len();
+                if !inserted.is_empty() {
+                    publish_entries_upserted(&self.db_path, inserted);
+                }
+                notify_agent_db_listeners(
+                    &self.db_path,
+                    AgentDbListenerChannel::Metadata(KV_SESSION_WORK_ADMISSION.into()),
+                );
+                Ok(count)
+            }
+            Err(error) => {
+                let _ = db.execute_batch("ROLLBACK");
+                Err(error)
+            }
+        }
+    }
+
+    /// Atomically commits one guarded compaction entry and advances the
+    /// session lifecycle revision. Older rows remain durable; replay uses the
+    /// latest compaction entry as the boundary for the active context.
+    pub fn commit_compaction(
+        &self,
+        commit: &CompactionCommit,
+    ) -> Result<CompactionCommitOutcome, AgentDbProjectionError> {
+        let entry_id = commit.entry_id.trim();
+        let source_turn_id = commit.source_turn_id.trim();
+        let expected_revision = commit.expected_lifecycle_revision.trim();
+        if entry_id.is_empty() || source_turn_id.is_empty() || expected_revision.is_empty() {
+            return Err(AgentDbProjectionError::CompactionInvalid(
+                "entry_id, source_turn_id, and expected_lifecycle_revision are required".into(),
+            ));
+        }
+        if let Some(first_kept_entry_id) = commit.first_kept_entry_id.as_deref() {
+            if first_kept_entry_id.trim().is_empty() {
+                return Err(AgentDbProjectionError::CompactionInvalid(
+                    "first_kept_entry_id must be non-empty when present".into(),
+                ));
+            }
+        }
+
+        let mut guard = self
+            .connection
+            .lock()
+            .map_err(|_| AgentDbProjectionError::OwnerPoisoned)?;
+        let Some(db) = guard.as_ref() else {
+            return Err(AgentDbProjectionError::CompactionInvalid(
+                "agent database is closed".into(),
+            ));
+        };
+
+        db.execute_batch("BEGIN IMMEDIATE")?;
+        let result = (|| -> Result<CompactionCommitOutcome, AgentDbProjectionError> {
+            let existing = db
+                .query_row(GET_TRANSCRIPT_ENTRY_SQL, params![entry_id], |row| {
+                    row.get::<_, String>(0)
+                })
+                .optional()?;
+            if let Some(raw) = existing {
+                let Some(existing) = parse_transcript_entry(&raw) else {
+                    return Err(AgentDbProjectionError::CompactionInvalid(
+                        "existing compaction identity contains malformed JSON".into(),
+                    ));
+                };
+                if compaction_payload_matches(&existing, commit) {
+                    return Ok(CompactionCommitOutcome::AlreadyCommitted(existing));
+                }
+                return Err(AgentDbProjectionError::CompactionConflict(entry_id.to_string()));
+            }
+
+            let raw_metadata = db
+                .query_row(GET_KV_SQL, params!["metadata"], |row| row.get::<_, String>(0))
+                .optional()?;
+            let Some(raw_metadata) = raw_metadata else {
+                return Err(AgentDbProjectionError::CompactionInvalid(
+                    "metadata is missing".into(),
+                ));
+            };
+            let metadata_bytes = decode_hex(&raw_metadata).map_err(AgentDbProjectionError::MetadataHex)?;
+            let mut metadata: serde_json::Value = serde_json::from_slice(&metadata_bytes)?;
+            let current_revision = metadata
+                .get("lifecycleRevision")
+                .and_then(serde_json::Value::as_str)
+                .map(str::trim)
+                .filter(|value| !value.is_empty())
+                .ok_or_else(|| {
+                    AgentDbProjectionError::LifecycleRevisionUnavailable(
+                        "metadata has no lifecycleRevision".into(),
+                    )
+                })?;
+            if current_revision != expected_revision {
+                return Ok(CompactionCommitOutcome::RejectedStale);
+            }
+
+            if let Some(first_kept_entry_id) = commit.first_kept_entry_id.as_deref() {
+                let present = db
+                    .query_row(GET_TRANSCRIPT_ENTRY_SQL, params![first_kept_entry_id], |row| {
+                        row.get::<_, String>(0)
+                    })
+                    .optional()?
+                    .is_some();
+                if !present {
+                    return Err(AgentDbProjectionError::CompactionInvalid(format!(
+                        "first kept entry {first_kept_entry_id} does not exist"
+                    )));
+                }
+            }
+
+            let next_revision = Uuid::new_v4().to_string();
+            let mut entry = serde_json::Map::new();
+            entry.insert("id".into(), serde_json::Value::String(entry_id.to_string()));
+            entry.insert("kind".into(), serde_json::Value::String("compaction".into()));
+            entry.insert(
+                "firstKeptEntryId".into(),
+                commit
+                    .first_kept_entry_id
+                    .as_ref()
+                    .map(|value| serde_json::Value::String(value.trim().to_string()))
+                    .unwrap_or(serde_json::Value::Null),
+            );
+            entry.insert("summary".into(), serde_json::Value::String(commit.summary.clone()));
+            entry.insert(
+                "tokensBefore".into(),
+                serde_json::Value::Number(serde_json::Number::from(commit.tokens_before)),
+            );
+            if let Some(details) = commit.details.clone() {
+                entry.insert("details".into(), details);
+            }
+            entry.insert(
+                "sourceTurnId".into(),
+                serde_json::Value::String(source_turn_id.to_string()),
+            );
+            entry.insert(
+                "sourceLifecycleRevision".into(),
+                serde_json::Value::String(expected_revision.to_string()),
+            );
+            entry.insert(
+                "lifecycleRevision".into(),
+                serde_json::Value::String(next_revision.clone()),
+            );
+            let entry = serde_json::Value::Object(entry);
+            db.execute(
+                INSERT_TRANSCRIPT_ENTRY_SQL,
+                params![entry_id, entry.to_string()],
+            )?;
+
+            let metadata_object = metadata.as_object_mut().ok_or_else(|| {
+                AgentDbProjectionError::CompactionInvalid("metadata is not an object".into())
+            })?;
+            metadata_object.insert(
+                "lifecycleRevision".into(),
+                serde_json::Value::String(next_revision),
+            );
+            let next_metadata = encode_hex(&serde_json::to_vec(&metadata)?);
+            if db.execute(
+                COMPARE_AND_SET_KV_SQL,
+                params![next_metadata, "metadata", raw_metadata],
+            )? != 1
+            {
+                return Ok(CompactionCommitOutcome::RejectedStale);
+            }
+            Ok(CompactionCommitOutcome::Committed(entry))
+        })();
+
+        match result {
+            Ok(outcome @ CompactionCommitOutcome::Committed(_)) => {
+                db.execute_batch("COMMIT")?;
+                bump_db_write_generation(&self.db_path);
+                if let CompactionCommitOutcome::Committed(entry) = &outcome {
+                    publish_entries_upserted(&self.db_path, vec![entry.clone()]);
+                    notify_agent_db_listeners(
+                        &self.db_path,
+                        AgentDbListenerChannel::Metadata("lifecycleRevision".into()),
+                    );
+                }
+                Ok(outcome)
+            }
+            Ok(outcome) => {
+                let _ = db.execute_batch("ROLLBACK");
+                Ok(outcome)
+            }
+            Err(error) => {
+                let _ = db.execute_batch("ROLLBACK");
+                Err(error)
+            }
+        }
+    }
+
+    /// Returns the active replay projection after the newest compaction.
+    /// Malformed compaction boundaries fail closed instead of silently
+    /// replaying an incomplete conversation.
+    pub fn get_compacted_transcript_entries(
+        &self,
+    ) -> Result<Vec<serde_json::Value>, AgentDbProjectionError> {
+        let entries = self.get_transcript_entries()?;
+        let Some(compaction_index) = entries
+            .iter()
+            .rposition(|entry| entry.get("kind").and_then(serde_json::Value::as_str) == Some("compaction"))
+        else {
+            return Ok(entries);
+        };
+        let compaction = entries[compaction_index].clone();
+        if compaction.get("firstKeptEntryId").is_none()
+            || compaction.get("summary").and_then(serde_json::Value::as_str).is_none()
+            || compaction.get("tokensBefore").and_then(serde_json::Value::as_u64).is_none()
+        {
+            return Err(AgentDbProjectionError::CompactionInvalid(
+                "compaction entry is missing replay fields".into(),
+            ));
+        }
+        let first_kept = compaction
+            .get("firstKeptEntryId")
+            .and_then(serde_json::Value::as_str);
+        let start = match first_kept {
+            Some(first_kept) if !first_kept.is_empty() => entries
+                .iter()
+                .position(|entry| entry.get("id").and_then(serde_json::Value::as_str) == Some(first_kept))
+                .ok_or_else(|| {
+                    AgentDbProjectionError::CompactionInvalid(format!(
+                        "compaction boundary {first_kept} is missing"
+                    ))
+                })?,
+            Some(_) | None => entries.len(),
+        };
+        let mut replay = vec![compaction];
+        replay.extend(
+            entries
+                .into_iter()
+                .skip(start)
+                .filter(|entry| entry.get("kind").and_then(serde_json::Value::as_str) != Some("compaction")),
+        );
+        Ok(replay)
+    }
+
     pub fn update_transcript_entry(
         &self,
         entry_id: &str,
@@ -1789,6 +2598,65 @@ impl Drop for SandAgentDb {
     fn drop(&mut self) {
         self.close(false);
     }
+}
+
+fn session_work_result_receipt_entry(
+    receipt: &SessionWorkResultReceipt,
+    entry_id: &str,
+) -> serde_json::Value {
+    serde_json::json!({
+        "id": entry_id,
+        "kind": "background-result-receipt",
+        "sessionKey": receipt.session_key,
+        "lifecycleRevision": receipt.lifecycle_revision,
+        "workId": receipt.work_id,
+        "idempotencyKey": receipt.idempotency_key,
+        "content": receipt.content,
+        "sentMessageCount": receipt.sent_message_count,
+    })
+}
+
+fn media_settlement_receipt_entry(
+    entry_id: &str,
+    media_work_id: &str,
+    lifecycle_revision: &str,
+    media_paths: &[String],
+    transcript_entries: &[serde_json::Value],
+) -> serde_json::Value {
+    let transcript_entry_ids = transcript_entries
+        .iter()
+        .filter_map(|entry| entry.get("id").and_then(serde_json::Value::as_str))
+        .map(ToOwned::to_owned)
+        .collect::<Vec<_>>();
+    serde_json::json!({
+        "id": entry_id,
+        "kind": "outgoing-media-settlement",
+        "mediaWorkId": media_work_id,
+        "lifecycleRevision": lifecycle_revision,
+        "mediaPaths": media_paths,
+        "transcriptEntryIds": transcript_entry_ids,
+    })
+}
+
+fn parse_session_work_result_receipt(
+    entry: &serde_json::Value,
+) -> Option<SessionWorkResultReceipt> {
+    if entry.get("kind").and_then(serde_json::Value::as_str)
+        != Some("background-result-receipt")
+    {
+        return None;
+    }
+    Some(SessionWorkResultReceipt {
+        session_key: entry.get("sessionKey")?.as_str()?.to_string(),
+        lifecycle_revision: entry.get("lifecycleRevision")?.as_str()?.to_string(),
+        work_id: entry.get("workId")?.as_str()?.to_string(),
+        idempotency_key: entry.get("idempotencyKey")?.as_str()?.to_string(),
+        content: entry.get("content")?.as_str()?.to_string(),
+        sent_message_count: usize::try_from(
+            entry.get("sentMessageCount")?.as_u64()?,
+        )
+        .ok()?,
+    })
 }
 
 
@@ -3028,6 +3896,27 @@ fn read_transcript_entries_from_db(
         }
     }
     Ok(entries)
+}
+
+fn compaction_payload_matches(
+    existing: &serde_json::Value,
+    commit: &CompactionCommit,
+) -> bool {
+    existing.get("kind").and_then(serde_json::Value::as_str) == Some("compaction")
+        && existing.get("id").and_then(serde_json::Value::as_str) == Some(commit.entry_id.trim())
+        && existing
+            .get("firstKeptEntryId")
+            .and_then(serde_json::Value::as_str)
+            == commit.first_kept_entry_id.as_deref().map(str::trim)
+        && existing.get("summary").and_then(serde_json::Value::as_str)
+            == Some(commit.summary.as_str())
+        && existing
+            .get("tokensBefore")
+            .and_then(serde_json::Value::as_u64)
+            == Some(commit.tokens_before)
+        && existing.get("details") == commit.details.as_ref()
+        && existing.get("sourceTurnId").and_then(serde_json::Value::as_str)
+            == Some(commit.source_turn_id.trim())
 }
 
 fn read_transcript_entry_from_db(

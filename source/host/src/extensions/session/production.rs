@@ -10,11 +10,14 @@ use crate::agent_isolation::{
     AgentWorkerPool, ProductionAgentStoreWorkerBackend,
     create_production_agent_store_worker_backend,
 };
+use crate::attachment_paths::{OutgoingMediaCustody, get_agent_media_store_roots};
 use crate::agents::agent_profile::SandAgentProfile;
 use crate::storage::agent_paths::get_sand_agents_root_dir;
 
 use super::agent_db::{
-    AgentDbSerdeSnapshot, SandAgentDb, add_persisted_conversation_partner,
+    AgentDbSerdeSnapshot, CompactionCommit, CompactionCommitOutcome, SandAgentDb,
+    SessionProviderReview, SessionWorkAdmissionRecord, SessionWorkResultCommitOutcome,
+    add_persisted_conversation_partner,
     append_persisted_transcript_entries, clear_persisted_agent_profile_prompt_snapshot,
     clear_persisted_memory_prompt_snapshot,
     clear_persisted_transient_state, delete_persisted_transcript_entry,
@@ -31,6 +34,15 @@ use super::agent_db::{
 use super::agent_db_transcript_pages::{
     TranscriptPage, TranscriptPageQuery, TranscriptWindow, TranscriptWindowQuery,
 };
+
+fn hide_session_work_receipts(entries: &mut Vec<serde_json::Value>) {
+    entries.retain(|entry| {
+        !matches!(
+            entry.get("kind").and_then(serde_json::Value::as_str),
+            Some("background-result-receipt" | "outgoing-media-settlement")
+        )
+    });
+}
 use super::call_session::{CallSession, CallSessionStore, CallSignal, transition_target};
 use super::agent_db_serde::{
     AwaitingUserResponse, EpisodeTurn, MemoryPromptSnapshot, SandProfile, SpendGuardState,
@@ -160,7 +172,23 @@ pub struct ProductionSessionWorkers {
     native_messaging_error: Option<String>,
     call_session_store: Option<Arc<CallSessionStore>>,
     call_session_store_error: Option<String>,
+    provider_review_capabilities: Mutex<BTreeMap<String, ProviderReviewCapabilityState>>,
     busy_timeout_ms: u64,
+}
+
+#[derive(Debug)]
+struct ProviderReviewCapabilityState {
+    agent_id: String,
+    lifecycle_revision: String,
+    review_id: String,
+    next_run_id: String,
+}
+
+/// Host-issued, single-claim provider-review capability. It is deliberately
+/// not serde-serializable; request JSON cannot manufacture one.
+#[derive(Debug)]
+pub struct ProviderReviewAcknowledgment {
+    token: String,
 }
 
 impl ProductionSessionWorkers {
@@ -316,6 +344,7 @@ impl ProductionSessionWorkers {
             native_messaging_error,
             call_session_store,
             call_session_store_error,
+            provider_review_capabilities: Mutex::new(BTreeMap::new()),
             busy_timeout_ms,
         }
     }
@@ -1039,6 +1068,7 @@ impl ProductionSessionWorkers {
             .map_err(|error| error.to_string())
         })?;
         let _ = self.open_agent_db_owner(&record.id)?;
+        self.ensure_main_session_work_admission(&record.id)?;
         Ok(record)
     }
 
@@ -1076,6 +1106,7 @@ impl ProductionSessionWorkers {
         })?;
         if let FallbackSession::Created(record) = &result {
             let _ = self.open_agent_db_owner(&record.id)?;
+            self.ensure_main_session_work_admission(&record.id)?;
         }
         Ok(result)
     }
@@ -1085,6 +1116,7 @@ impl ProductionSessionWorkers {
         record: MaterializedAgentRecord,
         prepared: PreparedAgentBlobStore,
     ) -> Result<ProductionMaterializedSession, String> {
+        self.ensure_main_session_work_admission(&record.id)?;
         let db = self.open_agent_db_owner(&record.id)?;
         let agent_store = self.open_agent_store_owner(&record.id)?;
         let memory = self
@@ -1153,9 +1185,12 @@ impl ProductionSessionWorkers {
         &self,
         agent_id: &str,
     ) -> Result<Vec<serde_json::Value>, String> {
-        self.open_agent_db_owner(agent_id)?
+        let mut entries = self
+            .open_agent_db_owner(agent_id)?
             .get_transcript_entries()
-            .map_err(|error| error.to_string())
+            .map_err(|error| error.to_string())?;
+        hide_session_work_receipts(&mut entries);
+        Ok(entries)
     }
 
     pub fn read_agent_transcript_page(
@@ -1163,9 +1198,12 @@ impl ProductionSessionWorkers {
         agent_id: &str,
         query: TranscriptPageQuery,
     ) -> Result<TranscriptPage, String> {
-        self.open_agent_db_owner(agent_id)?
+        let mut page = self
+            .open_agent_db_owner(agent_id)?
             .get_transcript_page(query)
-            .map_err(|error| error.to_string())
+            .map_err(|error| error.to_string())?;
+        hide_session_work_receipts(&mut page.entries);
+        Ok(page)
     }
 
     pub fn read_agent_transcript_window(
@@ -1173,9 +1211,12 @@ impl ProductionSessionWorkers {
         agent_id: &str,
         query: TranscriptWindowQuery,
     ) -> Result<TranscriptWindow<std::collections::BTreeMap<String, usize>>, String> {
-        self.open_agent_db_owner(agent_id)?
+        let mut window = self
+            .open_agent_db_owner(agent_id)?
             .get_transcript_window(query)
-            .map_err(|error| error.to_string())
+            .map_err(|error| error.to_string())?;
+        hide_session_work_receipts(&mut window.entries);
+        Ok(window)
     }
 
     pub fn read_agent_transcript_tail(
@@ -1183,9 +1224,12 @@ impl ProductionSessionWorkers {
         agent_id: &str,
         query: TranscriptWindowQuery,
     ) -> Result<TranscriptPage, String> {
-        self.open_agent_db_owner(agent_id)?
+        let mut page = self
+            .open_agent_db_owner(agent_id)?
             .get_transcript_tail(query)
-            .map_err(|error| error.to_string())
+            .map_err(|error| error.to_string())?;
+        hide_session_work_receipts(&mut page.entries);
+        Ok(page)
     }
 
     pub fn read_agent_thread(
@@ -1193,10 +1237,12 @@ impl ProductionSessionWorkers {
         agent_id: &str,
         root_id: &str,
     ) -> Result<TranscriptThread, String> {
-        self.open_agent_db_owner(agent_id)?
+        let mut entries = self
+            .open_agent_db_owner(agent_id)?
             .get_thread_entries(root_id)
-            .map(|entries| TranscriptThread { entries })
-            .map_err(|error| error.to_string())
+            .map_err(|error| error.to_string())?;
+        hide_session_work_receipts(&mut entries);
+        Ok(TranscriptThread { entries })
     }
 
     pub fn read_agent_outline(
@@ -1376,8 +1422,104 @@ impl ProductionSessionWorkers {
             SandAgentDb::open(&db_path, self.busy_timeout_ms)
                 .map_err(|error| error.to_string())?,
         );
+        self.recover_pending_media_custody(agent_id, &owner)?;
         owners.insert(agent_id.to_string(), Arc::clone(&owner));
         Ok(owner)
+    }
+
+    /// Reconcile one durable media fence when an agent database is first
+    /// opened after a process interruption. A committed settlement receipt
+    /// retains its media; without one, only paths proven to remain inside the
+    /// agent media roots are rolled back. Any uncertainty leaves the fence in
+    /// place so archive/delete cannot race an unknown outcome.
+    fn recover_pending_media_custody(
+        &self,
+        agent_id: &str,
+        owner: &SandAgentDb,
+    ) -> Result<(), String> {
+        let Some(record) = owner
+            .read_session_work_admission()
+            .map_err(|error| error.to_string())?
+        else {
+            return Ok(());
+        };
+        let Some(work_id) = record.admitted_media_work_id.as_deref() else {
+            if record.admitted_media_paths.is_empty() {
+                return Ok(());
+            }
+            return Err("media admission has paths without a work identity".into());
+        };
+        let expected_revision = record.lifecycle_revision.clone();
+        let receipt_id = format!("outgoing-media-settlement:{work_id}");
+        if let Some(receipt) = owner
+            .get_transcript_entry_by_id(&receipt_id)
+            .map_err(|error| error.to_string())?
+        {
+            let valid = receipt.get("kind").and_then(serde_json::Value::as_str)
+                == Some("outgoing-media-settlement")
+                && receipt.get("mediaWorkId").and_then(serde_json::Value::as_str)
+                    == Some(work_id)
+                && receipt
+                    .get("lifecycleRevision")
+                    .and_then(serde_json::Value::as_str)
+                    == Some(expected_revision.as_str());
+            if !valid {
+                return Err("outgoing media settlement receipt is malformed or rebound".into());
+            }
+            if !Self::clear_media_fence_from_owner(owner, &expected_revision, work_id)? {
+                return Err("could not clear committed outgoing media fence".into());
+            }
+            return Ok(());
+        }
+        if record.admitted_media_paths.is_empty() {
+            return Err("pending outgoing media has no durable materialized paths".into());
+        }
+        let media_roots = get_agent_media_store_roots(self.agents_root.join(agent_id));
+        let mut custody = OutgoingMediaCustody::default();
+        for raw_path in record.admitted_media_paths {
+            let path = PathBuf::from(raw_path);
+            if !media_roots.iter().any(|root| path.starts_with(root)) {
+                return Err("pending outgoing media path is outside the agent media store".into());
+            }
+            custody.track(path);
+        }
+        let cleanup_errors = custody.rollback();
+        if !cleanup_errors.is_empty() {
+            return Err(format!(
+                "could not roll back pending outgoing media paths: {} cleanup errors",
+                cleanup_errors.len()
+            ));
+        }
+        if !Self::clear_media_fence_from_owner(owner, &expected_revision, work_id)? {
+            return Err("could not clear rolled-back outgoing media fence".into());
+        }
+        Ok(())
+    }
+
+    fn clear_media_fence_from_owner(
+        owner: &SandAgentDb,
+        expected_lifecycle_revision: &str,
+        work_id: &str,
+    ) -> Result<bool, String> {
+        let Some(mut record) = owner
+            .read_session_work_admission()
+            .map_err(|error| error.to_string())?
+        else {
+            return Ok(false);
+        };
+        if record.lifecycle_revision != expected_lifecycle_revision
+            || record.admitted_media_work_id.as_deref() != Some(work_id)
+        {
+            return Ok(false);
+        }
+        record.admitted_media_work_id = None;
+        record.admitted_media_paths.clear();
+        owner
+            .compare_and_set_session_work_admission(
+                Some(expected_lifecycle_revision),
+                &record,
+            )
+            .map_err(|error| error.to_string())
     }
 
     pub fn close_agent_db_owner(
@@ -1484,6 +1626,489 @@ impl ProductionSessionWorkers {
             .lock()
             .map(|deleting| deleting.contains(agent_id))
             .unwrap_or(false)
+    }
+
+    /// Reject new session-owned writes while the existing deletion owner has
+    /// custody of the agent directory. Deletion itself uses its own file and
+    /// store owner path and does not call these transcript mutation wrappers.
+    pub fn assert_agent_work_admission(&self, agent_id: &str) -> Result<(), String> {
+        if self.is_agent_being_deleted(agent_id) {
+            return Err(format!(
+                "agent {agent_id} deletion cleanup is pending; new session work is not admitted"
+            ));
+        }
+        Ok(())
+    }
+
+    pub fn ensure_main_session_work_admission(&self, agent_id: &str) -> Result<(), String> {
+        let db = self.open_agent_db_owner(agent_id)?;
+        if db.read_session_work_admission().map_err(|error| error.to_string())?.is_some() {
+            return Ok(());
+        }
+        let lifecycle_revision = db
+            .ensure_lifecycle_revision()
+            .map_err(|error| error.to_string())?;
+        let record = SessionWorkAdmissionRecord {
+            session_key: format!("agent:{agent_id}:main"),
+            session_id: agent_id.to_string(),
+            lifecycle_revision,
+            archived_at_ms: None,
+            archived_by: None,
+            archive_reason: None,
+            admitted_work_id: None,
+            admitted_media_work_id: None,
+            admitted_media_paths: Vec::new(),
+            terminal_result_idempotency_key: None,
+            provider_review_id: None,
+            provider_review_phase: None,
+            provider_review: None,
+        };
+        let _ = db
+            .compare_and_set_session_work_admission(None, &record)
+            .map_err(|error| error.to_string())?;
+        Ok(())
+    }
+
+    pub fn assert_session_work_admission(
+        &self,
+        agent_id: &str,
+        session_key: Option<&str>,
+    ) -> Result<(), String> {
+        self.assert_agent_work_admission(agent_id)?;
+        let Some(session_key) = session_key.map(str::trim).filter(|value| !value.is_empty())
+        else {
+            return Ok(());
+        };
+        let Some(record) = self.read_session_work_admission(agent_id)? else {
+            return Ok(());
+        };
+        if record.session_key != session_key {
+            return Ok(());
+        }
+        if record.archived_at_ms.is_some() {
+            return Err(format!(
+                "session {session_key} is archived and does not admit new work"
+            ));
+        }
+        Ok(())
+    }
+
+    /// Capture the generation that a background producer is admitting work
+    /// against. The caller must carry this value to its terminal edge and
+    /// recheck it before treating a detached result as committed.
+    pub fn capture_session_work_admission(
+        &self,
+        agent_id: &str,
+        session_key: &str,
+        work_id: &str,
+    ) -> Result<String, String> {
+        self.assert_agent_work_admission(agent_id)?;
+        let session_key = session_key.trim();
+        let work_id = work_id.trim();
+        if session_key.is_empty() || work_id.is_empty() {
+            return Err("session work admission requires a session key and work id".into());
+        }
+        self.ensure_main_session_work_admission(agent_id)?;
+        let record = self
+            .read_session_work_admission(agent_id)?
+            .ok_or_else(|| "session work admission record is unavailable".to_string())?;
+        if record.session_key != session_key {
+            return Err(format!(
+                "session work admission key mismatch: expected {}, got {}",
+                record.session_key, session_key
+            ));
+        }
+        if record.archived_at_ms.is_some() {
+            return Err(format!(
+                "session {session_key} is archived and does not admit new work"
+            ));
+        }
+        if let Some(admitted_work_id) = record.admitted_work_id.as_deref() {
+            if admitted_work_id != work_id {
+                return Err(format!(
+                    "session {session_key} already has admitted background work"
+                ));
+            }
+            return Ok(record.lifecycle_revision);
+        }
+        let lifecycle_revision = record.lifecycle_revision.clone();
+        let mut next = record;
+        next.admitted_work_id = Some(work_id.to_string());
+        if !self.compare_and_set_session_work_admission(
+            agent_id,
+            Some(&lifecycle_revision),
+            &next,
+        )? {
+            return Err(format!(
+                "session {session_key} generation changed while admitting work"
+            ));
+        }
+        Ok(lifecycle_revision)
+    }
+
+    /// Recheck the generation immediately before a background terminal result
+    /// is exposed to its consumer. A missing record, rebound session, archive,
+    /// deletion fence, or changed lifecycle is fail-closed.
+    pub fn assert_session_work_admission_generation(
+        &self,
+        agent_id: &str,
+        session_key: &str,
+        expected_lifecycle_revision: &str,
+    ) -> Result<(), String> {
+        self.assert_agent_work_admission(agent_id)?;
+        let record = self
+            .read_session_work_admission(agent_id)?
+            .ok_or_else(|| "session work admission record disappeared".to_string())?;
+        if record.session_key != session_key
+            || record.lifecycle_revision != expected_lifecycle_revision
+            || record.archived_at_ms.is_some()
+        {
+            return Err(format!(
+                "session work admission generation changed for {session_key}"
+            ));
+        }
+        Ok(())
+    }
+
+    /// Capture one durable media-custody identity before an owned attachment
+    /// becomes visible to the transcript/channel path.
+    pub fn capture_session_media_admission(
+        &self,
+        agent_id: &str,
+        session_key: &str,
+        work_id: &str,
+        media_path: Option<&Path>,
+    ) -> Result<String, String> {
+        self.assert_agent_work_admission(agent_id)?;
+        let session_key = session_key.trim();
+        let work_id = work_id.trim();
+        if session_key.is_empty() || work_id.is_empty() {
+            return Err("media custody requires a session key and work id".into());
+        }
+        let media_path = media_path
+            .map(|path| {
+                path.to_str()
+                    .map(ToOwned::to_owned)
+                    .ok_or_else(|| "media custody path must be valid UTF-8".to_string())
+            })
+            .transpose()?;
+        let record = self
+            .read_session_work_admission(agent_id)?
+            .ok_or_else(|| "session work admission record is unavailable".to_string())?;
+        if record.session_key != session_key {
+            return Err(format!(
+                "media custody session key mismatch: expected {}, got {}",
+                record.session_key, session_key
+            ));
+        }
+        if record.archived_at_ms.is_some() {
+            return Err(format!(
+                "session {session_key} is archived and does not admit media custody"
+            ));
+        }
+        if record.admitted_media_work_id.is_none() && !record.admitted_media_paths.is_empty() {
+            return Err(format!(
+                "session {session_key} has media paths without a pending media identity"
+            ));
+        }
+        if let Some(admitted_media_work_id) = record.admitted_media_work_id.as_deref() {
+            if admitted_media_work_id != work_id {
+                return Err(format!(
+                    "session {session_key} already has pending outgoing media"
+                ));
+            }
+            let lifecycle_revision = record.lifecycle_revision.clone();
+            let mut next = record;
+            if let Some(path) = media_path.as_deref() {
+                if !next.admitted_media_paths.iter().any(|known| known == path) {
+                    next.admitted_media_paths.push(path.to_string());
+                    if !self.compare_and_set_session_work_admission(
+                        agent_id,
+                        Some(&lifecycle_revision),
+                        &next,
+                    )? {
+                        return Err(format!(
+                            "session {session_key} generation changed while recording media custody"
+                        ));
+                    }
+                }
+            }
+            return Ok(lifecycle_revision);
+        }
+        let lifecycle_revision = record.lifecycle_revision.clone();
+        let mut next = record;
+        next.admitted_media_work_id = Some(work_id.to_string());
+        next.admitted_media_paths = media_path.into_iter().collect();
+        if !self.compare_and_set_session_work_admission(
+            agent_id,
+            Some(&lifecycle_revision),
+            &next,
+        )? {
+            return Err(format!(
+                "session {session_key} generation changed while admitting media custody"
+            ));
+        }
+        Ok(lifecycle_revision)
+    }
+
+    /// Release media custody only for the captured session generation and
+    /// identity. A failed release intentionally leaves the durable fence in
+    /// place so archive/restore remains fail-closed.
+    pub fn release_session_media_admission(
+        &self,
+        agent_id: &str,
+        expected_lifecycle_revision: &str,
+        work_id: &str,
+    ) -> Result<bool, String> {
+        self.assert_agent_work_admission(agent_id)?;
+        let Some(mut record) = self.read_session_work_admission(agent_id)? else {
+            return Ok(false);
+        };
+        if record.lifecycle_revision != expected_lifecycle_revision
+            || record.admitted_media_work_id.as_deref() != Some(work_id.trim())
+        {
+            return Ok(false);
+        }
+        record.admitted_media_work_id = None;
+        record.admitted_media_paths.clear();
+        self.compare_and_set_session_work_admission(
+            agent_id,
+            Some(expected_lifecycle_revision),
+            &record,
+        )
+    }
+
+    pub fn read_session_work_admission(
+        &self,
+        agent_id: &str,
+    ) -> Result<Option<SessionWorkAdmissionRecord>, String> {
+        self.open_agent_db_owner(agent_id)?
+            .read_session_work_admission()
+            .map_err(|error| error.to_string())
+    }
+
+    pub fn compare_and_set_session_work_admission(
+        &self,
+        agent_id: &str,
+        expected_lifecycle_revision: Option<&str>,
+        next: &SessionWorkAdmissionRecord,
+    ) -> Result<bool, String> {
+        self.assert_agent_work_admission(agent_id)?;
+        self.open_agent_db_owner(agent_id)?
+            .compare_and_set_session_work_admission(expected_lifecycle_revision, next)
+            .map_err(|error| error.to_string())
+    }
+
+    pub fn read_session_provider_review(
+        &self,
+        agent_id: &str,
+    ) -> Result<Option<SessionProviderReview>, String> {
+        self.open_agent_db_owner(agent_id)?
+            .read_session_provider_review()
+            .map_err(|error| error.to_string())
+    }
+
+    pub fn record_session_provider_review(
+        &self,
+        agent_id: &str,
+        expected_lifecycle_revision: &str,
+        review: &SessionProviderReview,
+    ) -> Result<SessionProviderReview, String> {
+        self.assert_agent_work_admission(agent_id)?;
+        self.open_agent_db_owner(agent_id)?
+            .record_session_provider_review(expected_lifecycle_revision, review)
+            .map_err(|error| error.to_string())
+    }
+
+    pub fn issue_provider_review_acknowledgment(
+        &self,
+        agent_id: &str,
+        expected_lifecycle_revision: &str,
+        review_id: &str,
+        next_run_id: &str,
+    ) -> Result<ProviderReviewAcknowledgment, String> {
+        let agent_id = agent_id.trim();
+        let expected_lifecycle_revision = expected_lifecycle_revision.trim();
+        let review_id = review_id.trim();
+        let next_run_id = next_run_id.trim();
+        if agent_id.is_empty()
+            || expected_lifecycle_revision.is_empty()
+            || review_id.is_empty()
+            || next_run_id.is_empty()
+        {
+            return Err("provider review acknowledgment requires bounded identity".into());
+        }
+        self.assert_agent_work_admission(agent_id)?;
+        let record = self
+            .read_session_work_admission(agent_id)?
+            .ok_or_else(|| "session work admission record is unavailable".to_string())?;
+        let review = record
+            .provider_review
+            .clone()
+            .ok_or_else(|| "provider review is unavailable".to_string())?;
+        let continuation_supported = review
+            .continuation_message
+            .as_deref()
+            .is_some_and(|message| !message.trim().is_empty())
+            && review.provider == "openai"
+            && ((review.runtime_id == "codex"
+                && review.native_thread_id.as_deref().is_some_and(|value| !value.trim().is_empty())
+                && review.native_turn_id.as_deref().is_some_and(|value| !value.trim().is_empty()))
+                || (review.runtime_id == "openclaw"
+                    && review.api.as_deref() == Some("openai-chatgpt-responses")));
+        if record.lifecycle_revision != expected_lifecycle_revision
+            || record.provider_review_id.as_deref() != Some(review_id)
+            || record.provider_review_phase.as_deref() != Some("pending")
+            || review.id != review_id
+            || review.run_id == next_run_id
+            || !continuation_supported
+        {
+            return Err("provider review changed or cannot be continued".into());
+        }
+        let token = Uuid::new_v4().to_string();
+        self.provider_review_capabilities
+            .lock()
+            .map_err(|_| "provider review capability owner is poisoned".to_string())?
+            .insert(
+                token.clone(),
+                ProviderReviewCapabilityState {
+                    agent_id: agent_id.to_string(),
+                    lifecycle_revision: expected_lifecycle_revision.to_string(),
+                    review_id: review_id.to_string(),
+                    next_run_id: next_run_id.to_string(),
+                },
+            );
+        Ok(ProviderReviewAcknowledgment { token })
+    }
+
+    pub fn claim_provider_review_acknowledgment(
+        &self,
+        acknowledgment: ProviderReviewAcknowledgment,
+        next_run_id: &str,
+        provider: &str,
+        model: &str,
+        runtime_id: &str,
+        api: Option<&str>,
+    ) -> Result<SessionProviderReview, String> {
+        let state = self
+            .provider_review_capabilities
+            .lock()
+            .map_err(|_| "provider review capability owner is poisoned".to_string())?
+            .remove(&acknowledgment.token)
+            .ok_or_else(|| "provider review acknowledgment is no longer current".to_string())?;
+        self.assert_agent_work_admission(&state.agent_id)?;
+        if provider.trim().is_empty()
+            || model.trim().is_empty()
+            || runtime_id.trim().is_empty()
+            || next_run_id.trim() != state.next_run_id
+        {
+            return Err("provider review run or runtime identity is incomplete or changed".into());
+        }
+        let owner = self.open_agent_db_owner(&state.agent_id)?;
+        let Some(mut record) = owner
+            .read_session_work_admission()
+            .map_err(|error| error.to_string())?
+        else {
+            return Err("session work admission record is unavailable".into());
+        };
+        let review = record
+            .provider_review
+            .clone()
+            .ok_or_else(|| "provider review is unavailable".to_string())?;
+        if record.lifecycle_revision != state.lifecycle_revision
+            || record.provider_review_id.as_deref() != Some(state.review_id.as_str())
+            || record.provider_review_phase.as_deref() != Some("pending")
+            || review.id != state.review_id
+            || review.provider != provider.trim()
+            || review.model != model.trim()
+            || review.runtime_id != runtime_id.trim()
+            || review.api.as_deref() != api.map(str::trim)
+        {
+            return Err("provider review runtime or lifecycle identity changed".into());
+        }
+        record.provider_review_phase = Some("accepted".into());
+        if !owner
+            .compare_and_set_session_work_admission(Some(&state.lifecycle_revision), &record)
+            .map_err(|error| error.to_string())?
+        {
+            return Err("provider review acknowledgment lost its lifecycle race".into());
+        }
+        Ok(review)
+    }
+
+    pub fn transition_session_work_archive(
+        &self,
+        agent_id: &str,
+        session_key: &str,
+        expected_session_id: &str,
+        expected_lifecycle_revision: Option<&str>,
+        archived: bool,
+        archived_by: Option<&str>,
+        archive_reason: Option<&str>,
+        archived_at_ms: f64,
+    ) -> Result<SessionWorkAdmissionRecord, String> {
+        self.assert_agent_work_admission(agent_id)?;
+        let expected_key = format!("agent:{agent_id}:main");
+        if session_key.trim() != expected_key {
+            return Err("session archive transition requires the canonical main session key".into());
+        }
+        self.ensure_main_session_work_admission(agent_id)?;
+        self.open_agent_db_owner(agent_id)?
+            .transition_session_work_archive(
+                expected_session_id,
+                expected_lifecycle_revision,
+                archived,
+                archived_by,
+                archive_reason,
+                archived_at_ms,
+            )
+            .map_err(|error| error.to_string())
+    }
+
+    pub fn commit_session_work_result(
+        &self,
+        agent_id: &str,
+        session_key: &str,
+        expected_lifecycle_revision: &str,
+        work_id: &str,
+        idempotency_key: &str,
+        content: &str,
+        sent_message_count: usize,
+    ) -> Result<SessionWorkResultCommitOutcome, String> {
+        self.assert_agent_work_admission(agent_id)?;
+        self.open_agent_db_owner(agent_id)?
+            .commit_session_work_result(
+                session_key,
+                expected_lifecycle_revision,
+                work_id,
+                idempotency_key,
+                content,
+                sent_message_count,
+            )
+            .map_err(|error| error.to_string())
+    }
+
+    pub fn release_session_work_admission(
+        &self,
+        agent_id: &str,
+        expected_lifecycle_revision: &str,
+        work_id: &str,
+    ) -> Result<bool, String> {
+        self.assert_agent_work_admission(agent_id)?;
+        let Some(mut record) = self.read_session_work_admission(agent_id)? else {
+            return Ok(false);
+        };
+        if record.lifecycle_revision != expected_lifecycle_revision
+            || record.admitted_work_id.as_deref() != Some(work_id)
+        {
+            return Ok(false);
+        }
+        record.admitted_work_id = None;
+        self.compare_and_set_session_work_admission(
+            agent_id,
+            Some(expected_lifecycle_revision),
+            &record,
+        )
     }
 
 
@@ -1713,9 +2338,50 @@ impl ProductionSessionWorkers {
         agent_id: &str,
         entries: &[serde_json::Value],
     ) -> Result<usize, String> {
+        self.assert_agent_work_admission(agent_id)?;
         self.open_agent_db_owner(agent_id)?
             .append_transcript_entries(entries)
             .map_err(|error| error.to_string())
+    }
+
+    pub fn append_agent_transcript_entries_and_release_media(
+        &self,
+        agent_id: &str,
+        entries: &[serde_json::Value],
+        expected_lifecycle_revision: &str,
+        media_work_id: &str,
+    ) -> Result<usize, String> {
+        self.assert_agent_work_admission(agent_id)?;
+        self.open_agent_db_owner(agent_id)?
+            .append_transcript_entries_and_release_media(
+                entries,
+                expected_lifecycle_revision,
+                media_work_id,
+            )
+            .map_err(|error| error.to_string())
+    }
+
+    pub fn commit_agent_compaction(
+        &self,
+        agent_id: &str,
+        commit: &CompactionCommit,
+    ) -> Result<CompactionCommitOutcome, String> {
+        self.assert_agent_work_admission(agent_id)?;
+        self.open_agent_db_owner(agent_id)?
+            .commit_compaction(commit)
+            .map_err(|error| error.to_string())
+    }
+
+    pub fn read_agent_compacted_transcript_entries(
+        &self,
+        agent_id: &str,
+    ) -> Result<Vec<serde_json::Value>, String> {
+        let mut entries = self
+            .open_agent_db_owner(agent_id)?
+            .get_compacted_transcript_entries()
+            .map_err(|error| error.to_string())?;
+        hide_session_work_receipts(&mut entries);
+        Ok(entries)
     }
 
     pub fn update_agent_transcript_entry(
@@ -1724,6 +2390,7 @@ impl ProductionSessionWorkers {
         entry_id: &str,
         next: &serde_json::Value,
     ) -> Result<Option<serde_json::Value>, String> {
+        self.assert_agent_work_admission(agent_id)?;
         self.open_agent_db_owner(agent_id)?
             .update_transcript_entry(entry_id, next)
             .map_err(|error| error.to_string())
@@ -1734,12 +2401,14 @@ impl ProductionSessionWorkers {
         agent_id: &str,
         entry_id: &str,
     ) -> Result<bool, String> {
+        self.assert_agent_work_admission(agent_id)?;
         self.open_agent_db_owner(agent_id)?
             .delete_transcript_entry(entry_id)
             .map_err(|error| error.to_string())
     }
 
     pub fn clear_agent_conversation(&self, agent_id: &str) -> Result<bool, String> {
+        self.assert_agent_work_admission(agent_id)?;
         let store = self.create_agent_blob_store(agent_id)?;
         let db_path = self.existing_session_db_path(agent_id)?;
         futures::executor::block_on(self.pool.clear_blobs(

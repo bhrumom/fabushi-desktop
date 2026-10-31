@@ -15,6 +15,7 @@ use mahayana_host_runtime::extensions::session::agent_db_serde::AwaitingUserResp
 use mahayana_host_runtime::extensions::session::agent_db_transcript_pages::{
     TranscriptPageQuery, TranscriptWindowQuery,
 };
+use mahayana_host_runtime::extensions::session::agent_db::SessionWorkAdmissionRecord;
 use mahayana_host_runtime::extensions::session::production::ProductionSessionWorkers;
 use mahayana_host_runtime::transcript_mutation_events::subscribe_transcript_mutations;
 
@@ -102,6 +103,288 @@ fn delete_session_closes_owned_blob_store_clears_directory_and_publishes_removal
     assert_eq!(removals.load(Ordering::SeqCst), 1);
 
     subscription.unsubscribe();
+    store.close_worker_pool();
+    let _ = fs::remove_dir_all(root);
+}
+
+#[test]
+fn deletion_fence_rejects_new_transcript_work_before_durable_write() {
+    let root = temp_root("work-admission-delete-fence");
+    let agents = root.join("agents");
+    let production = Arc::new(ProductionSessionWorkers::with_agents_root(&agents, 500));
+    let store = SandAgentSessionStore::new(Arc::clone(&production));
+    let record = store
+        .create_session(None, "user", None)
+        .expect("agent");
+
+    production.begin_agent_delete(&record.id);
+    let error = production
+        .append_agent_transcript_entries(
+            &record.id,
+            &[serde_json::json!({
+                "id": "blocked-entry",
+                "kind": "message",
+                "role": "user",
+                "content": "must not be admitted",
+            })],
+        )
+        .expect_err("deletion-pending work must be rejected");
+    assert!(error.contains("new session work is not admitted"));
+    production.end_agent_delete(&record.id);
+    production
+        .append_agent_transcript_entries(
+            &record.id,
+            &[serde_json::json!({
+                "id": "admitted-entry",
+                "kind": "message",
+                "role": "user",
+                "content": "admitted after cleanup fence",
+            })],
+        )
+        .expect("work is admitted after deletion fence clears");
+
+    store.close_worker_pool();
+    let _ = fs::remove_dir_all(root);
+}
+
+#[test]
+fn archived_main_session_rejects_routed_work_admission() {
+    let root = temp_root("work-admission-archive");
+    let agents = root.join("agents");
+    let production = Arc::new(ProductionSessionWorkers::with_agents_root(&agents, 500));
+    let store = SandAgentSessionStore::new(Arc::clone(&production));
+    let record = store
+        .create_session(None, "user", None)
+        .expect("agent");
+    let current = production
+        .read_session_work_admission(&record.id)
+        .expect("read admission")
+        .expect("main admission");
+    let mut archived = SessionWorkAdmissionRecord {
+        archived_at_ms: Some(100.0),
+        archived_by: Some("human-1".into()),
+        archive_reason: Some("review".into()),
+        lifecycle_revision: "archived-revision".into(),
+        ..current.clone()
+    };
+    assert!(production
+        .compare_and_set_session_work_admission(
+            &record.id,
+            Some(&current.lifecycle_revision),
+            &archived,
+        )
+        .expect("archive transition"));
+    let error = production
+        .assert_session_work_admission(&record.id, Some(&current.session_key))
+        .expect_err("archived session must reject work");
+    assert!(error.contains("is archived"));
+    archived.archived_at_ms = None;
+    archived.lifecycle_revision = "restored-revision".into();
+    assert!(production
+        .compare_and_set_session_work_admission(
+            &record.id,
+            Some("archived-revision"),
+            &archived,
+        )
+        .expect("restore transition"));
+    production
+        .assert_session_work_admission(&record.id, Some(&current.session_key))
+        .expect("restored session admits work");
+
+    store.close_worker_pool();
+    let _ = fs::remove_dir_all(root);
+}
+
+#[test]
+fn pending_media_admission_blocks_archive_until_same_generation_release() {
+    let root = temp_root("work-admission-media");
+    let agents = root.join("agents");
+    let production = Arc::new(ProductionSessionWorkers::with_agents_root(&agents, 500));
+    let store = SandAgentSessionStore::new(Arc::clone(&production));
+    let record = store
+        .create_session(None, "user", None)
+        .expect("agent");
+    let session_key = format!("agent:{}:main", record.id);
+    let media_path = root.join("agents").join("attachments").join("outgoing.bin");
+    let revision = production
+        .capture_session_media_admission(
+            &record.id,
+            &session_key,
+            "send-media:tool-1",
+            Some(&media_path),
+        )
+        .expect("capture media generation");
+    let admitted = production
+        .read_session_work_admission(&record.id)
+        .expect("read admission")
+        .expect("main admission");
+    assert_eq!(
+        admitted.admitted_media_work_id.as_deref(),
+        Some("send-media:tool-1")
+    );
+    assert_eq!(
+        admitted.admitted_media_paths,
+        vec![media_path.to_string_lossy().to_string()]
+    );
+
+    let archive_error = production
+        .transition_session_work_archive(
+            &record.id,
+            &session_key,
+            &record.id,
+            Some(&revision),
+            true,
+            Some("gateway-operator"),
+            Some("manual review"),
+            42.0,
+        )
+        .expect_err("pending media must block archive");
+    assert!(archive_error.contains("pending outgoing media"));
+
+    assert!(production
+        .release_session_media_admission(&record.id, &revision, "send-media:tool-1")
+        .expect("release media admission"));
+    assert!(!production
+        .release_session_media_admission(&record.id, &revision, "send-media:tool-1")
+        .expect("duplicate release"));
+    production
+        .transition_session_work_archive(
+            &record.id,
+            &session_key,
+            &record.id,
+            Some(&revision),
+            true,
+            Some("gateway-operator"),
+            Some("manual review"),
+            43.0,
+        )
+        .expect("archive after media settlement");
+
+    store.close_worker_pool();
+    let _ = fs::remove_dir_all(root);
+}
+
+#[test]
+fn reopened_session_owner_rolls_back_unsettled_materialized_media() {
+    let root = temp_root("work-admission-media-recovery");
+    let agents = root.join("agents");
+    let production = Arc::new(ProductionSessionWorkers::with_agents_root(&agents, 500));
+    let store = SandAgentSessionStore::new(Arc::clone(&production));
+    let record = store
+        .create_session(None, "user", None)
+        .expect("agent");
+    let session_key = format!("agent:{}:main", record.id);
+    let media_path = agents.join(&record.id).join("attachments").join("outgoing.bin");
+    fs::create_dir_all(media_path.parent().expect("media parent")).expect("media dir");
+    fs::write(&media_path, b"pending media").expect("media file");
+    let revision = production
+        .capture_session_media_admission(
+            &record.id,
+            &session_key,
+            "send-media:tool-recovery",
+            Some(&media_path),
+        )
+        .expect("capture media generation");
+    assert!(!revision.is_empty());
+    assert!(production.close_agent_db_owner(&record.id, false));
+
+    production
+        .open_agent_db_owner(&record.id)
+        .expect("reopen session owner");
+    assert!(!media_path.exists());
+    let admission = production
+        .read_session_work_admission(&record.id)
+        .expect("read recovered admission")
+        .expect("recovered admission");
+    assert!(admission.admitted_media_work_id.is_none());
+    assert!(admission.admitted_media_paths.is_empty());
+
+    store.close_worker_pool();
+    let _ = fs::remove_dir_all(root);
+}
+
+#[test]
+fn background_work_generation_recheck_rejects_stale_terminal_result() {
+    let root = temp_root("work-admission-generation");
+    let agents = root.join("agents");
+    let production = Arc::new(ProductionSessionWorkers::with_agents_root(&agents, 500));
+    let store = SandAgentSessionStore::new(Arc::clone(&production));
+    let record = store
+        .create_session(None, "user", None)
+        .expect("agent");
+
+    let expected_revision = production
+        .capture_session_work_admission(
+            &record.id,
+            &format!("agent:{}:main", record.id),
+            "background-work-1",
+        )
+        .expect("capture active generation");
+    let current = production
+        .read_session_work_admission(&record.id)
+        .expect("read admission")
+        .expect("main admission");
+    let mut rebound = current.clone();
+    rebound.lifecycle_revision = "rebound-generation".into();
+    assert!(production
+        .compare_and_set_session_work_admission(
+            &record.id,
+            Some(&current.lifecycle_revision),
+            &rebound,
+        )
+        .expect("rebind generation"));
+
+    let error = production
+        .assert_session_work_admission_generation(
+            &record.id,
+            &current.session_key,
+            &expected_revision,
+        )
+        .expect_err("stale terminal result must be rejected");
+    assert!(error.contains("generation changed"));
+
+    store.close_worker_pool();
+    let _ = fs::remove_dir_all(root);
+}
+
+#[test]
+fn background_result_receipt_is_hidden_from_production_transcript_projection() {
+    let root = temp_root("work-admission-receipt-projection");
+    let agents = root.join("agents");
+    let production = Arc::new(ProductionSessionWorkers::with_agents_root(&agents, 500));
+    let store = SandAgentSessionStore::new(Arc::clone(&production));
+    let record = store
+        .create_session(None, "user", None)
+        .expect("agent");
+    let session_key = format!("agent:{}:main", record.id);
+    let lifecycle_revision = production
+        .capture_session_work_admission(&record.id, &session_key, "background-work-1")
+        .expect("capture generation");
+    let result = production
+        .commit_session_work_result(
+            &record.id,
+            &session_key,
+            &lifecycle_revision,
+            "background-work-1",
+            "background-idem-1",
+            "background output",
+            1,
+        )
+        .expect("commit receipt");
+    assert!(matches!(
+        result,
+        mahayana_host_runtime::extensions::session::agent_db::SessionWorkResultCommitOutcome::Committed(_)
+    ));
+    let visible = production
+        .read_agent_transcript_entries(&record.id)
+        .expect("read visible transcript");
+    assert!(visible.iter().all(|entry| {
+        !matches!(
+            entry.get("kind").and_then(serde_json::Value::as_str),
+            Some("background-result-receipt" | "outgoing-media-settlement")
+        )
+    }));
+
     store.close_worker_pool();
     let _ = fs::remove_dir_all(root);
 }

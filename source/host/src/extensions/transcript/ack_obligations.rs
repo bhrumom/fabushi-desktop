@@ -62,6 +62,7 @@ pub fn build_ack_redrive_send_args(
 ) -> serde_json::Value {
     serde_json::json!({
         "agentId": agent_id,
+        "sessionKey": format!("agent:{agent_id}:main"),
         "prompt": build_ack_redrive_prompt(),
         "appendUserMessage": false,
         "awaitTurn": false,

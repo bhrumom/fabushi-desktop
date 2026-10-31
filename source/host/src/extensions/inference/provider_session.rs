@@ -27,8 +27,9 @@ use super::cursor_inference_transport::{
 };
 use super::codex_direct_responses::{
     CodexDirectCheckpoint, CodexDirectError, CodexDirectOptions, CodexDirectTool,
+    CodexProviderRefusal,
     CodexDirectTransport, CodexDirectUsage, run_codex_direct_responses_with_cancel,
-    run_codex_direct_responses_with_lifecycle_and_tool_step_reminder,
+    parse_codex_provider_refusal, run_codex_direct_responses_with_lifecycle_and_tool_step_reminder,
 };
 
 pub const FABUSHI_ROUTER_SYSTEM_PROMPT: &str =
@@ -251,6 +252,8 @@ pub enum ProviderSessionError {
     Protocol(String),
     #[error("{0}")]
     Tool(String),
+    #[error("provider refusal: {0:?}")]
+    ProviderRefusal(CodexProviderRefusal),
     #[error("{0}")]
     Cancelled(String),
 }
@@ -261,6 +264,7 @@ impl From<CodexDirectError> for ProviderSessionError {
             CodexDirectError::Transport(message) => Self::Transport(message),
             CodexDirectError::Protocol(message) => Self::Protocol(message),
             CodexDirectError::Tool(message) => Self::Tool(message),
+            CodexDirectError::ProviderRefusal(refusal) => Self::ProviderRefusal(refusal),
             CodexDirectError::Cancelled(message) => Self::Cancelled(message),
         }
     }
@@ -348,6 +352,7 @@ fn codex_provider_error(error: ProviderSessionError) -> CodexDirectError {
         ProviderSessionError::Cancelled(message) => CodexDirectError::Cancelled(message),
         ProviderSessionError::Protocol(message) => CodexDirectError::Protocol(message),
         ProviderSessionError::Tool(message) => CodexDirectError::Tool(message),
+        ProviderSessionError::ProviderRefusal(refusal) => CodexDirectError::ProviderRefusal(refusal),
         other => CodexDirectError::Transport(other.to_string()),
     }
 }
@@ -1074,16 +1079,19 @@ impl CodexDirectTransport for CodexHttpTransport {
 
             if !response.status().is_success() {
                 let status = response.status();
-                let detail = await_reqwest(
+                let body = await_reqwest(
                     response.text(),
                     should_cancel,
                     "the Responses provider error response",
                 )
                 .await
-                .map_err(codex_provider_error)?
-                .chars()
-                .take(4096)
-                .collect::<String>();
+                .map_err(codex_provider_error)?;
+                if let Ok(payload) = serde_json::from_str::<Value>(&body) {
+                    if let Some(refusal) = parse_codex_provider_refusal(&payload) {
+                        return Err(CodexDirectError::ProviderRefusal(refusal));
+                    }
+                }
+                let detail = body.chars().take(4096).collect::<String>();
                 return Err(CodexDirectError::Transport(format!(
                     "Responses request failed ({status}{}).",
                     if detail.trim().is_empty() {

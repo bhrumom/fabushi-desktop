@@ -9,7 +9,9 @@ use mahayana_host_runtime::extensions::session::session_paths::{
     SAND_CONVERSATION_ROOT_SLOT_ID, STALE_ROOT_CLEANUP_VERSION, STORE_FILENAME,
     get_agent_db_path, get_connector_secrets_root, get_sand_transcripts_dir_with,
     is_stale_root_gc_enabled_from_env, pin_stale_root_gc, stat_if_exists,
-    reject_public_agent_harness_session_key,
+    is_root_main_session_key, reject_public_agent_harness_session_key,
+    resolve_public_session_route,
+    PublicSessionRouteError, SessionKind,
 };
 
 #[test]
@@ -95,4 +97,45 @@ fn public_session_commands_reject_harness_owned_namespace() {
         reject_public_agent_harness_session_key("agent:main:harness:codex:run"),
         Err("Session key namespace is reserved for agent harness-owned sessions.")
     );
+}
+
+#[test]
+fn public_session_route_resolves_one_canonical_boundary() {
+    let route = resolve_public_session_route(
+        " agent:agent-a:group:main ",
+        Some("group"),
+        None,
+    )
+    .expect("canonical route");
+    assert_eq!(route.raw_key, "agent:agent-a:group:main");
+    assert_eq!(route.agent_id, "agent-a");
+    assert_eq!(route.kind, SessionKind::Group);
+    let mixed_case_route = resolve_public_session_route("AGENT:Agent-A:Main", None, None)
+        .expect("mixed-case canonical route");
+    assert_eq!(mixed_case_route.agent_id, "agent-a");
+    assert_eq!(
+        resolve_public_session_route("agent:agent-a:harness:child", None, None),
+        Err(PublicSessionRouteError::HarnessNamespaceReserved)
+    );
+    assert_eq!(
+        resolve_public_session_route("agent::main", None, None),
+        Err(PublicSessionRouteError::EmptyAgentIdentity)
+    );
+    assert_eq!(
+        resolve_public_session_route("   ", None, None),
+        Err(PublicSessionRouteError::EmptySelector)
+    );
+    let unicode_selector = resolve_public_session_route("用户会话", None, None)
+        .expect("non-agent UTF-8 selectors remain safe legacy identities");
+    assert_eq!(unicode_selector.agent_id, "用户会话");
+}
+
+#[test]
+fn root_main_session_guard_is_case_insensitive_only_for_structural_root_keys() {
+    assert!(is_root_main_session_key("global"));
+    assert!(is_root_main_session_key(" GLOBAL "));
+    assert!(is_root_main_session_key("AGENT:GLOBAL:MAIN"));
+    assert!(!is_root_main_session_key("agent:global:main:child"));
+    assert!(!is_root_main_session_key("global-user"));
+    assert!(!is_root_main_session_key("legacy-session"));
 }

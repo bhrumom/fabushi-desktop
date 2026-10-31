@@ -72,7 +72,8 @@ use mahayana_host_runtime::extensions::session::agent_session::SandAgentSessionS
 use mahayana_host_runtime::extensions::memory::agent_state::AvatarBoxFileReader;
 use mahayana_host_runtime::extensions::session::production::ProductionSessionWorkers;
 use mahayana_host_runtime::extensions::session::session_paths::{
-    classify_session_kind, reject_public_agent_harness_session_key, SessionKind,
+    is_root_main_session_key, resolve_internal_send_route, resolve_public_session_route,
+    InternalSessionRouteError, PublicSessionRoute, PublicSessionRouteError, SessionKind,
 };
 use mahayana_host_runtime::extensions::session::session_profile_files::AgentProfileUpdate;
 use mahayana_host_runtime::agents::agent_messaging::{
@@ -206,6 +207,7 @@ use mahayana_host_runtime::extensions::inference::provider_session::{
     RoutedMcpMetaToolDefinition, RoutedToolDefinition, configured_routed_provider,
     run_routed_provider_text,
 };
+use mahayana_host_runtime::extensions::session::agent_db::SessionProviderReview;
 use mahayana_host_runtime::extensions::inference::inference_service::{
     InferenceUsage, authorize_routed_provider_request,
 };
@@ -432,7 +434,7 @@ use mahayana_host_runtime::runner::subagent_runtime::{
     SubagentRuntime,
 };
 use mahayana_host_runtime::attachment_paths::{
-    AgentMediaKind, file_url_for_path, persist_agent_media_bytes,
+    AgentMediaKind, OutgoingMediaCustody, file_url_for_path, persist_agent_media_bytes,
 };
 use mahayana_host_runtime::runner::tools::send_message_encoding::{
     image_mime_from_path, resolve_box_media_attachment,
@@ -499,7 +501,7 @@ use mahayana_unified_app_host::{
     PlatformRequestHost, UnifiedAppHost, default_unified_app_data_dir, dispatch_json,
     is_platform_request_json,
 };
-use std::collections::{BTreeMap, HashSet};
+use std::collections::{BTreeMap, HashMap, HashSet};
 use std::fs;
 use std::io::{self, BufRead, Write};
 use std::path::{Path, PathBuf};
@@ -603,12 +605,12 @@ fn resolve_production_attachment_source(
     forever_box: &ForeverBoxService,
     agent_id: &str,
     source_url: &str,
-) -> ResolvedAttachmentSource {
+) -> (ResolvedAttachmentSource, Option<std::path::PathBuf>) {
     let Some(source_path) = file_path_from_file_url(source_url) else {
-        return ResolvedAttachmentSource {
+        return (ResolvedAttachmentSource {
             url: source_url.to_string(),
             file_name: None,
-        };
+        }, None);
     };
     let file_name = source_path
         .file_name()
@@ -628,7 +630,10 @@ fn resolve_production_attachment_source(
             &bytes,
             kind,
         ) {
-            return ResolvedAttachmentSource { url, file_name };
+            return (
+                ResolvedAttachmentSource { url: url.clone(), file_name },
+                file_path_from_file_url(&url),
+            );
         }
     }
     let status = forever_box.get_status(agent_id);
@@ -654,7 +659,10 @@ fn resolve_production_attachment_source(
         ),
     )
     .unwrap_or_else(|| source_url.to_string());
-    ResolvedAttachmentSource { url: resolved, file_name }
+    let owned_path = (resolved != source_url)
+        .then(|| file_path_from_file_url(&resolved))
+        .flatten();
+    (ResolvedAttachmentSource { url: resolved, file_name }, owned_path)
 }
 
 struct ProductionSendMessageSink {
@@ -668,8 +676,17 @@ struct ProductionSendMessageSink {
     transcript_runtime: Arc<ProductionTranscriptRuntime>,
     ack_token: Option<String>,
     agent_id: String,
+    session_key: String,
     reply_thread_target: Option<String>,
     is_fork: bool,
+    pending_media: Mutex<HashMap<String, PendingOutgoingMedia>>,
+}
+
+struct PendingOutgoingMedia {
+    custody: OutgoingMediaCustody,
+    session_key: Option<String>,
+    lifecycle_revision: Option<String>,
+    media_work_id: Option<String>,
 }
 
 impl ProductionSendMessageSink {
@@ -686,6 +703,33 @@ impl ProductionSendMessageSink {
                 );
             }
         }
+    }
+
+    fn assert_pending_media_current(&self, tool_call_id: &str) -> Result<(), ProviderSessionError> {
+        let fence = self
+            .pending_media
+            .lock()
+            .map_err(|_| ProviderSessionError::Tool("outgoing media custody lock poisoned".into()))?
+            .get(tool_call_id)
+            .and_then(|pending| {
+                Some((
+                    pending.session_key.as_deref()?,
+                    pending.lifecycle_revision.as_deref()?,
+                ))
+            })
+            .map(|(session_key, lifecycle_revision)| {
+                (session_key.to_string(), lifecycle_revision.to_string())
+            });
+        let Some((session_key, lifecycle_revision)) = fence else {
+            return Ok(());
+        };
+        self.sessions
+            .assert_session_work_admission_generation(
+                &self.agent_id,
+                &session_key,
+                &lifecycle_revision,
+            )
+            .map_err(ProviderSessionError::Tool)
     }
 }
 
@@ -787,14 +831,103 @@ impl SendMessageSink for ProductionSendMessageSink {
     fn resolve_attachment_source(
         &self,
         source_url: &str,
-        _tool_call_id: &str,
+        tool_call_id: &str,
     ) -> Result<ResolvedAttachmentSource, ProviderSessionError> {
-        Ok(resolve_production_attachment_source(
+        self.sessions
+            .assert_session_work_admission(&self.agent_id, Some(&self.session_key))
+            .map_err(ProviderSessionError::Tool)?;
+        let admission = self
+            .sessions
+            .read_session_work_admission(&self.agent_id)
+            .map_err(ProviderSessionError::Tool)?
+            .filter(|record| record.session_key == self.session_key)
+            .map(|record| (record.session_key, record.lifecycle_revision));
+        let admission_session_key = admission.as_ref().map(|(key, _)| key.clone());
+        let admission_lifecycle_revision = admission.map(|(_, revision)| revision);
+        let (resolved, owned_path) = resolve_production_attachment_source(
             self.sessions.as_ref(),
             self.forever_box.as_ref(),
             &self.agent_id,
             source_url,
-        ))
+        );
+        if let Some(path) = owned_path {
+            let mut custody = OutgoingMediaCustody::default();
+            custody.track(path.clone());
+            let media_work_id = format!("send-media:{tool_call_id}");
+            let media_lifecycle_revision = self
+                .sessions
+                .capture_session_media_admission(
+                    &self.agent_id,
+                    &self.session_key,
+                    &media_work_id,
+                    Some(&path),
+                )
+                .map_err(|error| {
+                    let _ = custody.rollback();
+                    ProviderSessionError::Tool(error)
+                })?;
+            let mut pending = match self.pending_media.lock() {
+                Ok(pending) => pending,
+                Err(_) => {
+                    for error in custody.rollback() {
+                        eprintln!(
+                            "mahayana-host outgoing_media_cleanup_failed agent={} tool={} error={error}",
+                            self.agent_id, tool_call_id
+                        );
+                    }
+                    let _ = self.sessions.release_session_media_admission(
+                        &self.agent_id,
+                        &media_lifecycle_revision,
+                        &media_work_id,
+                    );
+                    return Err(ProviderSessionError::Tool(
+                        "outgoing media custody lock poisoned".into(),
+                    ));
+                }
+            };
+            let pending_media = pending
+                .entry(tool_call_id.to_string())
+                .or_insert_with(|| PendingOutgoingMedia {
+                    custody: OutgoingMediaCustody::default(),
+                    session_key: admission_session_key
+                        .clone()
+                        .or_else(|| Some(self.session_key.clone())),
+                    lifecycle_revision: Some(media_lifecycle_revision.clone())
+                        .or(admission_lifecycle_revision.clone()),
+                    media_work_id: Some(media_work_id.clone()),
+                });
+            pending_media.custody.absorb(custody);
+        }
+        Ok(resolved)
+    }
+
+    fn abort_attachment_custody(&self, tool_call_id: &str) {
+        let mut pending = match self.pending_media.lock() {
+            Ok(pending) => pending,
+            Err(poisoned) => poisoned.into_inner(),
+        };
+        let Some(mut custody) = pending.remove(tool_call_id) else { return };
+        for error in custody.custody.rollback() {
+            eprintln!(
+                "mahayana-host outgoing_media_cleanup_failed agent={} tool_call={} error={error}",
+                self.agent_id, tool_call_id
+            );
+        }
+        if let (Some(revision), Some(work_id)) = (
+            custody.lifecycle_revision.as_deref(),
+            custody.media_work_id.as_deref(),
+        ) {
+            if let Err(error) = self.sessions.release_session_media_admission(
+                &self.agent_id,
+                revision,
+                work_id,
+            ) {
+                eprintln!(
+                    "mahayana-host outgoing_media_admission_release_failed agent={} tool_call={} error={error}",
+                    self.agent_id, tool_call_id
+                );
+            }
+        }
     }
 
     fn read_media_dimensions(&self, resolved_url: &str) -> Option<(u32, u32)> {
@@ -817,27 +950,67 @@ impl SendMessageSink for ProductionSendMessageSink {
             .filter(|value| !value.is_empty())
             .map(ToOwned::to_owned);
 
-        let entry = self
-            .transcript_runtime
-            .append_generated_send_message_entry(
+        if let Err(error) = self.assert_pending_media_current(tool_call_id) {
+            self.abort_attachment_custody(tool_call_id);
+            return Err(error);
+        }
+        let media_fence = self
+            .pending_media
+            .lock()
+            .map_err(|_| ProviderSessionError::Tool("outgoing media custody lock poisoned".into()))?
+            .get(tool_call_id)
+            .and_then(|pending| {
+                Some((
+                    pending.lifecycle_revision.as_ref()?.clone(),
+                    pending.media_work_id.as_ref()?.clone(),
+                ))
+            });
+        let entry = match media_fence {
+            Some((revision, work_id)) => self
+                .transcript_runtime
+                .append_generated_send_message_entry_with_media_custody(
+                    self.sessions.as_ref(),
+                    &self.agent_id,
+                    &message,
+                    timestamp_ms,
+                    self.reply_thread_target.as_deref(),
+                    self.is_fork,
+                    &revision,
+                    &work_id,
+                ),
+            None => self.transcript_runtime.append_generated_send_message_entry(
                 self.sessions.as_ref(),
                 &self.agent_id,
                 &message,
                 timestamp_ms,
                 self.reply_thread_target.as_deref(),
                 self.is_fork,
-            )
-            .map_err(|error| ProviderSessionError::Tool(format!(
-                "could not persist SendMessage for {}: {error}",
-                self.agent_id
-            )))?;
+            ),
+        }
+            .map_err(|error| {
+                self.abort_attachment_custody(tool_call_id);
+                ProviderSessionError::Tool(format!(
+                    "could not persist SendMessage for {}: {error}",
+                    self.agent_id
+                ))
+            })?;
         let entry_id = entry
             .get("id")
             .and_then(serde_json::Value::as_str)
             .map(ToOwned::to_owned)
-            .ok_or_else(|| ProviderSessionError::Tool(
-                "persisted SendMessage entry did not contain an id".to_string()
-            ))?;
+            .ok_or_else(|| {
+                self.abort_attachment_custody(tool_call_id);
+                ProviderSessionError::Tool(
+                    "persisted SendMessage entry did not contain an id".to_string(),
+                )
+            })?;
+        let mut pending = match self.pending_media.lock() {
+            Ok(pending) => pending,
+            Err(poisoned) => poisoned.into_inner(),
+        };
+        if let Some(mut custody) = pending.remove(tool_call_id) {
+            custody.custody.commit();
+        }
         if let Some(address_token) = channel_delivery {
             let host_tx = self.host_tx.clone();
             let agent_id = self.agent_id.clone();
@@ -918,7 +1091,7 @@ impl AgentManagementSink for ProductionAgentManagementSink {
         image: &AgentMessageImage,
         _tool_call_id: &str,
     ) -> Result<AgentMessageImage, ProviderSessionError> {
-        let resolved = resolve_production_attachment_source(
+        let (resolved, _) = resolve_production_attachment_source(
             self.sessions.as_ref(),
             self.forever_box.as_ref(),
             &self.agent_id,
@@ -1372,6 +1545,8 @@ impl SubagentTaskSink for ProductionSubagentTaskSink {
         let args = serde_json::json!({
             "provider": self.provider.as_str(),
             "agentId": child_id,
+            "sessionKey": format!("agent:{child_id}:main"),
+            "spawnedBy": self.parent_agent_id,
             "lifecycleRevision": child_lifecycle_revision,
             "streamId": child_stream_id,
             "messages": [{"role":"user","content":prompt}],
@@ -1912,6 +2087,83 @@ fn session_kind_label(kind: SessionKind) -> &'static str {
     }
 }
 
+fn resolve_gateway_session_route(
+    args: &serde_json::Value,
+    raw_key: &str,
+) -> Result<PublicSessionRoute, GatewayCommandError> {
+    resolve_public_session_route(
+        raw_key,
+        args.get("chatType").and_then(serde_json::Value::as_str),
+        args.get("spawnedBy").and_then(serde_json::Value::as_str),
+    )
+    .map_err(|error| match error {
+        PublicSessionRouteError::EmptySelector => {
+            GatewayCommandError::BadRequest("session selector must be non-empty".into())
+        }
+        PublicSessionRouteError::HarnessNamespaceReserved => GatewayCommandError::BadRequest(
+            "Session key namespace is reserved for agent harness-owned sessions.".into(),
+        ),
+        PublicSessionRouteError::EmptyAgentIdentity => GatewayCommandError::BadRequest(
+            "session selector contains an empty agent identity".into(),
+        ),
+    })
+}
+
+fn validate_internal_send_route(args: &serde_json::Value) -> Result<(), ProductionSendError> {
+    let Some(agent_id) = args
+        .get("agentId")
+        .or_else(|| args.get("id"))
+        .and_then(serde_json::Value::as_str)
+    else {
+        return Err(ProductionSendError::BadRequest(
+            "sendPrompt requires agentId".into(),
+        ));
+    };
+    let request_source = args
+        .get("requestSource")
+        .and_then(serde_json::Value::as_str);
+    let requires_selector = matches!(
+        request_source,
+        Some("automation" | "group-member" | "upgrade-resume" | "ack-redrive" | "subagent")
+    );
+    let session_key = args
+        .get("sessionKey")
+        .or_else(|| args.get("sessionId"))
+        .and_then(serde_json::Value::as_str);
+    let explicit_direct_fallback = args
+        .get("directMainFallback")
+        .and_then(serde_json::Value::as_bool)
+        .unwrap_or(false);
+    if !requires_selector && session_key.is_none() && !explicit_direct_fallback {
+        return Ok(());
+    }
+    resolve_internal_send_route(
+        agent_id,
+        session_key,
+        args.get("chatType").and_then(serde_json::Value::as_str),
+        args.get("spawnedBy").and_then(serde_json::Value::as_str),
+        explicit_direct_fallback,
+    )
+    .map(|_| ())
+    .map_err(|error| {
+        let detail = match error {
+            InternalSessionRouteError::MissingSelector =>
+                "trusted send producer requires sessionKey/sessionId".to_string(),
+            InternalSessionRouteError::EmptyAgentIdentity =>
+                "trusted send producer requires a non-empty agentId".to_string(),
+            InternalSessionRouteError::SelectorAgentMismatch =>
+                "session selector does not belong to agentId".to_string(),
+            InternalSessionRouteError::Public(PublicSessionRouteError::EmptySelector) =>
+                "session selector must be non-empty".to_string(),
+            InternalSessionRouteError::Public(PublicSessionRouteError::HarnessNamespaceReserved) =>
+                "Session key namespace is reserved for agent harness-owned sessions.".to_string(),
+            InternalSessionRouteError::Public(PublicSessionRouteError::EmptyAgentIdentity) =>
+                "session selector contains an empty agent identity".to_string(),
+        };
+        ProductionSendError::BadRequest(detail)
+    })
+}
+
 impl UnifiedGatewayApi {
 
     fn rearm_channel_delivery_failure(
@@ -2103,6 +2355,23 @@ impl UnifiedGatewayApi {
         args: serde_json::Value,
         gateway_context: Option<&GatewayCommandContext>,
     ) -> Result<serde_json::Value, GatewayCommandError> {
+
+            validate_internal_send_route(&args).map_err(map_production_send_error)?;
+            if let Some(agent_id) = args
+                .get("agentId")
+                .or_else(|| args.get("id"))
+                .and_then(serde_json::Value::as_str)
+            {
+                self.session_workers
+                    .assert_session_work_admission(
+                        agent_id,
+                        args.get("sessionKey")
+                            .or_else(|| args.get("sessionId"))
+                            .and_then(serde_json::Value::as_str),
+                    )
+                    .map_err(ProductionSendError::BadRequest)
+                    .map_err(map_production_send_error)?;
+            }
 
             let send_trace = begin_send_trace(
                 gateway_context.and_then(|context| context.traceparent.as_deref()),
@@ -3105,8 +3374,16 @@ impl UnifiedGatewayApi {
                     )
                 }
                 _ => {
+                    let session_key = marker
+                        .automation_id
+                        .as_deref()
+                        .map(|automation_id| {
+                            format!("agent:{}:cron:{automation_id}", marker.agent_id)
+                        })
+                        .unwrap_or_else(|| format!("agent:{}:main", marker.agent_id));
                     let mut args = serde_json::json!({
                         "agentId": marker.agent_id,
+                        "sessionKey": session_key,
                         "prompt": build_upgrade_resume_prompt(resumed_source),
                         "clientNonce": format!(
                             "upgrade-resume:{}:{}",
@@ -3290,6 +3567,12 @@ impl UnifiedGatewayApi {
             "sessions.list" => self.call_openclaw_sessions_list(&args),
             "sessions.get" => self.call_openclaw_sessions_get(&args),
             "sessions.create" => self.call_openclaw_sessions_create(&args),
+            "sessions.patch" => Err(GatewayCommandError::Internal(
+                "sessions.patch requires the authenticated Gateway request context".into(),
+            )),
+            "sessions.providerReview.continue" => Err(GatewayCommandError::Internal(
+                "sessions.providerReview.continue requires the authenticated Gateway request context".into(),
+            )),
             "sessions.delete" => self.call_openclaw_sessions_delete(&args),
             "chat.send" => self.call_openclaw_chat_send(args),
             "chat.abort" => self.call_openclaw_chat_abort(&args),
@@ -3425,6 +3708,58 @@ impl UnifiedGatewayApi {
         }))
     }
 
+    fn provider_review_projection(
+        &self,
+        agent_id: &str,
+        session_key: &str,
+        session_id: &str,
+    ) -> Result<Option<serde_json::Value>, GatewayCommandError> {
+        let Some(review) = self
+            .session_workers
+            .read_session_provider_review(agent_id)
+            .map_err(GatewayCommandError::Internal)?
+        else {
+            return Ok(None);
+        };
+        if review.session_id != session_id {
+            return Ok(None);
+        }
+        let can_continue = session_key == format!("agent:{agent_id}:main")
+            && review.provider == "openai"
+            && review
+                .continuation_message
+                .as_deref()
+                .is_some_and(|message| !message.trim().is_empty())
+            && ((review.runtime_id == "codex"
+                && review
+                    .native_thread_id
+                    .as_deref()
+                    .is_some_and(|value| !value.trim().is_empty())
+                && review
+                    .native_turn_id
+                    .as_deref()
+                    .is_some_and(|value| !value.trim().is_empty()))
+                || (review.runtime_id == "openclaw"
+                    && review.api.as_deref() == Some("openai-chatgpt-responses")));
+        let mut projection = serde_json::json!({
+            "id": review.id,
+            "runId": review.run_id,
+            "explanation": review.explanation,
+            "canContinue": can_continue,
+        });
+        if can_continue {
+            if let Some(message) = review
+                .continuation_message
+                .as_deref()
+                .filter(|message| !message.trim().is_empty())
+            {
+                projection["continuationMessage"] =
+                    serde_json::Value::String(message.to_string());
+            }
+        }
+        Ok(Some(projection))
+    }
+
     fn call_openclaw_sessions_list(
         &self,
         args: &serde_json::Value,
@@ -3450,15 +3785,17 @@ impl UnifiedGatewayApi {
             .take(limit)
             .map(|s| {
                 let key = format!("agent:{}:main", s.id);
-                let kind = session_kind_label(classify_session_kind(
+                let route = resolve_gateway_session_route(
+                    &serde_json::json!({
+                        "chatType": if s.is_group { "group" } else { "direct" },
+                    }),
                     &key,
-                    Some(if s.is_group { "group" } else { "direct" }),
-                    None,
-                ));
+                )?;
+                let kind = session_kind_label(route.kind);
                 let active_run_ids = self.runner_registry.active_stream_ids_for_agent(&s.id);
                 let has_active_run = !active_run_ids.is_empty();
                 let status = if s.is_running || has_active_run { "running" } else { "done" };
-                serde_json::json!({
+                let mut row = serde_json::json!({
                     "key": key,
                     "sessionId": s.id,
                     "agentId": s.id,
@@ -3471,9 +3808,17 @@ impl UnifiedGatewayApi {
                     "status": status,
                     "hasActiveRun": has_active_run,
                     "activeRunIds": active_run_ids,
-                })
+                });
+                if let Some(review) = self.provider_review_projection(
+                    &s.id,
+                    &key,
+                    &s.id,
+                )? {
+                    row["providerReview"] = review;
+                }
+                Ok(row)
             })
-            .collect();
+            .collect::<Result<_, GatewayCommandError>>()?;
 
         Ok(serde_json::json!({
             "sessions": rows,
@@ -3500,19 +3845,9 @@ impl UnifiedGatewayApi {
             ));
         }
 
-        reject_public_agent_harness_session_key(raw_key)
-            .map_err(|message| GatewayCommandError::BadRequest(message.into()))?;
-
-        let agent_id = if let Some(stripped) = raw_key.strip_prefix("agent:") {
-            stripped.split(':').next().unwrap_or(stripped)
-        } else {
-            raw_key
-        };
-        let session_kind = session_kind_label(classify_session_kind(
-            raw_key,
-            args.get("chatType").and_then(serde_json::Value::as_str),
-            args.get("spawnedBy").and_then(serde_json::Value::as_str),
-        ));
+        let route = resolve_gateway_session_route(args, raw_key)?;
+        let agent_id = route.agent_id.as_str();
+        let session_kind = session_kind_label(route.kind);
 
         let summary = self
             .session_workers
@@ -3569,7 +3904,7 @@ impl UnifiedGatewayApi {
             }));
         }
 
-        Ok(serde_json::json!({
+        let mut response = serde_json::json!({
             "messages": messages,
             "key": raw_key,
             "kind": session_kind,
@@ -3578,7 +3913,13 @@ impl UnifiedGatewayApi {
             "lifecycleRevision": summary
                 .as_ref()
                 .map(|value| value.lifecycle_revision.clone()),
-        }))
+        });
+        if let Some(session_id) = summary.as_ref().map(|value| value.id.as_str())
+            && let Some(review) = self.provider_review_projection(agent_id, raw_key, session_id)?
+        {
+            response["providerReview"] = review;
+        }
+        Ok(response)
     }
 
     fn call_openclaw_sessions_create(
@@ -3643,23 +3984,14 @@ impl UnifiedGatewayApi {
             return Err(GatewayCommandError::BadRequest("sessions.delete requires key or sessionId".into()));
         }
 
-        reject_public_agent_harness_session_key(raw_key)
-            .map_err(|message| GatewayCommandError::BadRequest(message.into()))?;
+        let route = resolve_gateway_session_route(args, raw_key)?;
 
-        if raw_key == "global" || raw_key == "agent:global:main" {
+        if is_root_main_session_key(raw_key) {
             return Err(GatewayCommandError::BadRequest("Cannot delete root main session".into()));
         }
 
-        let agent_id = if let Some(stripped) = raw_key.strip_prefix("agent:") {
-            stripped.split(':').next().unwrap_or(stripped)
-        } else {
-            raw_key
-        };
-        let session_kind = session_kind_label(classify_session_kind(
-            raw_key,
-            args.get("chatType").and_then(serde_json::Value::as_str),
-            args.get("spawnedBy").and_then(serde_json::Value::as_str),
-        ));
+        let agent_id = route.agent_id.as_str();
+        let session_kind = session_kind_label(route.kind);
         if agent_id.is_empty() {
             return Err(GatewayCommandError::BadRequest(
                 "sessions.delete requires a non-empty agent identity".into(),
@@ -3725,6 +4057,309 @@ impl UnifiedGatewayApi {
         }))
     }
 
+    fn call_openclaw_sessions_patch(
+        &self,
+        args: &serde_json::Value,
+        context: &GatewayCommandContext,
+    ) -> Result<serde_json::Value, GatewayCommandError> {
+        if !context.authenticated {
+            return Err(GatewayCommandError::Forbidden(
+                "sessions.patch requires an authenticated Gateway request".into(),
+            ));
+        }
+        let raw_key = args
+            .get("key")
+            .or_else(|| args.get("sessionKey"))
+            .or_else(|| args.get("sessionId"))
+            .and_then(serde_json::Value::as_str)
+            .map(str::trim)
+            .filter(|value| !value.is_empty())
+            .ok_or_else(|| GatewayCommandError::BadRequest(
+                "sessions.patch requires key or sessionKey".into(),
+            ))?;
+        let archived = args
+            .get("archived")
+            .and_then(serde_json::Value::as_bool)
+            .ok_or_else(|| GatewayCommandError::BadRequest(
+                "sessions.patch requires archived".into(),
+            ))?;
+        let route = resolve_gateway_session_route(args, raw_key)?;
+        let expected_key = format!("agent:{}:main", route.agent_id);
+        if raw_key != expected_key {
+            return Err(GatewayCommandError::BadRequest(
+                "sessions.patch only supports canonical main sessions".into(),
+            ));
+        }
+        let expected_session_id = args
+            .get("expectedSessionId")
+            .and_then(serde_json::Value::as_str)
+            .map(str::trim)
+            .filter(|value| !value.is_empty())
+            .ok_or_else(|| GatewayCommandError::BadRequest(
+                "sessions.patch requires expectedSessionId".into(),
+            ))?;
+        let expected_revision = args
+            .get("expectedLifecycleRevision")
+            .and_then(serde_json::Value::as_str)
+            .map(str::trim)
+            .filter(|value| !value.is_empty())
+            .ok_or_else(|| GatewayCommandError::BadRequest(
+                "sessions.patch requires expectedLifecycleRevision".into(),
+            ))?;
+        let reason = args
+            .get("archiveReason")
+            .and_then(serde_json::Value::as_str)
+            .map(str::trim)
+            .filter(|value| !value.is_empty());
+        if archived
+            && !self
+                .generated_agent_runtime
+                .lock()
+                .map_err(|_| {
+                    GatewayCommandError::Internal(
+                        "generated subagent runtime lock is unavailable".into(),
+                    )
+                })?
+                .running_subagent_records_for_parent(&route.agent_id)
+                .is_empty()
+        {
+            return Err(GatewayCommandError::Conflict(
+                "session has active subagent work; archive requires subagent settlement before retry"
+                    .into(),
+            ));
+        }
+        if archived && !self
+            .runner_registry
+            .active_stream_ids_for_agent(&route.agent_id)
+            .is_empty()
+        {
+            return Err(GatewayCommandError::Conflict(
+                "session has an active foreground turn; archive requires terminal settlement before retry".into(),
+            ));
+        }
+        let record = self
+            .session_workers
+            .transition_session_work_archive(
+                &route.agent_id,
+                raw_key,
+                expected_session_id,
+                Some(expected_revision),
+                archived,
+                Some("gateway-operator"),
+                reason,
+                started_at_ms() as f64,
+            )
+            .map_err(|error| {
+                if error.contains("identity")
+                    || error.contains("lifecycle")
+                    || error.contains("admitted work")
+                {
+                    GatewayCommandError::Conflict(error)
+                } else {
+                    GatewayCommandError::Internal(error)
+                }
+            })?;
+        Ok(serde_json::json!({
+            "ok": true,
+            "key": record.session_key,
+            "sessionId": record.session_id,
+            "archived": record.archived_at_ms.is_some(),
+            "archivedAt": record.archived_at_ms,
+            "archivedBy": record.archived_by,
+            "archiveReason": record.archive_reason,
+            "lifecycleRevision": record.lifecycle_revision,
+        }))
+    }
+
+    fn call_openclaw_sessions_provider_review_continue(
+        &self,
+        args: &serde_json::Value,
+        context: &GatewayCommandContext,
+    ) -> Result<serde_json::Value, GatewayCommandError> {
+        if !context.authenticated {
+            return Err(GatewayCommandError::Forbidden(
+                "sessions.providerReview.continue requires an authenticated Gateway request".into(),
+            ));
+        }
+        let session_key = args
+            .get("sessionKey")
+            .or_else(|| args.get("key"))
+            .and_then(serde_json::Value::as_str)
+            .map(str::trim)
+            .filter(|value| !value.is_empty())
+            .ok_or_else(|| GatewayCommandError::BadRequest(
+                "sessions.providerReview.continue requires sessionKey".into(),
+            ))?;
+        let route = resolve_gateway_session_route(args, session_key)?;
+        let canonical_key = format!("agent:{}:main", route.agent_id);
+        if session_key != canonical_key {
+            return Err(GatewayCommandError::BadRequest(
+                "sessions.providerReview.continue only supports canonical main sessions".into(),
+            ));
+        }
+        let expected_session_id = args
+            .get("sessionId")
+            .and_then(serde_json::Value::as_str)
+            .map(str::trim)
+            .filter(|value| !value.is_empty())
+            .ok_or_else(|| GatewayCommandError::BadRequest(
+                "sessions.providerReview.continue requires sessionId".into(),
+            ))?;
+        let review_id = args
+            .get("reviewId")
+            .and_then(serde_json::Value::as_str)
+            .map(str::trim)
+            .filter(|value| !value.is_empty())
+            .ok_or_else(|| GatewayCommandError::BadRequest(
+                "sessions.providerReview.continue requires reviewId".into(),
+            ))?;
+        let next_run_id = args
+            .get("idempotencyKey")
+            .and_then(serde_json::Value::as_str)
+            .map(str::trim)
+            .filter(|value| !value.is_empty())
+            .ok_or_else(|| GatewayCommandError::BadRequest(
+                "sessions.providerReview.continue requires idempotencyKey".into(),
+            ))?;
+        let record = self
+            .session_workers
+            .read_session_work_admission(&route.agent_id)
+            .map_err(GatewayCommandError::Internal)?
+            .ok_or_else(|| GatewayCommandError::Conflict(
+                "provider review session admission is unavailable".into(),
+            ))?;
+        let review = record
+            .provider_review
+            .clone()
+            .ok_or_else(|| GatewayCommandError::Conflict(
+                "provider review is unavailable; refresh the current findings".into(),
+            ))?;
+        if record.session_id != expected_session_id
+            || review.session_id != expected_session_id
+            || review.id != review_id
+            || record.provider_review_id.as_deref() != Some(review_id)
+            || record.provider_review_phase.as_deref() != Some("pending")
+        {
+            return Err(GatewayCommandError::Conflict(
+                "provider review changed; refresh the current findings".into(),
+            ));
+        }
+        let continuation = review
+            .continuation_message
+            .as_deref()
+            .map(str::trim)
+            .filter(|value| !value.is_empty())
+            .ok_or_else(|| GatewayCommandError::BadRequest(
+                "provider review has no bounded continuation".into(),
+            ))?;
+        let provider = match review.provider.as_str() {
+            "openai" => RoutedProvider::Codex,
+            value => RoutedProvider::parse(value).ok_or_else(|| {
+                GatewayCommandError::BadRequest(
+                    "provider review runtime is unsupported by this host".into(),
+                )
+            })?,
+        };
+        let lifecycle_revision = record.lifecycle_revision.clone();
+        let admitted_revision = self
+            .session_workers
+            .capture_session_work_admission(
+                &route.agent_id,
+                &canonical_key,
+                next_run_id,
+            )
+            .map_err(GatewayCommandError::Conflict)?;
+        if admitted_revision != lifecycle_revision {
+            let _ = self.session_workers.release_session_work_admission(
+                &route.agent_id,
+                &admitted_revision,
+                next_run_id,
+            );
+            return Err(GatewayCommandError::Conflict(
+                "provider review lifecycle changed before continuation admission".into(),
+            ));
+        }
+        let acknowledgment = match self.session_workers.issue_provider_review_acknowledgment(
+            &route.agent_id,
+            &admitted_revision,
+            review_id,
+            next_run_id,
+        ) {
+            Ok(acknowledgment) => acknowledgment,
+            Err(error) => {
+                let _ = self.session_workers.release_session_work_admission(
+                    &route.agent_id,
+                    &admitted_revision,
+                    next_run_id,
+                );
+                return Err(GatewayCommandError::Conflict(error));
+            }
+        };
+        if let Err(error) = self.session_workers.claim_provider_review_acknowledgment(
+            acknowledgment,
+            next_run_id,
+            &review.provider,
+            &review.model,
+            &review.runtime_id,
+            review.api.as_deref(),
+        ) {
+            let _ = self.session_workers.release_session_work_admission(
+                &route.agent_id,
+                &admitted_revision,
+                next_run_id,
+            );
+            return Err(GatewayCommandError::Conflict(error));
+        }
+        let runner_args = serde_json::json!({
+            "provider": provider.as_str(),
+            "agentId": route.agent_id.clone(),
+            "sessionKey": canonical_key,
+            "streamId": next_run_id,
+            "clientNonce": next_run_id,
+            "requestSource": "provider-review",
+            "prompt": continuation,
+            "appendUserMessage": true,
+            "skipAckObligation": true,
+            "messages": [{
+                "role": "user",
+                "content": continuation,
+            }],
+        });
+        if let Err(error) = self
+            .transcript_runtime
+            .accept_routed_send(&runner_args, |accepted| {
+                persist_accepted_send_prompt_context(
+                    &self.session_workers,
+                    &runner_args,
+                    accepted,
+                )
+                .map_err(map_session_send_error)
+            })
+        {
+            let _ = self.session_workers.release_session_work_admission(
+                &route.agent_id,
+                &admitted_revision,
+                next_run_id,
+            );
+            return Err(map_production_send_error(error));
+        }
+        match self.call_with_context(
+            RUNNER_START_ROUTED_PROVIDER_GATEWAY_METHOD,
+            runner_args,
+            context,
+        ) {
+            Ok(result) => Ok(result),
+            Err(error) => {
+                let _ = self.session_workers.release_session_work_admission(
+                    &route.agent_id,
+                    &admitted_revision,
+                    next_run_id,
+                );
+                Err(error)
+            }
+        }
+    }
+
     fn delete_generated_subagent(
         &self,
         agent_id: &str,
@@ -3766,14 +4401,8 @@ impl UnifiedGatewayApi {
             .filter(|s| !s.is_empty())
             .ok_or_else(|| GatewayCommandError::BadRequest("chat.send requires sessionKey".into()))?;
 
-        reject_public_agent_harness_session_key(session_key)
-            .map_err(|message| GatewayCommandError::BadRequest(message.into()))?;
-
-        let session_kind = session_kind_label(classify_session_kind(
-            session_key,
-            args.get("chatType").and_then(serde_json::Value::as_str),
-            args.get("spawnedBy").and_then(serde_json::Value::as_str),
-        ));
+        let route = resolve_gateway_session_route(&args, session_key)?;
+        let session_kind = session_kind_label(route.kind);
 
         let message = args.get("message")
             .and_then(serde_json::Value::as_str)
@@ -3787,11 +4416,7 @@ impl UnifiedGatewayApi {
             .filter(|s| !s.is_empty())
             .ok_or_else(|| GatewayCommandError::BadRequest("chat.send requires idempotencyKey".into()))?;
 
-        let agent_id = if let Some(stripped) = session_key.strip_prefix("agent:") {
-            stripped.split(':').next().unwrap_or(stripped)
-        } else {
-            session_key
-        };
+        let agent_id = route.agent_id.as_str();
 
         let agent_exists = self.session_workers
             .summarize_agent_by_id(agent_id, None)
@@ -3805,6 +4430,9 @@ impl UnifiedGatewayApi {
 
         let prompt_args = serde_json::json!({
             "agentId": agent_id,
+            "sessionKey": session_key,
+            "chatType": args.get("chatType").cloned().unwrap_or(serde_json::Value::Null),
+            "spawnedBy": args.get("spawnedBy").cloned().unwrap_or(serde_json::Value::Null),
             "prompt": message,
             "clientNonce": idempotency_key,
         });
@@ -3850,20 +4478,9 @@ impl UnifiedGatewayApi {
             .filter(|s| !s.is_empty())
             .ok_or_else(|| GatewayCommandError::BadRequest("chat.abort requires sessionKey".into()))?;
 
-        reject_public_agent_harness_session_key(session_key)
-            .map_err(|message| GatewayCommandError::BadRequest(message.into()))?;
-
-        let session_kind = session_kind_label(classify_session_kind(
-            session_key,
-            args.get("chatType").and_then(serde_json::Value::as_str),
-            args.get("spawnedBy").and_then(serde_json::Value::as_str),
-        ));
-
-        let agent_id = if let Some(stripped) = session_key.strip_prefix("agent:") {
-            stripped.split(':').next().unwrap_or(stripped)
-        } else {
-            session_key
-        };
+        let route = resolve_gateway_session_route(args, session_key)?;
+        let session_kind = session_kind_label(route.kind);
+        let agent_id = route.agent_id.as_str();
         if agent_id.is_empty() {
             return Err(GatewayCommandError::BadRequest(
                 "chat.abort requires a non-empty agent identity".into(),
@@ -4526,6 +5143,7 @@ fn run_local_group_member_turn(
     let client_nonce = format!("group-member:{}:{}", member_id, uuid::Uuid::new_v4());
     let admission_args = serde_json::json!({
         "agentId": member_id,
+        "sessionKey": format!("agent:{member_id}:group:{}", group_room_id.as_deref().unwrap_or("main")),
         "prompt": request.prompt,
         "clientNonce": client_nonce,
         "streamId": stream_id,
@@ -4534,6 +5152,12 @@ fn run_local_group_member_turn(
         "groupMemberTurn": true,
         "skipAckObligation": true,
     });
+    deps.session_workers
+        .assert_session_work_admission(
+            &member_id,
+            admission_args.get("sessionKey").and_then(serde_json::Value::as_str),
+        )
+        .map_err(|error| error.to_string())?;
     deps.transcript_runtime
         .accept_routed_send(&admission_args, |_| {
             Ok::<_, ProductionSendError>(PersistedSendContext::default())
@@ -4544,6 +5168,7 @@ fn run_local_group_member_turn(
     let runner_args = serde_json::json!({
         "provider": provider.as_str(),
         "agentId": member_id,
+        "sessionKey": format!("agent:{member_id}:group:{}", group_room_id.as_deref().unwrap_or("main")),
         "streamId": stream_id,
         "requestSource": "group-member",
         "groupMemberTurn": true,
@@ -4560,7 +5185,7 @@ fn run_local_group_member_turn(
             }
         ],
     });
-    start_routed_provider_task(
+    if let Err(error) = start_routed_provider_task(
         deps.routed_tool_relay,
         deps.mcp_service,
         deps.events.clone(),
@@ -4597,7 +5222,9 @@ fn run_local_group_member_turn(
         None,
         runner_args,
     )
-    .map_err(|error| error.to_string())?;
+    .map_err(|error| error.to_string()) {
+        return Err(error);
+    }
 
     let deadline = Instant::now() + Duration::from_secs(30 * 60);
     loop {
@@ -4692,6 +5319,11 @@ fn start_local_upgrade_resume_turn(
         _ => "handoff-resume".to_string(),
     };
     let prompt = build_upgrade_resume_prompt(&resumed_source);
+    let session_key = marker
+        .automation_id
+        .as_deref()
+        .map(|automation_id| format!("agent:{}:cron:{automation_id}", marker.agent_id))
+        .unwrap_or_else(|| format!("agent:{}:main", marker.agent_id));
     let stream_id = format!("upgrade-resume-{}", uuid::Uuid::new_v4());
     let client_nonce = format!(
         "upgrade-resume:{}:{}",
@@ -4708,6 +5340,7 @@ fn start_local_upgrade_resume_turn(
 
     let mut admission_args = serde_json::json!({
         "agentId": marker.agent_id,
+        "sessionKey": session_key.clone(),
         "prompt": prompt,
         "clientNonce": client_nonce,
         "streamId": stream_id,
@@ -4721,6 +5354,13 @@ fn start_local_upgrade_resume_turn(
         admission_args["automationWake"] = automation_wake;
     }
 
+    deps.session_workers
+        .assert_session_work_admission(
+            &marker.agent_id,
+            admission_args.get("sessionKey").and_then(serde_json::Value::as_str),
+        )
+        .map_err(|error| error.to_string())?;
+
     if let Err(error) = deps.transcript_runtime.accept_routed_send(&admission_args, |_| {
         Ok::<_, ProductionSendError>(PersistedSendContext::default())
     }) {
@@ -4732,6 +5372,7 @@ fn start_local_upgrade_resume_turn(
     let mut runner_args = serde_json::json!({
         "provider": provider.as_str(),
         "agentId": marker.agent_id,
+        "sessionKey": session_key,
         "streamId": stream_id,
         "requestSource": resumed_source,
         "hidden": true,
@@ -4749,7 +5390,7 @@ fn start_local_upgrade_resume_turn(
         runner_args["automationWake"] = automation_wake;
     }
 
-    start_routed_provider_task(
+    if let Err(error) = start_routed_provider_task(
         deps.routed_tool_relay,
         deps.mcp_service,
         deps.events.clone(),
@@ -4875,6 +5516,7 @@ fn run_local_automation_turn(
     });
     let admission_args = serde_json::json!({
         "agentId": agent_id,
+        "sessionKey": format!("agent:{agent_id}:cron:{automation_id}"),
         "prompt": prompt,
         "clientNonce": client_nonce,
         "streamId": stream_id,
@@ -4884,6 +5526,12 @@ fn run_local_automation_turn(
         "automationWake": automation_wake,
         "skipAckObligation": true,
     });
+    deps.session_workers
+        .assert_session_work_admission(
+            agent_id,
+            admission_args.get("sessionKey").and_then(serde_json::Value::as_str),
+        )
+        .map_err(|error| error.to_string())?;
     deps.transcript_runtime
         .accept_routed_send(&admission_args, |_| {
             Ok::<_, ProductionSendError>(PersistedSendContext::default())
@@ -4894,6 +5542,7 @@ fn run_local_automation_turn(
     let runner_args = serde_json::json!({
         "provider": provider.as_str(),
         "agentId": agent_id,
+        "sessionKey": format!("agent:{agent_id}:cron:{automation_id}"),
         "streamId": stream_id,
         "requestSource": "automation",
         "automationWake": {
@@ -4942,7 +5591,9 @@ fn run_local_automation_turn(
         None,
         runner_args,
     )
-    .map_err(|error| error.to_string())?;
+    .map_err(|error| error.to_string()) {
+        return Err(error);
+    }
 
     let deadline = Instant::now() + Duration::from_secs(30 * 60);
     loop {
@@ -4991,6 +5642,7 @@ fn run_local_kickstart_turn(
     let client_nonce = format!("kickstart:{}:{}", agent_id, uuid::Uuid::new_v4());
     let admission_args = serde_json::json!({
         "agentId": agent_id,
+        "sessionKey": format!("agent:{agent_id}:main"),
         "prompt": prompt,
         "clientNonce": client_nonce,
         "streamId": stream_id,
@@ -4999,6 +5651,15 @@ fn run_local_kickstart_turn(
         "requestSource": source,
         "skipAckObligation": true,
     });
+    deps.session_workers
+        .assert_session_work_admission(
+            agent_id,
+            admission_args.get("sessionKey").and_then(serde_json::Value::as_str),
+        )
+        .map_err(|error| KickstartRunError {
+            request_id: Some(stream_id.clone()),
+            message: error.to_string(),
+        })?;
     deps.transcript_runtime
         .accept_routed_send(&admission_args, |_| {
             Ok::<_, ProductionSendError>(PersistedSendContext::default())
@@ -5012,6 +5673,7 @@ fn run_local_kickstart_turn(
     let runner_args = serde_json::json!({
         "provider": provider.as_str(),
         "agentId": agent_id,
+        "sessionKey": format!("agent:{agent_id}:main"),
         "streamId": stream_id,
         "requestSource": source,
         "hidden": true,
@@ -5229,8 +5891,13 @@ fn run_local_background_revival_turn_with_context(
         .session_workers
         .read_agent_transcript_entries(agent_id)
         .unwrap_or_default();
+    let session_key = format!("agent:{agent_id}:main");
+    let admitted_lifecycle_revision = deps
+        .session_workers
+        .capture_session_work_admission(agent_id, &session_key, &stream_id)?;
     let mut admission_args = serde_json::json!({
         "agentId": agent_id,
+        "sessionKey": session_key,
         "prompt": prompt,
         "clientNonce": client_nonce,
         "streamId": stream_id,
@@ -5242,16 +5909,33 @@ fn run_local_background_revival_turn_with_context(
     if let Some(ack_token) = ack_token.as_deref() {
         admission_args["ackToken"] = serde_json::Value::String(ack_token.to_string());
     }
-    deps.transcript_runtime
-        .accept_routed_send(&admission_args, |_| {
-            Ok::<_, ProductionSendError>(PersistedSendContext::default())
-        })
-        .map_err(|error| error.to_string())?;
+    if let Err(error) = deps.session_workers.assert_session_work_admission(
+        agent_id,
+        admission_args.get("sessionKey").and_then(serde_json::Value::as_str),
+    ) {
+        let _ = deps.session_workers.release_session_work_admission(
+            agent_id,
+            &admitted_lifecycle_revision,
+            &stream_id,
+        );
+        return Err(error);
+    }
+    if let Err(error) = deps.transcript_runtime.accept_routed_send(&admission_args, |_| {
+        Ok::<_, ProductionSendError>(PersistedSendContext::default())
+    }) {
+        let _ = deps.session_workers.release_session_work_admission(
+            agent_id,
+            &admitted_lifecycle_revision,
+            &stream_id,
+        );
+        return Err(error.to_string());
+    }
 
     let receiver = deps.events.subscribe();
     let mut runner_args = serde_json::json!({
         "provider": provider.as_str(),
         "agentId": agent_id,
+        "sessionKey": admission_args.get("sessionKey").cloned().unwrap_or_default(),
         "streamId": stream_id,
         "requestSource": source,
         "hidden": true,
@@ -5284,7 +5968,7 @@ fn run_local_background_revival_turn_with_context(
                 .collect(),
         );
     }
-    start_routed_provider_task(
+    if let Err(error) = start_routed_provider_task(
         deps.routed_tool_relay,
         deps.mcp_service,
         deps.events.clone(),
@@ -5321,7 +6005,14 @@ fn run_local_background_revival_turn_with_context(
         None,
         runner_args,
     )
-    .map_err(|error| error.to_string())?;
+    .map_err(|error| error.to_string()) {
+        let _ = deps.session_workers.release_session_work_admission(
+            agent_id,
+            &admitted_lifecycle_revision,
+            &stream_id,
+        );
+        return Err(error);
+    }
 
     let deadline = Instant::now() + Duration::from_secs(30 * 60);
     loop {
@@ -5330,6 +6021,11 @@ fn run_local_background_revival_turn_with_context(
             let _ = deps
                 .runner_registry
                 .cancel_stream(&stream_id, "background revival timed out");
+            let _ = deps.session_workers.release_session_work_admission(
+                agent_id,
+                &admitted_lifecycle_revision,
+                &stream_id,
+            );
             return Ok(RevivalExecution {
                 aborted: true,
                 quiesced_for_upgrade: false,
@@ -5346,29 +6042,88 @@ fn run_local_background_revival_turn_with_context(
                 };
                 match result {
                     Ok(AutomationExecutionResult::Completed) => {
+                        deps.session_workers
+                            .assert_session_work_admission_generation(
+                                agent_id,
+                                admission_args
+                                    .get("sessionKey")
+                                    .and_then(serde_json::Value::as_str)
+                                    .unwrap_or_default(),
+                                &admitted_lifecycle_revision,
+                            )?;
+                        let terminal_content = event
+                            .get("payload")
+                            .and_then(serde_json::Value::as_object)
+                            .and_then(|payload| payload.get("content"))
+                            .and_then(serde_json::Value::as_str)
+                            .unwrap_or_default();
                         let after = deps
                             .session_workers
                             .read_agent_transcript_entries(agent_id)
                             .unwrap_or_default();
+                        let sent_message_count = collect_new_member_send_messages(&before, &after)
+                            .len();
+                        let receipt = deps.session_workers.commit_session_work_result(
+                            agent_id,
+                            admission_args
+                                .get("sessionKey")
+                                .and_then(serde_json::Value::as_str)
+                                .unwrap_or_default(),
+                            &admitted_lifecycle_revision,
+                            &stream_id,
+                            &client_nonce,
+                            terminal_content,
+                            sent_message_count,
+                        )?;
+                        let sent_message_count = match receipt {
+                            mahayana_host_runtime::extensions::session::agent_db::SessionWorkResultCommitOutcome::Committed(
+                                receipt,
+                            )
+                            | mahayana_host_runtime::extensions::session::agent_db::SessionWorkResultCommitOutcome::AlreadyCommitted(
+                                receipt,
+                            ) => receipt.sent_message_count,
+                            mahayana_host_runtime::extensions::session::agent_db::SessionWorkResultCommitOutcome::RejectedStale => {
+                                return Err("background result generation became stale before receipt commit".into());
+                            }
+                            mahayana_host_runtime::extensions::session::agent_db::SessionWorkResultCommitOutcome::ConflictingResult => {
+                                return Err("background result idempotency key conflicts with a prior receipt".into());
+                            }
+                        };
                         return Ok(RevivalExecution {
                             aborted: false,
                             quiesced_for_upgrade: false,
-                            sent_message_count: collect_new_member_send_messages(&before, &after)
-                                .len(),
+                            sent_message_count,
                         });
                     }
                     Ok(AutomationExecutionResult::Interrupted { .. }) => {
+                        let _ = deps.session_workers.release_session_work_admission(
+                            agent_id,
+                            &admitted_lifecycle_revision,
+                            &stream_id,
+                        );
                         return Ok(RevivalExecution {
                             aborted: true,
                             quiesced_for_upgrade: false,
                             sent_message_count: 0,
                         });
                     }
-                    Err(error) => return Err(error),
+                    Err(error) => {
+                        let _ = deps.session_workers.release_session_work_admission(
+                            agent_id,
+                            &admitted_lifecycle_revision,
+                            &stream_id,
+                        );
+                        return Err(error);
+                    }
                 }
             }
             Err(mpsc::RecvTimeoutError::Timeout) => continue,
             Err(mpsc::RecvTimeoutError::Disconnected) => {
+                let _ = deps.session_workers.release_session_work_admission(
+                    agent_id,
+                    &admitted_lifecycle_revision,
+                    &stream_id,
+                );
                 return Err("Host event bus disconnected during background revival".into());
             }
         }
@@ -7487,6 +8242,13 @@ fn start_routed_provider_task(
         .map(str::trim)
         .filter(|value| !value.is_empty())
         .map(ToOwned::to_owned);
+    let worker_session_key = args
+        .get("sessionKey")
+        .and_then(serde_json::Value::as_str)
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+        .map(ToOwned::to_owned)
+        .unwrap_or_else(|| format!("agent:{agent_id}:main"));
     let worker_send_is_fork = turn_input.options.is_fork;
     let avatar_box_file_reader: AvatarBoxFileReader = {
         let forever_box = Arc::clone(&forever_box);
@@ -8722,8 +9484,10 @@ fn start_routed_provider_task(
                     transcript_runtime: Arc::clone(&worker_transcript_runtime),
                     ack_token: worker_ack_token.clone(),
                     agent_id: agent_id.clone(),
+                    session_key: worker_session_key.clone(),
                     reply_thread_target: worker_reply_thread_target.clone(),
                     is_fork: worker_send_is_fork,
+                    pending_media: Mutex::new(HashMap::new()),
                 },
             );
             let send_message_sink: Arc<dyn SendMessageSink> = Arc::new(
@@ -9655,6 +10419,59 @@ fn start_routed_provider_task(
                 turn_input.clone(),
                 &mut on_text_delta,
             );
+            if provider == RoutedProvider::Codex
+                && let Err(ProviderSessionError::ProviderRefusal(refusal)) = result.as_ref()
+            {
+                let explanation = refusal
+                    .explanation
+                    .as_deref()
+                    .map(str::trim)
+                    .filter(|value| !value.is_empty())
+                    .map(ToOwned::to_owned);
+                match (
+                    explanation,
+                    worker_sessions.read_session_work_admission(&agent_id),
+                ) {
+                    (Some(explanation), Ok(Some(admission))) => {
+                        let review = SessionProviderReview {
+                            id: uuid::Uuid::new_v4().to_string(),
+                            session_id: admission.session_id,
+                            run_id: worker_stream_id.clone(),
+                            provider: "openai".into(),
+                            model: turn_model_id.clone(),
+                            runtime_id: "codex".into(),
+                            api: Some("openai-chatgpt-responses".into()),
+                            native_thread_id: None,
+                            native_turn_id: None,
+                            explanation,
+                            continuation_message: refusal.continuation_message.clone(),
+                            error_type: refusal.error_type.clone(),
+                        };
+                        if let Err(error) = worker_sessions.record_session_provider_review(
+                            &agent_id,
+                            &admission.lifecycle_revision,
+                            &review,
+                        ) {
+                            eprintln!(
+                                "mahayana-host provider_review_record_failed agent={} run={} error={error}",
+                                agent_id, worker_stream_id
+                            );
+                        }
+                    }
+                    (None, _) => eprintln!(
+                        "mahayana-host provider_review_rejected_missing_explanation agent={} run={}",
+                        agent_id, worker_stream_id
+                    ),
+                    (_, Ok(None)) => eprintln!(
+                        "mahayana-host provider_review_rejected_missing_admission agent={} run={}",
+                        agent_id, worker_stream_id
+                    ),
+                    (_, Err(error)) => eprintln!(
+                        "mahayana-host provider_review_admission_read_failed agent={} run={} error={error}",
+                        agent_id, worker_stream_id
+                    ),
+                }
+            }
             let mut waiting_user = matches!(
                 runner.last_finished().map(|finished| &finished.outcome),
                 Some(mahayana_host_runtime::runner::TerminalOutcome::WaitingUser)
@@ -11940,6 +12757,12 @@ impl GatewayApi for UnifiedGatewayApi {
         args: serde_json::Value,
         context: &GatewayCommandContext,
     ) -> Result<serde_json::Value, GatewayCommandError> {
+        if method == "sessions.providerReview.continue" {
+            return self.call_openclaw_sessions_provider_review_continue(&args, context);
+        }
+        if method == "sessions.patch" {
+            return self.call_openclaw_sessions_patch(&args, context);
+        }
         if method == RUNNER_ACCEPT_ROUTED_PROMPT_GATEWAY_METHOD {
             return self.call_accept_routed_prompt(args, Some(context));
         }

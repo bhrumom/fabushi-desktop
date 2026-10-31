@@ -142,6 +142,7 @@ pub struct GatewayCommandContext {
     pub traceparent: Option<String>,
     pub trace_id: Option<String>,
     pub span_id: Option<String>,
+    pub authenticated: bool,
     pub dispatch_started: Instant,
 }
 
@@ -650,6 +651,8 @@ fn is_mutating_openclaw_command(method: &str) -> bool {
             | "chat.send"
             | "chat.abort"
             | "sessions.create"
+            | "sessions.patch"
+            | "sessions.providerReview.continue"
             | "sessions.delete"
             | "cron.trigger"
             | "config.set"
@@ -670,6 +673,8 @@ fn is_operator_only_openclaw_command(method: &str) -> bool {
             | "sessions.list"
             | "sessions.get"
             | "sessions.create"
+            | "sessions.patch"
+            | "sessions.providerReview.continue"
             | "sessions.delete"
             | "cron.list"
             | "cron.trigger"
@@ -843,6 +848,7 @@ fn valid_traceparent(value: &str) -> bool {
 
 fn gateway_command_context(
     request: &HttpRequest,
+    authenticated: bool,
     dispatch_started: Instant,
 ) -> GatewayCommandContext {
     let request_id = request
@@ -871,6 +877,7 @@ fn gateway_command_context(
         traceparent,
         trace_id,
         span_id,
+        authenticated,
         dispatch_started,
     }
 }
@@ -1433,7 +1440,7 @@ fn handle_connection(
         }
     }
     let started = Instant::now();
-    let command_context = gateway_command_context(&request, started);
+    let command_context = gateway_command_context(&request, authenticated, started);
     match deps.api.call_with_context(method, args, &command_context) {
         Ok(value) => {
             deps.api

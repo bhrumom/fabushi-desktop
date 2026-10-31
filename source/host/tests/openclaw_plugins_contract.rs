@@ -3088,6 +3088,15 @@ fn test_computer_use_contract_and_execution_manager() {
     ));
     assert!(!is_valid_computer_execution_id("invalid-id"));
     assert!(!is_valid_computer_execution_id(""));
+    assert!(!is_valid_computer_execution_id(
+        "12345678-1234-6234-8234-123456789abc"
+    ));
+    assert!(!is_valid_computer_execution_id(
+        "12345678-1234-4234-0234-123456789abc"
+    ));
+    assert!(!is_valid_computer_execution_id(
+        "12345678-1234-4234-8234-123456789ABC"
+    ));
 
     let manager = ComputerExecutionManager::new();
     assert!(!manager.is_active());

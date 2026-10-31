@@ -392,7 +392,13 @@ fn gateway_public_pairing_join_route_redeems_once_and_rejects_query_or_empty_cod
 #[derive(Clone, Default)]
 struct ReportingApi {
     reports: Arc<Mutex<Vec<(String, GatewayCommandReport)>>>,
-    contexts: Arc<Mutex<Vec<(Option<String>, Option<String>, Option<String>, Option<String>)>>>,
+    contexts: Arc<Mutex<Vec<(
+        Option<String>,
+        Option<String>,
+        Option<String>,
+        Option<String>,
+        bool,
+    )>>>,
 }
 
 impl GatewayApi for ReportingApi {
@@ -420,6 +426,7 @@ impl GatewayApi for ReportingApi {
                 context.traceparent.clone(),
                 context.trace_id.clone(),
                 context.span_id.clone(),
+                context.authenticated,
             ));
         self.call(method, args)
     }
@@ -1194,10 +1201,12 @@ fn gateway_command_telemetry_preserves_request_trace_and_server_error_semantics(
         Some("4bf92f3577b34da6a3ce929d0e0e4736")
     );
     assert_eq!(contexts[0].3.as_deref(), Some("00f067aa0ba902b7"));
+    assert!(contexts[0].4);
     assert_eq!(contexts[1].0.as_deref(), Some("request-fail"));
     assert_eq!(contexts[1].1, None);
     assert_eq!(contexts[1].2, None);
     assert_eq!(contexts[1].3, None);
+    assert!(contexts[1].4);
     drop(contexts);
 
     let reports = reports.lock().expect("read reports");

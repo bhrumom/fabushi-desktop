@@ -152,6 +152,28 @@ pub enum SessionKind {
     Unknown,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum PublicSessionRouteError {
+    EmptySelector,
+    HarnessNamespaceReserved,
+    EmptyAgentIdentity,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum InternalSessionRouteError {
+    MissingSelector,
+    EmptyAgentIdentity,
+    SelectorAgentMismatch,
+    Public(PublicSessionRouteError),
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct PublicSessionRoute {
+    pub raw_key: String,
+    pub agent_id: String,
+    pub kind: SessionKind,
+}
+
 /// Classify session kind equivalent to OpenClaw classifySessionKind.
 pub fn classify_session_kind(
     key: &str,
@@ -164,10 +186,14 @@ pub fn classify_session_kind(
     if key == "unknown" {
         return SessionKind::Unknown;
     }
-    if key.starts_with("cron:") || key.contains(":cron:") {
+    let is_canonical_cron = parse_agent_session_key(key)
+        .is_some_and(|(_agent_id, rest)| rest.to_ascii_lowercase().starts_with("cron:"));
+    if is_canonical_cron {
         return SessionKind::Cron;
     }
-    if spawned_by.is_some() {
+    // Match the upstream `entry?.spawnedBy` truthiness rule: an absent or
+    // empty-string value does not establish spawn ancestry.
+    if spawned_by.is_some_and(|value| !value.is_empty()) {
         return SessionKind::SpawnChild;
     }
     if chat_type == Some("group")
@@ -184,7 +210,10 @@ pub fn classify_session_kind(
 /// Format: agent:<agentId>:<rest>
 pub fn parse_agent_session_key(session_key: &str) -> Option<(&str, &str)> {
     let trimmed = session_key.trim();
-    if trimmed.len() < 6 || !trimmed[..6].eq_ignore_ascii_case("agent:") {
+    let Some(prefix) = trimmed.get(..6) else {
+        return None;
+    };
+    if !prefix.eq_ignore_ascii_case("agent:") {
         return None;
     }
     let after_agent = &trimmed[6..];
@@ -196,6 +225,20 @@ pub fn parse_agent_session_key(session_key: &str) -> Option<(&str, &str)> {
     } else {
         Some((agent_id, rest))
     }
+}
+
+/// Return whether a selector names the undeletable global main session.
+///
+/// Structural agent wrappers are case-insensitive at the public selector
+/// boundary, so the deletion guard must use the same rule.
+pub fn is_root_main_session_key(session_key: &str) -> bool {
+    let trimmed = session_key.trim();
+    if trimmed.eq_ignore_ascii_case("global") {
+        return true;
+    }
+    parse_agent_session_key(trimmed).is_some_and(|(agent_id, rest)| {
+        agent_id.eq_ignore_ascii_case("global") && rest.eq_ignore_ascii_case("main")
+    })
 }
 
 /// Agent harness session key namespace check equivalent to OpenClaw isAgentHarnessSessionKey.
@@ -218,5 +261,75 @@ pub fn reject_public_agent_harness_session_key(session_key: &str) -> Result<(), 
     } else {
         Ok(())
     }
+}
+
+/// Resolve the one public session selector boundary used by Gateway session
+/// and chat methods. This function is deliberately pure: downstream session,
+/// transcript, lifecycle, and runner owners remain responsible for state and
+/// execution.
+pub fn resolve_public_session_route(
+    session_key: &str,
+    chat_type: Option<&str>,
+    spawned_by: Option<&str>,
+) -> Result<PublicSessionRoute, PublicSessionRouteError> {
+    let raw_key = session_key.trim();
+    if raw_key.is_empty() {
+        return Err(PublicSessionRouteError::EmptySelector);
+    }
+    if is_agent_harness_session_key(raw_key) {
+        return Err(PublicSessionRouteError::HarnessNamespaceReserved);
+    }
+
+    let agent_id = if let Some((agent_id, _rest)) = parse_agent_session_key(raw_key) {
+        // OpenClaw normalizes the structural agent wrapper before returning
+        // ParsedAgentSessionKey. Agent IDs are structural, while legacy raw
+        // selectors remain opaque below.
+        agent_id.to_ascii_lowercase()
+    } else if raw_key.to_ascii_lowercase().starts_with("agent:") {
+        return Err(PublicSessionRouteError::EmptyAgentIdentity);
+    } else {
+        raw_key.to_owned()
+    };
+    if agent_id.trim().is_empty() {
+        return Err(PublicSessionRouteError::EmptyAgentIdentity);
+    }
+
+    Ok(PublicSessionRoute {
+        raw_key: raw_key.to_owned(),
+        agent_id,
+        kind: classify_session_kind(raw_key, chat_type, spawned_by),
+    })
+}
+
+/// Resolve a trusted producer's send target through the same selector owner as
+/// public Gateway methods. A direct-main fallback is intentionally explicit;
+/// background producers with a richer session kind must provide their key.
+pub fn resolve_internal_send_route(
+    agent_id: &str,
+    session_key: Option<&str>,
+    chat_type: Option<&str>,
+    spawned_by: Option<&str>,
+    allow_direct_main_fallback: bool,
+) -> Result<PublicSessionRoute, InternalSessionRouteError> {
+    let supplied_agent_id = agent_id.trim();
+    if supplied_agent_id.is_empty() {
+        return Err(InternalSessionRouteError::EmptyAgentIdentity);
+    }
+    let selector = match session_key.map(str::trim).filter(|value| !value.is_empty()) {
+        Some(value) => value.to_owned(),
+        None if allow_direct_main_fallback => format!("agent:{supplied_agent_id}:main"),
+        None => return Err(InternalSessionRouteError::MissingSelector),
+    };
+    let route = resolve_public_session_route(&selector, chat_type, spawned_by)
+        .map_err(InternalSessionRouteError::Public)?;
+    let matches_agent = if parse_agent_session_key(&selector).is_some() {
+        route.agent_id.eq_ignore_ascii_case(supplied_agent_id)
+    } else {
+        route.agent_id == supplied_agent_id
+    };
+    if !matches_agent {
+        return Err(InternalSessionRouteError::SelectorAgentMismatch);
+    }
+    Ok(route)
 }
 

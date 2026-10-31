@@ -52,7 +52,9 @@ pub const OPENCLAW_GATEWAY_METHODS: &[&str] = &[
     "sessions.list",
     "sessions.get",
     "sessions.create",
+    "sessions.patch",
     "sessions.delete",
+    "sessions.providerReview.continue",
     "cron.list",
     "cron.trigger",
     "config.get",
@@ -78,6 +80,9 @@ pub fn openclaw_gateway_owner(method: &str) -> Option<HostGatewayOwner> {
             Some(HostGatewayOwner::TranscriptManager)
         }
         "sessions.create" | "sessions.delete" => Some(HostGatewayOwner::AgentLifecycle),
+        "sessions.patch" | "sessions.providerReview.continue" => {
+            Some(HostGatewayOwner::TranscriptManager)
+        }
         "cron.list" | "cron.trigger" => Some(HostGatewayOwner::Automations),
         "config.get" | "config.set" => Some(HostGatewayOwner::Settings),
         _ => None,

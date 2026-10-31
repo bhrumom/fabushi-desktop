@@ -7,6 +7,7 @@ use std::time::{Duration, SystemTime, UNIX_EPOCH};
 use serde_json::{Value, json};
 
 use crate::extensions::session::agent_session::SandAgentSessionStore;
+use crate::extensions::session::session_paths::resolve_internal_send_route;
 use crate::extensions::session::production::ProductionSessionWorkers;
 use crate::sand_activity::{ActivityUpdate, AgentActivity};
 
@@ -557,6 +558,31 @@ impl ProductionTranscriptRuntime {
         QueueDequeuedObserver: Fn(&QueueDequeued),
     {
         let input = parse_send_input(args)?;
+        let request_source = optional_non_empty(args, "requestSource");
+        let session_key = args
+            .get("sessionKey")
+            .or_else(|| args.get("sessionId"))
+            .and_then(Value::as_str);
+        let requires_selector = matches!(
+            request_source,
+            Some("automation" | "group-member" | "upgrade-resume" | "ack-redrive" | "subagent")
+        );
+        if (requires_selector || session_key.is_some()) && input.agent_id.is_some() {
+            resolve_internal_send_route(
+                input.agent_id.as_deref().unwrap_or_default(),
+                session_key,
+                args.get("chatType").and_then(Value::as_str),
+                args.get("spawnedBy").and_then(Value::as_str),
+                args.get("directMainFallback")
+                    .and_then(Value::as_bool)
+                    .unwrap_or(false),
+            )
+            .map_err(|error| {
+                ProductionSendError::BadRequest(format!(
+                    "invalid trusted session route: {error:?}"
+                ))
+            })?;
+        }
         if input.prompt.trim().is_empty() && input.attachment_paths.is_empty() {
             return Err(ProductionSendError::BadRequest(
                 "routed send requires prompt or attachments".into(),
@@ -1349,6 +1375,44 @@ impl ProductionTranscriptRuntime {
             .and_then(Value::as_str)
             .ok_or_else(|| "generated send pipeline did not produce an entry id".to_string())?;
         sessions.append_agent_transcript_entries(agent_id, std::slice::from_ref(&entry))?;
+        Ok(entry)
+    }
+
+    /// Append a generated send and release its durable media fence in the same
+    /// session-owner transaction.
+    pub fn append_generated_send_message_entry_with_media_custody(
+        &self,
+        sessions: &ProductionSessionWorkers,
+        agent_id: &str,
+        message: &Value,
+        timestamp_ms: u64,
+        reply_thread_target: Option<&str>,
+        is_fork: bool,
+        expected_lifecycle_revision: &str,
+        media_work_id: &str,
+    ) -> Result<Value, String> {
+        let entries = sessions.read_agent_transcript_entries(agent_id)?;
+        let entry = self
+            .lock_state()
+            .pipeline
+            .prepare_generated_send_message_entry(
+                agent_id,
+                &entries,
+                message,
+                reply_thread_target,
+                is_fork,
+                timestamp_ms,
+            );
+        entry
+            .get("id")
+            .and_then(Value::as_str)
+            .ok_or_else(|| "generated send pipeline did not produce an entry id".to_string())?;
+        sessions.append_agent_transcript_entries_and_release_media(
+            agent_id,
+            std::slice::from_ref(&entry),
+            expected_lifecycle_revision,
+            media_work_id,
+        )?;
         Ok(entry)
     }
 

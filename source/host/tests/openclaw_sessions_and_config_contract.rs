@@ -3,7 +3,9 @@ use std::sync::{Arc, Mutex};
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use mahayana_host_runtime::extensions::session::session_paths::{
-    classify_session_kind, is_agent_harness_session_key, SessionKind,
+    classify_session_kind, is_agent_harness_session_key, is_root_main_session_key,
+    resolve_internal_send_route, resolve_public_session_route, InternalSessionRouteError,
+    PublicSessionRouteError, SessionKind,
 };
 use mahayana_host_runtime::extensions::settings::settings_service::SettingsService;
 use mahayana_host_runtime::gateway_command_error::GatewayCommandError;
@@ -216,6 +218,7 @@ fn test_sessions_list_projects_exact_active_run_set() {
     assert!(sessions_list.contains("s.is_running || has_active_run"));
     assert!(sessions_list.contains("\"hasActiveRun\": has_active_run"));
     assert!(sessions_list.contains("\"activeRunIds\": active_run_ids"));
+    assert!(sessions_list.contains("resolve_gateway_session_route"));
 }
 
 #[test]
@@ -239,7 +242,7 @@ fn test_sessions_delete_guards_root_session_and_cas() {
         if key.is_empty() {
             return Err(GatewayCommandError::BadRequest("sessions.delete requires key or sessionId".into()));
         }
-        if key == "global" || key == "agent:global:main" {
+        if is_root_main_session_key(key) {
             return Err(GatewayCommandError::BadRequest("Cannot delete root main session".into()));
         }
         let agent_id = if let Some(stripped) = key.strip_prefix("agent:") {
@@ -262,6 +265,10 @@ fn test_sessions_delete_guards_root_session_and_cas() {
 
     let err_root2 = guard_delete("agent:global:main", None).unwrap_err();
     assert_eq!(err_root2.status(), 400);
+    let err_root3 = guard_delete("GLOBAL", None).unwrap_err();
+    assert_eq!(err_root3.status(), 400);
+    let err_root4 = guard_delete("AGENT:GLOBAL:MAIN", None).unwrap_err();
+    assert_eq!(err_root4.status(), 400);
 
     // CAS check: mismatch returns SESSION_LIFECYCLE_CHANGED
     let err_cas = guard_delete("agent:agent-correct:main", Some("agent-stale")).unwrap_err();
@@ -288,6 +295,60 @@ fn test_sessions_delete_guards_root_session_and_cas() {
         .next()
         .expect("shipping sessions.delete function boundary exists");
     assert!(sessions_delete.contains("sessions.delete requires a non-empty agent identity"));
+    assert!(sessions_delete.contains("is_root_main_session_key(raw_key)"));
+}
+
+#[test]
+fn test_sessions_patch_requires_authenticated_identity_revision_and_terminal_state() {
+    let shipping_source = include_str!("../app/src/main.rs");
+    let sessions_patch = shipping_source
+        .split("fn call_openclaw_sessions_patch(")
+        .nth(1)
+        .expect("shipping sessions.patch owner exists")
+        .split("fn delete_generated_subagent(")
+        .next()
+        .expect("shipping sessions.patch function boundary exists");
+    assert!(sessions_patch.contains("context.authenticated"));
+    assert!(sessions_patch.contains("sessions.patch requires expectedSessionId"));
+    assert!(sessions_patch.contains("sessions.patch requires expectedLifecycleRevision"));
+    assert!(sessions_patch.contains("canonical main sessions"));
+    assert!(sessions_patch.contains("running_subagent_records_for_parent(&route.agent_id)"));
+    assert!(sessions_patch.contains("active subagent work"));
+    assert!(sessions_patch.contains("active_stream_ids_for_agent(&route.agent_id)"));
+    assert!(sessions_patch.contains("active foreground turn"));
+    assert!(sessions_patch.contains("transition_session_work_archive"));
+}
+
+#[test]
+fn test_provider_review_continuation_uses_owner_capability_and_existing_run_path() {
+    let shipping_source = include_str!("../app/src/main.rs");
+    let continuation = shipping_source
+        .split("fn call_openclaw_sessions_provider_review_continue(")
+        .nth(1)
+        .expect("shipping provider-review continuation owner exists")
+        .split("fn delete_generated_subagent(")
+        .next()
+        .expect("provider-review continuation function boundary exists");
+    assert!(continuation.contains("context.authenticated"));
+    assert!(continuation.contains("canonical main sessions"));
+    assert!(continuation.contains("issue_provider_review_acknowledgment"));
+    assert!(continuation.contains("claim_provider_review_acknowledgment"));
+    assert!(continuation.contains("capture_session_work_admission"));
+    assert!(continuation.contains("accept_routed_send"));
+    assert!(continuation.contains("RUNNER_START_ROUTED_PROVIDER_GATEWAY_METHOD"));
+    assert!(!continuation.contains("serde_json::from_value::<ProviderReviewAcknowledgment"));
+}
+
+#[test]
+fn test_provider_review_owner_exposes_single_claim_host_capability() {
+    let owner_source = include_str!("../src/extensions/session/production.rs");
+    assert!(owner_source.contains("pub struct ProviderReviewAcknowledgment"));
+    assert!(owner_source.contains("issue_provider_review_acknowledgment"));
+    assert!(owner_source.contains("claim_provider_review_acknowledgment"));
+    assert!(owner_source.contains("next_run_id.trim() != state.next_run_id"));
+    assert!(owner_source.contains("provider_review_capabilities"));
+    assert!(owner_source.contains(".remove(&acknowledgment.token)"));
+    assert!(owner_source.contains("provider_review_phase.as_deref() != Some(\"pending\")"));
 }
 
 // ---------------------------------------------------------------------------
@@ -297,8 +358,13 @@ fn test_sessions_delete_guards_root_session_and_cas() {
 fn test_ocrm_session_o01_session_key_routing() {
     assert_eq!(classify_session_kind("global", None, None), SessionKind::Global);
     assert_eq!(classify_session_kind("unknown", None, None), SessionKind::Unknown);
-    assert_eq!(classify_session_kind("cron:job-1", None, None), SessionKind::Cron);
+    assert_eq!(classify_session_kind("agent:agent-1:cron:job-1", None, None), SessionKind::Cron);
+    assert_eq!(classify_session_kind("cron:job-1", None, None), SessionKind::Direct);
+    assert_eq!(classify_session_kind("agent:agent-1:opaque:cron:job-1", None, None), SessionKind::Direct);
+    assert_eq!(classify_session_kind("agent:agent-1:channel:cron:job-1", None, None), SessionKind::Group);
     assert_eq!(classify_session_kind("session-1", None, Some("parent-session")), SessionKind::SpawnChild);
+    assert_eq!(classify_session_kind("session-empty-parent", None, Some("")), SessionKind::Direct);
+    assert_eq!(classify_session_kind("session-empty-parent-group", Some("group"), Some("")), SessionKind::Group);
     assert_eq!(classify_session_kind("session-2", Some("group"), None), SessionKind::Group);
     assert_eq!(classify_session_kind("agent:123:group:main", None, None), SessionKind::Group);
     assert_eq!(classify_session_kind("direct-sess", None, None), SessionKind::Direct);
@@ -310,6 +376,74 @@ fn test_ocrm_session_o01_session_key_routing() {
     assert!(!is_agent_harness_session_key("agent:harness:main"));
     assert!(!is_agent_harness_session_key("agent:regular-user:main"));
     assert!(!is_agent_harness_session_key("direct-user"));
+
+    let route = resolve_public_session_route(" agent:agent-123:group:main ", Some("group"), None)
+        .expect("canonical public route");
+    assert_eq!(route.raw_key, "agent:agent-123:group:main");
+    assert_eq!(route.agent_id, "agent-123");
+    assert_eq!(route.kind, SessionKind::Group);
+    let mixed_case_route = resolve_public_session_route("AGENT:Agent-123:Main", None, None)
+        .expect("mixed-case canonical agent route");
+    assert_eq!(mixed_case_route.agent_id, "agent-123");
+    assert_eq!(mixed_case_route.kind, SessionKind::Direct);
+    assert_eq!(
+        resolve_public_session_route("agent:agent-123:harness:child", None, None),
+        Err(PublicSessionRouteError::HarnessNamespaceReserved)
+    );
+    assert_eq!(
+        resolve_public_session_route("agent::main", None, None),
+        Err(PublicSessionRouteError::EmptyAgentIdentity)
+    );
+    assert_eq!(
+        resolve_internal_send_route(
+            "agent-123",
+            Some("agent:agent-123:cron:job-1"),
+            None,
+            None,
+            false,
+        )
+        .expect("cron producer route")
+        .kind,
+        SessionKind::Cron
+    );
+    assert_eq!(
+        resolve_internal_send_route(
+            "agent-123",
+            Some("agent:agent-999:main"),
+            None,
+            None,
+            false,
+        ),
+        Err(InternalSessionRouteError::SelectorAgentMismatch)
+    );
+    assert_eq!(
+        resolve_internal_send_route("agent-123", None, None, None, false),
+        Err(InternalSessionRouteError::MissingSelector)
+    );
+    assert_eq!(
+        resolve_internal_send_route("agent-123", None, None, None, true)
+            .expect("explicit direct fallback")
+            .kind,
+        SessionKind::Direct
+    );
+
+    let shipping_source = include_str!("../app/src/main.rs");
+    for (start, end) in [
+        ("fn call_openclaw_sessions_list(", "fn call_openclaw_sessions_get("),
+        ("fn call_openclaw_sessions_get(", "fn call_openclaw_sessions_create("),
+        ("fn call_openclaw_sessions_delete(", "fn call_openclaw_chat_send("),
+        ("fn call_openclaw_chat_send(", "fn call_openclaw_chat_abort("),
+        ("fn call_openclaw_chat_abort(", "fn call_openclaw_cron_list("),
+    ] {
+        let method = shipping_source
+            .split(start)
+            .nth(1)
+            .expect("shipping session method exists")
+            .split(end)
+            .next()
+            .expect("shipping session method boundary exists");
+        assert!(method.contains("resolve_gateway_session_route"));
+    }
 }
 
 // ---------------------------------------------------------------------------

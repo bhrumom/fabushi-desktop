@@ -18,6 +18,51 @@ pub enum AgentMediaKind {
     Attachment,
 }
 
+/// Owns media materialized for one outgoing message until its transcript
+/// entry has been accepted by the existing session owner.
+#[derive(Debug, Default)]
+pub struct OutgoingMediaCustody {
+    paths: Vec<PathBuf>,
+    committed: bool,
+}
+
+impl OutgoingMediaCustody {
+    pub fn track(&mut self, path: PathBuf) {
+        self.paths.push(path);
+    }
+
+    pub fn absorb(&mut self, mut other: Self) {
+        self.paths.append(&mut other.paths);
+    }
+
+    pub fn commit(&mut self) {
+        self.committed = true;
+        self.paths.clear();
+    }
+
+    pub fn rollback(&mut self) -> Vec<io::Error> {
+        if self.committed {
+            return Vec::new();
+        }
+        self.paths
+            .drain(..)
+            .filter_map(|path| match fs::remove_file(&path) {
+                Ok(()) => None,
+                Err(error) if error.kind() == io::ErrorKind::NotFound => None,
+                Err(error) => Some(error),
+            })
+            .collect()
+    }
+}
+
+impl Drop for OutgoingMediaCustody {
+    fn drop(&mut self) {
+        // Explicit rollback reports errors. Drop is only a last-resort safety
+        // net for an unwound tool path and therefore cannot surface I/O.
+        let _ = self.rollback();
+    }
+}
+
 pub fn get_agent_attachments_dir(agent_dir: impl AsRef<Path>) -> PathBuf {
     agent_dir.as_ref().join(ATTACHMENTS_DIRNAME)
 }
@@ -211,4 +256,44 @@ pub fn persist_agent_media_bytes(
 
 pub fn file_url_for_path(path: impl AsRef<Path>) -> Option<String> {
     Url::from_file_path(path.as_ref()).ok().map(String::from)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::OutgoingMediaCustody;
+
+    fn temp_media_path(label: &str) -> std::path::PathBuf {
+        std::env::temp_dir().join(format!(
+            "fabushi-outgoing-media-custody-{label}-{}",
+            uuid::Uuid::new_v4()
+        ))
+    }
+
+    #[test]
+    fn rollback_removes_every_uncommitted_path() {
+        let first = temp_media_path("first");
+        let second = temp_media_path("second");
+        std::fs::write(&first, b"first").expect("write first media");
+        std::fs::write(&second, b"second").expect("write second media");
+
+        let mut custody = OutgoingMediaCustody::default();
+        custody.track(first.clone());
+        custody.track(second.clone());
+        assert!(custody.rollback().is_empty());
+        assert!(!first.exists());
+        assert!(!second.exists());
+    }
+
+    #[test]
+    fn commit_prevents_cleanup_of_persisted_media() {
+        let path = temp_media_path("committed");
+        std::fs::write(&path, b"committed").expect("write committed media");
+
+        let mut custody = OutgoingMediaCustody::default();
+        custody.track(path.clone());
+        custody.commit();
+        assert!(custody.rollback().is_empty());
+        assert!(path.exists());
+        std::fs::remove_file(path).expect("remove committed test media");
+    }
 }

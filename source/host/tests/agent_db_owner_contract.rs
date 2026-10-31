@@ -4,7 +4,8 @@ use std::sync::{Arc, Mutex};
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use mahayana_host_runtime::extensions::session::agent_db::{
-    SandAgentDb, SandAgentDbOptions,
+    CompactionCommit, CompactionCommitOutcome, SandAgentDb, SandAgentDbOptions,
+    SessionProviderReview, SessionWorkAdmissionRecord, SessionWorkResultCommitOutcome,
 };
 use mahayana_host_runtime::extensions::session::agent_db_recovery::DbRecoveryOptions;
 use mahayana_host_runtime::extensions::session::agent_db_transcript_pages::{
@@ -155,6 +156,380 @@ fn owner_drops_busy_writes_and_reports_the_operation() {
 
     owner.close(false);
     assert_eq!(live_db_handle_count(&db_path), 0);
+    let _ = fs::remove_dir_all(root);
+}
+
+#[test]
+fn session_work_admission_record_migrates_and_compare_and_sets_generation() {
+    let root = temp_root("work-admission-record");
+    let agent_dir = root.join("agent-work");
+    fs::create_dir_all(&agent_dir).expect("agent dir");
+    let db_path = agent_dir.join("store.db");
+    let owner = SandAgentDb::open(&db_path, 50).expect("owner");
+    let first = SessionWorkAdmissionRecord {
+        session_key: "agent:agent-work:main".into(),
+        session_id: "session-1".into(),
+        lifecycle_revision: "revision-1".into(),
+        archived_at_ms: None,
+        archived_by: None,
+        archive_reason: None,
+        admitted_work_id: Some("work-1".into()),
+        admitted_media_work_id: None,
+        admitted_media_paths: Vec::new(),
+        terminal_result_idempotency_key: None,
+        provider_review_id: None,
+        provider_review_phase: None,
+        provider_review: None,
+    };
+    assert!(owner
+        .compare_and_set_session_work_admission(None, &first)
+        .expect("create admission record"));
+    assert!(!owner
+        .compare_and_set_session_work_admission(None, &first)
+        .expect("create-only conflict"));
+
+    let mut archived = first.clone();
+    archived.lifecycle_revision = "revision-2".into();
+    archived.archived_at_ms = Some(42.0);
+    archived.archived_by = Some("human-1".into());
+    archived.archive_reason = Some("manual review".into());
+    assert!(owner
+        .compare_and_set_session_work_admission(Some("revision-1"), &archived)
+        .expect("guarded archive transition"));
+    assert!(!owner
+        .compare_and_set_session_work_admission(Some("revision-1"), &first)
+        .expect("stale transition"));
+    assert_eq!(
+        owner
+            .read_session_work_admission()
+            .expect("read admission record")
+            .expect("record")
+            .lifecycle_revision,
+        "revision-2"
+    );
+    owner.close(false);
+    let _ = fs::remove_dir_all(root);
+}
+
+#[test]
+fn provider_review_owner_is_generation_bound_idempotent_and_conflict_safe() {
+    let root = temp_root("provider-review-owner");
+    let agent_dir = root.join("agent-review");
+    fs::create_dir_all(&agent_dir).expect("agent dir");
+    let db_path = agent_dir.join("store.db");
+    let owner = SandAgentDb::open(&db_path, 50).expect("owner");
+    let admission = SessionWorkAdmissionRecord {
+        session_key: "agent:agent-review:main".into(),
+        session_id: "session-1".into(),
+        lifecycle_revision: "revision-1".into(),
+        archived_at_ms: None,
+        archived_by: None,
+        archive_reason: None,
+        admitted_work_id: None,
+        admitted_media_work_id: None,
+        admitted_media_paths: Vec::new(),
+        terminal_result_idempotency_key: None,
+        provider_review_id: None,
+        provider_review_phase: None,
+        provider_review: None,
+    };
+    assert!(owner
+        .compare_and_set_session_work_admission(None, &admission)
+        .expect("create admission"));
+    let review = SessionProviderReview {
+        id: "review-1".into(),
+        session_id: "session-1".into(),
+        run_id: "run-1".into(),
+        provider: "openai".into(),
+        model: "model-1".into(),
+        runtime_id: "openclaw".into(),
+        api: Some("openai-chatgpt-responses".into()),
+        native_thread_id: None,
+        native_turn_id: None,
+        explanation: "provider-authored refusal".into(),
+        continuation_message: Some("Review and continue".into()),
+        error_type: Some("policy".into()),
+    };
+    assert_eq!(owner
+        .record_session_provider_review("revision-1", &review)
+        .expect("record review"), review);
+    let repeated = SessionProviderReview { id: "review-2".into(), ..review.clone() };
+    assert_eq!(owner
+        .record_session_provider_review("revision-1", &repeated)
+        .expect("idempotent review"), review);
+    let conflicting = SessionProviderReview { explanation: "different".into(), ..review.clone() };
+    assert!(owner
+        .record_session_provider_review("revision-1", &conflicting)
+        .is_err());
+    let mut accepted = admission.clone();
+    accepted.provider_review_id = Some(review.id.clone());
+    accepted.provider_review_phase = Some("accepted".into());
+    accepted.provider_review = Some(review.clone());
+    assert!(owner
+        .compare_and_set_session_work_admission(Some("revision-1"), &accepted)
+        .expect("mark review accepted"));
+    let continuation_refusal = SessionProviderReview {
+        id: "review-3".into(),
+        run_id: "run-2".into(),
+        explanation: "provider-authored follow-up refusal".into(),
+        ..review.clone()
+    };
+    assert_eq!(
+        owner
+            .record_session_provider_review("revision-1", &continuation_refusal)
+            .expect("replace after accepted continuation"),
+        continuation_refusal
+    );
+    assert!(owner
+        .record_session_provider_review("stale", &review)
+        .is_err());
+    assert_eq!(owner
+        .read_session_provider_review()
+        .expect("read review")
+        .expect("review exists")
+        .id, "review-3");
+    owner.close(false);
+    let _ = fs::remove_dir_all(root);
+}
+
+#[test]
+fn session_archive_transition_is_guarded_idempotent_and_blocks_active_work() {
+    let root = temp_root("work-admission-archive-transition");
+    let agent_dir = root.join("agent-work");
+    fs::create_dir_all(&agent_dir).expect("agent dir");
+    let db_path = agent_dir.join("store.db");
+    let owner = SandAgentDb::open(&db_path, 50).expect("owner");
+    let record = SessionWorkAdmissionRecord {
+        session_key: "agent:agent-work:main".into(),
+        session_id: "session-1".into(),
+        lifecycle_revision: "revision-1".into(),
+        archived_at_ms: None,
+        archived_by: None,
+        archive_reason: None,
+        admitted_work_id: None,
+        admitted_media_work_id: None,
+        admitted_media_paths: Vec::new(),
+        terminal_result_idempotency_key: None,
+        provider_review_id: None,
+        provider_review_phase: None,
+        provider_review: None,
+    };
+    assert!(owner
+        .compare_and_set_session_work_admission(None, &record)
+        .expect("create admission record"));
+
+    let archived = owner
+        .transition_session_work_archive(
+            "session-1",
+            Some("revision-1"),
+            true,
+            Some("gateway-operator"),
+            Some("manual review"),
+            42.0,
+        )
+        .expect("archive transition");
+    assert_eq!(archived.archived_at_ms, Some(42.0));
+    assert_eq!(archived.archive_reason.as_deref(), Some("manual review"));
+    assert_eq!(
+        owner
+            .transition_session_work_archive(
+                "session-1",
+                Some("revision-1"),
+                true,
+                Some("other-operator"),
+                Some("different reason"),
+                43.0,
+            )
+            .expect("idempotent archive")
+            .archived_at_ms,
+        Some(42.0)
+    );
+    let restored = owner
+        .transition_session_work_archive(
+            "session-1",
+            Some("revision-1"),
+            false,
+            None,
+            None,
+            44.0,
+        )
+        .expect("restore transition");
+    assert!(restored.archived_at_ms.is_none());
+
+    let mut active = restored;
+    active.admitted_work_id = Some("work-1".into());
+    assert!(owner
+        .compare_and_set_session_work_admission(Some("revision-1"), &active)
+        .expect("admit active work"));
+    let error = owner
+        .transition_session_work_archive(
+            "session-1",
+            Some("revision-1"),
+            true,
+            Some("gateway-operator"),
+            None,
+            45.0,
+        )
+        .expect_err("active work must block archive");
+    assert!(error.to_string().contains("admitted work"));
+
+    active.admitted_work_id = None;
+    active.admitted_media_work_id = Some("send-media:tool-1".into());
+    assert!(owner
+        .compare_and_set_session_work_admission(Some("revision-1"), &active)
+        .expect("admit pending media"));
+    let media_error = owner
+        .transition_session_work_archive(
+            "session-1",
+            Some("revision-1"),
+            true,
+            Some("gateway-operator"),
+            None,
+            46.0,
+        )
+        .expect_err("pending media must block archive");
+    assert!(media_error.to_string().contains("pending outgoing media"));
+    owner.close(false);
+    let _ = fs::remove_dir_all(root);
+}
+
+#[test]
+fn media_settlement_appends_and_releases_in_one_owner_transaction() {
+    let root = temp_root("media-settlement");
+    let agent_dir = root.join("agent-media-settlement");
+    fs::create_dir_all(&agent_dir).expect("agent dir");
+    let db_path = agent_dir.join("store.db");
+    let owner = SandAgentDb::open(&db_path, 50).expect("owner");
+    let admission = SessionWorkAdmissionRecord {
+        session_key: "agent:agent-media-settlement:main".into(),
+        session_id: "session-1".into(),
+        lifecycle_revision: "revision-1".into(),
+        archived_at_ms: None,
+        archived_by: None,
+        archive_reason: None,
+        admitted_work_id: None,
+        admitted_media_work_id: Some("send-media:tool-1".into()),
+        admitted_media_paths: vec!["/tmp/send-media-tool-1".into()],
+        terminal_result_idempotency_key: None,
+        provider_review_id: None,
+        provider_review_phase: None,
+        provider_review: None,
+    };
+    assert!(owner
+        .compare_and_set_session_work_admission(None, &admission)
+        .expect("create admission"));
+
+    assert_eq!(
+        owner
+            .append_transcript_entries_and_release_media(
+                &[serde_json::json!({
+                    "id": "send-1",
+                    "kind": "send-message",
+                    "content": "owned media"
+                })],
+                "revision-1",
+                "send-media:tool-1",
+            )
+            .expect("atomic media settlement"),
+        1
+    );
+    assert_eq!(
+        owner
+            .read_session_work_admission()
+            .expect("read admission")
+            .expect("admission")
+            .admitted_media_work_id,
+        None
+    );
+    assert!(owner
+        .read_session_work_admission()
+        .expect("read admission paths")
+        .expect("admission paths")
+        .admitted_media_paths
+        .is_empty());
+    assert!(owner
+        .get_transcript_entry_by_id("send-1")
+        .expect("read transcript")
+        .is_some());
+    let receipt = owner
+        .get_transcript_entry_by_id("outgoing-media-settlement:send-media:tool-1")
+        .expect("read media settlement receipt")
+        .expect("media settlement receipt");
+    assert_eq!(
+        receipt.get("kind").and_then(serde_json::Value::as_str),
+        Some("outgoing-media-settlement")
+    );
+
+    owner.close(false);
+    let _ = fs::remove_dir_all(root);
+}
+
+#[test]
+fn background_result_receipt_is_idempotent_and_conflicts_fail_closed() {
+    let root = temp_root("work-admission-receipt");
+    let agent_dir = root.join("agent-work");
+    fs::create_dir_all(&agent_dir).expect("agent dir");
+    let db_path = agent_dir.join("store.db");
+    let owner = SandAgentDb::open(&db_path, 50).expect("owner");
+    let admission = SessionWorkAdmissionRecord {
+        session_key: "agent:agent-work:main".into(),
+        session_id: "session-1".into(),
+        lifecycle_revision: "revision-1".into(),
+        archived_at_ms: None,
+        archived_by: None,
+        archive_reason: None,
+        admitted_work_id: Some("work-1".into()),
+        admitted_media_work_id: None,
+        admitted_media_paths: Vec::new(),
+        terminal_result_idempotency_key: None,
+        provider_review_id: None,
+        provider_review_phase: None,
+        provider_review: None,
+    };
+    assert!(owner
+        .compare_and_set_session_work_admission(None, &admission)
+        .expect("create admission"));
+
+    let committed = owner
+        .commit_session_work_result(
+            &admission.session_key,
+            &admission.lifecycle_revision,
+            "work-1",
+            "idem-1",
+            "background output",
+            2,
+        )
+        .expect("commit receipt");
+    assert!(matches!(committed, SessionWorkResultCommitOutcome::Committed(_)));
+
+    let duplicate = owner
+        .commit_session_work_result(
+            &admission.session_key,
+            &admission.lifecycle_revision,
+            "work-1",
+            "idem-1",
+            "background output",
+            2,
+        )
+        .expect("duplicate receipt");
+    assert!(matches!(
+        duplicate,
+        SessionWorkResultCommitOutcome::AlreadyCommitted(_)
+    ));
+
+    let conflict = owner
+        .commit_session_work_result(
+            &admission.session_key,
+            &admission.lifecycle_revision,
+            "work-1",
+            "idem-1",
+            "different output",
+            2,
+        )
+        .expect("conflicting receipt");
+    assert_eq!(conflict, SessionWorkResultCommitOutcome::ConflictingResult);
+
+    owner.close(false);
     let _ = fs::remove_dir_all(root);
 }
 
@@ -449,6 +824,93 @@ fn owner_routes_partner_origin_purpose_and_transcript_mutations() {
     );
 
     owner.close(false);
+    let _ = fs::remove_dir_all(root);
+}
+
+#[test]
+fn owner_commits_guarded_compaction_and_replays_from_cut_point() {
+    let root = temp_root("compaction");
+    let agent_dir = root.join("agent-compaction");
+    fs::create_dir_all(&agent_dir).expect("agent dir");
+    let db_path = agent_dir.join("store.db");
+    let owner = SandAgentDb::open(&db_path, 50).expect("owner");
+
+    owner
+        .append_transcript_entries(&[
+            serde_json::json!({"id":"old", "kind":"message", "role":"user", "content":"old"}),
+            serde_json::json!({"id":"kept", "kind":"message", "role":"user", "content":"kept"}),
+        ])
+        .expect("history");
+    let expected_revision = owner
+        .get_metadata("lifecycleRevision")
+        .expect("revision")
+        .and_then(|value| value.as_str().map(ToOwned::to_owned))
+        .expect("revision value");
+    let commit = CompactionCommit {
+        entry_id: "compaction-1".into(),
+        first_kept_entry_id: Some("kept".into()),
+        summary: "summary".into(),
+        tokens_before: 123,
+        details: Some(serde_json::json!({"files": ["a.txt"]})),
+        source_turn_id: "turn-1".into(),
+        expected_lifecycle_revision: expected_revision.clone(),
+    };
+
+    let outcome = owner.commit_compaction(&commit).expect("commit");
+    let committed = match outcome {
+        CompactionCommitOutcome::Committed(entry) => entry,
+        other => panic!("expected committed outcome, got {other:?}"),
+    };
+    assert_eq!(committed.get("kind").and_then(serde_json::Value::as_str), Some("compaction"));
+    assert_ne!(
+        owner
+            .get_metadata("lifecycleRevision")
+            .expect("next revision")
+            .and_then(|value| value.as_str().map(ToOwned::to_owned)),
+        Some(expected_revision.clone())
+    );
+    let replay = owner
+        .get_compacted_transcript_entries()
+        .expect("replay projection");
+    assert_eq!(
+        replay
+            .iter()
+            .filter_map(|entry| entry.get("id").and_then(serde_json::Value::as_str))
+            .collect::<Vec<_>>(),
+        vec!["compaction-1", "kept"]
+    );
+
+    assert!(matches!(
+        owner.commit_compaction(&commit).expect("duplicate commit"),
+        CompactionCommitOutcome::AlreadyCommitted(_)
+    ));
+    let mut conflict = commit.clone();
+    conflict.summary = "different".into();
+    assert!(matches!(
+        owner.commit_compaction(&conflict),
+        Err(mahayana_host_runtime::extensions::session::agent_db::AgentDbProjectionError::CompactionConflict(_))
+    ));
+
+    let mut stale = commit.clone();
+    stale.entry_id = "compaction-stale".into();
+    assert!(matches!(
+        owner.commit_compaction(&stale).expect("stale commit"),
+        CompactionCommitOutcome::RejectedStale
+    ));
+    let mut missing_cut = commit;
+    missing_cut.entry_id = "compaction-missing".into();
+    missing_cut.first_kept_entry_id = Some("missing".into());
+    missing_cut.expected_lifecycle_revision = owner
+        .get_metadata("lifecycleRevision")
+        .expect("current revision")
+        .and_then(|value| value.as_str().map(ToOwned::to_owned))
+        .expect("current revision value");
+    assert!(matches!(
+        owner.commit_compaction(&missing_cut),
+        Err(mahayana_host_runtime::extensions::session::agent_db::AgentDbProjectionError::CompactionInvalid(_))
+    ));
+
+    owner.close(true);
     let _ = fs::remove_dir_all(root);
 }
 

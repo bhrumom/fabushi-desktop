@@ -78,15 +78,20 @@ pub fn is_valid_computer_execution_id(id: &str) -> bool {
     if parts.len() != 5 {
         return false;
     }
-    let hex_check = |s: &str| s.chars().all(|c| c.is_ascii_hexdigit());
+    let hex_check = |s: &str| {
+        s.bytes()
+            .all(|byte| matches!(byte, b'0'..=b'9' | b'a'..=b'f'))
+    };
     parts[0].len() == 8
         && hex_check(parts[0])
         && parts[1].len() == 4
         && hex_check(parts[1])
         && parts[2].len() == 4
         && hex_check(parts[2])
+        && matches!(parts[2].as_bytes().first(), Some(b'1'..=b'5'))
         && parts[3].len() == 4
         && hex_check(parts[3])
+        && matches!(parts[3].as_bytes().first(), Some(b'8'..=b'b'))
         && parts[4].len() == 12
         && hex_check(parts[4])
 }
