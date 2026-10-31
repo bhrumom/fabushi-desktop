@@ -1983,8 +1983,8 @@
       "id": "OCRM-RESP-INFRA-WORKER-CRABBOX-ARTIFACT-001",
       "integration": {
         "consumer": "CloudWorkerProvisioningOwner and bootstrap adapter (not yet wired)",
-        "entrypoint": "source/host/src/extensions/cloud_workers/artifact_admission.rs::verify_artifact_bytes",
-        "owner": "source/host/src/extensions/cloud_workers/artifact_admission.rs",
+        "entrypoint": "source/host/src/extensions/cloud_workers/extension.rs::CloudWorkerProvisioningExtension::register_artifact / settle_artifact -> owner.rs -> artifact_admission.rs",
+        "owner": "source/host/src/extensions/cloud_workers/extension.rs, owner.rs and artifact_admission.rs",
         "producer": "configured HTTPS/managed-local artifact source (not yet wired)"
       },
       "invariants": [

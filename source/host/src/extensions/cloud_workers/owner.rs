@@ -3,6 +3,8 @@ use std::collections::HashMap;
 use serde::{Deserialize, Serialize};
 
 use super::{
+    CloudWorkerArtifactAdmission, CloudWorkerArtifactAdmissionError,
+    CloudWorkerArtifactAdmissionState, CloudWorkerArtifactPolicy, CloudWorkerArtifactDigest,
     CloudWorkerBinaryIdentity, CloudWorkerCatalog, CloudWorkerCatalogCache,
     CloudWorkerCatalogError,
     CloudWorkerBootstrapPhase, CloudWorkerBootstrapRecord, CloudWorkerBootstrapRetryClass,
@@ -25,6 +27,7 @@ pub struct CloudWorkerProvisioningConfig {
     pub enabled: bool,
     pub max_leases: usize,
     pub max_warm_images: usize,
+    pub max_artifacts: usize,
 }
 
 impl Default for CloudWorkerProvisioningConfig {
@@ -33,6 +36,7 @@ impl Default for CloudWorkerProvisioningConfig {
             enabled: false,
             max_leases: 64,
             max_warm_images: 128,
+            max_artifacts: 128,
         }
     }
 }
@@ -79,6 +83,7 @@ pub struct CloudWorkerProvisioningOwner {
     config: CloudWorkerProvisioningConfig,
     leases: HashMap<LeaseId, CloudWorkerLease>,
     bootstrap_records: HashMap<LeaseId, CloudWorkerBootstrapRecord>,
+    artifacts: HashMap<String, CloudWorkerArtifactAdmission>,
     warm_images: HashMap<String, CloudWorkerWarmImage>,
     migration_receipts: Vec<CloudWorkerMigrationReceipt>,
     catalog_cache: CloudWorkerCatalogCache,
@@ -90,6 +95,8 @@ pub struct CloudWorkerPersistentSnapshot {
     pub leases: Vec<CloudWorkerLease>,
     #[serde(default)]
     pub bootstrap_records: Vec<CloudWorkerBootstrapRecord>,
+    #[serde(default)]
+    pub artifacts: Vec<CloudWorkerArtifactAdmission>,
     pub warm_images: Vec<CloudWorkerWarmImage>,
     #[serde(default)]
     pub migration_receipts: Vec<CloudWorkerMigrationReceipt>,
@@ -103,10 +110,14 @@ impl CloudWorkerProvisioningOwner {
         if config.max_warm_images == 0 {
             return Err(CloudWorkerOwnerError::InvalidWarmImageLimit);
         }
+        if config.max_artifacts == 0 {
+            return Err(CloudWorkerOwnerError::InvalidArtifactLimit);
+        }
         Ok(Self {
             config,
             leases: HashMap::new(),
             bootstrap_records: HashMap::new(),
+            artifacts: HashMap::new(),
             warm_images: HashMap::new(),
             migration_receipts: Vec::new(),
             catalog_cache: CloudWorkerCatalogCache::default(),
@@ -145,10 +156,13 @@ impl CloudWorkerProvisioningOwner {
         bootstrap_records.sort_by(|left, right| {
             left.request.lease_id.0.cmp(&right.request.lease_id.0)
         });
+        let mut artifacts = self.artifacts.values().cloned().collect::<Vec<_>>();
+        artifacts.sort_by(|left, right| artifact_key(left).cmp(&artifact_key(right)));
         CloudWorkerPersistentSnapshot {
             schema_version: CLOUD_WORKER_STATE_SCHEMA_VERSION,
             leases,
             bootstrap_records,
+            artifacts,
             warm_images,
             migration_receipts: self.migration_receipts.clone(),
         }
@@ -193,6 +207,16 @@ impl CloudWorkerProvisioningOwner {
                 .insert(record.request.lease_id.clone(), record)
                 .is_some()
             {
+                return Err(CloudWorkerOwnerError::InvalidSnapshot);
+            }
+        }
+        if snapshot.artifacts.len() > owner.config.max_artifacts {
+            return Err(CloudWorkerOwnerError::ArtifactLimitReached);
+        }
+        for artifact in snapshot.artifacts {
+            artifact.validate_persisted()?;
+            let key = artifact_key(&artifact);
+            if owner.artifacts.insert(key, artifact).is_some() {
                 return Err(CloudWorkerOwnerError::InvalidSnapshot);
             }
         }
@@ -318,6 +342,37 @@ impl CloudWorkerProvisioningOwner {
         Ok(())
     }
 
+    pub fn register_artifact(
+        &mut self,
+        artifact: CloudWorkerArtifactAdmission,
+        policy: &CloudWorkerArtifactPolicy,
+    ) -> Result<(), CloudWorkerOwnerError> {
+        self.ensure_enabled()?;
+        if self.artifacts.len() >= self.config.max_artifacts {
+            return Err(CloudWorkerOwnerError::ArtifactLimitReached);
+        }
+        artifact.validate(policy)?;
+        let key = artifact_key(&artifact);
+        if self.artifacts.insert(key, artifact).is_some() {
+            return Err(CloudWorkerOwnerError::DuplicateArtifact);
+        }
+        Ok(())
+    }
+
+    pub fn settle_artifact(
+        &mut self,
+        digest: &CloudWorkerArtifactDigest,
+        next: CloudWorkerArtifactAdmissionState,
+    ) -> Result<CloudWorkerArtifactAdmission, CloudWorkerOwnerError> {
+        self.ensure_enabled()?;
+        let artifact = self
+            .artifacts
+            .get_mut(&digest.0)
+            .ok_or(CloudWorkerOwnerError::UnknownArtifact)?;
+        artifact.settle(next)?;
+        Ok(artifact.clone())
+    }
+
     pub fn settle_bootstrap(
         &mut self,
         mutation: &CloudWorkerLeaseMutation,
@@ -406,6 +461,8 @@ pub enum CloudWorkerOwnerError {
     InvalidLeaseLimit,
     #[error("maximum warm-image count must be greater than zero")]
     InvalidWarmImageLimit,
+    #[error("maximum artifact count must be greater than zero")]
+    InvalidArtifactLimit,
     #[error("lease id must be non-empty")]
     InvalidLeaseId,
     #[error("lease already exists")]
@@ -416,6 +473,8 @@ pub enum CloudWorkerOwnerError {
     WarmImageLimitReached,
     #[error("bootstrap record limit reached")]
     BootstrapRecordLimitReached,
+    #[error("artifact limit reached")]
+    ArtifactLimitReached,
     #[error("lease was not found")]
     UnknownLease,
     #[error("warm image already exists")]
@@ -428,6 +487,10 @@ pub enum CloudWorkerOwnerError {
     UnknownBootstrapRecord,
     #[error("bootstrap record does not match its lease")]
     BootstrapLeaseMismatch,
+    #[error("artifact already exists")]
+    DuplicateArtifact,
+    #[error("artifact was not found")]
+    UnknownArtifact,
     #[error("unsupported cloud-worker snapshot schema version: {0}")]
     UnsupportedSnapshotVersion(u32),
     #[error("cloud-worker snapshot contains invalid or duplicate records")]
@@ -444,6 +507,15 @@ pub enum CloudWorkerOwnerError {
     WarmImage(#[from] CloudWorkerWarmImageError),
     #[error(transparent)]
     Bootstrap(#[from] CloudWorkerNodeBootstrapError),
+    #[error(transparent)]
+    Artifact(#[from] CloudWorkerArtifactAdmissionError),
+}
+
+fn artifact_key(artifact: &CloudWorkerArtifactAdmission) -> String {
+    match &artifact.source {
+        super::CloudWorkerArtifactSource::Https { digest, .. }
+        | super::CloudWorkerArtifactSource::ManagedLocal { digest } => digest.0.clone(),
+    }
 }
 
 fn bootstrap_matches_lease(
@@ -476,6 +548,7 @@ mod tests {
             enabled: true,
             max_leases: 1,
             max_warm_images: 1,
+            max_artifacts: 1,
         })
         .unwrap()
     }
@@ -544,6 +617,7 @@ mod tests {
                 enabled: true,
                 max_leases: 1,
                 max_warm_images: 0,
+                max_artifacts: 1,
             })
             .unwrap_err(),
             CloudWorkerOwnerError::InvalidWarmImageLimit

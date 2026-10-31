@@ -252,6 +252,10 @@ pending Crabbox responsibilities:
   `settle_bootstrap` façades through the same owner snapshot. Lease fencing,
   opaque secret references and bounded redacted diagnostics are persisted;
   provider/process, FDN enrollment and platform consumers remain pending.
+- Artifact admissions now have typed `register_artifact` and
+  `settle_artifact` façades through the owner snapshot. Policy, digest and
+  state-transition checks are retained; download, credential egress, atomic
+  publication and provider consumers remain pending.
 
 The broader Crabbox projection, lifecycle, sandbox, bootstrap, artifact,
 warm-image and runtime-control rows remain pending where their producer or

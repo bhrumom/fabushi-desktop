@@ -158,6 +158,47 @@ impl CloudWorkerArtifactAdmission {
     ) -> Result<(), CloudWorkerArtifactAdmissionError> {
         policy.validate_source(&self.source, self.size_bytes)
     }
+
+    pub fn validate_persisted(&self) -> Result<(), CloudWorkerArtifactAdmissionError> {
+        let source_digest = match &self.source {
+            CloudWorkerArtifactSource::Https { url, digest } => {
+                let parsed = Url::parse(url)
+                    .map_err(|_| CloudWorkerArtifactAdmissionError::InvalidOrigin)?;
+                if parsed.scheme() != "https"
+                    || parsed.username() != ""
+                    || parsed.password().is_some()
+                {
+                    return Err(CloudWorkerArtifactAdmissionError::InvalidOrigin);
+                }
+                digest
+            }
+            CloudWorkerArtifactSource::ManagedLocal { digest } => digest,
+        };
+        CloudWorkerArtifactDigest::new(source_digest.0.clone())?;
+        Ok(())
+    }
+
+    pub fn settle(
+        &mut self,
+        next: CloudWorkerArtifactAdmissionState,
+    ) -> Result<(), CloudWorkerArtifactAdmissionError> {
+        let allowed = matches!(
+            (self.state, next),
+            (CloudWorkerArtifactAdmissionState::Pending,
+                CloudWorkerArtifactAdmissionState::Verified)
+                | (CloudWorkerArtifactAdmissionState::Pending,
+                    CloudWorkerArtifactAdmissionState::Damaged)
+                | (CloudWorkerArtifactAdmissionState::Pending,
+                    CloudWorkerArtifactAdmissionState::OutcomeUnknown)
+                | (CloudWorkerArtifactAdmissionState::OutcomeUnknown,
+                    CloudWorkerArtifactAdmissionState::Pending)
+        );
+        if !allowed {
+            return Err(CloudWorkerArtifactAdmissionError::InvalidStateTransition);
+        }
+        self.state = next;
+        Ok(())
+    }
 }
 
 pub fn validate_archive_member_path(path: &str) -> Result<(), CloudWorkerArtifactAdmissionError> {
@@ -213,6 +254,8 @@ pub enum CloudWorkerArtifactAdmissionError {
         expected: CloudWorkerArtifactDigest,
         actual: CloudWorkerArtifactDigest,
     },
+    #[error("invalid artifact admission state transition")]
+    InvalidStateTransition,
 }
 
 #[cfg(test)]

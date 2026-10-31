@@ -71,6 +71,7 @@ fn owner_exposes_only_a_fenced_enrolled_consumer_capability() {
         enabled: true,
         max_leases: 1,
         max_warm_images: 1,
+        max_artifacts: 1,
     })
     .unwrap();
     let lease_id = LeaseId("lease-contract".into());

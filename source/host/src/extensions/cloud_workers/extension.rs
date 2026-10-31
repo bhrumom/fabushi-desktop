@@ -7,6 +7,8 @@ use serde::Serialize;
 use crate::extensions::extension_ids_generated::HostExtensionId;
 
 use super::{
+    CloudWorkerArtifactAdmission, CloudWorkerArtifactAdmissionState,
+    CloudWorkerArtifactDigest, CloudWorkerArtifactPolicy,
     CloudWorkerBinaryIdentity, CloudWorkerBootstrapRequest, CloudWorkerCatalog,
     CloudWorkerCatalogError, CloudWorkerDoctorAction, CloudWorkerDoctorError,
     CloudWorkerDoctorRequest, CloudWorkerDoctorResult,
@@ -80,6 +82,26 @@ impl CloudWorkerProvisioningExtension {
             .lock()
             .map_err(|_| CloudWorkerCatalogError::OwnerUnavailable)?;
         owner.resolve_catalog(identity, load)
+    }
+
+    /// Registers one policy-validated artifact admission in the canonical
+    /// owner snapshot. Acquisition and publication remain external producers.
+    pub fn register_artifact(
+        &self,
+        artifact: CloudWorkerArtifactAdmission,
+        policy: &CloudWorkerArtifactPolicy,
+    ) -> Result<(), CloudWorkerMutationError> {
+        self.mutate_and_persist(|owner| owner.register_artifact(artifact, policy))
+    }
+
+    /// Settles one persisted artifact admission without retrying or hiding an
+    /// outcome-unknown state.
+    pub fn settle_artifact(
+        &self,
+        digest: &CloudWorkerArtifactDigest,
+        next: CloudWorkerArtifactAdmissionState,
+    ) -> Result<CloudWorkerArtifactAdmission, CloudWorkerMutationError> {
+        self.mutate_and_persist(|owner| owner.settle_artifact(digest, next))
     }
 
     /// Registers warm-image state through the canonical owner and its atomic

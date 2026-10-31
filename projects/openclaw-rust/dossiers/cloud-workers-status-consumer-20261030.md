@@ -176,3 +176,11 @@ the same canonical owner snapshot. Lease scope, epoch, generation and runtime
 identity are checked before persistence; diagnostics remain bounded and
 redacted, and opaque secret references are retained without resolving them.
 Provider/process, FDN enrollment and platform consumers remain pending.
+
+## Artifact admission persistence façade — 2026-10-31
+
+Artifact admissions now enter the canonical owner through policy validation and
+can be settled as verified, damaged or outcome-unknown with atomic snapshot
+persistence. The owner revalidates persisted digest/source structure on load;
+download, credential egress, atomic artifact publication and provider
+consumers remain pending.
