@@ -181,6 +181,12 @@ entries（61,681 blobs、2,241 directories），无 gitlink。`.gitmodules` 仍�
 不得复用旧 inventory、依赖闭包、LFS/完整性或 Actions provenance，亦不得提升
 任何 authority 或 global flag。
 
+当前 `projects/openclaw-rust/evidence/` 只有开发冻结说明与历史 upstream drift
+记录两个文件；尚无绑定 `002f25a97…/553796fe…` 的 Actions run/attempt/job、
+inventory/dependency-closure artifact、不可变 digest、acceptance receipt 或
+OCRM-AC01–AC24 终验记录。相关 dossier 仍属于 discovery/static evidence，不能
+替代 exact-subject evidence envelope；八项 global flags 继续全部为 `false`。
+
 同一时间的只读身份审计确认：`inventory/index.json` 与全部 58,750 条分片
 记录仍绑定实现 baseline `ad8d12f126d29b0db204187adf5092db80294e70` /
 tree `04ccce62f1d74dc8e0c88290ae8ded027b7b0f16`；`parity-ledger.json` 与
