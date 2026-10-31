@@ -21673,10 +21673,10 @@
       ],
       "id": "OCRM-RESP-PLUGIN-SDK-ACCESS-ACCOUNT-001",
       "integration": {
-        "consumer": "source/host/src/extensions/plugin_sdk/access_groups.rs",
+        "consumer": "No production Plugin SDK access-group consumer identified; AccessGroup and AccountIdentifier are consumed only by source/host/tests/openclaw_plugin_sdk_contract.rs",
         "entrypoint": "source/host/src/extensions/plugin_sdk/access_groups.rs::is_sender_allowed",
         "owner": "source/host/src/extensions/plugin_sdk/access_groups.rs",
-        "producer": "source/host/src/extensions/plugin_sdk/access_groups.rs"
+        "producer": "No production access-group/account projection producer identified; the module exposes only standalone contract helpers"
       },
       "invariants": [
         "Prefix accessGroup: is required to select group membership",

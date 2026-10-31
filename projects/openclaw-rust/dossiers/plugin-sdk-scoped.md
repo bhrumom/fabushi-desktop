@@ -77,3 +77,12 @@ separate boundary and does not launch, own, drain, or consume
 production harness producer or consumer and retains
 `BL-PLUGIN-SDK-HARNESS-WIRING-001`; the static contract implementation is not
 production harness equivalence evidence.
+
+The access/account slice has the same boundary. `AccessGroup`,
+`parse_access_group_allow_from_entry`, and `AccountIdentifier` are only
+consumed by the Plugin SDK contract test in the current checkout. The existing
+`channel_runtime` group-policy helpers and unrelated authenticated account
+claims do not consume this Plugin SDK access-group contract, so they cannot be
+used as its production wiring. The parity integration records no trusted
+production access-group producer or consumer and retains
+`BL-PLUGIN-SDK-ACCESS-WIRING-001`.
