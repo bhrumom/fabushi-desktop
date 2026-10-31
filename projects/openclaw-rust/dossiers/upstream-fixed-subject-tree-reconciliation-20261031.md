@@ -86,21 +86,21 @@ classification:
 | `docs/snippets/plugin-publish/minimal-package.json` | public-looking sample plugin package; `typebox` | **applicable as documentation/example input, excluded from workspace closure by scope**. The plugin-building guide embeds the same `typebox@1.3.37` example and points readers to this snippet; it is not a product package or workspace importer. |
 | `qa/convex-credential-broker/package.json` | private QA service; `convex`, `nostr-tools`, `@types/node`; deploy/dev/dashboard scripts | **applicable; standalone QA-service closure**. A QA test imports its validation code; the live-transports workflow supplies broker secrets and invokes lanes with `--credential-source convex`; the README documents install/dev/deploy. It is not silently excluded as a fixture and is not a pnpm workspace importer. |
 | `scripts/cloudflare/package.json` | private deployment template; Cloudflare container, TypeScript and Wrangler dependencies; check/deploy scripts | **applicable as an operator-run experimental deployment template, outside the workspace importer set**. Its README directs `npm install`, `npm run check`, and `npm run deploy`, and `wrangler.jsonc` identifies the deployment template. No exact-tree workflow consumer was found in the targeted release/CI references, so it remains a separately reviewed operator path rather than “not applicable.” |
-| `src/claws/fixtures/delegating-agent/package.json` | dependency-free fixture package | non-product fixture disposition with exact test references |
-| `test/fixtures/claws/project-v1/package.json` | dependency-free golden fixture package | non-product fixture disposition with exact test references |
-| `test/fixtures/web-output-provider/package.json` | private dependency-free QA fixture package | non-product fixture disposition with exact test references |
+| `src/claws/fixtures/delegating-agent/package.json` | dependency-free fixture package | **fixture-only; exact test consumer found**. `src/cli/claws-cli.project.test.ts` invokes `runClawsDevCommand` against this fixture path. |
+| `test/fixtures/claws/project-v1/package.json` | dependency-free golden fixture package | **fixture-only; exact test consumer found**. `src/claws/project.test.ts` resolves this directory as `goldenProject` and reads its manifest. |
+| `test/fixtures/web-output-provider/package.json` | private dependency-free QA fixture package | **fixture-only; exact test consumer found**. `src/cli/capability-web-output.process.test.ts` copies this fixture into an isolated plugin directory. |
 
 ### Direct-consumer follow-up
 
-The targeted exact-source read resolves six of the nine rows above to explicit
-consumers or documented operator entry points. The remaining three manifests
-are dependency-free fixtures and remain an open applicability/disposition
-frontier; the fixed recursive tree proves their paths exist, but this
-continuation has not yet produced sufficient direct test/source reads to claim
-that they are unused, workspace members, or safely excluded. A GitHub Code
-Search attempt could not be used as evidence because the endpoint requires
-authentication. Until exact fixture consumers are read and recorded, the
-dependency/source closure gate remains open.
+The targeted exact-source read now resolves all nine rows above to explicit
+consumers, documented operator entry points, or exact fixture tests. The three
+dependency-free manifests are fixture-only rather than workspace packages;
+their test/oracle responsibility remains in the source inventory. A GitHub
+Code Search attempt could not be used as evidence because the endpoint
+requires authentication; the exact commit's local Git object was available and
+`git grep` supplied the fixture references below. Recursive package,
+license/provenance, generated-input and semantic source closure remain open
+beyond this manifest review.
 
 The direct references used for the resolved rows are:
 
@@ -112,10 +112,14 @@ The direct references used for the resolved rows are:
 | `docs/snippets/plugin-publish/minimal-package.json` | `docs/plugins/building-plugins.md` lines 72, 139, 241 |
 | `qa/convex-credential-broker/package.json` | `test/qa-convex-credential-payload-validation.test.ts` line 2; `.github/workflows/qa-live-transports-convex.yml` lines 85–89, 639–691, 737–796, 835–882, 924–961, 1000–1038; `qa/convex-credential-broker/README.md` lines 20–35 |
 | `scripts/cloudflare/package.json` | `scripts/cloudflare/README.md` sections 1–3 and 5; `scripts/cloudflare/wrangler.jsonc` line 43 |
+| `src/claws/fixtures/delegating-agent/package.json` | `src/cli/claws-cli.project.test.ts` line 39 |
+| `test/fixtures/claws/project-v1/package.json` | `src/claws/project.test.ts` line 16 (manifest read at line 38) |
+| `test/fixtures/web-output-provider/package.json` | `src/cli/capability-web-output.process.test.ts` lines 13 and 30 |
 
 This is a classification frontier, not a completed dependency closure: the
-workflow, release, QA-service, deployment-template and fixture consumers still
-need exact source references and license/provenance evidence.
+manifest consumers are now evidenced, but recursive dependency, generated
+input, license/provenance and semantic source closure still require separate
+exact-subject evidence.
 
 ## Evidence boundary
 
