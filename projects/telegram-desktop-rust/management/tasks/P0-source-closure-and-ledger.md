@@ -1145,3 +1145,12 @@ Disposition: **no production delta**. Platform-core spec commit/blob is `bf4f241
 Salt adoption/persistence, bad-time/time correction, current/historical request correlation, binding/reconnect, resend/application behavior, arbitrary sent/container history, gzip, complete difference decoding, broader source/legal closure, Stage-B executable evidence and independent release ACCEPT remain outside this wire-only closure or open.
 
 No GitHub Actions/status/check query or trigger, build, typecheck, lint, schema validator, generator, unit/contract/integration/E2E test, package, deployment, installation or runtime acceptance was performed.
+
+
+### Round 89 final source-level compliance
+
+Platform-core final compliance commit `3db5c55a946a466d157e37b95d2fce0eb5706595` / spec blob `4247be931d826a80ef4cc10c8c4b84de96804991` records `bad_server_salt#edab447b` as source-level closed with **no production delta**. Canonical production api/tl/lib/network blobs remain `ebfb3670b5cd097b9ce288782c7954f5cfe9fc43` / `89256ab35184b6dc06a095ab34abb9f44e95a264` / `abab39e42f100972484191f0e52e9edd9b88c6cf` / `1fc1b1f69e3e37377400d078f916599e0c7b20bc`. Canonical and desktop authored-only external contract blob is `b3e535525ffa97920816c9b8f316afddbf46f6ac` and remains not run.
+
+The existing ledger row stays `implemented / validation_status=not-run / accepted=false`; coverage remains `97 responsibilities / 16172 unknown / 16145 unread / 0 omitted`. Salt adoption/persistence, bad-time/time correction, request-history lookup, binding/reconnect, resend/application, arbitrary sent/container history, gzip, complete difference decoding/application, broader source/legal closure, Stage-B executable evidence and independent release ACCEPT remain outside this wire-only closure or open.
+
+No GitHub Actions/status/check query or trigger, build, typecheck, lint, schema validator, generator, unit/contract/integration/E2E test, package, deployment, installation or runtime acceptance was performed.

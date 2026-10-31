@@ -17374,7 +17374,9 @@
         "path:source/mahayana/mahayana-rs/providers/telegram-protocol/src/lib.rs@abab39e42f100972484191f0e52e9edd9b88c6cf",
         "path:source/mahayana/mahayana-rs/providers/telegram-network/src/lib.rs@1fc1b1f69e3e37377400d078f916599e0c7b20bc",
         "path:source/mahayana/mahayana-rs/providers/telegram-protocol/tests/protocol_contract.rs@b3e535525ffa97920816c9b8f316afddbf46f6ac",
-        "stage-a-round89-evidence:projects/telegram-desktop-rust/evidence/round89-mtproto-bad-server-salt-wire-20261101.md"
+        "stage-a-round89-evidence:projects/telegram-desktop-rust/evidence/round89-mtproto-bad-server-salt-wire-20261101.md",
+        "platform-core-round89-final-compliance-commit:3db5c55a946a466d157e37b95d2fce0eb5706595",
+        "platform-core-round89-final-spec-blob:4247be931d826a80ef4cc10c8c4b84de96804991"
       ],
       "test_evidence": [
         "platform-core native/telegram-protocol/src/api.rs exact bad_server_salt four-field parse contract authored, not run",
@@ -17512,7 +17514,7 @@
       "acceptance_reviewer": null,
       "reviewer": null,
       "license_and_provenance": "Behavioral responsibility is anchored to fixed-U telegramdesktop/tdesktop Telegram/SourceFiles/mtproto/session_private.cpp@13cbc76ec723386027b5b4dcac79999b791c4614 and Telegram/SourceFiles/mtproto/scheme/mtproto.tl@76225965bfc794388db241f3f760db8ab79e84f8. The implementation is source-neutral Rust and copies no upstream C++ implementation.",
-      "notes": "Stage A implementation only. This row closes complete bad_server_salt wire validation and current-one-request correlation in both existing receive branches; it does not claim arbitrary historical sent/container bookkeeping. Global unknown/unread source-entry counts remain unchanged because this is a newly mapped responsibility slice within already-open fixed-U source coverage. Contracts are authored but not executed; validation_status=not-run and accepted=false. Round89 adjacent revalidation confirms the live parser/TlReader already satisfy exact constructor, signed 8/4/4/8 field widths, fail-closed truncation and strict EOF, so no production behavior delta was made. External canonical/desktop contracts were added and mirrored but not executed. This wire-only disposition is strictly separate from salt adoption/persistence, bad-time/time correction, request-history lookup, binding/reconnect, resend/application and broader session semantics.",
+      "notes": "Stage A implementation only. This row closes complete bad_server_salt wire validation and current-one-request correlation in both existing receive branches; it does not claim arbitrary historical sent/container bookkeeping. Global unknown/unread source-entry counts remain unchanged because this is a newly mapped responsibility slice within already-open fixed-U source coverage. Contracts are authored but not executed; validation_status=not-run and accepted=false. Round89 adjacent revalidation confirms the live parser/TlReader already satisfy exact constructor, signed 8/4/4/8 field widths, fail-closed truncation and strict EOF, so no production behavior delta was made. External canonical/desktop contracts were added and mirrored but not executed. This wire-only disposition is strictly separate from salt adoption/persistence, bad-time/time correction, request-history lookup, binding/reconnect, resend/application and broader session semantics. Final round89 source-level compliance is recorded at platform-core commit 3db5c55a946a466d157e37b95d2fce0eb5706595/spec blob 4247be931d826a80ef4cc10c8c4b84de96804991; executable validation remains not-run.",
       "test_execution_evidence": [],
       "validation_status": "not-run",
       "accepted": false
