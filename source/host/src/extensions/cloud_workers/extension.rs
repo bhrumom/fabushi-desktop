@@ -10,7 +10,9 @@ use super::{
     CloudWorkerBinaryIdentity, CloudWorkerBootstrapRequest, CloudWorkerCatalog,
     CloudWorkerCatalogError, CloudWorkerDoctorAction, CloudWorkerDoctorError,
     CloudWorkerDoctorRequest, CloudWorkerDoctorResult,
-    CloudWorkerLeasedCapability, CloudWorkerOwnerError, CloudWorkerOwnerStatus,
+    CloudWorkerLease, CloudWorkerLeaseMutation, CloudWorkerLeaseScope,
+    CloudWorkerLeasedCapability, CloudWorkerLifecycle, CloudWorkerMutationOutcome,
+    CloudWorkerOwnerError, CloudWorkerOwnerStatus, CloudWorkerRuntimeIdentity, LeaseId,
     CloudWorkerSandboxCapability, CloudWorkerSandboxError,
     CloudWorkerSandboxRequest,
     CloudWorkerProvisioningConfig,
@@ -99,6 +101,28 @@ impl CloudWorkerProvisioningExtension {
         self.mutate_and_persist(|owner| {
             owner.apply_warm_image(image_id, expected_generation, operation)
         })
+    }
+
+    /// Admits one lease through the canonical owner and persists the exact
+    /// owner snapshot. Provider discovery and worker launch remain separate.
+    pub fn admit_lease(
+        &self,
+        scope: CloudWorkerLeaseScope,
+        lease_id: LeaseId,
+        runtime: CloudWorkerRuntimeIdentity,
+    ) -> Result<CloudWorkerLease, CloudWorkerMutationError> {
+        self.mutate_and_persist(|owner| owner.admit(scope, lease_id, runtime))
+    }
+
+    /// Settles one fenced lease mutation and persists its lifecycle outcome,
+    /// including outcome-unknown states without retrying or hiding them.
+    pub fn settle_lease(
+        &self,
+        mutation: &CloudWorkerLeaseMutation,
+        next: CloudWorkerLifecycle,
+        outcome: CloudWorkerMutationOutcome,
+    ) -> Result<CloudWorkerLease, CloudWorkerMutationError> {
+        self.mutate_and_persist(|owner| owner.settle_lease(mutation, next, outcome))
     }
 
     /// Provides the read-only doctor projection from the canonical owner.

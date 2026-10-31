@@ -160,3 +160,11 @@ and its atomic persistence adapter; generation fencing and rollback/outcome
 unknown handling remain centralized in that owner. No provider snapshot,
 credential scrub, image process or recovery consumer is connected by these
 methods.
+
+## Lease lifecycle persistence façade — 2026-10-31
+
+The Host extension now exposes typed `admit_lease` and `settle_lease`
+operations. Both use the canonical owner and atomic store; replay, owner-epoch,
+generation, runtime identity and outcome-unknown rules remain in the lease
+owner. This is lifecycle/state persistence wiring only and does not discover a
+provider, enroll a device, launch a process or authorize a consumer.

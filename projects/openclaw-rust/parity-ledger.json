@@ -2456,8 +2456,8 @@
       "id": "OCRM-RESP-INFRA-WORKER-CRABBOX-LIFECYCLE-001",
       "integration": {
         "consumer": "existing Runner, Computer and sandbox adapters (not yet wired)",
-        "entrypoint": "source/host/src/extensions/cloud_workers/owner.rs::CloudWorkerProvisioningOwner::settle_lease",
-        "owner": "source/host/src/extensions/cloud_workers/owner.rs",
+        "entrypoint": "source/host/src/extensions/cloud_workers/extension.rs::CloudWorkerProvisioningExtension::admit_lease / settle_lease -> owner.rs",
+        "owner": "source/host/src/extensions/cloud_workers/extension.rs and owner.rs",
         "producer": "typed provider/process adapter (not yet wired)"
       },
       "invariants": [
