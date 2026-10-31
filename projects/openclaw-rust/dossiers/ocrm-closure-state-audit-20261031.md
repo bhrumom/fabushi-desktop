@@ -73,24 +73,27 @@ reviewed or accepted from field presence alone.
 Both mapping groups have non-empty source and evidence references for every
 row. The integration text has a different result:
 
-| Mapping state | Count | Producer with pending semantics | Owner with pending semantics | Consumer with pending semantics | Decision with pending semantics |
+| Mapping state | Count | Producer with lexical pending semantics | Owner with lexical pending semantics | Consumer with lexical pending semantics | Decision with lexical pending semantics |
 | --- | ---: | ---: | ---: | ---: | ---: |
 | `mapped` | 91 | 12 | 2 | 29 | 9 |
 | `reviewed` | 148 | 1 | 0 | 6 | 1 |
 
 The scan treats terms such as `pending`, `future`, `unresolved`, `absent`,
-`not-wired`, `fixture-only`, and `not executed` as unresolved contract
-semantics. This is a text audit, not a semantic verifier; it demonstrates why
-non-empty fields and even `mapping=reviewed` cannot alone establish AC05 or
+`not-wired`, `fixture-only`, and `not executed` as candidate unresolved
+contract semantics. This is a text audit, not a semantic verifier; domain state
+names can be false positives. It demonstrates why non-empty fields and even
+`mapping=reviewed` cannot alone establish AC05 or
 `production_wiring_complete`.
 
-The eight reviewed responsibilities surfaced by this audit are:
+Eight reviewed responsibilities produced lexical hits. Semantic review removes
+one false positive: `OCRM-RESP-DEVICE-PAIRING-STATE-MACHINE-001` uses
+`pending` as a valid state-machine state, and its producer/owner/consumer
+contract is populated. The seven actual unresolved contract frontiers are:
 
 | Responsibility | Unresolved dimension | Existing owner |
 | --- | --- | --- |
 | `OCRM-RESP-CHANNEL-THREAD-BINDINGS-001` | inbound producer and transcript/session consumer | `source/host/src/connectors/channel_delivery.rs` |
 | `OCRM-RESP-SESSION-LIFECYCLE-DELETE-FENCE-001` | isolated-cron producer | `source/host/src/extensions/transcript/agent_lifecycle.rs` |
-| `OCRM-RESP-DEVICE-PAIRING-STATE-MACHINE-001` | owner decision contains pending wording | `source/host/src/device_pairing_owner.rs` |
 | `OCRM-RESP-MEDIA-FILE-CONTEXT-001` | prompt assembler consumer | `source/host/src/extensions/attachments/media_file_context.rs` |
 | `OCRM-RESP-MEDIA-PHOTON-RUNTIME-001` | raster/media-understanding consumer | `source/host/src/extensions/attachments/image_ops.rs` |
 | `OCRM-RESP-MEDIA-PNG-ENCODE-001` | upstream image/canvas consumer | `source/host/src/extensions/attachments/media_qr_png.rs` |
@@ -98,6 +101,8 @@ The eight reviewed responsibilities surfaced by this audit are:
 | `OCRM-RESP-MEDIA-STORE-REMOTE-001` | external URL ingestion consumers | `source/host/src/extensions/attachments/media_store.rs` |
 
 This table is a review frontier, not an approval or implementation change.
+The device-pairing false-positive review is retained as a method correction;
+it does not authorize changing that responsibility's ledger status.
 
 ## Requirements traceability state
 
