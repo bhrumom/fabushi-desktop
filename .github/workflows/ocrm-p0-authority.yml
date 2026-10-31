@@ -148,9 +148,18 @@ jobs:
               data=json.loads(path.read_text())
               data["upstream"] = identity
               if name.endswith("inventory/index.json"):
+                  evidence=json.loads(Path("ocrm-evidence/upstream-recursive-inventory.json").read_text())
+                  counts=evidence["counts"]
                   data["upstream"]["baseline_identity_accepted"] = lock["upstream"]["baseline_identity_accepted"]
                   data["authority"]["source_closure_ready"] = False
                   data["authority"]["dependency_closure_enumerated"] = False
+                  for key in ("tracked_entries_total", "blob_entries_total", "symlink_entries_total", "gitlink_entries_total"):
+                      data["inventory"][key] = counts[key]
+                  data["inventory"]["unread"] = counts["tracked_entries_total"]
+                  data["inventory"]["unclassified"] = counts["tracked_entries_total"]
+              if name.endswith("parity-ledger.json"):
+                  evidence=json.loads(Path("ocrm-evidence/upstream-recursive-inventory.json").read_text())
+                  data["file_coverage"]["tracked_paths"] = evidence["counts"]["tracked_entries_total"]
               path.write_text(json.dumps(data, ensure_ascii=False, sort_keys=True, indent=2) + "\n")
           PY
           python3 projects/openclaw-rust/scripts/expand_inventory.py ocrm-evidence/upstream-recursive-inventory.json
