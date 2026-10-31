@@ -137,6 +137,135 @@ impl TurnContextTracker {
     }
 }
 
+pub const REALTIME_TRANSCRIPTION_MAX_BUFFERED_BYTES: usize = 1_048_576;
+pub const REALTIME_TRANSCRIPTION_MAX_SDP_LINES: usize = 4_096;
+pub const REALTIME_TRANSCRIPTION_MAX_SDP_LINE_BYTES: usize = 4_096;
+pub const REALTIME_TRANSCRIPTION_MAX_MEDIA_SECTIONS: usize = 8;
+
+#[derive(Debug, Default)]
+pub struct RealtimeVoiceAudioQueue {
+    chunks: std::collections::VecDeque<Vec<u8>>,
+    buffered_bytes: usize,
+    overflow_count: usize,
+}
+
+impl RealtimeVoiceAudioQueue {
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    pub fn push(&mut self, chunk: Vec<u8>) -> bool {
+        if self.buffered_bytes.saturating_add(chunk.len())
+            > REALTIME_TRANSCRIPTION_MAX_BUFFERED_BYTES
+        {
+            self.overflow_count = self.overflow_count.saturating_add(1);
+            return false;
+        }
+        self.buffered_bytes += chunk.len();
+        self.chunks.push_back(chunk);
+        true
+    }
+
+    pub fn pop(&mut self) -> Option<Vec<u8>> {
+        let chunk = self.chunks.pop_front()?;
+        self.buffered_bytes = self.buffered_bytes.saturating_sub(chunk.len());
+        Some(chunk)
+    }
+
+    pub fn len(&self) -> usize {
+        self.chunks.len()
+    }
+
+    pub fn buffered_bytes(&self) -> usize {
+        self.buffered_bytes
+    }
+
+    pub fn overflow_count(&self) -> usize {
+        self.overflow_count
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.chunks.is_empty()
+    }
+}
+
+pub fn validate_realtime_transcription_sdp(sdp: &str) -> Result<(), &'static str> {
+    let lines: Vec<&str> = sdp.lines().collect();
+    if lines.len() > REALTIME_TRANSCRIPTION_MAX_SDP_LINES {
+        return Err("SDP offer exceeds maximum line count of 4096");
+    }
+    let mut media_count = 0;
+    let mut has_active_audio = false;
+    for line in lines {
+        if line.len() > REALTIME_TRANSCRIPTION_MAX_SDP_LINE_BYTES {
+            return Err("SDP line exceeds 4096 bytes");
+        }
+        let Some(rest) = line.strip_prefix("m=") else {
+            continue;
+        };
+        media_count += 1;
+        if media_count > REALTIME_TRANSCRIPTION_MAX_MEDIA_SECTIONS {
+            return Err("SDP offer exceeds maximum of 8 media sections");
+        }
+        if rest.starts_with("video") {
+            return Err("video media sections are rejected by audio gateway");
+        }
+        if rest.starts_with("audio") {
+            let parts: Vec<&str> = rest.split_whitespace().collect();
+            if parts.get(1).is_some_and(|port| *port != "0") {
+                has_active_audio = true;
+            }
+        }
+    }
+    if has_active_audio {
+        Ok(())
+    } else {
+        Err("SDP offer requires at least one active audio media stream")
+    }
+}
+
+pub fn validate_transcription_request(
+    audio: &[u8],
+    mime_type: &str,
+) -> Result<(), &'static str> {
+    if audio.is_empty() {
+        return Err("empty audio buffer: SandTranscribeEmptyAudioError");
+    }
+    if !mime_type.starts_with("audio/") {
+        return Err("invalid audio MIME type");
+    }
+    Ok(())
+}
+
+pub fn is_cjk_dominant(text: &str) -> bool {
+    let total_chars = text.chars().count();
+    if total_chars == 0 {
+        return false;
+    }
+    let cjk_count = text
+        .chars()
+        .filter(|&character| {
+            matches!(
+                character,
+                '\u{4e00}'..='\u{9fff}' | '\u{3400}'..='\u{4dbf}' | '\u{20000}'..='\u{2a6df}'
+            )
+        })
+        .count();
+    (cjk_count as f64 / total_chars as f64) > 0.30
+}
+
+pub fn resolve_edge_tts_voice(text: &str, default_voice: &str) -> (&'static str, &'static str) {
+    if is_cjk_dominant(text) {
+        ("zh-CN-XiaoxiaoNeural", "zh-CN")
+    } else {
+        let voice = match default_voice {
+            "en-US-MichelleNeural" => "en-US-MichelleNeural",
+            _ => "en-US-MichelleNeural",
+        };
+        (voice, "en-US")
+    }
+}
+
 pub use checkpoint::AttemptCheckpoint;
 pub use stream_attempt::{
     AttemptProgress, OuterCheckpointDisposition, OuterStreamFuture,

@@ -94,6 +94,13 @@ closure state, prunes closed silent turns during context consumption, and marks
 active responses cancelled on barge-in. It does not own the absent VAD or
 playback transport, so the turn-context row remains un-wired and unverified.
 
+The same Runner owner now contains pure realtime-transcription boundaries:
+`RealtimeVoiceAudioQueue` enforces a 1 MiB buffer cap, SDP validation rejects
+video and inactive audio offers, transcription rejects empty/non-audio input,
+and `resolve_edge_tts_voice` applies the audited 30% CJK threshold. No
+WebSocket/audio producer or transcription consumer exists in the current Host;
+these helpers advance implementation only.
+
 ### Audio output port implementation slice (2026-10-31)
 
 `source/host/src/ports/mod.rs` now owns a bounded `AudioOutputPort` primitive.

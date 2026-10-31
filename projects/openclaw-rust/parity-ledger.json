@@ -16171,9 +16171,9 @@
       ],
       "id": "OCRM-RESP-TALK-WS-TRANSCRIPTION-001",
       "integration": {
-        "consumer": "No production realtime transcription consumer identified; source/host/src/runner/mod.rs has no RealtimeVoiceAudioQueue",
-        "entrypoint": "pending realtime transcription transport owner selection",
-        "owner": "pending existing realtime transcription owner selection",
+        "consumer": "No production realtime transcription consumer identified; helpers are currently uncalled",
+        "entrypoint": "source/host/src/runner/mod.rs::RealtimeVoiceAudioQueue",
+        "owner": "source/host/src/runner/mod.rs",
         "producer": "No production transcription WebSocket/audio producer identified"
       },
       "invariants": [
@@ -16219,7 +16219,7 @@
       ],
       "status": {
         "acceptance": "pending",
-        "implementation": "not-started",
+        "implementation": "implementing",
         "mapping": "mapped",
         "read": "read-complete",
         "verification": "not-run",
@@ -16236,7 +16236,9 @@
         "source/host/tests/openclaw_audio_talk_contract.rs::test_ocrm_audio_o12_edge_tts_cjk_dominant_voice_fallback (fixture-only; not production evidence)"
       ],
       "typed_contracts": [
-        "validate_sdp_offer",
+        "RealtimeVoiceAudioQueue",
+        "validate_realtime_transcription_sdp",
+        "validate_transcription_request",
         "resolve_edge_tts_voice"
       ],
       "unit_id": "OCRM-UNIT-TALK-001"
