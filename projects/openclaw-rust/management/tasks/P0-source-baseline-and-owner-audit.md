@@ -179,3 +179,10 @@ entries（61,705 blobs、2,241 directories）。它已同步写入
 一致。该 subject 仍 discovery-only，旧 inventory、依赖闭包和 Actions
 provenance 不得复用；P0-AC02、source closure 与所有 global flags 继续保持
 未通过/未闭合。
+
+2026-10-31T07:55:14Z 的最新只读核对将当前 discovery reference 更新为
+OpenClaw `77b08d1345a8e5734ada19dc95e77f4c5135bd0a` / tree
+`a52b727858379d14b1b1ed4bde71837326c127f7`；递归 tree 未截断，共 63,993
+entries（61,752 blobs、2,241 directories）。该 subject 已同步写入
+`upstream.lock.json` 的 `live_candidate`，仍不构成 Actions authority、依赖闭包
+或任何 completion flag 的正面证据；此前 candidate 段落仅作历史记录保留。

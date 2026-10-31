@@ -180,8 +180,15 @@ subject 已同步写入 `upstream.lock.json` 的 `live_candidate`，但仍是
 discovery-only；不得复用旧 inventory、依赖闭包、LFS/完整性或 Actions
 provenance，亦不得提升任何 authority 或 global flag。
 
+2026-10-31T07:55:14Z 的最新只读核对将当前 live discovery reference 更新为
+commit=`77b08d1345a8e5734ada19dc95e77f4c5135bd0a`、root tree
+`a52b727858379d14b1b1ed4bde71837326c127f7`；递归 tree 未截断，共 63,993
+entries（61,752 blobs、2,241 directories）。`upstream.lock.json` 已同步该
+`live_candidate`；它仍是 discovery-only，未取得绑定该 exact subject 的 Actions
+inventory、依赖闭包、LFS scan、acceptance receipt 或终验记录。
+
 当前 `projects/openclaw-rust/evidence/` 有开发冻结说明、本地冻结治理说明与历史
-upstream drift 记录；尚无绑定 `bcf23b2e…/5d9b96f3…` 的 Actions run/attempt/job、
+upstream drift 记录；尚无绑定 `77b08d13…/a52b7278…` 的 Actions run/attempt/job、
 inventory/dependency-closure artifact、不可变 digest、acceptance receipt 或
 OCRM-AC01–AC24 终验记录。相关 dossier 仍属于 discovery/static evidence，不能
 替代 exact-subject evidence envelope；八项 global flags 继续全部为 `false`。
@@ -203,7 +210,7 @@ head，并以事件 head ref 做合法性检查和 subject CAS 写入；新的�
 记录仍绑定实现 baseline `ad8d12f126d29b0db204187adf5092db80294e70` /
 tree `04ccce62f1d74dc8e0c88290ae8ded027b7b0f16`；`parity-ledger.json` 与
 `requirements-traceability-matrix.json` 也绑定该 baseline。它们不匹配当前
-`002f25a…/553796f…` discovery candidate，未被重标为当前来源；在同一 exact
+`77b08d13…/a52b7278…` discovery candidate，未被重标为当前来源；在同一 exact
 subject 上重新取得 Actions inventory、依赖闭包和 receipt 前，不得把这些旧
 产物当作当前 source closure 或完成证据。
 
