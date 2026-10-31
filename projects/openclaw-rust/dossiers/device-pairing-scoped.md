@@ -228,3 +228,28 @@ The owner-level contract `repair_request_is_pending_without_overwriting_paired_c
 also proves that a re-registration of an already approved device is reported
 as `isRepair` pending, while the existing paired public key, token map, and
 retained node surfaces remain unchanged until an explicit approval commit.
+
+## 10. Local Rust producer-to-consumer wiring closure (2026-10-31)
+
+The three local responsibilities below have a complete source-level production
+call graph and are therefore marked `wiring=wired` in the parity ledger. This
+does not promote their still-pending executable verification or external-device
+acceptance.
+
+- **State machine:** `source/host/app/src/main.rs::UnifiedGatewayApi::call_openclaw_gateway_command`
+  dispatches `device.pair.request/status/approve/reject/list/revoke/rotateToken`
+  into `DevicePairingOwner::handle_pairing_command`; the owner performs the
+  pending/approved/rejected/revoked transitions and revision publication.
+- **Durable store:** Host startup creates one `DevicePairingOwner` over the
+  application data directory's `device-pairing.db`. Approval and revocation
+  use SQLite transactions, and the owner persists pending/paired rows plus the
+  revision state before returning the command result.
+- **Token lifecycle and consumers:** `UnifiedGatewayApi` exposes the owner
+  through the existing `GatewayApi`; `gateway_server.rs` calls
+  `authenticate_device_token` for bearer admission, applies the returned
+  device scope before dispatch, and calls `redeem_device_pairing_join_code`
+  for the HTTP join endpoint. No second pairing or token store is introduced.
+
+Static source wiring is the only claim made here. The required unit,
+integration, negative, exact-head Actions, websocket/companion transport, and
+physical-device gates remain pending under the existing blockers.
