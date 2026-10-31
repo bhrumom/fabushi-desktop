@@ -677,7 +677,10 @@ mod tests {
         CloudWorkerArtifactSource, CloudWorkerDoctorAction, CloudWorkerDoctorError,
         CloudWorkerDoctorRequest, CloudWorkerDoctorStatus, CloudWorkerLeaseScope,
         CloudWorkerArtifactDigest, CloudWorkerProvisioningConfig,
-        CloudWorkerProvisioningOwner, ReplayKey,
+        CloudWorkerProvisioningOwner, CloudWorkerMutationOutcome,
+        CloudWorkerRuntimeControlAction, CloudWorkerRuntimeControlBudget,
+        CloudWorkerRuntimeControlRequest, CloudWorkerRuntimeControlResult,
+        CloudWorkerRuntimeIdentity, LeaseId, ReplayKey,
     };
 
     fn enabled_extension(state_path: PathBuf) -> CloudWorkerProvisioningExtension {
@@ -809,6 +812,44 @@ mod tests {
         ));
         assert!(extension.snapshot().unwrap().artifacts.is_empty());
         assert!(!state_path.exists());
+    }
+
+    #[test]
+    fn bounded_runtime_control_result_settles_through_the_extension_owner() {
+        let state_path = test_state_path("bounded-runtime-control");
+        let extension = enabled_extension(state_path.clone());
+        let lease_id = LeaseId("bounded-lease".into());
+        let runtime = CloudWorkerRuntimeIdentity::new("provider", "profile", "runtime").unwrap();
+        extension
+            .admit_lease(
+                CloudWorkerLeaseScope::new("account", "device").unwrap(),
+                lease_id.clone(),
+                runtime,
+            )
+            .unwrap();
+        let request = CloudWorkerRuntimeControlRequest {
+            action: CloudWorkerRuntimeControlAction::Inspect,
+            replay_key: ReplayKey("inspect-bounded".into()),
+            budget: CloudWorkerRuntimeControlBudget {
+                timeout_ms: 30_000,
+                max_output_bytes: 64 * 1024,
+            },
+        };
+        let mutation = extension
+            .admit_bounded_runtime_control(&lease_id, request.clone())
+            .unwrap();
+        let result = CloudWorkerRuntimeControlResult {
+            action: request.action,
+            mutation: mutation.clone(),
+            outcome: CloudWorkerMutationOutcome::Completed,
+            elapsed_ms: 100,
+            diagnostic: None,
+        };
+        let settled = extension
+            .settle_bounded_runtime_control(&request, &mutation, &result)
+            .unwrap();
+        assert_eq!(settled.lifecycle, super::super::CloudWorkerLifecycle::Enrolled);
+        assert!(state_path.is_file());
     }
 
     #[test]

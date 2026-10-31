@@ -1684,6 +1684,7 @@
         "source/host/src/extensions/cloud_workers/runtime_control.rs::tests::bounded_request_rejects_unbounded_execution_material_before_admission",
         "source/host/src/extensions/cloud_workers/runtime_control.rs::tests::bounded_request_preserves_fenced_mutation_identity",
         "source/host/src/extensions/cloud_workers/runtime_control.rs::tests::result_validation_binds_action_mutation_timeout_and_redaction",
+        "source/host/src/extensions/cloud_workers/extension.rs::tests::bounded_runtime_control_result_settles_through_the_extension_owner",
         "source/host/src/extensions/cloud_workers/owner.rs::tests::runtime_control_completion_returns_read_capability_to_enrolled"
       ],
       "typed_contracts": [
