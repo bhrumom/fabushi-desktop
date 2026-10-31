@@ -18194,7 +18194,9 @@
         "platform-core-round61-revalidation-spec-blob:87f5657bcb413ffbd94ae11d4bb3a42ae5b30daa",
         "platform-core-round61-external-contract-commit:d3d8635c69186631396886b086133b7f455ce33b",
         "platform-core-path:native/telegram-protocol/tests/protocol_contract.rs@e414104c28784a1735f7d8b5c1a5cfeb23fe2192",
-        "stage-a-round92-evidence:projects/telegram-desktop-rust/evidence/round92-mtproto-destroy-session-result-revalidation-20261101.md"
+        "stage-a-round92-evidence:projects/telegram-desktop-rust/evidence/round92-mtproto-destroy-session-result-revalidation-20261101.md",
+        "platform-core-round61-final-compliance-commit:c32cc58ffe44214a102e7c455fe73c00f90e1aed",
+        "platform-core-round61-final-spec-blob:1502e49a46298c1bf4e393e37c018009cf33fcca"
       ],
       "test_evidence": [
         "platform-core native/telegram-protocol/src/api.rs both-variant exact parse/session-id preservation contract authored, not run",
@@ -18319,7 +18321,7 @@
       "acceptance_reviewer": null,
       "reviewer": null,
       "license_and_provenance": "Behavioral responsibility is anchored to fixed-U telegramdesktop/tdesktop Telegram/SourceFiles/mtproto/scheme/mtproto.tl@76225965bfc794388db241f3f760db8ab79e84f8. session_private.cpp has no direct destroy_session_* receive branch. The implementation is source-neutral Rust and copies no upstream C++ implementation.",
-      "notes": "Stage A implementation only. This row closes exact typed DestroySessionRes wire decoding only. Outbound destroy_session request lifecycle and live session teardown semantics remain explicitly blocked/fail-closed. Global unknown/unread source-entry counts remain unchanged because this is a newly mapped responsibility slice within already-open fixed-U source coverage. Contracts are authored but not executed; validation_status=not-run and accepted=false. Round92 adjacent revalidation confirms the live parser already enforces exact 12-byte destroy_session_ok/none constructor+i64 layouts, signed session_id preservation, all constructor/session-id truncation boundaries, unknown-constructor rejection and strict EOF; no production behavior delta was made. Canonical/desktop external response-boundary contracts were added and remain not run. Live teardown/outbound destroy-session lifecycle and arbitrary request-history/application remain outside this wire-only disposition.",
+      "notes": "Stage A implementation only. This row closes exact typed DestroySessionRes wire decoding only. Outbound destroy_session request lifecycle and live session teardown semantics remain explicitly blocked/fail-closed. Global unknown/unread source-entry counts remain unchanged because this is a newly mapped responsibility slice within already-open fixed-U source coverage. Contracts are authored but not executed; validation_status=not-run and accepted=false. Round92 adjacent revalidation confirms the live parser already enforces exact 12-byte destroy_session_ok/none constructor+i64 layouts, signed session_id preservation, all constructor/session-id truncation boundaries, unknown-constructor rejection and strict EOF; no production behavior delta was made. Canonical/desktop external response-boundary contracts were added and remain not run. Live teardown/outbound destroy-session lifecycle and arbitrary request-history/application remain outside this wire-only disposition. Final round92 source-level compliance is recorded at platform-core commit c32cc58ffe44214a102e7c455fe73c00f90e1aed/spec blob 1502e49a46298c1bf4e393e37c018009cf33fcca; executable validation remains not-run.",
       "test_execution_evidence": [],
       "validation_status": "not-run",
       "accepted": false
