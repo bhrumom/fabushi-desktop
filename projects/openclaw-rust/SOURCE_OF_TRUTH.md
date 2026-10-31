@@ -513,3 +513,15 @@ discovery-only；不得复用上一 candidate 的 inventory、dependency closure
 LFS/integrity 或 Actions provenance，`baseline_identity_accepted`、
 `source_closure_ready` 与所有 global flags 继续保持 false。固定
 `ad8d12f...` implementation subject 不变。
+
+对固定 implementation subject `ad8d12f126d29b0db204187adf5092db80294e70` 的
+本地 Git object 只读 probe 还发现：精确 `pnpm-lock.yaml` 在同一文本中有两套
+`importers`、`packages`、`snapshots` 顶层区段（分别从第 4/13/97 行和第
+221/3193/11165 行开始）；前一套只有 pnpm 自身 15 个条目，后一套才包含应用
+workspace 图。root manifest 是 75 runtime、58 dev、1 optional、0 peer，树中有
+208 个 `package.json` 候选。详见
+`dossiers/upstream-fixed-subject-dependency-probe-20261031.md`。这构成固定
+subject dependency closure 的直接负证据；在 exact-head Actions 解释/重建同一
+subject 的 canonical lock、完整 importer/package/patch/native/optional/peer/
+integrity/license provenance 前，`dependency_closure_enumerated`、
+`source_closure_ready` 及 authority flags 继续保持 false。

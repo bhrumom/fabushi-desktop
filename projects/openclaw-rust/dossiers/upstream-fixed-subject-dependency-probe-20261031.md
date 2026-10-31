@@ -1,0 +1,71 @@
+# OpenClaw fixed implementation subject — dependency probe
+
+**Observed**: 2026-10-31 (local Git object read only)  
+**Subject**: `openclaw/openclaw@ad8d12f126d29b0db204187adf5092db80294e70`  
+**Tree**: `04ccce62f1d74dc8e0c88290ae8ded027b7b0f16`  
+**Authority**: implementation subject only; accepted/source-closure flags remain false
+
+## Exact root inputs
+
+| Path | Blob |
+| --- | --- |
+| `AGENTS.md` | `c3deeccdb6b1a4c7137d56297e933bbf19f4d3bf` |
+| `package.json` | `af543c4c033b5c5e0c466061ada470feeda777f3` |
+| `pnpm-lock.yaml` | `80fb4d9fa985297a24ac88931ef534e85a40ba47` |
+| `pnpm-workspace.yaml` | `d4ebbf1c13db7e189fe4053122a3e3fa77bb0e26` |
+| `.gitattributes` | `c6118b226a4a760f7861b6b7b1e7dccd943384e4` |
+| `LICENSE` | `ed064819ab537575d0cad902f7e5af4a3488b1d0` |
+| `THIRD_PARTY_NOTICES.md` | `0c9c123760188915a384ce7275df4096114e8f90` |
+| `.gitmodules` | absent |
+
+The tree has 58,750 paths and no gitlinks. These are source/tree facts only;
+they do not establish package or source closure.
+
+## Manifest and workspace facts
+
+The exact root manifest declares 75 runtime dependencies, 58 development
+dependencies, 1 optional dependency, and 0 peer dependencies. Its package
+manager is pnpm `12.15.0` with a pinned package-manager digest. The workspace
+patterns are `.`, `ui`, `packages/*`, `extensions/*`, `examples/*`, and
+`tools/solid-lint`; the exact tree contains 208 `package.json` paths matching
+the root/workspace candidate shape.
+
+## Lock-structure negative evidence
+
+The exact `pnpm-lock.yaml` is 19,772 lines and contains these top-level section
+occurrences:
+
+| Section | Occurrences | Lines |
+| --- | ---: | --- |
+| `importers` | 2 | 4, 221 |
+| `packages` | 2 | 13, 3,193 |
+| `snapshots` | 2 | 97, 11,165 |
+| `patchedDependencies` | 1 | 213 |
+
+The first section has one root importer with only `pnpm@12.15.0` and 15 pnpm
+platform/package entries. A second `importers`/`packages`/`snapshots` section
+starts at line 221 and contains the application/workspace dependency graph.
+The duplicate top-level sections are not a single unambiguous YAML dependency
+document and cannot be treated as a validated lock graph without an
+exact-subject generation/installation oracle that explains the structure.
+
+This is direct negative evidence for `dependency_closure_enumerated` and
+`source_closure_ready`. It does not assert that the repository is unusable;
+it records that root manifest dependencies, 208 workspace candidates, patched
+dependencies, optional/peer relations, external package bytes, and install
+provenance are not yet bound into one accepted closure.
+
+## Required next instrument
+
+The exact-head Actions authority must independently establish which lock
+section is authoritative (or regenerate a canonical lock from the same exact
+subject), enumerate every applicable workspace importer and resolved package,
+bind patches/native/optional/peer edges and integrity/license inputs, and emit
+the immutable inventory/closure artifact. Until then the fixed subject remains
+the implementation comparison subject, not an accepted source authority.
+
+## Evidence boundary
+
+No package was installed, downloaded, rehashed, built, or executed by this
+probe. No OCRM workflow, local OCRM check, Rust build/test/formatter/lint,
+push, PR update, or completion flag was changed.
