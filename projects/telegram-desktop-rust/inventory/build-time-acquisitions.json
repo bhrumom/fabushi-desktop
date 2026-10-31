@@ -3236,5 +3236,33 @@
       "cppgir_original_gitlab": "git_tree_verified=false/fail-closed-original-host-unread; not retried"
     },
     "validation_status": "not-run"
+  },
+  "round38_archive_manifest_equivalent_leads": {
+    "evidence_mode": "manual-public-source-search-stage-a-no-ci",
+    "upstream_commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+    "boost_1_90_0": {
+      "archive": "boost_1_90_0.tar.gz",
+      "size_bytes": 210975925,
+      "sha256": "5e93d582aff26868d581a52ae78c7d8edf3f3064742c6e77901a1f18a437eea9",
+      "fossies_diff_index": "https://fossies.org/diffs/boost/1_90_0_vs_1_91_0/index.html",
+      "readable_search_evidence": "Fossies search exposes archive-derived 1.90.0-vs-1.91.0 change data, demonstrating parsed 1.90.0 members, but not a complete 1.90.0 member list",
+      "raw_member_listing": "unread",
+      "status": "equivalent-complete-member-manifest-not-obtained"
+    },
+    "libiconv_1_18": {
+      "archive": "libiconv-1.18.tar.gz",
+      "size_bytes": 5822590,
+      "sha256": "3b08f5f4f9b4eb82f151a7040bfd6fe6c6fb922efe4b1659c66ea933276965e8",
+      "advertised_file_list_page": "https://tho-otto.m68k.eu/crossmint.php",
+      "readable_page_evidence": "CrossMiNT explicitly lists libiconv 1.18 Original sources with a <file list> label, but the complete target/body was not exposed by the current reader",
+      "raw_member_listing": "unread",
+      "status": "equivalent-complete-member-manifest-not-obtained"
+    },
+    "no_retry_blockers": {
+      "dav1d_original_host": "not retried",
+      "xcb_util_m4_original_gitlab": "not retried; original-host-unverified",
+      "cppgir_original_gitlab": "not retried; git_tree_verified=false/fail-closed-original-host-unread"
+    },
+    "validation_status": "not-run"
   }
 }

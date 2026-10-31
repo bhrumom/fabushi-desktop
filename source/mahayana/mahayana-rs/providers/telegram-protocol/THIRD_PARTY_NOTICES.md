@@ -78,3 +78,31 @@ No GPL Telegram client implementation source is asserted as copied into this
 crate by these mappings. Source identity and license provenance are recorded
 for release review; Stage A validation and release legal acceptance have not
 been run or granted.
+
+## Fixed-U Telegram Desktop corroboration
+
+For migration traceability, fixed
+`telegramdesktop/tdesktop@f985723b552b30fe1c17d377d57f44e61a15a8c4`
+contains the corresponding protocol schemas at
+`Telegram/SourceFiles/mtproto/scheme/api.tl@8319b7df634d145390c299404129fd161a5dbd2a`
+and
+`Telegram/SourceFiles/mtproto/scheme/mtproto.tl@76225965bfc794388db241f3f760db8ab79e84f8`.
+These fixed-U schema objects are retained as migration-provenance corroboration;
+they do not replace the TDLib Boost-1.0 source/license basis recorded above.
+
+The layer constant used in `src/api.rs` is independently mapped to
+`td/telegram/Version.h@a8774804b611a7fa8b6748d31666dead255c3118`
+(`MTPROTO_LAYER = 227`), while invoke-with-layer/init-connection framing is
+source-mapped to
+`td/telegram/net/MtprotoHeader.cpp@a7e7bf975bf56696fcaa0da2646dc161a51b5061`.
+
+The core `src/tl.rs` constructor constants `vector#1cb5c415`,
+`boolTrue#997275b5`, and `boolFalse#bc799737` are schema-mapped; the TL
+reader/writer implementation remains Fabushi-owned Rust code.
+
+Fixed-U Telegram Desktop legal authorities are
+`LEGAL@09c9e383db122fe0694e73c48d6224676afe60f6` and
+`LICENSE@d70f4d6a87eece19c4ec184de36a8aba72b4a639`. No separate legal
+`NOTICE` or `PATENTS` file was observed in the exact non-truncated fixed-U
+tree. This is a source-tree observation only and is not a patent-clearance or
+release-acceptance opinion.

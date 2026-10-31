@@ -194,3 +194,18 @@ Stage A remained validation-execution-free: no GitHub Actions/CI query or trigge
 - **No-spin blockers:** dav1d original-host robots/DNS, xcb-util-m4 original GitLab, and cppgir original GitLab were not retried.
 
 Durable details are in `inventory/fixed-u-non-code-inputs.json`, `inventory/build-time-acquisitions.json`, the updated Telegram third-party notices, and `evidence/round37-shipping-telegram-source-provenance-and-archive-manifests-20261031.md`. Broader shipping-file provenance, release legal acceptance, raw Boost/libiconv member closure, original-host GitLab blockers and fixed-U semantic/implementation closure remain open; `baseline_ready=false`, `accepted=false`, and `validation_status=not-run`.
+
+
+## Fixed-U wire corroboration and conditional owner injection gap (round 38, 2026-10-31)
+
+Stage A remained execution-free for validation: no GitHub Actions/CI status query or trigger, build, typecheck, lint, schema validator, generator, tests, packaging, deployment, installation, benchmark, fuzz, or runtime acceptance was performed.
+
+- **Fixed-U dual anchoring:** current protocol `api.rs@a5a226ba...`, `updates.rs@05cef74a...`, `tl.rs@89256ab3...` and `handshake.rs@e430fcc1...` are now cross-anchored not only to the pinned BSL-1.0 TDLib schema/source objects recorded in round 37, but also to fixed `telegramdesktop/tdesktop@f985723b...` schema objects `Telegram/SourceFiles/mtproto/scheme/api.tl@8319b7df...` and `mtproto.tl@76225965...` as migration-provenance corroboration. Fixed-U legal authorities remain `LEGAL@09c9e383...` and `LICENSE@d70f4d6a...`; those GPL-side objects are not substituted for the TDLib BSL license basis of mapped implementation inputs.
+- **Layer/header exact source:** `api.rs` layer 227 is independently anchored to TDLib `td/telegram/Version.h@a8774804...`; invoke-with-layer/init-connection framing is anchored to `td/telegram/net/MtprotoHeader.cpp@a7e7bf97...`.
+- **TL core constants:** `tl.rs` uses the schema constants `vector#1cb5c415`, `boolTrue#997275b5`, and `boolFalse#bc799737`; these are mapped to the exact TDLib/fixed-U schema objects while the reader/writer remains Fabushi-owned Rust code.
+- **Expanded static owner chain:** `mahayana-conversation/src/lib.rs@bef082ee...` routes `telegram:` IDs to provider key `telegram`; `mahayana-ffi/src/lib.rs@bdff6af5...` force-links Telegram runtime ABI symbols; and `providers/telegram-runtime/src/runtime.rs@787d28c0...` directly composes the mapped protocol/network/storage operations. Combined with the round-37 host/provider registration evidence, this closes more of the static source chain.
+- **Injection gap remains explicit:** the inspected desktop app-host construction path `mahayana-app-host/src/lib.rs@3b873243...` creates `HostCreateConfig` with default Telegram fields. The actual platform-login/caller source that supplies `telegram_client_id` has not yet been traced, so unconditional shipping activation is not claimed.
+- **Archive member manifests:** a readable Fossies search result exposes archive-derived Boost 1.90.0 diff data but not a complete 1.90.0 member manifest. CrossMiNT still advertises the exact libiconv 1.18 file-list link but the complete list body remains unread. Both remain fail-closed; archive bytes were not retried.
+- **No-spin blockers:** dav1d original-host robots/DNS and xcb-util-m4/cppgir original GitLab blockers were not retried.
+
+`baseline_ready=false`, `accepted=false`, and `validation_status=not-run` remain unchanged. Broader provider semantic/source-informed review, the Telegram client-id injection trace, release legal acceptance, complete archive members, original-host blockers, and full fixed-U implementation closure remain open.
