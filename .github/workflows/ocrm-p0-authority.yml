@@ -16,8 +16,6 @@ jobs:
     timeout-minutes: 30
     env:
       UPSTREAM_REPO: openclaw/openclaw
-      UPSTREAM_COMMIT: ad8d12f126d29b0db204187adf5092db80294e70
-      UPSTREAM_TREE: 04ccce62f1d74dc8e0c88290ae8ded027b7b0f16
       SUBJECT_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
     steps:
       - name: Checkout exact subject
@@ -34,17 +32,18 @@ jobs:
           expected="${{ github.event.pull_request.head.sha || github.sha }}"
           test "$subject" = "$expected"
           python3 - <<'PY'
-          import json
+          import json, os
           from pathlib import Path
           lock=json.loads(Path("projects/openclaw-rust/upstream.lock.json").read_text())
           assert lock["upstream"]["repository"] == "openclaw/openclaw"
-          assert lock["upstream"]["commit"] == "ad8d12f126d29b0db204187adf5092db80294e70"
-          assert lock["upstream"]["tree"] == "04ccce62f1d74dc8e0c88290ae8ded027b7b0f16"
           assert lock["closure"]["source_closure_ready"] is False
           idx=json.loads(Path("projects/openclaw-rust/inventory/index.json").read_text())
           assert idx["upstream"]["commit"] == lock["upstream"]["commit"]
           assert idx["authority"]["source_closure_ready"] is False
           assert idx["inventory"]["omitted_known"] == 0
+          with open(os.environ["GITHUB_ENV"], "a", encoding="utf-8") as env:
+              env.write(f"UPSTREAM_COMMIT={lock['upstream']['commit']}\n")
+              env.write(f"UPSTREAM_TREE={lock['upstream']['tree']}\n")
           PY
 
       - name: Acquire exact upstream and verify identity
@@ -87,7 +86,7 @@ jobs:
           payload={
             "format_version":1,
             "project_id":"OCRM-001",
-            "upstream":{"repository":"openclaw/openclaw","commit":"ad8d12f126d29b0db204187adf5092db80294e70","tree":"04ccce62f1d74dc8e0c88290ae8ded027b7b0f16"},
+            "upstream":{"repository":os.environ["UPSTREAM_REPO"],"commit":os.environ["UPSTREAM_COMMIT"],"tree":os.environ["UPSTREAM_TREE"]},
             "counts":counts,
             "entries":entries
           }
@@ -184,7 +183,8 @@ jobs:
           raw=(root/"upstream-recursive-inventory.json").read_bytes()
           expected=(root/"upstream-recursive-inventory.sha256").read_text().strip()
           assert hashlib.sha256(raw).hexdigest() == expected == summary["canonical_inventory_sha256"]
-          assert summary["canonical_file_records"] == 58750
+          assert summary["canonical_file_records"] == summary["tracked_entries_total"]
+          assert summary["canonical_file_records"] > 0
           PY
           python3 projects/openclaw-rust/scripts/shard_inventory.py --write ocrm-evidence/upstream-recursive-inventory.json
 

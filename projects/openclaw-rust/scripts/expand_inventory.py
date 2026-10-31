@@ -53,6 +53,16 @@ for responsibility in ledger.get("responsibilities", []):
 
 for e in entries:
     shard_rec = shard_map.get(e["path"])
+    # A path match alone is not sufficient across an upstream rebaseline.
+    # Reuse hand-reviewed fields only when the prior row proves the same
+    # source identity and blob. Otherwise the new exact subject remains
+    # unread/unclassified until it is reviewed against that subject.
+    if shard_rec is not None and (
+        shard_rec.get("source_commit") != payload["upstream"]["commit"]
+        or shard_rec.get("source_tree") != payload["upstream"]["tree"]
+        or shard_rec.get("blob_sha") != e["sha"]
+    ):
+        shard_rec = None
     e.update({
         "source_repository": payload["upstream"]["repository"],
         "source_commit": payload["upstream"]["commit"],
