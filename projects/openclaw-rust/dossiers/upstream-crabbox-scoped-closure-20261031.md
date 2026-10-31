@@ -111,3 +111,21 @@ candidate's full tree has changed from the earlier `129583af...` subject, so
 the earlier scoped note cannot be relabeled as current full-tree authority.
 The dependency frontier, Actions inventory/closure, LFS/integrity, generated
 inputs, licenses and packaged acceptance remain open for the new subject.
+
+The current subject's first-hop runtime surfaces were also identity-checked:
+
+| Imported surface | Exact blob |
+| --- | --- |
+| `packages/plugin-sdk/package.json` | `2ae3706819610eea18d127130a2eb64cbfb89c25` |
+| `packages/plugin-sdk/src/plugin-entry.ts` | `82796abdb21c4a24bafd18be164efc70f0d3766f` |
+| `packages/plugin-sdk/src/error-runtime.ts` | `e0151c9bc5ced6f6d7d6fb98a876df8ede62a89c` |
+| `packages/plugin-sdk/src/time-runtime.ts` | `6749e3e370038475d6b76f1827dd356fb0118d40` |
+| `packages/plugin-sdk/src/text-utility-runtime.ts` | `93efdcde9465d20d655ae2488ba94bda4c9c2f2b` |
+| `src/plugin-sdk/logging-core.ts` | `d53d7eaa9e4ebdd3b6e4f215b2d03bb8a86c9cf9` |
+| `src/plugin-sdk/process-runtime.ts` | `b84627cbccc5febf67df529e3456f254200efeee` |
+| `src/plugin-sdk/sandbox.ts` | `fbbe7446fde322d86ba59f3f54a89e818ac950a2` |
+| `src/plugin-sdk/string-coerce-runtime.ts` | `ecb5392d5b93242bd2899b11246197a9fbd4ea26` |
+
+These are direct identity edges only. Their own imports, generated exports,
+build-time aliases and transitive package/runtime dependencies remain outside
+this scoped note and must be closed by the exact-subject authority run.
