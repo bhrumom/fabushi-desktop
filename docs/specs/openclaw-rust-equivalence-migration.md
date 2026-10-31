@@ -224,6 +224,13 @@ Git tree API 被截断时必须分子树继续枚举并核对集合；GitHub sea
 
 每条责任至少包含：`id`、`responsibility_kind`、源 path/blob/symbol/range、行为描述、前后置条件、不变量、capability/requirement IDs、source oracle、所有候选 existing owners 与选择原因、target path/symbol/artifact/language、commands/events/schema、state/lifecycle、dependencies、按类型的 integration path、`required_evidence_dimensions`、`required_gate_ids`、测试、差异 ADR、迁移/回滚、风险、阻塞、当前证据。运行时 integration path 必须记录 production entrypoint/producer/owner/consumer。
 
+项目级 RTM 只登记本 Spec 的顶层 `OCRM-Rxx` 与 `OCRM-ACxx` requirement/acceptance
+行。具体实施任务可以在其自身的受审任务文档中定义 task-local criteria（例如
+`OCRM-P1-Fxx`、`OCRM-P1-ACxx` 及其 task-local oracle）；这些 ID 必须能解析回
+唯一任务、不能伪装成项目 RTM 行，也不能单独产生项目级 verified/accepted 或
+completion flag。责任仍应同时关联适用的项目级 requirement/AC，除非该任务明确
+记录其 task-local 范围与尚未提升为项目级标准的原因。
+
 | 维度 | 可记录状态 | 升级条件 |
 | --- | --- | --- |
 | 来源读取 | unread / partial / read-complete | 该路径的完整内容与责任阅读记录；仅该路径没有未读区间（不表示全量 inventory 或 AC02 必须 unread=0） |
