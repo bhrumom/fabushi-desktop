@@ -52,6 +52,37 @@ under-report the workspace graph. This is a structural lock observation, not a
 claim that every registry archive, patch, native artifact, optional platform
 package, license or LFS object has been externally verified.
 
+## Manifest-to-importer crosswalk
+
+The exact tree contains 215 `package.json` paths. Normalizing the root manifest
+to importer `.` and other manifests to their containing directory yields:
+
+| Crosswalk result | Count |
+| --- | ---: |
+| exact-tree `package.json` paths | 215 |
+| second-document workspace importers | 206 |
+| manifests with a matching importer | 206 |
+| importers without a matching manifest | 0 |
+| manifests without a matching importer | 9 |
+
+The nine manifest paths without a workspace importer are:
+
+- `.github/actions/setup-security-review/package.json`
+- `.github/release/clawhub-cli/package.json`
+- `.github/release/vercel-cli/package.json`
+- `docs/snippets/plugin-publish/minimal-package.json`
+- `qa/convex-credential-broker/package.json`
+- `scripts/cloudflare/package.json`
+- `src/templates/fixtures/delegating-agent/package.json`
+- `test/fixtures/templates/project-v1/package.json`
+- `test/fixtures/web-output-provider/package.json`
+
+This is a path-level workspace crosswalk, not a declaration that those nine
+paths are irrelevant: their scripts, release tooling, fixtures and QA/build
+inputs still require explicit applicability and disposition review. Conversely,
+the zero unmatched-importer result does not prove that resolved package edges,
+patches, platform artifacts or dynamic imports are closed.
+
 ## Drift against the fixed-baseline declaration input
 
 The committed `dependencies/source-manifest-inputs.json` remains deliberately
