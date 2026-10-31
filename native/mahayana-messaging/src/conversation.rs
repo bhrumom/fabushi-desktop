@@ -59,6 +59,18 @@ pub struct ConversationPermissions {
     pub can_send_messages: bool,
     pub can_send_media: bool,
     pub can_send_polls: bool,
+    /// Canonical capability used by share/link recipient authorization.
+    /// Missing values from legacy persisted state fail closed.
+    #[serde(default)]
+    pub can_send_other: bool,
+    /// Canonical capability used by inline-result recipient authorization.
+    /// Missing values from legacy persisted state fail closed.
+    #[serde(default)]
+    pub can_send_inline: bool,
+    /// Canonical capability used by game recipient authorization.
+    /// Missing values from legacy persisted state fail closed.
+    #[serde(default)]
+    pub can_send_games: bool,
     pub can_add_members: bool,
     pub can_pin_messages: bool,
     pub can_manage_topics: bool,
@@ -71,6 +83,9 @@ impl Default for ConversationPermissions {
             can_send_messages: true,
             can_send_media: true,
             can_send_polls: true,
+            can_send_other: true,
+            can_send_inline: true,
+            can_send_games: true,
             can_add_members: true,
             can_pin_messages: true,
             can_manage_topics: true,

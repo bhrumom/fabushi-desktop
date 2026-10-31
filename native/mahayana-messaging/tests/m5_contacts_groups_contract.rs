@@ -80,6 +80,9 @@ fn community(id: &str) -> CommunityState {
             send_messages: true,
             send_media: true,
             send_polls: true,
+            send_other: true,
+            send_inline: true,
+            send_games: true,
             ..MemberRestrictions::default()
         },
         joined_at_ms: 1,
@@ -289,6 +292,181 @@ fn contacts_and_groups_are_searchable_through_the_messaging_protocol() {
                 && results.iter().all(|result| result.id != "group:m5-search-blocked")
                 && results.iter().all(|result| result.id != "group:m5-search-media-blocked")
     ));
+}
+
+#[test]
+fn share_recipient_search_uses_canonical_typed_permission_axes_before_exposure() {
+    let mut service = MessagingService::load(MemoryStateStore::default()).unwrap();
+    for (id, name) in [
+        ("human:owner", "Owner"),
+        ("human:restricted", "Restricted"),
+    ] {
+        service
+            .handle(
+                ClientEnvelope::new(
+                    context(id, &format!("profile:{id}")),
+                    ClientCommand::UpsertProfile {
+                        actor: Actor::human(id, name),
+                    },
+                ),
+                1,
+            )
+            .unwrap();
+    }
+
+    let mut allowed = group_conversation("group:share-allowed");
+    allowed.title = "Share Allowed".into();
+    service
+        .handle(
+            ClientEnvelope::new(
+                context("human:owner", "create-share-allowed"),
+                ClientCommand::CreateConversation {
+                    conversation: allowed,
+                },
+            ),
+            2,
+        )
+        .unwrap();
+
+    service
+        .handle(
+            ClientEnvelope::new(
+                context("human:owner", "community-share-allowed"),
+                ClientCommand::UpdateCommunity {
+                    community: community("group:share-allowed"),
+                },
+            ),
+            3,
+        )
+        .unwrap();
+
+    let mut other_blocked = group_conversation("group:share-other-blocked");
+    other_blocked.title = "Share Other Blocked".into();
+    other_blocked.permissions.can_send_other = false;
+    let mut inline_blocked = group_conversation("group:share-inline-blocked");
+    inline_blocked.title = "Share Inline Blocked".into();
+    inline_blocked.permissions.can_send_inline = false;
+    let mut game_blocked = group_conversation("group:share-game-blocked");
+    game_blocked.title = "Share Game Blocked".into();
+    game_blocked.permissions.can_send_games = false;
+
+    for (index, conversation) in [other_blocked, inline_blocked, game_blocked]
+        .into_iter()
+        .enumerate()
+    {
+        service
+            .handle(
+                ClientEnvelope::new(
+                    context("human:owner", &format!("create-share-blocked-{index}")),
+                    ClientCommand::CreateConversation { conversation },
+                ),
+                4 + i64::try_from(index).unwrap(),
+            )
+            .unwrap();
+    }
+
+    let query = || SearchQuery {
+        text: "share".into(),
+        scope: SearchScope::Global,
+        conversation_id: None,
+        sender_id: None,
+        from_ms: None,
+        to_ms: None,
+        limit: 20,
+    };
+    let mut search = |actor_id: &str, request_id: &str, requirements: RecipientSearchRequirements| {
+        let response = service
+            .handle(
+                ClientEnvelope::new(
+                    context(actor_id, request_id),
+                    ClientCommand::SearchRecipients {
+                        query: query(),
+                        requirements,
+                    },
+                ),
+                10,
+            )
+            .unwrap();
+        match &response[0].event {
+            ServerEvent::SearchResults { results, .. } => results.clone(),
+            other => panic!("unexpected recipient search event: {other:?}"),
+        }
+    };
+
+    let other = search(
+        "human:owner",
+        "share-other",
+        RecipientSearchRequirements {
+            require_send_other: true,
+            ..RecipientSearchRequirements::default()
+        },
+    );
+    assert!(other.iter().any(|result| result.id == "group:share-allowed"));
+    assert!(other
+        .iter()
+        .all(|result| result.id != "group:share-other-blocked"));
+
+    let inline = search(
+        "human:owner",
+        "share-inline",
+        RecipientSearchRequirements {
+            require_inline: true,
+            ..RecipientSearchRequirements::default()
+        },
+    );
+    assert!(inline.iter().any(|result| result.id == "group:share-allowed"));
+    assert!(inline
+        .iter()
+        .all(|result| result.id != "group:share-inline-blocked"));
+
+    let game = search(
+        "human:owner",
+        "share-game",
+        RecipientSearchRequirements {
+            require_game: true,
+            ..RecipientSearchRequirements::default()
+        },
+    );
+    assert!(game.iter().any(|result| result.id == "group:share-allowed"));
+    assert!(game
+        .iter()
+        .all(|result| result.id != "group:share-game-blocked"));
+
+    let restricted = search(
+        "human:restricted",
+        "share-restricted",
+        RecipientSearchRequirements {
+            require_send_other: true,
+            ..RecipientSearchRequirements::default()
+        },
+    );
+    assert!(restricted
+        .iter()
+        .all(|result| result.id != "group:share-allowed"));
+}
+
+#[test]
+fn typed_share_permission_fields_keep_legacy_persistence_fail_closed() {
+    let legacy_permissions: ConversationPermissions = serde_json::from_str(
+        r#"{"canSendMessages":true,"canSendMedia":true,"canSendPolls":true,"canAddMembers":true,"canPinMessages":true,"canManageTopics":true,"canManageCalls":true}"#,
+    )
+    .unwrap();
+    assert!(!legacy_permissions.can_send_other);
+    assert!(!legacy_permissions.can_send_inline);
+    assert!(!legacy_permissions.can_send_games);
+
+    let fresh_permissions = ConversationPermissions::default();
+    assert!(fresh_permissions.can_send_other);
+    assert!(fresh_permissions.can_send_inline);
+    assert!(fresh_permissions.can_send_games);
+
+    let legacy_restrictions: MemberRestrictions = serde_json::from_str(
+        r#"{"sendMessages":false,"sendMedia":false,"sendPolls":false,"embedLinks":false,"addMembers":false,"pinMessages":false,"changeInfo":false,"untilMs":null}"#,
+    )
+    .unwrap();
+    assert!(!legacy_restrictions.send_other);
+    assert!(!legacy_restrictions.send_inline);
+    assert!(!legacy_restrictions.send_games);
 }
 
 #[test]

@@ -2227,7 +2227,10 @@
         "native/mahayana-messaging/src/service.rs",
         "source/host/src/extensions/session/production.rs",
         "source/host/src/extensions/session/gateway.rs",
-        "frontend/src/production/ForwardMessageDialog.tsx"
+        "frontend/src/production/ForwardMessageDialog.tsx",
+        "native/mahayana-messaging/src/conversation.rs",
+        "native/mahayana-messaging/src/community.rs",
+        "native/mahayana-messaging/tests/m5_contacts_groups_contract.rs"
       ],
       "fabushi_target_symbols": [
         "RecipientSearchRequirements",
@@ -2237,7 +2240,9 @@
         "fn recipient_search_envelope(",
         "fn actor_can_send_to_recipient(",
         "pub fn search_human_recipients(",
-        "ForwardMessageDialog"
+        "ForwardMessageDialog",
+        "ConversationPermissions::can_send_other/can_send_inline/can_send_games",
+        "MemberRestrictions::send_other/send_inline/send_games"
       ],
       "target_language": "Rust",
       "language_rationale": "Recipient exposure is a privacy/authorization boundary and must execute in the canonical native messaging service before results cross to UI.",
@@ -2260,7 +2265,7 @@
       "blockers": [
         "Current-head GitHub Actions compile/test/integration evidence pending",
         "Shipping candidate enumeration remains Human-direct; canonical Group/Channel/topic/saved-sublist child destinations are not yet composed into this picker",
-        "Canonical Conversation permission state does not yet represent authorized send-other/inline/game axes; typed requests therefore fail closed",
+        "Canonical Conversation/Community send-other/inline/game axes are now modeled and enforced before Search exposure; authoritative synchronized policy refresh across the complete shipping destination universe remains open",
         "Exact-head Electron E2E, policy-refresh temporal/reload/restart evidence and independent acceptance remain open"
       ],
       "production_entrypoints": [
@@ -2280,15 +2285,21 @@
         "path:source/host/src/extensions/session/gateway.rs#searchHumanRecipients",
         "path:source/host/src/extensions/session/production.rs#search_human_recipients",
         "commit:a50fd7cf28b6dcebda7240d94208e524b18f145e",
-        "path:native/mahayana-messaging/src/search.rs#recipient_search_authorized"
+        "path:native/mahayana-messaging/src/search.rs#recipient_search_authorized",
+        "commit:fc792c61f29aa5d6b415bf99ede958ea60d6a0d0",
+        "commit:0c5bf2551a6c730eedfc1ea19bab81738b9a9103",
+        "commit:217fa8cef686e60a5bba565a95419be6d6711046"
       ],
       "test_evidence": [
         "native/mahayana-messaging/tests/m5_contacts_groups_contract.rs#contacts_and_groups_are_searchable",
         "source/host/src/extensions/session/production.rs#sharebox_shipping_tests::shipping_human_forward_reuses_session_owner_across_retry_and_restart",
         "native/mahayana-messaging/src/search.rs#recipient_policy_tests::recipient_authorization_fails_before_exposure_for_typed_share_requirements",
-        "native/mahayana-messaging/src/search.rs#recipient_policy_tests::recipient_requirements_deserialize_old_media_poll_shape_with_safe_defaults"
+        "native/mahayana-messaging/src/search.rs#recipient_policy_tests::recipient_requirements_deserialize_old_media_poll_shape_with_safe_defaults",
+        "commit:82127ec395c9ab6a13b68b235267864e0659bd2b",
+        "native/mahayana-messaging/tests/m5_contacts_groups_contract.rs#share_recipient_search_uses_canonical_typed_permission_axes_before_exposure",
+        "native/mahayana-messaging/tests/m5_contacts_groups_contract.rs#typed_share_permission_fields_keep_legacy_persistence_fail_closed"
       ],
-      "target_commit": "a50fd7cf28b6dcebda7240d94208e524b18f145e",
+      "target_commit": "38bc48076d3e17fded451f7e869e5f7e5685369e",
       "workflow_run": null,
       "run_attempt": null,
       "job": null,
@@ -2426,7 +2437,7 @@
       "release_gate_status": "pending",
       "license_and_provenance": "Behavior was reimplemented source-neutrally from the accepted ShareBox authorization semantics inside the existing Fabushi Conversation/Community policy owner.",
       "reviewer": null,
-      "notes": "Shipping Human Forward now passes the actual sourceEntryId into Host recipient discovery. Host validates the settled source message, derives media/protected requirements, and calls the same fabushi_messaging_core::recipient_search_authorized function used by native SearchRecipients before returning candidates. The shipping candidate universe is still Human-direct and send-other/inline/game permission axes are not yet modeled by canonical Conversation state, so those typed requests fail closed and this row remains implemented/pending, not verified."
+      "notes": "Canonical ConversationPermissions now represent send-other/inline/game allow axes and Community MemberRestrictions represent matching deny axes; MessagingService projects both into recipient_search_authorized before SearchIndex exposure. Legacy persisted Conversation permissions missing the new allow fields deserialize false and remain fail-closed until authoritative policy refresh. Shipping candidate enumeration is still Human-direct, full Group/Channel/typed-child composition and exact-head Electron/temporal/recovery/independent acceptance remain open."
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
@@ -12964,5 +12975,24 @@
       "notes": "Recursive authority array index 29, immediately after health_test.py index 28, is .agents/skills/code-health/scripts/history.py. Its direct report.py caller and code-health SKILL measurement/prioritization contract were read. This closure decrements only this independent source entry to unknown=16,172 and unread=16,145, omitted=0.",
       "test_execution_evidence": []
     }
-  ]
+  ],
+  "rebaseline_candidate": {
+    "upstream_commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+    "status": "unaccepted-inventory-open",
+    "direct_gitlinks_checked": 36,
+    "nested_gitlinks_discovered": 3,
+    "nested_gitlinks_resolved": 2,
+    "nested_gitlinks_blocked": 1,
+    "source_responsibility_rows": "historical-source-identity-preserved-not-current-baseline-evidence",
+    "unknown": null,
+    "unread": null,
+    "omitted_known": 0,
+    "cppgir_identity": {
+      "declared_by": "desktop-app/cmake_helpers@7ceca3019b4750d7a5acb2de0faffd523ee14095:.gitmodules",
+      "repository": "https://gitlab.com/mnauw/cppgir.git",
+      "commit": "47cf94f83b54cda59018135601e19d7fb0c77776",
+      "git_tree_verified": false,
+      "reason": "GitHub desktop-app/cppgir 404 was a wrong-host lookup; exact GitLab source content remains unresolved"
+    }
+  }
 }
