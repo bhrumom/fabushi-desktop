@@ -191,6 +191,27 @@ proof of the real production composition path. The existing trait owners do
 not need to expose their state stores; the adapter consumes only their typed
 executor contract.
 
+#### P1-F08 current traceability split (2026-10-31)
+
+The current ledger keeps the following narrow paths separate from the broader
+pending Crabbox responsibilities:
+
+- `OCRM-RESP-INFRA-WORKER-CRABBOX-STATUS-PROJECTION-001` records the existing
+  read-only `CloudWorkerProvisioningExtension::status_snapshot` → Host Gateway
+  → Coordinator status consumer path as `implementation=implemented` and
+  `wiring=wired`. It does not include provider mutation, live event publication
+  or packaged UI/CLI reachability.
+- `OCRM-RESP-INFRA-WORKER-CRABBOX-EXTERNAL-MACHINE-ADAPTER-001` records the
+  typed `ExternalMachineExecutor` adapter boundary as `wiring=wired`. It does
+  not include provider selection, physical worker execution, device
+  enrollment, Computer grants, Runner composition or cloud mutation.
+
+The broader Crabbox projection, lifecycle, sandbox, bootstrap, artifact,
+warm-image and runtime-control rows remain pending where their producer or
+consumer is absent. The NodeHost local projection is tracked independently in
+`OCRM-RESP-NODE-HOST-LOCAL-RUNTIME-PROJECTION-001`; neither local status nor
+adapter-boundary evidence is a substitute for remote worker acceptance.
+
 ## 5. Target architecture and contracts
 
 Proposed Rust placement:
