@@ -276,6 +276,12 @@ global flag or source-closure state.
 
 P0 在 Actions 建立 lock、inventory、parity ledger、RTM、dossiers 和 evidence 索引；本次不提交伪造的完整台账或空清单来充当 baseline。
 
+冻结期本地治理载体见
+[`evidence/development-freeze-local-governance-20261031.md`](evidence/development-freeze-local-governance-20261031.md)。
+它只记录未推送 local subject、远端 ref 状态和冻结策略，不是 Actions
+receipt、source authority 或产品验收证据；其 carrier commit 也不能继承旧
+subject 的 receipt。
+
 各 flag 的适用集合、true 谓词、负责 gate 和失效条件以主 Spec §15.1 为唯一规范。`source_closure_ready` 表示完整取得并枚举来源/依赖，不表示已阅读全文；AC02 的全量闭合是“0 未分流、0 未评估适用责任”，而不是把 58,750 个路径强行变成全文深读。全部适用产品责任理解、owner/合同/oracle 双向映射和非产品 disposition 证据归 `responsibility_mapping_complete`。P0 G02 structural 可以保留诚实 unread/unclassified；最终 G02 必须消除未分流/未评估适用责任，但仍要如实报告尚未深读的非适用成组路径。
 
 主 Spec §12.3 区分受验 target 与证据载体：仓库保留 source declarations、已知 baseline 和历史 receipt 引用，当前有效状态由同一 subject target 的不可变 Actions receipt 投影。最终 receipt 发布到 artifact/attestation/check，不为回写自身 SHA 再制造一个提交；后续提交是新 target，旧绿色结果不能自动成为当前验收。
