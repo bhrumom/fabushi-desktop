@@ -85,6 +85,15 @@ incomplete: only one package has `licenseDeclared`, 1,609 have
 evidence that the SBOM cannot by itself satisfy the project's license/NOTICE
 closure gate.
 
+The exact `THIRD_PARTY_NOTICES.md` blob is
+`0c9c123760188915a384ce7275df4096114e8f90`; the GitHub contents API reports
+4,779 bytes and the raw file has 111 lines. It contains four additional notice
+sections covering SQLite, Pi/pi-mono, GitHub Octicons, and Hermes Agent, with
+license text or attribution for those incorporated portions. The file itself
+states that it supplements normal package-manager metadata; it is therefore
+positive notice evidence for those four areas, not a complete per-package
+license mapping for the SPDX package set.
+
 The GitHub Actions runs endpoint returned 262 matching run records for this
 head query, but the captured response did not provide a complete exact-H CI
 receipt for the required inventory/dependency-closure gates. No workflow was
