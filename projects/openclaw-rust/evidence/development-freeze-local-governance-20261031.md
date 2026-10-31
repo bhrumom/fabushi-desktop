@@ -22,8 +22,10 @@ must not be inherited by this subject.
 - Accepted upstream remains `ad8d12f126d29b0db204187adf5092db80294e70` /
   `04ccce62f1d74dc8e0c88290ae8ded027b7b0f16`, with
   `accepted_for_this_implementation_round=false`.
-- Current discovery candidate remains `002f25a97fccb7eff05b768a3fd7bc7e13488ed6` /
-  `553796fe9bd2b9298f6d843c63cf9a4d588f5b71`.
+- At the later read, the current discovery candidate is
+  `f92366d3c7fb390dc9bba3b89e06b794e0cb5119` /
+  `260ace762cbdaf2e25a8335319601b199d6848e0`. The earlier
+  `002f25a…/553796fe…` candidate is historical discovery evidence only.
 - `tracked_tree_enumerated`, `dependency_closure_enumerated`,
   `lfs_scan_complete`, and `source_closure_ready` remain `false`.
 - All eight project completion flags remain `false`.
