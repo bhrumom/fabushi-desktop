@@ -522,6 +522,47 @@ impl CloudWorkerProvisioningOwner {
         Ok(image.clone())
     }
 
+    /// Returns only warm-image rows that require an explicit recovery
+    /// decision. The projection is deterministic so callers can present or
+    /// reconcile the same rows without treating a broad inventory as a
+    /// recovery instruction.
+    pub fn warm_image_recovery_candidates(&self) -> Vec<CloudWorkerWarmImage> {
+        let mut candidates = self
+            .warm_images
+            .values()
+            .filter(|image| {
+                image.cleanup_debt
+                    || matches!(
+                        image.state,
+                        super::CloudWorkerWarmImageState::CaptureUncertain
+                            | super::CloudWorkerWarmImageState::Retiring
+                    )
+            })
+            .cloned()
+            .collect::<Vec<_>>();
+        candidates.sort_by(|left, right| left.image_id.cmp(&right.image_id));
+        candidates
+    }
+
+    /// Selects one exact recovery row by image ID. A healthy available image
+    /// is not a recovery target, even when the caller knows its ID.
+    pub fn warm_image_recovery_candidate(
+        &self,
+        image_id: &str,
+    ) -> Result<CloudWorkerWarmImage, CloudWorkerOwnerError> {
+        let image = self.warm_image(image_id)?;
+        if image.cleanup_debt
+            || matches!(
+                image.state,
+                super::CloudWorkerWarmImageState::CaptureUncertain
+                    | super::CloudWorkerWarmImageState::Retiring
+            )
+        {
+            return Ok(image);
+        }
+        Err(CloudWorkerOwnerError::WarmImageNotRecoverable)
+    }
+
     pub fn apply_warm_image(
         &mut self,
         image_id: &str,
@@ -591,6 +632,8 @@ pub enum CloudWorkerOwnerError {
     DuplicateWarmImage,
     #[error("warm image was not found")]
     UnknownWarmImage,
+    #[error("warm image does not require recovery")]
+    WarmImageNotRecoverable,
     #[error("bootstrap record already exists")]
     DuplicateBootstrapRecord,
     #[error("bootstrap record was not found")]
@@ -834,6 +877,45 @@ mod tests {
             .unwrap();
         assert_eq!(settled.lifecycle, CloudWorkerLifecycle::Enrolled);
         assert_eq!(settled.generation, super::super::LeaseGeneration(1));
+    }
+
+    #[test]
+    fn recovery_candidates_are_sorted_and_exclude_healthy_images() {
+        let mut owner = CloudWorkerProvisioningOwner::new(CloudWorkerProvisioningConfig {
+            enabled: true,
+            max_leases: 1,
+            max_warm_images: 3,
+            max_artifacts: 1,
+        })
+        .unwrap();
+        owner
+            .register_warm_image(CloudWorkerWarmImage::new("healthy").unwrap())
+            .unwrap();
+        owner
+            .register_warm_image(CloudWorkerWarmImage::new("zeta").unwrap())
+            .unwrap();
+        owner
+            .register_warm_image(CloudWorkerWarmImage::new("alpha").unwrap())
+            .unwrap();
+        owner
+            .mark_warm_image_capture_uncertain("zeta", CloudWorkerWarmImageGeneration(0))
+            .unwrap();
+        owner
+            .mark_warm_image_capture_uncertain("alpha", CloudWorkerWarmImageGeneration(0))
+            .unwrap();
+
+        let candidates = owner.warm_image_recovery_candidates();
+        assert_eq!(
+            candidates
+                .iter()
+                .map(|image| image.image_id.as_str())
+                .collect::<Vec<_>>(),
+            vec!["alpha", "zeta"]
+        );
+        assert_eq!(
+            owner.warm_image_recovery_candidate("healthy"),
+            Err(CloudWorkerOwnerError::WarmImageNotRecoverable)
+        );
     }
 }
 

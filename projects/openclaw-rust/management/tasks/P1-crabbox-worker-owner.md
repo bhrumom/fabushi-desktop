@@ -283,6 +283,10 @@ pending Crabbox responsibilities:
 - Warm-image capture uncertainty now persists through a typed
   `mark_warm_image_capture_uncertain` façade with generation fencing and
   cleanup debt; provider snapshot/recovery consumers remain pending.
+- Warm-image recovery inspection now exposes deterministic candidates limited
+  to cleanup-debt, capture-uncertain and retiring rows, plus an exact image-ID
+  selector that rejects healthy rows; it remains a read-only projection and
+  does not perform provider cleanup, capture, deletion or recovery.
 
 The broader Crabbox projection, lifecycle, sandbox, bootstrap, artifact,
 warm-image and runtime-control rows remain pending where their producer or

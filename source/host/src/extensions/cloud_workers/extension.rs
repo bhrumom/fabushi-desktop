@@ -274,6 +274,31 @@ impl CloudWorkerProvisioningExtension {
         owner.warm_image(image_id)
     }
 
+    /// Returns the deterministic, read-only set of warm-image rows requiring
+    /// explicit recovery handling. It does not select or execute a provider
+    /// mutation.
+    pub fn inspect_warm_image_recovery_candidates(&self) -> Result<Vec<CloudWorkerWarmImage>, CloudWorkerOwnerError> {
+        let owner = self
+            .owner
+            .lock()
+            .map_err(|_| CloudWorkerOwnerError::Unavailable)?;
+        Ok(owner.warm_image_recovery_candidates())
+    }
+
+    /// Selects one exact warm-image recovery row by ID. Healthy images are
+    /// rejected so a read/recovery surface cannot accidentally broaden its
+    /// target into a normal warm-image inventory.
+    pub fn inspect_warm_image_recovery_candidate(
+        &self,
+        image_id: &str,
+    ) -> Result<CloudWorkerWarmImage, CloudWorkerOwnerError> {
+        let owner = self
+            .owner
+            .lock()
+            .map_err(|_| CloudWorkerOwnerError::Unavailable)?;
+        owner.warm_image_recovery_candidate(image_id)
+    }
+
     /// Applies one generation-fenced warm-image transition and persists the
     /// resulting owner snapshot. Provider side effects remain a separate
     /// adapter and are intentionally not implied by this method.
