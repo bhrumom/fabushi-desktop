@@ -1095,7 +1095,9 @@
       "not_applicable_reason": null,
       "oracle_ids": [],
       "requirement_text_source": "docs/specs/openclaw-rust-equivalence-migration.md#15",
-      "responsibility_ids": [],
+      "responsibility_ids": [
+        "OCRM-RESP-INFRA-WORKER-CRABBOX-EXTERNAL-MACHINE-ADAPTER-001"
+      ],
       "reviewer": null
     },
     {
@@ -1108,7 +1110,9 @@
       "not_applicable_reason": null,
       "oracle_ids": [],
       "requirement_text_source": "docs/specs/openclaw-rust-equivalence-migration.md#15",
-      "responsibility_ids": [],
+      "responsibility_ids": [
+        "OCRM-RESP-INFRA-WORKER-CRABBOX-EXTERNAL-MACHINE-ADAPTER-001"
+      ],
       "reviewer": null
     },
     {
