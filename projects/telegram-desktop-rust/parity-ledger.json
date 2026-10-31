@@ -18459,14 +18459,25 @@
         "platform-core-path:native/telegram-protocol/src/lib.rs@4d8b7198fbe7aa8cbb71180587970760f6ebd1d9",
         "desktop-implementation-commit:1495975bbdd2e5d56826a95854def198862e2c5b",
         "path:source/mahayana/mahayana-rs/providers/telegram-protocol/src/api.rs@7b731b6d6bbd2009453c5107a24ebea58cc2ece3",
-        "path:source/mahayana/mahayana-rs/providers/telegram-protocol/src/lib.rs@4d8b7198fbe7aa8cbb71180587970760f6ebd1d9"
+        "path:source/mahayana/mahayana-rs/providers/telegram-protocol/src/lib.rs@4d8b7198fbe7aa8cbb71180587970760f6ebd1d9",
+        "platform-core-round64-revalidation-spec-commit:63743d4c188402e812e2f9ba9e7a46ea9ba3ff6c",
+        "platform-core-round64-revalidation-spec-blob:8084780823adc82a02c5f7227bcabcd0706e0cfa",
+        "platform-core-round64-tree-recovery-commit:50f3ef5f748e0008c70f990e8dbd0e3896a66455",
+        "platform-core-round64-external-contract-commit:e3c19abe76b58742e80ef97713049b121e5831c1",
+        "platform-core-path:native/telegram-protocol/tests/protocol_contract.rs@71449041d7a7ae60be5b13379b7b8e7f417dfb8f",
+        "desktop-round64-contract-mirror-commit:e556ba8ee47dfad52aeaab37b622b90b92cf87b2",
+        "desktop-path:source/mahayana/mahayana-rs/providers/telegram-protocol/tests/protocol_contract.rs@71449041d7a7ae60be5b13379b7b8e7f417dfb8f",
+        "platform-core-round64-final-compliance-commit:a9cca9a441ada6738bf3418f389c58293b3ec54e",
+        "platform-core-round64-final-spec-blob:20dee6cba28ad8dd044314f0bdf4d5f4d1e1c54d",
+        "stage-a-round95-evidence:projects/telegram-desktop-rust/evidence/round95-mtproto-http-wait-wire-revalidation-20261101.md"
       ],
       "test_evidence": [
         "platform-core native/telegram-protocol/src/api.rs exact max_delay/wait_after/max_wait preservation contract authored, not run",
         "platform-core native/telegram-protocol/src/api.rs wrong-constructor, every-byte truncation and trailing rejection contract authored, not run",
-        "desktop synchronized protocol contracts authored, not run"
+        "desktop synchronized protocol contracts authored, not run",
+        "round95 canonical/desktop external http_wait boundary contracts pin exact 16-byte layout, three signed i32 boundaries, every 0..15 truncation cut, wrong constructor and strict EOF; authored, not run"
       ],
-      "target_commit": "1495975bbdd2e5d56826a95854def198862e2c5b",
+      "target_commit": "e556ba8ee47dfad52aeaab37b622b90b92cf87b2",
       "workflow_run": null,
       "run_attempt": null,
       "job": null,
@@ -18583,7 +18594,7 @@
       "acceptance_reviewer": null,
       "reviewer": null,
       "license_and_provenance": "Behavioral responsibility is anchored to fixed-U telegramdesktop/tdesktop Telegram/SourceFiles/mtproto/scheme/mtproto.tl@76225965bfc794388db241f3f760db8ab79e84f8 and the usingHttpWait call site in session_private.cpp@13cbc76ec723386027b5b4dcac79999b791c4614. The implementation is source-neutral Rust and copies no upstream C++ implementation.",
-      "notes": "Stage A implementation only. This row closes exact typed http_wait wire decoding only. Telegram Desktop-equivalent HTTP wait scheduling/usingHttpWait lifecycle remains explicitly blocked/fail-closed. Global unknown/unread source-entry counts remain unchanged because this is a newly mapped responsibility slice within already-open fixed-U source coverage. Contracts are authored but not executed; validation_status=not-run and accepted=false.",
+      "notes": "Stage A implementation only. This row closes exact typed http_wait wire decoding only. Telegram Desktop-equivalent HTTP wait scheduling/usingHttpWait lifecycle remains explicitly blocked/fail-closed. Global unknown/unread source-entry counts remain unchanged because this is a newly mapped responsibility slice within already-open fixed-U source coverage. Contracts are authored but not executed; validation_status=not-run and accepted=false. Round95 adjacent revalidation confirms the current canonical parser still enforces exact 16-byte constructor+three-i32 decoding, independent signed field preservation, every-byte truncation rejection, wrong-constructor rejection and strict EOF; no production behavior delta was made. Canonical/desktop external boundary contracts were added and remain not run. usingHttpWait transport selection/scheduling, timeout/retry/backoff, arbitrary request history, auth-key binding/persistence, gzip and complete difference decoding/application remain outside this wire-only disposition. Platform-core final source-level compliance is recorded at a9cca9a441ada6738bf3418f389c58293b3ec54e/spec blob 20dee6cba28ad8dd044314f0bdf4d5f4d1e1c54d; executable validation remains not-run.",
       "test_execution_evidence": [],
       "validation_status": "not-run",
       "accepted": false
