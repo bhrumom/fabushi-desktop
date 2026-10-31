@@ -117,6 +117,9 @@ envelope；不得复用旧 candidate 的 closure，也不得提升任何 global 
 dependency closure；`source_closure_ready`、`baseline_identity_accepted` 和
 其余 global flags 继续为 `false`。
 
+同一 exact subject 的 declaration-input frontier 已记录在
+[`upstream-current-candidate-dependency-frontier-8c69e8b7-20261031.md`](../../projects/openclaw-rust/dossiers/upstream-current-candidate-dependency-frontier-8c69e8b7-20261031.md)：当前树有 246 个依赖/构建声明文件，较固定实现基线清单的 244 个路径出现 6 个消失、8 个新增和 208 个 shared blob 变化。该 frontier 只扩大 exact-tree 输入证据，不等价于递归依赖闭包，也不改变固定 baseline、inventory 或 flags。
+
 此前只读核对（现已被后续候选 supersede）发现 OpenClaw `main` 漂移到 commit
 `298546d88934bf05bc7e208d13bf6ce2c538e3f2`、tree
 `120f973ab7da856b4bc1c545c437dd94d35ef9eb`。GitHub recursive-tree API 返回

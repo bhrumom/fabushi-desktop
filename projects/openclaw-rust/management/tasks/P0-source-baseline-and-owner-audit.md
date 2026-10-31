@@ -330,6 +330,14 @@ discovery-only subject; prior inventory, dependency/LFS closure, semantic
 reads, and Actions provenance are not reusable, and no authority or completion
 flag changes.
 
+The exact-tree declaration frontier at `2026-10-31T12:18:40Z` enumerates 246
+dependency/build declaration inputs. Compared with the fixed-baseline manifest
+input set of 244 paths, 6 baseline paths are absent, 8 paths are new, 208
+shared blob identities changed, and 30 remained unchanged. This is recorded in
+`dossiers/upstream-current-candidate-dependency-frontier-8c69e8b7-20261031.md`
+as discovery evidence only; it does not relabel the baseline inventory or
+establish recursive dependency closure.
+
 2026-10-31T11:40:24Z drift amendment: read-only GitHub checks resolved the
 current OpenClaw `main` to commit=`70da3265b8bf09e25acb1a14ce246982520a1140`,
 tree=`b8afd36d3c8d722dbab9a05781605fd79d2d5a50`, with an untruncated recursive

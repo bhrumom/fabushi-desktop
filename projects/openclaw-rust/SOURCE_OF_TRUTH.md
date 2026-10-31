@@ -653,6 +653,12 @@ gitlinks）；commit message 为 `perf(ui): open New Session faster on higher-la
 依赖闭包、LFS/integrity、语义阅读和 Actions provenance 均不得复用。lock live
 candidate 已更新，固定 implementation subject、ledger 修订及全部
 authority/completion flags 不变。
+2026-10-31T12:18:40Z 的 exact-tree declaration frontier 进一步枚举出 246 个
+依赖/构建声明文件；与固定 implementation baseline 的 244 条声明输入相比，
+有 6 条旧路径消失、8 条新路径出现、208 条 shared blob 变化、30 条保持不变。
+该结果仅是当前候选的输入漂移证据，详见
+`dossiers/upstream-current-candidate-dependency-frontier-8c69e8b7-20261031.md`；
+不重写旧 baseline 清单，不提升 dependency closure、source authority 或任何完成 flag。
 
 2026-10-31T11:40:24Z 的只读远端复核发现 OpenClaw `main` 再推进到
 `70da3265b8bf09e25acb1a14ce246982520a1140` / tree
