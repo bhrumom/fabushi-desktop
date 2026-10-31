@@ -2,8 +2,8 @@
 
 Status: implementation in progress; verification not run
 Project: OCRM-001  
-Current live discovery subject: `openclaw/openclaw@e0f1e0a6af388d18fcfcda210f39f5106c7f7c10`
-Current live discovery tree: `63d39e4b31fbb462aab29ff0f8b728597bb3ca20`
+Current live discovery subject: `openclaw/openclaw@ce908375fed062dd75abab62d57fc840b96a144e`
+Current live discovery tree: `f2db36d9a98e23753ce1130a84cdae7a4c57488d`
 Status: discovery-only; the historical session delta below was read at
 `1b870b2c78e81fded72913ecba732b84b611ca12` / tree
 `199fe97259d0226ce0e4d3dcec603252376c9205` and requires exact-head
