@@ -4700,10 +4700,10 @@
       ],
       "id": "OCRM-RESP-CHANNEL-INBOUND-DEBOUNCE-001",
       "integration": {
-        "consumer": "source/host/src/extensions/transcript/mod.rs",
-        "entrypoint": "source/host/src/connectors/channel_delivery.rs",
+        "consumer": "InboundChannelDeduplicator::process_message is available at the connector boundary; no production inbound channel consumer is wired yet",
+        "entrypoint": "source/host/src/connectors/channel_delivery.rs::InboundChannelDeduplicator::process_message",
         "owner": "source/host/src/connectors/channel_delivery.rs",
-        "producer": "source/host/src/connectors/channel_delivery.rs"
+        "producer": "No production inbound channel producer identified; deduplication remains a pure connector policy helper"
       },
       "invariants": [
         "Exact duplicate message id is suppressed idempotently",
@@ -4882,10 +4882,10 @@
       ],
       "id": "OCRM-RESP-CHANNEL-THREAD-BINDINGS-001",
       "integration": {
-        "consumer": "source/host/src/extensions/transcript/mod.rs",
-        "entrypoint": "source/host/src/connectors/channel_delivery.rs",
+        "consumer": "ChannelThreadRouter::resolve_or_create is available at the connector boundary; transcript/session consumer is not wired",
+        "entrypoint": "source/host/src/connectors/channel_delivery.rs::ChannelThreadRouter::resolve_or_create",
         "owner": "source/host/src/connectors/channel_delivery.rs",
-        "producer": "source/host/src/connectors/channel_delivery.rs"
+        "producer": "No production inbound channel producer identified; thread affinity remains a pure connector policy helper"
       },
       "invariants": [
         "Messages with identical thread id resolve to canonical conversation scope",

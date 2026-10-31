@@ -174,6 +174,72 @@ fn hex_nibble(value: u8) -> Option<u8> {
     }
 }
 
+#[derive(Debug, Clone, Default)]
+pub struct InboundChannelDeduplicator {
+    seen_messages: HashSet<(String, String)>,
+    last_cursor: HashMap<String, u64>,
+}
+
+impl InboundChannelDeduplicator {
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    /// Returns `Ok(true)` for a newly admitted message, `Ok(false)` for an
+    /// idempotent duplicate, and rejects a new message behind the channel's
+    /// durable cursor.
+    pub fn process_message(
+        &mut self,
+        channel_id: &str,
+        message_id: &str,
+        cursor: u64,
+    ) -> Result<bool, &'static str> {
+        let channel = normalize_channel_acl_value(channel_id);
+        let message = message_id.trim().to_string();
+        if channel.is_empty() || message.is_empty() {
+            return Err("inbound channel message identity is empty");
+        }
+        let key = (channel.clone(), message);
+        if self.seen_messages.contains(&key) {
+            return Ok(false);
+        }
+        let current_cursor = self.last_cursor.entry(channel).or_insert(0);
+        if cursor <= *current_cursor {
+            return Err("inbound cursor is stale or out of order");
+        }
+        *current_cursor = cursor;
+        self.seen_messages.insert(key);
+        Ok(true)
+    }
+}
+
+#[derive(Debug, Clone, Default)]
+pub struct ChannelThreadRouter {
+    thread_to_conversation: HashMap<(String, String), String>,
+}
+
+impl ChannelThreadRouter {
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    pub fn resolve_or_create(&mut self, channel_id: &str, thread_id: Option<&str>) -> String {
+        let channel = normalize_channel_acl_value(channel_id);
+        let thread = thread_id
+            .map(str::trim)
+            .filter(|value| !value.is_empty())
+            .unwrap_or("default_root")
+            .to_string();
+        let key = (channel.clone(), thread.clone());
+        if let Some(scope_id) = self.thread_to_conversation.get(&key) {
+            return scope_id.clone();
+        }
+        let new_scope = format!("conv-{channel}-{thread}");
+        self.thread_to_conversation.insert(key, new_scope.clone());
+        new_scope
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum ChannelOutboundMessage {
     Text { text: String, operation_id: Option<String> },

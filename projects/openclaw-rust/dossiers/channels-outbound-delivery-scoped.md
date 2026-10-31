@@ -75,6 +75,12 @@ audit emission, replay nonce/receipt storage, and production webhook path
 remain unwired. The legacy contract fixture's `secret || payload` digest is
 not treated as HMAC evidence.
 
+The connector now also owns the Rust `InboundChannelDeduplicator` and
+`ChannelThreadRouter` contracts: channel cursors and message IDs are admitted
+idempotently, and a normalized `(channel, thread)` pair resolves to one stable
+conversation scope. These helpers are not marked wired because no production
+inbound channel producer or transcript/session consumer has been identified.
+
 ---
 
 ## 3. Falsifiable Test Oracles (`source/host/tests/openclaw_channel_delivery_contract.rs`)
