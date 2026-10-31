@@ -1385,6 +1385,7 @@
       ],
       "requirement_text_source": "docs/specs/openclaw-rust-equivalence-migration.md#15",
       "responsibility_ids": [
+        "OCRM-RESP-NODE-HOST-LOCAL-RUNTIME-PROJECTION-001",
         "OCRM-RESP-GW-ROLE-POLICY-001",
         "OCRM-RESP-GW-METHOD-SCOPE-001",
         "OCRM-RESP-GW-DEVICE-PAIRING-AUTH-001",

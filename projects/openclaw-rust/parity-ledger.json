@@ -140,6 +140,125 @@
       "unit_id": "OCRM-UNIT-INFRA-001"
     },
     {
+      "adr_refs": [
+        "projects/openclaw-rust/decisions/2026-10-30-node-host-transport-owner.md",
+        "projects/openclaw-rust/decisions/2026-10-30-upstream-rebaseline-required.md"
+      ],
+      "behavior": "NodeHost local projection seam: local system.run producer, canonical NodeHostRuntimeState session/invocation state, and node.register/list/status/invoke consumers.",
+      "blocker_ids": [],
+      "capability_ids": [
+        "node_host.local_runtime_projection"
+      ],
+      "dependencies": [
+        "mahayana_host_runtime::extensions::node_host::runtime_state",
+        "mahayana_host_runtime::extensions::local_exec",
+        "source/host/app::UnifiedGatewayApi"
+      ],
+      "evidence_refs": [
+        "source/host/src/extensions/node_host/runtime_state.rs",
+        "source/host/app/src/main.rs",
+        "projects/openclaw-rust/dossiers/node-host-scoped.md"
+      ],
+      "existing_owner_candidates": [
+        {
+          "path": "source/host/src/extensions/node_host/runtime_state.rs",
+          "reason": "Canonical local NodeHost session and invocation state owner"
+        },
+        {
+          "path": "source/host/app/src/main.rs",
+          "reason": "Existing Gateway projection and local system.run producer"
+        }
+      ],
+      "id": "OCRM-RESP-NODE-HOST-LOCAL-RUNTIME-PROJECTION-001",
+      "integration": {
+        "consumer": "UnifiedGatewayApi node.register/list/status/invoke local projection",
+        "entrypoint": "source/host/app/src/main.rs::call_openclaw_node_invoke and node projection branches",
+        "owner": "source/host/src/extensions/node_host/runtime_state.rs",
+        "producer": "UnifiedGatewayApi local system.run through HostLocalExecExtension"
+      },
+      "invariants": [
+        "The local producer and Gateway projections share one generation-fenced NodeHostRuntimeState owner",
+        "Local invocation admission uses idempotency and generation fencing before the existing local executor side effect",
+        "This row does not claim a remote Gateway caller, reconnect scheduler, remote manifest publication or physical worker executor",
+        "Pairing-backed remote rows remain explicitly disconnected until a legitimate transport owner supplies the missing caller"
+      ],
+      "migration_rollback": "Disable the local node projection only at its existing Gateway boundary and retain canonical runtime state; remote paths remain fail-closed",
+      "oracle_ids": [],
+      "owner_decision": "Record local producer/state/consumer wiring separately from the full NodeHost transport and worker responsibility",
+      "postconditions": [
+        "Local node status/list/register and system.run invoke use the same canonical runtime state and local execution owner"
+      ],
+      "preconditions": [
+        "Host startup supplies one NodeHostRuntimeState instance",
+        "The local execution owner is available and remains the only local system.run side-effect owner"
+      ],
+      "required_evidence_dimensions": [
+        "unit",
+        "security-negative-test",
+        "compatibility",
+        "package"
+      ],
+      "required_gate_ids": [
+        "OCRM-G04-rust-contract",
+        "OCRM-G05-frozen-oracle"
+      ],
+      "requirement_ids": [
+        "OCRM-R04",
+        "OCRM-R06",
+        "OCRM-R08",
+        "OCRM-R13",
+        "OCRM-AC11"
+      ],
+      "responsibility_kind": "integration-adapter",
+      "reviewer": "xuyao@ombhrum.com",
+      "risk": "High; confusing local projection wiring with remote transport or worker acceptance could expose disconnected devices as available",
+      "selected_owner": "source/host/src/extensions/node_host/runtime_state.rs",
+      "source_refs": [
+        {
+          "blob_sha": "769e01f6c36e88667140c4680f459556e8bccb70",
+          "path": "src/node-host/invoke-system-run.ts",
+          "range": {
+            "end_line": 917,
+            "start_line": 1
+          },
+          "symbol": "handleSystemRunInvoke"
+        },
+        {
+          "blob_sha": "9e675256c727ce03b2a9820dc65fe991f0cc148d",
+          "path": "src/node-host/runtime-manifest.ts",
+          "range": {
+            "end_line": 113,
+            "start_line": 1
+          },
+          "symbol": "buildRuntimeManifest"
+        }
+      ],
+      "status": {
+        "acceptance": "pending",
+        "implementation": "implemented",
+        "mapping": "mapped",
+        "read": "read-complete",
+        "verification": "not-run",
+        "wiring": "wired"
+      },
+      "target": {
+        "language": "Rust",
+        "path": "source/host/src/extensions/node_host/runtime_state.rs",
+        "symbol": "NodeHostRuntimeState"
+      },
+      "tests": [
+        "source/host/tests/openclaw_node_host_contract.rs",
+        "source/host/src/extensions/node_host/runtime_state.rs::tests::replacement_drains_predecessor_invocations_before_successor"
+      ],
+      "typed_contracts": [
+        "NodeHostRuntimeState",
+        "NodeHostSessionSnapshot",
+        "NodeHostInvocationRegistry",
+        "HostLocalExecExtension"
+      ],
+      "unit_id": "OCRM-UNIT-INFRA-001"
+    },
+    {
       "adr_refs": [],
       "behavior": "Locked OpenClaw Rust crate dependency metadata and gateway-client/node-host test oracles used to compare the native transport/runtime boundaries.",
       "blocker_ids": [
