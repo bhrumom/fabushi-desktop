@@ -90,6 +90,36 @@ persistence or admission authority; the existing session owner must supply
 the snapshot, generation, reset boundary, and fence before production
 adaptation.
 
+## 8. Production owner/consumer audit (2026-10-31)
+
+The production session owner audit is complete for the current Fabushi Host
+HEAD. The canonical owner is
+`source/host/src/extensions/session/production.rs::ProductionSessionWorkers`,
+exposed through `source/host/src/extensions/session/extension.rs` and the
+existing session gateway. It owns agent roster discovery, session materializing,
+the per-agent SQLite transcript store, transcript append/update/delete, and
+page/window/tail reads. The gateway already consumes that owner for
+`listAgents`, `getAgentTranscript`, `getAgentTranscriptPage`,
+`getAgentTranscriptWindow`, and `getAgentTranscriptTail`.
+
+The audit found no production caller, plugin dispatcher, or typed gateway route
+that consumes `plugin_sdk::session_memory::{paginate_sessions,
+read_visible_transcript_page, SessionTranscriptLockRegistry}`. The only current
+consumer is the focused Rust contract test. `session_memory.rs` therefore
+cannot be promoted to `wired` by adding a second catalog, transcript store, or
+synthetic producer. Doing so would violate the unique Session/Transcript owner
+boundary and would not establish the upstream SDK contract's required
+generation, reset-anchor, append, and current-turn admission producers.
+
+Disposition: retain `implementation=implementing`,
+`wiring=not-wired`, `verification=not-run`, and `acceptance=pending` for
+`OCRM-RESP-PLUGIN-SDK-SESSION-MEMORY-001`. The blocker remains
+`BL-PLUGIN-SDK-SESSION-WIRING-001`. A future wiring task must first publish a
+typed SDK/session contract that names the canonical gateway consumer and adapts
+the existing `ProductionSessionWorkers` snapshot, reset-anchor, generation,
+and admission-fence authorities; until then the static contract test is not
+production equivalence evidence.
+
 ## 4. Audited Bundled Channel Contract Invariants
 The following test suites in `src/plugins/contracts/` have been audited line-by-line and mapped to `OCRM-RESP-PLUGIN-SDK-CHANNEL-RUNTIME-001`:
 1. `channel-config-writes.contract.test.ts` (71 lines):
