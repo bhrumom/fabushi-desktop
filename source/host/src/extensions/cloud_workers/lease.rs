@@ -171,6 +171,8 @@ impl CloudWorkerLease {
         }
         if (self.lifecycle == CloudWorkerLifecycle::OutcomeUnknown)
             != (self.last_outcome == CloudWorkerMutationOutcome::OutcomeUnknown)
+            || (self.lifecycle == CloudWorkerLifecycle::Disposed
+                && self.last_outcome != CloudWorkerMutationOutcome::Completed)
         {
             return Err(CloudWorkerLeaseError::InvalidPersistedRecord);
         }
@@ -517,6 +519,19 @@ mod tests {
             lease.validate_persisted(),
             Err(CloudWorkerLeaseError::InvalidPersistedRecord)
         );
+    }
+
+    #[test]
+    fn disposed_lease_requires_a_confirmed_completed_outcome() {
+        let mut lease = lease();
+        lease.lifecycle = CloudWorkerLifecycle::Disposed;
+        lease.last_outcome = CloudWorkerMutationOutcome::Failed;
+        assert_eq!(
+            lease.validate_persisted(),
+            Err(CloudWorkerLeaseError::InvalidPersistedRecord)
+        );
+        lease.last_outcome = CloudWorkerMutationOutcome::Completed;
+        assert!(lease.validate_persisted().is_ok());
     }
 
     #[test]

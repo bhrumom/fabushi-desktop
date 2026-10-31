@@ -299,6 +299,9 @@ pending Crabbox responsibilities:
 - The auxiliary boundary also validates the pinned 1024×576 PNG wallpaper
   header/dimensions without reading files, encoding bytes or applying platform
   settings.
+- Persisted lease validation now rejects a `Disposed` record unless its last
+  mutation is explicitly `Completed`, preserving the distinction between
+  confirmed release and stop outcome uncertainty.
 
 The broader Crabbox projection, lifecycle, sandbox, bootstrap, artifact,
 warm-image and runtime-control rows remain pending where their producer or
