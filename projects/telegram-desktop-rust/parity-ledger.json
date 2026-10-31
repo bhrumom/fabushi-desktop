@@ -9,7 +9,7 @@
     "unknown": 16172,
     "unread": 16145,
     "omitted": 0,
-    "responsibilities_total": 61,
+    "responsibilities_total": 62,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -15403,6 +15403,260 @@
       "reviewer": null,
       "license_and_provenance": "Behavioral responsibility is anchored to fixed-U session_private.cpp@13cbc76ec723386027b5b4dcac79999b791c4614 and mtproto.tl@76225965bfc794388db241f3f760db8ab79e84f8. Implementation is source-neutral Rust and copies no upstream C++ queue implementation.",
       "notes": "Stage A implementation only. The exact single-outstanding-RPC subset is implemented; arbitrary multi-request sent/resend/state-query reconciliation remains open and fail-closed. This is a responsibility slice, so unknown/unread source-entry counts remain unchanged. Contracts are authored but not executed.",
+      "test_execution_evidence": []
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+      "source_path": "Telegram/SourceFiles/mtproto/session_private.cpp",
+      "source_blob_sha": "13cbc76ec723386027b5b4dcac79999b791c4614",
+      "source_kind": "source",
+      "module_id": "tdesktop.mtproto.session.single-rpc-acknowledgement",
+      "responsibility_id": "TDRP-R9-MTPROTO-SINGLE-RPC-ACKNOWLEDGEMENT-001",
+      "source_symbols": [
+        "SessionPrivate::handleOneReceived / mtpc_msgs_ack",
+        "SessionPrivate::requestsAcked",
+        "msgs_ack#62d6b459"
+      ],
+      "capability_ids": [
+        "CAP-EMBEDDED-MTPROTO-SESSION-RECOVERY"
+      ],
+      "dependency_ids": [
+        "EmbeddedTelegramProtocol",
+        "EmbeddedTelegramNetwork",
+        "TelegramClientLease",
+        "MTProtoAuthKey"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/evidence/round51-mtproto-single-rpc-acknowledgement-20261101.md",
+      "behavior_contract": "For Fabushi's existing single outstanding callback RPC, fixed-U msgs_ack is parsed and correlated without settling that RPC: a normal transport ACK only confirms server receipt and the call continues waiting for rpc_result or an existing bounded recovery path. The same bounded parser validates msgs_ack in the ping/service path. Malformed ACK payloads fail closed. Arbitrary historical ACK bookkeeping, resend cancellation, container ACK fan-out, and per-request fast-clock correction remain open because they require Telegram Desktop's multi-request sent/resend history.",
+      "state_machine": "same TelegramClientLease -> RuntimeClient -> EstablishedSession current RPC/ping -> authenticated/decrypted msgs_ack -> bounded TL parse -> optionally recognize current request id -> Continue without RpcResult/replay/settlement -> later rpc_result or existing bounded recovery; malformed ACK -> InvalidServiceMessage",
+      "side_effects": [
+        "Adds bounded fixed-U msgs_ack parsing to the existing shared telegram-protocol owner",
+        "Adds explicit msgs_ack handling to the existing single-RPC and ping service dispatch without settling the callback RPC",
+        "Synchronizes the canonical shared implementation into the existing desktop provider path chain",
+        "Authors ACK parsing/current-request contracts without executing them in Stage A"
+      ],
+      "failure_cases": [
+        "A transport ACK for the current callback RPC is incorrectly treated as the final RPC result",
+        "Malformed/trailing msgs_ack bytes are silently accepted",
+        "ACKs for unrelated ids mutate the current RPC",
+        "Implementation introduces haveSent/_resendingIds/toSend/sent-container history to emulate multi-request semantics",
+        "Ping is incorrectly settled by a plain msgs_ack"
+      ],
+      "ui_disposition": "No UI change. This is MTProto transport reliability inside the existing embedded runtime.",
+      "non_ui_responsibilities": [
+        "MTProto msgs_ack bounded parsing",
+        "Current outstanding RPC acknowledgement correlation",
+        "Callback-RPC non-settlement on transport ACK",
+        "Ping/service ACK validation",
+        "Fail-closed malformed ACK handling"
+      ],
+      "platform_delta": "Fixed-U acknowledgement semantics are expressed inside the existing source-neutral Rust telegram-protocol/telegram-network owners. The current single RPC/ping remains the only live request state represented; no second sent queue, runtime, provider, transport, session, or message store is added.",
+      "existing_owner_candidates": [
+        "bhrumom/fabushi-platform-core:native/telegram-protocol/src/api.rs",
+        "bhrumom/fabushi-platform-core:native/telegram-network/src/lib.rs",
+        "source/mahayana/mahayana-rs/providers/telegram-protocol/src/api.rs",
+        "source/mahayana/mahayana-rs/providers/telegram-network/src/lib.rs"
+      ],
+      "existing_owner": "Canonical shared Telegram protocol parser + telegram-network EstablishedSession consumed by the existing desktop lease/runtime chain",
+      "rejected_existing_owners": [
+        "Renderer/AppHost cannot own MTProto ACK settlement semantics",
+        "Storage cannot own live callback-RPC acknowledgement state",
+        "A second sent/resend queue would split request-state truth"
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "bhrumom/fabushi-platform-core:native/telegram-protocol/src/api.rs",
+        "bhrumom/fabushi-platform-core:native/telegram-protocol/src/lib.rs",
+        "bhrumom/fabushi-platform-core:native/telegram-network/src/lib.rs",
+        "source/mahayana/mahayana-rs/providers/telegram-protocol/src/api.rs",
+        "source/mahayana/mahayana-rs/providers/telegram-protocol/src/lib.rs",
+        "source/mahayana/mahayana-rs/providers/telegram-network/src/lib.rs"
+      ],
+      "fabushi_target_symbols": [
+        "parse_msgs_ack",
+        "EstablishedSession::scan_rpc_body",
+        "EstablishedSession::process_service_body",
+        "acknowledgement_mentions_request"
+      ],
+      "target_language": "Rust",
+      "language_rationale": "MTProto service-message decoding and current outstanding request lifecycle are already owned by the shared Rust protocol/network crates, which can represent this single-RPC subset exactly without duplicating Telegram Desktop's multi-request sent history.",
+      "command_event_contracts": [
+        "msgs_ack(valid,current_request_id present) -> parse -> recognize current id -> Continue; do not produce RpcResult or clear/replay request",
+        "msgs_ack(valid,unrelated/empty ids) -> parse -> Continue with no effect on current RPC",
+        "msgs_ack(malformed/trailing bytes) -> NetworkError::InvalidServiceMessage",
+        "ping/service msgs_ack(valid) -> parse -> Continue waiting for pong"
+      ],
+      "state_owner": "Existing EstablishedSession owns the current callback RPC/ping and service-message dispatch; protocol TlReader owns bounded parsing.",
+      "lifecycle_owner": "Existing account-bound TelegramClientLease -> RuntimeClient -> EstablishedSession production chain.",
+      "persistence_and_restart": "No new persistence. ACK handling is live per-call state only; historical multi-request ACK state is intentionally not introduced.",
+      "concurrency_and_cancellation": "The existing synchronous EstablishedSession has one outstanding callback RPC. ACK handling neither creates background work nor changes cancellation semantics.",
+      "security_boundary": "Only authenticated/decrypted MTProto service messages reach ACK parsing. Bounded TL parsing rejects malformed/trailing data; ACK cannot manufacture RPC completion.",
+      "network_service_dependencies": [
+        "Existing embedded Telegram MTProto encrypted transport",
+        "fixed-U msgs_ack#62d6b459"
+      ],
+      "service_owner": "Canonical embedded Telegram protocol/network runtime; no external ACK service or provider.",
+      "deployment_evidence": [],
+      "implementation_status": "implemented",
+      "coverage_disposition": "rewritten",
+      "blockers": [
+        "Stage B executable build/unit/contract/integration/packaged validation has not run.",
+        "Full multi-request haveSent/_resendingIds/toSend/_sentContainers ACK bookkeeping, queued-resend cancellation and fast-request clock correction remain open and fail-closed.",
+        "Higher-level new-session update/difference propagation remains open.",
+        "Broader fixed-U source/legal/release closure remains open."
+      ],
+      "production_entrypoints": [
+        "source/mahayana/mahayana-rs/Cargo.toml -> mahayana-telegram -> providers/telegram-runtime -> providers/telegram-network + providers/telegram-protocol",
+        "existing TelegramClientLease/RuntimeClient -> EstablishedSession::invoke_raw/send_ping -> explicit msgs_ack parse/non-settlement"
+      ],
+      "production_evidence": [
+        "platform-core-spec-commit:9f72142c7b4d8ab0e605e95301f4194d964ffa73",
+        "platform-core-implementation-commit:3470cd572891222c8846a9e91f98ca621624ec64",
+        "platform-core-path:native/telegram-protocol/src/api.rs@d38546a0f6954bb6a03aaec80968dbf195945edc",
+        "platform-core-path:native/telegram-protocol/src/lib.rs@da012dab3b1111f18c318cf0001f2f3d1f32bf6f",
+        "platform-core-path:native/telegram-network/src/lib.rs@70645dd06426374ae4e20bd9c9545388948f65bb",
+        "desktop-implementation-commit:6804906c0646d75a16b150b4f745476f44e19953",
+        "path:source/mahayana/mahayana-rs/providers/telegram-protocol/src/api.rs@d38546a0f6954bb6a03aaec80968dbf195945edc",
+        "path:source/mahayana/mahayana-rs/providers/telegram-protocol/src/lib.rs@da012dab3b1111f18c318cf0001f2f3d1f32bf6f",
+        "path:source/mahayana/mahayana-rs/providers/telegram-network/src/lib.rs@70645dd06426374ae4e20bd9c9545388948f65bb"
+      ],
+      "test_evidence": [
+        "platform-core native/telegram-protocol/src/api.rs msgs_ack parse/vector/trailing-byte contracts authored, not run",
+        "platform-core native/telegram-network/src/lib.rs current-request ACK correlation contract authored, not run",
+        "desktop synchronized copies authored, not run"
+      ],
+      "target_commit": "6804906c0646d75a16b150b4f745476f44e19953",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Canonical Fabushi account + existing TelegramClientLease/runtime + shared MTProto protocol/network production composition",
+      "composition_slot": "Embedded Telegram encrypted session acknowledgement handling",
+      "capability_component": "Single-current-RPC msgs_ack validation and callback non-settlement",
+      "variation_axes": [
+        "ACK contains current request id vs unrelated id vs empty vector",
+        "valid ACK vs malformed/trailing payload",
+        "RPC receive path vs ping/service receive path"
+      ],
+      "shared_owner_contracts": [
+        "Existing account-bound TelegramClientLease",
+        "Existing RuntimeClient/EstablishedSession",
+        "Existing telegram-protocol bounded TL reader",
+        "Existing encrypted auth-key transport",
+        "Existing Cargo path-dependency composition"
+      ],
+      "duplicate_root_check": "No second account, runtime, provider, transport, auth key, request queue, session product, message store, UI root, sidecar, subprocess or Web wrapper was introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Not applicable",
+      "primary_navigation_target": "Existing Messages/Conversation navigation",
+      "collection_surface": "Existing ConversationList; no change",
+      "creation_flow": "Existing canonical conversation creation; no change",
+      "object_action_scope": "Not applicable",
+      "detail_section": "Not applicable",
+      "capability_surface": "Existing ConversationWorkspace through the same provider/runtime; no new surface",
+      "route_contract": "No new route.",
+      "search_scope": "Not applicable",
+      "search_provider": "Existing canonical Search owner; unchanged",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Unchanged.",
+      "search_local_remote_contract": "Not applicable.",
+      "responsive_disposition": "No UI change.",
+      "accessibility_contract": "No UI change.",
+      "keyboard_contract": "No UI change.",
+      "state_continuity_contract": "A normal msgs_ack does not end the current callback RPC. The same EstablishedSession continues waiting for rpc_result or its already-bounded recovery outcomes.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Existing Fabushi design system; no visual changes",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": null,
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "No new icon asset",
+      "avatar_contract": "No change",
+      "content_copy_keys": [],
+      "motion_contract": "No change",
+      "reduced_motion_contract": "No change",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "high",
+      "requirement_ids": [
+        "TDRP-R9-MTPROTO-SINGLE-RPC-ACKNOWLEDGEMENT-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-MTPROTO-ACK-NON-SETTLEMENT-001",
+        "ORA-TDRP-MTPROTO-ACK-PARSE-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-MTPROTO-ACK-CALLBACK-OUTSTANDING-001",
+        "INV-TDRP-MTPROTO-ACK-NO-SECOND-SENT-QUEUE-001"
+      ],
+      "unit_case_ids": [
+        "UNIT-TDRP-MTPROTO-MSGS-ACK-PARSE-001",
+        "UNIT-TDRP-MTPROTO-MSGS-ACK-TRAILING-BYTES-001"
+      ],
+      "property_state_case_ids": [
+        "PROP-TDRP-MTPROTO-ACK-NON-SETTLEMENT-001"
+      ],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-MTPROTO-SINGLE-RPC-ACK-001"
+      ],
+      "integration_case_ids": [
+        "INT-TDRP-MTPROTO-RPC-ACK-THEN-RESULT-001",
+        "INT-TDRP-MTPROTO-PING-ACK-THEN-PONG-001"
+      ],
+      "functional_e2e_case_ids": [
+        "E2E-TDRP-MTPROTO-ACK-NON-SETTLEMENT-001"
+      ],
+      "temporal_case_ids": [
+        "TEMP-TDRP-MTPROTO-ACK-WAITS-FOR-RESULT-001"
+      ],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "fault_recovery_case_ids": [
+        "FAULT-TDRP-MTPROTO-MALFORMED-ACK-001"
+      ],
+      "performance_case_ids": [],
+      "security_case_ids": [
+        "SEC-TDRP-MTPROTO-AUTHENTICATED-ACK-001",
+        "SEC-TDRP-MTPROTO-ACK-CANNOT-FABRICATE-RPC-RESULT-001"
+      ],
+      "soak_case_ids": [],
+      "exploratory_charter_ids": [],
+      "regression_ids": [
+        "REG-TDRP-MTPROTO-ACK-PREMATURE-COMPLETION-001"
+      ],
+      "release_gate_ids": [
+        "G-TRACEABILITY",
+        "G-COMPOSITION",
+        "G-SECURITY",
+        "G-EVIDENCE",
+        "G-RELEASE"
+      ],
+      "test_fixture_ids": [
+        "mtproto-single-rpc-ack-fixture"
+      ],
+      "test_environment_ids": [
+        "GitHub Actions Stage B matrix (not run)"
+      ],
+      "coverage_matrix_status": "pending",
+      "flake_status": "stable",
+      "release_gate_status": "pending",
+      "acceptance_reviewer": null,
+      "reviewer": null,
+      "license_and_provenance": "Behavioral responsibility is anchored to fixed-U telegramdesktop/tdesktop Telegram/SourceFiles/mtproto/session_private.cpp@13cbc76ec723386027b5b4dcac79999b791c4614 and Telegram/SourceFiles/mtproto/scheme/mtproto.tl@76225965bfc794388db241f3f760db8ab79e84f8. The implementation is source-neutral Rust and copies no upstream C++ implementation.",
+      "notes": "Stage A implementation only. This row records only the acknowledgement subset exactly representable by the single outstanding callback RPC/ping owner. Arbitrary historical sent/resend/container ACK bookkeeping and fast-request history-based clock correction remain open and fail-closed. Global unknown/unread source-entry counts are intentionally unchanged; contracts are authored but not executed; validation_status=not-run and accepted=false.",
       "test_execution_evidence": []
     }
   ],
