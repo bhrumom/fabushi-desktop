@@ -912,3 +912,43 @@ blob remains `60a1dfb3ea2051a498d6cfb9d401fe653fde7d75`. Ledger compliance commi
 `implemented / validation_status=not-run / accepted=false`, coverage
 `91 / 16172 unknown / 16145 unread / 0 omitted`. Arbitrary multi-request history and the other deferred
 lifecycle/gzip/difference responsibilities remain open/fail-closed. No executable validation was performed.
+
+
+### Round 82 — msg_resend_req exact request serializer/vector boundary
+
+Fixed U remains `f985723b552b30fe1c17d377d57f44e61a15a8c4`. Fixed-U
+`msg_resend_req#7d861a08 msg_ids:Vector<long>` is shipping-reachable in
+`SessionPrivate::tryToSend`: a non-empty `_resendRequestData` is moved into
+`MTP_vector<MTPlong>` and serialized as `MTP_msg_resend_req`. The adjacent detailed-info receive paths enqueue
+an answer id into that vector when the answer was not received.
+
+Remote source review confirms the existing canonical production owner already closes the independent request-wire
+boundary with no behavior delta:
+`native/telegram-protocol/src/api.rs@ebfb3670b5cd097b9ce288782c7954f5cfe9fc43` defines
+`MSG_RESEND_REQ_CONSTRUCTOR = 0x7d861a08` and `build_msg_resend_req`;
+`tl.rs@89256ab35184b6dc06a095ab34abb9f44e95a264` writes TL Vector constructor
+`0x1cb5c415`, converts the element count to signed i32 before writing the Vector header, and preserves each signed
+long as little-endian i64; `lib.rs@abab39e42f100972484191f0e52e9edd9b88c6cf` exports the same builder.
+
+Spec-first platform commit `953cd194143ae4cea4b8e842cb6d596b33451b19`
+(`docs/specs/telegram-mtproto-msg-resend-req-request-wire.md@56facfa5ba3db5999a42cdcb742086f2c8ae690a`)
+records the no-production-delta disposition. Canonical authored-only contract commit
+`161d78f68715540e733c43895aba2f1be4619755` adds empty, one shipping-shaped id, multiple signed-long
+order/bit-preservation, strict EOF and `i32::MAX+1` vector-overflow/no-partial-header cases; canonical contract blob
+is `89692a28620b2d8465703a1335458d5fbd15aee6`. Desktop provider sync
+`37299e18e3018e988d541607d5ba7842713d9fd1` mirrors that blob byte-for-byte while desktop production
+`api.rs` remains `ebfb3670b5cd097b9ce288782c7954f5cfe9fc43` and facade remains
+`abab39e42f100972484191f0e52e9edd9b88c6cf`.
+
+Ledger/evidence commit `5cd36cdd14e7321b0d96526f334b1f97e4243510` adds
+`TDRP-R9-MTPROTO-MSG-RESEND-REQ-REQUEST-WIRE-001`; coverage is
+`responsibilities_total=92`, `unknown=16172`, `unread=16145`, `omitted=0`; the responsibility is
+`implemented / validation_status=not-run / accepted=false`.
+
+This slice deliberately does not claim Telegram Desktop arbitrary
+`haveSent/_resendingIds/toSend/_sentContainers` histories, callback ownership, resend scheduling, container retry,
+connection scheduling/racing/send retry, auth-key binding/persistence, gzip, or complete difference decoding/application.
+Those remain open/fail-closed.
+
+No GitHub Actions/status/check query or trigger, build, typecheck, lint, schema validator, generator,
+unit/contract/integration/E2E test, package, deployment, installation or runtime acceptance was performed.
