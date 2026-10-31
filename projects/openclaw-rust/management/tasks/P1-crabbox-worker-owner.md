@@ -302,7 +302,8 @@ pending Crabbox responsibilities:
 - Auxiliary profile suggestion now preserves the pinned closed projection
   (`cloud`/`crabbox`/bundle/Linux plus bounded timing and warm-image defaults)
   without treating a suggestion as provider authorization or readiness; the
-  projection is serde-compatible for typed setup/UI transport.
+  projection is serde-compatible for typed setup/UI transport and is now
+  exposed only through the enabled canonical owner façade.
 - Persisted lease validation now rejects a `Disposed` record unless its last
   mutation is explicitly `Completed`, preserving the distinction between
   confirmed release and stop outcome uncertainty.

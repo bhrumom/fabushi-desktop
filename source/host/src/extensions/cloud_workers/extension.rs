@@ -12,6 +12,7 @@ use super::{
     CloudWorkerArtifactKind, CloudWorkerArtifactPolicy, CloudWorkerArtifactSource,
     CloudWorkerArtifactPublisher, CloudWorkerArtifactStoreError,
     CloudWorkerPublishedArtifact,
+    CloudWorkerProfileSuggestion,
     CloudWorkerBinaryIdentity, CloudWorkerBootstrapRequest, CloudWorkerCatalog,
     CloudWorkerCatalogError, CloudWorkerDoctorAction, CloudWorkerDoctorError,
     CloudWorkerDoctorRequest, CloudWorkerDoctorResult,
@@ -112,6 +113,22 @@ impl CloudWorkerProvisioningExtension {
             .lock()
             .map_err(|_| CloudWorkerCatalogError::OwnerUnavailable)?;
         owner.select_cached_machine(identity, provider_id, profile_id, requirement)
+    }
+
+    /// Returns the owner-bound setup suggestion projection. It performs no
+    /// provider discovery, authorization, readiness check or launch.
+    pub fn suggest_profile(
+        &self,
+        provider_display_id: impl Into<String>,
+        machine_class: impl Into<String>,
+    ) -> Result<CloudWorkerProfileSuggestion, CloudWorkerMutationError> {
+        let owner = self
+            .owner
+            .lock()
+            .map_err(|_| CloudWorkerMutationError::PoisonedOwner)?;
+        owner
+            .suggest_profile(provider_display_id, machine_class)
+            .map_err(CloudWorkerMutationError::Owner)
     }
 
     /// Registers one policy-validated artifact admission in the canonical

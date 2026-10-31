@@ -6,6 +6,7 @@ use super::{
     CloudWorkerArtifactAdmission, CloudWorkerArtifactAdmissionError,
     CloudWorkerArtifactAdmissionState, CloudWorkerArtifactPolicy, CloudWorkerArtifactDigest,
     CloudWorkerVerifiedArtifact,
+    CloudWorkerAuxiliaryError, CloudWorkerProfileSuggestion,
     CloudWorkerBinaryIdentity, CloudWorkerCatalog, CloudWorkerCatalogCache,
     CloudWorkerCatalogError, CloudWorkerMachine, CloudWorkerMachineRequirement,
     CloudWorkerBootstrapPhase, CloudWorkerBootstrapRecord, CloudWorkerBootstrapRetryClass,
@@ -147,6 +148,19 @@ impl CloudWorkerProvisioningOwner {
         F: FnOnce() -> Result<CloudWorkerCatalog, CloudWorkerCatalogError>,
     {
         self.catalog_cache.resolve(identity, load)
+    }
+
+    /// Produces the typed setup suggestion only while this owner is enabled.
+    /// The suggestion is not provider discovery, authorization, readiness or
+    /// a launch request.
+    pub fn suggest_profile(
+        &self,
+        provider_display_id: impl Into<String>,
+        machine_class: impl Into<String>,
+    ) -> Result<CloudWorkerProfileSuggestion, CloudWorkerOwnerError> {
+        self.ensure_enabled()?;
+        CloudWorkerProfileSuggestion::new(provider_display_id, machine_class)
+            .map_err(CloudWorkerOwnerError::from)
     }
 
     pub fn select_cached_machine(
@@ -666,6 +680,8 @@ pub enum CloudWorkerOwnerError {
     Artifact(#[from] CloudWorkerArtifactAdmissionError),
     #[error(transparent)]
     RuntimeControl(#[from] CloudWorkerRuntimeControlError),
+    #[error(transparent)]
+    Auxiliary(#[from] CloudWorkerAuxiliaryError),
 }
 
 fn artifact_key(artifact: &CloudWorkerArtifactAdmission) -> String {
@@ -779,6 +795,20 @@ mod tests {
             .unwrap_err(),
             CloudWorkerOwnerError::InvalidWarmImageLimit
         );
+    }
+
+    #[test]
+    fn profile_suggestion_is_owner_bound_and_disabled_by_default() {
+        let disabled = CloudWorkerProvisioningOwner::new(Default::default()).unwrap();
+        assert_eq!(
+            disabled.suggest_profile("aws", "standard"),
+            Err(CloudWorkerOwnerError::Disabled)
+        );
+
+        let enabled = owner();
+        let suggestion = enabled.suggest_profile("aws", "standard").unwrap();
+        assert_eq!(suggestion.provider_display_id, "aws");
+        assert_eq!(suggestion.machine_class, "standard");
     }
 
     #[test]
