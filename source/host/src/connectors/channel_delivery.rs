@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::sync::{Arc, RwLock};
 
 use crate::extensions::transcript::channel_delivery_unregistered_error::SandChannelDeliveryUnregisteredError;
@@ -62,6 +62,56 @@ pub fn split_channel_message(text: &str, limit: usize) -> Vec<String> {
         chunks.push(current);
     }
     chunks
+}
+
+/// Evaluates the channel sender policy at the connector boundary. Empty
+/// allowlists are permissive, `*` allows every normalized sender, and the
+/// denylist always wins over either form of allowlist access.
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct ChannelAclGate {
+    allowlist: HashSet<String>,
+    denylist: HashSet<String>,
+}
+
+impl ChannelAclGate {
+    pub fn new<I, J>(allowlist: I, denylist: J) -> Self
+    where
+        I: IntoIterator,
+        I::Item: AsRef<str>,
+        J: IntoIterator,
+        J::Item: AsRef<str>,
+    {
+        Self {
+            allowlist: Self::normalize_entries(allowlist),
+            denylist: Self::normalize_entries(denylist),
+        }
+    }
+
+    pub fn is_authorized(&self, sender_id: &str) -> bool {
+        let sender = normalize_channel_acl_value(sender_id);
+        if sender.is_empty() || self.denylist.contains("*") || self.denylist.contains(&sender) {
+            return false;
+        }
+        self.allowlist.is_empty()
+            || self.allowlist.contains("*")
+            || self.allowlist.contains(&sender)
+    }
+
+    fn normalize_entries<I>(entries: I) -> HashSet<String>
+    where
+        I: IntoIterator,
+        I::Item: AsRef<str>,
+    {
+        entries
+            .into_iter()
+            .map(|entry| normalize_channel_acl_value(entry.as_ref()))
+            .filter(|entry| !entry.is_empty())
+            .collect()
+    }
+}
+
+fn normalize_channel_acl_value(value: &str) -> String {
+    value.trim().to_ascii_lowercase()
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]

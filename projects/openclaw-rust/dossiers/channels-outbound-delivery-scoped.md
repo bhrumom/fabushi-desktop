@@ -67,6 +67,11 @@ verification remain open and keep `implementation=implementing`,
    - **Rust Owner**: `source/host/src/connectors/channel_delivery.rs:ChannelAclGate`.
    - **Oracles**: `OCRM-CHANNEL-O11`, `OCRM-CHANNEL-O12`.
 
+`ChannelAclGate` now owns normalized allowlist/denylist evaluation, including
+the deny-overrides-allow rule and `*` wildcard. This closes only the pure ACL
+sub-contract; the inbound channel producer, security audit emission, and
+webhook HMAC replay-protection path remain unimplemented and unwired.
+
 ---
 
 ## 3. Falsifiable Test Oracles (`source/host/tests/openclaw_channel_delivery_contract.rs`)
