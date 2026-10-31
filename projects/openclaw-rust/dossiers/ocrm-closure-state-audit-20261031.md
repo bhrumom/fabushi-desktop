@@ -152,6 +152,28 @@ runtime acceptance or proof that no generated/dynamic producer exists.
 | in-progress | 31 |
 | not-started | 17 |
 
+## Not-started business-runtime frontier audit
+
+A bounded source/ledger review of the nine responsibilities whose
+`status.implementation` is `not-started` confirms that these are owner or
+production-reachability gaps, not missing status promotion opportunities:
+
+| Responsibility family | Current direct observation | Safe conclusion |
+| --- | --- | --- |
+| ACP commands/policy | `AcpSessionManager` exists as an in-memory module (`source/host/src/extensions/plugin_sdk/acp_runtime.rs:46-97`), but no production ACP command or policy dispatch owner/caller was found in the bounded Rust-source search | keep not-started; requires a canonical production transport/owner decision |
+| Context compaction | `ContextWindowTracker` currently records/sanitizes usage (`source/host/src/runner/conversation_state.rs:228-262`); no `check_compaction` implementation or production caller was found | keep not-started; existing usage tracking is not the compaction contract |
+| Deferred turn runner | production `TurnRunShell` lifecycle ownership exists, but no production deferred-supersede queue consumer was found | keep not-started until queue ownership and persistence semantics are selected |
+| Model pricing | no production pricing catalog or provider-fallback owner/consumer was found | keep not-started; usage aggregation is not pricing equivalence |
+| Cron session reaper | automation scheduling exists, but no per-cron-session reaper producer or session-row owner was found | keep not-started; requires the recorded `CRON-REAPER-D01` owner decision |
+| Session auth-profile lifecycle | `session_profile_files.rs` owns agent profile/avatar files, not auth-profile preservation/removal; no production auth-profile lifecycle caller was found | keep not-started; do not conflate agent profile storage with auth-profile lifecycle |
+| Session work admission | `ProductionSessionWorkers` owns general session storage, but no work-admission/archive/review transition owner was found | keep not-started; requires a lifecycle owner and consumer contract |
+| Plugin bundle manifest | bundled capability metadata registration exists, but no production bundle/archive installer/discovery owner was found | keep not-started; metadata registration is not bundle delivery |
+
+This audit preserves the existing `not-started` states and identifies the next
+required architectural decisions. It is static evidence only and does not
+create an owner, alter implementation status, or substitute for Actions
+verification.
+
 ## Global flags
 
 All eight global flags remain `false`: baseline identity, source closure,
