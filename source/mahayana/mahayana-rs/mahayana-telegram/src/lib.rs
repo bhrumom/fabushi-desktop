@@ -80,6 +80,7 @@ impl Drop for TelegramClientLease {
 pub struct TelegramConversationProvider {
     client_id: u64,
     self_user_id: i64,
+    runtime_identity: bool,
     next_local_message_id: AtomicI64,
     owns_client: bool,
 }
@@ -89,6 +90,7 @@ impl TelegramConversationProvider {
         Self {
             client_id: create_client(),
             self_user_id,
+            runtime_identity: false,
             next_local_message_id: AtomicI64::new(-1),
             owns_client: true,
         }
@@ -107,16 +109,18 @@ impl TelegramConversationProvider {
         Ok(Self {
             client_id,
             self_user_id,
+            runtime_identity: false,
             next_local_message_id: AtomicI64::new(-1),
             owns_client: true,
         })
     }
 
     /// Wraps an existing Telegram client owned by another platform component.
-    pub fn from_client_id(client_id: u64, self_user_id: i64) -> Self {
+    pub fn from_client_id(client_id: u64, self_user_id: Option<i64>) -> Self {
         Self {
             client_id,
-            self_user_id,
+            self_user_id: self_user_id.unwrap_or_default(),
+            runtime_identity: true,
             next_local_message_id: AtomicI64::new(-1),
             owns_client: false,
         }
@@ -126,7 +130,22 @@ impl TelegramConversationProvider {
         self.client_id
     }
 
+    fn canonical_self_user_id(&self) -> Result<i64, ConversationError> {
+        if !self.runtime_identity {
+            return Ok(self.self_user_id);
+        }
+        let authorization = authorization_snapshot(self.client_id)
+            .map_err(|error| ConversationError::Provider(error.to_string()))?;
+        match (authorization.state, authorization.self_user_id) {
+            (TelegramAuthorizationState::Ready, Some(self_user_id)) => Ok(self_user_id),
+            _ => Err(ConversationError::Provider(
+                "Telegram account is not authorized with a canonical self user identity".into(),
+            )),
+        }
+    }
+
     fn state(&self) -> Result<TelegramState, ConversationError> {
+        self.canonical_self_user_id()?;
         let response = self.execute(json!({"@type": "telegram.getState"}))?;
         serde_json::from_value(
             response
@@ -208,6 +227,7 @@ impl ConversationProvider for TelegramConversationProvider {
                 conversation_id.clone(),
             ));
         }
+        let self_user_id = self.canonical_self_user_id()?;
         let mut messages: Vec<_> = state
             .messages
             .values()
@@ -215,7 +235,7 @@ impl ConversationProvider for TelegramConversationProvider {
             .map(|message| Message {
                 id: telegram_message_id(chat_id, message.id.0),
                 conversation_id: conversation_id.clone(),
-                role: if message.sender_user_id.0 == self.self_user_id || message.is_outgoing {
+                role: if message.sender_user_id.0 == self_user_id || message.is_outgoing {
                     MessageRole::User
                 } else {
                     MessageRole::Contact
@@ -240,6 +260,7 @@ impl ConversationProvider for TelegramConversationProvider {
         events: SharedConversationEventSink,
     ) -> Result<(), ConversationError> {
         let chat_id = parse_chat_id(&request.conversation_id)?;
+        let self_user_id = self.canonical_self_user_id()?;
         let local_message_id = self.next_local_message_id.fetch_sub(1, Ordering::Relaxed);
         let now_ms = now_ms();
         let client_request_id = request
@@ -253,7 +274,7 @@ impl ConversationProvider for TelegramConversationProvider {
                 "type": "queueMessage",
                 "chatId": chat_id,
                 "localMessageId": local_message_id,
-                "senderUserId": self.self_user_id,
+                "senderUserId": self_user_id,
                 "clientRequestId": client_request_id,
                 "dateUnixMs": now_ms,
                 "content": {
