@@ -14418,10 +14418,10 @@
       ],
       "id": "OCRM-RESP-SESSION-CONVERSATION-TURNS-001",
       "integration": {
-        "consumer": "source/host/src/extensions/session/session_conversation_state.rs",
+        "consumer": "No shipping inbound reply/transcript consumer is wired; the registry is exercised only by source/host/tests/openclaw_sessions_and_config_contract.rs",
         "entrypoint": "source/host/src/extensions/session/session_conversation_state.rs",
         "owner": "source/host/src/extensions/session/session_conversation_state.rs",
-        "producer": "source/host/src/extensions/session/session_conversation_state.rs"
+        "producer": "No shipping session-turn producer is wired; ProductionSessionWorkers retains the process-lifetime registry only"
       },
       "invariants": [
         "Pending turns must be settled exactly once; duplicate settlements are ignored"
