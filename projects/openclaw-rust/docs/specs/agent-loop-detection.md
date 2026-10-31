@@ -1,15 +1,15 @@
 # Agent tool-loop detection
 
-Status: implementation slice; production wiring remains pending
+Status: implementation and production-wiring slice; verification remains pending
 Project: OCRM-001
 Responsibility: OCRM-RESP-AGENT-LOOP-DETECTION-001
 
 ## Context / goal
 
 The canonical Runner owner already serializes one active turn and owns the
-`TurnOwnerToken` cancellation boundary, but it has no stateful detector for a
+`TurnOwnerToken` cancellation boundary, but it had no stateful detector for a
 tool call that repeats without making progress. Add the detector to that same
-owner so a future production tool producer can report a loop without creating a
+owner and connect the existing routed-tool producer to it without creating a
 second Runner or session state owner.
 
 ## Non-goals
@@ -17,8 +17,8 @@ second Runner or session state owner.
 - Do not add a provider, tool executor, scheduler, or transcript store.
 - Do not infer a loop from tool output text or from retries of a transport
   request; this slice only observes tool name plus arguments.
-- Do not claim production wiring or acceptance until a real tool producer calls
-  the owner and the cancellation reaches the active executor.
+- Do not claim verification or acceptance from static wiring alone; the exact
+  routed-tool execution path still needs the frozen Actions oracle.
 
 ## Requirements
 
@@ -36,14 +36,13 @@ second Runner or session state owner.
 `tool producer -> TurnRunShell::observe_tool_call -> active run loop state ->
 TurnRunShell::checkpoint_boundary -> existing executor cancellation path`.
 
-The detector is a bounded per-turn helper owned by `TurnRunShell`. It is not
-invoked by fixtures or tests as a substitute for a producer; production
-integration remains a separate follow-up at the existing tool-call boundary.
-The live source audit located that boundary in
-source/host/src/runner/routed_provider_runtime.rs::execute_tool and the
-RoutedToolBridge::call_tool chain. That discovery does not yet prove the
-callback can safely borrow the mutable TurnRunShell across the provider
-execution lifetime, so no wiring claim is made.
+The detector is a bounded per-turn helper owned by `TurnRunShell`. The
+production path binds it in `ProductionTurnAgentOwner`, passes it through
+`TurnAgentComposition`, and observes routed calls in
+`CheckpointRecordingRoutedToolBridge::call_tool`. A detected loop requests
+cancellation through the existing `RoutedProviderCancellation`; the shell
+imports that cancellation at its checkpoint boundary. Fixtures and tests are
+not used as a substitute for this producer/consumer chain.
 
 ## Failure modes
 
@@ -57,8 +56,8 @@ bounded history evicts the oldest identity and never grows without limit.
   reset on a distinct call, history bound, empty-name rejection, and stale-owner
   isolation.
 - `git diff --check` and the repository JSON syntax checks pass.
-- The ledger records implementation progress while leaving wiring,
-  verification, and acceptance pending.
+- The ledger records `implementation=implemented` and `wiring=wired`; frozen
+  verification and acceptance remain pending.
 
 ## References
 

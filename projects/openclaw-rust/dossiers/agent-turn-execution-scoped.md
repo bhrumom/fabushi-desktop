@@ -138,15 +138,17 @@ responsibility is implemented or wired. The parity row
 `implementation=not-started`, `wiring=not-wired`, `verification=not-run`, and
 `acceptance=pending` until the real Runner producer/consumer path exists.
 
-The tool-loop mapping was rechecked separately. The Rust Runner has a real
-`TurnOwnerToken` and production cancellation/generation lifecycle, but a
-repository-wide non-test search found no equivalent of the historical
-`hashToolCall`/repeated-tool detector or a production loop-breaker consumer.
-O03 proves immediate cancellation and O04 proves monotonic generation only;
-those are necessary turn-attempt controls, not tool-loop detection. The parity
-row `OCRM-RESP-AGENT-LOOP-DETECTION-001` is therefore corrected to
-`implementation=not-started`, `wiring=not-wired`, `verification=not-run`, and
-`acceptance=pending` until the detector and its real Runner call chain exist.
+The tool-loop mapping was rechecked after the detector implementation landed.
+`TurnRunShell::ToolLoopGate` now canonicalizes tool arguments, bounds per-turn
+history, classifies the third consecutive identical call, and requests
+cancellation through the existing `RoutedProviderCancellation`. The live
+chain is `ProductionTurnAgentOwner` -> `TurnAgentComposition` ->
+`CheckpointRecordingRoutedToolBridge::call_tool` -> the existing routed
+provider executor. The parity row
+`OCRM-RESP-AGENT-LOOP-DETECTION-001` is therefore
+`implementation=implemented`, `wiring=wired`, `verification=not-run`, and
+`acceptance=pending`; O03/O04 remain lifecycle oracles and do not replace the
+dedicated frozen tool-loop verification.
 
 The model-pricing mapping was rechecked as well. `TurnUsage` is a real
 production-carried usage shape, but the current non-test source has no

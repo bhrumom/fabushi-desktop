@@ -4,7 +4,9 @@
 authority remains the discovery-only candidate in `upstream.lock.json`.  
 **Purpose**: Record why the remaining `not-started` ledger rows are not safely
 implementable from the current production graph, and preserve the next direct
-instrument required for each row.
+instrument required for each row. The tool-loop detector was removed from this
+frontier after its production producer/consumer chain was wired; its frozen
+verification remains pending in the parity ledger.
 
 ## Current frontier
 
@@ -13,7 +15,6 @@ instrument required for each row.
 | `OCRM-RESP-AGENT-ACP-COMMANDS-001` | No production `AvailableCommand`/`get_available_commands` producer; current ACP manager is test-consumed only; historical source path moved to the current chat-command registry. | Requires exact upstream command-registry mapping and a real ACP producer/consumer before adding a second command owner. Blocker: `BL-PLUGIN-SDK-ACP-WIRING-001`. |
 | `OCRM-RESP-AGENT-ACP-POLICY-001` | No production ACP dispatch-policy producer or consumer; current production runtime owns a separate Host turn lease/watchdog path. | Requires an exact ACP admission/settlement owner and a production caller; contract fixtures are insufficient. |
 | `OCRM-RESP-AGENT-CONTEXT-COMPACTION-001` | `ContextWindowTracker` contract logic has no production `check_compaction` caller; production prompt code reads persisted compaction epochs through `HostRunnerComposition`. | Requires the current compaction producer and prompt/turn consumer; wiring a parallel tracker would create a second owner. |
-| `OCRM-RESP-AGENT-LOOP-DETECTION-001` | No production repeated-tool/hash detector or loop-breaker producer; `TurnOwnerToken` is consumed for cancellation/generation only. | Requires a real tool-call observation stream and cancellation consumer; static token helpers do not prove loop detection. |
 | `OCRM-RESP-AGENT-LOOP-RUNNER-001` | `ProductionTurnRunShellAdapter` owns active-run lifecycle; `DeferredTurnQueue` exists only in the contract fixture. | Requires a production supersede queue owner and persistence/settlement consumer; do not copy the fixture queue into runtime without its producer. |
 | `OCRM-RESP-AGENT-MODEL-PRICING-001` | No production pricing catalog or provider-fallback producer/consumer; production paths aggregate usage and retry transport failures only. | Requires provider pricing authority, currency/model schema, and fallback admission policy. |
 | `OCRM-RESP-SESSION-AUTH-PROFILE-LIFECYCLE-001` | `session_profile_files.rs` serves agent profile/avatar data; no auth-profile preservation/removal producer or lifecycle consumer is identified. | Requires a real session cleanup/auth owner and credential-preserving contract; profile files cannot be repurposed as auth storage. |
@@ -27,8 +28,10 @@ These are implementation gaps, not acceptance approvals. No row is promoted by t
 presence of a helper, contract test, capability metadata, or historical upstream
 source path. The next direct instruments are a fresh exact-subject source/dependency
 closure and, for each applicable row, a production call graph showing producer,
-owner, state/storage boundary, and consumer. Until then the ledger states remain
-`not-started/not-wired` and all global completion flags remain unchanged.
+owner, state/storage boundary, and consumer. The rows listed above remain
+`not-started/not-wired` and all global completion
+flags remain unchanged. `OCRM-RESP-AGENT-LOOP-DETECTION-001` is intentionally
+not listed: its current ledger state is `implemented/wired/not-run/pending`.
 
 ## References
 

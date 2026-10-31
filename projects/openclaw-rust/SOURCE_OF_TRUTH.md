@@ -241,7 +241,7 @@ delete admission/post-hook recheck 已存在；focused oracle source 已加入
 对应的 cron isolated-session 或 subagent cleanup producer，故 producer 接线、
 Actions、packaged/runtime 和 acceptance 仍未闭合；ledger/global flags 不变。
 
-当前 parity ledger 的 10 条 `not-started/not-wired` 责任已在
+当前 parity ledger 的 9 条 `not-started/not-wired` 责任已在
 `dossiers/not-started-responsibility-frontier-20261031.md` 做了逐条 frontier
 审计：它们缺少生产 producer/consumer、拥有明确 ACP/plugin blocker，或只能从
 contract fixture/metadata 得到间接证据。该 dossier 不改变责任状态，也不把
