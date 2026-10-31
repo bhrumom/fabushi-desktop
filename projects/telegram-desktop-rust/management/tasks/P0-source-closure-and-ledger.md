@@ -359,3 +359,12 @@ Exact-layout and signed-boundary contracts are authored only. No Actions/status/
 ### Round 65 source-level compliance readback
 
 Platform-core compliance commit `6cfc81d79901493c6b34ec4e174d4fbdae81800e` updates `docs/specs/telegram-mtproto-ping-delay-disconnect-wire.md@aaa7c8b0290264b162405f35285a777fb37df91f`. Source inspection records R1-R10 and AC1-AC6 satisfied at source/implementation/bookkeeping level; AC7 remains Stage-B blocked/not-run. Remote blob readback confirms canonical and desktop provider api/lib remain byte-identical at `405b04166bea039051833a38ad0a75c62107f70c` / `ef7fe73335551e303fa71b02f5cf066d778ae8a4`. No runtime claim is made for the TLS camouflage ClientHello generator/socket lifecycle or the main-session ping timer/scheduling policy.
+
+
+## Stage-A MTProto destroy_session exact request serialization (round 66, 2026-11-01)
+
+Fixed U remains `f985723b552b30fe1c17d377d57f44e61a15a8c4`. `mtproto.tl@76225965bfc794388db241f3f760db8ab79e84f8` declares `destroy_session#e7512126 session_id:long = DestroySessionRes`. The existing `DestroySessionRes` parser remains a separate response responsibility. Platform-core spec amendment `6f1ecac8f9284405e49dfc69af20270f914d2c83` and implementation `5f259ca296432384f5388ffef9539dbbf1f4033a` add only `DESTROY_SESSION_CONSTRUCTOR` plus exact `build_destroy_session(session_id:i64)`; canonical blobs are api `2f0c2893e256064f822082dd2fd7deae394b5763`, lib `05c690a72f5f9b5a547f10486a5289229d7bb0ff`. Desktop implementation `28d36535b4d4d342b72c6a0e35752ce56dbcfd26` synchronizes those blobs byte-for-byte.
+
+Ledger adds `TDRP-R9-MTPROTO-DESTROY-SESSION-REQUEST-WIRE-001`; `responsibilities_total=76`, while `unknown=16172`, `unread=16145`, and `omitted=0` remain unchanged. Exact 12-byte layout, signed-boundary preservation, and request/result-parser separation contracts are authored only. No Actions/status/check query or trigger, build, typecheck, lint, schema validator, generator, unit/contract/integration/E2E test, package, deployment, installation, or runtime acceptance was performed. `validation_status=not-run`, `accepted=false`.
+
+Live outbound destroy-session/teardown lifecycle remains fail-closed because no precise existing owner currently represents it. TLS camouflage lifecycle, gzip, complete difference/differenceSlice decoding/application, and arbitrary `wasSent/haveSent/_resendingIds/toSend/_sentContainers` history remain open/fail-closed.
