@@ -111,10 +111,16 @@ pub struct CloudWorkerArtifactAdmission {
     pub state: CloudWorkerArtifactAdmissionState,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct CloudWorkerVerifiedArtifact {
     pub digest: CloudWorkerArtifactDigest,
     pub size_bytes: u64,
+}
+
+impl CloudWorkerVerifiedArtifact {
+    pub fn validate(&self) -> Result<(), CloudWorkerArtifactAdmissionError> {
+        CloudWorkerArtifactDigest::new(self.digest.0.clone()).map(|_| ())
+    }
 }
 
 pub fn verify_artifact_bytes(

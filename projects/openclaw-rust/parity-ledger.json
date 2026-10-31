@@ -2249,6 +2249,7 @@
       "typed_contracts": [
         "CloudWorkerBootstrapRequest",
         "CloudWorkerBootstrapRecord",
+        "CloudWorkerVerifiedArtifact",
         "CloudWorkerSecretRef",
         "CloudWorkerPlatformBridge",
         "CloudWorkerDesktopSession"

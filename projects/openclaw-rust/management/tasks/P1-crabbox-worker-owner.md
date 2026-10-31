@@ -229,6 +229,10 @@ pending Crabbox responsibilities:
   boundary only; `CloudWorkerProvisioningExtension::validate_current_sandbox_capability`
   also re-reads the canonical owner before use. No remote sandbox executor or
   provider path is wired.
+- `OCRM-RESP-INFRA-WORKER-CRABBOX-BOOTSTRAP-001` now consumes a
+  `CloudWorkerVerifiedArtifact` proof and revalidates its digest shape before
+  admission. Artifact acquisition, extraction, process launch and provider
+  wiring remain separate pending responsibilities.
 
 The broader Crabbox projection, lifecycle, sandbox, bootstrap, artifact,
 warm-image and runtime-control rows remain pending where their producer or

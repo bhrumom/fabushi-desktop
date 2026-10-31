@@ -2,8 +2,8 @@ use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
 use super::{
-    CloudWorkerArtifactDigest, CloudWorkerLeaseScope, CloudWorkerPlatformBridge,
-    CloudWorkerRuntimeIdentity, ReplayKey,
+    CloudWorkerLeaseScope, CloudWorkerPlatformBridge, CloudWorkerRuntimeIdentity,
+    CloudWorkerVerifiedArtifact, ReplayKey,
 };
 
 const MAX_DIAGNOSTIC_CHARS: usize = 512;
@@ -56,7 +56,7 @@ pub enum CloudWorkerBootstrapPhase {
 pub struct CloudWorkerBootstrapRequest {
     pub scope: CloudWorkerLeaseScope,
     pub runtime: CloudWorkerRuntimeIdentity,
-    pub artifact: CloudWorkerArtifactDigest,
+    pub artifact: CloudWorkerVerifiedArtifact,
     pub platform: CloudWorkerPlatformBridge,
     pub secret_refs: Vec<CloudWorkerSecretRef>,
     pub replay_key: ReplayKey,
@@ -78,7 +78,8 @@ impl CloudWorkerBootstrapRequest {
         self.platform
             .validate()
             .map_err(|_| CloudWorkerNodeBootstrapError::InvalidPlatformBridge)?;
-        CloudWorkerArtifactDigest::new(self.artifact.0.clone())
+        self.artifact
+            .validate()
             .map_err(|_| CloudWorkerNodeBootstrapError::InvalidArtifactDigest)?;
         if self.secret_refs.is_empty() {
             return Err(CloudWorkerNodeBootstrapError::MissingSecretRef);
@@ -249,7 +250,10 @@ mod tests {
             scope: CloudWorkerLeaseScope::new("account", "device").unwrap(),
             runtime: CloudWorkerRuntimeIdentity::new("provider", "profile", "runtime")
                 .unwrap(),
-            artifact: CloudWorkerArtifactDigest::new("a".repeat(64)).unwrap(),
+            artifact: CloudWorkerVerifiedArtifact {
+                digest: super::super::CloudWorkerArtifactDigest::new("a".repeat(64)).unwrap(),
+                size_bytes: 1,
+            },
             platform: CloudWorkerPlatformBridge::new(
                 super::CloudWorkerPlatform::Linux,
                 super::CloudWorkerDesktopSession::Headless,
@@ -334,7 +338,7 @@ mod tests {
     #[test]
     fn request_validation_does_not_trust_deserialized_digest() {
         let mut request = request();
-        request.artifact = CloudWorkerArtifactDigest("not-a-digest".into());
+        request.artifact.digest = super::super::CloudWorkerArtifactDigest("not-a-digest".into());
         assert_eq!(
             request.validate(),
             Err(CloudWorkerNodeBootstrapError::InvalidArtifactDigest)

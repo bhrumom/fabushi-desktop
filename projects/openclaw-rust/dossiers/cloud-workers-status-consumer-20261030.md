@@ -127,3 +127,12 @@ The canonical extension now exposes
 rejects disabled, stale, invalid or outcome-unknown capabilities before a
 future consumer can delegate. This is still an owner-validation seam, not a
 remote sandbox execution path.
+
+## Verified artifact to bootstrap binding — 2026-10-31
+
+`CloudWorkerBootstrapRequest` now carries `CloudWorkerVerifiedArtifact` rather
+than a bare digest. The artifact proof is serializable for typed boundaries
+and revalidates its digest shape after deserialization before bootstrap
+admission. This preserves the distinction between artifact admission and
+bootstrap execution: no download, extraction, process launch or provider
+readiness is introduced by this binding.
