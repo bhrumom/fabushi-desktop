@@ -51,3 +51,8 @@ Remote ledger readback confirms `TDRP-R9-MTPROTO-P-Q-INNER-DATA-TEMP-DC-WIRE-001
 Source readback confirms both selection branches in the single canonical helper: `Some(expires_in)` selects `build_p_q_inner_data_temp_dc`, while `None` keeps `build_p_q_inner_data_dc`. Non-positive temporary lifetime is rejected before the shared helper/state mutation. telegram-network/runtime temporary establishment remains deliberately unchanged/fail-closed because current persisted transport material lacks expiry/binding metadata.
 
 No executable validation was performed. No GitHub Actions/status/check query or trigger, build, typecheck, lint, schema validator, generator, unit/contract/integration/E2E test, package, deployment, installation or runtime acceptance was performed.
+
+
+## Final wording correction readback
+
+Platform-core commit `6e6aad98d390163bef77b1e21b8481c6e7c046d0` corrects the durable spec wording so it no longer implies a runtime `temporaryExpiresIn` input is implemented. Final spec blob is `08b7734d8c42c90cf10fb62eb1d21426f1de9254`. The implemented boundary remains: canonical `AuthKeyHandshake::prepare_temporary_req_dh_params*` owns temporary Req_DH_params preparation; telegram-network/runtime temporary establishment and expiry/binding persistence remain unavailable/fail-closed. No production code changed in this wording correction and no executable validation was performed.
