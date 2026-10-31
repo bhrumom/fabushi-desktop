@@ -50,6 +50,28 @@ the existing plugin install owner, followed by one state/receipt boundary and
 the activation consumer. No ledger status, completion flag, or acceptance
 claim changes from this evidence.
 
+## 2026-10-31 session model-override boundary recheck
+
+The session override path has a real persistence owner but still lacks the
+required consumer edge. `agent_session.rs` reads and writes the
+`sessionModelSelection` KV through the per-agent SQLite owner and applies the
+validated transition at `apply_session_model_selection`; the only production
+references to `read_session_model_entry` are its definition and the store
+method that exposes the read. No turn/request composition path loads that
+record and builds `SandSessionOptions` from it.
+
+The inference owner does consume an explicitly supplied `SandSessionOptions`
+through `ProductionAgentInferenceOwner::resolve_requested_model` and
+`cursor_auth_for_session`, but its persisted inputs are agent defaults,
+computer/browser-use settings, environment and experiment overrides. The
+session KV is not among those inputs. Therefore the current chain ends at
+SQLite state and does not reach the inference consumer required by
+`OCRM-RESP-SESSION-MODEL-OVERRIDES-001`; the row remains
+`implementing/not-wired/not-run/pending`. The next direct instrument is the
+existing Host turn/session composition boundary that can project the
+validated per-session state into one `SandSessionOptions` instance, followed
+by a negative test proving parent-agent defaults remain unchanged.
+
 ## Evidence boundary
 
 These are implementation gaps, not acceptance approvals. No row is promoted by the
