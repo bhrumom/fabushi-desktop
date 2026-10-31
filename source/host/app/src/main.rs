@@ -3605,6 +3605,11 @@ impl UnifiedGatewayApi {
         } else {
             raw_key
         };
+        let session_kind = session_kind_label(classify_session_kind(
+            raw_key,
+            args.get("chatType").and_then(serde_json::Value::as_str),
+            args.get("spawnedBy").and_then(serde_json::Value::as_str),
+        ));
         if agent_id.is_empty() {
             return Err(GatewayCommandError::BadRequest(
                 "sessions.delete requires a non-empty agent identity".into(),
@@ -3639,6 +3644,7 @@ impl UnifiedGatewayApi {
             "ok": true,
             "key": format!("agent:{agent_id}:main"),
             "sessionId": agent_id,
+            "kind": session_kind,
             "deleted": true,
             "result": result,
         }))
@@ -3658,6 +3664,12 @@ impl UnifiedGatewayApi {
 
         reject_public_agent_harness_session_key(session_key)
             .map_err(|message| GatewayCommandError::BadRequest(message.into()))?;
+
+        let session_kind = session_kind_label(classify_session_kind(
+            session_key,
+            args.get("chatType").and_then(serde_json::Value::as_str),
+            args.get("spawnedBy").and_then(serde_json::Value::as_str),
+        ));
 
         let message = args.get("message")
             .and_then(serde_json::Value::as_str)
@@ -3707,6 +3719,7 @@ impl UnifiedGatewayApi {
         let mut response = serde_json::json!({
             "ok": true,
             "status": status,
+            "kind": session_kind,
             "result": send_result,
         });
         if let Some(stream_id) = new_stream_id {
@@ -3735,6 +3748,12 @@ impl UnifiedGatewayApi {
 
         reject_public_agent_harness_session_key(session_key)
             .map_err(|message| GatewayCommandError::BadRequest(message.into()))?;
+
+        let session_kind = session_kind_label(classify_session_kind(
+            session_key,
+            args.get("chatType").and_then(serde_json::Value::as_str),
+            args.get("spawnedBy").and_then(serde_json::Value::as_str),
+        ));
 
         let agent_id = if let Some(stripped) = session_key.strip_prefix("agent:") {
             stripped.split(':').next().unwrap_or(stripped)
@@ -3774,6 +3793,7 @@ impl UnifiedGatewayApi {
         Ok(serde_json::json!({
             "ok": true,
             "aborted": cancelled_count > 0,
+            "kind": session_kind,
             "runIds": run_ids,
         }))
     }

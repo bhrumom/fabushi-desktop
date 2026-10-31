@@ -218,13 +218,13 @@ real lifecycle contract and call chain exist.
 ## 11. Session-key classification production reachability recheck (2026-10-31)
 
 `call_openclaw_sessions_list` now uses `classify_session_kind` when projecting
-the canonical `agent:<id>:main` session rows, and `call_openclaw_sessions_get`
-returns the classified kind using its optional `chatType` and `spawnedBy`
-metadata. The public Host app session and chat commands also call
+the canonical `agent:<id>:main` session rows. `sessions.get`, `sessions.delete`,
+`chat.send`, and `chat.abort` also return the classified kind using their
+optional `chatType` and `spawnedBy` metadata. The public Host app session and chat commands also call
 `reject_public_agent_harness_session_key`, which in turn uses
 `is_agent_harness_session_key`, so the reserved `harness:` namespace guard is
 production-reachable. This closes a real projection consumer but does not
-prove complete cron/direct/group/global/spawn-child routing across every
-mutation path; the parity row therefore remains `wiring=not-wired`,
+prove complete cron/direct/group/global/spawn-child routing/admission across
+every mutation path; the parity row therefore remains `wiring=not-wired`,
 `verification=not-run`, and `acceptance=pending` until the classifier governs
 the full public routing boundary.

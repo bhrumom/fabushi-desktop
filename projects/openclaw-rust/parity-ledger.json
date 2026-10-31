@@ -14509,10 +14509,10 @@
       ],
       "id": "OCRM-RESP-SESSION-KEY-ROUTING-001",
       "integration": {
-        "consumer": "source/host/app/src/main.rs::call_openclaw_sessions_list and call_openclaw_sessions_get consume classify_session_kind for session-kind projection; delete/send/abort still consume only the harness namespace guard",
-        "entrypoint": "source/host/app/src/main.rs::call_openclaw_sessions_list/call_openclaw_sessions_get -> source/host/src/extensions/session/session_paths.rs::classify_session_kind",
+        "consumer": "source/host/app/src/main.rs::call_openclaw_sessions_list/call_openclaw_sessions_get/call_openclaw_sessions_delete/call_openclaw_chat_send/call_openclaw_chat_abort consume classify_session_kind for session-kind projection; mutation routing semantics remain owned by their existing handlers",
+        "entrypoint": "source/host/app/src/main.rs public sessions/chat Gateway handlers -> source/host/src/extensions/session/session_paths.rs::classify_session_kind",
         "owner": "source/host/src/extensions/session/session_paths.rs",
-        "producer": "source/host/app/src/main.rs session list/get request and summary projection"
+        "producer": "source/host/app/src/main.rs public sessions/chat request and summary projections"
       },
       "invariants": [
         "Public session create APIs cannot allocate sessions inside the reserved harness: prefix"
