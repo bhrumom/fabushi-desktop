@@ -1,5 +1,5 @@
 {
-  "declared_manifest_paths": 244,
+  "declared_manifest_paths": 250,
   "dependency_closure_enumerated": false,
   "entries": [
     {
@@ -24,53 +24,53 @@
       "size_bytes": 216
     },
     {
-      "blob_sha": "cda95c21103bf203f67d2a954f6de142bcc8e8d1",
+      "blob_sha": "020ea9fd4c13d72f7757aabe981a3b185cc8d180",
       "declaration_kind": "package-lock.json",
       "path": ".github/release/clawhub-cli/package-lock.json",
       "recursive_dependency_closure": "unresolved",
       "size_bytes": 20781
     },
     {
-      "blob_sha": "b9633b99c18daca082ce725048a72eef12308902",
+      "blob_sha": "618ca81c88506b36732e8c878defe48e4edd5e8e",
       "declaration_kind": "package.json",
       "path": ".github/release/clawhub-cli/package.json",
       "recursive_dependency_closure": "unresolved",
       "size_bytes": 212
     },
     {
-      "blob_sha": "6a4229a8b3ace8c2c1feb4fbf2bb3ed751ecc74b",
+      "blob_sha": "68fc7c8e28edaaefefb650201cd32da0735e2489",
       "declaration_kind": "package-lock.json",
       "path": ".github/release/vercel-cli/package-lock.json",
       "recursive_dependency_closure": "unresolved",
-      "size_bytes": 182408
+      "size_bytes": 180785
     },
     {
-      "blob_sha": "b3f87747ec7992a4749ad81fba1e3973daa5b71c",
+      "blob_sha": "538f91231d1504f5c811dc1e7e228c3266ef9e97",
       "declaration_kind": "package.json",
       "path": ".github/release/vercel-cli/package.json",
       "recursive_dependency_closure": "unresolved",
-      "size_bytes": 589
+      "size_bytes": 590
     },
     {
-      "blob_sha": "8ba8fa9164b6c7711e00c14a743ddca1f8c9e48c",
+      "blob_sha": "6c71d2fe11f18f952635889af1440bbd1cd60b65",
       "declaration_kind": "Gemfile",
       "path": "apps/android/Gemfile",
       "recursive_dependency_closure": "unresolved",
       "size_bytes": 71
     },
     {
-      "blob_sha": "00388137442de687b992565f9e89b897387ab6c7",
+      "blob_sha": "f0e0a5f41fce97d65c3974faad0918b2c43b1a7c",
       "declaration_kind": "Gemfile.lock",
       "path": "apps/android/Gemfile.lock",
       "recursive_dependency_closure": "unresolved",
       "size_bytes": 16820
     },
     {
-      "blob_sha": "b065d730fcfc3ee2b07c1d3f4f48d24f34f9f0b7",
+      "blob_sha": "878ebe9ca9077104c3c326794d1b31436dc8d009",
       "declaration_kind": "build.gradle.kts",
       "path": "apps/android/app/build.gradle.kts",
       "recursive_dependency_closure": "unresolved",
-      "size_bytes": 27423
+      "size_bytes": 27698
     },
     {
       "blob_sha": "fc4523b9b8e58e20a9bd1df2e1c03f9c9c456363",
@@ -115,56 +115,56 @@
       "size_bytes": 5493
     },
     {
-      "blob_sha": "8ba8fa9164b6c7711e00c14a743ddca1f8c9e48c",
+      "blob_sha": "6c71d2fe11f18f952635889af1440bbd1cd60b65",
       "declaration_kind": "Gemfile",
       "path": "apps/ios/Gemfile",
       "recursive_dependency_closure": "unresolved",
       "size_bytes": 71
     },
     {
-      "blob_sha": "00388137442de687b992565f9e89b897387ab6c7",
+      "blob_sha": "f0e0a5f41fce97d65c3974faad0918b2c43b1a7c",
       "declaration_kind": "Gemfile.lock",
       "path": "apps/ios/Gemfile.lock",
       "recursive_dependency_closure": "unresolved",
       "size_bytes": 16820
     },
     {
-      "blob_sha": "82a5fbb23ef95a7ae292afebba3b5649e3d879c8",
+      "blob_sha": "e653d0ea95c7419eebd7603f4f145dbc9e421a5d",
       "declaration_kind": "Cargo.lock",
       "path": "apps/linux/src-tauri/Cargo.lock",
       "recursive_dependency_closure": "unresolved",
-      "size_bytes": 160931
+      "size_bytes": 160822
     },
     {
-      "blob_sha": "2510089cbc88b9a47118b20ee53797cbac9860b0",
+      "blob_sha": "482358d21e25d11589a3528afe054969bb6e3519",
       "declaration_kind": "Cargo.toml",
       "path": "apps/linux/src-tauri/Cargo.toml",
       "recursive_dependency_closure": "unresolved",
       "size_bytes": 4384
     },
     {
-      "blob_sha": "b91709a9425065d642648f936fe37ef24e43ffd3",
+      "blob_sha": "45c04d8bd928e915c86879c87f4ca4f56bee5617",
       "declaration_kind": "Package.resolved",
       "path": "apps/macos-mlx-tts/Package.resolved",
       "recursive_dependency_closure": "unresolved",
-      "size_bytes": 3952
+      "size_bytes": 3402
     },
     {
-      "blob_sha": "532fb68b592fc6cbbacdec4fc29c696e1273661e",
+      "blob_sha": "7f29cebda8b0fe33c3326701cb392542452ab330",
       "declaration_kind": "Package.swift",
       "path": "apps/macos-mlx-tts/Package.swift",
       "recursive_dependency_closure": "unresolved",
       "size_bytes": 1782
     },
     {
-      "blob_sha": "c4d7e385e1267b2b2c411098101e44a426519933",
+      "blob_sha": "66a7a506b9cf25fd15ecef5fdfb2a96f4bb32621",
       "declaration_kind": "Package.resolved",
       "path": "apps/macos/Package.resolved",
       "recursive_dependency_closure": "unresolved",
       "size_bytes": 4459
     },
     {
-      "blob_sha": "4ac5a89cb11acf436e0c96a02ca91741a1495888",
+      "blob_sha": "c9de19448032d01a2769c978285f0f3d965f5671",
       "declaration_kind": "Package.swift",
       "path": "apps/macos/Package.swift",
       "recursive_dependency_closure": "unresolved",
@@ -192,7 +192,7 @@
       "size_bytes": 467
     },
     {
-      "blob_sha": "10f23ff7b212428562083e4f35671d63f09727f2",
+      "blob_sha": "7d33bf49036f76410468bce679f2dfef9c540910",
       "declaration_kind": "Cargo.lock",
       "path": "apps/shared/OpenClawWatchRTC/Cargo.lock",
       "recursive_dependency_closure": "unresolved",
@@ -213,7 +213,7 @@
       "size_bytes": 1573
     },
     {
-      "blob_sha": "8d8bff95536377b71437bc448929390779496651",
+      "blob_sha": "9e6e34dcf2743918975d0e4458ff3418fe654c0b",
       "declaration_kind": "Cargo.lock",
       "path": "crates/Cargo.lock",
       "recursive_dependency_closure": "unresolved",
@@ -227,14 +227,14 @@
       "size_bytes": 87
     },
     {
-      "blob_sha": "8cb256da3f6b3640eef33b9bafd5886872ce9548",
+      "blob_sha": "18b353c29dde05a7ffe41780dd34b5002f2d0ed1",
       "declaration_kind": "Cargo.toml",
       "path": "crates/openclaw-gateway-client/Cargo.toml",
       "recursive_dependency_closure": "unresolved",
       "size_bytes": 873
     },
     {
-      "blob_sha": "c9a2ef66c7e98fe0e27144bfc49132bff7d7ebf8",
+      "blob_sha": "4f876a6fbece81bad19f84d6aa236c5e25cddd7f",
       "declaration_kind": "Cargo.toml",
       "path": "crates/openclaw-node-host/Cargo.toml",
       "recursive_dependency_closure": "unresolved",
@@ -248,1215 +248,1257 @@
       "size_bytes": 291
     },
     {
-      "blob_sha": "90acb72e0e44619552e58572e6b9d75faaf82bfd",
+      "blob_sha": "bfe4f38973bb9ec6aa474e4d2d457a0c81e15a8e",
+      "declaration_kind": "package.json",
+      "path": "examples/inline-incident/package.json",
+      "recursive_dependency_closure": "unresolved",
+      "size_bytes": 465
+    },
+    {
+      "blob_sha": "ca4b102d8187f26486d1666d6f81a373c1ad2246",
       "declaration_kind": "package.json",
       "path": "extensions/a2a/package.json",
       "recursive_dependency_closure": "unresolved",
       "size_bytes": 1827
     },
     {
-      "blob_sha": "ca4ae76c5ee375b7ec7854c6947cc134174c279f",
+      "blob_sha": "ec9b94ac32164cca9bc69dfc350d8062058beb73",
+      "declaration_kind": "package.json",
+      "path": "extensions/abliteration/package.json",
+      "recursive_dependency_closure": "unresolved",
+      "size_bytes": 815
+    },
+    {
+      "blob_sha": "3d6ea3cbec19d1507d4a75e37941ce7d7917b6ef",
       "declaration_kind": "package.json",
       "path": "extensions/acpx/package.json",
       "recursive_dependency_closure": "unresolved",
       "size_bytes": 1747
     },
     {
-      "blob_sha": "584c5cd266e75e474f75dcfd4866e5f19a090caf",
+      "blob_sha": "a1d956798471052d4fe29ff2d96422a0898c2b21",
       "declaration_kind": "package.json",
       "path": "extensions/admin-http-rpc/package.json",
       "recursive_dependency_closure": "unresolved",
       "size_bytes": 295
     },
     {
-      "blob_sha": "23b363c7f02f74a454f608328c9177ab7976ad2b",
+      "blob_sha": "a9b559e60d640afc55f523578420d084c378d7b5",
       "declaration_kind": "package.json",
       "path": "extensions/advisor/package.json",
       "recursive_dependency_closure": "unresolved",
       "size_bytes": 300
     },
     {
-      "blob_sha": "221d7f35e8b63359713d13d5e34ff87896f81e97",
+      "blob_sha": "41acb9f21ac60c202218ba04410e069ea3cf329b",
       "declaration_kind": "package.json",
       "path": "extensions/agent-guidance/package.json",
       "recursive_dependency_closure": "unresolved",
       "size_bytes": 316
     },
     {
-      "blob_sha": "f613cca1956a842ef5737ef50408a52483da8906",
+      "blob_sha": "9c82435f4fe38c77b015311df6a9324ce474dcab",
       "declaration_kind": "package.json",
       "path": "extensions/agentsapi/package.json",
       "recursive_dependency_closure": "unresolved",
       "size_bytes": 585
     },
     {
-      "blob_sha": "423f5a2322b033ccebae01a01d434f9c124b31fb",
+      "blob_sha": "2eb6d1b7f151cafb374a887fdde8c054216793c2",
       "declaration_kind": "package.json",
       "path": "extensions/alibaba/package.json",
       "recursive_dependency_closure": "unresolved",
       "size_bytes": 316
     },
     {
-      "blob_sha": "c308bba7f50aeff1ab528b1036daa0f21d9d6d15",
+      "blob_sha": "8585973b169cec7b5e227606fafce446e8f160b1",
       "declaration_kind": "package.json",
       "path": "extensions/amazon-bedrock-mantle/package.json",
       "recursive_dependency_closure": "unresolved",
       "size_bytes": 999
     },
     {
-      "blob_sha": "3424e2e2815cee8baa29ba0a2aca590efc3f87e9",
+      "blob_sha": "34720c72c456c4f70e1d0dd73d4693fec27248b1",
       "declaration_kind": "package.json",
       "path": "extensions/amazon-bedrock/package.json",
       "recursive_dependency_closure": "unresolved",
       "size_bytes": 1131
     },
     {
-      "blob_sha": "d3292989699695b0de5be0cd923534ba99b1c852",
+      "blob_sha": "bb923c155d00f3bf1bedeff1839bc27d44bd337e",
       "declaration_kind": "package.json",
       "path": "extensions/anthropic-vertex/package.json",
       "recursive_dependency_closure": "unresolved",
       "size_bytes": 1003
     },
     {
-      "blob_sha": "611a77c9809ab5cf6d005b50521e9640cbdeecf5",
+      "blob_sha": "2be68c09d4fa6c952c4b4afb78442cea5c997f31",
       "declaration_kind": "package.json",
       "path": "extensions/anthropic/package.json",
       "recursive_dependency_closure": "unresolved",
       "size_bytes": 341
     },
     {
-      "blob_sha": "8585e5799bdf3f50ccf38e1ed266415820c8a42c",
+      "blob_sha": "6d3b71d2317b1f33038bb94d270dbf69c26213ef",
       "declaration_kind": "package.json",
       "path": "extensions/apple-fm/package.json",
       "recursive_dependency_closure": "unresolved",
       "size_bytes": 590
     },
     {
-      "blob_sha": "6c1df8c82f452420e1027a647d60b5bd1d12929d",
+      "blob_sha": "7b6a5e3b0ac121083ca42c1d741f98bd4c808828",
       "declaration_kind": "package.json",
       "path": "extensions/arcee/package.json",
       "recursive_dependency_closure": "unresolved",
       "size_bytes": 786
     },
     {
-      "blob_sha": "19bed6ffafae308caf729642333ea9bd1ff663e7",
+      "blob_sha": "6cbff46a1d676a8b12e46f7e3e4a0cdecafc765e",
       "declaration_kind": "package.json",
       "path": "extensions/autoreview/package.json",
       "recursive_dependency_closure": "unresolved",
-      "size_bytes": 338
+      "size_bytes": 337
     },
     {
-      "blob_sha": "8bc18e7a7e90cf79cdff9d814e93c4e4f9ed9007",
+      "blob_sha": "0b183684c111d2502233eb78363e6332508b4378",
       "declaration_kind": "package.json",
       "path": "extensions/azure-speech/package.json",
       "recursive_dependency_closure": "unresolved",
       "size_bytes": 289
     },
     {
-      "blob_sha": "94d7517aee813667561275d891617d92dbf16191",
+      "blob_sha": "a856ea407f3496f7f435ce2bfe5bbd1b94d1e0cb",
       "declaration_kind": "package.json",
       "path": "extensions/baseten/package.json",
       "recursive_dependency_closure": "unresolved",
       "size_bytes": 794
     },
     {
-      "blob_sha": "4aec4f55a8a2eed27e4a217c837c3eebb572fc93",
+      "blob_sha": "81e5f1c31434945d070b29cdb12100dc7f3ee5a7",
       "declaration_kind": "package.json",
       "path": "extensions/beam/package.json",
       "recursive_dependency_closure": "unresolved",
       "size_bytes": 291
     },
     {
-      "blob_sha": "a9a7f4112fef69670f2633599dd996d0d1f1bbea",
+      "blob_sha": "91c91ba9d9340e4914657ae430e9d48639f91eaf",
       "declaration_kind": "package.json",
       "path": "extensions/bifrost/package.json",
       "recursive_dependency_closure": "unresolved",
       "size_bytes": 297
     },
     {
-      "blob_sha": "da9b991a344482aeee204a2a29815ba20897ba9c",
+      "blob_sha": "40f9b1c770319802c70be2924ab164044bea472e",
       "declaration_kind": "package.json",
       "path": "extensions/bonjour/package.json",
       "recursive_dependency_closure": "unresolved",
-      "size_bytes": 334
+      "size_bytes": 388
     },
     {
-      "blob_sha": "e3289984d46661a7bf11f881f7a570d660c49372",
+      "blob_sha": "0ac7f34a597a1d032b2db10ca8553164f7b3c5f9",
       "declaration_kind": "package.json",
       "path": "extensions/brave/package.json",
       "recursive_dependency_closure": "unresolved",
       "size_bytes": 817
     },
     {
-      "blob_sha": "067348aa2b317ff47c790564d4a796e5665fe420",
+      "blob_sha": "63382611b05aa4dc6ae31a623425f13cae9aa948",
       "declaration_kind": "package.json",
       "path": "extensions/browser/package.json",
       "recursive_dependency_closure": "unresolved",
-      "size_bytes": 717
+      "size_bytes": 943
     },
     {
-      "blob_sha": "083cd8728cc6dffa9300062ffadc7ee04601f85d",
+      "blob_sha": "d51e6ae05a8e2febdb9bbd9c669fb39c00396e16",
       "declaration_kind": "package.json",
       "path": "extensions/buzz/package.json",
       "recursive_dependency_closure": "unresolved",
       "size_bytes": 2359
     },
     {
-      "blob_sha": "8697eeb035d5d3ba591d1b88b5e1ab0e095f7a28",
+      "blob_sha": "ee116ffd070b1489c3c4548df1535d63c8d8a06f",
       "declaration_kind": "package.json",
       "path": "extensions/byteplus/package.json",
       "recursive_dependency_closure": "unresolved",
       "size_bytes": 798
     },
     {
-      "blob_sha": "a38cfd824ce5d6178686712e7d80d2a92a0897df",
+      "blob_sha": "b0370dd2c18ea845b2a88e4c6b57a5d68dbc7b84",
       "declaration_kind": "package.json",
       "path": "extensions/canvas/package.json",
       "recursive_dependency_closure": "unresolved",
-      "size_bytes": 795
+      "size_bytes": 332
     },
     {
-      "blob_sha": "8ef85a714c1f89e485173ca0eb583b6f8809398e",
+      "blob_sha": "84af1fe785ebcef9c9a429ee219b4b9abc478ae2",
       "declaration_kind": "package.json",
       "path": "extensions/cerebras/package.json",
       "recursive_dependency_closure": "unresolved",
       "size_bytes": 798
     },
     {
-      "blob_sha": "05b1639edc82139f62493e97ba9df48fb150696e",
+      "blob_sha": "6c32cf38734cea934d437e590e87ebd51da84d52",
       "declaration_kind": "package.json",
       "path": "extensions/chutes/package.json",
       "recursive_dependency_closure": "unresolved",
       "size_bytes": 793
     },
     {
-      "blob_sha": "19a02a9e990afa226ad1379524f8298a332bebff",
+      "blob_sha": "6cf7373687cd4363e347b82b7261c92f68d25e2c",
       "declaration_kind": "package.json",
       "path": "extensions/clawrouter/package.json",
       "recursive_dependency_closure": "unresolved",
       "size_bytes": 824
     },
     {
-      "blob_sha": "00aac44e676a0605be6010a445169ef54b9ca6e9",
+      "blob_sha": "d99b99570ebca7be2e7aba522c1e9c946ea9b1fa",
       "declaration_kind": "package.json",
       "path": "extensions/clickclack/package.json",
       "recursive_dependency_closure": "unresolved",
       "size_bytes": 4181
     },
     {
-      "blob_sha": "edacd9762d28d7ee4d26ef5a0aca1b81f0f8963a",
+      "blob_sha": "29e674426098cfc750cc6a342cf9707e2c94c2af",
       "declaration_kind": "package.json",
       "path": "extensions/cloudflare-ai-gateway/package.json",
       "recursive_dependency_closure": "unresolved",
       "size_bytes": 850
     },
     {
-      "blob_sha": "c00e20c4109a1ea76e1032e9c33d63f0f5fb85bb",
+      "blob_sha": "d310f7fcecb2581c517b6e436df220e40c09a542",
       "declaration_kind": "package.json",
       "path": "extensions/cloudflare/package.json",
       "recursive_dependency_closure": "unresolved",
       "size_bytes": 821
     },
     {
-      "blob_sha": "178e3978433246b569df00910b51fa10fe2bcf5f",
+      "blob_sha": "1a439163778cefe29a7a8ebc54bfff8850675b39",
       "declaration_kind": "package.json",
       "path": "extensions/code-mode-quickjs/package.json",
       "recursive_dependency_closure": "unresolved",
       "size_bytes": 753
     },
     {
-      "blob_sha": "51ba383abbd78b3a679d10d4a2828add506b2471",
+      "blob_sha": "efe783e85f6df510d830acb325a580d220ea6b46",
       "declaration_kind": "package.json",
       "path": "extensions/codex/package.json",
       "recursive_dependency_closure": "unresolved",
-      "size_bytes": 1427
+      "size_bytes": 1488
     },
     {
-      "blob_sha": "69d1023545835153f6838a5004cb20cd9a0d69b6",
+      "blob_sha": "f6301ffbf893b43e16d987712750688d8f07a770",
       "declaration_kind": "package.json",
       "path": "extensions/cohere/package.json",
       "recursive_dependency_closure": "unresolved",
       "size_bytes": 790
     },
     {
-      "blob_sha": "b9d73cdaaaaadb980de9d408ae04fa05ce02901e",
+      "blob_sha": "c77af9e883190a3b7ffc26fb978623ac8cf8544c",
       "declaration_kind": "package.json",
       "path": "extensions/comfy/package.json",
       "recursive_dependency_closure": "unresolved",
       "size_bytes": 788
     },
     {
-      "blob_sha": "dff96b25e901e534a167d578d1d4c6d266cd93a5",
+      "blob_sha": "ebbac1ca8371a3a5ec8c44efc08d37c61a567005",
       "declaration_kind": "package.json",
       "path": "extensions/copilot-proxy/package.json",
       "recursive_dependency_closure": "unresolved",
       "size_bytes": 300
     },
     {
-      "blob_sha": "4606450b37c702e9cc0bf2bf6a6644755b325e49",
+      "blob_sha": "aea785793ea7deb8e83d827163195c0dd6013f78",
       "declaration_kind": "package.json",
       "path": "extensions/copilot/package.json",
       "recursive_dependency_closure": "unresolved",
       "size_bytes": 996
     },
     {
-      "blob_sha": "129116e692a6a377f25c0a281c7b602c7ce93306",
+      "blob_sha": "4a9de08781371a6803f08c11b26b4285f76aa747",
       "declaration_kind": "package.json",
       "path": "extensions/crabbox/package.json",
       "recursive_dependency_closure": "unresolved",
       "size_bytes": 587
     },
     {
-      "blob_sha": "eed9a3867f238e3fa1f9e7f594da4bd9f600be1c",
+      "blob_sha": "05f4426a8b5b4a290d4d3f11546b861d54f9a95c",
       "declaration_kind": "package.json",
       "path": "extensions/cua-computer/package.json",
       "recursive_dependency_closure": "unresolved",
       "size_bytes": 2186
     },
     {
-      "blob_sha": "610ebe8676bd097877a21c84fbd8a34d0f84c2b1",
+      "blob_sha": "f91146fc63349a44563c56022260d04944fb2a89",
       "declaration_kind": "package.json",
       "path": "extensions/deepgram/package.json",
       "recursive_dependency_closure": "unresolved",
       "size_bytes": 312
     },
     {
-      "blob_sha": "fbcf46c81a84cc1a6b51124e88d312a174398d24",
+      "blob_sha": "4af2fc22ce561e256fb73f4462587c47e601c7d0",
       "declaration_kind": "package.json",
       "path": "extensions/deepinfra/package.json",
       "recursive_dependency_closure": "unresolved",
       "size_bytes": 802
     },
     {
-      "blob_sha": "f0bd96bf8545dbf191ff85814fc567899c0b82b0",
+      "blob_sha": "8ed5f00dcb636fef0bfea304cb60f7a05985d808",
       "declaration_kind": "package.json",
       "path": "extensions/deepseek/package.json",
       "recursive_dependency_closure": "unresolved",
       "size_bytes": 798
     },
     {
-      "blob_sha": "ec8ef9fd074a7df4febda4f5383846982c7cf592",
+      "blob_sha": "3a93f8a833fd295f196403ec6f2cc2d5bfdfbe55",
       "declaration_kind": "package.json",
       "path": "extensions/diagnostics-otel/package.json",
       "recursive_dependency_closure": "unresolved",
       "size_bytes": 1500
     },
     {
-      "blob_sha": "9f5b17d4466238f7c309dabaa1c75fd03aade375",
+      "blob_sha": "a8328abb4ea9e0586cba15cef32876ba3e649600",
       "declaration_kind": "package.json",
       "path": "extensions/diagnostics-prometheus/package.json",
       "recursive_dependency_closure": "unresolved",
       "size_bytes": 813
     },
     {
-      "blob_sha": "5ca97ce4bac7e0bf45b1ae0840d4c5d74f1e3b3b",
+      "blob_sha": "cd8d96787c3057799f704c797e064d2b30e6c337",
       "declaration_kind": "package.json",
       "path": "extensions/diffs-language-pack/package.json",
       "recursive_dependency_closure": "unresolved",
       "size_bytes": 1090
     },
     {
-      "blob_sha": "0f61d4e72421ca7e2c0148b42838f374562a3ba8",
+      "blob_sha": "05155b0a1b8e6ee827a9c33619663db2c5a410b8",
       "declaration_kind": "package.json",
       "path": "extensions/diffs/package.json",
       "recursive_dependency_closure": "unresolved",
-      "size_bytes": 1226
+      "size_bytes": 1225
     },
     {
-      "blob_sha": "be09ed02d1d35147d69394b69314a2ca18a38d02",
+      "blob_sha": "933e35432cb389f31fce549800ba2ac5a4451278",
       "declaration_kind": "package.json",
       "path": "extensions/discord/package.json",
       "recursive_dependency_closure": "unresolved",
-      "size_bytes": 3204
+      "size_bytes": 3203
     },
     {
-      "blob_sha": "57a35a9ba7623c83b9bd22dcce8467c62f5ff1c2",
+      "blob_sha": "f5a4011db432801a4927011b0effabce500ff167",
       "declaration_kind": "package.json",
       "path": "extensions/document-extract/package.json",
       "recursive_dependency_closure": "unresolved",
       "size_bytes": 457
     },
     {
-      "blob_sha": "a6a217b26cfb8bea6aeb047cf5cc059d592e582a",
+      "blob_sha": "2c7d884f45a403846cb01416fa2dbc772f4ca11a",
       "declaration_kind": "package.json",
       "path": "extensions/duckduckgo/package.json",
       "recursive_dependency_closure": "unresolved",
       "size_bytes": 791
     },
     {
-      "blob_sha": "eaeba96ac626f3ee5094f3639e44272f4fec19b1",
+      "blob_sha": "abc106536419ec07c33f731b236ed66bd44c9f2d",
       "declaration_kind": "package.json",
       "path": "extensions/elevenlabs/package.json",
       "recursive_dependency_closure": "unresolved",
       "size_bytes": 299
     },
     {
-      "blob_sha": "de83f5dac440eca3e00b099df3fb8b765e18edad",
+      "blob_sha": "6b588e8d9f71607bb940e75639609f287d769f0c",
       "declaration_kind": "package.json",
       "path": "extensions/exa/package.json",
       "recursive_dependency_closure": "unresolved",
       "size_bytes": 763
     },
     {
-      "blob_sha": "afff45429754293f69d90a27f044aafe4ce34148",
+      "blob_sha": "7f723738bb05a7cc22a55fff1121bc4253ad058d",
       "declaration_kind": "package.json",
       "path": "extensions/facetime/package.json",
       "recursive_dependency_closure": "unresolved",
-      "size_bytes": 2579
+      "size_bytes": 2506
     },
     {
-      "blob_sha": "a11eef87e39f648d76937abb482ce0f7b1fb39ed",
+      "blob_sha": "e4e2537a3e335e303240e3ba2c2fd6efd77d8a7c",
       "declaration_kind": "package.json",
       "path": "extensions/fal/package.json",
       "recursive_dependency_closure": "unresolved",
       "size_bytes": 289
     },
     {
-      "blob_sha": "ab87ac04190443e33d9ffb3ed566fc31764f81f9",
+      "blob_sha": "4ca314923a539539cdbe28518e8d8e2cd0a0269a",
       "declaration_kind": "package.json",
       "path": "extensions/featherless/package.json",
       "recursive_dependency_closure": "unresolved",
       "size_bytes": 814
     },
     {
-      "blob_sha": "898f1c77809c65ca95b4043b53d2ae4efec651f3",
+      "blob_sha": "6408684c1febe845884620c78b0140f11a08168c",
       "declaration_kind": "package.json",
       "path": "extensions/feishu/package.json",
       "recursive_dependency_closure": "unresolved",
-      "size_bytes": 2013
+      "size_bytes": 2012
     },
     {
-      "blob_sha": "4c265cc6ecd1c5045acf805cb9a52adaedc0c215",
+      "blob_sha": "3aead80c909e991ad7783fbfeeee7668ad93366b",
       "declaration_kind": "package.json",
       "path": "extensions/file-transfer/package.json",
       "recursive_dependency_closure": "unresolved",
-      "size_bytes": 429
+      "size_bytes": 583
     },
     {
-      "blob_sha": "c83ae648ec01867873a9144b5c53ca2468c3c1e9",
+      "blob_sha": "bbaf836902892139bfd505b87c210de0fb67f563",
       "declaration_kind": "package.json",
       "path": "extensions/firecrawl/package.json",
       "recursive_dependency_closure": "unresolved",
-      "size_bytes": 836
+      "size_bytes": 835
     },
     {
-      "blob_sha": "96e439c54d31def9d38f8392dc4bdd564159821e",
+      "blob_sha": "2b2ead9aa95446d9c73b8ebce521e33f57346420",
       "declaration_kind": "package.json",
       "path": "extensions/fireworks/package.json",
       "recursive_dependency_closure": "unresolved",
       "size_bytes": 801
     },
     {
-      "blob_sha": "30ff8642e9af65d8d1c2f69a969a48e6621f3e1b",
+      "blob_sha": "5bd39d61d4469e74f33c17a610ca16ed892d0dee",
       "declaration_kind": "package.json",
       "path": "extensions/fish-audio-speech/package.json",
       "recursive_dependency_closure": "unresolved",
       "size_bytes": 798
     },
     {
-      "blob_sha": "882bf3481f6188a1ab427ca7deb19ecdbfcccfc2",
+      "blob_sha": "b0a1d92b7e53b1eb3ebf0a40f64fcada8e10f433",
       "declaration_kind": "package.json",
       "path": "extensions/geolocation/package.json",
       "recursive_dependency_closure": "unresolved",
       "size_bytes": 625
     },
     {
-      "blob_sha": "a58d7b8a1a9291a6049a04133ff729c3df0f29a3",
+      "blob_sha": "8d89600e8cd677c3c7caf3917064fbc988cde2be",
       "declaration_kind": "package.json",
       "path": "extensions/github-copilot/package.json",
       "recursive_dependency_closure": "unresolved",
       "size_bytes": 311
     },
     {
-      "blob_sha": "a3acabc2bb722868f96f134d7b7a11fec80eb5fb",
+      "blob_sha": "79bd079064853c1611d51d9ab4c5712783a9f9c6",
       "declaration_kind": "package.json",
       "path": "extensions/github/package.json",
       "recursive_dependency_closure": "unresolved",
       "size_bytes": 518
     },
     {
-      "blob_sha": "5f816ed66da0f87fbc24d4c7f1de81d70590c4a4",
+      "blob_sha": "9c41fc314e82783d64cd722a66fd174595c7da88",
       "declaration_kind": "package.json",
       "path": "extensions/gmi/package.json",
       "recursive_dependency_closure": "unresolved",
       "size_bytes": 784
     },
     {
-      "blob_sha": "a2c80f4fb73dc653b43f747af3ead21626c77fd9",
+      "blob_sha": "6464d22404eccaaa6fbef3d9e4be6224317e9fbe",
       "declaration_kind": "package.json",
       "path": "extensions/google-meet/package.json",
       "recursive_dependency_closure": "unresolved",
-      "size_bytes": 1055
+      "size_bytes": 1054
     },
     {
-      "blob_sha": "b033bf3dace3cd19f3eeff31449c9a92944fbd39",
+      "blob_sha": "e8b3ad8d59590e4f6f8189dd47233cf01e2621c4",
       "declaration_kind": "package.json",
       "path": "extensions/google/package.json",
       "recursive_dependency_closure": "unresolved",
       "size_bytes": 400
     },
     {
-      "blob_sha": "8a7e365098503ca42ecd5dc7465d068115c30ace",
+      "blob_sha": "a01b97cfaef6924bec6e7837f650fcff4b4850e7",
       "declaration_kind": "package.json",
       "path": "extensions/googlechat/package.json",
       "recursive_dependency_closure": "unresolved",
       "size_bytes": 3944
     },
     {
-      "blob_sha": "7502a05647b57609c64cf332386280e9b43b46cc",
+      "blob_sha": "95d1a345f23452d0589484bf54c6aa32ce77edcc",
       "declaration_kind": "package.json",
       "path": "extensions/gradium/package.json",
       "recursive_dependency_closure": "unresolved",
       "size_bytes": 786
     },
     {
-      "blob_sha": "c457b97e65bdaa3cc7a2a87942b4e7c9c7988de7",
+      "blob_sha": "2661ffaead28479dc7b42e56e75223b7c1c942fc",
       "declaration_kind": "package.json",
       "path": "extensions/groq/package.json",
       "recursive_dependency_closure": "unresolved",
       "size_bytes": 795
     },
     {
-      "blob_sha": "d5104442ac9656f94ceed1e91509b6c3f0927ae3",
+      "blob_sha": "2e06a3006bf7596afc0c18e23737783201ff4741",
       "declaration_kind": "package.json",
       "path": "extensions/huggingface/package.json",
       "recursive_dependency_closure": "unresolved",
       "size_bytes": 306
     },
     {
-      "blob_sha": "06cd5ee847b7b089dd1869fbfdef3cea13a0ee2e",
+      "blob_sha": "e6d40b0af9fe25581d6e2aff12927d0a2635d8bf",
       "declaration_kind": "package.json",
       "path": "extensions/image-generation-core/package.json",
       "recursive_dependency_closure": "unresolved",
       "size_bytes": 245
     },
     {
-      "blob_sha": "ae4668703ede6ed93ac283ae98fc6f4adceb450d",
+      "blob_sha": "210dce0f5a4ec2ffa6be06b9967e937f365d0054",
       "declaration_kind": "package.json",
       "path": "extensions/imap/package.json",
       "recursive_dependency_closure": "unresolved",
       "size_bytes": 431
     },
     {
-      "blob_sha": "ef9bd9b3c16b04e0ee40cf4ae4d24530a8398bb2",
+      "blob_sha": "2e57775563eaffb20054ad8ca22906eb7dfc0b2d",
       "declaration_kind": "package.json",
       "path": "extensions/imessage/package.json",
       "recursive_dependency_closure": "unresolved",
-      "size_bytes": 3213
+      "size_bytes": 3212
     },
     {
-      "blob_sha": "e6ede3157546d11b74707918cc46a28ddb74a77b",
+      "blob_sha": "5ce444da520cd790147294a498d7bc8721985010",
       "declaration_kind": "package.json",
       "path": "extensions/inworld/package.json",
       "recursive_dependency_closure": "unresolved",
       "size_bytes": 786
     },
     {
-      "blob_sha": "d9d3639639d5efd62f79285275d162e2bb8fc7dc",
+      "blob_sha": "6f41be52a42efaa56c377105d2d070d0362a4b60",
       "declaration_kind": "package.json",
       "path": "extensions/irc/package.json",
       "recursive_dependency_closure": "unresolved",
       "size_bytes": 3508
     },
     {
-      "blob_sha": "c15e953e60fa10bc8ec67473185d1a0640fe7339",
+      "blob_sha": "d126498ca2b3df39a41d8d4b18bc68f9c0aa3e4b",
       "declaration_kind": "package.json",
       "path": "extensions/kie/package.json",
       "recursive_dependency_closure": "unresolved",
       "size_bytes": 298
     },
     {
-      "blob_sha": "86a99b4f1323e87d2e8301bac06ce706598b16fe",
+      "blob_sha": "c616783920343daa764152f9d9c05989d569ee40",
       "declaration_kind": "package.json",
       "path": "extensions/kilocode/package.json",
       "recursive_dependency_closure": "unresolved",
       "size_bytes": 802
     },
     {
-      "blob_sha": "9d39ca7e134a7b67847380d9bc08d4e78f69e8b8",
+      "blob_sha": "5d9e2c0a210c72e3be3209a9a6c533233cffed1e",
       "declaration_kind": "package.json",
       "path": "extensions/kimi-coding/package.json",
       "recursive_dependency_closure": "unresolved",
       "size_bytes": 782
     },
     {
-      "blob_sha": "a1cc329c937dd1e393336c1012e5727f07934494",
+      "blob_sha": "fc7fd833eac3062b7372b4322c224165c0acf277",
+      "declaration_kind": "package.json",
+      "path": "extensions/knowledge/package.json",
+      "recursive_dependency_closure": "unresolved",
+      "size_bytes": 3057
+    },
+    {
+      "blob_sha": "0e8e831601fd8441d8ef5184fbc6a00676b5423d",
       "declaration_kind": "package.json",
       "path": "extensions/levanto/package.json",
       "recursive_dependency_closure": "unresolved",
       "size_bytes": 780
     },
     {
-      "blob_sha": "f6e2395769b12edb8ce4f15e868d1d3085b52b0d",
+      "blob_sha": "1dfa46305945cf94fe4c32ac482412f54f00756c",
       "declaration_kind": "package.json",
       "path": "extensions/line/package.json",
       "recursive_dependency_closure": "unresolved",
-      "size_bytes": 3540
+      "size_bytes": 3539
     },
     {
-      "blob_sha": "cc94dc15539e232ece955ca58f4b7199c69b0079",
+      "blob_sha": "62253574b0960f7a34536d7fc740637b838677cc",
       "declaration_kind": "package.json",
       "path": "extensions/linux-node/package.json",
       "recursive_dependency_closure": "unresolved",
       "size_bytes": 323
     },
     {
-      "blob_sha": "80eb1f6c9bb5218bafc3b721a49c7f5f694f5d9a",
+      "blob_sha": "22571b415bcfa713bcec302c0f6d0b1e7de09334",
+      "declaration_kind": "package.json",
+      "path": "extensions/liquid-ai/package.json",
+      "recursive_dependency_closure": "unresolved",
+      "size_bytes": 803
+    },
+    {
+      "blob_sha": "87e1eb046bccbca24bfa9c5b1920ee6ba24677c9",
       "declaration_kind": "package.json",
       "path": "extensions/litellm/package.json",
       "recursive_dependency_closure": "unresolved",
       "size_bytes": 297
     },
     {
-      "blob_sha": "dc91a8b1dc15632ad7030fe1905cc6f8c749f0db",
+      "blob_sha": "cce6a120cbbe58cd09184bf128669844dcccb048",
       "declaration_kind": "package.json",
       "path": "extensions/llama-cpp/package.json",
       "recursive_dependency_closure": "unresolved",
       "size_bytes": 900
     },
     {
-      "blob_sha": "7921cd719cb8aee7b47b8fd6aeda87024c2c5aaf",
+      "blob_sha": "8fe51875931bfbb2b0d665a76dead2b20dfacac9",
       "declaration_kind": "package.json",
       "path": "extensions/llm-task/package.json",
       "recursive_dependency_closure": "unresolved",
-      "size_bytes": 340
+      "size_bytes": 339
     },
     {
-      "blob_sha": "35367fbb3992b0efa4e44dde53fde7e70f6f2050",
+      "blob_sha": "8723e63695e04420d8ae4628d9eadf3d511f829f",
       "declaration_kind": "package.json",
       "path": "extensions/lmstudio/package.json",
       "recursive_dependency_closure": "unresolved",
       "size_bytes": 230
     },
     {
-      "blob_sha": "a45bf445466ef22b3379013f2c481569ae141e3b",
+      "blob_sha": "7bf0b936e68e0ed5470f9b73774447abf5c58e1b",
       "declaration_kind": "package.json",
       "path": "extensions/lobster/package.json",
       "recursive_dependency_closure": "unresolved",
-      "size_bytes": 867
+      "size_bytes": 866
     },
     {
-      "blob_sha": "eb7fe961f7b37aeed91b2a0aa4a16022d0387fcb",
+      "blob_sha": "4254ed710dde9338e546fe4f3fdb17fd724c8ff3",
       "declaration_kind": "package.json",
       "path": "extensions/logbook/package.json",
       "recursive_dependency_closure": "unresolved",
       "size_bytes": 1177
     },
     {
-      "blob_sha": "6b710ff755761e5a75d7ea6fed1de837e6a945a1",
+      "blob_sha": "0249644de3761945df0d0852115fa3c27a865b16",
       "declaration_kind": "package.json",
       "path": "extensions/longcat/package.json",
       "recursive_dependency_closure": "unresolved",
       "size_bytes": 794
     },
     {
-      "blob_sha": "0226a0a62965f4203dd18aaa03d7b342301d07b4",
+      "blob_sha": "f4c4891d63cd864bddf90ad441fa358ef042c13b",
       "declaration_kind": "package.json",
       "path": "extensions/matrix/package.json",
       "recursive_dependency_closure": "unresolved",
-      "size_bytes": 5047
+      "size_bytes": 5046
     },
     {
-      "blob_sha": "e9504d84d3bef09b50702d3958c7685ef7c80433",
+      "blob_sha": "b044f2f6183d3fe71cac1c7fc1cdba91c222bc52",
       "declaration_kind": "package.json",
       "path": "extensions/mattermost/package.json",
       "recursive_dependency_closure": "unresolved",
       "size_bytes": 2688
     },
     {
-      "blob_sha": "9da2ed13e7b8176bfd1695cd99d52d7b340eb621",
+      "blob_sha": "9620ff5fd760bcedacd8eec0731cdb741f2f7ce5",
       "declaration_kind": "package.json",
       "path": "extensions/mcp-events/package.json",
       "recursive_dependency_closure": "unresolved",
       "size_bytes": 322
     },
     {
-      "blob_sha": "2c2db497a3508901db67a6a3ecf2c1722e63fb86",
+      "blob_sha": "ffb16d8c511599190d76cf2086a17c7282fd6775",
       "declaration_kind": "package.json",
       "path": "extensions/mcp-relay/package.json",
       "recursive_dependency_closure": "unresolved",
-      "size_bytes": 676
+      "size_bytes": 673
     },
     {
-      "blob_sha": "f0d13b0afed8d6390bc1b9cb8648d42f6ea80149",
+      "blob_sha": "81c6ab92c3ef7fa0efb598f948efcab4355828c3",
       "declaration_kind": "package.json",
       "path": "extensions/memory-core/package.json",
       "recursive_dependency_closure": "unresolved",
-      "size_bytes": 1600
+      "size_bytes": 1599
     },
     {
-      "blob_sha": "88977a521cb89f8bb01ac7d4a427e34f0750b28d",
+      "blob_sha": "0d79b57372ed18f09366469ab9840a91173d894b",
       "declaration_kind": "package.json",
       "path": "extensions/memory-lancedb/package.json",
       "recursive_dependency_closure": "unresolved",
-      "size_bytes": 1447
+      "size_bytes": 1458
     },
     {
-      "blob_sha": "571433f78d59481059268786fde024c0dd2e9f7f",
+      "blob_sha": "7fb70a287a4c64b335758deb6773b087197a9349",
       "declaration_kind": "package.json",
       "path": "extensions/memory-wiki/package.json",
       "recursive_dependency_closure": "unresolved",
-      "size_bytes": 1198
+      "size_bytes": 1197
     },
     {
-      "blob_sha": "7372dbfc7edd2b8c4fd600648005641e19a9b796",
+      "blob_sha": "5221d6e2513d9f6de6ca5e74a69c7566c71fc8f3",
       "declaration_kind": "package.json",
       "path": "extensions/meta/package.json",
       "recursive_dependency_closure": "unresolved",
       "size_bytes": 783
     },
     {
-      "blob_sha": "af9c1207f86d6613cb08475a7d1dcbb275cb1f7c",
+      "blob_sha": "b47fed4e4f848e7221b2579ed87546fed52077aa",
       "declaration_kind": "package.json",
       "path": "extensions/microsoft-foundry/package.json",
       "recursive_dependency_closure": "unresolved",
       "size_bytes": 308
     },
     {
-      "blob_sha": "6080e91d3e44f079a8a8f6ea6f64b7ee8369bd78",
+      "blob_sha": "4fa7b2560ab72e5a966224b950a7cbb519e291e1",
       "declaration_kind": "package.json",
       "path": "extensions/microsoft/package.json",
       "recursive_dependency_closure": "unresolved",
       "size_bytes": 352
     },
     {
-      "blob_sha": "ca294e07a51f3710dfe3326babeaf00628c7b21f",
+      "blob_sha": "a9f3efd02abc159215d5f7d823f8d3cb1e32ac4f",
       "declaration_kind": "package.json",
       "path": "extensions/migrate-claude/package.json",
       "recursive_dependency_closure": "unresolved",
       "size_bytes": 529
     },
     {
-      "blob_sha": "fc47ec002d5a4a8981f0d955e27d15934ad141de",
+      "blob_sha": "819ee8f1fc2d9d6c655420b12a48d1587c34f5fe",
       "declaration_kind": "package.json",
       "path": "extensions/migrate-hermes/package.json",
       "recursive_dependency_closure": "unresolved",
       "size_bytes": 539
     },
     {
-      "blob_sha": "9b671af9c1c2fb8a2efed7024e2fbaaa1f8b96d5",
+      "blob_sha": "b2bace22fe49d02268cbe5d620a3d6b97d64d7a7",
       "declaration_kind": "package.json",
       "path": "extensions/minimax/package.json",
       "recursive_dependency_closure": "unresolved",
       "size_bytes": 307
     },
     {
-      "blob_sha": "ba3e162b7ab7d15353f56e16f53b5d7b867ea931",
+      "blob_sha": "eb47f6f4b81135385e6bfd015207f2745a44e999",
       "declaration_kind": "package.json",
       "path": "extensions/mistral/package.json",
       "recursive_dependency_closure": "unresolved",
       "size_bytes": 793
     },
     {
-      "blob_sha": "fc56b0e169cc2d73622ddd28c416689227289edf",
+      "blob_sha": "b116debb92954bbacf1718f0a097acd1fbf5be1d",
       "declaration_kind": "package.json",
       "path": "extensions/moonshot/package.json",
       "recursive_dependency_closure": "unresolved",
       "size_bytes": 797
     },
     {
-      "blob_sha": "7951618190fd347377710d23f1d5a6d1aa9b297f",
+      "blob_sha": "fe86d4db992b5f246ec296d983154c2292e25f95",
       "declaration_kind": "package.json",
       "path": "extensions/msteams/package.json",
       "recursive_dependency_closure": "unresolved",
-      "size_bytes": 3655
+      "size_bytes": 3654
     },
     {
-      "blob_sha": "a0603cb666afec969df4e663fd4dc6782ee07bb5",
+      "blob_sha": "efac09345ac9689b4134873382f1f25c16175b3c",
       "declaration_kind": "package.json",
       "path": "extensions/muse/package.json",
       "recursive_dependency_closure": "unresolved",
-      "size_bytes": 973
+      "size_bytes": 974
     },
     {
-      "blob_sha": "d9ffcc5e49d45b56c64ce7d2279f1751f116f4be",
+      "blob_sha": "40870c9947f5ebb4bb43a844c5baea9af60ca325",
       "declaration_kind": "package.json",
       "path": "extensions/mxc/package.json",
       "recursive_dependency_closure": "unresolved",
       "size_bytes": 1035
     },
     {
-      "blob_sha": "02da195e1c07de72c66dc870c5d32508dbd5ed07",
+      "blob_sha": "b98479196b26410aea02e0aa87e8c4fbfc531d95",
       "declaration_kind": "package.json",
       "path": "extensions/nextcloud-talk/package.json",
       "recursive_dependency_closure": "unresolved",
       "size_bytes": 3911
     },
     {
-      "blob_sha": "05de5ca7c1b963411337f6d137706d5995ed4a3f",
+      "blob_sha": "4f887777ef1a9ebd0d072198c25d559c756f9ce6",
       "declaration_kind": "package.json",
       "path": "extensions/nostr/package.json",
       "recursive_dependency_closure": "unresolved",
       "size_bytes": 2785
     },
     {
-      "blob_sha": "d06c142c1e8202e5592319cf8f2ca63fa7677081",
+      "blob_sha": "5022403d002efd67f665d4d8d1d72917c4793e35",
       "declaration_kind": "package.json",
       "path": "extensions/novita/package.json",
       "recursive_dependency_closure": "unresolved",
       "size_bytes": 791
     },
     {
-      "blob_sha": "dc191cb8fdc80243c18d58d088b09c3656d61f74",
+      "blob_sha": "a396aa76053cc0daa282c8731ba3bda92c5cae5e",
       "declaration_kind": "package.json",
       "path": "extensions/nvidia/package.json",
       "recursive_dependency_closure": "unresolved",
       "size_bytes": 295
     },
     {
-      "blob_sha": "f2fefa2a72c84244030e0f5bffe395c227f771b9",
+      "blob_sha": "515869187e83830d8e92216a678800fa1a48f708",
       "declaration_kind": "package.json",
       "path": "extensions/oc-path/package.json",
       "recursive_dependency_closure": "unresolved",
       "size_bytes": 586
     },
     {
-      "blob_sha": "d0639efa30af813771bddef3deeb36b6095e51b6",
+      "blob_sha": "d60a6c313005292eb6c9418511371231f9993578",
       "declaration_kind": "package.json",
       "path": "extensions/ollama/package.json",
       "recursive_dependency_closure": "unresolved",
-      "size_bytes": 344
+      "size_bytes": 343
     },
     {
-      "blob_sha": "ed592c85afb44b373e921c7bd22efd3636eaecd9",
+      "blob_sha": "7b3c439b1d8d129a8eba269455bcb0308744c554",
       "declaration_kind": "package.json",
       "path": "extensions/omlx/package.json",
       "recursive_dependency_closure": "unresolved",
       "size_bytes": 291
     },
     {
-      "blob_sha": "c2485fbee4f934764df35643852c76bb3be26666",
+      "blob_sha": "9227caafb9af46bf88b4ecd8562179b0da199b04",
       "declaration_kind": "package.json",
       "path": "extensions/onepassword/package.json",
       "recursive_dependency_closure": "unresolved",
       "size_bytes": 1225
     },
     {
-      "blob_sha": "cea536e617a458eb6336ddbeb656935ad8c0f5df",
+      "blob_sha": "6312d704aa70d164979196af80d3248d99a25198",
       "declaration_kind": "package.json",
       "path": "extensions/onnx/package.json",
       "recursive_dependency_closure": "unresolved",
-      "size_bytes": 1201
+      "size_bytes": 1200
     },
     {
-      "blob_sha": "6bc8e4e0e62a34de0bd6ceae7ca8de56c5be0bde",
+      "blob_sha": "c841548b8581e89a80b5f74ab40d5abe9efb4c8b",
       "declaration_kind": "package.json",
       "path": "extensions/openai/package.json",
       "recursive_dependency_closure": "unresolved",
-      "size_bytes": 590
+      "size_bytes": 695
     },
     {
-      "blob_sha": "8d956a4c03b4277f7f403bb514c046af754f802c",
+      "blob_sha": "ca195d3ed7ce6d221902ba188a466372eee080d9",
       "declaration_kind": "package.json",
       "path": "extensions/opencode-go/package.json",
       "recursive_dependency_closure": "unresolved",
       "size_bytes": 808
     },
     {
-      "blob_sha": "739d829906ebac2685050ac967758c3777c43f0d",
+      "blob_sha": "c3f54211421db4957923c851969db9aed4b9c11f",
       "declaration_kind": "package.json",
       "path": "extensions/opencode/package.json",
       "recursive_dependency_closure": "unresolved",
       "size_bytes": 801
     },
     {
-      "blob_sha": "e67dbb18adb57fa8e5b5e0eeb20a65db42dfd9d5",
+      "blob_sha": "7465439a7ea1afd2fb6e7513cd0ada1a65a558c1",
       "declaration_kind": "package.json",
       "path": "extensions/openrouter/package.json",
       "recursive_dependency_closure": "unresolved",
       "size_bytes": 303
     },
     {
-      "blob_sha": "9dab0813962a770bc670d70bff4906a5f7355f75",
+      "blob_sha": "3a4a20139b0c1eaa1315e9550d6ab1ef82881f2a",
       "declaration_kind": "package.json",
       "path": "extensions/openshell/package.json",
       "recursive_dependency_closure": "unresolved",
       "size_bytes": 986
     },
     {
-      "blob_sha": "8b8c3cde6af8209ece951aa5629a6bb4a9e4c34d",
+      "blob_sha": "d86de49d32a0307d04ff02fc067929361f4dd764",
       "declaration_kind": "package.json",
       "path": "extensions/parallel/package.json",
       "recursive_dependency_closure": "unresolved",
       "size_bytes": 794
     },
     {
-      "blob_sha": "ebe6f73f73f784cb2ee9b7d3480d7a96de1e082e",
+      "blob_sha": "0d6e8f8e76c03cd9aa3d260b7680c4d121da6dd5",
+      "declaration_kind": "package.json",
+      "path": "extensions/particle/package.json",
+      "recursive_dependency_closure": "unresolved",
+      "size_bytes": 798
+    },
+    {
+      "blob_sha": "da7e522749fbd9299b54d574c86b1b122dfdc12b",
       "declaration_kind": "package.json",
       "path": "extensions/perplexity/package.json",
       "recursive_dependency_closure": "unresolved",
       "size_bytes": 791
     },
     {
-      "blob_sha": "c8d627f4ac4eb8f75db4d8dc1e33ab381ea2ced2",
+      "blob_sha": "2cf547654a8e2ed99db0f63c6be7fe0c62b82903",
       "declaration_kind": "package.json",
       "path": "extensions/pixverse/package.json",
       "recursive_dependency_closure": "unresolved",
       "size_bytes": 986
     },
     {
-      "blob_sha": "51a28001b47d90c0e9477f2903763c919a5e2970",
+      "blob_sha": "97db65b35e64bf880f9afb1803715e4ef7ea85f7",
       "declaration_kind": "package.json",
       "path": "extensions/policy/package.json",
       "recursive_dependency_closure": "unresolved",
       "size_bytes": 526
     },
     {
-      "blob_sha": "f0d99d61be9f94ffd4fe43ca00d4624ca78a3550",
+      "blob_sha": "d33f64b8bb8243a66ecd87343e205bfbf6cbc3d7",
       "declaration_kind": "package.json",
       "path": "extensions/qa-channel/package.json",
       "recursive_dependency_closure": "unresolved",
-      "size_bytes": 1935
+      "size_bytes": 1934
     },
     {
-      "blob_sha": "260bd907747c59ea94fecef5c45adbd8bb554478",
+      "blob_sha": "97991628fee3e843afea1ef8ab71575a569e4ced",
       "declaration_kind": "package.json",
       "path": "extensions/qa-lab/package.json",
       "recursive_dependency_closure": "unresolved",
-      "size_bytes": 1296
+      "size_bytes": 1352
     },
     {
-      "blob_sha": "e18f5fd0de42d401bd4f6541aef16c8e66cec462",
+      "blob_sha": "3ea69a7404b3f567298631f3f3c5f424b830b4de",
       "declaration_kind": "package.json",
       "path": "extensions/qianfan/package.json",
       "recursive_dependency_closure": "unresolved",
       "size_bytes": 794
     },
     {
-      "blob_sha": "1a9339782f6917b7e50b01aacd8026e014d17733",
+      "blob_sha": "f28c026e22276012ef7222dd1e5da7038d015986",
       "declaration_kind": "package.json",
       "path": "extensions/qwen/package.json",
       "recursive_dependency_closure": "unresolved",
       "size_bytes": 788
     },
     {
-      "blob_sha": "46dd80c27ccba46e17837b5ed720f58e911ef2dc",
+      "blob_sha": "dfe90c883b8675b45e8095534ceb58d166dd3697",
       "declaration_kind": "package.json",
       "path": "extensions/radius/package.json",
       "recursive_dependency_closure": "unresolved",
       "size_bytes": 804
     },
     {
-      "blob_sha": "a5c32a95d53b30a820101c3c3a085daeb2aafe41",
+      "blob_sha": "7223bff1eb4c082f8267f804d51dea0456b334ba",
       "declaration_kind": "package.json",
       "path": "extensions/raft/package.json",
       "recursive_dependency_closure": "unresolved",
       "size_bytes": 1668
     },
     {
-      "blob_sha": "e603de858e1913ba4c051a114d1d91d369052138",
+      "blob_sha": "edddf63d694023fe564d905c0acee24a563eff20",
       "declaration_kind": "package.json",
       "path": "extensions/reef/package.json",
       "recursive_dependency_closure": "unresolved",
       "size_bytes": 912
     },
     {
-      "blob_sha": "ae3f9dfbd79164f9b731692fddd780eb60cef326",
+      "blob_sha": "f73909acc416eeaf958fe55fe89465712479b610",
+      "declaration_kind": "package.json",
+      "path": "extensions/requesty/package.json",
+      "recursive_dependency_closure": "unresolved",
+      "size_bytes": 300
+    },
+    {
+      "blob_sha": "9d6a2e44b8b8be0ca44c111a51f34fae209bb381",
       "declaration_kind": "package.json",
       "path": "extensions/runway/package.json",
       "recursive_dependency_closure": "unresolved",
       "size_bytes": 301
     },
     {
-      "blob_sha": "03990711692cebbab3b700b9121eb777e55f214a",
+      "blob_sha": "b24cd5b0612599fdd858fb267b6481934b211181",
       "declaration_kind": "package.json",
       "path": "extensions/searxng/package.json",
       "recursive_dependency_closure": "unresolved",
       "size_bytes": 820
     },
     {
-      "blob_sha": "09f48bf508c8c8a212e55dc4c1aa419da68e5390",
+      "blob_sha": "a0ee58d4a7a3e12d8e1b74acb20138e922e15b35",
       "declaration_kind": "package.json",
       "path": "extensions/senseaudio/package.json",
       "recursive_dependency_closure": "unresolved",
       "size_bytes": 316
     },
     {
-      "blob_sha": "6a5b83ee4a896f8e229337bb4b79909f6864d505",
+      "blob_sha": "1d0d3aa58cc3cdc883ee35c181fd534ec0aed113",
       "declaration_kind": "package.json",
       "path": "extensions/session-share/package.json",
       "recursive_dependency_closure": "unresolved",
       "size_bytes": 308
     },
     {
-      "blob_sha": "6b35e952089d1c94f0a09305d22be65a5cca2a61",
+      "blob_sha": "96a6a446c738cc903a773b192d1a7861ccd95ffa",
       "declaration_kind": "package.json",
       "path": "extensions/sglang/package.json",
       "recursive_dependency_closure": "unresolved",
       "size_bytes": 295
     },
     {
-      "blob_sha": "1bc58741d1ea397bd9881fb8ce07ec9880e5a884",
+      "blob_sha": "4cb789ac0201ac161c9fcc10abdea1e9e7867423",
       "declaration_kind": "package.json",
       "path": "extensions/signal/package.json",
       "recursive_dependency_closure": "unresolved",
       "size_bytes": 2967
     },
     {
-      "blob_sha": "35126873d41e79e019f7bc24717389af38f7d1ad",
+      "blob_sha": "48ab7ba95217d9e8857a64198b334d72d37868d3",
       "declaration_kind": "package.json",
       "path": "extensions/slack-huddles/package.json",
       "recursive_dependency_closure": "unresolved",
       "size_bytes": 979
     },
     {
-      "blob_sha": "fbcdc56fcd334efd4dee57346f0bf54660a355d2",
+      "blob_sha": "4dbd5f24594bf08defa0f8d4992d9a59074df00e",
       "declaration_kind": "package.json",
       "path": "extensions/slack/package.json",
       "recursive_dependency_closure": "unresolved",
-      "size_bytes": 4246
+      "size_bytes": 4245
     },
     {
-      "blob_sha": "8ddb55a1a34e9626370f3aebd9bc9efbc332b389",
+      "blob_sha": "6767be8d7b8737a7bff65882f614a5654b6c6da7",
       "declaration_kind": "package.json",
       "path": "extensions/sms/package.json",
       "recursive_dependency_closure": "unresolved",
       "size_bytes": 3857
     },
     {
-      "blob_sha": "29e0867aa43feca37378b733a7f00c6a087e4515",
+      "blob_sha": "5ba65320e6a270a989c12d04e46d69002a53237a",
       "declaration_kind": "package.json",
       "path": "extensions/stepfun/package.json",
       "recursive_dependency_closure": "unresolved",
       "size_bytes": 794
     },
     {
-      "blob_sha": "6ce4f5cc6e98c9fd939ed6b4be0aede4c3facfba",
+      "blob_sha": "16ad131b2043aa1f5b02da45a89318017decbb63",
       "declaration_kind": "package.json",
       "path": "extensions/subq/package.json",
       "recursive_dependency_closure": "unresolved",
       "size_bytes": 762
     },
     {
-      "blob_sha": "abfd8a08a7bb9b68c4e331532197e0e3c2c92a2e",
+      "blob_sha": "43517c2dcc0cb94ebfb5da353ce3a7460c09134d",
       "declaration_kind": "package.json",
       "path": "extensions/synology-chat/package.json",
       "recursive_dependency_closure": "unresolved",
       "size_bytes": 2742
     },
     {
-      "blob_sha": "447f3eafe2013490c1a130afc2fb3fe4f56178cb",
+      "blob_sha": "383551d4b3f6918ef2c2850c81ef8c138ee2562b",
       "declaration_kind": "package.json",
       "path": "extensions/synthetic/package.json",
       "recursive_dependency_closure": "unresolved",
       "size_bytes": 802
     },
     {
-      "blob_sha": "092982732507d61d78a2e875d3f5c97da9c8d711",
+      "blob_sha": "3942b9708e9453a52e4b44f0c35bb6153d823a73",
       "declaration_kind": "package.json",
       "path": "extensions/tavily/package.json",
       "recursive_dependency_closure": "unresolved",
-      "size_bytes": 865
+      "size_bytes": 864
     },
     {
-      "blob_sha": "716a4973b4adf29f631a197c2e54bcb0fc799ab3",
+      "blob_sha": "aebab09d59a95fca9a3ba46066654033e32c2eb1",
       "declaration_kind": "package.json",
       "path": "extensions/team-reports/package.json",
       "recursive_dependency_closure": "unresolved",
       "size_bytes": 1428
     },
     {
-      "blob_sha": "91df7682a390e34a17e54e67ec3828715aee2d82",
+      "blob_sha": "0d4a9871883cf0847987aa42da30e249cc71fcbd",
       "declaration_kind": "package.json",
       "path": "extensions/teams-meetings/package.json",
       "recursive_dependency_closure": "unresolved",
       "size_bytes": 985
     },
     {
-      "blob_sha": "237f21e12d98c8ad110c98c6a4bf97498048000c",
+      "blob_sha": "c4a7c91e323e970fbcfeb8a8a5dbe08f67c4d797",
       "declaration_kind": "package.json",
       "path": "extensions/telegram/package.json",
       "recursive_dependency_closure": "unresolved",
-      "size_bytes": 2779
+      "size_bytes": 2778
     },
     {
-      "blob_sha": "d9552a3bfe82a2e170a13e1b595de0b2d4c5139e",
+      "blob_sha": "acda489a3a72c6487c41de3b0cb5c86cc46bd2d9",
       "declaration_kind": "package.json",
       "path": "extensions/tencent/package.json",
       "recursive_dependency_closure": "unresolved",
       "size_bytes": 859
     },
     {
-      "blob_sha": "6e3906cd887899918a22fd755dd91ab23d531aa5",
+      "blob_sha": "2b2c3ed630a4d12e9c74768e40e9fb10f584430a",
       "declaration_kind": "package.json",
       "path": "extensions/tlon/package.json",
       "recursive_dependency_closure": "unresolved",
       "size_bytes": 3498
     },
     {
-      "blob_sha": "51c3ca8eca4f577f48c20cc0ffcb70873085cfdb",
+      "blob_sha": "971fb6ddcced9d56f481e6eb6c95891f14160354",
       "declaration_kind": "package.json",
       "path": "extensions/together/package.json",
       "recursive_dependency_closure": "unresolved",
       "size_bytes": 299
     },
     {
-      "blob_sha": "5d6755e300b0a23f7ecad51c4d74e407ece3dfd0",
+      "blob_sha": "978fd671f95edd053864f3778ff7d74f6977389f",
       "declaration_kind": "package.json",
       "path": "extensions/tokenjuice/package.json",
       "recursive_dependency_closure": "unresolved",
       "size_bytes": 1014
     },
     {
-      "blob_sha": "ce778fad8aecd153348496ca6c4f7929f50ff062",
+      "blob_sha": "7af05b251763347ff6bd34afd474407ed5ac8e35",
       "declaration_kind": "package.json",
       "path": "extensions/tts-local-cli/package.json",
       "recursive_dependency_closure": "unresolved",
       "size_bytes": 291
     },
     {
-      "blob_sha": "6927da4e0e03f028e815e0b1fbacd28eb6c65451",
+      "blob_sha": "a4932989355a994975f444f1d7a7bc74fb389489",
       "declaration_kind": "package.json",
       "path": "extensions/twitch/package.json",
       "recursive_dependency_closure": "unresolved",
       "size_bytes": 1474
     },
     {
-      "blob_sha": "7c90a588fc11615e178e6c33c2ac769eda42aa69",
+      "blob_sha": "d962fd8d7ac000032c48fe52630e210ed2169939",
       "declaration_kind": "package.json",
       "path": "extensions/typesafe/package.json",
       "recursive_dependency_closure": "unresolved",
-      "size_bytes": 827
+      "size_bytes": 826
     },
     {
-      "blob_sha": "c8a1f8b6e3f9856262ed9797250dfdc1a8a5831a",
+      "blob_sha": "e667c995e0e7f3785a3c835957d4bbba3bb5f1f2",
       "declaration_kind": "package.json",
       "path": "extensions/vault/package.json",
       "recursive_dependency_closure": "unresolved",
       "size_bytes": 598
     },
     {
-      "blob_sha": "3f3ebe3792373bd1552b4cf7a3e477ceae048cc1",
+      "blob_sha": "340501a697c6213a64ad546eb431580eeb20fc6a",
       "declaration_kind": "package.json",
       "path": "extensions/venice/package.json",
       "recursive_dependency_closure": "unresolved",
       "size_bytes": 789
     },
     {
-      "blob_sha": "edd632314ced853286978ce31139928a145055da",
+      "blob_sha": "e471770a9747655580e18de8d7837547d8f06e78",
       "declaration_kind": "package.json",
       "path": "extensions/vercel-ai-gateway/package.json",
       "recursive_dependency_closure": "unresolved",
       "size_bytes": 833
     },
     {
-      "blob_sha": "75ce65c1718dfbce0ce2b34f0e2239ddd6bbc750",
+      "blob_sha": "9cd5e4587bff3e9edd9be3f404e05857f44e774f",
       "declaration_kind": "package.json",
       "path": "extensions/visitor-access/package.json",
       "recursive_dependency_closure": "unresolved",
-      "size_bytes": 389
+      "size_bytes": 388
     },
     {
-      "blob_sha": "547ab0d25d3a7caaf039917df6b81ca0776bbe20",
+      "blob_sha": "8a40c0017969ea651d8f648ac38aa7bb38693097",
       "declaration_kind": "package.json",
       "path": "extensions/vllm/package.json",
       "recursive_dependency_closure": "unresolved",
       "size_bytes": 291
     },
     {
-      "blob_sha": "33f3e0e26a3bcb544e7c231d81a3bae340cc84dc",
+      "blob_sha": "7054435b6958d55007fa615c0d421692ac3173e0",
       "declaration_kind": "package.json",
       "path": "extensions/voice-call/package.json",
       "recursive_dependency_closure": "unresolved",
-      "size_bytes": 1060
+      "size_bytes": 1059
     },
     {
-      "blob_sha": "7660f3192be374b69b4f4d7770ce32a4ceba9f41",
+      "blob_sha": "377baa62cfbe1cf5c1c62e6e1f0cbbb97b1364c2",
       "declaration_kind": "package.json",
       "path": "extensions/volcengine/package.json",
       "recursive_dependency_closure": "unresolved",
       "size_bytes": 806
     },
     {
-      "blob_sha": "f731fdccbc59fc2102f1dd0e06af28c7f5127065",
+      "blob_sha": "96d5a98ccb57fdf3bd3aa68269acbe9c142d485b",
       "declaration_kind": "package.json",
       "path": "extensions/voyage/package.json",
       "recursive_dependency_closure": "unresolved",
       "size_bytes": 800
     },
     {
-      "blob_sha": "e9099a509dd5636905df66d083370d6e092be4ec",
+      "blob_sha": "0aa49ea6796cee06c07545b12f97bc6453542aee",
       "declaration_kind": "package.json",
       "path": "extensions/vydra/package.json",
       "recursive_dependency_closure": "unresolved",
       "size_bytes": 792
     },
     {
-      "blob_sha": "1c08ba3f4e2229fafe7763eae1ae9d7a90bf860a",
+      "blob_sha": "7db3874f38f3bda50bbddd858c713788f251374f",
       "declaration_kind": "package.json",
       "path": "extensions/web-readability/package.json",
       "recursive_dependency_closure": "unresolved",
       "size_bytes": 407
     },
     {
-      "blob_sha": "f417c428ef62c15a449cff597fc583b80712db42",
+      "blob_sha": "0db64b781244d3a12c35fc2279b3cce21e89db0e",
       "declaration_kind": "package.json",
       "path": "extensions/whatsapp/package.json",
       "recursive_dependency_closure": "unresolved",
-      "size_bytes": 2733
+      "size_bytes": 2732
     },
     {
-      "blob_sha": "bf561c24372c666856d99442fa830767437e4372",
+      "blob_sha": "c2482485754b799b6e9546a4e5b9650de92d07e3",
       "declaration_kind": "package.json",
       "path": "extensions/workboard/package.json",
       "recursive_dependency_closure": "unresolved",
-      "size_bytes": 1505
+      "size_bytes": 1504
     },
     {
-      "blob_sha": "a4866a9723a57ff6e9013126bccded5754f460ea",
+      "blob_sha": "d4ef0647b4e4c12b5be92b914a303522f2ff34d4",
       "declaration_kind": "package.json",
       "path": "extensions/x/package.json",
       "recursive_dependency_closure": "unresolved",
       "size_bytes": 1548
     },
     {
-      "blob_sha": "6ddf06a326b9970f9079cf25767b4a745353effd",
+      "blob_sha": "bcc693a132c7095ee42d20168d9f2401db749e49",
       "declaration_kind": "package.json",
       "path": "extensions/xai/package.json",
       "recursive_dependency_closure": "unresolved",
-      "size_bytes": 347
+      "size_bytes": 346
     },
     {
-      "blob_sha": "788fd48b69e0596ec9800781257567ce8eba2c16",
+      "blob_sha": "3cb880665a54f197cdd477d174eb96db145b83b6",
       "declaration_kind": "package.json",
       "path": "extensions/xiaomi/package.json",
       "recursive_dependency_closure": "unresolved",
       "size_bytes": 790
     },
     {
-      "blob_sha": "af874eef3a7c22e792c4216011f353e410790dd6",
+      "blob_sha": "cbe2b9dc3edd748f9938c74ba1514bc2c346fd9e",
       "declaration_kind": "package.json",
       "path": "extensions/zai/package.json",
       "recursive_dependency_closure": "unresolved",
       "size_bytes": 778
     },
     {
-      "blob_sha": "c818ff66ac7a267a874cd9d30bd0899e19e95574",
+      "blob_sha": "103e2adf8c5bbb0c22cd6173d062af2209f74511",
       "declaration_kind": "package.json",
       "path": "extensions/zalo/package.json",
       "recursive_dependency_closure": "unresolved",
       "size_bytes": 2341
     },
     {
-      "blob_sha": "9c6bda610e273eff92e2df47c80fcf0f3bb65bf8",
+      "blob_sha": "b0794ad2a9596921ba66aff2636153c4ddc78e84",
       "declaration_kind": "package.json",
       "path": "extensions/zalouser/package.json",
       "recursive_dependency_closure": "unresolved",
-      "size_bytes": 1906
+      "size_bytes": 1905
     },
     {
-      "blob_sha": "a837133017b2d921ea37941e3f2006f6cd717b6d",
+      "blob_sha": "73aafc4e8343ee6e1d065b57ed4312d31de59e26",
       "declaration_kind": "package.json",
       "path": "extensions/zoom-meetings/package.json",
       "recursive_dependency_closure": "unresolved",
       "size_bytes": 971
     },
     {
-      "blob_sha": "af543c4c033b5c5e0c466061ada470feeda777f3",
+      "blob_sha": "6989c0618742d3c2b93cc336cbe1d9c3c4f0a657",
       "declaration_kind": "package.json",
       "path": "package.json",
       "recursive_dependency_closure": "unresolved",
-      "size_bytes": 151591
+      "size_bytes": 154751
     },
     {
       "blob_sha": "90ec4a0b47b13568e1a35ee1307198036f64b8c9",
@@ -1466,49 +1508,49 @@
       "size_bytes": 2293
     },
     {
-      "blob_sha": "ea50b4db92d7d902211ec1120161a71f455940c0",
+      "blob_sha": "d6a0a193eaa5ca83cf26eb1b3cc85a425c23d42a",
       "declaration_kind": "package.json",
       "path": "packages/agent-core/package.json",
       "recursive_dependency_closure": "unresolved",
-      "size_bytes": 1989
+      "size_bytes": 1988
     },
     {
-      "blob_sha": "128b6f49f4ea2cfcdec40afa74e23aeb497ac621",
+      "blob_sha": "2ee99c5de54591d5dcad3b7b29cde9fc07549718",
       "declaration_kind": "package.json",
       "path": "packages/ai/package.json",
       "recursive_dependency_closure": "unresolved",
-      "size_bytes": 5156
+      "size_bytes": 5371
     },
     {
-      "blob_sha": "450a731a41e3331577cd2f57da8416d798243736",
+      "blob_sha": "d9bf30e230b040f364ea5e27ef1d452fff4c23a8",
       "declaration_kind": "package.json",
       "path": "packages/gateway-client/package.json",
       "recursive_dependency_closure": "unresolved",
-      "size_bytes": 2179
+      "size_bytes": 2209
     },
     {
-      "blob_sha": "3cb52a3f3cb2d51faa276313aaa8e0337328abce",
+      "blob_sha": "0e481b74b75176478c7d427bc0f54c43dfaf20df",
       "declaration_kind": "package.json",
       "path": "packages/gateway-protocol/package.json",
       "recursive_dependency_closure": "unresolved",
-      "size_bytes": 3497
+      "size_bytes": 3496
     },
     {
-      "blob_sha": "019a1cf769bfa04f40bf320c1d2295bfaf45e3ab",
+      "blob_sha": "d7b6312ebf2eaf900b6d3216048afe439d58247d",
       "declaration_kind": "package.json",
       "path": "packages/llm-core/package.json",
       "recursive_dependency_closure": "unresolved",
-      "size_bytes": 1295
+      "size_bytes": 1294
     },
     {
-      "blob_sha": "b4aa13d14fe9bc3b6200e150121001b6711c19f7",
+      "blob_sha": "ad768aa210af39938bbd06e52534c8fe493cd9ab",
       "declaration_kind": "package.json",
       "path": "packages/markdown-core/package.json",
       "recursive_dependency_closure": "unresolved",
-      "size_bytes": 1809
+      "size_bytes": 1835
     },
     {
-      "blob_sha": "c146adc4e17c74d270360eaa7e121ba274fa6c5e",
+      "blob_sha": "88490cbd64f5cddd4181f053bb029da78d272885",
       "declaration_kind": "package.json",
       "path": "packages/media-core/package.json",
       "recursive_dependency_closure": "unresolved",
@@ -1522,11 +1564,11 @@
       "size_bytes": 1213
     },
     {
-      "blob_sha": "91a43d6e1ff17148d060992ae4815f1864ed7e14",
+      "blob_sha": "3c47763070d395c722e8e791dc21cb067b997d90",
       "declaration_kind": "package.json",
       "path": "packages/media-understanding-common/package.json",
       "recursive_dependency_closure": "unresolved",
-      "size_bytes": 1868
+      "size_bytes": 1699
     },
     {
       "blob_sha": "5a4496e0ea1cd1584c4ad40da81182b512a5cc56",
@@ -1536,18 +1578,18 @@
       "size_bytes": 783
     },
     {
-      "blob_sha": "870b0089d5ca894a7660dce4a8bffd2d6c3ab8bd",
+      "blob_sha": "7a4f8ae0e9ffb72837181a479b135547cdb7fbad",
       "declaration_kind": "package.json",
       "path": "packages/mermaid-renderer/package.json",
       "recursive_dependency_closure": "unresolved",
-      "size_bytes": 426
+      "size_bytes": 422
     },
     {
-      "blob_sha": "d6ab52a94685f7a16e38b5f050a7a432df94dd21",
+      "blob_sha": "613cef0166be6e14ed563edd4e27a2b5134ca57b",
       "declaration_kind": "package.json",
       "path": "packages/model-catalog-core/package.json",
       "recursive_dependency_closure": "unresolved",
-      "size_bytes": 2035
+      "size_bytes": 2260
     },
     {
       "blob_sha": "e9dbeade1e5d093ed13cec09c5ab57c9bd8ba3f5",
@@ -1557,11 +1599,11 @@
       "size_bytes": 1334
     },
     {
-      "blob_sha": "49a7737afc21be738c97fcb03dbf3452b61100d2",
+      "blob_sha": "13606635cecef520cc2a8ebc4e10d7769559f59f",
       "declaration_kind": "package.json",
       "path": "packages/normalization-core/package.json",
       "recursive_dependency_closure": "unresolved",
-      "size_bytes": 4867
+      "size_bytes": 5063
     },
     {
       "blob_sha": "74ec4fa16ca86eaff40db4520143e9f4a58ee5ef",
@@ -1627,35 +1669,35 @@
       "size_bytes": 829
     },
     {
-      "blob_sha": "80fb4d9fa985297a24ac88931ef534e85a40ba47",
+      "blob_sha": "83b4975eb96942ec007a2eb9847ccfe98d380bda",
       "declaration_kind": "pnpm-lock.yaml",
       "path": "pnpm-lock.yaml",
       "recursive_dependency_closure": "unresolved",
-      "size_bytes": 646948
+      "size_bytes": 634241
     },
     {
-      "blob_sha": "d4ebbf1c13db7e189fe4053122a3e3fa77bb0e26",
+      "blob_sha": "32ce4d83de4aac6a1e3665baba09a3aa9582960c",
       "declaration_kind": "pnpm-workspace.yaml",
       "path": "pnpm-workspace.yaml",
       "recursive_dependency_closure": "unresolved",
-      "size_bytes": 5227
+      "size_bytes": 7822
     },
     {
-      "blob_sha": "edd690fd80c4ea346f5ccd601d464785964745b9",
+      "blob_sha": "d4c340498b186c3b08b7bf98194f9244275acadf",
       "declaration_kind": "package.json",
       "path": "qa/convex-credential-broker/package.json",
       "recursive_dependency_closure": "unresolved",
       "size_bytes": 436
     },
     {
-      "blob_sha": "2d4ec9efa9d0c43308cfa53468931b49938b0da4",
+      "blob_sha": "845d15b4aee2dfa82ae2e7d73e4effffd36fa340",
       "declaration_kind": "package.json",
       "path": "scripts/cloudflare/package.json",
       "recursive_dependency_closure": "unresolved",
       "size_bytes": 326
     },
     {
-      "blob_sha": "aa1e3c3e99cffab5a3fda6d01cd9e0f084c6853a",
+      "blob_sha": "fcf2641e7394886a8badba2a7f32b9c5e0125717",
       "declaration_kind": "go.mod",
       "path": "scripts/docs-i18n/go.mod",
       "recursive_dependency_closure": "unresolved",
@@ -1676,18 +1718,18 @@
       "size_bytes": 193
     },
     {
-      "blob_sha": "6b19cdf001012c7af7f457ba6720cbd181223b33",
+      "blob_sha": "43e5d42b9a94e7f6348d44518bd69e32b5621b0f",
       "declaration_kind": "package.json",
-      "path": "src/claws/fixtures/delegating-agent/package.json",
+      "path": "src/templates/fixtures/delegating-agent/package.json",
       "recursive_dependency_closure": "unresolved",
-      "size_bytes": 118
+      "size_bytes": 122
     },
     {
-      "blob_sha": "d37e8bc4132331a26ea0df6bceca46cc71f7c159",
+      "blob_sha": "07b8a540e52cc87c603d7ecff167680c5a214963",
       "declaration_kind": "package.json",
-      "path": "test/fixtures/claws/project-v1/package.json",
+      "path": "test/fixtures/templates/project-v1/package.json",
       "recursive_dependency_closure": "unresolved",
-      "size_bytes": 113
+      "size_bytes": 121
     },
     {
       "blob_sha": "82f5ec805d4c47ddd0c996e6517e40d8d6e6737e",
@@ -1697,18 +1739,18 @@
       "size_bytes": 145
     },
     {
-      "blob_sha": "210e00c2f83f732b9273f428dd415ebce9836ecb",
+      "blob_sha": "9796a29bc4c334e4343bcbf35ebb4817dbcda9f0",
       "declaration_kind": "package.json",
       "path": "tools/solid-lint/package.json",
       "recursive_dependency_closure": "unresolved",
       "size_bytes": 211
     },
     {
-      "blob_sha": "057c4fb07d07d672a168be03c90574f7026b2fa2",
+      "blob_sha": "0dde20e9954801f6491202b3e9be124a12e9563a",
       "declaration_kind": "package.json",
       "path": "ui/package.json",
       "recursive_dependency_closure": "unresolved",
-      "size_bytes": 2470
+      "size_bytes": 2498
     }
   ],
   "external_recursive_dependencies_resolved": null,
@@ -1719,14 +1761,17 @@
   "root_inputs": {
     ".gitattributes": "c6118b226a4a760f7861b6b7b1e7dccd943384e4",
     ".gitmodules": null,
-    "AGENTS.md": "c3deeccdb6b1a4c7137d56297e933bbf19f4d3bf",
-    "package.json": "af543c4c033b5c5e0c466061ada470feeda777f3",
-    "pnpm-lock.yaml": "80fb4d9fa985297a24ac88931ef534e85a40ba47"
+    "AGENTS.md": "6eedd536b6f5145d5d158a48415a8c0e1cd8db7e",
+    "LICENSE": "ed064819ab537575d0cad902f7e5af4a3488b1d0",
+    "THIRD_PARTY_NOTICES.md": "0c9c123760188915a384ce7275df4096114e8f90",
+    "package.json": "6989c0618742d3c2b93cc336cbe1d9c3c4f0a657",
+    "pnpm-lock.yaml": "83b4975eb96942ec007a2eb9847ccfe98d380bda",
+    "pnpm-workspace.yaml": "32ce4d83de4aac6a1e3665baba09a3aa9582960c"
   },
   "scope": "Tracked manifest/package/build declarations, not downloaded transitive packages or dependency content",
   "upstream": {
-    "commit": "ad8d12f126d29b0db204187adf5092db80294e70",
+    "commit": "1440bb1771372334bea23d7642bb52deb7db1845",
     "repository": "openclaw/openclaw",
-    "tree": "04ccce62f1d74dc8e0c88290ae8ded027b7b0f16"
+    "tree": "90c8aab39972da11cfad220361781d49e1bc6700"
   }
 }

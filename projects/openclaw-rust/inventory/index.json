@@ -1,5 +1,6 @@
 {
   "authority": {
+    "applicability_disposition_closure": false,
     "candidate_evidence": {
       "prior_artifact_digest": "sha256:20e1b112073b37bea00d5355f3a4aaccf95db61f96cd2a2475bc68991b489d01",
       "prior_artifact_id": 12407594187,
@@ -13,13 +14,14 @@
     "generator": ".github/workflows/ocrm-p0-authority.yml",
     "latest_exact_head_evidence": null,
     "lfs_content_closed": false,
-    "source_closure_ready": false,
-    "applicability_disposition_closure": false
+    "source_closure_ready": false
   },
   "format_version": 1,
   "inventory": {
-    "blob_entries_total": 58748,
+    "applicability_assessed": 0,
+    "blob_entries_total": 62128,
     "canonical_manifest_format": "projects/openclaw-rust/schemas/source-inventory.schema.json",
+    "dispositioned": 0,
     "gitlink_entries_total": 0,
     "itemized_manifest_location": "projects/openclaw-rust/inventory/shards/manifest.json (Git-tracked canonical row shards; authority checked in Actions)",
     "lfs_pointer_candidates_observed": 0,
@@ -27,20 +29,18 @@
     "omitted_known": 0,
     "responsibility_decomposition_complete": false,
     "semantic_read_complete": false,
-    "applicability_assessed": null,
-    "dispositioned": null,
-    "unreviewed_applicable": null,
     "symlink_entries_total": 2,
-    "tracked_entries_total": 58750,
-    "unclassified": 57331,
-    "unread": 57331
+    "tracked_entries_total": 62130,
+    "unclassified": 61315,
+    "unread": 62130,
+    "unreviewed_applicable": 0
   },
   "project_id": "OCRM-001",
   "spec_revision": 2,
   "upstream": {
     "baseline_identity_accepted": false,
-    "commit": "ad8d12f126d29b0db204187adf5092db80294e70",
+    "commit": "1440bb1771372334bea23d7642bb52deb7db1845",
     "repository": "openclaw/openclaw",
-    "tree": "04ccce62f1d74dc8e0c88290ae8ded027b7b0f16"
+    "tree": "90c8aab39972da11cfad220361781d49e1bc6700"
   }
 }

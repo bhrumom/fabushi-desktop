@@ -1,5 +1,5 @@
 {
-  "canonical_inventory_sha256": "5c029a553c2f559c966bd405edb8352aee561461790c00a2dff1da3785c2d356",
+  "canonical_inventory_sha256": "7f76cda2a3e2d90d70b3fc9a219b6934f7c960581759f6a17fe9e66423f741ad",
   "compression": "gzip with mtime=0, UTF-8 JSONL, full canonical schema records",
   "format_version": 1,
   "project_id": "OCRM-001",
@@ -7,479 +7,501 @@
   "shard_size_limit": 1024,
   "shards": [
     {
-      "compressed_sha256": "fb39326ba3229ea81881156e99558ab9ab5be88f055a3f9bd795b5772c516847",
+      "compressed_sha256": "e366f0dbfc9c3f260b30d8357b2275043b39dcc6a887dbacb70305574dd74909",
       "count": 1024,
       "first_path": ".agents/resume",
-      "last_path": "apps/android/app/src/main/java/ai/openclaw/app/ui/CronJobManagementPanel.kt",
+      "last_path": "apps/android/app/src/main/java/ai/openclaw/app/ui/chat/ChatCommandControls.kt",
       "path": "projects/openclaw-rust/inventory/shards/part-0000.jsonl.gz",
-      "uncompressed_sha256": "668880d294c4e08fdf5bd79d0d5be923fc1350908cb0180508786b5b5c2eff5e"
+      "uncompressed_sha256": "fa716b17b9a5d680deb4fd6e3417b7fedc5c7a4f107e4e13e2956fe393baafc2"
     },
     {
-      "compressed_sha256": "40326476c022c74ed24fe56d077203b908300eda3f7447056faaadf53d992f3c",
+      "compressed_sha256": "13b57af026835b556be1fb4f386df822e88c2170c0dcaa8fe334b9cd6a85f66a",
       "count": 1024,
-      "first_path": "apps/android/app/src/main/java/ai/openclaw/app/ui/DesktopScreen.kt",
-      "last_path": "apps/ios/Sources/Services/WatchConnectivityTransport.swift",
+      "first_path": "apps/android/app/src/main/java/ai/openclaw/app/ui/chat/ChatComposer.kt",
+      "last_path": "apps/ios/Tests/IOSGatewayChatTransportTests.swift",
       "path": "projects/openclaw-rust/inventory/shards/part-0001.jsonl.gz",
-      "uncompressed_sha256": "455cb9dd4d40ef92bdd76d319511f3587746954b1070aa5701b819cad7a4e92f"
+      "uncompressed_sha256": "df0d8d64894f8e88607371101edc6a6947be02b88356aaa8bd4bef36f21240ea"
     },
     {
-      "compressed_sha256": "f79e8cd68064f23b929f75679f0718901f48645ea3a8c8a35b6dde9992f6e569",
+      "compressed_sha256": "4e8e70acf852e8f1818c5a4827ff42f1f34bf4295188146ae81420c2146eb24f",
       "count": 1024,
-      "first_path": "apps/ios/Sources/Services/WatchMessagingPayloadCodec.swift",
-      "last_path": "apps/macos/Tests/OpenClawIPCTests/DeviceSettingsBridgeTests.swift",
+      "first_path": "apps/ios/Tests/IOSMediaArtifactLoaderTests.swift",
+      "last_path": "apps/macos/Tests/OpenClawIPCTests/MacSessionObserverDigestTests.swift",
       "path": "projects/openclaw-rust/inventory/shards/part-0002.jsonl.gz",
-      "uncompressed_sha256": "aa1beb0b5d5c70ae6e3695df212bbb617936cc1d124cb58d0ce617fdf5eaced0"
+      "uncompressed_sha256": "8fd707a6008f3826a2b9112c6d19ba37d1e097dc99c48eb475dadabc7c13dbff"
     },
     {
-      "compressed_sha256": "a462d70cc9ab22b53fad756d8ef4de9c81f80fb180c58da0ee3d6ab369ae070b",
+      "compressed_sha256": "ee352f239021d85ddaddbfad9afd1b471a02233c04fc624b09ae779aa099e049",
       "count": 1024,
-      "first_path": "apps/macos/Tests/OpenClawIPCTests/DeviceSettingsConsentTests.swift",
-      "last_path": "docs/channels/slack/threads-and-sessions.md",
+      "first_path": "apps/macos/Tests/OpenClawIPCTests/ManagedNodeGatewayMigrationTests.swift",
+      "last_path": "config/test-lines-allocations/permission-block-remediation.txt",
       "path": "projects/openclaw-rust/inventory/shards/part-0003.jsonl.gz",
-      "uncompressed_sha256": "9879780debee33c80d2a7c0b0545ca6cba5cbb62471293c52318cd8946164225"
+      "uncompressed_sha256": "7293622217c3a31a31504489b3118bfd8a8cd294217492b12a672e7abffe28dc"
     },
     {
-      "compressed_sha256": "e89c5a4d1446006c54a52ec01c1c40227effe9259111b58e4886571031ba3dd5",
+      "compressed_sha256": "39c04a7d808ba8f1ef11c14cea8d0ff02f7fafcd98f13982a72d22ae4ee938de",
       "count": 1024,
-      "first_path": "docs/channels/slack/transports.md",
-      "last_path": "docs/reference/rpc.md",
+      "first_path": "config/test-lines-allocations/plugin-artifact-review-budget.txt",
+      "last_path": "docs/plugins/github.md",
       "path": "projects/openclaw-rust/inventory/shards/part-0004.jsonl.gz",
-      "uncompressed_sha256": "4e7c57eced57f1d56f1f96de03fab8fcea202e6c7355aea0896d840fce73c514"
+      "uncompressed_sha256": "97892941cb2dd176f41e3ee4149851444267896675f8f72f8acfc7e42f010aed"
     },
     {
-      "compressed_sha256": "dd2b0367ab1df44db0ff6261340d97a88f38c66948db355a793b8eb04773f438",
+      "compressed_sha256": "1b24b69c8e55c576ee620b6169396f50d1b36f5801b82816fda4bfed9eea9843",
       "count": 1024,
-      "first_path": "docs/reference/scripts/github-transport.md",
-      "last_path": "extensions/browser/src/browser/chrome.headless-launch.test.ts",
+      "first_path": "docs/plugins/google-meet.md",
+      "last_path": "extensions/amazon-bedrock/setup-api.ts",
       "path": "projects/openclaw-rust/inventory/shards/part-0005.jsonl.gz",
-      "uncompressed_sha256": "082879a4bb5552ee2d60e7406feb3d002009461d99db0967c8717f27fe69d927"
+      "uncompressed_sha256": "6fb2cfebd96c5d88dbc15fd1bfdc5edb0baaeb331c35b9529b4e8b398f023701"
     },
     {
-      "compressed_sha256": "11edd6d7fcf053d7c9341f57f36905dfddf7faaf9d7a07fe20424cc92d4e2c7f",
+      "compressed_sha256": "ca19c3140a604158a2a217d0eaf0cad4b66f372fdd5a2b2b10421d8d707feee7",
       "count": 1024,
-      "first_path": "extensions/browser/src/browser/chrome.internal.test-support.ts",
-      "last_path": "extensions/codex/src/app-server/dynamic-tool-automations-allowlist.ts",
+      "first_path": "extensions/amazon-bedrock/stream.runtime.test.ts",
+      "last_path": "extensions/buzz/tsconfig.json",
       "path": "projects/openclaw-rust/inventory/shards/part-0006.jsonl.gz",
-      "uncompressed_sha256": "1b4b99fc582fa6fcfdd007eb324a4bda11850bc38f9ff3acd10a78413b34e0eb"
+      "uncompressed_sha256": "1caf0b71758e3094462ee4ac738f5d540ab9fa07f56a813d7065b3c6cf136b17"
     },
     {
-      "compressed_sha256": "c40702d3281a791e8c7f2f6d21e5a84065f27a2ec31f47c53ab14ad34c7c1d13",
+      "compressed_sha256": "b1f74d492fe9c4d7788f3541fc3f9596faab7333b5b3bf07f64084dc02be1ca8",
       "count": 1024,
-      "first_path": "extensions/codex/src/app-server/dynamic-tool-availability.test.ts",
-      "last_path": "extensions/crabbox/src/crabbox-worker-lifetime.ts",
+      "first_path": "extensions/byteplus/README.md",
+      "last_path": "extensions/codex/src/app-server/thread-lifecycle.configured-mcp-ownership.test.ts",
       "path": "projects/openclaw-rust/inventory/shards/part-0007.jsonl.gz",
-      "uncompressed_sha256": "d5f19a3ff4cc4aa0e59ce9dc2112e0f4f53f4aed3d0bf35e00aafb5bcfe3eb2a"
+      "uncompressed_sha256": "fcdb532ffa2eb606c47861cbcca5b3fe24ed9cd49987f771d38060e36f90cc37"
     },
     {
-      "compressed_sha256": "e351f4fb205578cb4db013eb6c523b66abca7e6e5a6c7ef33b4739c6ceaa1ce6",
+      "compressed_sha256": "4e4e1a31c831926bdf20091dd21b87c9c6a76f2782175008f24d71261370c198",
       "count": 1024,
-      "first_path": "extensions/crabbox/src/crabbox-worker-machine-options.ts",
-      "last_path": "extensions/discord/test/discord-api-types-payloads-v10-runtime.ts",
+      "first_path": "extensions/codex/src/app-server/thread-lifecycle.handoff-cancellation.test.ts",
+      "last_path": "extensions/discord/src/internal/rest-routes.ts",
       "path": "projects/openclaw-rust/inventory/shards/part-0008.jsonl.gz",
-      "uncompressed_sha256": "b125233820528d8e2f98d1eab841bbd304d77a81a7c74a42473e9bf8989e9f50"
+      "uncompressed_sha256": "1bcd42d4624a8fb7ed3890986858dbb2b3ac30806ca4fafa7f4aff8033fd395c"
     },
     {
-      "compressed_sha256": "1a84dc82f0a53d08bf34cdfbcb79e028382d0f2e50a5c493289933afcd32aac9",
+      "compressed_sha256": "969d0affef72f9ce7c24ed36c6eb8668b90351891e5e4d89c9b9e8ecc02c8ebd",
       "count": 1024,
-      "first_path": "extensions/discord/test/discord-api-types-v10-runtime.ts",
-      "last_path": "extensions/groq/provider-discovery.ts",
+      "first_path": "extensions/discord/src/internal/rest-scheduler.test.ts",
+      "last_path": "extensions/file-transfer/test-api.ts",
       "path": "projects/openclaw-rust/inventory/shards/part-0009.jsonl.gz",
-      "uncompressed_sha256": "fb94505b944bb5fda9417db170e8e2c2366c046757e85277d5e3a6c0a36fdab6"
+      "uncompressed_sha256": "48145ea2eae7b79bfc8b3b9e34861ce6dc13b16e4b9b7a6a40f350da648a460b"
     },
     {
-      "compressed_sha256": "ceade434499588544d886c3b37a53bafab52aa4c09d616111d034d6ad89049ba",
+      "compressed_sha256": "7684c19887f0f996a9f66aa293bd540a1d19c289b6860c53d8faa4c330dd499d",
       "count": 1024,
-      "first_path": "extensions/groq/tsconfig.json",
-      "last_path": "extensions/matrix/src/matrix/relations.ts",
+      "first_path": "extensions/firecrawl/README.md",
+      "last_path": "extensions/knowledge/src/memory-provider.test-support.ts",
       "path": "projects/openclaw-rust/inventory/shards/part-0010.jsonl.gz",
-      "uncompressed_sha256": "ca8a5ae0a975c6c9353d6595fb4196083e09ccd6537c133367b68392bdaace39"
+      "uncompressed_sha256": "35266918a771a8c365c2eaf5646bf39fff59b176de33dc5227537fcbf74b6f68"
     },
     {
-      "compressed_sha256": "19dd3f8e4e5ba2992733129fc655767b1f69dc323bb6841021fe005c7839e243",
+      "compressed_sha256": "2d7e4ac8e4e8594e1f16938e48e2839a663c06acd0b7b631b32b53a6d348ddc9",
       "count": 1024,
-      "first_path": "extensions/matrix/src/matrix/retired-state.ts",
-      "last_path": "extensions/microsoft-foundry/cli.ts",
+      "first_path": "extensions/knowledge/src/memory-provider.test.ts",
+      "last_path": "extensions/mattermost/src/mattermost/monitor.preview-delivery.test-support.ts",
       "path": "projects/openclaw-rust/inventory/shards/part-0011.jsonl.gz",
-      "uncompressed_sha256": "5b44aaabd4b6304737f262b3bb063bacce22b24837895a1bf9b0455f101ab3a3"
+      "uncompressed_sha256": "61234edb106a37af045c50c85bba11387726fc7f7154d8e2e2c3da4bf739c566"
     },
     {
-      "compressed_sha256": "0576b58e43a7b734c6febf85c1a8b92770f0c4cae11c169da233e808d21c1e84",
+      "compressed_sha256": "cbdc2a96a81d88df0948528cc98cc110aff3468771548fa24013fbd4e841ee29",
       "count": 1024,
-      "first_path": "extensions/microsoft-foundry/image-generation-provider.test.ts",
-      "last_path": "extensions/openai/provider-policy-api.custom-tools.test.ts",
+      "first_path": "extensions/mattermost/src/mattermost/monitor.preview-policy.test-support.ts",
+      "last_path": "extensions/msteams/src/approval-native.test.ts",
       "path": "projects/openclaw-rust/inventory/shards/part-0012.jsonl.gz",
-      "uncompressed_sha256": "cc172f36cd6b142e2c986e527e18209fe6fe71257e01d32f323d5b2277a2f0b6"
+      "uncompressed_sha256": "e40959716faf20cbc37c861cdfc5407adce1b1be2d411d9baccb50ca9c38a457"
     },
     {
-      "compressed_sha256": "1f55bd60a53298bfb224e4a6f927548e88572b65c1cd980763ca431541d8993a",
+      "compressed_sha256": "629e3666cb311cbc32813d8517ce1824752c3b91984c25636713f995a3dc8637",
       "count": 1024,
-      "first_path": "extensions/openai/provider-policy-api.decisions.test.ts",
-      "last_path": "extensions/qa-lab/src/scenario-catalog-anthropic-live.test.ts",
+      "first_path": "extensions/msteams/src/approval-native.ts",
+      "last_path": "extensions/openshell/src/backend.ts",
       "path": "projects/openclaw-rust/inventory/shards/part-0013.jsonl.gz",
-      "uncompressed_sha256": "c3a2d43b28c4f427dccd15734746f381a3447d82d85e9fe7f3d04390a21589ad"
+      "uncompressed_sha256": "14a779730fe023e85f714146840645a28ce829a9f9c4a96825bae6652e07cc7d"
     },
     {
-      "compressed_sha256": "7b1624644b28269e90c84a36e7803fff674deec4ba4a5c9a263a154ba0ace232",
+      "compressed_sha256": "e39767f2cd827f6fa5145837883428b9bdaf0fd8b1cd8fd3458c7faabb465113",
       "count": 1024,
-      "first_path": "extensions/qa-lab/src/scenario-catalog-browser-coverage.test.ts",
-      "last_path": "extensions/slack/src/types.ts",
+      "first_path": "extensions/openshell/src/backend.types.ts",
+      "last_path": "extensions/qianfan/provider-catalog.ts",
       "path": "projects/openclaw-rust/inventory/shards/part-0014.jsonl.gz",
-      "uncompressed_sha256": "69a2ced2ec4b52b75a93fadafb33ee8de9dc783768d09539152a1a2778a16866"
+      "uncompressed_sha256": "6817dbfa15935f5dc5d94f58225d43f36868ebf80001ab7ad2a14652fbe74812"
     },
     {
-      "compressed_sha256": "75afa34ec8a06b0cbdd7ff16812e4b9747f7bbec66faaf445ff5fe8837c8d317",
+      "compressed_sha256": "9cb375c61070d730e02afacfe22ec2247e9e5f1281e935ac91ea1ac0765ae218",
       "count": 1024,
-      "first_path": "extensions/slack/test-api.test.ts",
-      "last_path": "extensions/venice/package.json",
+      "first_path": "extensions/qianfan/tsconfig.json",
+      "last_path": "extensions/teams-meetings/openclaw.plugin.json",
       "path": "projects/openclaw-rust/inventory/shards/part-0015.jsonl.gz",
-      "uncompressed_sha256": "be69f60e59d027dd96d4eb8f21a7ace36cca46aa6b6f35e3a202af2667da28e8"
+      "uncompressed_sha256": "c50898d79addff7c5c5dea0bf868445d3ac1ad5a9713eb23b641d26a70737fb3"
     },
     {
-      "compressed_sha256": "6390bc57759fc84995b24c949505335d0f205154c7f0d1e1a3adfa6fd535c730",
+      "compressed_sha256": "cc0fd20f9f33fa4fad53af4dbc7c347a9d2b9f5772be2e8228b6f257e03313ae",
       "count": 1024,
-      "first_path": "extensions/venice/pricing-api.ts",
-      "last_path": "extensions/xai/realtime-voice.optional-capture.test.ts",
+      "first_path": "extensions/teams-meetings/package.json",
+      "last_path": "extensions/volcengine/index.ts",
       "path": "projects/openclaw-rust/inventory/shards/part-0016.jsonl.gz",
-      "uncompressed_sha256": "757a8ca28d1a6cea67b3d5e837d6accd6bd3c68094c0a66c425af5477076f35e"
+      "uncompressed_sha256": "3cb9e3b4a4d6f40cd391535e4324b29da5df8ca90c30cd339ba947ec60add446"
     },
     {
-      "compressed_sha256": "bc9b18cbf844e5d873f8b9618ebb1b700df2635ff979b8d0f4267dfd0bebfa9a",
+      "compressed_sha256": "9ed913874b86508a0262d3df84c42b266663b7908d62d28b5e0c149487a585d9",
       "count": 1024,
-      "first_path": "extensions/xai/responses-http.test-support.ts",
-      "last_path": "packages/gateway-protocol/src/schema/plugin-inspection.ts",
+      "first_path": "extensions/volcengine/models.ts",
+      "last_path": "extensions/zalouser/src/zalo-js.credentials.test.ts",
       "path": "projects/openclaw-rust/inventory/shards/part-0017.jsonl.gz",
-      "uncompressed_sha256": "d3a1bb6b0239ee8ada90e40e98e5dea0da585ea0697666d3bff75d82c14b3f40"
+      "uncompressed_sha256": "39bb493dd4cfd9e747871f58115f82c5e485a480acacd0294e76dfd2c141b791"
     },
     {
-      "compressed_sha256": "a7bf5cb1ff5193ca0dc8c285a7da262c194d80fb5124fbef2038a256626b05ef",
+      "compressed_sha256": "8a50661e816e37a96e5484f68f3a64865dfc278b5752e27b9e10478a7fe51559",
       "count": 1024,
-      "first_path": "packages/gateway-protocol/src/schema/plugin-install-progress.ts",
-      "last_path": "qa/scenarios/goals/goal-context-survives-compaction.yaml",
+      "first_path": "extensions/zalouser/src/zalo-js.lifecycle.test.ts",
+      "last_path": "packages/llm-core/src/utils/stream.test-support.ts",
       "path": "projects/openclaw-rust/inventory/shards/part-0018.jsonl.gz",
-      "uncompressed_sha256": "74a397db93f770e8565d615b0dad2b2d92d19ff12c28bb9c7e1d5b83f7361fac"
+      "uncompressed_sha256": "8220971b4bda1920b562f7ca1e139c3d13429f3cf960c76866c40f0c5edc7538"
     },
     {
-      "compressed_sha256": "6ab7a8401a9eefd6f17f2b692614a7e7f3a38a2fda086c9485fc1566ed609597",
+      "compressed_sha256": "a5ed368a62ac37f00db3c8216992eb15610a7f056caef79d2247a8b1c036c79a",
       "count": 1024,
-      "first_path": "qa/scenarios/goals/goal-followthrough-live.yaml",
-      "last_path": "scripts/e2e/parallels/macos-exec.ts",
+      "first_path": "packages/llm-core/src/validation.test.ts",
+      "last_path": "qa/scenarios/runtime/gateway-node-control-plane.yaml",
       "path": "projects/openclaw-rust/inventory/shards/part-0019.jsonl.gz",
-      "uncompressed_sha256": "936bf9dd6c00ea702b9a176f21637d723f06b2fdad0bd76a9455b8efb21f0a13"
+      "uncompressed_sha256": "779f0876e4356da3db0e5a54c908ef2301ff12daa16e27ef4b71e6c9f2a9afe3"
     },
     {
-      "compressed_sha256": "f9b1160cc658409c0b6e99adc2c0748083aa0d88c2780f470815867d7ff3e05e",
+      "compressed_sha256": "77fe9a8a65f6b0069ba23f17268b82cc58fa7e79b0d65389e06e374dc7f4fdfe",
       "count": 1024,
-      "first_path": "scripts/e2e/parallels/macos-smoke.ts",
-      "last_path": "scripts/release-plan-producer-core.mts",
+      "first_path": "qa/scenarios/runtime/gateway-node-exec-approvals.yaml",
+      "last_path": "scripts/format-swift.sh",
       "path": "projects/openclaw-rust/inventory/shards/part-0020.jsonl.gz",
-      "uncompressed_sha256": "7c2782e52747715e6e93acd23b98a7d87abcfcc800e87a9fcba44def6e09fe41"
+      "uncompressed_sha256": "09950aa644c14a237ec9931e043aad0e28ad80b05c171dde44c6812c9d86107c"
     },
     {
-      "compressed_sha256": "b295d97037977ee6e0ed56ff216563b20cef2f9f21df814ddedadd9d2f40ef4b",
+      "compressed_sha256": "392b64f61f23d5d8e177a45e0abfade6321195125ae629655fc03da3a277985f",
       "count": 1024,
-      "first_path": "scripts/release-plan-producer.mts",
-      "last_path": "src/agents/auth-profiles/usage.ts",
+      "first_path": "scripts/freebsd-service-inspect.mjs",
+      "last_path": "scripts/perf/chat-progress-capture-measure.ts",
       "path": "projects/openclaw-rust/inventory/shards/part-0021.jsonl.gz",
-      "uncompressed_sha256": "ef088f55346b08a508819b7ec8e0d546993618a635cf199924cc23b76e1ce427"
+      "uncompressed_sha256": "6a6e31ff4d46fe2fd6d34676a94b4021da23f4510b3e5680f7c109e604af7d85"
     },
     {
-      "compressed_sha256": "c8932feaf78ce628085b0a596fac40a309ea4c89605aa7a3fb3f61b076674d81",
+      "compressed_sha256": "e4f787b41ff230966f4903bcdcc71efa7868028698b28b6fe14670d4f5810562",
       "count": 1024,
-      "first_path": "src/agents/auth-profiles/usage.write-admission.test.ts",
-      "last_path": "src/agents/embedded-agent-runner/run/attempt-preparation.ts",
+      "first_path": "scripts/perf/chat-send-attachments-measure.ts",
+      "last_path": "scripts/test-update-cli-startup-bench.mts",
       "path": "projects/openclaw-rust/inventory/shards/part-0022.jsonl.gz",
-      "uncompressed_sha256": "26cd79aac335b3365aecc4b6c2f27d27e438b1045f104f0658da0b5fd067afe5"
+      "uncompressed_sha256": "49fa527ebe6deb00e92a1b9786db824d8853001479b091435d76ba719ff9bcc6"
     },
     {
-      "compressed_sha256": "5e4de83650dd20ecbb9ce6dcc195caf18399c8bffb248bb14b8f5aeb079d0c7b",
+      "compressed_sha256": "3fad8d5ffc6c2caa360eb91514faeaacc4b14a1c757c2db9bbfe42902d1588ce",
       "count": 1024,
-      "first_path": "src/agents/embedded-agent-runner/run/attempt-prompt-admission.test-support.ts",
-      "last_path": "src/agents/main-session-recovery/main-session-restart-recovery-peer-source.test-support.ts",
+      "first_path": "scripts/test-voicecall-closedloop.mts",
+      "last_path": "src/agents/bootstrap-files.test.ts",
       "path": "projects/openclaw-rust/inventory/shards/part-0023.jsonl.gz",
-      "uncompressed_sha256": "b035e8f5fde4f5b9e8474ed973ea473c0cdc94294e431f7131cf09b3ff8d163e"
+      "uncompressed_sha256": "0e0b2f1336c7bf7759534ad6b49bc5515925fdb7be5ed7f2a45b57d3aadef1e0"
     },
     {
-      "compressed_sha256": "6a40bdb28c5a5417f41c0e52e0dd195d96a6e56e70d98715f59131f611c431a2",
+      "compressed_sha256": "0840d1540f9e579813bc50b23c6d8638d264d7c4e26be5ffb5a9431fea6ea797",
       "count": 1024,
-      "first_path": "src/agents/main-session-recovery/main-session-restart-recovery-peer-source.test.ts",
-      "last_path": "src/agents/sessions/agent-session-loop-resource-loader.test-support.ts",
+      "first_path": "src/agents/bootstrap-files.ts",
+      "last_path": "src/agents/embedded-agent-runner/run/attempt-tool-call-stream-normalization.ts",
       "path": "projects/openclaw-rust/inventory/shards/part-0024.jsonl.gz",
-      "uncompressed_sha256": "49b4dcc730bb9b1db2506386c936941b12710442f837dd565b9e1394f35967cb"
+      "uncompressed_sha256": "a87d3e5e3b2a3ccda2df03a7c79262754c2845fbd64f3f7c358ae6b466aa7f32"
     },
     {
-      "compressed_sha256": "a203fb5152890e1ebebbb8aa8cd84d90f5b847f43a34ec0c9b87860760919fc4",
+      "compressed_sha256": "b7b8dd64a5f10296fe260a485a7f1ac13c8682fc9a8b9eb622ad6394b142730f",
       "count": 1024,
-      "first_path": "src/agents/sessions/agent-session-models.admission.test.ts",
-      "last_path": "src/agents/tools/embedded-gateway-stub.history.test.ts",
+      "first_path": "src/agents/embedded-agent-runner/run/attempt-tool-call-text-promotion-adjacent.test.ts",
+      "last_path": "src/agents/media-generation-activity.ts",
       "path": "projects/openclaw-rust/inventory/shards/part-0025.jsonl.gz",
-      "uncompressed_sha256": "5dc791c4bdc796a91a44b1077c5856096b7b27ea6eeacda4c6831dda84138075"
+      "uncompressed_sha256": "f8f95b2b2fcc0b9199add7337f684243b6d50927a58a60d603cf6a28f79edc66"
     },
     {
-      "compressed_sha256": "2cf1dfebacb7c07f46a56c9027678a864cb4a7ea88638184c3de14ddb8d3d47d",
+      "compressed_sha256": "60c8d76311d094d61ee78a6f4bc032f1ecbcba12fbc00c6ecf85d4b29b8154b8",
       "count": 1024,
-      "first_path": "src/agents/tools/embedded-gateway-stub.runtime.ts",
-      "last_path": "src/auto-reply/reply/commands-diagnostics.ts",
+      "first_path": "src/agents/media-generation-task-status-shared.test.ts",
+      "last_path": "src/agents/sessions/session-manager-async-message-custody.test.ts",
       "path": "projects/openclaw-rust/inventory/shards/part-0026.jsonl.gz",
-      "uncompressed_sha256": "e837912c18478fd3f306833d4e28f89fc5dd74faa44052cca42174f575c0da88"
+      "uncompressed_sha256": "ca1543649f67e7b63ca86bb52c26f0585aac8a480726c8d832a0995c134b3520"
     },
     {
-      "compressed_sha256": "5372b7adab05fd0b76b55b0db887791f9a1dab2c161738ca812d501dba53ff23",
+      "compressed_sha256": "6f28ed2b97542c181a311e77505fe217eaee1228c3b71d33eefe4b2c22d38d7f",
       "count": 1024,
-      "first_path": "src/auto-reply/reply/commands-export-common.ts",
-      "last_path": "src/channels/plugins/bundled.load-failures.test.ts",
+      "first_path": "src/agents/sessions/session-manager-async-message.test.ts",
+      "last_path": "src/agents/tools/media-tool-file-url.windows.test.ts",
       "path": "projects/openclaw-rust/inventory/shards/part-0027.jsonl.gz",
-      "uncompressed_sha256": "8dd1629886cda5034834f4e3398411d35efd9418e4a24082e118cebad6686dc1"
+      "uncompressed_sha256": "0e31eb555468ee20c8c44bed4a87d7c601bfc14b6c13809c935de3d94825a214"
     },
     {
-      "compressed_sha256": "853b7821042853b252b2bd878001409437b8b5fee5afa0a1321d42aa297429ef",
+      "compressed_sha256": "ede822a8998a5cc4b0e1bd099527552bc0d13b732c72b1510e164edffb23cb58",
       "count": 1024,
-      "first_path": "src/channels/plugins/bundled.shape-guard.test-helpers.ts",
-      "last_path": "src/cli/plugin-invocation-resources.test.ts",
+      "first_path": "src/agents/tools/media-tool-shared.test.ts",
+      "last_path": "src/auto-reply/reply/commands-session-abort.ts",
       "path": "projects/openclaw-rust/inventory/shards/part-0028.jsonl.gz",
-      "uncompressed_sha256": "3c521e16ec6dcafd2aff527f287567b6413e31d52d1ef96084c19f0d4af9da1f"
+      "uncompressed_sha256": "5a8013f5fcc23c245ba561cce1fbd49f80fc611cf9b4fc35b662c9dc5b3037bc"
     },
     {
-      "compressed_sha256": "4531978677a9ca1a33a85633c55a81984e253441e6c15b4642809b278f96dbf8",
+      "compressed_sha256": "c8aef5e425248abbb78d85a6c656f0b69b7c02b559642fbfc069a97c37cd9af3",
       "count": 1024,
-      "first_path": "src/cli/plugin-invocation-resources.ts",
-      "last_path": "src/commands/doctor-config-flow.rehearsal-bookkeeping.test.ts",
+      "first_path": "src/auto-reply/reply/commands-session-cost.runtime.ts",
+      "last_path": "src/channels/plugins/contracts/surfaces-only.registry-backed-shard-h.contract.test.ts",
       "path": "projects/openclaw-rust/inventory/shards/part-0029.jsonl.gz",
-      "uncompressed_sha256": "4ff75d5e5a4fc41f699ed8a42c11518825a49acebea60f1f05e02f9886c2f600"
+      "uncompressed_sha256": "c32a1228d9e04ec8927d88582390240255e92b6006234dc976b77fbce4a31885"
     },
     {
-      "compressed_sha256": "580398e8f00507f80dddbbd58a1a8fde2c2daf4ccdc80d92d905608a20724164",
+      "compressed_sha256": "6a623ed875b816f9e35725e1e607c5f6c052a339aef60dadbf7c8e3a4343f4f7",
       "count": 1024,
-      "first_path": "src/commands/doctor-config-flow.session-store-owner.test.ts",
-      "last_path": "src/commands/runtime-plugin-install.ts",
+      "first_path": "src/channels/plugins/contracts/test-helpers.ts",
+      "last_path": "src/cli/requirements-test-fixtures.ts",
       "path": "projects/openclaw-rust/inventory/shards/part-0030.jsonl.gz",
-      "uncompressed_sha256": "1ddccf4948efc1d3faf49d51be570c25bd051569e9c6e934b722969fa16e3619"
+      "uncompressed_sha256": "098f5d9ad43d97e85697083bb07d987054a0fa248d4df496bc73fe4f162c8f43"
     },
     {
-      "compressed_sha256": "0ccc8bf5e8feda0caf5f125f69920659827d4852fc73793bebbe6b7127fa13a1",
+      "compressed_sha256": "57da5241e780e2948a803cb13d03f8d6a4ba2fed5b8097fd6ed61d0586773251",
       "count": 1024,
-      "first_path": "src/commands/sandbox-explain.test.ts",
-      "last_path": "src/config/sessions/session-accessor.sqlite-transcript-incremental-read.ts",
+      "first_path": "src/cli/respawn-policy.ts",
+      "last_path": "src/commands/doctor-lint.native-admission.test.ts",
       "path": "projects/openclaw-rust/inventory/shards/part-0031.jsonl.gz",
-      "uncompressed_sha256": "eb166646a26dfd7699120d8067d035ccf80245cb6a596b26f6ed21aa7468d37c"
+      "uncompressed_sha256": "e8d41dbd43d105a22ed176d6c70d8e516c92f09ec471193b258273ab03eef969"
     },
     {
-      "compressed_sha256": "c253b53bde90745e7171966e44513d6b00b6ab2d944895eb1b506609447bdf8e",
+      "compressed_sha256": "a9934891782e40fefdeb6124b374b4c4e2a8cbdb69bd58634d85f1069531b979",
       "count": 1024,
-      "first_path": "src/config/sessions/session-accessor.sqlite-transcript-message-append.ts",
-      "last_path": "src/cron/backup-command.ts",
+      "first_path": "src/commands/doctor-lint.native-capture.test-support.ts",
+      "last_path": "src/commands/status.service-summary.test.ts",
       "path": "projects/openclaw-rust/inventory/shards/part-0032.jsonl.gz",
-      "uncompressed_sha256": "7524eff9e2aa43d8e68eb5acd13746b610e84d8d7cb0d697b085320902e72bff"
+      "uncompressed_sha256": "20f4bfb97dd8b637804934a9fdaad485c19045fd3a63f007b63323f27a0d5b09"
     },
     {
-      "compressed_sha256": "bc64e4256c21624204b52e264f0f9217dec3d51b7b1eabe1c8bbda674db570d7",
+      "compressed_sha256": "7b8fec56b83ccd2acfb2ae3f4c8a98473b3061210bd501e98f5afc8ab02d9d14",
       "count": 1024,
-      "first_path": "src/cron/cli-thinking.gateway.test.ts",
-      "last_path": "src/flows/doctor-stale-runtime-build-contribution.test.ts",
+      "first_path": "src/commands/status.summary-heartbeat-roster.test.ts",
+      "last_path": "src/config/sessions/session-actor-memory-fork.test.ts",
       "path": "projects/openclaw-rust/inventory/shards/part-0033.jsonl.gz",
-      "uncompressed_sha256": "4d613e168dacb0f5e8828260edd58e47f8d03b43acf5acd2533d83b89c39ed39"
+      "uncompressed_sha256": "559d3d4ec768533260d986c7071b99fc84d9d6eb1b1a93d56f09420d2b16c6e6"
     },
     {
-      "compressed_sha256": "90a6c36d04b93762e8d913ce2256dd98513e1916f5fbab92eaae6a1d4e3782c5",
+      "compressed_sha256": "08ca7cb7b58bcf4cf3a4f4c0db0b2aad323d0ef8e357e30e6d3445cd52a107dc",
       "count": 1024,
-      "first_path": "src/flows/doctor-startup-channel-maintenance.test.ts",
-      "last_path": "src/gateway/model-account-connect.ts",
+      "first_path": "src/config/sessions/session-actor-memory-fork.ts",
+      "last_path": "src/cron/isolated-agent.auth-continuity.integration.test.ts",
       "path": "projects/openclaw-rust/inventory/shards/part-0034.jsonl.gz",
-      "uncompressed_sha256": "5eb07a092fcdd1ac515c84a653f45677b865eadea51c9a1cb15ebca973732e36"
+      "uncompressed_sha256": "9296603719ab1f40dca4826c2d25083c45fa92be164a70164c4aaa8fcad0e9a5"
     },
     {
-      "compressed_sha256": "b678802d159ecac27c47ef856e64b52653ac39ea2d4d7a5dbada588103155d5e",
+      "compressed_sha256": "f685758240a6bdc6708606532ff955efcdd62f36326460d94fc1b238744dc24a",
       "count": 1024,
-      "first_path": "src/gateway/model-account-connect.worker.test.ts",
-      "last_path": "src/gateway/server-methods/environments.pairing-snapshot.test.ts",
+      "first_path": "src/cron/isolated-agent.auth-profile-propagation.test.ts",
+      "last_path": "src/flows/doctor-model-reference-check.test.ts",
       "path": "projects/openclaw-rust/inventory/shards/part-0035.jsonl.gz",
-      "uncompressed_sha256": "5a3a531c3d4776b2e95baf72ff651e5b5bd13a040b9717b8f7c1c03d56b910a2"
+      "uncompressed_sha256": "a87f608c84bd1de7ed7b01bcbb7348f2b3a5d5d5b4c50e37f3cd9874e32e28a1"
     },
     {
-      "compressed_sha256": "8bed61351d608c90d862f5361deacfa9143bcfeb5df6ec8e715d8d90ab90224a",
+      "compressed_sha256": "dfffa11ea040405a605d3ca3bdf942e6fef10258eb2c9808eba26058267147f8",
       "count": 1024,
-      "first_path": "src/gateway/server-methods/environments.pool.test.ts",
-      "last_path": "src/gateway/server-startup.test-support.ts",
+      "first_path": "src/flows/doctor-model-reference-check.ts",
+      "last_path": "src/gateway/mcp-http.runtime.test.ts",
       "path": "projects/openclaw-rust/inventory/shards/part-0036.jsonl.gz",
-      "uncompressed_sha256": "6962d7113eae710a03d24cca09032923ddafe67e6fd50d6ddf801ba690b693c5"
+      "uncompressed_sha256": "3a8f2c97f8264f412f66ad42d307f2e4d6bc8a744d6ce987ce117ab2243425ab"
     },
     {
-      "compressed_sha256": "c7c02511e1e1164652ced2b3e315cb38ec665decb425a305f1c7bbd2386eb116",
+      "compressed_sha256": "e03370c9bad1e03db90795dbda463071d48e8b413ce70d2c1810502310d43e4d",
       "count": 1024,
-      "first_path": "src/gateway/server-startup.test.ts",
-      "last_path": "src/gateway/session-utils.fs.display-position.test.ts",
+      "first_path": "src/gateway/mcp-http.runtime.ts",
+      "last_path": "src/gateway/server-methods/cron-creator-authority-admission.ts",
       "path": "projects/openclaw-rust/inventory/shards/part-0037.jsonl.gz",
-      "uncompressed_sha256": "5b14d92617506638063ca9f36ac57beec14d12d8ef7db568d8a11b6b56e473de"
+      "uncompressed_sha256": "8c42b4c6f3afb5e8d4842d59325bd27c9219fdf6cbe62486ab394568c4f0decb"
     },
     {
-      "compressed_sha256": "3f4ecb325b5b6c83934c22850f2d6bda50fdb9cf3ca501bf68bcd65208bc7f8c",
+      "compressed_sha256": "6e495db1086b64fec2e4cfb12bb5e78a8cdd4eba97a17082a04a79eed4cd1c80",
       "count": 1024,
-      "first_path": "src/gateway/session-utils.fs.test.ts",
-      "last_path": "src/hooks/bundled/command-logger/handler.ts",
+      "first_path": "src/gateway/server-methods/cron-creator-session.test-support.ts",
+      "last_path": "src/gateway/server-runtime-state.portals.test.ts",
       "path": "projects/openclaw-rust/inventory/shards/part-0038.jsonl.gz",
-      "uncompressed_sha256": "019806417e9680627e469b8b2b4fb3e72652846c751323fd41c290123dcdb2ac"
+      "uncompressed_sha256": "cb8af89e502112b4b6b64351545ab3ca31b09887c666111ac54e3f196dc452e0"
     },
     {
-      "compressed_sha256": "6c22be530ca5e106a7de8526d7b2549ff18b2e0520107c1ea8ae3df0d31b890e",
+      "compressed_sha256": "a5fc6528fd2802c581325893e8cc1b5ae4a79996d393e435e62043f8ecd45336",
       "count": 1024,
-      "first_path": "src/hooks/bundled/compaction-notifier/HOOK.md",
-      "last_path": "src/infra/heartbeat-runner.subagent-session-guard.test.ts",
+      "first_path": "src/gateway/server-runtime-state.tailscale.test.ts",
+      "last_path": "src/gateway/session-row-projection.worker-read.test.ts",
       "path": "projects/openclaw-rust/inventory/shards/part-0039.jsonl.gz",
-      "uncompressed_sha256": "d8a2d07eedfbc2552ace9eeae8dc99fa137fe23e23052faa12c05c3b8249d065"
+      "uncompressed_sha256": "bca63efc44c795b8b69949a48f3d881fbb1bbb12341b14e13455c2e1f0b83ca8"
     },
     {
-      "compressed_sha256": "073f8864d3095daffefdbcefdbf0046dc9f8f71e6dbffe8da8d467f9f253444a",
+      "compressed_sha256": "a75f34ea2c3553ea7059458db72ed664f0e89a830be8ee5e53e9ddf8ff8c92eb",
       "count": 1024,
-      "first_path": "src/infra/heartbeat-runner.test-harness.ts",
-      "last_path": "src/infra/sqlite-native-observer.test.ts",
+      "first_path": "src/gateway/session-row-provider-review.ts",
+      "last_path": "src/gateway/worker-environments/worker-portal-tool-executor.test.ts",
       "path": "projects/openclaw-rust/inventory/shards/part-0040.jsonl.gz",
-      "uncompressed_sha256": "8316bcb93c56e755c93a7da4149c62e1fbd709cb317b8437c2ad7b055e6d83f8"
+      "uncompressed_sha256": "ac089b5d4a94821cbc3c999f3c663e31c06106cf7340926f71032cb2f4f73765"
     },
     {
-      "compressed_sha256": "ce23396b0163c499d20c9c90d3d3423dd7b2839d1a0b6653c63ee8c765eaf8f6",
+      "compressed_sha256": "c6065181a162a45c295d59d25f5f45bbb2bd7b9aa620acf52d7fdb752383ffae",
       "count": 1024,
-      "first_path": "src/infra/sqlite-native-observer.ts",
-      "last_path": "src/infra/update-startup-cached.test.ts",
+      "first_path": "src/gateway/worker-environments/worker-portal-tool-executor.ts",
+      "last_path": "src/infra/exec-approval-policy-snapshot.test.ts",
       "path": "projects/openclaw-rust/inventory/shards/part-0041.jsonl.gz",
-      "uncompressed_sha256": "a70c2e0332bb86027397d5960f397bba1b2ad04fd650ba4faf484a87eae10792"
+      "uncompressed_sha256": "6330b4ffdf72b0896dc3de14b0193774630bae0f060c66736c6bfa7661b6c3de"
     },
     {
-      "compressed_sha256": "c129e5005e9748311a27d439cd2bc4cab8661d7bd43b075e4f991f0846aad941",
+      "compressed_sha256": "8f55a7e3e094e5263cb029856dcd519d5433e567ac6f314e10f49ec4343de0cf",
       "count": 1024,
-      "first_path": "src/infra/update-startup-campaign-run.test.ts",
-      "last_path": "src/plugin-sdk/agent-sessions.ts",
+      "first_path": "src/infra/exec-approval-policy-snapshot.ts",
+      "last_path": "src/infra/resolve-system-bin.test.ts",
       "path": "projects/openclaw-rust/inventory/shards/part-0042.jsonl.gz",
-      "sha256": "fea4181da60124c0eea91f31f419f14d218a32720e77fb3a8799829e3a1afac2",
-      "size_bytes": 48086,
-      "uncompressed_sha256": "301f3d09f841b233a197a5cab17a09e08bff07ef0afa8c40ad2279569ee71ddc"
+      "uncompressed_sha256": "e49a02a03be86e08075f6da6cc4a97f1d823d3222a4a91eed062556c029d5448"
     },
     {
-      "compressed_sha256": "cd0a28caca5d366b85f0653c0135c88a483f6a3cf66740b646491ed7c5e6b241",
+      "compressed_sha256": "6ca6ef116945b2638f6ff1c6a816d129a783bfead74a06c61a5bbc715abdf006",
       "count": 1024,
-      "first_path": "src/plugin-sdk/agent-workspace-runtime.ts",
-      "last_path": "src/plugins/contracts/provider-catalog-deprecation.contract.test.ts",
+      "first_path": "src/infra/resolve-system-bin.ts",
+      "last_path": "src/infra/update-immutable-install-schema.ts",
       "path": "projects/openclaw-rust/inventory/shards/part-0043.jsonl.gz",
-      "uncompressed_sha256": "aad09f6ae12697d5bb04cbb3e9f6d8ec5498a1a63208f1ee3d59592692de59a4"
+      "uncompressed_sha256": "29d5440ed4a10be4813566d9a078205931c38f465c612bafb6ab994e7ff05ed9"
     },
     {
-      "compressed_sha256": "4a2cfe95d7efba6ddca1c60a2d188842ac42d7e37841cb4dcf9bfe9ec81fe4bd",
+      "compressed_sha256": "05c95ab53cb1a38b8516db63a063a5cb503e729a9628c5c53380d1234e6a4b20",
       "count": 1024,
-      "first_path": "src/plugins/contracts/providers.contract.test.ts",
-      "last_path": "src/plugins/runtime.retention.test.ts",
+      "first_path": "src/infra/update-immutable-install.adoption.test.ts",
+      "last_path": "src/meeting-bot/transcripts-bridge.test.ts",
       "path": "projects/openclaw-rust/inventory/shards/part-0044.jsonl.gz",
-      "uncompressed_sha256": "351bf36bf1398bbae83daf3ba8691ca67bc64f6bf06be4d041935931a798b4f2"
+      "uncompressed_sha256": "135b2fbce8d14c1e3c7d545aafecd37ccd07758240c6b2d328065a6af19eeb0b"
     },
     {
-      "compressed_sha256": "97f4ce745e1740605161c68fc9800eb8958a78d1ba08bfba81b7206e35fccec6",
+      "compressed_sha256": "994e5b48514e983e24f784a13e1ff199e7aa697d82a2265402aadb493dfde8d4",
       "count": 1024,
-      "first_path": "src/plugins/runtime.shutdown-preload.test.ts",
-      "last_path": "src/sessions/session-chat-type.ts",
+      "first_path": "src/meeting-bot/transcripts-bridge.ts",
+      "last_path": "src/plugin-sdk/test-helpers/web-search-provider-contract.ts",
       "path": "projects/openclaw-rust/inventory/shards/part-0045.jsonl.gz",
-      "uncompressed_sha256": "53537d781267c500f809ae4533813d05fce88d623231854dd359e94e97bab4eb"
+      "uncompressed_sha256": "6553e57e386093bd0990d011c0c595962fd049dea18fc26797ffca39d6867d6b"
     },
     {
-      "compressed_sha256": "80ef6018dfa5b1860143b5b3f504626dc9cfb0a5e586068dd3040a7477389e7c",
+      "compressed_sha256": "7b3f5fb9ee757ef6c908eee0a6e8c7296d26d01364c40603ee295fb6c9228b4a",
       "count": 1024,
-      "first_path": "src/sessions/session-controller-model.test-support.ts",
-      "last_path": "src/state/openclaw-agent-legacy-acp-schema.test.ts",
+      "first_path": "src/plugin-sdk/test-live-auth.ts",
+      "last_path": "src/plugins/plugin-lifecycle-lease.test.ts",
       "path": "projects/openclaw-rust/inventory/shards/part-0046.jsonl.gz",
-      "uncompressed_sha256": "0c25292a64ba949f0a5f6fdf840fb774ba12674d23605687e6300324457dfadd"
+      "uncompressed_sha256": "04926c44f36453ab93efd35c923ec3ca63a87c269ec0c8bc6257445e0f971b2f"
     },
     {
-      "compressed_sha256": "e27ae6c547bb7487a08d3e0efc38cd6b228e6c0ea3ed652807572c70695b2fc9",
+      "compressed_sha256": "07f047a3e775d2edf20407401c886a26711846f5a0a07f96d0c0d177cec1721b",
       "count": 1024,
-      "first_path": "src/state/openclaw-agent-legacy-acp-schema.ts",
-      "last_path": "src/tts/status-config.ts",
+      "first_path": "src/plugins/plugin-lifecycle-lease.ts",
+      "last_path": "src/proxy-capture/runtime.retirement.test.ts",
       "path": "projects/openclaw-rust/inventory/shards/part-0047.jsonl.gz",
-      "uncompressed_sha256": "98356eb4ca53844382d6cfa8b0bb3abc6c721dbef3e34bd5578be9dc29c4aa88"
+      "uncompressed_sha256": "2c0042f89d622e397b0b6ec9ed2d80e1990a019724d8bdce344f7a77900afa37"
     },
     {
-      "compressed_sha256": "c8f488d2a9b04aa51f777e42c2194b8650f56d05136411c13a0fbbddd458c181",
+      "compressed_sha256": "0947b310d37041bf7fe8d9d5ec8740bf61b6e4ebc7ac0155da642b11fa4cead4",
       "count": 1024,
-      "first_path": "src/tts/tts-audio-store.test.ts",
-      "last_path": "test/gateway-restart.test-support.ts",
+      "first_path": "src/proxy-capture/runtime.test.ts",
+      "last_path": "src/skills/lifecycle/skill-change-hook.ts",
       "path": "projects/openclaw-rust/inventory/shards/part-0048.jsonl.gz",
-      "uncompressed_sha256": "3eec59d4081d0aa47aac4032eb7aa30a1f166d1f0bba4848109aee284139c123"
+      "uncompressed_sha256": "5d34b498ad70a40c987305c0d93f8788f004bb64451aa302513a5174d998c380"
     },
     {
-      "compressed_sha256": "4b85b31bb53f90a043ebc6f3eadbe06f74d08a87b1f6543fb82d50772a64c326",
+      "compressed_sha256": "35e0f526739dfbf94bbd89327fe087486fc6db1eb993d197413fbe3d6852ec4a",
       "count": 1024,
-      "first_path": "test/gateway-restored-requester-settle.e2e.test.ts",
-      "last_path": "test/scripts/plugin-prerelease-test-plan.test.ts",
+      "first_path": "src/skills/lifecycle/skill-tree-digest.test.ts",
+      "last_path": "src/state/user-profile-github-identity.ts",
       "path": "projects/openclaw-rust/inventory/shards/part-0049.jsonl.gz",
-      "uncompressed_sha256": "e30d90ba99240759f0fa204599f3701840a70dac34c3dfa7d8c657b9cdf7bba4"
+      "uncompressed_sha256": "0a31547e4e6ee628ea3a2cfca98e978d1663e48efcc18d16d06b10d4c160c312"
     },
     {
-      "compressed_sha256": "e1c5715ca6965bd8718e686be62740a38500c9fb7427c2a9431c87ae583a7a4f",
+      "compressed_sha256": "cdcef9b92e00627e50cc88d72a91184120f64649ed1b0c741ccc579174e64236",
       "count": 1024,
-      "first_path": "test/scripts/plugin-prerelease.test-support.ts",
-      "last_path": "ui/public/fonts/fraunces-italic-latin.woff2",
+      "first_path": "src/state/user-profile-identity.read.ts",
+      "last_path": "src/worker/browser-runtime.test.ts",
       "path": "projects/openclaw-rust/inventory/shards/part-0050.jsonl.gz",
-      "uncompressed_sha256": "5e1faa73db1f47f662c1af7f424521bf8b2533fc0502f8eea8a7f8a16634f044"
+      "uncompressed_sha256": "7a83a733da8c7d260e6dd031f872b631c3cc9aa5efee78c868e0d1941d483027"
     },
     {
-      "compressed_sha256": "3e45c57f9b6971c0ff2714a6c6b8d112226179a75c95619a653c356ab83a785e",
+      "compressed_sha256": "529fa0ba5bb08dca771e74047b45e03c9ac07966cd97e21a90b3f1359d3d248e",
       "count": 1024,
-      "first_path": "ui/public/fonts/fraunces-latin-ext.woff2",
-      "last_path": "ui/src/components/link-reader-hovercard.types.ts",
+      "first_path": "src/worker/browser-runtime.ts",
+      "last_path": "test/scripts/bench-gateway-startup.test.ts",
       "path": "projects/openclaw-rust/inventory/shards/part-0051.jsonl.gz",
-      "uncompressed_sha256": "88f27d983508f7adf867b8adeb7e9e7117000a1f37eb2b54344655ea637e13c9"
+      "uncompressed_sha256": "440a09aea60293460d89adfa882c3fbf87b1fb8f3675ddb9a479fd0133f467b7"
     },
     {
-      "compressed_sha256": "54050c5c12b9d605910a69a500af06ea63bc297e761a9604b0962152a0a3ca5e",
+      "compressed_sha256": "b3845389f24c7e6ec9717ecec3ee5a00313d810992c7a856bdfd947f0e5e6c7c",
       "count": 1024,
-      "first_path": "ui/src/components/link-reader-images.ts",
-      "last_path": "ui/src/e2e/chat-widget-sandbox.real-gateway.e2e.test.ts",
+      "first_path": "test/scripts/bench-model.test.ts",
+      "last_path": "test/scripts/security-review-admission.test.ts",
       "path": "projects/openclaw-rust/inventory/shards/part-0052.jsonl.gz",
-      "uncompressed_sha256": "493a0ac23c8daffc506e114034fceb9623435427ff30bd69193874a73d0dafac"
+      "uncompressed_sha256": "d3c41193ad186d80ae382d69aef270a86901404afa413f96b42928d754bdda34"
     },
     {
-      "compressed_sha256": "ad2f10ed82b2dc81f5762c8b01bff785cedb0a10499960798258808948f2b941",
+      "compressed_sha256": "a039c8fd305cc481d8102f94aac82c65c0634d93986f1e3217939d4769b50d66",
       "count": 1024,
-      "first_path": "ui/src/e2e/chat-widget-scroll.e2e.test.ts",
-      "last_path": "ui/src/lib/gateway-client-kind.ts",
+      "first_path": "test/scripts/security-review-event.test.ts",
+      "last_path": "ui/src/app/app-shell-view-state.ts",
       "path": "projects/openclaw-rust/inventory/shards/part-0053.jsonl.gz",
-      "uncompressed_sha256": "58e82fcea62e87155da9b74ac40e10b659431818755d1466e9903aa47e55a0ab"
+      "uncompressed_sha256": "602414ae0322887fbda9a8a5f6bffc4671b9e0163b9aa5579c25ffee82442c13"
     },
     {
-      "compressed_sha256": "1d1784182dbb700edc5062e54190e221b823f8b8623310d7b70fa9d15aed1839",
+      "compressed_sha256": "729f3f14e36d28895656c207885c70ef2b8794802dad8d4edb7e9915ab8bdf45",
       "count": 1024,
-      "first_path": "ui/src/lib/gateway-connection-lifecycle.test.ts",
-      "last_path": "ui/src/pages/chat/chat-send-attachment-retirement.test.ts",
+      "first_path": "ui/src/app/app-shell-view.test.ts",
+      "last_path": "ui/src/components/menu-shortcuts.ts",
       "path": "projects/openclaw-rust/inventory/shards/part-0054.jsonl.gz",
-      "uncompressed_sha256": "ed83a8180f901fb4f9f24ec517a18da806f7d3ee6e105d2c0e14dd0b823b8bd2"
+      "uncompressed_sha256": "36c8806456e9506340bb1632594087171186b14d80d46c7e4fb333c330b6972a"
     },
     {
-      "compressed_sha256": "2d33fa1610d995f3ce91365edf4df5b15c6161926d05097c09aebaedb4d27f4b",
+      "compressed_sha256": "b6077eb3d66a1677b63495e238a63e5ac5f6f8f04bd55f11bbbadeca8c78b07b",
       "count": 1024,
-      "first_path": "ui/src/pages/chat/chat-send-command-recovery.test.ts",
-      "last_path": "ui/src/pages/chat/terminal-message-identity.ts",
+      "first_path": "ui/src/components/menu-surface.browser.test.tsx",
+      "last_path": "ui/src/e2e/github-panel.e2e.test.ts",
       "path": "projects/openclaw-rust/inventory/shards/part-0055.jsonl.gz",
-      "uncompressed_sha256": "bd180f7d073f31356591e5d8e6f6f904e3aa800474eb0070b2032b3df5f70d8d"
+      "uncompressed_sha256": "b3ddb6ab9e359803045b66ddd92fff59717bb99fbe632b4199afe6078bfc4648"
     },
     {
-      "compressed_sha256": "c3eb8ad512a14d43bff21048d485c08e743b3e6d4241ab14a603de2832334528",
+      "compressed_sha256": "0d2071f45c016233a0fbe5e5d2ba7e2d39e201578be9484bfcc4d5f76e7315c1",
       "count": 1024,
-      "first_path": "ui/src/pages/chat/test-helpers/chat-scroll-input.tsx",
-      "last_path": "ui/src/styles/agents-home.css",
+      "first_path": "ui/src/e2e/guest-personal-groups.real-gateway.e2e.test.ts",
+      "last_path": "ui/src/lib/mcp-app-message.test.ts",
       "path": "projects/openclaw-rust/inventory/shards/part-0056.jsonl.gz",
-      "uncompressed_sha256": "8a46cf5fbb0b5c87d918477598c8ce5316ea893145c632569c1e49f006e3a06c"
+      "uncompressed_sha256": "c702b262545f71cfc4172899ffc2dc0f56e8d28fc311a7b0d9e76970771fd02e"
     },
     {
-      "compressed_sha256": "93af5b38c4ad377ff2d1de816411cf704aa1d2dd1a0876c89b78f705d034b1a2",
-      "count": 382,
-      "first_path": "ui/src/styles/agents.css",
-      "last_path": "worker-heap-flag.mjs",
+      "compressed_sha256": "8bf68936178f9aa7930c888c1e16ebde8ed57078e7a33755991adaafa6706307",
+      "count": 1024,
+      "first_path": "ui/src/lib/mcp-app-message.ts",
+      "last_path": "ui/src/pages/chat/chat-pane-unidentified-successor.test.ts",
       "path": "projects/openclaw-rust/inventory/shards/part-0057.jsonl.gz",
-      "uncompressed_sha256": "5b42c37230b9537452e478742a4632c0d2c4a4891973e26321055c1b8ad0d6f4"
+      "uncompressed_sha256": "6c82d8ffa11b9f9c9abbe7bcf47bfff1c2ffab6320e03bddc453f60681802b6a"
+    },
+    {
+      "compressed_sha256": "1da0b2e5814204cfeea50934dfa8f15cf26669c9de6461ecde983b8227fbf4cc",
+      "count": 1024,
+      "first_path": "ui/src/pages/chat/chat-pane-unmaterialized-settings.test.ts",
+      "last_path": "ui/src/pages/chat/composer-library-session.ts",
+      "path": "projects/openclaw-rust/inventory/shards/part-0058.jsonl.gz",
+      "uncompressed_sha256": "108ece22c571fd1c3dd38f6235783686b8249c8bcc1b6d831daa6b6c1b99c84d"
+    },
+    {
+      "compressed_sha256": "f0c5f9828adc1658c8f1c7510878bc64ec24444be679d228f8c0bf3b97f647a1",
+      "count": 1024,
+      "first_path": "ui/src/pages/chat/composer-microphone-picker.test.ts",
+      "last_path": "ui/src/pages/secrets/view.tsx",
+      "path": "projects/openclaw-rust/inventory/shards/part-0059.jsonl.gz",
+      "uncompressed_sha256": "71543430280ff54928031e7221d0615cf7dab0c1080441b20479c542f44954ac"
+    },
+    {
+      "compressed_sha256": "e86cebfc5679afb5c3d69201bb9c286a059e193f4ef8a7b021970b5132360ade",
+      "count": 690,
+      "first_path": "ui/src/pages/sessions/agent-scope.ts",
+      "last_path": "worker-heap-flag.mjs",
+      "path": "projects/openclaw-rust/inventory/shards/part-0060.jsonl.gz",
+      "uncompressed_sha256": "b2c33fdc4818ae1b434d08f411510aa5dad53dbdbe03afd2abe1d338c92f8d10"
     }
   ],
-  "tracked_blob_entries_total": 58748,
-  "tracked_entries_total": 58750,
+  "tracked_blob_entries_total": 62128,
+  "tracked_entries_total": 62130,
   "tracked_gitlink_entries_total": 0,
   "tracked_symlink_entries_total": 2,
   "upstream": {
-    "commit": "ad8d12f126d29b0db204187adf5092db80294e70",
+    "commit": "1440bb1771372334bea23d7642bb52deb7db1845",
     "repository": "openclaw/openclaw",
-    "tree": "04ccce62f1d74dc8e0c88290ae8ded027b7b0f16"
+    "tree": "90c8aab39972da11cfad220361781d49e1bc6700"
   }
 }
