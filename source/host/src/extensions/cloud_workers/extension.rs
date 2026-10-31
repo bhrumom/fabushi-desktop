@@ -458,11 +458,53 @@ pub enum CloudWorkerExtensionError {
 
 #[cfg(test)]
 mod tests {
-    use super::{CloudWorkerOwnerStatus, start_cloud_worker_provisioning_extension};
-    use crate::extensions::cloud_workers::{
-        CloudWorkerDoctorAction, CloudWorkerDoctorError, CloudWorkerDoctorRequest,
-        CloudWorkerDoctorStatus, CloudWorkerLeaseScope, ReplayKey,
+    use std::path::PathBuf;
+    use std::sync::{Arc, Mutex};
+
+    use super::{
+        CloudWorkerMutationError, CloudWorkerOwnerStatus, CloudWorkerProvisioningExtension,
+        CloudWorkerProvisioningStore, start_cloud_worker_provisioning_extension,
     };
+    use crate::extensions::cloud_workers::{
+        CloudWorkerArtifactAdmissionError, CloudWorkerArtifactKind, CloudWorkerArtifactPolicy,
+        CloudWorkerArtifactSource, CloudWorkerDoctorAction, CloudWorkerDoctorError,
+        CloudWorkerDoctorRequest, CloudWorkerDoctorStatus, CloudWorkerLeaseScope,
+        CloudWorkerArtifactDigest, CloudWorkerProvisioningConfig,
+        CloudWorkerProvisioningOwner, ReplayKey,
+    };
+
+    fn enabled_extension(state_path: PathBuf) -> CloudWorkerProvisioningExtension {
+        let owner = CloudWorkerProvisioningOwner::new(CloudWorkerProvisioningConfig {
+            enabled: true,
+            max_leases: 1,
+            max_warm_images: 1,
+            max_artifacts: 1,
+        })
+        .unwrap();
+        CloudWorkerProvisioningExtension {
+            owner: Arc::new(Mutex::new(owner)),
+            state_path,
+            store: CloudWorkerProvisioningStore,
+        }
+    }
+
+    fn artifact_policy() -> CloudWorkerArtifactPolicy {
+        CloudWorkerArtifactPolicy {
+            allowed_https_origins: Vec::new(),
+            max_bytes: 1024,
+        }
+    }
+
+    fn test_state_path(label: &str) -> PathBuf {
+        let nonce = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap()
+            .as_nanos();
+        std::env::temp_dir().join(format!(
+            "cloud-worker-{label}-{}-{nonce}.json",
+            std::process::id()
+        ))
+    }
 
     #[test]
     fn poisoned_owner_is_projected_as_unavailable_without_public_owner_access() {
@@ -505,5 +547,55 @@ mod tests {
             extension.inspect_doctor(request),
             Err(CloudWorkerDoctorError::MutationNotWired)
         );
+    }
+
+    #[test]
+    fn verified_artifact_bytes_are_persisted_as_one_owner_mutation() {
+        let state_path = test_state_path("verified-artifact");
+        let extension = enabled_extension(state_path.clone());
+        let source = CloudWorkerArtifactSource::ManagedLocal {
+            digest: CloudWorkerArtifactDigest::new(
+                "87eba76e7f3164534045ba922e7770fb58bbd14ad732bbf5ba6f11cc56989e6e",
+            )
+            .unwrap(),
+        };
+
+        let verified = extension
+            .verify_and_register_artifact(
+                CloudWorkerArtifactKind::WorkerBinary,
+                &artifact_policy(),
+                &source,
+                b"worker",
+            )
+            .unwrap();
+
+        assert_eq!(verified.size_bytes, 6);
+        assert_eq!(extension.snapshot().unwrap().artifacts.len(), 1);
+        assert!(state_path.is_file());
+    }
+
+    #[test]
+    fn digest_mismatch_does_not_persist_an_artifact_admission() {
+        let state_path = test_state_path("rejected-artifact");
+        let extension = enabled_extension(state_path.clone());
+        let source = CloudWorkerArtifactSource::ManagedLocal {
+            digest: CloudWorkerArtifactDigest::new("a".repeat(64)).unwrap(),
+        };
+
+        let result = extension.verify_and_register_artifact(
+            CloudWorkerArtifactKind::WorkerBinary,
+            &artifact_policy(),
+            &source,
+            b"worker",
+        );
+
+        assert!(matches!(
+            result,
+            Err(CloudWorkerMutationError::Artifact(
+                CloudWorkerArtifactAdmissionError::DigestMismatch { .. }
+            ))
+        ));
+        assert!(extension.snapshot().unwrap().artifacts.is_empty());
+        assert!(!state_path.exists());
     }
 }

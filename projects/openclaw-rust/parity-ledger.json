@@ -2069,7 +2069,9 @@
       },
       "tests": [
         "source/host/src/extensions/cloud_workers/artifact_admission.rs::tests::rejects_digest_mismatch",
-        "source/host/src/extensions/cloud_workers/artifact_admission.rs::tests::rejects_unsafe_archive_member"
+        "source/host/src/extensions/cloud_workers/artifact_admission.rs::tests::rejects_unsafe_archive_member",
+        "source/host/src/extensions/cloud_workers/extension.rs::tests::verified_artifact_bytes_are_persisted_as_one_owner_mutation",
+        "source/host/src/extensions/cloud_workers/extension.rs::tests::digest_mismatch_does_not_persist_an_artifact_admission"
       ],
       "typed_contracts": [
         "CloudWorkerArtifactAdmission",

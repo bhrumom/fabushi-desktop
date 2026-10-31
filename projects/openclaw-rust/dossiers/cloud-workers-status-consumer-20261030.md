@@ -200,6 +200,12 @@ introducing download, credential egress, extraction, publication, provider
 launch or packaged consumer behavior; those producer and consumer paths remain
 pending.
 
+The extension contract now also records the positive persistence and digest
+mismatch negative oracles in
+`source/host/src/extensions/cloud_workers/extension.rs`; they are authored for
+Actions execution and have not been run locally under this task's verification
+constraints.
+
 Warm-image capture ambiguity now has a typed extension façade that persists
 `CaptureUncertain` and cleanup debt under generation fencing. Provider snapshot
 reconciliation and cleanup consumers remain pending.
