@@ -59,3 +59,17 @@ this request-wire responsibility.
 
 No GitHub Actions/status/check query or trigger, build, typecheck, lint, schema validator, generator,
 unit/contract/integration/E2E test, package, deployment, installation or runtime acceptance was performed.
+
+
+## Final source-level compliance readback
+
+Platform-core compliance commit:
+`f2593977cbdfe1a09ce811da86029ec824021af3`.
+
+Final spec blob:
+`docs/specs/telegram-mtproto-msgs-state-req-request-wire.md@f9b8839b10fa449474a5cfe080f84ca70a08f7a1`.
+
+Remote source readback records R1-R9 and AC-1-AC-6 as source/bookkeeping satisfied while executable Stage-B
+validation remains intentionally not run. Production api/tl/lib blobs remain unchanged, canonical/desktop
+authored contract blob remains `60a1dfb3ea2051a498d6cfb9d401fe653fde7d75`, and the responsibility remains
+`implemented / validation_status=not-run / accepted=false`.
