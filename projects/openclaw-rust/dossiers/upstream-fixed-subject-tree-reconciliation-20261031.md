@@ -43,6 +43,26 @@ SHAs from the tree response are:
 
 `.gitmodules` is absent, consistent with zero gitlinks.
 
+## Root dependency-input probe
+
+The same exact commit's raw root inputs were fetched and verified against the
+tree blob identities with Git's blob hash algorithm. `package.json` resolves to
+the tree SHA above and declares `pnpm@12.15.0` with its integrity-qualified
+package-manager string, `75` runtime dependencies and `58` dev dependencies.
+The recursive tree contains `209` `package.json` paths. `pnpm-lock.yaml` also
+hashes to its exact tree SHA and begins with lockfile version `9.0`, the pnpm
+12.15.0 package-manager dependency and importer/package/snapshot sections. The
+lock input is therefore present and identity-bound; a full workspace importer,
+peer/optional dependency, patch, native-build and external-package closure has
+not yet been independently materialized.
+
+The exact root-input identities are:
+
+| input | Git blob SHA |
+| --- | --- |
+| `package.json` | `af543c4c033b5c5e0c466061ada470feeda777f3` |
+| `pnpm-lock.yaml` | `80fb4d9fa985297a24ac88931ef534e85a40ba47` |
+
 ## Evidence boundary
 
 This proves the fixed subject's recursive path/blob/mode inventory is complete
