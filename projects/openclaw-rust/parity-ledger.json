@@ -15713,9 +15713,9 @@
       ],
       "id": "OCRM-RESP-TALK-AUDIO-PORT-FENCE-001",
       "integration": {
-        "consumer": "No production audio-output consumer identified; source/host/src/ports/mod.rs has no AudioOutputPort",
-        "entrypoint": "pending realtime talk transport owner selection",
-        "owner": "pending existing realtime talk audio owner selection",
+        "consumer": "No production audio-output consumer identified; AudioOutputPort remains an uncalled bounded Host primitive",
+        "entrypoint": "source/host/src/ports/mod.rs::AudioOutputPort::send_audio",
+        "owner": "source/host/src/ports/mod.rs::AudioOutputPort",
         "producer": "No production realtime audio producer identified"
       },
       "invariants": [
@@ -15760,7 +15760,7 @@
       ],
       "status": {
         "acceptance": "pending",
-        "implementation": "not-started",
+        "implementation": "implementing",
         "mapping": "mapped",
         "read": "read-complete",
         "verification": "not-run",
@@ -15777,7 +15777,9 @@
       ],
       "typed_contracts": [
         "AudioOutputPort::send_audio",
-        "AudioOutputPort::close"
+        "AudioOutputPort::close",
+        "AudioOutputPort::pop_audio",
+        "AtomicI32 close fence"
       ],
       "unit_id": "OCRM-UNIT-TALK-001"
     },

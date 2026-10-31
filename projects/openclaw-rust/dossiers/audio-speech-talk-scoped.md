@@ -72,14 +72,24 @@ and `acceptance=pending` until ESP-D01 through ESP-D04 in
 `docs/specs/exact-speech-protocol.md` are resolved. The historical OCRM-AUDIO-O07
 test is not a production oracle until it is moved behind the real Runner path.
 
-The same exact-source re-read found no `AudioOutputPort`, `TurnContextTracker`,
+The same exact-source re-read found no `TurnContextTracker`,
 or `RealtimeVoiceAudioQueue` in the declared Rust targets. The O05/O06, O08/O09,
 and O10/O11/O12 logic lives only in the contract fixture, while the current
 Host has no corresponding realtime audio producer, WebSocket transcription
 consumer, or playback/VAD turn owner. Those three responsibilities are now
-calibrated in the ledger to `implementation=not-started`,
+calibrated in the ledger to `implementation=not-started` or `implementing`,
 `wiring=not-wired`, `verification=not-run`, and `acceptance=pending`; their
 fixture tests are explicitly non-production evidence.
+
+### Audio output port implementation slice (2026-10-31)
+
+`source/host/src/ports/mod.rs` now owns a bounded `AudioOutputPort` primitive.
+It enforces both the 320-frame and 1 MiB pending limits, counts rejected
+overflow attempts, and uses an `AtomicI32` close fence checked before and after
+queue admission. `pop_audio` releases the corresponding byte budget. This is
+an implementation slice only: no realtime playback producer or consumer has
+been identified, so the ledger remains `wiring=not-wired`,
+`verification=not-run`, and `acceptance=pending`.
 
 ---
 
