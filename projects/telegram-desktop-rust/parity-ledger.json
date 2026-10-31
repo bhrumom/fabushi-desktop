@@ -9,7 +9,7 @@
     "unknown": 16172,
     "unread": 16145,
     "omitted": 0,
-    "responsibilities_total": 84,
+    "responsibilities_total": 85,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -21157,6 +21157,263 @@
         "Telegram/SourceFiles/mtproto/scheme/mtproto.tl@76225965bfc794388db241f3f760db8ab79e84f8",
         "Telegram/SourceFiles/mtproto/details/mtproto_dc_key_creator.cpp@13c57454f14b814b5923ea253048fb881ad8cf03",
         "Telegram/SourceFiles/mtproto/session_private.cpp@13cbc76ec723386027b5b4dcac79999b791c4614"
+      ]
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+      "source_path": "Telegram/SourceFiles/mtproto/scheme/mtproto.tl",
+      "source_blob_sha": "76225965bfc794388db241f3f760db8ab79e84f8",
+      "source_kind": "schema",
+      "module_id": "tdesktop.mtproto.p-q-inner-data-temp-dc-wire",
+      "responsibility_id": "TDRP-R9-MTPROTO-P-Q-INNER-DATA-TEMP-DC-WIRE-001",
+      "source_symbols": [
+        "p_q_inner_data_temp_dc#56fddf88 pq:string p:string q:string nonce:int128 server_nonce:int128 new_nonce:int256 dc:int expires_in:int = P_Q_inner_data",
+        "DcKeyCreator::pqSend / Attempt::expiresIn",
+        "DcKeyCreator::pqAnswered / MTP_p_q_inner_data_temp_dc",
+        "AuthKeyHandshake::prepare_temporary_req_dh_params*"
+      ],
+      "capability_ids": [
+        "CAP-TELEGRAM-MTPROTO-P-Q-INNER-DATA-TEMP-DC-WIRE"
+      ],
+      "dependency_ids": [
+        "telegram-protocol::AuthKeyHandshake",
+        "telegram-protocol::TlWriter"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/evidence/round75-mtproto-p-q-inner-data-temp-dc-wire-20261101.md",
+      "behavior_contract": "Given an active ResPqReceived handshake, factored pq, caller-owned dc_id and positive expires_in, the canonical handshake request-preparation path emits fixed-U p_q_inner_data_temp_dc#56fddf88 with exact TL field order, RSA_PAD-encrypts that inner object through the existing trusted-key path, builds the existing req_DH_params request, stores only the existing new_nonce state, and transitions to AwaitingServerDh. The persistent prepare path remains unchanged and continues to serialize p_q_inner_data_dc#a9f55f95.",
+      "state_machine": "ResPqReceived + positive expires_in -> prepare_temporary_req_dh_params* -> exact p_q_inner_data_temp_dc -> existing RSA_PAD/build_req_dh_params -> AwaitingServerDh; expires_in <= 0 fails before state mutation. Network/runtime temporary-key establishment and persistence remain fail-closed until expiry/binding semantics have an exact owner.",
+      "side_effects": [
+        "Pure builder allocates exact p_q_inner_data_temp_dc bytes",
+        "Temporary prepare path reuses existing new_nonce generation, RSA key selection, RSA_PAD and handshake state transition; no second handshake state owner is added"
+      ],
+      "failure_cases": [
+        "Wrong constructor or TL field order",
+        "expires_in omitted, reordered, zero or negative",
+        "Factor mismatch accepted instead of failing closed",
+        "Temporary preparation mutates state before rejecting invalid lifetime",
+        "Persistent prepare path accidentally switches to temporary constructor",
+        "Temporary key routed into current permanent transport persistence without expiry/binding metadata"
+      ],
+      "ui_disposition": "No UI. This is source-neutral MTProto request-wire serialization inside the existing embedded Telegram protocol owner.",
+      "non_ui_responsibilities": [
+        "Exact p_q_inner_data_temp_dc constructor serialization",
+        "Canonical pq/p/q TL bytes framing",
+        "Raw nonce/server_nonce/new_nonce preservation",
+        "Exact dc_id and positive expires_in TL int serialization",
+        "Temporary request-preparation reuse of existing AuthKeyHandshake state machine",
+        "Fail-closed separation from broader temporary-key persistence/binding lifecycle"
+      ],
+      "platform_delta": "Fixed-U Telegram Desktop stores expiresIn on an auth-key creation attempt and consumes it when selecting MTP_p_q_inner_data_temp_dc before req_DH_params. Fabushi now carries the same value through the existing AuthKeyHandshake temporary request-preparation path without creating a second handshake. Existing network/runtime main bootstrap stays persistent because its current persisted transport snapshot has no expiry/binding metadata.",
+      "existing_owner_candidates": [
+        "bhrumom/fabushi-platform-core:native/telegram-protocol/src/handshake.rs",
+        "bhrumom/fabushi-platform-core:native/telegram-protocol/src/lib.rs",
+        "source/mahayana/mahayana-rs/providers/telegram-protocol/src/lib.rs",
+        "existing telegram-network/runtime owners for later expiry-aware temporary-key establishment"
+      ],
+      "existing_owner": "Existing canonical embedded telegram-protocol AuthKeyHandshake/request-wire owner",
+      "rejected_existing_owners": [
+        "new handshake owner: rejected because AuthKeyHandshake already owns req_pq -> req_DH_params preparation state",
+        "telegram-network/runtime main bootstrap: rejected for temporary-key establishment in this slice because existing persisted transport material lacks expires/binding metadata",
+        "standalone serializer only: rejected because request-preparation must consume the existing ResPqReceived state and transition the same handshake"
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "bhrumom/fabushi-platform-core:native/telegram-protocol/src/handshake.rs",
+        "bhrumom/fabushi-platform-core:native/telegram-protocol/src/lib.rs",
+        "bhrumom/fabushi-platform-core:native/telegram-protocol/tests/protocol_contract.rs",
+        "source/mahayana/mahayana-rs/providers/telegram-protocol/src/lib.rs",
+        "source/mahayana/mahayana-rs/providers/telegram-protocol/tests/protocol_contract.rs"
+      ],
+      "fabushi_target_symbols": [
+        "P_Q_INNER_DATA_TEMP_DC_CONSTRUCTOR",
+        "build_p_q_inner_data_temp_dc",
+        "AuthKeyHandshake::prepare_temporary_req_dh_params",
+        "AuthKeyHandshake::prepare_temporary_req_dh_params_with_random"
+      ],
+      "target_language": "Rust",
+      "language_rationale": "This is protocol wire logic and belongs in the existing Rust telegram-protocol owner; no Telegram C++ core, FFI, sidecar, subprocess, or second protocol runtime is retained.",
+      "command_event_contracts": [
+        "ResPqReceived + dc_id + positive expires_in -> prepare_temporary_req_dh_params* -> exact temporary inner object -> existing req_DH_params envelope",
+        "expires_in <= 0 -> InvalidTemporaryKeyLifetime with state remaining ResPqReceived",
+        "existing prepare_req_dh_params* -> unchanged persistent p_q_inner_data_dc path"
+      ],
+      "state_owner": "Existing AuthKeyHandshake remains authoritative; expires_in is consumed as request-preparation input and is not added as a second durable state machine.",
+      "lifecycle_owner": "Existing AuthKeyHandshake owns this wire/request-preparation slice. Broader temporary auth-key expiry enforcement, permanent-key binding, renewal and persistence remain unclaimed/fail-closed.",
+      "persistence_and_restart": "No new persistence. The current runtime transport snapshot does not encode temporary-key expiry/binding and therefore is deliberately not wired to temporary establishment in this slice.",
+      "concurrency_and_cancellation": "Pure synchronous serialization; no new asynchronous work, cancellation token, scheduler, callback registry, request history, or shared mutable state.",
+      "security_boundary": "Positive expires_in is validated before state mutation. The builder does not generate/store keys or perform network I/O; request preparation reuses existing trusted RSA selection and RSA_PAD. Temporary material is not silently written as permanent transport state.",
+      "network_service_dependencies": [
+        "No new network operation in the builder or handshake preparation method. Existing telegram-network main establish_auth_key remains persistent; temporary establishment is blocked on expiry/binding-aware lifecycle ownership."
+      ],
+      "service_owner": "Canonical embedded Telegram protocol runtime.",
+      "deployment_evidence": [],
+      "implementation_status": "implemented",
+      "coverage_disposition": "rewritten",
+      "blockers": [
+        "Network/runtime temporary-key establishment remains fail-closed because the current persisted transport state has no expiry/binding semantics; routing a temporary key there would misrepresent it as permanent auth-key material.",
+        "Connection-probe scheduling, endpoint/transport racing, plaintext/not-secure packet framing, send/timeout/retry and server-response correlation/application remain outside this wire/request-preparation slice.",
+        "Broader auth-key expiry enforcement, permanent-key binding, renewal and persistence remain open.",
+        "Stage B executable build/unit/contract/integration/packaged validation has not run.",
+        "gzip_packed bounded decompression remains blocked.",
+        "Complete updates difference/differenceSlice decoding/application remains open/fail-closed.",
+        "Arbitrary wasSent/haveSent/_resendingIds/toSend/_sentContainers histories remain open/fail-closed.",
+        "Broader fixed-U source/legal/release closure remains open."
+      ],
+      "production_entrypoints": [
+        "canonical telegram-protocol::AuthKeyHandshake::prepare_temporary_req_dh_params* -> build_p_q_inner_data_temp_dc -> existing rsa_pad_with_random -> build_req_dh_params",
+        "desktop tracked telegram-protocol facade/contracts mirror canonical API; no second handshake owner"
+      ],
+      "production_evidence": [
+        "platform-core-spec-commit:93283c35d075a16498b672e548071e16bdafd2c3",
+        "platform-core-spec-boundary-commit:8f09112d7af1875e19eddb7096ef1a0a05347d8d",
+        "platform-core-handshake-commit:af7b37f57be70a88cd10728d79d352c7aade88f5",
+        "platform-core-facade-commit:68c20daadfc680e24393c63d0505feb5fee4783e",
+        "platform-core-contract-commit:bcd516892fa49407a4de757e05235ed585ad4338",
+        "platform-core-path:native/telegram-protocol/src/handshake.rs@3e740e0714dfca71bb908ec46f182e98605582e5",
+        "platform-core-path:native/telegram-protocol/src/lib.rs@a2dc3f48a15c7a14657f598d7a5ce4b1fed9ed7f",
+        "platform-core-path:native/telegram-protocol/tests/protocol_contract.rs@748ca5f7962ff0704a630144c7368c067d212de3",
+        "desktop-facade-commit:aafca841fd745f3aee2deb9b89921f6d34021361",
+        "desktop-contract-commit:bd7c3a1c648107c92a265c76c46bae1da745f7e9",
+        "path:source/mahayana/mahayana-rs/providers/telegram-protocol/src/lib.rs@a2dc3f48a15c7a14657f598d7a5ce4b1fed9ed7f",
+        "path:source/mahayana/mahayana-rs/providers/telegram-protocol/tests/protocol_contract.rs@748ca5f7962ff0704a630144c7368c067d212de3"
+      ],
+      "test_evidence": [
+        "canonical and desktop protocol contracts authored for exact p_q_inner_data_temp_dc layout, positive expires_in, no trailing bytes, invalid lifetime rejection without state mutation, and temporary prepare transition; not run"
+      ],
+      "target_commit": "bd7c3a1c648107c92a265c76c46bae1da745f7e9",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Canonical Fabushi account + existing TelegramClientLease/runtime + shared telegram-protocol production composition",
+      "composition_slot": "Embedded Telegram MTProto client_DH_inner_data wire serialization",
+      "capability_component": "Exact fixed-U client_DH_inner_data builder",
+      "variation_axes": [
+        "caller-provided nonce/server_nonce/new_nonce",
+        "dc_id",
+        "positive expires_in",
+        "persistent versus temporary prepare selection"
+      ],
+      "shared_owner_contracts": [
+        "Existing account-bound TelegramClientLease",
+        "Existing RuntimeClient",
+        "Existing telegram-protocol TlWriter",
+        "Existing Cargo path-dependency composition"
+      ],
+      "duplicate_root_check": "No second account, runtime, provider, transport, connection probe, handshake runtime, request history, callback registry, sent-container store, decompression runtime, difference runtime, message store, UI root, sidecar, subprocess or Web wrapper was introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Not applicable",
+      "primary_navigation_target": "Existing Messages/Conversation navigation",
+      "collection_surface": "Existing ConversationList; no change",
+      "creation_flow": "Existing canonical conversation creation; no change",
+      "object_action_scope": "Not applicable",
+      "detail_section": "Not applicable",
+      "capability_surface": "Existing ConversationWorkspace through the same provider/runtime; no new surface",
+      "route_contract": "No new route.",
+      "search_scope": "Not applicable",
+      "search_provider": "Existing canonical Search owner; unchanged",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Unchanged.",
+      "search_local_remote_contract": "Not applicable.",
+      "responsive_disposition": "No UI change.",
+      "accessibility_contract": "No UI change.",
+      "keyboard_contract": "No UI change.",
+      "state_continuity_contract": "Temporary prepare consumes the same ResPqReceived state and transitions to AwaitingServerDh only after successful serialization/RSA_PAD/request framing. Invalid expires_in fails before mutation. Persistent prepare remains unchanged. Broader temporary-key persistence/binding remains fail-closed.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Existing Fabushi design system; no visual changes",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": null,
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "No new icon asset",
+      "avatar_contract": "No change",
+      "content_copy_keys": [],
+      "motion_contract": "No change",
+      "reduced_motion_contract": "No change",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "high",
+      "requirement_ids": [
+        "TDRP-R9-MTPROTO-P-Q-INNER-DATA-TEMP-DC-WIRE-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-MTPROTO-P-Q-INNER-DATA-TEMP-DC-WIRE-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-MTPROTO-P-Q-INNER-DATA-TEMP-DC-EXACT-001",
+        "INV-TDRP-MTPROTO-TEMP-AUTH-EXPIRES-POSITIVE-001",
+        "INV-TDRP-MTPROTO-TEMP-PREPARE-STATE-001",
+        "INV-TDRP-MTPROTO-PERSISTENT-PREPARE-UNCHANGED-001",
+        "INV-TDRP-MTPROTO-TEMP-PERSISTENCE-FAIL-CLOSED-001"
+      ],
+      "unit_case_ids": [
+        "UNIT-TDRP-MTPROTO-P-Q-INNER-DATA-TEMP-DC-LAYOUT-001",
+        "UNIT-TDRP-MTPROTO-P-Q-INNER-DATA-TEMP-DC-EXPIRES-001"
+      ],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-MTPROTO-P-Q-INNER-DATA-TEMP-DC-WIRE-001",
+        "CONTRACT-TDRP-MTPROTO-TEMP-REQ-DH-PREPARE-001"
+      ],
+      "integration_case_ids": [],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "fault_recovery_case_ids": [],
+      "performance_case_ids": [],
+      "security_case_ids": [
+        "SEC-TDRP-MTPROTO-TEMP-EXPIRES-VALIDATION-001",
+        "SEC-TDRP-MTPROTO-TEMP-PERSISTENCE-FAIL-CLOSED-001"
+      ],
+      "soak_case_ids": [],
+      "exploratory_charter_ids": [],
+      "regression_ids": [
+        "REG-TDRP-MTPROTO-PERSISTENT-P-Q-INNER-DATA-UNCHANGED-001"
+      ],
+      "release_gate_ids": [
+        "G-TRACEABILITY",
+        "G-COMPOSITION",
+        "G-SECURITY",
+        "G-EVIDENCE",
+        "G-RELEASE"
+      ],
+      "test_fixture_ids": [
+        "mtproto-temp-p-q-patterned-nonces",
+        "mtproto-temp-p-q-factored-272953",
+        "mtproto-temp-p-q-dc-2",
+        "mtproto-temp-p-q-expires-86400"
+      ],
+      "test_environment_ids": [
+        "GitHub Actions Stage B matrix (not run)"
+      ],
+      "coverage_matrix_status": "pending",
+      "flake_status": "stable",
+      "release_gate_status": "pending",
+      "acceptance_reviewer": null,
+      "reviewer": null,
+      "license_and_provenance": "Behavioral responsibility is anchored to fixed-U telegramdesktop/tdesktop Telegram/SourceFiles/mtproto/scheme/mtproto.tl@76225965bfc794388db241f3f760db8ab79e84f8 and shipping DcKeyCreator::dhClientParamsSend / MTP_client_DH_inner_data plus adjacent temporary-key selection in Telegram/SourceFiles/mtproto/details/mtproto_dc_key_creator.cpp@13c57454f14b814b5923ea253048fb881ad8cf03. session_private.cpp@13cbc76ec723386027b5b4dcac79999b791c4614 was reread as adjacent context and contains no direct inner-object construction. The implementation is source-neutral Rust and copies no upstream C++ implementation.",
+      "notes": "Stage A implementation only. This row closes fixed-U p_q_inner_data_temp_dc exact serialization and its explicit AuthKeyHandshake temporary Req_DH_params preparation path. It does not claim network/runtime temporary-key establishment because current persisted transport state lacks expiry/binding semantics. Contracts are authored but not executed; validation_status=not-run and accepted=false.",
+      "test_execution_evidence": [],
+      "validation_status": "not-run",
+      "accepted": false,
+      "id": "TDRP-R9-MTPROTO-P-Q-INNER-DATA-TEMP-DC-WIRE-001",
+      "source_paths": [
+        "Telegram/SourceFiles/mtproto/scheme/mtproto.tl@76225965bfc794388db241f3f760db8ab79e84f8",
+        "Telegram/SourceFiles/mtproto/details/mtproto_dc_key_creator.cpp@13c57454f14b814b5923ea253048fb881ad8cf03"
       ]
     }
   ],
