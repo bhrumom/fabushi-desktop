@@ -274,11 +274,17 @@
     "requires_generated_inputs": true,
     "requires_resources_locales_assets": true,
     "requires_packaging_updater_tests_tooling_docs_licenses": true,
-    "note": "Live rebaseline identity for telegramdesktop/tdesktop@351204f3695b4a39bc3f4d2f230c061b9a01fe2a remains source-closure open. Actual recursive array entry 27 .agents/skills/code-health/scripts/cpp_text.py is mapped to existing repository responsibility/quality/task-evidence governance with source-text provenance and non-compiler authority boundaries preserved; full closure remains unknown=16,175, unread=16,148, omitted=0, so acceptance remains fail-closed."
+    "note": "Fixed Stage A authority is telegramdesktop/tdesktop@f985723b552b30fe1c17d377d57f44e61a15a8c4 (tree 91f2b083ab2877c0a17d07868eabec362a5cfca6); root identity was manually revalidated from GitHub without executing CI. Historical recursive coverage counts are not current-U acceptance evidence. Source closure remains open, including original-host recursive cppgir provenance, build-time acquisitions, LFS/generated inputs, resources/locales/assets, packaging/updater/tests/tooling/docs/licenses."
   },
   "baseline_identity_evidence": {
-    "status": "pending-current-head-revalidation",
-    "upstream_commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4"
+    "status": "manually-revalidated-stage-a-no-ci",
+    "upstream_commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+    "root_tree": "91f2b083ab2877c0a17d07868eabec362a5cfca6",
+    "root_tree_truncated": false,
+    "root_tree_entries": 7194,
+    "root_blobs": 6859,
+    "direct_gitlinks": 36,
+    "root_gitmodules_blob": "2a71e861fab57dfd74d66e787867f2ede203a099"
   },
   "recursive_inventory_evidence": {
     "status": "pending-fresh-complete-recursive-scan",
@@ -309,7 +315,7 @@
     }
   },
   "recursive_submodule_spot_checks": {
-    "status": "direct-gitlink-recursive-tree-scans-complete-nested-cppgir-unresolved",
+    "status": "direct-gitlink-recursive-tree-scans-complete-nested-cppgir-original-host-unresolved",
     "authority": "telegramdesktop/tdesktop@f985723b552b30fe1c17d377d57f44e61a15a8c4",
     "checked": [
       {
@@ -642,7 +648,7 @@
         "source_declaration_path": ".gitmodules"
       }
     ],
-    "remaining_nested_gitlinks_and_build_time_acquisitions": "GitLab mnauw/cppgir pinned Git tree unresolved; build-time acquisitions / LFS / generated inputs not fully revalidated",
+    "remaining_nested_gitlinks_and_build_time_acquisitions": "GitLab mnauw/cppgir pinned Git tree/blob recursion remains unverified from the original host in this execution environment; build-time acquisitions / LFS / generated inputs are not fully revalidated.",
     "closure_status": "open"
   }
 }

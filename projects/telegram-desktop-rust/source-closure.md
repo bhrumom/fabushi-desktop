@@ -1,26 +1,24 @@
 # Telegram Frozen Source Closure Evidence
 
 Status: P0 evidence; recursive gitlink, tracked generator/packaging roots, and external-acquisition entrypoints discovered; immutable external-resolution/resource-license/behavior closure not complete
-Frozen root: `telegramdesktop/tdesktop@33261535a0e747f125e0ed25486f01e556330677`  
-Captured: 2026-10-02; refreshed against PR #27 on 2026-10-05
+Current Stage A authority root: `telegramdesktop/tdesktop@f985723b552b30fe1c17d377d57f44e61a15a8c4` (tree `91f2b083ab2877c0a17d07868eabec362a5cfca6`)  
+Reconciled: 2026-10-31; Stage A manual Git/API evidence only, no CI executed
 
 ## Root tree
 
-The GitHub recursive tree for the frozen root returned `truncated=false`. The root contains 35 direct gitlinks pinned in `upstream.lock.json`. The recursive SourceFiles inventory exposed 118 directories at depth <= 4, including product areas that were not explicit in the initial hand-authored capability list.
+The GitHub recursive tree for the fixed U returned `truncated=false`: 7,194 entries total, including 6,859 blobs, 299 trees, and 36 direct gitlinks. Root `.gitmodules` is blob `2a71e861fab57dfd74d66e787867f2ede203a099`. These are exact fixed-U identity facts, not acceptance or full recursive-source-completeness evidence.
 
 ## Direct gitlink recursion
 
-Every one of the 35 direct GitHub-hosted gitlink commits was queried with the GitHub recursive-tree API. None of those tree responses was truncated.
-
-Thirty-two direct gitlinks contain no nested gitlinks. Three contain one nested gitlink each:
+The current `upstream.lock.json` records recursive GitHub-tree reads for all 36 direct gitlinks at fixed U. Three direct gitlinks expose one nested gitlink each; the remaining 33 expose none in those recorded scans. The two GitHub-hosted nested targets remain resolved; the GitLab-hosted cppgir target remains fail-closed because its original-host recursive tree/blob set is not available in the current execution environment.
 
 | Parent | Nested path | Pinned commit | Result |
 | --- | --- | --- | --- |
-| `desktop-app/cmake_helpers@7a6abdae…` | `external/glib/cppgir` | `47cf94f83b54cda59018135601e19d7fb0c77776` | recursive GitLab tree fully paged: 126 entries (103 blobs, 22 trees, 1 gitlink); sole nested gitlink `expected-lite@95b9cb015fa17baa749c2b396b335906e1596a9e`; that exact GitHub tree is `truncated=false`, 55 entries, 0 further gitlinks |
+| `desktop-app/cmake_helpers@7ceca3019b4750d7a5acb2de0faffd523ee14095` | `external/glib/cppgir` | `47cf94f83b54cda59018135601e19d7fb0c77776` | parent `.gitmodules` blob `c92fbea3467f72e188cba4cbfe51c8c68a7e2e77` pins `https://gitlab.com/mnauw/cppgir.git`, and the parent tree pins this exact gitlink commit; original GitLab recursive tree/blob evidence remains unavailable here, so this nested chain is **not** current-closure complete |
 | `PJK/libcbor@170bee2b…` | `doxygen-theme` | `46111c61a9f49b7a9886127e679d4317478fab1c` | recursive tree verified, `truncated=false`, no further gitlinks |
-| `ericniebler/range-v3@a8147793…` | `doc/gh-pages` | `2dae74bb693e42d850fb0adcc9045c5b71fbdeae` | recursive tree verified, `truncated=false`, no further gitlinks |
+| `ericniebler/range-v3@5ba39112d2eafbb3c851a16a537f29b445022998` | `doc/gh-pages` | `2dae74bb693e42d850fb0adcc9045c5b71fbdeae` | recursive tree verified, `truncated=false`, no further gitlinks |
 
-The `cppgir` parent `.gitmodules` pins its URL to `https://gitlab.com/mnauw/cppgir.git`. On 2026-10-02, htch-runtime read the GitLab repository-tree API at exact ref `47cf94f83b54cda59018135601e19d7fb0c77776` through all pages: 126 entries total, with exactly one mode-`160000` entry, `expected-lite@95b9cb015fa17baa749c2b396b335906e1596a9e`. The exact `cppgir/.gitmodules` maps it to `https://github.com/martinmoene/expected-lite.git`; GitHub's canonical repository is now `nonstd-lite/expected-lite`, whose exact recursive tree at `95b9cb0…` returned `truncated=false`, 55 entries and no gitlinks. The external `cppgir` recursive gitlink chain is therefore closed; this does **not** close build/resource/license provenance.
+For fixed U, `desktop-app/cmake_helpers@7ceca3019b4750d7a5acb2de0faffd523ee14095` has `.gitmodules` blob `c92fbea3467f72e188cba4cbfe51c8c68a7e2e77`, which pins `external/glib/cppgir` to `https://gitlab.com/mnauw/cppgir.git`; its recursive GitHub tree pins the gitlink itself to `47cf94f83b54cda59018135601e19d7fb0c77776`. Historical evidence in this document previously asserted a fully paged GitLab tree and an `expected-lite` nested gitlink. The current execution environment cannot retrieve the original GitLab recursive tree/blob set, so those historical claims are not promoted into current fixed-U closure. A standalone GitHub read confirms `nonstd-lite/expected-lite@95b9cb015fa17baa749c2b396b335906e1596a9e` has a non-truncated 55-entry tree with no nested gitlinks, but that does not prove it is reachable from the pinned cppgir commit without the original cppgir tree/.gitmodules evidence.
 
 ## Newly exposed capability domains
 
@@ -57,7 +55,7 @@ The frozen root already proves these non-product-code inputs are reachable and t
 | resources/assets | `Telegram/Resources` themes, language bundles, emoji, export templates, webview/picker HTML, sounds and updater/platform assets | resource roots identified; copied/derived asset and per-license review still incomplete |
 | shaders | `Telegram/shaders` | 35 tracked sources identified; QRhi `qsb` output/QRC generation mapped; copied/derived shader license provenance remains open |
 | build/packaging | `Telegram/build`, `Telegram/cmake`, `snap`, Windows/macOS/Linux packaging/update inputs | tracked platform roots and all explicit URL acquisition entrypoints mapped; mutable refs, package-manager resolution and dependency-by-dependency licenses remain open |
-| native third parties | direct gitlinks including `tgcalls`, `lib_webrtc`, `lib_webview`, FIDO2 and media/storage libraries | all direct/nested gitlink recursion closed, including `cppgir`→`expected-lite`; non-gitlink external acquisitions remain separate |
+| native third parties | direct gitlinks including `tgcalls`, `lib_webrtc`, `lib_webview`, FIDO2 and media/storage libraries | all 36 direct gitlinks have recorded fixed-U recursive scans; two GitHub-hosted nested links are resolved, while `cppgir` remains original-host unresolved; non-gitlink external acquisitions remain separate |
 
 No item in this table is an instruction to ship Telegram dependencies. It is source/provenance research required before declaring capability/source coverage complete.
 
