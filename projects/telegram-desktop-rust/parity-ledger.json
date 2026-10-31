@@ -9,7 +9,7 @@
     "unknown": 16172,
     "unread": 16145,
     "omitted": 0,
-    "responsibilities_total": 74,
+    "responsibilities_total": 75,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -18755,6 +18755,249 @@
       "reviewer": null,
       "license_and_provenance": "Behavioral responsibility is anchored to fixed-U telegramdesktop/tdesktop Telegram/SourceFiles/mtproto/scheme/mtproto.tl@76225965bfc794388db241f3f760db8ab79e84f8. Higher-level lifecycle evidence was reread from Telegram/SourceFiles/mtproto/special_config_request.cpp@fdb65506b0a886bc2daeccb61090bc44be7e2d88 and special_config_request.h@91901489e778089b03187682a9556e929867b94f; session_private.cpp@13cbc76ec723386027b5b4dcac79999b791c4614 has no help.configSimple branch. The implementation is source-neutral Rust and copies no upstream C++ implementation.",
       "notes": "Stage A implementation only. This row closes exact typed ipPort/ipPortSecret/accessPointRule/help.configSimple wire decoding only. Telegram Desktop-equivalent special-config web acquisition/decryption/HTTP-date/expiry/phone-prefix/DC endpoint application lifecycle remains explicitly blocked/fail-closed. Global unknown/unread source-entry counts remain unchanged because this is a newly mapped responsibility slice within already-open fixed-U source coverage. Final authored-only malformed-framing contracts are synchronized at desktop commit 878329a3f54895da0c44ab33e14cf8856444e128; validation_status=not-run and accepted=false.",
+      "test_execution_evidence": [],
+      "validation_status": "not-run",
+      "accepted": false
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+      "source_path": "Telegram/SourceFiles/mtproto/scheme/mtproto.tl",
+      "source_blob_sha": "76225965bfc794388db241f3f760db8ab79e84f8",
+      "source_kind": "schema",
+      "module_id": "tdesktop.mtproto.ping-delay-disconnect-wire",
+      "responsibility_id": "TDRP-R9-MTPROTO-PING-DELAY-DISCONNECT-WIRE-001",
+      "source_symbols": [
+        "ping_delay_disconnect#f3427b8c ping_id:long disconnect_delay:int = Pong",
+        "SessionPrivate::tryToSend -> MTP_ping_delay_disconnect(ping_id, kPingDelayDisconnect=60)",
+        "tlsClientHello/tlsBlock* adjacency reviewed as local TLS ClientHello template AST, not an inbound parser responsibility"
+      ],
+      "capability_ids": [
+        "CAP-EMBEDDED-MTPROTO-SERVICE-WIRE"
+      ],
+      "dependency_ids": [
+        "EmbeddedTelegramProtocol",
+        "EmbeddedTelegramNetwork",
+        "TelegramClientLease"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/evidence/round65-mtproto-ping-delay-disconnect-wire-20261101.md",
+      "behavior_contract": "The canonical telegram-protocol owner serializes fixed-U ping_delay_disconnect exactly as constructor#f3427b8c followed by ping_id:long and disconnect_delay:int, preserving raw signed values and field order with no timer, socket, session, or request-history side effects. The Telegram Desktop main-session/timer decision for when to use this request remains outside this wire-only slice. Adjacent tlsClientHello/tlsBlock* declarations are local ClientHello-template AST nodes consumed by mtproto_tls_socket.cpp, not inbound MTProto objects, so no artificial parser is introduced.",
+      "state_machine": "explicit protocol encode -> build_ping_delay_disconnect(ping_id, disconnect_delay) -> exact 16-byte TL request; no scheduling/session mutation; main-session timer policy and TLS camouflage lifecycle remain fail-closed/open",
+      "side_effects": [
+        "Adds fixed-U PING_DELAY_DISCONNECT_CONSTRUCTOR to the existing shared telegram-protocol owner",
+        "Adds source-neutral build_ping_delay_disconnect preserving raw signed ping_id and disconnect_delay values",
+        "Re-exports the builder through the existing protocol public API",
+        "Synchronizes canonical protocol sources byte-for-byte into the existing desktop provider path",
+        "Authors exact-layout and signed-boundary contracts without executing them in Stage A"
+      ],
+      "failure_cases": [
+        "Builder emits the wrong constructor or non-little-endian field bytes",
+        "Builder swaps or transforms ping_id/disconnect_delay",
+        "Wire layer imposes the Telegram Desktop value 60 as schema validity instead of preserving raw i32",
+        "A wire-only change invents main-session ping timers, reconnect state, multi-ping history, or historical sent-request state",
+        "tlsClientHello/tlsBlock* are incorrectly treated as inbound wire responses and given a synthetic parser instead of preserving the missing TLS camouflage lifecycle blocker"
+      ],
+      "ui_disposition": "No UI change. This is exact MTProto service-request serialization inside the existing embedded protocol owner.",
+      "non_ui_responsibilities": [
+        "Exact fixed-U ping_delay_disconnect constructor and field serialization",
+        "Raw signed-value preservation",
+        "No-side-effect request representation",
+        "Explicit separation from main-session timer policy and TLS camouflage lifecycle"
+      ],
+      "platform_delta": "Adds only exact ping_delay_disconnect wire serialization to the existing source-neutral Rust telegram-protocol owner. The current TcpTransport does not implement Telegram Desktop's TLS camouflage ClientHello generator/socket, and the existing network owner does not yet reproduce the main-session ping timer policy; both higher lifecycles remain fail-closed rather than being synthesized.",
+      "existing_owner_candidates": [
+        "bhrumom/fabushi-platform-core:native/telegram-protocol/src/api.rs",
+        "bhrumom/fabushi-platform-core:native/telegram-protocol/src/lib.rs",
+        "bhrumom/fabushi-platform-core:native/telegram-network/src/lib.rs",
+        "source/mahayana/mahayana-rs/providers/telegram-protocol/src/api.rs",
+        "source/mahayana/mahayana-rs/providers/telegram-protocol/src/lib.rs"
+      ],
+      "existing_owner": "Canonical shared telegram-protocol MTProto request serializer, exposed through the existing desktop provider path",
+      "rejected_existing_owners": [
+        "telegram-network owns socket/session policy but raw TL request layout belongs to telegram-protocol",
+        "The current TcpTransport has no TLS camouflage ClientHello generator/socket lifecycle and cannot precisely absorb tlsClientHello/tlsBlock* behavior without a broader transport design",
+        "Renderer/AppHost cannot own MTProto service-request serialization",
+        "A second Telegram transport/runtime/provider would split connection and session truth"
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "bhrumom/fabushi-platform-core:native/telegram-protocol/src/api.rs",
+        "bhrumom/fabushi-platform-core:native/telegram-protocol/src/lib.rs",
+        "source/mahayana/mahayana-rs/providers/telegram-protocol/src/api.rs",
+        "source/mahayana/mahayana-rs/providers/telegram-protocol/src/lib.rs"
+      ],
+      "fabushi_target_symbols": [
+        "PING_DELAY_DISCONNECT_CONSTRUCTOR",
+        "build_ping_delay_disconnect"
+      ],
+      "target_language": "Rust",
+      "language_rationale": "Exact TL request serialization is already owned by the shared Rust telegram-protocol crate; keeping it there preserves one protocol boundary while leaving session timers and TLS transport camouflage with their proper lifecycle owners.",
+      "command_event_contracts": [
+        "build_ping_delay_disconnect(ping_id, disconnect_delay) -> constructor#f3427b8c + little-endian i64 ping_id + little-endian i32 disconnect_delay",
+        "raw signed input values -> preserved exactly with no semantic clamping or fixed-60 requirement",
+        "builder call -> no timer/socket/session/request-history mutation",
+        "main-session scheduling and TLS camouflage generation -> no behavior claimed by this slice"
+      ],
+      "state_owner": "No mutable state is owned by this wire-only builder; existing EstablishedSession remains the sole live session/ping owner.",
+      "lifecycle_owner": "Existing account-bound TelegramClientLease -> RuntimeClient -> telegram-protocol/network chain. Telegram Desktop-equivalent main-session ping timers and TLS camouflage socket/generator remain open/fail-closed.",
+      "persistence_and_restart": "No persistence is introduced.",
+      "concurrency_and_cancellation": "No concurrency, cancellation, timers, or retry lifecycle is introduced by the serializer.",
+      "security_boundary": "The builder only produces exact MTProto request bytes. Authentication/encryption and transport policy remain in the existing EstablishedSession/network boundary; no TLS camouflage security semantics are invented.",
+      "network_service_dependencies": [
+        "Existing embedded Telegram MTProto protocol types",
+        "fixed-U ping_delay_disconnect schema declaration"
+      ],
+      "service_owner": "Canonical embedded Telegram protocol runtime; no new scheduler, transport, or provider.",
+      "deployment_evidence": [],
+      "implementation_status": "implemented",
+      "coverage_disposition": "rewritten",
+      "blockers": [
+        "Telegram Desktop TLS camouflage ClientHello generation/socket lifecycle from mtproto_tls_socket.cpp is not represented by the current canonical direct TcpTransport; tlsClientHello/tlsBlock* are local template AST nodes, so no artificial wire parser is introduced.",
+        "Telegram Desktop main-session/timer policy deciding when to send ping_delay_disconnect is not represented by this exact wire-only slice and remains fail-closed/open.",
+        "Telegram Desktop-equivalent SpecialConfigRequest web acquisition/decryption/HTTP-date/expiry/phone-prefix/DC endpoint application lifecycle remains fail-closed.",
+        "Stage B executable build/unit/contract/integration/packaged validation has not run.",
+        "gzip_packed bounded decompression remains blocked.",
+        "Complete updates difference/differenceSlice decoding/application remains open/fail-closed.",
+        "Arbitrary wasSent/haveSent/_resendingIds/toSend/_sentContainers histories remain open/fail-closed.",
+        "Broader fixed-U source/legal/release closure remains open."
+      ],
+      "production_entrypoints": [
+        "source/mahayana/mahayana-rs/Cargo.toml -> mahayana-telegram -> providers/telegram-protocol",
+        "providers/telegram-protocol public API -> build_ping_delay_disconnect; no main-session timer or TLS camouflage consumer is claimed in this slice"
+      ],
+      "production_evidence": [
+        "platform-core-spec-commit:c98a668a64a25c516065f0dda938200290712018",
+        "platform-core-implementation-commit:cb816c7540ea93717238b3aec96372cdab1c1706",
+        "platform-core-path:native/telegram-protocol/src/api.rs@405b04166bea039051833a38ad0a75c62107f70c",
+        "platform-core-path:native/telegram-protocol/src/lib.rs@ef7fe73335551e303fa71b02f5cf066d778ae8a4",
+        "desktop-implementation-commit:d38f6bef11a9a4334f8387c73c7b74e7994c0cdb",
+        "path:source/mahayana/mahayana-rs/providers/telegram-protocol/src/api.rs@405b04166bea039051833a38ad0a75c62107f70c",
+        "path:source/mahayana/mahayana-rs/providers/telegram-protocol/src/lib.rs@ef7fe73335551e303fa71b02f5cf066d778ae8a4"
+      ],
+      "test_evidence": [
+        "platform-core native/telegram-protocol/src/api.rs exact constructor/field layout contract authored, not run",
+        "platform-core native/telegram-protocol/src/api.rs i64/i32 signed-boundary preservation contract authored, not run",
+        "desktop synchronized protocol contracts authored, not run"
+      ],
+      "target_commit": "d38f6bef11a9a4334f8387c73c7b74e7994c0cdb",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Canonical Fabushi account + existing TelegramClientLease/runtime + shared telegram-protocol/network production composition",
+      "composition_slot": "Embedded Telegram MTProto service-request wire serialization",
+      "capability_component": "Exact fixed-U ping_delay_disconnect request builder",
+      "variation_axes": [
+        "ordinary vs minimum/maximum signed ping_id",
+        "ordinary fixed-U disconnect delay 60 vs arbitrary signed i32 wire value",
+        "wire-only builder vs absent main-session scheduling/TLS camouflage lifecycle"
+      ],
+      "shared_owner_contracts": [
+        "Existing account-bound TelegramClientLease",
+        "Existing RuntimeClient/EstablishedSession",
+        "Existing telegram-protocol TlWriter",
+        "Existing direct TcpTransport remains unchanged",
+        "Existing Cargo path-dependency composition"
+      ],
+      "duplicate_root_check": "No second account, runtime, provider, transport, scheduler, TLS socket, ping-history store, request-history store, message store, UI root, sidecar, subprocess or Web wrapper was introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Not applicable",
+      "primary_navigation_target": "Existing Messages/Conversation navigation",
+      "collection_surface": "Existing ConversationList; no change",
+      "creation_flow": "Existing canonical conversation creation; no change",
+      "object_action_scope": "Not applicable",
+      "detail_section": "Not applicable",
+      "capability_surface": "Existing ConversationWorkspace through the same provider/runtime; no new surface",
+      "route_contract": "No new route.",
+      "search_scope": "Not applicable",
+      "search_provider": "Existing canonical Search owner; unchanged",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Unchanged.",
+      "search_local_remote_contract": "Not applicable.",
+      "responsive_disposition": "No UI change.",
+      "accessibility_contract": "No UI change.",
+      "keyboard_contract": "No UI change.",
+      "state_continuity_contract": "Wire decoding is side-effect free. HTTP connection wait scheduling is intentionally unchanged because no proven canonical usingHttpWait lifecycle is present.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Existing Fabushi design system; no visual changes",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": null,
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "No new icon asset",
+      "avatar_contract": "No change",
+      "content_copy_keys": [],
+      "motion_contract": "No change",
+      "reduced_motion_contract": "No change",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "medium",
+      "requirement_ids": [
+        "TDRP-R9-MTPROTO-PING-DELAY-DISCONNECT-WIRE-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-MTPROTO-PING-DELAY-DISCONNECT-WIRE-001",
+        "ORA-TDRP-MTPROTO-PING-DELAY-DISCONNECT-NO-LIFECYCLE-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-MTPROTO-PING-DELAY-DISCONNECT-EXACT-001",
+        "INV-TDRP-MTPROTO-PING-DELAY-DISCONNECT-NO-SECOND-OWNER-001"
+      ],
+      "unit_case_ids": [
+        "UNIT-TDRP-MTPROTO-PING-DELAY-DISCONNECT-LAYOUT-001",
+        "UNIT-TDRP-MTPROTO-PING-DELAY-DISCONNECT-BOUNDARIES-001"
+      ],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-MTPROTO-PING-DELAY-DISCONNECT-WIRE-001"
+      ],
+      "integration_case_ids": [],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "fault_recovery_case_ids": [],
+      "performance_case_ids": [],
+      "security_case_ids": [
+        "SEC-TDRP-MTPROTO-PING-DELAY-DISCONNECT-NO-INVENTED-TRANSPORT-001"
+      ],
+      "soak_case_ids": [],
+      "exploratory_charter_ids": [],
+      "regression_ids": [
+        "REG-TDRP-MTPROTO-PING-DELAY-DISCONNECT-LAYOUT-001"
+      ],
+      "release_gate_ids": [
+        "G-TRACEABILITY",
+        "G-COMPOSITION",
+        "G-SECURITY",
+        "G-EVIDENCE",
+        "G-RELEASE"
+      ],
+      "test_fixture_ids": [
+        "mtproto-ping-delay-disconnect-fixture"
+      ],
+      "test_environment_ids": [
+        "GitHub Actions Stage B matrix (not run)"
+      ],
+      "coverage_matrix_status": "pending",
+      "flake_status": "stable",
+      "release_gate_status": "pending",
+      "acceptance_reviewer": null,
+      "reviewer": null,
+      "license_and_provenance": "Behavioral responsibility is anchored to fixed-U telegramdesktop/tdesktop Telegram/SourceFiles/mtproto/scheme/mtproto.tl@76225965bfc794388db241f3f760db8ab79e84f8 and SessionPrivate::tryToSend in Telegram/SourceFiles/mtproto/session_private.cpp@13cbc76ec723386027b5b4dcac79999b791c4614. Adjacent tlsClientHello/tlsBlock* lifecycle evidence was reread from Telegram/SourceFiles/mtproto/details/mtproto_tls_socket.cpp@e7562e3ca1a1da03f5d368085d5e61d887ab3f16. The implementation is source-neutral Rust and copies no upstream C++ implementation.",
+      "notes": "Stage A implementation only. This row closes exact ping_delay_disconnect request serialization only. The fixed-U TLS ClientHello template/generator socket lifecycle and main-session ping scheduling remain explicitly blocked/fail-closed; global unknown/unread source-entry counts remain unchanged because this is a newly mapped responsibility slice within already-open fixed-U source coverage. Contracts are authored but not executed; validation_status=not-run and accepted=false.",
       "test_execution_evidence": [],
       "validation_status": "not-run",
       "accepted": false
