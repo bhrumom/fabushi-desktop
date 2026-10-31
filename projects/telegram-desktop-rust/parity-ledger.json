@@ -19114,7 +19114,9 @@
         "platform-core-path:native/telegram-protocol/src/lib.rs@05c690a72f5f9b5a547f10486a5289229d7bb0ff",
         "desktop-implementation-commit:28d36535b4d4d342b72c6a0e35752ce56dbcfd26",
         "path:source/mahayana/mahayana-rs/providers/telegram-protocol/src/api.rs@2f0c2893e256064f822082dd2fd7deae394b5763",
-        "path:source/mahayana/mahayana-rs/providers/telegram-protocol/src/lib.rs@05c690a72f5f9b5a547f10486a5289229d7bb0ff"
+        "path:source/mahayana/mahayana-rs/providers/telegram-protocol/src/lib.rs@05c690a72f5f9b5a547f10486a5289229d7bb0ff",
+        "platform-core-spec-compliance-commit:5e4a142d6090bcfd233b9913c1dbb16caa999a7b",
+        "platform-core-spec-blob:c2450bb9c97b229392adf2dbc7d6ddab7d3f624b"
       ],
       "test_evidence": [
         "platform-core native/telegram-protocol/src/api.rs exact 12-byte constructor+session_id contract authored, not run",
@@ -19237,7 +19239,7 @@
       "acceptance_reviewer": null,
       "reviewer": null,
       "license_and_provenance": "Behavioral responsibility is anchored to fixed-U telegramdesktop/tdesktop Telegram/SourceFiles/mtproto/scheme/mtproto.tl@76225965bfc794388db241f3f760db8ab79e84f8. session_private.cpp@13cbc76ec723386027b5b4dcac79999b791c4614 was reread for adjacent service-message lifecycle; no precise live destroy-session owner is inferred from it. The implementation is source-neutral Rust and copies no upstream C++ implementation.",
-      "notes": "Stage A implementation only. This row closes exact destroy_session request serialization only and is intentionally distinct from TDRP-R9-MTPROTO-DESTROY-SESSION-WIRE-001 response parsing. Live outbound teardown/session lifecycle remains blocked/fail-closed. Global unknown/unread source-entry counts remain unchanged because this is a newly mapped responsibility slice within already-open fixed-U source coverage. Contracts are authored but not executed; validation_status=not-run and accepted=false.",
+      "notes": "Stage A implementation only. This row closes exact destroy_session request serialization only and is intentionally distinct from TDRP-R9-MTPROTO-DESTROY-SESSION-WIRE-001 response parsing. Live outbound teardown/session lifecycle remains blocked/fail-closed. Global unknown/unread source-entry counts remain unchanged because this is a newly mapped responsibility slice within already-open fixed-U source coverage. Contracts are authored but not executed; validation_status=not-run and accepted=false. Source-level request compliance is recorded at platform-core commit 5e4a142d6090bcfd233b9913c1dbb16caa999a7b; R8-R14 and AC7-AC10 are source/bookkeeping satisfied while executable Stage-B validation remains not-run.",
       "test_execution_evidence": [],
       "validation_status": "not-run",
       "accepted": false
