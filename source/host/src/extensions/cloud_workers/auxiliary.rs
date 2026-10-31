@@ -1,5 +1,6 @@
 use std::collections::BTreeMap;
 
+use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
 const MAX_ENV_NAME_CHARS: usize = 128;
@@ -63,7 +64,7 @@ pub struct CloudWorkerWarmImagePolicy {
     pub keep_previous: bool,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum CloudWorkerInstallMode {
     Bundle,
 }
@@ -71,7 +72,7 @@ pub enum CloudWorkerInstallMode {
 /// The pinned Crabbox profile suggestion projected for existing setup/UI
 /// consumers. It is deliberately not a provider authorization or readiness
 /// result.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct CloudWorkerProfileSuggestion {
     pub id: String,
     pub provider_display_id: String,
