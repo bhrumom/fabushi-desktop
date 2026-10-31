@@ -210,3 +210,11 @@ compare 为 2 commits ahead、7 个文件变化，其中包含 mapped session/cr
 生命周期路径；这些责任必须重新读取后才能复用。根依赖输入 identities 保持不变，
 该 subject 已同步到 `upstream.lock.json::live_candidate`，仍不构成 Actions
 authority、依赖闭包或任何 completion flag 的正面证据。
+
+2026-10-31T08:26:10Z 的最新只读复核又解析到 OpenClaw `main` 为
+`1d2e685b76b2bb7da964a2d6445cec2e07bf5883` / tree
+`a7f33a87af80c203422677be70f83aebb0857666`；递归 tree 未截断，共 63,996
+entries（61,755 blobs、2,241 directories），无 gitlink，根依赖/license
+inputs 保持不变。该 subject 已同步到 `upstream.lock.json::live_candidate`，
+仍仅为 discovery-only；既有 inventory、依赖闭包、LFS 与 Actions provenance
+不得重标复用，P0-AC02、source closure 与所有 global flags 继续未闭合。
