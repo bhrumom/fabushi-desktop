@@ -527,6 +527,95 @@ fn shipping_gateway_contract_validates_delete_arguments_and_uses_lifecycle_owner
     let _ = fs::remove_dir_all(root);
 }
 
+#[test]
+fn guarded_delete_rejects_stale_revision_before_destructive_hooks() {
+    let root = temp_root("stale-revision");
+    let production = Arc::new(ProductionSessionWorkers::with_agents_root(
+        root.join("agents"),
+        500,
+    ));
+    let store = SandAgentSessionStore::new(Arc::clone(&production));
+    let record = store.create_session(None, "user", None).expect("agent");
+    let summary = production
+        .summarize_agent_by_id(&record.id, None)
+        .expect("summary")
+        .expect("summary present");
+
+    let result = dispatch_production_agent_lifecycle_gateway_call(
+        &production,
+        "deleteAgent",
+        &json!({
+            "id": record.id.clone(),
+            "expectedSessionId": record.id.clone(),
+            "expectedLifecycleRevision": "stale-revision",
+        }),
+    )
+    .expect("handled");
+    assert_eq!(
+        result,
+        Err(AgentLifecycleGatewayError::BadRequest(
+            "SESSION_LIFECYCLE_CHANGED".into()
+        ))
+    );
+    assert!(store.agent_exists(&record.id));
+    assert!(!summary.lifecycle_revision.is_empty());
+
+    store.close_worker_pool();
+    let _ = fs::remove_dir_all(root);
+}
+
+#[test]
+fn guarded_delete_rechecks_revision_after_drain_mutation() {
+    let root = temp_root("drain-revision");
+    let production = Arc::new(ProductionSessionWorkers::with_agents_root(
+        root.join("agents"),
+        500,
+    ));
+    let store = SandAgentSessionStore::new(Arc::clone(&production));
+    let record = store.create_session(None, "user", None).expect("agent");
+    let summary = production
+        .summarize_agent_by_id(&record.id, None)
+        .expect("summary")
+        .expect("summary present");
+    let agent_id = record.id.clone();
+    let mutation_owner = Arc::clone(&production);
+    let runtime = AgentDeletionRuntimeDeps {
+        drain_runner: Some(Arc::new(move |_| {
+            mutation_owner
+                .open_agent_db_owner(&agent_id)
+                .and_then(|owner| {
+                    owner
+                        .set_metadata("drainMutation", json!(true))
+                        .map(|_| ())
+                        .map_err(|error| error.to_string())
+                })
+        })),
+        ..AgentDeletionRuntimeDeps::default()
+    };
+
+    let result = dispatch_production_agent_lifecycle_gateway_call_with_runtime(
+        &production,
+        &runtime,
+        "deleteAgent",
+        &json!({
+            "id": record.id.clone(),
+            "expectedSessionId": record.id.clone(),
+            "expectedLifecycleRevision": summary.lifecycle_revision,
+        }),
+    )
+    .expect("handled");
+    assert_eq!(
+        result,
+        Err(AgentLifecycleGatewayError::BadRequest(
+            "SESSION_LIFECYCLE_CHANGED".into()
+        ))
+    );
+    assert!(store.agent_exists(&record.id));
+
+    store.close_worker_pool();
+    let _ = fs::remove_dir_all(root);
+}
+
 
 #[test]
 fn lifecycle_roster_owner_covers_unread_notifications_hidden_and_avatar_mutations() {

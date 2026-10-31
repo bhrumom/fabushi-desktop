@@ -103,3 +103,21 @@ cron/subagent producers have not been proven to pass the captured fields, and
 Actions/package/runtime evidence remains absent. The initial gap statement
 above records the pre-implementation state; verification and acceptance remain
 pending.
+
+## Current Rust producer audit and oracle checkpoint
+
+The current Rust source tree has no cron isolated-session or subagent cleanup
+producer under `source/host/src`; the only matching production entrypoints are
+the Host `sessions.delete` adapter and the existing transcript/session
+`deleteAgent` owner. The upstream TypeScript producers therefore remain
+unimplemented Rust consumers, and no second cleanup owner is introduced to
+bridge that gap.
+
+The implementation now rejects an empty lifecycle revision from the public
+`sessions.list`/`sessions.get` projections, validates a supplied update-time
+guard as a finite number, and includes focused source oracles in
+`source/host/tests/agent_lifecycle_contract.rs` for stale revision admission
+and mutation during the pre-delete drain. These oracles are source evidence
+only: they have not been compiled or executed during the development freeze.
+Verification remains `not-run`; cron/subagent wiring remains `not-wired`; and
+Actions, package, runtime, provider and device evidence remain absent.

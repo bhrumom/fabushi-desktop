@@ -622,13 +622,24 @@ impl ProductionAgentLifecycle {
             };
             Ok(Some(value.to_string()))
         };
+        let expected_updated_at = if args.get("expectedSessionUpdatedAt").is_some() {
+            Some(
+                args.get("expectedSessionUpdatedAt")
+                    .and_then(Value::as_f64)
+                    .filter(|value| value.is_finite())
+                    .ok_or_else(|| {
+                        AgentLifecycleGatewayError::bad(
+                            "expectedSessionUpdatedAt must be a finite number",
+                        )
+                    })?,
+            )
+        } else {
+            None
+        };
         let guard = AgentDeletionGuard {
             expected_session_id: expected_string("expectedSessionId")?,
             expected_lifecycle_revision: expected_string("expectedLifecycleRevision")?,
-            expected_updated_at: args
-                .get("expectedSessionUpdatedAt")
-                .and_then(Value::as_f64)
-                .filter(|value| value.is_finite()),
+            expected_updated_at,
         };
         self.delete_agents_with_guard(std::slice::from_ref(&agent_id), Some(&guard))
             .map_err(|error| {

@@ -3410,6 +3410,12 @@ impl UnifiedGatewayApi {
             .list_agent_summaries(active.as_deref())
             .map_err(GatewayCommandError::Internal)?;
 
+        if summaries.iter().any(|summary| summary.lifecycle_revision.trim().is_empty()) {
+            return Err(GatewayCommandError::Internal(
+                "session lifecycle revision unavailable".into(),
+            ));
+        }
+
         let limit = args.get("limit").and_then(serde_json::Value::as_u64).unwrap_or(100) as usize;
         let offset = args.get("offset").and_then(serde_json::Value::as_u64).unwrap_or(0) as usize;
 
@@ -3488,6 +3494,15 @@ impl UnifiedGatewayApi {
             .session_workers
             .summarize_agent_by_id(agent_id, None)
             .map_err(GatewayCommandError::Internal)?;
+
+        if summary
+            .as_ref()
+            .is_some_and(|value| value.lifecycle_revision.trim().is_empty())
+        {
+            return Err(GatewayCommandError::Internal(
+                "session lifecycle revision unavailable".into(),
+            ));
+        }
 
         let entries = self
             .session_workers
@@ -3647,10 +3662,16 @@ impl UnifiedGatewayApi {
             delete_args["expectedLifecycleRevision"] =
                 serde_json::Value::String(expected.to_string());
         }
-        if let Some(expected) = args
-            .get("expectedSessionUpdatedAt")
-            .and_then(serde_json::Value::as_f64)
-        {
+        if args.get("expectedSessionUpdatedAt").is_some() {
+            let expected = args
+                .get("expectedSessionUpdatedAt")
+                .and_then(serde_json::Value::as_f64)
+                .filter(|value| value.is_finite())
+                .ok_or_else(|| {
+                    GatewayCommandError::BadRequest(
+                        "expectedSessionUpdatedAt must be a finite number".into(),
+                    )
+                })?;
             delete_args["expectedSessionUpdatedAt"] = serde_json::Value::from(expected);
         }
         let result = self.transcript_manager
