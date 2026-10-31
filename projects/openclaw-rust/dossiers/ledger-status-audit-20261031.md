@@ -30,6 +30,20 @@ capability declarations, or static target presence.
 | verification | `not-run` | 231 |
 | acceptance | `pending` | 239 |
 
+## Crosswalk and source-reference audit
+
+The ledger contains 239 responsibility IDs. 228 are referenced by the project
+RTM; the remaining 11 are the explicitly documented Crabbox P1 task-local
+responsibilities and are not project-level RTM rows. The RTM contains no
+responsibility ID absent from the ledger, so this exception is intentional and
+does not create a dangling project crosswalk.
+
+The ledger contains 1,430 unique `source_refs` path/blob pairs. Every pair is
+present in the fixed-baseline inventory shards bound to the implementation
+subject above. This proves source-reference identity consistency only; it does
+not prove semantic closure, applicability/disposition closure, implementation,
+wiring, verification, or acceptance.
+
 ## Interpretation
 
 The ledger proves honest progress states, not completion. In particular:
