@@ -127,3 +127,17 @@ The responsibility is now registered as
 linked from the `OCRM-R21` traceability row. This records the implementation
 and evidence boundary only; it does not change any completion flag or promote
 the upstream discovery subject to accepted authority.
+
+## Follow-up read at the newer discovery subject
+
+The later upstream subject `openclaw/openclaw@1d2e685b76b2bb7da964a2d6445cec2e07bf5883`
+changes `src/cron/isolated-agent/run.ts` (blob
+`617257faccf4b8cb7d696e0a8890d77916e83fa5`) but leaves the previously audited
+`src/cron/isolated-agent/session-cleanup.ts` blob unchanged
+(`5cdeb385daf097dd9d7b87febdc7178dd4a91050`). Direct reading of the changed
+run path confirms that the production cron caller passes the captured
+`sessionId`, `lifecycleRevision`, and `sessionEntry.updatedAt` into
+`cleanupCronRunSessionAfterRun`, along with the existing pre-delete release
+hook. This strengthens the upstream producer contract, but it is still not a
+Rust producer: the current Fabushi Rust tree has no corresponding isolated-cron
+cleanup caller, so no Rust wiring status is promoted.
