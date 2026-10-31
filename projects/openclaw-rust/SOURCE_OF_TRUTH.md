@@ -309,7 +309,8 @@ GitHub Actions inventory、依赖闭包或 LFS scan，因此没有提升 accepte
 
 对旧 baseline inventory 的只读计数还显示：58,750 条路径中有 57,331 条仍为
 `responsibility_status=unclassified` 且 `disposition=null`；其余 1,419 条已有
-read/disposition 记录。该计数是当前 AC02/G02 final 未闭合的直接证据，不是把
+read-complete/responsibility-mapping 记录，但当前 applicability/disposition 字段仍为
+`null`。该计数是当前 AC02/G02 final 未闭合的直接证据，不是把
 unread 强行当作失败门槛，也不能被结构性 inventory 完整或已完成的 scoped
 责任行抵消。
 
@@ -378,8 +379,9 @@ gate，未伪造尚未取得的证明。没有发现 `in-progress` 但完全无 
 reviewer 的误标；这只证明 RTM 状态诚实，不证明任何 AC 已接受。
 
 同一只读维度审计通过：1,419 条 `read-complete`/mapped 记录均有 reviewer、
-disposition 与 evidence；57,331 条 `unread`/unclassified 记录没有伪造
-disposition；未发现 mapped-without-disposition、unclassified-with-disposition、
+source references、responsibility mapping evidence；57,331 条 `unread`/unclassified
+记录没有伪造 applicability/disposition；未发现 mapped-without-responsibility、
+unclassified-with-disposition、
 缺 reviewer 或缺 evidence 的矛盾。该结果只证明旧 baseline inventory 的内部
 状态自洽，不证明当前 candidate 的 source closure 或 AC02 final。
 
