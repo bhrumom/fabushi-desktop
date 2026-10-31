@@ -146,7 +146,11 @@ jobs:
           ):
               path=Path(name)
               data=json.loads(path.read_text())
-              data["upstream"] = identity
+              # Give each canonical document its own identity object. The
+              # inventory document adds its baseline flag below; sharing the
+              # dict would leak that field into the parity ledger/RTM and make
+              # shard_inventory.py reject the exact-source identity.
+              data["upstream"] = dict(identity)
               if name.endswith("inventory/index.json"):
                   evidence=json.loads(Path("ocrm-evidence/upstream-recursive-inventory.json").read_text())
                   counts=evidence["counts"]
