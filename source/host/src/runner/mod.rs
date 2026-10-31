@@ -54,6 +54,89 @@ pub fn classify_realtime_voice_consult_tool_call(
     }
 }
 
+pub const REALTIME_VOICE_MAX_TURN_CONTEXTS: usize = 32;
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct RealtimeVoiceTurnContext {
+    pub turn_id: String,
+    pub has_audio: bool,
+    pub closed: bool,
+    pub response_active: bool,
+    pub cancel_sent: bool,
+}
+
+/// Bounded state owner for future realtime voice turn producers.
+#[derive(Debug, Default)]
+pub struct TurnContextTracker {
+    turns: std::collections::VecDeque<RealtimeVoiceTurnContext>,
+}
+
+impl TurnContextTracker {
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    pub fn begin_turn(&mut self, turn_id: impl Into<String>) -> bool {
+        let turn_id = turn_id.into();
+        if turn_id.trim().is_empty() {
+            return false;
+        }
+        if self.turns.len() >= REALTIME_VOICE_MAX_TURN_CONTEXTS {
+            self.turns.pop_front();
+        }
+        self.turns.push_back(RealtimeVoiceTurnContext {
+            turn_id,
+            has_audio: false,
+            closed: false,
+            response_active: true,
+            cancel_sent: false,
+        });
+        true
+    }
+
+    pub fn mark_audio(&mut self, turn_id: &str) -> bool {
+        let Some(turn) = self.turns.iter_mut().find(|turn| turn.turn_id == turn_id) else {
+            return false;
+        };
+        turn.has_audio = true;
+        true
+    }
+
+    pub fn close_turn(&mut self, turn_id: &str) -> bool {
+        let Some(turn) = self.turns.iter_mut().find(|turn| turn.turn_id == turn_id) else {
+            return false;
+        };
+        turn.closed = true;
+        turn.response_active = false;
+        true
+    }
+
+    pub fn handle_barge_in(&mut self) -> bool {
+        let mut cancelled = false;
+        for turn in &mut self.turns {
+            if turn.response_active {
+                turn.response_active = false;
+                turn.cancel_sent = true;
+                cancelled = true;
+            }
+        }
+        cancelled
+    }
+
+    pub fn consume_audio_context(&mut self) -> Vec<RealtimeVoiceTurnContext> {
+        self.turns.retain(|turn| !(turn.closed && !turn.has_audio));
+        self.turns.iter().cloned().collect()
+    }
+
+    pub fn len(&self) -> usize {
+        self.turns.len()
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.turns.is_empty()
+    }
+}
+
 pub use checkpoint::AttemptCheckpoint;
 pub use stream_attempt::{
     AttemptProgress, OuterCheckpointDisposition, OuterStreamFuture,

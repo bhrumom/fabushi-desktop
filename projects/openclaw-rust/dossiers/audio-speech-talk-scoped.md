@@ -79,14 +79,20 @@ It performs no I/O or dispatch and does not own retained state. This advances
 implementation only; the absence of a real voice-consult producer, retained
 session state owner, and consumer prevents any wiring or acceptance upgrade.
 
-The same exact-source re-read found no `TurnContextTracker`,
-or `RealtimeVoiceAudioQueue` in the declared Rust targets. The O05/O06, O08/O09,
+The same exact-source re-read found no `RealtimeVoiceAudioQueue` in the declared
+Rust targets. The O05/O06, O08/O09,
 and O10/O11/O12 logic lives only in the contract fixture, while the current
 Host has no corresponding realtime audio producer, WebSocket transcription
 consumer, or playback/VAD turn owner. Those three responsibilities are now
 calibrated in the ledger to `implementation=not-started` or `implementing`,
 `wiring=not-wired`, `verification=not-run`, and `acceptance=pending`; their
 fixture tests are explicitly non-production evidence.
+
+`source/host/src/runner/mod.rs` now contains the bounded pure
+`TurnContextTracker` state owner. It caps contexts at 32, records audio and
+closure state, prunes closed silent turns during context consumption, and marks
+active responses cancelled on barge-in. It does not own the absent VAD or
+playback transport, so the turn-context row remains un-wired and unverified.
 
 ### Audio output port implementation slice (2026-10-31)
 
