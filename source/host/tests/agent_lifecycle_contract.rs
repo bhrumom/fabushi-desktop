@@ -616,6 +616,76 @@ fn guarded_delete_rechecks_revision_after_drain_mutation() {
     let _ = fs::remove_dir_all(root);
 }
 
+#[test]
+fn guarded_delete_rejects_stale_updated_at_before_destructive_hooks() {
+    let root = temp_root("stale-updated-at");
+    let production = Arc::new(ProductionSessionWorkers::with_agents_root(
+        root.join("agents"),
+        500,
+    ));
+    let store = SandAgentSessionStore::new(Arc::clone(&production));
+    let record = store.create_session(None, "user", None).expect("agent");
+    let summary = production
+        .summarize_agent_by_id(&record.id, None)
+        .expect("summary")
+        .expect("summary present");
+
+    let result = dispatch_production_agent_lifecycle_gateway_call(
+        &production,
+        "deleteAgent",
+        &json!({
+            "id": record.id.clone(),
+            "expectedSessionId": record.id.clone(),
+            "expectedLifecycleRevision": summary.lifecycle_revision,
+            "expectedSessionUpdatedAt": summary.updated_at + 1.0,
+        }),
+    )
+    .expect("handled");
+    assert_eq!(
+        result,
+        Err(AgentLifecycleGatewayError::BadRequest(
+            "SESSION_LIFECYCLE_CHANGED".into()
+        ))
+    );
+    assert!(store.agent_exists(&record.id));
+
+    store.close_worker_pool();
+    let _ = fs::remove_dir_all(root);
+}
+
+#[test]
+fn guarded_delete_allows_matching_identity_revision_and_updated_at() {
+    let root = temp_root("guarded-success");
+    let production = Arc::new(ProductionSessionWorkers::with_agents_root(
+        root.join("agents"),
+        500,
+    ));
+    let store = SandAgentSessionStore::new(Arc::clone(&production));
+    let record = store.create_session(None, "user", None).expect("agent");
+    let summary = production
+        .summarize_agent_by_id(&record.id, None)
+        .expect("summary")
+        .expect("summary present");
+
+    let result = dispatch_production_agent_lifecycle_gateway_call(
+        &production,
+        "deleteAgent",
+        &json!({
+            "id": record.id.clone(),
+            "expectedSessionId": record.id.clone(),
+            "expectedLifecycleRevision": summary.lifecycle_revision,
+            "expectedSessionUpdatedAt": summary.updated_at,
+        }),
+    )
+    .expect("handled")
+    .expect("guarded delete");
+    assert_eq!(result["transcript"], json!([]));
+    assert!(!store.agent_exists(&record.id));
+
+    store.close_worker_pool();
+    let _ = fs::remove_dir_all(root);
+}
+
 
 #[test]
 fn lifecycle_roster_owner_covers_unread_notifications_hidden_and_avatar_mutations() {

@@ -117,9 +117,10 @@ bridge that gap.
 The implementation now rejects an empty lifecycle revision from the public
 `sessions.list`/`sessions.get` projections, validates a supplied update-time
 guard as a finite number, and includes focused source oracles in
-`source/host/tests/agent_lifecycle_contract.rs` for stale revision admission
-and mutation during the pre-delete drain. These oracles are source evidence
-only: they have not been compiled or executed during the development freeze.
+`source/host/tests/agent_lifecycle_contract.rs` for stale revision admission,
+stale update-time admission, mutation during the pre-delete drain, and the
+matching guarded-success control. These oracles are source evidence only: they
+have not been compiled or executed during the development freeze.
 Verification remains `not-run`; cron/subagent wiring remains `not-wired`; and
 Actions, package, runtime, provider and device evidence remain absent.
 
