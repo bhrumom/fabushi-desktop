@@ -11,6 +11,7 @@ use super::{
     CloudWorkerCatalogError, CloudWorkerMachine, CloudWorkerMachineRequirement,
     CloudWorkerBootstrapPhase, CloudWorkerBootstrapRecord, CloudWorkerBootstrapRetryClass,
     CloudWorkerDiagnostic, CloudWorkerNodeBootstrapError,
+    CloudWorkerProcessReceipt,
     CloudWorkerLease, CloudWorkerLeaseError, CloudWorkerLeaseMutation, CloudWorkerLeaseScope,
     CloudWorkerLeasedCapability, CloudWorkerLifecycle, CloudWorkerMutationOutcome,
     CloudWorkerRuntimeIdentity,
@@ -469,6 +470,25 @@ impl CloudWorkerProvisioningOwner {
             return Err(CloudWorkerOwnerError::BootstrapLeaseMismatch);
         }
         record.settle(phase, retry_class, diagnostic)?;
+        Ok(record.clone())
+    }
+
+    pub fn attach_bootstrap_process_receipt(
+        &mut self,
+        mutation: &CloudWorkerLeaseMutation,
+        receipt: CloudWorkerProcessReceipt,
+    ) -> Result<CloudWorkerBootstrapRecord, CloudWorkerOwnerError> {
+        self.ensure_enabled()?;
+        let lease = self.lease(&mutation.lease_id)?;
+        lease.validate(mutation)?;
+        let record = self
+            .bootstrap_records
+            .get_mut(&mutation.lease_id)
+            .ok_or(CloudWorkerOwnerError::UnknownBootstrapRecord)?;
+        if !bootstrap_matches_mutation(record, mutation) {
+            return Err(CloudWorkerOwnerError::BootstrapLeaseMismatch);
+        }
+        record.attach_process_receipt(receipt)?;
         Ok(record.clone())
     }
 

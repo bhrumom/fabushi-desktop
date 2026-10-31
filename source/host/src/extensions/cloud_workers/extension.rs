@@ -18,6 +18,7 @@ use super::{
     CloudWorkerDoctorRequest, CloudWorkerDoctorResult,
     CloudWorkerBootstrapPhase, CloudWorkerBootstrapRecord, CloudWorkerBootstrapRetryClass,
     CloudWorkerDiagnostic,
+    CloudWorkerProcessReceipt,
     CloudWorkerLease, CloudWorkerLeaseMutation, CloudWorkerLeaseScope,
     CloudWorkerLeasedCapability, CloudWorkerLifecycle, CloudWorkerMutationOutcome,
     CloudWorkerOwnerError, CloudWorkerOwnerStatus, CloudWorkerRuntimeIdentity, LeaseId,
@@ -455,6 +456,19 @@ impl CloudWorkerProvisioningExtension {
     ) -> Result<CloudWorkerBootstrapRecord, CloudWorkerMutationError> {
         self.mutate_and_persist(|owner| {
             owner.settle_bootstrap(mutation, phase, retry_class, diagnostic)
+        })
+    }
+
+    /// Attaches a validated process launch receipt during the fenced
+    /// Enrolling phase. This persists identity only; no process inspection or
+    /// cleanup is performed here.
+    pub fn attach_bootstrap_process_receipt(
+        &self,
+        mutation: &CloudWorkerLeaseMutation,
+        receipt: CloudWorkerProcessReceipt,
+    ) -> Result<CloudWorkerBootstrapRecord, CloudWorkerMutationError> {
+        self.mutate_and_persist(|owner| {
+            owner.attach_bootstrap_process_receipt(mutation, receipt)
         })
     }
 

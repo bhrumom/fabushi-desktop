@@ -317,6 +317,9 @@ pending Crabbox responsibilities:
 - A typed `CloudWorkerProcessReceipt` now validates the pinned launch identity
   fields and paired interactive session identity; it remains a persisted
   receipt shape only and does not prove liveness or own process cleanup.
+- Bootstrap owner settlement now accepts that receipt only through the
+  lease-fenced `Enrolling` phase, and refuses `Ready` without one; process
+  inspection, launch and cleanup remain external producer responsibilities.
 
 The broader Crabbox projection, lifecycle, sandbox, bootstrap, artifact,
 warm-image and runtime-control rows remain pending where their producer or

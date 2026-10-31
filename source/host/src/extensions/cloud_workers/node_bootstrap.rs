@@ -3,7 +3,8 @@ use thiserror::Error;
 
 use super::{
     CloudWorkerLeaseScope, CloudWorkerPlatformBridge, CloudWorkerRuntimeIdentity,
-    CloudWorkerVerifiedArtifact, LeaseGeneration, LeaseId, OwnerEpoch, ReplayKey,
+    CloudWorkerProcessReceipt, CloudWorkerVerifiedArtifact, LeaseGeneration, LeaseId, OwnerEpoch,
+    ReplayKey,
 };
 
 const MAX_DIAGNOSTIC_CHARS: usize = 2048;
@@ -152,6 +153,8 @@ pub struct CloudWorkerBootstrapRecord {
     pub retry_class: CloudWorkerBootstrapRetryClass,
     pub runtime_identity: String,
     pub diagnostics: Vec<CloudWorkerDiagnostic>,
+    #[serde(default)]
+    pub process_receipt: Option<CloudWorkerProcessReceipt>,
 }
 
 impl CloudWorkerBootstrapRecord {
@@ -165,7 +168,24 @@ impl CloudWorkerBootstrapRecord {
             phase: CloudWorkerBootstrapPhase::Pending,
             retry_class: CloudWorkerBootstrapRetryClass::ReconcileFirst,
             diagnostics: Vec::new(),
+            process_receipt: None,
         })
+    }
+
+    pub fn attach_process_receipt(
+        &mut self,
+        receipt: CloudWorkerProcessReceipt,
+    ) -> Result<(), CloudWorkerNodeBootstrapError> {
+        if self.phase != CloudWorkerBootstrapPhase::Enrolling {
+            return Err(CloudWorkerNodeBootstrapError::InvalidProcessReceiptPhase {
+                phase: self.phase,
+            });
+        }
+        receipt
+            .validate()
+            .map_err(|_| CloudWorkerNodeBootstrapError::InvalidProcessReceipt)?;
+        self.process_receipt = Some(receipt);
+        Ok(())
     }
 
     pub fn settle(
@@ -181,10 +201,13 @@ impl CloudWorkerBootstrapRecord {
                 to: phase,
             });
         }
-        if matches!(phase, CloudWorkerBootstrapPhase::Ready)
-            && self.request.secret_refs.is_empty()
-        {
-            return Err(CloudWorkerNodeBootstrapError::MissingSecretRef);
+        if matches!(phase, CloudWorkerBootstrapPhase::Ready) {
+            if self.request.secret_refs.is_empty() {
+                return Err(CloudWorkerNodeBootstrapError::MissingSecretRef);
+            }
+            if self.process_receipt.is_none() {
+                return Err(CloudWorkerNodeBootstrapError::MissingProcessReceipt);
+            }
         }
         if let Some(diagnostic) = diagnostic {
             if self.diagnostics.len() >= MAX_DIAGNOSTICS {
@@ -209,6 +232,14 @@ impl CloudWorkerBootstrapRecord {
         }
         for diagnostic in &self.diagnostics {
             diagnostic.validate()?;
+        }
+        if let Some(receipt) = &self.process_receipt {
+            receipt
+                .validate()
+                .map_err(|_| CloudWorkerNodeBootstrapError::InvalidProcessReceipt)?;
+        }
+        if self.phase == CloudWorkerBootstrapPhase::Ready && self.process_receipt.is_none() {
+            return Err(CloudWorkerNodeBootstrapError::MissingProcessReceipt);
         }
         Ok(())
     }
@@ -288,6 +319,12 @@ pub enum CloudWorkerNodeBootstrapError {
         phase: CloudWorkerBootstrapPhase,
         retry_class: CloudWorkerBootstrapRetryClass,
     },
+    #[error("bootstrap process receipt is invalid")]
+    InvalidProcessReceipt,
+    #[error("bootstrap process receipt cannot be attached in phase {phase:?}")]
+    InvalidProcessReceiptPhase { phase: CloudWorkerBootstrapPhase },
+    #[error("ready bootstrap record requires a process receipt")]
+    MissingProcessReceipt,
     #[error("invalid bootstrap phase transition from {from:?} to {to:?}")]
     InvalidPhaseTransition {
         from: CloudWorkerBootstrapPhase,
@@ -319,6 +356,19 @@ mod tests {
             .unwrap(),
             secret_refs: vec![CloudWorkerSecretRef::new("secret://bootstrap").unwrap()],
             replay_key: ReplayKey("request-1".into()),
+        }
+    }
+
+    fn process_receipt() -> CloudWorkerProcessReceipt {
+        CloudWorkerProcessReceipt {
+            pid: 42,
+            start_time: "Fri Oct 31 11:22:33 2026".into(),
+            executable_path: "/opt/openclaw/node".into(),
+            runtime_dir: "/var/lib/openclaw/runtime/lease-1".into(),
+            state_dir: "/var/lib/openclaw/state/lease-1".into(),
+            cli: "/opt/openclaw/bin/openclaw".into(),
+            session_id: None,
+            user_sid: None,
         }
     }
 
@@ -382,6 +432,7 @@ mod tests {
                 None,
             )
             .unwrap();
+        record.attach_process_receipt(process_receipt()).unwrap();
         record
             .settle(
                 CloudWorkerBootstrapPhase::Ready,
@@ -390,6 +441,47 @@ mod tests {
             )
             .unwrap();
         assert_eq!(record.phase, CloudWorkerBootstrapPhase::Ready);
+    }
+
+    #[test]
+    fn ready_requires_an_enrolling_process_receipt() {
+        let mut record = CloudWorkerBootstrapRecord::pending(request()).unwrap();
+        record
+            .settle(
+                CloudWorkerBootstrapPhase::Preparing,
+                CloudWorkerBootstrapRetryClass::SafeReplay,
+                None,
+            )
+            .unwrap();
+        record
+            .settle(
+                CloudWorkerBootstrapPhase::Enrolling,
+                CloudWorkerBootstrapRetryClass::ReconcileFirst,
+                None,
+            )
+            .unwrap();
+        assert_eq!(
+            record.settle(
+                CloudWorkerBootstrapPhase::Ready,
+                CloudWorkerBootstrapRetryClass::Never,
+                None,
+            ),
+            Err(CloudWorkerNodeBootstrapError::MissingProcessReceipt)
+        );
+        record.attach_process_receipt(process_receipt()).unwrap();
+        record
+            .settle(
+                CloudWorkerBootstrapPhase::Ready,
+                CloudWorkerBootstrapRetryClass::Never,
+                None,
+            )
+            .unwrap();
+        assert_eq!(
+            record.attach_process_receipt(process_receipt()),
+            Err(CloudWorkerNodeBootstrapError::InvalidProcessReceiptPhase {
+                phase: CloudWorkerBootstrapPhase::Ready,
+            })
+        );
     }
 
     #[test]
