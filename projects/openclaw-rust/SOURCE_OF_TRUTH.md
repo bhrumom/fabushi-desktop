@@ -209,6 +209,16 @@ product owner path 变化。该结果支持复用“root input identities unchan
 保持不变；lock 已更新 `live_candidate`，但该 subject 仍 discovery-only。此前
 dependency probe 绑定旧 candidate，不能直接充当新 subject 的 closure evidence。
 
+2026-10-31T08:07:28Z 的只读远端复核又发现 `openclaw/openclaw` 的 `main` 已漂移到
+commit=`db59290c33e1768cce8a461e2697cff7108c5a69`、root tree
+`c1e4818f8f877576c02da1573e7dc809d1fdd800`。GitHub compare
+`2910c0de…db59290c…` 返回 `ahead_by=2`、`behind_by=0`、`total_commits=2` 和
+8 个文件，涉及 UI/Cron windowing、gateway-network 与对应测试；没有 root
+dependency input 变化。递归 tree 仍未截断，63,993 entries（61,752 blobs、2,241
+directories），根输入 blob identities 保持不变。该 exact subject 已同步到
+`upstream.lock.json::live_candidate`，但仍是 discovery-only；旧 candidate 的
+inventory、依赖 probe、closure 和 Actions provenance 均不可直接复用。
+
 当前 parity ledger 的 10 条 `not-started/not-wired` 责任已在
 `dossiers/not-started-responsibility-frontier-20261031.md` 做了逐条 frontier
 审计：它们缺少生产 producer/consumer、拥有明确 ACP/plugin blocker，或只能从
