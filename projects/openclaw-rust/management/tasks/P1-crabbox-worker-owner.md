@@ -293,6 +293,9 @@ pending Crabbox responsibilities:
   does not perform provider cleanup, capture, deletion or recovery.
 - Persisted warm-image validation now rejects a forged `CaptureUncertain` row
   without cleanup debt, preserving the recovery obligation across restart.
+- Auxiliary contracts now provide deterministic setup-environment profiles and
+  bounded warm-image policy parsing with the pinned defaults/minimum windows;
+  they perform no file, secret-egress, project or provider side effects.
 
 The broader Crabbox projection, lifecycle, sandbox, bootstrap, artifact,
 warm-image and runtime-control rows remain pending where their producer or

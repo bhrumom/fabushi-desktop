@@ -7,6 +7,7 @@
 
 pub mod extension;
 
+mod auxiliary;
 mod lease;
 mod artifact_admission;
 mod artifact_store;
@@ -29,6 +30,9 @@ pub use artifact_admission::{
 pub use artifact_store::{
     CloudWorkerArtifactPublisher, CloudWorkerArtifactStoreError,
     CloudWorkerPublishedArtifact,
+};
+pub use auxiliary::{
+    CloudWorkerAuxiliaryError, CloudWorkerEnvironmentProfile, CloudWorkerWarmImagePolicy,
 };
 pub use doctor::{
     CloudWorkerDoctorAction, CloudWorkerDoctorError, CloudWorkerDoctorRequest,
