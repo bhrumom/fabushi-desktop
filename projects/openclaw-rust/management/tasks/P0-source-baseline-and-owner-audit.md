@@ -107,7 +107,7 @@ source closure 或任何 global flag 的正面证据。OCRM Actions、本机 OCR
 验证、push 与 PR 更新仍按开发期冻结要求未执行；本文件的退出标准保持
 pending，允许满足主 Spec §11.1 的 scoped 单元继续推进。
 
-本轮新增 `dossiers/upstream-node-host-candidate-20261030.md`，仅记录
+本轮新增 `dossiers/upstream-node-host-candidate-20261030.md`，仅记录历史候选
 `5f6f15fed0d6ba618cf781c9686a8b93f499564b` 的 NodeHost package/lock/workspace
 依赖前沿与待验证闭包条件；它不改变 `upstream.lock.json` 的 discovery-only
 状态，也不替代 exact-subject Actions inventory、LFS、integrity、license/
@@ -146,3 +146,8 @@ transport fail-closed；这不改变 P0 或任何 global flag。
 63,740 entries、61,499 blobs、2,241 directories。七个已映射 NodeHost/command
 blob 身份保持不变，但该新 subject 仍仅为 discovery-only；P0 不得复用旧
 inventory/依赖闭包或将其提升为 authority。
+
+本段 exact subject 是本轮治理文件的唯一当前 discovery reference；较早段落
+保留为历史 identity 记录，不代表当前 source authority。当前 lock 状态仍为
+`p0-source-authority-rebaseline-required`，因此不得从本段 discovery identity
+提升 `baseline_identity_accepted` 或 `source_closure_ready`。

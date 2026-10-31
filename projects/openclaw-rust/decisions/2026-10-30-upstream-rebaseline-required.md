@@ -42,8 +42,21 @@ directories. The root `package.json` and `pnpm-lock.yaml` blob identities were
 `14ec89238970e23718e93f5f6f160e6db217311`; the candidate remains discovery
 only pending the exact-subject Actions inventory and dependency-closure run.
 
+The latest current discovery identity is now recorded by
+`upstream.lock.json` as commit `2c157ed06dff5032da1093cbb6745efeff2b6f33`,
+tree `3fb582f6a1299daa74446ef001cb7cb4fd3c2270`, observed 2026-10-31. It
+supersedes the c325 paragraph as a current reference but remains discovery-only;
+the c325 paragraph is retained as historical evidence.
+
 ## Decision
 
-Keep the prior inventory/shards as historical candidate evidence while the lock records c325 as the current discovery candidate. A fresh GitHub Actions authority run must recursively enumerate that exact OpenClaw commit, resolve submodules/LFS and dependency inputs, and produce a new immutable manifest. Do not claim `baseline_identity_accepted`, `source_closure_ready`, or any semantic/implementation flag from live discovery alone. The next P0 authority run must rebaseline the inventory, shards, ledger/RTM provenance and root-input digests together against one exact subject.
+Keep the prior inventory/shards as historical candidate evidence while the lock
+records `2c157ed…` as the current discovery candidate. A fresh GitHub Actions
+authority run must recursively enumerate that exact OpenClaw commit, resolve
+submodules/LFS and dependency inputs, and produce a new immutable manifest. Do
+not claim `baseline_identity_accepted`, `source_closure_ready`, or any
+semantic/implementation flag from live discovery alone. The next P0 authority
+run must rebaseline the inventory, shards, ledger/RTM provenance and root-input
+digests together against one exact subject.
 
 This decision permits read-only source review and implementation work whose source authority is explicitly the prior locked candidate, but any source-dependent acceptance or final receipt must use the new live lock after Actions rebaseline. No CI, push, PR update, or local OCRM executable verification was performed for this decision.

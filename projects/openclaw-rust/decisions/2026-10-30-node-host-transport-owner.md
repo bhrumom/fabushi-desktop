@@ -127,4 +127,4 @@ Sand descriptor.
 - `source/host/src/extensions/node_host/`
 - `source/host/src/gateway_server.rs`
 - `native/mahayana-messaging/src/gateway.rs`
-- OpenClaw discovery candidate `5f6f15fed0d6ba618cf781c9686a8b93f499564b`
+- OpenClaw discovery candidate `2c157ed06dff5032da1093cbb6745efeff2b6f33`

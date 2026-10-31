@@ -63,6 +63,12 @@ Implementation/acceptance: **未完成**
 
 2026-10-31 的独立 live-main 核对又解析到 commit=`2c157ed06dff5032da1093cbb6745efeff2b6f33`、root tree=`3fb582f6a1299daa74446ef001cb7cb4fd3c2270`（committer=`2026-10-30T22:39:38Z`）。该 exact subject 的递归 tree 未截断，共 63,740 entries（61,499 blobs、2,241 directories）；root 输入和 live candidate 已同步写入 `upstream.lock.json`。七个已建立 NodeHost/command blob 身份保持不变，但这仍只是 discovery-only，不能提升 source authority、复用旧 closure 或改变任何 global flag。
 
+本段是当前 Source of Truth 的唯一有效 OpenClaw discovery identity；更早
+candidate 段落仅保留历史证据。当前 `upstream.lock.json` 状态仍要求 P0
+针对该 exact subject 重新生成递归 inventory、依赖闭包、LFS/完整性与
+Actions evidence envelope；在此之前 `baseline_identity_accepted`、
+`source_closure_ready` 及后续完成 flags 均保持 false。
+
 ## 5. 机器记录的初始化与终态
 
 P0 在 Actions 建立 lock、inventory、parity ledger、RTM、dossiers 和 evidence 索引；本次不提交伪造的完整台账或空清单来充当 baseline。

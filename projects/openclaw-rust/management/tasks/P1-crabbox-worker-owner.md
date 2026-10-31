@@ -12,8 +12,8 @@ Last updated: 2026-10-30 (Asia/Shanghai)
 
 Current OpenClaw discovery candidate is recorded in
 `projects/openclaw-rust/upstream.lock.json` as commit
-`5f6f15fed0d6ba618cf781c9686a8b93f499564b`, tree
-`ee0af1d3ba415e7763da6759ca47b245031a21c9`. It remains discovery-only until
+`2c157ed06dff5032da1093cbb6745efeff2b6f33`, tree
+`3fb582f6a1299daa74446ef001cb7cb4fd3c2270`. It remains discovery-only until
 the exact-subject Actions inventory, dependency closure, and evidence envelope
 are produced; this task must not reuse the historical oracle as current source
 authority or promote the candidate without that rebaseline.

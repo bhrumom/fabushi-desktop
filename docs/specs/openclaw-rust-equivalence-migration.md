@@ -93,6 +93,14 @@ inventory 的未经重核结论；需在同一 exact subject 上重新生成 inv
 必须对 c325 exact subject 重新取得完整 inventory、依赖闭包与 Actions
 provenance。
 
+2026-10-31 当前治理快照以 `upstream.lock.json` 的 discovery candidate 为准：
+OpenClaw `main` commit=`2c157ed06dff5032da1093cbb6745efeff2b6f33`、tree
+`3fb582f6a1299daa74446ef001cb7cb4fd3c2270`，递归 tree 未截断，共 63,740
+entries（61,499 blobs、2,241 directories）。它 supersede 以上更早的 live
+候选作为当前引用，但仍未取得 exact-subject Actions inventory、依赖闭包、
+LFS/完整性、许可证和 evidence envelope；不得复用旧 candidate 的 closure，
+也不得提升任何 global flag。
+
 随后只读核对发现 OpenClaw `main` 再次漂移到 commit
 `89734994c6c9d3572e2927be0cdae8d7da1998ca`、root tree
 `bcb3914c8418e2f92927dd3e60c635fc4345a858`；递归 tree API 返回
