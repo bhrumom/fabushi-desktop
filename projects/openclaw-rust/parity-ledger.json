@@ -2670,7 +2670,7 @@
       "integration": {
         "consumer": "No production ACP command consumer identified; current AcpSessionManager is consumed only by source/host/tests/openclaw_plugin_sdk_contract.rs",
         "entrypoint": "source/host/src/runner/mod.rs",
-        "owner": "source/host/src/runner/mod.rs",
+        "owner": "none: no canonical production ACP command/transport owner selected",
         "producer": "No production AvailableCommand/get_available_commands producer; historical source path moved to the current OpenClaw chat-command registry"
       },
       "invariants": [
@@ -2682,7 +2682,7 @@
         "OCRM-AGENT-O05",
         "OCRM-AGENT-O06"
       ],
-      "owner_decision": "Preserve the existing Runner/Session owners, but defer ACP command wiring until the canonical handshake/transport owner and current command-registry contract are rebaselined; standalone plugin_sdk::AcpSessionManager is test-only evidence",
+      "owner_decision": "Rebaseline the current command-registry and canonical ACP handshake/transport contract before selecting an owner; standalone plugin_sdk::AcpSessionManager and historical AvailableCommand are test/source evidence only",
       "postconditions": [
         "Command list exposed to client; security context enforced"
       ],
@@ -2704,7 +2704,7 @@
       "responsibility_kind": "business-runtime",
       "reviewer": "xuyao@ombhrum.com",
       "risk": "High; blocks unauthorized command execution and tainted state propagation",
-      "selected_owner": "source/host/src/runner/mod.rs",
+      "selected_owner": "unselected pending ACP command/transport architecture decision",
       "source_refs": [
         {
           "blob_sha": "ed35270d5976a1700d7b0adc7367b0b5b4352f44",
@@ -2726,8 +2726,8 @@
       },
       "target": {
         "language": "Rust",
-        "path": "source/host/src/runner/mod.rs",
-        "symbol": "AvailableCommand"
+        "path": "unselected pending ACP command/transport owner",
+        "symbol": "not selected; historical AvailableCommand is not current production contract"
       },
       "tests": [
         "source/host/tests/openclaw_agent_turn_contract.rs::test_ocrm_agent_o05_viral_turn_tainting",
