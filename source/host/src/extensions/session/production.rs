@@ -1985,6 +1985,8 @@ impl ProductionSessionWorkers {
             "delivery": "sent",
             "remoteMessageId": remote_id,
             "remoteCreatedAt": remote.created_at,
+            "remoteRevision": remote.revision.unwrap_or(1).max(1),
+            "isDeleted": remote.is_deleted,
         });
         let object = entry
             .as_object_mut()
@@ -2004,6 +2006,22 @@ impl ProductionSessionWorkers {
             .filter(|value| !value.is_empty())
         {
             object.insert("clientNonce".into(), serde_json::json!(client_nonce));
+        }
+        if let Some(edited_at) = remote
+            .edited_at
+            .as_deref()
+            .map(str::trim)
+            .filter(|value| !value.is_empty())
+        {
+            object.insert("editedAt".into(), serde_json::json!(edited_at));
+        }
+        if let Some(deleted_at) = remote
+            .deleted_at
+            .as_deref()
+            .map(str::trim)
+            .filter(|value| !value.is_empty())
+        {
+            object.insert("deletedAt".into(), serde_json::json!(deleted_at));
         }
         if let Some(read_at) = remote
             .read_at
@@ -3188,6 +3206,107 @@ impl ProductionSessionWorkers {
             .update_transcript_entry(entry_id, &next)
             .map_err(|error| error.to_string())?
             .ok_or_else(|| "Human reaction target disappeared before durable settlement".to_string())
+    }
+
+    pub fn edit_human_message(
+        &self,
+        conversation_id: &str,
+        entry_id: &str,
+        text: &str,
+        operation_id: &str,
+    ) -> Result<serde_json::Value, String> {
+        let text = text.trim();
+        let operation_id = operation_id.trim();
+        if operation_id.is_empty() {
+            return Err("editHumanMessage requires operationId".into());
+        }
+        let owner = self.open_human_conversation_db_owner(conversation_id)?;
+        let metadata = owner.read_metadata().map_err(|error| error.to_string())?;
+        if !self.metadata_has_local_human(&metadata)? {
+            return Err("local Human identity is not a conversation participant".into());
+        }
+        let local_human_id = self.local_human_id()?;
+        let current = owner
+            .get_transcript_entries()
+            .map_err(|error| error.to_string())?
+            .into_iter()
+            .find(|entry| entry.get("id").and_then(serde_json::Value::as_str) == Some(entry_id))
+            .ok_or_else(|| "Human edit target is not in this conversation".to_string())?;
+        if current.get("authorId").and_then(serde_json::Value::as_str) != Some(local_human_id.as_str()) {
+            return Err("only the local sender may edit a Human message".into());
+        }
+        if current.get("isDeleted").and_then(serde_json::Value::as_bool) == Some(true) {
+            return Err("deleted Human messages cannot be edited".into());
+        }
+        let remote_message_id = current
+            .get("remoteMessageId")
+            .map(fabushi_identity_text)
+            .transpose()?
+            .ok_or_else(|| "Human edit target has no canonical remote message identity".to_string())?;
+        let expected_revision = current
+            .get("remoteRevision")
+            .and_then(serde_json::Value::as_u64)
+            .unwrap_or(1)
+            .max(1);
+        let client = self
+            .shipping_native_messaging()?
+            .ok_or_else(|| "Fabushi Human edits require the shipping messaging backend".to_string())?;
+        let remote = client.edit_direct_message(
+            &remote_message_id,
+            text,
+            operation_id,
+            expected_revision,
+        )?;
+        self.materialize_remote_human_message(&owner, &remote)
+    }
+
+    pub fn delete_human_message(
+        &self,
+        conversation_id: &str,
+        entry_id: &str,
+        operation_id: &str,
+    ) -> Result<serde_json::Value, String> {
+        let operation_id = operation_id.trim();
+        if operation_id.is_empty() {
+            return Err("deleteHumanMessage requires operationId".into());
+        }
+        let owner = self.open_human_conversation_db_owner(conversation_id)?;
+        let metadata = owner.read_metadata().map_err(|error| error.to_string())?;
+        if !self.metadata_has_local_human(&metadata)? {
+            return Err("local Human identity is not a conversation participant".into());
+        }
+        let local_human_id = self.local_human_id()?;
+        let current = owner
+            .get_transcript_entries()
+            .map_err(|error| error.to_string())?
+            .into_iter()
+            .find(|entry| entry.get("id").and_then(serde_json::Value::as_str) == Some(entry_id))
+            .ok_or_else(|| "Human delete target is not in this conversation".to_string())?;
+        if current.get("authorId").and_then(serde_json::Value::as_str) != Some(local_human_id.as_str()) {
+            return Err("only the local sender may delete a Human message".into());
+        }
+        if current.get("isDeleted").and_then(serde_json::Value::as_bool) == Some(true) {
+            return Err("Human message is already deleted".into());
+        }
+        let remote_message_id = current
+            .get("remoteMessageId")
+            .map(fabushi_identity_text)
+            .transpose()?
+            .ok_or_else(|| "Human delete target has no canonical remote message identity".to_string())?;
+        let expected_revision = current
+            .get("remoteRevision")
+            .and_then(serde_json::Value::as_u64)
+            .unwrap_or(1)
+            .max(1);
+        let client = self
+            .shipping_native_messaging()?
+            .ok_or_else(|| "Fabushi Human deletes require the shipping messaging backend".to_string())?;
+        let remote = client.delete_direct_message(
+            &remote_message_id,
+            operation_id,
+            expected_revision,
+        )?;
+        self.materialize_remote_human_message(&owner, &remote)
     }
 
     pub fn search_human_messages(
