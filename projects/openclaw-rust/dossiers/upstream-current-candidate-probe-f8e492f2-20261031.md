@@ -67,3 +67,18 @@ The exact-tree declaration-input count for this subject is recorded separately
 in `dossiers/upstream-current-candidate-declaration-frontier-f8e492f2-20261031.md`;
 that frontier remains structural evidence and does not establish dependency
 closure.
+
+## Existing dependency-graph and Actions observations
+
+At `2026-10-31T12:49:24Z`, the GitHub Dependency Graph SBOM endpoint for this
+exact commit returned SPDX `2.3` with 1,704 packages and 1,840 relationships.
+This is positive external dependency-graph evidence for the exact SHA, but it
+does not establish source import closure, patch application, native/optional
+artifact closure, LFS completeness, license acceptance, or the Fabushi OCRM
+authority contract.
+
+The GitHub Actions runs endpoint returned 262 matching run records for this
+head query, but the captured response did not provide a complete exact-H CI
+receipt for the required inventory/dependency-closure gates. No workflow was
+triggered or modified. Existing upstream Actions observations therefore remain
+non-authoritative for project completion, and all project flags remain false.
