@@ -2,7 +2,7 @@
 
 **Project ID**: OCRM-001  
 **Module**: OCRM-M14/M15 (Channel Ingress, Deduplication, Thread Routing & Outbound Delivery Subsystems)  
-**Upstream live discovery subject (not authority)**: `openclaw/openclaw@e8dade039bdeb729754d2b5956e6f4cb0a84bf84` (tree `2e35087eee94a7c9380ea4ad9fa9c0a6b41e9232`); the file/blob rows below retain their historical source-audit identities and require exact-head revalidation before final closure.
+**Upstream live discovery subject (not authority)**: `openclaw/openclaw@e0f1e0a6af388d18fcfcda210f39f5106c7f7c10` (tree `63d39e4b31fbb462aab29ff0f8b728597bb3ca20`); the file/blob rows below retain their historical source-audit identities and require exact-head revalidation before final closure.
 **Target Repository**: `bhrumom/fabushi-desktop`  
 **Working Branch**: `codex/openclaw-rust-full-fusion-20261030`
 **Reviewer**: `xuyao@ombhrum.com`  

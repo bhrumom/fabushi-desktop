@@ -417,18 +417,19 @@ subject 的 receipt。
 
 后续接手者先重读本入口、主 Spec、适用 task 和 current code。交接只保留当前请求、确切 refs、已完成且有证据的变化、未闭合项和下一可执行责任，不复制旧会话堆积状态。
 
-2026-10-31T17:02:22Z 的最新只读核对将当前 OpenClaw `main` 更新为
-`e8dade039bdeb729754d2b5956e6f4cb0a84bf84` / tree
-`2e35087eee94a7c9380ea4ad9fa9c0a6b41e9232`（committer
-`2026-10-31T08:58:55Z`）。递归 tree 未截断，共 63,999 entries（61,758 blobs、
+2026-10-31T09:14:47Z 的最新只读核对将当前 OpenClaw `main` 更新为
+`e0f1e0a6af388d18fcfcda210f39f5106c7f7c10` / tree
+`63d39e4b31fbb462aab29ff0f8b728597bb3ca20`（committer
+`2026-10-31T09:13:56Z`）。递归 tree 未截断，共 64,003 entries（61,762 blobs、
 2,241 directories、0 gitlinks）；package/lock/workspace/license 输入 blob
 identities 与上一 candidate 保持不变。该 subject 已同步写入
 `upstream.lock.json::live_candidate`，仍是 discovery-only；不得复用旧
 inventory、依赖闭包、LFS/完整性或 Actions provenance，也不改变任何
 authority/global flag。
 
-同一 exact subject 的根 dependency input probe 已记录在
-`dossiers/upstream-current-candidate-dependency-probe-e8dade03-20261031.md`：
+同一 exact subject 的根 dependency input probe 尚未重新生成；此前的
+`dossiers/upstream-current-candidate-dependency-probe-e8dade03-20261031.md`
+绑定旧 subject，不能作为当前 closure evidence：
 确认了 integrity-qualified `pnpm@12.15.0`、六组 workspace pattern、77 个
 root runtime dependencies、57 个 devDependencies，以及同树的
 lock/workspace/license blob。该 probe 只证明根输入存在与形状，不等价于递归

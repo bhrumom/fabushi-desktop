@@ -100,17 +100,18 @@ discovery-only subject; prior inventory, dependency closure and Actions
 provenance remain bound to their original exact subjects, and all global flags
 remain false.
 
-2026-10-31T17:02:22Z drift amendment: read-only GitHub checks resolved the
-current OpenClaw `main` to `e8dade039bdeb729754d2b5956e6f4cb0a84bf84` /
-`2e35087eee94a7c9380ea4ad9fa9c0a6b41e9232`, committed at
-`2026-10-31T08:58:55Z`. The recursive tree is untruncated with 63,999 entries
-(61,758 blobs, 2,241 directories, 0 gitlinks); root dependency/license input
+2026-10-31T09:14:47Z drift amendment: read-only GitHub checks resolved the
+current OpenClaw `main` to `e0f1e0a6af388d18fcfcda210f39f5106c7f7c10` /
+`63d39e4b31fbb462aab29ff0f8b728597bb3ca20`, committed at
+`2026-10-31T09:13:56Z`. The recursive tree is untruncated with 64,003 entries
+(61,762 blobs, 2,241 directories, 0 gitlinks); root dependency/license input
 identities are unchanged. This is a fresh discovery-only subject; prior
 inventory, dependency closure, LFS/integrity and Actions provenance remain
 bound to their original subjects and all global flags remain false.
 
-The exact-subject root dependency probe is retained at
-`dossiers/upstream-current-candidate-dependency-probe-e8dade03-20261031.md`.
+The previous root dependency probe is retained at
+`dossiers/upstream-current-candidate-dependency-probe-e8dade03-20261031.md`,
+but it is bound to the superseded subject and is not current closure evidence.
 It confirms only manifest shape and root input identities; it does not satisfy
 the required recursive dependency closure, LFS/integrity, or Actions evidence
 envelope.
