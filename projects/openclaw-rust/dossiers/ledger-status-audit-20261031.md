@@ -54,6 +54,26 @@ subject above. This proves source-reference identity consistency only; it does
 not prove semantic closure, applicability/disposition closure, implementation,
 wiring, verification, or acceptance.
 
+## Integration-field semantic audit
+
+All 239 responsibilities have non-empty `integration.producer`,
+`integration.owner`, and `integration.consumer` fields. That is schema-shape
+completeness only. A case-insensitive read of those exact strings found:
+
+| Field containing pending/no-production/future/unresolved wording | Count |
+| --- | ---: |
+| consumer | 112 |
+| producer | 86 |
+| owner | 5 |
+
+Examples include consumers explicitly stating that production Computer/Runner
+composition remains pending, no production ACP consumer exists, or only a
+contract-test consumer is present. These strings agree with the ledger's
+`wiring=not-wired` frontier; they are not negative proof of every missing edge,
+but they do prove that populated integration fields cannot be promoted to
+AC05, `production_wiring_complete`, or accepted runtime behavior without a
+direct production producer → existing owner → state/storage → consumer receipt.
+
 The project RTM has 31 `in-progress` rows and 17 `not-started` rows. Every
 `in-progress` row has both a reviewer and at least one evidence reference. The
 11 `not-started` rows without responsibility IDs/evidence remain explicitly
