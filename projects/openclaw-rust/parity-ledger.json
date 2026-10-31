@@ -25391,7 +25391,7 @@
       "oracle_ids": [
         "OCRM-PLUGIN-SDK-CHANNEL-O01"
       ],
-      "owner_decision": "Native implementation in channel_runtime under plugin_sdk extension",
+      "owner_decision": "Retain channel_runtime as the standalone channel-policy contract owner; identify the production inbound/outbound event ingress and channel consumer before wiring",
       "postconditions": [
         "Access granted or denied per policy, and duplicate replay events suppressed"
       ],
@@ -25629,7 +25629,7 @@
       "oracle_ids": [
         "OCRM-PLUGIN-SDK-APPROVAL-O01"
       ],
-      "owner_decision": "Native implementation in approval_security under plugin_sdk extension",
+      "owner_decision": "Retain approval_security as the standalone approval/SSRF policy owner; identify the production approval producer, authority state owner and consumer before wiring",
       "postconditions": [
         "Tokens expired cleanly; SSRF prohibited IP spaces and schemes rejected"
       ],
@@ -26085,7 +26085,7 @@
       "oracle_ids": [
         "OCRM-PLUGIN-SDK-TOOL-O01"
       ],
-      "owner_decision": "Native implementation in tool_runtime under plugin_sdk extension",
+      "owner_decision": "Retain tool_runtime as the standalone tool-schema/bridge contract owner; identify the production tool producer, command owner and consumer before wiring",
       "postconditions": [
         "Arguments verified against required schema properties; commands dispatched"
       ],
