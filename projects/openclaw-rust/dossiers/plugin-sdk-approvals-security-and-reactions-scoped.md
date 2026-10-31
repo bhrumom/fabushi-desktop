@@ -61,6 +61,24 @@
 - Rejects loopback domains (`localhost`, `*.localhost`, `local`, `*.local`).
 - Strictly rejects RFC 1918 private IPv4 (`10.0.0.0/8`, `172.16.0.0/12`, `192.168.0.0/16`), cloud metadata/link-local (`169.254.0.0/16`), loopback (`127.0.0.0/8`), unspecified (`0.0.0.0/8`), IPv6 loopback (`::1`), and unspecified (`::`).
 
+## 3. Production owner/consumer reachability audit (2026-10-31)
+
+The current checkout was searched for the exported Plugin SDK approval symbols
+`NativeApprovalControlRegistry`, `ApprovalBinding`,
+`resolve_approval_approvers`, `resolve_approval_reaction_decision`, and
+`validate_outbound_url`. No non-test caller was found in Host, Host app,
+Coordinator, Node agent, Electron, or frontend source. The only direct use is
+the Plugin SDK contract test.
+
+The production auto-review path uses the distinct
+`SandAutoReviewController`/pending-card lifecycle, and local tool approval
+settings use their own existing owner. Neither path consumes the Plugin SDK
+registry or SSRF helper, so they cannot establish this responsibility's
+producer→owner→consumer chain. The parity integration now records both
+production sides as absent; the responsibility remains
+`wiring=not-wired`, `verification=not-run`, and `acceptance=pending` under
+`BL-PLUGIN-SDK-APPROVAL-WIRING-001`.
+
 ## 3. Native Rust Implementation & Equivalence
 - **Implementation Module**: [`source/host/src/extensions/plugin_sdk/approval_security.rs`](file:///Users/bhrum/.gemini/antigravity/scratch/fabushi-desktop/source/host/src/extensions/plugin_sdk/approval_security.rs).
 - **Test Oracles**:

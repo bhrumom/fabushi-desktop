@@ -25499,10 +25499,10 @@
       ],
       "id": "OCRM-RESP-PLUGIN-SDK-APPROVAL-SECURITY-001",
       "integration": {
-        "consumer": "source/host/src/extensions/plugin_sdk/approval_security.rs",
+        "consumer": "No production Plugin SDK approval consumer identified; NativeApprovalControlRegistry and validate_outbound_url have no non-test callers",
         "entrypoint": "source/host/src/extensions/plugin_sdk/approval_security.rs::validate_outbound_url",
         "owner": "source/host/src/extensions/plugin_sdk/approval_security.rs",
-        "producer": "source/host/src/extensions/plugin_sdk/approval_security.rs"
+        "producer": "No production Plugin SDK approval producer identified; the module exposes standalone registry and validation helpers"
       },
       "invariants": [
         "127.0.0.0/8, 10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16, and 169.254.0.0/16 are strictly blocked"
