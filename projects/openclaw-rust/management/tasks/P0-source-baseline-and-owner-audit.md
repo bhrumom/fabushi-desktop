@@ -320,11 +320,11 @@ discovery-only subject; prior inventory, dependency/LFS closure, semantic
 reads, and Actions provenance are not reusable, and no authority or completion
 flag changes.
 
-2026-10-31T12:03:33Z drift amendment: read-only GitHub checks resolved the
-current OpenClaw `main` to commit=`159d00bed3fb5be9bab9f3e9a546ee6714ee20b2`,
-tree=`cc95923e28435c92d4c7bc54e844fc0cdad04b6c`, with an untruncated recursive
+2026-10-31T12:06:03Z drift amendment: read-only GitHub checks resolved the
+current OpenClaw `main` to commit=`1b777ab47da016c998244d7bcb377a72b5b4bba5`,
+tree=`33cb615b384021957d00cec5c5e8183c05ee18ef`, with an untruncated recursive
 tree of 64,072 entries (61,831 blobs, 2,241 directories, 0 gitlinks). The
-commit is `fix(cron): Gateway exits on resume when a queued cron run hits a storage error (#175678)`.
+commit is `fix(docker): preserve SDK imports for bundled plugin helpers (#181974)`.
 Root dependency/license identities remain unchanged, but this is a fresh
 discovery-only subject; prior inventory, dependency/LFS closure, semantic
 reads, and Actions provenance are not reusable, and no authority or completion
@@ -384,9 +384,9 @@ flag changes.
 
 The canonical current discovery pointer is always `upstream.lock.json::live_candidate`.
 At the latest read-only reconciliation it is OpenClaw
-`159d00bed3fb5be9bab9f3e9a546ee6714ee20b2` / tree
-`cc95923e28435c92d4c7bc54e844fc0cdad04b6c`, observed at
-`2026-10-31T12:03:33Z`, with 64,072 untruncated recursive-tree entries
+`1b777ab47da016c998244d7bcb377a72b5b4bba5` / tree
+`33cb615b384021957d00cec5c5e8183c05ee18ef`, observed at
+`2026-10-31T12:06:03Z`, with 64,072 untruncated recursive-tree entries
 (61,831 blobs, 2,241 directories, 0 gitlinks). This remains discovery-only;
 the fixed implementation subject, inventory, dependency closure, Actions
 provenance, and all completion flags remain unchanged.

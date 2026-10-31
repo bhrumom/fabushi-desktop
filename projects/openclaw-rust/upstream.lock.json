@@ -25,9 +25,9 @@
   "live_candidate": {
     "repository": "openclaw/openclaw",
     "ref": "refs/heads/main",
-    "commit": "159d00bed3fb5be9bab9f3e9a546ee6714ee20b2",
-    "tree": "cc95923e28435c92d4c7bc54e844fc0cdad04b6c",
-    "observed_at": "2026-10-31T12:03:33Z",
+    "commit": "1b777ab47da016c998244d7bcb377a72b5b4bba5",
+    "tree": "33cb615b384021957d00cec5c5e8183c05ee18ef",
+    "observed_at": "2026-10-31T12:06:03Z",
     "discovery_source": "GitHub commit/tree API",
     "recursive_tree_truncated": false,
     "recursive_tree_entries": 64072,
@@ -49,7 +49,7 @@
     "behind_by": null,
     "compare_files_returned": null,
     "compare_file_counts_are_not_complete": true,
-    "decision": "live-main-drifted-to-159d00be; read-only exact commit/tree and recursive tree revalidated at 2026-10-31T12:03:33Z; recursive tree remains 64,072 entries with the same root dependency/license identities, while the commit fixes Gateway exit handling when a queued Cron run hits a storage error; require fresh source reads before reuse and retain discovery-only status until Actions inventory and dependency closure"
+    "decision": "live-main-drifted-to-1b777ab4; read-only exact commit/tree and recursive tree revalidated at 2026-10-31T12:06:03Z; recursive tree remains 64,072 entries with the same root dependency/license identities, while the commit preserves SDK imports for bundled plugin helpers; require fresh source reads before reuse and retain discovery-only status until Actions inventory and dependency closure"
   },
   "root_inputs": {
     "AGENTS.md": "c3deeccdb6b1a4c7137d56297e933bbf19f4d3bf",
