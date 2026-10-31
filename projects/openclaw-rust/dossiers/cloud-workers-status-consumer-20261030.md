@@ -21,6 +21,23 @@ tests/builds, Actions, provider reachability, and live UI/CLI acceptance remain
 pending. The Host-side live event publisher and provider mutation path remain
 open.
 
+## Coordinator RPC and packaged Settings consumer — 2026-10-31
+
+The shared Coordinator RPC contract now registers `cloudWorkers.status` and
+`cloudWorkers.doctor` with typed response parsers. The doctor request preserves
+the Host wire shape (`scope`, `action`, `acknowledged_mutation`, and
+`replay_key`) and is rejected in the production client when malformed. The
+Host gateway allow-list also includes the doctor route.
+
+The production Settings overlay adds a read-only Cloud Workers section. It
+fetches the status projection through `ProductionCoordinatorClient`, subscribes
+to the `cloud-workers.status` family, and ignores event payloads that fail the
+shared projection parser. It displays owner status, provider/mutation
+readiness, persistence, and bounded owner counts; it does not add a mutation
+control or a second state store. This closes the packaged status consumer
+boundary only. A live Host event producer, CLI consumer, provider/device/process
+producer, executable verification, and acceptance remain open.
+
 The read projection is now produced by `CloudWorkerProvisioningExtension` via
 `status_snapshot`; `UnifiedGatewayApi` serializes that owner result instead of
 repeating lease/image/receipt semantics in the Gateway adapter. A focused Host
