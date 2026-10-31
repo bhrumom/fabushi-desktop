@@ -9,7 +9,7 @@
     "unknown": 16172,
     "unread": 16145,
     "omitted": 0,
-    "responsibilities_total": 72,
+    "responsibilities_total": 73,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -18251,6 +18251,246 @@
       "reviewer": null,
       "license_and_provenance": "Behavioral responsibility is anchored to fixed-U telegramdesktop/tdesktop Telegram/SourceFiles/mtproto/scheme/mtproto.tl@76225965bfc794388db241f3f760db8ab79e84f8. session_private.cpp has no direct destroy_session_* receive branch. The implementation is source-neutral Rust and copies no upstream C++ implementation.",
       "notes": "Stage A implementation only. This row closes exact typed DestroySessionRes wire decoding only. Outbound destroy_session request lifecycle and live session teardown semantics remain explicitly blocked/fail-closed. Global unknown/unread source-entry counts remain unchanged because this is a newly mapped responsibility slice within already-open fixed-U source coverage. Contracts are authored but not executed; validation_status=not-run and accepted=false.",
+      "test_execution_evidence": [],
+      "validation_status": "not-run",
+      "accepted": false
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+      "source_path": "Telegram/SourceFiles/mtproto/scheme/mtproto.tl",
+      "source_blob_sha": "76225965bfc794388db241f3f760db8ab79e84f8",
+      "source_kind": "schema",
+      "module_id": "tdesktop.mtproto.http-wait-wire",
+      "responsibility_id": "TDRP-R9-MTPROTO-HTTP-WAIT-WIRE-001",
+      "source_symbols": [
+        "http_wait#9299359f max_delay:int wait_after:int max_wait:int = HttpWait",
+        "SessionPrivate::tryToSend() -> MTP_http_wait(MTP_int(100), MTP_int(30), MTP_int(25000)) when _connection->usingHttpWait()"
+      ],
+      "capability_ids": [
+        "CAP-EMBEDDED-MTPROTO-SERVICE-WIRE"
+      ],
+      "dependency_ids": [
+        "EmbeddedTelegramProtocol",
+        "TelegramClientLease",
+        "MTProtoAuthKey"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/evidence/round63-mtproto-http-wait-wire-20261101.md",
+      "behavior_contract": "The canonical telegram-protocol owner must exactly decode fixed-U http_wait#9299359f as constructor plus max_delay:int, wait_after:int, and max_wait:int in schema order, reject wrong constructors, truncation, and trailing bytes, and perform no HTTP connection-wait scheduling side effect. Telegram Desktop's observed 100/30/25000 values are call-site values, not protocol validity constraints.",
+      "state_machine": "explicit protocol decode -> parse_http_wait -> exact constructor + three i32 fields -> HttpWait{max_delay,wait_after,max_wait}; wrong/truncated/trailing -> protocol error; no connection/session/request mutation in this slice",
+      "side_effects": [
+        "Adds fixed-U HTTP_WAIT_CONSTRUCTOR to the existing shared telegram-protocol owner",
+        "Adds typed HttpWait preserving all three TL int fields",
+        "Rejects wrong constructor, truncation, and trailing bytes",
+        "Synchronizes canonical protocol sources byte-for-byte into the existing desktop provider path",
+        "Authors parser contracts without executing them in Stage A"
+      ],
+      "failure_cases": [
+        "http_wait accepts a wrong constructor",
+        "http_wait accepts a missing or truncated max_delay/wait_after/max_wait field",
+        "http_wait accepts trailing bytes",
+        "Parser hard-codes Telegram Desktop's observed 100/30/25000 call-site values as schema validity constraints",
+        "Decoded http_wait mutates connection scheduling without a proven canonical usingHttpWait lifecycle",
+        "Implementation invents wasSent/haveSent/_resendingIds/toSend/_sentContainers state"
+      ],
+      "ui_disposition": "No UI change. This is MTProto wire decoding inside the existing embedded protocol owner.",
+      "non_ui_responsibilities": [
+        "Exact fixed-U http_wait constructor dispatch",
+        "Exact max_delay:int / wait_after:int / max_wait:int decoding",
+        "Wrong-constructor, truncation and trailing-byte fail-closed validation",
+        "No-side-effect typed protocol representation"
+      ],
+      "platform_delta": "Adds only exact http_wait wire decoding to the existing source-neutral Rust telegram-protocol owner. HTTP long-poll scheduling/usingHttpWait lifecycle, historical request registry, gzip runtime, complete difference decoder, and second Telegram runtime remain absent.",
+      "existing_owner_candidates": [
+        "bhrumom/fabushi-platform-core:native/telegram-protocol/src/api.rs",
+        "bhrumom/fabushi-platform-core:native/telegram-protocol/src/lib.rs",
+        "source/mahayana/mahayana-rs/providers/telegram-protocol/src/api.rs",
+        "source/mahayana/mahayana-rs/providers/telegram-protocol/src/lib.rs"
+      ],
+      "existing_owner": "Canonical shared telegram-protocol typed MTProto parser, consumed through the existing desktop provider path",
+      "rejected_existing_owners": [
+        "telegram-network/transport cannot synthesize Telegram Desktop's usingHttpWait scheduling lifecycle from a wire-only parser responsibility",
+        "Renderer/AppHost cannot own MTProto wire decoding",
+        "A second HTTP polling/session owner would split lifecycle truth",
+        "gzip/difference owners are unrelated to this independent wire object"
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "bhrumom/fabushi-platform-core:native/telegram-protocol/src/api.rs",
+        "bhrumom/fabushi-platform-core:native/telegram-protocol/src/lib.rs",
+        "source/mahayana/mahayana-rs/providers/telegram-protocol/src/api.rs",
+        "source/mahayana/mahayana-rs/providers/telegram-protocol/src/lib.rs"
+      ],
+      "fabushi_target_symbols": [
+        "HTTP_WAIT_CONSTRUCTOR",
+        "HttpWait",
+        "parse_http_wait"
+      ],
+      "target_language": "Rust",
+      "language_rationale": "The existing Rust telegram-protocol crate owns exact TL decoding for adjacent MTProto service/RPC wire objects; this side-effect-free wire responsibility belongs there without creating an HTTP scheduler.",
+      "command_event_contracts": [
+        "http_wait exact body -> HttpWait{max_delay,wait_after,max_wait}",
+        "wrong/truncated/trailing body -> protocol parse failure",
+        "decoded HttpWait -> no HTTP transport/session/request side effect in this slice"
+      ],
+      "state_owner": "No live mutable state is owned by this wire-only parser; the existing telegram-protocol owner owns the typed value.",
+      "lifecycle_owner": "Existing account-bound TelegramClientLease -> RuntimeClient -> telegram-protocol dependency chain; Telegram Desktop-equivalent usingHttpWait connection scheduling remains absent/fail-closed.",
+      "persistence_and_restart": "No persistence is introduced.",
+      "concurrency_and_cancellation": "No concurrency or cancellation lifecycle is introduced. HTTP wait scheduling remains blocked pending a precise existing-owner lifecycle.",
+      "security_boundary": "Only exact typed decode is added; malformed/trailing objects fail closed before any future consumer may interpret them.",
+      "network_service_dependencies": [
+        "Existing embedded Telegram MTProto encrypted transport",
+        "fixed-U http_wait schema constructor"
+      ],
+      "service_owner": "Canonical embedded Telegram protocol runtime.",
+      "deployment_evidence": [],
+      "implementation_status": "implemented",
+      "coverage_disposition": "rewritten",
+      "blockers": [
+        "Telegram Desktop-equivalent _connection->usingHttpWait() scheduling/lifecycle is not represented by a proven canonical owner; connection-wait behavior remains fail-closed and is not synthesized by this parser.",
+        "Stage B executable build/unit/contract/integration/packaged validation has not run.",
+        "gzip_packed bounded decompression remains blocked.",
+        "Complete updates difference/differenceSlice decoding/application remains open/fail-closed.",
+        "Arbitrary wasSent/haveSent/_resendingIds/toSend/_sentContainers histories remain open/fail-closed.",
+        "Broader fixed-U source/legal/release closure remains open."
+      ],
+      "production_entrypoints": [
+        "source/mahayana/mahayana-rs/Cargo.toml -> mahayana-telegram -> providers/telegram-protocol",
+        "providers/telegram-protocol public API -> parse_http_wait; no HTTP wait scheduler/usingHttpWait consumer is claimed"
+      ],
+      "production_evidence": [
+        "platform-core-spec-commit:03b40ed111c8e64d159ea837848bfae0fa85102c",
+        "platform-core-implementation-commit:96bb0e2cd31cdfc82aaa44e0f8e25acf8c30a204",
+        "platform-core-path:native/telegram-protocol/src/api.rs@7b731b6d6bbd2009453c5107a24ebea58cc2ece3",
+        "platform-core-path:native/telegram-protocol/src/lib.rs@4d8b7198fbe7aa8cbb71180587970760f6ebd1d9",
+        "desktop-implementation-commit:1495975bbdd2e5d56826a95854def198862e2c5b",
+        "path:source/mahayana/mahayana-rs/providers/telegram-protocol/src/api.rs@7b731b6d6bbd2009453c5107a24ebea58cc2ece3",
+        "path:source/mahayana/mahayana-rs/providers/telegram-protocol/src/lib.rs@4d8b7198fbe7aa8cbb71180587970760f6ebd1d9"
+      ],
+      "test_evidence": [
+        "platform-core native/telegram-protocol/src/api.rs exact max_delay/wait_after/max_wait preservation contract authored, not run",
+        "platform-core native/telegram-protocol/src/api.rs wrong-constructor, every-byte truncation and trailing rejection contract authored, not run",
+        "desktop synchronized protocol contracts authored, not run"
+      ],
+      "target_commit": "1495975bbdd2e5d56826a95854def198862e2c5b",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Canonical Fabushi account + existing TelegramClientLease/runtime + shared telegram-protocol production composition",
+      "composition_slot": "Embedded Telegram MTProto service wire decoding",
+      "capability_component": "Typed fixed-U HttpWait wire parser",
+      "variation_axes": [
+        "arbitrary i32 field values",
+        "exact vs wrong/truncated/trailing payload"
+      ],
+      "shared_owner_contracts": [
+        "Existing account-bound TelegramClientLease",
+        "Existing RuntimeClient",
+        "Existing telegram-protocol TlReader",
+        "Existing Cargo path-dependency composition"
+      ],
+      "duplicate_root_check": "No second account, runtime, provider, transport, HTTP scheduler, auth key, session registry, request history, callback registry, sent-container store, decompression runtime, difference runtime, message store, UI root, sidecar, subprocess or Web wrapper was introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Not applicable",
+      "primary_navigation_target": "Existing Messages/Conversation navigation",
+      "collection_surface": "Existing ConversationList; no change",
+      "creation_flow": "Existing canonical conversation creation; no change",
+      "object_action_scope": "Not applicable",
+      "detail_section": "Not applicable",
+      "capability_surface": "Existing ConversationWorkspace through the same provider/runtime; no new surface",
+      "route_contract": "No new route.",
+      "search_scope": "Not applicable",
+      "search_provider": "Existing canonical Search owner; unchanged",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Unchanged.",
+      "search_local_remote_contract": "Not applicable.",
+      "responsive_disposition": "No UI change.",
+      "accessibility_contract": "No UI change.",
+      "keyboard_contract": "No UI change.",
+      "state_continuity_contract": "Wire decoding is side-effect free. HTTP connection wait scheduling is intentionally unchanged because no proven canonical usingHttpWait lifecycle is present.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Existing Fabushi design system; no visual changes",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": null,
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "No new icon asset",
+      "avatar_contract": "No change",
+      "content_copy_keys": [],
+      "motion_contract": "No change",
+      "reduced_motion_contract": "No change",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "high",
+      "requirement_ids": [
+        "TDRP-R9-MTPROTO-HTTP-WAIT-WIRE-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-MTPROTO-HTTP-WAIT-WIRE-001",
+        "ORA-TDRP-MTPROTO-HTTP-WAIT-FAIL-CLOSED-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-MTPROTO-HTTP-WAIT-EXACT-001",
+        "INV-TDRP-MTPROTO-HTTP-WAIT-NO-SCHEDULING-001"
+      ],
+      "unit_case_ids": [
+        "UNIT-TDRP-MTPROTO-HTTP-WAIT-PARSE-001",
+        "UNIT-TDRP-MTPROTO-HTTP-WAIT-MALFORMED-001"
+      ],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-MTPROTO-HTTP-WAIT-WIRE-001"
+      ],
+      "integration_case_ids": [],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "fault_recovery_case_ids": [
+        "FAULT-TDRP-MTPROTO-HTTP-WAIT-MALFORMED-001"
+      ],
+      "performance_case_ids": [],
+      "security_case_ids": [
+        "SEC-TDRP-MTPROTO-HTTP-WAIT-FAIL-CLOSED-001"
+      ],
+      "soak_case_ids": [],
+      "exploratory_charter_ids": [],
+      "regression_ids": [
+        "REG-TDRP-MTPROTO-HTTP-WAIT-TRAILING-001"
+      ],
+      "release_gate_ids": [
+        "G-TRACEABILITY",
+        "G-COMPOSITION",
+        "G-SECURITY",
+        "G-EVIDENCE",
+        "G-RELEASE"
+      ],
+      "test_fixture_ids": [
+        "mtproto-http-wait-fixture"
+      ],
+      "test_environment_ids": [
+        "GitHub Actions Stage B matrix (not run)"
+      ],
+      "coverage_matrix_status": "pending",
+      "flake_status": "stable",
+      "release_gate_status": "pending",
+      "acceptance_reviewer": null,
+      "reviewer": null,
+      "license_and_provenance": "Behavioral responsibility is anchored to fixed-U telegramdesktop/tdesktop Telegram/SourceFiles/mtproto/scheme/mtproto.tl@76225965bfc794388db241f3f760db8ab79e84f8 and the usingHttpWait call site in session_private.cpp@13cbc76ec723386027b5b4dcac79999b791c4614. The implementation is source-neutral Rust and copies no upstream C++ implementation.",
+      "notes": "Stage A implementation only. This row closes exact typed http_wait wire decoding only. Telegram Desktop-equivalent HTTP wait scheduling/usingHttpWait lifecycle remains explicitly blocked/fail-closed. Global unknown/unread source-entry counts remain unchanged because this is a newly mapped responsibility slice within already-open fixed-U source coverage. Contracts are authored but not executed; validation_status=not-run and accepted=false.",
       "test_execution_evidence": [],
       "validation_status": "not-run",
       "accepted": false
