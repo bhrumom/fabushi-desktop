@@ -283,7 +283,8 @@ pub use turn_settle::{
 };
 pub use turn_run_shell::{
     CheckpointBoundary, TurnCancellation, TurnOwnerToken, TurnRunFinished,
-    TurnRunOptions, TurnRunShell, TurnRunShellError, TurnRunStarted, is_recovery_shaped_turn,
+    ToolLoopDecision, TurnRunOptions, TurnRunShell, TurnRunShellError, TurnRunStarted,
+    TOOL_LOOP_HISTORY_CAPACITY, TOOL_LOOP_REPEAT_THRESHOLD, is_recovery_shaped_turn,
 };
 pub use conversation_state::{
     CompletedAwaitOutcome, ContextWindowTracker, FullStreamSanitizer, HIDDEN_PROMPT_MARKER,

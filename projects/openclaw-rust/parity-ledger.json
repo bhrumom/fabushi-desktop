@@ -3015,7 +3015,9 @@
       "unit_id": "OCRM-UNIT-ROSTER-001"
     },
     {
-      "adr_refs": [],
+      "adr_refs": [
+        "projects/openclaw-rust/docs/specs/agent-loop-detection.md"
+      ],
       "behavior": "Tool loop detection, immediate cancellation supersedes, and monotonic generation increments in TurnOwnerToken.",
       "blocker_ids": [],
       "capability_ids": [
@@ -3086,7 +3088,7 @@
       ],
       "status": {
         "acceptance": "pending",
-        "implementation": "not-started",
+        "implementation": "implementing",
         "mapping": "reviewed",
         "read": "read-complete",
         "verification": "not-run",
