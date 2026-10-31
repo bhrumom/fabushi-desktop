@@ -3,13 +3,13 @@
   "project_id": "TDRP-001",
   "spec_revision": 9,
   "upstream_commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
-  "target_commit": "e8a8b7726679c06862205ef21fdfbfc0c5aca4ed",
+  "target_commit": "d19fc3742b9a2d5076513ec444383d7683a35ea2",
   "coverage": {
     "source_entries_total": 16202,
     "unknown": 16172,
     "unread": 16145,
     "omitted": 0,
-    "responsibilities_total": 53,
+    "responsibilities_total": 54,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -13082,7 +13082,7 @@
       "coverage_disposition": "rewritten",
       "blockers": [
         "Stage B executable build/contract/integration/packaged validation has not run.",
-        "Telegram authentication/self-user settlement and broader source responsibility closure remain open.",
+        "Broader fixed-U semantic/implementation closure remains open.",
         "Independent release/legal/acceptance gates remain open."
       ],
       "production_entrypoints": [
@@ -13230,6 +13230,289 @@
       "reviewer": null,
       "license_and_provenance": "Behavioral account/session/storage lifecycle responsibility mapped from fixed-U Telegram Desktop main_account.cpp; implementation is source-neutral Fabushi TypeScript/Rust and does not copy the upstream C++ account implementation.",
       "notes": "Stage A implementation only. The adjacent fixed-U storage_account.cpp@afe6f61af833fd32ba02a3bd8a48f6801cb583d5 was read as supporting encrypted-local-storage context. This row does not claim either upstream file fully semantically closed and does not decrement global unknown/unread counters.",
+      "test_execution_evidence": []
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+      "source_path": "Telegram/SourceFiles/main/main_account.cpp",
+      "source_blob_sha": "2721c7ac12effe454d398610d26d638fadaa1f68",
+      "source_kind": "source",
+      "module_id": "tdesktop.main.account.authorization",
+      "responsibility_id": "TDRP-R9-ACCOUNT-AUTHORIZATION-SELF-IDENTITY-001",
+      "source_symbols": [
+        "Main::Account::setMtpAuthorization",
+        "Main::Account::startMtp",
+        "Main::Account::prepareToStart",
+        "auth.sentCodeSuccess#2390fe44",
+        "auth.authorization#2ea2c0d4",
+        "auth.authorizationSignUpRequired#44747e9a",
+        "userEmpty#d3bc4b7a",
+        "user#b1b8cc83"
+      ],
+      "capability_ids": [
+        "CAP-CANONICAL-ACCOUNT-TELEGRAM-AUTHORIZATION-IDENTITY"
+      ],
+      "dependency_ids": [
+        "CanonicalAccountIdentity",
+        "PlatformLogin",
+        "TelegramEmbeddedRuntime",
+        "EncryptedStorage",
+        "ConversationProvider"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/evidence/round42-canonical-telegram-authorization-identity-20261101.md",
+      "behavior_contract": "One account-bound embedded Telegram client owns transport authorization, challenge state, canonical self-user identity and durable encrypted restore state. send-code success, sign-in, password and registration authorization responses must extract auth.Authorization.user.id as the canonical Telegram self_user_id; challenge and Ready state must persist with the same MTProto auth-key material, and restore must fail closed if Ready lacks either identity or resumable key material. The existing Host/ConversationProvider composition receives the same client id plus authorization state/self_user_id and must never create a second Telegram account/runtime.",
+      "state_machine": "canonical Fabushi account restored -> one persistent TelegramClientLease -> WaitParameters/WaitPhoneNumber -> send-code -> WaitCode or Ready -> sign-in -> WaitPassword/WaitRegistration/Ready -> password or registration -> Ready(self_user_id) -> encrypted authorization+MTProto auth-key persistence -> process restart -> same lease restores authorization/self_user and lazily resumes transport -> HostCreateConfig carries client_id+authorization_state+self_user_id -> existing non-owning provider dynamically resolves the same runtime identity; non-Ready provider operations fail closed",
+      "side_effects": [
+        "Persist Telegram authorization/challenge metadata in the existing account-scoped encrypted SQLite store",
+        "Persist the MTProto auth key, DC, salt and server-time restore material under the same storage key",
+        "Extract canonical self_user_id from auth.Authorization after send-code success/sign-in/password/registration",
+        "Restore the same client identity and lazily resume transport without opening another Telegram runtime",
+        "Keep one existing non-owning ConversationProvider attached to the same client id and dynamically fence operations on Ready+self_user_id"
+      ],
+      "failure_cases": [
+        "Ready is restored without canonical self_user_id",
+        "Ready is restored without MTProto auth-key material",
+        "A challenge state is restored without phone/hash/SRP context or transport material",
+        "auth.Authorization is accepted without parsing the canonical user id",
+        "Host registers a Telegram identity with self_user_id=0 fallback",
+        "Same-process authorization completion requires a second client/provider or Host restart",
+        "Authorization metadata or auth key is written outside the existing encrypted account storage"
+      ],
+      "ui_disposition": "No new UI root. Authorization identity is owned by the existing account/platform-login and embedded runtime lifecycle; conversation surfaces remain the existing Fabushi composition.",
+      "non_ui_responsibilities": [
+        "Telegram authorization state machine settlement",
+        "Canonical self-user identity extraction",
+        "Encrypted challenge/Ready persistence",
+        "MTProto auth-key restore and lazy transport resume",
+        "Typed authorization/self-user handoff to existing Host",
+        "Dynamic same-runtime provider identity fencing"
+      ],
+      "platform_delta": "Telegram Desktop account/session authorization persistence is re-expressed inside the existing Fabushi account-scoped encrypted client lease. No Telegram account product, second runtime, sidecar, subprocess, Web wrapper, second provider registry or second message store is introduced.",
+      "existing_owner_candidates": [
+        "source/mahayana/mahayana-rs/providers/telegram-protocol/src/api.rs",
+        "source/mahayana/mahayana-rs/providers/telegram-network/src/lib.rs",
+        "source/mahayana/mahayana-rs/providers/telegram-storage/src/sqlite.rs",
+        "source/mahayana/mahayana-rs/providers/telegram-runtime/src/runtime.rs",
+        "source/mahayana/mahayana-rs/mahayana-telegram/src/lib.rs",
+        "source/mahayana/mahayana-rs/mahayana-app-host/src/lib.rs",
+        "source/mahayana/mahayana-rs/mahayana-host/src/lib.rs"
+      ],
+      "existing_owner": "Canonical Fabushi account/platform-login lifecycle + existing embedded Telegram runtime + existing Host/ConversationProvider composition",
+      "rejected_existing_owners": [
+        "A Telegram-specific account/login owner would duplicate canonical Fabushi identity/platform-login truth",
+        "A second runtime or sidecar would split authorization and persistence ownership",
+        "ConversationProvider cannot own network credentials; it remains a non-owning adapter to the canonical lease"
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "source/mahayana/mahayana-rs/providers/telegram-protocol/src/api.rs",
+        "source/mahayana/mahayana-rs/providers/telegram-protocol/src/srp.rs",
+        "source/mahayana/mahayana-rs/providers/telegram-network/src/lib.rs",
+        "source/mahayana/mahayana-rs/providers/telegram-storage/src/sqlite.rs",
+        "source/mahayana/mahayana-rs/providers/telegram-runtime/src/runtime.rs",
+        "source/mahayana/mahayana-rs/providers/telegram-runtime/src/lib.rs",
+        "source/mahayana/mahayana-rs/mahayana-telegram/src/lib.rs",
+        "source/mahayana/mahayana-rs/mahayana-app-host/src/lib.rs",
+        "source/mahayana/mahayana-rs/mahayana-host/src/lib.rs"
+      ],
+      "fabushi_target_symbols": [
+        "parse_auth_authorization_user_id",
+        "SentCodeResult::Success { user_id }",
+        "resume_auth_key",
+        "EncryptedSqliteStore::{load_private_metadata,save_private_metadata}",
+        "AuthorizationSnapshot",
+        "PersistedAuthorization",
+        "PersistedTransportState",
+        "TelegramClientLease::handoff",
+        "TelegramClientHandoff.authorization_state",
+        "HostCreateConfig.telegram_authorization_state",
+        "TelegramConversationProvider::canonical_self_user_id"
+      ],
+      "target_language": "Rust",
+      "language_rationale": "Protocol parsing, MTProto session restore, encrypted embedded storage, runtime authorization lifecycle and Host composition are already Rust owners; keeping this responsibility there avoids a second identity implementation and keeps secrets out of renderer/UI.",
+      "command_event_contracts": [
+        "auth.sendCode -> auth.SentCode/auth.sentCodeSuccess -> WaitCode or Ready(self_user_id)",
+        "auth.signIn -> auth.authorizationSignUpRequired/account.Password/auth.Authorization -> WaitRegistration/WaitPassword/Ready(self_user_id)",
+        "auth.checkPassword -> auth.Authorization -> Ready(self_user_id)",
+        "auth.signUp -> auth.Authorization -> Ready(self_user_id)",
+        "encrypted authorization+transport metadata -> create_persistent_client -> AuthorizationSnapshot",
+        "TelegramClientLease::handoff -> HostCreateConfig(client_id,authorization_state,self_user_id)",
+        "existing non-owning TelegramConversationProvider -> authorization_snapshot -> Ready+self_user_id fence"
+      ],
+      "state_owner": "Existing embedded Telegram runtime AuthorizationMachine plus canonical self_user_id on the single account-bound RuntimeClient; canonical Fabushi account remains outer platform identity owner.",
+      "lifecycle_owner": "AppHost process-lifetime TelegramClientLease created by the canonical Fabushi account/platform-login composition.",
+      "persistence_and_restart": "Authorization state, challenge context, canonical self_user_id and MTProto auth-key/DC/salt restore material are encrypted with the same account-scoped Telegram storage key in the existing SQLite store. Restart reconstructs the same RuntimeClient and lazily reconnects using the persisted auth key; Ready without identity or auth-key material is rejected.",
+      "concurrency_and_cancellation": "The existing global runtime registry retains one client_id per lease. Host/provider is non-owning and resolves authorization_snapshot from that same client for each identity-sensitive operation, so same-process authorization completion does not require client duplication or Host recomposition.",
+      "security_boundary": "Phone/code-hash/SRP challenge metadata and the 256-byte MTProto auth key are stored only through EncryptedSqliteStore under the account-scoped storage key. The storage key remains in the existing OS-protected secret lifecycle. HostCreateConfig receives only client id, authorization state and numeric self_user_id, never secret key bytes.",
+      "network_service_dependencies": [
+        "Existing embedded Telegram MTProto transport/runtime",
+        "Existing Fabushi account/platform-login credential lifecycle"
+      ],
+      "service_owner": "Existing Fabushi account/platform-login owner + embedded Telegram runtime; no separate Telegram auth service.",
+      "deployment_evidence": [],
+      "implementation_status": "implemented",
+      "coverage_disposition": "rewritten",
+      "blockers": [
+        "Stage B executable build/unit/contract/integration/packaged validation has not run.",
+        "Broader fixed-U semantic/implementation closure remains open.",
+        "Independent release/legal/acceptance gates remain open."
+      ],
+      "production_entrypoints": [
+        "Electron canonical Fabushi account credential -> AppHost -> one TelegramClientLease -> create_persistent_client restore -> TelegramClientHandoff -> HostCreateConfig -> MahayanaHost -> existing non-owning TelegramConversationProvider",
+        "embedded Telegram runtime sendAuthenticationCode/submitAuthenticationCode/submitAuthenticationPassword/submitRegistration -> AuthorizationSnapshot/self_user_id -> same lease/provider"
+      ],
+      "production_evidence": [
+        "commit:d19fc3742b9a2d5076513ec444383d7683a35ea2",
+        "path:source/mahayana/mahayana-rs/providers/telegram-runtime/src/runtime.rs#AuthorizationSnapshot",
+        "path:source/mahayana/mahayana-rs/providers/telegram-runtime/src/runtime.rs#apply_authorization_state",
+        "path:source/mahayana/mahayana-rs/mahayana-telegram/src/lib.rs#TelegramClientLease::handoff",
+        "path:source/mahayana/mahayana-rs/mahayana-host/src/lib.rs#validate_telegram_handoff"
+      ],
+      "test_evidence": [
+        "providers/telegram-protocol/src/api.rs authorization_identity_contract_tests (authored, not run)",
+        "providers/telegram-storage/src/sqlite.rs private_metadata_round_trips_under_storage_encryption (authored, not run)",
+        "providers/telegram-runtime/src/runtime.rs authorization_restore_contract_tests (authored, not run)",
+        "mahayana-host/src/lib.rs telegram_provider_requires_ready_canonical_identity (authored, not run)"
+      ],
+      "target_commit": "d19fc3742b9a2d5076513ec444383d7683a35ea2",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Fabushi canonical account + Host/ConversationProvider production composition",
+      "composition_slot": "Account-bound embedded communication authorization/identity handoff",
+      "capability_component": "Single persistent embedded Telegram authorization state and canonical self-user identity",
+      "variation_axes": [
+        "send-code challenge vs sent-code success",
+        "password required vs registration required vs Ready",
+        "first login vs encrypted restart restore",
+        "Ready with complete restore material vs corrupt/incomplete metadata"
+      ],
+      "shared_owner_contracts": [
+        "Canonical Fabushi account identity",
+        "Existing OS-protected secret storage",
+        "Existing encrypted Telegram account store",
+        "Existing HostCreateConfig production composition",
+        "Existing canonical ConversationProvider registry"
+      ],
+      "duplicate_root_check": "No second account, identity, login truth, Telegram runtime, provider registry, conversation store, UI root, sidecar, subprocess or Web wrapper was introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Not applicable",
+      "primary_navigation_target": "Existing Messages/Conversation navigation",
+      "collection_surface": "Existing ConversationList",
+      "creation_flow": "Existing canonical conversation creation; no Telegram-specific creation root added",
+      "object_action_scope": "Not applicable to this lifecycle responsibility",
+      "detail_section": "Not applicable",
+      "capability_surface": "Existing ConversationWorkspace via ConversationProvider",
+      "route_contract": "Existing conversation routes; no Telegram-specific product route",
+      "search_scope": "Not applicable",
+      "search_provider": "Existing canonical Search owner",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Unchanged; this lifecycle handoff grants no renderer/search visibility.",
+      "search_local_remote_contract": "Not applicable to this responsibility.",
+      "responsive_disposition": "No UI change.",
+      "accessibility_contract": "No UI change.",
+      "keyboard_contract": "No UI change.",
+      "state_continuity_contract": "The same account-scoped encrypted client restores authorization challenge/Ready state and canonical self_user_id with its MTProto auth key; same-process provider operations read the current runtime snapshot rather than a stale startup identity.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Existing Fabushi design system; no visual changes",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": null,
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "No new icon asset",
+      "avatar_contract": "No change",
+      "content_copy_keys": [],
+      "motion_contract": "No change",
+      "reduced_motion_contract": "No change",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "high",
+      "requirement_ids": [
+        "TDRP-R9-ACCOUNT-AUTHORIZATION-SELF-IDENTITY-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-AUTH-SELF-IDENTITY-001",
+        "ORA-TDRP-AUTH-RESTORE-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-AUTH-READY-REQUIRES-SELF-001",
+        "INV-TDRP-AUTH-READY-REQUIRES-AUTHKEY-001",
+        "INV-TDRP-AUTH-NO-SECOND-RUNTIME-001"
+      ],
+      "unit_case_ids": [
+        "UNIT-TDRP-AUTHORIZATION-USER-ID-PARSE-001",
+        "UNIT-TDRP-AUTH-PRIVATE-METADATA-001"
+      ],
+      "property_state_case_ids": [
+        "PROP-TDRP-AUTH-STATE-IDENTITY-CONSISTENCY-001"
+      ],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-HOST-TELEGRAM-AUTH-HANDOFF-001"
+      ],
+      "integration_case_ids": [
+        "INT-TDRP-TELEGRAM-AUTH-RESTORE-HANDOFF-001"
+      ],
+      "functional_e2e_case_ids": [
+        "E2E-TDRP-TELEGRAM-AUTHORIZATION-IDENTITY-001"
+      ],
+      "temporal_case_ids": [
+        "TEMP-TDRP-TELEGRAM-AUTH-RESTART-RESTORE-001",
+        "TEMP-TDRP-TELEGRAM-AUTH-SAME-PROCESS-001"
+      ],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "fault_recovery_case_ids": [
+        "FAULT-TDRP-AUTH-READY-MISSING-SELF-001",
+        "FAULT-TDRP-AUTH-READY-MISSING-AUTHKEY-001",
+        "FAULT-TDRP-AUTH-CHALLENGE-MISSING-CONTEXT-001"
+      ],
+      "performance_case_ids": [],
+      "security_case_ids": [
+        "SEC-TDRP-AUTHKEY-ENCRYPTED-AT-REST-001",
+        "SEC-TDRP-AUTH-SECRET-NOT-HOSTCONFIG-001"
+      ],
+      "soak_case_ids": [],
+      "exploratory_charter_ids": [],
+      "regression_ids": [
+        "REG-TDRP-TELEGRAM-AUTH-STALE-SELF-001",
+        "REG-TDRP-TELEGRAM-SECOND-CLIENT-OWNER-001"
+      ],
+      "release_gate_ids": [
+        "G-TRACEABILITY",
+        "G-COMPOSITION",
+        "G-SECURITY",
+        "G-EVIDENCE",
+        "G-RELEASE"
+      ],
+      "test_fixture_ids": [
+        "telegram-auth-authorization-user-fixture",
+        "telegram-auth-private-metadata-fixture",
+        "telegram-host-auth-handoff-fixture"
+      ],
+      "test_environment_ids": [
+        "GitHub Actions Stage B matrix (not run)"
+      ],
+      "coverage_matrix_status": "pending",
+      "flake_status": "stable",
+      "release_gate_status": "pending",
+      "acceptance_reviewer": null,
+      "reviewer": null,
+      "license_and_provenance": "Behavioral account/session authorization responsibility is mapped from fixed-U Telegram Desktop main_account.cpp plus exact fixed-U MTProto API schema declarations in Telegram/SourceFiles/mtproto/scheme/api.tl@8319b7df634d145390c299404129fd161a5dbd2a. Implementation is source-neutral Rust and does not copy the upstream C++ account implementation.",
+      "notes": "Stage A implementation only. Exact fixed-U schema corroborates auth.sentCodeSuccess/auth.Authorization/auth.authorizationSignUpRequired/User constructors. This row does not claim whole-file semantic closure and does not decrement global unknown/unread counters.",
       "test_execution_evidence": []
     }
   ],
