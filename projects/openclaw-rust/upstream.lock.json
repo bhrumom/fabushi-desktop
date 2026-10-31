@@ -25,9 +25,9 @@
   "live_candidate": {
     "repository": "openclaw/openclaw",
     "ref": "refs/heads/main",
-    "commit": "55c411df82200a801d790d8d1fe5ad862f79d33f",
-    "tree": "0ab0a51751fb0c9cb3749fb477039b16e5772db8",
-    "observed_at": "2026-10-31T11:41:30Z",
+    "commit": "3a9578d82d516610e75fae5ab9b92e79b2782a8c",
+    "tree": "22fbf6fceb92b04902c8be866acd28bdc93d492e",
+    "observed_at": "2026-10-31T11:45:18Z",
     "discovery_source": "GitHub commit/tree API",
     "recursive_tree_truncated": false,
     "recursive_tree_entries": 64068,
@@ -49,7 +49,7 @@
     "behind_by": null,
     "compare_files_returned": null,
     "compare_file_counts_are_not_complete": true,
-    "decision": "live-main-drifted-to-55c411df; read-only exact commit/tree and recursive tree revalidated at 2026-10-31T11:41:30Z; recursive tree is 64,068 entries, the commit fixes skill-reader descendant animations in CI, root dependency/license identities remain stable; require fresh source reads before reuse and retain discovery-only status until Actions inventory and dependency closure"
+    "decision": "live-main-drifted-to-3a9578d8; read-only exact commit/tree and recursive tree revalidated at 2026-10-31T11:45:18Z; recursive tree is 64,068 entries, the commit retires duplicate reply boundary test cases, root dependency/license identities remain stable; require fresh source reads before reuse and retain discovery-only status until Actions inventory and dependency closure"
   },
   "root_inputs": {
     "AGENTS.md": "c3deeccdb6b1a4c7137d56297e933bbf19f4d3bf",
