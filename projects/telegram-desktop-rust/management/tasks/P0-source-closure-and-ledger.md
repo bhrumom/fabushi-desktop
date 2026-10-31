@@ -1010,3 +1010,35 @@ Exact signed 8/8/4/4 field widths and strict EOF are isolated from `requestsAcke
 temporary/permanent auth-key binding/expiry/persistence/teardown, gzip, complete difference/differenceSlice
 decoding/application, broader fixed-U source/legal closure, Stage-B executable evidence and independent release ACCEPT
 remain open/fail-closed. No executable validation was performed.
+
+
+### Round 87 — msg_new_detailed_info exact typed parser / fixed field widths
+
+Fixed U remains `f985723b552b30fe1c17d377d57f44e61a15a8c4`. Fixed-U
+`msg_new_detailed_info#809db6df answer_msg_id:long bytes:int status:int` is shipping-reachable in
+`SessionPrivate::handle`. That branch first ignores the service message when `info.badTime` is set; otherwise
+`MTPMsgDetailedInfo::read(from,end)` performs typed wire decoding before `_receivedMessageIds` lookup or
+ack/resend enqueueing.
+
+Remote source review confirms the existing canonical `telegram-protocol` owner already closes the independent
+wire boundary with no production delta. `api.rs@ebfb3670b5cd097b9ce288782c7954f5cfe9fc43` defines constructor
+`0x809db6df`, `MsgNewDetailedInfo { i64, i32, i32 }`, and `parse_msg_new_detailed_info`;
+`tl.rs@89256ab35184b6dc06a095ab34abb9f44e95a264` reads signed little-endian i64/i32 values with fail-closed
+truncation; `lib.rs@abab39e42f100972484191f0e52e9edd9b88c6cf` exports the same parser/type/constructor.
+The parser requires exact EOF. The exact wire object is 20 bytes: 4 + 8 + 4 + 4.
+
+Spec-first platform commit `ba585c9d3c0d66fd07f254dac0e0ac97f0cd8c92` /
+spec blob `1295bed353dfd9b5f26518dadfc68ddb6e1bf56b` records the no-production-delta disposition.
+Canonical authored-only contract commit `9154bcf48a0d27efe2fa459a9670100c99d29e25` and desktop sync
+`efeb7cef34a4582deb0a3631856ded581889f6bd` share contract blob
+`feedf5e25c739e0deca7a26f356a25a9d1a9f46b`. Authored cases cover signed extremes, exact 20-byte layout,
+wrong constructor, truncation at constructor/each 8/4/4 field boundary, trailing bytes and exact EOF; they were not run.
+
+Ledger adds `TDRP-R9-MTPROTO-MSG-NEW-DETAILED-INFO-WIRE-001`; coverage becomes
+`97 / 16172 unknown / 16145 unread / 0 omitted`, and the responsibility is
+`implemented / validation_status=not-run / accepted=false`.
+
+Bad-time handling, `_receivedMessageIds` history, ack/resend application, arbitrary request history,
+connection scheduling/racing/send retry, temporary/permanent auth-key binding/expiry/persistence/teardown,
+gzip, complete difference/differenceSlice decoding/application, broader source/legal closure and Stage-B executable
+evidence remain open/fail-closed. No executable validation was performed.
