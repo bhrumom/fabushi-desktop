@@ -342,3 +342,8 @@ re-read against this subject. No prior inventory, dependency closure,
 LFS/integrity result or Actions provenance was relabeled or reused; authority
 and completion flags remain unchanged. No CI, push, PR update or local OCRM
 executable verification was performed.
+
+The three changed session/cron runtime paths are recorded in
+`dossiers/upstream-current-session-lifecycle-delta-20261031.md`. That dossier is
+discovery evidence only; it does not alter the old-subject ledger or establish
+Rust production wiring.

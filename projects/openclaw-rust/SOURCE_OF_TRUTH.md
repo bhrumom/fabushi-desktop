@@ -230,6 +230,10 @@ identities 保持不变；递归 tree 未截断，为 63,994 entries（61,753 bl
 directories），无 gitlink。该 subject 已同步到 `upstream.lock.json::live_candidate`，
 但 mapped session/cron 路径必须重新读取后才能复用责任证据；旧 inventory、依赖闭包
 和 Actions provenance 仍不可复用，authority/global flags 不变。
+该 exact-subject 的三条 session/cron runtime delta 已记录在
+[`dossiers/upstream-current-session-lifecycle-delta-20261031.md`](dossiers/upstream-current-session-lifecycle-delta-20261031.md)，
+仅作为 discovery audit；它不改变 ledger/RTM 状态，也不把 lifecycle revision、
+Gateway owner fence 或 cleanup outcome 映射误报为 Rust 生产接线。
 
 当前 parity ledger 的 10 条 `not-started/not-wired` 责任已在
 `dossiers/not-started-responsibility-frontier-20261031.md` 做了逐条 frontier
