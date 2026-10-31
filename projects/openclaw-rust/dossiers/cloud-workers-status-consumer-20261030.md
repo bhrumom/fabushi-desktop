@@ -18,8 +18,8 @@ family instead of silently classifying a future status event as generic
 
 Evidence is limited to source inspection and `git diff --check`; local OCRM
 tests/builds, Actions, provider reachability, and live UI/CLI acceptance remain
-pending. The Host-side live event publisher and provider mutation path remain
-open.
+pending. The provider mutation path remains open; the Host event publication
+seam is documented below and still lacks mutation-driven state producers.
 
 ## Coordinator RPC and packaged Settings consumer — 2026-10-31
 
@@ -49,7 +49,8 @@ publication, rather than merely successful access to the in-memory owner. This
 is covered in both directions by the focused contract (absent before
 `persist()`, present after it), including the serialized `statePersisted` wire
 field. This is owner-boundary progress only: it does not add mutation
-commands, provider readiness, or a live event publisher.
+commands or provider readiness; at this earlier stage it did not yet add the
+event publication seam documented below.
 
 ## P1-F08 typed consumer adapter — 2026-10-31
 
