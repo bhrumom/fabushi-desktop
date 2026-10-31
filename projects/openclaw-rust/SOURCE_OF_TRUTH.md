@@ -223,6 +223,14 @@ canonical inventory 身份，不能手工改写旧分片来伪造 projection clo
 `5d9b96f3208eb2daf4c566fc60865a1850e4c77f` supersede。旧 baseline inventory、
 其 projection 计数和旧 candidate identity 均不得解读为当前 source closure。
 
+2026-10-31T07:55:14Z 的只读远端复核显示 `openclaw/openclaw` 的 `refs/heads/main`
+已漂移到 commit `77b08d1345a8e5734ada19dc95e77f4c5135bd0a`、tree
+`a52b727858379d14b1b1ed4bde71837326c127f7`；recursive tree 未截断，共 63,993
+entries（61,752 blobs、2,241 directories）。这些值已更新到
+`upstream.lock.json` 的 `live_candidate`，但仍保持 discovery-only；没有 fresh
+GitHub Actions inventory、依赖闭包或 LFS scan，因此没有提升 accepted identity，
+也没有改变任何 closure/global flag。
+
 对旧 baseline inventory 的只读计数还显示：58,750 条路径中有 57,331 条仍为
 `responsibility_status=unclassified` 且 `disposition=null`；其余 1,419 条已有
 read/disposition 记录。该计数是当前 AC02/G02 final 未闭合的直接证据，不是把

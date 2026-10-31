@@ -25,13 +25,13 @@
   "live_candidate": {
     "repository": "openclaw/openclaw",
     "ref": "refs/heads/main",
-    "commit": "bcf23b2ea0eee92c8c497c6b1c4d486588e4d5ab",
-    "tree": "5d9b96f3208eb2daf4c566fc60865a1850e4c77f",
-    "observed_at": "2026-10-31T05:51:22Z",
+    "commit": "77b08d1345a8e5734ada19dc95e77f4c5135bd0a",
+    "tree": "a52b727858379d14b1b1ed4bde71837326c127f7",
+    "observed_at": "2026-10-31T07:55:14Z",
     "discovery_source": "GitHub commit/tree API",
     "recursive_tree_truncated": false,
-    "recursive_tree_entries": 63946,
-    "recursive_blob_entries": 61705,
+    "recursive_tree_entries": 63993,
+    "recursive_blob_entries": 61752,
     "recursive_directory_entries": 2241,
     "root_inputs": {
       "package.json": "3b8d23201d08859353b3ada3915f9e6fe5266dcf",
@@ -49,7 +49,7 @@
     "behind_by": null,
     "compare_files_returned": null,
     "compare_file_counts_are_not_complete": true,
-    "decision": "live-main-drifted-again-to-bcf23b2; recursive-tree-and-root-inputs-revalidated-read-only; retain-discovery-only-status-until-fresh-actions-inventory-and-dependency-closure"
+    "decision": "live-main-drifted-again-to-77b08d1; recursive-tree-and-root-inputs-revalidated-read-only; retain-discovery-only-status-until-fresh-actions-inventory-and-dependency-closure"
   },
   "root_inputs": {
     "AGENTS.md": "c3deeccdb6b1a4c7137d56297e933bbf19f4d3bf",
