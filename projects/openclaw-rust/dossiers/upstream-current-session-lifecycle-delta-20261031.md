@@ -196,3 +196,23 @@ not silently removed. Exact-head Actions and real generated-subagent
 completion/deletion evidence, plus the remaining isolated-cron producer, are
 still required before the responsibility can be treated as fully
 production-wired.
+
+## Exact-head revalidation at current discovery subject
+
+A read-only GitHub tree lookup at the current lock candidate
+`openclaw/openclaw@ce908375fed062dd75abab62d57fc840b96a144e` /
+`f2db36d9a98e23753ce1130a84cdae7a4c57488d` reports the same blob identities for
+the audited producer/owner paths:
+
+| Path | Current blob |
+| --- | --- |
+| `src/config/sessions/lifecycle.ts` | `7e3c7a6999cb44417ec634b0e77d1299c672f8c1` |
+| `src/cron/isolated-agent/session-cleanup.ts` | `5cdeb385daf097dd9d7b87febdc7178dd4a91050` |
+| `src/agents/subagents/registry/subagent-session-cleanup.ts` | `1669914996a02fcecd45012811d0a42f18bd32d7` |
+| `src/cron/isolated-agent/run.ts` | `617257faccf4b8cb7d696e0a8890d77916e83fa5` |
+
+This narrow identity result allows the prior source reading to remain applicable
+to these four exact files only. It does not close the remaining Rust producer
+edge, compile or execute the focused oracles, establish packaged/runtime
+reachability, or change the ledger's `implementing` / `not-wired` /
+`not-run` / `pending` states.
