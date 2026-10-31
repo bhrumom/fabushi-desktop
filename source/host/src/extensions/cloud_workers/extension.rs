@@ -242,6 +242,20 @@ impl CloudWorkerProvisioningExtension {
         self.mutate_and_persist(|owner| owner.register_warm_image(image))
     }
 
+    /// Returns one owner-bound warm-image record after rechecking persisted
+    /// state invariants. This read projection does not query a provider,
+    /// capture/delete an image, clear cleanup debt or create a second store.
+    pub fn inspect_warm_image(
+        &self,
+        image_id: &str,
+    ) -> Result<CloudWorkerWarmImage, CloudWorkerOwnerError> {
+        let owner = self
+            .owner
+            .lock()
+            .map_err(|_| CloudWorkerOwnerError::Unavailable)?;
+        owner.warm_image(image_id)
+    }
+
     /// Applies one generation-fenced warm-image transition and persists the
     /// resulting owner snapshot. Provider side effects remain a separate
     /// adapter and are intentionally not implied by this method.
@@ -695,7 +709,7 @@ mod tests {
         CloudWorkerProvisioningOwner, CloudWorkerMutationOutcome,
         CloudWorkerRuntimeControlAction, CloudWorkerRuntimeControlBudget,
         CloudWorkerRuntimeControlRequest, CloudWorkerRuntimeControlResult,
-        CloudWorkerRuntimeIdentity, LeaseId, ReplayKey,
+        CloudWorkerRuntimeIdentity, CloudWorkerWarmImage, LeaseId, ReplayKey,
     };
 
     fn enabled_extension(state_path: PathBuf) -> CloudWorkerProvisioningExtension {
@@ -865,6 +879,22 @@ mod tests {
             .unwrap();
         assert_eq!(settled.lifecycle, super::super::CloudWorkerLifecycle::Enrolled);
         assert!(state_path.is_file());
+    }
+
+    #[test]
+    fn warm_image_inspection_rechecks_the_canonical_owner_record() {
+        let state_path = test_state_path("warm-image-inspection");
+        let extension = enabled_extension(state_path);
+        extension
+            .register_warm_image(CloudWorkerWarmImage::new("image-inspect").unwrap())
+            .unwrap();
+        let image = extension.inspect_warm_image("image-inspect").unwrap();
+        assert_eq!(image.image_id, "image-inspect");
+        assert_eq!(image.generation, super::super::CloudWorkerWarmImageGeneration(0));
+        assert_eq!(
+            extension.inspect_warm_image("missing-image"),
+            Err(super::super::CloudWorkerOwnerError::UnknownWarmImage)
+        );
     }
 
     #[test]

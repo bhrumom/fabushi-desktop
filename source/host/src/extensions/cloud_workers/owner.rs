@@ -495,6 +495,18 @@ impl CloudWorkerProvisioningOwner {
         Ok(())
     }
 
+    pub fn warm_image(
+        &self,
+        image_id: &str,
+    ) -> Result<CloudWorkerWarmImage, CloudWorkerOwnerError> {
+        let image = self
+            .warm_images
+            .get(image_id)
+            .ok_or(CloudWorkerOwnerError::UnknownWarmImage)?;
+        image.validate_persisted()?;
+        Ok(image.clone())
+    }
+
     pub fn apply_warm_image(
         &mut self,
         image_id: &str,

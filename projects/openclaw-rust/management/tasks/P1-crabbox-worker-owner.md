@@ -258,6 +258,9 @@ pending Crabbox responsibilities:
   `register_warm_image` and `apply_warm_image`, both using the canonical owner
   and atomic store. Provider snapshot, credential scrub and recovery consumers
   remain pending and are not inferred from this persistence path.
+- `inspect_warm_image` now provides the corresponding owner-bound read
+  projection and revalidates persisted image invariants before returning a
+  record; it does not query or mutate a provider snapshot backend.
 - Lease lifecycle mutations now have typed `admit_lease` and `settle_lease`
   façades through the extension and atomic store. Provider/process producers,
   device enrollment and consumer wiring remain separate pending work.

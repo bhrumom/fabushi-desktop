@@ -2313,9 +2313,9 @@
       ],
       "id": "OCRM-RESP-INFRA-WORKER-CRABBOX-WARM-IMAGE-001",
       "integration": {
-    "consumer": "CloudWorkerProvisioningExtension::register_warm_image / apply_warm_image; provider snapshot and recovery consumers remain not wired",
-    "entrypoint": "source/host/src/extensions/cloud_workers/extension.rs::CloudWorkerProvisioningExtension::apply_warm_image / mark_warm_image_capture_uncertain -> owner.rs",
-    "owner": "source/host/src/extensions/cloud_workers/extension.rs and owner.rs",
+        "consumer": "CloudWorkerProvisioningExtension::inspect_warm_image / register_warm_image / apply_warm_image; provider snapshot and recovery consumers remain not wired",
+        "entrypoint": "source/host/src/extensions/cloud_workers/extension.rs::CloudWorkerProvisioningExtension::inspect_warm_image / apply_warm_image / mark_warm_image_capture_uncertain -> owner.rs",
+        "owner": "source/host/src/extensions/cloud_workers/extension.rs and owner.rs",
         "producer": "provider snapshot adapter (not yet wired)"
       },
       "invariants": [
@@ -2330,7 +2330,7 @@
       ],
       "owner_decision": "Keep warm-image state separate from FDN, Computer, Session, Transcript and Sand stores",
       "postconditions": [
-        "Warm-image state transitions are deterministic and bounded without claiming a snapshot backend"
+        "Warm-image state transitions and owner-bound reads are deterministic and bounded without claiming a snapshot backend"
       ],
       "preconditions": [
         "A scoped lease/profile/runtime identity and expected image generation are present"
@@ -2434,13 +2434,15 @@
       },
       "tests": [
         "source/host/src/extensions/cloud_workers/warm_image.rs::tests::fences_generation_and_hold_lifecycle",
-        "source/host/src/extensions/cloud_workers/warm_image.rs::tests::capture_uncertainty_is_recoverable"
+        "source/host/src/extensions/cloud_workers/warm_image.rs::tests::capture_uncertainty_is_recoverable",
+        "source/host/src/extensions/cloud_workers/extension.rs::tests::warm_image_inspection_rechecks_the_canonical_owner_record"
       ],
       "typed_contracts": [
         "CloudWorkerWarmImage",
         "CloudWorkerWarmImageGeneration",
         "CloudWorkerWarmImageOperation",
-        "CloudWorkerWarmImageState"
+        "CloudWorkerWarmImageState",
+        "CloudWorkerProvisioningExtension::inspect_warm_image"
       ],
       "unit_id": "OCRM-UNIT-INFRA-001"
     },

@@ -247,6 +247,11 @@ Warm-image capture ambiguity now has a typed extension façade that persists
 `CaptureUncertain` and cleanup debt under generation fencing. Provider snapshot
 reconciliation and cleanup consumers remain pending.
 
+The extension now also exposes `inspect_warm_image`, which reads through the
+canonical owner and revalidates the persisted warm-image record before a future
+snapshot/recovery consumer can use it. It does not query, capture, delete or
+scrub a provider image.
+
 The current implementation boundary therefore contains persistence and
 fencing contracts only; it has no runtime-control producer, process launcher,
 device enrollment caller or packaged consumer acceptance.
