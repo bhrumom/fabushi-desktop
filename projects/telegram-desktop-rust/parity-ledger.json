@@ -3,13 +3,13 @@
   "project_id": "TDRP-001",
   "spec_revision": 9,
   "upstream_commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
-  "target_commit": "c8109e3412d8c2cb4e7362a0fe4ec4976c07bd22",
+  "target_commit": "e7c0da2a654aad9a65e6c7fc545f9cf7d9dd48a8",
   "coverage": {
     "source_entries_total": 16202,
     "unknown": 16172,
     "unread": 16145,
     "omitted": 0,
-    "responsibilities_total": 55,
+    "responsibilities_total": 56,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -13792,6 +13792,274 @@
       "license_and_provenance": "Behavioral login responsibility is anchored to fixed-U telegramdesktop/tdesktop@f985723b552b30fe1c17d377d57f44e61a15a8c4 exact intro sources: intro_phone.cpp@ee14ffa7c6f31e171cdcbdfaf627ea9868af1246 (auth.sendCode), intro_code.cpp@2bed39cf0d696ee642e7d18f3f17bec05e8e4489 (auth.signIn), intro_password_check.cpp@d08bf88408b29cb5ec7ed31c4e925074bfb8825e (auth.checkPassword), and intro_signup.cpp@1ba7a38379a6ae2febe615783333fd0822e0bb96 (auth.signUp). The Fabushi implementation is source-neutral and copies no upstream UI/C++ implementation.",
       "notes": "Stage A implementation only. This row covers the canonical login command/secret boundary and supporting fixed-U intro files without claiming any whole upstream file semantically closed or decrementing global unknown/unread counters. Actual Telegram api_id/api_hash values are external product configuration and are intentionally absent from repository/renderer state.",
       "test_execution_evidence": []
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+      "source_path": "Telegram/SourceFiles/intro/intro_code.cpp",
+      "source_blob_sha": "2bed39cf0d696ee642e7d18f3f17bec05e8e4489",
+      "source_kind": "source",
+      "module_id": "tdesktop.intro.authorization-lifecycle",
+      "responsibility_id": "TDRP-R9-ACCOUNT-TELEGRAM-AUTH-LIFECYCLE-ERROR-BACKOFF-001",
+      "source_symbols": [
+        "Intro::CodeWidget::finished / cancelled / codeSubmitFail / sendCall / noTelegramCode / noTelegramCodeFail / emailVerifyDone / submitCode",
+        "Intro::PasswordCheckWidget::cancelled / pwdSubmitFail / handleSrpIdInvalid / requestPasswordData / toRecover / codeSubmitFail / submit",
+        "Intro::EmailWidget::_submitCallback / cancelled",
+        "Intro::PhoneWidget::phoneSubmitFail / cancelled",
+        "Intro::SignupWidget::nameSubmitFail"
+      ],
+      "capability_ids": [
+        "CAP-CANONICAL-ACCOUNT-TELEGRAM-AUTH-STATE-ERROR",
+        "CAP-TELEGRAM-AUTH-BACKOFF"
+      ],
+      "dependency_ids": [
+        "CanonicalAccountIdentity",
+        "PlatformLogin",
+        "RendererCoordinatorBridge",
+        "AppHost",
+        "TelegramClientLease",
+        "AuthorizationSnapshot",
+        "EmbeddedTelegramRuntime"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/evidence/round44-telegram-auth-lifecycle-error-backoff-20261101.md",
+      "behavior_contract": "Canonical Telegram authorization commands must return a bounded typed authorization projection from the one account-bound TelegramClientLease. Recognized Telegram RPC/auth-context failures are projected as typed error category/action/recoverability metadata while preserving the live AuthorizationSnapshot/self_user_id. FLOOD_WAIT/FLOOD_PREMIUM_WAIT values establish a bounded process-lifetime backoff on that same lease so repeated renderer mutations cannot hot-loop the remote authorization endpoint. Missing resend/cancel/password-recovery/email-verification protocol primitives remain explicit blockers and are not fabricated in AppHost or renderer code.",
+      "state_machine": "canonical Fabushi platform account -> one TelegramClientLease -> typed auth command -> bounded backoff preflight -> embedded runtime -> success => live AuthorizationSnapshot/self_user_id OR recognized runtime/RPC failure => typed authorizationIssue + live AuthorizationSnapshot/self_user_id -> FLOOD_WAIT establishes bounded retryAfterSeconds/backoff -> renderer consumes shared typed projection",
+      "side_effects": [
+        "Classifies known Telegram login failures into bounded source-neutral category/action metadata",
+        "Retains a process-lifetime authorization backoff deadline on the existing TelegramClientLease for FLOOD_WAIT/FLOOD_PREMIUM_WAIT",
+        "Rejects repeated auth mutations locally while backoff is active by returning a typed AUTH_BACKOFF_ACTIVE projection",
+        "Rereads live AuthorizationSnapshot/self_user_id for status, successful mutations and typed issue projections",
+        "Keeps all renderer replies free of Telegram api_id/api_hash and does not create a second account/runtime/provider"
+      ],
+      "failure_cases": [
+        "Renderer accepts arbitrary or malformed authorization-state shapes",
+        "Raw remote Telegram error strings become an unbounded renderer state contract",
+        "FLOOD_WAIT values can cause an immediate repeated authorization request loop",
+        "Retry delay is unbounded or integer-invalid",
+        "An error projection loses the live AuthorizationSnapshot/self_user_id",
+        "AppHost invents resend/cancel/recovery/email-verification behavior that the embedded runtime does not implement",
+        "Authorization error handling creates a second Telegram runtime or provider"
+      ],
+      "ui_disposition": "Reuse the existing Fabushi account/platform-login surface. This responsibility supplies typed lifecycle/error/backoff state to that owner and does not add a Telegram-specific route, navigation root, account store, workspace or error UI system.",
+      "non_ui_responsibilities": [
+        "Shared typed Telegram authorization-state projection",
+        "Bounded auth error classification",
+        "Flood/backoff no-spin behavior",
+        "Live AuthorizationSnapshot settlement on error as well as success",
+        "Fail-closed accounting for unavailable remote authorization primitives"
+      ],
+      "platform_delta": "Telegram Desktop intro lifecycle/error semantics are projected through the existing source-neutral Fabushi account/Coordinator/AppHost/TelegramClientLease chain. Only independently implementable state/error/backoff behavior is added in this round; resend/cancel/password-recovery/email-verification remain blocked on missing embedded-runtime protocol primitives.",
+      "existing_owner_candidates": [
+        "source/mahayana/mahayana-rs/mahayana-telegram/src/lib.rs",
+        "source/mahayana/mahayana-rs/mahayana-app-host/src/lib.rs",
+        "source/shared/rpc/coordinator.ts",
+        "frontend/src/production/coordinator-client.ts"
+      ],
+      "existing_owner": "Canonical Fabushi account/platform-login + shared Coordinator contract + AppHost + existing TelegramClientLease/AuthorizationSnapshot",
+      "rejected_existing_owners": [
+        "Renderer UI cannot own retry/flood truth because authorization network state belongs to the retained native lease",
+        "AppHost cannot fabricate protocol operations absent from the embedded runtime",
+        "A Telegram-specific login state store would duplicate the canonical Fabushi account/platform-login owner"
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "source/mahayana/mahayana-rs/mahayana-telegram/src/lib.rs",
+        "source/mahayana/mahayana-rs/mahayana-app-host/src/lib.rs",
+        "source/shared/rpc/coordinator.ts",
+        "frontend/src/production/coordinator-client.ts",
+        "source/shared/rpc/coordinator.contract.test.ts"
+      ],
+      "fabushi_target_symbols": [
+        "TelegramAuthIssue / classify_telegram_auth_issue",
+        "TelegramClientLease::{authorization_status,execute_authorization,authorization_backoff_projection,set_authorization_backoff}",
+        "AppHost::feature_telegram_auth_status",
+        "TelegramAuthorizationStateProjection / TelegramAuthIssueProjection / TelegramAuthorizationProjection",
+        "parseCoordinatorTelegramAuthorizationProjection / validateCoordinatorReply",
+        "ProductionCoordinatorClient.telegram*"
+      ],
+      "target_language": "TypeScript + Rust",
+      "language_rationale": "Network authorization state, error settlement and backoff stay with the existing Rust TelegramClientLease/runtime boundary; renderer contract validation stays in the existing shared TypeScript Coordinator owner. This keeps one state owner and one renderer carrier without adding a source-named subsystem.",
+      "command_event_contracts": [
+        "feature.auth.telegramStatus -> same TelegramClientLease -> typed authorizationState/selfUserId/backoff projection",
+        "feature.auth.telegramSendCode/signIn/password/registration -> same lease -> backoff preflight -> embedded runtime -> success or typed authorizationIssue -> live AuthorizationSnapshot",
+        "FLOOD_WAIT_n/FLOOD_PREMIUM_WAIT_n -> bounded retryAfterSeconds -> subsequent same-lease mutation returns AUTH_BACKOFF_ACTIVE until deadline",
+        "resend/cancel/password-recovery/email-verification remain unavailable until matching embedded-runtime commands exist; no fallback command is invented"
+      ],
+      "state_owner": "Existing canonical Fabushi platform account owns outer account state; the one AppHost TelegramClientLease owns process-local auth backoff while the embedded AuthorizationMachine/AuthorizationSnapshot remains authorization truth; shared Coordinator types only validate/project that truth.",
+      "lifecycle_owner": "Existing Fabushi platform-login -> AppHost retained TelegramClientLease -> embedded Telegram runtime. No second authorization lifecycle is introduced.",
+      "persistence_and_restart": "Existing Telegram authorization/challenge/auth-key state continues in the existing account-scoped encrypted store. The newly added local flood deadline is intentionally process-lifetime only; after restart the authoritative Telegram service still enforces any remaining server-side rate limit. No new persistence truth is introduced.",
+      "concurrency_and_cancellation": "One process-lifetime lease serializes the shared backoff deadline behind a Mutex and all renderer calls still traverse the existing Coordinator/AppHost request lane. Upstream cancellation-specific remote auth.cancelCode is not claimed implemented because the embedded runtime lacks that primitive.",
+      "security_boundary": "No application secret is added to the renderer contract. Error parsing accepts only bounded uppercase/digit/underscore Telegram error tokens; retryAfterSeconds is capped at seven days; malformed projection shapes fail coordinator validation.",
+      "network_service_dependencies": [
+        "Existing embedded Telegram MTProto runtime",
+        "Existing Telegram authorization RPCs already implemented by that runtime",
+        "Missing runtime protocol commands/builders for auth.resendCode, auth.cancelCode, auth.requestPasswordRecovery, auth.checkRecoveryPassword, account.sendVerifyEmailCode and account.verifyEmail"
+      ],
+      "service_owner": "Existing embedded Telegram runtime behind the canonical Fabushi account/platform-login lease; no new service or sidecar.",
+      "deployment_evidence": [],
+      "implementation_status": "implemented",
+      "coverage_disposition": "rewritten",
+      "blockers": [
+        "Embedded runtime currently has no protocol builder/command path for auth.resendCode or auth.cancelCode.",
+        "Embedded runtime currently has no protocol builder/command path for auth.requestPasswordRecovery/auth.checkRecoveryPassword.",
+        "Embedded runtime currently has no protocol builder/command path for account.sendVerifyEmailCode/account.verifyEmail.",
+        "SRP_ID_INVALID source behavior requires a safe account.getPassword challenge-refresh primitive before automatic retry can be implemented without looping.",
+        "Stage B executable build/unit/contract/integration/packaged validation has not run.",
+        "Broader fixed-U semantic/implementation closure, external-source/legal closure and independent acceptance remain open."
+      ],
+      "production_entrypoints": [
+        "Existing Account/Settings platform-login consumer -> ProductionCoordinatorClient.telegram* -> shared Coordinator method carrier -> AppHost feature.auth.telegram* -> same TelegramClientLease -> embedded runtime/AuthorizationSnapshot",
+        "AppHost feature.auth.telegramStatus -> TelegramClientLease.authorization_status -> live AuthorizationSnapshot + bounded process-local backoff"
+      ],
+      "production_evidence": [
+        "commit:a9e9683a3bf8cd05fd79b46213c19f56bc7c606d",
+        "commit:e7c0da2a654aad9a65e6c7fc545f9cf7d9dd48a8",
+        "path:source/mahayana/mahayana-rs/mahayana-telegram/src/lib.rs#TelegramAuthIssue/TelegramClientLease@07c4bdff3a146dcd96165358e43bf6ca6d4dd137",
+        "path:source/mahayana/mahayana-rs/mahayana-app-host/src/lib.rs#feature_telegram_auth_status@d22df18ceec568f1a0c75663f664a3a4b0d9a9af",
+        "path:source/shared/rpc/coordinator.ts#TelegramAuthorizationProjection/parseCoordinatorTelegramAuthorizationProjection@77aa3c82d6fcf1b7f11996cdd7544551af23bf55",
+        "path:frontend/src/production/coordinator-client.ts#ProductionCoordinatorClient.telegram*@9d5cf6bc55c4e769835f21c433cf30a84fb4e314"
+      ],
+      "test_evidence": [
+        "source/mahayana/mahayana-rs/mahayana-telegram/src/lib.rs auth_rpc_errors_have_typed_actions_and_bounded_backoff (authored, not run)",
+        "source/shared/rpc/coordinator.contract.test.ts Telegram authorization projection/error/backoff contracts (authored, not run)"
+      ],
+      "target_commit": "e7c0da2a654aad9a65e6c7fc545f9cf7d9dd48a8",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Fabushi canonical account/platform-login + existing production renderer/Coordinator/AppHost composition",
+      "composition_slot": "Account authorization lifecycle/error/backoff projection",
+      "capability_component": "Typed Telegram authorization lifecycle state/error/backoff on one embedded client lease",
+      "variation_axes": [
+        "success vs recognized remote issue vs unrecognized transport/runtime failure",
+        "normal authorization request vs active FLOOD_WAIT backoff",
+        "phone/code/password/registration challenge state",
+        "runtime primitive available vs explicitly blocked"
+      ],
+      "shared_owner_contracts": [
+        "Canonical Fabushi account identity",
+        "Existing renderer Coordinator carrier",
+        "Existing AppHost process",
+        "Existing TelegramClientLease/AuthorizationSnapshot",
+        "Existing embedded Telegram runtime"
+      ],
+      "duplicate_root_check": "No second account, login truth, Telegram runtime, provider registry, renderer bridge, state store, UI root, sidecar, subprocess or Web wrapper was introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Existing account/platform-login capability",
+      "primary_navigation_target": "Existing Account/Settings sign-in surface",
+      "collection_surface": "Not applicable",
+      "creation_flow": "Existing canonical account/platform-login flow",
+      "object_action_scope": "Telegram authorization challenge/error actions",
+      "detail_section": "Existing account/session surface",
+      "capability_surface": "Existing platform-login renderer capability boundary; no Telegram-specific workspace",
+      "route_contract": "No new route. Existing account/session navigation consumes the shared typed authorization projection.",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "No search change.",
+      "search_local_remote_contract": "Not applicable.",
+      "responsive_disposition": "No new visual surface in this responsibility.",
+      "accessibility_contract": "No new visual surface in this responsibility.",
+      "keyboard_contract": "No new visual surface in this responsibility.",
+      "state_continuity_contract": "Every implemented auth status/mutation projection rereads the same runtime AuthorizationSnapshot; same-process flood/backoff remains attached to the same retained client lease.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Existing Fabushi design system; no visual changes",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": null,
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Existing Account/Settings pattern",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "No visual change",
+      "icon_asset_contract": "No new icon asset",
+      "avatar_contract": "No change",
+      "content_copy_keys": [],
+      "motion_contract": "No change",
+      "reduced_motion_contract": "No change",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "high",
+      "requirement_ids": [
+        "TDRP-R9-ACCOUNT-TELEGRAM-AUTH-LIFECYCLE-ERROR-BACKOFF-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-TELEGRAM-AUTH-TYPED-ERROR-001",
+        "ORA-TDRP-TELEGRAM-AUTH-BACKOFF-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-TELEGRAM-AUTH-ERROR-BOUNDED-001",
+        "INV-TDRP-TELEGRAM-AUTH-BACKOFF-NO-SPIN-001",
+        "INV-TDRP-TELEGRAM-AUTH-SNAPSHOT-ON-ISSUE-001"
+      ],
+      "unit_case_ids": [
+        "UNIT-TDRP-TELEGRAM-AUTH-ERROR-CLASSIFY-001"
+      ],
+      "property_state_case_ids": [
+        "PROP-TDRP-TELEGRAM-AUTH-BACKOFF-BOUNDS-001"
+      ],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-TELEGRAM-AUTH-PROJECTION-001"
+      ],
+      "integration_case_ids": [
+        "INT-TDRP-TELEGRAM-AUTH-ISSUE-SAME-LEASE-001"
+      ],
+      "functional_e2e_case_ids": [
+        "E2E-TDRP-TELEGRAM-AUTH-FLOOD-BACKOFF-001"
+      ],
+      "temporal_case_ids": [
+        "TEMP-TDRP-TELEGRAM-AUTH-BACKOFF-DEADLINE-001"
+      ],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "fault_recovery_case_ids": [
+        "FAULT-TDRP-TELEGRAM-AUTH-FLOOD-001",
+        "FAULT-TDRP-TELEGRAM-AUTH-MALFORMED-PROJECTION-001",
+        "FAULT-TDRP-TELEGRAM-AUTH-CONTEXT-MISSING-001"
+      ],
+      "performance_case_ids": [],
+      "security_case_ids": [
+        "SEC-TDRP-TELEGRAM-AUTH-ERROR-BOUNDS-001"
+      ],
+      "soak_case_ids": [],
+      "exploratory_charter_ids": [],
+      "regression_ids": [
+        "REG-TDRP-TELEGRAM-AUTH-FLOOD-SPIN-001",
+        "REG-TDRP-TELEGRAM-AUTH-RAW-ERROR-001",
+        "REG-TDRP-TELEGRAM-AUTH-SNAPSHOT-STALE-ON-ERROR-001"
+      ],
+      "release_gate_ids": [
+        "G-TRACEABILITY",
+        "G-COMPOSITION",
+        "G-SECURITY",
+        "G-EVIDENCE",
+        "G-RELEASE"
+      ],
+      "test_fixture_ids": [
+        "telegram-auth-typed-projection",
+        "telegram-auth-flood-wait",
+        "telegram-auth-malformed-projection"
+      ],
+      "test_environment_ids": [
+        "GitHub Actions Stage B matrix (not run)"
+      ],
+      "coverage_matrix_status": "pending",
+      "flake_status": "stable",
+      "release_gate_status": "pending",
+      "acceptance_reviewer": null,
+      "reviewer": null,
+      "license_and_provenance": "Behavioral lifecycle/error/backoff responsibility is anchored to fixed-U telegramdesktop/tdesktop exact intro sources: intro_code.cpp@2bed39cf0d696ee642e7d18f3f17bec05e8e4489, intro_password_check.cpp@d08bf88408b29cb5ec7ed31c4e925074bfb8825e, intro_email.cpp@dfb5ceeddeb48ab00773add72e75e0aef8ceb074, intro_phone.cpp@ee14ffa7c6f31e171cdcbdfaf627ea9868af1246 and intro_signup.cpp@1ba7a38379a6ae2febe615783333fd0822e0bb96. The implementation is source-neutral and copies no upstream C++/UI code.",
+      "notes": "Stage A implementation only. This row covers the independently implementable canonical auth state/error/backoff contract. It deliberately does not claim resend/cancel/password-recovery/email-verification remote operations as implemented because the current embedded runtime lacks those protocol primitives. No whole upstream file is claimed semantically closed; unknown/unread/omitted counters remain unchanged. Tests are authored but not executed.",
+      "test_execution_evidence": []
     }
   ],
   "rebaseline_candidate": {
@@ -13801,7 +14069,7 @@
     "nested_gitlinks_discovered": 3,
     "nested_gitlinks_resolved": 2,
     "nested_gitlinks_blocked": 1,
-    "source_responsibility_rows": "55-fixed-U-anchored-40-exact-blob-plus-15-semantic-reread",
+    "source_responsibility_rows": "56-fixed-U-anchored-41-exact-blob-plus-15-semantic-reread",
     "unknown": null,
     "unread": null,
     "omitted_known": 0,
