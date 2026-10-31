@@ -111,3 +111,13 @@ registration, provider mutation and recovery receipts remain pending. The
 read-only result is now reachable through the `cloudWorkers.doctor` Host
 Gateway registry/route; this does not make the broader doctor responsibility
 production-wired because mutating and packaged consumer paths remain absent.
+
+## Sandbox capability fencing — 2026-10-31
+
+`CloudWorkerSandboxCapability` now must be derived from an enrolled
+`CloudWorkerLeasedCapability` and carries lease ID, scope, owner epoch,
+generation and runtime identity. `validate_against` rejects a stale or
+deserialized capability before any future sandbox consumer can use it. The
+workspace/path/argv contract remains side-effect-free and no sandbox executor
+or remote provider is connected; the parity row therefore remains
+`wiring=not-wired`, `verification=not-run`, `acceptance=pending`.

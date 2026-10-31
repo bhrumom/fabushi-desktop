@@ -3,7 +3,10 @@ use std::path::Component;
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
-use super::{CloudWorkerLeaseScope, LeaseId, ReplayKey};
+use super::{
+    CloudWorkerLeaseScope, CloudWorkerLeasedCapability, CloudWorkerRuntimeIdentity,
+    LeaseGeneration, LeaseId, OwnerEpoch, ReplayKey,
+};
 
 const MAX_ID_CHARS: usize = 256;
 const MAX_PATH_CHARS: usize = 4096;
@@ -14,6 +17,9 @@ const MAX_ARG_CHARS: usize = 4096;
 pub struct CloudWorkerSandboxCapability {
     pub lease_id: LeaseId,
     pub scope: CloudWorkerLeaseScope,
+    pub owner_epoch: OwnerEpoch,
+    pub generation: LeaseGeneration,
+    pub runtime: CloudWorkerRuntimeIdentity,
     pub workspace_id: String,
     pub remote_shell: bool,
     pub filesystem: bool,
@@ -21,23 +27,23 @@ pub struct CloudWorkerSandboxCapability {
 
 impl CloudWorkerSandboxCapability {
     pub fn new(
-        lease_id: LeaseId,
-        scope: CloudWorkerLeaseScope,
+        leased_capability: CloudWorkerLeasedCapability,
         workspace_id: impl Into<String>,
     ) -> Result<Self, CloudWorkerSandboxError> {
         let workspace_id = workspace_id.into();
-        validate_id(&lease_id.0)?;
-        CloudWorkerLeaseScope::new(
-            scope.account_scope.clone(),
-            scope.device_scope.clone(),
-        )
-        .map_err(|_| CloudWorkerSandboxError::InvalidScope)?;
+        validate_id(&leased_capability.lease_id().0)?;
+        let scope = leased_capability.scope().clone();
+        CloudWorkerLeaseScope::new(scope.account_scope.clone(), scope.device_scope.clone())
+            .map_err(|_| CloudWorkerSandboxError::InvalidScope)?;
         if !valid_text_id(&workspace_id) {
             return Err(CloudWorkerSandboxError::InvalidWorkspace);
         }
         Ok(Self {
-            lease_id,
+            lease_id: leased_capability.lease_id().clone(),
             scope,
+            owner_epoch: leased_capability.owner_epoch(),
+            generation: leased_capability.generation(),
+            runtime: leased_capability.runtime().clone(),
             workspace_id,
             remote_shell: true,
             filesystem: true,
@@ -51,8 +57,30 @@ impl CloudWorkerSandboxCapability {
             self.scope.device_scope.clone(),
         )
         .map_err(|_| CloudWorkerSandboxError::InvalidScope)?;
+        CloudWorkerRuntimeIdentity::new(
+            self.runtime.provider.clone(),
+            self.runtime.profile.clone(),
+            self.runtime.runtime_id.clone(),
+        )
+        .map_err(|_| CloudWorkerSandboxError::InvalidRuntimeIdentity)?;
         if !valid_text_id(&self.workspace_id) {
             return Err(CloudWorkerSandboxError::InvalidWorkspace);
+        }
+        Ok(())
+    }
+
+    pub fn validate_against(
+        &self,
+        leased_capability: &CloudWorkerLeasedCapability,
+    ) -> Result<(), CloudWorkerSandboxError> {
+        self.validate()?;
+        if self.lease_id != *leased_capability.lease_id()
+            || self.scope != *leased_capability.scope()
+            || self.owner_epoch != leased_capability.owner_epoch()
+            || self.generation != leased_capability.generation()
+            || self.runtime != *leased_capability.runtime()
+        {
+            return Err(CloudWorkerSandboxError::StaleCapability);
         }
         Ok(())
     }
@@ -137,6 +165,10 @@ pub enum CloudWorkerSandboxError {
     InvalidLease,
     #[error("sandbox lease scope is invalid")]
     InvalidScope,
+    #[error("sandbox capability is stale")]
+    StaleCapability,
+    #[error("sandbox runtime identity is invalid")]
+    InvalidRuntimeIdentity,
     #[error("sandbox request must include workspace and replay identities")]
     InvalidRequest,
     #[error("sandbox path escapes the workspace")]
@@ -148,6 +180,21 @@ pub enum CloudWorkerSandboxError {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    fn leased_capability() -> CloudWorkerLeasedCapability {
+        super::super::CloudWorkerLease {
+            scope: CloudWorkerLeaseScope::new("account", "device").unwrap(),
+            lease_id: LeaseId("lease-1".into()),
+            owner_epoch: OwnerEpoch(3),
+            generation: LeaseGeneration(7),
+            runtime: CloudWorkerRuntimeIdentity::new("provider", "profile", "runtime")
+                .unwrap(),
+            lifecycle: super::super::CloudWorkerLifecycle::Enrolled,
+            last_outcome: super::super::CloudWorkerMutationOutcome::Completed,
+        }
+        .capability()
+        .unwrap()
+    }
 
     fn request(operation: CloudWorkerSandboxOperation) -> CloudWorkerSandboxRequest {
         CloudWorkerSandboxRequest {
@@ -206,6 +253,10 @@ mod tests {
                 account_scope: "account\nunsafe".into(),
                 device_scope: "device".into(),
             },
+            owner_epoch: OwnerEpoch(3),
+            generation: LeaseGeneration(7),
+            runtime: CloudWorkerRuntimeIdentity::new("provider", "profile", "runtime")
+                .unwrap(),
             workspace_id: "workspace-1".into(),
             remote_shell: true,
             filesystem: true,
@@ -213,6 +264,30 @@ mod tests {
         assert_eq!(
             capability.validate(),
             Err(CloudWorkerSandboxError::InvalidScope)
+        );
+    }
+
+    #[test]
+    fn binds_and_rejects_stale_lease_fencing_material() {
+        let capability = CloudWorkerSandboxCapability::new(leased_capability(), "workspace-1")
+            .unwrap();
+        assert_eq!(capability.validate_against(&leased_capability()), Ok(()));
+
+        let current = leased_capability();
+        let stale = super::super::CloudWorkerLease {
+            scope: current.scope().clone(),
+            lease_id: current.lease_id().clone(),
+            owner_epoch: current.owner_epoch(),
+            generation: LeaseGeneration(8),
+            runtime: current.runtime().clone(),
+            lifecycle: super::super::CloudWorkerLifecycle::Enrolled,
+            last_outcome: super::super::CloudWorkerMutationOutcome::Completed,
+        }
+        .capability()
+        .unwrap();
+        assert_eq!(
+            capability.validate_against(&stale),
+            Err(CloudWorkerSandboxError::StaleCapability)
         );
     }
 }

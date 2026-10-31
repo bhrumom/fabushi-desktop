@@ -223,6 +223,10 @@ pending Crabbox responsibilities:
   migration and reconciliation remain explicitly `mutation-not-wired` until a
   real recovery owner and plugin/UI/CLI consumer exist. The read-only path is
   exposed through the `cloudWorkers.doctor` Host Gateway route only.
+- `OCRM-RESP-INFRA-WORKER-CRABBOX-SANDBOX-001` now binds sandbox descriptors to
+  an enrolled `CloudWorkerLeasedCapability` and rechecks lease scope, owner
+  epoch, generation and runtime identity. This is fencing at the contract
+  boundary only; no remote sandbox executor or provider path is wired.
 
 The broader Crabbox projection, lifecycle, sandbox, bootstrap, artifact,
 warm-image and runtime-control rows remain pending where their producer or

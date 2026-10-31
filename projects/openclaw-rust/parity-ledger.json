@@ -1855,7 +1855,7 @@
       "id": "OCRM-RESP-INFRA-WORKER-CRABBOX-SANDBOX-001",
       "integration": {
         "consumer": "Runner/Sand/Computer execution adapters (not yet wired)",
-        "entrypoint": "source/host/src/extensions/cloud_workers/sandbox.rs::CloudWorkerSandboxCapability",
+        "entrypoint": "source/host/src/extensions/cloud_workers/sandbox.rs::CloudWorkerSandboxCapability::new / validate_against",
         "owner": "source/host/src/extensions/cloud_workers/sandbox.rs",
         "producer": "enrolled leased-worker capability (not yet wired)"
       },
@@ -1926,7 +1926,7 @@
       ],
       "status": {
         "acceptance": "pending",
-        "implementation": "implementing",
+        "implementation": "implemented",
         "mapping": "mapped",
         "read": "read-complete",
         "verification": "not-run",
@@ -1943,6 +1943,7 @@
       ],
       "typed_contracts": [
         "CloudWorkerSandboxCapability",
+        "CloudWorkerLeasedCapability",
         "CloudWorkerSandboxOperation",
         "CloudWorkerSandboxRequest"
       ],
