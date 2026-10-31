@@ -310,6 +310,16 @@ materializer against the exact subject is required before structural AC02 can
 evaluate the new fields. The development freeze does not permit hand-editing
 generated shards, so applicability/disposition closure remains false.
 
+2026-10-31T11:21:03Z drift amendment: read-only GitHub checks resolved the
+current OpenClaw `main` to commit=`ce908375fed062dd75abab62d57fc840b96a144e`,
+tree=`f2db36d9a98e23753ce1130a84cdae7a4c57488d`, with an untruncated recursive
+tree of 64,060 entries (61,819 blobs, 2,241 directories, 0 gitlinks). The
+commit is `fix: session deletion delays unrelated agent writes (#189287)`.
+Root dependency/license identities remain unchanged, but this is a fresh
+discovery-only subject; prior inventory, dependency/LFS closure, semantic
+reads, and Actions provenance are not reusable, and no authority or completion
+flag changes.
+
 2026-10-31T11:19:02Z drift amendment: read-only GitHub checks resolved the
 current OpenClaw `main` to commit=`77f272bd7e5ad7db4c96e8bc4d440d583ab17e7f`,
 tree=`a3402ffe65237a9e616e0a287d7b7119c9cd20de`, with an untruncated recursive
