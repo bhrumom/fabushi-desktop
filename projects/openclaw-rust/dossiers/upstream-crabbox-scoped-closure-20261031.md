@@ -129,3 +129,18 @@ The current subject's first-hop runtime surfaces were also identity-checked:
 These are direct identity edges only. Their own imports, generated exports,
 build-time aliases and transitive package/runtime dependencies remain outside
 this scoped note and must be closed by the exact-subject authority run.
+
+## Subject recheck — 2026-10-31T04:20:22Z
+
+The same scoped tree was re-read against the newer live candidate
+`openclaw/openclaw@8e61893b6e692b14d4741ccdf681e1f932289f2f`, root tree
+`4e9cca115794d90ad9f056871103790101022764`. The recursive tree remained
+untruncated with 63,880 entries (61,639 blobs and 2,241 directories).
+`extensions/crabbox/` remains 118 entries: 114 blobs and 4 directories.
+
+The nine previously recorded Crabbox implementation identities remain unchanged
+on this exact subject, including the plugin entry/manifest, provider and binary,
+node enrollment/process, process lifecycle and gateway-methods sources. The
+scoped result is still discovery-only: recursive imports, generated exports,
+build aliases, package/patch/native closure, LFS/integrity, license/NOTICE and
+Actions evidence remain open and no authority or completion flag is promoted.

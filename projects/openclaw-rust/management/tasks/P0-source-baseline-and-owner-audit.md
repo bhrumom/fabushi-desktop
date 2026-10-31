@@ -101,11 +101,16 @@ P0-AC 全通过也只完成基线任务；可按主 Spec §15.1 为 baseline ide
 P0 仍未退出：此前只读 live candidate 曾推进到 OpenClaw
 `68fbe4ac429cdac7a54541df40367d66defd0161` / tree
 `a3c122b99571c0c33ff6a02ca4c4e32f05f9433d`；该 identity 仅保留为历史
-discovery evidence。当前 candidate 以本文件后面的
-`298546d…/120f973…` 为准，但尚未取得针对该 exact subject 的 GitHub Actions
+discovery evidence。当前 candidate 以 `upstream.lock.json` 的
+`8e61893b…/4e9cca11…` 为准，但尚未取得针对该 exact subject 的 GitHub Actions
 inventory、依赖闭包和 evidence envelope。既有 inventory/shards 仍绑定上一轮
 候选，不能编辑性重标为当前来源；对应 drift decision 见
 `decisions/2026-10-31-upstream-live-drift.md`。
+
+2026-10-31T04:20:22Z 的只读重核对确认该 candidate 的递归 tree 未截断，共
+63,880 entries（61,639 blobs、2,241 directories）；根依赖/许可证输入与上一
+candidate 相同。该事实仍不构成 Actions authority、source closure 或任何
+completion flag 的正面证据。
 
 已完成的工作包括 schema/门槛修订、live candidate 记录、若干 scoped
 node-host owner 合同与 Rust 实现切片；这些不构成 P0-AC01–AC08、全项目
