@@ -2662,7 +2662,7 @@ references, mismatched Gateway path scopes, and credential `Debug` output that
 must contain only redaction markers. These tests were added but not executed
 under the development-phase verification freeze.
 
-## 200. Current live candidate revalidation (2026-10-31)
+## 200. Historical live candidate revalidation (2026-10-31)
 
 An independent live-main check resolved OpenClaw to
 `2c157ed06dff5032da1093cbb6745efeff2b6f33` / tree
@@ -2674,6 +2674,12 @@ connection, Cloudflare Access config, invoke types, and runtime manifest.
 This is discovery and targeted identity evidence only; the candidate remains
 outside accepted source authority until exact-head Actions inventory,
 dependency closure, and the required negative/omitted evidence exist.
+
+The current lock candidate is now
+`openclaw/openclaw@b924498923dff81a02fb8a89d57828717c6e160d`, root tree
+`af9b32fcb093badf0e05912411f5acfa65698e79`, discovery-only. The seven blob
+identities and scoped observations in this historical section are not relabeled
+as evidence for that newer subject.
 
 ## 201. Current worker environment custody delta (2026-10-31)
 
