@@ -88,21 +88,27 @@ names can be false positives. It demonstrates why non-empty fields and even
 Eight reviewed responsibilities produced lexical hits. Semantic review removes
 one false positive: `OCRM-RESP-DEVICE-PAIRING-STATE-MACHINE-001` uses
 `pending` as a valid state-machine state, and its producer/owner/consumer
-contract is populated. The seven actual unresolved contract frontiers are:
+contract is populated. The two source-confirmed unresolved frontiers are:
 
 | Responsibility | Unresolved dimension | Existing owner |
 | --- | --- | --- |
 | `OCRM-RESP-CHANNEL-THREAD-BINDINGS-001` | inbound producer and transcript/session consumer | `source/host/src/connectors/channel_delivery.rs` |
 | `OCRM-RESP-SESSION-LIFECYCLE-DELETE-FENCE-001` | isolated-cron producer | `source/host/src/extensions/transcript/agent_lifecycle.rs` |
-| `OCRM-RESP-MEDIA-FILE-CONTEXT-001` | prompt assembler consumer | `source/host/src/extensions/attachments/media_file_context.rs` |
-| `OCRM-RESP-MEDIA-PHOTON-RUNTIME-001` | raster/media-understanding consumer | `source/host/src/extensions/attachments/image_ops.rs` |
-| `OCRM-RESP-MEDIA-PNG-ENCODE-001` | upstream image/canvas consumer | `source/host/src/extensions/attachments/media_qr_png.rs` |
-| `OCRM-RESP-MEDIA-STORE-READ-SCOPE-001` | channel/session read-authority consumers | `source/host/src/extensions/attachments/media_store.rs` |
-| `OCRM-RESP-MEDIA-STORE-REMOTE-001` | external URL ingestion consumers | `source/host/src/extensions/attachments/media_store.rs` |
 
 This table is a review frontier, not an approval or implementation change.
 The device-pairing false-positive review is retained as a method correction;
 it does not authorize changing that responsibility's ledger status.
+
+Five media rows remain a ledger/source contradiction frontier rather than
+confirmed absent consumers. Current Rust source shows
+`render_file_context_block` dispatched by `attachments_service.rs:1737-1746`,
+image operations dispatched at `attachments_service.rs:1810` and
+`1928-1962`, media-store read dispatch at `attachments_service.rs:1855-1868`,
+and remote fetch persistence through `media_fetch.rs:841-849`. These paths
+prove native owner-to-consumer calls exist, but do not prove that every
+upstream consumer contract, scope token, fallback, or end-to-end producer is
+equivalent. The five ledger rows require semantic reconciliation, not an
+automatic “consumer absent” classification.
 
 ### Source-level evidence for two actual gaps
 
