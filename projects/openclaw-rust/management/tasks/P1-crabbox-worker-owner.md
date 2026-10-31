@@ -280,6 +280,10 @@ pending Crabbox responsibilities:
 - Bootstrap validation now requires a matching canonical `Verified` artifact
   record and admitted size, so a shape-valid digest alone cannot authorize a
   producer.
+- Bootstrap diagnostics now canonicalize and revalidate both the diagnostic
+  code and message through the Host sanitizer; a deserialized `redacted=true`
+  code containing bearer/query/password material is rejected before state
+  settlement.
 - Warm-image capture uncertainty now persists through a typed
   `mark_warm_image_capture_uncertain` façade with generation fencing and
   cleanup debt; provider snapshot/recovery consumers remain pending.

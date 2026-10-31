@@ -120,9 +120,10 @@ pub struct CloudWorkerDiagnostic {
 
 impl CloudWorkerDiagnostic {
     pub fn redacted(code: impl Into<String>, message: impl Into<String>) -> Self {
+        let code = crate::error_diagnostics::sanitize_error_diagnostic(&code.into());
         let message = crate::error_diagnostics::sanitize_error_diagnostic(&message.into());
         Self {
-            code: code.into(),
+            code,
             message,
             redacted: true,
         }
@@ -135,6 +136,7 @@ impl CloudWorkerDiagnostic {
             || self.message.chars().count() > MAX_DIAGNOSTIC_CHARS
             || self.message.chars().any(|character| character.is_control())
             || !self.redacted
+            || crate::error_diagnostics::sanitize_error_diagnostic(&self.code) != self.code
             || crate::error_diagnostics::sanitize_error_diagnostic(&self.message) != self.message
         {
             return Err(CloudWorkerNodeBootstrapError::InvalidDiagnostic);
@@ -414,6 +416,17 @@ mod tests {
     }
 
     #[test]
+    fn redacted_diagnostic_codes_are_sanitized_too() {
+        let diagnostic = CloudWorkerDiagnostic::redacted(
+            "Bearer code-token password=code-secret",
+            "provider failed",
+        );
+        assert!(!diagnostic.code.contains("code-token"));
+        assert!(!diagnostic.code.contains("code-secret"));
+        assert!(diagnostic.validate().is_ok());
+    }
+
+    #[test]
     fn rejects_deserialized_diagnostics_marked_redacted_but_not_sanitized() {
         let diagnostic = CloudWorkerDiagnostic {
             code: "provider".into(),
@@ -422,6 +435,16 @@ mod tests {
         };
         assert_eq!(
             diagnostic.validate(),
+            Err(CloudWorkerNodeBootstrapError::InvalidDiagnostic)
+        );
+
+        let code_leak = CloudWorkerDiagnostic {
+            code: "Bearer code-token".into(),
+            message: "provider failed".into(),
+            redacted: true,
+        };
+        assert_eq!(
+            code_leak.validate(),
             Err(CloudWorkerNodeBootstrapError::InvalidDiagnostic)
         );
     }
