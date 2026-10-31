@@ -193,3 +193,11 @@ entries（61,752 blobs、2,241 directories）。该 subject 已同步写入
 entries（61,752 blobs、2,241 directories）。该 subject 已同步到
 `upstream.lock.json::live_candidate`，仍不构成 Actions authority、依赖闭包或
 任何 completion flag 的正面证据。
+
+2026-10-31T08:07:28Z 的只读远端复核又发现 OpenClaw `main` 漂移到
+`db59290c33e1768cce8a461e2697cff7108c5a69` / tree
+`c1e4818f8f877576c02da1573e7dc809d1fdd800`；递归 tree 未截断，仍为 63,993
+entries（61,752 blobs、2,241 directories）。相对 `2910c0de…` 的 compare 为
+2 commits ahead、8 个文件变化，根依赖输入 identities 保持不变。该 subject 已
+同步到 `upstream.lock.json::live_candidate`，仍不构成 Actions authority、依赖
+闭包或任何 completion flag 的正面证据。

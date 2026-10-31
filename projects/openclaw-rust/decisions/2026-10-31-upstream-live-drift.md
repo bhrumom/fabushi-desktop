@@ -304,3 +304,21 @@ discovery-only: no prior inventory, dependency closure, LFS/integrity result or
 Actions provenance is relabeled or reused, and all authority/completion flags
 remain unchanged. No CI, push, PR update or local OCRM executable verification
 was performed.
+
+## Subsequent live recheck — 2026-10-31T08:07:28Z
+
+Read-only `git ls-remote` and GitHub commit/tree API checks resolved
+`openclaw/openclaw` `refs/heads/main` to commit
+`db59290c33e1768cce8a461e2697cff7108c5a69`, root tree
+`c1e4818f8f877576c02da1573e7dc809d1fdd800`. The recursive tree response was
+not truncated and contained 63,993 entries: 61,752 blobs and 2,241 trees; no
+gitlinks were present. Root dependency/license input identities remained
+stable and `.gitmodules` remained absent.
+
+The exact compare from `2910c0de8d7d290f9a82ca388f2893d067c06cb1` to this
+subject reported two commits ahead and eight changed files, limited to
+UI/Cron-windowing, gateway-network, and their test/support paths. This is a
+discovery refresh only: no prior inventory, dependency closure, LFS/integrity
+result or Actions provenance was relabeled or reused, and all authority and
+completion flags remain unchanged. No CI, push, PR update or local OCRM
+executable verification was performed.
