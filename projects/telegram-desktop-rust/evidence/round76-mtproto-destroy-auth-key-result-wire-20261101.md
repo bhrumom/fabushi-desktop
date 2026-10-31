@@ -35,3 +35,12 @@ Validation status: not-run.
 Accepted: false.
 
 No executable validation was performed. No GitHub Actions/status/check query or trigger, build, typecheck, lint, schema validator, generator, unit/contract/integration/E2E test, package, deployment, installation or runtime acceptance was performed.
+
+## Round 76 final source-level readback
+
+Platform-core compliance commit `42c7ac4d193f7f1872a9bfd87ce70b2af973c2df` updates `docs/specs/telegram-mtproto-destroy-auth-key-result-wire.md` to blob `da653d871e78a8a97770449034d0ac4db2f71cfe` and records R1-R8 source-level compliance. Canonical api/lib/contracts remain `ebfb3670b5cd097b9ce288782c7954f5cfe9fc43` / `abab39e42f100972484191f0e52e9edd9b88c6cf` / `a53c90f09ec18f8e99d8cfb36eb8c8842f27635e`; desktop tracked provider files are byte-identical.
+
+The ledger responsibility `TDRP-R9-MTPROTO-DESTROY-AUTH-KEY-RESULT-WIRE-001` remains `implemented / validation_status=not-run / accepted=false`. Coverage remains `responsibilities_total=86`, `unknown=16172`, `unread=16145`, `omitted=0`. Adjacent `p_q_inner_data#83c95aec` and `p_q_inner_data_temp#3c6a84d4` remain dispositioned as non-shipping in fixed-U `DcKeyCreator`; `bind_auth_key_inner#75a3f765` and broader auth-key destruction/binding/persistence/teardown lifecycle remain fail-closed.
+
+No executable validation was performed. No GitHub Actions/status/check query or trigger, build, typecheck, lint, schema validator, generator, unit/contract/integration/E2E test, package, deployment, installation or runtime acceptance was performed.
+

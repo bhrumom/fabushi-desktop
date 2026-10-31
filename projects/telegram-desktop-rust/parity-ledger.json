@@ -21533,7 +21533,9 @@
         "desktop-sync-commit:4b152da131b17558fcad7c1aee45fd0cec3269e6",
         "path:source/mahayana/mahayana-rs/providers/telegram-protocol/src/api.rs@ebfb3670b5cd097b9ce288782c7954f5cfe9fc43",
         "path:source/mahayana/mahayana-rs/providers/telegram-protocol/src/lib.rs@abab39e42f100972484191f0e52e9edd9b88c6cf",
-        "path:source/mahayana/mahayana-rs/providers/telegram-protocol/tests/protocol_contract.rs@a53c90f09ec18f8e99d8cfb36eb8c8842f27635e"
+        "path:source/mahayana/mahayana-rs/providers/telegram-protocol/tests/protocol_contract.rs@a53c90f09ec18f8e99d8cfb36eb8c8842f27635e",
+        "platform-core-spec-compliance-commit:42c7ac4d193f7f1872a9bfd87ce70b2af973c2df",
+        "platform-core-spec-blob:da653d871e78a8a97770449034d0ac4db2f71cfe"
       ],
       "test_evidence": [
         "canonical and desktop protocol contracts authored for all three fixed-U variants plus unknown-constructor, truncation and trailing-byte rejection; not run"
@@ -21650,7 +21652,7 @@
       "acceptance_reviewer": null,
       "reviewer": null,
       "license_and_provenance": "Behavioral responsibility is anchored to fixed-U telegramdesktop/tdesktop Telegram/SourceFiles/mtproto/scheme/mtproto.tl@76225965bfc794388db241f3f760db8ab79e84f8. session_private.cpp@13cbc76ec723386027b5b4dcac79999b791c4614 was reread as adjacent lifecycle context; no auth-key destruction lifecycle semantics are inferred into this wire-only builder. The implementation is source-neutral Rust and copies no upstream C++ implementation.",
-      "notes": "Stage A implementation only. Fixed-U DcKeyCreator always carries protocolDcId and selects p_q_inner_data_dc or p_q_inner_data_temp_dc, so adjacent p_q_inner_data#83c95aec and p_q_inner_data_temp#3c6a84d4 have no independent shipping responsibility in that auth-key path and no duplicate builders were added. This row closes only strict DestroyAuthKeyRes wire parsing; broader key deletion/teardown remains fail-closed. Contracts are authored but not executed; validation_status=not-run and accepted=false.",
+      "notes": "Stage A implementation only. Fixed-U DcKeyCreator always carries protocolDcId and selects p_q_inner_data_dc or p_q_inner_data_temp_dc, so adjacent p_q_inner_data#83c95aec and p_q_inner_data_temp#3c6a84d4 have no independent shipping responsibility in that auth-key path and no duplicate builders were added. This row closes only strict DestroyAuthKeyRes wire parsing; broader key deletion/teardown remains fail-closed. Contracts are authored but not executed; validation_status=not-run and accepted=false. Final source-level spec compliance is recorded at platform-core commit 42c7ac4d193f7f1872a9bfd87ce70b2af973c2df; executable validation remains not-run.",
       "test_execution_evidence": [],
       "validation_status": "not-run",
       "accepted": false,
