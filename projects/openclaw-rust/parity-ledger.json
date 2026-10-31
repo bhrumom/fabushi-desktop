@@ -14601,10 +14601,10 @@
       ],
       "id": "OCRM-RESP-SESSION-MODEL-OVERRIDES-001",
       "integration": {
-        "consumer": "source/host/src/extensions/session/agent_session.rs",
+        "consumer": "No production session-override consumer identified; apply_session_model_selection has no non-test caller",
         "entrypoint": "source/host/src/extensions/session/agent_session.rs",
         "owner": "source/host/src/extensions/session/agent_session.rs",
-        "producer": "source/host/src/extensions/session/agent_session.rs"
+        "producer": "No production session model-override producer identified; O04 is a JSON fixture and model_picker_service is not called"
       },
       "invariants": [
         "Session model overrides do not alter parent agent profile defaults"
@@ -14651,7 +14651,7 @@
       ],
       "status": {
         "acceptance": "pending",
-        "implementation": "implemented",
+        "implementation": "not-started",
         "mapping": "mapped",
         "read": "read-complete",
         "verification": "not-run",

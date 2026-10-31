@@ -83,6 +83,17 @@ parity row therefore remains `wiring=not-wired`, `verification=not-run`, and
 `acceptance=pending`, with `implementation=not-started` until the real
 auth-profile owner and lifecycle contract are implemented.
 
+The model-override recheck found the same gap in a neighboring owner. The
+current `agent_session.rs` does not implement the registered model-override
+contract. `model_picker_service.rs` contains an isolated
+`apply_session_model_selection` helper and session-state shape, but no
+production caller was found for that helper. The O04 test only round-trips
+`modelOverride` and `thinkingLevel` in a JSON value; it does not exercise
+session persistence, provider selection, thinking-level application, or the
+negative invariant that parent agent defaults remain unchanged. The model
+override parity row therefore remains `implementation=not-started`,
+`wiring=not-wired`, `verification=not-run`, and `acceptance=pending`.
+
 The same pass read `src/sessions/auth-profile-removal.ts` in full (blob
 `378579dd13534027cdce7953942e64822db097e9`, 157 lines). It is mapped to the
 same lifecycle responsibility as the preservation source, while its removal
