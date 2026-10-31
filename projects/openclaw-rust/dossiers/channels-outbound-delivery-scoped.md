@@ -50,8 +50,8 @@ The audited source code was decomposed into 6 discrete Rust runtime responsibili
 
 5. **`OCRM-RESP-CHANNEL-STREAMING-CHUNKING-001`**:
    - **Behavior**: Draft streaming preview chunk size clamping, break preference resolution (paragraph, newline, sentence), and code fence boundary preservation.
-   - **Rust Owner**: `source/host/src/connectors/channel_delivery.rs:split_channel_message`.
-   - **Oracle**: `OCRM-CHANNEL-O06`.
+   - **Rust Owner**: `source/host/src/extensions/plugin_sdk/channel_outbound.rs:ChannelDraftStreamingChunking::resolve`.
+   - **Oracle**: pending; the historical `OCRM-CHANNEL-O06` fixture covers the separate Host transport splitter and is not an oracle for this configuration resolver.
 
 The shared outbound router now invokes `split_channel_message` for every text
 delivery before handing chunks to the registered provider. The implementation

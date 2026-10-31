@@ -3828,7 +3828,7 @@
       "status": {
         "acceptance": "pending",
         "implementation": "implementing",
-        "mapping": "reviewed",
+        "mapping": "mapped",
         "read": "read-complete",
         "verification": "not-run",
         "wiring": "not-wired"
@@ -4836,7 +4836,7 @@
       "status": {
         "acceptance": "pending",
         "implementation": "implemented",
-        "mapping": "reviewed",
+        "mapping": "mapped",
         "read": "read-complete",
         "verification": "not-run",
         "wiring": "not-wired"
@@ -5981,7 +5981,7 @@
       "status": {
         "acceptance": "pending",
         "implementation": "not-started",
-        "mapping": "reviewed",
+        "mapping": "mapped",
         "read": "read-complete",
         "verification": "not-run",
         "wiring": "not-wired"
@@ -13636,7 +13636,7 @@
       "status": {
         "acceptance": "pending",
         "implementation": "implementing",
-        "mapping": "reviewed",
+        "mapping": "mapped",
         "read": "read-complete",
         "verification": "not-run",
         "wiring": "not-wired"
@@ -15759,7 +15759,7 @@
       "status": {
         "acceptance": "pending",
         "implementation": "not-started",
-        "mapping": "reviewed",
+        "mapping": "mapped",
         "read": "read-complete",
         "verification": "not-run",
         "wiring": "not-wired"
@@ -15940,7 +15940,7 @@
       "status": {
         "acceptance": "pending",
         "implementation": "not-started",
-        "mapping": "reviewed",
+        "mapping": "mapped",
         "read": "read-complete",
         "verification": "not-run",
         "wiring": "not-wired"
@@ -16120,7 +16120,7 @@
       "status": {
         "acceptance": "pending",
         "implementation": "not-started",
-        "mapping": "reviewed",
+        "mapping": "mapped",
         "read": "read-complete",
         "verification": "not-run",
         "wiring": "not-wired"
@@ -16211,7 +16211,7 @@
       "status": {
         "acceptance": "pending",
         "implementation": "not-started",
-        "mapping": "reviewed",
+        "mapping": "mapped",
         "read": "read-complete",
         "verification": "not-run",
         "wiring": "not-wired"
