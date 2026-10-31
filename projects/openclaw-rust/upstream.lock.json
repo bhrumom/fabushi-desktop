@@ -25,9 +25,9 @@
   "live_candidate": {
     "repository": "openclaw/openclaw",
     "ref": "refs/heads/main",
-    "commit": "447e14d02460342af4fe2c98dbd5475b15b938d2",
-    "tree": "3b066eb5f2eddd08ea7a74f124395248fbdcd384",
-    "observed_at": "2026-10-31T11:48:58Z",
+    "commit": "719beb6f5a0d2544e0e3f342506c6aae870da504",
+    "tree": "048652ef129a8e21b812d27e93ed7a10b4abf859",
+    "observed_at": "2026-10-31T11:56:49Z",
     "discovery_source": "GitHub commit/tree API",
     "recursive_tree_truncated": false,
     "recursive_tree_entries": 64072,
@@ -49,7 +49,7 @@
     "behind_by": null,
     "compare_files_returned": null,
     "compare_file_counts_are_not_complete": true,
-    "decision": "live-main-drifted-to-447e14d0; read-only exact commit/tree and recursive tree revalidated at 2026-10-31T11:48:58Z; recursive tree is 64,072 entries, the commit adds a UI rendered-reader color comparison test, root dependency/license identities remain stable; require fresh source reads before reuse and retain discovery-only status until Actions inventory and dependency closure"
+    "decision": "live-main-drifted-to-719beb6f; read-only exact commit/tree and recursive tree revalidated at 2026-10-31T11:56:49Z; recursive tree remains 64,072 entries with the same root dependency/license identities, while the commit adds a gateway visitor-access SDK resource-host close test; require fresh source reads before reuse and retain discovery-only status until Actions inventory and dependency closure"
   },
   "root_inputs": {
     "AGENTS.md": "c3deeccdb6b1a4c7137d56297e933bbf19f4d3bf",
