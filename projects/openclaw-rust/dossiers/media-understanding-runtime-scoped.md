@@ -62,7 +62,7 @@ The audited source code was decomposed into 6 discrete Rust runtime responsibili
    - **Rust Owner**: `source/host/src/extensions/attachments/media_understanding_service.rs::is_transcript_artifact_text`.
    - **Production Call Chain**: Producer `attachments_service.rs::read_attachment_text_with_root` → Owner `is_transcript_artifact_text` → Consumer `read_attachment_text_with_root`.
    - **Oracles**: `OCRM-MEDIA-UND-O01`, `OCRM-MEDIA-UND-O08`.
-   - **Status**: `implementation=implemented`, `wiring=wired`, `verification=verified`.
+   - **Status**: `implementation=implemented`, `wiring=wired`, `verification=not-run`, `acceptance=pending`.
 
 6. **`OCRM-RESP-MEDIA-UNDERSTANDING-TYPES-001`**:
    - **Behavior**: Typed data contracts for media understanding decisions, attachment dispositions, processing states, and model request structures.
@@ -74,6 +74,10 @@ The audited source code was decomposed into 6 discrete Rust runtime responsibili
 ---
 
 ## 3. Falsifiable Test Oracles (`source/host/tests/openclaw_media_understanding_contract.rs`)
+
+The test names below are a historical contract record. They were not executed
+in the current development freeze; exact-head Actions, packaged/runtime, and
+live inference/provider acceptance evidence remain pending.
 
 1. **`OCRM-MEDIA-UND-O01`**: `test_ocrm_media_und_o01_stt_transcript_artifact_rejection` (verifies detection of STT echoes like `###`, `context:`, `transcribe the audio`).
 2. **`OCRM-MEDIA-UND-O02`**: `test_ocrm_media_und_o02_audio_transcription_upload_filename` (verifies `.aac` mapping to `.m4a`, audio/aac mime mapping, and original filename retention).

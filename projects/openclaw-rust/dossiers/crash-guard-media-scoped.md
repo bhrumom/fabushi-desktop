@@ -37,42 +37,46 @@ The audited source code was decomposed into 6 discrete Rust runtime responsibili
    - **Behavior**: Deep byte-level image MIME detection matching upstream `detectSupportedImageMimeType` (JPEG byte 4 `0xf7` rejection for lossless JPEG, static PNG magic byte verification, animated PNG rejection via `acTL` chunk inspection before `IDAT` chunk, GIF87a/GIF89a validation, WebP RIFF/WEBP/VP8 signature check, and BMP DIB header structure validation where `pixelDataOffset < declaredFileSize`).
    - **Rust Owner**: `source/host/src/media_mime.rs::detect_supported_image_mime_type`.
    - **Oracles**: `OCRM-MEDIA-O01`, `OCRM-MEDIA-O02`.
-   - **Status**: `implementation=implemented`, `wiring=wired`, `verification=verified`.
+   - **Status**: `implementation=implemented`, `wiring=wired`, `verification=not-run`, `acceptance=pending`.
 
 2. **`OCRM-RESP-SUBAGENT-ATTACHMENT-PATHS-001`**:
    - **Behavior**: Deterministic resolution of subagent session attachment directory trees mounted under `/openclaw/attachments` using normalized agent ID and SHA-256 session ref, preserving run-level subagent attachment directory trees.
    - **Rust Owner**: `source/host/src/attachment_paths.rs::resolve_subagent_session_attachment_root_dir`.
    - **Oracles**: `OCRM-MEDIA-O04`, `OCRM-MEDIA-O06`.
-   - **Status**: `implementation=implemented`, `wiring=wired`, `verification=verified`.
+   - **Status**: `implementation=implemented`, `wiring=wired`, `verification=not-run`, `acceptance=pending`.
 
 3. **`OCRM-RESP-MEDIA-ATTACHMENT-PROCESSOR-001`**:
    - **Behavior**: Attachment payload validation and preparation, calculating exact base64 decoded size and enforcing bounds limits before materialization.
    - **Rust Owner**: `source/host/src/attachment_paths.rs::validate_and_prepare_attachment_payload`.
    - **Oracle**: `OCRM-MEDIA-O05`.
-   - **Status**: `implementation=implemented`, `wiring=wired`, `verification=verified`.
+   - **Status**: `implementation=implemented`, `wiring=wired`, `verification=not-run`, `acceptance=pending`.
 
 4. **`OCRM-RESP-MEDIA-OUTBOUND-ATTACHMENT-001`**:
    - **Behavior**: Resolves outbound attachment buffers into persisted media files inside agent outbound directory with byte bounds checks and MIME sniffing.
    - **Rust Owner**: `source/host/src/attachment_paths.rs::resolve_outbound_attachment_from_buffer`.
    - **Oracles**: `OCRM-MEDIA-O08`, `OCRM-MEDIA-O09`.
-   - **Status**: `implementation=implemented`, `wiring=wired`, `verification=verified`.
+   - **Status**: `implementation=implemented`, `wiring=wired`, `verification=not-run`, `acceptance=pending`.
 
 5. **`OCRM-RESP-PROCESS-SPAWN-DIAGNOSTICS-001`**:
    - **Behavior**: Child process spawn telemetry tracking, command family classification (git, shell, node, python, rust, docker, curl, etc.), unscoped operation categorization, and atomic sample recording matching upstream `spawn-diagnostics.ts`.
    - **Rust Owner**: `source/host/src/process_spawn_diagnostics.rs::ChildProcessSpawnTracker`, `global_child_process_spawn_tracker`.
    - **Production Call Chain**: Producer `source/host/src/box/exec_daemon_process.rs::spawn_box_exec_daemon_process`, `source/host/src/network_worker_process.rs::spawn_network_worker_process` → Owner `global_child_process_spawn_tracker` → Consumer `sample_counts`.
    - **Oracles**: `OCRM-CRASH-O02`.
-   - **Status**: `implementation=implemented`, `wiring=wired`, `verification=verified`.
+   - **Status**: `implementation=implemented`, `wiring=wired`, `verification=not-run`, `acceptance=pending`.
 
 6. **`OCRM-RESP-ERROR-DIAGNOSTICS-ATTACH-001`**:
    - **Behavior**: Attaches sanitized diagnostic metadata to error objects, masking sensitive credentials (`Bearer <redacted>`, `sk-<redacted-secret>`, `password=<redacted>`) and producing bounded display format strings under 2,048 UTF-16 code units.
    - **Rust Owner**: `source/host/src/error_diagnostics.rs::sanitize_error_diagnostic`.
    - **Oracle**: `OCRM-CRASH-O03`.
-   - **Status**: `implementation=implemented`, `wiring=wired`, `verification=verified`.
+   - **Status**: `implementation=implemented`, `wiring=wired`, `verification=not-run`, `acceptance=pending`.
 
 ---
 
 ## 3. Falsifiable Test Oracles (`source/host/tests/openclaw_crash_guard_media_contract.rs`)
+
+The test names below are a historical contract record. They were not executed
+in the current development freeze; exact-head Actions, packaged/runtime, and
+live acceptance evidence remain pending.
 
 1. **`OCRM-MEDIA-O01`**: `test_ocrm_media_o01_deep_image_mime_detection` (verifies JPEG 0xf7 rejection, APNG acTL rejection, and valid JPEG/PNG/GIF/WebP/BMP).
 2. **`OCRM-MEDIA-O02`**: `test_ocrm_media_o02_servable_image_mime` (verifies extension-based servable mime mapping).

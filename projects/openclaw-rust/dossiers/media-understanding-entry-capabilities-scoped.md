@@ -37,7 +37,7 @@ The following 6 media understanding files (totaling 358 lines) were audited line
    - **Behavior**: Media understanding default model resolution, priority sorting, and native document capabilities.
    - **Rust Owner**: `source/host/src/media_understanding_defaults.rs::resolve_default_media_model`.
    - **Source Additions**: Encompasses `defaults.constants.ts`, `defaults.test.ts`, `defaults.generation.test.ts`, and `config-provider-models.ts`.
-   - **Status**: Retains existing calibrated status (`wiring=wired`, `verification=verified`).
+   - **Status**: Retains existing calibrated status (`wiring=wired`, `verification=not-run`, `acceptance=pending`).
 
 ---
 
@@ -52,6 +52,11 @@ The following 6 media understanding files (totaling 358 lines) were audited line
 
 ## 4. Contract Test Verification
 
+The test result below is a historical contract record, not current verification;
+the suite was not executed in the current development freeze. Exact-head
+Actions, packaged/runtime, and live model-selector acceptance evidence remain
+pending.
+
 Contract tests in `source/host/tests/openclaw_media_understanding_contract.rs` verify all entry capability resolution invariants:
 - `test_ocrm_media_und_o14_entry_capabilities_resolution_and_matching`: Validates narrowing of shared capabilities against effective capabilities, precedence of explicit configurations, CLI capability suppression, and unknown provider handling.
-- **Result**: 14/14 tests passing in `openclaw_media_understanding_contract.rs`.
+- **Historical result**: 14/14 tests were previously recorded as passing in `openclaw_media_understanding_contract.rs`; this result was not re-run in the current development freeze.

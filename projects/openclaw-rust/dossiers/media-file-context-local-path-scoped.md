@@ -43,7 +43,7 @@ The audited source code was decomposed into 6 discrete Rust runtime responsibili
    - **Rust Owner**: `source/host/src/extensions/attachments/media_file_context.rs::resolve_local_media_path`.
    - **Production Call Chain**: Producer `cross_user_sharing/production.rs::CrossUserSharingService::resolve_attachment` → Entrypoint `AttachmentsService::resolve_channel_attachment` → Resolver `channel_attachment.rs::to_local_channel_attachment_path` → Owner `resolve_local_media_path` → Consumer `cross_user_sharing/production.rs`.
    - **Oracles**: `OCRM-FILE-CTX-O03`, `OCRM-FILE-CTX-O08`.
-   - **Status**: `implementation=implemented`, `wiring=wired`, `verification=verified`.
+   - **Status**: `implementation=implemented`, `wiring=wired`, `verification=not-run`, `acceptance=pending`.
 
 3. **`OCRM-RESP-MEDIA-TEMP-CLEANUP-001`**:
    - **Behavior**: Best-effort temporary file cleanup helper for optional file paths produced during media conversion and staging flows, gracefully ignoring missing files.
@@ -77,8 +77,7 @@ The audited source code was decomposed into 6 discrete Rust runtime responsibili
 
 ## 3. Verification & Evidence
 
-- **Contract Test Suite**: `source/host/tests/openclaw_media_file_context_contract.rs`
-  - 8 passing test cases, including a live `uploadAttachment` → `readAttachmentText` path that prefixes `[Partial document: ...]` before text when extraction metadata is supplied:
+- **Historical contract record**: `source/host/tests/openclaw_media_file_context_contract.rs` previously recorded 8 passing test cases, including a live `uploadAttachment` → `readAttachmentText` path that prefixes `[Partial document: ...]` before text when extraction metadata is supplied. The suite was not executed in the current development freeze; exact-head Actions, packaged/runtime, and live gateway acceptance evidence remain pending:
     - `test_ocrm_file_ctx_01_xml_attribute_escaping_and_sanitization`: verifies XML attribute character escaping (`&`, `<`, `>`, `"`, `'`) and filename sanitization against quotes, brackets, slashes, and traversal sequences (`.`, `..`).
     - `test_ocrm_file_ctx_02_render_file_context_block_escaping`: verifies exact parity with upstream `file-context.test.ts` (injection markup stripped, `</file>` replaced with `&lt;/file&gt;`, `<file` replaced with `&lt;file`, compact mode supported, fallback filename and mime attributes applied).
     - `test_ocrm_file_ctx_03_resolve_local_media_path`: verifies remote URL rejection, data URL rejection, file URL traversal rejection (`%2f`, `%5c`), UNC host rejection, valid `file:///` path resolution, absolute path resolution, and `~` home directory expansion.

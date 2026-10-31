@@ -57,13 +57,13 @@ The audited source code was decomposed into 6 discrete Rust runtime responsibili
    - **Behavior**: Local media filesystem access boundary, canonical boundary path resolution (`resolveCanonicalBoundaryPath`), directory traversal prevention, and assets isolation.
    - **Rust Owner**: `source/host/src/extensions/attachments/generate_image_resource_accessor.rs:SandGenerateImageResourceAccessor`.
    - **Oracle**: `OCRM-ATTACH-O03`.
-   - **Status**: `implementation=implemented`, `wiring=wired`, `verification=verified`.
+   - **Status**: `implementation=implemented`, `wiring=wired`, `verification=not-run`, `acceptance=pending`.
 
 5. **`OCRM-RESP-MEDIA-DEFAULT-MODELS-001`**:
    - **Behavior**: Media understanding default provider and model resolution (`resolve_default_media_model`), vision/audio capability registration, configured model retrieval, and auto-discovery provider priority sorting (`resolve_auto_media_key_providers`).
    - **Rust Owner**: `source/host/src/media_understanding_defaults.rs::resolve_default_media_model, resolve_auto_media_key_providers`.
    - **Production Call Chain**: Producer `CursorGenerateImageOptions::production` → Entrypoint `generate_image_service.rs::configured_generate_image_model_id` → Owner `resolve_default_media_model` → Consumer `SandGenerateImageService::generate`.
-   - **Status**: `implementation=implemented`, `wiring=wired`, `verification=verified`.
+   - **Status**: `implementation=implemented`, `wiring=wired`, `verification=not-run`, `acceptance=pending`.
    - **Oracle**: `OCRM-ATTACH-O04`.
 
 6. **`OCRM-RESP-MEDIA-SNIFF-PREVIEW-001`**:
@@ -71,11 +71,15 @@ The audited source code was decomposed into 6 discrete Rust runtime responsibili
    - **Rust Owner**: `source/host/src/media_mime.rs:sniff_mime_from_base64_with_hints, source/host/src/media_mime.rs:inspect_canonical_base64` and `source/host/src/extensions/attachments/attachments_service.rs:AttachmentTextPreview, read_attachment_text_with_root`.
    - **Production Call Chain**: Producer `attachments_service.rs::upload, inline_image_materialization.rs::materialize_one` → Owner `media_mime.rs::inspect_canonical_base64, sniff_mime_from_base64_with_hints` → Storage `ingest_attachment_bytes` → Consumer `attachments_service.rs::read_text`.
    - **Oracles**: `OCRM-ATTACH-O10` (tail corruption, non-canonical pad bits, hints fallback & conflict), `OCRM-ATTACH-O11` (real filesystem text truncation & binary discrimination), `OCRM-ATTACH-O12` (extension dependency graph).
-   - **Status**: `implementation=implemented`, `wiring=wired`, `verification=verified`.
+   - **Status**: `implementation=implemented`, `wiring=wired`, `verification=not-run`, `acceptance=pending`.
 
 ---
 
 ## 3. Falsifiable Test Oracles (`source/host/tests/openclaw_media_generation_contract.rs`)
+
+The test names below are a historical contract record. They were not executed
+in the current development freeze; exact-head Actions, packaged/runtime, and
+live provider acceptance evidence remain pending.
 
 1. **`OCRM-ATTACH-O01`**: `test_ocrm_attach_o01_byte_limits`
 2. **`OCRM-ATTACH-O02`**: `test_ocrm_attach_o02_directory_names`

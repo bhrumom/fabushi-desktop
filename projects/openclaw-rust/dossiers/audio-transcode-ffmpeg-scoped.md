@@ -34,7 +34,7 @@ The audited source code was decomposed into 6 discrete Rust runtime responsibili
    - **Rust Owner**: `source/host/src/extensions/attachments/media_audio_transcode.rs::MEDIA_FFMPEG_MAX_BUFFER_BYTES`.
    - **Production Call Chain**: Producer `video_playback_rendition.rs::run_video_tool` → Enforce Buffer and Timeout → Process Execution.
    - **Oracles**: `OCRM-AUDIO-O06`.
-   - **Status**: `implementation=implemented`, `wiring=wired`, `verification=verified`.
+   - **Status**: `implementation=implemented`, `wiring=wired`, `verification=not-run`, `acceptance=pending`.
 
 2. **`OCRM-RESP-MEDIA-FFMPEG-EXEC-001`**:
    - **Behavior**: Compact ffprobe stdout parsing for audio codec and positive sample rate.
@@ -48,7 +48,7 @@ The audited source code was decomposed into 6 discrete Rust runtime responsibili
    - **Rust Owner**: `source/host/src/extensions/attachments/media_audio_transcode.rs::is_voice_message_compatible_audio`.
    - **Production Call Chain**: Inbound voice attachment → `connectors/channel_attachment.rs::is_voice_message_attachment` → Channel Dispatch.
    - **Oracles**: `OCRM-AUDIO-O01`.
-   - **Status**: `implementation=implemented`, `wiring=wired`, `verification=verified`.
+   - **Status**: `implementation=implemented`, `wiring=wired`, `verification=not-run`, `acceptance=pending`.
 
 4. **`OCRM-RESP-MEDIA-AUDIO-TRANSCODE-001`**:
    - **Behavior**: Audio transcode parameters normalization and FFmpeg Opus command construction (mono 48kHz, 64k bitrate, duration limit).
@@ -76,7 +76,7 @@ The audited source code was decomposed into 6 discrete Rust runtime responsibili
 ## 3. Verification & Evidence
 
 - **Contract Test Suite**: `source/host/tests/openclaw_audio_transcode_contract.rs`
-  - 6 passing test cases:
+  - Historical contract record: 6 test cases were previously recorded as passing; they were not executed in the current development freeze. Exact-head Actions, packaged/runtime, and live audio-pipeline acceptance evidence remain pending.
     - `test_ocrm_audio_o01_voice_message_compatible_audio`: verifies compatible extensions (`.oga`, `.ogg`, `.opus`, `.mp3`, `.m4a`) and compatible MIMEs, rejecting incompatible formats like WAV or FLAC.
     - `test_ocrm_audio_o02_ffprobe_codec_and_sample_rate_parsing`: verifies multi-delimiter grouping (`\r\n`, `,`) and sample rate parsing.
     - `test_ocrm_audio_o03_media_reference_comparison_normalization`: verifies path normalization, literal retention of `..` segments, `file://` decoding, and `%2f` separator preservation.

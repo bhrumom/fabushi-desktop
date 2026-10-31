@@ -64,7 +64,7 @@ The following 21 media extraction, parsing, and media test suite files (totaling
      - `source/host/tests/inline_image_materialization_contract.rs::inline_image_materialization_boundary_admittance` (verifies valid payload within boundary is written to disk and returns asset reference).
      - `source/host/tests/openclaw_crash_guard_media_contract.rs::test_ocrm_media_o05_attachment_processor_size_limits`.
      - `source/host/tests/openclaw_image_ops_contract.rs::test_ocrm_image_ops_prepare_attachment`.
-   - **Status**: Calibrated to `implementation=implemented`, `wiring=wired`, `verification=verified`, `blocker_ids=[]` (eliminating `BL-MEDIA-ATTACHMENT-PROCESSOR-CONSUMERS-001`).
+   - **Status**: Calibrated to `implementation=implemented`, `wiring=wired`, `verification=not-run`, `acceptance=pending`, `blocker_ids=[]` (eliminating `BL-MEDIA-ATTACHMENT-PROCESSOR-CONSUMERS-001`).
 
 ---
 
@@ -82,7 +82,10 @@ The following 21 media extraction, parsing, and media test suite files (totaling
 
 ## 4. Verification Evidence & Contract Test Suite
 
-A dedicated contract test suite was authored and verified passing:
+A dedicated contract test suite was authored; the result below is a historical
+contract record and was not re-run in the current development freeze. Exact-head
+Actions, packaged/runtime, and live PDF/parse-output acceptance evidence remain
+pending:
 - **Test File**: `source/host/tests/openclaw_pdf_and_parse_contract.rs`
 - **Results**: 9/9 tests passing:
   1. `test_pdf_extract_disabled_when_no_extractor`: Verifies clear disablement error when no document extractors are available.

@@ -67,7 +67,7 @@ The audited source code was decomposed into 5 discrete Rust runtime responsibili
    - **Rust Owner**: `source/host/src/extensions/attachments/media_store.rs::StoreRemoteFixtureScope, check_active_remote_fixtures_empty, expect_saved_original_filename_case`.
    - **Production Call Chain**: Producer `openclaw_media_store_contract` → Owner `media_store::StoreRemoteFixtureScope` → Consumer: `source/host/tests/openclaw_media_store_contract.rs::test_ocrm_media_store_remote_fixture_scope_and_filename_support` (*strictly scoped to test-only harness boundary, explicitly classified as non-production runtime*).
    - **Oracles**: `OCRM-MEDIA-STORE-O08`.
-   - **Status**: `implementation=implemented`, `wiring=wired`, `verification=verified`, `blocker_ids=[]` (*support scope only*).
+   - **Status**: `implementation=implemented`, `wiring=wired`, `verification=not-run`, `acceptance=pending`, `blocker_ids=[]` (*support scope only*).
 
 ---
 
