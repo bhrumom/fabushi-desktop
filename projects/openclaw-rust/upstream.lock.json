@@ -25,9 +25,9 @@
   "live_candidate": {
     "repository": "openclaw/openclaw",
     "ref": "refs/heads/main",
-    "commit": "140e7af6627723fd50b8ecf51927d80e77b4daa9",
-    "tree": "7ba305f7cb5adb1e80121d044047005e8a996d00",
-    "observed_at": "2026-10-31T12:01:29Z",
+    "commit": "159d00bed3fb5be9bab9f3e9a546ee6714ee20b2",
+    "tree": "cc95923e28435c92d4c7bc54e844fc0cdad04b6c",
+    "observed_at": "2026-10-31T12:03:33Z",
     "discovery_source": "GitHub commit/tree API",
     "recursive_tree_truncated": false,
     "recursive_tree_entries": 64072,
@@ -49,7 +49,7 @@
     "behind_by": null,
     "compare_files_returned": null,
     "compare_file_counts_are_not_complete": true,
-    "decision": "live-main-drifted-to-140e7af6; read-only exact commit/tree and recursive tree revalidated at 2026-10-31T12:01:29Z; recursive tree remains 64,072 entries with the same root dependency/license identities, while the commit adds native Doctor/archive byte comparison coverage; require fresh source reads before reuse and retain discovery-only status until Actions inventory and dependency closure"
+    "decision": "live-main-drifted-to-159d00be; read-only exact commit/tree and recursive tree revalidated at 2026-10-31T12:03:33Z; recursive tree remains 64,072 entries with the same root dependency/license identities, while the commit fixes Gateway exit handling when a queued Cron run hits a storage error; require fresh source reads before reuse and retain discovery-only status until Actions inventory and dependency closure"
   },
   "root_inputs": {
     "AGENTS.md": "c3deeccdb6b1a4c7137d56297e933bbf19f4d3bf",

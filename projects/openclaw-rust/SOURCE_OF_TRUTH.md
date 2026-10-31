@@ -627,11 +627,11 @@ RTM 行 ID；ledger 已改为合法的项目级 `OCRM-R04`、`OCRM-R08`、`OCRM-
 这修复了 validator 会报告的 6 条 dangling requirement refs，但不提升该
 责任的 implementation/wiring/verification/acceptance 状态。
 
-2026-10-31T12:01:29Z 的只读远端复核发现 OpenClaw `main` 再推进到
-`140e7af6627723fd50b8ecf51927d80e77b4daa9` / tree
-`7ba305f7cb5adb1e80121d044047005e8a996d00`。GitHub recursive-tree API 返回
+2026-10-31T12:03:33Z 的只读远端复核发现 OpenClaw `main` 再推进到
+`159d00bed3fb5be9bab9f3e9a546ee6714ee20b2` / tree
+`cc95923e28435c92d4c7bc54e844fc0cdad04b6c`。GitHub recursive-tree API 返回
 `truncated=false`，共 64,072 entries（61,831 blobs、2,241 directories、0
-gitlinks）；commit message 为 `test: compare Doctor and archive bytes natively (#189318)`。
+gitlinks）；commit message 为 `fix(cron): Gateway exits on resume when a queued cron run hits a storage error (#175678)`。
 根 package/lock/workspace/license/notice blob identities
 仍未变化；该 exact subject 仍为 discovery-only，前一 candidate 的 inventory、
 依赖闭包、LFS/integrity、语义阅读和 Actions provenance 均不得复用。lock live
