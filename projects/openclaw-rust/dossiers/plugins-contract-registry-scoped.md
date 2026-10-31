@@ -73,12 +73,21 @@
   - `test_ocrm_plugins_wizard_choice_resolution_and_model_picker` (PASSED)
     - Verifies exact provider, method, and wizard resolution across colon, hyphen, and primary default formats.
     - Verifies wizard model picker entries exposed across shared wizard layer.
+
   - `test_ocrm_plugins_bundled_capability_metadata_and_subpath_bundle` (PASSED)
     - Verifies bundled plugin contract snapshot models across all 21 capability families and setup provider env vars.
   - `test_ocrm_plugins_bundled_channel_metadata_compat_and_dir_resolver` (PASSED)
     - Verifies bundled channel metadata validation (history limits, media limits, empty ID check).
     - Verifies bundled compat ID normalization (`legacy-telegram` -> `telegram`, etc.).
     - Verifies bundled directory relative path resolution and path traversal rejection.
+
+The `PASSED` labels above describe the recorded contract assertions, not a
+current exact-head Actions receipt. The canonical ledger status for
+`OCRM-RESP-PLUGINS-CAPABILITY-CATALOG-001` remains
+`implementation=implemented`, `wiring=not-wired`, `verification=not-run`,
+and `acceptance=pending`; only bundled channel metadata and crabbox worker
+metadata have identified production consumers, while speech/realtime provider
+manifest producers and consumers remain absent from the audited Host path.
 
 ## 5. Audited Bundled Capability Runtime, Channel Metadata, Compat & Dir Files (9 files)
 - **Responsibility**: `OCRM-RESP-PLUGINS-CAPABILITY-CATALOG-001`

@@ -70,6 +70,12 @@
   - `test_ocrm_plugin_sdk_browser_url_parsing_and_redaction`
   - `test_ocrm_plugin_sdk_browser_config_and_profiles`
 
+The test names above are source-level contract coverage recorded for this
+dossier, not a current exact-head Actions execution receipt. The canonical
+ledger status remains `implementation=implemented`, `wiring=not-wired`,
+`verification=not-run`, and `acceptance=pending`; no production Plugin SDK
+browser/archive producer or consumer was identified in the audited Host tree.
+
 ## 5. Audit Status
 - Mapped Files: 19 added (Total mapped: 764 / 58,750).
 - Unclassified Remaining: 57,986.
