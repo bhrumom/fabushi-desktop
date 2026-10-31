@@ -19301,10 +19301,10 @@
       ],
       "id": "OCRM-RESP-MEMORY-ROOT-PROVENANCE-001",
       "integration": {
-        "consumer": "source/host/src/extensions/memory/root_memory_provenance.rs",
+        "consumer": "No production memory artifact writer/reader or provenance consumer identified; current evidence is the contract suite only",
         "entrypoint": "source/host/src/extensions/memory/root_memory_provenance.rs::resolve_canonical_root_memory_path",
         "owner": "source/host/src/extensions/memory/root_memory_provenance.rs",
-        "producer": "source/host/src/extensions/memory/root_memory_provenance.rs"
+        "producer": "No production memory artifact producer or durable provenance-state writer identified; root_memory_provenance.rs exposes standalone policy helpers"
       },
       "invariants": [
         "Canonical root memory file name is fixed to MEMORY.md",
@@ -19317,7 +19317,7 @@
         "OCRM-MEMORY-ROOT-O01",
         "OCRM-MEMORY-PROVENANCE-O02"
       ],
-      "owner_decision": "Implement canonical root memory path resolution and artifact write provenance in root_memory_provenance",
+      "owner_decision": "Retain root_memory_provenance.rs as the local path/provenance policy owner; identify the real memory artifact writer, durable provenance state owner, and consumer before production wiring",
       "postconditions": [
         "Canonical root memory paths and normalized artifact write provenance returned"
       ],
