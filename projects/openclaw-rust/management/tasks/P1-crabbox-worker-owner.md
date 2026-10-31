@@ -311,6 +311,9 @@ pending Crabbox responsibilities:
 - Bootstrap persistence and settlement now require `Ready` to use `Never` and
   `OutcomeUnknown` to use `ReconcileFirst`, preventing inconsistent retry
   semantics from being restored or published.
+- The platform descriptor oracle now records the pinned macOS/Windows VNC
+  compatibility while retaining Linux-VNC fail-closed behavior; it remains a
+  descriptor-only contract without launcher or process wiring.
 
 The broader Crabbox projection, lifecycle, sandbox, bootstrap, artifact,
 warm-image and runtime-control rows remain pending where their producer or

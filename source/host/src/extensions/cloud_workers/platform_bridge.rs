@@ -91,6 +91,22 @@ mod tests {
     }
 
     #[test]
+    fn preserves_pinned_desktop_sessions_for_macos_and_windows() {
+        assert!(CloudWorkerPlatformBridge::new(
+            CloudWorkerPlatform::Macos,
+            CloudWorkerDesktopSession::Vnc,
+            "macos-launcher",
+        )
+        .is_ok());
+        assert!(CloudWorkerPlatformBridge::new(
+            CloudWorkerPlatform::Windows,
+            CloudWorkerDesktopSession::Vnc,
+            "windows-launcher",
+        )
+        .is_ok());
+    }
+
+    #[test]
     fn rejects_controlled_or_oversized_launcher_identity() {
         assert_eq!(
             CloudWorkerPlatformBridge::new(
