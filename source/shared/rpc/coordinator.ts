@@ -124,13 +124,15 @@ function isTelegramAuthorizationState(value: unknown): value is TelegramAuthoriz
       return isBoundedString(value.phoneNumber, 64)
         && typeof value.deliveryType === "string"
         && TELEGRAM_CODE_DELIVERY_TYPES.has(value.deliveryType as TelegramCodeDeliveryType)
+        && typeof value.codeLength === "number"
         && Number.isSafeInteger(value.codeLength)
-        && (value.codeLength as number) >= 0
+        && value.codeLength >= 0
         && (value.codeLength as number) <= 64
         && (value.timeoutSeconds == null
-          || (Number.isSafeInteger(value.timeoutSeconds)
-            && (value.timeoutSeconds as number) >= 0
-            && (value.timeoutSeconds as number) <= MAX_TELEGRAM_AUTH_BACKOFF_SECONDS));
+          || (typeof value.timeoutSeconds === "number"
+            && Number.isSafeInteger(value.timeoutSeconds)
+            && value.timeoutSeconds >= 0
+            && value.timeoutSeconds <= MAX_TELEGRAM_AUTH_BACKOFF_SECONDS));
     case "waitOtherDeviceConfirmation":
       return isBoundedString(value.link, 4096);
     case "waitRegistration":
@@ -152,22 +154,24 @@ function isTelegramAuthIssue(value: unknown): value is TelegramAuthIssueProjecti
     || !isBoundedString(value.action, 128)
     || typeof value.recoverable !== "boolean") return false;
   return value.retryAfterSeconds == null
-    || (Number.isSafeInteger(value.retryAfterSeconds)
-      && (value.retryAfterSeconds as number) >= 1
-      && (value.retryAfterSeconds as number) <= MAX_TELEGRAM_AUTH_BACKOFF_SECONDS);
+    || (typeof value.retryAfterSeconds === "number"
+      && Number.isSafeInteger(value.retryAfterSeconds)
+      && value.retryAfterSeconds >= 1
+      && value.retryAfterSeconds <= MAX_TELEGRAM_AUTH_BACKOFF_SECONDS);
 }
 
 export function parseCoordinatorTelegramAuthorizationProjection(value: unknown): TelegramAuthorizationProjection | null {
   if (!isRecord(value) || !isTelegramAuthorizationState(value.authorizationState)) return null;
   if (value.selfUserId !== undefined
     && value.selfUserId !== null
-    && (!Number.isSafeInteger(value.selfUserId) || (value.selfUserId as number) <= 0)) return null;
+    && (typeof value.selfUserId !== "number" || !Number.isSafeInteger(value.selfUserId) || value.selfUserId <= 0)) return null;
   if (value.error !== undefined && !isTelegramAuthIssue(value.error)) return null;
   if (value.backoff !== undefined) {
     if (!isRecord(value.backoff)
+      || typeof value.backoff.retryAfterSeconds !== "number"
       || !Number.isSafeInteger(value.backoff.retryAfterSeconds)
-      || (value.backoff.retryAfterSeconds as number) < 1
-      || (value.backoff.retryAfterSeconds as number) > MAX_TELEGRAM_AUTH_BACKOFF_SECONDS) return null;
+      || value.backoff.retryAfterSeconds < 1
+      || value.backoff.retryAfterSeconds > MAX_TELEGRAM_AUTH_BACKOFF_SECONDS) return null;
   }
   return value as unknown as TelegramAuthorizationProjection;
 }
