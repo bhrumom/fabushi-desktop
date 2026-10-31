@@ -87,11 +87,15 @@ The audited source code was decomposed into 6 discrete Rust runtime responsibili
 ## Current-source correction — 2026-10-31
 
 The historical reaper mapping above is not a current Rust implementation
-claim. At the current OpenClaw discovery subject
-`54a2fe137a70a5d2c0c0187ba27294c5ba74d3a0`, `src/cron/session-reaper.ts` is
-blob `5474f33412bd9c3a808e78a42be359f976ee35b5` and directly owns retention
+claim. At the historical OpenClaw discovery subject used for this correction,
+`54a2fe137a70a5d2c0c0187ba27294c5ba74d3a0`, `src/cron/session-reaper.ts` was
+blob `5474f33412bd9c3a808e78a42be359f976ee35b5` and directly owned retention
 resolution, per-agent/store throttling, expired-row discovery, media/subagent
 preservation, guarded lifecycle deletion, and transcript artifact cleanup.
+The current discovery subject is the discovery-only
+`upstream.lock.json::live_candidate`; the fixed implementation inventory row
+for this path is separately pinned to blob
+`b1d615cf5b6ab55b3f58775aa4251e36eeb7c53a`.
 
 The current Fabushi Rust tree has no `TranscriptCleanup` symbol in
 `source/host/src/extensions/transcript/mod.rs`, no per-run cron session row
