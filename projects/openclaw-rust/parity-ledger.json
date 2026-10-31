@@ -3233,7 +3233,7 @@
       "integration": {
         "consumer": "No production consumer for model cost calculation or provider fallback chain; production paths only carry/aggregate TurnUsage and retry transport failures",
         "entrypoint": "source/host/src/runner/turn_usage.rs::TurnUsage plus source/host/src/extensions/inference/model_catalog_service.rs::project_remote_model_catalog",
-        "owner": "source/host/src/runner/mod.rs",
+        "owner": "none: no existing Rust pricing/fallback owner selected",
         "producer": "No production PricingCatalog or provider-fallback producer is wired; OCRM-AGENT-O07/O08 are contract-only oracles"
       },
       "invariants": [
@@ -3245,7 +3245,7 @@
         "OCRM-AGENT-O07",
         "OCRM-AGENT-O08"
       ],
-      "owner_decision": "Implement TurnUsage merge and fallback chain in runner",
+      "owner_decision": "Select a provider pricing authority and fallback admission owner before implementation; TurnUsage and transport retry helpers are not sufficient",
       "postconditions": [
         "Accurate cost accounting and resilient provider failover"
       ],
@@ -3267,7 +3267,7 @@
       "responsibility_kind": "business-runtime",
       "reviewer": "xuyao@ombhrum.com",
       "risk": "Low; provides transparent billing accounting and provider resilience",
-      "selected_owner": "source/host/src/runner/mod.rs",
+      "selected_owner": "unselected pending pricing/fallback architecture decision",
       "source_refs": [
         {
           "blob_sha": "92e53d1556a7eda2c5487613fe240ab6d5a11c41",
@@ -3289,8 +3289,8 @@
       },
       "target": {
         "language": "Rust",
-        "path": "source/host/src/runner/mod.rs",
-        "symbol": "TurnUsage"
+        "path": "unselected pending pricing/fallback owner",
+        "symbol": "not selected; TurnUsage is partial evidence only"
       },
       "tests": [
         "source/host/tests/openclaw_agent_turn_contract.rs::test_ocrm_agent_o07_model_catalog_pricing_calculation",
