@@ -179,7 +179,12 @@
               "test-oracle",
               "documentation-governance",
               "asset-license",
-              "non-product-disposition"
+              "non-product-disposition",
+              "dependency-authority",
+              "integration-adapter",
+              "platform-adapter",
+              "projection",
+              "security-evidence"
             ]
           },
           "source_refs": {

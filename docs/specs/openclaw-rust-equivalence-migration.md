@@ -256,6 +256,15 @@ completion flag。责任仍应同时关联适用的项目级 requirement/AC，�
 | `asset-license` | 二进制、图标、字体、模板、版权与 notices 有内容身份、替换关系及合法 provenance | 应分发内容进入实际 artifact/NOTICE/SBOM；不分发项有经审查处置；Actions 包内容证据与许可审查 |
 | `non-product-disposition` | 对具体责任给出完整源证据、适用性分析和独立审查；不能用于未实现或受阻功能 | G02 校验处置及引用；不要求不存在的运行时实现，但该责任仍在分母，审查不通过即未闭合 |
 
+现有 ledger 还允许以下仓库级细分 kind：`dependency-authority`、
+`integration-adapter`、`platform-adapter`、`projection`、
+`security-evidence`。它们是对上述合同的责任细分，不是绕过类型合同的第
+二套状态机：`dependency-authority` 与 `security-evidence` 继承
+`documentation-governance`/`test-oracle` 的证据合同，`integration-adapter`
+与 `platform-adapter` 继承 `platform-bridge` 的边界合同，`projection`
+继承 `presentation` 的 typed consumer 合同；各项仍须保留独立 owner、
+source/oracle、接入、验证和验收证据。
+
 mixed 文件必须拆出所有不同类型的责任，不能把带业务的 UI、脚本、插件、schema 或文档整体改标为非运行时。`dimension-not-applicable` 仅用于上述合同确实不要求的某个维度，记录 `dimension/reason/source_evidence/reviewer`；缺少必要的实现、账号、服务、设备或证据不是维度不适用。所有 responsibility 仍需完成自己的实现/处置、接入/消费、验证和独立验收合同；某维度不适用不等于整个责任已接受。
 
 文档和许可判断可以采用独立只读审查记录；它们的机器身份、映射、分发等可执行检查仍只在 Actions。状态投影由 §12.3 的 exact-target receipt 绑定这些输入和审查记录，不能编造测试或要求一份纯文档被编译成 Rust。
