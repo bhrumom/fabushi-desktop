@@ -866,7 +866,7 @@
       }
     ],
     "root_identity_status": "fixed-u-enumerated",
-    "license_semantic_closure_status": "open-adopted-dependencies-and-copied-derived-content-still-require-release-review; round34 adds direct official libyuv LICENSE/PATENTS identity plus build-reachable prepare Breakpad and mini_chromium content-addressed authority mappings without inferring release acceptance",
+    "license_semantic_closure_status": "open-adopted-dependencies-and-copied-derived-content-still-require-release-review; round36 adds concrete current-Fabushi TDLib exact-license-copy, schema-generated, bootstrap-data-transcription, and source-informed-SRP file mappings plus an exact fixed-U root blob-identity comparison; no release legal acceptance is inferred",
     "github_license_blob_reads": [
       {
         "repository": "telegramdesktop/tdesktop",
@@ -1650,6 +1650,176 @@
       "xcb_util_m4_original_host_status": "github-mirror-object-verified-original-host-unread",
       "cppgir_original_host_status": "fail-closed-original-host-unread"
     },
+    "baseline_ready": false,
+    "accepted": false,
+    "validation_status": "not-run"
+  },
+  "round36_current_fabushi_adopted_copied_derived_file_mapping": {
+    "evidence_mode": "manual-github-api-tree-blob-and-source-text-reads-stage-a-no-ci-no-generator-no-validator",
+    "checkpoint_commit_before_round": "d47ace6e412eb1e72f04b7957d9d8905746c585f",
+    "fixed_tdesktop_upstream_commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+    "fixed_tdesktop_root_tree_sha": "91f2b083ab2877c0a17d07868eabec362a5cfca6",
+    "checkpoint_root_tree_sha": "6098a14dc30158b463ad637871234f966c3eae29",
+    "exact_fixed_u_root_blob_identity_comparison": {
+      "upstream_tree_truncated": false,
+      "downstream_tree_truncated": false,
+      "upstream_tree_entries": 7194,
+      "downstream_tree_entries": 9545,
+      "identical_blob_hits": 1,
+      "hits": [
+        {
+          "upstream_path": "Telegram/build/docker/centos_env/centos_env/__init__.py",
+          "downstream_path": "source/mahayana/codex-rs/utils/cargo-bin/repo_root.marker",
+          "blob_sha": "8b137891791fe96927ad78e64b0aad7bded08bdc",
+          "content": "single newline",
+          "substantive_copy_classification": "incidental-trivial-byte-identity-not-substantive-telegram-product-source"
+        }
+      ],
+      "substantive_byte_identical_fixed_u_root_payload_copies_detected": 0,
+      "caveat": "Exact Git blob identity detects byte-for-byte root-U copies only. It does not decide adapted, generated, transcribed, or source-informed reimplementations, which require separate file-level mappings."
+    },
+    "current_legacy_build_authority_lockfile_name_scan": {
+      "mode": "manual text search over GitHub-fetched lockfile/package-lock contents; no repository scanner or validator executed",
+      "searched_names": [
+        "breakpad",
+        "linux-syscall-support",
+        "libyuv",
+        "mini_chromium",
+        "boost",
+        "libiconv",
+        "dav1d",
+        "libxcb",
+        "xcb-keysyms",
+        "xcb-render-util",
+        "xcb-cursor",
+        "xcb-util",
+        "cppgir",
+        "ffmpeg",
+        "libavif",
+        "openh264",
+        "libvpx"
+      ],
+      "searched_files": [
+        {
+          "path": "desktop/package-lock.json",
+          "blob_sha": "ee0f596ecf8aaf47cb28873316a7c6d148c70de0"
+        },
+        {
+          "path": "native/mahayana-messaging/Cargo.lock",
+          "blob_sha": "876b3fe8a6e182d4d53c379dbfad7b80c967d748"
+        },
+        {
+          "path": "source/host/Cargo.lock",
+          "blob_sha": "b872bdfe574c550cf9d74589015c75e106b25760"
+        },
+        {
+          "path": "source/host/app/Cargo.lock",
+          "blob_sha": "7cd7f844f981ef4219ea37581a7c79445b1f68e8"
+        },
+        {
+          "path": "source/mahayana/codex-rs/Cargo.lock",
+          "blob_sha": "7591a40df797cde1c4cd88e30bfe3cf248ab3f92"
+        },
+        {
+          "path": "source/mahayana/mahayana-rs/Cargo.lock",
+          "blob_sha": "5c343a8b1bc0f88a68fd0055d372af55f4dfbf55"
+        },
+        {
+          "path": "source/mahayana/codex-rs/patches/pagable-0.4.1/Cargo.lock",
+          "blob_sha": "96aaf5bb772c406d5bac790423eef1415d7d1a62"
+        }
+      ],
+      "matching_names": [],
+      "status": "no-direct-name-adoption-detected-in-scanned-current-lockfiles",
+      "caveat": "This narrows direct package adoption for the named historical C/C++ build authorities; it is not an exhaustive legal/dependency acceptance verdict."
+    },
+    "tdlib_source_authority": {
+      "repository": "tdlib/td",
+      "commit": "a17f87c4cff7b90b278d12b91ba0614383aaee82",
+      "root_tree_sha": "27af7989c2c65dec54eb7860fb6932d5e422c7b5",
+      "recursive_tree_truncated": false,
+      "license": {
+        "path": "LICENSE_1_0.txt",
+        "blob_sha": "36b7cd93cdfbac762f5be4c6ce276df2ea6305c2",
+        "size_bytes": 1338,
+        "license_family": "Boost-Software-License-1.0"
+      }
+    },
+    "file_level_mappings": [
+      {
+        "id": "ROUND36-TDLIB-LICENSE-EXACT-COPY",
+        "downstream_path": "source/mahayana/mahayana-rs/providers/telegram-protocol/LICENSE-TDLIB-BOOST-1.0.txt",
+        "downstream_blob_sha": "36b7cd93cdfbac762f5be4c6ce276df2ea6305c2",
+        "source_repository": "tdlib/td",
+        "source_commit": "a17f87c4cff7b90b278d12b91ba0614383aaee82",
+        "source_path": "LICENSE_1_0.txt",
+        "source_blob_sha": "36b7cd93cdfbac762f5be4c6ce276df2ea6305c2",
+        "transformation": "exact-byte-copy",
+        "license_basis": "Boost Software License 1.0 exact upstream license blob",
+        "notice_path": "source/mahayana/mahayana-rs/providers/telegram-protocol/THIRD_PARTY_NOTICES.md",
+        "status": "source-and-license-identity-mapped-release-review-still-required"
+      },
+      {
+        "id": "ROUND36-TDLIB-SCHEMA-GENERATED-CATALOG",
+        "downstream_path": "source/mahayana/mahayana-rs/providers/telegram-protocol/src/generated/schema_ids.rs",
+        "downstream_blob_sha": "ef3e357fa81e2aac917d0083015b72c3cc023659",
+        "source_repository": "tdlib/td",
+        "source_commit": "a17f87c4cff7b90b278d12b91ba0614383aaee82",
+        "source_inputs": [
+          {
+            "path": "td/generate/scheme/telegram_api.tl",
+            "blob_sha": "c48d7914bc151a514b8c93c1b514bce48b28cb27",
+            "size_bytes": 274690,
+            "role": "generator-input"
+          },
+          {
+            "path": "td/generate/scheme/mtproto_api.tl",
+            "blob_sha": "b2508b478b9e5dd51af1dde33adcbf87949b9a5c",
+            "size_bytes": 4057,
+            "role": "generator-input"
+          },
+          {
+            "path": "td/generate/scheme/td_api.tl",
+            "blob_sha": "4dac6c8b10eeb76dd5d0280c9f374281990db877",
+            "size_bytes": 1120893,
+            "role": "audit-baseline-only-not-generator-input"
+          }
+        ],
+        "downstream_generator_path": "source/mahayana/mahayana-rs/providers/telegram-protocol/src/bin/tl-schema-codegen.rs",
+        "downstream_generator_blob_sha": "1408cd1f1c17a97382aa2c4aa991e84f17f74475",
+        "transformation": "deterministically-generated-catalog-of-declaration-names-constructor-ids-kinds-and-result-types; generator-not-run-in-stage-a",
+        "license_basis": "TDLib Boost Software License 1.0 exact license blob 36b7cd93cdfbac762f5be4c6ce276df2ea6305c2",
+        "notice_path": "source/mahayana/mahayana-rs/providers/telegram-protocol/THIRD_PARTY_NOTICES.md",
+        "status": "generated-derived-inputs-source-mapped-validation-not-run-release-review-still-required"
+      },
+      {
+        "id": "ROUND36-TDLIB-BOOTSTRAP-DC-TRANSCRIPTION",
+        "downstream_path": "source/mahayana/mahayana-rs/providers/telegram-protocol/src/dc.rs",
+        "downstream_blob_sha": "31ca7076014ea12a76796a07f4f7a27b8eb93201",
+        "source_repository": "tdlib/td",
+        "source_commit": "a17f87c4cff7b90b278d12b91ba0614383aaee82",
+        "source_path": "td/telegram/net/ConnectionCreator.cpp",
+        "source_blob_sha": "4bfe3bbdaaa82a20772a7bc8b437321578d45c7e",
+        "transformation": "transcribed-bootstrap-data-center-addresses-and-ports-into-rust-typed-constants-and-directory-logic",
+        "license_basis": "TDLib Boost Software License 1.0 exact license blob 36b7cd93cdfbac762f5be4c6ce276df2ea6305c2",
+        "notice_path": "source/mahayana/mahayana-rs/providers/telegram-network/THIRD_PARTY_NOTICES.md",
+        "status": "file-level-source-license-provenance-mapped-validation-not-run-release-review-still-required"
+      },
+      {
+        "id": "ROUND36-TDLIB-SRP-SOURCE-INFORMED",
+        "downstream_path": "source/mahayana/mahayana-rs/providers/telegram-protocol/src/srp.rs",
+        "downstream_blob_sha": "f1368308b0ee1d75769dfb6ff559d7caa4e2d57e",
+        "source_repository": "tdlib/td",
+        "source_commit": "a17f87c4cff7b90b278d12b91ba0614383aaee82",
+        "source_path": "td/telegram/PasswordManager.cpp",
+        "source_blob_sha": "8c0766d9e80bc7e5976993130a9a7e0f184e8b77",
+        "transformation": "source-informed-independent-rust-reimplementation-also-based-on-public-protocol; not-classified-as-byte-copy",
+        "license_basis": "TDLib Boost Software License 1.0 exact license blob 36b7cd93cdfbac762f5be4c6ce276df2ea6305c2",
+        "notice_path": "source/mahayana/mahayana-rs/providers/telegram-protocol/THIRD_PARTY_NOTICES.md",
+        "status": "source-license-provenance-mapped-validation-not-run-release-review-still-required"
+      }
+    ],
+    "copied_derived_adopted_mapping_status": "partially-closed-for-listed-current-fabushi-files; broader-current-shipping-file-review-and-release-legal-acceptance-remain-open",
     "baseline_ready": false,
     "accepted": false,
     "validation_status": "not-run"

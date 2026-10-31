@@ -3138,5 +3138,57 @@
       "libiconv-1.18-raw-archive-members",
       "adopted-and-copied-derived-file-level-release-legal-review"
     ]
+  },
+  "round36_remaining_official_source_and_archive_manifest_search": {
+    "evidence_mode": "manual-source-host-and-github-api-source-reads-stage-a-no-ci",
+    "upstream_commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+    "freedesktop_xcb_mirror_exact_commit_corroboration": {
+      "corroborating_source": "https://www.xquartz.org/releases/XQuartz-2.8.6_beta3.html",
+      "source_role": "independent X.Org distribution release page; not the original GitLab repository object authority",
+      "rows": [
+        {
+          "component": "libxcb-keysyms",
+          "exact_commit": "ef5cb393d27511ba511c68a54f8ff7b9aab4a384"
+        },
+        {
+          "component": "libxcb-render-util",
+          "exact_commit": "5ad9853d6ddcac394d42dd2d4e34436b5db9da39"
+        },
+        {
+          "component": "libxcb-cursor",
+          "exact_commit": "4929f6051658ba5424b41703a1fb63f9db896065"
+        }
+      ],
+      "direct_official_gitlab_commit_tree_license_read": false,
+      "attempted_original_host_result": "not-readable-through-current-web-source-reader",
+      "attempted_freedesktop_cgit_result": "not-readable-through-current-web-source-reader",
+      "status": "exact-commit-independently-corroborated-but-original-host-tree-license-unverified",
+      "caveat": "Do not promote XQuartz release metadata or GitHub mirror objects to direct original-GitLab tree/blob verification."
+    },
+    "archive_member_manifest_search": {
+      "boost_1_90_0": {
+        "official_index": "https://archives.boost.io/release/1.90.0/source/",
+        "archive": "boost_1_90_0.tar.gz",
+        "size_bytes": 210975925,
+        "sha256": "5e93d582aff26868d581a52ae78c7d8edf3f3064742c6e77901a1f18a437eea9",
+        "raw_member_listing": "unread",
+        "result": "official release/index and package metadata remain readable but no complete member manifest was exposed; archive bytes were not retried"
+      },
+      "libiconv_1_18": {
+        "archive": "libiconv-1.18.tar.gz",
+        "size_bytes": 5822590,
+        "sha256": "3b08f5f4f9b4eb82f151a7040bfd6fe6c6fb922efe4b1659c66ea933276965e8",
+        "advertised_file_list_page": "https://tho-otto.m68k.eu/crossmint.php",
+        "corroborating_diff_page": "https://fossies.org/diffs/libiconv/1.18_vs_1.19/ChangeLog-diff.html",
+        "raw_member_listing": "unread",
+        "result": "the exact original archive is advertised with a file-list entry and Fossies can parse exact 1.18-vs-1.19 archive members, but a complete 1.18 member-list body was not independently retrieved; no archive-byte retry was performed"
+      }
+    },
+    "no_retry_blockers_unchanged": {
+      "dav1d_original_host": "robots/DNS state unchanged; not retried",
+      "xcb_util_m4_original_gitlab": "original-host-unverified; not retried",
+      "cppgir_original_gitlab": "git_tree_verified=false/fail-closed-original-host-unread; not retried"
+    },
+    "validation_status": "not-run"
   }
 }
