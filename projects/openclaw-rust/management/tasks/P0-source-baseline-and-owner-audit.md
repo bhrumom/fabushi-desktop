@@ -388,6 +388,17 @@ fresh discovery-only subject; prior inventory, dependency/LFS closure, semantic
 reads, and Actions provenance are not reusable, and no authority or completion
 flag changes.
 
+2026-10-31T12:53:51Z drift amendment: read-only GitHub checks resolved the
+current OpenClaw `main` to commit=`eb0183deb6891f07686a1f3cefeaf063c119aaa7`,
+tree=`6c66d83fbeba3e74a7142073a2980bd2433722a8`, with an untruncated recursive
+tree of 64,097 entries (61,856 blobs, 2,241 directories, 0 gitlinks). The
+commit is `chore: speed up state lease and preservation tests (#189366)`. Root
+dependency/license identities remain unchanged, but this is a fresh
+discovery-only subject; prior inventory, dependency/SBOM/LFS closure, notice
+audit, semantic reads, and Actions provenance are not reusable, and no
+authority or completion flag changes. Its exact diff is test-only; the probe is
+recorded at `dossiers/upstream-current-candidate-probe-eb0183de-20261031.md`.
+
 2026-10-31T12:42:39Z drift amendment: read-only GitHub checks resolved the
 current OpenClaw `main` to commit=`f8e492f2c9d1cc3768c222b909a82bd3e4f97455`,
 tree=`89257a1e739896c29fbc427e43e2c59d95ab02a1`, with an untruncated recursive
@@ -437,9 +448,9 @@ completion flag changes. The probe is recorded at
 
 The canonical current discovery pointer is always `upstream.lock.json::live_candidate`.
 At the latest read-only reconciliation it is OpenClaw
-`f8e492f2c9d1cc3768c222b909a82bd3e4f97455` / tree
-`89257a1e739896c29fbc427e43e2c59d95ab02a1`, observed at
-`2026-10-31T12:42:39Z`, with 64,090 untruncated recursive-tree entries
-(61,849 blobs, 2,241 directories, 0 gitlinks). This remains discovery-only;
+`eb0183deb6891f07686a1f3cefeaf063c119aaa7` / tree
+`6c66d83fbeba3e74a7142073a2980bd2433722a8`, observed at
+`2026-10-31T12:53:51Z`, with 64,097 untruncated recursive-tree entries
+(61,856 blobs, 2,241 directories, 0 gitlinks). This remains discovery-only;
 the fixed implementation subject, inventory, dependency closure, Actions
 provenance, and all completion flags remain unchanged.
