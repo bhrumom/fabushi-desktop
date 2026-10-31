@@ -20231,10 +20231,10 @@
       ],
       "id": "OCRM-RESP-INTERACTIVE-PRESENTATION-001",
       "integration": {
-        "consumer": "source/host/src/extensions/interactive/payload_service.rs",
+        "consumer": "No production interactive-presentation consumer identified; payload helpers have no non-test callers",
         "entrypoint": "source/host/src/extensions/interactive/payload_service.rs::render_message_presentation_fallback_text",
         "owner": "source/host/src/extensions/interactive/payload_service.rs",
-        "producer": "source/host/src/extensions/interactive/payload_service.rs"
+        "producer": "No production interactive-presentation producer identified; payload inputs are supplied only by contract fixtures"
       },
       "invariants": [
         "Opaque callback values are never leaked in fallback text",
@@ -20351,10 +20351,10 @@
       ],
       "id": "OCRM-RESP-PARAM-KEY-NORMALIZATION-001",
       "integration": {
-        "consumer": "source/host/src/extensions/interactive/param_key.rs",
+        "consumer": "No production interactive parameter consumer identified; snake/camel key helpers have no non-test callers",
         "entrypoint": "source/host/src/extensions/interactive/param_key.rs::resolve_snake_case_param_key",
         "owner": "source/host/src/extensions/interactive/param_key.rs",
-        "producer": "source/host/src/extensions/interactive/param_key.rs"
+        "producer": "No production interactive parameter producer identified; parameter maps are supplied only by contract fixtures"
       },
       "invariants": [
         "Multi-letter acronyms convert cleanly (e.g. parseURL to parse_url)",
@@ -20480,10 +20480,10 @@
       ],
       "id": "OCRM-RESP-MEMORY-DREAMING-001",
       "integration": {
-        "consumer": "source/host/src/extensions/memory/dreaming_service.rs",
+        "consumer": "No production memory-dreaming consumer identified; promotion eligibility helpers have no non-test callers",
         "entrypoint": "source/host/src/extensions/memory/dreaming_service.rs::is_candidate_eligible_for_promotion",
         "owner": "source/host/src/extensions/memory/dreaming_service.rs",
-        "producer": "source/host/src/extensions/memory/dreaming_service.rs"
+        "producer": "No production memory-dreaming producer identified; candidate inputs are supplied only by contract fixtures"
       },
       "invariants": [
         "Default dreaming cron frequency is 0 3 * * *",
@@ -20585,10 +20585,10 @@
       ],
       "id": "OCRM-RESP-MEMORY-EVENT-STORE-001",
       "integration": {
-        "consumer": "source/host/src/extensions/memory/event_store_service.rs",
+        "consumer": "No production memory-event consumer identified; event normalization helpers have no non-test callers",
         "entrypoint": "source/host/src/extensions/memory/event_store_service.rs::normalize_memory_host_event_for_storage",
         "owner": "source/host/src/extensions/memory/event_store_service.rs",
-        "producer": "source/host/src/extensions/memory/event_store_service.rs"
+        "producer": "No production memory-event producer identified; host events are supplied only by contract fixtures"
       },
       "invariants": [
         "Event arrays clamped to 10 items, path to 256 bytes, text to 2048 bytes",
@@ -20774,10 +20774,10 @@
       ],
       "id": "OCRM-RESP-MCP-CHANNEL-BRIDGE-001",
       "integration": {
-        "consumer": "source/host/src/extensions/mcp/channel_bridge.rs",
+        "consumer": "No production MCP channel-bridge consumer identified; permission-reply helpers have no non-test callers",
         "entrypoint": "source/host/src/extensions/mcp/channel_bridge.rs::parse_claude_permission_reply",
         "owner": "source/host/src/extensions/mcp/channel_bridge.rs",
-        "producer": "source/host/src/extensions/mcp/channel_bridge.rs"
+        "producer": "No production MCP channel-bridge producer identified; permission replies are supplied only by contract fixtures"
       },
       "invariants": [
         "Queue capacity strictly capped at 1,000 events with oldest eviction",
@@ -20927,10 +20927,10 @@
       ],
       "id": "OCRM-RESP-MCP-TOOLS-STDIO-SERVER-001",
       "integration": {
-        "consumer": "source/host/src/extensions/mcp/tools_stdio_server.rs",
+        "consumer": "No production MCP stdio-tools consumer identified; tool filtering helpers have no non-test callers",
         "entrypoint": "source/host/src/extensions/mcp/tools_stdio_server.rs::filter_tools_for_mcp",
         "owner": "source/host/src/extensions/mcp/tools_stdio_server.rs",
-        "producer": "source/host/src/extensions/mcp/tools_stdio_server.rs"
+        "producer": "No production MCP stdio-tools producer identified; tool lists are supplied only by contract fixtures"
       },
       "invariants": [
         "Incoming requests rejected after close is initiated",
@@ -21488,10 +21488,10 @@
       ],
       "id": "OCRM-RESP-LOGGING-CORE-CONSOLE-001",
       "integration": {
-        "consumer": "source/host/src/extensions/telemetry/openclaw_logging_core.rs",
+        "consumer": "No production logging-core consumer identified; ConsoleLineFormatter has no non-test callers",
         "entrypoint": "source/host/src/extensions/telemetry/openclaw_logging_core.rs::format_json",
         "owner": "source/host/src/extensions/telemetry/openclaw_logging_core.rs",
-        "producer": "source/host/src/extensions/telemetry/openclaw_logging_core.rs"
+        "producer": "No production logging-line producer identified; log records are supplied only by contract fixtures"
       },
       "invariants": [
         "Silent level disables all event emissions",
@@ -21692,10 +21692,10 @@
       ],
       "id": "OCRM-RESP-LOGGING-DIAGNOSTIC-TELEMETRY-001",
       "integration": {
-        "consumer": "source/host/src/extensions/telemetry/openclaw_diagnostic_telemetry.rs",
+        "consumer": "No production diagnostic-telemetry consumer identified; memory-pressure evaluation has no non-test callers",
         "entrypoint": "source/host/src/extensions/telemetry/openclaw_diagnostic_telemetry.rs::evaluate_memory_pressure",
         "owner": "source/host/src/extensions/telemetry/openclaw_diagnostic_telemetry.rs",
-        "producer": "source/host/src/extensions/telemetry/openclaw_diagnostic_telemetry.rs"
+        "producer": "No production diagnostic-telemetry producer identified; diagnostic samples are supplied only by contract fixtures"
       },
       "invariants": [
         "Memory ratio >= 0.90 is Critical, >= 0.75 is Moderate",
@@ -22090,10 +22090,10 @@
       ],
       "id": "OCRM-RESP-MEETING-BOT-AUDIO-001",
       "integration": {
-        "consumer": "source/host/src/extensions/meeting_bot/audio_bridge.rs",
+        "consumer": "No production meeting-bot audio consumer identified; audio decoding has no non-test callers",
         "entrypoint": "source/host/src/extensions/meeting_bot/audio_bridge.rs::decode_meeting_audio_base64",
         "owner": "source/host/src/extensions/meeting_bot/audio_bridge.rs",
-        "producer": "source/host/src/extensions/meeting_bot/audio_bridge.rs"
+        "producer": "No production meeting-bot audio producer identified; audio payloads are supplied only by contract fixtures"
       },
       "invariants": [
         "Empty or non-base64 payloads are rejected with descriptive action error",
@@ -22190,10 +22190,10 @@
       ],
       "id": "OCRM-RESP-MEETING-BOT-BROWSER-001",
       "integration": {
-        "consumer": "source/host/src/extensions/meeting_bot/browser_controller.rs",
+        "consumer": "No production meeting-bot browser consumer identified; browser action locks have no non-test callers",
         "entrypoint": "source/host/src/extensions/meeting_bot/browser_controller.rs::acquire_lock",
         "owner": "source/host/src/extensions/meeting_bot/browser_controller.rs",
-        "producer": "source/host/src/extensions/meeting_bot/browser_controller.rs"
+        "producer": "No production meeting-bot browser producer identified; action requests are supplied only by contract fixtures"
       },
       "invariants": [
         "Concurrent operations on same target ID are serialized without interleaving",
@@ -22289,10 +22289,10 @@
       ],
       "id": "OCRM-RESP-MEETING-BOT-LIFECYCLE-001",
       "integration": {
-        "consumer": "source/host/src/extensions/meeting_bot/session_lifecycle.rs",
+        "consumer": "No production meeting-bot lifecycle consumer identified; cleanup tracking has no non-test callers",
         "entrypoint": "source/host/src/extensions/meeting_bot/session_lifecycle.rs::is_meeting_realtime_route_ready",
         "owner": "source/host/src/extensions/meeting_bot/session_lifecycle.rs",
-        "producer": "source/host/src/extensions/meeting_bot/session_lifecycle.rs"
+        "producer": "No production meeting-bot lifecycle producer identified; lifecycle events are supplied only by contract fixtures"
       },
       "invariants": [
         "Realtime route ready requires mode in (agent, bidi), inCall=true, mic unmuted, audio routed, and no manual action",
@@ -22390,10 +22390,10 @@
       ],
       "id": "OCRM-RESP-INFRA-UPDATE-STARTUP-001",
       "integration": {
-        "consumer": "source/host/src/extensions/host_upgrade/openclaw_update_startup.rs",
+        "consumer": "No production update-startup consumer identified; update triage helpers have no non-test callers",
         "entrypoint": "source/host/src/extensions/host_upgrade/openclaw_update_startup.rs::is_update_check_due",
         "owner": "source/host/src/extensions/host_upgrade/openclaw_update_startup.rs",
-        "producer": "source/host/src/extensions/host_upgrade/openclaw_update_startup.rs"
+        "producer": "No production update-startup producer identified; startup facts are supplied only by contract fixtures"
       },
       "invariants": [
         "Checks are due only when time difference exceeds interval threshold",
@@ -22489,10 +22489,10 @@
       ],
       "id": "OCRM-RESP-INFRA-PLATFORM-SANDBOX-001",
       "integration": {
-        "consumer": "source/host/src/extensions/local_exec/openclaw_platform_sandbox.rs",
+        "consumer": "No production platform-sandbox consumer identified; PowerShell escaping helpers have no non-test callers",
         "entrypoint": "source/host/src/extensions/local_exec/openclaw_platform_sandbox.rs::escape_powershell_argument",
         "owner": "source/host/src/extensions/local_exec/openclaw_platform_sandbox.rs",
-        "producer": "source/host/src/extensions/local_exec/openclaw_platform_sandbox.rs"
+        "producer": "No production platform-sandbox producer identified; command arguments are supplied only by contract fixtures"
       },
       "invariants": [
         "Special characters in PowerShell args are backtick-escaped and wrapped in quotes",
@@ -22590,10 +22590,10 @@
       ],
       "id": "OCRM-RESP-INFRA-WORKER-POOL-001",
       "integration": {
-        "consumer": "source/host/src/extensions/box_lifecycle/openclaw_worker_pool.rs",
+        "consumer": "No production worker-pool consumer identified; WorkerTaskPool has no non-test callers",
         "entrypoint": "source/host/src/extensions/box_lifecycle/openclaw_worker_pool.rs::sweep_idle_workers",
         "owner": "source/host/src/extensions/box_lifecycle/openclaw_worker_pool.rs",
-        "producer": "source/host/src/extensions/box_lifecycle/openclaw_worker_pool.rs"
+        "producer": "No production worker-pool producer identified; worker tasks are supplied only by contract fixtures"
       },
       "invariants": [
         "Completing last task transitions worker to idle with recorded timestamp",
@@ -28855,10 +28855,10 @@
       ],
       "id": "OCRM-RESP-SECURITY-EXEC-AUDIT-001",
       "integration": {
-        "consumer": "source/host/src/extensions/security/policy_auditor.rs",
+        "consumer": "No production execution-policy auditor consumer identified; SecurityPolicyAuditor has no non-test callers",
         "entrypoint": "source/host/src/extensions/security/policy_auditor.rs::SecurityPolicyAuditor::check_symlink_traversal",
         "owner": "source/host/src/extensions/security/policy_auditor.rs",
-        "producer": "source/host/src/extensions/security/policy_auditor.rs"
+        "producer": "No production execution-policy audit producer identified; policy inputs are supplied only by contract fixtures"
       },
       "invariants": [
         "Canonicalized target path must start with canonical root; safe binaries strictly allowlisted"
@@ -28952,10 +28952,10 @@
       ],
       "id": "OCRM-RESP-PROXY-CAPTURE-HEADER-001",
       "integration": {
-        "consumer": "source/host/src/extensions/proxy_capture/header_redactor.rs",
+        "consumer": "No production proxy-capture consumer identified; ProxyHeaderRedactor has no non-test callers",
         "entrypoint": "source/host/src/extensions/proxy_capture/header_redactor.rs::ProxyHeaderRedactor::redact_headers",
         "owner": "source/host/src/extensions/proxy_capture/header_redactor.rs",
-        "producer": "source/host/src/extensions/proxy_capture/header_redactor.rs"
+        "producer": "No production proxy-capture producer identified; headers are supplied only by contract fixtures"
       },
       "invariants": [
         "Authorization, X-Api-Key, Cookie, and Set-Cookie are strictly sanitized"
@@ -29166,10 +29166,10 @@
       ],
       "id": "OCRM-RESP-SNAPSHOT-BACKUP-CODEC-001",
       "integration": {
-        "consumer": "source/host/src/extensions/snapshot/git_backup_manager.rs",
+        "consumer": "No production snapshot-backup consumer identified; SnapshotExportEnvelope has no non-test callers",
         "entrypoint": "source/host/src/extensions/snapshot/git_backup_manager.rs::create_export_envelope",
         "owner": "source/host/src/extensions/snapshot/git_backup_manager.rs",
-        "producer": "source/host/src/extensions/snapshot/git_backup_manager.rs"
+        "producer": "No production snapshot-backup producer identified; snapshot rows are supplied only by contract fixtures"
       },
       "invariants": [
         "Tampered manifests with mismatched checksums must produce verification error"
@@ -29265,10 +29265,10 @@
       ],
       "id": "OCRM-RESP-SKILLS-RUNTIME-LIBRARY-001",
       "integration": {
-        "consumer": "source/host/src/extensions/skills/skill_runtime.rs",
+        "consumer": "No production skills-runtime consumer identified; SkillRegistry has no non-test callers",
         "entrypoint": "source/host/src/extensions/skills/skill_runtime.rs::parse_skill_markdown",
         "owner": "source/host/src/extensions/skills/skill_runtime.rs",
-        "producer": "source/host/src/extensions/skills/skill_runtime.rs"
+        "producer": "No production skills-runtime producer identified; skill records are supplied only by contract fixtures"
       },
       "invariants": [
         "Skills missing frontmatter boundary or name attribute are rejected"
