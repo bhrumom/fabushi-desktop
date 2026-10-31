@@ -459,6 +459,20 @@ impl CloudWorkerProvisioningOwner {
         Ok(image.clone())
     }
 
+    pub fn mark_warm_image_capture_uncertain(
+        &mut self,
+        image_id: &str,
+        expected_generation: CloudWorkerWarmImageGeneration,
+    ) -> Result<CloudWorkerWarmImage, CloudWorkerOwnerError> {
+        self.ensure_enabled()?;
+        let image = self
+            .warm_images
+            .get_mut(image_id)
+            .ok_or(CloudWorkerOwnerError::UnknownWarmImage)?;
+        image.mark_capture_uncertain(expected_generation)?;
+        Ok(image.clone())
+    }
+
     fn ensure_enabled(&self) -> Result<(), CloudWorkerOwnerError> {
         if !self.config.enabled {
             return Err(CloudWorkerOwnerError::Disabled);

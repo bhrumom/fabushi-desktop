@@ -127,6 +127,18 @@ impl CloudWorkerProvisioningExtension {
         })
     }
 
+    /// Persists an ambiguous capture outcome as explicit recovery debt. The
+    /// provider snapshot and cleanup consumer remain outside this façade.
+    pub fn mark_warm_image_capture_uncertain(
+        &self,
+        image_id: &str,
+        expected_generation: CloudWorkerWarmImageGeneration,
+    ) -> Result<CloudWorkerWarmImage, CloudWorkerMutationError> {
+        self.mutate_and_persist(|owner| {
+            owner.mark_warm_image_capture_uncertain(image_id, expected_generation)
+        })
+    }
+
     /// Admits one lease through the canonical owner and persists the exact
     /// owner snapshot. Provider discovery and worker launch remain separate.
     pub fn admit_lease(

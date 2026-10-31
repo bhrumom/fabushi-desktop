@@ -2292,7 +2292,7 @@
       "id": "OCRM-RESP-INFRA-WORKER-CRABBOX-WARM-IMAGE-001",
       "integration": {
     "consumer": "CloudWorkerProvisioningExtension::register_warm_image / apply_warm_image; provider snapshot and recovery consumers remain not wired",
-    "entrypoint": "source/host/src/extensions/cloud_workers/extension.rs::CloudWorkerProvisioningExtension::apply_warm_image -> owner.rs::apply_warm_image",
+    "entrypoint": "source/host/src/extensions/cloud_workers/extension.rs::CloudWorkerProvisioningExtension::apply_warm_image / mark_warm_image_capture_uncertain -> owner.rs",
     "owner": "source/host/src/extensions/cloud_workers/extension.rs and owner.rs",
         "producer": "provider snapshot adapter (not yet wired)"
       },

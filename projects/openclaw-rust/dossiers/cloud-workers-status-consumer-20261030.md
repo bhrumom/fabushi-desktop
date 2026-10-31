@@ -188,3 +188,7 @@ consumers remain pending.
 Bootstrap admission now also requires the requested digest and size to match a
 canonical artifact record in `Verified` state; a shape-valid serialized digest
 alone cannot authorize bootstrap.
+
+Warm-image capture ambiguity now has a typed extension façade that persists
+`CaptureUncertain` and cleanup debt under generation fencing. Provider snapshot
+reconciliation and cleanup consumers remain pending.

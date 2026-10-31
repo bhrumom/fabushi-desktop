@@ -259,6 +259,9 @@ pending Crabbox responsibilities:
 - Bootstrap validation now requires a matching canonical `Verified` artifact
   record and admitted size, so a shape-valid digest alone cannot authorize a
   producer.
+- Warm-image capture uncertainty now persists through a typed
+  `mark_warm_image_capture_uncertain` façade with generation fencing and
+  cleanup debt; provider snapshot/recovery consumers remain pending.
 
 The broader Crabbox projection, lifecycle, sandbox, bootstrap, artifact,
 warm-image and runtime-control rows remain pending where their producer or
