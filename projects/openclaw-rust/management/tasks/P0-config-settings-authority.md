@@ -4,7 +4,8 @@ Status: **Scoped unit admitted into parity-ledger (6 responsibilities mapped, 8 
 Unit: `OCRM-UNIT-CONFIG-001`  
 Candidate requirements: `OCRM-R04`, `OCRM-R09`, `OCRM-AC05`, `OCRM-AC17`  
 Dossier: `projects/openclaw-rust/dossiers/config-settings-scoped.md`  
-Pinned source: `openclaw/openclaw@ad8d12f126d29b0db204187adf5092db80294e70` / tree `04ccce62f1d74dc8e0c88290ae8ded027b7b0f16`  
+Historical scoped source oracle (not current authority): `openclaw/openclaw@ad8d12f126d29b0db204187adf5092db80294e70` / tree `04ccce62f1d74dc8e0c88290ae8ded027b7b0f16`
+Current discovery subject: `projects/openclaw-rust/upstream.lock.json::live_candidate` (discovery-only; do not reuse this unit's historical inventory or provenance without rebaseline).
 Investigated target: `bhrumom/fabushi-desktop` HEAD
 
 ## Atomic closed behavior
