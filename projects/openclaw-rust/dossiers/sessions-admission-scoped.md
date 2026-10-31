@@ -131,6 +131,14 @@ owner functions directly instead of an inline policy lambda. This remains
 `not-wired` until a real session communication producer and consumer use the
 planner; no production wiring or acceptance status is upgraded here.
 
+The current caller recheck found no non-test call to
+`plan_session_communication` or `resolve_session_communication_policy` in the
+Host, Host app, Coordinator, Electron, or frontend sources. The planner is
+therefore a pure owner-level contract slice; no inbound inter-session message
+producer, approval-card consumer, or outbound transcript/channel consumer is
+connected to it. The parity integration records both sides as absent while
+retaining the existing pending statuses.
+
 The locked `conversation-turns.ts` source was also re-read in full. The Rust
 session conversation owner now contains a bounded pending-turn registry with
 agent/id uniqueness, outbound-message reverse indexing, session/thread and

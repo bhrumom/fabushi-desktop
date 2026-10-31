@@ -14327,10 +14327,10 @@
       ],
       "id": "OCRM-RESP-SESSION-COMMUNICATION-POLICY-001",
       "integration": {
-        "consumer": "source/host/src/extensions/session/agent_session.rs",
+        "consumer": "No production session-communication consumer identified; the planner is consumed only by source/host/tests/openclaw_sessions_and_config_contract.rs",
         "entrypoint": "source/host/src/extensions/session/agent_session.rs",
         "owner": "source/host/src/extensions/session/agent_session.rs",
-        "producer": "source/host/src/extensions/session/agent_session.rs"
+        "producer": "No production inter-session communication producer identified"
       },
       "invariants": [
         "Never communication mode rejects inter-session messaging immediately without dispatch"
