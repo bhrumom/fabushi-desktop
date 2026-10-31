@@ -180,6 +180,14 @@ identities 与上一 candidate 相同，`.gitmodules` 仍不存在。该 exact s
 不得复用旧 inventory、依赖闭包、LFS/完整性或 Actions provenance，亦不得提升
 任何 authority 或 global flag。
 
+同一时间的只读身份审计确认：`inventory/index.json` 与全部 58,750 条分片
+记录仍绑定实现 baseline `ad8d12f126d29b0db204187adf5092db80294e70` /
+tree `04ccce62f1d74dc8e0c88290ae8ded027b7b0f16`；`parity-ledger.json` 与
+`requirements-traceability-matrix.json` 也绑定该 baseline。它们不匹配当前
+`b513040e…/c48aeaf…` discovery candidate，未被重标为当前来源；在同一 exact
+subject 上重新取得 Actions inventory、依赖闭包和 receipt 前，不得把这些旧
+产物当作当前 source closure 或完成证据。
+
 ## 5. 机器记录的初始化与终态
 
 2026-10-31 governance amendment: AC02/G02 final requires zero omitted,

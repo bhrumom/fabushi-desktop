@@ -221,3 +221,11 @@ discovery-only: no prior inventory, dependency closure, LFS/integrity result or
 Actions provenance is relabeled or reused, and all authority/completion flags
 remain unchanged. No CI, push, PR update or local OCRM executable verification
 was performed.
+
+The read-only identity audit also confirms that `inventory/index.json` and all
+58,750 inventory shard rows remain bound to the implementation baseline
+`ad8d12f126d29b0db204187adf5092db80294e70` / tree
+`04ccce62f1d74dc8e0c88290ae8ded027b7b0f16`; the parity ledger and RTM carry the
+same baseline identity. They are not relabeled to this discovery subject and
+cannot serve as current source-closure evidence until a fresh exact-subject
+Actions inventory, dependency closure and receipt exist.
