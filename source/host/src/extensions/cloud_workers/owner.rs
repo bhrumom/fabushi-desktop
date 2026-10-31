@@ -444,6 +444,26 @@ impl CloudWorkerProvisioningOwner {
         Ok(lease.clone())
     }
 
+    /// Settles a runtime-control mutation using the action's own lifecycle
+    /// contract. Producers cannot substitute an unrelated next state; an
+    /// ambiguous result is always retained as explicit recovery state.
+    pub fn settle_runtime_control(
+        &mut self,
+        mutation: &CloudWorkerLeaseMutation,
+        action: CloudWorkerRuntimeControlAction,
+        outcome: CloudWorkerMutationOutcome,
+    ) -> Result<CloudWorkerLease, CloudWorkerOwnerError> {
+        let current = self.lease(&mutation.lease_id)?.lifecycle;
+        let next = match outcome {
+            CloudWorkerMutationOutcome::Completed => action.completed_lifecycle(current)?,
+            CloudWorkerMutationOutcome::Submitted
+            | CloudWorkerMutationOutcome::Failed
+            | CloudWorkerMutationOutcome::Cancelled => current,
+            CloudWorkerMutationOutcome::OutcomeUnknown => CloudWorkerLifecycle::OutcomeUnknown,
+        };
+        self.settle_lease(mutation, next, outcome)
+    }
+
     pub fn register_warm_image(
         &mut self,
         image: CloudWorkerWarmImage,
@@ -744,6 +764,34 @@ mod tests {
             owner.lease(&LeaseId("lease-1".into())),
             Err(CloudWorkerOwnerError::UnknownLease)
         );
+    }
+
+    #[test]
+    fn runtime_control_completion_returns_read_capability_to_enrolled() {
+        let mut owner = owner();
+        let lease = owner
+            .admit(
+                CloudWorkerLeaseScope::new("account", "device").unwrap(),
+                LeaseId("lease-1".into()),
+                runtime(),
+            )
+            .unwrap();
+        let mutation = owner
+            .admit_runtime_control(
+                &lease.lease_id,
+                CloudWorkerRuntimeControlAction::Heartbeat,
+                super::super::ReplayKey("heartbeat-1".into()),
+            )
+            .unwrap();
+        let settled = owner
+            .settle_runtime_control(
+                &mutation,
+                CloudWorkerRuntimeControlAction::Heartbeat,
+                CloudWorkerMutationOutcome::Completed,
+            )
+            .unwrap();
+        assert_eq!(settled.lifecycle, CloudWorkerLifecycle::Enrolled);
+        assert_eq!(settled.generation, super::super::LeaseGeneration(1));
     }
 }
 

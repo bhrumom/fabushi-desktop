@@ -209,6 +209,19 @@ impl CloudWorkerProvisioningExtension {
         self.mutate_and_persist(|owner| owner.settle_lease(mutation, next, outcome))
     }
 
+    /// Settles a runtime-control mutation through its action-specific
+    /// lifecycle contract and the canonical persistence boundary.
+    pub fn settle_runtime_control(
+        &self,
+        mutation: &CloudWorkerLeaseMutation,
+        action: CloudWorkerRuntimeControlAction,
+        outcome: CloudWorkerMutationOutcome,
+    ) -> Result<CloudWorkerLease, CloudWorkerMutationError> {
+        self.mutate_and_persist(|owner| {
+            owner.settle_runtime_control(mutation, action, outcome)
+        })
+    }
+
     /// Registers a validated bootstrap record in the canonical owner snapshot.
     /// Secret values remain opaque references; no enrollment or process action
     /// is performed by this persistence façade.

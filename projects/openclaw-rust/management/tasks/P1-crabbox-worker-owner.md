@@ -549,11 +549,13 @@ contract in `source/host/src/extensions/cloud_workers/runtime_control.rs`.
 `Inspect`, `Heartbeat`, `Stop` and `Dispose` commands derive a
 `CloudWorkerLeaseMutation` only after checking the current lease lifecycle and
 preserving lease ID, owner epoch, generation, runtime identity and replay key.
-The command contract does not perform provider RPC, process cleanup, device
-enrollment, persistence or consumer dispatch; a future producer must still
-settle the mutation through the canonical owner and retain outcome-unknown
-recovery. The extension exposes this as an owner admission façade so no caller
-needs direct access to the owner map.
+Completed inspect/heartbeat return to `Enrolled`; stop/dispose advance only
+through their declared terminal transitions. The action-specific settlement
+façade rejects unrelated lifecycle substitutions and retains
+outcome-unknown recovery. The command contract does not perform provider RPC,
+process cleanup, device enrollment, persistence or consumer dispatch; the
+extension exposes the owner admission/settlement boundary so no caller needs
+direct access to the owner map.
 
 The slice's negative contract is explicit: inspect/heartbeat require an
 enrolled lease, stop requires an enrolled or outcome-unknown lease, dispose

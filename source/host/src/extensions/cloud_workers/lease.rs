@@ -283,6 +283,7 @@ fn is_allowed_transition(from: CloudWorkerLifecycle, to: CloudWorkerLifecycle) -
             | (CloudWorkerLifecycle::Preparing, CloudWorkerLifecycle::Warming)
             | (CloudWorkerLifecycle::Warming, CloudWorkerLifecycle::Bootstrapping)
             | (CloudWorkerLifecycle::Bootstrapping, CloudWorkerLifecycle::Enrolled)
+            | (CloudWorkerLifecycle::Enrolled, CloudWorkerLifecycle::Enrolled)
             | (CloudWorkerLifecycle::Enrolled, CloudWorkerLifecycle::Inspecting)
             | (CloudWorkerLifecycle::Enrolled, CloudWorkerLifecycle::Heartbeating)
             | (CloudWorkerLifecycle::Enrolled, CloudWorkerLifecycle::Stopping)

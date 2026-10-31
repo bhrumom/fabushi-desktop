@@ -1679,7 +1679,8 @@
         "source/host/src/extensions/cloud_workers/lease.rs::tests::ambiguous_results_enter_recovery_state",
         "source/host/src/extensions/cloud_workers/lease.rs::tests::only_completed_results_advance_the_lifecycle",
         "source/host/src/extensions/cloud_workers/runtime_control.rs::tests::stop_and_dispose_preserve_outcome_unknown_recovery",
-        "source/host/src/extensions/cloud_workers/runtime_control.rs::tests::admission_rejects_invalid_replay_key_before_side_effects"
+        "source/host/src/extensions/cloud_workers/runtime_control.rs::tests::admission_rejects_invalid_replay_key_before_side_effects",
+        "source/host/src/extensions/cloud_workers/owner.rs::tests::runtime_control_completion_returns_read_capability_to_enrolled"
       ],
       "typed_contracts": [
         "CloudWorkerLeaseMutation",

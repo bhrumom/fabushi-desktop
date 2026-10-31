@@ -26,10 +26,12 @@ impl CloudWorkerRuntimeControlAction {
         current: CloudWorkerLifecycle,
     ) -> Result<CloudWorkerLifecycle, CloudWorkerRuntimeControlError> {
         let next = match (self, current) {
-            (Self::Inspect, CloudWorkerLifecycle::Enrolled) => CloudWorkerLifecycle::Inspecting,
-            (Self::Heartbeat, CloudWorkerLifecycle::Enrolled) => {
-                CloudWorkerLifecycle::Heartbeating
-            }
+            // Inspecting and Heartbeating are transient lifecycle labels used
+            // by the wider lease state machine. A completed read/control
+            // operation returns the lease to Enrolled so its capability is not
+            // stranded after one successful observation.
+            (Self::Inspect, CloudWorkerLifecycle::Enrolled)
+            | (Self::Heartbeat, CloudWorkerLifecycle::Enrolled) => CloudWorkerLifecycle::Enrolled,
             (Self::Stop, CloudWorkerLifecycle::Enrolled)
             | (Self::Stop, CloudWorkerLifecycle::OutcomeUnknown) => CloudWorkerLifecycle::Stopping,
             (Self::Dispose, CloudWorkerLifecycle::Stopping)
@@ -106,13 +108,13 @@ mod tests {
             CloudWorkerRuntimeControlAction::Inspect.completed_lifecycle(
                 CloudWorkerLifecycle::Enrolled
             ),
-            Ok(CloudWorkerLifecycle::Inspecting)
+            Ok(CloudWorkerLifecycle::Enrolled)
         );
         assert_eq!(
             CloudWorkerRuntimeControlAction::Heartbeat.completed_lifecycle(
                 CloudWorkerLifecycle::Enrolled
             ),
-            Ok(CloudWorkerLifecycle::Heartbeating)
+            Ok(CloudWorkerLifecycle::Enrolled)
         );
         assert!(matches!(
             CloudWorkerRuntimeControlAction::Inspect
