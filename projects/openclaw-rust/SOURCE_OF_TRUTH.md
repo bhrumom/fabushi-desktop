@@ -187,6 +187,13 @@ inventory/dependency-closure artifact、不可变 digest、acceptance receipt �
 OCRM-AC01–AC24 终验记录。相关 dossier 仍属于 discovery/static evidence，不能
 替代 exact-subject evidence envelope；八项 global flags 继续全部为 `false`。
 
+对 `.github/workflows/ocrm-p0-authority.yml` 的只读审阅发现其来源获取步骤使用
+lock 的 `upstream` 字段；已加入 fail-closed preflight，要求该字段与
+`live_candidate` 的 commit/tree 完全一致且 `accepted_for_this_implementation_round`
+为 `true`，否则不得生成或上传 Actions inventory。当前 lock 仍不满足该条件，
+因此不会把实现 baseline 的旧来源误报为当前 `002f25a…/553796f…` subject；本轮
+没有触发 workflow。
+
 同一时间的只读身份审计确认：`inventory/index.json` 与全部 58,750 条分片
 记录仍绑定实现 baseline `ad8d12f126d29b0db204187adf5092db80294e70` /
 tree `04ccce62f1d74dc8e0c88290ae8ded027b7b0f16`；`parity-ledger.json` 与

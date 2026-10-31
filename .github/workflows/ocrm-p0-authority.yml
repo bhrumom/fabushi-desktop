@@ -36,6 +36,10 @@ jobs:
           from pathlib import Path
           lock=json.loads(Path("projects/openclaw-rust/upstream.lock.json").read_text())
           assert lock["upstream"]["repository"] == "openclaw/openclaw"
+          live=lock["live_candidate"]
+          assert lock["upstream"]["commit"] == live["commit"], "upstream authority differs from live discovery candidate"
+          assert lock["upstream"]["tree"] == live["tree"], "upstream authority tree differs from live discovery candidate"
+          assert lock["upstream"]["accepted_for_this_implementation_round"] is True, "exact upstream subject is not accepted for this implementation round"
           assert lock["closure"]["source_closure_ready"] is False
           idx=json.loads(Path("projects/openclaw-rust/inventory/index.json").read_text())
           assert idx["upstream"]["commit"] == lock["upstream"]["commit"]
