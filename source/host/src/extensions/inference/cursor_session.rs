@@ -22,6 +22,8 @@ pub const SAND_COMPUTER_USE_SUBAGENT_MODEL_ID: &str = "claude-opus-4-8";
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub struct SandSessionOptions {
     pub model_id: Option<String>,
+    pub session_model_override: bool,
+    pub thinking_level: Option<String>,
     pub is_summarization_session: bool,
     pub is_computer_use_subagent: bool,
     pub is_browser_use_subagent: bool,
@@ -238,6 +240,29 @@ pub fn resolve_sand_requested_model(inputs: ResolveRequestedModelInputs<'_>) -> 
     {
         if let Some(model) = inputs.stored_browser_use_model {
             return from_selection(model);
+        }
+    }
+
+    if session
+        .map(|options| options.session_model_override)
+        .unwrap_or(false)
+    {
+        if let Some(model_id) = subagent_model_id {
+            let parameters = session
+                .and_then(|options| options.thinking_level.as_deref())
+                .filter(|level| !level.trim().is_empty())
+                .map(|level| {
+                    vec![SandAgentModelParameter {
+                        id: "thinking".into(),
+                        value: level.trim().into(),
+                    }]
+                })
+                .unwrap_or_default();
+            return RequestedModel {
+                model_id: model_id.to_string(),
+                max_mode: Some(true),
+                parameters,
+            };
         }
     }
 

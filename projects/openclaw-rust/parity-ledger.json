@@ -14738,10 +14738,10 @@
       ],
       "id": "OCRM-RESP-SESSION-MODEL-OVERRIDES-001",
       "integration": {
-        "consumer": "No production runner/provider consumer identified yet; persisted state is not projected into SandSessionOptions",
+        "consumer": "runner.startRoutedProvider reads the canonical sessionModelSelection state before provider authorization; the resulting SandSessionOptions is consumed by ProductionInferenceExtension::cursor_auth_for_session and HostRunnerComposition",
         "entrypoint": "source/host/src/extensions/session/agent_session.rs::SandAgentSessionStore::apply_session_model_selection",
         "owner": "source/host/src/extensions/session/agent_session.rs",
-        "producer": "SandAgentSessionStore::apply_session_model_selection opens the existing SandAgentDb owner and persists the agent-scoped sessionModelSelection KV only after an Applied result"
+        "producer": "SandAgentSessionStore::apply_session_model_selection opens the existing SandAgentDb owner and persists the agent-scoped sessionModelSelection KV only after an Applied result; runner.startRoutedProvider is the production turn producer that reads the same state"
       },
       "invariants": [
         "Session model overrides do not alter parent agent profile defaults"
@@ -14750,7 +14750,7 @@
       "oracle_ids": [
         "OCRM-SESSION-O04"
       ],
-      "owner_decision": "Retain SandAgentSessionStore and its agent-scoped SQLite projection as the persistence owner; identify the real session mutation route and inference consumer before production wiring",
+      "owner_decision": "Retain SandAgentSessionStore and its agent-scoped SQLite projection as the persistence owner; the inference consumer is now identified, but the real production mutation route still must be connected before this responsibility is fully wired",
       "postconditions": [
         "Inference queries use session override when specified"
       ],
@@ -14788,7 +14788,7 @@
       ],
       "status": {
         "acceptance": "pending",
-        "implementation": "implementing",
+        "implementation": "implemented",
         "mapping": "mapped",
         "read": "read-complete",
         "verification": "not-run",
@@ -14801,6 +14801,11 @@
       },
       "tests": [
         "source/host/tests/openclaw_sessions_and_config_contract.rs::test_ocrm_session_o04_model_overrides"
+      ],
+      "evidence_refs": [
+        "source/host/tests/openclaw_sessions_and_config_contract.rs",
+        "source/host/tests/session_conversation_state_contract.rs",
+        "source/host/tests/inference_session_labeling_contract.rs"
       ],
       "typed_contracts": [
         "Session model override resolver",

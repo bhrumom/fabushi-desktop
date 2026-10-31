@@ -6425,7 +6425,22 @@ fn start_routed_provider_task(
     gateway_context: Option<GatewayCommandContext>,
     mut args: serde_json::Value,
 ) -> Result<serde_json::Value, GatewayCommandError> {
-    let provider_name = args.get("provider").and_then(serde_json::Value::as_str).unwrap_or("");
+    let agent_id = args.get("agentId").and_then(serde_json::Value::as_str)
+        .filter(|value| !value.trim().is_empty())
+        .ok_or_else(|| GatewayCommandError::Internal(
+            "runner.startRoutedProvider requires agentId".into()
+        ))?
+        .to_string();
+    let persisted_session_model = SandAgentSessionStore::new(Arc::clone(&session_workers))
+        .read_session_model_entry(&agent_id)
+        .map_err(GatewayCommandError::Internal)?;
+    let provider_name = persisted_session_model
+        .provider_override
+        .as_deref()
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+        .or_else(|| args.get("provider").and_then(serde_json::Value::as_str))
+        .unwrap_or("");
     let requested_provider = RoutedProvider::parse(provider_name)
         .ok_or_else(|| GatewayCommandError::Internal(format!(
             "unsupported routed provider: {provider_name}"
@@ -6435,12 +6450,6 @@ fn start_routed_provider_task(
         requested_provider,
     )
     .map_err(GatewayCommandError::Internal)?;
-    let agent_id = args.get("agentId").and_then(serde_json::Value::as_str)
-        .filter(|value| !value.trim().is_empty())
-        .ok_or_else(|| GatewayCommandError::Internal(
-            "runner.startRoutedProvider requires agentId".into()
-        ))?
-        .to_string();
     let stream_id = args.get("streamId").and_then(serde_json::Value::as_str)
         .filter(|value| !value.trim().is_empty())
         .ok_or_else(|| GatewayCommandError::Internal(
@@ -7287,13 +7296,23 @@ fn start_routed_provider_task(
     let worker_group_room_id = group_room_id.clone();
     let worker_group_member_name = group_member_name.clone();
     let worker_is_handoff_resume = worker_request_source.as_deref() == Some("handoff-resume");
+    let persisted_model_override = persisted_session_model
+        .model_override
+        .as_deref()
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+        .map(ToOwned::to_owned);
     let worker_session_options = SandSessionOptions {
-        model_id: args
+        model_id: persisted_model_override
+            .clone()
+            .or_else(|| args
             .get("modelId")
             .and_then(serde_json::Value::as_str)
             .map(str::trim)
             .filter(|value| !value.is_empty())
-            .map(ToOwned::to_owned),
+            .map(ToOwned::to_owned)),
+        session_model_override: persisted_model_override.is_some(),
+        thinking_level: persisted_session_model.thinking_level.clone(),
         is_summarization_session: args
             .get("isSummarizationSession")
             .and_then(serde_json::Value::as_bool)

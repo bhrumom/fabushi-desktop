@@ -245,3 +245,30 @@ prove complete cron/direct/group/global/spawn-child routing/admission across
 every mutation path; the parity row therefore remains `wiring=not-wired`,
 `verification=not-run`, and `acceptance=pending` until the classifier governs
 the full public routing boundary.
+
+## 12. Session model-override production consumer (2026-10-31)
+
+The inference consumer edge is now explicit. The existing
+`SandAgentSessionStore::apply_session_model_selection` remains the only writer
+of the agent-scoped `sessionModelSelection` KV. `runner.startRoutedProvider`
+reads that same record before provider authorization, rejects malformed or
+cross-agent state through the existing reader, and projects provider/model/
+thinking values into the one `SandSessionOptions` passed to
+`ProductionInferenceExtension::cursor_auth_for_session`. The resulting
+`RequestedModel` is consumed by the existing Cursor inference transport and
+`HostRunnerComposition` turn; no second session or inference owner is added.
+
+This does not yet close the full producer→owner→state→consumer contract: no
+production gateway/UI mutation caller for `apply_session_model_selection` was
+found in the current source. The parity row therefore remains
+`wiring=not-wired` until that mutation route is connected with its existing
+visibility/operator/runtime fences.
+
+The inference contract oracle now covers the positive precedence case and the
+negative parent-default invariant: a persisted session override selects its
+own model and thinking parameter while the stored agent default remains
+unchanged. This is implementation and wiring evidence only. No local OCRM
+build/test or packaged acceptance was run in the development phase, so the
+ledger remains `verification=not-run` and `acceptance=pending` until the
+frozen exact-head Actions lane executes the required unit, integration and
+negative checks.
