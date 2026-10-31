@@ -2,7 +2,7 @@
 
 Date: 2026-11-01
 Checkpoint base: `bf72e29187f6932a56462295b8c63cee0005f2ed`
-Production implementation: `b1eae64151c76ecf5ecb142f082960c4b050da80`
+Production implementation: `c8109e3412d8c2cb4e7362a0fe4ec4976c07bd22`
 Fixed upstream U: `f985723b552b30fe1c17d377d57f44e61a15a8c4`
 
 ## Exact fixed-U behavioral sources

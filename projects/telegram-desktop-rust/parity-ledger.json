@@ -3,7 +3,7 @@
   "project_id": "TDRP-001",
   "spec_revision": 9,
   "upstream_commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
-  "target_commit": "b1eae64151c76ecf5ecb142f082960c4b050da80",
+  "target_commit": "c8109e3412d8c2cb4e7362a0fe4ec4976c07bd22",
   "coverage": {
     "source_entries_total": 16202,
     "unknown": 16172,
@@ -13641,7 +13641,7 @@
         "ProductionRenderer/feature consumer -> ProductionCoordinatorClient.telegram* -> Coordinator data carrier -> existing Host gateway -> AppHost feature.auth.telegram* -> same TelegramClientLease -> AuthorizationSnapshot"
       ],
       "production_evidence": [
-        "commit:b1eae64151c76ecf5ecb142f082960c4b050da80",
+        "commit:c8109e3412d8c2cb4e7362a0fe4ec4976c07bd22",
         "path:source/product/fabushi/fabushi-account-service.ts#FABUSHI_TELEGRAM_APPLICATION_CREDENTIAL_SECRET@8e26fd5eab70d27ee553791ca30a8d6147358bf5",
         "path:frontend/src/production/coordinator-client.ts#ProductionCoordinatorClient.telegramSendCode@c09dfd0e8130de3f63875184f661823d324c5b00",
         "path:source/mahayana/mahayana-rs/mahayana-app-host/src/lib.rs#feature_telegram_send_code@165abd51b30f4237cf441191854bcd1f0d652a40",
@@ -13652,7 +13652,7 @@
         "source/mahayana/mahayana-rs/mahayana-product/src/native_desktop_session.rs native Telegram application credential contract (authored, not run)",
         "source/mahayana/mahayana-rs/mahayana-app-host/src/lib.rs telegram renderer auth parameter contract (authored, not run)"
       ],
-      "target_commit": "b1eae64151c76ecf5ecb142f082960c4b050da80",
+      "target_commit": "c8109e3412d8c2cb4e7362a0fe4ec4976c07bd22",
       "workflow_run": null,
       "run_attempt": null,
       "job": null,
