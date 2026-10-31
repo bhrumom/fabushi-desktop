@@ -18873,7 +18873,9 @@
         "platform-core-path:native/telegram-protocol/src/lib.rs@ef7fe73335551e303fa71b02f5cf066d778ae8a4",
         "desktop-implementation-commit:d38f6bef11a9a4334f8387c73c7b74e7994c0cdb",
         "path:source/mahayana/mahayana-rs/providers/telegram-protocol/src/api.rs@405b04166bea039051833a38ad0a75c62107f70c",
-        "path:source/mahayana/mahayana-rs/providers/telegram-protocol/src/lib.rs@ef7fe73335551e303fa71b02f5cf066d778ae8a4"
+        "path:source/mahayana/mahayana-rs/providers/telegram-protocol/src/lib.rs@ef7fe73335551e303fa71b02f5cf066d778ae8a4",
+        "platform-core-spec-compliance-commit:6cfc81d79901493c6b34ec4e174d4fbdae81800e",
+        "platform-core-spec-blob:aaa7c8b0290264b162405f35285a777fb37df91f"
       ],
       "test_evidence": [
         "platform-core native/telegram-protocol/src/api.rs exact constructor/field layout contract authored, not run",
@@ -18997,7 +18999,7 @@
       "acceptance_reviewer": null,
       "reviewer": null,
       "license_and_provenance": "Behavioral responsibility is anchored to fixed-U telegramdesktop/tdesktop Telegram/SourceFiles/mtproto/scheme/mtproto.tl@76225965bfc794388db241f3f760db8ab79e84f8 and SessionPrivate::tryToSend in Telegram/SourceFiles/mtproto/session_private.cpp@13cbc76ec723386027b5b4dcac79999b791c4614. Adjacent tlsClientHello/tlsBlock* lifecycle evidence was reread from Telegram/SourceFiles/mtproto/details/mtproto_tls_socket.cpp@e7562e3ca1a1da03f5d368085d5e61d887ab3f16. The implementation is source-neutral Rust and copies no upstream C++ implementation.",
-      "notes": "Stage A implementation only. This row closes exact ping_delay_disconnect request serialization only. The fixed-U TLS ClientHello template/generator socket lifecycle and main-session ping scheduling remain explicitly blocked/fail-closed; global unknown/unread source-entry counts remain unchanged because this is a newly mapped responsibility slice within already-open fixed-U source coverage. Contracts are authored but not executed; validation_status=not-run and accepted=false.",
+      "notes": "Stage A implementation only. This row closes exact ping_delay_disconnect request serialization only. The fixed-U TLS ClientHello template/generator socket lifecycle and main-session ping scheduling remain explicitly blocked/fail-closed; global unknown/unread source-entry counts remain unchanged because this is a newly mapped responsibility slice within already-open fixed-U source coverage. Source-level compliance is recorded at platform-core commit 6cfc81d79901493c6b34ec4e174d4fbdae81800e; AC1-AC6 are source/bookkeeping satisfied and AC7 remains Stage-B blocked/not-run. Contracts are authored but not executed; validation_status=not-run and accepted=false.",
       "test_execution_evidence": [],
       "validation_status": "not-run",
       "accepted": false

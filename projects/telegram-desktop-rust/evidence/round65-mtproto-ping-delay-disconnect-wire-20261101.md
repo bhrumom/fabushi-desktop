@@ -45,3 +45,13 @@ Accepted: false.
 No GitHub Actions/status/checks were queried or triggered. No build, typecheck, lint, schema validator, generator, unit/contract/integration/E2E test, package, deployment, installation, or runtime acceptance was performed.
 
 Remaining blockers include TLS camouflage ClientHello generation/socket lifecycle, the main-session ping timer/scheduling policy, SpecialConfigRequest higher lifecycle, gzip, full difference decoding/application, arbitrary historical sent/resend/container state, broader source/legal closure, Stage-B executable evidence and independent release ACCEPT.
+
+
+## Source-level compliance readback
+
+Platform-core compliance commit: `6cfc81d79901493c6b34ec4e174d4fbdae81800e`.
+Final spec blob: `aaa7c8b0290264b162405f35285a777fb37df91f`.
+
+R1-R10 and AC1-AC6 are recorded as satisfied by source/blob/bookkeeping inspection. AC7 remains blocked/not-run pending Stage B executable validation. Canonical and desktop provider blobs remain byte-identical at api `405b04166bea039051833a38ad0a75c62107f70c` and lib `ef7fe73335551e303fa71b02f5cf066d778ae8a4`.
+
+The TLS camouflage ClientHello generator/socket lifecycle and the main-session ping timer/scheduling policy remain explicit fail-closed blockers. No Actions/status/checks, build, test, validator, package, deploy, install, or runtime acceptance was queried or executed.
