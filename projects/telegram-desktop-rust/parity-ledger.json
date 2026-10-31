@@ -3,13 +3,13 @@
   "project_id": "TDRP-001",
   "spec_revision": 9,
   "upstream_commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
-  "target_commit": "667a5f4369e344e8376f1bda90d2bba78e453f49",
+  "target_commit": "e8a8b7726679c06862205ef21fdfbfc0c5aca4ed",
   "coverage": {
     "source_entries_total": 16202,
     "unknown": 16172,
     "unread": 16145,
     "omitted": 0,
-    "responsibilities_total": 52,
+    "responsibilities_total": 53,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -12974,6 +12974,263 @@
       "license_and_provenance": "Behavioral repository-quality history/task-effort measurement contract read from telegramdesktop/tdesktop authority; no upstream Python implementation copied into Fabushi shipping runtime.",
       "notes": "Recursive authority array index 29, immediately after health_test.py index 28, is .agents/skills/code-health/scripts/history.py. Its direct report.py caller and code-health SKILL measurement/prioritization contract were read. This closure decrements only this independent source entry to unknown=16,172 and unread=16,145, omitted=0.",
       "test_execution_evidence": []
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+      "source_path": "Telegram/SourceFiles/main/main_account.cpp",
+      "source_blob_sha": "2721c7ac12effe454d398610d26d638fadaa1f68",
+      "source_kind": "source",
+      "module_id": "tdesktop.main.account",
+      "responsibility_id": "TDRP-R9-ACCOUNT-EMBEDDED-CLIENT-HANDOFF-001",
+      "source_symbols": [
+        "Main::Account::Account",
+        "Main::Account::prepareToStart",
+        "Main::Account::start",
+        "Main::Account::createSession",
+        "Main::Account::setMtpAuthorization",
+        "Main::Account::startMtp",
+        "Main::Account::loggedOut"
+      ],
+      "capability_ids": [
+        "CAP-CANONICAL-ACCOUNT-EMBEDDED-TELEGRAM-CLIENT"
+      ],
+      "dependency_ids": [
+        "CanonicalAccountIdentity",
+        "PlatformLogin",
+        "CredentialStorage",
+        "ConversationProvider",
+        "TelegramEmbeddedRuntime"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/evidence/round41-canonical-telegram-account-handoff-20261101.md",
+      "behavior_contract": "The canonical account/platform-login lifecycle owns restoration of one account-bound embedded communication client and its encrypted local state. The existing Host/ConversationProvider receives only a typed client identity; it must not create or own a second Telegram account/runtime. Account restart restores the same encrypted local client state, while loss of the active platform credential removes access to the storage key without reclassifying durable encrypted data as another account.",
+      "state_machine": "signed out -> canonical Fabushi account restored/logged in -> existing secure secret store resolves or creates account/device-scoped Telegram storage key -> private Host credential projection -> AppHost opens/restores one persistent TelegramClientLease -> typed HostCreateConfig.telegram_client_id handoff -> existing TelegramConversationProvider attaches non-owningly -> process drop closes provider then lease; logout removes active Host credential while durable encrypted account data remains account-scoped",
+      "side_effects": [
+        "Resolve/create one 32-byte account/device-scoped Telegram storage key in the existing OS-protected secret store",
+        "Atomically project the key through the existing private Host credential file",
+        "Open/restore one encrypted account-scoped SQLite state store and one embedded Telegram runtime client",
+        "Close the process-lifetime client lease after the non-owning ConversationProvider is dropped"
+      ],
+      "failure_cases": [
+        "A legacy active credential without a Telegram storage key silently creates an unrelated ephemeral Telegram account",
+        "An invalid projected storage key is accepted as persistent storage material",
+        "Two canonical clients are created for one AppHost composition",
+        "A Telegram provider owns/closes a client that is also owned by the platform account lifecycle",
+        "Different canonical account identities alias the same Telegram database path or secret scope",
+        "The storage key is exposed to renderer/UI or serialized Host configuration"
+      ],
+      "ui_disposition": "No new UI root. Telegram conversations continue through the existing ConversationProvider/ConversationWorkspace composition.",
+      "non_ui_responsibilities": [
+        "Canonical account-bound client ownership",
+        "Encrypted local client persistence and restore",
+        "Stable account/device-scoped storage-key lifecycle",
+        "Typed non-owning client-id handoff into existing Host composition",
+        "Provider/client drop-order ownership"
+      ],
+      "platform_delta": "Telegram Desktop account-local MTP/storage lifetime is re-expressed through Fabushi's existing account/platform-login and secret-storage owners plus a source-neutral embedded client lease. No Telegram account product or parallel runtime is introduced.",
+      "existing_owner_candidates": [
+        "source/product/fabushi/fabushi-account-service.ts",
+        "source/mahayana/mahayana-rs/mahayana-product/src/native_desktop_session.rs",
+        "source/mahayana/mahayana-rs/mahayana-app-host/src/lib.rs",
+        "source/mahayana/mahayana-rs/mahayana-host/src/lib.rs",
+        "source/mahayana/mahayana-rs/mahayana-telegram/src/lib.rs"
+      ],
+      "existing_owner": "Canonical Fabushi account/platform login + existing Mahayana Host/ConversationProvider composition",
+      "rejected_existing_owners": [
+        "A Telegram-specific account owner would duplicate canonical Fabushi identity/login truth",
+        "TelegramConversationProvider must not become the credential/storage lifecycle owner because it is a shared conversation adapter",
+        "Creating a second TelegramRuntime/sidecar would violate the single embedded runtime and existing-owner-first contract"
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "source/product/fabushi/fabushi-account-service.ts",
+        "source/mahayana/mahayana-rs/mahayana-product/src/native_desktop_session.rs",
+        "source/host/src/extensions/auth/auth_service.rs",
+        "source/mahayana/mahayana-rs/mahayana-telegram/src/lib.rs",
+        "source/mahayana/mahayana-rs/mahayana-app-host/src/lib.rs"
+      ],
+      "fabushi_target_symbols": [
+        "telegramStorageSecretName",
+        "FabushiAuthService::telegramStorageKey",
+        "NativeCredential::telegram_storage_key",
+        "TelegramClientLease",
+        "TelegramClientHandoff",
+        "open_platform_telegram_client",
+        "create_feature_host -> HostCreateConfig.telegram_client_id"
+      ],
+      "target_language": "TypeScript + Rust",
+      "language_rationale": "Platform account/OS secret integration stays in the existing TypeScript Electron account owner; durable embedded runtime/storage and typed Host composition remain Rust. This preserves current language ownership instead of introducing a source-specific subsystem.",
+      "command_event_contracts": [
+        "Fabushi account session -> OS secret key scope -> private Host credential projection",
+        "private credential + canonical account id -> account-scoped encrypted Telegram database -> TelegramClientLease",
+        "TelegramClientLease::handoff -> HostCreateConfig.telegram_client_id -> MahayanaHost provider registration",
+        "TelegramConversationProvider::from_client_id -> non-owning canonical ConversationProvider"
+      ],
+      "state_owner": "Canonical Fabushi account owner for identity/credential/key scope; embedded Telegram core for Telegram state",
+      "lifecycle_owner": "AppHost process-lifetime TelegramClientLease under the canonical Fabushi account/platform-login composition",
+      "persistence_and_restart": "The 32-byte storage key remains in the existing OS-protected secret store under an account/device-scoped name. AppHost derives an account-scoped database path and create_persistent_client restores the encrypted snapshot after restart. Logout removes the private Host credential so inactive processes lose key access; encrypted account data is not silently rebound to another identity.",
+      "concurrency_and_cancellation": "FabushiAuthService already epoch-fences account refresh/logout and atomically replaces the Host credential. AppHost consumes one settled credential before Host startup. No concurrent second client owner is created; the non-owning provider drops before the retained lease by field order.",
+      "security_boundary": "The Telegram storage key is never returned to React/UI, never serialized into HostCreateConfig, and is not exposed by the shipping Host auth credential object. It travels only secure secret store -> mode-0600 private credential file -> Rust process memory; Telegram local state remains encrypted with that key.",
+      "network_service_dependencies": [
+        "Existing Fabushi account control plane for canonical account session",
+        "Existing embedded Telegram MTProto transport/runtime for Telegram network operations"
+      ],
+      "service_owner": "Existing Fabushi account/platform-login owner + embedded Telegram runtime; no separate Telegram service owner",
+      "deployment_evidence": [],
+      "implementation_status": "implemented",
+      "coverage_disposition": "rewritten",
+      "blockers": [
+        "Stage B executable build/contract/integration/packaged validation has not run.",
+        "Telegram authentication/self-user settlement and broader source responsibility closure remain open.",
+        "Independent release/legal/acceptance gates remain open."
+      ],
+      "production_entrypoints": [
+        "Electron Fabushi account binding -> FabushiAuthService -> private Host credential -> source/host/app mahayana-app-host -> UnifiedAppHost -> AppHost -> TelegramClientLease -> HostCreateConfig.telegram_client_id -> MahayanaHost -> TelegramConversationProvider::from_client_id"
+      ],
+      "production_evidence": [
+        "commit:e8a8b7726679c06862205ef21fdfbfc0c5aca4ed",
+        "path:source/product/fabushi/fabushi-account-service.ts#telegramStorageSecretName",
+        "path:source/mahayana/mahayana-rs/mahayana-app-host/src/lib.rs#open_platform_telegram_client",
+        "path:source/mahayana/mahayana-rs/mahayana-telegram/src/lib.rs#TelegramClientLease"
+      ],
+      "test_evidence": [
+        "source/product/fabushi/fabushi-account-service.contract.test.ts (authored, not run)",
+        "source/mahayana/mahayana-rs/mahayana-product/src/native_desktop_session.rs parser contracts (authored, not run)",
+        "source/mahayana/mahayana-rs/mahayana-app-host/src/lib.rs telegram_composition_contract_tests (authored, not run)"
+      ],
+      "target_commit": "e8a8b7726679c06862205ef21fdfbfc0c5aca4ed",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Fabushi canonical account + Host/ConversationProvider production composition",
+      "composition_slot": "Account-bound embedded communication client handoff",
+      "capability_component": "Single persistent embedded Telegram client lease and typed handoff",
+      "variation_axes": [
+        "signed-out vs signed-in canonical Fabushi account",
+        "existing storage key vs first key creation",
+        "same account restart vs different account identity",
+        "legacy credential without Telegram key vs current private credential"
+      ],
+      "shared_owner_contracts": [
+        "Canonical Fabushi account identity",
+        "Existing OS-protected secret storage",
+        "Existing HostCreateConfig production composition",
+        "Existing canonical ConversationProvider registry"
+      ],
+      "duplicate_root_check": "No second account, identity, login, Telegram runtime, ConversationProvider registry, Conversation store, UI root, sidecar, or subprocess was introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Not applicable",
+      "primary_navigation_target": "Existing Messages/Conversation navigation",
+      "collection_surface": "Existing ConversationList",
+      "creation_flow": "Existing canonical conversation creation; no Telegram-specific creation root added",
+      "object_action_scope": "Not applicable to this lifecycle responsibility",
+      "detail_section": "Not applicable",
+      "capability_surface": "Existing ConversationWorkspace via ConversationProvider",
+      "route_contract": "Existing conversation routes; no Telegram-specific product route",
+      "search_scope": "Not applicable",
+      "search_provider": "Existing canonical Search owner",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Unchanged; this lifecycle handoff grants no renderer/search visibility.",
+      "search_local_remote_contract": "Not applicable to this responsibility.",
+      "responsive_disposition": "No UI change.",
+      "accessibility_contract": "No UI change.",
+      "keyboard_contract": "No UI change.",
+      "state_continuity_contract": "Restart reopens the account-scoped encrypted client state with the same secure key; account changes derive distinct secret/database scopes and must not alias.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Existing Fabushi design system; no visual changes",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": null,
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "No new icon asset",
+      "avatar_contract": "No change",
+      "content_copy_keys": [],
+      "motion_contract": "No change",
+      "reduced_motion_contract": "No change",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "high",
+      "requirement_ids": [
+        "TDRP-R9-ACCOUNT-EMBEDDED-CLIENT-HANDOFF-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-ACCOUNT-CLIENT-RESTORE-001",
+        "ORA-TDRP-ACCOUNT-CLIENT-SINGLE-OWNER-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-ACCOUNT-CLIENT-NO-SECOND-RUNTIME-001",
+        "INV-TDRP-ACCOUNT-CLIENT-SECRET-BOUNDARY-001",
+        "INV-TDRP-ACCOUNT-CLIENT-ACCOUNT-SCOPE-001"
+      ],
+      "unit_case_ids": [
+        "UNIT-TDRP-NATIVE-TELEGRAM-KEY-PARSE-001",
+        "UNIT-TDRP-TELEGRAM-DB-PATH-ACCOUNT-SCOPE-001"
+      ],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-FABUSHI-TELEGRAM-KEY-SCOPE-001"
+      ],
+      "integration_case_ids": [
+        "INT-TDRP-APPHOST-TELEGRAM-HANDOFF-001"
+      ],
+      "functional_e2e_case_ids": [
+        "E2E-TDRP-CANONICAL-TELEGRAM-HANDOFF-001"
+      ],
+      "temporal_case_ids": [
+        "TEMP-TDRP-TELEGRAM-CLIENT-RESTART-RESTORE-001"
+      ],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "fault_recovery_case_ids": [
+        "FAULT-TDRP-TELEGRAM-MISSING-LEGACY-KEY-001",
+        "FAULT-TDRP-TELEGRAM-INVALID-STORAGE-KEY-001"
+      ],
+      "performance_case_ids": [],
+      "security_case_ids": [
+        "SEC-TDRP-TELEGRAM-STORAGE-KEY-NO-RENDERER-001",
+        "SEC-TDRP-TELEGRAM-ACCOUNT-SCOPE-001"
+      ],
+      "soak_case_ids": [],
+      "exploratory_charter_ids": [],
+      "regression_ids": [
+        "REG-TDRP-TELEGRAM-SECOND-CLIENT-OWNER-001"
+      ],
+      "release_gate_ids": [
+        "G-TRACEABILITY",
+        "G-COMPOSITION",
+        "G-SECURITY",
+        "G-EVIDENCE",
+        "G-RELEASE"
+      ],
+      "test_fixture_ids": [
+        "fabushi-account-telegram-storage-key-contract",
+        "native-private-credential-telegram-key-contract",
+        "apphost-telegram-account-path-contract"
+      ],
+      "test_environment_ids": [
+        "GitHub Actions Stage B matrix (not run)"
+      ],
+      "coverage_matrix_status": "pending",
+      "flake_status": "stable",
+      "release_gate_status": "pending",
+      "acceptance_reviewer": null,
+      "reviewer": null,
+      "license_and_provenance": "Behavioral account/session/storage lifecycle responsibility mapped from fixed-U Telegram Desktop main_account.cpp; implementation is source-neutral Fabushi TypeScript/Rust and does not copy the upstream C++ account implementation.",
+      "notes": "Stage A implementation only. The adjacent fixed-U storage_account.cpp@afe6f61af833fd32ba02a3bd8a48f6801cb583d5 was read as supporting encrypted-local-storage context. This row does not claim either upstream file fully semantically closed and does not decrement global unknown/unread counters.",
+      "test_execution_evidence": []
     }
   ],
   "rebaseline_candidate": {
@@ -12983,7 +13240,7 @@
     "nested_gitlinks_discovered": 3,
     "nested_gitlinks_resolved": 2,
     "nested_gitlinks_blocked": 1,
-    "source_responsibility_rows": "54-fixed-U-anchored-39-exact-blob-plus-15-semantic-reread",
+    "source_responsibility_rows": "55-fixed-U-anchored-40-exact-blob-plus-15-semantic-reread",
     "unknown": null,
     "unread": null,
     "omitted_known": 0,

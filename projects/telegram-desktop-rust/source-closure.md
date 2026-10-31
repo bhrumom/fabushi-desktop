@@ -229,3 +229,23 @@ Stage A remained execution-free for validation. Three residual provider files we
 - `providers/telegram-network/src/bin/telegram-auth-key-probe.rs@2854784c...` is tooling rather than a production owner. Its literal `get_future_salts#b921bd04` request and expected `future_salts#ae500895` result identifiers are both exactly present in TDLib `td/generate/scheme/mtproto_api.tl@b2508b47...`; these two schema identifiers are now source/license-mapped. The surrounding probe remains Fabushi-owned diagnostic code.
 
 No relationship was inferred merely from Telegram naming, domain concepts, SQLite, HMAC/SHA-256, or local JSON conventions. `baseline_ready=false`, `accepted=false`, and `validation_status=not-run` remain unchanged.
+
+
+## Canonical account-bound embedded Telegram client handoff (2026-11-01)
+
+This Stage-A slice closes the previously recorded **production wiring implementation gap**, not the full source inventory or acceptance gate. Fixed U remains `f985723b552b30fe1c17d377d57f44e61a15a8c4`.
+
+Exact source objects manually read for this responsibility:
+- `Telegram/SourceFiles/main/main_account.cpp@2721c7ac12effe454d398610d26d638fadaa1f68`: `Main::Account` owns local account storage, restores serialized authorization/session identity, starts the MTP instance, persists changing keys/config, and tears down/reset local session state on logout.
+- `Telegram/SourceFiles/storage/storage_account.cpp@afe6f61af833fd32ba02a3bd8a48f6801cb583d5`: account-local encrypted storage supplies the durable local-state side of that lifecycle.
+
+Fabushi implementation commit `e8a8b7726679c06862205ef21fdfbfc0c5aca4ed` has the following exact target blobs:
+- `source/product/fabushi/fabushi-account-service.ts@067b644ee568743892ba8cd0126d8b040eb21d4b`
+- `source/mahayana/mahayana-rs/mahayana-product/src/native_desktop_session.rs@d3941bf971ce0d357263ee298e1cdb1f264c50c0`
+- `source/host/src/extensions/auth/auth_service.rs@c9fc53ef66e7f1a1c06381a40515edb410f3418b`
+- `source/mahayana/mahayana-rs/mahayana-telegram/src/lib.rs@fce2ef0a509d6033697fac29a121b429ee4890bd`
+- `source/mahayana/mahayana-rs/mahayana-app-host/src/lib.rs@86cfa4c38bd535939e9299b79b8d72ce2db6fc70`
+
+The canonical Fabushi account owner now keeps a stable 32-byte Telegram storage key in the existing OS-protected secret lifecycle and projects it only through the private Host credential file. AppHost hashes canonical account identity into an account-scoped database path, restores/creates one encrypted persistent embedded client, retains its process-lifetime lease, and hands only its typed client ID to the existing Host/ConversationProvider composition. This deliberately does not create a Telegram account subsystem, second runtime, sidecar, or source-named state store.
+
+Authored-only test blobs are `source/product/fabushi/fabushi-account-service.contract.test.ts@969eb3cede3060366e1b73c4d4106bcf1f49be89` plus Rust parser/database-path unit contracts in the target blobs above. No test/build/typecheck/lint/schema validator/generator/packaging/runtime acceptance was run. Therefore this slice is `implemented / validation_status=not-run / accepted=false`; global `unknown=16172`, `unread=16145`, and `omitted=0` are unchanged by this mapping.

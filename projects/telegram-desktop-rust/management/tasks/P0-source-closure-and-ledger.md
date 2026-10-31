@@ -71,3 +71,12 @@ A service/account/platform blocker blocks only its dependent responsibility. Con
 P0 passes only when the accepted exact baseline, full recursive inventory, full semantic-read/responsibility coverage, owner resolution, schema/ledger validators and Revision 9 traceability/composition gates all pass on one exact Fabushi HEAD in GitHub Actions.
 
 P0 exit is not product completion; production responsibilities, existing Bot regression, real services, signed packaged temporal acceptance and independent release `ACCEPT` remain separate gates.
+
+
+## Stage-A account / embedded-client handoff implementation (2026-11-01)
+
+Fixed upstream authority remains `f985723b552b30fe1c17d377d57f44e61a15a8c4`. Manual source review of `Telegram/SourceFiles/main/main_account.cpp@2721c7ac12effe454d398610d26d638fadaa1f68` and `Telegram/SourceFiles/storage/storage_account.cpp@afe6f61af833fd32ba02a3bd8a48f6801cb583d5` confirms the applicable source responsibility: account lifecycle owns restored authorization/session state and encrypted local persistence while the network/session instance remains tied to that account lifecycle.
+
+Fabushi production commit `e8a8b7726679c06862205ef21fdfbfc0c5aca4ed` implements the source-neutral equivalent through existing owners: canonical Fabushi account/platform login -> existing secure secret store -> private Host credential -> AppHost `TelegramClientLease` -> typed `HostCreateConfig.telegram_client_id` -> existing `TelegramConversationProvider::from_client_id`. The lease is the only embedded client owner; ConversationProvider is explicitly non-owning. No source counts were decremented by this responsibility slice and no whole upstream file is claimed semantically closed.
+
+State remains Stage A: implementation only, tests/contracts authored but not executed, `coverage_matrix_status=pending`, `release_gate_status=pending`, no runtime/package evidence and no acceptance.
