@@ -417,16 +417,23 @@ subject 的 receipt。
 
 后续接手者先重读本入口、主 Spec、适用 task 和 current code。交接只保留当前请求、确切 refs、已完成且有证据的变化、未闭合项和下一可执行责任，不复制旧会话堆积状态。
 
-2026-10-31T09:37:57Z 的只读远端复核发现 OpenClaw main 已再次漂移到
-commit=ad57b6135a55a6792b6d703bc1750954d854d6aa、root tree
-24204d2196587105bf3af93a999cea03e8bdfae5；committer 时间为
-2026-10-31T09:37:57Z。GitHub recursive tree 未截断，共 64,011 entries
-（61,770 blobs、2,241 directories、0 gitlinks）。根 package/lock/workspace/
+2026-10-31T09:38:43Z 的只读远端复核发现 OpenClaw main 已再次漂移到
+commit=d27a8c9d9fec49a81084993bf16c3fefc4efd508、root tree
+e378a64af5f7409473636e6758cca43f4a204fcc；committer 时间为
+2026-10-31T09:38:43Z。GitHub recursive tree 未截断，共 64,009 entries
+（61,768 blobs、2,241 directories、0 gitlinks）。根 package/lock/workspace/
 license/notice blob identities 与上一 candidate 保持不变。该 exact subject 已
 同步写入 upstream.lock.json::live_candidate，仍是 discovery-only；本次未
 重新运行 compare、Actions inventory、依赖闭包、LFS/完整性或 acceptance
 receipt，因此不得复用上一 candidate 的 closure/provenance，也不改变任何
 authority 或 global flag。
+
+相对上一 candidate `ad57b6135a55a6792b6d703bc1750954d854d6aa`，只读 compare
+显示当前 subject ahead 1、behind 0，共 16 个文件变化；其中 `package.json`
+本身发生变化，另外涉及 Plugin SDK subpaths/testing、package boundary、XAI
+tsconfig、package-dist inventory、plugin contracts 和审计文档。此前绑定
+`ad57b613…` 的 dependency probe、Gateway scoped audit 和 drift mapping 只能
+作为历史证据，当前 subject 的受影响文件必须重新读取。
 
 该 exact subject 的根输入 probe 已重新读取：package.json、pnpm-lock.yaml、
 pnpm-workspace.yaml、.gitattributes、LICENSE 和 THIRD_PARTY_NOTICES.md 的 blob

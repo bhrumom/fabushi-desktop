@@ -25,16 +25,16 @@
   "live_candidate": {
     "repository": "openclaw/openclaw",
     "ref": "refs/heads/main",
-    "commit": "ad57b6135a55a6792b6d703bc1750954d854d6aa",
-    "tree": "24204d2196587105bf3af93a999cea03e8bdfae5",
-    "observed_at": "2026-10-31T09:37:57Z",
+    "commit": "d27a8c9d9fec49a81084993bf16c3fefc4efd508",
+    "tree": "e378a64af5f7409473636e6758cca43f4a204fcc",
+    "observed_at": "2026-10-31T09:38:43Z",
     "discovery_source": "GitHub commit/tree API",
     "recursive_tree_truncated": false,
-    "recursive_tree_entries": 64011,
-    "recursive_blob_entries": 61770,
+    "recursive_tree_entries": 64009,
+    "recursive_blob_entries": 61768,
     "recursive_directory_entries": 2241,
     "root_inputs": {
-      "package.json": "3b8d23201d08859353b3ada3915f9e6fe5266dcf",
+      "package.json": "e52ea501bd0e2d749e7f4ab2efce5074b81a2a78",
       "pnpm-lock.yaml": "83b4975eb96942ec007a2eb9847ccfe98d380bda",
       "pnpm-workspace.yaml": "32ce4d83de4aac6a1e3665baba09a3aa9582960c",
       ".gitattributes": "c6118b226a4a760f7861b6b7b1e7dccd943384e4",
@@ -49,7 +49,7 @@
     "behind_by": null,
     "compare_files_returned": null,
     "compare_file_counts_are_not_complete": true,
-    "decision": "live-main-drifted-again-to-ad57b613; read-only exact commit/tree and recursive tree revalidated at 2026-10-31T09:37:57Z; recursive tree is 64,011 entries with unchanged root dependency/license identities; GitHub compare was not rerun; require fresh source reads before reuse and retain discovery-only status until Actions inventory and dependency closure"
+    "decision": "live-main-drifted-again-to-d27a8c9d; read-only exact commit/tree and recursive tree revalidated at 2026-10-31T09:38:43Z; recursive tree is 64,009 entries, package.json changed, other root dependency/license identities remain stable; require fresh source reads before reuse and retain discovery-only status until Actions inventory and dependency closure"
   },
   "root_inputs": {
     "AGENTS.md": "c3deeccdb6b1a4c7137d56297e933bbf19f4d3bf",
