@@ -8,6 +8,24 @@ Reconciled: 2026-10-31; Stage A manual Git/API evidence only, no CI executed
 
 The GitHub recursive tree for the fixed U returned `truncated=false`: 7,194 entries total, including 6,859 blobs, 299 trees, and 36 direct gitlinks. Root `.gitmodules` is blob `2a71e861fab57dfd74d66e787867f2ede203a099`. These are exact fixed-U identity facts, not acceptance or full recursive-source-completeness evidence.
 
+## Fixed-U changed-row semantic reread (2026-10-31)
+
+Starting from checkpoint live HEAD `5c4d02ce42794b7ebc0878e4c7c4654765d706f0`, the 15 parity-ledger rows that still carried historical `351204f3695b4a39bc3f4d2f230c061b9a01fe2a` provenance were reread against fixed `U=f985723b552b30fe1c17d377d57f44e61a15a8c4`. They span seven source blobs. All 15 cited behavior contracts remain supported by the fixed-U sources and are now eligible for provenance re-anchoring; this is provenance reconciliation only and does not change validation/acceptance state.
+
+- `Telegram/SourceFiles/boxes/share_box.cpp`: historical blob `b7bf9f0d1f253d8e1a333ec1daa61d224fb188be` -> fixed-U blob `f4787dbb34cdb5fb2af78a69ae7537e91e06395a`. The GitHub compare reports 85 additions and 0 deletions: new includes plus a new `FastShareImage` function after the cited ShareBox/FastShareLink regions. The existing row-replacement, send-options, destination-policy, formatted-link entity shifting, typed child destination, topic eligibility, forward replay/idempotency mapping, forward privacy, and recipient-eligibility source regions were not removed or rewritten.
+- `.agents/shared/codex-cli-leaves.md`: `659da44a8083c433c4e9b59ca28f64ba525bfbf8` -> `11c59b68df43e442e596c3052296fc51a044d46a`. The three-line delta expands model-pin scope for harness review/assessment leaves; availability, read-only sandbox, run/start/continue/recovery and fail-closed provider fallback remain intact.
+- `.agents/shared/phase-effort.md`: `dd07a4c611922a29a6892332db98afe76cd58952` -> `8d7b385dbb526e87fc090774ee35191e1619bb08`. Six additive lines extend harness-task model selection; effort classification, evidence preservation, configured-model fallback and host-adapter controls remain intact.
+- `.agents/shared/test-loop.md`: `83c4732bf6139f7c6557f18dd87bb35c3d68808d` -> `bb51685e417759939cadc1e2e74b1c0199fcb8f0`. Helper detail was moved to targeted `test/docs/` references and a Windows host-load evidence gate was added; the APPROVED/TEST_FLAW/IMPL_BUG/BLOCKED state machine, unique run directory, pass carry-forward, oracle evidence and one-focused-recovery convergence contract remain present.
+- `.agents/skills/code-health/SKILL.md`: `6885938b3d186b55f5d69cb8b9b9a96bbca0e097` -> `101e69bc18d8f37c73d3b077f04d266bd939360f`. Harness lifecycle/report metrics were added; exact `origin/dev` authority, durable ledger/history, atlas, area survey, change check, proposals, audit and report contract remain intact.
+- `.agents/skills/code-health/scripts/health.py`: `f08675ef7a03c016d85f91c60b8f29e99454abe9` -> `4fd8d8013d0efb7103a57e4ff7b1d395c448eb0d`. Harness reporting was added to `command_scan`; the cited state, exact-source, detached-worktree and command orchestration functions remain present.
+- `.agents/skills/code-health/scripts/health_test.py`: `2176aea672fd9ed16c01342939fbffb41490ae73` -> `6058fa64a5121c966021d8589b2010480aec8794`. Numeric-literal/CRLF/harness regression cases and interpreter portability were added; all cited integrated regression test classes remain present.
+
+The additive fixed-U deltas above stay within the already mapped source-neutral governance/source responsibility boundaries; this reread does not mark any runtime validation gate passed. Coverage counters, `baseline_ready=false`, and `accepted=false` remain unchanged.
+
+### cppgir retry
+
+The parent evidence remains unchanged: `desktop-app/cmake_helpers@7ceca3019b4750d7a5acb2de0faffd523ee14095` declares `https://gitlab.com/mnauw/cppgir.git` and pins `external/glib/cppgir@47cf94f83b54cda59018135601e19d7fb0c77776`. This round retried both the original GitLab API v4 recursive repository-tree URL and the GitLab pinned-commit tree page; the execution network layer rejected both before any repository tree/blob data was returned. Therefore `git_tree_verified` remains false and the recursive cppgir chain remains fail-closed. No mirror, standalone `expected-lite` read, or historical claim is promoted as original-host reachability evidence.
+
 ## Direct gitlink recursion
 
 The current `upstream.lock.json` records recursive GitHub-tree reads for all 36 direct gitlinks at fixed U. Three direct gitlinks expose one nested gitlink each; the remaining 33 expose none in those recorded scans. The two GitHub-hosted nested targets remain resolved; the GitLab-hosted cppgir target remains fail-closed because its original-host recursive tree/blob set is not available in the current execution environment.
