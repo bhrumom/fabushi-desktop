@@ -192,3 +192,7 @@ alone cannot authorize bootstrap.
 Warm-image capture ambiguity now has a typed extension façade that persists
 `CaptureUncertain` and cleanup debt under generation fencing. Provider snapshot
 reconciliation and cleanup consumers remain pending.
+
+The current implementation boundary therefore contains persistence and
+fencing contracts only; it has no runtime-control producer, process launcher,
+device enrollment caller or packaged consumer acceptance.

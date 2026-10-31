@@ -568,7 +568,9 @@ unbounded provider output.
 - Exact upstream Crabbox source identities recorded in the dossier/inventory.
 - Live Fabushi owner source identities recorded in the dossier.
 
-Current state: typed lease foundation implemented locally; provider/artifact,
-warm-image, bootstrap, platform, sandbox, doctor/recovery, integration,
-executable verification and acceptance remain open. The ADR remains a proposed
-boundary until owner approval and the required RTM review are recorded.
+Current state: typed lease, artifact-admission, bootstrap-record and
+warm-image persistence seams are implemented locally; provider/process
+producers, platform, sandbox, doctor/recovery consumers, full integration,
+executable verification and acceptance remain open. These seams do not imply
+provider readiness or production mutation. The ADR remains a proposed boundary
+until owner approval and the required RTM review are recorded.
