@@ -295,6 +295,13 @@ producer path 纠正为实际的 `source/host/src/runner/tools/` 位置；
 步骤，不能按单一 symbol 文本匹配推断缺失。当前未发现新的 wired 不存在路径；
 该结果仍不替代调用图、Actions receipt 或 packaged runtime 证据。
 
+随后按 qualified Rust symbol 的最后一段做了当前工作树反向存在性检查：80 条
+`implementation=implemented,wiring=wired` 责任的目标文件与目标 symbol 均可定位；
+其中带 `Type::method` 的声明按方法名检查，避免把 Rust qualified name 当作字面
+源码行。该检查没有发现新的明确缺失目标，但仅证明静态 target presence，不替代
+producer→owner→state/storage→consumer 调用图、Actions receipt、packaged runtime
+或真实服务/设备验收。
+
 降级后的反向审计确认其余 79 条 `wiring=wired` 责任均可在生产源码范围
 （`source/host/src`、`source/node-agent-coordinator/src`、
 `source/electron-main` 或 `frontend/src`）定位目标 symbol；未发现第二批仅由
