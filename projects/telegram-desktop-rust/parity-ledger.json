@@ -17638,7 +17638,9 @@
         "path:source/mahayana/mahayana-rs/providers/telegram-protocol/src/lib.rs@abab39e42f100972484191f0e52e9edd9b88c6cf",
         "path:source/mahayana/mahayana-rs/providers/telegram-network/src/lib.rs@1fc1b1f69e3e37377400d078f916599e0c7b20bc",
         "path:source/mahayana/mahayana-rs/providers/telegram-protocol/tests/protocol_contract.rs@184e5bfa7832e9bc7c7d4f594011b032382e11d3",
-        "stage-a-round88-evidence:projects/telegram-desktop-rust/evidence/round88-mtproto-bad-msg-notification-wire-20261101.md"
+        "stage-a-round88-evidence:projects/telegram-desktop-rust/evidence/round88-mtproto-bad-msg-notification-wire-20261101.md",
+        "platform-core-round88-final-compliance-commit:21ab4e3c4b98a93761c8df525656c09f9b4c404d",
+        "platform-core-round88-final-spec-blob:8b12f64f4a102296195365833b145d5329056b69"
       ],
       "test_evidence": [
         "platform-core native/telegram-protocol/src/api.rs exact bad_msg_notification three-field parse contract authored, not run",
@@ -17778,7 +17780,7 @@
       "acceptance_reviewer": null,
       "reviewer": null,
       "license_and_provenance": "Behavioral responsibility is anchored to fixed-U telegramdesktop/tdesktop Telegram/SourceFiles/mtproto/session_private.cpp@13cbc76ec723386027b5b4dcac79999b791c4614 and Telegram/SourceFiles/mtproto/scheme/mtproto.tl@76225965bfc794388db241f3f760db8ab79e84f8. The implementation is source-neutral Rust and copies no upstream C++ implementation.",
-      "notes": "Stage A implementation only. This row closes complete bad_msg_notification wire validation, typed clock-window gating, and current-one-request correlation in both existing receive branches; it does not claim arbitrary historical sent/container bookkeeping. Global unknown/unread source-entry counts remain unchanged because this is a newly mapped responsibility slice within already-open fixed-U source coverage. Contracts are authored but not executed; validation_status=not-run and accepted=false. Round88 adjacent revalidation confirms the live parser/TlReader already satisfy exact constructor, signed 8/4/4 field widths, fail-closed truncation and strict EOF, so no production behavior delta was made. External canonical/desktop contracts were added and mirrored but not executed. This wire-only disposition is strictly separate from pre-existing bad-time/time-correction recovery, current-request correlation, retry/session reset, sent/container history, acknowledgement/resend application and broader session semantics.",
+      "notes": "Stage A implementation only. This row closes complete bad_msg_notification wire validation, typed clock-window gating, and current-one-request correlation in both existing receive branches; it does not claim arbitrary historical sent/container bookkeeping. Global unknown/unread source-entry counts remain unchanged because this is a newly mapped responsibility slice within already-open fixed-U source coverage. Contracts are authored but not executed; validation_status=not-run and accepted=false. Round88 adjacent revalidation confirms the live parser/TlReader already satisfy exact constructor, signed 8/4/4 field widths, fail-closed truncation and strict EOF, so no production behavior delta was made. External canonical/desktop contracts were added and mirrored but not executed. This wire-only disposition is strictly separate from pre-existing bad-time/time-correction recovery, current-request correlation, retry/session reset, sent/container history, acknowledgement/resend application and broader session semantics. Final round88 source-level compliance is recorded at platform-core commit 21ab4e3c4b98a93761c8df525656c09f9b4c404d/spec blob 8b12f64f4a102296195365833b145d5329056b69; executable validation remains not-run.",
       "test_execution_evidence": [],
       "validation_status": "not-run",
       "accepted": false

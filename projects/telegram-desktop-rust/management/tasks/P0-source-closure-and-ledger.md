@@ -1105,3 +1105,30 @@ independent release ACCEPT remain outside this isolated wire-only no-production-
 
 No GitHub Actions/status/check query or trigger, build, typecheck, lint, schema validator, generator,
 unit/contract/integration/E2E test, package, deployment, installation or runtime acceptance was performed.
+
+
+### Round 88 final source-level compliance
+
+Platform-core final compliance commit `21ab4e3c4b98a93761c8df525656c09f9b4c404d` / final spec blob
+`8b12f64f4a102296195365833b145d5329056b69` records the isolated
+`bad_msg_notification#a7eff811 bad_msg_id:long bad_msg_seqno:int error_code:int` wire responsibility as
+source-level closed with no production delta. Canonical production api/tl/lib/network blobs remain
+`ebfb3670b5cd097b9ce288782c7954f5cfe9fc43` /
+`89256ab35184b6dc06a095ab34abb9f44e95a264` /
+`abab39e42f100972484191f0e52e9edd9b88c6cf` /
+`1fc1b1f69e3e37377400d078f916599e0c7b20bc`.
+
+Canonical and desktop authored-only external contract blob is
+`184e5bfa7832e9bc7c7d4f594011b032382e11d3`; contracts cover exact 20-byte layout, signed i64/i32/i32
+extremes, wrong constructor, constructor/field truncation boundaries, trailing-byte rejection and exact EOF and
+remain not run. The existing ledger row stays
+`implemented / validation_status=not-run / accepted=false`; coverage remains
+`97 responsibilities / 16172 unknown / 16145 unread / 0 omitted`.
+
+Bad-time/time-correction recovery, current-request correlation, retry/session reset, arbitrary sent-request/container
+history, acknowledgement/resend application, connection scheduling/racing/send retry, auth-key lifecycle, gzip,
+complete difference/differenceSlice decoding/application, broader fixed-U source/legal closure, Stage-B executable
+evidence and independent release ACCEPT remain outside this wire-only closure.
+
+No GitHub Actions/status/check query or trigger, build, typecheck, lint, schema validator, generator,
+unit/contract/integration/E2E test, package, deployment, installation or runtime acceptance was performed.
