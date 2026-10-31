@@ -1175,3 +1175,16 @@ The existing `TDRP-R9-MTPROTO-FUTURE-SALTS-WIRE-001` row stays `implemented / va
 
 No GitHub Actions/status/check query or trigger, build, typecheck, lint, schema validator, generator, unit/contract/integration/E2E test, package, deployment, installation or runtime acceptance was performed.
 
+
+
+### Round 91 RpcDropAnswer result adjacent revalidation (task round 60, 2026-11-01)
+
+Fixed-U `rpc_answer_unknown#5e2ad36e`, `rpc_answer_dropped_running#cd78e586`, and `rpc_answer_dropped#a43ad8b7 msg_id:long seq_no:int bytes:int` were reread against `mtproto.tl@76225965bfc794388db241f3f760db8ab79e84f8` and `session_private.cpp@13cbc76ec723386027b5b4dcac79999b791c4614`. The existing ledger row `TDRP-R9-MTPROTO-RPC-DROP-ANSWER-WIRE-001` is reused; no duplicate responsibility is created and coverage remains `97 responsibilities / 16172 unknown / 16145 unread / 0 omitted`.
+
+Existing canonical `telegram-protocol` is already exact: `api.rs@ebfb3670b5cd097b9ce288782c7954f5cfe9fc43` dispatches the two exact zero-field constructors and the exact Dropped constructor; `tl.rs@89256ab35184b6dc06a095ab34abb9f44e95a264` enforces signed little-endian fixed-width i64/i32/i32 reads with fail-closed truncation; strict EOF rejects trailing bytes; `lib.rs@abab39e42f100972484191f0e52e9edd9b88c6cf` exports the same owner. Fixed-U `session_private.cpp` has no direct `rpc_answer_*` branch, so request-history drop/cancel semantics are not part of this parser-only claim.
+
+Disposition: **no production delta**. Platform-core spec commit/blob is `930a6839e8f64fafab836e43080c485507d4a4a6@8e8c3376dd39b93ae50d8490aedceed8f947ba12`; canonical authored-only external contract commit/blob is `cf51ff32eb217bc2084b8f2cbf9c886eb2a588ec@3c69527d941fad9eddb8c264e695666ad3e404f9`; desktop contract mirror commit is `314b0b90fa96efe492fd3785e141a0d1390646d3` with the same byte-identical contract blob. Contracts cover exact 4-byte zero-field objects, exact 20-byte Dropped layout/offsets, signed i64/i32/i32 extremes, unknown constructor, every truncation cut, and trailing bytes; they remain not run.
+
+Historical request drop/cancel scheduling and arbitrary request mutation, connection scheduling, auth-key binding/persistence, gzip, complete difference/differenceSlice decoding/application, broader source/legal closure, Stage-B executable evidence, and independent release ACCEPT remain outside this wire-only closure or open.
+
+No GitHub Actions/status/check query or trigger, build, typecheck, lint, schema validator, generator, unit/contract/integration/E2E test, package, deployment, installation, or runtime acceptance was performed.

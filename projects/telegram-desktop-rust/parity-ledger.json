@@ -17937,12 +17937,20 @@
         "platform-core-path:native/telegram-protocol/src/lib.rs@9229c83fa6b484a5af657ee37f0bd827fecdc28d",
         "desktop-implementation-commit:4257fc9c875526c4b49a1f3cfbbeec7cd5a3eb0f",
         "path:source/mahayana/mahayana-rs/providers/telegram-protocol/src/api.rs@77b9cc0a7d191ef9f197fb8fd718e29631197ddc",
-        "path:source/mahayana/mahayana-rs/providers/telegram-protocol/src/lib.rs@9229c83fa6b484a5af657ee37f0bd827fecdc28d"
+        "path:source/mahayana/mahayana-rs/providers/telegram-protocol/src/lib.rs@9229c83fa6b484a5af657ee37f0bd827fecdc28d",
+        "platform-core-round60-revalidation-spec-commit:930a6839e8f64fafab836e43080c485507d4a4a6",
+        "platform-core-round60-revalidation-spec-blob:8e8c3376dd39b93ae50d8490aedceed8f947ba12",
+        "platform-core-round60-external-contract-commit:cf51ff32eb217bc2084b8f2cbf9c886eb2a588ec",
+        "platform-core-path:native/telegram-protocol/tests/protocol_contract.rs@3c69527d941fad9eddb8c264e695666ad3e404f9",
+        "desktop-round91-contract-mirror-commit:314b0b90fa96efe492fd3785e141a0d1390646d3",
+        "path:source/mahayana/mahayana-rs/providers/telegram-protocol/tests/protocol_contract.rs@3c69527d941fad9eddb8c264e695666ad3e404f9",
+        "stage-a-round91-evidence:projects/telegram-desktop-rust/evidence/round91-mtproto-rpc-drop-answer-revalidation-20261101.md"
       ],
       "test_evidence": [
         "platform-core native/telegram-protocol/src/api.rs all-three-variant exact parse contract authored, not run",
         "platform-core native/telegram-protocol/src/api.rs unknown-constructor, truncation and trailing rejection contract authored, not run",
-        "desktop synchronized protocol contracts authored, not run"
+        "desktop synchronized protocol contracts authored, not run",
+        "round91 canonical/desktop external RpcDropAnswer result-boundary contracts authored, not run"
       ],
       "target_commit": "4257fc9c875526c4b49a1f3cfbbeec7cd5a3eb0f",
       "workflow_run": null,
@@ -18061,7 +18069,7 @@
       "acceptance_reviewer": null,
       "reviewer": null,
       "license_and_provenance": "Behavioral responsibility is anchored to fixed-U telegramdesktop/tdesktop Telegram/SourceFiles/mtproto/scheme/mtproto.tl@76225965bfc794388db241f3f760db8ab79e84f8. session_private.cpp has no direct rpc_answer_* branch. The implementation is source-neutral Rust and copies no upstream C++ implementation.",
-      "notes": "Stage A implementation only. This row closes exact typed RpcDropAnswer wire decoding only. Outbound rpc_drop_answer request lifecycle and historical request mutation remain explicitly blocked/fail-closed. Global unknown/unread source-entry counts remain unchanged because this is a newly mapped responsibility slice within already-open fixed-U source coverage. Contracts are authored but not executed; validation_status=not-run and accepted=false.",
+      "notes": "Stage A implementation only. This row closes exact typed RpcDropAnswer wire decoding only. Outbound rpc_drop_answer request lifecycle and historical request mutation remain explicitly blocked/fail-closed. Global unknown/unread source-entry counts remain unchanged because this is a newly mapped responsibility slice within already-open fixed-U source coverage. Contracts are authored but not executed; validation_status=not-run and accepted=false. Round91 adjacent revalidation confirms the live parser already enforces exact zero-field 4-byte Unknown/DroppedRunning objects, exact 20-byte Dropped constructor+i64+i32+i32 layout, signed fixed-width field preservation, truncation fail-closed behavior and strict EOF; no production behavior delta was made. Canonical/desktop external response-boundary contracts were added and remain not run. Historical request drop/cancel scheduling and arbitrary request-history mutation remain outside this wire-only disposition.",
       "test_execution_evidence": [],
       "validation_status": "not-run",
       "accepted": false
