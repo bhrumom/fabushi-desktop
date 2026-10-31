@@ -76,8 +76,8 @@ entries（61,606 blobs、2,241 directories）。根输入 blob 已按该 subject
 重读并写入 lock：`package.json`=`5e468c9625b7670af23096df4588fd5e066c58a8`、
 `pnpm-lock.yaml`=`df897f3361f5968912f27b31971a60c08a1132b4`、
 `pnpm-workspace.yaml`=`32ce4d83de4aac6a1e3665baba09a3aa9582960c`；
-`.gitmodules` 仍不存在。该 identity 取代 `2c157ed…/3fb582…` 成为当前
-discovery reference，但不提升 source authority，不使旧 inventory/closure
+`.gitmodules` 仍不存在。该 identity 当时取代 `2c157ed…/3fb582…` 成为 discovery
+reference，但不提升 source authority，不使旧 inventory/closure
 可复用，也不改变任何 global flag；必须针对新 exact subject 取得 Actions
 inventory、依赖闭包、LFS/完整性及 evidence envelope。
 
@@ -115,6 +115,15 @@ blob identities 与上一 candidate 相同，`.gitmodules` 仍不存在。该 ca
 已同步写入 `upstream.lock.json`，但仍是 discovery-only；不得复用旧
 inventory、依赖闭包、LFS/完整性或 Actions provenance，亦不得提升任何
 authority 或 global flag。
+
+2026-10-31T04:08:46Z 的再次只读核对发现 OpenClaw `main` 已漂移到
+commit=`510e1687e965c1a5e2c372f6622704c88448fb5b`、root tree
+`8260de46bfdd6ac1a78369ebf2343cb255de20e5`；递归 tree 未截断，共 63,877
+entries（61,636 blobs、2,241 directories）。该 exact subject 的根输入
+blob identities 与上一 candidate 相同，`.gitmodules` 仍不存在。该 identity
+已同步写入 `upstream.lock.json` 的 `live_candidate`，但仍是 discovery-only；
+不得复用旧 inventory、依赖闭包、LFS/完整性或 Actions provenance，亦不得提升
+任何 authority 或 global flag。
 
 ## 5. 机器记录的初始化与终态
 

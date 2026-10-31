@@ -94,9 +94,9 @@ inventory 的未经重核结论；需在同一 exact subject 上重新生成 inv
 provenance。
 
 2026-10-31 当前治理快照以 `upstream.lock.json` 的 discovery candidate 为准：
-OpenClaw `main` commit=`2c157ed06dff5032da1093cbb6745efeff2b6f33`、tree
-`3fb582f6a1299daa74446ef001cb7cb4fd3c2270`，递归 tree 未截断，共 63,740
-entries（61,499 blobs、2,241 directories）。它 supersede 以上更早的 live
+OpenClaw `main` commit=`510e1687e965c1a5e2c372f6622704c88448fb5b`、tree
+`8260de46bfdd6ac1a78369ebf2343cb255de20e5`，递归 tree 未截断，共 63,877
+entries（61,636 blobs、2,241 directories）。它 supersede 以上更早的 live
 候选作为当前引用，但仍未取得 exact-subject Actions inventory、依赖闭包、
 LFS/完整性、许可证和 evidence envelope；不得复用旧 candidate 的 closure，
 也不得提升任何 global flag。
@@ -117,8 +117,8 @@ inventory/shards/closure 不得复用或编辑性重标。
 `89734994c6c9d3572e2927be0cdae8d7da1998ca`、root tree
 `bcb3914c8418e2f92927dd3e60c635fc4345a858`；递归 tree API 返回
 `truncated=false`，共 63,519 条 tree entry（61,279 blobs、2,240 directories）。
-该结果仅保留为历史 discovery evidence；当前 identity 以本节后面的
-`2c157ed…/3fb582…` 为准，不能复用该 candidate 或更早 candidate 的旧
+该结果仅保留为历史 discovery evidence；当前 identity 以 `upstream.lock.json`
+及本节后面的 `510e168…/8260de…` 为准，不能复用该 candidate 或更早 candidate 的旧
 inventory、依赖闭包与 provenance。
 
 ### 4.2 当前 Fabushi 接线事实
@@ -129,6 +129,14 @@ inventory、依赖闭包与 provenance。
 - 当前 main 已有 Human 消息和 CallSession 接缝，不能照抄旧 owner inventory 中的“尚不存在”结论。
 - 外部 channel 存在 `connectors/channel_delivery.rs` 接缝，但其 default 是 `UnregisteredChannelDeliveryPort`；Host app 本次读取仍注入 `HostChannelDelivery::default()`。这不能证明任一 OpenClaw channel 已生产可用。
 - 当前 main 的 Browser/Memory/Plugins 等源码存在，不等于其已覆盖全部 OpenClaw 行为，也不等于取得当前 HEAD 的 packaged acceptance。
+
+2026-10-31T04:08:46Z 的再次只读核对发现 OpenClaw `main` 已漂移到
+commit=`510e1687e965c1a5e2c372f6622704c88448fb5b`、root tree
+`8260de46bfdd6ac1a78369ebf2343cb255de20e5`；递归 tree 未截断，共 63,877
+entries（61,636 blobs、2,241 directories）。根输入 identities 与上一候选
+相同，`.gitmodules` 仍不存在。该 candidate 仍是 discovery-only；不得复用
+旧 inventory、依赖闭包、LFS/完整性、许可证或 Actions provenance，必须对该
+exact subject 重新取得完整 inventory、依赖闭包和 evidence envelope。
 
 这些是只读源码观察。未在本次执行任何构建、测试或产品验收。
 
