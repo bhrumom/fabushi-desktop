@@ -2762,7 +2762,7 @@
       "integration": {
         "consumer": "No production consumer for the historical ACP dispatch-policy contract; source/host/src/extensions/transcript/production_runtime.rs consumes a separate Host turn lease/watchdog path",
         "entrypoint": "source/host/src/runner/mod.rs::SandAutoReviewDecision (policy-shaped helper) and source/host/src/extensions/transcript/production_runtime.rs::settle_routed_turn (separate runtime path)",
-        "owner": "source/host/src/runner/mod.rs",
+        "owner": "none: no production ACP policy/settlement owner selected",
         "producer": "No production ACP dispatch-policy producer is wired; OCRM-AGENT-O11/O12 are contract fixtures"
       },
       "invariants": [
@@ -2774,7 +2774,7 @@
         "OCRM-AGENT-O11",
         "OCRM-AGENT-O12"
       ],
-      "owner_decision": "Implement ACP policy and turn settlement watchdog in runner",
+      "owner_decision": "Select the canonical ACP handshake/transport owner and settlement watchdog contract before implementation; existing Runner lease helpers are not ACP wiring",
       "postconditions": [
         "Settlement receipt logged; zombie attempts terminated"
       ],
@@ -2796,7 +2796,7 @@
       "responsibility_kind": "business-runtime",
       "reviewer": "xuyao@ombhrum.com",
       "risk": "Medium; guarantees cleanup of deadlocked or orphaned agent processes",
-      "selected_owner": "source/host/src/runner/mod.rs",
+      "selected_owner": "unselected pending ACP policy architecture decision",
       "source_refs": [
         {
           "blob_sha": "5cbf002ee4ad1c9e2529417ec4b3d054a73e69fb",
@@ -2818,8 +2818,8 @@
       },
       "target": {
         "language": "Rust",
-        "path": "source/host/src/runner/mod.rs",
-        "symbol": "SandAutoReviewDecision"
+        "path": "unselected pending ACP policy owner",
+        "symbol": "not selected; Runner lease helpers are partial evidence only"
       },
       "tests": [
         "source/host/tests/openclaw_agent_turn_contract.rs::test_ocrm_agent_o11_runner_settlement_receipt",
@@ -2854,7 +2854,7 @@
       "integration": {
         "consumer": "No production caller consumes ContextWindowTracker::check_compaction; production prompt code reads persisted compaction epochs through HostRunnerComposition instead",
         "entrypoint": "source/host/src/runner/conversation_state.rs::ContextWindowTracker",
-        "owner": "source/host/src/runner/mod.rs",
+        "owner": "none: no production context-compaction owner selected",
         "producer": "No production context-compaction or tool-schema producer is wired; OCRM-AGENT-O09/O10 use contract-only logic"
       },
       "invariants": [
@@ -2866,7 +2866,7 @@
         "OCRM-AGENT-O09",
         "OCRM-AGENT-O10"
       ],
-      "owner_decision": "Integrate ContextWindowTracker in host runner",
+      "owner_decision": "Identify the production compaction producer and prompt/turn consumer before implementation; persisted compaction epochs and the contract tracker are partial evidence only",
       "postconditions": [
         "Compacted summary replaces historical message slice"
       ],
@@ -2888,7 +2888,7 @@
       "responsibility_kind": "business-runtime",
       "reviewer": "xuyao@ombhrum.com",
       "risk": "Medium; keeps session context within LLM window limits",
-      "selected_owner": "source/host/src/runner/mod.rs",
+      "selected_owner": "unselected pending context-compaction architecture decision",
       "source_refs": [
         {
           "blob_sha": "43601859d6ee9f015eb96a60111106d0d6026578",
@@ -2910,8 +2910,8 @@
       },
       "target": {
         "language": "Rust",
-        "path": "source/host/src/runner/mod.rs",
-        "symbol": "ContextWindowTracker"
+        "path": "unselected pending context-compaction owner",
+        "symbol": "not selected; ContextWindowTracker has no production caller"
       },
       "tests": [
         "source/host/tests/openclaw_agent_turn_contract.rs::test_ocrm_agent_o09_context_window_compaction_trigger",
@@ -14815,7 +14815,7 @@
       "integration": {
         "consumer": "No production work-admission/archive/review consumer identified; ProductionSessionWorkers is used for general session storage but does not expose this lifecycle contract",
         "entrypoint": "source/host/src/extensions/session/production.rs",
-        "owner": "source/host/src/extensions/session/production.rs",
+        "owner": "none: no production session work-admission owner selected",
         "producer": "No production work-admission/archive transition producer identified"
       },
       "invariants": [
@@ -14825,7 +14825,7 @@
       "oracle_ids": [
         "OCRM-SESSION-O06"
       ],
-      "owner_decision": "Enforce session work admission and archive gating in production.rs",
+      "owner_decision": "Identify the owning workboard/task lifecycle and terminal review consumer before implementation; ProductionSessionWorkers storage alone is not work-admission wiring",
       "postconditions": [
         "Work admitted for active sessions; archived sessions return error"
       ],
@@ -14849,7 +14849,7 @@
       "responsibility_kind": "business-runtime",
       "reviewer": "xuyao@ombhrum.com",
       "risk": "Low; ensures work is only performed on active unarchived sessions",
-      "selected_owner": "source/host/src/extensions/session/production.rs",
+      "selected_owner": "unselected pending session work-admission architecture decision",
       "source_refs": [
         {
           "blob_sha": "db33391e3300f6077a3d14cb5977fa0116ec962c",
@@ -14937,8 +14937,8 @@
       },
       "target": {
         "language": "Rust",
-        "path": "source/host/src/extensions/session/production.rs",
-        "symbol": "production"
+        "path": "unselected pending session work-admission owner",
+        "symbol": "not selected; session storage is partial evidence only"
       },
       "tests": [
         "source/host/tests/openclaw_sessions_and_config_contract.rs::test_ocrm_session_o06_work_admission_and_archive"
@@ -26174,7 +26174,7 @@
       "integration": {
         "consumer": "No production plugin installer/discovery consumer identified; source/host/tests/openclaw_plugins_contract.rs is the only caller of the bundle-manifest helpers",
         "entrypoint": "source/host/src/extensions/plugins/bundle_manifest.rs::parse_clawhub_plugin_spec/verify_archive_limits/verify_sha256_integrity",
-        "owner": "source/host/src/extensions/plugins/bundle_manifest.rs",
+        "owner": "none: no production plugin bundle owner selected",
         "producer": "No production bundle/archive producer is wired; ProductionHostExtensions registers capability metadata only"
       },
       "invariants": [
@@ -26184,7 +26184,7 @@
       "oracle_ids": [
         "OCRM-PLUGINS-MANIFEST-O01"
       ],
-      "owner_decision": "Native implementation in bundle_manifest under plugins extension",
+      "owner_decision": "Select the existing plugin install/activation ingress and archive custody owner before implementation; bundle_manifest helpers are not a production ingress",
       "postconditions": [
         "Manifest parsed according to format; archive limits and integrity checksum verified"
       ],
@@ -26212,7 +26212,7 @@
       "responsibility_kind": "business-runtime",
       "reviewer": "xuyao@ombhrum.com",
       "risk": "High; archive zip bombs or corrupt manifests crash extension discovery or permit arbitrary bundle loading",
-      "selected_owner": "source/host/src/extensions/plugins/bundle_manifest.rs",
+      "selected_owner": "unselected pending plugin bundle architecture decision",
       "source_refs": [
         {
           "blob_sha": "c861447e9b565a1920a1707165326bb6543aac7a",
@@ -26495,8 +26495,8 @@
       },
       "target": {
         "language": "Rust",
-        "path": "source/host/src/extensions/plugins/bundle_manifest.rs",
-        "symbol": "PluginBundleFormat"
+        "path": "unselected pending plugin bundle owner",
+        "symbol": "not selected; bundle helpers are test-only evidence"
       },
       "tests": [
         "source/host/tests/openclaw_plugins_contract.rs::test_ocrm_plugins_bundle_manifest",
