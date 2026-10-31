@@ -38,6 +38,16 @@ responsibilities and are not project-level RTM rows. The RTM contains no
 responsibility ID absent from the ledger, so this exception is intentional and
 does not create a dangling project crosswalk.
 
+The requirement side has the same explicit boundary. Twelve task-local IDs
+(`OCRM-P1-F01` through `OCRM-P1-F08` and `OCRM-P1-AC02` through
+`OCRM-P1-AC05`) are absent from the 48 project RTM row IDs, and all twelve are
+present in `management/tasks/P1-crabbox-worker-owner.md`. All project-level
+requirement IDs referenced by ledger responsibilities resolve to project RTM
+rows; no RTM responsibility ID resolves outside the ledger. Task-local IDs and
+responsibilities therefore remain auditable through their owning P1 task, but
+cannot independently produce project-level verified/accepted state or a
+completion flag.
+
 The ledger contains 1,430 unique `source_refs` path/blob pairs. Every pair is
 present in the fixed-baseline inventory shards bound to the implementation
 subject above. This proves source-reference identity consistency only; it does
