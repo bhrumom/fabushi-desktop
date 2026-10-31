@@ -1156,3 +1156,24 @@ Ledger adds `TDRP-R9-MTPROTO-MSG-DETAILED-INFO-WIRE-001`; coverage becomes
 connection scheduling/racing/send retry, temporary/permanent auth-key binding/expiry/persistence/teardown,
 gzip, complete difference/differenceSlice decoding/application, broader source/legal closure and Stage-B executable
 evidence remain open/fail-closed. No executable validation was performed.
+
+
+### Round 86 final source-level compliance
+
+Platform-core `d6fd206df4b71689d74dc5a5e0b9b3a82b9a6e3c` / final spec blob
+`5afa9a228f9d5983e80747d12b355ffa85b0b44e` records source-level R1-R7 and AC-1-AC-6 compliance for the
+fixed-U `msg_detailed_info#276d3ec6 msg_id:long answer_msg_id:long bytes:int status:int` wire responsibility.
+Canonical production `api.rs/tl.rs/lib.rs` remain
+`ebfb3670b5cd097b9ce288782c7954f5cfe9fc43` /
+`89256ab35184b6dc06a095ab34abb9f44e95a264` /
+`abab39e42f100972484191f0e52e9edd9b88c6cf` with no behavior delta. Canonical/desktop authored contract
+blob remains `d1d4ed680d297b778516ec52d3b3746fe9687135`. The desktop ledger records
+`TDRP-R9-MTPROTO-MSG-DETAILED-INFO-WIRE-001` as
+`implemented / validation_status=not-run / accepted=false`, coverage
+`96 / 16172 unknown / 16145 unread / 0 omitted`.
+
+Exact signed 8/8/4/4 field widths and strict EOF are isolated from `requestsAcked`, bad-time recovery,
+`_receivedMessageIds` history, ack/resend application and arbitrary request-history semantics. Connection scheduling,
+temporary/permanent auth-key binding/expiry/persistence/teardown, gzip, complete difference/differenceSlice
+decoding/application, broader fixed-U source/legal closure, Stage-B executable evidence and independent release ACCEPT
+remain open/fail-closed. No executable validation was performed.

@@ -24106,7 +24106,9 @@
         "desktop-sync-commit:1d82ac67b4a86f1fd8b0584cbf8b76fb9252de2a",
         "path:source/mahayana/mahayana-rs/providers/telegram-protocol/src/api.rs@ebfb3670b5cd097b9ce288782c7954f5cfe9fc43",
         "path:source/mahayana/mahayana-rs/providers/telegram-protocol/src/lib.rs@abab39e42f100972484191f0e52e9edd9b88c6cf",
-        "path:source/mahayana/mahayana-rs/providers/telegram-protocol/tests/protocol_contract.rs@d1d4ed680d297b778516ec52d3b3746fe9687135"
+        "path:source/mahayana/mahayana-rs/providers/telegram-protocol/tests/protocol_contract.rs@d1d4ed680d297b778516ec52d3b3746fe9687135",
+        "platform-core-spec-compliance-commit:d6fd206df4b71689d74dc5a5e0b9b3a82b9a6e3c",
+        "platform-core-spec-compliance-blob:5afa9a228f9d5983e80747d12b355ffa85b0b44e"
       ],
       "test_evidence": [
         "canonical and desktop tracked authored-only contracts cover exact 28-byte layout, signed i64/i64/i32/i32 extremes, wrong constructor, truncation at constructor/each field boundary, trailing bytes and exact EOF; not run"
@@ -24227,7 +24229,7 @@
       "acceptance_reviewer": null,
       "reviewer": null,
       "license_and_provenance": "Behavioral responsibility is anchored to fixed-U telegramdesktop/tdesktop Telegram/SourceFiles/mtproto/scheme/mtproto.tl@76225965bfc794388db241f3f760db8ab79e84f8 and shipping Telegram/SourceFiles/mtproto/session_private.cpp@13cbc76ec723386027b5b4dcac79999b791c4614. Implementation is source-neutral Rust and copies no upstream C++ implementation.",
-      "notes": "Stage A implementation bookkeeping only. Remote source review confirms existing parse_msg_detailed_info/TlReader already satisfy exact fixed-U constructor, signed i64/i64/i32/i32 field widths, truncation and trailing validation, so no production behavior change was made. Durable spec and authored-only contracts were added and mirrored but not executed; validation_status=not-run and accepted=false. requestsAcked, received-message history, resend/ack application, connection scheduling, auth-key lifecycle, gzip and complete difference decoding remain open/fail-closed. Final source-level compliance will be recorded after platform spec readback; executable validation remains not-run.",
+      "notes": "Stage A implementation bookkeeping only. Remote source review confirms existing parse_msg_detailed_info/TlReader already satisfy exact fixed-U constructor, signed i64/i64/i32/i32 field widths, truncation and trailing validation, so no production behavior change was made. Durable spec and authored-only contracts were added and mirrored but not executed; validation_status=not-run and accepted=false. requestsAcked, received-message history, resend/ack application, connection scheduling, auth-key lifecycle, gzip and complete difference decoding remain open/fail-closed. Final source-level compliance is recorded at platform-core commit d6fd206df4b71689d74dc5a5e0b9b3a82b9a6e3c/spec blob 5afa9a228f9d5983e80747d12b355ffa85b0b44e; executable validation remains not-run.",
       "test_execution_evidence": [],
       "validation_status": "not-run",
       "accepted": false,
