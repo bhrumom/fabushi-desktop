@@ -68,9 +68,12 @@ verification remain open and keep `implementation=implementing`,
    - **Oracles**: `OCRM-CHANNEL-O11`, `OCRM-CHANNEL-O12`.
 
 `ChannelAclGate` now owns normalized allowlist/denylist evaluation, including
-the deny-overrides-allow rule and `*` wildcard. This closes only the pure ACL
-sub-contract; the inbound channel producer, security audit emission, and
-webhook HMAC replay-protection path remain unimplemented and unwired.
+the deny-overrides-allow rule and `*` wildcard. The connector also exposes
+strict standard HMAC-SHA256 verification with constant-time comparison. This
+closes only pure security helpers; the inbound channel producer, security
+audit emission, replay nonce/receipt storage, and production webhook path
+remain unwired. The legacy contract fixture's `secret || payload` digest is
+not treated as HMAC evidence.
 
 ---
 

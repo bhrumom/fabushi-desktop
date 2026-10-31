@@ -2,6 +2,8 @@ use std::collections::{HashMap, HashSet};
 use std::sync::{Arc, RwLock};
 
 use crate::extensions::transcript::channel_delivery_unregistered_error::SandChannelDeliveryUnregisteredError;
+use sha2::{Digest, Sha256};
+use subtle::ConstantTimeEq;
 
 pub const CHANNEL_MAX_MESSAGE_CHARS: usize = 4_000;
 
@@ -112,6 +114,64 @@ impl ChannelAclGate {
 
 fn normalize_channel_acl_value(value: &str) -> String {
     value.trim().to_ascii_lowercase()
+}
+
+/// Verifies a webhook's standard HMAC-SHA256 signature. Invalid encoding and
+/// mismatched lengths fail closed, and the final comparison is constant-time.
+pub fn verify_webhook_hmac_sha256(
+    payload: &[u8],
+    secret: &str,
+    expected_hex: &str,
+) -> bool {
+    let Some(expected) = decode_sha256_hex(expected_hex) else {
+        return false;
+    };
+
+    const BLOCK_SIZE: usize = 64;
+    let mut key = secret.as_bytes().to_vec();
+    if key.len() > BLOCK_SIZE {
+        key = Sha256::digest(&key).to_vec();
+    }
+    key.resize(BLOCK_SIZE, 0);
+
+    let mut inner_pad = [0x36_u8; BLOCK_SIZE];
+    let mut outer_pad = [0x5c_u8; BLOCK_SIZE];
+    for (index, byte) in key.iter().enumerate() {
+        inner_pad[index] ^= byte;
+        outer_pad[index] ^= byte;
+    }
+
+    let mut inner = Sha256::new();
+    inner.update(inner_pad);
+    inner.update(payload);
+    let inner_digest = inner.finalize();
+
+    let mut outer = Sha256::new();
+    outer.update(outer_pad);
+    outer.update(inner_digest);
+    let actual = outer.finalize();
+    actual.as_slice().ct_eq(&expected).into()
+}
+
+fn decode_sha256_hex(value: &str) -> Option<[u8; 32]> {
+    let bytes = value.as_bytes();
+    if bytes.len() != 64 {
+        return None;
+    }
+    let mut decoded = [0_u8; 32];
+    for (index, pair) in bytes.chunks_exact(2).enumerate() {
+        decoded[index] = (hex_nibble(pair[0])? << 4) | hex_nibble(pair[1])?;
+    }
+    Some(decoded)
+}
+
+fn hex_nibble(value: u8) -> Option<u8> {
+    match value {
+        b'0'..=b'9' => Some(value - b'0'),
+        b'a'..=b'f' => Some(value - b'a' + 10),
+        b'A'..=b'F' => Some(value - b'A' + 10),
+        _ => None,
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
