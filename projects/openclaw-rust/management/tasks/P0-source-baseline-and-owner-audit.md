@@ -320,6 +320,16 @@ discovery-only subject; prior inventory, dependency/LFS closure, semantic
 reads, and Actions provenance are not reusable, and no authority or completion
 flag changes.
 
+2026-10-31T11:41:30Z drift amendment: read-only GitHub checks resolved the
+current OpenClaw `main` to commit=`55c411df82200a801d790d8d1fe5ad862f79d33f`,
+tree=`0ab0a51751fb0c9cb3749fb477039b16e5772db8`, with an untruncated recursive
+tree of 64,068 entries (61,827 blobs, 2,241 directories, 0 gitlinks). The
+commit is `fix(ci): settle skill reader descendant animations (#189235)`.
+Root dependency/license identities remain unchanged, but this is a fresh
+discovery-only subject; prior inventory, dependency/LFS closure, semantic
+reads, and Actions provenance are not reusable, and no authority or completion
+flag changes.
+
 2026-10-31T11:40:24Z drift amendment: read-only GitHub checks resolved the
 current OpenClaw `main` to commit=`70da3265b8bf09e25acb1a14ce246982520a1140`,
 tree=`b8afd36d3c8d722dbab9a05781605fd79d2d5a50`, with an untruncated recursive

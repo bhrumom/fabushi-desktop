@@ -620,6 +620,17 @@ blob identities 仍未变化；该 exact subject 仍为 discovery-only，前一 
 复用。lock live candidate 已更新，固定 implementation subject、ledger 修订及
 全部 authority/completion flags 不变。
 
+2026-10-31T11:41:30Z 的只读远端复核发现 OpenClaw `main` 再推进到
+`55c411df82200a801d790d8d1fe5ad862f79d33f` / tree
+`0ab0a51751fb0c9cb3749fb477039b16e5772db8`。GitHub recursive-tree API 返回
+`truncated=false`，共 64,068 entries（61,827 blobs、2,241 directories、0
+gitlinks）；commit message 为 `fix(ci): settle skill reader descendant
+animations (#189235)`。根 package/lock/workspace/license/notice blob identities
+仍未变化；该 exact subject 仍为 discovery-only，前一 candidate 的 inventory、
+依赖闭包、LFS/integrity、语义阅读和 Actions provenance 均不得复用。lock live
+candidate 已更新，固定 implementation subject、ledger 修订及全部
+authority/completion flags 不变。
+
 2026-10-31T11:40:24Z 的只读远端复核发现 OpenClaw `main` 再推进到
 `70da3265b8bf09e25acb1a14ce246982520a1140` / tree
 `b8afd36d3c8d722dbab9a05781605fd79d2d5a50`。GitHub recursive-tree API 返回
