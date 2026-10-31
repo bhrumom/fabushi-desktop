@@ -117,6 +117,15 @@ lock-structure facts; they do not prove that the corresponding registry bytes
 were downloaded, that every integrity value resolves to the intended archive,
 or that native/optional/platform artifacts and licenses are closed.
 
+At `2026-10-31T12:29:42Z`, the 206 workspace importers were crosswalked through
+all `dependencies`, `devDependencies`, `optionalDependencies`, and
+`peerDependencies` entries. There are 270 local `link:` edges (35 dependency
+edges and 235 devDependency edges; no optional/peer local edges), targeting 21
+distinct workspace paths. Every local edge resolves to an importer in the
+exact second-document set: `invalid_edges=0`. This closes the lock's local
+workspace path relation, not the source import graph, generated/dynamic edges,
+registry archive bytes, or platform artifact closure.
+
 The exact tree contains 26 native/platform declaration inputs across
 `Cargo.toml`, `Cargo.lock`, `Package.swift`, `Package.resolved`, `Gemfile`,
 `Gemfile.lock`, `build.gradle.kts`, and `gradle.properties`, totaling 323,239
