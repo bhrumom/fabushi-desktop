@@ -849,3 +849,35 @@ Arbitrary request history, connection scheduling/racing/send retry, temporary/pe
 binding/expiry/persistence/teardown, gzip, complete difference/differenceSlice decoding/application, broader fixed-U
 source/legal closure, Stage-B executable evidence and independent release ACCEPT remain open/fail-closed.
 No executable validation was performed.
+
+
+### Round 84 — msgs_state_info exact typed parser / binary TL string
+
+Fixed U remains `f985723b552b30fe1c17d377d57f44e61a15a8c4`. Fixed-U
+`msgs_state_info#04deb57d req_msg_id:long info:string` is shipping-reachable in
+`SessionPrivate::handle`, where `MTPMsgsStateInfo::read(from,end)` performs typed wire decoding before
+`_stateAndResendRequests` lookup and `handleMsgsStates` application.
+
+Remote source review confirms the existing canonical `telegram-protocol` owner already closes the independent
+wire boundary with no behavior delta:
+`api.rs@ebfb3670b5cd097b9ce288782c7954f5cfe9fc43` defines constructor `0x04deb57d`,
+`MsgsStateInfo` and `parse_msgs_state_info`; `tl.rs@89256ab35184b6dc06a095ab34abb9f44e95a264`
+owns TL bytes/string short/long framing, length limits, padding and truncation; and
+`lib.rs@abab39e42f100972484191f0e52e9edd9b88c6cf` exports the same parser. The fixed-U `info` value is
+binary state data, so preserving it through `read_bytes()` rather than UTF-8 `read_string()` is intentional.
+
+Spec-first platform commit `41fc75c372bdb818c21c21af6fcc60958bb7974b` /
+spec blob `d90260a94d2bc04f2d487614cc4806b819e126ee` records the no-production-delta disposition.
+Canonical authored-only contract commit `ae5b7a6f6b6669fe9069d7371b1b4a2acd76e182` and desktop sync
+`ae630cf55cb611f9e400b8c5a4bbbbad20654387` share contract blob
+`efaa8ac407af5bca430855fbb69c862f9ce793b0`. Authored cases cover signed id preservation,
+binary non-UTF8 short-form state, empty and 254-byte long-form state, wrong constructor, truncation,
+missing padding, trailing bytes and exact EOF; they were not run.
+
+Ledger adds `TDRP-R9-MTPROTO-MSGS-STATE-INFO-WIRE-001`; coverage becomes
+`94 / 16172 unknown / 16145 unread / 0 omitted`, and the responsibility is
+`implemented / validation_status=not-run / accepted=false`.
+
+Arbitrary request history/application, connection scheduling/racing/send retry, auth-key binding/persistence,
+gzip, complete difference/differenceSlice decoding/application, broader source/legal closure and Stage-B executable
+evidence remain open/fail-closed. No executable validation was performed.
