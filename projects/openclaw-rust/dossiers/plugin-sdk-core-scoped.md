@@ -10,11 +10,12 @@
   4. `OCRM-RESP-PLUGIN-SDK-TOOL-RUNTIME-001`: Tool Schema Definition, Command Dispatch Facade, Realtime Speech/Browser Hook Bridge.
 
 ## 2. Producer -> Owner -> Storage -> Consumer Traces
-1. **Channel Runtime Pipeline**:
+1. **Channel Runtime Pipeline (intended contract trace; production reachability pending)**:
    - `Producer`: Inbound channel messages and streaming events from external gateways or plugins.
    - `Owner`: `source/host/src/extensions/plugin_sdk/channel_runtime.rs` (`ChannelConfig`, `ChannelReplayGuard`).
    - `Storage`: In-memory dedupe map with TTL expiration and atomic in-flight claim set.
-   - `Consumer`: Gateway ingress/egress routers and outbound dispatch pipelines.
+   - `Consumer`: Intended Gateway ingress/egress routers and outbound dispatch
+     pipelines; the current checkout does not prove these callers.
 2. **Approval Security Pipeline**:
    - `Producer`: Plugin actions requiring elevated permissions or manual user approval.
    - `Owner`: `source/host/src/extensions/plugin_sdk/approval_security.rs` (`NativeApprovalControlRegistry`, `validate_outbound_url`).
@@ -151,4 +152,20 @@ the locked `src/plugin-sdk/allow-from.ts` oracle. This removes a duplicate raw
 comparison in the channel-runtime owner; it does not register a provider,
 create channel delivery wiring, or change the ledger's `wiring`/`verification`
 state.
+
+## 9. Channel runtime production reachability audit (2026-10-31)
+
+The current checkout was searched for `ChannelConfig`, `ChannelReplayGuard`,
+`ChannelReplayGuard::claim`, `calculate_retry_delay`, and
+`normalize_recipient_list`. The only callers of the Plugin SDK channel runtime
+types are in `source/host/tests/openclaw_plugin_sdk_core_contract.rs`.
+Existing channel delivery, inbound connector, and outbound dispatch owners do
+not call this module. Their existence is not equivalent wiring because the
+Plugin SDK runtime owns a distinct replay-claim/commit lifecycle and policy
+contract.
+
+The parity integration now records no trusted production event producer or
+consumer. The implementation remains a standalone Rust contract slice with
+in-memory TTL state; it remains `wiring=not-wired`, `verification=not-run`,
+and `acceptance=pending` under `BL-PLUGIN-SDK-CHANNEL-WIRING-001`.
 

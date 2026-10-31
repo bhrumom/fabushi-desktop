@@ -25261,10 +25261,10 @@
       ],
       "id": "OCRM-RESP-PLUGIN-SDK-CHANNEL-RUNTIME-001",
       "integration": {
-        "consumer": "source/host/src/extensions/plugin_sdk/channel_runtime.rs",
+        "consumer": "No production channel consumer identified; ChannelConfig and ChannelReplayGuard are consumed only by source/host/tests/openclaw_plugin_sdk_core_contract.rs",
         "entrypoint": "source/host/src/extensions/plugin_sdk/channel_runtime.rs::ChannelReplayGuard::claim",
         "owner": "source/host/src/extensions/plugin_sdk/channel_runtime.rs",
-        "producer": "source/host/src/extensions/plugin_sdk/channel_runtime.rs"
+        "producer": "No production inbound/outbound event producer identified for this Plugin SDK runtime"
       },
       "invariants": [
         "Allowlist takes precedence over wildcards; in-flight claims prevent duplicate processing"
