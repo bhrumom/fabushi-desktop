@@ -9,7 +9,7 @@
     "unknown": 16172,
     "unread": 16145,
     "omitted": 0,
-    "responsibilities_total": 87,
+    "responsibilities_total": 88,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -21910,6 +21910,259 @@
       "validation_status": "not-run",
       "accepted": false,
       "id": "TDRP-R9-MTPROTO-SERVER-DH-PARAMS-WIRE-001",
+      "source_paths": [
+        "Telegram/SourceFiles/mtproto/scheme/mtproto.tl@76225965bfc794388db241f3f760db8ab79e84f8",
+        "Telegram/SourceFiles/mtproto/details/mtproto_dc_key_creator.cpp@13c57454f14b814b5923ea253048fb881ad8cf03"
+      ]
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+      "source_path": "Telegram/SourceFiles/mtproto/scheme/mtproto.tl",
+      "source_blob_sha": "76225965bfc794388db241f3f760db8ab79e84f8",
+      "source_kind": "schema",
+      "module_id": "tdesktop.mtproto.dh-gen-result-wire",
+      "responsibility_id": "TDRP-R9-MTPROTO-DH-GEN-RESULT-WIRE-001",
+      "source_symbols": [
+        "dh_gen_ok#3bcbf734 nonce:int128 server_nonce:int128 new_nonce_hash1:int128 = Set_client_DH_params_answer",
+        "dh_gen_retry#46dc1fb9 nonce:int128 server_nonce:int128 new_nonce_hash2:int128 = Set_client_DH_params_answer",
+        "dh_gen_fail#a69dae02 nonce:int128 server_nonce:int128 new_nonce_hash3:int128 = Set_client_DH_params_answer",
+        "DcKeyCreator::dhClientParamsAnswered / MTPset_client_DH_params_answer",
+        "AuthKeyHandshake::receive_dh_gen / parse_dh_gen_result"
+      ],
+      "capability_ids": [
+        "CAP-TELEGRAM-MTPROTO-DH-GEN-RESULT-WIRE"
+      ],
+      "dependency_ids": [
+        "telegram-protocol::AuthKeyHandshake",
+        "telegram-protocol::TlReader"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/evidence/round78-mtproto-dh-gen-result-wire-20261101.md",
+      "behavior_contract": "The canonical telegram-protocol/AuthKeyHandshake owner must discriminate fixed-U dh_gen_ok#3bcbf734, dh_gen_retry#46dc1fb9 and dh_gen_fail#a69dae02 from the constructor before consuming fields; for a recognized variant it must validate the active nonce/server_nonce pair, consume exactly one int128 new_nonce_hash, authenticate SHA1(new_nonce || tag || auth_key_aux_hash_le)[4..20] with tag 1/2/3 respectively, and reject truncation or trailing bytes. AuthKeyHandshake::receive_dh_gen may establish on OK, perform only its existing handshake-local AwaitingDhGen retry on RETRY, or reject on FAIL. This slice does not own temporary/permanent binding, expiry, persistence, teardown, connection scheduling, multi-request history, gzip, or complete updates difference lifecycle.",
+      "state_machine": "AwaitingDhGen -> authenticated plaintext response -> constructor-first parse_dh_gen_result -> exact Ok/Retry/Fail hash authentication -> receive_dh_gen: OK consumes prepared key and becomes Complete; RETRY replaces only the prepared client-DH request and remains AwaitingDhGen; FAIL returns DhGenRejected; malformed/unknown/mismatched/trailing input fails closed before transition.",
+      "side_effects": [
+        "Hardens the existing canonical dh_gen union parser so unknown constructors fail before field consumption",
+        "Preserves constant-time tag-specific new_nonce hash authentication",
+        "Preserves the existing AuthKeyHandshake-local retry transition without adding a broader lifetime/scheduler owner",
+        "Authors canonical and desktop-mirrored positive/negative contracts without executing them in Stage A"
+      ],
+      "failure_cases": [
+        "A four-byte unknown constructor is misclassified as nonce/hash truncation",
+        "A known constructor accepts truncated nonce/server_nonce/hash or trailing bytes",
+        "A variant accepts a new_nonce hash generated with another variant tag",
+        "Nonce/server_nonce mismatch is accepted",
+        "RETRY is expanded into persistence, key binding, connection scheduling, or multi-request history"
+      ],
+      "ui_disposition": "No UI change. This is exact MTProto auth-key handshake result parsing inside the existing embedded protocol owner.",
+      "non_ui_responsibilities": [
+        "Constructor-first Set_client_DH_params_answer union discrimination",
+        "Active nonce/server_nonce binding",
+        "Exact tag-specific new_nonce_hash1/2/3 authentication",
+        "Strict truncation and no-trailing validation",
+        "Handshake-local retry without broader key lifetime ownership"
+      ],
+      "platform_delta": "The source-neutral Rust AuthKeyHandshake already consumed and authenticated dh_gen responses. This slice makes constructor identity authoritative before fields and completes fixed-U three-variant negative contracts; no second parser/state machine or broader lifecycle owner is introduced.",
+      "existing_owner_candidates": [
+        "bhrumom/fabushi-platform-core:native/telegram-protocol/src/handshake.rs",
+        "bhrumom/fabushi-platform-core:native/telegram-protocol/src/lib.rs",
+        "source/mahayana/mahayana-rs/providers/telegram-protocol/src/lib.rs",
+        "source/mahayana/mahayana-rs/providers/telegram-protocol/tests/protocol_contract.rs"
+      ],
+      "existing_owner": "Canonical shared telegram-protocol AuthKeyHandshake/dh_gen parser with desktop tracked facade/contracts",
+      "rejected_existing_owners": [
+        "telegram-network/runtime: exact handshake TL result parsing already belongs to telegram-protocol",
+        "new auth-key lifetime owner: unnecessary for the existing AwaitingDhGen-local RETRY transition",
+        "desktop copied handshake core: rejected because the tracked desktop overlay intentionally mirrors only facade/contracts"
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "bhrumom/fabushi-platform-core:native/telegram-protocol/src/handshake.rs",
+        "bhrumom/fabushi-platform-core:native/telegram-protocol/src/lib.rs",
+        "bhrumom/fabushi-platform-core:native/telegram-protocol/tests/protocol_contract.rs",
+        "source/mahayana/mahayana-rs/providers/telegram-protocol/src/lib.rs",
+        "source/mahayana/mahayana-rs/providers/telegram-protocol/tests/protocol_contract.rs"
+      ],
+      "fabushi_target_symbols": [
+        "parse_dh_gen_result",
+        "DhGenResult",
+        "DH_GEN_OK_CONSTRUCTOR",
+        "DH_GEN_RETRY_CONSTRUCTOR",
+        "DH_GEN_FAIL_CONSTRUCTOR",
+        "AuthKeyHandshake::receive_dh_gen"
+      ],
+      "target_language": "Rust",
+      "language_rationale": "Exact MTProto handshake result parsing and its AwaitingDhGen state already belong to the existing canonical Rust telegram-protocol owner.",
+      "command_event_contracts": [
+        "dh_gen_ok + active nonces + hash(tag=1) + EOF -> DhGenResult::Ok -> existing EstablishedAuthKey transition",
+        "dh_gen_retry + active nonces + hash(tag=2) + EOF -> DhGenResult::Retry -> existing local client-DH regeneration; state remains AwaitingDhGen",
+        "dh_gen_fail + active nonces + hash(tag=3) + EOF -> DhGenResult::Fail -> DhGenRejected",
+        "unknown/truncated/mismatched/tag-wrong/trailing body -> typed HandshakeError before transition"
+      ],
+      "state_owner": "Existing AuthKeyHandshake owns AwaitingDhGen, active nonces, prepared client-DH material and the local retry transition; parse_dh_gen_result is a synchronous wire parser only.",
+      "lifecycle_owner": "Existing account-bound TelegramClientLease/runtime -> canonical AuthKeyHandshake production composition. Key binding/expiry/persistence and transport scheduling are outside this slice.",
+      "persistence_and_restart": "No persistence is introduced or mutated by this parser or the existing handshake-local RETRY transition.",
+      "concurrency_and_cancellation": "Pure synchronous parsing/transition inside the existing handshake call; no background task, scheduler, callback registry or historical request state is introduced.",
+      "security_boundary": "Unrecognized constructors fail before any fields are interpreted. Recognized variants remain bound to exact active nonces and constant-time tag-specific new_nonce hash authentication before any handshake transition.",
+      "network_service_dependencies": [
+        "Existing embedded Telegram MTProto plaintext auth-key handshake transport",
+        "fixed-U Set_client_DH_params_answer schema constructors"
+      ],
+      "service_owner": "Canonical embedded Telegram protocol/AuthKeyHandshake owner.",
+      "deployment_evidence": [],
+      "implementation_status": "implemented",
+      "coverage_disposition": "rewritten",
+      "blockers": [
+        "Stage B executable build/unit/contract/integration/packaged validation has not run.",
+        "Temporary/permanent auth-key binding, expiry enforcement, renewal, persistence and teardown remain open/fail-closed.",
+        "Connection scheduling/racing, plaintext send/retry/timeout and arbitrary wasSent/haveSent/_resendingIds/toSend/_sentContainers histories remain open/fail-closed.",
+        "gzip_packed bounded decompression and complete updates difference/differenceSlice decoding/application remain open/fail-closed.",
+        "Broader fixed-U source/legal/release closure remains open."
+      ],
+      "production_entrypoints": [
+        "existing AuthKeyHandshake::receive_dh_gen -> parse_dh_gen_result -> existing EstablishedAuthKey / handshake-local Retry / DhGenRejected transition",
+        "desktop tracked telegram-protocol public facade remains canonical; desktop contract mirror consumes the canonical exports without a second handshake core"
+      ],
+      "production_evidence": [
+        "platform-core-spec-commit:0c16a7c83a7e511484f5099399acb4c308aecb6c",
+        "platform-core-spec-blob:a43f4db8123abfcd2334fe49079b413e40c58ea6",
+        "platform-core-implementation-commit:5a5c6095d3e049de5d187b89c4942d7f3377ae00",
+        "platform-core-path:native/telegram-protocol/src/handshake.rs@87616f4b96a1775455da42b0bbed77711fb3c9f6",
+        "platform-core-contract-commit:39fce63bce58718727541ac9f18dbc258766d159",
+        "platform-core-path:native/telegram-protocol/tests/protocol_contract.rs@6710d6ef3fd915689792c68d69b3922b446c9bfa",
+        "desktop-sync-commit:965db14afa7104deae0fc63a76d2cc0df35d81fd",
+        "path:source/mahayana/mahayana-rs/providers/telegram-protocol/tests/protocol_contract.rs@6710d6ef3fd915689792c68d69b3922b446c9bfa",
+        "path:source/mahayana/mahayana-rs/providers/telegram-protocol/src/lib.rs@abab39e42f100972484191f0e52e9edd9b88c6cf"
+      ],
+      "test_evidence": [
+        "canonical and desktop tracked protocol contracts authored for all OK/RETRY/FAIL variants, four-byte unknown constructor, every truncation cut, nonce/server_nonce mismatch, wrong variant tag hash and trailing-byte rejection; not run"
+      ],
+      "target_commit": "965db14afa7104deae0fc63a76d2cc0df35d81fd",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Canonical Fabushi account + existing TelegramClientLease/runtime + shared telegram-protocol AuthKeyHandshake production composition",
+      "composition_slot": "Embedded Telegram MTProto auth-key dh_gen result parsing",
+      "capability_component": "Exact constructor-first fixed-U Set_client_DH_params_answer union parser/hash validation",
+      "variation_axes": [
+        "dh_gen_ok vs dh_gen_retry vs dh_gen_fail",
+        "valid vs unknown/truncated/mismatched/tag-wrong/trailing body"
+      ],
+      "shared_owner_contracts": [
+        "Existing AuthKeyHandshake",
+        "Existing telegram-protocol TlReader",
+        "Existing desktop tracked protocol facade/contracts",
+        "Existing Cargo path-dependency composition"
+      ],
+      "duplicate_root_check": "No second account, runtime, provider, transport, handshake core, auth-key lifetime owner, session registry, request history, decompression runtime, difference runtime, message store, UI root, sidecar, subprocess or Web wrapper was introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Not applicable",
+      "primary_navigation_target": "Existing Messages/Conversation navigation",
+      "collection_surface": "Existing ConversationList; no change",
+      "creation_flow": "Existing canonical conversation creation; no change",
+      "object_action_scope": "Not applicable",
+      "detail_section": "Not applicable",
+      "capability_surface": "Existing ConversationWorkspace through the same provider/runtime; no new surface",
+      "route_contract": "No new route.",
+      "search_scope": "Not applicable",
+      "search_provider": "Existing canonical Search owner; unchanged",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Unchanged.",
+      "search_local_remote_contract": "Not applicable.",
+      "responsive_disposition": "No UI change.",
+      "accessibility_contract": "No UI change.",
+      "keyboard_contract": "No UI change.",
+      "state_continuity_contract": "The same AuthKeyHandshake remains in AwaitingDhGen until an authenticated result is accepted; OK completes, RETRY replaces only prepared client-DH material while remaining AwaitingDhGen, and FAIL does not establish a key.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Existing Fabushi design system; no visual changes",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": null,
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "No new icon asset",
+      "avatar_contract": "No change",
+      "content_copy_keys": [],
+      "motion_contract": "No change",
+      "reduced_motion_contract": "No change",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "high",
+      "requirement_ids": [
+        "TDRP-R9-MTPROTO-DH-GEN-RESULT-WIRE-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-MTPROTO-DH-GEN-RESULT-WIRE-001",
+        "ORA-TDRP-MTPROTO-DH-GEN-HASH-TAG-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-MTPROTO-DH-GEN-CONSTRUCTOR-FIRST-001",
+        "INV-TDRP-MTPROTO-DH-GEN-NONCE-BOUND-001",
+        "INV-TDRP-MTPROTO-DH-GEN-HASH-TAG-001",
+        "INV-TDRP-MTPROTO-DH-GEN-RETRY-LOCAL-001"
+      ],
+      "unit_case_ids": [
+        "UNIT-TDRP-MTPROTO-DH-GEN-PARSE-001",
+        "UNIT-TDRP-MTPROTO-DH-GEN-FAIL-CLOSED-001"
+      ],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-MTPROTO-DH-GEN-RESULT-WIRE-001"
+      ],
+      "integration_case_ids": [],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [
+        "TEMP-TDRP-MTPROTO-DH-GEN-RETRY-LOCAL-001"
+      ],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "fault_recovery_case_ids": [],
+      "performance_case_ids": [],
+      "security_case_ids": [
+        "SEC-TDRP-MTPROTO-DH-GEN-UNKNOWN-CONSTRUCTOR-001",
+        "SEC-TDRP-MTPROTO-DH-GEN-NONCE-HASH-BINDING-001"
+      ],
+      "soak_case_ids": [],
+      "exploratory_charter_ids": [],
+      "regression_ids": [
+        "REG-TDRP-MTPROTO-DH-GEN-UNKNOWN-AS-TRUNCATION-001",
+        "REG-TDRP-MTPROTO-DH-GEN-WRONG-TAG-HASH-001"
+      ],
+      "release_gate_ids": [
+        "G-TRACEABILITY",
+        "G-COMPOSITION",
+        "G-SECURITY",
+        "G-EVIDENCE",
+        "G-RELEASE"
+      ],
+      "test_fixture_ids": [
+        "mtproto-dh-gen-three-variants-patterned"
+      ],
+      "test_environment_ids": [
+        "GitHub Actions Stage B matrix (not run)"
+      ],
+      "coverage_matrix_status": "pending",
+      "flake_status": "stable",
+      "release_gate_status": "pending",
+      "acceptance_reviewer": null,
+      "reviewer": null,
+      "license_and_provenance": "Behavioral responsibility is anchored to fixed-U telegramdesktop/tdesktop Telegram/SourceFiles/mtproto/scheme/mtproto.tl@76225965bfc794388db241f3f760db8ab79e84f8 and shipping DcKeyCreator::dhClientParamsAnswered in Telegram/SourceFiles/mtproto/details/mtproto_dc_key_creator.cpp@13c57454f14b814b5923ea253048fb881ad8cf03. The implementation is source-neutral Rust and copies no upstream C++ implementation.",
+      "notes": "Stage A implementation only. This row closes constructor-first exact dh_gen_ok/retry/fail result parsing, nonce binding and tag-specific new_nonce hash validation in the already-shipping AuthKeyHandshake path. The existing RETRY transition is representable entirely by the current AwaitingDhGen owner and is not expanded into temporary/permanent key binding/persistence or network scheduling. Contracts are authored but not executed; validation_status=not-run and accepted=false.",
+      "test_execution_evidence": [],
+      "validation_status": "not-run",
+      "accepted": false,
+      "id": "TDRP-R9-MTPROTO-DH-GEN-RESULT-WIRE-001",
       "source_paths": [
         "Telegram/SourceFiles/mtproto/scheme/mtproto.tl@76225965bfc794388db241f3f760db8ab79e84f8",
         "Telegram/SourceFiles/mtproto/details/mtproto_dc_key_creator.cpp@13c57454f14b814b5923ea253048fb881ad8cf03"

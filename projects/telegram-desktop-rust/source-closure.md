@@ -720,3 +720,40 @@ No GitHub Actions/status/check query or trigger, build, typecheck, lint, schema 
 ### Round 77 final source-level compliance
 
 Platform-core `8654e737a04900b6cac8c92660fa8a8b84b449bc` / spec blob `b9b0f486aa47071ad46ba4ff5c238cee4b2bbfce` records source-level R1-R9 and AC-1-AC-6 compliance for the constructor-first fixed-U `Server_DH_Params` parser. Canonical handshake/contracts are `ed9eda7732f4753b442de98ebf510b8a7558b823` / `a19c4a14d113e6c82fe3cc801f1764c555f26f76`; desktop contracts remain byte-identical and facade `abab39e42f100972484191f0e52e9edd9b88c6cf` remains unchanged. Ledger stays `implemented / not-run / accepted=false`, coverage `87 / 16172 unknown / 16145 unread / 0 omitted`. No executable validation was performed.
+
+
+### Round 78 — dh_gen_ok/retry/fail exact result/hash validation
+
+Fixed U remains `f985723b552b30fe1c17d377d57f44e61a15a8c4`. The shipping
+`DcKeyCreator::dhClientParamsAnswered` consumes fixed-U `dh_gen_ok#3bcbf734`,
+`dh_gen_retry#46dc1fb9` and `dh_gen_fail#a69dae02`. Existing
+`AuthKeyHandshake::receive_dh_gen / parse_dh_gen_result` already owned nonce binding,
+tag-specific `new_nonce_hash{1,2,3}` authentication, strict trailing validation, OK completion,
+handshake-local RETRY and FAIL rejection. The remaining exact-wire gap was discriminator ordering:
+nonce/server_nonce/hash were read before constructor matching, so a complete four-byte unknown constructor
+was misclassified as TL truncation.
+
+Spec-first platform commit `0c16a7c83a7e511484f5099399acb4c308aecb6c`
+(`docs/specs/telegram-mtproto-dh-gen-result-wire.md@a43f4db8123abfcd2334fe49079b413e40c58ea6`)
+defines the wire-only boundary. Canonical implementation commit
+`5a5c6095d3e049de5d187b89c4942d7f3377ae00` moves three-way constructor discrimination before
+all common fields in `handshake.rs@87616f4b96a1775455da42b0bbed77711fb3c9f6`.
+Canonical authored-contract commit `39fce63bce58718727541ac9f18dbc258766d159` expands the existing harness to all
+OK/RETRY/FAIL variants, every truncation cut, four-byte unknown constructor, nonce/server_nonce mismatch,
+wrong variant-tag hash and trailing bytes; contract blob is
+`6710d6ef3fd915689792c68d69b3922b446c9bfa`. Desktop sync
+`965db14afa7104deae0fc63a76d2cc0df35d81fd` mirrors that blob byte-for-byte; the tracked desktop
+facade remains `abab39e42f100972484191f0e52e9edd9b88c6cf` and no duplicate `handshake.rs` is introduced.
+
+The existing RETRY branch is precisely representable by the current `AwaitingDhGen` owner: it uses the
+previous auth-key auxiliary hash as `retry_id`, replaces only prepared client-DH material, and remains in
+`AwaitingDhGen`. It does not require or claim temporary/permanent key binding, expiry, persistence,
+teardown, connection scheduling, multi-request history, gzip, or complete difference decoding/application.
+
+Ledger adds `TDRP-R9-MTPROTO-DH-GEN-RESULT-WIRE-001`; coverage becomes
+`responsibilities_total=88`, `unknown=16172`, `unread=16145`, `omitted=0`; the responsibility is
+`implemented / validation_status=not-run / accepted=false`.
+
+No executable validation was performed. No GitHub Actions/status/check query or trigger, build, typecheck,
+lint, schema validator, generator, unit/contract/integration/E2E test, package, deployment, installation or
+runtime acceptance was performed.
