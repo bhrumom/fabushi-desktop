@@ -194,6 +194,13 @@ dependencies、57 个 devDependencies，以及同树的 lockfile/workspace blob�
 probe 只证明根输入存在与形状，不等价于递归依赖闭包；所有 closure flags 继续
 保持 `false`。
 
+对 `77b08d1345a8e5734ada19dc95e77f4c5135bd0a...2910c0de8d7d290f9a82ca388f2893d067c06cb1`
+的 GitHub compare 只读结果为 `ahead_by=1`、`behind_by=0`、`total_commits=1`，
+返回的 2 个文件仅为 `scripts/lib/vitest-process-env.mts` 与
+`test/scripts/run-vitest.test.ts`；没有 root dependency manifest 或当前已映射
+product owner path 变化。该结果支持复用“root input identities unchanged”的狭义
+事实，但不支持复用旧 inventory、dependency closure 或 Actions provenance。
+
 2026-10-31T08:02:48Z 的只读远端复核再次发现 `openclaw/openclaw` 的 `main` 已从
 `77b08d13…/a52b7278…` 漂移到 commit
 `2910c0de8d7d290f9a82ca388f2893d067c06cb1`、tree

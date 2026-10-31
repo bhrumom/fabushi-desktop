@@ -45,11 +45,11 @@
     "authority_status": "discovery-only; requires fresh GitHub Actions inventory and dependency closure"
   },
   "drift_from_discovery": {
-    "ahead_by": null,
-    "behind_by": null,
-    "compare_files_returned": null,
-    "compare_file_counts_are_not_complete": true,
-    "decision": "live-main-drifted-again-to-2910c0d; recursive-tree-and-root-inputs-revalidated-read-only; retain-discovery-only-status-until-fresh-actions-inventory-and-dependency-closure"
+    "ahead_by": 1,
+    "behind_by": 0,
+    "compare_files_returned": 2,
+    "compare_file_counts_are_not_complete": false,
+    "decision": "live-main-drifted-again-to-2910c0d; exact compare from 77b08d1 is one commit ahead with two non-product test-support files changed; recursive-tree-and-root-inputs-revalidated-read-only; retain-discovery-only-status-until-fresh-actions-inventory-and-dependency-closure"
   },
   "root_inputs": {
     "AGENTS.md": "c3deeccdb6b1a4c7137d56297e933bbf19f4d3bf",
