@@ -3,8 +3,9 @@
 
 The structural gate requires a complete exact-path inventory and honest read /
 mapping dimensions. It deliberately does not turn an honest unread count into
-an AC02 failure: ``--final-ac02`` separately requires zero undispositioned paths
-and zero unreviewed applicable product responsibility.
+an AC02 failure: ``--final-ac02`` separately requires accepted source identity,
+canonical applicability/disposition closure, zero undispositioned paths and
+zero unreviewed applicable product responsibility.
 """
 import hashlib
 import json
