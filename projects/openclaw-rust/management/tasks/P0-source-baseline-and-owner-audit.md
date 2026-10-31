@@ -470,9 +470,12 @@ completion flag changes. The probe is recorded at
 
 The canonical current discovery pointer is always `upstream.lock.json::live_candidate`.
 At the latest read-only reconciliation it is OpenClaw
-`af300f447128e0bec692fa0c96d20f360ee8c8b6` / tree
-`601cfe03da8faaac3c1d92972298ec763e4d3fca`, observed at
-`2026-10-31T13:03:16Z`, with 64,102 untruncated recursive-tree entries
-(61,861 blobs, 2,241 directories, 0 gitlinks). This remains discovery-only;
+`2d5703f93ee06f45320039323eb6c5ab8733bf15` / tree
+`a8760296458322a23cf41c8ab0061813fdb8a225`, observed at
+`2026-10-31T13:09:57Z`, with 64,106 untruncated recursive-tree entries
+(61,865 blobs, 2,241 directories, 0 gitlinks). This remains discovery-only;
 the fixed implementation subject, inventory, dependency closure, Actions
-provenance, and all completion flags remain unchanged.
+provenance, and all completion flags remain unchanged. The changed source
+scope covers auth reload, prepared model runtime refresh, session-row
+projection, and cron session-model strictness; see
+`dossiers/upstream-current-candidate-probe-2d5703f9-20261031.md`.

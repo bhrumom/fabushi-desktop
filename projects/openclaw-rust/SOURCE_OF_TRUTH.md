@@ -636,6 +636,20 @@ blob identities 仍未变化；该 exact subject 仍为 discovery-only，前一 
 复用。lock live candidate 已更新，固定 implementation subject、ledger 修订及
 全部 authority/completion flags 不变。
 
+2026-10-31T13:09:57Z 的只读远端复核发现 OpenClaw `main` 再推进到
+`2d5703f93ee06f45320039323eb6c5ab8733bf15` / tree
+`a8760296458322a23cf41c8ab0061813fdb8a225`。GitHub recursive-tree API 返回
+`truncated=false`，共 64,106 entries（61,865 blobs、2,241 directories、0
+gitlinks）；commit message 为 `fix: preserve in-flight work across unrelated
+auth reloads (#189349)`。该提交涉及 auth reload、prepared model runtime
+refresh、session-row projection 与 cron session-model strictness。根
+package/lock/workspace/license/notice blob identities 仍未变化；该 exact
+subject 仍为 discovery-only，前一 candidate 的 inventory、依赖闭包、
+LFS/integrity、语义阅读和 Actions provenance 均不得复用。lock live candidate
+已更新，固定 implementation subject、ledger 修订及全部 authority/completion
+flags 不变。详见
+`dossiers/upstream-current-candidate-probe-2d5703f9-20261031.md`。
+
 对 `OCRM-RESP-SESSION-LIFECYCLE-DELETE-FENCE-001` 的 requirement crosswalk
 做了静态审计：其专用 spec 的 `SLD-01..06` 是 task-level detail，不是项目
 RTM 行 ID；ledger 已改为合法的项目级 `OCRM-R04`、`OCRM-R08`、`OCRM-AC08`

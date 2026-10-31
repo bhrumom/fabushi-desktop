@@ -9,8 +9,8 @@ Actions receipt, independent acceptance, or release verdict.
 - Fabushi branch: `codex/openclaw-rust-full-fusion-20261030`
 - Fixed implementation subject: `openclaw/openclaw@ad8d12f126d29b0db204187adf5092db80294e70`
   / tree `04ccce62f1d74dc8e0c88290ae8ded027b7b0f16`
-- Current discovery candidate: `openclaw/openclaw@af300f447128e0bec692fa0c96d20f360ee8c8b6` (discovery-only; source rebaseline still required)
-  / tree `601cfe03da8faaac3c1d92972298ec763e4d3fca`
+- Current discovery candidate: `openclaw/openclaw@2d5703f93ee06f45320039323eb6c5ab8733bf15` (discovery-only; source rebaseline still required)
+  / tree `a8760296458322a23cf41c8ab0061813fdb8a225`
 - Current candidate status: discovery-only; it does not replace the fixed
   implementation subject or authorize reuse of its inventory.
 
