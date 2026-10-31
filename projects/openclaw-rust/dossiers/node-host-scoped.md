@@ -2727,3 +2727,18 @@ executor, `system.which` executor, or additional command was introduced. The
 producer-to-state-to-consumer path is therefore closed only for local
 `system.run`; remote transport and the remaining upstream command owners stay
 pending.
+
+## 204. Workspace lease currentness and path boundary (2026-10-31)
+
+`worker_workspace.rs` now owns one in-memory current workspace lease per
+environment. Admission canonicalizes an existing root, requires a complete
+`environmentId`/`sessionId`/`ownerEpoch` identity from the existing worker
+protocol owner, and returns a generation-fenced lease. Replacement retires the
+predecessor; release and path checks require the exact current lease, and a
+candidate path is canonicalized and accepted only inside the admitted root.
+
+This is the first Rust state/path boundary for the upstream workspace custody
+contract. It does not create or delete directories, launch or observe
+processes, persist retention/seed/transfer state, or supply a production
+worker caller. Those remain explicit R12/R13 implementation and acceptance
+frontiers; R13 identity/signing remains separately owned.

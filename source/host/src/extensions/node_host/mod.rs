@@ -26,3 +26,4 @@ pub mod optional_publication;
 pub mod gateway_lifecycle;
 pub mod secret_materializer;
 pub mod worker_environment;
+pub mod worker_workspace;
