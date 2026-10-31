@@ -9,7 +9,7 @@
     "unknown": 16172,
     "unread": 16145,
     "omitted": 0,
-    "responsibilities_total": 88,
+    "responsibilities_total": 89,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -22165,6 +22165,257 @@
       "validation_status": "not-run",
       "accepted": false,
       "id": "TDRP-R9-MTPROTO-DH-GEN-RESULT-WIRE-001",
+      "source_paths": [
+        "Telegram/SourceFiles/mtproto/scheme/mtproto.tl@76225965bfc794388db241f3f760db8ab79e84f8",
+        "Telegram/SourceFiles/mtproto/details/mtproto_dc_key_creator.cpp@13c57454f14b814b5923ea253048fb881ad8cf03"
+      ]
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+      "source_path": "Telegram/SourceFiles/mtproto/scheme/mtproto.tl",
+      "source_blob_sha": "76225965bfc794388db241f3f760db8ab79e84f8",
+      "source_kind": "schema",
+      "module_id": "tdesktop.mtproto.res-pq-wire",
+      "responsibility_id": "TDRP-R9-MTPROTO-RES-PQ-WIRE-001",
+      "source_symbols": [
+        "resPQ#05162463 nonce:int128 server_nonce:int128 pq:string server_public_key_fingerprints:Vector<long> = ResPQ",
+        "DcKeyCreator::pqAnswered / MTPresPQ",
+        "AuthKeyHandshake::receive_res_pq / parse_res_pq"
+      ],
+      "capability_ids": [
+        "CAP-TELEGRAM-MTPROTO-RES-PQ-WIRE"
+      ],
+      "dependency_ids": [
+        "telegram-protocol::AuthKeyHandshake",
+        "telegram-protocol::TlReader"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/evidence/round79-mtproto-res-pq-wire-20261101.md",
+      "behavior_contract": "The canonical telegram-protocol/AuthKeyHandshake owner must parse fixed-U resPQ#05162463 constructor-first as nonce:int128, server_nonce:int128, pq:string and server_public_key_fingerprints:Vector<long>; the bounded TL reader must enforce exact Vector magic/non-negative bounded count and exact fingerprint elements, and the parser must reject truncation/trailing bytes. AuthKeyHandshake::receive_res_pq must require AwaitingResPq, bind the response nonce to the active request, reject empty pq and empty fingerprint vectors, capture the server-provided server_nonce only after validation, and transition to ResPqReceived without adding connection scheduling or broader key lifetime state.",
+      "state_machine": "Ready -> begin(req_pq_multi) -> AwaitingResPq -> exact parse_res_pq -> active nonce/basic shape validation -> ResPqReceived; malformed/unknown/vector-invalid/truncated/trailing/nonce-mismatched/empty input fails closed without state mutation. server_nonce is introduced by the accepted resPQ response and is not compared to nonexistent prior server state.",
+      "side_effects": [
+        "Preserves the existing canonical resPQ parser and AuthKeyHandshake receiver because source review shows exact fixed-U semantics already implemented",
+        "Authors exhaustive canonical and desktop-mirrored negative wire contracts without executing them in Stage A",
+        "Adds durable resPQ specification and migration traceability without creating a second handshake owner"
+      ],
+      "failure_cases": [
+        "Unknown resPQ constructor is accepted or interpreted after fields",
+        "TL Vector constructor, negative/bounded length, or declared fingerprint count is not enforced",
+        "Truncated or trailing resPQ body is accepted",
+        "Active req_pq_multi nonce mismatch is accepted",
+        "Empty pq or empty server fingerprint vector mutates handshake state",
+        "resPQ closure is incorrectly expanded into connection scheduling, key persistence/binding, gzip, or difference state"
+      ],
+      "ui_disposition": "No UI change. This is exact MTProto auth-key handshake resPQ wire parsing inside the existing embedded protocol owner.",
+      "non_ui_responsibilities": [
+        "Constructor-first resPQ decoding",
+        "Exact nonce/server_nonce/pq/Vector<long> field order",
+        "Bounded TL Vector magic/count validation",
+        "Active request nonce binding and empty-field rejection",
+        "Strict truncation and no-trailing validation"
+      ],
+      "platform_delta": "No production delta was required: current shared Rust AuthKeyHandshake::receive_res_pq / parse_res_pq already implement the fixed-U resPQ wire and state responsibility exactly. This slice closes the durable spec, exhaustive authored-only contracts and migration bookkeeping in the same existing owner.",
+      "existing_owner_candidates": [
+        "bhrumom/fabushi-platform-core:native/telegram-protocol/src/handshake.rs",
+        "bhrumom/fabushi-platform-core:native/telegram-protocol/src/tl.rs",
+        "bhrumom/fabushi-platform-core:native/telegram-protocol/src/lib.rs",
+        "source/mahayana/mahayana-rs/providers/telegram-protocol/src/lib.rs",
+        "source/mahayana/mahayana-rs/providers/telegram-protocol/tests/protocol_contract.rs"
+      ],
+      "existing_owner": "Canonical shared telegram-protocol AuthKeyHandshake/resPQ parser with desktop tracked facade/contracts",
+      "rejected_existing_owners": [
+        "telegram-network/runtime: exact handshake TL parsing and phase state already belong to telegram-protocol",
+        "new auth-key lifetime owner: resPQ wire reception does not require binding/expiry/persistence state",
+        "desktop copied handshake core: rejected because the desktop overlay mirrors only facade/contracts"
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "bhrumom/fabushi-platform-core:native/telegram-protocol/src/handshake.rs",
+        "bhrumom/fabushi-platform-core:native/telegram-protocol/src/tl.rs",
+        "bhrumom/fabushi-platform-core:native/telegram-protocol/src/lib.rs",
+        "bhrumom/fabushi-platform-core:native/telegram-protocol/tests/protocol_contract.rs",
+        "source/mahayana/mahayana-rs/providers/telegram-protocol/src/lib.rs",
+        "source/mahayana/mahayana-rs/providers/telegram-protocol/tests/protocol_contract.rs"
+      ],
+      "fabushi_target_symbols": [
+        "parse_res_pq",
+        "ResPq",
+        "RES_PQ_CONSTRUCTOR",
+        "AuthKeyHandshake::receive_res_pq",
+        "TlReader::read_vector_length"
+      ],
+      "target_language": "Rust",
+      "language_rationale": "Exact MTProto resPQ parsing and AwaitingResPq state already belong to the existing canonical Rust telegram-protocol owner.",
+      "command_event_contracts": [
+        "resPQ + active nonce + exact pq + non-empty fingerprint Vector + EOF -> ResPqReceived with server_nonce captured",
+        "unknown/vector-invalid/truncated/trailing body -> typed HandshakeError before transition",
+        "nonce mismatch -> NonceMismatch with state remaining AwaitingResPq",
+        "empty pq -> EmptyPq; empty fingerprint vector -> MissingServerKeyFingerprint; neither mutates state"
+      ],
+      "state_owner": "Existing AuthKeyHandshake owns AwaitingResPq, the active client nonce, accepted server_nonce and ResPqReceived transition; parse_res_pq is a synchronous bounded wire parser only.",
+      "lifecycle_owner": "Existing account-bound TelegramClientLease/runtime -> canonical AuthKeyHandshake production composition. Connection scheduling and key lifetime/persistence remain outside this slice.",
+      "persistence_and_restart": "No persistence is introduced or mutated by resPQ parsing/reception.",
+      "concurrency_and_cancellation": "Pure synchronous parsing/transition inside the existing handshake call; no background task, scheduler, callback registry or historical request state is introduced.",
+      "security_boundary": "Only constructor 0x05162463 is accepted. TL string/vector bounds, exact Vector constructor/count, active client nonce, non-empty pq/fingerprints and EOF are validated before handshake state mutation. server_nonce is captured as fresh server-provided handshake material.",
+      "network_service_dependencies": [
+        "Existing embedded Telegram MTProto plaintext auth-key handshake transport",
+        "fixed-U resPQ schema constructor"
+      ],
+      "service_owner": "Canonical embedded Telegram protocol/AuthKeyHandshake owner.",
+      "deployment_evidence": [],
+      "implementation_status": "implemented",
+      "coverage_disposition": "rewritten",
+      "blockers": [
+        "Stage B executable build/unit/contract/integration/packaged validation has not run.",
+        "Temporary/permanent auth-key binding, expiry enforcement, renewal, persistence and teardown remain open/fail-closed.",
+        "Connection scheduling/racing, plaintext send/retry/timeout and arbitrary wasSent/haveSent/_resendingIds/toSend/_sentContainers histories remain open/fail-closed.",
+        "gzip_packed bounded decompression and complete updates difference/differenceSlice decoding/application remain open/fail-closed.",
+        "Broader fixed-U source/legal/release closure remains open."
+      ],
+      "production_entrypoints": [
+        "existing AuthKeyHandshake::receive_res_pq -> parse_res_pq -> ResPqReceived -> existing req_DH_params preparation",
+        "desktop tracked telegram-protocol public facade remains canonical; desktop contract mirror consumes canonical exports without a second handshake core"
+      ],
+      "production_evidence": [
+        "platform-core-spec-commit:03dc0f804a8c80d8d60500e6667cc9b091ccc3cf",
+        "platform-core-spec-blob:ab044dcb2b34d7def042e4dd2eb798f3b658c52a",
+        "platform-core-path:native/telegram-protocol/src/handshake.rs@87616f4b96a1775455da42b0bbed77711fb3c9f6",
+        "platform-core-path:native/telegram-protocol/src/tl.rs@89256ab35184b6dc06a095ab34abb9f44e95a264",
+        "platform-core-contract-commit:5e1ba90b32ac7c58b7be0d9630f1630a0a764061",
+        "platform-core-path:native/telegram-protocol/tests/protocol_contract.rs@44d2a5d141e7d7854529379aaaad660853c8cbe3",
+        "desktop-sync-commit:c72c7f85c926d05b21842c41a3b11c1313537793",
+        "path:source/mahayana/mahayana-rs/providers/telegram-protocol/tests/protocol_contract.rs@44d2a5d141e7d7854529379aaaad660853c8cbe3",
+        "path:source/mahayana/mahayana-rs/providers/telegram-protocol/src/lib.rs@abab39e42f100972484191f0e52e9edd9b88c6cf"
+      ],
+      "test_evidence": [
+        "canonical and desktop tracked protocol contracts authored for exact positive resPQ, every truncation cut, four-byte unknown constructor, Vector magic/negative/bounded/count failures, trailing byte, active nonce mismatch, empty pq, empty fingerprints and invalid receiver state; not run"
+      ],
+      "target_commit": "c72c7f85c926d05b21842c41a3b11c1313537793",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Canonical Fabushi account + existing TelegramClientLease/runtime + shared telegram-protocol AuthKeyHandshake production composition",
+      "composition_slot": "Embedded Telegram MTProto auth-key resPQ parsing",
+      "capability_component": "Exact fixed-U resPQ constructor/nonce/server_nonce/pq/fingerprint-vector validation",
+      "variation_axes": [
+        "valid vs unknown/truncated/vector-invalid/trailing body",
+        "matching vs mismatching active nonce",
+        "non-empty vs empty pq/fingerprint vector"
+      ],
+      "shared_owner_contracts": [
+        "Existing AuthKeyHandshake",
+        "Existing telegram-protocol TlReader",
+        "Existing desktop tracked protocol facade/contracts",
+        "Existing Cargo path-dependency composition"
+      ],
+      "duplicate_root_check": "No second account, runtime, provider, transport, handshake core, auth-key lifetime owner, session registry, request history, decompression runtime, difference runtime, message store, UI root, sidecar, subprocess or Web wrapper was introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Not applicable",
+      "primary_navigation_target": "Existing Messages/Conversation navigation",
+      "collection_surface": "Existing ConversationList; no change",
+      "creation_flow": "Existing canonical conversation creation; no change",
+      "object_action_scope": "Not applicable",
+      "detail_section": "Not applicable",
+      "capability_surface": "Existing ConversationWorkspace through the same provider/runtime; no new surface",
+      "route_contract": "No new route.",
+      "search_scope": "Not applicable",
+      "search_provider": "Existing canonical Search owner; unchanged",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Unchanged.",
+      "search_local_remote_contract": "Not applicable.",
+      "responsive_disposition": "No UI change.",
+      "accessibility_contract": "No UI change.",
+      "keyboard_contract": "No UI change.",
+      "state_continuity_contract": "The same AuthKeyHandshake remains AwaitingResPq until a fully parsed response with the active nonce, non-empty pq and non-empty fingerprint vector is accepted; only then is server_nonce captured and state advanced to ResPqReceived.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Existing Fabushi design system; no visual changes",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": null,
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "No new icon asset",
+      "avatar_contract": "No change",
+      "content_copy_keys": [],
+      "motion_contract": "No change",
+      "reduced_motion_contract": "No change",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "high",
+      "requirement_ids": [
+        "TDRP-R9-MTPROTO-RES-PQ-WIRE-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-MTPROTO-RES-PQ-WIRE-001",
+        "ORA-TDRP-MTPROTO-RES-PQ-VECTOR-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-MTPROTO-RES-PQ-CONSTRUCTOR-FIRST-001",
+        "INV-TDRP-MTPROTO-RES-PQ-NONCE-BOUND-001",
+        "INV-TDRP-MTPROTO-RES-PQ-VECTOR-EXACT-001",
+        "INV-TDRP-MTPROTO-RES-PQ-NO-MUTATION-ON-ERROR-001"
+      ],
+      "unit_case_ids": [
+        "UNIT-TDRP-MTPROTO-RES-PQ-PARSE-001",
+        "UNIT-TDRP-MTPROTO-RES-PQ-FAIL-CLOSED-001"
+      ],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-MTPROTO-RES-PQ-WIRE-001"
+      ],
+      "integration_case_ids": [],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "fault_recovery_case_ids": [],
+      "performance_case_ids": [],
+      "security_case_ids": [
+        "SEC-TDRP-MTPROTO-RES-PQ-UNKNOWN-CONSTRUCTOR-001",
+        "SEC-TDRP-MTPROTO-RES-PQ-VECTOR-NONCE-BOUNDING-001"
+      ],
+      "soak_case_ids": [],
+      "exploratory_charter_ids": [],
+      "regression_ids": [
+        "REG-TDRP-MTPROTO-RES-PQ-VECTOR-MALFORMED-001",
+        "REG-TDRP-MTPROTO-RES-PQ-STATE-MUTATION-ON-ERROR-001"
+      ],
+      "release_gate_ids": [
+        "G-TRACEABILITY",
+        "G-COMPOSITION",
+        "G-SECURITY",
+        "G-EVIDENCE",
+        "G-RELEASE"
+      ],
+      "test_fixture_ids": [
+        "mtproto-res-pq-patterned"
+      ],
+      "test_environment_ids": [
+        "GitHub Actions Stage B matrix (not run)"
+      ],
+      "coverage_matrix_status": "pending",
+      "flake_status": "stable",
+      "release_gate_status": "pending",
+      "acceptance_reviewer": null,
+      "reviewer": null,
+      "license_and_provenance": "Behavioral responsibility is anchored to fixed-U telegramdesktop/tdesktop Telegram/SourceFiles/mtproto/scheme/mtproto.tl@76225965bfc794388db241f3f760db8ab79e84f8 and shipping DcKeyCreator::pqAnswered in Telegram/SourceFiles/mtproto/details/mtproto_dc_key_creator.cpp@13c57454f14b814b5923ea253048fb881ad8cf03. The implementation is source-neutral Rust and copies no upstream C++ implementation.",
+      "notes": "Stage A implementation bookkeeping only. Remote source review confirms the existing AuthKeyHandshake::receive_res_pq / parse_res_pq owner already satisfies the fixed-U production wire semantics, so no behavior code change was made. Durable spec and exhaustive contracts were added and mirrored but not executed; validation_status=not-run and accepted=false.",
+      "test_execution_evidence": [],
+      "validation_status": "not-run",
+      "accepted": false,
+      "id": "TDRP-R9-MTPROTO-RES-PQ-WIRE-001",
       "source_paths": [
         "Telegram/SourceFiles/mtproto/scheme/mtproto.tl@76225965bfc794388db241f3f760db8ab79e84f8",
         "Telegram/SourceFiles/mtproto/details/mtproto_dc_key_creator.cpp@13c57454f14b814b5923ea253048fb881ad8cf03"

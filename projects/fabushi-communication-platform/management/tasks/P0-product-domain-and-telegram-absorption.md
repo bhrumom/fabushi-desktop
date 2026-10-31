@@ -635,3 +635,32 @@ Canonical handshake/contracts are `87616f4b96a1775455da42b0bbed77711fb3c9f6` /
 `AwaitingDhGen` and does not claim binding/persistence or connection scheduling. Ledger remains
 `implemented / not-run / accepted=false`, coverage `88 / 16172 unknown / 16145 unread / 0 omitted`.
 No executable validation was performed.
+
+
+### Round 79 — resPQ exact constructor/nonce/server_nonce/pq/fingerprint-vector validation
+
+Fixed U remains `f985723b552b30fe1c17d377d57f44e61a15a8c4`. The shipping
+`DcKeyCreator::pqAnswered` consumes `resPQ#05162463 nonce:int128 server_nonce:int128 pq:string server_public_key_fingerprints:Vector<long>`.
+Remote source review confirms the existing canonical `AuthKeyHandshake::receive_res_pq / parse_res_pq` already owns and exactly implements
+this fixed-U wire responsibility: constructor-first discrimination, exact nonce/server_nonce/pq/vector field order, bounded TL Vector
+constructor/count validation, strict EOF, active request nonce binding, empty-pq rejection and empty-fingerprint rejection before state mutation.
+The server nonce is fresh server-provided handshake material at this phase and is captured only after the response passes validation.
+
+Because production behavior was already exact, no production `handshake.rs` delta was manufactured. Spec-first platform commit
+`03dc0f804a8c80d8d60500e6667cc9b091ccc3cf`
+(`docs/specs/telegram-mtproto-res-pq-wire.md@ab044dcb2b34d7def042e4dd2eb798f3b658c52a`) records that disposition.
+Canonical authored-contract commit `5e1ba90b32ac7c58b7be0d9630f1630a0a764061` extends the existing protocol harness with exact
+positive resPQ, every truncation cut, four-byte unknown constructor, wrong Vector constructor, negative/over-limit/short declared vector,
+trailing byte, active nonce mismatch, empty pq, empty fingerprints and invalid receiver-state cases; canonical contract blob is
+`44d2a5d141e7d7854529379aaaad660853c8cbe3`. Desktop provider sync commit
+`c72c7f85c926d05b21842c41a3b11c1313537793` mirrors that contract blob byte-for-byte; the tracked desktop facade remains
+`abab39e42f100972484191f0e52e9edd9b88c6cf` and no duplicate handshake core is introduced.
+
+Ledger adds `TDRP-R9-MTPROTO-RES-PQ-WIRE-001`; coverage becomes
+`responsibilities_total=89`, `unknown=16172`, `unread=16145`, `omitted=0`; the responsibility is
+`implemented / validation_status=not-run / accepted=false`. Temporary/permanent key binding/expiry/persistence/teardown,
+connection scheduling/racing/send lifecycle, arbitrary multi-request history, gzip, complete difference decoding/application,
+broader source/legal closure and release acceptance remain fail-closed/open.
+
+No GitHub Actions/status/check query or trigger, build, typecheck, lint, schema validator, generator,
+unit/contract/integration/E2E test, package, deployment, installation or runtime acceptance was performed.
