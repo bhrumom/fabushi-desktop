@@ -476,3 +476,21 @@ Actions provenance, or source-semantic conclusion is relabeled or reused. All
 authority and completion flags remain unchanged. No CI, push, PR update, local
 OCRM executable verification, build, package, release, or runtime/device
 acceptance was performed.
+
+## Subsequent live recheck — 2026-10-31T12:36:43Z
+
+Read-only GitHub branches/commit/tree API checks resolved
+`openclaw/openclaw` `refs/heads/main` to commit
+`dfd4904312e87674d468d89232180973859e26e0`, root tree
+`9cf481d8e97f4428d9d9e2f80f941c9cbb7a410d`. The recursive tree was not
+truncated and contained 64,090 entries: 61,849 blobs, 2,241 directories, and
+no gitlinks. The commit message is `fix: restore spawn boundary SDK resource
+lifecycle (#189329)`; its GitHub commit verification is valid and root
+dependency/license input blobs remain unchanged.
+
+This supersedes the `be8eca7f...` discovery candidate in the lock. It remains
+discovery-only: no prior inventory, dependency closure, LFS/integrity result,
+Actions provenance, or source-semantic conclusion is relabeled or reused. All
+authority and completion flags remain unchanged. No CI, push, PR update, local
+OCRM executable verification, build, package, release, or runtime/device
+acceptance was performed.
