@@ -4772,39 +4772,39 @@
         "channel.streaming_chunking"
       ],
       "dependencies": [
-        "mahayana_host_runtime::connectors"
+        "mahayana_host_runtime::extensions::plugin_sdk"
       ],
       "evidence_refs": [
-        "source/host/tests/openclaw_channel_delivery_contract.rs",
+        "source/host/tests/openclaw_plugin_sdk_contract.rs",
+        "projects/openclaw-rust/dossiers/plugin-sdk-channel-lifecycle-and-outbound-scoped.md",
         "projects/openclaw-rust/dossiers/channels-outbound-delivery-scoped.md"
       ],
       "existing_owner_candidates": [
         {
-          "path": "source/host/src/connectors/channel_delivery.rs",
-          "reason": "Host outbound message chunker"
+          "path": "source/host/src/extensions/plugin_sdk/channel_outbound.rs",
+          "reason": "ChannelDraftStreamingChunking configuration resolver"
         }
       ],
       "id": "OCRM-RESP-CHANNEL-STREAMING-CHUNKING-001",
       "integration": {
-        "consumer": "ChannelDeliveryRouter::deliver invokes split_channel_message for every outbound text message before provider dispatch",
-        "entrypoint": "source/host/src/connectors/channel_delivery.rs::ChannelDeliveryRouter::deliver",
-        "owner": "source/host/src/connectors/channel_delivery.rs",
-        "producer": "source/host/app/src/main.rs::deliverToChannel and transcript background channel delivery"
+        "consumer": "No production draft-streaming consumer identified; ChannelDraftStreamingChunking::resolve is a local configuration resolver",
+        "entrypoint": "source/host/src/extensions/plugin_sdk/channel_outbound.rs::ChannelDraftStreamingChunking::resolve",
+        "owner": "source/host/src/extensions/plugin_sdk/channel_outbound.rs",
+        "producer": "No production channel/account draft-streaming configuration producer identified"
       },
       "invariants": [
-        "All chunks maintain balanced and valid markdown code fences",
-        "Chunk boundaries honor paragraph, sentence, or newline preferences"
+        "Account-level configuration replaces channel-level configuration when present",
+        "Resolved maximum is clamped to the caller-supplied text limit and minimum is clamped to the resolved maximum",
+        "Only paragraph, newline, or sentence break preferences are accepted"
       ],
       "migration_rollback": "Deliver single truncated message with warning",
-      "oracle_ids": [
-        "OCRM-CHANNEL-O06"
-      ],
-      "owner_decision": "Implement message splitting and code fence preservation in connectors",
+      "oracle_ids": [],
+      "owner_decision": "Keep draft-streaming configuration resolution in the Plugin SDK owner; do not treat the separate Host transport splitter as this upstream responsibility until its exact source mapping is re-established",
       "postconditions": [
-        "List of compliant message chunks generated"
+        "Resolved draft-streaming configuration is available to a future production channel consumer"
       ],
       "preconditions": [
-        "Message exceeding channel length limit (4,000 chars)"
+        "Caller supplies a resolved text limit and optional channel/account overrides"
       ],
       "required_evidence_dimensions": [
         "unit",
@@ -4820,8 +4820,8 @@
       ],
       "responsibility_kind": "business-runtime",
       "reviewer": "xuyao@ombhrum.com",
-      "risk": "Medium; guarantees message delivery without downstream protocol errors",
-      "selected_owner": "source/host/src/connectors/channel_delivery.rs",
+      "risk": "Low; preserves configuration precedence and limit clamping without inventing a provider consumer",
+      "selected_owner": "source/host/src/extensions/plugin_sdk/channel_outbound.rs",
       "source_refs": [
         {
           "blob_sha": "ca99866dc4c2b40b7d735f3799e8fee80e24fb5b",
@@ -4835,22 +4835,22 @@
       ],
       "status": {
         "acceptance": "pending",
-        "implementation": "implementing",
+        "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
         "verification": "not-run",
-        "wiring": "wired"
+        "wiring": "not-wired"
       },
       "target": {
         "language": "Rust",
-        "path": "source/host/src/connectors/channel_delivery.rs",
-        "symbol": "split_channel_message"
+        "path": "source/host/src/extensions/plugin_sdk/channel_outbound.rs",
+        "symbol": "ChannelDraftStreamingChunking::resolve"
       },
       "tests": [
-        "source/host/tests/openclaw_channel_delivery_contract.rs::test_ocrm_channel_o06_message_chunking_code_fence_preservation"
+        "source/host/tests/openclaw_plugin_sdk_contract.rs::test_ocrm_plugin_sdk_channel_lifecycle_outbound_pairing"
       ],
       "typed_contracts": [
-        "split_channel_message"
+        "ChannelDraftStreamingChunking::resolve"
       ],
       "unit_id": "OCRM-UNIT-CHANNELS-001"
     },

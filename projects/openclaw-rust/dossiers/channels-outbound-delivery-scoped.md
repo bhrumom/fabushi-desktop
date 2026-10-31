@@ -57,10 +57,15 @@ The shared outbound router now invokes `split_channel_message` for every text
 delivery before handing chunks to the registered provider. The implementation
 uses the conservative 4,000-character Host boundary and reopens fenced code
 blocks between chunks. This is a real production call path, so the row is
-`wiring=wired`; draft-streaming configuration precedence, paragraph/sentence
-break preference resolution, provider-specific limits, and exact-head runtime
-verification remain open and keep `implementation=implementing`,
-`verification=not-run`, and `acceptance=pending`.
+`wiring=wired` for the separate Host transport-splitting behavior only. It is
+not evidence for the upstream `draft-streaming-chunking.ts` responsibility:
+that source resolves account/channel configuration and break preferences, while
+the Host splitter has no configuration input and only preserves code fences and
+the fixed 4,000-character transport boundary. The ledger therefore points the
+upstream responsibility at `ChannelDraftStreamingChunking::resolve`, records
+`implementation=implemented`, `wiring=not-wired`, `verification=not-run`, and
+`acceptance=pending`, and retains the Host splitter as a separate unregistered
+mapping candidate until its exact upstream source is re-established.
 
 6. **`OCRM-RESP-CHANNEL-ACCESS-CONTROL-001`**:
    - **Behavior**: Channel sender access control list (ACL) evaluation, wildcard resolution, normalized candidate matching, and webhook HMAC signature replay protection.
