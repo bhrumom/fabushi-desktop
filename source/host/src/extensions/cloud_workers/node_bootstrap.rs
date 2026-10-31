@@ -1,7 +1,10 @@
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
-use super::{CloudWorkerArtifactDigest, CloudWorkerLeaseScope, CloudWorkerRuntimeIdentity, ReplayKey};
+use super::{
+    CloudWorkerArtifactDigest, CloudWorkerLeaseScope, CloudWorkerPlatformBridge,
+    CloudWorkerRuntimeIdentity, ReplayKey,
+};
 
 const MAX_DIAGNOSTIC_CHARS: usize = 512;
 const MAX_DIAGNOSTICS: usize = 32;
@@ -54,6 +57,7 @@ pub struct CloudWorkerBootstrapRequest {
     pub scope: CloudWorkerLeaseScope,
     pub runtime: CloudWorkerRuntimeIdentity,
     pub artifact: CloudWorkerArtifactDigest,
+    pub platform: CloudWorkerPlatformBridge,
     pub secret_refs: Vec<CloudWorkerSecretRef>,
     pub replay_key: ReplayKey,
 }
@@ -71,6 +75,9 @@ impl CloudWorkerBootstrapRequest {
             self.runtime.runtime_id.clone(),
         )
         .map_err(|_| CloudWorkerNodeBootstrapError::InvalidRuntimeIdentity)?;
+        self.platform
+            .validate()
+            .map_err(|_| CloudWorkerNodeBootstrapError::InvalidPlatformBridge)?;
         CloudWorkerArtifactDigest::new(self.artifact.0.clone())
             .map_err(|_| CloudWorkerNodeBootstrapError::InvalidArtifactDigest)?;
         if self.secret_refs.is_empty() {
@@ -210,6 +217,8 @@ pub enum CloudWorkerNodeBootstrapError {
     InvalidScope,
     #[error("bootstrap runtime identity is invalid")]
     InvalidRuntimeIdentity,
+    #[error("bootstrap platform bridge is invalid")]
+    InvalidPlatformBridge,
     #[error("bootstrap artifact digest is invalid")]
     InvalidArtifactDigest,
     #[error("at least one secret reference is required")]
@@ -241,6 +250,12 @@ mod tests {
             runtime: CloudWorkerRuntimeIdentity::new("provider", "profile", "runtime")
                 .unwrap(),
             artifact: CloudWorkerArtifactDigest::new("a".repeat(64)).unwrap(),
+            platform: CloudWorkerPlatformBridge::new(
+                super::CloudWorkerPlatform::Linux,
+                super::CloudWorkerDesktopSession::Headless,
+                "linux-launcher",
+            )
+            .unwrap(),
             secret_refs: vec![CloudWorkerSecretRef::new("secret://bootstrap").unwrap()],
             replay_key: ReplayKey("request-1".into()),
         }
@@ -323,6 +338,16 @@ mod tests {
         assert_eq!(
             request.validate(),
             Err(CloudWorkerNodeBootstrapError::InvalidArtifactDigest)
+        );
+    }
+
+    #[test]
+    fn request_validation_rejects_an_invalid_deserialized_platform_bridge() {
+        let mut request = request();
+        request.platform.launcher_id = "launcher\nidentity".into();
+        assert_eq!(
+            request.validate(),
+            Err(CloudWorkerNodeBootstrapError::InvalidPlatformBridge)
         );
     }
 

@@ -83,3 +83,8 @@ session owner, provider producer, package path or live platform receipt is
 wired to this descriptor. The parity row therefore records
 `implementation=implemented`, `wiring=not-wired`, `verification=not-run` and
 `acceptance=pending`; platform/device/package acceptance remains open.
+
+The descriptor is now carried by `CloudWorkerBootstrapRequest` and revalidated
+before bootstrap request admission. This is a type-level bootstrap contract
+connection only; it still does not launch a platform, resolve credentials or
+provide a production producer/consumer path.
