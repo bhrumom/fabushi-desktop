@@ -7,6 +7,12 @@ does not promote the candidate to `upstream.lock.json` authority, does not
 replace the required GitHub Actions inventory/closure receipt, and does not
 authorize new product implementation or acceptance flags.
 
+The repository lock now points to the newer discovery candidate
+`openclaw/openclaw@622fa3fab8e154819a329d3c288d13491facea7b`, root tree
+`2590235af3db54166cf88801806e2b63b3f4688b`. The scoped identities and
+observations below remain bound to their explicitly named historical subjects;
+they are not relabeled as closure evidence for the newer candidate.
+
 ## Exact scoped inventory
 
 The GitHub recursive tree API returned `truncated=false` for the candidate's
