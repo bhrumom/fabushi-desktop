@@ -276,3 +276,10 @@ fresh discovery-only subject; prior inventory, dependency closure, LFS/
 integrity and Actions provenance remain bound to their exact subjects. The
 lock was refreshed only as `live_candidate`; no authority or completion flag
 changed, and the fixed `ad8d12f...` implementation subject remains in use.
+
+The exact-subject root dependency probe for this candidate is recorded in
+`dossiers/upstream-current-candidate-dependency-probe-2464bd85-20261031.md`.
+The root input blobs are unchanged from `d27a8c9d...`, while the exact compare
+shows seven gateway-test/UI session files changed. This carries forward only
+root-input identity; it does not carry forward inventory, semantic reads,
+dependency closure, LFS/integrity, or Actions provenance.
