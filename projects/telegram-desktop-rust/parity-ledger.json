@@ -3,13 +3,13 @@
   "project_id": "TDRP-001",
   "spec_revision": 9,
   "upstream_commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
-  "target_commit": "221a661e17f2ad417e349df6604815d3fbfa946f",
+  "target_commit": "6c714e664d6cd4d66228b313664a6e776a4fd558",
   "coverage": {
     "source_entries_total": 16202,
     "unknown": 16172,
     "unread": 16145,
     "omitted": 0,
-    "responsibilities_total": 57,
+    "responsibilities_total": 58,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -14365,6 +14365,280 @@
       "reviewer": null,
       "license_and_provenance": "Behavioral lifecycle/error/backoff responsibility is anchored to fixed-U telegramdesktop/tdesktop exact intro sources: intro_code.cpp@2bed39cf0d696ee642e7d18f3f17bec05e8e4489, intro_password_check.cpp@d08bf88408b29cb5ec7ed31c4e925074bfb8825e, intro_email.cpp@dfb5ceeddeb48ab00773add72e75e0aef8ceb074, intro_phone.cpp@ee14ffa7c6f31e171cdcbdfaf627ea9868af1246 and intro_signup.cpp@1ba7a38379a6ae2febe615783333fd0822e0bb96. The implementation is source-neutral and copies no upstream C++/UI code.",
       "notes": "Stage A implementation only. The previously open sparse-checkpoint dependency-manifest blocker is statically closed by exact Cargo/path manifests and synchronized provider blobs on desktop commit 43d9d398801f2885da982d106c17a74efb1f9472, with authored-only contracts through 221a661e17f2ad417e349df6604815d3fbfa946f. No build/test/runtime validation has run; validation_status remains not-run and accepted remains false.",
+      "test_execution_evidence": []
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+      "source_path": "Telegram/SourceFiles/mtproto/session_private.cpp",
+      "source_blob_sha": "13cbc76ec723386027b5b4dcac79999b791c4614",
+      "source_kind": "source",
+      "module_id": "tdesktop.mtproto.session.bad-message-recovery",
+      "responsibility_id": "TDRP-R9-MTPROTO-BAD-MESSAGE-RECOVERY-001",
+      "source_symbols": [
+        "SessionPrivate::handleOneReceived / mtpc_bad_msg_notification",
+        "correctUnixtimeWithBadLocal",
+        "resend",
+        "HandleResult::ResetSession",
+        "mtpc_bad_server_salt"
+      ],
+      "capability_ids": [
+        "CAP-EMBEDDED-MTPROTO-SESSION-RECOVERY"
+      ],
+      "dependency_ids": [
+        "EmbeddedTelegramProtocol",
+        "EmbeddedTelegramNetwork",
+        "TelegramClientLease",
+        "MTProtoAuthKey",
+        "MessageIdGuard",
+        "SessionSequence"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/evidence/round47-mtproto-bad-message-recovery-20261101.md",
+      "behavior_contract": "The existing account-bound MTProto EstablishedSession handles fixed-U recoverable bad_msg_notification codes without creating a second transport/runtime: codes 16/17/64 derive trusted server time from the authenticated response message id, reset only the client message-id monotonic floor while retaining server replay history, and retry once with a fresh message id; codes 32/33 rotate the session id, reset the content-related sequence counter, and retry once. Mismatched bad_msg_id, repeated recovery, malformed messages, replay/parity failures, and all other codes fail closed as NetworkError::BadServerMessage or the existing protocol error.",
+      "state_machine": "same TelegramClientLease -> existing RuntimeClient EstablishedSession -> encrypted RPC/ping -> authenticated server service message -> normal replay/parity/time validation -> fixed-U recoverable bad_msg classification -> (16/17/64: correct clock + reset client-id floor | 32/33: reset session id + sequence) -> one bounded resend on the same auth key/socket owner -> success or fail closed; bad_server_salt remains the existing salt-update bounded retry",
+      "side_effects": [
+        "Adds source-neutral bad_msg_notification recovery classification to the existing shared telegram-network owner",
+        "Adds a narrow MessageIdGuard client-floor reset primitive that preserves server replay history",
+        "Applies corrected server time to subsequent encrypted RPC/ping message-id generation",
+        "Resets only session id and content sequence for fixed-U codes 32/33",
+        "Synchronizes the canonical shared network/session implementation into the existing desktop providers/telegram-* path-dependency chain",
+        "Authors recovery contracts without executing them in Stage A"
+      ],
+      "failure_cases": [
+        "Code 17 correction retains a locally-future client message-id floor and immediately resends another invalid future id",
+        "Code 16/17/64 clock recovery clears server replay history",
+        "Code 32/33 creates a second runtime or auth key instead of resetting the current session state",
+        "Unknown or fatal bad_msg_notification codes are silently retried",
+        "A bad_msg_id unrelated to the current request mutates session state",
+        "Recovery retries more than once and forms a hot loop",
+        "Container-nested bad-time notifications are rejected before the same authenticated recovery policy is applied"
+      ],
+      "ui_disposition": "No UI change. This is transport/session lifecycle inside the existing embedded Telegram runtime used by canonical Fabushi account and conversation owners.",
+      "non_ui_responsibilities": [
+        "MTProto bad-message classification",
+        "Trusted server-time correction",
+        "Client message-id floor recovery with replay-window preservation",
+        "Session-id/content-sequence reset",
+        "Bounded same-session resend",
+        "Container-nested service-message validation"
+      ],
+      "platform_delta": "The fixed-U Telegram Desktop session recovery behavior is re-expressed inside the existing source-neutral Rust telegram-network/session owners. The existing TelegramClientLease, RuntimeClient, auth key, transport, storage and provider composition remain unique; no TelegramCore/runtime/provider/session product root is added.",
+      "existing_owner_candidates": [
+        "bhrumom/fabushi-platform-core:native/telegram-network/src/lib.rs",
+        "bhrumom/fabushi-platform-core:native/telegram-protocol/src/session.rs",
+        "source/mahayana/mahayana-rs/providers/telegram-network/src/lib.rs",
+        "source/mahayana/mahayana-rs/providers/telegram-protocol/src/session.rs",
+        "source/mahayana/mahayana-rs/providers/telegram-runtime/src/runtime.rs",
+        "source/mahayana/mahayana-rs/mahayana-telegram/src/lib.rs"
+      ],
+      "existing_owner": "Canonical shared MTProto telegram-network EstablishedSession + telegram-protocol MessageIdGuard, consumed by the existing desktop TelegramClientLease/runtime chain",
+      "rejected_existing_owners": [
+        "Renderer/AppHost cannot own MTProto message-id, session-sequence, or retry state",
+        "A second Telegram runtime/session owner would split auth-key and replay truth",
+        "Storage is not the owner of live MTProto retry policy"
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "bhrumom/fabushi-platform-core:native/telegram-network/src/lib.rs",
+        "bhrumom/fabushi-platform-core:native/telegram-protocol/src/session.rs",
+        "source/mahayana/mahayana-rs/providers/telegram-network/src/lib.rs",
+        "source/mahayana/mahayana-rs/providers/telegram-protocol/src/session.rs",
+        "source/mahayana/mahayana-rs/providers/telegram-protocol/src/lib.rs",
+        "source/mahayana/mahayana-rs/providers/telegram-runtime/src/runtime.rs",
+        "source/mahayana/mahayana-rs/mahayana-telegram/src/lib.rs"
+      ],
+      "fabushi_target_symbols": [
+        "EstablishedSession::invoke_raw",
+        "EstablishedSession::send_ping",
+        "EstablishedSession::validate_incoming_message_id",
+        "EstablishedSession::correct_time_from_server_message",
+        "EstablishedSession::reset_session_state",
+        "bad_message_recovery_action",
+        "direct_bad_message_time_recovery",
+        "MessageIdGuard::reset_client_message_id_floor"
+      ],
+      "target_language": "Rust",
+      "language_rationale": "MTProto session message ids, encryption-adjacent replay fencing, connection retry policy and sequence state are already owned by the shared Rust protocol/network crates. Keeping recovery there preserves one transport/session owner and keeps renderer/product code protocol-neutral.",
+      "command_event_contracts": [
+        "bad_msg_notification(code=16|17|64,bad_msg_id=current) -> trusted response time correction -> reset client-id floor only -> one fresh-message retry",
+        "bad_msg_notification(code=32|33,bad_msg_id=current) -> new session_id + SessionSequence::new -> one fresh-message retry",
+        "bad_msg_notification(other|mismatched|second recovery) -> NetworkError::BadServerMessage",
+        "nested container service message -> same incoming message-id replay/parity/time validation and recovery classification",
+        "bad_server_salt -> existing salt replacement + bounded retry remains unchanged"
+      ],
+      "state_owner": "Existing EstablishedSession owns live auth key, server salt/time, message-id guard, sequence and session id; MessageIdGuard owns client-id floor and server replay window.",
+      "lifecycle_owner": "Existing account-bound TelegramClientLease -> RuntimeClient -> EstablishedSession production chain.",
+      "persistence_and_restart": "No new persistence is introduced. Existing persisted auth-key/DC/salt/server-time material continues to reconstruct the same runtime; stale persisted server_time is not used as a permanent reconnect clock offset. Recovery clock offset is live session state and is re-derived from authenticated service messages when needed.",
+      "concurrency_and_cancellation": "Recovery happens synchronously inside the same mutable EstablishedSession invocation. Retry budget is one per invoke_raw/send_ping call, preventing parallel or recursive recovery ownership.",
+      "security_boundary": "Only authenticated/decrypted MTProto service messages can trigger recovery. Server replay/parity checks remain active; the narrow outside-window exception applies only to direct fixed-U time-recovery bad_msg_notification codes and still preserves replay history.",
+      "network_service_dependencies": [
+        "Existing embedded Telegram MTProto encrypted transport",
+        "Fixed-U MTProto bad_msg_notification/bad_server_salt/new_session_created service constructors"
+      ],
+      "service_owner": "Canonical embedded Telegram network/session runtime; no external recovery service or provider.",
+      "deployment_evidence": [],
+      "implementation_status": "implemented",
+      "coverage_disposition": "rewritten",
+      "blockers": [
+        "Stage B executable build/unit/contract/integration/packaged validation has not run.",
+        "Broader fixed-U semantic/implementation closure remains open.",
+        "Complete Boost/libiconv member enumeration, original-host GitLab blockers, adopted/copied-derived legal closure and independent release ACCEPT remain open."
+      ],
+      "production_entrypoints": [
+        "source/mahayana/mahayana-rs/Cargo.toml -> mahayana-telegram -> providers/telegram-runtime -> providers/telegram-network + providers/telegram-protocol",
+        "existing TelegramClientLease/RuntimeClient -> EstablishedSession::invoke_raw/send_ping -> bounded bad-message recovery"
+      ],
+      "production_evidence": [
+        "platform-core-spec-commit:47ed28d35dbb6c7dd19bdcf1cd66fbf88dc68f67",
+        "platform-core-implementation-commit:ac9e20217812aa72b92049d4dfb52f76d6380da6",
+        "platform-core-path:native/telegram-network/src/lib.rs@ba9935b54e9c178c7d9377cd75572f2c21b62144",
+        "platform-core-path:native/telegram-protocol/src/session.rs@ab8fd351a05543854c3f62de5c8332a13b7ff472",
+        "desktop-implementation-commit:6c714e664d6cd4d66228b313664a6e776a4fd558",
+        "path:source/mahayana/mahayana-rs/providers/telegram-network/src/lib.rs@ba9935b54e9c178c7d9377cd75572f2c21b62144",
+        "path:source/mahayana/mahayana-rs/providers/telegram-protocol/src/session.rs@ab8fd351a05543854c3f62de5c8332a13b7ff472",
+        "path:source/mahayana/mahayana-rs/providers/telegram-protocol/src/lib.rs@34bcd749f758cfd3f562b6e701ee10eb51d5d0c2"
+      ],
+      "test_evidence": [
+        "platform-core native/telegram-network/src/lib.rs recovery_contract_tests authored, not run",
+        "platform-core native/telegram-protocol/src/session.rs message_id_recovery_contract_tests authored, not run",
+        "desktop providers/telegram-network/src/lib.rs recovery_contract_tests authored, not run",
+        "desktop providers/telegram-protocol/src/session.rs message_id_recovery_contract_tests authored, not run"
+      ],
+      "target_commit": "6c714e664d6cd4d66228b313664a6e776a4fd558",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Canonical Fabushi account + existing TelegramClientLease/runtime + shared MTProto protocol/network production composition",
+      "composition_slot": "Embedded Telegram encrypted session lifecycle",
+      "capability_component": "Bounded MTProto bad-message recovery on the unique EstablishedSession",
+      "variation_axes": [
+        "clock too low (16) vs clock too high (17) vs bad container (64)",
+        "sequence too low/high (32/33)",
+        "direct service message vs message-container nested service message",
+        "first recoverable rejection vs second rejection/fatal failure"
+      ],
+      "shared_owner_contracts": [
+        "Existing account-bound TelegramClientLease",
+        "Existing RuntimeClient/EstablishedSession",
+        "Existing MessageIdGuard replay contract",
+        "Existing encrypted auth-key transport",
+        "Existing Cargo path-dependency composition"
+      ],
+      "duplicate_root_check": "No second account, runtime, provider, transport, auth key, session product, message store, UI root, sidecar, subprocess or Web wrapper was introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Not applicable",
+      "primary_navigation_target": "Existing Messages/Conversation navigation",
+      "collection_surface": "Existing ConversationList; no change",
+      "creation_flow": "Existing canonical conversation creation; no change",
+      "object_action_scope": "Not applicable",
+      "detail_section": "Not applicable",
+      "capability_surface": "Existing ConversationWorkspace through the same provider/runtime; no new surface",
+      "route_contract": "No new route.",
+      "search_scope": "Not applicable",
+      "search_provider": "Existing canonical Search owner; unchanged",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Unchanged.",
+      "search_local_remote_contract": "Not applicable.",
+      "responsive_disposition": "No UI change.",
+      "accessibility_contract": "No UI change.",
+      "keyboard_contract": "No UI change.",
+      "state_continuity_contract": "The same EstablishedSession preserves auth key, server salt and replay history across recoverable bad-message handling; only the state component identified by fixed-U recovery semantics is corrected/reset, and retry remains bounded.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Existing Fabushi design system; no visual changes",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": null,
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "No new icon asset",
+      "avatar_contract": "No change",
+      "content_copy_keys": [],
+      "motion_contract": "No change",
+      "reduced_motion_contract": "No change",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "high",
+      "requirement_ids": [
+        "TDRP-R9-MTPROTO-BAD-MESSAGE-RECOVERY-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-MTPROTO-BAD-MSG-RECOVERY-001",
+        "ORA-TDRP-MTPROTO-REPLAY-PRESERVATION-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-MTPROTO-RECOVERY-ONE-RETRY-001",
+        "INV-TDRP-MTPROTO-REPLAY-WINDOW-PRESERVED-001",
+        "INV-TDRP-MTPROTO-NO-SECOND-SESSION-OWNER-001"
+      ],
+      "unit_case_ids": [
+        "UNIT-TDRP-MTPROTO-BAD-MSG-CLASSIFICATION-001",
+        "UNIT-TDRP-MTPROTO-CLIENT-ID-FLOOR-RESET-001"
+      ],
+      "property_state_case_ids": [
+        "PROP-TDRP-MTPROTO-RECOVERY-BOUNDED-001"
+      ],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-MTPROTO-BAD-MSG-RECOVERY-001"
+      ],
+      "integration_case_ids": [
+        "INT-TDRP-MTPROTO-SAME-SESSION-RECOVERY-001"
+      ],
+      "functional_e2e_case_ids": [
+        "E2E-TDRP-MTPROTO-BAD-MSG-RECOVERY-001"
+      ],
+      "temporal_case_ids": [
+        "TEMP-TDRP-MTPROTO-CLOCK-SKEW-RECOVERY-001"
+      ],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "fault_recovery_case_ids": [
+        "FAULT-TDRP-MTPROTO-BAD-MSG-SECOND-REJECT-001",
+        "FAULT-TDRP-MTPROTO-BAD-MSG-MISMATCH-001",
+        "FAULT-TDRP-MTPROTO-BAD-MSG-FATAL-001"
+      ],
+      "performance_case_ids": [],
+      "security_case_ids": [
+        "SEC-TDRP-MTPROTO-REPLAY-PRESERVATION-001",
+        "SEC-TDRP-MTPROTO-AUTHENTICATED-RECOVERY-001"
+      ],
+      "soak_case_ids": [],
+      "exploratory_charter_ids": [],
+      "regression_ids": [
+        "REG-TDRP-MTPROTO-FUTURE-ID-HOT-LOOP-001",
+        "REG-TDRP-MTPROTO-CONTAINER-RECOVERY-001"
+      ],
+      "release_gate_ids": [
+        "G-TRACEABILITY",
+        "G-COMPOSITION",
+        "G-SECURITY",
+        "G-EVIDENCE",
+        "G-RELEASE"
+      ],
+      "test_fixture_ids": [
+        "mtproto-bad-message-recovery-fixture"
+      ],
+      "test_environment_ids": [
+        "GitHub Actions Stage B matrix (not run)"
+      ],
+      "coverage_matrix_status": "pending",
+      "flake_status": "stable",
+      "release_gate_status": "pending",
+      "acceptance_reviewer": null,
+      "reviewer": null,
+      "license_and_provenance": "Behavioral responsibility is anchored to fixed-U telegramdesktop/tdesktop Telegram/SourceFiles/mtproto/session_private.cpp@13cbc76ec723386027b5b4dcac79999b791c4614 and the corresponding MTProto constructor declarations in Telegram/SourceFiles/mtproto/scheme/mtproto.tl@76225965bfc794388db241f3f760db8ab79e84f8. The implementation is source-neutral Rust and copies no upstream C++ implementation.",
+      "notes": "Stage A implementation only. This row records a responsibility slice from session_private.cpp and does not claim whole-file semantic closure, so global unknown/unread counters are intentionally unchanged. Authored tests are not executed; validation_status remains not-run and accepted remains false.",
       "test_execution_evidence": []
     }
   ],
