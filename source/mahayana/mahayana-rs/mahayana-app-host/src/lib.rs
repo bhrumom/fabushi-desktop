@@ -378,6 +378,13 @@ impl AppHost {
             "feature.auth.telegramSignIn" => self.feature_telegram_sign_in(params),
             "feature.auth.telegramPassword" => self.feature_telegram_password(params),
             "feature.auth.telegramRegistration" => self.feature_telegram_registration(params),
+            "feature.auth.telegramResendCode" => self.feature_telegram_resend_code(params),
+            "feature.auth.telegramCancelCode" => self.feature_telegram_cancel_code(),
+            "feature.auth.telegramRequestPasswordRecovery" => self.feature_telegram_request_password_recovery(),
+            "feature.auth.telegramCheckRecoveryPassword" => self.feature_telegram_check_recovery_password(params),
+            "feature.auth.telegramSendVerifyEmailCode" => self.feature_telegram_send_verify_email_code(params),
+            "feature.auth.telegramVerifyEmail" => self.feature_telegram_verify_email(params),
+            "feature.auth.telegramRefreshPasswordChallenge" => self.feature_telegram_refresh_password_challenge(),
             "feature.auth.passwordLogin" => self.feature_password_login(params),
             "feature.auth.browserStart" => self
                 .feature
@@ -647,6 +654,49 @@ impl AppHost {
         let last_name = params.get("lastName").and_then(Value::as_str);
         self.telegram_client()?
             .submit_registration(first_name, last_name)
+            .map_err(|error| AppHostError::Operation(error.to_string()))
+    }
+
+    fn feature_telegram_resend_code(&self, params: Value) -> Result<Value, AppHostError> {
+        let reason = params.get("reason").and_then(Value::as_str);
+        self.telegram_client()?
+            .resend_authentication_code(reason)
+            .map_err(|error| AppHostError::Operation(error.to_string()))
+    }
+
+    fn feature_telegram_cancel_code(&self) -> Result<Value, AppHostError> {
+        self.telegram_client()?
+            .cancel_authentication_code()
+            .map_err(|error| AppHostError::Operation(error.to_string()))
+    }
+
+    fn feature_telegram_request_password_recovery(&self) -> Result<Value, AppHostError> {
+        self.telegram_client()?
+            .request_password_recovery()
+            .map_err(|error| AppHostError::Operation(error.to_string()))
+    }
+
+    fn feature_telegram_check_recovery_password(&self, params: Value) -> Result<Value, AppHostError> {
+        self.telegram_client()?
+            .check_recovery_password(string_param(&params, "code")?)
+            .map_err(|error| AppHostError::Operation(error.to_string()))
+    }
+
+    fn feature_telegram_send_verify_email_code(&self, params: Value) -> Result<Value, AppHostError> {
+        self.telegram_client()?
+            .send_verify_email_code(string_param(&params, "email")?)
+            .map_err(|error| AppHostError::Operation(error.to_string()))
+    }
+
+    fn feature_telegram_verify_email(&self, params: Value) -> Result<Value, AppHostError> {
+        self.telegram_client()?
+            .verify_email(string_param(&params, "code")?)
+            .map_err(|error| AppHostError::Operation(error.to_string()))
+    }
+
+    fn feature_telegram_refresh_password_challenge(&self) -> Result<Value, AppHostError> {
+        self.telegram_client()?
+            .refresh_password_challenge()
             .map_err(|error| AppHostError::Operation(error.to_string()))
     }
 

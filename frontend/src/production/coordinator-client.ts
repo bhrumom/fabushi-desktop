@@ -59,6 +59,13 @@ export interface ProductionCoordinatorClient {
   telegramSignIn(code: string): Promise<TelegramAuthorizationProjection>;
   telegramPassword(password: string): Promise<TelegramAuthorizationProjection>;
   telegramRegistration(firstName: string, lastName?: string): Promise<TelegramAuthorizationProjection>;
+  telegramResendCode(reason?: string): Promise<TelegramAuthorizationProjection>;
+  telegramCancelCode(): Promise<TelegramAuthorizationProjection>;
+  telegramRequestPasswordRecovery(): Promise<TelegramAuthorizationProjection>;
+  telegramCheckRecoveryPassword(code: string): Promise<TelegramAuthorizationProjection>;
+  telegramSendVerifyEmailCode(email: string): Promise<TelegramAuthorizationProjection>;
+  telegramVerifyEmail(code: string): Promise<TelegramAuthorizationProjection>;
+  telegramRefreshPasswordChallenge(): Promise<TelegramAuthorizationProjection>;
   getAgentTranscriptWindow(args: CoordinatorTranscriptWindowRequest): Promise<CoordinatorTranscriptWindowResponse>;
   getAgentThread(args: CoordinatorAgentThreadRequest): Promise<CoordinatorAgentThreadResponse>;
   isEgressTunnelAvailable(): Promise<boolean>;
@@ -182,6 +189,15 @@ export function createCoordinatorClient(portBridge: CoordinatorPortBridge): Prod
       firstName,
       ...(lastName == null ? {} : { lastName }),
     }) as TelegramAuthorizationProjection,
+    telegramResendCode: async (reason) => await call("feature.auth.telegramResendCode", {
+      ...(reason == null ? {} : { reason }),
+    }) as TelegramAuthorizationProjection,
+    telegramCancelCode: async () => await call("feature.auth.telegramCancelCode", {}) as TelegramAuthorizationProjection,
+    telegramRequestPasswordRecovery: async () => await call("feature.auth.telegramRequestPasswordRecovery", {}) as TelegramAuthorizationProjection,
+    telegramCheckRecoveryPassword: async (code) => await call("feature.auth.telegramCheckRecoveryPassword", { code }) as TelegramAuthorizationProjection,
+    telegramSendVerifyEmailCode: async (email) => await call("feature.auth.telegramSendVerifyEmailCode", { email }) as TelegramAuthorizationProjection,
+    telegramVerifyEmail: async (code) => await call("feature.auth.telegramVerifyEmail", { code }) as TelegramAuthorizationProjection,
+    telegramRefreshPasswordChallenge: async () => await call("feature.auth.telegramRefreshPasswordChallenge", {}) as TelegramAuthorizationProjection,
     getAgentTranscriptWindow: async (args) => await call("getAgentTranscriptWindow", args) as CoordinatorTranscriptWindowResponse,
     getAgentThread: async (args) => await call("getAgentThread", args) as CoordinatorAgentThreadResponse,
     isEgressTunnelAvailable: async () => await call("isEgressTunnelAvailable") === true,

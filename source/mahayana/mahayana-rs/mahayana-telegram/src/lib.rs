@@ -429,6 +429,55 @@ impl TelegramClientLease {
             "lastName": last_name.unwrap_or("").trim(),
         }))
     }
+
+    pub fn resend_authentication_code(
+        &self,
+        reason: Option<&str>,
+    ) -> Result<Value, ConversationError> {
+        self.execute_authorization(json!({
+            "@type": "telegram.resendAuthenticationCode",
+            "reason": reason.map(str::trim).filter(|value| !value.is_empty()),
+        }))
+    }
+
+    pub fn cancel_authentication_code(&self) -> Result<Value, ConversationError> {
+        self.execute_authorization(json!({
+            "@type": "telegram.cancelAuthenticationCode",
+        }))
+    }
+
+    pub fn request_password_recovery(&self) -> Result<Value, ConversationError> {
+        self.execute_authorization(json!({
+            "@type": "telegram.requestPasswordRecovery",
+        }))
+    }
+
+    pub fn check_recovery_password(&self, code: &str) -> Result<Value, ConversationError> {
+        self.execute_authorization(json!({
+            "@type": "telegram.checkRecoveryPassword",
+            "code": code.trim(),
+        }))
+    }
+
+    pub fn send_verify_email_code(&self, email: &str) -> Result<Value, ConversationError> {
+        self.execute_authorization(json!({
+            "@type": "telegram.sendVerifyEmailCode",
+            "email": email.trim(),
+        }))
+    }
+
+    pub fn verify_email(&self, code: &str) -> Result<Value, ConversationError> {
+        self.execute_authorization(json!({
+            "@type": "telegram.verifyEmail",
+            "code": code.trim(),
+        }))
+    }
+
+    pub fn refresh_password_challenge(&self) -> Result<Value, ConversationError> {
+        self.execute_authorization(json!({
+            "@type": "telegram.refreshPasswordChallenge",
+        }))
+    }
 }
 
 impl Drop for TelegramClientLease {

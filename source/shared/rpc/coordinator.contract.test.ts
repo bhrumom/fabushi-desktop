@@ -57,3 +57,27 @@ test("Telegram authorization projection rejects malformed or unbounded state", (
     /malformed Telegram authorization projection/,
   );
 });
+
+
+test("remaining Telegram auth lifecycle methods share the canonical projection contract", () => {
+  const value = {
+    authorizationState: {
+      type: "waitPassword",
+      passwordHint: "hint",
+      hasRecoveryEmail: true,
+      recoveryEmailPattern: "m***@example.test",
+    },
+    selfUserId: null,
+  };
+  for (const method of [
+    "feature.auth.telegramResendCode",
+    "feature.auth.telegramCancelCode",
+    "feature.auth.telegramRequestPasswordRecovery",
+    "feature.auth.telegramCheckRecoveryPassword",
+    "feature.auth.telegramSendVerifyEmailCode",
+    "feature.auth.telegramVerifyEmail",
+    "feature.auth.telegramRefreshPasswordChallenge",
+  ]) {
+    assert.equal(validateCoordinatorReply(method, value), value);
+  }
+});
