@@ -459,3 +459,20 @@ discovery-only: no prior inventory, dependency closure, LFS/integrity result,
 Actions provenance, or source-semantic conclusion is relabeled or reused. All
 authority and completion flags remain unchanged. No CI, push, PR update, or
 local OCRM executable verification was performed.
+
+## Subsequent live recheck — 2026-10-31T12:33:09Z
+
+Read-only GitHub branches/commit/tree API checks resolved
+`openclaw/openclaw` `refs/heads/main` to commit
+`be8eca7f92b2d7c9acb4043debef785906af6188`, root tree
+`6b24eed3a7d79dcb099ad4c17aee7f85c0ea3842`. The recursive tree was not
+truncated and contained 64,088 entries: 61,847 blobs, 2,241 directories, and
+no gitlinks. The commit message is `fix(ci): remove leftover internal exports
+(#189345)`; root dependency/license input blobs remain unchanged.
+
+This supersedes the `8c69e8b7...` discovery candidate in the lock. It remains
+discovery-only: no prior inventory, dependency closure, LFS/integrity result,
+Actions provenance, or source-semantic conclusion is relabeled or reused. All
+authority and completion flags remain unchanged. No CI, push, PR update, local
+OCRM executable verification, build, package, release, or runtime/device
+acceptance was performed.

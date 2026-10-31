@@ -660,6 +660,18 @@ authority/completion flags 不变。
 `dossiers/upstream-current-candidate-dependency-frontier-8c69e8b7-20261031.md`；
 不重写旧 baseline 清单，不提升 dependency closure、source authority 或任何完成 flag。
 
+2026-10-31T12:33:09Z 的只读远端复核发现 OpenClaw `main` 再推进到
+`be8eca7f92b2d7c9acb4043debef785906af6188` / tree
+`6b24eed3a7d79dcb099ad4c17aee7f85c0ea3842`。GitHub recursive-tree API 返回
+`truncated=false`，共 64,088 entries（61,847 blobs、2,241 directories、0
+gitlinks）；commit message 为 `fix(ci): remove leftover internal exports
+(#189345)`。根 package/lock/workspace/license/notice blob identities 仍未
+变化；该 exact subject 仍为 discovery-only，前一 candidate 的 inventory、
+依赖闭包、LFS/integrity、语义阅读和 Actions provenance 均不得复用。lock
+live candidate 已更新，固定 implementation subject、ledger 修订及全部
+authority/completion flags 不变。详见
+`dossiers/upstream-current-candidate-probe-be8eca7f-20261031.md`。
+
 2026-10-31T11:40:24Z 的只读远端复核发现 OpenClaw `main` 再推进到
 `70da3265b8bf09e25acb1a14ce246982520a1140` / tree
 `b8afd36d3c8d722dbab9a05781605fd79d2d5a50`。GitHub recursive-tree API 返回
