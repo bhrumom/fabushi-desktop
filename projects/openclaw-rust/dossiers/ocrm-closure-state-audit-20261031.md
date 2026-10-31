@@ -104,6 +104,24 @@ This table is a review frontier, not an approval or implementation change.
 The device-pairing false-positive review is retained as a method correction;
 it does not authorize changing that responsibility's ledger status.
 
+### Source-level evidence for two actual gaps
+
+- `ChannelThreadRouter::resolve_or_create` is defined at
+  `source/host/src/connectors/channel_delivery.rs:587-610`. A read-only search
+  of the current Rust source found no production call site beyond that
+  definition, so the router policy is present but inbound-channel to
+  transcript/session consumption is not directly evidenced.
+- `ProductionSubagentTaskSink::launch_subagent` captures the child
+  `lifecycleRevision` at `source/host/app/src/main.rs:1333-1376`, and the
+  `ProductionAgentLifecycle` Gateway dispatch begins at
+  `source/host/src/extensions/transcript/agent_lifecycle.rs:802`. The same
+  source search found no `isolated-agent` or `session-cleanup` producer path
+  in the Rust implementation (apart from a meeting-bot comment), supporting
+  the ledger's separate isolated-cron producer gap.
+
+These are static source observations with bounded search scope; they are not
+runtime acceptance or proof that no generated/dynamic producer exists.
+
 ## Requirements traceability state
 
 | State | Count |
