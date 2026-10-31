@@ -72,6 +72,17 @@
           "evidence_scope": "official release/package-level description only",
           "raw_file_member_manifest_status": "unread",
           "caveat": "Boost release/library documentation is not treated as an archive file-member manifest or complete content-tree proof"
+        },
+        "round35_manifest_search": {
+          "evidence_round": 35,
+          "official_release_index_reconfirmed": true,
+          "official_release_index": "https://archives.boost.io/release/1.90.0/source/",
+          "sourceforge_release_archive_listing_observed": true,
+          "fossies_exact_release_diff_parse_observed": true,
+          "fossies_scope": "readable 1.89.0-vs-1.90.0 source diff pages prove an equivalent Boost 1.90.0 release tree was parsed, but no complete archive member listing was exposed",
+          "complete_raw_member_manifest_read": false,
+          "archive_bytes_retried": false,
+          "status": "unread-no-complete-member-manifest"
         }
       }
     },
@@ -104,6 +115,17 @@
           "evidence_scope": "official release/checksum/signature metadata only",
           "raw_file_member_manifest_status": "unread",
           "caveat": "release notes do not enumerate the archive file members"
+        },
+        "round35_manifest_search": {
+          "evidence_round": 35,
+          "exact_archive_file_list_advertised_by": "https://tho-otto.m68k.eu/crossmint.php",
+          "advertised_label": "Original sources: libiconv-1.18.tar.gz <file list>",
+          "complete_advertised_file_list_body_read": false,
+          "fossies_diff_index": "https://fossies.org/diffs/libiconv/",
+          "fossies_scope": "readable index confirms a 1.17_vs_1.18 source-code changes report, but not a complete 1.18 member manifest",
+          "independent_gnu_mirror_size_reconfirmed_bytes": 5822590,
+          "archive_bytes_retried": false,
+          "status": "unread-leads-found-but-complete-member-manifest-not-readable"
         }
       }
     }
@@ -331,5 +353,15 @@
     "boost_1_90_0_raw_members": "unread",
     "libiconv_1_18_raw_members": "unread",
     "evidence_mode": "manual-source-and-original-host-reads-stage-a-no-ci"
+  },
+  "round35_non_github_root_and_archive_readability": {
+    "upstream_commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+    "dav1d_original_host_direct_read": "tracked-in-root-mutable-authorities-as-unavailable",
+    "boost_1_90_0_raw_members": "unread",
+    "libiconv_1_18_raw_members": "unread",
+    "archive_download_retry": false,
+    "xcb_util_m4_original_host_status": "fail-closed-original-host-unread",
+    "cppgir_original_host_status": "fail-closed-original-host-unread",
+    "evidence_mode": "manual-public-source-host-and-equivalent-manifest-search-stage-a-no-ci"
   }
 }

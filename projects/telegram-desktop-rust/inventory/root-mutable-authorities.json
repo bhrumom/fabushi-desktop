@@ -68,6 +68,22 @@
             "evidence_round": 32
           }
         ]
+      },
+      "round35_original_host_readability": {
+        "evidence_round": 35,
+        "original_repository": "https://code.videolan.org/videolan/dav1d",
+        "commit": "54706fc6bc0cdecab7e9593974a4039cc038fca7",
+        "direct_original_host_web_read": false,
+        "web_read_status": "blocked-by-robots",
+        "direct_original_host_git_probe": false,
+        "git_probe_status": "dns-resolution-failed",
+        "archive_or_build_execution_used": false,
+        "official_github_mirror": "https://github.com/videolan/dav1d",
+        "mirror_tree_sha": "37c883895a0fe6cf3fdf3f975525fe8beefdd9c2",
+        "mirror_copying_blob_sha": "8d4d6418c1ab4adf0a05bddfc11182216d5238a1",
+        "status": "original-host-direct-read-unavailable-official-content-addressed-mirror-remains-verified",
+        "retry_policy": "do-not-repeat-without-reader-or-network-state-change",
+        "caveat": "The exact Git object remains independently verified through VideoLAN's GitHub mirror; this does not convert the failed code.videolan.org direct read into original-host verification."
       }
     },
     {
@@ -2448,5 +2464,16 @@
         ]
       }
     }
-  ]
+  ],
+  "round35_non_github_root_authority_readability": {
+    "upstream_commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+    "fixed_u_non_github_root_authorities_reviewed": [
+      "ROOT-MUT-001"
+    ],
+    "dav1d_original_host_direct_read": "unavailable-web-robots-and-git-dns",
+    "dav1d_official_mirror_object_verified": true,
+    "xcb_util_m4_original_host_status": "unchanged-fail-closed-original-host-unread",
+    "cppgir_original_host_status": "unchanged-fail-closed-original-host-unread",
+    "evidence_mode": "manual-source-host-readability-review-stage-a-no-ci"
+  }
 }
