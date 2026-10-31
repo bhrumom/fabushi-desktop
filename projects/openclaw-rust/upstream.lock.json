@@ -25,13 +25,13 @@
   "live_candidate": {
     "repository": "openclaw/openclaw",
     "ref": "refs/heads/main",
-    "commit": "6b469c95cec1a50fa00dfa3666e7abec355eabde",
-    "tree": "62c61f9e1f72b8ae66fe3e285d129491d62fa4c3",
-    "observed_at": "2026-10-31T12:10:37Z",
+    "commit": "8c69e8b71d3be0a8543e3480161e8e01f4fd9e5c",
+    "tree": "f4e34cf339e1645079baa9c8a6bdf1b9a169fa4f",
+    "observed_at": "2026-10-31T12:13:10Z",
     "discovery_source": "GitHub commit/tree API",
     "recursive_tree_truncated": false,
-    "recursive_tree_entries": 64072,
-    "recursive_blob_entries": 61831,
+    "recursive_tree_entries": 64075,
+    "recursive_blob_entries": 61834,
     "recursive_directory_entries": 2241,
     "root_inputs": {
       "package.json": "e52ea501bd0e2d749e7f4ab2efce5074b81a2a78",
@@ -49,7 +49,7 @@
     "behind_by": null,
     "compare_files_returned": null,
     "compare_file_counts_are_not_complete": true,
-    "decision": "live-main-drifted-to-6b469c95; read-only exact commit/tree and recursive tree revalidated at 2026-10-31T12:10:37Z; recursive tree remains 64,072 entries with the same root dependency/license identities, while the commit co-locates shared tab rendering dependencies; require fresh source reads before reuse and retain discovery-only status until Actions inventory and dependency closure"
+    "decision": "live-main-drifted-to-8c69e8b7; read-only exact commit/tree and recursive tree revalidated at 2026-10-31T12:13:10Z; recursive tree is 64,075 entries with the same root dependency/license identities, while the commit improves New Session latency on higher-latency connections; require fresh source reads before reuse and retain discovery-only status until Actions inventory and dependency closure"
   },
   "root_inputs": {
     "AGENTS.md": "c3deeccdb6b1a4c7137d56297e933bbf19f4d3bf",
