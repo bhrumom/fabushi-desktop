@@ -28,6 +28,7 @@ pub enum NodeWorkerSupervisorReceiptState {
     Failed { error_text: String },
     Interrupted { error_text: String },
     Cancelled { error_text: String },
+    OutcomeUnknown { error_text: String },
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -246,13 +247,14 @@ pub fn parse_worker_receipt(value: &Value) -> Result<NodeWorkerSupervisorReceipt
                 result_json: bounded_result_json(object.get("resultJson"))?,
             }
         }
-        "failed" | "interrupted" | "cancelled" => {
+        "failed" | "interrupted" | "cancelled" | "outcome-unknown" => {
             require_exact_keys(object, &identity_keys_with_two("state", "errorText"))?;
             let error_text = bounded_error_text(object.get("errorText"))?;
             match state {
                 "failed" => NodeWorkerSupervisorReceiptState::Failed { error_text },
                 "interrupted" => NodeWorkerSupervisorReceiptState::Interrupted { error_text },
-                _ => NodeWorkerSupervisorReceiptState::Cancelled { error_text },
+                "cancelled" => NodeWorkerSupervisorReceiptState::Cancelled { error_text },
+                _ => NodeWorkerSupervisorReceiptState::OutcomeUnknown { error_text },
             }
         }
         _ => return Err("INVALID_REQUEST: invalid worker receipt state".into()),

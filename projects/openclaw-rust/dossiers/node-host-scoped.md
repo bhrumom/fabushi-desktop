@@ -2754,3 +2754,17 @@ workspace identity is required before the binding can acquire a lease, while a
 descriptor without owner-supplied identity remains fail-closed. This connects
 the existing launch cross-field validator to the workspace owner without
 allowing descriptor fields to become workspace authority.
+
+## 205. Worker launch lifecycle state owner (2026-10-31)
+
+`worker_supervisor_runtime.rs` now composes validated launch bindings with the
+workspace lease owner and owns one in-memory launch record per `launchId`.
+Admission rejects duplicate launch identities; start and terminal settlement
+require the exact launch identity and current workspace lease. Receipts expose
+only pending/running/completed/failed/interrupted/cancelled or
+outcome-unknown state, with bounded result/error fields inherited from the
+existing protocol limits.
+
+This is lifecycle state and currentness fencing only. It is not the durable
+SQLite supervisor/journal, process or container launcher, cleanup observer,
+retention policy, or production command caller; those remain pending.
