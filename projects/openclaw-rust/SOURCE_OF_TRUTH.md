@@ -171,6 +171,15 @@ candidate 相同，`.gitmodules` 仍不存在；`src/acp/commands.ts` 仍不存�
 inventory、依赖闭包、LFS/完整性或 Actions provenance，亦不得提升任何 authority
 或 global flag。
 
+2026-10-31T05:23:17Z 的只读核对再次发现 OpenClaw `main` 漂移到
+commit=`b513040e660678693cee8d6131f35b206f0df833`、root tree
+`c48aeaf4c192e112f1ed38b4d693e13bd1f1d222`；递归 tree 未截断，共 63,906
+entries（61,665 blobs、2,241 directories），无 gitlink。root input blob
+identities 与上一 candidate 相同，`.gitmodules` 仍不存在。该 exact subject
+已同步写入 `upstream.lock.json` 的 `live_candidate`，但仍是 discovery-only；
+不得复用旧 inventory、依赖闭包、LFS/完整性或 Actions provenance，亦不得提升
+任何 authority 或 global flag。
+
 ## 5. 机器记录的初始化与终态
 
 2026-10-31 governance amendment: AC02/G02 final requires zero omitted,

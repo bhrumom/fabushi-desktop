@@ -205,3 +205,19 @@ discovery-only: no prior inventory, dependency closure, LFS/integrity result or
 Actions provenance is relabeled or reused, and all authority/completion flags
 remain unchanged. No CI, push, PR update or local OCRM executable verification
 was performed.
+
+## Subsequent live recheck — 2026-10-31T05:23:17Z
+
+Read-only `git ls-remote` and GitHub commit/tree API checks resolved
+`openclaw/openclaw` `refs/heads/main` to commit
+`b513040e660678693cee8d6131f35b206f0df833`, root tree
+`c48aeaf4c192e112f1ed38b4d693e13bd1f1d222`. The recursive tree response was
+not truncated and contained 63,906 entries: 61,665 blobs and 2,241 trees; no
+gitlinks were present. Root inputs remain identity-stable and `.gitmodules`
+remains absent.
+
+This supersedes the `b9244989...` discovery candidate in the lock. It remains
+discovery-only: no prior inventory, dependency closure, LFS/integrity result or
+Actions provenance is relabeled or reused, and all authority/completion flags
+remain unchanged. No CI, push, PR update or local OCRM executable verification
+was performed.
