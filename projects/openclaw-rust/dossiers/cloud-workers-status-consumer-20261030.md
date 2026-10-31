@@ -105,6 +105,11 @@ façade to that owner cache. A poisoned owner maps to an explicit unavailable
 catalog error; no provider discovery, authorization or launch fallback is
 introduced.
 
+The owner also exposes `select_provider_machine`, which requires the exact
+cached binary identity and deterministically selects a matching provider,
+profile and resource shape. Cache misses and incompatible choices fail closed;
+the projection does not authorize or launch a worker.
+
 ## Doctor read-only owner projection — 2026-10-31
 
 `CloudWorkerProvisioningExtension::inspect_doctor` now validates and accepts

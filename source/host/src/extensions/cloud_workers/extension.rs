@@ -96,6 +96,24 @@ impl CloudWorkerProvisioningExtension {
         owner.resolve_catalog(identity, load)
     }
 
+    /// Selects a machine only from the exact-binary-identity catalog already
+    /// admitted by the owner. A cache miss or incompatible profile is an
+    /// explicit discovery failure; this method grants no permission and does
+    /// not launch or mutate a provider.
+    pub fn select_provider_machine(
+        &self,
+        identity: &CloudWorkerBinaryIdentity,
+        provider_id: &str,
+        profile_id: &str,
+        requirement: &super::CloudWorkerMachineRequirement,
+    ) -> Result<super::CloudWorkerMachine, CloudWorkerCatalogError> {
+        let owner = self
+            .owner
+            .lock()
+            .map_err(|_| CloudWorkerCatalogError::OwnerUnavailable)?;
+        owner.select_cached_machine(identity, provider_id, profile_id, requirement)
+    }
+
     /// Registers one policy-validated artifact admission in the canonical
     /// owner snapshot. Acquisition and publication remain external producers.
     pub fn register_artifact(

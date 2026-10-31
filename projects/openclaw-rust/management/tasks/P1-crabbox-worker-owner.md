@@ -253,7 +253,10 @@ pending Crabbox responsibilities:
 - Provider catalog producers must enter through
   `CloudWorkerProvisioningExtension::resolve_provider_catalog`; direct access
   to the owner cache is not a production integration path, and owner lock
-  failure remains an explicit unavailable result.
+  failure remains an explicit unavailable result. Consumers select a machine
+  through `select_provider_machine`, which requires the exact cached binary
+  identity and fails explicitly on unknown or incompatible profiles without
+  authorizing or launching a worker.
 - Warm-image state mutations now have typed extension façades
   `register_warm_image` and `apply_warm_image`, both using the canonical owner
   and atomic store. Provider snapshot, credential scrub and recovery consumers
@@ -384,7 +387,7 @@ process launch, device enrollment, persistence, Coordinator wiring or UI
 projection. The slice is therefore an implementation foundation, not P1
 completion or production reachability.
 
-The next slice adds the side-effect-free catalog contract at
+The side-effect-free catalog contract at
 `source/host/src/extensions/cloud_workers/provider_catalog.rs`: bounded JSON
 input, explicit provider/profile/machine records, deterministic ordering,
 duplicate rejection, bounded identity text and resource/architecture
@@ -399,7 +402,10 @@ The catalog contract now also exposes an exact-binary-identity cache. Successful
 catalog loads are reused only for the same opaque binary identity, while every
 failed refresh invalidates that identity before returning the error. This is a
 side-effect-free cache contract; provider discovery, binary probing,
-authorization and launch remain open.
+authorization and launch remain open. The owner-bound
+`select_provider_machine` projection now performs the deterministic
+provider/profile/resource lookup from that exact cache and returns no
+permission or lifecycle capability.
 
 The artifact-admission foundation at
 `source/host/src/extensions/cloud_workers/artifact_admission.rs` is likewise

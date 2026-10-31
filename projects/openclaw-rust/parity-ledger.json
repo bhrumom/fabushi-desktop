@@ -1154,8 +1154,8 @@
       ],
       "id": "OCRM-RESP-INFRA-WORKER-CRABBOX-CATALOG-001",
       "integration": {
-        "consumer": "CloudWorkerProvisioningExtension::resolve_provider_catalog; provider/process producer remains not wired",
-        "entrypoint": "source/host/src/extensions/cloud_workers/extension.rs::CloudWorkerProvisioningExtension::resolve_provider_catalog -> owner.rs::resolve_catalog",
+        "consumer": "CloudWorkerProvisioningExtension::resolve_provider_catalog / select_provider_machine; provider/process producer remains not wired",
+        "entrypoint": "source/host/src/extensions/cloud_workers/extension.rs::CloudWorkerProvisioningExtension::resolve_provider_catalog / select_provider_machine -> owner.rs::resolve_catalog / select_cached_machine",
         "owner": "source/host/src/extensions/cloud_workers/extension.rs and owner.rs::catalog_cache",
         "producer": "configured provider binary (not yet wired)"
       },
@@ -1171,7 +1171,7 @@
       ],
       "owner_decision": "Keep catalog state under the CloudWorker provisioning boundary; do not widen FDN, Computer, Sand or Runner owners",
       "postconditions": [
-        "A typed, deterministic catalog projection is available to the future provider adapter without authorizing or launching a worker"
+        "A typed, deterministic catalog projection and exact-cache machine selection are available to the future provider adapter without authorizing or launching a worker"
       ],
       "preconditions": [
         "An explicitly configured provider binary supplies bounded JSON output and an exact identity"
@@ -1246,7 +1246,8 @@
         "CloudWorkerCatalogParser",
         "CloudWorkerCatalogCache",
         "CloudWorkerBinaryIdentity",
-        "CloudWorkerMachineRequirement"
+        "CloudWorkerMachineRequirement",
+        "CloudWorkerProvisioningExtension::select_provider_machine"
       ],
       "unit_id": "OCRM-UNIT-INFRA-001"
     },

@@ -130,6 +130,34 @@ pub struct CloudWorkerCatalog {
 }
 
 impl CloudWorkerCatalog {
+    pub fn select_machine(
+        &self,
+        provider_id: &str,
+        profile_id: &str,
+        requirement: &CloudWorkerMachineRequirement,
+    ) -> Result<CloudWorkerMachine, CloudWorkerCatalogError> {
+        let provider = self
+            .providers
+            .iter()
+            .find(|provider| provider.id == provider_id)
+            .ok_or_else(|| CloudWorkerCatalogError::UnknownProvider(provider_id.into()))?;
+        let profile = provider
+            .profiles
+            .iter()
+            .find(|profile| profile.id == profile_id)
+            .ok_or_else(|| CloudWorkerCatalogError::UnknownProfile {
+                provider: provider_id.into(),
+                profile: profile_id.into(),
+            })?;
+        profile
+            .select_machine(requirement)
+            .cloned()
+            .ok_or_else(|| CloudWorkerCatalogError::NoCompatibleMachine {
+                provider: provider_id.into(),
+                profile: profile_id.into(),
+            })
+    }
+
     pub fn validate(mut self) -> Result<Self, CloudWorkerCatalogError> {
         if self.providers.is_empty() {
             return Err(CloudWorkerCatalogError::EmptyCatalog);
@@ -260,6 +288,8 @@ pub struct CloudWorkerMachineRequirement {
 pub enum CloudWorkerCatalogError {
     #[error("cloud-worker owner is unavailable")]
     OwnerUnavailable,
+    #[error("provider catalog is not cached for this binary identity")]
+    UnknownBinaryIdentity,
     #[error("catalog parser limit must be greater than zero")]
     InvalidLimit,
     #[error("binary identity is empty or contains surrounding whitespace")]
@@ -280,6 +310,12 @@ pub enum CloudWorkerCatalogError {
     InvalidProfileId,
     #[error("profile {0} has no machine choices")]
     EmptyProfileMachines(String),
+    #[error("provider was not found in the cached catalog: {0}")]
+    UnknownProvider(String),
+    #[error("profile {profile} was not found under provider {provider}")]
+    UnknownProfile { provider: String, profile: String },
+    #[error("profile {profile} has no machine satisfying the requested resources under provider {provider}")]
+    NoCompatibleMachine { provider: String, profile: String },
     #[error("profile {profile} is duplicated under provider {provider}")]
     DuplicateProfile { provider: String, profile: String },
     #[error("machine architecture is empty")]
@@ -364,6 +400,17 @@ mod tests {
             ..requirement
         };
         assert!(profile.select_machine(&too_large).is_none());
+        assert_eq!(
+            catalog
+                .select_machine("local", "default", &requirement)
+                .unwrap()
+                .arch,
+            "x86_64"
+        );
+        assert!(matches!(
+            catalog.select_machine("missing", "default", &requirement),
+            Err(CloudWorkerCatalogError::UnknownProvider(id)) if id == "missing"
+        ));
     }
 
     #[test]

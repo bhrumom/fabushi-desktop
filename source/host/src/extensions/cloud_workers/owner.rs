@@ -7,7 +7,7 @@ use super::{
     CloudWorkerArtifactAdmissionState, CloudWorkerArtifactPolicy, CloudWorkerArtifactDigest,
     CloudWorkerVerifiedArtifact,
     CloudWorkerBinaryIdentity, CloudWorkerCatalog, CloudWorkerCatalogCache,
-    CloudWorkerCatalogError,
+    CloudWorkerCatalogError, CloudWorkerMachine, CloudWorkerMachineRequirement,
     CloudWorkerBootstrapPhase, CloudWorkerBootstrapRecord, CloudWorkerBootstrapRetryClass,
     CloudWorkerDiagnostic, CloudWorkerNodeBootstrapError,
     CloudWorkerLease, CloudWorkerLeaseError, CloudWorkerLeaseMutation, CloudWorkerLeaseScope,
@@ -147,6 +147,20 @@ impl CloudWorkerProvisioningOwner {
         F: FnOnce() -> Result<CloudWorkerCatalog, CloudWorkerCatalogError>,
     {
         self.catalog_cache.resolve(identity, load)
+    }
+
+    pub fn select_cached_machine(
+        &self,
+        identity: &CloudWorkerBinaryIdentity,
+        provider_id: &str,
+        profile_id: &str,
+        requirement: &CloudWorkerMachineRequirement,
+    ) -> Result<CloudWorkerMachine, CloudWorkerCatalogError> {
+        let catalog = self
+            .catalog_cache
+            .get(identity)
+            .ok_or(CloudWorkerCatalogError::UnknownBinaryIdentity)?;
+        catalog.select_machine(provider_id, profile_id, requirement)
     }
 
     pub fn snapshot(&self) -> CloudWorkerPersistentSnapshot {
