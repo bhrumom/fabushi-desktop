@@ -103,6 +103,7 @@ jobs:
               "forward-destination-authorization",
               "formatted-text-utf16-entity-offset",
               "typed-forward-thread-destination",
+              "share-recipient-send-other-inline-game-permission-axes",
               "missing-closed-hidden-topic-rejection"
             ],
             "result": "passed"
