@@ -15,6 +15,7 @@ mod doctor;
 mod node_bootstrap;
 mod owner;
 mod platform_bridge;
+mod process_identity;
 mod provider_catalog;
 mod runtime_control;
 mod sandbox;
@@ -52,6 +53,9 @@ pub use owner::{
 pub use platform_bridge::{
     CloudWorkerDesktopSession, CloudWorkerPlatform, CloudWorkerPlatformBridge,
     CloudWorkerPlatformBridgeError,
+};
+pub use process_identity::{
+    CloudWorkerProcessIdentityError, CloudWorkerProcessReceipt,
 };
 pub use lease::{
     CloudWorkerLease, CloudWorkerLeaseError, CloudWorkerLeaseMutation,

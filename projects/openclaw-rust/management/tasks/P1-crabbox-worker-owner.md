@@ -314,6 +314,9 @@ pending Crabbox responsibilities:
 - The platform descriptor oracle now records the pinned macOS/Windows VNC
   compatibility while retaining Linux-VNC fail-closed behavior; it remains a
   descriptor-only contract without launcher or process wiring.
+- A typed `CloudWorkerProcessReceipt` now validates the pinned launch identity
+  fields and paired interactive session identity; it remains a persisted
+  receipt shape only and does not prove liveness or own process cleanup.
 
 The broader Crabbox projection, lifecycle, sandbox, bootstrap, artifact,
 warm-image and runtime-control rows remain pending where their producer or
