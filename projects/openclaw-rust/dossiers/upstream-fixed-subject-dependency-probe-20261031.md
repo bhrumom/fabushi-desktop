@@ -105,3 +105,14 @@ manifest-to-importer identity, patch/native/optional/peer semantics, external
 archive bytes, license/notice provenance, source closure, and exact-head
 Actions evidence remain unverified. `dependency_closure_enumerated` and
 `source_closure_ready` therefore remain `false`.
+
+The same exact-object recheck compared workspace importer keys with every
+`package.json` path. There are 208 package manifests in the tree, 200 importer
+keys, and all 200 importer keys have a matching manifest. The eight manifests
+without importers are outside the declared workspace package roots and are
+classified as non-workspace candidates: three `.github`/release entries,
+`qa/convex-credential-broker`, `scripts/cloudflare`,
+`src/claws/fixtures/delegating-agent`, and two `test/fixtures` entries. No
+importer lacks a manifest. This closes the prior workspace-count ambiguity at
+the static mapping layer, while external package provenance and Actions
+authority remain open.

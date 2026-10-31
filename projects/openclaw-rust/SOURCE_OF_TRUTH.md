@@ -539,3 +539,11 @@ pnpm alias 后全部可解析。这纠正了单文档 Psych 读取造成的“�
 身份、patch/native/optional/peer 语义、外部 archive bytes、license/notice
 provenance、source closure 与 exact-head Actions 仍未验证，故所有 closure/
 authority flags 继续保持 `false`。
+
+同一 fixed subject 的 workspace 对齐重核还比较了全部 `package.json` 路径与
+应用 lock importer：树中 208 个 manifest 中有 200 个与 importer 一一匹配，且
+没有 importer 缺少 manifest；其余 8 个明确位于 `.github`/release、`qa`、
+`scripts`、`src/claws/fixtures` 或 `test/fixtures`，不属于声明的 workspace
+package roots。该结果消除了此前 workspace count 的歧义，但仍只属于静态
+manifest/importer mapping；外部包 archive/integrity/license provenance、
+source closure 和 exact-head Actions authority 仍未闭合。
