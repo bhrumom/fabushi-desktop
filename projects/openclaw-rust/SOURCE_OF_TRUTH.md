@@ -188,6 +188,16 @@ tree `04ccce62f1d74dc8e0c88290ae8ded027b7b0f16`；`parity-ledger.json` 与
 subject 上重新取得 Actions inventory、依赖闭包和 receipt 前，不得把这些旧
 产物当作当前 source closure 或完成证据。
 
+双向责任引用审计还发现旧 baseline inventory 的 responsibility projection 尚未
+包含两条已在 parity ledger 中建立的非 P1 责任：
+`OCRM-RESP-NODE-HOST-LOCAL-RUNTIME-PROJECTION-001` 与
+`OCRM-RESP-SKILLS-CONFIG-MUTATION-001`；其对应路径已有旧责任 ID，且不存在
+悬空 ledger/RTM ID。另有四条 Crabbox P1 task-local 责任按既定规则不进入
+inventory/RTM 的项目级责任集合。由于分片的压缩摘要和未压缩摘要绑定
+canonical inventory 身份，不能手工改写旧分片来伪造 projection closure；这些
+差异必须在 `b513040e…/c48aeaf…` exact subject 的新 inventory 生成与独立
+验证中闭合。
+
 ## 5. 机器记录的初始化与终态
 
 2026-10-31 governance amendment: AC02/G02 final requires zero omitted,

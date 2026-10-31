@@ -229,3 +229,13 @@ The read-only identity audit also confirms that `inventory/index.json` and all
 same baseline identity. They are not relabeled to this discovery subject and
 cannot serve as current source-closure evidence until a fresh exact-subject
 Actions inventory, dependency closure and receipt exist.
+
+The same audit found six ledger responsibilities absent from the old inventory
+`responsibility_ids` projection: four declared Crabbox P1 task-local rows and
+the two mapped non-P1 rows `OCRM-RESP-NODE-HOST-LOCAL-RUNTIME-PROJECTION-001`
+and `OCRM-RESP-SKILLS-CONFIG-MUTATION-001`. The referenced paths and all
+ledger/RTM IDs are otherwise present; this is projection staleness, not a
+dangling reference. Because the shards carry canonical compressed and
+uncompressed digests, the old inventory is not edited by hand. The new
+exact-subject inventory generation must reconcile these rows and prove the
+result independently.
