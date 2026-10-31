@@ -10,6 +10,8 @@ use super::{
     CloudWorkerArtifactAdmission, CloudWorkerArtifactAdmissionState,
     CloudWorkerArtifactAdmissionError, CloudWorkerArtifactDigest,
     CloudWorkerArtifactKind, CloudWorkerArtifactPolicy, CloudWorkerArtifactSource,
+    CloudWorkerArtifactPublisher, CloudWorkerArtifactStoreError,
+    CloudWorkerPublishedArtifact,
     CloudWorkerBinaryIdentity, CloudWorkerBootstrapRequest, CloudWorkerCatalog,
     CloudWorkerCatalogError, CloudWorkerDoctorAction, CloudWorkerDoctorError,
     CloudWorkerDoctorRequest, CloudWorkerDoctorResult,
@@ -38,6 +40,7 @@ pub struct CloudWorkerProvisioningExtension {
     owner: Arc<Mutex<CloudWorkerProvisioningOwner>>,
     state_path: PathBuf,
     store: CloudWorkerProvisioningStore,
+    artifact_publisher: CloudWorkerArtifactPublisher,
 }
 
 /// Read-only projection produced by the Cloud Worker owner for Gateway and
@@ -133,6 +136,74 @@ impl CloudWorkerProvisioningExtension {
         next: CloudWorkerArtifactAdmissionState,
     ) -> Result<CloudWorkerArtifactAdmission, CloudWorkerMutationError> {
         self.mutate_and_persist(|owner| owner.settle_artifact(digest, next))
+    }
+
+    /// Publishes one explicitly admitted artifact through the canonical
+    /// owner boundary. The admission is durable before publication begins;
+    /// known publication failures settle to `Damaged`, while a directory
+    /// barrier failure settles to `OutcomeUnknown`. A successful file rename
+    /// is not reported as success until the owner snapshot also settles to
+    /// `Verified`.
+    pub fn publish_verified_artifact(
+        &self,
+        kind: CloudWorkerArtifactKind,
+        policy: &CloudWorkerArtifactPolicy,
+        source: &CloudWorkerArtifactSource,
+        bytes: &[u8],
+    ) -> Result<CloudWorkerPublishedArtifact, CloudWorkerArtifactPublicationError> {
+        let pending = CloudWorkerArtifactAdmission {
+            kind: kind.clone(),
+            source: source.clone(),
+            size_bytes: bytes.len() as u64,
+            state: CloudWorkerArtifactAdmissionState::Pending,
+        };
+        self.register_artifact(pending, policy)
+            .map_err(CloudWorkerArtifactPublicationError::Admission)?;
+
+        let published = match self
+            .artifact_publisher
+            .publish_verified(kind, policy, source, bytes)
+        {
+            Ok(published) => published,
+            Err(error) => {
+                let state = if matches!(
+                    &error,
+                    CloudWorkerArtifactStoreError::DirectoryBarrierOutcomeUnknown(_)
+                ) {
+                    CloudWorkerArtifactAdmissionState::OutcomeUnknown
+                } else {
+                    CloudWorkerArtifactAdmissionState::Damaged
+                };
+                let settled = self.settle_artifact(
+                    &source_digest(source),
+                    state,
+                );
+                return match (state, settled) {
+                    (CloudWorkerArtifactAdmissionState::Damaged, Ok(_)) => {
+                        Err(CloudWorkerArtifactPublicationError::Publication(error))
+                    }
+                    (CloudWorkerArtifactAdmissionState::OutcomeUnknown, Ok(_)) => Err(
+                        CloudWorkerArtifactPublicationError::PublicationOutcomeUnknown(error),
+                    ),
+                    (_, Err(settlement)) => Err(
+                        CloudWorkerArtifactPublicationError::SettlementAfterFailure {
+                            publication: error,
+                            settlement,
+                        },
+                    ),
+                };
+            }
+        };
+
+        self.settle_artifact(
+            &published.proof.digest,
+            CloudWorkerArtifactAdmissionState::Verified,
+        )
+        .map_err(|settlement| CloudWorkerArtifactPublicationError::SettlementAfterPublication {
+            publication: published,
+            settlement,
+        })?;
+        Ok(published)
     }
 
     /// Registers warm-image state through the canonical owner and its atomic
@@ -444,6 +515,8 @@ pub enum CloudWorkerMutationError {
     #[error(transparent)]
     Artifact(#[source] CloudWorkerArtifactAdmissionError),
     #[error(transparent)]
+    ArtifactStore(#[source] CloudWorkerArtifactStoreError),
+    #[error(transparent)]
     Persistence(#[source] CloudWorkerStoreError),
     #[error("cloud-worker mutation persistence outcome is unknown: {0}")]
     OutcomeUnknown(#[source] CloudWorkerStoreError),
@@ -453,10 +526,42 @@ pub enum CloudWorkerMutationError {
     PoisonedOwner,
 }
 
+fn source_digest(source: &CloudWorkerArtifactSource) -> CloudWorkerArtifactDigest {
+    match source {
+        CloudWorkerArtifactSource::Https { digest, .. }
+        | CloudWorkerArtifactSource::ManagedLocal { digest } => digest.clone(),
+    }
+}
+
+#[derive(Debug, thiserror::Error)]
+pub enum CloudWorkerArtifactPublicationError {
+    #[error("artifact admission failed: {0}")]
+    Admission(#[source] CloudWorkerMutationError),
+    #[error("artifact publication failed after settling admission as damaged: {0}")]
+    Publication(#[source] CloudWorkerArtifactStoreError),
+    #[error("artifact publication outcome is unknown after settling admission: {0}")]
+    PublicationOutcomeUnknown(#[source] CloudWorkerArtifactStoreError),
+    #[error("artifact publication failed and its recovery settlement failed: {publication}; settlement: {settlement}")]
+    SettlementAfterFailure {
+        publication: CloudWorkerArtifactStoreError,
+        settlement: CloudWorkerMutationError,
+    },
+    #[error("artifact was published but owner verification settlement failed: {settlement}")]
+    SettlementAfterPublication {
+        publication: CloudWorkerPublishedArtifact,
+        settlement: CloudWorkerMutationError,
+    },
+}
+
 pub fn start_cloud_worker_provisioning_extension(
     state_path: impl AsRef<Path>,
 ) -> Result<CloudWorkerProvisioningExtension, CloudWorkerExtensionError> {
     let state_path = state_path.as_ref().to_path_buf();
+    let artifact_root = state_path
+        .parent()
+        .ok_or(CloudWorkerExtensionError::InvalidStatePath)?
+        .join("artifacts");
+    let artifact_publisher = CloudWorkerArtifactPublisher::new(artifact_root)?;
     let config = CloudWorkerProvisioningConfig::default();
     let store = CloudWorkerProvisioningStore;
     let owner = if state_path.exists() {
@@ -474,6 +579,7 @@ pub fn start_cloud_worker_provisioning_extension(
         owner: Arc::new(Mutex::new(owner)),
         state_path,
         store,
+        artifact_publisher,
     })
 }
 
@@ -485,6 +591,8 @@ pub enum CloudWorkerExtensionError {
     Store(#[from] CloudWorkerStoreError),
     #[error(transparent)]
     Owner(#[from] CloudWorkerOwnerError),
+    #[error(transparent)]
+    ArtifactStore(#[from] CloudWorkerArtifactStoreError),
 }
 
 #[cfg(test)]
@@ -493,7 +601,8 @@ mod tests {
     use std::sync::{Arc, Mutex};
 
     use super::{
-        CloudWorkerMutationError, CloudWorkerOwnerStatus, CloudWorkerProvisioningExtension,
+        CloudWorkerArtifactPublicationError, CloudWorkerMutationError, CloudWorkerOwnerStatus,
+        CloudWorkerProvisioningExtension,
         CloudWorkerProvisioningStore, start_cloud_worker_provisioning_extension,
     };
     use crate::extensions::cloud_workers::{
@@ -512,10 +621,15 @@ mod tests {
             max_artifacts: 1,
         })
         .unwrap();
+        let artifact_root = state_path
+            .parent()
+            .unwrap()
+            .join(format!("cloud-worker-test-artifacts-{}", std::process::id()));
         CloudWorkerProvisioningExtension {
             owner: Arc::new(Mutex::new(owner)),
             state_path,
             store: CloudWorkerProvisioningStore,
+            artifact_publisher: super::CloudWorkerArtifactPublisher::new(artifact_root).unwrap(),
         }
     }
 
@@ -628,5 +742,72 @@ mod tests {
         ));
         assert!(extension.snapshot().unwrap().artifacts.is_empty());
         assert!(!state_path.exists());
+    }
+
+    #[test]
+    fn publication_settles_the_owner_only_after_the_file_is_published() {
+        let state_path = test_state_path("published-artifact");
+        let extension = enabled_extension(state_path.clone());
+        let source = CloudWorkerArtifactSource::ManagedLocal {
+            digest: CloudWorkerArtifactDigest::new(
+                "87eba76e7f3164534045ba922e7770fb58bbd14ad732bbf5ba6f11cc56989e6e",
+            )
+            .unwrap(),
+        };
+
+        let published = extension
+            .publish_verified_artifact(
+                CloudWorkerArtifactKind::WorkerBinary,
+                &artifact_policy(),
+                &source,
+                b"worker",
+            )
+            .unwrap();
+
+        assert!(published.path.is_file());
+        assert_eq!(
+            extension
+                .snapshot()
+                .unwrap()
+                .artifacts
+                .get(&published.proof.digest.0)
+                .unwrap()
+                .state,
+            super::super::CloudWorkerArtifactAdmissionState::Verified
+        );
+        let _ = std::fs::remove_file(&published.path);
+        let _ = std::fs::remove_file(state_path);
+    }
+
+    #[test]
+    fn known_publication_failure_settles_the_pending_admission_as_damaged() {
+        let state_path = test_state_path("damaged-artifact");
+        let extension = enabled_extension(state_path.clone());
+        let source = CloudWorkerArtifactSource::ManagedLocal {
+            digest: CloudWorkerArtifactDigest::new("a".repeat(64)).unwrap(),
+        };
+
+        let result = extension.publish_verified_artifact(
+            CloudWorkerArtifactKind::WorkerBinary,
+            &artifact_policy(),
+            &source,
+            b"worker",
+        );
+
+        assert!(matches!(
+            result,
+            Err(CloudWorkerArtifactPublicationError::Publication(_))
+        ));
+        assert_eq!(
+            extension
+                .snapshot()
+                .unwrap()
+                .artifacts
+                .get(&"a".repeat(64))
+                .unwrap()
+                .state,
+            super::super::CloudWorkerArtifactAdmissionState::Damaged
+        );
+        let _ = std::fs::remove_file(state_path);
     }
 }

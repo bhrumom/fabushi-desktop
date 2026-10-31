@@ -207,15 +207,29 @@ boundary for verified bytes. It is digest-addressed by artifact kind, refuses
 symlink/non-regular destinations, publishes through a private create-new temp
 file plus file sync, atomic rename and directory barrier, and permits only
 byte-identical idempotent re-publication. Network acquisition, extraction,
-credential egress, admission-snapshot mutation, provider launch and packaged
-consumers remain outside this seam; the artifact responsibility therefore
-stays `wiring=not-wired`, `verification=not-run`, `acceptance=pending`.
+credential egress, provider launch and packaged consumers remain outside this
+seam. The separate extension façade now composes publication with admission
+state, but the production producer/bootstrap consumer path remains absent, so
+the artifact responsibility stays `wiring=not-wired`, `verification=not-run`,
+`acceptance=pending`.
 
 The extension contract now also records the positive persistence and digest
 mismatch negative oracles in
 `source/host/src/extensions/cloud_workers/extension.rs`; they are authored for
 Actions execution and have not been run locally under this task's verification
 constraints.
+
+## Managed artifact publication owner composition — 2026-10-31
+
+`CloudWorkerProvisioningExtension::publish_verified_artifact` now composes
+managed publication with the canonical admission owner. It persists `Pending`
+before publishing, settles known write/admission failures as `Damaged`, maps a
+directory-barrier failure to `OutcomeUnknown`, and settles `Verified` only
+after the digest-addressed file is published. If the owner settlement itself
+fails, the façade returns an explicit non-success result and does not claim
+that file and owner state are durably reconciled. This is local publication
+and recovery-state composition only; acquisition, extraction, provider launch,
+bootstrap/process consumers and packaged acceptance remain pending.
 
 Warm-image capture ambiguity now has a typed extension façade that persists
 `CaptureUncertain` and cleanup debt under generation fencing. Provider snapshot

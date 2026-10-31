@@ -263,8 +263,10 @@ pending Crabbox responsibilities:
   provider/process, FDN enrollment and platform consumers remain pending.
 - Artifact admissions now have typed `register_artifact` and
   `settle_artifact` façades through the owner snapshot. Policy, digest and
-  state-transition checks are retained; download, credential egress, atomic
-  publication and provider consumers remain pending.
+  state-transition checks are retained; configured download, credential
+  egress, provider acquisition and provider consumers remain pending. Local
+  managed publication is composed through the separate
+  `publish_verified_artifact` façade with explicit recovery settlement.
 - Bootstrap validation now requires a matching canonical `Verified` artifact
   record and admitted size, so a shape-valid digest alone cannot authorize a
   producer.
@@ -406,18 +408,27 @@ publication and managed artifact mutation remain outside this slice.
 The Host extension now exposes `verify_and_register_artifact`, which binds
 that byte-level verification to the same canonical owner mutation and atomic
 snapshot persistence. The method returns the typed verified artifact proof and
-cannot claim provider publication; configured acquisition, credential egress,
-extraction, publication and managed artifact consumers remain unwired.
+cannot claim provider publication. The separate
+`publish_verified_artifact` façade now binds local publication to a durable
+`Pending` admission and explicit `Verified`/`Damaged`/`OutcomeUnknown`
+settlement; configured acquisition, credential egress, extraction, provider
+launch and managed artifact consumers remain unwired.
 
 The managed publication seam at
 `source/host/src/extensions/cloud_workers/artifact_store.rs` now publishes
 already verified bytes under a digest-addressed kind directory. It rejects
 symlink/non-regular destinations, uses a create-new private temporary file,
 file sync, atomic rename and parent-directory barrier, and treats an existing
-matching artifact as idempotent while rejecting different bytes. This seam
-does not acquire bytes, extract archives, resolve credentials, register a
-provider runtime or update the canonical admission snapshot; its producer and
-consumer composition therefore remain unwired.
+matching artifact as idempotent while rejecting different bytes. The Host
+extension now composes this seam with the canonical owner through
+`publish_verified_artifact`: it durably records `Pending` before publication,
+settles a known publication failure as `Damaged`, settles a directory-barrier
+failure as `OutcomeUnknown`, and settles `Verified` only after the file
+publication succeeds. A failed owner settlement is returned as an explicit
+error rather than being converted into success. This seam still does not
+acquire bytes, extract archives, resolve credentials, register a provider
+runtime or wire a bootstrap/process consumer; those production paths remain
+unwired.
 
 The lease foundation now also includes an explicit transition guard: only a
 completed mutation may advance the lifecycle, submitted/failed/cancelled
