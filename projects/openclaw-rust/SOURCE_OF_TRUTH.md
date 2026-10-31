@@ -204,6 +204,18 @@ read/disposition 记录。该计数是当前 AC02/G02 final 未闭合的直接�
 unread 强行当作失败门槛，也不能被结构性 inventory 完整或已完成的 scoped
 责任行抵消。
 
+2026-10-31 的只读生产可达性审计还纠正了 10 条错误的
+`implemented/wired` 状态：`OCRM-RESP-AUTO-REPLY-HEARTBEAT-001`、
+`OCRM-RESP-CHANNEL-ACCESS-CONTROL-001`、`OCRM-RESP-CHANNEL-INBOUND-DEBOUNCE-001`、
+`OCRM-RESP-CHANNEL-STREAMING-CHUNKING-001`、`OCRM-RESP-CHANNEL-THREAD-BINDINGS-001`、
+`OCRM-RESP-CRON-SESSION-REAPER-001`、`OCRM-RESP-MEM-CITATIONS-FORMAT-001`、
+`OCRM-RESP-TALK-AUDIO-PORT-FENCE-001`、`OCRM-RESP-TALK-EXACT-SPEECH-001`、
+`OCRM-RESP-TALK-TURN-CONTEXT-001`。这些目标 symbol 只在 contract tests/文档
+中存在，或尚未出现在声明的生产 owner 文件；因此 ledger 已降为
+`implementing/not-wired`。测试 oracle 和源阅读证据保留，生产实现、真实
+producer→owner→consumer 接线与 packaged acceptance 仍待完成；本审计未运行
+OCRM 测试或本机构建。
+
 同一只读维度审计通过：1,419 条 `read-complete`/mapped 记录均有 reviewer、
 disposition 与 evidence；57,331 条 `unread`/unclassified 记录没有伪造
 disposition；未发现 mapped-without-disposition、unclassified-with-disposition、
