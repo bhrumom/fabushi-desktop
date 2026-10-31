@@ -6,6 +6,7 @@ pub const CLOUD_WORKERS_CAPABILITIES_METHOD: &str = "cloudWorkers.capabilities";
 pub const CLOUD_WORKERS_DOCTOR_METHOD: &str = "cloudWorkers.doctor";
 pub const CLOUD_WORKERS_STATUS_EVENT_FAMILY: &str = "cloud-workers.status";
 const MAX_PROJECTION_TEXT_CHARS: usize = 256;
+const MAX_CAPABILITY_PROVIDERS: usize = 64;
 
 fn validate_projection_text(field: &str, value: &str) -> Result<(), String> {
     if value.is_empty() {
@@ -109,11 +110,20 @@ impl CloudWorkerCapabilitiesProjection {
         if !self.metadata_only {
             return Err("cloud worker capabilities must remain metadata-only".into());
         }
+        if self.providers.len() > MAX_CAPABILITY_PROVIDERS {
+            return Err(format!(
+                "cloud worker capabilities exceed {MAX_CAPABILITY_PROVIDERS} providers"
+            ));
+        }
+        let mut identities = std::collections::HashSet::new();
         for provider in &self.providers {
             validate_projection_text("providerId", &provider.provider_id)?;
             validate_projection_text("pluginId", &provider.plugin_id)?;
             if let Some(label) = &provider.label {
                 validate_projection_text("label", label)?;
+            }
+            if !identities.insert((&provider.provider_id, &provider.plugin_id)) {
+                return Err("cloud worker capabilities contain a duplicate provider identity".into());
             }
         }
         Ok(())
@@ -286,6 +296,23 @@ mod tests {
         invalid.metadata_only = true;
         invalid.owner = "other-owner".into();
         assert!(invalid.validate().is_err());
+        let duplicate = CloudWorkerCapabilitiesProjection {
+            owner: "cloud-workers".into(),
+            metadata_only: true,
+            providers: vec![
+                CloudWorkerCapabilityProvider {
+                    provider_id: "crabbox".into(),
+                    plugin_id: "crabbox".into(),
+                    label: None,
+                },
+                CloudWorkerCapabilityProvider {
+                    provider_id: "crabbox".into(),
+                    plugin_id: "crabbox".into(),
+                    label: None,
+                },
+            ],
+        };
+        assert!(duplicate.validate().is_err());
     }
 
     #[test]

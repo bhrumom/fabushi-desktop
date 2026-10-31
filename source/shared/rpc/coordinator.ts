@@ -100,6 +100,8 @@ function isBoundedWireText(value: unknown): value is string {
   return typeof value === "string" && value.length > 0 && [...value].length <= 256 && ![...value].some((character) => /\p{C}/u.test(character));
 }
 
+const MAX_CLOUD_WORKER_CAPABILITY_PROVIDERS = 64;
+
 export function parseCloudWorkerDoctorRequest(value: unknown): CloudWorkerDoctorRequest | null {
   if (!isRecord(value) || !isRecord(value.scope)) return null;
   if (!isBoundedWireText(value.scope.account_scope) || !isBoundedWireText(value.scope.device_scope)) return null;
@@ -116,8 +118,10 @@ export function parseCloudWorkerStatusProjection(value: unknown): CloudWorkerSta
 }
 
 export function parseCloudWorkerCapabilitiesProjection(value: unknown): CloudWorkerCapabilitiesProjection | null {
-  if (!isRecord(value) || value.owner !== "cloud-workers" || value.metadataOnly !== true || !Array.isArray(value.providers)) return null;
+  if (!isRecord(value) || value.owner !== "cloud-workers" || value.metadataOnly !== true || !Array.isArray(value.providers) || value.providers.length > MAX_CLOUD_WORKER_CAPABILITY_PROVIDERS) return null;
   if (!value.providers.every((provider) => isRecord(provider) && isBoundedWireText(provider.providerId) && isBoundedWireText(provider.pluginId) && (provider.label === undefined || isBoundedWireText(provider.label)))) return null;
+  const identities = new Set(value.providers.map((provider) => `${(provider as Record<string, unknown>).providerId}\u0000${(provider as Record<string, unknown>).pluginId}`));
+  if (identities.size !== value.providers.length) return null;
   return value as CloudWorkerCapabilitiesProjection;
 }
 
