@@ -2423,5 +2423,67 @@
     "baseline_ready": false,
     "accepted": false,
     "validation_status": "not-run"
+  },
+  "round39_canonical_telegram_provider_activation_gap": {
+    "evidence_mode": "manual-exact-head-source-review-stage-a-no-ci",
+    "checkpoint_commit_before_round": "47e91cbbe74bea272c5c0759dfdb60fcbeb8cc70",
+    "fixed_u": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+    "status": "open-production-wiring-implementation-gap",
+    "conditional_registration": {
+      "path": "source/mahayana/mahayana-rs/mahayana-host/src/lib.rs",
+      "blob_sha": "fd28ba534d82cc928a4c7723ec3f9c50ddd1e280",
+      "contract": "HostCreateConfig carries optional telegram_client_id/self_user_id; Host registers TelegramConversationProvider::from_client_id only when telegram_client_id is Some; source comment assigns client creation to the platform login flow."
+    },
+    "provider_runtime": {
+      "provider_path": "source/mahayana/mahayana-rs/mahayana-telegram/src/lib.rs",
+      "provider_blob_sha": "cec9d354acc3923ab05e30af55baa4b7c814adf5",
+      "runtime_path": "source/mahayana/mahayana-rs/providers/telegram-runtime/src/runtime.rs",
+      "runtime_blob_sha": "787d28c05944802edfa566512366b7e5898f3a62",
+      "ffi_path": "source/mahayana/mahayana-rs/providers/telegram-runtime/src/lib.rs",
+      "ffi_blob_sha": "268b2bfcc24ac89ac1a6bbec1afad4b37f0e03d0",
+      "contract": "Provider/runtime already expose ephemeral/persistent client creation, authentication/update dispatch, and stable create/execute/close ABI; the blocker is canonical ownership/handoff, not absence of low-level runtime primitives."
+    },
+    "inspected_creation_paths": [
+      {
+        "path": "source/mahayana/mahayana-rs/mahayana-app-host/src/lib.rs",
+        "blob_sha": "3b87324329177dc0df00b98c644dd893ae207f27",
+        "finding": "canonical production HostCreateConfig ends with ..HostCreateConfig::default() and does not assign Telegram IDs"
+      },
+      {
+        "path": "source/mahayana/mahayana-rs/mahayana-app-host-desktop/src/main.rs",
+        "blob_sha": "c78409876f0a8104d26bbc924128ef2842d72daf",
+        "finding": "no Telegram client-id injection reference"
+      },
+      {
+        "path": "source/mahayana/mahayana-rs/mahayana-app-host-mobile/src/lib.rs",
+        "blob_sha": "03b52043164e6039f929e4c5c02cd261e57a06b7",
+        "finding": "no Telegram client-id injection reference"
+      },
+      {
+        "path": "source/mahayana/mahayana-rs/mahayana-unified-app-host/src/lib.rs",
+        "blob_sha": "39966aec08778144f55b0adf17de8f2f0770c8d5",
+        "finding": "no Telegram client-id injection reference"
+      },
+      {
+        "path": "source/mahayana/mahayana-rs/mahayana-cli/src/main.rs",
+        "blob_sha": "a0e0a98f20e7f24eb75dc13ae9bffdf5c4846b6e",
+        "finding": "CLI starts from HostCreateConfig::default() and does not set Telegram IDs"
+      },
+      {
+        "path": "source/mahayana/mahayana-rs/mahayana-feature-host/src/implementation.rs",
+        "blob_sha": "98b665d390edfbada2112d902e51c9e38dfc27ea",
+        "finding": "generic production create uses HostCreateConfig::default(); explicit path only forwards caller config"
+      }
+    ],
+    "conclusion": "Conditional Telegram provider implementation exists, but canonical shipping activation is not source-proven in inspected production creation paths. A canonical account/platform-login owner must create or restore the embedded client and hand its typed identity into Host composition.",
+    "shortcuts_rejected": [
+      "default-ephemeral-client",
+      "environment-variable-client-id",
+      "mock-login",
+      "ABI-presence-as-activation-evidence"
+    ],
+    "baseline_ready": false,
+    "accepted": false,
+    "validation_status": "not-run"
   }
 }

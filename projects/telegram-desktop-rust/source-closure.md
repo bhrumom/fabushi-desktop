@@ -209,3 +209,12 @@ Stage A remained execution-free for validation: no GitHub Actions/CI status quer
 - **No-spin blockers:** dav1d original-host robots/DNS and xcb-util-m4/cppgir original GitLab blockers were not retried.
 
 `baseline_ready=false`, `accepted=false`, and `validation_status=not-run` remain unchanged. Broader provider semantic/source-informed review, the Telegram client-id injection trace, release legal acceptance, complete archive members, original-host blockers, and full fixed-U implementation closure remain open.
+
+
+## Canonical Telegram provider activation gap (round 39, 2026-10-31)
+
+Stage A source review found a concrete production-wiring gap without running validation. `mahayana-host/src/lib.rs@fd28ba53...` registers `TelegramConversationProvider::from_client_id` only when `HostCreateConfig.telegram_client_id` is supplied and documents that client as created by the platform login flow. The provider/runtime already exposes real ephemeral/persistent client creation plus transport/auth/update operations, so the missing piece is canonical account/platform ownership and handoff.
+
+The current production app-host construction `mahayana-app-host/src/lib.rs@3b873243...` finishes with `..HostCreateConfig::default()` and leaves Telegram IDs unset. Exact reads of the desktop/mobile/unified wrappers, CLI creation path and generic production FeatureHost path also found no Telegram client-id injection. Therefore the current evidence proves conditional provider code, not canonical shipping activation.
+
+No default ephemeral client, environment-variable client ID, mock login or ABI-only shortcut was added. `baseline_ready=false`, `accepted=false`, and `validation_status=not-run` remain unchanged.

@@ -103,3 +103,10 @@ P0 只在以下均完成时通过：
 - 新 ledger/validator gate 取得 exact-head GitHub Actions 证据。
 
 P0 通过只是实施输入闭合，不是产品已完成。某项 blocked 时继续无依赖阻塞的研究、合同、已批准实现或证据收集；不能伪造 P0/既有 Bot gate 已通过来启动依赖它的工作。需要用户支持先检查相同通知及回复，按指定渠道通知一次，再推进其他内容。
+
+
+## Current Stage-A production-wiring blocker — Telegram client ownership handoff (2026-10-31)
+
+Exact-head review at checkpoint `47e91cbbe74bea272c5c0759dfdb60fcbeb8cc70` found that the embedded Telegram provider is only conditionally registered: `mahayana-host/src/lib.rs@fd28ba53...` expects an existing `telegram_client_id` from a platform login owner, while the canonical production app-host `mahayana-app-host/src/lib.rs@3b873243...` and the inspected desktop/mobile/unified/CLI/default FeatureHost creation paths do not supply it. The provider/runtime itself already has real client creation, persistence and authentication primitives.
+
+Disposition: **open production-wiring implementation gap**. The canonical account/platform login owner must create/restore the embedded client, own credential/storage lifecycle, and pass the typed client identity into Host composition (or coherently revise that ownership contract). Runtime/package validation remains Stage B and has not been run.
