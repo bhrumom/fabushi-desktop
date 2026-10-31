@@ -490,6 +490,7 @@ const UPDATE_PILL_LABELS = {
 const SETTINGS_COMMANDS: readonly { id: SettingsSectionId; label: string; keywords: readonly string[] }[] = [
   { id: "general", label: "General", keywords: ["account", "model", "notifications", "preferences", "appearance", "theme", "mode", "security", "yubikey", "webauthn"] },
   { id: "usage", label: "Usage & Billing", keywords: ["usage", "billing", "spend", "limit", "on-demand", "plan", "quota"] },
+  { id: "cloud-workers", label: "Cloud Workers", keywords: ["cloud", "worker", "crabbox", "provider", "lease", "warm image"] },
   { id: "beta", label: "Updates", keywords: ["beta", "updates", "release", "track", "danger"] }
 ];
 const THEME_COMMANDS: readonly { preference: ThemePreference; label: string; keywords: readonly string[] }[] = [

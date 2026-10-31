@@ -231,8 +231,10 @@ pending Crabbox responsibilities:
 - `OCRM-RESP-PLUGIN-SDK-CRABBOX-DOCTOR-001` now has a read-only owner projection
   through `CloudWorkerProvisioningExtension::inspect_doctor`. Mutating repair,
   migration and reconciliation remain explicitly `mutation-not-wired` until a
-  real recovery owner and plugin/UI/CLI consumer exist. The read-only path is
-  exposed through the `cloudWorkers.doctor` Host Gateway route only.
+  real recovery owner and plugin/CLI consumer exist. The read-only path is
+  exposed through the `cloudWorkers.doctor` Host Gateway route and the typed
+  Coordinator RPC client; the packaged Settings view currently consumes status
+  only.
 - `OCRM-RESP-INFRA-WORKER-CRABBOX-SANDBOX-001` now binds sandbox descriptors to
   an enrolled `CloudWorkerLeasedCapability` and rechecks lease scope, owner
   epoch, generation and runtime identity. This is fencing at the contract
@@ -561,10 +563,11 @@ typed mutation delegation. Direct admit/register writes use the same deep
 identity and state validation as snapshot restore. The
 production extension boundary exists and now owns a fail-closed persistence
 adapter, but no provider side-effect adapter or production mutation producer is
-connected. The Coordinator→Host Gateway now
-exposes only the read-only `cloudWorkers.status` projection; mutating commands
+connected. The Coordinator→Host Gateway exposes the read-only
+`cloudWorkers.status` and `cloudWorkers.doctor` projections; mutating commands
 remain unregistered until their real producer, authorization, persistence and
-consumer paths are implemented. Packaged UI/CLI reachability remains open.
+consumer paths are implemented. The packaged Settings status view is wired;
+CLI, live event publication, provider and mutation reachability remain open.
 
 Versioned persistence is now defined by
 `CloudWorkerPersistentSnapshot` and `CloudWorkerProvisioningStore`: lease and
@@ -611,13 +614,15 @@ projection remains regression-visible when executable verification is enabled.
 The Coordinator crate now owns the serializable projection contract in
 `source/node-agent-coordinator/src/cloud_worker_projection.rs`, with the exact
 read-only `cloudWorkers.status` and `cloudWorkers.doctor` methods plus the
-`cloud-workers.status` event family. It is a schema/command boundary only.
+`cloud-workers.status` event family. The projection remains read-only and does
+not own cloud-worker state.
 `CoordinatorGatewayClient` has dedicated status and doctor projection calls
 that reuse the existing gateway transport and error classification. The shared
 Coordinator RPC table and production client now preserve the doctor request's
 scope, action, acknowledgement, and replay-key contract, with runtime input
-validation before dispatch; a live event publisher and renderer/CLI consumer
-are still open.
+validation before dispatch. The production Settings overlay consumes and
+renders the validated status projection and its status event family; a live
+Host event producer and CLI consumer are still open.
 
 The Coordinator event projection now has a family-scoped decode/encode
 boundary for `cloud-workers.status`: unknown families, malformed payloads, and
