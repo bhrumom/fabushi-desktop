@@ -103,6 +103,12 @@ export function parseCloudWorkerStatusProjection(value: unknown): CloudWorkerSta
   return value as CloudWorkerStatusProjection;
 }
 
+export function parseCloudWorkerStatusEvent(value: unknown): CloudWorkerStatusProjection | null {
+  return isRecord(value) && value.kind === "status-changed"
+    ? parseCloudWorkerStatusProjection(value.projection)
+    : null;
+}
+
 export function parseCloudWorkerDoctorProjection(value: unknown): CloudWorkerDoctorProjection | null {
   if (!isRecord(value) || !["inspection-only", "pending", "completed", "failed", "outcome-unknown"].includes(String(value.status))) return null;
   if (typeof value.mutationStarted !== "boolean" || (value.diagnosticCode !== undefined && !isBoundedProjectionText(value.diagnosticCode)) || typeof value.statePersisted !== "boolean") return null;

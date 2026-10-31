@@ -620,9 +620,11 @@ not own cloud-worker state.
 that reuse the existing gateway transport and error classification. The shared
 Coordinator RPC table and production client now preserve the doctor request's
 scope, action, acknowledgement, and replay-key contract, with runtime input
-validation before dispatch. The production Settings overlay consumes and
-renders the validated status projection and its status event family; a live
-Host event producer and CLI consumer are still open.
+validation before dispatch. The Host now publishes the canonical status event
+on startup and after status/doctor gateway reads, and the production Settings
+overlay consumes and renders both the validated status reply and event family.
+Mutation-driven event publication, provider/process production and CLI
+consumer are still open.
 
 The Coordinator event projection now has a family-scoped decode/encode
 boundary for `cloud-workers.status`: unknown families, malformed payloads, and

@@ -466,7 +466,9 @@ use mahayana_host_runtime::gateway_server::{
 use mahayana_host_runtime::host_gateway_api::{
     CreateAgentNonceLedger, HOST_CAPABILITIES, sanitize_create_agent_args,
 };
-use mahayana_host_runtime::extensions::cloud_workers::extension::CloudWorkerProvisioningExtension;
+use mahayana_host_runtime::extensions::cloud_workers::extension::{
+    CloudWorkerProvisioningExtension, CloudWorkerStatusSnapshot,
+};
 use mahayana_host_runtime::extensions::cloud_workers::CloudWorkerDoctorRequest;
 use mahayana_host_runtime::sand_host::{
     BOX_READY_REPORT_ATTEMPTS, BOX_READY_REPORT_RETRY_MS, BOX_READY_STAGE_MARKER_PATH,
@@ -1147,6 +1149,19 @@ struct UnifiedGatewayApi {
     device_pairing: Arc<DevicePairingOwner>,
     node_host_runtime: Arc<NodeHostRuntimeState>,
     node_host_local_session: NodeHostSessionLease,
+}
+
+fn publish_cloud_worker_status(
+    events: &GatewayEventHub,
+    projection: CloudWorkerStatusSnapshot,
+) {
+    events.publish(serde_json::json!({
+        "channel": "cloud-workers.status",
+        "payload": {
+            "kind": "status-changed",
+            "projection": projection
+        }
+    }));
 }
 
 #[derive(Clone)]
@@ -11169,7 +11184,9 @@ impl GatewayApi for UnifiedGatewayApi {
             return Ok(project_forever_box_status(&status, handoff.as_ref()));
         }
         if method == "cloudWorkers.status" {
-            return serde_json::to_value(self.cloud_workers.status_snapshot())
+            let projection = self.cloud_workers.status_snapshot();
+            publish_cloud_worker_status(&self.events, projection.clone());
+            return serde_json::to_value(projection)
                 .map_err(|error| GatewayCommandError::Internal(format!(
                     "cloud worker status projection failed: {error}"
                 )));
@@ -11183,6 +11200,7 @@ impl GatewayApi for UnifiedGatewayApi {
                 .cloud_workers
                 .inspect_doctor(request)
                 .map_err(|error| GatewayCommandError::BadRequest(error.to_string()))?;
+            publish_cloud_worker_status(&self.events, self.cloud_workers.status_snapshot());
             return serde_json::to_value(result)
                 .map_err(|error| GatewayCommandError::Internal(format!(
                     "cloud worker doctor projection failed: {error}"
@@ -12707,6 +12725,10 @@ fn main() {
             return;
         }
     });
+    publish_cloud_worker_status(
+        &gateway_events,
+        production_extensions.cloud_workers.status_snapshot(),
+    );
     let mut network_enrollment_supervisor: Option<NetworkEnrollmentSupervisor> = {
         match FileRemoteComputerDeviceSecretProvider::from_environment() {
             Ok(device_provider) => {

@@ -35,8 +35,10 @@ to the `cloud-workers.status` family, and ignores event payloads that fail the
 shared projection parser. It displays owner status, provider/mutation
 readiness, persistence, and bounded owner counts; it does not add a mutation
 control or a second state store. This closes the packaged status consumer
-boundary only. A live Host event producer, CLI consumer, provider/device/process
-producer, executable verification, and acceptance remain open.
+boundary only. The Host publishes the initial snapshot and refresh snapshots
+after status/doctor gateway reads through the existing event bus; mutation-
+driven publication, CLI consumer, provider/device/process producer, executable
+verification, and acceptance remain open.
 
 The read projection is now produced by `CloudWorkerProvisioningExtension` via
 `status_snapshot`; `UnifiedGatewayApi` serializes that owner result instead of

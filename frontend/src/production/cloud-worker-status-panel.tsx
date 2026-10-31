@@ -1,5 +1,5 @@
 import { useEffect, useState, type ReactElement } from "react";
-import { parseCloudWorkerStatusProjection, type CloudWorkerStatusProjection } from "../../../source/shared/rpc/coordinator";
+import { parseCloudWorkerStatusEvent, parseCloudWorkerStatusProjection, type CloudWorkerStatusProjection } from "../../../source/shared/rpc/coordinator";
 import type { ProductionCoordinatorClient } from "./coordinator-client";
 
 type CloudWorkerStatusState =
@@ -16,14 +16,18 @@ export function CloudWorkerStatusPanel({ client }: { readonly client: Production
       return;
     }
     let active = true;
-    const apply = (value: unknown) => {
+    const applyProjection = (value: unknown) => {
       const projection = parseCloudWorkerStatusProjection(value);
       if (active && projection != null) setState({ kind: "ready", projection });
     };
-    void client.cloudWorkersStatus().then(apply).catch((reason: unknown) => {
+    const applyEvent = (value: unknown) => {
+      const projection = parseCloudWorkerStatusEvent(value);
+      if (active && projection != null) setState({ kind: "ready", projection });
+    };
+    void client.cloudWorkersStatus().then(applyProjection).catch((reason: unknown) => {
       if (active) setState({ kind: "error", message: reason instanceof Error ? reason.message : "Cloud worker status is unavailable." });
     });
-    const unsubscribe = client.subscribe("cloud-workers.status", apply);
+    const unsubscribe = client.subscribe("cloud-workers.status", applyEvent);
     return () => {
       active = false;
       unsubscribe();
