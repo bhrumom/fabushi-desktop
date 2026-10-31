@@ -493,7 +493,7 @@ Definition of Done 或 AGENTS.md 的“可执行验证只在 GitHub Actions”�
 | OCRM-G11 Package/release | 每支持平台实际打包/签名/安装/升级/回滚、binary reachability、SBOM/NOTICE/provenance 与无开发 fallback |
 | OCRM-G12 Independent acceptance | 独立阅读 Spec/RTM、审看真实 artifacts/视频/日志、全部 AC 与 release verdict |
 
-G01 可以分别报告根/已声明输入的 identity verdict 与全量枚举/依赖 closure verdict；前者不能推出后者。G02 `structural` mode 用于 P0：验证完整 inventory 集合、schema、引用、责任种类与状态合法性，允许准确列出的 unread/unclassified/not-started，不允许 omitted、断引用或假 accepted。G02 `final` mode（Actions 中调用 `validate_p0.py <evidence-dir> --final-ac02`）在同一 exact subject 上强制 0 未分流、0 未评估适用性、0 适用产品责任 orphan/unmapped；`product/mixed` 路径必须有 `deep-read` 与 reviewed responsibility mapping，普通 `non-product` 路径可以用带 reviewer/evidence 的 `grouped-evidence` 或 `not-applicable`，而未知行为不得降级为非产品。它不要求普通非产品路径伪装成逐文件语义深读，也不单独以 unread 数量失败。scoped G01/G02 必须显式给出单元和依赖集合；不准复用一个泛化绿色结论抹去阶段与范围差异。
+G01 可以分别报告根/已声明输入的 identity verdict 与全量枚举/依赖 closure verdict；前者不能推出后者。G02 `structural` mode 用于 P0：验证完整 inventory 集合、schema、引用、责任种类与状态合法性，允许准确列出的 unread/unclassified/not-started，不允许 omitted、断引用或假 accepted。G02 `final` mode（Actions 中调用 `validate_p0.py <evidence-dir> --final-ac02`）在同一 exact subject 上强制 0 适用性/处置未闭合路径、0 未评估适用性、0 适用产品责任 orphan/unmapped；`product/mixed` 路径必须有 `deep-read` 与 reviewed responsibility mapping，普通 `non-product` 路径可以用带 reviewer/evidence 的 `grouped-evidence` 或 `not-applicable`，而未知行为不得降级为非产品。这里的处置闭合不把普通非产品路径误写成产品责任 mapping；责任映射由 AC03 与 `responsibility_mapping_complete` 的独立谓词判定。它不要求普通非产品路径伪装成逐文件语义深读，也不单独以 unread 数量失败。scoped G01/G02 必须显式给出单元和依赖集合；不准复用一个泛化绿色结论抹去阶段与范围差异。
 
 上游 Node/TS 环境只可在隔离的 Actions oracle lane 为对照运行，不能随生产 Fabushi 分发或被生产 fallback 使用。高风险逻辑采用正反例/property/状态机；真实第三方服务用受控账号与清理策略，不把 mock、record-replay 或 SDK sample 当作外部全流程已通过。
 
@@ -545,7 +545,7 @@ OpenClaw 导入路径包括配置、workspace instructions、Agent profile、ski
 | ID | 必须满足的结果 |
 | --- | --- |
 | OCRM-AC01 | upstream exact source/dependency closure 经 Actions 接受；§12.3 receipt 绑定实际 subject target/ref/tree、完整输入及 lock/inventory/ledger/dossiers 的一致 provenance，清楚区分 baseline 与 evidence carrier。 |
-| OCRM-AC02 | 全部路径完成 exact identity、类型、适用性和 disposition；0 omitted、0 未分流路径、0 未评估适用产品责任。承载行为/高风险/公开合同/生产 producer-owner-consumer/权限安全/状态迁移/官方插件渠道平台/关键上游 oracle 的适用路径完成逐文件深读；普通文档示例、fixture、重复或研发用途项可由可复核成组证据处置。`unread` 仅表示尚未完成该路径的语义深读，不再作为全量 AC02 硬门槛；未知行为不得被归入非产品处置，必须升级深读。 |
+| OCRM-AC02 | 全部路径完成 exact identity、类型、适用性和 disposition；0 omitted、0 适用性/处置未闭合路径、0 未评估适用产品责任。承载行为/高风险/公开合同/生产 producer-owner-consumer/权限安全/状态迁移/官方插件渠道平台/关键上游 oracle 的适用路径完成逐文件深读；普通文档示例、fixture、重复或研发用途项可由可复核成组证据处置。此处的处置闭合不把普通非产品路径误写成产品责任 mapping；责任双向映射由 OCRM-AC03 单独验收。`unread` 仅表示尚未完成该路径的语义深读，不再作为全量 AC02 硬门槛；未知行为不得被归入非产品处置，必须升级深读。 |
 | OCRM-AC03 | 全部源 responsibility/capability 双向映射，0 unmapped/orphan/ambiguous owner；非产品处置逐项有证据。 |
 | OCRM-AC04 | 所有业务运行时责任在 canonical Fabushi 真实 Rust 实现或明确复用已有 Rust；表现/薄平台桥接及其他责任满足 §6.4.1 类型合同，mixed 文件无业务漏项；无原 OpenClaw core 生产 fallback。 |
 | OCRM-AC05 | 每运行时责任 production producer→owner→consumer 可达；表现/桥接有真实业务 owner 与产品入口，非运行时责任有对应构建/测试/文档/资源 consumer 或经审查的具体处置；0 stub/no-op/fake/unregistered 代替要求功能。 |
@@ -577,7 +577,7 @@ OpenClaw 导入路径包括配置、workspace instructions、Agent profile、ski
 | --- | --- | --- | --- |
 | `baseline_identity_accepted` | pinned 根来源、已声明依赖和当前 target 的身份/内容/provenance 已验证；只表示这些已声明身份可信，不表示枚举已穷尽 | G01 identity verdict 与 exact-target receipt | ref/内容/身份不匹配、缺 digest、证据不可取得；该 flag 本身不能豁免未知依赖 |
 | `source_closure_ready` | 全部 tracked 路径、gitlink/LFS、生成输入和必要递归依赖完整枚举并取得；零截断/漏项/未取得依赖；可以仍有诚实 unread | 全局 G01 closure、G02 structural；AC01 的源集合部分 | 未知或缺失来源/依赖、集合漂移、闭包不完整；不要求此时所有语义已读 |
-| `responsibility_mapping_complete` | 全部适用产品责任完成责任分解并 reviewed，owner/合同/oracle/依赖/类型处置双向映射完成；非产品路径有逐项或可复核成组 disposition 证据。它不要求普通文档/示例/fixture/重复/研发用途路径伪装成逐文件语义深读 | G02 final responsibility/disposition；AC02/AC03 | 未分流路径、未评估适用性、unmapped/orphan/owner 歧义、未知行为被错误降级或来源/合同变化 |
+| `responsibility_mapping_complete` | 全部适用产品责任完成责任分解并 reviewed，owner/合同/oracle/依赖/类型处置双向映射完成；非产品路径有逐项或可复核成组 disposition 证据。它不要求普通文档/示例/fixture/重复/研发用途路径伪装成逐文件语义深读，也不把普通非产品路径的责任状态 `unclassified` 单独等同于 disposition 未闭合 | G02 final responsibility/disposition；AC02/AC03 | 适用性未评估、适用性/处置未闭合路径、unmapped/orphan/owner 歧义、未知行为被错误降级或来源/合同变化 |
 | `rust_implementation_complete` | 全部业务运行时责任的真实 Rust 实现存在且合同通过，非 Rust 表现/桥接不承载迁入业务；这是实现结论，不代替生产验收 | G03/G04/G05 与 AC04 的 Rust/语言边界部分 | 缺实现、stub、业务留在 TS/原 Node core、相关 source/owner/oracle 变化 |
 | `production_wiring_complete` | 全部运行时/表现/平台责任生产接线真实；全部非运行时责任也完成各自类型合同的实际消费/分发或审定处置 | G02/G03、适用 G07/G09/G11；AC05/AC06 | unregistered、不可达消费者、缺产物/资源、未闭合类型合同或接线变化 |
 | `ecosystem_compatibility_accepted` | 全部 pinned provider/channel/plugin/skill/SDK/MCP/node 与具体外部合同逐行通过兼容及所需真实服务/设备验收 | G06/G07/G08/G12 与 AC09–AC15 的对应集合 | 缺账号/设备/服务证据、unsupported 未解决、版本/身份/合同变化 |
