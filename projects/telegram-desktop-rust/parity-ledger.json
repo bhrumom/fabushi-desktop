@@ -9,7 +9,7 @@
     "unknown": 16172,
     "unread": 16145,
     "omitted": 0,
-    "responsibilities_total": 65,
+    "responsibilities_total": 66,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -16425,6 +16425,261 @@
       "reviewer": null,
       "license_and_provenance": "Behavioral responsibility is anchored to fixed-U telegramdesktop/tdesktop Telegram/SourceFiles/mtproto/session_private.cpp@13cbc76ec723386027b5b4dcac79999b791c4614. The implementation is source-neutral Rust and copies no upstream C++ implementation.",
       "notes": "Stage A implementation only. This row records only the receive-side msg_container subset exactly representable by the single outstanding RPC/current ping owners. Arbitrary outbound wasSent/haveSent/_resendingIds/toSend/_sentContainers fan-out and gzip_packed remain open and fail-closed. Global unknown/unread source-entry counts are intentionally unchanged; contracts are authored but not executed; validation_status=not-run and accepted=false.",
+      "test_execution_evidence": []
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+      "source_path": "Telegram/SourceFiles/mtproto/session_private.cpp",
+      "source_blob_sha": "13cbc76ec723386027b5b4dcac79999b791c4614",
+      "source_kind": "source",
+      "module_id": "tdesktop.mtproto.session.new-detailed-info-wire",
+      "responsibility_id": "TDRP-R9-MTPROTO-NEW-DETAILED-INFO-WIRE-001",
+      "source_symbols": [
+        "SessionPrivate::handleOneReceived / mtpc_msg_new_detailed_info",
+        "msg_new_detailed_info#809db6df",
+        "SessionPrivate::ungzip / kMaxGzipNesting / unpackedBudget (blocker context)"
+      ],
+      "capability_ids": [
+        "CAP-EMBEDDED-MTPROTO-SESSION-RECOVERY"
+      ],
+      "dependency_ids": [
+        "EmbeddedTelegramProtocol",
+        "EmbeddedTelegramNetwork",
+        "TelegramClientLease",
+        "MTProtoAuthKey"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/evidence/round55-mtproto-new-detailed-info-wire-20261101.md",
+      "behavior_contract": "Fixed-U msg_new_detailed_info#809db6df must be fully decoded as answer_msg_id:long, bytes:int, status:int before any current-session acknowledgement or resend side effect. Truncated, wrong-constructor, or trailing payloads fail closed. The existing received-message replay window decides whether answer_msg_id is ACKed or requested once via msg_resend_req. gzip_packed remains blocked because the canonical protocol crate has no approved bounded decompression dependency/lifecycle.",
+      "state_machine": "same TelegramClientLease -> RuntimeClient -> EstablishedSession receives authenticated/decrypted msg_new_detailed_info -> telegram-protocol exact typed parse -> if malformed fail InvalidServiceMessage before side effects -> if answer id already in MessageIdGuard recent set add existing ACK at most once else send one existing non-content msg_resend_req -> continue current RPC; gzip remains open/fail-closed",
+      "side_effects": [
+        "Moves complete msg_new_detailed_info wire decoding into the existing shared telegram-protocol owner",
+        "Prevents truncated/trailing new-detailed-info payloads from reaching existing ACK/resend side effects",
+        "Reuses the existing current-session detailed-answer reconciliation and msg_resend_req service send",
+        "Authors exact-field and malformed-payload contracts without executing them in Stage A"
+      ],
+      "failure_cases": [
+        "Only answer_msg_id is read and truncated bytes/status are silently accepted",
+        "Trailing bytes are ignored and a resend/ACK side effect still occurs",
+        "A malformed constructor reaches reconciliation",
+        "Implementation creates historical sent-request/container ownership",
+        "gzip_packed is implemented without an approved bounded decompression dependency and nesting/unpacked-budget lifecycle"
+      ],
+      "ui_disposition": "No UI change. This is receive-side MTProto service-message validation inside the existing embedded runtime.",
+      "non_ui_responsibilities": [
+        "Exact fixed-U msg_new_detailed_info wire decoding",
+        "Malformed/trailing payload fail-closed behavior before side effects",
+        "Reuse of current-session answer ACK/resend reconciliation",
+        "Explicit gzip dependency/lifecycle blocker retention"
+      ],
+      "platform_delta": "The already-existing single-session msg_new_detailed_info behavior is tightened to a complete typed fixed-U parser in the source-neutral Rust protocol owner. No new request history or decompression owner is added.",
+      "existing_owner_candidates": [
+        "bhrumom/fabushi-platform-core:native/telegram-protocol/src/api.rs",
+        "bhrumom/fabushi-platform-core:native/telegram-network/src/lib.rs",
+        "source/mahayana/mahayana-rs/providers/telegram-protocol/src/api.rs",
+        "source/mahayana/mahayana-rs/providers/telegram-network/src/lib.rs"
+      ],
+      "existing_owner": "Canonical shared Telegram protocol parser + telegram-network EstablishedSession consumed by the existing desktop lease/runtime chain",
+      "rejected_existing_owners": [
+        "Renderer/AppHost cannot own MTProto service-message wire validation",
+        "Storage cannot own live ACK/resend reconciliation",
+        "A second request-history or gzip runtime would split lifecycle truth"
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "bhrumom/fabushi-platform-core:native/telegram-protocol/src/api.rs",
+        "bhrumom/fabushi-platform-core:native/telegram-protocol/src/lib.rs",
+        "bhrumom/fabushi-platform-core:native/telegram-network/src/lib.rs",
+        "source/mahayana/mahayana-rs/providers/telegram-protocol/src/api.rs",
+        "source/mahayana/mahayana-rs/providers/telegram-protocol/src/lib.rs",
+        "source/mahayana/mahayana-rs/providers/telegram-network/src/lib.rs"
+      ],
+      "fabushi_target_symbols": [
+        "MSG_NEW_DETAILED_INFO_CONSTRUCTOR",
+        "MsgNewDetailedInfo",
+        "parse_msg_new_detailed_info",
+        "EstablishedSession::scan_rpc_body",
+        "EstablishedSession::reconcile_detailed_answer"
+      ],
+      "target_language": "Rust",
+      "language_rationale": "MTProto wire decoding and current-session answer reconciliation are already owned by the shared Rust protocol/network crates, so the fixed-U strict parser belongs there rather than in a new Telegram-specific subsystem.",
+      "command_event_contracts": [
+        "msg_new_detailed_info(valid exact object) -> typed parse -> existing answer reconciliation",
+        "answer id recent -> existing acknowledgement accumulator at most once",
+        "answer id absent -> one existing non-content msg_resend_req -> continue waiting for current RPC",
+        "wrong/truncated/trailing object -> NetworkError::InvalidServiceMessage before ACK/resend",
+        "no wasSent/haveSent/_resendingIds/toSend/_sentContainers history and no gzip owner is inferred"
+      ],
+      "state_owner": "Existing EstablishedSession owns current RPC and MessageIdGuard; telegram-protocol owns exact msg_new_detailed_info wire decoding.",
+      "lifecycle_owner": "Existing account-bound TelegramClientLease -> RuntimeClient -> EstablishedSession production chain.",
+      "persistence_and_restart": "No new persistence. This service-message decision uses only the live session replay window and existing current RPC.",
+      "concurrency_and_cancellation": "The existing synchronous EstablishedSession retains one outstanding invoke_raw RPC. No background work, parallel callback registry, or multi-request queue is introduced.",
+      "security_boundary": "Only authenticated/decrypted MTProto messages reach the parser. Exact constructor/field/trailing validation fails closed before any ACK/resend side effect.",
+      "network_service_dependencies": [
+        "Existing embedded Telegram MTProto encrypted transport",
+        "fixed-U msg_new_detailed_info#809db6df",
+        "existing msg_resend_req#7d861a08"
+      ],
+      "service_owner": "Canonical embedded Telegram protocol/network runtime; no external service or decompression provider.",
+      "deployment_evidence": [],
+      "implementation_status": "implemented",
+      "coverage_disposition": "rewritten",
+      "blockers": [
+        "Stage B executable build/unit/contract/integration/packaged validation has not run.",
+        "gzip_packed decompression remains blocked: canonical telegram-protocol Cargo.toml/Cargo.lock have no approved flate2/miniz_oxide owner and no bounded decompression lifecycle has been adopted.",
+        "Outbound/multi-request wasSent/haveSent/_resendingIds/toSend/_sentContainers histories remain open and fail-closed.",
+        "Higher-level new-session update/difference propagation remains open.",
+        "Broader fixed-U source/legal/release closure remains open."
+      ],
+      "production_entrypoints": [
+        "source/mahayana/mahayana-rs/Cargo.toml -> mahayana-telegram -> providers/telegram-runtime -> providers/telegram-network + providers/telegram-protocol",
+        "existing TelegramClientLease/RuntimeClient -> EstablishedSession::invoke_raw -> typed parse_msg_new_detailed_info -> existing reconcile_detailed_answer"
+      ],
+      "production_evidence": [
+        "platform-core-spec-commit:40d53cfb44f2a495e4bf1a84002f653f555532e5",
+        "platform-core-implementation-commit:5bdf993dc1048ed22194d7f1c0439049e820ee5f",
+        "platform-core-path:native/telegram-protocol/src/api.rs@eff20dbc601ca78fa7e6a4662bfeda088706d4f4",
+        "platform-core-path:native/telegram-protocol/src/lib.rs@b6ab0397cbad0776b269d965f89427030824ba4c",
+        "platform-core-path:native/telegram-network/src/lib.rs@7f3b140a9becda2305a2f5e252fcea61108597e0",
+        "desktop-implementation-commit:3b37ff49e7c3b100af12206ab88662f4d83959c2",
+        "path:source/mahayana/mahayana-rs/providers/telegram-protocol/src/api.rs@eff20dbc601ca78fa7e6a4662bfeda088706d4f4",
+        "path:source/mahayana/mahayana-rs/providers/telegram-protocol/src/lib.rs@b6ab0397cbad0776b269d965f89427030824ba4c",
+        "path:source/mahayana/mahayana-rs/providers/telegram-network/src/lib.rs@7f3b140a9becda2305a2f5e252fcea61108597e0"
+      ],
+      "test_evidence": [
+        "platform-core native/telegram-protocol/src/api.rs exact-field msg_new_detailed_info parse contract authored, not run",
+        "platform-core native/telegram-protocol/src/api.rs truncation/trailing rejection contract authored, not run",
+        "existing platform-core native/telegram-network/src/lib.rs current-session detailed-answer reconciliation contracts remain authored, not run",
+        "desktop synchronized copies authored, not run"
+      ],
+      "target_commit": "3b37ff49e7c3b100af12206ab88662f4d83959c2",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Canonical Fabushi account + existing TelegramClientLease/runtime + shared MTProto protocol/network production composition",
+      "composition_slot": "Embedded Telegram encrypted session receive-side new-detailed-info validation",
+      "capability_component": "Typed current-session MTProto new-detailed-answer reconciliation",
+      "variation_axes": [
+        "exact payload vs truncated vs trailing payload",
+        "answer id already received vs missing",
+        "current RPC continues after ACK/resend service handling"
+      ],
+      "shared_owner_contracts": [
+        "Existing account-bound TelegramClientLease",
+        "Existing RuntimeClient/EstablishedSession",
+        "Existing telegram-protocol TlReader",
+        "Existing MessageIdGuard recent server-message history",
+        "Existing encrypted auth-key transport",
+        "Existing build_msg_resend_req service primitive"
+      ],
+      "duplicate_root_check": "No second account, runtime, provider, transport, auth key, request history, sent-container store, callback registry, decompression runtime, session product, message store, UI root, sidecar, subprocess or Web wrapper was introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Not applicable",
+      "primary_navigation_target": "Existing Messages/Conversation navigation",
+      "collection_surface": "Existing ConversationList; no change",
+      "creation_flow": "Existing canonical conversation creation; no change",
+      "object_action_scope": "Not applicable",
+      "detail_section": "Not applicable",
+      "capability_surface": "Existing ConversationWorkspace through the same provider/runtime; no new surface",
+      "route_contract": "No new route.",
+      "search_scope": "Not applicable",
+      "search_provider": "Existing canonical Search owner; unchanged",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Unchanged.",
+      "search_local_remote_contract": "Not applicable.",
+      "responsive_disposition": "No UI change.",
+      "accessibility_contract": "No UI change.",
+      "keyboard_contract": "No UI change.",
+      "state_continuity_contract": "Full wire validation occurs before the existing live-session answer reconciliation. A recent answer id is ACKed at most once; a missing answer id emits one resend request. Historical sent-request/container state remains absent.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Existing Fabushi design system; no visual changes",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": null,
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "No new icon asset",
+      "avatar_contract": "No change",
+      "content_copy_keys": [],
+      "motion_contract": "No change",
+      "reduced_motion_contract": "No change",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "high",
+      "requirement_ids": [
+        "TDRP-R9-MTPROTO-NEW-DETAILED-INFO-WIRE-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-MTPROTO-NEW-DETAILED-INFO-WIRE-001",
+        "ORA-TDRP-MTPROTO-NEW-DETAILED-INFO-FAIL-CLOSED-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-MTPROTO-NEW-DETAILED-INFO-EXACT-001",
+        "INV-TDRP-MTPROTO-NO-HISTORICAL-REQUEST-OWNER-001"
+      ],
+      "unit_case_ids": [
+        "UNIT-TDRP-MTPROTO-NEW-DETAILED-INFO-PARSE-001",
+        "UNIT-TDRP-MTPROTO-NEW-DETAILED-INFO-MALFORMED-001"
+      ],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-MTPROTO-NEW-DETAILED-INFO-WIRE-001"
+      ],
+      "integration_case_ids": [
+        "INT-TDRP-MTPROTO-NEW-DETAILED-INFO-RECONCILE-001"
+      ],
+      "functional_e2e_case_ids": [
+        "E2E-TDRP-MTPROTO-NEW-DETAILED-INFO-RECEIVE-001"
+      ],
+      "temporal_case_ids": [
+        "TEMP-TDRP-MTPROTO-NEW-DETAILED-INFO-BEFORE-SIDE-EFFECT-001"
+      ],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "fault_recovery_case_ids": [
+        "FAULT-TDRP-MTPROTO-NEW-DETAILED-INFO-MALFORMED-001"
+      ],
+      "performance_case_ids": [],
+      "security_case_ids": [
+        "SEC-TDRP-MTPROTO-NEW-DETAILED-INFO-AUTHENTICATED-001"
+      ],
+      "soak_case_ids": [],
+      "exploratory_charter_ids": [],
+      "regression_ids": [
+        "REG-TDRP-MTPROTO-NEW-DETAILED-INFO-PARTIAL-PARSE-001"
+      ],
+      "release_gate_ids": [
+        "G-TRACEABILITY",
+        "G-COMPOSITION",
+        "G-SECURITY",
+        "G-EVIDENCE",
+        "G-RELEASE"
+      ],
+      "test_fixture_ids": [
+        "mtproto-new-detailed-info-fixture"
+      ],
+      "test_environment_ids": [
+        "GitHub Actions Stage B matrix (not run)"
+      ],
+      "coverage_matrix_status": "pending",
+      "flake_status": "stable",
+      "release_gate_status": "pending",
+      "acceptance_reviewer": null,
+      "reviewer": null,
+      "license_and_provenance": "Behavioral responsibility is anchored to fixed-U telegramdesktop/tdesktop Telegram/SourceFiles/mtproto/session_private.cpp@13cbc76ec723386027b5b4dcac79999b791c4614 and Telegram/SourceFiles/mtproto/scheme/mtproto.tl@76225965bfc794388db241f3f760db8ab79e84f8. The implementation is source-neutral Rust and copies no upstream C++ implementation.",
+      "notes": "Stage A implementation only. This row tightens the already-used msg_new_detailed_info path to an exact typed fixed-U wire contract before side effects. gzip_packed is explicitly blocked because no approved bounded decompression dependency/lifecycle exists in the canonical protocol owner. Arbitrary wasSent/haveSent/_resendingIds/toSend/_sentContainers remain open and fail-closed. Global unknown/unread source-entry counts are intentionally unchanged; contracts are authored but not executed; validation_status=not-run and accepted=false.",
       "test_execution_evidence": []
     }
   ],
