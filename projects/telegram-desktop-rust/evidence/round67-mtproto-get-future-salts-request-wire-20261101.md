@@ -49,3 +49,11 @@ Implementation status: implemented. Validation status: not-run. Accepted: false.
 - Arbitrary wasSent/haveSent/_resendingIds/toSend/_sentContainers bookkeeping.
 - Remaining fixed-U unknown/unread source responsibilities and source/legal closure.
 - Stage-B executable evidence and independent release ACCEPT.
+
+
+## Source-level compliance readback
+
+Platform-core compliance commit: `eaf1eeefdde1401d820d9fecd15da3b4aa9cfde5`.  
+Final spec blob: `4b690dcafce939c13540d1ff0a55a66bed1138bb`.
+
+R11-R17 and AC9-AC12 are satisfied by source/blob/bookkeeping inspection for the request-side serializer boundary. Canonical and desktop provider blobs remain api `e8026c79b8b14261ef30d39bf6de8b0bc92306a6` and lib `809eeb7aa3256e1aa259e694f413b9c0377f08d6`. AC13 executable validation remains Stage-B blocked/not-run; `accepted=false`. Live request scheduling and future-salt installation/rotation remain explicit fail-closed.

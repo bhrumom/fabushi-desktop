@@ -19354,7 +19354,8 @@
         "platform-core-path:native/telegram-protocol/src/lib.rs@809eeb7aa3256e1aa259e694f413b9c0377f08d6",
         "desktop-implementation-commit:dd232c52e1b39cdccb409c6d6307f1523e4d538f",
         "path:source/mahayana/mahayana-rs/providers/telegram-protocol/src/api.rs@e8026c79b8b14261ef30d39bf6de8b0bc92306a6",
-        "path:source/mahayana/mahayana-rs/providers/telegram-protocol/src/lib.rs@809eeb7aa3256e1aa259e694f413b9c0377f08d6"
+        "path:source/mahayana/mahayana-rs/providers/telegram-protocol/src/lib.rs@809eeb7aa3256e1aa259e694f413b9c0377f08d6",
+        "platform-core-compliance-commit:eaf1eeefdde1401d820d9fecd15da3b4aa9cfde5"
       ],
       "test_evidence": [
         "platform-core native/telegram-protocol/src/api.rs exact 8-byte constructor+num contract authored, not run",
@@ -19477,7 +19478,7 @@
       "acceptance_reviewer": null,
       "reviewer": null,
       "license_and_provenance": "Behavioral responsibility is anchored to fixed-U telegramdesktop/tdesktop Telegram/SourceFiles/mtproto/scheme/mtproto.tl@76225965bfc794388db241f3f760db8ab79e84f8. session_private.cpp@13cbc76ec723386027b5b4dcac79999b791c4614 was reread for adjacent session/salt lifecycle; no precise live get-future-salts scheduling/install owner is inferred from it. The implementation is source-neutral Rust and copies no upstream C++ implementation.",
-      "notes": "Stage A implementation only. This row closes exact get_future_salts request serialization only and is intentionally distinct from TDRP-R9-MTPROTO-FUTURE-SALTS-WIRE-001 response parsing/current-request correlation. Live request scheduling and future-salt installation/rotation remain blocked/fail-closed. Global unknown/unread source-entry counts remain unchanged because this is a newly mapped responsibility slice within already-open fixed-U source coverage. Contracts are authored but not executed; validation_status=not-run and accepted=false.",
+      "notes": "Stage A implementation only. This row closes exact get_future_salts request serialization only and is intentionally distinct from TDRP-R9-MTPROTO-FUTURE-SALTS-WIRE-001 response parsing/current-request correlation. Live request scheduling and future-salt installation/rotation remain blocked/fail-closed. Global unknown/unread source-entry counts remain unchanged because this is a newly mapped responsibility slice within already-open fixed-U source coverage. Contracts are authored but not executed; validation_status=not-run and accepted=false. Source-level compliance readback at platform-core eaf1eeefdde1401d820d9fecd15da3b4aa9cfde5 confirms R11-R17 and AC9-AC12 satisfied at source/implementation/bookkeeping level; AC13 executable validation remains blocked/not-run.",
       "test_execution_evidence": [],
       "validation_status": "not-run",
       "accepted": false

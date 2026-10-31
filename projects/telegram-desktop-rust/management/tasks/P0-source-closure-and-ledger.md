@@ -377,3 +377,8 @@ Fixed U remains `f985723b552b30fe1c17d377d57f44e61a15a8c4`. `mtproto.tl@76225965
 Ledger adds `TDRP-R9-MTPROTO-GET-FUTURE-SALTS-REQUEST-WIRE-001`; `responsibilities_total=77`, while `unknown=16172`, `unread=16145`, and `omitted=0` remain unchanged. Exact 8-byte layout, signed-`i32` boundary preservation, and request/FutureSalts-parser separation contracts are authored only. No Actions/status/check query or trigger, build, typecheck, lint, schema validator, generator, unit/contract/integration/E2E test, package, deployment, installation, or runtime acceptance was performed. `validation_status=not-run`, `accepted=false`.
 
 Live `get_future_salts` scheduling and returned future-salt installation/rotation remain fail-closed because no precise existing owner currently represents those timer/session/history semantics. TLS camouflage lifecycle, gzip, complete difference/differenceSlice decoding/application, and arbitrary `wasSent/haveSent/_resendingIds/toSend/_sentContainers` history remain open/fail-closed.
+
+
+### Round 67 source-level compliance readback
+
+Platform-core compliance commit `eaf1eeefdde1401d820d9fecd15da3b4aa9cfde5` updates `docs/specs/telegram-mtproto-future-salts-wire.md@4b690dcafce939c13540d1ff0a55a66bed1138bb`. Source inspection records R11-R17 and AC9-AC12 satisfied at source/implementation/bookkeeping level; AC13 keeps executable validation blocked/not-run with `accepted=false`. Remote source readback confirms canonical and desktop provider api/lib remain byte-identical at `e8026c79b8b14261ef30d39bf6de8b0bc92306a6` / `809eeb7aa3256e1aa259e694f413b9c0377f08d6`. Live `get_future_salts` scheduling and future-salt installation/rotation remain explicit fail-closed scope.
