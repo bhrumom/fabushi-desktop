@@ -349,3 +349,13 @@ commit is `refactor(skills): read the review workspace from the session entry
 fresh discovery-only subject; prior inventory, dependency/LFS closure, semantic
 reads, and Actions provenance are not reusable, and no authority or completion
 flag changes.
+
+2026-10-31T11:34:55Z drift amendment: read-only GitHub checks resolved the
+current OpenClaw `main` to commit=`d04091590ac09ffb743da149ac99e147283eb730`,
+tree=`1f60bc3eeb1ab36c984d73066392d8bccbf45ed6`, with an untruncated recursive
+tree of 64,066 entries (61,825 blobs, 2,241 directories, 0 gitlinks). The
+commit is `fix: keep background process launches from stalling the Gateway
+(#189277)`. Root dependency/license identities remain unchanged, but this is a
+fresh discovery-only subject; prior inventory, dependency/LFS closure, semantic
+reads, and Actions provenance are not reusable, and no authority or completion
+flag changes.

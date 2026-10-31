@@ -628,3 +628,14 @@ integrity，另有 285 个 platform-qualified package、318 个 optional snapsho
 `patches/` 文件。这些是静态一致性和声明 provenance，不证明 archive bytes、
 patch 实际应用、native build、peer 环境、license/NOTICE 内容或 exact-head
 Actions reproduction；closure 与 authority flags 继续保持 `false`。
+
+2026-10-31T11:34:55Z 的只读远端复核发现 OpenClaw `main` 再推进到
+`d04091590ac09ffb743da149ac99e147283eb730` / tree
+`1f60bc3eeb1ab36c984d73066392d8bccbf45ed6`。GitHub recursive-tree API 返回
+`truncated=false`，共 64,066 entries（61,825 blobs、2,241 directories、0
+gitlinks）；commit message 为 `fix: keep background process launches from
+stalling the Gateway (#189277)`。根 package/lock/workspace/license/notice
+blob identities 仍未变化；该 exact subject 仍为 discovery-only，前一 candidate
+的 inventory、依赖闭包、LFS/integrity、语义阅读和 Actions provenance 均不得
+复用。lock live candidate 已更新，固定 implementation subject、ledger 修订及
+全部 authority/completion flags 不变。
