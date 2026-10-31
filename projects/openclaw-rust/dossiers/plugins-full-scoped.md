@@ -170,6 +170,8 @@ Channel failure markers now reuse the existing `SandPendingWakeStore` and `Pendi
 
 The failure worker now treats `RevivalExecution::aborted` and `quiesced_for_upgrade` as non-settled outcomes: it requeues the in-memory failure and leaves the durable marker intact. Marker cleanup is restricted to a non-aborted, non-quiesced follow-up result, so a cancellation or upgrade handoff cannot be reported as a delivered recovery notice.
 
+The provider-extension bridge has the same production reachability boundary: `ProviderExtensionBridge::register_provider` and `invoke_provider` are present and contract-tested, but no production Host owner constructs the bridge or routes speech, transcription, embedding, inference, or image operations through it. The parity ledger therefore records the implementation as present while keeping `wiring=not-wired` under `BL-PLUGINS-PROVIDER-WIRING-001`.
+
 ## 2026-10-29 — lifecycle hook production reachability re-audit
 
 The current exact Fabushi target was rechecked at

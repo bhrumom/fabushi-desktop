@@ -28223,10 +28223,10 @@
       ],
       "id": "OCRM-RESP-PLUGINS-PROVIDER-EXTENSIONS-001",
       "integration": {
-        "consumer": "source/host/src/extensions/plugins/hook_runner.rs",
+        "consumer": "No production provider-extension consumer identified; ProviderExtensionBridge::invoke_provider is called only by source/host/tests/openclaw_plugins_full_contract.rs",
         "entrypoint": "source/host/src/extensions/plugins/hook_runner.rs::ProviderExtensionBridge::invoke_provider",
         "owner": "source/host/src/extensions/plugins/hook_runner.rs",
-        "producer": "source/host/src/extensions/plugins/hook_runner.rs"
+        "producer": "No production provider registration producer identified; register_provider is exercised only by contract/test fixtures"
       },
       "invariants": [
         "Provider IDs are unique case-insensitively"
@@ -28281,7 +28281,7 @@
         "mapping": "reviewed",
         "read": "read-complete",
         "verification": "not-run",
-        "wiring": "wired"
+        "wiring": "not-wired"
       },
       "target": {
         "language": "Rust",
