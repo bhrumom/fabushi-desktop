@@ -4,7 +4,7 @@
 
 - **Unit ID:** `OCRM-UNIT-SESSIONS-001`
 - **Module ID:** `OCRM-M07` (Sessions, History, Branches and Transcript)
-- **Status:** **Admitted into Parity Ledger; 35 source files mapped to reviewed; 6 responsibilities registered; 6 falsifiable test oracles implemented in openclaw_sessions_and_config_contract.rs; acceptance pending**
+- **Status:** **Admitted into Parity Ledger; 35 source files mapped to reviewed; 6 responsibilities registered; 6 falsifiable test oracles registered in openclaw_sessions_and_config_contract.rs (not executed in the current development freeze); acceptance pending**
 - **Requirements Traced:** `OCRM-R04`, `OCRM-R08`, `OCRM-AC08`
 - **Reviewer:** `xuyao@ombhrum.com`
 - **Upstream Baseline:** `openclaw/openclaw@ad8d12f126d29b0db204187adf5092db80294e70` (tree `04ccce62f1d74dc8e0c88290ae8ded027b7b0f16`)
