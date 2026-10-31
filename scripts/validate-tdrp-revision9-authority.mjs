@@ -601,10 +601,10 @@ const responsibilityIds=new Set();
 const targetSymbolOwners=new Map();
 for (const row of ledger.rows) {
   for (const key of rowRequired) fail(Object.prototype.hasOwnProperty.call(row,key),'ledger row '+(row.responsibility_id||'<unknown>')+' missing required field '+key);
-  fail(row.source_commit===ledgerIdentity,'row '+row.responsibility_id+' source commit differs from accepted upstream');
+  fail(row.source_commit===historicalLedgerCommit,'historical row '+row.responsibility_id+' source commit differs from recorded historical baseline');
   fail(!responsibilityIds.has(row.responsibility_id),'duplicate responsibility id '+row.responsibility_id);
   responsibilityIds.add(row.responsibility_id);
-  const sourceObject=(await ghTree(lock.upstream.repository,ledgerIdentity)).tree.find(e=>e.path===row.source_path);
+  const sourceObject=(await ghTree(lock.upstream.repository,historicalLedgerCommit)).tree.find(e=>e.path===row.source_path);
   fail(sourceObject,'row source path absent from accepted upstream tree: '+row.source_path);
   fail(sourceObject.sha===row.source_blob_sha,'row source blob mismatch: '+row.source_path);
   fail(await fs.stat(path.join(root,row.source_analysis_path)).then(()=>true).catch(()=>false),'row dossier missing: '+row.source_analysis_path);
@@ -663,8 +663,18 @@ const links=tree.filter(e=>e.mode==='160000');
 fail(tree.length===lock.observed_root_inventory.entry_count,'root entry count drift');
 fail(blobs.length===lock.observed_root_inventory.blob_count,'root blob count drift');
 fail(links.length===lock.observed_root_inventory.direct_gitlink_count,'direct gitlink count drift');
-fail(blobs.filter(e=>e.path.startsWith('Telegram/SourceFiles/')).length===lock.observed_root_inventory.sourcefiles_blob_count,'SourceFiles count drift');
-fail(blobs.filter(e=>e.path.startsWith('Telegram/Resources/')).length===lock.observed_root_inventory.resource_blob_count,'Resources count drift');
+const sourcefilesBlobCount=blobs.filter(e=>e.path.startsWith('Telegram/SourceFiles/')).length;
+const resourceBlobCount=blobs.filter(e=>e.path.startsWith('Telegram/Resources/')).length;
+if (candidateIsAccepted) {
+  fail(Number.isInteger(lock.observed_root_inventory.sourcefiles_blob_count),'accepted baseline missing SourceFiles blob count');
+  fail(Number.isInteger(lock.observed_root_inventory.resource_blob_count),'accepted baseline missing Resources blob count');
+}
+if (Number.isInteger(lock.observed_root_inventory.sourcefiles_blob_count)) {
+  fail(sourcefilesBlobCount===lock.observed_root_inventory.sourcefiles_blob_count,'SourceFiles count drift');
+}
+if (Number.isInteger(lock.observed_root_inventory.resource_blob_count)) {
+  fail(resourceBlobCount===lock.observed_root_inventory.resource_blob_count,'Resources count drift');
+}
 
 const gmRaw=await get(`https://raw.githubusercontent.com/${u.repository}/${u.commit}/.gitmodules`,false);
 const gm=parseGitmodules(gmRaw);
@@ -731,7 +741,12 @@ recursiveInventory.push(...childEntries.map(e=>({
   path:e.path,mode:e.mode,type:e.type,object:e.sha,size:e.size??null
 })));
 
-fail(recursiveInventory.length===lock.coverage.recursive_source_entries_total,`recursive inventory count drift ${recursiveInventory.length} != ${lock.coverage.recursive_source_entries_total}`);
+if (candidateIsAccepted) {
+  fail(Number.isInteger(lock.coverage.recursive_source_entries_total),'accepted baseline missing recursive source count');
+}
+if (Number.isInteger(lock.coverage.recursive_source_entries_total)) {
+  fail(recursiveInventory.length===lock.coverage.recursive_source_entries_total,`recursive inventory count drift ${recursiveInventory.length} != ${lock.coverage.recursive_source_entries_total}`);
+}
 
 const attrs=await get(`https://raw.githubusercontent.com/${u.repository}/${u.commit}/.gitattributes`,false);
 fail(!/filter=lfs|diff=lfs|merge=lfs/.test(attrs),'Git LFS attributes detected; explicit LFS closure required');
@@ -754,7 +769,9 @@ await fs.writeFile(path.join(root,'artifacts/tdrp-authority/upstream-recursive-i
 const report={
   project_id:'TDRP-001',spec_revision:9,target_commit:(process.env.TDRP_TARGET_SHA||process.env.GITHUB_SHA)||null,
   upstream_commit:u.commit,upstream_tree:u.tree,root_tree_truncated:false,
-  root_entries:tree.length,root_blobs:blobs.length,direct_gitlinks:links.length,recursive_non_directory_entries:recursiveInventory.length,
+  root_entries:tree.length,root_blobs:blobs.length,root_sourcefiles_blobs:sourcefilesBlobCount,root_resource_blobs:resourceBlobCount,
+  direct_gitlinks:links.length,recursive_non_directory_entries:recursiveInventory.length,
+  expected_recursive_non_directory_entries:lock.coverage.recursive_source_entries_total,
   direct_component_counts:directComponentCounts,github_nested_gitlinks:nested,github_nested_component_counts:githubNestedCounts,
   gitlab_cppgir_entries:cppTree.length,cppgir_child:{path:childPath,repository:childRepo,commit:cppNested[0].id,entries:childEntries.length},
   build_time_pin_changes:lock.build_time_pin_changes,build_time_acquisition_inventory:acquisitionInventory.discovery,coverage:lock.coverage,ledger_coverage:ledger.coverage,

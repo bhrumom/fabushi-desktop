@@ -27,6 +27,11 @@ assert.equal(lock.acceptance.baseline_ready, false);
 assert.equal(lock.coverage.recursive_source_entries_total, null);
 assert.equal(lock.coverage.unknown_minimum, null);
 assert.equal(lock.coverage.unread_minimum, null);
+assert.ok(validator.includes('row.source_commit===historicalLedgerCommit'), 'historical ledger row validation must use the recorded historical baseline');
+assert.ok(validator.includes('ghTree(lock.upstream.repository,historicalLedgerCommit)'), 'historical source blobs must be read from the historical baseline');
+assert.ok(!validator.includes('row.source_commit===ledgerIdentity'), 'validator must not reference the removed undefined ledgerIdentity binding');
+assert.ok(validator.includes('Number.isInteger(lock.observed_root_inventory.sourcefiles_blob_count)'), 'open-candidate root discovery must not require unpublished SourceFiles counts');
+assert.ok(validator.includes('Number.isInteger(lock.coverage.recursive_source_entries_total)'), 'open-candidate recursive discovery must not require an unpublished recursive count');
 // Ensure the runtime accepted-gate checks genuinely use candidate-owned evidence.
 const gates = [
   'candidateLedger=await readJson(candidateLedgerPath)',
