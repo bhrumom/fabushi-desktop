@@ -32,7 +32,7 @@ Therefore exact nested TL decoding is independently implementable in the existin
 - Spec commit: `db4e6db92d6ebf6f03442cb3eb2134b9bf0a144e`.
 - Initial implementation commit: `cde1297cacd3861764d74a111629d002e74c9d71`.
 - Constructor-first fail-closed correction: `46db4422aa7221b1c8048f96f1c7c47cd0c01458`.
-- Canonical api blob: `28bc9f24c7a7e676ecb7a6a8ec0eaa78edb44faa`.
+- Canonical api blob: `0c852a5e3bc41a4ac571d713ae3d4edea19b3619`.
 - Canonical lib blob: `04e5020e7b1e7ed46b403c151f84a095a1a17e4c`.
 
 Source inspection confirms:
@@ -49,7 +49,7 @@ Source inspection confirms:
 Desktop implementation commit: `870ec15e7760718ad7ef1eb5e578dfcef8f0e46b`.
 
 Byte-identical synchronized blobs:
-- `source/mahayana/mahayana-rs/providers/telegram-protocol/src/api.rs@28bc9f24c7a7e676ecb7a6a8ec0eaa78edb44faa`
+- `source/mahayana/mahayana-rs/providers/telegram-protocol/src/api.rs@0c852a5e3bc41a4ac571d713ae3d4edea19b3619`
 - `source/mahayana/mahayana-rs/providers/telegram-protocol/src/lib.rs@04e5020e7b1e7ed46b403c151f84a095a1a17e4c`
 
 ## Authored-only contracts
@@ -69,3 +69,10 @@ No GitHub Actions/status/checks were queried or triggered. No build, typecheck, 
 - Arbitrary `wasSent/haveSent/_resendingIds/toSend/_sentContainers` bookkeeping.
 - Remaining fixed-U unknown/unread source responsibilities and source/legal closure.
 - Stage-B executable evidence and independent release ACCEPT.
+
+
+### Round 64 final authored-contract and compliance readback
+
+After the initial parser synchronization, canonical authored-only negative contracts were expanded at platform-core commit `022b578b8f7823a9af737a2f88fdf4c684fa4e56` to explicitly cover wrong TL vector constructors and invalid UTF-8 `phone_prefix_rules`; no contract was executed. Final canonical blobs are api `0c852a5e3bc41a4ac571d713ae3d4edea19b3619` and lib `04e5020e7b1e7ed46b403c151f84a095a1a17e4c`. Desktop final contract-sync commit `878329a3f54895da0c44ab33e14cf8856444e128` has byte-identical provider api/lib blobs.
+
+Platform-core spec compliance review commit `d1c85e53a4cb162ef02f5344fcadf3c4a3476f6a` updates `docs/specs/telegram-mtproto-config-simple-wire.md@f7dd300a5a5f49fe6958617817f95629dcf95e8f`: AC1-AC7 are satisfied at source/implementation/bookkeeping level; AC8 remains blocked/not-run for Stage B executable validation. Special-config acquisition/decryption/expiry/phone-prefix/DC endpoint application remains fail-closed.
