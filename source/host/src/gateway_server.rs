@@ -103,6 +103,7 @@ const FABUSHI_EXTENSION_COMMANDS: &[&str] = &[
     "runner.cancelRoutedProvider",
     "runner.resolveRoutedToolRequest",
     "cloudWorkers.status",
+    "cloudWorkers.doctor",
 ];
 
 
