@@ -33,6 +33,7 @@ import {
 import { GeneralSettingsPanel, RouterSettingsPanel, UpdatesSettingsPanel, UsageSettingsPanel } from "./panels";
 import { SettingsModalShell, SETTINGS_SECTIONS_WITH_CLOUD_WORKERS, type SettingsSectionId } from "./view";
 import { CloudWorkerStatusPanel } from "../../../../production/cloud-worker-status-panel";
+import { DevicePairingPanel } from "./device-pairing";
 import { DEFAULT_ROUTER_PROVIDER, loadRouterProvider, saveRouterProvider, type RouterProviderId } from "./router";
 import type { AutoReviewSettings } from "./auto-review";
 import type { SettingsComputerMount } from "./computer";
@@ -290,6 +291,7 @@ export function SettingsDesktopSurface({ bridge, coordinatorClient = null, initi
           />
         );
         if (section === "cloud-workers") return <CloudWorkerStatusPanel client={coordinatorClient} />;
+        if (section === "pairing") return <DevicePairingPanel client={coordinatorClient} />;
         return (
           <UpdatesSettingsPanel
             autoUpdateWhenIdle={snapshot.update?.autoUpdateWhenIdleOptIn ?? false}

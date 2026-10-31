@@ -8,7 +8,7 @@ import { OverlayDialog } from "../../../ui/overlay-primitives";
 import { settingsCopy } from "./localization";
 import "./view.css";
 
-export type SettingsSectionId = "general" | "router" | "usage" | "beta" | "cloud-workers";
+export type SettingsSectionId = "general" | "router" | "usage" | "beta" | "cloud-workers" | "pairing";
 
 export interface SettingsSection {
   id: SettingsSectionId;
@@ -26,6 +26,7 @@ export const SETTINGS_SECTIONS: readonly SettingsSection[] = [
 
 export const SETTINGS_SECTIONS_WITH_CLOUD_WORKERS: readonly SettingsSection[] = [
   ...SETTINGS_SECTIONS,
+  { id: "pairing", label: "Pairing", icon: "git-branch" },
   { id: "cloud-workers", label: "Cloud Workers", icon: "cloud-download" }
 ];
 
