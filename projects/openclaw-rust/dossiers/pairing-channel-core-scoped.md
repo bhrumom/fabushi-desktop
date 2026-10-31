@@ -70,6 +70,7 @@ The following 25 upstream files in `src/pairing/` (3,469 lines total, 100% of th
     - `test_ocrm_pair_o09_and_o10_pair_revoke`
     - `test_ocrm_pair_o11_rotate_token_in_band_and_cross_device`
     - `test_ocrm_pair_o12_setup_code`
+    - `test_ocrm_pair_o12_setup_code_is_expiring_and_single_use`
     - `test_ocrm_pair_o13_join_code_validation_and_path_parsing`
     - `test_ocrm_pair_o14_safe_keys_and_labels`
     - `test_ocrm_pair_o15_pairing_reply_formatting`
@@ -84,3 +85,13 @@ remote companion transport, physical-device flow, and packaged UI consumers
 remain open. The ledger therefore retains
 `BL-PAIRING-CHANNEL-EXEC-WIRING-001` with `wiring=not-wired`,
 `verification=not-run`, and `acceptance=pending`.
+
+## 6. Host bootstrap-secret lifetime hardening (2026-11-01)
+
+The canonical Host owner now persists `expires_at_ms` for setup-code bootstrap
+rows, purges expired rows before issuing a new code, and exposes an atomic
+`consume_bootstrap_token` operation that rejects expired or already-consumed
+codes. Existing databases migrate the new column from `issued_at_ms` using the
+fixed 15-minute lifetime. This closes the server-side lifetime/one-time-use
+contract only; it does not claim a remote companion consumer, packaged device
+acceptance, or promote the broader pairing wiring/verification states.

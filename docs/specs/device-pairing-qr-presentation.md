@@ -35,6 +35,10 @@ canonical `device.pair.setupCode` method and presents the result safely.
 - `DPR-05`: The feature is mounted in the existing Settings shell and uses the
   existing design-system primitives. It does not add a new navigation or
   pairing authority.
+- `DPR-06`: The canonical Host pairing owner persists the setup-code expiry,
+  rejects expired bootstrap secrets at consumption time, and burns a
+  successfully consumed setup code atomically. Existing pairing databases must
+  migrate without losing live setup records.
 
 ## Current and target state
 
@@ -43,7 +47,7 @@ canonical `device.pair.setupCode` method and presents the result safely.
 | Setup producer | Host `DevicePairingOwner` | unchanged |
 | Transport | Coordinator arbitrary Gateway call | unchanged |
 | Desktop consumer | Settings `Pairing` panel is mounted in the existing shell | Settings `Pairing` section |
-| Secret lifetime | Host expiry | renderer memory only, visibly expired |
+| Secret lifetime | Host calculates expiry but the bootstrap row did not retain it | Host-persisted expiry and one-time consumption; renderer memory only, visibly expired |
 
 ## Failure modes and boundaries
 
@@ -52,15 +56,19 @@ into DOM markup. A missing QR result remains a failed presentation, not a
 successful pairing state. Clipboard failure is non-fatal and leaves the secret
 visible only in the current in-memory result. Closing Settings drops the result
 with the component; no persistence is introduced.
+Expired or already-consumed bootstrap secrets are rejected by the Host owner
+before they can be used. A migration of an existing database derives the
+missing expiry from its original issuance timestamp and the fixed 15-minute
+lifetime.
 
 ## Implementation and verification strategy
 
-Add a small renderer-only panel, register it in the existing Settings section
-registry, and call the already registered Host Gateway method through the
-existing Coordinator client. Add focused source oracles for the method name,
-response fields, expiry/error branches, and Settings mounting. Verification is
-not claimed until exact-head Actions and packaged/runtime evidence are
-available.
+Persist the setup-code expiry and expose one owner-local atomic consume
+operation alongside the existing setup-code issuer; keep the renderer panel on
+the existing Coordinator path. Add focused source oracles for issuance, expiry
+rejection, one-time consumption, migration, response fields, expiry/error
+branches, and Settings mounting. Verification is not claimed until exact-head
+Actions and packaged/runtime evidence are available.
 
 The focused oracle is
 `frontend/src/recovered/features/settings/overlay/device-pairing.contract.test.ts`.
@@ -78,6 +86,9 @@ packaged acceptance.
   retry behavior.
 - `DPR-AC04`: Exact-head Actions and packaged/runtime UI evidence are still
   required before `verification=verified` or `acceptance=accepted`.
+- `DPR-AC05`: Source review proves expiry is stored and enforced by the
+  canonical Host owner, successful consumption is one-time, and legacy pairing
+  databases migrate without silently extending existing secrets.
 
 ## Release, rollback, and observability
 

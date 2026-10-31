@@ -4,7 +4,7 @@ use std::sync::Mutex;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use base64::{Engine as _, engine::general_purpose::URL_SAFE_NO_PAD};
-use rusqlite::{Connection, params};
+use rusqlite::{Connection, OptionalExtension, params};
 use serde_json::{Value, json};
 use subtle::ConstantTimeEq;
 use uuid::Uuid;
@@ -236,6 +236,7 @@ impl DevicePairingOwner {
                 redeemed_profile_json TEXT,
                 pending_profile_json TEXT,
                 issued_at_ms INTEGER NOT NULL,
+                expires_at_ms INTEGER NOT NULL DEFAULT 0,
                 last_used_at_ms INTEGER
             );
             CREATE INDEX IF NOT EXISTS idx_device_bootstrap_tokens_setup_id ON device_bootstrap_tokens(setup_id);
@@ -267,6 +268,30 @@ impl DevicePairingOwner {
             );
             "#,
         )?;
+        let has_bootstrap_expiry: bool = conn.query_row(
+            "SELECT EXISTS(
+                SELECT 1 FROM pragma_table_info('device_bootstrap_tokens')
+                WHERE name = 'expires_at_ms'
+            )",
+            [],
+            |row| row.get(0),
+        )?;
+        if !has_bootstrap_expiry {
+            conn.execute_batch(
+                "ALTER TABLE device_bootstrap_tokens
+                   ADD COLUMN expires_at_ms INTEGER NOT NULL DEFAULT 0;
+                 UPDATE device_bootstrap_tokens
+                    SET expires_at_ms = issued_at_ms + 900000
+                  WHERE expires_at_ms = 0;",
+            )?;
+        } else {
+            conn.execute(
+                "UPDATE device_bootstrap_tokens
+                    SET expires_at_ms = issued_at_ms + ?1
+                  WHERE expires_at_ms = 0",
+                params![PENDING_PAIRING_TTL_MS],
+            )?;
+        }
         Ok(())
     }
 
@@ -1013,13 +1038,21 @@ impl DevicePairingOwner {
         let setup_id = format!("setup-{}", Uuid::new_v4());
         let setup_code = format!("sand-setup-{}", Uuid::new_v4());
         let now = now_ms();
-        let expires_at = now + 900_000;
+        let expires_at = now + PENDING_PAIRING_TTL_MS;
 
         let conn = self.conn.lock().unwrap();
         conn.execute(
-            r#"INSERT INTO device_bootstrap_tokens (token_key, token, setup_id, ts, issued_at_ms)
-               VALUES (?1, ?2, ?3, ?4, ?4)"#,
-            params![setup_code, setup_code, setup_id, now],
+            "DELETE FROM device_bootstrap_tokens WHERE expires_at_ms <= ?1",
+            params![now],
+        )
+        .map_err(|e| {
+            GatewayCommandError::Internal(format!("Failed to purge expired bootstrap tokens: {e}"))
+        })?;
+        conn.execute(
+            r#"INSERT INTO device_bootstrap_tokens
+               (token_key, token, setup_id, ts, issued_at_ms, expires_at_ms)
+               VALUES (?1, ?2, ?3, ?4, ?4, ?5)"#,
+            params![setup_code, setup_code, setup_id, now, expires_at],
         )
         .map_err(|e| {
             GatewayCommandError::Internal(format!("Failed to store bootstrap token: {e}"))
@@ -1052,6 +1085,78 @@ impl DevicePairingOwner {
             res["qrTerminal"] = Value::String(term);
         }
         Ok(res)
+    }
+
+    /// Atomically consumes one live setup code. The token itself is never
+    /// returned after issuance; consumers receive only the setup identity and
+    /// timing metadata needed to continue the pairing handshake.
+    pub fn consume_bootstrap_token(
+        &self,
+        token: &str,
+    ) -> Result<Option<Value>, GatewayCommandError> {
+        let token = token.trim();
+        if token.is_empty() || token.len() > 256 {
+            return Ok(None);
+        }
+
+        let mut conn = self.conn.lock().unwrap();
+        let tx = conn.transaction().map_err(|error| {
+            GatewayCommandError::Internal(format!("failed to begin bootstrap-token consume: {error}"))
+        })?;
+        let now = now_ms();
+        let row = tx
+            .query_row(
+                "SELECT setup_id, issued_at_ms, expires_at_ms
+                   FROM device_bootstrap_tokens
+                  WHERE token_key = ?1 AND token = ?1 AND expires_at_ms > ?2",
+                params![token, now],
+                |row| {
+                    Ok((
+                        row.get::<_, Option<String>>(0)?,
+                        row.get::<_, i64>(1)?,
+                        row.get::<_, i64>(2)?,
+                    ))
+                },
+            )
+            .optional()
+            .map_err(|error| {
+                GatewayCommandError::Internal(format!("failed to read bootstrap token: {error}"))
+            })?;
+        let Some((setup_id, issued_at_ms, expires_at_ms)) = row else {
+            tx.execute(
+                "DELETE FROM device_bootstrap_tokens WHERE token_key = ?1 AND expires_at_ms <= ?2",
+                params![token, now],
+            )
+            .map_err(|error| {
+                GatewayCommandError::Internal(format!("failed to reap expired bootstrap token: {error}"))
+            })?;
+            tx.commit().map_err(|error| {
+                GatewayCommandError::Internal(format!("failed to commit bootstrap-token reap: {error}"))
+            })?;
+            return Ok(None);
+        };
+        let deleted = tx
+            .execute(
+                "DELETE FROM device_bootstrap_tokens WHERE token_key = ?1 AND token = ?1 AND expires_at_ms > ?2",
+                params![token, now],
+            )
+            .map_err(|error| {
+                GatewayCommandError::Internal(format!("failed to consume bootstrap token: {error}"))
+            })?;
+        if deleted != 1 {
+            tx.commit().map_err(|error| {
+                GatewayCommandError::Internal(format!("failed to commit bootstrap-token retry: {error}"))
+            })?;
+            return Ok(None);
+        }
+        tx.commit().map_err(|error| {
+            GatewayCommandError::Internal(format!("failed to commit bootstrap-token consume: {error}"))
+        })?;
+        Ok(Some(json!({
+            "setupId": setup_id,
+            "issuedAtMs": issued_at_ms,
+            "expiresAtMs": expires_at_ms,
+        })))
     }
 
     /// Stores a short-lived pairing setup payload under a cryptographically random

@@ -432,6 +432,28 @@ fn test_ocrm_pair_o12_setup_code() {
 }
 
 #[test]
+fn test_ocrm_pair_o12_setup_code_is_expiring_and_single_use() {
+    let owner = DevicePairingOwner::in_memory().expect("in-memory db");
+    let issued = owner
+        .handle_pairing_command("device.pair.setupCode", &json!({}))
+        .expect("issue setup code");
+    let setup_code = issued["setupCode"].as_str().expect("setup code");
+
+    let consumed = owner
+        .consume_bootstrap_token(setup_code)
+        .expect("consume setup code")
+        .expect("live setup code");
+    assert_eq!(consumed["setupId"], issued["setupId"]);
+    assert_eq!(consumed["expiresAtMs"], issued["expiresAtMs"]);
+    assert!(consumed["expiresAtMs"].as_i64().unwrap() > consumed["issuedAtMs"].as_i64().unwrap());
+
+    assert!(owner
+        .consume_bootstrap_token(setup_code)
+        .expect("second consume")
+        .is_none());
+}
+
+#[test]
 fn test_ocrm_pair_o13_join_code_validation_and_path_parsing() {
     use mahayana_host_runtime::device_pairing_owner::*;
 
