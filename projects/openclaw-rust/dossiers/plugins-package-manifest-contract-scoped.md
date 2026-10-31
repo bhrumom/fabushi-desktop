@@ -89,6 +89,20 @@
 | `src/plugins/bundle-mcp.ts` | 468 | 19157 | `8ab6f481a539bc2eb6368d5045b35d03c61b2d07` |
 | `src/plugins/bundle-mcp.types.ts` | 21 | 543 | `4ae60bf318eb8ea072aa8ef4c5c703b0c0f99ae9` |
 
+## 6. Bundle-manifest production reachability recheck (2026-10-31)
+
+The current Host tree has no non-test caller for
+`parse_clawhub_plugin_spec`, `verify_archive_limits`,
+`verify_sha256_integrity`, or the bundle-format helpers in
+`source/host/src/extensions/plugins/bundle_manifest.rs`. The plugin contract
+fixture is therefore implementation evidence only. `ProductionHostExtensions`
+registers bundled channel/worker capability metadata, but it does not load,
+parse, archive-check, or integrity-verify a plugin bundle through this owner.
+The parity row `OCRM-RESP-PLUGINS-BUNDLE-MANIFEST-001` is corrected to
+`implementation=not-started`, `wiring=not-wired`, `verification=not-run`, and
+`acceptance=pending`; capability metadata registration must not be counted as
+bundle-manifest production wiring.
+
 
 
 

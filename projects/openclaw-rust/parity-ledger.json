@@ -26054,10 +26054,10 @@
       ],
       "id": "OCRM-RESP-PLUGINS-BUNDLE-MANIFEST-001",
       "integration": {
-        "consumer": "source/host/src/extensions/plugins/bundle_manifest.rs",
-        "entrypoint": "source/host/src/extensions/plugins/bundle_manifest.rs::parse_clawhub_plugin_spec",
+        "consumer": "No production plugin installer/discovery consumer identified; source/host/tests/openclaw_plugins_contract.rs is the only caller of the bundle-manifest helpers",
+        "entrypoint": "source/host/src/extensions/plugins/bundle_manifest.rs::parse_clawhub_plugin_spec/verify_archive_limits/verify_sha256_integrity",
         "owner": "source/host/src/extensions/plugins/bundle_manifest.rs",
-        "producer": "source/host/src/extensions/plugins/bundle_manifest.rs"
+        "producer": "No production bundle/archive producer is wired; ProductionHostExtensions registers capability metadata only"
       },
       "invariants": [
         "Archive entries exceeding 50MB single entry or 250MB extracted size are rejected"
@@ -26369,11 +26369,11 @@
       ],
       "status": {
         "acceptance": "pending",
-        "implementation": "implemented",
+        "implementation": "not-started",
         "mapping": "reviewed",
         "read": "read-complete",
         "verification": "not-run",
-        "wiring": "wired"
+        "wiring": "not-wired"
       },
       "target": {
         "language": "Rust",
