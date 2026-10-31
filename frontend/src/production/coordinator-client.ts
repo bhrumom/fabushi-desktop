@@ -1,6 +1,8 @@
 import type { CoordinatorPortBridge, TransferredCoordinatorPort } from "../recovered/contracts/desktop-bridge";
 import {
   validateCoordinatorReply,
+  type CloudWorkerDoctorProjection,
+  type CloudWorkerStatusProjection,
   type CoordinatorAgentThreadRequest,
   type CoordinatorAgentThreadResponse,
   type CoordinatorTranscriptWindowRequest,
@@ -54,6 +56,8 @@ export interface ProductionCoordinatorClient {
   getAgentTranscriptWindow(args: CoordinatorTranscriptWindowRequest): Promise<CoordinatorTranscriptWindowResponse>;
   getAgentThread(args: CoordinatorAgentThreadRequest): Promise<CoordinatorAgentThreadResponse>;
   isEgressTunnelAvailable(): Promise<boolean>;
+  cloudWorkersStatus(): Promise<CloudWorkerStatusProjection>;
+  cloudWorkersDoctor(): Promise<CloudWorkerDoctorProjection>;
   subscribe(family: string, listener: EventListener): () => void;
   subscribeTransport(listener: TransportListener): () => void;
   dispose(): void;
@@ -169,6 +173,8 @@ export function createCoordinatorClient(portBridge: CoordinatorPortBridge): Prod
     getAgentTranscriptWindow: async (args) => await call("getAgentTranscriptWindow", args) as CoordinatorTranscriptWindowResponse,
     getAgentThread: async (args) => await call("getAgentThread", args) as CoordinatorAgentThreadResponse,
     isEgressTunnelAvailable: async () => await call("isEgressTunnelAvailable") === true,
+    cloudWorkersStatus: async () => await call("cloudWorkers.status") as CloudWorkerStatusProjection,
+    cloudWorkersDoctor: async () => await call("cloudWorkers.doctor") as CloudWorkerDoctorProjection,
     subscribe(family, listener) {
       const listeners = eventListeners.get(family) ?? new Set<EventListener>();
       listeners.add(listener);

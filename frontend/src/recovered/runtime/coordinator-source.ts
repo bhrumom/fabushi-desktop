@@ -3,6 +3,8 @@
 
 import {
   COORDINATOR_METHOD_TABLE,
+  parseCloudWorkerDoctorProjection,
+  parseCloudWorkerStatusProjection,
   parseCoordinatorAgentThreadResponse,
   parseCoordinatorTranscriptWindowResponse,
   type CoordinatorMethod
@@ -222,7 +224,9 @@ const REPLY_CONVERTERS: Record<ReplyKind, (value: unknown) => ConvertedReply> = 
     ? null
     : isSourceRecord(value) && typeof value.agentId === "string" && typeof value.state === "string"
       ? value
-      : MALFORMED_REPLY
+      : MALFORMED_REPLY,
+  "cloud-worker-status": (value) => parseCloudWorkerStatusProjection(value) ?? MALFORMED_REPLY,
+  "cloud-worker-doctor": (value) => parseCloudWorkerDoctorProjection(value) ?? MALFORMED_REPLY
 };
 
 interface AbortSignalLike {
@@ -546,7 +550,8 @@ const TELEMETRY_DOMAIN_BY_METHOD: Record<CoordinatorMethod, string> = {
   getSharingState: "sharing", createRoomFromAgent: "sharing", createRoomInvite: "sharing",
   joinSharedRoom: "sharing", respondToRoomJoinRequest: "sharing", createSharedRoom: "sharing",
   addOwnAgentToSharedRoom: "sharing", removeOwnAgentFromSharedRoom: "sharing",
-  setSharedRoomTyping: "sharing", leaveSharedRoom: "sharing"
+  setSharedRoomTyping: "sharing", leaveSharedRoom: "sharing",
+  "cloudWorkers.status": "cloud_workers", "cloudWorkers.doctor": "cloud_workers"
 };
 
 export function createCoordinatorFailureTelemetryTracker(

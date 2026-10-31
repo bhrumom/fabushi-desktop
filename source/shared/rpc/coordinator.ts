@@ -25,6 +25,33 @@ export interface CoordinatorAgentThreadResponse {
   readonly entries: readonly CoordinatorTranscriptEntry[];
 }
 
+export type CloudWorkerCoordinatorStatus = "disabled" | "enabled" | "unavailable";
+export type CloudWorkerDoctorProjectionStatus = "inspection-only" | "pending" | "completed" | "failed" | "outcome-unknown";
+
+export interface CloudWorkerStatusProjection {
+  readonly owner: "cloud-workers";
+  readonly status: CloudWorkerCoordinatorStatus;
+  readonly providerReady: boolean;
+  readonly productionMutation: boolean;
+  readonly statePersisted: boolean;
+  readonly leaseCount: number;
+  readonly warmImageCount: number;
+  readonly bootstrapCount: number;
+  readonly artifactCount: number;
+  readonly migrationReceiptCount: number;
+}
+
+export interface CloudWorkerDoctorProjection {
+  readonly status: CloudWorkerDoctorProjectionStatus;
+  readonly mutationStarted: boolean;
+  readonly diagnosticCode?: string;
+  readonly statePersisted: boolean;
+  readonly leaseCount: number;
+  readonly bootstrapCount: number;
+  readonly artifactCount: number;
+  readonly warmImageCount: number;
+}
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
@@ -35,6 +62,28 @@ function isTranscriptEntry(value: unknown): value is CoordinatorTranscriptEntry 
 
 function isFiniteNumber(value: unknown): value is number {
   return typeof value === "number" && Number.isFinite(value);
+}
+
+function isBoundedProjectionText(value: unknown): value is string {
+  return typeof value === "string" && value.length > 0 && [...value].length <= 256 && ![...value].some((character) => /\p{C}/u.test(character));
+}
+
+function isNonNegativeInteger(value: unknown): value is number {
+  return isFiniteNumber(value) && Number.isInteger(value) && value >= 0;
+}
+
+export function parseCloudWorkerStatusProjection(value: unknown): CloudWorkerStatusProjection | null {
+  if (!isRecord(value) || value.owner !== "cloud-workers" || !["disabled", "enabled", "unavailable"].includes(String(value.status))) return null;
+  if (typeof value.providerReady !== "boolean" || typeof value.productionMutation !== "boolean" || typeof value.statePersisted !== "boolean") return null;
+  if (!["leaseCount", "warmImageCount", "bootstrapCount", "artifactCount", "migrationReceiptCount"].every((key) => isNonNegativeInteger(value[key]))) return null;
+  return value as CloudWorkerStatusProjection;
+}
+
+export function parseCloudWorkerDoctorProjection(value: unknown): CloudWorkerDoctorProjection | null {
+  if (!isRecord(value) || !["inspection-only", "pending", "completed", "failed", "outcome-unknown"].includes(String(value.status))) return null;
+  if (typeof value.mutationStarted !== "boolean" || (value.diagnosticCode !== undefined && !isBoundedProjectionText(value.diagnosticCode)) || typeof value.statePersisted !== "boolean") return null;
+  if (!["leaseCount", "bootstrapCount", "artifactCount", "warmImageCount"].every((key) => isNonNegativeInteger(value[key]))) return null;
+  return value as CloudWorkerDoctorProjection;
 }
 
 export function parseCoordinatorTranscriptWindowResponse(value: unknown): CoordinatorTranscriptWindowResponse | null {
@@ -85,6 +134,12 @@ export function validateCoordinatorReply(method: string, value: unknown): unknow
   }
   if (method === "getAgentThread" && parseCoordinatorAgentThreadResponse(value) == null) {
     throw new Error("getAgentThread returned a malformed agent thread");
+  }
+  if (method === "cloudWorkers.status" && parseCloudWorkerStatusProjection(value) == null) {
+    throw new Error("cloudWorkers.status returned a malformed cloud worker status projection");
+  }
+  if (method === "cloudWorkers.doctor" && parseCloudWorkerDoctorProjection(value) == null) {
+    throw new Error("cloudWorkers.doctor returned a malformed cloud worker doctor projection");
   }
   return value;
 }
@@ -179,7 +234,9 @@ export const COORDINATOR_METHOD_TABLE = {
   createAgentAutomation: { args: "object", reply: "array" },
   updateAgentAutomation: { args: "object", reply: "array" },
   deleteAgentAutomation: { args: "object", reply: "array" },
-  runAgentAutomationNow: { args: "object", reply: "void" }
+  runAgentAutomationNow: { args: "object", reply: "void" },
+  "cloudWorkers.status": { args: "none", reply: "cloud-worker-status" },
+  "cloudWorkers.doctor": { args: "none", reply: "cloud-worker-doctor" }
 } as const;
 
 export type CoordinatorMethod = keyof typeof COORDINATOR_METHOD_TABLE;
