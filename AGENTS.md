@@ -360,6 +360,8 @@ TDRP-001 remains source-informed and is not clean-room. Do not claim Rust automa
 
 **FBCP-001 / TDRP-001 project exception:** all executable verification for this migration project runs **only in GitHub Actions**. The repository-wide `htch-runtime` allowance above does not apply to FBCP/TDRP. This includes build, lint, generator, schema, unit/property/state-machine, contract, integration, E2E, temporal, visual, accessibility, performance, soak, fault-injection, package and acceptance runs.
 
+For FBCP/TDRP, follow TDRP-EXEC-01: finish the full source-responsibility and implementation scope first, then freeze one exact target commit and run applicable Actions and real acceptance together. During development do not trigger, wait for or repeat migration CI, push implementation branches/update migration PR heads, or run local executable validation. Preserve `not-run`/`pending`/false until evidence exists; this timing rule does not waive any final gate.
+
 Read-only investigation, spec/test-plan editing, evidence review and Git/API operations may occur outside Actions. Missing runner/account/service/signing configuration is blocked, never pass.
 
 ## OpenClaw full-source Rust equivalence — OCRM-001

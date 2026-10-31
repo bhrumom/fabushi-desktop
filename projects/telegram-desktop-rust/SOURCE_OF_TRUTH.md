@@ -2,9 +2,9 @@
 
 Status: active  
 Project ID: TDRP-001  
-Revision: 9  
-Date: 2026-10-07  
-Parent: FBCP-001 Revision 7
+Revision: 10
+Date: 2026-10-31
+Parent: FBCP-001 Revision 8
 
 ## Role
 
@@ -15,9 +15,9 @@ Parent: FBCP-001 Revision 7
 ## Must read
 
 - root `AGENTS.md`
-- `projects/fabushi-communication-platform/SOURCE_OF_TRUTH.md` Revision 7
-- `docs/specs/fabushi-bot-communication-platform.md` Revision 7
-- `docs/specs/telegram-desktop-rust-equivalence-migration.md` Revision 9
+- `projects/fabushi-communication-platform/SOURCE_OF_TRUTH.md` Revision 8
+- `docs/specs/fabushi-bot-communication-platform.md` Revision 8
+- `docs/specs/telegram-desktop-rust-equivalence-migration.md` Revision 10
 - `module-map.md`
 - current upstream lock / inventory / ledger / dossiers / validators / quality plans
 - current canonical Fabushi shipping owners and GitHub Actions release evidence
@@ -76,6 +76,8 @@ accepted baseline 必须在 GitHub Actions 中重新确认，并递归闭合：
 
 所有 FBCP/TDRP 可执行 build/test/lint/generator/schema/benchmark/fuzz/E2E/visual/a11y/performance/soak/fault/package/acceptance 只允许 GitHub Actions。
 
+开发期按 TDRP-EXEC-01 先完成源责任闭包、Rust/适用语言实现、真实生产接线、UI/服务/数据/平台/打包路径及正反用例；不触发、等待或重复迁移 CI，不推送实现分支/更新迁移 PR head，不跑本机验证。隔离分支本地提交和只读/静态审查允许。全量开发闭包后冻结同一确切 H，再集中运行 Actions 与真实服务、设备、平台、包体验收。失败则修复并重新冻结。开发期验证状态保持 `not-run`/`pending`/false。
+
 每个 responsibility 的 Definition of Done 同时要求：
 - production implementation 已进入唯一 shipping composition；
 - requirement/oracle/invariant/test 可追溯；
@@ -87,6 +89,6 @@ release candidate 只有在 independent acceptance 为 ACCEPT、0 open P0/P1/blo
 
 ## Current status
 
-迁移尚未完成。当前 durable specs 已升级到 FBCP Revision 7 / TDRP Revision 9，但历史 lock / inventory / ledger / dossiers / STATUS / validators 中仍可能包含旧 Revision 4/5 语义，必须逐项 rebaseline/reconcile，不能据此宣称 source completeness 或 production completeness。
+迁移尚未完成。当前 durable specs 已升级到 FBCP Revision 8 / TDRP Revision 10，但历史 lock / inventory / ledger / dossiers / STATUS / validators 中仍可能包含旧 Revision 4/5/9 语义，必须逐项 rebaseline/reconcile，不能据此宣称 source completeness 或 production completeness。
 
 每个模块继续执行 `unreviewed -> understood -> mapped -> implemented -> verified` 的真实证据路径。遇到 service/account/signing blocker，记录解除条件并继续推进所有不依赖该 blocker 的 responsibility。

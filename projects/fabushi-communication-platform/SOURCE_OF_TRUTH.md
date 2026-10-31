@@ -2,8 +2,8 @@
 
 Status: active  
 Project ID: FBCP-001  
-Revision: 7  
-Date: 2026-10-07  
+Revision: 8
+Date: 2026-10-31
 Repository: `bhrumom/fabushi-desktop`
 
 ## Canonical statement
@@ -15,8 +15,8 @@ Repository: `bhrumom/fabushi-desktop`
 ## Normative documents
 
 - root `AGENTS.md`
-- `docs/specs/fabushi-bot-communication-platform.md` — FBCP-001 Revision 7
-- `docs/specs/telegram-desktop-rust-equivalence-migration.md` — TDRP-001 Revision 9
+- `docs/specs/fabushi-bot-communication-platform.md` — FBCP-001 Revision 8
+- `docs/specs/telegram-desktop-rust-equivalence-migration.md` — TDRP-001 Revision 10
 - current canonical Bot architecture/spec and exact-head implementation
 - `projects/telegram-desktop-rust/SOURCE_OF_TRUTH.md` and `module-map.md`
 - `projects/fabushi-communication-platform/ui-information-architecture.md`
@@ -52,6 +52,7 @@ Repository: `bhrumom/fabushi-desktop`
 - release candidate 必须由独立验收者复核 packaged timeline/screenshots/video/evidence，0 open P0/P1/blocker 才可 ACCEPT。
 - 产品名/图标/窗口/文案/安装更新全部 Fabushi；无 Telegram/Grok Bot/Gok Bot 产品品牌；必要法律声明和 provenance 保留。
 - 所有可执行验证仅 GitHub Actions，不沿用本项目旧 htch-runtime allowance。
+- 开发期先闭合源责任、实现、生产接线及正反用例，不触发/等待迁移 CI，不推送实现分支或更新迁移 PR head；全部开发闭包后冻结同一 H，集中 Actions 与真实服务/设备/平台/包体验收。开发期未运行的 gate 保持 pending/false，不能冒充通过。
 - 完整迁移需要 0 in-scope open blockers、0 omitted/unmapped、0 stub/fake fallback 和 exact-head 生产/发布证据。
 
 ## Snapshot, not live truth

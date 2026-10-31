@@ -2,9 +2,9 @@
 
 Status: active  
 Spec ID: TDRP-001  
-Revision: 9  
-Last updated: 2026-10-07  
-Parent: `docs/specs/fabushi-bot-communication-platform.md` (FBCP-001 Revision 7)  
+Revision: 10
+Last updated: 2026-10-31
+Parent: `docs/specs/fabushi-bot-communication-platform.md` (FBCP-001 Revision 8)
 Project: `projects/telegram-desktop-rust`  
 Acceptance status: **not complete; requirements only updated by this revision**
 
@@ -18,7 +18,7 @@ Acceptance status: **not complete; requirements only updated by this revision**
 
 本 Revision 当前读取并接受的 tdesktop `dev` discovery HEAD 为 `72b3b71c3d6e450e5ef94a3112dd750a0168aa0b`；`f23c37857220eb84f8559f0901ea26fb304b564b` 与更早 `33261535a0e747f125e0ed25486f01e556330677` 均为历史 baseline。accepted identity 不等于 source completeness：递归 source/build authority、逐文件语义读取和责任闭合未完成前，baseline_ready/acceptance.accepted 仍为 false。
 
-下一执行在 GitHub Actions 内重新确认上游 HEAD，并统一更新现有 `projects/telegram-desktop-rust/upstream.lock.json`、inventory、ledger 和 dossiers；记录旧→新差异。每项 evidence 同时绑定 upstream 与 Fabushi target SHA。不得只改文档中的 SHA 就宣称 rebaseline 完成。
+开发期先以只读 Git/API 证据确认上游 exact commit/tree，并统一更新现有 `projects/telegram-desktop-rust/upstream.lock.json`、inventory、ledger 和 dossiers；记录旧→新差异。此时只能标 candidate/discovery，不得只改文档中的 SHA 就宣称 rebaseline 完成。全量实现与源责任闭包后冻结同一 Fabushi target SHA，再由 GitHub Actions 确认上游及递归依赖并取得 accepted baseline 与最终证据。每项执行证据同时绑定 upstream 与 target SHA。
 
 ### TDRP-SRC-02 — 全仓库、递归依赖、资源和工具链
 
@@ -189,15 +189,15 @@ Telegram 中 dialog/history/people/media/username/filter 等搜索职责必须�
 3. 对每个文件/责任选择现有 Fabushi owner，必要新 owner 经最小 ADR 批准。
 4. 在 Fabushi 自有路径用选定语言实现，补齐真实服务端/平台依赖。
 5. 接入唯一 shipping composition，迁移数据/路由/权限，移除被替代的重复 ownership。
-6. 在 GitHub Actions 按 quality risk 执行 unit/table、property/state-machine、contract、integration、真实 E2E、temporal/recovery、UI functional/visual/a11y，以及适用 performance/security/fault/soak。
-7. 对动态用户旅程生成 timeline trace/DOM manifest/screenshots/video，并按 oracle 检查 terminal settlement、ordering、reconnect/restart 后一致性。
-8. 更新 RTM、regression ledger、current-head evidence，并由独立 acceptance reviewer 复核后，最后才能把相应责任标 verified。
+6. 开发期编写并静态审查 unit/table、property/state-machine、contract、integration、真实 E2E、temporal/recovery、UI functional/visual/a11y 以及适用 performance/security/fault/soak 用例和 oracle；将每个模块的验证状态保持 `not-run`，继续闭合其他模块。
+7. 全部适用源责任、Rust/最合适语言实现、生产接线、服务和平台、UI 与数据迁移闭合后，冻结同一确切 Fabushi 提交 H。仅在此后统一于 GitHub Actions 执行适用验证，并对动态用户旅程生成 timeline trace/DOM manifest/screenshots/video，按 oracle 检查 terminal settlement、ordering、reconnect/restart 后一致性。
+8. 更新 RTM、regression ledger、H 的执行证据，由独立 acceptance reviewer 复核后才能把责任标 verified。失败时修复、重新冻结 H 并重跑受影响验收；旧 H 的证据不能冒充新 H 通过。
 
 已批准且无依赖的模块可并行推进；缺权限、账号、服务或某个模块被阻塞时不停止其他安全可推进的任务。仍然不得跳过本模块的必要前置与既有 Bot 硬门。
 
 ## 8. Verification gates
 
-以下 gate 必须在实现阶段扩展现有检查并取得真实结果，规范文字不是 gate 已执行的证明：
+以下 gate 的合同与用例在开发阶段补齐，执行及真实结果统一推迟到全量实现闭包后冻结的同一 H；规范文字、静态审查和未运行用例不是 gate 已通过的证明：
 
 - **G-INVENTORY:** accepted exact root tree + all recursive gitlinks/external acquisitions；0 unknown/unread/omitted source entries。
 - **G-FILE:** 每个文件及 non-UI responsibility 均有处置；0 directory-only placeholders；双向 target trace 无遗漏。
@@ -226,6 +226,8 @@ Telegram 中 dialog/history/people/media/username/filter 等搜索职责必须�
 
 所有可执行验证仅 GitHub Actions；本项目不沿用旧 htch-runtime allowance。禁止在用户 Mac、bhrum2 或 assistant container 执行 build/test/lint/generator/schema/benchmark/fuzz/package/acceptance。
 
+**TDRP-EXEC-01 — 开发先行、一次冻结后集中验收。** 开发阶段不触发、等待、重复或轮询 TDRP/FBCP 迁移 CI，不做 `workflow_dispatch`，不推送实现分支或更新迁移 PR head 来触发自动 CI；在隔离分支本地提交、审读源码、完善账本、实现生产代码及编写测试。必要的只读 Git/API、文档编辑和静态审查允许。单个 helper、模块、用例或局部绿色旧结果不构成阶段出口。全量开发闭包后冻结 H，再集中安排适用 Actions、真实服务/设备/平台/安装包验收及独立复核。开发期所有 execution/verification/acceptance 均保持 `not-run`/`pending`/false；缺服务或签名的最终验收仍为 blocked，不能提前通过。此执行顺序优先于旧文档中逐模块运行 CI 或先取得执行证据才能继续其他模块的描述，不降低任何最终 gate。
+
 ## 9. 完成定义
 
 TDRP-001 只有以下同时成立才能 accepted：
@@ -245,4 +247,4 @@ TDRP-001 只有以下同时成立才能 accepted：
 
 本 Revision 未宣称已逐个阅读全部上游文件、未刷新锁文件/全量账本、未重写产品或运行新 gate。下一任务必须先完成 baseline/ledger/schema/validator 的真实差异审计，再按已有无阻塞 owner 推进实现；旧研究和代码可以复用，但状态必须基于新合同重新证明。
 
-References: https://github.com/telegramdesktop/tdesktop ; upstream README/individual licenses at the accepted exact tree ; FBCP-001 Revision 7 ; current canonical Fabushi/Bot specifications.
+References: https://github.com/telegramdesktop/tdesktop ; upstream README/individual licenses at the accepted exact tree ; FBCP-001 Revision 8 ; current canonical Fabushi/Bot specifications.
