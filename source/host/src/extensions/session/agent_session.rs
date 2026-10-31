@@ -12,6 +12,10 @@ use crate::agents::settings_file::{get_sand_settings_path, write_sand_settings_f
 use crate::storage::store_db::delete_sand_agent_db_write_generation;
 use crate::transcript_mutation_events::publish_transcript_mutation;
 use crate::extensions::memory::memory_service::FileMemoryStore;
+use crate::extensions::inference::model_picker_service::{
+    apply_session_model_selection as apply_model_selection,
+    ApplySessionModelSelectionParams, ApplySessionModelSelectionResult, SessionModelEntryState,
+};
 use crate::automations::automation::{AUTOMATION_UI_LIMIT, AutomationRecord, AutomationSpec};
 use crate::automations::automation_store::FileAutomationStore;
 use crate::workflows::workflow_library::WorkflowSpec;
@@ -37,6 +41,55 @@ use super::session_profile_files::{
     write_agent_profile_update,
 };
 use super::session_summaries::AgentSummary;
+
+const SESSION_MODEL_SELECTION_KV: &str = "sessionModelSelection";
+
+/// Read the authoritative per-session model selection from the session's
+/// SQLite KV owner. The record is deliberately scoped by agent id; malformed
+/// or cross-session state is rejected instead of being applied to another
+/// session.
+pub fn read_session_model_entry(
+    db: &crate::extensions::session::agent_db::SandAgentDb,
+    agent_id: &str,
+) -> Result<SessionModelEntryState, String> {
+    let Some(raw) = db
+        .read_kv(SESSION_MODEL_SELECTION_KV)
+        .map_err(|error| error.to_string())?
+    else {
+        return Ok(SessionModelEntryState {
+            session_id: agent_id.to_string(),
+            ..SessionModelEntryState::default()
+        });
+    };
+    let state = serde_json::from_str::<SessionModelEntryState>(&raw)
+        .map_err(|error| format!("invalid session model selection: {error}"))?;
+    if state.session_id != agent_id {
+        return Err(format!(
+            "session model selection belongs to {}, not {agent_id}",
+            state.session_id
+        ));
+    }
+    Ok(state)
+}
+
+/// Persist a validated session model selection without touching agent-level
+/// settings or defaults.
+pub fn write_session_model_entry(
+    db: &crate::extensions::session::agent_db::SandAgentDb,
+    agent_id: &str,
+    state: &SessionModelEntryState,
+) -> Result<bool, String> {
+    if state.session_id != agent_id {
+        return Err(format!(
+            "cannot persist session model selection for {}, expected {agent_id}",
+            state.session_id
+        ));
+    }
+    let raw = serde_json::to_string(state)
+        .map_err(|error| format!("serialize session model selection: {error}"))?;
+    db.write_kv(SESSION_MODEL_SELECTION_KV, &raw)
+        .map_err(|error| error.to_string())
+}
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum SessionCommunicationMode {
@@ -209,6 +262,37 @@ impl SandAgentSessionStore {
 
     pub fn production(&self) -> &Arc<ProductionSessionWorkers> {
         &self.production
+    }
+
+    /// Apply and persist a session-scoped model selection through the existing
+    /// model-picker policy owner. Only an `Applied` result is persisted; policy
+    /// rejection and generation conflicts leave the previous KV state intact.
+    pub fn apply_session_model_selection(
+        &self,
+        agent_id: &str,
+        params: ApplySessionModelSelectionParams<'_>,
+        current_time_ms: u64,
+    ) -> Result<ApplySessionModelSelectionResult, String> {
+        if !params.request.reset_to_default
+            && (params.request.provider.trim().is_empty() || params.request.model.trim().is_empty())
+        {
+            return Err("session model selection requires provider and model".into());
+        }
+        let db = self.production.open_agent_db_owner(agent_id)?;
+        let mut state = read_session_model_entry(&db, agent_id)?;
+        let result = apply_model_selection(&mut state, params, current_time_ms);
+        if matches!(&result, ApplySessionModelSelectionResult::Applied(_)) {
+            let _ = write_session_model_entry(&db, agent_id, &state)?;
+        }
+        Ok(result)
+    }
+
+    pub fn read_session_model_entry(
+        &self,
+        agent_id: &str,
+    ) -> Result<SessionModelEntryState, String> {
+        let db = self.production.open_agent_db_owner(agent_id)?;
+        read_session_model_entry(&db, agent_id)
     }
 
     pub fn pending_conversation_turns(&self) -> PendingConversationTurnRegistry {

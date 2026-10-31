@@ -84,15 +84,32 @@ parity row therefore remains `wiring=not-wired`, `verification=not-run`, and
 auth-profile owner and lifecycle contract are implemented.
 
 The model-override recheck found the same gap in a neighboring owner. The
-current `agent_session.rs` does not implement the registered model-override
-contract. `model_picker_service.rs` contains an isolated
-`apply_session_model_selection` helper and session-state shape, but no
-production caller was found for that helper. The O04 test only round-trips
-`modelOverride` and `thinkingLevel` in a JSON value; it does not exercise
-session persistence, provider selection, thinking-level application, or the
-negative invariant that parent agent defaults remain unchanged. The model
-override parity row therefore remains `implementation=not-started`,
-`wiring=not-wired`, `verification=not-run`, and `acceptance=pending`.
+existing `model_picker_service.rs` helper and session-state shape are now
+owned by `agent_session.rs` through a narrow SQLite KV projection:
+`sessionModelSelection` is read and written only for the requested agent id,
+malformed or cross-session state is rejected, and only an `Applied` model-picker
+result is persisted. This is the implementation slice for the session owner;
+it does not mutate parent agent defaults.
+
+The producer/consumer boundary remains open. No production runner/provider
+caller currently supplies the persisted state to `SandSessionOptions`, and the
+O04 test still only round-trips `modelOverride` and `thinkingLevel` in a JSON
+value. It does not prove session persistence, provider selection, thinking-level
+application, or the negative invariant at runtime. The model override parity
+row therefore advances to `implementation=implementing`, while retaining
+`wiring=not-wired`, `verification=not-run`, and `acceptance=pending` until a
+real session mutation route and inference consumer are identified and verified.
+
+### Session model-override implementation contract (2026-10-31)
+
+`SandAgentSessionStore::apply_session_model_selection` is the sole persistence
+entrypoint for this slice. It opens the existing `SandAgentDb` owner, loads the
+agent-scoped `sessionModelSelection` record, delegates policy/generation/runtime
+checks to `model_picker_service::apply_session_model_selection`, and writes the
+new state only for an `Applied` result. Rejected and conflict results leave the
+previous state untouched. A persisted record whose `sessionId` differs from the
+requested agent is a hard error. This contract is static implementation
+evidence only; no local OCRM test/build was run under the development freeze.
 
 The same pass read `src/sessions/auth-profile-removal.ts` in full (blob
 `378579dd13534027cdce7953942e64822db097e9`, 157 lines). It is mapped to the

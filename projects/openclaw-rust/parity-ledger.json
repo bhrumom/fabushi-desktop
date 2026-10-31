@@ -14705,10 +14705,10 @@
       ],
       "id": "OCRM-RESP-SESSION-MODEL-OVERRIDES-001",
       "integration": {
-        "consumer": "No production session-override consumer identified; apply_session_model_selection has no non-test caller",
-        "entrypoint": "source/host/src/extensions/session/agent_session.rs",
+        "consumer": "No production runner/provider consumer identified yet; persisted state is not projected into SandSessionOptions",
+        "entrypoint": "source/host/src/extensions/session/agent_session.rs::SandAgentSessionStore::apply_session_model_selection",
         "owner": "source/host/src/extensions/session/agent_session.rs",
-        "producer": "No production session model-override producer identified; O04 is a JSON fixture and model_picker_service is not called"
+        "producer": "SandAgentSessionStore::apply_session_model_selection opens the existing SandAgentDb owner and persists the agent-scoped sessionModelSelection KV only after an Applied result"
       },
       "invariants": [
         "Session model overrides do not alter parent agent profile defaults"
@@ -14755,7 +14755,7 @@
       ],
       "status": {
         "acceptance": "pending",
-        "implementation": "not-started",
+        "implementation": "implementing",
         "mapping": "mapped",
         "read": "read-complete",
         "verification": "not-run",
@@ -14770,7 +14770,8 @@
         "source/host/tests/openclaw_sessions_and_config_contract.rs::test_ocrm_session_o04_model_overrides"
       ],
       "typed_contracts": [
-        "Session model override resolver"
+        "Session model override resolver",
+        "sessionModelSelection SQLite KV projection"
       ],
       "unit_id": "OCRM-UNIT-SESSIONS-001"
     },
