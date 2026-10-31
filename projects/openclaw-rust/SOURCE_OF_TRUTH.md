@@ -548,6 +548,16 @@ package roots。该结果消除了此前 workspace count 的歧义，但仍只�
 manifest/importer mapping；外部包 archive/integrity/license provenance、
 source closure 和 exact-head Actions authority 仍未闭合。
 
+2026-10-31 inventory field audit：当前提交的固定 subject shards 与
+`ad8d12f.../04ccce...` 一致，58,750 行路径唯一、`omitted_known=0`，其中
+57,331 行仍是 `unread/unclassified`，1,419 行是 `read-complete/mapped`。
+但所有行的 `applicability_status` 与 `disposition_status` 仍为旧 materialization
+留下的 `null`，不是已分流或已完成 disposition 的证据；因此
+`applicability_disposition_closure` 继续为 `false`。现有
+`shard_inventory.py` 会在下一次 Actions exact-subject materialization 时为
+未复用审查字段发出 `unknown/pending`；开发冻结期间不手工重写 generated
+shards。详见 `dossiers/inventory-applicability-field-audit-20261031.md`。
+
 对 fixed subject 应用 lock 与 exact Git tree 的进一步只读重核显示：200 个
 importer 路径全部匹配 manifest，263 条 `link:` edge 按 importer 相对路径解析
 后全部落到现有 workspace manifest；1,844 个 package resolution 全部带声明的
