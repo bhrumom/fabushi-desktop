@@ -272,3 +272,35 @@ discovery-only: no prior inventory, dependency closure, LFS/integrity result or
 Actions provenance is relabeled or reused, and all authority/completion flags
 remain unchanged. No CI, push, PR update or local OCRM executable verification
 was performed.
+
+## Subsequent live recheck — 2026-10-31T05:45:33Z
+
+Read-only GitHub ref and commit/tree API checks resolved
+`openclaw/openclaw` `refs/heads/main` to commit
+`f92366d3c7fb390dc9bba3b89e06b794e0cb5119`, root tree
+`260ace762cbdaf2e25a8335319601b199d6848e0`. The recursive tree response was
+not truncated and contained 63,946 entries: 61,705 blobs and 2,241 trees; no
+gitlinks were present. Root dependency/license input identities remained
+stable and `.gitmodules` remained absent.
+
+This superseded the `002f25a...` discovery candidate in the lock. It remained
+discovery-only: no prior inventory, dependency closure, LFS/integrity result or
+Actions provenance was relabeled or reused, and all authority/completion flags
+remained unchanged. No CI, push, PR update or local OCRM executable
+verification was performed.
+
+## Subsequent live recheck — 2026-10-31T05:51:22Z
+
+Read-only GitHub ref and commit/tree API checks resolved
+`openclaw/openclaw` `refs/heads/main` to commit
+`bcf23b2ea0eee92c8c497c6b1c4d486588e4d5ab`, root tree
+`5d9b96f3208eb2daf4c566fc60865a1850e4c77f`. The recursive tree response was
+not truncated and contained 63,946 entries: 61,705 blobs and 2,241 trees; no
+gitlinks were present. Root dependency/license input identities remained
+stable and `.gitmodules` remained absent.
+
+This superseded the `f92366d...` discovery candidate in the lock. It remains
+discovery-only: no prior inventory, dependency closure, LFS/integrity result or
+Actions provenance is relabeled or reused, and all authority/completion flags
+remain unchanged. No CI, push, PR update or local OCRM executable verification
+was performed.
