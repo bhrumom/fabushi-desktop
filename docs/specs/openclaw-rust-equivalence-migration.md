@@ -226,7 +226,7 @@ Git tree API 被截断时必须分子树继续枚举并核对集合；GitHub sea
 
 | 维度 | 可记录状态 | 升级条件 |
 | --- | --- | --- |
-| 来源读取 | unread / partial / read-complete | 完整内容与责任阅读记录；没有未读区间 |
+| 来源读取 | unread / partial / read-complete | 该路径的完整内容与责任阅读记录；仅该路径没有未读区间（不表示全量 inventory 或 AC02 必须 unread=0） |
 | 责任分析 | unclassified / mapped / reviewed | owner、行为、依赖、oracle 和具体覆盖经复核 |
 | 实现 | not-started / implementing / implemented | 按 §6.4.1 类型合同有真实实现或交付物；业务责任必须 Rust，不是 stub |
 | 生产/交付接入 | not-wired / wired | 对应类型的真实 consumer 已接入；运行时必须实际 packaged entrypoint 可到达 owner 和 consumer |
