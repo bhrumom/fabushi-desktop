@@ -13556,7 +13556,7 @@
       "id": "OCRM-RESP-MEM-FORGET-ATOMIC-001",
       "integration": {
         "consumer": "source/host/src/extensions/memory/memory_service.rs",
-        "entrypoint": "source/host/src/extensions/memory/memory_service.rs::FileMemoryStore::remove",
+        "entrypoint": "source/host/src/extensions/memory/memory_service.rs::MemoryService::remove",
         "owner": "source/host/src/extensions/memory/memory_service.rs",
         "producer": "source/host/src/runner/tools/sand_state_tool.rs"
       },
@@ -13567,7 +13567,7 @@
       "oracle_ids": [
         "OCRM-MEM-O08"
       ],
-      "owner_decision": "Enforce tombstone creation and fact removal in FileMemoryStore::remove",
+      "owner_decision": "Enforce tombstone creation and fact removal through MemoryService::remove, which delegates to FileMemoryStore::remove_memory",
       "postconditions": [
         "Fact removed from memory store and recorded in tombstones directory"
       ],
@@ -13613,13 +13613,13 @@
       "target": {
         "language": "Rust",
         "path": "source/host/src/extensions/memory/memory_service.rs",
-        "symbol": "FileMemoryStore::remove"
+        "symbol": "MemoryService::remove"
       },
       "tests": [
         "source/host/tests/openclaw_memory_contract.rs::test_ocrm_mem_o08_tombstone_persistence_and_resurrection_prevention"
       ],
       "typed_contracts": [
-        "FileMemoryStore::remove(&mut self, content: &str) -> io::Result<bool>"
+        "MemoryService::remove(&self, agent_id: &str, id: &str) -> io::Result<bool>"
       ],
       "unit_id": "OCRM-UNIT-MEM-001"
     },
