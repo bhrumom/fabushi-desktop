@@ -112,6 +112,18 @@ closure permits a rebaseline. The standalone `AcpSessionManager` contract
 does not satisfy production consumer, security-context, or packaged ACP
 acceptance evidence.
 
+The ACP policy row requires the same separation. A repository-wide search
+found no production ACP dispatch-policy producer or consumer for the historical
+`src/acp/policy.ts` contract. `SandAutoReviewDecision` is a policy-shaped
+Runner helper, while `source/host/src/extensions/transcript/production_runtime.rs`
+owns a separate Host turn lease and watchdog lifecycle. The O11 settlement and
+O12 zombie checks in `openclaw_agent_turn_contract.rs` construct local
+`TurnSettlement`/`TurnWatchdogLease` fixtures and do not establish an ACP
+transport or dispatch-policy call chain. Therefore the parity row
+`OCRM-RESP-AGENT-ACP-POLICY-001` retains `wiring=not-wired`,
+`verification=not-run`, and `acceptance=pending`; the independent Transcript
+runtime must not be counted as ACP compatibility.
+
 The parity row's blocker attribution was rechecked at the same time. The prior
 `BL-MEDIA-DOC-TRUNCATION-UPSTREAM-CALLER-001` reference did not describe this
 ACP transport/consumer gap; the row now points to the existing

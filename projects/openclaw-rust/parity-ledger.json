@@ -2760,10 +2760,10 @@
       ],
       "id": "OCRM-RESP-AGENT-ACP-POLICY-001",
       "integration": {
-        "consumer": "source/host/src/runner/production_turn_agent_owner.rs",
-        "entrypoint": "source/host/src/runner/mod.rs",
+        "consumer": "No production consumer for the historical ACP dispatch-policy contract; source/host/src/extensions/transcript/production_runtime.rs consumes a separate Host turn lease/watchdog path",
+        "entrypoint": "source/host/src/runner/mod.rs::SandAutoReviewDecision (policy-shaped helper) and source/host/src/extensions/transcript/production_runtime.rs::settle_routed_turn (separate runtime path)",
         "owner": "source/host/src/runner/mod.rs",
-        "producer": "source/host/src/runner/mod.rs"
+        "producer": "No production ACP dispatch-policy producer is wired; OCRM-AGENT-O11/O12 are contract fixtures"
       },
       "invariants": [
         "ACP dispatch disabled by policy rejects explicit turns",
@@ -2814,7 +2814,7 @@
         "mapping": "reviewed",
         "read": "read-complete",
         "verification": "not-run",
-        "wiring": "wired"
+        "wiring": "not-wired"
       },
       "target": {
         "language": "Rust",
