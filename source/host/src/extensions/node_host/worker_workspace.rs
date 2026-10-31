@@ -189,6 +189,9 @@ impl NodeWorkerWorkspaceOwner {
 }
 
 fn validate_identity(identity: &NodeWorkerWorkspaceIdentity) -> Result<(), String> {
+    if identity.owner_epoch == 0 {
+        return Err("WORKSPACE_INVALID: ownerEpoch must be greater than zero".into());
+    }
     for (label, value) in [
         ("environmentId", identity.environment_id.as_str()),
         ("sessionId", identity.session_id.as_str()),
