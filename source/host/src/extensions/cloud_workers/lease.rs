@@ -1,3 +1,5 @@
+use std::collections::HashSet;
+
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
@@ -159,11 +161,11 @@ impl CloudWorkerLease {
         {
             return Err(CloudWorkerLeaseError::InvalidPersistedRecord);
         }
+        let mut replay_keys = HashSet::with_capacity(self.replay_history.len());
         if self.replay_history.len() > MAX_REPLAY_HISTORY
-            || self
-                .replay_history
-                .iter()
-                .any(|key| !valid_text(&key.0, MAX_REPLAY_KEY_CHARS))
+            || self.replay_history.iter().any(|key| {
+                !valid_text(&key.0, MAX_REPLAY_KEY_CHARS) || !replay_keys.insert(key)
+            })
         {
             return Err(CloudWorkerLeaseError::InvalidPersistedRecord);
         }
@@ -501,6 +503,19 @@ mod tests {
         assert_eq!(
             lease.validate(&mutation),
             Err(CloudWorkerLeaseError::ReplayAlreadySettled)
+        );
+    }
+
+    #[test]
+    fn rejects_duplicate_replay_history_on_restore() {
+        let mut lease = lease();
+        lease.replay_history = vec![
+            ReplayKey("settled-1".into()),
+            ReplayKey("settled-1".into()),
+        ];
+        assert_eq!(
+            lease.validate_persisted(),
+            Err(CloudWorkerLeaseError::InvalidPersistedRecord)
         );
     }
 

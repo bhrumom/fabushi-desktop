@@ -2492,6 +2492,7 @@
         "Lease mutations validate lease ID, owner epoch, generation, runtime identity and non-empty replay key before settlement",
         "Lease scope and runtime constructors reject control text and oversized identity fields",
         "Settled replay keys are retained in a bounded persistent history and cannot be reused",
+        "Persisted replay history rejects invalid or duplicate keys",
         "Only completed mutations advance lifecycle; submitted, failed and cancelled outcomes cannot silently change state",
         "Outcome-unknown results remain visible and cannot be retried as a successful non-replayable mutation",
         "Process cleanup remains bounded and ownership-proven; broad process-name termination is forbidden"
