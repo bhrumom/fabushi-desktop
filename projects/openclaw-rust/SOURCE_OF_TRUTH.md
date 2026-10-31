@@ -198,6 +198,12 @@ canonical inventory 身份，不能手工改写旧分片来伪造 projection clo
 差异必须在 `b513040e…/c48aeaf…` exact subject 的新 inventory 生成与独立
 验证中闭合。
 
+对旧 baseline inventory 的只读计数还显示：58,750 条路径中有 57,331 条仍为
+`responsibility_status=unclassified` 且 `disposition=null`；其余 1,419 条已有
+read/disposition 记录。该计数是当前 AC02/G02 final 未闭合的直接证据，不是把
+unread 强行当作失败门槛，也不能被结构性 inventory 完整或已完成的 scoped
+责任行抵消。
+
 ## 5. 机器记录的初始化与终态
 
 2026-10-31 governance amendment: AC02/G02 final requires zero omitted,
