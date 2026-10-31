@@ -937,3 +937,24 @@ Arbitrary `wasSent/haveSent/_resendingIds/toSend/_sentContainers` history, resen
 connection scheduling/racing/send retry, temporary/permanent auth-key binding/expiry/persistence/teardown,
 gzip, complete difference/differenceSlice decoding/application, broader source/legal closure and Stage-B executable
 evidence remain open/fail-closed. No executable validation was performed.
+
+
+### Round 85 final source-level compliance
+
+Platform-core `a6281c8b43aff544acdafca454091fa2856cdd49` / final spec blob
+`0e0baa8fe35f9ef9e446d8a04ac7f95ca1fadba4` records source-level R1-R10 and AC-1-AC-6 compliance for the
+fixed-U `msgs_all_info#8cc0d131 msg_ids:Vector<long> info:string` wire/state-shape responsibility.
+Canonical production `api.rs/tl.rs/lib.rs` remain
+`ebfb3670b5cd097b9ce288782c7954f5cfe9fc43` /
+`89256ab35184b6dc06a095ab34abb9f44e95a264` /
+`abab39e42f100972484191f0e52e9edd9b88c6cf` with no behavior delta. Canonical/desktop authored contract
+blob remains `d1a86cb35d6e27ed94c911750190c627fc7764cf`. The desktop ledger records
+`TDRP-R9-MTPROTO-MSGS-ALL-INFO-WIRE-001` as
+`implemented / validation_status=not-run / accepted=false`, coverage
+`95 / 16172 unknown / 16145 unread / 0 omitted`.
+
+Vector constructor/count bounds, signed ids, binary `info`, state/id cardinality and exact EOF are isolated from
+arbitrary request history/application. `wasSent/haveSent/_resendingIds/toSend/_sentContainers`, resend/ack application,
+connection scheduling/racing/send retry, temporary/permanent auth-key binding/expiry/persistence/teardown, gzip,
+complete difference/differenceSlice decoding/application, broader fixed-U source/legal closure, Stage-B executable
+evidence and independent release ACCEPT remain open/fail-closed. No executable validation was performed.
