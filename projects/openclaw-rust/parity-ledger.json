@@ -13481,11 +13481,8 @@
         "Channel and group sessions suppress citations under auto mode"
       ],
       "migration_rollback": "Citations mode can be configured via host settings",
-      "oracle_ids": [
-        "OCRM-MEM-O06",
-        "OCRM-MEM-O10"
-      ],
-      "owner_decision": "Format search citations in agent_content_search.rs with session key awareness",
+      "oracle_ids": [],
+      "owner_decision": "Keep citation formatting pending until search results carry verified source-line provenance and an independent citation-format oracle exists; do not infer line numbers from snippets or entry order",
       "postconditions": [
         "Results formatted with snippet and citation according to session mode"
       ],
@@ -13532,13 +13529,8 @@
         "path": "source/host/src/extensions/content_search/agent_content_search.rs",
         "symbol": "search_messages"
       },
-      "tests": [
-        "source/host/tests/openclaw_memory_contract.rs::test_ocrm_mem_o06_ungrounded_synthesis_evidence_rejection",
-        "source/host/tests/openclaw_memory_contract.rs::test_ocrm_mem_o10_content_search_per_agent_capping_and_recency_sorting"
-      ],
-      "typed_contracts": [
-        "search_messages per-agent match capping and recency"
-      ],
+      "tests": [],
+      "typed_contracts": [],
       "unit_id": "OCRM-UNIT-MEM-001"
     },
     {

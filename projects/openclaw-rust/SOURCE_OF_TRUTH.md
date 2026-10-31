@@ -248,6 +248,13 @@ web-search/fetch payload bounds contract，不是 heartbeat 测试；ledger 已�
 consumer、response-notification consumer 及独立 heartbeat oracle；没有因此新增
 实现或验收证据。
 
+同一轮 memory citations 复核确认：当前 content-search index/result contract 只保留
+entry ID、role、timestamp 与 snippet，没有可信的 source-line provenance；ledger 原先
+绑定的 `OCRM-MEM-O06/O10` 分别是 synthesis evidence rejection 与 per-agent
+match-capping/recency tests，不是 citation-format oracles。该责任因此继续保持
+`implementing/not-wired`，不得从 snippet 或 entry 顺序推导 `#L{n}` 行号，直到
+provenance contract 与独立 citation oracle 同时存在。
+
 随后对 320 条 wired integration path claim 做了只读存在性检查：5 条 Browser
 producer path 纠正为实际的 `source/host/src/runner/tools/` 位置；
 `OCRM-RESP-AGENT-ROSTER-AUDIT-001` 的声明 consumer

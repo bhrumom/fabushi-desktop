@@ -30,7 +30,7 @@ The unit covers the core memory tool contracts, forget mechanics, citations form
 
 1. **`OCRM-RESP-MEM-TOOL-CONTRACT-001`**: Memory tool contract, argument normalization, parameter aliasing (`maxResults` > `max_results` > `limit`), and safe project-scope comment formatting (`<!-- project: ${projectKey} -->`).
 2. **`OCRM-RESP-MEM-FORGET-ATOMIC-001`**: Atomic memory fact scrubbing, session-referenced corpus line removal, and durable tombstone persistence against resurrection.
-3. **`OCRM-RESP-MEM-CITATIONS-FORMAT-001`**: Memory search result presentation, citation formatting (`#L{start}` or `#L{start}-L{end}`), and auto-mode suppression on channel/group sessions.
+3. **`OCRM-RESP-MEM-CITATIONS-FORMAT-001`**: Memory search result presentation, citation formatting (`#L{start}` or `#L{start}-L{end}`), and auto-mode suppression on channel/group sessions. Current Rust search records contain entry IDs, timestamps, roles, and snippets but no verified source-line provenance; this responsibility remains `implementing/not-wired` and no line numbers may be inferred from snippet positions or entry ordering.
 4. **`OCRM-RESP-MEM-SHORT-TERM-PROMOTION-001`**: Multi-dimensional candidate ranking (frequency, relevance, diversity, recency, consolidation, conceptual) and dreaming phase signal boosting.
 5. **`OCRM-RESP-MEM-STANDING-INTENTS-001`**: Standing intent creation, channel and sender scoping, keyword normalization, and expiration enforcement.
 6. **`OCRM-RESP-MEM-SEARCH-CORPUS-ROUTING-001`**: Memory search corpus validation, closed enum enforcement (`memory`, `wiki`, `all`, `sessions`), cooldown tracking, and failure presentation.
@@ -54,3 +54,8 @@ Implemented and verified in `source/host/tests/openclaw_memory_contract.rs`:
 - **`OCRM-MEM-O12`**: `test_ocrm_mem_o12_memory_update_state_tool_contract`
 
 CI Verification: Verified passing in GitHub Actions run 40276785979 on exact commit `03f548f22`.
+
+The listed OCRM-MEM-O06 and OCRM-MEM-O10 tests are not citation-format oracles: they
+cover ungrounded synthesis rejection and per-agent match capping/recency sorting.
+Until a source-line provenance contract and an independent citation-format oracle are
+added, this responsibility has no valid citation evidence and remains pending.
