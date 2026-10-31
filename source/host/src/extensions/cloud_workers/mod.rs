@@ -33,7 +33,7 @@ pub use artifact_store::{
 };
 pub use auxiliary::{
     validate_worker_wallpaper_png, CloudWorkerAuxiliaryError, CloudWorkerEnvironmentProfile,
-    CloudWorkerWarmImagePolicy,
+    CloudWorkerInstallMode, CloudWorkerProfileSuggestion, CloudWorkerWarmImagePolicy,
 };
 pub use doctor::{
     CloudWorkerDoctorAction, CloudWorkerDoctorError, CloudWorkerDoctorRequest,

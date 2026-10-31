@@ -299,6 +299,9 @@ pending Crabbox responsibilities:
 - The auxiliary boundary also validates the pinned 1024×576 PNG wallpaper
   header/dimensions without reading files, encoding bytes or applying platform
   settings.
+- Auxiliary profile suggestion now preserves the pinned closed projection
+  (`cloud`/`crabbox`/bundle/Linux plus bounded timing and warm-image defaults)
+  without treating a suggestion as provider authorization or readiness.
 - Persisted lease validation now rejects a `Disposed` record unless its last
   mutation is explicitly `Completed`, preserving the distinction between
   confirmed release and stop outcome uncertainty.

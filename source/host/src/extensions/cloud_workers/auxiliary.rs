@@ -11,6 +11,8 @@ const MIN_RETAIN_UNUSED_MS: u64 = 86_400_000;
 const WORKER_WALLPAPER_WIDTH: u32 = 1024;
 const WORKER_WALLPAPER_HEIGHT: u32 = 576;
 const PNG_SIGNATURE: &[u8; 8] = b"\x89PNG\r\n\x1a\n";
+const MAX_SUGGESTION_ID_CHARS: usize = 256;
+const MAX_MACHINE_CLASS_CHARS: usize = 128;
 
 /// A deterministic, side-effect-free representation of the setup environment
 /// profile. Values are inputs to a future secret-egress/process owner; this
@@ -59,6 +61,55 @@ pub struct CloudWorkerWarmImagePolicy {
     pub refresh_after_ms: u64,
     pub retain_unused_ms: u64,
     pub keep_previous: bool,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum CloudWorkerInstallMode {
+    Bundle,
+}
+
+/// The pinned Crabbox profile suggestion projected for existing setup/UI
+/// consumers. It is deliberately not a provider authorization or readiness
+/// result.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct CloudWorkerProfileSuggestion {
+    pub id: String,
+    pub provider_display_id: String,
+    pub provider: String,
+    pub install: CloudWorkerInstallMode,
+    pub target: super::CloudWorkerOs,
+    pub machine_class: String,
+    pub suspend_after: String,
+    pub ttl: String,
+    pub idle_timeout: String,
+    pub warm_image: bool,
+}
+
+impl CloudWorkerProfileSuggestion {
+    pub fn new(
+        provider_display_id: impl Into<String>,
+        machine_class: impl Into<String>,
+    ) -> Result<Self, CloudWorkerAuxiliaryError> {
+        let provider_display_id = provider_display_id.into();
+        let machine_class = machine_class.into();
+        if !valid_bounded_text(&provider_display_id, MAX_SUGGESTION_ID_CHARS)
+            || !valid_bounded_text(&machine_class, MAX_MACHINE_CLASS_CHARS)
+        {
+            return Err(CloudWorkerAuxiliaryError::InvalidProfileSuggestion);
+        }
+        Ok(Self {
+            id: "cloud".into(),
+            provider_display_id,
+            provider: "crabbox".into(),
+            install: CloudWorkerInstallMode::Bundle,
+            target: super::CloudWorkerOs::Linux,
+            machine_class,
+            suspend_after: "45m".into(),
+            ttl: "4h".into(),
+            idle_timeout: "45m".into(),
+            warm_image: true,
+        })
+    }
 }
 
 impl CloudWorkerWarmImagePolicy {
@@ -147,6 +198,12 @@ fn valid_environment_name(value: &str) -> bool {
         && !value.chars().any(|character| character.is_control() || character == '=')
 }
 
+fn valid_bounded_text(value: &str, max_chars: usize) -> bool {
+    !value.trim().is_empty()
+        && value.chars().count() <= max_chars
+        && !value.chars().any(|character| character.is_control())
+}
+
 #[derive(Debug, Error, Clone, PartialEq, Eq)]
 pub enum CloudWorkerAuxiliaryError {
     #[error("setup environment contains too many entries")]
@@ -165,6 +222,8 @@ pub enum CloudWorkerAuxiliaryError {
     InvalidWallpaperPng,
     #[error("worker wallpaper dimensions are {width}x{height}, expected 1024x576")]
     InvalidWallpaperDimensions { width: u32, height: u32 },
+    #[error("cloud-worker profile suggestion identity is invalid")]
+    InvalidProfileSuggestion,
 }
 
 #[cfg(test)]
@@ -238,6 +297,20 @@ mod tests {
                 width: 1024,
                 height: 575,
             })
+        );
+    }
+
+    #[test]
+    fn profile_suggestion_is_a_closed_setup_projection() {
+        let suggestion = CloudWorkerProfileSuggestion::new("aws", "standard").unwrap();
+        assert_eq!(suggestion.id, "cloud");
+        assert_eq!(suggestion.provider, "crabbox");
+        assert_eq!(suggestion.target, super::super::CloudWorkerOs::Linux);
+        assert_eq!(suggestion.install, CloudWorkerInstallMode::Bundle);
+        assert!(suggestion.warm_image);
+        assert_eq!(
+            CloudWorkerProfileSuggestion::new("aws\nunsafe", "standard"),
+            Err(CloudWorkerAuxiliaryError::InvalidProfileSuggestion)
         );
     }
 }
