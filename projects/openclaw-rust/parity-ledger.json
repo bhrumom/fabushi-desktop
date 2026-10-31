@@ -1154,9 +1154,9 @@
       ],
       "id": "OCRM-RESP-INFRA-WORKER-CRABBOX-CATALOG-001",
       "integration": {
-        "consumer": "CloudWorkerProvisioningOwner::resolve_catalog; provider/process producer remains not wired",
-        "entrypoint": "source/host/src/extensions/cloud_workers/owner.rs::CloudWorkerProvisioningOwner::resolve_catalog",
-        "owner": "source/host/src/extensions/cloud_workers/owner.rs::catalog_cache",
+        "consumer": "CloudWorkerProvisioningExtension::resolve_provider_catalog; provider/process producer remains not wired",
+        "entrypoint": "source/host/src/extensions/cloud_workers/extension.rs::CloudWorkerProvisioningExtension::resolve_provider_catalog -> owner.rs::resolve_catalog",
+        "owner": "source/host/src/extensions/cloud_workers/extension.rs and owner.rs::catalog_cache",
         "producer": "configured provider binary (not yet wired)"
       },
       "invariants": [

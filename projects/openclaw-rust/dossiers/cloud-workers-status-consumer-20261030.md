@@ -100,6 +100,11 @@ authorize a worker, or set `providerReady=true`. The parity row therefore marks
 the Rust catalog contract implemented while producer wiring and acceptance stay
 pending.
 
+The Host extension now exposes `resolve_provider_catalog` as the sole typed
+façade to that owner cache. A poisoned owner maps to an explicit unavailable
+catalog error; no provider discovery, authorization or launch fallback is
+introduced.
+
 ## Doctor read-only owner projection — 2026-10-31
 
 `CloudWorkerProvisioningExtension::inspect_doctor` now validates and accepts

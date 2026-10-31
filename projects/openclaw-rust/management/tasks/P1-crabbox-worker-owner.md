@@ -237,6 +237,10 @@ pending Crabbox responsibilities:
 - Bootstrap requests now carry lease ID, owner epoch and generation, and the
   canonical extension revalidates them with scope/runtime identity through
   `validate_current_bootstrap_request` before any future producer may act.
+- Provider catalog producers must enter through
+  `CloudWorkerProvisioningExtension::resolve_provider_catalog`; direct access
+  to the owner cache is not a production integration path, and owner lock
+  failure remains an explicit unavailable result.
 
 The broader Crabbox projection, lifecycle, sandbox, bootstrap, artifact,
 warm-image and runtime-control rows remain pending where their producer or

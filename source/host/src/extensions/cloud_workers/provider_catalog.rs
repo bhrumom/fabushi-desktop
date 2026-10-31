@@ -258,6 +258,8 @@ pub struct CloudWorkerMachineRequirement {
 
 #[derive(Debug, Error)]
 pub enum CloudWorkerCatalogError {
+    #[error("cloud-worker owner is unavailable")]
+    OwnerUnavailable,
     #[error("catalog parser limit must be greater than zero")]
     InvalidLimit,
     #[error("binary identity is empty or contains surrounding whitespace")]

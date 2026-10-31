@@ -7,9 +7,9 @@ use serde::Serialize;
 use crate::extensions::extension_ids_generated::HostExtensionId;
 
 use super::{
-    CloudWorkerDoctorAction, CloudWorkerDoctorError, CloudWorkerDoctorRequest,
-    CloudWorkerDoctorResult,
-    CloudWorkerBootstrapRequest,
+    CloudWorkerBinaryIdentity, CloudWorkerBootstrapRequest, CloudWorkerCatalog,
+    CloudWorkerCatalogError, CloudWorkerDoctorAction, CloudWorkerDoctorError,
+    CloudWorkerDoctorRequest, CloudWorkerDoctorResult,
     CloudWorkerLeasedCapability, CloudWorkerOwnerError, CloudWorkerOwnerStatus,
     CloudWorkerSandboxCapability, CloudWorkerSandboxError,
     CloudWorkerSandboxRequest,
@@ -57,6 +57,24 @@ impl CloudWorkerProvisioningExtension {
             .lock()
             .map(|owner| owner.status())
             .unwrap_or(CloudWorkerOwnerStatus::Unavailable)
+    }
+
+    /// Routes provider capability discovery through the canonical owner and
+    /// its exact-binary-identity cache. The loader remains the explicit
+    /// provider/process boundary and may not authorize or launch a worker.
+    pub fn resolve_provider_catalog<F>(
+        &self,
+        identity: CloudWorkerBinaryIdentity,
+        load: F,
+    ) -> Result<CloudWorkerCatalog, CloudWorkerCatalogError>
+    where
+        F: FnOnce() -> Result<CloudWorkerCatalog, CloudWorkerCatalogError>,
+    {
+        let mut owner = self
+            .owner
+            .lock()
+            .map_err(|_| CloudWorkerCatalogError::OwnerUnavailable)?;
+        owner.resolve_catalog(identity, load)
     }
 
     /// Provides the read-only doctor projection from the canonical owner.
