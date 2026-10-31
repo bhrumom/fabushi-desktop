@@ -266,7 +266,11 @@
       ],
       "evidence_refs": [
         "source/host/app/src/main.rs",
+        "source/host/src/gateway_server.rs",
         "source/node-agent-coordinator/src/cloud_worker_projection.rs",
+        "source/shared/rpc/coordinator.ts",
+        "frontend/src/production/coordinator-client.ts",
+        "frontend/src/production/cloud-worker-status-panel.tsx",
         "source/host/tests/cloud_workers_extension_contract.rs",
         "projects/openclaw-rust/dossiers/cloud-workers-status-consumer-20261030.md"
       ],
@@ -1422,8 +1426,14 @@
         "mahayana_host_runtime::extensions::plugins"
       ],
       "evidence_refs": [
+        "source/host/app/src/main.rs",
+        "source/host/src/gateway_server.rs",
+        "source/node-agent-coordinator/src/cloud_worker_projection.rs",
         "source/host/tests/cloud_workers_extension_contract.rs",
         "source/node-agent-coordinator/tests/cloud_worker_projection_contract.rs",
+        "source/shared/rpc/coordinator.ts",
+        "frontend/src/production/coordinator-client.ts",
+        "frontend/src/production/cloud-worker-status-panel.tsx",
         "projects/openclaw-rust/management/tasks/P1-crabbox-worker-owner.md"
       ],
       "existing_owner_candidates": [
