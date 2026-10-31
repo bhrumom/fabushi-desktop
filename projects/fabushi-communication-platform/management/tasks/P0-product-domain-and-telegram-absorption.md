@@ -506,3 +506,14 @@ Source review confirms existing canonical `build_req_dh_params` already serializ
 Ledger adds `TDRP-R9-MTPROTO-SET-CLIENT-DH-PARAMS-REQUEST-WIRE-001`; `responsibilities_total=83`, while `unknown=16172`, `unread=16145`, and `omitted=0` remain unchanged. Exact constructor/raw-nonce/TL-string-padding and prepare-path body-equality contracts are authored only. `implementation_status=implemented`, `validation_status=not-run`, `accepted=false`.
 
 No Actions/status/check query or trigger, build, typecheck, lint, schema validator, generator, unit/contract/integration/E2E test, package, deployment, installation, or runtime acceptance was performed. Connection probing/racing, message-id generation, plaintext/not-secure framing, send/retry/timeout, server response correlation/application, broader auth-key creation/persistence/session lifecycle, arbitrary `wasSent/haveSent/_resendingIds/toSend/_sentContainers` history, gzip, complete difference/differenceSlice decoding/application, broader fixed-U source/legal closure, Stage-B evidence and independent release ACCEPT remain open/fail-closed.
+
+
+### Round 73 source-level compliance readback
+
+Platform-core compliance commit `dd584145d268084545e082c399e9f5fe2e52cba9` updates `docs/specs/telegram-mtproto-set-client-dh-params-request-wire.md@7ec57e2cfa47f62f0ae372e776ec8a1dcb39c04d`. Remote readback confirms canonical `build_set_client_dh_params`, its public facade export, and `prepare_client_dh` body-only delegation are present; canonical handshake/lib/contracts blobs are `2e9acc80d10a87a8633173c88568aef706d4e123` / `3a05251d749f0df868e4ebd94fb7e28e31fad8f1` / `3cef7f7532cf98c46f9f9eb06f9b0ff2026dfcb4`. Desktop tracked lib/contracts are byte-identical. Existing `build_req_dh_params` and its complete field-order/trailing contract remain present and unchanged.
+
+Spec R1-R8 are satisfied at source/ownership/bookkeeping level. Ledger responsibility `TDRP-R9-MTPROTO-SET-CLIENT-DH-PARAMS-REQUEST-WIRE-001` remains `implemented / validation_status=not-run / accepted=false`; `responsibilities_total=83`, `unknown=16172`, `unread=16145`, `omitted=0`. Stage-B executable evidence is intentionally absent.
+
+Connection probing/racing, message-id generation, plaintext/not-secure framing, network send/retry/timeout, server response correlation/application, broader auth-key creation/persistence/session lifecycle, arbitrary sent/resend/container history, gzip, complete difference decoding/application, broader fixed-U source/legal closure and independent release ACCEPT remain open/fail-closed.
+
+No GitHub Actions/status/check query or trigger, build, typecheck, lint, schema validator, generator, unit/contract/integration/E2E test, package, deployment, installation, or runtime acceptance was performed.
