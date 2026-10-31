@@ -3410,7 +3410,7 @@
         "consumer": "source/host/src/extensions/settings/settings_service.rs::set_host_settings",
         "entrypoint": "source/host/src/agents/agent_roster.rs::config_include_owns_agent_roster_values",
         "owner": "source/host/src/agents/agent_roster.rs::include_contribution_owns_agent_roster",
-        "producer": "source/host/src/agents/agent_roster.rs::can_write_doctor_include"
+        "producer": "none: no trusted include resolver supplies include-contribution provenance"
       },
       "invariants": [
         "Includes at agents.entries or list boundaries are marked include-owned",
@@ -6855,7 +6855,7 @@
         "consumer": "source/host/src/extensions/settings/settings_service.rs::set_host_settings",
         "entrypoint": "source/host/src/agents/agent_roster.rs::can_write_doctor_include",
         "owner": "source/host/src/agents/agent_roster.rs::can_write_doctor_include",
-        "producer": "source/host/src/agents/agent_roster.rs::can_write_doctor_include"
+        "producer": "none: no trusted include resolver supplies include-ownership provenance"
       },
       "invariants": [
         "Include-owned roster returns false for direct doctor include writes",

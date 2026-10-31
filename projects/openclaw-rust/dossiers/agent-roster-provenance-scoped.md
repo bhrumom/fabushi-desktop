@@ -170,3 +170,22 @@ is a fail-closed local guard, not complete provenance wiring: included roster
 membership/default ownership cannot be positively established from the real
 config source. The responsibility remains `wiring=not-wired` and its blocker
 remains open; no completion flag or acceptance state was changed.
+
+## 7. Recheck: no trusted include producer (2026-10-31)
+
+The current `SettingsService::set_host_settings` flow was re-read at
+`source/host/src/extensions/settings/settings_service.rs` around lines
+1118–1142. It constructs `parsed` from the persisted settings map and derives
+`resolved` by replacing or removing the incoming `agents` value. It then calls
+`can_write_doctor_include` for the current and target documents, passing the
+literal `false` for `include_contributes_roster` in both calls. No parsed
+source document, include graph, root/external include resolver, or
+`sourceConfigBeforeMigrations`-equivalent producer reaches this path.
+
+A repository-wide source search found no other trusted Rust include resolver or
+provenance producer. The only relevant implementation remains the local
+`agent_roster.rs` boundary inspection plus the Settings consumer. Therefore
+the parity integration records `producer=none` with the missing resolver
+explicitly named. This is partial fail-closed protection for authored
+`$include` markers, not positive production provenance acceptance; the row
+remains `wiring=not-wired`, `verification=not-run`, and `acceptance=pending`.
