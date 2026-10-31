@@ -14339,8 +14339,8 @@
       "id": "OCRM-RESP-SESSION-AUTH-PROFILE-LIFECYCLE-001",
       "integration": {
         "consumer": "No production auth-profile lifecycle consumer identified; session_profile_files.rs currently serves agent profile/avatar data only",
-        "entrypoint": "source/host/src/extensions/session/session_profile_files.rs",
-        "owner": "source/host/src/extensions/session/session_profile_files.rs",
+        "entrypoint": "none: no production auth-profile lifecycle entrypoint identified",
+        "owner": "none: no existing Rust auth-profile lifecycle owner selected",
         "producer": "No production auth-profile preservation/removal producer identified"
       },
       "invariants": [
@@ -14350,7 +14350,7 @@
       "oracle_ids": [
         "OCRM-SESSION-O05"
       ],
-      "owner_decision": "Enforce auth profile preservation in session_profile_files.rs",
+      "owner_decision": "Select a real session cleanup/auth owner and credential-preserving contract before implementation; do not repurpose session_profile_files.rs",
       "postconditions": [
         "Credentials retained during active session; cleaned up on explicit deletion"
       ],
@@ -14374,7 +14374,7 @@
       "responsibility_kind": "business-runtime",
       "reviewer": "xuyao@ombhrum.com",
       "risk": "Low; maintains authenticated sessions without leakage",
-      "selected_owner": "source/host/src/extensions/session/session_profile_files.rs",
+      "selected_owner": "unselected pending auth-profile lifecycle architecture decision",
       "source_refs": [
         {
           "blob_sha": "5d93e81b6f237a0783e4b3163fbd3a365cf143b7",
@@ -14414,8 +14414,8 @@
       },
       "target": {
         "language": "Rust",
-        "path": "source/host/src/extensions/session/session_profile_files.rs",
-        "symbol": "session_profile_files"
+        "path": "unselected pending auth-profile lifecycle owner",
+        "symbol": "candidate rejected: agent profile/avatar file manager, not auth-profile lifecycle owner"
       },
       "tests": [
         "source/host/tests/openclaw_sessions_and_config_contract.rs::test_ocrm_session_o05_auth_profile_preservation"
