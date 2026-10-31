@@ -3,13 +3,13 @@
   "project_id": "TDRP-001",
   "spec_revision": 9,
   "upstream_commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
-  "target_commit": "3f5e2d3a8b2e0c2726a1b1dcd1ab1172a0c5758d",
+  "target_commit": "fe17d4bcdea22d1df8e474961aa12b5f04b291db",
   "coverage": {
     "source_entries_total": 16202,
     "unknown": 16172,
     "unread": 16145,
     "omitted": 0,
-    "responsibilities_total": 60,
+    "responsibilities_total": 61,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -15126,6 +15126,283 @@
       "reviewer": null,
       "license_and_provenance": "Behavioral responsibility is anchored to fixed-U session_private.cpp@13cbc76ec723386027b5b4dcac79999b791c4614 and mtproto.tl@76225965bfc794388db241f3f760db8ab79e84f8. Implementation is source-neutral Rust and copies no upstream C++ queue implementation.",
       "notes": "Stage A implementation only. msg_new_detailed_info and full msgs_state reconciliation remain open. This row is a responsibility slice, so unknown/unread counts remain unchanged; authored tests are not executed.",
+      "test_execution_evidence": []
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+      "source_path": "Telegram/SourceFiles/mtproto/session_private.cpp",
+      "source_blob_sha": "13cbc76ec723386027b5b4dcac79999b791c4614",
+      "source_kind": "source",
+      "module_id": "tdesktop.mtproto.session.single-rpc-state-reconciliation",
+      "responsibility_id": "TDRP-R9-MTPROTO-SINGLE-RPC-STATE-RECONCILIATION-001",
+      "source_symbols": [
+        "SessionPrivate::handleMsgsStates",
+        "SessionPrivate::handleOneReceived / mtpc_msgs_state_info",
+        "SessionPrivate::handleOneReceived / mtpc_msgs_all_info",
+        "SessionPrivate::handleOneReceived / mtpc_msg_new_detailed_info",
+        "msgs_state_req#da69fb52",
+        "msgs_state_info#04deb57d",
+        "msgs_all_info#8cc0d131",
+        "msg_new_detailed_info#809db6df"
+      ],
+      "capability_ids": [
+        "CAP-EMBEDDED-MTPROTO-SINGLE-RPC-STATE-RECONCILIATION"
+      ],
+      "dependency_ids": [
+        "EmbeddedTelegramProtocol",
+        "EmbeddedTelegramNetwork",
+        "TelegramClientLease",
+        "MTProtoAuthKey"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/evidence/round50-mtproto-single-rpc-state-reconciliation-20261101.md",
+      "behavior_contract": "Within the existing synchronous one-outstanding-RPC EstablishedSession, encode a non-content msgs_state_req for the current request after the normal receive window, correlate msgs_state_info only to that one state-query id, reconcile msgs_all_info only when it explicitly names the current request, and replay the current RPC once when (state & 0x07) != 0x04. msg_new_detailed_info and msg_detailed_info reconcile answer_msg_id against the existing server-message replay window: already-seen answers are acked, unseen answers are requested with msg_resend_req. Full arbitrary multi-request sent/resend history remains fail-closed and open.",
+      "state_machine": "TelegramClientLease -> RuntimeClient -> EstablishedSession::invoke_raw(current request) -> normal receive window exhausted -> msgs_state_req([current]) non-content -> msgs_state_info(query=current state query, one byte) or msgs_all_info(ids includes current) -> low3==0x04 keep waiting, else one outer-loop replay -> repeated replay signal => StateReconciliationLimit; msg_new_detailed_info(answer) -> replay-window contains answer ? ack : msg_resend_req([answer])",
+      "side_effects": [
+        "Adds fixed-U msgs_state_req builder and msgs_state_info/msgs_all_info bounded parsers in canonical protocol owner",
+        "Adds one current-RPC state-query slot and bounded state-driven replay in existing network owner",
+        "Reconciles msg_new_detailed_info through the existing server replay window without a new receive-history owner",
+        "Synchronizes canonical protocol/network blobs into existing desktop provider paths",
+        "Authors protocol/network contracts without executing them"
+      ],
+      "failure_cases": [
+        "unrelated state-query response mutates the current RPC",
+        "msgs_all_info for unrelated message ids triggers replay",
+        "received state 0x04 is incorrectly replayed",
+        "unknown/not-received state is incorrectly treated as acknowledged",
+        "state-driven replay loops beyond the existing retry budget",
+        "msg_new_detailed_info creates a second received-message store",
+        "multi-request Telegram Desktop queue semantics are falsely claimed complete"
+      ],
+      "ui_disposition": "No UI change. This is MTProto transport reliability inside the existing embedded runtime.",
+      "non_ui_responsibilities": [
+        "msgs_state_req TL encoding",
+        "msgs_state_info/msgs_all_info bounded parsing",
+        "current outstanding RPC state correlation",
+        "bounded current-RPC resend decision",
+        "msg_new_detailed_info answer ack/resend reconciliation"
+      ],
+      "platform_delta": "The fixed-U message-state responsibility is narrowed to Fabushi's existing single outstanding RPC and existing replay window. Telegram Desktop's haveSent/_resendingIds/_stateAndResendRequests multi-request queue remains explicitly out of scope and fail-closed.",
+      "existing_owner_candidates": [
+        "bhrumom/fabushi-platform-core:native/telegram-protocol/src/api.rs",
+        "bhrumom/fabushi-platform-core:native/telegram-network/src/lib.rs",
+        "source/mahayana/mahayana-rs/providers/telegram-protocol/src/api.rs",
+        "source/mahayana/mahayana-rs/providers/telegram-network/src/lib.rs"
+      ],
+      "existing_owner": "Canonical shared Telegram protocol builder/parser + telegram-network EstablishedSession consumed by the existing desktop lease/runtime chain",
+      "rejected_existing_owners": [
+        "Renderer/AppHost cannot own MTProto service-message state reconciliation",
+        "A second sent-request history or resend queue would duplicate current network ownership and exceed the single-RPC contract"
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "bhrumom/fabushi-platform-core:native/telegram-protocol/src/api.rs",
+        "bhrumom/fabushi-platform-core:native/telegram-protocol/src/lib.rs",
+        "bhrumom/fabushi-platform-core:native/telegram-network/src/lib.rs",
+        "source/mahayana/mahayana-rs/providers/telegram-protocol/src/api.rs",
+        "source/mahayana/mahayana-rs/providers/telegram-protocol/src/lib.rs",
+        "source/mahayana/mahayana-rs/providers/telegram-network/src/lib.rs"
+      ],
+      "fabushi_target_symbols": [
+        "build_msgs_state_req",
+        "parse_msgs_state_info",
+        "parse_msgs_all_info",
+        "MSGS_STATE_REQ_CONSTRUCTOR",
+        "MSGS_STATE_INFO_CONSTRUCTOR",
+        "MSGS_ALL_INFO_CONSTRUCTOR",
+        "MSG_NEW_DETAILED_INFO_CONSTRUCTOR",
+        "EstablishedSession::invoke_raw",
+        "EstablishedSession::scan_rpc_body",
+        "EstablishedSession::reconcile_detailed_answer",
+        "request_state_requires_resend",
+        "state_reconciliation_requires_resend",
+        "StateReconciliationLimit"
+      ],
+      "target_language": "Rust",
+      "language_rationale": "TL service-message encoding/parsing belongs in the existing Rust protocol crate; current-RPC retry/reconciliation belongs in the existing Rust network session owner.",
+      "command_event_contracts": [
+        "receive window exhausted -> msgs_state_req([current_request_message_id]) on same session",
+        "msgs_state_info(req_msg_id=current_state_query, states=[s]) and (s & 0x07)!=0x04 -> one current-RPC replay",
+        "msgs_state_info unrelated query id -> no current-call mutation",
+        "msgs_all_info(ids includes current, state low3==0x04) -> keep waiting without replay",
+        "msg_new_detailed_info(answer=X) -> X already in replay window ? ack(X) : msg_resend_req([X])"
+      ],
+      "state_owner": "Existing EstablishedSession owns the current outstanding request, optional single state-query id, replay window and session sequence; protocol owner supplies TL encoding/parsing.",
+      "lifecycle_owner": "Existing account-bound TelegramClientLease -> RuntimeClient -> EstablishedSession.",
+      "persistence_and_restart": "No new persistence, durable request history or resend queue is introduced.",
+      "concurrency_and_cancellation": "Behavior remains scoped to the single synchronous invoke_raw call; no background replay worker or multi-request concurrency is added.",
+      "security_boundary": "Only authenticated/decrypted service messages after existing message-id parity/time/replay validation participate; unrelated ids are ignored for the current call.",
+      "network_service_dependencies": [
+        "Existing embedded encrypted MTProto transport",
+        "msgs_state_req#da69fb52",
+        "msgs_state_info#04deb57d",
+        "msgs_all_info#8cc0d131",
+        "msg_new_detailed_info#809db6df",
+        "msg_resend_req#7d861a08"
+      ],
+      "service_owner": "Canonical telegram-protocol + telegram-network owners.",
+      "deployment_evidence": [],
+      "implementation_status": "implemented",
+      "coverage_disposition": "rewritten",
+      "blockers": [
+        "Stage B executable validation has not run.",
+        "Full multi-request haveSent/_resendingIds/_stateAndResendRequests reconciliation, simultaneous state queries, resend cancellation and container-wide bookkeeping remain open and fail-closed.",
+        "Higher-level new-session update/difference propagation remains open.",
+        "Broader fixed-U source/legal/release closure remains open."
+      ],
+      "production_entrypoints": [
+        "existing TelegramClientLease/RuntimeClient -> EstablishedSession::invoke_raw -> one msgs_state_req -> scan_rpc_body(msgs_state_info/msgs_all_info) -> bounded current-RPC replay",
+        "existing EstablishedSession::scan_rpc_body(msg_new_detailed_info/msg_detailed_info) -> existing MessageIdGuard replay window -> msgs_ack or msg_resend_req",
+        "existing Cargo path chain -> providers/telegram-protocol + providers/telegram-network"
+      ],
+      "production_evidence": [
+        "platform-core-spec-commit:469e46f72d15138aa4fb343a49e06feeaefb1303",
+        "platform-core-implementation-commit:404623cad89e0d77ab326e140784b893d677f31e",
+        "platform-core-path:native/telegram-protocol/src/api.rs@ed695ed575c5950c99818acc7086a2cf8b1c712d",
+        "platform-core-path:native/telegram-protocol/src/lib.rs@21ec771260dd356d4a8e653be6e2e250a32ab5ce",
+        "platform-core-path:native/telegram-network/src/lib.rs@c24515c2ee15608f51970a5420769e7713e60327",
+        "desktop-implementation-commit:fe17d4bcdea22d1df8e474961aa12b5f04b291db",
+        "path:source/mahayana/mahayana-rs/providers/telegram-protocol/src/api.rs@ed695ed575c5950c99818acc7086a2cf8b1c712d",
+        "path:source/mahayana/mahayana-rs/providers/telegram-protocol/src/lib.rs@21ec771260dd356d4a8e653be6e2e250a32ab5ce",
+        "path:source/mahayana/mahayana-rs/providers/telegram-network/src/lib.rs@c24515c2ee15608f51970a5420769e7713e60327"
+      ],
+      "test_evidence": [
+        "platform-core native/telegram-protocol/src/api.rs msgs_state_req encoding and msgs_state_info/msgs_all_info parsing contracts authored, not run",
+        "platform-core native/telegram-network/src/lib.rs state-byte/current-request reconciliation predicate contracts authored, not run",
+        "desktop synchronized copies authored, not run"
+      ],
+      "target_commit": "fe17d4bcdea22d1df8e474961aa12b5f04b291db",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Canonical Fabushi account + existing TelegramClientLease/runtime + shared MTProto protocol/network production composition",
+      "composition_slot": "Embedded Telegram current-RPC state reconciliation",
+      "capability_component": "Single outstanding RPC state query, bounded resend and detailed-answer reconciliation",
+      "variation_axes": [
+        "state query matches vs unrelated",
+        "state low3 received vs resend",
+        "answer already seen vs unseen"
+      ],
+      "shared_owner_contracts": [
+        "Existing TelegramClientLease",
+        "Existing RuntimeClient/EstablishedSession",
+        "Existing MessageIdGuard replay window",
+        "Existing protocol TL writer/reader",
+        "Existing auth key/session/transport"
+      ],
+      "duplicate_root_check": "No second account, runtime, provider, transport, auth key, session product, request-history queue, received-message store, message store, UI root, sidecar, subprocess or Web wrapper was introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Not applicable",
+      "primary_navigation_target": "Existing Messages/Conversation navigation",
+      "collection_surface": "Existing ConversationList; no change",
+      "creation_flow": "Existing canonical conversation creation; no change",
+      "object_action_scope": "Not applicable",
+      "detail_section": "Not applicable",
+      "capability_surface": "Existing ConversationWorkspace through the same provider/runtime; no new surface",
+      "route_contract": "No new route.",
+      "search_scope": "Not applicable",
+      "search_provider": "Existing canonical Search owner; unchanged",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Unchanged.",
+      "search_local_remote_contract": "Not applicable.",
+      "responsive_disposition": "No UI change.",
+      "accessibility_contract": "No UI change.",
+      "keyboard_contract": "No UI change.",
+      "state_continuity_contract": "The same logical RPC and encrypted session remain active through one state query; state-driven replay is bounded by the existing outer retry loop and unrelated historical request state is not fabricated.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Existing Fabushi design system; no visual changes",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": null,
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "No new icon asset",
+      "avatar_contract": "No change",
+      "content_copy_keys": [],
+      "motion_contract": "No change",
+      "reduced_motion_contract": "No change",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "high",
+      "requirement_ids": [
+        "TDRP-R9-MTPROTO-SINGLE-RPC-STATE-RECONCILIATION-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-MTPROTO-SINGLE-RPC-STATE-RECONCILIATION-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-MTPROTO-STATE-CURRENT-RPC-ONLY-001",
+        "INV-TDRP-MTPROTO-STATE-LOW3-001",
+        "INV-TDRP-MTPROTO-STATE-RETRY-BOUND-001",
+        "INV-TDRP-MTPROTO-NEW-DETAILED-REPLAY-WINDOW-001"
+      ],
+      "unit_case_ids": [
+        "UNIT-TDRP-MTPROTO-MSGS-STATE-REQ-ENCODE-001",
+        "UNIT-TDRP-MTPROTO-MSGS-STATE-INFO-PARSE-001",
+        "UNIT-TDRP-MTPROTO-MSGS-ALL-INFO-PARSE-001",
+        "UNIT-TDRP-MTPROTO-STATE-LOW3-001"
+      ],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-MTPROTO-SINGLE-RPC-STATE-RECONCILIATION-001"
+      ],
+      "integration_case_ids": [
+        "INT-TDRP-MTPROTO-SINGLE-RPC-STATE-RECONCILIATION-001"
+      ],
+      "functional_e2e_case_ids": [
+        "E2E-TDRP-MTPROTO-SINGLE-RPC-STATE-RECONCILIATION-001"
+      ],
+      "temporal_case_ids": [
+        "TEMP-TDRP-MTPROTO-STATE-QUERY-AFTER-RECEIVE-WINDOW-001"
+      ],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "fault_recovery_case_ids": [
+        "FAULT-TDRP-MTPROTO-STATE-UNRELATED-001",
+        "FAULT-TDRP-MTPROTO-STATE-REPLAY-LIMIT-001"
+      ],
+      "performance_case_ids": [],
+      "security_case_ids": [
+        "SEC-TDRP-MTPROTO-STATE-AUTHENTICATED-001"
+      ],
+      "soak_case_ids": [],
+      "exploratory_charter_ids": [],
+      "regression_ids": [
+        "REG-TDRP-MTPROTO-STATE-UNKNOWN-DELIVERY-001",
+        "REG-TDRP-MTPROTO-NEW-DETAILED-ANSWER-LOSS-001"
+      ],
+      "release_gate_ids": [
+        "G-TRACEABILITY",
+        "G-COMPOSITION",
+        "G-SECURITY",
+        "G-EVIDENCE",
+        "G-RELEASE"
+      ],
+      "test_fixture_ids": [
+        "mtproto-single-rpc-state-reconciliation-fixture"
+      ],
+      "test_environment_ids": [
+        "GitHub Actions Stage B matrix (not run)"
+      ],
+      "coverage_matrix_status": "pending",
+      "flake_status": "stable",
+      "release_gate_status": "pending",
+      "acceptance_reviewer": null,
+      "reviewer": null,
+      "license_and_provenance": "Behavioral responsibility is anchored to fixed-U session_private.cpp@13cbc76ec723386027b5b4dcac79999b791c4614 and mtproto.tl@76225965bfc794388db241f3f760db8ab79e84f8. Implementation is source-neutral Rust and copies no upstream C++ queue implementation.",
+      "notes": "Stage A implementation only. The exact single-outstanding-RPC subset is implemented; arbitrary multi-request sent/resend/state-query reconciliation remains open and fail-closed. This is a responsibility slice, so unknown/unread source-entry counts remain unchanged. Contracts are authored but not executed.",
       "test_execution_evidence": []
     }
   ],
