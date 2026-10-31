@@ -7563,7 +7563,7 @@
         "mapping": "mapped",
         "read": "read-complete",
         "verification": "verified",
-        "wiring": "wired"
+        "wiring": "not-wired"
       },
       "target": {
         "language": "Rust",
