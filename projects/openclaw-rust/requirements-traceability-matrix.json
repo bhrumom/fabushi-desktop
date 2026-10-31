@@ -768,10 +768,15 @@
     },
     {
       "acceptance_status": "in-progress",
-      "blocker_ids": [],
+      "blocker_ids": [
+        "BL-SESSION-LIFECYCLE-PRODUCER-001"
+      ],
       "evidence_refs": [
         "source/host/tests/openclaw_plugins_automations_contract.rs",
-        "projects/openclaw-rust/dossiers/cron-automations-heartbeat-scoped.md"
+        "projects/openclaw-rust/dossiers/cron-automations-heartbeat-scoped.md",
+        "source/host/tests/agent_lifecycle_contract.rs",
+        "projects/openclaw-rust/docs/specs/session-lifecycle-delete-fence.md",
+        "projects/openclaw-rust/dossiers/upstream-current-session-lifecycle-delta-20261031.md"
       ],
       "gate_ids": [],
       "id": "OCRM-R21",
