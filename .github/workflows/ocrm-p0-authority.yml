@@ -149,7 +149,7 @@ jobs:
   persist-verified-inventory:
     # P0 source-derived files only; never overwrite a moved PR head.
     needs: source-authority
-    if: ${{ github.event_name == 'pull_request' && github.event.pull_request.number == 169 && github.event.pull_request.head.repo.full_name == 'bhrumom/fabushi-desktop' && github.event.pull_request.head.ref == 'ocrm/p0-source-authority-20261022' }}
+    if: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:
@@ -196,8 +196,11 @@ jobs:
         shell: bash
         env:
           EXPECTED_SUBJECT: ${{ github.event.pull_request.head.sha }}
+          EXPECTED_HEAD_REF: ${{ github.event.pull_request.head.ref }}
         run: |
           set -euo pipefail
+          test -n "$EXPECTED_HEAD_REF"
+          git check-ref-format "refs/heads/$EXPECTED_HEAD_REF"
           git add projects/openclaw-rust/inventory/index.json \
                   projects/openclaw-rust/inventory/shards \
                   projects/openclaw-rust/dependencies/source-manifest-inputs.json
@@ -205,7 +208,7 @@ jobs:
             echo "No new source-derived shard content"
             exit 0
           fi
-          branch="ocrm/p0-source-authority-20261022"
+          branch="$EXPECTED_HEAD_REF"
           current="$(git ls-remote origin "refs/heads/$branch" | cut -f1)"
           test "$current" = "$EXPECTED_SUBJECT" || { echo "PR lease moved: refusing derived snapshot write"; exit 1; }
           git config user.name "github-actions[bot]"
