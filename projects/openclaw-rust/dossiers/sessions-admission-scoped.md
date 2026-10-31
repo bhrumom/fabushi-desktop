@@ -186,3 +186,20 @@ worker/blob owner. The contract fixture is
 that the upstream poll-intent oracle is implemented. The ledger now records
 this actual call chain while preserving `wiring=not-wired`, `verification=not-run`,
 and the poll-intent mapping mismatch above.
+
+## 10. Work-admission/archive production reachability recheck (2026-10-31)
+
+The current `ProductionSessionWorkers` API was re-read and searched for the
+work-admission, archive/restore, background-result, and review-terminal
+operations represented by this responsibility. The worker is a real session
+storage/materialization owner, but no corresponding admission or archive
+transition producer/consumer was found in the Host, gateway, runner, Electron,
+or frontend paths.
+
+The O06 Rust test only constructs a JSON value and asserts `status == "active"`
+and `archived == false`; it does not call `ProductionSessionWorkers` or prove
+rejection of archived work, restore transitions, background completion capture,
+or review settlement. This is a fixture/test-flaw, not implementation or
+integration evidence. The parity row is therefore `implementation=not-started`,
+`wiring=not-wired`, `verification=not-run`, and `acceptance=pending` until the
+real lifecycle contract and call chain exist.

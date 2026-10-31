@@ -14692,10 +14692,10 @@
       ],
       "id": "OCRM-RESP-SESSION-WORK-ADMISSION-001",
       "integration": {
-        "consumer": "source/host/src/extensions/session/production.rs",
+        "consumer": "No production work-admission/archive/review consumer identified; ProductionSessionWorkers is used for general session storage but does not expose this lifecycle contract",
         "entrypoint": "source/host/src/extensions/session/production.rs",
         "owner": "source/host/src/extensions/session/production.rs",
-        "producer": "source/host/src/extensions/session/production.rs"
+        "producer": "No production work-admission/archive transition producer identified"
       },
       "invariants": [
         "Archived sessions cannot admit new work until explicitly restored"
@@ -14808,7 +14808,7 @@
       ],
       "status": {
         "acceptance": "pending",
-        "implementation": "implemented",
+        "implementation": "not-started",
         "mapping": "mapped",
         "read": "read-complete",
         "verification": "not-run",
