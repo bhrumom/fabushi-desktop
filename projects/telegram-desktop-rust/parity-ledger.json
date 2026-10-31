@@ -20293,7 +20293,9 @@
         "platform-core-path:native/telegram-protocol/src/lib.rs@8df4760c6bf6dbeeba3e8d8b72232bac6a410ff0",
         "desktop-implementation-commit:9e3065eddd2d0497dfb4ea2ed7a38d4ee7acb13f",
         "path:source/mahayana/mahayana-rs/providers/telegram-protocol/src/api.rs@54ab072495a4f8f1eca322a7f8f46c5dcd4396ee",
-        "path:source/mahayana/mahayana-rs/providers/telegram-protocol/src/lib.rs@8df4760c6bf6dbeeba3e8d8b72232bac6a410ff0"
+        "path:source/mahayana/mahayana-rs/providers/telegram-protocol/src/lib.rs@8df4760c6bf6dbeeba3e8d8b72232bac6a410ff0",
+        "platform-core-spec-compliance-commit:893b83679268c9a2e3bd8d867419adb4b5145d26",
+        "platform-core-spec-blob:b90b86e526f24665832326cc1b3ff7e95d0d32c2"
       ],
       "test_evidence": [
         "platform-core native/telegram-protocol/src/api.rs exact 20-byte constructor-plus-raw-int128-nonce contracts authored, not run",
@@ -20416,7 +20418,7 @@
       "acceptance_reviewer": null,
       "reviewer": null,
       "license_and_provenance": "Behavioral responsibility is anchored to fixed-U telegramdesktop/tdesktop Telegram/SourceFiles/mtproto/scheme/mtproto.tl@76225965bfc794388db241f3f760db8ab79e84f8 and the shipping connection-probe call site AbstractConnection::preparePQFake in Telegram/SourceFiles/mtproto/connection_abstract.cpp@3baabf3f72c7c7edba3151814681fbf167a5ca0a. session_private.cpp@13cbc76ec723386027b5b4dcac79999b791c4614 was reread as adjacent context and has no req_pq branch. The implementation is source-neutral Rust and copies no upstream C++ implementation.",
-      "notes": "Stage A implementation only. This row closes exact req_pq request-body serialization only: constructor plus raw caller-owned 16-byte nonce. Connection-probe scheduling/racing, nonce generation, not-secure packet framing, message-id generation, send/retry/timeout, response correlation, req_pq_multi and live auth-key handshake integration remain blocked/fail-closed. Global unknown/unread source-entry counts remain unchanged because this is a newly mapped responsibility slice within already-open fixed-U source coverage; connection_abstract.cpp is cited only as a shipping call-site anchor and is not declared whole-file reviewed/closed. Contracts are authored but not executed; validation_status=not-run and accepted=false.",
+      "notes": "Stage A implementation only. This row closes exact req_pq request-body serialization only: constructor plus raw caller-owned 16-byte nonce. Connection-probe scheduling/racing, nonce generation, not-secure packet framing, message-id generation, send/retry/timeout, response correlation, req_pq_multi and live auth-key handshake integration remain blocked/fail-closed. Global unknown/unread source-entry counts remain unchanged because this is a newly mapped responsibility slice within already-open fixed-U source coverage; connection_abstract.cpp is cited only as a shipping call-site anchor and is not declared whole-file reviewed/closed. Contracts are authored but not executed; validation_status=not-run and accepted=false. Source-level request compliance is recorded at platform-core commit 893b83679268c9a2e3bd8d867419adb4b5145d26; R1-R5 are source/bookkeeping satisfied while R6 executable Stage-B validation remains not-run.",
       "test_execution_evidence": [],
       "validation_status": "not-run",
       "accepted": false

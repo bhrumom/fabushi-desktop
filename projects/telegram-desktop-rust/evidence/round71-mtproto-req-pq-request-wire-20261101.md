@@ -26,3 +26,8 @@ This slice does not generate the nonce, schedule or race connection probes, buil
 Implementation status: implemented.
 Validation status: not-run.
 Accepted: false.
+
+## Source-level compliance readback
+
+Platform-core compliance commit: `893b83679268c9a2e3bd8d867419adb4b5145d26`. Spec blob: `b90b86e526f24665832326cc1b3ff7e95d0d32c2`. Canonical/desktop api/lib remain byte-identical at `54ab072495a4f8f1eca322a7f8f46c5dcd4396ee` / `8df4760c6bf6dbeeba3e8d8b72232bac6a410ff0`. R1-R5 are source-level satisfied. R6 executable validation remains not-run and accepted=false; no live connection-probe/not-secure/auth-key lifecycle is claimed.
+
