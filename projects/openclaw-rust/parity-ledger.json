@@ -26633,10 +26633,10 @@
       ],
       "id": "OCRM-RESP-PLUGINS-CAPABILITY-CATALOG-001",
       "integration": {
-        "consumer": "source/host/src/extensions/plugins/capability_catalog.rs",
-        "entrypoint": "source/host/src/extensions/plugins/capability_catalog.rs::PluginCapabilityCatalog::get_capability",
+        "consumer": "Production currently consumes bundled channel metadata through ProductionHostExtensions channel-delivery registration/revocation and workerProviders through source/host/app/src/main.rs::cloudWorkers.capabilities; no production speechProviders, realtimeTranscriptionProviders, or realtimeVoiceProviders consumer is wired",
+        "entrypoint": "source/host/src/extensions/plugins/capability_catalog.rs::PluginCapabilityCatalog::get_capability/list_capabilities_for_family",
         "owner": "source/host/src/extensions/plugins/capability_catalog.rs",
-        "producer": "source/host/src/extensions/plugins/capability_catalog.rs"
+        "producer": "ProductionHostExtensions registers bundled channel metadata and the crabbox worker-provider metadata only; no production provider-manifest or speech/realtime provider producer is wired"
       },
       "invariants": [
         "Provider IDs within a capability family are unique and case-insensitively indexed"
@@ -27477,7 +27477,7 @@
         "mapping": "reviewed",
         "read": "read-complete",
         "verification": "not-run",
-        "wiring": "wired"
+        "wiring": "not-wired"
       },
       "target": {
         "language": "Rust",

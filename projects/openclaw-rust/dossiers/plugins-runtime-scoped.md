@@ -20,10 +20,12 @@
    - `Storage`: In-memory manifest registry index.
    - `Consumer`: Extension host runtime activator.
 3. **Capability & Channel Catalog Pipeline**:
-   - `Producer`: Installed and bundled plugin manifests declaring speech, voice, transcription, and channel capabilities.
+   - `Producer (production evidence)`: `source/host/src/host_production_extensions.rs` registers bundled channel metadata and the `crabbox` `workerProviders` metadata. No production producer for installed manifests or the speech, realtime transcription, or realtime voice families has been identified.
    - `Owner`: `source/host/src/extensions/plugins/capability_catalog.rs` (`PluginCapabilityCatalog`).
    - `Storage`: Process-shared concurrent capability map.
-   - `Consumer`: Agent inference bridge, speech synthesis router, and desktop channel selector.
+   - `Consumer (production evidence)`: `source/host/app/src/main.rs` projects `workerProviders` for `cloudWorkers.capabilities`, and `ProductionHostExtensions` gates channel-delivery provider registration/revocation on the channel catalog. No production speech/realtime routing consumer has been identified.
+
+The catalog implementation and its contract fixtures exist, but this responsibility is not fully production-wired. The parity ledger therefore keeps `implementation=implemented` while recording `wiring=not-wired` until every declared provider family has a real producer and consumer.
 
 ## 3. Verification & Oracle Evidence
 - **Contract Tests**: `source/host/tests/openclaw_plugins_contract.rs`:
