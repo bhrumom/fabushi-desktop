@@ -837,3 +837,28 @@ Arbitrary multi-request `haveSent/_resendingIds/toSend/_sentContainers` history,
 connection scheduling/racing/send retry, auth-key binding/persistence, gzip, complete difference decoding/application,
 broader fixed-U source/legal closure, Stage-B executable evidence and independent release ACCEPT remain open/fail-closed.
 No executable validation was performed.
+
+
+### Round 83 — rpc_error exact typed parser/trailing validation
+
+Fixed U remains `f985723b552b30fe1c17d377d57f44e61a15a8c4`. Fixed-U
+`rpc_error#2144ca19 error_code:int error_message:string` is shipping-reachable as the body of
+`rpc_result` in `SessionPrivate::handle`. Wider request-history lookup, temporary-key handling and
+`gzip_packed` are deliberately outside this isolated wire slice.
+
+Remote source review confirms the existing canonical production owner already closes the independent parser boundary:
+`api.rs@ebfb3670b5cd097b9ce288782c7954f5cfe9fc43` defines `RPC_ERROR_CONSTRUCTOR`,
+`RpcErrorResponse` and `try_parse_rpc_error`; `tl.rs@89256ab35184b6dc06a095ab34abb9f44e95a264`
+owns TL string padding/UTF-8/truncation; `lib.rs@abab39e42f100972484191f0e52e9edd9b88c6cf` exports the same parser.
+The parser rejects trailing bytes, so production behavior requires no delta.
+
+Spec blob is `c219f35d393bb94e29c30f579ec501bb3d42c9d5`; canonical authored contract commit
+`7ad951b93b57fc3c4cf33e43eaa157066d452b31` and desktop sync
+`885faac55fc8b7d99e4989b438e1a428ac57c1f8` share contract blob
+`d171a3ab9a43955a693c87162f80c2667fc397ce`. Authored cases cover exact signed code/message,
+non-RpcError discrimination, truncation, invalid UTF-8, trailing bytes and exact EOF; they were not run.
+
+The responsibility is recorded as `implemented / validation_status=not-run / accepted=false`.
+Arbitrary multi-request history, connection scheduling/racing/send retry, auth-key binding/persistence, gzip,
+complete difference/differenceSlice decoding/application, broader source/legal closure and Stage-B executable evidence
+remain open/fail-closed. No executable validation was performed.
