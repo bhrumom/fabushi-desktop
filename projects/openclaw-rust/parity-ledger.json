@@ -3128,10 +3128,10 @@
       ],
       "id": "OCRM-RESP-AGENT-LOOP-RUNNER-001",
       "integration": {
-        "consumer": "source/host/src/runner/production_turn_agent_owner.rs",
-        "entrypoint": "source/host/src/runner/mod.rs",
+        "consumer": "source/host/src/runner/production_turn_run_shell_adapter.rs consumes begin_run/settlement, but no production consumer owns the deferred supersede queue",
+        "entrypoint": "source/host/src/runner/turn_run_shell.rs::TurnRunShell and source/host/src/runner/production_turn_run_shell_adapter.rs",
         "owner": "source/host/src/runner/mod.rs",
-        "producer": "source/host/src/runner/mod.rs"
+        "producer": "ProductionTurnRunShellAdapter produces the active-run lifecycle; DeferredTurnQueue is defined only inside source/host/tests/openclaw_agent_turn_contract.rs"
       },
       "invariants": [
         "Active run rejects parallel run requests with AlreadyRunning",
@@ -3178,11 +3178,11 @@
       ],
       "status": {
         "acceptance": "pending",
-        "implementation": "implemented",
+        "implementation": "not-started",
         "mapping": "reviewed",
         "read": "read-complete",
         "verification": "not-run",
-        "wiring": "wired"
+        "wiring": "not-wired"
       },
       "target": {
         "language": "Rust",

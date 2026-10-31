@@ -159,6 +159,19 @@ pricing and fallback responsibility. The parity row
 `acceptance=pending` until model pricing and provider fallback have a real
 producer/consumer path.
 
+The loop-runner mapping has a narrower partial positive. The production
+`ProductionTurnRunShellAdapter` calls `TurnRunShell::begin_run`, marks the
+owner dispatched, and settles the active run, so the active-run lifecycle is
+reachable. However, the deferred supersede behavior in O02 is implemented by
+the local `DeferredTurnQueue` declared inside
+`openclaw_agent_turn_contract.rs`; no production queue producer/consumer was
+found. Because the mapped responsibility requires both `AlreadyRunning`
+handling and deferred supersede, the parity row
+`OCRM-RESP-AGENT-LOOP-RUNNER-001` is corrected to
+`implementation=not-started`, `wiring=not-wired`, `verification=not-run`, and
+`acceptance=pending`. The active-run adapter remains recorded as partial
+evidence, not full responsibility acceptance.
+
 The parity row's blocker attribution was rechecked at the same time. The prior
 `BL-MEDIA-DOC-TRUNCATION-UPSTREAM-CALLER-001` reference did not describe this
 ACP transport/consumer gap; the row now points to the existing
