@@ -9,7 +9,7 @@ use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
 
-use super::worker_supervisor_protocol::NodeWorkerWorkspaceIdentity;
+use super::worker_supervisor_protocol::{NodeWorkerLaunchBinding, NodeWorkerWorkspaceIdentity};
 
 const MAX_WORKSPACE_IDENTIFIER_BYTES: usize = 256;
 
@@ -121,6 +121,21 @@ impl NodeWorkerWorkspaceOwner {
             root,
             generation,
         })
+    }
+
+    /// Bind a validated launch only when the owner has supplied complete
+    /// workspace identity. The launch descriptor cannot manufacture this
+    /// authority because `validate_worker_launch_bindings` rejects nested
+    /// identity fields before this method is reached.
+    pub fn admit_binding(
+        &self,
+        binding: &NodeWorkerLaunchBinding,
+        root: impl AsRef<Path>,
+    ) -> Result<NodeWorkerWorkspaceLease, String> {
+        let identity = binding.workspace.clone().ok_or_else(|| {
+            "WORKSPACE_IDENTITY_REQUIRED: worker owner must supply workspace identity".to_string()
+        })?;
+        self.admit(identity, root)
     }
 
     pub fn is_current(&self, lease: &NodeWorkerWorkspaceLease) -> bool {

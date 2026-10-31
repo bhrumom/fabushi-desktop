@@ -2748,3 +2748,9 @@ contract. It does not create or delete directories, launch or observe
 processes, persist retention/seed/transfer state, or supply a production
 worker caller. Those remain explicit R12/R13 implementation and acceptance
 frontiers; R13 identity/signing remains separately owned.
+
+The launch-binding path now exposes an owner-only admission method: a complete
+workspace identity is required before the binding can acquire a lease, while a
+descriptor without owner-supplied identity remains fail-closed. This connects
+the existing launch cross-field validator to the workspace owner without
+allowing descriptor fields to become workspace authority.
