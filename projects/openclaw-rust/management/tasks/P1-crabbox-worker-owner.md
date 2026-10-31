@@ -260,6 +260,13 @@ pending Crabbox responsibilities:
   through `select_provider_machine`, which requires the exact cached binary
   identity and fails explicitly on unknown or incompatible profiles without
   authorizing or launching a worker.
+- The existing Host `PluginCapabilityCatalog` now records the bundled upstream
+  `workerProviders: ["crabbox"]` contract through
+  `ProductionHostExtensions::register_bundled_worker_capabilities`. This is
+  capability metadata only: it does not start or discover a provider, resolve
+  credentials, enroll a device, register a sandbox backend or promote
+  `providerReady`. The broader plugin/CLI/tool/gateway projection remains
+  unwired until those real consumers and lifecycle producers are connected.
 - Warm-image state mutations now have typed extension façades
   `register_warm_image` and `apply_warm_image`, both using the canonical owner
   and atomic store. Provider snapshot, credential scrub and recovery consumers
