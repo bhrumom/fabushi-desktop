@@ -41,6 +41,18 @@ export interface CloudWorkerStatusProjection {
   readonly migrationReceiptCount: number;
 }
 
+export interface CloudWorkerCapabilityProvider {
+  readonly providerId: string;
+  readonly pluginId: string;
+  readonly label?: string;
+}
+
+export interface CloudWorkerCapabilitiesProjection {
+  readonly owner: "cloud-workers";
+  readonly metadataOnly: true;
+  readonly providers: readonly CloudWorkerCapabilityProvider[];
+}
+
 export interface CloudWorkerDoctorProjection {
   readonly status: CloudWorkerDoctorProjectionStatus;
   readonly mutationStarted: boolean;
@@ -101,6 +113,12 @@ export function parseCloudWorkerStatusProjection(value: unknown): CloudWorkerSta
   if (typeof value.providerReady !== "boolean" || typeof value.productionMutation !== "boolean" || typeof value.statePersisted !== "boolean") return null;
   if (!["leaseCount", "warmImageCount", "bootstrapCount", "artifactCount", "migrationReceiptCount"].every((key) => isNonNegativeInteger(value[key]))) return null;
   return value as CloudWorkerStatusProjection;
+}
+
+export function parseCloudWorkerCapabilitiesProjection(value: unknown): CloudWorkerCapabilitiesProjection | null {
+  if (!isRecord(value) || value.owner !== "cloud-workers" || value.metadataOnly !== true || !Array.isArray(value.providers)) return null;
+  if (!value.providers.every((provider) => isRecord(provider) && isBoundedWireText(provider.providerId) && isBoundedWireText(provider.pluginId) && (provider.label === undefined || isBoundedWireText(provider.label)))) return null;
+  return value as CloudWorkerCapabilitiesProjection;
 }
 
 export function parseCloudWorkerStatusEvent(value: unknown): CloudWorkerStatusProjection | null {
@@ -167,6 +185,9 @@ export function validateCoordinatorReply(method: string, value: unknown): unknow
   }
   if (method === "cloudWorkers.status" && parseCloudWorkerStatusProjection(value) == null) {
     throw new Error("cloudWorkers.status returned a malformed cloud worker status projection");
+  }
+  if (method === "cloudWorkers.capabilities" && parseCloudWorkerCapabilitiesProjection(value) == null) {
+    throw new Error("cloudWorkers.capabilities returned a malformed cloud worker capabilities projection");
   }
   if (method === "cloudWorkers.doctor" && parseCloudWorkerDoctorProjection(value) == null) {
     throw new Error("cloudWorkers.doctor returned a malformed cloud worker doctor projection");
@@ -266,6 +287,7 @@ export const COORDINATOR_METHOD_TABLE = {
   deleteAgentAutomation: { args: "object", reply: "array" },
   runAgentAutomationNow: { args: "object", reply: "void" },
   "cloudWorkers.status": { args: "none", reply: "cloud-worker-status" },
+  "cloudWorkers.capabilities": { args: "none", reply: "cloud-worker-capabilities" },
   "cloudWorkers.doctor": { args: "object", reply: "cloud-worker-doctor" }
 } as const;
 

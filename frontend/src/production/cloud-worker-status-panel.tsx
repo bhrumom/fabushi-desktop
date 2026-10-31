@@ -1,10 +1,10 @@
 import { useEffect, useState, type ReactElement } from "react";
-import { parseCloudWorkerStatusEvent, parseCloudWorkerStatusProjection, type CloudWorkerStatusProjection } from "../../../source/shared/rpc/coordinator";
+import { parseCloudWorkerCapabilitiesProjection, parseCloudWorkerStatusEvent, parseCloudWorkerStatusProjection, type CloudWorkerCapabilitiesProjection, type CloudWorkerStatusProjection } from "../../../source/shared/rpc/coordinator";
 import type { ProductionCoordinatorClient } from "./coordinator-client";
 
 type CloudWorkerStatusState =
   | { readonly kind: "loading" }
-  | { readonly kind: "ready"; readonly projection: CloudWorkerStatusProjection }
+  | { readonly kind: "ready"; readonly projection: CloudWorkerStatusProjection; readonly capabilities: CloudWorkerCapabilitiesProjection }
   | { readonly kind: "error"; readonly message: string };
 
 export function CloudWorkerStatusPanel({ client }: { readonly client: ProductionCoordinatorClient | null }): ReactElement {
@@ -16,15 +16,18 @@ export function CloudWorkerStatusPanel({ client }: { readonly client: Production
       return;
     }
     let active = true;
-    const applyProjection = (value: unknown) => {
-      const projection = parseCloudWorkerStatusProjection(value);
-      if (active && projection != null) setState({ kind: "ready", projection });
+    const applyProjections = ([statusValue, capabilitiesValue]: readonly [unknown, unknown]) => {
+      const projection = parseCloudWorkerStatusProjection(statusValue);
+      const capabilities = parseCloudWorkerCapabilitiesProjection(capabilitiesValue);
+      if (active && projection != null && capabilities != null) setState({ kind: "ready", projection, capabilities });
     };
     const applyEvent = (value: unknown) => {
-      const projection = parseCloudWorkerStatusEvent(value);
-      if (active && projection != null) setState({ kind: "ready", projection });
+      const eventProjection = parseCloudWorkerStatusEvent(value);
+      if (active && eventProjection != null) {
+        setState((current) => current.kind === "ready" ? { ...current, projection: eventProjection } : current);
+      }
     };
-    void client.cloudWorkersStatus().then(applyProjection).catch((reason: unknown) => {
+    void Promise.all([client.cloudWorkersStatus(), client.cloudWorkersCapabilities()]).then(applyProjections).catch((reason: unknown) => {
       if (active) setState({ kind: "error", message: reason instanceof Error ? reason.message : "Cloud worker status is unavailable." });
     });
     const unsubscribe = client.subscribe("cloud-workers.status", applyEvent);
@@ -52,6 +55,12 @@ export function CloudWorkerStatusPanel({ client }: { readonly client: Production
         <dt>Artifacts</dt><dd>{projection.artifactCount}</dd>
         <dt>Migration receipts</dt><dd>{projection.migrationReceiptCount}</dd>
       </dl>
+      <h4>Available provider metadata</h4>
+      {state.capabilities.providers.length > 0 ? (
+        <ul>
+          {state.capabilities.providers.map((provider) => <li key={`${provider.pluginId}:${provider.providerId}`}>{provider.label ?? provider.providerId} ({provider.pluginId})</li>)}
+        </ul>
+      ) : <p>No worker provider metadata is registered.</p>}
     </section>
   );
 }

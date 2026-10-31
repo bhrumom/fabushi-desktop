@@ -3,6 +3,7 @@
 
 import {
   COORDINATOR_METHOD_TABLE,
+  parseCloudWorkerCapabilitiesProjection,
   parseCloudWorkerDoctorProjection,
   parseCloudWorkerStatusProjection,
   parseCoordinatorAgentThreadResponse,
@@ -226,6 +227,7 @@ const REPLY_CONVERTERS: Record<ReplyKind, (value: unknown) => ConvertedReply> = 
       ? value
       : MALFORMED_REPLY,
   "cloud-worker-status": (value) => parseCloudWorkerStatusProjection(value) ?? MALFORMED_REPLY,
+  "cloud-worker-capabilities": (value) => parseCloudWorkerCapabilitiesProjection(value) ?? MALFORMED_REPLY,
   "cloud-worker-doctor": (value) => parseCloudWorkerDoctorProjection(value) ?? MALFORMED_REPLY
 };
 
@@ -551,7 +553,7 @@ const TELEMETRY_DOMAIN_BY_METHOD: Record<CoordinatorMethod, string> = {
   joinSharedRoom: "sharing", respondToRoomJoinRequest: "sharing", createSharedRoom: "sharing",
   addOwnAgentToSharedRoom: "sharing", removeOwnAgentFromSharedRoom: "sharing",
   setSharedRoomTyping: "sharing", leaveSharedRoom: "sharing",
-  "cloudWorkers.status": "cloud_workers", "cloudWorkers.doctor": "cloud_workers"
+  "cloudWorkers.status": "cloud_workers", "cloudWorkers.capabilities": "cloud_workers", "cloudWorkers.doctor": "cloud_workers"
 };
 
 export function createCoordinatorFailureTelemetryTracker(

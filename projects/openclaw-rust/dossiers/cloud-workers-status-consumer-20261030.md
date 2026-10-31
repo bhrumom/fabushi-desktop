@@ -392,3 +392,20 @@ elapsed-time bounds (with timeout overruns requiring explicit
 `OutcomeUnknown`) and diagnostic redaction before lifecycle settlement. This
 classifies a producer observation without persisting raw output or creating a
 provider/process executor.
+
+## Read-only worker capability metadata consumer — 2026-10-31
+
+The existing bundled `workerProviders/crabbox` catalog entry now has a typed,
+read-only `cloudWorkers.capabilities` Host/Coordinator projection. The Host
+serializes only `providerId`, `pluginId`, and optional display label from the
+existing `PluginCapabilityCatalog`; the projection is marked `metadataOnly: true`
+and Settings renders it beside the canonical status projection. Shared parsing,
+Recovered Coordinator reply conversion/telemetry, gateway ownership and the
+production Coordinator client all reject malformed capability payloads.
+
+This is metadata discoverability only. It does not resolve a provider binary or
+secret, enroll a device, create a sandbox or Computer grant, launch a process,
+authorize a lease, publish mutation state, or change `providerReady`/
+`productionMutation`. The broader Crabbox projection row remains not-wired;
+CLI, provider/device/process producers, executable verification, Actions and
+packaged acceptance remain pending.

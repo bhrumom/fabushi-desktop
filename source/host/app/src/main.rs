@@ -470,6 +470,9 @@ use mahayana_host_runtime::extensions::cloud_workers::extension::{
     CloudWorkerProvisioningExtension, CloudWorkerStatusSnapshot,
 };
 use mahayana_host_runtime::extensions::cloud_workers::CloudWorkerDoctorRequest;
+use mahayana_host_runtime::extensions::plugins::capability_catalog::{
+    PluginCapabilityCatalog, CAPABILITY_FAMILY_WORKER_PROVIDERS,
+};
 use mahayana_host_runtime::sand_host::{
     BOX_READY_REPORT_ATTEMPTS, BOX_READY_REPORT_RETRY_MS, BOX_READY_STAGE_MARKER_PATH,
     box_ready_duration_ms, compute_host_health, should_report_box_ready,
@@ -1133,6 +1136,7 @@ struct UnifiedGatewayApi {
     production_action_auditor: ActionAuditExtension,
     cloud_agents: Arc<SandCloudAgentManager>,
     cloud_workers: CloudWorkerProvisioningExtension,
+    plugin_capability_catalog: Arc<PluginCapabilityCatalog>,
     cloud_agent_watches: Arc<RunnerCloudAgentWatches>,
     background_shell_watches: Arc<RunnerBackgroundShellWatches>,
     secrets: Arc<HostSecretsExtension>,
@@ -11191,6 +11195,30 @@ impl GatewayApi for UnifiedGatewayApi {
                     "cloud worker status projection failed: {error}"
                 )));
         }
+        if method == "cloudWorkers.capabilities" {
+            let mut providers = self
+                .plugin_capability_catalog
+                .list_capabilities_for_family(CAPABILITY_FAMILY_WORKER_PROVIDERS);
+            providers.sort_by(|left, right| {
+                left.provider_id
+                    .cmp(&right.provider_id)
+                    .then_with(|| left.plugin_id.cmp(&right.plugin_id))
+            });
+            return Ok(serde_json::json!({
+                "owner": "cloud-workers",
+                "metadataOnly": true,
+                "providers": providers.into_iter().map(|provider| {
+                    let mut projected = serde_json::json!({
+                        "providerId": provider.provider_id,
+                        "pluginId": provider.plugin_id,
+                    });
+                    if let Some(label) = provider.label {
+                        projected["label"] = serde_json::Value::String(label);
+                    }
+                    projected
+                }).collect::<Vec<_>>(),
+            }));
+        }
         if method == "cloudWorkers.doctor" {
             let request: CloudWorkerDoctorRequest = serde_json::from_value(args)
                 .map_err(|error| GatewayCommandError::BadRequest(format!(
@@ -14245,6 +14273,7 @@ fn main() {
             production_action_auditor: production_extensions.action_audit.clone(),
             cloud_agents: production_extensions.cloud_agents.service(),
             cloud_workers: production_extensions.cloud_workers.clone(),
+            plugin_capability_catalog: Arc::clone(&production_extensions.plugin_capability_catalog),
             cloud_agent_watches: Arc::clone(&cloud_agent_watches),
             background_shell_watches: Arc::clone(&background_shell_watches),
             secrets: Arc::clone(&secrets_extension),

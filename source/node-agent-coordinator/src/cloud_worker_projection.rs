@@ -2,6 +2,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
 pub const CLOUD_WORKERS_STATUS_METHOD: &str = "cloudWorkers.status";
+pub const CLOUD_WORKERS_CAPABILITIES_METHOD: &str = "cloudWorkers.capabilities";
 pub const CLOUD_WORKERS_DOCTOR_METHOD: &str = "cloudWorkers.doctor";
 pub const CLOUD_WORKERS_STATUS_EVENT_FAMILY: &str = "cloud-workers.status";
 const MAX_PROJECTION_TEXT_CHARS: usize = 256;
@@ -23,6 +24,7 @@ fn validate_projection_text(field: &str, value: &str) -> Result<(), String> {
 #[serde(rename_all = "kebab-case")]
 pub enum CloudWorkerCoordinatorCommand {
     Status,
+    Capabilities,
     Doctor,
 }
 
@@ -30,6 +32,7 @@ impl CloudWorkerCoordinatorCommand {
     pub const fn method(self) -> &'static str {
         match self {
             Self::Status => CLOUD_WORKERS_STATUS_METHOD,
+            Self::Capabilities => CLOUD_WORKERS_CAPABILITIES_METHOD,
             Self::Doctor => CLOUD_WORKERS_DOCTOR_METHOD,
         }
     }
@@ -37,6 +40,7 @@ impl CloudWorkerCoordinatorCommand {
     pub fn from_method(method: &str) -> Option<Self> {
         match method {
             CLOUD_WORKERS_STATUS_METHOD => Some(Self::Status),
+            CLOUD_WORKERS_CAPABILITIES_METHOD => Some(Self::Capabilities),
             CLOUD_WORKERS_DOCTOR_METHOD => Some(Self::Doctor),
             _ => None,
         }
@@ -44,7 +48,7 @@ impl CloudWorkerCoordinatorCommand {
 
     pub fn args(self) -> Value {
         match self {
-            Self::Status | Self::Doctor => Value::Object(Default::default()),
+            Self::Status | Self::Capabilities | Self::Doctor => Value::Object(Default::default()),
         }
     }
 }
@@ -77,6 +81,43 @@ pub struct CloudWorkerStatusProjection {
     pub artifact_count: usize,
     #[serde(default, rename = "migrationReceiptCount")]
     pub migration_receipt_count: usize,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct CloudWorkerCapabilityProvider {
+    #[serde(rename = "providerId")]
+    pub provider_id: String,
+    #[serde(rename = "pluginId")]
+    pub plugin_id: String,
+    #[serde(default)]
+    pub label: Option<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct CloudWorkerCapabilitiesProjection {
+    pub owner: String,
+    #[serde(rename = "metadataOnly")]
+    pub metadata_only: bool,
+    pub providers: Vec<CloudWorkerCapabilityProvider>,
+}
+
+impl CloudWorkerCapabilitiesProjection {
+    pub fn validate(&self) -> Result<(), String> {
+        if self.owner != "cloud-workers" {
+            return Err(format!("owner must be cloud-workers, got {:?}", self.owner));
+        }
+        if !self.metadata_only {
+            return Err("cloud worker capabilities must remain metadata-only".into());
+        }
+        for provider in &self.providers {
+            validate_projection_text("providerId", &provider.provider_id)?;
+            validate_projection_text("pluginId", &provider.plugin_id)?;
+            if let Some(label) = &provider.label {
+                validate_projection_text("label", label)?;
+            }
+        }
+        Ok(())
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -179,6 +220,14 @@ mod tests {
             Some(CloudWorkerCoordinatorCommand::Status)
         );
         assert_eq!(
+            CloudWorkerCoordinatorCommand::Capabilities.method(),
+            "cloudWorkers.capabilities"
+        );
+        assert_eq!(
+            CloudWorkerCoordinatorCommand::from_method("cloudWorkers.capabilities"),
+            Some(CloudWorkerCoordinatorCommand::Capabilities)
+        );
+        assert_eq!(
             CloudWorkerCoordinatorCommand::Doctor.method(),
             "cloudWorkers.doctor"
         );
@@ -213,6 +262,30 @@ mod tests {
         assert!(projection.is_disabled());
         let event = CloudWorkerCoordinatorEvent::StatusChanged { projection };
         assert_eq!(event.family(), "cloud-workers.status");
+    }
+
+    #[test]
+    fn capabilities_projection_remains_metadata_only() {
+        let projection = CloudWorkerCapabilitiesProjection {
+            owner: "cloud-workers".into(),
+            metadata_only: true,
+            providers: vec![CloudWorkerCapabilityProvider {
+                provider_id: "crabbox".into(),
+                plugin_id: "crabbox".into(),
+                label: Some("Crabbox Worker Provider".into()),
+            }],
+        };
+        projection.validate().unwrap();
+        assert!(serde_json::to_value(projection).unwrap()["metadataOnly"] == true);
+        let mut invalid = CloudWorkerCapabilitiesProjection {
+            owner: "cloud-workers".into(),
+            metadata_only: false,
+            providers: Vec::new(),
+        };
+        assert!(invalid.validate().is_err());
+        invalid.metadata_only = true;
+        invalid.owner = "other-owner".into();
+        assert!(invalid.validate().is_err());
     }
 
     #[test]

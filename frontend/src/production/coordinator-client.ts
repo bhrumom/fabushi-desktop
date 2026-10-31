@@ -2,6 +2,7 @@ import type { CoordinatorPortBridge, TransferredCoordinatorPort } from "../recov
 import {
   validateCoordinatorReply,
   parseCloudWorkerDoctorRequest,
+  type CloudWorkerCapabilitiesProjection,
   type CloudWorkerDoctorProjection,
   type CloudWorkerDoctorRequest,
   type CloudWorkerStatusProjection,
@@ -35,7 +36,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 }
 
 function validateReply(method: string, value: unknown): unknown {
-  if (method === "getAgentTranscriptWindow" || method === "getAgentThread") return validateCoordinatorReply(method, value);
+  if (["getAgentTranscriptWindow", "getAgentThread", "cloudWorkers.status", "cloudWorkers.capabilities", "cloudWorkers.doctor"].includes(method)) return validateCoordinatorReply(method, value);
   if (["listAgents", "searchAgents", "getTrays", "listAllAutomations"].includes(method)) {
     if (!Array.isArray(value)) throw new Error(`${method} returned a malformed array reply`);
   }
@@ -59,6 +60,7 @@ export interface ProductionCoordinatorClient {
   getAgentThread(args: CoordinatorAgentThreadRequest): Promise<CoordinatorAgentThreadResponse>;
   isEgressTunnelAvailable(): Promise<boolean>;
   cloudWorkersStatus(): Promise<CloudWorkerStatusProjection>;
+  cloudWorkersCapabilities(): Promise<CloudWorkerCapabilitiesProjection>;
   cloudWorkersDoctor(args: CloudWorkerDoctorRequest): Promise<CloudWorkerDoctorProjection>;
   subscribe(family: string, listener: EventListener): () => void;
   subscribeTransport(listener: TransportListener): () => void;
@@ -176,6 +178,7 @@ export function createCoordinatorClient(portBridge: CoordinatorPortBridge): Prod
     getAgentThread: async (args) => await call("getAgentThread", args) as CoordinatorAgentThreadResponse,
     isEgressTunnelAvailable: async () => await call("isEgressTunnelAvailable") === true,
     cloudWorkersStatus: async () => await call("cloudWorkers.status") as CloudWorkerStatusProjection,
+    cloudWorkersCapabilities: async () => await call("cloudWorkers.capabilities") as CloudWorkerCapabilitiesProjection,
     cloudWorkersDoctor: async (args) => {
       if (parseCloudWorkerDoctorRequest(args) == null) throw new Error("cloudWorkers.doctor request is malformed");
       return await call("cloudWorkers.doctor", args) as CloudWorkerDoctorProjection;

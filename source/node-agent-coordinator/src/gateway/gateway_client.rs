@@ -10,7 +10,8 @@ use uuid::Uuid;
 
 use super::gateway_reachability::ReachabilityOutcome;
 use super::super::cloud_worker_projection::{
-    CLOUD_WORKERS_DOCTOR_METHOD, CLOUD_WORKERS_STATUS_METHOD,
+    CLOUD_WORKERS_CAPABILITIES_METHOD, CLOUD_WORKERS_DOCTOR_METHOD,
+    CLOUD_WORKERS_STATUS_METHOD, CloudWorkerCapabilitiesProjection,
     CloudWorkerDoctorProjection, CloudWorkerStatusProjection,
 };
 use super::gateway_request_dispatcher::{
@@ -400,6 +401,31 @@ impl CoordinatorGatewayClient {
         projection.validate().map_err(|error| {
             GatewayDispatchError::Command(SandGatewayCommandError::new(format!(
                 "cloud worker doctor projection is invalid: {error}"
+            )))
+        })?;
+        Ok(projection)
+    }
+
+    pub fn dispatch_cloud_worker_capabilities<F>(
+        &mut self,
+        dispatch: F,
+    ) -> Result<CloudWorkerCapabilitiesProjection, GatewayDispatchError>
+    where
+        F: FnOnce(&GatewayConnection, &str, Value) -> Result<Value, GatewayDispatchError>,
+    {
+        let value = self.dispatch_command(
+            CLOUD_WORKERS_CAPABILITIES_METHOD,
+            Value::Object(Default::default()),
+            dispatch,
+        )?;
+        let projection: CloudWorkerCapabilitiesProjection = serde_json::from_value(value).map_err(|error| {
+            GatewayDispatchError::Command(SandGatewayCommandError::new(format!(
+                "cloud worker capabilities projection is invalid: {error}"
+            )))
+        })?;
+        projection.validate().map_err(|error| {
+            GatewayDispatchError::Command(SandGatewayCommandError::new(format!(
+                "cloud worker capabilities projection is invalid: {error}"
             )))
         })?;
         Ok(projection)

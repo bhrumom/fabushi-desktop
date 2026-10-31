@@ -200,6 +200,7 @@ define_host_gateway_registry!(
     ("getForeverBoxStatus", ForeverBox),
     ("getCloudAgentInfo", CloudAgents),
     ("cloudWorkers.status", CloudWorkers),
+    ("cloudWorkers.capabilities", CloudWorkers),
     ("cloudWorkers.doctor", CloudWorkers),
     ("ensureForeverBox", ForeverBox),
     ("resetForeverBox", ForeverBox),

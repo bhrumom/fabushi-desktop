@@ -729,6 +729,17 @@ unbounded provider output.
 - Exact upstream Crabbox source identities recorded in the dossier/inventory.
 - Live Fabushi owner source identities recorded in the dossier.
 
+## 12. Read-only capability metadata consumer — 2026-10-31
+
+The bundled `workerProviders/crabbox` metadata is now consumed through the
+typed `cloudWorkers.capabilities` Host/Coordinator projection and displayed by
+the Settings status surface. This slice uses the existing
+`PluginCapabilityCatalog` only; `metadataOnly: true` is explicit and the
+projection cannot authorize, launch, enroll, mutate or set provider readiness.
+The broader P1-AC05/P1-AC06 obligations remain pending because the real
+provider/device/process producers, CLI path, executable verification, Actions,
+and packaged acceptance are not established.
+
 Current state: typed lease, artifact-admission, bootstrap-record and
 warm-image persistence seams are implemented locally; provider/process
 producers, platform, sandbox, doctor/recovery consumers, full integration,
