@@ -38,7 +38,19 @@ if shards_manifest.exists():
             with gzip.open(sp, "rt", encoding="utf-8") as gf:
                 for line in gf:
                     r = json.loads(line)
-                    if r.get("read_status") == "read-complete" or r.get("responsibility_status") != "unclassified":
+                    # AC02 disposition evidence may intentionally remain
+                    # unread/unclassified for ordinary non-product paths;
+                    # retain those rows instead of treating read depth as the
+                    # only reason to reuse a reviewed shard record.
+                    if (
+                        r.get("read_status") == "read-complete"
+                        or r.get("responsibility_status") != "unclassified"
+                        or r.get("applicability_status") not in (None, "unknown")
+                        or r.get("disposition_status") not in (None, "pending")
+                        or r.get("disposition") is not None
+                        or r.get("reviewer") is not None
+                        or bool(r.get("evidence_refs"))
+                    ):
                         shard_map[r["path"]] = r
 
 # The ledger is the canonical responsibility side of the bidirectional map.
