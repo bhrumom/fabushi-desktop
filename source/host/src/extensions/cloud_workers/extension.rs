@@ -12,6 +12,7 @@ use super::{
     CloudWorkerBootstrapRequest,
     CloudWorkerLeasedCapability, CloudWorkerOwnerError, CloudWorkerOwnerStatus,
     CloudWorkerSandboxCapability, CloudWorkerSandboxError,
+    CloudWorkerSandboxRequest,
     CloudWorkerProvisioningConfig,
     CloudWorkerProvisioningOwner, CloudWorkerProvisioningStore, CloudWorkerStoreError,
 };
@@ -121,6 +122,20 @@ impl CloudWorkerProvisioningExtension {
                 _ => CloudWorkerOwnerError::StaleCapability,
             })?;
         Ok(capability.clone())
+    }
+
+    /// Revalidates both the canonical lease and the requested sandbox
+    /// operation before delegation. Existing sandbox owners retain all actual
+    /// filesystem/process side effects.
+    pub fn validate_current_sandbox_request(
+        &self,
+        capability: &CloudWorkerSandboxCapability,
+        request: &CloudWorkerSandboxRequest,
+    ) -> Result<(), CloudWorkerOwnerError> {
+        self.validate_current_sandbox_capability(capability)?;
+        request
+            .validate_against(capability)
+            .map_err(|_| CloudWorkerOwnerError::StaleCapability)
     }
 
     /// Re-reads the canonical lease before a bootstrap producer may act. The

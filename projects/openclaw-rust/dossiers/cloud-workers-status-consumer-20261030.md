@@ -128,6 +128,10 @@ rejects disabled, stale, invalid or outcome-unknown capabilities before a
 future consumer can delegate. This is still an owner-validation seam, not a
 remote sandbox execution path.
 
+The owner boundary now also validates each `CloudWorkerSandboxRequest` against
+the current capability, including workspace identity and the requested
+filesystem/remote-shell grant, before any future delegate call.
+
 ## Verified artifact to bootstrap binding — 2026-10-31
 
 `CloudWorkerBootstrapRequest` now carries `CloudWorkerVerifiedArtifact` rather

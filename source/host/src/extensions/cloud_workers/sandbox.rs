@@ -125,6 +125,32 @@ impl CloudWorkerSandboxRequest {
             }
         }
     }
+
+    pub fn validate_against(
+        &self,
+        capability: &CloudWorkerSandboxCapability,
+    ) -> Result<(), CloudWorkerSandboxError> {
+        self.validate()?;
+        capability.validate()?;
+        if self.lease_id != capability.lease_id {
+            return Err(CloudWorkerSandboxError::StaleCapability);
+        }
+        if self.workspace_id != capability.workspace_id {
+            return Err(CloudWorkerSandboxError::WorkspaceMismatch);
+        }
+        match &self.operation {
+            CloudWorkerSandboxOperation::ExecuteArgv { .. } if !capability.remote_shell => {
+                Err(CloudWorkerSandboxError::RemoteShellUnavailable)
+            }
+            CloudWorkerSandboxOperation::ReadFile { .. }
+            | CloudWorkerSandboxOperation::WriteFile { .. }
+                if !capability.filesystem =>
+            {
+                Err(CloudWorkerSandboxError::FilesystemUnavailable)
+            }
+            _ => Ok(()),
+        }
+    }
 }
 
 fn validate_workspace_path(path: &str) -> Result<(), CloudWorkerSandboxError> {
@@ -169,6 +195,12 @@ pub enum CloudWorkerSandboxError {
     StaleCapability,
     #[error("sandbox runtime identity is invalid")]
     InvalidRuntimeIdentity,
+    #[error("sandbox request workspace does not match the capability")]
+    WorkspaceMismatch,
+    #[error("sandbox remote-shell capability is unavailable")]
+    RemoteShellUnavailable,
+    #[error("sandbox filesystem capability is unavailable")]
+    FilesystemUnavailable,
     #[error("sandbox request must include workspace and replay identities")]
     InvalidRequest,
     #[error("sandbox path escapes the workspace")]
@@ -288,6 +320,38 @@ mod tests {
         assert_eq!(
             capability.validate_against(&stale),
             Err(CloudWorkerSandboxError::StaleCapability)
+        );
+    }
+
+    #[test]
+    fn binds_request_to_capability_scope_and_operation_grants() {
+        let capability = CloudWorkerSandboxCapability::new(leased_capability(), "workspace-1")
+            .unwrap();
+        assert_eq!(
+            request(CloudWorkerSandboxOperation::ExecuteArgv {
+                argv: vec!["git".into(), "status".into()],
+            })
+            .validate_against(&capability),
+            Ok(())
+        );
+
+        let mut wrong_workspace = request(CloudWorkerSandboxOperation::ReadFile {
+            path: "README.md".into(),
+        });
+        wrong_workspace.workspace_id = "workspace-2".into();
+        assert_eq!(
+            wrong_workspace.validate_against(&capability),
+            Err(CloudWorkerSandboxError::WorkspaceMismatch)
+        );
+
+        let mut no_shell = capability.clone();
+        no_shell.remote_shell = false;
+        assert_eq!(
+            request(CloudWorkerSandboxOperation::ExecuteArgv {
+                argv: vec!["git".into()],
+            })
+            .validate_against(&no_shell),
+            Err(CloudWorkerSandboxError::RemoteShellUnavailable)
         );
     }
 }

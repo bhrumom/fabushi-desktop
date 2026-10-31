@@ -228,7 +228,8 @@ pending Crabbox responsibilities:
   epoch, generation and runtime identity. This is fencing at the contract
   boundary only; `CloudWorkerProvisioningExtension::validate_current_sandbox_capability`
   also re-reads the canonical owner before use. No remote sandbox executor or
-  provider path is wired.
+  provider path is wired. Requests are additionally checked against the
+  capability workspace and filesystem/remote-shell grants before delegation.
 - `OCRM-RESP-INFRA-WORKER-CRABBOX-BOOTSTRAP-001` now consumes a
   `CloudWorkerVerifiedArtifact` proof and revalidates its digest shape before
   admission. Artifact acquisition, extraction, process launch and provider

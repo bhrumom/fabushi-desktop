@@ -1855,7 +1855,7 @@
       "id": "OCRM-RESP-INFRA-WORKER-CRABBOX-SANDBOX-001",
       "integration": {
         "consumer": "Runner/Sand/Computer execution adapters (not yet wired)",
-        "entrypoint": "source/host/src/extensions/cloud_workers/extension.rs::CloudWorkerProvisioningExtension::validate_current_sandbox_capability",
+        "entrypoint": "source/host/src/extensions/cloud_workers/extension.rs::CloudWorkerProvisioningExtension::validate_current_sandbox_request",
         "owner": "source/host/src/extensions/cloud_workers/extension.rs plus sandbox.rs descriptor contract",
         "producer": "enrolled leased-worker capability (not yet wired)"
       },
