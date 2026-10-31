@@ -857,3 +857,42 @@ fixed-U `server_DH_inner_data#b5890dba` responsibility. Canonical production han
 `abab39e42f100972484191f0e52e9edd9b88c6cf`. Ledger remains
 `implemented / validation_status=not-run / accepted=false`, coverage
 `90 / 16172 unknown / 16145 unread / 0 omitted`. No executable validation was performed.
+
+
+### Round 81 — msgs_state_req exact request serializer/vector boundary
+
+Fixed U remains `f985723b552b30fe1c17d377d57f44e61a15a8c4`. The shipping
+`SessionPrivate::tryToSend` path serializes fixed-U
+`msgs_state_req#da69fb52 msg_ids:Vector<long>` from non-empty `_stateRequestData`, preserving id order in
+`MTP_vector<MTPlong>`. Existing Fabushi `build_msgs_state_req` already owns the independent request-wire
+responsibility and is used by the previously implemented single-current-RPC state-reconciliation path.
+
+Remote source review confirms canonical production
+`native/telegram-protocol/src/api.rs@ebfb3670b5cd097b9ce288782c7954f5cfe9fc43`,
+`tl.rs@89256ab35184b6dc06a095ab34abb9f44e95a264` and
+`lib.rs@abab39e42f100972484191f0e52e9edd9b88c6cf` already serialize constructor `0xda69fb52`,
+TL Vector constructor `0x1cb5c415`, signed i32 count and each signed long as little-endian i64 in caller
+order; vector-count conversion fails closed before a partial Vector header can be emitted. Empty Vector remains
+schema-valid at the pure builder boundary, while the shipping caller independently sends only non-empty state requests.
+
+Because production behavior is already exact, no production delta was manufactured. Spec-first platform commit
+`579b575974b2031e50ffea4910acce8a67289a64`
+(`docs/specs/telegram-mtproto-msgs-state-req-request-wire.md@dfa2b21a82d9b4d9f92da32b4cedcc176bab0c3f`)
+records the no-production-delta disposition. Canonical authored-contract commit
+`97e04d8ee1556c28cd6227f809816f04bcf1f674` adds empty, one-id shipping, multiple signed-long
+order/bit-preservation, exact EOF and `i32::MAX+1` vector-overflow/no-partial-header cases; contract blob is
+`60a1dfb3ea2051a498d6cfb9d401fe653fde7d75`. Desktop provider sync
+`23f023f57cc9c6bc50e519fe89f01cc78a3511d9` mirrors that contract blob byte-for-byte while production
+`api.rs` remains `ebfb3670b5cd097b9ce288782c7954f5cfe9fc43` and facade
+`abab39e42f100972484191f0e52e9edd9b88c6cf` remains unchanged.
+
+Ledger/evidence commit `2b5267d726385e6bebbd9d68555f1ebe607b4a84` adds
+`TDRP-R9-MTPROTO-MSGS-STATE-REQ-REQUEST-WIRE-001`; coverage becomes
+`responsibilities_total=91`, `unknown=16172`, `unread=16145`, `omitted=0`; the responsibility is
+`implemented / validation_status=not-run / accepted=false`. Arbitrary multi-request
+`haveSent/_resendingIds/_stateAndResendRequests` history, simultaneous state queries, connection scheduling,
+auth-key binding/persistence, gzip, complete difference decoding/application, broader source/legal closure and
+release acceptance remain open/fail-closed.
+
+No GitHub Actions/status/check query or trigger, build, typecheck, lint, schema validator, generator,
+unit/contract/integration/E2E test, package, deployment, installation or runtime acceptance was performed.
