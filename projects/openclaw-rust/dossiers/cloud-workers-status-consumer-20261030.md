@@ -165,6 +165,36 @@ The owner boundary now also validates each `CloudWorkerSandboxRequest` against
 the current capability, including workspace identity and the requested
 filesystem/remote-shell grant, before any future delegate call.
 
+## Provider/process and CLI owner audit — 2026-10-31
+
+A read-only audit of the current Host composition confirms that no existing
+Fabushi owner can be promoted to the Crabbox provider/process producer:
+
+- `source/host/src/runner/process_tree.rs` owns bounded cleanup for already
+  owned Runner children; it does not own provider launch admission, artifact
+  identity, lease claims, runtime/session identity or Cloud Worker receipts.
+- `source/host/src/extensions/cloud_agents/cloud_agents_service.rs` owns the
+  existing cloud-agent provider lifecycle and is not the Crabbox provider or
+  node-worker owner.
+- `source/host/src/network_worker_process.rs` owns the Fabushi network worker,
+  not the Crabbox provider or Gateway worker lifecycle.
+- `source/host/src/host_production_extensions.rs` composes the disabled
+  Cloud Worker owner but does not supply configured provider binary, secret
+  scope, launch custody or a process receipt producer.
+
+The repository's existing `source/mahayana/codex-rs/cli` is a separate Codex
+runtime and is not a Cloud Worker Coordinator consumer. No CLI route was added
+from this audit. Adding a direct `Command::new` provider launcher, reusing a
+generic process owner as if it owned Crabbox state, or treating the catalog
+loader/process receipt shape as production discovery would violate the
+Crabbox owner boundary and could falsely promote `providerReady`.
+
+The provider catalog, process receipt and doctor contracts therefore remain
+owner-bound but producer/consumer-unwired. `providerReady=false`,
+`productionMutation=false`, provider/device/process acceptance, CLI reachability
+and exact-head verification remain pending. This audit used source inspection
+only; no local OCRM build/test/lint, Actions, push or PR update was performed.
+
 ## Verified artifact to bootstrap binding — 2026-10-31
 
 `CloudWorkerBootstrapRequest` now carries `CloudWorkerVerifiedArtifact` rather
