@@ -130,6 +130,15 @@ linked from the `OCRM-R21` traceability row. This records the implementation
 and evidence boundary only; it does not change any completion flag or promote
 the upstream discovery subject to accepted authority.
 
+The remaining production-wiring blocker is
+`BL-SESSION-LIFECYCLE-PRODUCER-001`: Fabushi Rust has no isolated-cron or
+subagent cleanup producer that captures the projection fields and calls this
+existing Host lifecycle owner. The blocker is resolved only when a real
+producer is found or implemented within the declared owner boundary, its
+captured fields reach `sessions.delete` in production, and the corresponding
+Actions/runtime evidence is available; helper signatures, fixtures, and static
+source oracles do not resolve it.
+
 ## Follow-up read at the newer discovery subject
 
 The later upstream subject `openclaw/openclaw@1d2e685b76b2bb7da964a2d6445cec2e07bf5883`

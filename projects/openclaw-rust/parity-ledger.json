@@ -5798,7 +5798,9 @@
         "projects/openclaw-rust/dossiers/upstream-current-session-lifecycle-delta-20261031.md"
       ],
       "behavior": "Session deletion lifecycle fence: durable lifecycle revision projection, expected identity/revision/update-time admission, and post-drain recheck before the existing destructive session owner commits.",
-      "blocker_ids": [],
+      "blocker_ids": [
+        "BL-SESSION-LIFECYCLE-PRODUCER-001"
+      ],
       "capability_ids": [
         "sessions.delete.lifecycle_fence"
       ],
