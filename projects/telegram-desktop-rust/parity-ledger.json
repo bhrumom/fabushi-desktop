@@ -3,13 +3,13 @@
   "project_id": "TDRP-001",
   "spec_revision": 9,
   "upstream_commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
-  "target_commit": "6c714e664d6cd4d66228b313664a6e776a4fd558",
+  "target_commit": "01b78f13e4a500bdb401c080a40f5295d8110779",
   "coverage": {
     "source_entries_total": 16202,
     "unknown": 16172,
     "unread": 16145,
     "omitted": 0,
-    "responsibilities_total": 58,
+    "responsibilities_total": 59,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -14639,6 +14639,250 @@
       "reviewer": null,
       "license_and_provenance": "Behavioral responsibility is anchored to fixed-U telegramdesktop/tdesktop Telegram/SourceFiles/mtproto/session_private.cpp@13cbc76ec723386027b5b4dcac79999b791c4614 and the corresponding MTProto constructor declarations in Telegram/SourceFiles/mtproto/scheme/mtproto.tl@76225965bfc794388db241f3f760db8ab79e84f8. The implementation is source-neutral Rust and copies no upstream C++ implementation.",
       "notes": "Stage A implementation only. This row records a responsibility slice from session_private.cpp and does not claim whole-file semantic closure, so global unknown/unread counters are intentionally unchanged. Authored tests are not executed; validation_status remains not-run and accepted remains false.",
+      "test_execution_evidence": []
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+      "source_path": "Telegram/SourceFiles/mtproto/session_private.cpp",
+      "source_blob_sha": "13cbc76ec723386027b5b4dcac79999b791c4614",
+      "source_kind": "source",
+      "module_id": "tdesktop.mtproto.session.new-session-replay",
+      "responsibility_id": "TDRP-R9-MTPROTO-NEW-SESSION-REPLAY-001",
+      "source_symbols": [
+        "SessionPrivate::handleOneReceived / mtpc_new_session_created",
+        "new_session_created#9ec20908",
+        "resend"
+      ],
+      "capability_ids": [
+        "CAP-EMBEDDED-MTPROTO-NEW-SESSION-REPLAY"
+      ],
+      "dependency_ids": [
+        "EmbeddedTelegramNetwork",
+        "TelegramClientLease",
+        "MTProtoAuthKey",
+        "MessageIdGuard",
+        "SessionSequence"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/evidence/round48-mtproto-new-session-replay-20261101.md",
+      "behavior_contract": "When the authenticated server emits new_session_created, the existing EstablishedSession adopts the new server_salt and compares the one outstanding invoke_raw request message id against first_msg_id. If the request predates first_msg_id it is replayed once with a fresh message id on the same auth key, transport and runtime; equal/newer requests continue waiting. A second replay signal fails closed with NewSessionReplayLimit. Ping adopts the salt without inventing RPC replay.",
+      "state_machine": "same TelegramClientLease -> EstablishedSession::invoke_raw -> encrypted content RPC -> new_session_created(first_msg_id,server_salt) -> update salt -> current request id < first_msg_id ? one same-call fresh-message retry : continue waiting -> result or typed replay-limit failure",
+      "side_effects": [
+        "Parses fixed-U new_session_created first_msg_id and server_salt in the existing network owner",
+        "Updates the existing live server salt",
+        "Replays only the current synchronous outstanding RPC when it predates first_msg_id",
+        "Bounds new-session replay to one retry",
+        "Authors predicate contract without running it"
+      ],
+      "failure_cases": [
+        "new_session_created updates salt but a pre-first_msg_id outstanding RPC is left to time out",
+        "request equal to first_msg_id is replayed unnecessarily",
+        "repeated new-session notification forms an unbounded retry loop",
+        "ping invents a content-RPC replay",
+        "a second request queue/runtime/session store is introduced"
+      ],
+      "ui_disposition": "No UI change. This is MTProto transport/session reliability inside the existing embedded runtime.",
+      "non_ui_responsibilities": [
+        "new_session_created parsing",
+        "server-salt replacement",
+        "first_msg_id pending-request comparison",
+        "bounded same-session RPC replay"
+      ],
+      "platform_delta": "Fixed-U pending-request replay is mapped onto Fabushi's existing synchronous one-outstanding-RPC EstablishedSession rather than copying Telegram Desktop's multi-request queue. No second queue, runtime, session store, account, provider or transport owner is introduced.",
+      "existing_owner_candidates": [
+        "bhrumom/fabushi-platform-core:native/telegram-network/src/lib.rs",
+        "source/mahayana/mahayana-rs/providers/telegram-network/src/lib.rs",
+        "source/mahayana/mahayana-rs/providers/telegram-runtime/src/runtime.rs",
+        "source/mahayana/mahayana-rs/mahayana-telegram/src/lib.rs"
+      ],
+      "existing_owner": "Canonical shared telegram-network EstablishedSession consumed by the existing desktop TelegramClientLease/runtime chain",
+      "rejected_existing_owners": [
+        "Renderer/AppHost cannot own MTProto pending-request replay",
+        "A second request queue would duplicate the synchronous network owner",
+        "Storage cannot own live new-session replay"
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "bhrumom/fabushi-platform-core:native/telegram-network/src/lib.rs",
+        "source/mahayana/mahayana-rs/providers/telegram-network/src/lib.rs",
+        "source/mahayana/mahayana-rs/providers/telegram-runtime/src/runtime.rs",
+        "source/mahayana/mahayana-rs/mahayana-telegram/src/lib.rs"
+      ],
+      "fabushi_target_symbols": [
+        "EstablishedSession::invoke_raw",
+        "EstablishedSession::scan_rpc_body",
+        "RpcOutcome::RetryNewSession",
+        "new_session_requires_replay",
+        "NetworkError::NewSessionReplayLimit"
+      ],
+      "target_language": "Rust",
+      "language_rationale": "Pending encrypted RPC lifecycle and server session signals are already owned by the Rust telegram-network EstablishedSession; the synchronous single-request mapping avoids importing source-specific queue architecture.",
+      "command_event_contracts": [
+        "new_session_created(first_msg_id,server_salt) -> adopt server_salt",
+        "request_message_id < first_msg_id -> one fresh-message invoke_raw retry",
+        "request_message_id >= first_msg_id -> continue waiting",
+        "second replay signal -> NetworkError::NewSessionReplayLimit"
+      ],
+      "state_owner": "Existing EstablishedSession owns current request message id, auth key, salt, sequence and retry budget.",
+      "lifecycle_owner": "Existing account-bound TelegramClientLease -> RuntimeClient -> EstablishedSession.",
+      "persistence_and_restart": "No new persistence. Replay is live-session state; existing persisted auth-key/DC/salt restore remains unchanged.",
+      "concurrency_and_cancellation": "Fabushi invoke_raw is synchronous with one outstanding RPC, so new-session replay applies only to that request and remains bounded within the call.",
+      "security_boundary": "Only decrypted/authenticated MTProto new_session_created can mutate salt or trigger replay; existing replay/parity validation remains in force.",
+      "network_service_dependencies": [
+        "Existing embedded encrypted MTProto transport",
+        "new_session_created#9ec20908"
+      ],
+      "service_owner": "Canonical telegram-network EstablishedSession.",
+      "deployment_evidence": [],
+      "implementation_status": "implemented",
+      "coverage_disposition": "rewritten",
+      "blockers": [
+        "Stage B executable validation has not run.",
+        "Higher-level new-session update/difference notification semantics remain a separate open responsibility.",
+        "Broader fixed-U source/legal/release closure remains open."
+      ],
+      "production_entrypoints": [
+        "existing TelegramClientLease/RuntimeClient -> EstablishedSession::invoke_raw -> scan_rpc_body(new_session_created) -> bounded replay",
+        "source/mahayana/mahayana-rs/Cargo.toml -> mahayana-telegram -> providers/telegram-runtime -> providers/telegram-network"
+      ],
+      "production_evidence": [
+        "platform-core-spec-commit:8275952bed7bea3a7c275f1b122c2c9c710ba262",
+        "platform-core-implementation-commit:6ec2d64da2d30d78c919bd971e8e0d1953aed587",
+        "platform-core-path:native/telegram-network/src/lib.rs@7df3dd74ed1cc4fea5273a36152d1ff8bd00ec65",
+        "desktop-implementation-commit:01b78f13e4a500bdb401c080a40f5295d8110779",
+        "path:source/mahayana/mahayana-rs/providers/telegram-network/src/lib.rs@7df3dd74ed1cc4fea5273a36152d1ff8bd00ec65"
+      ],
+      "test_evidence": [
+        "platform-core native/telegram-network/src/lib.rs::recovery_contract_tests::new_session_replays_only_requests_older_than_first_message authored, not run",
+        "desktop providers/telegram-network/src/lib.rs same contract authored, not run"
+      ],
+      "target_commit": "01b78f13e4a500bdb401c080a40f5295d8110779",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Canonical Fabushi account + existing TelegramClientLease/runtime + shared MTProto protocol/network production composition",
+      "composition_slot": "Embedded Telegram new-session pending-RPC recovery",
+      "capability_component": "Bounded replay of the one outstanding RPC across new_session_created",
+      "variation_axes": [
+        "request older than first_msg_id vs equal/newer",
+        "first replay signal vs repeated signal",
+        "invoke_raw content request vs ping service request"
+      ],
+      "shared_owner_contracts": [
+        "Existing TelegramClientLease",
+        "Existing RuntimeClient/EstablishedSession",
+        "Existing MTProto auth key and transport",
+        "Existing Cargo path-dependency composition"
+      ],
+      "duplicate_root_check": "No second account, runtime, provider, transport, auth key, session product, message store, UI root, sidecar, subprocess or Web wrapper was introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Not applicable",
+      "primary_navigation_target": "Existing Messages/Conversation navigation",
+      "collection_surface": "Existing ConversationList; no change",
+      "creation_flow": "Existing canonical conversation creation; no change",
+      "object_action_scope": "Not applicable",
+      "detail_section": "Not applicable",
+      "capability_surface": "Existing ConversationWorkspace through the same provider/runtime; no new surface",
+      "route_contract": "No new route.",
+      "search_scope": "Not applicable",
+      "search_provider": "Existing canonical Search owner; unchanged",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Unchanged.",
+      "search_local_remote_contract": "Not applicable.",
+      "responsive_disposition": "No UI change.",
+      "accessibility_contract": "No UI change.",
+      "keyboard_contract": "No UI change.",
+      "state_continuity_contract": "The same auth key, transport, session owner and request body survive a fixed-U new-session boundary; only server salt and fresh message id change for the bounded replay.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Existing Fabushi design system; no visual changes",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": null,
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "No new icon asset",
+      "avatar_contract": "No change",
+      "content_copy_keys": [],
+      "motion_contract": "No change",
+      "reduced_motion_contract": "No change",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "high",
+      "requirement_ids": [
+        "TDRP-R9-MTPROTO-NEW-SESSION-REPLAY-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-MTPROTO-NEW-SESSION-REPLAY-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-MTPROTO-NEW-SESSION-ONE-RETRY-001",
+        "INV-TDRP-MTPROTO-NEW-SESSION-SAME-OWNER-001"
+      ],
+      "unit_case_ids": [
+        "UNIT-TDRP-MTPROTO-NEW-SESSION-PREDICATE-001"
+      ],
+      "property_state_case_ids": [
+        "PROP-TDRP-MTPROTO-NEW-SESSION-BOUNDED-001"
+      ],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-MTPROTO-NEW-SESSION-REPLAY-001"
+      ],
+      "integration_case_ids": [
+        "INT-TDRP-MTPROTO-NEW-SESSION-SAME-RPC-001"
+      ],
+      "functional_e2e_case_ids": [
+        "E2E-TDRP-MTPROTO-NEW-SESSION-REPLAY-001"
+      ],
+      "temporal_case_ids": [
+        "TEMP-TDRP-MTPROTO-NEW-SESSION-REPLAY-001"
+      ],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "fault_recovery_case_ids": [
+        "FAULT-TDRP-MTPROTO-NEW-SESSION-REPEAT-001",
+        "FAULT-TDRP-MTPROTO-NEW-SESSION-MALFORMED-001"
+      ],
+      "performance_case_ids": [],
+      "security_case_ids": [
+        "SEC-TDRP-MTPROTO-NEW-SESSION-AUTHENTICATED-001"
+      ],
+      "soak_case_ids": [],
+      "exploratory_charter_ids": [],
+      "regression_ids": [
+        "REG-TDRP-MTPROTO-NEW-SESSION-TIMEOUT-001"
+      ],
+      "release_gate_ids": [
+        "G-TRACEABILITY",
+        "G-COMPOSITION",
+        "G-SECURITY",
+        "G-EVIDENCE",
+        "G-RELEASE"
+      ],
+      "test_fixture_ids": [
+        "mtproto-new-session-replay-fixture"
+      ],
+      "test_environment_ids": [
+        "GitHub Actions Stage B matrix (not run)"
+      ],
+      "coverage_matrix_status": "pending",
+      "flake_status": "stable",
+      "release_gate_status": "pending",
+      "acceptance_reviewer": null,
+      "reviewer": null,
+      "license_and_provenance": "Behavioral responsibility is anchored to fixed-U Telegram/SourceFiles/mtproto/session_private.cpp@13cbc76ec723386027b5b4dcac79999b791c4614 and Telegram/SourceFiles/mtproto/scheme/mtproto.tl@76225965bfc794388db241f3f760db8ab79e84f8. Implementation is source-neutral Rust and copies no upstream C++ queue implementation.",
+      "notes": "Stage A implementation only. Higher-level propagation of new_session_created for update/difference recovery remains explicitly open. This is a responsibility slice, so unknown/unread counts are unchanged; tests are authored but not executed.",
       "test_execution_evidence": []
     }
   ],
