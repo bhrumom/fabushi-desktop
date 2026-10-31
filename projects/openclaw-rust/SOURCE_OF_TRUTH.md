@@ -194,11 +194,11 @@ lock 的 `upstream` 字段；已加入 fail-closed preflight，要求该字段�
 因此不会把实现 baseline 的旧来源误报为当前 `002f25a…/553796f…` subject；本轮
 没有触发 workflow。
 
-同一 workflow 的 `persist-verified-inventory` job 仍受旧 PR `#169` 与
-`ocrm/p0-source-authority-20261022` 分支条件保护；当前 managed branch 不会
-进入该写入路径。开发冻结期间不放宽这项写入 guard、不 push 或触发 workflow；
-最终 exact-H 流程必须在明确的 branch lease/subject CAS 条件下替换该 stale
-persist guard，才能持久化新的 inventory/receipt。
+同一 workflow 的 `persist-verified-inventory` job 已在本地提交
+`390108a5e` 中移除旧 PR `#169`/旧分支硬编码，改为仅允许同仓库当前 PR
+head，并以事件 head ref 做合法性检查和 subject CAS 写入；新的提交仍要求
+下一次 exact-head Actions receipt，不能继承旧 receipt。开发冻结期间不触发
+该 workflow、不 push，也不把这项治理修订当作 inventory/receipt 正面证据。
 
 同一时间的只读身份审计确认：`inventory/index.json` 与全部 58,750 条分片
 记录仍绑定实现 baseline `ad8d12f126d29b0db204187adf5092db80294e70` /
