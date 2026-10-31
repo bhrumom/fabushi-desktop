@@ -28353,7 +28353,7 @@
       "oracle_ids": [
         "OCRM-PLUGINS-PROVIDER-O01"
       ],
-      "owner_decision": "Native implementation in hook_runner under plugins extension",
+      "owner_decision": "Retain ProviderExtensionBridge as the plugin provider adapter contract owner; identify the production provider-registration producer and speech/inference/image consumer before wiring",
       "postconditions": [
         "Operation delegated to registered provider handler and result returned"
       ],
