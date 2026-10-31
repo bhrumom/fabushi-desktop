@@ -9,25 +9,28 @@ pub const CLOUD_WORKERS_STATUS_EVENT_FAMILY: &str = "cloud-workers.status";
 #[serde(rename_all = "kebab-case")]
 pub enum CloudWorkerCoordinatorCommand {
     Status,
+    Doctor,
 }
 
 impl CloudWorkerCoordinatorCommand {
     pub const fn method(self) -> &'static str {
         match self {
             Self::Status => CLOUD_WORKERS_STATUS_METHOD,
+            Self::Doctor => CLOUD_WORKERS_DOCTOR_METHOD,
         }
     }
 
     pub fn from_method(method: &str) -> Option<Self> {
         match method {
             CLOUD_WORKERS_STATUS_METHOD => Some(Self::Status),
+            CLOUD_WORKERS_DOCTOR_METHOD => Some(Self::Doctor),
             _ => None,
         }
     }
 
     pub fn args(self) -> Value {
         match self {
-            Self::Status => Value::Object(Default::default()),
+            Self::Status | Self::Doctor => Value::Object(Default::default()),
         }
     }
 }
@@ -141,7 +144,19 @@ mod tests {
             Some(CloudWorkerCoordinatorCommand::Status)
         );
         assert_eq!(
+            CloudWorkerCoordinatorCommand::Doctor.method(),
+            "cloudWorkers.doctor"
+        );
+        assert_eq!(
+            CloudWorkerCoordinatorCommand::from_method("cloudWorkers.doctor"),
+            Some(CloudWorkerCoordinatorCommand::Doctor)
+        );
+        assert_eq!(
             CloudWorkerCoordinatorCommand::Status.args(),
+            serde_json::json!({})
+        );
+        assert_eq!(
+            CloudWorkerCoordinatorCommand::Doctor.args(),
             serde_json::json!({})
         );
     }
