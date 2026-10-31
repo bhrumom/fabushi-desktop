@@ -569,3 +569,14 @@ The ledger responsibility `TDRP-R9-MTPROTO-DESTROY-AUTH-KEY-RESULT-WIRE-001` rem
 
 No executable validation was performed. No GitHub Actions/status/check query or trigger, build, typecheck, lint, schema validator, generator, unit/contract/integration/E2E test, package, deployment, installation or runtime acceptance was performed.
 
+
+
+### Round 77 — Server_DH_Params exact constructor-first union parsing
+
+Fixed U remains `f985723b552b30fe1c17d377d57f44e61a15a8c4`. The shipping `DcKeyCreator::dhParamsAnswered` consumes fixed-U `server_DH_params_ok#d0e8075c` / `server_DH_params_fail#79cb045d` through the existing canonical `AuthKeyHandshake::receive_server_dh`. The existing parser already owned the wire responsibility, but read nonce/server_nonce before constructor discrimination, so a complete four-byte unknown constructor was misclassified as TL truncation.
+
+Spec-first platform commit `9a6b687e043bae9f7f40e776ce1d5ec98220a168` defines the strict wire-only boundary. Canonical implementation commit `274bdb92bc7e4d5755bb87fd4996398ee6cf768b` hardens `parse_server_dh_params` to reject unknown constructors before field reads while preserving exact nonce binding, OK TL-bytes / FAIL int128 payload decoding and no-trailing validation. Canonical handshake/contracts blobs are `ed9eda7732f4753b442de98ebf510b8a7558b823` / `a19c4a14d113e6c82fe3cc801f1764c555f26f76`. Desktop sync commit `000d38bd2db19052766ccf8062eea4a6fb93c7eb` mirrors the contracts byte-for-byte; the tracked desktop facade remains `abab39e42f100972484191f0e52e9edd9b88c6cf` and no duplicate desktop `handshake.rs` is introduced.
+
+Ledger adds `TDRP-R9-MTPROTO-SERVER-DH-PARAMS-WIRE-001`; coverage becomes `responsibilities_total=87`, `unknown=16172`, `unread=16145`, `omitted=0`; the new responsibility is `implemented / validation_status=not-run / accepted=false`. Broader auth-key destruction/binding/persistence/teardown, connection scheduling/racing/send lifecycle, multi-request history, gzip, complete difference decoding/application, broader source/legal closure and release acceptance remain fail-closed/open.
+
+No GitHub Actions/status/check query or trigger, build, typecheck, lint, schema validator, generator, unit/contract/integration/E2E test, package, deployment, installation or runtime acceptance was performed.
