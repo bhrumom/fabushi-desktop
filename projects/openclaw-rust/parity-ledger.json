@@ -10340,10 +10340,10 @@
       ],
       "id": "OCRM-RESP-MEDIA-IMAGE-PROCESSOR-SPEC-001",
       "integration": {
-        "consumer": "source/host/src/extensions/attachments/image_ops.rs (pending native image processing worker integration)",
+        "consumer": "No production native image-processing worker consumer identified; ImageProcessorPixelLimits is consumed only by contract fixtures",
         "entrypoint": "source/host/src/extensions/attachments/media_file_context.rs::MAX_IMAGE_INPUT_PIXELS",
         "owner": "source/host/src/extensions/attachments/media_file_context.rs",
-        "producer": "source/host/src/extensions/attachments/media_file_context.rs"
+        "producer": "No production image-processing request producer identified; processor limits are supplied only by contract fixtures"
       },
       "invariants": [
         "MAX_IMAGE_INPUT_PIXELS is exactly 25,000,000 pixels",
@@ -11242,10 +11242,10 @@
       ],
       "id": "OCRM-RESP-MEDIA-PROMPT-IMAGE-INPUT-001",
       "integration": {
-        "consumer": "source/host/src/extensions/attachments/attachments_service.rs",
+        "consumer": "No production prompt-image pipeline consumer identified; has_prompt_image_input has no non-test caller",
         "entrypoint": "source/host/src/extensions/attachments/media_audio_transcode.rs::has_prompt_image_input",
         "owner": "source/host/src/extensions/attachments/media_audio_transcode.rs",
-        "producer": "source/host/src/extensions/attachments/attachments_service.rs"
+        "producer": "No production prompt-image producer identified; image-input values are supplied only by contract fixtures"
       },
       "invariants": [
         "Facts with hydrationSuppressed = true do not trigger vision model requirements",
@@ -11344,10 +11344,10 @@
       ],
       "id": "OCRM-RESP-MEDIA-PROMPT-IMAGE-PROVENANCE-001",
       "integration": {
-        "consumer": "source/host/src/extensions/inference/provider_session.rs (pending upstream prompt assembler integration)",
+        "consumer": "No production provider prompt consumer identified; runtime prompt-image provenance has no non-test caller",
         "entrypoint": "source/host/src/extensions/attachments/media_file_context.rs::finalize_runtime_prompt_images",
         "owner": "source/host/src/extensions/attachments/media_file_context.rs",
-        "producer": "source/host/src/extensions/attachments/media_file_context.rs"
+        "producer": "No production runtime prompt-image producer identified; entries are supplied only by contract fixtures"
       },
       "invariants": [
         "Image fact index list length matches finalized prompt images array length",
@@ -11763,10 +11763,10 @@
       ],
       "id": "OCRM-RESP-MEDIA-REF-COMPARISON-001",
       "integration": {
-        "consumer": "source/host/src/extensions/attachments/attachments_service.rs",
+        "consumer": "No production attachment reference consumer identified; normalize_media_reference_for_comparison has no non-test caller",
         "entrypoint": "source/host/src/extensions/attachments/media_audio_transcode.rs::normalize_media_reference_for_comparison",
         "owner": "source/host/src/extensions/attachments/media_audio_transcode.rs",
-        "producer": "source/host/src/extensions/attachments/attachments_service.rs"
+        "producer": "No production media-reference producer identified; references are supplied only by contract fixtures"
       },
       "invariants": [
         "Traversal segments (..) retained literally to prevent key collision",
@@ -13307,10 +13307,10 @@
       ],
       "id": "OCRM-RESP-MEDIA-UNDERSTANDING-TYPES-001",
       "integration": {
-        "consumer": "source/host/src/extensions/attachments/attachments_service.rs",
+        "consumer": "No production media-understanding runtime consumer identified; typed contracts have no non-test caller beyond internal module definitions",
         "entrypoint": "source/host/src/extensions/attachments/media_understanding_service.rs::MediaUnderstandingDecision",
         "owner": "source/host/src/extensions/attachments/media_understanding_service.rs",
-        "producer": "source/host/src/extensions/attachments/media_understanding_service.rs"
+        "producer": "No production media-understanding decision producer identified; decision inputs are supplied only by contract fixtures"
       },
       "invariants": [
         "Capability variants match image, audio, video",
@@ -16964,10 +16964,10 @@
       ],
       "id": "OCRM-RESP-MEDIA-UND-AUDIO-PREFLIGHT-001",
       "integration": {
-        "consumer": "source/host/src/extensions/attachments/media_understanding_service.rs",
+        "consumer": "No production media-understanding audio consumer identified; audio preflight helpers have no non-test caller",
         "entrypoint": "source/host/src/extensions/attachments/media_understanding_service.rs::format_echo_transcript",
         "owner": "source/host/src/extensions/attachments/media_understanding_service.rs",
-        "producer": "source/host/src/extensions/attachments/media_understanding_service.rs"
+        "producer": "No production media-understanding audio producer identified; audio inputs are supplied only by contract fixtures"
       },
       "invariants": [
         "Empty STT prompt artifact echoes are strictly rejected from transcript output",
@@ -17108,10 +17108,10 @@
       ],
       "id": "OCRM-RESP-MEDIA-UND-ATTACHMENTS-SELECT-001",
       "integration": {
-        "consumer": "source/host/src/extensions/attachments/media_understanding_service.rs",
+        "consumer": "No production media-understanding attachment-selection consumer identified; selection helpers have no non-test caller",
         "entrypoint": "source/host/src/extensions/attachments/media_understanding_service.rs::select_attachments",
         "owner": "source/host/src/extensions/attachments/media_understanding_service.rs",
-        "producer": "source/host/src/extensions/attachments/media_understanding_service.rs"
+        "producer": "No production attachment-selection producer identified; attachment inputs are supplied only by contract fixtures"
       },
       "invariants": [
         "Windows UNC network paths and remote schemes are strictly rejected during attachment path normalization",
@@ -17250,10 +17250,10 @@
       ],
       "id": "OCRM-RESP-MEDIA-ENTRY-CAPABILITIES-001",
       "integration": {
-        "consumer": "source/host/src/extensions/attachments/media_understanding_service.rs",
+        "consumer": "No production media-entry capability consumer identified; capability helpers have no non-test caller",
         "entrypoint": "source/host/src/extensions/attachments/media_understanding_service.rs::resolve_effective_media_entry_capabilities",
         "owner": "source/host/src/extensions/attachments/media_understanding_service.rs",
-        "producer": "source/host/src/extensions/attachments/media_understanding_service.rs"
+        "producer": "No production media-entry capability producer identified; capability inputs are supplied only by contract fixtures"
       },
       "invariants": [
         "Explicitly configured entry capabilities override metadata and shared provider entries",
@@ -17355,10 +17355,10 @@
       ],
       "id": "OCRM-RESP-MEDIA-UND-FILE-OUTCOMES-001",
       "integration": {
-        "consumer": "source/host/src/extensions/attachments/media_understanding_service.rs",
+        "consumer": "No production media-understanding file-outcome consumer identified; file-outcome helpers have no non-test caller",
         "entrypoint": "source/host/src/extensions/attachments/media_understanding_service.rs::render_file_attachment_outcome",
         "owner": "source/host/src/extensions/attachments/media_understanding_service.rs",
-        "producer": "source/host/src/extensions/attachments/media_understanding_service.rs"
+        "producer": "No production file-extraction outcome producer identified; file inputs are supplied only by contract fixtures"
       },
       "invariants": [
         "Byte cap clamped to 25MB ceiling and PDF pages clamped to 150 pages",
@@ -17501,10 +17501,10 @@
       ],
       "id": "OCRM-RESP-MEDIA-UND-FILE-CONTEXT-001",
       "integration": {
-        "consumer": "source/host/src/extensions/attachments/media_understanding_service.rs",
+        "consumer": "No production media-understanding document-context consumer identified; document-context helpers have no non-test caller",
         "entrypoint": "source/host/src/extensions/attachments/media_understanding_service.rs::render_inbound_document_context_from_items",
         "owner": "source/host/src/extensions/attachments/media_understanding_service.rs",
-        "producer": "source/host/src/extensions/attachments/media_understanding_service.rs"
+        "producer": "No production document-context producer identified; document items are supplied only by contract fixtures"
       },
       "invariants": [
         "Inbound document context wraps blocks into safe XML file tags",
@@ -17603,10 +17603,10 @@
       ],
       "id": "OCRM-RESP-MEDIA-UND-LOCAL-AUDIO-001",
       "integration": {
-        "consumer": "source/host/src/extensions/attachments/media_understanding_service.rs",
+        "consumer": "No production local-audio media-understanding consumer identified; backend discovery and ranking helpers have no non-test caller",
         "entrypoint": "source/host/src/extensions/attachments/media_understanding_service.rs::format_local_audio_selection",
         "owner": "source/host/src/extensions/attachments/media_understanding_service.rs",
-        "producer": "source/host/src/extensions/attachments/media_understanding_service.rs"
+        "producer": "No production local-audio backend producer identified; observations are supplied only by contract fixtures"
       },
       "invariants": [
         "Command paths normalized across operating systems stripping Windows extensions",
@@ -17719,10 +17719,10 @@
       ],
       "id": "OCRM-RESP-MEDIA-UND-OPENAI-COMPAT-001",
       "integration": {
-        "consumer": "source/host/src/extensions/attachments/media_understanding_service.rs",
+        "consumer": "No production OpenAI-compatible media consumer identified; payload and form-data builders have no non-test caller",
         "entrypoint": "source/host/src/extensions/attachments/media_understanding_service.rs::build_openai_compatible_video_request_body",
         "owner": "source/host/src/extensions/attachments/media_understanding_service.rs",
-        "producer": "source/host/src/extensions/attachments/media_understanding_service.rs"
+        "producer": "No production OpenAI-compatible media producer identified; provider inputs are supplied only by contract fixtures"
       },
       "invariants": [
         "Audio transcription API contract key is strictly openai-audio-transcriptions",
@@ -17862,10 +17862,10 @@
       ],
       "id": "OCRM-RESP-MEDIA-UND-IMAGE-INPUT-001",
       "integration": {
-        "consumer": "source/host/src/extensions/attachments/media_understanding_service.rs",
+        "consumer": "No production media-understanding image-input consumer identified; image predicates and bounds helpers have no non-test caller",
         "entrypoint": "source/host/src/extensions/attachments/media_understanding_service.rs::effective_image_bytes_cap",
         "owner": "source/host/src/extensions/attachments/media_understanding_service.rs",
-        "producer": "source/host/src/extensions/attachments/media_understanding_service.rs"
+        "producer": "No production image-input producer identified; image values are supplied only by contract fixtures"
       },
       "invariants": [
         "HEIC and HEIF inputs recognized via MIME or file extension",
@@ -17965,10 +17965,10 @@
       ],
       "id": "OCRM-RESP-MEDIA-UND-IMAGE-RUNTIME-001",
       "integration": {
-        "consumer": "source/host/src/extensions/attachments/media_understanding_service.rs",
+        "consumer": "No production media-understanding image-runtime consumer identified; model checks and retry helpers have no non-test caller",
         "entrypoint": "source/host/src/extensions/attachments/media_understanding_service.rs::require_image_capable_model",
         "owner": "source/host/src/extensions/attachments/media_understanding_service.rs",
-        "producer": "source/host/src/extensions/attachments/media_understanding_service.rs"
+        "producer": "No production image-runtime producer identified; model and retry inputs are supplied only by contract fixtures"
       },
       "invariants": [
         "Models lacking image input capability are rejected before dispatch",
@@ -18135,10 +18135,10 @@
       ],
       "id": "OCRM-RESP-MEDIA-UND-PROVIDER-REGISTRY-001",
       "integration": {
-        "consumer": "source/host/src/extensions/attachments/media_understanding_service.rs",
+        "consumer": "No production media-understanding provider-registry consumer identified; registry helpers have no non-test caller",
         "entrypoint": "source/host/src/extensions/attachments/media_understanding_service.rs::resolve_default_media_model_from_registry",
         "owner": "source/host/src/extensions/attachments/media_understanding_service.rs",
-        "producer": "source/host/src/extensions/attachments/media_understanding_service.rs"
+        "producer": "No production media-understanding provider-registry producer identified; provider records are supplied only by contract fixtures"
       },
       "invariants": [
         "Provider IDs are case-insensitively trimmed and normalized across all lookups",
@@ -18284,10 +18284,10 @@
       ],
       "id": "OCRM-RESP-MEDIA-UND-PROVIDER-EXEC-001",
       "integration": {
-        "consumer": "source/host/src/extensions/attachments/media_understanding_service.rs",
+        "consumer": "No production media-understanding provider-execution consumer identified; request-context helpers have no non-test caller",
         "entrypoint": "source/host/src/extensions/attachments/media_understanding_service.rs::resolve_provider_request_context",
         "owner": "source/host/src/extensions/attachments/media_understanding_service.rs",
-        "producer": "source/host/src/extensions/attachments/media_understanding_service.rs"
+        "producer": "No production media-understanding provider-execution producer identified; request inputs are supplied only by contract fixtures"
       },
       "invariants": [
         "Request context merges base URL along entry -> tools -> provider precedence",
@@ -18413,10 +18413,10 @@
       ],
       "id": "OCRM-RESP-MEDIA-UND-RUNNER-001",
       "integration": {
-        "consumer": "source/host/src/extensions/attachments/media_understanding_service.rs",
+        "consumer": "No production media-understanding runner consumer identified; decision-summary helpers have no non-test caller",
         "entrypoint": "source/host/src/extensions/attachments/media_understanding_service.rs::format_decision_summary",
         "owner": "source/host/src/extensions/attachments/media_understanding_service.rs",
-        "producer": "source/host/src/extensions/attachments/media_understanding_service.rs"
+        "producer": "No production media-understanding runner producer identified; runner outcomes are supplied only by contract fixtures"
       },
       "invariants": [
         "Timer-safe timeout clamping within MIN and MAX timer bounds",
@@ -18648,10 +18648,10 @@
       ],
       "id": "OCRM-RESP-MEDIA-UND-APPLY-RUNTIME-001",
       "integration": {
-        "consumer": "source/host/src/extensions/attachments/media_understanding_service.rs",
+        "consumer": "No production media-understanding apply-runtime consumer identified; audio-budget and dispatch helpers have no non-test caller",
         "entrypoint": "source/host/src/extensions/attachments/media_understanding_service.rs::resolve_audio_input_budget_for_config",
         "owner": "source/host/src/extensions/attachments/media_understanding_service.rs",
-        "producer": "source/host/src/extensions/attachments/media_understanding_service.rs"
+        "producer": "No production media-understanding apply-runtime producer identified; runtime inputs are supplied only by contract fixtures"
       },
       "invariants": [
         "Deterministic audio budget calculation",
