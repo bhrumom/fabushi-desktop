@@ -21805,7 +21805,7 @@
       "oracle_ids": [
         "OCRM-PLUGIN-SDK-ACCESS-O01"
       ],
-      "owner_decision": "Native implementation in access_groups under plugin_sdk extension",
+      "owner_decision": "Retain access_groups as the standalone policy/contract owner; identify the production access-group/account producer and consumer before wiring",
       "postconditions": [
         "Sender membership evaluated deterministically against access group rules"
       ],
@@ -21903,7 +21903,7 @@
       "oracle_ids": [
         "OCRM-PLUGIN-SDK-ACP-O01"
       ],
-      "owner_decision": "Native implementation in acp_runtime under plugin_sdk extension",
+      "owner_decision": "Retain acp_runtime as the standalone contract owner; identify the canonical ACP session producer, transport and consumer before wiring",
       "postconditions": [
         "Inactive incognito sessions rejected and doctor report aggregated"
       ],
@@ -22003,7 +22003,7 @@
       "oracle_ids": [
         "OCRM-PLUGIN-SDK-HARNESS-O01"
       ],
-      "owner_decision": "Native implementation in agent_harness under plugin_sdk extension",
+      "owner_decision": "Retain agent_harness as the standalone contract owner; identify the production attempt producer, session/runner owner and consumer before wiring",
       "postconditions": [
         "Run attempt state tracked, aborted runs drained, and form fields validated"
       ],
