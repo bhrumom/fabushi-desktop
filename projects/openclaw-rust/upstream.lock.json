@@ -12,9 +12,9 @@
   "upstream": {
     "repository": "openclaw/openclaw",
     "ref": "refs/heads/main",
-    "commit": "ad8d12f126d29b0db204187adf5092db80294e70",
-    "tree": "04ccce62f1d74dc8e0c88290ae8ded027b7b0f16",
-    "accepted_for_this_implementation_round": false,
+    "commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+    "tree": "90c8aab39972da11cfad220361781d49e1bc6700",
+    "accepted_for_this_implementation_round": true,
     "baseline_identity_accepted": false
   },
   "discovery_baseline": {
@@ -25,22 +25,23 @@
   "live_candidate": {
     "repository": "openclaw/openclaw",
     "ref": "refs/heads/main",
-    "commit": "4b6907d8bdb74ecf3b0206ca75610673ad42690f",
-    "tree": "3f34cd0b962913a0f92a6027c5b2e2038dfc3373",
-    "observed_at": "2026-10-31T13:11:18Z",
+    "commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+    "tree": "90c8aab39972da11cfad220361781d49e1bc6700",
+    "observed_at": "2026-10-31T23:18:17Z",
     "discovery_source": "GitHub commit/tree API",
     "recursive_tree_truncated": false,
-    "recursive_tree_entries": 64106,
-    "recursive_blob_entries": 61865,
-    "recursive_directory_entries": 2241,
+    "recursive_tree_entries": 64372,
+    "recursive_blob_entries": 62128,
+    "recursive_directory_entries": 2242,
     "root_inputs": {
-      "package.json": "e52ea501bd0e2d749e7f4ab2efce5074b81a2a78",
+      "package.json": "6989c0618742d3c2b93cc336cbe1d9c3c4f0a657",
       "pnpm-lock.yaml": "83b4975eb96942ec007a2eb9847ccfe98d380bda",
       "pnpm-workspace.yaml": "32ce4d83de4aac6a1e3665baba09a3aa9582960c",
       ".gitattributes": "c6118b226a4a760f7861b6b7b1e7dccd943384e4",
       "LICENSE": "ed064819ab537575d0cad902f7e5af4a3488b1d0",
       "THIRD_PARTY_NOTICES.md": "0c9c123760188915a384ce7275df4096114e8f90",
-      ".gitmodules": null
+      ".gitmodules": null,
+      "AGENTS.md": "6eedd536b6f5145d5d158a48415a8c0e1cd8db7e"
     },
     "authority_status": "discovery-only; requires fresh GitHub Actions inventory and dependency closure"
   },
@@ -52,10 +53,13 @@
     "decision": "live-main-drifted-to-af300f44; read-only exact commit/tree and recursive tree revalidated at 2026-10-31T13:03:16Z; recursive tree is 64,102 entries with the same root dependency/license identities, while the commit changes UI settings render paths; require fresh source reads before reuse and retain discovery-only status until Actions inventory and dependency closure"
   },
   "root_inputs": {
-    "AGENTS.md": "c3deeccdb6b1a4c7137d56297e933bbf19f4d3bf",
-    "package.json": "af543c4c033b5c5e0c466061ada470feeda777f3",
-    "pnpm-lock.yaml": "80fb4d9fa985297a24ac88931ef534e85a40ba47",
+    "AGENTS.md": "6eedd536b6f5145d5d158a48415a8c0e1cd8db7e",
+    "package.json": "6989c0618742d3c2b93cc336cbe1d9c3c4f0a657",
+    "pnpm-lock.yaml": "83b4975eb96942ec007a2eb9847ccfe98d380bda",
+    "pnpm-workspace.yaml": "32ce4d83de4aac6a1e3665baba09a3aa9582960c",
     ".gitattributes": "c6118b226a4a760f7861b6b7b1e7dccd943384e4",
+    "LICENSE": "ed064819ab537575d0cad902f7e5af4a3488b1d0",
+    "THIRD_PARTY_NOTICES.md": "0c9c123760188915a384ce7275df4096114e8f90",
     ".gitmodules": null
   },
   "closure": {

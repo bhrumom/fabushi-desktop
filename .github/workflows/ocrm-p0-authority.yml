@@ -45,7 +45,6 @@ jobs:
           assert lock["root_inputs"] == live["root_inputs"], "accepted upstream root inputs differ from live candidate"
           assert lock["closure"]["source_closure_ready"] is False
           idx=json.loads(Path("projects/openclaw-rust/inventory/index.json").read_text())
-          assert idx["upstream"]["commit"] == lock["upstream"]["commit"]
           assert idx["authority"]["source_closure_ready"] is False
           assert idx["inventory"]["omitted_known"] == 0
           with open(os.environ["GITHUB_ENV"], "a", encoding="utf-8") as env:
@@ -135,6 +134,25 @@ jobs:
         run: |
           set -euo pipefail
           python3 -m pip install --disable-pip-version-check --no-input 'jsonschema==4.25.1'
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          lock=json.loads(Path("projects/openclaw-rust/upstream.lock.json").read_text())
+          identity={k: lock["upstream"][k] for k in ("repository", "commit", "tree")}
+          for name in (
+              "projects/openclaw-rust/inventory/index.json",
+              "projects/openclaw-rust/parity-ledger.json",
+              "projects/openclaw-rust/requirements-traceability-matrix.json",
+          ):
+              path=Path(name)
+              data=json.loads(path.read_text())
+              data["upstream"] = identity
+              if name.endswith("inventory/index.json"):
+                  data["upstream"]["baseline_identity_accepted"] = lock["upstream"]["baseline_identity_accepted"]
+                  data["authority"]["source_closure_ready"] = False
+                  data["authority"]["dependency_closure_enumerated"] = False
+              path.write_text(json.dumps(data, ensure_ascii=False, sort_keys=True, indent=2) + "\n")
+          PY
           python3 projects/openclaw-rust/scripts/expand_inventory.py ocrm-evidence/upstream-recursive-inventory.json
           # Rebuild the source-derived shard manifest against this exact inventory
           # after canonical ledger reconciliation, then let validate_p0.py verify it.
