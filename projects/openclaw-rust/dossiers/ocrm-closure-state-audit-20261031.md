@@ -68,6 +68,22 @@ The business-runtime mapped-only frontier is therefore the dominant remaining
 responsibility review and production-wiring risk. It must not be promoted to
 reviewed or accepted from field presence alone.
 
+### Integration-contract placeholder audit
+
+Both mapping groups have non-empty source and evidence references for every
+row. The integration text has a different result:
+
+| Mapping state | Count | Producer with pending semantics | Owner with pending semantics | Consumer with pending semantics | Decision with pending semantics |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| `mapped` | 91 | 12 | 2 | 29 | 9 |
+| `reviewed` | 148 | 1 | 0 | 6 | 1 |
+
+The scan treats terms such as `pending`, `future`, `unresolved`, `absent`,
+`not-wired`, `fixture-only`, and `not executed` as unresolved contract
+semantics. This is a text audit, not a semantic verifier; it demonstrates why
+non-empty fields and even `mapping=reviewed` cannot alone establish AC05 or
+`production_wiring_complete`.
+
 ## Requirements traceability state
 
 | State | Count |
