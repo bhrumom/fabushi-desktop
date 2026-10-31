@@ -178,22 +178,23 @@ loop, or bypass Sand/FDN/Remote Computer authorization. A capability without a
 completed enrolled lease, a stale generation, a mismatched scope, or an
 outcome-unknown mutation must fail closed before delegation.
 
-The adapter task is now the next narrow implementation slice at
-`source/host/src/runner/host_external_machine_dependencies.rs`. It receives an
-ephemeral enrolled `CloudWorkerLeasedCapability`, the expected account/device
-scope, the canonical `CloudWorkerProvisioningExtension`, and exactly one
-existing `ExternalMachineExecutor` delegate. Before every shell/read/status/
-history/cancel operation it must revalidate the capability against the current
-owner record; it must reject a disabled/unavailable owner, stale lease
-generation, owner epoch or runtime identity, scope mismatch, and a capability
-whose last mutation is outcome-unknown. Shell/read calls use the existing
-tool-call identity as the bounded replay key; a replayed shell key is rejected
-before delegation and a key is retained after any delegate error so an
-ambiguous delivery cannot silently retry. The adapter never mints a Computer
-grant, enrolls a device, writes sensitive results, starts a provider, creates a
-Runner loop, or becomes a second executor. The production owner remains
-`provider_ready=false` and `production_mutation=false` until a real provider
-producer and side-effect path are separately wired.
+The external-machine adapter slice at
+`source/host/src/runner/host_external_machine_dependencies.rs` is implemented
+as a typed boundary. It receives an ephemeral enrolled
+`CloudWorkerLeasedCapability`, the expected account/device scope, the canonical
+`CloudWorkerProvisioningExtension`, and exactly one existing
+`ExternalMachineExecutor` delegate. Before every shell/read/status/history/
+cancel operation it revalidates the capability against the current owner
+record; it rejects a disabled/unavailable owner, stale lease generation, owner
+epoch or runtime identity, scope mismatch, and a capability whose last mutation
+is outcome-unknown. Shell/read calls use the existing tool-call identity as the
+bounded replay key; a replayed key is rejected before delegation, including
+background terminal polling, and a key is retained after any delegate error so
+an ambiguous delivery cannot silently retry. The adapter never mints a
+Computer grant, enrolls a device, writes sensitive results, starts a provider,
+creates a Runner loop, or becomes a second executor. The production owner
+remains `provider_ready=false` and `production_mutation=false` until a real
+provider producer and side-effect path are separately wired.
 
 This slice does not promote the ADR or any OCRM flag. Acceptance still requires
 named producer/owner/consumer rows in the RTM, negative tests for
