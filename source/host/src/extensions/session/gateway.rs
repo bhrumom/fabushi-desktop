@@ -409,6 +409,25 @@ pub fn dispatch_production_session_gateway_call_with_content_search_and_group_ch
                 })
             })
         }),
+        "editHumanMessage" => required_string(args, "conversationId").and_then(|conversation_id| {
+            required_string(args, "entryId").and_then(|entry_id| {
+                required_string(args, "operationId").and_then(|operation_id| {
+                    let text = optional_string(args, "text")?.unwrap_or_default();
+                    session
+                        .edit_human_message(conversation_id, entry_id, text, operation_id)
+                        .map_err(SessionGatewayError::internal)
+                })
+            })
+        }),
+        "deleteHumanMessage" => required_string(args, "conversationId").and_then(|conversation_id| {
+            required_string(args, "entryId").and_then(|entry_id| {
+                required_string(args, "operationId").and_then(|operation_id| {
+                    session
+                        .delete_human_message(conversation_id, entry_id, operation_id)
+                        .map_err(SessionGatewayError::internal)
+                })
+            })
+        }),
         "getHumanConversationTranscript" => required_string(args, "conversationId").and_then(|conversation_id| {
             session
                 .read_human_conversation_transcript(conversation_id)
