@@ -71,7 +71,9 @@ use mahayana_host_runtime::extensions::cloud_agents::cloud_agents_service::SandC
 use mahayana_host_runtime::extensions::session::agent_session::SandAgentSessionStore;
 use mahayana_host_runtime::extensions::memory::agent_state::AvatarBoxFileReader;
 use mahayana_host_runtime::extensions::session::production::ProductionSessionWorkers;
-use mahayana_host_runtime::extensions::session::session_paths::reject_public_agent_harness_session_key;
+use mahayana_host_runtime::extensions::session::session_paths::{
+    classify_session_kind, reject_public_agent_harness_session_key, SessionKind,
+};
 use mahayana_host_runtime::extensions::session::session_profile_files::AgentProfileUpdate;
 use mahayana_host_runtime::agents::agent_messaging::{
     AgentAddress, AgentGroupAddress, AgentMessageImage, build_admin_broadcast_wake_prompt,
@@ -1876,6 +1878,17 @@ fn report_agent_roster_security_findings(config: &serde_json::Value) {
     }
 }
 
+fn session_kind_label(kind: SessionKind) -> &'static str {
+    match kind {
+        SessionKind::Cron => "cron",
+        SessionKind::Direct => "direct",
+        SessionKind::Group => "group",
+        SessionKind::Global => "global",
+        SessionKind::SpawnChild => "spawn-child",
+        SessionKind::Unknown => "unknown",
+    }
+}
+
 impl UnifiedGatewayApi {
 
     fn rearm_channel_delivery_failure(
@@ -3406,14 +3419,20 @@ impl UnifiedGatewayApi {
             .skip(offset)
             .take(limit)
             .map(|s| {
+                let key = format!("agent:{}:main", s.id);
+                let kind = session_kind_label(classify_session_kind(
+                    &key,
+                    Some(if s.is_group { "group" } else { "direct" }),
+                    None,
+                ));
                 let active_run_ids = self.runner_registry.active_stream_ids_for_agent(&s.id);
                 let has_active_run = !active_run_ids.is_empty();
                 let status = if s.is_running || has_active_run { "running" } else { "done" };
                 serde_json::json!({
-                    "key": format!("agent:{}:main", s.id),
+                    "key": key,
                     "sessionId": s.id,
                     "agentId": s.id,
-                    "kind": if s.is_group { "group" } else { "direct" },
+                    "kind": kind,
                     "displayName": s.name,
                     "updatedAt": s.updated_at,
                     "pinned": false,
@@ -3458,6 +3477,11 @@ impl UnifiedGatewayApi {
         } else {
             raw_key
         };
+        let session_kind = session_kind_label(classify_session_kind(
+            raw_key,
+            args.get("chatType").and_then(serde_json::Value::as_str),
+            args.get("spawnedBy").and_then(serde_json::Value::as_str),
+        ));
 
         let entries = self
             .session_workers
@@ -3500,7 +3524,11 @@ impl UnifiedGatewayApi {
             }));
         }
 
-        Ok(serde_json::json!({ "messages": messages }))
+        Ok(serde_json::json!({
+            "messages": messages,
+            "key": raw_key,
+            "kind": session_kind,
+        }))
     }
 
     fn call_openclaw_sessions_create(
