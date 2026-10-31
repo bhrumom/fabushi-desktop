@@ -50,8 +50,8 @@ def main():
                 # their absence as explicit unknown/pending so the integrity
                 # check remains backward-readable while a fresh Actions
                 # generator upgrades every row.
-                applicability_status = entry.get("applicability_status", "unknown")
-                disposition_status = entry.get("disposition_status", "pending")
+                applicability_status = entry.get("applicability_status") or "unknown"
+                disposition_status = entry.get("disposition_status") or "pending"
 
                 if applicability_status not in {"unknown", "product", "non-product", "mixed"}:
                     fail(f"{shard_path}:{line_no}: '{path}' has invalid applicability_status={applicability_status!r}")
