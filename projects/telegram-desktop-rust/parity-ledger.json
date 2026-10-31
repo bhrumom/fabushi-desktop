@@ -3,13 +3,13 @@
   "project_id": "TDRP-001",
   "spec_revision": 9,
   "upstream_commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
-  "target_commit": "01b78f13e4a500bdb401c080a40f5295d8110779",
+  "target_commit": "3f5e2d3a8b2e0c2726a1b1dcd1ab1172a0c5758d",
   "coverage": {
     "source_entries_total": 16202,
     "unknown": 16172,
     "unread": 16145,
     "omitted": 0,
-    "responsibilities_total": 59,
+    "responsibilities_total": 60,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -14883,6 +14883,249 @@
       "reviewer": null,
       "license_and_provenance": "Behavioral responsibility is anchored to fixed-U Telegram/SourceFiles/mtproto/session_private.cpp@13cbc76ec723386027b5b4dcac79999b791c4614 and Telegram/SourceFiles/mtproto/scheme/mtproto.tl@76225965bfc794388db241f3f760db8ab79e84f8. Implementation is source-neutral Rust and copies no upstream C++ queue implementation.",
       "notes": "Stage A implementation only. Higher-level propagation of new_session_created for update/difference recovery remains explicitly open. This is a responsibility slice, so unknown/unread counts are unchanged; tests are authored but not executed.",
+      "test_execution_evidence": []
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+      "source_path": "Telegram/SourceFiles/mtproto/session_private.cpp",
+      "source_blob_sha": "13cbc76ec723386027b5b4dcac79999b791c4614",
+      "source_kind": "source",
+      "module_id": "tdesktop.mtproto.session.detailed-answer-resend",
+      "responsibility_id": "TDRP-R9-MTPROTO-DETAILED-ANSWER-RESEND-001",
+      "source_symbols": [
+        "SessionPrivate::handleOneReceived / mtpc_msg_detailed_info",
+        "msg_detailed_info#276d3ec6",
+        "msg_resend_req#7d861a08"
+      ],
+      "capability_ids": [
+        "CAP-EMBEDDED-MTPROTO-DETAILED-ANSWER-RESEND"
+      ],
+      "dependency_ids": [
+        "EmbeddedTelegramProtocol",
+        "EmbeddedTelegramNetwork",
+        "TelegramClientLease",
+        "MTProtoAuthKey"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/evidence/round49-mtproto-detailed-answer-resend-20261101.md",
+      "behavior_contract": "For the existing synchronous one-outstanding-RPC EstablishedSession, a fixed-U msg_detailed_info whose msg_id equals the current request causes the same encrypted session to send one non-content-related msg_resend_req for answer_msg_id and continue waiting for the RPC result. Unrelated detailed-info messages are ignored for the current call. Full multi-request state reconciliation and msg_new_detailed_info remain separate open responsibilities.",
+      "state_machine": "TelegramClientLease -> RuntimeClient -> EstablishedSession::invoke_raw -> authenticated msg_detailed_info(sent_msg_id,answer_msg_id) -> sent_msg_id == current request ? build fixed-U msg_resend_req([answer_msg_id]) -> send_encrypted_message(content_related=false) -> continue waiting : ignore for current call",
+      "side_effects": [
+        "Adds fixed-U msg_resend_req builder beside build_msgs_ack in canonical protocol owner",
+        "Handles matching msg_detailed_info in existing network owner",
+        "Requests retransmission of the missing answer on the same auth key/session/transport",
+        "Authors protocol/network contracts without executing them"
+      ],
+      "failure_cases": [
+        "matching detailed-info is ignored and RPC times out despite server-known answer",
+        "unrelated detailed-info mutates current request state",
+        "resend request is sent as content-related and changes content sequence semantics",
+        "a second sent-request history or queue is introduced",
+        "msg_new_detailed_info is falsely claimed complete"
+      ],
+      "ui_disposition": "No UI change. This is MTProto transport reliability inside the existing embedded runtime.",
+      "non_ui_responsibilities": [
+        "msg_resend_req TL encoding",
+        "msg_detailed_info current-request matching",
+        "same-session answer retransmission request"
+      ],
+      "platform_delta": "The fixed-U answer-resend responsibility is narrowed to Fabushi's existing synchronous outstanding RPC instead of importing Telegram Desktop's multi-request sent-history queue.",
+      "existing_owner_candidates": [
+        "bhrumom/fabushi-platform-core:native/telegram-protocol/src/api.rs",
+        "bhrumom/fabushi-platform-core:native/telegram-network/src/lib.rs",
+        "source/mahayana/mahayana-rs/providers/telegram-protocol/src/api.rs",
+        "source/mahayana/mahayana-rs/providers/telegram-network/src/lib.rs"
+      ],
+      "existing_owner": "Canonical shared Telegram protocol builder + telegram-network EstablishedSession consumed by the existing desktop lease/runtime chain",
+      "rejected_existing_owners": [
+        "Renderer/AppHost cannot own MTProto service-message encoding or resend semantics",
+        "A second request-history queue would duplicate current network ownership"
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "bhrumom/fabushi-platform-core:native/telegram-protocol/src/api.rs",
+        "bhrumom/fabushi-platform-core:native/telegram-protocol/src/lib.rs",
+        "bhrumom/fabushi-platform-core:native/telegram-network/src/lib.rs",
+        "source/mahayana/mahayana-rs/providers/telegram-protocol/src/api.rs",
+        "source/mahayana/mahayana-rs/providers/telegram-protocol/src/lib.rs",
+        "source/mahayana/mahayana-rs/providers/telegram-network/src/lib.rs"
+      ],
+      "fabushi_target_symbols": [
+        "build_msg_resend_req",
+        "MSG_RESEND_REQ_CONSTRUCTOR",
+        "EstablishedSession::scan_rpc_body",
+        "MSG_DETAILED_INFO_CONSTRUCTOR",
+        "detailed_info_matches_request"
+      ],
+      "target_language": "Rust",
+      "language_rationale": "TL service-message encoding belongs in the existing Rust protocol crate and synchronous response recovery belongs in the existing Rust network session owner.",
+      "command_event_contracts": [
+        "msg_detailed_info(msg_id=current,answer_msg_id=X) -> msg_resend_req([X]) on same session -> continue waiting",
+        "msg_detailed_info(msg_id!=current) -> no current-call mutation"
+      ],
+      "state_owner": "Existing EstablishedSession owns current outstanding request and session/sequence state; protocol owner supplies typed TL encoding.",
+      "lifecycle_owner": "Existing account-bound TelegramClientLease -> RuntimeClient -> EstablishedSession.",
+      "persistence_and_restart": "No new persistence or request history is introduced.",
+      "concurrency_and_cancellation": "The behavior is scoped to the single synchronous invoke_raw outstanding request and does not create background replay work.",
+      "security_boundary": "Only authenticated/decrypted detailed-info service messages are considered; existing message-id replay/parity/time validation precedes handling.",
+      "network_service_dependencies": [
+        "Existing embedded encrypted MTProto transport",
+        "msg_detailed_info#276d3ec6",
+        "msg_resend_req#7d861a08"
+      ],
+      "service_owner": "Canonical telegram-protocol + telegram-network owners.",
+      "deployment_evidence": [],
+      "implementation_status": "implemented",
+      "coverage_disposition": "rewritten",
+      "blockers": [
+        "Stage B executable validation has not run.",
+        "msg_new_detailed_info and msgs_state_req/info/all_info full state reconciliation remain open.",
+        "Broader fixed-U source/legal/release closure remains open."
+      ],
+      "production_entrypoints": [
+        "existing TelegramClientLease/RuntimeClient -> EstablishedSession::invoke_raw -> scan_rpc_body(msg_detailed_info) -> build_msg_resend_req -> same session send_encrypted_message(false)",
+        "existing Cargo path chain -> providers/telegram-protocol + providers/telegram-network"
+      ],
+      "production_evidence": [
+        "platform-core-spec-commit:9bea551d1e26a4ff5efa522417999388256486ff",
+        "platform-core-implementation-commit:0536aa2ad9f93e59f1b1e3cdc19aabaf9a104fce",
+        "platform-core-path:native/telegram-protocol/src/api.rs@1feaefd062f4e8635bbf002a7dce30b804c9f6ed",
+        "platform-core-path:native/telegram-protocol/src/lib.rs@3e17847045f3be606d8b821c85f7b8136b89474a",
+        "platform-core-path:native/telegram-network/src/lib.rs@581156c32289082ad1f53410ab0637bdeef85c66",
+        "desktop-implementation-commit:3f5e2d3a8b2e0c2726a1b1dcd1ab1172a0c5758d",
+        "path:source/mahayana/mahayana-rs/providers/telegram-protocol/src/api.rs@1feaefd062f4e8635bbf002a7dce30b804c9f6ed",
+        "path:source/mahayana/mahayana-rs/providers/telegram-protocol/src/lib.rs@3e17847045f3be606d8b821c85f7b8136b89474a",
+        "path:source/mahayana/mahayana-rs/providers/telegram-network/src/lib.rs@581156c32289082ad1f53410ab0637bdeef85c66"
+      ],
+      "test_evidence": [
+        "platform-core native/telegram-protocol/src/api.rs mtproto_service_builder_contract_tests authored, not run",
+        "platform-core native/telegram-network/src/lib.rs detailed_info current-RPC predicate contract authored, not run",
+        "desktop synchronized copies authored, not run"
+      ],
+      "target_commit": "3f5e2d3a8b2e0c2726a1b1dcd1ab1172a0c5758d",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Canonical Fabushi account + existing TelegramClientLease/runtime + shared MTProto protocol/network production composition",
+      "composition_slot": "Embedded Telegram detailed-answer recovery",
+      "capability_component": "Same-session resend request for a missing detailed RPC answer",
+      "variation_axes": [
+        "matching vs unrelated sent message id",
+        "answer resend requested vs no mutation"
+      ],
+      "shared_owner_contracts": [
+        "Existing TelegramClientLease",
+        "Existing RuntimeClient/EstablishedSession",
+        "Existing protocol TL writer",
+        "Existing auth key/session/transport"
+      ],
+      "duplicate_root_check": "No second account, runtime, provider, transport, auth key, session product, message store, UI root, sidecar, subprocess or Web wrapper was introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Not applicable",
+      "primary_navigation_target": "Existing Messages/Conversation navigation",
+      "collection_surface": "Existing ConversationList; no change",
+      "creation_flow": "Existing canonical conversation creation; no change",
+      "object_action_scope": "Not applicable",
+      "detail_section": "Not applicable",
+      "capability_surface": "Existing ConversationWorkspace through the same provider/runtime; no new surface",
+      "route_contract": "No new route.",
+      "search_scope": "Not applicable",
+      "search_provider": "Existing canonical Search owner; unchanged",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Unchanged.",
+      "search_local_remote_contract": "Not applicable.",
+      "responsive_disposition": "No UI change.",
+      "accessibility_contract": "No UI change.",
+      "keyboard_contract": "No UI change.",
+      "state_continuity_contract": "The same logical RPC and encrypted session remain active while a non-content service request asks the server to retransmit the known answer message.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Existing Fabushi design system; no visual changes",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": null,
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "No new icon asset",
+      "avatar_contract": "No change",
+      "content_copy_keys": [],
+      "motion_contract": "No change",
+      "reduced_motion_contract": "No change",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "high",
+      "requirement_ids": [
+        "TDRP-R9-MTPROTO-DETAILED-ANSWER-RESEND-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-MTPROTO-DETAILED-ANSWER-RESEND-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-MTPROTO-DETAILED-SAME-SESSION-001",
+        "INV-TDRP-MTPROTO-DETAILED-CURRENT-REQUEST-ONLY-001"
+      ],
+      "unit_case_ids": [
+        "UNIT-TDRP-MTPROTO-MSG-RESEND-ENCODE-001",
+        "UNIT-TDRP-MTPROTO-DETAILED-MATCH-001"
+      ],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-MTPROTO-DETAILED-ANSWER-RESEND-001"
+      ],
+      "integration_case_ids": [
+        "INT-TDRP-MTPROTO-DETAILED-ANSWER-RESEND-001"
+      ],
+      "functional_e2e_case_ids": [
+        "E2E-TDRP-MTPROTO-DETAILED-ANSWER-RESEND-001"
+      ],
+      "temporal_case_ids": [
+        "TEMP-TDRP-MTPROTO-DETAILED-ANSWER-LOSS-001"
+      ],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "fault_recovery_case_ids": [
+        "FAULT-TDRP-MTPROTO-DETAILED-UNRELATED-001"
+      ],
+      "performance_case_ids": [],
+      "security_case_ids": [
+        "SEC-TDRP-MTPROTO-DETAILED-AUTHENTICATED-001"
+      ],
+      "soak_case_ids": [],
+      "exploratory_charter_ids": [],
+      "regression_ids": [
+        "REG-TDRP-MTPROTO-DETAILED-ANSWER-TIMEOUT-001"
+      ],
+      "release_gate_ids": [
+        "G-TRACEABILITY",
+        "G-COMPOSITION",
+        "G-SECURITY",
+        "G-EVIDENCE",
+        "G-RELEASE"
+      ],
+      "test_fixture_ids": [
+        "mtproto-detailed-answer-resend-fixture"
+      ],
+      "test_environment_ids": [
+        "GitHub Actions Stage B matrix (not run)"
+      ],
+      "coverage_matrix_status": "pending",
+      "flake_status": "stable",
+      "release_gate_status": "pending",
+      "acceptance_reviewer": null,
+      "reviewer": null,
+      "license_and_provenance": "Behavioral responsibility is anchored to fixed-U session_private.cpp@13cbc76ec723386027b5b4dcac79999b791c4614 and mtproto.tl@76225965bfc794388db241f3f760db8ab79e84f8. Implementation is source-neutral Rust and copies no upstream C++ queue implementation.",
+      "notes": "Stage A implementation only. msg_new_detailed_info and full msgs_state reconciliation remain open. This row is a responsibility slice, so unknown/unread counts remain unchanged; authored tests are not executed.",
       "test_execution_evidence": []
     }
   ],
