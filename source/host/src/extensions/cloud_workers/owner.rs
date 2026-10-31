@@ -5,6 +5,7 @@ use serde::{Deserialize, Serialize};
 use super::{
     CloudWorkerArtifactAdmission, CloudWorkerArtifactAdmissionError,
     CloudWorkerArtifactAdmissionState, CloudWorkerArtifactPolicy, CloudWorkerArtifactDigest,
+    CloudWorkerVerifiedArtifact,
     CloudWorkerBinaryIdentity, CloudWorkerCatalog, CloudWorkerCatalogCache,
     CloudWorkerCatalogError,
     CloudWorkerBootstrapPhase, CloudWorkerBootstrapRecord, CloudWorkerBootstrapRetryClass,
@@ -373,6 +374,23 @@ impl CloudWorkerProvisioningOwner {
         Ok(artifact.clone())
     }
 
+    pub fn verified_artifact(
+        &self,
+        artifact: &CloudWorkerVerifiedArtifact,
+    ) -> Result<CloudWorkerVerifiedArtifact, CloudWorkerOwnerError> {
+        artifact.validate()?;
+        let admission = self
+            .artifacts
+            .get(&artifact.digest.0)
+            .ok_or(CloudWorkerOwnerError::UnknownArtifact)?;
+        if admission.state != CloudWorkerArtifactAdmissionState::Verified
+            || artifact.size_bytes != admission.size_bytes
+        {
+            return Err(CloudWorkerOwnerError::ArtifactNotVerified);
+        }
+        Ok(artifact.clone())
+    }
+
     pub fn settle_bootstrap(
         &mut self,
         mutation: &CloudWorkerLeaseMutation,
@@ -491,6 +509,8 @@ pub enum CloudWorkerOwnerError {
     DuplicateArtifact,
     #[error("artifact was not found")]
     UnknownArtifact,
+    #[error("artifact is not verified or does not match its admitted size")]
+    ArtifactNotVerified,
     #[error("unsupported cloud-worker snapshot schema version: {0}")]
     UnsupportedSnapshotVersion(u32),
     #[error("cloud-worker snapshot contains invalid or duplicate records")]

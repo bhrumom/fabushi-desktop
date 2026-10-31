@@ -184,3 +184,7 @@ can be settled as verified, damaged or outcome-unknown with atomic snapshot
 persistence. The owner revalidates persisted digest/source structure on load;
 download, credential egress, atomic artifact publication and provider
 consumers remain pending.
+
+Bootstrap admission now also requires the requested digest and size to match a
+canonical artifact record in `Verified` state; a shape-valid serialized digest
+alone cannot authorize bootstrap.

@@ -2250,6 +2250,7 @@
         "CloudWorkerBootstrapRequest",
         "CloudWorkerBootstrapRecord",
         "CloudWorkerVerifiedArtifact",
+        "CloudWorkerProvisioningOwner::verified_artifact",
         "CloudWorkerProvisioningExtension::validate_current_bootstrap_request",
         "CloudWorkerSecretRef",
         "CloudWorkerPlatformBridge",

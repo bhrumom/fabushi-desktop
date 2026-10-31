@@ -256,6 +256,9 @@ pending Crabbox responsibilities:
   `settle_artifact` façades through the owner snapshot. Policy, digest and
   state-transition checks are retained; download, credential egress, atomic
   publication and provider consumers remain pending.
+- Bootstrap validation now requires a matching canonical `Verified` artifact
+  record and admitted size, so a shape-valid digest alone cannot authorize a
+  producer.
 
 The broader Crabbox projection, lifecycle, sandbox, bootstrap, artifact,
 warm-image and runtime-control rows remain pending where their producer or

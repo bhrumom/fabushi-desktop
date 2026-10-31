@@ -277,6 +277,7 @@ impl CloudWorkerProvisioningExtension {
         {
             return Err(CloudWorkerOwnerError::StaleCapability);
         }
+        owner.verified_artifact(&request.artifact)?;
         Ok(())
     }
 
