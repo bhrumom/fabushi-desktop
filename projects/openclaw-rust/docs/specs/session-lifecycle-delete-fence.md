@@ -2,8 +2,12 @@
 
 Status: implementation in progress; verification not run
 Project: OCRM-001  
-Source subject: `openclaw/openclaw@1b870b2c78e81fded72913ecba732b84b611ca12`  
-Source tree: `199fe97259d0226ce0e4d3dcec603252376c9205`  
+Current live discovery subject: `openclaw/openclaw@e8dade039bdeb729754d2b5956e6f4cb0a84bf84`
+Current live discovery tree: `2e35087eee94a7c9380ea4ad9fa9c0a6b41e9232`
+Status: discovery-only; the historical session delta below was read at
+`1b870b2c78e81fded72913ecba732b84b611ca12` / tree
+`199fe97259d0226ce0e4d3dcec603252376c9205` and requires exact-head
+revalidation before final authority or acceptance.
 Owner boundary: existing Host Gateway → Transcript/Session lifecycle owner
 
 ## Context and problem
