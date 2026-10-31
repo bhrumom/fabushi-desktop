@@ -83,6 +83,27 @@ inputs still require explicit applicability and disposition review. Conversely,
 the zero unmatched-importer result does not prove that resolved package edges,
 patches, platform artifacts or dynamic imports are closed.
 
+## Patch, native and LFS-input frontier
+
+The second lock document declares 44 overrides and 17 patched dependencies.
+All 17 corresponding `.patch` files are present under the exact tree's
+`patches/` prefix, with 604,457 total bytes; the lock-to-tree path existence
+check therefore has no missing patch path. This does not yet prove patch
+content semantics, patch application, registry archive integrity or the
+license/provenance of the patched artifacts.
+
+The exact tree contains 26 native/platform declaration inputs across
+`Cargo.toml`, `Cargo.lock`, `Package.swift`, `Package.resolved`, `Gemfile`,
+`Gemfile.lock`, `build.gradle.kts`, and `gradle.properties`, totaling 323,239
+bytes. These inputs remain separate closure edges; a path inventory does not
+prove a configured build graph or downloaded native artifact set.
+
+The exact `.gitattributes` blob is
+`c6118b226a4a760f7861b6b7b1e7dccd943384e4` and contains text/generated-file
+rules but no `filter=lfs` rule. That is useful negative evidence about the
+declared root policy, not proof that no LFS pointer or externally fetched asset
+exists; LFS/content closure therefore remains an independent unresolved gate.
+
 ## Drift against the fixed-baseline declaration input
 
 The committed `dependencies/source-manifest-inputs.json` remains deliberately
