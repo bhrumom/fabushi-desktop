@@ -77,11 +77,11 @@ impl CloudWorkerRuntimeControlResult {
         {
             return Err(CloudWorkerRuntimeControlError::ElapsedExceedsTimeout);
         }
-        if let Some(diagnostic) = &self.diagnostic {
-            diagnostic
-                .validate()
-                .map_err(|_| CloudWorkerRuntimeControlError::InvalidDiagnostic)?;
-        }
+        self.diagnostic
+            .as_ref()
+            .ok_or(CloudWorkerRuntimeControlError::InvalidDiagnostic)?
+            .validate()
+            .map_err(|_| CloudWorkerRuntimeControlError::InvalidDiagnostic)?;
         Ok(())
     }
 }
@@ -361,6 +361,13 @@ mod tests {
             )),
         };
         assert_eq!(result.validate_against(&request, &mutation), Ok(()));
+
+        let mut missing_diagnostic = result.clone();
+        missing_diagnostic.diagnostic = None;
+        assert_eq!(
+            missing_diagnostic.validate_against(&request, &mutation),
+            Err(CloudWorkerRuntimeControlError::InvalidDiagnostic)
+        );
 
         let mut invalid = result.clone();
         invalid.elapsed_ms = request.budget.timeout_ms + 1;
