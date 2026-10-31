@@ -477,6 +477,26 @@ authority and completion flags remain unchanged. No CI, push, PR update, local
 OCRM executable verification, build, package, release, or runtime/device
 acceptance was performed.
 
+## Subsequent live recheck — 2026-10-31T13:03:16Z
+
+Read-only GitHub branches/commit/tree API checks resolved
+`openclaw/openclaw` `refs/heads/main` to commit
+`af300f447128e0bec692fa0c96d20f360ee8c8b6`, root tree
+`601cfe03da8faaac3c1d92972298ec763e4d3fca`. The recursive tree was not
+truncated and contained 64,102 entries: 61,861 blobs, 2,241 directories, and
+no gitlinks. The commit message is `perf(ui): skip unused settings render work
+(#189355)`; its GitHub commit verification is valid and root dependency/license
+input blobs remain unchanged.
+
+This supersedes the `a79002c9...` discovery candidate in the lock. Its exact
+diff is limited to five UI settings files, so it is not production Rust
+implementation or wiring evidence. It remains discovery-only: no prior
+inventory, dependency closure, SBOM, LFS/integrity result, notice audit,
+Actions provenance, or source-semantic conclusion is relabeled or reused. All
+authority and completion flags remain unchanged. No CI, push, PR update, local
+OCRM executable verification, build, package, release, or runtime/device
+acceptance was performed.
+
 ## Subsequent live recheck — 2026-10-31T12:58:01Z
 
 Read-only GitHub branches/commit/tree API checks resolved

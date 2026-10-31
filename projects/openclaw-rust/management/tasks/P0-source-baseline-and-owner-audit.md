@@ -388,6 +388,17 @@ fresh discovery-only subject; prior inventory, dependency/LFS closure, semantic
 reads, and Actions provenance are not reusable, and no authority or completion
 flag changes.
 
+2026-10-31T13:03:16Z drift amendment: read-only GitHub checks resolved the
+current OpenClaw `main` to commit=`af300f447128e0bec692fa0c96d20f360ee8c8b6`,
+tree=`601cfe03da8faaac3c1d92972298ec763e4d3fca`, with an untruncated recursive
+tree of 64,102 entries (61,861 blobs, 2,241 directories, 0 gitlinks). The
+commit is `perf(ui): skip unused settings render work (#189355)`. Root
+dependency/license identities remain unchanged, but this is a fresh
+discovery-only subject; prior inventory, dependency/SBOM/LFS closure, notice
+audit, semantic reads, and Actions provenance are not reusable, and no
+authority or completion flag changes. Its exact diff is UI-only; the probe is
+recorded at `dossiers/upstream-current-candidate-probe-af300f44-20261031.md`.
+
 2026-10-31T12:58:01Z drift amendment: read-only GitHub checks resolved the
 current OpenClaw `main` to commit=`a79002c971e2231807f3268eb58f20363b5482d6`,
 tree=`c42693615111af5103940392bb6e318505760f92`, with an untruncated recursive
@@ -459,9 +470,9 @@ completion flag changes. The probe is recorded at
 
 The canonical current discovery pointer is always `upstream.lock.json::live_candidate`.
 At the latest read-only reconciliation it is OpenClaw
-`a79002c971e2231807f3268eb58f20363b5482d6` / tree
-`c42693615111af5103940392bb6e318505760f92`, observed at
-`2026-10-31T12:58:01Z`, with 64,101 untruncated recursive-tree entries
-(61,860 blobs, 2,241 directories, 0 gitlinks). This remains discovery-only;
+`af300f447128e0bec692fa0c96d20f360ee8c8b6` / tree
+`601cfe03da8faaac3c1d92972298ec763e4d3fca`, observed at
+`2026-10-31T13:03:16Z`, with 64,102 untruncated recursive-tree entries
+(61,861 blobs, 2,241 directories, 0 gitlinks). This remains discovery-only;
 the fixed implementation subject, inventory, dependency closure, Actions
 provenance, and all completion flags remain unchanged.

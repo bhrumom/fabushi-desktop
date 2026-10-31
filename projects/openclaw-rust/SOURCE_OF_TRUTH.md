@@ -660,6 +660,19 @@ authority/completion flags 不变。
 `dossiers/upstream-current-candidate-dependency-frontier-8c69e8b7-20261031.md`；
 不重写旧 baseline 清单，不提升 dependency closure、source authority 或任何完成 flag。
 
+2026-10-31T13:03:16Z 的只读远端复核发现 OpenClaw `main` 再推进到
+`af300f447128e0bec692fa0c96d20f360ee8c8b6` / tree
+`601cfe03da8faaac3c1d92972298ec763e4d3fca`。GitHub recursive-tree API 返回
+`truncated=false`，共 64,102 entries（61,861 blobs、2,241 directories、0
+gitlinks）；commit message 为 `perf(ui): skip unused settings render work
+(#189355)`。根 package/lock/workspace/license/notice blob identities 仍未
+变化；该 exact subject 仍为 discovery-only，前一 candidate 的 inventory、
+依赖闭包、SBOM、LFS/integrity、notice audit、语义阅读和 Actions provenance
+均不得复用。exact diff 仅为五个 UI settings 文件，不构成生产 Rust
+wiring 证据。lock live candidate 已更新，固定 implementation subject、
+ledger 修订及全部 authority/completion flags 不变。详见
+`dossiers/upstream-current-candidate-probe-af300f44-20261031.md`。
+
 2026-10-31T12:58:01Z 的只读远端复核发现 OpenClaw `main` 再推进到
 `a79002c971e2231807f3268eb58f20363b5482d6` / tree
 `c42693615111af5103940392bb6e318505760f92`。GitHub recursive-tree API 返回

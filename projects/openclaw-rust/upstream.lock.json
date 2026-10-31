@@ -25,13 +25,13 @@
   "live_candidate": {
     "repository": "openclaw/openclaw",
     "ref": "refs/heads/main",
-    "commit": "a79002c971e2231807f3268eb58f20363b5482d6",
-    "tree": "c42693615111af5103940392bb6e318505760f92",
-    "observed_at": "2026-10-31T12:58:01Z",
+    "commit": "af300f447128e0bec692fa0c96d20f360ee8c8b6",
+    "tree": "601cfe03da8faaac3c1d92972298ec763e4d3fca",
+    "observed_at": "2026-10-31T13:03:16Z",
     "discovery_source": "GitHub commit/tree API",
     "recursive_tree_truncated": false,
-    "recursive_tree_entries": 64101,
-    "recursive_blob_entries": 61860,
+    "recursive_tree_entries": 64102,
+    "recursive_blob_entries": 61861,
     "recursive_directory_entries": 2241,
     "root_inputs": {
       "package.json": "e52ea501bd0e2d749e7f4ab2efce5074b81a2a78",
@@ -49,7 +49,7 @@
     "behind_by": null,
     "compare_files_returned": null,
     "compare_file_counts_are_not_complete": true,
-    "decision": "live-main-drifted-to-a79002c9; read-only exact commit/tree and recursive tree revalidated at 2026-10-31T12:58:01Z; recursive tree is 64,101 entries with the same root dependency/license identities, while the commit changes native-command test fixtures; require fresh source reads before reuse and retain discovery-only status until Actions inventory and dependency closure"
+    "decision": "live-main-drifted-to-af300f44; read-only exact commit/tree and recursive tree revalidated at 2026-10-31T13:03:16Z; recursive tree is 64,102 entries with the same root dependency/license identities, while the commit changes UI settings render paths; require fresh source reads before reuse and retain discovery-only status until Actions inventory and dependency closure"
   },
   "root_inputs": {
     "AGENTS.md": "c3deeccdb6b1a4c7137d56297e933bbf19f4d3bf",
