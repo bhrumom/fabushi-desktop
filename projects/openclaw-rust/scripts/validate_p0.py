@@ -96,6 +96,9 @@ def structural():
     check(subprocess.check_output(["git","-C","upstream","rev-parse","HEAD^{tree}"],text=True).strip() == up["tree"], "Upstream tree moved")
     seen = {}
     kind_counts = {"blob":0,"symlink":0,"gitlink":0}
+    applicability_assessed = 0
+    dispositioned = 0
+    unreviewed_applicable = 0
     for e in entries:
         path = e["path"]
         check(path not in seen, "Duplicate inventory path: " + path)
@@ -104,10 +107,14 @@ def structural():
         check(e["source_repository"] == up["repository"] and e["source_commit"] == up["commit"] and e["source_tree"] == up["tree"], "File source identity drift: " + path)
         check(e["applicability_status"] in {"unknown", "product", "non-product", "mixed"}, "Invalid applicability status: " + path)
         check(e["disposition_status"] in {"pending", "deep-read-required", "deep-read", "grouped-evidence", "not-applicable"}, "Invalid disposition status: " + path)
+        applicability_assessed += e["applicability_status"] != "unknown"
+        dispositioned += e["disposition_status"] not in {"pending", "deep-read-required"}
         if FINAL_AC02:
             check(e["applicability_status"] != "unknown", "Final AC02 unresolved applicability: " + path)
             check(e["disposition_status"] not in {"pending", "deep-read-required"}, "Final AC02 undispositioned path: " + path)
             if e["applicability_status"] in {"product", "mixed"}:
+                if e["responsibility_status"] != "reviewed" or not e["responsibility_ids"]:
+                    unreviewed_applicable += 1
                 check(e["responsibility_status"] == "reviewed" and bool(e["responsibility_ids"]), "Final AC02 applicable path lacks reviewed responsibility mapping: " + path)
                 check(e["disposition_status"] == "deep-read", "Final AC02 applicable path lacks deep-read disposition: " + path)
             if e["disposition_status"] == "grouped-evidence":
@@ -131,6 +138,13 @@ def structural():
             # A fully read oracle/test file may remain unclassified until a
             # real responsibility source_ref exists; it must not carry IDs.
             check(not e["responsibility_ids"], "Unclassified read-complete file has responsibility: " + path)
+    if FINAL_AC02:
+        check(idx["inventory"]["applicability_assessed"] == applicability_assessed, "Final AC02 applicability count projection mismatch")
+        check(idx["inventory"]["dispositioned"] == dispositioned, "Final AC02 disposition count projection mismatch")
+        check(idx["inventory"]["unreviewed_applicable"] == unreviewed_applicable, "Final AC02 unreviewed-applicable count projection mismatch")
+        check(ledger["file_coverage"]["applicability_assessed_paths"] == applicability_assessed, "Final AC02 ledger applicability count mismatch")
+        check(ledger["file_coverage"]["dispositioned_paths"] == dispositioned, "Final AC02 ledger disposition count mismatch")
+        check(ledger["file_coverage"]["unreviewed_applicable_paths"] == unreviewed_applicable, "Final AC02 ledger unreviewed-applicable count mismatch")
     check(kind_counts["symlink"] == counts["symlink_entries_total"] and kind_counts["gitlink"] == counts["gitlink_entries_total"] and kind_counts["blob"] == counts["blob_entries_total"], "Wrong entry kinds")
     raw_records = [x for x in (EVIDENCE / "ls-tree.z").read_bytes().split(b"\0") if x]
     check(len(raw_records) == len(entries), "Raw recursive git tree differs from inventory")
