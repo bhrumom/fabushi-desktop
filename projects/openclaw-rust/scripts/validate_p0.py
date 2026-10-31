@@ -116,6 +116,7 @@ def structural():
                 if e["responsibility_status"] != "reviewed" or not e["responsibility_ids"]:
                     unreviewed_applicable += 1
                 check(e["responsibility_status"] == "reviewed" and bool(e["responsibility_ids"]), "Final AC02 applicable path lacks reviewed responsibility mapping: " + path)
+                check(e["read_status"] == "read-complete", "Final AC02 applicable path lacks complete semantic read: " + path)
                 check(e["disposition_status"] == "deep-read", "Final AC02 applicable path lacks deep-read disposition: " + path)
             if e["disposition_status"] == "grouped-evidence":
                 check(e["applicability_status"] == "non-product", "Final AC02 grouped evidence is not non-product: " + path)
