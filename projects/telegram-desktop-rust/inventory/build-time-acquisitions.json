@@ -2464,5 +2464,149 @@
     ],
     "classification_status": "fixed-u-primary-authority-lines-revalidated",
     "recursive_authority_closure_status": "open"
+  },
+  "round31_github_exact_object_closure": {
+    "evidence_mode": "manual-github-commit-tree-blob-reads-stage-a-no-ci",
+    "upstream_commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+    "recursive_children": [
+      {
+        "repository": "abseil/abseil-cpp",
+        "commit": "d7aaad83b488fd62bd51c81ecf16cd938532cc0a",
+        "tree": "b7787164b428ec7b9dc8168cfe8d5363654e2600",
+        "truncated": false,
+        "entries": 1591,
+        "blobs": 1517,
+        "trees": 74,
+        "gitlinks": [],
+        "license_blobs": [
+          {
+            "path": "AUTHORS",
+            "blob_sha": "976d31defc263902a9fe3b54d9ba3cf0d1185447",
+            "size_bytes": 295
+          },
+          {
+            "path": "LICENSE",
+            "blob_sha": "ccd61dcfe3dbcdf77a72794d7794b1e112a39e0b",
+            "size_bytes": 11361
+          }
+        ]
+      },
+      {
+        "repository": "google/crc32c",
+        "commit": "21fc8ef30415a635e7351ffa0e5d5367943d4a94",
+        "tree": "96bd5adb8040b61b0d5e887c229f714e2d407d2c",
+        "truncated": false,
+        "entries": 46,
+        "blobs": 37,
+        "trees": 6,
+        "gitlinks": [
+          {
+            "path": "third_party/benchmark",
+            "commit": "e991355c02b93fe17713efe04cbc2e278e00fdbd"
+          },
+          {
+            "path": "third_party/glog",
+            "commit": "56523194b3ce1212414c93d55f31832e94677f55"
+          },
+          {
+            "path": "third_party/googletest",
+            "commit": "3b49be074d5c1340eeb447e6a8e78427051e675a"
+          }
+        ],
+        "gitmodules_blob": "888541f40767c5ba60c12f214c940544e98364d8",
+        "license_blobs": [
+          {
+            "path": "AUTHORS",
+            "blob_sha": "ef9b4ea933e05e51decd7bb721e392256a5cf487",
+            "size_bytes": 439
+          },
+          {
+            "path": "LICENSE",
+            "blob_sha": "8c8735cf123cee0e410583fe9af785cb424b835b",
+            "size_bytes": 1460
+          }
+        ]
+      },
+      {
+        "repository": "cisco/libsrtp",
+        "commit": "a566a9cfcd619e8327784aa7cff4a1276dc1e895",
+        "tree": "e578452a4c2b77f699c8d0e40ffc01f58b0b5aec",
+        "truncated": false,
+        "entries": 2400,
+        "blobs": 2382,
+        "trees": 18,
+        "gitlinks": [],
+        "license_blobs": [
+          {
+            "path": "LICENSE",
+            "blob_sha": "af0a2ac312708a0f9d15aa68472e6863de0156ff",
+            "size_bytes": 1614
+          }
+        ]
+      },
+      {
+        "repository": "google/googletest",
+        "commit": "3b49be074d5c1340eeb447e6a8e78427051e675a",
+        "tree": "eb95355ba469dc98e973ef0a4eed01ff49b0d602",
+        "truncated": false,
+        "entries": 264,
+        "blobs": 235,
+        "trees": 29,
+        "gitlinks": [],
+        "license_blobs": [
+          {
+            "path": "LICENSE",
+            "blob_sha": "1941a11f8ce94389160b458927a29ba217542818",
+            "size_bytes": 1475
+          }
+        ]
+      },
+      {
+        "repository": "google/glog",
+        "commit": "56523194b3ce1212414c93d55f31832e94677f55",
+        "tree": "f1244093f7def780dbb04e5c17750d06874ed318",
+        "truncated": false,
+        "entries": 110,
+        "blobs": 97,
+        "trees": 13,
+        "gitlinks": [],
+        "license_blobs": [
+          {
+            "path": "AUTHORS",
+            "blob_sha": "5d8cc0db935c8042955ec95b29fca64e5156da7b",
+            "size_bytes": 964
+          },
+          {
+            "path": "COPYING",
+            "blob_sha": "38396b580b37b961f2fc72b254de161cbafdc060",
+            "size_bytes": 3215
+          }
+        ]
+      },
+      {
+        "repository": "google/benchmark",
+        "commit": "e991355c02b93fe17713efe04cbc2e278e00fdbd",
+        "tree": "11fd09c7349e27e875673f0d0e21a56e6502452b",
+        "truncated": false,
+        "entries": 172,
+        "blobs": 156,
+        "trees": 16,
+        "gitlinks": [],
+        "license_blobs": [
+          {
+            "path": "AUTHORS",
+            "blob_sha": "838dd4f5bd5e7329bae069234201e79c52db2251",
+            "size_bytes": 2202
+          },
+          {
+            "path": "LICENSE",
+            "blob_sha": "d645695673349e3947e8e5ae42332d0ac3164cd7",
+            "size_bytes": 11358
+          }
+        ]
+      }
+    ],
+    "closure_statement": "All GitHub-readable descendants listed here have exact commit/root-tree identity. crc32c has three pinned gitlinks and each listed child has a non-truncated tree with zero further gitlinks. This does not close non-GitHub original-host inputs or package-manager/toolchain resolution.",
+    "cppgir_effect": "none; cppgir original GitLab tree/blob remains independently fail-closed"
   }
 }

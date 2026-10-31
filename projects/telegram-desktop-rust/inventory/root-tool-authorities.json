@@ -2,35 +2,51 @@
   "format_version": 1,
   "project_id": "TDRP-001",
   "spec_revision": 9,
-  "accepted_upstream_commit": "f23c37857220eb84f8559f0901ea26fb304b564b",
+  "accepted_upstream_commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
   "discovery_provenance": {
-    "run_id": 37607789689,
-    "head_sha": "16f5f04e362a4ef93d0c5f9fb8a61f5b4e3500b1",
-    "artifact_id": 11475597885,
-    "artifact_digest": "sha256:ac9f74cd2e573de663c149768f6b5a462eb08ae3b2484f2bfaa4a8b9663ae219"
+    "mode": "fixed-u-manual-source-reread-stage-a-no-ci",
+    "upstream_commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+    "source_blobs": {
+      ".github/workflows/docker.yml": "cba00688d935d50454bfb891fc37e001626cf9a0",
+      ".github/workflows/linux.yml": "dbedd23593c5ea66ff9b8b880bda6a8bc5a4cc55",
+      "Telegram/build/prepare/prepare.py": "a9f3dd2d9e4020df958ab5af942376177d66c78b",
+      "Telegram/build/docker/centos_env/Dockerfile": "3fea9e6866e0ea6351f8a13ebb825ebf49cadfc2",
+      "snap/snapcraft.yaml": "a181d828f25d901303f7221824ac30b0ff5e773a"
+    },
+    "note": "Fixed-U reread reduces the recorded candidate-line total from 17 to 16 because snap/snapcraft.yaml no longer directly downloads sh.rustup.rs; the current Snap uses the rust plugin/channel. Mutable package-manager/tool URLs remain non-product-source toolchain inputs, not immutable product-source pins.",
+    "historical_evidence": {
+      "run_id": 37607789689,
+      "head_sha": "16f5f04e362a4ef93d0c5f9fb8a61f5b4e3500b1",
+      "artifact_id": 11475597885,
+      "artifact_digest": "sha256:ac9f74cd2e573de663c149768f6b5a462eb08ae3b2484f2bfaa4a8b9663ae219"
+    }
   },
-  "candidate_lines_total": 17,
-  "tool_bootstrap_lines": 15,
+  "candidate_lines_total": 16,
+  "tool_bootstrap_lines": 14,
   "versioned_download_lines": 2,
-  "covered_candidate_lines": 17,
+  "covered_candidate_lines": 16,
   "immutable_source_archives": [
     {
       "id": "ROOT-ARCHIVE-BOOST-190",
       "source_path": "Telegram/build/docker/centos_env/Dockerfile",
-      "source_line": 903,
+      "source_line": 905,
       "url": "https://archives.boost.io/release/1.90.0/source/boost_1_90_0.tar.gz",
       "version": "1.90.0",
       "sha256": "5e93d582aff26868d581a52ae78c7d8edf3f3064742c6e77901a1f18a437eea9",
-      "status": "pending-recursive-content-accounting"
+      "status": "pending-recursive-content-accounting",
+      "source_commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+      "source_blob_sha": "3fea9e6866e0ea6351f8a13ebb825ebf49cadfc2"
     },
     {
       "id": "ROOT-ARCHIVE-LIBICONV-118",
       "source_path": "Telegram/build/prepare/prepare.py",
-      "source_line": 804,
+      "source_line": 806,
       "url": "https://ftp.gnu.org/pub/gnu/libiconv/libiconv-1.18.tar.gz",
       "version": "1.18",
       "sha256": "3b08f5f4f9b4eb82f151a7040bfd6fe6c6fb922efe4b1659c66ea933276965e8",
-      "status": "pending-recursive-content-accounting"
+      "status": "pending-recursive-content-accounting",
+      "source_commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+      "source_blob_sha": "a9f3dd2d9e4020df958ab5af942376177d66c78b"
     }
   ],
   "non_product_source_toolchain": [
@@ -48,7 +64,21 @@
       ],
       "url": "https://install.python-poetry.org",
       "sha256": "75745ca71373a7b22fa150953543f03d826a52f8e4bc4350328a33bddd668026",
-      "disposition": "non-product-source-toolchain"
+      "disposition": "non-product-source-toolchain",
+      "source_provenance": [
+        {
+          "path": ".github/workflows/docker.yml",
+          "line": 27,
+          "source_commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+          "source_blob_sha": "cba00688d935d50454bfb891fc37e001626cf9a0"
+        },
+        {
+          "path": ".github/workflows/linux.yml",
+          "line": 72,
+          "source_commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+          "source_blob_sha": "dbedd23593c5ea66ff9b8b880bda6a8bc5a4cc55"
+        }
+      ]
     },
     {
       "id": "TOOL-CCACHE-4136",
@@ -60,44 +90,77 @@
       ],
       "url": "https://github.com/ccache/ccache/releases/download/v4.13.6/ccache-4.13.6-linux-x86_64-glibc.tar.xz",
       "sha256": "508b2a1217dc6e04a23e967c7b95a0fb45d8a7e16fde9e180919698f2e2be060",
-      "disposition": "non-product-source-toolchain"
+      "disposition": "non-product-source-toolchain",
+      "source_provenance": [
+        {
+          "path": ".github/workflows/linux.yml",
+          "line": 73,
+          "source_commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+          "source_blob_sha": "dbedd23593c5ea66ff9b8b880bda6a8bc5a4cc55"
+        }
+      ]
     },
     {
       "id": "TOOL-RUSTUP-INSTALLER",
       "candidate_lines": [
         [
-          "snap/snapcraft.yaml",
-          490
-        ],
-        [
           "Telegram/build/docker/centos_env/Dockerfile",
-          998
+          1001
         ],
         [
           "Telegram/build/prepare/prepare.py",
-          597
+          598
         ]
       ],
       "url": "https://sh.rustup.rs",
       "sha256": "7d0ea0f8eba7fa1ebfe998091cd7ec4501e33ec5ca6b884eb4d894d7da5170af",
-      "disposition": "non-product-source-toolchain"
+      "disposition": "non-product-source-toolchain",
+      "source_provenance": [
+        {
+          "path": "Telegram/build/docker/centos_env/Dockerfile",
+          "line": 1001,
+          "source_commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+          "source_blob_sha": "3fea9e6866e0ea6351f8a13ebb825ebf49cadfc2"
+        },
+        {
+          "path": "Telegram/build/prepare/prepare.py",
+          "line": 598,
+          "source_commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+          "source_blob_sha": "a9f3dd2d9e4020df958ab5af942376177d66c78b"
+        }
+      ]
     },
     {
       "id": "TOOL-GYP-MASTER",
       "candidate_lines": [
         [
           "Telegram/build/prepare/prepare.py",
-          580
+          581
         ],
         [
           "Telegram/build/prepare/prepare.py",
-          583
+          584
         ]
       ],
       "repository": "https://chromium.googlesource.com/external/gyp",
       "observed_ref": "master",
       "commit": "1615ec326858f8c2bd8f30b3a86ea71830409ce4",
-      "disposition": "non-product-source-toolchain"
+      "disposition": "non-product-source-toolchain",
+      "source_provenance": [
+        {
+          "path": "Telegram/build/prepare/prepare.py",
+          "line": 581,
+          "source_commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+          "source_blob_sha": "a9f3dd2d9e4020df958ab5af942376177d66c78b"
+        },
+        {
+          "path": "Telegram/build/prepare/prepare.py",
+          "line": 584,
+          "source_commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+          "source_blob_sha": "a9f3dd2d9e4020df958ab5af942376177d66c78b"
+        }
+      ],
+      "commit_resolution_scope": "historical-resolution-only-not-reattributed-to-fixed-u-master"
     },
     {
       "id": "TOOL-ROCKY-DNF-PIP",
@@ -116,30 +179,76 @@
         ],
         [
           "Telegram/build/docker/centos_env/Dockerfile",
-          30
+          31
         ]
       ],
       "disposition": "non-product-source-toolchain",
-      "rationale": "compiler/build-environment packages; product source responsibility is not supplied by these package-manager commands"
+      "rationale": "compiler/build-environment packages; product source responsibility is not supplied by these package-manager commands",
+      "source_provenance": [
+        {
+          "path": "Telegram/build/docker/centos_env/Dockerfile",
+          "line": 14,
+          "source_commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+          "source_blob_sha": "3fea9e6866e0ea6351f8a13ebb825ebf49cadfc2"
+        },
+        {
+          "path": "Telegram/build/docker/centos_env/Dockerfile",
+          "line": 16,
+          "source_commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+          "source_blob_sha": "3fea9e6866e0ea6351f8a13ebb825ebf49cadfc2"
+        },
+        {
+          "path": "Telegram/build/docker/centos_env/Dockerfile",
+          "line": 18,
+          "source_commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+          "source_blob_sha": "3fea9e6866e0ea6351f8a13ebb825ebf49cadfc2"
+        },
+        {
+          "path": "Telegram/build/docker/centos_env/Dockerfile",
+          "line": 31,
+          "source_commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+          "source_blob_sha": "3fea9e6866e0ea6351f8a13ebb825ebf49cadfc2"
+        }
+      ]
     },
     {
       "id": "TOOL-MSYS2-PIP",
       "candidate_lines": [
         [
           "Telegram/build/prepare/prepare.py",
-          541
-        ],
-        [
-          "Telegram/build/prepare/prepare.py",
           542
         ],
         [
           "Telegram/build/prepare/prepare.py",
-          556
+          543
+        ],
+        [
+          "Telegram/build/prepare/prepare.py",
+          557
         ]
       ],
       "disposition": "non-product-source-toolchain",
-      "rationale": "build-environment bootstrap packages, not product source responsibility"
+      "rationale": "build-environment bootstrap packages, not product source responsibility",
+      "source_provenance": [
+        {
+          "path": "Telegram/build/prepare/prepare.py",
+          "line": 542,
+          "source_commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+          "source_blob_sha": "a9f3dd2d9e4020df958ab5af942376177d66c78b"
+        },
+        {
+          "path": "Telegram/build/prepare/prepare.py",
+          "line": 543,
+          "source_commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+          "source_blob_sha": "a9f3dd2d9e4020df958ab5af942376177d66c78b"
+        },
+        {
+          "path": "Telegram/build/prepare/prepare.py",
+          "line": 557,
+          "source_commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+          "source_blob_sha": "a9f3dd2d9e4020df958ab5af942376177d66c78b"
+        }
+      ]
     }
   ]
 }
