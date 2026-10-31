@@ -2711,3 +2711,19 @@ The contract test records that stale `node.*` availability is ignored and that
 the system-run capability is emitted only with the current `system.run`
 command. This is a static contract correction only: no new producer, executor,
 remote transport, plugin inventory, or live acceptance was added.
+
+## 203. Local manifest producer wired to canonical runtime state (2026-10-31)
+
+Host startup now derives the `sand-local-node` command surface through the
+Rust `NodeHostManifest` builder from the one real local invoke branch,
+`system.run`, owned by `HostLocalExecExtension`. The resulting commands and
+manifest capability are combined with the existing Host gateway capabilities
+and stored directly in the one `NodeHostRuntimeState` session lease consumed by
+`node.register`, `node.list`, `node.status`, and manifest-gated invocation
+admission.
+
+No remote Gateway caller, plugin/worker inventory producer, `system.run.prepare`
+executor, `system.which` executor, or additional command was introduced. The
+producer-to-state-to-consumer path is therefore closed only for local
+`system.run`; remote transport and the remaining upstream command owners stay
+pending.

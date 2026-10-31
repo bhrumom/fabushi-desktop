@@ -251,6 +251,9 @@ use mahayana_host_runtime::extensions::node_host::invoke_protocol::{
 };
 use mahayana_host_runtime::extensions::node_host::invocation_runtime::NodeHostInvocationRuntime;
 use mahayana_host_runtime::extensions::node_host::runtime_state::NodeHostRuntimeState;
+use mahayana_host_runtime::extensions::node_host::runtime_manifest::{
+    NodeHostManifest, NODE_SYSTEM_RUN_COMMAND,
+};
 use mahayana_host_runtime::host_production_extensions::{
     CURRENT_SHIPPING_PRODUCTION_EXTENSION_IDS, start_production_host_box_extensions,
     start_production_host_extensions,
@@ -14140,6 +14143,20 @@ fn main() {
             .unwrap_or_else(|_| DevicePairingOwner::in_memory().expect("in-memory device pairing db"))
     );
     let node_host_runtime = Arc::new(NodeHostRuntimeState::new());
+    let local_available_commands = [NODE_SYSTEM_RUN_COMMAND.to_string()]
+        .into_iter()
+        .collect::<HashSet<_>>();
+    let local_manifest = NodeHostManifest::build(
+        &local_available_commands,
+        false,
+        false,
+        None,
+    );
+    let mut local_capabilities = HOST_CAPABILITIES
+        .iter()
+        .map(|capability| (*capability).to_string())
+        .collect::<Vec<_>>();
+    local_capabilities.extend(local_manifest.capabilities.iter().cloned());
     let local_session = node_host_runtime.connect(NodeHostSessionMetadata {
         node_id: "sand-local-node".into(),
         display_name: "Local Host Node".into(),
@@ -14148,11 +14165,8 @@ fn main() {
         // Advertise only the command with a real production invoke branch.
         // Canvas/Computer command names remain unavailable until their
         // existing owners are wired through this node boundary.
-        commands: vec!["system.run".into()],
-        capabilities: HOST_CAPABILITIES
-            .iter()
-            .map(|capability| (*capability).to_string())
-            .collect(),
+        commands: local_manifest.advertised_commands,
+        capabilities: local_capabilities,
         paired: true,
         gateway_local: true,
     });
