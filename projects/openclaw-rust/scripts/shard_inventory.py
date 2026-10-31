@@ -113,8 +113,8 @@ def write(path):
     (SHARDS / "manifest.json").write_text(json.dumps(manifest, sort_keys=True, indent=2, ensure_ascii=False) + "\n")
     DEPS.write_text(json.dumps(dependency_declarations(rows, doc["upstream"], lock), sort_keys=True, indent=2, ensure_ascii=False) + "\n")
     index = json.loads(INDEX.read_text())
-    applicability_assessed = sum(e.get("applicability_status") != "unknown" for e in rows)
-    dispositioned = sum(e.get("disposition_status") not in {"pending", "deep-read-required"} for e in rows)
+    applicability_assessed = sum((e.get("applicability_status") or "unknown") != "unknown" for e in rows)
+    dispositioned = sum((e.get("disposition_status") or "pending") not in {"pending", "deep-read-required"} for e in rows)
     unreviewed_applicable = sum(
         e.get("applicability_status") in {"product", "mixed"}
         and (e.get("responsibility_status") != "reviewed" or not e.get("responsibility_ids"))
