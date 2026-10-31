@@ -241,6 +241,11 @@ producer path 纠正为实际的 `source/host/src/runner/tools/` 位置；
 tests 支撑的 wired 行。该结果只证明静态目标可达性，不证明 Actions exact
 receipt、packaged runtime reachability、真实服务/设备或最终验收。
 
+RTM 证据完整性审计显示 48 行中 31 行为 `in-progress`，每行至少有 evidence
+与 reviewer；17 行为 `not-started`，其中基础/终验行保留空 evidence、责任或
+gate，未伪造尚未取得的证明。没有发现 `in-progress` 但完全无 evidence 或无
+reviewer 的误标；这只证明 RTM 状态诚实，不证明任何 AC 已接受。
+
 同一只读维度审计通过：1,419 条 `read-complete`/mapped 记录均有 reviewer、
 disposition 与 evidence；57,331 条 `unread`/unclassified 记录没有伪造
 disposition；未发现 mapped-without-disposition、unclassified-with-disposition、
