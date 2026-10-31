@@ -219,6 +219,18 @@ directories），根输入 blob identities 保持不变。该 exact subject 已�
 `upstream.lock.json::live_candidate`，但仍是 discovery-only；旧 candidate 的
 inventory、依赖 probe、closure 和 Actions provenance 均不可直接复用。
 
+2026-10-31T08:09:58Z 的只读远端复核又发现 `openclaw/openclaw` 的 `main` 已漂移到
+commit=`1b870b2c78e81fded72913ecba732b84b611ca12`、root tree
+`199fe97259d0226ce0e4d3dcec603252376c9205`。相对 `db59290c…` 的 GitHub
+compare 为 `ahead_by=2`、`behind_by=0`、`total_commits=2`，返回 7 个文件；其中
+包含 `src/config/sessions/lifecycle.ts`、`src/cron/isolated-agent/session-cleanup.ts`
+与 `src/agents/subagents/registry/subagent-session-cleanup.ts` 等已映射 session/cron
+生命周期路径，以及 PDF provider/test 支持文件。根 dependency/license input
+identities 保持不变；递归 tree 未截断，为 63,994 entries（61,753 blobs、2,241
+directories），无 gitlink。该 subject 已同步到 `upstream.lock.json::live_candidate`，
+但 mapped session/cron 路径必须重新读取后才能复用责任证据；旧 inventory、依赖闭包
+和 Actions provenance 仍不可复用，authority/global flags 不变。
+
 当前 parity ledger 的 10 条 `not-started/not-wired` 责任已在
 `dossiers/not-started-responsibility-frontier-20261031.md` 做了逐条 frontier
 审计：它们缺少生产 producer/consumer、拥有明确 ACP/plugin blocker，或只能从

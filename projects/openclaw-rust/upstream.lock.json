@@ -25,13 +25,13 @@
   "live_candidate": {
     "repository": "openclaw/openclaw",
     "ref": "refs/heads/main",
-    "commit": "db59290c33e1768cce8a461e2697cff7108c5a69",
-    "tree": "c1e4818f8f877576c02da1573e7dc809d1fdd800",
-    "observed_at": "2026-10-31T08:07:28Z",
+    "commit": "1b870b2c78e81fded72913ecba732b84b611ca12",
+    "tree": "199fe97259d0226ce0e4d3dcec603252376c9205",
+    "observed_at": "2026-10-31T08:09:58Z",
     "discovery_source": "GitHub commit/tree API",
     "recursive_tree_truncated": false,
-    "recursive_tree_entries": 63993,
-    "recursive_blob_entries": 61752,
+    "recursive_tree_entries": 63994,
+    "recursive_blob_entries": 61753,
     "recursive_directory_entries": 2241,
     "root_inputs": {
       "package.json": "3b8d23201d08859353b3ada3915f9e6fe5266dcf",
@@ -47,9 +47,9 @@
   "drift_from_discovery": {
     "ahead_by": 2,
     "behind_by": 0,
-    "compare_files_returned": 8,
+    "compare_files_returned": 7,
     "compare_file_counts_are_not_complete": false,
-    "decision": "live-main-drifted-again-to-db59290; exact compare from 2910c0d is two commits ahead with eight UI/gateway test-support and Cron-windowing files changed; recursive-tree-and-root-inputs-revalidated-read-only; retain-discovery-only-status-until-fresh-actions-inventory-and-dependency-closure"
+    "decision": "live-main-drifted-again-to-1b870b2; exact compare from db59290c is two commits ahead with seven files, including mapped session/cron lifecycle paths and PDF provider tests; recursive-tree-and-root-inputs-revalidated-read-only; require fresh source reads before reuse and retain discovery-only status until Actions inventory and dependency closure"
   },
   "root_inputs": {
     "AGENTS.md": "c3deeccdb6b1a4c7137d56297e933bbf19f4d3bf",
