@@ -9,7 +9,7 @@
     "unknown": 16172,
     "unread": 16145,
     "omitted": 0,
-    "responsibilities_total": 71,
+    "responsibilities_total": 72,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -18009,6 +18009,248 @@
       "reviewer": null,
       "license_and_provenance": "Behavioral responsibility is anchored to fixed-U telegramdesktop/tdesktop Telegram/SourceFiles/mtproto/scheme/mtproto.tl@76225965bfc794388db241f3f760db8ab79e84f8. session_private.cpp has no direct rpc_answer_* branch. The implementation is source-neutral Rust and copies no upstream C++ implementation.",
       "notes": "Stage A implementation only. This row closes exact typed RpcDropAnswer wire decoding only. Outbound rpc_drop_answer request lifecycle and historical request mutation remain explicitly blocked/fail-closed. Global unknown/unread source-entry counts remain unchanged because this is a newly mapped responsibility slice within already-open fixed-U source coverage. Contracts are authored but not executed; validation_status=not-run and accepted=false.",
+      "test_execution_evidence": [],
+      "validation_status": "not-run",
+      "accepted": false
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+      "source_path": "Telegram/SourceFiles/mtproto/scheme/mtproto.tl",
+      "source_blob_sha": "76225965bfc794388db241f3f760db8ab79e84f8",
+      "source_kind": "schema",
+      "module_id": "tdesktop.mtproto.destroy-session-wire",
+      "responsibility_id": "TDRP-R9-MTPROTO-DESTROY-SESSION-WIRE-001",
+      "source_symbols": [
+        "destroy_session_ok#e22045fc session_id:long = DestroySessionRes",
+        "destroy_session_none#62d350c9 session_id:long = DestroySessionRes",
+        "destroy_session#e7512126 session_id:long = DestroySessionRes"
+      ],
+      "capability_ids": [
+        "CAP-EMBEDDED-MTPROTO-RPC-WIRE"
+      ],
+      "dependency_ids": [
+        "EmbeddedTelegramProtocol",
+        "TelegramClientLease",
+        "MTProtoAuthKey"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/evidence/round62-mtproto-destroy-session-wire-20261101.md",
+      "behavior_contract": "The canonical telegram-protocol owner must exactly decode fixed-U DestroySessionRes result objects. destroy_session_ok and destroy_session_none each preserve exactly one session_id:long and reject unknown constructors, truncation, or trailing bytes. Decoding alone performs no live session teardown or request-history mutation.",
+      "state_machine": "authenticated RPC result body or explicit protocol decode -> parse_destroy_session_result -> exact constructor dispatch -> Ok{session_id} or None{session_id} -> malformed/unknown/trailing => protocol error; no live session mutation in this slice",
+      "side_effects": [
+        "Adds fixed-U DestroySessionRes constructor constants to the existing shared telegram-protocol owner",
+        "Adds typed DestroySessionResult variants preserving session_id",
+        "Rejects unknown constructors, truncation, and trailing bytes",
+        "Synchronizes canonical protocol sources byte-for-byte into the existing desktop provider path",
+        "Authors parser contracts without executing them in Stage A"
+      ],
+      "failure_cases": [
+        "destroy_session_ok accepts a missing or truncated session_id",
+        "destroy_session_none accepts a missing or truncated session_id",
+        "Either result accepts trailing bytes",
+        "Decoded result tears down or mutates a live session without a canonical outbound destroy-session lifecycle",
+        "Implementation invents wasSent/haveSent/_resendingIds/toSend/_sentContainers state"
+      ],
+      "ui_disposition": "No UI change. This is MTProto RPC result wire decoding inside the existing embedded protocol owner.",
+      "non_ui_responsibilities": [
+        "Exact fixed-U DestroySessionRes constructor dispatch",
+        "Exact session_id:long decoding for Ok and None",
+        "Truncation and trailing-byte fail-closed validation",
+        "No-side-effect typed protocol representation"
+      ],
+      "platform_delta": "Adds only exact DestroySessionRes decoding to the existing source-neutral Rust telegram-protocol owner. No outbound destroy_session lifecycle, live teardown orchestration, historical request registry, gzip runtime, difference decoder, or second Telegram runtime is added.",
+      "existing_owner_candidates": [
+        "bhrumom/fabushi-platform-core:native/telegram-protocol/src/api.rs",
+        "bhrumom/fabushi-platform-core:native/telegram-protocol/src/lib.rs",
+        "source/mahayana/mahayana-rs/providers/telegram-protocol/src/api.rs",
+        "source/mahayana/mahayana-rs/providers/telegram-protocol/src/lib.rs"
+      ],
+      "existing_owner": "Canonical shared telegram-protocol typed MTProto parser, consumed through the existing desktop provider path",
+      "rejected_existing_owners": [
+        "telegram-network cannot invent session teardown semantics because no canonical outbound destroy_session production call path/lifecycle exists",
+        "Renderer/AppHost cannot own MTProto wire decoding",
+        "A second session registry or request-history owner would split lifecycle truth",
+        "gzip/difference owners are unrelated to this independent wire object"
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "bhrumom/fabushi-platform-core:native/telegram-protocol/src/api.rs",
+        "bhrumom/fabushi-platform-core:native/telegram-protocol/src/lib.rs",
+        "source/mahayana/mahayana-rs/providers/telegram-protocol/src/api.rs",
+        "source/mahayana/mahayana-rs/providers/telegram-protocol/src/lib.rs"
+      ],
+      "fabushi_target_symbols": [
+        "DESTROY_SESSION_OK_CONSTRUCTOR",
+        "DESTROY_SESSION_NONE_CONSTRUCTOR",
+        "DestroySessionResult",
+        "parse_destroy_session_result"
+      ],
+      "target_language": "Rust",
+      "language_rationale": "The existing Rust telegram-protocol crate already owns exact TL decoding for adjacent MTProto RPC result objects; this wire-only responsibility belongs there without creating a teardown subsystem.",
+      "command_event_contracts": [
+        "destroy_session_ok exact body -> DestroySessionResult::Ok{session_id}",
+        "destroy_session_none exact body -> DestroySessionResult::None{session_id}",
+        "unknown/truncated/trailing body -> protocol parse failure",
+        "decoded DestroySessionResult -> no live session teardown/history side effect in this slice"
+      ],
+      "state_owner": "No live mutable state is owned by this wire-only parser; the existing telegram-protocol owner owns the typed value.",
+      "lifecycle_owner": "Existing account-bound TelegramClientLease -> RuntimeClient -> telegram-protocol dependency chain; outbound destroy_session and teardown lifecycle remain absent/fail-closed.",
+      "persistence_and_restart": "No persistence is introduced.",
+      "concurrency_and_cancellation": "No concurrency or cancellation lifecycle is introduced. Live teardown semantics remain blocked pending a canonical existing-owner production path.",
+      "security_boundary": "Only exact typed decode is added; malformed/unknown/trailing objects fail closed before any future consumer may interpret them.",
+      "network_service_dependencies": [
+        "Existing embedded Telegram MTProto encrypted transport",
+        "fixed-U DestroySessionRes schema constructors"
+      ],
+      "service_owner": "Canonical embedded Telegram protocol runtime.",
+      "deployment_evidence": [],
+      "implementation_status": "implemented",
+      "coverage_disposition": "rewritten",
+      "blockers": [
+        "No canonical outbound destroy_session production call path and live session teardown lifecycle exists; interpreting Ok/None as teardown mutations remains fail-closed.",
+        "Stage B executable build/unit/contract/integration/packaged validation has not run.",
+        "gzip_packed bounded decompression remains blocked.",
+        "Complete updates difference/differenceSlice decoding/application remains open/fail-closed.",
+        "Arbitrary wasSent/haveSent/_resendingIds/toSend/_sentContainers histories remain open/fail-closed.",
+        "Broader fixed-U source/legal/release closure remains open."
+      ],
+      "production_entrypoints": [
+        "source/mahayana/mahayana-rs/Cargo.toml -> mahayana-telegram -> providers/telegram-protocol",
+        "providers/telegram-protocol public API -> parse_destroy_session_result; no outbound destroy_session consumer is claimed"
+      ],
+      "production_evidence": [
+        "platform-core-spec-commit:dee7cff150070d7891478510386674970a6217af",
+        "platform-core-implementation-commit:cfe6a0564c40d2c9b9ea62b686470139a1eeb2ab",
+        "platform-core-path:native/telegram-protocol/src/api.rs@d82cca134274b8d939c1140ec44ee00230e2cfac",
+        "platform-core-path:native/telegram-protocol/src/lib.rs@655498ce9db2faf8a76f093250d4a1f02f77ff67",
+        "desktop-implementation-commit:b179796344fba3e22bccb1310b74f229d613b531",
+        "path:source/mahayana/mahayana-rs/providers/telegram-protocol/src/api.rs@d82cca134274b8d939c1140ec44ee00230e2cfac",
+        "path:source/mahayana/mahayana-rs/providers/telegram-protocol/src/lib.rs@655498ce9db2faf8a76f093250d4a1f02f77ff67"
+      ],
+      "test_evidence": [
+        "platform-core native/telegram-protocol/src/api.rs both-variant exact parse/session-id preservation contract authored, not run",
+        "platform-core native/telegram-protocol/src/api.rs unknown-constructor, truncation and trailing rejection contract authored, not run",
+        "desktop synchronized protocol contracts authored, not run"
+      ],
+      "target_commit": "b179796344fba3e22bccb1310b74f229d613b531",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Canonical Fabushi account + existing TelegramClientLease/runtime + shared telegram-protocol production composition",
+      "composition_slot": "Embedded Telegram MTProto RPC result wire decoding",
+      "capability_component": "Typed fixed-U DestroySessionRes wire parser",
+      "variation_axes": [
+        "Ok vs None",
+        "exact vs unknown/truncated/trailing payload"
+      ],
+      "shared_owner_contracts": [
+        "Existing account-bound TelegramClientLease",
+        "Existing RuntimeClient",
+        "Existing telegram-protocol TlReader",
+        "Existing Cargo path-dependency composition"
+      ],
+      "duplicate_root_check": "No second account, runtime, provider, transport, auth key, session registry, request history, callback registry, sent-container store, decompression runtime, difference runtime, message store, UI root, sidecar, subprocess or Web wrapper was introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Not applicable",
+      "primary_navigation_target": "Existing Messages/Conversation navigation",
+      "collection_surface": "Existing ConversationList; no change",
+      "creation_flow": "Existing canonical conversation creation; no change",
+      "object_action_scope": "Not applicable",
+      "detail_section": "Not applicable",
+      "capability_surface": "Existing ConversationWorkspace through the same provider/runtime; no new surface",
+      "route_contract": "No new route.",
+      "search_scope": "Not applicable",
+      "search_provider": "Existing canonical Search owner; unchanged",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Unchanged.",
+      "search_local_remote_contract": "Not applicable.",
+      "responsive_disposition": "No UI change.",
+      "accessibility_contract": "No UI change.",
+      "keyboard_contract": "No UI change.",
+      "state_continuity_contract": "Wire decoding is side-effect free. Live session state is intentionally unchanged because no canonical destroy-session teardown lifecycle is present.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Existing Fabushi design system; no visual changes",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": null,
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "No new icon asset",
+      "avatar_contract": "No change",
+      "content_copy_keys": [],
+      "motion_contract": "No change",
+      "reduced_motion_contract": "No change",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "high",
+      "requirement_ids": [
+        "TDRP-R9-MTPROTO-DESTROY-SESSION-WIRE-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-MTPROTO-DESTROY-SESSION-WIRE-001",
+        "ORA-TDRP-MTPROTO-DESTROY-SESSION-FAIL-CLOSED-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-MTPROTO-DESTROY-SESSION-EXACT-001",
+        "INV-TDRP-MTPROTO-DESTROY-SESSION-NO-TEARDOWN-001"
+      ],
+      "unit_case_ids": [
+        "UNIT-TDRP-MTPROTO-DESTROY-SESSION-PARSE-001",
+        "UNIT-TDRP-MTPROTO-DESTROY-SESSION-MALFORMED-001"
+      ],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-MTPROTO-DESTROY-SESSION-WIRE-001"
+      ],
+      "integration_case_ids": [],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "fault_recovery_case_ids": [
+        "FAULT-TDRP-MTPROTO-DESTROY-SESSION-MALFORMED-001"
+      ],
+      "performance_case_ids": [],
+      "security_case_ids": [
+        "SEC-TDRP-MTPROTO-DESTROY-SESSION-FAIL-CLOSED-001"
+      ],
+      "soak_case_ids": [],
+      "exploratory_charter_ids": [],
+      "regression_ids": [
+        "REG-TDRP-MTPROTO-DESTROY-SESSION-TRAILING-001"
+      ],
+      "release_gate_ids": [
+        "G-TRACEABILITY",
+        "G-COMPOSITION",
+        "G-SECURITY",
+        "G-EVIDENCE",
+        "G-RELEASE"
+      ],
+      "test_fixture_ids": [
+        "mtproto-destroy-session-fixture"
+      ],
+      "test_environment_ids": [
+        "GitHub Actions Stage B matrix (not run)"
+      ],
+      "coverage_matrix_status": "pending",
+      "flake_status": "stable",
+      "release_gate_status": "pending",
+      "acceptance_reviewer": null,
+      "reviewer": null,
+      "license_and_provenance": "Behavioral responsibility is anchored to fixed-U telegramdesktop/tdesktop Telegram/SourceFiles/mtproto/scheme/mtproto.tl@76225965bfc794388db241f3f760db8ab79e84f8. session_private.cpp has no direct destroy_session_* receive branch. The implementation is source-neutral Rust and copies no upstream C++ implementation.",
+      "notes": "Stage A implementation only. This row closes exact typed DestroySessionRes wire decoding only. Outbound destroy_session request lifecycle and live session teardown semantics remain explicitly blocked/fail-closed. Global unknown/unread source-entry counts remain unchanged because this is a newly mapped responsibility slice within already-open fixed-U source coverage. Contracts are authored but not executed; validation_status=not-run and accepted=false.",
       "test_execution_evidence": [],
       "validation_status": "not-run",
       "accepted": false

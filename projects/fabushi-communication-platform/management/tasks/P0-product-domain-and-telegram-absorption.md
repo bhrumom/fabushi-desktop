@@ -335,3 +335,14 @@ Spec-first canonical work: platform-core spec `0c85884ee491d985e4fbf0d6ec1d1acca
 Ledger adds `TDRP-R9-MTPROTO-RPC-DROP-ANSWER-WIRE-001`; `responsibilities_total=71`, while `unknown=16172`, `unread=16145`, and `omitted=0` remain unchanged. No outbound `rpc_drop_answer` production call path or historical request registry exists, so interpreting these results as drop/cancel state mutations remains explicitly fail-closed; no `wasSent/haveSent/_resendingIds/toSend/_sentContainers` semantics were invented.
 
 Parser contracts are authored only. No Actions/status/check query or trigger, build, typecheck, lint, schema validator, generator, unit/contract/integration/E2E test, package, deployment, installation, or runtime acceptance was performed. `validation_status=not-run`, `accepted=false`.
+
+
+## Stage-A MTProto DestroySessionRes exact wire validation (round 62, 2026-11-01)
+
+Fixed U remains `f985723b552b30fe1c17d377d57f44e61a15a8c4`. `mtproto.tl@76225965bfc794388db241f3f760db8ab79e84f8` declares `destroy_session_ok#e22045fc session_id:long`, `destroy_session_none#62d350c9 session_id:long`, and `destroy_session#e7512126 session_id:long`. The fixed-U `session_private.cpp@13cbc76ec723386027b5b4dcac79999b791c4614` has no direct `destroy_session_*` receive branch, so wire decoding is separated from any live teardown lifecycle.
+
+Spec-first canonical work is on `bhrumom/fabushi-platform-core checkpoint/tdrp-telegram-auth-lifecycle-7457eb1c-r16`: spec commit `dee7cff150070d7891478510386674970a6217af`, implementation `cfe6a0564c40d2c9b9ea62b686470139a1eeb2ab`; canonical blobs api `d82cca134274b8d939c1140ec44ee00230e2cfac`, lib `655498ce9db2faf8a76f093250d4a1f02f77ff67`. The existing protocol owner now exports typed `DestroySessionResult::{Ok,None}` and `parse_destroy_session_result`; both variants preserve exactly one `session_id:long` and reject unknown constructors, truncation, and trailing bytes. Desktop implementation `b179796344fba3e22bccb1310b74f229d613b531` synchronizes both protocol blobs byte-for-byte.
+
+Ledger adds `TDRP-R9-MTPROTO-DESTROY-SESSION-WIRE-001`; `responsibilities_total=72`, while `unknown=16172`, `unread=16145`, and `omitted=0` remain unchanged. No canonical outbound `destroy_session` production path or live teardown owner exists, so interpreting Ok/None as session mutation remains explicitly fail-closed; no `wasSent/haveSent/_resendingIds/toSend/_sentContainers` semantics were invented.
+
+Parser contracts are authored only. No Actions/status/check query or trigger, build, typecheck, lint, schema validator, generator, unit/contract/integration/E2E test, package, deployment, installation, or runtime acceptance was performed. `validation_status=not-run`, `accepted=false`.
