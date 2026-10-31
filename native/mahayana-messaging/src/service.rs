@@ -511,13 +511,9 @@ impl<S: MessagingStateStore> MessagingService<S> {
                 can_send_messages: conversation.permissions.can_send_messages,
                 can_send_media: conversation.permissions.can_send_media,
                 can_send_polls: conversation.permissions.can_send_polls,
-                // Conversation has no canonical send-other permission axis yet; fail closed
-                // whenever a caller requests that capability instead of assuming exposure.
-                can_send_other: false,
-                // Inline/game permissions are not yet represented by the canonical Conversation
-                // owner, so SearchRecipients refuses those typed requests until that owner exists.
-                can_send_inline: false,
-                can_send_games: false,
+                can_send_other: conversation.permissions.can_send_other,
+                can_send_inline: conversation.permissions.can_send_inline,
+                can_send_games: conversation.permissions.can_send_games,
                 community_forbidden: community_member.is_some_and(|member| {
                     matches!(member.status, MemberStatus::Left | MemberStatus::Banned)
                 }),
