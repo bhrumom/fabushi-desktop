@@ -30975,10 +30975,10 @@
       ],
       "id": "OCRM-RESP-PLUGIN-SDK-ALLOW-FROM-API-BASELINE-001",
       "integration": {
-        "consumer": "source/host/src/extensions/plugin_sdk/mod.rs",
-        "entrypoint": "source/host/src/extensions/plugin_sdk/mod.rs",
+        "consumer": "source/host/src/extensions/plugins/capability_catalog.rs::PluginCapabilityCatalog::register_bundled_channel_entry",
+        "entrypoint": "source/host/src/host_production_extensions.rs::register_bundled_channel_capabilities",
         "owner": "source/host/src/extensions/plugin_sdk/mod.rs",
-        "producer": "source/host/src/extensions/plugin_sdk/mod.rs"
+        "producer": "source/host/src/host_production_extensions.rs::register_bundled_channel_capabilities"
       },
       "invariants": [
         "Allow-from empty allowlists deny senders by default while wildcard allows all",

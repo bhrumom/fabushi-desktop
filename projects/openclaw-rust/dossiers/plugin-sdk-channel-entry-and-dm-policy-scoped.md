@@ -52,3 +52,15 @@
 - Mapped Files: 10 added (Total mapped: 785 / 58,750).
 - Unclassified Remaining: 57,965.
 - Global completion flags: all 8 remaining `false` (fail-closed).
+
+## 6. Current production reachability boundary (2026-10-31)
+
+`ProductionHostExtensions::register_bundled_channel_capabilities` creates the
+Rust `BundledChannelEntryContract` for each immutable bundled channel and
+passes it to the existing `PluginCapabilityCatalog::register_bundled_channel_entry`
+owner in `Capabilities` mode. This is a real production catalog consumer for
+channel-entry capability metadata. The function deliberately does not create
+transport credentials, a `ChannelDeliveryPort`, channel session state, or an
+inbound producer; therefore the responsibility remains
+`wiring=not-wired` for the full plugin runtime contract and acceptance remains
+pending.
