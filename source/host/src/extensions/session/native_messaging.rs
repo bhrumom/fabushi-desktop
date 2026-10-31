@@ -70,6 +70,14 @@ pub struct FabushiRemoteHumanMessage {
     pub attachments: Vec<FabushiRemoteHumanAttachment>,
     #[serde(default)]
     pub reactions: Vec<FabushiRemoteHumanReaction>,
+    #[serde(default)]
+    pub revision: Option<u64>,
+    #[serde(default)]
+    pub edited_at: Option<String>,
+    #[serde(default)]
+    pub deleted_at: Option<String>,
+    #[serde(default)]
+    pub is_deleted: bool,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize, PartialEq)]
@@ -208,6 +216,21 @@ struct SendRequest<'a> {
     reply_to_message_id: Option<&'a str>,
     #[serde(skip_serializing_if = "Vec::is_empty")]
     attachments: Vec<SendAttachmentRequest<'a>>,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct EditMessageRequest<'a> {
+    text: &'a str,
+    operation_id: &'a str,
+    expected_revision: u64,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct DeleteMessageRequest<'a> {
+    operation_id: &'a str,
+    expected_revision: u64,
 }
 
 #[derive(Debug, Serialize)]
@@ -555,6 +578,137 @@ impl FabushiNativeMessagingClient {
         envelope
             .message
             .ok_or_else(|| "Fabushi Human message response omitted the persisted message.".to_string())
+    }
+
+    pub fn edit_direct_message(
+        &self,
+        message_id: &str,
+        text: &str,
+        operation_id: &str,
+        expected_revision: u64,
+    ) -> Result<FabushiRemoteHumanMessage, String> {
+        let message_id = required_trimmed(message_id, "message id")?;
+        if message_id.parse::<u64>().ok().filter(|value| *value > 0).is_none() {
+            return Err("Fabushi Human edit requires a positive canonical message id".into());
+        }
+        let text = text.trim();
+        let operation_id = required_trimmed(operation_id, "operation id")?;
+        if operation_id.len() > 200 {
+            return Err("Fabushi Human edit operation id exceeds the backend limit".into());
+        }
+        if expected_revision == 0 {
+            return Err("Fabushi Human edit requires a positive expected revision".into());
+        }
+        let credentials = self.read_bound_credentials()?;
+        let path = format!("/api/social/messages/{message_id}");
+        let response = self
+            .client
+            .patch(self.endpoint(&path)?)
+            .bearer_auth(required_trimmed(&credentials.access_token, "accessToken")?)
+            .header(
+                "x-fabushi-device-id",
+                required_trimmed(&credentials.device_id, "deviceId")?,
+            )
+            .header("accept", "application/json")
+            .json(&EditMessageRequest {
+                text,
+                operation_id,
+                expected_revision,
+            })
+            .send()
+            .map_err(|error| format!("Fabushi Human edit mutation failed: {error}"))?;
+        let status = response.status();
+        let body = response
+            .text()
+            .map_err(|error| format!("Fabushi Human edit response could not be read: {error}"))?;
+        let envelope: SendEnvelope = serde_json::from_str(&body).map_err(|error| {
+            format!(
+                "Fabushi Human edit response was invalid JSON (HTTP {}): {error}",
+                status.as_u16()
+            )
+        })?;
+        if !status.is_success() || !envelope.success {
+            return Err(format!(
+                "Fabushi Human edit mutation was rejected (HTTP {}): {}",
+                status.as_u16(),
+                envelope.error.unwrap_or_else(|| "unknown backend error".into())
+            ));
+        }
+        let message = envelope
+            .message
+            .ok_or_else(|| "Fabushi Human edit response omitted the canonical message.".to_string())?;
+        let returned_id = fabushi_identity_text(&message.id)?;
+        if returned_id != message_id {
+            return Err("Fabushi Human edit backend returned a mismatched message id".into());
+        }
+        if message.revision.unwrap_or(0) <= expected_revision || message.is_deleted {
+            return Err("Fabushi Human edit backend returned a non-advancing or deleted message".into());
+        }
+        Ok(message)
+    }
+
+    pub fn delete_direct_message(
+        &self,
+        message_id: &str,
+        operation_id: &str,
+        expected_revision: u64,
+    ) -> Result<FabushiRemoteHumanMessage, String> {
+        let message_id = required_trimmed(message_id, "message id")?;
+        if message_id.parse::<u64>().ok().filter(|value| *value > 0).is_none() {
+            return Err("Fabushi Human delete requires a positive canonical message id".into());
+        }
+        let operation_id = required_trimmed(operation_id, "operation id")?;
+        if operation_id.len() > 200 {
+            return Err("Fabushi Human delete operation id exceeds the backend limit".into());
+        }
+        if expected_revision == 0 {
+            return Err("Fabushi Human delete requires a positive expected revision".into());
+        }
+        let credentials = self.read_bound_credentials()?;
+        let path = format!("/api/social/messages/{message_id}");
+        let response = self
+            .client
+            .delete(self.endpoint(&path)?)
+            .bearer_auth(required_trimmed(&credentials.access_token, "accessToken")?)
+            .header(
+                "x-fabushi-device-id",
+                required_trimmed(&credentials.device_id, "deviceId")?,
+            )
+            .header("accept", "application/json")
+            .json(&DeleteMessageRequest {
+                operation_id,
+                expected_revision,
+            })
+            .send()
+            .map_err(|error| format!("Fabushi Human delete mutation failed: {error}"))?;
+        let status = response.status();
+        let body = response
+            .text()
+            .map_err(|error| format!("Fabushi Human delete response could not be read: {error}"))?;
+        let envelope: SendEnvelope = serde_json::from_str(&body).map_err(|error| {
+            format!(
+                "Fabushi Human delete response was invalid JSON (HTTP {}): {error}",
+                status.as_u16()
+            )
+        })?;
+        if !status.is_success() || !envelope.success {
+            return Err(format!(
+                "Fabushi Human delete mutation was rejected (HTTP {}): {}",
+                status.as_u16(),
+                envelope.error.unwrap_or_else(|| "unknown backend error".into())
+            ));
+        }
+        let message = envelope
+            .message
+            .ok_or_else(|| "Fabushi Human delete response omitted the canonical message.".to_string())?;
+        let returned_id = fabushi_identity_text(&message.id)?;
+        if returned_id != message_id {
+            return Err("Fabushi Human delete backend returned a mismatched message id".into());
+        }
+        if message.revision.unwrap_or(0) <= expected_revision || !message.is_deleted {
+            return Err("Fabushi Human delete backend returned a non-advancing non-tombstone message".into());
+        }
+        Ok(message)
     }
 
     pub fn set_direct_message_reaction(
