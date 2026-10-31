@@ -194,6 +194,14 @@ dependencies、57 个 devDependencies，以及同树的 lockfile/workspace blob�
 probe 只证明根输入存在与形状，不等价于递归依赖闭包；所有 closure flags 继续
 保持 `false`。
 
+2026-10-31T08:02:48Z 的只读远端复核再次发现 `openclaw/openclaw` 的 `main` 已从
+`77b08d13…/a52b7278…` 漂移到 commit
+`2910c0de8d7d290f9a82ca388f2893d067c06cb1`、tree
+`42dc443420e1b5b84e481f170cd8fccfcc00d7be`。递归 tree 仍未截断，63,993 entries
+（61,752 blobs、2,241 directories），root dependency/license blob identities
+保持不变；lock 已更新 `live_candidate`，但该 subject 仍 discovery-only。此前
+dependency probe 绑定旧 candidate，不能直接充当新 subject 的 closure evidence。
+
 当前 parity ledger 的 10 条 `not-started/not-wired` 责任已在
 `dossiers/not-started-responsibility-frontier-20261031.md` 做了逐条 frontier
 审计：它们缺少生产 producer/consumer、拥有明确 ACP/plugin blocker，或只能从
