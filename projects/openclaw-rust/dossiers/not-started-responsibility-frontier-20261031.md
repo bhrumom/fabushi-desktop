@@ -22,6 +22,34 @@ verification remains pending in the parity ledger.
 | `OCRM-RESP-SESSION-WORK-ADMISSION-001` | `ProductionSessionWorkers` provides general session storage but no work-admission/archive/review lifecycle producer or consumer. | Requires the owning workboard/task lifecycle and terminal review consumer; adding state fields alone would not close the path. |
 | `OCRM-RESP-PLUGINS-BUNDLE-MANIFEST-001` | `bundle_manifest.rs` defines parsing helpers, but no production bundle/archive producer or installer/discovery consumer calls them; Host extension registration currently publishes capability metadata only. | Requires a real plugin bundle ingress, archive custody, install transaction, and activation consumer. Blocker: `BL-PLUGINS-MANIFEST-WIRING-001`. |
 
+## 2026-10-31 plugin-owner boundary recheck
+
+The read-only source search was repeated against the current Fabushi checkout.
+`source/host/src/extensions/plugins/bundle_manifest.rs` exposes the format
+paths, ClawHub spec parser, archive-size limits, and SHA-256 verifier, and
+`extensions/plugins/mod.rs` only exports that module. The only call sites for
+`parse_clawhub_plugin_spec`, `verify_archive_limits`, and
+`verify_sha256_integrity` are the `openclaw_plugins_contract.rs` tests; no
+production Rust caller supplies bundle bytes or consumes a verified bundle.
+
+Two nearby paths are deliberately not promoted to consumers:
+
+- `extensions/mcp/installable_package/ledger.rs` owns the separately scoped
+  mini-app install/activation ledger and `VerifiedPackage` transaction. It is
+  not a plugin bundle ingress and must not be reused as a second interpretation
+  of plugin manifests.
+- `extensions/mcp/skill_publish.rs::read_manifest_name` reads only the
+  `plugin.json` name from an already-installed skill directory for duplicate
+  protection. It does not discover archives, enforce bundle limits, verify
+  bundle digests, or activate plugin code.
+
+This recheck strengthens the existing disposition: the bundle-manifest helper
+is implementation-shaped test support, not production wiring. The next direct
+instrument remains a real marketplace/ClawHub or local-bundle producer through
+the existing plugin install owner, followed by one state/receipt boundary and
+the activation consumer. No ledger status, completion flag, or acceptance
+claim changes from this evidence.
+
 ## Evidence boundary
 
 These are implementation gaps, not acceptance approvals. No row is promoted by the
