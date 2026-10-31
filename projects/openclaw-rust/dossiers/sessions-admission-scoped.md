@@ -214,3 +214,17 @@ or review settlement. This is a fixture/test-flaw, not implementation or
 integration evidence. The parity row is therefore `implementation=not-started`,
 `wiring=not-wired`, `verification=not-run`, and `acceptance=pending` until the
 real lifecycle contract and call chain exist.
+
+## 11. Session-key classification production reachability recheck (2026-10-31)
+
+`session_paths.rs::classify_session_kind` is exercised by the O01 contract
+fixture, but a repository-wide non-test search found no production caller for
+that classifier. The public Host app session and chat commands do call
+`reject_public_agent_harness_session_key`, which in turn uses
+`is_agent_harness_session_key`, so the reserved `harness:` namespace guard is
+production-reachable. That guard is only a security boundary; it does not
+prove the complete cron/direct/group/global/spawn-child classification and
+routing contract. The parity row therefore retains `implementation=implemented`
+for the owner helper but is corrected to `wiring=not-wired`,
+`verification=not-run`, and `acceptance=pending` until a real production
+classifier consumer exists.
