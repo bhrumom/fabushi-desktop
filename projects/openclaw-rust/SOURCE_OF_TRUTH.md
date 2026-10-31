@@ -204,6 +204,12 @@ read/disposition 记录。该计数是当前 AC02/G02 final 未闭合的直接�
 unread 强行当作失败门槛，也不能被结构性 inventory 完整或已完成的 scoped
 责任行抵消。
 
+同一只读维度审计通过：1,419 条 `read-complete`/mapped 记录均有 reviewer、
+disposition 与 evidence；57,331 条 `unread`/unclassified 记录没有伪造
+disposition；未发现 mapped-without-disposition、unclassified-with-disposition、
+缺 reviewer 或缺 evidence 的矛盾。该结果只证明旧 baseline inventory 的内部
+状态自洽，不证明当前 candidate 的 source closure 或 AC02 final。
+
 ## 5. 机器记录的初始化与终态
 
 2026-10-31 governance amendment: AC02/G02 final requires zero omitted,
