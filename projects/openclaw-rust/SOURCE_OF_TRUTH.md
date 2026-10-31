@@ -660,6 +660,19 @@ authority/completion flags 不变。
 `dossiers/upstream-current-candidate-dependency-frontier-8c69e8b7-20261031.md`；
 不重写旧 baseline 清单，不提升 dependency closure、source authority 或任何完成 flag。
 
+2026-10-31T12:58:01Z 的只读远端复核发现 OpenClaw `main` 再推进到
+`a79002c971e2231807f3268eb58f20363b5482d6` / tree
+`c42693615111af5103940392bb6e318505760f92`。GitHub recursive-tree API 返回
+`truncated=false`，共 64,101 entries（61,860 blobs、2,241 directories、0
+gitlinks）；commit message 为 `fix(test): bind native command fixture SDK
+hosts (#189386)`。根 package/lock/workspace/license/notice blob identities
+仍未变化；该 exact subject 仍为 discovery-only，前一 candidate 的 inventory、
+依赖闭包、SBOM、LFS/integrity、notice audit、语义阅读和 Actions provenance
+均不得复用。exact diff 为一个 fixture allocation 文件与两个测试文件，
+不构成生产运行时或 Rust wiring 证据。lock live candidate 已更新，固定
+implementation subject、ledger 修订及全部 authority/completion flags 不变。
+详见 `dossiers/upstream-current-candidate-probe-a79002c9-20261031.md`。
+
 2026-10-31T12:53:51Z 的只读远端复核发现 OpenClaw `main` 再推进到
 `eb0183deb6891f07686a1f3cefeaf063c119aaa7` / tree
 `6c66d83fbeba3e74a7142073a2980bd2433722a8`。GitHub recursive-tree API 返回

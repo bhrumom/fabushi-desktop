@@ -477,6 +477,26 @@ authority and completion flags remain unchanged. No CI, push, PR update, local
 OCRM executable verification, build, package, release, or runtime/device
 acceptance was performed.
 
+## Subsequent live recheck — 2026-10-31T12:58:01Z
+
+Read-only GitHub branches/commit/tree API checks resolved
+`openclaw/openclaw` `refs/heads/main` to commit
+`a79002c971e2231807f3268eb58f20363b5482d6`, root tree
+`c42693615111af5103940392bb6e318505760f92`. The recursive tree was not
+truncated and contained 64,101 entries: 61,860 blobs, 2,241 directories, and
+no gitlinks. The commit message is `fix(test): bind native command fixture SDK
+hosts (#189386)`; its GitHub commit verification is valid and root
+dependency/license input blobs remain unchanged.
+
+This supersedes the `eb0183de...` discovery candidate in the lock. Its exact
+diff is limited to one fixture allocation file and two test files, so it is not
+production Rust implementation or wiring evidence. It remains discovery-only:
+no prior inventory, dependency closure, SBOM, LFS/integrity result, notice
+audit, Actions provenance, or source-semantic conclusion is relabeled or
+reused. All authority and completion flags remain unchanged. No CI, push, PR
+update, local OCRM executable verification, build, package, release, or
+runtime/device acceptance was performed.
+
 ## Subsequent live recheck — 2026-10-31T12:53:51Z
 
 Read-only GitHub branches/commit/tree API checks resolved
