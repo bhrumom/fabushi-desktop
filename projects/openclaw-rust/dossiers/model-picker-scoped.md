@@ -65,3 +65,27 @@ selection into `SandSessionOptions` or a live provider request. The pure
 implementation evidence only; the ledger keeps
 `BL-MODEL-PICKER-EXEC-WIRING-001` with `wiring=not-wired`,
 `verification=not-run`, and `acceptance=pending`.
+
+## 5. Fixed-source producer comparison and safe-wiring boundary
+
+The pinned OpenClaw subject has two concrete production mutation paths for
+this responsibility. The Telegram callback router resolves a callback against
+the live provider/model catalog and invokes `applySessionModelSelection` at
+`extensions/telegram/src/bot-handlers.callback-router.ts:546`; the general
+auto-reply directive path invokes the same service at
+`src/auto-reply/reply/get-reply-directives-apply.ts:355`. Both paths construct
+their request from resolved catalog, default-model, session-entry and operator
+context rather than accepting visibility or allowed-model policy from an
+untrusted request body.
+
+The Fabushi target currently has only the portable
+`MessagePresentationAction::ModelPicker` schema/fallback renderer and the
+Rust persistence/evaluation owners. The current gateway surface exposes
+`sessions.*` and `chat.*`, but no model-selection mutation method; a non-test
+search also found no caller for `SandAgentSessionStore::apply_session_model_selection`.
+Therefore the model-picker envelope is not evidence of a usable UI or
+production mutation path. A route that accepts `visibilityAllow` or
+`operatorAllowedModels` from request parameters would violate the existing
+policy owner and is explicitly out of scope. Wiring remains pending until a
+canonical model catalog/operator-authority producer and an authenticated
+session-action caller are available in existing owners.
