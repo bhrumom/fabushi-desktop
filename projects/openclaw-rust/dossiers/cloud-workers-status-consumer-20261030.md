@@ -189,6 +189,17 @@ Bootstrap admission now also requires the requested digest and size to match a
 canonical artifact record in `Verified` state; a shape-valid serialized digest
 alone cannot authorize bootstrap.
 
+## Verified byte admission persistence façade — 2026-10-31
+
+`CloudWorkerProvisioningExtension::verify_and_register_artifact` now verifies
+caller-supplied bytes against the typed source digest and policy, constructs a
+`Verified` artifact admission, and persists it through the same canonical owner
+and atomic store used by other Cloud Worker mutations. Digest, origin and size
+failures remain explicit errors. This binds proof to persistence without
+introducing download, credential egress, extraction, publication, provider
+launch or packaged consumer behavior; those producer and consumer paths remain
+pending.
+
 Warm-image capture ambiguity now has a typed extension façade that persists
 `CaptureUncertain` and cleanup debt under generation fencing. Provider snapshot
 reconciliation and cleanup consumers remain pending.

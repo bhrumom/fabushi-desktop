@@ -394,6 +394,12 @@ artifact store. It now also exposes bounded byte-level SHA-256 verification;
 digest mismatch remains a hard admission failure, while download, extraction,
 publication and managed artifact mutation remain outside this slice.
 
+The Host extension now exposes `verify_and_register_artifact`, which binds
+that byte-level verification to the same canonical owner mutation and atomic
+snapshot persistence. The method returns the typed verified artifact proof and
+cannot claim provider publication; configured acquisition, credential egress,
+extraction, publication and managed artifact consumers remain unwired.
+
 The lease foundation now also includes an explicit transition guard: only a
 completed mutation may advance the lifecycle, submitted/failed/cancelled
 mutations cannot silently change state, and an ambiguous result enters

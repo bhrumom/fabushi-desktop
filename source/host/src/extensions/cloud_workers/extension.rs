@@ -8,7 +8,8 @@ use crate::extensions::extension_ids_generated::HostExtensionId;
 
 use super::{
     CloudWorkerArtifactAdmission, CloudWorkerArtifactAdmissionState,
-    CloudWorkerArtifactDigest, CloudWorkerArtifactPolicy,
+    CloudWorkerArtifactAdmissionError, CloudWorkerArtifactDigest,
+    CloudWorkerArtifactKind, CloudWorkerArtifactPolicy, CloudWorkerArtifactSource,
     CloudWorkerBinaryIdentity, CloudWorkerBootstrapRequest, CloudWorkerCatalog,
     CloudWorkerCatalogError, CloudWorkerDoctorAction, CloudWorkerDoctorError,
     CloudWorkerDoctorRequest, CloudWorkerDoctorResult,
@@ -22,6 +23,7 @@ use super::{
     CloudWorkerProvisioningConfig,
     CloudWorkerProvisioningOwner, CloudWorkerProvisioningStore, CloudWorkerStoreError,
     CloudWorkerWarmImage, CloudWorkerWarmImageGeneration, CloudWorkerWarmImageOperation,
+    verify_artifact_bytes,
 };
 
 pub const CLOUD_WORKERS_EXTENSION_ID: HostExtensionId = HostExtensionId::CloudWorkers;
@@ -96,6 +98,30 @@ impl CloudWorkerProvisioningExtension {
         policy: &CloudWorkerArtifactPolicy,
     ) -> Result<(), CloudWorkerMutationError> {
         self.mutate_and_persist(|owner| owner.register_artifact(artifact, policy))
+    }
+
+    /// Verifies caller-supplied bytes and atomically records the resulting
+    /// verified admission. Download, credential egress and publication remain
+    /// owned by the future artifact producer.
+    pub fn verify_and_register_artifact(
+        &self,
+        kind: CloudWorkerArtifactKind,
+        policy: &CloudWorkerArtifactPolicy,
+        source: &CloudWorkerArtifactSource,
+        bytes: &[u8],
+    ) -> Result<super::CloudWorkerVerifiedArtifact, CloudWorkerMutationError> {
+        let verified = verify_artifact_bytes(policy, source, bytes)
+            .map_err(CloudWorkerMutationError::Artifact)?;
+        let admission = CloudWorkerArtifactAdmission {
+            kind,
+            source: source.clone(),
+            size_bytes: verified.size_bytes,
+            state: CloudWorkerArtifactAdmissionState::Verified,
+        };
+        self.mutate_and_persist(|owner| {
+            owner.register_artifact(admission, policy)?;
+            Ok(verified.clone())
+        })
     }
 
     /// Settles one persisted artifact admission without retrying or hiding an
@@ -384,6 +410,8 @@ impl CloudWorkerProvisioningExtension {
 pub enum CloudWorkerMutationError {
     #[error(transparent)]
     Owner(#[source] CloudWorkerOwnerError),
+    #[error(transparent)]
+    Artifact(#[source] CloudWorkerArtifactAdmissionError),
     #[error(transparent)]
     Persistence(#[source] CloudWorkerStoreError),
     #[error("cloud-worker mutation persistence outcome is unknown: {0}")]
