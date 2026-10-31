@@ -318,6 +318,14 @@ read-complete/responsibility-mapping 记录，但当前 applicability/dispositio
 unread 强行当作失败门槛，也不能被结构性 inventory 完整或已完成的 scoped
 责任行抵消。
 
+随后对 ledger source references 与旧 baseline inventory 的反向 projection 做了
+只读核对：12 个被当前责任 source_refs 明确引用的路径仍在旧分片中保持
+`unread/unclassified` 或缺少对应 responsibility projection，包括本轮补齐的
+session cleanup producer 文件。该差异是旧 inventory 与后续 scoped source-read
+证据之间的 provenance gap；它不证明 source closure，也不允许手工改写旧分片
+来制造双向映射。必须在同一新 exact subject 上重新生成 inventory 并由 Actions
+验证后，才能闭合这些 reverse edges；本轮未运行 validator、generator 或 CI。
+
 2026-10-31 的只读生产可达性审计还纠正了 10 条错误的
 `implemented/wired` 状态：`OCRM-RESP-AUTO-REPLY-HEARTBEAT-001`、
 `OCRM-RESP-CHANNEL-ACCESS-CONTROL-001`、`OCRM-RESP-CHANNEL-INBOUND-DEBOUNCE-001`、
