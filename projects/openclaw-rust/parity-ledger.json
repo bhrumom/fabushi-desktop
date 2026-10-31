@@ -30267,10 +30267,10 @@
       ],
       "id": "OCRM-RESP-SHARED-ASYNC-SCOPE-001",
       "integration": {
-        "consumer": "source/host/src/extensions/shared/async_scope.rs",
+        "consumer": "No production async-scope consumer identified; AsyncWorkTracker::enter is exercised only by source/host/tests/openclaw_snapshot_skills_contract.rs",
         "entrypoint": "source/host/src/extensions/shared/async_scope.rs::AsyncWorkTracker::enter",
         "owner": "source/host/src/extensions/shared/async_scope.rs",
-        "producer": "source/host/src/extensions/shared/async_scope.rs"
+        "producer": "No production task-scope producer identified; retry and normalization helpers are likewise not called from production code"
       },
       "invariants": [
         "Retry backoff saturates at max_ms ceiling without integer overflow"
@@ -30325,7 +30325,7 @@
         "mapping": "reviewed",
         "read": "read-complete",
         "verification": "not-run",
-        "wiring": "wired"
+        "wiring": "not-wired"
       },
       "target": {
         "language": "Rust",

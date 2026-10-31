@@ -27,10 +27,12 @@
    - `Storage`: Existing atomic host settings persistence.
    - `Consumer`: Host settings projection and subsequent skills runtime configuration reads.
 4. **Session Turns & Async Scope Pipeline**:
-   - `Producer`: Inbound user messages and turn lifecycle events.
-   - `Owner`: `source/host/src/extensions/session/session_turns_controller.rs` (`SessionTurnsController`) and `source/host/src/extensions/shared/async_scope.rs` (`AsyncWorkTracker`).
-   - `Storage`: Active turn record journal and atomic task counters.
-   - `Consumer`: The contract fixture `source/host/tests/openclaw_snapshot_skills_contract.rs` only; no production caller currently consumes `SessionTurnsController`. Shipping turn/session state remains owned by the existing session/runner composition and must not be inferred from this helper.
+   - `Producer (production evidence)`: No production producer for `AsyncWorkTracker`, retry backoff, or identifier normalization has been identified. Inbound turn lifecycle belongs to the existing session/runner composition, not this helper.
+   - `Owner`: `source/host/src/extensions/shared/async_scope.rs` (`AsyncWorkTracker` and its helper functions).
+   - `Storage`: Atomic task counter inside `AsyncWorkTracker` when explicitly instantiated.
+   - `Consumer (current evidence)`: `source/host/tests/openclaw_snapshot_skills_contract.rs` only; no production caller currently consumes `AsyncWorkTracker`.
+
+The shared async-scope implementation is present and contract-tested, but it is not production-wired. The parity ledger therefore records `implementation=implemented` and `wiring=not-wired` under `BL-SHARED-ASYNC-WIRING-001`.
 
 ## 3. Verification & Oracle Evidence
 - **Contract Tests**: `source/host/tests/openclaw_snapshot_skills_contract.rs`:
