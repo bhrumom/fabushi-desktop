@@ -223,14 +223,15 @@ introduced explicitly.
   `wiring=wired`. It does not include provider mutation, live event publication
   or packaged UI/CLI reachability.
 - `OCRM-RESP-INFRA-WORKER-CRABBOX-EXTERNAL-MACHINE-ADAPTER-001` records the
-  typed `ExternalMachineExecutor` adapter boundary as `wiring=wired`. It does
-  not include provider selection, physical worker execution, device
-  enrollment, Computer grants, Runner composition or cloud mutation.
+  implemented typed `ExternalMachineExecutor` adapter boundary as
+  `wiring=not-wired`. It does not include provider selection, physical worker
+  execution, device enrollment, Computer grants, Runner composition or cloud
+  mutation; the production Runner/Sand composition remains pending.
 - `OCRM-RESP-INFRA-WORKER-CRABBOX-COMPUTER-ADAPTER-001` records the typed
-  `ComputerToolExecutor` adapter boundary as `wiring=wired`. Existing
-  Computer authorization, screenshot/result persistence and side effects stay
-  with the delegate; this does not establish device enrollment or production
-  worker composition.
+  implemented `ComputerToolExecutor` adapter boundary as `wiring=not-wired`.
+  Existing Computer authorization, screenshot/result persistence and side
+  effects stay with the delegate; device enrollment and production
+  Computer/Runner composition remain pending.
 - `OCRM-RESP-INFRA-WORKER-CRABBOX-PLATFORM-DESCRIPTOR-001` records the
   implemented `CloudWorkerPlatformBridge` descriptor as a separate platform
   boundary. It validates platform, desktop session and bounded launcher
