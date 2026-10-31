@@ -2852,10 +2852,10 @@
       ],
       "id": "OCRM-RESP-AGENT-CONTEXT-COMPACTION-001",
       "integration": {
-        "consumer": "source/host/src/runner/production_turn_agent_owner.rs",
-        "entrypoint": "source/host/src/runner/mod.rs",
+        "consumer": "No production caller consumes ContextWindowTracker::check_compaction; production prompt code reads persisted compaction epochs through HostRunnerComposition instead",
+        "entrypoint": "source/host/src/runner/conversation_state.rs::ContextWindowTracker",
         "owner": "source/host/src/runner/mod.rs",
-        "producer": "source/host/src/runner/mod.rs"
+        "producer": "No production context-compaction or tool-schema producer is wired; OCRM-AGENT-O09/O10 use contract-only logic"
       },
       "invariants": [
         "Compaction triggered when token estimate exceeds configured reserve",
@@ -2902,11 +2902,11 @@
       ],
       "status": {
         "acceptance": "pending",
-        "implementation": "implemented",
+        "implementation": "not-started",
         "mapping": "reviewed",
         "read": "read-complete",
         "verification": "not-run",
-        "wiring": "wired"
+        "wiring": "not-wired"
       },
       "target": {
         "language": "Rust",

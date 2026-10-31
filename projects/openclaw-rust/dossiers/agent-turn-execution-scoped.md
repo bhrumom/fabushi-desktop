@@ -124,6 +124,18 @@ transport or dispatch-policy call chain. Therefore the parity row
 `verification=not-run`, and `acceptance=pending`; the independent Transcript
 runtime must not be counted as ACP compatibility.
 
+The context-compaction mapping was also rechecked. A non-test search found no
+production caller for `ContextWindowTracker::check_compaction`; production
+prompt code currently reads a persisted compaction epoch through
+`HostRunnerComposition`. The O09 contract calls the tracker directly, while
+O10 defines a local `validate_tool_schema` fixture inside the test file rather
+than a production tool-admission owner. The epoch projection and those tests
+therefore do not prove the mapped threshold-compaction plus tool-schema
+responsibility is implemented or wired. The parity row
+`OCRM-RESP-AGENT-CONTEXT-COMPACTION-001` is corrected to
+`implementation=not-started`, `wiring=not-wired`, `verification=not-run`, and
+`acceptance=pending` until the real Runner producer/consumer path exists.
+
 The parity row's blocker attribution was rechecked at the same time. The prior
 `BL-MEDIA-DOC-TRUNCATION-UPSTREAM-CALLER-001` reference did not describe this
 ACP transport/consumer gap; the row now points to the existing
