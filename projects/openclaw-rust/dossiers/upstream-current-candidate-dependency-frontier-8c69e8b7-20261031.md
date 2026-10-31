@@ -98,6 +98,14 @@ the recursive-tree SHA (`patch_blob_checks=17`, `mismatches=0`). This closes
 the patch path/content-identity check for the exact subject only; it does not
 close application semantics or the external package bytes being patched.
 
+The 17 `patchedDependencies` values in the second lock document are SHA-256
+digests. At `2026-10-31T12:27:03Z`, the exact raw patch bytes were hashed with
+SHA-256 and compared to those lock values: `patched_dependency_hash_checks=17`,
+`mismatches=0`. The lock-to-patch-byte integrity relation is therefore positive
+for this exact subject. Registry tarball identity, patch application result,
+native post-patch artifacts, and license provenance remain separate evidence
+requirements.
+
 The exact tree contains 26 native/platform declaration inputs across
 `Cargo.toml`, `Cargo.lock`, `Package.swift`, `Package.resolved`, `Gemfile`,
 `Gemfile.lock`, `build.gradle.kts`, and `gradle.properties`, totaling 323,239
