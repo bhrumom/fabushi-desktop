@@ -24,6 +24,7 @@ pub const NODE_DESKTOP_STREAM_COMMAND: &str = "worker.desktop.stream.v1";
 
 pub const SYSTEM_RUN_EXECUTION_CONTEXT_CAPABILITY: &str = "system_run.execution_context";
 pub const NODE_CLAUDE_SKILLS_CAPABILITY: &str = "node.claude_skills";
+pub const NODE_CLAUDE_NATIVE_AUTH_CAPABILITY: &str = "claude-cli-native-auth-v1";
 const MAX_MANIFEST_ENTRY_CHARS: usize = 256;
 
 fn valid_manifest_entry(value: &str) -> Option<String> {
@@ -99,6 +100,7 @@ impl NodeHostManifest {
         }
         if commands.contains(NODE_AGENT_CLI_CLAUDE_RUN_COMMAND) {
             capabilities.insert(NODE_CLAUDE_SKILLS_CAPABILITY.to_string());
+            capabilities.insert(NODE_CLAUDE_NATIVE_AUTH_CAPABILITY.to_string());
         }
         capabilities.extend(
             plugin_capabilities

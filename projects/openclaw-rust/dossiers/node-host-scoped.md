@@ -2712,6 +2712,12 @@ the system-run capability is emitted only with the current `system.run`
 command. This is a static contract correction only: no new producer, executor,
 remote transport, plugin inventory, or live acceptance was added.
 
+The same manifest branch now preserves the separately named Claude native-auth
+capability `claude-cli-native-auth-v1` alongside `node.claude_skills`, gated by
+the existing Claude feature and exact command availability. It remains a
+projection correction only; the Claude command producer and native-auth
+credential owner are not wired.
+
 ## 203. Local manifest producer wired to canonical runtime state (2026-10-31)
 
 Host startup now derives the `sand-local-node` command surface through the

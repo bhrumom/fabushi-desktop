@@ -8,6 +8,7 @@ use mahayana_host_runtime::extensions::node_host::command_dispatch::{
 };
 use mahayana_host_runtime::extensions::node_host::runtime_manifest::{
     NodeHostManifest, NODE_AGENT_CLI_CLAUDE_RUN_COMMAND, NODE_DESKTOP_STREAM_COMMAND,
+    NODE_CLAUDE_NATIVE_AUTH_CAPABILITY, NODE_CLAUDE_SKILLS_CAPABILITY,
     NODE_SYSTEM_RUN_COMMAND, NODE_SYSTEM_RUN_COMMANDS,
 };
 use mahayana_host_runtime::extensions::node_host::protocol_negotiation::{
@@ -216,6 +217,14 @@ fn test_ocrm_node_host_runtime_manifest() {
     assert!(manifest.advertised_commands.iter().any(|c| c == NODE_AGENT_CLI_CLAUDE_RUN_COMMAND));
     assert!(manifest.advertised_commands.iter().any(|c| c == NODE_DESKTOP_STREAM_COMMAND));
     assert!(manifest.advertised_commands.iter().any(|c| c == NODE_SYSTEM_RUN_COMMAND));
+    assert!(manifest
+        .capabilities
+        .iter()
+        .any(|capability| capability == NODE_CLAUDE_SKILLS_CAPABILITY));
+    assert!(manifest
+        .capabilities
+        .iter()
+        .any(|capability| capability == NODE_CLAUDE_NATIVE_AUTH_CAPABILITY));
 
     // With allowlist filter
     let mut allowlist = HashSet::new();
