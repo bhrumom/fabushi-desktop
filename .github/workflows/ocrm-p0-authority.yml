@@ -206,7 +206,8 @@ jobs:
           git check-ref-format "refs/heads/$EXPECTED_HEAD_REF"
           git add projects/openclaw-rust/inventory/index.json \
                   projects/openclaw-rust/inventory/shards \
-                  projects/openclaw-rust/dependencies/source-manifest-inputs.json
+                  projects/openclaw-rust/dependencies/source-manifest-inputs.json \
+                  projects/openclaw-rust/parity-ledger.json
           if git diff --cached --quiet; then
             echo "No new source-derived shard content"
             exit 0

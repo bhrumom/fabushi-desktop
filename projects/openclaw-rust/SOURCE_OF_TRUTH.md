@@ -562,7 +562,8 @@ source closure 和 exact-head Actions authority 仍未闭合。
 `applicability_disposition_closure` 继续为 `false`。现有
 Actions 中的 `expand_inventory.py` 会在下一次 exact-subject materialization
 时为未复用审查字段发出显式 `unknown/pending`，随后由 `shard_inventory.py`
-持久化展开后的记录；开发冻结期间不手工重写 generated shards。详见
+持久化展开后的记录及 applicability/disposition 聚合投影；开发冻结期间不
+手工重写 generated shards。详见
 `dossiers/inventory-applicability-field-audit-20261031.md`。
 
 对 fixed subject 应用 lock 与 exact Git tree 的进一步只读重核显示：200 个

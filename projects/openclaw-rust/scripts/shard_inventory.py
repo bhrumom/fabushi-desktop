@@ -15,6 +15,7 @@ ROOT = Path("projects/openclaw-rust")
 SHARDS = ROOT / "inventory" / "shards"
 DEPS = ROOT / "dependencies" / "source-manifest-inputs.json"
 INDEX = ROOT / "inventory" / "index.json"
+LEDGER = ROOT / "parity-ledger.json"
 LOCK = ROOT / "upstream.lock.json"
 SHARD_SIZE = 1024
 MANIFEST_NAMES = {
@@ -112,8 +113,23 @@ def write(path):
     (SHARDS / "manifest.json").write_text(json.dumps(manifest, sort_keys=True, indent=2, ensure_ascii=False) + "\n")
     DEPS.write_text(json.dumps(dependency_declarations(rows, doc["upstream"], lock), sort_keys=True, indent=2, ensure_ascii=False) + "\n")
     index = json.loads(INDEX.read_text())
+    applicability_assessed = sum(e.get("applicability_status") != "unknown" for e in rows)
+    dispositioned = sum(e.get("disposition_status") not in {"pending", "deep-read-required"} for e in rows)
+    unreviewed_applicable = sum(
+        e.get("applicability_status") in {"product", "mixed"}
+        and (e.get("responsibility_status") != "reviewed" or not e.get("responsibility_ids"))
+        for e in rows
+    )
+    index["inventory"]["applicability_assessed"] = applicability_assessed
+    index["inventory"]["dispositioned"] = dispositioned
+    index["inventory"]["unreviewed_applicable"] = unreviewed_applicable
     index["inventory"]["itemized_manifest_location"] = str(SHARDS / "manifest.json") + " (Git-tracked canonical row shards; authority checked in Actions)"
     INDEX.write_text(json.dumps(index, sort_keys=True, indent=2, ensure_ascii=False) + "\n")
+    ledger = json.loads(LEDGER.read_text())
+    ledger["file_coverage"]["applicability_assessed_paths"] = applicability_assessed
+    ledger["file_coverage"]["dispositioned_paths"] = dispositioned
+    ledger["file_coverage"]["unreviewed_applicable_paths"] = unreviewed_applicable
+    LEDGER.write_text(json.dumps(ledger, sort_keys=True, indent=2, ensure_ascii=False) + "\n")
     verify(path)
     print(f"OCRM persisted shard candidates: {len(rows)} rows, {len(records)} shards; dependencies unresolved")
 

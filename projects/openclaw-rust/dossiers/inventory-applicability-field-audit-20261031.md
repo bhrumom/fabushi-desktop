@@ -29,10 +29,11 @@ therefore remains `false`.
 `projects/openclaw-rust/scripts/expand_inventory.py` emits explicit
 `applicability_status=unknown` and `disposition_status=pending` when it
 expands rows without reviewed fields; `shard_inventory.py` then persists that
-expanded exact-subject record set. The required repair is a fresh Actions-bound
-exact-subject materialization, followed by the normal structural validator; it
-must not be simulated by hand-editing generated shards during the current
-development freeze.
+expanded exact-subject record set and its applicability/disposition aggregate
+projections. The required repair is a fresh Actions-bound exact-subject
+materialization, followed by the normal structural validator; it must not be
+simulated by hand-editing generated shards during the current development
+freeze.
 
 The next exact Actions run must preserve the fixed subject identity, keep all
 58,750 rows, emit explicit unknown/pending values for untouched rows, and only
