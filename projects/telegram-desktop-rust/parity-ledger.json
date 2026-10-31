@@ -9,7 +9,7 @@
     "unknown": 16172,
     "unread": 16145,
     "omitted": 0,
-    "responsibilities_total": 67,
+    "responsibilities_total": 68,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -16967,6 +16967,271 @@
       "reviewer": null,
       "license_and_provenance": "Behavioral responsibility is anchored to fixed-U telegramdesktop/tdesktop Telegram/SourceFiles/mtproto/session_private.cpp@13cbc76ec723386027b5b4dcac79999b791c4614 and Telegram/SourceFiles/mtproto/scheme/mtproto.tl@76225965bfc794388db241f3f760db8ab79e84f8. High-level blocker evidence is additionally anchored to Telegram/SourceFiles/api/api_updates.cpp@71c929cfe3c779c94719efef32a47a4d029e2c67 and Telegram/SourceFiles/mtproto/scheme/api.tl@8319b7df634d145390c299404129fd161a5dbd2a. The implementation is source-neutral Rust and copies no upstream C++ implementation.",
       "notes": "Stage A implementation only. This row closes only exact new_session_created wire validation in the existing protocol/network owners. The complete high-level new-session update/difference propagation responsibility remains open/fail-closed because full/slice difference object decoding and canonical application are absent; gzip_packed and arbitrary wasSent/haveSent/_resendingIds/toSend/_sentContainers remain open. Global unknown/unread source-entry counts are intentionally unchanged; contracts are authored but not executed; validation_status=not-run and accepted=false.",
+      "test_execution_evidence": []
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+      "source_path": "Telegram/SourceFiles/mtproto/scheme/mtproto.tl",
+      "source_blob_sha": "76225965bfc794388db241f3f760db8ab79e84f8",
+      "source_kind": "schema",
+      "module_id": "tdesktop.mtproto.session.future-salts-wire",
+      "responsibility_id": "TDRP-R9-MTPROTO-FUTURE-SALTS-WIRE-001",
+      "source_symbols": [
+        "future_salts#ae500895 req_msg_id:long now:int salts:vector<future_salt>",
+        "future_salt#0949d9dc valid_since:int valid_until:int salt:long",
+        "get_future_salts#b921bd04 num:int",
+        "EstablishedSession::scan_rpc_body / FUTURE_SALTS_CONSTRUCTOR (pre-hardening raw-offset receive path)"
+      ],
+      "capability_ids": [
+        "CAP-EMBEDDED-MTPROTO-SESSION-RECOVERY"
+      ],
+      "dependency_ids": [
+        "EmbeddedTelegramProtocol",
+        "EmbeddedTelegramNetwork",
+        "TelegramClientLease",
+        "MTProtoAuthKey"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/evidence/round58-mtproto-future-salts-wire-20261101.md",
+      "behavior_contract": "A received future_salts#ae500895 object must be fully decoded as req_msg_id:long, now:int, a TL Vector constructor/count, and exact future_salt#0949d9dc entries (valid_since:int, valid_until:int, salt:long) before it may settle the current RPC. Wrong top-level/vector/nested constructors, any truncation, impossible declared vector length for the remaining fixed-size entries, or trailing bytes fail closed. A valid response settles only when req_msg_id equals the one outstanding request and returns the exact validated raw object through the existing RpcResult.",
+      "state_machine": "same TelegramClientLease -> RuntimeClient -> EstablishedSession authenticated/decrypted receive -> telegram-protocol parse_future_salts validates entire object and nested vector before allocation/settlement -> valid unrelated req_msg_id continues waiting -> valid matching req_msg_id returns existing RpcResult raw body -> malformed object fails InvalidServiceMessage",
+      "side_effects": [
+        "Moves future_salts wire validation into the existing shared telegram-protocol owner",
+        "Prevents truncated/malformed/trailing future_salts objects from settling the current RPC",
+        "Bounds declared vector count against remaining fixed-size nested entries before allocation",
+        "Preserves the existing one-outstanding-RPC result boundary and caller-visible raw TL body",
+        "Authors exact and malformed contracts without executing them in Stage A"
+      ],
+      "failure_cases": [
+        "Raw req_msg_id offset read accepts truncated now/vector/nested salt fields",
+        "Wrong TL vector or future_salt constructor is accepted",
+        "Untrusted vector count drives allocation without structural remaining-byte validation",
+        "Trailing bytes are ignored before RPC settlement",
+        "An unrelated historical request id mutates or settles the current call",
+        "Implementation invents multi-request wasSent/haveSent/_resendingIds/toSend/_sentContainers history"
+      ],
+      "ui_disposition": "No UI change. This is authenticated receive-side MTProto service/result validation inside the existing embedded runtime.",
+      "non_ui_responsibilities": [
+        "Exact fixed-U future_salts/future_salt wire decoding",
+        "Malformed/trailing/impossible-vector fail-closed behavior before settlement",
+        "Current-request-only correlation in the existing EstablishedSession",
+        "Preservation of exact validated raw object for the existing RpcResult contract"
+      ],
+      "platform_delta": "The existing FUTURE_SALTS receive branch is hardened from a raw request-id offset check to complete typed fixed-U validation. No historical request queue, callback registry, decompression runtime, difference decoder, or second Telegram runtime is added.",
+      "existing_owner_candidates": [
+        "bhrumom/fabushi-platform-core:native/telegram-protocol/src/api.rs",
+        "bhrumom/fabushi-platform-core:native/telegram-network/src/lib.rs",
+        "source/mahayana/mahayana-rs/providers/telegram-protocol/src/api.rs",
+        "source/mahayana/mahayana-rs/providers/telegram-network/src/lib.rs"
+      ],
+      "existing_owner": "Canonical shared telegram-protocol TL service parser + telegram-network EstablishedSession consumed by the existing desktop lease/runtime chain",
+      "rejected_existing_owners": [
+        "Renderer/AppHost cannot own MTProto service-result wire validation",
+        "Storage cannot own live RPC correlation",
+        "A second request-history/callback owner would split lifecycle truth",
+        "gzip/difference owners are unrelated to this independently bounded result object"
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "bhrumom/fabushi-platform-core:native/telegram-protocol/src/api.rs",
+        "bhrumom/fabushi-platform-core:native/telegram-protocol/src/lib.rs",
+        "bhrumom/fabushi-platform-core:native/telegram-network/src/lib.rs",
+        "source/mahayana/mahayana-rs/providers/telegram-protocol/src/api.rs",
+        "source/mahayana/mahayana-rs/providers/telegram-protocol/src/lib.rs",
+        "source/mahayana/mahayana-rs/providers/telegram-network/src/lib.rs"
+      ],
+      "fabushi_target_symbols": [
+        "FUTURE_SALT_CONSTRUCTOR",
+        "FUTURE_SALTS_CONSTRUCTOR",
+        "FutureSalt",
+        "FutureSalts",
+        "parse_future_salts",
+        "EstablishedSession::scan_rpc_body",
+        "future_salts_matches_request"
+      ],
+      "target_language": "Rust",
+      "language_rationale": "The shared Rust protocol/network crates already own MTProto service parsing and the single outstanding encrypted RPC lifecycle, so exact future-salts decoding belongs there rather than in a new provider or history subsystem.",
+      "command_event_contracts": [
+        "future_salts(valid exact object, matching req_msg_id) -> typed parse -> existing RpcResult with exact raw body",
+        "future_salts(valid exact object, unrelated req_msg_id) -> Continue without current-call mutation",
+        "wrong top-level/vector/nested constructor -> InvalidServiceMessage before settlement",
+        "truncated/impossible-count/trailing object -> InvalidServiceMessage before settlement",
+        "no wasSent/haveSent/_resendingIds/toSend/_sentContainers history is inferred"
+      ],
+      "state_owner": "Existing EstablishedSession owns the one outstanding RPC; telegram-protocol api.rs owns exact future_salts/future_salt wire decoding.",
+      "lifecycle_owner": "Existing account-bound TelegramClientLease -> RuntimeClient -> EstablishedSession production chain.",
+      "persistence_and_restart": "No new persistence. The validation/correlation applies only to the live current RPC and preserves the existing caller-visible raw response body.",
+      "concurrency_and_cancellation": "The existing synchronous EstablishedSession retains one outstanding invoke_raw RPC. No background worker, parallel callback registry, historical request table, or multi-request queue is introduced.",
+      "security_boundary": "Only authenticated/decrypted MTProto messages reach the parser. Complete constructor/field/vector/trailing validation occurs before RPC settlement; vector allocation is structurally constrained by remaining fixed-size entry bytes.",
+      "network_service_dependencies": [
+        "Existing embedded Telegram MTProto encrypted transport",
+        "fixed-U future_salts#ae500895 and future_salt#0949d9dc",
+        "existing single-outstanding-RPC invoke_raw result boundary"
+      ],
+      "service_owner": "Canonical embedded Telegram protocol/network runtime.",
+      "deployment_evidence": [],
+      "implementation_status": "implemented",
+      "coverage_disposition": "rewritten",
+      "blockers": [
+        "Stage B executable build/unit/contract/integration/packaged validation has not run.",
+        "gzip_packed decompression remains blocked: canonical protocol has no adopted bounded decompression lifecycle for the fixed-U 64-level/32 MiB contract.",
+        "Complete updates difference/differenceSlice decoding and canonical application remain open/fail-closed.",
+        "Outbound/multi-request wasSent/haveSent/_resendingIds/toSend/_sentContainers histories remain open and fail-closed.",
+        "Broader fixed-U source/legal/release closure remains open."
+      ],
+      "production_entrypoints": [
+        "source/mahayana/mahayana-rs/Cargo.toml -> mahayana-telegram -> providers/telegram-runtime -> providers/telegram-network + providers/telegram-protocol",
+        "existing TelegramClientLease/RuntimeClient -> EstablishedSession::invoke_raw -> scan_rpc_body -> typed parse_future_salts -> current-request correlation -> existing RpcResult"
+      ],
+      "production_evidence": [
+        "platform-core-spec-commit:69167c52582d67df73c2284bb1e98a47c3846343",
+        "platform-core-implementation-commit:f631d7cc0c1a21db93ab647d3b6dcb29b42cb74e",
+        "platform-core-compliance-commit:f604e40e175d6a05ef10d6c4811ec1e363c85529",
+        "platform-core-path:native/telegram-protocol/src/api.rs@bdac614fab9ca16ffeb36c7e98a012fe20231597",
+        "platform-core-path:native/telegram-protocol/src/lib.rs@6b6bde59a9f5e86ec33b0258e1e6a34f2b1622f9",
+        "platform-core-path:native/telegram-network/src/lib.rs@b2eb7022c6a8d38d7ac9f4a9fd13fe22913621de",
+        "desktop-implementation-commit:a3329a8c948cbffab1d6843c78abc8024afa87b4",
+        "path:source/mahayana/mahayana-rs/providers/telegram-protocol/src/api.rs@bdac614fab9ca16ffeb36c7e98a012fe20231597",
+        "path:source/mahayana/mahayana-rs/providers/telegram-protocol/src/lib.rs@6b6bde59a9f5e86ec33b0258e1e6a34f2b1622f9",
+        "path:source/mahayana/mahayana-rs/providers/telegram-network/src/lib.rs@b2eb7022c6a8d38d7ac9f4a9fd13fe22913621de"
+      ],
+      "test_evidence": [
+        "platform-core native/telegram-protocol/src/api.rs exact future_salts/future_salt parse contract authored, not run",
+        "platform-core native/telegram-protocol/src/api.rs wrong top-level/vector/nested constructor, truncation, impossible-count and trailing rejection contracts authored, not run",
+        "platform-core native/telegram-network/src/lib.rs current-request-only future_salts correlation contract authored, not run",
+        "desktop synchronized protocol/network contracts authored, not run"
+      ],
+      "target_commit": "a3329a8c948cbffab1d6843c78abc8024afa87b4",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Canonical Fabushi account + existing TelegramClientLease/runtime + shared MTProto protocol/network production composition",
+      "composition_slot": "Embedded Telegram encrypted session receive-side future-salts result validation",
+      "capability_component": "Typed fixed-U future_salts/future_salt wire validation",
+      "variation_axes": [
+        "exact payload vs wrong/truncated/trailing payload",
+        "correct vs wrong vector constructor",
+        "correct vs wrong nested future_salt constructor",
+        "declared count fits vs exceeds remaining fixed-size entries",
+        "matching vs unrelated current request id"
+      ],
+      "shared_owner_contracts": [
+        "Existing account-bound TelegramClientLease",
+        "Existing RuntimeClient/EstablishedSession",
+        "Existing telegram-protocol TlReader",
+        "Existing MessageIdGuard/session sequence owners",
+        "Existing encrypted auth-key transport",
+        "Existing one-outstanding-RPC invoke_raw result contract"
+      ],
+      "duplicate_root_check": "No second account, runtime, provider, transport, auth key, request history, sent-container store, callback registry, decompression runtime, difference runtime, message store, UI root, sidecar, subprocess or Web wrapper was introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Not applicable",
+      "primary_navigation_target": "Existing Messages/Conversation navigation",
+      "collection_surface": "Existing ConversationList; no change",
+      "creation_flow": "Existing canonical conversation creation; no change",
+      "object_action_scope": "Not applicable",
+      "detail_section": "Not applicable",
+      "capability_surface": "Existing ConversationWorkspace through the same provider/runtime; no new surface",
+      "route_contract": "No new route.",
+      "search_scope": "Not applicable",
+      "search_provider": "Existing canonical Search owner; unchanged",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Unchanged.",
+      "search_local_remote_contract": "Not applicable.",
+      "responsive_disposition": "No UI change.",
+      "accessibility_contract": "No UI change.",
+      "keyboard_contract": "No UI change.",
+      "state_continuity_contract": "Malformed future_salts objects fail before current-RPC settlement. Valid unrelated request ids do not affect the current call. Valid matching responses preserve the exact validated raw object and existing one-RPC lifecycle.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Existing Fabushi design system; no visual changes",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": null,
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "No new icon asset",
+      "avatar_contract": "No change",
+      "content_copy_keys": [],
+      "motion_contract": "No change",
+      "reduced_motion_contract": "No change",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "high",
+      "requirement_ids": [
+        "TDRP-R9-MTPROTO-FUTURE-SALTS-WIRE-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-MTPROTO-FUTURE-SALTS-WIRE-001",
+        "ORA-TDRP-MTPROTO-FUTURE-SALTS-FAIL-CLOSED-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-MTPROTO-FUTURE-SALTS-EXACT-001",
+        "INV-TDRP-MTPROTO-FUTURE-SALTS-ALLOC-BOUND-001",
+        "INV-TDRP-MTPROTO-NO-HISTORICAL-REQUEST-OWNER-001"
+      ],
+      "unit_case_ids": [
+        "UNIT-TDRP-MTPROTO-FUTURE-SALTS-PARSE-001",
+        "UNIT-TDRP-MTPROTO-FUTURE-SALTS-MALFORMED-001"
+      ],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-MTPROTO-FUTURE-SALTS-WIRE-001"
+      ],
+      "integration_case_ids": [
+        "INT-TDRP-MTPROTO-FUTURE-SALTS-CURRENT-RPC-001"
+      ],
+      "functional_e2e_case_ids": [
+        "E2E-TDRP-MTPROTO-FUTURE-SALTS-RECEIVE-001"
+      ],
+      "temporal_case_ids": [
+        "TEMP-TDRP-MTPROTO-FUTURE-SALTS-PARSE-BEFORE-SETTLEMENT-001"
+      ],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "fault_recovery_case_ids": [
+        "FAULT-TDRP-MTPROTO-FUTURE-SALTS-MALFORMED-001"
+      ],
+      "performance_case_ids": [],
+      "security_case_ids": [
+        "SEC-TDRP-MTPROTO-FUTURE-SALTS-AUTHENTICATED-001"
+      ],
+      "soak_case_ids": [],
+      "exploratory_charter_ids": [],
+      "regression_ids": [
+        "REG-TDRP-MTPROTO-FUTURE-SALTS-PARTIAL-PARSE-001"
+      ],
+      "release_gate_ids": [
+        "G-TRACEABILITY",
+        "G-COMPOSITION",
+        "G-SECURITY",
+        "G-EVIDENCE",
+        "G-RELEASE"
+      ],
+      "test_fixture_ids": [
+        "mtproto-future-salts-fixture"
+      ],
+      "test_environment_ids": [
+        "GitHub Actions Stage B matrix (not run)"
+      ],
+      "coverage_matrix_status": "pending",
+      "flake_status": "stable",
+      "release_gate_status": "pending",
+      "acceptance_reviewer": null,
+      "reviewer": null,
+      "license_and_provenance": "Behavioral responsibility is anchored to fixed-U telegramdesktop/tdesktop Telegram/SourceFiles/mtproto/scheme/mtproto.tl@76225965bfc794388db241f3f760db8ab79e84f8 and the adjacent authenticated service-message handling boundary in Telegram/SourceFiles/mtproto/session_private.cpp@13cbc76ec723386027b5b4dcac79999b791c4614. The implementation is source-neutral Rust and copies no upstream C++ implementation.",
+      "notes": "Stage A implementation only. This row closes complete future_salts/future_salt wire validation and current-one-RPC correlation; it does not claim arbitrary historical request bookkeeping. Global unknown/unread source-entry counts remain unchanged because this is a newly mapped responsibility slice within already-open fixed-U source coverage. Contracts are authored but not executed; validation_status=not-run and accepted=false.",
       "test_execution_evidence": []
     }
   ],
