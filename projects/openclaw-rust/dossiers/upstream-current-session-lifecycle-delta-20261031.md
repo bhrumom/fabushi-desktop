@@ -82,3 +82,24 @@ closure, ledger/RTM identity, completion flag, Actions receipt, local OCRM test,
 build, package, provider or device acceptance was changed or inferred. The
 previous inventory and dependency probe remain bound to their historical
 subjects and cannot be used to claim closure for this candidate.
+
+## Implementation checkpoint after the initial audit
+
+The approved lifecycle-fence spec now has a first Rust implementation slice in
+the existing owners:
+
+- `source/host/src/extensions/session/agent_db.rs` seeds or CAS-migrates an
+  opaque `lifecycleRevision` in the existing metadata row and advances it for
+  metadata mutations and checkpoint-root publication.
+- `source/host/src/extensions/session/session_summaries.rs` and the public Host
+  `sessions.list`/`sessions.get` projections expose that revision.
+- `source/host/src/extensions/transcript/agent_lifecycle.rs` accepts guarded
+  delete fields and rechecks the current session before and after the existing
+  deletion hooks.
+
+This later implementation evidence does not alter the exact upstream subject
+or promote the responsibility: focused oracles have not been executed,
+cron/subagent producers have not been proven to pass the captured fields, and
+Actions/package/runtime evidence remains absent. The initial gap statement
+above records the pre-implementation state; verification and acceptance remain
+pending.

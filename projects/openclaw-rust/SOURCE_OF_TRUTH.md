@@ -234,6 +234,10 @@ directories），无 gitlink。该 subject 已同步到 `upstream.lock.json::liv
 [`dossiers/upstream-current-session-lifecycle-delta-20261031.md`](dossiers/upstream-current-session-lifecycle-delta-20261031.md)，
 仅作为 discovery audit；它不改变 ledger/RTM 状态，也不把 lifecycle revision、
 Gateway owner fence 或 cleanup outcome 映射误报为 Rust 生产接线。
+随后按已批准的 lifecycle-fence spec 在既有 agent DB、session projection 和
+Transcript lifecycle owner 中落下首个实现切片：revision migration/projection 与
+delete admission/post-hook recheck 已存在，但 cron/subagent producer 接线、focused
+oracle、Actions、packaged/runtime 和 acceptance 仍未闭合；ledger/global flags 不变。
 
 当前 parity ledger 的 10 条 `not-started/not-wired` 责任已在
 `dossiers/not-started-responsibility-frontier-20261031.md` 做了逐条 frontier

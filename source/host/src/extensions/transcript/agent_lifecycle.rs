@@ -282,6 +282,13 @@ impl AgentDeletionRuntimeDeps {
     }
 }
 
+#[derive(Debug, Clone, Default)]
+struct AgentDeletionGuard {
+    expected_session_id: Option<String>,
+    expected_lifecycle_revision: Option<String>,
+    expected_updated_at: Option<f64>,
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum AgentLifecycleGatewayError {
     BadRequest(String),
@@ -598,11 +605,83 @@ impl ProductionAgentLifecycle {
         opened
     }
 
+    fn delete_agent_from_args(
+        &self,
+        args: &Value,
+    ) -> Result<Value, AgentLifecycleGatewayError> {
+        let agent_id = required_string(args, "id")?.to_string();
+        let expected_string = |key: &str| -> Result<Option<String>, AgentLifecycleGatewayError> {
+            let Some(value) = args.get(key) else {
+                return Ok(None);
+            };
+            let Some(value) = value.as_str().map(str::trim).filter(|value| !value.is_empty())
+            else {
+                return Err(AgentLifecycleGatewayError::bad(format!(
+                    "{key} must be a non-empty string"
+                )));
+            };
+            Ok(Some(value.to_string()))
+        };
+        let guard = AgentDeletionGuard {
+            expected_session_id: expected_string("expectedSessionId")?,
+            expected_lifecycle_revision: expected_string("expectedLifecycleRevision")?,
+            expected_updated_at: args
+                .get("expectedSessionUpdatedAt")
+                .and_then(Value::as_f64)
+                .filter(|value| value.is_finite()),
+        };
+        self.delete_agents_with_guard(std::slice::from_ref(&agent_id), Some(&guard))
+            .map_err(|error| {
+                if error == "SESSION_LIFECYCLE_CHANGED" {
+                    AgentLifecycleGatewayError::bad(error)
+                } else {
+                    AgentLifecycleGatewayError::internal(error)
+                }
+            })
+    }
+
     pub fn delete_agent(&self, agent_id: &str) -> Result<Value, String> {
         self.delete_agents(std::slice::from_ref(&agent_id.to_string()))
     }
 
     pub fn delete_agents(&self, agent_ids: &[String]) -> Result<Value, String> {
+        self.delete_agents_with_guard(agent_ids, None)
+    }
+
+    fn assert_delete_guard(
+        &self,
+        agent_id: &str,
+        guard: &AgentDeletionGuard,
+    ) -> Result<(), String> {
+        let current = self
+            .store
+            .summarize_agent_by_id(agent_id)?
+            .ok_or_else(|| "SESSION_LIFECYCLE_CHANGED".to_string())?;
+        if guard
+            .expected_session_id
+            .as_deref()
+            .is_some_and(|expected| expected != current.id)
+            || guard
+                .expected_lifecycle_revision
+                .as_deref()
+                .is_some_and(|expected| {
+                    current.lifecycle_revision.is_empty()
+                        || expected != current.lifecycle_revision
+                })
+            || guard
+                .expected_updated_at
+                .is_some_and(|expected| expected != current.updated_at)
+        {
+            return Err("SESSION_LIFECYCLE_CHANGED".to_string());
+        }
+        Ok(())
+    }
+
+    fn delete_agents_with_guard(
+        &self,
+        agent_ids: &[String],
+        guard: Option<&AgentDeletionGuard>,
+    ) -> Result<Value, String> {
         let mut seen = HashSet::new();
         let ids = agent_ids
             .iter()
@@ -619,9 +698,15 @@ impl ProductionAgentLifecycle {
         let active_before = self.store.read_active_agent_id();
 
         for agent_id in &ids {
+            if let Some(guard) = guard {
+                self.assert_delete_guard(agent_id, guard)?;
+            }
             self.deletion_runtime.mark_deleting(agent_id)?;
             let deleted = (|| {
                 self.deletion_runtime.before_delete(agent_id)?;
+                if let Some(guard) = guard {
+                    self.assert_delete_guard(agent_id, guard)?;
+                }
                 self.store.delete_session(agent_id)?;
                 self.deletion_runtime.after_delete(agent_id)?;
                 Ok::<(), String>(())
@@ -776,12 +861,7 @@ pub fn dispatch_production_agent_lifecycle_gateway_call_with_all_runtimes(
                 .clone_agent(agent_id)
                 .map_err(AgentLifecycleGatewayError::internal)
         }),
-        "deleteAgent" => required_string(args, "id")
-            .and_then(|agent_id| {
-                lifecycle
-                    .delete_agent(agent_id)
-                    .map_err(AgentLifecycleGatewayError::internal)
-            }),
+        "deleteAgent" => lifecycle.delete_agent_from_args(args),
         "deleteAgents" => parse_agent_ids(args)
             .and_then(|ids| {
                 lifecycle

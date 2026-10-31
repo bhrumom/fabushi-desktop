@@ -48,6 +48,8 @@ pub enum AgentDbProjectionError {
     MetadataUtf8(#[from] std::string::FromUtf8Error),
     #[error("agent metadata json is invalid: {0}")]
     MetadataJson(#[from] serde_json::Error),
+    #[error("agent lifecycle revision unavailable: {0}")]
+    LifecycleRevisionUnavailable(String),
     #[error("latestRootBlobId hex is invalid: {0}")]
     LatestRootHex(String),
     #[error("agent db owner mutex poisoned")]
@@ -77,6 +79,7 @@ pub struct AgentMetadataProjection {
     pub agent_id: String,
     pub created_at: f64,
     pub latest_root_blob_id: Vec<u8>,
+    pub lifecycle_revision: String,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -390,10 +393,21 @@ impl SandAgentDb {
         let Some(object) = metadata.as_object_mut() else {
             return Ok(false);
         };
-        if object.get(key) == Some(&value) {
+        let has_lifecycle_revision = object
+            .get("lifecycleRevision")
+            .and_then(serde_json::Value::as_str)
+            .is_some_and(|revision| !revision.trim().is_empty());
+        if object.get(key) == Some(&value) && (key == "lifecycleRevision" || has_lifecycle_revision)
+        {
             return Ok(true);
         }
         object.insert(key.to_string(), value);
+        if key != "lifecycleRevision" {
+            object.insert(
+                "lifecycleRevision".to_string(),
+                serde_json::json!(Uuid::new_v4().to_string()),
+            );
+        }
         let next_raw = encode_hex(&serde_json::to_vec(&metadata)?);
         let changed = self.run_write(&format!("setMetadata:{key}"), |db| {
             db.execute(
@@ -409,6 +423,32 @@ impl SandAgentDb {
             );
         }
         Ok(changed)
+    }
+
+    /// Returns the durable session lifecycle revision, migrating legacy stores
+    /// exactly once through the existing metadata CAS owner.
+    pub fn ensure_lifecycle_revision(&self) -> Result<String, AgentDbProjectionError> {
+        if let Some(existing) = self
+            .get_metadata("lifecycleRevision")?
+            .and_then(|value| value.as_str().map(str::trim).map(ToOwned::to_owned))
+            .filter(|value| !value.is_empty())
+        {
+            return Ok(existing);
+        }
+
+        let candidate = Uuid::new_v4().to_string();
+        if self.set_metadata("lifecycleRevision", serde_json::json!(candidate))? {
+            return Ok(candidate);
+        }
+
+        self.get_metadata("lifecycleRevision")?
+            .and_then(|value| value.as_str().map(str::trim).map(ToOwned::to_owned))
+            .filter(|value| !value.is_empty())
+            .ok_or_else(|| {
+                AgentDbProjectionError::LifecycleRevisionUnavailable(
+                    "lifecycle revision migration did not publish a value".to_string(),
+                )
+            })
     }
 
     /// Atomically advances the durable Agent root and marks the addressed
@@ -480,6 +520,10 @@ impl SandAgentDb {
             metadata_object.insert(
                 "latestRootBlobId".into(),
                 serde_json::Value::String(encode_hex(next_root)),
+            );
+            metadata_object.insert(
+                "lifecycleRevision".into(),
+                serde_json::json!(Uuid::new_v4().to_string()),
             );
             let next_metadata = encode_hex(&serde_json::to_vec(&metadata)?);
             if db.execute(
@@ -1761,6 +1805,7 @@ fn default_agent_metadata(agent_dir_name: &str) -> serde_json::Value {
         "mode": "default",
         "isRunEverything": false,
         "createdAt": created_at,
+        "lifecycleRevision": Uuid::new_v4().to_string(),
         "blobEncryptionKey": blob_encryption_key,
     })
 }
@@ -1818,10 +1863,9 @@ pub fn read_persisted_agent_metadata_projection(
     db_path: &Path,
     busy_timeout_ms: u64,
 ) -> Result<Option<AgentMetadataProjection>, AgentDbProjectionError> {
-    let db = open_projection_db(db_path, busy_timeout_ms)?;
-    let Some(metadata) = read_metadata_json(&db)? else {
-        return Ok(None);
-    };
+    let owner = SandAgentDb::open(db_path, busy_timeout_ms)?;
+    let metadata = owner.read_metadata()?;
+    let lifecycle_revision = owner.ensure_lifecycle_revision()?;
     let agent_id = metadata
         .get("agentId")
         .and_then(serde_json::Value::as_str)
@@ -1843,6 +1887,7 @@ pub fn read_persisted_agent_metadata_projection(
         agent_id,
         created_at,
         latest_root_blob_id,
+        lifecycle_revision,
     }))
 }
 

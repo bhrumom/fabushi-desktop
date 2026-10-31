@@ -1,6 +1,6 @@
 # Session lifecycle deletion fence
 
-Status: proposed implementation spec for the current exact upstream delta  
+Status: implementation in progress; verification not run
 Project: OCRM-001  
 Source subject: `openclaw/openclaw@1b870b2c78e81fded72913ecba732b84b611ca12`  
 Source tree: `199fe97259d0226ce0e4d3dcec603252376c9205`  
@@ -165,6 +165,23 @@ Definition of Done for this task is SLD-01 through SLD-06 implemented in the
 existing owners, focused oracle sources present, exact source identity recorded,
 and all required verification/acceptance states honestly represented. Until
 those gates exist, the responsibility remains pending.
+
+## Current implementation checkpoint
+
+The first Rust implementation slice now exists in the existing owners:
+
+- `SandAgentDb` seeds or CAS-migrates `lifecycleRevision` in the existing
+  metadata row and advances it with metadata mutations and checkpoint-root
+  publication.
+- `AgentMetadataProjection`, `AgentSummary`, `sessions.list`, and
+  `sessions.get` expose the captured revision.
+- The existing `deleteAgent` owner accepts the guarded fields and rechecks the
+  current summary both before deletion admission and after deletion hooks.
+
+This checkpoint is not yet DoD: focused oracles have not been executed, the
+cron/subagent production producers are not yet proven to pass the fields, and
+exact-head Actions/package/runtime evidence is absent. Ledger verification and
+acceptance states must remain pending until those checks are available.
 
 ## Release, migration, rollback, and observability
 

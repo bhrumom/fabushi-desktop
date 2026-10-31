@@ -36,6 +36,7 @@ use super::session_recovery::{ensure_profile_file, ensure_settings_file};
 pub struct DbExtras {
     pub agent_id: String,
     pub created_at: f64,
+    pub lifecycle_revision: String,
     pub updated_at: f64,
     pub has_transcript: bool,
     pub last_entry: Option<Value>,
@@ -53,6 +54,7 @@ pub struct DbExtras {
 #[serde(rename_all = "camelCase")]
 pub struct AgentSummary {
     pub id: String,
+    pub lifecycle_revision: String,
     pub name: String,
     pub description: String,
     pub title: String,
@@ -105,6 +107,7 @@ pub fn load_agent_db_extras(
             agent_id: dir_name.to_string(),
             created_at: 0.0,
             latest_root_blob_id: Vec::new(),
+            lifecycle_revision: String::new(),
         });
     let mut state = read_persisted_agent_serde_snapshot(db_path, busy_timeout_ms)
         .map_err(|error| error.to_string())?;
@@ -144,6 +147,7 @@ pub fn load_agent_db_extras(
             metadata.agent_id
         },
         created_at: metadata.created_at,
+        lifecycle_revision: metadata.lifecycle_revision,
         updated_at: get_summary_updated_at(
             metadata.created_at,
             state.unread_state.last_activity_at,
@@ -196,6 +200,7 @@ pub fn minimal_agent_summary(
         .unwrap_or_default();
     AgentSummary {
         id: dir_name.to_string(),
+        lifecycle_revision: String::new(),
         name,
         description,
         title,
@@ -305,6 +310,9 @@ pub fn build_summary(
     summary.id = extras
         .map(|extras| extras.agent_id.clone())
         .unwrap_or_else(|| dir_name.to_string());
+    summary.lifecycle_revision = extras
+        .map(|extras| extras.lifecycle_revision.clone())
+        .unwrap_or_default();
     summary.name = name;
     summary.description = identity.description;
     summary.title = identity.title;

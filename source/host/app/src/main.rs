@@ -3432,6 +3432,7 @@ impl UnifiedGatewayApi {
                     "key": key,
                     "sessionId": s.id,
                     "agentId": s.id,
+                    "lifecycleRevision": s.lifecycle_revision,
                     "kind": kind,
                     "displayName": s.name,
                     "updatedAt": s.updated_at,
@@ -3483,6 +3484,11 @@ impl UnifiedGatewayApi {
             args.get("spawnedBy").and_then(serde_json::Value::as_str),
         ));
 
+        let summary = self
+            .session_workers
+            .summarize_agent_by_id(agent_id, None)
+            .map_err(GatewayCommandError::Internal)?;
+
         let entries = self
             .session_workers
             .read_agent_transcript_entries(agent_id)
@@ -3528,6 +3534,11 @@ impl UnifiedGatewayApi {
             "messages": messages,
             "key": raw_key,
             "kind": session_kind,
+            "sessionId": summary.as_ref().map(|value| value.id.clone()),
+            "updatedAt": summary.as_ref().map(|value| value.updated_at),
+            "lifecycleRevision": summary
+                .as_ref()
+                .map(|value| value.lifecycle_revision.clone()),
         }))
     }
 
@@ -3622,7 +3633,26 @@ impl UnifiedGatewayApi {
             }
         }
 
-        let delete_args = serde_json::json!({ "id": agent_id });
+        let mut delete_args = serde_json::json!({ "id": agent_id });
+        if let Some(expected) = args
+            .get("expectedSessionId")
+            .and_then(serde_json::Value::as_str)
+        {
+            delete_args["expectedSessionId"] = serde_json::Value::String(expected.to_string());
+        }
+        if let Some(expected) = args
+            .get("expectedLifecycleRevision")
+            .and_then(serde_json::Value::as_str)
+        {
+            delete_args["expectedLifecycleRevision"] =
+                serde_json::Value::String(expected.to_string());
+        }
+        if let Some(expected) = args
+            .get("expectedSessionUpdatedAt")
+            .and_then(serde_json::Value::as_f64)
+        {
+            delete_args["expectedSessionUpdatedAt"] = serde_json::Value::from(expected);
+        }
         let result = self.transcript_manager
             .dispatch_agent_lifecycle_gateway_call(
                 &self.agent_deletion_runtime,
