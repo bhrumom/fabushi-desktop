@@ -80,15 +80,38 @@ classification:
 
 | manifest group | exact observed shape | required disposition review |
 | --- | --- | --- |
-| `.github/actions/setup-security-review/package.json` | private action runtime; `minimatch`, `yaml` | build/security-operation dependency; trace the workflow and lock treatment |
-| `.github/release/clawhub-cli/package.json` | private release helper; `clawhub` | release-operation dependency; trace packaging/publish consumers |
-| `.github/release/vercel-cli/package.json` | private release helper; `sandbox`, `vercel` | release-operation dependency; trace deployment workflow consumers |
-| `docs/snippets/plugin-publish/minimal-package.json` | public-looking sample plugin package; `typebox` | documentation/example provenance and plugin-publish contract review |
-| `qa/convex-credential-broker/package.json` | private QA service; `convex`, `nostr-tools`, `@types/node`; deploy/dev/dashboard scripts | external QA service and credential-flow review; not silently excluded as fixture |
-| `scripts/cloudflare/package.json` | private deployment template; Cloudflare container, TypeScript and Wrangler dependencies; check/deploy scripts | build/release/platform-operation review |
+| `.github/actions/setup-security-review/package.json` | private action runtime; `minimatch`, `yaml` | **applicable; standalone action closure**. The local action copies this manifest and its lockfile to a temp runtime and runs `npm ci --ignore-scripts`; the security workflow invokes the action and bundles both files. It is not a pnpm workspace importer. |
+| `.github/release/clawhub-cli/package.json` | private release helper; `clawhub` | **applicable; standalone release-tool closure**. The materializer pins `clawhub@0.23.3` and its lock digest; the ClawHub publication workflow materializes this directory in multiple jobs; its workflow contract test reads both manifest and lockfile. It is not a pnpm workspace importer. |
+| `.github/release/vercel-cli/package.json` | private release helper; `sandbox`, `vercel` | **applicable; standalone release-tool closure**. The materializer pins `vercel@63.1.2` and uses `sandbox`; the Vercel registry workflow materializes this directory before authentication. It is not a pnpm workspace importer. |
+| `docs/snippets/plugin-publish/minimal-package.json` | public-looking sample plugin package; `typebox` | **applicable as documentation/example input, excluded from workspace closure by scope**. The plugin-building guide embeds the same `typebox@1.3.37` example and points readers to this snippet; it is not a product package or workspace importer. |
+| `qa/convex-credential-broker/package.json` | private QA service; `convex`, `nostr-tools`, `@types/node`; deploy/dev/dashboard scripts | **applicable; standalone QA-service closure**. A QA test imports its validation code; the live-transports workflow supplies broker secrets and invokes lanes with `--credential-source convex`; the README documents install/dev/deploy. It is not silently excluded as a fixture and is not a pnpm workspace importer. |
+| `scripts/cloudflare/package.json` | private deployment template; Cloudflare container, TypeScript and Wrangler dependencies; check/deploy scripts | **applicable as an operator-run experimental deployment template, outside the workspace importer set**. Its README directs `npm install`, `npm run check`, and `npm run deploy`, and `wrangler.jsonc` identifies the deployment template. No exact-tree workflow consumer was found in the targeted release/CI references, so it remains a separately reviewed operator path rather than “not applicable.” |
 | `src/claws/fixtures/delegating-agent/package.json` | dependency-free fixture package | non-product fixture disposition with exact test references |
 | `test/fixtures/claws/project-v1/package.json` | dependency-free golden fixture package | non-product fixture disposition with exact test references |
 | `test/fixtures/web-output-provider/package.json` | private dependency-free QA fixture package | non-product fixture disposition with exact test references |
+
+### Direct-consumer follow-up
+
+The targeted exact-source read resolves six of the nine rows above to explicit
+consumers or documented operator entry points. The remaining three manifests
+are dependency-free fixtures and remain an open applicability/disposition
+frontier; the fixed recursive tree proves their paths exist, but this
+continuation has not yet produced sufficient direct test/source reads to claim
+that they are unused, workspace members, or safely excluded. A GitHub Code
+Search attempt could not be used as evidence because the endpoint requires
+authentication. Until exact fixture consumers are read and recorded, the
+dependency/source closure gate remains open.
+
+The direct references used for the resolved rows are:
+
+| manifest | exact consumer/documentation evidence |
+| --- | --- |
+| `.github/actions/setup-security-review/package.json` | `.github/actions/setup-security-review/action.yml` lines 16–21; `.github/workflows/security-review.yml` lines 154–203 |
+| `.github/release/clawhub-cli/package.json` | `scripts/materialize-clawhub-cli.sh` lines 5–14; `.github/workflows/plugin-clawhub-new.yml` lines 444–445, 543–544, 693–694, 850–851; `test/scripts/plugin-clawhub-new-workflow.test.ts` lines 41–49 |
+| `.github/release/vercel-cli/package.json` | `scripts/materialize-vercel-cli.sh` lines 5–15; `.github/workflows/vercel-container-registry-publish.yml` lines 107–117 |
+| `docs/snippets/plugin-publish/minimal-package.json` | `docs/plugins/building-plugins.md` lines 72, 139, 241 |
+| `qa/convex-credential-broker/package.json` | `test/qa-convex-credential-payload-validation.test.ts` line 2; `.github/workflows/qa-live-transports-convex.yml` lines 85–89, 639–691, 737–796, 835–882, 924–961, 1000–1038; `qa/convex-credential-broker/README.md` lines 20–35 |
+| `scripts/cloudflare/package.json` | `scripts/cloudflare/README.md` sections 1–3 and 5; `scripts/cloudflare/wrangler.jsonc` line 43 |
 
 This is a classification frontier, not a completed dependency closure: the
 workflow, release, QA-service, deployment-template and fixture consumers still
