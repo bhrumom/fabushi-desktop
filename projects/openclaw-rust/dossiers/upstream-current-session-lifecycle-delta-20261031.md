@@ -90,7 +90,8 @@ the existing owners:
 
 - `source/host/src/extensions/session/agent_db.rs` seeds or CAS-migrates an
   opaque `lifecycleRevision` in the existing metadata row and advances it for
-  metadata mutations and checkpoint-root publication.
+  metadata mutations, checkpoint-root publication, compare-and-set root
+  publication, and conversation clearing.
 - `source/host/src/extensions/session/session_summaries.rs` and the public Host
   `sessions.list`/`sessions.get` projections expose that revision.
 - `source/host/src/extensions/transcript/agent_lifecycle.rs` accepts guarded

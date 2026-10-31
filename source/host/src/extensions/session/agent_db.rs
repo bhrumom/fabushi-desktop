@@ -605,6 +605,10 @@ impl SandAgentDb {
             "latestRootBlobId".into(),
             serde_json::Value::String(encode_hex(next_root)),
         );
+        object.insert(
+            "lifecycleRevision".into(),
+            serde_json::json!(Uuid::new_v4().to_string()),
+        );
         let next_raw = encode_hex(&serde_json::to_vec(&metadata)?);
         let changed = self.run_write("compareAndSetLatestRootBlobId", |db| {
             db.execute(
@@ -1571,6 +1575,10 @@ impl SandAgentDb {
                 object.insert(
                     "currentPlanUri".into(),
                     serde_json::Value::String(String::new()),
+                );
+                object.insert(
+                    "lifecycleRevision".into(),
+                    serde_json::json!(Uuid::new_v4().to_string()),
                 );
             }
             Some(encode_hex(&serde_json::to_vec(&metadata)?))

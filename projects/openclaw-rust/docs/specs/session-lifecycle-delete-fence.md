@@ -171,8 +171,8 @@ those gates exist, the responsibility remains pending.
 The first Rust implementation slice now exists in the existing owners:
 
 - `SandAgentDb` seeds or CAS-migrates `lifecycleRevision` in the existing
-  metadata row and advances it with metadata mutations and checkpoint-root
-  publication.
+  metadata row and advances it with metadata mutations, checkpoint-root
+  publication, compare-and-set root publication, and conversation clearing.
 - `AgentMetadataProjection`, `AgentSummary`, `sessions.list`, and
   `sessions.get` expose the captured revision.
 - The existing `deleteAgent` owner accepts the guarded fields and rechecks the

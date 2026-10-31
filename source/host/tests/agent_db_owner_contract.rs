@@ -62,9 +62,21 @@ fn owner_registers_live_handle_notifies_shipping_mutations_and_releases_on_close
         })
     });
 
+    let initial_revision = owner
+        .get_metadata("lifecycleRevision")
+        .expect("initial revision")
+        .and_then(|value| value.as_str().map(ToOwned::to_owned))
+        .expect("initial revision value");
+
     assert!(owner
         .compare_and_set_latest_root_blob_id(&[], &[0xaa, 0xbb])
         .expect("root cas"));
+    let root_revision = owner
+        .get_metadata("lifecycleRevision")
+        .expect("root revision")
+        .and_then(|value| value.as_str().map(ToOwned::to_owned))
+        .expect("root revision value");
+    assert_ne!(root_revision, initial_revision);
     assert!(owner
         .set_sand_profile(&SandProfile {
             description: "profile".into(),
@@ -84,6 +96,12 @@ fn owner_registers_live_handle_notifies_shipping_mutations_and_releases_on_close
     assert_eq!(awaiting_hits.load(Ordering::SeqCst), 1);
 
     assert!(owner.clear_conversation().expect("clear conversation"));
+    let cleared_revision = owner
+        .get_metadata("lifecycleRevision")
+        .expect("cleared revision")
+        .and_then(|value| value.as_str().map(ToOwned::to_owned))
+        .expect("cleared revision value");
+    assert_ne!(cleared_revision, root_revision);
     assert!(owner
         .get_awaiting_user_response()
         .expect("awaiting after clear")
