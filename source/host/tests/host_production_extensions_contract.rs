@@ -104,6 +104,12 @@ fn production_host_owns_the_canonical_plugin_capability_catalog() {
         "bundled Crabbox registration must remain capability metadata only"
     );
     assert!(
+        SHIPPING_HOST.contains("plugin_capability_catalog: Arc::clone(&production_extensions.plugin_capability_catalog)")
+            && SHIPPING_HOST.contains("if method == \"cloudWorkers.capabilities\"")
+            && SHIPPING_HOST.contains("\"metadataOnly\": true"),
+        "worker capability metadata must be projected through the existing Host catalog"
+    );
+    assert!(
         PRODUCTION_OWNER.contains("if self.plugin_capability_catalog.get_channel(channel_id).is_none()"),
         "provider registration must reject channels absent from the capability catalog"
     );
