@@ -18,7 +18,7 @@ The following 6 core agent execution, loop detection, session compaction, model 
 | `part-0021` | `src/acp/commands.ts` | `ed35270d5976a1700d7b0adc7367b0b5b4352f44` | 45 | 1..45 (full-file) | `OCRM-RESP-AGENT-ACP-COMMAND-001` |
 | `part-0021` | `src/acp/policy.ts` | `5cbf002ee4ad1c9e2529417ec4b3d054a73e69fb` | 48 | 1..48 (full-file) | `OCRM-RESP-AGENT-ACP-POLICY-001` |
 | `part-0025` | `src/agents/sessions/compaction/compaction.ts` | `e26a8d7ba3ddf06b53cb12ec1694fef437a3c306` | 722 | 1..722 (full-file) | `OCRM-RESP-AGENT-COMPACTION-001` |
-| `part-0025` | `src/agents/tool-loop-admission.ts` | `bf5d08bb075195a0488c0e0747141f2d61f16605` | 299 | 1..299 (full-file) | `OCRM-RESP-AGENT-LOOP-RUNNER-001` |
+| `part-0025` | `packages/agent-core/src/agent-loop.ts` | `c6d5ce6c43fe0897f47ee71f2e74ac4e93034634` | 1229 | 1..1229 (full-file) | `OCRM-RESP-AGENT-LOOP-RUNNER-001` |
 | `part-0025` | `src/agents/tool-loop-detection.ts` | `3924feee594b238384b655fcb8b5db0c96c4b2b2` | 340 | 1..340 (full-file) | `OCRM-RESP-AGENT-LOOP-DETECTION-001` |
 | `part-0042` | `src/model-catalog/pricing.ts` | `f69ca7e8c3395725d2db24c7f123f95b9d316cb1` | 172 | 1..172 (full-file) | `OCRM-RESP-AGENT-PRICING-CATALOG-001` |
 
