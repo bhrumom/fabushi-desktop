@@ -14218,10 +14218,10 @@
       ],
       "id": "OCRM-RESP-SESSION-AUTH-PROFILE-LIFECYCLE-001",
       "integration": {
-        "consumer": "source/host/src/extensions/session/session_profile_files.rs",
+        "consumer": "No production auth-profile lifecycle consumer identified; session_profile_files.rs currently serves agent profile/avatar data only",
         "entrypoint": "source/host/src/extensions/session/session_profile_files.rs",
         "owner": "source/host/src/extensions/session/session_profile_files.rs",
-        "producer": "source/host/src/extensions/session/session_profile_files.rs"
+        "producer": "No production auth-profile preservation/removal producer identified"
       },
       "invariants": [
         "Active auth profiles cannot be purged while referenced by live sessions"
@@ -14286,7 +14286,7 @@
       ],
       "status": {
         "acceptance": "pending",
-        "implementation": "implemented",
+        "implementation": "not-started",
         "mapping": "mapped",
         "read": "read-complete",
         "verification": "not-run",

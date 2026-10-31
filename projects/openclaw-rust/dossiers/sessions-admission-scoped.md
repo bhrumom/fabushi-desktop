@@ -72,6 +72,17 @@ does not yet have a production caller proving this lifecycle, so
 `OCRM-RESP-SESSION-AUTH-PROFILE-LIFECYCLE-001` remains `not-wired`/`not-run`;
 the read is source-closure evidence only, not a production acceptance claim.
 
+The current implementation/test recheck is stricter: `session_profile_files.rs`
+contains agent profile and avatar read/write helpers, not auth-profile
+preservation or removal logic. The O05 Rust test only writes a temporary JSON
+document and asserts that two strings can be read back; it does not invoke the
+selected owner and does not exercise active-session retention, incompatible
+provider clearing, stale-profile removal, or a producer/consumer lifecycle.
+This is test-flaw/static fixture evidence, not an implementation slice. The
+parity row therefore remains `wiring=not-wired`, `verification=not-run`, and
+`acceptance=pending`, with `implementation=not-started` until the real
+auth-profile owner and lifecycle contract are implemented.
+
 The same pass read `src/sessions/auth-profile-removal.ts` in full (blob
 `378579dd13534027cdce7953942e64822db097e9`, 157 lines). It is mapped to the
 same lifecycle responsibility as the preservation source, while its removal
