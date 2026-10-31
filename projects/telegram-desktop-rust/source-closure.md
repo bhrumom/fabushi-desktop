@@ -1445,3 +1445,18 @@ Platform-core final source-level compliance commit is `a9cca9a441ada6738bf3418f3
 `usingHttpWait()` transport scheduling, timeout/retry/backoff, arbitrary request history, auth-key binding/persistence, gzip, complete difference/differenceSlice decoding/application, broader fixed-U source/legal closure, Stage-B executable evidence, and independent release ACCEPT remain outside this wire-only closure or open.
 
 No GitHub Actions/status/check query or trigger, build, typecheck, lint, schema validator, generator, unit/contract/integration/E2E test, package, deployment, installation, or runtime acceptance was performed.
+
+
+## Stage-A MTProto help.configSimple adjacent revalidation (evidence round 96; task round 65, 2026-11-01)
+
+Fixed U remains `telegramdesktop/tdesktop@f985723b552b30fe1c17d377d57f44e61a15a8c4`. Fresh readback confirms `mtproto.tl@76225965bfc794388db241f3f760db8ab79e84f8` still declares `ipPort#d433ad73`, `ipPortSecret#37982646`, `accessPointRule#4679b65f`, and `help.configSimple#5a592a6c` immediately after `http_wait#9299359f`; `session_private.cpp@13cbc76ec723386027b5b4dcac79999b791c4614` has no simple-config receive/application branch. The actual fixed-U higher lifecycle remains `special_config_request.cpp@fdb65506b0a886bc2daeccb61090bc44be7e2d88` / `special_config_request.h@91901489e778089b03187682a9556e929867b94f`, which owns web acquisition/decryption, HTTP-derived time, expiry/non-empty policy, phone-prefix filtering, IPv4 conversion, and DC endpoint callbacks.
+
+Existing-owner-first source review confirms **no production delta**. Canonical production api/lib blobs remain `ebfb3670b5cd097b9ce288782c7954f5cfe9fc43` / `abab39e42f100972484191f0e52e9edd9b88c6cf`, and desktop provider api/lib read back byte-identically. The existing parser still preserves raw signed ints, strings, binary secrets and nested vector order, uses bounded TL framing, rejects malformed/wrong/truncated/trailing objects, and performs no expiry/phone/DC routing mutation.
+
+Spec-first revalidation is platform-core commit `99bb755e64a1fb96889acf0b4b673f855f5e48b6` / blob `a80fb4dd9dd7a6855fb28162ba03716daa000b09`. An external public-API regression contract was authored only at canonical commit `2d78cb1aa4ad7e7edb3a31bb596b9eb79e610d32` / blob `bc5c49ee5be958a49f16d7c14617e51e47c3961b`, then mirrored byte-identically into desktop at commit `231337450087a652b678747b98359914c20c8058`. It independently pins empty wire-level `rules` acceptance, signed nested value/secret preservation, every truncation boundary, wrong top-level/nested/vector constructors, and strict EOF. The contract was not run.
+
+Platform-core final source-level compliance is `070ff5136f550a3c79f3839d91667857f71c9f14` / spec blob `ac08d9b91e06af12d8d794d9b146d2aaba829d60`. The sole ledger row `TDRP-R9-MTPROTO-CONFIG-SIMPLE-WIRE-001` remains `implemented / validation_status=not-run / accepted=false`; coverage remains `responsibilities_total=97, unknown=16172, unread=16145, omitted=0, unmapped_responsibilities=0`.
+
+Special-config acquisition/decryption/expiry/phone-prefix/DC endpoint application, arbitrary request/container history, connection scheduling, auth-key binding/persistence, `gzip_packed`, complete difference/differenceSlice decoding/application, broader fixed-U source/legal closure, Stage-B executable evidence, and independent release ACCEPT remain outside this wire-only closure or open.
+
+No GitHub Actions/status/check query or trigger, build, typecheck, lint, schema validator, generator, unit/contract/integration/E2E test, package, deployment, installation, or runtime acceptance was performed.

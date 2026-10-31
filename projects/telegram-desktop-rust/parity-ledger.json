@@ -18730,15 +18730,29 @@
         "desktop-initial-implementation-commit:870ec15e7760718ad7ef1eb5e578dfcef8f0e46b",
         "desktop-final-contract-sync-commit:878329a3f54895da0c44ab33e14cf8856444e128",
         "path:source/mahayana/mahayana-rs/providers/telegram-protocol/src/api.rs@0c852a5e3bc41a4ac571d713ae3d4edea19b3619",
-        "path:source/mahayana/mahayana-rs/providers/telegram-protocol/src/lib.rs@04e5020e7b1e7ed46b403c151f84a095a1a17e4c"
+        "path:source/mahayana/mahayana-rs/providers/telegram-protocol/src/lib.rs@04e5020e7b1e7ed46b403c151f84a095a1a17e4c",
+        "platform-core-round65-revalidation-spec-commit:99bb755e64a1fb96889acf0b4b673f855f5e48b6",
+        "platform-core-round65-revalidation-spec-blob:a80fb4dd9dd7a6855fb28162ba03716daa000b09",
+        "platform-core-round65-external-contract-commit:2d78cb1aa4ad7e7edb3a31bb596b9eb79e610d32",
+        "platform-core-path:native/telegram-protocol/tests/protocol_contract.rs@bc5c49ee5be958a49f16d7c14617e51e47c3961b",
+        "desktop-round65-contract-mirror-commit:231337450087a652b678747b98359914c20c8058",
+        "desktop-path:source/mahayana/mahayana-rs/providers/telegram-protocol/tests/protocol_contract.rs@bc5c49ee5be958a49f16d7c14617e51e47c3961b",
+        "platform-core-round65-final-compliance-commit:070ff5136f550a3c79f3839d91667857f71c9f14",
+        "platform-core-round65-final-spec-blob:ac08d9b91e06af12d8d794d9b146d2aaba829d60",
+        "platform-core-live-path:native/telegram-protocol/src/api.rs@ebfb3670b5cd097b9ce288782c7954f5cfe9fc43",
+        "platform-core-live-path:native/telegram-protocol/src/lib.rs@abab39e42f100972484191f0e52e9edd9b88c6cf",
+        "desktop-live-path:source/mahayana/mahayana-rs/providers/telegram-protocol/src/api.rs@ebfb3670b5cd097b9ce288782c7954f5cfe9fc43",
+        "desktop-live-path:source/mahayana/mahayana-rs/providers/telegram-protocol/src/lib.rs@abab39e42f100972484191f0e52e9edd9b88c6cf",
+        "stage-a-round96-evidence:projects/telegram-desktop-rust/evidence/round96-mtproto-config-simple-wire-revalidation-20261101.md"
       ],
       "test_evidence": [
         "platform-core native/telegram-protocol/src/api.rs both IpPort variants and raw-field preservation contracts authored, not run",
         "platform-core native/telegram-protocol/src/api.rs AccessPointRule/help.ConfigSimple nested vector/order contracts authored, not run",
         "platform-core native/telegram-protocol/src/api.rs wrong top-level/nested constructors, wrong vector constructors, invalid UTF-8 phone-prefix string, every-byte truncation and trailing rejection contracts authored, not run",
-        "desktop synchronized protocol contracts authored, not run"
+        "desktop synchronized protocol contracts authored, not run",
+        "round96 canonical/desktop public configSimple contracts preserve signed nested values and empty wire-level rules while rejecting every truncation boundary, wrong top-level/nested/vector constructors, and strict-EOF violations; authored, not run"
       ],
-      "target_commit": "878329a3f54895da0c44ab33e14cf8856444e128",
+      "target_commit": "231337450087a652b678747b98359914c20c8058",
       "workflow_run": null,
       "run_attempt": null,
       "job": null,
@@ -18858,7 +18872,7 @@
       "acceptance_reviewer": null,
       "reviewer": null,
       "license_and_provenance": "Behavioral responsibility is anchored to fixed-U telegramdesktop/tdesktop Telegram/SourceFiles/mtproto/scheme/mtproto.tl@76225965bfc794388db241f3f760db8ab79e84f8. Higher-level lifecycle evidence was reread from Telegram/SourceFiles/mtproto/special_config_request.cpp@fdb65506b0a886bc2daeccb61090bc44be7e2d88 and special_config_request.h@91901489e778089b03187682a9556e929867b94f; session_private.cpp@13cbc76ec723386027b5b4dcac79999b791c4614 has no help.configSimple branch. The implementation is source-neutral Rust and copies no upstream C++ implementation.",
-      "notes": "Stage A implementation only. This row closes exact typed ipPort/ipPortSecret/accessPointRule/help.configSimple wire decoding only. Telegram Desktop-equivalent special-config web acquisition/decryption/HTTP-date/expiry/phone-prefix/DC endpoint application lifecycle remains explicitly blocked/fail-closed. Global unknown/unread source-entry counts remain unchanged because this is a newly mapped responsibility slice within already-open fixed-U source coverage. Final authored-only malformed-framing contracts are synchronized at desktop commit 878329a3f54895da0c44ab33e14cf8856444e128; validation_status=not-run and accepted=false.",
+      "notes": "Stage A implementation only. This row closes exact typed ipPort/ipPortSecret/accessPointRule/help.configSimple wire decoding only. Telegram Desktop-equivalent special-config web acquisition/decryption/HTTP-date/expiry/phone-prefix/DC endpoint application lifecycle remains explicitly blocked/fail-closed. Global unknown/unread source-entry counts remain unchanged because this is a newly mapped responsibility slice within already-open fixed-U source coverage. Final authored-only malformed-framing contracts are synchronized at desktop commit 878329a3f54895da0c44ab33e14cf8856444e128; validation_status=not-run and accepted=false. Round96 adjacent revalidation confirms the live canonical/desktop api/lib blobs remain byte-identical and the existing parser still precisely closes only the ipPort/ipPortSecret/accessPointRule/help.configSimple wire layer. A new external public-API regression contract was authored at platform-core 2d78cb1aa4ad7e7edb3a31bb596b9eb79e610d32 and mirrored byte-identically at desktop 231337450087a652b678747b98359914c20c8058; it was not run. Special-config acquisition/decryption/HTTP-time/expiry/non-empty/phone-prefix/IP conversion/DC callback application remains explicitly separate/fail-closed. Platform final source-level compliance is 070ff5136f550a3c79f3839d91667857f71c9f14/spec blob ac08d9b91e06af12d8d794d9b146d2aaba829d60.",
       "test_execution_evidence": [],
       "validation_status": "not-run",
       "accepted": false
