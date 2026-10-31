@@ -174,6 +174,30 @@ required architectural decisions. It is static evidence only and does not
 create an owner, alter implementation status, or substitute for Actions
 verification.
 
+## Priority producer/owner/consumer wiring frontier
+
+`OCRM-RESP-SESSION-MODEL-OVERRIDES-001` has a more precise implementation
+frontier than its current ledger wording alone conveys. The existing owner
+validates and persists the session-scoped `sessionModelSelection` KV through
+`SandAgentDb` (`source/host/src/extensions/session/agent_session.rs:45-92,
+267-295`). The production turn path, however, currently constructs
+`SandSessionOptions` from the incoming request's `modelId`
+(`source/host/app/src/main.rs:7290-7307`), and a bounded Rust-source search
+found no production read of `read_session_model_entry` feeding that options
+object or the inference owner.
+
+The resulting contract is:
+
+| Segment | Evidence | Status |
+| --- | --- | --- |
+| producer | session model mutation reaches `apply_session_model_selection` | native mutation path exists |
+| owner/state | validated `sessionModelSelection` is scoped to the agent id and persisted in the existing DB | implemented owner/state |
+| consumer | production inference/turn options do not yet consume the persisted selection | not wired; direct implementation frontier |
+
+This is a static reachability finding. It does not authorize changing the
+ledger to `wired`, and it does not establish that a future consumer may bypass
+the existing model-selection policy or session identity checks.
+
 ## Global flags
 
 All eight global flags remain `false`: baseline identity, source closure,
