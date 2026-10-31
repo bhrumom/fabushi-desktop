@@ -633,6 +633,14 @@ overlay consumes and renders both the validated status reply and event family.
 Mutation-driven event publication, provider/process production and CLI
 consumer are still open.
 
+The bundled `workerProviders/crabbox` metadata now has a separate read-only
+`cloudWorkers.capabilities` projection. The Host reads the existing
+`PluginCapabilityCatalog`, the Rust Coordinator validates the
+`metadataOnly=true` projection, and Settings displays provider/plugin labels.
+This does not alter the Cloud Worker owner status, authorize a lease, resolve a
+binary or secret, enroll a device, create a sandbox, launch a process, or wire
+CLI/mutation consumers.
+
 The Coordinator event projection now has a family-scoped decode/encode
 boundary for `cloud-workers.status`: unknown families, malformed payloads, and
 semantically invalid projections (including a non-canonical owner) are
