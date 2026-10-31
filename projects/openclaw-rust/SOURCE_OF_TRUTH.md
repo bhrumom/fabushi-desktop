@@ -223,6 +223,11 @@ producer path 纠正为实际的 `source/host/src/runner/tools/` 位置；
 因此已将该行降为 `not-wired` 并保留明确 pending consumer。该修订只纠正
 接线台账，不创建新的 owner 或替代 packaged/Actions 证据。
 
+重新运行接线路径审计后，316 个仍为 wired 的 integration path claim 全部指向
+存在的仓库文件；剩余 28 个复合描述使用 `->`、`plus` 或逗号列举多个调用
+步骤，不能按单一 symbol 文本匹配推断缺失。当前未发现新的 wired 不存在路径；
+该结果仍不替代调用图、Actions receipt 或 packaged runtime 证据。
+
 降级后的反向审计确认其余 80 条 `wiring=wired` 责任均可在生产源码范围
 （`source/host/src`、`source/node-agent-coordinator/src`、
 `source/electron-main` 或 `frontend/src`）定位目标 symbol；未发现第二批仅由
