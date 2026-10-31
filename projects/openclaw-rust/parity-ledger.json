@@ -14733,7 +14733,7 @@
       "oracle_ids": [
         "OCRM-SESSION-O04"
       ],
-      "owner_decision": "Implement session model overrides in agent_session.rs",
+      "owner_decision": "Retain SandAgentSessionStore and its agent-scoped SQLite projection as the persistence owner; identify the real session mutation route and inference consumer before production wiring",
       "postconditions": [
         "Inference queries use session override when specified"
       ],
