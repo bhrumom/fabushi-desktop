@@ -101,8 +101,9 @@ P0-AC 全通过也只完成基线任务；可按主 Spec §15.1 为 baseline ide
 P0 仍未退出：此前只读 live candidate 曾推进到 OpenClaw
 `68fbe4ac429cdac7a54541df40367d66defd0161` / tree
 `a3c122b99571c0c33ff6a02ca4c4e32f05f9433d`；该 identity 仅保留为历史
-discovery evidence。当前 candidate 以 `upstream.lock.json` 的
-`10d93efc…/d33ed7c3…` 为准，但尚未取得针对该 exact subject 的 GitHub Actions
+discovery evidence。此前 candidate 曾以 `upstream.lock.json` 的
+`10d93efc…/d33ed7c3…` 为准，但现已被后续 live candidate supersede；该段仅作
+历史记录。当前 `b924498…/af9b32…` 尚未取得针对 exact subject 的 GitHub Actions
 inventory、依赖闭包和 evidence envelope。既有 inventory/shards 仍绑定上一轮
 候选，不能编辑性重标为当前来源；对应 drift decision 见
 `decisions/2026-10-31-upstream-live-drift.md`。
@@ -162,6 +163,14 @@ inventory/依赖闭包或将其提升为 authority。
 保留为历史 identity 记录，不代表当前 source authority。当前 lock 状态仍为
 `p0-source-authority-rebaseline-required`，因此不得从本段 discovery identity
 提升 `baseline_identity_accepted` 或 `source_closure_ready`。
+
+2026-10-31T05:14:48Z 的最新只读核对将当前 discovery reference 更新为
+OpenClaw `b924498923dff81a02fb8a89d57828717c6e160d` / tree
+`af9b32fcb093badf0e05912411f5acfa65698e79`；递归 tree 未截断，共 63,902
+entries（61,661 blobs、2,241 directories）。它已同步写入
+`upstream.lock.json` 的 `live_candidate`，仍不构成 Actions authority、依赖
+闭包或任何 completion flag 的正面证据；以上较早 current-candidate 段落仅作
+历史记录保留。
 
 随后在 2026-10-31T02:34:32Z 重新核对到 OpenClaw
 `298546d88934bf05bc7e208d13bf6ce2c538e3f2` / tree

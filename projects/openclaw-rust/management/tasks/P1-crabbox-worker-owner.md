@@ -12,18 +12,19 @@ Last updated: 2026-10-31 (Asia/Shanghai)
 
 Current OpenClaw discovery candidate is recorded in
 `projects/openclaw-rust/upstream.lock.json` as commit
-`10d93efc9c8730b7a2fad831c20c649adec7176b`, tree
-`d33ed7c344544baf60148a41afab9e9a9547e9f4`. It remains discovery-only until
+`b924498923dff81a02fb8a89d57828717c6e160d`, tree
+`af9b32fcb093badf0e05912411f5acfa65698e79`. It remains discovery-only until
 the exact-subject Actions inventory, dependency closure, and evidence envelope
 are produced; this task must not reuse the historical oracle as current source
 authority or promote the candidate without that rebaseline.
 
-## Live revalidation (2026-10-31T04:25:12Z)
+## Live revalidation (2026-10-31T05:14:48Z)
 
 The current read-only live-main ref is now
-`openclaw/openclaw@10d93efc9c8730b7a2fad831c20c649adec7176b`, tree
-`d33ed7c344544baf60148a41afab9e9a9547e9f4`, with a non-truncated recursive
-tree of 63,881 entries. The refreshed root-input identities are in the lock;
+`openclaw/openclaw@b924498923dff81a02fb8a89d57828717c6e160d`, tree
+`af9b32fcb093badf0e05912411f5acfa65698e79`, with a non-truncated recursive
+tree of 63,902 entries (61,661 blobs and 2,241 directories). The refreshed
+root-input identities are in the lock;
 this does not reattribute historical source rows or establish provider,
 Actions, device, package or acceptance evidence.
 
