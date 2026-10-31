@@ -98,7 +98,7 @@ provenance。该 c325 subject 已被 2026-10-31 的后续 live revalidation supe
 当前 OpenClaw `main` 以 `upstream.lock.json::live_candidate` 为准：commit
 `7293e892728aef27996d8a15626e006e2d537dcc`、tree
 `b02727b750a5439df95f2178dd983f2a1bd79f03`，递归 tree 未截断，共 64,064
-条 entry（61,821 blobs、2,241 directories、0 gitlinks）。该 subject 仍为
+条 entry（61,823 blobs、2,241 directories、0 gitlinks）。该 subject 仍为
 discovery-only；未取得绑定本 exact subject 的 Actions inventory、递归依赖
 闭包、LFS/完整性或 evidence envelope，不得复用任何旧 candidate 的 closure
 或提升 authority/global flag。
@@ -106,7 +106,7 @@ discovery-only；未取得绑定本 exact subject 的 Actions inventory、递归
 2026-10-31 当前治理快照以 `upstream.lock.json::live_candidate` 为准：
 OpenClaw `main` commit=`7293e892728aef27996d8a15626e006e2d537dcc`、tree
 `b02727b750a5439df95f2178dd983f2a1bd79f03`，递归 tree 未截断，共 64,064
-entries（61,821 blobs、2,241 directories、0 gitlinks）。它 supersede 以上
+entries（61,823 blobs、2,241 directories、0 gitlinks）。它 supersede 以上
 更早的 live 候选作为当前 discovery reference，但仍未取得绑定该 exact
 subject 的 Actions inventory、递归依赖闭包、LFS/完整性、许可证和 evidence
 envelope；不得复用旧 candidate 的 closure，也不得提升任何 global flag。
@@ -658,7 +658,7 @@ verification, acceptance, or global flag state.
 只读 GitHub 核对显示 OpenClaw `main` 已推进到
 `7293e892728aef27996d8a15626e006e2d537dcc` / tree
 `b02727b750a5439df95f2178dd983f2a1bd79f03`，递归 tree 未截断，共 64,064
-entries（61,821 blobs、2,241 directories、0 gitlinks）。该 identity 只更新
+entries（61,823 blobs、2,241 directories、0 gitlinks）。该 identity 只更新
 `upstream.lock.json::live_candidate`，仍是 discovery-only；不得复用前一
 candidate 的 inventory、dependency closure、LFS/integrity 或 Actions
 provenance，也不改变 fixed implementation subject、AC01/AC02 状态或任何
