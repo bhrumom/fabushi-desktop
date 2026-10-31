@@ -560,9 +560,10 @@ source closure 和 exact-head Actions authority 仍未闭合。
 但所有行的 `applicability_status` 与 `disposition_status` 仍为旧 materialization
 留下的 `null`，不是已分流或已完成 disposition 的证据；因此
 `applicability_disposition_closure` 继续为 `false`。现有
-`shard_inventory.py` 会在下一次 Actions exact-subject materialization 时为
-未复用审查字段发出 `unknown/pending`；开发冻结期间不手工重写 generated
-shards。详见 `dossiers/inventory-applicability-field-audit-20261031.md`。
+Actions 中的 `expand_inventory.py` 会在下一次 exact-subject materialization
+时为未复用审查字段发出显式 `unknown/pending`，随后由 `shard_inventory.py`
+持久化展开后的记录；开发冻结期间不手工重写 generated shards。详见
+`dossiers/inventory-applicability-field-audit-20261031.md`。
 
 对 fixed subject 应用 lock 与 exact Git tree 的进一步只读重核显示：200 个
 importer 路径全部匹配 manifest，263 条 `link:` edge 按 importer 相对路径解析
