@@ -3790,10 +3790,8 @@
         "Silent reply token suppresses user notifications cleanly"
       ],
       "migration_rollback": "Disable periodic heartbeat wakes",
-      "oracle_ids": [
-        "OCRM-PLUGIN-O07"
-      ],
-      "owner_decision": "Implement heartbeat polling and scratchpad evaluation in runner",
+      "oracle_ids": [],
+      "owner_decision": "Keep the heartbeat responsibility pending until a real producer, timer admission, runner consumer, response-notification consumer, and heartbeat-specific oracle are identified",
       "postconditions": [
         "Heartbeat wake settled with or without user notification"
       ],
@@ -3840,12 +3838,8 @@
         "path": "source/host/src/runner/mod.rs",
         "symbol": "HeartbeatService"
       },
-      "tests": [
-        "source/host/tests/openclaw_plugins_automations_contract.rs::test_ocrm_plugin_o07_web_search_and_fetch_bounds"
-      ],
-      "typed_contracts": [
-        "HeartbeatService::poll"
-      ],
+      "tests": [],
+      "typed_contracts": [],
       "unit_id": "OCRM-UNIT-AUTOMATION-001"
     },
     {

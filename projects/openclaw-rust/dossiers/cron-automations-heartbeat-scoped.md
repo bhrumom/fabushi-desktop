@@ -55,8 +55,9 @@ The audited source code was decomposed into 6 discrete Rust runtime responsibili
 
 6. **`OCRM-RESP-AUTO-REPLY-HEARTBEAT-001`**:
    - **Behavior**: Periodic heartbeat poll scheduling, scratchpad effectively-empty detection, silent token reply evaluation (`HEARTBEAT_OK`), and response tool instruction injection.
-   - **Rust Owner**: `source/host/src/runner/mod.rs:HeartbeatService`.
-   - **Oracle**: `OCRM-PLUGIN-O07`.
+   - **Declared Rust Owner Candidate**: `source/host/src/runner/mod.rs` (no `HeartbeatService` symbol is present).
+   - **Production reachability**: not wired. The repository has production cron/event automation runtime paths, but no heartbeat producer, timer admission, runner consumer, or response-notification consumer for this responsibility.
+   - **Oracle status**: no valid heartbeat oracle is currently registered. The historical `OCRM-PLUGIN-O07` test is a web-search/fetch payload-bounds contract and must not be used as heartbeat evidence.
 
 ---
 
@@ -70,7 +71,7 @@ The audited source code was decomposed into 6 discrete Rust runtime responsibili
 6. **`OCRM-PLUGIN-O04`**: `test_ocrm_plugin_o04_plugin_rpc_timeouts`
 7. **`OCRM-PLUGIN-O05`**: `test_ocrm_plugin_o05_sand_auto_review_modes_uniform`
 8. **`OCRM-PLUGIN-O06`**: `test_ocrm_plugin_o06_tool_schema_validation`
-9. **`OCRM-PLUGIN-O07`**: `test_ocrm_plugin_o07_web_search_and_fetch_bounds`
+9. **`OCRM-PLUGIN-O07`**: `test_ocrm_plugin_o07_web_search_and_fetch_bounds` (web-search/fetch only; not heartbeat evidence)
 
 ---
 
