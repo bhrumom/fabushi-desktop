@@ -217,6 +217,12 @@ as an acceptance claim. If P1-specific criteria later become project-level RTM
 criteria, that schema change and the corresponding rows must be reviewed and
 introduced explicitly.
 
+The canonical task-local IDs currently declared by this task are:
+`OCRM-P1-F01`, `OCRM-P1-F02`, `OCRM-P1-F03`, `OCRM-P1-F04`,
+`OCRM-P1-F05`, `OCRM-P1-F06`, `OCRM-P1-F07`, `OCRM-P1-F08`,
+`OCRM-P1-AC02`, `OCRM-P1-AC03`, `OCRM-P1-AC04`, and `OCRM-P1-AC05`.
+They remain task-local until an explicit project-RTM amendment promotes them.
+
 - `OCRM-RESP-INFRA-WORKER-CRABBOX-STATUS-PROJECTION-001` records the existing
   read-only `CloudWorkerProvisioningExtension::status_snapshot` → Host Gateway
   → Coordinator status consumer path as `implementation=implemented` and
