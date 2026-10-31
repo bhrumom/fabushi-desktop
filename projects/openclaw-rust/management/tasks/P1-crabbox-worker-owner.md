@@ -212,6 +212,12 @@ pending Crabbox responsibilities:
   Computer authorization, screenshot/result persistence and side effects stay
   with the delegate; this does not establish device enrollment or production
   worker composition.
+- `OCRM-RESP-INFRA-WORKER-CRABBOX-PLATFORM-DESCRIPTOR-001` records the
+  implemented `CloudWorkerPlatformBridge` descriptor as a separate platform
+  boundary. It validates platform, desktop session and bounded launcher
+  identity only; launcher, Docker, VNC, CDP, Electron lifecycle, physical
+  worker process and platform credential ownership remain absent. Its wiring is
+  therefore `not-wired`, and platform acceptance remains pending.
 
 The broader Crabbox projection, lifecycle, sandbox, bootstrap, artifact,
 warm-image and runtime-control rows remain pending where their producer or

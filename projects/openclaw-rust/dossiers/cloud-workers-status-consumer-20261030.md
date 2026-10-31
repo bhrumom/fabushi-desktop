@@ -68,3 +68,18 @@ results, own screenshots, or execute Computer actions itself. The provider,
 physical worker, device enrollment, production Runner composition, package
 reachability, verification and acceptance remain pending; the parity row marks
 only this adapter boundary as wired.
+
+## P1-F06 platform descriptor boundary — 2026-10-31
+
+The Rust platform seam at
+`source/host/src/extensions/cloud_workers/platform_bridge.rs` is a descriptor
+contract, not a platform executor. `CloudWorkerPlatformBridge` validates the
+requested platform, desktop session and bounded launcher identity, rejecting
+unsupported Linux/VNC and malformed launcher identities before delegation.
+
+It does not own or connect a launcher, Docker, VNC, CDP, Electron lifecycle,
+physical worker process, or platform credentials. No existing platform adapter,
+session owner, provider producer, package path or live platform receipt is
+wired to this descriptor. The parity row therefore records
+`implementation=implemented`, `wiring=not-wired`, `verification=not-run` and
+`acceptance=pending`; platform/device/package acceptance remains open.
