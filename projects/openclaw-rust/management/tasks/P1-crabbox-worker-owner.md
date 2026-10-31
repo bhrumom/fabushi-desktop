@@ -291,6 +291,8 @@ pending Crabbox responsibilities:
   to cleanup-debt, capture-uncertain and retiring rows, plus an exact image-ID
   selector that rejects healthy rows; it remains a read-only projection and
   does not perform provider cleanup, capture, deletion or recovery.
+- Persisted warm-image validation now rejects a forged `CaptureUncertain` row
+  without cleanup debt, preserving the recovery obligation across restart.
 
 The broader Crabbox projection, lifecycle, sandbox, bootstrap, artifact,
 warm-image and runtime-control rows remain pending where their producer or

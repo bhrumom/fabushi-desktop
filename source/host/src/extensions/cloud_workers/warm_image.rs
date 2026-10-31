@@ -118,6 +118,7 @@ impl CloudWorkerWarmImage {
     pub fn validate_persisted(&self) -> Result<(), CloudWorkerWarmImageError> {
         if !valid_image_id(&self.image_id)
             || (self.state != CloudWorkerWarmImageState::Available && self.hold_count != 0)
+            || (self.state == CloudWorkerWarmImageState::CaptureUncertain && !self.cleanup_debt)
         {
             return Err(CloudWorkerWarmImageError::InvalidPersistedRecord);
         }
@@ -267,5 +268,17 @@ mod tests {
             Err(CloudWorkerWarmImageError::HoldLimitReached)
         );
         assert_eq!(image.generation, CloudWorkerWarmImageGeneration(0));
+    }
+
+    #[test]
+    fn persisted_uncertain_capture_requires_cleanup_debt() {
+        let mut image = CloudWorkerWarmImage::new("image-1").unwrap();
+        image.state = CloudWorkerWarmImageState::CaptureUncertain;
+        assert_eq!(
+            image.validate_persisted(),
+            Err(CloudWorkerWarmImageError::InvalidPersistedRecord)
+        );
+        image.cleanup_debt = true;
+        assert!(image.validate_persisted().is_ok());
     }
 }
