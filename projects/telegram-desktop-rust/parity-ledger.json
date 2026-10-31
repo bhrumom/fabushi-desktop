@@ -9,7 +9,7 @@
     "unknown": 16172,
     "unread": 16145,
     "omitted": 0,
-    "responsibilities_total": 64,
+    "responsibilities_total": 65,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -16165,6 +16165,266 @@
       "reviewer": null,
       "license_and_provenance": "Behavioral responsibility is anchored to fixed-U telegramdesktop/tdesktop Telegram/SourceFiles/mtproto/session_private.cpp@13cbc76ec723386027b5b4dcac79999b791c4614 and Telegram/SourceFiles/mtproto/scheme/mtproto.tl@76225965bfc794388db241f3f760db8ab79e84f8. The implementation is source-neutral Rust and copies no upstream C++ implementation.",
       "notes": "Stage A implementation only. This row records only the rpc_result subset exactly representable by the single outstanding RPC owner. Arbitrary historical wasSent/haveSent/_resendingIds/toSend/_sentContainers callback routing remains open and fail-closed. Global unknown/unread source-entry counts are intentionally unchanged; contracts are authored but not executed; validation_status=not-run and accepted=false.",
+      "test_execution_evidence": []
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+      "source_path": "Telegram/SourceFiles/mtproto/session_private.cpp",
+      "source_blob_sha": "13cbc76ec723386027b5b4dcac79999b791c4614",
+      "source_kind": "source",
+      "module_id": "tdesktop.mtproto.session.single-rpc-message-container",
+      "responsibility_id": "TDRP-R9-MTPROTO-SINGLE-RPC-MESSAGE-CONTAINER-001",
+      "source_symbols": [
+        "SessionPrivate::handleOneReceived / mtpc_msg_container",
+        "mtpc_msg_container#73f1f8dc",
+        "ReceivedIdsManager::registerMsgId",
+        "SessionPrivate::_ackRequestData"
+      ],
+      "capability_ids": [
+        "CAP-EMBEDDED-MTPROTO-SESSION-RECOVERY"
+      ],
+      "dependency_ids": [
+        "EmbeddedTelegramProtocol",
+        "EmbeddedTelegramNetwork",
+        "TelegramClientLease",
+        "MTProtoAuthKey"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/evidence/round54-mtproto-single-rpc-message-container-20261101.md",
+      "behavior_contract": "For Fabushi's existing single outstanding content RPC and single current ping, fixed-U msg_container#73f1f8dc is parsed as a bounded sequence of msg_id/seq_no/body entries. Every inner server message id is validated by the existing replay guard before recursive handling; on the current RPC path odd seq_no entries enter the existing acknowledgement accumulator. Malformed lengths/count/trailing data fail closed. Outbound _sentContainers and arbitrary historical request fan-out remain open.",
+      "state_machine": "same TelegramClientLease -> RuntimeClient -> EstablishedSession receives authenticated/decrypted msg_container -> bounded protocol parse -> for each inner entry validate server msg_id -> RPC path odd seq_no accumulates ACK -> recursively scan current RPC or current ping service body -> existing exact correlation/recovery only; malformed container => InvalidServiceMessage",
+      "side_effects": [
+        "Moves receive-side msg_container wire parsing into the existing shared telegram-protocol owner",
+        "Reuses the typed parser from the existing RPC and ping receive paths",
+        "Preserves existing inner message-id replay validation and current-RPC odd-sequence acknowledgement accumulation",
+        "Authors parser/sequence-parity contracts without executing them in Stage A"
+      ],
+      "failure_cases": [
+        "Negative or oversized contained-message count is accepted",
+        "Contained body shorter than one TL word or non-word-aligned is accepted",
+        "Truncated or trailing container bytes are silently ignored",
+        "An inner message bypasses the existing server message-id replay guard",
+        "Implementation introduces _sentContainers or arbitrary historical request/container routing"
+      ],
+      "ui_disposition": "No UI change. This is receive-side MTProto container traversal inside the existing embedded runtime.",
+      "non_ui_responsibilities": [
+        "Bounded MTProto msg_container decoding",
+        "Inner server message-id validation before recursive handling",
+        "Current-RPC acknowledgement accumulation from seq_no parity",
+        "Recursive current-RPC/current-ping service dispatch",
+        "Fail-closed malformed container handling"
+      ],
+      "platform_delta": "Fixed-U receive-side msg_container semantics are expressed inside the existing source-neutral Rust telegram-protocol/telegram-network owners. Only current RPC/current ping traversal is represented; no outbound sent-container history or second request registry is added.",
+      "existing_owner_candidates": [
+        "bhrumom/fabushi-platform-core:native/telegram-protocol/src/api.rs",
+        "bhrumom/fabushi-platform-core:native/telegram-network/src/lib.rs",
+        "source/mahayana/mahayana-rs/providers/telegram-protocol/src/api.rs",
+        "source/mahayana/mahayana-rs/providers/telegram-network/src/lib.rs"
+      ],
+      "existing_owner": "Canonical shared Telegram protocol parser + telegram-network EstablishedSession consumed by the existing desktop lease/runtime chain",
+      "rejected_existing_owners": [
+        "Renderer/AppHost cannot own MTProto receive-container parsing",
+        "Storage cannot own live recursive service-message dispatch",
+        "A second sent-container/request registry would split request-state truth"
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "bhrumom/fabushi-platform-core:native/telegram-protocol/src/api.rs",
+        "bhrumom/fabushi-platform-core:native/telegram-protocol/src/lib.rs",
+        "bhrumom/fabushi-platform-core:native/telegram-network/src/lib.rs",
+        "source/mahayana/mahayana-rs/providers/telegram-protocol/src/api.rs",
+        "source/mahayana/mahayana-rs/providers/telegram-protocol/src/lib.rs",
+        "source/mahayana/mahayana-rs/providers/telegram-network/src/lib.rs"
+      ],
+      "fabushi_target_symbols": [
+        "parse_message_container",
+        "MessageContainer",
+        "MessageContainerEntry",
+        "EstablishedSession::scan_rpc_body",
+        "EstablishedSession::process_service_body",
+        "contained_message_requires_ack"
+      ],
+      "target_language": "Rust",
+      "language_rationale": "MTProto wire decoding and current request/ping receive lifecycles are already owned by the shared Rust protocol/network crates, which can represent this receive-only subset without duplicating Telegram Desktop's outbound sent-container history.",
+      "command_event_contracts": [
+        "msg_container(valid) -> parse bounded entries -> validate each inner msg_id -> recursively dispatch through existing current RPC/ping handlers",
+        "current RPC inner seq_no odd -> existing acknowledgement accumulator; even -> no acknowledgement addition",
+        "malformed count/length/truncation/trailing data -> NetworkError::InvalidServiceMessage",
+        "no outbound _sentContainers/wasSent/haveSent/multi-request fan-out is inferred or introduced"
+      ],
+      "state_owner": "Existing EstablishedSession owns live current RPC/current ping and MessageIdGuard; protocol TlReader owns bounded container decoding.",
+      "lifecycle_owner": "Existing account-bound TelegramClientLease -> RuntimeClient -> EstablishedSession production chain.",
+      "persistence_and_restart": "No new persistence. Receive-container traversal is live session state only; outbound historical container/request routing remains intentionally absent.",
+      "concurrency_and_cancellation": "The existing synchronous EstablishedSession retains one outstanding invoke_raw RPC or current ping path. Container traversal creates no background work and no parallel callback registry.",
+      "security_boundary": "Only authenticated/decrypted MTProto messages reach container parsing. Bounded counts/lengths, exact full-buffer consumption, and existing MessageIdGuard replay checks fail closed before inner service handling.",
+      "network_service_dependencies": [
+        "Existing embedded Telegram MTProto encrypted transport",
+        "fixed-U msg_container#73f1f8dc"
+      ],
+      "service_owner": "Canonical embedded Telegram protocol/network runtime; no external container service or provider.",
+      "deployment_evidence": [],
+      "implementation_status": "implemented",
+      "coverage_disposition": "rewritten",
+      "blockers": [
+        "Stage B executable build/unit/contract/integration/packaged validation has not run.",
+        "Outbound/multi-request wasSent/haveSent/_resendingIds/toSend/_sentContainers fan-out and acknowledgement bookkeeping remain open and fail-closed.",
+        "gzip_packed decompression nesting/budget semantics remain open and fail-closed.",
+        "Higher-level new-session update/difference propagation remains open.",
+        "Broader fixed-U source/legal/release closure remains open."
+      ],
+      "production_entrypoints": [
+        "source/mahayana/mahayana-rs/Cargo.toml -> mahayana-telegram -> providers/telegram-runtime -> providers/telegram-network + providers/telegram-protocol",
+        "existing TelegramClientLease/RuntimeClient -> EstablishedSession::invoke_raw or send_ping -> typed parse_message_container -> MessageIdGuard -> recursive current RPC/ping service handling"
+      ],
+      "production_evidence": [
+        "platform-core-spec-commit:b223407bc9829a2fc14449bb5a7cfe6d7f4b082e",
+        "platform-core-implementation-commit:98a2ff425407725571966a4ed17b1643fba87b4d",
+        "platform-core-path:native/telegram-protocol/src/api.rs@14c282bfc20a33446c69a47db4fdd6f0b887348a",
+        "platform-core-path:native/telegram-protocol/src/lib.rs@f21d38495e5a7f5c6e2a35f28a633ac6e3433d4b",
+        "platform-core-path:native/telegram-network/src/lib.rs@bab8893bd8a2a0632014d826503a8091cfe64d46",
+        "desktop-implementation-commit:e8091133b85eb7e368839e6c9b09547620be17c2",
+        "path:source/mahayana/mahayana-rs/providers/telegram-protocol/src/api.rs@14c282bfc20a33446c69a47db4fdd6f0b887348a",
+        "path:source/mahayana/mahayana-rs/providers/telegram-protocol/src/lib.rs@f21d38495e5a7f5c6e2a35f28a633ac6e3433d4b",
+        "path:source/mahayana/mahayana-rs/providers/telegram-network/src/lib.rs@bab8893bd8a2a0632014d826503a8091cfe64d46"
+      ],
+      "test_evidence": [
+        "platform-core native/telegram-protocol/src/api.rs msg_container parse/malformed contracts authored, not run",
+        "platform-core native/telegram-network/src/lib.rs contained seq_no acknowledgement parity contract authored, not run",
+        "desktop synchronized copies authored, not run"
+      ],
+      "target_commit": "e8091133b85eb7e368839e6c9b09547620be17c2",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Canonical Fabushi account + existing TelegramClientLease/runtime + shared MTProto protocol/network production composition",
+      "composition_slot": "Embedded Telegram encrypted session receive-side container traversal",
+      "capability_component": "Bounded current-RPC/current-ping MTProto message-container dispatch",
+      "variation_axes": [
+        "one vs multiple contained messages",
+        "odd vs even contained seq_no on current RPC path",
+        "valid aligned body vs short/unaligned/truncated/trailing container",
+        "nested current RPC result/recovery vs current ping pong"
+      ],
+      "shared_owner_contracts": [
+        "Existing account-bound TelegramClientLease",
+        "Existing RuntimeClient/EstablishedSession",
+        "Existing telegram-protocol bounded TL reader",
+        "Existing MessageIdGuard server replay protection",
+        "Existing encrypted auth-key transport",
+        "Existing Cargo path-dependency composition"
+      ],
+      "duplicate_root_check": "No second account, runtime, provider, transport, auth key, request history, sent-container store, callback registry, session product, message store, UI root, sidecar, subprocess or Web wrapper was introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Not applicable",
+      "primary_navigation_target": "Existing Messages/Conversation navigation",
+      "collection_surface": "Existing ConversationList; no change",
+      "creation_flow": "Existing canonical conversation creation; no change",
+      "object_action_scope": "Not applicable",
+      "detail_section": "Not applicable",
+      "capability_surface": "Existing ConversationWorkspace through the same provider/runtime; no new surface",
+      "route_contract": "No new route.",
+      "search_scope": "Not applicable",
+      "search_provider": "Existing canonical Search owner; unchanged",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Unchanged.",
+      "search_local_remote_contract": "Not applicable.",
+      "responsive_disposition": "No UI change.",
+      "accessibility_contract": "No UI change.",
+      "keyboard_contract": "No UI change.",
+      "state_continuity_contract": "Each contained message is parsed and replay-validated before recursive handling. Odd sequence numbers add an ACK only on the current RPC receive path. Outbound historical container state is not represented.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Existing Fabushi design system; no visual changes",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": null,
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "No new icon asset",
+      "avatar_contract": "No change",
+      "content_copy_keys": [],
+      "motion_contract": "No change",
+      "reduced_motion_contract": "No change",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "high",
+      "requirement_ids": [
+        "TDRP-R9-MTPROTO-SINGLE-RPC-MESSAGE-CONTAINER-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-MTPROTO-MESSAGE-CONTAINER-PARSE-001",
+        "ORA-TDRP-MTPROTO-CONTAINED-ACK-PARITY-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-MTPROTO-CONTAINER-BOUNDED-001",
+        "INV-TDRP-MTPROTO-CONTAINER-NO-SENT-HISTORY-001"
+      ],
+      "unit_case_ids": [
+        "UNIT-TDRP-MTPROTO-MESSAGE-CONTAINER-PARSE-001",
+        "UNIT-TDRP-MTPROTO-MESSAGE-CONTAINER-MALFORMED-001"
+      ],
+      "property_state_case_ids": [
+        "PROP-TDRP-MTPROTO-CONTAINED-ACK-PARITY-001"
+      ],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-MTPROTO-SINGLE-RPC-MESSAGE-CONTAINER-001"
+      ],
+      "integration_case_ids": [
+        "INT-TDRP-MTPROTO-CONTAINER-CURRENT-RPC-001",
+        "INT-TDRP-MTPROTO-CONTAINER-CURRENT-PING-001"
+      ],
+      "functional_e2e_case_ids": [
+        "E2E-TDRP-MTPROTO-CONTAINER-RECEIVE-001"
+      ],
+      "temporal_case_ids": [
+        "TEMP-TDRP-MTPROTO-CONTAINER-RECURSIVE-DISPATCH-001"
+      ],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "fault_recovery_case_ids": [
+        "FAULT-TDRP-MTPROTO-MALFORMED-CONTAINER-001"
+      ],
+      "performance_case_ids": [],
+      "security_case_ids": [
+        "SEC-TDRP-MTPROTO-AUTHENTICATED-CONTAINER-001",
+        "SEC-TDRP-MTPROTO-CONTAINED-REPLAY-GUARD-001"
+      ],
+      "soak_case_ids": [],
+      "exploratory_charter_ids": [],
+      "regression_ids": [
+        "REG-TDRP-MTPROTO-CONTAINER-BYPASS-VALIDATION-001"
+      ],
+      "release_gate_ids": [
+        "G-TRACEABILITY",
+        "G-COMPOSITION",
+        "G-SECURITY",
+        "G-EVIDENCE",
+        "G-RELEASE"
+      ],
+      "test_fixture_ids": [
+        "mtproto-single-rpc-message-container-fixture"
+      ],
+      "test_environment_ids": [
+        "GitHub Actions Stage B matrix (not run)"
+      ],
+      "coverage_matrix_status": "pending",
+      "flake_status": "stable",
+      "release_gate_status": "pending",
+      "acceptance_reviewer": null,
+      "reviewer": null,
+      "license_and_provenance": "Behavioral responsibility is anchored to fixed-U telegramdesktop/tdesktop Telegram/SourceFiles/mtproto/session_private.cpp@13cbc76ec723386027b5b4dcac79999b791c4614. The implementation is source-neutral Rust and copies no upstream C++ implementation.",
+      "notes": "Stage A implementation only. This row records only the receive-side msg_container subset exactly representable by the single outstanding RPC/current ping owners. Arbitrary outbound wasSent/haveSent/_resendingIds/toSend/_sentContainers fan-out and gzip_packed remain open and fail-closed. Global unknown/unread source-entry counts are intentionally unchanged; contracts are authored but not executed; validation_status=not-run and accepted=false.",
       "test_execution_evidence": []
     }
   ],
