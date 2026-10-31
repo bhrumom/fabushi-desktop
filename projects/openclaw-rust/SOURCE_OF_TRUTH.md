@@ -410,6 +410,13 @@ global flag or source-closure state.
 
 P0 在 Actions 建立 lock、inventory、parity ledger、RTM、dossiers 和 evidence 索引；本次不提交伪造的完整台账或空清单来充当 baseline。
 
+本地冻结期间的最新 parity-ledger 状态快照见
+[`dossiers/ledger-status-audit-20261031.md`](dossiers/ledger-status-audit-20261031.md)：239 条责任中
+210 条 `implemented`、20 条 `implementing`、9 条 `not-started`；83 条 `wired`、156 条
+`not-wired`；8 条 `verified`、231 条 `not-run`；239 条 acceptance 仍为 `pending`。
+该快照只固化台账状态，不把 helper、fixture、静态 symbol 或 local oracle 解释为生产接线，
+也不改变任何 completion flag。
+
 冻结期本地治理载体见
 [`evidence/development-freeze-local-governance-20261031.md`](evidence/development-freeze-local-governance-20261031.md)。
 它只记录未推送 local subject、远端 ref 状态和冻结策略，不是 Actions

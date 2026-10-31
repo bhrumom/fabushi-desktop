@@ -1,0 +1,64 @@
+# OCRM parity-ledger status audit — 2026-10-31
+
+## Subject and scope
+
+This is a read-only status audit of the committed parity ledger. The ledger
+remains bound to the fixed implementation subject
+`openclaw/openclaw@ad8d12f126d29b0db204187adf5092db80294e70` /
+`04ccce62f1d74dc8e0c88290ae8ded027b7b0f16`. The moving discovery candidate in
+`upstream.lock.json::live_candidate` is not substituted for that subject.
+
+The audit reads only the ledger's nested `status` fields and does not infer
+production behavior from source references, contract fixtures, helpers,
+capability declarations, or static target presence.
+
+## Current counts
+
+| Dimension | Status | Count |
+| --- | --- | ---: |
+| responsibilities | total | 239 |
+| read | `read-complete` | 234 |
+| read | `partial` | 5 |
+| mapping | `reviewed` | 148 |
+| mapping | `mapped` | 91 |
+| implementation | `implemented` | 210 |
+| implementation | `implementing` | 20 |
+| implementation | `not-started` | 9 |
+| wiring | `wired` | 83 |
+| wiring | `not-wired` | 156 |
+| verification | `verified` | 8 |
+| verification | `not-run` | 231 |
+| acceptance | `pending` | 239 |
+
+## Interpretation
+
+The ledger proves honest progress states, not completion. In particular:
+
+- 29 responsibilities do not yet have `implementation=implemented`.
+- 156 responsibilities lack a recorded production wiring state of `wired`.
+- 231 responsibilities lack verification evidence, and no responsibility has
+  an accepted terminal state in this snapshot.
+- `OCRM-RESP-EXEC-TERMINATION-CONTROLLER-001` is implemented and verified but
+  remains not-wired; its local contract/oracle evidence is not a producer to
+  production consumer proof.
+- The remaining frontier requires a current exact-source read plus a direct
+  producer → existing owner → state/storage → consumer call graph for each
+  applicable responsibility. A helper, fixture, capability declaration,
+  source reference, or target-symbol search cannot close that edge.
+
+No implementation, wiring, verification, acceptance flag, or global flag is
+promoted by this audit.
+
+## Evidence boundary
+
+This dossier is a governance/status artifact only. It does not replace
+Actions inventory, dependency closure, configured build evidence, runtime
+acceptance, device/platform evidence, package/release receipts, or the final
+OCRM-AC01–AC24 review.
+
+## References
+
+- `projects/openclaw-rust/parity-ledger.json`
+- `projects/openclaw-rust/dossiers/not-started-responsibility-frontier-20261031.md`
+- `docs/specs/openclaw-rust-equivalence-migration.md`
+- `projects/openclaw-rust/SOURCE_OF_TRUTH.md`
