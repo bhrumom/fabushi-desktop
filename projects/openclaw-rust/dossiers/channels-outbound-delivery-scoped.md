@@ -2,9 +2,9 @@
 
 **Project ID**: OCRM-001  
 **Module**: OCRM-M14/M15 (Channel Ingress, Deduplication, Thread Routing & Outbound Delivery Subsystems)  
-**Upstream Target Authority**: `openclaw/openclaw@ad8d12f126d29b0db204187adf5092db80294e70` (tree `04ccce62f1d74dc8e0c88290ae8ded027b7b0f16`)  
+**Upstream live discovery subject (not authority)**: `openclaw/openclaw@e8dade039bdeb729754d2b5956e6f4cb0a84bf84` (tree `2e35087eee94a7c9380ea4ad9fa9c0a6b41e9232`); the file/blob rows below retain their historical source-audit identities and require exact-head revalidation before final closure.
 **Target Repository**: `bhrumom/fabushi-desktop`  
-**Working Branch**: `ocrm/round20-snapshot-lifecycle-audit-20261023`  
+**Working Branch**: `codex/openclaw-rust-full-fusion-20261030`
 **Reviewer**: `xuyao@ombhrum.com`  
 
 ---
@@ -73,12 +73,13 @@ mapping candidate until its exact upstream source is re-established.
    - **Oracles**: `OCRM-CHANNEL-O11`, `OCRM-CHANNEL-O12`.
 
 `ChannelAclGate` now owns normalized allowlist/denylist evaluation, including
-the deny-overrides-allow rule and `*` wildcard. The connector also exposes
-strict standard HMAC-SHA256 verification with constant-time comparison. This
-closes only pure security helpers; the inbound channel producer, security
-audit emission, replay nonce/receipt storage, and production webhook path
-remain unwired. The legacy contract fixture's `secret || payload` digest is
-not treated as HMAC evidence.
+the deny-overrides-allow rule, `*` wildcard, default-deny empty allowlists, and
+ordered candidate match metadata (`id`, name/tag/prefixed/slug/localpart
+sources). The connector also exposes strict standard HMAC-SHA256 verification
+with constant-time comparison. This closes only pure security helpers; the
+inbound channel producer, security audit emission, replay nonce/receipt
+storage, and production webhook path remain unwired. The legacy contract
+fixture's `secret || payload` digest is not treated as HMAC evidence.
 
 The connector now also owns the Rust `InboundChannelDeduplicator` and
 `ChannelThreadRouter` contracts: channel cursors and message IDs are admitted

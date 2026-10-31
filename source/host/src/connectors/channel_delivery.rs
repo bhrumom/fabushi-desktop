@@ -66,8 +66,38 @@ pub fn split_channel_message(text: &str, limit: usize) -> Vec<String> {
     chunks
 }
 
-/// Evaluates the channel sender policy at the connector boundary. Empty
-/// allowlists are permissive, `*` allows every normalized sender, and the
+/// The source-level provenance of an allowlist candidate. Keeping this with
+/// the match result lets the caller produce a diagnostic without reimplementing
+/// normalization or leaking channel-specific text from the connector owner.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ChannelAllowlistMatchSource {
+    Wildcard,
+    Id,
+    Name,
+    Tag,
+    Username,
+    PrefixedId,
+    PrefixedUser,
+    PrefixedName,
+    Slug,
+    Localpart,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ChannelAllowlistCandidate {
+    pub value: Option<String>,
+    pub source: ChannelAllowlistMatchSource,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ChannelAllowlistMatch {
+    pub allowed: bool,
+    pub match_key: Option<String>,
+    pub match_source: Option<ChannelAllowlistMatchSource>,
+}
+
+/// Evaluates the channel sender policy at the connector boundary. An empty
+/// allowlist is deny-all, `*` allows every non-denylisted candidate, and the
 /// denylist always wins over either form of allowlist access.
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct ChannelAclGate {
@@ -90,13 +120,69 @@ impl ChannelAclGate {
     }
 
     pub fn is_authorized(&self, sender_id: &str) -> bool {
-        let sender = normalize_channel_acl_value(sender_id);
-        if sender.is_empty() || self.denylist.contains("*") || self.denylist.contains(&sender) {
-            return false;
+        self.resolve_candidates(&[ChannelAllowlistCandidate {
+            value: Some(sender_id.to_string()),
+            source: ChannelAllowlistMatchSource::Id,
+        }])
+        .allowed
+    }
+
+    pub fn resolve_candidates(
+        &self,
+        candidates: &[ChannelAllowlistCandidate],
+    ) -> ChannelAllowlistMatch {
+        let normalized_candidates: Vec<(String, ChannelAllowlistMatchSource)> = candidates
+            .iter()
+            .filter_map(|candidate| {
+                let value = normalize_channel_acl_value(candidate.value.as_deref().unwrap_or(""));
+                (!value.is_empty()).then_some((value, candidate.source))
+            })
+            .collect();
+
+        if self.allowlist.is_empty() {
+            return ChannelAllowlistMatch {
+                allowed: false,
+                match_key: None,
+                match_source: None,
+            };
         }
-        self.allowlist.is_empty()
-            || self.allowlist.contains("*")
-            || self.allowlist.contains(&sender)
+
+        if self.allowlist.contains("*") {
+            let allowed_candidate = normalized_candidates.iter().find(|(value, _)| {
+                !self.denylist.contains("*") && !self.denylist.contains(value)
+            });
+            if allowed_candidate.is_none() {
+                return ChannelAllowlistMatch {
+                    allowed: false,
+                    match_key: None,
+                    match_source: None,
+                };
+            }
+            return ChannelAllowlistMatch {
+                allowed: true,
+                match_key: Some("*".to_string()),
+                match_source: Some(ChannelAllowlistMatchSource::Wildcard),
+            };
+        }
+
+        for (value, source) in normalized_candidates {
+            if self.denylist.contains("*") || self.denylist.contains(&value) {
+                continue;
+            }
+            if self.allowlist.contains(&value) {
+                return ChannelAllowlistMatch {
+                    allowed: true,
+                    match_key: Some(value),
+                    match_source: Some(source),
+                };
+            }
+        }
+
+        ChannelAllowlistMatch {
+            allowed: false,
+            match_key: None,
+            match_source: None,
+        }
     }
 
     fn normalize_entries<I>(entries: I) -> HashSet<String>

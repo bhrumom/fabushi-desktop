@@ -4485,6 +4485,7 @@
       ],
       "typed_contracts": [
         "ChannelAclGate::is_authorized",
+        "ChannelAclGate::resolve_candidates",
         "verify_webhook_hmac_sha256"
       ],
       "unit_id": "OCRM-UNIT-CHANNELS-001"
