@@ -4,7 +4,8 @@ import {
   type CoordinatorAgentThreadRequest,
   type CoordinatorAgentThreadResponse,
   type CoordinatorTranscriptWindowRequest,
-  type CoordinatorTranscriptWindowResponse
+  type CoordinatorTranscriptWindowResponse,
+  type TelegramAuthorizationProjection
 } from "../../../source/shared/rpc/coordinator";
 
 export const COORDINATOR_PROTOCOL_VERSION = 1;
@@ -31,7 +32,9 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 }
 
 function validateReply(method: string, value: unknown): unknown {
-  if (method === "getAgentTranscriptWindow" || method === "getAgentThread") return validateCoordinatorReply(method, value);
+  if (method.startsWith("feature.auth.telegram") || method === "getAgentTranscriptWindow" || method === "getAgentThread") {
+    return validateCoordinatorReply(method, value);
+  }
   if (["listAgents", "searchAgents", "getTrays", "listAllAutomations"].includes(method)) {
     if (!Array.isArray(value)) throw new Error(`${method} returned a malformed array reply`);
   }
@@ -46,12 +49,6 @@ function validateReply(method: string, value: unknown): unknown {
     }
   }
   return value;
-}
-
-export interface TelegramAuthorizationProjection {
-  readonly authorizationState?: unknown;
-  readonly selfUserId?: number | null;
-  readonly [key: string]: unknown;
 }
 
 export interface ProductionCoordinatorClient {

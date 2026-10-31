@@ -27,8 +27,108 @@ use serde_json::json;
 use std::path::Path;
 use std::sync::atomic::AtomicI64;
 use std::sync::atomic::Ordering;
+use std::sync::Mutex;
 
 const CONVERSATION_PREFIX: &str = "telegram:chat:";
+const MAX_AUTH_BACKOFF_SECONDS: u32 = 7 * 24 * 60 * 60;
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+struct TelegramAuthIssue {
+    code: String,
+    category: &'static str,
+    action: &'static str,
+    recoverable: bool,
+    retry_after_seconds: Option<u32>,
+}
+
+impl TelegramAuthIssue {
+    fn as_value(&self) -> Value {
+        json!({
+            "code": self.code,
+            "category": self.category,
+            "action": self.action,
+            "recoverable": self.recoverable,
+            "retryAfterSeconds": self.retry_after_seconds,
+        })
+    }
+}
+
+fn remote_rpc_error_type(message: &str) -> Option<&str> {
+    let candidate = message
+        .rsplit_once(": ")
+        .map(|(_, value)| value)
+        .unwrap_or(message)
+        .trim();
+    (!candidate.is_empty()
+        && candidate.len() <= 128
+        && candidate
+            .bytes()
+            .all(|byte| byte.is_ascii_uppercase() || byte.is_ascii_digit() || byte == b'_'))
+    .then_some(candidate)
+}
+
+fn flood_wait_seconds(code: &str) -> Option<u32> {
+    ["FLOOD_WAIT_", "FLOOD_PREMIUM_WAIT_"]
+        .into_iter()
+        .find_map(|prefix| code.strip_prefix(prefix))
+        .and_then(|value| value.parse::<u32>().ok())
+        .map(|seconds| seconds.clamp(1, MAX_AUTH_BACKOFF_SECONDS))
+}
+
+fn classify_telegram_auth_issue(runtime_code: &str, message: &str) -> Option<TelegramAuthIssue> {
+    if runtime_code == "auth_context_missing" {
+        return Some(TelegramAuthIssue {
+            code: "AUTH_CONTEXT_MISSING".into(),
+            category: "state",
+            action: "restartAuthorization",
+            recoverable: true,
+            retry_after_seconds: None,
+        });
+    }
+    if runtime_code != "telegram_rpc_error" {
+        return None;
+    }
+
+    let code = remote_rpc_error_type(message)
+        .unwrap_or("TELEGRAM_RPC_ERROR")
+        .to_string();
+    let retry_after_seconds = flood_wait_seconds(&code);
+    let (category, action, recoverable) = if retry_after_seconds.is_some()
+        || code == "PHONE_NUMBER_FLOOD"
+    {
+        ("rateLimit", "retryLater", true)
+    } else {
+        match code.as_str() {
+            "PHONE_NUMBER_INVALID" => ("input", "editPhoneNumber", true),
+            "PHONE_NUMBER_BANNED" => ("policy", "contactSupport", false),
+            "PHONE_CODE_EMPTY" | "PHONE_CODE_INVALID" => ("input", "retryCode", true),
+            "PHONE_CODE_EXPIRED" => ("state", "restartAuthorization", true),
+            "PASSWORD_HASH_INVALID" | "SRP_PASSWORD_CHANGED" => {
+                ("input", "retryPassword", true)
+            }
+            "PASSWORD_EMPTY" | "AUTH_KEY_UNREGISTERED" | "PHONE_NUMBER_OCCUPIED" => {
+                ("state", "restartAuthorization", true)
+            }
+            "SRP_ID_INVALID" => ("state", "refreshPasswordChallenge", true),
+            "FIRSTNAME_INVALID" | "LASTNAME_INVALID" => {
+                ("input", "retryRegistration", true)
+            }
+            "SEND_CODE_UNAVAILABLE" => ("availability", "retryLater", true),
+            "EMAIL_NOT_ALLOWED" | "EMAIL_INVALID" => ("input", "editEmail", true),
+            "EMAIL_HASH_EXPIRED" => ("state", "restartEmailVerification", true),
+            "PASSWORD_RECOVERY_NA" => ("state", "restartAuthorization", true),
+            "PASSWORD_RECOVERY_EXPIRED" => ("state", "restartPasswordRecovery", true),
+            _ => ("remote", "retryCurrentStep", true),
+        }
+    };
+    Some(TelegramAuthIssue {
+        code,
+        category,
+        action,
+        recoverable,
+        retry_after_seconds,
+    })
+}
 
 #[derive(Clone, PartialEq, Eq)]
 pub struct TelegramApplicationCredentials {
@@ -74,6 +174,7 @@ pub struct TelegramClientHandoff {
 pub struct TelegramClientLease {
     client_id: u64,
     application_credentials: Option<TelegramApplicationCredentials>,
+    authorization_backoff_until_ms: Mutex<Option<u64>>,
 }
 
 impl TelegramClientLease {
@@ -97,6 +198,7 @@ impl TelegramClientLease {
         Ok(Self {
             client_id,
             application_credentials,
+            authorization_backoff_until_ms: Mutex::new(None),
         })
     }
 
@@ -110,20 +212,27 @@ impl TelegramClientLease {
         })
     }
 
+    fn runtime_envelope(&self, request: Value) -> Result<Value, ConversationError> {
+        serde_json::from_str(&execute_json(self.client_id, &request.to_string()))
+            .map_err(|error| ConversationError::Provider(error.to_string()))
+    }
+
+    fn runtime_failure(response: &Value) -> ConversationError {
+        let code = response
+            .get("errorCode")
+            .and_then(Value::as_str)
+            .unwrap_or("telegram_error");
+        let message = response
+            .get("message")
+            .and_then(Value::as_str)
+            .unwrap_or("Telegram command failed");
+        ConversationError::Provider(format!("{code}: {message}"))
+    }
+
     fn execute(&self, request: Value) -> Result<Value, ConversationError> {
-        let response: Value =
-            serde_json::from_str(&execute_json(self.client_id, &request.to_string()))
-                .map_err(|error| ConversationError::Provider(error.to_string()))?;
+        let response = self.runtime_envelope(request)?;
         if response.get("ok").and_then(Value::as_bool) != Some(true) {
-            let code = response
-                .get("errorCode")
-                .and_then(Value::as_str)
-                .unwrap_or("telegram_error");
-            let message = response
-                .get("message")
-                .and_then(Value::as_str)
-                .unwrap_or("Telegram command failed");
-            return Err(ConversationError::Provider(format!("{code}: {message}")));
+            return Err(Self::runtime_failure(&response));
         }
         response
             .get("data")
@@ -131,8 +240,36 @@ impl TelegramClientLease {
             .ok_or_else(|| ConversationError::Provider("Telegram response data is missing".into()))
     }
 
-    fn execute_authorization(&self, request: Value) -> Result<Value, ConversationError> {
-        let mut response = self.execute(request)?;
+    fn authorization_backoff_remaining_seconds(&self) -> Result<Option<u32>, ConversationError> {
+        let now = now_ms().max(0) as u64;
+        let mut deadline = self.authorization_backoff_until_ms.lock().map_err(|_| {
+            ConversationError::Provider("Telegram authorization backoff lock is unavailable".into())
+        })?;
+        let Some(until_ms) = *deadline else {
+            return Ok(None);
+        };
+        if until_ms <= now {
+            *deadline = None;
+            return Ok(None);
+        }
+        let remaining_ms = until_ms - now;
+        let remaining_seconds = (remaining_ms.saturating_add(999) / 1000)
+            .min(u64::from(MAX_AUTH_BACKOFF_SECONDS)) as u32;
+        Ok(Some(remaining_seconds.max(1)))
+    }
+
+    fn set_authorization_backoff(&self, retry_after_seconds: u32) -> Result<(), ConversationError> {
+        let seconds = retry_after_seconds.clamp(1, MAX_AUTH_BACKOFF_SECONDS);
+        let now = now_ms().max(0) as u64;
+        let deadline_ms = now.saturating_add(u64::from(seconds).saturating_mul(1000));
+        let mut deadline = self.authorization_backoff_until_ms.lock().map_err(|_| {
+            ConversationError::Provider("Telegram authorization backoff lock is unavailable".into())
+        })?;
+        *deadline = Some(deadline_ms);
+        Ok(())
+    }
+
+    fn decorate_authorization(&self, mut response: Value) -> Result<Value, ConversationError> {
         let handoff = self.handoff()?;
         let object = response.as_object_mut().ok_or_else(|| {
             ConversationError::Provider("Telegram authorization response is not an object".into())
@@ -143,7 +280,72 @@ impl TelegramClientLease {
                 .map_err(|error| ConversationError::Provider(error.to_string()))?,
         );
         object.insert("selfUserId".into(), json!(handoff.self_user_id));
+        if let Some(retry_after_seconds) = self.authorization_backoff_remaining_seconds()? {
+            object.insert(
+                "backoff".into(),
+                json!({"retryAfterSeconds": retry_after_seconds}),
+            );
+        }
         Ok(response)
+    }
+
+    fn authorization_issue_projection(
+        &self,
+        issue: TelegramAuthIssue,
+    ) -> Result<Value, ConversationError> {
+        if let Some(retry_after_seconds) = issue.retry_after_seconds {
+            self.set_authorization_backoff(retry_after_seconds)?;
+        }
+        self.decorate_authorization(json!({
+            "@type": "telegram.authorizationIssue",
+            "error": issue.as_value(),
+        }))
+    }
+
+    fn authorization_backoff_projection(&self) -> Result<Option<Value>, ConversationError> {
+        let Some(retry_after_seconds) = self.authorization_backoff_remaining_seconds()? else {
+            return Ok(None);
+        };
+        let issue = TelegramAuthIssue {
+            code: "AUTH_BACKOFF_ACTIVE".into(),
+            category: "rateLimit",
+            action: "retryLater",
+            recoverable: true,
+            retry_after_seconds: Some(retry_after_seconds),
+        };
+        Ok(Some(self.decorate_authorization(json!({
+            "@type": "telegram.authorizationIssue",
+            "error": issue.as_value(),
+        }))?))
+    }
+
+    pub fn authorization_status(&self) -> Result<Value, ConversationError> {
+        self.decorate_authorization(json!({}))
+    }
+
+    fn execute_authorization(&self, request: Value) -> Result<Value, ConversationError> {
+        if let Some(projection) = self.authorization_backoff_projection()? {
+            return Ok(projection);
+        }
+        let response = self.runtime_envelope(request)?;
+        if response.get("ok").and_then(Value::as_bool) == Some(true) {
+            let data = response.get("data").cloned().ok_or_else(|| {
+                ConversationError::Provider("Telegram response data is missing".into())
+            })?;
+            return self.decorate_authorization(data);
+        }
+        let runtime_code = response
+            .get("errorCode")
+            .and_then(Value::as_str)
+            .unwrap_or("telegram_error");
+        let message = response
+            .get("message")
+            .and_then(Value::as_str)
+            .unwrap_or("Telegram command failed");
+        if let Some(issue) = classify_telegram_auth_issue(runtime_code, message) {
+            return self.authorization_issue_projection(issue);
+        }
+        Err(Self::runtime_failure(&response))
     }
 
     pub fn send_authentication_code(&self, phone_number: &str) -> Result<Value, ConversationError> {
@@ -156,6 +358,9 @@ impl TelegramClientLease {
             return Err(ConversationError::Provider(
                 "Telegram account is already authorized".into(),
             ));
+        }
+        if let Some(projection) = self.authorization_backoff_projection()? {
+            return Ok(projection);
         }
         let credentials = self.application_credentials.as_ref().ok_or_else(|| {
             ConversationError::Provider(
@@ -559,6 +764,45 @@ mod tests {
             self.0.lock().expect("event mutex").push(event);
             Ok(())
         }
+    }
+
+    #[test]
+    fn auth_rpc_errors_have_typed_actions_and_bounded_backoff() {
+        let flood = classify_telegram_auth_issue(
+            "telegram_rpc_error",
+            "Telegram RPC failed with 420: FLOOD_WAIT_37",
+        )
+        .expect("flood issue");
+        assert_eq!(flood.code, "FLOOD_WAIT_37");
+        assert_eq!(flood.category, "rateLimit");
+        assert_eq!(flood.action, "retryLater");
+        assert_eq!(flood.retry_after_seconds, Some(37));
+
+        let bounded = classify_telegram_auth_issue(
+            "telegram_rpc_error",
+            "Telegram RPC failed with 420: FLOOD_WAIT_999999999",
+        )
+        .expect("bounded flood issue");
+        assert_eq!(bounded.retry_after_seconds, Some(MAX_AUTH_BACKOFF_SECONDS));
+
+        let invalid_code = classify_telegram_auth_issue(
+            "telegram_rpc_error",
+            "Telegram RPC failed with 400: PHONE_CODE_INVALID",
+        )
+        .expect("invalid-code issue");
+        assert_eq!(invalid_code.category, "input");
+        assert_eq!(invalid_code.action, "retryCode");
+        assert_eq!(invalid_code.retry_after_seconds, None);
+
+        let missing_context = classify_telegram_auth_issue(
+            "auth_context_missing",
+            "Telegram authentication code context is unavailable",
+        )
+        .expect("missing-context issue");
+        assert_eq!(missing_context.action, "restartAuthorization");
+        assert!(missing_context.recoverable);
+
+        assert!(classify_telegram_auth_issue("network_failed", "offline").is_none());
     }
 
     #[tokio::test]

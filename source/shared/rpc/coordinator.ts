@@ -25,6 +25,57 @@ export interface CoordinatorAgentThreadResponse {
   readonly entries: readonly CoordinatorTranscriptEntry[];
 }
 
+export type TelegramCodeDeliveryType =
+  | "telegramMessage"
+  | "sms"
+  | "call"
+  | "flashCall"
+  | "missedCall"
+  | "email"
+  | "fragment"
+  | "firebaseAndroid"
+  | "firebaseIos"
+  | "unknown";
+
+export type TelegramAuthorizationStateProjection =
+  | { readonly type: "waitParameters" }
+  | { readonly type: "waitPhoneNumber" }
+  | {
+      readonly type: "waitCode";
+      readonly phoneNumber: string;
+      readonly deliveryType: TelegramCodeDeliveryType;
+      readonly codeLength: number;
+      readonly timeoutSeconds?: number | null;
+    }
+  | { readonly type: "waitOtherDeviceConfirmation"; readonly link: string }
+  | { readonly type: "waitRegistration"; readonly termsOfServiceId?: string | null }
+  | {
+      readonly type: "waitPassword";
+      readonly passwordHint: string;
+      readonly hasRecoveryEmail: boolean;
+      readonly recoveryEmailPattern?: string | null;
+    }
+  | { readonly type: "ready" }
+  | { readonly type: "loggingOut" }
+  | { readonly type: "closing" }
+  | { readonly type: "closed" };
+
+export interface TelegramAuthIssueProjection {
+  readonly code: string;
+  readonly category: string;
+  readonly action: string;
+  readonly recoverable: boolean;
+  readonly retryAfterSeconds?: number | null;
+}
+
+export interface TelegramAuthorizationProjection {
+  readonly authorizationState: TelegramAuthorizationStateProjection;
+  readonly selfUserId?: number | null;
+  readonly error?: TelegramAuthIssueProjection;
+  readonly backoff?: { readonly retryAfterSeconds: number };
+  readonly [key: string]: unknown;
+}
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
@@ -35,6 +86,90 @@ function isTranscriptEntry(value: unknown): value is CoordinatorTranscriptEntry 
 
 function isFiniteNumber(value: unknown): value is number {
   return typeof value === "number" && Number.isFinite(value);
+}
+
+const TELEGRAM_CODE_DELIVERY_TYPES = new Set<TelegramCodeDeliveryType>([
+  "telegramMessage",
+  "sms",
+  "call",
+  "flashCall",
+  "missedCall",
+  "email",
+  "fragment",
+  "firebaseAndroid",
+  "firebaseIos",
+  "unknown",
+]);
+const MAX_TELEGRAM_AUTH_BACKOFF_SECONDS = 7 * 24 * 60 * 60;
+
+function isBoundedString(value: unknown, maxLength: number): value is string {
+  return typeof value === "string" && value.length > 0 && value.length <= maxLength;
+}
+
+function isNullableBoundedString(value: unknown, maxLength: number): boolean {
+  return value == null || (typeof value === "string" && value.length <= maxLength);
+}
+
+function isTelegramAuthorizationState(value: unknown): value is TelegramAuthorizationStateProjection {
+  if (!isRecord(value) || typeof value.type !== "string") return false;
+  switch (value.type) {
+    case "waitParameters":
+    case "waitPhoneNumber":
+    case "ready":
+    case "loggingOut":
+    case "closing":
+    case "closed":
+      return true;
+    case "waitCode":
+      return isBoundedString(value.phoneNumber, 64)
+        && typeof value.deliveryType === "string"
+        && TELEGRAM_CODE_DELIVERY_TYPES.has(value.deliveryType as TelegramCodeDeliveryType)
+        && Number.isSafeInteger(value.codeLength)
+        && (value.codeLength as number) >= 0
+        && (value.codeLength as number) <= 64
+        && (value.timeoutSeconds == null
+          || (Number.isSafeInteger(value.timeoutSeconds)
+            && (value.timeoutSeconds as number) >= 0
+            && (value.timeoutSeconds as number) <= MAX_TELEGRAM_AUTH_BACKOFF_SECONDS));
+    case "waitOtherDeviceConfirmation":
+      return isBoundedString(value.link, 4096);
+    case "waitRegistration":
+      return isNullableBoundedString(value.termsOfServiceId, 1024);
+    case "waitPassword":
+      return typeof value.passwordHint === "string"
+        && value.passwordHint.length <= 1024
+        && typeof value.hasRecoveryEmail === "boolean"
+        && isNullableBoundedString(value.recoveryEmailPattern, 1024);
+    default:
+      return false;
+  }
+}
+
+function isTelegramAuthIssue(value: unknown): value is TelegramAuthIssueProjection {
+  if (!isRecord(value)) return false;
+  if (!isBoundedString(value.code, 128)
+    || !isBoundedString(value.category, 64)
+    || !isBoundedString(value.action, 128)
+    || typeof value.recoverable !== "boolean") return false;
+  return value.retryAfterSeconds == null
+    || (Number.isSafeInteger(value.retryAfterSeconds)
+      && (value.retryAfterSeconds as number) >= 1
+      && (value.retryAfterSeconds as number) <= MAX_TELEGRAM_AUTH_BACKOFF_SECONDS);
+}
+
+export function parseCoordinatorTelegramAuthorizationProjection(value: unknown): TelegramAuthorizationProjection | null {
+  if (!isRecord(value) || !isTelegramAuthorizationState(value.authorizationState)) return null;
+  if (value.selfUserId !== undefined
+    && value.selfUserId !== null
+    && (!Number.isSafeInteger(value.selfUserId) || (value.selfUserId as number) <= 0)) return null;
+  if (value.error !== undefined && !isTelegramAuthIssue(value.error)) return null;
+  if (value.backoff !== undefined) {
+    if (!isRecord(value.backoff)
+      || !Number.isSafeInteger(value.backoff.retryAfterSeconds)
+      || (value.backoff.retryAfterSeconds as number) < 1
+      || (value.backoff.retryAfterSeconds as number) > MAX_TELEGRAM_AUTH_BACKOFF_SECONDS) return null;
+  }
+  return value as unknown as TelegramAuthorizationProjection;
 }
 
 export function parseCoordinatorTranscriptWindowResponse(value: unknown): CoordinatorTranscriptWindowResponse | null {
@@ -80,6 +215,9 @@ export function parseCoordinatorAgentThreadRequest(value: unknown): CoordinatorA
 }
 
 export function validateCoordinatorReply(method: string, value: unknown): unknown {
+  if (method.startsWith("feature.auth.telegram") && parseCoordinatorTelegramAuthorizationProjection(value) == null) {
+    throw new Error(`${method} returned a malformed Telegram authorization projection`);
+  }
   if (method === "getAgentTranscriptWindow" && parseCoordinatorTranscriptWindowResponse(value) == null) {
     throw new Error("getAgentTranscriptWindow returned a malformed transcript window");
   }

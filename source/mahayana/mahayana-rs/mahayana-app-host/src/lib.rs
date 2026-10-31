@@ -619,14 +619,9 @@ impl AppHost {
     }
 
     fn feature_telegram_auth_status(&self) -> Result<Value, AppHostError> {
-        let handoff = self
-            .telegram_client()?
-            .handoff()
-            .map_err(|error| AppHostError::Operation(error.to_string()))?;
-        Ok(json!({
-            "authorizationState": handoff.authorization_state,
-            "selfUserId": handoff.self_user_id,
-        }))
+        self.telegram_client()?
+            .authorization_status()
+            .map_err(|error| AppHostError::Operation(error.to_string()))
     }
 
     fn feature_telegram_send_code(&self, params: Value) -> Result<Value, AppHostError> {
