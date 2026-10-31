@@ -146,7 +146,7 @@ the sole admitted-device action/result owner; Host/Runner remains the sole turn
 and process-composition owner. Every runtime command has a producer, owner and
 consumer recorded in the RTM.
 
-#### P1-F08 implementation seam (adapter boundary wired; production composition pending)
+#### P1-F08 implementation seam (adapter boundary implemented; production composition pending)
 
 The current exact-head consumers are deliberately narrower than the Crabbox
 capability and must remain the integration targets:

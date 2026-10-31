@@ -86,8 +86,9 @@ to exactly one existing `ComputerToolExecutor`.
 The adapter does not mint a Computer grant, enroll a device, write sensitive
 results, own screenshots, or execute Computer actions itself. The provider,
 physical worker, device enrollment, production Runner composition, package
-reachability, verification and acceptance remain pending; the parity row marks
-only this adapter boundary as wired.
+reachability, verification and acceptance remain pending; the parity row keeps
+the adapter implementation separate from production wiring and remains
+`wiring=not-wired`.
 
 ## P1-F06 platform descriptor boundary — 2026-10-31
 
