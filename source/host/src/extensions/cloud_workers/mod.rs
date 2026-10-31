@@ -72,5 +72,6 @@ pub use provider_catalog::{
     CloudWorkerProfile, CloudWorkerResourceLimits,
 };
 pub use runtime_control::{
-    CloudWorkerRuntimeControlAction, CloudWorkerRuntimeControlError,
+    CloudWorkerRuntimeControlAction, CloudWorkerRuntimeControlBudget,
+    CloudWorkerRuntimeControlError, CloudWorkerRuntimeControlRequest,
 };

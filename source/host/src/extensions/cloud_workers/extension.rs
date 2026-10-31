@@ -25,6 +25,7 @@ use super::{
     CloudWorkerProvisioningConfig,
     CloudWorkerProvisioningOwner, CloudWorkerProvisioningStore, CloudWorkerStoreError,
     CloudWorkerRuntimeControlAction,
+    CloudWorkerRuntimeControlRequest,
     CloudWorkerWarmImage, CloudWorkerWarmImageGeneration, CloudWorkerWarmImageOperation,
     verify_artifact_bytes,
 };
@@ -292,6 +293,28 @@ impl CloudWorkerProvisioningExtension {
         owner
             .admit_runtime_control(lease_id, action, replay_key)
             .map_err(CloudWorkerMutationError::Owner)
+    }
+
+    /// Admits a bounded runtime-control request against the current lease.
+    /// The budget is carried to a future producer, while this façade still
+    /// performs no provider RPC, process launch or timer side effect.
+    pub fn admit_bounded_runtime_control(
+        &self,
+        lease_id: &LeaseId,
+        request: CloudWorkerRuntimeControlRequest,
+    ) -> Result<super::CloudWorkerLeaseMutation, CloudWorkerMutationError> {
+        let owner = self
+            .owner
+            .lock()
+            .map_err(|_| CloudWorkerMutationError::PoisonedOwner)?;
+        let lease = owner
+            .lease(lease_id)
+            .map_err(CloudWorkerMutationError::Owner)?;
+        request
+            .admit(lease)
+            .map_err(|error| CloudWorkerMutationError::Owner(
+                super::CloudWorkerOwnerError::RuntimeControl(error),
+            ))
     }
 
     /// Settles one fenced lease mutation and persists its lifecycle outcome,

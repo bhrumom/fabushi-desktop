@@ -6,6 +6,47 @@ use super::{
     CloudWorkerLifecycle, ReplayKey,
 };
 
+const MAX_CONTROL_TIMEOUT_MS: u64 = 15 * 60 * 1000;
+const MAX_CONTROL_OUTPUT_BYTES: u64 = 1024 * 1024;
+
+/// Bounded execution material that a future provider/process producer must
+/// honor. It is admission data only; no timer, process or transport is owned
+/// by this contract.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub struct CloudWorkerRuntimeControlBudget {
+    pub timeout_ms: u64,
+    pub max_output_bytes: u64,
+}
+
+impl CloudWorkerRuntimeControlBudget {
+    pub fn validate(self) -> Result<(), CloudWorkerRuntimeControlError> {
+        if self.timeout_ms == 0 || self.timeout_ms > MAX_CONTROL_TIMEOUT_MS {
+            return Err(CloudWorkerRuntimeControlError::InvalidTimeoutBudget);
+        }
+        if self.max_output_bytes == 0 || self.max_output_bytes > MAX_CONTROL_OUTPUT_BYTES {
+            return Err(CloudWorkerRuntimeControlError::InvalidOutputBudget);
+        }
+        Ok(())
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct CloudWorkerRuntimeControlRequest {
+    pub action: CloudWorkerRuntimeControlAction,
+    pub replay_key: ReplayKey,
+    pub budget: CloudWorkerRuntimeControlBudget,
+}
+
+impl CloudWorkerRuntimeControlRequest {
+    pub fn admit(
+        &self,
+        lease: &CloudWorkerLease,
+    ) -> Result<CloudWorkerLeaseMutation, CloudWorkerRuntimeControlError> {
+        self.budget.validate()?;
+        self.action.admit(lease, self.replay_key.clone())
+    }
+}
+
 /// The non-replayable control operations that a future provider producer may
 /// perform against an already admitted worker. This type only admits a
 /// lease-fenced mutation; it never performs the operation.
@@ -82,6 +123,10 @@ pub enum CloudWorkerRuntimeControlError {
         action: CloudWorkerRuntimeControlAction,
         current: CloudWorkerLifecycle,
     },
+    #[error("runtime control timeout budget is outside the allowed bounds")]
+    InvalidTimeoutBudget,
+    #[error("runtime control output budget is outside the allowed bounds")]
+    InvalidOutputBudget,
     #[error(transparent)]
     Lease(#[from] CloudWorkerLeaseError),
 }
@@ -195,5 +240,53 @@ mod tests {
                 CloudWorkerLeaseError::MissingReplayKey
             ))
         );
+    }
+
+    #[test]
+    fn bounded_request_rejects_unbounded_execution_material_before_admission() {
+        let lease = lease(CloudWorkerLifecycle::Enrolled);
+        let request = CloudWorkerRuntimeControlRequest {
+            action: CloudWorkerRuntimeControlAction::Heartbeat,
+            replay_key: ReplayKey("heartbeat-1".into()),
+            budget: CloudWorkerRuntimeControlBudget {
+                timeout_ms: 0,
+                max_output_bytes: 1024,
+            },
+        };
+        assert_eq!(
+            request.admit(&lease),
+            Err(CloudWorkerRuntimeControlError::InvalidTimeoutBudget)
+        );
+
+        let request = CloudWorkerRuntimeControlRequest {
+            budget: CloudWorkerRuntimeControlBudget {
+                timeout_ms: 1000,
+                max_output_bytes: 1024 * 1024 + 1,
+            },
+            ..request
+        };
+        assert_eq!(
+            request.admit(&lease),
+            Err(CloudWorkerRuntimeControlError::InvalidOutputBudget)
+        );
+    }
+
+    #[test]
+    fn bounded_request_preserves_fenced_mutation_identity() {
+        let lease = lease(CloudWorkerLifecycle::Enrolled);
+        let request = CloudWorkerRuntimeControlRequest {
+            action: CloudWorkerRuntimeControlAction::Heartbeat,
+            replay_key: ReplayKey("heartbeat-bounded".into()),
+            budget: CloudWorkerRuntimeControlBudget {
+                timeout_ms: 30_000,
+                max_output_bytes: 64 * 1024,
+            },
+        };
+        let mutation = request.admit(&lease).unwrap();
+        assert_eq!(mutation.lease_id, lease.lease_id);
+        assert_eq!(mutation.owner_epoch, lease.owner_epoch);
+        assert_eq!(mutation.generation, lease.generation);
+        assert_eq!(mutation.runtime, lease.runtime);
+        assert_eq!(mutation.replay_key, request.replay_key);
     }
 }

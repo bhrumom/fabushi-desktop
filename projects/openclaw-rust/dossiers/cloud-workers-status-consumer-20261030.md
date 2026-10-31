@@ -272,3 +272,8 @@ process cleanup, device enrollment or persistence is performed by this slice;
 the future producer remains responsible for the external side effect. The
 runtime-control row therefore remains `wiring=not-wired`, `verification=not-run`,
 `acceptance=pending`.
+
+The admission request now also carries validated timeout and output bounds;
+zero or excessive values fail closed before the fenced mutation is returned.
+These are typed producer inputs only, with no timer, process transport,
+provider RPC or output capture wired.

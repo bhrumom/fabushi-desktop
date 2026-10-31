@@ -1583,7 +1583,7 @@
       "id": "OCRM-RESP-INFRA-WORKER-CRABBOX-RUNTIME-CONTROL-001",
       "integration": {
         "consumer": "CloudWorkerProvisioningOwner and future provider/process adapters (not yet wired)",
-        "entrypoint": "source/host/src/extensions/cloud_workers/lease.rs::CloudWorkerLease::apply_outcome",
+        "entrypoint": "source/host/src/extensions/cloud_workers/runtime_control.rs::CloudWorkerRuntimeControlRequest::admit / CloudWorkerRuntimeControlAction::admit -> lease.rs::CloudWorkerLease::apply_outcome",
         "owner": "source/host/src/extensions/cloud_workers/owner.rs",
         "producer": "provider/process adapter (not yet wired)"
       },
@@ -1600,7 +1600,7 @@
       ],
       "owner_decision": "Keep transport/control helpers subordinate to the single CloudWorker owner and existing process-tree owner",
       "postconditions": [
-        "Control results are classified into bounded typed outcomes before owner settlement"
+        "Control requests carry validated timeout/output bounds and results are classified into bounded typed outcomes before owner settlement"
       ],
       "preconditions": [
         "A scoped lease, runtime identity and bounded operation budget are supplied"
@@ -1681,11 +1681,15 @@
         "source/host/src/extensions/cloud_workers/runtime_control.rs::tests::preparation_actions_follow_the_declared_lifecycle_order",
         "source/host/src/extensions/cloud_workers/runtime_control.rs::tests::stop_and_dispose_preserve_outcome_unknown_recovery",
         "source/host/src/extensions/cloud_workers/runtime_control.rs::tests::admission_rejects_invalid_replay_key_before_side_effects",
+        "source/host/src/extensions/cloud_workers/runtime_control.rs::tests::bounded_request_rejects_unbounded_execution_material_before_admission",
+        "source/host/src/extensions/cloud_workers/runtime_control.rs::tests::bounded_request_preserves_fenced_mutation_identity",
         "source/host/src/extensions/cloud_workers/owner.rs::tests::runtime_control_completion_returns_read_capability_to_enrolled"
       ],
       "typed_contracts": [
         "CloudWorkerLeaseMutation",
         "CloudWorkerMutationOutcome",
+        "CloudWorkerRuntimeControlBudget",
+        "CloudWorkerRuntimeControlRequest",
         "CloudWorkerDiagnostic"
       ],
       "unit_id": "OCRM-UNIT-INFRA-001"

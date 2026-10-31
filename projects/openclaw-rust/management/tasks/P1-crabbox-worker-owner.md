@@ -572,7 +572,7 @@ identity, and carries no lifecycle or authorization state of its own. Runner,
 Computer and sandbox adapters remain responsible for consuming this contract;
 provider launch and real consumer wiring remain open.
 
-The next F03 foundation slice is the side-effect-free runtime-control admission
+The F03 foundation now includes the side-effect-free runtime-control admission
 contract in `source/host/src/extensions/cloud_workers/runtime_control.rs`.
 `Prepare`, `Warmup`, `Bootstrap`, `Inspect`, `Heartbeat`, `Stop` and `Dispose` commands derive a
 `CloudWorkerLeaseMutation` only after checking the current lease lifecycle and
@@ -592,6 +592,11 @@ requires a stopping or outcome-unknown lease, and every command rejects stale
 lease identity or an invalid replay key before any future side effect. This
 does not promote the runtime-control responsibility to `wired`, `verified` or
 `accepted`; provider/process producers and packaged consumers remain pending.
+
+Runtime-control admission now also carries a bounded timeout/output budget.
+Zero or over-limit execution material is rejected before a lease mutation is
+admitted. The budget is typed producer input only: no timer, process,
+transport, provider RPC or output capture is implemented by this slice.
 
 ## 9. Definition of Done / acceptance criteria
 
