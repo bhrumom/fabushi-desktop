@@ -9,7 +9,7 @@
     "unknown": 16172,
     "unread": 16145,
     "omitted": 0,
-    "responsibilities_total": 68,
+    "responsibilities_total": 69,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -17232,6 +17232,271 @@
       "reviewer": null,
       "license_and_provenance": "Behavioral responsibility is anchored to fixed-U telegramdesktop/tdesktop Telegram/SourceFiles/mtproto/scheme/mtproto.tl@76225965bfc794388db241f3f760db8ab79e84f8 and the adjacent authenticated service-message handling boundary in Telegram/SourceFiles/mtproto/session_private.cpp@13cbc76ec723386027b5b4dcac79999b791c4614. The implementation is source-neutral Rust and copies no upstream C++ implementation.",
       "notes": "Stage A implementation only. This row closes complete future_salts/future_salt wire validation and current-one-RPC correlation; it does not claim arbitrary historical request bookkeeping. Global unknown/unread source-entry counts remain unchanged because this is a newly mapped responsibility slice within already-open fixed-U source coverage. Contracts are authored but not executed; validation_status=not-run and accepted=false.",
+      "test_execution_evidence": []
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+      "source_path": "Telegram/SourceFiles/mtproto/session_private.cpp",
+      "source_blob_sha": "13cbc76ec723386027b5b4dcac79999b791c4614",
+      "source_kind": "source",
+      "module_id": "tdesktop.mtproto.session.bad-server-salt-wire",
+      "responsibility_id": "TDRP-R9-MTPROTO-BAD-SERVER-SALT-WIRE-001",
+      "source_symbols": [
+        "SessionPrivate::handleOneReceived / mtpc_bad_server_salt",
+        "bad_server_salt#edab447b bad_msg_id:long bad_msg_seqno:int error_code:int new_server_salt:long",
+        "MTPBadMsgNotification::c_bad_server_salt",
+        "EstablishedSession::scan_rpc_body / pre-hardening BAD_SERVER_SALT raw-offset branch",
+        "EstablishedSession::process_service_body / pre-hardening BAD_SERVER_SALT raw-offset branch"
+      ],
+      "capability_ids": [
+        "CAP-EMBEDDED-MTPROTO-SESSION-RECOVERY"
+      ],
+      "dependency_ids": [
+        "EmbeddedTelegramProtocol",
+        "EmbeddedTelegramNetwork",
+        "TelegramClientLease",
+        "MTProtoAuthKey"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/evidence/round59-mtproto-bad-server-salt-wire-20261101.md",
+      "behavior_contract": "A received bad_server_salt#edab447b object must be fully decoded as bad_msg_id:long, bad_msg_seqno:int, error_code:int, and new_server_salt:long before the live session may correlate it or mutate server_salt. Wrong constructor, any truncation, or trailing bytes fail closed. A valid object affects only the one outstanding request when bad_msg_id matches that request; a valid unrelated id preserves the existing BadServerMessage failure. The decoded bad_msg_seqno is retained in the typed protocol value without inventing historical sent/container reconciliation.",
+      "state_machine": "same TelegramClientLease -> RuntimeClient -> EstablishedSession authenticated/decrypted receive -> telegram-protocol::parse_bad_server_salt validates complete four-field object -> malformed => InvalidServiceMessage before salt mutation; valid unrelated bad_msg_id => existing BadServerMessage; valid matching bad_msg_id => assign exact new_server_salt -> existing bounded NewSalt retry outcome",
+      "side_effects": [
+        "Moves bad_server_salt wire decoding into the existing shared telegram-protocol owner",
+        "Decodes and retains bad_msg_seqno instead of skipping it through raw offsets",
+        "Prevents wrong/truncated/trailing bad_server_salt objects from mutating live server salt",
+        "Uses the same typed parser in both RPC and ping/service receive branches",
+        "Preserves existing one-outstanding-request NewSalt retry semantics",
+        "Authors exact and malformed contracts without executing them in Stage A"
+      ],
+      "failure_cases": [
+        "Raw-offset receive path skips bad_msg_seqno validation",
+        "Truncated new_server_salt or shifted field layout reaches salt mutation",
+        "Trailing bytes are ignored before salt mutation",
+        "An unrelated historical request id mutates current server salt",
+        "Implementation invents wasSent/haveSent/_resendingIds/toSend/_sentContainers history"
+      ],
+      "ui_disposition": "No UI change. This is authenticated receive-side MTProto service-message validation inside the existing embedded runtime.",
+      "non_ui_responsibilities": [
+        "Exact fixed-U bad_server_salt wire decoding",
+        "Malformed/trailing fail-closed behavior before salt mutation",
+        "Current-request-only correlation in both existing EstablishedSession receive branches",
+        "Preservation of existing bounded new-salt retry behavior"
+      ],
+      "platform_delta": "Both existing BAD_SERVER_SALT receive branches are hardened from raw offset reads to complete typed fixed-U validation. No historical request queue, callback registry, gzip runtime, difference decoder, or second Telegram runtime is added.",
+      "existing_owner_candidates": [
+        "bhrumom/fabushi-platform-core:native/telegram-protocol/src/api.rs",
+        "bhrumom/fabushi-platform-core:native/telegram-network/src/lib.rs",
+        "source/mahayana/mahayana-rs/providers/telegram-protocol/src/api.rs",
+        "source/mahayana/mahayana-rs/providers/telegram-network/src/lib.rs"
+      ],
+      "existing_owner": "Canonical shared telegram-protocol MTProto service parser + telegram-network EstablishedSession consumed by the existing desktop lease/runtime chain",
+      "rejected_existing_owners": [
+        "Renderer/AppHost cannot own authenticated MTProto service-message wire validation",
+        "Storage cannot own live session salt mutation",
+        "A second request-history/callback owner would split lifecycle truth",
+        "gzip/difference owners are unrelated to this independently bounded object"
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "bhrumom/fabushi-platform-core:native/telegram-protocol/src/api.rs",
+        "bhrumom/fabushi-platform-core:native/telegram-protocol/src/lib.rs",
+        "bhrumom/fabushi-platform-core:native/telegram-network/src/lib.rs",
+        "source/mahayana/mahayana-rs/providers/telegram-protocol/src/api.rs",
+        "source/mahayana/mahayana-rs/providers/telegram-protocol/src/lib.rs",
+        "source/mahayana/mahayana-rs/providers/telegram-network/src/lib.rs"
+      ],
+      "fabushi_target_symbols": [
+        "BAD_SERVER_SALT_CONSTRUCTOR",
+        "BadServerSalt",
+        "parse_bad_server_salt",
+        "EstablishedSession::scan_rpc_body",
+        "EstablishedSession::process_service_body",
+        "bad_server_salt_matches_request"
+      ],
+      "target_language": "Rust",
+      "language_rationale": "The shared Rust protocol/network crates already own authenticated MTProto service parsing and live server-salt/session retry policy, so exact bad-server-salt decoding belongs there rather than in a new history or provider subsystem.",
+      "command_event_contracts": [
+        "bad_server_salt(valid exact object, matching bad_msg_id) -> typed parse -> exact new_server_salt assignment -> existing NewSalt retry",
+        "bad_server_salt(valid exact object, unrelated bad_msg_id) -> existing BadServerMessage without salt mutation",
+        "wrong constructor -> InvalidServiceMessage before salt mutation",
+        "truncated/trailing object -> InvalidServiceMessage before salt mutation",
+        "bad_msg_seqno is decoded/retained but no historical sent/container semantics are inferred"
+      ],
+      "state_owner": "Existing EstablishedSession owns the live server salt and one outstanding RPC; telegram-protocol api.rs owns exact bad_server_salt wire decoding.",
+      "lifecycle_owner": "Existing account-bound TelegramClientLease -> RuntimeClient -> EstablishedSession production chain.",
+      "persistence_and_restart": "No new persistence. The parsed server salt updates only the existing live EstablishedSession after exact current-request correlation.",
+      "concurrency_and_cancellation": "The existing synchronous EstablishedSession retains one outstanding invoke_raw/ping request. No background worker, callback registry, historical request table, or multi-request queue is introduced.",
+      "security_boundary": "Only authenticated/decrypted MTProto messages reach the parser. Complete constructor/field/trailing validation and request correlation occur before live server-salt mutation.",
+      "network_service_dependencies": [
+        "Existing embedded Telegram MTProto encrypted transport",
+        "fixed-U bad_server_salt#edab447b",
+        "existing single-outstanding-request NewSalt retry boundary"
+      ],
+      "service_owner": "Canonical embedded Telegram protocol/network runtime.",
+      "deployment_evidence": [],
+      "implementation_status": "implemented",
+      "coverage_disposition": "rewritten",
+      "blockers": [
+        "Stage B executable build/unit/contract/integration/packaged validation has not run.",
+        "gzip_packed decompression remains blocked: canonical protocol has no adopted bounded decompression lifecycle for the fixed-U 64-level/32 MiB contract.",
+        "Complete updates difference/differenceSlice decoding and canonical application remain open/fail-closed.",
+        "Outbound/multi-request wasSent/haveSent/_resendingIds/toSend/_sentContainers histories remain open and fail-closed.",
+        "Broader fixed-U source/legal/release closure remains open."
+      ],
+      "production_entrypoints": [
+        "source/mahayana/mahayana-rs/Cargo.toml -> mahayana-telegram -> providers/telegram-runtime -> providers/telegram-network + providers/telegram-protocol",
+        "existing TelegramClientLease/RuntimeClient -> EstablishedSession::invoke_raw or ping -> authenticated BAD_SERVER_SALT -> typed parse_bad_server_salt -> current-request correlation -> live server_salt mutation -> existing NewSalt retry"
+      ],
+      "production_evidence": [
+        "platform-core-spec-commit:12bc8a0ce1e453af1b3f2af0ffbd9ce868c92447",
+        "platform-core-implementation-commit:3a850171c59a5f27809e176ba54971c7c0c003dc",
+        "platform-core-compliance-commit:515857196fd5fd8688326c7971a60079b67a0b71",
+        "platform-core-path:native/telegram-protocol/src/api.rs@75959eb82460cb36bf5f43c6e4470ef8814ea2a9",
+        "platform-core-path:native/telegram-protocol/src/lib.rs@3540f1a60df0d07f77b6e38349e0c500ec2d12d8",
+        "platform-core-path:native/telegram-network/src/lib.rs@42be9e9fa78c3acc77367799c1ecb506cdd25ab0",
+        "desktop-implementation-commit:131980d0bc3c5b6e8fad3ad2e394715426cd1529",
+        "path:source/mahayana/mahayana-rs/providers/telegram-protocol/src/api.rs@75959eb82460cb36bf5f43c6e4470ef8814ea2a9",
+        "path:source/mahayana/mahayana-rs/providers/telegram-protocol/src/lib.rs@3540f1a60df0d07f77b6e38349e0c500ec2d12d8",
+        "path:source/mahayana/mahayana-rs/providers/telegram-network/src/lib.rs@42be9e9fa78c3acc77367799c1ecb506cdd25ab0"
+      ],
+      "test_evidence": [
+        "platform-core native/telegram-protocol/src/api.rs exact bad_server_salt four-field parse contract authored, not run",
+        "platform-core native/telegram-protocol/src/api.rs wrong-constructor, truncation and trailing rejection contracts authored, not run",
+        "platform-core native/telegram-network/src/lib.rs current-request-only bad_server_salt correlation contract authored, not run",
+        "desktop synchronized protocol/network contracts authored, not run"
+      ],
+      "target_commit": "131980d0bc3c5b6e8fad3ad2e394715426cd1529",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Canonical Fabushi account + existing TelegramClientLease/runtime + shared MTProto protocol/network production composition",
+      "composition_slot": "Embedded Telegram encrypted session receive-side bad-server-salt validation and live salt recovery",
+      "capability_component": "Typed fixed-U bad_server_salt wire validation",
+      "variation_axes": [
+        "exact payload vs wrong/truncated/trailing payload",
+        "matching vs unrelated current request id",
+        "RPC receive branch vs ping/service receive branch",
+        "decoded bad_msg_seqno values"
+      ],
+      "shared_owner_contracts": [
+        "Existing account-bound TelegramClientLease",
+        "Existing RuntimeClient/EstablishedSession",
+        "Existing telegram-protocol TlReader",
+        "Existing MessageIdGuard/session sequence owners",
+        "Existing encrypted auth-key transport",
+        "Existing one-outstanding-request NewSalt retry contract"
+      ],
+      "duplicate_root_check": "No second account, runtime, provider, transport, auth key, request history, sent-container store, callback registry, decompression runtime, difference runtime, message store, UI root, sidecar, subprocess or Web wrapper was introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Not applicable",
+      "primary_navigation_target": "Existing Messages/Conversation navigation",
+      "collection_surface": "Existing ConversationList; no change",
+      "creation_flow": "Existing canonical conversation creation; no change",
+      "object_action_scope": "Not applicable",
+      "detail_section": "Not applicable",
+      "capability_surface": "Existing ConversationWorkspace through the same provider/runtime; no new surface",
+      "route_contract": "No new route.",
+      "search_scope": "Not applicable",
+      "search_provider": "Existing canonical Search owner; unchanged",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Unchanged.",
+      "search_local_remote_contract": "Not applicable.",
+      "responsive_disposition": "No UI change.",
+      "accessibility_contract": "No UI change.",
+      "keyboard_contract": "No UI change.",
+      "state_continuity_contract": "Malformed bad_server_salt objects fail before salt mutation. Valid unrelated request ids preserve fail-closed BadServerMessage behavior. Valid matching objects update only the existing live server salt and preserve the bounded current-request retry lifecycle.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Existing Fabushi design system; no visual changes",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": null,
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "No new icon asset",
+      "avatar_contract": "No change",
+      "content_copy_keys": [],
+      "motion_contract": "No change",
+      "reduced_motion_contract": "No change",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "high",
+      "requirement_ids": [
+        "TDRP-R9-MTPROTO-BAD-SERVER-SALT-WIRE-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-MTPROTO-BAD-SERVER-SALT-WIRE-001",
+        "ORA-TDRP-MTPROTO-BAD-SERVER-SALT-FAIL-CLOSED-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-MTPROTO-BAD-SERVER-SALT-EXACT-001",
+        "INV-TDRP-MTPROTO-BAD-SERVER-SALT-PARSE-BEFORE-MUTATION-001",
+        "INV-TDRP-MTPROTO-NO-HISTORICAL-REQUEST-OWNER-001"
+      ],
+      "unit_case_ids": [
+        "UNIT-TDRP-MTPROTO-BAD-SERVER-SALT-PARSE-001",
+        "UNIT-TDRP-MTPROTO-BAD-SERVER-SALT-MALFORMED-001"
+      ],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-MTPROTO-BAD-SERVER-SALT-WIRE-001"
+      ],
+      "integration_case_ids": [
+        "INT-TDRP-MTPROTO-BAD-SERVER-SALT-CURRENT-RPC-001",
+        "INT-TDRP-MTPROTO-BAD-SERVER-SALT-PING-001"
+      ],
+      "functional_e2e_case_ids": [
+        "E2E-TDRP-MTPROTO-BAD-SERVER-SALT-RECEIVE-001"
+      ],
+      "temporal_case_ids": [
+        "TEMP-TDRP-MTPROTO-BAD-SERVER-SALT-PARSE-BEFORE-MUTATION-001"
+      ],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "fault_recovery_case_ids": [
+        "FAULT-TDRP-MTPROTO-BAD-SERVER-SALT-MALFORMED-001"
+      ],
+      "performance_case_ids": [],
+      "security_case_ids": [
+        "SEC-TDRP-MTPROTO-BAD-SERVER-SALT-AUTHENTICATED-001"
+      ],
+      "soak_case_ids": [],
+      "exploratory_charter_ids": [],
+      "regression_ids": [
+        "REG-TDRP-MTPROTO-BAD-SERVER-SALT-PARTIAL-PARSE-001"
+      ],
+      "release_gate_ids": [
+        "G-TRACEABILITY",
+        "G-COMPOSITION",
+        "G-SECURITY",
+        "G-EVIDENCE",
+        "G-RELEASE"
+      ],
+      "test_fixture_ids": [
+        "mtproto-bad-server-salt-fixture"
+      ],
+      "test_environment_ids": [
+        "GitHub Actions Stage B matrix (not run)"
+      ],
+      "coverage_matrix_status": "pending",
+      "flake_status": "stable",
+      "release_gate_status": "pending",
+      "acceptance_reviewer": null,
+      "reviewer": null,
+      "license_and_provenance": "Behavioral responsibility is anchored to fixed-U telegramdesktop/tdesktop Telegram/SourceFiles/mtproto/session_private.cpp@13cbc76ec723386027b5b4dcac79999b791c4614 and Telegram/SourceFiles/mtproto/scheme/mtproto.tl@76225965bfc794388db241f3f760db8ab79e84f8. The implementation is source-neutral Rust and copies no upstream C++ implementation.",
+      "notes": "Stage A implementation only. This row closes complete bad_server_salt wire validation and current-one-request correlation in both existing receive branches; it does not claim arbitrary historical sent/container bookkeeping. Global unknown/unread source-entry counts remain unchanged because this is a newly mapped responsibility slice within already-open fixed-U source coverage. Contracts are authored but not executed; validation_status=not-run and accepted=false.",
       "test_execution_evidence": []
     }
   ],
