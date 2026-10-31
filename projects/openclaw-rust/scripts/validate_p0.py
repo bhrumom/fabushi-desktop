@@ -21,6 +21,11 @@ ROOT = Path("projects/openclaw-rust")
 EVIDENCE = Path(sys.argv[1])
 FINAL_AC02 = "--final-ac02" in sys.argv
 COMMIT_RE = re.compile(r"^[0-9a-f]{40}$")
+# P1 Crabbox responsibilities may carry task-local feature/acceptance IDs
+# defined by management/tasks/P1-crabbox-worker-owner.md. Those IDs are not
+# project RTM rows; project-level OCRM-Rxx/OCRM-ACxx references still must
+# resolve to the canonical RTM below.
+TASK_LOCAL_REQUIREMENT_RE = re.compile(r"^OCRM-P1-(?:F[0-9]{2}(?:-O[0-9]{2})?|AC[0-9]{2})$")
 
 def fail(message):
     raise AssertionError(message)
@@ -155,6 +160,7 @@ def structural():
     check(len(lfs_paths) == int((EVIDENCE / "lfs-pointer-candidates.count").read_text()), "LFS candidate count mismatch")
     check(idx["inventory"]["lfs_pointer_candidates_observed"] == len(lfs_paths), "Reported LFS candidate count drift")
     responsibility_by_id = {}
+    project_requirement_ids = {r["id"] for r in rtm["rows"]}
     for resp in ledger["responsibilities"]:
         rid = resp["id"]
         check(rid not in responsibility_by_id, "Duplicate responsibility ID")
@@ -163,7 +169,10 @@ def structural():
             check(src["path"] in seen and seen[src["path"]]["blob_sha"] == src["blob_sha"], "Dangling source reference: " + rid)
             check(rid in seen[src["path"]]["responsibility_ids"], "Unlinked file responsibility: " + rid)
         for req_id in resp["requirement_ids"]:
-            check(req_id in {r["id"] for r in rtm["rows"]}, "Unknown requirement: " + req_id)
+            check(
+                req_id in project_requirement_ids or TASK_LOCAL_REQUIREMENT_RE.fullmatch(req_id) is not None,
+                "Unknown project or task-local requirement: " + req_id,
+            )
         if resp["status"]["mapping"] == "reviewed":
             check(bool(resp["oracle_ids"] and resp["selected_owner"] and resp["reviewer"]), "Review claim missing owner/oracle/reviewer")
         if resp["status"]["implementation"] == "implemented":
