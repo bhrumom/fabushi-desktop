@@ -320,6 +320,16 @@ discovery-only subject; prior inventory, dependency/LFS closure, semantic
 reads, and Actions provenance are not reusable, and no authority or completion
 flag changes.
 
+2026-10-31T11:40:24Z drift amendment: read-only GitHub checks resolved the
+current OpenClaw `main` to commit=`70da3265b8bf09e25acb1a14ce246982520a1140`,
+tree=`b8afd36d3c8d722dbab9a05781605fd79d2d5a50`, with an untruncated recursive
+tree of 64,067 entries (61,826 blobs, 2,241 directories, 0 gitlinks). The
+commit is `refactor(test): share scoped environment restoration (#189314)`.
+Root dependency/license identities remain unchanged, but this is a fresh
+discovery-only subject; prior inventory, dependency/LFS closure, semantic
+reads, and Actions provenance are not reusable, and no authority or completion
+flag changes.
+
 2026-10-31T11:19:02Z drift amendment: read-only GitHub checks resolved the
 current OpenClaw `main` to commit=`77f272bd7e5ad7db4c96e8bc4d440d583ab17e7f`,
 tree=`a3402ffe65237a9e616e0a287d7b7119c9cd20de`, with an untruncated recursive
