@@ -5,6 +5,7 @@ const MAX_LEASE_ID_CHARS: usize = 256;
 const MAX_SCOPE_CHARS: usize = 256;
 const MAX_RUNTIME_FIELD_CHARS: usize = 256;
 const MAX_REPLAY_KEY_CHARS: usize = 256;
+const MAX_REPLAY_HISTORY: usize = 256;
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct CloudWorkerLeaseScope {
@@ -103,6 +104,8 @@ pub struct CloudWorkerLease {
     pub runtime: CloudWorkerRuntimeIdentity,
     pub lifecycle: CloudWorkerLifecycle,
     pub last_outcome: CloudWorkerMutationOutcome,
+    #[serde(default)]
+    pub replay_history: Vec<ReplayKey>,
 }
 
 /// Ephemeral capability handed to an existing Runner, Computer or sandbox
@@ -153,6 +156,14 @@ impl CloudWorkerLease {
         if !valid_text(&self.runtime.provider, MAX_RUNTIME_FIELD_CHARS)
             || !valid_text(&self.runtime.profile, MAX_RUNTIME_FIELD_CHARS)
             || !valid_text(&self.runtime.runtime_id, MAX_RUNTIME_FIELD_CHARS)
+        {
+            return Err(CloudWorkerLeaseError::InvalidPersistedRecord);
+        }
+        if self.replay_history.len() > MAX_REPLAY_HISTORY
+            || self
+                .replay_history
+                .iter()
+                .any(|key| !valid_text(&key.0, MAX_REPLAY_KEY_CHARS))
         {
             return Err(CloudWorkerLeaseError::InvalidPersistedRecord);
         }
@@ -224,6 +235,9 @@ impl CloudWorkerLease {
         if !valid_text(&mutation.replay_key.0, MAX_REPLAY_KEY_CHARS) {
             return Err(CloudWorkerLeaseError::InvalidReplayKey);
         }
+        if self.replay_history.contains(&mutation.replay_key) {
+            return Err(CloudWorkerLeaseError::ReplayAlreadySettled);
+        }
         Ok(())
     }
 
@@ -231,7 +245,17 @@ impl CloudWorkerLease {
         &mut self,
         next: CloudWorkerLifecycle,
         outcome: CloudWorkerMutationOutcome,
+        replay_key: ReplayKey,
     ) -> Result<(), CloudWorkerLeaseError> {
+        if !valid_text(&replay_key.0, MAX_REPLAY_KEY_CHARS) {
+            return Err(CloudWorkerLeaseError::InvalidReplayKey);
+        }
+        if self.replay_history.contains(&replay_key) {
+            return Err(CloudWorkerLeaseError::ReplayAlreadySettled);
+        }
+        if self.replay_history.len() >= MAX_REPLAY_HISTORY {
+            return Err(CloudWorkerLeaseError::ReplayHistoryLimitReached);
+        }
         let advances_generation = matches!(
             outcome,
             CloudWorkerMutationOutcome::Completed | CloudWorkerMutationOutcome::OutcomeUnknown
@@ -274,6 +298,7 @@ impl CloudWorkerLease {
             self.generation = generation;
         }
         self.last_outcome = outcome;
+        self.replay_history.push(replay_key);
         Ok(())
     }
 }
@@ -325,6 +350,10 @@ pub enum CloudWorkerLeaseError {
     MissingReplayKey,
     #[error("mutation replay key is invalid or oversized")]
     InvalidReplayKey,
+    #[error("mutation replay key was already settled for this lease")]
+    ReplayAlreadySettled,
+    #[error("lease replay history is full; refusing to settle another mutation")]
+    ReplayHistoryLimitReached,
     #[error("lease capability is unavailable in lifecycle {lifecycle:?} with outcome {outcome:?}")]
     CapabilityUnavailable {
         lifecycle: CloudWorkerLifecycle,
@@ -365,6 +394,7 @@ mod tests {
                 .unwrap(),
             lifecycle: CloudWorkerLifecycle::Admitted,
             last_outcome: CloudWorkerMutationOutcome::Completed,
+            replay_history: Vec::new(),
         }
     }
 
@@ -452,12 +482,36 @@ mod tests {
     }
 
     #[test]
+    fn rejects_replaying_a_settled_mutation_key() {
+        let mut lease = lease();
+        let replay_key = ReplayKey("failed-1".into());
+        let mutation = lease.mutation(
+            OwnerEpoch(3),
+            LeaseGeneration(7),
+            lease.runtime.clone(),
+            replay_key.clone(),
+        );
+        lease
+            .apply_outcome(
+                CloudWorkerLifecycle::Admitted,
+                CloudWorkerMutationOutcome::Failed,
+                replay_key,
+            )
+            .unwrap();
+        assert_eq!(
+            lease.validate(&mutation),
+            Err(CloudWorkerLeaseError::ReplayAlreadySettled)
+        );
+    }
+
+    #[test]
     fn only_completed_results_advance_the_lifecycle() {
         let mut lease = lease();
         assert_eq!(
             lease.apply_outcome(
                 CloudWorkerLifecycle::Preparing,
                 CloudWorkerMutationOutcome::Submitted,
+                ReplayKey("submitted-1".into()),
             ),
             Err(CloudWorkerLeaseError::SubmittedStateChanged)
         );
@@ -465,6 +519,7 @@ mod tests {
             lease.apply_outcome(
                 CloudWorkerLifecycle::Preparing,
                 CloudWorkerMutationOutcome::Completed,
+                ReplayKey("completed-1".into()),
             ),
             Ok(())
         );
@@ -479,6 +534,7 @@ mod tests {
             lease.apply_outcome(
                 CloudWorkerLifecycle::Admitted,
                 CloudWorkerMutationOutcome::OutcomeUnknown,
+                ReplayKey("unknown-1".into()),
             ),
             Ok(())
         );
@@ -488,6 +544,7 @@ mod tests {
             lease.apply_outcome(
                 CloudWorkerLifecycle::Preparing,
                 CloudWorkerMutationOutcome::Completed,
+                ReplayKey("recovery-1".into()),
             ),
             Err(CloudWorkerLeaseError::InvalidLifecycleTransition {
                 from: CloudWorkerLifecycle::OutcomeUnknown,
@@ -520,6 +577,7 @@ mod tests {
             lease.apply_outcome(
                 CloudWorkerLifecycle::Preparing,
                 CloudWorkerMutationOutcome::Completed,
+                ReplayKey("overflow-1".into()),
             ),
             Err(CloudWorkerLeaseError::GenerationExhausted)
         );

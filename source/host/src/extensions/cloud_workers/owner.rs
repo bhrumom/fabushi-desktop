@@ -312,6 +312,7 @@ impl CloudWorkerProvisioningOwner {
             runtime,
             lifecycle: CloudWorkerLifecycle::Admitted,
             last_outcome: CloudWorkerMutationOutcome::Completed,
+            replay_history: Vec::new(),
         };
         lease.validate_persisted()?;
         self.leases.insert(lease_id, lease.clone());
@@ -469,7 +470,7 @@ impl CloudWorkerProvisioningOwner {
             .get_mut(&mutation.lease_id)
             .ok_or(CloudWorkerOwnerError::UnknownLease)?;
         lease.validate(mutation)?;
-        lease.apply_outcome(next, outcome)?;
+        lease.apply_outcome(next, outcome, mutation.replay_key.clone())?;
         Ok(lease.clone())
     }
 

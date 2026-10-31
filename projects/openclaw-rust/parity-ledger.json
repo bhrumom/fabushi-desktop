@@ -2491,6 +2491,7 @@
       "invariants": [
         "Lease mutations validate lease ID, owner epoch, generation, runtime identity and non-empty replay key before settlement",
         "Lease scope and runtime constructors reject control text and oversized identity fields",
+        "Settled replay keys are retained in a bounded persistent history and cannot be reused",
         "Only completed mutations advance lifecycle; submitted, failed and cancelled outcomes cannot silently change state",
         "Outcome-unknown results remain visible and cannot be retried as a successful non-replayable mutation",
         "Process cleanup remains bounded and ownership-proven; broad process-name termination is forbidden"
@@ -2616,6 +2617,7 @@
       "tests": [
         "source/host/src/extensions/cloud_workers/lease.rs::tests::only_completed_results_advance_the_lifecycle",
         "source/host/src/extensions/cloud_workers/lease.rs::tests::ambiguous_results_enter_recovery_state",
+        "source/host/src/extensions/cloud_workers/lease.rs::tests::rejects_replaying_a_settled_mutation_key",
         "source/host/tests/cloud_workers_extension_contract.rs::owner_exposes_only_a_fenced_enrolled_consumer_capability"
       ],
       "typed_contracts": [

@@ -199,6 +199,7 @@ mod tests {
             } else {
                 CloudWorkerMutationOutcome::Completed
             },
+            replay_history: Vec::new(),
         }
     }
 

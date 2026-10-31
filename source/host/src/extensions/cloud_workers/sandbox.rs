@@ -223,6 +223,7 @@ mod tests {
                 .unwrap(),
             lifecycle: super::super::CloudWorkerLifecycle::Enrolled,
             last_outcome: super::super::CloudWorkerMutationOutcome::Completed,
+            replay_history: Vec::new(),
         }
         .capability()
         .unwrap()
@@ -314,6 +315,7 @@ mod tests {
             runtime: current.runtime().clone(),
             lifecycle: super::super::CloudWorkerLifecycle::Enrolled,
             last_outcome: super::super::CloudWorkerMutationOutcome::Completed,
+            replay_history: Vec::new(),
         }
         .capability()
         .unwrap();

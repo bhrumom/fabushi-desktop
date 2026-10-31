@@ -462,8 +462,9 @@ completed mutation may advance the lifecycle, submitted/failed/cancelled
 mutations cannot silently change state, and an ambiguous result enters
 `OutcomeUnknown` until a permitted recovery transition is applied. Every
 completed or outcome-unknown lifecycle change advances the lease generation
-before publication; generation exhaustion fails closed so stale capabilities
-cannot be reused.
+before publication; settled replay keys are retained in a bounded persistent
+history and cannot be reused, while history exhaustion fails closed. Generation
+exhaustion also fails closed so stale capabilities cannot be reused.
 
 The warm-image contract at
 `source/host/src/extensions/cloud_workers/warm_image.rs` adds generation-fenced
