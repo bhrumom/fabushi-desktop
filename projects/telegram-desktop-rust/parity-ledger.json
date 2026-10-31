@@ -23069,7 +23069,9 @@
         "desktop-sync-commit:37299e18e3018e988d541607d5ba7842713d9fd1",
         "path:source/mahayana/mahayana-rs/providers/telegram-protocol/src/api.rs@ebfb3670b5cd097b9ce288782c7954f5cfe9fc43",
         "path:source/mahayana/mahayana-rs/providers/telegram-protocol/src/lib.rs@abab39e42f100972484191f0e52e9edd9b88c6cf",
-        "path:source/mahayana/mahayana-rs/providers/telegram-protocol/tests/protocol_contract.rs@89692a28620b2d8465703a1335458d5fbd15aee6"
+        "path:source/mahayana/mahayana-rs/providers/telegram-protocol/tests/protocol_contract.rs@89692a28620b2d8465703a1335458d5fbd15aee6",
+        "platform-core-spec-compliance-commit:be950b18eca7e3e6c1e9ffb4833a19fcbd224880",
+        "platform-core-spec-compliance-blob:e85d67b0b3b8c7c3d7bee7c08d72a9978903c325"
       ],
       "test_evidence": [
         "canonical and desktop tracked authored-only contracts cover empty, one-element shipping-shaped id, multiple signed long order/bit preservation, exact EOF and vector-count overflow/no-partial-header behavior; not run"
@@ -23192,7 +23194,7 @@
       "acceptance_reviewer": null,
       "reviewer": null,
       "license_and_provenance": "Behavioral responsibility is anchored to fixed-U telegramdesktop/tdesktop Telegram/SourceFiles/mtproto/scheme/mtproto.tl@76225965bfc794388db241f3f760db8ab79e84f8 and shipping SessionPrivate::tryToSend plus detailed-answer enqueue paths in Telegram/SourceFiles/mtproto/session_private.cpp@13cbc76ec723386027b5b4dcac79999b791c4614. Implementation is source-neutral Rust and copies no upstream C++ implementation.",
-      "notes": "Stage A implementation bookkeeping only. Remote source review confirms existing build_msg_resend_req/TlWriter already satisfy exact fixed-U request-wire semantics, so no production behavior change was made. Durable spec and authored-only contracts were added and mirrored but not executed; validation_status=not-run and accepted=false. Arbitrary multi-request resend history remains open and fail-closed.",
+      "notes": "Stage A implementation bookkeeping only. Remote source review confirms existing build_msg_resend_req/TlWriter already satisfy exact fixed-U request-wire semantics, so no production behavior change was made. Durable spec and authored-only contracts were added and mirrored but not executed; validation_status=not-run and accepted=false. Arbitrary multi-request resend history remains open and fail-closed. Final source-level compliance is recorded at platform-core commit be950b18eca7e3e6c1e9ffb4833a19fcbd224880/spec blob e85d67b0b3b8c7c3d7bee7c08d72a9978903c325; executable validation remains not-run.",
       "test_execution_evidence": [],
       "validation_status": "not-run",
       "accepted": false,
