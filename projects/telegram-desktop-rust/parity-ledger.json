@@ -9,7 +9,7 @@
     "unknown": 16172,
     "unread": 16145,
     "omitted": 0,
-    "responsibilities_total": 69,
+    "responsibilities_total": 70,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -17498,6 +17498,275 @@
       "license_and_provenance": "Behavioral responsibility is anchored to fixed-U telegramdesktop/tdesktop Telegram/SourceFiles/mtproto/session_private.cpp@13cbc76ec723386027b5b4dcac79999b791c4614 and Telegram/SourceFiles/mtproto/scheme/mtproto.tl@76225965bfc794388db241f3f760db8ab79e84f8. The implementation is source-neutral Rust and copies no upstream C++ implementation.",
       "notes": "Stage A implementation only. This row closes complete bad_server_salt wire validation and current-one-request correlation in both existing receive branches; it does not claim arbitrary historical sent/container bookkeeping. Global unknown/unread source-entry counts remain unchanged because this is a newly mapped responsibility slice within already-open fixed-U source coverage. Contracts are authored but not executed; validation_status=not-run and accepted=false.",
       "test_execution_evidence": []
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+      "source_path": "Telegram/SourceFiles/mtproto/session_private.cpp",
+      "source_blob_sha": "13cbc76ec723386027b5b4dcac79999b791c4614",
+      "source_kind": "source",
+      "module_id": "tdesktop.mtproto.session.bad-msg-notification-wire",
+      "responsibility_id": "TDRP-R9-MTPROTO-BAD-MSG-NOTIFICATION-WIRE-001",
+      "source_symbols": [
+        "SessionPrivate::handleOneReceived / mtpc_bad_msg_notification",
+        "bad_msg_notification#a7eff811 bad_msg_id:long bad_msg_seqno:int error_code:int",
+        "MTPBadMsgNotification::c_bad_msg_notification",
+        "EstablishedSession::scan_rpc_body / pre-hardening BAD_MSG_NOTIFICATION raw-offset branch",
+        "EstablishedSession::process_service_body / pre-hardening BAD_MSG_NOTIFICATION raw-offset branch",
+        "direct_bad_message_time_recovery / pre-hardening raw-offset guard"
+      ],
+      "capability_ids": [
+        "CAP-EMBEDDED-MTPROTO-SESSION-RECOVERY"
+      ],
+      "dependency_ids": [
+        "EmbeddedTelegramProtocol",
+        "EmbeddedTelegramNetwork",
+        "TelegramClientLease",
+        "MTProtoAuthKey"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/evidence/round60-mtproto-bad-msg-notification-wire-20261101.md",
+      "behavior_contract": "A received bad_msg_notification#a7eff811 object must be fully decoded as bad_msg_id:long, bad_msg_seqno:int, and error_code:int before the live session may correlate it or perform retry/time/session recovery. Wrong constructor, any truncation, or trailing bytes fail closed. The direct message-id time-window relaxation is available only to a fully valid typed notification with an already-supported direct-time recovery code. A valid object affects only the one outstanding request when bad_msg_id matches that request; the decoded bad_msg_seqno is retained without inventing historical sent/container reconciliation.",
+      "state_machine": "same TelegramClientLease -> RuntimeClient -> EstablishedSession authenticated/decrypted receive -> telegram-protocol::parse_bad_msg_notification validates complete three-field object -> malformed => InvalidServiceMessage before recovery; direct incoming-id relaxation only for valid code 16/17/64 -> valid unrelated bad_msg_id => existing BadServerMessage; valid matching id => existing bounded time-correction/session-reset retry mapping",
+      "side_effects": [
+        "Moves bad_msg_notification wire decoding into the existing shared telegram-protocol owner",
+        "Decodes and retains bad_msg_seqno instead of skipping it through raw offsets",
+        "Prevents wrong/truncated/trailing notifications from reaching retry/session-reset behavior",
+        "Requires fully valid typed notification before the direct message-id clock-window relaxation",
+        "Uses the same typed parser in both RPC and ping/service receive branches",
+        "Preserves existing one-outstanding-request recovery-code semantics",
+        "Authors exact and malformed contracts without executing them in Stage A"
+      ],
+      "failure_cases": [
+        "Raw-offset receive path skips bad_msg_seqno validation",
+        "Trailing or truncated notification reaches time correction/session reset",
+        "Malformed notification receives the direct server-message clock-window exception",
+        "An unrelated historical request id mutates current recovery state",
+        "Implementation invents wasSent/haveSent/_resendingIds/toSend/_sentContainers history"
+      ],
+      "ui_disposition": "No UI change. This is authenticated receive-side MTProto service-message validation inside the existing embedded runtime.",
+      "non_ui_responsibilities": [
+        "Exact fixed-U bad_msg_notification wire decoding",
+        "Malformed/trailing fail-closed behavior before recovery mutation",
+        "Typed validation before direct message-id clock-window relaxation",
+        "Current-request-only correlation in both existing EstablishedSession receive branches",
+        "Preservation of existing bounded bad-message recovery-code mapping"
+      ],
+      "platform_delta": "Both existing BAD_MSG_NOTIFICATION receive branches and the direct clock-window recovery guard are hardened from raw offset reads to complete typed fixed-U validation. No historical request queue, sent-container store, callback registry, gzip runtime, difference decoder, or second Telegram runtime is added.",
+      "existing_owner_candidates": [
+        "bhrumom/fabushi-platform-core:native/telegram-protocol/src/api.rs",
+        "bhrumom/fabushi-platform-core:native/telegram-network/src/lib.rs",
+        "source/mahayana/mahayana-rs/providers/telegram-protocol/src/api.rs",
+        "source/mahayana/mahayana-rs/providers/telegram-network/src/lib.rs"
+      ],
+      "existing_owner": "Canonical shared telegram-protocol MTProto service parser + telegram-network EstablishedSession consumed by the existing desktop lease/runtime chain",
+      "rejected_existing_owners": [
+        "Renderer/AppHost cannot own authenticated MTProto service-message wire validation",
+        "Storage cannot own live session salt mutation",
+        "A second request-history/callback owner would split lifecycle truth",
+        "gzip/difference owners are unrelated to this independently bounded object"
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "bhrumom/fabushi-platform-core:native/telegram-protocol/src/api.rs",
+        "bhrumom/fabushi-platform-core:native/telegram-protocol/src/lib.rs",
+        "bhrumom/fabushi-platform-core:native/telegram-network/src/lib.rs",
+        "source/mahayana/mahayana-rs/providers/telegram-protocol/src/api.rs",
+        "source/mahayana/mahayana-rs/providers/telegram-protocol/src/lib.rs",
+        "source/mahayana/mahayana-rs/providers/telegram-network/src/lib.rs"
+      ],
+      "fabushi_target_symbols": [
+        "BAD_MSG_NOTIFICATION_CONSTRUCTOR",
+        "BadMsgNotification",
+        "parse_bad_msg_notification",
+        "EstablishedSession::scan_rpc_body",
+        "EstablishedSession::process_service_body",
+        "direct_bad_message_time_recovery",
+        "bad_msg_notification_matches_request"
+      ],
+      "target_language": "Rust",
+      "language_rationale": "The shared Rust protocol/network crates already own authenticated MTProto service parsing and live server-salt/session retry policy, so exact bad-server-salt decoding belongs there rather than in a new history or provider subsystem.",
+      "command_event_contracts": [
+        "authenticated BAD_MSG_NOTIFICATION -> exact typed parse -> current request correlation -> bounded recovery outcome",
+        "incoming message-id outside time window -> exact typed bad_msg_notification parse -> only valid 16/17/64 may use direct recovery window"
+      ],
+      "state_owner": "Existing RuntimeClient/EstablishedSession owns live clock/session state; telegram-protocol owns exact service-message decoding.",
+      "lifecycle_owner": "Existing account-bound TelegramClientLease -> RuntimeClient -> EstablishedSession lifecycle.",
+      "persistence_and_restart": "No new persistence. Recovery mutates only existing in-memory session clock/session state and the existing retry lifecycle.",
+      "concurrency_and_cancellation": "No new concurrency owner. The existing single-outstanding-request synchronous receive loop remains authoritative.",
+      "security_boundary": "Only authenticated/decrypted MTProto bodies are considered; malformed service objects fail before recovery side effects or clock-window relaxation.",
+      "network_service_dependencies": [
+        "Existing embedded Telegram MTProto encrypted transport",
+        "fixed-U bad_msg_notification#a7eff811",
+        "existing single-outstanding-request bad-message recovery boundary"
+      ],
+      "service_owner": "Canonical embedded Telegram protocol/network runtime.",
+      "deployment_evidence": [],
+      "implementation_status": "implemented",
+      "coverage_disposition": "rewritten",
+      "blockers": [
+        "Stage B executable build/unit/contract/integration/packaged validation has not run.",
+        "gzip_packed decompression remains blocked: canonical protocol has no adopted bounded decompression lifecycle for the fixed-U 64-level/32 MiB contract.",
+        "Complete updates difference/differenceSlice decoding and canonical application remain open/fail-closed.",
+        "Outbound/multi-request wasSent/haveSent/_resendingIds/toSend/_sentContainers histories remain open and fail-closed.",
+        "Broader fixed-U source/legal/release closure remains open."
+      ],
+      "production_entrypoints": [
+        "source/mahayana/mahayana-rs/Cargo.toml -> mahayana-telegram -> providers/telegram-runtime -> providers/telegram-network + providers/telegram-protocol",
+        "existing TelegramClientLease/RuntimeClient -> EstablishedSession::invoke_raw or ping -> authenticated BAD_MSG_NOTIFICATION -> typed parse_bad_msg_notification -> current-request correlation -> existing bounded retry/time/session recovery"
+      ],
+      "production_evidence": [
+        "platform-core-spec-commit:42d90d6351a31f6d0815c47f2d647ae8162eccf8",
+        "platform-core-implementation-commit:0e569130a80a53b48b74f8e27a96004363b30e7e",
+        "platform-core-path:native/telegram-protocol/src/api.rs@15e34bbb0e9c5a5d4fdd8b7a9cdedf3d6b123080",
+        "platform-core-path:native/telegram-protocol/src/lib.rs@2c4897cfdba4502d8ca880d7a58cfd0e88877bf7",
+        "platform-core-path:native/telegram-network/src/lib.rs@1fc1b1f69e3e37377400d078f916599e0c7b20bc",
+        "desktop-implementation-commit:1205f8709995aa4f5fd5dafdc9fb5121fbfce06c",
+        "path:source/mahayana/mahayana-rs/providers/telegram-protocol/src/api.rs@15e34bbb0e9c5a5d4fdd8b7a9cdedf3d6b123080",
+        "path:source/mahayana/mahayana-rs/providers/telegram-protocol/src/lib.rs@2c4897cfdba4502d8ca880d7a58cfd0e88877bf7",
+        "path:source/mahayana/mahayana-rs/providers/telegram-network/src/lib.rs@1fc1b1f69e3e37377400d078f916599e0c7b20bc"
+      ],
+      "test_evidence": [
+        "platform-core native/telegram-protocol/src/api.rs exact bad_msg_notification three-field parse contract authored, not run",
+        "platform-core native/telegram-protocol/src/api.rs wrong-constructor, truncation and trailing rejection contracts authored, not run",
+        "platform-core native/telegram-network/src/lib.rs current-request-only correlation and malformed clock-window contracts authored, not run",
+        "desktop synchronized protocol/network contracts authored, not run"
+      ],
+      "target_commit": "1205f8709995aa4f5fd5dafdc9fb5121fbfce06c",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Canonical Fabushi account + existing TelegramClientLease/runtime + shared MTProto protocol/network production composition",
+      "composition_slot": "Embedded Telegram encrypted session receive-side bad-server-salt validation and live salt recovery",
+      "capability_component": "Typed fixed-U bad_server_salt wire validation",
+      "variation_axes": [
+        "exact payload vs wrong/truncated/trailing payload",
+        "matching vs unrelated current request id",
+        "RPC receive branch vs ping/service receive branch",
+        "decoded bad_msg_seqno values"
+      ],
+      "shared_owner_contracts": [
+        "Existing account-bound TelegramClientLease",
+        "Existing RuntimeClient/EstablishedSession",
+        "Existing telegram-protocol TlReader",
+        "Existing MessageIdGuard/session sequence owners",
+        "Existing encrypted auth-key transport",
+        "Existing one-outstanding-request bad-message recovery contract"
+      ],
+      "duplicate_root_check": "No second account, runtime, provider, transport, auth key, request history, sent-container store, callback registry, decompression runtime, difference runtime, message store, UI root, sidecar, subprocess or Web wrapper was introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Not applicable",
+      "primary_navigation_target": "Existing Messages/Conversation navigation",
+      "collection_surface": "Existing ConversationList; no change",
+      "creation_flow": "Existing canonical conversation creation; no change",
+      "object_action_scope": "Not applicable",
+      "detail_section": "Not applicable",
+      "capability_surface": "Existing ConversationWorkspace through the same provider/runtime; no new surface",
+      "route_contract": "No new route.",
+      "search_scope": "Not applicable",
+      "search_provider": "Existing canonical Search owner; unchanged",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Unchanged.",
+      "search_local_remote_contract": "Not applicable.",
+      "responsive_disposition": "No UI change.",
+      "accessibility_contract": "No UI change.",
+      "keyboard_contract": "No UI change.",
+      "state_continuity_contract": "Malformed bad_msg_notification objects fail before retry/session-reset mutation and do not receive the direct message-id time-window exception. Valid unrelated request ids preserve fail-closed BadServerMessage behavior. Valid matching objects preserve only the existing bounded time-correction/session-reset retry lifecycle.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Existing Fabushi design system; no visual changes",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": null,
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "No new icon asset",
+      "avatar_contract": "No change",
+      "content_copy_keys": [],
+      "motion_contract": "No change",
+      "reduced_motion_contract": "No change",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "high",
+      "requirement_ids": [
+        "TDRP-R9-MTPROTO-BAD-MSG-NOTIFICATION-WIRE-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-MTPROTO-BAD-MSG-NOTIFICATION-WIRE-001",
+        "ORA-TDRP-MTPROTO-BAD-MSG-NOTIFICATION-FAIL-CLOSED-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-MTPROTO-BAD-MSG-NOTIFICATION-EXACT-001",
+        "INV-TDRP-MTPROTO-BAD-MSG-NOTIFICATION-PARSE-BEFORE-RECOVERY-001",
+        "INV-TDRP-MTPROTO-BAD-MSG-NOTIFICATION-CLOCK-GUARD-001",
+        "INV-TDRP-MTPROTO-NO-HISTORICAL-REQUEST-OWNER-001"
+      ],
+      "unit_case_ids": [
+        "UNIT-TDRP-MTPROTO-BAD-MSG-NOTIFICATION-PARSE-001",
+        "UNIT-TDRP-MTPROTO-BAD-MSG-NOTIFICATION-MALFORMED-001"
+      ],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-MTPROTO-BAD-MSG-NOTIFICATION-WIRE-001"
+      ],
+      "integration_case_ids": [
+        "INT-TDRP-MTPROTO-BAD-MSG-NOTIFICATION-CURRENT-RPC-001",
+        "INT-TDRP-MTPROTO-BAD-MSG-NOTIFICATION-PING-001"
+      ],
+      "functional_e2e_case_ids": [
+        "E2E-TDRP-MTPROTO-BAD-MSG-NOTIFICATION-RECEIVE-001"
+      ],
+      "temporal_case_ids": [
+        "TEMP-TDRP-MTPROTO-BAD-MSG-NOTIFICATION-PARSE-BEFORE-RECOVERY-001"
+      ],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "fault_recovery_case_ids": [
+        "FAULT-TDRP-MTPROTO-BAD-MSG-NOTIFICATION-MALFORMED-001",
+        "FAULT-TDRP-MTPROTO-BAD-MSG-NOTIFICATION-CLOCK-GUARD-001"
+      ],
+      "performance_case_ids": [],
+      "security_case_ids": [
+        "SEC-TDRP-MTPROTO-BAD-MSG-NOTIFICATION-AUTHENTICATED-001"
+      ],
+      "soak_case_ids": [],
+      "exploratory_charter_ids": [],
+      "regression_ids": [
+        "REG-TDRP-MTPROTO-BAD-MSG-NOTIFICATION-PARTIAL-PARSE-001"
+      ],
+      "release_gate_ids": [
+        "G-TRACEABILITY",
+        "G-COMPOSITION",
+        "G-SECURITY",
+        "G-EVIDENCE",
+        "G-RELEASE"
+      ],
+      "test_fixture_ids": [
+        "mtproto-bad-msg-notification-fixture"
+      ],
+      "test_environment_ids": [
+        "GitHub Actions Stage B matrix (not run)"
+      ],
+      "coverage_matrix_status": "pending",
+      "flake_status": "stable",
+      "release_gate_status": "pending",
+      "acceptance_reviewer": null,
+      "reviewer": null,
+      "license_and_provenance": "Behavioral responsibility is anchored to fixed-U telegramdesktop/tdesktop Telegram/SourceFiles/mtproto/session_private.cpp@13cbc76ec723386027b5b4dcac79999b791c4614 and Telegram/SourceFiles/mtproto/scheme/mtproto.tl@76225965bfc794388db241f3f760db8ab79e84f8. The implementation is source-neutral Rust and copies no upstream C++ implementation.",
+      "notes": "Stage A implementation only. This row closes complete bad_msg_notification wire validation, typed clock-window gating, and current-one-request correlation in both existing receive branches; it does not claim arbitrary historical sent/container bookkeeping. Global unknown/unread source-entry counts remain unchanged because this is a newly mapped responsibility slice within already-open fixed-U source coverage. Contracts are authored but not executed; validation_status=not-run and accepted=false.",
+      "test_execution_evidence": [],
+      "validation_status": "not-run",
+      "accepted": false
     }
   ],
   "rebaseline_candidate": {
