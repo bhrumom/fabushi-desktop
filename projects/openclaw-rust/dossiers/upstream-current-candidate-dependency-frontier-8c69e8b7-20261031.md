@@ -36,6 +36,22 @@ The exact root manifest is OpenClaw `2026.10.9`, with integrity-qualified
 dependency, and 0 peer dependencies. The exact workspace declaration contains
 `.`, `ui`, `packages/*`, `extensions/*`, `examples/*`, and `tools/solid-lint`.
 
+The exact `pnpm-lock.yaml` blob is
+`83b4975eb96942ec007a2eb9847ccfe98d380bda`. A YAML-stream read preserves two
+documents in that one blob:
+
+| Document | Importers | Packages | Snapshots | Interpretation |
+| --- | ---: | ---: | ---: | --- |
+| 1 | 1 | 15 | 15 | pnpm bootstrap/package-manager self-lock |
+| 2 | 206 | 1,749 | 1,750 | workspace dependency lock |
+
+The second document's 206 importers cover the root, `ui`, `packages/*`,
+`extensions/*`, `examples/*`, and `tools/solid-lint` workspace members observed
+in the exact tree. Counting only the first YAML document would therefore
+under-report the workspace graph. This is a structural lock observation, not a
+claim that every registry archive, patch, native artifact, optional platform
+package, license or LFS object has been externally verified.
+
 ## Drift against the fixed-baseline declaration input
 
 The committed `dependencies/source-manifest-inputs.json` remains deliberately
