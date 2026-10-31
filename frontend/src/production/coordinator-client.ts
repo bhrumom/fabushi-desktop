@@ -1,6 +1,7 @@
 import type { CoordinatorPortBridge, TransferredCoordinatorPort } from "../recovered/contracts/desktop-bridge";
 import {
   validateCoordinatorReply,
+  parseCloudWorkerDoctorRequest,
   type CloudWorkerDoctorProjection,
   type CloudWorkerDoctorRequest,
   type CloudWorkerStatusProjection,
@@ -175,7 +176,10 @@ export function createCoordinatorClient(portBridge: CoordinatorPortBridge): Prod
     getAgentThread: async (args) => await call("getAgentThread", args) as CoordinatorAgentThreadResponse,
     isEgressTunnelAvailable: async () => await call("isEgressTunnelAvailable") === true,
     cloudWorkersStatus: async () => await call("cloudWorkers.status") as CloudWorkerStatusProjection,
-    cloudWorkersDoctor: async (args) => await call("cloudWorkers.doctor", args) as CloudWorkerDoctorProjection,
+    cloudWorkersDoctor: async (args) => {
+      if (parseCloudWorkerDoctorRequest(args) == null) throw new Error("cloudWorkers.doctor request is malformed");
+      return await call("cloudWorkers.doctor", args) as CloudWorkerDoctorProjection;
+    },
     subscribe(family, listener) {
       const listeners = eventListeners.get(family) ?? new Set<EventListener>();
       listeners.add(listener);

@@ -84,6 +84,18 @@ function isNonNegativeInteger(value: unknown): value is number {
   return isFiniteNumber(value) && Number.isInteger(value) && value >= 0;
 }
 
+function isBoundedWireText(value: unknown): value is string {
+  return typeof value === "string" && value.length > 0 && [...value].length <= 256 && ![...value].some((character) => /\p{C}/u.test(character));
+}
+
+export function parseCloudWorkerDoctorRequest(value: unknown): CloudWorkerDoctorRequest | null {
+  if (!isRecord(value) || !isRecord(value.scope)) return null;
+  if (!isBoundedWireText(value.scope.account_scope) || !isBoundedWireText(value.scope.device_scope)) return null;
+  if (!["Inspect", "RepairManagedArtifact", "MigrateSecretRefs", "ReconcileLease", "ReconcileWarmImage"].includes(String(value.action))) return null;
+  if (typeof value.acknowledged_mutation !== "boolean" || !isBoundedWireText(value.replay_key)) return null;
+  return value as CloudWorkerDoctorRequest;
+}
+
 export function parseCloudWorkerStatusProjection(value: unknown): CloudWorkerStatusProjection | null {
   if (!isRecord(value) || value.owner !== "cloud-workers" || !["disabled", "enabled", "unavailable"].includes(String(value.status))) return null;
   if (typeof value.providerReady !== "boolean" || typeof value.productionMutation !== "boolean" || typeof value.statePersisted !== "boolean") return null;
