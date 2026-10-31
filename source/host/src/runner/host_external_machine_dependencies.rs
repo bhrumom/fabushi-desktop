@@ -143,6 +143,9 @@ impl ExternalMachineExecutor for CloudWorkerScopedExternalMachineExecutor {
         if let Err(error) = self.validate() {
             return ShellTerminalPollRead::TransientFailure(error.to_string());
         }
+        if let Err(error) = self.claim_replay_key(tool_call_id) {
+            return ShellTerminalPollRead::TransientFailure(error.to_string());
+        }
         self.delegate
             .poll_background_shell_terminal(shell_id, tool_call_id)
     }
