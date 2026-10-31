@@ -63,7 +63,7 @@ The audited source code was decomposed into 6 discrete Rust runtime responsibili
 The historical ACP command source above is bound to the then-locked subject
 `ad8d12f126d29b0db204187adf5092db80294e70` and remains historical evidence.
 Read-only GitHub contents checks against the current discovery candidate
-`openclaw/openclaw@10d93efc9c8730b7a2fad831c20c649adec7176b` found no
+`openclaw/openclaw@44069f9c1ab6d1713c2e558dd631fccf8b5adda0` found no
 `src/acp/commands.ts`; the path returns 404. The command surface is now
 represented by at least:
 
