@@ -2,6 +2,7 @@ import type { CoordinatorPortBridge, TransferredCoordinatorPort } from "../recov
 import {
   validateCoordinatorReply,
   type CloudWorkerDoctorProjection,
+  type CloudWorkerDoctorRequest,
   type CloudWorkerStatusProjection,
   type CoordinatorAgentThreadRequest,
   type CoordinatorAgentThreadResponse,
@@ -57,7 +58,7 @@ export interface ProductionCoordinatorClient {
   getAgentThread(args: CoordinatorAgentThreadRequest): Promise<CoordinatorAgentThreadResponse>;
   isEgressTunnelAvailable(): Promise<boolean>;
   cloudWorkersStatus(): Promise<CloudWorkerStatusProjection>;
-  cloudWorkersDoctor(): Promise<CloudWorkerDoctorProjection>;
+  cloudWorkersDoctor(args: CloudWorkerDoctorRequest): Promise<CloudWorkerDoctorProjection>;
   subscribe(family: string, listener: EventListener): () => void;
   subscribeTransport(listener: TransportListener): () => void;
   dispose(): void;
@@ -174,7 +175,7 @@ export function createCoordinatorClient(portBridge: CoordinatorPortBridge): Prod
     getAgentThread: async (args) => await call("getAgentThread", args) as CoordinatorAgentThreadResponse,
     isEgressTunnelAvailable: async () => await call("isEgressTunnelAvailable") === true,
     cloudWorkersStatus: async () => await call("cloudWorkers.status") as CloudWorkerStatusProjection,
-    cloudWorkersDoctor: async () => await call("cloudWorkers.doctor") as CloudWorkerDoctorProjection,
+    cloudWorkersDoctor: async (args) => await call("cloudWorkers.doctor", args) as CloudWorkerDoctorProjection,
     subscribe(family, listener) {
       const listeners = eventListeners.get(family) ?? new Set<EventListener>();
       listeners.add(listener);

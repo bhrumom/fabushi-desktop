@@ -52,6 +52,18 @@ export interface CloudWorkerDoctorProjection {
   readonly warmImageCount: number;
 }
 
+export type CloudWorkerDoctorAction = "Inspect" | "RepairManagedArtifact" | "MigrateSecretRefs" | "ReconcileLease" | "ReconcileWarmImage";
+
+export interface CloudWorkerDoctorRequest {
+  readonly scope: {
+    readonly account_scope: string;
+    readonly device_scope: string;
+  };
+  readonly action: CloudWorkerDoctorAction;
+  readonly acknowledged_mutation: boolean;
+  readonly replay_key: string;
+}
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
@@ -236,7 +248,7 @@ export const COORDINATOR_METHOD_TABLE = {
   deleteAgentAutomation: { args: "object", reply: "array" },
   runAgentAutomationNow: { args: "object", reply: "void" },
   "cloudWorkers.status": { args: "none", reply: "cloud-worker-status" },
-  "cloudWorkers.doctor": { args: "none", reply: "cloud-worker-doctor" }
+  "cloudWorkers.doctor": { args: "object", reply: "cloud-worker-doctor" }
 } as const;
 
 export type CoordinatorMethod = keyof typeof COORDINATOR_METHOD_TABLE;
