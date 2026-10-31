@@ -566,6 +566,17 @@ Actions 中的 `expand_inventory.py` 会在下一次 exact-subject materializati
 手工重写 generated shards。详见
 `dossiers/inventory-applicability-field-audit-20261031.md`。
 
+2026-10-31T11:19:02Z 的只读远端复核发现 OpenClaw `main` 又推进到
+`77f272bd7e5ad7db4c96e8bc4d440d583ab17e7f` / tree
+`a3402ffe65237a9e616e0a287d7b7119c9cd20de`。GitHub recursive-tree API 返回
+`truncated=false`，共 64,057 entries（61,816 blobs、2,241 directories、0
+gitlinks）；commit message 为 `fix(ci): generate published-driver package
+declarations (#189209)`。根 package/lock/workspace/license/notice blob
+identities 与上一 candidate 保持不变，但该 exact subject 仍是
+discovery-only；旧 inventory、依赖闭包、LFS/integrity、语义阅读和 Actions
+provenance 均不得复用。`upstream.lock.json::live_candidate` 已更新，固定
+implementation subject 与全部 authority/completion flags 不变。
+
 对 fixed subject 应用 lock 与 exact Git tree 的进一步只读重核显示：200 个
 importer 路径全部匹配 manifest，263 条 `link:` edge 按 importer 相对路径解析
 后全部落到现有 workspace manifest；1,844 个 package resolution 全部带声明的

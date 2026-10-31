@@ -25,13 +25,13 @@
   "live_candidate": {
     "repository": "openclaw/openclaw",
     "ref": "refs/heads/main",
-    "commit": "2464bd85e0bc2927701c3147bf3dfc6993daaae3",
-    "tree": "08b1e6627c310e8640a340be49838e2936b44346",
-    "observed_at": "2026-10-31T09:47:18Z",
+    "commit": "77f272bd7e5ad7db4c96e8bc4d440d583ab17e7f",
+    "tree": "a3402ffe65237a9e616e0a287d7b7119c9cd20de",
+    "observed_at": "2026-10-31T11:19:02Z",
     "discovery_source": "GitHub commit/tree API",
     "recursive_tree_truncated": false,
-    "recursive_tree_entries": 64009,
-    "recursive_blob_entries": 61768,
+    "recursive_tree_entries": 64057,
+    "recursive_blob_entries": 61816,
     "recursive_directory_entries": 2241,
     "root_inputs": {
       "package.json": "e52ea501bd0e2d749e7f4ab2efce5074b81a2a78",
@@ -49,7 +49,7 @@
     "behind_by": null,
     "compare_files_returned": null,
     "compare_file_counts_are_not_complete": true,
-    "decision": "live-main-drifted-again-to-d27a8c9d; read-only exact commit/tree and recursive tree revalidated at 2026-10-31T09:38:43Z; recursive tree is 64,009 entries, package.json changed, other root dependency/license identities remain stable; require fresh source reads before reuse and retain discovery-only status until Actions inventory and dependency closure"
+    "decision": "live-main-drifted-to-77f272bd; read-only exact commit/tree and recursive tree revalidated at 2026-10-31T11:19:02Z; recursive tree is 64,057 entries, the commit changes published-driver package declarations, root dependency/license identities remain stable; require fresh source reads before reuse and retain discovery-only status until Actions inventory and dependency closure"
   },
   "root_inputs": {
     "AGENTS.md": "c3deeccdb6b1a4c7137d56297e933bbf19f4d3bf",

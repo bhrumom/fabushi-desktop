@@ -96,25 +96,24 @@ provenance。该 c325 subject 已被 2026-10-31 的后续 live revalidation supe
 ### 4.1.2 2026-10-31 current live discovery revalidation
 
 当前 OpenClaw `main` 以 `upstream.lock.json::live_candidate` 为准：commit
-`e0f1e0a6af388d18fcfcda210f39f5106c7f7c10`、tree
-`63d39e4b31fbb462aab29ff0f8b728597bb3ca20`，递归 tree 未截断，共 64,003
-条 entry（61,762 blobs、2,241 directories、0 gitlinks）。该 subject 仍为
+`77f272bd7e5ad7db4c96e8bc4d440d583ab17e7f`、tree
+`a3402ffe65237a9e616e0a287d7b7119c9cd20de`，递归 tree 未截断，共 64,057
+条 entry（61,816 blobs、2,241 directories、0 gitlinks）。该 subject 仍为
 discovery-only；未取得绑定本 exact subject 的 Actions inventory、递归依赖
 闭包、LFS/完整性或 evidence envelope，不得复用任何旧 candidate 的 closure
 或提升 authority/global flag。
 
 2026-10-31 当前治理快照以 `upstream.lock.json::live_candidate` 为准：
-OpenClaw `main` commit=`e0f1e0a6af388d18fcfcda210f39f5106c7f7c10`、tree
-`63d39e4b31fbb462aab29ff0f8b728597bb3ca20`，递归 tree 未截断，共 64,003
-entries（61,762 blobs、2,241 directories、0 gitlinks）。它 supersede 以上
+OpenClaw `main` commit=`77f272bd7e5ad7db4c96e8bc4d440d583ab17e7f`、tree
+`a3402ffe65237a9e616e0a287d7b7119c9cd20de`，递归 tree 未截断，共 64,057
+entries（61,816 blobs、2,241 directories、0 gitlinks）。它 supersede 以上
 更早的 live 候选作为当前 discovery reference，但仍未取得绑定该 exact
 subject 的 Actions inventory、递归依赖闭包、LFS/完整性、许可证和 evidence
 envelope；不得复用旧 candidate 的 closure，也不得提升任何 global flag。
 
-当前 exact subject 的根 dependency input probe 尚未重新生成；此前的
-[`upstream-current-candidate-dependency-probe-e8dade03-20261031.md`](../../projects/openclaw-rust/dossiers/upstream-current-candidate-dependency-probe-e8dade03-20261031.md)
-绑定已 supersede 的旧 subject，不能作为当前 closure evidence。它只确认
-旧 subject 的 pnpm/workspace/root manifest 形状与 blob identity，不等价于递归
+当前 exact subject 的根输入 identity probe 已记录在
+[`upstream-current-candidate-probe-77f272bd-20261031.md`](../../projects/openclaw-rust/dossiers/upstream-current-candidate-probe-77f272bd-20261031.md)
+它只确认该 exact subject 的 pnpm/workspace/license root blob identity，不等价于递归
 dependency closure；`source_closure_ready`、`baseline_identity_accepted` 和
 其余 global flags 继续为 `false`。
 
@@ -617,10 +616,10 @@ P0 通常只能建立前两个 flags 的正面证据；完整适用责任映射�
 
 - [historical live candidate c49 commit / tree](https://github.com/openclaw/openclaw/commit/c49e07385f8d17601efbed7746381213d5326ba9)（只读 discovery；已被后续候选 supersede）。
 - [historical live candidate d67 commit / tree](https://github.com/openclaw/openclaw/commit/d67aa608643f6583a6c6102c522043794aafe064)（只读 discovery；已被后续候选 supersede）。
-- [current observed live candidate commit / tree](https://github.com/openclaw/openclaw/commit/e0f1e0a6af388d18fcfcda210f39f5106c7f7c10)（tree `63d39e4b31fbb462aab29ff0f8b728597bb3ca20`；只读 discovery；未取得本轮 Actions authority，不能复用旧 inventory）。
+- [current observed live candidate commit / tree](https://github.com/openclaw/openclaw/commit/77f272bd7e5ad7db4c96e8bc4d440d583ab17e7f)（tree `a3402ffe65237a9e616e0a287d7b7119c9cd20de`；只读 discovery；未取得本轮 Actions authority，不能复用旧 inventory）。
 - [historical discovery commit / tree](https://github.com/openclaw/openclaw/commit/002f25a97fccb7eff05b768a3fd7bc7e13488ed6)（仅作为早期研究输入，不是当前 source lock）。
-- [README](https://github.com/openclaw/openclaw/blob/e0f1e0a6af388d18fcfcda210f39f5106c7f7c10/README.md)、[源码](https://github.com/openclaw/openclaw/tree/e0f1e0a6af388d18fcfcda210f39f5106c7f7c10/src)、[packages](https://github.com/openclaw/openclaw/tree/e0f1e0a6af388d18fcfcda210f39f5106c7f7c10/packages)。
-- [plugin inventory](https://github.com/openclaw/openclaw/blob/e0f1e0a6af388d18fcfcda210f39f5106c7f7c10/docs/plugins/plugin-inventory.md)、[extensions](https://github.com/openclaw/openclaw/tree/e0f1e0a6af388d18fcfcda210f39f5106c7f7c10/extensions)、[channels](https://github.com/openclaw/openclaw/blob/e0f1e0a6af388d18fcfcda210f39f5106c7f7c10/docs/channels/index.md)。
+- [README](https://github.com/openclaw/openclaw/blob/77f272bd7e5ad7db4c96e8bc4d440d583ab17e7f/README.md)、[源码](https://github.com/openclaw/openclaw/tree/77f272bd7e5ad7db4c96e8bc4d440d583ab17e7f/src)、[packages](https://github.com/openclaw/openclaw/tree/77f272bd7e5ad7db4c96e8bc4d440d583ab17e7f/packages)。
+- [plugin inventory](https://github.com/openclaw/openclaw/blob/77f272bd7e5ad7db4c96e8bc4d440d583ab17e7f/docs/plugins/plugin-inventory.md)、[extensions](https://github.com/openclaw/openclaw/tree/77f272bd7e5ad7db4c96e8bc4d440d583ab17e7f/extensions)、[channels](https://github.com/openclaw/openclaw/blob/77f272bd7e5ad7db4c96e8bc4d440d583ab17e7f/docs/channels/index.md)。
 - [Gateway architecture](https://github.com/openclaw/openclaw/blob/b924498923dff81a02fb8a89d57828717c6e160d/docs/concepts/architecture.md)、[protocol package](https://github.com/openclaw/openclaw/blob/b924498923dff81a02fb8a89d57828717c6e160d/packages/gateway-protocol/README.md)、[versioning / state owner](https://github.com/openclaw/openclaw/blob/b924498923dff81a02fb8a89d57828717c6e160d/docs/gateway/protocol/versioning.md)。
 - [automation / retired surfaces](https://github.com/openclaw/openclaw/blob/b924498923dff81a02fb8a89d57828717c6e160d/docs/automation/index.md)、[schedule source](https://github.com/openclaw/openclaw/blob/b924498923dff81a02fb8a89d57828717c6e160d/src/cron/schedule.ts)、[node runtime manifest](https://github.com/openclaw/openclaw/blob/b924498923dff81a02fb8a89d57828717c6e160d/src/node-host/runtime-manifest.ts)。
 - [LICENSE](https://github.com/openclaw/openclaw/blob/b924498923dff81a02fb8a89d57828717c6e160d/LICENSE)、[THIRD_PARTY_NOTICES](https://github.com/openclaw/openclaw/blob/b924498923dff81a02fb8a89d57828717c6e160d/THIRD_PARTY_NOTICES.md)。
@@ -653,3 +652,15 @@ verification, acceptance, or global flag state.
 | 所有完成 flags | false | 递归总量与全量进度尚未建立，不填虚构百分比 |
 
 执行阶段每次更新真实责任与 evidence，最终每个适用 AC 只能 `passed`（有证据）或保持 `blocked`；具体非产品事项的 `not-applicable` 必须有源证据，不能豁免最终功能。下一项工作为 [`P0-source-baseline-and-owner-audit.md`](../../projects/openclaw-rust/management/tasks/P0-source-baseline-and-owner-audit.md)。
+
+### 17.2 2026-10-31 live-source drift amendment
+
+只读 GitHub 核对显示 OpenClaw `main` 已推进到
+`77f272bd7e5ad7db4c96e8bc4d440d583ab17e7f` / tree
+`a3402ffe65237a9e616e0a287d7b7119c9cd20de`，递归 tree 未截断，共 64,057
+entries（61,816 blobs、2,241 directories、0 gitlinks）。该 identity 只更新
+`upstream.lock.json::live_candidate`，仍是 discovery-only；不得复用前一
+candidate 的 inventory、dependency closure、LFS/integrity 或 Actions
+provenance，也不改变 fixed implementation subject、AC01/AC02 状态或任何
+global flag。新的 exact-subject inventory、依赖闭包和 evidence envelope
+仍需在最终解冻后的 Actions 流程中重新取得。

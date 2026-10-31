@@ -309,3 +309,13 @@ materializer now supplies explicit `unknown/pending` defaults; rerunning that
 materializer against the exact subject is required before structural AC02 can
 evaluate the new fields. The development freeze does not permit hand-editing
 generated shards, so applicability/disposition closure remains false.
+
+2026-10-31T11:19:02Z drift amendment: read-only GitHub checks resolved the
+current OpenClaw `main` to commit=`77f272bd7e5ad7db4c96e8bc4d440d583ab17e7f`,
+tree=`a3402ffe65237a9e616e0a287d7b7119c9cd20de`, with an untruncated recursive
+tree of 64,057 entries (61,816 blobs, 2,241 directories, 0 gitlinks). The
+commit is `fix(ci): generate published-driver package declarations (#189209)`.
+Root dependency/license identities remain unchanged from the prior candidate,
+but this is a fresh discovery-only subject. Prior inventory, dependency/LFS
+closure, semantic reads, and Actions provenance remain bound to their exact
+subjects and are not reusable; no authority or completion flag changes.
