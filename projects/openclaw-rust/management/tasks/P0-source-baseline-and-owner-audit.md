@@ -320,11 +320,11 @@ discovery-only subject; prior inventory, dependency/LFS closure, semantic
 reads, and Actions provenance are not reusable, and no authority or completion
 flag changes.
 
-2026-10-31T11:56:49Z drift amendment: read-only GitHub checks resolved the
-current OpenClaw `main` to commit=`719beb6f5a0d2544e0e3f342506c6aae870da504`,
-tree=`048652ef129a8e21b812d27e93ed7a10b4abf859`, with an untruncated recursive
+2026-10-31T12:01:29Z drift amendment: read-only GitHub checks resolved the
+current OpenClaw `main` to commit=`140e7af6627723fd50b8ecf51927d80e77b4daa9`,
+tree=`7ba305f7cb5adb1e80121d044047005e8a996d00`, with an untruncated recursive
 tree of 64,072 entries (61,831 blobs, 2,241 directories, 0 gitlinks). The
-commit is `test(gateway): await visitor-access SDK resource host close`.
+commit is `test: compare Doctor and archive bytes natively (#189318)`.
 Root dependency/license identities remain unchanged, but this is a fresh
 discovery-only subject; prior inventory, dependency/LFS closure, semantic
 reads, and Actions provenance are not reusable, and no authority or completion
@@ -384,9 +384,9 @@ flag changes.
 
 The canonical current discovery pointer is always `upstream.lock.json::live_candidate`.
 At the latest read-only reconciliation it is OpenClaw
-`719beb6f5a0d2544e0e3f342506c6aae870da504` / tree
-`048652ef129a8e21b812d27e93ed7a10b4abf859`, observed at
-`2026-10-31T11:56:49Z`, with 64,072 untruncated recursive-tree entries
+`140e7af6627723fd50b8ecf51927d80e77b4daa9` / tree
+`7ba305f7cb5adb1e80121d044047005e8a996d00`, observed at
+`2026-10-31T12:01:29Z`, with 64,072 untruncated recursive-tree entries
 (61,831 blobs, 2,241 directories, 0 gitlinks). This remains discovery-only;
 the fixed implementation subject, inventory, dependency closure, Actions
 provenance, and all completion flags remain unchanged.
