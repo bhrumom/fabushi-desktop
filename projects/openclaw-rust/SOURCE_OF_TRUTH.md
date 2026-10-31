@@ -416,3 +416,13 @@ subject 的 receipt。
 按主 Spec 的 P0→P5 依赖推进，阶段不是范围豁免。全局闭包受阻时，满足主 Spec §11.1 的单元可在自身及传递依赖 authority、完整阅读和合同经审查后进入实现/单元验收；单元通过不改变全项目 flags，缺服务/设备仍阻塞对应验收。每个任务记录 source responsibility、existing owner、具体差异、实现与验收证据；进展以真实生产闭合为中心。阻塞时检查已有支持邮件、记录必要动作和解除条件，继续后续可执行项；恢复时重查事实和 lease。
 
 后续接手者先重读本入口、主 Spec、适用 task 和 current code。交接只保留当前请求、确切 refs、已完成且有证据的变化、未闭合项和下一可执行责任，不复制旧会话堆积状态。
+
+2026-10-31T16:58:00Z 的最新只读核对将当前 OpenClaw `main` 更新为
+`9f3da25c107e88380e84f8a70f8f703422ba5995` / tree
+`5957adf997a86b4937f6b7c162ebccb116e0aafa`（committer
+`2026-10-31T08:57:14Z`）。递归 tree 未截断，共 63,998 entries（61,757 blobs、
+2,241 directories、0 gitlinks）；package/lock/workspace/license 输入 blob
+identities 与上一 candidate 保持不变。该 subject 已同步写入
+`upstream.lock.json::live_candidate`，仍是 discovery-only；不得复用旧
+inventory、依赖闭包、LFS/完整性或 Actions provenance，也不改变任何
+authority/global flag。

@@ -15711,21 +15711,18 @@
       ],
       "id": "OCRM-RESP-TALK-AUDIO-PORT-FENCE-001",
       "integration": {
-        "consumer": "source/host/src/runner/production_turn_agent_owner.rs",
-        "entrypoint": "source/host/src/ports/mod.rs",
-        "owner": "source/host/src/ports/mod.rs",
-        "producer": "source/host/src/ports/mod.rs"
+        "consumer": "No production audio-output consumer identified; source/host/src/ports/mod.rs has no AudioOutputPort",
+        "entrypoint": "pending realtime talk transport owner selection",
+        "owner": "pending existing realtime talk audio owner selection",
+        "producer": "No production realtime audio producer identified"
       },
       "invariants": [
         "Chunk buffer strictly capped at 320 pending chunks",
         "Atomic close fence immediately rejects audio playback after revocation"
       ],
       "migration_rollback": "Controlled by audio port bridge implementation",
-      "oracle_ids": [
-        "OCRM-AUDIO-O05",
-        "OCRM-AUDIO-O06"
-      ],
-      "owner_decision": "Implement AudioOutputPort with AtomicI32 close fence",
+      "oracle_ids": [],
+      "owner_decision": "Keep audio-output fence pending until a real realtime audio producer, consumer, and Host port owner are identified; current tests are fixture-only",
       "postconditions": [
         "Audio frames dropped safely without memory leakage upon close"
       ],
@@ -15761,7 +15758,7 @@
       ],
       "status": {
         "acceptance": "pending",
-        "implementation": "implementing",
+        "implementation": "not-started",
         "mapping": "reviewed",
         "read": "read-complete",
         "verification": "not-run",
@@ -15773,8 +15770,8 @@
         "symbol": "AudioOutputPort"
       },
       "tests": [
-        "source/host/tests/openclaw_audio_talk_contract.rs::test_ocrm_audio_o05_audio_buffer_queue_overflow",
-        "source/host/tests/openclaw_audio_talk_contract.rs::test_ocrm_audio_o06_shared_array_buffer_close_fence"
+        "source/host/tests/openclaw_audio_talk_contract.rs::test_ocrm_audio_o05_audio_buffer_queue_overflow (fixture-only; not production evidence)",
+        "source/host/tests/openclaw_audio_talk_contract.rs::test_ocrm_audio_o06_shared_array_buffer_close_fence (fixture-only; not production evidence)"
       ],
       "typed_contracts": [
         "AudioOutputPort::send_audio",
@@ -15896,20 +15893,18 @@
       ],
       "id": "OCRM-RESP-TALK-EXACT-SPEECH-001",
       "integration": {
-        "consumer": "source/host/src/runner/production_turn_agent_owner.rs",
-        "entrypoint": "source/host/src/runner/mod.rs",
-        "owner": "source/host/src/runner/mod.rs",
-        "producer": "source/host/src/runner/mod.rs"
+        "consumer": "No production voice-consult consumer identified; production_turn_agent_owner has no exact-speech classifier call",
+        "entrypoint": "pending ESP-D01 producer and Runner consumer selection",
+        "owner": "pending existing Runner voice-consult owner selection",
+        "producer": "No production voice-consult tool-call producer identified"
       },
       "invariants": [
         "Synthesized playback results classified as exact-speech-echo",
         "Prevents infinite turn re-entry for audio playback"
       ],
       "migration_rollback": "Controlled by voice consult enablement flags",
-      "oracle_ids": [
-        "OCRM-AUDIO-O07"
-      ],
-      "owner_decision": "Implement classify_realtime_voice_consult_tool_call in runner tools",
+      "oracle_ids": [],
+      "owner_decision": "Keep exact-speech responsibility pending until the real consult producer, retained session state owner, and Runner consumer are identified; the current test helper is fixture-only",
       "postconditions": [
         "Exact speech echo suppressed from recursive consult"
       ],
@@ -15944,7 +15939,7 @@
       ],
       "status": {
         "acceptance": "pending",
-        "implementation": "implementing",
+        "implementation": "not-started",
         "mapping": "reviewed",
         "read": "read-complete",
         "verification": "not-run",
@@ -15956,10 +15951,10 @@
         "symbol": "classify_realtime_voice_consult_tool_call"
       },
       "tests": [
-        "source/host/tests/openclaw_audio_talk_contract.rs::test_ocrm_audio_o07_exact_speech_loop_prevention"
+        "source/host/tests/openclaw_audio_talk_contract.rs::test_ocrm_audio_o07_exact_speech_loop_prevention (fixture-only; not production evidence)"
       ],
       "typed_contracts": [
-        "classify_realtime_voice_consult_tool_call"
+        "pending ESP-D01 through ESP-D04"
       ],
       "unit_id": "OCRM-UNIT-TALK-001"
     },
@@ -16078,21 +16073,18 @@
       ],
       "id": "OCRM-RESP-TALK-TURN-CONTEXT-001",
       "integration": {
-        "consumer": "source/host/src/runner/production_turn_agent_owner.rs",
-        "entrypoint": "source/host/src/runner/mod.rs",
-        "owner": "source/host/src/runner/mod.rs",
-        "producer": "source/host/src/runner/mod.rs"
+        "consumer": "No production realtime turn-context consumer identified; source/host/src/runner/mod.rs has no TurnContextTracker",
+        "entrypoint": "pending realtime talk transport owner selection",
+        "owner": "pending existing realtime talk turn owner selection",
+        "producer": "No production VAD/playback turn-context producer identified"
       },
       "invariants": [
         "Barge-in speech_started flushes audio queue and cancels pending turn",
         "Silent closed turns pruned during audio context preparation"
       ],
       "migration_rollback": "Controlled by turn context tracker options",
-      "oracle_ids": [
-        "OCRM-AUDIO-O08",
-        "OCRM-AUDIO-O09"
-      ],
-      "owner_decision": "Implement TurnContextTracker with silent turn pruning and barge-in",
+      "oracle_ids": [],
+      "owner_decision": "Keep turn-context responsibility pending until a real VAD/playback producer, consumer, and turn owner are identified; current tests are fixture-only",
       "postconditions": [
         "Clean turn context correlated to active voice responses"
       ],
@@ -16127,7 +16119,7 @@
       ],
       "status": {
         "acceptance": "pending",
-        "implementation": "implementing",
+        "implementation": "not-started",
         "mapping": "reviewed",
         "read": "read-complete",
         "verification": "not-run",
@@ -16139,8 +16131,8 @@
         "symbol": "TurnContextTracker"
       },
       "tests": [
-        "source/host/tests/openclaw_audio_talk_contract.rs::test_ocrm_audio_o08_barge_in_playback_cancellation",
-        "source/host/tests/openclaw_audio_talk_contract.rs::test_ocrm_audio_o09_turn_context_silent_turn_pruning"
+        "source/host/tests/openclaw_audio_talk_contract.rs::test_ocrm_audio_o08_barge_in_playback_cancellation (fixture-only; not production evidence)",
+        "source/host/tests/openclaw_audio_talk_contract.rs::test_ocrm_audio_o09_turn_context_silent_turn_pruning (fixture-only; not production evidence)"
       ],
       "typed_contracts": [
         "TurnContextTracker::consume_audio_context",
@@ -16170,10 +16162,10 @@
       ],
       "id": "OCRM-RESP-TALK-WS-TRANSCRIPTION-001",
       "integration": {
-        "consumer": "source/host/src/runner/production_turn_agent_owner.rs",
-        "entrypoint": "source/host/src/runner/mod.rs",
-        "owner": "source/host/src/runner/mod.rs",
-        "producer": "source/host/src/runner/mod.rs"
+        "consumer": "No production realtime transcription consumer identified; source/host/src/runner/mod.rs has no RealtimeVoiceAudioQueue",
+        "entrypoint": "pending realtime transcription transport owner selection",
+        "owner": "pending existing realtime transcription owner selection",
+        "producer": "No production transcription WebSocket/audio producer identified"
       },
       "invariants": [
         "SDP rejects video streams and enforces max 4096 lines",
@@ -16181,12 +16173,8 @@
         "CJK density >30% dynamically selects zh-CN voice"
       ],
       "migration_rollback": "Controlled by transcription provider settings",
-      "oracle_ids": [
-        "OCRM-AUDIO-O10",
-        "OCRM-AUDIO-O11",
-        "OCRM-AUDIO-O12"
-      ],
-      "owner_decision": "Integrate RealtimeVoiceAudioQueue and voice selector in runner",
+      "oracle_ids": [],
+      "owner_decision": "Keep realtime transcription responsibility pending until a real audio/WebSocket producer, transcription consumer, and existing transport owner are identified; current tests are fixture-only",
       "postconditions": [
         "Validated audio streams delivered to transcription provider"
       ],
@@ -16222,8 +16210,8 @@
       ],
       "status": {
         "acceptance": "pending",
-        "implementation": "implemented",
-        "mapping": "mapped",
+        "implementation": "not-started",
+        "mapping": "reviewed",
         "read": "read-complete",
         "verification": "not-run",
         "wiring": "not-wired"
@@ -16234,9 +16222,9 @@
         "symbol": "RealtimeVoiceAudioQueue"
       },
       "tests": [
-        "source/host/tests/openclaw_audio_talk_contract.rs::test_ocrm_audio_o10_sdp_offer_validation",
-        "source/host/tests/openclaw_audio_talk_contract.rs::test_ocrm_audio_o11_empty_audio_transcription_rejection",
-        "source/host/tests/openclaw_audio_talk_contract.rs::test_ocrm_audio_o12_edge_tts_cjk_dominant_voice_fallback"
+        "source/host/tests/openclaw_audio_talk_contract.rs::test_ocrm_audio_o10_sdp_offer_validation (fixture-only; not production evidence)",
+        "source/host/tests/openclaw_audio_talk_contract.rs::test_ocrm_audio_o11_empty_audio_transcription_rejection (fixture-only; not production evidence)",
+        "source/host/tests/openclaw_audio_talk_contract.rs::test_ocrm_audio_o12_edge_tts_cjk_dominant_voice_fallback (fixture-only; not production evidence)"
       ],
       "typed_contracts": [
         "validate_sdp_offer",

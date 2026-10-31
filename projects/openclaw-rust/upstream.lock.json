@@ -25,9 +25,9 @@
   "live_candidate": {
     "repository": "openclaw/openclaw",
     "ref": "refs/heads/main",
-    "commit": "54a2fe137a70a5d2c0c0187ba27294c5ba74d3a0",
-    "tree": "4e8c368864db959f8a188bc23333a6d24dd221a0",
-    "observed_at": "2026-10-31T08:42:15Z",
+    "commit": "9f3da25c107e88380e84f8a70f8f703422ba5995",
+    "tree": "5957adf997a86b4937f6b7c162ebccb116e0aafa",
+    "observed_at": "2026-10-31T16:58:00Z",
     "discovery_source": "GitHub commit/tree API",
     "recursive_tree_truncated": false,
     "recursive_tree_entries": 63998,
@@ -49,7 +49,7 @@
     "behind_by": 0,
     "compare_files_returned": 300,
     "compare_file_counts_are_not_complete": true,
-    "decision": "live-main-drifted-again-to-54a2fe1; read-only exact commit/tree and recursive tree revalidated at 2026-10-31T08:42:15Z; root dependency/license inputs remain unchanged; require fresh source reads before reuse and retain discovery-only status until Actions inventory and dependency closure"
+    "decision": "live-main-drifted-again-to-9f3da25c; read-only exact commit/tree and recursive tree revalidated at 2026-10-31T16:58:00Z; recursive tree remains 63,998 entries with unchanged root dependency/license identities; require fresh source reads before reuse and retain discovery-only status until Actions inventory and dependency closure"
   },
   "root_inputs": {
     "AGENTS.md": "c3deeccdb6b1a4c7137d56297e933bbf19f4d3bf",

@@ -393,3 +393,19 @@ subject: `src/cron/isolated-agent/run.ts`
 (`7e3c7a6999cb44417ec634b0e77d1299c672f8c1`). Their behavior evidence may be
 carried forward as same-blob evidence only; no broader inventory or dependency
 closure is implied.
+
+## Subsequent live recheck — 2026-10-31T16:58:00Z
+
+Read-only `git ls-remote` and GitHub commit/tree API checks resolved
+`openclaw/openclaw` `refs/heads/main` to commit
+`9f3da25c107e88380e84f8a70f8f703422ba5995`, root tree
+`5957adf997a86b4937f6b7c162ebccb116e0aafa`, committed at
+`2026-10-31T08:57:14Z`. The recursive tree was not truncated and contained
+63,998 entries: 61,757 blobs, 2,241 directories, and no gitlinks. Root
+dependency/license identities remain unchanged; `.gitmodules` remains absent.
+
+This supersedes the `54a2fe137...` discovery candidate in the lock. It remains
+discovery-only: no earlier inventory, dependency closure, LFS/integrity result,
+Actions provenance, or source-semantic conclusion is relabeled or reused. All
+authority and completion flags remain unchanged. No CI, push, PR update, or
+local OCRM executable verification was performed.

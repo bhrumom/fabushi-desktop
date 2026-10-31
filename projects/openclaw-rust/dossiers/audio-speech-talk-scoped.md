@@ -58,6 +58,29 @@ The audited source code was decomposed into 6 discrete Rust runtime responsibili
    - **Rust Owner**: `source/host/src/runner/mod.rs:RealtimeVoiceAudioQueue`.
    - **Oracles**: `OCRM-AUDIO-O10`, `OCRM-AUDIO-O11`, `OCRM-AUDIO-O12`.
 
+### Current-source correction — exact-speech boundary
+
+The historical Unit 8 mapping treated the private classifier inside
+`source/host/tests/openclaw_audio_talk_contract.rs` as if it were the declared
+Runner owner. A current source re-read finds no
+`classify_realtime_voice_consult_tool_call` symbol in `source/host/src/runner`
+or `source/host/app/src/main.rs`, no retained exact-speech session state, and
+no production voice-consult producer/consumer path. The test helper therefore
+remains fixture-only evidence. `OCRM-RESP-TALK-EXACT-SPEECH-001` is calibrated
+to `implementation=not-started`, `wiring=not-wired`, `verification=not-run`,
+and `acceptance=pending` until ESP-D01 through ESP-D04 in
+`docs/specs/exact-speech-protocol.md` are resolved. The historical OCRM-AUDIO-O07
+test is not a production oracle until it is moved behind the real Runner path.
+
+The same exact-source re-read found no `AudioOutputPort`, `TurnContextTracker`,
+or `RealtimeVoiceAudioQueue` in the declared Rust targets. The O05/O06, O08/O09,
+and O10/O11/O12 logic lives only in the contract fixture, while the current
+Host has no corresponding realtime audio producer, WebSocket transcription
+consumer, or playback/VAD turn owner. Those three responsibilities are now
+calibrated in the ledger to `implementation=not-started`,
+`wiring=not-wired`, `verification=not-run`, and `acceptance=pending`; their
+fixture tests are explicitly non-production evidence.
+
 ---
 
 ## 3. Falsifiable Test Oracles (`source/host/tests/openclaw_audio_talk_contract.rs`)

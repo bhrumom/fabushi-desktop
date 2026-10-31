@@ -100,6 +100,15 @@ discovery-only subject; prior inventory, dependency closure and Actions
 provenance remain bound to their original exact subjects, and all global flags
 remain false.
 
+2026-10-31T16:58:00Z drift amendment: read-only GitHub checks resolved the
+current OpenClaw `main` to `9f3da25c107e88380e84f8a70f8f703422ba5995` /
+`5957adf997a86b4937f6b7c162ebccb116e0aafa`, committed at
+`2026-10-31T08:57:14Z`. The recursive tree is untruncated with 63,998 entries
+(61,757 blobs, 2,241 directories, 0 gitlinks); root dependency/license input
+identities are unchanged. This is a fresh discovery-only subject; prior
+inventory, dependency closure, LFS/integrity and Actions provenance remain
+bound to their original subjects and all global flags remain false.
+
 ## 7. 阻塞与支持请求
 
 使用稳定 blocker ID，记录影响范围、已知事实、根因/未知点、owner、解除条件、最后检查、既有通知 thread 和可继续任务。需要用户操作时按用户指定 Gmail 地址通知；先检索是否已发送相同未解决请求，避免重复。地址、token 和账号敏感详情不进入公开仓库。
