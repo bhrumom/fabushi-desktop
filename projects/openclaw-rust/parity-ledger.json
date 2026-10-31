@@ -5882,12 +5882,9 @@
         "OCRM-G05-frozen-oracle"
       ],
       "requirement_ids": [
-        "SLD-01",
-        "SLD-02",
-        "SLD-03",
-        "SLD-04",
-        "SLD-05",
-        "SLD-06"
+        "OCRM-R04",
+        "OCRM-R08",
+        "OCRM-AC08"
       ],
       "source_refs": [
         {

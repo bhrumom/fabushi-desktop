@@ -620,12 +620,19 @@ blob identities 仍未变化；该 exact subject 仍为 discovery-only，前一 
 复用。lock live candidate 已更新，固定 implementation subject、ledger 修订及
 全部 authority/completion flags 不变。
 
+对 `OCRM-RESP-SESSION-LIFECYCLE-DELETE-FENCE-001` 的 requirement crosswalk
+做了静态审计：其专用 spec 的 `SLD-01..06` 是 task-level detail，不是项目
+RTM 行 ID；ledger 已改为合法的项目级 `OCRM-R04`、`OCRM-R08`、`OCRM-AC08`
+映射，SLD IDs 仍保留在专用 spec 的 Definition of Done 与 oracle 语义中。
+这修复了 validator 会报告的 6 条 dangling requirement refs，但不提升该
+责任的 implementation/wiring/verification/acceptance 状态。
+
 2026-10-31T11:41:30Z 的只读远端复核发现 OpenClaw `main` 再推进到
-`84bfd8a445e9d8090b8f0d4532cd8165729b9bb5` / tree
-`b76daf4585d6d77a8a25f804410a787ed78d39ba`。GitHub recursive-tree API 返回
+`447e14d02460342af4fe2c98dbd5475b15b938d2` / tree
+`3b066eb5f2eddd08ea7a74f124395248fbdcd384`。GitHub recursive-tree API 返回
 `truncated=false`，共 64,068 entries（61,827 blobs、2,241 directories、0
-gitlinks）；commit message 为 `fix(doctor): avoid repeated agent database
-integrity scans (#189247)`。根 package/lock/workspace/license/notice blob identities
+gitlinks）；commit message 为 `test(ui): compare rendered reader dialog colors
+(#189320)`。根 package/lock/workspace/license/notice blob identities
 仍未变化；该 exact subject 仍为 discovery-only，前一 candidate 的 inventory、
 依赖闭包、LFS/integrity、语义阅读和 Actions provenance 均不得复用。lock live
 candidate 已更新，固定 implementation subject、ledger 修订及全部
