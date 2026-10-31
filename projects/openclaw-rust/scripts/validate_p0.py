@@ -26,6 +26,7 @@ COMMIT_RE = re.compile(r"^[0-9a-f]{40}$")
 # project RTM rows; project-level OCRM-Rxx/OCRM-ACxx references still must
 # resolve to the canonical RTM below.
 TASK_LOCAL_REQUIREMENT_RE = re.compile(r"^OCRM-P1-(?:F[0-9]{2}(?:-O[0-9]{2})?|AC[0-9]{2})$")
+TASK_LOCAL_REQUIREMENT_TASK = ROOT / "management/tasks/P1-crabbox-worker-owner.md"
 
 def fail(message):
     raise AssertionError(message)
@@ -161,6 +162,7 @@ def structural():
     check(idx["inventory"]["lfs_pointer_candidates_observed"] == len(lfs_paths), "Reported LFS candidate count drift")
     responsibility_by_id = {}
     project_requirement_ids = {r["id"] for r in rtm["rows"]}
+    task_local_requirement_text = TASK_LOCAL_REQUIREMENT_TASK.read_text(encoding="utf-8")
     for resp in ledger["responsibilities"]:
         rid = resp["id"]
         check(rid not in responsibility_by_id, "Duplicate responsibility ID")
@@ -169,10 +171,13 @@ def structural():
             check(src["path"] in seen and seen[src["path"]]["blob_sha"] == src["blob_sha"], "Dangling source reference: " + rid)
             check(rid in seen[src["path"]]["responsibility_ids"], "Unlinked file responsibility: " + rid)
         for req_id in resp["requirement_ids"]:
+            is_task_local = TASK_LOCAL_REQUIREMENT_RE.fullmatch(req_id) is not None
             check(
-                req_id in project_requirement_ids or TASK_LOCAL_REQUIREMENT_RE.fullmatch(req_id) is not None,
+                req_id in project_requirement_ids or is_task_local,
                 "Unknown project or task-local requirement: " + req_id,
             )
+            if is_task_local:
+                check(req_id in task_local_requirement_text, "Task-local requirement is not declared by its task: " + req_id)
         if resp["status"]["mapping"] == "reviewed":
             check(bool(resp["oracle_ids"] and resp["selected_owner"] and resp["reviewer"]), "Review claim missing owner/oracle/reviewer")
         if resp["status"]["implementation"] == "implemented":
