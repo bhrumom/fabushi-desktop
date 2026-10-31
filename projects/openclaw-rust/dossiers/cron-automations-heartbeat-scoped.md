@@ -83,3 +83,21 @@ The audited source code was decomposed into 6 discrete Rust runtime responsibili
 - **Unread / Unclassified Paths**: 58,620
 - **Strict Conservation**: $130 + 58620 = 58750$.
 - **All Global Completion Flags**: `false` strictly preserved.
+
+## Current-source correction — 2026-10-31
+
+The historical reaper mapping above is not a current Rust implementation
+claim. At the current OpenClaw discovery subject
+`54a2fe137a70a5d2c0c0187ba27294c5ba74d3a0`, `src/cron/session-reaper.ts` is
+blob `5474f33412bd9c3a808e78a42be359f976ee35b5` and directly owns retention
+resolution, per-agent/store throttling, expired-row discovery, media/subagent
+preservation, guarded lifecycle deletion, and transcript artifact cleanup.
+
+The current Fabushi Rust tree has no `TranscriptCleanup` symbol in
+`source/host/src/extensions/transcript/mod.rs`, no per-run cron session row
+model in the inspected automation run path, and no cron reaper producer. The
+existing automation run records and `OCRM-PLUGIN-O05` auto-review test are not
+equivalent evidence. The responsibility is therefore reset to
+`implementation=not-started`, `wiring=not-wired`, `verification=not-run`, and
+`acceptance=pending` pending the dedicated
+`docs/specs/cron-session-reaper.md` decisions CRON-REAPER-D01 through D05.

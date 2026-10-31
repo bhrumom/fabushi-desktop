@@ -5904,7 +5904,9 @@
       "unit_id": "OCRM-UNIT-SESSION-002"
     },
     {
-      "adr_refs": [],
+      "adr_refs": [
+        "projects/openclaw-rust/docs/specs/cron-session-reaper.md"
+      ],
       "behavior": "Expired cron run-session pruning (sessionRetention), unreferenced transcript cleanup, and active media task preservation.",
       "blocker_ids": [],
       "capability_ids": [
@@ -5915,20 +5917,25 @@
       ],
       "evidence_refs": [
         "source/host/tests/openclaw_plugins_automations_contract.rs",
-        "projects/openclaw-rust/dossiers/cron-automations-heartbeat-scoped.md"
+        "projects/openclaw-rust/dossiers/cron-automations-heartbeat-scoped.md",
+        "projects/openclaw-rust/docs/specs/cron-session-reaper.md"
       ],
       "existing_owner_candidates": [
         {
-          "path": "source/host/src/extensions/transcript/mod.rs",
-          "reason": "Host transcript storage and maintenance"
+          "path": "source/host/src/extensions/transcript/automation_run_path.rs",
+          "reason": "Existing automation run outcome owner; does not currently own per-run session rows"
+        },
+        {
+          "path": "source/host/src/extensions/session/production.rs",
+          "reason": "Existing durable per-agent session owner; per-run cron representation is not yet present"
         }
       ],
       "id": "OCRM-RESP-CRON-SESSION-REAPER-001",
       "integration": {
-        "consumer": "source/host/src/extensions/transcript/mod.rs",
-        "entrypoint": "source/host/src/extensions/transcript/mod.rs",
-        "owner": "source/host/src/extensions/transcript/mod.rs",
-        "producer": "source/host/src/automations/mod.rs"
+        "consumer": "Not yet selected; current automation run records are not per-run session rows",
+        "entrypoint": "source/host/src/extensions/transcript/automation_run_path.rs::AutomationRunPath",
+        "owner": "Not yet selected; requires CRON-REAPER-D01 owner decision",
+        "producer": "source/host/src/extensions/transcript/automation_runtime.rs schedules automation execution but no cron session-reaper producer is present"
       },
       "invariants": [
         "Sessions with pending media tasks are exempt from pruning",
@@ -5936,9 +5943,8 @@
       ],
       "migration_rollback": "Retain all cron sessions indefinitely",
       "oracle_ids": [
-        "OCRM-PLUGIN-O05"
       ],
-      "owner_decision": "Implement session pruning and transcript cleanup in transcript manager",
+      "owner_decision": "Do not claim an existing TranscriptCleanup owner; complete cron-session-reaper spec decisions before implementation",
       "postconditions": [
         "Expired ephemeral cron sessions pruned from SQLite store"
       ],
@@ -5960,10 +5966,10 @@
       "responsibility_kind": "business-runtime",
       "reviewer": "xuyao@ombhrum.com",
       "risk": "Medium; prevents database bloat while protecting active work items",
-      "selected_owner": "source/host/src/extensions/transcript/mod.rs",
+      "selected_owner": "unselected pending cron-session-reaper architecture decision",
       "source_refs": [
         {
-          "blob_sha": "b1d615cf5b6ab55b3f58775aa4251e36eeb7c53a",
+          "blob_sha": "5474f33412bd9c3a808e78a42be359f976ee35b5",
           "path": "src/cron/session-reaper.ts",
           "range": {
             "end_line": 341,
@@ -5974,7 +5980,7 @@
       ],
       "status": {
         "acceptance": "pending",
-        "implementation": "implementing",
+        "implementation": "not-started",
         "mapping": "reviewed",
         "read": "read-complete",
         "verification": "not-run",
@@ -5982,14 +5988,14 @@
       },
       "target": {
         "language": "Rust",
-        "path": "source/host/src/extensions/transcript/mod.rs",
-        "symbol": "TranscriptCleanup"
+        "path": "source/host/src/extensions/transcript/automation_run_path.rs",
+        "symbol": "No existing per-run session reaper owner"
       },
       "tests": [
-        "source/host/tests/openclaw_plugins_automations_contract.rs::test_ocrm_plugin_o05_sand_auto_review_modes_uniform"
+        "projects/openclaw-rust/docs/specs/cron-session-reaper.md"
       ],
       "typed_contracts": [
-        "TranscriptCleanup::prune_expired"
+        "CRON-REAPER-D01..D05 architecture decisions"
       ],
       "unit_id": "OCRM-UNIT-AUTOMATION-001"
     },
