@@ -237,6 +237,13 @@ export interface TranscriptMessage {
   composedAtMs?: number;
   isStreaming?: boolean;
   replyToId?: string;
+  /** Canonical Human-message identity and mutation metadata, when this row is remotely owned. */
+  authorId?: string;
+  remoteMessageId?: string;
+  remoteRevision?: number;
+  editedAt?: string;
+  deletedAt?: string;
+  isDeleted?: boolean;
   // @evidence src/app/dist/renderer/assets/index-UbX-y3il.js#byteOffset=5083971
   reactions?: readonly import("../cards/transcript-card/reaction-actions").TranscriptReaction[];
   myReactions?: ReadonlySet<string>;
