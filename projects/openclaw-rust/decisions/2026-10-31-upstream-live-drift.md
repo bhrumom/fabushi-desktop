@@ -65,6 +65,23 @@ Actions provenance is relabeled or reused, and all authority/completion flags
 remain unchanged. No CI, push, PR update or local OCRM executable verification
 was performed.
 
+## Subsequent live recheck — 2026-10-31T05:14:48Z
+
+Read-only `git ls-remote` and GitHub commit/tree API checks resolved
+`openclaw/openclaw` `refs/heads/main` to commit
+`b924498923dff81a02fb8a89d57828717c6e160d`, root tree
+`af9b32fcb093badf0e05912411f5acfa65698e79`. The recursive tree response was
+not truncated and contained 63,902 entries: 61,661 blobs and 2,241 trees.
+Root inputs remain identity-stable and `.gitmodules` remains absent; the ACP
+commands path remains absent while the auto-reply command registry list remains
+present.
+
+This supersedes the `622fa3fab...` discovery candidate in the lock. It remains
+discovery-only: no prior inventory, dependency closure, LFS/integrity result or
+Actions provenance is relabeled or reused, and all authority/completion flags
+remain unchanged. No CI, push, PR update or local OCRM executable verification
+was performed.
+
 ## Subsequent live recheck — 2026-10-31T03:46:32Z
 
 Read-only `git ls-remote` and GitHub commit/tree API checks resolved
