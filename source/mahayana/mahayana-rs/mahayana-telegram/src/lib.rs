@@ -162,11 +162,22 @@ impl TelegramClientLease {
                 "Telegram application credentials are unavailable".into(),
             )
         })?;
-        self.execute(json!({
-            "@type": "telegram.bootstrapTransport",
-            "dcId": 2,
-            "testMode": false,
-        }))?;
+        let status = self.execute(json!({"@type": "telegram.getStatus"}))?;
+        let transport_available = status
+            .get("transportConnected")
+            .and_then(Value::as_bool)
+            .unwrap_or(false)
+            || status
+                .get("transportRestorable")
+                .and_then(Value::as_bool)
+                .unwrap_or(false);
+        if !transport_available {
+            self.execute(json!({
+                "@type": "telegram.bootstrapTransport",
+                "dcId": 2,
+                "testMode": false,
+            }))?;
+        }
         self.execute(json!({
             "@type": "telegram.initializeConnection",
             "apiId": credentials.api_id,
