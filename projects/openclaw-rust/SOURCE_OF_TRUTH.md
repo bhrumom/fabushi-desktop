@@ -385,7 +385,11 @@ producer→owner→state/storage→consumer 调用图、Actions receipt、packag
 （`source/host/src`、`source/node-agent-coordinator/src`、
 `source/electron-main` 或 `frontend/src`）定位目标 symbol；未发现第二批仅由
 tests 支撑的 wired 行。该结果只证明静态目标可达性，不证明 Actions exact
-receipt、packaged runtime reachability、真实服务/设备或最终验收。
+receipt、packaged runtime reachability、真实服务/设备或最终验收。这里的 79
+是该次 scoped reverse-audit 的历史子集计数，不是当前 239 条责任的总 wired
+数；当前总量以
+[`dossiers/ledger-status-audit-20261031.md`](dossiers/ledger-status-audit-20261031.md)
+记录的 83 wired / 156 not-wired 为准。
 
 RTM 证据完整性审计显示 48 行中 31 行为 `in-progress`，每行至少有 evidence
 与 reviewer；17 行为 `not-started`，其中基础/终验行保留空 evidence、责任或
