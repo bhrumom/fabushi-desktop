@@ -135,6 +135,7 @@ impl CloudWorkerDiagnostic {
             || self.message.chars().count() > MAX_DIAGNOSTIC_CHARS
             || self.message.chars().any(|character| character.is_control())
             || !self.redacted
+            || crate::error_diagnostics::sanitize_error_diagnostic(&self.message) != self.message
         {
             return Err(CloudWorkerNodeBootstrapError::InvalidDiagnostic);
         }
@@ -410,6 +411,19 @@ mod tests {
         assert!(!diagnostic.message.contains("password=secret"));
         assert!(diagnostic.message.chars().count() <= MAX_DIAGNOSTIC_CHARS);
         assert!(diagnostic.validate().is_ok());
+    }
+
+    #[test]
+    fn rejects_deserialized_diagnostics_marked_redacted_but_not_sanitized() {
+        let diagnostic = CloudWorkerDiagnostic {
+            code: "provider".into(),
+            message: "Bearer token123".into(),
+            redacted: true,
+        };
+        assert_eq!(
+            diagnostic.validate(),
+            Err(CloudWorkerNodeBootstrapError::InvalidDiagnostic)
+        );
     }
 
     #[test]
