@@ -111,7 +111,7 @@ impl CloudWorkerCatalogCache {
     {
         self.entries.remove(&identity);
 
-        match load() {
+        match load().and_then(CloudWorkerCatalog::validate) {
             Ok(catalog) => {
                 self.entries.insert(identity, catalog.clone());
                 Ok(catalog)
@@ -445,6 +445,33 @@ mod tests {
                 Err(CloudWorkerCatalogError::EmptyCatalog)
             }),
             Err(CloudWorkerCatalogError::EmptyCatalog)
+        ));
+        assert!(cache.get(&identity).is_none());
+    }
+
+    #[test]
+    fn rejects_unvalidated_loader_catalog_before_caching() {
+        let mut cache = CloudWorkerCatalogCache::default();
+        let identity = CloudWorkerBinaryIdentity::new("sha256:unvalidated").unwrap();
+        let invalid = CloudWorkerCatalog {
+            providers: vec![CloudWorkerProvider {
+                id: "provider\nwith-control".into(),
+                profiles: vec![CloudWorkerProfile {
+                    id: "default".into(),
+                    machines: vec![CloudWorkerMachine {
+                        os: CloudWorkerOs::Linux,
+                        arch: "x86_64".into(),
+                        resources: CloudWorkerResourceLimits {
+                            cpu_cores: 1,
+                            memory_bytes: 1,
+                        },
+                    }],
+                }],
+            }],
+        };
+        assert!(matches!(
+            cache.resolve(identity.clone(), || Ok(invalid)),
+            Err(CloudWorkerCatalogError::InvalidProviderId)
         ));
         assert!(cache.get(&identity).is_none());
     }

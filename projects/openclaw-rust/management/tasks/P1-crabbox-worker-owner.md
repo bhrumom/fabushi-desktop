@@ -401,8 +401,10 @@ the provider, grant a lease, select a model or launch a worker.
 The catalog contract now also exposes an exact-binary-identity cache. Successful
 catalog loads are reused only for the same opaque binary identity, while every
 failed refresh invalidates that identity before returning the error. This is a
-side-effect-free cache contract; provider discovery, binary probing,
-authorization and launch remain open. The owner-bound
+side-effect-free cache contract; loader-supplied catalogs are validated again at
+the cache boundary so a typed producer cannot bypass duplicate, identity or
+resource constraints. Provider discovery, binary probing, authorization and
+launch remain open. The owner-bound
 `select_provider_machine` projection now performs the deterministic
 provider/profile/resource lookup from that exact cache and returns no
 permission or lifecycle capability.

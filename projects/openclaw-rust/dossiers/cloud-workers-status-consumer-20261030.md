@@ -108,7 +108,10 @@ introduced.
 The owner also exposes `select_provider_machine`, which requires the exact
 cached binary identity and deterministically selects a matching provider,
 profile and resource shape. Cache misses and incompatible choices fail closed;
-the projection does not authorize or launch a worker.
+the projection does not authorize or launch a worker. The cache revalidates
+loader-supplied catalogs before admission, so a producer cannot bypass the
+catalog's duplicate, identity or resource constraints by constructing a typed
+value directly.
 
 ## Doctor read-only owner projection — 2026-10-31
 

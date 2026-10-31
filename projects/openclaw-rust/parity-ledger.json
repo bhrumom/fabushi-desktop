@@ -1163,7 +1163,8 @@
         "Catalog input is bounded and malformed or duplicate provider/profile data fails closed",
         "Machine compatibility preserves OS, architecture and minimum resource constraints",
         "Successful catalog data is reused only for the exact binary identity",
-        "A failed refresh removes stale capability data before returning the error"
+        "A failed refresh removes stale capability data before returning the error",
+        "The cache revalidates loader-supplied catalogs before admission"
       ],
       "migration_rollback": "Keep the capability gate disabled and discard cache entries when provider identity changes or refresh fails",
       "oracle_ids": [
