@@ -100,10 +100,10 @@
       "selected_owner": "source/host/src/runner/host_computer_tool_dependencies.rs",
       "source_refs": [
         {
-          "blob_sha": "5c9cffc5b1ad9150ca3c28ab3de8d79f16e9451e",
+          "blob_sha": "b55bdd1f79ee96963561a3806c19dc8366251cba",
           "path": "extensions/crabbox/src/crabbox-gateway-methods.ts",
           "range": {
-            "end_line": 179,
+            "end_line": 178,
             "start_line": 1
           },
           "symbol": "CrabboxGatewayMethods"
@@ -329,10 +329,10 @@
       "selected_owner": "source/host/src/extensions/cloud_workers/extension.rs",
       "source_refs": [
         {
-          "blob_sha": "5c9cffc5b1ad9150ca3c28ab3de8d79f16e9451e",
+          "blob_sha": "b55bdd1f79ee96963561a3806c19dc8366251cba",
           "path": "extensions/crabbox/src/crabbox-gateway-methods.ts",
           "range": {
-            "end_line": 179,
+            "end_line": 178,
             "start_line": 1
           },
           "symbol": "CrabboxGatewayMethods"
@@ -435,10 +435,10 @@
       "selected_owner": "source/host/src/runner/host_external_machine_dependencies.rs",
       "source_refs": [
         {
-          "blob_sha": "2c56b582c5a385a16c08ef59a599a3a4fddd1387",
+          "blob_sha": "8879fee7eee95ba233cfb615d03e7f908531b053",
           "path": "extensions/crabbox/src/crabbox-tool.ts",
           "range": {
-            "end_line": 349,
+            "end_line": 354,
             "start_line": 1
           },
           "symbol": "CrabboxTool"
@@ -1498,19 +1498,19 @@
       "selected_owner": "source/node-agent-coordinator/src/cloud_worker_projection.rs",
       "source_refs": [
         {
-          "blob_sha": "5c9cffc5b1ad9150ca3c28ab3de8d79f16e9451e",
+          "blob_sha": "b55bdd1f79ee96963561a3806c19dc8366251cba",
           "path": "extensions/crabbox/src/crabbox-gateway-methods.ts",
-          "range": { "end_line": 179, "start_line": 1 },
+          "range": { "end_line": 178, "start_line": 1 },
           "symbol": "CrabboxGatewayMethods"
         },
         {
-          "blob_sha": "2c56b582c5a385a16c08ef59a599a3a4fddd1387",
+          "blob_sha": "8879fee7eee95ba233cfb615d03e7f908531b053",
           "path": "extensions/crabbox/src/crabbox-tool.ts",
-          "range": { "end_line": 349, "start_line": 1 },
+          "range": { "end_line": 354, "start_line": 1 },
           "symbol": "CrabboxTool"
         },
         {
-          "blob_sha": "fd4e046460830ec360a1d405e009d7164cf3520a",
+          "blob_sha": "5914b6490562b567ed515f4adf580897ad39d127",
           "path": "extensions/crabbox/src/crabbox-model-run-cli.ts",
           "range": { "end_line": 175, "start_line": 1 },
           "symbol": "CrabboxModelRunCli"
