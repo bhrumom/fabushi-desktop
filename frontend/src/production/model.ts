@@ -535,6 +535,14 @@ export function projectTranscriptEntry(value: unknown, index: number, agentName:
     ...(composedAtMs == null ? {} : { composedAtMs }),
     ...(transcriptStreaming(value) ? { isStreaming: true } : {}),
     ...(transcriptReplyToId(value) == null ? {} : { replyToId: transcriptReplyToId(value) }),
+    ...(typeof value.authorId === "string" ? { authorId: value.authorId } : {}),
+    ...(typeof value.remoteMessageId === "string" ? { remoteMessageId: value.remoteMessageId } : {}),
+    ...(typeof value.remoteRevision === "number" && Number.isInteger(value.remoteRevision) && value.remoteRevision >= 1
+      ? { remoteRevision: value.remoteRevision }
+      : {}),
+    ...(typeof value.editedAt === "string" ? { editedAt: value.editedAt } : {}),
+    ...(typeof value.deletedAt === "string" ? { deletedAt: value.deletedAt } : {}),
+    ...(value.isDeleted === true ? { isDeleted: true } : {}),
     ...transcriptReactionFields(value)
   };
 }
