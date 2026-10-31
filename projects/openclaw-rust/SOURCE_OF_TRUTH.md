@@ -241,6 +241,13 @@ unread 强行当作失败门槛，也不能被结构性 inventory 完整或已�
 producer→owner→consumer 接线与 packaged acceptance 仍待完成；本审计未运行
 OCRM 测试或本机构建。
 
+本次 heartbeat 复核还纠正了该责任的 oracle 绑定：`OCRM-PLUGIN-O07` 实际是
+web-search/fetch payload bounds contract，不是 heartbeat 测试；ledger 已移除这条
+错误的 oracle、test 和未实现的 `HeartbeatService::poll` typed contract。heartbeat
+仍保持 `implementing/not-wired`，直到出现真实 producer、timer admission、runner
+consumer、response-notification consumer 及独立 heartbeat oracle；没有因此新增
+实现或验收证据。
+
 随后对 320 条 wired integration path claim 做了只读存在性检查：5 条 Browser
 producer path 纠正为实际的 `source/host/src/runner/tools/` 位置；
 `OCRM-RESP-AGENT-ROSTER-AUDIT-001` 的声明 consumer
