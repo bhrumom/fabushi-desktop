@@ -1235,7 +1235,7 @@
       "target": {
         "language": "Rust",
         "path": "source/host/src/extensions/cloud_workers/provider_catalog.rs",
-        "symbol": "CloudWorkerCatalogParser::parse / CloudWorkerCatalogCache::resolve"
+        "symbol": "CloudWorkerCatalogParser::parse / CloudWorkerCatalogCache::resolve / CloudWorkerCatalog::select_machine"
       },
       "tests": [
         "source/host/src/extensions/cloud_workers/provider_catalog.rs::tests::parses_and_sorts_a_valid_catalog",
