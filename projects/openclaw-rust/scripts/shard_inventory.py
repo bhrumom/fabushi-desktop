@@ -120,12 +120,16 @@ def write(path):
         and (e.get("responsibility_status") != "reviewed" or not e.get("responsibility_ids"))
         for e in rows
     )
+    ledger = json.loads(LEDGER.read_text())
+    if ledger.get("upstream") != doc["upstream"]:
+        raise AssertionError("Parity ledger source identity does not match exact inventory")
+    if ledger.get("file_coverage", {}).get("tracked_paths") != len(rows):
+        raise AssertionError("Parity ledger tracked denominator does not match exact inventory")
     index["inventory"]["applicability_assessed"] = applicability_assessed
     index["inventory"]["dispositioned"] = dispositioned
     index["inventory"]["unreviewed_applicable"] = unreviewed_applicable
     index["inventory"]["itemized_manifest_location"] = str(SHARDS / "manifest.json") + " (Git-tracked canonical row shards; authority checked in Actions)"
     INDEX.write_text(json.dumps(index, sort_keys=True, indent=2, ensure_ascii=False) + "\n")
-    ledger = json.loads(LEDGER.read_text())
     ledger["file_coverage"]["applicability_assessed_paths"] = applicability_assessed
     ledger["file_coverage"]["dispositioned_paths"] = dispositioned
     ledger["file_coverage"]["unreviewed_applicable_paths"] = unreviewed_applicable
