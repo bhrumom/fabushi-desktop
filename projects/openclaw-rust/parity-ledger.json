@@ -25955,10 +25955,10 @@
       ],
       "id": "OCRM-RESP-PLUGIN-SDK-TOOL-RUNTIME-001",
       "integration": {
-        "consumer": "source/host/src/extensions/plugin_sdk/tool_runtime.rs",
+        "consumer": "No production Plugin SDK tool consumer identified; PluginToolDefinition, PluginCommandDispatcher, and BrowserHookBridge have no non-test callers",
         "entrypoint": "source/host/src/extensions/plugin_sdk/tool_runtime.rs::PluginToolDefinition::validate_arguments",
         "owner": "source/host/src/extensions/plugin_sdk/tool_runtime.rs",
-        "producer": "source/host/src/extensions/plugin_sdk/tool_runtime.rs"
+        "producer": "No production Plugin SDK tool-definition or command producer identified; the module exposes standalone helpers"
       },
       "invariants": [
         "Missing required arguments rejected before handler execution"

@@ -169,3 +169,19 @@ consumer. The implementation remains a standalone Rust contract slice with
 in-memory TTL state; it remains `wiring=not-wired`, `verification=not-run`,
 and `acceptance=pending` under `BL-PLUGIN-SDK-CHANNEL-WIRING-001`.
 
+## 10. Tool runtime production reachability audit (2026-10-31)
+
+The current checkout was searched for `PluginToolDefinition`,
+`PluginCommandDispatcher`, `BrowserHookBridge`, `validate_arguments`, and
+`execute_with_tab_lock`. No non-test caller was found for these Plugin SDK
+types. The existing Runner `RoutedToolDefinition`/toolset and MCP dispatch
+facades are separate canonical owners; their tool definitions and execution
+paths do not consume this module's schema validator, command handler registry,
+or browser tab lock.
+
+The parity integration now records no trusted production tool producer or
+consumer. The Plugin SDK implementation remains a standalone contract slice
+with process-local handler/tab-lock state and is still
+`wiring=not-wired`, `verification=not-run`, and `acceptance=pending` under
+`BL-PLUGIN-SDK-TOOL-WIRING-001`.
+
