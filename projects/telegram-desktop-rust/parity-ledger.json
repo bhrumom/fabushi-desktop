@@ -17359,15 +17359,31 @@
         "desktop-implementation-commit:131980d0bc3c5b6e8fad3ad2e394715426cd1529",
         "path:source/mahayana/mahayana-rs/providers/telegram-protocol/src/api.rs@75959eb82460cb36bf5f43c6e4470ef8814ea2a9",
         "path:source/mahayana/mahayana-rs/providers/telegram-protocol/src/lib.rs@3540f1a60df0d07f77b6e38349e0c500ec2d12d8",
-        "path:source/mahayana/mahayana-rs/providers/telegram-network/src/lib.rs@42be9e9fa78c3acc77367799c1ecb506cdd25ab0"
+        "path:source/mahayana/mahayana-rs/providers/telegram-network/src/lib.rs@42be9e9fa78c3acc77367799c1ecb506cdd25ab0",
+        "platform-core-round89-no-production-delta-spec-commit:bf4f241f9ceddc9b032b23d1f154a8883b636e92",
+        "platform-core-round89-no-production-delta-spec-blob:757e919f5328bd004fcf2e9a22b49a05e4a80f21",
+        "platform-core-current-production-path:native/telegram-protocol/src/api.rs@ebfb3670b5cd097b9ce288782c7954f5cfe9fc43",
+        "platform-core-current-tl-path:native/telegram-protocol/src/tl.rs@89256ab35184b6dc06a095ab34abb9f44e95a264",
+        "platform-core-current-lib-path:native/telegram-protocol/src/lib.rs@abab39e42f100972484191f0e52e9edd9b88c6cf",
+        "platform-core-current-network-path:native/telegram-network/src/lib.rs@1fc1b1f69e3e37377400d078f916599e0c7b20bc",
+        "platform-core-round89-authored-contract-commit:67e66a56a2ab2bf3c85b27a5d2bfac0d5682321f",
+        "platform-core-round89-contract-path:native/telegram-protocol/tests/protocol_contract.rs@b3e535525ffa97920816c9b8f316afddbf46f6ac",
+        "desktop-round89-contract-sync-commit:8caa269f72d98f79624ef73bd3ea901d0d0a6f86",
+        "path:source/mahayana/mahayana-rs/providers/telegram-protocol/src/api.rs@ebfb3670b5cd097b9ce288782c7954f5cfe9fc43",
+        "path:source/mahayana/mahayana-rs/providers/telegram-protocol/src/tl.rs@89256ab35184b6dc06a095ab34abb9f44e95a264",
+        "path:source/mahayana/mahayana-rs/providers/telegram-protocol/src/lib.rs@abab39e42f100972484191f0e52e9edd9b88c6cf",
+        "path:source/mahayana/mahayana-rs/providers/telegram-network/src/lib.rs@1fc1b1f69e3e37377400d078f916599e0c7b20bc",
+        "path:source/mahayana/mahayana-rs/providers/telegram-protocol/tests/protocol_contract.rs@b3e535525ffa97920816c9b8f316afddbf46f6ac",
+        "stage-a-round89-evidence:projects/telegram-desktop-rust/evidence/round89-mtproto-bad-server-salt-wire-20261101.md"
       ],
       "test_evidence": [
         "platform-core native/telegram-protocol/src/api.rs exact bad_server_salt four-field parse contract authored, not run",
         "platform-core native/telegram-protocol/src/api.rs wrong-constructor, truncation and trailing rejection contracts authored, not run",
         "platform-core native/telegram-network/src/lib.rs current-request-only bad_server_salt correlation contract authored, not run",
-        "desktop synchronized protocol/network contracts authored, not run"
+        "desktop synchronized protocol/network contracts authored, not run",
+        "round89 canonical and desktop external authored-only contracts cover exact 28-byte layout, signed i64/i32/i32/i64 extremes, wrong constructor, truncation at constructor/each field boundary, trailing bytes and exact EOF; not run"
       ],
-      "target_commit": "131980d0bc3c5b6e8fad3ad2e394715426cd1529",
+      "target_commit": "8caa269f72d98f79624ef73bd3ea901d0d0a6f86",
       "workflow_run": null,
       "run_attempt": null,
       "job": null,
@@ -17496,8 +17512,10 @@
       "acceptance_reviewer": null,
       "reviewer": null,
       "license_and_provenance": "Behavioral responsibility is anchored to fixed-U telegramdesktop/tdesktop Telegram/SourceFiles/mtproto/session_private.cpp@13cbc76ec723386027b5b4dcac79999b791c4614 and Telegram/SourceFiles/mtproto/scheme/mtproto.tl@76225965bfc794388db241f3f760db8ab79e84f8. The implementation is source-neutral Rust and copies no upstream C++ implementation.",
-      "notes": "Stage A implementation only. This row closes complete bad_server_salt wire validation and current-one-request correlation in both existing receive branches; it does not claim arbitrary historical sent/container bookkeeping. Global unknown/unread source-entry counts remain unchanged because this is a newly mapped responsibility slice within already-open fixed-U source coverage. Contracts are authored but not executed; validation_status=not-run and accepted=false.",
-      "test_execution_evidence": []
+      "notes": "Stage A implementation only. This row closes complete bad_server_salt wire validation and current-one-request correlation in both existing receive branches; it does not claim arbitrary historical sent/container bookkeeping. Global unknown/unread source-entry counts remain unchanged because this is a newly mapped responsibility slice within already-open fixed-U source coverage. Contracts are authored but not executed; validation_status=not-run and accepted=false. Round89 adjacent revalidation confirms the live parser/TlReader already satisfy exact constructor, signed 8/4/4/8 field widths, fail-closed truncation and strict EOF, so no production behavior delta was made. External canonical/desktop contracts were added and mirrored but not executed. This wire-only disposition is strictly separate from salt adoption/persistence, bad-time/time correction, request-history lookup, binding/reconnect, resend/application and broader session semantics.",
+      "test_execution_evidence": [],
+      "validation_status": "not-run",
+      "accepted": false
     },
     {
       "source_repository": "telegramdesktop/tdesktop",

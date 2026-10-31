@@ -1297,3 +1297,16 @@ evidence and independent release ACCEPT remain outside this wire-only closure.
 
 No GitHub Actions/status/check query or trigger, build, typecheck, lint, schema validator, generator,
 unit/contract/integration/E2E test, package, deployment, installation or runtime acceptance was performed.
+
+
+### Round 89 bad_server_salt adjacent revalidation (task round 58, 2026-11-01)
+
+Fixed-U `bad_server_salt#edab447b bad_msg_id:long bad_msg_seqno:int error_code:int new_server_salt:long` was reread against `mtproto.tl@76225965bfc794388db241f3f760db8ab79e84f8` and `session_private.cpp@13cbc76ec723386027b5b4dcac79999b791c4614`. The existing ledger row `TDRP-R9-MTPROTO-BAD-SERVER-SALT-WIRE-001` is reused; no duplicate responsibility is created and coverage remains `97 responsibilities / 16172 unknown / 16145 unread / 0 omitted`.
+
+Existing canonical `telegram-protocol` is already exact: `api.rs@ebfb3670b5cd097b9ce288782c7954f5cfe9fc43` exposes constructor/type/parser; `tl.rs@89256ab35184b6dc06a095ab34abb9f44e95a264` enforces signed little-endian 8/4/4/8 fixed-width reads with fail-closed truncation; `lib.rs@abab39e42f100972484191f0e52e9edd9b88c6cf` exports the same owner. `telegram-network@1fc1b1f69e3e37377400d078f916599e0c7b20bc` consumes that parser in both shipping receive branches before current-request correlation and salt mutation. Exact object size is 28 bytes and strict EOF rejects trailing bytes.
+
+Disposition: **no production delta**. Platform-core spec commit/blob is `bf4f241f9ceddc9b032b23d1f154a8883b636e92@757e919f5328bd004fcf2e9a22b49a05e4a80f21`; canonical authored-only contract commit/blob is `67e66a56a2ab2bf3c85b27a5d2bfac0d5682321f@b3e535525ffa97920816c9b8f316afddbf46f6ac`; desktop contract mirror commit is `8caa269f72d98f79624ef73bd3ea901d0d0a6f86` with the same blob. Contracts cover exact 28-byte layout/EOF, signed i64/i32/i32/i64 extremes, wrong constructor, constructor/field truncation boundaries and trailing bytes; they remain not run.
+
+Salt adoption/persistence, bad-time/time correction, current/historical request correlation, binding/reconnect, resend/application behavior, arbitrary sent/container history, gzip, complete difference decoding, broader source/legal closure, Stage-B executable evidence and independent release ACCEPT remain outside this wire-only closure or open.
+
+No GitHub Actions/status/check query or trigger, build, typecheck, lint, schema validator, generator, unit/contract/integration/E2E test, package, deployment, installation or runtime acceptance was performed.
