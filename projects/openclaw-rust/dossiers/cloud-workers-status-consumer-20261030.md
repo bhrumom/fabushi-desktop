@@ -200,6 +200,17 @@ introducing download, credential egress, extraction, publication, provider
 launch or packaged consumer behavior; those producer and consumer paths remain
 pending.
 
+## Managed artifact publication foundation — 2026-10-31
+
+`CloudWorkerArtifactPublisher` now provides the local managed-publication
+boundary for verified bytes. It is digest-addressed by artifact kind, refuses
+symlink/non-regular destinations, publishes through a private create-new temp
+file plus file sync, atomic rename and directory barrier, and permits only
+byte-identical idempotent re-publication. Network acquisition, extraction,
+credential egress, admission-snapshot mutation, provider launch and packaged
+consumers remain outside this seam; the artifact responsibility therefore
+stays `wiring=not-wired`, `verification=not-run`, `acceptance=pending`.
+
 The extension contract now also records the positive persistence and digest
 mismatch negative oracles in
 `source/host/src/extensions/cloud_workers/extension.rs`; they are authored for

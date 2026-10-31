@@ -409,6 +409,16 @@ snapshot persistence. The method returns the typed verified artifact proof and
 cannot claim provider publication; configured acquisition, credential egress,
 extraction, publication and managed artifact consumers remain unwired.
 
+The managed publication seam at
+`source/host/src/extensions/cloud_workers/artifact_store.rs` now publishes
+already verified bytes under a digest-addressed kind directory. It rejects
+symlink/non-regular destinations, uses a create-new private temporary file,
+file sync, atomic rename and parent-directory barrier, and treats an existing
+matching artifact as idempotent while rejecting different bytes. This seam
+does not acquire bytes, extract archives, resolve credentials, register a
+provider runtime or update the canonical admission snapshot; its producer and
+consumer composition therefore remain unwired.
+
 The lease foundation now also includes an explicit transition guard: only a
 completed mutation may advance the lifecycle, submitted/failed/cancelled
 mutations cannot silently change state, and an ambiguous result enters

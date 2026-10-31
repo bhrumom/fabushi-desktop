@@ -1975,7 +1975,8 @@
       "evidence_refs": [
         "source/host/tests/cloud_workers_extension_contract.rs",
         "projects/openclaw-rust/management/tasks/P1-crabbox-worker-owner.md",
-        "projects/openclaw-rust/dossiers/crabbox-node-enrollment-owner-audit-20261029.md"
+        "projects/openclaw-rust/dossiers/crabbox-node-enrollment-owner-audit-20261029.md",
+        "source/host/src/extensions/cloud_workers/artifact_store.rs"
       ],
       "existing_owner_candidates": [
         {
@@ -2076,7 +2077,9 @@
         "source/host/src/extensions/cloud_workers/artifact_admission.rs::tests::rejects_digest_mismatch",
         "source/host/src/extensions/cloud_workers/artifact_admission.rs::tests::rejects_unsafe_archive_member",
         "source/host/src/extensions/cloud_workers/extension.rs::tests::verified_artifact_bytes_are_persisted_as_one_owner_mutation",
-        "source/host/src/extensions/cloud_workers/extension.rs::tests::digest_mismatch_does_not_persist_an_artifact_admission"
+        "source/host/src/extensions/cloud_workers/extension.rs::tests::digest_mismatch_does_not_persist_an_artifact_admission",
+        "source/host/src/extensions/cloud_workers/artifact_store.rs::tests::publishes_digest_addressed_bytes_and_is_idempotent",
+        "source/host/src/extensions/cloud_workers/artifact_store.rs::tests::refuses_a_symlink_destination"
       ],
       "typed_contracts": [
         "CloudWorkerArtifactAdmission",

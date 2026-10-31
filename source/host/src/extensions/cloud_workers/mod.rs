@@ -9,6 +9,7 @@ pub mod extension;
 
 mod lease;
 mod artifact_admission;
+mod artifact_store;
 mod doctor;
 mod node_bootstrap;
 mod owner;
@@ -24,6 +25,10 @@ pub use artifact_admission::{
     CloudWorkerArtifactAdmissionState, CloudWorkerArtifactDigest,
     CloudWorkerArtifactKind, CloudWorkerArtifactPolicy, CloudWorkerArtifactSource,
     CloudWorkerVerifiedArtifact, verify_artifact_bytes,
+};
+pub use artifact_store::{
+    CloudWorkerArtifactPublisher, CloudWorkerArtifactStoreError,
+    CloudWorkerPublishedArtifact,
 };
 pub use doctor::{
     CloudWorkerDoctorAction, CloudWorkerDoctorError, CloudWorkerDoctorRequest,
