@@ -293,6 +293,10 @@ canonical inventory 身份，不能手工改写旧分片来伪造 projection clo
 差异必须在 `002f25a…/553796f…` exact subject 的新 inventory 生成与独立
 验证中闭合。
 
+这里的“四条”仅是该旧 baseline projection 快照中的历史计数，不代表当前
+Crabbox task-local responsibility 数量；当前数量和 canonical ID 以
+`management/tasks/P1-crabbox-worker-owner.md` 与当前 parity ledger 为准。
+
 上述 baseline projection 审计段落保留其当时的 candidate 快照；截至
 2026-10-31T05:51:22Z，当前 discovery identity 已由
 `bcf23b2ea0eee92c8c497c6b1c4d486588e4d5ab` /
