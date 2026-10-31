@@ -2648,7 +2648,7 @@
       "adr_refs": [],
       "behavior": "Agent Client Protocol (ACP) available commands surface, viral turn tainting, and auto-review gate resolution.",
       "blocker_ids": [
-        "BL-MEDIA-DOC-TRUNCATION-UPSTREAM-CALLER-001"
+        "BL-PLUGIN-SDK-ACP-WIRING-001"
       ],
       "capability_ids": [
         "agent.acp_commands"

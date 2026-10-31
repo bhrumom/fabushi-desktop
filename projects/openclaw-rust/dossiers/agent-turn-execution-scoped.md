@@ -112,6 +112,13 @@ closure permits a rebaseline. The standalone `AcpSessionManager` contract
 does not satisfy production consumer, security-context, or packaged ACP
 acceptance evidence.
 
+The parity row's blocker attribution was rechecked at the same time. The prior
+`BL-MEDIA-DOC-TRUNCATION-UPSTREAM-CALLER-001` reference did not describe this
+ACP transport/consumer gap; the row now points to the existing
+`BL-PLUGIN-SDK-ACP-WIRING-001` blocker. This is a blocker-classification
+correction only and does not promote implementation, wiring, verification, or
+acceptance.
+
 ---
 
 ## 3. Falsifiable Test Oracles (`source/host/tests/openclaw_agent_turn_contract.rs`)
