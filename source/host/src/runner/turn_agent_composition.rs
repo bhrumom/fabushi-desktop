@@ -34,6 +34,7 @@ use super::sand_subagent_auto_review::{
 };
 use super::subagent_runtime::SubagentRuntime;
 use super::StreamAttemptRuntime;
+use super::{ToolLoopDecision, ToolLoopGate, TurnOwnerToken};
 use super::turn_shape::checkpoint_ended_on_silent_tool_calls;
 use super::turn_tool_session_reminders::TurnToolSessionReminderState;
 use super::turn_observation::{
@@ -85,6 +86,8 @@ struct CheckpointRecordingRoutedToolBridge {
     delegate: Arc<dyn RoutedToolBridge>,
     completed: Arc<Mutex<Vec<CompletedRoutedToolCall>>>,
     next_sequence: Arc<AtomicU64>,
+    tool_loop_gate: Option<(ToolLoopGate, TurnOwnerToken)>,
+    cancellation: RoutedProviderCancellation,
 }
 
 impl CheckpointRecordingRoutedToolBridge {
@@ -92,11 +95,15 @@ impl CheckpointRecordingRoutedToolBridge {
         delegate: Arc<dyn RoutedToolBridge>,
         completed: Arc<Mutex<Vec<CompletedRoutedToolCall>>>,
         next_sequence: Arc<AtomicU64>,
+        tool_loop_gate: Option<(ToolLoopGate, TurnOwnerToken)>,
+        cancellation: RoutedProviderCancellation,
     ) -> Self {
         Self {
             delegate,
             completed,
             next_sequence,
+            tool_loop_gate,
+            cancellation,
         }
     }
 }
@@ -125,6 +132,23 @@ impl RoutedToolBridge for CheckpointRecordingRoutedToolBridge {
         args: Value,
         tool_call_id: &str,
     ) -> Result<Value, ProviderSessionError> {
+        if let Some((gate, owner)) = &self.tool_loop_gate {
+            let effective_tool_name = if tool.tool_name.trim().is_empty() {
+                tool.name.as_str()
+            } else {
+                tool.tool_name.as_str()
+            };
+            match gate
+                .observe_tool_call(owner, effective_tool_name, &args)
+                .map_err(|error| ProviderSessionError::Tool(error.to_string()))?
+            {
+                ToolLoopDecision::Continue { .. } => {}
+                ToolLoopDecision::Cancel { reason } => {
+                    self.cancellation.cancel(reason);
+                    return self.cancellation.check();
+                }
+            }
+        }
         let sequence = self.next_sequence.fetch_add(1, Ordering::Relaxed);
         let started_at_ms = unix_epoch_ms();
         let result = self.delegate.call_tool(tool, args.clone(), tool_call_id);
@@ -342,6 +366,7 @@ pub struct TurnAgentComposition {
     local_tool_permission: Option<TurnLocalToolPermissionBinding>,
     is_silence_allowed: bool,
     max_steps: usize,
+    tool_loop_gate: Option<(ToolLoopGate, TurnOwnerToken)>,
 }
 
 impl TurnAgentComposition {
@@ -409,6 +434,7 @@ impl TurnAgentComposition {
             local_tool_permission: None,
             is_silence_allowed: false,
             max_steps: SAND_AGENT_MAX_STEPS,
+            tool_loop_gate: None,
         }
     }
 
@@ -427,6 +453,15 @@ impl TurnAgentComposition {
 
     pub fn with_max_steps(mut self, max_steps: usize) -> Self {
         self.max_steps = max_steps.max(1);
+        self
+    }
+
+    pub fn with_tool_loop_gate(
+        mut self,
+        gate: ToolLoopGate,
+        owner: TurnOwnerToken,
+    ) -> Self {
+        self.tool_loop_gate = Some((gate, owner));
         self
     }
 
@@ -1008,6 +1043,8 @@ impl TurnAgentComposition {
                 bridge,
                 Arc::clone(&self.completed_tool_calls),
                 Arc::clone(&self.next_tool_sequence),
+                self.tool_loop_gate.clone(),
+                self.cancellation.clone(),
             ),
         );
         let tool_step_reminder = if self.toolset_role.is_subagent_runner || self.is_silence_allowed {

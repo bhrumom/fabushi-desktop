@@ -1,4 +1,5 @@
 use std::collections::VecDeque;
+use std::sync::{Arc, Mutex};
 
 use serde_json::Value;
 use uuid::Uuid;
@@ -64,6 +65,109 @@ pub enum ToolLoopDecision {
     Cancel { reason: &'static str },
 }
 
+#[derive(Debug, Default)]
+struct ToolLoopGateState {
+    owner: Option<TurnOwnerToken>,
+    last_tool_call_identity: Option<String>,
+    consecutive_tool_calls: u8,
+    tool_call_history: VecDeque<String>,
+    cancellation: Option<TurnCancellation>,
+}
+
+/// Shared handle for the existing TurnRunShell-owned tool-loop state.
+///
+/// The provider bridge may retain this handle for the synchronous duration of
+/// a turn without borrowing the mutable shell across the provider lifetime.
+#[derive(Debug, Clone, Default)]
+pub struct ToolLoopGate {
+    state: Arc<Mutex<ToolLoopGateState>>,
+}
+
+impl ToolLoopGate {
+    fn bind(&self, owner: &TurnOwnerToken) {
+        let mut state = self.state.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
+        state.owner = Some(owner.clone());
+        state.last_tool_call_identity = None;
+        state.consecutive_tool_calls = 0;
+        state.tool_call_history.clear();
+        state.cancellation = None;
+    }
+
+    pub fn observe_tool_call(
+        &self,
+        owner: &TurnOwnerToken,
+        tool_name: &str,
+        arguments: &Value,
+    ) -> Result<ToolLoopDecision, TurnRunShellError> {
+        if tool_name.trim().is_empty() {
+            return Err(TurnRunShellError::EmptyToolName);
+        }
+        let identity = tool_call_identity(tool_name, arguments);
+        let mut state = self.state.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
+        if state.owner.as_ref() != Some(owner) {
+            return Err(TurnRunShellError::StaleOwner);
+        }
+        if state.last_tool_call_identity.as_deref() == Some(identity.as_str()) {
+            state.consecutive_tool_calls = state
+                .consecutive_tool_calls
+                .saturating_add(1)
+                .min(TOOL_LOOP_REPEAT_THRESHOLD);
+        } else {
+            state.last_tool_call_identity = Some(identity.clone());
+            state.consecutive_tool_calls = 1;
+        }
+        if state.tool_call_history.len() == TOOL_LOOP_HISTORY_CAPACITY {
+            state.tool_call_history.pop_front();
+        }
+        state.tool_call_history.push_back(identity);
+        if state.consecutive_tool_calls >= TOOL_LOOP_REPEAT_THRESHOLD {
+            let cancellation = TurnCancellation {
+                intentional: true,
+                reason: TOOL_LOOP_CANCEL_REASON.to_string(),
+            };
+            if state.cancellation.is_none() {
+                state.cancellation = Some(cancellation);
+            }
+            return Ok(ToolLoopDecision::Cancel {
+                reason: TOOL_LOOP_CANCEL_REASON,
+            });
+        }
+        Ok(ToolLoopDecision::Continue {
+            consecutive_repeats: state.consecutive_tool_calls,
+        })
+    }
+
+    fn cancellation(
+        &self,
+        owner: &TurnOwnerToken,
+    ) -> Result<Option<TurnCancellation>, TurnRunShellError> {
+        let state = self.state.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
+        if state.owner.as_ref() != Some(owner) {
+            return Err(TurnRunShellError::StaleOwner);
+        }
+        Ok(state.cancellation.clone())
+    }
+
+    fn history_len(&self, owner: &TurnOwnerToken) -> Result<usize, TurnRunShellError> {
+        let state = self.state.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
+        if state.owner.as_ref() != Some(owner) {
+            return Err(TurnRunShellError::StaleOwner);
+        }
+        Ok(state.tool_call_history.len())
+    }
+
+    fn clear(&self, owner: &TurnOwnerToken) {
+        let mut state = self.state.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
+        if state.owner.as_ref() == Some(owner) {
+            state.owner = None;
+            state.cancellation = None;
+            state.last_tool_call_identity = None;
+            state.consecutive_tool_calls = 0;
+            state.tool_call_history.clear();
+        }
+    }
+}
+
 #[derive(Debug, thiserror::Error, PartialEq, Eq)]
 pub enum TurnRunShellError {
     #[error("prompt cannot be empty")]
@@ -87,9 +191,6 @@ struct ActiveRun {
     quiesced_for_upgrade: bool,
     cancellation: Option<TurnCancellation>,
     settlement: TurnSettlement,
-    last_tool_call_identity: Option<String>,
-    consecutive_tool_calls: u8,
-    tool_call_history: VecDeque<String>,
 }
 
 pub fn is_recovery_shaped_turn(prompt: &str, options: &TurnRunOptions) -> bool {
@@ -117,6 +218,7 @@ pub fn is_recovery_shaped_turn(prompt: &str, options: &TurnRunOptions) -> bool {
 #[derive(Debug, Default)]
 pub struct TurnRunShell {
     active: Option<ActiveRun>,
+    tool_loop_gate: ToolLoopGate,
     quiescing_for_upgrade: bool,
     next_generation: u64,
 }
@@ -187,6 +289,7 @@ impl TurnRunShell {
             request_id,
             generation: self.next_generation,
         };
+        self.tool_loop_gate.bind(&owner);
         self.active = Some(ActiveRun {
             owner: owner.clone(),
             dispatched: false,
@@ -195,9 +298,6 @@ impl TurnRunShell {
             quiesced_for_upgrade: false,
             cancellation: None,
             settlement: TurnSettlement::default(),
-            last_tool_call_identity: None,
-            consecutive_tool_calls: 0,
-            tool_call_history: VecDeque::with_capacity(TOOL_LOOP_HISTORY_CAPACITY),
         });
         Ok(TurnRunStarted {
             owner,
@@ -226,8 +326,9 @@ impl TurnRunShell {
 
     /// Observe one tool call at the canonical turn owner boundary.
     ///
-    /// A real tool producer must call this before the detector can be
-    /// considered wired.
+    /// The production bridge uses the shared gate returned by tool_loop_gate;
+    /// this method remains the owner-local seam for synchronous callers and
+    /// focused contract tests.
     pub fn observe_tool_call(
         &mut self,
         owner: &TurnOwnerToken,
@@ -237,43 +338,28 @@ impl TurnRunShell {
         if tool_name.trim().is_empty() {
             return Err(TurnRunShellError::EmptyToolName);
         }
-        let identity = tool_call_identity(tool_name, arguments);
-        let run = self.require_owner_mut(owner)?;
-        if run.last_tool_call_identity.as_deref() == Some(identity.as_str()) {
-            run.consecutive_tool_calls = run
-                .consecutive_tool_calls
-                .saturating_add(1)
-                .min(TOOL_LOOP_REPEAT_THRESHOLD);
-        } else {
-            run.last_tool_call_identity = Some(identity.clone());
-            run.consecutive_tool_calls = 1;
-        }
-        if run.tool_call_history.len() == TOOL_LOOP_HISTORY_CAPACITY {
-            run.tool_call_history.pop_front();
-        }
-        run.tool_call_history.push_back(identity);
-        if run.consecutive_tool_calls >= TOOL_LOOP_REPEAT_THRESHOLD {
-            let cancellation = TurnCancellation {
-                intentional: true,
-                reason: TOOL_LOOP_CANCEL_REASON.to_string(),
-            };
+        let decision = self.tool_loop_gate.observe_tool_call(owner, tool_name, arguments)?;
+        if let ToolLoopDecision::Cancel { reason } = decision {
+            let run = self.require_owner_mut(owner)?;
             if run.cancellation.is_none() {
-                run.cancellation = Some(cancellation);
+                run.cancellation = Some(TurnCancellation {
+                    intentional: true,
+                    reason: reason.to_string(),
+                });
             }
-            return Ok(ToolLoopDecision::Cancel {
-                reason: TOOL_LOOP_CANCEL_REASON,
-            });
         }
-        Ok(ToolLoopDecision::Continue {
-            consecutive_repeats: run.consecutive_tool_calls,
-        })
+        Ok(decision)
     }
 
     pub fn tool_call_history_len(
         &self,
         owner: &TurnOwnerToken,
     ) -> Result<usize, TurnRunShellError> {
-        Ok(self.require_owner(owner)?.tool_call_history.len())
+        self.tool_loop_gate.history_len(owner)
+    }
+
+    pub fn tool_loop_gate(&self) -> ToolLoopGate {
+        self.tool_loop_gate.clone()
     }
 
     pub fn interrupt(
@@ -339,7 +425,13 @@ impl TurnRunShell {
         owner: &TurnOwnerToken,
     ) -> Result<CheckpointBoundary, TurnRunShellError> {
         let quiescing = self.quiescing_for_upgrade;
+        let loop_cancellation = self.tool_loop_gate.cancellation(owner)?;
         let run = self.require_owner_mut(owner)?;
+        if let Some(cancellation) = loop_cancellation {
+            if run.cancellation.is_none() {
+                run.cancellation = Some(cancellation);
+            }
+        }
         if run.awaiting_user_selection {
             let cancellation = run
                 .cancellation
@@ -415,12 +507,14 @@ impl TurnRunShell {
         owner: &TurnOwnerToken,
         outcome: TerminalOutcome,
     ) -> Result<TurnRunFinished, TurnRunShellError> {
-        let run = self.require_owner_mut(owner)?;
-        run.settlement
-            .settle(outcome.clone())
-            .map_err(TurnRunShellError::Settlement)?;
-        let quiesced_for_upgrade = run.quiesced_for_upgrade;
-        let finished_owner = run.owner.clone();
+        let (quiesced_for_upgrade, finished_owner) = {
+            let run = self.require_owner_mut(owner)?;
+            run.settlement
+                .settle(outcome.clone())
+                .map_err(TurnRunShellError::Settlement)?;
+            (run.quiesced_for_upgrade, run.owner.clone())
+        };
+        self.tool_loop_gate.clear(&finished_owner);
         self.active = None;
         Ok(TurnRunFinished {
             owner: finished_owner,

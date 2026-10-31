@@ -39,6 +39,11 @@ TurnRunShell::checkpoint_boundary -> existing executor cancellation path`.
 The detector is a bounded per-turn helper owned by `TurnRunShell`. It is not
 invoked by fixtures or tests as a substitute for a producer; production
 integration remains a separate follow-up at the existing tool-call boundary.
+The live source audit located that boundary in
+source/host/src/runner/routed_provider_runtime.rs::execute_tool and the
+RoutedToolBridge::call_tool chain. That discovery does not yet prove the
+callback can safely borrow the mutable TurnRunShell across the provider
+execution lifetime, so no wiring claim is made.
 
 ## Failure modes
 

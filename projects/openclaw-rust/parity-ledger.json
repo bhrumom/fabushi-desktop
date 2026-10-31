@@ -3038,10 +3038,10 @@
       ],
       "id": "OCRM-RESP-AGENT-LOOP-DETECTION-001",
       "integration": {
-        "consumer": "No production consumer for tool-call loop detection; production_turn_agent_owner consumes TurnOwnerToken cancellation/generation only",
-        "entrypoint": "source/host/src/runner/turn_run_shell.rs::TurnOwnerToken and TurnRunShell",
-        "owner": "source/host/src/runner/mod.rs",
-        "producer": "No production hashToolCall/repeated-tool detector or loop-breaker producer is wired; OCRM-AGENT-O03/O04 cover cancellation and generation fixtures"
+        "consumer": "source/host/src/runner/turn_agent_composition.rs::CheckpointRecordingRoutedToolBridge cancels the live RoutedProviderCancellation; TurnRunShell::checkpoint_boundary imports the gate cancellation",
+        "entrypoint": "source/host/src/runner/routed_provider_runtime.rs::execute_tool -> RoutedToolBridge::call_tool",
+        "owner": "source/host/src/runner/turn_run_shell.rs::ToolLoopGate held by TurnRunShell",
+        "producer": "ProductionTurnAgentOwner passes the bound gate into TurnAgentComposition, whose checkpoint recording bridge observes every live routed tool call"
       },
       "invariants": [
         "Tool execution cancellation immediately cancels active attempt",
@@ -3088,11 +3088,11 @@
       ],
       "status": {
         "acceptance": "pending",
-        "implementation": "implementing",
+        "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
         "verification": "not-run",
-        "wiring": "not-wired"
+        "wiring": "wired"
       },
       "target": {
         "language": "Rust",
