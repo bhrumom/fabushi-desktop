@@ -53,6 +53,19 @@
 - **Implementation Modules**:
   - [`source/host/src/extensions/plugins/computer_use.rs`](file:///Users/bhrum/.gemini/antigravity/scratch/fabushi-desktop/source/host/src/extensions/plugins/computer_use.rs).
   - [`source/host/src/extensions/plugins/config.rs`](file:///Users/bhrum/.gemini/antigravity/scratch/fabushi-desktop/source/host/src/extensions/plugins/config.rs).
+
+## 3.1 Current production reachability boundary (2026-10-31)
+
+The production Worker path constructs
+`ProductionComputerToolExecutor` in `source/host/app/src/main.rs` and routes
+actions through the existing Runner/box Computer owner. The adjacent
+`ComputerUseCoordination` lease and audit surfaces are therefore real runtime
+evidence. The plugin-owned `ComputerExecutionManager` and the plugin
+configuration functions in `extensions/plugins/config.rs` are not directly
+consumed by that path: no provider execution ID is handed to the manager and
+no production plugin-config admission call was found. The responsibility
+therefore remains `wiring=not-wired` and acceptance remains pending until the
+single-flight/config contract reaches its intended producer and consumer.
 - **Test Oracles**:
   - `source/host/tests/openclaw_plugins_contract.rs`:
     - `test_computer_use_contract_and_execution_manager`

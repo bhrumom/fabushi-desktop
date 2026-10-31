@@ -30774,10 +30774,10 @@
       ],
       "id": "OCRM-RESP-PLUGINS-COMPUTER-USE-CONFIG-001",
       "integration": {
-        "consumer": "source/host/src/extensions/plugins/mod.rs",
-        "entrypoint": "source/host/src/extensions/plugins/mod.rs",
+        "consumer": "source/host/app/src/main.rs worker computer executor -> source/host/src/runner/host_computer_tool_dependencies.rs::ProductionComputerToolExecutor -> existing box Computer owner; plugin ComputerExecutionManager and plugin config engine have no direct production consumer",
+        "entrypoint": "source/host/app/src/main.rs worker computer executor construction and source/host/src/runner/host_computer_tool_dependencies.rs::ProductionComputerToolExecutor::execute",
         "owner": "source/host/src/extensions/plugins/mod.rs",
-        "producer": "source/host/src/extensions/plugins/mod.rs"
+        "producer": "source/host/src/runner/host_computer_tool_dependencies.rs::ProductionComputerToolExecutor::execute"
       },
       "invariants": [
         "Computer use execution requires valid UUID and allows only one active provider execution per computer",
