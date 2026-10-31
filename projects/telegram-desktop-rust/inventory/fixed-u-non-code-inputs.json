@@ -866,7 +866,7 @@
       }
     ],
     "root_identity_status": "fixed-u-enumerated",
-    "license_semantic_closure_status": "open-adopted-dependencies-and-copied-derived-content-still-require-release-review; round33 adds original-host Breakpad/LSS/GYP license identities and composite-license facts without inferring release acceptance",
+    "license_semantic_closure_status": "open-adopted-dependencies-and-copied-derived-content-still-require-release-review; round34 adds direct official libyuv LICENSE/PATENTS identity plus build-reachable prepare Breakpad and mini_chromium content-addressed authority mappings without inferring release acceptance",
     "github_license_blob_reads": [
       {
         "repository": "telegramdesktop/tdesktop",
@@ -1493,6 +1493,28 @@
         "evidence_round": 33,
         "build_scope": "current observation of mutable fixed-U toolchain ref @master; non-product-source toolchain",
         "semantic_note": "BSD-style redistribution conditions are present; mutable master remains non-U-pinned and this license read does not freeze the fixed-U tool input."
+      },
+      {
+        "repository": "chromium.googlesource.com/libyuv/libyuv",
+        "commit": "04821d1e7d60845525e8db55c7bcd41ef5be9406",
+        "path": "LICENSE",
+        "blob_sha": "c911747a6b53f063503992c3903d932f54cf6c57",
+        "read_verified": true,
+        "evidence_round": 34,
+        "build_scope": "tg_owt pinned recursive child libyuv exact content",
+        "semantic_note": "BSD-style libyuv license text is directly read at the official Chromium Gitiles exact commit; fixed-U child uses the gitlab.com/chromiumsrc mirror at the identical commit. This records source/license identity, not downstream release legal acceptance."
+      }
+    ],
+    "non_github_original_host_notice_blob_reads": [
+      {
+        "repository": "chromium.googlesource.com/libyuv/libyuv",
+        "commit": "04821d1e7d60845525e8db55c7bcd41ef5be9406",
+        "path": "PATENTS",
+        "blob_sha": "64aa5c90d8fd97484876870a6722163468e9c0e7",
+        "read_verified": true,
+        "evidence_round": 34,
+        "build_scope": "tg_owt pinned recursive child libyuv exact content",
+        "semantic_note": "The official upstream PATENTS file is directly read and retained as a distinct notice/IP-rights provenance object; no release-acceptance or legal-compatibility conclusion is inferred."
       }
     ]
   },
@@ -1581,6 +1603,53 @@
     "libiconv_raw_archive_member_listing": "unread",
     "xcb_util_m4_original_host_status": "github-mirror-object-verified-original-host-unread",
     "cppgir_original_host_status": "fail-closed-original-host-unread",
+    "baseline_ready": false,
+    "accepted": false,
+    "validation_status": "not-run"
+  },
+  "round34_build_reachable_source_license_mapping": {
+    "evidence_mode": "manual-source-host-and-content-addressed-object-reads-stage-a-no-ci",
+    "upstream_commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+    "prepare_breakpad": {
+      "source_path": "Telegram/build/prepare/prepare.py",
+      "source_blob_sha": "a9f3dd2d9e4020df958ab5af942376177d66c78b",
+      "commit": "dfcb7b6799b7c1e2c8d65e857d8afede185471d8",
+      "exact_original_repository": "https://chromium.googlesource.com/breakpad/breakpad",
+      "original_host_commit_bound": true,
+      "same_host_same_commit_tree_sha": "49b9ded11cf134b7385759bb599616f37f24eb8d",
+      "same_host_same_commit_license_blob_sha": "a840b26471e053099ae9cce7507324562915293a",
+      "direct_original_repository_tree_blob_read": false,
+      "copied_derived_adopted_mapping_status": "open-file-level-release-review"
+    },
+    "tg_owt_libyuv": {
+      "commit": "04821d1e7d60845525e8db55c7bcd41ef5be9406",
+      "fixed_child_repository": "gitlab.com/chromiumsrc/libyuv",
+      "official_upstream_repository": "https://chromium.googlesource.com/libyuv/libyuv",
+      "official_upstream_tree_sha": "46b29e13d76928a8423b346d085eda3eb215e4bb",
+      "official_upstream_license_blob_sha": "c911747a6b53f063503992c3903d932f54cf6c57",
+      "official_upstream_patents_blob_sha": "64aa5c90d8fd97484876870a6722163468e9c0e7",
+      "official_upstream_read_verified": true,
+      "copied_derived_adopted_mapping_status": "open-file-level-release-review"
+    },
+    "crashpad_mini_chromium": {
+      "source_path": "Telegram/build/prepare/prepare.py",
+      "source_blob_sha": "a9f3dd2d9e4020df958ab5af942376177d66c78b",
+      "commit": "14b219d5d503e305a6d853e64de201659cfcbe2d",
+      "original_host_repository": "https://chromium.googlesource.com/chromium/mini_chromium",
+      "original_host_exact_commit_file_reference_read": true,
+      "exact_commit_tree_sha_from_chromium_official_github_mirror": "655c7a93bdc2126a60bfec45055269986b271f26",
+      "exact_commit_license_blob_sha_from_chromium_official_github_mirror": "36980134e0f658a15afe357511883b98d1bdae3b",
+      "direct_original_host_root_tree_license_read": false,
+      "copied_derived_adopted_mapping_status": "open-file-level-release-review"
+    },
+    "archive_manifest_status": {
+      "boost_1_90_0": "unread-no-new-complete-member-manifest-found",
+      "libiconv_1_18": "unread-third-party-exact-archive-file-list-lead-not-readable-as-complete-manifest"
+    },
+    "blockers_unchanged": {
+      "xcb_util_m4_original_host_status": "github-mirror-object-verified-original-host-unread",
+      "cppgir_original_host_status": "fail-closed-original-host-unread"
+    },
     "baseline_ready": false,
     "accepted": false,
     "validation_status": "not-run"

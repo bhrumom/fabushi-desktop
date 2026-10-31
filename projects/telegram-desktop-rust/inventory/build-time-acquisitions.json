@@ -910,7 +910,14 @@
       "repository": "https://chromium.googlesource.com/breakpad/breakpad",
       "observed_short_ref": "dfcb7b6799",
       "resolved_commit": "dfcb7b6799b7c1e2c8d65e857d8afede185471d8",
-      "status": "resolved-via-github-mirror"
+      "status": "resolved-via-chromium-original-host-pin-with-same-object-host-mirror-corroboration",
+      "resolution_evidence": "Fixed-U prepare.py directly clones chromium.googlesource.com/breakpad/breakpad and checks out dfcb7b6799. An independent Chromium src DEPS object binds /breakpad/breakpad.git to full commit dfcb7b6799b7c1e2c8d65e857d8afede185471d8. The same content-addressed commit is readable on Chromium's google-breakpad host mirror with root tree 49b9ded11cf134b7385759bb599616f37f24eb8d and LICENSE blob a840b26471e053099ae9cce7507324562915293a. The direct breakpad/breakpad exact root page was not exposed by the current reader, so this is not labeled a direct original-repository tree/blob read.",
+      "original_host_commit_bound": true,
+      "same_host_same_commit_tree_sha": "49b9ded11cf134b7385759bb599616f37f24eb8d",
+      "same_host_same_commit_license_blob_sha": "a840b26471e053099ae9cce7507324562915293a",
+      "direct_original_repository_tree_blob_read": false,
+      "evidence_round": 34,
+      "build_reachability": "fixed-U prepare.py stackwalk and breakpad stages explicitly clone and check out this Breakpad ref, apply patches/breakpad.diff, clone googletest release-1.11.0 into src/testing, and on mac clone LSS e1e7b0ad8e; Breakpad DEPS/gclient is not invoked"
     },
     {
       "source_path": "Telegram/build/prepare/prepare.py",
@@ -931,7 +938,14 @@
       "repository": "https://chromium.googlesource.com/breakpad/breakpad",
       "observed_short_ref": "dfcb7b6799",
       "resolved_commit": "dfcb7b6799b7c1e2c8d65e857d8afede185471d8",
-      "status": "resolved-via-github-mirror"
+      "status": "resolved-via-chromium-original-host-pin-with-same-object-host-mirror-corroboration",
+      "resolution_evidence": "Fixed-U prepare.py directly clones chromium.googlesource.com/breakpad/breakpad and checks out dfcb7b6799. An independent Chromium src DEPS object binds /breakpad/breakpad.git to full commit dfcb7b6799b7c1e2c8d65e857d8afede185471d8. The same content-addressed commit is readable on Chromium's google-breakpad host mirror with root tree 49b9ded11cf134b7385759bb599616f37f24eb8d and LICENSE blob a840b26471e053099ae9cce7507324562915293a. The direct breakpad/breakpad exact root page was not exposed by the current reader, so this is not labeled a direct original-repository tree/blob read.",
+      "original_host_commit_bound": true,
+      "same_host_same_commit_tree_sha": "49b9ded11cf134b7385759bb599616f37f24eb8d",
+      "same_host_same_commit_license_blob_sha": "a840b26471e053099ae9cce7507324562915293a",
+      "direct_original_repository_tree_blob_read": false,
+      "evidence_round": 34,
+      "build_reachability": "fixed-U prepare.py stackwalk and breakpad stages explicitly clone and check out this Breakpad ref, apply patches/breakpad.diff, clone googletest release-1.11.0 into src/testing, and on mac clone LSS e1e7b0ad8e; Breakpad DEPS/gclient is not invoked"
     },
     {
       "source_path": "Telegram/build/prepare/prepare.py",
@@ -983,7 +997,19 @@
       "child_repository": "gitlab.com/chromiumsrc/libyuv",
       "child_commit": "04821d1e7d60845525e8db55c7bcd41ef5be9406",
       "nested_scan_status": "external-scan-complete",
-      "external_scan_id": "tg-owt-libyuv"
+      "external_scan_id": "tg-owt-libyuv",
+      "round34_official_upstream_object_mapping": {
+        "evidence_round": 34,
+        "fixed_child_repository": "gitlab.com/chromiumsrc/libyuv",
+        "official_upstream_repository": "https://chromium.googlesource.com/libyuv/libyuv",
+        "commit": "04821d1e7d60845525e8db55c7bcd41ef5be9406",
+        "root_tree_sha": "46b29e13d76928a8423b346d085eda3eb215e4bb",
+        "license_blob_sha": "c911747a6b53f063503992c3903d932f54cf6c57",
+        "patents_blob_sha": "64aa5c90d8fd97484876870a6722163468e9c0e7",
+        "original_host_read_verified": true,
+        "status": "official-upstream-original-host-exact-object-license-and-patents-read",
+        "caveat": "This closes the independently readable official libyuv upstream object/license mapping for the exact content-addressed commit used by tg_owt; it does not claim that the gitlab.com/chromiumsrc mirror itself was read from its original GitLab host and does not constitute downstream release legal acceptance."
+      }
     },
     {
       "id": "crc32c-googletest",
@@ -1050,7 +1076,19 @@
       "child_repository": "chromium.googlesource.com/chromium/mini_chromium",
       "child_commit": "14b219d5d503e305a6d853e64de201659cfcbe2d",
       "nested_scan_status": "external-scan-complete",
-      "external_scan_id": "crashpad-mini-chromium"
+      "external_scan_id": "crashpad-mini-chromium",
+      "round34_original_host_and_object_mapping": {
+        "evidence_round": 34,
+        "original_host_repository": "https://chromium.googlesource.com/chromium/mini_chromium",
+        "commit": "14b219d5d503e305a6d853e64de201659cfcbe2d",
+        "original_host_exact_commit_file_reference_read": true,
+        "exact_commit_tree_sha_from_chromium_official_github_mirror": "655c7a93bdc2126a60bfec45055269986b271f26",
+        "exact_commit_license_blob_sha_from_chromium_official_github_mirror": "36980134e0f658a15afe357511883b98d1bdae3b",
+        "direct_original_host_root_tree_license_read": false,
+        "status": "original-host-exact-commit-addressability-plus-content-addressed-official-mirror-object-corroboration",
+        "build_reachability": "fixed-U prepare.py crashpad stage checks out desktop-app/crashpad@3279fae3f0, initializes submodules, and explicitly updates only third_party/mini_chromium",
+        "caveat": "The original Chromium host exact commit is independently addressable, while root tree/LICENSE identities were read from chromium/mini_chromium at the identical Git commit SHA. Because the current reader did not expose the original-host root/LICENSE page directly, this is not promoted to a direct original-host tree/blob read."
+      }
     }
   ],
   "external_nested_scans": [
@@ -1092,6 +1130,18 @@
         "validation_head_sha": "7e1f2dbfb5c543ab05231a0e271f11d48232ca94",
         "artifact_id": 11474492724,
         "artifact_digest": "sha256:ab52d74cadbc20427e8183fd0963a955d7a7a4f91a478744688fb6c299442d38"
+      },
+      "round34_official_upstream_object_mapping": {
+        "evidence_round": 34,
+        "fixed_child_repository": "gitlab.com/chromiumsrc/libyuv",
+        "official_upstream_repository": "https://chromium.googlesource.com/libyuv/libyuv",
+        "commit": "04821d1e7d60845525e8db55c7bcd41ef5be9406",
+        "root_tree_sha": "46b29e13d76928a8423b346d085eda3eb215e4bb",
+        "license_blob_sha": "c911747a6b53f063503992c3903d932f54cf6c57",
+        "patents_blob_sha": "64aa5c90d8fd97484876870a6722163468e9c0e7",
+        "original_host_read_verified": true,
+        "status": "official-upstream-original-host-exact-object-license-and-patents-read",
+        "caveat": "This closes the independently readable official libyuv upstream object/license mapping for the exact content-addressed commit used by tg_owt; it does not claim that the gitlab.com/chromiumsrc mirror itself was read from its original GitLab host and does not constitute downstream release legal acceptance."
       }
     },
     {
@@ -1153,6 +1203,18 @@
         "validation_head_sha": "7e1f2dbfb5c543ab05231a0e271f11d48232ca94",
         "artifact_id": 11474492724,
         "artifact_digest": "sha256:ab52d74cadbc20427e8183fd0963a955d7a7a4f91a478744688fb6c299442d38"
+      },
+      "round34_original_host_and_object_mapping": {
+        "evidence_round": 34,
+        "original_host_repository": "https://chromium.googlesource.com/chromium/mini_chromium",
+        "commit": "14b219d5d503e305a6d853e64de201659cfcbe2d",
+        "original_host_exact_commit_file_reference_read": true,
+        "exact_commit_tree_sha_from_chromium_official_github_mirror": "655c7a93bdc2126a60bfec45055269986b271f26",
+        "exact_commit_license_blob_sha_from_chromium_official_github_mirror": "36980134e0f658a15afe357511883b98d1bdae3b",
+        "direct_original_host_root_tree_license_read": false,
+        "status": "original-host-exact-commit-addressability-plus-content-addressed-official-mirror-object-corroboration",
+        "build_reachability": "fixed-U prepare.py crashpad stage checks out desktop-app/crashpad@3279fae3f0, initializes submodules, and explicitly updates only third_party/mini_chromium",
+        "caveat": "The original Chromium host exact commit is independently addressable, while root tree/LICENSE identities were read from chromium/mini_chromium at the identical Git commit SHA. Because the current reader did not expose the original-host root/LICENSE page directly, this is not promoted to a direct original-host tree/blob read."
       }
     }
   ],
@@ -3017,6 +3079,64 @@
       "boost-1.90.0-raw-archive-members",
       "libiconv-1.18-raw-archive-members",
       "adopted-and-copied-derived-release-legal-review"
+    ]
+  },
+  "round34_chromium_original_host_and_archive_manifest_leads": {
+    "evidence_mode": "manual-public-original-host-and-content-addressed-object-reads-stage-a-no-ci",
+    "upstream_commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+    "breakpad_prepare": {
+      "repository": "https://chromium.googlesource.com/breakpad/breakpad",
+      "commit": "dfcb7b6799b7c1e2c8d65e857d8afede185471d8",
+      "fixed_u_short_ref": "dfcb7b6799",
+      "original_host_full_commit_bound": true,
+      "same_host_same_commit_tree_sha": "49b9ded11cf134b7385759bb599616f37f24eb8d",
+      "same_host_same_commit_license_blob_sha": "a840b26471e053099ae9cce7507324562915293a",
+      "direct_original_repository_tree_blob_read": false,
+      "build_reachability": "prepare.py stackwalk/breakpad stages directly clone/check out this ref; googletest and LSS are explicitly fetched; Breakpad DEPS/gclient is not invoked"
+    },
+    "libyuv": {
+      "evidence_round": 34,
+      "fixed_child_repository": "gitlab.com/chromiumsrc/libyuv",
+      "official_upstream_repository": "https://chromium.googlesource.com/libyuv/libyuv",
+      "commit": "04821d1e7d60845525e8db55c7bcd41ef5be9406",
+      "root_tree_sha": "46b29e13d76928a8423b346d085eda3eb215e4bb",
+      "license_blob_sha": "c911747a6b53f063503992c3903d932f54cf6c57",
+      "patents_blob_sha": "64aa5c90d8fd97484876870a6722163468e9c0e7",
+      "original_host_read_verified": true,
+      "status": "official-upstream-original-host-exact-object-license-and-patents-read",
+      "caveat": "This closes the independently readable official libyuv upstream object/license mapping for the exact content-addressed commit used by tg_owt; it does not claim that the gitlab.com/chromiumsrc mirror itself was read from its original GitLab host and does not constitute downstream release legal acceptance."
+    },
+    "mini_chromium": {
+      "evidence_round": 34,
+      "original_host_repository": "https://chromium.googlesource.com/chromium/mini_chromium",
+      "commit": "14b219d5d503e305a6d853e64de201659cfcbe2d",
+      "original_host_exact_commit_file_reference_read": true,
+      "exact_commit_tree_sha_from_chromium_official_github_mirror": "655c7a93bdc2126a60bfec45055269986b271f26",
+      "exact_commit_license_blob_sha_from_chromium_official_github_mirror": "36980134e0f658a15afe357511883b98d1bdae3b",
+      "direct_original_host_root_tree_license_read": false,
+      "status": "original-host-exact-commit-addressability-plus-content-addressed-official-mirror-object-corroboration",
+      "build_reachability": "fixed-U prepare.py crashpad stage checks out desktop-app/crashpad@3279fae3f0, initializes submodules, and explicitly updates only third_party/mini_chromium",
+      "caveat": "The original Chromium host exact commit is independently addressable, while root tree/LICENSE identities were read from chromium/mini_chromium at the identical Git commit SHA. Because the current reader did not expose the original-host root/LICENSE page directly, this is not promoted to a direct original-host tree/blob read."
+    },
+    "archive_manifest_search": {
+      "boost_1_90_0": {
+        "raw_member_listing": "unread",
+        "new_manifest_found": false,
+        "note": "Official Boost 1.90.0 release/package pages remain package-level evidence only; no independently readable official or equivalent complete raw member manifest was found this round. Archive-byte download was not retried."
+      },
+      "libiconv_1_18": {
+        "raw_member_listing": "unread",
+        "equivalent_manifest_lead": "A third-party cross-build source page advertises a <file list> for the exact Original sources libiconv-1.18.tar.gz, and Fossies exposes parsed 1.17-vs-1.18 file diffs, but the complete 1.18 file-list body/target was not independently readable through the current reader.",
+        "closure_status": "lead-only-not-member-enumeration",
+        "note": "No archive-byte download was retried; the advertised list is not treated as a verified raw archive member manifest until its complete contents are readable."
+      }
+    },
+    "unchanged_fail_closed_blockers": [
+      "xcb-util-m4-original-gitlab-object",
+      "cppgir-original-gitlab-tree-and-blobs",
+      "boost-1.90.0-raw-archive-members",
+      "libiconv-1.18-raw-archive-members",
+      "adopted-and-copied-derived-file-level-release-legal-review"
     ]
   }
 }
