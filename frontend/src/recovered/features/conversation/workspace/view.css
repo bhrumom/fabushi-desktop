@@ -144,7 +144,7 @@ html[data-platform="darwin"] .sand-agents-sidebar__new-actions {
 .sand-message-hover-actions__button:focus-visible { color: #eef3e7; background: #292d26; outline: 1px solid #a9c85d; outline-offset: 1px; }
 .sand-message-hover-actions__button--danger,
 .sand-message-hover-actions__button--danger:hover,
-.sand-message-hover-actions__button--danger:focus-visible { color: var(--fabushi-text-danger, var(--sand-text-danger)); }
+.sand-message-hover-actions__button--danger:focus-visible { color: var(--fabushi-text-danger, var(--cursor-text-error)); }
 .sand-message-prose { display: flex; flex-direction: column; min-width: 0; overflow-wrap: anywhere; color: var(--cursor-text-primary); font-size: var(--cursor-font-size-base, 14px); line-height: 20px; }
 .sand-message-prose p { margin: 0; line-height: inherit; white-space: pre-wrap; }
 .sand-message-prose a { color: #bfe86b; text-decoration: underline; text-underline-offset: 2px; }

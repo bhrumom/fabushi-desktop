@@ -161,11 +161,11 @@ function isMessageContextTargetExcluded(target: EventTarget | null): boolean {
 }
 
 function MessageActionAnchor({ entry, isReadOnly, threadRootId, threadSummary, onOpenThread, onCopy, onForward, onEdit, onDelete, mutationOwnerId, onReply, onStartThread, renderReactionActions, children }: { entry: TranscriptMessage; isReadOnly: boolean; threadRootId: string | null; threadSummary?: TranscriptThreadSummary | null; onOpenThread?: (targetId: string) => void; onCopy?: (entry: TranscriptMessage) => void | Promise<void>; onForward?: (entry: TranscriptMessage) => void; onEdit?: (entry: TranscriptMessage) => void; onDelete?: (entry: TranscriptMessage) => void; mutationOwnerId?: string; onReply?: (entry: TranscriptMessage) => void; onStartThread?: (entry: TranscriptMessage) => void; renderReactionActions?: (onOpenChange: (open: boolean) => void) => ReactNode; children: ReactNode }) {
-  const hasActions = isOrdinaryMessageActionable(entry, isReadOnly, onCopy, onForward);
-  if (!hasActions) return <>{children}</>;
-  const isThreadActionVisible = threadRootId == null;
   const editAllowed = !isReadOnly && onEdit != null && canEditHumanMessage(entry, mutationOwnerId);
   const deleteAllowed = !isReadOnly && onDelete != null && canDeleteHumanMessage(entry, mutationOwnerId);
+  const hasActions = isOrdinaryMessageActionable(entry, isReadOnly, onCopy, onForward) || editAllowed || deleteAllowed;
+  if (!hasActions) return <>{children}</>;
+  const isThreadActionVisible = threadRootId == null;
   const anchorRef = useRef<HTMLDivElement | null>(null);
   const triggerRef = useRef<HTMLButtonElement | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
