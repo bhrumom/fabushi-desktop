@@ -18,7 +18,7 @@ const MAX_MACHINE_CLASS_CHARS: usize = 128;
 /// A deterministic, side-effect-free representation of the setup environment
 /// profile. Values are inputs to a future secret-egress/process owner; this
 /// type never writes a file or mutates a child environment.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct CloudWorkerEnvironmentProfile {
     entries: BTreeMap<String, String>,
 }
@@ -194,9 +194,12 @@ fn parse_duration(
 }
 
 fn valid_environment_name(value: &str) -> bool {
-    !value.is_empty()
-        && value.chars().count() <= MAX_ENV_NAME_CHARS
-        && !value.chars().any(|character| character.is_control() || character == '=')
+    let mut characters = value.chars();
+    let Some(first) = characters.next() else {
+        return false;
+    };
+    (first.is_ascii_alphabetic() || first == '_')
+        && characters.all(|character| character.is_ascii_alphanumeric() || character == '_')
 }
 
 fn valid_bounded_text(value: &str, max_chars: usize) -> bool {
@@ -244,6 +247,13 @@ mod tests {
         assert_eq!(
             CloudWorkerEnvironmentProfile::new(unsafe_entries),
             Err(CloudWorkerAuxiliaryError::UnsafeEnvironmentValue)
+        );
+
+        let mut unsafe_name = BTreeMap::new();
+        unsafe_name.insert("SECRET-NAME".into(), "value".into());
+        assert_eq!(
+            CloudWorkerEnvironmentProfile::new(unsafe_name),
+            Err(CloudWorkerAuxiliaryError::InvalidEnvironmentName)
         );
     }
 
