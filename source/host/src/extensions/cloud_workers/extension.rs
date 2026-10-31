@@ -9,6 +9,7 @@ use crate::extensions::extension_ids_generated::HostExtensionId;
 use super::{
     CloudWorkerDoctorAction, CloudWorkerDoctorError, CloudWorkerDoctorRequest,
     CloudWorkerDoctorResult,
+    CloudWorkerBootstrapRequest,
     CloudWorkerLeasedCapability, CloudWorkerOwnerError, CloudWorkerOwnerStatus,
     CloudWorkerSandboxCapability, CloudWorkerSandboxError,
     CloudWorkerProvisioningConfig,
@@ -120,6 +121,34 @@ impl CloudWorkerProvisioningExtension {
                 _ => CloudWorkerOwnerError::StaleCapability,
             })?;
         Ok(capability.clone())
+    }
+
+    /// Re-reads the canonical lease before a bootstrap producer may act. The
+    /// request carries only fencing material and typed admission proofs; this
+    /// method performs no enrollment, process launch or provider mutation.
+    pub fn validate_current_bootstrap_request(
+        &self,
+        request: &CloudWorkerBootstrapRequest,
+    ) -> Result<(), CloudWorkerOwnerError> {
+        request
+            .validate()
+            .map_err(|_| CloudWorkerOwnerError::StaleCapability)?;
+        let owner = self
+            .owner
+            .lock()
+            .map_err(|_| CloudWorkerOwnerError::Unavailable)?;
+        if owner.status() != super::CloudWorkerOwnerStatus::Enabled {
+            return Err(CloudWorkerOwnerError::Disabled);
+        }
+        let current = owner.leased_capability(&request.lease_id)?;
+        if current.scope() != &request.scope
+            || current.owner_epoch() != request.owner_epoch
+            || current.generation() != request.generation
+            || current.runtime() != &request.runtime
+        {
+            return Err(CloudWorkerOwnerError::StaleCapability);
+        }
+        Ok(())
     }
 
     pub fn status_snapshot(&self) -> CloudWorkerStatusSnapshot {

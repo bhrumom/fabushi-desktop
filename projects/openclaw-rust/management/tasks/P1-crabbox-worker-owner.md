@@ -233,6 +233,9 @@ pending Crabbox responsibilities:
   `CloudWorkerVerifiedArtifact` proof and revalidates its digest shape before
   admission. Artifact acquisition, extraction, process launch and provider
   wiring remain separate pending responsibilities.
+- Bootstrap requests now carry lease ID, owner epoch and generation, and the
+  canonical extension revalidates them with scope/runtime identity through
+  `validate_current_bootstrap_request` before any future producer may act.
 
 The broader Crabbox projection, lifecycle, sandbox, bootstrap, artifact,
 warm-image and runtime-control rows remain pending where their producer or

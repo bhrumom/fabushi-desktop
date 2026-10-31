@@ -3,7 +3,7 @@ use thiserror::Error;
 
 use super::{
     CloudWorkerLeaseScope, CloudWorkerPlatformBridge, CloudWorkerRuntimeIdentity,
-    CloudWorkerVerifiedArtifact, ReplayKey,
+    CloudWorkerVerifiedArtifact, LeaseGeneration, LeaseId, OwnerEpoch, ReplayKey,
 };
 
 const MAX_DIAGNOSTIC_CHARS: usize = 512;
@@ -54,6 +54,9 @@ pub enum CloudWorkerBootstrapPhase {
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct CloudWorkerBootstrapRequest {
+    pub lease_id: LeaseId,
+    pub owner_epoch: OwnerEpoch,
+    pub generation: LeaseGeneration,
     pub scope: CloudWorkerLeaseScope,
     pub runtime: CloudWorkerRuntimeIdentity,
     pub artifact: CloudWorkerVerifiedArtifact,
@@ -64,6 +67,11 @@ pub struct CloudWorkerBootstrapRequest {
 
 impl CloudWorkerBootstrapRequest {
     pub fn validate(&self) -> Result<(), CloudWorkerNodeBootstrapError> {
+        if self.lease_id.0.trim().is_empty()
+            || self.lease_id.0.chars().any(|character| character.is_control())
+        {
+            return Err(CloudWorkerNodeBootstrapError::InvalidLeaseIdentity);
+        }
         CloudWorkerLeaseScope::new(
             self.scope.account_scope.clone(),
             self.scope.device_scope.clone(),
@@ -216,6 +224,8 @@ pub enum CloudWorkerNodeBootstrapError {
     InvalidSecretRef,
     #[error("bootstrap scope is invalid")]
     InvalidScope,
+    #[error("bootstrap lease identity is invalid")]
+    InvalidLeaseIdentity,
     #[error("bootstrap runtime identity is invalid")]
     InvalidRuntimeIdentity,
     #[error("bootstrap platform bridge is invalid")]
@@ -247,6 +257,9 @@ mod tests {
 
     fn request() -> CloudWorkerBootstrapRequest {
         CloudWorkerBootstrapRequest {
+            lease_id: LeaseId("lease-1".into()),
+            owner_epoch: OwnerEpoch(3),
+            generation: LeaseGeneration(7),
             scope: CloudWorkerLeaseScope::new("account", "device").unwrap(),
             runtime: CloudWorkerRuntimeIdentity::new("provider", "profile", "runtime")
                 .unwrap(),

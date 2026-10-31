@@ -136,3 +136,9 @@ and revalidates its digest shape after deserialization before bootstrap
 admission. This preserves the distinction between artifact admission and
 bootstrap execution: no download, extraction, process launch or provider
 readiness is introduced by this binding.
+
+The bootstrap request now also carries lease ID, owner epoch and generation.
+`CloudWorkerProvisioningExtension::validate_current_bootstrap_request` checks
+those fields, scope and runtime identity against the canonical owner before a
+future producer can act, preserving stale/outcome-unknown fencing without
+adding enrollment or process side effects.

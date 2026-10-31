@@ -2118,8 +2118,8 @@
       "id": "OCRM-RESP-INFRA-WORKER-CRABBOX-BOOTSTRAP-001",
       "integration": {
         "consumer": "FDN enrollment and existing Computer/platform adapters (not yet wired)",
-        "entrypoint": "source/host/src/extensions/cloud_workers/node_bootstrap.rs::CloudWorkerBootstrapRecord::settle",
-        "owner": "source/host/src/extensions/cloud_workers/node_bootstrap.rs",
+        "entrypoint": "source/host/src/extensions/cloud_workers/extension.rs::CloudWorkerProvisioningExtension::validate_current_bootstrap_request -> node_bootstrap.rs::CloudWorkerBootstrapRecord::settle",
+        "owner": "source/host/src/extensions/cloud_workers/extension.rs plus node_bootstrap.rs",
         "producer": "verified artifact/process/platform adapters (not yet wired)"
       },
       "invariants": [
@@ -2250,6 +2250,7 @@
         "CloudWorkerBootstrapRequest",
         "CloudWorkerBootstrapRecord",
         "CloudWorkerVerifiedArtifact",
+        "CloudWorkerProvisioningExtension::validate_current_bootstrap_request",
         "CloudWorkerSecretRef",
         "CloudWorkerPlatformBridge",
         "CloudWorkerDesktopSession"
