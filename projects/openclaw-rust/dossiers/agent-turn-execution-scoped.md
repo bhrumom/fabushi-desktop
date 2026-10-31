@@ -58,6 +58,32 @@ The audited source code was decomposed into 6 discrete Rust runtime responsibili
    - **Rust Owner**: `source/host/src/runner/mod.rs:SandAutoReviewDecision`.
    - **Oracles**: `OCRM-AGENT-O11`, `OCRM-AGENT-O12`.
 
+## 2.1 Current live-candidate drift — 2026-10-31
+
+The historical ACP command source above is bound to the then-locked subject
+`ad8d12f126d29b0db204187adf5092db80294e70` and remains historical evidence.
+Read-only GitHub contents checks against the current discovery candidate
+`openclaw/openclaw@10d93efc9c8730b7a2fad831c20c649adec7176b` found no
+`src/acp/commands.ts`; the path returns 404. The command surface is now
+represented by at least:
+
+- `src/auto-reply/commands-registry-list.ts::listChatCommands`, which adds
+  skill command projections and filters operator-disabled command keys;
+- `src/auto-reply/commands-registry.data.ts::getChatCommands`, which caches
+  the built-in registry and supplies runtime thinking-level choices; and
+- `src/auto-reply/commands-registry.runtime.ts`, which exports the lazy-boundary
+  runtime facade.
+
+This is a source-contract drift observation, not a current-source closure or
+implementation approval. The existing parity row for
+`OCRM-RESP-AGENT-ACP-COMMANDS-001` must retain its historical source identity
+until a fresh exact-subject Actions inventory and dependency closure accepts
+the live candidate. A future rebaseline must remap the responsibility from the
+old ACP-only `AvailableCommand` shape to the current chat-command registry,
+including feature-flag filtering, skill command injection, aliases, argument
+parsing, scope/category metadata, and the boundary between chat commands and
+ACP presentation. No Rust target or completion flag is upgraded by this note.
+
 ---
 
 ## 3. Falsifiable Test Oracles (`source/host/tests/openclaw_agent_turn_contract.rs`)
