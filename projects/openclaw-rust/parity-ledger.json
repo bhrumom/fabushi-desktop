@@ -5793,6 +5793,112 @@
       "unit_id": "OCRM-UNIT-AUTOMATION-001"
     },
     {
+      "adr_refs": [
+        "projects/openclaw-rust/docs/specs/session-lifecycle-delete-fence.md",
+        "projects/openclaw-rust/dossiers/upstream-current-session-lifecycle-delta-20261031.md"
+      ],
+      "behavior": "Session deletion lifecycle fence: durable lifecycle revision projection, expected identity/revision/update-time admission, and post-drain recheck before the existing destructive session owner commits.",
+      "blocker_ids": [],
+      "capability_ids": [
+        "sessions.delete.lifecycle_fence"
+      ],
+      "dependencies": [
+        "mahayana_host_runtime::extensions::session::agent_db",
+        "mahayana_host_runtime::extensions::transcript::agent_lifecycle"
+      ],
+      "evidence_refs": [
+        "source/host/src/extensions/session/agent_db.rs",
+        "source/host/src/extensions/session/session_summaries.rs",
+        "source/host/src/extensions/transcript/agent_lifecycle.rs",
+        "source/host/app/src/main.rs",
+        "source/host/tests/agent_lifecycle_contract.rs",
+        "projects/openclaw-rust/docs/specs/session-lifecycle-delete-fence.md",
+        "projects/openclaw-rust/dossiers/upstream-current-session-lifecycle-delta-20261031.md"
+      ],
+      "existing_owner_candidates": [
+        {
+          "path": "source/host/src/extensions/session/agent_db.rs",
+          "reason": "Existing durable per-agent session metadata owner"
+        },
+        {
+          "path": "source/host/src/extensions/transcript/agent_lifecycle.rs",
+          "reason": "Existing destructive agent/session lifecycle owner"
+        }
+      ],
+      "id": "OCRM-RESP-SESSION-LIFECYCLE-DELETE-FENCE-001",
+      "integration": {
+        "consumer": "Future Rust cron isolated-session and subagent cleanup producers; current public sessions.list/get projections and delete response",
+        "entrypoint": "source/host/app/src/main.rs::call_openclaw_sessions_list/call_openclaw_sessions_get/call_openclaw_sessions_delete",
+        "owner": "source/host/src/extensions/transcript/agent_lifecycle.rs::ProductionAgentLifecycle",
+        "producer": "Current projection callers are present; Rust cron/subagent cleanup producers are not present in the source tree"
+      },
+      "invariants": [
+        "A missing or invalid lifecycle revision is explicit incomplete projection evidence",
+        "A stale identity, revision, or supplied update time prevents destructive deletion",
+        "A lifecycle revision change during pre-delete drain prevents the destructive commit",
+        "No alternate cleanup owner or unauthenticated fallback bypasses the existing Host owner"
+      ],
+      "migration_rollback": "Retain the durable metadata migration and remove only guarded producer fields after all callers are retired; never replay an unknown delete outcome",
+      "oracle_ids": [
+        "OCRM-SESSION-LIFECYCLE-DELETE-FENCE-O01"
+      ],
+      "owner_decision": "Keep durable revision in AgentDb and deletion admission/recheck in the existing Transcript lifecycle owner; do not create a second cron or subagent cleanup owner",
+      "postconditions": [
+        "The current session row remains intact when a stale guard is detected",
+        "A successful guarded delete commits only after the pre-delete recheck"
+      ],
+      "preconditions": [
+        "A session projection captured the session identity and lifecycle revision",
+        "The existing Host Gateway and Transcript lifecycle owners are current"
+      ],
+      "required_evidence_dimensions": [
+        "unit",
+        "security-negative-test",
+        "compatibility",
+        "package",
+        "runtime"
+      ],
+      "required_gate_ids": [
+        "OCRM-G04-rust-contract",
+        "OCRM-G05-frozen-oracle"
+      ],
+      "requirement_ids": [
+        "SLD-01",
+        "SLD-02",
+        "SLD-03",
+        "SLD-04",
+        "SLD-05",
+        "SLD-06"
+      ],
+      "responsibility_kind": "business-runtime",
+      "reviewer": "xuyao@ombhrum.com",
+      "risk": "Critical; stale cleanup could delete a replacement session or bypass the durable lifecycle owner",
+      "selected_owner": "source/host/src/extensions/transcript/agent_lifecycle.rs",
+      "status": {
+        "acceptance": "pending",
+        "implementation": "implementing",
+        "mapping": "reviewed",
+        "read": "read-complete",
+        "verification": "not-run",
+        "wiring": "not-wired"
+      },
+      "target": {
+        "language": "Rust",
+        "path": "source/host/src/extensions/transcript/agent_lifecycle.rs",
+        "symbol": "ProductionAgentLifecycle::delete_agent_from_args"
+      },
+      "tests": [
+        "source/host/tests/agent_lifecycle_contract.rs::guarded_delete_rejects_stale_revision_before_destructive_hooks",
+        "source/host/tests/agent_lifecycle_contract.rs::guarded_delete_rechecks_revision_after_drain_mutation"
+      ],
+      "typed_contracts": [
+        "AgentMetadataProjection::lifecycle_revision",
+        "AgentSummary::lifecycle_revision",
+        "AgentDeletionGuard"
+      ],
+      "unit_id": "OCRM-UNIT-SESSION-002"
+    },
+    {
       "adr_refs": [],
       "behavior": "Expired cron run-session pruning (sessionRetention), unreferenced transcript cleanup, and active media task preservation.",
       "blocker_ids": [],
