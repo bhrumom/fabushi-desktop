@@ -229,11 +229,11 @@ data; Coordinator stores no recovery state and malformed responses fail closed.
 ## Runtime-control admission foundation — 2026-10-31
 
 `source/host/src/extensions/cloud_workers/runtime_control.rs` now defines the
-side-effect-free F03 admission contract for `Inspect`, `Heartbeat`, `Stop` and
-`Dispose`. It maps only valid current lease lifecycles to completed target
-states (inspect/heartbeat return to `Enrolled`), preserves the lease ID/owner
-epoch/generation/runtime identity and validates the replay key before returning
-a `CloudWorkerLeaseMutation`.
+side-effect-free F03 admission contract for `Prepare`, `Warmup`, `Bootstrap`,
+`Inspect`, `Heartbeat`, `Stop` and `Dispose`. It maps only valid current lease
+lifecycles to completed target states (inspect/heartbeat return to `Enrolled`),
+preserves the lease ID/owner epoch/generation/runtime identity and validates
+the replay key before returning a `CloudWorkerLeaseMutation`.
 `CloudWorkerProvisioningOwner::admit_runtime_control` and the Host extension
 provide the single owner admission/settlement façade, with action-specific
 next-state selection and explicit outcome-unknown handling. No provider RPC,

@@ -11,6 +11,9 @@ use super::{
 /// lease-fenced mutation; it never performs the operation.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum CloudWorkerRuntimeControlAction {
+    Prepare,
+    Warmup,
+    Bootstrap,
     Inspect,
     Heartbeat,
     Stop,
@@ -30,6 +33,11 @@ impl CloudWorkerRuntimeControlAction {
             // by the wider lease state machine. A completed read/control
             // operation returns the lease to Enrolled so its capability is not
             // stranded after one successful observation.
+            (Self::Prepare, CloudWorkerLifecycle::Admitted) => CloudWorkerLifecycle::Preparing,
+            (Self::Warmup, CloudWorkerLifecycle::Preparing) => CloudWorkerLifecycle::Warming,
+            (Self::Bootstrap, CloudWorkerLifecycle::Warming) => {
+                CloudWorkerLifecycle::Bootstrapping
+            }
             (Self::Inspect, CloudWorkerLifecycle::Enrolled)
             | (Self::Heartbeat, CloudWorkerLifecycle::Enrolled) => CloudWorkerLifecycle::Enrolled,
             (Self::Stop, CloudWorkerLifecycle::Enrolled)
@@ -119,6 +127,30 @@ mod tests {
         assert!(matches!(
             CloudWorkerRuntimeControlAction::Inspect
                 .completed_lifecycle(CloudWorkerLifecycle::Preparing),
+            Err(CloudWorkerRuntimeControlError::InvalidLifecycle { .. })
+        ));
+    }
+
+    #[test]
+    fn preparation_actions_follow_the_declared_lifecycle_order() {
+        assert_eq!(
+            CloudWorkerRuntimeControlAction::Prepare
+                .completed_lifecycle(CloudWorkerLifecycle::Admitted),
+            Ok(CloudWorkerLifecycle::Preparing)
+        );
+        assert_eq!(
+            CloudWorkerRuntimeControlAction::Warmup
+                .completed_lifecycle(CloudWorkerLifecycle::Preparing),
+            Ok(CloudWorkerLifecycle::Warming)
+        );
+        assert_eq!(
+            CloudWorkerRuntimeControlAction::Bootstrap
+                .completed_lifecycle(CloudWorkerLifecycle::Warming),
+            Ok(CloudWorkerLifecycle::Bootstrapping)
+        );
+        assert!(matches!(
+            CloudWorkerRuntimeControlAction::Bootstrap
+                .completed_lifecycle(CloudWorkerLifecycle::Admitted),
             Err(CloudWorkerRuntimeControlError::InvalidLifecycle { .. })
         ));
     }

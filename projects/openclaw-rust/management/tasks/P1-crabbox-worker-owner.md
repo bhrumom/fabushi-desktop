@@ -546,10 +546,11 @@ provider launch and real consumer wiring remain open.
 
 The next F03 foundation slice is the side-effect-free runtime-control admission
 contract in `source/host/src/extensions/cloud_workers/runtime_control.rs`.
-`Inspect`, `Heartbeat`, `Stop` and `Dispose` commands derive a
+`Prepare`, `Warmup`, `Bootstrap`, `Inspect`, `Heartbeat`, `Stop` and `Dispose` commands derive a
 `CloudWorkerLeaseMutation` only after checking the current lease lifecycle and
 preserving lease ID, owner epoch, generation, runtime identity and replay key.
-Completed inspect/heartbeat return to `Enrolled`; stop/dispose advance only
+Completed inspect/heartbeat return to `Enrolled`; prepare/warmup/bootstrap
+advance only through the declared lifecycle order; stop/dispose advance only
 through their declared terminal transitions. The action-specific settlement
 façade rejects unrelated lifecycle substitutions and retains
 outcome-unknown recovery. The command contract does not perform provider RPC,
