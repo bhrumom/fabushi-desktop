@@ -48,6 +48,10 @@ starts at line 221 and contains the application/workspace dependency graph.
 The duplicate top-level sections are not a single unambiguous YAML dependency
 document and cannot be treated as a validated lock graph without an
 exact-subject generation/installation oracle that explains the structure.
+As a read-only parser sanity check, Ruby Psych loaded the document with only
+`importers=1`, `packages=15`, and `snapshots=15`, i.e. the pnpm-only section;
+this parser observation is evidence of ambiguity, not a replacement closure
+validator.
 
 This is direct negative evidence for `dependency_closure_enumerated` and
 `source_closure_ready`. It does not assert that the repository is unusable;
