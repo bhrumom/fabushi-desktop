@@ -5829,10 +5829,10 @@
       ],
       "id": "OCRM-RESP-SESSION-LIFECYCLE-DELETE-FENCE-001",
       "integration": {
-        "consumer": "Future Rust cron isolated-session and subagent cleanup producers; current public sessions.list/get projections and delete response",
+        "consumer": "Generated-subagent completion cleanup plus current public sessions.list/get projections and guarded delete response; isolated-cron producer remains a separate upstream gap",
         "entrypoint": "source/host/app/src/main.rs::call_openclaw_sessions_list/call_openclaw_sessions_get/call_openclaw_sessions_delete",
         "owner": "source/host/src/extensions/transcript/agent_lifecycle.rs::ProductionAgentLifecycle",
-        "producer": "Current projection callers are present; Rust cron/subagent cleanup producers are not present in the source tree"
+        "producer": "source/host/app/src/main.rs::ProductionSubagentTaskSink::launch_subagent captures lifecycleRevision and the settled worker invokes the Gateway-owned guarded cleanup callback; isolated-cron producer remains absent"
       },
       "invariants": [
         "A missing or invalid lifecycle revision is explicit incomplete projection evidence",
@@ -5882,7 +5882,7 @@
         "mapping": "reviewed",
         "read": "read-complete",
         "verification": "not-run",
-        "wiring": "not-wired"
+        "wiring": "wired"
       },
       "target": {
         "language": "Rust",

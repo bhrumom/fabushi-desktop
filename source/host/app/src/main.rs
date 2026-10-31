@@ -1155,6 +1155,7 @@ struct UnifiedGatewayApi {
     device_pairing: Arc<DevicePairingOwner>,
     node_host_runtime: Arc<NodeHostRuntimeState>,
     node_host_local_session: NodeHostSessionLease,
+    generated_subagent_cleanup: GeneratedSubagentCleanupSlot,
 }
 
 fn publish_cloud_worker_status(
@@ -1169,6 +1170,11 @@ fn publish_cloud_worker_status(
         }
     }));
 }
+
+type GeneratedSubagentCleanup = Arc<
+    dyn Fn(&str, &str) -> Result<(), String> + Send + Sync + 'static,
+>;
+type GeneratedSubagentCleanupSlot = Arc<Mutex<Option<GeneratedSubagentCleanup>>>;
 
 #[derive(Clone)]
 struct LocalRoutedRunnerDeps {
@@ -1204,6 +1210,7 @@ struct LocalRoutedRunnerDeps {
     host_runner_composition: Arc<HostRunnerComposition>,
     box_store_sync: ProductionBoxStoreSyncApi,
     automations_lifecycle: Arc<Mutex<Weak<ProductionAutomationsLifecycle>>>,
+    generated_subagent_cleanup: GeneratedSubagentCleanupSlot,
 }
 
 #[derive(Clone)]
@@ -1414,6 +1421,7 @@ impl SubagentTaskSink for ProductionSubagentTaskSink {
             Arc::clone(&self.deps.host_runner_composition),
             self.deps.box_store_sync.clone(),
             Arc::clone(&self.deps.automations_lifecycle),
+            Arc::clone(&self.deps.generated_subagent_cleanup),
             None,
             args,
         )
@@ -2626,6 +2634,7 @@ impl UnifiedGatewayApi {
             host_runner_composition: Arc::clone(&self.host_runner_composition),
             box_store_sync: self.box_store_sync.clone(),
             automations_lifecycle: Arc::clone(&self.automations_lifecycle),
+            generated_subagent_cleanup: Arc::clone(&self.generated_subagent_cleanup),
         }
     }
 
@@ -3716,6 +3725,35 @@ impl UnifiedGatewayApi {
         }))
     }
 
+    fn delete_generated_subagent(
+        &self,
+        agent_id: &str,
+        lifecycle_revision: &str,
+    ) -> Result<(), String> {
+        let args = serde_json::json!({
+            "id": agent_id,
+            "expectedSessionId": agent_id,
+            "expectedLifecycleRevision": lifecycle_revision,
+        });
+        self.transcript_manager
+            .dispatch_agent_lifecycle_gateway_call(
+                &self.agent_deletion_runtime,
+                None,
+                "deleteAgent",
+                &args,
+            )
+            .ok_or_else(|| "generated subagent delete owner unavailable".to_string())?
+            .map_err(|error| match error {
+                AgentLifecycleGatewayError::BadRequest(message)
+                | AgentLifecycleGatewayError::Internal(message) => message,
+            })?;
+        self.host_runner_composition
+            .forget_local_tool_permission(agent_id);
+        self.delete_production_automation_schedules(agent_id);
+        self.refresh_production_automations();
+        Ok(())
+    }
+
     fn call_openclaw_chat_send(
         &self,
         args: serde_json::Value,
@@ -4555,6 +4593,7 @@ fn run_local_group_member_turn(
         deps.host_runner_composition,
         deps.box_store_sync,
         Arc::clone(&deps.automations_lifecycle),
+        Arc::clone(&deps.generated_subagent_cleanup),
         None,
         runner_args,
     )
@@ -4743,6 +4782,7 @@ fn start_local_upgrade_resume_turn(
         deps.host_runner_composition,
         deps.box_store_sync,
         Arc::clone(&deps.automations_lifecycle),
+        Arc::clone(&deps.generated_subagent_cleanup),
         None,
         runner_args,
     )
@@ -4898,6 +4938,7 @@ fn run_local_automation_turn(
         deps.host_runner_composition,
         deps.box_store_sync,
         Arc::clone(&deps.automations_lifecycle),
+        Arc::clone(&deps.generated_subagent_cleanup),
         None,
         runner_args,
     )
@@ -5012,6 +5053,7 @@ fn run_local_kickstart_turn(
         deps.host_runner_composition,
         deps.box_store_sync,
         Arc::clone(&deps.automations_lifecycle),
+        Arc::clone(&deps.generated_subagent_cleanup),
         None,
         runner_args,
     )
@@ -5275,6 +5317,7 @@ fn run_local_background_revival_turn_with_context(
         deps.host_runner_composition,
         deps.box_store_sync,
         Arc::clone(&deps.automations_lifecycle),
+        Arc::clone(&deps.generated_subagent_cleanup),
         None,
         runner_args,
     )
@@ -6378,6 +6421,7 @@ fn start_routed_provider_task(
     host_runner_composition: Arc<HostRunnerComposition>,
     box_store_sync: ProductionBoxStoreSyncApi,
     automations_lifecycle: Arc<Mutex<Weak<ProductionAutomationsLifecycle>>>,
+    generated_subagent_cleanup: GeneratedSubagentCleanupSlot,
     gateway_context: Option<GatewayCommandContext>,
     mut args: serde_json::Value,
 ) -> Result<serde_json::Value, GatewayCommandError> {
@@ -7337,6 +7381,7 @@ fn start_routed_provider_task(
         host_runner_composition: Arc::clone(&host_runner_composition),
         box_store_sync: box_store_sync.clone(),
         automations_lifecycle: Arc::clone(&automations_lifecycle),
+        generated_subagent_cleanup: Arc::clone(&generated_subagent_cleanup),
     };
     let worker_generated_parent_agent_id = generated_parent_agent_id.clone();
     let worker_generated_subagent_type = generated_subagent_type.clone();
@@ -7389,6 +7434,7 @@ fn start_routed_provider_task(
                     host_runner_composition: Arc::clone(&host_runner_composition),
                     box_store_sync: box_store_sync.clone(),
                     automations_lifecycle: Arc::clone(&automations_lifecycle),
+                    generated_subagent_cleanup: Arc::clone(&generated_subagent_cleanup),
                 },
                 parent_agent_id: agent_id.clone(),
                 provider,
@@ -7407,6 +7453,7 @@ fn start_routed_provider_task(
     let worker_profile_announcement = pending_profile_announcement;
     let worker_memory_store = memory_store.clone();
     let worker_memory_service = session_workers.memory_service();
+    let worker_generated_cleanup_slot = Arc::clone(&generated_subagent_cleanup);
     let worker_turn_hidden = turn_hidden;
     let worker_turn_trace_type = resolve_turn_trace_type(TurnTraceTypeOptions {
         automation_wake: args.get("automationWake"),
@@ -9914,6 +9961,8 @@ fn start_routed_provider_task(
                         }
                     }
                     if let Some(completion) = settled.completion {
+                        let cleanup_agent_id = completion.subagent_agent_id.clone();
+                        let cleanup_revision = completion.lifecycle_revision.clone();
                         if let Some(store) = worker_transcript_runtime.pending_wake_store() {
                             let _ = store.clear_one(
                                 &completion.parent_agent_id,
@@ -9940,6 +9989,18 @@ fn start_routed_provider_task(
                                 quiet_origin: None,
                             },
                         );
+                        let cleanup = worker_generated_cleanup_slot
+                            .lock()
+                            .unwrap_or_else(|poisoned| poisoned.into_inner())
+                            .clone();
+                        if let Some(cleanup) = cleanup {
+                            if let Err(error) = cleanup(&cleanup_agent_id, &cleanup_revision) {
+                                eprintln!(
+                                    "mahayana-host generated_subagent_cleanup_failed agent={} error={}",
+                                    cleanup_agent_id, error
+                                );
+                            }
+                        }
                     }
                 }
                 worker_transcript_runtime.end_live_subagent(parent_agent_id);
@@ -11444,6 +11505,7 @@ impl GatewayApi for UnifiedGatewayApi {
                 Arc::clone(&self.host_runner_composition),
                 self.box_store_sync.clone(),
                 Arc::clone(&self.automations_lifecycle),
+                Arc::clone(&self.generated_subagent_cleanup),
                 None,
                 args,
             );
@@ -11902,6 +11964,7 @@ impl GatewayApi for UnifiedGatewayApi {
                 Arc::clone(&self.host_runner_composition),
                 self.box_store_sync.clone(),
                 Arc::clone(&self.automations_lifecycle),
+                Arc::clone(&self.generated_subagent_cleanup),
                 Some(context.clone()),
                 args,
             );
@@ -13395,6 +13458,8 @@ fn main() {
     let completion_revivals_deletion_slot =
         Arc::new(Mutex::new(Weak::<CompletionRevivals>::new()));
     let box_store_sync_deletion_slot = Arc::new(Mutex::new(None::<ProductionBoxStoreSyncApi>));
+    let generated_subagent_cleanup_slot: GeneratedSubagentCleanupSlot =
+        Arc::new(Mutex::new(None));
     let agent_deletion_runtime = AgentDeletionRuntimeDeps {
         mark_deleting: Some({
             let transcript_runtime = Arc::clone(&transcript_runtime);
@@ -14013,6 +14078,7 @@ fn main() {
         host_runner_composition: Arc::clone(&host_runner_composition),
         box_store_sync: box_store_sync_api.clone(),
         automations_lifecycle: Arc::clone(&automations_lifecycle_slot),
+        generated_subagent_cleanup: Arc::clone(&generated_subagent_cleanup_slot),
     };
     let timeline_event_runner_deps = cross_user_runner_deps.clone();
     let timeline_event_roster = Arc::clone(&roster_emit);
@@ -14412,7 +14478,17 @@ fn main() {
             device_pairing,
             node_host_runtime,
             node_host_local_session: local_session,
+            generated_subagent_cleanup: Arc::clone(&generated_subagent_cleanup_slot),
         });
+    let generated_subagent_cleanup_gateway = Arc::downgrade(&gateway_api);
+    *generated_subagent_cleanup_slot
+        .lock()
+        .unwrap_or_else(|poisoned| poisoned.into_inner()) = Some(Arc::new(move |agent_id, revision| {
+            let gateway = generated_subagent_cleanup_gateway
+                .upgrade()
+                .ok_or_else(|| "Host Gateway is no longer current".to_string())?;
+            gateway.delete_generated_subagent(agent_id, revision)
+        }));
     *host_upgrade_gateway_slot
         .lock()
         .unwrap_or_else(|poisoned| poisoned.into_inner()) = Arc::downgrade(&gateway_api);

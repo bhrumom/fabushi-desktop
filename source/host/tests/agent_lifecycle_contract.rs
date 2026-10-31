@@ -851,3 +851,28 @@ fn shipping_gateway_orders_lifecycle_owner_before_generic_session_gateway() {
         );
     }
 }
+
+#[test]
+fn generated_subagent_cleanup_keeps_the_gateway_lifecycle_owner_and_captured_revision() {
+    let manifest_dir = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+    let main = fs::read_to_string(manifest_dir.join("app/src/main.rs")).expect("shipping main");
+    let launch = main
+        .find("let child_lifecycle_revision = self")
+        .expect("subagent launch must capture lifecycle revision");
+    let request = main
+        .find("\"lifecycleRevision\": child_lifecycle_revision")
+        .expect("subagent request must carry lifecycle revision");
+    let completion = main
+        .find("let cleanup_revision = completion.lifecycle_revision.clone()")
+        .expect("completion must retain lifecycle revision");
+    let owner = main
+        .find("fn delete_generated_subagent(")
+        .expect("cleanup must have one Gateway-owned entrypoint");
+    let guarded_delete_offset = main
+        .get(owner..)
+        .and_then(|source| source.find("\"expectedLifecycleRevision\": lifecycle_revision"))
+        .expect("cleanup must pass the captured revision to the lifecycle owner");
+    assert!(launch < request);
+    assert!(completion != launch && guarded_delete_offset > 0);
+    assert!(main.contains("generated_subagent_cleanup_gateway"));
+}

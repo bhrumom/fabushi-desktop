@@ -177,3 +177,21 @@ the captured `expectedSessionId` and `expectedLifecycleRevision` through the
 existing Host Gateway lifecycle owner. Therefore wiring remains `not-wired`,
 the blocker remains open, and the capture slice must not be interpreted as
 deletion safety or production acceptance.
+
+## 2026-10-31 lifecycle-owner wiring slice
+
+The current Rust source now contains the guarded generated-subagent cleanup
+edge. After `SubagentRuntime` settles and the existing completion-revival handoff
+is invoked, the worker obtains the injected Gateway-owned cleanup callback. The
+callback retains the current `UnifiedGatewayApi`, calls the existing
+`ProductionAgentLifecycle` owner with `expectedSessionId` and
+`expectedLifecycleRevision`, and performs no retry on a lifecycle conflict.
+The callback is installed only after the Gateway is constructed and returns an
+explicit error if that owner is no longer current.
+
+This changes the source-level wiring assessment from `not-wired` to
+`source-wired`; it does not prove packaged reachability, runtime execution,
+Actions verification, or acceptance. The producer blocker is therefore
+reframed as an evidence blocker rather than silently removed: exact-head
+Actions and real generated-subagent completion/deletion evidence are still
+required before the responsibility can be treated as fully production-wired.
