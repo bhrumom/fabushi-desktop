@@ -1,10 +1,18 @@
-# OpenClaw Current Candidate — Dependency Input Probe
+# OpenClaw Prior Discovery Candidate — Dependency Input Probe
 
 **Observed at**: 2026-10-31T07:55:14Z  
 **Repository**: `openclaw/openclaw`  
 **Exact discovery subject**: `77b08d1345a8e5734ada19dc95e77f4c5135bd0a`  
 **Tree**: `a52b727858379d14b1b1ed4bde71837326c127f7`  
 **Status**: discovery-only; not accepted source authority
+
+**Superseded**: OpenClaw `main` later advanced to
+`2910c0de8d7d290f9a82ca388f2893d067c06cb1` / tree
+`42dc443420e1b5b84e481f170cd8fccfcc00d7be`. This probe remains valid only for the
+exact subject above; its manifest counts and blob identities must not be reused as
+closure evidence for the later candidate. A separate compare observation found no
+root-input or mapped product-owner path changes, but that narrow fact does not
+promote or retarget this probe.
 
 ## Observed root dependency inputs
 
