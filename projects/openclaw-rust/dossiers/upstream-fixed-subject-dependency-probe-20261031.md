@@ -30,7 +30,7 @@ patterns are `.`, `ui`, `packages/*`, `extensions/*`, `examples/*`, and
 `tools/solid-lint`; the exact tree contains 208 `package.json` paths matching
 the root/workspace candidate shape.
 
-## Lock-structure negative evidence
+## Lock-structure and parser boundary
 
 The exact `pnpm-lock.yaml` is 19,772 lines and contains these top-level section
 occurrences:
@@ -42,22 +42,20 @@ occurrences:
 | `snapshots` | 2 | 97, 11,165 |
 | `patchedDependencies` | 1 | 213 |
 
-The first section has one root importer with only `pnpm@12.15.0` and 15 pnpm
-platform/package entries. A second `importers`/`packages`/`snapshots` section
-starts at line 221 and contains the application/workspace dependency graph.
-The duplicate top-level sections are not a single unambiguous YAML dependency
-document and cannot be treated as a validated lock graph without an
-exact-subject generation/installation oracle that explains the structure.
-As a read-only parser sanity check, Ruby Psych loaded the document with only
-`importers=1`, `packages=15`, and `snapshots=15`, i.e. the pnpm-only section;
-this parser observation is evidence of ambiguity, not a replacement closure
-validator.
+The lock contains two YAML documents separated at line 158. The first document
+has one root importer with only `pnpm@12.15.0` and 15 pnpm platform/package
+entries; the second document starts with its own lockfile version and contains
+the application/workspace dependency graph. A single-document parser such as
+Ruby Psych reads only the first document, so it is not a valid closure oracle
+for this lock. The later `YAML.load_stream` recheck in this dossier is the
+authoritative static interpretation of the two-document structure for this
+probe.
 
-This is direct negative evidence for `dependency_closure_enumerated` and
-`source_closure_ready`. It does not assert that the repository is unusable;
-it records that root manifest dependencies, 208 workspace candidates, patched
-dependencies, optional/peer relations, external package bytes, and install
-provenance are not yet bound into one accepted closure.
+The static recheck is stronger evidence but not accepted closure evidence:
+root manifest dependencies, 208 workspace candidates, patched dependencies,
+optional/peer relations, external package bytes, and install provenance still
+require independent exact-subject verification. `dependency_closure_enumerated`
+and `source_closure_ready` therefore remain false.
 
 ## Required next instrument
 
