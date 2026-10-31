@@ -98,7 +98,7 @@ fn production_host_owns_the_canonical_plugin_capability_catalog() {
         "provider registration must be owned by ProductionHostExtensions"
     );
     assert!(
-        PRODUCTION_OWNER.contains("family: \"workerProviders\".into()")
+        PRODUCTION_OWNER.contains("family: CAPABILITY_FAMILY_WORKER_PROVIDERS.into()")
             && PRODUCTION_OWNER.contains("provider_id: \"crabbox\".into()")
             && PRODUCTION_OWNER.contains("plugin_id: \"crabbox\".into()"),
         "bundled Crabbox registration must remain capability metadata only"

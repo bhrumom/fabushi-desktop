@@ -117,6 +117,7 @@ use crate::extensions::plugin_sdk::channel_entry::{
 };
 use crate::extensions::plugins::capability_catalog::{
     CapabilityProviderEntry, PluginCapabilityCatalog, PluginOrigin,
+    CAPABILITY_FAMILY_WORKER_PROVIDERS,
 };
 use crate::extensions::plugins::installed_index_store::BundledInstallGuard;
 use crate::connectors::channel_delivery::{
@@ -553,7 +554,7 @@ fn register_bundled_channel_capabilities(catalog: &PluginCapabilityCatalog) -> R
 /// readiness. The Cloud Worker owner remains the sole lifecycle/state owner.
 fn register_bundled_worker_capabilities(catalog: &PluginCapabilityCatalog) {
     catalog.register_capability(CapabilityProviderEntry {
-        family: "workerProviders".into(),
+        family: CAPABILITY_FAMILY_WORKER_PROVIDERS.into(),
         provider_id: "crabbox".into(),
         plugin_id: "crabbox".into(),
         label: Some("Crabbox Worker Provider".into()),

@@ -10,6 +10,10 @@ use std::sync::{Arc, Mutex};
 pub const CAPABILITY_FAMILY_SPEECH_PROVIDERS: &str = "speechProviders";
 pub const CAPABILITY_FAMILY_TRANSCRIPTION_PROVIDERS: &str = "realtimeTranscriptionProviders";
 pub const CAPABILITY_FAMILY_VOICE_PROVIDERS: &str = "realtimeVoiceProviders";
+/// Bundled worker-provider metadata family. Entries in this family describe
+/// discoverability only; provider lifecycle and readiness remain owned by the
+/// relevant worker owner.
+pub const CAPABILITY_FAMILY_WORKER_PROVIDERS: &str = "workerProviders";
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
