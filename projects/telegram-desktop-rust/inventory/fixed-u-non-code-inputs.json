@@ -2485,5 +2485,44 @@
     "baseline_ready": false,
     "accepted": false,
     "validation_status": "not-run"
+  },
+  "round40_remaining_telegram_provider_source_disposition": {
+    "evidence_mode": "manual-exact-head-source-review-stage-a-no-ci",
+    "checkpoint_commit_before_round": "1caf8ed26becbdad129b41ed70cd353efd58c8d6",
+    "fixed_u": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+    "reviewed": [
+      {
+        "path": "source/mahayana/mahayana-rs/providers/telegram-protocol/src/request.rs",
+        "blob_sha": "d59aae57f411c0f0c346c729a1c9bb528af144fe",
+        "disposition": "Fabushi-owned request sequencing/JSON envelope helper; no exact upstream byte-copy/generated/transcribed relationship established from the reviewed source",
+        "release_review": "no-new-source-license-mapping-asserted"
+      },
+      {
+        "path": "source/mahayana/mahayana-rs/providers/telegram-storage/src/lib.rs",
+        "blob_sha": "13378d686b9ea45ac57f165a95052ef559545fc5",
+        "disposition": "Fabushi-owned encrypted-storage module boundary assigning key lifecycle to platform credential stores; no exact Telegram/TDLib byte-copy/generated/transcribed relationship established from the reviewed source",
+        "release_review": "no-new-source-license-mapping-asserted"
+      },
+      {
+        "path": "source/mahayana/mahayana-rs/providers/telegram-network/src/bin/telegram-auth-key-probe.rs",
+        "blob_sha": "2854784c2db2ebdfc005ceb85c7bad9b4a7682d5",
+        "scope": "tooling-probe-not-production-owner",
+        "source_repository": "tdlib/td",
+        "source_commit": "a17f87c4cff7b90b278d12b91ba0614383aaee82",
+        "source_path": "td/generate/scheme/mtproto_api.tl",
+        "source_blob_sha": "b2508b478b9e5dd51af1dde33adcbf87949b9a5c",
+        "mapped_declarations": [
+          "get_future_salts#b921bd04",
+          "future_salts#ae500895"
+        ],
+        "transformation": "two schema constructor identifiers embedded in a Fabushi-owned manual auth-key/ping diagnostic probe",
+        "license_basis": "TDLib Boost Software License 1.0 exact license blob 36b7cd93cdfbac762f5be4c6ce276df2ea6305c2",
+        "release_review": "tooling-source-mapped-validation-not-run"
+      }
+    ],
+    "negative_claim_rule": "Telegram naming, domain concepts, SQLite usage, HMAC/SHA-256 usage, or local JSON request conventions are not by themselves evidence of source copying; no provenance relationship is asserted without an exact source object/behavior basis.",
+    "baseline_ready": false,
+    "accepted": false,
+    "validation_status": "not-run"
   }
 }

@@ -218,3 +218,14 @@ Stage A source review found a concrete production-wiring gap without running val
 The current production app-host construction `mahayana-app-host/src/lib.rs@3b873243...` finishes with `..HostCreateConfig::default()` and leaves Telegram IDs unset. Exact reads of the desktop/mobile/unified wrappers, CLI creation path and generic production FeatureHost path also found no Telegram client-id injection. Therefore the current evidence proves conditional provider code, not canonical shipping activation.
 
 No default ephemeral client, environment-variable client ID, mock login or ABI-only shortcut was added. `baseline_ready=false`, `accepted=false`, and `validation_status=not-run` remain unchanged.
+
+
+## Remaining Telegram provider source disposition (round 40, 2026-10-31)
+
+Stage A remained execution-free for validation. Three residual provider files were source-read at exact checkpoint `1caf8ed26becbdad129b41ed70cd353efd58c8d6`:
+
+- `providers/telegram-protocol/src/request.rs@d59aae57...` is a Fabushi-owned request sequencer/JSON-envelope helper. No exact upstream byte-copy, generated, or transcribed relationship was established from the reviewed source.
+- `providers/telegram-storage/src/lib.rs@13378d68...` is the Fabushi encrypted-storage module boundary and explicitly assigns key lifecycle to platform credential stores. No exact Telegram/TDLib copied/generated/transcribed relationship was established.
+- `providers/telegram-network/src/bin/telegram-auth-key-probe.rs@2854784c...` is tooling rather than a production owner. Its literal `get_future_salts#b921bd04` request and expected `future_salts#ae500895` result identifiers are both exactly present in TDLib `td/generate/scheme/mtproto_api.tl@b2508b47...`; these two schema identifiers are now source/license-mapped. The surrounding probe remains Fabushi-owned diagnostic code.
+
+No relationship was inferred merely from Telegram naming, domain concepts, SQLite, HMAC/SHA-256, or local JSON conventions. `baseline_ready=false`, `accepted=false`, and `validation_status=not-run` remain unchanged.
