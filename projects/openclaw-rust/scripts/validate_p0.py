@@ -57,6 +57,13 @@ def structural():
     check(inv["upstream"] == expected, "Source manifest identity mismatch")
     check(ledger["upstream"] == expected and rtm["upstream"] == expected, "Ledger/RTM source drift")
     check(idx["upstream"]["commit"] == up["commit"] and idx["upstream"]["tree"] == up["tree"], "Index/lock drift")
+    if FINAL_AC02:
+        live = lock["live_candidate"]
+        check(up["accepted_for_this_implementation_round"] is True, "Final AC02 requires accepted upstream identity")
+        check(live["repository"] == up["repository"] and live["ref"] == up["ref"], "Final AC02 upstream ref drift")
+        check(live["commit"] == up["commit"] and live["tree"] == up["tree"], "Final AC02 upstream differs from live candidate")
+        check(lock["root_inputs"] == live["root_inputs"], "Final AC02 accepted root inputs differ from live candidate")
+        check(idx["authority"].get("applicability_disposition_closure") is True, "Final AC02 canonical applicability/disposition closure is not accepted")
     if not FINAL_AC02:
         check(not lock["closure"]["source_closure_ready"] and not idx["authority"]["source_closure_ready"], "Unproven closure asserted")
         check(not idx["authority"].get("applicability_disposition_closure", False), "Unproven applicability/disposition closure asserted")
