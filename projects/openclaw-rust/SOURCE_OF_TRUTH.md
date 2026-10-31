@@ -417,10 +417,10 @@ subject 的 receipt。
 
 后续接手者先重读本入口、主 Spec、适用 task 和 current code。交接只保留当前请求、确切 refs、已完成且有证据的变化、未闭合项和下一可执行责任，不复制旧会话堆积状态。
 
-2026-10-31T16:58:00Z 的最新只读核对将当前 OpenClaw `main` 更新为
-`9f3da25c107e88380e84f8a70f8f703422ba5995` / tree
-`5957adf997a86b4937f6b7c162ebccb116e0aafa`（committer
-`2026-10-31T08:57:14Z`）。递归 tree 未截断，共 63,998 entries（61,757 blobs、
+2026-10-31T17:02:22Z 的最新只读核对将当前 OpenClaw `main` 更新为
+`e8dade039bdeb729754d2b5956e6f4cb0a84bf84` / tree
+`2e35087eee94a7c9380ea4ad9fa9c0a6b41e9232`（committer
+`2026-10-31T08:58:55Z`）。递归 tree 未截断，共 63,999 entries（61,758 blobs、
 2,241 directories、0 gitlinks）；package/lock/workspace/license 输入 blob
 identities 与上一 candidate 保持不变。该 subject 已同步写入
 `upstream.lock.json::live_candidate`，仍是 discovery-only；不得复用旧

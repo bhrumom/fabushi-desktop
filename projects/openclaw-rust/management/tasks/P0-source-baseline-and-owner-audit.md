@@ -100,11 +100,11 @@ discovery-only subject; prior inventory, dependency closure and Actions
 provenance remain bound to their original exact subjects, and all global flags
 remain false.
 
-2026-10-31T16:58:00Z drift amendment: read-only GitHub checks resolved the
-current OpenClaw `main` to `9f3da25c107e88380e84f8a70f8f703422ba5995` /
-`5957adf997a86b4937f6b7c162ebccb116e0aafa`, committed at
-`2026-10-31T08:57:14Z`. The recursive tree is untruncated with 63,998 entries
-(61,757 blobs, 2,241 directories, 0 gitlinks); root dependency/license input
+2026-10-31T17:02:22Z drift amendment: read-only GitHub checks resolved the
+current OpenClaw `main` to `e8dade039bdeb729754d2b5956e6f4cb0a84bf84` /
+`2e35087eee94a7c9380ea4ad9fa9c0a6b41e9232`, committed at
+`2026-10-31T08:58:55Z`. The recursive tree is untruncated with 63,999 entries
+(61,758 blobs, 2,241 directories, 0 gitlinks); root dependency/license input
 identities are unchanged. This is a fresh discovery-only subject; prior
 inventory, dependency closure, LFS/integrity and Actions provenance remain
 bound to their original subjects and all global flags remain false.
