@@ -81,6 +81,16 @@ discovery reference，但不提升 source authority，不使旧 inventory/closur
 可复用，也不改变任何 global flag；必须针对新 exact subject 取得 Actions
 inventory、依赖闭包、LFS/完整性及 evidence envelope。
 
+2026-10-31T03:34:16Z 的再次只读核对发现 OpenClaw `main` 已漂移到
+commit=`ece4ca85af0e0ffa7cc619522b9e8b7e40b08da9`、root tree
+`25f9aa8f30eef5b41f8873ddc0a7c4a8a0350772`；递归 tree 未截断，共 63,865
+entries（61,624 blobs、2,241 directories）。该 exact subject 的
+`package.json` blob 为 `bb155612041150b48dc93246039cb4eac65306ec`，其余
+root dependency/license inputs 与上一 candidate 相同。该 identity 已同步
+写入 `upstream.lock.json`，但仍是 discovery-only；不得复用旧 inventory、
+依赖闭包、LFS/完整性或 Actions provenance，亦不得提升任何 authority 或
+global flag。
+
 ## 5. 机器记录的初始化与终态
 
 2026-10-31 governance amendment: AC02/G02 final requires zero omitted,

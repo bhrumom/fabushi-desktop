@@ -25,16 +25,16 @@
   "live_candidate": {
     "repository": "openclaw/openclaw",
     "ref": "refs/heads/main",
-    "commit": "298546d88934bf05bc7e208d13bf6ce2c538e3f2",
-    "tree": "120f973ab7da856b4bc1c545c437dd94d35ef9eb",
-    "observed_at": "2026-10-31T02:34:32Z",
+    "commit": "ece4ca85af0e0ffa7cc619522b9e8b7e40b08da9",
+    "tree": "25f9aa8f30eef5b41f8873ddc0a7c4a8a0350772",
+    "observed_at": "2026-10-31T03:34:16Z",
     "discovery_source": "GitHub commit/tree API",
     "recursive_tree_truncated": false,
-    "recursive_tree_entries": 63847,
-    "recursive_blob_entries": 61606,
+    "recursive_tree_entries": 63865,
+    "recursive_blob_entries": 61624,
     "recursive_directory_entries": 2241,
     "root_inputs": {
-      "package.json": "5e468c9625b7670af23096df4588fd5e066c58a8",
+      "package.json": "bb155612041150b48dc93246039cb4eac65306ec",
       "pnpm-lock.yaml": "df897f3361f5968912f27b31971a60c08a1132b4",
       "pnpm-workspace.yaml": "32ce4d83de4aac6a1e3665baba09a3aa9582960c",
       ".gitattributes": "c6118b226a4a760f7861b6b7b1e7dccd943384e4",
@@ -49,7 +49,7 @@
     "behind_by": null,
     "compare_files_returned": null,
     "compare_file_counts_are_not_complete": true,
-    "decision": "live-main-drifted-again-to-298546d; root-inputs-and-recursive-tree-revalidated-read-only; retain-discovery-only-status-until-fresh-actions-inventory-and-dependency-closure"
+    "decision": "live-main-drifted-again-to-ece4ca8; root-inputs-and-recursive-tree-revalidated-read-only; retain-discovery-only-status-until-fresh-actions-inventory-and-dependency-closure"
   },
   "root_inputs": {
     "AGENTS.md": "c3deeccdb6b1a4c7137d56297e933bbf19f4d3bf",
