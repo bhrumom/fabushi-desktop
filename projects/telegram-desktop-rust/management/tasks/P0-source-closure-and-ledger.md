@@ -423,3 +423,8 @@ Platform-core spec-first commit `529f5c9147f0144b67eb077733b52d61b469f55d` and i
 Ledger adds `TDRP-R9-MTPROTO-DESTROY-AUTH-KEY-REQUEST-WIRE-001`; `responsibilities_total=80`, `unknown=16172`, `unread=16145`, `omitted=0`. Exact four-byte/no-payload contract is authored only. `validation_status=not-run`, `accepted=false`.
 
 No Actions/status/check query or trigger, build, typecheck, lint, schema validator, generator, unit/contract/integration/E2E test, package, deployment, installation, or runtime acceptance was performed. Auth-key destruction lifecycle, arbitrary sent/resend/container history, gzip, complete difference/differenceSlice decoding/application, broader fixed-U source/legal closure, Stage-B evidence and independent release ACCEPT remain open.
+
+
+### Round 70 source-level compliance readback
+
+Platform-core compliance commit `7643f936cd2b40aa628041880565c88539a1aace` updates `docs/specs/telegram-mtproto-destroy-auth-key-request-wire.md@ca43a6b328e68d68dfbfd7c9bae90c614918a046`. Remote readback confirms canonical and desktop provider api/lib blobs are byte-identical at `fbca9b0ebb85d0edd5c01ceea9896d0977294b53` / `ed581d8356375e264fabe85a2e5cccbd9b772f21`; `DESTROY_AUTH_KEY_CONSTRUCTOR=0xd1435160` and public `build_destroy_auth_key()` are present. R1-R5 are satisfied at source/ownership/bookkeeping level; R6 executable validation remains blocked/not-run with `accepted=false`. Auth-key destruction eligibility/result handling/local deletion/persistence/teardown, arbitrary sent/resend/container history, gzip, complete difference decoding, broader source/legal closure, Stage-B evidence and independent release ACCEPT remain open.

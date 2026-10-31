@@ -25,3 +25,7 @@ This slice does not decide auth-key destruction eligibility, parse/apply a remot
 Implementation status: implemented.
 Validation status: not-run.
 Accepted: false.
+
+## Source-level compliance readback
+
+Platform-core compliance commit: `7643f936cd2b40aa628041880565c88539a1aace`. Spec blob: `ca43a6b328e68d68dfbfd7c9bae90c614918a046`. Canonical/desktop api/lib remain byte-identical at `fbca9b0ebb85d0edd5c01ceea9896d0977294b53` / `ed581d8356375e264fabe85a2e5cccbd9b772f21`. R1-R5 are source-level satisfied. R6 executable validation remains not-run and accepted=false; no live auth-key destruction lifecycle is claimed.

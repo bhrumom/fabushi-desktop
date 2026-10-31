@@ -20067,7 +20067,9 @@
         "platform-core-path:native/telegram-protocol/src/lib.rs@ed581d8356375e264fabe85a2e5cccbd9b772f21",
         "desktop-implementation-commit:fe0093d767ad2a12e049b4d0a474c0145d3468ab",
         "path:source/mahayana/mahayana-rs/providers/telegram-protocol/src/api.rs@fbca9b0ebb85d0edd5c01ceea9896d0977294b53",
-        "path:source/mahayana/mahayana-rs/providers/telegram-protocol/src/lib.rs@ed581d8356375e264fabe85a2e5cccbd9b772f21"
+        "path:source/mahayana/mahayana-rs/providers/telegram-protocol/src/lib.rs@ed581d8356375e264fabe85a2e5cccbd9b772f21",
+        "platform-core-spec-compliance-commit:7643f936cd2b40aa628041880565c88539a1aace",
+        "platform-core-spec-blob:ca43a6b328e68d68dfbfd7c9bae90c614918a046"
       ],
       "test_evidence": [
         "platform-core native/telegram-protocol/src/api.rs exact four-byte zero-field constructor contract authored, not run",
@@ -20185,7 +20187,7 @@
       "acceptance_reviewer": null,
       "reviewer": null,
       "license_and_provenance": "Behavioral responsibility is anchored to fixed-U telegramdesktop/tdesktop Telegram/SourceFiles/mtproto/scheme/mtproto.tl@76225965bfc794388db241f3f760db8ab79e84f8. session_private.cpp@13cbc76ec723386027b5b4dcac79999b791c4614 was reread as adjacent lifecycle context; no auth-key destruction lifecycle semantics are inferred into this wire-only builder. The implementation is source-neutral Rust and copies no upstream C++ implementation.",
-      "notes": "Stage A implementation only. This row closes exact destroy_auth_key zero-field request serialization only. Auth-key destruction eligibility, remote result handling, local deletion, teardown/reconnect and persistence remain blocked/fail-closed. Global unknown/unread source-entry counts remain unchanged because this is a newly mapped responsibility slice within already-open fixed-U source coverage. Contract is authored but not executed; validation_status=not-run and accepted=false.",
+      "notes": "Stage A implementation only. This row closes exact destroy_auth_key zero-field request serialization only. Auth-key destruction eligibility, remote result handling, local deletion, teardown/reconnect and persistence remain blocked/fail-closed. Global unknown/unread source-entry counts remain unchanged because this is a newly mapped responsibility slice within already-open fixed-U source coverage. Contract is authored but not executed; validation_status=not-run and accepted=false. Source-level request compliance is recorded at platform-core commit 7643f936cd2b40aa628041880565c88539a1aace; R1-R5 are source/bookkeeping satisfied while R6 executable Stage-B validation remains not-run.",
       "test_execution_evidence": [],
       "validation_status": "not-run",
       "accepted": false
