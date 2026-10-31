@@ -9,7 +9,7 @@
     "unknown": 16172,
     "unread": 16145,
     "omitted": 0,
-    "responsibilities_total": 89,
+    "responsibilities_total": 90,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -22418,6 +22418,265 @@
       "validation_status": "not-run",
       "accepted": false,
       "id": "TDRP-R9-MTPROTO-RES-PQ-WIRE-001",
+      "source_paths": [
+        "Telegram/SourceFiles/mtproto/scheme/mtproto.tl@76225965bfc794388db241f3f760db8ab79e84f8",
+        "Telegram/SourceFiles/mtproto/details/mtproto_dc_key_creator.cpp@13c57454f14b814b5923ea253048fb881ad8cf03"
+      ]
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+      "source_path": "Telegram/SourceFiles/mtproto/scheme/mtproto.tl",
+      "source_blob_sha": "76225965bfc794388db241f3f760db8ab79e84f8",
+      "source_kind": "schema",
+      "module_id": "tdesktop.mtproto.server-dh-inner-data-wire",
+      "responsibility_id": "TDRP-R9-MTPROTO-SERVER-DH-INNER-DATA-WIRE-001",
+      "source_symbols": [
+        "server_DH_inner_data#b5890dba nonce:int128 server_nonce:int128 g:int dh_prime:string g_a:string server_time:int = Server_DH_inner_data",
+        "DcKeyCreator::dhParamsAnswered / MTPDserver_DH_inner_data",
+        "decrypt_server_dh_inner_data",
+        "AuthKeyHandshake::receive_server_dh"
+      ],
+      "capability_ids": [
+        "CAP-TELEGRAM-MTPROTO-SERVER-DH-INNER-DATA-WIRE"
+      ],
+      "dependency_ids": [
+        "telegram-protocol::AuthKeyHandshake",
+        "telegram-protocol::TlReader",
+        "telegram-protocol::AES-IGE/SHA-1 crypto primitives"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/evidence/round80-mtproto-server-dh-inner-data-wire-20261101.md",
+      "behavior_contract": "The canonical telegram-protocol/AuthKeyHandshake owner must decrypt fixed-U server_DH_inner_data#b5890dba from server_DH_params_ok.encrypted_answer with the active temporary AES key/IV, parse constructor/nonce/server_nonce/g/dh_prime/g_a/server_time in exact order, bind the active nonce pair, authenticate exactly the consumed TL object with the leading SHA-1 digest, accept only 0..15 residual AES-alignment padding bytes, preserve server_time, and reject invalid DH parameters before client-DH preparation.",
+      "state_machine": "AwaitingServerDh -> outer Server_DH_Params OK -> decrypt_server_dh_inner_data -> exact authenticated ServerDhInnerData -> prepare_client_dh -> AwaitingDhGen. Any ciphertext, constructor, truncation, nonce, hash, padding or DH-parameter failure returns an error and leaves the handshake in AwaitingServerDh.",
+      "side_effects": [
+        "No production behavior delta: existing decrypt_server_dh_inner_data / AuthKeyHandshake::receive_server_dh already satisfy the fixed-U responsibility",
+        "Adds durable spec and authored-only negative contract coverage in the canonical harness",
+        "Mirrors the same contract blob into the existing desktop tracked provider surface without a second handshake core"
+      ],
+      "failure_cases": [
+        "Empty or non-block-aligned encrypted_answer is accepted",
+        "Unknown server_DH_inner_data constructor is accepted",
+        "A truncated fixed-U field is accepted",
+        "Active nonce or server_nonce mismatch is accepted",
+        "SHA-1 mismatch is accepted or computed over residual AES padding",
+        "More than 15 residual bytes are accepted as alignment padding",
+        "Invalid generator, dh_prime or g_a reaches client-DH preparation",
+        "server_time is skipped or width-misread",
+        "Rejected inner data advances handshake state or publishes partial DH state",
+        "The responsibility expands into auth-key binding/persistence, connection scheduling, multi-request history, gzip or complete difference handling"
+      ],
+      "ui_disposition": "No UI change. This is exact MTProto auth-key handshake inner-response validation inside the existing embedded protocol owner.",
+      "non_ui_responsibilities": [
+        "AES-IGE ciphertext framing and temporary key/IV use",
+        "Constructor-first fixed-U server_DH_inner_data parsing",
+        "Active nonce/server_nonce binding",
+        "Exact g/dh_prime/g_a/server_time decoding",
+        "SHA-1 authentication of the consumed TL object",
+        "Strict 0..15 residual alignment-padding bound",
+        "Existing safe-prime/generator/public-value validation before client DH",
+        "Fail-closed handshake-state continuity"
+      ],
+      "platform_delta": "No production delta. Remote source review confirms canonical handshake.rs@87616f4b96a1775455da42b0bbed77711fb3c9f6 already owns and implements the exact fixed-U inner-DH wire/decryption responsibility. This slice adds only durable specification, exhaustive authored-only contracts and migration bookkeeping.",
+      "existing_owner_candidates": [
+        "bhrumom/fabushi-platform-core:native/telegram-protocol/src/handshake.rs",
+        "bhrumom/fabushi-platform-core:native/telegram-protocol/src/tl.rs",
+        "bhrumom/fabushi-platform-core:native/telegram-protocol/tests/protocol_contract.rs",
+        "source/mahayana/mahayana-rs/providers/telegram-protocol/src/lib.rs",
+        "source/mahayana/mahayana-rs/providers/telegram-protocol/tests/protocol_contract.rs"
+      ],
+      "existing_owner": "Canonical shared telegram-protocol AuthKeyHandshake/decrypt_server_dh_inner_data owner with desktop tracked facade/contracts",
+      "rejected_existing_owners": [
+        "telegram-network/runtime: rejected because handshake decryption and TL/DH validation already belong to telegram-protocol",
+        "new auth-key handshake owner: rejected because AuthKeyHandshake already owns AwaitingServerDh and the active nonce/new_nonce/server_nonce data",
+        "desktop copied handshake core: rejected because the desktop overlay intentionally consumes the canonical shared implementation"
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "bhrumom/fabushi-platform-core:native/telegram-protocol/src/handshake.rs",
+        "bhrumom/fabushi-platform-core:native/telegram-protocol/src/tl.rs",
+        "bhrumom/fabushi-platform-core:native/telegram-protocol/tests/protocol_contract.rs",
+        "source/mahayana/mahayana-rs/providers/telegram-protocol/src/lib.rs",
+        "source/mahayana/mahayana-rs/providers/telegram-protocol/tests/protocol_contract.rs"
+      ],
+      "fabushi_target_symbols": [
+        "decrypt_server_dh_inner_data",
+        "validate_server_dh_parameters",
+        "ServerDhInnerData",
+        "SERVER_DH_INNER_DATA_CONSTRUCTOR",
+        "AuthKeyHandshake::receive_server_dh"
+      ],
+      "target_language": "Rust",
+      "language_rationale": "Exact MTProto handshake cryptographic parsing and state continuity already belong to the existing canonical Rust telegram-protocol owner.",
+      "command_event_contracts": [
+        "non-empty 16-byte-aligned ciphertext + authenticated exact server_DH_inner_data + active nonce pair + trusted DH parameters -> ServerDhInnerData",
+        "unknown/truncated/mismatched/hash-invalid/padding-invalid/DH-invalid inner response -> typed HandshakeError and no AwaitingServerDh state advance"
+      ],
+      "state_owner": "Existing AuthKeyHandshake owns AwaitingServerDh plus active nonce/server_nonce/new_nonce; decrypt_server_dh_inner_data is a synchronous validation function.",
+      "lifecycle_owner": "Existing account-bound TelegramClientLease/runtime -> canonical AuthKeyHandshake production composition. Auth-key persistence/binding/destruction and connection scheduling are outside this slice.",
+      "persistence_and_restart": "No persistence is introduced or mutated by this responsibility.",
+      "concurrency_and_cancellation": "Pure synchronous handshake parsing/validation. No scheduler, background task, callback registry or historical request state is introduced.",
+      "security_boundary": "Ciphertext must be AES-block aligned, the inner constructor and active nonce pair must match, SHA-1 authenticates exactly the consumed fixed-U TL object, residual alignment padding is bounded to 15 bytes, and audited DH safety checks run before any client-DH continuation.",
+      "network_service_dependencies": [
+        "Existing embedded Telegram MTProto plaintext auth-key handshake transport",
+        "fixed-U server_DH_inner_data schema constructor"
+      ],
+      "service_owner": "Canonical embedded Telegram protocol/AuthKeyHandshake owner.",
+      "deployment_evidence": [],
+      "implementation_status": "implemented",
+      "coverage_disposition": "rewritten",
+      "blockers": [
+        "Stage B executable build/unit/contract/integration/packaged validation has not run.",
+        "Auth-key destruction eligibility/local deletion/persistence/teardown and temporary/permanent key binding/expiry/renewal remain open/fail-closed.",
+        "Connection scheduling/racing, plaintext send/retry/timeout and arbitrary wasSent/haveSent/_resendingIds/toSend/_sentContainers histories remain open/fail-closed.",
+        "gzip_packed bounded decompression and complete updates difference/differenceSlice decoding/application remain open/fail-closed.",
+        "Broader fixed-U source/legal/release closure remains open."
+      ],
+      "production_entrypoints": [
+        "existing AuthKeyHandshake::receive_server_dh -> parse_server_dh_params -> decrypt_server_dh_inner_data -> prepare_client_dh",
+        "desktop tracked telegram-protocol facade remains byte-identical to canonical facade; desktop contract mirror consumes the canonical exported implementation without a second handshake core"
+      ],
+      "production_evidence": [
+        "platform-core-spec-commit:3bdde5a158373e3392cac987c8846d16a6fb3162",
+        "platform-core-spec-blob:5174248bd16e0d125abca66b389d0e49bc2a3f05",
+        "platform-core-production-path:native/telegram-protocol/src/handshake.rs@87616f4b96a1775455da42b0bbed77711fb3c9f6",
+        "platform-core-tl-path:native/telegram-protocol/src/tl.rs@89256ab35184b6dc06a095ab34abb9f44e95a264",
+        "platform-core-authored-contract-commit:d724e29265e53a7ee7efd821c8bb37f6e4994cb2",
+        "platform-core-path:native/telegram-protocol/tests/protocol_contract.rs@256f421f54c41256646388833b634cf1191afd91",
+        "desktop-sync-commit:4323b97d3b6041731d5b547118fb746d2eba37a6",
+        "path:source/mahayana/mahayana-rs/providers/telegram-protocol/tests/protocol_contract.rs@256f421f54c41256646388833b634cf1191afd91",
+        "path:source/mahayana/mahayana-rs/providers/telegram-protocol/src/lib.rs@abab39e42f100972484191f0e52e9edd9b88c6cf"
+      ],
+      "test_evidence": [
+        "canonical and desktop tracked protocol contracts authored for exact signed server_time preservation, malformed ciphertext lengths, unknown constructor, every serialized-inner truncation cut, active nonce/server_nonce mismatch, SHA-1 mismatch, >15 residual padding, invalid generator, dh_prime length/trust, empty/oversized/unsafe g_a, and rejected-inner state continuity; not run"
+      ],
+      "target_commit": "4323b97d3b6041731d5b547118fb746d2eba37a6",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Canonical Fabushi account + existing TelegramClientLease/runtime + shared telegram-protocol AuthKeyHandshake production composition",
+      "composition_slot": "Embedded Telegram MTProto auth-key server_DH_inner_data decryption and validation",
+      "capability_component": "Exact fixed-U server_DH_inner_data authenticated parser/DH validator",
+      "variation_axes": [
+        "valid vs malformed ciphertext",
+        "valid vs unknown/truncated/mismatched/hash-invalid/padding-invalid/DH-invalid inner data"
+      ],
+      "shared_owner_contracts": [
+        "Existing AuthKeyHandshake",
+        "Existing telegram-protocol TlReader",
+        "Existing crypto primitives",
+        "Existing desktop tracked protocol facade/contracts",
+        "Existing Cargo path-dependency composition"
+      ],
+      "duplicate_root_check": "No second account, runtime, provider, transport, handshake core, auth key, session registry, request history, decompression runtime, difference runtime, message store, UI root, sidecar, subprocess or Web wrapper was introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Not applicable",
+      "primary_navigation_target": "Existing Messages/Conversation navigation",
+      "collection_surface": "Existing ConversationList; no change",
+      "creation_flow": "Existing canonical conversation creation; no change",
+      "object_action_scope": "Not applicable",
+      "detail_section": "Not applicable",
+      "capability_surface": "Existing ConversationWorkspace through the same provider/runtime; no new surface",
+      "route_contract": "No new route.",
+      "search_scope": "Not applicable",
+      "search_provider": "Existing canonical Search owner; unchanged",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Unchanged.",
+      "search_local_remote_contract": "Not applicable.",
+      "responsive_disposition": "No UI change.",
+      "accessibility_contract": "No UI change.",
+      "keyboard_contract": "No UI change.",
+      "state_continuity_contract": "The same AuthKeyHandshake remains AwaitingServerDh until outer response, inner decryption/authentication/DH validation and client-DH preparation all succeed; rejected inner data does not advance state.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Existing Fabushi design system; no visual changes",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": null,
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "No new icon asset",
+      "avatar_contract": "No change",
+      "content_copy_keys": [],
+      "motion_contract": "No change",
+      "reduced_motion_contract": "No change",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "high",
+      "requirement_ids": [
+        "TDRP-R9-MTPROTO-SERVER-DH-INNER-DATA-WIRE-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-MTPROTO-SERVER-DH-INNER-DATA-WIRE-001",
+        "ORA-TDRP-MTPROTO-SERVER-DH-INNER-DATA-AUTH-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-MTPROTO-SERVER-DH-INNER-CONSTRUCTOR-001",
+        "INV-TDRP-MTPROTO-SERVER-DH-INNER-NONCE-BOUND-001",
+        "INV-TDRP-MTPROTO-SERVER-DH-INNER-SHA1-001",
+        "INV-TDRP-MTPROTO-SERVER-DH-INNER-PADDING-001",
+        "INV-TDRP-MTPROTO-SERVER-DH-INNER-DH-SAFETY-001",
+        "INV-TDRP-MTPROTO-SERVER-DH-INNER-NO-MUTATION-ON-ERROR-001"
+      ],
+      "unit_case_ids": [
+        "UNIT-TDRP-MTPROTO-SERVER-DH-INNER-PARSE-001",
+        "UNIT-TDRP-MTPROTO-SERVER-DH-INNER-FAIL-CLOSED-001"
+      ],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-MTPROTO-SERVER-DH-INNER-WIRE-001"
+      ],
+      "integration_case_ids": [],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "fault_recovery_case_ids": [],
+      "performance_case_ids": [],
+      "security_case_ids": [
+        "SEC-TDRP-MTPROTO-SERVER-DH-INNER-AUTH-001",
+        "SEC-TDRP-MTPROTO-SERVER-DH-INNER-DH-SAFETY-001"
+      ],
+      "soak_case_ids": [],
+      "exploratory_charter_ids": [],
+      "regression_ids": [
+        "REG-TDRP-MTPROTO-SERVER-DH-INNER-MALFORMED-001",
+        "REG-TDRP-MTPROTO-SERVER-DH-INNER-STATE-MUTATION-001"
+      ],
+      "release_gate_ids": [
+        "G-TRACEABILITY",
+        "G-COMPOSITION",
+        "G-SECURITY",
+        "G-EVIDENCE",
+        "G-RELEASE"
+      ],
+      "test_fixture_ids": [
+        "mtproto-server-dh-inner-patterned"
+      ],
+      "test_environment_ids": [
+        "GitHub Actions Stage B matrix (not run)"
+      ],
+      "coverage_matrix_status": "pending",
+      "flake_status": "stable",
+      "release_gate_status": "pending",
+      "acceptance_reviewer": null,
+      "reviewer": null,
+      "license_and_provenance": "Behavioral responsibility is anchored to fixed-U telegramdesktop/tdesktop Telegram/SourceFiles/mtproto/scheme/mtproto.tl@76225965bfc794388db241f3f760db8ab79e84f8 and shipping DcKeyCreator::dhParamsAnswered in Telegram/SourceFiles/mtproto/details/mtproto_dc_key_creator.cpp@13c57454f14b814b5923ea253048fb881ad8cf03. The implementation is source-neutral Rust and copies no upstream C++ implementation.",
+      "notes": "Stage A implementation bookkeeping only. Remote source review confirms existing AuthKeyHandshake::receive_server_dh -> decrypt_server_dh_inner_data already satisfies the fixed-U production semantics, so no production behavior change was made. Durable spec and exhaustive authored-only contracts were added and mirrored but not executed; validation_status=not-run and accepted=false.",
+      "test_execution_evidence": [],
+      "validation_status": "not-run",
+      "accepted": false,
+      "id": "TDRP-R9-MTPROTO-SERVER-DH-INNER-DATA-WIRE-001",
       "source_paths": [
         "Telegram/SourceFiles/mtproto/scheme/mtproto.tl@76225965bfc794388db241f3f760db8ab79e84f8",
         "Telegram/SourceFiles/mtproto/details/mtproto_dc_key_creator.cpp@13c57454f14b814b5923ea253048fb881ad8cf03"

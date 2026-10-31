@@ -676,3 +676,37 @@ fixed-U `resPQ#05162463` wire responsibility. Canonical production handshake rem
 `abab39e42f100972484191f0e52e9edd9b88c6cf` remains unchanged. Ledger remains
 `implemented / validation_status=not-run / accepted=false`, coverage
 `89 / 16172 unknown / 16145 unread / 0 omitted`. No executable validation was performed.
+
+
+### Round 80 — server_DH_inner_data exact authenticated wire validation
+
+Fixed U remains `f985723b552b30fe1c17d377d57f44e61a15a8c4`. The shipping
+`DcKeyCreator::dhParamsAnswered` consumes fixed-U
+`server_DH_inner_data#b5890dba nonce:int128 server_nonce:int128 g:int dh_prime:string g_a:string server_time:int`.
+Remote source review confirms the existing canonical
+`AuthKeyHandshake::receive_server_dh -> decrypt_server_dh_inner_data` already owns and exactly implements this
+wire/decryption responsibility: non-empty AES-IGE block framing, temporary key/IV derivation from active
+new_nonce/server_nonce, constructor-first exact field decode, active nonce/server_nonce binding, SHA-1 authentication
+over exactly the consumed TL object, residual AES alignment padding bounded to 0..15 bytes, signed server_time
+preservation, and existing safe-prime/generator/public-value checks before client-DH preparation.
+
+Because production behavior is already exact, no `handshake.rs` behavior delta was manufactured. Spec-first
+platform commit `3bdde5a158373e3392cac987c8846d16a6fb3162`
+(`docs/specs/telegram-mtproto-server-dh-inner-data-wire.md@5174248bd16e0d125abca66b389d0e49bc2a3f05`)
+records the no-production-delta disposition. Canonical authored-contract commit
+`d724e29265e53a7ee7efd821c8bb37f6e4994cb2` expands the existing harness with exact signed server_time,
+empty/non-block ciphertext, unknown constructor, every serialized-inner truncation cut, nonce/server_nonce mismatch,
+SHA-1 mismatch, >15 residual padding, invalid generator, dh_prime length/trust, empty/oversized/unsafe g_a and
+rejected-inner state-continuity cases; canonical contract blob is
+`256f421f54c41256646388833b634cf1191afd91`. Desktop sync
+`4323b97d3b6041731d5b547118fb746d2eba37a6` mirrors that blob byte-for-byte; desktop facade remains
+`abab39e42f100972484191f0e52e9edd9b88c6cf` and no duplicate handshake core is introduced.
+
+Ledger adds `TDRP-R9-MTPROTO-SERVER-DH-INNER-DATA-WIRE-001`; coverage becomes
+`responsibilities_total=90`, `unknown=16172`, `unread=16145`, `omitted=0`; the responsibility is
+`implemented / validation_status=not-run / accepted=false`. Auth-key binding/expiry/persistence/teardown,
+connection scheduling/racing/send lifecycle, arbitrary multi-request history, gzip, complete difference
+decoding/application, broader source/legal closure and release acceptance remain fail-closed/open.
+
+No GitHub Actions/status/check query or trigger, build, typecheck, lint, schema validator, generator,
+unit/contract/integration/E2E test, package, deployment, installation or runtime acceptance was performed.
