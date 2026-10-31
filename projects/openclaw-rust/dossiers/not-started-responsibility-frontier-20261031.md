@@ -72,6 +72,25 @@ existing Host turn/session composition boundary that can project the
 validated per-session state into one `SandSessionOptions` instance, followed
 by a negative test proving parent-agent defaults remain unchanged.
 
+## 2026-10-31 session work-admission boundary recheck
+
+The current source also does not contain a production equivalent of the
+upstream `assertAgentSessionWriteAdmission` contract. The session runtime has
+active-session switching, shutdown draining, deletion and deferred activation
+paths, but none checks an archived-session state before admitting new agent
+work. The `archive`/`unarchive` branches found in `main.rs` are cloud-agent
+lifecycle review actions and do not consume `ProductionSessionWorkers` as a
+session work-admission owner. No production caller for the contract's
+background-session result or archive/restore review transition was found.
+
+These adjacent lifecycle paths therefore cannot close
+`OCRM-RESP-SESSION-WORK-ADMISSION-001`; its status remains
+`not-started/not-wired/not-run/pending`. The next direct instrument is a
+session-owned admission API that fences writes against archive/delete
+generations and returns a durable terminal/review outcome to the existing
+turn consumer. No second session store or cloud-agent archive shim is
+authorized by this finding.
+
 ## Evidence boundary
 
 These are implementation gaps, not acceptance approvals. No row is promoted by the
