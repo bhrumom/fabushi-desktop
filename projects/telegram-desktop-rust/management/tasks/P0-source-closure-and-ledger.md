@@ -1063,3 +1063,45 @@ history and ack/resend application. Arbitrary request history, connection schedu
 temporary/permanent auth-key binding/expiry/persistence/teardown, gzip, complete difference/differenceSlice
 decoding/application, broader fixed-U source/legal closure, Stage-B executable evidence and independent release ACCEPT
 remain open/fail-closed. No executable validation was performed.
+
+
+## Stage-A MTProto bad_msg_notification adjacent wire no-production-delta (round 88, 2026-11-01)
+
+Fixed U remains `telegramdesktop/tdesktop@f985723b552b30fe1c17d377d57f44e61a15a8c4`,
+with `mtproto.tl@76225965bfc794388db241f3f760db8ab79e84f8` and
+`session_private.cpp@13cbc76ec723386027b5b4dcac79999b791c4614`. The live upstream schema is
+`bad_msg_notification#a7eff811 bad_msg_id:long bad_msg_seqno:int error_code:int`; the shipping
+`mtpc_bad_msg_notification` branch completes `MTPBadMsgNotification::read(from, end)` before it enters resend,
+clock correction, request-history or session-reset decisions.
+
+The exact wire responsibility had already been closed by the existing shared owner in round 60. Current remote
+readback confirms canonical `api.rs@ebfb3670b5cd097b9ce288782c7954f5cfe9fc43`,
+`tl.rs@89256ab35184b6dc06a095ab34abb9f44e95a264`,
+`lib.rs@abab39e42f100972484191f0e52e9edd9b88c6cf`, and
+`telegram-network/src/lib.rs@1fc1b1f69e3e37377400d078f916599e0c7b20bc`. The protocol parser owns constructor
+`0xa7eff811`, signed i64/i32/i32 decoding, truncation failure, and strict EOF. The network recovery consumers remain
+pre-existing application semantics and were not modified in this round.
+
+Spec-first no-production-delta record is platform-core commit
+`9984ca1b13185693961ff0735156e55ab035e62a` / spec blob
+`7155c589c1e4090a534060e42fc9ebce1f8c404d`. Canonical authored-only external contracts are commit
+`bc5f9410a520e5e35d40a1c5a1e6a8f2031d6030` / blob
+`184e5bfa7832e9bc7c7d4f594011b032382e11d3`; desktop mirror commit
+`58237abd9bcb64671d1bbfe88a3cdc8bdca5a2a4` has the byte-identical contract blob. Desktop production
+api/lib/network remain `ebfb3670b5cd097b9ce288782c7954f5cfe9fc43` /
+`abab39e42f100972484191f0e52e9edd9b88c6cf` /
+`1fc1b1f69e3e37377400d078f916599e0c7b20bc`.
+
+The existing ledger row `TDRP-R9-MTPROTO-BAD-MSG-NOTIFICATION-WIRE-001` is reused rather than duplicated and
+remains `implemented / validation_status=not-run / accepted=false`. Coverage remains
+`responsibilities_total=97`, `unknown=16172`, `unread=16145`, `omitted=0`. The round88 contracts lock the
+exact 20-byte layout, signed extremes, constructor and each field truncation boundary, wrong constructor, trailing
+bytes and exact EOF; they were authored only and not run.
+
+Bad-time/time-correction recovery, request correlation/history, retry/session-reset application,
+acknowledgement/resend application, connection scheduling/racing/send retry, auth-key lifecycle, gzip, complete
+difference/differenceSlice decoding/application, broader fixed-U source/legal closure, Stage-B executable evidence and
+independent release ACCEPT remain outside this isolated wire-only no-production-delta claim.
+
+No GitHub Actions/status/check query or trigger, build, typecheck, lint, schema validator, generator,
+unit/contract/integration/E2E test, package, deployment, installation or runtime acceptance was performed.

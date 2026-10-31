@@ -17585,7 +17585,7 @@
         "bad_msg_notification_matches_request"
       ],
       "target_language": "Rust",
-      "language_rationale": "The shared Rust protocol/network crates already own authenticated MTProto service parsing and live server-salt/session retry policy, so exact bad-server-salt decoding belongs there rather than in a new history or provider subsystem.",
+      "language_rationale": "The shared Rust protocol/network crates already own authenticated MTProto service parsing and live session recovery policy, so exact bad_msg_notification decoding belongs in telegram-protocol while recovery remains in the existing telegram-network owner.",
       "command_event_contracts": [
         "authenticated BAD_MSG_NOTIFICATION -> exact typed parse -> current request correlation -> bounded recovery outcome",
         "incoming message-id outside time window -> exact typed bad_msg_notification parse -> only valid 16/17/64 may use direct recovery window"
@@ -17624,23 +17624,38 @@
         "desktop-implementation-commit:1205f8709995aa4f5fd5dafdc9fb5121fbfce06c",
         "path:source/mahayana/mahayana-rs/providers/telegram-protocol/src/api.rs@15e34bbb0e9c5a5d4fdd8b7a9cdedf3d6b123080",
         "path:source/mahayana/mahayana-rs/providers/telegram-protocol/src/lib.rs@2c4897cfdba4502d8ca880d7a58cfd0e88877bf7",
-        "path:source/mahayana/mahayana-rs/providers/telegram-network/src/lib.rs@1fc1b1f69e3e37377400d078f916599e0c7b20bc"
+        "path:source/mahayana/mahayana-rs/providers/telegram-network/src/lib.rs@1fc1b1f69e3e37377400d078f916599e0c7b20bc",
+        "platform-core-round88-no-production-delta-spec-commit:9984ca1b13185693961ff0735156e55ab035e62a",
+        "platform-core-round88-no-production-delta-spec-blob:7155c589c1e4090a534060e42fc9ebce1f8c404d",
+        "platform-core-current-production-path:native/telegram-protocol/src/api.rs@ebfb3670b5cd097b9ce288782c7954f5cfe9fc43",
+        "platform-core-current-tl-path:native/telegram-protocol/src/tl.rs@89256ab35184b6dc06a095ab34abb9f44e95a264",
+        "platform-core-current-lib-path:native/telegram-protocol/src/lib.rs@abab39e42f100972484191f0e52e9edd9b88c6cf",
+        "platform-core-current-network-path:native/telegram-network/src/lib.rs@1fc1b1f69e3e37377400d078f916599e0c7b20bc",
+        "platform-core-round88-authored-contract-commit:bc5f9410a520e5e35d40a1c5a1e6a8f2031d6030",
+        "platform-core-round88-contract-path:native/telegram-protocol/tests/protocol_contract.rs@184e5bfa7832e9bc7c7d4f594011b032382e11d3",
+        "desktop-round88-contract-sync-commit:58237abd9bcb64671d1bbfe88a3cdc8bdca5a2a4",
+        "path:source/mahayana/mahayana-rs/providers/telegram-protocol/src/api.rs@ebfb3670b5cd097b9ce288782c7954f5cfe9fc43",
+        "path:source/mahayana/mahayana-rs/providers/telegram-protocol/src/lib.rs@abab39e42f100972484191f0e52e9edd9b88c6cf",
+        "path:source/mahayana/mahayana-rs/providers/telegram-network/src/lib.rs@1fc1b1f69e3e37377400d078f916599e0c7b20bc",
+        "path:source/mahayana/mahayana-rs/providers/telegram-protocol/tests/protocol_contract.rs@184e5bfa7832e9bc7c7d4f594011b032382e11d3",
+        "stage-a-round88-evidence:projects/telegram-desktop-rust/evidence/round88-mtproto-bad-msg-notification-wire-20261101.md"
       ],
       "test_evidence": [
         "platform-core native/telegram-protocol/src/api.rs exact bad_msg_notification three-field parse contract authored, not run",
         "platform-core native/telegram-protocol/src/api.rs wrong-constructor, truncation and trailing rejection contracts authored, not run",
         "platform-core native/telegram-network/src/lib.rs current-request-only correlation and malformed clock-window contracts authored, not run",
-        "desktop synchronized protocol/network contracts authored, not run"
+        "desktop synchronized protocol/network contracts authored, not run",
+        "round88 canonical and desktop external authored-only contracts cover exact 20-byte layout, signed i64/i32/i32 extremes, wrong constructor, truncation at constructor/each field boundary, trailing bytes and exact EOF; not run"
       ],
-      "target_commit": "1205f8709995aa4f5fd5dafdc9fb5121fbfce06c",
+      "target_commit": "58237abd9bcb64671d1bbfe88a3cdc8bdca5a2a4",
       "workflow_run": null,
       "run_attempt": null,
       "job": null,
       "artifact_id": null,
       "artifact_digest": null,
       "composition_root": "Canonical Fabushi account + existing TelegramClientLease/runtime + shared MTProto protocol/network production composition",
-      "composition_slot": "Embedded Telegram encrypted session receive-side bad-server-salt validation and live salt recovery",
-      "capability_component": "Typed fixed-U bad_server_salt wire validation",
+      "composition_slot": "Embedded Telegram encrypted session receive-side bad_msg_notification exact wire validation before existing recovery application",
+      "capability_component": "Typed fixed-U bad_msg_notification wire validation",
       "variation_axes": [
         "exact payload vs wrong/truncated/trailing payload",
         "matching vs unrelated current request id",
@@ -17763,7 +17778,7 @@
       "acceptance_reviewer": null,
       "reviewer": null,
       "license_and_provenance": "Behavioral responsibility is anchored to fixed-U telegramdesktop/tdesktop Telegram/SourceFiles/mtproto/session_private.cpp@13cbc76ec723386027b5b4dcac79999b791c4614 and Telegram/SourceFiles/mtproto/scheme/mtproto.tl@76225965bfc794388db241f3f760db8ab79e84f8. The implementation is source-neutral Rust and copies no upstream C++ implementation.",
-      "notes": "Stage A implementation only. This row closes complete bad_msg_notification wire validation, typed clock-window gating, and current-one-request correlation in both existing receive branches; it does not claim arbitrary historical sent/container bookkeeping. Global unknown/unread source-entry counts remain unchanged because this is a newly mapped responsibility slice within already-open fixed-U source coverage. Contracts are authored but not executed; validation_status=not-run and accepted=false.",
+      "notes": "Stage A implementation only. This row closes complete bad_msg_notification wire validation, typed clock-window gating, and current-one-request correlation in both existing receive branches; it does not claim arbitrary historical sent/container bookkeeping. Global unknown/unread source-entry counts remain unchanged because this is a newly mapped responsibility slice within already-open fixed-U source coverage. Contracts are authored but not executed; validation_status=not-run and accepted=false. Round88 adjacent revalidation confirms the live parser/TlReader already satisfy exact constructor, signed 8/4/4 field widths, fail-closed truncation and strict EOF, so no production behavior delta was made. External canonical/desktop contracts were added and mirrored but not executed. This wire-only disposition is strictly separate from pre-existing bad-time/time-correction recovery, current-request correlation, retry/session reset, sent/container history, acknowledgement/resend application and broader session semantics.",
       "test_execution_evidence": [],
       "validation_status": "not-run",
       "accepted": false
