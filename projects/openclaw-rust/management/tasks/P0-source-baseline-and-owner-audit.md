@@ -244,3 +244,11 @@ entries（61,755 blobs、2,241 directories），无 gitlink，根依赖/license
 inputs 保持不变。该 subject 已同步到 `upstream.lock.json::live_candidate`，
 仍仅为 discovery-only；既有 inventory、依赖闭包、LFS 与 Actions provenance
 不得重标复用，P0-AC02、source closure 与所有 global flags 继续未闭合。
+
+2026-10-31T09:37:57Z 的只读远端复核又发现 OpenClaw `main` 漂移到
+`ad57b6135a55a6792b6d703bc1750954d854d6aa` / tree
+`24204d2196587105bf3af93a999cea03e8bdfae5`；递归 tree 未截断，共 64,011
+entries（61,770 blobs、2,241 directories、0 gitlinks），根依赖/license 输入
+identities 保持不变。该 subject 已同步到 `upstream.lock.json::live_candidate`，
+仍仅为 discovery-only；此前 inventory、依赖闭包、LFS 与 Actions provenance
+不得重标复用，P0-AC02、source closure 与所有 global flags 继续未闭合。
