@@ -1823,5 +1823,394 @@
     "baseline_ready": false,
     "accepted": false,
     "validation_status": "not-run"
+  },
+  "round37_current_shipping_telegram_source_provenance": {
+    "evidence_mode": "manual-github-api-tree-blob-source-reads-plus-public-release-index-reads-stage-a-no-ci-no-generator-no-validator",
+    "checkpoint_commit_before_round": "231202ef98f0e93845fcadebae67ebfffd143109",
+    "fixed_tdesktop_upstream_commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+    "tdlib_source_authority": {
+      "repository": "tdlib/td",
+      "commit": "a17f87c4cff7b90b278d12b91ba0614383aaee82",
+      "root_tree_sha": "27af7989c2c65dec54eb7860fb6932d5e422c7b5",
+      "recursive_tree_truncated": false,
+      "recursive_tree_entries": 1714,
+      "license": {
+        "path": "LICENSE_1_0.txt",
+        "blob_sha": "36b7cd93cdfbac762f5be4c6ce276df2ea6305c2",
+        "license_family": "Boost-Software-License-1.0",
+        "downstream_exact_copy_path": "source/mahayana/mahayana-rs/providers/telegram-protocol/LICENSE-TDLIB-BOOST-1.0.txt",
+        "downstream_exact_copy_blob_sha": "36b7cd93cdfbac762f5be4c6ce276df2ea6305c2"
+      },
+      "notice_patents_path_name_scan": {
+        "NOTICE": "no-separate-NOTICE-path-found-in-the-exact-non-truncated-tdlib-tree",
+        "PATENTS": "no-separate-PATENTS-path-found-in-the-exact-non-truncated-tdlib-tree",
+        "caveat": "This is an exact-tree path-name/source-authority observation for the pinned TDLib commit, not a release legal opinion."
+      }
+    },
+    "static_shipping_owner_chain": {
+      "workspace_manifest": {
+        "path": "source/mahayana/mahayana-rs/Cargo.toml",
+        "blob_sha": "144c67c76daaf2229e817f9830e678a3e6d4cf3a",
+        "evidence": "workspace includes providers/telegram-* and mahayana-telegram"
+      },
+      "host_manifest": {
+        "path": "source/mahayana/mahayana-rs/mahayana-host/Cargo.toml",
+        "blob_sha": "cb88615198f0320f01b0cdc65f1dd2cff8047a54",
+        "evidence": "mahayana-host directly depends on mahayana-telegram"
+      },
+      "host_wiring": {
+        "path": "source/mahayana/mahayana-rs/mahayana-host/src/lib.rs",
+        "blob_sha": "fd28ba534d82cc928a4c7723ec3f9c50ddd1e280",
+        "symbols": [
+          "TelegramConversationProvider",
+          "CreateHost.telegram_client_id",
+          "TelegramConversationProvider::from_client_id",
+          "builder.with_provider"
+        ],
+        "evidence": "when telegram_client_id is supplied, Host constructs TelegramConversationProvider and registers it in the shared ConversationProvider set"
+      },
+      "conversation_adapter": {
+        "path": "source/mahayana/mahayana-rs/mahayana-telegram/src/lib.rs",
+        "blob_sha": "cec9d354acc3923ab05e30af55baa4b7c814adf5",
+        "evidence": "shared ConversationProvider adapter directly consumes fabushi-telegram-core and fabushi-telegram-runtime"
+      },
+      "adapter_manifest": {
+        "path": "source/mahayana/mahayana-rs/mahayana-telegram/Cargo.toml",
+        "blob_sha": "f43109356f1f486a82a2d0120f6e78808c431c40"
+      },
+      "ffi_manifest": {
+        "path": "source/mahayana/mahayana-rs/mahayana-ffi/Cargo.toml",
+        "blob_sha": "8b0d6b7671cacbb52760057d15edd72349716bf0",
+        "evidence": "native compatibility ABI directly depends on fabushi-telegram-runtime and mahayana-host"
+      },
+      "lockfile": {
+        "path": "source/mahayana/mahayana-rs/Cargo.lock",
+        "blob_sha": "5c343a8b1bc0f88a68fd0055d372af55f4dfbf55",
+        "evidence": "resolved package graph contains mahayana-host -> mahayana-telegram -> fabushi-telegram-core/fabushi-telegram-runtime"
+      },
+      "validation_disposition": "static-source-wiring-only-runtime-packaged-acceptance-not-run"
+    },
+    "file_level_mappings": [
+      {
+        "id": "ROUND37-TDLIB-SCHEMA-AUDIT-BASELINES",
+        "downstream_path": "source/mahayana/mahayana-rs/providers/telegram-protocol/src/schema.rs",
+        "downstream_blob_sha": "6e2de8f02e61ec47d2e925eb5a2ad06fe16755c9",
+        "source_repository": "tdlib/td",
+        "source_commit": "a17f87c4cff7b90b278d12b91ba0614383aaee82",
+        "source_inputs": [
+          {
+            "path": "td/generate/scheme/td_api.tl",
+            "blob_sha": "4dac6c8b10eeb76dd5d0280c9f374281990db877",
+            "role": "digest-and-declaration-count-audit-baseline"
+          },
+          {
+            "path": "td/generate/scheme/telegram_api.tl",
+            "blob_sha": "c48d7914bc151a514b8c93c1b514bce48b28cb27",
+            "role": "digest-and-declaration-count-audit-baseline"
+          },
+          {
+            "path": "td/generate/scheme/mtproto_api.tl",
+            "blob_sha": "b2508b478b9e5dd51af1dde33adcbf87949b9a5c",
+            "role": "digest-and-declaration-count-audit-baseline"
+          }
+        ],
+        "transformation": "derived-audit-baseline-metadata-digests-and-declaration-counts-in-checked-in-rust-source",
+        "license_basis": "TDLib Boost Software License 1.0 exact license blob 36b7cd93cdfbac762f5be4c6ce276df2ea6305c2",
+        "notice_path": "source/mahayana/mahayana-rs/providers/telegram-protocol/THIRD_PARTY_NOTICES.md",
+        "release_review_disposition": "source-and-license-mapped-validation-not-run-release-review-required"
+      },
+      {
+        "id": "ROUND37-TDLIB-API-WIRE-SCHEMA-INFORMED",
+        "downstream_path": "source/mahayana/mahayana-rs/providers/telegram-protocol/src/api.rs",
+        "downstream_blob_sha": "a5a226baa675864f142f5c815d5829bf7344fd87",
+        "source_repository": "tdlib/td",
+        "source_commit": "a17f87c4cff7b90b278d12b91ba0614383aaee82",
+        "source_inputs": [
+          {
+            "path": "td/generate/scheme/telegram_api.tl",
+            "blob_sha": "c48d7914bc151a514b8c93c1b514bce48b28cb27",
+            "role": "constructor-identifiers-field-order-and-result-types"
+          },
+          {
+            "path": "td/generate/scheme/mtproto_api.tl",
+            "blob_sha": "b2508b478b9e5dd51af1dde33adcbf87949b9a5c",
+            "role": "rpc_error-and-msgs_ack-wire-declarations"
+          }
+        ],
+        "mapped_declarations": [
+          "invokeWithLayer#da9b0d0d",
+          "initConnection#c1cd5ea9",
+          "help.getConfig#c4f9186b",
+          "auth.sendCode#a677244f",
+          "codeSettings#ad253d78",
+          "auth.signIn#8d52a951",
+          "auth.signUp#aac7b717",
+          "dcOption#18b7a10d",
+          "config#cc1a241e",
+          "auth.sentCode#5e002502",
+          "auth.sentCodeSuccess#2390fe44",
+          "auth.sentCodePaymentRequired#f8827ebf",
+          "account.getPassword#548a30f5",
+          "account.password#957b50fb",
+          "passwordKdfAlgoSHA256SHA256PBKDF2HMACSHA512iter100000SHA256ModPow#3a912d4a",
+          "auth.checkPassword#d18b4d16",
+          "rpc_error#2144ca19",
+          "msgs_ack#62d6b459"
+        ],
+        "transformation": "manual-rust-tl-request-response-encoding-and-partial-parsing-from-exact-schema-declarations-no-byte-copy-asserted",
+        "license_basis": "TDLib Boost Software License 1.0 exact license blob 36b7cd93cdfbac762f5be4c6ce276df2ea6305c2",
+        "notice_path": "source/mahayana/mahayana-rs/providers/telegram-protocol/THIRD_PARTY_NOTICES.md",
+        "release_review_disposition": "source-informed-wire-mapping-recorded-validation-not-run-release-review-required"
+      },
+      {
+        "id": "ROUND37-TDLIB-UPDATES-WIRE-SCHEMA-INFORMED",
+        "downstream_path": "source/mahayana/mahayana-rs/providers/telegram-protocol/src/updates.rs",
+        "downstream_blob_sha": "05cef74aec2f04f4fd73081aba0ed05383101408",
+        "source_repository": "tdlib/td",
+        "source_commit": "a17f87c4cff7b90b278d12b91ba0614383aaee82",
+        "source_path": "td/generate/scheme/telegram_api.tl",
+        "source_blob_sha": "c48d7914bc151a514b8c93c1b514bce48b28cb27",
+        "mapped_declarations": [
+          "updates.state#a56c2a3e",
+          "updates.differenceEmpty#5d75a138",
+          "updates.differenceTooLong#4afe8f6d",
+          "updates.getState#edd4882a",
+          "updates.getDifference#19c2f763"
+        ],
+        "transformation": "manual-rust-wire-encoding-and-terminal-response-parsing-from-exact-schema-declarations",
+        "license_basis": "TDLib Boost Software License 1.0 exact license blob 36b7cd93cdfbac762f5be4c6ce276df2ea6305c2",
+        "notice_path": "source/mahayana/mahayana-rs/providers/telegram-protocol/THIRD_PARTY_NOTICES.md",
+        "release_review_disposition": "source-informed-wire-mapping-recorded-validation-not-run-release-review-required"
+      },
+      {
+        "id": "ROUND37-TDLIB-HANDSHAKE-CONSTANTS-AND-BEHAVIOR",
+        "downstream_path": "source/mahayana/mahayana-rs/providers/telegram-protocol/src/handshake.rs",
+        "downstream_blob_sha": "e430fcc1344c44849873487a67bf98fda6b39ec7",
+        "source_repository": "tdlib/td",
+        "source_commit": "a17f87c4cff7b90b278d12b91ba0614383aaee82",
+        "source_inputs": [
+          {
+            "path": "td/generate/scheme/mtproto_api.tl",
+            "blob_sha": "b2508b478b9e5dd51af1dde33adcbf87949b9a5c",
+            "role": "handshake-constructor-identifiers-and-wire-fields"
+          },
+          {
+            "path": "td/telegram/DhCache.cpp",
+            "blob_sha": "eb9a4f3ea83fe5223c588f9d304b115a9bcefcf3",
+            "role": "built-in-good-DH-prime"
+          },
+          {
+            "path": "td/telegram/net/PublicRsaKeySharedMain.cpp",
+            "blob_sha": "abdbff5970e2692f19b27506ebcd358401b29d56",
+            "role": "main-and-test-RSA-public-keys"
+          },
+          {
+            "path": "td/mtproto/Handshake.cpp",
+            "blob_sha": "35c483f6d3ee17c1b56c26bafb6e8fe2c961e55d",
+            "role": "source-informed-handshake-state-and-wire-behavior-reference"
+          },
+          {
+            "path": "td/mtproto/DhHandshake.cpp",
+            "blob_sha": "ca410d395f61afd831200ce911a635b15b89ec2b",
+            "role": "source-informed-DH-handshake-behavior-reference"
+          }
+        ],
+        "transformation": "schema-constant-transcription-plus-PKCS1-PEM-to-modulus-exponent-normalization-plus-source-informed-independent-rust-handshake-implementation",
+        "mapped_constructor_ids": [
+          "req_pq_multi#be7e8ef1",
+          "resPQ#05162463",
+          "p_q_inner_data_dc#a9f55f95",
+          "req_DH_params#d712e4be",
+          "server_DH_params_ok#d0e8075c",
+          "server_DH_inner_data#b5890dba",
+          "client_DH_inner_data#6643b654",
+          "set_client_DH_params#f5045f1f",
+          "dh_gen_ok#3bcbf734",
+          "dh_gen_retry#46dc1fb9",
+          "dh_gen_fail#a69dae02"
+        ],
+        "license_basis": "TDLib Boost Software License 1.0 exact license blob 36b7cd93cdfbac762f5be4c6ce276df2ea6305c2",
+        "notice_path": "source/mahayana/mahayana-rs/providers/telegram-protocol/THIRD_PARTY_NOTICES.md",
+        "release_review_disposition": "constants-and-source-informed-behavior-mapped-validation-not-run-release-review-required"
+      },
+      {
+        "id": "ROUND37-TDLIB-MTPROTO2-CRYPTO-SOURCE-INFORMED",
+        "downstream_path": "source/mahayana/mahayana-rs/providers/telegram-protocol/src/crypto.rs",
+        "downstream_blob_sha": "032b6fcf384c23337facad55b8f9f11c0023dbbd",
+        "source_repository": "tdlib/td",
+        "source_commit": "a17f87c4cff7b90b278d12b91ba0614383aaee82",
+        "source_inputs": [
+          {
+            "path": "td/mtproto/KDF.cpp",
+            "blob_sha": "36daac0b1538cea89b897cc81ebb889182781eb4",
+            "role": "MTProto-2-KDF2-key-IV-derivation"
+          },
+          {
+            "path": "td/mtproto/Transport.cpp",
+            "blob_sha": "d23173e15db3abdfff6310e8daced15ab42a9761",
+            "role": "message-key-large-message-key-padding-and-envelope-behavior"
+          }
+        ],
+        "transformation": "source-informed-independent-rust-MTProto2-crypto-envelope-KDF-and-AES-IGE-implementation-no-byte-copy-asserted",
+        "license_basis": "TDLib Boost Software License 1.0 exact license blob 36b7cd93cdfbac762f5be4c6ce276df2ea6305c2",
+        "notice_path": "source/mahayana/mahayana-rs/providers/telegram-protocol/THIRD_PARTY_NOTICES.md",
+        "release_review_disposition": "source-informed-mapping-recorded-validation-not-run-release-review-required"
+      },
+      {
+        "id": "ROUND37-TDLIB-SESSION-TIME-SEMANTICS-SOURCE-INFORMED",
+        "downstream_path": "source/mahayana/mahayana-rs/providers/telegram-protocol/src/session.rs",
+        "downstream_blob_sha": "bc5dfce3361f7a15c26a4c7a878822dd0f0e6756",
+        "source_repository": "tdlib/td",
+        "source_commit": "a17f87c4cff7b90b278d12b91ba0614383aaee82",
+        "source_path": "td/mtproto/AuthData.cpp",
+        "source_blob_sha": "56c59ae337fbf28a3ec6af2c59eb5c46ca1d4566",
+        "transformation": "source-informed-independent-rust-message-id-time-window-and-replay-guard-implementation; sequence-number-semantics-also-follow-public-MTProto-contract-with-no-single-file-copy-claim",
+        "license_basis": "TDLib Boost Software License 1.0 exact license blob 36b7cd93cdfbac762f5be4c6ce276df2ea6305c2",
+        "notice_path": "source/mahayana/mahayana-rs/providers/telegram-protocol/THIRD_PARTY_NOTICES.md",
+        "release_review_disposition": "partial-source-informed-mapping-recorded-validation-not-run-release-review-required"
+      },
+      {
+        "id": "ROUND37-TDLIB-TCP-TRANSPORT-SOURCE-INFORMED",
+        "downstream_path": "source/mahayana/mahayana-rs/providers/telegram-protocol/src/transport.rs",
+        "downstream_blob_sha": "f4ce1cd004e58283864511d25e4ad04d1cfdcbd3",
+        "source_repository": "tdlib/td",
+        "source_commit": "a17f87c4cff7b90b278d12b91ba0614383aaee82",
+        "source_inputs": [
+          {
+            "path": "td/mtproto/TcpTransport.cpp",
+            "blob_sha": "55937def171c8c6aa5d63055beca7403e9507edf",
+            "role": "intermediate-padded-intermediate-magic-framing-and-quick-ack-behavior"
+          },
+          {
+            "path": "td/mtproto/Transport.cpp",
+            "blob_sha": "d23173e15db3abdfff6310e8daced15ab42a9761",
+            "role": "MTProto-packet-transport-context"
+          }
+        ],
+        "transformation": "source-informed-independent-rust-full-abridged-intermediate-padded-intermediate-frame-codec; exact-one-file-derivation-for-all-modes-not-asserted",
+        "license_basis": "TDLib Boost Software License 1.0 exact license blob 36b7cd93cdfbac762f5be4c6ce276df2ea6305c2",
+        "notice_path": "source/mahayana/mahayana-rs/providers/telegram-protocol/THIRD_PARTY_NOTICES.md",
+        "release_review_disposition": "partial-source-informed-mapping-recorded-validation-not-run-release-review-required"
+      }
+    ],
+    "prior_round36_mappings_retained": [
+      "ROUND36-TDLIB-LICENSE-EXACT-COPY",
+      "ROUND36-TDLIB-SCHEMA-GENERATED-CATALOG",
+      "ROUND36-TDLIB-BOOTSTRAP-DC-TRANSCRIPTION",
+      "ROUND36-TDLIB-SRP-SOURCE-INFORMED"
+    ],
+    "reviewed_current_shipping_files_without_new_copy_claim": [
+      {
+        "path": "source/mahayana/mahayana-rs/providers/telegram-core/src/domain.rs",
+        "blob_sha": "bf14f5102a9f22d3d34263d38089dcbcffaf99ee",
+        "disposition": "fabushi-domain-model-no-specific-upstream-byte-copy-generated-or-transcribed-mapping-established-this-round"
+      },
+      {
+        "path": "source/mahayana/mahayana-rs/providers/telegram-core/src/engine.rs",
+        "blob_sha": "d0b41719c489ee54e8a2d42ec43bdc4c2ea8d8fd",
+        "disposition": "fabushi-state-engine-no-specific-upstream-byte-copy-generated-or-transcribed-mapping-established-this-round"
+      },
+      {
+        "path": "source/mahayana/mahayana-rs/providers/telegram-core/src/feature.rs",
+        "blob_sha": "2c0b09b5b23aed947e837f981c71523951d75b68",
+        "disposition": "fabushi-feature-ledger-no-specific-upstream-byte-copy-generated-or-transcribed-mapping-established-this-round"
+      },
+      {
+        "path": "source/mahayana/mahayana-rs/providers/telegram-core/src/lib.rs",
+        "blob_sha": "9f76970d54d82d6bd58ec66e0db593859961a173",
+        "disposition": "fabushi-module-boundary"
+      },
+      {
+        "path": "source/mahayana/mahayana-rs/providers/telegram-media/src/lib.rs",
+        "blob_sha": "f171cf350b4d502d2a303ce358742002540dd8cd",
+        "disposition": "fabushi-media-owner-no-specific-upstream-byte-copy-generated-or-transcribed-mapping-established-this-round"
+      },
+      {
+        "path": "source/mahayana/mahayana-rs/providers/telegram-network/src/lib.rs",
+        "blob_sha": "81c9939902dec158462325c48a17c1f480d587dc",
+        "disposition": "fabushi-network-adapter-consumes-telegram-protocol; DC-source-provenance-is-recorded-separately"
+      },
+      {
+        "path": "source/mahayana/mahayana-rs/providers/telegram-protocol/src/auth.rs",
+        "blob_sha": "bd20416c6de3458311e8141dc084ba90e837c8a2",
+        "disposition": "fabushi-authorization-state-machine-no-byte-copy-claim-established-this-round"
+      },
+      {
+        "path": "source/mahayana/mahayana-rs/providers/telegram-protocol/src/generated/mod.rs",
+        "blob_sha": "ff251fbd1615487f99820c11a61b1e5fc08b66b8",
+        "disposition": "fabushi-wrapper-around-generated-schema-catalog"
+      },
+      {
+        "path": "source/mahayana/mahayana-rs/providers/telegram-protocol/src/lib.rs",
+        "blob_sha": "98b5fbbbc21c0f6456683ddcac8f53ddfe98df7b",
+        "disposition": "fabushi-protocol-module-boundary"
+      },
+      {
+        "path": "source/mahayana/mahayana-rs/providers/telegram-protocol/src/tl.rs",
+        "blob_sha": "89256ab35184b6dc06a095ab34abb9f44e95a264",
+        "disposition": "fabushi-TL-codec-no-specific-byte-copy-claim-established-this-round"
+      },
+      {
+        "path": "source/mahayana/mahayana-rs/providers/telegram-runtime/src/lib.rs",
+        "blob_sha": "268b2bfcc24ac89ac1a6bbec1afad4b37f0e03d0",
+        "disposition": "fabushi-runtime-ABI-owner"
+      },
+      {
+        "path": "source/mahayana/mahayana-rs/providers/telegram-runtime/src/runtime.rs",
+        "blob_sha": "787d28c05944802edfa566512366b7e5898f3a62",
+        "disposition": "fabushi-runtime-composition-owner-consuming-mapped-protocol-code"
+      },
+      {
+        "path": "source/mahayana/mahayana-rs/providers/telegram-storage/src/cipher.rs",
+        "blob_sha": "39190cc58db34f6f74f390730e4b96c8d06ee066",
+        "disposition": "fabushi-storage-crypto-owner-no-specific-telegram-upstream-copy-claim-established-this-round"
+      },
+      {
+        "path": "source/mahayana/mahayana-rs/providers/telegram-storage/src/sqlite.rs",
+        "blob_sha": "27323ee9deacad0a4e8287e8cddedb2d7ebe782a",
+        "disposition": "fabushi-storage-owner-no-specific-telegram-upstream-copy-claim-established-this-round"
+      },
+      {
+        "path": "source/mahayana/mahayana-rs/providers/telegram-wasm/src/lib.rs",
+        "blob_sha": "c1d43a8bb6271642fef0eb8574b2a02c288b8def",
+        "disposition": "fabushi-web-adapter-consuming-core-protocol"
+      }
+    ],
+    "legacy_upstream_pins_disposition": {
+      "path": "source/mahayana/mahayana-rs/providers/telegram-core/upstream-pins.json",
+      "blob_sha": "c3743170d52b3a886eab7296314538cc9d76b8a2",
+      "captured_at": "2026-07-10",
+      "status": "legacy-research-metadata-not-fixed-U-release-authority",
+      "reason": "Its Telegram Desktop pin e01ee7256693cc4bdfa4dca0eb4f969c3f3b9227 is not fixed U=f985723b552b30fe1c17d377d57f44e61a15a8c4; current TDRP upstream.lock remains authoritative for fixed-U scope."
+    },
+    "archive_member_manifest_search": {
+      "boost_1_90_0": {
+        "official_index": "https://archives.boost.io/release/1.90.0/source/",
+        "archive": "boost_1_90_0.tar.gz",
+        "size_bytes": 210975925,
+        "sha256": "5e93d582aff26868d581a52ae78c7d8edf3f3064742c6e77901a1f18a437eea9",
+        "additional_readable_release_listing": "https://sourceforge.net/projects/boost/files/boost/1.90.0/",
+        "raw_member_listing": "unread",
+        "result": "No complete official or equivalent archive-member manifest was exposed by the readable release/package/search paths; archive bytes were not retried."
+      },
+      "libiconv_1_18": {
+        "archive": "libiconv-1.18.tar.gz",
+        "size_bytes": 5822590,
+        "sha256": "3b08f5f4f9b4eb82f151a7040bfd6fe6c6fb922efe4b1659c66ea933276965e8",
+        "advertised_file_list_page": "https://tho-otto.m68k.eu/crossmint.php",
+        "corroborating_diff_page": "https://fossies.org/diffs/libiconv/1.18_vs_1.19/ChangeLog-diff.html",
+        "raw_member_listing": "unread",
+        "result": "CrossMiNT still renders the exact Original sources libiconv-1.18.tar.gz <file list> label, but the crawler did not expose a complete list body/target; no archive-byte retry was performed."
+      }
+    },
+    "no_spin_blockers": {
+      "dav1d_original_host": "robots/DNS state unchanged; not retried",
+      "xcb_util_m4_original_gitlab": "original-host-unverified; not retried",
+      "cppgir_original_gitlab": "git_tree_verified=false/fail-closed-original-host-unread; not retried"
+    },
+    "copied_derived_adopted_mapping_status": "advanced-for-current-shipping-telegram-protocol-and-static-owner-chain-but-broader-shipping-file-and-release-legal-review-remain-open",
+    "baseline_ready": false,
+    "accepted": false,
+    "validation_status": "not-run"
   }
 }

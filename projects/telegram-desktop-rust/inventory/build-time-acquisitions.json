@@ -3190,5 +3190,51 @@
       "cppgir_original_gitlab": "git_tree_verified=false/fail-closed-original-host-unread; not retried"
     },
     "validation_status": "not-run"
+  },
+  "round37_shipping_telegram_and_archive_manifest_closure": {
+    "evidence_mode": "manual-github-api-source-reads-and-public-release-index-reads-stage-a-no-ci",
+    "upstream_commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+    "current_fabushi_tdlib_source_provenance": {
+      "authority_commit": "a17f87c4cff7b90b278d12b91ba0614383aaee82",
+      "authority_root_tree": "27af7989c2c65dec54eb7860fb6932d5e422c7b5",
+      "license_blob": "36b7cd93cdfbac762f5be4c6ce276df2ea6305c2",
+      "newly_mapped_downstream_files": [
+        "source/mahayana/mahayana-rs/providers/telegram-protocol/src/schema.rs",
+        "source/mahayana/mahayana-rs/providers/telegram-protocol/src/api.rs",
+        "source/mahayana/mahayana-rs/providers/telegram-protocol/src/updates.rs",
+        "source/mahayana/mahayana-rs/providers/telegram-protocol/src/handshake.rs",
+        "source/mahayana/mahayana-rs/providers/telegram-protocol/src/crypto.rs",
+        "source/mahayana/mahayana-rs/providers/telegram-protocol/src/session.rs",
+        "source/mahayana/mahayana-rs/providers/telegram-protocol/src/transport.rs"
+      ],
+      "detailed_mapping_authority": "projects/telegram-desktop-rust/inventory/fixed-u-non-code-inputs.json#round37_current_shipping_telegram_source_provenance",
+      "release_review_disposition": "validation-not-run-release-legal-review-required"
+    },
+    "archive_member_manifest_search": {
+      "boost_1_90_0": {
+        "official_index": "https://archives.boost.io/release/1.90.0/source/",
+        "archive": "boost_1_90_0.tar.gz",
+        "size_bytes": 210975925,
+        "sha256": "5e93d582aff26868d581a52ae78c7d8edf3f3064742c6e77901a1f18a437eea9",
+        "additional_readable_release_listing": "https://sourceforge.net/projects/boost/files/boost/1.90.0/",
+        "raw_member_listing": "unread",
+        "result": "No complete official or equivalent archive-member manifest was exposed by the readable release/package/search paths; archive bytes were not retried."
+      },
+      "libiconv_1_18": {
+        "archive": "libiconv-1.18.tar.gz",
+        "size_bytes": 5822590,
+        "sha256": "3b08f5f4f9b4eb82f151a7040bfd6fe6c6fb922efe4b1659c66ea933276965e8",
+        "advertised_file_list_page": "https://tho-otto.m68k.eu/crossmint.php",
+        "corroborating_diff_page": "https://fossies.org/diffs/libiconv/1.18_vs_1.19/ChangeLog-diff.html",
+        "raw_member_listing": "unread",
+        "result": "CrossMiNT still renders the exact Original sources libiconv-1.18.tar.gz <file list> label, but the crawler did not expose a complete list body/target; no archive-byte retry was performed."
+      }
+    },
+    "no_retry_blockers_unchanged": {
+      "dav1d_original_host": "robots/DNS state unchanged; not retried",
+      "xcb_util_m4_original_gitlab": "original-host-unverified; not retried",
+      "cppgir_original_gitlab": "git_tree_verified=false/fail-closed-original-host-unread; not retried"
+    },
+    "validation_status": "not-run"
   }
 }
