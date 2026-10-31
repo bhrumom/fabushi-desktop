@@ -106,7 +106,7 @@ def structural():
             check(e["applicability_status"] != "unknown", "Final AC02 unresolved applicability: " + path)
             check(e["disposition_status"] not in {"pending", "deep-read-required"}, "Final AC02 undispositioned path: " + path)
             if e["applicability_status"] in {"product", "mixed"}:
-                check(e["responsibility_status"] in {"mapped", "reviewed"} and bool(e["responsibility_ids"]), "Final AC02 applicable path lacks responsibility mapping: " + path)
+                check(e["responsibility_status"] == "reviewed" and bool(e["responsibility_ids"]), "Final AC02 applicable path lacks reviewed responsibility mapping: " + path)
                 check(e["disposition_status"] == "deep-read", "Final AC02 applicable path lacks deep-read disposition: " + path)
             if e["disposition_status"] == "grouped-evidence":
                 check(e["applicability_status"] == "non-product", "Final AC02 grouped evidence is not non-product: " + path)
