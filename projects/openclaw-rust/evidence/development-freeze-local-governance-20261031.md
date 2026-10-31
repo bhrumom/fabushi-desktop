@@ -7,8 +7,8 @@ receipt, source-authority artifact, or release evidence.
 
 - Repository: `bhrumom/fabushi-desktop`
 - Worktree branch: `codex/openclaw-rust-full-fusion-20261030`
-- Local HEAD: `6da1fb6845c0db468c859629a4cab80931b4b459`
-- Local HEAD tree: `5898d83cea18c51eb5e7dda8df4469fdbcda1b3f`
+- Local HEAD observed before this note refresh: `c76baa96abe2ab5ae225d2ebde0fc2d5691a7cff`
+- Local HEAD tree observed before this note refresh: `985fac8a0079c9164ba26ea036f985209a4cc532`
 - Same-name `origin` branch: absent at observation time
 - Working tree: clean at observation time
 
@@ -22,11 +22,12 @@ must not be inherited by this subject.
 - Accepted upstream remains `ad8d12f126d29b0db204187adf5092db80294e70` /
   `04ccce62f1d74dc8e0c88290ae8ded027b7b0f16`, with
   `accepted_for_this_implementation_round=false`.
-- At the later read, the current discovery candidate is
-  `bcf23b2ea0eee92c8c497c6b1c4d486588e4d5ab` /
-  `5d9b96f3208eb2daf4c566fc60865a1850e4c77f`. The earlier
-  `002f25a…/553796fe…` and `f92366d…/260ace76…` candidates are historical
-  discovery evidence only.
+- At the latest read, the current discovery candidate is
+  `1b777ab47da016c998244d7bcb377a72b5b4bba5` /
+  `33cb615b384021957d00cec5c5e8183c05ee18ef`, observed at
+  `2026-10-31T12:06:03Z`. Earlier candidates are historical discovery
+  evidence only. This note's refresh commit will advance the local HEAD again;
+  the recorded subject is therefore explicitly the pre-write observation.
 - `tracked_tree_enumerated`, `dependency_closure_enumerated`,
   `lfs_scan_complete`, and `source_closure_ready` remain `false`.
 - All eight project completion flags remain `false`.
