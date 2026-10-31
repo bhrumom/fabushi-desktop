@@ -8,6 +8,9 @@ const MAX_ENV_ENTRIES: usize = 64;
 const MAX_POLICY_DIGITS: usize = 8;
 const MIN_REFRESH_AFTER_MS: u64 = 3_600_000;
 const MIN_RETAIN_UNUSED_MS: u64 = 86_400_000;
+const WORKER_WALLPAPER_WIDTH: u32 = 1024;
+const WORKER_WALLPAPER_HEIGHT: u32 = 576;
+const PNG_SIGNATURE: &[u8; 8] = b"\x89PNG\r\n\x1a\n";
 
 /// A deterministic, side-effect-free representation of the setup environment
 /// profile. Values are inputs to a future secret-egress/process owner; this
@@ -82,6 +85,28 @@ impl CloudWorkerWarmImagePolicy {
     }
 }
 
+/// Validates the exact image shape accepted by the worker wallpaper owner.
+/// File access, base64 encoding and platform setup remain outside this
+/// contract.
+pub fn validate_worker_wallpaper_png(bytes: &[u8]) -> Result<(), CloudWorkerAuxiliaryError> {
+    if bytes.len() < 33
+        || &bytes[..PNG_SIGNATURE.len()] != PNG_SIGNATURE
+        || u32::from_be_bytes(bytes[8..12].try_into().expect("length checked")) != 13
+        || &bytes[12..16] != b"IHDR"
+    {
+        return Err(CloudWorkerAuxiliaryError::InvalidWallpaperPng);
+    }
+    let width = u32::from_be_bytes(bytes[16..20].try_into().expect("length checked"));
+    let height = u32::from_be_bytes(bytes[20..24].try_into().expect("length checked"));
+    if width != WORKER_WALLPAPER_WIDTH || height != WORKER_WALLPAPER_HEIGHT {
+        return Err(CloudWorkerAuxiliaryError::InvalidWallpaperDimensions {
+            width,
+            height,
+        });
+    }
+    Ok(())
+}
+
 fn parse_duration(
     value: &str,
     minimum_ms: u64,
@@ -136,6 +161,10 @@ pub enum CloudWorkerAuxiliaryError {
     DurationOverflow { field: &'static str },
     #[error("warm-image policy duration for {field} is below the minimum")]
     DurationTooShort { field: &'static str },
+    #[error("worker wallpaper is not a PNG with a valid IHDR header")]
+    InvalidWallpaperPng,
+    #[error("worker wallpaper dimensions are {width}x{height}, expected 1024x576")]
+    InvalidWallpaperDimensions { width: u32, height: u32 },
 }
 
 #[cfg(test)]
@@ -190,5 +219,25 @@ mod tests {
             CloudWorkerWarmImagePolicy::from_config(Some("100000000d"), None, false),
             Err(CloudWorkerAuxiliaryError::InvalidDuration { .. })
         ));
+    }
+
+    #[test]
+    fn wallpaper_contract_requires_the_pinned_png_dimensions() {
+        let mut bytes = vec![0; 33];
+        bytes[..8].copy_from_slice(PNG_SIGNATURE);
+        bytes[8..12].copy_from_slice(&13u32.to_be_bytes());
+        bytes[12..16].copy_from_slice(b"IHDR");
+        bytes[16..20].copy_from_slice(&1024u32.to_be_bytes());
+        bytes[20..24].copy_from_slice(&576u32.to_be_bytes());
+        assert!(validate_worker_wallpaper_png(&bytes).is_ok());
+
+        bytes[20..24].copy_from_slice(&575u32.to_be_bytes());
+        assert_eq!(
+            validate_worker_wallpaper_png(&bytes),
+            Err(CloudWorkerAuxiliaryError::InvalidWallpaperDimensions {
+                width: 1024,
+                height: 575,
+            })
+        );
     }
 }

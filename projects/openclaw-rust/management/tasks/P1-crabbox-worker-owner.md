@@ -296,6 +296,9 @@ pending Crabbox responsibilities:
 - Auxiliary contracts now provide deterministic setup-environment profiles and
   bounded warm-image policy parsing with the pinned defaults/minimum windows;
   they perform no file, secret-egress, project or provider side effects.
+- The auxiliary boundary also validates the pinned 1024×576 PNG wallpaper
+  header/dimensions without reading files, encoding bytes or applying platform
+  settings.
 
 The broader Crabbox projection, lifecycle, sandbox, bootstrap, artifact,
 warm-image and runtime-control rows remain pending where their producer or
