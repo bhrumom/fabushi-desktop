@@ -5891,7 +5891,8 @@
         "source/host/tests/agent_lifecycle_contract.rs::guarded_delete_rejects_stale_revision_before_destructive_hooks",
         "source/host/tests/agent_lifecycle_contract.rs::guarded_delete_rechecks_revision_after_drain_mutation",
         "source/host/tests/agent_lifecycle_contract.rs::guarded_delete_rejects_stale_updated_at_before_destructive_hooks",
-        "source/host/tests/agent_lifecycle_contract.rs::guarded_delete_allows_matching_identity_revision_and_updated_at"
+        "source/host/tests/agent_lifecycle_contract.rs::guarded_delete_allows_matching_identity_revision_and_updated_at",
+        "source/host/tests/agent_lifecycle_contract.rs::guarded_delete_rejects_declared_invalid_updated_at"
       ],
       "typed_contracts": [
         "AgentMetadataProjection::lifecycle_revision",
