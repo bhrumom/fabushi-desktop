@@ -252,3 +252,15 @@ entries（61,770 blobs、2,241 directories、0 gitlinks），根依赖/license �
 identities 保持不变。该 subject 已同步到 `upstream.lock.json::live_candidate`，
 仍仅为 discovery-only；此前 inventory、依赖闭包、LFS 与 Actions provenance
 不得重标复用，P0-AC02、source closure 与所有 global flags 继续未闭合。
+
+针对该 exact subject 的 lock-structure 只读 probe 发现：root
+`package.json` 的 77 runtime / 57 dev / 1 optional declarations 未在
+`pnpm-lock.yaml` 中形成对应应用依赖闭包；唯一 importer 只含 pnpm，lock 的
+`packages` 与 `snapshots` 各为 15 条 pnpm 平台/主包记录，15 条均有 integrity。
+该 mismatch 需要 Actions 中的完整 workspace/package provenance 和生成策略
+解释，不能以 pnpm 自身 integrity 通过替代 dependency closure；
+`dependency_closure_enumerated`、`source_closure_ready` 与 P0-AC02 继续未闭合。
+
+递归 tree 还列出 206 个位于声明 workspace pattern 下的 `package.json`
+候选，而 lock 只有一个 importer；这进一步要求对 workspace manifests 做
+逐项分类和 provenance 绑定，不能把 root-only lock 解析当作完整闭包。

@@ -434,6 +434,22 @@ pnpm-workspace.yaml、.gitattributes、LICENSE 和 THIRD_PARTY_NOTICES.md 的 bl
 身份不等价于依赖闭包，仍需 exact-head Actions inventory、包 integrity/LFS 和
 递归 dependency closure 才能提升任何 authority flag。
 
+对该 exact subject 的只读 lock-structure probe 进一步发现：root
+`package.json` 声明 77 个 runtime、57 个 dev、1 个 optional dependency，
+但 `pnpm-lock.yaml` 的唯一 importer `.` 只记录 `pnpm@12.15.0`；lock 的
+`packages`/`snapshots` 各只有 15 条，均为 pnpm 自身平台包且有 integrity，未
+出现 root 声明的应用依赖解析记录。这是 dependency closure 的明确负证据，
+不是把 manifest 计数或 pnpm integrity 误报为 closure；必须在 exact-head
+Actions 中核对生成/提交策略、workspace manifests、patched/optional/peer
+关系和完整包来源后才能继续。`dependency_closure_enumerated` 与
+`source_closure_ready` 保持 false。
+
+同一 recursive tree 中又发现 206 个 workspace-pattern 下的 `package.json`
+候选（root、ui、packages、extensions、examples、tools/solid-lint），而 lock
+仍只有一个 importer。该集合差异进一步证明当前 lock 不能直接作为完整
+workspace dependency closure；候选 manifest 仍需逐项绑定 workspace/包身份、
+patch、optional/peer、外部 tarball integrity 和生成/安装 provenance。
+
 对上一 candidate `b7cc7ebc9b442ed7eb73a92336c2a9886b578f7b` 的只读 compare
 显示当前 subject ahead 4、behind 0，共 25 个文件变化。变化覆盖 Gateway
 protocol/client handshake 与 pending-request、TTS preference/fallback、UI

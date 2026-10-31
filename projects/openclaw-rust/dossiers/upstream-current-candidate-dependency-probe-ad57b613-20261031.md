@@ -30,3 +30,28 @@ not prove recursive package dependency closure, published tarball integrity,
 LFS completeness, Actions inventory, source reads, or authority acceptance.
 The lock therefore keeps `accepted_for_this_implementation_round=false`,
 `baseline_identity_accepted=false`, and all closure/global flags unchanged.
+
+## Lock-structure negative evidence
+
+The exact `package.json` declares 77 runtime dependencies, 57 dev
+dependencies, 1 optional dependency, and 0 peer dependencies. The exact
+`pnpm-lock.yaml` parses as lockfile v9 with one importer (`.`), whose only
+declared dependency is `pnpm@12.15.0`. It contains 15 `packages` entries and
+15 `snapshots`; all 15 package entries carry an integrity value, and all are
+pnpm executable/platform packages or pnpm itself. The root application
+dependency names do not appear as resolved importer/package entries in this
+lock structure.
+
+This is an explicit unresolved closure mismatch, not a successful dependency
+closure. It may reflect a repository-specific generated-lock or workspace
+installation strategy, but that explanation requires exact Actions/package
+provenance and the remaining workspace manifests. No closure or authority flag
+is promoted by this probe.
+
+The recursive exact tree contains 206 `package.json` candidates under the
+declared workspace patterns (`.`, `ui`, `packages/*`, `extensions/*`,
+`examples/*`, and `tools/solid-lint`), while the lock has one importer. This
+does not by itself prove every candidate is an active workspace package, but it
+does prove that a root-only lock parse cannot establish the requested full
+workspace closure; each candidate requires exact manifest classification and
+package provenance.
