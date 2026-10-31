@@ -3,7 +3,7 @@
   "project_id": "TDRP-001",
   "spec_revision": 9,
   "upstream_commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
-  "target_commit": "169d6cc7798507f0302d6c93fef7deef1a302d28",
+  "target_commit": "221a661e17f2ad417e349df6604815d3fbfa946f",
   "coverage": {
     "source_entries_total": 16202,
     "unknown": 16172,
@@ -14114,7 +14114,7 @@
         "encrypted pending AuthContext persistence",
         "feature.auth command carrier"
       ],
-      "platform_delta": "Canonical platform-core now contains the missing protocol/runtime/storage primitives on isolated checkpoint a50f33da685506f4e170729a9d11f01f8dda8ec5; desktop checkpoint 169d6cc7798507f0302d6c93fef7deef1a302d28 wires matching commands through the existing lease. The sparse desktop checkpoint contains no dependency manifest, so exact runtime dependency binding remains unproven and fail-closed.",
+      "platform_delta": "The canonical platform-core lifecycle checkpoint has been fused with the existing authorization_snapshot/self_user_id + resumable MTProto transport baseline. Desktop checkpoint 43d9d398801f2885da982d106c17a74efb1f9472 now carries the real Mahayana workspace/path-dependency manifests and the same fused provider sources at the existing providers/telegram-* paths; no second runtime or dependency chain is introduced. This is static Stage-A composition evidence only, not executable validation.",
       "existing_owner_candidates": [
         "bhrumom/fabushi-platform-core:native/telegram-protocol",
         "bhrumom/fabushi-platform-core:native/telegram-runtime",
@@ -14140,7 +14140,17 @@
         "source/mahayana/mahayana-rs/mahayana-app-host/src/lib.rs",
         "source/shared/rpc/coordinator.ts",
         "frontend/src/production/coordinator-client.ts",
-        "source/shared/rpc/coordinator.contract.test.ts"
+        "source/shared/rpc/coordinator.contract.test.ts",
+        "source/mahayana/mahayana-rs/Cargo.toml",
+        "source/mahayana/mahayana-rs/mahayana-telegram/Cargo.toml",
+        "source/mahayana/mahayana-rs/providers/telegram-runtime/Cargo.toml",
+        "source/mahayana/mahayana-rs/providers/telegram-protocol/src/api.rs",
+        "source/mahayana/mahayana-rs/providers/telegram-protocol/src/srp.rs",
+        "source/mahayana/mahayana-rs/providers/telegram-network/src/lib.rs",
+        "source/mahayana/mahayana-rs/providers/telegram-storage/src/sqlite.rs",
+        "source/mahayana/mahayana-rs/providers/telegram-runtime/src/runtime.rs",
+        "source/mahayana/mahayana-rs/providers/telegram-runtime/src/lib.rs",
+        "source/mahayana/mahayana-rs/mahayana-telegram/tests/telegram_runtime_composition.rs"
       ],
       "fabushi_target_symbols": [
         "build_auth_resend_code/build_auth_cancel_code/build_auth_request_password_recovery/build_auth_check_recovery_password",
@@ -14149,7 +14159,10 @@
         "resend_authentication_code/cancel_authentication_code/request_password_recovery/check_recovery_password/send_verify_email_code/verify_email/refresh_password_challenge",
         "TelegramClientLease lifecycle methods",
         "AppHost feature.auth.telegram* lifecycle methods",
-        "ProductionCoordinatorClient telegram lifecycle methods"
+        "ProductionCoordinatorClient telegram lifecycle methods",
+        "AuthorizationSnapshot/authorization_snapshot/self_user_id",
+        "resume_auth_key/PersistedTransportState",
+        "EncryptedSqliteStore schema-v4 private_metadata + secure_value convergence"
       ],
       "target_language": "Rust + TypeScript",
       "language_rationale": "Network authorization state, error settlement and backoff stay with the existing Rust TelegramClientLease/runtime boundary; renderer contract validation stays in the existing shared TypeScript Coordinator owner. This keeps one state owner and one renderer carrier without adding a source-named subsystem.",
@@ -14162,7 +14175,7 @@
       ],
       "state_owner": "Existing embedded AuthorizationMachine/AuthContext in the one account-bound runtime client; desktop lease only invokes and projects it.",
       "lifecycle_owner": "Existing platform-login -> AppHost retained TelegramClientLease -> canonical embedded runtime.",
-      "persistence_and_restart": "Platform-core checkpoint persists AuthorizationState plus phone/hash/SRP challenge in the existing encrypted SQLite store secure_value slot; plaintext password is never persisted. Exact desktop dependency binding to that checkpoint remains unproven because the sparse checkpoint has no manifest.",
+      "persistence_and_restart": "One account-scoped encrypted SQLite owner now uses schema v4 containing both historical private_metadata and secure_value tables. Canonical authorization state/self_user_id/AuthContext and resumable transport remain encrypted under the same store; migration code recognizes both historical schema-v3 shapes and adds the missing table without discarding data. Ready restore still fails closed without canonical identity or MTProto auth-key material.",
       "concurrency_and_cancellation": "All commands reuse the same RuntimeClient transport and desktop process-lifetime TelegramClientLease. auth.cancelCode clears pending auth context on success.",
       "security_boundary": "api_hash remains application-only; renderer sees no application secret. Pending phone/hash/SRP data is encrypted at rest with domain-separated associated data.",
       "network_service_dependencies": [
@@ -14174,13 +14187,13 @@
       "implementation_status": "implemented",
       "coverage_disposition": "rewritten",
       "blockers": [
-        "The sparse desktop checkpoint tree does not contain Cargo/dependency manifests, so exact binding of the desktop fabushi_telegram_runtime dependency to platform-core checkpoint a50f33da685506f4e170729a9d11f01f8dda8ec5 cannot be proven in this round.",
-        "Stage B executable build/unit/contract/integration/packaged validation has not run.",
-        "Broader fixed-U semantic/implementation closure, external-source/legal closure and independent acceptance remain open."
+        "Stage B executable build/unit/contract/integration/packaged validation has not run; the static Cargo/dependency and source fusion is not a runtime acceptance result.",
+        "Broader fixed-U semantic/implementation closure, Boost/libiconv complete member enumeration, original-host GitLab blockers, adopted/copied-derived legal closure and independent release ACCEPT remain open."
       ],
       "production_entrypoints": [
-        "ProductionCoordinatorClient.telegram* -> shared Coordinator method carrier -> AppHost feature.auth.telegram* -> same TelegramClientLease -> embedded runtime command",
-        "Canonical platform-core runtime checkpoint implements matching wire/storage/runtime primitives"
+        "ProductionCoordinatorClient.telegram* -> shared Coordinator method carrier -> AppHost feature.auth.telegram* -> same TelegramClientLease -> fabushi_telegram_runtime command",
+        "source/mahayana/mahayana-rs/Cargo.toml -> mahayana-telegram/Cargo.toml -> ../providers/telegram-runtime -> sibling protocol/network/storage crates",
+        "Canonical platform-core checkpoint -> exact synchronized desktop providers/telegram-* blobs"
       ],
       "production_evidence": [
         "platform-core-commit:314e8804ddfc997acdde2c19bff831b5e26b1706",
@@ -14191,15 +14204,37 @@
         "path:source/mahayana/mahayana-rs/mahayana-telegram/src/lib.rs@f93afe79d02a2eed2ce131d3cf6533e9d156306e",
         "path:source/mahayana/mahayana-rs/mahayana-app-host/src/lib.rs@ed69b2b7aa0d87ebd34210e9a13d9c8a8b3e3087",
         "path:source/shared/rpc/coordinator.ts@35a29e167b38a69924925dbd30fbb658eea23faa",
-        "path:frontend/src/production/coordinator-client.ts@1f9e386e391ec9504c82dbc47662a95a3ef811eb"
+        "path:frontend/src/production/coordinator-client.ts@1f9e386e391ec9504c82dbc47662a95a3ef811eb",
+        "platform-core-commit:399f0fdf4d56e8c129118825a34f7d1aa13b6dc1",
+        "platform-core-commit:6b1a75a74f5ee2b100f70d905051bf961a040585",
+        "platform-core-commit:b2a45edb2e4e3e62a1543410e9ad87f4c1a87e2a",
+        "platform-core-commit:4fbff4f54caed03b7b1ba68efe2f008fa4447622",
+        "platform-core-commit:1831ba28980b511abd413ab98d912ba058463bcd",
+        "platform-core-test-commit:13f5458aadf19a87c52bfa904f9942d81c88979a",
+        "desktop-composition-commit:43d9d398801f2885da982d106c17a74efb1f9472",
+        "desktop-contract-commit:9110c9a5bce67f917a9bcba4af72de31199a290a",
+        "desktop-test-correction-commit:221a661e17f2ad417e349df6604815d3fbfa946f",
+        "path:source/mahayana/mahayana-rs/Cargo.toml@144c67c76daaf2229e817f9830e678a3e6d4cf3a",
+        "path:source/mahayana/mahayana-rs/mahayana-telegram/Cargo.toml@f43109356f1f486a82a2d0120f6e78808c431c40",
+        "path:source/mahayana/mahayana-rs/providers/telegram-runtime/Cargo.toml@0fc8ee357ef5c00074e5fdcd1d7594860e289bd1",
+        "path:source/mahayana/mahayana-rs/providers/telegram-protocol/src/api.rs@751219099926a809d455d31b005c48a841d879f2",
+        "path:source/mahayana/mahayana-rs/providers/telegram-protocol/src/srp.rs@06ff7c4ed54f445c9df8bf96deb1deb7defe4939",
+        "path:source/mahayana/mahayana-rs/providers/telegram-network/src/lib.rs@24e236df503e273490e44645251d757e30712ea3",
+        "path:source/mahayana/mahayana-rs/providers/telegram-storage/src/sqlite.rs@e6cc314ec749f8a258bfe0125a25beb3613eb2ca",
+        "path:source/mahayana/mahayana-rs/providers/telegram-runtime/src/runtime.rs@10031c5261bb0810ad2df2fca3de2e2fe4f65301",
+        "path:source/mahayana/mahayana-rs/providers/telegram-runtime/src/lib.rs@0c79707ba1e0932de15fad3c57ad00fcb9682aff"
       ],
       "test_evidence": [
         "platform-core native/telegram-protocol/tests/protocol_contract.rs authored, not run",
         "platform-core native/telegram-storage/tests/encrypted_store.rs authored, not run",
         "platform-core native/telegram-runtime/tests/runtime_ffi.rs authored, not run",
-        "desktop source/shared/rpc/coordinator.contract.test.ts authored, not run"
+        "desktop source/shared/rpc/coordinator.contract.test.ts authored, not run",
+        "desktop source/mahayana/mahayana-rs/providers/telegram-protocol/tests/protocol_contract.rs@4d6bec0d84016fc7651c69985ad19f005f22eaa1 authored, not run",
+        "desktop source/mahayana/mahayana-rs/providers/telegram-storage/tests/encrypted_store.rs@ecde6882fc7265eee0f1c2714a8eb4fa1543d63f authored, not run",
+        "desktop source/mahayana/mahayana-rs/providers/telegram-runtime/tests/runtime_ffi.rs@97eb341731e6122f615aeac2aba5eaa12d3a9fbd authored, not run",
+        "desktop source/mahayana/mahayana-rs/mahayana-telegram/tests/telegram_runtime_composition.rs@a0453c88d6d8874e7bd0b32f8a9e357eab6799a4 authored, not run"
       ],
-      "target_commit": "169d6cc7798507f0302d6c93fef7deef1a302d28",
+      "target_commit": "221a661e17f2ad417e349df6604815d3fbfa946f",
       "workflow_run": null,
       "run_attempt": null,
       "job": null,
@@ -14328,7 +14363,7 @@
       "acceptance_reviewer": null,
       "reviewer": null,
       "license_and_provenance": "Behavioral lifecycle/error/backoff responsibility is anchored to fixed-U telegramdesktop/tdesktop exact intro sources: intro_code.cpp@2bed39cf0d696ee642e7d18f3f17bec05e8e4489, intro_password_check.cpp@d08bf88408b29cb5ec7ed31c4e925074bfb8825e, intro_email.cpp@dfb5ceeddeb48ab00773add72e75e0aef8ceb074, intro_phone.cpp@ee14ffa7c6f31e171cdcbdfaf627ea9868af1246 and intro_signup.cpp@1ba7a38379a6ae2febe615783333fd0822e0bb96. The implementation is source-neutral and copies no upstream C++/UI code.",
-      "notes": "Stage A implementation only. Fixed-U primitives and desktop command wiring are authored and committed; executable validation is not run. Exact desktop dependency-manifest binding to the canonical platform-core checkpoint is not present in this sparse checkpoint and remains an explicit integration-evidence blocker.",
+      "notes": "Stage A implementation only. The previously open sparse-checkpoint dependency-manifest blocker is statically closed by exact Cargo/path manifests and synchronized provider blobs on desktop commit 43d9d398801f2885da982d106c17a74efb1f9472, with authored-only contracts through 221a661e17f2ad417e349df6604815d3fbfa946f. No build/test/runtime validation has run; validation_status remains not-run and accepted remains false.",
       "test_execution_evidence": []
     }
   ],
