@@ -53,6 +53,15 @@ The audited source code was decomposed into 6 discrete Rust runtime responsibili
    - **Rust Owner**: `source/host/src/connectors/channel_delivery.rs:split_channel_message`.
    - **Oracle**: `OCRM-CHANNEL-O06`.
 
+The shared outbound router now invokes `split_channel_message` for every text
+delivery before handing chunks to the registered provider. The implementation
+uses the conservative 4,000-character Host boundary and reopens fenced code
+blocks between chunks. This is a real production call path, so the row is
+`wiring=wired`; draft-streaming configuration precedence, paragraph/sentence
+break preference resolution, provider-specific limits, and exact-head runtime
+verification remain open and keep `implementation=implementing`,
+`verification=not-run`, and `acceptance=pending`.
+
 6. **`OCRM-RESP-CHANNEL-ACCESS-CONTROL-001`**:
    - **Behavior**: Channel sender access control list (ACL) evaluation, wildcard resolution, normalized candidate matching, and webhook HMAC signature replay protection.
    - **Rust Owner**: `source/host/src/connectors/channel_delivery.rs:ChannelAclGate`.

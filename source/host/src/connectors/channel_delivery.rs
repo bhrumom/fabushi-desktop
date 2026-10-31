@@ -3,6 +3,67 @@ use std::sync::{Arc, RwLock};
 
 use crate::extensions::transcript::channel_delivery_unregistered_error::SandChannelDeliveryUnregisteredError;
 
+pub const CHANNEL_MAX_MESSAGE_CHARS: usize = 4_000;
+
+/// Split outbound text at channel-sized boundaries while keeping every
+/// emitted chunk's markdown code fences balanced. The channel provider remains
+/// responsible for transport-specific limits; this is the shared conservative
+/// limit used by the Host delivery boundary.
+pub fn split_channel_message(text: &str, limit: usize) -> Vec<String> {
+    let limit = limit.max(1);
+    if text.chars().count() <= limit {
+        return vec![text.to_string()];
+    }
+
+    let mut chunks = Vec::new();
+    let mut current = String::new();
+    let mut in_code_fence = false;
+    let mut fence_lang = String::new();
+
+    for line in text.lines() {
+        let separator = usize::from(!current.is_empty());
+        let projected = current.chars().count() + separator + line.chars().count();
+        if projected > limit && !current.is_empty() {
+            if in_code_fence {
+                current.push_str("\n```");
+                chunks.push(current);
+                current = if fence_lang.is_empty() {
+                    format!("```\n{line}")
+                } else {
+                    format!("```{fence_lang}\n{line}")
+                };
+            } else {
+                chunks.push(current);
+                current = line.to_string();
+            }
+        } else {
+            if !current.is_empty() {
+                current.push('\n');
+            }
+            current.push_str(line);
+        }
+
+        if line.trim_start().starts_with("```") {
+            if in_code_fence {
+                in_code_fence = false;
+                fence_lang.clear();
+            } else {
+                in_code_fence = true;
+                fence_lang = line
+                    .trim_start()
+                    .trim_start_matches("```")
+                    .trim()
+                    .to_string();
+            }
+        }
+    }
+
+    if !current.is_empty() {
+        chunks.push(current);
+    }
+    chunks
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum ChannelOutboundMessage {
     Text { text: String, operation_id: Option<String> },
@@ -111,7 +172,30 @@ impl ChannelDeliveryPort for ChannelDeliveryRouter {
         let Some(port) = self.resolve(address_token) else {
             return Err(SandChannelDeliveryUnregisteredError.to_string());
         };
-        port.deliver(agent_id, address_token, message)
+        match message {
+            ChannelOutboundMessage::Text { text, operation_id } => {
+                for (index, chunk) in split_channel_message(text, CHANNEL_MAX_MESSAGE_CHARS)
+                    .into_iter()
+                    .enumerate()
+                {
+                    let chunk_operation_id = operation_id.as_ref().map(|id| {
+                        format!(
+                            "{id}:chunk-{index}",
+                            index = index + 1,
+                        )
+                    });
+                    let chunk_message = ChannelOutboundMessage::Text {
+                        text: chunk,
+                        operation_id: chunk_operation_id,
+                    };
+                    port.deliver(agent_id, address_token, &chunk_message)?;
+                }
+                Ok(())
+            }
+            ChannelOutboundMessage::Attachment { .. } => {
+                port.deliver(agent_id, address_token, message)
+            }
+        }
     }
 }
 

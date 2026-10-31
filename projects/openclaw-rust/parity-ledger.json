@@ -4792,10 +4792,10 @@
       ],
       "id": "OCRM-RESP-CHANNEL-STREAMING-CHUNKING-001",
       "integration": {
-        "consumer": "source/host/src/connectors/channel_delivery.rs",
-        "entrypoint": "source/host/src/connectors/channel_delivery.rs",
+        "consumer": "ChannelDeliveryRouter::deliver invokes split_channel_message for every outbound text message before provider dispatch",
+        "entrypoint": "source/host/src/connectors/channel_delivery.rs::ChannelDeliveryRouter::deliver",
         "owner": "source/host/src/connectors/channel_delivery.rs",
-        "producer": "source/host/src/runner/production_turn_agent_owner.rs"
+        "producer": "source/host/app/src/main.rs::deliverToChannel and transcript background channel delivery"
       },
       "invariants": [
         "All chunks maintain balanced and valid markdown code fences",
@@ -4845,7 +4845,7 @@
         "mapping": "reviewed",
         "read": "read-complete",
         "verification": "not-run",
-        "wiring": "not-wired"
+        "wiring": "wired"
       },
       "target": {
         "language": "Rust",
