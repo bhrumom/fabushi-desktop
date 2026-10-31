@@ -54,6 +54,10 @@ pub struct CloudWorkerStatusSnapshot {
     pub lease_count: usize,
     #[serde(rename = "warmImageCount")]
     pub warm_image_count: usize,
+    #[serde(rename = "bootstrapCount")]
+    pub bootstrap_count: usize,
+    #[serde(rename = "artifactCount")]
+    pub artifact_count: usize,
     #[serde(rename = "migrationReceiptCount")]
     pub migration_receipt_count: usize,
 }
@@ -327,6 +331,10 @@ impl CloudWorkerProvisioningExtension {
             state_persisted,
             lease_count: snapshot.as_ref().map_or(0, |value| value.leases.len()),
             warm_image_count: snapshot.as_ref().map_or(0, |value| value.warm_images.len()),
+            bootstrap_count: snapshot
+                .as_ref()
+                .map_or(0, |value| value.bootstrap_records.len()),
+            artifact_count: snapshot.as_ref().map_or(0, |value| value.artifacts.len()),
             migration_receipt_count: snapshot
                 .as_ref()
                 .map_or(0, |value| value.migration_receipts.len()),

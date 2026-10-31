@@ -53,6 +53,10 @@ pub struct CloudWorkerStatusProjection {
     pub lease_count: usize,
     #[serde(default, rename = "warmImageCount")]
     pub warm_image_count: usize,
+    #[serde(default, rename = "bootstrapCount")]
+    pub bootstrap_count: usize,
+    #[serde(default, rename = "artifactCount")]
+    pub artifact_count: usize,
     #[serde(default, rename = "migrationReceiptCount")]
     pub migration_receipt_count: usize,
 }
@@ -123,6 +127,8 @@ mod tests {
             state_persisted: false,
             lease_count: 0,
             warm_image_count: 0,
+            bootstrap_count: 0,
+            artifact_count: 0,
             migration_receipt_count: 0,
         };
         assert!(projection.is_disabled());
@@ -161,6 +167,8 @@ mod tests {
                 state_persisted: false,
                 lease_count: 0,
                 warm_image_count: 0,
+                bootstrap_count: 0,
+                artifact_count: 0,
                 migration_receipt_count: 0,
             },
         };

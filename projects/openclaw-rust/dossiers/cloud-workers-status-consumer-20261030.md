@@ -200,3 +200,7 @@ device enrollment caller or packaged consumer acceptance.
 The read-only doctor Inspect route now projects live canonical snapshot counts
 and whether the state path exists. Repair, secret migration and reconciliation
 actions remain acknowledgement-gated and explicitly unwired.
+
+The status projection now also carries additive `bootstrapCount` and
+`artifactCount` fields, with Coordinator decoding defaults for older Host
+payloads; provider readiness and production-mutation remain fail-closed.
