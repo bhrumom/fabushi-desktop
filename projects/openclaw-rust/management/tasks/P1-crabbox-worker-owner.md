@@ -222,6 +222,10 @@ The canonical task-local IDs currently declared by this task are:
 `OCRM-P1-F05`, `OCRM-P1-F06`, `OCRM-P1-F07`, `OCRM-P1-F08`,
 `OCRM-P1-AC02`, `OCRM-P1-AC03`, `OCRM-P1-AC04`, and `OCRM-P1-AC05`.
 They remain task-local until an explicit project-RTM amendment promotes them.
+Four of these responsibility IDs are referenced by existing project-level
+`OCRM-AC02`/`OCRM-AC03`/`OCRM-AC11` rows for crosswalk purposes; the remaining
+eleven are absent from the project RTM. Neither case creates a P1-specific RTM
+row or promotes the task-local criteria to project-level acceptance.
 
 - `OCRM-RESP-INFRA-WORKER-CRABBOX-STATUS-PROJECTION-001` records the existing
   read-only `CloudWorkerProvisioningExtension::status_snapshot` → Host Gateway
