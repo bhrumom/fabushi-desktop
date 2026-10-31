@@ -896,3 +896,19 @@ release acceptance remain open/fail-closed.
 
 No GitHub Actions/status/check query or trigger, build, typecheck, lint, schema validator, generator,
 unit/contract/integration/E2E test, package, deployment, installation or runtime acceptance was performed.
+
+
+### Round 81 final source-level compliance
+
+Platform-core `f2593977cbdfe1a09ce811da86029ec824021af3` / final spec blob
+`f9b8839b10fa449474a5cfe080f84ca70a08f7a1` records source-level R1-R9 and AC-1-AC-6 compliance for the
+fixed-U `msgs_state_req#da69fb52 msg_ids:Vector<long>` request-wire responsibility. Canonical production
+`api.rs/tl.rs/lib.rs` remain
+`ebfb3670b5cd097b9ce288782c7954f5cfe9fc43` /
+`89256ab35184b6dc06a095ab34abb9f44e95a264` /
+`abab39e42f100972484191f0e52e9edd9b88c6cf` with no behavior delta. Canonical/desktop authored contract
+blob remains `60a1dfb3ea2051a498d6cfb9d401fe653fde7d75`. Ledger compliance commit
+`cba0acd6b39a75d6c605ec0549c372c23c77ffa2` records the responsibility as
+`implemented / validation_status=not-run / accepted=false`, coverage
+`91 / 16172 unknown / 16145 unread / 0 omitted`. Arbitrary multi-request history and the other deferred
+lifecycle/gzip/difference responsibilities remain open/fail-closed. No executable validation was performed.
