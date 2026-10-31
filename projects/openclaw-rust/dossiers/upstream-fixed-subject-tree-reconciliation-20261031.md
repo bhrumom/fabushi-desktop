@@ -63,6 +63,18 @@ The exact root-input identities are:
 | `package.json` | `af543c4c033b5c5e0c466061ada470feeda777f3` |
 | `pnpm-lock.yaml` | `80fb4d9fa985297a24ac88931ef534e85a40ba47` |
 
+The lockfile parses as two YAML documents, both lockfile version `9.0`, with
+`201` importer rows in total (`200` unique importer paths), `1,859` package
+records and `1,861` snapshot records. The tree has `209` unique
+`package.json` paths. Nine manifests are not represented by a lockfile
+importer: the three `.github`/release helper manifests,
+`docs/snippets/plugin-publish/minimal-package.json`,
+`qa/convex-credential-broker/package.json`, `scripts/cloudflare/package.json`,
+and four fixture/example manifests under `src/claws/fixtures` and `test/fixtures`.
+That difference is an explicit dependency-closure review set, not an omission
+or proof of irrelevance. It must be classified against the exact source and
+build/release consumers before dependency closure can be accepted.
+
 ## Evidence boundary
 
 This proves the fixed subject's recursive path/blob/mode inventory is complete
