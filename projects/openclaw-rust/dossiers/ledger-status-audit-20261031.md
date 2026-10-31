@@ -44,6 +44,12 @@ subject above. This proves source-reference identity consistency only; it does
 not prove semantic closure, applicability/disposition closure, implementation,
 wiring, verification, or acceptance.
 
+The project RTM has 31 `in-progress` rows and 17 `not-started` rows. Every
+`in-progress` row has both a reviewer and at least one evidence reference. The
+11 `not-started` rows without responsibility IDs/evidence remain explicitly
+unstarted; they are not interpreted as missing proof for an accepted
+requirement and do not promote any completion flag.
+
 ## Interpretation
 
 The ledger proves honest progress states, not completion. In particular:
