@@ -1219,3 +1219,16 @@ Platform-core final compliance commit `c32cc58ffe44214a102e7c455fe73c00f90e1aed`
 The existing `TDRP-R9-MTPROTO-DESTROY-SESSION-WIRE-001` row stays `implemented / validation_status=not-run / accepted=false`. Live teardown/outbound destroy-session lifecycle, arbitrary multi-request history, connection scheduling, auth-key binding/persistence, gzip, complete difference decoding/application, broader source/legal closure, Stage-B executable evidence, and independent release ACCEPT remain outside this wire-only closure or open.
 
 No GitHub Actions/status/check query or trigger, build, typecheck, lint, schema validator, generator, unit/contract/integration/E2E test, package, deployment, installation, or runtime acceptance was performed.
+
+
+## Stage-A MTProto NewSession exact wire adjacent revalidation (round 93, 2026-11-01)
+
+Fixed U remains `f985723b552b30fe1c17d377d57f44e61a15a8c4`. Live adjacency was reread from `mtproto.tl@76225965bfc794388db241f3f760db8ab79e84f8` and `session_private.cpp@13cbc76ec723386027b5b4dcac79999b791c4614`: `new_session_created#9ec20908 first_msg_id:long unique_id:long server_salt:long = NewSession` is the next service-message type after `DestroySessionRes`.
+
+The existing owner already closes this exact wire responsibility, so this round is **no production delta**. Canonical protocol `updates.rs@23a09bb6e4e78ef526823cf01d0a207565fb2a3e` parses constructor plus three signed 64-bit fields and strict EOF. Current canonical/desktop network blob `1fc1b1f69e3e37377400d078f916599e0c7b20bc` invokes that parser before salt mutation or the existing one-current-RPC replay decision. Desktop protocol updates/lib/network blobs remain `23a09bb6e4e78ef526823cf01d0a207565fb2a3e` / `abab39e42f100972484191f0e52e9edd9b88c6cf` / `1fc1b1f69e3e37377400d078f916599e0c7b20bc`.
+
+Platform-core spec-first revalidation is commit `8d86554fcc4afc8d02b7ed38bfd5ca93221fede7`, spec blob `9e5ee768418dddfbde2f4534d9ff9c26d70ef5ba`. Authored-only external contracts are commit `0db067351aef9365ada9e168f041599983dc1693`, blob `32a60800c34d53223fed2f1e4aa521e300b510d7`, and are mirrored byte-identically into the desktop provider in this round. They pin exact 28-byte length, field offsets 0..4 / 4..12 / 12..20 / 20..28, signed i64 extremes, every truncation cut, wrong-constructor rejection and strict EOF. They were not run.
+
+The existing ledger row `TDRP-R9-MTPROTO-NEW-SESSION-WIRE-001` is reused; no duplicate responsibility is created. It remains `implemented / validation_status=not-run / accepted=false`. Coverage remains `responsibilities_total=97`, `unknown=16172`, `unread=16145`, `omitted=0`. Arbitrary sent/resend/container history, connection scheduling, auth-key binding/persistence, gzip, complete difference/differenceSlice decoding/application, broader source/legal closure, Stage-B executable evidence and independent release ACCEPT remain open or outside this isolated wire claim.
+
+No GitHub Actions/status/check query or trigger, build, typecheck, lint, schema validator, generator, unit/contract/integration/E2E test, package, deployment, installation or runtime acceptance was performed.
