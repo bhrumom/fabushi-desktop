@@ -146,6 +146,19 @@ row `OCRM-RESP-AGENT-LOOP-DETECTION-001` is therefore corrected to
 `implementation=not-started`, `wiring=not-wired`, `verification=not-run`, and
 `acceptance=pending` until the detector and its real Runner call chain exist.
 
+The model-pricing mapping was rechecked as well. `TurnUsage` is a real
+production-carried usage shape, but the current non-test source has no
+`PricingCatalog`/model-cost calculation caller. The remote catalog projection
+and `RateLimitAdmissionController` are defined under the Inference extension
+without a production consumer in this path; the Runner adapter's HTTP status
+handling provides retry/timeout classification, not the mapped provider
+fallback chain. The O07/O08 tests therefore do not establish the combined
+pricing and fallback responsibility. The parity row
+`OCRM-RESP-AGENT-MODEL-PRICING-001` is corrected to
+`implementation=not-started`, `wiring=not-wired`, `verification=not-run`, and
+`acceptance=pending` until model pricing and provider fallback have a real
+producer/consumer path.
+
 The parity row's blocker attribution was rechecked at the same time. The prior
 `BL-MEDIA-DOC-TRUNCATION-UPSTREAM-CALLER-001` reference did not describe this
 ACP transport/consumer gap; the row now points to the existing

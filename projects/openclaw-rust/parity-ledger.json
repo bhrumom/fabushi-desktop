@@ -3220,10 +3220,10 @@
       ],
       "id": "OCRM-RESP-AGENT-MODEL-PRICING-001",
       "integration": {
-        "consumer": "source/host/src/runner/production_turn_agent_owner.rs",
-        "entrypoint": "source/host/src/runner/mod.rs",
+        "consumer": "No production consumer for model cost calculation or provider fallback chain; production paths only carry/aggregate TurnUsage and retry transport failures",
+        "entrypoint": "source/host/src/runner/turn_usage.rs::TurnUsage plus source/host/src/extensions/inference/model_catalog_service.rs::project_remote_model_catalog",
         "owner": "source/host/src/runner/mod.rs",
-        "producer": "source/host/src/runner/mod.rs"
+        "producer": "No production PricingCatalog or provider-fallback producer is wired; OCRM-AGENT-O07/O08 are contract-only oracles"
       },
       "invariants": [
         "TurnUsage merge aggregates prompt, completion, and cache tokens",
@@ -3270,11 +3270,11 @@
       ],
       "status": {
         "acceptance": "pending",
-        "implementation": "implemented",
+        "implementation": "not-started",
         "mapping": "reviewed",
         "read": "read-complete",
         "verification": "not-run",
-        "wiring": "wired"
+        "wiring": "not-wired"
       },
       "target": {
         "language": "Rust",
