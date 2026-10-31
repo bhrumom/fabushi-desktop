@@ -2,8 +2,8 @@
 
 Status: active  
 Spec ID: OCRM-001  
-Revision: 2
-Last updated: 2026-10-30（Asia/Shanghai）
+Revision: 3
+Last updated: 2026-10-31（Asia/Shanghai）
 Owner: Fabushi Desktop  
 Canonical target: `bhrumom/fabushi-desktop` 当前 `main` 及从它推进的已核验实现分支  
 Project: [`projects/openclaw-rust`](../../projects/openclaw-rust/SOURCE_OF_TRUTH.md)  
@@ -580,6 +580,16 @@ P0 通常只能建立前两个 flags 的正面证据；完整适用责任映射�
 - [Rust Actions](https://github.com/bhrumom/fabushi-desktop/blob/ba9ecce728ef021fee609796c8704d8af6fe4b5a/.github/workflows/rust-desktop-runtime.yml) 是已有验证入口，不是本 Spec 的迁移通过证明。
 
 ## 17. Spec compliance 与本次交付记录
+
+### 17.1 2026-10-31 governance amendment
+
+OCRM-AC02 and G02 final close the source set by requiring zero omitted paths,
+zero undispositioned paths, zero unassessed applicable product
+responsibilities, and zero applicable orphan/unmapped responsibilities. Honest
+`unread`/`unclassified` progress for ordinary non-product grouped evidence
+remains reportable and is not an independent AC02 failure predicate. This
+amendment does not promote any source-closure, implementation, wiring,
+verification, acceptance, or global flag state.
 
 | 对象 | 状态 | 说明 |
 | --- | --- | --- |

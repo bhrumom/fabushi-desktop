@@ -4,7 +4,7 @@ Status: in-progress / global authority pending
 Task ID: OCRM-P0  
 Spec: [OCRM-001](../../../../docs/specs/openclaw-rust-equivalence-migration.md)  
 Project: [Source of Truth](../../SOURCE_OF_TRUTH.md)  
-Last updated: 2026-10-30（Asia/Shanghai）
+Last updated: 2026-10-31（Asia/Shanghai）
 
 ## 1. 本任务要交付什么
 
@@ -13,6 +13,11 @@ Last updated: 2026-10-30（Asia/Shanghai）
 本任务不声称一轮已完成所有文件语义深读。P0 必须完成全量集合与身份校验，并为每条路径建立适用性与 disposition；对下一实施单元完成逐文件阅读、依赖/owner/oracle 合同。承载行为、高风险、公开合同、生产 producer/owner/consumer、权限安全、状态迁移、官方插件/渠道/平台和关键上游 oracle 的路径必须深读；普通文档、示例、fixture、重复或研发用途项可以用可复核成组证据处置。未知行为保持未知并升级深读，未深读路径真实保持 unread。全部源码语义阅读、Rust 实现与验收由后续任务持续闭合，最终标准不降低。
 
 完整枚举/取得来源由 `source_closure_ready` 表达；0 未分流路径和 0 未评估适用责任由 OCRM-AC02/G02 final 表达；适用责任理解、映射和 disposition closure 由 `responsibility_mapping_complete` 表达，正面谓词见主 Spec §15.1。`unread` 是深读进度维度，不是把普通非产品路径强行全文阅读的全局门槛。P0 全局未退出时，满足 §11.1 的单元及其全部相关传递依赖仍可获得 scoped authority 并推进 Rust 实现；不把该单元结论升级为全项目通过。
+
+2026-10-31 governance amendment: P0 structural may preserve honest
+unread/unclassified progress. P0 final and AC02 close disposition and
+applicability sets, not a fabricated zero-unread count; this does not promote
+source closure or any project completion flag.
 
 ## 2. 前置读取与并行工作保护
 

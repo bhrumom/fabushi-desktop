@@ -2,8 +2,8 @@
 
 Status: active  
 Project ID: OCRM-001  
-Revision: 2
-Last updated: 2026-10-30（Asia/Shanghai）
+Revision: 3
+Last updated: 2026-10-31（Asia/Shanghai）
 Target: `bhrumom/fabushi-desktop` current canonical main  
 Implementation/acceptance: **未完成**
 
@@ -70,6 +70,13 @@ Actions evidence envelope；在此之前 `baseline_identity_accepted`、
 `source_closure_ready` 及后续完成 flags 均保持 false。
 
 ## 5. 机器记录的初始化与终态
+
+2026-10-31 governance amendment: AC02/G02 final requires zero omitted,
+undispositioned and unassessed applicable product responsibilities, plus zero
+applicable orphan/unmapped responsibilities. Honest unread/unclassified
+progress for ordinary non-product grouped evidence remains reportable and is
+not an independent AC02 hard gate. This clarification does not change any
+global flag or source-closure state.
 
 P0 在 Actions 建立 lock、inventory、parity ledger、RTM、dossiers 和 evidence 索引；本次不提交伪造的完整台账或空清单来充当 baseline。
 
