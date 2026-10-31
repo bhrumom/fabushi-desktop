@@ -75,6 +75,25 @@ That difference is an explicit dependency-closure review set, not an omission
 or proof of irrelevance. It must be classified against the exact source and
 build/release consumers before dependency closure can be accepted.
 
+The exact manifest read gives the following initial, evidence-backed
+classification:
+
+| manifest group | exact observed shape | required disposition review |
+| --- | --- | --- |
+| `.github/actions/setup-security-review/package.json` | private action runtime; `minimatch`, `yaml` | build/security-operation dependency; trace the workflow and lock treatment |
+| `.github/release/clawhub-cli/package.json` | private release helper; `clawhub` | release-operation dependency; trace packaging/publish consumers |
+| `.github/release/vercel-cli/package.json` | private release helper; `sandbox`, `vercel` | release-operation dependency; trace deployment workflow consumers |
+| `docs/snippets/plugin-publish/minimal-package.json` | public-looking sample plugin package; `typebox` | documentation/example provenance and plugin-publish contract review |
+| `qa/convex-credential-broker/package.json` | private QA service; `convex`, `nostr-tools`, `@types/node`; deploy/dev/dashboard scripts | external QA service and credential-flow review; not silently excluded as fixture |
+| `scripts/cloudflare/package.json` | private deployment template; Cloudflare container, TypeScript and Wrangler dependencies; check/deploy scripts | build/release/platform-operation review |
+| `src/claws/fixtures/delegating-agent/package.json` | dependency-free fixture package | non-product fixture disposition with exact test references |
+| `test/fixtures/claws/project-v1/package.json` | dependency-free golden fixture package | non-product fixture disposition with exact test references |
+| `test/fixtures/web-output-provider/package.json` | private dependency-free QA fixture package | non-product fixture disposition with exact test references |
+
+This is a classification frontier, not a completed dependency closure: the
+workflow, release, QA-service, deployment-template and fixture consumers still
+need exact source references and license/provenance evidence.
+
 ## Evidence boundary
 
 This proves the fixed subject's recursive path/blob/mode inventory is complete
