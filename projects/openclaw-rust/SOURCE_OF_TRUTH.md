@@ -91,6 +91,22 @@ root dependency/license inputs 与上一 candidate 相同。该 identity 已同�
 依赖闭包、LFS/完整性或 Actions provenance，亦不得提升任何 authority 或
 global flag。
 
+2026-10-31T03:46:32Z 的再次只读核对发现 OpenClaw `main` 已漂移到
+commit=`5ce7a597cbe3f8bd42456cac3b5dbe0e74d9e321`、root tree
+`63813e46d6f93598cce22bff02f9def2c098f5ca`；递归 tree 未截断，共 63,872
+entries（61,631 blobs、2,241 directories）。该 exact subject 的
+`package.json`、`pnpm-lock.yaml`、`pnpm-workspace.yaml`、`.gitattributes`、
+`LICENSE` 与 `THIRD_PARTY_NOTICES.md` blob identities 分别为
+`bb155612041150b48dc93246039cb4eac65306ec`、
+`df897f3361f5968912f27b31971a60c08a1132b4`、
+`32ce4d83de4aac6a1e3665baba09a3aa9582960c`、
+`c6118b226a4a760f7861b6b7b1e7dccd943384e4`、
+`ed064819ab537575d0cad902f7e5af4a3488b1d0`、
+`0c9c123760188915a384ce7275df4096114e8f90`；`.gitmodules` 仍不存在。
+该 identity 已同步写入 `upstream.lock.json`，但仍是 discovery-only；不得复用
+旧 inventory、依赖闭包、LFS/完整性或 Actions provenance，亦不得提升任何
+authority 或 global flag。
+
 ## 5. 机器记录的初始化与终态
 
 2026-10-31 governance amendment: AC02/G02 final requires zero omitted,

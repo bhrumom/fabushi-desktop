@@ -64,3 +64,28 @@ discovery-only: no prior inventory, dependency closure, LFS/integrity result or
 Actions provenance is relabeled or reused, and all authority/completion flags
 remain unchanged. No CI, push, PR update or local OCRM executable verification
 was performed.
+
+## Subsequent live recheck — 2026-10-31T03:46:32Z
+
+Read-only `git ls-remote` and GitHub commit/tree API checks resolved
+`openclaw/openclaw` `refs/heads/main` to commit
+`5ce7a597cbe3f8bd42456cac3b5dbe0e74d9e321`, root tree
+`63813e46d6f93598cce22bff02f9def2c098f5ca`, with committer time
+`2026-10-31T03:46:32Z`. The recursive tree response was not truncated and
+contained 63,872 entries: 61,631 blobs and 2,241 trees.
+
+The exact subject retained these root input identities:
+
+- `package.json`: `bb155612041150b48dc93246039cb4eac65306ec`
+- `pnpm-lock.yaml`: `df897f3361f5968912f27b31971a60c08a1132b4`
+- `pnpm-workspace.yaml`: `32ce4d83de4aac6a1e3665baba09a3aa9582960c`
+- `.gitattributes`: `c6118b226a4a760f7861b6b7b1e7dccd943384e4`
+- `LICENSE`: `ed064819ab537575d0cad902f7e5af4a3488b1d0`
+- `THIRD_PARTY_NOTICES.md`: `0c9c123760188915a384ce7275df4096114e8f90`
+- `.gitmodules`: absent
+
+This supersedes the `ece4ca8...` discovery candidate in the lock. It remains
+discovery-only: no prior inventory, dependency closure, LFS/integrity result or
+Actions provenance is relabeled or reused, and all authority/completion flags
+remain unchanged. No CI, push, PR update or local OCRM executable verification
+was performed.
