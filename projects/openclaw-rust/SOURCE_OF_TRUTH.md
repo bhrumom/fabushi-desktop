@@ -476,3 +476,13 @@ authority/global flag。
 root runtime dependencies、57 个 devDependencies，以及同树的
 lock/workspace/license blob。该 probe 只证明根输入存在与形状，不等价于递归
 dependency closure；closure flags 继续保持 `false`。
+
+当前 exact candidate 的 Gateway drift 已完成一项只读 scoped audit：
+`packages/gateway-client` 新增 negotiated `hello.policy.maxPayload`、UTF-8
+发送前 payload byte guard、typed `GatewayPayloadLimitError` 和 64 KiB pre-auth
+default；协议包是唯一 limit owner，server constants 仅 re-export。Fabushi 当前
+`source/node-agent-coordinator/src/gateway/gateway_client.rs` 是 HTTP/SSE client，
+`source/host/src/gateway_server.rs` 是 Host server boundary，尚未证明等价的
+WebSocket handshake/pending-request negotiated consumer。详见
+`dossiers/gateway-client-payload-limit-current-ad57b613-20261031.md`；不提升
+任何 ledger/flag，且不创建第二 Gateway transport owner。
