@@ -48,9 +48,20 @@ function validateReply(method: string, value: unknown): unknown {
   return value;
 }
 
+export interface TelegramAuthorizationProjection {
+  readonly authorizationState?: unknown;
+  readonly selfUserId?: number | null;
+  readonly [key: string]: unknown;
+}
+
 export interface ProductionCoordinatorClient {
   readonly ready: Promise<void>;
   call(method: string, args?: unknown): Promise<unknown>;
+  telegramAuthStatus(): Promise<TelegramAuthorizationProjection>;
+  telegramSendCode(phoneNumber: string): Promise<TelegramAuthorizationProjection>;
+  telegramSignIn(code: string): Promise<TelegramAuthorizationProjection>;
+  telegramPassword(password: string): Promise<TelegramAuthorizationProjection>;
+  telegramRegistration(firstName: string, lastName?: string): Promise<TelegramAuthorizationProjection>;
   getAgentTranscriptWindow(args: CoordinatorTranscriptWindowRequest): Promise<CoordinatorTranscriptWindowResponse>;
   getAgentThread(args: CoordinatorAgentThreadRequest): Promise<CoordinatorAgentThreadResponse>;
   isEgressTunnelAvailable(): Promise<boolean>;
@@ -166,6 +177,14 @@ export function createCoordinatorClient(portBridge: CoordinatorPortBridge): Prod
   return {
     ready,
     call,
+    telegramAuthStatus: async () => await call("feature.auth.telegramStatus", {}) as TelegramAuthorizationProjection,
+    telegramSendCode: async (phoneNumber) => await call("feature.auth.telegramSendCode", { phoneNumber }) as TelegramAuthorizationProjection,
+    telegramSignIn: async (code) => await call("feature.auth.telegramSignIn", { code }) as TelegramAuthorizationProjection,
+    telegramPassword: async (password) => await call("feature.auth.telegramPassword", { password }) as TelegramAuthorizationProjection,
+    telegramRegistration: async (firstName, lastName) => await call("feature.auth.telegramRegistration", {
+      firstName,
+      ...(lastName == null ? {} : { lastName }),
+    }) as TelegramAuthorizationProjection,
     getAgentTranscriptWindow: async (args) => await call("getAgentTranscriptWindow", args) as CoordinatorTranscriptWindowResponse,
     getAgentThread: async (args) => await call("getAgentThread", args) as CoordinatorAgentThreadResponse,
     isEgressTunnelAvailable: async () => await call("isEgressTunnelAvailable") === true,

@@ -15,7 +15,9 @@ use mahayana_plugin_runtime::{
     PluginState,
 };
 use mahayana_product::MahayanaProductClient;
-use mahayana_telegram::{TelegramClientHandoff, TelegramClientLease};
+use mahayana_telegram::{
+    TelegramApplicationCredentials, TelegramClientHandoff, TelegramClientLease,
+};
 use serde::{Deserialize, Serialize};
 use rusqlite::{params, Connection, OptionalExtension};
 use serde_json::{Value, json};
@@ -93,7 +95,7 @@ pub struct AppHost {
     js: Mutex<DeepSeekJsHost>,
     feature: Arc<FeatureHostController>,
     // Declared after `feature` so the non-owning provider is dropped before the client lease.
-    _telegram_client: Option<TelegramClientLease>,
+    telegram_client: Option<TelegramClientLease>,
 }
 
 /// Send-safe event lane for desktop PUSH delivery. It intentionally owns only
@@ -274,7 +276,7 @@ impl AppHost {
                     .map_err(|error| AppHostError::Operation(error.to_string()))?,
             ),
             feature,
-            _telegram_client: telegram_client,
+            telegram_client,
         })
     }
 
@@ -371,6 +373,11 @@ impl AppHost {
                 .feature
                 .auth_providers()
                 .map_err(|error| AppHostError::Operation(error.to_string())),
+            "feature.auth.telegramStatus" => self.feature_telegram_auth_status(),
+            "feature.auth.telegramSendCode" => self.feature_telegram_send_code(params),
+            "feature.auth.telegramSignIn" => self.feature_telegram_sign_in(params),
+            "feature.auth.telegramPassword" => self.feature_telegram_password(params),
+            "feature.auth.telegramRegistration" => self.feature_telegram_registration(params),
             "feature.auth.passwordLogin" => self.feature_password_login(params),
             "feature.auth.browserStart" => self
                 .feature
@@ -600,6 +607,51 @@ impl AppHost {
             .unwrap_or(24 * 60 * 60 * 1000);
         self.feature
             .issue_messaging_access(device_id, session_id, scopes, ttl_ms)
+            .map_err(|error| AppHostError::Operation(error.to_string()))
+    }
+
+    fn telegram_client(&self) -> Result<&TelegramClientLease, AppHostError> {
+        self.telegram_client.as_ref().ok_or_else(|| {
+            AppHostError::Operation(
+                "embedded Telegram client is unavailable for the current platform account".into(),
+            )
+        })
+    }
+
+    fn feature_telegram_auth_status(&self) -> Result<Value, AppHostError> {
+        let handoff = self
+            .telegram_client()?
+            .handoff()
+            .map_err(|error| AppHostError::Operation(error.to_string()))?;
+        Ok(json!({
+            "authorizationState": handoff.authorization_state,
+            "selfUserId": handoff.self_user_id,
+        }))
+    }
+
+    fn feature_telegram_send_code(&self, params: Value) -> Result<Value, AppHostError> {
+        self.telegram_client()?
+            .send_authentication_code(string_param(&params, "phoneNumber")?)
+            .map_err(|error| AppHostError::Operation(error.to_string()))
+    }
+
+    fn feature_telegram_sign_in(&self, params: Value) -> Result<Value, AppHostError> {
+        self.telegram_client()?
+            .submit_authentication_code(string_param(&params, "code")?)
+            .map_err(|error| AppHostError::Operation(error.to_string()))
+    }
+
+    fn feature_telegram_password(&self, params: Value) -> Result<Value, AppHostError> {
+        self.telegram_client()?
+            .submit_authentication_password(string_param(&params, "password")?)
+            .map_err(|error| AppHostError::Operation(error.to_string()))
+    }
+
+    fn feature_telegram_registration(&self, params: Value) -> Result<Value, AppHostError> {
+        let first_name = string_param(&params, "firstName")?;
+        let last_name = params.get("lastName").and_then(Value::as_str);
+        self.telegram_client()?
+            .submit_registration(first_name, last_name)
             .map_err(|error| AppHostError::Operation(error.to_string()))
     }
 
@@ -1297,9 +1349,20 @@ fn open_platform_telegram_client(
         std::fs::create_dir_all(parent)
             .map_err(|error| AppHostError::Operation(format!("create Telegram storage directory: {error}")))?;
     }
-    TelegramClientLease::open_persistent(&database_path, &storage_key)
-        .map(Some)
-        .map_err(|error| AppHostError::Operation(format!("open embedded Telegram client: {error}")))
+    let application_credentials = credential
+        .telegram_application_credentials()
+        .map(|(api_id, api_hash)| TelegramApplicationCredentials::new(api_id, api_hash.to_string()))
+        .transpose()
+        .map_err(|error| {
+            AppHostError::Operation(format!("read Telegram application credentials: {error}"))
+        })?;
+    TelegramClientLease::open_persistent_with_application_credentials(
+        &database_path,
+        &storage_key,
+        application_credentials,
+    )
+    .map(Some)
+    .map_err(|error| AppHostError::Operation(format!("open embedded Telegram client: {error}")))
 }
 
 fn create_feature_host(
@@ -1492,6 +1555,21 @@ pub fn dispatch_json(host: &AppHost, input: &str) -> String {
 #[cfg(test)]
 mod telegram_composition_contract_tests {
     use super::*;
+
+    #[test]
+    fn telegram_renderer_auth_contract_has_no_application_credential_parameters() {
+        let renderer_methods = [
+            "feature.auth.telegramStatus",
+            "feature.auth.telegramSendCode",
+            "feature.auth.telegramSignIn",
+            "feature.auth.telegramPassword",
+            "feature.auth.telegramRegistration",
+        ];
+        assert_eq!(renderer_methods.len(), 5);
+        let renderer_parameters = ["phoneNumber", "code", "password", "firstName", "lastName"];
+        assert!(!renderer_parameters.contains(&"apiId"));
+        assert!(!renderer_parameters.contains(&"apiHash"));
+    }
 
     #[test]
     fn telegram_database_path_is_stable_and_account_scoped() {

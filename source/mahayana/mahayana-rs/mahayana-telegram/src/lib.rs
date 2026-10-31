@@ -30,6 +30,37 @@ use std::sync::atomic::Ordering;
 
 const CONVERSATION_PREFIX: &str = "telegram:chat:";
 
+#[derive(Clone, PartialEq, Eq)]
+pub struct TelegramApplicationCredentials {
+    api_id: i32,
+    api_hash: String,
+}
+
+impl std::fmt::Debug for TelegramApplicationCredentials {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        formatter
+            .debug_struct("TelegramApplicationCredentials")
+            .field("api_id", &self.api_id)
+            .field("api_hash", &"<redacted>")
+            .finish()
+    }
+}
+
+impl TelegramApplicationCredentials {
+    pub fn new(api_id: i32, api_hash: impl Into<String>) -> Result<Self, ConversationError> {
+        let api_hash = api_hash.into().trim().to_ascii_lowercase();
+        if api_id <= 0
+            || api_hash.len() != 32
+            || !api_hash.bytes().all(|byte| byte.is_ascii_hexdigit())
+        {
+            return Err(ConversationError::Provider(
+                "Telegram application credentials failed bounded validation".into(),
+            ));
+        }
+        Ok(Self { api_id, api_hash })
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct TelegramClientHandoff {
     pub client_id: u64,
@@ -42,6 +73,7 @@ pub struct TelegramClientHandoff {
 /// non-owning typed handoff; no second Telegram account/runtime is created.
 pub struct TelegramClientLease {
     client_id: u64,
+    application_credentials: Option<TelegramApplicationCredentials>,
 }
 
 impl TelegramClientLease {
@@ -49,12 +81,23 @@ impl TelegramClientLease {
         database_path: &Path,
         storage_key: &[u8],
     ) -> Result<Self, ConversationError> {
+        Self::open_persistent_with_application_credentials(database_path, storage_key, None)
+    }
+
+    pub fn open_persistent_with_application_credentials(
+        database_path: &Path,
+        storage_key: &[u8],
+        application_credentials: Option<TelegramApplicationCredentials>,
+    ) -> Result<Self, ConversationError> {
         let database_path = database_path.to_str().ok_or_else(|| {
             ConversationError::Provider("Telegram database path is not UTF-8".into())
         })?;
         let client_id = create_persistent_client(database_path, storage_key)
             .map_err(|error| ConversationError::Provider(error.to_string()))?;
-        Ok(Self { client_id })
+        Ok(Self {
+            client_id,
+            application_credentials,
+        })
     }
 
     pub fn handoff(&self) -> Result<TelegramClientHandoff, ConversationError> {
@@ -65,6 +108,110 @@ impl TelegramClientLease {
             authorization_state: authorization.state,
             self_user_id: authorization.self_user_id,
         })
+    }
+
+    fn execute(&self, request: Value) -> Result<Value, ConversationError> {
+        let response: Value =
+            serde_json::from_str(&execute_json(self.client_id, &request.to_string()))
+                .map_err(|error| ConversationError::Provider(error.to_string()))?;
+        if response.get("ok").and_then(Value::as_bool) != Some(true) {
+            let code = response
+                .get("errorCode")
+                .and_then(Value::as_str)
+                .unwrap_or("telegram_error");
+            let message = response
+                .get("message")
+                .and_then(Value::as_str)
+                .unwrap_or("Telegram command failed");
+            return Err(ConversationError::Provider(format!("{code}: {message}")));
+        }
+        response
+            .get("data")
+            .cloned()
+            .ok_or_else(|| ConversationError::Provider("Telegram response data is missing".into()))
+    }
+
+    fn execute_authorization(&self, request: Value) -> Result<Value, ConversationError> {
+        let mut response = self.execute(request)?;
+        let handoff = self.handoff()?;
+        let object = response.as_object_mut().ok_or_else(|| {
+            ConversationError::Provider("Telegram authorization response is not an object".into())
+        })?;
+        object.insert(
+            "authorizationState".into(),
+            serde_json::to_value(&handoff.authorization_state)
+                .map_err(|error| ConversationError::Provider(error.to_string()))?,
+        );
+        object.insert("selfUserId".into(), json!(handoff.self_user_id));
+        Ok(response)
+    }
+
+    pub fn send_authentication_code(&self, phone_number: &str) -> Result<Value, ConversationError> {
+        if phone_number.trim().is_empty() {
+            return Err(ConversationError::Provider(
+                "Telegram phone number is required".into(),
+            ));
+        }
+        if matches!(self.handoff()?.authorization_state, TelegramAuthorizationState::Ready) {
+            return Err(ConversationError::Provider(
+                "Telegram account is already authorized".into(),
+            ));
+        }
+        let credentials = self.application_credentials.as_ref().ok_or_else(|| {
+            ConversationError::Provider(
+                "Telegram application credentials are unavailable".into(),
+            )
+        })?;
+        self.execute(json!({
+            "@type": "telegram.bootstrapTransport",
+            "dcId": 2,
+            "testMode": false,
+        }))?;
+        self.execute(json!({
+            "@type": "telegram.initializeConnection",
+            "apiId": credentials.api_id,
+            "deviceModel": "Fabushi Desktop",
+            "systemVersion": std::env::consts::OS,
+            "appVersion": env!("CARGO_PKG_VERSION"),
+            "systemLangCode": "en",
+            "langPack": "",
+            "langCode": "en",
+        }))?;
+        self.execute_authorization(json!({
+            "@type": "telegram.sendAuthenticationCode",
+            "phoneNumber": phone_number.trim(),
+            "apiId": credentials.api_id,
+            "apiHash": credentials.api_hash.as_str(),
+        }))
+    }
+
+    pub fn submit_authentication_code(&self, code: &str) -> Result<Value, ConversationError> {
+        self.execute_authorization(json!({
+            "@type": "telegram.submitAuthenticationCode",
+            "code": code.trim(),
+        }))
+    }
+
+    pub fn submit_authentication_password(
+        &self,
+        password: &str,
+    ) -> Result<Value, ConversationError> {
+        self.execute_authorization(json!({
+            "@type": "telegram.submitAuthenticationPassword",
+            "password": password,
+        }))
+    }
+
+    pub fn submit_registration(
+        &self,
+        first_name: &str,
+        last_name: Option<&str>,
+    ) -> Result<Value, ConversationError> {
+        self.execute_authorization(json!({
+            "@type": "telegram.submitRegistration",
+            "firstName": first_name.trim(),
+            "lastName": last_name.unwrap_or("").trim(),
+        }))
     }
 }
 

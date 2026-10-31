@@ -90,6 +90,11 @@ export function validateCoordinatorReply(method: string, value: unknown): unknow
 }
 
 export const COORDINATOR_METHOD_TABLE = {
+  "feature.auth.telegramStatus": { args: "none", reply: "record" },
+  "feature.auth.telegramSendCode": { args: "object", reply: "record" },
+  "feature.auth.telegramSignIn": { args: "object", reply: "record" },
+  "feature.auth.telegramPassword": { args: "object", reply: "record" },
+  "feature.auth.telegramRegistration": { args: "object", reply: "record" },
   getAgentTranscriptWindow: { args: "object", reply: "transcript-window" },
   getAgentThread: { args: "object", reply: "agent-thread" },
   getAgentTranscriptTail: { args: "object", reply: "transcript-page" },

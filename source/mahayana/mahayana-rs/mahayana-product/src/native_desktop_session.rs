@@ -118,6 +118,10 @@ struct WireCredential {
     user_id: Value,
     #[serde(default)]
     telegram_storage_key: Option<String>,
+    #[serde(default)]
+    telegram_api_id: Option<i32>,
+    #[serde(default)]
+    telegram_api_hash: Option<String>,
 }
 
 /// Intentionally has no Serialize or derived Debug implementation.
@@ -129,6 +133,8 @@ pub struct NativeCredential {
     device_id: String,
     raw_user_id: String,
     telegram_storage_key: Option<[u8; 32]>,
+    telegram_api_id: Option<i32>,
+    telegram_api_hash: Option<String>,
 }
 
 impl std::fmt::Debug for NativeCredential {
@@ -163,6 +169,10 @@ impl NativeCredential {
         self.telegram_storage_key
     }
 
+    pub fn telegram_application_credentials(&self) -> Option<(i32, &str)> {
+        self.telegram_api_id.zip(self.telegram_api_hash.as_deref())
+    }
+
     fn binding(&self) -> String {
         let value = json!([
             self.issuer,
@@ -172,6 +182,8 @@ impl NativeCredential {
             self.device_id,
             self.raw_user_id,
             self.telegram_storage_key,
+            self.telegram_api_id,
+            self.telegram_api_hash.as_deref(),
         ]);
         format!("{:x}", Sha256::digest(value.to_string().as_bytes()))
     }
@@ -331,6 +343,18 @@ fn parse(
                 .map_err(|_| invalid("NATIVE_TELEGRAM_STORAGE_KEY_INVALID"))
         })
         .transpose()?;
+    let (telegram_api_id, telegram_api_hash) =
+        match (wire.telegram_api_id, wire.telegram_api_hash.as_deref()) {
+            (None, None) => (None, None),
+            (Some(api_id), Some(api_hash))
+                if api_id > 0
+                    && api_hash.len() == 32
+                    && api_hash.bytes().all(|byte| byte.is_ascii_hexdigit()) =>
+            {
+                (Some(api_id), Some(api_hash.to_ascii_lowercase()))
+            }
+            _ => return Err(invalid("NATIVE_TELEGRAM_APPLICATION_CREDENTIAL_INVALID")),
+        };
     Ok(NativeCredential {
         issuer,
         access_token: wire.access_token,
@@ -339,6 +363,8 @@ fn parse(
         device_id: wire.device_id,
         raw_user_id: raw_id(&wire.user_id)?,
         telegram_storage_key,
+        telegram_api_id,
+        telegram_api_hash,
     })
 }
 
@@ -541,6 +567,35 @@ mod tests {
         let mut invalid_telegram_key = fixture(PRODUCTION_ISSUER);
         invalid_telegram_key["telegramStorageKey"] = json!("not-a-32-byte-storage-key");
         assert!(parse(invalid_telegram_key.to_string().as_bytes(), PRODUCTION_ISSUER, NOW).is_err());
+
+        let mut telegram_application = fixture(PRODUCTION_ISSUER);
+        telegram_application["telegramApiId"] = json!(123456);
+        telegram_application["telegramApiHash"] =
+            json!("ABCDEF0123456789ABCDEF0123456789");
+        let telegram_application = parse(
+            telegram_application.to_string().as_bytes(),
+            PRODUCTION_ISSUER,
+            NOW,
+        )
+        .expect("bounded Telegram application credential");
+        assert_eq!(
+            telegram_application.telegram_application_credentials(),
+            Some((123456, "abcdef0123456789abcdef0123456789"))
+        );
+        for (api_id, api_hash) in [
+            (json!(0), json!("abcdef0123456789abcdef0123456789")),
+            (json!(123456), json!("short")),
+            (json!(123456), json!(null)),
+        ] {
+            let mut invalid = fixture(PRODUCTION_ISSUER);
+            invalid["telegramApiId"] = api_id;
+            invalid["telegramApiHash"] = api_hash;
+            assert!(parse(invalid.to_string().as_bytes(), PRODUCTION_ISSUER, NOW).is_err());
+        }
+        let mut missing_id = fixture(PRODUCTION_ISSUER);
+        missing_id["telegramApiHash"] = json!("abcdef0123456789abcdef0123456789");
+        assert!(parse(missing_id.to_string().as_bytes(), PRODUCTION_ISSUER, NOW).is_err());
+
         assert!(parse(b"{", PRODUCTION_ISSUER, NOW).is_err());
         assert!(parse(&vec![b' '; MAX_BYTES as usize + 1], PRODUCTION_ISSUER, NOW).is_err());
     }

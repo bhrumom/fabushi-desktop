@@ -10,6 +10,7 @@ export const FABUSHI_ACCOUNT_SESSION_SECRET = "fabushi-account-session-v1";
 export const FABUSHI_CI_ACCOUNT_SESSION_FILE_ENV = "FABUSHI_CI_ACCOUNT_SESSION_FILE";
 export const FABUSHI_HOST_ACCESS_CREDENTIAL_FILE_ENV = "FABUSHI_HOST_ACCESS_CREDENTIAL_FILE";
 export const FABUSHI_REMOTE_COMPUTER_DEVICE_CREDENTIAL_FILE_ENV = "FABUSHI_REMOTE_COMPUTER_DEVICE_CREDENTIAL_FILE";
+export const FABUSHI_TELEGRAM_APPLICATION_CREDENTIAL_SECRET = "fabushi-telegram-application-credential-v1";
 const FABUSHI_REMOTE_COMPUTER_DEVICE_SECRET_PREFIX = "fabushi-remote-computer-device-secret-v1";
 const FABUSHI_TELEGRAM_STORAGE_SECRET_PREFIX = "fabushi-telegram-storage-key-v1";
 const REFRESH_LEEWAY_MS = 60_000;
@@ -66,6 +67,27 @@ function validTelegramStorageKey(value: string): boolean {
   } catch {
     return false;
   }
+}
+
+export interface TelegramApplicationCredential {
+  readonly apiId: number;
+  readonly apiHash: string;
+}
+
+export function normalizeTelegramApplicationCredential(value: unknown): TelegramApplicationCredential | null {
+  if (!isRecord(value)) return null;
+  const keys = Object.keys(value);
+  if (keys.length !== 2 || !keys.every((key) => key === "apiId" || key === "apiHash")) return null;
+  const apiId = value.apiId;
+  const apiHash = typeof value.apiHash === "string" ? value.apiHash.trim().toLowerCase() : "";
+  if (typeof apiId !== "number"
+    || !Number.isSafeInteger(apiId)
+    || apiId <= 0
+    || apiId > 0x7fffffff
+    || !/^[0-9a-f]{32}$/u.test(apiHash)) {
+    return null;
+  }
+  return { apiId, apiHash };
 }
 
 function statusFromSession(session: FabushiSession): SandAuthStatus {
@@ -226,8 +248,25 @@ export class FabushiAuthService implements AuthServicePort {
     return encoded;
   }
 
+  private async telegramApplicationCredential(): Promise<TelegramApplicationCredential | null> {
+    const raw = await readSecret(FABUSHI_TELEGRAM_APPLICATION_CREDENTIAL_SECRET);
+    if (raw == null) return null;
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(raw);
+    } catch {
+      throw new Error("Fabushi Telegram application credential is not valid JSON.");
+    }
+    const credential = normalizeTelegramApplicationCredential(parsed);
+    if (credential == null) {
+      throw new Error("Fabushi Telegram application credential failed bounded validation.");
+    }
+    return credential;
+  }
+
   private async writeHostCredential(session: FabushiSession): Promise<void> {
     const telegramStorageKey = await this.telegramStorageKey(session);
+    const telegramApplication = await this.telegramApplicationCredential();
     const path = this.options.hostAccessCredentialFile;
     await fs.mkdir(dirname(path), { recursive: true, mode: 0o700 });
     const temporary = `${path}.${process.pid}.${randomUUID()}.tmp`;
@@ -240,6 +279,10 @@ export class FabushiAuthService implements AuthServicePort {
       deviceId: session.deviceId,
       userId: session.userId,
       telegramStorageKey,
+      ...(telegramApplication == null ? {} : {
+        telegramApiId: telegramApplication.apiId,
+        telegramApiHash: telegramApplication.apiHash,
+      }),
     }), { encoding: "utf8", mode: 0o600, flag: "wx" });
     try {
       await fs.rename(temporary, path);

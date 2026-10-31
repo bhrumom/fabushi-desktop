@@ -2,7 +2,12 @@ import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import test from "node:test";
 
-import { FabushiAuthService, telegramStorageSecretName } from "./fabushi-account-service.js";
+import {
+  FABUSHI_TELEGRAM_APPLICATION_CREDENTIAL_SECRET,
+  FabushiAuthService,
+  normalizeTelegramApplicationCredential,
+  telegramStorageSecretName,
+} from "./fabushi-account-service.js";
 import {
   DEFAULT_FABUSHI_API_BASE_URL,
   DEFAULT_FABUSHI_RESPONSES_URL,
@@ -128,6 +133,27 @@ test("Telegram storage secret scope follows the canonical Fabushi account and de
     telegramStorageSecretName({ ...base, issuer: FABUSHI_CI_ISOLATED_AUTH_BASE_URL }),
   );
   assert.match(same, /^fabushi-telegram-storage-key-v1:[0-9a-f]{64}$/u);
+});
+
+test("Telegram application API credential is application-scoped and bounded before private Host handoff", () => {
+  assert.equal(FABUSHI_TELEGRAM_APPLICATION_CREDENTIAL_SECRET, "fabushi-telegram-application-credential-v1");
+  assert.deepEqual(
+    normalizeTelegramApplicationCredential({
+      apiId: 123456,
+      apiHash: "ABCDEF0123456789ABCDEF0123456789",
+    }),
+    { apiId: 123456, apiHash: "abcdef0123456789abcdef0123456789" },
+  );
+  for (const invalid of [
+    null,
+    {},
+    { apiId: 0, apiHash: "abcdef0123456789abcdef0123456789" },
+    { apiId: 2 ** 31, apiHash: "abcdef0123456789abcdef0123456789" },
+    { apiId: 123456, apiHash: "not-a-telegram-api-hash" },
+    { apiId: 123456, apiHash: "abcdef0123456789abcdef0123456789", rendererVisible: true },
+  ]) {
+    assert.equal(normalizeTelegramApplicationCredential(invalid), null);
+  }
 });
 
 test("session issuer is bound by the Native owner and missing stored issuer remains production-only", () => {
