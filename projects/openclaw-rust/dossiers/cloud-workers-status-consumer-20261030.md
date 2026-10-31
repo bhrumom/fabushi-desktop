@@ -211,6 +211,22 @@ catalog owner. It does not close the upstream plugin entry, CLI/tool/gateway
 consumer, provider lifecycle, device/platform path, or packaged acceptance;
 the broader Crabbox projection row remains `wiring=not-wired`.
 
+## Doctor UI scope frontier — 2026-10-31
+
+The typed `cloudWorkers.doctor` route is available to the production
+Coordinator client, but the Settings surface does not yet have an authoritative
+Cloud Worker `account_scope` plus `device_scope` to submit. Its account state
+currently contains presentation-level Cursor identity, while the local
+`sand-local-node` identifier is a NodeHost identity and is not proof of a
+Cloud Worker lease/device scope. The UI therefore remains status-only rather
+than sending a fabricated doctor request with placeholder scope values.
+
+The next valid UI step requires the existing owner/Coordinator to expose the
+current scoped worker identity (or a typed scope-bound doctor projection) with
+the same generation/authorization fencing as the Host request. Until then,
+`cloudWorkers.doctor` remains a typed route and read-only Host consumer seam,
+not a packaged doctor-button acceptance claim.
+
 ## Verified artifact to bootstrap binding — 2026-10-31
 
 `CloudWorkerBootstrapRequest` now carries `CloudWorkerVerifiedArtifact` rather
