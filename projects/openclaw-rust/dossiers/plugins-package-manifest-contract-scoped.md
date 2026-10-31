@@ -103,6 +103,30 @@ The parity row `OCRM-RESP-PLUGINS-BUNDLE-MANIFEST-001` is corrected to
 `acceptance=pending`; capability metadata registration must not be counted as
 bundle-manifest production wiring.
 
+## 7. Production ingress recheck — 2026-10-31
+
+Two existing plugin-adjacent surfaces were re-read as possible owners and
+rejected as bundle-manifest ingress:
+
+- `source/host/src/extensions/mcp/mcp_service.rs::McpHostService::install_plugin`
+  accepts a catalog `plugin_id` plus configuration values and delegates to
+  `McpManagerBackend::install_plugin`. It does not receive archive bytes,
+  inspect `.codex-plugin/plugin.json`, `.claude-plugin/plugin.json`,
+  `.cursor-plugin/plugin.json`, or `plugin.json`, and it does not call the
+  bundle-manifest helpers.
+- `source/host/src/extensions/plugins/clawhub.rs::ClawHubInstallPipeline`
+  provides family/security eligibility decisions, while
+  `ClawHubArchiveVerification` is a standalone verification helper. A
+  repository search found no non-test caller that connects download,
+  archive verification, manifest parsing, installed-index persistence, and
+  activation.
+
+The existing `installable_package` archive path is the Host mini-app package
+owner and has a separate signed-artifact contract. Reusing it for OpenClaw
+plugin bundles would cross product ownership and security boundaries. The
+bundle responsibility therefore remains not wired; no Rust implementation or
+ledger promotion is justified by these helpers alone.
+
 
 
 
