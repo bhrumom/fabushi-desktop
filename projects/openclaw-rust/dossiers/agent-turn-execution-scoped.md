@@ -84,6 +84,34 @@ including feature-flag filtering, skill command injection, aliases, argument
 parsing, scope/category metadata, and the boundary between chat commands and
 ACP presentation. No Rust target or completion flag is upgraded by this note.
 
+## 2.2 ACP Rust owner/consumer audit — 2026-10-31
+
+The current Fabushi checkout contains
+`source/host/src/extensions/plugin_sdk/acp_runtime.rs`, but its
+`AcpSessionManager`, `verify_session_access`, and `generate_doctor_report`
+symbols have no production caller. The only references are
+`source/host/tests/openclaw_plugin_sdk_contract.rs` and the module export in
+`plugin_sdk/mod.rs`. The manager owns an in-memory session map and its doctor
+method returns `Ready` from that local map; this is a contract slice, not the
+canonical Session/Runner ACP lifecycle or a live ACP transport.
+
+The existing Runner search likewise found no `AvailableCommand` or
+`get_available_commands` implementation, and no production route exposing the
+historical ACP command list. The current live OpenClaw candidate's command
+registry drift described above means the old parity integration
+(`runner/mod.rs` as both producer and consumer) is not evidence of real
+production wiring. A valid implementation must first identify the canonical
+ACP handshake/transport owner, then adapt the current Session/Runner state and
+command registry without creating a second session store or treating a test
+manager as a production doctor.
+
+Disposition: keep the ACP command responsibility
+`wiring=not-wired`, `verification=not-run`, and `acceptance=pending`; retain
+the historical source and implementation contract until exact-subject source
+closure permits a rebaseline. The standalone `AcpSessionManager` contract
+does not satisfy production consumer, security-context, or packaged ACP
+acceptance evidence.
+
 ---
 
 ## 3. Falsifiable Test Oracles (`source/host/tests/openclaw_agent_turn_contract.rs`)

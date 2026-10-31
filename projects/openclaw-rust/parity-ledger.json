@@ -2668,10 +2668,10 @@
       ],
       "id": "OCRM-RESP-AGENT-ACP-COMMANDS-001",
       "integration": {
-        "consumer": "source/host/src/runner/production_turn_agent_owner.rs",
+        "consumer": "No production ACP command consumer identified; current AcpSessionManager is consumed only by source/host/tests/openclaw_plugin_sdk_contract.rs",
         "entrypoint": "source/host/src/runner/mod.rs",
         "owner": "source/host/src/runner/mod.rs",
-        "producer": "source/host/src/runner/mod.rs"
+        "producer": "No production AvailableCommand/get_available_commands producer; historical source path moved to the current OpenClaw chat-command registry"
       },
       "invariants": [
         "Unreviewed arbitrary tool execution virally taints session context",
@@ -2682,7 +2682,7 @@
         "OCRM-AGENT-O05",
         "OCRM-AGENT-O06"
       ],
-      "owner_decision": "Integrate ACP available commands and session security context in runner",
+      "owner_decision": "Preserve the existing Runner/Session owners, but defer ACP command wiring until the canonical handshake/transport owner and current command-registry contract are rebaselined; standalone plugin_sdk::AcpSessionManager is test-only evidence",
       "postconditions": [
         "Command list exposed to client; security context enforced"
       ],
