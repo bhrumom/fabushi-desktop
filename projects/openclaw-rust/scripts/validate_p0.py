@@ -70,6 +70,8 @@ def structural():
         check(live["repository"] == up["repository"] and live["ref"] == up["ref"], "Final AC02 upstream ref drift")
         check(live["commit"] == up["commit"] and live["tree"] == up["tree"], "Final AC02 upstream differs from live candidate")
         check(lock["root_inputs"] == live["root_inputs"], "Final AC02 accepted root inputs differ from live candidate")
+        check(up["baseline_identity_accepted"] is True, "Final AC02 requires accepted baseline identity")
+        check(idx["upstream"]["baseline_identity_accepted"] is True, "Final AC02 index does not project accepted baseline identity")
         check(idx["authority"].get("applicability_disposition_closure") is True, "Final AC02 canonical applicability/disposition closure is not accepted")
     if not FINAL_AC02:
         check(not lock["closure"]["source_closure_ready"] and not idx["authority"]["source_closure_ready"], "Unproven closure asserted")
@@ -216,7 +218,7 @@ def structural():
             check(bool(row["not_applicable_reason"] and row["reviewer"] and row["evidence_refs"]), "Unsupported N/A")
     for k in idx["upstream"]:
         if k == "baseline_identity_accepted":
-            check(idx["upstream"][k] is False, "Unreviewed baseline acceptance claimed")
+            check(idx["upstream"][k] is FINAL_AC02, "Baseline acceptance projection mismatches validation mode")
     check(all(v is False for v in ledger["completion_flags"].values()), "P0 ledger may not claim any global completion")
     check(all(v is False for v in rtm["completion_flags"].values()), "P0 RTM may not claim any global completion")
     return digest
