@@ -136,7 +136,7 @@ the sole admitted-device action/result owner; Host/Runner remains the sole turn
 and process-composition owner. Every runtime command has a producer, owner and
 consumer recorded in the RTM.
 
-#### P1-F08 implementation seam (source-backed, not yet wired)
+#### P1-F08 implementation seam (adapter boundary wired; production composition pending)
 
 The current exact-head consumers are deliberately narrower than the Crabbox
 capability and must remain the integration targets:
@@ -156,8 +156,9 @@ capability and must remain the integration targets:
   `source/host/src/host_runner_composition.rs` own the Runner turn/process
   composition boundary; they do not own worker lifecycle or device grants.
 
-The next implementation unit is a typed adapter at these existing trait
-boundaries. It must accept an ephemeral
+The implemented adapter boundary is a typed adapter at the existing external
+machine trait boundary; the remaining Computer/Sand/Electron consumers still
+require their own source-backed adapters. It accepts an ephemeral
 `CloudWorkerLeasedCapability`/sandbox request, validate account/device scope,
 lease generation, runtime identity and replay key, then delegate the actual
 action to exactly one existing executor. The adapter may not mint a Computer
