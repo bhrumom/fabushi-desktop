@@ -40,3 +40,14 @@ Validation status: not-run.
 Accepted: false.
 
 No GitHub Actions/status/check query or trigger, build, typecheck, lint, schema validator, generator, unit/contract/integration/E2E test, package, deployment, installation or runtime acceptance was performed.
+
+
+## Final source-level readback
+
+Platform-core compliance commit `d04917b2ab583a6b143ab7d0925a38bda4e7ac14` updates the durable spec to blob `f7f1b220b79c8ab92f49d6a07054ffc2821b8a3c` and records requirement-by-requirement source compliance. Canonical handshake/facade/contracts remain `3e740e0714dfca71bb908ec46f182e98605582e5` / `a2dc3f48a15c7a14657f598d7a5ce4b1fed9ed7f` / `748ca5f7962ff0704a630144c7368c067d212de3`. Desktop tracked facade/contracts remain byte-identical.
+
+Remote ledger readback confirms `TDRP-R9-MTPROTO-P-Q-INNER-DATA-TEMP-DC-WIRE-001` is `implemented / validation_status=not-run / accepted=false`; ledger blob `971489ca6ff27838b1ef884a24ced884f60da4ea` reports `responsibilities_total=85`, `unknown=16172`, `unread=16145`, `omitted=0`.
+
+Source readback confirms both selection branches in the single canonical helper: `Some(expires_in)` selects `build_p_q_inner_data_temp_dc`, while `None` keeps `build_p_q_inner_data_dc`. Non-positive temporary lifetime is rejected before the shared helper/state mutation. telegram-network/runtime temporary establishment remains deliberately unchanged/fail-closed because current persisted transport material lacks expiry/binding metadata.
+
+No executable validation was performed. No GitHub Actions/status/check query or trigger, build, typecheck, lint, schema validator, generator, unit/contract/integration/E2E test, package, deployment, installation or runtime acceptance was performed.
