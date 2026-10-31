@@ -62,3 +62,8 @@ This is a benchmark/script scope observation, not proof of a production runtime
 change or a Rust owner/wiring change. It does not authorize relabeling
 fixed-subject inventory rows, responsibility mapping, implementation, or
 acceptance state.
+
+The exact-tree declaration-input count for this subject is recorded separately
+in `dossiers/upstream-current-candidate-declaration-frontier-f8e492f2-20261031.md`;
+that frontier remains structural evidence and does not establish dependency
+closure.
