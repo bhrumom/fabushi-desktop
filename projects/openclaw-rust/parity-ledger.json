@@ -3036,10 +3036,10 @@
       ],
       "id": "OCRM-RESP-AGENT-LOOP-DETECTION-001",
       "integration": {
-        "consumer": "source/host/src/runner/production_turn_agent_owner.rs",
-        "entrypoint": "source/host/src/runner/mod.rs",
+        "consumer": "No production consumer for tool-call loop detection; production_turn_agent_owner consumes TurnOwnerToken cancellation/generation only",
+        "entrypoint": "source/host/src/runner/turn_run_shell.rs::TurnOwnerToken and TurnRunShell",
         "owner": "source/host/src/runner/mod.rs",
-        "producer": "source/host/src/runner/mod.rs"
+        "producer": "No production hashToolCall/repeated-tool detector or loop-breaker producer is wired; OCRM-AGENT-O03/O04 cover cancellation and generation fixtures"
       },
       "invariants": [
         "Tool execution cancellation immediately cancels active attempt",
@@ -3086,11 +3086,11 @@
       ],
       "status": {
         "acceptance": "pending",
-        "implementation": "implemented",
+        "implementation": "not-started",
         "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "verified",
-        "wiring": "wired"
+        "verification": "not-run",
+        "wiring": "not-wired"
       },
       "target": {
         "language": "Rust",

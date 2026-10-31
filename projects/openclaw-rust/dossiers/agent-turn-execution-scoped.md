@@ -136,6 +136,16 @@ responsibility is implemented or wired. The parity row
 `implementation=not-started`, `wiring=not-wired`, `verification=not-run`, and
 `acceptance=pending` until the real Runner producer/consumer path exists.
 
+The tool-loop mapping was rechecked separately. The Rust Runner has a real
+`TurnOwnerToken` and production cancellation/generation lifecycle, but a
+repository-wide non-test search found no equivalent of the historical
+`hashToolCall`/repeated-tool detector or a production loop-breaker consumer.
+O03 proves immediate cancellation and O04 proves monotonic generation only;
+those are necessary turn-attempt controls, not tool-loop detection. The parity
+row `OCRM-RESP-AGENT-LOOP-DETECTION-001` is therefore corrected to
+`implementation=not-started`, `wiring=not-wired`, `verification=not-run`, and
+`acceptance=pending` until the detector and its real Runner call chain exist.
+
 The parity row's blocker attribution was rechecked at the same time. The prior
 `BL-MEDIA-DOC-TRUNCATION-UPSTREAM-CALLER-001` reference did not describe this
 ACP transport/consumer gap; the row now points to the existing
