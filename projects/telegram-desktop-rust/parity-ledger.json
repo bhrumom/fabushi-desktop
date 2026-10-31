@@ -22545,7 +22545,9 @@
         "platform-core-path:native/telegram-protocol/tests/protocol_contract.rs@256f421f54c41256646388833b634cf1191afd91",
         "desktop-sync-commit:4323b97d3b6041731d5b547118fb746d2eba37a6",
         "path:source/mahayana/mahayana-rs/providers/telegram-protocol/tests/protocol_contract.rs@256f421f54c41256646388833b634cf1191afd91",
-        "path:source/mahayana/mahayana-rs/providers/telegram-protocol/src/lib.rs@abab39e42f100972484191f0e52e9edd9b88c6cf"
+        "path:source/mahayana/mahayana-rs/providers/telegram-protocol/src/lib.rs@abab39e42f100972484191f0e52e9edd9b88c6cf",
+        "platform-core-spec-compliance-commit:26cc521c1e57944a9f27fa16f469fff870f34517",
+        "platform-core-spec-compliance-blob:1290cb76c59c01343ac7903a83113b28a90b4147"
       ],
       "test_evidence": [
         "canonical and desktop tracked protocol contracts authored for exact signed server_time preservation, malformed ciphertext lengths, unknown constructor, every serialized-inner truncation cut, active nonce/server_nonce mismatch, SHA-1 mismatch, >15 residual padding, invalid generator, dh_prime length/trust, empty/oversized/unsafe g_a, and rejected-inner state continuity; not run"
@@ -22672,7 +22674,7 @@
       "acceptance_reviewer": null,
       "reviewer": null,
       "license_and_provenance": "Behavioral responsibility is anchored to fixed-U telegramdesktop/tdesktop Telegram/SourceFiles/mtproto/scheme/mtproto.tl@76225965bfc794388db241f3f760db8ab79e84f8 and shipping DcKeyCreator::dhParamsAnswered in Telegram/SourceFiles/mtproto/details/mtproto_dc_key_creator.cpp@13c57454f14b814b5923ea253048fb881ad8cf03. The implementation is source-neutral Rust and copies no upstream C++ implementation.",
-      "notes": "Stage A implementation bookkeeping only. Remote source review confirms existing AuthKeyHandshake::receive_server_dh -> decrypt_server_dh_inner_data already satisfies the fixed-U production semantics, so no production behavior change was made. Durable spec and exhaustive authored-only contracts were added and mirrored but not executed; validation_status=not-run and accepted=false.",
+      "notes": "Stage A implementation bookkeeping only. Remote source review confirms existing AuthKeyHandshake::receive_server_dh -> decrypt_server_dh_inner_data already satisfies the fixed-U production semantics, so no production behavior change was made. Durable spec and exhaustive authored-only contracts were added and mirrored but not executed; validation_status=not-run and accepted=false. Final source-level compliance is recorded at platform-core commit 26cc521c1e57944a9f27fa16f469fff870f34517/spec blob 1290cb76c59c01343ac7903a83113b28a90b4147; executable validation remains not-run.",
       "test_execution_evidence": [],
       "validation_status": "not-run",
       "accepted": false,

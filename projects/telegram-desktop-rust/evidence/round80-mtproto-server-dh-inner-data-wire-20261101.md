@@ -53,3 +53,16 @@ complete updates difference decoding/application remain outside this responsibil
 
 No GitHub Actions/status/check query or trigger, build, typecheck, lint, schema validator, generator,
 unit/contract/integration/E2E test, package, deployment, installation or runtime acceptance was performed.
+
+
+## Final source-level compliance readback
+
+Platform-core compliance commit:
+`26cc521c1e57944a9f27fa16f469fff870f34517`.
+
+Final spec blob:
+`docs/specs/telegram-mtproto-server-dh-inner-data-wire.md@1290cb76c59c01343ac7903a83113b28a90b4147`.
+
+Remote source readback records R1-R13 and AC-1-AC-6 as source/bookkeeping satisfied while executable Stage-B
+validation remains intentionally not run. The responsibility remains
+`implemented / validation_status=not-run / accepted=false`.

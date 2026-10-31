@@ -845,3 +845,15 @@ decoding/application, broader source/legal closure and release acceptance remain
 
 No GitHub Actions/status/check query or trigger, build, typecheck, lint, schema validator, generator,
 unit/contract/integration/E2E test, package, deployment, installation or runtime acceptance was performed.
+
+
+### Round 80 final source-level compliance
+
+Platform-core `26cc521c1e57944a9f27fa16f469fff870f34517` / spec blob
+`1290cb76c59c01343ac7903a83113b28a90b4147` records source-level R1-R13 and AC-1-AC-6 compliance for the
+fixed-U `server_DH_inner_data#b5890dba` responsibility. Canonical production handshake remains
+`87616f4b96a1775455da42b0bbed77711fb3c9f6` with no behavior delta; canonical/desktop authored contract blob is
+`256f421f54c41256646388833b634cf1191afd91`, and desktop facade remains
+`abab39e42f100972484191f0e52e9edd9b88c6cf`. Ledger remains
+`implemented / validation_status=not-run / accepted=false`, coverage
+`90 / 16172 unknown / 16145 unread / 0 omitted`. No executable validation was performed.
