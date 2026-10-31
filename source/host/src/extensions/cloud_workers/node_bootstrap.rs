@@ -196,6 +196,20 @@ impl CloudWorkerBootstrapRecord {
         self.retry_class = retry_class;
         Ok(())
     }
+
+    pub fn validate_persisted(&self) -> Result<(), CloudWorkerNodeBootstrapError> {
+        self.request.validate()?;
+        if self.runtime_identity != self.request.runtime.runtime_id {
+            return Err(CloudWorkerNodeBootstrapError::InvalidRuntimeIdentity);
+        }
+        if self.diagnostics.len() > MAX_DIAGNOSTICS {
+            return Err(CloudWorkerNodeBootstrapError::DiagnosticLimitReached);
+        }
+        for diagnostic in &self.diagnostics {
+            diagnostic.validate()?;
+        }
+        Ok(())
+    }
 }
 
 fn is_allowed_transition(

@@ -168,3 +168,11 @@ operations. Both use the canonical owner and atomic store; replay, owner-epoch,
 generation, runtime identity and outcome-unknown rules remain in the lease
 owner. This is lifecycle/state persistence wiring only and does not discover a
 provider, enroll a device, launch a process or authorize a consumer.
+
+## Bootstrap record persistence façade — 2026-10-31
+
+Bootstrap records are now registered and settled through the Host extension and
+the same canonical owner snapshot. Lease scope, epoch, generation and runtime
+identity are checked before persistence; diagnostics remain bounded and
+redacted, and opaque secret references are retained without resolving them.
+Provider/process, FDN enrollment and platform consumers remain pending.

@@ -5,6 +5,8 @@ use serde::{Deserialize, Serialize};
 use super::{
     CloudWorkerBinaryIdentity, CloudWorkerCatalog, CloudWorkerCatalogCache,
     CloudWorkerCatalogError,
+    CloudWorkerBootstrapPhase, CloudWorkerBootstrapRecord, CloudWorkerBootstrapRetryClass,
+    CloudWorkerDiagnostic, CloudWorkerNodeBootstrapError,
     CloudWorkerLease, CloudWorkerLeaseError, CloudWorkerLeaseMutation, CloudWorkerLeaseScope,
     CloudWorkerLeasedCapability, CloudWorkerLifecycle, CloudWorkerMutationOutcome,
     CloudWorkerRuntimeIdentity,
@@ -76,6 +78,7 @@ impl CloudWorkerMigrationReceipt {
 pub struct CloudWorkerProvisioningOwner {
     config: CloudWorkerProvisioningConfig,
     leases: HashMap<LeaseId, CloudWorkerLease>,
+    bootstrap_records: HashMap<LeaseId, CloudWorkerBootstrapRecord>,
     warm_images: HashMap<String, CloudWorkerWarmImage>,
     migration_receipts: Vec<CloudWorkerMigrationReceipt>,
     catalog_cache: CloudWorkerCatalogCache,
@@ -85,6 +88,8 @@ pub struct CloudWorkerProvisioningOwner {
 pub struct CloudWorkerPersistentSnapshot {
     pub schema_version: u32,
     pub leases: Vec<CloudWorkerLease>,
+    #[serde(default)]
+    pub bootstrap_records: Vec<CloudWorkerBootstrapRecord>,
     pub warm_images: Vec<CloudWorkerWarmImage>,
     #[serde(default)]
     pub migration_receipts: Vec<CloudWorkerMigrationReceipt>,
@@ -101,6 +106,7 @@ impl CloudWorkerProvisioningOwner {
         Ok(Self {
             config,
             leases: HashMap::new(),
+            bootstrap_records: HashMap::new(),
             warm_images: HashMap::new(),
             migration_receipts: Vec::new(),
             catalog_cache: CloudWorkerCatalogCache::default(),
@@ -135,9 +141,14 @@ impl CloudWorkerProvisioningOwner {
         leases.sort_by(|left, right| left.lease_id.0.cmp(&right.lease_id.0));
         let mut warm_images = self.warm_images.values().cloned().collect::<Vec<_>>();
         warm_images.sort_by(|left, right| left.image_id.cmp(&right.image_id));
+        let mut bootstrap_records = self.bootstrap_records.values().cloned().collect::<Vec<_>>();
+        bootstrap_records.sort_by(|left, right| {
+            left.request.lease_id.0.cmp(&right.request.lease_id.0)
+        });
         CloudWorkerPersistentSnapshot {
             schema_version: CLOUD_WORKER_STATE_SCHEMA_VERSION,
             leases,
+            bootstrap_records,
             warm_images,
             migration_receipts: self.migration_receipts.clone(),
         }
@@ -162,6 +173,26 @@ impl CloudWorkerProvisioningOwner {
         for lease in snapshot.leases {
             lease.validate_persisted()?;
             if owner.leases.insert(lease.lease_id.clone(), lease).is_some() {
+                return Err(CloudWorkerOwnerError::InvalidSnapshot);
+            }
+        }
+        if snapshot.bootstrap_records.len() > owner.config.max_leases {
+            return Err(CloudWorkerOwnerError::BootstrapRecordLimitReached);
+        }
+        for record in snapshot.bootstrap_records {
+            record.validate_persisted()?;
+            let lease = owner
+                .leases
+                .get(&record.request.lease_id)
+                .ok_or(CloudWorkerOwnerError::UnknownLease)?;
+            if !bootstrap_matches_lease(&record, lease) {
+                return Err(CloudWorkerOwnerError::BootstrapLeaseMismatch);
+            }
+            if owner
+                .bootstrap_records
+                .insert(record.request.lease_id.clone(), record)
+                .is_some()
+            {
                 return Err(CloudWorkerOwnerError::InvalidSnapshot);
             }
         }
@@ -264,6 +295,50 @@ impl CloudWorkerProvisioningOwner {
             .map_err(CloudWorkerOwnerError::from)
     }
 
+    pub fn register_bootstrap(
+        &mut self,
+        record: CloudWorkerBootstrapRecord,
+    ) -> Result<(), CloudWorkerOwnerError> {
+        self.ensure_enabled()?;
+        if self.bootstrap_records.len() >= self.config.max_leases {
+            return Err(CloudWorkerOwnerError::BootstrapRecordLimitReached);
+        }
+        record.validate_persisted()?;
+        let lease = self.lease(&record.request.lease_id)?;
+        if !bootstrap_matches_lease(&record, lease) {
+            return Err(CloudWorkerOwnerError::BootstrapLeaseMismatch);
+        }
+        if self
+            .bootstrap_records
+            .insert(record.request.lease_id.clone(), record)
+            .is_some()
+        {
+            return Err(CloudWorkerOwnerError::DuplicateBootstrapRecord);
+        }
+        Ok(())
+    }
+
+    pub fn settle_bootstrap(
+        &mut self,
+        mutation: &CloudWorkerLeaseMutation,
+        phase: CloudWorkerBootstrapPhase,
+        retry_class: CloudWorkerBootstrapRetryClass,
+        diagnostic: Option<CloudWorkerDiagnostic>,
+    ) -> Result<CloudWorkerBootstrapRecord, CloudWorkerOwnerError> {
+        self.ensure_enabled()?;
+        let lease = self.lease(&mutation.lease_id)?;
+        lease.validate(mutation)?;
+        let record = self
+            .bootstrap_records
+            .get_mut(&mutation.lease_id)
+            .ok_or(CloudWorkerOwnerError::UnknownBootstrapRecord)?;
+        if !bootstrap_matches_mutation(record, mutation) {
+            return Err(CloudWorkerOwnerError::BootstrapLeaseMismatch);
+        }
+        record.settle(phase, retry_class, diagnostic)?;
+        Ok(record.clone())
+    }
+
     pub fn settle_lease(
         &mut self,
         mutation: &CloudWorkerLeaseMutation,
@@ -339,12 +414,20 @@ pub enum CloudWorkerOwnerError {
     LeaseLimitReached,
     #[error("warm-image limit reached")]
     WarmImageLimitReached,
+    #[error("bootstrap record limit reached")]
+    BootstrapRecordLimitReached,
     #[error("lease was not found")]
     UnknownLease,
     #[error("warm image already exists")]
     DuplicateWarmImage,
     #[error("warm image was not found")]
     UnknownWarmImage,
+    #[error("bootstrap record already exists")]
+    DuplicateBootstrapRecord,
+    #[error("bootstrap record was not found")]
+    UnknownBootstrapRecord,
+    #[error("bootstrap record does not match its lease")]
+    BootstrapLeaseMismatch,
     #[error("unsupported cloud-worker snapshot schema version: {0}")]
     UnsupportedSnapshotVersion(u32),
     #[error("cloud-worker snapshot contains invalid or duplicate records")]
@@ -359,6 +442,29 @@ pub enum CloudWorkerOwnerError {
     Lease(#[from] CloudWorkerLeaseError),
     #[error(transparent)]
     WarmImage(#[from] CloudWorkerWarmImageError),
+    #[error(transparent)]
+    Bootstrap(#[from] CloudWorkerNodeBootstrapError),
+}
+
+fn bootstrap_matches_lease(
+    record: &CloudWorkerBootstrapRecord,
+    lease: &CloudWorkerLease,
+) -> bool {
+    record.request.lease_id == lease.lease_id
+        && record.request.scope == lease.scope
+        && record.request.owner_epoch == lease.owner_epoch
+        && record.request.generation == lease.generation
+        && record.request.runtime == lease.runtime
+}
+
+fn bootstrap_matches_mutation(
+    record: &CloudWorkerBootstrapRecord,
+    mutation: &CloudWorkerLeaseMutation,
+) -> bool {
+    record.request.lease_id == mutation.lease_id
+        && record.request.owner_epoch == mutation.owner_epoch
+        && record.request.generation == mutation.generation
+        && record.request.runtime == mutation.runtime
 }
 
 #[cfg(test)]

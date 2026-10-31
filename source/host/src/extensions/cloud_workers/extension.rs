@@ -10,6 +10,8 @@ use super::{
     CloudWorkerBinaryIdentity, CloudWorkerBootstrapRequest, CloudWorkerCatalog,
     CloudWorkerCatalogError, CloudWorkerDoctorAction, CloudWorkerDoctorError,
     CloudWorkerDoctorRequest, CloudWorkerDoctorResult,
+    CloudWorkerBootstrapPhase, CloudWorkerBootstrapRecord, CloudWorkerBootstrapRetryClass,
+    CloudWorkerDiagnostic,
     CloudWorkerLease, CloudWorkerLeaseMutation, CloudWorkerLeaseScope,
     CloudWorkerLeasedCapability, CloudWorkerLifecycle, CloudWorkerMutationOutcome,
     CloudWorkerOwnerError, CloudWorkerOwnerStatus, CloudWorkerRuntimeIdentity, LeaseId,
@@ -123,6 +125,30 @@ impl CloudWorkerProvisioningExtension {
         outcome: CloudWorkerMutationOutcome,
     ) -> Result<CloudWorkerLease, CloudWorkerMutationError> {
         self.mutate_and_persist(|owner| owner.settle_lease(mutation, next, outcome))
+    }
+
+    /// Registers a validated bootstrap record in the canonical owner snapshot.
+    /// Secret values remain opaque references; no enrollment or process action
+    /// is performed by this persistence façade.
+    pub fn register_bootstrap(
+        &self,
+        record: CloudWorkerBootstrapRecord,
+    ) -> Result<(), CloudWorkerMutationError> {
+        self.mutate_and_persist(|owner| owner.register_bootstrap(record))
+    }
+
+    /// Settles a lease-fenced bootstrap phase and persists its bounded,
+    /// redacted diagnostic state.
+    pub fn settle_bootstrap(
+        &self,
+        mutation: &CloudWorkerLeaseMutation,
+        phase: CloudWorkerBootstrapPhase,
+        retry_class: CloudWorkerBootstrapRetryClass,
+        diagnostic: Option<CloudWorkerDiagnostic>,
+    ) -> Result<CloudWorkerBootstrapRecord, CloudWorkerMutationError> {
+        self.mutate_and_persist(|owner| {
+            owner.settle_bootstrap(mutation, phase, retry_class, diagnostic)
+        })
     }
 
     /// Provides the read-only doctor projection from the canonical owner.

@@ -248,6 +248,10 @@ pending Crabbox responsibilities:
 - Lease lifecycle mutations now have typed `admit_lease` and `settle_lease`
   façades through the extension and atomic store. Provider/process producers,
   device enrollment and consumer wiring remain separate pending work.
+- Bootstrap records now have typed `register_bootstrap` and
+  `settle_bootstrap` façades through the same owner snapshot. Lease fencing,
+  opaque secret references and bounded redacted diagnostics are persisted;
+  provider/process, FDN enrollment and platform consumers remain pending.
 
 The broader Crabbox projection, lifecycle, sandbox, bootstrap, artifact,
 warm-image and runtime-control rows remain pending where their producer or
