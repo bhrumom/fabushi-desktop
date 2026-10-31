@@ -23,9 +23,10 @@ must not be inherited by this subject.
   `04ccce62f1d74dc8e0c88290ae8ded027b7b0f16`, with
   `accepted_for_this_implementation_round=false`.
 - At the later read, the current discovery candidate is
-  `f92366d3c7fb390dc9bba3b89e06b794e0cb5119` /
-  `260ace762cbdaf2e25a8335319601b199d6848e0`. The earlier
-  `002f25a…/553796fe…` candidate is historical discovery evidence only.
+  `bcf23b2ea0eee92c8c497c6b1c4d486588e4d5ab` /
+  `5d9b96f3208eb2daf4c566fc60865a1850e4c77f`. The earlier
+  `002f25a…/553796fe…` and `f92366d…/260ace76…` candidates are historical
+  discovery evidence only.
 - `tracked_tree_enumerated`, `dependency_closure_enumerated`,
   `lfs_scan_complete`, and `source_closure_ready` remain `false`.
 - All eight project completion flags remain `false`.

@@ -164,9 +164,9 @@ inventory/依赖闭包或将其提升为 authority。
 `p0-source-authority-rebaseline-required`，因此不得从本段 discovery identity
 提升 `baseline_identity_accepted` 或 `source_closure_ready`。
 
-2026-10-31T05:45:33Z 的最新只读核对将当前 discovery reference 更新为
-OpenClaw `f92366d3c7fb390dc9bba3b89e06b794e0cb5119` / tree
-`260ace762cbdaf2e25a8335319601b199d6848e0`；递归 tree 未截断，共 63,946
+2026-10-31T05:51:22Z 的最新只读核对将当前 discovery reference 更新为
+OpenClaw `bcf23b2ea0eee92c8c497c6b1c4d486588e4d5ab` / tree
+`5d9b96f3208eb2daf4c566fc60865a1850e4c77f`；递归 tree 未截断，共 63,946
 entries（61,705 blobs、2,241 directories）。它已同步写入
 `upstream.lock.json` 的 `live_candidate`，仍不构成 Actions authority、依赖
 闭包或任何 completion flag 的正面证据；以上较早 current-candidate 段落仅作

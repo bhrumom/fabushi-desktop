@@ -171,9 +171,9 @@ candidate 相同，`.gitmodules` 仍不存在；`src/acp/commands.ts` 仍不存�
 inventory、依赖闭包、LFS/完整性或 Actions provenance，亦不得提升任何 authority
 或 global flag。
 
-2026-10-31T05:45:33Z 的只读核对再次发现 OpenClaw `main` 漂移到
-commit=`f92366d3c7fb390dc9bba3b89e06b794e0cb5119`、root tree
-`260ace762cbdaf2e25a8335319601b199d6848e0`；递归 tree 未截断，共 63,946
+2026-10-31T05:51:22Z 的只读核对再次发现 OpenClaw `main` 漂移到
+commit=`bcf23b2ea0eee92c8c497c6b1c4d486588e4d5ab`、root tree
+`5d9b96f3208eb2daf4c566fc60865a1850e4c77f`；递归 tree 未截断，共 63,946
 entries（61,705 blobs、2,241 directories），无 gitlink。`.gitmodules` 仍不存在；
 根 package/dependency/license blob identities 与上一 candidate 一致。该 exact
 subject 已同步写入 `upstream.lock.json` 的 `live_candidate`，但仍是
@@ -181,7 +181,7 @@ discovery-only；不得复用旧 inventory、依赖闭包、LFS/完整性或 Act
 provenance，亦不得提升任何 authority 或 global flag。
 
 当前 `projects/openclaw-rust/evidence/` 有开发冻结说明、本地冻结治理说明与历史
-upstream drift 记录；尚无绑定 `f92366d3…/260ace76…` 的 Actions run/attempt/job、
+upstream drift 记录；尚无绑定 `bcf23b2e…/5d9b96f3…` 的 Actions run/attempt/job、
 inventory/dependency-closure artifact、不可变 digest、acceptance receipt 或
 OCRM-AC01–AC24 终验记录。相关 dossier 仍属于 discovery/static evidence，不能
 替代 exact-subject evidence envelope；八项 global flags 继续全部为 `false`。
