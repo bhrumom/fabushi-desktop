@@ -160,3 +160,29 @@ acceptance, or authorize CI/build/package/runtime work during the development
 freeze. The next AC02 materialization must be performed against the fixed exact
 subject by the authorized Actions owner; hand-editing null generated fields is
 not permitted.
+
+## Spec/SOT/P0 alignment check
+
+The 2026-10-31 read-only comparison of the governing documents found no
+contradiction in the AC02/G02 interpretation. The main migration Spec
+(`docs/specs/openclaw-rust-equivalence-migration.md` §§6.2–6.5, 12.3, 15,
+15.1), `SOURCE_OF_TRUTH.md`, and
+`management/tasks/P0-source-baseline-and-owner-audit.md` consistently state
+that:
+
+- source/dependency closure, applicability/disposition closure, responsibility
+  mapping, implementation, wiring, verification, and acceptance are separate
+  predicates;
+- P0 G02 structural may retain honestly reported `unread`/`unclassified`
+  progress, while final AC02/G02 requires zero omitted paths, zero
+  applicability/disposition-unclear paths, and zero unassessed applicable
+  product responsibilities;
+- ordinary non-product grouped evidence is not required to masquerade as
+  semantic deep-read, and `not-applicable` cannot stand in for missing
+  implementation, service, platform, device, or evidence; and
+- no P0 structural result or implementation result promotes any later global
+  flag.
+
+This check confirms document alignment only. It does not change the current
+inventory, ledger, RTM, flags, exact-subject provenance, or development-freeze
+permissions.
