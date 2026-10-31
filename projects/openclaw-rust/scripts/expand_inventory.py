@@ -79,11 +79,19 @@ for e in entries:
         "content_identity": shard_rec.get("content_identity") if shard_rec else None,
         "responsibility_ids": shard_rec.get("responsibility_ids", []) if shard_rec else [],
         # Applicability and disposition are independent from semantic read
-        # depth.  Existing shards may not have the new fields; emit explicit
-        # unknown/pending values so a later Actions run cannot silently omit
-        # the new AC02 dimensions.
-        "applicability_status": shard_rec.get("applicability_status", "unknown") if shard_rec else "unknown",
-        "disposition_status": shard_rec.get("disposition_status", "pending") if shard_rec else "pending",
+        # depth. Existing shards may omit the new fields or carry explicit
+        # nulls from the pre-AC02 materialization; both cases must become
+        # explicit unknown/pending values in the next Actions expansion.
+        "applicability_status": (
+            shard_rec.get("applicability_status")
+            if shard_rec and shard_rec.get("applicability_status") is not None
+            else "unknown"
+        ),
+        "disposition_status": (
+            shard_rec.get("disposition_status")
+            if shard_rec and shard_rec.get("disposition_status") is not None
+            else "pending"
+        ),
         "disposition": shard_rec.get("disposition") if shard_rec else None,
         "license_provenance": shard_rec.get("license_provenance") if shard_rec else None,
         "reviewer": shard_rec.get("reviewer") if shard_rec else None,
