@@ -1353,3 +1353,12 @@ Disposition: **no production delta**. Platform-core spec commit/blob is `930a683
 Historical request drop/cancel scheduling and arbitrary request mutation, connection scheduling, auth-key binding/persistence, gzip, complete difference/differenceSlice decoding/application, broader source/legal closure, Stage-B executable evidence, and independent release ACCEPT remain outside this wire-only closure or open.
 
 No GitHub Actions/status/check query or trigger, build, typecheck, lint, schema validator, generator, unit/contract/integration/E2E test, package, deployment, installation, or runtime acceptance was performed.
+
+
+### Round 91 final source-level compliance
+
+Platform-core final compliance commit `df3feac4618636cdbc863b19e05106e19ba10446` / spec blob `2a6a5adae6b2f8bb1ebf06faa29dba88f35c958e` records `RpcDropAnswer` response wire validation as source-level closed with **no production delta**. Canonical production api/tl/lib blobs remain `ebfb3670b5cd097b9ce288782c7954f5cfe9fc43` / `89256ab35184b6dc06a095ab34abb9f44e95a264` / `abab39e42f100972484191f0e52e9edd9b88c6cf`. Canonical and desktop authored-only external contract blob is `3c69527d941fad9eddb8c264e695666ad3e404f9` and remains not run.
+
+The existing `TDRP-R9-MTPROTO-RPC-DROP-ANSWER-WIRE-001` row stays `implemented / validation_status=not-run / accepted=false`; coverage remains `97 responsibilities / 16172 unknown / 16145 unread / 0 omitted`. Historical request drop/cancel scheduling and arbitrary request mutation, connection scheduling, auth-key binding/persistence, gzip, complete difference decoding/application, broader source/legal closure, Stage-B executable evidence, and independent release ACCEPT remain outside this wire-only closure or open.
+
+No GitHub Actions/status/check query or trigger, build, typecheck, lint, schema validator, generator, unit/contract/integration/E2E test, package, deployment, installation, or runtime acceptance was performed.

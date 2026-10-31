@@ -43,3 +43,8 @@ Outbound/history-aware `rpc_drop_answer` selection, drop/cancel scheduling, arbi
 The existing ledger row remains `implemented / validation_status=not-run / accepted=false`.
 
 No GitHub Actions/status/check query or trigger, build, typecheck, lint, schema validator, generator, unit/contract/integration/E2E test, package, deployment, installation, or runtime acceptance was performed.
+
+
+## Final source-level compliance
+
+Platform-core final compliance commit `df3feac4618636cdbc863b19e05106e19ba10446` / spec blob `2a6a5adae6b2f8bb1ebf06faa29dba88f35c958e` confirms the same no-production-delta disposition. Canonical production api/tl/lib blobs remain `ebfb3670b5cd097b9ce288782c7954f5cfe9fc43` / `89256ab35184b6dc06a095ab34abb9f44e95a264` / `abab39e42f100972484191f0e52e9edd9b88c6cf`. Canonical and desktop authored-only external contract blob remains `3c69527d941fad9eddb8c264e695666ad3e404f9` and remains not run. The existing ledger responsibility remains `implemented / validation_status=not-run / accepted=false`; no historical request drop/cancel/application semantics are claimed.

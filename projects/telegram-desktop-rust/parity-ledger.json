@@ -17944,7 +17944,9 @@
         "platform-core-path:native/telegram-protocol/tests/protocol_contract.rs@3c69527d941fad9eddb8c264e695666ad3e404f9",
         "desktop-round91-contract-mirror-commit:314b0b90fa96efe492fd3785e141a0d1390646d3",
         "path:source/mahayana/mahayana-rs/providers/telegram-protocol/tests/protocol_contract.rs@3c69527d941fad9eddb8c264e695666ad3e404f9",
-        "stage-a-round91-evidence:projects/telegram-desktop-rust/evidence/round91-mtproto-rpc-drop-answer-revalidation-20261101.md"
+        "stage-a-round91-evidence:projects/telegram-desktop-rust/evidence/round91-mtproto-rpc-drop-answer-revalidation-20261101.md",
+        "platform-core-round60-final-compliance-commit:df3feac4618636cdbc863b19e05106e19ba10446",
+        "platform-core-round60-final-spec-blob:2a6a5adae6b2f8bb1ebf06faa29dba88f35c958e"
       ],
       "test_evidence": [
         "platform-core native/telegram-protocol/src/api.rs all-three-variant exact parse contract authored, not run",
@@ -18069,7 +18071,7 @@
       "acceptance_reviewer": null,
       "reviewer": null,
       "license_and_provenance": "Behavioral responsibility is anchored to fixed-U telegramdesktop/tdesktop Telegram/SourceFiles/mtproto/scheme/mtproto.tl@76225965bfc794388db241f3f760db8ab79e84f8. session_private.cpp has no direct rpc_answer_* branch. The implementation is source-neutral Rust and copies no upstream C++ implementation.",
-      "notes": "Stage A implementation only. This row closes exact typed RpcDropAnswer wire decoding only. Outbound rpc_drop_answer request lifecycle and historical request mutation remain explicitly blocked/fail-closed. Global unknown/unread source-entry counts remain unchanged because this is a newly mapped responsibility slice within already-open fixed-U source coverage. Contracts are authored but not executed; validation_status=not-run and accepted=false. Round91 adjacent revalidation confirms the live parser already enforces exact zero-field 4-byte Unknown/DroppedRunning objects, exact 20-byte Dropped constructor+i64+i32+i32 layout, signed fixed-width field preservation, truncation fail-closed behavior and strict EOF; no production behavior delta was made. Canonical/desktop external response-boundary contracts were added and remain not run. Historical request drop/cancel scheduling and arbitrary request-history mutation remain outside this wire-only disposition.",
+      "notes": "Stage A implementation only. This row closes exact typed RpcDropAnswer wire decoding only. Outbound rpc_drop_answer request lifecycle and historical request mutation remain explicitly blocked/fail-closed. Global unknown/unread source-entry counts remain unchanged because this is a newly mapped responsibility slice within already-open fixed-U source coverage. Contracts are authored but not executed; validation_status=not-run and accepted=false. Round91 adjacent revalidation confirms the live parser already enforces exact zero-field 4-byte Unknown/DroppedRunning objects, exact 20-byte Dropped constructor+i64+i32+i32 layout, signed fixed-width field preservation, truncation fail-closed behavior and strict EOF; no production behavior delta was made. Canonical/desktop external response-boundary contracts were added and remain not run. Historical request drop/cancel scheduling and arbitrary request-history mutation remain outside this wire-only disposition. Final round91 source-level compliance is recorded at platform-core commit df3feac4618636cdbc863b19e05106e19ba10446/spec blob 2a6a5adae6b2f8bb1ebf06faa29dba88f35c958e; executable validation remains not-run.",
       "test_execution_evidence": [],
       "validation_status": "not-run",
       "accepted": false
