@@ -78,7 +78,11 @@ The audited source code was decomposed into 5 discrete Rust runtime responsibili
 
 ## 4. Verification & Contract Test Coverage
 
-All contracts verified in `source/host/tests/openclaw_qr_png_contract.rs`:
+The contract list below is historical evidence, not current verification; the
+suite was not executed in the current development freeze. Exact-head Actions,
+packaged/runtime, and device/UI acceptance evidence remain pending.
+
+Historical contract coverage in `source/host/tests/openclaw_qr_png_contract.rs`:
 - `test_ocrm_qr_terminal_compact`: Half-block terminal characters, ANSI escapes, quiet-zone bounds.
 - `test_ocrm_qr_terminal_standard`: Standard full-block terminal fallback rendering.
 - `test_ocrm_qr_image_options_validation`: Scale bounds 1..12, margin bounds 0..16, finite float flooring, path segment traversal rejection.

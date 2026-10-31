@@ -69,7 +69,10 @@ The audited sources were mapped to 2 discrete Rust runtime responsibilities regi
 
 ## 4. Verification Evidence & Contract Test Suite
 
-A dedicated contract test suite was authored and verified passing:
+A dedicated contract test suite was authored; the result below is historical
+evidence, not current verification. The suite was not executed in the current
+development freeze; exact-head Actions, packaged/runtime, and live input
+pipeline acceptance evidence remain pending:
 - **Test File**: `source/host/tests/openclaw_input_files_contract.rs`
 - **Results**: 6/6 tests passing:
   1. `test_staged_input_directory_and_ownership`: Verifies exact candidate regex (64 lower hex or UUID v4), `.gitignore` marker file SHA-256 validation (78 bytes, `c2ae48852cf5745c7dcbcdfa46b0141497cb37fda5b011164f75dd3c08358e6f`), 0o600 file modes, and rejection of tampered directories.

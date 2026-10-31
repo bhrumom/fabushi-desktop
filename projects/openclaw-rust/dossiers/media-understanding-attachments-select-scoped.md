@@ -53,8 +53,12 @@ The following 7 media understanding attachment files (totaling 1,000 lines) were
 
 ## 4. Contract Test Verification
 
+The result below is a historical contract record, not current verification; the
+suite was not executed in the current development freeze. Exact-head Actions,
+packaged/runtime, and live model-selection acceptance evidence remain pending.
+
 Contract tests in `source/host/tests/openclaw_media_understanding_contract.rs` verify all core normalization and selection invariants:
 - `test_ocrm_media_und_o11_attachment_path_normalization_and_guards`: Validates rejection of Windows UNC network paths (`\\server\share`, `//server/share`), safe decoding of `file://` URLs, and whitespace rejection.
 - `test_ocrm_media_und_o12_attachment_kind_resolution`: Validates precedence of authoritative kind over MIME and extension (including sticker-to-image coercion), MIME fallback, and extension fallback.
 - `test_ocrm_media_und_o13_attachment_selection_policy_ordering_and_limits`: Validates `First` vs `All` modes, `Last` preference reversal, `Path` vs `Url` prioritization, dropped index accounting, and audio preflight deduplication.
-- **Result**: 13/13 tests passing in `openclaw_media_understanding_contract.rs`.
+- **Historical result**: 13/13 tests were previously recorded as passing in `openclaw_media_understanding_contract.rs`.

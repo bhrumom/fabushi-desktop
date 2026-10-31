@@ -4,7 +4,7 @@
 
 - **Unit ID:** `OCRM-UNIT-MEM-001`
 - **Module ID:** `OCRM-M08` (Memory, Vault & Knowledge Retrieval)
-- **Status:** **Admitted into Parity Ledger; 6 source files mapped to reviewed; 6 responsibilities registered; 12 falsifiable test oracles verified in openclaw_memory_contract.rs; acceptance pending**
+- **Status:** **Admitted into Parity Ledger; 6 source files mapped to reviewed; 6 responsibilities registered; 12 falsifiable test oracles recorded as historical contract evidence; current verification not-run; acceptance pending**
 - **Requirements Traced:** `OCRM-R08`, `OCRM-AC08`
 - **Reviewer:** `xuyao@ombhrum.com`
 - **Upstream Baseline:** `openclaw/openclaw@ad8d12f126d29b0db204187adf5092db80294e70` (tree `04ccce62f1d74dc8e0c88290ae8ded027b7b0f16`)
@@ -39,7 +39,8 @@ The unit covers the core memory tool contracts, forget mechanics, citations form
 
 ## 4. Test Oracles & Conformance Evidence
 
-Implemented and verified in `source/host/tests/openclaw_memory_contract.rs`:
+Historical contract record from `source/host/tests/openclaw_memory_contract.rs` (not
+executed in the current development freeze):
 - **`OCRM-MEM-O01`**: `test_ocrm_mem_o01_whitespace_normalization_and_case_insensitive_deduplication`
 - **`OCRM-MEM-O02`**: `test_ocrm_mem_o02_markdown_fact_parser_strict_conformance`
 - **`OCRM-MEM-O03`**: `test_ocrm_mem_o03_multi_agent_shard_isolation_single_writer`
@@ -53,7 +54,8 @@ Implemented and verified in `source/host/tests/openclaw_memory_contract.rs`:
 - **`OCRM-MEM-O11`**: `test_ocrm_mem_o11_project_scope_path_traversal_and_unjoined_membership_gate`
 - **`OCRM-MEM-O12`**: `test_ocrm_mem_o12_memory_update_state_tool_contract`
 
-CI Verification: Verified passing in GitHub Actions run 40276785979 on exact commit `03f548f22`.
+Historical CI record: previously reported passing in GitHub Actions run 40276785979
+on exact commit `03f548f22`; this is not current exact-head verification.
 
 The listed OCRM-MEM-O06 and OCRM-MEM-O10 tests are not citation-format oracles: they
 cover ungrounded synthesis rejection and per-agent match capping/recency sorting.
