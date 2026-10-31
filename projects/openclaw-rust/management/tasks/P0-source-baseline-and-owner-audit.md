@@ -103,7 +103,7 @@ P0 仍未退出：此前只读 live candidate 曾推进到 OpenClaw
 `a3c122b99571c0c33ff6a02ca4c4e32f05f9433d`；该 identity 仅保留为历史
 discovery evidence。此前 candidate 曾以 `upstream.lock.json` 的
 `10d93efc…/d33ed7c3…` 为准，但现已被后续 live candidate supersede；该段仅作
-历史记录。当前 `b513040…/c48aeaf…` 尚未取得针对 exact subject 的 GitHub Actions
+历史记录。当前 `42c05e2…/574e2fa…` 尚未取得针对 exact subject 的 GitHub Actions
 inventory、依赖闭包和 evidence envelope。既有 inventory/shards 仍绑定上一轮
 候选，不能编辑性重标为当前来源；对应 drift decision 见
 `decisions/2026-10-31-upstream-live-drift.md`。
@@ -165,9 +165,9 @@ inventory/依赖闭包或将其提升为 authority。
 提升 `baseline_identity_accepted` 或 `source_closure_ready`。
 
 2026-10-31T05:14:48Z 的最新只读核对将当前 discovery reference 更新为
-OpenClaw `b513040e660678693cee8d6131f35b206f0df833` / tree
-`c48aeaf4c192e112f1ed38b4d693e13bd1f1d222`；递归 tree 未截断，共 63,906
-entries（61,665 blobs、2,241 directories）。它已同步写入
+OpenClaw `42c05e2b352ab9efbd3f06267cbd396589e02c52` / tree
+`574e2fa28cb932349a192f36309557d6c17f4c7e`；递归 tree 未截断，共 63,911
+entries（61,670 blobs、2,241 directories）。它已同步写入
 `upstream.lock.json` 的 `live_candidate`，仍不构成 Actions authority、依赖
 闭包或任何 completion flag 的正面证据；以上较早 current-candidate 段落仅作
 历史记录保留。

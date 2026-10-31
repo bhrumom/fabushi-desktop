@@ -239,3 +239,19 @@ dangling reference. Because the shards carry canonical compressed and
 uncompressed digests, the old inventory is not edited by hand. The new
 exact-subject inventory generation must reconcile these rows and prove the
 result independently.
+
+## Subsequent live recheck — 2026-10-31T05:28:35Z
+
+Read-only `git ls-remote` and GitHub commit/tree API checks resolved
+`openclaw/openclaw` `refs/heads/main` to commit
+`42c05e2b352ab9efbd3f06267cbd396589e02c52`, root tree
+`574e2fa28cb932349a192f36309557d6c17f4c7e`. The recursive tree response was
+not truncated and contained 63,911 entries: 61,670 blobs and 2,241 trees; no
+gitlinks were present. Root inputs remain identity-stable and `.gitmodules`
+remains absent.
+
+This supersedes the `b513040e...` discovery candidate in the lock. It remains
+discovery-only: no prior inventory, dependency closure, LFS/integrity result or
+Actions provenance is relabeled or reused, and all authority/completion flags
+remain unchanged. No CI, push, PR update or local OCRM executable verification
+was performed.

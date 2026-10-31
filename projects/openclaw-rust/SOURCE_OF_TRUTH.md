@@ -171,10 +171,10 @@ candidate 相同，`.gitmodules` 仍不存在；`src/acp/commands.ts` 仍不存�
 inventory、依赖闭包、LFS/完整性或 Actions provenance，亦不得提升任何 authority
 或 global flag。
 
-2026-10-31T05:23:17Z 的只读核对再次发现 OpenClaw `main` 漂移到
-commit=`b513040e660678693cee8d6131f35b206f0df833`、root tree
-`c48aeaf4c192e112f1ed38b4d693e13bd1f1d222`；递归 tree 未截断，共 63,906
-entries（61,665 blobs、2,241 directories），无 gitlink。root input blob
+2026-10-31T05:28:35Z 的只读核对再次发现 OpenClaw `main` 漂移到
+commit=`42c05e2b352ab9efbd3f06267cbd396589e02c52`、root tree
+`574e2fa28cb932349a192f36309557d6c17f4c7e`；递归 tree 未截断，共 63,911
+entries（61,670 blobs、2,241 directories），无 gitlink。root input blob
 identities 与上一 candidate 相同，`.gitmodules` 仍不存在。该 exact subject
 已同步写入 `upstream.lock.json` 的 `live_candidate`，但仍是 discovery-only；
 不得复用旧 inventory、依赖闭包、LFS/完整性或 Actions provenance，亦不得提升
@@ -184,7 +184,7 @@ identities 与上一 candidate 相同，`.gitmodules` 仍不存在。该 exact s
 记录仍绑定实现 baseline `ad8d12f126d29b0db204187adf5092db80294e70` /
 tree `04ccce62f1d74dc8e0c88290ae8ded027b7b0f16`；`parity-ledger.json` 与
 `requirements-traceability-matrix.json` 也绑定该 baseline。它们不匹配当前
-`b513040e…/c48aeaf…` discovery candidate，未被重标为当前来源；在同一 exact
+`42c05e2…/574e2fa…` discovery candidate，未被重标为当前来源；在同一 exact
 subject 上重新取得 Actions inventory、依赖闭包和 receipt 前，不得把这些旧
 产物当作当前 source closure 或完成证据。
 
@@ -195,7 +195,7 @@ subject 上重新取得 Actions inventory、依赖闭包和 receipt 前，不得
 悬空 ledger/RTM ID。另有四条 Crabbox P1 task-local 责任按既定规则不进入
 inventory/RTM 的项目级责任集合。由于分片的压缩摘要和未压缩摘要绑定
 canonical inventory 身份，不能手工改写旧分片来伪造 projection closure；这些
-差异必须在 `b513040e…/c48aeaf…` exact subject 的新 inventory 生成与独立
+差异必须在 `42c05e2…/574e2fa…` exact subject 的新 inventory 生成与独立
 验证中闭合。
 
 对旧 baseline inventory 的只读计数还显示：58,750 条路径中有 57,331 条仍为

@@ -94,9 +94,9 @@ inventory 的未经重核结论；需在同一 exact subject 上重新生成 inv
 provenance。
 
 2026-10-31 当前治理快照以 `upstream.lock.json` 的 discovery candidate 为准：
-OpenClaw `main` commit=`b513040e660678693cee8d6131f35b206f0df833`、tree
-`c48aeaf4c192e112f1ed38b4d693e13bd1f1d222`，递归 tree 未截断，共 63,906
-entries（61,665 blobs、2,241 directories）。它 supersede 以上更早的 live
+OpenClaw `main` commit=`42c05e2b352ab9efbd3f06267cbd396589e02c52`、tree
+`574e2fa28cb932349a192f36309557d6c17f4c7e`，递归 tree 未截断，共 63,911
+entries（61,670 blobs、2,241 directories）。它 supersede 以上更早的 live
 候选作为当前引用，但仍未取得 exact-subject Actions inventory、依赖闭包、
 LFS/完整性、许可证和 evidence envelope；不得复用旧 candidate 的 closure，
 也不得提升任何 global flag。
@@ -584,7 +584,7 @@ P0 通常只能建立前两个 flags 的正面证据；完整适用责任映射�
 
 - [historical live candidate c49 commit / tree](https://github.com/openclaw/openclaw/commit/c49e07385f8d17601efbed7746381213d5326ba9)（只读 discovery；已被后续候选 supersede）。
 - [historical live candidate d67 commit / tree](https://github.com/openclaw/openclaw/commit/d67aa608643f6583a6c6102c522043794aafe064)（只读 discovery；已被后续候选 supersede）。
-- [current observed live candidate commit / tree](https://github.com/openclaw/openclaw/commit/b513040e660678693cee8d6131f35b206f0df833)（tree `c48aeaf4c192e112f1ed38b4d693e13bd1f1d222`；只读 discovery；未取得本轮 Actions authority，不能复用旧 inventory）。
+- [current observed live candidate commit / tree](https://github.com/openclaw/openclaw/commit/42c05e2b352ab9efbd3f06267cbd396589e02c52)（tree `574e2fa28cb932349a192f36309557d6c17f4c7e`；只读 discovery；未取得本轮 Actions authority，不能复用旧 inventory）。
 - [historical discovery commit / tree](https://github.com/openclaw/openclaw/commit/e8cde7518c558f1b4e44cb8139a149289b9719ad)（仅作为早期研究输入，不是当前 source lock）。
 - [README](https://github.com/openclaw/openclaw/blob/b513040e660678693cee8d6131f35b206f0df833/README.md)、[源码](https://github.com/openclaw/openclaw/tree/b513040e660678693cee8d6131f35b206f0df833/src)、[packages](https://github.com/openclaw/openclaw/tree/b513040e660678693cee8d6131f35b206f0df833/packages)。
 - [plugin inventory](https://github.com/openclaw/openclaw/blob/b513040e660678693cee8d6131f35b206f0df833/docs/plugins/plugin-inventory.md)、[extensions](https://github.com/openclaw/openclaw/tree/b513040e660678693cee8d6131f35b206f0df833/extensions)、[channels](https://github.com/openclaw/openclaw/blob/b513040e660678693cee8d6131f35b206f0df833/docs/channels/index.md)。
