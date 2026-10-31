@@ -3169,13 +3169,22 @@
       "selected_owner": "source/host/src/runner/mod.rs",
       "source_refs": [
         {
-          "blob_sha": "bf5d08bb075195a0488c0e0747141f2d61f16605",
-          "path": "src/agents/tool-loop-admission.ts",
+          "blob_sha": "c6d5ce6c43fe0897f47ee71f2e74ac4e93034634",
+          "path": "packages/agent-core/src/agent-loop.ts",
           "range": {
-            "end_line": 299,
+            "end_line": 1229,
             "start_line": 1
           },
-          "symbol": "evaluateToolLoopCall"
+          "symbol": "runAgentLoop"
+        },
+        {
+          "blob_sha": "8c6f1bade7526eb67e6e7813c34542cf0b454ba9",
+          "path": "packages/agent-core/src/agent-loop-steering.ts",
+          "range": {
+            "end_line": 53,
+            "start_line": 1
+          },
+          "symbol": "getSteeringAtCheckpoint"
         }
       ],
       "status": {

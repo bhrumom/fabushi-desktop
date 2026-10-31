@@ -183,6 +183,37 @@ ACP transport/consumer gap; the row now points to the existing
 correction only and does not promote implementation, wiring, verification, or
 acceptance.
 
+## 2.3 Fixed-subject loop-runner source and owner recheck — 2026-10-31
+
+The fixed implementation subject was re-read at the exact OpenClaw commit
+`ad8d12f126d29b0db204187adf5092db80294e70`, rather than using the moving
+default branch. The relevant production loop sources are:
+
+| Source | Blob | Verified responsibility |
+| --- | --- | --- |
+| `packages/agent-core/src/agent-loop.ts` | `c6d5ce6c43fe0897f47ee71f2e74ac4e93034634` | turn loop, tool batches, steering checkpoints, final follow-up drain |
+| `packages/agent-core/src/agent-loop-steering.ts` | `8c6f1bade7526eb67e6e7813c34542cf0b454ba9` | bounded/drained steering access at loop checkpoints |
+| `src/agents/tool-loop-admission.ts` | `bf5d08bb075195a0488c0e0747141f2d61f16605` | tool-loop admission and batch reservation, not turn queue ownership |
+
+This recheck corrects the earlier source association: the deferred behavior
+does not come from `tool-loop-admission.ts` alone. It is an agent-core
+checkpoint/steering contract. In Fabushi, `TurnRunShell` remains the sole
+active-run owner and `ProductionTurnRunShellAdapter` is a real active
+lifecycle consumer, but `DeferredTurnQueue` is still declared only in
+`source/host/tests/openclaw_agent_turn_contract.rs`.
+
+The shipping host path creates one `ProductionTurnAgentOwner` for a worker
+request before calling `run_routed_provider_with_projected_turn_input`; no
+production ingress currently submits a deferred item to that owner, and no
+production checkpoint consumer drains such a queue. Adding a queue copied
+from the fixture would therefore create an unproven second contract and could
+leak state across worker recreation. The task-specific specification
+`projects/openclaw-rust/docs/specs/agent-loop-runner.md` records the required
+producer/consumer boundary and keeps this responsibility at
+`implementation=not-started`, `wiring=not-wired`, `verification=not-run`,
+`acceptance=pending` until that boundary is found or deliberately designed
+under the canonical owner.
+
 ---
 
 ## 3. Falsifiable Test Oracles (`source/host/tests/openclaw_agent_turn_contract.rs`)
