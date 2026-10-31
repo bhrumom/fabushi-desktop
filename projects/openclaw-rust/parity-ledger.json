@@ -1716,9 +1716,9 @@
       ],
       "id": "OCRM-RESP-PLUGIN-SDK-CRABBOX-DOCTOR-001",
       "integration": {
-        "consumer": "existing Host plugin/doctor and Coordinator UI/CLI projections (not yet wired)",
-        "entrypoint": "source/host/src/extensions/cloud_workers/doctor.rs::CloudWorkerDoctorRequest",
-        "owner": "source/host/src/extensions/cloud_workers/doctor.rs",
+    "consumer": "CloudWorkerProvisioningExtension::inspect_doctor for read-only inspection; plugin/UI/CLI mutation consumers remain not wired",
+    "entrypoint": "source/host/src/extensions/cloud_workers/extension.rs::CloudWorkerProvisioningExtension::inspect_doctor",
+    "owner": "source/host/src/extensions/cloud_workers/extension.rs",
         "producer": "Host plugin and doctor registration (not yet wired)"
       },
       "invariants": [
@@ -1798,7 +1798,7 @@
       ],
       "status": {
         "acceptance": "pending",
-        "implementation": "implementing",
+    "implementation": "implemented",
         "mapping": "mapped",
         "read": "read-complete",
         "verification": "not-run",

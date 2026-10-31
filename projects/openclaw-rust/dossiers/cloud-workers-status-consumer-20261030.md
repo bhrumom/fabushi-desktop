@@ -99,3 +99,12 @@ explicit typed boundary and still does not discover or launch a provider,
 authorize a worker, or set `providerReady=true`. The parity row therefore marks
 the Rust catalog contract implemented while producer wiring and acceptance stay
 pending.
+
+## Doctor read-only owner projection — 2026-10-31
+
+`CloudWorkerProvisioningExtension::inspect_doctor` now validates and accepts
+the typed `Inspect` action from the canonical extension boundary. Repair,
+secret-reference migration and lease/warm-image reconciliation actions return
+an explicit `mutation-not-wired` error even when acknowledged, so the
+projection cannot accidentally become a second recovery owner. Plugin/UI/CLI
+registration, provider mutation and recovery receipts remain pending.

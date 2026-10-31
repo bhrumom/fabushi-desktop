@@ -7,6 +7,8 @@ use serde::Serialize;
 use crate::extensions::extension_ids_generated::HostExtensionId;
 
 use super::{
+    CloudWorkerDoctorAction, CloudWorkerDoctorError, CloudWorkerDoctorRequest,
+    CloudWorkerDoctorResult,
     CloudWorkerLeasedCapability, CloudWorkerOwnerError, CloudWorkerOwnerStatus,
     CloudWorkerProvisioningConfig,
     CloudWorkerProvisioningOwner, CloudWorkerProvisioningStore, CloudWorkerStoreError,
@@ -52,6 +54,20 @@ impl CloudWorkerProvisioningExtension {
             .lock()
             .map(|owner| owner.status())
             .unwrap_or(CloudWorkerOwnerStatus::Unavailable)
+    }
+
+    /// Provides the read-only doctor projection from the canonical owner.
+    /// Mutating recovery actions remain explicitly unavailable until their
+    /// provider, persistence and recovery owners are wired.
+    pub fn inspect_doctor(
+        &self,
+        request: CloudWorkerDoctorRequest,
+    ) -> Result<CloudWorkerDoctorResult, CloudWorkerDoctorError> {
+        request.validate()?;
+        if !matches!(request.action, CloudWorkerDoctorAction::Inspect) {
+            return Err(CloudWorkerDoctorError::MutationNotWired);
+        }
+        Ok(CloudWorkerDoctorResult::inspection())
     }
 
     /// Returns a read-only snapshot for the existing Host/Coordinator status
@@ -200,6 +216,10 @@ pub enum CloudWorkerExtensionError {
 #[cfg(test)]
 mod tests {
     use super::{CloudWorkerOwnerStatus, start_cloud_worker_provisioning_extension};
+    use crate::extensions::cloud_workers::{
+        CloudWorkerDoctorAction, CloudWorkerDoctorError, CloudWorkerDoctorRequest,
+        CloudWorkerDoctorStatus, CloudWorkerLeaseScope, ReplayKey,
+    };
 
     #[test]
     fn poisoned_owner_is_projected_as_unavailable_without_public_owner_access() {
@@ -215,5 +235,32 @@ mod tests {
         .join();
         assert!(join.is_err());
         assert_eq!(extension.status(), CloudWorkerOwnerStatus::Unavailable);
+    }
+
+    #[test]
+    fn doctor_inspection_is_owner_bound_but_mutation_stays_closed() {
+        let state_path = std::env::temp_dir().join("cloud-worker-doctor-inspection-state.json");
+        let extension = start_cloud_worker_provisioning_extension(state_path).unwrap();
+        let request = CloudWorkerDoctorRequest {
+            scope: CloudWorkerLeaseScope::new("account", "device").unwrap(),
+            action: CloudWorkerDoctorAction::Inspect,
+            acknowledged_mutation: false,
+            replay_key: ReplayKey("doctor-1".into()),
+        };
+        assert_eq!(
+            extension.inspect_doctor(request).unwrap().status,
+            CloudWorkerDoctorStatus::InspectionOnly
+        );
+
+        let request = CloudWorkerDoctorRequest {
+            scope: CloudWorkerLeaseScope::new("account", "device").unwrap(),
+            action: CloudWorkerDoctorAction::ReconcileLease,
+            acknowledged_mutation: true,
+            replay_key: ReplayKey("doctor-2".into()),
+        };
+        assert_eq!(
+            extension.inspect_doctor(request),
+            Err(CloudWorkerDoctorError::MutationNotWired)
+        );
     }
 }

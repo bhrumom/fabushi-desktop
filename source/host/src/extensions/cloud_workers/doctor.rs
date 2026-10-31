@@ -86,6 +86,8 @@ pub enum CloudWorkerDoctorError {
     InvalidReplayKey,
     #[error("mutating doctor action requires explicit acknowledgement")]
     MutationNotAcknowledged,
+    #[error("mutating doctor action is not wired to a recovery owner")]
+    MutationNotWired,
 }
 
 #[cfg(test)]

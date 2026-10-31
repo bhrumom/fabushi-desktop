@@ -218,6 +218,10 @@ pending Crabbox responsibilities:
   identity only; launcher, Docker, VNC, CDP, Electron lifecycle, physical
   worker process and platform credential ownership remain absent. Its wiring is
   therefore `not-wired`, and platform acceptance remains pending.
+- `OCRM-RESP-PLUGIN-SDK-CRABBOX-DOCTOR-001` now has a read-only owner projection
+  through `CloudWorkerProvisioningExtension::inspect_doctor`. Mutating repair,
+  migration and reconciliation remain explicitly `mutation-not-wired` until a
+  real recovery owner and plugin/UI/CLI consumer exist.
 
 The broader Crabbox projection, lifecycle, sandbox, bootstrap, artifact,
 warm-image and runtime-control rows remain pending where their producer or
