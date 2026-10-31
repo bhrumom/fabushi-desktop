@@ -240,6 +240,43 @@ jobs:
           assert summary["canonical_file_records"] == summary["tracked_entries_total"]
           assert summary["canonical_file_records"] > 0
           PY
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          inventory=json.loads(Path("ocrm-evidence/upstream-recursive-inventory.json").read_text())
+          current_blobs={entry["path"]: entry["sha"] for entry in inventory["entries"] if entry["git_type"] == "blob"}
+          lock=json.loads(Path("projects/openclaw-rust/upstream.lock.json").read_text())
+          identity={k: lock["upstream"][k] for k in ("repository", "commit", "tree")}
+          for name in (
+              "projects/openclaw-rust/inventory/index.json",
+              "projects/openclaw-rust/parity-ledger.json",
+              "projects/openclaw-rust/requirements-traceability-matrix.json",
+          ):
+              path=Path(name)
+              data=json.loads(path.read_text())
+              data["upstream"] = dict(identity)
+              if name.endswith("inventory/index.json"):
+                  data["upstream"]["baseline_identity_accepted"] = lock["upstream"]["baseline_identity_accepted"]
+                  data["authority"]["source_closure_ready"] = False
+                  data["authority"]["dependency_closure_enumerated"] = False
+                  for key in ("tracked_entries_total", "blob_entries_total", "symlink_entries_total", "gitlink_entries_total"):
+                      data["inventory"][key] = inventory["counts"][key]
+                  data["inventory"]["unread"] = inventory["counts"]["tracked_entries_total"]
+                  data["inventory"]["unclassified"] = inventory["counts"]["tracked_entries_total"]
+              if name.endswith("parity-ledger.json"):
+                  data["file_coverage"]["tracked_paths"] = inventory["counts"]["tracked_entries_total"]
+                  for responsibility in data["responsibilities"]:
+                      refs=responsibility.get("source_refs", [])
+                      current=[ref for ref in refs if current_blobs.get(ref["path"]) == ref["blob_sha"]]
+                      stale=[ref for ref in refs if current_blobs.get(ref["path"]) != ref["blob_sha"]]
+                      if stale:
+                          responsibility["historical_source_refs"] = responsibility.get("historical_source_refs", []) + stale
+                          responsibility["source_refs"] = current
+                          if not current:
+                              responsibility["status"]["mapping"] = "unclassified"
+                              responsibility["status"]["read"] = "unread"
+              path.write_text(json.dumps(data, ensure_ascii=False, sort_keys=True, indent=2) + "\n")
+          PY
           python3 projects/openclaw-rust/scripts/shard_inventory.py --write ocrm-evidence/upstream-recursive-inventory.json
 
       - name: CAS commit derived source shards to PR branch (non-force)
