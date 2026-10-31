@@ -46,3 +46,12 @@ Desktop mirrors the contract blob byte-identically. No test was executed.
 Ledger coverage remains `responsibilities_total=97, unknown=16172, unread=16145, omitted=0, unmapped_responsibilities=0`.
 
 No GitHub Actions/status/check query or trigger, build, typecheck, lint, validator, generator, unit/contract/integration/E2E test, package, deploy, install, or runtime acceptance was performed.
+
+
+### Round 93 final source-level compliance
+
+Platform-core final compliance commit `3e24ea732acd2bcb2fe5bf2e5257f275643384de` / spec blob `298cbba2b593aa17502be752dd406718d745de93` records the fixed-U `NewSession` result-wire revalidation as source-level closed with **no production delta**. Canonical production protocol updates/lib/network blobs remain `23a09bb6e4e78ef526823cf01d0a207565fb2a3e` / `abab39e42f100972484191f0e52e9edd9b88c6cf` / `1fc1b1f69e3e37377400d078f916599e0c7b20bc`. Canonical and desktop authored-only external contract blob is `32a60800c34d53223fed2f1e4aa521e300b510d7` and remains not run.
+
+The existing `TDRP-R9-MTPROTO-NEW-SESSION-WIRE-001` row stays `implemented / validation_status=not-run / accepted=false`. Arbitrary multi-request history, connection scheduling, auth-key binding/persistence, gzip, complete difference decoding/application, broader source/legal closure, Stage-B executable evidence, and independent release ACCEPT remain outside this wire-only closure or open.
+
+No GitHub Actions/status/check query or trigger, build, typecheck, lint, schema validator, generator, unit/contract/integration/E2E test, package, deployment, installation, or runtime acceptance was performed.
