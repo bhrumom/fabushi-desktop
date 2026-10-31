@@ -47,9 +47,9 @@ def main():
                 read_status = entry.get("read_status")
                 resp_status = entry.get("responsibility_status")
                 # Older committed shards predate the AC02 dimensions. Treat
-                # their absence as explicit unknown/pending so the integrity
-                # check remains backward-readable while a fresh Actions
-                # generator upgrades every row.
+                # their absence or explicit nulls as unknown/pending so the
+                # integrity check remains backward-readable while a fresh
+                # Actions generator upgrades every row.
                 applicability_status = entry.get("applicability_status") or "unknown"
                 disposition_status = entry.get("disposition_status") or "pending"
 
