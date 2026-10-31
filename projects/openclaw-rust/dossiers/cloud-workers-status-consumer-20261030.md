@@ -88,3 +88,14 @@ The descriptor is now carried by `CloudWorkerBootstrapRequest` and revalidated
 before bootstrap request admission. This is a type-level bootstrap contract
 connection only; it still does not launch a platform, resolve credentials or
 provide a production producer/consumer path.
+
+## Provider catalog owner connection — 2026-10-31
+
+`CloudWorkerProvisioningOwner` now owns the ephemeral
+`CloudWorkerCatalogCache` and exposes `resolve_catalog`. Catalog results remain
+bounded, normalized and keyed by the exact opaque provider-binary identity;
+failed refreshes cannot leave stale capability data available. The loader is an
+explicit typed boundary and still does not discover or launch a provider,
+authorize a worker, or set `providerReady=true`. The parity row therefore marks
+the Rust catalog contract implemented while producer wiring and acceptance stay
+pending.

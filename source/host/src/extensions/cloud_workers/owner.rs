@@ -3,6 +3,8 @@ use std::collections::HashMap;
 use serde::{Deserialize, Serialize};
 
 use super::{
+    CloudWorkerBinaryIdentity, CloudWorkerCatalog, CloudWorkerCatalogCache,
+    CloudWorkerCatalogError,
     CloudWorkerLease, CloudWorkerLeaseError, CloudWorkerLeaseMutation, CloudWorkerLeaseScope,
     CloudWorkerLeasedCapability, CloudWorkerLifecycle, CloudWorkerMutationOutcome,
     CloudWorkerRuntimeIdentity,
@@ -76,6 +78,7 @@ pub struct CloudWorkerProvisioningOwner {
     leases: HashMap<LeaseId, CloudWorkerLease>,
     warm_images: HashMap<String, CloudWorkerWarmImage>,
     migration_receipts: Vec<CloudWorkerMigrationReceipt>,
+    catalog_cache: CloudWorkerCatalogCache,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -100,6 +103,7 @@ impl CloudWorkerProvisioningOwner {
             leases: HashMap::new(),
             warm_images: HashMap::new(),
             migration_receipts: Vec::new(),
+            catalog_cache: CloudWorkerCatalogCache::default(),
         })
     }
 
@@ -109,6 +113,21 @@ impl CloudWorkerProvisioningOwner {
         } else {
             CloudWorkerOwnerStatus::Disabled
         }
+    }
+
+    /// Resolves provider capability data through the canonical owner while
+    /// keeping the cache ephemeral and keyed by the exact binary identity.
+    /// The loader remains an explicit provider/process boundary; this method
+    /// does not discover, authorize, launch or mutate a worker.
+    pub fn resolve_catalog<F>(
+        &mut self,
+        identity: CloudWorkerBinaryIdentity,
+        load: F,
+    ) -> Result<CloudWorkerCatalog, CloudWorkerCatalogError>
+    where
+        F: FnOnce() -> Result<CloudWorkerCatalog, CloudWorkerCatalogError>,
+    {
+        self.catalog_cache.resolve(identity, load)
     }
 
     pub fn snapshot(&self) -> CloudWorkerPersistentSnapshot {
@@ -423,6 +442,39 @@ mod tests {
             .unwrap_err(),
             CloudWorkerOwnerError::InvalidWarmImageLimit
         );
+    }
+
+    #[test]
+    fn owner_caches_catalog_only_by_exact_binary_identity() {
+        let mut owner = owner();
+        let identity = CloudWorkerBinaryIdentity::new("sha256:provider").unwrap();
+        let catalog = CloudWorkerCatalog {
+            providers: vec![super::super::CloudWorkerProvider {
+                id: "local".into(),
+                profiles: vec![super::super::CloudWorkerProfile {
+                    id: "default".into(),
+                    machines: vec![super::super::CloudWorkerMachine {
+                        os: super::super::CloudWorkerOs::Linux,
+                        arch: "x86_64".into(),
+                        resources: super::super::CloudWorkerResourceLimits {
+                            cpu_cores: 2,
+                            memory_bytes: 1024,
+                        },
+                    }],
+                }],
+            }],
+        }
+        .validate()
+        .unwrap();
+        let first = owner
+            .resolve_catalog(identity.clone(), || Ok(catalog.clone()))
+            .unwrap();
+        let second = owner
+            .resolve_catalog(identity, || {
+                Err(super::super::CloudWorkerCatalogError::EmptyCatalog)
+            })
+            .unwrap();
+        assert_eq!(first, second);
     }
 
     #[test]
