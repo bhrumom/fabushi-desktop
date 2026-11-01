@@ -1566,8 +1566,13 @@ impl SandAgentDb {
             })();
             match result {
                 Ok(changed) => {
-                    db.execute_batch("COMMIT")?;
-                    Ok(changed)
+                    match db.execute_batch("COMMIT") {
+                        Ok(()) => Ok(changed),
+                        Err(error) => {
+                            let _ = db.execute_batch("ROLLBACK");
+                            Err(error)
+                        }
+                    }
                 }
                 Err(error) => {
                     let _ = db.execute_batch("ROLLBACK");
@@ -1623,8 +1628,13 @@ impl SandAgentDb {
             })();
             match result {
                 Ok(changed) => {
-                    db.execute_batch("COMMIT")?;
-                    Ok(changed)
+                    match db.execute_batch("COMMIT") {
+                        Ok(()) => Ok(changed),
+                        Err(error) => {
+                            let _ = db.execute_batch("ROLLBACK");
+                            Err(error)
+                        }
+                    }
                 }
                 Err(error) => {
                     let _ = db.execute_batch("ROLLBACK");
@@ -1690,8 +1700,13 @@ impl SandAgentDb {
             })();
             match result {
                 Ok(changed) => {
-                    db.execute_batch("COMMIT")?;
-                    Ok(changed)
+                    match db.execute_batch("COMMIT") {
+                        Ok(()) => Ok(changed),
+                        Err(error) => {
+                            let _ = db.execute_batch("ROLLBACK");
+                            Err(error)
+                        }
+                    }
                 }
                 Err(error) => {
                     let _ = db.execute_batch("ROLLBACK");
@@ -1743,8 +1758,13 @@ impl SandAgentDb {
             })();
             match result {
                 Ok(changed) => {
-                    db.execute_batch("COMMIT")?;
-                    Ok(changed)
+                    match db.execute_batch("COMMIT") {
+                        Ok(()) => Ok(changed),
+                        Err(error) => {
+                            let _ = db.execute_batch("ROLLBACK");
+                            Err(error)
+                        }
+                    }
                 }
                 Err(error) => {
                     let _ = db.execute_batch("ROLLBACK");

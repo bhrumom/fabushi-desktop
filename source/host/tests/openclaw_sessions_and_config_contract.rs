@@ -519,6 +519,23 @@ fn test_cron_schema_migrates_fence_marker_for_existing_rows() {
     ));
 }
 
+#[test]
+fn test_cron_owner_writes_rollback_when_commit_fails() {
+    let owner_source = include_str!("../src/extensions/session/agent_db.rs");
+    let cron_owner = owner_source
+        .split("pub fn begin_cron_session_run(")
+        .nth(1)
+        .expect("cron owner write section exists")
+        .split("pub fn list_cron_session_runs(")
+        .next()
+        .expect("cron owner write section boundary exists");
+    assert_eq!(
+        cron_owner.matches("match db.execute_batch(\"COMMIT\")").count(),
+        4
+    );
+    assert!(cron_owner.matches("db.execute_batch(\"ROLLBACK\")").count() >= 8);
+}
+
 // ---------------------------------------------------------------------------
 // OCRM-SESSION-O01: Session Key Parsing, Classification & Harness Namespace
 // ---------------------------------------------------------------------------
