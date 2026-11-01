@@ -202,6 +202,9 @@ fn shipping_send_message_reaches_host_owned_delivery_failure_broadcast_and_conte
     assert!(SHIPPING_HOST.contains("store.clear_if_matches(&marker)"));
     assert!(SHIPPING_HOST.contains("channel_failure_marker_identity_incomplete"));
     assert!(SHIPPING_HOST.contains(
+        "Some(_) => {\n                stale.push(failure.clone());\n                false\n            }\n            None => true"
+    ));
+    assert!(SHIPPING_HOST.contains(
         "Ok(None) => {\n                clear_durable_channel_failure_markers(&deps, &agent_id, &failures);\n                continue;\n            }"
     ));
     assert!(SHIPPING_HOST.contains(

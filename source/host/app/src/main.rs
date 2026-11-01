@@ -6766,11 +6766,13 @@ fn filter_current_channel_failure_provenance(
         else {
             return true;
         };
-        if current_session_key.as_deref() == Some(session_key) {
-            true
-        } else {
-            stale.push(failure.clone());
-            false
+        match current_session_key.as_deref() {
+            Some(current) if current == session_key => true,
+            Some(_) => {
+                stale.push(failure.clone());
+                false
+            }
+            None => true,
         }
     });
     clear_durable_channel_failure_markers(deps, agent_id, &stale);

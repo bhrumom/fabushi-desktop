@@ -469,3 +469,6 @@ next retry's context without spinning an unbounded immediate retry loop.
 If the owning agent is gone, the worker now records the explicit terminal-lost
 disposition by settling the exact observed markers instead of leaving orphaned
 durable wakes.
+Session provenance filtering also now fails closed when no current admission
+identity can be read: only an explicitly different current key is stale; an
+unknown current identity remains pending.
