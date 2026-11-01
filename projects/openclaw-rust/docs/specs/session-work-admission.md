@@ -83,6 +83,9 @@ bounded production path, limited to canonical main sessions and fail-closed
 while admitted work, active generated-subagent work, or an active foreground
 Runner stream is active. Media custody still has no equivalent session-owned
 active-work authority and remains an open requirement.
+The authenticated provider-review continuation producer also binds its
+expected session ID to the canonical route agent before issuing or claiming
+the existing owner capability; a mismatch is rejected as a lifecycle change.
 `deleting_agents` remains the in-memory fast-path deletion fence; the durable
 `deletion_pending` field now backs the same owner-local admission record when
 the agent database is available. This closes the durable deletion-window
