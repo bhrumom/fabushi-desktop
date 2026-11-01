@@ -10724,6 +10724,7 @@ fn start_routed_provider_task(
                                     let should_cancel = || memory_cancellation.is_cancelled();
                                     let mut options = RoutedProviderOptions {
                                         data_dir: &data_dir,
+                                        typed_replay: None,
                                         cursor_auth: Some(auth.clone()),
                                         tools: &[],
                                         mcp_server_url: None,
