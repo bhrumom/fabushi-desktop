@@ -7248,6 +7248,13 @@ fn start_routed_provider_task(
             "runner.startRoutedProvider requires agentId".into()
         ))?
         .to_string();
+    let worker_session_key = args
+        .get("sessionKey")
+        .and_then(serde_json::Value::as_str)
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+        .map(ToOwned::to_owned)
+        .unwrap_or_else(|| format!("agent:{agent_id}:main"));
     let persisted_session_model = SandAgentSessionStore::new(Arc::clone(&session_workers))
         .read_session_model_entry(&agent_id)
         .map_err(GatewayCommandError::Internal)?;
@@ -8092,7 +8099,11 @@ fn start_routed_provider_task(
         request_source.as_deref(),
         Some("group-member" | "automation")
     );
-    let auto_review_controller = auto_review.bind_runner(&agent_id, approvals_resolvable);
+    let auto_review_controller = auto_review.bind_runner_with_session(
+        &agent_id,
+        Some(&worker_session_key),
+        approvals_resolvable,
+    );
     let auto_review_cancellation = cancellation.clone();
     auto_review_controller.set_cancellation_probe(Arc::new(move || {
         auto_review_cancellation.is_cancelled()
@@ -8326,13 +8337,6 @@ fn start_routed_provider_task(
         .map(str::trim)
         .filter(|value| !value.is_empty())
         .map(ToOwned::to_owned);
-    let worker_session_key = args
-        .get("sessionKey")
-        .and_then(serde_json::Value::as_str)
-        .map(str::trim)
-        .filter(|value| !value.is_empty())
-        .map(ToOwned::to_owned)
-        .unwrap_or_else(|| format!("agent:{agent_id}:main"));
     let worker_send_is_fork = turn_input.options.is_fork;
     let avatar_box_file_reader: AvatarBoxFileReader = {
         let forever_box = Arc::clone(&forever_box);

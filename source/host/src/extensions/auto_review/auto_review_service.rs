@@ -148,6 +148,15 @@ impl AutoReviewService {
         agent_id: &str,
         approvals_resolvable: bool,
     ) -> Arc<SandAutoReviewController> {
+        self.bind_runner_with_session(agent_id, None, approvals_resolvable)
+    }
+
+    pub fn bind_runner_with_session(
+        self: &Arc<Self>,
+        agent_id: &str,
+        session_key: Option<&str>,
+        approvals_resolvable: bool,
+    ) -> Arc<SandAutoReviewController> {
         self.unbind_runner(agent_id, SandAutoReviewExpiryCause::SessionEnd);
 
         let weak_display: Weak<Self> = Arc::downgrade(self);
@@ -172,6 +181,12 @@ impl AutoReviewService {
                     sink(agent_id);
                 }
             })),
+        )
+        .with_session_key(
+            session_key
+                .map(str::trim)
+                .filter(|value| !value.is_empty())
+                .map(ToOwned::to_owned),
         ));
         let weak: Weak<Self> = Arc::downgrade(self);
         let subscription_id = controller.subscribe(Arc::new(move |event| {
@@ -481,9 +496,18 @@ impl AutoReviewService {
                     },
                     "timestampMs": now_ms(),
                 });
-                let _ = self
-                    .sessions
-                    .append_agent_transcript_entries(&approval.agent_id, &[entry]);
+                let result = if let Some(session_key) = approval.session_key.as_deref() {
+                    self.sessions
+                        .append_agent_transcript_entries_if_session_admitted(
+                            &approval.agent_id,
+                            session_key,
+                            &[entry],
+                        )
+                } else {
+                    self.sessions
+                        .append_agent_transcript_entries(&approval.agent_id, &[entry])
+                };
+                let _ = result;
             }
             SandAutoReviewEvent::Resolved(_)
             | SandAutoReviewEvent::Expired { .. } => {
@@ -519,11 +543,21 @@ impl AutoReviewService {
                         ),
                     );
                 }
-                let _ = self.sessions.update_agent_transcript_entry(
-                    &approval.agent_id,
-                    &approval.id,
-                    &entry,
-                );
+                let result = if let Some(session_key) = approval.session_key.as_deref() {
+                    self.sessions.update_agent_transcript_entry_if_session_admitted(
+                        &approval.agent_id,
+                        session_key,
+                        &approval.id,
+                        &entry,
+                    )
+                } else {
+                    self.sessions.update_agent_transcript_entry(
+                        &approval.agent_id,
+                        &approval.id,
+                        &entry,
+                    )
+                };
+                let _ = result;
             }
         }
     }

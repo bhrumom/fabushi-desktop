@@ -147,6 +147,13 @@ rows use session-admitted owner transactions when that key is present; legacy
 unbound permission infrastructure remains on the explicitly compatibility-only
 agent append/update path.
 
+The active Runner's Auto-review controller now has the same producer fact: the
+Runner already owns the canonical `worker_session_key` at controller binding,
+so approval events can retain it without deriving a selector from `agent_id`.
+Created approval cards and settled/expired card updates must use the existing
+session-admitted owner transactions when that identity is present; legacy
+controller instances remain compatibility-only.
+
 The remaining agent-only transcript mutation producers were rechecked against
 the live source. Widget-response updates, shared-room restamps, box-request
 settlement, and auto-review settlement carry only `agent_id`; the generic

@@ -51,6 +51,7 @@ fn approval(id: &str, agent_id: &str, summary: &str) -> SandAutoReviewApproval {
     SandAutoReviewApproval {
         id: id.into(),
         agent_id: agent_id.into(),
+        session_key: None,
         surface: SandAutoReviewSurface::HostShell,
         fingerprint: format!("fingerprint-{id}"),
         reason: format!("reason-{id}"),

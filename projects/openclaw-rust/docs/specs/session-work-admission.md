@@ -230,6 +230,14 @@ created card append and settled-card update must use session-admitted owner
 transactions when that identity is present; permission requests from legacy
 unbound infrastructure remain explicitly outside this session-scoped path.
 
+The same producer boundary applies to Auto-review approvals created by an
+active Runner. The Runner already has the canonical `worker_session_key` when
+it binds the Auto-review controller, so that identity must be carried on the
+approval event through the existing Auto-review service. Created approval
+cards and settled/expired card updates must use the session-admitted owner
+transactions when the key is present; controller instances created by legacy
+unbound infrastructure remain on the compatibility path.
+
 The owner now also carries one migration-safe `admitted_media_work_id` and
 archive rejects that field while it is present. This closes the durable
 archive fence for the bounded SendMessage path: the sink's process-local

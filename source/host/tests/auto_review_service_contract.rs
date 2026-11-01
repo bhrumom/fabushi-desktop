@@ -42,7 +42,8 @@ fn production_service_projects_pending_approval_into_durable_transcript_and_awai
         }),
         Arc::new(|_| {}),
     );
-    let controller = service.bind_runner(&record.id, true);
+    let session_key = format!("agent:{}:main", record.id);
+    let controller = service.bind_runner_with_session(&record.id, Some(&session_key), true);
 
     let pending = match controller.request_approval(SandAutoReviewRequest {
         agent_id: None,
@@ -58,6 +59,7 @@ fn production_service_projects_pending_approval_into_durable_transcript_and_awai
         SandAutoReviewRequestOutcome::Immediate(_) => panic!("expected pending approval"),
     };
     let request_id = pending.approval.id.clone();
+    assert_eq!(pending.approval.session_key.as_deref(), Some(session_key.as_str()));
 
     let entries = sessions
         .read_agent_transcript_entries(&record.id)
