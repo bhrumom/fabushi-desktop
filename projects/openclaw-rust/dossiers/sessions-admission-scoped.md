@@ -493,13 +493,15 @@ conversation-turn settlement, and exact-head acceptance remain pending.
 
 ## 12.9 Human handoff result session provenance — 2026-11-01
 
-The authenticated `runner.startRoutedProvider` producer already carries the
-validated `worker_session_key` into the terminal Human handoff result path.
-That key is now passed to `ProductionSessionWorkers::append_human_agent_message`
-and persisted as `sessionKey` in the existing Human conversation owner. A
-same-stream replay preserves the bound identity, upgrades a legacy matching
-row with the producer-owned provenance, and rejects a replay that supplies a
-different session key.
+The authenticated `runner.startRoutedProvider` producer already carries an
+owner-confirmed `worker_session_admitted_key` into the terminal Human handoff
+result path when the target has a session admission record. That key is now
+passed to `ProductionSessionWorkers::append_human_agent_message` and persisted
+as `sessionKey` in the existing Human conversation owner. A same-stream replay
+preserves the bound identity, upgrades a legacy matching row with the
+producer-owned provenance, and rejects a replay that supplies a different
+session key. Selector-only compatibility calls without an admission record
+remain explicitly unbound rather than being promoted to session-admitted.
 
 This closes the producer-owned provenance edge for Agent results written into
 the separate Human conversation store without deriving a key from
