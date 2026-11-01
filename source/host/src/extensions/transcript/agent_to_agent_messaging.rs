@@ -301,6 +301,7 @@ impl ProductionAgentToAgentMessaging {
         }
         let source_entries=self.sessions.read_agent_transcript_entries(from_agent_id)?;
         let outbound_id=next_entry_id(&source_entries,TranscriptEntryIdKind::AssistantMessage);
+        let image_json=serde_json::to_value(images).map_err(|e|format!("could not encode agent message images: {e}"))?;
         let pending_turn_id = if let (Some(session_key), Some(source_admission)) =
             (sender_session_key.as_deref(), source_admission.as_ref())
         {
@@ -316,7 +317,6 @@ impl ProductionAgentToAgentMessaging {
         } else {
             None
         };
-        let image_json=serde_json::to_value(images).map_err(|e|format!("could not encode agent message images: {e}"))?;
         let mut outbound_entry = json!({
             "kind":"message","id":outbound_id,"role":"assistant","content":message,"isStreaming":false,
             "timestampMs":timestamp_ms,"toAgent":{"id":to_agent_id,"name":target.name,"kind":"agent"},"images":image_json.clone()
