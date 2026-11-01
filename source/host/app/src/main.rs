@@ -5735,6 +5735,7 @@ fn resolve_admitted_automation_session_key(
             "automation {automation_id} has an empty owner-admitted session identity for {agent_id}"
         ));
     }
+    session_workers.assert_session_work_admission(agent_id, Some(&expected_key))?;
     Ok(record.session_key)
 }
 

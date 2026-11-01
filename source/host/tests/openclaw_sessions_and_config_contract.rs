@@ -422,6 +422,20 @@ fn test_direct_agent_db_metadata_writes_fail_closed_on_malformed_admission() {
     assert!(owner_source.contains("!admission.lifecycle_revision.trim().is_empty()"));
 }
 
+#[test]
+fn test_automation_session_identity_helper_rechecks_owner_admission() {
+    let shipping_source = include_str!("../app/src/main.rs");
+    let helper = shipping_source
+        .split("fn resolve_admitted_automation_session_key(")
+        .nth(1)
+        .expect("automation session identity helper exists")
+        .split("fn run_local_automation_turn(")
+        .next()
+        .expect("automation session identity helper boundary exists");
+    assert!(helper.contains("session_workers.assert_session_work_admission"));
+    assert!(helper.contains("Some(&expected_key)"));
+}
+
 // ---------------------------------------------------------------------------
 // OCRM-SESSION-O01: Session Key Parsing, Classification & Harness Namespace
 // ---------------------------------------------------------------------------

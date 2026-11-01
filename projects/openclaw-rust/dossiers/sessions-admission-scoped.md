@@ -506,6 +506,11 @@ The focused contract fixture was updated to pass an explicit canonical test
 key. This is static producer wiring evidence only; redrive runtime,
 conversation-turn settlement, and exact-head acceptance remain pending.
 
+The shared automation-session identity helper now rechecks the owner admission
+fence before returning a cron key to upgrade-resume or automation dispatch.
+Matching key text alone cannot bypass archived, deleting, or malformed owner
+state; this remains static producer evidence with runtime acceptance pending.
+
 ## 12.9 Human handoff result session provenance — 2026-11-01
 
 The authenticated `runner.startRoutedProvider` producer already carries an

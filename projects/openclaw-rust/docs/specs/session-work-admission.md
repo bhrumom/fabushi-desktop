@@ -114,6 +114,11 @@ return the committed receipt and conflicting payloads fail closed. This bounded
 path still does not represent the full upstream detached-result contract or
 provide archive/restore, media, or provider-review ownership.
 
+Automation-session identity resolution also rechecks the owner admission fence
+before returning an owner-confirmed cron key to upgrade-resume or automation
+dispatch. A matching key in an archived, deleting, or otherwise malformed
+record is not sufficient evidence for producer admission.
+
 ## Ownership and data flow
 
 `Gateway/Runner/background producer → ProductionSessionWorkers/SandAgentDb →
