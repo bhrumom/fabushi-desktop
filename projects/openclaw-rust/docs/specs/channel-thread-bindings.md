@@ -16,8 +16,8 @@ boundary would guess the provider contract and would create a second,
 unreviewed routing authority.
 
 This specification is revalidated against the current implementation subject
-at `fabushi-desktop` commit `9fa6207377b045944722fdbd34190f6856ad1d12`, tree
-`7fb99713576e897599e2e57150ee405936b2c2e3`. The OpenClaw source identity
+at `fabushi-desktop` commit `6f8fd5686c7ea8450c213892c05134533e24d1c9`, tree
+`129f3a5a3cb1fcab608051018cda7ea1e2abadc2`. The OpenClaw source identity
 remains the authority recorded by `projects/openclaw-rust/SOURCE_OF_TRUTH.md`;
 the current implementation subject does not promote the discovery-only
 upstream candidate or alter any acceptance flag.
@@ -94,6 +94,14 @@ replacement binding.
   lifecycle.
 - Therefore the responsibility remains `implementation=implemented`,
   `wiring=not-wired`, `verification=not-run`, and `acceptance=pending`.
+
+The current subject recheck also confirms the same negative producer evidence:
+`wakeForInbound` accepts an opaque `agentId` plus `envelope` and queues it
+directly; no production caller supplies a validated provider/account/channel/
+message identity to `ChannelThreadRouter::resolve_or_create`. The generic
+revival worker therefore remains an existing transcript/background-turn path,
+not an authenticated thread-binding ingress. No implementation or status
+promotion follows from this recheck.
 
 ## 6. Target architecture / ownership
 
