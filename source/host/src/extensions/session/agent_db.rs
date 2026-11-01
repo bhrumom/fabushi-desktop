@@ -1005,6 +1005,8 @@ impl SandAgentDb {
             if !session_admission_identity_is_well_formed(&admission)
                 || admission.session_key != session_key
                 || admission.lifecycle_revision != expected_lifecycle_revision
+                || admission.archived_at_ms.is_some()
+                || admission.deletion_pending
             {
                 return Ok(SessionWorkResultCommitOutcome::RejectedStale);
             }
@@ -2467,6 +2469,16 @@ impl SandAgentDb {
                 })
                 .optional()?
             {
+                if !session_admission_identity_is_well_formed(&admission)
+                    || admission.session_key != expected_session_key.trim()
+                    || admission.lifecycle_revision != expected_lifecycle_revision.trim()
+                    || admission.archived_at_ms.is_some()
+                    || admission.deletion_pending
+                {
+                    return Err(AgentDbProjectionError::WorkAdmissionInvalid(
+                        "media settlement replay is stale or session is not admitted".into(),
+                    ));
+                }
                 let receipt = parse_transcript_entry(&raw_receipt).ok_or_else(|| {
                     AgentDbProjectionError::WorkAdmissionInvalid(
                         "outgoing media settlement receipt is malformed".into(),

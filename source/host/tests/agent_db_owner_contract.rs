@@ -1180,6 +1180,30 @@ fn media_settlement_appends_and_releases_in_one_owner_transaction() {
         .to_string()
         .contains("conflicts with the committed transcript"));
 
+    let mut fenced = owner
+        .read_session_work_admission()
+        .expect("read admission after media settlement")
+        .expect("admission after media settlement");
+    fenced.deletion_pending = true;
+    assert!(owner
+        .transition_session_deletion_pending(Some("revision-1"), false, &fenced)
+        .expect("publish deletion fence"));
+    let fenced_replay = owner
+        .append_transcript_entries_and_release_media(
+            &[serde_json::json!({
+                "id": "send-1",
+                "kind": "send-message",
+                "content": "owned media"
+            })],
+            "agent:agent-media-settlement:main",
+            "revision-1",
+            "send-media:tool-1",
+        )
+        .expect_err("media settlement replay must recheck the live admission fence");
+    assert!(fenced_replay
+        .to_string()
+        .contains("media settlement replay is stale or session is not admitted"));
+
     owner.close(false);
     let _ = fs::remove_dir_all(root);
 }
@@ -1250,6 +1274,26 @@ fn background_result_receipt_is_idempotent_and_conflicts_fail_closed() {
         )
         .expect("conflicting receipt");
     assert_eq!(conflict, SessionWorkResultCommitOutcome::ConflictingResult);
+
+    let mut fenced = owner
+        .read_session_work_admission()
+        .expect("read admission after background receipt")
+        .expect("admission after background receipt");
+    fenced.deletion_pending = true;
+    assert!(owner
+        .transition_session_deletion_pending(Some("revision-1"), false, &fenced)
+        .expect("publish deletion fence"));
+    let fenced_replay = owner
+        .commit_session_work_result(
+            &admission.session_key,
+            &admission.lifecycle_revision,
+            "work-1",
+            "idem-1",
+            "background output",
+            2,
+        )
+        .expect("fenced background replay");
+    assert_eq!(fenced_replay, SessionWorkResultCommitOutcome::RejectedStale);
 
     owner.close(false);
     let _ = fs::remove_dir_all(root);

@@ -409,3 +409,20 @@ non-actionable terminal evidence, and a pre-Runner dispatch error restores
 reviews. This is a bounded owner-local settlement chain, not full OpenClaw
 equivalence or production acceptance; exact-head Actions and real runtime
 evidence remain pending, and global completion flags are unchanged.
+
+## Receipt replay admission-fence correction — 2026-11-01
+
+The live `SandAgentDb` recheck found that an already-committed
+`background-result` or `outgoing-media-settlement` receipt could be inspected
+before the replay path revalidated the current owner-local admission record.
+The receipt contents carried their original session identity and generation,
+but that alone did not prove that the current session was still admitted: a
+deletion fence could be published without rotating the lifecycle revision.
+
+Both replay paths now recheck the current canonical session key, lifecycle
+revision, archive state, and `deletion_pending` fence before returning an
+idempotent result. Focused owner contracts cover replay during deletion
+custody for both receipt types. This closes a durable replay bypass at the
+existing owner edge; the broader responsibility remains
+`not-started/not-wired/not-run/pending` because detached-result/media replay,
+provider-review recovery, and exact-head verification are still incomplete.
