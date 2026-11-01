@@ -505,8 +505,6 @@ export function createProductionCoordinatorAdapter<
         revokeRefusedAccount: () => ports.account.revokeRefusedAccount(context),
         prepareAccountTransition: (transition) => {
           localHumanId = null;
-          context.accountLifecycle.beginTransition();
-          context.hostSettingsFields.onAccountDeparted();
           return ports.account.prepareAccountTransition(transition, context);
         },
         resetAccountState: () => ports.account.resetAccountState(context),

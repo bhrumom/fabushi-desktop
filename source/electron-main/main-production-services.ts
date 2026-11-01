@@ -437,6 +437,7 @@ export interface ProductionAccountLifecycle {
   readonly isSignedIn: () => boolean;
   readonly isAccountDeparting: () => boolean;
   readonly beginTransition: () => void;
+  readonly noteAccountDeparted: () => void;
   readonly deliverStatus: (status: ProductionAccountStatus) => void;
 }
 
@@ -647,7 +648,8 @@ export function createElectronMainProductionComposition(bindings: ElectronMainPr
         getAccountScope: () => requireValue(settings, "settings").settingsStore.getMcpCustomInstructionsAccountScope(),
         isSignedIn: () => cursorAuthSignedIn,
         isAccountDeparting: () => accountTransitionDeparting,
-        beginTransition: () => { accountTransitionDeparting = true; connectorEgress.noteAccountDeparted(); },
+        beginTransition: () => { accountTransitionDeparting = true; },
+        noteAccountDeparted: () => connectorEgress.noteAccountDeparted(),
         deliverStatus: (status) => {
           cursorAuthSignedIn = (desktopStructuredLogAccountSlot(status) ?? "logged-out") !== "logged-out";
           accountTransitionDeparting = false;

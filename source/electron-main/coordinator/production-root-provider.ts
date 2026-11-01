@@ -18,6 +18,9 @@ import {
   createProductionCoordinatorRevokeRefusedAccount,
 } from "./account-revoke.js";
 import {
+  createProductionAccountTransitionCleanup,
+} from "./account-transition-cleanup.js";
+import {
   createProductionCoordinatorAuxiliaryPorts,
   type ProductionCoordinatorAuxiliaryPorts,
 } from "./production-root-auxiliary-provider.js";
@@ -60,6 +63,16 @@ function accountPorts(
       }>;
     },
   );
+  const transitionCleanup = createProductionAccountTransitionCleanup({
+    setAccountDeparting: () => context.accountLifecycle.beginTransition(),
+    onAccountDeparted: () => context.hostSettingsFields.onAccountDeparted(),
+    noteAccountDeparted: () => context.accountLifecycle.noteAccountDeparted(),
+    syncHostSettingsToBox: (settings) => context.coordinatorResync.pushHostSettings(settings),
+    reportHostSettingsClearFailure: (error) => context.reportFailure("host-settings", "clear", error),
+    clearAccountScope: () => context.settings.settingsStore.clearAccountScope(),
+    clearGatewayDescriptor: () => context.clearGatewayDescriptor(),
+    resetMcpManager: () => context.requireMcp().resetMcpManager(),
+  });
   return {
     authorizeAccount: async (slot, transition) => {
       const authorizationContext = {
@@ -69,23 +82,7 @@ function accountPorts(
       return await authorization.authorizeAccount(slot, authorizationContext);
     },
     revokeRefusedAccount: (receivedContext) => revoke.revokeRefusedAccount(),
-    async prepareAccountTransition(transition, receivedContext): Promise<void> {
-      if (transition.previousSlot == null) return;
-      try {
-        await receivedContext.coordinatorResync.pushHostSettings({
-          mcpCustomInstructionsAccountScope: null,
-          mcpCustomInstructions: {},
-          mcpCustomInstructionsByServerId: {},
-          mcpDisabledToolsByServerId: {},
-        });
-      } catch (error) {
-        receivedContext.reportFailure("host-settings", "clear", error);
-      } finally {
-        receivedContext.settings.settingsStore.clearAccountScope();
-        await receivedContext.clearGatewayDescriptor();
-        await receivedContext.requireMcp().resetMcpManager();
-      }
-    },
+    prepareAccountTransition: (transition) => transitionCleanup.prepareAccountTransition(transition),
     resetAccountState: (receivedContext) => receivedContext.requireNotifications().resetAccountState(),
     deliverStatus: (status, receivedContext) => {
       receivedContext.requireAccount().deliverCursorAuthStatus(
