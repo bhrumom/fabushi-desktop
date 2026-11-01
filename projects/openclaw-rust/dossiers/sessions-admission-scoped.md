@@ -631,3 +631,15 @@ The missing producer/consumer boundary is now explicit in the ledger as
 `BL-SESSION-CONVERSATION-TURN-PRODUCTION-WIRING-001` for O03. These blockers
 describe absent production paths; they do not convert the existing contract
 oracles into runtime acceptance.
+
+## 12.21 Session identity propagation recheck — 2026-11-01
+
+A bounded read of the remaining production transcript append callers found no
+new unguarded session-identity path. Local-tool permission, timeline events,
+channel inbound, upgrade-resume, automation, background revival, and Runner
+composition either read the existing owner admission before carrying its key,
+retain an explicitly producer-owned key, or stay on the generic compatibility
+path. The final `SandAgentDb` session-admitted append still validates the
+admission key, archive state, and each entry's persisted `sessionKey` inside
+the same transaction. This is a provenance-negative recheck only; it does not
+promote session-work-admission wiring, verification, or acceptance.
