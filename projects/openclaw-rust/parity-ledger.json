@@ -6874,11 +6874,11 @@
       "existing_owner_candidates": [
         {
           "path": "source/host/src/extensions/transcript/automation_run_path.rs",
-          "reason": "Existing automation run outcome owner; does not currently own per-run session rows"
+          "reason": "Existing automation run outcome producer; delegates per-run session registration and settlement to the selected Session owner"
         },
         {
           "path": "source/host/src/extensions/session/production.rs",
-          "reason": "Existing durable per-agent session owner; per-run cron representation is not yet present"
+          "reason": "Existing durable session owner; owns the bounded per-run cron projection through SandAgentDb, while cleanup/archive remains open"
         }
       ],
       "historical_source_refs": [
