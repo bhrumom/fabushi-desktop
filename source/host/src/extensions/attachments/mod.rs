@@ -27,6 +27,7 @@ pub mod parse_output;
 pub mod pdf_extract;
 pub mod read_capability;
 pub mod remote_workspace_file;
+pub mod replay_attachment_projection;
 pub mod safe_link_preview_fetch;
 pub mod staged_inputs;
 pub mod video_playback_rendition;

@@ -290,7 +290,11 @@ This matrix makes the next ownership boundary explicit: the inference owner
 must accept a typed replay input and select a provider-specific serializer;
 the attachment owner must resolve durable attachment identities into a
 provider-supported representation or return a fail-closed unsupported-media
-result. The current `ProviderMessage` path remains valid for ordinary turns
+result. The existing attachment owner now exposes the pure
+`replay_attachment_projection::provider_replay_attachment_url` boundary for
+already-materialized HTTP(S) URLs; historical local-file materialization and
+remote upload remain explicitly out of scope for this slice. The current
+`ProviderMessage` path remains valid for ordinary turns
 and must not be silently reused for compacted typed replay.
 
 An inference-owner pure serializer contract is now present in
@@ -308,7 +312,9 @@ current CLI has no typed replay surface. The provider-specific serializers are
 now connected to the live provider owners: Cursor through its typed checkpoint
 conversation, Codex/Fabushi through Responses input, OpenRouter through native
 Chat Completions messages, and Claude through its supported text-only subset.
-Unsupported media/tool shapes and exact-head/provider acceptance remain open.
+Unsupported media/tool shapes, historical local-file materialization, and
+exact-head/provider acceptance remain open. URL qualification is now delegated
+to the existing attachment owner rather than duplicated in inference.
 
 The optional typed replay channel is now threaded through the existing
 production turn path: `ProductionTurnInputProjection` →

@@ -10,6 +10,7 @@ use crate::extensions::session::typed_replay::{
     ReplayContentPart, ReplayMessage, ReplayRole, ReplayToolCall, ReplayToolResult,
     TypedReplayEntry,
 };
+use crate::extensions::attachments::replay_attachment_projection::provider_replay_attachment_url;
 use super::cursor_inference_transport::{CursorCheckpointMessage, CursorCheckpointToolCall};
 
 const COMPACTION_SUMMARY_PREFIX: &str =
@@ -390,18 +391,12 @@ fn chat_attachment(index: usize, value: &Value) -> Result<Value, TypedReplaySeri
 }
 
 fn attachment_url(index: usize, value: &Value) -> Result<String, TypedReplaySerializationError> {
-    value
-        .get("url")
-        .or_else(|| value.get("signedUrl"))
-        .or_else(|| value.get("signed_url"))
-        .and_then(Value::as_str)
-        .map(str::trim)
-        .filter(|url| !url.is_empty() && (url.starts_with("https://") || url.starts_with("http://")))
-        .map(ToOwned::to_owned)
-        .ok_or_else(|| TypedReplaySerializationError::UnsupportedAttachment {
+    provider_replay_attachment_url(value).map_err(|error| {
+        TypedReplaySerializationError::UnsupportedAttachment {
             index,
-            detail: "attachment has no provider-usable https URL".into(),
-        })
+            detail: error.to_string(),
+        }
+    })
 }
 
 fn responses_tool_call(call: &ReplayToolCall) -> Value {

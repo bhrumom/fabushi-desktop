@@ -75,6 +75,14 @@ The producer also bounds large summary inputs with deterministic tail/user/head
 sampling and canonical fill. Exact upstream omission/weight parity, live-turn
 proof, and frozen verification are still open.
 
+Replay attachment ownership is now narrowed to the existing attachment owner:
+it may expose a read-only provider-usable HTTP(S) URL projection for a durable
+attachment identity. The inference serializer owns the provider-specific part
+shape, while local paths, data URLs, missing URLs, and unsupported schemes stay
+fail-closed. This contract does not authorize the compaction path to reuse
+outgoing-media custody or to upload historical transcript files; the missing
+remote/materialization capability remains an explicit open item.
+
 ## Required implementation sequence
 
 1. Add the owner-local schema/API and migration-safe transaction, with focused
