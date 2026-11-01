@@ -744,7 +744,7 @@ fn finish_cron_session_run(
         return Ok(());
     }
     let Some(run_id) = run_id else {
-        return Ok(());
+        return Err("background automation run settlement requires a durable run identity".into());
     };
     if let Some(fences) = fences {
         return store.finish_cron_session_run_with_fences(
