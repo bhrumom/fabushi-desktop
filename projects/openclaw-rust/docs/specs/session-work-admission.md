@@ -449,6 +449,13 @@ Production Gateway and Runner settings writes now use the same existing
 writer callback so its `settings.set` command does not write `settings.json`
 directly. The standalone `SandAgentState` fallback remains for non-production
 construction and is not production acceptance evidence.
+Session-scoped model selection now uses the same owner boundary: the
+`SandAgentSessionStore` facade delegates evaluation and persistence to
+`ProductionSessionWorkers`, which holds the per-agent filesystem/deletion lock,
+rechecks admission, and writes the existing `sessionModelSelection` KV through
+the canonical `SandAgentDb`. The model-picker policy owner remains unchanged;
+this closes only the owner-serialization gap and does not create a production
+mutation ingress, so model-selection wiring and acceptance remain pending.
 The Runner `channels.disconnect` command likewise injects the existing channel
 owner instead of deleting the channel directory directly; connector-secret
 removal uses the same admission boundary.

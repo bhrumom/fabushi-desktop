@@ -15,7 +15,6 @@ use crate::transcript_mutation_events::publish_transcript_mutation;
 use crate::extensions::memory::memory_service::FileMemoryStore;
 use crate::extensions::memory::memory_service::{get_project_dir, project_dir_exists};
 use crate::extensions::inference::model_picker_service::{
-    apply_session_model_selection as apply_model_selection,
     ApplySessionModelSelectionParams, ApplySessionModelSelectionResult, SessionModelEntryState,
 };
 use crate::automations::automation::{AUTOMATION_UI_LIMIT, AutomationRecord, AutomationSpec};
@@ -313,20 +312,8 @@ impl SandAgentSessionStore {
         params: ApplySessionModelSelectionParams<'_>,
         current_time_ms: u64,
     ) -> Result<ApplySessionModelSelectionResult, String> {
-        if !params.request.reset_to_default
-            && (params.request.provider.trim().is_empty() || params.request.model.trim().is_empty())
-        {
-            return Err("session model selection requires provider and model".into());
-        }
-        let db = self.production.open_agent_db_owner(agent_id)?;
-        let mut state = read_session_model_entry(&db, agent_id)?;
-        let result = apply_model_selection(&mut state, params, current_time_ms);
-        if matches!(&result, ApplySessionModelSelectionResult::Applied(_)) {
-            if !write_session_model_entry(&db, agent_id, &state)? {
-                return Err("SESSION_MODEL_SELECTION_NOT_COMMITTED".into());
-            }
-        }
-        Ok(result)
+        self.production
+            .apply_session_model_selection(agent_id, params, current_time_ms)
     }
 
     pub fn read_session_model_entry(

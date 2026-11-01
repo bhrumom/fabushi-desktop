@@ -25,6 +25,13 @@ use super::agent_db::{
 use super::agent_db_transcript_pages::{
     TranscriptPage, TranscriptPageQuery, TranscriptWindow, TranscriptWindowQuery,
 };
+use super::agent_session::{
+    read_session_model_entry, write_session_model_entry,
+};
+use crate::extensions::inference::model_picker_service::{
+    apply_session_model_selection as apply_model_selection,
+    ApplySessionModelSelectionParams, ApplySessionModelSelectionResult,
+};
 
 fn hide_session_work_receipts(entries: &mut Vec<serde_json::Value>) {
     entries.retain(|entry| {
@@ -2340,6 +2347,37 @@ impl ProductionSessionWorkers {
             ));
         }
         Ok(Some(record))
+    }
+
+    /// Apply a session-scoped model selection while holding the same
+    /// per-agent filesystem/deletion boundary used by every other session
+    /// mutation. The policy evaluator remains the model-picker owner; this
+    /// method owns only admission, serialization, and the owner-local write
+    /// edge.
+    pub fn apply_session_model_selection(
+        &self,
+        agent_id: &str,
+        params: ApplySessionModelSelectionParams<'_>,
+        current_time_ms: u64,
+    ) -> Result<ApplySessionModelSelectionResult, String> {
+        if !params.request.reset_to_default
+            && (params.request.provider.trim().is_empty()
+                || params.request.model.trim().is_empty())
+        {
+            return Err("session model selection requires provider and model".into());
+        }
+        self.with_agent_filesystem_mutation(agent_id, || {
+            self.assert_agent_work_admission_locked(agent_id)?;
+            let db = self.open_agent_db_owner_locked(agent_id)?;
+            let mut state = read_session_model_entry(&db, agent_id)?;
+            let result = apply_model_selection(&mut state, params, current_time_ms);
+            if matches!(&result, ApplySessionModelSelectionResult::Applied(_))
+                && !write_session_model_entry(&db, agent_id, &state)?
+            {
+                return Err("SESSION_MODEL_SELECTION_NOT_COMMITTED".into());
+            }
+            Ok(result)
+        })
     }
 
     pub(crate) fn read_session_work_admission_locked(
