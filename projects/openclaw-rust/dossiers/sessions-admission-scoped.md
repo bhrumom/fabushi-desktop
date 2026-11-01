@@ -770,3 +770,9 @@ check closes the local boundary if a persisted review record is malformed or
 rebound after facade admission. Static contract evidence is recorded, while
 runtime verification, exact-head verification, and production acceptance
 remain pending under the development freeze.
+
+The list/get provider-review projection now applies the same owner-local
+identity fence before exposing a review: admission `session_id`, admission
+`session_key`, requested route identity, and stored review `session_id` must
+all agree. This is consumer-side static evidence only; it does not upgrade
+runtime or acceptance status.

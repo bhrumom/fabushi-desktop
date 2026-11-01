@@ -380,6 +380,8 @@ fn test_provider_review_projection_hides_non_pending_continuations() {
         .next()
         .expect("provider-review projection boundary exists");
     assert!(projection.contains("provider_review_phase.as_deref() == Some(\"pending\")"));
+    assert!(projection.contains("record.session_id != session_id"));
+    assert!(projection.contains("record.session_key != session_key"));
     assert!(projection.contains("read_session_work_admission"));
 }
 

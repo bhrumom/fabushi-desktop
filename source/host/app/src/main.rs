@@ -3804,7 +3804,10 @@ impl UnifiedGatewayApi {
         let Some(review) = record.provider_review else {
             return Ok(None);
         };
-        if review.session_id != session_id {
+        if record.session_id != session_id
+            || record.session_key != session_key
+            || review.session_id != session_id
+        {
             return Ok(None);
         }
         let can_continue = record.provider_review_phase.as_deref() == Some("pending")

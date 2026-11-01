@@ -55,6 +55,9 @@ native field.
 - `PR-06`: Runtime/provider/model/API identity and lifecycle must be rechecked
   at continuation start and native-turn acceptance; stale acknowledgments are
   retired and cannot be retried.
+- `PR-06b`: Session projections must expose provider-review facts only when
+  the owner-local admission record's session ID and canonical session key both
+  match the requested projection route and the stored review session ID.
 - `PR-06a`: A continuation run must carry the captured lifecycle revision and
   run identity to the existing Runner terminal owner. A known successful
   terminal outcome clears the matching review; cancellation, failure, and
