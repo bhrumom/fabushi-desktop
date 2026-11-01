@@ -1313,3 +1313,34 @@ No GitHub Actions/status/check query or trigger, build, typecheck, lint, schema 
 Platform-core final compliance is `06ac74bc56fcdb362e4e004980d6c60917311bf6` / spec blob `d40d0a5f6d61f4bf16cbc58e303660350885756a`, referencing desktop bookkeeping checkpoint `918837f0456ea3745bd24d8bf11fd72e379b5069`. The unique TLS-template responsibility remains `mapped / coverage_disposition=blocked / validation_status=not-run / accepted=false`; production disposition remains **no production delta**. Canonical/desktop telegram-protocol api/lib blobs remain `ebfb3670b5cd097b9ce288782c7954f5cfe9fc43` / `abab39e42f100972484191f0e52e9edd9b88c6cf`.
 
 Real implementation remains blocked on a shipping canonical telegram-network TLS camouflage ClientHello generator/socket lifecycle. No dead parser/serializer was added, and no executable validation was performed.
+
+
+## Stage-A MTProto msgs_ack request-wire adjacent revalidation (evidence round 98; task round 67, 2026-11-01)
+
+Fixed U remains `telegramdesktop/tdesktop@f985723b552b30fe1c17d377d57f44e61a15a8c4`. Fresh readback of
+`mtproto.tl@76225965bfc794388db241f3f760db8ab79e84f8` confirms
+`msgs_ack#62d6b459 msg_ids:Vector<long> = MsgsAck`. Fixed-U
+`session_private.cpp@13cbc76ec723386027b5b4dcac79999b791c4614` confirms the shipping send path serializes
+`MTP_msgs_ack(MTP_vector<MTPlong>(base::take(_ackRequestData)))` only when `_ackRequestData` is non-empty.
+
+Existing-owner-first review finds **no production delta**. Canonical and desktop production api/lib remain
+`ebfb3670b5cd097b9ce288782c7954f5cfe9fc43` / `abab39e42f100972484191f0e52e9edd9b88c6cf`;
+canonical TL remains `89256ab35184b6dc06a095ab34abb9f44e95a264`. Existing `build_msgs_ack` already writes the exact
+constructor, canonical TL Vector framing/count, and caller-ordered signed i64 values.
+
+Spec-first platform-core commit/blob is `5759adce64e495f85dbc068fb0d74d027dee8004@6fd5961fa70b86417d7bb4e71b937c97edacbd08`.
+Authored-only exact boundary contracts are platform-core commit `95508fda3420d4829eb1fb76a20bc6f589f02635` /
+blob `7314ad06c48f9ca87dc08c0bd3b7d08a47579797`, mirrored byte-identically into desktop at
+`4677ae986ea7f9e3156c57883ecfbb6fca7e2f49`. They cover empty, one-element, multiple signed values,
+exact order/EOF, and vector-count overflow/no-partial-header. They were not run.
+
+The unique ledger adds `TDRP-R9-MTPROTO-MSGS-ACK-REQUEST-WIRE-001` as
+`implemented / coverage_disposition=rewritten / validation_status=not-run / accepted=false`. Coverage becomes
+`responsibilities_total=99, unknown=16172, unread=16145, omitted=0, unmapped_responsibilities=0`.
+
+Arbitrary ACK scheduling/history/application, request settlement/callback history, connection/TLS scheduling,
+auth-key binding/persistence, `gzip_packed`, complete difference/differenceSlice decoding/application, broader
+fixed-U source/legal closure, Stage-B executable evidence, and independent release ACCEPT remain open.
+
+No GitHub Actions/status/check query or trigger, build, typecheck, lint, schema validator, generator,
+unit/contract/integration/E2E test, package, deployment, installation, or runtime acceptance was performed.
