@@ -288,6 +288,29 @@ reached by the production `sessions.delete` path. Contract coverage includes
 `GLOBAL` and `AGENT:GLOBAL:MAIN`; this closes a case-normalization guard gap,
 but does not change the parity disposition above.
 
+## 11.3 Current adapter-to-owner reduction recheck — 2026-11-01
+
+The exact current Host app path confirms that the five public projections do
+invoke `resolve_gateway_session_route`, but it also shows why this is not yet
+full session-key fusion. `sessions.get` resolves a route and then reads the
+agent-wide transcript through `session_workers`; `chat.send` resolves a route
+and passes only the resulting `agent_id` plus the raw key into the existing
+`call_send_prompt` path; and `chat.abort` resolves a route but cancels runner
+streams selected by agent-wide registry state. `sessions.delete` resolves a
+route and then dispatches the existing `deleteAgent` lifecycle owner, whose
+operation removes the whole agent directory. `sessions.patch` rejects every
+key other than `agent:<id>:main` before invoking the existing archive owner.
+
+This is positive evidence for selector validation and negative evidence for
+per-kind/per-run state ownership. A cron, group, spawn-child, or other
+non-main key is not yet a durable transcript/session target merely because
+`classify_session_kind` labels it. The remaining implementation boundary is
+therefore a source/spec task for a session catalog and per-key transcript,
+archive, abort, and admission owners; it cannot be closed by changing the
+adapter's return type or by routing non-main keys to whole-agent deletion.
+The parity row remains `implementation=implemented`, `wiring=not-wired`,
+`verification=not-run`, and `acceptance=pending`.
+
 ## 11.2 Internal sendPrompt boundary recheck — 2026-11-01
 
 The remaining full-wiring gap was checked against the actual dispatch graph.
