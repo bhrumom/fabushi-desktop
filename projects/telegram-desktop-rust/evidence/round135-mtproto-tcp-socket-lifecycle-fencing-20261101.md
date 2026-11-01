@@ -79,3 +79,11 @@ No source-entry decrement is claimed because the source blobs are part of an alr
 ## Stage-A execution statement
 
 No GitHub Actions/check/status/workflow query or trigger was performed. No build, typecheck, lint, validator, generator, dependency resolution, unit/contract/integration/E2E, visual/a11y, package, deploy, install or runtime acceptance was executed.
+
+
+## Final source-level compliance
+
+Platform-core source-level compliance commit: `1138e34377d441a97d72b23279dacdb0bc310d2e`  
+Final durable spec blob: `449cfa61c2b3b20c5fd42838a627a8e5330f8bb4`
+
+The final spec review records R1-R7 and AC-1..AC-7 as source-level passed against canonical production `dc16f388756d681ef4ee6683b98525edef869e1f` and desktop bookkeeping checkpoint `734e37f377e7fe58b7a646a6b64b29a92bf9629e`. This does not advance executable validation: `validation_status=not-run`, `accepted=false`.

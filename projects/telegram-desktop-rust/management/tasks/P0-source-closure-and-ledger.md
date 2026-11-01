@@ -2131,3 +2131,6 @@ Two focused loopback socket lifecycle contracts were authored in the existing te
 The adjacent fixed-U `protocolForFiles` responsibility is deliberately not claimed here: `TcpSocket` sets `SendBufferSizeSocketOption=kFilesSendBufferSize` and `ReceiveBufferSizeSocketOption=kFilesReceiveBufferSize` only for file protocol connections. That file-transfer socket tuning remains the next explicit open adjacency for source/owner review.
 
 Stage A zero-CI discipline remained intact: no GitHub Actions/check/status/workflow query or trigger, build, typecheck, lint, validator, generator, dependency resolution, unit/contract/integration/E2E execution, package, deployment, installation or runtime acceptance was performed.
+
+
+Round104 final source-level compliance: platform-core `1138e34377d441a97d72b23279dacdb0bc310d2e` / spec blob `449cfa61c2b3b20c5fd42838a627a8e5330f8bb4` records R1-R7 and AC-1..AC-7 source-review passed for `TDRP-R9-MTPROTO-TCP-SOCKET-LIFECYCLE-FENCING-001`; executable validation remains `not-run`, accepted remains false, and fixed-U `protocolForFiles` socket-buffer tuning remains open.

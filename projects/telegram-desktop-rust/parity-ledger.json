@@ -31848,7 +31848,10 @@
         "desktop-production-mirror-commit:e4fe918b8e8ba5589d1ab3d2cdae888087933719",
         "desktop-network-blob:63f9c4a26385a776fbdd42af3d0de44a37857691",
         "desktop-spec-blob:a463412a99805ebf38e035db3dde4f29964be206",
-        "runtime-fencing-blob:3a3da0eb4bf004569a3989e05e55c8b86a199c41"
+        "runtime-fencing-blob:3a3da0eb4bf004569a3989e05e55c8b86a199c41",
+        "platform-core-final-compliance-commit:1138e34377d441a97d72b23279dacdb0bc310d2e",
+        "platform-core-final-spec-blob:449cfa61c2b3b20c5fd42838a627a8e5330f8bb4",
+        "desktop-final-spec-blob:449cfa61c2b3b20c5fd42838a627a8e5330f8bb4"
       ],
       "test_evidence": [
         "native/telegram-network/src/lib.rs::network_attempt_control_contract_tests::successful_connect_handoff_releases_attempt_stream_without_cancelling_control authored, not run",
@@ -31981,7 +31984,7 @@
       "acceptance_reviewer": null,
       "reviewer": null,
       "license_and_provenance": "Behavioral provenance is fixed-U mtproto_tcp_socket.cpp plus adjacent AbstractSocket/TcpConnection/SessionPrivate lifecycle. No upstream C++ implementation is copied; implementation is source-neutral Rust in existing owners.",
-      "notes": "Round104/source evidence round135. Source review isolated connect-attempt ownership handoff as the next exact responsibility after selectable proxy carriers. Controlled successful establishment now releases the connect-only NetworkAttemptControl from the adopted transport; request-scoped invoke_raw_controlled may reattach/clear the owned request control. Bounded flush recursion/bypass was corrected in the same socket lifecycle owner. RuntimeClient projection-change fencing is unchanged. protocolForFiles socket-buffer tuning remains open. Contracts are authored but not run; validation_status=not-run; accepted=false.",
+      "notes": "Round104/source evidence round135. Source review isolated connect-attempt ownership handoff as the next exact responsibility after selectable proxy carriers. Controlled successful establishment now releases the connect-only NetworkAttemptControl from the adopted transport; request-scoped invoke_raw_controlled may reattach/clear the owned request control. Bounded flush recursion/bypass was corrected in the same socket lifecycle owner. RuntimeClient projection-change fencing is unchanged. protocolForFiles socket-buffer tuning remains open. Contracts are authored but not run; validation_status=not-run; accepted=false. Final platform source-level spec compliance is 1138e34377d441a97d72b23279dacdb0bc310d2e / spec blob 449cfa61c2b3b20c5fd42838a627a8e5330f8bb4; all R1-R7 and AC-1..AC-7 are source-review passed while Stage-B executable validation remains not-run.",
       "test_execution_evidence": [],
       "validation_status": "not-run",
       "accepted": false,
