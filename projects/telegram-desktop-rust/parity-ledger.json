@@ -6,10 +6,10 @@
   "target_commit": "23d73b32e301408f9c8aed151cb1f9e442516e13",
   "coverage": {
     "source_entries_total": 16202,
-    "unknown": 16118,
-    "unread": 16091,
+    "unknown": 16117,
+    "unread": 16090,
     "omitted": 0,
-    "responsibilities_total": 160,
+    "responsibilities_total": 161,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -42666,6 +42666,330 @@
       "lifecycle_owner": "Existing Fabushi repository process/security/quality governance + release gates",
       "persistence_and_restart": "Source image build layers and /data working state are infrastructure-local; no Docker VOLUME is declared. Target Stage-A persists only exact provenance/contracts in existing governance and the unique ledger.",
       "concurrency_and_cancellation": "Source external commit input and final image digest fence identities across build/consume stages; publish readiness is bounded. Target publication uses non-force expected-SHA CAS and must reread on concurrent movement."
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+      "source_path": ".github/telegram-bot-api/entrypoint.sh",
+      "source_blob_sha": "d40a7372efd8e5862e00f9b214b36a840688797e",
+      "source_kind": "repository_container_runtime_entrypoint",
+      "module_id": "tdesktop.repository-canary-bot-api-entrypoint",
+      "responsibility_id": "TDRP-R9-REPOSITORY-CANARY-BOT-API-ENTRYPOINT-001",
+      "source_symbols": [
+        "#!/bin/sh",
+        "set -e",
+        "exec /usr/local/bin/telegram-bot-api",
+        "--http-port=8081",
+        "--dir=/data",
+        "--temp-dir=/data/temp",
+        "${TELEGRAM_LOCAL:+--local}",
+        "\"$@\""
+      ],
+      "capability_ids": [
+        "CAP-REPOSITORY-PROCESS-GOVERNANCE",
+        "CAP-REPOSITORY-QUALITY-GOVERNANCE",
+        "CAP-REPOSITORY-TASK-EVIDENCE"
+      ],
+      "dependency_ids": [
+        ".github/telegram-bot-api/Dockerfile@a361602441040028a3332c3732c4902d9c880122",
+        ".github/workflows/canary-bot-api.yml@3ef5e601948c8f3256464d0d31816eebf4ba41a9",
+        ".github/workflows/canary.yml@0d460c617c2a3910a0d11ac793d07533ac966947",
+        "Telegram/build/canary_publish.sh@4eb2d790063bb8f11efc7ffa06977fe1ef79a270"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/telegram-bot-api-entrypoint-complete-read.md",
+      "behavior_contract": "Preserve the exact fixed-U canary Bot API shell entrypoint as repository container/runtime provenance: POSIX /bin/sh, set -e, absolute-path exec, fixed port/data/temp argv, non-empty TELEGRAM_LOCAL presence semantics, quoted argv forwarding, inherited binary-owned API credentials, and direct Dockerfile/build-workflow/digest-pinned canary-consumer/readiness lineage without importing a Telegram Bot API runtime or sidecar into Fabushi.",
+      "state_machine": "container starts as non-root botapi via exact Dockerfile -> /usr/local/bin/entrypoint.sh is invoked -> shell enables set -e -> expands fixed argv -> TELEGRAM_LOCAL unset/empty omits or non-empty adds literal --local -> quoted caller argv appended -> exec replaces shell with absolute telegram-bot-api binary as PID1 -> process exit/signal becomes container lifecycle -> downstream canary_publish.sh separately polls bounded getMe readiness -> publication or hard failure; target Stage A records provenance only, no execution or ACCEPT",
+      "side_effects": [
+        "Stage-A closure updates existing Fabushi repository container/toolchain/process/security and quality/evidence documentation plus the unique migration ledger.",
+        "No target entrypoint, Dockerfile, Bot API sidecar/provider, product runtime, second release service, updater, platform-core service or Telegram-specific runtime owner is introduced.",
+        "No shell/container/service/Bot API/workflow/build/validator/test/package/deploy execution is performed."
+      ],
+      "failure_cases": [
+        "Entrypoint source/mode/blob, Dockerfile caller, build workflow, image consumer or publish consumer identity is stale or mismatched.",
+        "Absolute /usr/local/bin/telegram-bot-api is missing or non-executable and exec fails.",
+        "/data or /data/temp is unavailable/unwritable for the composed non-root runtime.",
+        "Runtime API credentials or binary configuration are rejected and the binary fails to start or exits.",
+        "A non-empty TELEGRAM_LOCAL value is incorrectly treated as Boolean false rather than enabling --local.",
+        "Caller-supplied argv boundaries are changed, re-evaluated by a shell, or exposed to untrusted product input.",
+        "Conflicting trusted appended argv changes binary behavior and is silently treated as equivalent.",
+        "Process starts but downstream bounded getMe readiness never succeeds.",
+        "Loopback/TLS/authentication is falsely attributed to the shell although it specifies only port/data/temp/local-mode argv.",
+        "Stage-A authored-only work is promoted to verified/accepted."
+      ],
+      "ui_disposition": "Not applicable to Fabushi product UI; repository container runtime-entrypoint provenance only.",
+      "non_ui_responsibilities": [
+        "POSIX shell/bootstrap identity",
+        "absolute binary exec and PID1 handoff",
+        "runtime environment inheritance",
+        "TELEGRAM_LOCAL non-empty presence semantics",
+        "fixed and forwarded argv contract",
+        "HTTP port argument",
+        "data/temp path arguments",
+        "failure/exit propagation",
+        "direct Dockerfile/build/image/publish source lineage",
+        "trusted deployment argv and secret boundary"
+      ],
+      "platform_delta": "No platform-core production delta.",
+      "implementation_language": "Markdown/JSON repository governance and evidence; no shipping runtime implementation and no Stage-A container/shell execution.",
+      "target_owner": "Existing Fabushi repository build/container/toolchain provenance + dependency-advisory / supply-chain quality + repository process/security governance + shared quality/evidence/release gates",
+      "existing_owner_candidates": [
+        "Fabushi root repository build/development-process and source-provenance authority",
+        "Fabushi repository dependency-advisory / supply-chain quality governance",
+        "Fabushi repository security governance",
+        "Fabushi existing development-container/toolchain provenance domain",
+        "Fabushi shared Test Strategy and Test Evidence Contract",
+        "Fabushi release entry/exit gates",
+        "FMEP-001 Stage-A deferred executable validation authority"
+      ],
+      "rejected_owners": [
+        "Telegram Bot API sidecar/provider/runtime inside Fabushi Desktop",
+        "Telegram-specific entrypoint/container runtime owner",
+        "second product updater or release/publication service",
+        "Agent / Coordinator / Host / Runner product runtime",
+        "platform-core runtime/service/authorization owner",
+        "shipping product Settings/Permissions as container credential owner",
+        "second supply-chain/security/quality/evidence truth"
+      ],
+      "commands_events": [
+        "source container ENTRYPOINT invocation",
+        "source runtime environment inheritance",
+        "source optional --local selection",
+        "source trusted appended argv forwarding",
+        "source PID1 exec handoff",
+        "source canary publish bounded readiness",
+        "future Stage-B exact frozen-candidate runtime-entrypoint qualification"
+      ],
+      "persistence_contract": "The shell fixes /data and /data/temp argv but creates no directory, volume, database, credential store or recovery journal. Dockerfile composition creates/chowns /data; temp creation/use is binary-owned. Target Stage-A persists only exact provenance/contracts in existing repository governance and the unique migration ledger.",
+      "concurrency_contract": "The shell owns no concurrency primitive. Container lifecycle is single PID1 after exec; source consumers fence image identity by digest. Target publication binds the live Fabushi checkpoint with non-force expected-SHA CAS; concurrent movement invalidates stale writes and requires reread/reconciliation.",
+      "cancellation_contract": "Successful exec delegates signal/exit behavior to the Bot API process. The shell has no retry/backoff/cancellation supervisor. Downstream readiness is bounded by canary_publish.sh; interruption or timeout remains unqualified and requires a fresh exact-candidate run in Stage B.",
+      "security_boundary": "Absolute binary path and quoted \"$@\" avoid PATH substitution and shell re-evaluation; shell does not print API ID/hash. Non-root UID 999 and digest-pinned image are Dockerfile/consumer composition properties. The entrypoint does not provide bind restriction, TLS, firewall, credential validation, secret scrubbing, argv allowlisting or privilege drop; extra argv is trusted operator authority only.",
+      "network_service_dependencies": [
+        "localhost:8081 between source canary publish job and its service container",
+        "Telegram Bot API network activity owned by the external telegram-bot-api binary, not this shell"
+      ],
+      "service_owner": "Not applicable as a Fabushi service; source container/runtime publication chain is provenance only.",
+      "deployment_evidence": [],
+      "implementation_status": "implemented",
+      "coverage_disposition": "workflow-equivalent",
+      "blockers": [],
+      "production_entrypoints": [
+        "AGENTS.md -> Repository canary Bot API runtime-entrypoint authority",
+        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md -> Repository canary Bot API runtime-entrypoint qualification",
+        "projects/fabushi-communication-platform/quality/evidence-contract.md -> Repository canary Bot API runtime-entrypoint evidence"
+      ],
+      "production_evidence": [
+        "spec-first commit:8b36ad8f578a175f068f35fd1646ad586c1ef16a",
+        "dossier:projects/telegram-desktop-rust/dossiers/telegram-bot-api-entrypoint-complete-read.md",
+        "upstream-source:.github/telegram-bot-api/entrypoint.sh@d40a7372efd8e5862e00f9b214b36a840688797e",
+        "upstream-docker-caller:.github/telegram-bot-api/Dockerfile@a361602441040028a3332c3732c4902d9c880122",
+        "upstream-build-caller:.github/workflows/canary-bot-api.yml@3ef5e601948c8f3256464d0d31816eebf4ba41a9",
+        "upstream-image-consumer:.github/workflows/canary.yml@0d460c617c2a3910a0d11ac793d07533ac966947",
+        "upstream-publish-consumer:Telegram/build/canary_publish.sh@4eb2d790063bb8f11efc7ffa06977fe1ef79a270",
+        "fixed-U-tree:91f2b083ab2877c0a17d07868eabec362a5cfca6"
+      ],
+      "test_evidence": [
+        "CONTRACT-TDRP-CANARY-BOT-API-ENTRYPOINT-SHELL-001 authored, not run",
+        "CONTRACT-TDRP-CANARY-BOT-API-ENTRYPOINT-FIXED-ARGV-001 authored, not run",
+        "CONTRACT-TDRP-CANARY-BOT-API-ENTRYPOINT-LOCAL-MODE-001 authored, not run",
+        "CONTRACT-TDRP-CANARY-BOT-API-ENTRYPOINT-ENV-INHERITANCE-001 authored, not run",
+        "CONTRACT-TDRP-CANARY-BOT-API-ENTRYPOINT-ARGV-FORWARDING-001 authored, not run",
+        "CONTRACT-TDRP-CANARY-BOT-API-ENTRYPOINT-PID1-EXEC-001 authored, not run",
+        "CONTRACT-TDRP-CANARY-BOT-API-ENTRYPOINT-NETWORK-001 authored, not run",
+        "CONTRACT-TDRP-CANARY-BOT-API-ENTRYPOINT-DATA-PATHS-001 authored, not run",
+        "CONTRACT-TDRP-CANARY-BOT-API-ENTRYPOINT-SOURCE-LINEAGE-001 authored, not run",
+        "CONTRACT-TDRP-CANARY-BOT-API-ENTRYPOINT-CONSUMER-001 authored, not run",
+        "INT-TDRP-CANARY-BOT-API-ENTRYPOINT-REPOSITORY-PROCESS-001 authored, not run",
+        "FAULT-TDRP-CANARY-BOT-API-ENTRYPOINT-EXEC-FAILURE-001 authored, not run",
+        "FAULT-TDRP-CANARY-BOT-API-ENTRYPOINT-DATA-PATH-001 authored, not run",
+        "FAULT-TDRP-CANARY-BOT-API-ENTRYPOINT-BINARY-STARTUP-001 authored, not run",
+        "FAULT-TDRP-CANARY-BOT-API-ENTRYPOINT-READINESS-001 authored, not run",
+        "SEC-TDRP-CANARY-BOT-API-ENTRYPOINT-NO-EVAL-001 authored, not run",
+        "SEC-TDRP-CANARY-BOT-API-ENTRYPOINT-SECRET-BOUNDARY-001 authored, not run",
+        "SEC-TDRP-CANARY-BOT-API-ENTRYPOINT-ARGV-TRUST-BOUNDARY-001 authored, not run",
+        "SEC-TDRP-CANARY-BOT-API-ENTRYPOINT-NONROOT-COMPOSITION-001 authored, not run"
+      ],
+      "target_commit": "8b36ad8f578a175f068f35fd1646ad586c1ef16a",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Fabushi root repository build/container/toolchain provenance + dependency-advisory / supply-chain security + repository process/security + shared quality/evidence/release gates",
+      "composition_slot": "Repository canary publication runtime-entrypoint and PID1 handoff boundary",
+      "capability_component": "Source-neutral repository container runtime-entrypoint provenance contract",
+      "variation_axes": [
+        "TELEGRAM_LOCAL unset vs empty vs non-empty including 0",
+        "no extra argv vs multiple quoted argv elements",
+        "exec success vs missing/non-executable binary",
+        "data/temp path usable vs unusable",
+        "process startup vs downstream readiness",
+        "non-root composition vs forbidden privileged fallback"
+      ],
+      "shared_owner_contracts": [
+        "Fabushi root repository build/development-process/source-provenance instructions",
+        "Fabushi repository dependency-advisory / supply-chain security governance",
+        "Fabushi Test Strategy",
+        "Fabushi Test Evidence Contract",
+        "Fabushi release entry/exit criteria",
+        "FMEP-001"
+      ],
+      "duplicate_root_check": "No Telegram Bot API sidecar/provider, product runtime, second updater/release service, platform-core service, Telegram-specific entrypoint owner, or second supply-chain/security/evidence truth introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Repository container infrastructure; no product navigation entry",
+      "primary_navigation_target": "Not applicable",
+      "collection_surface": "Not applicable",
+      "creation_flow": "Not applicable to product UI; source container invokes an infrastructure service binary",
+      "object_action_scope": "Repository runtime-entrypoint/source-lineage qualification only",
+      "detail_section": "Not applicable",
+      "capability_surface": "Repository build/container/toolchain/supply-chain governance",
+      "route_contract": "Source Dockerfile invokes the entrypoint and source canary workflows consume the resulting digest-pinned service; target records exact provenance and defers executable qualification to Stage B.",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Not applicable",
+      "search_local_remote_contract": "Not applicable",
+      "responsive_disposition": "Not applicable",
+      "accessibility_contract": "Repository shell/runtime source only; no Fabushi product UI claim.",
+      "keyboard_contract": "Not applicable",
+      "state_continuity_contract": "Exact entrypoint/Dockerfile/build-workflow/image-consumer/publish-consumer identities preserve provenance; any drift invalidates stale evidence.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Not applicable",
+      "semantic_token_usage": "Not applicable",
+      "legacy_token_adapter": "Not applicable",
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "Not applicable",
+      "avatar_contract": "Not applicable",
+      "content_copy_keys": [],
+      "motion_contract": "Not applicable",
+      "reduced_motion_contract": "Not applicable",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "high",
+      "requirement_ids": [
+        "TDRP-R9-REPOSITORY-CANARY-BOT-API-ENTRYPOINT-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-CANARY-BOT-API-ENTRYPOINT-ARGV-001",
+        "ORA-TDRP-CANARY-BOT-API-ENTRYPOINT-PID1-001",
+        "ORA-TDRP-CANARY-BOT-API-ENTRYPOINT-ENV-BOUNDARY-001",
+        "ORA-TDRP-CANARY-BOT-API-ENTRYPOINT-CONSUMER-READINESS-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-CANARY-BOT-API-ENTRYPOINT-NO-EVAL-001",
+        "INV-TDRP-CANARY-BOT-API-ENTRYPOINT-NO-SECRET-LOGGING-001",
+        "INV-TDRP-CANARY-BOT-API-ENTRYPOINT-NO-UNTRUSTED-ARGV-001",
+        "INV-TDRP-CANARY-BOT-API-ENTRYPOINT-NO-STAGE-A-EXECUTION-001"
+      ],
+      "unit_case_ids": [],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-CANARY-BOT-API-ENTRYPOINT-SHELL-001",
+        "CONTRACT-TDRP-CANARY-BOT-API-ENTRYPOINT-FIXED-ARGV-001",
+        "CONTRACT-TDRP-CANARY-BOT-API-ENTRYPOINT-LOCAL-MODE-001",
+        "CONTRACT-TDRP-CANARY-BOT-API-ENTRYPOINT-ENV-INHERITANCE-001",
+        "CONTRACT-TDRP-CANARY-BOT-API-ENTRYPOINT-ARGV-FORWARDING-001",
+        "CONTRACT-TDRP-CANARY-BOT-API-ENTRYPOINT-PID1-EXEC-001",
+        "CONTRACT-TDRP-CANARY-BOT-API-ENTRYPOINT-NETWORK-001",
+        "CONTRACT-TDRP-CANARY-BOT-API-ENTRYPOINT-DATA-PATHS-001",
+        "CONTRACT-TDRP-CANARY-BOT-API-ENTRYPOINT-SOURCE-LINEAGE-001",
+        "CONTRACT-TDRP-CANARY-BOT-API-ENTRYPOINT-CONSUMER-001"
+      ],
+      "integration_case_ids": [
+        "INT-TDRP-CANARY-BOT-API-ENTRYPOINT-REPOSITORY-PROCESS-001"
+      ],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [],
+      "fault_recovery_case_ids": [
+        "FAULT-TDRP-CANARY-BOT-API-ENTRYPOINT-EXEC-FAILURE-001",
+        "FAULT-TDRP-CANARY-BOT-API-ENTRYPOINT-DATA-PATH-001",
+        "FAULT-TDRP-CANARY-BOT-API-ENTRYPOINT-BINARY-STARTUP-001",
+        "FAULT-TDRP-CANARY-BOT-API-ENTRYPOINT-READINESS-001"
+      ],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "performance_case_ids": [],
+      "soak_case_ids": [],
+      "security_case_ids": [
+        "SEC-TDRP-CANARY-BOT-API-ENTRYPOINT-NO-EVAL-001",
+        "SEC-TDRP-CANARY-BOT-API-ENTRYPOINT-SECRET-BOUNDARY-001",
+        "SEC-TDRP-CANARY-BOT-API-ENTRYPOINT-ARGV-TRUST-BOUNDARY-001",
+        "SEC-TDRP-CANARY-BOT-API-ENTRYPOINT-NONROOT-COMPOSITION-001"
+      ],
+      "regression_ids": [],
+      "exploratory_charter_ids": [],
+      "release_gate_ids": [
+        "G-INVENTORY",
+        "G-TRACEABILITY",
+        "G-EVIDENCE",
+        "G-RELEASE"
+      ],
+      "test_fixture_ids": [
+        "fixed-U-canary-bot-api-entrypoint-dockerfile",
+        "fixed-U-canary-digest-service-and-publish-readiness"
+      ],
+      "test_environment_ids": [
+        "Stage-B exact frozen candidate with authorized container runtime/GHCR/canary repository context"
+      ],
+      "coverage_matrix_status": "pending",
+      "flake_status": "not-run",
+      "test_execution_evidence": [],
+      "acceptance_reviewer": null,
+      "release_gate_status": "not-run",
+      "license_and_provenance": "Read from telegramdesktop/tdesktop fixed-U entrypoint, exact Dockerfile direct caller, exact build workflow, exact digest-pinned canary consumer and exact publish-script readiness consumer; no Telegram Bot API runtime/container is copied into Fabushi shipping product.",
+      "reviewer": null,
+      "notes": "Task round160/source evidence round191. Spec-first non-force expected-SHA CAS 8b36ad8f578a175f068f35fd1646ad586c1ef16a authored exact source-neutral shell/runtime-entrypoint/environment/argv/network/data-path/failure/security/source-lineage contracts. Desktop main 9993ca8e107f7e019a8201e5ab74fa54e82159f2; platform-core bhrumom/fabushi-platform-core@e92b51e23b39dae5719f033fa1f7a20d6579dc8c. Fixed-U tree 91f2b083ab2877c0a17d07868eabec362a5cfca6 is complete, 7,194 entries; source index 115, mode 100755, 322 bytes/code points, 11 LF, zero CR, trailing newline. One independent source entry closes: unknown 16118->16117, unread 16091->16090, responsibilities 160->161, omitted 0, unmapped 0.",
+      "validation_status": "not-run",
+      "accepted": false,
+      "source_paths": [
+        ".github/telegram-bot-api/entrypoint.sh@d40a7372efd8e5862e00f9b214b36a840688797e"
+      ],
+      "existing_owner": "Existing Fabushi repository build/container/toolchain provenance + dependency-advisory / supply-chain quality + repository process/security governance + shared quality/evidence/release gates",
+      "rejected_existing_owners": [
+        "Telegram Bot API sidecar/provider/runtime",
+        "Telegram-specific entrypoint/container owner",
+        "Fabushi product updater or second release/publication service",
+        "Agent/Coordinator/Host/Runner product runtime",
+        "platform-core service/authorization owner",
+        "shipping product Settings/Permissions as container credential owner",
+        "second supply-chain/security/evidence truth"
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "AGENTS.md",
+        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md",
+        "projects/fabushi-communication-platform/quality/evidence-contract.md"
+      ],
+      "fabushi_target_symbols": [
+        "Repository canary Bot API runtime-entrypoint authority",
+        "Repository canary Bot API runtime-entrypoint qualification",
+        "Repository canary Bot API runtime-entrypoint evidence"
+      ],
+      "target_language": "Markdown/JSON repository governance and evidence",
+      "language_rationale": "Pure repository container runtime-entrypoint provenance; no shipping runtime implementation is required.",
+      "command_event_contracts": [
+        "source Docker ENTRYPOINT invocation",
+        "source TELEGRAM_LOCAL local-mode selection",
+        "source trusted argv forwarding",
+        "source PID1 exec handoff",
+        "source bounded downstream readiness",
+        "future Stage-B exact-candidate qualification through existing supply-chain/release gates"
+      ],
+      "state_owner": "Existing Fabushi repository build/container/toolchain + supply-chain governance",
+      "lifecycle_owner": "Existing Fabushi repository process/security/quality governance + release gates",
+      "persistence_and_restart": "The shell fixes /data and /data/temp but owns no persistence/restart mechanism. Dockerfile creates /data; external binary owns temp/data behavior; downstream workflow owns readiness. Target Stage-A persists only exact provenance/contracts in existing governance and unique ledger.",
+      "concurrency_and_cancellation": "Successful exec delegates lifecycle directly to the Bot API PID1; no shell concurrency/retry loop exists. Target publication uses non-force expected-SHA CAS and must reread on concurrent movement."
     }
   ],
   "rebaseline_candidate": {
