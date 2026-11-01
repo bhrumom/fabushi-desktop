@@ -627,3 +627,16 @@ Evidence records argument selection, complete-triple claim versus reuse, incompl
 For confirmed fixes, evidence binds current target-branch source, serial per-crash commit identity, durable group recording, and reconciliation after each wave and before the final report. Dry-run is non-mutating. The final build/report belongs to executable Stage-B qualification.
 
 Stage A contains authored source contracts only. `validation_status=not-run` and `accepted=false`.
+
+
+### Claude cross-review command-adapter evidence
+
+For `TDRP-R9-CROSS-REVIEW-CLAUDE-COMMAND-ADAPTER-001`, preserve the exact fixed-U command identity plus exact protocol, prompt, Codex-leaf, scope-helper and worker-helper identities. Consumer evidence identifies Claude Code command discovery/user `/cross-review` invocation as the direct host consumer; the shared protocol's reference to `.claude/commands/cross-review.md` names its current runner but is not a second caller. The generic Claude workflow adapter is recorded as a negative dependency because it is explicit-load-only and not loaded by this command.
+
+Invocation evidence records the raw arguments, selected scope mode/base, round cap, review-only flag, resume session identity and free-form focus. Provider-admission evidence records the Codex availability/auth result and proves the command-specific no-native-fallback fence. Session evidence binds the existing frozen base/start HEAD/private-index snapshot identity, round file-count/size disclosure, empty-scope termination, and on resume the existing ledger plus first incomplete step rather than a new or widened scope.
+
+Per-round evidence records every leaf name/role, read-only sandbox/effort, immutable prompt/report identities, foreground wait outcomes, terminal/verdict presence, bounded replacement lineage and any twice-failed lens coverage gap or twice-failed general stop. Synthesis evidence binds the resumed general-reviewer thread and all applicable lens reports. Arbitration evidence reuses the durable source-neutral cross-review ledger for every `FIX|REJECT|DEFER|COMPROMISE`, rationale, reversal/supersession, and review-only no-edit decision before source mutation.
+
+Fix/re-review evidence binds accepted edits to ordinary repository ownership, the next immutable snapshot/fix delta, focused general confirmation, rerun originating lenses, stop reason, and the source command's no-commit/amend/rebase/stash boundary. Source-requested Debug build and staged comment-hook results are executable Stage-B evidence only for this migration.
+
+Stage A contains authored source contracts only. Missing required dependency reads, provider substitution, duplicate/overlapping leaf runs, progress/polling as completion, unproved replacement, missing verdict/synthesis/arbitration, resume that restarts or widens scope, edits during review-only, or any executable review/build/hook/test path is non-passing. `validation_status=not-run`; `accepted=false`.
