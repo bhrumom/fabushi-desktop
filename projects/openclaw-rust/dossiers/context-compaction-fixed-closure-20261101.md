@@ -292,3 +292,15 @@ the attachment owner must resolve durable attachment identities into a
 provider-supported representation or return a fail-closed unsupported-media
 result. The current `ProviderMessage` path remains valid for ordinary turns
 and must not be silently reused for compacted typed replay.
+
+The existing attachment resolution evidence is app-owned rather than an
+inference contract: `source/host/app/src/main.rs:605-670`
+`resolve_production_attachment_source` can persist host bytes or download box
+bytes into the agent media store and return a `file://` URL, while the current
+provider-facing attachment resolver at `main.rs:833-875` is scoped to an
+outgoing tool/send-message path and its admitted media settlement. No
+inference-owner API currently resolves a historical transcript attachment for
+replay with a provider capability policy. Reusing the outgoing send path for
+compaction would cross ownership and settlement boundaries; a narrow
+read-only attachment projection contract is required before typed replay can
+be enabled.
