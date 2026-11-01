@@ -132,6 +132,28 @@ fn inbound_consumer_binds_source_identity_and_rejects_self_or_unknown(){
 }
 
 #[test]
+fn inbound_consumer_rechecks_target_receive_policy_before_persistence(){
+    let root=temp_root();let sessions=Arc::new(ProductionSessionWorkers::with_agents_root(&root,500));
+    let source=sessions.materialize_new_session(Some(&profile("Source")),"user",None).expect("source");
+    let target=sessions.materialize_new_session(Some(&profile("Target")),"user",None).expect("target");
+    let admission=sessions.read_session_work_admission(&target.id).expect("admission").expect("target admission");
+    sessions.write_session_communication_policy(
+        &target.id,&admission.session_id,&admission.lifecycle_revision,
+        &SessionCommunicationPolicyOverride{send:None,receive:Some(SessionCommunicationMode::Never)},
+    ).expect("policy write");
+    let inbound=serde_json::json!({
+        "from":{"id":source.id,"name":"spoofed"},
+        "text":"blocked by target receive policy",
+        "timestampMs":100,
+    });
+    let error=persist_agent_inbound_message(&sessions,&target.id,&inbound).expect_err("receive policy must reject");
+    assert!(error.contains("receive is disabled"));
+    assert!(sessions.read_agent_transcript_entries(&target.id).expect("target transcript").is_empty());
+    assert!(sessions.get_agent_conversation_partner_ids(&target.id).expect("target partners").is_empty());
+    sessions.shutdown();let _=fs::remove_dir_all(root);
+}
+
+#[test]
 fn session_bound_sender_append_rejects_an_archived_source_without_writing(){
     let root=temp_root();let sessions=Arc::new(ProductionSessionWorkers::with_agents_root(&root,500));
     let alpha=sessions.materialize_new_session(Some(&profile("Alpha")),"user",None).expect("alpha");

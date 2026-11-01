@@ -385,6 +385,41 @@ pub fn persist_agent_inbound_message(
     if source.is_group || source.remote_room.is_some() {
         return Ok(false);
     }
+    let source_admission = sessions.read_session_work_admission(from_id)?;
+    let target_admission = sessions.read_session_work_admission(agent_id)?;
+    if let (Some(source_admission), Some(target_admission)) =
+        (source_admission.as_ref(), target_admission.as_ref())
+    {
+        let source_endpoint = CommunicationEndpoint {
+            agent_id: from_id.to_string(),
+            session_key: source_admission.session_key.clone(),
+            store_path: sessions.session_db_path(from_id)?.to_string_lossy().into_owned(),
+            session_id: Some(source_admission.session_id.clone()),
+            communication: sessions.read_session_communication_policy(from_id)?,
+        };
+        let target_endpoint = CommunicationEndpoint {
+            agent_id: agent_id.to_string(),
+            session_key: target_admission.session_key.clone(),
+            store_path: sessions.session_db_path(agent_id)?.to_string_lossy().into_owned(),
+            session_id: Some(target_admission.session_id.clone()),
+            communication: sessions.read_session_communication_policy(agent_id)?,
+        };
+        match plan_session_communication(
+            None,
+            &[source_endpoint],
+            &[target_endpoint],
+            false,
+        ) {
+            SessionCommunicationDecision::Denied { error } => return Err(error),
+            SessionCommunicationDecision::Allowed { approvals } if !approvals.is_empty() => {
+                return Err(format!(
+                    "Session communication requires approval before delivery ({} approval(s)).",
+                    approvals.len()
+                ));
+            }
+            SessionCommunicationDecision::Allowed { .. } => {}
+        }
+    }
     let from_name = source.name.trim();
     let from_name = if from_name.is_empty() { "An agent" } else { from_name };
     let text = inbound
