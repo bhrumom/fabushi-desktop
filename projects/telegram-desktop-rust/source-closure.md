@@ -1937,3 +1937,12 @@ The separate carrier/application responsibility remains mapped/pending with no p
 
 Ledger rows: `TDRP-R9-MTPROTO-SPECIAL-CONFIG-PAYLOAD-001 = implemented / rewritten / validation_status=not-run / accepted=false`; `TDRP-R9-MTPROTO-SPECIAL-CONFIG-CARRIER-APPLICATION-001 = mapped / pending / validation_status=not-run / accepted=false`. Coverage is `source_entries_total=16202, responsibilities_total=118, unknown=16172, unread=16145, omitted=0, unmapped_responsibilities=0`; focused semantic review does not decrement global source-entry unknown/unread.
 
+
+
+### Round 115 final source-level compliance
+
+Platform-core final source-level compliance is `cbfb785ef23f33fbcebda0950b457da2f0578c66` / spec blob `0be79934e196946c3b0d11c232fbbd161d5aef94`. It references desktop initial bookkeeping commit `651c199fee8b3cad83e9f97b6fd92c59cd38f996` and records R1-R14 plus AC-1 through AC-8 as passed at source/implementation/bookkeeping review level. Executable validation remains intentionally `not-run`; no acceptance or release claim is made.
+
+`TDRP-R9-MTPROTO-SPECIAL-CONFIG-PAYLOAD-001` remains `implemented / rewritten / validation_status=not-run / accepted=false`. `TDRP-R9-MTPROTO-SPECIAL-CONFIG-CARRIER-APPLICATION-001` remains `mapped / pending / validation_status=not-run / accepted=false` because the reviewed Fabushi network/runtime checkpoints have no shipping special-config HTTP acquisition / temporary-DC help.getConfig scheduler / DcOptions application lifecycle to extend without inventing a parallel bootstrap runtime.
+
+No GitHub Actions/status/check query or trigger, build, typecheck, lint, schema validator, generator, dependency resolution, lock regeneration, unit/contract/integration/E2E execution, package, deployment, installation or runtime acceptance was performed.

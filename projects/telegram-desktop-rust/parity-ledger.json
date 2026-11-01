@@ -29718,7 +29718,10 @@
         "desktop-source-contract-sync-commit:eba569bf912a89fd02f2731edb3da262f1be962d",
         "desktop-special-config-blob:03ea4149703942befe59132a2019bef71e92938b",
         "desktop-lib-blob:02853449d52bc713d6db826e88875b94c2a9c70f",
-        "desktop-authored-contract-blob:cd51c5db0c2d92cd713eac5ddb80f589775ead43"
+        "desktop-authored-contract-blob:cd51c5db0c2d92cd713eac5ddb80f589775ead43",
+        "platform-core-final-source-compliance-commit:cbfb785ef23f33fbcebda0950b457da2f0578c66",
+        "platform-core-final-spec-blob:0be79934e196946c3b0d11c232fbbd161d5aef94",
+        "desktop-initial-bookkeeping-commit:651c199fee8b3cad83e9f97b6fd92c59cd38f996"
       ],
       "test_evidence": [
         "Internal special_config.rs AES-CBC, synthetic recovered-payload, prefix/expiry/no-match and fail-closed contracts authored; not executed.",
@@ -29845,7 +29848,7 @@
       "acceptance_reviewer": null,
       "reviewer": null,
       "license_and_provenance": "Behavioral provenance is fixed-U special_config_request.cpp@fdb65506b0a886bc2daeccb61090bc44be7e2d88 plus mtproto_rsa_public_key.cpp@312c8b1ddb3145d5ec3180323e8d72d50c35e526 and existing help.configSimple schema/parser. Implementation is source-neutral Rust; no upstream C++ copied.",
-      "notes": "Task round84/source evidence round115. Pure payload decode and endpoint-selection are implemented in existing telegram-protocol and mirrored byte-identically. HTTP acquisition/global HTTP Date mutation/temporary-DC scheduling/DcOptions application remain separate mapped/pending. Contracts authored only; validation_status=not-run; accepted=false.",
+      "notes": "Task round84/source evidence round115. Pure payload decode and endpoint-selection are implemented in existing telegram-protocol and mirrored byte-identically. HTTP acquisition/global HTTP Date mutation/temporary-DC scheduling/DcOptions application remain separate mapped/pending. Contracts authored only; validation_status=not-run; accepted=false. Final platform source-level compliance is cbfb785ef23f33fbcebda0950b457da2f0578c66 / spec blob 0be79934e196946c3b0d11c232fbbd161d5aef94.",
       "test_execution_evidence": [],
       "validation_status": "not-run",
       "accepted": false,
@@ -29954,7 +29957,10 @@
         "fixed-U:special_config_request.cpp@fdb65506b0a886bc2daeccb61090bc44be7e2d88",
         "fixed-U:config_loader.cpp@5d07404ba07223016c6728b986dcba10628d7194",
         "fixed-U:mtproto_dc_options.cpp@d8499fc1df2ed7fdb88da687a04b824d243ff49a",
-        "platform-core-spec-commit:e4344c0c9b68efd54dc44c88f9da87b29acf8bbf"
+        "platform-core-spec-commit:e4344c0c9b68efd54dc44c88f9da87b29acf8bbf",
+        "platform-core-final-source-compliance-commit:cbfb785ef23f33fbcebda0950b457da2f0578c66",
+        "platform-core-final-spec-blob:0be79934e196946c3b0d11c232fbbd161d5aef94",
+        "desktop-initial-bookkeeping-commit:651c199fee8b3cad83e9f97b6fd92c59cd38f996"
       ],
       "test_evidence": [
         "Carrier/application contracts are documented in the durable spec; no fake executable test was added against a nonexistent shipping scheduler."
@@ -30075,7 +30081,7 @@
       "acceptance_reviewer": null,
       "reviewer": null,
       "license_and_provenance": "Behavioral provenance is fixed-U Telegram/SourceFiles/mtproto/mtp_instance.cpp@d25fe3b72298fab371854f80186ee8e4777ea087 plus adjacent proxy/settings/network source listed in round114 evidence. No upstream C++ copied.",
-      "notes": "Task round84/source evidence round115. Mapped/pending no-production-delta: HTTP acquisition/HTTP Date mutation/temporary-DC help.getConfig/DcOptions application depend on a shipping network/runtime scheduler absent at the reviewed checkpoints. Pure payload decode/selection is separately implemented.",
+      "notes": "Task round84/source evidence round115. Mapped/pending no-production-delta: HTTP acquisition/HTTP Date mutation/temporary-DC help.getConfig/DcOptions application depend on a shipping network/runtime scheduler absent at the reviewed checkpoints. Pure payload decode/selection is separately implemented. Final platform source-level compliance is cbfb785ef23f33fbcebda0950b457da2f0578c66 / spec blob 0be79934e196946c3b0d11c232fbbd161d5aef94.",
       "test_execution_evidence": [],
       "validation_status": "not-run",
       "accepted": false,
