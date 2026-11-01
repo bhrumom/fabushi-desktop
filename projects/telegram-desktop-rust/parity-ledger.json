@@ -27396,7 +27396,10 @@
         "path:source/mahayana/mahayana-rs/providers/telegram-protocol/src/dc.rs@a9582e4ece93590c322febbff391ba3ff7635575",
         "path:source/mahayana/mahayana-rs/providers/telegram-protocol/src/lib.rs@daf27c48a422ed6ed663ca0021ff138436d99c0b",
         "path:source/mahayana/mahayana-rs/providers/telegram-network/src/lib.rs@3034acab752ca37531033bb8a1d106003b20265d",
-        "path:source/mahayana/mahayana-rs/providers/telegram-protocol/tests/protocol_contract.rs@adc51856cebcdb6e539828e3d4abb9952fc32c29"
+        "path:source/mahayana/mahayana-rs/providers/telegram-protocol/tests/protocol_contract.rs@adc51856cebcdb6e539828e3d4abb9952fc32c29",
+        "platform-core-final-compliance-commit:0da9e826633817068f06159d90d46eaf664aa51b",
+        "platform-core-final-spec-blob:cdb4a4565257b7919f510244ec4a11a4c7fcf32f",
+        "desktop-round76-bookkeeping-commit:dc671558c60f4c292e2a8bf6de8faf1000da6c89"
       ],
       "test_evidence": [
         "Canonical and desktop protocol contracts author regular/test, temporary normalization, media negative, shifted media, shifted temporary-media and invalid-domain cases; not run.",
@@ -27521,7 +27524,7 @@
       "acceptance_reviewer": null,
       "reviewer": null,
       "license_and_provenance": "Behavioral responsibility is anchored to fixed-U telegramdesktop/tdesktop session_private.cpp@13cbc76ec723386027b5b4dcac79999b791c4614 plus facade.h@39e2f732c7df32af37ebf8222e887aec7e11b256, core_types.h@9d025d8ae265e3fe2eef3f32fc609e79a0c4de7f, mtp_instance.h@eeb56d29cc8316bd6600c26b6f8edf3a912601eb, connection_abstract.h@217b684fa222c42e968dfddeaa62f16a0054017f and mtproto_dc_options.*. Implementation is source-neutral Rust and copies no upstream C++ implementation.",
-      "notes": "Stage A source-level implementation only. This row closes the pure fixed-U protocol DC-id identity responsibility: shifted-to-bare directory identity, temporary wire normalization, test shift and explicit MediaCluster negative sign. Existing telegram-network consumes the result but broader TDesktop currentDcType/auth-key selection, binding/persistence and connection scheduling remain outside this slice. Contracts are authored but not executed; validation_status=not-run and accepted=false.",
+      "notes": "Stage A source-level implementation only. This row closes the pure fixed-U protocol DC-id identity responsibility: shifted-to-bare directory identity, temporary wire normalization, test shift and explicit MediaCluster negative sign. Existing telegram-network consumes the result but broader TDesktop currentDcType/auth-key selection, binding/persistence and connection scheduling remain outside this slice. Contracts are authored but not executed; validation_status=not-run and accepted=false. Final canonical source-level spec compliance is platform-core 0da9e826633817068f06159d90d46eaf664aa51b / spec blob cdb4a4565257b7919f510244ec4a11a4c7fcf32f, referencing desktop bookkeeping dc671558c60f4c292e2a8bf6de8faf1000da6c89. Executable validation remains not-run and acceptance remains false.",
       "test_execution_evidence": [],
       "validation_status": "not-run",
       "accepted": false,

@@ -55,3 +55,10 @@ No contract was executed.
 Proxy/Web/TLS camouflage; quick-ACK lifecycle/correlation; broader currentDcType and TemporaryMediaCluster auth-key selection/binding/persistence/expiry/renewal; connection scheduling/racing/reconnect/send retry; arbitrary request histories; gzip; complete difference/differenceSlice decoding/application; broader fixed-U source/legal closure; Stage-B executable evidence; independent release ACCEPT.
 
 No GitHub Actions/status/check query or trigger, build, typecheck, lint, schema validator, generator, unit/contract/integration/E2E test, package, deployment, installation or runtime acceptance was performed.
+
+
+## Final source-level compliance readback
+
+Platform-core final compliance commit is `0da9e826633817068f06159d90d46eaf664aa51b`, spec blob `cdb4a4565257b7919f510244ec4a11a4c7fcf32f`. It records R1-R10 and AC-1..AC-5 as source-level/spec-compliance satisfied while explicitly preserving `validation_status=not-run` and `accepted=false`; it references desktop bookkeeping `dc671558c60f4c292e2a8bf6de8faf1000da6c89`.
+
+No test, build, validator, runtime gate, Actions/status/check query, package, deployment or installation evidence was produced in this round.

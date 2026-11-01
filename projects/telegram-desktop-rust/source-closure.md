@@ -1756,3 +1756,14 @@ Desktop provider synchronization is `385e5a261da3620733053503027c9a28c71cc221`: 
 The unique ledger adds this responsibility as `implemented / coverage_disposition=rewritten / validation_status=not-run / accepted=false`. Coverage becomes `responsibilities_total=108, unknown=16172, unread=16145, omitted=0, unmapped_responsibilities=0`. Unknown/unread intentionally do not decrease because the broader fixed-U session/connection family still contains proxy/TLS camouflage, quick-ACK lifecycle, currentDcType/auth-key lifecycle, connection scheduling/retry, arbitrary request histories, gzip and complete difference decoding responsibilities.
 
 Contracts were authored only and were not executed. No GitHub Actions/status/check query or trigger, build, typecheck, lint, schema validator, generator, unit/contract/integration/E2E test, package, deployment, installation or runtime acceptance was performed.
+
+
+### Round 107 final source-level compliance
+
+Platform-core final source-level compliance is `0da9e826633817068f06159d90d46eaf664aa51b` / spec blob `cdb4a4565257b7919f510244ec4a11a4c7fcf32f`, referencing desktop bookkeeping checkpoint `dc671558c60f4c292e2a8bf6de8faf1000da6c89`.
+
+Canonical production remains `e9cfc7fbd06002c6510d3bf45df9710e55ff1d57`: `telegram-protocol/src/dc.rs@a9582e4ece93590c322febbff391ba3ff7635575`, protocol facade `daf27c48a422ed6ed663ca0021ff138436d99c0b`, and shipping network `3034acab752ca37531033bb8a1d106003b20265d`. Authored-only protocol/network contracts remain `adc51856cebcdb6e539828e3d4abb9952fc32c29` and `4adbcabf66dc0ca35861f46e40e9a8ca77fb73c5`; desktop provider mirrors the production/protocol contract blobs exactly at checkpoint `385e5a261da3620733053503027c9a28c71cc221`.
+
+The unique `TDRP-R9-MTPROTO-PROTOCOL-DC-ID-WIRE-001` responsibility remains `implemented / coverage_disposition=rewritten / validation_status=not-run / accepted=false`. Coverage remains `responsibilities_total=108, unknown=16172, unread=16145, omitted=0, unmapped_responsibilities=0`.
+
+No executable validation or GitHub Actions/status/check query was performed. Proxy/Web/TLS camouflage, quick-ACK lifecycle, broader currentDcType/auth-key lifecycle, connection scheduling/racing/reconnect/send retry, arbitrary request histories, gzip, complete difference/differenceSlice decoding/application, broader fixed-U source/legal closure, Stage-B executable evidence and independent release ACCEPT remain open.
