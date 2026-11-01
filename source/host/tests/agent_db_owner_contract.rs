@@ -685,6 +685,82 @@ fn background_result_receipt_is_idempotent_and_conflicts_fail_closed() {
     let _ = fs::remove_dir_all(root);
 }
 
+#[test]
+fn stale_background_result_cas_rolls_back_receipt_insert() {
+    let root = temp_root("work-admission-stale-receipt");
+    let agent_dir = root.join("agent-work");
+    fs::create_dir_all(&agent_dir).expect("agent dir");
+    let db_path = agent_dir.join("store.db");
+    let owner = SandAgentDb::open(&db_path, 50).expect("owner");
+    let admission = SessionWorkAdmissionRecord {
+        session_key: "agent:agent-work:main".into(),
+        session_id: "session-1".into(),
+        lifecycle_revision: "revision-1".into(),
+        archived_at_ms: None,
+        archived_by: None,
+        archive_reason: None,
+        admitted_work_id: Some("work-stale".into()),
+        admitted_media_work_id: None,
+        admitted_media_paths: Vec::new(),
+        terminal_result_idempotency_key: None,
+        provider_review_id: None,
+        provider_review_phase: None,
+        provider_review_continuation_run_id: None,
+        provider_review: None,
+    };
+    assert!(owner
+        .compare_and_set_session_work_admission(None, &admission)
+        .expect("create admission"));
+
+    // Force the owner CAS to lose its lifecycle race after the receipt INSERT
+    // but before the compare-and-set. The surrounding transaction must roll
+    // back both the trigger update and the receipt insert.
+    let trigger = rusqlite::Connection::open(&db_path).expect("trigger connection");
+    trigger
+        .execute_batch(
+            "CREATE TRIGGER stale_work_admission_after_receipt
+             AFTER INSERT ON transcript_entries
+             WHEN NEW.id = 'background-result:idem-stale'
+             BEGIN
+               UPDATE kv
+               SET value = replace(value, 'revision-1', 'revision-2')
+               WHERE key = 'sessionWorkAdmission';
+             END;",
+        )
+        .expect("install stale-race trigger");
+
+    let outcome = owner
+        .commit_session_work_result(
+            &admission.session_key,
+            &admission.lifecycle_revision,
+            "work-stale",
+            "idem-stale",
+            "stale output",
+            0,
+        )
+        .expect("stale result outcome");
+    assert_eq!(outcome, SessionWorkResultCommitOutcome::RejectedStale);
+
+    assert!(owner
+        .get_transcript_entries()
+        .expect("transcript remains readable")
+        .iter()
+        .all(|entry| entry.get("id").and_then(serde_json::Value::as_str)
+            != Some("background-result:idem-stale")));
+    let retained = owner
+        .read_session_work_admission()
+        .expect("read admission")
+        .expect("admission remains");
+    assert_eq!(retained.lifecycle_revision, "revision-1");
+    assert_eq!(retained.admitted_work_id.as_deref(), Some("work-stale"));
+
+    trigger
+        .execute_batch("DROP TRIGGER stale_work_admission_after_receipt")
+        .expect("remove stale-race trigger");
+    owner.close(false);
+    let _ = fs::remove_dir_all(root);
+}
+
 
 #[test]
 fn owner_routes_unread_request_episode_snapshot_and_spend_guard_mutations() {

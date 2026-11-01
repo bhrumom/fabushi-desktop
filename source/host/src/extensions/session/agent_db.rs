@@ -906,6 +906,14 @@ impl SandAgentDb {
         })();
 
         match result {
+            // A stale CAS after the receipt insert must roll back the whole
+            // transaction. Committing here would leave an orphan receipt
+            // while the admission marker still owns the work, causing a
+            // later retry to be misreported as AlreadyCommitted.
+            Ok(SessionWorkResultCommitOutcome::RejectedStale) => {
+                let _ = db.execute_batch("ROLLBACK");
+                Ok(SessionWorkResultCommitOutcome::RejectedStale)
+            }
             Ok(outcome) => {
                 db.execute_batch("COMMIT")?;
                 if let SessionWorkResultCommitOutcome::Committed(receipt) = &outcome {

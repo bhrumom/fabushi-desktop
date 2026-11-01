@@ -112,6 +112,12 @@ responsibility remains open because this slice is not yet the complete
 upstream detached-result contract and does not provide authenticated
 archive/restore, media replay ownership, or provider-review terminal wiring.
 
+The transaction boundary now explicitly rolls back both the receipt insert and
+any trigger-side admission mutation when the post-insert lifecycle CAS returns
+`RejectedStale`; this prevents an orphan receipt from converting a later stale
+retry into `AlreadyCommitted`. The focused negative oracle remains pending
+until the frozen exact-head verification lane is available.
+
 The next implementation must extend the same owner-local receipt and session
 record to the remaining detached-result and terminal-review cases. Clearing an
 admitted-work marker without retaining the original result remains forbidden

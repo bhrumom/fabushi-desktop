@@ -169,6 +169,14 @@ lifecycle required for responsibility completion; the bounded Gateway
 archive/restore producer is now present but intentionally rejects active
 admitted work.
 
+The receipt transaction also rolls back the inserted receipt when its
+post-insert lifecycle compare-and-set loses a race. This preserves the
+`RejectedStale` outcome without leaving an orphan receipt that could make a
+later retry appear `AlreadyCommitted` while the admission marker still owns
+the work. The focused owner oracle is recorded in
+`source/host/tests/agent_db_owner_contract.rs::stale_background_result_cas_rolls_back_receipt_insert`;
+it remains unrun during the development freeze.
+
 The 2026-11-01 background-result recheck confirms the bounded receipt path is
 now present, but the gap remains at the broader lifecycle boundary:
 `run_local_background_revival_turn_with_context` has `agent_id`, canonical
