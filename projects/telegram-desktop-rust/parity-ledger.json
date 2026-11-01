@@ -6,10 +6,10 @@
   "target_commit": "23d73b32e301408f9c8aed151cb1f9e442516e13",
   "coverage": {
     "source_entries_total": 16202,
-    "unknown": 16120,
-    "unread": 16093,
+    "unknown": 16119,
+    "unread": 16092,
     "omitted": 0,
-    "responsibilities_total": 158,
+    "responsibilities_total": 159,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -42041,6 +42041,298 @@
       "source_paths": [
         ".github/dependabot.yml@5ace4600a1f26e6892982f3e2f069ebfab108d87"
       ]
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+      "source_path": ".github/scripts/generate_changelog.py",
+      "source_blob_sha": "6cdd12652d31b2a47ed9a8ef906308af59cca3d0",
+      "source_kind": "generator",
+      "module_id": "tdesktop.repository-changelog-pages-generator",
+      "responsibility_id": "TDRP-R9-REPOSITORY-CHANGELOG-PAGES-GENERATOR-001",
+      "source_symbols": [
+        "MONTHS",
+        "VERSION_RE",
+        "parse_date",
+        "parse_changelog",
+        "render_entry",
+        "build_html",
+        "main"
+      ],
+      "capability_ids": [
+        "CAP-REPOSITORY-PROCESS-GOVERNANCE",
+        "CAP-REPOSITORY-QUALITY-GOVERNANCE",
+        "CAP-REPOSITORY-TASK-EVIDENCE"
+      ],
+      "dependency_ids": [
+        "changelog.txt@41b7466f8a11a1866a66ff583809dfe74ad9a3c3",
+        "Telegram/Resources/art/icon16.png@561369d2b2688cc3799fc2b7a7a2f918d99cc155",
+        "Telegram/Resources/art/icon32.png@cff636894428e42c4fa5a063e3aa472c4bded8fc",
+        ".github/workflows/changelog.yml@445277fe4b44dc9ccef17b7b602016572c08fe7c"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/changelog-generator-complete-read.md",
+      "behavior_contract": "Exact fixed-U repository changelog generator provenance: acquire UTF-8 changelog input, parse anchored numeric version plus optional alpha/beta/dev/stable and source date grammar, preserve source order with only the source's narrow blank/artifact filtering, HTML-escape derived content, render the static page, conditionally copy favicons, and bind source publication context to the exact fixed-U Pages workflow without turning generated HTML into version/release/acceptance authority.",
+      "state_machine": "exact generator/input/caller identities -> acquire default changelog or trusted-operator override -> parse source-order entries -> narrow filtering -> escaped HTML render -> create/write output -> optional icon copies -> source Pages workflow upload/deploy context -> target repository release/process evidence; no Stage-A execution or ACCEPT",
+      "side_effects": [
+        "Stage-A closure updates existing repository release/process/quality governance and the unique ledger/evidence only.",
+        "No target Python generator, Pages workflow, shipping updater, product runtime or platform-core service is introduced.",
+        "No helper/workflow/Pages/build/test/release/deploy execution is performed."
+      ],
+      "failure_cases": [
+        "Stale or mismatched generator/changelog/icon/workflow identity.",
+        "Version grammar or filtering broadened beyond fixed-U semantics.",
+        "Computed sort_key mistaken for active sorting; source order silently rewritten.",
+        "Malformed month/date, UTF-8 read, output write/stat or icon copy failure reported as success.",
+        "Changelog-controlled text rendered without HTML escaping.",
+        "CLI path overrides exposed as untrusted remote/product input.",
+        "Version-tag Actions refs, live footer link, generated HTML or Pages deployment treated as immutable provenance or release acceptance.",
+        "Stage-A authored-only work promoted to verified/accepted."
+      ],
+      "ui_disposition": "Repository static documentation only; no Fabushi product UI ownership.",
+      "non_ui_responsibilities": [
+        "changelog acquisition and trusted operator path override semantics",
+        "version/date parsing and source-order preservation",
+        "narrow filtering and HTML formatting/escaping",
+        "output/icon I/O and failure propagation",
+        "exact GitHub Pages caller/source-lineage",
+        "release/publication/acceptance authority separation"
+      ],
+      "platform_delta": "No platform-core production delta.",
+      "implementation_language": "Markdown/JSON repository governance and evidence; no shipping runtime implementation and no Stage-A dependency automation execution.",
+      "target_owner": "Existing Fabushi repository dependency-advisory / supply-chain quality owner + repository process governance + security/quality evidence governance",
+      "existing_owner_candidates": [
+        "Fabushi root repository release/development-process authority",
+        "Fabushi shared Test Strategy and Test Evidence Contract",
+        "FQT-REL-001",
+        "FMEP-001 Stage-A deferred validation authority"
+      ],
+      "rejected_owners": [
+        "Telegram-specific Dependabot/product dependency owner",
+        "second dependency monitor or auto-update service",
+        "Fabushi product updater/runtime dependency loader",
+        "automatic merge engine",
+        "release/deployment service",
+        "Agent / Coordinator / Host / Runner product runtime",
+        "platform-core runtime/service",
+        "second security/quality/evidence truth"
+      ],
+      "commands_events": [
+        "GitHub repository Dependabot configuration discovery",
+        "eligible GitHub Actions dependency proposal generation by the repository host",
+        "maintainer dependency-candidate review through existing repository process",
+        "future Stage-B exact-candidate validation before explicit adoption"
+      ],
+      "persistence_contract": "This source persists only repository dependency-update metadata in Git. It creates no product dependency database, credential store, updater state store, release state, customer data store or second evidence system. Proposal/PR state, when the host creates it, remains GitHub repository-host state and is not Fabushi runtime authority.",
+      "concurrency_contract": "Source qualification binds the exact fixed-U dependabot.yml blob and the exact 20 fixed-U workflow blobs in its discovery scope. Target publication binds the live Fabushi checkpoint with expected-SHA CAS; concurrent target movement invalidates stale writes and requires reread/reconciliation rather than force overwrite.",
+      "cancellation_contract": "The source defines cadence, not a Fabushi retry/cancellation protocol. An unsafe, ambiguous, stale or interrupted dependency candidate remains unadopted; later review/validation must restart from fresh exact source/target and candidate identities.",
+      "security_boundary": "HTML-escape all changelog-derived text. CLI path overrides are trusted local operator authority only. Source Pages permissions/action tags do not grant Fabushi release acceptance.",
+      "network_service_dependencies": [],
+      "service_owner": "Not applicable as a Fabushi service; GitHub Actions/Pages is source-host publication context.",
+      "deployment_evidence": [],
+      "implementation_status": "implemented",
+      "coverage_disposition": "workflow-equivalent",
+      "blockers": [],
+      "production_entrypoints": [
+        "AGENTS.md -> Repository changelog Pages generator authority",
+        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md -> Repository changelog Pages generator qualification",
+        "projects/fabushi-communication-platform/quality/evidence-contract.md -> Repository changelog Pages generator evidence"
+      ],
+      "production_evidence": [
+        "spec-first commit:0c0c6bf8076a4c4fe23f831796ccd67fd97aee40",
+        "dossier:projects/telegram-desktop-rust/dossiers/changelog-generator-complete-read.md",
+        "upstream-source:.github/scripts/generate_changelog.py@6cdd12652d31b2a47ed9a8ef906308af59cca3d0",
+        "upstream-input:changelog.txt@41b7466f8a11a1866a66ff583809dfe74ad9a3c3",
+        "upstream-caller:.github/workflows/changelog.yml@445277fe4b44dc9ccef17b7b602016572c08fe7c"
+      ],
+      "test_evidence": [
+        "CONTRACT-TDRP-CHANGELOG-GENERATOR-ACQUISITION-001 authored, not run",
+        "CONTRACT-TDRP-CHANGELOG-GENERATOR-VERSION-PARSE-001 authored, not run",
+        "CONTRACT-TDRP-CHANGELOG-GENERATOR-FILTERING-001 authored, not run",
+        "CONTRACT-TDRP-CHANGELOG-GENERATOR-ORDERING-001 authored, not run",
+        "CONTRACT-TDRP-CHANGELOG-GENERATOR-HTML-FORMAT-001 authored, not run",
+        "CONTRACT-TDRP-CHANGELOG-GENERATOR-INPUT-OUTPUT-001 authored, not run",
+        "CONTRACT-TDRP-CHANGELOG-GENERATOR-SOURCE-LINEAGE-001 authored, not run",
+        "CONTRACT-TDRP-CHANGELOG-GENERATOR-PAGES-CALLER-001 authored, not run",
+        "INT-TDRP-CHANGELOG-GENERATOR-RELEASE-PROCESS-001 authored, not run",
+        "FAULT-TDRP-CHANGELOG-GENERATOR-MALFORMED-DATE-001 authored, not run",
+        "FAULT-TDRP-CHANGELOG-GENERATOR-IO-RECOVERY-001 authored, not run",
+        "SEC-TDRP-CHANGELOG-GENERATOR-HTML-ESCAPE-001 authored, not run",
+        "SEC-TDRP-CHANGELOG-GENERATOR-PATH-AUTHORITY-001 authored, not run"
+      ],
+      "target_commit": "0c0c6bf8076a4c4fe23f831796ccd67fd97aee40",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Fabushi root repository release/process governance + shared quality/evidence + FQT-REL-001",
+      "composition_slot": "Repository changelog generation provenance / static Pages publication boundary",
+      "capability_component": "Source-neutral repository changelog generation contract",
+      "variation_axes": [
+        "default paths vs argv overrides",
+        "major.minor vs major.minor.patch",
+        "stable vs prerelease labels",
+        "2-digit vs 4-digit year",
+        "bullet vs paragraph",
+        "optional icon absence vs I/O failure",
+        "newest-first source order",
+        "Pages publication vs release acceptance"
+      ],
+      "shared_owner_contracts": [
+        "root repository release/process governance",
+        "Fabushi Test Strategy",
+        "Fabushi Test Evidence Contract",
+        "FQT-REL-001",
+        "FMEP-001"
+      ],
+      "duplicate_root_check": "No second changelog runtime, shipping updater, platform-core service, Pages owner or release-acceptance truth introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Repository static documentation; no product navigation entry",
+      "primary_navigation_target": "Not applicable",
+      "collection_surface": "Not applicable",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "Repository release-documentation qualification only",
+      "detail_section": "Not applicable",
+      "capability_surface": "Repository release/development-process governance",
+      "route_contract": "Source GitHub Actions may invoke/deploy Pages; target records exact provenance and defers executable qualification to Stage B.",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Not applicable",
+      "search_local_remote_contract": "Not applicable",
+      "responsive_disposition": "Not applicable",
+      "accessibility_contract": "No Fabushi product UI claim; source page accessibility is not accepted from source review.",
+      "keyboard_contract": "No Fabushi product UI claim; source static page keyboard behavior is provenance only.",
+      "state_continuity_contract": "Exact generator/input/icon/caller identities and source order bind provenance; any drift invalidates stale evidence.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Not applicable",
+      "semantic_token_usage": "Not applicable",
+      "legacy_token_adapter": "Not applicable",
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "Source icon16/icon32 are Pages favicon inputs only, not Fabushi product design assets.",
+      "avatar_contract": "Not applicable",
+      "content_copy_keys": [],
+      "motion_contract": "Source page only; no Fabushi motion claim.",
+      "reduced_motion_contract": "Not applicable",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "high",
+      "requirement_ids": [
+        "TDRP-R9-REPOSITORY-CHANGELOG-PAGES-GENERATOR-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-CHANGELOG-GENERATOR-EXACT-LINEAGE-001",
+        "ORA-TDRP-CHANGELOG-GENERATOR-PARSE-ORDER-001",
+        "ORA-TDRP-CHANGELOG-GENERATOR-HTML-ESCAPE-001",
+        "ORA-TDRP-CHANGELOG-GENERATOR-PUBLICATION-NONAUTHORITY-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-CHANGELOG-GENERATOR-ONE-RELEASE-OWNER-001",
+        "INV-TDRP-CHANGELOG-GENERATOR-SOURCE-ORDER-PRESERVED-001",
+        "INV-TDRP-CHANGELOG-GENERATOR-GENERATED-PAGE-NOT-ACCEPTANCE-001",
+        "INV-TDRP-CHANGELOG-GENERATOR-NO-STAGE-A-EXECUTION-001"
+      ],
+      "unit_case_ids": [],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-CHANGELOG-GENERATOR-ACQUISITION-001",
+        "CONTRACT-TDRP-CHANGELOG-GENERATOR-VERSION-PARSE-001",
+        "CONTRACT-TDRP-CHANGELOG-GENERATOR-FILTERING-001",
+        "CONTRACT-TDRP-CHANGELOG-GENERATOR-ORDERING-001",
+        "CONTRACT-TDRP-CHANGELOG-GENERATOR-HTML-FORMAT-001",
+        "CONTRACT-TDRP-CHANGELOG-GENERATOR-INPUT-OUTPUT-001",
+        "CONTRACT-TDRP-CHANGELOG-GENERATOR-SOURCE-LINEAGE-001",
+        "CONTRACT-TDRP-CHANGELOG-GENERATOR-PAGES-CALLER-001"
+      ],
+      "integration_case_ids": [
+        "INT-TDRP-CHANGELOG-GENERATOR-RELEASE-PROCESS-001"
+      ],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [],
+      "fault_recovery_case_ids": [
+        "FAULT-TDRP-CHANGELOG-GENERATOR-MALFORMED-DATE-001",
+        "FAULT-TDRP-CHANGELOG-GENERATOR-IO-RECOVERY-001"
+      ],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "performance_case_ids": [],
+      "soak_case_ids": [],
+      "security_case_ids": [
+        "SEC-TDRP-CHANGELOG-GENERATOR-HTML-ESCAPE-001",
+        "SEC-TDRP-CHANGELOG-GENERATOR-PATH-AUTHORITY-001"
+      ],
+      "regression_ids": [],
+      "exploratory_charter_ids": [],
+      "release_gate_ids": [
+        "G-INVENTORY",
+        "G-TRACEABILITY",
+        "G-EVIDENCE",
+        "G-RELEASE"
+      ],
+      "test_fixture_ids": [
+        "fixed-U-generate-changelog-source-input-icons-workflow",
+        "fixed-U-changelog-newest-first-first-entry-7.3.3"
+      ],
+      "test_environment_ids": [
+        "Stage-B exact frozen candidate with authorized repository release-documentation context"
+      ],
+      "coverage_matrix_status": "pending",
+      "flake_status": "not-run",
+      "test_execution_evidence": [],
+      "acceptance_reviewer": null,
+      "release_gate_status": "not-run",
+      "license_and_provenance": "Read from telegramdesktop/tdesktop fixed-U script, exact changelog/icon inputs and exact Pages caller workflow; no Telegram runtime or Pages path copied into Fabushi shipping product.",
+      "reviewer": null,
+      "notes": "Task round158/source evidence round189. Spec-first CAS 0c0c6bf8076a4c4fe23f831796ccd67fd97aee40; desktop main 9993ca8e107f7e019a8201e5ab74fa54e82159f2; platform-core e92b51e23b39dae5719f033fa1f7a20d6579dc8c. Fixed-U tree 91f2b083ab2877c0a17d07868eabec362a5cfca6 complete; source index 112, 9036 bytes/code points, 328 LF, trailing newline. sort_key is computed but unused, so source order is authoritative. One source entry closes: unknown 16120->16119, unread 16093->16092, responsibilities 158->159. Next blob index 114: .github/telegram-bot-api/Dockerfile@a361602441040028a3332c3732c4902d9c880122.",
+      "validation_status": "not-run",
+      "accepted": false,
+      "source_paths": [
+        ".github/dependabot.yml@5ace4600a1f26e6892982f3e2f069ebfab108d87"
+      ],
+      "existing_owner": "Existing Fabushi repository release/development-process governance + shared quality/evidence + FQT-REL-001",
+      "rejected_existing_owners": [
+        "Telegram-specific changelog runtime/store",
+        "Fabushi shipping updater/update-feed runtime",
+        "source/electron-main/update/release-metadata.ts as changelog publication owner",
+        "Product Tasks/Automations",
+        "Agent/Coordinator/Host/Runner product runtime",
+        "platform-core service",
+        "second release/version/acceptance truth"
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "AGENTS.md",
+        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md",
+        "projects/fabushi-communication-platform/quality/evidence-contract.md"
+      ],
+      "fabushi_target_symbols": [
+        "Repository changelog Pages generator authority",
+        "Repository changelog Pages generator qualification",
+        "Repository changelog Pages generator evidence"
+      ],
+      "target_language": "Markdown/JSON repository governance and evidence",
+      "language_rationale": "Pure repository/process provenance; no shipping runtime implementation is required.",
+      "command_event_contracts": [
+        "source python .github/scripts/generate_changelog.py [input] [output]",
+        "source changelog workflow no-argument invocation",
+        "future Stage-B exact-candidate qualification through existing release/quality gates"
+      ],
+      "state_owner": "Existing Fabushi repository release/process governance",
+      "lifecycle_owner": "Existing Fabushi repository release/process governance + FQT-REL-001",
+      "persistence_and_restart": "Source inputs are Git-tracked; output is derived static HTML/icons. Target Stage-A persists only provenance/contracts in existing governance and the unique ledger.",
+      "concurrency_and_cancellation": "Source workflow uses Pages concurrency cancel-in-progress; helper has no lock/cancellation protocol. Target publication uses non-force expected-SHA CAS and must reread on concurrent movement."
     }
   ],
   "rebaseline_candidate": {
