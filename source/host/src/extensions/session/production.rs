@@ -16,7 +16,8 @@ use crate::storage::agent_paths::get_sand_agents_root_dir;
 use crate::agents::settings_file::{get_sand_settings_path, write_sand_settings_file};
 
 use super::agent_db::{
-    AgentDbSerdeSnapshot, CompactionCommit, CompactionCommitOutcome, PendingMemoryMutation,
+    AgentDbSerdeSnapshot, CompactionCommit, CompactionCommitOutcome, CronSessionRunRecord,
+    PendingMemoryMutation,
     PendingProfileMutation, ProfileFileSnapshot, SandAgentDb,
     ProviderReviewContinuationOutcome, SessionProviderReview,
     SessionWorkAdmissionRecord,
@@ -2595,13 +2596,46 @@ impl ProductionSessionWorkers {
     pub fn list_cron_session_runs(
         &self,
         agent_id: &str,
-    ) -> Result<Vec<crate::extensions::session::agent_db::CronSessionRunRecord>, String> {
+    ) -> Result<Vec<CronSessionRunRecord>, String> {
         self.with_agent_filesystem_mutation(agent_id, || {
             Ok(self
                 .open_agent_db_owner_locked(agent_id)?
                 .list_cron_session_runs()
                 .map_err(|error| error.to_string())?)
         })
+    }
+
+    /// Project only rows that are eligible for a future guarded cleanup
+    /// operation. This method never mutates the row or transcript artifacts.
+    pub fn list_expired_cron_session_runs(
+        &self,
+        agent_id: &str,
+        now_ms: f64,
+        retention_ms: Option<u64>,
+    ) -> Result<Vec<CronSessionRunRecord>, String> {
+        let Some(retention_ms) = retention_ms else {
+            return Ok(Vec::new());
+        };
+        if !now_ms.is_finite() || now_ms < 0.0 || retention_ms == 0 {
+            return Ok(Vec::new());
+        }
+        let rows = self.list_cron_session_runs(agent_id)?;
+        let now_ms = now_ms.floor();
+        let retention_ms = retention_ms as f64;
+        Ok(rows
+            .into_iter()
+            .filter(|row| {
+                !row.base_session
+                    && row.state == "terminal"
+                    && !row.active_controller
+                    && !row.pending_outgoing_media
+                    && !row.unsettled_subagent
+                    && row.updated_at_ms.is_finite()
+                    && row.updated_at_ms >= 0.0
+                    && now_ms >= row.updated_at_ms
+                    && now_ms - row.updated_at_ms >= retention_ms
+            })
+            .collect())
     }
 
     pub(crate) fn read_session_work_admission_locked(

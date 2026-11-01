@@ -68,6 +68,11 @@ per-owner five-minute throttle primitive. It has no scheduler caller and does
 not decide whether a row is deletable; D03 trigger wiring and D04--D05 cleanup
 remain pending.
 
+The following bounded read slice is also approved: the existing Session owner
+may project expired, terminal, non-base rows while excluding active
+controller/media/subagent fences. This is candidate selection only; it must not
+archive transcript artifacts or delete a row until D04--D05 are approved.
+
 ## Verification and Definition of Done
 
 - A source-backed architecture decision names the existing owners and all

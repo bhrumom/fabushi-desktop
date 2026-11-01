@@ -118,6 +118,12 @@ fallback to 24 hours, finite positive millisecond conversion, and a
 per-owner five-minute throttle primitive. It has no scheduler caller and does
 not decide whether any row is deletable.
 
+`ProductionSessionWorkers::list_expired_cron_session_runs` now provides the
+corresponding read-only candidate projection: terminal, non-base rows older
+than a caller-supplied retention duration, excluding active controller,
+outgoing-media, and unsettled-subagent fences. It performs no archive or
+delete mutation.
+
 This is direct producer → owner → durable row evidence for registration only.
 No retention parser, sweep trigger, transcript archive, active media/subagent
 preservation query, guarded deletion, focused verification, or acceptance was

@@ -366,6 +366,16 @@ impl SandAgentSessionStore {
         self.production.list_cron_session_runs(agent_id)
     }
 
+    pub fn list_expired_cron_session_runs(
+        &self,
+        agent_id: &str,
+        now_ms: f64,
+        retention_ms: Option<u64>,
+    ) -> Result<Vec<crate::extensions::session::agent_db::CronSessionRunRecord>, String> {
+        self.production
+            .list_expired_cron_session_runs(agent_id, now_ms, retention_ms)
+    }
+
     pub fn pending_conversation_turns(&self) -> PendingConversationTurnRegistry {
         self.production.pending_conversation_turns()
     }

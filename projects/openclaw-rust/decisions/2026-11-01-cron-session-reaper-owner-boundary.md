@@ -28,6 +28,9 @@ boundary; it is an input for a later sweep, not a deletion consumer.
 The pure D02 retention parser and per-owner throttle primitive are also
 approved as policy-only code; they must remain uncalled until a D03 scheduler
 owner is selected.
+The owner may additionally expose a read-only expired-candidate projection
+using the stored terminal/base/fence fields and a caller-supplied parsed
+retention duration; this projection is not permission to archive or delete.
 
 ## Source evidence and exact subjects
 
