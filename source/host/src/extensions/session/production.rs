@@ -2433,6 +2433,9 @@ impl ProductionSessionWorkers {
         &self,
         agent_id: &str,
     ) -> Result<Option<SessionWorkAdmissionRecord>, String> {
+        if agent_id.trim().is_empty() {
+            return Err("session admission read requires a non-empty agent identity".into());
+        }
         let record = self
             .open_agent_db_owner(agent_id)?
             .read_session_work_admission()
@@ -2769,6 +2772,9 @@ impl ProductionSessionWorkers {
         &self,
         agent_id: &str,
     ) -> Result<Option<SessionWorkAdmissionRecord>, String> {
+        if agent_id.trim().is_empty() {
+            return Err("locked session admission read requires a non-empty agent identity".into());
+        }
         let record = self
             .open_agent_db_owner_locked(agent_id)?
             .read_session_work_admission()
