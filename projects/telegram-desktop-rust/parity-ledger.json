@@ -6,10 +6,10 @@
   "target_commit": "23d73b32e301408f9c8aed151cb1f9e442516e13",
   "coverage": {
     "source_entries_total": 16202,
-    "unknown": 16168,
-    "unread": 16141,
+    "unknown": 16167,
+    "unread": 16140,
     "omitted": 0,
-    "responsibilities_total": 128,
+    "responsibilities_total": 129,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -33351,6 +33351,274 @@
       "accepted": false,
       "source_paths": [
         ".agents/skills/code-health/scripts/includes.py@2c02b4e7eb821f123588e0a80056edef86fc084c"
+      ]
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+      "source_path": ".agents/skills/code-health/scripts/metrics.py",
+      "source_blob_sha": "42f42b1100f88bd85977b66dfb6bf13e9dc88e46",
+      "source_kind": "repository_quality_source_metrics_unused_hotspot_instrument",
+      "module_id": "tdesktop.code-health-source-metrics-unused-hotspot",
+      "responsibility_id": "TDRP-R9-CODE-HEALTH-METRICS-UNUSED-HOTSPOT-001",
+      "source_symbols": [
+        "area_of",
+        "file_metrics",
+        "unused_candidates",
+        "only_declared",
+        "declares",
+        "LONG_FUNCTION",
+        "UNUSED_EXEMPT"
+      ],
+      "capability_ids": [
+        "CAP-REPOSITORY-QUALITY-GOVERNANCE"
+      ],
+      "dependency_ids": [
+        ".agents/skills/code-health/scripts/cpp_text.py@366f173248add43c34317c8fe17d9ca31d46b1d4",
+        ".agents/skills/code-health/scripts/sources.py@749ccc1f503e203d4a651c9ac793381e0e0a314b",
+        ".agents/skills/code-health/scripts/history.py@7c12f5b091936723c6ad005dda4bb8e2b1e549df",
+        ".agents/skills/code-health/scripts/report.py@40d9512e3be2e075154230e7fa214d4b52e2bc12",
+        ".agents/skills/code-health/scripts/review.py@89f15913714c54467ef40d6f42feb5c526cb0f32",
+        ".agents/skills/code-health/scripts/health.py@4fd8d8013d0efb7103a57e4ff7b1d395c448eb0d",
+        ".agents/skills/code-health/scripts/health_test.py@6058fa64a5121c966021d8589b2010480aec8794"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/code-health-metrics-script-complete-read.md",
+      "behavior_contract": "Derive exact-tree text-level area/file size and rough function/class metrics; emit conservative lexical unused-function candidates only under the fixed source/exemption/declaration rules; and preserve the downstream distinction between metric pre-filters, report finding thresholds, and history-composed hotspot maintenance proxies.",
+      "state_machine": "exact scanned tree + text parser -> fallback area/file shape metrics and conservative unused candidates -> report/review/health projections; file lines + exact-revision history churn -> downstream hotspot ranking -> existing repository quality/test-evidence lifecycle",
+      "side_effects": [
+        "No shipping product side effects.",
+        "Existing quality consumers may project source metrics into maintainability findings and review routing."
+      ],
+      "failure_cases": [
+        "Partial or wrong source tree treated as complete",
+        "150-line function pre-filter confused with 300-line finding threshold",
+        "methods+fields>=40 pre-filter confused with 120-method/60-field finding threshold",
+        "Lexical unused candidate presented as dead-code or deletion proof",
+        "Language resource identifiers distort candidate counts",
+        "Test-source or constructor/callback/operator exemption lost",
+        "Initializer-list or ordinary use misclassified as declaration-only",
+        "Same-name/generated/external consumer ambiguity converted to known zero",
+        "Hotspot presented as runtime performance or defect telemetry",
+        "Fallback area treated as canonical product ownership",
+        "Second scanner/findings/task/runtime owner introduced"
+      ],
+      "ui_disposition": "Not applicable; repository source-maintainability evidence only.",
+      "non_ui_responsibilities": [
+        "Fallback source-area classification",
+        "Per-file line/function/class shape metrics",
+        "Long-function and large-class collection pre-filters",
+        "Conservative lexical unused-function candidate detection",
+        "Declaration/exemption helper reuse for orphan-reference review",
+        "Downstream hotspot/finding threshold separation"
+      ],
+      "platform_delta": "No platform-core production delta. Preserve this fixed-U tooling responsibility in existing Fabushi repository quality/test-evidence governance; do not add a second metrics/dead-code scanner, findings ledger, task queue, performance telemetry owner, or runtime.",
+      "existing_owner_candidates": [
+        "AGENTS.md repository quality-health governance",
+        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md",
+        "projects/fabushi-communication-platform/quality/evidence-contract.md"
+      ],
+      "existing_owner": "Fabushi repository quality/test-evidence governance",
+      "rejected_existing_owners": [
+        "Shipping Agent/Coordinator/Host/Runner do not own repository source metrics or dead-code candidates",
+        "Product performance telemetry cannot be replaced by source-line/churn hotspot proxies",
+        "Configured-build/link/runtime evidence remains separate from lexical unused candidates",
+        "Copying upstream Python would preserve source-specific plumbing instead of the portable quality contract"
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md",
+        "projects/fabushi-communication-platform/quality/evidence-contract.md"
+      ],
+      "fabushi_target_symbols": [
+        "Repository source-metric, unused-candidate, and hotspot qualification",
+        "Repository source-metric, unused-candidate, and hotspot evidence"
+      ],
+      "target_language": "Markdown",
+      "language_rationale": "The upstream source is repository-development quality instrumentation, not shipping product logic; the applicable portable responsibility is a source-neutral exact-head qualification/evidence contract.",
+      "command_event_contracts": [
+        "exact tree + path -> fallback area classification",
+        "exact C/C++ source/header text -> line/function/class metric observations",
+        "exact tree + lexical identifier/declaration rules -> unused review candidate or no candidate",
+        "file lines + exact-revision Git churn -> downstream hotspot maintenance proxy",
+        "metric observations -> existing report/review/health projections"
+      ],
+      "state_owner": "Existing Fabushi repository quality/test-evidence governance",
+      "lifecycle_owner": "Existing repository development lifecycle and GitHub Actions evidence production/review",
+      "persistence_and_restart": "No durable product state. Metrics are regenerated from exact scanned source/history inputs; durable evidence binds to the frozen candidate and records limitations.",
+      "concurrency_and_cancellation": "Task-local deterministic source analysis; incomplete acquisition/history cannot become canonical zero-use or hotspot evidence.",
+      "security_boundary": "Cannot authorize deletion, ownership changes, configured-build/runtime truth, product performance claims, credentials, product mutation, acceptance, or release.",
+      "network_service_dependencies": [
+        "GitHub repository authority",
+        "GitHub Actions hosted runners",
+        "GitHub Actions artifact storage"
+      ],
+      "service_owner": "Existing Fabushi repository quality/release workflow / GitHub Actions",
+      "deployment_evidence": [],
+      "implementation_status": "implemented",
+      "coverage_disposition": "workflow-equivalent",
+      "blockers": [
+        "Stage-B exact-head execution of authored source-metric/unused/hotspot contracts is pending."
+      ],
+      "production_entrypoints": [
+        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md -> Repository source-metric, unused-candidate, and hotspot qualification",
+        "projects/fabushi-communication-platform/quality/evidence-contract.md -> Repository source-metric, unused-candidate, and hotspot evidence"
+      ],
+      "production_evidence": [
+        "dossier:projects/telegram-desktop-rust/dossiers/code-health-metrics-script-complete-read.md",
+        "upstream-metrics:.agents/skills/code-health/scripts/metrics.py@42f42b1100f88bd85977b66dfb6bf13e9dc88e46",
+        "desktop-spec-commit:68e34c7c7ee1459d2ec06f54fc1f4d29583a29e6"
+      ],
+      "test_evidence": [
+        "CONTRACT-TDRP-CODE-HEALTH-METRICS-AREA-001 authored, not run",
+        "CONTRACT-TDRP-CODE-HEALTH-METRICS-FILE-SHAPE-001 authored, not run",
+        "CONTRACT-TDRP-CODE-HEALTH-METRICS-UNUSED-CANDIDATE-001 authored, not run",
+        "CONTRACT-TDRP-CODE-HEALTH-METRICS-UNUSED-NEGATIVE-001 authored, not run",
+        "CONTRACT-TDRP-CODE-HEALTH-METRICS-HOTSPOT-COMPOSITION-001 authored, not run",
+        "CONTRACT-TDRP-CODE-HEALTH-METRICS-FINDING-THRESHOLDS-001 authored, not run",
+        "INT-TDRP-CODE-HEALTH-METRICS-REPORT-001 authored, not run"
+      ],
+      "target_commit": "68e34c7c7ee1459d2ec06f54fc1f4d29583a29e6",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Fabushi repository development and quality evidence governance",
+      "composition_slot": "Static source metrics, unused candidates, and hotspot qualification",
+      "capability_component": "Source-neutral repository maintainability metric evidence",
+      "variation_axes": [
+        "SourceFiles vs lib root vs other path",
+        "translation unit vs header",
+        "short vs long parsed function",
+        "small vs large rough class",
+        "candidate vs exempt/used/ambiguous function",
+        "source/header declaration vs initializer-list/ordinary use",
+        "atlas area vs fallback area",
+        "low vs high churn",
+        "tested vs zero-tested hot area",
+        "metric pre-filter vs finding threshold vs deletion/build proof"
+      ],
+      "shared_owner_contracts": [
+        "Fabushi Test Strategy",
+        "Fabushi Test Evidence Contract",
+        "Repository quality-health governance",
+        "Configured-build/runtime evidence separation"
+      ],
+      "duplicate_root_check": "No upstream Python runtime, second metrics/dead-code scanner/findings ledger/task queue/performance owner/shipping runtime introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Not applicable",
+      "primary_navigation_target": "Not applicable",
+      "collection_surface": "Not applicable",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "Not applicable",
+      "detail_section": "Not applicable",
+      "capability_surface": "Quality/tooling",
+      "route_contract": "Not applicable",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Not applicable",
+      "search_local_remote_contract": "Not applicable",
+      "responsive_disposition": "Not applicable",
+      "accessibility_contract": "Not applicable",
+      "keyboard_contract": "Not applicable",
+      "state_continuity_contract": "Regenerate from exact scanned source/history inputs; durable evidence records the exact candidate identity, thresholds, operands, and limitations.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Not applicable",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": null,
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "Not applicable",
+      "avatar_contract": "Not applicable",
+      "content_copy_keys": [],
+      "motion_contract": "Not applicable",
+      "reduced_motion_contract": "Not applicable",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "medium",
+      "requirement_ids": [
+        "TDRP-R9-CODE-HEALTH-METRICS-UNUSED-HOTSPOT-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-CODE-HEALTH-METRICS-AREA-001",
+        "ORA-TDRP-CODE-HEALTH-METRICS-FILE-SHAPE-001",
+        "ORA-TDRP-CODE-HEALTH-METRICS-UNUSED-CANDIDATE-001",
+        "ORA-TDRP-CODE-HEALTH-METRICS-HOTSPOT-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-CODE-HEALTH-METRICS-EXACT-TREE-001",
+        "INV-TDRP-CODE-HEALTH-METRICS-CANDIDATE-NOT-DELETION-001",
+        "INV-TDRP-CODE-HEALTH-METRICS-THRESHOLD-SEPARATION-001",
+        "INV-TDRP-CODE-HEALTH-METRICS-NO-SECOND-OWNER-001"
+      ],
+      "unit_case_ids": [],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-CODE-HEALTH-METRICS-AREA-001",
+        "CONTRACT-TDRP-CODE-HEALTH-METRICS-FILE-SHAPE-001",
+        "CONTRACT-TDRP-CODE-HEALTH-METRICS-UNUSED-CANDIDATE-001",
+        "CONTRACT-TDRP-CODE-HEALTH-METRICS-UNUSED-NEGATIVE-001",
+        "CONTRACT-TDRP-CODE-HEALTH-METRICS-HOTSPOT-COMPOSITION-001",
+        "CONTRACT-TDRP-CODE-HEALTH-METRICS-FINDING-THRESHOLDS-001"
+      ],
+      "integration_case_ids": [
+        "INT-TDRP-CODE-HEALTH-METRICS-REPORT-001"
+      ],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "fault_recovery_case_ids": [
+        "FAULT-TDRP-CODE-HEALTH-METRICS-INCOMPLETE-SOURCE-001",
+        "FAULT-TDRP-CODE-HEALTH-METRICS-HISTORY-UNAVAILABLE-001",
+        "FAULT-TDRP-CODE-HEALTH-METRICS-NAME-COLLISION-001"
+      ],
+      "performance_case_ids": [],
+      "security_case_ids": [
+        "SEC-TDRP-CODE-HEALTH-METRICS-AUTHORITY-001"
+      ],
+      "soak_case_ids": [],
+      "exploratory_charter_ids": [
+        "EXP-TDRP-CODE-HEALTH-METRICS-001"
+      ],
+      "regression_ids": [],
+      "release_gate_ids": [
+        "G-INVENTORY",
+        "G-TRACEABILITY",
+        "G-EVIDENCE",
+        "G-RELEASE"
+      ],
+      "test_fixture_ids": [
+        "repository-source-metrics-unused-hotspot-contract-fixture"
+      ],
+      "test_environment_ids": [
+        "GitHub Actions Stage B candidate matrix (not run)"
+      ],
+      "coverage_matrix_status": "pending",
+      "flake_status": "stable",
+      "release_gate_status": "pending",
+      "acceptance_reviewer": null,
+      "reviewer": null,
+      "license_and_provenance": "Behavioral repository-quality source-metric/unused-candidate contract read from fixed-U metrics.py and direct fixed-U consumers; no upstream Python implementation copied into Fabushi shipping runtime.",
+      "notes": "Task round110/source evidence round141. Complete fixed-U tree reread truncated=false confirms metrics.py is the first unrepresented blob after represented includes.py; report.py remains the next independent unrepresented entry. Exact metrics.py plus direct report/review/health/health_test consumers and cpp_text/sources/history inputs were read. Exactly one independent source entry closes: unknown 16168->16167, unread 16141->16140, responsibilities 128->129. Contracts authored, not run; accepted=false.",
+      "test_execution_evidence": [],
+      "id": "TDRP-R9-CODE-HEALTH-METRICS-UNUSED-HOTSPOT-001",
+      "validation_status": "not-run",
+      "accepted": false,
+      "source_paths": [
+        ".agents/skills/code-health/scripts/metrics.py@42f42b1100f88bd85977b66dfb6bf13e9dc88e46"
       ]
     }
   ],
