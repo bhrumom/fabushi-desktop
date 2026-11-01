@@ -244,29 +244,56 @@ def summarize_snapshot_graph(
             if row.get("lock_snapshot_status") == "observed"
         }
     )
-    reachable: set[str] = set()
-    pending = list(roots)
-    missing: set[tuple[str, str, str, str]] = set()
-    while pending:
-        current = pending.pop()
-        if current in reachable:
-            continue
-        if current not in snapshot_dependencies:
-            missing.add(("<root>", current, "", "snapshot-key-missing"))
-            continue
-        reachable.add(current)
-        for dependency, specifier, section in snapshot_dependencies[current]:
-            if specifier.startswith("link:") or specifier.startswith("workspace:"):
+    peer_roots = sorted(
+        {
+            candidate
+            for row in rows
+            if row.get("lock_join_status") == "lock-name-candidates"
+            for candidate in row.get("lock_package_candidates", [])
+        }
+    )
+    peer_snapshot_roots: list[str] = []
+    peer_root_missing: set[str] = set()
+    for candidate in peer_roots:
+        variants = sorted(
+            key
+            for key in snapshot_dependencies
+            if key == candidate or key.startswith(candidate + "(")
+        )
+        if variants:
+            peer_snapshot_roots.extend(variants)
+        else:
+            peer_root_missing.add(candidate)
+
+    def walk(roots_to_walk: list[str]) -> tuple[set[str], set[tuple[str, str, str, str]]]:
+        reachable: set[str] = set()
+        pending = list(roots_to_walk)
+        missing: set[tuple[str, str, str, str]] = set()
+        while pending:
+            current = pending.pop()
+            if current in reachable:
                 continue
-            resolved_specifier = specifier.removeprefix("npm:")
-            if resolved_specifier.startswith("@") and "@" in resolved_specifier[1:]:
-                child = resolved_specifier
-            else:
-                child = f"{dependency}@{resolved_specifier}"
-            if child not in snapshot_dependencies:
-                missing.add((current, dependency, specifier, section))
-            else:
-                pending.append(child)
+            if current not in snapshot_dependencies:
+                missing.add(("<root>", current, "", "snapshot-key-missing"))
+                continue
+            reachable.add(current)
+            for dependency, specifier, section in snapshot_dependencies[current]:
+                if specifier.startswith("link:") or specifier.startswith("workspace:"):
+                    continue
+                resolved_specifier = specifier.removeprefix("npm:")
+                if resolved_specifier.startswith("@") and "@" in resolved_specifier[1:]:
+                    child = resolved_specifier
+                else:
+                    child = f"{dependency}@{resolved_specifier}"
+                if child not in snapshot_dependencies:
+                    missing.add((current, dependency, specifier, section))
+                else:
+                    pending.append(child)
+        return reachable, missing
+
+    reachable, missing = walk(roots)
+    peer_reachable, peer_missing = walk(peer_snapshot_roots)
+    peer_missing.update(("<root>", root, "", "snapshot-key-missing") for root in peer_root_missing)
     return {
         "root_count": len(roots),
         "total_snapshot_count": len(snapshot_dependencies),
@@ -275,6 +302,19 @@ def summarize_snapshot_graph(
         "unreachable_snapshot_examples": sorted(
             set(snapshot_dependencies) - reachable
         )[:20],
+        "peer_candidate_root_count": len(peer_roots),
+        "peer_candidate_snapshot_root_count": len(set(peer_snapshot_roots)),
+        "peer_candidate_reachable_snapshot_count": len(peer_reachable),
+        "peer_candidate_missing_edge_count": len(peer_missing),
+        "peer_candidate_missing_edges": [
+            {
+                "from_snapshot": source,
+                "dependency": dependency,
+                "specifier": specifier,
+                "kind": kind,
+            }
+            for source, dependency, specifier, kind in sorted(peer_missing)
+        ][:100],
         "missing_edge_count": len(missing),
         "missing_edges": [
             {
