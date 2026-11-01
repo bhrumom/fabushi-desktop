@@ -87,7 +87,9 @@ durable state → consumer chain.
   leave the session
   fenced when any identity, path, restore, or CAS check is uncertain. No
   second journal, memory database, or best-effort timestamp inference is
-  allowed.
+allowed. Recovery must also compare the current owner-local memory snapshot
+with the journal's captured pre-mutation snapshot; a mismatch is rebound or
+outcome-unknown state and must retain the journal and fence.
 - `SWA-12`: Profile and avatar mutations that cross the agent directory and
   owner-local SQLite must use the existing `SandAgentDb` owner as a durable
   crash-recovery fence. The journal must capture canonical session identity,
@@ -273,7 +275,7 @@ lifecycle owners.
   the separate media read-scope responsibility.
 - external memory mutation crash window: a durable journal without a committed
   owner clear is rolled back from its captured records; malformed identity,
-  non-canonical store, restore failure, or journal CAS mismatch remains
+  snapshot mismatch, non-canonical store, restore failure, or journal CAS mismatch remains
   outcome-unknown and keeps the owner fence.
 - upgrade-resume marker recovery: do not clear the pending set before dispatch;
   clear only the exact marker after a successful accepted resume or an explicit

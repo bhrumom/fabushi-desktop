@@ -1635,6 +1635,12 @@ impl ProductionSessionWorkers {
         {
             return Err("pending memory mutation journal is malformed or rebound".into());
         }
+        let current_snapshot = owner
+            .get_memory_prompt_snapshot()
+            .map_err(|error| error.to_string())?;
+        if current_snapshot != mutation.prior_snapshot {
+            return Err("pending memory mutation snapshot is rebound or outcome-unknown".into());
+        }
         let store = self.memory_service.store_for_agent(agent_id);
         Self::restore_memory_records(&store, &mutation.records)?;
         if !owner

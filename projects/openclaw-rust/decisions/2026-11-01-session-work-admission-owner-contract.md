@@ -166,6 +166,11 @@ inspection or identity uncertainty retains the media fence and remains
 outcome-unknown. This tightens recovery safety without claiming the separate
 full read-scope capability or descriptor-lifecycle responsibility.
 
+External-memory reopen recovery also compares the current owner-local memory
+snapshot with the journaled pre-mutation snapshot before restoring records.
+A rebound snapshot now retains the journal and owner fence as outcome-unknown;
+the recovery path no longer treats the journal identity alone as sufficient.
+
 The turn-local permission path now carries `worker_session_key` through its
 permission scope and event record. Created and settled permission transcript
 rows use session-admitted owner transactions when that key is present; legacy
