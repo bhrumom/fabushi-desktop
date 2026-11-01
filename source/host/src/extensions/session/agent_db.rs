@@ -3274,7 +3274,10 @@ impl SandAgentDb {
             })();
             match result {
                 Ok(inserted) => {
-                    db.execute_batch("COMMIT")?;
+                    if let Err(error) = db.execute_batch("COMMIT") {
+                        let _ = db.execute_batch("ROLLBACK");
+                        return Err(error);
+                    }
                     let changed = !inserted.is_empty();
                     Ok((inserted, changed))
                 }
@@ -4032,7 +4035,10 @@ impl SandAgentDb {
             })();
             match result {
                 Ok(outcome) => {
-                    db.execute_batch("COMMIT")?;
+                    if let Err(error) = db.execute_batch("COMMIT") {
+                        let _ = db.execute_batch("ROLLBACK");
+                        return Err(error);
+                    }
                     Ok(outcome)
                 }
                 Err(error) => {
@@ -4178,7 +4184,10 @@ impl SandAgentDb {
             })();
             match result {
                 Ok(outcome) => {
-                    db.execute_batch("COMMIT")?;
+                    if let Err(error) = db.execute_batch("COMMIT") {
+                        let _ = db.execute_batch("ROLLBACK");
+                        return Err(error);
+                    }
                     Ok(outcome)
                 }
                 Err(error) => {

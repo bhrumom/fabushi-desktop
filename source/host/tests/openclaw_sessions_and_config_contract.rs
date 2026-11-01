@@ -716,6 +716,36 @@ fn test_session_metadata_owners_roll_back_when_commit_fails() {
 }
 
 #[test]
+fn test_transcript_owners_roll_back_when_commit_fails() {
+    let owner_source = include_str!("../src/extensions/session/agent_db.rs");
+    let owners = [
+        (
+            "pub fn append_transcript_entries(",
+            "pub fn append_transcript_entries_if_session_admitted(",
+        ),
+        (
+            "pub fn update_transcript_entry(",
+            "pub fn update_transcript_entry_if_session_admitted(",
+        ),
+        (
+            "pub fn settle_transcript_entry_identity(",
+            "pub fn settle_transcript_entry_identity_if_session_admitted(",
+        ),
+    ];
+    for (start, end) in owners {
+        let owner = owner_source
+            .split(start)
+            .nth(1)
+            .expect("transcript owner exists")
+            .split(end)
+            .next()
+            .expect("transcript owner boundary exists");
+        assert!(owner.contains("if let Err(error) = db.execute_batch(\"COMMIT\")"));
+        assert!(owner.contains("let _ = db.execute_batch(\"ROLLBACK\")"));
+    }
+}
+
+#[test]
 fn test_compaction_owner_rolls_back_when_commit_fails() {
     let owner_source = include_str!("../src/extensions/session/agent_db.rs");
     let compaction_owner = owner_source
