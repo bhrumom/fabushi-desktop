@@ -65,6 +65,35 @@ Inference consumer edge is present. The missing authenticated mutation producer
 keeps `BL-MODEL-PICKER-EXEC-WIRING-001` at `wiring=not-wired`,
 `verification=not-run`, and `acceptance=pending`.
 
+## 2026-11-01 current-branch evidence refresh
+
+The preceding exact-head audit was superseded by the current chat branch at
+commit `e5dc54cbfdf3fe969c40ea20489fa299e2a88563`, tree
+`4ca749e6f6bd075fcf98a28d13ce796b88e61f03`. Rechecking that exact subject
+finds the same boundary after the session admission and profile/memory
+recovery commits.
+
+The non-test call-site search still finds only the owner method at
+`source/host/src/extensions/session/agent_session.rs:309-329`; all other
+matches are the inference owner or contract tests. The authenticated Gateway
+dispatch at `source/host/app/src/main.rs:3654-3682` still exposes session
+listing/creation/deletion, chat send/abort, and an authenticated-context-only
+`sessions.patch`; its implementation at `:4171-4282` handles communication
+policy and archive lifecycle fields, not model selection. The model-picker
+payload validator at `source/host/src/extensions/interactive/payload_service.rs:271-277`
+still validates presentation data only and has no action executor or
+authenticated session context.
+
+The persisted consumer remains present: `start_routed_provider_task` reads the
+session model selection around `source/host/app/src/main.rs:8580-8596` and
+projects the override into the provider options. This refresh keeps
+`BL-MODEL-PICKER-EXEC-WIRING-001` and
+`BL-SESSION-MODEL-MUTATION-WIRING-001` at
+`wiring=not-wired`, `verification=not-run`, and `acceptance=pending`. No
+runtime change is justified until an existing authenticated producer can
+derive the canonical catalog, operator authority, placement and generation
+context.
+
 ## 5. Fixed-source producer comparison and safe-wiring boundary
 
 The pinned OpenClaw subject has two concrete production mutation paths for

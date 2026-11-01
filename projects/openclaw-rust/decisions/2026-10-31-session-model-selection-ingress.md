@@ -80,6 +80,21 @@ manufacture a catalog entry by supplying policy fields alone.
 - Writing directly to `sessionModelSelection` outside
   `SandAgentSessionStore`.
 
+## Current branch revalidation (2026-11-01)
+
+The earlier evidence subject was superseded by the current chat branch at
+commit `e5dc54cbfdf3fe969c40ea20489fa299e2a88563`, tree
+`4ca749e6f6bd075fcf98a28d13ce796b88e61f03`. Rechecking that exact subject
+finds the same boundary: `SandAgentSessionStore::apply_session_model_selection`
+has no non-test caller, while the Runner consumer reads the persisted
+selection around `source/host/app/src/main.rs:8580-8596`.
+
+The subsequent session admission changes did not add a model-selection
+producer. The authenticated `sessions.patch` handler remains limited to
+communication policy and archive lifecycle mutation, and the model-picker
+payload validator remains presentation-only. Both blockers and all pending
+verification/acceptance states therefore remain unchanged.
+
 ## Verification and acceptance
 
 Static evidence at the exact subject above proves the owner/state and consumer
