@@ -192,6 +192,7 @@ fn inbound_policy_recheck_is_target_admission_scoped() {
     assert!(source.contains("if let Some(target_admission) = target_admission.as_ref()"));
     assert!(source.contains(".map(|admission| admission.session_key.clone())"));
     assert!(source.contains(".unwrap_or_default()"));
+    assert!(source.contains("sessions.assert_session_work_admission(\n            agent_id"));
 }
 
 #[test]

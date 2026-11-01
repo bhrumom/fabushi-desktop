@@ -489,6 +489,10 @@ pub fn persist_agent_inbound_message(
             }
             SessionCommunicationDecision::Allowed { .. } => {}
         }
+        sessions.assert_session_work_admission(
+            agent_id,
+            Some(&target_admission.session_key),
+        )?;
     }
     let from_name = source.name.trim();
     let from_name = if from_name.is_empty() { "An agent" } else { from_name };
