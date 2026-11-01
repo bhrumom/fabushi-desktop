@@ -843,3 +843,26 @@ Authored, not run in Stage A:
 - `SEC-TDRP-GITATTRIBUTES-NO-FILTER-EXECUTION-001` — the source defines no clean/smudge/process filter or custom executable merge/diff driver; Stage-B qualification must not invent or execute one as source behavior.
 
 The current Fabushi checkpoint has no root `.gitattributes` and no tracked paths matching the upstream special patterns. This is a source-neutral governance mapping, not permission to copy Telegram resource paths or to rewrite the Fabushi index during Stage A. Stage A status is `validation_status=not-run`, `accepted=false`; no checkout/add/renormalize/diff/merge/archive/digest/build/test/lint/validator/package/deploy operation is executed by this qualification.
+
+### Repository contribution / PR process qualification
+
+`TDRP-R9-REPOSITORY-CONTRIBUTION-PROCESS-QUALITY-001` is qualified through authored-only Stage-A contracts and later frozen-candidate Stage-B repository-process evidence. Source identity is fixed-U `.github/CONTRIBUTING.md@4265e974d0b87622af223d5b8096b67edcbd4aab`, recursive-tree index 105 zero-based, mode 100644, 6,074 Git bytes / 6,074 ASCII characters, 118 LF newline characters, no CR characters, trailing newline and 119 split lines. Fixed-U build-link composition binds `README.md@15a6194f73ae6084a2ab25d14005dc10262cdfb3` rather than the source's floating `master` URL.
+
+Authored, not run in Stage A:
+- `CONTRACT-TDRP-CONTRIBUTING-HOST-AUTHORITY-001` — GitHub conventional contribution guidance plus contributor/reviewer consumption maps to existing repository process owners, not product runtime.
+- `CONTRACT-TDRP-CONTRIBUTING-ACCEPTED-SCOPE-001` — upstream bug/optimization/docs acceptance and feature/translation/new-UI rejection remain Telegram maintainer-process provenance and do not reduce Fabushi migration scope.
+- `CONTRACT-TDRP-CONTRIBUTING-BUILD-LINK-001` — build guidance resolves to the exact fixed-U README build section; floating `master` links cannot establish fixed-U identity.
+- `CONTRACT-TDRP-CONTRIBUTING-UPSTREAM-LINEAGE-001` — source-side upstream remote, `master`, fetch/log/rebase and contributor-fork force-push semantics are preserved without granting force publication to Fabushi.
+- `CONTRACT-TDRP-CONTRIBUTING-ATOMIC-PR-001` — one-issue/small atomic change scope remains the repository-process invariant.
+- `CONTRACT-TDRP-CONTRIBUTING-SQUASH-COMMIT-001` — upstream one-commit PR guidance is recorded without rewriting unrelated Fabushi history.
+- `CONTRACT-TDRP-CONTRIBUTING-WHITESPACE-ISOLATION-001` — unrelated whitespace cleanup cannot be mixed into a functional change.
+- `CONTRACT-TDRP-CONTRIBUTING-CODE-CLARITY-001` — clear, straightforward naming/code guidance remains a review-quality invariant rather than a new style subsystem.
+- `CONTRACT-TDRP-CONTRIBUTING-TEST-GATE-001` — source requires testing before submission; FMEP-001 defers execution to Stage B and forbids invented Stage-A pass evidence.
+- `CONTRACT-TDRP-CONTRIBUTING-COMMIT-MESSAGE-001` — commit rationale and supported issue-closing linkage remain repository reporting/provenance requirements.
+- `INT-TDRP-CONTRIBUTING-PROCESS-COMPOSITION-001` — contribution guidance composes with root process/source-provenance, existing rebase authority and shared quality/evidence governance without duplicate owners.
+- `FAULT-TDRP-CONTRIBUTING-STALE-FORK-001` — divergent/stale upstream lineage remains non-passing until deliberate refresh/rebase recovery.
+- `FAULT-TDRP-CONTRIBUTING-MIXED-SCOPE-001` — broad mixed issue/cleanup scope remains non-passing until split into reviewable responsibility.
+- `FAULT-TDRP-CONTRIBUTING-UNTESTED-001` — missing required Stage-B execution evidence remains unqualified, never normalized to pass from prose review.
+- `SEC-TDRP-CONTRIBUTING-NO-FORCE-PUBLISH-001` — upstream `git push --force` applies to the contributor-fork recipe only and cannot bypass Fabushi expected-SHA CAS, branch protection or publication authority.
+
+Stage A status is `validation_status=not-run`, `accepted=false`; no fork mutation, Git rebase/reset/squash/force-push, build, test, validator, CI, PR mutation, package, deploy or runtime acceptance is executed by this qualification.
