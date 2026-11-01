@@ -3809,6 +3809,7 @@ impl ProductionSessionWorkers {
         conversation_id: &str,
         agent_id: &str,
         stream_id: &str,
+        session_key: Option<&str>,
         content: &str,
         completed_at_ms: f64,
     ) -> Result<serde_json::Value, String> {
@@ -3816,6 +3817,16 @@ impl ProductionSessionWorkers {
         let conversation_id = conversation_id.trim();
         let agent_id = agent_id.trim();
         let stream_id = stream_id.trim();
+        let session_key = match session_key {
+            Some(value) => {
+                let value = value.trim();
+                if value.is_empty() {
+                    return Err("Human handoff Agent result session key must be non-empty".into());
+                }
+                Some(value)
+            }
+            None => None,
+        };
         let content = content.trim();
         if conversation_id.is_empty()
             || agent_id.is_empty()
@@ -3851,12 +3862,37 @@ impl ProductionSessionWorkers {
             let same_stream =
                 entry.get("sourceStreamId").and_then(serde_json::Value::as_str) == Some(stream_id);
             if same_agent && same_content && same_stream {
+                if let Some(expected_session_key) = session_key {
+                    if let Some(actual_session_key) = entry
+                        .get("sessionKey")
+                        .and_then(serde_json::Value::as_str)
+                    {
+                        if actual_session_key != expected_session_key {
+                            return Err(
+                                "Human handoff stream already identifies a different session key"
+                                    .into(),
+                            );
+                        }
+                    } else {
+                        let mut enriched = entry.clone();
+                        enriched["sessionKey"] = serde_json::Value::String(
+                            expected_session_key.to_string(),
+                        );
+                        return owner
+                            .update_transcript_entry(&entry_id, &enriched)
+                            .map_err(|error| error.to_string())?
+                            .ok_or_else(|| {
+                                "Human handoff Agent result disappeared during provenance settlement"
+                                    .to_string()
+                            });
+                    }
+                }
                 return Ok(entry.clone());
             }
             return Err("Human handoff stream already identifies different Agent content".into());
         }
 
-        let entry = serde_json::json!({
+        let mut entry = serde_json::json!({
             "id": entry_id,
             "kind": "message",
             "role": "assistant",
@@ -3868,6 +3904,9 @@ impl ProductionSessionWorkers {
             "timestampMs": completed_at_ms,
             "delivery": "sent",
         });
+        if let Some(session_key) = session_key {
+            entry["sessionKey"] = serde_json::Value::String(session_key.to_string());
+        }
         if !owner
             .append_transcript_entry(&entry)
             .map_err(|error| error.to_string())?
@@ -3885,6 +3924,31 @@ impl ProductionSessionWorkers {
             let same_stream =
                 replay.get("sourceStreamId").and_then(serde_json::Value::as_str) == Some(stream_id);
             if same_agent && same_content && same_stream {
+                if let Some(expected_session_key) = session_key {
+                    if let Some(actual_session_key) = replay
+                        .get("sessionKey")
+                        .and_then(serde_json::Value::as_str)
+                    {
+                        if actual_session_key != expected_session_key {
+                            return Err(
+                                "Human handoff stream already identifies a different session key"
+                                    .into(),
+                            );
+                        }
+                    } else {
+                        let mut enriched = replay.clone();
+                        enriched["sessionKey"] = serde_json::Value::String(
+                            expected_session_key.to_string(),
+                        );
+                        return owner
+                            .update_transcript_entry(&entry_id, &enriched)
+                            .map_err(|error| error.to_string())?
+                            .ok_or_else(|| {
+                                "Human handoff Agent result disappeared during replay provenance settlement"
+                                    .to_string()
+                            });
+                    }
+                }
                 return Ok(replay);
             }
             return Err("Human handoff stream already identifies different Agent content".into());

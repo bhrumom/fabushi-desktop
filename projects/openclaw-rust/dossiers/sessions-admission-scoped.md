@@ -490,3 +490,19 @@ requires the producer-supplied key.
 The focused contract fixture was updated to pass an explicit canonical test
 key. This is static producer wiring evidence only; redrive runtime,
 conversation-turn settlement, and exact-head acceptance remain pending.
+
+## 12.9 Human handoff result session provenance — 2026-11-01
+
+The authenticated `runner.startRoutedProvider` producer already carries the
+validated `worker_session_key` into the terminal Human handoff result path.
+That key is now passed to `ProductionSessionWorkers::append_human_agent_message`
+and persisted as `sessionKey` in the existing Human conversation owner. A
+same-stream replay preserves the bound identity, upgrades a legacy matching
+row with the producer-owned provenance, and rejects a replay that supplies a
+different session key.
+
+This closes the producer-owned provenance edge for Agent results written into
+the separate Human conversation store without deriving a key from
+`conversation_id` or making that store a session-admission owner. Human
+pending-send settlement, remote delivery correlation, conversation-turn
+registry production wiring, and runtime/exact-head acceptance remain pending.

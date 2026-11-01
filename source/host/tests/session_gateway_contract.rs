@@ -803,6 +803,7 @@ fn human_conversation_uses_session_transcript_owner_without_becoming_an_agent() 
             &conversation_id,
             &agent.id,
             "runner-stream-1",
+            None,
             "trusted Agent result",
             2345.0,
         )
@@ -817,6 +818,7 @@ fn human_conversation_uses_session_transcript_owner_without_becoming_an_agent() 
                 &conversation_id,
                 &agent.id,
                 "runner-stream-1",
+                None,
                 "trusted Agent result",
                 2345.0,
             )
@@ -829,11 +831,51 @@ fn human_conversation_uses_session_transcript_owner_without_becoming_an_agent() 
                 &conversation_id,
                 &agent.id,
                 "runner-stream-1",
+                None,
                 "different Agent result",
                 2345.0,
             )
             .is_err(),
         "one Runner stream must not identify different Human-transcript content"
+    );
+
+    let session_key = format!("agent:{}:main", agent.id);
+    let bound_agent_result = runtime
+        .append_human_agent_message(
+            &conversation_id,
+            &agent.id,
+            "runner-stream-bound",
+            Some(&session_key),
+            "session-bound Agent result",
+            2346.0,
+        )
+        .expect("session-bound Human handoff Agent result");
+    assert_eq!(bound_agent_result["sessionKey"], session_key);
+    assert_eq!(
+        runtime
+            .append_human_agent_message(
+                &conversation_id,
+                &agent.id,
+                "runner-stream-bound",
+                Some(&session_key),
+                "session-bound Agent result",
+                2346.0,
+            )
+            .expect("idempotent session-bound Agent result replay"),
+        bound_agent_result
+    );
+    assert!(
+        runtime
+            .append_human_agent_message(
+                &conversation_id,
+                &agent.id,
+                "runner-stream-bound",
+                Some("agent:other:main"),
+                "session-bound Agent result",
+                2346.0,
+            )
+            .is_err(),
+        "one Human handoff stream must not be rebound to another session key"
     );
     assert!(
         dispatch_production_session_gateway_call(

@@ -8245,6 +8245,7 @@ fn start_routed_provider_task(
     let worker_cancellation = cancellation.clone();
     let worker_sessions = Arc::clone(&session_workers);
     let worker_human_handoff_sessions = Arc::clone(&session_workers);
+    let worker_human_handoff_session_key = worker_session_key.clone();
     let worker_retire_sessions = Arc::clone(&session_workers);
     let worker_ack_obligations = Arc::clone(&ack_obligations);
     let worker_transcript_runtime = Arc::clone(&transcript_runtime);
@@ -11310,6 +11311,7 @@ fn start_routed_provider_task(
                         conversation_id,
                         &agent_id,
                         &worker_stream_id,
+                        Some(&worker_human_handoff_session_key),
                         &content,
                         started_at_ms() as f64,
                     ) {
