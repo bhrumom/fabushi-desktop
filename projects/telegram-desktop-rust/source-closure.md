@@ -1917,3 +1917,23 @@ The three exact proxy non-UI consumer rows remain `mapped / pending / validation
 R1-R8 and AC-1 through AC-8 are satisfied at source/bookkeeping review level. R9 production implementation remains explicitly blocked for the reasons above, and R10 executable validation remains intentionally not-run.
 
 No GitHub Actions/status/check query or trigger, build, typecheck, lint, schema validator, generator, dependency resolution, lock regeneration, unit/contract/integration/E2E execution, package, deployment, installation or runtime acceptance was performed.
+
+
+## Stage-A MTProto special-config payload boundary (round 115, 2026-11-01)
+
+## Fixed-U source read
+
+`config_loader.cpp@5d07404ba07223016c6728b986dcba10628d7194` suppresses `SpecialConfigRequest` when proxy use or keys-destroyer mode forbids it. Outside that gate, `SpecialConfigRequest` acquires compact special-config text, emits source DC endpoint candidates, and `ConfigLoader::sendSpecialRequest` maps a source DC to a temporary DC id, inserts a transient `tcpo_only` endpoint, sends `help.getConfig` through that temporary session, then applies only the returned `dc_options` via `DcOptions::setFromList`.
+
+`special_config_request.cpp@fdb65506b0a886bc2daeccb61090bc44be7e2d88` splits cleanly into a pure payload boundary and a carrier scheduler. The pure boundary normalizes to 344 base64 bytes, decodes 256 bytes, performs pinned raw RSA public recovery, uses recovered bytes 0..32 as AES-256 key and 16..32 as IV, CBC-decrypts bytes 32..256, checks the first 16 bytes of SHA-256 over the first 208 plaintext bytes, validates a positive aligned declared length <=208, reuses `help.configSimple`, rejects only `now > expires` plus empty rules, applies ordered comma-separated phone-prefix rules where matching negative tokens immediately reject, and projects dc/ip/port/secret candidates. `mtproto_rsa_public_key.cpp@312c8b1ddb3145d5ec3180323e8d72d50c35e526` confirms no-padding raw RSA public operation. `mtproto_dc_options.cpp@d8499fc1df2ed7fdb88da687a04b824d243ff49a` confirms temporary endpoint insertion and whole-directory `setFromList` are runtime application behavior; temporary IDs are excluded from serialization. `facade.h@39e2f732c7df32af37ebf8222e887aec7e11b256` confirms the temporary-id mapping.
+
+## Existing-owner-first result
+
+The pure payload responsibility is independently representable in the existing `telegram-protocol` owner and does not require a carrier scheduler. Platform spec-first commit `e4344c0c9b68efd54dc44c88f9da87b29acf8bbf` created `docs/specs/telegram-special-config-payload-boundary.md@7ed218ea6f52aac59f5461f8706c5c772d0e0f8b`. Production implementation commit `ba7ca87b27c3fbf7cb07ea5fa01b8d5caf67d1b4` added `special_config.rs@03ea4149703942befe59132a2019bef71e92938b` and exported it through `lib.rs@02853449d52bc713d6db826e88875b94c2a9c70f`. It reuses the crate's existing `aes`, `num-bigint-dig`, `sha2` and `subtle` dependencies and the existing `parse_help_config_simple`; no dependency or lock change was made.
+
+Authored-only public contracts were added at platform commit `0ac3bdc2b3bcb47871970b654bc50dc9cefbf21d`, `protocol_contract.rs@cd51c5db0c2d92cd713eac5ddb80f589775ead43`. Desktop source/contract mirror commit `eba569bf912a89fd02f2731edb3da262f1be962d` has byte-identical special-config, lib and contract blobs. Internal authored-only contracts also cover the NIST AES-256-CBC vector, a synthetic recovered payload through the existing TL parser, expiry/rule/prefix semantics, endpoint bit preservation, no-match behavior and malformed input. None were executed.
+
+The separate carrier/application responsibility remains mapped/pending with no production delta: fixed-U direct no-proxy DoH/Firestore request racing, HTTP Date global-time mutation, temporary-DC session/help.getConfig scheduling/cancel/timeout/kill, and runtime `DcOptions::setFromList` replacement require a shipping telegram-network/runtime bootstrap lifecycle that is absent at the reviewed checkpoints. No second bootstrap runtime/provider/DC owner was invented.
+
+Ledger rows: `TDRP-R9-MTPROTO-SPECIAL-CONFIG-PAYLOAD-001 = implemented / rewritten / validation_status=not-run / accepted=false`; `TDRP-R9-MTPROTO-SPECIAL-CONFIG-CARRIER-APPLICATION-001 = mapped / pending / validation_status=not-run / accepted=false`. Coverage is `source_entries_total=16202, responsibilities_total=118, unknown=16172, unread=16145, omitted=0, unmapped_responsibilities=0`; focused semantic review does not decrement global source-entry unknown/unread.
+

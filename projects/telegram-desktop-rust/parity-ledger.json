@@ -9,7 +9,7 @@
     "unknown": 16172,
     "unread": 16145,
     "omitted": 0,
-    "responsibilities_total": 116,
+    "responsibilities_total": 118,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -29601,6 +29601,488 @@
       "id": "TDRP-R9-PROXY-MTPROTO-CONSUMER-001",
       "source_paths": [
         "Telegram/SourceFiles/mtproto/mtp_instance.cpp@d25fe3b72298fab371854f80186ee8e4777ea087"
+      ]
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+      "source_path": "Telegram/SourceFiles/mtproto/special_config_request.cpp",
+      "source_blob_sha": "fdb65506b0a886bc2daeccb61090bc44be7e2d88",
+      "source_kind": "source",
+      "module_id": "tdesktop.mtproto.special-config-payload",
+      "responsibility_id": "TDRP-R9-MTPROTO-SPECIAL-CONFIG-PAYLOAD-001",
+      "source_symbols": [
+        "SpecialConfigRequest::decryptSimpleConfig",
+        "SpecialConfigRequest::handleResponse",
+        "ComputeSimpleConfig",
+        "CheckPhoneByPrefixes"
+      ],
+      "capability_ids": [
+        "CAP-EMBEDDED-MTPROTO-SPECIAL-CONFIG-PAYLOAD"
+      ],
+      "dependency_ids": [
+        "EmbeddedTelegramProtocol",
+        "help.configSimple",
+        "AES-256-CBC",
+        "RSA-2048",
+        "SHA-256"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/evidence/round115-special-config-payload-boundary-20261101.md",
+      "behavior_contract": "Decode fixed-U compact special-config bytes exactly (base64 normalization, pinned raw RSA public recovery, AES-256-CBC, SHA-256 digest, declared TL length), reuse the existing help.configSimple parser, apply the exact expiry/phone-prefix policy, and project typed endpoint candidates without network, clock, settings, session, scheduler or DcOptions mutation.",
+      "state_machine": "acquired compact bytes -> normalize/decode -> pinned RSA public recover -> AES-256-CBC -> digest/length validation -> existing help.configSimple parser -> expiry/non-empty-rules gate -> ordered phone-prefix evaluation -> typed endpoint candidates; malformed/expired/empty-rules -> typed failure",
+      "side_effects": [
+        "Adds a side-effect-free special_config module to the existing canonical telegram-protocol owner",
+        "Mirrors the same module/export into the existing desktop provider source tree",
+        "Authors cryptographic/policy contracts without executing them"
+      ],
+      "failure_cases": [
+        "Malformed normalized/base64/RSA/AES/digest/declared-length input is accepted",
+        "Existing help.configSimple parser is duplicated or bypassed",
+        "now < date is incorrectly rejected although fixed-U only rejects now > expires",
+        "A later matching negative phone prefix fails to override an earlier positive prefix",
+        "Endpoint dc_id/IPv4/port/secret bits are changed",
+        "Decoder opens network connections, mutates HTTP time, proxy state, sessions or DcOptions"
+      ],
+      "ui_disposition": "No UI change. This is a pure MTProto bootstrap payload/protocol-policy boundary.",
+      "non_ui_responsibilities": [
+        "Compact special-config cryptographic decode",
+        "Existing help.configSimple parser composition",
+        "Expiry/non-empty rules gate",
+        "Exact phone-prefix eligibility",
+        "Typed IPv4/DC/port/secret endpoint projection"
+      ],
+      "platform_delta": "Adds only the carrier-independent special-config payload decoder/selector to the existing source-neutral Rust telegram-protocol owner. HTTP/DoH/Firestore acquisition, HTTP Date mutation, temporary-DC help.getConfig scheduling and DcOptions replacement remain outside this owner.",
+      "existing_owner_candidates": [
+        "bhrumom/fabushi-platform-core:native/telegram-protocol",
+        "source/mahayana/mahayana-rs/providers/telegram-protocol",
+        "bhrumom/fabushi-platform-core:native/telegram-network"
+      ],
+      "existing_owner": "Canonical shared telegram-protocol pure protocol/crypto boundary",
+      "rejected_existing_owners": [
+        "telegram-network: acquisition/scheduling owner, not payload cryptographic/TL policy owner",
+        "DcDirectory: runtime directory owner must not absorb acquisition crypto/prefix policy",
+        "new Telegram bootstrap provider/runtime: would duplicate lifecycle truth"
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "bhrumom/fabushi-platform-core:native/telegram-protocol/src/special_config.rs",
+        "bhrumom/fabushi-platform-core:native/telegram-protocol/src/lib.rs",
+        "bhrumom/fabushi-platform-core:native/telegram-protocol/tests/protocol_contract.rs",
+        "source/mahayana/mahayana-rs/providers/telegram-protocol/src/special_config.rs",
+        "source/mahayana/mahayana-rs/providers/telegram-protocol/src/lib.rs",
+        "source/mahayana/mahayana-rs/providers/telegram-protocol/tests/protocol_contract.rs"
+      ],
+      "fabushi_target_symbols": [
+        "decode_special_config_payload",
+        "select_special_config_endpoints",
+        "decode_and_select_special_config",
+        "SpecialConfigEndpoint",
+        "SpecialConfigError"
+      ],
+      "target_language": "Rust",
+      "language_rationale": "The existing Rust telegram-protocol owner already owns exact help.configSimple parsing and audited crypto primitives; this deterministic transformation belongs there without a carrier scheduler.",
+      "command_event_contracts": [
+        "encoded bytes + phone + injected now -> typed endpoint candidates or typed error",
+        "no endpoint match -> successful empty list",
+        "malformed/expired/empty-rules -> typed fail-closed result"
+      ],
+      "state_owner": "No mutable state; typed values are owned by existing telegram-protocol.",
+      "lifecycle_owner": "Caller-owned synchronous protocol transform; acquisition/application lifecycle remains separate.",
+      "persistence_and_restart": "No persistence.",
+      "concurrency_and_cancellation": "No concurrency, timer, retry or cancellation lifecycle.",
+      "security_boundary": "Pinned RSA key, strict digest/length checks and constant-time digest comparison fail closed before endpoint candidates are exposed.",
+      "network_service_dependencies": [
+        "None for this pure boundary; acquired bytes are supplied by a separate future network owner."
+      ],
+      "service_owner": "Canonical embedded Telegram protocol runtime.",
+      "deployment_evidence": [],
+      "implementation_status": "implemented",
+      "coverage_disposition": "rewritten",
+      "blockers": [
+        "Stage B executable build/unit/contract/integration validation has not run.",
+        "HTTP/DoH/Firestore acquisition, HTTP Date clock mutation, temporary-DC help.getConfig scheduling and DcOptions replacement remain separately pending.",
+        "Broader fixed-U source/legal/release closure remains open."
+      ],
+      "production_entrypoints": [
+        "existing telegram-protocol public API -> decode_special_config_payload / select_special_config_endpoints; no network/scheduler entrypoint is claimed"
+      ],
+      "production_evidence": [
+        "platform-core-spec-commit:e4344c0c9b68efd54dc44c88f9da87b29acf8bbf",
+        "platform-core-initial-spec-blob:7ed218ea6f52aac59f5461f8706c5c772d0e0f8b",
+        "platform-core-implementation-commit:ba7ca87b27c3fbf7cb07ea5fa01b8d5caf67d1b4",
+        "platform-core-special-config-blob:03ea4149703942befe59132a2019bef71e92938b",
+        "platform-core-lib-blob:02853449d52bc713d6db826e88875b94c2a9c70f",
+        "platform-core-authored-contract-commit:0ac3bdc2b3bcb47871970b654bc50dc9cefbf21d",
+        "platform-core-authored-contract-blob:cd51c5db0c2d92cd713eac5ddb80f589775ead43",
+        "desktop-source-contract-sync-commit:eba569bf912a89fd02f2731edb3da262f1be962d",
+        "desktop-special-config-blob:03ea4149703942befe59132a2019bef71e92938b",
+        "desktop-lib-blob:02853449d52bc713d6db826e88875b94c2a9c70f",
+        "desktop-authored-contract-blob:cd51c5db0c2d92cd713eac5ddb80f589775ead43"
+      ],
+      "test_evidence": [
+        "Internal special_config.rs AES-CBC, synthetic recovered-payload, prefix/expiry/no-match and fail-closed contracts authored; not executed.",
+        "Public protocol_contract.rs special-config selector and malformed boundary contracts authored at cd51c5db0c2d92cd713eac5ddb80f589775ead43; not executed."
+      ],
+      "target_commit": "eba569bf912a89fd02f2731edb3da262f1be962d",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Canonical Fabushi account + existing TelegramClientLease/runtime + shared telegram-protocol production composition",
+      "composition_slot": "Embedded Telegram special-config payload decode/selection",
+      "capability_component": "Carrier-independent special-config payload decoder and endpoint selector",
+      "variation_axes": [
+        "plain vs secret endpoint",
+        "positive/negative/empty phone-prefix token",
+        "expired vs fresh config",
+        "valid vs malformed crypto/TL envelope"
+      ],
+      "shared_owner_contracts": [
+        "Existing help.configSimple typed parser",
+        "Existing telegram-protocol crypto dependencies",
+        "Separate network/runtime scheduler ownership"
+      ],
+      "duplicate_root_check": "No second settings, network, bootstrap runtime, DC directory, provider, account, conversation, UI root, sidecar or subprocess introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Not applicable",
+      "primary_navigation_target": "Existing Messages/Conversation navigation",
+      "collection_surface": "Existing ConversationList; no change",
+      "creation_flow": "Existing canonical conversation creation; no change",
+      "object_action_scope": "Not applicable",
+      "detail_section": "Not applicable",
+      "capability_surface": "Existing ConversationWorkspace through the same provider/runtime; no new surface",
+      "route_contract": "No new route.",
+      "search_scope": "Not applicable",
+      "search_provider": "Existing canonical Search owner; unchanged",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Unchanged.",
+      "search_local_remote_contract": "Not applicable.",
+      "responsive_disposition": "No UI change.",
+      "accessibility_contract": "No UI change.",
+      "keyboard_contract": "No UI change.",
+      "state_continuity_contract": "Pure decoding/selection has no continuity state; runtime acquisition/application remains separately owned.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Existing Fabushi design system; no visual changes",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": null,
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "No new icon asset",
+      "avatar_contract": "No change",
+      "content_copy_keys": [],
+      "motion_contract": "No change",
+      "reduced_motion_contract": "No change",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "high",
+      "requirement_ids": [
+        "TDRP-R9-MTPROTO-SPECIAL-CONFIG-PAYLOAD-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-MTPROTO-SPECIAL-CONFIG-PAYLOAD-001",
+        "ORA-TDRP-MTPROTO-SPECIAL-CONFIG-PREFIX-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-SPECIAL-CONFIG-CRYPTO-001",
+        "INV-TDRP-SPECIAL-CONFIG-PREFIX-001",
+        "INV-TDRP-SPECIAL-CONFIG-NO-SCHEDULER-001"
+      ],
+      "unit_case_ids": [
+        "UNIT-TDRP-SPECIAL-CONFIG-AES-CBC-001",
+        "UNIT-TDRP-SPECIAL-CONFIG-PAYLOAD-001",
+        "UNIT-TDRP-SPECIAL-CONFIG-PREFIX-001"
+      ],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-SPECIAL-CONFIG-PAYLOAD-001"
+      ],
+      "integration_case_ids": [],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "fault_recovery_case_ids": [
+        "FAULT-TDRP-SPECIAL-CONFIG-MALFORMED-001"
+      ],
+      "performance_case_ids": [],
+      "security_case_ids": [
+        "SEC-TDRP-SPECIAL-CONFIG-DIGEST-RSA-001"
+      ],
+      "soak_case_ids": [],
+      "exploratory_charter_ids": [],
+      "regression_ids": [
+        "REG-TDRP-SPECIAL-CONFIG-NEGATIVE-PREFIX-001"
+      ],
+      "release_gate_ids": [
+        "G-TRACEABILITY",
+        "G-COMPOSITION",
+        "G-SECURITY",
+        "G-EVIDENCE",
+        "G-RELEASE"
+      ],
+      "test_fixture_ids": [
+        "fixed-u-special-config-synthetic-recovered-payload",
+        "nist-aes256-cbc-vector"
+      ],
+      "test_environment_ids": [
+        "GitHub Actions Stage B matrix (not run)"
+      ],
+      "coverage_matrix_status": "pending",
+      "flake_status": "unknown",
+      "release_gate_status": "pending",
+      "acceptance_reviewer": null,
+      "reviewer": null,
+      "license_and_provenance": "Behavioral provenance is fixed-U special_config_request.cpp@fdb65506b0a886bc2daeccb61090bc44be7e2d88 plus mtproto_rsa_public_key.cpp@312c8b1ddb3145d5ec3180323e8d72d50c35e526 and existing help.configSimple schema/parser. Implementation is source-neutral Rust; no upstream C++ copied.",
+      "notes": "Task round84/source evidence round115. Pure payload decode and endpoint-selection are implemented in existing telegram-protocol and mirrored byte-identically. HTTP acquisition/global HTTP Date mutation/temporary-DC scheduling/DcOptions application remain separate mapped/pending. Contracts authored only; validation_status=not-run; accepted=false.",
+      "test_execution_evidence": [],
+      "validation_status": "not-run",
+      "accepted": false,
+      "source_paths": [
+        "Telegram/SourceFiles/mtproto/special_config_request.cpp@fdb65506b0a886bc2daeccb61090bc44be7e2d88"
+      ],
+      "id": "TDRP-R9-MTPROTO-SPECIAL-CONFIG-PAYLOAD-001"
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+      "source_path": "Telegram/SourceFiles/mtproto/config_loader.cpp",
+      "source_blob_sha": "5d07404ba07223016c6728b986dcba10628d7194",
+      "source_kind": "source",
+      "module_id": "tdesktop.mtproto.special-config-carrier-application",
+      "responsibility_id": "TDRP-R9-MTPROTO-SPECIAL-CONFIG-CARRIER-APPLICATION-001",
+      "source_symbols": [
+        "SpecialConfigRequest::sendNextRequest",
+        "SpecialConfigRequest::performRequest",
+        "SpecialConfigRequest::requestFinished",
+        "ConfigLoader::sendSpecialRequest",
+        "ConfigLoader::specialConfigLoaded",
+        "DcOptions::constructAddOne",
+        "DcOptions::setFromList"
+      ],
+      "capability_ids": [
+        "CAP-EMBEDDED-MTPROTO-SPECIAL-CONFIG-CARRIER"
+      ],
+      "dependency_ids": [
+        "telegram-network/runtime",
+        "HTTP/DoH/Firestore",
+        "Temporary DC session",
+        "DcOptions"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/evidence/round115-special-config-payload-boundary-20261101.md",
+      "behavior_contract": "Acquire special-config bytes through fixed-U direct no-proxy web attempts, update source HTTP-derived time, race/cancel requests, insert a temporary tcpo_only endpoint, send help.getConfig through the temporary DC, and replace runtime dc_options on success without creating a second settings/network/DC owner.",
+      "state_machine": "eligible config refresh -> staggered direct web attempts -> first successful compact payload -> selected endpoint -> transient temporary DC option -> temporary help.getConfig request -> dc_options replacement -> terminate/kill temporary session; timeout/error -> retry/terminate",
+      "side_effects": [
+        "No production delta in this round; carrier/scheduler/application behavior is recorded as an explicit blocker."
+      ],
+      "failure_cases": [
+        "Protocol owner starts opening web requests or mutating global time",
+        "Temporary DC/session scheduling is invented without a shipping runtime owner",
+        "DcOptions replacement becomes a second durable directory owner",
+        "Blocked lifecycle is falsely marked implemented"
+      ],
+      "ui_disposition": "No new UI root. Existing unified Settings remains the future projection/edit surface.",
+      "non_ui_responsibilities": [
+        "Direct no-proxy DoH/Firestore acquisition racing",
+        "HTTP Date global-time update",
+        "Temporary DC endpoint insertion and session lifecycle",
+        "help.getConfig request/cancel/timeout",
+        "dc_options replacement/change notification"
+      ],
+      "platform_delta": "No production delta. Current telegram-network/runtime has no shipping special-config acquisition/temporary-DC scheduler/application chain; the pure decoder is separately implemented in telegram-protocol.",
+      "existing_owner_candidates": [
+        "bhrumom/fabushi-platform-core:native/telegram-network",
+        "existing telegram-runtime/session owner",
+        "existing DcDirectory owner"
+      ],
+      "existing_owner": "Future extension of existing telegram-network/runtime + DcDirectory lifecycle once a shipping bootstrap consumer exists",
+      "rejected_existing_owners": [
+        "telegram-protocol pure decoder: must remain side-effect free",
+        "new bootstrap provider/runtime: violates existing-owner-first",
+        "Settings owner: does not own network acquisition/session scheduling"
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "bhrumom/fabushi-platform-core:native/telegram-network/src/lib.rs",
+        "bhrumom/fabushi-desktop:source/mahayana/mahayana-rs/providers/telegram-network/src/lib.rs"
+      ],
+      "fabushi_target_symbols": [
+        "future special-config acquisition scheduler",
+        "future temporary-DC config application lifecycle"
+      ],
+      "target_language": "Rust/TypeScript at existing owner boundary once shipping owner exists; no new production code in this blocked round",
+      "language_rationale": "The exact consumer must live in the existing source-neutral domain owner; no retained C++ or Telegram-specific parallel runtime is introduced.",
+      "command_event_contracts": [
+        "initial config loader receives isEnabled",
+        "connection type event updates active loader flag",
+        "enabled suppresses special config",
+        "resolved IP cache transient/not serialized",
+        "enabled selected resolution refreshes sessions",
+        "good-IP promotion refreshes global proxy only on actual enabled promotion"
+      ],
+      "state_owner": "Canonical Fabushi Settings/application owner for durable proxy state; downstream consumer owns projection/runtime observations only.",
+      "lifecycle_owner": "Existing telegram-network/runtime owner for transient proxy observations once a shipping selectable proxy/config-acquisition path exists; Settings remains durable owner",
+      "persistence_and_restart": "No new persistence. Durable proxy state remains in the future canonical Settings owner; transient consumer observations are not persisted.",
+      "concurrency_and_cancellation": "No scheduler or background lifecycle is added in this round. Existing consumer lifecycle remains authoritative when the shipping path exists.",
+      "security_boundary": "Proxy secrets must not be logged or copied into UI/provider-local persistence. External commands must be authorized before forwarding typed mutations.",
+      "network_service_dependencies": [
+        "Existing embedded Telegram/native network stack only when a selectable proxy carrier exists"
+      ],
+      "service_owner": "Existing telegram-network/runtime owner for transient proxy observations once a shipping selectable proxy/config-acquisition path exists; Settings remains durable owner",
+      "deployment_evidence": [],
+      "implementation_status": "mapped",
+      "coverage_disposition": "pending",
+      "blockers": [
+        "Canonical/desktop telegram-network currently exposes no shipping special-config HTTP acquisition or temporary-DC help.getConfig scheduler.",
+        "Current runtime has no proven special-config temporary-session lifecycle/caller to extend without inventing a parallel bootstrap runtime.",
+        "Stage B executable validation has not run."
+      ],
+      "production_entrypoints": [],
+      "production_evidence": [
+        "fixed-U:special_config_request.cpp@fdb65506b0a886bc2daeccb61090bc44be7e2d88",
+        "fixed-U:config_loader.cpp@5d07404ba07223016c6728b986dcba10628d7194",
+        "fixed-U:mtproto_dc_options.cpp@d8499fc1df2ed7fdb88da687a04b824d243ff49a",
+        "platform-core-spec-commit:e4344c0c9b68efd54dc44c88f9da87b29acf8bbf"
+      ],
+      "test_evidence": [
+        "Carrier/application contracts are documented in the durable spec; no fake executable test was added against a nonexistent shipping scheduler."
+      ],
+      "target_commit": "e4344c0c9b68efd54dc44c88f9da87b29acf8bbf",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Canonical Fabushi ProductShell/Settings + existing source-neutral runtime owners",
+      "composition_slot": "Special-config acquisition / temporary-DC application",
+      "capability_component": "Blocked carrier scheduler and DC application lifecycle",
+      "variation_axes": [
+        "DoH/Firestore source",
+        "success/failure/timeout",
+        "temporary endpoint with/without secret"
+      ],
+      "shared_owner_contracts": [
+        "Existing telegram-network/runtime lifecycle",
+        "Existing DcDirectory owner",
+        "No duplicate settings owner"
+      ],
+      "duplicate_root_check": "No second bootstrap runtime/provider/network/DC directory is introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [
+        "Desktop tracked tree contains no shipping call/proxy consumer; telegram-network/runtime contain no proxy/config-loader/custom-resolution symbols at the reviewed blobs."
+      ],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Not applicable",
+      "primary_navigation_target": "Existing Settings/Messages surfaces; unchanged",
+      "collection_surface": "Not applicable",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "Proxy settings/runtime projection",
+      "detail_section": "Not applicable",
+      "capability_surface": "Non-UI",
+      "route_contract": "No new route.",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Unchanged.",
+      "search_local_remote_contract": "Not applicable.",
+      "responsive_disposition": "No UI change.",
+      "accessibility_contract": "No UI change.",
+      "keyboard_contract": "No UI change.",
+      "state_continuity_contract": "Blocked until existing shipping network/runtime owner can carry the lifecycle.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Existing Fabushi design system; no visual changes",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": null,
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "No new icon asset",
+      "avatar_contract": "No change",
+      "content_copy_keys": [],
+      "motion_contract": "No change",
+      "reduced_motion_contract": "No change",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "high",
+      "requirement_ids": [
+        "TDRP-R9-MTPROTO-SPECIAL-CONFIG-CARRIER-APPLICATION-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-SPECIAL-CONFIG-CARRIER-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-SPECIAL-CONFIG-NO-PARALLEL-SCHEDULER-001"
+      ],
+      "unit_case_ids": [],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-SPECIAL-CONFIG-CARRIER-BOUNDARY-001"
+      ],
+      "integration_case_ids": [
+        "INT-TDRP-SPECIAL-CONFIG-CARRIER-001"
+      ],
+      "functional_e2e_case_ids": [
+        "E2E-TDRP-SPECIAL-CONFIG-BOOTSTRAP-001"
+      ],
+      "temporal_case_ids": [
+        "TEMP-TDRP-SPECIAL-CONFIG-REQUEST-RACE-001"
+      ],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "fault_recovery_case_ids": [
+        "FAULT-TDRP-SPECIAL-CONFIG-TIMEOUT-001"
+      ],
+      "performance_case_ids": [],
+      "security_case_ids": [
+        "SEC-TDRP-SPECIAL-CONFIG-DIRECT-NOPROXY-001"
+      ],
+      "soak_case_ids": [],
+      "exploratory_charter_ids": [],
+      "regression_ids": [],
+      "release_gate_ids": [
+        "G-TRACEABILITY",
+        "G-ARCHITECTURE",
+        "G-EVIDENCE"
+      ],
+      "test_fixture_ids": [
+        "fixed-u-special-config-carrier-vectors"
+      ],
+      "test_environment_ids": [
+        "Stage B GitHub Actions candidate environment"
+      ],
+      "coverage_matrix_status": "pending",
+      "flake_status": "stable",
+      "release_gate_status": "pending",
+      "acceptance_reviewer": null,
+      "reviewer": null,
+      "license_and_provenance": "Behavioral provenance is fixed-U Telegram/SourceFiles/mtproto/mtp_instance.cpp@d25fe3b72298fab371854f80186ee8e4777ea087 plus adjacent proxy/settings/network source listed in round114 evidence. No upstream C++ copied.",
+      "notes": "Task round84/source evidence round115. Mapped/pending no-production-delta: HTTP acquisition/HTTP Date mutation/temporary-DC help.getConfig/DcOptions application depend on a shipping network/runtime scheduler absent at the reviewed checkpoints. Pure payload decode/selection is separately implemented.",
+      "test_execution_evidence": [],
+      "validation_status": "not-run",
+      "accepted": false,
+      "id": "TDRP-R9-MTPROTO-SPECIAL-CONFIG-CARRIER-APPLICATION-001",
+      "source_paths": [
+        "Telegram/SourceFiles/mtproto/config_loader.cpp@5d07404ba07223016c6728b986dcba10628d7194",
+        "Telegram/SourceFiles/mtproto/special_config_request.cpp@fdb65506b0a886bc2daeccb61090bc44be7e2d88"
       ]
     }
   ],
