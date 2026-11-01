@@ -204,6 +204,10 @@ fn deletion_fence_rejects_new_transcript_work_before_durable_write() {
         .clear_agent_memories(&record.id)
         .expect_err("deletion-pending external memory clear must be rejected");
     assert!(memory_clear_error.contains("new session work is not admitted"));
+    let memory_snapshot_clear_error = production
+        .clear_agent_memory_prompt_snapshot(&record.id)
+        .expect_err("deletion-pending memory snapshot clear must be rejected");
+    assert!(memory_snapshot_clear_error.contains("new session work is not admitted"));
     let memory_remove_error = production
         .remove_agent_memory(&record.id, "blocked-memory")
         .expect_err("deletion-pending external memory removal must be rejected");

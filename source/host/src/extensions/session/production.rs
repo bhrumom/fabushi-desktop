@@ -2469,6 +2469,7 @@ impl ProductionSessionWorkers {
     }
 
     pub fn clear_agent_memory_prompt_snapshot(&self, agent_id: &str) -> Result<bool, String> {
+        self.assert_agent_work_admission(agent_id)?;
         self.open_agent_db_owner(agent_id)?
             .clear_memory_prompt_snapshot()
             .map_err(|error| error.to_string())

@@ -124,10 +124,10 @@ automation store, so deletion cannot leave a routine-side effect without its
 owner-local state transition.
 
 Host turn memory/profile prompt snapshot setters are likewise admitted through
-the same owner fence. Their paired clear paths are intentionally not widened
-here because one production memory-clear caller mutates the external memory
-store before clearing the SQLite snapshot and needs a separate atomic contract.
-The selected contract is now an owner-composed memory mutation path with the
+the same owner fence. The memory gateway's paired clear paths now use an
+owner-composed mutation path because they mutate the external memory store
+before clearing the SQLite snapshot. The selected contract is now an
+owner-composed memory mutation path with the
 same per-agent filesystem serialization boundary and bounded record restore on
 snapshot-clear rejection; crash recovery across the external store and SQLite
 remains a separate gap.
