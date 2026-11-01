@@ -793,6 +793,8 @@ Authored and not run: `CONTRACT-TDRP-CRASH-TRIAGE-HOST-AUTHORITY-001`, `CONTRACT
 
 ### Repository Claude settings / house-rule PostToolUse qualification
 
+Responsibility `TDRP-R9-CLAUDE-REPOSITORY-SETTINGS-HOUSE-RULE-HOOK-001` owns this source-entry qualification under the existing Claude host/static-policy/process/security/quality composition.
+
 Qualify fixed-U `.claude/settings.json@d47520dc0e3b7e8d6067456e33062140c75f7c79` as a thin Claude Code repository-host projection over existing process/security/quality owners. Positive cases bind the sole `hooks.PostToolUse` event, exact `Edit|Write|MultiEdit` matcher, exact `python3 "$CLAUDE_PROJECT_DIR/tools/rules/hook.py"` command and `Checking house rules` status text. Negative controls reject invented permission grants/denials, product authorization, or a second settings/security owner.
 
 Composition qualification binds edit-mode dispatch to fixed-U `tools/rules/hook.py@287b36c948566659970651226c92f7b8b056b434` and canonical root `.clang-tidy@5610bd13664ca77549993def241eb3edaffeff7a`, while distinguishing sibling `--staged` consumers from settings-driven mode. Post-use qualification proves this is corrective after matched edits, not a pre-use barrier. Malformed stdin JSON and non-source paths are explicit success/no-op source behaviors; missing interpreter/script/project-dir or dispatch failure remains failed/unknown evidence, never compliance proof.
