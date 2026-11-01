@@ -154,6 +154,13 @@ Created approval cards and settled/expired card updates must use the existing
 session-admitted owner transactions when that identity is present; legacy
 controller instances remain compatibility-only.
 
+The session preflight also now rejects a non-empty requested selector when an
+existing admission record carries a different canonical key. Returning success
+for that mismatch was weaker than the owner contract even though later atomic
+transcript writes rejected it; the deterministic preflight negative is now
+explicit. Missing admission records retain the legacy compatibility behavior
+until their producer establishes the session record.
+
 The remaining agent-only transcript mutation producers were rechecked against
 the live source. Widget-response updates, shared-room restamps, box-request
 settlement, and auto-review settlement carry only `agent_id`; the generic

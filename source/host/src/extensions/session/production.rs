@@ -1686,7 +1686,10 @@ impl ProductionSessionWorkers {
             return Ok(());
         };
         if record.session_key != session_key {
-            return Ok(());
+            return Err(format!(
+                "session work admission key mismatch: expected {}, got {}",
+                record.session_key, session_key
+            ));
         }
         if record.archived_at_ms.is_some() {
             return Err(format!(

@@ -190,6 +190,10 @@ fn archived_main_session_rejects_routed_work_admission() {
     production
         .assert_session_work_admission(&record.id, Some(&current.session_key))
         .expect("restored session admits work");
+    let mismatch = production
+        .assert_session_work_admission(&record.id, Some("agent:wrong:main"))
+        .expect_err("rebound session key must fail closed");
+    assert!(mismatch.contains("key mismatch"));
 
     store.close_worker_pool();
     let _ = fs::remove_dir_all(root);

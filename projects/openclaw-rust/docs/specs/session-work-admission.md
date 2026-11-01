@@ -250,6 +250,16 @@ result/media replay and the placement/database identity chain remain open. A
 global in-memory registry or a second media lifecycle owner remains
 unauthorized by this spec.
 
+## Exact selector preflight — 2026-11-01
+
+The session-owner preflight now fails closed when a producer supplies a
+non-empty selector that differs from the existing admission record. A missing
+record retains the existing compatibility behavior for callers that have not
+yet established a session admission; once a record exists, a rebound or
+mismatched `session_key` is an explicit identity error rather than an admitted
+preflight. The atomic transcript/media owner checks remain authoritative at
+the durable write edge.
+
 ## Agent-only transcript mutation boundary — 2026-11-01
 
 The remaining transcript mutation producers were rechecked against the live
