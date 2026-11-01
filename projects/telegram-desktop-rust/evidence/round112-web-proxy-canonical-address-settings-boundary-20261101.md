@@ -40,3 +40,11 @@ Existing bridge responsibility remains `implemented/rewritten`; existing relay r
 ## Stage-A execution statement
 
 No GitHub Actions/status/check query or trigger, build, typecheck, lint, schema validator, generator, dependency resolution, lock regeneration, unit/contract/integration/E2E execution, package, deployment, installation or runtime acceptance was performed.
+
+## Final platform source-compliance readback
+
+- platform-core final commit: `2682d35b46d5521d71ea82896557466c3e07a58f`
+- final spec blob: `eb924c6492ffb4f545b9ccc2eec404284c41335d`
+- desktop initial bookkeeping commit: `a32d435e5363804d6637867a662c00bf661e9ae2`
+
+The final spec records R10/R12 as blocked, all other applicable source-review requirements and AC-1..AC-7 as passed, and executable validation as not-run. The responsibility remains mapped/pending with no production delta.

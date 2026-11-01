@@ -1696,3 +1696,11 @@ Coverage becomes `source_entries_total=16202, responsibilities_total=112, unknow
 
 No GitHub Actions/status/check query or trigger, build, typecheck, lint, schema validator, generator, dependency resolution, lock regeneration, unit/contract/integration/E2E execution, package, deployment, installation or runtime acceptance was performed.
 
+### Round 112 final source-level compliance
+
+Platform-core final source-level compliance is `2682d35b46d5521d71ea82896557466c3e07a58f` / spec blob `eb924c6492ffb4f545b9ccc2eec404284c41335d`. It records exact fixed-U address/import/share semantics, source-review passes for the understood boundary, and explicit blockers R10/R12: no live unified Fabushi proxy/settings production owner and no reviewed exact IDNA dependency/dependency-lock path available under Stage-A zero-execution rules.
+
+The unique `TDRP-R9-MTPROTO-WEB-PROXY-CANONICAL-ADDRESS-SETTINGS-001` row remains `mapped / pending / validation_status=not-run / accepted=false`. No protocol/network production blob changed; bridge capability remains implemented and relay carrier/window/bootstrap remains separately mapped/pending.
+
+No GitHub Actions/status/check query or trigger, build, typecheck, lint, schema validator, generator, dependency resolution, lock regeneration, unit/contract/integration/E2E execution, package, deployment, installation or runtime acceptance was performed.
+

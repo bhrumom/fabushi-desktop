@@ -3,7 +3,7 @@
   "project_id": "TDRP-001",
   "spec_revision": 9,
   "upstream_commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
-  "target_commit": "80c480076cfc3b34cc9ed96428cabc5f04fdb592",
+  "target_commit": "a32d435e5363804d6637867a662c00bf661e9ae2",
   "coverage": {
     "source_entries_total": 16202,
     "unknown": 16172,
@@ -28506,7 +28506,10 @@
         "canonical-protocol-lock-blob:97ad9046ce8926764258c978664cd8cd92fce503",
         "canonical-network-unchanged-blob:241cd8ec792070a8de8af9ec6ca5b317e34376d1",
         "desktop-web-proxy-unchanged-blob:4c91f6e4e6b8d37d84afd40aae6af9fbbe7d80d4",
-        "desktop-network-unchanged-blob:241cd8ec792070a8de8af9ec6ca5b317e34376d1"
+        "desktop-network-unchanged-blob:241cd8ec792070a8de8af9ec6ca5b317e34376d1",
+        "platform-core-final-source-compliance-commit:2682d35b46d5521d71ea82896557466c3e07a58f",
+        "platform-core-final-spec-blob:eb924c6492ffb4f545b9ccc2eec404284c41335d",
+        "desktop-bookkeeping-commit:a32d435e5363804d6637867a662c00bf661e9ae2"
       ],
       "test_evidence": [
         "Authored source contract vectors are recorded in docs/specs/telegram-web-proxy-canonical-address-settings-boundary.md@27d16a8bedf20c51860889602f67cedb305a205b; no executable contract was run.",
@@ -28635,7 +28638,7 @@
       "acceptance_reviewer": null,
       "reviewer": null,
       "license_and_provenance": "Behavioral provenance is fixed-U mtproto_proxy_data.cpp/header plus connection_box.cpp. No upstream C++ copied. No new IDNA dependency or handwritten punycode introduced.",
-      "notes": "Task round81/source evidence round112. Exact Unicode/IDNA host/address plus settings import/share boundary is understood but not independently shippable in current Fabushi architecture: canonical protocol has only ASCII canonical validation and there is no live unified proxy/settings production owner or reviewed IDNA dependency. Recorded as mapped/pending with no production delta. Existing bridge wire remains implemented; relay carrier remains mapped/pending. Stage-A executable validation remains not-run.",
+      "notes": "Task round81/source evidence round112. Exact Unicode/IDNA host/address plus settings import/share boundary is understood but not independently shippable in current Fabushi architecture: canonical protocol has only ASCII canonical validation and there is no live unified proxy/settings production owner or reviewed IDNA dependency. Recorded as mapped/pending with no production delta. Existing bridge wire remains implemented; relay carrier remains mapped/pending. Stage-A executable validation remains not-run. Final platform source compliance is 2682d35b46d5521d71ea82896557466c3e07a58f / spec blob eb924c6492ffb4f545b9ccc2eec404284c41335d; R1-R9/R11/R13-R14 and AC-1..AC-7 are source-review passed while R10/R12 remain explicitly blocked and executable validation remains not-run.",
       "test_execution_evidence": [],
       "validation_status": "not-run",
       "accepted": false
