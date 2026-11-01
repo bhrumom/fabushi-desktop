@@ -2070,7 +2070,13 @@ impl ProductionSessionWorkers {
     }
 
     pub fn ensure_main_session_work_admission(&self, agent_id: &str) -> Result<(), String> {
-        let db = self.open_agent_db_owner(agent_id)?;
+        self.with_agent_filesystem_mutation(agent_id, || {
+            self.ensure_main_session_work_admission_locked(agent_id)
+        })
+    }
+
+    fn ensure_main_session_work_admission_locked(&self, agent_id: &str) -> Result<(), String> {
+        let db = self.open_agent_db_owner_locked(agent_id)?;
         if db.read_session_work_admission().map_err(|error| error.to_string())?.is_some() {
             return Ok(());
         }
@@ -2136,48 +2142,50 @@ impl ProductionSessionWorkers {
         session_key: &str,
         work_id: &str,
     ) -> Result<String, String> {
-        self.assert_agent_work_admission(agent_id)?;
         let session_key = session_key.trim();
         let work_id = work_id.trim();
         if session_key.is_empty() || work_id.is_empty() {
             return Err("session work admission requires a session key and work id".into());
         }
-        self.ensure_main_session_work_admission(agent_id)?;
-        let record = self
-            .read_session_work_admission(agent_id)?
-            .ok_or_else(|| "session work admission record is unavailable".to_string())?;
-        if record.session_key != session_key {
-            return Err(format!(
-                "session work admission key mismatch: expected {}, got {}",
-                record.session_key, session_key
-            ));
-        }
-        if record.archived_at_ms.is_some() {
-            return Err(format!(
-                "session {session_key} is archived and does not admit new work"
-            ));
-        }
-        if let Some(admitted_work_id) = record.admitted_work_id.as_deref() {
-            if admitted_work_id != work_id {
+        self.with_agent_admitted_filesystem_mutation(agent_id, || {
+            self.ensure_main_session_work_admission_locked(agent_id)?;
+            let owner = self.open_agent_db_owner_locked(agent_id)?;
+            let record = owner
+                .read_session_work_admission()
+                .map_err(|error| error.to_string())?
+                .ok_or_else(|| "session work admission record is unavailable".to_string())?;
+            if record.session_key != session_key {
                 return Err(format!(
-                    "session {session_key} already has admitted background work"
+                    "session work admission key mismatch: expected {}, got {}",
+                    record.session_key, session_key
                 ));
             }
-            return Ok(record.lifecycle_revision);
-        }
-        let lifecycle_revision = record.lifecycle_revision.clone();
-        let mut next = record;
-        next.admitted_work_id = Some(work_id.to_string());
-        if !self.compare_and_set_session_work_admission(
-            agent_id,
-            Some(&lifecycle_revision),
-            &next,
-        )? {
-            return Err(format!(
-                "session {session_key} generation changed while admitting work"
-            ));
-        }
-        Ok(lifecycle_revision)
+            if record.archived_at_ms.is_some() {
+                return Err(format!(
+                    "session {session_key} is archived and does not admit new work"
+                ));
+            }
+            if let Some(admitted_work_id) = record.admitted_work_id.as_deref() {
+                if admitted_work_id != work_id {
+                    return Err(format!(
+                        "session {session_key} already has admitted background work"
+                    ));
+                }
+                return Ok(record.lifecycle_revision);
+            }
+            let lifecycle_revision = record.lifecycle_revision.clone();
+            let mut next = record;
+            next.admitted_work_id = Some(work_id.to_string());
+            if !owner
+                .compare_and_set_session_work_admission(Some(&lifecycle_revision), &next)
+                .map_err(|error| error.to_string())?
+            {
+                return Err(format!(
+                    "session {session_key} generation changed while admitting work"
+                ));
+            }
+            Ok(lifecycle_revision)
+        })
     }
 
     /// Recheck the generation immediately before a background terminal result
@@ -2213,7 +2221,6 @@ impl ProductionSessionWorkers {
         work_id: &str,
         media_path: Option<&Path>,
     ) -> Result<String, String> {
-        self.assert_agent_work_admission(agent_id)?;
         let session_key = session_key.trim();
         let work_id = work_id.trim();
         if session_key.is_empty() || work_id.is_empty() {
@@ -2226,63 +2233,68 @@ impl ProductionSessionWorkers {
                     .ok_or_else(|| "media custody path must be valid UTF-8".to_string())
             })
             .transpose()?;
-        let record = self
-            .read_session_work_admission(agent_id)?
-            .ok_or_else(|| "session work admission record is unavailable".to_string())?;
-        if record.session_key != session_key {
-            return Err(format!(
-                "media custody session key mismatch: expected {}, got {}",
-                record.session_key, session_key
-            ));
-        }
-        if record.archived_at_ms.is_some() {
-            return Err(format!(
-                "session {session_key} is archived and does not admit media custody"
-            ));
-        }
-        if record.admitted_media_work_id.is_none() && !record.admitted_media_paths.is_empty() {
-            return Err(format!(
-                "session {session_key} has media paths without a pending media identity"
-            ));
-        }
-        if let Some(admitted_media_work_id) = record.admitted_media_work_id.as_deref() {
-            if admitted_media_work_id != work_id {
+        self.with_agent_admitted_filesystem_mutation(agent_id, || {
+            let owner = self.open_agent_db_owner_locked(agent_id)?;
+            let record = owner
+                .read_session_work_admission()
+                .map_err(|error| error.to_string())?
+                .ok_or_else(|| "session work admission record is unavailable".to_string())?;
+            if record.session_key != session_key {
                 return Err(format!(
-                    "session {session_key} already has pending outgoing media"
+                    "media custody session key mismatch: expected {}, got {}",
+                    record.session_key, session_key
                 ));
+            }
+            if record.archived_at_ms.is_some() {
+                return Err(format!(
+                    "session {session_key} is archived and does not admit media custody"
+                ));
+            }
+            if record.admitted_media_work_id.is_none() && !record.admitted_media_paths.is_empty() {
+                return Err(format!(
+                    "session {session_key} has media paths without a pending media identity"
+                ));
+            }
+            if let Some(admitted_media_work_id) = record.admitted_media_work_id.as_deref() {
+                if admitted_media_work_id != work_id {
+                    return Err(format!(
+                        "session {session_key} already has pending outgoing media"
+                    ));
+                }
+                let lifecycle_revision = record.lifecycle_revision.clone();
+                let mut next = record;
+                if let Some(path) = media_path.as_deref() {
+                    if !next.admitted_media_paths.iter().any(|known| known == path) {
+                        next.admitted_media_paths.push(path.to_string());
+                        if !owner
+                            .compare_and_set_session_work_admission(
+                                Some(&lifecycle_revision),
+                                &next,
+                            )
+                            .map_err(|error| error.to_string())?
+                        {
+                            return Err(format!(
+                                "session {session_key} generation changed while recording media custody"
+                            ));
+                        }
+                    }
+                }
+                return Ok(lifecycle_revision);
             }
             let lifecycle_revision = record.lifecycle_revision.clone();
             let mut next = record;
-            if let Some(path) = media_path.as_deref() {
-                if !next.admitted_media_paths.iter().any(|known| known == path) {
-                    next.admitted_media_paths.push(path.to_string());
-                    if !self.compare_and_set_session_work_admission(
-                        agent_id,
-                        Some(&lifecycle_revision),
-                        &next,
-                    )? {
-                        return Err(format!(
-                            "session {session_key} generation changed while recording media custody"
-                        ));
-                    }
-                }
+            next.admitted_media_work_id = Some(work_id.to_string());
+            next.admitted_media_paths = media_path.into_iter().collect();
+            if !owner
+                .compare_and_set_session_work_admission(Some(&lifecycle_revision), &next)
+                .map_err(|error| error.to_string())?
+            {
+                return Err(format!(
+                    "session {session_key} generation changed while admitting media custody"
+                ));
             }
-            return Ok(lifecycle_revision);
-        }
-        let lifecycle_revision = record.lifecycle_revision.clone();
-        let mut next = record;
-        next.admitted_media_work_id = Some(work_id.to_string());
-        next.admitted_media_paths = media_path.into_iter().collect();
-        if !self.compare_and_set_session_work_admission(
-            agent_id,
-            Some(&lifecycle_revision),
-            &next,
-        )? {
-            return Err(format!(
-                "session {session_key} generation changed while admitting media custody"
-            ));
-        }
-        Ok(lifecycle_revision)
+            Ok(lifecycle_revision)
+        })
     }
 
     /// Release media custody only for the captured session generation and
@@ -2294,22 +2306,28 @@ impl ProductionSessionWorkers {
         expected_lifecycle_revision: &str,
         work_id: &str,
     ) -> Result<bool, String> {
-        self.assert_agent_work_admission(agent_id)?;
-        let Some(mut record) = self.read_session_work_admission(agent_id)? else {
-            return Ok(false);
-        };
-        if record.lifecycle_revision != expected_lifecycle_revision
-            || record.admitted_media_work_id.as_deref() != Some(work_id.trim())
-        {
-            return Ok(false);
-        }
-        record.admitted_media_work_id = None;
-        record.admitted_media_paths.clear();
-        self.compare_and_set_session_work_admission(
-            agent_id,
-            Some(expected_lifecycle_revision),
-            &record,
-        )
+        self.with_agent_admitted_filesystem_mutation(agent_id, || {
+            let owner = self.open_agent_db_owner_locked(agent_id)?;
+            let Some(mut record) = owner
+                .read_session_work_admission()
+                .map_err(|error| error.to_string())?
+            else {
+                return Ok(false);
+            };
+            if record.lifecycle_revision != expected_lifecycle_revision
+                || record.admitted_media_work_id.as_deref() != Some(work_id.trim())
+            {
+                return Ok(false);
+            }
+            record.admitted_media_work_id = None;
+            record.admitted_media_paths.clear();
+            owner
+                .compare_and_set_session_work_admission(
+                    Some(expected_lifecycle_revision),
+                    &record,
+                )
+                .map_err(|error| error.to_string())
+        })
     }
 
     pub fn read_session_work_admission(
@@ -2395,10 +2413,11 @@ impl ProductionSessionWorkers {
         expected_lifecycle_revision: Option<&str>,
         next: &SessionWorkAdmissionRecord,
     ) -> Result<bool, String> {
-        self.assert_agent_work_admission(agent_id)?;
-        self.open_agent_db_owner(agent_id)?
-            .compare_and_set_session_work_admission(expected_lifecycle_revision, next)
-            .map_err(|error| error.to_string())
+        self.with_agent_admitted_filesystem_mutation(agent_id, || {
+            self.open_agent_db_owner_locked(agent_id)?
+                .compare_and_set_session_work_admission(expected_lifecycle_revision, next)
+                .map_err(|error| error.to_string())
+        })
     }
 
     pub fn read_session_provider_review(
@@ -2594,23 +2613,25 @@ impl ProductionSessionWorkers {
         archive_reason: Option<&str>,
         archived_at_ms: f64,
     ) -> Result<SessionWorkAdmissionRecord, String> {
-        self.assert_agent_work_admission(agent_id)?;
         let expected_key = format!("agent:{agent_id}:main");
         if session_key.trim() != expected_key {
             return Err("session archive transition requires the canonical main session key".into());
         }
-        self.ensure_main_session_work_admission(agent_id)?;
-        self.open_agent_db_owner(agent_id)?
-            .transition_session_work_archive(
-                session_key,
-                expected_session_id,
-                expected_lifecycle_revision,
-                archived,
-                archived_by,
-                archive_reason,
-                archived_at_ms,
-            )
-            .map_err(|error| error.to_string())
+        self.with_agent_filesystem_mutation(agent_id, || {
+            self.assert_agent_work_admission_locked(agent_id)?;
+            self.ensure_main_session_work_admission_locked(agent_id)?;
+            self.open_agent_db_owner_locked(agent_id)?
+                .transition_session_work_archive(
+                    session_key,
+                    expected_session_id,
+                    expected_lifecycle_revision,
+                    archived,
+                    archived_by,
+                    archive_reason,
+                    archived_at_ms,
+                )
+                .map_err(|error| error.to_string())
+        })
     }
 
     pub fn commit_session_work_result(
