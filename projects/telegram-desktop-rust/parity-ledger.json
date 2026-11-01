@@ -6,10 +6,10 @@
   "target_commit": "23d73b32e301408f9c8aed151cb1f9e442516e13",
   "coverage": {
     "source_entries_total": 16202,
-    "unknown": 16133,
-    "unread": 16106,
+    "unknown": 16132,
+    "unread": 16105,
     "omitted": 0,
-    "responsibilities_total": 145,
+    "responsibilities_total": 146,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -38535,6 +38535,285 @@
       "accepted": false,
       "source_paths": [
         ".claude/commands/process-inbox.md@3bd1c22b06c735ff92cf2260bd893c9de2653f21"
+      ]
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+      "source_path": ".claude/commands/rebase.md",
+      "source_blob_sha": "df14e750067aeac1258a92068886cd2b33f83120",
+      "source_kind": "repository_rebase_claude_command_host_adapter",
+      "module_id": "tdesktop.repository-rebase-claude-command-adapter",
+      "responsibility_id": "TDRP-R9-REBASE-CLAUDE-COMMAND-ADAPTER-001",
+      "source_symbols": [
+        "Intent-Aware Rebase",
+        "$ARGUMENTS",
+        ".agents/skills/rebase/SKILL.md",
+        "AskUserQuestion",
+        "TodoWrite",
+        "git -c core.editor=true rebase --continue",
+        "GIT_SEQUENCE_EDITOR",
+        "no Agent delegation",
+        "session scratchpad",
+        "no .claude/ai-workflow-adapter.md"
+      ],
+      "capability_ids": [
+        "CAP-REPOSITORY-PROCESS-GOVERNANCE",
+        "CAP-REPOSITORY-QUALITY-GOVERNANCE",
+        "CAP-REPOSITORY-TASK-EVIDENCE"
+      ],
+      "dependency_ids": [
+        ".agents/skills/rebase/SKILL.md@0660dc78b26614e40d7151d1da59241b1bad5430",
+        ".grok/commands/rebase.md@dc095e3c837aba1b30ff35e1bb92952cef5f1780",
+        ".claude/ai-workflow-adapter.md@370ff84a1ab4c080b15b601a54162b0630c4f4df",
+        "AGENTS.md@b3ce86744f7d889a5dee63dbaefa3353801c4c32",
+        "CLAUDE.md@f8564d18cef4b9c545767025995d31deb3fa7155",
+        "REVIEW.md@e65be8231a8e0f50ee86b20ef16120d58ea40376"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/claude-rebase-command-complete-read.md",
+      "behavior_contract": "Expose Claude Code /rebase as a thin host adapter over the canonical source-neutral intent-aware rebase authority: completely load the shared rebase skill, preserve the user's raw request and shared ONTO/REPLAY_BASE/OLD_TIP lineage, use blocking structured conflict questions, non-interactive Git editor mechanics, local-context conflict decisions and scratch-only progress state, and preserve shared resume/abort/no-push publication boundaries while explicitly excluding the Claude AI workflow/task publication pipeline.",
+      "state_machine": "Claude /rebase -> complete shared rebase skill load -> bind raw $ARGUMENTS -> shared request/lineage resolution + preflight -> proceed | AskUserQuestion hard stop -> non-interactive rebase -> current-context intent resolution -> shared resume/abort/rerere/empty-commit recovery -> whole-series semantic report -> stop; never route through AI task/process publication and never push/force-push",
+      "side_effects": [
+        "Stage-A closure changes repository governance/quality evidence documentation and the unique migration ledger only.",
+        "No Claude-specific rebase store, shipping runtime, task queue, publication path or platform-core service is introduced.",
+        "No Git rebase/fetch/range-diff, Todo/Agent execution, build/test/review/evidence campaign, CI, publication simulation or acceptance is performed in Stage A."
+      ],
+      "failure_cases": [
+        "Shared rebase skill is not read completely before the Claude wrapper is applied",
+        "The generic Claude AI workflow adapter, task records, phase leaves or task publication are introduced into branch integration",
+        "Raw user arguments are reinterpreted without the shared replay-lineage proof",
+        "An ambiguous replay or genuine semantic contradiction continues before the structured question is answered",
+        "AskUserQuestion omits either intent or does not offer concrete resolution directions",
+        "TodoWrite becomes durable lineage, recovery state or acceptance evidence",
+        "A rebase continuation or todo edit opens an interactive editor in the non-interactive Claude host",
+        "Conflict/history resolution is delegated to Agent or a summary leaf instead of kept in the current context",
+        "Stage dumps or the running report are written into tracked repository state",
+        "Unknown/in-progress rebase state is reset or auto-aborted instead of preserved under the shared recovery contract",
+        "Autonomous fetch, push or force-push is performed by the Claude rebase adapter",
+        "Stage-A source review is promoted to verified/accepted or executable validation is run"
+      ],
+      "ui_disposition": "Not applicable; repository branch-integration Claude host adapter only.",
+      "non_ui_responsibilities": [
+        "Claude /rebase host invocation and raw argument handoff",
+        "Shared rebase source-lineage composition",
+        "Structured blocking ambiguity/conflict decision gate",
+        "Non-interactive rebase continue/todo mechanics",
+        "No-delegation conflict/history context",
+        "Session-only Todo/scratch state",
+        "Shared resume/abort/reflog recovery composition",
+        "No-AI-publication/no-push boundary"
+      ],
+      "platform_delta": "No platform-core production delta.",
+      "implementation_language": "Markdown/JSON repository governance and evidence; no shipping runtime implementation.",
+      "target_owner": "TDRP-R9-REPOSITORY-INTENT-AWARE-REBASE-AUTHORITY-001 + Fabushi repository development-process and quality/test-evidence governance",
+      "existing_owner_candidates": [
+        "TDRP-R9-REPOSITORY-INTENT-AWARE-REBASE-AUTHORITY-001",
+        "AGENTS.md repository development/process governance",
+        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md",
+        "projects/fabushi-communication-platform/quality/evidence-contract.md"
+      ],
+      "rejected_owners": [
+        "Claude AI workflow/task/phase/publication pipeline",
+        "continue / perform-task / process-inbox state machines",
+        "shipping Product Tasks / Automations",
+        "Agent / Coordinator / Host / Runner product runtime",
+        "platform-core runtime/service",
+        "Claude-specific rebase queue/store/scratch persistence",
+        "autonomous Git publication owner / second acceptance truth"
+      ],
+      "commands_events": [
+        "/rebase",
+        "$rebase",
+        "$ARGUMENTS",
+        "AskUserQuestion",
+        "TodoWrite",
+        "git -c core.editor=true rebase --continue",
+        "GIT_SEQUENCE_EDITOR",
+        "continue",
+        "resume",
+        "abort"
+      ],
+      "persistence_contract": "The wrapper owns no independent durable state. Git rebase metadata, branch reflog and the shared ONTO/REPLAY_BASE/OLD_TIP lineage remain canonical. TodoWrite and stage/report scratch are session-only and cannot substitute for Git recovery state, source lineage or evidence.",
+      "concurrency_contract": "Only the explicitly selected current checkout/branch may be mutated under the shared rebase authority. A sibling-worktree-owned branch is fenced. Conflict and history decisions remain in one Claude context with no Agent delegation, so no second writer or summary authority exists.",
+      "cancellation_contract": "An unanswered structured question is a hard stop. Unknown or inconsistent in-progress state is preserved for recovery; explicit abort uses the shared rebase abort/reflog path. No silent stash, reset, skip, editor-timeout workaround or force publication is permitted.",
+      "security_boundary": "The adapter cannot authorize credentials, shipping runtime actions, Stage-A CI/validation, AI task/phase publication, Agent delegation, autonomous remote fetch, push, force-push, branch-protection changes or mutation of sibling worktrees/unrelated refs.",
+      "network_service_dependencies": [],
+      "service_owner": "Not applicable; repository-development command adapter only.",
+      "deployment_evidence": [],
+      "implementation_status": "implemented",
+      "coverage_disposition": "workflow-equivalent",
+      "blockers": [],
+      "production_entrypoints": [
+        "AGENTS.md -> Repository Claude rebase command host-adapter contract",
+        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md -> Claude rebase command host-adapter qualification",
+        "projects/fabushi-communication-platform/quality/evidence-contract.md -> Claude rebase command host-adapter evidence"
+      ],
+      "production_evidence": [
+        "spec-first commit:16e0dba10d422c65d06c0233ef68477fc00d51f3",
+        "dossier:projects/telegram-desktop-rust/dossiers/claude-rebase-command-complete-read.md",
+        "upstream-source:.claude/commands/rebase.md@df14e750067aeac1258a92068886cd2b33f83120",
+        "upstream-shared-authority:.agents/skills/rebase/SKILL.md@0660dc78b26614e40d7151d1da59241b1bad5430",
+        "upstream-direct-consumer:Claude Code command discovery/user /rebase invocation",
+        "upstream-shared-skill-back-reference:.agents/skills/rebase/SKILL.md@0660dc78b26614e40d7151d1da59241b1bad5430",
+        "upstream-peer-host:.grok/commands/rebase.md@dc095e3c837aba1b30ff35e1bb92952cef5f1780",
+        "upstream-negative-dependency:.claude/ai-workflow-adapter.md@370ff84a1ab4c080b15b601a54162b0630c4f4df",
+        "upstream-host-pointer:CLAUDE.md@f8564d18cef4b9c545767025995d31deb3fa7155"
+      ],
+      "test_evidence": [
+        "CONTRACT-TDRP-REBASE-CLAUDE-HOST-AUTHORITY-001 authored, not run",
+        "CONTRACT-TDRP-REBASE-CLAUDE-INVOCATION-LINEAGE-001 authored, not run",
+        "CONTRACT-TDRP-REBASE-CLAUDE-DECISION-GATE-001 authored, not run",
+        "CONTRACT-TDRP-REBASE-CLAUDE-NONINTERACTIVE-001 authored, not run",
+        "CONTRACT-TDRP-REBASE-CLAUDE-DELEGATION-001 authored, not run",
+        "CONTRACT-TDRP-REBASE-CLAUDE-SCRATCH-001 authored, not run",
+        "CONTRACT-TDRP-REBASE-CLAUDE-RECOVERY-PUBLICATION-001 authored, not run",
+        "INT-TDRP-REBASE-CLAUDE-COMPOSITION-001 authored, not run",
+        "FAULT-TDRP-REBASE-CLAUDE-UNANSWERED-CONFLICT-001 authored, not run",
+        "FAULT-TDRP-REBASE-CLAUDE-EDITOR-RECOVERY-001 authored, not run",
+        "SEC-TDRP-REBASE-CLAUDE-NO-AI-PUBLICATION-001 authored, not run"
+      ],
+      "target_commit": "16e0dba10d422c65d06c0233ef68477fc00d51f3",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Fabushi repository development process and quality evidence governance",
+      "composition_slot": "Repository rebase Claude host invocation adaptation",
+      "capability_component": "Source-neutral repository rebase Claude command host adapter",
+      "variation_axes": [
+        "current branch vs named branch vs --onto tail request",
+        "clear replay intent vs ambiguous replay intent",
+        "short replay vs long replay with Todo mirror",
+        "mechanical conflict vs overlapping logic vs genuine contradiction",
+        "question unanswered vs answered",
+        "fresh start vs resume vs explicit abort",
+        "non-interactive editor path vs editor-opening failure",
+        "published vs unpublished history reporting",
+        "Stage-A authored contract vs Stage-B executable evidence"
+      ],
+      "shared_owner_contracts": [
+        "TDRP-R9-REPOSITORY-INTENT-AWARE-REBASE-AUTHORITY-001",
+        "Fabushi repository development lifecycle",
+        "Fabushi repository quality/test-evidence governance",
+        "FMEP-001 Stage-A deferred executable validation"
+      ],
+      "duplicate_root_check": "No Claude-specific rebase state machine/store, AI task/process publication pipeline, shipping Product Tasks/Automations owner, Agent/Coordinator/Host/Runner owner, platform-core runtime, autonomous Git publication owner or second acceptance truth introduced.",
+      "novel_capability": true,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Not applicable",
+      "primary_navigation_target": "Not applicable",
+      "collection_surface": "Not applicable",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "Not applicable",
+      "detail_section": "Not applicable",
+      "capability_surface": "Repository development tooling",
+      "route_contract": "The command routes only the raw Claude /rebase request into the existing shared rebase authority. It never routes branch integration into continue/perform-task/process-inbox, task records, phase leaves or shipping Product Tasks/Automations.",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Not applicable",
+      "search_local_remote_contract": "Not applicable",
+      "responsive_disposition": "Not applicable",
+      "accessibility_contract": "Not applicable",
+      "keyboard_contract": "Not applicable",
+      "state_continuity_contract": "Git rebase metadata, reflog and shared lineage are canonical; Todo/scratch are non-authoritative session state. Unknown state is preserved, unanswered questions block, and explicit abort/resume follow the shared recovery owner.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Not applicable",
+      "semantic_token_usage": "Not applicable",
+      "legacy_token_adapter": "Not applicable",
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "Not applicable",
+      "avatar_contract": "Not applicable",
+      "content_copy_keys": [],
+      "motion_contract": "Not applicable",
+      "reduced_motion_contract": "Not applicable",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "high",
+      "requirement_ids": [
+        "TDRP-R9-REBASE-CLAUDE-COMMAND-ADAPTER-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-REBASE-CLAUDE-SHARED-AUTHORITY-001",
+        "ORA-TDRP-REBASE-CLAUDE-BLOCKING-DECISION-001",
+        "ORA-TDRP-REBASE-CLAUDE-NONINTERACTIVE-001",
+        "ORA-TDRP-REBASE-CLAUDE-SESSION-STATE-NONAUTH-001",
+        "ORA-TDRP-REBASE-CLAUDE-NO-PUBLICATION-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-REBASE-CLAUDE-NO-AI-PIPELINE-001",
+        "INV-TDRP-REBASE-CLAUDE-UNANSWERED-STOPS-001",
+        "INV-TDRP-REBASE-CLAUDE-NO-DELEGATION-001",
+        "INV-TDRP-REBASE-CLAUDE-NONINTERACTIVE-001",
+        "INV-TDRP-REBASE-CLAUDE-SCRATCH-ONLY-001",
+        "INV-TDRP-REBASE-CLAUDE-GIT-RECOVERY-001",
+        "INV-TDRP-REBASE-CLAUDE-NO-PUSH-001",
+        "INV-TDRP-REBASE-CLAUDE-STAGE-A-NO-EXECUTION-001"
+      ],
+      "unit_case_ids": [],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-REBASE-CLAUDE-HOST-AUTHORITY-001",
+        "CONTRACT-TDRP-REBASE-CLAUDE-INVOCATION-LINEAGE-001",
+        "CONTRACT-TDRP-REBASE-CLAUDE-DECISION-GATE-001",
+        "CONTRACT-TDRP-REBASE-CLAUDE-NONINTERACTIVE-001",
+        "CONTRACT-TDRP-REBASE-CLAUDE-DELEGATION-001",
+        "CONTRACT-TDRP-REBASE-CLAUDE-SCRATCH-001",
+        "CONTRACT-TDRP-REBASE-CLAUDE-RECOVERY-PUBLICATION-001"
+      ],
+      "integration_case_ids": [
+        "INT-TDRP-REBASE-CLAUDE-COMPOSITION-001"
+      ],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [],
+      "fault_recovery_case_ids": [
+        "FAULT-TDRP-REBASE-CLAUDE-UNANSWERED-CONFLICT-001",
+        "FAULT-TDRP-REBASE-CLAUDE-EDITOR-RECOVERY-001"
+      ],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "performance_case_ids": [],
+      "soak_case_ids": [],
+      "security_case_ids": [
+        "SEC-TDRP-REBASE-CLAUDE-NO-AI-PUBLICATION-001"
+      ],
+      "regression_ids": [],
+      "exploratory_charter_ids": [],
+      "release_gate_ids": [
+        "G-INVENTORY",
+        "G-TRACEABILITY",
+        "G-EVIDENCE",
+        "G-RELEASE"
+      ],
+      "test_fixture_ids": [
+        "repository-claude-rebase-host-contract-fixture"
+      ],
+      "test_environment_ids": [
+        "Stage-B exact candidate repository workflow environment"
+      ],
+      "coverage_matrix_status": "pending",
+      "flake_status": "not-run",
+      "test_execution_evidence": [],
+      "acceptance_reviewer": null,
+      "release_gate_status": "not-run",
+      "license_and_provenance": "Behavioral repository-development host-adapter contract read from telegramdesktop/tdesktop fixed-U .claude/commands/rebase.md plus exact shared rebase authority, peer host adapter and repository instruction dependencies; no upstream implementation copied into Fabushi shipping runtime.",
+      "reviewer": null,
+      "notes": "Task round145/source evidence round176. Live desktop checkpoint 16e0dba10d422c65d06c0233ef68477fc00d51f3 and platform-core e92b51e23b39dae5719f033fa1f7a20d6579dc8c are the closure authorities. Fixed-U recursive tree is complete with 7,194 entries / 6,859 blobs; target source is tree index 95 zero-based, exact 1,681-byte / 1,673-character / 37-split-line blob. Complete Claude wrapper and shared rebase skill plus peer Grok host/pointer dependencies were read. Existing-owner-first adds one thin Claude rebase command-adapter responsibility over the shared rebase + repository quality/evidence owners. Spec-first CAS commit 16e0dba10d422c65d06c0233ef68477fc00d51f3 authored contracts/dossier. Exactly one independent source entry closes: unknown 16133->16132, unread 16106->16105; responsibilities 145->146. Contracts authored, not run; accepted=false. Next fixed-U tree blob is .claude/commands/release.md@baaa7c261db67dced2ce052c8cde016147031a7d.",
+      "validation_status": "not-run",
+      "accepted": false,
+      "source_paths": [
+        ".claude/commands/rebase.md@df14e750067aeac1258a92068886cd2b33f83120"
       ]
     }
   ],
