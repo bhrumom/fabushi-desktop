@@ -405,8 +405,10 @@ checkpoint blob or external memory-store atomicity gaps. Profile/avatar
 deletion-race serialization is described below, but cross-process crash
 recovery remains separate. The
 checkpoint transaction now rejects confirmation under the durable fence, while
-the standalone latest-root CAS is fenced as well. The already-materialized
-external blob remains a separate cleanup/recovery responsibility. Session
+both confirmed and unconfirmed Runner checkpoint paths use the captured-root
+CAS; a stale checkpoint cannot overwrite a successor root or lifecycle
+revision. The already-materialized external blob remains a separate
+cleanup/recovery responsibility. Session
 maintenance now routes its persisted-root CAS through the same `SandAgentDb`
 owner instead of maintaining a second direct SQLite mutation path.
 Runtime profile-name recovery maintenance now uses the same owner metadata
