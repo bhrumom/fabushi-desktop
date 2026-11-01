@@ -215,10 +215,20 @@ export function createCoordinatorClient(portBridge: CoordinatorPortBridge): Prod
     dispose() {
       if (disposed) return;
       disposed = true;
-      port?.postMessage({ kind: "lifecycle", phase: "shutdown", reason: "requested", detail: null });
+      const currentPort = port;
+      try {
+        currentPort?.postMessage({ kind: "lifecycle", phase: "shutdown", reason: "requested", detail: null });
+      } catch {
+        // Local disposal must still reclaim the claim and settle callers when
+        // the endpoint is already unable to accept the shutdown frame.
+      }
       claim.release();
       rejectCalls("coordinator source disposed");
-      port?.close();
+      try {
+        currentPort?.close();
+      } catch {
+        // Endpoint cleanup is best effort after local ownership is settled.
+      }
       port = null;
       serving = false;
     }

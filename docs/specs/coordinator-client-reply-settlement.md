@@ -41,6 +41,8 @@ outcomes reject explicitly while preserving no indefinitely pending Promise.
 - R6: A malformed frame's protocol-error shutdown send cannot prevent the
   existing disconnect cleanup from reclaiming pending requests and the port
   claim.
+- R7: `dispose()` must reclaim the client claim, reject pending calls, and
+  release the endpoint even when its shutdown send fails synchronously.
 
 ## 5. Current state
 
@@ -81,8 +83,8 @@ exception. There is no storage or migration.
 Cover invalid status, failed status without an object, failed object with
 missing/non-string fields, unmatched request ID, disconnect after malformed
 reply, malformed-frame shutdown send failure, and disposal after malformed
-reply. A remote side effect remains outcome-unknown and must not be replayed
-by this client.
+reply, disposal shutdown-send failure, and endpoint close failure. A remote
+side effect remains outcome-unknown and must not be replayed by this client.
 
 ## 11. Implementation strategy
 
@@ -90,7 +92,8 @@ Classify the outcome before removing the pending entry, then remove it exactly
 once and settle it through the existing resolve/reject callbacks. Keep method
 response validation on successful outcomes and preserve the current handling
 for valid failure objects. Wrap only the malformed-frame shutdown send so its
-failure still reaches the existing disconnect owner.
+failure still reaches the existing disconnect owner. Make explicit disposal's
+local cleanup unconditional after the best-effort shutdown send.
 
 ## 12. Verification / test strategy
 
@@ -129,7 +132,7 @@ artifacts; no runtime acceptance is claimed here.
 
 | Requirement / AC | Status | Evidence / reason |
 | --- | --- | --- |
-| R1–R6 | passed | `coordinator-client.ts` classifies replies before pending removal and contains malformed-frame shutdown-send failure before invoking existing disconnect cleanup. |
+| R1–R7 | passed | `coordinator-client.ts` classifies replies before pending removal, contains malformed-frame shutdown-send failure, and makes disposal cleanup continue after shutdown/close errors. |
 | AC-1 | passed | Existing renderer client remains the sole pending/Promise owner; no new transport or business owner was added. |
 | AC-2 | passed | Every matching reply branch removes the pending entry only immediately before resolving or rejecting it. |
 | AC-3 | passed | `git diff --check` and source review passed; runtime, focused test, and packaged acceptance remain pending. |
