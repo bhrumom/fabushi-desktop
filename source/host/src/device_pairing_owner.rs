@@ -1555,7 +1555,7 @@ mod tests {
             let pending_public_key = conn
                 .query_row(
                     "SELECT public_key FROM device_pairing_pending WHERE request_id = ?1",
-                    params![repair_request["requestId"]],
+                    params![repair_request["requestId"].as_str().expect("requestId")],
                     |row| row.get(0),
                 )
                 .expect("read repair pending identity");

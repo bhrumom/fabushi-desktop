@@ -335,6 +335,7 @@ pub enum CloudWorkerNodeBootstrapError {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::extensions::cloud_workers::{CloudWorkerDesktopSession, CloudWorkerPlatform};
 
     fn request() -> CloudWorkerBootstrapRequest {
         CloudWorkerBootstrapRequest {
@@ -349,8 +350,8 @@ mod tests {
                 size_bytes: 1,
             },
             platform: CloudWorkerPlatformBridge::new(
-                super::CloudWorkerPlatform::Linux,
-                super::CloudWorkerDesktopSession::Headless,
+                CloudWorkerPlatform::Linux,
+                CloudWorkerDesktopSession::Headless,
                 "linux-launcher",
             )
             .unwrap(),

@@ -48,7 +48,9 @@ fn host_settings_projects_secret_audit_findings_without_secret_values() {
     let findings = observed.lock().expect("secret diagnostics");
     assert_eq!(findings.len(), 1);
     assert_eq!(findings[0].fields["findingKind"], "plaintext_residue");
-    assert!(!findings[0].fields.to_string().contains("sk-settings-plaintext-secret"));
+    assert!(!serde_json::to_string(&findings[0].fields)
+        .expect("serialize findings")
+        .contains("sk-settings-plaintext-secret"));
     let _ = fs::remove_file(path);
 }
 

@@ -1006,7 +1006,8 @@ mod tests {
                 .snapshot()
                 .unwrap()
                 .artifacts
-                .get(&published.proof.digest.0)
+                .iter()
+                .find(|artifact| super::source_digest(&artifact.source) == published.proof.digest)
                 .unwrap()
                 .state,
             super::super::CloudWorkerArtifactAdmissionState::Verified
@@ -1051,7 +1052,8 @@ mod tests {
                 .snapshot()
                 .unwrap()
                 .artifacts
-                .get(&"a".repeat(64))
+                .iter()
+                .find(|artifact| super::source_digest(&artifact.source).0 == "a".repeat(64))
                 .unwrap()
                 .state,
             super::super::CloudWorkerArtifactAdmissionState::Damaged

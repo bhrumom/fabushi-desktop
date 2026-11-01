@@ -7,6 +7,7 @@ use mahayana_host_runtime::extensions::session::production::ProductionSessionWor
 use mahayana_host_runtime::extensions::transcript::agent_lifecycle::{
     AgentDeletionRuntimeDeps, AgentLifecycleGatewayError, ProductionAgentLifecycle,
     dispatch_production_agent_lifecycle_gateway_call,
+    dispatch_production_agent_lifecycle_gateway_call_with_runtime,
     dispatch_production_agent_lifecycle_gateway_call_with_runtimes,
 };
 use mahayana_host_runtime::extensions::transcript::production_runtime::ProductionTranscriptRuntime;

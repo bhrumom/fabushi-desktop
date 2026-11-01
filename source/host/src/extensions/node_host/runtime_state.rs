@@ -145,6 +145,7 @@ impl NodeHostRuntimeState {
 #[cfg(test)]
 mod tests {
     use super::{NodeHostRuntimeState, NodeHostSessionMetadata};
+    use super::super::invoke_protocol::{NodeInvokeCancel, NodeInvokeRequest};
 
     fn metadata(node_id: &str) -> NodeHostSessionMetadata {
         NodeHostSessionMetadata {

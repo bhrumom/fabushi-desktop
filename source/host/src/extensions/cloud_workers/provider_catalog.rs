@@ -397,7 +397,7 @@ mod tests {
         assert!(profile.select_machine(&requirement).is_some());
         let too_large = CloudWorkerMachineRequirement {
             min_memory_bytes: 2 * 1024 * 1024 * 1024,
-            ..requirement
+            ..requirement.clone()
         };
         assert!(profile.select_machine(&too_large).is_none());
         assert_eq!(
