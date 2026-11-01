@@ -582,6 +582,63 @@ impl SandAgentDb {
             .map_err(AgentDbProjectionError::MetadataJson)
     }
 
+    /// Re-seed the owner-local admission record after a cloned database has
+    /// received its new directory identity. This is intentionally the one
+    /// pre-admission reset that may replace the copied source record.
+    pub fn reset_session_work_admission_for_clone(
+        &self,
+        agent_id: &str,
+    ) -> Result<bool, AgentDbProjectionError> {
+        let agent_id = agent_id.trim();
+        if agent_id.is_empty() {
+            return Err(AgentDbProjectionError::WorkAdmissionInvalid(
+                "cloned session admission requires an agent identity".into(),
+            ));
+        }
+        let record = SessionWorkAdmissionRecord {
+            session_key: format!("agent:{agent_id}:main"),
+            session_id: agent_id.to_string(),
+            lifecycle_revision: Uuid::new_v4().to_string(),
+            deletion_pending: false,
+            archived_at_ms: None,
+            archived_by: None,
+            archive_reason: None,
+            admitted_work_id: None,
+            admitted_media_work_id: None,
+            admitted_media_paths: Vec::new(),
+            terminal_result_idempotency_key: None,
+            provider_review_id: None,
+            provider_review_phase: None,
+            provider_review_continuation_run_id: None,
+            provider_review: None,
+        };
+        let encoded = serde_json::to_string(&record)?;
+        let changed = self.run_write("resetSessionWorkAdmissionForClone", |db| {
+            db.execute_batch("BEGIN IMMEDIATE")?;
+            let result = db.execute(
+                SET_KV_SQL,
+                params![KV_SESSION_WORK_ADMISSION, encoded],
+            );
+            match result {
+                Ok(changes) => {
+                    db.execute_batch("COMMIT")?;
+                    Ok(changes > 0)
+                }
+                Err(error) => {
+                    let _ = db.execute_batch("ROLLBACK");
+                    Err(error)
+                }
+            }
+        })?;
+        if changed {
+            notify_agent_db_listeners(
+                &self.db_path,
+                AgentDbListenerChannel::Metadata(KV_SESSION_WORK_ADMISSION.into()),
+            );
+        }
+        Ok(changed)
+    }
+
     /// Compare-and-set the agent-local work-admission record. A missing
     /// expected revision means create-only; a supplied revision means update
     /// only when the currently stored generation still matches.

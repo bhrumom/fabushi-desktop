@@ -15,12 +15,7 @@ use crate::agents::agent_profile::{
 use crate::agents::agent_workflow_enablement::get_agent_workflow_enablement_path;
 use crate::agents::settings_file::{get_sand_settings_path, write_sand_settings_file};
 use crate::extensions::session::agent_db::{
-    clear_persisted_clone_mutation_journals, clear_persisted_conversation,
-    clear_persisted_transient_state,
-    read_persisted_agent_serde_snapshot, reset_persisted_session_work_admission,
-    set_persisted_agent_id,
-    set_persisted_agent_origin, set_persisted_agent_purpose,
-    set_persisted_sand_profile,
+    SandAgentDb,
 };
 use crate::extensions::session::agent_db_serde::SandProfile;
 use crate::storage::store_db::checkpoint_sand_agent_db;
@@ -90,22 +85,35 @@ fn rewrite_identity(
     busy_timeout_ms: u64,
 ) -> Result<(), SandAgentCloneError> {
     let db_path = target_dir.join(STORE_FILENAME);
-    let snapshot = read_persisted_agent_serde_snapshot(&db_path, busy_timeout_ms)
+    let owner = SandAgentDb::open(&db_path, busy_timeout_ms)
+        .map_err(|error| SandAgentCloneError::Database(error.to_string()))?;
+    let profile = owner
+        .get_sand_profile()
         .map_err(|error| SandAgentCloneError::Database(error.to_string()))?;
 
-    set_persisted_agent_id(&db_path, busy_timeout_ms, new_agent_id)
+    owner
+        .set_metadata(
+            "agentId",
+            Value::String(new_agent_id.to_string()),
+        )
         .map_err(|error| SandAgentCloneError::Database(error.to_string()))?;
-    reset_persisted_session_work_admission(&db_path, busy_timeout_ms, new_agent_id)
+    owner
+        .reset_session_work_admission_for_clone(new_agent_id)
         .map_err(|error| SandAgentCloneError::Database(error.to_string()))?;
-    clear_persisted_clone_mutation_journals(&db_path, busy_timeout_ms)
+    owner
+        .clear_clone_mutation_journals()
         .map_err(|error| SandAgentCloneError::Database(error.to_string()))?;
-    set_persisted_agent_origin(&db_path, busy_timeout_ms, "user")
+    owner
+        .set_agent_origin("user")
         .map_err(|error| SandAgentCloneError::Database(error.to_string()))?;
-    set_persisted_agent_purpose(&db_path, busy_timeout_ms, None)
+    owner
+        .clear_agent_purpose()
         .map_err(|error| SandAgentCloneError::Database(error.to_string()))?;
-    clear_persisted_transient_state(&db_path, busy_timeout_ms)
+    owner
+        .clear_transient_state()
         .map_err(|error| SandAgentCloneError::Database(error.to_string()))?;
-    clear_persisted_conversation(&db_path, busy_timeout_ms)
+    owner
+        .clear_conversation()
         .map_err(|error| SandAgentCloneError::Database(error.to_string()))?;
 
     let avatar_path = target_dir
@@ -117,14 +125,11 @@ fn rewrite_identity(
                 .to_string_lossy()
                 .into_owned()
         });
-    set_persisted_sand_profile(
-        &db_path,
-        busy_timeout_ms,
-        &SandProfile {
-            description: snapshot.profile.description,
+    owner
+        .set_sand_profile(&SandProfile {
+            description: profile.description,
             avatar_path,
-        },
-    )
+        })
     .map_err(|error| SandAgentCloneError::Database(error.to_string()))?;
     Ok(())
 }
