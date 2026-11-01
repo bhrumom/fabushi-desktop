@@ -105,6 +105,7 @@ pub struct AgentDbSerdeSnapshot {
 #[derive(Debug, Clone, PartialEq)]
 pub struct CompactionCommit {
     pub entry_id: String,
+    pub expected_transcript_tail_id: String,
     pub first_kept_entry_id: Option<String>,
     pub summary: String,
     pub tokens_before: u64,
@@ -2009,9 +2010,14 @@ impl SandAgentDb {
         let entry_id = commit.entry_id.trim();
         let source_turn_id = commit.source_turn_id.trim();
         let expected_revision = commit.expected_lifecycle_revision.trim();
-        if entry_id.is_empty() || source_turn_id.is_empty() || expected_revision.is_empty() {
+        let expected_tail_id = commit.expected_transcript_tail_id.trim();
+        if entry_id.is_empty()
+            || source_turn_id.is_empty()
+            || expected_revision.is_empty()
+            || expected_tail_id.is_empty()
+        {
             return Err(AgentDbProjectionError::CompactionInvalid(
-                "entry_id, source_turn_id, and expected_lifecycle_revision are required".into(),
+                "entry_id, source_turn_id, expected_transcript_tail_id, and expected_lifecycle_revision are required".into(),
             ));
         }
         let summary = commit.summary.trim();
@@ -2083,6 +2089,17 @@ impl SandAgentDb {
                     )
                 })?;
             if current_revision != expected_revision {
+                return Ok(CompactionCommitOutcome::RejectedStale);
+            }
+
+            let current_tail_id = db
+                .query_row(
+                    "SELECT id FROM transcript_entries ORDER BY seq DESC LIMIT 1",
+                    [],
+                    |row| row.get::<_, String>(0),
+                )
+                .optional()?;
+            if current_tail_id.as_deref() != Some(expected_tail_id) {
                 return Ok(CompactionCommitOutcome::RejectedStale);
             }
 

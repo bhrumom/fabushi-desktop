@@ -48,7 +48,11 @@ chain.
 - `CC-04`: Preserve recent entries, summary budget, split-turn latest request,
   file-operation metadata, and no-summary fallback behavior.
 - `CC-05`: Make cancellation, provider failure, stale turn ownership, retry,
-  and duplicate commit behavior fail closed and recoverable.
+  and duplicate commit behavior fail closed and recoverable. The guarded
+  commit must compare both the captured lifecycle revision and the canonical
+  transcript tail observed by the planning producer; ordinary transcript
+  appends do not advance the lifecycle revision and therefore cannot be the
+  sole stale-turn fence.
 - `CC-06`: The next turn must consume the compacted state exactly once through
   the existing transcript replay path.
 - `CC-07`: The replay adapter must preserve the typed semantics required by
@@ -201,7 +205,10 @@ compaction entry → existing replay/context builder → next turn`.
 
 The durable entry must identify the first retained entry, summary, token count,
 details/file operations, source turn, and lifecycle revision sufficiently to
-reject stale or duplicate commits.
+reject stale or duplicate commits. The commit request also carries the
+producer's observed transcript-tail identity; the session owner rejects a
+commit when that identity no longer matches the latest canonical transcript
+row, while retaining the prior transcript as authoritative.
 
 The replay/context-builder boundary must expose a typed representation rich
 enough for the fixed OpenClaw projection. `ProviderMessage { role, content }`

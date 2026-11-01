@@ -10676,6 +10676,9 @@ fn start_routed_provider_task(
                                                         "compaction:{}:{}",
                                                         agent_id, worker_stream_id
                                                     ),
+                                                    expected_transcript_tail_id: plan
+                                                        .observed_transcript_tail_id
+                                                        .clone(),
                                                     first_kept_entry_id: Some(
                                                         plan.first_kept_entry_id.clone(),
                                                     ),

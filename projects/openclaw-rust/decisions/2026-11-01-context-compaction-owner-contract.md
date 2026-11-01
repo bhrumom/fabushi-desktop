@@ -24,6 +24,13 @@ composing those calls in Runner would permit a partially committed compaction.
 
 ## Decision
 
+The compaction commit is guarded by two independent observations captured by
+the Runner producer: the session lifecycle revision and the latest canonical
+transcript-entry id. Lifecycle CAS protects archive/deletion/owner changes;
+transcript-tail CAS protects concurrent ordinary turn appends, which do not
+advance the lifecycle revision. A mismatch returns a stale outcome and leaves
+the existing transcript unchanged.
+
 Compaction state remains owned by `SandAgentDb`, exposed through
 `ProductionSessionWorkers`. A future implementation must add one owner-local,
 transactional compaction operation and one replay projection; Runner and

@@ -333,6 +333,23 @@ slice, not full replay acceptance.
 
 ## Fixed-source compaction semantics rechecked
 
+## Transcript-tail stale-turn fence — 2026-11-01
+
+The production compaction boundary now carries the canonical transcript tail
+observed by the pure Runner planner (`CompactionPlan::observed_transcript_tail_id`)
+into `CompactionCommit`. `SandAgentDb::commit_compaction` compares that id with
+the latest `transcript_entries.seq` row in the same SQLite transaction as the
+existing lifecycle-revision CAS. A normal transcript append therefore makes an
+older compaction plan return `RejectedStale` without inserting a compaction row
+or advancing lifecycle state. The focused owner oracle is
+`owner_rejects_compaction_when_transcript_tail_changes_after_planning` in
+`source/host/tests/agent_db_owner_contract.rs`.
+
+This is a production owner/wiring slice for CC-05 only. It was statically
+reviewed on local HEAD `3bd91ac0e67e9957fb29d1c95f5ad8ed67941a35`; OCRM local
+executable validation remains intentionally not run under the development
+freeze, so verification and acceptance remain pending.
+
 The exact locked agent-core source was reread at commit
 `1440bb1771372334bea23d7642bb52deb7db1845`. The production port must preserve
 the following source-owned invariants before a Runner producer is enabled:

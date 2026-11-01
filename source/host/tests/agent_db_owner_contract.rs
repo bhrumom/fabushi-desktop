@@ -924,6 +924,7 @@ fn owner_commits_guarded_compaction_and_replays_from_cut_point() {
         .expect("revision value");
     let commit = CompactionCommit {
         entry_id: "compaction-1".into(),
+        expected_transcript_tail_id: "kept".into(),
         first_kept_entry_id: Some("kept".into()),
         summary: "summary".into(),
         tokens_before: 123,
@@ -1014,6 +1015,55 @@ fn owner_commits_guarded_compaction_and_replays_from_cut_point() {
         owner.commit_compaction(&oversized_summary),
         Err(mahayana_host_runtime::extensions::session::agent_db::AgentDbProjectionError::CompactionInvalid(_))
     ));
+
+    owner.close(true);
+    let _ = fs::remove_dir_all(root);
+}
+
+#[test]
+fn owner_rejects_compaction_when_transcript_tail_changes_after_planning() {
+    let root = temp_root("compaction-tail-fence");
+    let agent_dir = root.join("agent-compaction-tail-fence");
+    fs::create_dir_all(&agent_dir).expect("agent dir");
+    let db_path = agent_dir.join("store.db");
+    let owner = SandAgentDb::open(&db_path, 50).expect("owner");
+
+    owner
+        .append_transcript_entries(&[
+            serde_json::json!({"id":"old", "kind":"message", "role":"user", "content":"old"}),
+            serde_json::json!({"id":"tail-before", "kind":"message", "role":"user", "content":"planned"}),
+        ])
+        .expect("history");
+    let expected_revision = owner
+        .get_metadata("lifecycleRevision")
+        .expect("revision")
+        .and_then(|value| value.as_str().map(ToOwned::to_owned))
+        .expect("revision value");
+    owner
+        .append_transcript_entries(&[
+            serde_json::json!({"id":"tail-after", "kind":"message", "role":"assistant", "content":"concurrent"}),
+        ])
+        .expect("concurrent append");
+
+    let commit = CompactionCommit {
+        entry_id: "compaction-tail-stale".into(),
+        expected_transcript_tail_id: "tail-before".into(),
+        first_kept_entry_id: Some("tail-before".into()),
+        summary: "summary".into(),
+        tokens_before: 123,
+        details: None,
+        source_turn_id: "turn-stale".into(),
+        expected_lifecycle_revision: expected_revision,
+    };
+    assert!(matches!(
+        owner.commit_compaction(&commit).expect("stale tail outcome"),
+        CompactionCommitOutcome::RejectedStale
+    ));
+    assert!(owner
+        .get_transcript_entries()
+        .expect("transcript remains readable")
+        .iter()
+        .all(|entry| entry.get("kind").and_then(serde_json::Value::as_str) != Some("compaction")));
 
     owner.close(true);
     let _ = fs::remove_dir_all(root);

@@ -24,6 +24,10 @@ pub struct CompactionSettings {
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct CompactionPlan {
+    /// The canonical row observed by the producer. The transcript owner uses
+    /// this as a second CAS fence because ordinary appends do not advance the
+    /// session lifecycle revision.
+    pub observed_transcript_tail_id: String,
     pub first_kept_entry_id: String,
     pub entries_to_summarize: Vec<Value>,
     pub turn_prefix_entries: Vec<Value>,
@@ -136,6 +140,12 @@ pub fn prepare_compaction_plan(
         .map(str::trim)
         .filter(|id| !id.is_empty())?
         .to_string();
+    let observed_transcript_tail_id = last
+        .get("id")
+        .and_then(Value::as_str)
+        .map(str::trim)
+        .filter(|id| !id.is_empty())?
+        .to_string();
     let tokens_before = entries[..cut]
         .iter()
         .map(estimate_entry_tokens)
@@ -174,6 +184,7 @@ pub fn prepare_compaction_plan(
         .map(bound_latest_user_request);
 
     Some(CompactionPlan {
+        observed_transcript_tail_id,
         first_kept_entry_id,
         entries_to_summarize,
         turn_prefix_entries,
@@ -1042,6 +1053,7 @@ mod tests {
     #[test]
     fn file_operation_details_merge_previous_and_current_rows() {
         let plan = CompactionPlan {
+            observed_transcript_tail_id: "tail".into(),
             first_kept_entry_id: "keep".into(),
             entries_to_summarize: vec![
                 json!({
@@ -1080,6 +1092,7 @@ mod tests {
     #[test]
     fn summary_failure_fallback_preserves_previous_context_and_request() {
         let plan = CompactionPlan {
+            observed_transcript_tail_id: "tail".into(),
             first_kept_entry_id: "keep".into(),
             entries_to_summarize: vec![json!({"kind":"message","role":"user","content":"old"})],
             turn_prefix_entries: Vec::new(),
@@ -1099,6 +1112,7 @@ mod tests {
     #[test]
     fn degraded_fallback_is_recorded_in_compaction_details() {
         let plan = CompactionPlan {
+            observed_transcript_tail_id: "tail".into(),
             first_kept_entry_id: "keep".into(),
             entries_to_summarize: vec![json!({"kind":"message","role":"user","content":"old"})],
             turn_prefix_entries: Vec::new(),
@@ -1118,6 +1132,7 @@ mod tests {
     #[test]
     fn degraded_fallback_remains_true_when_previous_details_were_clean() {
         let plan = CompactionPlan {
+            observed_transcript_tail_id: "tail".into(),
             first_kept_entry_id: "keep".into(),
             entries_to_summarize: vec![json!({"kind":"message","role":"user","content":"old"})],
             turn_prefix_entries: Vec::new(),
@@ -1166,6 +1181,7 @@ mod tests {
             })
             .collect::<Vec<_>>();
         let plan = CompactionPlan {
+            observed_transcript_tail_id: "tail".into(),
             first_kept_entry_id: "keep".into(),
             entries_to_summarize: entries,
             turn_prefix_entries: Vec::new(),
