@@ -1919,3 +1919,12 @@ Desktop mirror commit `8f04c5f35cc6674b33f27edb09fe66fb1db7d6f0` carries the byt
 `TDRP-R9-MTPROTO-SPECIAL-CONFIG-CARRIER-APPLICATION-001` remains mapped/pending/not-run/accepted=false. The newly implemented owner does not yet create/resume an actual secondary EstablishedSession against a transient endpoint, expose independently cancellable in-flight request ownership or the 6000 ms total-attempt deadline, or perform dc_options-only replacement/change publication. The direct NoProxy HTTPS/Web-PKI carrier remains separately blocked.
 
 Stage A remained execution-free: no GitHub Actions/status/check query or trigger, build, typecheck, lint, validator, generator, dependency resolution, lock regeneration, unit/contract/integration/E2E execution, package, deployment, installation or runtime acceptance was performed.
+
+
+### Round 121 final source-level compliance
+
+Platform-core final source-level compliance is `e1d158cc9ba3457da6bc565fdb4b8353df28c0d1`; the canonical multi-session spec blob is `901d5e07c92a538870e6cf87343bab13a58f2558`, and the narrowed special-config temporary-DC boundary spec blob is `33b009b272822bbc4f8a77e027b6cecc8574cbc7`.
+
+The canonical/runtime and desktop shipping provider runtime blobs remain byte-identical at `d531db9176a09e973690b3a44da52208e09e33b5`. `TDRP-R9-MTPROTO-MULTI-SESSION-OWNER-001` remains implemented / rewritten / validation_status=not-run / accepted=false. `TDRP-R9-MTPROTO-SPECIAL-CONFIG-CARRIER-APPLICATION-001` remains mapped / pending / validation_status=not-run / accepted=false with its blocker narrowed to actual secondary endpoint session/auth material, independently cancellable request + 6000 ms total-attempt lifecycle, dc_options-only application, and the separately blocked direct HTTP carrier.
+
+No GitHub Actions/status/check query or trigger, build, typecheck, lint, validator, generator, dependency resolution, lock regeneration, unit/contract/integration/E2E execution, package, deployment, installation or runtime acceptance was performed.

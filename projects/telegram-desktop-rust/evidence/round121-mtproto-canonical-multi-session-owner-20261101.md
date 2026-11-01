@@ -57,3 +57,14 @@ Two internal runtime contracts are authored for 2/1002 auth-DC sharing and empty
 ## Deferred validation statement
 
 No GitHub Actions/status/check query or trigger, build, typecheck, lint, validator, generator, dependency resolution, lock regeneration, unit/contract/integration/E2E execution, package, deployment, installation or runtime acceptance was performed.
+
+
+## Final cross-repository source-compliance readback
+
+- platform final compliance commit: e1d158cc9ba3457da6bc565fdb4b8353df28c0d1
+- canonical multi-session spec blob: 901d5e07c92a538870e6cf87343bab13a58f2558
+- narrowed special-config boundary spec blob: 33b009b272822bbc4f8a77e027b6cecc8574cbc7
+- platform runtime blob: d531db9176a09e973690b3a44da52208e09e33b5
+- desktop provider runtime blob: d531db9176a09e973690b3a44da52208e09e33b5
+
+Source-level ACs are recorded only; executable validation remains not-run and acceptance remains false.
