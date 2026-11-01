@@ -23,4 +23,6 @@ jobs:
         if: always()
         with:
           name: plugin-marketplace-ui
+          include-hidden-files: true
+          if-no-files-found: error
           path: desktop/.tmp-plugin-ui/*.png
