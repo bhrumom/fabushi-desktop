@@ -5696,6 +5696,11 @@ pub fn update_persisted_transcript_entry_if_session_admitted(
     }
     let mut db = open_projection_db(db_path, busy_timeout_ms)?;
     let transaction = db.transaction_with_behavior(rusqlite::TransactionBehavior::Immediate)?;
+    if !session_work_write_is_admitted(&transaction)? {
+        return Err(AgentDbProjectionError::WorkAdmissionInvalid(
+            "session owner identity is not admitted for persisted transcript update".into(),
+        ));
+    }
     let raw_admission = transaction
         .query_row(GET_KV_SQL, params![KV_SESSION_WORK_ADMISSION], |row| {
             row.get::<_, String>(0)
