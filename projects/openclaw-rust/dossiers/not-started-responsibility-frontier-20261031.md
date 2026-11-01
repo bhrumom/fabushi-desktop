@@ -89,7 +89,8 @@ this responsibility.
 
 Disposition remains `not-started/not-wired/not-run/pending`. A source-backed
 CRON-REAPER-D01..D05 architecture decision now exists and is bound to the current
-Fabushi exact HEAD/tree, but it remains proposed and has not been approved. It names
+Fabushi exact source subject captured before the documentation-only provenance
+publication, but it remains proposed and has not been approved. It names
 the durable per-run session row/schema, the existing session/transcript lifecycle owner,
 the scheduled sweep producer and fence, the active media/subagent custody source, and
 unknown deletion/cleanup outcomes. D01..D05 are not implemented or verified, so this

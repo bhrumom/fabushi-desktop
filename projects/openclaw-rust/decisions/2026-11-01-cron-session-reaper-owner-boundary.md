@@ -25,7 +25,8 @@ are approved and then implemented with focused oracles.
 
 ## Source evidence and exact subjects
 
-- Fabushi source subject: current chat branch
+- Fabushi source subject captured for this decision (before this
+  documentation-only provenance publication):
   `codex/openclaw-rust-fusion-chat-20261101-writer`, commit
   `d8939d9bfb89b106cfcc0f65c5c5548081540a0f`, tree
   `0ad5de4e7668284ba85a7f69686b6f64e6fa7be4`.
