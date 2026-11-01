@@ -87,12 +87,14 @@ an expected-row guard. The existing media-store retention helpers and generic se
 deletion route do not prove the upstream reaper invariants and must not be promoted to
 this responsibility.
 
-Disposition remains `not-started/not-wired/not-run/pending`. The next direct instrument
-is a source-backed CRON-REAPER-D01..D05 architecture decision that names the durable
-per-run session row/schema, the existing session/transcript lifecycle owner, the
-scheduled sweep producer and fence, the active media/subagent custody source, and
-unknown deletion/cleanup outcomes. Only after that decision can a bounded Rust slice be
-implemented and verified against the required negative cases.
+Disposition remains `not-started/not-wired/not-run/pending`. A source-backed
+CRON-REAPER-D01..D05 architecture decision now exists and is bound to the current
+Fabushi exact HEAD/tree, but it remains proposed and has not been approved. It names
+the durable per-run session row/schema, the existing session/transcript lifecycle owner,
+the scheduled sweep producer and fence, the active media/subagent custody source, and
+unknown deletion/cleanup outcomes. D01..D05 are not implemented or verified, so this
+ADR does not upgrade the ledger or global flags; only after approval can a bounded Rust
+slice be implemented and verified against the required negative cases.
 
 ## 2026-10-31 plugin-owner boundary recheck
 
