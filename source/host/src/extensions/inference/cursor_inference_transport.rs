@@ -879,6 +879,42 @@ pub fn run_cursor_with_transport_reporting_usage_and_partials_with_max_steps(
     max_steps: usize,
     tool_step_reminder: Option<&(dyn Fn(&[(String, Value)]) -> Option<String> + Send + Sync)>,
 ) -> Result<String, ProviderSessionError> {
+    run_cursor_with_transport_reporting_usage_and_partials_with_initial_conversation(
+        transport,
+        messages,
+        None,
+        tools,
+        execute_tool,
+        on_text_delta,
+        should_cancel,
+        resume_from,
+        on_checkpoint,
+        on_usage,
+        on_partial_tool_call,
+        max_steps,
+        tool_step_reminder,
+    )
+}
+
+pub fn run_cursor_with_transport_reporting_usage_and_partials_with_initial_conversation(
+    transport: &dyn CursorInferenceStreamTransport,
+    messages: &[ProviderMessage],
+    initial_conversation: Option<&[CursorCheckpointMessage]>,
+    tools: &[RoutedToolDefinition],
+    execute_tool: &mut dyn FnMut(
+        &RoutedToolDefinition,
+        Value,
+        &str,
+    ) -> Result<Value, ProviderSessionError>,
+    on_text_delta: &mut dyn FnMut(&str, &str),
+    should_cancel: &dyn Fn() -> bool,
+    resume_from: Option<&CursorCheckpoint>,
+    on_checkpoint: &mut dyn FnMut(&CursorCheckpoint) -> Result<(), ProviderSessionError>,
+    on_usage: &mut dyn FnMut(ProviderTokenUsage),
+    on_partial_tool_call: &mut dyn FnMut(ProviderPartialToolCall) -> Result<(), ProviderSessionError>,
+    max_steps: usize,
+    tool_step_reminder: Option<&(dyn Fn(&[(String, Value)]) -> Option<String> + Send + Sync)>,
+) -> Result<String, ProviderSessionError> {
     let max_steps = max_steps.max(1);
     let tool_index = tools
         .iter()
@@ -893,10 +929,14 @@ pub fn run_cursor_with_transport_reporting_usage_and_partials_with_max_steps(
                 checkpoint.tool_calls_completed,
             ),
             None => (
-                messages
-                    .iter()
-                    .map(provider_message_to_checkpoint)
-                    .collect::<Vec<_>>(),
+                initial_conversation
+                    .map(|conversation| conversation.to_vec())
+                    .unwrap_or_else(|| {
+                        messages
+                            .iter()
+                            .map(provider_message_to_checkpoint)
+                            .collect::<Vec<_>>()
+                    }),
                 String::new(),
                 0,
                 0,

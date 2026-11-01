@@ -137,11 +137,13 @@ authority gates open.
   `:9476-9504`, but no caller at that boundary reads the canonical compaction
   replay projection or commits a compaction result.
 - The existing production turn projection now carries an optional typed replay
-  channel through the Runner and provider-runtime owners. No production caller
-  currently supplies the canonical session projection. A non-empty replay is
-  rejected at inference dispatch until provider-specific merge and
-  serialization are enabled, so typed history cannot be flattened into the
-  legacy `ProviderMessage { role, content }` path.
+  channel through the Runner and provider-runtime owners. The routed provider
+  path reads the canonical replay only after an active compaction is present;
+  Cursor merges it with system/current-turn messages through its existing typed
+  checkpoint serializer. Other providers remain rejected at inference
+  dispatch until provider-specific merge and serialization are enabled, so
+  typed history cannot be flattened into the legacy
+  `ProviderMessage { role, content }` path.
 - Prompt/memory code reads persisted compaction epochs for snapshot rendering;
   this is a separate responsibility.
 - Status remains `implementation=not-started`, `wiring=not-wired`,

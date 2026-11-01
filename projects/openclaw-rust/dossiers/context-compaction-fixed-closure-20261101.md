@@ -304,9 +304,10 @@ its native assistant-tool/tool-result checkpoint pairing, while rejecting all
 attachments because the current Cursor protobuf has no attachment part. The
 Claude serialization now explicitly accepts only summary and plain
 user/assistant text, rejecting typed tool rows and attachments because the
-current CLI has no typed replay surface. The serializers are not wired to a
-live Runner or provider attempt, so this is implementation evidence rather
-than production acceptance.
+current CLI has no typed replay surface. The serializers are not all wired to
+live provider attempts: Cursor is now connected through its typed checkpoint
+conversation, while the other provider paths remain implementation evidence
+only rather than production acceptance.
 
 The optional typed replay channel is now threaded through the existing
 production turn path: `ProductionTurnInputProjection` →
@@ -315,8 +316,12 @@ production turn path: `ProductionTurnInputProjection` →
 turns pass `None`. A non-empty replay is rejected at the provider runtime and
 provider-session dispatch boundaries until the canonical replay producer,
 system/current-turn merge, attachment resolution, and provider-specific
-serialization are all wired. This is an ownership-preserving fail-closed
-integration slice, not live replay acceptance.
+serialization are all wired. Cursor now consumes the channel through its
+existing typed checkpoint conversation; the canonical app entrypoint supplies
+the channel only when an active compaction exists. Cursor attachments remain
+fail-closed because its protobuf has no attachment part. Codex/Fabushi,
+OpenRouter, and Claude remain fail-closed. This is a partial production wiring
+slice, not full replay acceptance.
 
 The existing attachment resolution evidence is app-owned rather than an
 inference contract: `source/host/app/src/main.rs:605-670`

@@ -7345,6 +7345,14 @@ fn start_routed_provider_task(
         &lifecycle_messages,
     )
     .map_err(|error| GatewayCommandError::Internal(error.to_string()))?;
+    let typed_replay = session_workers
+        .read_agent_typed_compacted_transcript_entries(&agent_id)
+        .map_err(|error| GatewayCommandError::Internal(format!(
+            "could not read typed compacted replay for {agent_id}: {error}"
+        )))?;
+    if !typed_replay.is_empty() {
+        turn_input.typed_replay = Some(typed_replay);
+    }
 
     let prompt_compaction_epoch = host_runner_composition
         .prompt_compaction_epoch(&session_workers, &agent_id)

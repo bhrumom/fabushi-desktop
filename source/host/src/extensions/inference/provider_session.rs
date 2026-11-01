@@ -23,8 +23,7 @@ use crate::host_paths::get_sand_root_dir;
 use crate::extensions::session::typed_replay::TypedReplayEntry;
 
 use super::cursor_inference_transport::{
-    CursorCheckpoint, CursorInferenceAuth, CursorInferenceTransport,
-    run_cursor_with_transport_reporting_usage,
+    CursorCheckpoint, CursorCheckpointMessage, CursorInferenceAuth, CursorInferenceTransport,
 };
 use super::codex_direct_responses::{
     CodexDirectCheckpoint, CodexDirectError, CodexDirectOptions, CodexDirectTool,
@@ -32,6 +31,7 @@ use super::codex_direct_responses::{
     CodexDirectTransport, CodexDirectUsage, run_codex_direct_responses_with_cancel,
     parse_codex_provider_refusal, run_codex_direct_responses_with_lifecycle_and_tool_step_reminder,
 };
+use super::typed_replay_serialization::serialize_cursor_replay;
 
 pub const FABUSHI_ROUTER_SYSTEM_PROMPT: &str =
     "You are Fabushi, a warm, concise desktop assistant.\n\
@@ -1443,7 +1443,7 @@ pub fn run_routed_provider_text_with_lifecycle_reporting_usage_with_max_steps(
     tool_step_reminder: Option<&ProviderToolStepReminderHook>,
 ) -> Result<String, ProviderSessionError> {
     let max_steps = max_steps.max(1);
-    if options.typed_replay.is_some() {
+    if options.typed_replay.is_some() && provider != RoutedProvider::Cursor {
         return Err(ProviderSessionError::Protocol(
             "typed compacted replay reached provider serialization before provider-specific message merge was enabled".into(),
         ));
@@ -1504,9 +1504,38 @@ pub fn run_routed_provider_text_with_lifecycle_reporting_usage_with_max_steps(
                 .on_partial_tool_call
                 .as_deref_mut()
                 .unwrap_or(&mut ignore_partial);
-            let result = super::cursor_inference_transport::run_cursor_with_transport_reporting_usage_and_partials_with_max_steps(
+            let initial_conversation = options
+                .typed_replay
+                .map(serialize_cursor_replay)
+                .transpose()
+                .map_err(|error| ProviderSessionError::Protocol(error.to_string()))?
+                .map(|replay| {
+                    let latest_user = messages
+                        .iter()
+                        .rev()
+                        .find(|message| message.role == "user")
+                        .cloned();
+                    let mut merged = messages
+                        .iter()
+                        .filter(|message| message.role == "system")
+                        .map(|message| CursorCheckpointMessage::Text {
+                            role: message.role.clone(),
+                            text: message.content.clone(),
+                        })
+                        .collect::<Vec<_>>();
+                    merged.extend(replay);
+                    if let Some(message) = latest_user {
+                        merged.push(CursorCheckpointMessage::Text {
+                            role: message.role,
+                            text: message.content,
+                        });
+                    }
+                    merged
+                });
+            let result = super::cursor_inference_transport::run_cursor_with_transport_reporting_usage_and_partials_with_initial_conversation(
                 &transport,
                 messages,
+                initial_conversation.as_deref(),
                 options.tools,
                 options.execute_tool,
                 options.on_text_delta,

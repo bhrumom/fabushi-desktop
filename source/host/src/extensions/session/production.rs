@@ -2428,6 +2428,11 @@ impl ProductionSessionWorkers {
         agent_id: &str,
     ) -> Result<Vec<TypedReplayEntry>, String> {
         let entries = self.read_agent_compacted_transcript_entries(agent_id)?;
+        if !entries.iter().any(|entry| {
+            entry.get("kind").and_then(serde_json::Value::as_str) == Some("compaction")
+        }) {
+            return Ok(Vec::new());
+        }
         project_typed_replay_entries(&entries).map_err(|error| error.to_string())
     }
 
