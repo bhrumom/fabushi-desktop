@@ -212,6 +212,11 @@ journal. Archived, deletion-pending, malformed, or rebound owner state
 therefore retains the recovery journal and fails closed instead of treating
 cleanup itself as an admitted write.
 
+The spend-guard state setter and the atomic session-bound card/state/activity
+transaction now perform the same predicate check inside their SQLite
+transactions. A facade admission precheck can no longer be the only fence for
+direct spend-guard state mutation or card creation.
+
 The archive/restore owner now receives and checks both canonical
 `session_key` and `session_id` inside its transaction, so a producer cannot
 pass a valid session id with a different session selector and still mutate

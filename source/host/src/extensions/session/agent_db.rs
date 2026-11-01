@@ -1927,6 +1927,9 @@ impl SandAgentDb {
         self.run_write("setAutomationSpendGuardState", |db| {
             db.execute_batch("BEGIN IMMEDIATE")?;
             let result = (|| -> Result<bool, rusqlite::Error> {
+                if !session_work_write_is_admitted(db)? {
+                    return Ok(false);
+                }
                 let changed = if let Some(raw) = raw.as_deref() {
                     db.execute(SET_KV_SQL, params![KV_SPEND_GUARD, raw])? > 0
                 } else {
@@ -2925,6 +2928,11 @@ impl SandAgentDb {
         };
         db.execute_batch("BEGIN IMMEDIATE")?;
         let result = (|| -> Result<(bool, bool), AgentDbProjectionError> {
+            if !session_work_write_is_admitted(db)? {
+                return Err(AgentDbProjectionError::WorkAdmissionInvalid(
+                    "session owner identity is not admitted for spend-guard card".into(),
+                ));
+            }
             let raw_admission = db
                 .query_row(GET_KV_SQL, params![KV_SESSION_WORK_ADMISSION], |row| {
                     row.get::<_, String>(0)
