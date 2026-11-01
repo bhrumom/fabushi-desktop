@@ -213,6 +213,13 @@ also captures a matching session key/lifecycle revision and rechecks that
 generation immediately before transcript append. This proves a bounded
 foreground tool-path fence.
 
+The media settlement owner must retain both captured values at the final
+transcript/receipt transaction: `session_key` identifies the canonical session
+and `lifecycle_revision` identifies its generation. A matching revision alone
+is insufficient evidence when the producer already has a session identity;
+settlement must reject a rebound or mismatched session before clearing the
+durable media fence.
+
 The owner now also carries one migration-safe `admitted_media_work_id` and
 archive rejects that field while it is present. This closes the durable
 archive fence for the bounded SendMessage path: the sink's process-local

@@ -2395,6 +2395,7 @@ impl ProductionSessionWorkers {
     pub fn append_agent_transcript_entries_and_release_media(
         &self,
         agent_id: &str,
+        session_key: &str,
         entries: &[serde_json::Value],
         expected_lifecycle_revision: &str,
         media_work_id: &str,
@@ -2403,6 +2404,7 @@ impl ProductionSessionWorkers {
         self.open_agent_db_owner(agent_id)?
             .append_transcript_entries_and_release_media(
                 entries,
+                session_key,
                 expected_lifecycle_revision,
                 media_work_id,
             )

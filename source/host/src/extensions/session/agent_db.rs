@@ -1997,15 +1997,17 @@ impl SandAgentDb {
     pub fn append_transcript_entries_and_release_media(
         &self,
         entries: &[serde_json::Value],
+        expected_session_key: &str,
         expected_lifecycle_revision: &str,
         media_work_id: &str,
     ) -> Result<usize, AgentDbProjectionError> {
         if entries.is_empty()
+            || expected_session_key.trim().is_empty()
             || expected_lifecycle_revision.trim().is_empty()
             || media_work_id.trim().is_empty()
         {
             return Err(AgentDbProjectionError::WorkAdmissionInvalid(
-                "media settlement requires transcript entries, generation, and work identity"
+                "media settlement requires transcript entries, session identity, generation, and work identity"
                     .into(),
             ));
         }
@@ -2031,7 +2033,8 @@ impl SandAgentDb {
                     )
                 })?;
             let mut admission: SessionWorkAdmissionRecord = serde_json::from_str(&raw_admission)?;
-            if admission.lifecycle_revision != expected_lifecycle_revision.trim()
+            if admission.session_key != expected_session_key.trim()
+                || admission.lifecycle_revision != expected_lifecycle_revision.trim()
                 || admission.admitted_media_work_id.as_deref() != Some(media_work_id.trim())
                 || admission.archived_at_ms.is_some()
             {

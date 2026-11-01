@@ -134,6 +134,11 @@ The accepted-send session gateway applies the same owner-local append whenever
 its request carries `sessionKey` or `sessionId`; legacy sends without a
 session-scoped selector retain the existing agent-only compatibility path.
 
+The bounded outgoing-media settlement now carries the producer's canonical
+session key through `ProductionSendMessageSink`, `ProductionTranscriptRuntime`,
+`ProductionSessionWorkers`, and `SandAgentDb`; the final receipt/fence
+transaction rejects a matching-generation request from a rebound session.
+
 ## Rejected alternatives
 
 - Treating `deleting_agents` or filesystem age as durable work admission.

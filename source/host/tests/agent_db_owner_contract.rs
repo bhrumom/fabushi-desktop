@@ -570,6 +570,22 @@ fn media_settlement_appends_and_releases_in_one_owner_transaction() {
         .compare_and_set_session_work_admission(None, &admission)
         .expect("create admission"));
 
+    let stale_identity = owner
+        .append_transcript_entries_and_release_media(
+            &[serde_json::json!({
+                "id": "send-stale-identity",
+                "kind": "send-message",
+                "content": "must not settle",
+            })],
+            "agent:agent-media-settlement:rebound",
+            "revision-1",
+            "send-media:tool-1",
+        )
+        .expect_err("rebound session identity must reject media settlement");
+    assert!(stale_identity
+        .to_string()
+        .contains("media settlement generation or identity is stale"));
+
     assert_eq!(
         owner
             .append_transcript_entries_and_release_media(
@@ -578,6 +594,7 @@ fn media_settlement_appends_and_releases_in_one_owner_transaction() {
                     "kind": "send-message",
                     "content": "owned media"
                 })],
+                "agent:agent-media-settlement:main",
                 "revision-1",
                 "send-media:tool-1",
             )

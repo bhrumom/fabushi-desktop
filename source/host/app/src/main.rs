@@ -984,6 +984,7 @@ impl SendMessageSink for ProductionSendMessageSink {
                 .append_generated_send_message_entry_with_media_custody(
                     self.sessions.as_ref(),
                     &self.agent_id,
+                    &self.session_key,
                     &message,
                     timestamp_ms,
                     self.reply_thread_target.as_deref(),
