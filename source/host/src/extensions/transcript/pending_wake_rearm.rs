@@ -14,7 +14,6 @@ pub const PENDING_WAKE_STALE_MAX_AGE_MS: f64 = 48.0 * 60.0 * 60.0 * 1_000.0;
 pub fn is_recreate_wake_carry_disabled() -> bool {
     env::var("SAND_DISABLE_RECREATE_WAKE_CARRY").as_deref() == Ok("1")
 }
-
 #[derive(Debug, Clone, PartialEq)]
 pub struct PendingWakeReport {
     pub conversation_id: String,
@@ -124,10 +123,14 @@ impl PendingWakeRearm {
         let Some(store) = &self.store else {
             return;
         };
-        if !store.clear_one(agent_id, kind, work_id) {
+        let Some(marker) = store.list_pending().into_iter().find(|entry| {
+            entry.agent_id == agent_id && entry.kind == kind && entry.work_id == work_id
+        }) else {
+            return;
+        };
+        if !store.clear_if_matches(&marker) {
             return;
         }
-        let marker = marker_shell(agent_id, kind, work_id);
         self.report(&marker, "settled", None, None);
         self.runtime.emit_async_tasks_for_agent(agent_id);
     }
@@ -141,10 +144,14 @@ impl PendingWakeRearm {
         let Some(store) = &self.store else {
             return;
         };
-        if !store.clear_one(agent_id, kind, work_id) {
+        let Some(marker) = store.list_pending().into_iter().find(|entry| {
+            entry.agent_id == agent_id && entry.kind == kind && entry.work_id == work_id
+        }) else {
+            return;
+        };
+        if !store.clear_if_matches(&marker) {
             return;
         }
-        let marker = marker_shell(agent_id, kind, work_id);
         self.report(&marker, "settled", Some("aborted"), None);
         self.runtime.emit_async_tasks_for_agent(agent_id);
     }
@@ -412,26 +419,5 @@ impl PendingWakeRearm {
         }
         queue.entry(agent_id.to_string()).or_default().extend(items);
         true
-    }
-}
-
-fn marker_shell(
-    agent_id: &str,
-    kind: PendingWakeKind,
-    work_id: &str,
-) -> DurablePendingWakeMarker {
-    DurablePendingWakeMarker {
-        agent_id: agent_id.into(),
-        kind,
-        work_id: work_id.into(),
-        marked_at_ms: 0.0,
-        quiet_origin: None,
-        title: None,
-        subagent_type: None,
-        interrupted_by_recreate: false,
-        delivery_operation_id: None,
-        address_token: None,
-        failure_reason: None,
-        session_key: None,
     }
 }
