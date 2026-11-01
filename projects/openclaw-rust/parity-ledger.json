@@ -6744,6 +6744,7 @@
         "source/host/src/extensions/transcript/agent_lifecycle.rs",
         "source/host/app/src/main.rs",
         "source/host/tests/agent_lifecycle_contract.rs",
+        "source/host/tests/openclaw_sessions_and_config_contract.rs",
         "projects/openclaw-rust/docs/specs/session-lifecycle-delete-fence.md",
         "projects/openclaw-rust/dossiers/upstream-current-session-lifecycle-delta-20261031.md"
       ],
@@ -6838,6 +6839,7 @@
         "symbol": "ProductionAgentLifecycle::delete_agent_from_args"
       },
       "tests": [
+        "source/host/tests/openclaw_sessions_and_config_contract.rs::test_sessions_delete_guards_root_session_and_cas",
         "source/host/tests/agent_lifecycle_contract.rs::guarded_delete_rejects_stale_revision_before_destructive_hooks",
         "source/host/tests/agent_lifecycle_contract.rs::guarded_delete_rechecks_revision_after_drain_mutation",
         "source/host/tests/agent_lifecycle_contract.rs::guarded_delete_rejects_stale_updated_at_before_destructive_hooks",

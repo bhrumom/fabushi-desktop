@@ -104,6 +104,15 @@ available. The existing in-memory deletion marker remains a fast-path guard. A
 failed delete may clear the durable fence only after the agent directory is
 still present; an unknown cleanup outcome remains fail-closed.
 
+### SLD-07 — Non-main route fail-closed boundary
+
+Until the existing session owner has a durable per-key deletion contract, the
+Gateway must reject `cron`, `group`, `spawn-child`, and `unknown` session routes
+before dispatching the agent-wide `deleteAgent` owner. A selector kind label
+must never authorize whole-agent deletion for a non-main route. The existing
+opaque/legacy direct selector compatibility path and the canonical main-session
+path remain subject to the existing identity and lifecycle guards.
+
 ## Current and target state
 
 | Concern | Current state | Target state |
@@ -114,6 +123,7 @@ still present; an unknown cleanup outcome remains fail-closed.
 | Async cleanup | `deleteAgent` runs after a shallow admission check | Drain/cleanup then immediate guarded commit recheck |
 | Deletion admission | In-memory deletion marker only | Existing owner-local admission record carries `deletionPending` during deletion custody when the DB is available |
 | Cron/subagent consumer | Current upstream carries revision/currentness | Rust callers carry the same guarded contract |
+| Non-main session deletion | A route kind can reach the agent-wide delete owner | Reject before dispatch until a per-key deletion owner exists |
 
 ## Architecture and data flow
 

@@ -296,6 +296,10 @@ fn test_sessions_delete_guards_root_session_and_cas() {
         .expect("shipping sessions.delete function boundary exists");
     assert!(sessions_delete.contains("sessions.delete requires a non-empty agent identity"));
     assert!(sessions_delete.contains("is_root_main_session_key(raw_key)"));
+    assert!(sessions_delete.contains("SessionKind::Cron"));
+    assert!(sessions_delete.contains("SessionKind::Group"));
+    assert!(sessions_delete.contains("SessionKind::SpawnChild"));
+    assert!(sessions_delete.contains("per-session deletion is available"));
 }
 
 #[test]

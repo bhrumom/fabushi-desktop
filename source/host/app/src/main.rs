@@ -4134,6 +4134,19 @@ impl UnifiedGatewayApi {
             return Err(GatewayCommandError::BadRequest("Cannot delete root main session".into()));
         }
 
+        if matches!(
+            route.kind,
+            SessionKind::Cron
+                | SessionKind::Group
+                | SessionKind::SpawnChild
+                | SessionKind::Unknown
+        ) {
+            return Err(GatewayCommandError::BadRequest(format!(
+                "sessions.delete does not support {kind} session routes until per-session deletion is available",
+                kind = session_kind_label(route.kind),
+            )));
+        }
+
         let agent_id = route.agent_id.as_str();
         let session_kind = session_kind_label(route.kind);
         if agent_id.is_empty() {
