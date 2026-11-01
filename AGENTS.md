@@ -908,3 +908,77 @@ Image identity crosses the release boundary by digest, not by the mutable tag. A
 Failure and security are fail-closed. An invalid ref, checkout failure, GHCR-login failure, unresolved upstream commit/submodule, Docker build failure, push failure, missing digest, stale/manual variable handoff, non-digest consumer value, or consumer service startup/readiness failure is not equivalent to success. The 40-hex validator is a syntax fence, not provenance validation. The mutable SHA-named tag is discovery/convenience only and must not replace the digest trust anchor. The custom runner, canary environment rules, GHCR package policy, external action pins, Dockerfile acquisitions, and repository-variable update are all explicit supply-chain/security boundaries that require frozen-candidate evidence later rather than Stage-A assumptions.
 
 Stage-A cases are authored only and remain `validation_status=not-run`, `accepted=false`: `CONTRACT-TDRP-CANARY-BOT-API-WORKFLOW-DISPATCH-001`, `CONTRACT-TDRP-CANARY-BOT-API-WORKFLOW-REF-VALIDATION-001`, `CONTRACT-TDRP-CANARY-BOT-API-WORKFLOW-PERMISSIONS-001`, `CONTRACT-TDRP-CANARY-BOT-API-WORKFLOW-ENVIRONMENT-001`, `CONTRACT-TDRP-CANARY-BOT-API-WORKFLOW-CHECKOUT-PIN-001`, `CONTRACT-TDRP-CANARY-BOT-API-WORKFLOW-GHCR-AUTH-001`, `CONTRACT-TDRP-CANARY-BOT-API-WORKFLOW-BUILD-CONTEXT-001`, `CONTRACT-TDRP-CANARY-BOT-API-WORKFLOW-BUILD-ARGS-001`, `CONTRACT-TDRP-CANARY-BOT-API-WORKFLOW-IMAGE-TAG-001`, `CONTRACT-TDRP-CANARY-BOT-API-WORKFLOW-DIGEST-HANDOFF-001`, `CONTRACT-TDRP-CANARY-BOT-API-WORKFLOW-SOURCE-LINEAGE-001`, `CONTRACT-TDRP-CANARY-BOT-API-WORKFLOW-CONSUMER-001`, `INT-TDRP-CANARY-BOT-API-WORKFLOW-REPOSITORY-PROCESS-001`, `FAULT-TDRP-CANARY-BOT-API-WORKFLOW-INVALID-REF-001`, `FAULT-TDRP-CANARY-BOT-API-WORKFLOW-CHECKOUT-OR-LOGIN-001`, `FAULT-TDRP-CANARY-BOT-API-WORKFLOW-UPSTREAM-REF-UNRESOLVED-001`, `FAULT-TDRP-CANARY-BOT-API-WORKFLOW-BUILD-PUSH-001`, `FAULT-TDRP-CANARY-BOT-API-WORKFLOW-DIGEST-HANDOFF-001`, `SEC-TDRP-CANARY-BOT-API-WORKFLOW-TOKEN-SCOPE-001`, `SEC-TDRP-CANARY-BOT-API-WORKFLOW-ACTION-PINS-001`, `SEC-TDRP-CANARY-BOT-API-WORKFLOW-INPUT-BOUNDARY-001`, `SEC-TDRP-CANARY-BOT-API-WORKFLOW-RUNNER-TRUST-001`, `SEC-TDRP-CANARY-BOT-API-WORKFLOW-DIGEST-TRUST-001`. No workflow dispatch/run/query, checkout, shell execution, Docker/BuildKit, registry login/push/pull, container/service start, Bot API request, validator, build, test/E2E, package, signing, release, deployment, installation, runtime evidence, or acceptance is executed in Stage A.
+
+
+##### Repository canary release/publication workflow authority
+
+Fixed-U `.github/workflows/canary.yml@0d460c617c2a3910a0d11ac793d07533ac966947` is source-repository release/build/publication provenance, not a Fabushi workflow to copy verbatim and not a Telegram product/network owner. Existing-owner-first responsibility `TDRP-R9-REPOSITORY-CANARY-RELEASE-WORKFLOW-001` is absorbed by current Fabushi repository/build/package/release/process/security/quality authorities, including `desktop/package.json`, `.github/workflows/release-macos-main.yml`, `desktop/scripts/notarize-after-sign.cjs`, shared Test Strategy/Test Evidence Contract, release gates, and existing updater/package ownership. No Bot API sidecar/provider, Telegram channel publisher, second updater/release service, second credential owner, or platform-core runtime is introduced.
+
+The exact source is recursive fixed-U tree index 118 zero-based, mode 100644, tree size 77,724 UTF-8 bytes, 77,716 decoded code points, 1,707 LF characters, zero CR characters, trailing newline. It has one trigger surface: pushes to `public-canary` or `private-canary`. It has no `workflow_dispatch`, `workflow_call`, schedule, PR, or repository-dispatch trigger. Fixed-U sibling workflows for Windows, macOS, macOS packaged, Linux and Snap explicitly exclude those canary branches; their references to `canary.yml` are comments/routing exclusions, not workflow invocations. The workflow serializes its own repository's canary publications through `concurrency.group=canary-publish` and `cancel-in-progress=false`.
+
+The `version` job uses `depot-ubuntu-latest`, `environment: canary`, `contents: read` plus `actions: read`, and a full-history checkout. It first fences stale reruns by requiring `GITHUB_SHA` to equal the current remote tip of the triggering canary branch. Lane selection defaults from repository visibility unless `CANARY_CHANNEL` overrides it; only public/private are accepted, a private lane is rejected in a public repository, and the branch must equal `<lane>-canary`. Channel IDs are normalized once to Bot API form. `Telegram/build/version@2e6d6a21a175c02188038f4f9e3acae4300ddff7` supplies the base/display version and `AppVersionStr` must be exactly three numeric components.
+
+Version ordering is source-owned by `GITHUB_RUN_NUMBER + CANARY_COUNTER_BASE`, where the optional base must be a non-negative integer. The generated suffix/folder encode lane and counter. The previous completed tip is looked up through the GitHub Actions REST API under `actions: read`; that lookup is explicitly best-effort (`|| true`) and may produce an empty changelog baseline, but it does not relax lane, signing, digest, artifact, or publication gates. Publication is enabled only when `CANARY_BOT_TOKEN` is non-empty. When publication is enabled, a usable channel id, exactly three platform metadata message ids, and a digest-pinned GHCR Bot API image matching `ghcr.io/...@sha256:<64 lowerhex>` are mandatory.
+
+All eight jobs use `environment: canary`; actual environment protection, approvals, branch admission and Depot runner trust are external Stage-B evidence rather than facts proved by YAML comments. Global permission is `contents: read`. Only `version` adds `actions: read`; Windows/macOS-universal/Linux add `id-token: write` for update signing; the three publish jobs add only `packages: read`. The macOS thin-build matrix has contents-read only. OIDC scope is therefore limited to the three packing/signing jobs by source configuration.
+
+External Actions are full-SHA pinned and the commits were independently resolvable: checkout `3d3c42e5aac5ba805825da76410c181273ba90b1`, cache restore/save `55cc8345863c7cc4c66a329aec7e433d2d1c52a9`, Azure login `7ddb5af1ef8758cf1353cf3b42f940aee27ba21c`, download-artifact `9000827ccba6bdab643e8b6fd33ac0654aef8333`, free-disk-space `ceedf095f4ec1a097402bc6bd80831f2e1a6fde6`, setup-buildx `37fe631027851001ddb9b187196cc803df7f5f0e`, buildkit-cache-dance `5422eac04292c961a382e0f584ea0f03ad9da723`, docker build-push `53b7df96c91f9c12dcc8a07bcb9ccacbed38856a`, upload-artifact `043fb46d1a93c77aae656e7c1c64a875d1fc6a0a`, and Windows msvc-dev-cmd `1bd71f95d6f3d1b2b3395b335cc63bcdc90cf223`. Full SHA identity does not freeze mutable apt/Homebrew/NuGet/git-submodule inputs or custom-runner images.
+
+Windows builds Release x64 with LTO, canary/API/lane defines and auto-update/crash reporting enabled. It uses the existing prepare chain, shallow non-recursive submodules, explicit caches, generated throwaway v1 DesktopPrivate keys only for build compatibility, Breakpad symbol generation, optional KeyLocker platform signing, Azure Key Vault ES256 update-envelope signing, and separate seven-day update/portable artifacts. Missing KeyLocker secrets hard-fail a publishing run unless the explicit `CANARY_ALLOW_UNSIGNED=1` bring-up override is present; the source still contains a TODO for installing KeyLocker tooling, so tool availability is not claimed as proven.
+
+macOS builds x86_64 and arm64 independently without canary LTO, records Xcode/SDK/toolchain identity, transports each thin bundle/Packer in one-day tar artifacts, then requires both halves to assemble a universal app. It verifies matching toolchains and universal executable coverage, performs Developer ID codesign/notary/staple/spctl on thin and universal bundles when credentials exist, signs update envelopes through Azure Key Vault when publishing, and emits seven-day update/portable artifacts. The Linux-side publish witness only checks for the portable app's `_CodeSignature` directory and explicitly leaves full rcodesign verification as a TODO; this weaker publish-side witness must not be overstated beyond the stronger build-side codesign/notary checks.
+
+Linux initializes nested submodules, optionally rewrites the cppgir GitLab URL to `CANARY_CPPGIR_MIRROR`, installs Jinja2 through apt, generates the centos environment Dockerfile, restores/saves explicit BuildKit caches, builds a local container image, compiles Release+LTO with update tests enabled, emits Breakpad/minidebug symbols, and is the source workflow's explicit in-workflow update-trust verification lane: `out/Release/test_update_verify` plus `Telegram/build/canary_test_fixtures.sh@88ae0c43b8dc24538f6347819f5f4f904c0a0a49`. Those executable checks are source behavior only and are not executed during Fabushi Stage A.
+
+All three platforms use the existing v2 Packer flow. When publishing, `Telegram/build/sign_update.py@9e3e2e9e1b716db6a15a36b949bf53d3f650777d` obtains Azure Key Vault ES256 signatures and embeds them; without publication, unsigned envelope files remain for build-only output. Windows/macOS also carry platform-signature state. Update and portable artifacts are separate; mac thin transport is one-day retention, final platform artifacts seven days. These Actions artifacts are transient transport/evidence candidates, not a durable release truth.
+
+The three publish jobs are intentionally independent after their platform build is complete. Each uses the already-qualified digest-pinned `CANARY_BOT_API_IMAGE`, GHCR actor/token package-read credentials, runtime-only Telegram API id/hash, `TELEGRAM_LOCAL=1`, and localhost port 8081. Each downloads only its named update/portable artifacts, applies its platform witness where defined, selects its single platform metadata message, then delegates readiness/publication to exact `Telegram/build/canary_publish.sh@4eb2d790063bb8f11efc7ffa06977fe1ef79a270`. That unchanged exact blob owns the bounded getMe readiness loop and the one-writer-per-platform metadata publication contract. The Bot API image producer remains the separately closed `.github/workflows/canary-bot-api.yml@3ef5e601948c8f3256464d0d31816eebf4ba41a9`; mutable image tags are not accepted as consumer trust anchors.
+
+Secrets are scoped by job/source use and must not be promoted into a second product credential authority. API id/hash are injected into build configuration and Bot API runtime; GitHub token is used for repository/API/package access; Windows signing secrets, Apple certificate/notary credentials and Azure OIDC/Key Vault inputs are separate boundaries. Stage B must verify masking/non-disclosure and runner/environment trust. Network dependencies include GitHub checkout/API/artifacts, GHCR, NuGet, apt, Homebrew, git/submodules or cppgir mirror, Azure login/Key Vault, Apple notarization and downstream Bot API/Telegram publication; mutable acquisition remains supply-chain evidence to qualify, not immutable proof.
+
+Breakpad symbols are generated on all platforms, but every R2 upload shown in this workflow is a TODO/comment; no actual symbol publication step exists. This is an explicit source limitation, not a completed symbol-service contract. Likewise source comments or future infrastructure placeholders do not establish runtime environment protection, KeyLocker installation, mirror integrity, registry policy, notification delivery, or publication success.
+
+Stage-A cases are authored only and remain `validation_status=not-run`, `accepted=false`:
+- `CONTRACT-TDRP-CANARY-WORKFLOW-TRIGGER-LANE-001`
+- `CONTRACT-TDRP-CANARY-WORKFLOW-CONCURRENCY-001`
+- `CONTRACT-TDRP-CANARY-WORKFLOW-ENVIRONMENT-001`
+- `CONTRACT-TDRP-CANARY-WORKFLOW-PERMISSIONS-001`
+- `CONTRACT-TDRP-CANARY-WORKFLOW-TIP-FENCE-001`
+- `CONTRACT-TDRP-CANARY-WORKFLOW-VERSION-COUNTER-001`
+- `CONTRACT-TDRP-CANARY-WORKFLOW-PUBLISH-GATE-001`
+- `CONTRACT-TDRP-CANARY-WORKFLOW-UNSIGNED-OVERRIDE-001`
+- `CONTRACT-TDRP-CANARY-WORKFLOW-BOT-IMAGE-DIGEST-001`
+- `CONTRACT-TDRP-CANARY-WORKFLOW-ACTION-PINS-001`
+- `CONTRACT-TDRP-CANARY-WORKFLOW-WINDOWS-BUILD-SIGN-001`
+- `CONTRACT-TDRP-CANARY-WORKFLOW-MACOS-BUILD-UNIVERSAL-001`
+- `CONTRACT-TDRP-CANARY-WORKFLOW-MACOS-SIGN-NOTARY-001`
+- `CONTRACT-TDRP-CANARY-WORKFLOW-LINUX-BUILD-TRUST-001`
+- `CONTRACT-TDRP-CANARY-WORKFLOW-UPDATE-ENVELOPE-001`
+- `CONTRACT-TDRP-CANARY-WORKFLOW-ARTIFACT-HANDOFF-001`
+- `CONTRACT-TDRP-CANARY-WORKFLOW-PUBLISH-JOB-ISOLATION-001`
+- `CONTRACT-TDRP-CANARY-WORKFLOW-BOT-API-SERVICE-001`
+- `CONTRACT-TDRP-CANARY-WORKFLOW-PUBLISH-SCRIPT-001`
+- `CONTRACT-TDRP-CANARY-WORKFLOW-SOURCE-LINEAGE-001`
+- `CONTRACT-TDRP-CANARY-WORKFLOW-SECRETS-NETWORK-001`
+- `CONTRACT-TDRP-CANARY-WORKFLOW-SYMBOL-PROVENANCE-001`
+- `INT-TDRP-CANARY-WORKFLOW-REPOSITORY-RELEASE-001`
+- `FAULT-TDRP-CANARY-WORKFLOW-LANE-REJECT-001`
+- `FAULT-TDRP-CANARY-WORKFLOW-STALE-TIP-001`
+- `FAULT-TDRP-CANARY-WORKFLOW-VERSION-CONFIG-001`
+- `FAULT-TDRP-CANARY-WORKFLOW-BUILD-PLATFORM-001`
+- `FAULT-TDRP-CANARY-WORKFLOW-SIGNING-REQUIRED-001`
+- `FAULT-TDRP-CANARY-WORKFLOW-BOT-IMAGE-DIGEST-001`
+- `FAULT-TDRP-CANARY-WORKFLOW-ARTIFACT-HANDOFF-001`
+- `FAULT-TDRP-CANARY-WORKFLOW-SERVICE-READINESS-001`
+- `FAULT-TDRP-CANARY-WORKFLOW-PREVIOUS-RUN-LOOKUP-001`
+- `SEC-TDRP-CANARY-WORKFLOW-LEAST-PRIVILEGE-001`
+- `SEC-TDRP-CANARY-WORKFLOW-ACTION-PINS-001`
+- `SEC-TDRP-CANARY-WORKFLOW-RUNNER-ENVIRONMENT-TRUST-001`
+- `SEC-TDRP-CANARY-WORKFLOW-OIDC-SCOPE-001`
+- `SEC-TDRP-CANARY-WORKFLOW-SECRET-BOUNDARY-001`
+- `SEC-TDRP-CANARY-WORKFLOW-DIGEST-TRUST-001`
+- `SEC-TDRP-CANARY-WORKFLOW-UNSIGNED-OVERRIDE-001`
+- `SEC-TDRP-CANARY-WORKFLOW-MUTABLE-ACQUISITION-001`
+- `SEC-TDRP-CANARY-WORKFLOW-NO-SOURCE-PUBLISHER-IMPORT-001`
+
+No workflow run/query, branch push to source canary lanes, executable checkout step, build, test, Packer verification, package, signing, notarization, registry/service operation, Bot API request, publication, deployment, installation, or runtime acceptance is executed in Stage A.

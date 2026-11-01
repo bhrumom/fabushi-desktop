@@ -1040,3 +1040,59 @@ Authored, not run in Stage A:
 - `SEC-TDRP-CANARY-BOT-API-WORKFLOW-DIGEST-TRUST-001` — digest-pinned GHCR reference, not the ref-shaped tag, is the consumer trust boundary; third-party substitution is rejected.
 
 Frozen-candidate Stage-B execution, if still applicable to the target release process, must bind exact H/U/action pins/context tree, approved runner/environment configuration, GITHUB_TOKEN scopes, pushed manifest digest, operator variable transition, consumer digest validation, and downstream service readiness. Stage A does not execute any of those gates.
+
+
+### Repository canary release/publication workflow qualification
+
+`TDRP-R9-REPOSITORY-CANARY-RELEASE-WORKFLOW-001` qualifies fixed-U `.github/workflows/canary.yml@0d460c617c2a3910a0d11ac793d07533ac966947` as source repository build/sign/package/artifact/publication provenance. It is not copied into Fabushi. Existing target owners are `desktop/package.json`, `.github/workflows/release-macos-main.yml`, `desktop/scripts/notarize-after-sign.cjs`, existing updater/package/release owners, root repository process/security governance and this shared quality/evidence system. Stage A authors the following cases and executes none of them.
+
+Authored contract cases, not run:
+- `CONTRACT-TDRP-CANARY-WORKFLOW-TRIGGER-LANE-001` — push-only public/private canary trigger and exact repo-visibility/branch lane admission remain source-exact; sibling workflows merely exclude these branches.
+- `CONTRACT-TDRP-CANARY-WORKFLOW-CONCURRENCY-001` — one repository-level canary-publish group serializes runs without cancelling the in-progress run.
+- `CONTRACT-TDRP-CANARY-WORKFLOW-ENVIRONMENT-001` — all jobs name the canary environment, while actual approval/ref policy remains external evidence.
+- `CONTRACT-TDRP-CANARY-WORKFLOW-PERMISSIONS-001` — global/job permissions remain least-scoped by responsibility: contents read, actions read only for version, id-token only pack/sign jobs, packages read only publishers.
+- `CONTRACT-TDRP-CANARY-WORKFLOW-TIP-FENCE-001` — the triggering SHA must still be the remote branch tip before version/publication proceeds.
+- `CONTRACT-TDRP-CANARY-WORKFLOW-VERSION-COUNTER-001` — three-component display version, run-number counter plus validated nonnegative base, lane suffix/folder and seven-character source commit are derived exactly once.
+- `CONTRACT-TDRP-CANARY-WORKFLOW-PUBLISH-GATE-001` — absence of bot token cleanly disables publication; publication requires channel id, three metadata ids and a digest-pinned Bot API image.
+- `CONTRACT-TDRP-CANARY-WORKFLOW-UNSIGNED-OVERRIDE-001` — platform signatures are mandatory for publishing unless the explicit CANARY_ALLOW_UNSIGNED=1 bring-up override is set; v2 envelope signing remains distinct.
+- `CONTRACT-TDRP-CANARY-WORKFLOW-BOT-IMAGE-DIGEST-001` — consumer accepts only owner/other GHCR syntax bound to sha256 digest; no mutable-tag fallback.
+- `CONTRACT-TDRP-CANARY-WORKFLOW-ACTION-PINS-001` — all external Actions listed by the workflow remain exact full-SHA identities.
+- `CONTRACT-TDRP-CANARY-WORKFLOW-WINDOWS-BUILD-SIGN-001` — Release x64/LTO build, source/canary defines, cache/prepare chain, Breakpad symbols, KeyLocker signing and publish-side Authenticode witness preserve their boundaries.
+- `CONTRACT-TDRP-CANARY-WORKFLOW-MACOS-BUILD-UNIVERSAL-001` — two thin architecture builds share exact toolchain identity and must assemble a universal app with executable-architecture coverage.
+- `CONTRACT-TDRP-CANARY-WORKFLOW-MACOS-SIGN-NOTARY-001` — Developer ID codesign, notarization, staple and spctl build-side witnesses remain distinct from the weaker Linux publish-side _CodeSignature presence check.
+- `CONTRACT-TDRP-CANARY-WORKFLOW-LINUX-BUILD-TRUST-001` — nested-submodule/mirror, generated build image, Release+LTO build and exact test_update_verify/Packer fixture source quality checks remain explicit.
+- `CONTRACT-TDRP-CANARY-WORKFLOW-UPDATE-ENVELOPE-001` — Packer signing-input -> Azure Key Vault ES256 -> embedded v2 signature is required for publishing; build-only runs retain unsigned envelope output.
+- `CONTRACT-TDRP-CANARY-WORKFLOW-ARTIFACT-HANDOFF-001` — named per-platform update/portable artifacts and mac thin transport have exact producer/consumer paths and 7-day/1-day retention.
+- `CONTRACT-TDRP-CANARY-WORKFLOW-PUBLISH-JOB-ISOLATION-001` — each platform publishes independently after its own build and is sole writer of its metadata message; one slow/failing platform does not block another platform's publish job once prerequisites differ.
+- `CONTRACT-TDRP-CANARY-WORKFLOW-BOT-API-SERVICE-001` — three publication jobs consume the separately built digest-pinned service with package-read auth, runtime API id/hash/local mode and localhost:8081.
+- `CONTRACT-TDRP-CANARY-WORKFLOW-PUBLISH-SCRIPT-001` — exact canary_publish.sh remains readiness/publication owner; workflow does not duplicate its bounded getMe/message contract.
+- `CONTRACT-TDRP-CANARY-WORKFLOW-SOURCE-LINEAGE-001` — fixed-U workflow, helper blobs, action commits, package artifacts, digest-pinned service producer and publisher stay one traceable chain.
+- `CONTRACT-TDRP-CANARY-WORKFLOW-SECRETS-NETWORK-001` — credential scopes and mutable network acquisitions are recorded without treating runner masking or package resolution as source-proven runtime proof.
+- `CONTRACT-TDRP-CANARY-WORKFLOW-SYMBOL-PROVENANCE-001` — Breakpad symbols are generated but R2 upload is only TODO/comment and must remain an explicit non-implemented source edge.
+
+Authored integration case, not run:
+- `INT-TDRP-CANARY-WORKFLOW-REPOSITORY-RELEASE-001` — source workflow guarantees compose with existing Fabushi package/release/notarize/updater/process/security/evidence owners without a Telegram-specific workflow/runtime or second release truth.
+
+Authored fault/recovery cases, not run:
+- `FAULT-TDRP-CANARY-WORKFLOW-LANE-REJECT-001` — wrong event/ref/lane/repository-visibility combination is fail-closed.
+- `FAULT-TDRP-CANARY-WORKFLOW-STALE-TIP-001` — rerunning a non-tip commit cannot mint a newer canary version.
+- `FAULT-TDRP-CANARY-WORKFLOW-VERSION-CONFIG-001` — malformed display version/counter/channel/message-id inputs are non-passing when their gates apply.
+- `FAULT-TDRP-CANARY-WORKFLOW-BUILD-PLATFORM-001` — checkout/submodule/toolchain/cache/prepare/build/package failure blocks only the dependent path and is never reinterpreted as success.
+- `FAULT-TDRP-CANARY-WORKFLOW-SIGNING-REQUIRED-001` — missing platform-signing or update-signing prerequisites fail publishing unless the explicitly modeled unsigned bring-up exception applies.
+- `FAULT-TDRP-CANARY-WORKFLOW-BOT-IMAGE-DIGEST-001` — missing/stale/malformed Bot API image digest prevents publication rather than falling back to a tag or third-party image.
+- `FAULT-TDRP-CANARY-WORKFLOW-ARTIFACT-HANDOFF-001` — missing/wrong/expired named artifact blocks the dependent assembly/publish job.
+- `FAULT-TDRP-CANARY-WORKFLOW-SERVICE-READINESS-001` — container process existence is insufficient; bounded downstream readiness/publication failure remains non-passing.
+- `FAULT-TDRP-CANARY-WORKFLOW-PREVIOUS-RUN-LOOKUP-001` — previous-run API lookup failure may degrade changelog range to empty but must not bypass any release/security gate.
+
+Authored security cases, not run:
+- `SEC-TDRP-CANARY-WORKFLOW-LEAST-PRIVILEGE-001` — job token scopes do not expand beyond their declared source/read/actions/OIDC/package needs.
+- `SEC-TDRP-CANARY-WORKFLOW-ACTION-PINS-001` — full-SHA external action identity is mandatory; floating tags are not equivalent provenance.
+- `SEC-TDRP-CANARY-WORKFLOW-RUNNER-ENVIRONMENT-TRUST-001` — Depot runner and GitHub environment policies require independent frozen-candidate evidence.
+- `SEC-TDRP-CANARY-WORKFLOW-OIDC-SCOPE-001` — id-token write is available only to Windows/macOS-universal/Linux update-signing jobs.
+- `SEC-TDRP-CANARY-WORKFLOW-SECRET-BOUNDARY-001` — API, registry, platform-signing, Apple and Azure credentials stay within their intended jobs and must not appear in artifacts/logs/config outputs.
+- `SEC-TDRP-CANARY-WORKFLOW-DIGEST-TRUST-001` — Bot API service consumption remains sha256-digest anchored despite mutable producer tags.
+- `SEC-TDRP-CANARY-WORKFLOW-UNSIGNED-OVERRIDE-001` — CANARY_ALLOW_UNSIGNED is a deliberate high-risk bring-up exception and must be explicit/evidenced, never silently inferred.
+- `SEC-TDRP-CANARY-WORKFLOW-MUTABLE-ACQUISITION-001` — apt/Homebrew/NuGet/submodule/mirror/custom-runner inputs are not upgraded to immutable provenance by action/source SHA pins.
+- `SEC-TDRP-CANARY-WORKFLOW-NO-SOURCE-PUBLISHER-IMPORT-001` — Fabushi absorbs release guarantees into existing owners and does not import Telegram Bot API/channel publication or a second updater/release credential stack.
+
+Stage-B qualification, only after a frozen candidate exists, must bind exact source/target identities to authorized environment/ref admission, runner images/trust, action SHAs, dependency/cache identities where material, platform build/package outputs, signing/notary/Key Vault witnesses, artifact ids/digests, Bot API service digest/readiness, publication result, secret non-disclosure and the current Fabushi release/update evidence model. Source-side Linux `test_update_verify` and `canary_test_fixtures.sh` are recorded as upstream quality semantics only; they are not executed or treated as Fabushi verification during Stage A. R2 symbol upload and KeyLocker installation placeholders remain gaps rather than passing tests. `validation_status=not-run`; `accepted=false`.
