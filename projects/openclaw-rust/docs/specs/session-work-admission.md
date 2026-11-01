@@ -244,6 +244,8 @@ Pending-card maintenance fallback updates use the same owner update
 transaction and are likewise rejected during deletion custody.
 Hidden-entry repair cleanup now delegates deletion to the same owner
 transaction and reports no deletion while custody is active.
+Transcript identity settlement used by Human handoff/replay also uses the
+same transaction-edge fence.
 
 The owner-local admission CAS now preserves the current `deletion_pending`
 value as part of its compare predicate. Ordinary work/review/media mutations

@@ -423,6 +423,18 @@ fn owner_metadata_memory_writes_reject_deletion_fence_at_transaction_edge() {
     assert!(!owner
         .delete_transcript_entry("checkpoint-user")
         .expect("fenced transcript delete"));
+    assert!(owner
+        .settle_transcript_entry_identity(
+            "checkpoint-user",
+            &serde_json::json!({
+                "id": "checkpoint-user-settled",
+                "kind": "message",
+                "role": "user",
+                "content": "rejected settlement",
+            }),
+        )
+        .expect("fenced transcript identity settlement")
+        .is_none());
     assert_eq!(
         owner
             .get_metadata("lastActivityAt")

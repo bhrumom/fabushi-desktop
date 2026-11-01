@@ -2840,18 +2840,34 @@ impl SandAgentDb {
             return Ok(None);
         };
         let updated = self.run_write_value("settleTranscriptEntryIdentity", |db| {
-            let present = db
-                .query_row(GET_TRANSCRIPT_ENTRY_SQL, params![entry_id], |row| row.get::<_, String>(0))
-                .optional()?
-                .is_some();
-            if !present {
-                return Ok((None, false));
+            db.execute_batch("BEGIN IMMEDIATE")?;
+            let result = (|| -> Result<(Option<serde_json::Value>, bool), rusqlite::Error> {
+                if !session_work_write_is_admitted(db)? {
+                    return Ok((None, false));
+                }
+                let present = db
+                    .query_row(GET_TRANSCRIPT_ENTRY_SQL, params![entry_id], |row| row.get::<_, String>(0))
+                    .optional()?
+                    .is_some();
+                if !present {
+                    return Ok((None, false));
+                }
+                let changed = db.execute(
+                    "UPDATE transcript_entries SET id = ?1, entry = ?2 WHERE id = ?3",
+                    params![next_id, next.to_string(), entry_id],
+                )? > 0;
+                Ok((changed.then(|| next.clone()), changed))
+            })();
+            match result {
+                Ok(outcome) => {
+                    db.execute_batch("COMMIT")?;
+                    Ok(outcome)
+                }
+                Err(error) => {
+                    let _ = db.execute_batch("ROLLBACK");
+                    Err(error)
+                }
             }
-            let changed = db.execute(
-                "UPDATE transcript_entries SET id = ?1, entry = ?2 WHERE id = ?3",
-                params![next_id, next.to_string(), entry_id],
-            )? > 0;
-            Ok((changed.then(|| next.clone()), changed))
         })?;
         if let Some(entry) = updated.as_ref() {
             if entry_id != next_id {

@@ -267,6 +267,8 @@ Pending-card fallback updates now reuse the owner update transaction and are
 fenced by the same deletion custody boundary.
 Hidden-entry repair deletion likewise reuses the owner transaction and remains
 fail-closed during deletion custody.
+Human handoff/replay identity settlement now shares the same fenced owner
+transaction.
 
 ### 2026-11-01 background-result consumer recheck
 
