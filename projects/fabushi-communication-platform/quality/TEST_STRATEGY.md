@@ -1481,3 +1481,83 @@ Stage-B oracles are `ORA-TDRP-LOCK-WORKFLOW-EXACT-SOURCE-001`, `ORA-TDRP-LOCK-WO
 Frozen-candidate qualification must prove exact scheduled workflow revision, actual runner identity, effective token permissions without token capture, resolved Action commit/bundle/dependency identity, config defaults, issue/PR 45-day and discussion 365-day thresholds, exact closed/unlocked/updated eligibility, 50-result cap/no-pagination behavior, default resolved reason for issue/PR, process order, outputs, request retries/rate-limit behavior, partial settlement, backlog convergence across later runs, concurrent update/lock races, and negative cases proving upstream maintenance automation is not Fabushi product/runtime acceptance.
 
 No source/target workflow execution, third-party Action execution, repository lock mutation, build, validator, test, package, release, deployment, installation or runtime acceptance is executed in Stage A.
+
+
+### Repository macOS CI build/artifact workflow qualification
+
+`TDRP-R9-REPOSITORY-MAC-WORKFLOW-001` qualifies fixed-U `.github/workflows/mac.yml@184a94b091d2d7bab19ae67d7f3a5881b18213ba` as repository macOS CI/build/artifact provenance. Existing target owners are Fabushi repository build/toolchain governance, the canonical macOS package/release process (`.github/workflows/release-macos-main.yml`, `desktop/package.json`, notarization/signing and Electron update owners), repository security/provenance, and shared quality/evidence. No target Telegram workflow, second macOS package/release truth, product runtime, Agent/Coordinator/Host/Runner owner or platform-core service is introduced.
+
+Authored contract cases, not run:
+- `CONTRACT-TDRP-MAC-WORKFLOW-TRIGGER-PUSH-BRANCH-001`
+- `CONTRACT-TDRP-MAC-WORKFLOW-TRIGGER-PUSH-PATHS-001`
+- `CONTRACT-TDRP-MAC-WORKFLOW-TRIGGER-PR-PATHS-001`
+- `CONTRACT-TDRP-MAC-WORKFLOW-CANARY-EXCLUSION-001`
+- `CONTRACT-TDRP-MAC-WORKFLOW-PERMISSIONS-001`
+- `CONTRACT-TDRP-MAC-WORKFLOW-RUNNER-SELECTION-001`
+- `CONTRACT-TDRP-MAC-WORKFLOW-MATRIX-001`
+- `CONTRACT-TDRP-MAC-WORKFLOW-CHECKOUT-LINEAGE-001`
+- `CONTRACT-TDRP-MAC-WORKFLOW-RECURSIVE-SUBMODULES-001`
+- `CONTRACT-TDRP-MAC-WORKFLOW-HOMEBREW-SETUP-001`
+- `CONTRACT-TDRP-MAC-WORKFLOW-XCODE-CMAKE-SYSTEM-MUTATION-001`
+- `CONTRACT-TDRP-MAC-WORKFLOW-LIBS-CACHE-KEY-001`
+- `CONTRACT-TDRP-MAC-WORKFLOW-LIBS-CACHE-RESTORE-001`
+- `CONTRACT-TDRP-MAC-WORKFLOW-PREPARE-LINEAGE-001`
+- `CONTRACT-TDRP-MAC-WORKFLOW-PREPARE-INTERNAL-CACHE-001`
+- `CONTRACT-TDRP-MAC-WORKFLOW-QT-RUST-TOOLCHAIN-001`
+- `CONTRACT-TDRP-MAC-WORKFLOW-BUILD-ACQUISITION-GRAPH-001`
+- `CONTRACT-TDRP-MAC-WORKFLOW-DISK-PRUNE-001`
+- `CONTRACT-TDRP-MAC-WORKFLOW-CONFIGURE-LINEAGE-001`
+- `CONTRACT-TDRP-MAC-WORKFLOW-BUILD-FLAGS-001`
+- `CONTRACT-TDRP-MAC-WORKFLOW-CODE-SIGNING-DISABLED-001`
+- `CONTRACT-TDRP-MAC-WORKFLOW-NO-TEST-EXECUTION-001`
+- `CONTRACT-TDRP-MAC-WORKFLOW-ARTIFACT-STAGING-001`
+- `CONTRACT-TDRP-MAC-WORKFLOW-ARTIFACT-UPLOAD-001`
+- `CONTRACT-TDRP-MAC-WORKFLOW-ARTIFACT-RETENTION-001`
+- `CONTRACT-TDRP-MAC-WORKFLOW-PUBLICATION-BOUNDARY-001`
+- `CONTRACT-TDRP-MAC-WORKFLOW-CONSUMERS-001`
+- `CONTRACT-TDRP-MAC-WORKFLOW-NO-TARGET-COPY-001`
+
+Integration, not run:
+- `INT-TDRP-MAC-WORKFLOW-REPOSITORY-BUILD-001`
+
+Fault/recovery cases, not run:
+- `FAULT-TDRP-MAC-WORKFLOW-RUNNER-UNAVAILABLE-001`
+- `FAULT-TDRP-MAC-WORKFLOW-CHECKOUT-SUBMODULE-001`
+- `FAULT-TDRP-MAC-WORKFLOW-HOMEBREW-UPDATE-001`
+- `FAULT-TDRP-MAC-WORKFLOW-HOMEBREW-UPGRADE-PARTIAL-001`
+- `FAULT-TDRP-MAC-WORKFLOW-XCODE-CMAKE-MUTATION-001`
+- `FAULT-TDRP-MAC-WORKFLOW-LIBS-CACHE-RESTORE-001`
+- `FAULT-TDRP-MAC-WORKFLOW-PREPARE-CACHE-STALE-001`
+- `FAULT-TDRP-MAC-WORKFLOW-PREPARE-DEPENDENCY-001`
+- `FAULT-TDRP-MAC-WORKFLOW-DISK-PRUNE-PARTIAL-001`
+- `FAULT-TDRP-MAC-WORKFLOW-CONFIGURE-001`
+- `FAULT-TDRP-MAC-WORKFLOW-CMAKE-BUILD-001`
+- `FAULT-TDRP-MAC-WORKFLOW-APP-MISSING-001`
+- `FAULT-TDRP-MAC-WORKFLOW-UPDATER-MISSING-001`
+- `FAULT-TDRP-MAC-WORKFLOW-ARTIFACT-STAGE-PARTIAL-001`
+- `FAULT-TDRP-MAC-WORKFLOW-ARTIFACT-UPLOAD-001`
+- `FAULT-TDRP-MAC-WORKFLOW-MUTABLE-TOOLCHAIN-DRIFT-001`
+
+Security/provenance cases, not run:
+- `SEC-TDRP-MAC-WORKFLOW-IMPLICIT-TOKEN-SCOPE-001`
+- `SEC-TDRP-MAC-WORKFLOW-CHECKOUT-CREDENTIALS-001`
+- `SEC-TDRP-MAC-WORKFLOW-PR-UNTRUSTED-SOURCE-001`
+- `SEC-TDRP-MAC-WORKFLOW-DEPOT-RUNNER-TRUST-001`
+- `SEC-TDRP-MAC-WORKFLOW-MUTABLE-RUNNER-001`
+- `SEC-TDRP-MAC-WORKFLOW-MUTABLE-ACTION-TAGS-001`
+- `SEC-TDRP-MAC-WORKFLOW-HOMEBREW-MUTABLE-INPUTS-001`
+- `SEC-TDRP-MAC-WORKFLOW-RUSTUP-GYP-NETWORK-INPUTS-001`
+- `SEC-TDRP-MAC-WORKFLOW-CACHE-SCOPE-POISONING-001`
+- `SEC-TDRP-MAC-WORKFLOW-SYSTEM-MUTATION-ISOLATION-001`
+- `SEC-TDRP-MAC-WORKFLOW-RECURSIVE-SUBMODULE-PROVENANCE-001`
+- `SEC-TDRP-MAC-WORKFLOW-UNSIGNED-DEBUG-ARTIFACT-001`
+- `SEC-TDRP-MAC-WORKFLOW-NO-ARTIFACT-ATTESTATION-001`
+- `SEC-TDRP-MAC-WORKFLOW-NO-STAGE-A-EXECUTION-001`
+
+Stage-B oracles are `ORA-TDRP-MAC-WORKFLOW-EXACT-SOURCE-001`, `ORA-TDRP-MAC-WORKFLOW-TRIGGER-RUNNER-PERMISSIONS-001`, `ORA-TDRP-MAC-WORKFLOW-ACTION-TOOLCHAIN-LINEAGE-001`, `ORA-TDRP-MAC-WORKFLOW-CACHE-PREPARE-CONSISTENCY-001`, `ORA-TDRP-MAC-WORKFLOW-BUILD-OUTPUT-IDENTITY-001`, `ORA-TDRP-MAC-WORKFLOW-ARTIFACT-PUBLICATION-001`, `ORA-TDRP-MAC-WORKFLOW-FAILURE-RECOVERY-001`. Invariants are `INV-TDRP-MAC-WORKFLOW-NO-IMPLICIT-PERMISSION-TRUST-001`, `INV-TDRP-MAC-WORKFLOW-NO-MUTABLE-TAG-RUNNER-TRUST-001`, `INV-TDRP-MAC-WORKFLOW-CACHE-NOT-IDENTITY-001`, `INV-TDRP-MAC-WORKFLOW-UNSIGNED-DEBUG-NOT-RELEASE-001`, `INV-TDRP-MAC-WORKFLOW-NO-TELEGRAM-REPOSITORY-AUTHORITY-001`, `INV-TDRP-MAC-WORKFLOW-NO-STAGE-A-EXECUTION-001`.
+
+Frozen-candidate qualification must prove exact push/pull_request admission and path exclusions, actual conditional runner identity, effective token scope without secret capture, checkout/submodule and all mutable Action resolutions, Homebrew/Xcode/SDK/CMake/toolchain identities, exact prepare/configure/build-script identities, restored cache scope/key/content identity, prepare.py internal stage-cache decisions and rebuilds, Qt/Rust/material dependency acquisition identities, disk-prune effects, all CMake flags, resulting `Telegram.app` and `Updater` bytes, successful two-item staging, artifact ID/digest when available and one-day retention. It must include negative evidence that `TDESKTOP_API_TEST=ON` does not mean tests ran and that `CODE_SIGNING_ALLOWED=NO` plus a raw Debug Actions artifact is not package/sign/notarize/install/release evidence.
+
+Failure campaigns must distinguish ordinary hard failures from the source-suppressed `brew upgrade || true` path, cover host mutation and cache/prune partial state, recursive checkout/cache/prepare/configure/CMake failures, missing app/Updater, partial staging and upload failure, and show that later success cannot repair missing provenance for an earlier run. Cache reuse is optimization only; internal prepare cache validation and successful build do not replace immutable source/dependency/toolchain evidence.
+
+Stage A authors these contracts only. No workflow/action/cache execution, Homebrew/Xcode mutation, build, test, artifact upload/download, package, code signing, notarization, deployment, installation or runtime acceptance is run; `validation_status=not-run`, `accepted=false`.

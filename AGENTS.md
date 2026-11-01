@@ -1335,3 +1335,96 @@ The third-party client uses request retries=3 plus rate/secondary-rate-limit ret
 Permissions/security stay fail-closed: source has no explicit permissions while third-party JavaScript receives `github.token`. The Action README demonstrates explicit `issues: write`, `pull-requests: write`, `discussions: write`; actual frozen-candidate scopes must be proven without capturing token values. This configuration does not read thread bodies or request comments/labels; repository/thread identities and outputs remain repository data. All 20 fixed-U workflow blobs were inspected for direct reusable/workflow-run coupling; none invokes `lock.yml`.
 
 Stage-A cases are authored only: 18 contract, 1 integration, 12 fault/recovery and 10 security/privacy cases; `validation_status=not-run`, `accepted=false`. No scheduled event, workflow/Action execution, search/lock/unlock mutation, token probe, build, validator, test/E2E, package, release, deployment, installation, runtime acceptance, workflow-run/status/check query, or platform-core mutation is performed.
+
+
+##### Repository macOS CI build/artifact workflow authority
+
+Fixed-U `.github/workflows/mac.yml@184a94b091d2d7bab19ae67d7f3a5881b18213ba` is upstream macOS CI/build/artifact provenance, not Fabushi product runtime, installer/package authority, updater authority, signing/notarization authority, or a workflow to copy verbatim. Existing-owner-first responsibility `TDRP-R9-REPOSITORY-MAC-WORKFLOW-001` stays with current Fabushi repository build/toolchain governance, the existing canonical macOS package/release process, repository security/provenance governance, and shared quality/evidence gates. Canonical target release surfaces already include `.github/workflows/release-macos-main.yml`, `desktop/package.json`, `desktop/scripts/notarize-after-sign.cjs`, and `source/electron-main/update/*`; this source entry does not create a Telegram macOS lane, second build/package/release truth, runtime/provider/sidecar, Agent/Coordinator/Host/Runner change, or platform-core delta.
+
+The exact source is fixed-U recursive-tree index 126 zero-based, mode 100644, 4,273 ASCII bytes/code points, 138 LF, zero CR and trailing newline. Push admission excludes `public-canary` and `private-canary` and applies the source path-ignore list for docs/Markdown/legal, generic `.github/**` with the `!.github/workflows/mac.yml` exception, Linux/Windows resources/source, Docker, snap, xdg and `Telegram/configure.bat`; pull_request uses the same path-ignore list without the push branch exclusion. There is no schedule, manual/repository dispatch, reusable-workflow declaration, explicit `permissions`, environment, concurrency, timeout or workflow-level retry/backoff.
+
+The sole matrix contains one empty `defines` value. Runner selection is source-conditional: pull requests, tag-like refs and `refs/heads/nightly` select mutable `depot-macos-latest`; other admitted refs select mutable `macos-latest`. Environment fixes `UPLOAD_ARTIFACT=true`, `ONLY_CACHE=false`, and `PREPARE_PATH=Telegram/build/prepare/prepare.py`. Exact event/ref admission and immutable runner image/toolchain identity remain frozen-candidate evidence.
+
+Observed mutable Action-tag resolutions on 2026-11-01 are `actions/checkout@v7 -> 3d3c42e5aac5ba805825da76410c181273ba90b1`, `actions/cache@v6 -> 55cc8345863c7cc4c66a329aec7e433d2d1c52a9`, and `actions/upload-artifact@v7 -> cf430e030ddbb5b0abf93d22962f4752f3646cd9`. Their action metadata blobs are respectively `5b0524f730db83f9513c18ab31a6c086c7239076`, `2606455d4cedc2a06e05c1bf7feb8cc41aaf28f9`, and `7cb4d1e81db55320b41217e1a78a1a46e3d2baef`; package versions observed are 7.0.1, 6.1.0 and 7.0.2 and each repository declares MIT. The source major tags remain mutable and candidate execution must re-bind actual resolved commits/bundles.
+
+Checkout is recursive and places the source under `$REPO_NAME`. The first setup mutates host state: recursively changes ownership of `/usr/local/share`, refreshes Homebrew metadata, runs `brew upgrade || true`, installs unpinned automake/libtool/meson/nasm/ninja/pkg-config, disables Spotlight indexing, switches the selected developer directory to `/Applications/Xcode.app/Contents/Developer`, and edits Homebrew CMake's GNU compiler module to remove debug `-g` initialization. The suppressed Homebrew upgrade failure can leave a mixed host package state while later steps continue; source has no rollback or isolation contract for these host mutations.
+
+Libraries/ThirdParty are restored by `actions/cache@v6` with primary key `${runner.OS}-libs-${hashFiles(REPO_NAME/PREPARE_PATH)}` and broad `$"+"{runner.OS}-libs-` fallback. Exact `Telegram/build/prepare/mac.sh@82810b6cd5a13c78233232bee38602dcf1707de4` delegates to `prepare.py@a9f3dd2d9e4020df958ab5af942376177d66c78b` with `skip-release silent`. The prepare owner maintains per-stage `cache_keys`, derives stage keys from environment/toolchain and dependency file hashes, skips only a `Good` match, and because `silent` sets rebuild-stale mode, rebuilds stale stages rather than prompting. Thus an outer cache hit/fallback is only an optimization input, never dependency identity or acceptance evidence.
+
+The prepare graph resolves macOS Qt through `qt_version.py@24c81dcf88775f24943295d4477e2357f13f00f1` to Qt 6.11.2 and contains its own toolchain/acquisition graph, including Rust toolchain 1.96.1 plus mutable network bootstrap surfaces such as `sh.rustup.rs` and Chromium gyp master. `build_mac.py@881a1c212486976b318777b7f6e5c944da2bd5d3` contains preserved release-toolchain checks, while `prepare.py` defaults `TDESKTOP_MAC_TOOLCHAIN` to auto and can choose the system Xcode/SDK when the private preserved release path is not selected. This workflow does not set that selector, so actual compiler, SDK, deployment target, Homebrew packages and all material fixed-U dependency acquisitions must be evidence-bound rather than inferred. Existing fixed-U build-time-acquisition inventory remains the detailed dependency authority.
+
+After dependency preparation the workflow destructively prunes `Libraries`, preserving static libraries, headers/includes, CMake/pkg-config metadata, object/cache-key/patch trees and executable files while deleting other regular files and empty paths. Interruption or an incorrect preservation assumption can leave partial cached state; later cache publication/restore does not prove the pre-prune identity.
+
+Build configuration flows through exact `Telegram/configure.sh@c550d988cff5fe3047311cc330aeee943ee328e5` -> `configure.py@592b2f02fd0030dffe6a79d94f1d18c529c53645` -> CMake. For the only matrix value, `ARTIFACT_NAME=Telegram`. It builds Debug with warnings-as-errors, `TDESKTOP_API_TEST=ON`, auto-update/crash-report disable flags set OFF, and critically `CMAKE_XCODE_ATTRIBUTE_CODE_SIGNING_ALLOWED=NO`. The source contains no test command; the API-test CMake option is build configuration only. There is no source package/install step, DMG/ZIP release construction, code signing, notarization, runtime smoke, visual/a11y, security scan or release publication.
+
+Artifact staging creates `out/Debug/artifact`, then moves `Telegram.app` followed by `Updater`; a missing Updater can leave the app already moved before failure. Upload uses `actions/upload-artifact@v7`, name `Telegram`, path `$REPO_NAME/out/Debug/artifact/`, and one-day retention. Source captures no artifact digest, SBOM, attestation, signature, notarization ticket, package/install receipt or updater release identity. An unsigned Debug app plus Updater in a one-day Actions artifact is never Fabushi release/package/signing acceptance; target release evidence remains owned by the existing stronger Fabushi macOS release pipeline.
+
+Direct caller scope is GitHub push/pull_request event admission. Direct dependencies/consumers are recursive checkout/submodules, Homebrew/Xcode/CMake and prepare dependency services, GitHub cache/artifact stores, source-controlled prepare/configure/CMake inputs, and maintainers/reviewers/manual CI consumers. All 20 fixed-U workflow blobs were inspected for `mac.yml`, `workflow_call`, `workflow_run`, `prepare/mac.sh` and sibling packaged coupling: none invokes `mac.yml` as a reusable/workflow-run caller. `canary.yml` independently calls `prepare/mac.sh silent`; `mac_packaged.yml` is an independent sibling pipeline, not a caller.
+
+Security and provenance remain fail-closed. The workflow declares no explicit permissions while checkout defaults to GitHub-token authentication; effective token scopes, credential persistence/cleanup and recursive-submodule credentials must be captured without exposing secrets. Pull-request-controlled source, mutable runner labels, mutable Action major tags, Homebrew rolling metadata/packages, Xcode/SDK selection, mutable rustup/gyp acquisition surfaces, broad cache prefix restoration and host-global mutations are material boundaries. Cache contents are never source or dependency proof. No secret or token value may be retained in evidence.
+
+Failure/recovery has no workflow-level concurrency group, timeout, retry, rollback or compensation. Runner/action/submodule/Homebrew/prepare/cache/configure/build/prune failures stop normal progression except the explicitly suppressed Homebrew upgrade failure; host/cache mutation can be partial; app/Updater staging can be partial; artifact upload can fail after successful build. A later successful run cannot retroactively establish an earlier toolchain, cache, output or artifact identity.
+
+Stage-A cases are authored only and remain `validation_status=not-run`, `accepted=false`:
+
+- `CONTRACT-TDRP-MAC-WORKFLOW-TRIGGER-PUSH-BRANCH-001`
+- `CONTRACT-TDRP-MAC-WORKFLOW-TRIGGER-PUSH-PATHS-001`
+- `CONTRACT-TDRP-MAC-WORKFLOW-TRIGGER-PR-PATHS-001`
+- `CONTRACT-TDRP-MAC-WORKFLOW-CANARY-EXCLUSION-001`
+- `CONTRACT-TDRP-MAC-WORKFLOW-PERMISSIONS-001`
+- `CONTRACT-TDRP-MAC-WORKFLOW-RUNNER-SELECTION-001`
+- `CONTRACT-TDRP-MAC-WORKFLOW-MATRIX-001`
+- `CONTRACT-TDRP-MAC-WORKFLOW-CHECKOUT-LINEAGE-001`
+- `CONTRACT-TDRP-MAC-WORKFLOW-RECURSIVE-SUBMODULES-001`
+- `CONTRACT-TDRP-MAC-WORKFLOW-HOMEBREW-SETUP-001`
+- `CONTRACT-TDRP-MAC-WORKFLOW-XCODE-CMAKE-SYSTEM-MUTATION-001`
+- `CONTRACT-TDRP-MAC-WORKFLOW-LIBS-CACHE-KEY-001`
+- `CONTRACT-TDRP-MAC-WORKFLOW-LIBS-CACHE-RESTORE-001`
+- `CONTRACT-TDRP-MAC-WORKFLOW-PREPARE-LINEAGE-001`
+- `CONTRACT-TDRP-MAC-WORKFLOW-PREPARE-INTERNAL-CACHE-001`
+- `CONTRACT-TDRP-MAC-WORKFLOW-QT-RUST-TOOLCHAIN-001`
+- `CONTRACT-TDRP-MAC-WORKFLOW-BUILD-ACQUISITION-GRAPH-001`
+- `CONTRACT-TDRP-MAC-WORKFLOW-DISK-PRUNE-001`
+- `CONTRACT-TDRP-MAC-WORKFLOW-CONFIGURE-LINEAGE-001`
+- `CONTRACT-TDRP-MAC-WORKFLOW-BUILD-FLAGS-001`
+- `CONTRACT-TDRP-MAC-WORKFLOW-CODE-SIGNING-DISABLED-001`
+- `CONTRACT-TDRP-MAC-WORKFLOW-NO-TEST-EXECUTION-001`
+- `CONTRACT-TDRP-MAC-WORKFLOW-ARTIFACT-STAGING-001`
+- `CONTRACT-TDRP-MAC-WORKFLOW-ARTIFACT-UPLOAD-001`
+- `CONTRACT-TDRP-MAC-WORKFLOW-ARTIFACT-RETENTION-001`
+- `CONTRACT-TDRP-MAC-WORKFLOW-PUBLICATION-BOUNDARY-001`
+- `CONTRACT-TDRP-MAC-WORKFLOW-CONSUMERS-001`
+- `CONTRACT-TDRP-MAC-WORKFLOW-NO-TARGET-COPY-001`
+- `INT-TDRP-MAC-WORKFLOW-REPOSITORY-BUILD-001`
+- `FAULT-TDRP-MAC-WORKFLOW-RUNNER-UNAVAILABLE-001`
+- `FAULT-TDRP-MAC-WORKFLOW-CHECKOUT-SUBMODULE-001`
+- `FAULT-TDRP-MAC-WORKFLOW-HOMEBREW-UPDATE-001`
+- `FAULT-TDRP-MAC-WORKFLOW-HOMEBREW-UPGRADE-PARTIAL-001`
+- `FAULT-TDRP-MAC-WORKFLOW-XCODE-CMAKE-MUTATION-001`
+- `FAULT-TDRP-MAC-WORKFLOW-LIBS-CACHE-RESTORE-001`
+- `FAULT-TDRP-MAC-WORKFLOW-PREPARE-CACHE-STALE-001`
+- `FAULT-TDRP-MAC-WORKFLOW-PREPARE-DEPENDENCY-001`
+- `FAULT-TDRP-MAC-WORKFLOW-DISK-PRUNE-PARTIAL-001`
+- `FAULT-TDRP-MAC-WORKFLOW-CONFIGURE-001`
+- `FAULT-TDRP-MAC-WORKFLOW-CMAKE-BUILD-001`
+- `FAULT-TDRP-MAC-WORKFLOW-APP-MISSING-001`
+- `FAULT-TDRP-MAC-WORKFLOW-UPDATER-MISSING-001`
+- `FAULT-TDRP-MAC-WORKFLOW-ARTIFACT-STAGE-PARTIAL-001`
+- `FAULT-TDRP-MAC-WORKFLOW-ARTIFACT-UPLOAD-001`
+- `FAULT-TDRP-MAC-WORKFLOW-MUTABLE-TOOLCHAIN-DRIFT-001`
+- `SEC-TDRP-MAC-WORKFLOW-IMPLICIT-TOKEN-SCOPE-001`
+- `SEC-TDRP-MAC-WORKFLOW-CHECKOUT-CREDENTIALS-001`
+- `SEC-TDRP-MAC-WORKFLOW-PR-UNTRUSTED-SOURCE-001`
+- `SEC-TDRP-MAC-WORKFLOW-DEPOT-RUNNER-TRUST-001`
+- `SEC-TDRP-MAC-WORKFLOW-MUTABLE-RUNNER-001`
+- `SEC-TDRP-MAC-WORKFLOW-MUTABLE-ACTION-TAGS-001`
+- `SEC-TDRP-MAC-WORKFLOW-HOMEBREW-MUTABLE-INPUTS-001`
+- `SEC-TDRP-MAC-WORKFLOW-RUSTUP-GYP-NETWORK-INPUTS-001`
+- `SEC-TDRP-MAC-WORKFLOW-CACHE-SCOPE-POISONING-001`
+- `SEC-TDRP-MAC-WORKFLOW-SYSTEM-MUTATION-ISOLATION-001`
+- `SEC-TDRP-MAC-WORKFLOW-RECURSIVE-SUBMODULE-PROVENANCE-001`
+- `SEC-TDRP-MAC-WORKFLOW-UNSIGNED-DEBUG-ARTIFACT-001`
+- `SEC-TDRP-MAC-WORKFLOW-NO-ARTIFACT-ATTESTATION-001`
+- `SEC-TDRP-MAC-WORKFLOW-NO-STAGE-A-EXECUTION-001`
+
+No workflow run/query, external Action/bootstrap/cache execution, Homebrew/Xcode/CMake mutation, dependency preparation, build, artifact upload/download, test, package, signing, notarization, release, deployment, installation, runtime acceptance or platform-core mutation is performed in Stage A.
