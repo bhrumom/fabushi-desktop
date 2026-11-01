@@ -954,3 +954,22 @@ Source limitations are evidence too: R2 symbol uploads are TODO/comments only; W
 Existing-owner evidence must show composition with current Fabushi `desktop/package.json`, `.github/workflows/release-macos-main.yml`, `desktop/scripts/notarize-after-sign.cjs`, existing updater/package/release owners, repository process/security governance and shared quality/evidence gates. No Telegram canary workflow, Bot API sidecar, channel publisher, second updater/release service, platform-core runtime or second credential/evidence truth is permitted.
 
 Stage A records 22 contract, 1 integration, 9 fault/recovery and 9 security cases as authored-only. `workflow_run=null`, `test_execution_evidence=[]`, `validation_status=not-run`, `accepted=false`.
+
+
+### Repository cant-reproduce issue-lifecycle workflow evidence
+
+For `TDRP-R9-REPOSITORY-CANT-REPRODUCE-WORKFLOW-001`, source evidence binds `telegramdesktop/tdesktop@f985723b552b30fe1c17d377d57f44e61a15a8c4`, fixed recursive tree `91f2b083ab2877c0a17d07868eabec362a5cfca6` and exact `.github/workflows/cant-reproduce.yml@8e20e07349b5b43277f5371a4e931066bece4186`, index 119 zero-based, mode 100644, 902 ASCII bytes/code points, 25 LF, zero CR and trailing newline.
+
+Trigger evidence proves a single daily `0 3 * * *` schedule and no issue/issue_comment/manual/callable trigger. One ubuntu-slim job invokes `lee-dohm/no-response@v0.5.0`; the YAML supplies `github.token`, exact label `cant reproduce` and static closure text, but no explicit permissions, environment, concurrency, timeout, retry, checkout, `daysUntilClose` or label color.
+
+Action-lineage evidence records that v0.5.0 was observed resolving to commit `9bb0a4b5e6a45046f00353d5de7d90fb8bd773bb`, `action.yml@1eb04cb05934c6b5d299918356d4042115026b2a` and Node12 `dist/index.js@7dada7580c55196f93eb911f8a4646152b7d039e`. Because the workflow references a mutable tag, that observed resolution is not an immutable fixed-U pin. The Action defaults omitted days/color to 14/`ffffff`.
+
+Behavior evidence binds the schedule sweep to open issues with exact label, updated-descending search, `per_page=30` without search pagination, latest matching labeled-event lookup, and cutoff by label age rather than issue update/comment age. It binds mutations to optional comment then close-state update and records the broad label-get/create fallback. It also records the bundled Action's `issue_comment` unmark/reopen path as non-consumed behavior because this workflow never subscribes to that event; fixed-U needs-user-action/waiting-for-answer siblings do subscribe and therefore supply the contrasting source evidence.
+
+Failure evidence preserves source limitations rather than normalizing them away: implicit permissions, mutable tag, 30-item search window, post-label activity not resetting cutoff, partial comment-before-close failure, unawaited top-level sweep/unmark, unawaited per-issue close and unawaited label-create fallback. None is treated as a target acceptance shortcut.
+
+Security/privacy evidence binds `github.token` delivery to third-party Action code and requires later exact permission/source qualification. The Action's GitHub API reads and debug serialization of issue/event objects remain workflow-log privacy boundaries; the static close text is not reporter-controlled execution. Telegram-specific `Settings -> Ask question` support copy remains provenance and cannot become Fabushi support/navigation authority.
+
+Consumer evidence identifies GitHub Actions schedule as direct caller; lee-dohm/no-response as direct action consumer; GitHub Issues search/events/labels/comments/state as mutation consumers; and maintainers/triagers plus issue authors/readers as human participants. Current Fabushi has no equivalent issue lifecycle workflow, so ownership remains root repository issue/reporting/development-process + privacy/security + shared quality/evidence governance; no product runtime, second issue tracker, Telegram support system or platform-core service is added.
+
+Stage A records 13 contract, 1 integration, 7 fault/recovery and 5 security/privacy cases from TEST_STRATEGY as authored only. No schedule/workflow execution, issue search/mutation, token-scope probe, build, lint, validator, test, CI, package, deployment, runtime evidence or acceptance is performed. `validation_status=not-run`; `accepted=false`.

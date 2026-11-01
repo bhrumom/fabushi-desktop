@@ -1096,3 +1096,46 @@ Authored security cases, not run:
 - `SEC-TDRP-CANARY-WORKFLOW-NO-SOURCE-PUBLISHER-IMPORT-001` — Fabushi absorbs release guarantees into existing owners and does not import Telegram Bot API/channel publication or a second updater/release credential stack.
 
 Stage-B qualification, only after a frozen candidate exists, must bind exact source/target identities to authorized environment/ref admission, runner images/trust, action SHAs, dependency/cache identities where material, platform build/package outputs, signing/notary/Key Vault witnesses, artifact ids/digests, Bot API service digest/readiness, publication result, secret non-disclosure and the current Fabushi release/update evidence model. Source-side Linux `test_update_verify` and `canary_test_fixtures.sh` are recorded as upstream quality semantics only; they are not executed or treated as Fabushi verification during Stage A. R2 symbol upload and KeyLocker installation placeholders remain gaps rather than passing tests. `validation_status=not-run`; `accepted=false`.
+
+
+### Repository cant-reproduce issue-lifecycle workflow qualification
+
+`TDRP-R9-REPOSITORY-CANT-REPRODUCE-WORKFLOW-001` qualifies fixed-U `.github/workflows/cant-reproduce.yml@8e20e07349b5b43277f5371a4e931066bece4186` as upstream repository issue-triage/lifecycle provenance. Existing target owners are the root repository issue/reporting/development-process authority, repository privacy/security governance and this shared quality/evidence system. The workflow is not copied into Fabushi. Stage A authors the following cases and executes none of them.
+
+Authored contract cases, not run:
+- `CONTRACT-TDRP-CANT-REPRODUCE-TRIGGER-001` — only daily `0 3 * * *` schedule is admitted; no issue/issue_comment/manual/callable trigger is invented.
+- `CONTRACT-TDRP-CANT-REPRODUCE-LABEL-ROUTING-001` — only open issues carrying exact label `cant reproduce` enter the source search.
+- `CONTRACT-TDRP-CANT-REPRODUCE-AGE-CUTOFF-001` — omitted input uses Action default 14 days measured from the latest matching labeled-event timestamp, not from `updated_at` or comment age.
+- `CONTRACT-TDRP-CANT-REPRODUCE-SEARCH-WINDOW-001` — source search is updated-descending with `per_page=30` and no search pagination; this limitation is preserved as evidence rather than silently repaired in provenance.
+- `CONTRACT-TDRP-CANT-REPRODUCE-CLOSE-COMMENT-001` — configured static closure explanation remains exact source copy; Telegram support redirection never becomes Fabushi support authority.
+- `CONTRACT-TDRP-CANT-REPRODUCE-STATE-MUTATION-001` — close path posts the optional comment before changing issue state to closed.
+- `CONTRACT-TDRP-CANT-REPRODUCE-PERMISSIONS-001` — workflow has no explicit permissions block; effective `github.token` scope is frozen-candidate host evidence, not inferred least privilege.
+- `CONTRACT-TDRP-CANT-REPRODUCE-RUNNER-001` — single ubuntu-slim job has no environment, concurrency, timeout, retry or checkout contract.
+- `CONTRACT-TDRP-CANT-REPRODUCE-ACTION-LINEAGE-001` — mutable v0.5.0 tag and observed commit/action/bundle identities remain distinct; only an exact frozen candidate may qualify actual Action bytes.
+- `CONTRACT-TDRP-CANT-REPRODUCE-INPUT-BOUNDARY-001` — token is required; label/comment are literal source inputs; omitted days/color use Action defaults and no hidden validation is invented.
+- `CONTRACT-TDRP-CANT-REPRODUCE-ISSUE-COMMENT-ABSENCE-001` — bundled unmark/reopen behavior is not attributed to this workflow because `issue_comment` is absent.
+- `CONTRACT-TDRP-CANT-REPRODUCE-CONSUMER-001` — GitHub scheduler, external Action, GitHub Issues APIs/state, maintainers and reporters are the complete direct process chain.
+- `CONTRACT-TDRP-CANT-REPRODUCE-NO-TARGET-WORKFLOW-COPY-001` — target remains source-neutral existing repository governance; no Telegram automation copy or product runtime is introduced.
+
+Authored integration case, not run:
+- `INT-TDRP-CANT-REPRODUCE-REPOSITORY-ISSUE-PROCESS-001` — issue-label ownership, lifecycle mutation, privacy/security review and evidence compose through the existing repository process owner.
+
+Authored fault/recovery cases, not run:
+- `FAULT-TDRP-CANT-REPRODUCE-MISSING-PERMISSION-001` — insufficient issue/label/comment permission fails closed and is never called successful triage.
+- `FAULT-TDRP-CANT-REPRODUCE-LABEL-LOOKUP-CREATE-001` — broad get-label failure and unawaited create cannot be assumed to mean the label now exists.
+- `FAULT-TDRP-CANT-REPRODUCE-SEARCH-WINDOW-001` — more than 30 matching open issues exposes non-paginated/starvation behavior.
+- `FAULT-TDRP-CANT-REPRODUCE-POST-LABEL-ACTIVITY-001` — a new comment/update after labeling does not by itself reset the source cutoff; qualification must not invent that safeguard.
+- `FAULT-TDRP-CANT-REPRODUCE-PARTIAL-CLOSE-001` — successful close comment followed by state-update failure remains partial mutation requiring reconciliation.
+- `FAULT-TDRP-CANT-REPRODUCE-ASYNC-NOT-AWAITED-001` — top-level sweep/unmark, per-issue close and label-create asynchronous completion/rejection cannot be treated as synchronously fenced.
+- `FAULT-TDRP-CANT-REPRODUCE-NO-UNMARK-EVENT-001` — original-author comment cannot be credited with automatic label removal/reopen under this schedule-only workflow.
+
+Authored security/privacy cases, not run:
+- `SEC-TDRP-CANT-REPRODUCE-TOKEN-SCOPE-001` — implicit token permissions are qualified and no broader-than-needed authority is assumed.
+- `SEC-TDRP-CANT-REPRODUCE-MUTABLE-ACTION-TAG-001` — version tag is never accepted as immutable source identity.
+- `SEC-TDRP-CANT-REPRODUCE-THIRD-PARTY-ACTION-BOUNDARY-001` — repository token and issue mutation cross into third-party Action code only under explicit source-lineage/security qualification.
+- `SEC-TDRP-CANT-REPRODUCE-ISSUE-LOG-PRIVACY-001` — issue/event debug metadata and workflow logs remain governed by repository privacy/access policy, especially for private repositories.
+- `SEC-TDRP-CANT-REPRODUCE-NO-TELEGRAM-SUPPORT-AUTHORITY-001` — source close-copy/help route cannot grant Telegram support infrastructure authority inside Fabushi.
+
+Stage-B oracles are `ORA-TDRP-CANT-REPRODUCE-EXACT-WORKFLOW-001`, `ORA-TDRP-CANT-REPRODUCE-LABEL-AGE-CLOSE-001`, `ORA-TDRP-CANT-REPRODUCE-ACTION-LINEAGE-001`, and `ORA-TDRP-CANT-REPRODUCE-FAILURE-BOUNDARY-001`. Invariants are `INV-TDRP-CANT-REPRODUCE-NO-ISSUE-COMMENT-RECOVERY-ASSUMPTION-001`, `INV-TDRP-CANT-REPRODUCE-NO-MUTABLE-TAG-TRUST-001`, `INV-TDRP-CANT-REPRODUCE-NO-TELEGRAM-SUPPORT-IMPORT-001`, and `INV-TDRP-CANT-REPRODUCE-NO-STAGE-A-EXECUTION-001`.
+
+No source/target schedule run, issue/label/comment/state mutation, token probe, build, lint, validator, test/E2E, CI, package, deployment or acceptance is executed in Stage A.

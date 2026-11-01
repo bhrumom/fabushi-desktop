@@ -982,3 +982,52 @@ Stage-A cases are authored only and remain `validation_status=not-run`, `accepte
 - `SEC-TDRP-CANARY-WORKFLOW-NO-SOURCE-PUBLISHER-IMPORT-001`
 
 No workflow run/query, branch push to source canary lanes, executable checkout step, build, test, Packer verification, package, signing, notarization, registry/service operation, Bot API request, publication, deployment, installation, or runtime acceptance is executed in Stage A.
+
+
+##### Repository cant-reproduce issue-lifecycle workflow authority
+
+Fixed-U `.github/workflows/cant-reproduce.yml@8e20e07349b5b43277f5371a4e931066bece4186` is upstream repository issue-triage/lifecycle provenance, not a Fabushi product runtime and not a workflow to copy verbatim. Existing-owner-first responsibility `TDRP-R9-REPOSITORY-CANT-REPRODUCE-WORKFLOW-001` stays with the existing Fabushi root repository issue/reporting/development-process authority, repository privacy/security governance, and shared quality/evidence system. No Telegram support subsystem, second issue tracker, product Conversation/Task/Automation owner, Agent/Coordinator/Host/Runner runtime, or platform-core service is introduced.
+
+The exact source is recursive fixed-U tree index 119 zero-based, mode 100644, 902 ASCII bytes/code points, 25 LF characters, zero CR characters and a trailing newline. Despite the workflow name and issue-mutating behavior, its only trigger is `schedule` at cron `0 3 * * *` (03:00 UTC daily). It declares no `issues`, `issue_comment`, push, pull_request, workflow_dispatch, workflow_call, repository_dispatch or other event trigger. The single `cant-reproduce` job runs on `ubuntu-slim`, declares no environment, concurrency group, timeout, retry/backoff, condition, checkout step or explicit `permissions` block, and invokes `lee-dohm/no-response@v0.5.0` with `github.token`, exact label `cant reproduce`, and a static close comment.
+
+Input semantics come from the called Action as well as the YAML. The source supplies no `daysUntilClose` or `responseRequiredColor`, so Action v0.5.0 defaults are 14 days and `ffffff`; the token is required. The schedule path searches open issues with exact label `cant reproduce`, sorted by `updated` descending, but asks for only 30 results and does not paginate that search. For each returned issue it paginates issue events and uses the latest matching `labeled` event timestamp; the issue is closeable when that label event is older than the 14-day cutoff. It does not use issue `updated_at`, comment age or a direct author-response check in the schedule path. Thus post-label activity does not itself fence closure, and more than 30 matching issues can leave older candidates outside the queried window.
+
+Mutation semantics are explicit and ordered. The Action first tries to ensure the response label exists; any get-label exception enters a label-create path with the default color. For each closeable issue it posts the configured static close comment and then updates issue state to `closed`. A successful comment followed by a failed close is therefore a possible partial mutation. The bundled Action also implements an `issue_comment` path that removes the response-required label when the original issue author comments and can reopen an issue closed by someone else. This workflow does not subscribe to `issue_comment`, so that unmark/reopen recovery path is not reachable from this workflow. Fixed-U siblings `needs-user-action.yml@55ad7891ce36682accae01d739203aa487876053` and `waiting-for-answer.yml@0cccca6b2d434303da915b12a13e7620cf1b8bc4` do subscribe to created issue comments; their presence confirms that the omission here is source behavior, not an assumed GitHub default.
+
+Source lineage is fail-closed. `lee-dohm/no-response@v0.5.0` is a mutable tag reference, not an immutable commit pin. During this read the tag resolved to commit `9bb0a4b5e6a45046f00353d5de7d90fb8bd773bb`, whose release snapshot contains `action.yml@1eb04cb05934c6b5d299918356d4042115026b2a` and Node12 bundle `dist/index.js@7dada7580c55196f93eb911f8a4646152b7d039e`. That observed resolution is provenance only; it must not be upgraded to immutable fixed-U identity. The bundle dispatches `schedule` to `sweep()` and `issue_comment` to `unmark()`, but those async calls are not awaited by the top-level runner; `sweep()` likewise starts per-issue `close()` without awaiting it, and the label-create fallback is also not awaited. Asynchronous rejection/completion can therefore escape the apparent outer sequencing and must be treated as a failure/recovery limitation rather than a guaranteed clean run.
+
+Permissions and privacy remain explicit evidence boundaries. The workflow passes `github.token` to third-party Action code but declares no permissions block, so effective token scope depends on repository/workflow host configuration and must be proven on a frozen candidate; the mutation path requires sufficient issue/label/comment rights. The Action reads/searches issue metadata and events and emits debug serialization of issue/event data. It declares no non-GitHub reporting endpoint, and the close comment is static rather than reporter-controlled text, but token exposure to third-party code, workflow-log visibility and private-repository issue metadata remain security/privacy boundaries. The Telegram-specific close-copy redirect to `Settings -> Ask question` is upstream support provenance only and is not Fabushi support/navigation authority.
+
+Direct caller/consumer ownership is repository-process only: GitHub Actions schedule is the workflow caller; the external Action consumes the schedule/context/token; GitHub Issues search/events/labels/comments/state APIs and the repository issue state are mutation consumers; maintainers/triagers provide the `cant reproduce` label and issue authors/readers observe the result. There is no `workflow_call` caller and no Fabushi shipping runtime consumer. The current Fabushi checkpoint has no source-neutral equivalent issue-lifecycle workflow to mutate, so Stage A records exact behavior and qualification contracts without introducing Telegram-specific automation.
+
+Failure/recovery is fail-closed: missing mutation permission, mutable-tag drift, label lookup/create ambiguity, search-window starvation, post-label activity not fencing closure, partial comment-before-close mutation, asynchronous non-awaited failure, or assuming the unreachable comment recovery path all remain non-passing. Recovery must go through the existing repository issue/process/security owner with fresh exact source/action/permission evidence; no automatic product support path or second issue system is created.
+
+Stage-A cases are authored only and remain `validation_status=not-run`, `accepted=false`:
+- `CONTRACT-TDRP-CANT-REPRODUCE-TRIGGER-001`
+- `CONTRACT-TDRP-CANT-REPRODUCE-LABEL-ROUTING-001`
+- `CONTRACT-TDRP-CANT-REPRODUCE-AGE-CUTOFF-001`
+- `CONTRACT-TDRP-CANT-REPRODUCE-SEARCH-WINDOW-001`
+- `CONTRACT-TDRP-CANT-REPRODUCE-CLOSE-COMMENT-001`
+- `CONTRACT-TDRP-CANT-REPRODUCE-STATE-MUTATION-001`
+- `CONTRACT-TDRP-CANT-REPRODUCE-PERMISSIONS-001`
+- `CONTRACT-TDRP-CANT-REPRODUCE-RUNNER-001`
+- `CONTRACT-TDRP-CANT-REPRODUCE-ACTION-LINEAGE-001`
+- `CONTRACT-TDRP-CANT-REPRODUCE-INPUT-BOUNDARY-001`
+- `CONTRACT-TDRP-CANT-REPRODUCE-ISSUE-COMMENT-ABSENCE-001`
+- `CONTRACT-TDRP-CANT-REPRODUCE-CONSUMER-001`
+- `CONTRACT-TDRP-CANT-REPRODUCE-NO-TARGET-WORKFLOW-COPY-001`
+- `INT-TDRP-CANT-REPRODUCE-REPOSITORY-ISSUE-PROCESS-001`
+- `FAULT-TDRP-CANT-REPRODUCE-MISSING-PERMISSION-001`
+- `FAULT-TDRP-CANT-REPRODUCE-LABEL-LOOKUP-CREATE-001`
+- `FAULT-TDRP-CANT-REPRODUCE-SEARCH-WINDOW-001`
+- `FAULT-TDRP-CANT-REPRODUCE-POST-LABEL-ACTIVITY-001`
+- `FAULT-TDRP-CANT-REPRODUCE-PARTIAL-CLOSE-001`
+- `FAULT-TDRP-CANT-REPRODUCE-ASYNC-NOT-AWAITED-001`
+- `FAULT-TDRP-CANT-REPRODUCE-NO-UNMARK-EVENT-001`
+- `SEC-TDRP-CANT-REPRODUCE-TOKEN-SCOPE-001`
+- `SEC-TDRP-CANT-REPRODUCE-MUTABLE-ACTION-TAG-001`
+- `SEC-TDRP-CANT-REPRODUCE-THIRD-PARTY-ACTION-BOUNDARY-001`
+- `SEC-TDRP-CANT-REPRODUCE-ISSUE-LOG-PRIVACY-001`
+- `SEC-TDRP-CANT-REPRODUCE-NO-TELEGRAM-SUPPORT-AUTHORITY-001`
+
+No schedule/workflow execution, issue search, label/comment/state mutation, token-scope probe, Action execution, build, typecheck, lint, validator, test/E2E, package, deployment, installation, runtime evidence or acceptance is executed in Stage A.
