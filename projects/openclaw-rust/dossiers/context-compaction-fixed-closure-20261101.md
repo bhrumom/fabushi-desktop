@@ -80,6 +80,28 @@ also carries the same workspace roots plus the whitespace candidate. This
 separates valid workspace links from registry/archive resolution work without
 turning either category into approval.
 
+The optional exact-manifest dependency frontier was then emitted from the
+same fixed tree with:
+
+```text
+python3 projects/openclaw-rust/scripts/qualify_fixed_lockfile.py \
+  --repo <temporary-exact-checkout> \
+  --commit 1440bb1771372334bea23d7642bb52deb7db1845 \
+  --frontier-json <closure-json> \
+  --include-manifest-dependencies
+```
+
+The machine-readable result digest is
+`1d346c95182fd44c0ec60881b6a521e9a192171faf42ab85a9325bb9f7f461c0`.
+After de-duplicating repeated frontier rows by exact manifest path/package,
+it contains `13` manifest identities and `176` declared dependency edges:
+`17` workspace-specifier edges and `159` registry-or-path edges. This is a
+declaration frontier only; it does not establish recursive importer/package
+joins, peer resolution, archive bytes, generated artifacts, or license/SBOM
+provenance. The output still reports `2` lockfile fragments,
+`document_separator_count=2`, and
+`duplicate_top_level_lockfile_headers=false`.
+
 For the compaction behavior roots, the first workspace dependency chain is
 explicit in exact manifest blobs:
 

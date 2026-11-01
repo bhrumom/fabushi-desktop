@@ -131,7 +131,59 @@ def workspace_manifest_roots(frontier_path: Path) -> set[str]:
     }
 
 
-def qualify(repo: Path, commit: str, frontier_path: Path, lock_path: str) -> dict[str, Any]:
+def manifest_dependency_frontier(
+    repo: Path, commit: str, frontier_path: Path
+) -> list[dict[str, Any]]:
+    document = json.loads(frontier_path.read_text(encoding="utf-8"))
+    rows: list[dict[str, Any]] = []
+    sections = (
+        "dependencies",
+        "optionalDependencies",
+        "peerDependencies",
+        "devDependencies",
+    )
+    manifests: dict[tuple[str, str], str] = {}
+    for frontier in document.get("workspace_package_frontier", []):
+        path = frontier.get("manifest_path")
+        package = frontier.get("package")
+        if frontier.get("status") != "manifest-found" or not isinstance(path, str):
+            continue
+        if not isinstance(package, str):
+            continue
+        manifests.setdefault((path, package), package)
+    for path, package in sorted(manifests):
+        blob, content = git_blob(repo, commit, path)
+        parsed = json.loads(content)
+        for section in sections:
+            values = parsed.get(section)
+            if not isinstance(values, dict):
+                continue
+            for dependency, specifier in sorted(values.items()):
+                if not isinstance(specifier, str):
+                    continue
+                rows.append(
+                    {
+                        "manifest_blob": blob,
+                        "manifest_path": path,
+                        "package": package,
+                        "section": section,
+                        "dependency": dependency,
+                        "specifier": specifier,
+                        "edge_kind": "workspace"
+                        if specifier.startswith("workspace:")
+                        else "registry-or-path",
+                    }
+                )
+    return rows
+
+
+def qualify(
+    repo: Path,
+    commit: str,
+    frontier_path: Path,
+    lock_path: str,
+    include_manifest_dependencies: bool = False,
+) -> dict[str, Any]:
     blob, content = git_blob(repo, commit, lock_path)
     fragments = [parse_fragment(fragment) for fragment in split_fragments(content)]
     separators = document_separator_count(content)
@@ -176,7 +228,7 @@ def qualify(repo: Path, commit: str, frontier_path: Path, lock_path: str) -> dic
             {row["root"] for row in matches} & workspace_roots
         )
         fragment.pop("package_integrities")
-    return {
+    result = {
         "commit": commit,
         "lock_path": lock_path,
         "blob": blob,
@@ -189,6 +241,11 @@ def qualify(repo: Path, commit: str, frontier_path: Path, lock_path: str) -> dic
         "fragments": fragments,
         "authority": "unselected-raw-blob-observations",
     }
+    if include_manifest_dependencies:
+        result["manifest_dependency_frontier"] = manifest_dependency_frontier(
+            repo, commit, frontier_path
+        )
+    return result
 
 
 def main() -> None:
@@ -197,8 +254,24 @@ def main() -> None:
     parser.add_argument("--commit", required=True)
     parser.add_argument("--frontier-json", required=True, type=Path)
     parser.add_argument("--lock-path", default="pnpm-lock.yaml")
+    parser.add_argument(
+        "--include-manifest-dependencies",
+        action="store_true",
+        help="include exact-tree manifest dependency declarations",
+    )
     args = parser.parse_args()
-    print(json.dumps(qualify(args.repo, args.commit, args.frontier_json, args.lock_path), indent=2))
+    print(
+        json.dumps(
+            qualify(
+                args.repo,
+                args.commit,
+                args.frontier_json,
+                args.lock_path,
+                args.include_manifest_dependencies,
+            ),
+            indent=2,
+        )
+    )
 
 
 if __name__ == "__main__":
