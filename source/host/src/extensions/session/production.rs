@@ -3089,17 +3089,19 @@ impl ProductionSessionWorkers {
         agent_id: &str,
         snapshot: &serde_json::Value,
     ) -> Result<bool, String> {
-        self.assert_agent_work_admission(agent_id)?;
-        self.open_agent_db_owner(agent_id)?
-            .set_agent_profile_prompt_snapshot(snapshot)
-            .map_err(|error| error.to_string())
+        self.with_agent_admitted_filesystem_mutation(agent_id, || {
+            self.open_agent_db_owner_locked(agent_id)?
+                .set_agent_profile_prompt_snapshot(snapshot)
+                .map_err(|error| error.to_string())
+        })
     }
 
     pub fn clear_agent_profile_prompt_snapshot(&self, agent_id: &str) -> Result<bool, String> {
-        self.assert_agent_work_admission(agent_id)?;
-        self.open_agent_db_owner(agent_id)?
-            .clear_agent_profile_prompt_snapshot()
-            .map_err(|error| error.to_string())
+        self.with_agent_admitted_filesystem_mutation(agent_id, || {
+            self.open_agent_db_owner_locked(agent_id)?
+                .clear_agent_profile_prompt_snapshot()
+                .map_err(|error| error.to_string())
+        })
     }
 
     pub fn clear_agent_transient_state(&self, agent_id: &str) -> Result<bool, String> {
@@ -3113,10 +3115,12 @@ impl ProductionSessionWorkers {
         agent_id: &str,
         entries: &[serde_json::Value],
     ) -> Result<usize, String> {
-        self.assert_agent_transcript_write_admission(agent_id)?;
-        self.open_agent_db_owner(agent_id)?
-            .append_transcript_entries(entries)
-            .map_err(|error| error.to_string())
+        self.with_agent_filesystem_mutation(agent_id, || {
+            self.assert_agent_transcript_write_admission_locked(agent_id)?;
+            self.open_agent_db_owner_locked(agent_id)?
+                .append_transcript_entries(entries)
+                .map_err(|error| error.to_string())
+        })
     }
 
     pub fn append_agent_transcript_entries_if_session_admitted(
@@ -3125,10 +3129,12 @@ impl ProductionSessionWorkers {
         session_key: &str,
         entries: &[serde_json::Value],
     ) -> Result<usize, String> {
-        self.assert_agent_work_admission(agent_id)?;
-        self.open_agent_db_owner(agent_id)?
-            .append_transcript_entries_if_session_admitted(session_key, entries)
-            .map_err(|error| error.to_string())
+        self.with_agent_filesystem_mutation(agent_id, || {
+            self.assert_agent_transcript_write_admission_locked(agent_id)?;
+            self.open_agent_db_owner_locked(agent_id)?
+                .append_transcript_entries_if_session_admitted(session_key, entries)
+                .map_err(|error| error.to_string())
+        })
     }
 
     /// Append room-owned transcript state while the caller already holds the
@@ -3160,15 +3166,17 @@ impl ProductionSessionWorkers {
         state: &SpendGuardState,
         activity_at: f64,
     ) -> Result<bool, String> {
-        self.assert_agent_work_admission(agent_id)?;
-        self.open_agent_db_owner(agent_id)?
-            .append_spend_guard_card_if_session_admitted(
-                session_key,
-                entry,
-                state,
-                activity_at,
-            )
-            .map_err(|error| error.to_string())
+        self.with_agent_filesystem_mutation(agent_id, || {
+            self.assert_agent_transcript_write_admission_locked(agent_id)?;
+            self.open_agent_db_owner_locked(agent_id)?
+                .append_spend_guard_card_if_session_admitted(
+                    session_key,
+                    entry,
+                    state,
+                    activity_at,
+                )
+                .map_err(|error| error.to_string())
+        })
     }
 
     pub fn append_agent_transcript_entries_and_release_media(
@@ -3179,15 +3187,17 @@ impl ProductionSessionWorkers {
         expected_lifecycle_revision: &str,
         media_work_id: &str,
     ) -> Result<usize, String> {
-        self.assert_agent_work_admission(agent_id)?;
-        self.open_agent_db_owner(agent_id)?
-            .append_transcript_entries_and_release_media(
-                entries,
-                session_key,
-                expected_lifecycle_revision,
-                media_work_id,
-            )
-            .map_err(|error| error.to_string())
+        self.with_agent_filesystem_mutation(agent_id, || {
+            self.assert_agent_transcript_write_admission_locked(agent_id)?;
+            self.open_agent_db_owner_locked(agent_id)?
+                .append_transcript_entries_and_release_media(
+                    entries,
+                    session_key,
+                    expected_lifecycle_revision,
+                    media_work_id,
+                )
+                .map_err(|error| error.to_string())
+        })
     }
 
     pub fn commit_agent_compaction(
@@ -3195,10 +3205,12 @@ impl ProductionSessionWorkers {
         agent_id: &str,
         commit: &CompactionCommit,
     ) -> Result<CompactionCommitOutcome, String> {
-        self.assert_agent_transcript_write_admission(agent_id)?;
-        self.open_agent_db_owner(agent_id)?
-            .commit_compaction(commit)
-            .map_err(|error| error.to_string())
+        self.with_agent_filesystem_mutation(agent_id, || {
+            self.assert_agent_transcript_write_admission_locked(agent_id)?;
+            self.open_agent_db_owner_locked(agent_id)?
+                .commit_compaction(commit)
+                .map_err(|error| error.to_string())
+        })
     }
 
     pub fn read_agent_compacted_transcript_entries(
@@ -3235,10 +3247,12 @@ impl ProductionSessionWorkers {
         entry_id: &str,
         next: &serde_json::Value,
     ) -> Result<Option<serde_json::Value>, String> {
-        self.assert_agent_transcript_write_admission(agent_id)?;
-        self.open_agent_db_owner(agent_id)?
-            .update_transcript_entry(entry_id, next)
-            .map_err(|error| error.to_string())
+        self.with_agent_filesystem_mutation(agent_id, || {
+            self.assert_agent_transcript_write_admission_locked(agent_id)?;
+            self.open_agent_db_owner_locked(agent_id)?
+                .update_transcript_entry(entry_id, next)
+                .map_err(|error| error.to_string())
+        })
     }
 
     pub fn update_agent_transcript_entry_if_session_admitted(
@@ -3248,10 +3262,12 @@ impl ProductionSessionWorkers {
         entry_id: &str,
         next: &serde_json::Value,
     ) -> Result<Option<serde_json::Value>, String> {
-        self.assert_agent_work_admission(agent_id)?;
-        self.open_agent_db_owner(agent_id)?
-            .update_transcript_entry_if_session_admitted(session_key, entry_id, next)
-            .map_err(|error| error.to_string())
+        self.with_agent_filesystem_mutation(agent_id, || {
+            self.assert_agent_transcript_write_admission_locked(agent_id)?;
+            self.open_agent_db_owner_locked(agent_id)?
+                .update_transcript_entry_if_session_admitted(session_key, entry_id, next)
+                .map_err(|error| error.to_string())
+        })
     }
 
     pub fn delete_agent_transcript_entry(
@@ -3259,10 +3275,12 @@ impl ProductionSessionWorkers {
         agent_id: &str,
         entry_id: &str,
     ) -> Result<bool, String> {
-        self.assert_agent_transcript_write_admission(agent_id)?;
-        self.open_agent_db_owner(agent_id)?
-            .delete_transcript_entry(entry_id)
-            .map_err(|error| error.to_string())
+        self.with_agent_filesystem_mutation(agent_id, || {
+            self.assert_agent_transcript_write_admission_locked(agent_id)?;
+            self.open_agent_db_owner_locked(agent_id)?
+                .delete_transcript_entry(entry_id)
+                .map_err(|error| error.to_string())
+        })
     }
 
     pub fn clear_agent_conversation(&self, agent_id: &str) -> Result<bool, String> {
