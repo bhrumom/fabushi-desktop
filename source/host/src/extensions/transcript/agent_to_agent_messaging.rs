@@ -243,7 +243,7 @@ impl ProductionAgentToAgentMessaging {
         let target_session_key = target_admission
             .as_ref()
             .map(|record| record.session_key.clone())
-            .unwrap_or_else(|| format!("agent:{to_agent_id}:main"));
+            .unwrap_or_default();
         let source_endpoint = CommunicationEndpoint {
             agent_id: from_agent_id.to_string(),
             session_key: source_session_key,

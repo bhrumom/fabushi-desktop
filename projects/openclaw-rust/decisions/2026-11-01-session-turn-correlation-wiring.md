@@ -34,6 +34,9 @@ converted into a new turn.
 
 The registry remains process-local. Group/shared-room delivery and sends with
 no admitted session retain their existing owners and compatibility behavior.
+The direct producer also leaves a target session selector empty when the target
+has no admission record; it never derives `agent:{target}:main` from an agent
+id. Only an existing target admission record supplies a session identity.
 Admitted direct inbound envelopes additionally carry the emitted outbound ID as
 `messageId`; the existing SQLite transcript insert owner fences exact duplicate
 delivery and rejects same-identity/different-payload conflicts. Legacy

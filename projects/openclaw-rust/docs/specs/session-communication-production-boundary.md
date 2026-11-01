@@ -146,6 +146,9 @@ send_to_agent_with_session
   `quote` is rejected before the routed turn is dispatched.
 - Compatibility sends without an admitted sender session remain uncorrelated and
   do not call the registry.
+- A target without an admitted session remains on the compatibility identity
+  path; the producer must not synthesize `agent:{id}:main` from the target agent
+  id.
 - An admitted direct envelope carries the sender outbound ID as `messageId`;
   the existing transcript owner uses that identity for duplicate admission. An
   exact duplicate is already admitted and does not dispatch a second turn;
