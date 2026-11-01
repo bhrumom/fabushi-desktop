@@ -441,6 +441,11 @@ after a process interruption between the blob cleanup and owner transaction.
 Pruned-placeholder reclamation uses the same boundary through owner/worker
 close and directory removal, while retaining an explicit failed-reclaim
 outcome for close or removal errors.
+The cached `ProductionAgentStore` owner is also retired before the corresponding
+`SandAgentDb` owner and agent directory are closed/removed in both deletion and
+pruned-placeholder reclamation. The current clone path uses a new agent
+identity and does not reuse a source cache key; no successor-cache handoff was
+found in the static audit.
 Channel credential/configuration producers that write the per-agent channel
 directory (`store_connector_credential` and `disconnect_channel`) now acquire
 the same boundary and recheck admission while holding it. Secret-file and
