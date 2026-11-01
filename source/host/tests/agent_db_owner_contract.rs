@@ -372,7 +372,7 @@ fn provider_review_continuation_settlement_is_run_and_generation_bound() {
         archived_at_ms: None,
         archived_by: None,
         archive_reason: None,
-        admitted_work_id: None,
+        admitted_work_id: Some("continuation-run".into()),
         admitted_media_work_id: None,
         admitted_media_paths: Vec::new(),
         terminal_result_idempotency_key: None,
@@ -404,6 +404,7 @@ fn provider_review_continuation_settlement_is_run_and_generation_bound() {
         .expect("settled admission exists");
     assert_eq!(settled.provider_review_phase.as_deref(), Some("completed"));
     assert!(settled.provider_review.is_none());
+    assert!(settled.admitted_work_id.is_none());
     assert!(!owner
         .settle_provider_review_continuation(
             "revision-settle",

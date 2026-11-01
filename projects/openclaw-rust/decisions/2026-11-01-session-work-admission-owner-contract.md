@@ -171,6 +171,12 @@ The archive/restore owner now receives and checks both canonical
 pass a valid session id with a different session selector and still mutate
 archive state.
 
+Provider-review terminal settlement now clears the matching
+`admitted_work_id` in the same owner CAS as the terminal review phase. This
+prevents a known terminal, cancellation, failure, or outcome-unknown
+continuation from leaving a stale active-work fence after Runner ownership has
+ended.
+
 The remaining agent-only transcript mutation producers were rechecked against
 the live source. Widget-response updates, shared-room restamps, box-request
 settlement, and auto-review settlement carry only `agent_id`; the generic

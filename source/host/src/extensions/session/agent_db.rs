@@ -629,6 +629,9 @@ impl SandAgentDb {
         {
             return Ok(false);
         }
+        if record.admitted_work_id.as_deref() == Some(continuation_run_id) {
+            record.admitted_work_id = None;
+        }
         match outcome {
             ProviderReviewContinuationOutcome::Completed => {
                 record.provider_review_id = None;

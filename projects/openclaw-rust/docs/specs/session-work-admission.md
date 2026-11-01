@@ -104,7 +104,8 @@ without a committed receipt.
 - uncertain deletion/transcript result: report outcome-unknown and do not retry.
 - provider-review continuation dispatch failure: restore the review to
   `pending`; Runner cancellation/failure/unknown: retain terminal facts in a
-  non-actionable phase; Runner success: clear the matching review.
+  non-actionable phase and clear the matching terminal work marker; Runner
+  success: clear the matching review and work marker.
 
 ## Implementation strategy
 

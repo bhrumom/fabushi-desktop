@@ -56,8 +56,9 @@ native field.
 - `PR-06a`: A continuation run must carry the captured lifecycle revision and
   run identity to the existing Runner terminal owner. A known successful
   terminal outcome clears the matching review; cancellation, failure, and
-  outcome-unknown outcomes retain a non-actionable terminal phase. A dispatch
-  failure before Runner ownership restores `pending`.
+  outcome-unknown outcomes retain a non-actionable terminal phase and release
+  the matching admitted work marker. A dispatch failure before Runner
+  ownership restores `pending`.
 - `PR-07`: Incognito, unsupported runtime/API, missing continuation detail,
   duplicate/conflicting review, cancellation, and outcome-unknown paths fail
   closed with explicit outcomes.
