@@ -1008,3 +1008,35 @@ Authored, not run in Stage A:
 - `SEC-TDRP-CANARY-BOT-API-ENTRYPOINT-NONROOT-COMPOSITION-001` — non-root UID 999 is a Dockerfile/runtime composition requirement, not a shell privilege-drop claim.
 
 Stage-B witnesses, when the candidate is frozen and executable validation is authorized, must distinguish shell tokenization from binary semantics: exact process argv, local-mode presence cases, signal/exit propagation, filesystem ownership/creation, network bind/port observations, secret non-disclosure, and bounded readiness. Until those witnesses exist, status remains `validation_status=not-run`, `accepted=false`. Stage A executes none of them.
+
+
+### Repository canary Bot API image-build workflow qualification
+
+`TDRP-R9-REPOSITORY-CANARY-BOT-API-BUILD-WORKFLOW-001` qualifies fixed-U `.github/workflows/canary-bot-api.yml@3ef5e601948c8f3256464d0d31816eebf4ba41a9` as repository CI/container-image provenance only. Source identity is recursive-tree index 117 zero-based, mode 100644, 2,364 ASCII bytes/code points, 68 LF characters, zero CR, trailing newline; target ownership is existing repository build/container/toolchain + supply-chain/process/security + shared quality/evidence/release governance.
+
+Authored, not run in Stage A:
+- `CONTRACT-TDRP-CANARY-BOT-API-WORKFLOW-DISPATCH-001` — only `workflow_dispatch` exists and requires one `ref` input; no automatic trigger or workflow-call surface is invented.
+- `CONTRACT-TDRP-CANARY-BOT-API-WORKFLOW-REF-VALIDATION-001` — `REF` must match exactly 40 lowercase hex before later success-path steps; syntax validation is not commit-existence validation.
+- `CONTRACT-TDRP-CANARY-BOT-API-WORKFLOW-PERMISSIONS-001` — workflow permissions remain `contents: read` + `packages: write`; no broader token scope is inferred.
+- `CONTRACT-TDRP-CANARY-BOT-API-WORKFLOW-ENVIRONMENT-001` — build job uses `environment: canary`; actual environment branch/ref protection and approvals are external evidence, not source-code assumptions.
+- `CONTRACT-TDRP-CANARY-BOT-API-WORKFLOW-CHECKOUT-PIN-001` — checkout uses exact commit `3d3c42e5aac5ba805825da76410c181273ba90b1`.
+- `CONTRACT-TDRP-CANARY-BOT-API-WORKFLOW-GHCR-AUTH-001` — GHCR login uses `github.actor` plus scoped `GITHUB_TOKEN`, and that token is not a Docker build argument.
+- `CONTRACT-TDRP-CANARY-BOT-API-WORKFLOW-BUILD-CONTEXT-001` — build context is exact tree `050b40e726444074e504dadfa3701eedb58bc3e3` containing only exact Dockerfile and entrypoint blobs.
+- `CONTRACT-TDRP-CANARY-BOT-API-WORKFLOW-BUILD-ARGS-001` — the only declared build arg is `TELEGRAM_BOT_API_REF` bound to the validated dispatch input.
+- `CONTRACT-TDRP-CANARY-BOT-API-WORKFLOW-IMAGE-TAG-001` — push target/tag is exactly owner GHCR `telegram-bot-api:<ref>`; tag is mutable and not a release trust anchor.
+- `CONTRACT-TDRP-CANARY-BOT-API-WORKFLOW-DIGEST-HANDOFF-001` — successful push digest is printed as an owner GHCR digest reference and requires explicit operator transfer to `CANARY_BOT_API_IMAGE`; no automatic variable update is claimed.
+- `CONTRACT-TDRP-CANARY-BOT-API-WORKFLOW-SOURCE-LINEAGE-001` — exact workflow, three action commits, context tree, Dockerfile, entrypoint, consumer workflow and downstream publish script stay bound as one provenance chain.
+- `CONTRACT-TDRP-CANARY-BOT-API-WORKFLOW-CONSUMER-001` — fixed-U canary publishing validates a digest-pinned GHCR variable and three publish jobs consume it with `packages: read` and runtime-only API credentials.
+- `INT-TDRP-CANARY-BOT-API-WORKFLOW-REPOSITORY-PROCESS-001` — workflow provenance composes with existing Fabushi repository container/toolchain/security/evidence/release owners without importing the source service or workflow.
+- `FAULT-TDRP-CANARY-BOT-API-WORKFLOW-INVALID-REF-001` — malformed/uppercase/abbreviated ref stops before checkout/build.
+- `FAULT-TDRP-CANARY-BOT-API-WORKFLOW-CHECKOUT-OR-LOGIN-001` — checkout or GHCR-auth failure prevents build/push/digest handoff.
+- `FAULT-TDRP-CANARY-BOT-API-WORKFLOW-UPSTREAM-REF-UNRESOLVED-001` — syntactically valid but nonexistent/unusable upstream ref fails in Dockerfile acquisition and is not silently substituted.
+- `FAULT-TDRP-CANARY-BOT-API-WORKFLOW-BUILD-PUSH-001` — build or registry push failure yields no qualified digest handoff.
+- `FAULT-TDRP-CANARY-BOT-API-WORKFLOW-DIGEST-HANDOFF-001` — absent/stale/manual variable transfer or non-digest consumer value remains non-passing and cannot fall back to a tag/third-party image.
+- `SEC-TDRP-CANARY-BOT-API-WORKFLOW-TOKEN-SCOPE-001` — builder requires only source-read/package-write token capability; consumer later uses package-read and runtime secrets separately.
+- `SEC-TDRP-CANARY-BOT-API-WORKFLOW-ACTION-PINS-001` — all three external Actions remain full-SHA pinned; floating tags are rejected as equivalent provenance.
+- `SEC-TDRP-CANARY-BOT-API-WORKFLOW-INPUT-BOUNDARY-001` — dispatch input reaches shell through environment and build through an action field only after prior validation; it is not accepted as arbitrary shell command text.
+- `SEC-TDRP-CANARY-BOT-API-WORKFLOW-RUNNER-TRUST-001` — custom Depot runner and canary environment controls require independent approved-infrastructure evidence before acceptance.
+- `SEC-TDRP-CANARY-BOT-API-WORKFLOW-DIGEST-TRUST-001` — digest-pinned GHCR reference, not the ref-shaped tag, is the consumer trust boundary; third-party substitution is rejected.
+
+Frozen-candidate Stage-B execution, if still applicable to the target release process, must bind exact H/U/action pins/context tree, approved runner/environment configuration, GITHUB_TOKEN scopes, pushed manifest digest, operator variable transition, consumer digest validation, and downstream service readiness. Stage A does not execute any of those gates.
