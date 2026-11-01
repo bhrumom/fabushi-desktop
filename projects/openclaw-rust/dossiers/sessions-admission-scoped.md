@@ -760,3 +760,13 @@ made in this slice. The durable next step is an owner-controlled serialization
 or an explicit rollback/unknown-outcome contract covering the complete profile
 or avatar mutation, followed by a focused negative oracle. Runtime, package,
 and exact-head acceptance remain pending.
+
+## Provider-review capability identity fence — 2026-11-01
+
+The provider-review capability owner now rechecks `review.session_id` against
+the owner-local admission record in both acknowledgment issuance and claim.
+The Gateway route/session fence remains a producer-side check; this owner
+check closes the local boundary if a persisted review record is malformed or
+rebound after facade admission. Static contract evidence is recorded, while
+runtime verification, exact-head verification, and production acceptance
+remain pending under the development freeze.

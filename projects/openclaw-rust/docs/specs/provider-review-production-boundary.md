@@ -48,7 +48,9 @@ native field.
   `completed` clears the review, and `cancelled`/`failed`/`outcome-unknown`
   retain it as non-actionable terminal evidence.
 - `PR-05`: A continuation requires a host-issued, non-serializable
-  acknowledgment bound to the stored review ID and next run ID. One
+  acknowledgment bound to the stored session ID, review ID, and next run ID.
+  The session owner must reject issuance and claim when the stored review's
+  session identity differs from the owner-local admission record. One
   acknowledgment may be claimed by at most one admitted attempt.
 - `PR-06`: Runtime/provider/model/API identity and lifecycle must be rechecked
   at continuation start and native-turn acceptance; stale acknowledgments are

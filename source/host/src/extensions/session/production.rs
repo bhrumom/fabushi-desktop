@@ -2144,6 +2144,7 @@ impl ProductionSessionWorkers {
                 || (review.runtime_id == "openclaw"
                     && review.api.as_deref() == Some("openai-chatgpt-responses")));
         if record.lifecycle_revision != expected_lifecycle_revision
+            || record.session_id != review.session_id
             || record.provider_review_id.as_deref() != Some(review_id)
             || record.provider_review_phase.as_deref() != Some("pending")
             || review.id != review_id
@@ -2203,6 +2204,7 @@ impl ProductionSessionWorkers {
             .clone()
             .ok_or_else(|| "provider review is unavailable".to_string())?;
         if record.lifecycle_revision != state.lifecycle_revision
+            || record.session_id != review.session_id
             || record.provider_review_id.as_deref() != Some(state.review_id.as_str())
             || record.provider_review_phase.as_deref() != Some("pending")
             || record.admitted_work_id.as_deref() != Some(state.next_run_id.as_str())

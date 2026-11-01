@@ -393,6 +393,13 @@ fn test_provider_review_owner_exposes_single_claim_host_capability() {
     assert!(owner_source.contains("provider_review_capabilities"));
     assert!(owner_source.contains(".remove(&acknowledgment.token)"));
     assert!(owner_source.contains("provider_review_phase.as_deref() != Some(\"pending\")"));
+    assert_eq!(
+        owner_source
+            .matches("record.session_id != review.session_id")
+            .count(),
+        2,
+        "provider-review issue and claim must both enforce session identity"
+    );
     assert!(owner_source.contains("settle_provider_review_continuation"));
     assert!(owner_source.contains("provider_review_continuation_run_id"));
 }

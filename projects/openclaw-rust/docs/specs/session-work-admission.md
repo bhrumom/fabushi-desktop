@@ -45,7 +45,10 @@ durable state → consumer chain.
   admitted background work or an active foreground Runner stream is still
   active.
 - `SWA-05`: Provider-review terminal facts remain owned by the admitted run;
-  retries, fallback providers, and successor runs cannot claim them.
+  retries, fallback providers, and successor runs cannot claim them. The
+  session owner must also reject acknowledgment issuance and claim when the
+  stored review session identity differs from the owner-local admission
+  record.
 - `SWA-06`: Stale, deleted, archived, duplicate, cancelled, and
   outcome-unknown results are explicit and fail closed.
 - `SWA-07`: Existing `ProductionSessionWorkers`, `SandAgentDb`, transcript
