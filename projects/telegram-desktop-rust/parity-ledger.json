@@ -9,7 +9,7 @@
     "unknown": 16172,
     "unread": 16145,
     "omitted": 0,
-    "responsibilities_total": 101,
+    "responsibilities_total": 102,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -25608,6 +25608,267 @@
       "id": "TDRP-R9-MTPROTO-REQ-DH-PARAMS-REQUEST-WIRE-001",
       "source_paths": [
         "Telegram/SourceFiles/mtproto/scheme/mtproto.tl@76225965bfc794388db241f3f760db8ab79e84f8",
+        "Telegram/SourceFiles/mtproto/details/mtproto_dc_key_creator.cpp@13c57454f14b814b5923ea253048fb881ad8cf03"
+      ]
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+      "source_path": "Telegram/SourceFiles/mtproto/connection_abstract.h",
+      "source_blob_sha": "217b684fa222c42e968dfddeaa62f16a0054017f",
+      "source_kind": "wire",
+      "module_id": "tdesktop.mtproto.plaintext-handshake-envelope-wire",
+      "responsibility_id": "TDRP-R9-MTPROTO-PLAINTEXT-HANDSHAKE-ENVELOPE-WIRE-001",
+      "source_symbols": [
+        "AbstractConnection::prepareNotSecurePacket",
+        "AbstractConnection::parseNotSecureResponse",
+        "DcKeyCreator::sendNotSecureRequest",
+        "PlaintextEnvelope::encode/decode",
+        "TcpTransport::exchange_plaintext"
+      ],
+      "capability_ids": [
+        "CAP-TELEGRAM-MTPROTO-PLAINTEXT-HANDSHAKE-ENVELOPE-WIRE"
+      ],
+      "dependency_ids": [
+        "telegram-protocol::PlaintextEnvelope",
+        "telegram-network::TcpTransport::exchange_plaintext",
+        "telegram-protocol::MessageIdGuard"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/evidence/round101-mtproto-plaintext-handshake-envelope-wire-20261101.md",
+      "behavior_contract": "Existing PlaintextEnvelope remains the canonical unencrypted auth-key handshake envelope owner. It emits auth_key_id=0:i64, message_id:i64, message_data_length:i32 and 4-byte-aligned handshake message data. The shipping TcpTransport::exchange_plaintext path now adds fixed-U-equivalent 0..63 random 32-bit padding words and includes them in message_data_length. Envelope decode fails closed on non-zero auth_key_id, zero/negative/misaligned or oversized lengths, truncation and declared/actual length mismatch before handshake body parsing; server message-id semantic validation remains in MessageIdGuard.",
+      "state_machine": "AuthKeyHandshake phase emits PlaintextEnvelope -> TcpTransport::exchange_plaintext -> random padded exact unencrypted envelope -> receive/decode exact unencrypted envelope -> MessageIdGuard server-id validation -> existing phase parser/state transition. No connection scheduling or auth-key persistence state is added.",
+      "side_effects": [
+        "Adds fixed-U-equivalent random padding to the existing shipping plaintext auth-key exchange",
+        "Hardens plaintext envelope body alignment/zero-length validation",
+        "Keeps server message-id semantic validation in existing MessageIdGuard",
+        "Authors focused contracts without executing them",
+        "Mirrors existing desktop telegram-network and protocol contract files; no duplicate handshake.rs is created"
+      ],
+      "failure_cases": [
+        "Non-zero auth_key_id accepted",
+        "Empty or non-4-byte-aligned outbound handshake body accepted",
+        "Padding above 252 bytes or not divisible by four accepted",
+        "Declared message_data_length excludes padding",
+        "Zero/negative/non-4-byte-aligned or oversized inbound length accepted",
+        "Truncated or length-mismatched envelope accepted",
+        "Envelope work is expanded into connection scheduling, binding/persistence, arbitrary request history, gzip or full difference decoding"
+      ],
+      "ui_disposition": "No UI change. This is MTProto auth-key handshake envelope framing in the existing shared protocol/network owners.",
+      "non_ui_responsibilities": [
+        "Exact auth_key_id/message_id/message_data_length framing",
+        "0..63 random 32-bit outbound padding words",
+        "4-byte alignment and positive-length validation",
+        "Strict declared/actual envelope length validation",
+        "Separation from MessageIdGuard clock/window validation and broader transport lifecycle"
+      ],
+      "platform_delta": "Canonical production delta adds fixed-U random plaintext-handshake padding through the existing TcpTransport::exchange_plaintext caller and strengthens PlaintextEnvelope alignment/length guards. No second protocol/network owner or lifecycle is introduced.",
+      "existing_owner_candidates": [
+        "bhrumom/fabushi-platform-core:native/telegram-protocol/src/handshake.rs",
+        "bhrumom/fabushi-platform-core:native/telegram-network/src/lib.rs",
+        "bhrumom/fabushi-platform-core:native/telegram-protocol/tests/protocol_contract.rs",
+        "source/mahayana/mahayana-rs/providers/telegram-network/src/lib.rs",
+        "source/mahayana/mahayana-rs/providers/telegram-protocol/tests/protocol_contract.rs"
+      ],
+      "existing_owner": "Existing canonical telegram-protocol PlaintextEnvelope plus existing telegram-network TcpTransport shipping caller",
+      "rejected_existing_owners": [
+        "new plaintext-envelope owner: rejected because PlaintextEnvelope already owns the exact envelope",
+        "new connection scheduler: rejected because padding/framing is independent of connection selection and retry",
+        "desktop duplicate handshake implementation: rejected because desktop has no tracked handshake.rs mirror"
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "bhrumom/fabushi-platform-core:native/telegram-protocol/src/handshake.rs",
+        "bhrumom/fabushi-platform-core:native/telegram-network/src/lib.rs",
+        "bhrumom/fabushi-platform-core:native/telegram-protocol/tests/protocol_contract.rs",
+        "source/mahayana/mahayana-rs/providers/telegram-network/src/lib.rs",
+        "source/mahayana/mahayana-rs/providers/telegram-protocol/tests/protocol_contract.rs"
+      ],
+      "fabushi_target_symbols": [
+        "PlaintextEnvelope::encode",
+        "PlaintextEnvelope::encode_with_padding",
+        "PlaintextEnvelope::encode_with_random_padding",
+        "PlaintextEnvelope::decode",
+        "TcpTransport::exchange_plaintext",
+        "MAX_PLAINTEXT_PADDING_BYTES"
+      ],
+      "target_language": "Rust",
+      "language_rationale": "The existing source-neutral Rust protocol/network owners already carry the shipping auth-key handshake; the exact wire responsibility belongs there rather than in a new source-specific runtime.",
+      "command_event_contracts": [
+        "aligned TL body + 0..252 aligned random padding -> exact unencrypted envelope with inclusive message_data_length",
+        "invalid body/padding alignment or size -> fail closed",
+        "non-zero auth_key_id or invalid declared inbound length -> fail closed",
+        "valid envelope -> existing MessageIdGuard and handshake body parser"
+      ],
+      "state_owner": "Existing AuthKeyHandshake owns phase state; PlaintextEnvelope is a pure framing value and TcpTransport is the existing socket caller.",
+      "lifecycle_owner": "Existing telegram-network establish_auth_key/exchange_and_validate path. Connection selection/retry and auth-key persistence remain outside this slice.",
+      "persistence_and_restart": "No persistence or restart behavior is introduced or changed.",
+      "concurrency_and_cancellation": "Synchronous framing and secure-random padding inside the existing exchange only; no scheduler, background work, request-history registry or callback fan-out is added.",
+      "security_boundary": "Only auth_key_id=0 unencrypted envelopes with positive 4-byte-aligned bounded declared lengths are accepted. Outbound body/padding alignment and maximum padding are fail-closed. Message-id temporal semantics remain separately validated by MessageIdGuard.",
+      "network_service_dependencies": [
+        "Existing TcpTransport send_payload/receive_payload and OS secure randomness; no new connection or service dependency."
+      ],
+      "service_owner": "Canonical embedded Telegram protocol/network runtime.",
+      "deployment_evidence": [],
+      "implementation_status": "implemented",
+      "coverage_disposition": "rewritten",
+      "blockers": [
+        "Stage B executable build/unit/contract/integration/packaged validation has not run.",
+        "Auth-key binding, temporary/permanent persistence, expiry/renewal and restore remain outside this isolated wire slice.",
+        "Connection scheduling/racing/send retry beyond the existing exchange, arbitrary request histories, gzip and complete difference/differenceSlice decoding/application remain open/fail-closed.",
+        "Broader fixed-U source/legal/release closure remains open."
+      ],
+      "production_entrypoints": [
+        "fixed-U DcKeyCreator::sendNotSecureRequest -> AbstractConnection::prepareNotSecurePacket -> auth_key_id=0/message_id/message_data_length/request+random padding",
+        "canonical establish_auth_key -> exchange_and_validate -> TcpTransport::exchange_plaintext -> PlaintextEnvelope::encode_with_random_padding/decode -> MessageIdGuard",
+        "desktop tracked telegram-network mirror -> same canonical exchange_plaintext behavior"
+      ],
+      "production_evidence": [
+        "fixed-U:Telegram/SourceFiles/mtproto/connection_abstract.h@217b684fa222c42e968dfddeaa62f16a0054017f",
+        "fixed-U:Telegram/SourceFiles/mtproto/connection_abstract.cpp@3baabf3f72c7c7edba3151814681fbf167a5ca0a",
+        "fixed-U:Telegram/SourceFiles/mtproto/details/mtproto_dc_key_creator.cpp@13c57454f14b814b5923ea253048fb881ad8cf03",
+        "platform-core-spec-commit:acfc281740f3a31a17d7a50ec26327f5ddab0f8b",
+        "platform-core-spec-blob:d999d6349b64729783695704464b89ae706698b6",
+        "platform-core-production-commit:7b25a2cf1d690c1f441f3f45fcc92b7d0a86f057",
+        "platform-core-production-path:native/telegram-protocol/src/handshake.rs@301554c60fe318a621726cacdd37f0d5d1de2a3e",
+        "platform-core-network-path:native/telegram-network/src/lib.rs@54f509474391bb5118ba4678ba5c566ab3e74ec8",
+        "platform-core-contract-path:native/telegram-protocol/tests/protocol_contract.rs@a7c10e88172ccd664bad0370acea8fac7a3e2f3d",
+        "desktop-mirror-commit:d2aaaf1a4979ad4f825532ec14e6648fd5bbc8eb",
+        "path:source/mahayana/mahayana-rs/providers/telegram-network/src/lib.rs@54f509474391bb5118ba4678ba5c566ab3e74ec8",
+        "path:source/mahayana/mahayana-rs/providers/telegram-protocol/tests/protocol_contract.rs@a7c10e88172ccd664bad0370acea8fac7a3e2f3d"
+      ],
+      "test_evidence": [
+        "Canonical and desktop authored-only contract covers exact no-padding/padded envelope layout, inclusive length, invalid body/padding alignment and size, invalid inbound declared lengths, mismatch and maximum bounds; not run."
+      ],
+      "target_commit": "d2aaaf1a4979ad4f825532ec14e6648fd5bbc8eb",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Canonical Fabushi account + existing TelegramClientLease/runtime + shared telegram-protocol/network production composition",
+      "composition_slot": "Embedded Telegram MTProto plaintext auth-key handshake envelope wire",
+      "capability_component": "Exact fixed-U unencrypted handshake envelope with random padding",
+      "variation_axes": [
+        "0 vs maximum padding",
+        "aligned vs misaligned body",
+        "zero/negative/misaligned/oversized inbound declared length",
+        "auth_key_id zero vs non-zero"
+      ],
+      "shared_owner_contracts": [
+        "Existing AuthKeyHandshake",
+        "Existing PlaintextEnvelope",
+        "Existing TcpTransport",
+        "Existing MessageIdGuard"
+      ],
+      "duplicate_root_check": "No second account, runtime, provider, transport, handshake owner, auth-key store, request-history store, decompression runtime, difference runtime, UI root, sidecar, subprocess or Web wrapper was introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [
+        "Desktop checkpoint has no source/mahayana/mahayana-rs/providers/telegram-protocol/src/handshake.rs; canonical handshake/envelope remains in fabushi-platform-core while desktop tracks the network consumer and contracts."
+      ],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Not applicable",
+      "primary_navigation_target": "Existing Messages/Conversation navigation",
+      "collection_surface": "Existing ConversationList; no change",
+      "creation_flow": "Existing canonical conversation creation; no change",
+      "object_action_scope": "Not applicable",
+      "detail_section": "Not applicable",
+      "capability_surface": "Existing ConversationWorkspace through the same provider/runtime; no new surface",
+      "route_contract": "No new route.",
+      "search_scope": "Not applicable",
+      "search_provider": "Existing canonical Search owner; unchanged",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Unchanged.",
+      "search_local_remote_contract": "Not applicable.",
+      "responsive_disposition": "No UI change.",
+      "accessibility_contract": "No UI change.",
+      "keyboard_contract": "No UI change.",
+      "state_continuity_contract": "Existing auth-key handshake phases continue through the same PlaintextEnvelope and TcpTransport exchange; only exact unencrypted framing/padding validation changes.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Existing Fabushi design system; no visual changes",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": null,
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "No new icon asset",
+      "avatar_contract": "No change",
+      "content_copy_keys": [],
+      "motion_contract": "No change",
+      "reduced_motion_contract": "No change",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "high",
+      "requirement_ids": [
+        "TDRP-R9-MTPROTO-PLAINTEXT-HANDSHAKE-ENVELOPE-WIRE-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-MTPROTO-PLAINTEXT-HANDSHAKE-ENVELOPE-WIRE-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-MTPROTO-PLAINTEXT-ENVELOPE-LAYOUT-001",
+        "INV-TDRP-MTPROTO-PLAINTEXT-ENVELOPE-PADDING-001",
+        "INV-TDRP-MTPROTO-PLAINTEXT-ENVELOPE-LENGTH-001"
+      ],
+      "unit_case_ids": [
+        "UNIT-TDRP-MTPROTO-PLAINTEXT-ENVELOPE-LAYOUT-001",
+        "UNIT-TDRP-MTPROTO-PLAINTEXT-ENVELOPE-PADDING-001",
+        "UNIT-TDRP-MTPROTO-PLAINTEXT-ENVELOPE-REJECT-001"
+      ],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-MTPROTO-PLAINTEXT-HANDSHAKE-ENVELOPE-WIRE-001"
+      ],
+      "integration_case_ids": [],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "fault_recovery_case_ids": [],
+      "performance_case_ids": [],
+      "security_case_ids": [
+        "SEC-TDRP-MTPROTO-PLAINTEXT-AUTH-KEY-ID-001",
+        "SEC-TDRP-MTPROTO-PLAINTEXT-LENGTH-001"
+      ],
+      "soak_case_ids": [],
+      "exploratory_charter_ids": [],
+      "regression_ids": [
+        "REG-TDRP-MTPROTO-PLAINTEXT-HANDSHAKE-SHIPPING-001"
+      ],
+      "release_gate_ids": [
+        "G-TRACEABILITY",
+        "G-COMPOSITION",
+        "G-SECURITY",
+        "G-EVIDENCE",
+        "G-RELEASE"
+      ],
+      "test_fixture_ids": [
+        "mtproto-plaintext-req-pq-multi-patterned-envelope"
+      ],
+      "test_environment_ids": [
+        "GitHub Actions Stage B matrix (not run)"
+      ],
+      "coverage_matrix_status": "pending",
+      "flake_status": "stable",
+      "release_gate_status": "pending",
+      "acceptance_reviewer": null,
+      "reviewer": null,
+      "license_and_provenance": "Behavioral responsibility is anchored to fixed-U telegramdesktop/tdesktop connection_abstract.h@217b684fa222c42e968dfddeaa62f16a0054017f, connection_abstract.cpp@3baabf3f72c7c7edba3151814681fbf167a5ca0a and mtproto_dc_key_creator.cpp@13c57454f14b814b5923ea253048fb881ad8cf03. Implementation is source-neutral Rust and copies no upstream C++ implementation.",
+      "notes": "Stage A source-level implementation. Existing PlaintextEnvelope/TcpTransport shipping path was retained; this round adds fixed-U-equivalent 0..63 random 32-bit padding words to outbound unencrypted auth-key handshake messages and strengthens exact alignment/length fail-closed validation. Focused contracts were authored/mirrored but not executed; validation_status=not-run and accepted=false. Binding/persistence, broader connection scheduling, arbitrary request history, gzip and complete difference decoding remain open.",
+      "test_execution_evidence": [],
+      "validation_status": "not-run",
+      "accepted": false,
+      "id": "TDRP-R9-MTPROTO-PLAINTEXT-HANDSHAKE-ENVELOPE-WIRE-001",
+      "source_paths": [
+        "Telegram/SourceFiles/mtproto/connection_abstract.h@217b684fa222c42e968dfddeaa62f16a0054017f",
+        "Telegram/SourceFiles/mtproto/connection_abstract.cpp@3baabf3f72c7c7edba3151814681fbf167a5ca0a",
         "Telegram/SourceFiles/mtproto/details/mtproto_dc_key_creator.cpp@13c57454f14b814b5923ea253048fb881ad8cf03"
       ]
     }

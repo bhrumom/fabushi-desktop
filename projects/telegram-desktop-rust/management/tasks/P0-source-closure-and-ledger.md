@@ -1432,3 +1432,16 @@ Coverage is `responsibilities_total=101, unknown=16172, unread=16145, omitted=0,
 Auth-key binding/persistence/expiry/renewal, connection scheduling/racing/send retry, arbitrary request histories,
 gzip, complete difference/differenceSlice decoding/application, broader source/legal closure, Stage-B executable
 evidence and independent release ACCEPT remain open. No executable validation was performed.
+
+
+## Stage-A MTProto plaintext auth-key handshake envelope wire (evidence round 101; task round 70, 2026-11-01)
+
+Fixed U remains `telegramdesktop/tdesktop@f985723b552b30fe1c17d377d57f44e61a15a8c4`. Fixed-U `prepareNotSecurePacket` writes auth_key_id=0, message_id, message_data_length and the request plus 0..63 random 32-bit padding words, with padding included in the declared length; `DcKeyCreator::sendNotSecureRequest` is the real handshake caller.
+
+Existing-owner-first selected canonical `PlaintextEnvelope` plus `TcpTransport::exchange_plaintext`. Spec-first platform-core checkpoint is `acfc281740f3a31a17d7a50ec26327f5ddab0f8b` / `d999d6349b64729783695704464b89ae706698b6`; production/authored-contract checkpoint is `7b25a2cf1d690c1f441f3f45fcc92b7d0a86f057` with handshake `301554c60fe318a621726cacdd37f0d5d1de2a3e`, network `54f509474391bb5118ba4678ba5c566ab3e74ec8`, contract `a7c10e88172ccd664bad0370acea8fac7a3e2f3d`. Desktop mirrors network/contracts byte-identically at `d2aaaf1a4979ad4f825532ec14e6648fd5bbc8eb`; no duplicate handshake.rs was created.
+
+The unique ledger adds `TDRP-R9-MTPROTO-PLAINTEXT-HANDSHAKE-ENVELOPE-WIRE-001` as `implemented / coverage_disposition=rewritten / validation_status=not-run / accepted=false`. Coverage becomes `responsibilities_total=102, unknown=16172, unread=16145, omitted=0, unmapped_responsibilities=0`.
+
+Auth-key binding/persistence/expiry/renewal, broader connection scheduling/racing/send retry, arbitrary request histories, gzip, complete difference/differenceSlice decoding/application, broader fixed-U source/legal closure, Stage-B executable evidence and independent release ACCEPT remain open.
+
+No GitHub Actions/status/check query or trigger, build, typecheck, lint, schema validator, generator, unit/contract/integration/E2E test, package, deployment, installation, or runtime acceptance was performed.
