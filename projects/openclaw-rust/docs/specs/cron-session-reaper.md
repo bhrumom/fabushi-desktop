@@ -72,6 +72,12 @@ The following bounded read slice is also approved: the existing Session owner
 may project expired, terminal, non-base rows while excluding active
 controller/media/subagent fences. This is candidate selection only; it must not
 archive transcript artifacts or delete a row until D04--D05 are approved.
+Fence columns are fail-closed: until a real producer publishes a complete
+fence snapshot for the row, `fence_state_known` is false and the row is not a
+cleanup candidate.
+Schema initialization must migrate an already-created registration table by
+adding this marker with a default of false; migration errors remain explicit
+and non-passing.
 
 ## Verification and Definition of Done
 

@@ -2,7 +2,7 @@ use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::time::Duration;
 
-use rusqlite::{Connection, params};
+use rusqlite::{Connection, OptionalExtension, params};
 use serde_json::{Map, Value};
 
 use crate::storage::sqlite_busy::{is_sqlite_corrupt_error, is_sqlite_io_error};
@@ -110,6 +110,19 @@ pub fn init_configured_db(
         );
     }
     db.execute_batch(AGENT_DB_SCHEMA)?;
+    let has_fence_state_known = db
+        .query_row(
+            "SELECT 1 FROM pragma_table_info('cron_session_runs') WHERE name = 'fence_state_known' LIMIT 1",
+            [],
+            |row| row.get::<_, i64>(0),
+        )
+        .optional()?
+        .is_some();
+    if !has_fence_state_known {
+        db.execute_batch(
+            "ALTER TABLE cron_session_runs ADD COLUMN fence_state_known INTEGER NOT NULL DEFAULT 0",
+        )?;
+    }
     Ok(db)
 }
 

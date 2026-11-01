@@ -122,7 +122,11 @@ not decide whether any row is deletable.
 corresponding read-only candidate projection: terminal, non-base rows older
 than a caller-supplied retention duration, excluding active controller,
 outgoing-media, and unsettled-subagent fences. It performs no archive or
-delete mutation.
+delete mutation. The selector now also requires an explicit
+`fence_state_known` marker, so the current registration producer cannot turn
+unpopulated fence columns into an accidental all-clear.
+Existing agent databases are migrated explicitly when the schema opens; a
+missing marker is added as false and migration errors are not swallowed.
 
 This is direct producer → owner → durable row evidence for registration only.
 No retention parser, sweep trigger, transcript archive, active media/subagent

@@ -31,6 +31,9 @@ owner is selected.
 The owner may additionally expose a read-only expired-candidate projection
 using the stored terminal/base/fence fields and a caller-supplied parsed
 retention duration; this projection is not permission to archive or delete.
+Because the current registration producer does not yet own all three fence
+facts, the row must also carry `fence_state_known`; false is an explicit
+non-candidate state, never an implicit all-clear.
 
 ## Source evidence and exact subjects
 

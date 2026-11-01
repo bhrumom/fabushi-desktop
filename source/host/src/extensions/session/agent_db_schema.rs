@@ -40,7 +40,8 @@ CREATE TABLE IF NOT EXISTS cron_session_runs (
   terminal_detail TEXT,
   active_controller INTEGER NOT NULL DEFAULT 0,
   pending_outgoing_media INTEGER NOT NULL DEFAULT 0,
-  unsettled_subagent INTEGER NOT NULL DEFAULT 0
+  unsettled_subagent INTEGER NOT NULL DEFAULT 0,
+  fence_state_known INTEGER NOT NULL DEFAULT 0
 ) STRICT;
 CREATE UNIQUE INDEX IF NOT EXISTS idx_cron_session_runs_automation_run
   ON cron_session_runs(automation_id, run_id);

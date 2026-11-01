@@ -2630,6 +2630,7 @@ impl ProductionSessionWorkers {
                     && !row.active_controller
                     && !row.pending_outgoing_media
                     && !row.unsettled_subagent
+                    && row.fence_state_known
                     && row.updated_at_ms.is_finite()
                     && row.updated_at_ms >= 0.0
                     && now_ms >= row.updated_at_ms

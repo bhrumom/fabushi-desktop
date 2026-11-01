@@ -175,6 +175,7 @@ pub struct CronSessionRunRecord {
     pub active_controller: bool,
     pub pending_outgoing_media: bool,
     pub unsettled_subagent: bool,
+    pub fence_state_known: bool,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -1609,7 +1610,7 @@ impl SandAgentDb {
         let mut statement = db.prepare(
             "SELECT session_key, automation_id, run_id, session_id, lifecycle_revision,\
                     updated_at_ms, base_session, state, terminal_outcome, terminal_detail,\
-                    active_controller, pending_outgoing_media, unsettled_subagent\
+                    active_controller, pending_outgoing_media, unsettled_subagent, fence_state_known\
              FROM cron_session_runs ORDER BY updated_at_ms ASC, session_key ASC",
         )?;
         let rows = statement.query_map([], |row| {
@@ -1627,6 +1628,7 @@ impl SandAgentDb {
                 active_controller: row.get::<_, i64>(10)? != 0,
                 pending_outgoing_media: row.get::<_, i64>(11)? != 0,
                 unsettled_subagent: row.get::<_, i64>(12)? != 0,
+                fence_state_known: row.get::<_, i64>(13)? != 0,
             })
         })?;
         rows.collect::<Result<Vec<_>, _>>().map_err(Into::into)
