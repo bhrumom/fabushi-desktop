@@ -76,6 +76,15 @@ wiring may be recorded as source implemented/wired only for the covered direct
 path. Full responsibility remains pending until approval UI/consumer, inbound
 receipt, and exact-head/runtime evidence exist.
 
+### SCP-08 — Inbound consumer recheck
+
+The existing inbound transcript consumer must re-resolve the canonical source
+and target session identities and re-run the same communication planner before
+persisting a received agent message. A `never` or approval-required target
+decision must reject before partner, transcript, or activity mutation. The
+legacy no-admission compatibility path remains separate and must not invent a
+new session owner.
+
 ## Current and target state
 
 | Concern | Current | Target |
@@ -85,6 +94,7 @@ receipt, and exact-head/runtime evidence exist.
 | Direct send | Transcript/wake occur without admission | Admission precedes all effects |
 | Ask mode | Pure contract only | Fail closed until approval consumer exists |
 | Group send | Existing shared-room owner | Unchanged |
+| Inbound receipt | Consumer accepted a supplied source envelope | Existing session owner rechecks source identity and receive policy before persistence |
 
 ## Data/control flow
 

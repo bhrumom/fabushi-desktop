@@ -713,6 +713,16 @@ durable `deletion_pending` inside their SQLite transactions. These paths cannot
 commit after deletion custody wins the durable race; this is a write-edge
 correction, not completion of the detached-result/media lifecycle.
 
+The inbound agent-message consumer now revalidates the canonical source and
+target session owners before persistence. When both sessions have admission
+records it re-runs the existing communication planner, rejects target
+`receive=never` or approval-required delivery before partner/transcript/activity
+mutation, and derives the persisted source name from the source roster rather
+than trusting the inbound envelope. Self, unknown, group, remote, and deleting
+source identities are rejected. Legacy databases without admission records
+retain the existing compatibility append path; this correction does not claim
+full channel or runtime acceptance.
+
 The automation spend-guard producer now uses one existing session owner
 transaction for a session-bound widget card, its spend-guard KV state, and the
 activity projection. The legacy no-admission compatibility branch remains
