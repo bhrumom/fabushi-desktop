@@ -440,6 +440,15 @@ fn test_direct_agent_db_metadata_writes_fail_closed_on_malformed_admission() {
         "all session-owned transaction edges must validate admission identity"
     );
     assert!(owner_source.contains("if !session_work_write_is_admitted(db)?"));
+    let initializer = owner_source
+        .split("pub fn initialize_metadata_if_missing(")
+        .nth(1)
+        .expect("metadata initializer exists")
+        .split("pub fn set_metadata(")
+        .next()
+        .expect("metadata initializer boundary exists");
+    assert!(initializer.contains("BEGIN IMMEDIATE"));
+    assert!(initializer.contains("if !session_work_write_is_admitted(db)?"));
 }
 
 #[test]
