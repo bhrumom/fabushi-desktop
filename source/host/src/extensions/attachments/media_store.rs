@@ -579,7 +579,7 @@ pub fn save_media_source(
         }
     }
 
-    let bytes = fs::read(source_path).map_err(|e| {
+    let bytes = read_media_source_bytes(source_path, max_bytes).map_err(|e| {
         SaveMediaSourceError::new(
             SaveMediaSourceErrorCode::InvalidPath,
             format!("Failed to read source file: {e}"),
@@ -596,6 +596,28 @@ pub fn save_media_source(
         Some(source),
         base_dir,
     )
+}
+
+fn read_media_source_bytes(path: &Path, max_bytes: u64) -> io::Result<Vec<u8>> {
+    let mut options = OpenOptions::new();
+    options.read(true);
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::OpenOptionsExt;
+        options.custom_flags(libc::O_NOFOLLOW);
+    }
+    let mut file = options.open(path)?;
+    let metadata = file.metadata()?;
+    if !metadata.is_file() {
+        return Err(io::Error::new(
+            io::ErrorKind::InvalidInput,
+            "media source is not a regular file",
+        ));
+    }
+    let read_limit = max_bytes.saturating_add(1);
+    let mut bytes = Vec::new();
+    file.take(read_limit).read_to_end(&mut bytes)?;
+    Ok(bytes)
 }
 
 pub fn save_remote_media_for_store(
