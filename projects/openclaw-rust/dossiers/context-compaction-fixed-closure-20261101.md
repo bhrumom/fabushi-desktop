@@ -43,6 +43,16 @@ The temporary JSON result digest was
   exports, aliases, generated artifacts, registry-resolved packages, licenses,
   and archive identities therefore remain unqualified.
 
+The companion bounded lockfile probe read the exact `pnpm-lock.yaml` blob
+`83b4975eb96942ec007a2eb9847ccfe98d380bda` (`19227` lines; content SHA-256
+`a4623b232742ae72f37072a40779d709b32436b430b88dc006902d1fa1287a4c`). It
+observed two top-level lockfile fragments. The larger fragment contains `200`
+importers, `1749` package keys, and `1142` snapshots; of `81` candidate package
+roots derived from the closure frontier, `64` matched and `17` did not. This
+parser intentionally reports raw lockfile observations and does not resolve
+aliases, peer suffixes, package archives, integrity/license provenance, or the
+unmatched roots.
+
 ## Disposition
 
 This probe is stronger exact-subject discovery evidence for `CC-01`, but it
