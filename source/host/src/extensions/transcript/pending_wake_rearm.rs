@@ -34,6 +34,7 @@ pub struct LostSubagentWake {
     pub title: String,
     pub result: String,
     pub quiet_origin: Option<QuietWakeOrigin>,
+    pub pending_wake_marker: DurablePendingWakeMarker,
 }
 
 pub trait PendingWakeRuntimePort: Send + Sync {
@@ -378,6 +379,7 @@ impl PendingWakeRearm {
                 .unwrap_or_else(|| "Background task".into()),
             result: "A host restart interrupted this background task before its result could be delivered; its in-process run did not survive, so its final state is unknown. Check its transcript (Await with this task id) if you need what it got through, and dispatch a fresh background task if the work still matters.".into(),
             quiet_origin: marker.quiet_origin.clone(),
+            pending_wake_marker: marker.clone(),
         })
     }
 

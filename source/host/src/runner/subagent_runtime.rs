@@ -75,6 +75,7 @@ pub struct BackgroundSubagentCompletion {
     pub parent_agent_id: String,
     pub subagent_agent_id: String,
     pub lifecycle_revision: String,
+    pub marked_at_ms: u64,
     pub subagent_type: String,
     pub tool_call_id: String,
     pub title: String,
@@ -110,6 +111,7 @@ pub struct PendingWake {
     pub work_id: String,
     pub title: String,
     pub subagent_type: String,
+    pub marked_at_ms: u64,
     pub quiet_origin: Option<String>,
 }
 
@@ -296,6 +298,7 @@ impl SubagentRuntime {
             work_id: subagent_agent_id.to_string(),
             title,
             subagent_type: subagent_type.to_string(),
+            marked_at_ms: now_ms,
             quiet_origin: quiet_origin.map(ToOwned::to_owned),
         })
     }
@@ -443,6 +446,7 @@ impl SubagentRuntime {
             parent_agent_id: meta.parent_agent_id,
             subagent_agent_id: id.to_string(),
             lifecycle_revision: meta.lifecycle_revision,
+            marked_at_ms: meta.started_at_ms,
             subagent_type: meta.subagent_type,
             tool_call_id: meta.tool_call_id,
             title: meta.title,

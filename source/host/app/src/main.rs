@@ -1829,7 +1829,7 @@ impl PendingWakeRuntimePort for ProductionPendingWakeRuntime {
                 status: "error".into(),
                 result: wake.result,
                 quiet_origin: wake.quiet_origin,
-                pending_wake_marker: None,
+                pending_wake_marker: Some(wake.pending_wake_marker),
             });
         Ok(())
     }
@@ -10882,7 +10882,7 @@ fn start_routed_provider_task(
                             agent_id: pending.parent_agent_id.clone(),
                             kind: PendingWakeKind::Subagent,
                             work_id: pending.work_id.clone(),
-                            marked_at_ms: started_at_ms() as f64,
+                            marked_at_ms: pending.marked_at_ms,
                             quiet_origin,
                             title: Some(pending.title.clone()),
                             subagent_type: Some(pending.subagent_type.clone()),
@@ -11541,13 +11541,26 @@ fn start_routed_provider_task(
                     if let Some(completion) = settled.completion {
                         let cleanup_agent_id = completion.subagent_agent_id.clone();
                         let cleanup_revision = completion.lifecycle_revision.clone();
-                        if let Some(store) = worker_transcript_runtime.pending_wake_store() {
-                            let _ = store.clear_one(
-                                &completion.parent_agent_id,
-                                PendingWakeKind::Subagent,
-                                &completion.subagent_agent_id,
-                            );
-                        }
+                        let quiet_origin = completion
+                            .quiet_origin
+                            .as_ref()
+                            .and_then(|raw| serde_json::from_str::<serde_json::Value>(raw).ok())
+                            .as_ref()
+                            .and_then(coerce_quiet_origin);
+                        let pending_wake_marker = DurablePendingWakeMarker {
+                            agent_id: completion.parent_agent_id.clone(),
+                            kind: PendingWakeKind::Subagent,
+                            work_id: completion.subagent_agent_id.clone(),
+                            marked_at_ms: completion.marked_at_ms as f64,
+                            quiet_origin: quiet_origin.clone(),
+                            title: Some(completion.title.clone()),
+                            subagent_type: Some(completion.subagent_type.clone()),
+                            interrupted_by_recreate: false,
+                            delivery_operation_id: None,
+                            address_token: None,
+                            failure_reason: None,
+                            session_key: None,
+                        };
                         publish_async_tasks_changed(
                             &worker_events,
                             worker_transcript_runtime.as_ref(),
@@ -11564,8 +11577,8 @@ fn start_routed_provider_task(
                                 subagent_type: completion.subagent_type,
                                 status: completion.status,
                                 result: completion.result,
-                                quiet_origin: None,
-                                pending_wake_marker: None,
+                                quiet_origin,
+                                pending_wake_marker: Some(pending_wake_marker),
                             },
                         );
                         let cleanup = worker_generated_cleanup_slot
@@ -15701,11 +15714,17 @@ fn main() {
             .lock()
             .unwrap_or_else(|poisoned| poisoned.into_inner())
             .set_abort_observer(Some(Arc::new(move |parent_agent_id, subagent_id| {
-                pending_store.clear_one(
-                    parent_agent_id,
-                    PendingWakeKind::Subagent,
-                    subagent_id,
-                );
+                if let Some(marker) = pending_store
+                    .list_pending()
+                    .into_iter()
+                    .find(|entry| {
+                        entry.agent_id == parent_agent_id
+                            && entry.kind == PendingWakeKind::Subagent
+                            && entry.work_id == subagent_id
+                    })
+                {
+                    let _ = pending_store.clear_if_matches(&marker);
+                }
                 publish_async_tasks_changed_from_slots(
                     &abort_async_events,
                     abort_async_runtime.as_ref(),
