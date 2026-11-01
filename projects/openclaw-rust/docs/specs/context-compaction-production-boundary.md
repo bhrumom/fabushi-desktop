@@ -306,7 +306,7 @@ redacted content, test run identities, and exact-head Actions artifacts.
 | Requirement / AC | Status | Evidence / reason |
 | --- | --- | --- |
 | CC-01 | pending | Current dossier closes only bounded relative/source and selected lock graph observations; recursive source/package/archive/license closure and Actions authority remain open. |
-| CC-02 | passed (owner contract) | `ProductionSessionWorkers`/`SandAgentDb` is the canonical owner and implements the transactional compaction/replay contract defined in `decisions/2026-11-01-context-compaction-owner-contract.md`; the production caller uses that owner. |
+| CC-02 | passed (owner contract) | `ProductionSessionWorkers`/`SandAgentDb` is the canonical owner and implements the transactional compaction/replay contract defined in `decisions/2026-11-01-context-compaction-owner-contract.md`, including owner-local non-empty/16,000-character summary validation; the production caller uses that owner. |
 | CC-03 | partially wired | The non-test routed-provider completion boundary uses provider input-token usage, canonical transcript rows, the planning owner, and the existing summarizer/commit owner; exact fixed-source usage semantics and frozen verification remain open. |
 | CC-04 | partially wired | Threshold/cut-point, summary bound, latest-request bound, no-summary fallback, fixed file-operation details extraction/merge, split-turn prefix summarization, and bounded transcript sampling are wired; exact upstream sampling/omission parity remains open. |
 | CC-05 | partially wired | Cancellation after summarization, provider failure, stale lifecycle, and duplicate commit preserve the prior transcript through the guarded owner; focused oracles remain unrun. |

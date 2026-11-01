@@ -986,6 +986,27 @@ fn owner_commits_guarded_compaction_and_replays_from_cut_point() {
         Err(mahayana_host_runtime::extensions::session::agent_db::AgentDbProjectionError::CompactionInvalid(_))
     ));
 
+    let mut empty_summary = commit.clone();
+    empty_summary.entry_id = "compaction-empty-summary".into();
+    empty_summary.expected_lifecycle_revision = owner
+        .get_metadata("lifecycleRevision")
+        .expect("current revision")
+        .and_then(|value| value.as_str().map(ToOwned::to_owned))
+        .expect("current revision value");
+    empty_summary.summary = "  ".into();
+    assert!(matches!(
+        owner.commit_compaction(&empty_summary),
+        Err(mahayana_host_runtime::extensions::session::agent_db::AgentDbProjectionError::CompactionInvalid(_))
+    ));
+
+    let mut oversized_summary = empty_summary;
+    oversized_summary.entry_id = "compaction-oversized-summary".into();
+    oversized_summary.summary = "x".repeat(16_001);
+    assert!(matches!(
+        owner.commit_compaction(&oversized_summary),
+        Err(mahayana_host_runtime::extensions::session::agent_db::AgentDbProjectionError::CompactionInvalid(_))
+    ));
+
     owner.close(true);
     let _ = fs::remove_dir_all(root);
 }

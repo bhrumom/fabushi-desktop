@@ -56,9 +56,10 @@ valid substitutes.
 ## Current implementation evidence
 
 `SandAgentDb::commit_compaction` now implements the guarded transactional
-commit and `SandAgentDb::get_compacted_transcript_entries` implements the
-owner-local replay projection. `ProductionSessionWorkers` exposes both
-operations. The focused contract test is present in
+commit, including owner-local non-empty/16,000-character summary validation,
+and `SandAgentDb::get_compacted_transcript_entries` implements the owner-local
+replay projection. `ProductionSessionWorkers` exposes both operations. The
+focused contract test is present in
 `source/host/tests/agent_db_owner_contract.rs`, but remains unrun during the
 development freeze.
 

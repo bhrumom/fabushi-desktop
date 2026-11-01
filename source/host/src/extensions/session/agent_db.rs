@@ -81,6 +81,7 @@ const KV_INTRODUCTION: &str = "introductionPending";
 const KV_PURPOSE: &str = "purpose";
 const KV_PARTNERS: &str = "conversationPartners";
 const KV_SESSION_WORK_ADMISSION: &str = "sessionWorkAdmission";
+const MAX_COMPACTION_SUMMARY_CHARS: usize = 16_000;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct AgentMetadataProjection {
@@ -2013,6 +2014,17 @@ impl SandAgentDb {
                 "entry_id, source_turn_id, and expected_lifecycle_revision are required".into(),
             ));
         }
+        let summary = commit.summary.trim();
+        if summary.is_empty() {
+            return Err(AgentDbProjectionError::CompactionInvalid(
+                "summary must be non-empty".into(),
+            ));
+        }
+        if summary.chars().count() > MAX_COMPACTION_SUMMARY_CHARS {
+            return Err(AgentDbProjectionError::CompactionInvalid(format!(
+                "summary exceeds {MAX_COMPACTION_SUMMARY_CHARS} characters"
+            )));
+        }
         if let Some(first_kept_entry_id) = commit.first_kept_entry_id.as_deref() {
             if first_kept_entry_id.trim().is_empty() {
                 return Err(AgentDbProjectionError::CompactionInvalid(
@@ -2100,7 +2112,7 @@ impl SandAgentDb {
                     .map(|value| serde_json::Value::String(value.trim().to_string()))
                     .unwrap_or(serde_json::Value::Null),
             );
-            entry.insert("summary".into(), serde_json::Value::String(commit.summary.clone()));
+            entry.insert("summary".into(), serde_json::Value::String(summary.to_string()));
             entry.insert(
                 "tokensBefore".into(),
                 serde_json::Value::Number(serde_json::Number::from(commit.tokens_before)),
