@@ -195,6 +195,7 @@ fn test_sessions_get_empty_messages_200_invariant() {
         .expect("shipping sessions.get function boundary exists");
     assert!(sessions_get.contains("map_err(GatewayCommandError::Internal)?"));
     assert!(sessions_get.contains("sessions.get requires key, sessionKey, or sessionId"));
+    assert!(sessions_get.contains("reject_agent_wide_session_route(&route, \"sessions.get\")"));
     assert!(!sessions_get.contains("return Ok(serde_json::json!({ \"messages\": [] }))"));
     assert!(sessions_get.contains("entry.get(\"message\").and_then(|message| message.get(\"content\"))"));
     assert!(sessions_get.contains("entry.get(\"timestampMs\")"));
@@ -296,10 +297,7 @@ fn test_sessions_delete_guards_root_session_and_cas() {
         .expect("shipping sessions.delete function boundary exists");
     assert!(sessions_delete.contains("sessions.delete requires a non-empty agent identity"));
     assert!(sessions_delete.contains("is_root_main_session_key(raw_key)"));
-    assert!(sessions_delete.contains("SessionKind::Cron"));
-    assert!(sessions_delete.contains("SessionKind::Group"));
-    assert!(sessions_delete.contains("SessionKind::SpawnChild"));
-    assert!(sessions_delete.contains("per-session deletion is available"));
+    assert!(sessions_delete.contains("reject_agent_wide_session_route(&route, \"sessions.delete\")"));
 }
 
 #[test]
@@ -543,6 +541,14 @@ fn test_ocrm_session_o01_session_key_routing() {
             .expect("shipping session method boundary exists");
         assert!(method.contains("resolve_gateway_session_route"));
     }
+    let chat_abort = shipping_source
+        .split("fn call_openclaw_chat_abort(")
+        .nth(1)
+        .expect("shipping chat.abort owner exists")
+        .split("fn call_openclaw_cron_list(")
+        .next()
+        .expect("shipping chat.abort function boundary exists");
+    assert!(chat_abort.contains("reject_agent_wide_session_route(&route, \"chat.abort\")"));
 }
 
 // ---------------------------------------------------------------------------

@@ -2224,6 +2224,25 @@ fn resolve_gateway_session_route(
     })
 }
 
+fn reject_agent_wide_session_route(
+    route: &PublicSessionRoute,
+    operation: &str,
+) -> Result<(), GatewayCommandError> {
+    if matches!(
+        route.kind,
+        SessionKind::Cron
+            | SessionKind::Group
+            | SessionKind::SpawnChild
+            | SessionKind::Unknown
+    ) {
+        return Err(GatewayCommandError::BadRequest(format!(
+            "{operation} does not support {kind} session routes until per-session ownership is available",
+            kind = session_kind_label(route.kind),
+        )));
+    }
+    Ok(())
+}
+
 fn validate_internal_send_route(args: &serde_json::Value) -> Result<(), ProductionSendError> {
     let Some(agent_id) = args
         .get("agentId")
@@ -3990,6 +4009,7 @@ impl UnifiedGatewayApi {
         }
 
         let route = resolve_gateway_session_route(args, raw_key)?;
+        reject_agent_wide_session_route(&route, "sessions.get")?;
         let agent_id = route.agent_id.as_str();
         let session_kind = session_kind_label(route.kind);
 
@@ -4129,22 +4149,10 @@ impl UnifiedGatewayApi {
         }
 
         let route = resolve_gateway_session_route(args, raw_key)?;
+        reject_agent_wide_session_route(&route, "sessions.delete")?;
 
         if is_root_main_session_key(raw_key) {
             return Err(GatewayCommandError::BadRequest("Cannot delete root main session".into()));
-        }
-
-        if matches!(
-            route.kind,
-            SessionKind::Cron
-                | SessionKind::Group
-                | SessionKind::SpawnChild
-                | SessionKind::Unknown
-        ) {
-            return Err(GatewayCommandError::BadRequest(format!(
-                "sessions.delete does not support {kind} session routes until per-session deletion is available",
-                kind = session_kind_label(route.kind),
-            )));
         }
 
         let agent_id = route.agent_id.as_str();
@@ -4715,6 +4723,7 @@ impl UnifiedGatewayApi {
             .ok_or_else(|| GatewayCommandError::BadRequest("chat.abort requires sessionKey".into()))?;
 
         let route = resolve_gateway_session_route(args, session_key)?;
+        reject_agent_wide_session_route(&route, "chat.abort")?;
         let session_kind = session_kind_label(route.kind);
         let agent_id = route.agent_id.as_str();
         if agent_id.is_empty() {

@@ -15719,7 +15719,9 @@
       "tests": [
         "source/host/tests/session_paths_contract.rs::public_session_commands_reject_harness_owned_namespace",
         "source/host/tests/session_paths_contract.rs::public_session_route_resolves_one_canonical_boundary",
-        "source/host/tests/openclaw_sessions_and_config_contract.rs::test_ocrm_session_o01_session_key_routing"
+        "source/host/tests/openclaw_sessions_and_config_contract.rs::test_ocrm_session_o01_session_key_routing",
+        "source/host/tests/openclaw_sessions_and_config_contract.rs::test_sessions_get_empty_messages_200_invariant",
+        "source/host/tests/openclaw_sessions_and_config_contract.rs::test_sessions_delete_guards_root_session_and_cas"
       ],
       "typed_contracts": [
         "resolve_public_session_route(session_key: &str, chat_type: Option<&str>, spawned_by: Option<&str>) -> Result<PublicSessionRoute, PublicSessionRouteError>",

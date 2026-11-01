@@ -100,6 +100,13 @@ durable state → consumer chain.
   journaled after state (or are already at before), otherwise retain the fence
   and fail closed. No path inference, timestamp inference, or second profile
   authority is allowed.
+- `SWA-13`: Until a durable per-key session catalog and transcript/Runner
+  ownership contract exists, public Gateway operations that consume an
+  agent-wide owner must reject `cron`, `group`, `spawn-child`, and `unknown`
+  routes before reading or cancelling that owner. A session-kind label must
+  not make an agent-wide transcript or stream registry appear to be a
+  per-session target. Internal producers retain their existing authenticated
+  admission path and are not converted into public routing authorities.
 
 ## Current and target state
 
