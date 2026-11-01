@@ -141,6 +141,30 @@ fn upgrade_resume_store_coerces_upserts_and_deletes_file_when_empty() {
 }
 
 #[test]
+fn upgrade_resume_store_clears_only_the_observed_marker() {
+    let root = temp_root("upgrade-cas");
+    let store = SandUpgradeResumeStore::new(&root);
+    let old = UpgradeResumeMarker {
+        agent_id: "a".into(),
+        marked_at_ms: 1.0,
+        source: Some("turn".into()),
+        automation_id: None,
+        automation_run_id: None,
+    };
+    let newer = UpgradeResumeMarker {
+        marked_at_ms: 2.0,
+        ..old.clone()
+    };
+    store.mark_pending(old.clone());
+    store.mark_pending(newer.clone());
+    assert!(!store.clear_if_matches(&old));
+    assert_eq!(store.list_pending(), vec![newer.clone()]);
+    assert!(store.clear_if_matches(&newer));
+    assert!(store.list_pending().is_empty());
+    let _ = fs::remove_dir_all(root);
+}
+
+#[test]
 fn production_transcript_runtime_owns_both_durable_recovery_stores_and_cleans_deleted_agent() {
     let root = temp_root("runtime");
     let runtime = ProductionTranscriptRuntime::new(Some(&root));

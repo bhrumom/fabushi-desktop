@@ -115,6 +115,29 @@ impl SandUpgradeResumeStore {
         }
     }
 
+    /// Remove only the marker that was observed by a recovery pass.
+    ///
+    /// A recovery pass may race with a new marker for the same agent.  An
+    /// agent-only clear would delete that newer work, so the whole marker is
+    /// compared while holding the store lock and the new marker is retained.
+    pub fn clear_if_matches(&self, marker: &UpgradeResumeMarker) -> bool {
+        let _guard = self.lock.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
+        let pending = self.read_pending_unlocked();
+        let remaining = pending
+            .iter()
+            .filter(|entry| *entry != marker)
+            .cloned()
+            .collect::<Vec<_>>();
+        if remaining.len() == pending.len() {
+            return false;
+        }
+        if remaining.is_empty() {
+            self.delete_unlocked().is_ok()
+        } else {
+            self.write_unlocked(&remaining).is_ok()
+        }
+    }
+
     pub fn clear_all(&self) {
         let _guard = self.lock.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
         let _ = self.delete_unlocked();

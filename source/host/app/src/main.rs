@@ -3398,15 +3398,16 @@ impl UnifiedGatewayApi {
             return Ok(());
         }
 
-        store.clear_all();
         for marker in pending {
             let Some(summary) = self
                 .session_workers
                 .summarize_agent_by_id(&marker.agent_id, None)?
             else {
+                let _ = store.clear_if_matches(&marker);
                 continue;
             };
             if summary.is_group {
+                let _ = store.clear_if_matches(&marker);
                 continue;
             }
 
@@ -3509,6 +3510,8 @@ impl UnifiedGatewayApi {
                     "mahayana-host upgrade_resume_failed agent={} error={error}",
                     marker.agent_id
                 );
+            } else {
+                let _ = store.clear_if_matches(&marker);
             }
         }
         Ok(())

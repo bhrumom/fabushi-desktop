@@ -192,6 +192,11 @@ lifecycle owners.
 - active media/subagent work: preserve it during archive/reaper decisions;
 - cancellation/provider failure: leave prior transcript and generation intact;
 - uncertain deletion/transcript result: report outcome-unknown and do not retry.
+- upgrade-resume marker recovery: do not clear the pending set before dispatch;
+  clear only the exact marker after a successful accepted resume or an explicit
+  terminal-lost disposition (for example, a deleted agent or non-resumable
+  group); preserve the marker on identity, dispatch, or unknown failures, and
+  never remove a newer marker written for the same agent during recovery.
 - provider-review continuation dispatch failure: restore the review to
   `pending`; Runner cancellation/failure/unknown: retain terminal facts in a
   non-actionable phase and clear the matching terminal work marker; Runner

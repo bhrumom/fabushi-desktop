@@ -56,3 +56,14 @@ All upstream capabilities from `openclaw/openclaw` across search indexing, wake 
 10. **`OCRM-WAKE-O06` (Delivery Failure Wake Prompt)**: Validates in-app disclosure instructions without silent retry.
 11. **`OCRM-UPGRADE-O01` (Atomic Quiesce Lifecycle)**: Validates `quiesce_for_upgrade`, `is_quiescing_for_upgrade`, and `resume_after_recreate`.
 12. **`OCRM-UPGRADE-O02` (Resume Prompt Semantics)**: Validates silence semantics for automation and background revival sources.
+
+## 4. Upgrade-resume durable marker recovery correction — 2026-11-01
+
+The production recovery loop now keeps pending upgrade-resume markers until a
+resume is accepted or the marker is explicitly terminal-lost (deleted agent or
+non-resumable group). Identity, dispatch, and unknown failures retain the
+marker for a later recovery attempt. Settlement uses the whole observed
+`UpgradeResumeMarker` as an exact-match compare-and-clear, so a newer marker
+written for the same agent during recovery is not removed by an older pass.
+This is source and contract evidence only; runtime, exact-head verification,
+package, and acceptance remain pending.
