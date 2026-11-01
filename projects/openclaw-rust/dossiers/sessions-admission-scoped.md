@@ -155,17 +155,36 @@ were re-read at the pinned commit. The existing Rust session owner now exposes
 the corresponding independent send/receive resolution and admission planner:
 owned-task and same-session bypass, `never` denial, and ordered `ask`
 approvals for source-send then target-receive. The O02 contract calls these
-owner functions directly instead of an inline policy lambda. This remains
-`not-wired` until a real session communication producer and consumer use the
-planner; no production wiring or acceptance status is upgraded here.
+owner functions directly instead of an inline policy lambda. The full
+responsibility remains `wiring=not-wired` and acceptance-pending because the
+direct producer has only the bounded admission slice below; policy mutation,
+approval, receipt, and broader channel consumers are still absent.
 
-The current caller recheck found no non-test call to
+The earlier caller recheck found no non-test call to
 `plan_session_communication` or `resolve_session_communication_policy` in the
-Host, Host app, Coordinator, Electron, or frontend sources. The planner is
-therefore a pure owner-level contract slice; no inbound inter-session message
-producer, approval-card consumer, or outbound transcript/channel consumer is
-connected to it. The parity integration records both sides as absent while
-retaining the existing pending statuses.
+Host, Host app, Coordinator, Electron, or frontend sources. That negative
+finding is superseded for the direct agent-message producer by the bounded
+wiring recorded below; approval-card, inbound-receipt, and broader channel
+consumers remain absent, so the full responsibility retains its pending
+status.
+
+### 5.1 Direct agent-message admission wiring — 2026-11-01
+
+`ProductionAgentToAgentMessaging::send_to_agent_with_session` now reads the
+optional per-agent policy through the existing `ProductionSessionWorkers` /
+`SandAgentDb` owner and calls `plan_session_communication` before sender
+transcript append, recipient wake, or priority interruption. Missing policy
+state resolves through the planner's explicit compatibility default (`always`);
+malformed policy state fails closed. `never` rejects with no delivery side
+effects, and `ask` rejects until an existing approval producer and consumer can
+carry the approval. Group/shared-room delivery remains on its existing owner.
+
+This is a real direct producer → policy owner → existing transcript/wake
+consumer path, but not full responsibility acceptance: policy mutation,
+approval UI/consumer, inbound receipt correlation, exact-head verification,
+and runtime/provider/device acceptance remain pending. The corresponding
+durable contract is
+`projects/openclaw-rust/docs/specs/session-communication-production-boundary.md`.
 
 The locked `conversation-turns.ts` source was also re-read in full. The Rust
 session conversation owner now contains a bounded pending-turn registry with

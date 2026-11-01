@@ -15447,7 +15447,9 @@
       ],
       "evidence_refs": [
         "source/host/tests/openclaw_sessions_and_config_contract.rs",
-        "source/host/tests/session_conversation_state_contract.rs"
+        "source/host/tests/session_conversation_state_contract.rs",
+        "source/host/tests/agent_to_agent_messaging_contract.rs",
+        "projects/openclaw-rust/docs/specs/session-communication-production-boundary.md"
       ],
       "existing_owner_candidates": [
         {
@@ -15457,10 +15459,10 @@
       ],
       "id": "OCRM-RESP-SESSION-COMMUNICATION-POLICY-001",
       "integration": {
-        "consumer": "No production session-communication consumer identified; the planner is consumed only by source/host/tests/openclaw_sessions_and_config_contract.rs",
-        "entrypoint": "source/host/src/extensions/session/agent_session.rs",
+        "consumer": "ProductionAgentToAgentMessaging::send_to_agent_with_session uses the admission result before existing sender transcript, recipient wake, and priority-interrupt consumers; approval-card/inbound-receipt consumers remain absent",
+        "entrypoint": "source/host/src/extensions/transcript/agent_to_agent_messaging.rs::ProductionAgentToAgentMessaging::send_to_agent_with_session",
         "owner": "source/host/src/extensions/session/agent_session.rs",
-        "producer": "No production inter-session communication producer identified"
+        "producer": "source/host/src/extensions/transcript/agent_to_agent_messaging.rs::ProductionAgentToAgentMessaging"
       },
       "invariants": [
         "Never communication mode rejects inter-session messaging immediately without dispatch"

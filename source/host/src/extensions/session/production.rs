@@ -2044,6 +2044,17 @@ impl ProductionSessionWorkers {
             .map_err(|error| error.to_string())
     }
 
+    pub fn read_session_communication_policy(
+        &self,
+        agent_id: &str,
+    ) -> Result<
+        Option<super::agent_session::SessionCommunicationPolicyOverride>,
+        String,
+    > {
+        let db = self.open_agent_db_owner(agent_id)?;
+        super::agent_session::read_session_communication_policy(&db, agent_id)
+    }
+
     pub fn compare_and_set_session_work_admission(
         &self,
         agent_id: &str,

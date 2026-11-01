@@ -65,6 +65,46 @@ fn direct_delivery_defers_recipient_transcript_until_execution_admission(){
 }
 
 #[test]
+fn persisted_never_policy_rejects_before_transcript_or_wake(){
+    let root=temp_root();let sessions=Arc::new(ProductionSessionWorkers::with_agents_root(&root,500));
+    let alpha=sessions.materialize_new_session(Some(&profile("Alpha")),"user",None).expect("alpha");
+    let beta=sessions.materialize_new_session(Some(&profile("Beta")),"user",None).expect("beta");
+    let _=sessions.open_agent_db_owner(&alpha.id).expect("alpha db").write_kv(
+        "sessionCommunicationPolicy", r#"{"send":"never"}"#,
+    ).expect("policy write");
+    let wakes=Arc::new(Mutex::new(Vec::<AgentWakeRequest>::new()));
+    let service=ProductionAgentToAgentMessaging::new(Arc::clone(&sessions),{
+        let wakes=Arc::clone(&wakes);Arc::new(move|wake|wakes.lock().expect("wakes").push(wake.clone()))
+    },None);
+    let error=service.send_to_agent_with_session(&alpha.id,None,&beta.id,"blocked",&[],false)
+        .expect_err("never policy must reject");
+    assert!(error.contains("send is disabled"));
+    assert!(sessions.read_agent_transcript_entries(&alpha.id).expect("sender").is_empty());
+    assert!(wakes.lock().expect("wakes").is_empty());
+    sessions.shutdown();let _=fs::remove_dir_all(root);
+}
+
+#[test]
+fn persisted_ask_policy_rejects_without_approval_consumer(){
+    let root=temp_root();let sessions=Arc::new(ProductionSessionWorkers::with_agents_root(&root,500));
+    let alpha=sessions.materialize_new_session(Some(&profile("Alpha")),"user",None).expect("alpha");
+    let beta=sessions.materialize_new_session(Some(&profile("Beta")),"user",None).expect("beta");
+    let _=sessions.open_agent_db_owner(&alpha.id).expect("alpha db").write_kv(
+        "sessionCommunicationPolicy", r#"{"send":"ask"}"#,
+    ).expect("policy write");
+    let wakes=Arc::new(Mutex::new(Vec::<AgentWakeRequest>::new()));
+    let service=ProductionAgentToAgentMessaging::new(Arc::clone(&sessions),{
+        let wakes=Arc::clone(&wakes);Arc::new(move|wake|wakes.lock().expect("wakes").push(wake.clone()))
+    },None);
+    let error=service.send_to_agent_with_session(&alpha.id,None,&beta.id,"approval",&[],false)
+        .expect_err("ask policy must fail closed without approval consumer");
+    assert!(error.contains("requires approval"));
+    assert!(sessions.read_agent_transcript_entries(&alpha.id).expect("sender").is_empty());
+    assert!(wakes.lock().expect("wakes").is_empty());
+    sessions.shutdown();let _=fs::remove_dir_all(root);
+}
+
+#[test]
 fn session_bound_sender_append_rejects_an_archived_source_without_writing(){
     let root=temp_root();let sessions=Arc::new(ProductionSessionWorkers::with_agents_root(&root,500));
     let alpha=sessions.materialize_new_session(Some(&profile("Alpha")),"user",None).expect("alpha");

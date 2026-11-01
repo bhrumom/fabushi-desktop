@@ -8,6 +8,9 @@ use crate::agents::agent_messaging::{
     AgentAddress, AgentMessageImage, build_agent_inbound_wake_prompt, clamp_agent_message,
 };
 use crate::extensions::session::production::ProductionSessionWorkers;
+use crate::extensions::session::agent_session::{
+    CommunicationEndpoint, SessionCommunicationDecision, plan_session_communication,
+};
 use crate::extensions::telemetry::agent_error_telemetry::AgentErrorReport;
 use crate::extensions::telemetry::sand_error_tags::SandErrorValue;
 use crate::extensions::trays::trays_service::PushErrorOptions;
@@ -201,6 +204,52 @@ impl ProductionAgentToAgentMessaging {
             }
             if priority { notes.push("Note: priority is 1:1 only — this post did not interrupt members.".into()); }
             return Ok(if notes.is_empty(){ack}else{format!("{ack} {}",notes.join(" "))});
+        }
+
+        let source_admission = self.sessions.read_session_work_admission(from_agent_id)?;
+        let target_admission = self.sessions.read_session_work_admission(to_agent_id)?;
+        let source_session_key = from_session_key
+            .map(str::trim)
+            .filter(|value| !value.is_empty())
+            .map(ToOwned::to_owned)
+            .or_else(|| {
+                source_admission
+                    .as_ref()
+                    .map(|record| record.session_key.clone())
+            })
+            .unwrap_or_default();
+        let target_session_key = target_admission
+            .as_ref()
+            .map(|record| record.session_key.clone())
+            .unwrap_or_else(|| format!("agent:{to_agent_id}:main"));
+        let source_endpoint = CommunicationEndpoint {
+            agent_id: from_agent_id.to_string(),
+            session_key: source_session_key,
+            store_path: self.sessions.session_db_path(from_agent_id)?.to_string_lossy().into_owned(),
+            session_id: source_admission.as_ref().map(|record| record.session_id.clone()),
+            communication: self.sessions.read_session_communication_policy(from_agent_id)?,
+        };
+        let target_endpoint = CommunicationEndpoint {
+            agent_id: to_agent_id.to_string(),
+            session_key: target_session_key,
+            store_path: self.sessions.session_db_path(to_agent_id)?.to_string_lossy().into_owned(),
+            session_id: target_admission.as_ref().map(|record| record.session_id.clone()),
+            communication: self.sessions.read_session_communication_policy(to_agent_id)?,
+        };
+        match plan_session_communication(
+            None,
+            &[source_endpoint],
+            &[target_endpoint],
+            false,
+        ) {
+            SessionCommunicationDecision::Denied { error } => return Err(error),
+            SessionCommunicationDecision::Allowed { approvals } if !approvals.is_empty() => {
+                return Err(format!(
+                    "Session communication requires approval before delivery ({} approval(s)).",
+                    approvals.len()
+                ));
+            }
+            SessionCommunicationDecision::Allowed { .. } => {}
         }
 
         if let Some(analytics) = self.analytics.as_ref() {

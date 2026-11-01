@@ -5,6 +5,7 @@ use std::process;
 use std::sync::Arc;
 use std::time::{SystemTime, UNIX_EPOCH};
 
+use serde::{Deserialize, Serialize};
 use serde_json::{Map, Value};
 
 use crate::agents::agent_profile::SandAgentProfile;
@@ -42,6 +43,7 @@ use super::session_profile_files::{
 use super::session_summaries::AgentSummary;
 
 const SESSION_MODEL_SELECTION_KV: &str = "sessionModelSelection";
+const SESSION_COMMUNICATION_POLICY_KV: &str = "sessionCommunicationPolicy";
 
 /// Read the authoritative per-session model selection from the session's
 /// SQLite KV owner. The record is deliberately scoped by agent id; malformed
@@ -90,7 +92,8 @@ pub fn write_session_model_entry(
         .map_err(|error| error.to_string())
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
 pub enum SessionCommunicationMode {
     Always,
     Ask,
@@ -108,10 +111,29 @@ impl SessionCommunicationMode {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct SessionCommunicationPolicyOverride {
     pub send: Option<SessionCommunicationMode>,
     pub receive: Option<SessionCommunicationMode>,
+}
+
+/// Read the optional communication policy through the existing agent DB owner.
+/// Missing state is intentionally distinct from malformed state: callers may
+/// apply the documented compatibility default only to the former.
+pub fn read_session_communication_policy(
+    db: &crate::extensions::session::agent_db::SandAgentDb,
+    agent_id: &str,
+) -> Result<Option<SessionCommunicationPolicyOverride>, String> {
+    let Some(raw) = db
+        .read_kv(SESSION_COMMUNICATION_POLICY_KV)
+        .map_err(|error| error.to_string())?
+    else {
+        return Ok(None);
+    };
+    serde_json::from_str::<SessionCommunicationPolicyOverride>(&raw)
+        .map(Some)
+        .map_err(|error| format!("invalid session communication policy for {agent_id}: {error}"))
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
