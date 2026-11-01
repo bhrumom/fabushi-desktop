@@ -304,10 +304,11 @@ its native assistant-tool/tool-result checkpoint pairing, while rejecting all
 attachments because the current Cursor protobuf has no attachment part. The
 Claude serialization now explicitly accepts only summary and plain
 user/assistant text, rejecting typed tool rows and attachments because the
-current CLI has no typed replay surface. The serializers are not all wired to
-live provider attempts: Cursor is now connected through its typed checkpoint
-conversation, while the other provider paths remain implementation evidence
-only rather than production acceptance.
+current CLI has no typed replay surface. The provider-specific serializers are
+now connected to the live provider owners: Cursor through its typed checkpoint
+conversation, Codex/Fabushi through Responses input, OpenRouter through native
+Chat Completions messages, and Claude through its supported text-only subset.
+Unsupported media/tool shapes and exact-head/provider acceptance remain open.
 
 The optional typed replay channel is now threaded through the existing
 production turn path: `ProductionTurnInputProjection` →
