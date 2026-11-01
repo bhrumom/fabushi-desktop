@@ -491,7 +491,11 @@ impl SandAgentDb {
             (None, None) => true,
             (Some(expected), Some(raw)) => serde_json::from_str::<SessionWorkAdmissionRecord>(raw)
                 .ok()
-                .is_some_and(|record| record.lifecycle_revision == expected),
+                .is_some_and(|record| {
+                    record.lifecycle_revision == expected
+                        && record.session_key == next.session_key
+                        && record.session_id == next.session_id
+                }),
             _ => false,
         };
         if !matches {

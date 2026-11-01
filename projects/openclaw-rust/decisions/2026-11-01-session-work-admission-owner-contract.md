@@ -161,6 +161,11 @@ transcript writes rejected it; the deterministic preflight negative is now
 explicit. Missing admission records retain the legacy compatibility behavior
 until their producer establishes the session record.
 
+The owner-local compare-and-set now applies the same invariant to updates:
+advancing a valid lifecycle revision cannot replace the stored `session_key` or
+`session_id`. An attempted identity-rebinding CAS is rejected without changing
+the prior admission record.
+
 The remaining agent-only transcript mutation producers were rechecked against
 the live source. Widget-response updates, shared-room restamps, box-request
 settlement, and auto-review settlement carry only `agent_id`; the generic

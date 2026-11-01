@@ -210,6 +210,22 @@ fn session_work_admission_record_migrates_and_compare_and_sets_generation() {
         .expect("updated permission entry");
     assert_eq!(updated["message"]["ask"]["status"], "allowed");
 
+    let rebound = SessionWorkAdmissionRecord {
+        session_key: "agent:other-agent:main".into(),
+        ..first.clone()
+    };
+    assert!(!owner
+        .compare_and_set_session_work_admission(Some("revision-1"), &rebound)
+        .expect("identity-rebinding CAS is rejected"));
+    assert_eq!(
+        owner
+            .read_session_work_admission()
+            .expect("read admission after rejected rebind")
+            .expect("admission remains present")
+            .session_key,
+        first.session_key
+    );
+
     let mut archived = first.clone();
     archived.lifecycle_revision = "revision-2".into();
     archived.archived_at_ms = Some(42.0);

@@ -260,6 +260,12 @@ mismatched `session_key` is an explicit identity error rather than an admitted
 preflight. The atomic transcript/media owner checks remain authoritative at
 the durable write edge.
 
+The owner-local compare-and-set also preserves `session_key` and `session_id`
+across generation updates. A caller may advance lifecycle state and admission
+facts, but may not use a valid prior revision to rebind the record to another
+session identity; such a CAS returns false and leaves the previous record
+intact.
+
 ## Agent-only transcript mutation boundary — 2026-11-01
 
 The remaining transcript mutation producers were rechecked against the live
