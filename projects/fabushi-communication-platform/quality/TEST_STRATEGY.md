@@ -1657,3 +1657,77 @@ Stage-B oracles are `ORA-TDRP-MAC-PACKAGED-EXACT-SOURCE-001`, `ORA-TDRP-MAC-PACK
 Frozen-candidate qualification must prove exact trigger admission, effective token scope without secret capture, runner/image/Xcode/SDK/Homebrew identities, recursive checkout/submodules, actual Action commits, exact pinned git inputs, rustup bytes/toolchain, wallet patch bytes, built Rust archive/header/bindings, actual rnnoise/tg_owt cloned commits and tg_owt recursive submodules rather than only queried master refs, TDE2E exact commit, CMake prefix set, build outputs, `macdeployqt` closure, pre/post-signature state, staged app bytes, artifact ID/digest/retention and the absence of any release promotion. The source's `TDESKTOP_API_TEST=ON` flag is not test execution.
 
 No source or target workflow, Action/cache/bootstrap, host mutation, build, validator, test/E2E, artifact transfer, package, sign/notarize, release, deployment, installation or runtime acceptance is executed in Stage A.
+
+
+
+### Repository release-triggered master-promotion updater qualification
+
+`TDRP-R9-REPOSITORY-MASTER-UPDATER-WORKFLOW-001` qualifies fixed-U `.github/workflows/master_updater.yml@fedc24f8e5d781a0bbdcdf80e24baf3eb2fe199f` as repository source-maintenance/process provenance. Existing owners are Fabushi root repository source-maintenance/release/process governance, repository security/provenance, and shared quality/evidence. No Telegram updater workflow or product automation owner is introduced.
+
+Authored contract cases, not run:
+- `CONTRACT-TDRP-MASTER-UPDATER-EXACT-SOURCE-001`
+- `CONTRACT-TDRP-MASTER-UPDATER-RELEASE-TRIGGER-001`
+- `CONTRACT-TDRP-MASTER-UPDATER-NO-OTHER-TRIGGERS-001`
+- `CONTRACT-TDRP-MASTER-UPDATER-RUNNER-001`
+- `CONTRACT-TDRP-MASTER-UPDATER-PERMISSIONS-001`
+- `CONTRACT-TDRP-MASTER-UPDATER-ACTION-MASTER-LINEAGE-001`
+- `CONTRACT-TDRP-MASTER-UPDATER-DEV-TO-MASTER-INPUT-001`
+- `CONTRACT-TDRP-MASTER-UPDATER-DYNAMIC-NPM-BOOTSTRAP-001`
+- `CONTRACT-TDRP-MASTER-UPDATER-TOKEN-ARGV-001`
+- `CONTRACT-TDRP-MASTER-UPDATER-CURRENT-DISABLE-GUARD-001`
+- `CONTRACT-TDRP-MASTER-UPDATER-DISABLED-NO-CLONE-MUTATION-001`
+- `CONTRACT-TDRP-MASTER-UPDATER-DORMANT-SOURCE-TARGET-001`
+- `CONTRACT-TDRP-MASTER-UPDATER-DORMANT-TOKEN-CLONE-001`
+- `CONTRACT-TDRP-MASTER-UPDATER-DORMANT-NO-FILE-TRANSFORM-001`
+- `CONTRACT-TDRP-MASTER-UPDATER-DORMANT-NO-COMMIT-PUSH-001`
+- `CONTRACT-TDRP-MASTER-UPDATER-DORMANT-PR-LIST-001`
+- `CONTRACT-TDRP-MASTER-UPDATER-DORMANT-DUPLICATE-PR-001`
+- `CONTRACT-TDRP-MASTER-UPDATER-DORMANT-PR-CREATE-001`
+- `CONTRACT-TDRP-MASTER-UPDATER-PR-BODY-BRANCH-HASHES-001`
+- `CONTRACT-TDRP-MASTER-UPDATER-PR-ERROR-SETTLEMENT-001`
+- `CONTRACT-TDRP-MASTER-UPDATER-SIBLING-ACTION-CONSUMERS-001`
+- `CONTRACT-TDRP-MASTER-UPDATER-PUBLICATION-BOUNDARY-001`
+- `CONTRACT-TDRP-MASTER-UPDATER-NO-TARGET-COPY-001`
+- `CONTRACT-TDRP-MASTER-UPDATER-NO-PRODUCT-RUNTIME-001`
+
+Integration, not run:
+- `INT-TDRP-MASTER-UPDATER-REPOSITORY-SOURCE-MAINTENANCE-001`
+
+Fault/recovery cases, not run:
+- `FAULT-TDRP-MASTER-UPDATER-RELEASE-EVENT-MISSING-001`
+- `FAULT-TDRP-MASTER-UPDATER-RUNNER-UNAVAILABLE-001`
+- `FAULT-TDRP-MASTER-UPDATER-ACTION-MASTER-DRIFT-001`
+- `FAULT-TDRP-MASTER-UPDATER-NPM-ACQUISITION-001`
+- `FAULT-TDRP-MASTER-UPDATER-DISABLE-GUARD-REMOVED-001`
+- `FAULT-TDRP-MASTER-UPDATER-CLONE-AUTH-001`
+- `FAULT-TDRP-MASTER-UPDATER-MISSING-DEV-REF-001`
+- `FAULT-TDRP-MASTER-UPDATER-MISSING-MASTER-REF-001`
+- `FAULT-TDRP-MASTER-UPDATER-PR-LIST-API-001`
+- `FAULT-TDRP-MASTER-UPDATER-PR-CREATE-MASKED-001`
+- `FAULT-TDRP-MASTER-UPDATER-DUPLICATE-PR-RACE-001`
+- `FAULT-TDRP-MASTER-UPDATER-BRANCH-ADVANCE-AFTER-HASH-001`
+- `FAULT-TDRP-MASTER-UPDATER-OVERLAPPING-RELEASES-001`
+- `FAULT-TDRP-MASTER-UPDATER-NO-ROLLBACK-001`
+- `FAULT-TDRP-MASTER-UPDATER-FUTURE-ACTION-SEMANTIC-DRIFT-001`
+
+Security/provenance cases, not run:
+- `SEC-TDRP-MASTER-UPDATER-IMPLICIT-TOKEN-SCOPE-001`
+- `SEC-TDRP-MASTER-UPDATER-MUTABLE-ACTION-MASTER-001`
+- `SEC-TDRP-MASTER-UPDATER-MUTABLE-RUNNER-001`
+- `SEC-TDRP-MASTER-UPDATER-UNPINNED-NPM-DEPS-001`
+- `SEC-TDRP-MASTER-UPDATER-NO-LOCKFILE-INTEGRITY-001`
+- `SEC-TDRP-MASTER-UPDATER-TOKEN-PROCESS-ARGV-001`
+- `SEC-TDRP-MASTER-UPDATER-TOKENIZED-GIT-URL-001`
+- `SEC-TDRP-MASTER-UPDATER-ACTION-LICENSE-METADATA-001`
+- `SEC-TDRP-MASTER-UPDATER-RELEASE-ACTOR-TRUST-001`
+- `SEC-TDRP-MASTER-UPDATER-SAME-REPO-PR-WRITE-001`
+- `SEC-TDRP-MASTER-UPDATER-BRANCH-PROTECTION-EXTERNAL-001`
+- `SEC-TDRP-MASTER-UPDATER-SECRET-NONCAPTURE-001`
+- `SEC-TDRP-MASTER-UPDATER-NO-IMMUTABLE-ACTION-PIN-001`
+- `SEC-TDRP-MASTER-UPDATER-NO-STAGE-A-EXECUTION-001`
+
+Stage-B oracles are `ORA-TDRP-MASTER-UPDATER-EXACT-SOURCE-001`, `ORA-TDRP-MASTER-UPDATER-TRIGGER-RUNNER-PERMISSIONS-001`, `ORA-TDRP-MASTER-UPDATER-ACTION-RUNTIME-LINEAGE-001`, `ORA-TDRP-MASTER-UPDATER-EFFECTIVE-NOOP-OR-MUTATION-001`, `ORA-TDRP-MASTER-UPDATER-PR-SETTLEMENT-001`, and `ORA-TDRP-MASTER-UPDATER-FAILURE-RECOVERY-001`. Invariants are `INV-TDRP-MASTER-UPDATER-MUTABLE-MASTER-NOT-IDENTITY-001`, `INV-TDRP-MASTER-UPDATER-NOOP-NOT-PROMOTION-001`, `INV-TDRP-MASTER-UPDATER-PR-NOT-MASTER-MUTATION-001`, `INV-TDRP-MASTER-UPDATER-MASKED-PR-ERROR-NOT-SUCCESS-001`, `INV-TDRP-MASTER-UPDATER-NO-TELEGRAM-SOURCE-MAINTENANCE-AUTHORITY-001`, and `INV-TDRP-MASTER-UPDATER-NO-STAGE-A-EXECUTION-001`.
+
+Frozen-candidate qualification must bind the exact workflow revision used by the release event, actual runner identity, effective token permissions without secret capture, immutable resolved Action commit/tree, composite metadata and executable source, runtime npm package versions/integrities, whether the disable guard is present, and the exact resulting side effects. If re-enabled, evidence must bind clone source, `origin/dev`/`origin/master` heads, duplicate detection, PR request/response identity, and repository branch/ruleset policy separately from the Action. A logged PR API error with a successful step is non-passing mutation evidence.
+
+No source or target workflow/Action/npm/token/clone/PR operation or executable validation is run in Stage A.

@@ -1163,3 +1163,29 @@ Release-boundary evidence must bind the existing Fabushi canonical owner `.githu
 Direct-consumer evidence covers all 20 fixed-U workflow blobs and records no reusable/workflow-run/local-workflow call to `mac_packaged.yml`; `mac.yml` and canary are siblings only. Any later consumer must be newly qualified rather than inferred.
 
 Stage A records 36 contract, 1 integration, 22 fault/recovery and 18 security/provenance cases as authored only. No source/target workflow run or query, third-party Action/cache execution, token probe, dependency acquisition, host mutation, build/test, artifact transfer, package/sign/notarize, release/deployment/install/runtime operation is performed. `validation_status=not-run`; `accepted=false`.
+
+
+
+### Repository release-triggered master-promotion updater evidence contract
+
+For `TDRP-R9-REPOSITORY-MASTER-UPDATER-WORKFLOW-001`, source evidence binds `telegramdesktop/tdesktop@f985723b552b30fe1c17d377d57f44e61a15a8c4`, recursive tree `91f2b083ab2877c0a17d07868eabec362a5cfca6`, exact `.github/workflows/master_updater.yml@fedc24f8e5d781a0bbdcdf80e24baf3eb2fe199f`, index 128 zero-based, mode 100644, 221 ASCII bytes/code points, 13 LF, zero CR and trailing newline.
+
+Trigger/runner evidence records only `release.types: released`, mutable `ubuntu-slim`, the absence of checkout/explicit permissions/environment/concurrency/timeout/retry/other triggers, and the actual default-branch workflow revision admitted by the release event. Release existence is not proof that the job ran or mutated source.
+
+Action-lineage evidence records observed 2026-11-02 mutable `desktop-app/action_code_updater@master -> 0a8d3ebb437e5c77cf5d066d4a54cc93d34b534a`, `action.yml@5a9c7dff415a31f18a614119809f2d396b0e47c7`, `index.mjs@322bfa9e3e874299a09c35650611c2cd753cca3f`, three-file tree, unprotected master, and no repository license metadata. The ref remains mutable; candidate evidence must capture the actually resolved commit/tree.
+
+Runtime dependency evidence records `npm init -y` plus unpinned installs of `simple-git`, `isbinaryfile`, `@actions/core`, and `@actions/github`. Stage-B must retain generated manifest/lock information, exact package versions, integrity hashes and registry resolution; source Action identity alone does not bind these downloaded bytes.
+
+Token evidence records that the composite command supplies `github.token` as Node argv and dormant clone code embeds the token into an HTTPS remote URL. Effective repository permission evidence must be captured without secret values. No token, credential URL, process listing or shell expansion containing the secret may be retained in evidence.
+
+Behavior evidence distinguishes the observed disabled path from dormant mutation code. At observed commit `0a8d3ebb...`, `dev-to-master` exits 0 before clone or PR mutation; the disabling change `5f85512cf8e8f15cfbde4a10cb29208bcc3d3e52` predates fixed U but does not make mutable master immutable. Any candidate with a different guard state requires fresh semantic qualification.
+
+If dormant behavior is active, evidence must show same-repository clone, source `dev`, target `master`, no file transformation, no new commit/push by this job, `origin/dev` and `origin/master` hashes used in the generated body, pull-request listing, duplicate detection, and exact PR creation response for head `dev` base `master`. Master mutation/merge is external to this Action and must never be inferred from PR creation.
+
+Failure evidence must distinguish hard pipeline failures from the Action's internally masked PR API errors. `processPullRequest` catches list/create errors and logs without rethrowing, so workflow success alone cannot prove a PR was created or that repository mutation succeeded. Overlapping release events, list/create races, branch-head movement and mutable Action/dependency drift remain explicit recovery/provenance cases.
+
+Direct-consumer evidence records the GitHub release event as the sole workflow caller. Sibling fixed-U workflows `copyright_year_updater.yml`, `unused_styles_updater.yml` and `user_agent_updater.yml` independently consume the same Action under other job types; no fixed-U workflow invokes `master_updater.yml` as a reusable/local workflow. Any resulting PR is consumed only by repository maintainers/policy outside this workflow.
+
+Existing-owner evidence binds Fabushi root repository source-maintenance/release/process governance, repository security/provenance governance and shared Test Strategy/Test Evidence Contract. No copied Telegram updater, second source/release truth, product Task/Automation, runtime/provider/sidecar or platform-core delta is introduced.
+
+Stage A records 24 contract, 1 integration, 15 fault/recovery and 14 security/provenance cases as authored only. No release/workflow/Action/npm/token/clone/PR operation, executable validation, build/test/package/release/deploy/install operation, Actions/check/status query or platform-core mutation is performed. `validation_status=not-run`; `accepted=false`.
