@@ -1031,3 +1031,63 @@ Stage-A cases are authored only and remain `validation_status=not-run`, `accepte
 - `SEC-TDRP-CANT-REPRODUCE-NO-TELEGRAM-SUPPORT-AUTHORITY-001`
 
 No schedule/workflow execution, issue search, label/comment/state mutation, token-scope probe, Action execution, build, typecheck, lint, validator, test/E2E, package, deployment, installation, runtime evidence or acceptance is executed in Stage A.
+
+
+##### Repository changelog Pages workflow authority
+
+Fixed-U `.github/workflows/changelog.yml@445277fe4b44dc9ccef17b7b602016572c08fe7c` is upstream repository changelog-publication/Pages provenance, not a Fabushi shipping updater, release-metadata owner, product UI surface, platform-core service, or workflow to copy verbatim. Existing-owner-first responsibility `TDRP-R9-REPOSITORY-CHANGELOG-PAGES-WORKFLOW-001` stays with current Fabushi root repository release/changelog/process governance, repository security/provenance governance, shared quality/evidence ownership, and final `FQT-REL-001` release eligibility. The current checkpoint has no source-neutral changelog Pages workflow to mutate; no target workflow or platform-core delta is introduced.
+
+The exact source is fixed-U recursive-tree index 120 zero-based, mode 100644, 847 ASCII bytes/code points, 45 LF, zero CR and trailing newline. It has two admission paths only: a push to branch `dev` whose changed path includes exact root `changelog.txt`, and `workflow_dispatch`. A push to another branch or without `changelog.txt` is out of scope. The workflow-level permission set is `contents: read`, `pages: write`, `id-token: write`; because no job narrows it, both build and deploy inherit the complete set. This is source behavior, not proof of least privilege.
+
+Concurrency is global group `pages` with `cancel-in-progress: true`. A newly admitted run can cancel an older run in that group, including a manual run, so cancellation is part of the publication state machine rather than a successful deployment witness. There is no workflow/job timeout or retry policy in the YAML itself.
+
+The `build` job runs on mutable `ubuntu-latest`. It calls `actions/checkout@v7`, `actions/setup-python@v7` with `python-version: "3.12"`, runs exact `python .github/scripts/generate_changelog.py` with no argv overrides, then calls `actions/upload-pages-artifact@v5` with `path: docs`. The generator was already fully qualified at exact blob `.github/scripts/generate_changelog.py@6cdd12652d31b2a47ed9a8ef906308af59cca3d0`: default input is `changelog.txt@41b7466f8a11a1866a66ff583809dfe74ad9a3c3`, generated output is `docs/changelog/index.html`, and no client runtime consumes it.
+
+Observed external-action lineage is deliberately separated from the mutable workflow references. On 2026-11-01, `actions/checkout@v7` resolved to commit `3d3c42e5aac5ba805825da76410c181273ba90b1` with `action.yml@5b0524f730db83f9513c18ab31a6c086c7239076` and Node24 runtime; `actions/setup-python@v7` resolved to `6d4fd22b20465ccc0f7354476588e8df7c9ca0e0` with `action.yml@645de4f5108b28bcc7ed043ee171770b0754cc35`; `actions/upload-pages-artifact@v5` resolved to `fc324d3547104276b827a68afc52ff2a11cc49c9` with `action.yml@82713b4cbb35ccf98dfa8f2e0deedc5e83b6d845`; and `actions/deploy-pages@v5` resolved to `368f82528645a54fb793d4d04e342629a3f51346` with `action.yml@9640517bb026e0790a53bd6d35fd13a94617c48e`. These tag resolutions are provenance observations only and must be rebound for a frozen candidate.
+
+The upload action defaults the artifact name to `github-pages`, retention to one day, hidden-file inclusion to false, and archives the entire `docs` directory with tar `--dereference --hard-dereference`, excluding `.git` and `.github`; its internal upload step is pinned to `actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f` (v7.0.0). Fixed-U `docs` contains 14 tree entries including 12 blobs and no tracked symlinks. Because publication scope is whole `docs`, the changelog is not the only content reaching the Pages artifact; that broader scope is a required security/privacy review boundary.
+
+The `deploy` job needs `build`, runs on mutable `ubuntu-latest`, targets environment `github-pages`, exposes `steps.deploy.outputs.page_url` as the environment URL, and calls `actions/deploy-pages@v5`. The observed v5 action obtains an OIDC token, resolves exactly one artifact named `github-pages`, creates a Pages deployment with artifact id/build version/OIDC token, and polls status. Its defaults cap deployment wait at 600000 ms, allow 10 status-report errors, begin at a 5000 ms reporting interval with capped backoff/jitter, and explicitly cancel a pending deployment on timeout, too many polling errors, SIGINT or SIGTERM. Missing/duplicate artifact, OIDC failure, Pages permission failure, disabled Pages, server failure, terminal deployment failure, content failure or cancellation are non-success.
+
+Security boundaries are explicit. Workflow-level `pages: write` and `id-token: write` also apply to `build`, although only deploy needs them. Checkout defaults `persist-credentials: true`, so the repository token is configured in Git state during subsequent source-controlled Python execution. Setup-Python `3.12`, action tags, `ubuntu-latest`, tool-cache/download resolution and GitHub artifact/Pages services remain mutable runtime inputs. A successful upstream Pages deployment is never Fabushi release acceptance, and Telegram's Pages information architecture is not imported.
+
+Direct callers/consumers are repository process only: GitHub push/manual-dispatch admission calls the workflow; the exact generator consumes the checked-out changelog; Actions artifact storage consumes the archived `docs`; the Pages deployment API/environment consumes the uniquely named artifact and OIDC identity; Pages readers consume the published static site. No Fabushi application runtime, Agent/Coordinator/Host/Runner, updater, Tasks/Automations, or platform-core service consumes this workflow.
+
+Failure/recovery is fail-closed. Trigger/path drift, concurrent cancellation, mutable runner/action/interpreter drift, checkout/setup failure, generator failure, whole-docs archive scope error, artifact upload/missing/duplicate artifact, OIDC/permission failure, deployment creation/status failure, timeout/cancellation, or unexpected publication content all require a fresh exact-source/action/artifact/environment qualification. Recovery does not reuse a cancelled/partial deployment as success and does not grant Stage-A publication authority.
+
+Stage-A cases are authored only and remain `validation_status=not-run`, `accepted=false`:
+- `CONTRACT-TDRP-CHANGELOG-WORKFLOW-TRIGGER-001`
+- `CONTRACT-TDRP-CHANGELOG-WORKFLOW-PATH-FILTER-001`
+- `CONTRACT-TDRP-CHANGELOG-WORKFLOW-PERMISSIONS-001`
+- `CONTRACT-TDRP-CHANGELOG-WORKFLOW-CONCURRENCY-001`
+- `CONTRACT-TDRP-CHANGELOG-WORKFLOW-JOB-GRAPH-001`
+- `CONTRACT-TDRP-CHANGELOG-WORKFLOW-BUILD-RUNNER-001`
+- `CONTRACT-TDRP-CHANGELOG-WORKFLOW-CHECKOUT-LINEAGE-001`
+- `CONTRACT-TDRP-CHANGELOG-WORKFLOW-PYTHON-LINEAGE-001`
+- `CONTRACT-TDRP-CHANGELOG-WORKFLOW-GENERATOR-CALL-001`
+- `CONTRACT-TDRP-CHANGELOG-WORKFLOW-DOCS-SCOPE-001`
+- `CONTRACT-TDRP-CHANGELOG-WORKFLOW-PAGES-ARTIFACT-001`
+- `CONTRACT-TDRP-CHANGELOG-WORKFLOW-DEPLOY-ENVIRONMENT-001`
+- `CONTRACT-TDRP-CHANGELOG-WORKFLOW-DEPLOY-OIDC-001`
+- `CONTRACT-TDRP-CHANGELOG-WORKFLOW-DEPLOY-STATUS-001`
+- `CONTRACT-TDRP-CHANGELOG-WORKFLOW-PAGE-URL-001`
+- `CONTRACT-TDRP-CHANGELOG-WORKFLOW-CONSUMERS-001`
+- `CONTRACT-TDRP-CHANGELOG-WORKFLOW-NO-TARGET-COPY-001`
+- `INT-TDRP-CHANGELOG-WORKFLOW-REPOSITORY-RELEASE-001`
+- `FAULT-TDRP-CHANGELOG-WORKFLOW-CONCURRENT-CANCEL-001`
+- `FAULT-TDRP-CHANGELOG-WORKFLOW-CHECKOUT-SETUP-001`
+- `FAULT-TDRP-CHANGELOG-WORKFLOW-GENERATOR-001`
+- `FAULT-TDRP-CHANGELOG-WORKFLOW-ARCHIVE-UPLOAD-001`
+- `FAULT-TDRP-CHANGELOG-WORKFLOW-ARTIFACT-IDENTITY-001`
+- `FAULT-TDRP-CHANGELOG-WORKFLOW-DEPLOY-CREATE-001`
+- `FAULT-TDRP-CHANGELOG-WORKFLOW-DEPLOY-POLL-TIMEOUT-001`
+- `FAULT-TDRP-CHANGELOG-WORKFLOW-PUBLICATION-SCOPE-001`
+- `SEC-TDRP-CHANGELOG-WORKFLOW-LEAST-PRIVILEGE-001`
+- `SEC-TDRP-CHANGELOG-WORKFLOW-OIDC-JOB-SCOPE-001`
+- `SEC-TDRP-CHANGELOG-WORKFLOW-CHECKOUT-CREDENTIALS-001`
+- `SEC-TDRP-CHANGELOG-WORKFLOW-MUTABLE-ACTION-TAGS-001`
+- `SEC-TDRP-CHANGELOG-WORKFLOW-RUNNER-PYTHON-MUTABILITY-001`
+- `SEC-TDRP-CHANGELOG-WORKFLOW-WHOLE-DOCS-SCOPE-001`
+- `SEC-TDRP-CHANGELOG-WORKFLOW-NO-SOURCE-PUBLISH-AUTHORITY-001`
+
+No workflow dispatch/push, checkout/setup action execution, Python generator execution, artifact upload, Pages OIDC/deployment, build, typecheck, lint, validator, test/E2E, package, signing, release, installation, runtime acceptance, workflow-run/status/check query, or platform-core mutation is performed in Stage A.

@@ -1139,3 +1139,51 @@ Authored security/privacy cases, not run:
 Stage-B oracles are `ORA-TDRP-CANT-REPRODUCE-EXACT-WORKFLOW-001`, `ORA-TDRP-CANT-REPRODUCE-LABEL-AGE-CLOSE-001`, `ORA-TDRP-CANT-REPRODUCE-ACTION-LINEAGE-001`, and `ORA-TDRP-CANT-REPRODUCE-FAILURE-BOUNDARY-001`. Invariants are `INV-TDRP-CANT-REPRODUCE-NO-ISSUE-COMMENT-RECOVERY-ASSUMPTION-001`, `INV-TDRP-CANT-REPRODUCE-NO-MUTABLE-TAG-TRUST-001`, `INV-TDRP-CANT-REPRODUCE-NO-TELEGRAM-SUPPORT-IMPORT-001`, and `INV-TDRP-CANT-REPRODUCE-NO-STAGE-A-EXECUTION-001`.
 
 No source/target schedule run, issue/label/comment/state mutation, token probe, build, lint, validator, test/E2E, CI, package, deployment or acceptance is executed in Stage A.
+
+
+### Repository changelog Pages workflow qualification
+
+`TDRP-R9-REPOSITORY-CHANGELOG-PAGES-WORKFLOW-001` qualifies fixed-U `.github/workflows/changelog.yml@445277fe4b44dc9ccef17b7b602016572c08fe7c` as repository changelog-publication/Pages provenance. Existing target owners are root release/changelog/process governance, repository security/provenance governance, this shared quality/evidence owner, and final `FQT-REL-001`. No target Pages workflow, second release truth, updater owner, product runtime, or platform-core service is introduced. Stage A authors the following cases and executes none.
+
+Authored contract cases, not run:
+- `CONTRACT-TDRP-CHANGELOG-WORKFLOW-TRIGGER-001` — only dev pushes touching exact `changelog.txt` and manual dispatch are admitted.
+- `CONTRACT-TDRP-CHANGELOG-WORKFLOW-PATH-FILTER-001` — path filtering is exact root changelog input; unrelated dev pushes are excluded.
+- `CONTRACT-TDRP-CHANGELOG-WORKFLOW-PERMISSIONS-001` — workflow-level contents-read/pages-write/id-token-write applies to both jobs; source inspection does not call this least privilege.
+- `CONTRACT-TDRP-CHANGELOG-WORKFLOW-CONCURRENCY-001` — all runs share group `pages` and newer runs cancel in-progress predecessors.
+- `CONTRACT-TDRP-CHANGELOG-WORKFLOW-JOB-GRAPH-001` — deploy cannot begin before successful build/artifact production.
+- `CONTRACT-TDRP-CHANGELOG-WORKFLOW-BUILD-RUNNER-001` — build runs on mutable ubuntu-latest and carries no source timeout/retry declaration.
+- `CONTRACT-TDRP-CHANGELOG-WORKFLOW-CHECKOUT-LINEAGE-001` — checkout@v7 written ref, observed commit/action manifest and default persisted credentials remain separate evidence.
+- `CONTRACT-TDRP-CHANGELOG-WORKFLOW-PYTHON-LINEAGE-001` — setup-python@v7 plus `3.12` binds major/minor intent but later evidence must capture exact interpreter/runtime acquisition.
+- `CONTRACT-TDRP-CHANGELOG-WORKFLOW-GENERATOR-CALL-001` — exact previously-qualified helper is invoked with no argv overrides against exact changelog input.
+- `CONTRACT-TDRP-CHANGELOG-WORKFLOW-DOCS-SCOPE-001` — the whole `docs` tree, not only generated changelog output, enters publication scope.
+- `CONTRACT-TDRP-CHANGELOG-WORKFLOW-PAGES-ARTIFACT-001` — upload-pages-artifact defaults to exact name `github-pages`, one-day retention and hidden-file exclusion; fixed-U docs has no tracked symlink.
+- `CONTRACT-TDRP-CHANGELOG-WORKFLOW-DEPLOY-ENVIRONMENT-001` — deploy targets exact `github-pages` environment after build.
+- `CONTRACT-TDRP-CHANGELOG-WORKFLOW-DEPLOY-OIDC-001` — deploy-pages requires id-token and pages write; actual token/environment policy is later host evidence.
+- `CONTRACT-TDRP-CHANGELOG-WORKFLOW-DEPLOY-STATUS-001` — observed deploy action creates deployment, polls bounded status and treats terminal error/cancel as non-success.
+- `CONTRACT-TDRP-CHANGELOG-WORKFLOW-PAGE-URL-001` — environment URL is only the deploy step's returned page_url for that deployment.
+- `CONTRACT-TDRP-CHANGELOG-WORKFLOW-CONSUMERS-001` — Actions admission, generator, artifact service, Pages deployment/environment and Pages readers form the direct chain.
+- `CONTRACT-TDRP-CHANGELOG-WORKFLOW-NO-TARGET-COPY-001` — Fabushi absorbs guarantees into existing release/process/security/quality owners rather than copying Telegram Pages automation.
+
+Integration, not run:
+- `INT-TDRP-CHANGELOG-WORKFLOW-REPOSITORY-RELEASE-001` — frozen-candidate evidence must compose exact source/action/interpreter/artifact/Pages identities with current Fabushi release evidence without treating source Pages success as target release acceptance.
+
+Fault/recovery cases, not run:
+- `FAULT-TDRP-CHANGELOG-WORKFLOW-CONCURRENT-CANCEL-001`
+- `FAULT-TDRP-CHANGELOG-WORKFLOW-CHECKOUT-SETUP-001`
+- `FAULT-TDRP-CHANGELOG-WORKFLOW-GENERATOR-001`
+- `FAULT-TDRP-CHANGELOG-WORKFLOW-ARCHIVE-UPLOAD-001`
+- `FAULT-TDRP-CHANGELOG-WORKFLOW-ARTIFACT-IDENTITY-001`
+- `FAULT-TDRP-CHANGELOG-WORKFLOW-DEPLOY-CREATE-001`
+- `FAULT-TDRP-CHANGELOG-WORKFLOW-DEPLOY-POLL-TIMEOUT-001`
+- `FAULT-TDRP-CHANGELOG-WORKFLOW-PUBLICATION-SCOPE-001`
+
+Security/provenance cases, not run:
+- `SEC-TDRP-CHANGELOG-WORKFLOW-LEAST-PRIVILEGE-001`
+- `SEC-TDRP-CHANGELOG-WORKFLOW-OIDC-JOB-SCOPE-001`
+- `SEC-TDRP-CHANGELOG-WORKFLOW-CHECKOUT-CREDENTIALS-001`
+- `SEC-TDRP-CHANGELOG-WORKFLOW-MUTABLE-ACTION-TAGS-001`
+- `SEC-TDRP-CHANGELOG-WORKFLOW-RUNNER-PYTHON-MUTABILITY-001`
+- `SEC-TDRP-CHANGELOG-WORKFLOW-WHOLE-DOCS-SCOPE-001`
+- `SEC-TDRP-CHANGELOG-WORKFLOW-NO-SOURCE-PUBLISH-AUTHORITY-001`
+
+Stage-B oracles must bind exact workflow/helper/input/action SHAs, exact resolved Python and runner identity, actual job token/environment policy, artifact id/name/digest/content manifest, deployment id/status/page URL and publication-scope review. A cancelled or partial deployment, mutable-tag observation, generated page, or source Pages success is not reusable target acceptance. `validation_status=not-run`; `accepted=false`.
