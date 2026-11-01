@@ -6,8 +6,8 @@
   "target_commit": "23d73b32e301408f9c8aed151cb1f9e442516e13",
   "coverage": {
     "source_entries_total": 16202,
-    "unknown": 16145,
-    "unread": 16118,
+    "unknown": 16144,
+    "unread": 16117,
     "omitted": 0,
     "responsibilities_total": 135,
     "unmapped_responsibilities": 0
@@ -34540,7 +34540,13 @@
         "Validated frame selection/crop/scale extraction",
         "Deterministic frame/time naming and contact-sheet evidence",
         "Local-only source video and disposable full extraction",
-        "Temporary raw decode cleanup and fail-closed decode count"
+        "Temporary raw decode cleanup and fail-closed decode count",
+        "Workspace checkout identity and linked-worktree isolation",
+        "Inbox payload transaction digest and immutable snapshot",
+        "Atomic Start/Retry task-state transitions",
+        "Approved source-lineage commit ancestry and local recovery refs",
+        "Explicit-path semantic publication and approval-ref recovery",
+        "Digest-checked finalize/abort inbox recovery"
       ],
       "capability_ids": [
         "CAP-REPOSITORY-TASK-AUTHORITY",
@@ -34559,7 +34565,7 @@
         ".agents/skills/continue/agents/openai.yaml@e981285ee10cbed9e27e358d60ce596c9e0b3d61"
       ],
       "source_analysis_path": "projects/telegram-desktop-rust/dossiers/continue-skill-complete-read.md",
-      "behavior_contract": "Continue one explicitly specified repository-development batch from canonical task state without widening scope: resume exclusive checkout-owned active/split state first; freeze the initial selected task ids; establish ownership only through canonical task-state transitions; gate execution on source lineage and safe source preparation; delegate one task performer at a time; route split-required and discovered follow-up work as durable lineage transactions; consolidate only compatible unclaimed unfinished work; preserve recoverable state on races/conflicts; and keep implementation, executable validation, and acceptance distinct. When the explicitly selected scope is the inbox, acquisition is a checkout-bound immutable snapshot transaction; routing preserves project/source lineage, creates only pristine unclaimed implement tasks or receipt-only dispositions, resolves retired alias/split history to live successors, and publishes only explicit task/project/receipt paths before digest-checked finalization. Supplied-video intake is a subordinate evidence transformation: bind the local source by digest/probe metadata, use decoded presentation timestamps as timing authority, derive only validated frame/crop/sheet evidence, keep original video and bulk extraction untracked, hand later performers only durable task inputs, and fail closed on missing tools, malformed selection, empty/non-deterministic decode, count mismatch, or incomplete target output.",
+      "behavior_contract": "Continue one explicitly specified repository-development batch from canonical task state without widening scope: resume exclusive checkout-owned active/split state first; freeze the initial selected task ids; establish ownership only through canonical task-state transitions; gate execution on source lineage and safe source preparation; delegate one task performer at a time; route split-required and discovered follow-up work as durable lineage transactions; consolidate only compatible unclaimed unfinished work; preserve recoverable state on races/conflicts; and keep implementation, executable validation, and acceptance distinct. When the explicitly selected scope is the inbox, acquisition is a checkout-bound immutable snapshot transaction; routing preserves project/source lineage, creates only pristine unclaimed implement tasks or receipt-only dispositions, resolves retired alias/split history to live successors, and publishes only explicit task/project/receipt paths before digest-checked finalization. Supplied-video intake is a subordinate evidence transformation: bind the local source by digest/probe metadata, use decoded presentation timestamps as timing authority, derive only validated frame/crop/sheet evidence, keep original video and bulk extraction untracked, hand later performers only durable task inputs, and fail closed on missing tools, malformed selection, empty/non-deterministic decode, count mismatch, or incomplete target output. The concrete workspace helper binds execution to one checkout tag and canonical repository, isolates slot/inbox/routing/health worktrees, seals inbox transactions by content digest, gates Start/Retry on canonical task and source-lineage state, keeps base/green/run refs as local recovery metadata, publishes only explicit paths through refreshed/rebased semantic validation, and finalizes or aborts without discarding changed live input or unsafe recovery state.",
       "state_machine": "canonical queue snapshot -> recover pending consolidation / own split-required -> explicit specification -> frozen initial batch -> lineage/source-preparation gate -> exactly one active task -> approved | genuine blocked | split-required | hard-stop -> optional split/routing/consolidation rewrite with lineage -> next eligible in-scope task -> normal stop/report",
       "side_effects": [
         "No shipping product runtime side effects.",
@@ -34613,7 +34619,14 @@
         "Requested/decoded frame-count mismatch is published as complete evidence",
         "Original supplied video or bulk full extraction is tracked in task input",
         "A partial target directory left by filesystem/image-save failure is treated as authoritative complete evidence",
-        "Performer silently depends on local backup video unavailable on another machine"
+        "Performer silently depends on local backup video unavailable on another machine",
+        "Workspace identity accepts a foreign/moved worktree or wrong canonical branch/common Git directory",
+        "Inbox transaction resumes multiple/foreign snapshots or accepts symlinked payload content",
+        "Start/Retry proceeds despite unfinished dependencies, competing ownership, or missing approved source ancestry",
+        "Private recovery mirror is treated as canonical publication authority",
+        "Publication stages undeclared paths or converts semantic/rebase/remote failure into successful canonical state",
+        "Finalize clears human-edited live inbox content whose digest differs from the sealed transaction",
+        "Approval cleanup deletes source recovery refs without canonical approval and source-state agreement"
       ],
       "ui_disposition": "Not applicable; repository development-process governance only.",
       "non_ui_responsibilities": [
@@ -34648,7 +34661,13 @@
         "PTS-based frame timing for variable-frame-rate recordings",
         "Compact durable frame/sheet handoff without tracking original video",
         "Fail-closed helper dependency/decode/count handling",
-        "Temporary raw decode cleanup and non-authoritative partial target output"
+        "Temporary raw decode cleanup and non-authoritative partial target output",
+        "Checkout/machine identity and linked-worktree isolation",
+        "Content-addressed inbox transaction snapshot and digest",
+        "Atomic task Start/Retry transitions with source-lineage ancestry gates",
+        "Local source recovery refs and carried-work seal semantics",
+        "Explicit-path refreshed/rebased publication with semantic revalidation",
+        "Digest-checked finalize/abort and approval-ref recovery"
       ],
       "platform_delta": "No platform-core production delta. This fixed-U responsibility is repository-development process governance, not shipping Tasks/Automations, Agent/Coordinator/Host/Runner, or platform runtime behavior.",
       "existing_owner_candidates": [
@@ -34718,12 +34737,21 @@
         "selected frame/crop/scale request -> validated deterministic frame/time PNGs or fail-closed error",
         "task-owned animated phase -> compact tracked crops/sheets + key/context frames; original/full extraction remain local/scratch",
         "helper temporary decode -> automatic cleanup on scope exit; target-side partial output after later failure remains non-authoritative",
-        "performer -> tracked task.md + referenced input frames only; unanswered later question -> owner, not hidden local-video dependency"
+        "performer -> tracked task.md + referenced input frames only; unanswered later question -> owner, not hidden local-video dependency",
+        "source checkout + machine tag + checkout folder -> stable checkout tag + isolated linked worktrees",
+        "inbox payload -> sorted path/byte digest -> immutable matching transaction snapshot",
+        "eligible todo + dependency/source-lineage gate + no active owner -> Start publication | lost-race stop",
+        "owned blocked task + source-lineage gate -> local Retry resume without artifact erasure",
+        "approved source dependency -> retained task commit ancestry in current source | compatible-branch diagnostic | stop",
+        "explicit changed paths + refreshed canonical state -> rebase + semantic revalidation + publish | recoverable conflict",
+        "canonical receipt with exact digest -> archive snapshot + clear unchanged live inbox | preserve changed live inbox",
+        "pre-publication failure -> abort to retained failed snapshot; post-commit failure -> resume publication",
+        "canonical approved task + clean valid source state -> delete local recovery refs | otherwise retain refs"
       ],
       "state_owner": "Existing Fabushi repository development process authority",
       "lifecycle_owner": "Existing repository development lifecycle and quality/test-evidence governance",
-      "persistence_and_restart": "Canonical task/process state persists only in published repository/project task artifacts and exact Git history. Invocation batch bookkeeping and active phase artifacts are resumable but non-authoritative until canonical publication. Pending split/consolidation/routing markers are durable recovery boundaries; no-repeat completion markers prevent duplicate transactions. Inbox intake persists a digest-bound transaction under the ignored backup plus an isolated inbox publication branch; a matching active transaction resumes, post-commit failures retain the transaction/commit, and finalization preserves a raw backup before optional live-input clearing.",
-      "concurrency_and_cancellation": "Start/finish/split/routing/consolidation publication uses one-owner/CAS semantics. Concurrent claim wins are resolved by refresh without stealing. Pre-commit consolidation races write nothing; unsafe committed publication state is preserved. Interruption leaves task-local state resumable and does not manufacture a Block. Inbox publication is isolated from the task slot, rejects unsafe/unpublished canonical state for new acquisition, retries only ordinary non-fast-forward races after refresh/rebase, and preserves semantic-conflict/remote-failure state without force publication.",
+      "persistence_and_restart": "Canonical task/process state persists only in published repository/project task artifacts and exact Git history. Invocation batch bookkeeping and active phase artifacts are resumable but non-authoritative until canonical publication. Pending split/consolidation/routing markers are durable recovery boundaries; no-repeat completion markers prevent duplicate transactions. Inbox intake persists a digest-bound transaction under the ignored backup plus an isolated inbox publication branch; a matching active transaction resumes, post-commit failures retain the transaction/commit, and finalization preserves a raw backup before optional live-input clearing. Workspace helper recovery state additionally includes checkout-scoped linked worktrees, digest-sealed inbox snapshots, local base/green/run refs, carried-work seals and unpublished specialized commits; none supersedes published canonical task state.",
+      "concurrency_and_cancellation": "Start/finish/split/routing/consolidation publication uses one-owner/CAS semantics. Concurrent claim wins are resolved by refresh without stealing. Pre-commit consolidation races write nothing; unsafe committed publication state is preserved. Interruption leaves task-local state resumable and does not manufacture a Block. Inbox publication is isolated from the task slot, rejects unsafe/unpublished canonical state for new acquisition, retries only ordinary non-fast-forward races after refresh/rebase, and preserves semantic-conflict/remote-failure state without force publication. Workspace-helper publication reruns semantic validation after rebase, retries only ordinary non-fast-forward/fetch-first races, preserves unpublished work on semantic/rebase/remote failure, and never treats a private recovery mirror as canonical authority.",
       "security_boundary": "Cannot authorize product-runtime task execution, release acceptance, credentials, deployment, branch-protection changes, CI execution, or ownership theft. Host adapters and receipts cannot elevate themselves to canonical authority. Inbox planning additionally forbids tracking credentials, browser profiles, portable accounts, raw videos/full extractions, complete run/build logs, or persisted source commit hashes.",
       "network_service_dependencies": [
         "GitHub repository authority",
@@ -34807,9 +34835,16 @@
         "CONTRACT-TDRP-PROCESS-INBOX-VIDEO-FRAME-EXTRACT-001 authored, not run",
         "CONTRACT-TDRP-PROCESS-INBOX-VIDEO-DURABLE-REFERENCE-001 authored, not run",
         "INT-TDRP-PROCESS-INBOX-VIDEO-PERFORMER-HANDOFF-001 authored, not run",
-        "FAULT-TDRP-PROCESS-INBOX-VIDEO-CLEANUP-001 authored, not run"
+        "FAULT-TDRP-PROCESS-INBOX-VIDEO-CLEANUP-001 authored, not run",
+        "CONTRACT-TDRP-PROCESS-INBOX-WORKSPACE-IDENTITY-001 authored, not run",
+        "CONTRACT-TDRP-PROCESS-INBOX-WORKTREE-ISOLATION-001 authored, not run",
+        "CONTRACT-TDRP-PROCESS-INBOX-TRANSACTION-DIGEST-001 authored, not run",
+        "CONTRACT-TDRP-PROCESS-INBOX-TASK-STATE-TRANSITION-001 authored, not run",
+        "CONTRACT-TDRP-PROCESS-INBOX-SOURCE-LINEAGE-REFS-001 authored, not run",
+        "INT-TDRP-PROCESS-INBOX-WORKSPACE-PUBLICATION-001 authored, not run",
+        "FAULT-TDRP-PROCESS-INBOX-WORKSPACE-RECOVERY-001 authored, not run"
       ],
-      "target_commit": "910abf5ffd6f60f86d65ccde5c76d2ea99b37867",
+      "target_commit": "3d3d38156ad6327e37408013745b77c003ce4e02",
       "workflow_run": null,
       "run_attempt": null,
       "job": null,
@@ -34948,7 +34983,12 @@
         "CONTRACT-TDRP-PROCESS-INBOX-OPENAI-HOST-METADATA-001",
         "CONTRACT-TDRP-PROCESS-INBOX-VIDEO-PROBE-PTS-001",
         "CONTRACT-TDRP-PROCESS-INBOX-VIDEO-FRAME-EXTRACT-001",
-        "CONTRACT-TDRP-PROCESS-INBOX-VIDEO-DURABLE-REFERENCE-001"
+        "CONTRACT-TDRP-PROCESS-INBOX-VIDEO-DURABLE-REFERENCE-001",
+        "CONTRACT-TDRP-PROCESS-INBOX-WORKSPACE-IDENTITY-001",
+        "CONTRACT-TDRP-PROCESS-INBOX-WORKTREE-ISOLATION-001",
+        "CONTRACT-TDRP-PROCESS-INBOX-TRANSACTION-DIGEST-001",
+        "CONTRACT-TDRP-PROCESS-INBOX-TASK-STATE-TRANSITION-001",
+        "CONTRACT-TDRP-PROCESS-INBOX-SOURCE-LINEAGE-REFS-001"
       ],
       "integration_case_ids": [
         "INT-TDRP-CONTINUE-HOST-ADAPTER-COMPOSITION-001",
@@ -34957,7 +34997,8 @@
         "INT-TDRP-CONTINUE-SPLIT-PUBLISH-001",
         "INT-TDRP-PROCESS-INBOX-PUBLICATION-FINALIZE-001",
         "INT-TDRP-PROCESS-INBOX-OPENAI-HOST-INVOCATION-001",
-        "INT-TDRP-PROCESS-INBOX-VIDEO-PERFORMER-HANDOFF-001"
+        "INT-TDRP-PROCESS-INBOX-VIDEO-PERFORMER-HANDOFF-001",
+        "INT-TDRP-PROCESS-INBOX-WORKSPACE-PUBLICATION-001"
       ],
       "functional_e2e_case_ids": [],
       "temporal_case_ids": [
@@ -34974,7 +35015,8 @@
         "FAULT-TDRP-CONTINUE-CONSOLIDATION-RECOVERY-001",
         "FAULT-TDRP-CONTINUE-SPLIT-RECOVERY-001",
         "FAULT-TDRP-PROCESS-INBOX-RECOVERY-001",
-        "FAULT-TDRP-PROCESS-INBOX-VIDEO-CLEANUP-001"
+        "FAULT-TDRP-PROCESS-INBOX-VIDEO-CLEANUP-001",
+        "FAULT-TDRP-PROCESS-INBOX-WORKSPACE-RECOVERY-001"
       ],
       "performance_case_ids": [],
       "security_case_ids": [
@@ -35003,7 +35045,7 @@
       "acceptance_reviewer": null,
       "reviewer": null,
       "license_and_provenance": "Behavioral repository task/process authority, batch-freeze, source-lineage, split, discovery-routing and consolidation contracts read from fixed-U continue skill and direct fixed-U host/workflow consumers; no upstream scheduler implementation copied into Fabushi shipping runtime. OpenAI invocation metadata was additionally read from fixed-U agents/openai.yaml; only declarative host-adapter behavior was mapped. Fixed-U process-inbox/SKILL.md was additionally read completely for acquisition, routing, task-schema, alias/split interoperability, publication, finalization and recovery behavior; no upstream helper/runtime implementation was copied into the shipping product. Fixed-U process-inbox OpenAI invocation metadata was additionally read from agents/openai.yaml; only declarative discovery/invocation behavior was mapped, with no copied host runtime. Fixed-U process-inbox video.py was completely read as a repository-planning evidence helper; no helper runtime, ffmpeg/Pillow dependency, raw video, or derived frame payload was copied into Fabushi shipping product code.",
-      "notes": "Task round114/source evidence round145. Complete fixed-U tree reread truncated=false confirms continue/SKILL.md is the next independent unrepresented blob after represented code-health sources.py. Exact 39,712-character / 722-line continue skill plus host invocation wrappers, process-inbox/perform-task boundaries and split/consolidation references were read. Exactly one independent source entry closes: unknown 16164->16163, unread 16137->16136, responsibilities 132->133. Adjacent continue agents/openai.yaml and reference blobs remain independently unclosed. Contracts authored, not run; accepted=false. Task round115/source evidence round146 independently closes the adjacent OpenAI continue adapter blob. Exact 291-character / 4-line YAML preserves display/discovery metadata plus a default prompt that invokes $continue, resumes active work first, freezes exactly the caller-selected batch, and processes one task at a time. No new responsibility or owner is created; unknown 16163->16162, unread 16136->16135, responsibilities remain 133. OpenAI host-metadata/invocation contracts authored, not run. Task round116/source evidence round147 independently closes the fixed-U pending-task consolidation reference. Exact 14,614-character / 285-line source plus continue scheduler, project-context policy, process-inbox alias consumer, workspace helper, and fixed-U workspace tests were read. Eligibility is pristine unclaimed todo only, partitioned by project and frozen-batch membership; merge/no-merge preserves criteria/inputs/dependencies; retired ids retain durable aliases and content fingerprints; pre-commit drift returns RACED with no write while committed semantic/publication failures preserve a recoverable BLOCKED commit and never force-push. Existing repository process owner is extended; no new responsibility/ADR/platform-core runtime is created. Exactly one independent source entry closes: unknown 16162->16161, unread 16135->16134, responsibilities remain 133. Contracts authored, not run; accepted=false. Task round117/source evidence round148 independently closes the fixed-U split-required routing reference. Exact 5,813-character / 112-line source plus continue scheduler, perform-task producer boundary, process-inbox split consumer, project-context policy, workspace helper and fixed-U workspace tests were read. Split eligibility is canonical checkout-owned split-required state with complete retained-work seal; replacements are at least two independently shippable/testable implement tasks; retained implementation requires exactly one first carrier with carried_from/owned-path handoff while source refs transfer only at the carrier's later canonical Start after seal revalidation. Live dependencies/project links are rewritten atomically, source history becomes sealed split.yaml, and unsafe seal/conflict/remote states remain recoverable hard stops without force publication. Existing repository process owner is extended; no new responsibility/ADR/platform-core runtime is created. Exactly one independent source entry closes: unknown 16161->16160, unread 16134->16133, responsibilities remain 133. Contracts authored, not run; accepted=false. Task round130/source evidence round161 independently closes fixed-U process-inbox/SKILL.md. Exact 22,475-byte Git blob / 22,467 decoded characters / 441 lines at recursive-tree index 75 was read completely. Acquisition uses a checkout-bound isolated inbox worktree and immutable digest snapshot while excluding the dirty task slot; routing preserves project/source lineage, resolves superseded/split history to live successors, creates only collision-safe pristine unclaimed implement tasks or receipt-only branch-history dispositions, and keeps later split-required replacement ownership with the scheduler. Publication is digest/receipt-bound and explicit-path only, retries ordinary non-fast-forward races after refresh/rebase, preserves commit/transaction state on semantic conflict or remote failure, and finalizes only from canonical receipt/digest while preserving human edits and a raw backup. Direct callers/consumers include root AGENTS, Claude/Grok process-inbox wrappers, continue/perform-task boundaries, split/consolidation references, host workflow adapters and workspace.py. Existing repository task/process authority is extended; no new responsibility/ADR/platform-core runtime is created. Exactly one independent source entry closes: unknown 16148->16147, unread 16121->16120; responsibilities remain 135. Process-inbox contracts authored, not run; accepted=false. Adjacent agents/openai.yaml remains independently unclosed. Task round131/source evidence round162 independently closes fixed-U process-inbox/agents/openai.yaml. Exact 234-byte / 4-line YAML exposes display_name, short_description and a default_prompt delegating through $process-inbox to route/plan the local AI inbox while preserving project lineage. The OpenAI host-adapter remains non-authoritative; no new responsibility, ADR, shipping Product Tasks/Automations, Agent/Coordinator/Host/Runner owner or platform-core runtime delta is introduced. Exactly one independent source entry closes: unknown 16147->16146, unread 16120->16119; responsibilities remain 135. OpenAI metadata/invocation contracts authored, not run; accepted=false. Task round132/source evidence round163 independently closes fixed-U process-inbox/scripts/video.py. Exact 9,024-byte ASCII helper at recursive-tree index 79 implements probe/extract/sheet: SHA-256/probe metadata, decoded best-effort PTS normalized to the first frame, validated sorted unique frame selection and crop, ffmpeg passthrough PNG extraction with requested/decoded count fencing, deterministic frame-index/time names, bounded labelled Pillow contact sheets, and TemporaryDirectory cleanup. Its sole fixed-U direct caller is process-inbox/SKILL.md; workspace.py/workspace_test.py/Claude/Grok wrappers/root AGENTS do not directly invoke it, while perform-task later consumes task.md and tracked input frames. Existing repository process owner is extended; shipping attachments/resources/media owners are rejected because this is planning evidence, not runtime media. Exactly one independent source entry closes: unknown 16146->16145, unread 16119->16118; responsibilities remain 135. Five video evidence contracts authored, not run; accepted=false.",
+      "notes": "Task round114/source evidence round145. Complete fixed-U tree reread truncated=false confirms continue/SKILL.md is the next independent unrepresented blob after represented code-health sources.py. Exact 39,712-character / 722-line continue skill plus host invocation wrappers, process-inbox/perform-task boundaries and split/consolidation references were read. Exactly one independent source entry closes: unknown 16164->16163, unread 16137->16136, responsibilities 132->133. Adjacent continue agents/openai.yaml and reference blobs remain independently unclosed. Contracts authored, not run; accepted=false. Task round115/source evidence round146 independently closes the adjacent OpenAI continue adapter blob. Exact 291-character / 4-line YAML preserves display/discovery metadata plus a default prompt that invokes $continue, resumes active work first, freezes exactly the caller-selected batch, and processes one task at a time. No new responsibility or owner is created; unknown 16163->16162, unread 16136->16135, responsibilities remain 133. OpenAI host-metadata/invocation contracts authored, not run. Task round116/source evidence round147 independently closes the fixed-U pending-task consolidation reference. Exact 14,614-character / 285-line source plus continue scheduler, project-context policy, process-inbox alias consumer, workspace helper, and fixed-U workspace tests were read. Eligibility is pristine unclaimed todo only, partitioned by project and frozen-batch membership; merge/no-merge preserves criteria/inputs/dependencies; retired ids retain durable aliases and content fingerprints; pre-commit drift returns RACED with no write while committed semantic/publication failures preserve a recoverable BLOCKED commit and never force-push. Existing repository process owner is extended; no new responsibility/ADR/platform-core runtime is created. Exactly one independent source entry closes: unknown 16162->16161, unread 16135->16134, responsibilities remain 133. Contracts authored, not run; accepted=false. Task round117/source evidence round148 independently closes the fixed-U split-required routing reference. Exact 5,813-character / 112-line source plus continue scheduler, perform-task producer boundary, process-inbox split consumer, project-context policy, workspace helper and fixed-U workspace tests were read. Split eligibility is canonical checkout-owned split-required state with complete retained-work seal; replacements are at least two independently shippable/testable implement tasks; retained implementation requires exactly one first carrier with carried_from/owned-path handoff while source refs transfer only at the carrier's later canonical Start after seal revalidation. Live dependencies/project links are rewritten atomically, source history becomes sealed split.yaml, and unsafe seal/conflict/remote states remain recoverable hard stops without force publication. Existing repository process owner is extended; no new responsibility/ADR/platform-core runtime is created. Exactly one independent source entry closes: unknown 16161->16160, unread 16134->16133, responsibilities remain 133. Contracts authored, not run; accepted=false. Task round130/source evidence round161 independently closes fixed-U process-inbox/SKILL.md. Exact 22,475-byte Git blob / 22,467 decoded characters / 441 lines at recursive-tree index 75 was read completely. Acquisition uses a checkout-bound isolated inbox worktree and immutable digest snapshot while excluding the dirty task slot; routing preserves project/source lineage, resolves superseded/split history to live successors, creates only collision-safe pristine unclaimed implement tasks or receipt-only branch-history dispositions, and keeps later split-required replacement ownership with the scheduler. Publication is digest/receipt-bound and explicit-path only, retries ordinary non-fast-forward races after refresh/rebase, preserves commit/transaction state on semantic conflict or remote failure, and finalizes only from canonical receipt/digest while preserving human edits and a raw backup. Direct callers/consumers include root AGENTS, Claude/Grok process-inbox wrappers, continue/perform-task boundaries, split/consolidation references, host workflow adapters and workspace.py. Existing repository task/process authority is extended; no new responsibility/ADR/platform-core runtime is created. Exactly one independent source entry closes: unknown 16148->16147, unread 16121->16120; responsibilities remain 135. Process-inbox contracts authored, not run; accepted=false. Adjacent agents/openai.yaml remains independently unclosed. Task round131/source evidence round162 independently closes fixed-U process-inbox/agents/openai.yaml. Exact 234-byte / 4-line YAML exposes display_name, short_description and a default_prompt delegating through $process-inbox to route/plan the local AI inbox while preserving project lineage. The OpenAI host-adapter remains non-authoritative; no new responsibility, ADR, shipping Product Tasks/Automations, Agent/Coordinator/Host/Runner owner or platform-core runtime delta is introduced. Exactly one independent source entry closes: unknown 16147->16146, unread 16120->16119; responsibilities remain 135. OpenAI metadata/invocation contracts authored, not run; accepted=false. Task round132/source evidence round163 independently closes fixed-U process-inbox/scripts/video.py. Exact 9,024-byte ASCII helper at recursive-tree index 79 implements probe/extract/sheet: SHA-256/probe metadata, decoded best-effort PTS normalized to the first frame, validated sorted unique frame selection and crop, ffmpeg passthrough PNG extraction with requested/decoded count fencing, deterministic frame-index/time names, bounded labelled Pillow contact sheets, and TemporaryDirectory cleanup. Its sole fixed-U direct caller is process-inbox/SKILL.md; workspace.py/workspace_test.py/Claude/Grok wrappers/root AGENTS do not directly invoke it, while perform-task later consumes task.md and tracked input frames. Existing repository process owner is extended; shipping attachments/resources/media owners are rejected because this is planning evidence, not runtime media. Exactly one independent source entry closes: unknown 16146->16145, unread 16119->16118; responsibilities remain 135. Five video evidence contracts authored, not run; accepted=false. Task round133/source evidence round164 independently closes fixed-U process-inbox/scripts/workspace.py. Exact 185,107-byte/character source at recursive-tree index 80 was read completely across checkout/worktree identity, task-state transitions, source-lineage/local recovery refs, content-digested inbox snapshots, explicit-path publication, finalize/abort and recovery. Direct fixed-U consumers include process-inbox, perform-task, continue, code-health, performer pipeline, split/consolidation references, build-lock recovery, Claude workflow adapter and workspace_test.py. Existing repository task/process + quality/test-evidence owner is refined; no new responsibility, ADR, shipping runtime or platform-core production delta. Exactly one independent source entry closes: unknown 16145->16144, unread 16118->16117; responsibilities remain 135. Seven helper-level contracts authored, not run; accepted=false. Next source entry is process-inbox/scripts/workspace_test.py@79f943a99809bc6acf173872d9a780346648b5cf.",
       "test_execution_evidence": [],
       "id": "TDRP-R9-REPOSITORY-CONTINUE-TASK-PROCESS-AUTHORITY-001",
       "validation_status": "not-run",
@@ -35015,7 +35057,8 @@
         ".agents/skills/continue/references/split-required-task.md@552ad09b2fa022b7df94481746a51167305bf846",
         ".agents/skills/process-inbox/SKILL.md@73bd3c360232679a0ebfe3b990073ecc4f322b7d",
         ".agents/skills/process-inbox/agents/openai.yaml@b664f98ad4440de7a8074dfe790d80f3d2201546",
-        ".agents/skills/process-inbox/scripts/video.py@977d75aca7aea0b6c74471d533a5ee0e2a156ac3"
+        ".agents/skills/process-inbox/scripts/video.py@977d75aca7aea0b6c74471d533a5ee0e2a156ac3",
+        ".agents/skills/process-inbox/scripts/workspace.py@3cd99d173fcc3a6e293cfe36058a5fd9e492887d"
       ]
     },
     {
