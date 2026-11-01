@@ -272,6 +272,9 @@ transaction.
 Conversation clear also reuses the owner transaction and remains fail-closed
 under deletion custody; its external blob-store ordering remains a separate
 cross-storage gap.
+The shared owner KV write boundary now fences the remaining owner-local KV
+setters; external profile/avatar and memory-store clear paths remain separate
+atomicity gaps.
 
 ### 2026-11-01 background-result consumer recheck
 

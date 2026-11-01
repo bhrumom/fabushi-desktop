@@ -249,6 +249,9 @@ same transaction-edge fence.
 Conversation clear now uses the same owner transaction and is rejected during
 deletion custody; the facade's pre-cleared external blob store remains a
 separate cross-storage atomicity gap.
+The shared owner `write_kv` boundary now fences the remaining owner-local KV
+setters at the same SQLite edge; external profile/avatar and memory-store
+clear paths remain separately governed.
 
 The owner-local admission CAS now preserves the current `deletion_pending`
 value as part of its compare predicate. Ordinary work/review/media mutations

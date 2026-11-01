@@ -438,7 +438,23 @@ impl SandAgentDb {
         value: &str,
     ) -> Result<bool, AgentDbProjectionError> {
         self.run_write(&format!("writeKv:{key}"), |db| {
-            db.execute(SET_KV_SQL, params![key, value]).map(|changes| changes > 0)
+            db.execute_batch("BEGIN IMMEDIATE")?;
+            let result = (|| -> Result<bool, rusqlite::Error> {
+                if !session_work_write_is_admitted(db)? {
+                    return Ok(false);
+                }
+                Ok(db.execute(SET_KV_SQL, params![key, value])? > 0)
+            })();
+            match result {
+                Ok(changed) => {
+                    db.execute_batch("COMMIT")?;
+                    Ok(changed)
+                }
+                Err(error) => {
+                    let _ = db.execute_batch("ROLLBACK");
+                    Err(error)
+                }
+            }
         })
     }
 

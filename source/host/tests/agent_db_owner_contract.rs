@@ -438,6 +438,15 @@ fn owner_metadata_memory_writes_reject_deletion_fence_at_transaction_edge() {
     assert!(!owner
         .clear_conversation()
         .expect("fenced conversation clear"));
+    assert!(!owner
+        .set_awaiting_user_response(Some(
+            &mahayana_host_runtime::extensions::session::agent_db_serde::AwaitingUserResponse {
+                tab_id: "fenced-tab".into(),
+                reason: "fenced".into(),
+                since: 2.0,
+            },
+        ))
+        .expect("fenced KV write"));
     assert_eq!(
         owner
             .get_metadata("lastActivityAt")
