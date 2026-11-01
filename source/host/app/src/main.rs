@@ -4161,12 +4161,27 @@ impl UnifiedGatewayApi {
             .ok_or_else(|| GatewayCommandError::BadRequest(
                 "sessions.patch requires key or sessionKey".into(),
             ))?;
-        let archived = args
-            .get("archived")
-            .and_then(serde_json::Value::as_bool)
-            .ok_or_else(|| GatewayCommandError::BadRequest(
-                "sessions.patch requires archived".into(),
-            ))?;
+        let policy = args.get("communicationPolicy").map(|value| {
+            serde_json::from_value::<
+                mahayana_host_runtime::extensions::session::agent_session::SessionCommunicationPolicyOverride,
+            >(value.clone())
+            .map_err(|error| {
+                GatewayCommandError::BadRequest(format!(
+                    "sessions.patch communicationPolicy is invalid: {error}"
+                ))
+            })
+        }).transpose()?;
+        let archived = args.get("archived").and_then(serde_json::Value::as_bool);
+        if policy.is_some() && archived.is_some() {
+            return Err(GatewayCommandError::BadRequest(
+                "sessions.patch cannot combine communicationPolicy with archived".into(),
+            ));
+        }
+        if policy.is_none() && archived.is_none() {
+            return Err(GatewayCommandError::BadRequest(
+                "sessions.patch requires archived or communicationPolicy".into(),
+            ));
+        }
         let route = resolve_gateway_session_route(args, raw_key)?;
         let expected_key = format!("agent:{}:main", route.agent_id);
         if raw_key != expected_key {
@@ -4190,6 +4205,36 @@ impl UnifiedGatewayApi {
             .ok_or_else(|| GatewayCommandError::BadRequest(
                 "sessions.patch requires expectedLifecycleRevision".into(),
             ))?;
+        if let Some(policy) = policy {
+            self.session_workers
+                .write_session_communication_policy(
+                    &route.agent_id,
+                    expected_session_id,
+                    expected_revision,
+                    &policy,
+                )
+                .map_err(|error| {
+                    if error == "SESSION_LIFECYCLE_CHANGED"
+                        || error.contains("not admitted")
+                    {
+                        GatewayCommandError::Conflict(error)
+                    } else {
+                        GatewayCommandError::Internal(error)
+                    }
+                })?;
+            return Ok(serde_json::json!({
+                "ok": true,
+                "key": raw_key,
+                "sessionId": expected_session_id,
+                "communicationPolicy": policy,
+                "lifecycleRevision": expected_revision,
+            }));
+        }
+        let archived = archived.ok_or_else(|| {
+            GatewayCommandError::BadRequest(
+                "sessions.patch requires archived or communicationPolicy".into(),
+            )
+        })?;
         let reason = args
             .get("archiveReason")
             .and_then(serde_json::Value::as_str)

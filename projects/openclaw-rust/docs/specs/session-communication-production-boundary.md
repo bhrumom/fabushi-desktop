@@ -15,9 +15,11 @@ not call it before appending the sender transcript or waking the recipient.
 This slice connects that producer to the existing policy owner and keeps the
 existing transcript/wake consumers as the only delivery owners.
 
-Policy state is read only from the existing per-agent `SandAgentDb` KV owner.
+Policy state is read and mutated only through the existing authenticated
+canonical-session owner: `sessions.patch` requires the expected session ID and
+lifecycle revision and writes the per-agent `SandAgentDb` KV projection.
 Missing policy state is the documented compatibility default (`always`); a
-caller-supplied request body cannot mint or override policy authority.
+caller-supplied send request cannot mint or override policy authority.
 
 ## Non-goals
 
@@ -54,18 +56,25 @@ accept a policy selected in an untrusted send request.
 An absent per-agent policy record resolves to `always` for both directions,
 preserving existing behavior while making the default explicit and owned.
 
-### SCP-05 — Atomic delivery ordering
+### SCP-05 — Authenticated mutation
+
+The authenticated canonical `sessions.patch` route may update
+`communicationPolicy` only with the expected session ID and lifecycle
+revision. Policy mutation and archive mutation cannot be combined in one
+request, preventing a partial multi-owner update.
+
+### SCP-06 — Atomic delivery ordering
 
 Admission completes before sender transcript append, recipient wake, or any
 priority interrupt. A denied or approval-required decision leaves those
 consumers untouched.
 
-### SCP-06 — Honest completion boundary
+### SCP-07 — Honest completion boundary
 
-The policy owner and real producer/consumer wiring may be recorded as source
-implemented/wired only for the covered direct path. Full responsibility remains
-pending until policy mutation, approval UI/consumer, inbound receipt, and
-exact-head/runtime evidence exist.
+The policy owner, authenticated mutation route, and real producer/consumer
+wiring may be recorded as source implemented/wired only for the covered direct
+path. Full responsibility remains pending until approval UI/consumer, inbound
+receipt, and exact-head/runtime evidence exist.
 
 ## Current and target state
 

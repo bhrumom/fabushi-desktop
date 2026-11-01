@@ -179,10 +179,16 @@ malformed policy state fails closed. `never` rejects with no delivery side
 effects, and `ask` rejects until an existing approval producer and consumer can
 carry the approval. Group/shared-room delivery remains on its existing owner.
 
+The authenticated canonical `sessions.patch` route now owns policy mutation:
+it requires the expected session ID and lifecycle revision, rejects combining
+`communicationPolicy` with archive mutation, and writes through the same
+session DB owner. The DB write is admission-checked, so a concurrent archive
+cannot silently accept the policy update.
+
 This is a real direct producer → policy owner → existing transcript/wake
-consumer path, but not full responsibility acceptance: policy mutation,
-approval UI/consumer, inbound receipt correlation, exact-head verification,
-and runtime/provider/device acceptance remain pending. The corresponding
+consumer path, but not full responsibility acceptance: approval UI/consumer,
+inbound receipt correlation, exact-head verification, and runtime/provider/device
+acceptance remain pending. The corresponding
 durable contract is
 `projects/openclaw-rust/docs/specs/session-communication-production-boundary.md`.
 

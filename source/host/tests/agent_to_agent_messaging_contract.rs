@@ -5,6 +5,9 @@ use std::time::{SystemTime,UNIX_EPOCH};
 use mahayana_host_runtime::agents::agent_messaging::AgentMessageImage;
 use mahayana_host_runtime::agents::agent_profile::SandAgentProfile;
 use mahayana_host_runtime::extensions::session::production::ProductionSessionWorkers;
+use mahayana_host_runtime::extensions::session::agent_session::{
+    SessionCommunicationMode, SessionCommunicationPolicyOverride,
+};
 use mahayana_host_runtime::extensions::telemetry::agent_error_telemetry::agent_error_telemetry;
 use mahayana_host_runtime::extensions::transcript::agent_to_agent_messaging::{
     AgentWakeRequest, ProductionAgentToAgentMessaging, agent_inbound_failure_report,
@@ -69,8 +72,10 @@ fn persisted_never_policy_rejects_before_transcript_or_wake(){
     let root=temp_root();let sessions=Arc::new(ProductionSessionWorkers::with_agents_root(&root,500));
     let alpha=sessions.materialize_new_session(Some(&profile("Alpha")),"user",None).expect("alpha");
     let beta=sessions.materialize_new_session(Some(&profile("Beta")),"user",None).expect("beta");
-    let _=sessions.open_agent_db_owner(&alpha.id).expect("alpha db").write_kv(
-        "sessionCommunicationPolicy", r#"{"send":"never"}"#,
+    let admission=sessions.read_session_work_admission(&alpha.id).expect("admission").expect("alpha admission");
+    sessions.write_session_communication_policy(
+        &alpha.id,&admission.session_id,&admission.lifecycle_revision,
+        &SessionCommunicationPolicyOverride{send:Some(SessionCommunicationMode::Never),receive:None},
     ).expect("policy write");
     let wakes=Arc::new(Mutex::new(Vec::<AgentWakeRequest>::new()));
     let service=ProductionAgentToAgentMessaging::new(Arc::clone(&sessions),{
@@ -89,8 +94,10 @@ fn persisted_ask_policy_rejects_without_approval_consumer(){
     let root=temp_root();let sessions=Arc::new(ProductionSessionWorkers::with_agents_root(&root,500));
     let alpha=sessions.materialize_new_session(Some(&profile("Alpha")),"user",None).expect("alpha");
     let beta=sessions.materialize_new_session(Some(&profile("Beta")),"user",None).expect("beta");
-    let _=sessions.open_agent_db_owner(&alpha.id).expect("alpha db").write_kv(
-        "sessionCommunicationPolicy", r#"{"send":"ask"}"#,
+    let admission=sessions.read_session_work_admission(&alpha.id).expect("admission").expect("alpha admission");
+    sessions.write_session_communication_policy(
+        &alpha.id,&admission.session_id,&admission.lifecycle_revision,
+        &SessionCommunicationPolicyOverride{send:Some(SessionCommunicationMode::Ask),receive:None},
     ).expect("policy write");
     let wakes=Arc::new(Mutex::new(Vec::<AgentWakeRequest>::new()));
     let service=ProductionAgentToAgentMessaging::new(Arc::clone(&sessions),{

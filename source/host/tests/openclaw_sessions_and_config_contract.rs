@@ -317,6 +317,9 @@ fn test_sessions_patch_requires_authenticated_identity_revision_and_terminal_sta
     assert!(sessions_patch.contains("active_stream_ids_for_agent(&route.agent_id)"));
     assert!(sessions_patch.contains("active foreground turn"));
     assert!(sessions_patch.contains("transition_session_work_archive"));
+    assert!(sessions_patch.contains("communicationPolicy"));
+    assert!(sessions_patch.contains("write_session_communication_policy"));
+    assert!(sessions_patch.contains("cannot combine communicationPolicy with archived"));
 }
 
 #[test]

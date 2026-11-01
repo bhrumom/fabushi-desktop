@@ -113,6 +113,7 @@ impl SessionCommunicationMode {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
+#[serde(deny_unknown_fields)]
 pub struct SessionCommunicationPolicyOverride {
     pub send: Option<SessionCommunicationMode>,
     pub receive: Option<SessionCommunicationMode>,
@@ -134,6 +135,16 @@ pub fn read_session_communication_policy(
     serde_json::from_str::<SessionCommunicationPolicyOverride>(&raw)
         .map(Some)
         .map_err(|error| format!("invalid session communication policy for {agent_id}: {error}"))
+}
+
+pub fn write_session_communication_policy(
+    db: &crate::extensions::session::agent_db::SandAgentDb,
+    policy: &SessionCommunicationPolicyOverride,
+) -> Result<bool, String> {
+    let raw = serde_json::to_string(policy)
+        .map_err(|error| format!("serialize session communication policy: {error}"))?;
+    db.write_kv(SESSION_COMMUNICATION_POLICY_KV, &raw)
+        .map_err(|error| error.to_string())
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
