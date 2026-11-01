@@ -121,6 +121,15 @@ The output still reports `2` lockfile fragments,
 `document_separator_count=2`, and
 `duplicate_top_level_lockfile_headers=false`.
 
+The fixed tree's source-level LFS check found no Git LFS pointer blobs. The
+exact root provenance inputs are `.gitattributes`
+(`c6118b226a4a760f7861b6b7b1e7dccd943384e4`), `LICENSE`
+(`ed064819ab537575d0cad902f7e5af4a3488b1d0`), and
+`THIRD_PARTY_NOTICES.md`
+(`0c9c123760188915a384ce7275df4096114e8f90`). The absence of LFS pointers
+does not establish recursive package archive, license attribution, or SBOM
+closure; those remain separate evidence lanes.
+
 For the compaction behavior roots, the first workspace dependency chain is
 explicit in exact manifest blobs:
 
