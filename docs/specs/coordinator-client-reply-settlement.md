@@ -43,6 +43,8 @@ outcomes reject explicitly while preserving no indefinitely pending Promise.
   claim.
 - R7: `dispose()` must reclaim the client claim, reject pending calls, and
   release the endpoint even when its shutdown send fails synchronously.
+- R8: A newly claimed port whose hello send fails must enter the existing
+  disconnect/reclaim path rather than escaping from the port-claim callback.
 
 ## 5. Current state
 
@@ -93,7 +95,8 @@ once and settle it through the existing resolve/reject callbacks. Keep method
 response validation on successful outcomes and preserve the current handling
 for valid failure objects. Wrap only the malformed-frame shutdown send so its
 failure still reaches the existing disconnect owner. Make explicit disposal's
-local cleanup unconditional after the best-effort shutdown send.
+local cleanup unconditional after the best-effort shutdown send, and route a
+hello-send exception through the same disconnect owner.
 
 ## 12. Verification / test strategy
 
@@ -132,7 +135,7 @@ artifacts; no runtime acceptance is claimed here.
 
 | Requirement / AC | Status | Evidence / reason |
 | --- | --- | --- |
-| R1–R7 | passed | `coordinator-client.ts` classifies replies before pending removal, contains malformed-frame shutdown-send failure, and makes disposal cleanup continue after shutdown/close errors. |
+| R1–R8 | passed | `coordinator-client.ts` settles malformed replies, contains shutdown/disposal failures, and routes hello-send failure through endpoint close plus existing disconnect/reclaim cleanup. |
 | AC-1 | passed | Existing renderer client remains the sole pending/Promise owner; no new transport or business owner was added. |
 | AC-2 | passed | Every matching reply branch removes the pending entry only immediately before resolving or rejecting it. |
 | AC-3 | passed | `git diff --check` and source review passed; runtime, focused test, and packaged acceptance remain pending. |

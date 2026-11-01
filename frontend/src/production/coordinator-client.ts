@@ -175,7 +175,14 @@ export function createCoordinatorClient(portBridge: CoordinatorPortBridge): Prod
       nextPort.addEventListener("message", (event) => handleMessage(nextPort, event.data));
       nextPort.addEventListener("close", () => disconnect(nextPort, "coordinator port closed"));
       nextPort.start();
-      nextPort.postMessage({ kind: "lifecycle", phase: "hello", protocolVersion: COORDINATOR_PROTOCOL_VERSION });
+      try {
+        nextPort.postMessage({ kind: "lifecycle", phase: "hello", protocolVersion: COORDINATOR_PROTOCOL_VERSION });
+      } catch {
+        try { nextPort.close(); } catch {
+          // Disconnect below still owns local request/claim cleanup.
+        }
+        return disconnect(nextPort, "coordinator hello post failed");
+      }
     }
   });
   if (claim == null) return null;
