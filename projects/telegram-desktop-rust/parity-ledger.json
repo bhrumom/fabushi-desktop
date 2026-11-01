@@ -6,10 +6,10 @@
   "target_commit": "23d73b32e301408f9c8aed151cb1f9e442516e13",
   "coverage": {
     "source_entries_total": 16202,
-    "unknown": 16143,
-    "unread": 16116,
+    "unknown": 16142,
+    "unread": 16115,
     "omitted": 0,
-    "responsibilities_total": 135,
+    "responsibilities_total": 136,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -35895,6 +35895,294 @@
         ".agents/skills/perform-task/references/mechanical-lane.md@e5e3cc88ba80ece6a20df7c4dd6002491d66a4ef",
         ".agents/skills/perform-task/references/phase-prompts.md@f62400b00933fe3757d90b809e456b200389c65c",
         ".agents/skills/perform-task/references/pipeline.md@3f897572e10438024edd2e316bd0be7eb4171493"
+      ]
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+      "source_path": ".agents/skills/rebase/SKILL.md",
+      "source_blob_sha": "0660dc78b26614e40d7151d1da59241b1bad5430",
+      "source_kind": "repository_intent_aware_rebase_branch_integration_authority",
+      "module_id": "tdesktop.repository-rebase",
+      "responsibility_id": "TDRP-R9-REPOSITORY-INTENT-AWARE-REBASE-AUTHORITY-001",
+      "source_symbols": [
+        "Intent-Aware Rebase",
+        "Hard rules",
+        "Host mechanics",
+        "Read the request",
+        "Preflight",
+        "Start",
+        "How much to read",
+        "For every conflict: read before you write",
+        "Two traps",
+        "Resume",
+        "Verify the whole rebase",
+        "Report"
+      ],
+      "capability_ids": [
+        "CAP-REPOSITORY-PROCESS-GOVERNANCE",
+        "CAP-REPOSITORY-QUALITY-GOVERNANCE",
+        "CAP-REPOSITORY-TASK-EVIDENCE"
+      ],
+      "dependency_ids": [
+        ".claude/commands/rebase.md@df14e750067aeac1258a92068886cd2b33f83120",
+        ".grok/commands/rebase.md@dc095e3c837aba1b30ff35e1bb92952cef5f1780",
+        "AGENTS.md@b3ce86744f7d889a5dee63dbaefa3353801c4c32",
+        "REVIEW.md@e65be8231a8e0f50ee86b20ef16120d58ea40376",
+        ".agents/skills/perform-task/references/pipeline.md@3f897572e10438024edd2e316bd0be7eb4171493"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/rebase-skill-complete-read.md",
+      "behavior_contract": "Perform one explicitly requested, intent-aware Git rebase only in the current checkout: resolve the exact ONTO/REPLAY_BASE/OLD_TIP lineage and replay set before mutation; refuse dirty, ambiguous, sibling-worktree-owned or stale-target states that require a decision; keep task/process queues out of branch integration; resolve conflicts by reconstructing both sides' intent rather than mechanically selecting ours/theirs; review rerere and empty-commit cases explicitly; preserve reflog-based recovery and unknown in-progress state; verify the entire replay semantically with range-diff/log/status; and keep publication outside the rebase owner so no push or force-push occurs.",
+      "state_machine": "explicit request -> resolve branch/ONTO/REPLAY_BASE/OLD_TIP -> preflight current worktree/dirty/in-progress/remote snapshot -> explicit merge-history decision if needed -> non-interactive rebase -> per-conflict mechanical or intent-history resolution | genuine contradiction question -> continue/resume | explicit abort/recovery -> whole-series semantic range-diff/log/status -> report undo/conflicts/skips/uncertainty/publication need without push",
+      "side_effects": [
+        "Mutates only the explicitly selected current Git worktree/branch through the requested rebase.",
+        "Creates no ai-task records, backup branches/tags, shipping runtime state, product task state or platform-core state.",
+        "Does not fetch without explicit approval and does not push or force-push."
+      ],
+      "failure_cases": [
+        "A branch checked out in a sibling worktree is rebased from the current checkout",
+        "Dirty work is silently stashed/reset instead of stopping for a decision",
+        "A literal proposed command is executed although its resolved replay list contradicts the user's prose",
+        "A remote-tracking target is silently fetched or treated as fresh without its snapshot identity being disclosed",
+        "A new rebase is started while another rebase is already in progress",
+        "Merge commits are flattened or preserved without the explicit requested/default decision boundary",
+        "Conflict stages are oriented backwards so replayed work is silently reverted",
+        "Overlapping logic is resolved by ours/theirs, marker deletion or hard-conflict skip rather than intent history",
+        "Upstream-deleted structure is resurrected merely to host the old patch",
+        "A genuine semantic contradiction is guessed instead of surfaced for a decision",
+        "A rerere resolution is accepted without reviewing both intents and the staged result",
+        "An empty commit is skipped without proving its intended end state is already present",
+        "Unknown resume state is auto-aborted or destructively reset",
+        "Backup branches/tags are created despite reflog being the declared undo authority",
+        "Whole-series range-diff changed/disappeared mappings are ignored",
+        "Git command success is promoted to build/test/acceptance evidence",
+        "The rebase owner pushes or force-pushes rewritten history",
+        "Branch integration is routed into continue/perform-task/process-inbox or shipping Product Tasks/Automations"
+      ],
+      "ui_disposition": "Not applicable; repository branch-integration governance only.",
+      "non_ui_responsibilities": [
+        "Current-worktree and sibling-worktree branch ownership fencing",
+        "Resolved ONTO/REPLAY_BASE/OLD_TIP and replay-list source-lineage authority",
+        "Non-interactive rebase host mechanics",
+        "Intent-aware conflict resolution using three stages and relevant history",
+        "Rerere and empty-commit review",
+        "Resume/abort/reflog recovery",
+        "Whole-series range-diff semantic verification",
+        "No-push/no-force-push publication boundary"
+      ],
+      "platform_delta": "No platform-core production delta. This is source-neutral repository development-process and quality/evidence governance, not shipping runtime behavior.",
+      "existing_owner_candidates": [
+        "AGENTS.md repository development/task/process governance",
+        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md",
+        "projects/fabushi-communication-platform/quality/evidence-contract.md",
+        "TDRP-R9-REPOSITORY-CONTINUE-TASK-PROCESS-AUTHORITY-001",
+        "TDRP-R9-REPOSITORY-PERFORM-TASK-AUTHORITY-001"
+      ],
+      "existing_owner": "Fabushi repository development process authority + repository quality/test-evidence governance",
+      "rejected_existing_owners": [
+        "Continue/perform-task/process-inbox state machines do not own branch integration and the fixed-U source explicitly excludes ai-task routing",
+        "Shipping Product Tasks/Automations and Agent/Coordinator/Host/Runner do not own repository history rewriting",
+        "Platform-core runtime has no production responsibility for repository rebase operations",
+        "A Telegram-specific rebase runtime or second task/publication store would duplicate source-neutral repository governance"
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "AGENTS.md",
+        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md",
+        "projects/fabushi-communication-platform/quality/evidence-contract.md"
+      ],
+      "fabushi_target_symbols": [
+        "Repository intent-aware branch-integration / rebase contract",
+        "Intent-aware repository rebase qualification",
+        "Intent-aware repository rebase evidence"
+      ],
+      "target_language": "Markdown",
+      "language_rationale": "The portable responsibility is repository development-process/quality governance and evidence semantics; no shipping implementation is required.",
+      "command_event_contracts": [
+        "request -> resolved ONTO/REPLAY_BASE/OLD_TIP + replay list + overlap surface",
+        "preflight -> proceed | explicit decision stop | resume existing rebase",
+        "conflict -> stage/history evidence -> mechanical merge | integrated intent | genuine contradiction question",
+        "rerere/empty replay -> reviewed resolution | positively proven skip",
+        "resume -> reconstructed Git state -> continue | preserve unknown state",
+        "explicit abort -> restored OLD_TIP/reflog recovery",
+        "completed replay -> range-diff/log/status semantic evidence",
+        "published-history rewrite need -> report force-publication requirement without performing push"
+      ],
+      "state_owner": "Existing Fabushi repository development process authority",
+      "lifecycle_owner": "Existing repository development lifecycle and quality/test-evidence governance",
+      "persistence_and_restart": "Git rebase metadata, branch reflog, resolved lineage tuple and running conflict/report evidence are sufficient to reconstruct an interrupted operation. OLD_TIP/reflog is the undo authority; no backup branch/tag or second persistent state store is introduced.",
+      "concurrency_and_cancellation": "Only the current checkout/branch may be mutated. A branch checked out elsewhere, dirty tree, unresolved ambiguity, genuine semantic contradiction or unknown in-progress state stops fail-closed. Explicit abort is the cancellation path; no silent stash/reset/force publication is permitted.",
+      "security_boundary": "Cannot authorize credentials, product runtime actions, CI execution, release acceptance, arbitrary remote fetch, push, force-push, branch-protection changes or mutation of sibling worktrees/unrelated refs.",
+      "network_service_dependencies": [],
+      "service_owner": "Not applicable; Git repository operation only.",
+      "deployment_evidence": [],
+      "implementation_status": "implemented",
+      "coverage_disposition": "workflow-equivalent",
+      "blockers": [],
+      "production_entrypoints": [
+        "AGENTS.md -> Repository intent-aware branch-integration / rebase contract",
+        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md -> Intent-aware repository rebase qualification",
+        "projects/fabushi-communication-platform/quality/evidence-contract.md -> Intent-aware repository rebase evidence"
+      ],
+      "production_evidence": [
+        "spec-first commit:2ced9915727beb46da1bf42c1d278b98f751f17f",
+        "dossier:projects/telegram-desktop-rust/dossiers/rebase-skill-complete-read.md"
+      ],
+      "test_evidence": [
+        "CONTRACT-TDRP-REBASE-SCOPE-LINEAGE-001 authored, not run",
+        "CONTRACT-TDRP-REBASE-CONFLICT-INTENT-001 authored, not run",
+        "CONTRACT-TDRP-REBASE-RERERE-EMPTY-001 authored, not run",
+        "CONTRACT-TDRP-REBASE-RESUME-ABORT-RECOVERY-001 authored, not run",
+        "CONTRACT-TDRP-REBASE-NONINTERACTIVE-HOST-001 authored, not run",
+        "INT-TDRP-REBASE-HOST-COMPOSITION-001 authored, not run",
+        "INT-TDRP-REBASE-PUBLICATION-BOUNDARY-001 authored, not run",
+        "FAULT-TDRP-REBASE-UNKNOWN-CONTRADICTION-001 authored, not run",
+        "SEC-TDRP-REBASE-NO-FORCE-PUBLISH-001 authored, not run"
+      ],
+      "target_commit": "2ced9915727beb46da1bf42c1d278b98f751f17f",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Fabushi repository development process authority",
+      "composition_slot": "repository branch integration / rebase governance",
+      "capability_component": "Quality/tooling",
+      "variation_axes": [
+        "current branch vs named branch vs --onto tail",
+        "fresh start vs resume vs explicit abort",
+        "mechanical conflict vs overlapping logic vs genuine contradiction",
+        "rerere prefill vs ordinary conflict",
+        "empty replay already upstream vs hard conflict",
+        "published vs unpublished branch reporting"
+      ],
+      "shared_owner_contracts": [
+        "Fabushi repository development lifecycle",
+        "Fabushi repository task/process authority governance",
+        "Fabushi Test Strategy",
+        "Fabushi Test Evidence Contract",
+        "Git/GitHub compare-and-swap repository authority"
+      ],
+      "duplicate_root_check": "No Telegram-specific rebase runtime, second repository task state, shipping Product Tasks/Automations owner, Agent/Coordinator/Host/Runner owner, platform-core runtime owner or autonomous publication owner introduced.",
+      "novel_capability": true,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Not applicable",
+      "primary_navigation_target": "Not applicable",
+      "collection_surface": "Not applicable",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "Not applicable",
+      "detail_section": "Not applicable",
+      "capability_surface": "Quality/tooling",
+      "route_contract": "Not applicable",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Not applicable",
+      "search_local_remote_contract": "Not applicable",
+      "responsive_disposition": "Not applicable",
+      "accessibility_contract": "Not applicable",
+      "keyboard_contract": "Not applicable",
+      "state_continuity_contract": "Git rebase metadata and reflog preserve resumability; unknown state is preserved rather than auto-aborted.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Not applicable",
+      "semantic_token_usage": "Not applicable",
+      "legacy_token_adapter": "Not applicable",
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "Not applicable",
+      "avatar_contract": "Not applicable",
+      "content_copy_keys": [],
+      "motion_contract": "Not applicable",
+      "reduced_motion_contract": "Not applicable",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "high",
+      "requirement_ids": [
+        "TDRP-R9-REPOSITORY-INTENT-AWARE-REBASE-AUTHORITY-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-REBASE-EXACT-REPLAY-LINEAGE-001",
+        "ORA-TDRP-REBASE-JOINT-INTENT-001",
+        "ORA-TDRP-REBASE-REFLOG-RECOVERY-001",
+        "ORA-TDRP-REBASE-RANGE-DIFF-PRESERVATION-001",
+        "ORA-TDRP-REBASE-NO-PUBLICATION-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-REBASE-CURRENT-WORKTREE-ONLY-001",
+        "INV-TDRP-REBASE-NO-AI-TASK-001",
+        "INV-TDRP-REBASE-NO-SILENT-FETCH-STASH-001",
+        "INV-TDRP-REBASE-STAGE-ORIENTATION-001",
+        "INV-TDRP-REBASE-NO-BLANKET-SIDE-001",
+        "INV-TDRP-REBASE-CONTRADICTION-QUESTION-001",
+        "INV-TDRP-REBASE-RERERE-REVIEW-001",
+        "INV-TDRP-REBASE-EMPTY-POSITIVE-PROOF-001",
+        "INV-TDRP-REBASE-OLD-TIP-UNDO-001",
+        "INV-TDRP-REBASE-RANGE-DIFF-001",
+        "INV-TDRP-REBASE-NO-PUSH-001"
+      ],
+      "unit_case_ids": [],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-REBASE-SCOPE-LINEAGE-001",
+        "CONTRACT-TDRP-REBASE-CONFLICT-INTENT-001",
+        "CONTRACT-TDRP-REBASE-RERERE-EMPTY-001",
+        "CONTRACT-TDRP-REBASE-RESUME-ABORT-RECOVERY-001",
+        "CONTRACT-TDRP-REBASE-NONINTERACTIVE-HOST-001"
+      ],
+      "integration_case_ids": [
+        "INT-TDRP-REBASE-HOST-COMPOSITION-001",
+        "INT-TDRP-REBASE-PUBLICATION-BOUNDARY-001"
+      ],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [],
+      "fault_recovery_case_ids": [
+        "FAULT-TDRP-REBASE-UNKNOWN-CONTRADICTION-001"
+      ],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "performance_case_ids": [],
+      "soak_case_ids": [],
+      "security_case_ids": [
+        "SEC-TDRP-REBASE-NO-FORCE-PUBLISH-001"
+      ],
+      "regression_ids": [],
+      "exploratory_charter_ids": [
+        "EXP-TDRP-REBASE-INTENT-PRESERVATION-001"
+      ],
+      "release_gate_ids": [
+        "G-INVENTORY",
+        "G-TRACEABILITY",
+        "G-EVIDENCE",
+        "G-RELEASE"
+      ],
+      "test_fixture_ids": [
+        "repository-intent-aware-rebase-contract-fixture"
+      ],
+      "test_environment_ids": [
+        "GitHub Actions Stage B candidate matrix (not run)"
+      ],
+      "coverage_matrix_status": "pending",
+      "flake_status": "stable",
+      "test_execution_evidence": [],
+      "acceptance_reviewer": null,
+      "release_gate_status": "pending",
+      "license_and_provenance": "Behavioral repository branch-integration/rebase governance read from telegramdesktop/tdesktop fixed-U rebase SKILL.md and direct fixed-U host/boundary consumers; no upstream implementation copied into Fabushi shipping runtime.",
+      "reviewer": null,
+      "notes": "Task round135/source evidence round166. Live desktop checkpoint 6e8822013bbfc6bd7222381525eb802133d70317 and platform-core e92b51e23b39dae5719f033fa1f7a20d6579dc8c were reread before work. Fixed-U recursive tree is complete with 7,194 entries / 6,859 blobs; target rebase/SKILL.md is tree index 83 zero-based, exact 15,114-byte / 15,036-character / 322-split-line blob. Complete skill plus direct Claude/Grok host wrappers, AGENTS/REVIEW dependencies and performer-pipeline boundary consumer were read. Existing-owner-first maps a new responsibility into existing repository development process + quality/test-evidence governance; no new owner, ADR, shipping runtime or platform-core production delta. Spec-first CAS commit 2ced9915727beb46da1bf42c1d278b98f751f17f authored governance/evidence contracts and dossier. Exactly one independent source entry closes: unknown 16143->16142, unread 16116->16115; responsibilities 135->136. Contracts authored, not run; accepted=false. Next fixed-U tree blob is .clang-tidy@5610bd13664ca77549993def241eb3edaffeff7a.",
+      "validation_status": "not-run",
+      "accepted": false,
+      "source_paths": [
+        ".agents/skills/rebase/SKILL.md@0660dc78b26614e40d7151d1da59241b1bad5430"
       ]
     }
   ],
