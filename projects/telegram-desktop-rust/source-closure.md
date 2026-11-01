@@ -2372,3 +2372,18 @@ Existing-owner-first maps this to the current Fabushi repository quality/test-ev
 `TDRP-R9-CODE-HEALTH-HARNESS-INVENTORY-INSTRUMENT-001` is `implemented / validation_status=not-run / accepted=false`. Contracts were authored but not executed. Exactly one source entry closes: `unknown 16171 -> 16170`, `unread 16144 -> 16143`, `omitted=0`; `responsibilities_total 125 -> 126`.
 
 Stage A zero-CI discipline remained intact: no GitHub Actions/check/status/workflow query or trigger and no build, typecheck, lint, validator, generator, unit/contract/integration/E2E, visual/a11y, package, deployment, installation or runtime acceptance was performed.
+
+
+## Round 108 / source-entry closure — helper-inventory regression contract suite (2026-11-01)
+
+Fixed U remains `f985723b552b30fe1c17d377d57f44e61a15a8c4` (root tree `91f2b083ab2877c0a17d07868eabec362a5cfca6`, `truncated=false`). From desktop parent `f80ad4b1d1b82deea3b09be33d9b42acca0d7415`, the next independent unrepresented fixed-U entry was `.agents/skills/code-health/scripts/harness_test.py@5d6b2537c9289cb3e1db0904b9f8e1b99dec4b74`.
+
+The exact 10,145-byte test blob was completely read. It defines 13 helper-inventory regression tests plus disposable Git-repository fixture helpers. The contracts explicitly cover the 89/90-day threshold boundary; low-lifetime distinct-consumer counts; absent/no-patch/dirty archive remaining unavailable rather than known zero; creation/harness/self-test/uncertain/product separation; final saved-patch context while excluding deleted lines and helper edits; task-level de-duplication; comments/string/raw-string/commented-include suppression; internal-helper dependency/open-work propagation; exact-ref versus worktree document authority; namespace-safe symbol attribution; and stable finding identity/unverified semantics when current evidence is unavailable.
+
+Direct dependencies are `harness.py@652a9ee7ed6a690705cad45aeff06568210db6b1`, `report.py@40d9512e3be2e075154230e7fa214d4b52e2bc12`, `sources.py@749ccc1f503e203d4a651c9ac793381e0e0a314b`, and the disposable `Repo` fixture imported from `health_test.py@6058fa64a5121c966021d8589b2010480aec8794`. The module has its own `unittest.main` entry and ordinary `*_test.py` discovery shape; fixed-U repository search found no separate product/runtime caller by file name.
+
+Existing-owner-first maps this test responsibility to the current Fabushi repository quality/test-evidence owner, following the already-established `health_test.py` mapping. Spec-first checkpoint `f00a86d5e96a3584efe621f471a1046d1536da22` adds the source-neutral regression-suite qualification/evidence contracts and complete-read dossier. No upstream Python unittest harness, second scanner/findings/task owner, platform-core production delta, or new ADR is introduced.
+
+`TDRP-R9-CODE-HEALTH-HARNESS-INVENTORY-REGRESSION-001` is `implemented / validation_status=not-run / accepted=false`. Contracts are authored but not executed. Exactly one source entry closes: `unknown 16170 -> 16169`, `unread 16143 -> 16142`, `omitted=0`; `responsibilities_total 126 -> 127`.
+
+Stage A zero-CI discipline remained intact: no GitHub Actions/check/status/workflow query or trigger and no build, typecheck, lint, validator, generator, unit/contract/integration/E2E, visual/a11y, package, deployment, installation or runtime acceptance was performed.

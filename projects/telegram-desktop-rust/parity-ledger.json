@@ -6,10 +6,10 @@
   "target_commit": "23d73b32e301408f9c8aed151cb1f9e442516e13",
   "coverage": {
     "source_entries_total": 16202,
-    "unknown": 16170,
-    "unread": 16143,
+    "unknown": 16169,
+    "unread": 16142,
     "omitted": 0,
-    "responsibilities_total": 126,
+    "responsibilities_total": 127,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -32808,6 +32808,284 @@
       "accepted": false,
       "source_paths": [
         ".agents/skills/code-health/scripts/harness.py@652a9ee7ed6a690705cad45aeff06568210db6b1"
+      ]
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+      "source_path": ".agents/skills/code-health/scripts/harness_test.py",
+      "source_blob_sha": "5d6b2537c9289cb3e1db0904b9f8e1b99dec4b74",
+      "source_kind": "repository_quality_helper_inventory_regression_suite",
+      "module_id": "tdesktop.code-health-helper-inventory-regression-suite",
+      "responsibility_id": "TDRP-R9-CODE-HEALTH-HARNESS-INVENTORY-REGRESSION-001",
+      "source_symbols": [
+        "HarnessTests.setUp / commit / helper / task / inspect / row",
+        "test_ninety_day_boundary_and_low_lifetime_use",
+        "test_young_helper_and_missing_archive_are_not_zero_use_proof",
+        "test_no_saved_patches_is_unavailable_not_zero_use",
+        "test_creation_harness_and_self_test_calls_are_separate",
+        "test_final_patch_context_counts_but_deletions_and_helper_edits_do_not",
+        "test_distinct_tasks_not_duplicate_patches_or_calls",
+        "test_comments_strings_and_commented_includes_are_not_consumers",
+        "test_self_tests_internal_consumers_and_open_work",
+        "test_unclassified_consumers_do_not_become_known_zero",
+        "test_docs_are_read_from_the_scanned_ref",
+        "test_dirty_archive_cannot_supply_retirement_evidence",
+        "test_other_namespaces_are_not_harness_dependencies",
+        "test_stable_identity_and_unavailable_evidence_do_not_resolve_findings",
+        "unittest.main"
+      ],
+      "capability_ids": [
+        "CAP-REPOSITORY-QUALITY-GOVERNANCE",
+        "CAP-REPOSITORY-TASK-EVIDENCE"
+      ],
+      "dependency_ids": [
+        ".agents/skills/code-health/scripts/harness.py@652a9ee7ed6a690705cad45aeff06568210db6b1",
+        ".agents/skills/code-health/scripts/report.py@40d9512e3be2e075154230e7fa214d4b52e2bc12",
+        ".agents/skills/code-health/scripts/sources.py@749ccc1f503e203d4a651c9ac793381e0e0a314b",
+        ".agents/skills/code-health/scripts/health_test.py@6058fa64a5121c966021d8589b2010480aec8794"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/code-health-harness-test-script-complete-read.md",
+      "behavior_contract": "Qualify the helper-inventory/consumer-evidence instrument with isolated exact Git fixtures and positive/negative assertions for threshold boundaries, unavailable archive handling, consumer classification, patch/lexical filtering, internal/open-work propagation, exact-ref authority, namespace-safe attribution and stable finding lifecycle; preserve these as source-neutral Fabushi quality contracts rather than copying upstream Python unittest plumbing.",
+      "state_machine": "disposable source/task Git fixtures -> exact-ref or worktree source adapter -> helper inventory/report instrument -> asserted threshold/coverage/consumer/lexical/identity oracle -> Stage-B exact-head qualification evidence; test plumbing owns no durable product or repository-quality state",
+      "side_effects": [
+        "Test-only disposable Git repositories and fixture files may be created by the eventual executable suite.",
+        "No shipping product state, canonical quality ledger, helper-retention decision or task routing is owned by this source entry."
+      ],
+      "failure_cases": [
+        "Exactly-90-day and younger-than-90-day cases collapse into one threshold",
+        "Missing/no-patch/dirty archive is interpreted as observed zero use",
+        "Creation, harness-only, self-test-only or unknown tasks count as independent product consumers",
+        "Duplicate calls/patches within one task inflate consumer count",
+        "Deleted hunk lines, helper edits, comments, string literals or unrelated namespaces manufacture consumers",
+        "Mutable worktree text is presented as exact-ref evidence",
+        "Unavailable evidence resolves a prior open finding instead of leaving it unverified",
+        "Upstream Python unittest plumbing is treated as shipping Fabushi product responsibility"
+      ],
+      "ui_disposition": "Not applicable; repository quality regression qualification only.",
+      "non_ui_responsibilities": [
+        "90-day and lifetime-consumer boundary qualification",
+        "Unavailable archive remains unknown/not-zero qualification",
+        "Creation/harness/self-test/uncertain/product consumer classification",
+        "Distinct-task de-duplication",
+        "Final-patch context/deletion/helper-edit filtering",
+        "Comment/string/include lexical false-positive suppression",
+        "Self-test/internal dependency/open-work propagation qualification",
+        "Exact-ref versus worktree documentation authority qualification",
+        "Namespace-safe symbol ownership qualification",
+        "Stable finding identity/unverified lifecycle qualification"
+      ],
+      "platform_delta": "Fabushi already owns repository quality/test evidence. This closure adds the fixed-U helper-inventory regression contract suite to that same owner; no platform-core production delta and no second scanner/findings/task/runtime owner.",
+      "existing_owner_candidates": [
+        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md",
+        "projects/fabushi-communication-platform/quality/evidence-contract.md",
+        "AGENTS.md repository quality-health governance",
+        "ordinary Fabushi test/review/evidence lifecycle"
+      ],
+      "existing_owner": "Fabushi repository quality/test-evidence governance",
+      "rejected_existing_owners": [
+        "Shipping Agent/Coordinator/Host/Runner do not own repository-quality regression fixtures",
+        "harness.py owns inventory mechanics, not qualification-test ownership",
+        "health_test.py is the broader integrated regression suite and does not erase this file's independent source entry",
+        "Copying upstream harness_test.py would preserve Telegram-specific Python unittest plumbing"
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md",
+        "projects/fabushi-communication-platform/quality/evidence-contract.md"
+      ],
+      "fabushi_target_symbols": [
+        "Repository helper-inventory regression contract-suite qualification",
+        "Repository helper-inventory regression contract-suite evidence"
+      ],
+      "target_language": "Markdown",
+      "language_rationale": "The upstream source is repository-development test/qualification plumbing, not shipping product logic; preserve the portable oracles and negative controls as source-neutral quality contracts.",
+      "command_event_contracts": [
+        "disposable fixture -> harness inventory -> threshold/coverage/consumer assertion",
+        "saved patch fixture -> patch/lexical filter -> accepted/rejected consumer evidence",
+        "exact ref vs worktree -> declared document authority -> matching bytes/content observation",
+        "open/internal helper fixture -> dependency/open-task propagation -> routing hold",
+        "prior finding + unavailable current evidence -> report merge -> unverified, not resolved"
+      ],
+      "state_owner": "Existing Fabushi repository quality/test-evidence governance",
+      "lifecycle_owner": "Existing repository development lifecycle and GitHub Actions evidence production/review",
+      "persistence_and_restart": "The suite owns no durable canonical state. Fixture repositories are disposable; eventual evidence is bound to the frozen candidate commit and canonical Stage-B artifact identity.",
+      "concurrency_and_cancellation": "Tests must isolate source/task fixtures. Interrupted or dirty fixture acquisition cannot be rewritten as passing evidence; cleanup is limited to owned temporary identities.",
+      "security_boundary": "Regression contracts cannot authorize helper deletion, task routing, configured-build/runtime truth, credentials, product mutation or release acceptance.",
+      "network_service_dependencies": [
+        "GitHub repository authority",
+        "GitHub Actions hosted runners",
+        "GitHub Actions artifact storage"
+      ],
+      "service_owner": "Existing Fabushi repository quality/release workflow / GitHub Actions",
+      "deployment_evidence": [],
+      "implementation_status": "implemented",
+      "coverage_disposition": "workflow-equivalent",
+      "blockers": [
+        "Stage-B exact-head execution of the authored regression suite is pending."
+      ],
+      "production_entrypoints": [
+        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md -> Repository helper-inventory regression contract-suite qualification",
+        "projects/fabushi-communication-platform/quality/evidence-contract.md -> Repository helper-inventory regression contract-suite evidence"
+      ],
+      "production_evidence": [
+        "dossier:projects/telegram-desktop-rust/dossiers/code-health-harness-test-script-complete-read.md",
+        "upstream-harness-test:.agents/skills/code-health/scripts/harness_test.py@5d6b2537c9289cb3e1db0904b9f8e1b99dec4b74",
+        "desktop-spec-commit:f00a86d5e96a3584efe621f471a1046d1536da22"
+      ],
+      "test_evidence": [
+        "CONTRACT-TDRP-CODE-HEALTH-HARNESS-REGRESSION-BOUNDARIES-001 authored, not run",
+        "CONTRACT-TDRP-CODE-HEALTH-HARNESS-REGRESSION-COVERAGE-001 authored, not run",
+        "CONTRACT-TDRP-CODE-HEALTH-HARNESS-REGRESSION-CONSUMERS-001 authored, not run",
+        "CONTRACT-TDRP-CODE-HEALTH-HARNESS-REGRESSION-PATCH-FILTERING-001 authored, not run",
+        "CONTRACT-TDRP-CODE-HEALTH-HARNESS-REGRESSION-LEXICAL-OWNERSHIP-001 authored, not run",
+        "CONTRACT-TDRP-CODE-HEALTH-HARNESS-REGRESSION-EXACT-REF-001 authored, not run",
+        "CONTRACT-TDRP-CODE-HEALTH-HARNESS-REGRESSION-FINDING-LIFECYCLE-001 authored, not run",
+        "INT-TDRP-CODE-HEALTH-HARNESS-REGRESSION-001 authored, not run"
+      ],
+      "target_commit": "f00a86d5e96a3584efe621f471a1046d1536da22",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Fabushi repository development and quality evidence governance",
+      "composition_slot": "Helper-inventory regression qualification",
+      "capability_component": "Source-neutral helper-inventory regression contract suite",
+      "variation_axes": [
+        "89 days vs 90 days vs older",
+        "archive available vs absent/no-patch/dirty",
+        "product vs uncertain vs harness vs self-test vs creation",
+        "one task vs repeated calls/patches",
+        "surviving context vs deleted/helper-edit lines",
+        "real code/include vs comment/string/raw-string/commented include",
+        "direct vs internal/indirect/open-work consumer",
+        "exact ref vs mutable worktree",
+        "qualified namespace vs unrelated symbol name",
+        "open finding vs unavailable evidence vs resolved finding"
+      ],
+      "shared_owner_contracts": [
+        "Fabushi Test Strategy",
+        "Fabushi Test Evidence Contract",
+        "Repository helper-inventory instrument qualification",
+        "Repository helper-retention lifecycle governance"
+      ],
+      "duplicate_root_check": "No upstream Python unittest runtime, second quality scanner, findings ledger, task queue, ownership graph or product runtime introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Not applicable",
+      "primary_navigation_target": "Not applicable",
+      "collection_surface": "Not applicable",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "Not applicable",
+      "detail_section": "Not applicable",
+      "capability_surface": "Quality/tooling",
+      "route_contract": "Not applicable",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Not applicable",
+      "search_local_remote_contract": "Not applicable",
+      "responsive_disposition": "Not applicable",
+      "accessibility_contract": "Not applicable",
+      "keyboard_contract": "Not applicable",
+      "state_continuity_contract": "Fixture state is disposable; durable pass/fail evidence remains bound to exact frozen-candidate identity, and unavailable current evidence cannot silently resolve prior findings.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Not applicable",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": null,
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "Not applicable",
+      "avatar_contract": "Not applicable",
+      "content_copy_keys": [],
+      "motion_contract": "Not applicable",
+      "reduced_motion_contract": "Not applicable",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "medium",
+      "requirement_ids": [
+        "TDRP-R9-CODE-HEALTH-HARNESS-INVENTORY-REGRESSION-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-CODE-HEALTH-HARNESS-REGRESSION-BOUNDARIES-001",
+        "ORA-TDRP-CODE-HEALTH-HARNESS-REGRESSION-COVERAGE-001",
+        "ORA-TDRP-CODE-HEALTH-HARNESS-REGRESSION-CONSUMERS-001",
+        "ORA-TDRP-CODE-HEALTH-HARNESS-REGRESSION-IDENTITY-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-CODE-HEALTH-HARNESS-REGRESSION-UNKNOWN-NOT-ZERO-001",
+        "INV-TDRP-CODE-HEALTH-HARNESS-REGRESSION-DISTINCT-TASK-001",
+        "INV-TDRP-CODE-HEALTH-HARNESS-REGRESSION-EXACT-AUTHORITY-001",
+        "INV-TDRP-CODE-HEALTH-HARNESS-REGRESSION-NO-SECOND-OWNER-001"
+      ],
+      "unit_case_ids": [],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-CODE-HEALTH-HARNESS-REGRESSION-BOUNDARIES-001",
+        "CONTRACT-TDRP-CODE-HEALTH-HARNESS-REGRESSION-COVERAGE-001",
+        "CONTRACT-TDRP-CODE-HEALTH-HARNESS-REGRESSION-CONSUMERS-001",
+        "CONTRACT-TDRP-CODE-HEALTH-HARNESS-REGRESSION-PATCH-FILTERING-001",
+        "CONTRACT-TDRP-CODE-HEALTH-HARNESS-REGRESSION-LEXICAL-OWNERSHIP-001",
+        "CONTRACT-TDRP-CODE-HEALTH-HARNESS-REGRESSION-EXACT-REF-001",
+        "CONTRACT-TDRP-CODE-HEALTH-HARNESS-REGRESSION-FINDING-LIFECYCLE-001"
+      ],
+      "integration_case_ids": [
+        "INT-TDRP-CODE-HEALTH-HARNESS-REGRESSION-001"
+      ],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "fault_recovery_case_ids": [
+        "FAULT-TDRP-CODE-HEALTH-HARNESS-REGRESSION-MISSING-ARCHIVE-001",
+        "FAULT-TDRP-CODE-HEALTH-HARNESS-REGRESSION-DIRTY-ARCHIVE-001",
+        "FAULT-TDRP-CODE-HEALTH-HARNESS-REGRESSION-LEXICAL-FALSE-POSITIVE-001"
+      ],
+      "performance_case_ids": [],
+      "security_case_ids": [
+        "SEC-TDRP-CODE-HEALTH-HARNESS-REGRESSION-PROVENANCE-001"
+      ],
+      "soak_case_ids": [],
+      "exploratory_charter_ids": [
+        "EXP-TDRP-CODE-HEALTH-HARNESS-REGRESSION-001"
+      ],
+      "regression_ids": [],
+      "release_gate_ids": [
+        "G-INVENTORY",
+        "G-TRACEABILITY",
+        "G-EVIDENCE",
+        "G-RELEASE"
+      ],
+      "test_fixture_ids": [
+        "repository-helper-inventory-regression-contract-fixture"
+      ],
+      "test_environment_ids": [
+        "GitHub Actions Stage B candidate matrix (not run)"
+      ],
+      "coverage_matrix_status": "pending",
+      "flake_status": "stable",
+      "release_gate_status": "pending",
+      "acceptance_reviewer": null,
+      "reviewer": null,
+      "license_and_provenance": "Behavioral repository-quality regression contract read from fixed-U harness_test.py; no upstream Python unittest implementation or fixture source copied into Fabushi shipping runtime.",
+      "notes": "Task round108/source evidence round139. Exact fixed-U harness_test.py blob and its imports/consumers were read. This file has 13 explicit instrument regression tests and an own unittest.main entry; repository search found no separate runtime caller by file name. Exactly one independent source entry closes: unknown 16170->16169, unread 16143->16142, responsibilities 126->127. Contracts authored, not run; accepted=false.",
+      "test_execution_evidence": [],
+      "id": "TDRP-R9-CODE-HEALTH-HARNESS-INVENTORY-REGRESSION-001",
+      "validation_status": "not-run",
+      "accepted": false,
+      "source_paths": [
+        ".agents/skills/code-health/scripts/harness_test.py@5d6b2537c9289cb3e1db0904b9f8e1b99dec4b74"
       ]
     }
   ],
