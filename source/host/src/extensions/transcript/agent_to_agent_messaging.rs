@@ -206,7 +206,14 @@ impl ProductionAgentToAgentMessaging {
         if let Some(analytics) = self.analytics.as_ref() {
             analytics(from_agent_id, to_agent_id, false, priority);
         }
-        if let Some(session_key) = from_session_key {
+        let sender_session_key = match from_session_key {
+            Some(session_key) => Some(session_key.to_string()),
+            None => self
+                .sessions
+                .read_session_work_admission(from_agent_id)?
+                .map(|record| record.session_key),
+        };
+        if let Some(session_key) = sender_session_key.as_deref() {
             self.sessions
                 .assert_session_work_admission(from_agent_id, Some(session_key))?;
         }
@@ -218,7 +225,7 @@ impl ProductionAgentToAgentMessaging {
             "kind":"message","id":outbound_id,"role":"assistant","content":message,"isStreaming":false,
             "timestampMs":timestamp_ms,"toAgent":{"id":to_agent_id,"name":target.name,"kind":"agent"},"images":image_json.clone()
         });
-        if let Some(session_key) = from_session_key {
+        if let Some(session_key) = sender_session_key.as_deref() {
             outbound_entry["sessionKey"] = Value::String(session_key.trim().to_string());
             self.sessions.append_agent_transcript_entries_if_session_admitted(
                 from_agent_id,

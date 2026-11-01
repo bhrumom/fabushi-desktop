@@ -131,7 +131,14 @@ impl SharedRooms {
             "timestampMs": timestamp_ms,
             "toAgent": {"id": group_id, "name": group.name, "kind": "group"},
         });
-        if let Some(session_key) = from_session_key {
+        let sender_session_key = match from_session_key {
+            Some(session_key) => Some(session_key.to_string()),
+            None => self
+                .sessions
+                .read_session_work_admission(from_agent_id)?
+                .map(|record| record.session_key),
+        };
+        if let Some(session_key) = sender_session_key.as_deref() {
             outbound_entry["sessionKey"] = Value::String(session_key.trim().to_string());
             self.sessions.append_agent_transcript_entries_if_session_admitted(
                 from_agent_id,
