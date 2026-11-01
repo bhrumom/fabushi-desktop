@@ -2348,6 +2348,9 @@ impl SandAgentDb {
         self.run_write("clearPendingProfileMutation", |db| {
             db.execute_batch("BEGIN IMMEDIATE")?;
             let result = (|| -> Result<bool, rusqlite::Error> {
+                if !session_work_write_is_admitted(db)? {
+                    return Ok(false);
+                }
                 let Some(raw_admission) = db
                     .query_row(GET_KV_SQL, params![KV_SESSION_WORK_ADMISSION], |row| {
                         row.get::<_, String>(0)
@@ -2542,6 +2545,9 @@ impl SandAgentDb {
         self.run_write("clearPendingMemoryMutation", |db| {
             db.execute_batch("BEGIN IMMEDIATE")?;
             let result = (|| -> Result<bool, rusqlite::Error> {
+                if !session_work_write_is_admitted(db)? {
+                    return Ok(false);
+                }
                 let Some(raw_admission) = db
                     .query_row(GET_KV_SQL, params![KV_SESSION_WORK_ADMISSION], |row| {
                         row.get::<_, String>(0)

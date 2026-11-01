@@ -206,6 +206,12 @@ advancing a valid lifecycle revision cannot replace the stored `session_key` or
 `session_id`. An attempted identity-rebinding CAS is rejected without changing
 the prior admission record.
 
+The profile/avatar and external-memory mutation-journal clear transactions
+also re-run the shared owner identity-admission predicate before deleting a
+journal. Archived, deletion-pending, malformed, or rebound owner state
+therefore retains the recovery journal and fails closed instead of treating
+cleanup itself as an admitted write.
+
 The archive/restore owner now receives and checks both canonical
 `session_key` and `session_id` inside its transaction, so a producer cannot
 pass a valid session id with a different session selector and still mutate
