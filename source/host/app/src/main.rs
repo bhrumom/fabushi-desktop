@@ -1591,6 +1591,18 @@ impl SubagentTaskSink for ProductionSubagentTaskSink {
                     "subagent session lifecycle revision unavailable after materialization".into(),
                 )
             })?;
+        let child_session_key = self
+            .deps
+            .session_workers
+            .read_session_work_admission(&child_id)
+            .map_err(ProviderSessionError::Tool)?
+            .map(|record| record.session_key)
+            .filter(|value| !value.trim().is_empty())
+            .ok_or_else(|| {
+                ProviderSessionError::Tool(
+                    "subagent session admission identity unavailable after materialization".into(),
+                )
+            })?;
         let child_stream_id = uuid::Uuid::new_v4().to_string();
         let normalized_type = subagent_type
             .chars()
@@ -1599,7 +1611,7 @@ impl SubagentTaskSink for ProductionSubagentTaskSink {
         let args = serde_json::json!({
             "provider": self.provider.as_str(),
             "agentId": child_id,
-            "sessionKey": format!("agent:{child_id}:main"),
+            "sessionKey": child_session_key,
             "spawnedBy": self.parent_agent_id,
             "lifecycleRevision": child_lifecycle_revision,
             "streamId": child_stream_id,

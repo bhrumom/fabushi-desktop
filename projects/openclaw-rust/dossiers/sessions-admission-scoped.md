@@ -577,3 +577,13 @@ unbound path is retained for the generic transcript owner. Non-group Runner
 paths therefore cannot pass an unconfirmed key into auto-review, local-tool
 permission, or session-bound sinks. This does not add a session catalog or
 upgrade runtime/exact-head acceptance; those remain pending.
+
+## 12.16 Subagent launch identity readback — 2026-11-01
+
+After materializing a child session, the subagent producer now reads the
+owner-created admission record and carries its exact canonical key into the
+Runner payload. A missing or blank admission identity fails the launch before
+dispatch; the producer no longer reconstructs the child `main` key itself.
+The existing `ProductionSessionWorkers`/`SandAgentDb` owner and lifecycle
+revision readback remain unchanged, while subagent cleanup, runtime
+verification, and acceptance remain pending.
