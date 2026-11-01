@@ -320,6 +320,12 @@ write the canonical agent-local `projects.json`. The standalone state keeps
 its compatibility fallback. Project-directory creation remains outside this
 membership operation's transaction and does not create a session catalog.
 
+Runner avatar set/clear now follows the existing `SandAgentSessionStore` avatar
+owner as well. The production callback passes validated bytes to the owner's
+journaled mutation path, preserving one admission/serialization boundary;
+standalone `SandAgentState` retains its local fallback for non-production
+construction.
+
 The Runner `SendToAgent` sender-side transcript producer now persists its
 already-owned `worker_session_key` on the outbound entry, carries it through
 `ProductionAgentManagementSink` and `ProductionAgentToAgentMessaging` into the

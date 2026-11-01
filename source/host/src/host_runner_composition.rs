@@ -262,6 +262,17 @@ impl HostRunnerComposition {
                 )),
             }
         }));
+        let avatar_sessions = Arc::clone(&sessions);
+        let avatar_agent_id = agent_id.to_string();
+        state = state.with_agent_avatar_mutator(Arc::new(move |bytes| {
+            let session_store = SandAgentSessionStore::new(Arc::clone(&avatar_sessions));
+            match session_store.set_agent_avatar_bytes_by_id(&avatar_agent_id, bytes.as_deref()) {
+                Ok(_) => StateWriteResult::success("Updated your picture."),
+                Err(error) => StateWriteResult::failure(format!(
+                    "could not update your picture: {error}"
+                )),
+            }
+        }));
         let state_writer: Arc<dyn SandStateWriter> = Arc::new(state);
         let multitask_todo_state = if multitask_enabled {
             Some(sessions.open_agent_db_owner(agent_id)? as Arc<dyn MultitaskTodoState>)

@@ -49,6 +49,8 @@ pub type AgentWorkflowMutator =
     Arc<dyn Fn(AgentWorkflowMutation) -> StateWriteResult + Send + Sync + 'static>;
 pub type AgentProjectMembershipMutator =
     Arc<dyn Fn(AgentProjectMembershipMutation) -> StateWriteResult + Send + Sync + 'static>;
+pub type AgentAvatarMutator =
+    Arc<dyn Fn(Option<Vec<u8>>) -> StateWriteResult + Send + Sync + 'static>;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum MemoryTier { Profile, Note, Log }
@@ -103,6 +105,7 @@ pub struct SandAgentState {
     mutate_agent_automation: Option<AgentAutomationMutator>,
     mutate_agent_workflow: Option<AgentWorkflowMutator>,
     mutate_agent_project_membership: Option<AgentProjectMembershipMutator>,
+    mutate_agent_avatar: Option<AgentAvatarMutator>,
 }
 
 impl SandAgentState {
@@ -130,6 +133,7 @@ impl SandAgentState {
             mutate_agent_automation: None,
             mutate_agent_workflow: None,
             mutate_agent_project_membership: None,
+            mutate_agent_avatar: None,
         })
     }
 
@@ -172,6 +176,10 @@ impl SandAgentState {
         mutator: AgentProjectMembershipMutator,
     ) -> Self {
         self.mutate_agent_project_membership = Some(mutator);
+        self
+    }
+    pub fn with_agent_avatar_mutator(mut self, mutator: AgentAvatarMutator) -> Self {
+        self.mutate_agent_avatar = Some(mutator);
         self
     }
     pub fn agent_dir(&self) -> &Path { &self.agent_dir }
@@ -487,9 +495,22 @@ impl SandAgentState {
         if bytes.is_empty() || bytes.len() as u64 > AVATAR_MAX_BYTES { return StateWriteResult::failure("the image must be under 5 MB and non-empty."); }
         let Some(mime) = sniff_avatar_mime_type(&bytes) else { return StateWriteResult::failure("that file is not a recognized avatar image."); };
         let extension = match mime { "image/png" => "png", "image/jpeg" => "jpg", "image/webp" => "webp", "image/gif" => "gif", "image/svg+xml" => "svg", _ => return StateWriteResult::failure("that file is not a recognized avatar image.") };
+        let filename = if self.mutate_agent_avatar.is_some() || extension == "png" {
+            CANONICAL_AVATAR_FILENAME.to_string()
+        } else {
+            format!("avatar.{extension}")
+        };
+        if let Some(mutator) = self.mutate_agent_avatar.as_ref() {
+            let result = mutator(Some(bytes));
+            if !result.ok {
+                return result;
+            }
+            return StateWriteResult::success(format!(
+                "Updated your picture ({filename}). Source {source_label} can be deleted if you no longer need it."
+            ));
+        }
         if let Err(error) = fs::create_dir_all(&self.agent_dir) { return StateWriteResult::failure(format!("could not update picture: {error}")); }
         for name in list_conventional_avatar_filenames(&self.agent_dir) { let _ = fs::remove_file(self.agent_dir.join(name)); }
-        let filename = if extension == "png" { CANONICAL_AVATAR_FILENAME.to_string() } else { format!("avatar.{extension}") };
         if let Err(error) = fs::write(self.agent_dir.join(&filename), bytes) { return StateWriteResult::failure(format!("could not update picture: {error}")); }
         invalidate_avatar_data_url_cache(&self.agent_dir);
         if let Some(callback) = &self.on_avatar_changed { callback(); }
@@ -501,6 +522,13 @@ impl SandAgentState {
     pub fn clear_avatar(&self) -> StateWriteResult {
         let files = list_conventional_avatar_filenames(&self.agent_dir);
         if files.is_empty() { return StateWriteResult::failure("you already have the default picture."); }
+        if let Some(mutator) = self.mutate_agent_avatar.as_ref() {
+            let result = mutator(None);
+            if !result.ok {
+                return result;
+            }
+            return StateWriteResult::success("Cleared your picture - back to the default.");
+        }
         for name in files {
             if let Err(error) = fs::remove_file(self.agent_dir.join(name)) { return StateWriteResult::failure(format!("could not clear picture: {error}")); }
         }

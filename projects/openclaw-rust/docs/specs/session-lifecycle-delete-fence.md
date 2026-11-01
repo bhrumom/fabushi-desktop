@@ -269,6 +269,9 @@ facade and admitted per-agent filesystem boundary. This fences the
 agent-local `projects.json` write during deletion; project-directory creation
 and membership remain separate stores and are not represented as one atomic
 cross-store operation.
+Runner avatar set/clear mutations now use the same existing Session avatar
+owner, including its per-agent admission boundary and profile mutation journal;
+the standalone state fallback is compatibility-only.
 
 The session-bound automation spend-guard card path now commits its transcript
 card, owner-local spend-guard state, and activity projection in one existing

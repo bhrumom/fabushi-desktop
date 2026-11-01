@@ -467,6 +467,10 @@ owner; direct `SandAgentState` construction retains its non-production local
 fallback. Project-directory creation remains a separate shared project-store
 mutation and is not claimed as an atomic transaction with membership or as a
 cron/session catalog.
+The Runner avatar set/clear commands likewise delegate their validated bytes
+through the existing `SandAgentSessionStore` avatar owner and its profile
+mutation journal. Direct `SandAgentState` construction retains its local file
+fallback; production Runner avatar mutation no longer bypasses the owner.
 The shared owner `write_kv` boundary now fences the remaining owner-local KV
 setters at the same SQLite edge; external memory-store clear paths remain
 separately governed.
