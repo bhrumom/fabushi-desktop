@@ -219,18 +219,21 @@ impl SharedRooms {
         is_creation_allowed: bool,
     ) -> Result<Option<String>, String> {
         if let Some(existing_id) = self.resolve_canonical_room_agent(room_id)? {
-            let dir = self.sessions.agents_root().join(&existing_id);
-            let previous = read_sand_group_config(&dir);
-            let binding = SandGroupConfig {
-                version: GROUP_CONFIG_VERSION,
-                member_ids: self.filter_local_member_ids(local_member_ids),
-                remote_members: merge_remote_member_avatars(
-                    previous.as_ref().and_then(|value| value.remote_members.as_deref()),
-                    remote_members,
-                ),
-                shared_room_id: Some(room_id.to_string()),
-            };
-            write_sand_group_config(&dir, &binding).map_err(|error| error.to_string())?;
+            let sessions = Arc::clone(&self.sessions);
+            sessions.with_agent_admitted_filesystem_mutation(&existing_id, || {
+                let dir = sessions.agents_root().join(&existing_id);
+                let previous = read_sand_group_config(&dir);
+                let binding = SandGroupConfig {
+                    version: GROUP_CONFIG_VERSION,
+                    member_ids: self.filter_local_member_ids(local_member_ids),
+                    remote_members: merge_remote_member_avatars(
+                        previous.as_ref().and_then(|value| value.remote_members.as_deref()),
+                        remote_members,
+                    ),
+                    shared_room_id: Some(room_id.to_string()),
+                };
+                write_sand_group_config(&dir, &binding).map_err(|error| error.to_string())
+            })?;
             return Ok(Some(existing_id));
         }
         if !is_creation_allowed {
@@ -257,11 +260,11 @@ impl SharedRooms {
             remote_members: (!remote_members.is_empty()).then(|| remote_members.to_vec()),
             shared_room_id: Some(room_id.to_string()),
         };
-        write_sand_group_config(
-            self.sessions.agents_root().join(&created.id),
-            &binding,
-        )
-        .map_err(|error| error.to_string())?;
+        let sessions = Arc::clone(&self.sessions);
+        sessions.with_agent_admitted_filesystem_mutation(&created.id, || {
+            write_sand_group_config(sessions.agents_root().join(&created.id), &binding)
+                .map_err(|error| error.to_string())
+        })?;
         Ok(Some(created.id))
     }
 
@@ -318,7 +321,10 @@ impl SharedRooms {
             members: filtered,
             is_revoked: None,
         };
-        write_sand_remote_room_config(&dir, &config).map_err(|error| error.to_string())?;
+        let sessions = Arc::clone(&self.sessions);
+        sessions.with_agent_admitted_filesystem_mutation(&agent_id, || {
+            write_sand_remote_room_config(&dir, &config).map_err(|error| error.to_string())
+        })?;
         Ok(agent_id)
     }
 
@@ -334,7 +340,10 @@ impl SharedRooms {
             return Ok(());
         }
         config.is_revoked = Some(true);
-        write_sand_remote_room_config(&dir, &config).map_err(|error| error.to_string())
+        let sessions = Arc::clone(&self.sessions);
+        sessions.with_agent_admitted_filesystem_mutation(&agent_id, || {
+            write_sand_remote_room_config(&dir, &config).map_err(|error| error.to_string())
+        })
     }
 
     pub fn append_shared_room_activity_notice(
