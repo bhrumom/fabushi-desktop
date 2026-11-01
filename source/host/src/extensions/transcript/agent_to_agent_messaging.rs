@@ -147,7 +147,33 @@ impl ProductionAgentToAgentMessaging {
         self
     }
 
-    pub fn send_to_agent(&self, from_agent_id: &str, to_agent_id: &str, text: &str, images: &[AgentMessageImage], priority: bool) -> Result<String, String> {
+    pub fn send_to_agent(
+        &self,
+        from_agent_id: &str,
+        to_agent_id: &str,
+        text: &str,
+        images: &[AgentMessageImage],
+        priority: bool,
+    ) -> Result<String, String> {
+        self.send_to_agent_with_session(
+            from_agent_id,
+            None,
+            to_agent_id,
+            text,
+            images,
+            priority,
+        )
+    }
+
+    pub fn send_to_agent_with_session(
+        &self,
+        from_agent_id: &str,
+        from_session_key: Option<&str>,
+        to_agent_id: &str,
+        text: &str,
+        images: &[AgentMessageImage],
+        priority: bool,
+    ) -> Result<String, String> {
         let message = clamp_agent_message(text);
         if message.is_empty() { return Ok("Message was empty; nothing was sent.".into()); }
         if to_agent_id == from_agent_id { return Ok("An agent can't message itself.".into()); }
@@ -180,14 +206,28 @@ impl ProductionAgentToAgentMessaging {
         if let Some(analytics) = self.analytics.as_ref() {
             analytics(from_agent_id, to_agent_id, false, priority);
         }
+        if let Some(session_key) = from_session_key {
+            self.sessions
+                .assert_session_work_admission(from_agent_id, Some(session_key))?;
+        }
         let _=self.sessions.add_agent_conversation_partner(from_agent_id,to_agent_id)?;
         let source_entries=self.sessions.read_agent_transcript_entries(from_agent_id)?;
         let outbound_id=next_entry_id(&source_entries,TranscriptEntryIdKind::AssistantMessage);
         let image_json=serde_json::to_value(images).map_err(|e|format!("could not encode agent message images: {e}"))?;
-        self.sessions.append_agent_transcript_entries(from_agent_id,&[json!({
+        let outbound_entry = json!({
             "kind":"message","id":outbound_id,"role":"assistant","content":message,"isStreaming":false,
             "timestampMs":timestamp_ms,"toAgent":{"id":to_agent_id,"name":target.name,"kind":"agent"},"images":image_json.clone()
-        })])?;
+        });
+        if let Some(session_key) = from_session_key {
+            self.sessions.append_agent_transcript_entries_if_session_admitted(
+                from_agent_id,
+                session_key,
+                &[outbound_entry],
+            )?;
+        } else {
+            self.sessions
+                .append_agent_transcript_entries(from_agent_id, &[outbound_entry])?;
+        }
         let inbound = json!({
             "from": {"id": from_agent_id, "name": sender_name},
             "text": message,

@@ -189,6 +189,14 @@ The generic compatibility wrappers now also reject writes against an archived
 owner record, so retaining agent-only identity does not bypass the archive
 fence.
 
+The Runner `SendToAgent` sender-side transcript producer now carries its
+already-owned `worker_session_key` through `ProductionAgentManagementSink` and
+`ProductionAgentToAgentMessaging` into the session-admitted append. The
+recipient wake/inbound path remains compatibility-only because it does not
+carry a canonical target session selector; no `agent:{id}:main` key is derived
+there. The generic owner fence still rejects deletion-pending and archived
+recipient writes.
+
 ## Rejected alternatives
 
 - Treating `deleting_agents` or filesystem age as durable work admission.

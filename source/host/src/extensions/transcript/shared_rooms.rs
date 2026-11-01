@@ -89,6 +89,23 @@ impl SharedRooms {
         text: &str,
         timestamp_ms: f64,
     ) -> Result<LocalAgentGroupPost, String> {
+        self.post_local_agent_message_with_session(
+            from_agent_id,
+            None,
+            group_id,
+            text,
+            timestamp_ms,
+        )
+    }
+
+    pub fn post_local_agent_message_with_session(
+        &self,
+        from_agent_id: &str,
+        from_session_key: Option<&str>,
+        group_id: &str,
+        text: &str,
+        timestamp_ms: f64,
+    ) -> Result<LocalAgentGroupPost, String> {
         let group_dir = self.sessions.agents_root().join(group_id);
         let config = read_sand_group_config(&group_dir)
             .ok_or_else(|| format!("{group_id} is not a group chat."))?;
@@ -105,7 +122,7 @@ impl SharedRooms {
             .ok_or_else(|| format!("No agent found with id {from_agent_id}."))?;
         let source_entries = self.sessions.read_agent_transcript_entries(from_agent_id)?;
         let outbound_id = next_entry_id(&source_entries, TranscriptEntryIdKind::AssistantMessage);
-        self.sessions.append_agent_transcript_entries(from_agent_id, &[json!({
+        let outbound_entry = json!({
             "kind": "message",
             "id": outbound_id,
             "role": "assistant",
@@ -113,7 +130,17 @@ impl SharedRooms {
             "isStreaming": false,
             "timestampMs": timestamp_ms,
             "toAgent": {"id": group_id, "name": group.name, "kind": "group"},
-        })])?;
+        });
+        if let Some(session_key) = from_session_key {
+            self.sessions.append_agent_transcript_entries_if_session_admitted(
+                from_agent_id,
+                session_key,
+                &[outbound_entry],
+            )?;
+        } else {
+            self.sessions
+                .append_agent_transcript_entries(from_agent_id, &[outbound_entry])?;
+        }
 
         let room_entries = self.sessions.read_agent_transcript_entries(group_id)?;
         let room_entry_id = next_entry_id(&room_entries, TranscriptEntryIdKind::SendMessage);

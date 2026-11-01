@@ -1094,6 +1094,7 @@ struct ProductionAgentManagementSink {
     messaging: Arc<ProductionAgentToAgentMessaging>,
     agent_messages: Arc<Mutex<Vec<String>>>,
     agent_id: String,
+    session_key: Option<String>,
 }
 
 impl AgentManagementSink for ProductionAgentManagementSink {
@@ -1127,7 +1128,14 @@ impl AgentManagementSink for ProductionAgentManagementSink {
     ) -> Result<String, ProviderSessionError> {
         let entry_id = self
             .messaging
-            .send_to_agent(&self.agent_id, target_id, message, images, priority)
+            .send_to_agent_with_session(
+                &self.agent_id,
+                self.session_key.as_deref(),
+                target_id,
+                message,
+                images,
+                priority,
+            )
             .map_err(ProviderSessionError::Tool)?;
         if !message.trim().is_empty() {
             if let Ok(mut agent_messages) = self.agent_messages.lock() {
@@ -5046,6 +5054,24 @@ fn post_agent_message_to_group(
     message: &str,
     is_priority: bool,
 ) -> Result<String, String> {
+    post_agent_message_to_group_with_session(
+        deps,
+        None,
+        from_agent_id,
+        group_id,
+        message,
+        is_priority,
+    )
+}
+
+fn post_agent_message_to_group_with_session(
+    deps: LocalRoutedRunnerDeps,
+    from_session_key: Option<&str>,
+    from_agent_id: &str,
+    group_id: &str,
+    message: &str,
+    is_priority: bool,
+) -> Result<String, String> {
     if message == "(pass)" {
         return Ok("Nothing was posted: \"(pass)\" means staying silent in a group chat.".into());
     }
@@ -5057,12 +5083,13 @@ fn post_agent_message_to_group(
     let posted = deps
         .transcript_manager
         .shared_rooms()
-        .post_local_agent_message(
-        from_agent_id,
-        group_id,
-        message,
-        started_at_ms() as f64,
-    )?;
+        .post_local_agent_message_with_session(
+            from_agent_id,
+            from_session_key,
+            group_id,
+            message,
+            started_at_ms() as f64,
+        )?;
     let _ = deps.product_analytics.track_event(
         "sand.agent_message.sent",
         &serde_json::json!({
@@ -9540,9 +9567,11 @@ fn start_routed_provider_task(
                 );
             })).with_group_post({
                 let group_deps = worker_group_post_deps.clone();
+                let group_session_key = worker_session_key.clone();
                 Arc::new(move |from_agent_id, group_id, message, is_priority| {
-                    post_agent_message_to_group(
+                    post_agent_message_to_group_with_session(
                         group_deps.clone(),
+                        Some(group_session_key.as_str()),
                         from_agent_id,
                         group_id,
                         message,
@@ -9558,6 +9587,7 @@ fn start_routed_provider_task(
                     messaging: agent_messaging,
                     agent_messages: Arc::clone(&turn_agent_messages),
                     agent_id: agent_id.clone(),
+                    session_key: Some(worker_session_key.clone()),
                 },
             );
             let base_send_message_sink: Arc<dyn SendMessageSink> = Arc::new(

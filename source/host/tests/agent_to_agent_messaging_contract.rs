@@ -50,6 +50,25 @@ fn direct_delivery_defers_recipient_transcript_until_execution_admission(){
 }
 
 #[test]
+fn session_bound_sender_append_rejects_an_archived_source_without_writing(){
+    let root=temp_root();let sessions=Arc::new(ProductionSessionWorkers::with_agents_root(&root,500));
+    let alpha=sessions.materialize_new_session(Some(&profile("Alpha")),"user",None).expect("alpha");
+    let beta=sessions.materialize_new_session(Some(&profile("Beta")),"user",None).expect("beta");
+    let session_key=format!("agent:{}:main",alpha.id);
+    let current=sessions.read_session_work_admission(&alpha.id).expect("admission").expect("main admission");
+    sessions.transition_session_work_archive(
+        &alpha.id,&session_key,&current.session_id,Some(&current.lifecycle_revision),true,
+        Some("human-1"),Some("review"),100.0,
+    ).expect("archive source session");
+    let service=ProductionAgentToAgentMessaging::new(Arc::clone(&sessions),Arc::new(|_|{}),None);
+    let error=service.send_to_agent_with_session(&alpha.id,Some(&session_key),&beta.id,"hello",&[],false)
+        .expect_err("archived source must reject the session-bound append");
+    assert!(error.contains("is archived"));
+    assert!(sessions.read_agent_transcript_entries(&alpha.id).expect("source transcript").is_empty());
+    sessions.shutdown();let _=fs::remove_dir_all(root);
+}
+
+#[test]
 fn group_delivery_delegates_persistence_to_shared_rooms_owner() {
     use mahayana_host_runtime::extensions::transcript::group_chat_glue::GroupChatGlue;
 

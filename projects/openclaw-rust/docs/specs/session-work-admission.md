@@ -239,6 +239,16 @@ cards and settled/expired card updates must use the session-admitted owner
 transactions when the key is present; controller instances created by legacy
 unbound infrastructure remain on the compatibility path.
 
+The Runner `SendToAgent` producer also already owns the canonical
+`worker_session_key`. Its sender-side transcript append must carry that key
+through the existing agent-management sink and use the session-admitted owner
+transaction when present. The recipient-side wake envelope does not expose a
+canonical target session identity at this boundary, so its later inbound
+materialization remains on the generic agent-only compatibility path; it is
+still subject to the owner-local deletion and archive fences. The producer
+must not synthesize a target `agent:{id}:main` selector merely from a target
+agent id.
+
 The owner now also carries one migration-safe `admitted_media_work_id` and
 archive rejects that field while it is present. This closes the durable
 archive fence for the bounded SendMessage path: the sink's process-local
