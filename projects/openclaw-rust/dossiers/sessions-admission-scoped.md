@@ -656,7 +656,10 @@ parallel registries. The admitted direct 1:1 Agent→Agent path now adds the
 bounded producer/consumer slice: sender registration precedes outbound
 transcript append, the real outbound entry ID is indexed and marked ready after
 append, the wake envelope carries the ID as reply context, and a later admitted
-reply is claimed and completed around recipient transcript append. Missing
+reply is claimed and completed around recipient transcript append. The
+Coordinator now forwards the inbound envelope's `replyContext` into the
+routed Runner turn so the AgentManagement producer can carry it as
+`replyToId`. Missing
 admission, group/shared-room, stale, duplicate, and mismatched correlations
 remain fail-closed; the registry is still process-local.
 

@@ -517,6 +517,12 @@ pub fn prepare_agent_inbound_wake_routes(
     }
     if let Some(inbound) = payload.get("inbound").filter(|value| !value.is_null()) {
         send_args["agentWake"]["inbound"] = inbound.clone();
+        if let Some(reply_context) = inbound
+            .get("replyContext")
+            .filter(|value| value.is_object())
+        {
+            send_args["replyContext"] = reply_context.clone();
+        }
     }
     Ok(vec![CoordinatorAgentWakeRoute {
         agent_id: target_agent_id,

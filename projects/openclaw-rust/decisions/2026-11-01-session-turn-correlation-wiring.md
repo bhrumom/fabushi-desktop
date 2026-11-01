@@ -19,8 +19,9 @@ Extend only the admitted direct 1:1 path. The sender registers a pending turn
 against its canonical session ID and target-agent conversation reference before
 appending the outbound transcript entry. The real generated entry ID is then
 indexed and the turn is marked ready after the append succeeds. The wake
-envelope carries that ID as `replyContext.targetId`; a later reply carries it
-as `replyToId`.
+envelope carries that ID as `replyContext.targetId`; the Coordinator forwards
+that context into the routed Runner turn, and a later reply carries it as
+`replyToId`.
 
 When the recipient later sends a direct message through the runner, its
 authenticated reply context is copied into the outbound envelope. The inbound

@@ -91,9 +91,10 @@ For admitted 1:1 agent messages only, the existing session owner must register
 one pending conversation turn before sender transcript mutation, bind the turn
 to the actual sender session ID and the emitted outbound transcript entry ID,
 and mark it ready only after that entry is durably appended. The recipient wake
-envelope carries that outbound ID as `replyContext.targetId`; a later admitted
-direct agent send may carry the same ID as `replyToId` from the authenticated
-runner reply context.
+envelope carries that outbound ID as `replyContext.targetId`; the Coordinator
+forwards that context to the routed Runner turn, and a later admitted direct
+agent send may carry the same ID as `replyToId` from the authenticated runner
+reply context.
 
 The inbound transcript owner must claim the pending turn using the canonical
 source/target agent identities, the original sender session ID, and the

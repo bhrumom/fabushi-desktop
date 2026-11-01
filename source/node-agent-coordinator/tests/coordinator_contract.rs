@@ -2040,7 +2040,8 @@ fn agent_inbound_direct_wake_forwards_selected_images_without_group_fanout() {
         "inbound": {
             "from": {"id":"agent-source","name":"Source"},
             "text":"peer message",
-            "timestampMs":123
+            "timestampMs":123,
+            "replyContext":{"targetId":"outbound-1","quote":"peer message"}
         }
     }))
     .expect("direct peer wake");
@@ -2055,6 +2056,8 @@ fn agent_inbound_direct_wake_forwards_selected_images_without_group_fanout() {
     assert_eq!(route.send_args["selectedImages"], selected);
     assert_eq!(route.send_args["agentWake"]["priority"], true);
     assert_eq!(route.send_args["agentWake"]["inbound"]["text"], "peer message");
+    assert_eq!(route.send_args["replyContext"]["targetId"], "outbound-1");
+    assert_eq!(route.send_args["replyContext"]["quote"], "peer message");
     assert!(route.send_args.get("groupContext").is_none());
 
     assert!(prepare_agent_inbound_wake_routes(&json!({
