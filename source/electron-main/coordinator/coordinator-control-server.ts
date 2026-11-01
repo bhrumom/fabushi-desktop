@@ -136,7 +136,16 @@ export function createCoordinatorControlServer(options: {
           `coordinator emitted an undeclared control event family: ${frame.family}`,
         );
       }
-      options.onEvent[frame.family]!(frame.payload);
+      const onEvent = options.onEvent[frame.family];
+      if (onEvent == null) {
+        return breach(`control event family has no registered consumer: ${frame.family}`);
+      }
+      try {
+        onEvent(frame.payload);
+      } catch (error) {
+        options.reportFailure?.("event-consumer", error);
+        return breach(`control event consumer failed: ${frame.family}`);
+      }
     }
   };
 

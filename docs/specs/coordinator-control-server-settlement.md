@@ -37,6 +37,8 @@ rejection.
   settles the server.
 - CCTRL-5: Valid executor replies, valid events, clean shutdown, and disposal
   retain existing behavior.
+- CCTRL-6: An allowed event family with no consumer, or a consumer that
+  throws, enters breach settlement rather than escaping the message callback.
 
 ## 5. Current state
 
@@ -72,13 +74,15 @@ or control-port frame post. Failure uses the existing `breach(detail)` and
 
 Cover ready post throw, reply post throw after executor completion, unknown
 event family, shutdown-post throw during breach, clean shutdown, disposal,
-and executor rejection converted to a valid failed reply.
+missing/throwing event consumer, and executor rejection converted to a valid
+failed reply.
 
 ## 11. Implementation strategy
 
 Wrap ready and async reply posts in the existing breach path. Replace the
 undeclared-event diagnostic-only branch with breach. Keep valid replies/events
-and existing shutdown-post containment unchanged.
+and existing shutdown-post containment unchanged. Resolve the event consumer
+before invoking it and catch consumer failures into breach.
 
 ## 12. Verification / test strategy
 
@@ -115,7 +119,7 @@ results are the evidence surfaces. No runtime acceptance is claimed here.
 
 | Requirement / AC | Status | Evidence / reason |
 | --- | --- | --- |
-| CCTRL-1–CCTRL-5 | passed | Ready/reply post failures and undeclared event families now enter the existing breach settlement; valid executor/event and disposal behavior remains unchanged. |
+| CCTRL-1–CCTRL-6 | passed | Ready/reply post failures, event-family validation, and missing/throwing event consumers now enter the existing breach settlement. |
 | AC-1 | passed | The existing control server remains the sole protocol settlement owner. |
 | AC-2 | passed | Ready and async reply posts are caught, and unknown event families use `breach`. |
 | AC-3 | passed | `git diff --check` and source review passed; runtime, tests, packaged, and exact-head acceptance remain pending. |
