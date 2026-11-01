@@ -170,6 +170,47 @@ fn synthesis_apply_fails_closed_until_an_owner_gate_is_bound() {
     let _ = fs::remove_dir_all(root);
 }
 
+#[test]
+fn bound_synthesis_gate_rejects_a_noncanonical_store_path() {
+    let root = temp_root("synthesis-canonical-store");
+    let memory = Arc::new(MemoryService::new(&root));
+    let workers = Arc::new(ProductionSessionWorkers::with_agents_root_and_dependencies(
+        &root,
+        500,
+        Arc::new(|| None),
+        Arc::clone(&memory),
+    ));
+    workers.bind_memory_synthesis_gate();
+
+    let canonical = memory.store_for_agent("agent-gated");
+    let foreign = FileMemoryStore::new(root.join("foreign-memory"));
+    let canonical_snapshot = canonical.prepare_synthesis();
+    let foreign_snapshot = foreign.prepare_synthesis();
+    assert_eq!(
+        memory.apply_synthesis_with_gate(
+            "agent-gated",
+            &canonical,
+            &canonical_snapshot,
+            &[],
+            1,
+        ),
+        SynthesisApplyResult::Committed
+    );
+    assert_eq!(
+        memory.apply_synthesis_with_gate(
+            "agent-gated",
+            &foreign,
+            &foreign_snapshot,
+            &[],
+            2,
+        ),
+        SynthesisApplyResult::Invalid
+    );
+
+    workers.shutdown();
+    let _ = fs::remove_dir_all(root);
+}
+
 
 #[derive(Default)]
 struct RecordingSynthesisBridge {

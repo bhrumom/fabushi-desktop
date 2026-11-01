@@ -104,7 +104,9 @@ through `ProductionSynthesisTarget`. Its apply step resolves the late-bound
 `MemoryService` synthesis gate, which is bound to the existing
 `ProductionSessionWorkers`; the gate holds the per-agent filesystem/deletion
 lock, rechecks session admission, and then delegates to the existing
-fingerprint/CAS `FileMemoryStore::apply_synthesis` owner. An unbound gate fails
-closed with `SynthesisApplyResult::Invalid`, so startup ordering cannot create a
-second unguarded production writer. This is source-level wiring evidence only;
-memory synthesis verification and acceptance remain not-run/pending.
+fingerprint/CAS `FileMemoryStore::apply_synthesis` owner. It rejects a store
+whose path is not the canonical memory location for the agent. An unbound gate
+fails closed with `SynthesisApplyResult::Invalid`, so startup ordering cannot
+create a second unguarded production writer. This is source-level wiring
+evidence only; memory synthesis verification and acceptance remain
+not-run/pending.

@@ -206,6 +206,13 @@ impl ProductionSessionWorkers {
                 };
                 owner
                     .with_agent_filesystem_mutation(agent_id, || {
+                        let canonical_location = owner
+                            .memory_service()
+                            .store_for_agent(agent_id)
+                            .get_location();
+                        if store.get_location() != canonical_location {
+                            return Ok(SynthesisApplyResult::Invalid);
+                        }
                         owner.assert_agent_work_admission(agent_id)?;
                         Ok(
                             store

@@ -62,7 +62,8 @@ durable state → consumer chain.
 - `SWA-10`: Background memory synthesis applies changes through the existing
   `ProductionSessionWorkers` owner. The synthesis target must fail closed
   until that owner gate is bound, hold the per-agent filesystem/deletion lock,
-  recheck admission, and retain the existing fingerprint/CAS stale result.
+  recheck admission, reject a store path that is not the canonical memory
+  store for the agent, and retain the existing fingerprint/CAS stale result.
 
 ## Current and target state
 
@@ -295,8 +296,9 @@ the path does not claim crash-atomicity across files and SQLite.
 The production synthesis target is routed through a late-bound owner gate. A
 target without a bound `ProductionSessionWorkers` gate returns a
 typed invalid/stale-equivalent failure rather than writing the memory files;
-the bound path preserves `FileMemoryStore` fingerprint/CAS semantics inside
-the owner lock.
+the bound path accepts only the `MemoryService` canonical store for that agent,
+then preserves `FileMemoryStore` fingerprint/CAS semantics inside the owner
+lock.
 
 The focused deletion-fence contract is recorded in
 `source/host/tests/agent_session_contract.rs::deletion_fence_rejects_new_transcript_work_before_durable_write`;
