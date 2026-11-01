@@ -16,8 +16,8 @@ boundary would guess the provider contract and would create a second,
 unreviewed routing authority.
 
 This specification is revalidated against the current implementation subject
-at `fabushi-desktop` commit `217d60ea9e38f5cf2f303ba615db682acb3ed261`, tree
-`8f2e889961ee93b2ea292b3f1766dbf801040b6e`. The OpenClaw source identity
+at `fabushi-desktop` commit `9fa6207377b045944722fdbd34190f6856ad1d12`, tree
+`7fb99713576e897599e2e57150ee405936b2c2e3`. The OpenClaw source identity
 remains the authority recorded by `projects/openclaw-rust/SOURCE_OF_TRUTH.md`;
 the current implementation subject does not promote the discovery-only
 upstream candidate or alter any acceptance flag.
