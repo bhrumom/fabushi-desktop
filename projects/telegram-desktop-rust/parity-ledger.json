@@ -9,7 +9,7 @@
     "unknown": 16172,
     "unread": 16145,
     "omitted": 0,
-    "responsibilities_total": 119,
+    "responsibilities_total": 120,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -30161,7 +30161,7 @@
         "DcOptions"
       ],
       "source_analysis_path": "projects/telegram-desktop-rust/evidence/round115-special-config-payload-boundary-20261101.md",
-      "behavior_contract": "Issue fixed-U direct no-proxy Google/Mozilla DoH and Firestore carrier requests, apply staggered racing/cancellation, use pure normalized body/header outputs, mutate the global HTTP-derived time only after a valid parsed Date header, then drive temporary-DC help.getConfig and runtime dc_options replacement without creating a second settings/network/DC owner. Pure body/Date parsing is separately implemented in TDRP-R9-MTPROTO-RESPONSE-NORMALIZATION-001.",
+      "behavior_contract": "Issue fixed-U direct no-proxy Google/Mozilla DoH and Firestore requests from the separately implemented semantic request descriptors, apply staggered racing/cancellation, consume pure normalized body/header outputs, mutate the global HTTP-derived time only after a valid parsed Date header, then drive temporary-DC help.getConfig and runtime dc_options replacement without creating a second settings/network/DC owner. Pure request shaping is implemented in TDRP-R9-MTPROTO-REQUEST-NORMALIZATION-001; pure response parsing is implemented in TDRP-R9-MTPROTO-RESPONSE-NORMALIZATION-001.",
       "state_machine": "eligible config refresh -> staggered direct web attempts -> first successful compact payload -> selected endpoint -> transient temporary DC option -> temporary help.getConfig request -> dc_options replacement -> terminate/kill temporary session; timeout/error -> retry/terminate",
       "side_effects": [
         "No production delta in this round; carrier/scheduler/application behavior is recorded as an explicit blocker."
@@ -30174,13 +30174,14 @@
       ],
       "ui_disposition": "No new UI root. Existing unified Settings remains the future projection/edit surface.",
       "non_ui_responsibilities": [
-        "Direct no-proxy DoH/Firestore request construction and staggered acquisition racing",
+        "Direct no-proxy HTTP dispatch of already-normalized DoH/Firestore request descriptors",
+        "800 ms staggered acquisition racing, reply ownership, cancellation/finalization",
         "Global HTTP-derived time mutation after pure Date parsing",
         "Temporary DC endpoint insertion and session lifecycle",
         "help.getConfig request/cancel/timeout",
         "dc_options replacement/change notification"
       ],
-      "platform_delta": "No carrier/application production delta. Pure DoH/Firestore/DNS/HTTP-Date parsing and normalization is separately implemented in telegram-protocol; current telegram-network/runtime still has no shipping special-config acquisition/temporary-DC scheduler/application chain.",
+      "platform_delta": "Request shaping and response normalization are separately implemented in existing source-neutral owners. No carrier/application production delta: current telegram-network/runtime still has no shipping HTTP special-config acquisition/racing or temporary-DC help.getConfig application chain.",
       "existing_owner_candidates": [
         "bhrumom/fabushi-platform-core:native/telegram-network",
         "existing telegram-runtime/session owner",
@@ -30225,7 +30226,7 @@
       "implementation_status": "mapped",
       "coverage_disposition": "pending",
       "blockers": [
-        "Canonical/desktop telegram-network currently exposes no shipping special-config HTTP acquisition or temporary-DC help.getConfig scheduler.",
+        "Canonical/desktop telegram-network currently exposes no shipping HTTP client/special-config acquisition scheduler to dispatch the normalized request descriptors.",
         "Current runtime has no proven special-config temporary-session lifecycle/caller to extend without inventing a parallel bootstrap runtime.",
         "Stage B executable validation has not run."
       ],
@@ -30245,7 +30246,11 @@
         "platform-core-http-date-response-parser-commit:1d5d02d02abea178c9f91c37e41d24bee3171eca",
         "desktop-http-date-response-parser-sync-commit:bcb34c647362932be0c98e7d7caef918991bf11f",
         "platform-core-final-response-normalization-compliance-commit:58afebfe62e1c81d4f03d084fbafc4dc19f2a4c7",
-        "platform-core-final-response-normalization-spec-blob:929cfccd65ec2b009a183ccb052c16817a8ca2a1"
+        "platform-core-final-response-normalization-spec-blob:929cfccd65ec2b009a183ccb052c16817a8ca2a1",
+        "platform-core-request-normalization-spec-commit:997c7b12cdc8b22368b6f1a04490ea7b602294bc",
+        "platform-core-request-normalization-implementation-commit:9751072e735630accbbb921178c737b609dbb039",
+        "desktop-request-normalization-mirror-commit:688ba8dff5fb415736c8cee9d397d97bb0fe1837",
+        "request-normalization-module-blob:2958bd4042b546d98a1097a2a19b65eaeea5d04a"
       ],
       "test_evidence": [
         "Carrier/application contracts are documented in the durable spec; no fake executable test was added against a nonexistent shipping scheduler."
@@ -30366,7 +30371,7 @@
       "acceptance_reviewer": null,
       "reviewer": null,
       "license_and_provenance": "Behavioral provenance is fixed-U Telegram/SourceFiles/mtproto/mtp_instance.cpp@d25fe3b72298fab371854f80186ee8e4777ea087 plus adjacent proxy/settings/network source listed in round114 evidence. No upstream C++ copied.",
-      "notes": "Task round85/source evidence round116. Carrier/application remains mapped/pending with no production delta after extracting pure body and HTTP Date parsing/normalization into TDRP-R9-MTPROTO-RESPONSE-NORMALIZATION-001. Remaining HTTP acquisition/racing, global time mutation, temporary-DC help.getConfig and DcOptions application depend on a shipping network/runtime scheduler absent at the reviewed checkpoints. Final response-normalization source compliance is platform-core 58afebfe62e1c81d4f03d084fbafc4dc19f2a4c7 / spec blob 929cfccd65ec2b009a183ccb052c16817a8ca2a1. Stage-A executable validation remains not-run.",
+      "notes": "Task round86/source evidence round117. Carrier/application remains mapped/pending after extracting both pure response normalization and pure request shaping. Remaining work is actual direct no-proxy HTTP dispatch/racing/reply lifecycle, global time mutation, temporary-DC help.getConfig and DcOptions application against a shipping existing network/runtime scheduler. Stage-A executable validation remains not-run.",
       "test_execution_evidence": [],
       "validation_status": "not-run",
       "accepted": false,
@@ -30375,6 +30380,257 @@
         "Telegram/SourceFiles/mtproto/config_loader.cpp@5d07404ba07223016c6728b986dcba10628d7194",
         "Telegram/SourceFiles/mtproto/special_config_request.cpp@fdb65506b0a886bc2daeccb61090bc44be7e2d88"
       ]
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+      "source_path": "Telegram/SourceFiles/mtproto/details/mtproto_domain_resolver.cpp",
+      "source_blob_sha": "eeac8f6a8e2df67967ea7b536fb165e2f8d983e9",
+      "source_kind": "source",
+      "module_id": "tdesktop.mtproto.doh-special-config-request-normalization",
+      "responsibility_id": "TDRP-R9-MTPROTO-REQUEST-NORMALIZATION-001",
+      "source_symbols": [
+        "DnsDomains",
+        "GenerateDnsRandomPadding",
+        "DnsUserAgent",
+        "DomainResolver::performRequest",
+        "SpecialConfigRequest::performRequest(Type::Mozilla/Google/FireStore)"
+      ],
+      "capability_ids": [
+        "CAP-MTPROTO-REQUEST-NORMALIZATION"
+      ],
+      "dependency_ids": [
+        "existing fabushi-telegram-network getrandom dependency",
+        "future telegram-network HTTP/DoH/Firestore carrier scheduler"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/evidence/round117-doh-special-config-request-normalization-20261101.md",
+      "behavior_contract": "Fixed-U request shaping preserves DnsDomains order, the 13..=128 rejection-sampled base62 random padding algorithm, exact DNS User-Agent, Google/Mozilla HTTPS host/path/query plus Host/Accept semantics for A/AAAA and special-config ANY/TXT requests, and direct/camouflaged Firestore URL-host/path/Host generation. The implementation returns semantic request components only; QUrl-equivalent URL application, no-proxy HTTP dispatch, racing/cancellation and reply ownership remain in the carrier scheduler.",
+      "state_machine": "typed attempt + domain + explicit padding -> pure semantic scheme/url-host/path/query/Host/Accept/User-Agent descriptor; separate padding helper consumes entropy only -> caller-owned future carrier dispatch",
+      "side_effects": [
+        "Production padding wrapper reads OS entropy through the crate's existing getrandom dependency.",
+        "No socket, HTTP dispatch, timer, proxy mutation, reply lifecycle, cache mutation, global clock mutation or DC/session mutation."
+      ],
+      "failure_cases": [
+        "entropy source fails while generating random padding",
+        "padding count distribution diverges from fixed-U rejection sampling",
+        "padding alphabet/modulo mapping diverges from fixed-U base62 sequence",
+        "Google/Mozilla A/AAAA or ANY/TXT path/query/header shape diverges",
+        "Firestore camouflage URL host and Host override are conflated",
+        "pure normalizer starts owning scheduler/proxy/reply state"
+      ],
+      "ui_disposition": "No UI responsibility.",
+      "non_ui_responsibilities": [
+        "fixed DNS camouflage domain list",
+        "source-exact DNS random padding generation",
+        "fixed DNS User-Agent",
+        "Google/Mozilla domain-resolver request components",
+        "Google/Mozilla special-config DoH request components",
+        "Firestore direct/camouflage request components"
+      ],
+      "platform_delta": "Implemented as a pure request-normalization module in existing telegram-network and mirrored byte-identically to desktop. Reuses existing getrandom; no manifest/lock delta and no HTTP scheduler/runtime was added.",
+      "existing_owner_candidates": [
+        "bhrumom/fabushi-platform-core:native/telegram-network",
+        "bhrumom/fabushi-platform-core:native/telegram-protocol"
+      ],
+      "existing_owner": "Existing telegram-network carrier boundary; request semantics stay next to the future HTTP carrier while remaining scheduler-free.",
+      "rejected_existing_owners": [
+        "telegram-protocol: response/wire codecs live there, but request carrier shaping belongs to the existing network owner",
+        "new special-config/bootstrap provider: duplicates existing network owner",
+        "Settings/application owner: does not own carrier request formation"
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "bhrumom/fabushi-platform-core:docs/specs/telegram-doh-special-config-request-normalization-boundary.md",
+        "bhrumom/fabushi-platform-core:native/telegram-network/src/request_normalization.rs",
+        "bhrumom/fabushi-platform-core:native/telegram-network/src/lib.rs",
+        "bhrumom/fabushi-platform-core:native/telegram-network/tests/request_normalization.rs",
+        "source/mahayana/mahayana-rs/providers/telegram-network/src/request_normalization.rs",
+        "source/mahayana/mahayana-rs/providers/telegram-network/src/lib.rs",
+        "source/mahayana/mahayana-rs/providers/telegram-network/tests/request_normalization.rs"
+      ],
+      "fabushi_target_symbols": [
+        "DNS_DOMAINS",
+        "DNS_USER_AGENT",
+        "DNS_JSON_ACCEPT",
+        "RequestProvider",
+        "NormalizedServiceRequest",
+        "generate_dns_random_padding_with_entropy",
+        "generate_dns_random_padding",
+        "normalize_domain_resolver_request",
+        "normalize_special_config_doh_request",
+        "normalize_special_config_firestore_request"
+      ],
+      "target_language": "Rust",
+      "language_rationale": "The responsibility is source-neutral carrier request shaping. Rust extends the existing telegram-network owner and reuses its existing entropy dependency without retaining Qt/C++ or inventing an HTTP runtime.",
+      "command_event_contracts": [],
+      "state_owner": "No durable state; semantic request descriptors are pure values and padding has no retained state.",
+      "lifecycle_owner": "Future existing telegram-network HTTP scheduler owns dispatch/racing/cancel/reply lifecycle.",
+      "persistence_and_restart": "None.",
+      "concurrency_and_cancellation": "No concurrency or cancellation state in this responsibility.",
+      "security_boundary": "Do not log payloads/secrets. Entropy failure is explicit and fail-closed; no deterministic fallback padding.",
+      "network_service_dependencies": [
+        "None for normalization; future caller supplies the actual HTTP carrier."
+      ],
+      "service_owner": "Existing telegram-network remains carrier/scheduler owner.",
+      "deployment_evidence": [],
+      "implementation_status": "implemented",
+      "coverage_disposition": "rewritten",
+      "blockers": [
+        "Stage B executable validation has not run.",
+        "Actual no-proxy HTTP/DoH/Firestore dispatch/racing/application remains a separate pending responsibility."
+      ],
+      "production_entrypoints": [
+        "existing fabushi-telegram-network public API -> request_normalization module; no HTTP scheduler entrypoint is claimed"
+      ],
+      "production_evidence": [
+        "fixed-U:Telegram/SourceFiles/mtproto/details/mtproto_domain_resolver.cpp@eeac8f6a8e2df67967ea7b536fb165e2f8d983e9",
+        "fixed-U:Telegram/SourceFiles/mtproto/special_config_request.cpp@fdb65506b0a886bc2daeccb61090bc44be7e2d88",
+        "platform-core-request-normalization-spec-commit:997c7b12cdc8b22368b6f1a04490ea7b602294bc",
+        "platform-core-request-normalization-spec-blob:0983f2ae91648e1d8a48b553df6bd98c67dd3553",
+        "platform-core-request-normalization-implementation-commit:9751072e735630accbbb921178c737b609dbb039",
+        "platform-core-network-lib-request-normalization-blob:3743331b0b1453048a98a21ae4ac2d2b91a2b2a5",
+        "platform-core-request-normalization-module-blob:2958bd4042b546d98a1097a2a19b65eaeea5d04a",
+        "platform-core-request-normalization-contract-blob:c2060dc660dbc88409c7be1fca5796681947100b",
+        "desktop-request-normalization-mirror-commit:688ba8dff5fb415736c8cee9d397d97bb0fe1837",
+        "desktop-network-lib-request-normalization-blob:3743331b0b1453048a98a21ae4ac2d2b91a2b2a5",
+        "desktop-request-normalization-module-blob:2958bd4042b546d98a1097a2a19b65eaeea5d04a",
+        "desktop-request-normalization-contract-blob:c2060dc660dbc88409c7be1fca5796681947100b"
+      ],
+      "test_evidence": [
+        "Internal request_normalization.rs contracts cover padding rejection/range/alphabet plus Google/Mozilla and Firestore component shapes; not executed.",
+        "Public telegram-network request_normalization.rs contracts cover fixed constants, A/AAAA, ANY/TXT and Firestore direct/camouflage shapes; not executed."
+      ],
+      "target_commit": "688ba8dff5fb415736c8cee9d397d97bb0fe1837",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Existing telegram-network carrier boundary + existing telegram-protocol response codec",
+      "composition_slot": "Pure carrier request shaping before HTTP dispatch",
+      "capability_component": "DoH/Firestore request normalization",
+      "variation_axes": [
+        "Google vs Mozilla",
+        "IPv4 A vs IPv6 AAAA",
+        "special-config ANY vs TXT",
+        "Firestore direct vs Host-camouflaged"
+      ],
+      "shared_owner_contracts": [
+        "existing telegram-network getrandom dependency",
+        "existing telegram-protocol response normalization",
+        "future telegram-network scheduler without duplicated shaping"
+      ],
+      "duplicate_root_check": "No second HTTP runtime/bootstrap provider/network/settings/DC owner introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Not applicable",
+      "primary_navigation_target": "Not applicable",
+      "collection_surface": "Not applicable",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "Not applicable",
+      "detail_section": "Not applicable",
+      "capability_surface": "Non-UI network boundary",
+      "route_contract": "No route.",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Not applicable.",
+      "search_local_remote_contract": "Not applicable.",
+      "responsive_disposition": "No UI change.",
+      "accessibility_contract": "No UI change.",
+      "keyboard_contract": "No UI change.",
+      "state_continuity_contract": "No state; future carrier owns lifecycle.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Not applicable",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": null,
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "No new icon asset",
+      "avatar_contract": "No change",
+      "content_copy_keys": [],
+      "motion_contract": "No change",
+      "reduced_motion_contract": "No change",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "high",
+      "requirement_ids": [
+        "TDRP-R9-MTPROTO-REQUEST-NORMALIZATION-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-MTPROTO-REQUEST-NORMALIZATION-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-DNS-DOMAINS-UA-001",
+        "INV-TDRP-DNS-PADDING-001",
+        "INV-TDRP-DOH-REQUEST-SHAPE-001",
+        "INV-TDRP-FIRESTORE-REQUEST-SHAPE-001",
+        "INV-TDRP-REQUEST-NO-SCHEDULER-001"
+      ],
+      "unit_case_ids": [
+        "UNIT-TDRP-DNS-PADDING-001",
+        "UNIT-TDRP-DOH-REQUEST-NORMALIZE-001",
+        "UNIT-TDRP-FIRESTORE-REQUEST-NORMALIZE-001"
+      ],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-MTPROTO-REQUEST-NORMALIZATION-001"
+      ],
+      "integration_case_ids": [],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "fault_recovery_case_ids": [
+        "FAULT-TDRP-DNS-PADDING-ENTROPY-001"
+      ],
+      "performance_case_ids": [],
+      "security_case_ids": [
+        "SEC-TDRP-REQUEST-NORMALIZATION-NO-LOG-001"
+      ],
+      "soak_case_ids": [],
+      "exploratory_charter_ids": [],
+      "regression_ids": [
+        "REG-TDRP-FIRESTORE-HOST-CAMOUFLAGE-001"
+      ],
+      "release_gate_ids": [
+        "G-TRACEABILITY",
+        "G-COMPOSITION",
+        "G-EVIDENCE",
+        "G-RELEASE"
+      ],
+      "test_fixture_ids": [
+        "fixed-u-doh-request-vectors",
+        "fixed-u-firestore-request-vectors"
+      ],
+      "test_environment_ids": [
+        "GitHub Actions Stage B matrix (not run)"
+      ],
+      "coverage_matrix_status": "pending",
+      "flake_status": "unknown",
+      "release_gate_status": "pending",
+      "acceptance_reviewer": null,
+      "reviewer": null,
+      "license_and_provenance": "Behavioral provenance is fixed-U mtproto_domain_resolver.cpp and special_config_request.cpp. Implementation is source-neutral Rust; no upstream C++ copied.",
+      "notes": "Task round86/source evidence round117. Pure DnsDomains/padding/UA plus Google/Mozilla/Firestore request shaping is implemented in existing telegram-network and mirrored byte-identically. Actual HTTP dispatch/racing/global HTTP time mutation/temporary-DC/dc-options application remains separately mapped/pending. Contracts authored only; validation_status=not-run; accepted=false.",
+      "test_execution_evidence": [],
+      "validation_status": "not-run",
+      "accepted": false,
+      "source_paths": [
+        "Telegram/SourceFiles/mtproto/details/mtproto_domain_resolver.cpp@eeac8f6a8e2df67967ea7b536fb165e2f8d983e9",
+        "Telegram/SourceFiles/mtproto/special_config_request.cpp@fdb65506b0a886bc2daeccb61090bc44be7e2d88"
+      ],
+      "id": "TDRP-R9-MTPROTO-REQUEST-NORMALIZATION-001"
     }
   ],
   "rebaseline_candidate": {

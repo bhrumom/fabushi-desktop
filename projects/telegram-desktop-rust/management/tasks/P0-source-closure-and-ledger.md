@@ -1833,3 +1833,18 @@ Final canonical and desktop response module/lib/authored-contract blobs are byte
 Coverage remains `source_entries_total=16202, responsibilities_total=119, unknown=16172, unread=16145, omitted=0, unmapped_responsibilities=0`.
 
 No GitHub Actions/status/check query or trigger, build, typecheck, lint, schema validator, generator, dependency resolution, lock regeneration, unit/contract/integration/E2E execution, package, deployment, installation or runtime acceptance was performed.
+
+
+### Round 117 request-shaping normalization
+
+Fixed-U reread of `mtproto_domain_resolver.cpp@eeac8f6a8e2df67967ea7b536fb165e2f8d983e9` and `special_config_request.cpp@fdb65506b0a886bc2daeccb61090bc44be7e2d88` separated deterministic carrier request shaping from the still-blocked scheduler lifecycle.
+
+`TDRP-R9-MTPROTO-REQUEST-NORMALIZATION-001` is now `implemented / rewritten / validation_status=not-run / accepted=false`. The existing `telegram-network` owner now provides the exact fixed DNS camouflage-domain list, exact UA, source-equivalent 13..=128 rejection-sampled base62 random padding, Google/Mozilla A/AAAA and special-config ANY/TXT request components, and direct/camouflaged Firestore URL-host/path/Host components. It returns semantic request descriptors only and reuses the existing `getrandom` dependency; no manifest/lock delta, HTTP client, timer, proxy state, reply lifecycle or temporary-DC state was added.
+
+Platform spec-first commit is `997c7b12cdc8b22368b6f1a04490ea7b602294bc` / spec blob `0983f2ae91648e1d8a48b553df6bd98c67dd3553`. Platform implementation/authored-contract commit is `9751072e735630accbbb921178c737b609dbb039`: network lib `3743331b0b1453048a98a21ae4ac2d2b91a2b2a5`, request-normalization module `2958bd4042b546d98a1097a2a19b65eaeea5d04a`, authored contract `c2060dc660dbc88409c7be1fca5796681947100b`. Desktop mirror commit `688ba8dff5fb415736c8cee9d397d97bb0fe1837` has the same three blob identities.
+
+`TDRP-R9-MTPROTO-SPECIAL-CONFIG-CARRIER-APPLICATION-001` remains `mapped / pending / validation_status=not-run / accepted=false`, narrowed to actual direct no-proxy HTTP dispatch, 800 ms staggered racing/reply cancellation/finalization, global HTTP-derived time mutation, temporary-DC help.getConfig lifecycle, and dc_options replacement/change notification.
+
+Coverage becomes `source_entries_total=16202, responsibilities_total=120, unknown=16172, unread=16145, omitted=0, unmapped_responsibilities=0`; the two source blobs were already inventoried, so focused semantic reread does not change source-entry unknown/unread counts.
+
+No GitHub Actions/status/check query or trigger, build, typecheck, lint, schema validator, generator, dependency resolution, lock regeneration, unit/contract/integration/E2E execution, package, deployment, installation or runtime acceptance was performed.
