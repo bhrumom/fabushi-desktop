@@ -897,7 +897,12 @@ impl SendMessageSink for ProductionSendMessageSink {
                         Some(&path),
                     )
                     .map_err(|error| {
-                        let _ = custody.rollback();
+                        for cleanup_error in custody.rollback() {
+                            eprintln!(
+                                "mahayana-host outgoing_media_cleanup_failed agent={} tool={} error={cleanup_error}",
+                                self.agent_id, tool_call_id
+                            );
+                        }
                         ProviderSessionError::Tool(error)
                     })?)
             } else {
