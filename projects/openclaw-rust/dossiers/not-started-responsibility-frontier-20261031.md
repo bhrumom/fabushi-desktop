@@ -239,6 +239,21 @@ with `fence_state_known=true` but still `running`. It does not archive
 transcripts, delete rows, add a scheduler caller, or promote verification or
 acceptance.
 
+### 2026-11-01 automation execution/admission identity correction
+
+The live scheduled/event automation path was re-read after the bounded cron
+row work. `AutomationRunPath` registers the per-run projection under
+`agent:{agent_id}:cron:{automation_id}:{run_id}`, but the existing
+`sessionWorkAdmission` owner record remains the canonical main-session record;
+no producer changes that owner record to an automation key. The dispatch helper
+was incorrectly requiring `agent:{agent_id}:cron:{automation_id}` from that
+owner record, which would reject automation before Runner dispatch. It now
+requires and rechecks the existing `agent:{agent_id}:main` admission key, while
+the per-run cron key remains confined to `cron_session_runs` for future reaper
+selection. This restores the real producer → existing Session owner → Runner
+path without inventing a per-key session catalog. Reaper trigger, guarded
+deletion, transcript archival, verification, and acceptance remain pending.
+
 ## 2026-10-31 plugin-owner boundary recheck
 
 The read-only source search was repeated against the current Fabushi checkout.

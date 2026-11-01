@@ -448,6 +448,8 @@ fn test_automation_session_identity_helper_rechecks_owner_admission() {
         .expect("automation session identity helper boundary exists");
     assert!(helper.contains("session_workers.assert_session_work_admission"));
     assert!(helper.contains("Some(&expected_key)"));
+    assert!(helper.contains("format!(\"agent:{agent_id}:main\")"));
+    assert!(!helper.contains("format!(\"agent:{agent_id}:cron:{automation_id}\")"));
 }
 
 // ---------------------------------------------------------------------------

@@ -186,9 +186,12 @@ path still does not represent the full upstream detached-result contract or
 provide archive/restore, media, or provider-review ownership.
 
 Automation-session identity resolution also rechecks the owner admission fence
-before returning an owner-confirmed cron key to upgrade-resume or automation
-dispatch. A matching key in an archived, deleting, or otherwise malformed
-record is not sufficient evidence for producer admission.
+before returning the existing owner-admitted main key to upgrade-resume or
+automation dispatch. The per-run cron key remains in the durable
+`cron_session_runs` projection and is not substituted into the owner admission
+record until a real per-key session owner exists. A matching key in an
+archived, deleting, or otherwise malformed record is not sufficient evidence
+for producer admission.
 
 ## Ownership and data flow
 

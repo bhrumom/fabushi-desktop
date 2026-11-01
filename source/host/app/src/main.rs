@@ -5810,15 +5810,15 @@ fn resolve_admitted_automation_session_key(
     agent_id: &str,
     automation_id: &str,
 ) -> Result<String, String> {
-    let expected_key = format!("agent:{agent_id}:cron:{automation_id}");
+    let expected_key = format!("agent:{agent_id}:main");
     let Some(record) = session_workers.read_session_work_admission(agent_id)? else {
         return Err(format!(
-            "automation {automation_id} requires an existing owner-admitted cron session for {agent_id}"
+            "automation {automation_id} requires an existing owner-admitted session for {agent_id}"
         ));
     };
     if record.session_key != expected_key {
         return Err(format!(
-            "automation {automation_id} has no owner-admitted session identity for {agent_id}"
+            "automation {automation_id} has no owner-admitted main session identity for {agent_id}"
         ));
     }
     if record.session_key.trim().is_empty() {

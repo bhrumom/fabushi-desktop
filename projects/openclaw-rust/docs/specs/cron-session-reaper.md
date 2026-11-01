@@ -63,6 +63,12 @@ artifacts, or delete rows. A read-only owner projection of these rows is part
 of the same D01 slice so a future sweep cannot read `runs.json` as a substitute
 for session state.
 
+The per-run `cron_session_runs.session_key` is a cleanup/reaper projection
+identity. Automation execution continues through the existing admitted main
+Session owner until a real per-key session catalog and Runner/transcript owner
+are introduced; the projection must not be mistaken for, or written into, the
+owner-local admission record.
+
 Terminal settlement must record the actual execution-completion timestamp in
 the per-run row's `updated_at_ms`. The scheduled/fired timestamp remains an
 automation-history fact and must not be reused as the retention anchor for a
