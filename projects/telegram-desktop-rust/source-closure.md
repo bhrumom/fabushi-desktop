@@ -2521,3 +2521,16 @@ Exactly one independent source entry closes under the existing responsibility: `
 
 Stage A zero-CI discipline remained intact: no GitHub Actions/check/status/workflow query or trigger and no build, typecheck, lint, validator, generator, unit/contract/integration/E2E, visual/a11y, package, deployment, installation or runtime acceptance was performed.
 
+
+
+## Stage-A repository dependency advisory governance (evidence round 149; task round 118, 2026-11-01)
+
+Fixed U remains `telegramdesktop/tdesktop@f985723b552b30fe1c17d377d57f44e61a15a8c4`. Exact fixed-U `.agents/skills/dependency-watch/SKILL.md@482b3a8d0c939d4bb7bd32ab146e0cc988d29fd8` was completely read at tree index 56, together with its OpenAI invocation adapter, fork/release-trust references and snapshot/compare helper/test consumers. The applicable responsibility is source-neutral repository dependency/supply-chain advisory governance: fresh exact source snapshot, complete recursive dependency-input discovery, release/security applicability, patched-fork/backport provenance, release trust/regression assessment, stable finding lifecycle and atomic report projection. The source explicitly does not bump dependencies, build, mutate queue state, commit/push/open PRs or apply backports.
+
+Existing-owner-first maps the work to current Fabushi repository quality/test-evidence governance, not the shipping Electron product updater and not platform-core runtime. Spec-first desktop commit `d66c0d3bfa0e83148804b1bfb14036fd8176421e` adds the source-neutral governance/qualification/evidence contract and dossier. No platform-core production code, dependency lock/source pin, product updater state, build/test, backport, PR/release/deployment or runtime surface changes.
+
+The unique responsibility `TDRP-R9-REPOSITORY-DEPENDENCY-ADVISORY-001` is `implemented / coverage_disposition=workflow-equivalent / validation_status=not-run / accepted=false`. Authored-only contracts are `CONTRACT-TDRP-DEPENDENCY-SNAPSHOT-COVERAGE-001`, `CONTRACT-TDRP-DEPENDENCY-RELEASE-TRUST-001`, `CONTRACT-TDRP-DEPENDENCY-SECURITY-FORK-001`, `CONTRACT-TDRP-DEPENDENCY-FINDING-LIFECYCLE-001`, `FAULT-TDRP-DEPENDENCY-PARTIAL-RECOVERY-001`, and `INT-TDRP-DEPENDENCY-ADVISORY-OWNER-001`; none was run.
+
+Coverage after this independent source closure is `source_entries_total=16202 / unknown=16159 / unread=16132 / omitted=0 / responsibilities_total=134 / unmapped_responsibilities=0`. Adjacent dependency-watch blobs remain independent inventory entries; next in fixed-U tree order is `.agents/skills/dependency-watch/agents/openai.yaml@a61c118c41e3b50d6bc4bde12dc6d4c1b3756b5d`. Full fixed-U semantic closure, Stage-B executable validation and final independent acceptance remain open.
+
+No GitHub Actions/check/status/workflow query or trigger, build, typecheck, lint, validator, generator, dependency resolution, unit/contract/integration/E2E execution, package, deployment, installation or runtime acceptance was performed.

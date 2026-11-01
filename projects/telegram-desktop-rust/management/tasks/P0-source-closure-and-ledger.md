@@ -2325,3 +2325,20 @@ Exactly one independent source entry closes under the existing responsibility: `
 
 Stage A zero-CI discipline remained intact: no GitHub Actions/check/status/workflow query or trigger and no build, typecheck, lint, validator, generator, unit/contract/integration/E2E, visual/a11y, package, deployment, installation or runtime acceptance was performed.
 
+
+
+## Round 118 / source-entry closure — repository dependency advisory governance (2026-11-01)
+
+From desktop checkpoint parent `099d79fc5c50bf61ae08298150f9a5186e8ca23c`, live authority was reread before this work. Desktop main is `9993ca8e107f7e019a8201e5ab74fa54e82159f2`; platform-core remains exact `e92b51e23b39dae5719f033fa1f7a20d6579dc8c`. Fixed U remains `f985723b552b30fe1c17d377d57f44e61a15a8c4`; recursive root tree `91f2b083ab2877c0a17d07868eabec362a5cfca6` was reread `truncated=false` with 7,194 entries / 6,859 blobs. Before closure the unique ledger was `source_entries_total=16202 / unknown=16160 / unread=16133 / omitted=0 / responsibilities_total=133 / unmapped_responsibilities=0`.
+
+The exact `.agents/skills/dependency-watch/SKILL.md@482b3a8d0c939d4bb7bd32ab146e0cc988d29fd8` source was read completely (8932 characters / 150 lines), fixed-U tree index 56. Adjacent direct/supporting consumers were read: OpenAI invocation metadata `a61c118c41e3b50d6bc4bde12dc6d4c1b3756b5d`, patched-fork contract `29a7aa587ae26118a0611a2e4037a69141a3ffde`, release-trust contract `81a68395f9ad54ed651a84464a933ed7e57c9d32`, snapshot/compare helper `231c5a13e8d7e3cd337dbbad08e8f4434a943a38`, and helper regressions `d3107c617be3e8780a99bebaeba19a4f235ae6ea`.
+
+Existing-owner-first creates no product/runtime owner. The source is represented as `TDRP-R9-REPOSITORY-DEPENDENCY-ADVISORY-001` under existing Fabushi repository quality/test-evidence governance. The shipping Electron updater is rejected because it owns product update/install/rollback rather than source dependency release/security advisory state; build-time acquisition inventory is evidence input rather than decision ownership. No platform-core production delta or ADR is introduced.
+
+Spec-first CAS `d66c0d3bfa0e83148804b1bfb14036fd8176421e` extends root dependency-advisory governance, Test Strategy qualification and Evidence Contract requirements and adds the complete-read dossier. It preserves fresh exact snapshot identity, full dependency-input union, platform/configuration series, release/security/fork/backport applicability, release-trust assessment, stable pending findings, partial-failure preservation, prior run history and atomic latest projection while forbidding dependency mutation/build/test/backport/product-updater/release/deployment authority.
+
+Authored but not run: `CONTRACT-TDRP-DEPENDENCY-SNAPSHOT-COVERAGE-001`, `CONTRACT-TDRP-DEPENDENCY-RELEASE-TRUST-001`, `CONTRACT-TDRP-DEPENDENCY-SECURITY-FORK-001`, `CONTRACT-TDRP-DEPENDENCY-FINDING-LIFECYCLE-001`, `FAULT-TDRP-DEPENDENCY-PARTIAL-RECOVERY-001`, and `INT-TDRP-DEPENDENCY-ADVISORY-OWNER-001`.
+
+Exactly one independent source entry closes: `unknown 16160 -> 16159`, `unread 16133 -> 16132`, `omitted=0`; `responsibilities_total 133 -> 134`, `unmapped_responsibilities=0`. The next independent fixed-U blob in tree order is `.agents/skills/dependency-watch/agents/openai.yaml@a61c118c41e3b50d6bc4bde12dc6d4c1b3756b5d`.
+
+Stage A zero-CI discipline remained intact: no GitHub Actions/check/status/workflow query or trigger and no build, typecheck, lint, validator, generator, dependency resolution, unit/contract/integration/E2E, visual/a11y, package, deployment, installation or runtime acceptance was performed.

@@ -6,10 +6,10 @@
   "target_commit": "23d73b32e301408f9c8aed151cb1f9e442516e13",
   "coverage": {
     "source_entries_total": 16202,
-    "unknown": 16160,
-    "unread": 16133,
+    "unknown": 16159,
+    "unread": 16132,
     "omitted": 0,
-    "responsibilities_total": 133,
+    "responsibilities_total": 134,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -34896,6 +34896,297 @@
         ".agents/skills/continue/references/consolidate-pending-tasks.md@bd301d93f8f670ad041b3db72330e17cbb50eb5c",
         ".agents/skills/continue/references/split-required-task.md@552ad09b2fa022b7df94481746a51167305bf846"
       ]
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+      "source_path": ".agents/skills/dependency-watch/SKILL.md",
+      "source_blob_sha": "482b3a8d0c939d4bb7bd32ab146e0cc988d29fd8",
+      "source_kind": "repository_dependency_advisory_governance",
+      "module_id": "tdesktop.dependency-watch",
+      "responsibility_id": "TDRP-R9-REPOSITORY-DEPENDENCY-ADVISORY-001",
+      "source_symbols": [
+        "Snapshot and scope",
+        "Release and advisory checks",
+        "Incremental work and evidence",
+        "Report contract"
+      ],
+      "capability_ids": [
+        "CAP-REPOSITORY-QUALITY-GOVERNANCE",
+        "CAP-REPOSITORY-SUPPLY-CHAIN-ADVISORY",
+        "CAP-REPOSITORY-TASK-EVIDENCE"
+      ],
+      "dependency_ids": [
+        ".agents/skills/dependency-watch/agents/openai.yaml@a61c118c41e3b50d6bc4bde12dc6d4c1b3756b5d",
+        ".agents/skills/dependency-watch/references/forks.md@29a7aa587ae26118a0611a2e4037a69141a3ffde",
+        ".agents/skills/dependency-watch/references/release-trust.md@81a68395f9ad54ed651a84464a933ed7e57c9d32",
+        ".agents/skills/dependency-watch/scripts/watch.py@231c5a13e8d7e3cd337dbbad08e8f4434a943a38",
+        ".agents/skills/dependency-watch/scripts/watch_test.py@d3107c617be3e8780a99bebaeba19a4f235ae6ea",
+        "projects/telegram-desktop-rust/inventory/build-time-acquisitions.json",
+        "Fabushi repository AI development lifecycle",
+        "Fabushi Test Strategy",
+        "Fabushi Test Evidence Contract"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/dependency-watch-skill-complete-read.md",
+      "behavior_contract": "Audit repository dependency inputs against one freshly resolved exact source revision, recursively discover consumed dependency identities and platform/configuration variants, assess releases/security advisories/patched-fork lag and release trust without conflating urgency with adoption readiness, preserve stable pending findings across partial/failing runs, and publish advisory reports atomically without mutating dependency pins, product updater state, build/test state, backports, releases or deployment.",
+      "state_machine": "audit request -> fresh exact source snapshot -> complete dependency-input discovery -> per-dependency release/security/fork/trust research -> stable finding merge -> update/backport/hold/skip/track advisory decision -> run-local report/findings -> atomic latest projection; incomplete/failing authority -> explicit partial/unavailable state with prior pending findings retained",
+      "side_effects": [
+        "Writes repository advisory evidence/report state only under the repository-quality lifecycle.",
+        "Preserves prior run reports and atomically replaces only the current latest projection.",
+        "Does not alter dependency locks/pins, product updater state, source code, build/test state, backports, PRs, releases or deployments."
+      ],
+      "failure_cases": [
+        "Failed fetch or stale mutable ref is presented as a freshly checked dependency snapshot",
+        "Candidate extraction is treated as a complete dependency inventory",
+        "Unread recursive gitlinks/submodules, package revisions or security sources are silently treated as clean coverage",
+        "Absence from one advisory database is treated as evidence of safety",
+        "A CVE/version match, old upstream version, missing ancestry, matching subject or applicable patch is treated as proof of a missing applicable fix",
+        "Patched-fork consumed pin, fork head and original upstream/import provenance are conflated",
+        "A signature, attestation or checksum is treated as proof that code is benign without actual verification and broader trust review",
+        "Routine release age or later build success is treated as supply-chain safety proof",
+        "Partial/failing later audit drops or resolves prior pending findings without new evidence",
+        "A dependency pin change alone is treated as proof that a fix was incorporated",
+        "Repository advisory governance is assigned to the shipping Electron product updater",
+        "The advisory owner edits dependency pins, runs builds/tests, applies backports, creates PR/releases, deploys or accepts product state",
+        "Telegram-specific Python monitoring runtime or a second findings/task/update owner is copied into Fabushi"
+      ],
+      "ui_disposition": "Not applicable; repository dependency/supply-chain advisory governance only.",
+      "non_ui_responsibilities": [
+        "Fresh exact-revision dependency snapshot provenance",
+        "Complete dependency-bearing input discovery across build/package/runtime/gitlink sources",
+        "Platform/configuration/series-aware dependency identity",
+        "Release/advisory metadata refresh and native version-scheme handling",
+        "Security applicability and missing-fix classification",
+        "Patched-fork/copied-source import and backport provenance",
+        "Release trust/regression/unknown-check assessment",
+        "Update/backport/hold/skip/track advisory decisions",
+        "Stable finding identity and pending/resolved lifecycle",
+        "Partial/unavailable coverage preservation",
+        "Run-history retention and atomic latest report projection",
+        "Strict separation from dependency mutation, product updater, build/test and release authority"
+      ],
+      "platform_delta": "No platform-core production delta. This fixed-U source governs repository dependency/supply-chain advisory work, not shipping product update/install/rollback or runtime behavior.",
+      "existing_owner_candidates": [
+        "AGENTS.md repository dependency advisory governance",
+        "AGENTS.md repository quality-health governance",
+        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md",
+        "projects/fabushi-communication-platform/quality/evidence-contract.md",
+        "projects/telegram-desktop-rust/inventory/build-time-acquisitions.json as evidence input"
+      ],
+      "existing_owner": "Fabushi repository quality/test-evidence governance",
+      "rejected_existing_owners": [
+        "source/electron-main/update/* owns signed product update/install/rollback, not source dependency release/security advisory state",
+        "platform-core runtime has no repository dependency advisory state/lifecycle responsibility",
+        "build-time acquisition inventory records source/build-input facts but does not own release/security adoption decisions",
+        "Shipping Product Tasks/Automations, Agent/Coordinator/Host/Runner do not own repository supply-chain advisory findings",
+        "Copying Telegram dependency-watch Python runtime would create a source-specific parallel repository monitor"
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "AGENTS.md",
+        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md",
+        "projects/fabushi-communication-platform/quality/evidence-contract.md"
+      ],
+      "fabushi_target_symbols": [
+        "Repository dependency advisory governance",
+        "Repository dependency advisory qualification",
+        "Repository dependency advisory evidence"
+      ],
+      "target_language": "Markdown",
+      "language_rationale": "The source is repository-development dependency/supply-chain advisory policy, not shipping Telegram product logic. Fabushi preserves the applicable behavior as source-neutral governance and qualification/evidence contracts under the existing repository quality owner rather than copying a host-specific Python monitor.",
+      "command_event_contracts": [
+        "audit request -> fresh origin/source fetch -> exact commit identity -> immutable dependency snapshot",
+        "exact snapshot -> full dependency-bearing source union + recursive gitlinks -> dependency inventory with platform/configuration/series",
+        "dependency identity -> official release metadata + independent security advisory research -> candidate/fix facts",
+        "candidate/fix facts -> security applicability + release trust/regression assessment -> update | backport | hold | skip | track",
+        "patched/copy source -> consumed pin + fork head + original import mapping -> reviewed lag/fix/backport evidence",
+        "current findings + prior latest -> stable identity merge -> pending/resolved lifecycle with first/last seen retained",
+        "run-local report/findings -> atomic latest projection while prior runs remain retained",
+        "fetch/coverage/advisory failure -> explicit partial/unavailable result + prior pending findings retained; never clean/all-current"
+      ],
+      "state_owner": "Existing Fabushi repository quality/test-evidence governance",
+      "lifecycle_owner": "Existing repository development lifecycle and repository quality/evidence governance",
+      "persistence_and_restart": "Durable advisory state preserves exact snapshot identity, per-dependency check times, stable finding IDs, first/last seen, pending/resolved state, decisions/reasons, source/trust/fork evidence and prior runs. Run-local artifacts are written before atomic latest replacement; a later partial/failing audit cannot erase unresolved prior findings.",
+      "concurrency_and_cancellation": "One audit result is bound to one immutable snapshot identity. Cancellation/fetch failure/coverage loss cannot publish a complete clean result. Durable latest replacement is atomic; previous run evidence remains recoverable and no unrelated checkout, dependency source, product updater or task state is mutated.",
+      "security_boundary": "The advisory owner may assess and recommend but cannot authorize dependency pin mutation, execute downloaded build scripts, run build/test validation, apply backports, create/publish releases, deploy, alter product updater state, handle credentials or claim acceptance. Unknown applicability/trust/coverage fails closed.",
+      "network_service_dependencies": [
+        "GitHub repository authority",
+        "Official upstream release/tag/advisory sources",
+        "Vendor/distribution/GHSA/OSV/CVE security evidence when applicable"
+      ],
+      "service_owner": "Existing Fabushi repository quality/evidence workflow",
+      "deployment_evidence": [],
+      "implementation_status": "implemented",
+      "coverage_disposition": "workflow-equivalent",
+      "blockers": [
+        "Stage-B exact-head execution of authored repository dependency-advisory contracts is pending."
+      ],
+      "production_entrypoints": [
+        "AGENTS.md -> Repository dependency advisory governance",
+        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md -> Repository dependency advisory qualification",
+        "projects/fabushi-communication-platform/quality/evidence-contract.md -> Repository dependency advisory evidence"
+      ],
+      "production_evidence": [
+        "dossier:projects/telegram-desktop-rust/dossiers/dependency-watch-skill-complete-read.md",
+        "upstream-source:.agents/skills/dependency-watch/SKILL.md@482b3a8d0c939d4bb7bd32ab146e0cc988d29fd8",
+        "upstream-adapter:.agents/skills/dependency-watch/agents/openai.yaml@a61c118c41e3b50d6bc4bde12dc6d4c1b3756b5d",
+        "upstream-forks:.agents/skills/dependency-watch/references/forks.md@29a7aa587ae26118a0611a2e4037a69141a3ffde",
+        "upstream-release-trust:.agents/skills/dependency-watch/references/release-trust.md@81a68395f9ad54ed651a84464a933ed7e57c9d32",
+        "upstream-helper:.agents/skills/dependency-watch/scripts/watch.py@231c5a13e8d7e3cd337dbbad08e8f4434a943a38",
+        "desktop-spec-commit:d66c0d3bfa0e83148804b1bfb14036fd8176421e"
+      ],
+      "test_evidence": [
+        "CONTRACT-TDRP-DEPENDENCY-SNAPSHOT-COVERAGE-001 authored, not run",
+        "CONTRACT-TDRP-DEPENDENCY-RELEASE-TRUST-001 authored, not run",
+        "CONTRACT-TDRP-DEPENDENCY-SECURITY-FORK-001 authored, not run",
+        "CONTRACT-TDRP-DEPENDENCY-FINDING-LIFECYCLE-001 authored, not run",
+        "FAULT-TDRP-DEPENDENCY-PARTIAL-RECOVERY-001 authored, not run",
+        "INT-TDRP-DEPENDENCY-ADVISORY-OWNER-001 authored, not run",
+        "upstream-watch-test:.agents/skills/dependency-watch/scripts/watch_test.py@d3107c617be3e8780a99bebaeba19a4f235ae6ea"
+      ],
+      "target_commit": "d66c0d3bfa0e83148804b1bfb14036fd8176421e",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Fabushi repository development and quality evidence governance",
+      "composition_slot": "Repository dependency release/security advisory monitoring",
+      "capability_component": "Source-neutral dependency/supply-chain advisory governance",
+      "variation_axes": [
+        "fresh online snapshot vs explicit offline-unverified snapshot",
+        "complete vs partial/unavailable dependency coverage",
+        "shipped vs system-provided vs build-tool dependency",
+        "stable three-component version vs unsupported/native release scheme",
+        "patch vs minor vs major/milestone candidate",
+        "ordinary release vs security-fix urgency",
+        "direct upstream vs patched fork/copied source",
+        "confirmed missing vs already backported vs not applicable vs needs investigation",
+        "update vs backport vs hold vs skip vs track",
+        "current finding vs carried pending vs evidence-backed resolved"
+      ],
+      "shared_owner_contracts": [
+        "Fabushi repository AI development lifecycle",
+        "Fabushi Test Strategy",
+        "Fabushi Test Evidence Contract",
+        "Repository quality-health governance",
+        "TDRP fixed-U source/dependency inventory"
+      ],
+      "duplicate_root_check": "No Telegram-specific dependency monitor runtime, second repository findings store, second dependency ownership graph, shipping updater duplication, task queue or platform-core runtime owner introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Not applicable",
+      "primary_navigation_target": "Not applicable",
+      "collection_surface": "Not applicable",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "Not applicable",
+      "detail_section": "Not applicable",
+      "capability_surface": "Quality/tooling",
+      "route_contract": "Not applicable",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Not applicable",
+      "search_local_remote_contract": "Not applicable",
+      "responsive_disposition": "Not applicable",
+      "accessibility_contract": "Not applicable",
+      "keyboard_contract": "Not applicable",
+      "state_continuity_contract": "Stable advisory findings and prior run evidence remain bound to exact snapshot/source identities and survive interruption, partial later audits and mutable upstream movement until new evidence resolves them.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Not applicable to repository governance",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": null,
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "Not applicable",
+      "avatar_contract": "Not applicable",
+      "content_copy_keys": [],
+      "motion_contract": "Not applicable",
+      "reduced_motion_contract": "Not applicable",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "high",
+      "requirement_ids": [
+        "TDRP-R9-REPOSITORY-DEPENDENCY-ADVISORY-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-DEPENDENCY-EXACT-SNAPSHOT-001",
+        "ORA-TDRP-DEPENDENCY-SECURITY-APPLICABILITY-001",
+        "ORA-TDRP-DEPENDENCY-RELEASE-TRUST-001",
+        "ORA-TDRP-DEPENDENCY-STABLE-FINDINGS-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-DEPENDENCY-FRESH-AUTHORITY-001",
+        "INV-TDRP-DEPENDENCY-PARTIAL-FAIL-CLOSED-001",
+        "INV-TDRP-DEPENDENCY-NO-MUTATION-001",
+        "INV-TDRP-DEPENDENCY-NO-SECOND-OWNER-001"
+      ],
+      "unit_case_ids": [
+        "watch_test.DependencyWatchTests.test_stable_ordering_and_prefixes",
+        "watch_test.DependencyWatchTests.test_fetches_remote_without_touching_working_tree",
+        "watch_test.DependencyWatchTests.test_fetch_failure_never_uses_stale_ref",
+        "watch_test.DependencyWatchTests.test_missing_required_manifest_fails",
+        "watch_test.DependencyWatchTests.test_offline_snapshot_is_marked_unverified",
+        "watch_test.DependencyWatchTests.test_linked_worktree_uses_common_report_storage"
+      ],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-DEPENDENCY-SNAPSHOT-COVERAGE-001",
+        "CONTRACT-TDRP-DEPENDENCY-RELEASE-TRUST-001",
+        "CONTRACT-TDRP-DEPENDENCY-SECURITY-FORK-001",
+        "CONTRACT-TDRP-DEPENDENCY-FINDING-LIFECYCLE-001"
+      ],
+      "integration_case_ids": [
+        "INT-TDRP-DEPENDENCY-ADVISORY-OWNER-001"
+      ],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "fault_recovery_case_ids": [
+        "FAULT-TDRP-DEPENDENCY-PARTIAL-RECOVERY-001"
+      ],
+      "performance_case_ids": [],
+      "security_case_ids": [
+        "SEC-TDRP-DEPENDENCY-ADVISORY-TRUST-001"
+      ],
+      "soak_case_ids": [],
+      "exploratory_charter_ids": [
+        "EXP-TDRP-DEPENDENCY-ADVISORY-COVERAGE-001"
+      ],
+      "regression_ids": [],
+      "release_gate_ids": [
+        "G-EVIDENCE",
+        "G-INVENTORY",
+        "G-RELEASE"
+      ],
+      "test_fixture_ids": [
+        "repository-dependency-exact-snapshot-contract",
+        "repository-dependency-security-fork-contract",
+        "repository-dependency-release-trust-contract",
+        "repository-dependency-finding-lifecycle-contract"
+      ],
+      "test_environment_ids": [
+        "GitHub Actions hosted runners"
+      ],
+      "coverage_matrix_status": "pending",
+      "flake_status": "stable",
+      "release_gate_status": "pending",
+      "acceptance_reviewer": null,
+      "reviewer": null,
+      "license_and_provenance": "Behavioral repository dependency-advisory contract read from telegramdesktop/tdesktop fixed-U authority; no upstream Python implementation copied into Fabushi shipping runtime. Fixed-U source identity: telegramdesktop/tdesktop@f985723b552b30fe1c17d377d57f44e61a15a8c4:.agents/skills/dependency-watch/SKILL.md@482b3a8d0c939d4bb7bd32ab146e0cc988d29fd8.",
+      "notes": "Task round118/source evidence round149. Complete fixed-U tree reread was truncated=false with 7,194 entries. Exact dependency-watch/SKILL.md (8932 characters / 150 lines) plus OpenAI adapter, fork/release-trust references, helper and helper tests were read for direct semantics. Existing-owner-first extends source-neutral repository quality/test-evidence governance; the shipping Electron updater is explicitly rejected. Exactly one independent source entry closes: unknown 16160->16159, unread 16133->16132, responsibilities 133->134. Adjacent dependency-watch blobs remain independent inventory entries. Contracts authored, not run; accepted=false.",
+      "test_execution_evidence": []
     }
   ],
   "rebaseline_candidate": {
