@@ -72,6 +72,15 @@ root (`openclaw`). This proves fixed-tree manifest presence only; importer
 dependency edges and package archive/integrity provenance remain to be joined
 before closure can be accepted.
 
+The remaining `109` no-fixed-tree-package-manifest frontier entries were
+classified without inventing package ownership: `62` are package-root
+candidates, `45` are package-subpath/export candidates, and `2` are the
+bounded lexical `+`/`:` candidates emitted by the import recognizer. The
+package-root and subpath classes are external/package-export frontiers rather
+than evidence that a fixed-tree manifest should exist; their published
+manifest, exports, archive, license, and recursive dependency provenance remain
+unresolved.
+
 The corrected lockfile instrument now emits these classifications directly:
 in the workspace fragment, all `15` unmatched named roots are fixed-tree
 workspace manifests and the only `2` non-workspace unmatched roots are the
