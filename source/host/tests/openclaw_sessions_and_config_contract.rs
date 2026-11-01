@@ -310,6 +310,8 @@ fn test_sessions_patch_requires_authenticated_identity_revision_and_terminal_sta
         .expect("shipping sessions.patch function boundary exists");
     assert!(sessions_patch.contains("context.authenticated"));
     assert!(sessions_patch.contains("sessions.patch requires expectedSessionId"));
+    assert!(sessions_patch.contains("expected_session_id != route.agent_id.as_str()"));
+    assert!(sessions_patch.contains("SESSION_LIFECYCLE_CHANGED"));
     assert!(sessions_patch.contains("sessions.patch requires expectedLifecycleRevision"));
     assert!(sessions_patch.contains("canonical main sessions"));
     assert!(sessions_patch.contains("running_subagent_records_for_parent(&route.agent_id)"));
