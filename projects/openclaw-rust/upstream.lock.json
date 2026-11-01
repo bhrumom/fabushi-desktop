@@ -25,17 +25,17 @@
   "live_candidate": {
     "repository": "openclaw/openclaw",
     "ref": "refs/heads/main",
-    "commit": "1440bb1771372334bea23d7642bb52deb7db1845",
-    "tree": "90c8aab39972da11cfad220361781d49e1bc6700",
-    "observed_at": "2026-10-31T23:18:17Z",
+    "commit": "02b28c9d0b5ae329b07a1e758c9cfca8f1798bca",
+    "tree": "76940ff14f9d37a1729a6b0a2d8e466026d4a554",
+    "observed_at": "2026-11-01T01:18:36Z",
     "discovery_source": "GitHub commit/tree API",
     "recursive_tree_truncated": false,
-    "recursive_tree_entries": 64372,
-    "recursive_blob_entries": 62128,
+    "recursive_tree_entries": 64445,
+    "recursive_blob_entries": 62202,
     "recursive_directory_entries": 2242,
     "root_inputs": {
       "package.json": "6989c0618742d3c2b93cc336cbe1d9c3c4f0a657",
-      "pnpm-lock.yaml": "83b4975eb96942ec007a2eb9847ccfe98d380bda",
+      "pnpm-lock.yaml": "ba24cee97daeeb709109eb7d2b6a9efdfac0f310",
       "pnpm-workspace.yaml": "32ce4d83de4aac6a1e3665baba09a3aa9582960c",
       ".gitattributes": "c6118b226a4a760f7861b6b7b1e7dccd943384e4",
       "LICENSE": "ed064819ab537575d0cad902f7e5af4a3488b1d0",
@@ -50,12 +50,12 @@
     "behind_by": null,
     "compare_files_returned": null,
     "compare_file_counts_are_not_complete": true,
-    "decision": "live-main-drifted-to-af300f44; read-only exact commit/tree and recursive tree revalidated at 2026-10-31T13:03:16Z; recursive tree is 64,102 entries with the same root dependency/license identities, while the commit changes UI settings render paths; require fresh source reads before reuse and retain discovery-only status until Actions inventory and dependency closure"
+    "decision": "live-main-drifted-to-02b28c9d; read-only exact commit/tree and recursive tree revalidated at 2026-11-01T01:18:36Z; recursive tree is 64,445 entries (62,202 blobs, 2,243 directories, 0 gitlinks), with the same package/workspace/license/notice root identities except the lock blob; commit message is perf(ui): reduce shared agent selector setup and focus work (#189843). Require fresh source reads before reuse and retain discovery-only status until exact-head Actions inventory and dependency closure"
   },
   "root_inputs": {
     "AGENTS.md": "6eedd536b6f5145d5d158a48415a8c0e1cd8db7e",
     "package.json": "6989c0618742d3c2b93cc336cbe1d9c3c4f0a657",
-    "pnpm-lock.yaml": "83b4975eb96942ec007a2eb9847ccfe98d380bda",
+    "pnpm-lock.yaml": "ba24cee97daeeb709109eb7d2b6a9efdfac0f310",
     "pnpm-workspace.yaml": "32ce4d83de4aac6a1e3665baba09a3aa9582960c",
     ".gitattributes": "c6118b226a4a760f7861b6b7b1e7dccd943384e4",
     "LICENSE": "ed064819ab537575d0cad902f7e5af4a3488b1d0",

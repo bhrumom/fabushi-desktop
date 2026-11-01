@@ -484,7 +484,7 @@ pub fn build_compaction_details_with_quality(
     if let Some(previous) = plan.previous_details.as_ref().and_then(Value::as_object) {
         add_string_array(&mut read, previous.get("readFiles"));
         add_string_array(&mut edited, previous.get("modifiedFiles"));
-        quality_degraded = previous
+        quality_degraded |= previous
             .get("qualityDegraded")
             .and_then(Value::as_bool)
             .unwrap_or(false);
@@ -891,6 +891,25 @@ mod tests {
             turn_prefix_entries: Vec::new(),
             previous_summary: None,
             previous_details: None,
+            tokens_before: 10,
+            summary_token_budget: 10,
+            latest_user_request: None,
+            is_split_turn: false,
+        };
+        assert_eq!(
+            build_compaction_details_with_quality(&plan, true),
+            Some(json!({"readFiles":[],"modifiedFiles":[],"qualityDegraded":true}))
+        );
+    }
+
+    #[test]
+    fn degraded_fallback_remains_true_when_previous_details_were_clean() {
+        let plan = CompactionPlan {
+            first_kept_entry_id: "keep".into(),
+            entries_to_summarize: vec![json!({"kind":"message","role":"user","content":"old"})],
+            turn_prefix_entries: Vec::new(),
+            previous_summary: Some("prior".into()),
+            previous_details: Some(json!({"readFiles":[],"modifiedFiles":[]})),
             tokens_before: 10,
             summary_token_budget: 10,
             latest_user_request: None,
