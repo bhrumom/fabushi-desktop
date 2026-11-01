@@ -408,6 +408,18 @@ fn owner_metadata_memory_writes_reject_deletion_fence_at_transaction_edge() {
             .expect("fenced transcript append"),
         0
     );
+    assert!(owner
+        .update_transcript_entry(
+            "checkpoint-user",
+            &serde_json::json!({
+                "id": "checkpoint-user",
+                "kind": "message",
+                "role": "user",
+                "content": "rejected update",
+            }),
+        )
+        .expect("fenced transcript update")
+        .is_none());
     assert_eq!(
         owner
             .get_metadata("lastActivityAt")

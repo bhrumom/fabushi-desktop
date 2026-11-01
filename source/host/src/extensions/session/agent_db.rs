@@ -2701,20 +2701,36 @@ impl SandAgentDb {
         next: &serde_json::Value,
     ) -> Result<Option<serde_json::Value>, AgentDbProjectionError> {
         let updated = self.run_write_value("updateTranscriptEntry", |db| {
-            let present = db
-                .query_row(GET_TRANSCRIPT_ENTRY_SQL, params![entry_id], |row| {
-                    row.get::<_, String>(0)
-                })
-                .optional()?
-                .is_some();
-            if !present {
-                return Ok((None, false));
+            db.execute_batch("BEGIN IMMEDIATE")?;
+            let result = (|| -> Result<(Option<serde_json::Value>, bool), rusqlite::Error> {
+                if !session_work_write_is_admitted(db)? {
+                    return Ok((None, false));
+                }
+                let present = db
+                    .query_row(GET_TRANSCRIPT_ENTRY_SQL, params![entry_id], |row| {
+                        row.get::<_, String>(0)
+                    })
+                    .optional()?
+                    .is_some();
+                if !present {
+                    return Ok((None, false));
+                }
+                let changed = db.execute(
+                    UPDATE_TRANSCRIPT_ENTRY_SQL,
+                    params![next.to_string(), entry_id],
+                )? > 0;
+                Ok((changed.then(|| next.clone()), changed))
+            })();
+            match result {
+                Ok(outcome) => {
+                    db.execute_batch("COMMIT")?;
+                    Ok(outcome)
+                }
+                Err(error) => {
+                    let _ = db.execute_batch("ROLLBACK");
+                    Err(error)
+                }
             }
-            let changed = db.execute(
-                UPDATE_TRANSCRIPT_ENTRY_SQL,
-                params![next.to_string(), entry_id],
-            )? > 0;
-            Ok((changed.then(|| next.clone()), changed))
         })?;
         if let Some(entry) = updated.as_ref() {
             publish_entries_upserted(&self.db_path, vec![entry.clone()]);
@@ -4383,20 +4399,10 @@ pub fn update_persisted_transcript_entry(
     entry_id: &str,
     next: &serde_json::Value,
 ) -> Result<Option<serde_json::Value>, AgentDbProjectionError> {
-    if read_persisted_transcript_entry(db_path, busy_timeout_ms, entry_id)?.is_none() {
-        return Ok(None);
-    }
-    let db = open_projection_db(db_path, busy_timeout_ms)?;
-    let changed = db.execute(
-        UPDATE_TRANSCRIPT_ENTRY_SQL,
-        params![next.to_string(), entry_id],
-    )? > 0;
-    if !changed {
-        return Ok(None);
-    }
-    bump_db_write_generation(db_path);
-    publish_entries_upserted(db_path, vec![next.clone()]);
-    Ok(Some(next.clone()))
+    let mut options = SandAgentDbOptions::default();
+    options.recovery.busy_timeout_ms = busy_timeout_ms;
+    let owner = SandAgentDb::open_with_options_and_seed(db_path, options, false)?;
+    owner.update_transcript_entry(entry_id, next)
 }
 
 pub fn update_persisted_transcript_entry_if_session_admitted(

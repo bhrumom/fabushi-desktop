@@ -240,6 +240,8 @@ pre-admission setup path.
 Transcript backfill maintenance now also delegates to the same owner append
 transaction, so recovery cannot append entries while deletion custody is
 active.
+Pending-card maintenance fallback updates use the same owner update
+transaction and are likewise rejected during deletion custody.
 
 The owner-local admission CAS now preserves the current `deletion_pending`
 value as part of its compare predicate. Ordinary work/review/media mutations

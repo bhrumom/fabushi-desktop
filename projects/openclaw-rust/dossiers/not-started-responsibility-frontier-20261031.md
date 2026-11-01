@@ -263,6 +263,8 @@ the admitted-session deletion window.
 Transcript backfill likewise delegates to the owner append transaction and is
 fenced during deletion custody; hidden-entry repair/delete remains a separate
 cleanup contract.
+Pending-card fallback updates now reuse the owner update transaction and are
+fenced by the same deletion custody boundary.
 
 ### 2026-11-01 background-result consumer recheck
 
