@@ -142,9 +142,9 @@ out of scope under the ADR.
 
 ## 2026-11-01 exact-head evidence refresh
 
-The preceding negative producer audit was revalidated against commit
-`e4117e2bc0a6ce2e12f0b2641e0d45bf30e94837`, tree
-`6a6c6f38cbbd453725a5e7f7814449dc0908462b`. The gateway dispatch at
+The preceding negative producer audit and catalog-owner guard were revalidated
+against commit `17f175f41`, tree
+`dc60c6eaa0b6c648af65adb00412cfb9365ceb5b`. The gateway dispatch at
 `source/host/app/src/main.rs:3647-3658` exposes session listing, creation,
 deletion, chat send/abort, and an authenticated-context-only `sessions.patch`,
 but no model-selection mutation. The `sessions.patch` implementation at

@@ -8,8 +8,8 @@ Responsibilities: `OCRM-RESP-MODEL-PICKER-001`, `OCRM-RESP-SESSION-MODEL-OVERRID
 ## Evidence subject
 
 This boundary was revalidated against the current chat branch at commit
-`e4117e2bc0a6ce2e12f0b2641e0d45bf30e94837`, tree
-`6a6c6f38cbbd453725a5e7f7814449dc0908462b`. The fixed OpenClaw implementation
+`17f175f41`, tree
+`dc60c6eaa0b6c648af65adb00412cfb9365ceb5b`. The fixed OpenClaw implementation
 authority remains commit `ad8d12f126d29b0db204187adf5092db80294e70`, tree
 `04ccce62f1d74dc8e0c88290ae8ded027b7b0f16`; moving discovery candidates are
 not substituted for it. This provenance refresh does not promote wiring,
