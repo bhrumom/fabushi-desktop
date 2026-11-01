@@ -1187,3 +1187,57 @@ Security/provenance cases, not run:
 - `SEC-TDRP-CHANGELOG-WORKFLOW-NO-SOURCE-PUBLISH-AUTHORITY-001`
 
 Stage-B oracles must bind exact workflow/helper/input/action SHAs, exact resolved Python and runner identity, actual job token/environment policy, artifact id/name/digest/content manifest, deployment id/status/page URL and publication-scope review. A cancelled or partial deployment, mutable-tag observation, generated page, or source Pages success is not reusable target acceptance. `validation_status=not-run`; `accepted=false`.
+
+
+### Repository copyright-year updater workflow qualification
+
+`TDRP-R9-REPOSITORY-COPYRIGHT-YEAR-UPDATER-WORKFLOW-001` qualifies fixed-U `.github/workflows/copyright_year_updater.yml@7ddb3d0403a77812df954d8bb2f480672831a082` as repository source-maintenance provenance. Existing target owners are root source-maintenance/process governance, repository security/provenance governance, this shared quality/evidence owner, and final release/legal review where applicable. No target updater workflow, product runtime, second legal/version truth, or platform-core service is introduced. Stage A authors the following cases and executes none.
+
+Authored contract cases, not run:
+- `CONTRACT-TDRP-COPYRIGHT-YEAR-WORKFLOW-TRIGGER-001` — only exact repository_dispatch type and annual 03:00 UTC January-1 schedule are admitted.
+- `CONTRACT-TDRP-COPYRIGHT-YEAR-WORKFLOW-DISPATCH-CALLER-001` — fixed-U sibling workflows contain no direct dispatch/license-year caller; external dispatch identity remains host evidence.
+- `CONTRACT-TDRP-COPYRIGHT-YEAR-WORKFLOW-PERMISSIONS-001` — no explicit permissions block exists; effective github.token scopes must be captured later.
+- `CONTRACT-TDRP-COPYRIGHT-YEAR-WORKFLOW-RUNNER-001` — single ubuntu-slim job has no environment/concurrency/timeout/retry/checkout declaration.
+- `CONTRACT-TDRP-COPYRIGHT-YEAR-WORKFLOW-ACTION-LINEAGE-001` — mutable action master written ref is separated from observed commit/action/index blob identities.
+- `CONTRACT-TDRP-COPYRIGHT-YEAR-WORKFLOW-RUNTIME-DEPS-001` — npm init plus unversioned runtime package installs remain mutable acquisition evidence.
+- `CONTRACT-TDRP-COPYRIGHT-YEAR-WORKFLOW-TOKEN-DELIVERY-001` — github.token delivery through Node argv and token-authenticated Git URL is an explicit credential boundary.
+- `CONTRACT-TDRP-COPYRIGHT-YEAR-WORKFLOW-YEAR-DETECTION-001` — year is local-process getFullYear and previous year is current minus one.
+- `CONTRACT-TDRP-COPYRIGHT-YEAR-WORKFLOW-MATCH-REPLACE-001` — case-insensitive phrase presence gates a single unanchored first numeric-range replacement per text file.
+- `CONTRACT-TDRP-COPYRIGHT-YEAR-WORKFLOW-FILE-SCAN-001` — scan recursively covers non-.git working-tree paths and skips binary files; fixed-U has no tracked symlink.
+- `CONTRACT-TDRP-COPYRIGHT-YEAR-WORKFLOW-GITLINK-SCOPE-001` — 36 fixed-U gitlinks exist but license-year clone does not recurse submodules, so gitlink contents are outside scan payload.
+- `CONTRACT-TDRP-COPYRIGHT-YEAR-WORKFLOW-NOOP-001` — zero modified files is a successful source no-op, not target legal/release acceptance.
+- `CONTRACT-TDRP-COPYRIGHT-YEAR-WORKFLOW-BRANCH-001` — branch copyright_to_<year> is based on the runtime-cloned default branch and existing branch is rejected.
+- `CONTRACT-TDRP-COPYRIGHT-YEAR-WORKFLOW-COMMIT-PUSH-001` — all changes are staged, committed with deterministic message and pushed through token-authenticated origin.
+- `CONTRACT-TDRP-COPYRIGHT-YEAR-WORKFLOW-PR-PUBLICATION-001` — PR publication uses copyright branch head and cloned current branch base after branch push.
+- `CONTRACT-TDRP-COPYRIGHT-YEAR-WORKFLOW-PR-ERROR-BOUNDARY-001` — PR list/create errors are logged and swallowed, preserving possible branch-without-PR partial success.
+- `CONTRACT-TDRP-COPYRIGHT-YEAR-WORKFLOW-CONSUMERS-001` — scheduler/external dispatch, external Action, Git clone/files, branch/PR APIs and maintainers are the direct process chain.
+- `CONTRACT-TDRP-COPYRIGHT-YEAR-WORKFLOW-NO-TARGET-COPY-001` — Fabushi absorbs guarantees into existing repository governance rather than copying Telegram automation.
+
+Integration, not run:
+- `INT-TDRP-COPYRIGHT-YEAR-WORKFLOW-REPOSITORY-SOURCE-MAINTENANCE-001` — exact source/action/runtime-acquisition/mutation/branch/PR evidence composes through existing Fabushi repository source-maintenance, provenance/security and release/legal review without creating a second automation authority.
+
+Fault/recovery cases, not run:
+- `FAULT-TDRP-COPYRIGHT-YEAR-WORKFLOW-DISPATCH-TYPE-001`
+- `FAULT-TDRP-COPYRIGHT-YEAR-WORKFLOW-PERMISSION-001`
+- `FAULT-TDRP-COPYRIGHT-YEAR-WORKFLOW-MUTABLE-MASTER-001`
+- `FAULT-TDRP-COPYRIGHT-YEAR-WORKFLOW-NPM-ACQUISITION-001`
+- `FAULT-TDRP-COPYRIGHT-YEAR-WORKFLOW-YEAR-TIMEZONE-001`
+- `FAULT-TDRP-COPYRIGHT-YEAR-WORKFLOW-WRONG-FIRST-RANGE-001`
+- `FAULT-TDRP-COPYRIGHT-YEAR-WORKFLOW-NO-MODIFIED-FILES-001`
+- `FAULT-TDRP-COPYRIGHT-YEAR-WORKFLOW-BRANCH-EXISTS-001`
+- `FAULT-TDRP-COPYRIGHT-YEAR-WORKFLOW-COMMIT-PUSH-001`
+- `FAULT-TDRP-COPYRIGHT-YEAR-WORKFLOW-PR-SWALLOWED-001`
+
+Security/provenance cases, not run:
+- `SEC-TDRP-COPYRIGHT-YEAR-WORKFLOW-IMPLICIT-TOKEN-SCOPE-001`
+- `SEC-TDRP-COPYRIGHT-YEAR-WORKFLOW-MUTABLE-ACTION-MASTER-001`
+- `SEC-TDRP-COPYRIGHT-YEAR-WORKFLOW-UNPINNED-NPM-001`
+- `SEC-TDRP-COPYRIGHT-YEAR-WORKFLOW-TOKEN-ARGV-REMOTE-001`
+- `SEC-TDRP-COPYRIGHT-YEAR-WORKFLOW-BROAD-TEXT-SCAN-001`
+- `SEC-TDRP-COPYRIGHT-YEAR-WORKFLOW-BRANCH-PR-WRITE-001`
+- `SEC-TDRP-COPYRIGHT-YEAR-WORKFLOW-NO-SOURCE-MAINTENANCE-AUTHORITY-001`
+- `SEC-TDRP-COPYRIGHT-YEAR-WORKFLOW-NO-STAGE-A-EXECUTION-001`
+
+Stage-B oracles are `ORA-TDRP-COPYRIGHT-YEAR-WORKFLOW-EXACT-SOURCE-001`, `ORA-TDRP-COPYRIGHT-YEAR-WORKFLOW-ACTION-LINEAGE-001`, `ORA-TDRP-COPYRIGHT-YEAR-WORKFLOW-MUTATION-PUBLICATION-001`, and `ORA-TDRP-COPYRIGHT-YEAR-WORKFLOW-FAILURE-BOUNDARY-001`. Invariants are `INV-TDRP-COPYRIGHT-YEAR-WORKFLOW-NO-MUTABLE-MASTER-TRUST-001`, `INV-TDRP-COPYRIGHT-YEAR-WORKFLOW-NO-HOST-PERMISSION-ASSUMPTION-001`, `INV-TDRP-COPYRIGHT-YEAR-WORKFLOW-NO-PARTIAL-PR-SUCCESS-001`, `INV-TDRP-COPYRIGHT-YEAR-WORKFLOW-NO-BROAD-SCAN-AUTHORITY-001`, and `INV-TDRP-COPYRIGHT-YEAR-WORKFLOW-NO-STAGE-A-EXECUTION-001`.
+
+No source/target workflow run, dispatch, Action/npm execution, file mutation, branch/PR mutation, token probe, build, lint, validator, test/E2E, package, release, install or runtime acceptance is executed in Stage A.

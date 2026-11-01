@@ -1091,3 +1091,61 @@ Stage-A cases are authored only and remain `validation_status=not-run`, `accepte
 - `SEC-TDRP-CHANGELOG-WORKFLOW-NO-SOURCE-PUBLISH-AUTHORITY-001`
 
 No workflow dispatch/push, checkout/setup action execution, Python generator execution, artifact upload, Pages OIDC/deployment, build, typecheck, lint, validator, test/E2E, package, signing, release, installation, runtime acceptance, workflow-run/status/check query, or platform-core mutation is performed in Stage A.
+
+
+##### Repository copyright-year updater workflow authority
+
+Fixed-U `.github/workflows/copyright_year_updater.yml@7ddb3d0403a77812df954d8bb2f480672831a082` is upstream repository source-maintenance provenance, not a Fabushi shipping updater, product runtime, legal-acceptance engine, or workflow to copy verbatim. Existing-owner-first responsibility `TDRP-R9-REPOSITORY-COPYRIGHT-YEAR-UPDATER-WORKFLOW-001` stays with current Fabushi root repository source-maintenance/process governance, repository security/provenance governance, shared quality/evidence ownership, and final release/legal review where applicable. No target copyright-year workflow or platform-core delta is introduced.
+
+The exact source is fixed-U recursive-tree index 121 zero-based, mode 100644, 338 ASCII bytes/code points, 16 LF, zero CR and trailing newline. Admission is only exact `repository_dispatch` type `Restart copyright_year_updater workflow.` or schedule `0 3 1 1 *` (03:00 UTC on January 1). There is no explicit `permissions`, environment, concurrency, timeout, retry or checkout declaration. The single `Copyright-year` job runs on mutable `ubuntu-slim` and invokes mutable `desktop-app/action_code_updater@master` with the sole input `type: "license-year"`.
+
+All other fixed-U workflow blobs were checked for this dispatch/type contract: no sibling workflow calls the copyright dispatch or license-year mode. The direct callers are therefore the GitHub scheduler and an external repository-dispatch producer whose authentication/identity is outside this source tree. Sibling master/unused-styles/user-agent updater workflows reuse the Action under other modes only.
+
+Observed external Action lineage on 2026-11-01 is `desktop-app/action_code_updater@master -> 0a8d3ebb437e5c77cf5d066d4a54cc93d34b534a`, with `action.yml@5a9c7dff415a31f18a614119809f2d396b0e47c7` and `index.mjs@322bfa9e3e874299a09c35650611c2cd753cca3f`. The source ref remains mutable. The composite action performs `npm init -y` plus unversioned runtime installs of `simple-git`, `isbinaryfile`, `@actions/core` and `@actions/github`, then passes `github.token` and the type as Node argv. Exact npm package identities, runner image and effective token permissions are later frozen-candidate evidence, never inferred from source inspection.
+
+License-year behavior uses `new Date().getFullYear()` in the Action process local timezone and sets previousYear=currentYear-1. For every recursively discovered non-`.git` path in a token-authenticated clone of the repository, binary files are skipped. A text file is eligible only if its lower-cased content contains exact phrase `copyright (c) 2014-<previousYear>`; mutation then performs one ordinary string replacement of the first exact numeric substring `2014-<previousYear>` anywhere in that file with `2014-<currentYear>`. The replacement is not anchored to the detected copyright phrase and is one occurrence per file. Fixed U has zero tracked symlinks. It has 36 gitlinks, but this license-year clone does not request recursive submodules, so gitlink contents are not part of the scanned working-tree payload.
+
+The Action does not bind the clone to the triggering event SHA. It clones the repository's then-current default branch; current repository metadata reports `dev`, but default-branch identity and HEAD remain runtime host evidence. If no file changes, `No modified files.` is treated as a successful no-op. Otherwise it derives branch `copyright_to_<year>`, records the cloned current branch as PR base, refuses an already-visible same-named branch, sets the origin URL containing the token, configures GitHub Action author identity, creates the local branch, stages `.`, commits `Update copyright year to <year>.`, and pushes the branch. It then lists pull requests and attempts to create one from the copyright branch to the cloned base branch. Pull-request API errors are caught and logged without rethrow, so a pushed branch with no PR can finish the Action without a failing exit; this partial-publication boundary must remain explicit.
+
+Security and recovery fail closed. Mutable Action master, unpinned npm acquisition, mutable runner/default branch/timezone, implicit token permissions, token-bearing argv/remote URL, broad whole-repository text traversal, branch/PR write authority, branch collisions, clone/install/commit/push errors, first-occurrence replacement ambiguity, and swallowed PR API failure all require exact later qualification. Source no-op success is not evidence that every Fabushi copyright notice is current, and Telegram's maintenance automation is not imported as target release or legal authority.
+
+Stage-A cases are authored only and remain `validation_status=not-run`, `accepted=false`:
+- `CONTRACT-TDRP-COPYRIGHT-YEAR-WORKFLOW-TRIGGER-001`
+- `CONTRACT-TDRP-COPYRIGHT-YEAR-WORKFLOW-DISPATCH-CALLER-001`
+- `CONTRACT-TDRP-COPYRIGHT-YEAR-WORKFLOW-PERMISSIONS-001`
+- `CONTRACT-TDRP-COPYRIGHT-YEAR-WORKFLOW-RUNNER-001`
+- `CONTRACT-TDRP-COPYRIGHT-YEAR-WORKFLOW-ACTION-LINEAGE-001`
+- `CONTRACT-TDRP-COPYRIGHT-YEAR-WORKFLOW-RUNTIME-DEPS-001`
+- `CONTRACT-TDRP-COPYRIGHT-YEAR-WORKFLOW-TOKEN-DELIVERY-001`
+- `CONTRACT-TDRP-COPYRIGHT-YEAR-WORKFLOW-YEAR-DETECTION-001`
+- `CONTRACT-TDRP-COPYRIGHT-YEAR-WORKFLOW-MATCH-REPLACE-001`
+- `CONTRACT-TDRP-COPYRIGHT-YEAR-WORKFLOW-FILE-SCAN-001`
+- `CONTRACT-TDRP-COPYRIGHT-YEAR-WORKFLOW-GITLINK-SCOPE-001`
+- `CONTRACT-TDRP-COPYRIGHT-YEAR-WORKFLOW-NOOP-001`
+- `CONTRACT-TDRP-COPYRIGHT-YEAR-WORKFLOW-BRANCH-001`
+- `CONTRACT-TDRP-COPYRIGHT-YEAR-WORKFLOW-COMMIT-PUSH-001`
+- `CONTRACT-TDRP-COPYRIGHT-YEAR-WORKFLOW-PR-PUBLICATION-001`
+- `CONTRACT-TDRP-COPYRIGHT-YEAR-WORKFLOW-PR-ERROR-BOUNDARY-001`
+- `CONTRACT-TDRP-COPYRIGHT-YEAR-WORKFLOW-CONSUMERS-001`
+- `CONTRACT-TDRP-COPYRIGHT-YEAR-WORKFLOW-NO-TARGET-COPY-001`
+- `INT-TDRP-COPYRIGHT-YEAR-WORKFLOW-REPOSITORY-SOURCE-MAINTENANCE-001`
+- `FAULT-TDRP-COPYRIGHT-YEAR-WORKFLOW-DISPATCH-TYPE-001`
+- `FAULT-TDRP-COPYRIGHT-YEAR-WORKFLOW-PERMISSION-001`
+- `FAULT-TDRP-COPYRIGHT-YEAR-WORKFLOW-MUTABLE-MASTER-001`
+- `FAULT-TDRP-COPYRIGHT-YEAR-WORKFLOW-NPM-ACQUISITION-001`
+- `FAULT-TDRP-COPYRIGHT-YEAR-WORKFLOW-YEAR-TIMEZONE-001`
+- `FAULT-TDRP-COPYRIGHT-YEAR-WORKFLOW-WRONG-FIRST-RANGE-001`
+- `FAULT-TDRP-COPYRIGHT-YEAR-WORKFLOW-NO-MODIFIED-FILES-001`
+- `FAULT-TDRP-COPYRIGHT-YEAR-WORKFLOW-BRANCH-EXISTS-001`
+- `FAULT-TDRP-COPYRIGHT-YEAR-WORKFLOW-COMMIT-PUSH-001`
+- `FAULT-TDRP-COPYRIGHT-YEAR-WORKFLOW-PR-SWALLOWED-001`
+- `SEC-TDRP-COPYRIGHT-YEAR-WORKFLOW-IMPLICIT-TOKEN-SCOPE-001`
+- `SEC-TDRP-COPYRIGHT-YEAR-WORKFLOW-MUTABLE-ACTION-MASTER-001`
+- `SEC-TDRP-COPYRIGHT-YEAR-WORKFLOW-UNPINNED-NPM-001`
+- `SEC-TDRP-COPYRIGHT-YEAR-WORKFLOW-TOKEN-ARGV-REMOTE-001`
+- `SEC-TDRP-COPYRIGHT-YEAR-WORKFLOW-BROAD-TEXT-SCAN-001`
+- `SEC-TDRP-COPYRIGHT-YEAR-WORKFLOW-BRANCH-PR-WRITE-001`
+- `SEC-TDRP-COPYRIGHT-YEAR-WORKFLOW-NO-SOURCE-MAINTENANCE-AUTHORITY-001`
+- `SEC-TDRP-COPYRIGHT-YEAR-WORKFLOW-NO-STAGE-A-EXECUTION-001`
+
+No repository dispatch, schedule/workflow execution, third-party Action execution, npm installation, repository clone through the Action, file mutation, branch creation/push, PR creation, permission probe, build, typecheck, lint, validator, test/E2E, package, release, installation, runtime acceptance, workflow-run/status/check query, or platform-core mutation is performed in Stage A.
