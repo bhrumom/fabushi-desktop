@@ -226,14 +226,14 @@ atomicity boundary.
 Owner-local viewed/unread, profile, partner-membership, and profile-snapshot
 clears use the same facade admission fence.
 
-The file-backed agent profile/avatar paths remain pending for the same reason:
-profile updates write `profile.json`, while avatar replacement/removal combines
-conventional-file cleanup or creation with an optional SQLite legacy-pointer
-mutation. The send-acceptance profile seeding producer reaches this path. A
-pre-write admission check is not an atomic cross-filesystem/SQLite commit and
-must not be recorded as closing the deletion race. Closure requires a
-session-owner serialization or an explicit, verified rollback/unknown-outcome
-contract for the complete mutation.
+The file-backed agent profile/avatar paths use a per-agent session-owner
+serialization boundary. Profile updates write `profile.json`, while avatar
+replacement/removal combines conventional-file cleanup or creation with an
+optional SQLite legacy-pointer mutation. The send-acceptance profile seeding
+producer reaches this path; it rechecks admission while holding the same
+boundary that the directory deletion owner holds through cleanup. This closes
+the in-process deletion race, but cross-process crash recovery and external
+memory-store mutation remain separate atomicity gaps.
 
 The owner-local admission CAS preserves `deletion_pending` as a compare
 predicate for ordinary mutations. Clearing deletion custody is a separate

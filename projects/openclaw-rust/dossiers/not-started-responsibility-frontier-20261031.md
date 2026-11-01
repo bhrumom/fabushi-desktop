@@ -273,8 +273,11 @@ Conversation clear also reuses the owner transaction and remains fail-closed
 under deletion custody; its external blob-store ordering remains a separate
 cross-storage gap.
 The shared owner KV write boundary now fences the remaining owner-local KV
-setters; external profile/avatar and memory-store clear paths remain separate
-atomicity gaps.
+setters. Profile/avatar mutation and directory deletion now share a per-agent
+`ProductionSessionWorkers` serialization boundary, and avatar legacy-pointer
+clearing delegates to `SandAgentDb`; this closes the in-process deletion race,
+while cross-process crash recovery and external memory-store clear paths remain
+separate atomicity gaps.
 
 ### 2026-11-01 background-result consumer recheck
 

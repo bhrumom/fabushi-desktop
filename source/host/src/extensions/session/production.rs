@@ -165,6 +165,7 @@ pub struct ProductionSessionWorkers {
     mint_queue: SessionMintQueue,
     db_owners: Mutex<BTreeMap<String, Arc<SandAgentDb>>>,
     agent_store_owners: Mutex<BTreeMap<String, Arc<ProductionAgentStore>>>,
+    profile_mutation_locks: Mutex<BTreeMap<String, Arc<Mutex<()>>>>,
     deleting_agents: Mutex<BTreeSet<String>>,
     roster_extras_cache: RosterExtrasCache,
     user_time_zone_resolver: UserTimeZoneResolver,
@@ -337,6 +338,7 @@ impl ProductionSessionWorkers {
             mint_queue: SessionMintQueue::default(),
             db_owners: Mutex::new(BTreeMap::new()),
             agent_store_owners: Mutex::new(BTreeMap::new()),
+            profile_mutation_locks: Mutex::new(BTreeMap::new()),
             deleting_agents: Mutex::new(BTreeSet::new()),
             roster_extras_cache: RosterExtrasCache::default(),
             user_time_zone_resolver,
@@ -1610,6 +1612,30 @@ impl ProductionSessionWorkers {
             .unwrap_or_default()
     }
 
+    /// Serialize filesystem-backed profile/avatar mutation with the existing
+    /// directory deletion owner. The caller must perform the durable
+    /// admission check while this guard is held.
+    pub fn with_agent_profile_mutation<T, F>(
+        &self,
+        agent_id: &str,
+        operation: F,
+    ) -> Result<T, String>
+    where
+        F: FnOnce() -> Result<T, String>,
+    {
+        let lock = self
+            .profile_mutation_locks
+            .lock()
+            .map_err(|_| "profile mutation lock registry is poisoned".to_string())?
+            .entry(agent_id.to_string())
+            .or_insert_with(|| Arc::new(Mutex::new(())))
+            .clone();
+        let _guard = lock
+            .lock()
+            .map_err(|_| format!("profile mutation lock is poisoned for agent {agent_id}"))?;
+        operation()
+    }
+
     pub fn begin_agent_delete(&self, agent_id: &str) -> Result<(), String> {
         self.roster_extras_cache.remove(agent_id);
         if let Ok(mut deleting) = self.deleting_agents.lock() {
@@ -2681,8 +2707,12 @@ impl ProductionSessionWorkers {
         let agent_dir = db_path
             .parent()
             .ok_or_else(|| "agent database has no parent directory".to_string())?;
-        write_agent_profile_update(agent_dir, update)
-            .map_err(|error| error.to_string())?;
+        self.with_agent_profile_mutation(agent_id, || {
+            self.assert_agent_work_admission(agent_id)?;
+            write_agent_profile_update(agent_dir, update)
+                .map_err(|error| error.to_string())
+                .map(|_| ())
+        })?;
         self.summarize_agent_by_id(agent_id, active_agent_id)
     }
 
@@ -2723,7 +2753,25 @@ impl ProductionSessionWorkers {
         active_agent_id: Option<&str>,
     ) -> Result<Option<AgentSummary>, String> {
         let db_path = self.existing_session_db_path(agent_id)?;
-        mutate_agent_avatar_bytes(&db_path, self.busy_timeout_ms, png_bytes)?;
+        self.with_agent_profile_mutation(agent_id, || {
+            self.assert_agent_work_admission(agent_id)?;
+            let owner = self.open_agent_db_owner(agent_id)?;
+            mutate_agent_avatar_bytes(
+                &db_path,
+                self.busy_timeout_ms,
+                png_bytes,
+                |profile| {
+                    let changed = owner
+                        .set_sand_profile(profile)
+                        .map_err(|error| error.to_string())?;
+                    if changed {
+                        Ok(())
+                    } else {
+                        Err("avatar pointer clear was rejected by the session owner".into())
+                    }
+                },
+            )
+        })?;
         self.summarize_agent_by_id(agent_id, active_agent_id)
     }
 

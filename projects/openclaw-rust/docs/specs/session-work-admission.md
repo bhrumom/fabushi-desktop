@@ -48,6 +48,11 @@ durable state → consumer chain.
   outcome-unknown results are explicit and fail closed.
 - `SWA-07`: Existing `ProductionSessionWorkers`, `SandAgentDb`, transcript
   runtime, and Runner remain the owners; no parallel state owner is introduced.
+- `SWA-08`: Profile and avatar filesystem mutations and the existing agent
+  directory deletion owner share one per-agent session-owner serialization
+  boundary. The mutation must recheck admission while holding that boundary;
+  deletion must hold it through directory cleanup. A facade precheck without
+  this shared boundary is insufficient.
 
 ## Current and target state
 
@@ -123,10 +128,11 @@ also deletes or writes conventional avatar files and, on legacy removal, may
 clear an SQLite avatar pointer. The send-acceptance name seeding path is a real
 producer of the profile update. A facade admission check alone cannot make
 these filesystem and SQLite effects one owner transaction, so this slice does
-not claim their deletion-race closure. They remain pending until the existing
-session owner has a deletion-custody protocol that can either serialize the
-whole mutation or define and verify an explicit rollback/unknown-outcome
-contract.
+not claim their deletion-race closure. The selected closure is a per-agent
+session-owner serialization boundary shared by profile/avatar mutation and
+directory deletion; the boundary must be held across the complete mutation,
+with admission rechecked while held. Cross-process crash recovery and any
+external memory-store mutation remain separate atomicity gaps.
 
 The same fence covers owner-local viewed/unread projections, the persisted
 session profile projection, conversation-partner membership, and profile
@@ -228,7 +234,9 @@ path, as well as the owner-local transient-state clear. A deletion fence
 therefore rejects those metadata mutations at the SQLite write edge; this
 now also covers metadata CAS writes used by transcript/checkpoint owners.
 These remain bounded owner-local corrections and do not close the separate
-checkpoint blob, profile/avatar, or external memory-store atomicity gaps. The
+checkpoint blob or external memory-store atomicity gaps. Profile/avatar
+deletion-race serialization is described below, but cross-process crash
+recovery remains separate. The
 checkpoint transaction now rejects confirmation under the durable fence, while
 the standalone latest-root CAS is fenced as well. The already-materialized
 external blob remains a separate cleanup/recovery responsibility. Session
@@ -250,8 +258,19 @@ Conversation clear now uses the same owner transaction and is rejected during
 deletion custody; the facade's pre-cleared external blob store remains a
 separate cross-storage atomicity gap.
 The shared owner `write_kv` boundary now fences the remaining owner-local KV
-setters at the same SQLite edge; external profile/avatar and memory-store
-clear paths remain separately governed.
+setters at the same SQLite edge; external memory-store clear paths remain
+separately governed.
+
+Profile and avatar filesystem mutations now run through a per-agent
+`ProductionSessionWorkers` serialization boundary. Profile updates and avatar
+replacement/removal recheck the durable admission record while holding that
+boundary, and the existing directory deletion owner holds it through cleanup.
+The avatar legacy-pointer clear is delegated back to the same `SandAgentDb`
+owner rather than opening a second direct SQLite mutation path. The avatar
+mutation snapshots conventional files and restores them when the new file
+write or legacy-pointer clear fails. This closes the in-process deletion race
+and the bounded mutation-error rollback path; cross-process crash recovery
+remains pending.
 
 The owner-local admission CAS now preserves the current `deletion_pending`
 value as part of its compare predicate. Ordinary work/review/media mutations

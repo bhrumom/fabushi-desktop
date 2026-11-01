@@ -38,7 +38,6 @@ use super::session_materialization::MaterializedAgentRecord;
 use super::session_paths::ACTIVE_AGENT_FILENAME;
 use super::session_profile_files::{
     AgentAvatarResponse, AgentProfileUpdate, resolve_profile_name as resolve_profile_name_impl,
-    write_agent_profile_update,
 };
 use super::session_summaries::AgentSummary;
 
@@ -412,9 +411,10 @@ impl SandAgentSessionStore {
         agent_id: &str,
         update: &AgentProfileUpdate,
     ) -> Result<(), String> {
-        write_agent_profile_update(&self.get_agent_dir(agent_id), update)
+        let active = self.read_active_agent_id();
+        self.production
+            .update_agent_profile(agent_id, update, active.as_deref())
             .map(|_| ())
-            .map_err(|error| error.to_string())
     }
 
     pub fn create_session(
@@ -452,7 +452,7 @@ impl SandAgentSessionStore {
 
     pub fn delete_session(&self, agent_id: &str) -> Result<(), String> {
         self.production.begin_agent_delete(agent_id)?;
-        let result = (|| {
+        let result = self.production.with_agent_profile_mutation(agent_id, || {
             let db_path = self.production.session_db_path(agent_id)?;
             let blob_path = conversation_blobs_path(&db_path);
             let _ = self.production.close_agent_store_owner(agent_id, false);
@@ -470,7 +470,7 @@ impl SandAgentSessionStore {
             ]);
             publish_transcript_mutation(&mutation);
             Ok(())
-        })();
+        });
         match result {
             Err(error) => {
                 self.production.clear_agent_delete_fast_path(agent_id);
