@@ -34,6 +34,10 @@ converted into a new turn.
 
 The registry remains process-local. Group/shared-room delivery and sends with
 no admitted session retain their existing owners and compatibility behavior.
+Admitted direct inbound envelopes additionally carry the emitted outbound ID as
+`messageId`; the existing SQLite transcript insert owner fences exact duplicate
+delivery and rejects same-identity/different-payload conflicts. Legacy
+compatibility envelopes without that identity remain explicitly uncorrelated.
 
 ## Rejected alternatives
 

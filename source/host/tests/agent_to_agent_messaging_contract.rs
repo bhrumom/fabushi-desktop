@@ -52,6 +52,7 @@ fn direct_delivery_defers_recipient_transcript_until_execution_admission(){
     assert_eq!(wake.agent_id,beta.id);assert!(wake.priority);assert!(wake.prompt.starts_with("[agent]"));
     let inbound = wake.inbound.as_ref().expect("direct inbound envelope");
     assert_eq!(inbound["replyContext"]["targetId"], a[0]["id"]);
+    assert_eq!(inbound["messageId"], a[0]["id"]);
     assert!(inbound.get("replyToId").is_none());
     assert!(persist_agent_inbound_message(&sessions, &beta.id, inbound).expect("persist inbound"));
     let b=sessions.read_agent_transcript_entries(&beta.id).expect("beta transcript after admission");
@@ -66,6 +67,11 @@ fn direct_delivery_defers_recipient_transcript_until_execution_admission(){
         Some(beta_session_key.as_str())
     );
     assert_eq!(sessions.get_agent_conversation_partner_ids(&beta.id).expect("b partners after admission"),vec![alpha.id.clone()]);
+    assert!(!persist_agent_inbound_message(&sessions, &beta.id, inbound).expect("duplicate inbound is already admitted"));
+    assert_eq!(sessions.read_agent_transcript_entries(&beta.id).expect("deduped beta transcript").len(), 1);
+    let mut conflicting_inbound = inbound.clone();
+    conflicting_inbound["text"] = serde_json::Value::String("tampered".into());
+    assert!(persist_agent_inbound_message(&sessions, &beta.id, &conflicting_inbound).is_err());
     let beta_reply = service
         .send_to_agent_with_session_and_reply(
             &beta.id,

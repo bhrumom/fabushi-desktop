@@ -357,6 +357,7 @@ impl ProductionAgentToAgentMessaging {
             "timestampMs": timestamp_ms,
             "images": image_json,
             "priority": priority,
+            "messageId": outbound_id.clone(),
             "replyContext": {"targetId": outbound_id.clone(), "quote": message},
         });
         let mut inbound = inbound;
@@ -490,13 +491,43 @@ pub fn persist_agent_inbound_message(
         .get("timestampMs")
         .and_then(Value::as_u64)
         .unwrap_or_else(now_ms);
-    let entries = sessions.read_agent_transcript_entries(agent_id)?;
-    let entry_id = next_entry_id(&entries, TranscriptEntryIdKind::UserMessage);
+    let inbound_message_id = inbound
+        .get("messageId")
+        .and_then(Value::as_str)
+        .map(str::trim)
+        .filter(|value| !value.is_empty());
     let reply_to_id = inbound
         .get("replyToId")
         .and_then(Value::as_str)
         .map(str::trim)
         .filter(|value| !value.is_empty());
+    let entries = sessions.read_agent_transcript_entries(agent_id)?;
+    if let Some(message_id) = inbound_message_id {
+        if let Some(existing) = entries.iter().find(|entry| {
+            entry.get("kind").and_then(Value::as_str) == Some("message")
+                && entry
+                    .get("fromAgent")
+                    .and_then(Value::as_object)
+                    .and_then(|from| from.get("id"))
+                    .and_then(Value::as_str)
+                    == Some(from_id)
+                && entry.get("messageId").and_then(Value::as_str) == Some(message_id)
+        }) {
+            let same_payload = existing.get("content").and_then(Value::as_str) == Some(text)
+                && existing.get("replyToId").and_then(Value::as_str) == reply_to_id
+                && existing.get("images") == inbound.get("images")
+                && existing.get("replyContext") == inbound.get("replyContext");
+            if !same_payload {
+                return Err(format!(
+                    "agent inbound message identity conflict for {from_id}:{message_id}"
+                ));
+            }
+            return Ok(false);
+        }
+    }
+    let entry_id = inbound_message_id
+        .map(|message_id| format!("agent-inbound:{from_id}:{message_id}"))
+        .unwrap_or_else(|| next_entry_id(&entries, TranscriptEntryIdKind::UserMessage));
     let mut claimed_turn = None;
     if reply_to_id.is_some() {
         let Some(target_admission) = target_admission.as_ref() else { return Ok(false); };
@@ -526,6 +557,9 @@ pub fn persist_agent_inbound_message(
         "timestampMs": timestamp_ms,
         "fromAgent": {"id": from_id, "name": from_name},
     });
+    if let Some(message_id) = inbound_message_id {
+        entry["messageId"] = Value::String(message_id.to_string());
+    }
     if let Some(images) = inbound.get("images").filter(|value| {
         value.as_array().is_some_and(|images| !images.is_empty())
     }) {
@@ -551,11 +585,20 @@ pub fn persist_agent_inbound_message(
     } else {
         sessions.append_agent_transcript_entries(agent_id, &[entry])
     };
-    if let Err(error) = append_result {
-        if let Some(reply) = claimed_turn.as_ref() {
-            let _ = sessions.pending_conversation_turns().release(agent_id, &reply.id);
+    let inserted = match append_result {
+        Ok(inserted) => inserted,
+        Err(error) => {
+            if let Some(reply) = claimed_turn.as_ref() {
+                let _ = sessions.pending_conversation_turns().release(agent_id, &reply.id);
+            }
+            return Err(error);
         }
-        return Err(error);
+    };
+    if inserted == 0 {
+        if let Some(reply) = claimed_turn.as_ref() {
+            let _ = sessions.pending_conversation_turns().complete(agent_id, &reply.id);
+        }
+        return Ok(false);
     }
     let _ = sessions.add_agent_conversation_partner(agent_id, from_id)?;
     if let Some(reply) = claimed_turn {
