@@ -506,7 +506,12 @@ pub fn save_media_buffer(
         )
     })?;
 
-    let canonical_final = final_path.canonicalize().unwrap_or(final_path);
+    let canonical_final = final_path.canonicalize().map_err(|e| {
+        SaveMediaSourceError::new(
+            SaveMediaSourceErrorCode::PathMismatch,
+            format!("Saved media path identity could not be verified: {e}"),
+        )
+    })?;
 
     Ok(SavedMedia {
         id,
