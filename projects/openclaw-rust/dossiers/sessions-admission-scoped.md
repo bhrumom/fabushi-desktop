@@ -704,3 +704,24 @@ owner contract.
 Owner-local viewed/unread projections, profile projection, partner membership,
 and profile-snapshot clearing now use the same deletion fence. This extends the
 session metadata boundary without introducing another lifecycle owner.
+
+## File-backed profile/avatar boundary — 2026-11-01
+
+The live production owner was rechecked for the remaining agent profile and
+avatar mutation callers. `ProductionSessionWorkers::update_agent_profile`
+writes the session directory's `profile.json`; it is reached by the session
+gateway, transcript lifecycle dispatcher, provider-session management, and
+the first-send acceptance name-seeding path. `set_agent_avatar_bytes` removes
+conventional avatar files, writes the canonical avatar file, and when clearing
+legacy state may also update the SQLite profile avatar pointer.
+
+These are session-owned durable mutations, but they do not share one existing
+SQLite transaction: filesystem effects and the optional SQLite pointer update
+can be partially applied if deletion custody begins or an I/O failure occurs
+between effects. Adding only `assert_agent_work_admission` at the production
+facade would reject some new calls but would not prove atomic deletion-race
+closure, so no implementation status is upgraded and no facade-only patch is
+made in this slice. The durable next step is an owner-controlled serialization
+or an explicit rollback/unknown-outcome contract covering the complete profile
+or avatar mutation, followed by a focused negative oracle. Runtime, package,
+and exact-head acceptance remain pending.

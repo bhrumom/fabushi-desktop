@@ -117,6 +117,17 @@ the same owner fence. Their paired clear paths are intentionally not widened
 here because one production memory-clear caller mutates the external memory
 store before clearing the SQLite snapshot and needs a separate atomic contract.
 
+The file-backed agent profile and avatar mutations remain a separate atomicity
+boundary. Profile updates write `profile.json`; avatar replacement or removal
+also deletes or writes conventional avatar files and, on legacy removal, may
+clear an SQLite avatar pointer. The send-acceptance name seeding path is a real
+producer of the profile update. A facade admission check alone cannot make
+these filesystem and SQLite effects one owner transaction, so this slice does
+not claim their deletion-race closure. They remain pending until the existing
+session owner has a deletion-custody protocol that can either serialize the
+whole mutation or define and verify an explicit rollback/unknown-outcome
+contract.
+
 The same fence covers owner-local viewed/unread projections, the persisted
 session profile projection, conversation-partner membership, and profile
 snapshot clearing. These are session metadata mutations, not alternate
