@@ -578,6 +578,20 @@ fn test_archive_owner_rolls_back_when_commit_fails() {
 }
 
 #[test]
+fn test_background_result_owner_rolls_back_when_commit_fails() {
+    let owner_source = include_str!("../src/extensions/session/agent_db.rs");
+    let result_owner = owner_source
+        .split("pub fn commit_session_work_result(")
+        .nth(1)
+        .expect("background result owner exists")
+        .split("pub fn read_session_provider_review(")
+        .next()
+        .expect("background result owner boundary exists");
+    assert!(result_owner.contains("if let Err(error) = db.execute_batch(\"COMMIT\")"));
+    assert!(result_owner.contains("let _ = db.execute_batch(\"ROLLBACK\")"));
+}
+
+#[test]
 fn test_session_admission_creation_rechecks_create_race_identity() {
     let owner_source = include_str!("../src/extensions/session/production.rs");
     let ensure = owner_source

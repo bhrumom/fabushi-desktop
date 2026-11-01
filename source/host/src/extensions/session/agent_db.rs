@@ -1332,7 +1332,10 @@ impl SandAgentDb {
                 Ok(SessionWorkResultCommitOutcome::RejectedStale)
             }
             Ok(outcome) => {
-                db.execute_batch("COMMIT")?;
+                if let Err(error) = db.execute_batch("COMMIT") {
+                    let _ = db.execute_batch("ROLLBACK");
+                    return Err(error.into());
+                }
                 if let SessionWorkResultCommitOutcome::Committed(receipt) = &outcome {
                     let entry_id = format!("background-result:{}", receipt.idempotency_key);
                     let entry = db
