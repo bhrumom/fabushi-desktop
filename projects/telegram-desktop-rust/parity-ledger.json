@@ -6,10 +6,10 @@
   "target_commit": "23d73b32e301408f9c8aed151cb1f9e442516e13",
   "coverage": {
     "source_entries_total": 16202,
-    "unknown": 16121,
-    "unread": 16094,
+    "unknown": 16120,
+    "unread": 16093,
     "omitted": 0,
-    "responsibilities_total": 157,
+    "responsibilities_total": 158,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -41773,6 +41773,273 @@
       "accepted": false,
       "source_paths": [
         ".github/ISSUE_TEMPLATE/config.yml@1b864704be6a3e3aafdb1e02519bec84886942ce"
+      ]
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+      "source_path": ".github/dependabot.yml",
+      "source_blob_sha": "5ace4600a1f26e6892982f3e2f069ebfab108d87",
+      "source_kind": "repository_dependency_update_configuration",
+      "module_id": "tdesktop.repository-dependabot-github-actions",
+      "responsibility_id": "TDRP-R9-REPOSITORY-DEPENDABOT-GITHUB-ACTIONS-001",
+      "source_symbols": [
+        "version: 2",
+        "package-ecosystem: \"github-actions\"",
+        "directory: \"/\"",
+        "schedule.interval: \"weekly\""
+      ],
+      "capability_ids": [
+        "CAP-REPOSITORY-PROCESS-GOVERNANCE",
+        "CAP-REPOSITORY-QUALITY-GOVERNANCE",
+        "CAP-REPOSITORY-TASK-EVIDENCE"
+      ],
+      "dependency_ids": [
+        ".github/workflows/canary-bot-api.yml@3ef5e601948c8f3256464d0d31816eebf4ba41a9",
+        ".github/workflows/canary.yml@0d460c617c2a3910a0d11ac793d07533ac966947",
+        ".github/workflows/cant-reproduce.yml@8e20e07349b5b43277f5371a4e931066bece4186",
+        ".github/workflows/changelog.yml@445277fe4b44dc9ccef17b7b602016572c08fe7c",
+        ".github/workflows/copyright_year_updater.yml@7ddb3d0403a77812df954d8bb2f480672831a082",
+        ".github/workflows/docker.yml@cba00688d935d50454bfb891fc37e001626cf9a0",
+        ".github/workflows/issue_closer.yml@355405165590712b1826b2f92a8f867c8d568dd9",
+        ".github/workflows/linux.yml@dbedd23593c5ea66ff9b8b880bda6a8bc5a4cc55",
+        ".github/workflows/lock.yml@7904e79591f79a4ea61c0dc194c189f048bf5c67",
+        ".github/workflows/mac.yml@184a94b091d2d7bab19ae67d7f3a5881b18213ba",
+        ".github/workflows/mac_packaged.yml@6e9f0b5bddfc3146bbed0bcd56a465bd584b89fc",
+        ".github/workflows/master_updater.yml@fedc24f8e5d781a0bbdcdf80e24baf3eb2fe199f",
+        ".github/workflows/needs-user-action.yml@55ad7891ce36682accae01d739203aa487876053",
+        ".github/workflows/snap.yml@82f85ae9066a2773512afecb0bcf80875116a8c8",
+        ".github/workflows/stale.yml@0d57eb7dbd9a9f758e1e33d45afbd1aefd212614",
+        ".github/workflows/unused_styles_updater.yml@2c021d1cd09f7ac59b0e0d5ef6be2bf546167274",
+        ".github/workflows/user_agent_updater.yml@1e3dae8182aefc4e4c76df065f547a43a1e50437",
+        ".github/workflows/waiting-for-answer.yml@0cccca6b2d434303da915b12a13e7620cf1b8bc4",
+        ".github/workflows/win.yml@219c42ebf679ca5d93add5cdbd51b0bb6e516b57",
+        ".github/workflows/winget.yml@0ff2d50d8b12b67408d3ad1e06dc8e462b5a9390"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/dependabot-github-actions-complete-read.md",
+      "behavior_contract": "Preserve the fixed-U Dependabot configuration as repository dependency-update provenance: schema version 2 contains exactly one github-actions update entry rooted at / with weekly cadence. Bind its discovery scope to the exact contemporaneous fixed-U workflow action references, while keeping every proposal non-authoritative for adoption, merge, release, deployment, security clearance or compatibility acceptance.",
+      "state_machine": "exact dependabot.yml blob -> GitHub Dependabot configuration discovery -> root-scope GitHub Actions dependency scan -> weekly proposal candidate -> existing repository dependency-advisory / supply-chain owner evaluates identity, provenance, vulnerability applicability, compatibility and trust -> ordinary repository review -> later Stage-B executable validation -> explicit adopt/reject decision; no proposal, build result or version change auto-promotes to accepted",
+      "side_effects": [
+        "Stage-A closure changes only existing Fabushi repository governance/evidence documentation and the unique migration ledger.",
+        "No root .github/dependabot.yml is created in Fabushi and no Dependabot automation is enabled or executed.",
+        "No product updater, second dependency monitor, automatic merge engine, release/deployment service or platform-core runtime is introduced.",
+        "Twenty fixed-U workflow blobs remain source-lineage inputs only; this round does not mutate their action references."
+      ],
+      "failure_cases": [
+        "The schema version, github-actions ecosystem, root directory or weekly cadence is misread or broadened.",
+        "One or more fixed-U workflow blobs in the configured scope is omitted from source-lineage accounting.",
+        "A mutable workflow action branch/tag is treated as immutable provenance.",
+        "A Dependabot proposal or version bump is treated as approved adoption, security clearance, compatibility proof or release readiness.",
+        "Build/test success or absence from one advisory source is treated as sufficient supply-chain safety evidence.",
+        "Telegram's Dependabot configuration is copied into Fabushi despite no approved target configuration owner decision.",
+        "A second dependency updater/product updater/release engine/platform-core service is introduced.",
+        "Stage-A Dependabot execution, dependency update, workflow run, build, test, merge, release or deployment is performed.",
+        "Stage-A authored-only work is promoted to verified or accepted."
+      ],
+      "ui_disposition": "Not applicable to Fabushi product UI; repository-host dependency-update configuration only.",
+      "non_ui_responsibilities": [
+        "Dependabot schema/ecosystem/directory/schedule provenance",
+        "exact fixed-U workflow dependency source-lineage",
+        "immutable-vs-tag-vs-mutable action reference trust distinction",
+        "proposal-vs-adoption authority separation",
+        "supply-chain security/quality review ownership",
+        "failure/recovery through existing repository dependency and review process"
+      ],
+      "platform_delta": "No platform-core production delta.",
+      "implementation_language": "Markdown/JSON repository governance and evidence; no shipping runtime implementation and no Stage-A dependency automation execution.",
+      "target_owner": "Existing Fabushi repository dependency-advisory / supply-chain quality owner + repository process governance + security/quality evidence governance",
+      "existing_owner_candidates": [
+        "Fabushi root repository dependency/source-provenance and development-process authority",
+        "Fabushi repository dependency-advisory / supply-chain quality governance",
+        "Fabushi repository security governance",
+        "Fabushi shared Test Strategy and Test Evidence Contract",
+        "FMEP-001 Stage-A deferred executable validation authority"
+      ],
+      "rejected_owners": [
+        "Telegram-specific Dependabot/product dependency owner",
+        "second dependency monitor or auto-update service",
+        "Fabushi product updater/runtime dependency loader",
+        "automatic merge engine",
+        "release/deployment service",
+        "Agent / Coordinator / Host / Runner product runtime",
+        "platform-core runtime/service",
+        "second security/quality/evidence truth"
+      ],
+      "commands_events": [
+        "GitHub repository Dependabot configuration discovery",
+        "eligible GitHub Actions dependency proposal generation by the repository host",
+        "maintainer dependency-candidate review through existing repository process",
+        "future Stage-B exact-candidate validation before explicit adoption"
+      ],
+      "persistence_contract": "This source persists only repository dependency-update metadata in Git. It creates no product dependency database, credential store, updater state store, release state, customer data store or second evidence system. Proposal/PR state, when the host creates it, remains GitHub repository-host state and is not Fabushi runtime authority.",
+      "concurrency_contract": "Source qualification binds the exact fixed-U dependabot.yml blob and the exact 20 fixed-U workflow blobs in its discovery scope. Target publication binds the live Fabushi checkpoint with expected-SHA CAS; concurrent target movement invalidates stale writes and requires reread/reconciliation rather than force overwrite.",
+      "cancellation_contract": "The source defines cadence, not a Fabushi retry/cancellation protocol. An unsafe, ambiguous, stale or interrupted dependency candidate remains unadopted; later review/validation must restart from fresh exact source/target and candidate identities.",
+      "security_boundary": "Dependabot is a repository-host proposal producer, not a security authority. Mutable action references remain mutable; candidates require existing release identity, vulnerability applicability, fork/copy provenance, trust/regression and approval checks. No proposal, changelog, signed tag, build result or advisory absence independently establishes supply-chain safety.",
+      "network_service_dependencies": [],
+      "service_owner": "Not applicable as a Fabushi service; GitHub Dependabot is the external repository-host consumer and existing Fabushi repository governance owns adoption decisions.",
+      "deployment_evidence": [],
+      "implementation_status": "implemented",
+      "coverage_disposition": "workflow-equivalent",
+      "blockers": [],
+      "production_entrypoints": [
+        "AGENTS.md -> Repository Dependabot source-lineage governance",
+        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md -> Repository Dependabot configuration qualification",
+        "projects/fabushi-communication-platform/quality/evidence-contract.md -> Repository Dependabot configuration evidence"
+      ],
+      "production_evidence": [
+        "spec-first commit:57c433b52df88b76f77d1be4d9fdc9b99636a7af",
+        "dossier:projects/telegram-desktop-rust/dossiers/dependabot-github-actions-complete-read.md",
+        "upstream-source:.github/dependabot.yml@5ace4600a1f26e6892982f3e2f069ebfab108d87",
+        "fixed-U-tree:91f2b083ab2877c0a17d07868eabec362a5cfca6",
+        "fixed-U-workflow-lineage:20 exact .github/workflows blobs"
+      ],
+      "test_evidence": [
+        "CONTRACT-TDRP-DEPENDABOT-SCHEMA-001 authored, not run",
+        "CONTRACT-TDRP-DEPENDABOT-ECOSYSTEM-DIRECTORY-001 authored, not run",
+        "CONTRACT-TDRP-DEPENDABOT-WEEKLY-SCHEDULE-001 authored, not run",
+        "CONTRACT-TDRP-DEPENDABOT-WORKFLOW-SOURCE-LINEAGE-001 authored, not run",
+        "CONTRACT-TDRP-DEPENDABOT-PROPOSAL-NONAUTHORITY-001 authored, not run",
+        "INT-TDRP-DEPENDABOT-DEPENDENCY-OWNER-001 authored, not run",
+        "FAULT-TDRP-DEPENDABOT-MISSING-WORKFLOW-SCOPE-001 authored, not run",
+        "FAULT-TDRP-DEPENDABOT-MUTABLE-REF-TRUST-001 authored, not run",
+        "SEC-TDRP-DEPENDABOT-NO-AUTO-ADOPTION-001 authored, not run",
+        "SEC-TDRP-DEPENDABOT-NO-SECURITY-CLEARANCE-001 authored, not run"
+      ],
+      "target_commit": "57c433b52df88b76f77d1be4d9fdc9b99636a7af",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Fabushi root repository dependency/source-provenance authority + dependency-advisory / supply-chain quality + repository process/security/quality evidence governance",
+      "composition_slot": "Repository dependency update discovery / candidate provenance / security-quality adoption review",
+      "capability_component": "Source-neutral repository GitHub Actions dependency-update provenance contract",
+      "variation_axes": [
+        "schema v2",
+        "github-actions ecosystem",
+        "root directory scope",
+        "weekly cadence",
+        "immutable SHA vs version tag vs mutable branch/tag",
+        "proposal vs explicit adoption"
+      ],
+      "shared_owner_contracts": [
+        "Fabushi root repository development-process/source-provenance instructions",
+        "Fabushi repository dependency-advisory / supply-chain security governance",
+        "Fabushi Test Strategy",
+        "Fabushi Test Evidence Contract",
+        "FMEP-001 Stage-A deferred executable validation"
+      ],
+      "duplicate_root_check": "No Dependabot-specific product owner, second dependency monitor, product updater, auto-merge engine, release/deployment service, platform-core service or second security/quality truth introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Repository-host dependency automation configuration; no product navigation entry",
+      "primary_navigation_target": "Not applicable",
+      "collection_surface": "Not applicable",
+      "creation_flow": "Not applicable to product UI; repository-host proposal generation only",
+      "object_action_scope": "Repository dependency proposal qualification/adoption only",
+      "detail_section": "Not applicable",
+      "capability_surface": "Repository development/dependency governance",
+      "route_contract": "GitHub Dependabot consumes the source configuration. Fabushi adoption continues through existing repository dependency review and later Stage-B validation; no target Dependabot route/configuration is created by this closure.",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Not applicable",
+      "search_local_remote_contract": "Not applicable",
+      "responsive_disposition": "Not applicable",
+      "accessibility_contract": "Repository-host configuration only; no Fabushi product UI claim.",
+      "keyboard_contract": "Repository-host configuration only; no Fabushi product UI claim.",
+      "state_continuity_contract": "Exact source config, exact workflow lineage, exact target checkpoint and any future candidate identity preserve provenance. Any drift invalidates stale evidence; proposal cadence or prior review cannot inherit acceptance.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Not applicable",
+      "semantic_token_usage": "Not applicable",
+      "legacy_token_adapter": "Not applicable",
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "Not applicable",
+      "avatar_contract": "Not applicable",
+      "content_copy_keys": [],
+      "motion_contract": "Not applicable",
+      "reduced_motion_contract": "Not applicable",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "high",
+      "requirement_ids": [
+        "TDRP-R9-REPOSITORY-DEPENDABOT-GITHUB-ACTIONS-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-DEPENDABOT-EXACT-CONFIG-001",
+        "ORA-TDRP-DEPENDABOT-WORKFLOW-LINEAGE-001",
+        "ORA-TDRP-DEPENDABOT-PROPOSAL-NONAUTHORITY-001",
+        "ORA-TDRP-DEPENDABOT-SUPPLY-CHAIN-SECURITY-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-DEPENDABOT-ONE-DEPENDENCY-OWNER-001",
+        "INV-TDRP-DEPENDABOT-NO-AUTO-ADOPTION-001",
+        "INV-TDRP-DEPENDABOT-MUTABLE-REF-NOT-IMMUTABLE-001",
+        "INV-TDRP-DEPENDABOT-NO-STAGE-A-EXECUTION-001"
+      ],
+      "unit_case_ids": [],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-DEPENDABOT-SCHEMA-001",
+        "CONTRACT-TDRP-DEPENDABOT-ECOSYSTEM-DIRECTORY-001",
+        "CONTRACT-TDRP-DEPENDABOT-WEEKLY-SCHEDULE-001",
+        "CONTRACT-TDRP-DEPENDABOT-WORKFLOW-SOURCE-LINEAGE-001",
+        "CONTRACT-TDRP-DEPENDABOT-PROPOSAL-NONAUTHORITY-001"
+      ],
+      "integration_case_ids": [
+        "INT-TDRP-DEPENDABOT-DEPENDENCY-OWNER-001"
+      ],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [],
+      "fault_recovery_case_ids": [
+        "FAULT-TDRP-DEPENDABOT-MISSING-WORKFLOW-SCOPE-001",
+        "FAULT-TDRP-DEPENDABOT-MUTABLE-REF-TRUST-001"
+      ],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "performance_case_ids": [],
+      "soak_case_ids": [],
+      "security_case_ids": [
+        "SEC-TDRP-DEPENDABOT-NO-AUTO-ADOPTION-001",
+        "SEC-TDRP-DEPENDABOT-NO-SECURITY-CLEARANCE-001"
+      ],
+      "regression_ids": [],
+      "exploratory_charter_ids": [],
+      "release_gate_ids": [
+        "G-INVENTORY",
+        "G-TRACEABILITY",
+        "G-EVIDENCE",
+        "G-RELEASE"
+      ],
+      "test_fixture_ids": [
+        "fixed-U-dependabot-v2-github-actions-root-weekly",
+        "fixed-U-20-workflow-action-reference-lineage"
+      ],
+      "test_environment_ids": [
+        "Stage-B exact frozen candidate with authorized GitHub repository dependency-review/security context"
+      ],
+      "coverage_matrix_status": "pending",
+      "flake_status": "not-run",
+      "test_execution_evidence": [],
+      "acceptance_reviewer": null,
+      "release_gate_status": "not-run",
+      "license_and_provenance": "Repository dependency-update behavior was read from telegramdesktop/tdesktop fixed-U .github/dependabot.yml and contemporaneous fixed-U workflow inputs; no Telegram automation/product updater is copied into Fabushi shipping runtime.",
+      "reviewer": null,
+      "notes": "Task round157/source evidence round188. Original requested desktop checkpoint dccdb6f0ce5c83d4ad458a65fa48a3125e71ca67 advanced concurrently to 82dd3b4a1450e9ef4f4bc9fb4118432d58fb1b56 for Stage-A acceleration governance; this round rebound without overwrite and spec-first CAS 57c433b52df88b76f77d1be4d9fdc9b99636a7af authored the Dependabot contracts. Desktop main 9993ca8e107f7e019a8201e5ab74fa54e82159f2; platform-core checkpoint e92b51e23b39dae5719f033fa1f7a20d6579dc8c. Fixed-U tree 91f2b083ab2877c0a17d07868eabec362a5cfca6 complete, 7,194 entries; source index 110 zero-based, mode 100644, 118 Git bytes / 118 code points, 6 LF, zero CR, trailing newline. One source entry closes: unknown 16121->16120, unread 16094->16093; responsibilities 157->158. Next independent fixed-U blob after tree node index 111 is .github/scripts/generate_changelog.py@6cdd12652d31b2a47ed9a8ef906308af59cca3d0 at index 112 zero-based.",
+      "validation_status": "not-run",
+      "accepted": false,
+      "source_paths": [
+        ".github/dependabot.yml@5ace4600a1f26e6892982f3e2f069ebfab108d87"
       ]
     }
   ],
