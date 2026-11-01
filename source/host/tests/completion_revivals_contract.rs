@@ -28,7 +28,8 @@ impl CompletionRevivalRuntimePort for FakeRuntime {
     fn can_execute(&self)->bool{*self.can_execute.lock().unwrap()}
     fn is_agent_deleted(&self,id:&str)->bool{self.deleted.lock().unwrap().contains(id)}
     fn is_agent_gone(&self,id:&str)->bool{self.gone.lock().unwrap().contains(id)}
-    fn clear_pending_wake(&self,a:&str,k:PendingWakeKind,w:&str){self.cleared.lock().unwrap().push((a.into(),k,w.into()));}
+    fn clear_pending_wake(&self,marker: mahayana_host_runtime::extensions::transcript::sand_pending_wake_store::DurablePendingWakeMarker){self.cleared.lock().unwrap().push((marker.agent_id,marker.kind,marker.work_id));}
+    fn clear_pending_wake_by_key(&self,a:&str,k:PendingWakeKind,w:&str){self.cleared.lock().unwrap().push((a.into(),k,w.into()));}
     fn run_background_revival(&self,a:&str,s:&str,p:&str,_:bool,_:&str)->Result<RevivalExecution,String>{
         self.runs.lock().unwrap().push((a.into(),s.into(),p.into()));
         if let Some((entered, release)) = self.block.lock().unwrap().clone() {
@@ -45,10 +46,10 @@ fn quiet()->QuietWakeOrigin{
     QuietWakeOrigin{automation:Some(AutomationQuietOrigin{id:"r1".into(),name:"Daily".into()})}
 }
 fn sub(id:&str)->SubagentCompletion{
-    SubagentCompletion{parent_agent_id:"p".into(),subagent_agent_id:id.into(),title:"Research".into(),subagent_type:"task".into(),status:"success".into(),result:"done".into(),quiet_origin:None}
+    SubagentCompletion{parent_agent_id:"p".into(),subagent_agent_id:id.into(),title:"Research".into(),subagent_type:"task".into(),status:"success".into(),result:"done".into(),quiet_origin:None,pending_wake_marker:None}
 }
 fn shell(id:&str)->ShellCompletion{
-    ShellCompletion{agent_id:"p".into(),shell_id:id.into(),title:"Build".into(),status:"success".into(),detail:Some("ok".into()),output_path:Some("/tmp/out".into()),quiet_origin:None}
+    ShellCompletion{agent_id:"p".into(),shell_id:id.into(),title:"Build".into(),status:"success".into(),detail:Some("ok".into()),output_path:Some("/tmp/out".into()),quiet_origin:None,pending_wake_marker:None}
 }
 
 #[test]

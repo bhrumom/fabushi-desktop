@@ -1814,6 +1814,7 @@ impl PendingWakeRuntimePort for ProductionPendingWakeRuntime {
                 ),
                 output_path: None,
                 quiet_origin: marker.quiet_origin.clone(),
+                pending_wake_marker: Some(marker.clone()),
             });
         Ok(())
     }
@@ -1828,6 +1829,7 @@ impl PendingWakeRuntimePort for ProductionPendingWakeRuntime {
                 status: "error".into(),
                 result: wake.result,
                 quiet_origin: wake.quiet_origin,
+                pending_wake_marker: None,
             });
         Ok(())
     }
@@ -2040,7 +2042,17 @@ impl CompletionRevivalRuntimePort for ProductionCompletionRevivalRuntime {
         self.is_agent_deleted(agent_id)
     }
 
-    fn clear_pending_wake(&self, agent_id: &str, kind: PendingWakeKind, work_id: &str) {
+    fn clear_pending_wake(&self, marker: DurablePendingWakeMarker) {
+        let Some(gateway) = self.gateway() else {
+            return;
+        };
+        if let Some(store) = gateway.transcript_runtime.pending_wake_store() {
+            let _ = store.clear_if_matches(&marker);
+        }
+        gateway.emit_async_tasks_for_agent(&marker.agent_id);
+    }
+
+    fn clear_pending_wake_by_key(&self, agent_id: &str, kind: PendingWakeKind, work_id: &str) {
         let Some(gateway) = self.gateway() else {
             return;
         };
@@ -11553,6 +11565,7 @@ fn start_routed_provider_task(
                                 status: completion.status,
                                 result: completion.result,
                                 quiet_origin: None,
+                                pending_wake_marker: None,
                             },
                         );
                         let cleanup = worker_generated_cleanup_slot
@@ -15451,7 +15464,6 @@ fn main() {
         Arc::downgrade(&completion_revivals);
     let cloud_watch_manager = production_extensions.cloud_agents.service();
     let cloud_watch_pending_store = transcript_runtime.pending_wake_store().cloned();
-    let cloud_watch_settle_pending_store = transcript_runtime.pending_wake_store().cloned();
     let cloud_watch_pending_events = gateway_events.clone();
     let cloud_watch_settled = Arc::clone(&completion_revivals);
     let cloud_watch_async_runtime = Arc::clone(&transcript_runtime);
@@ -15477,7 +15489,7 @@ fn main() {
                     agent_id: pending.parent_agent_id.clone(),
                     kind: PendingWakeKind::CloudAgent,
                     work_id: pending.work_id.clone(),
-                    marked_at_ms: started_at_ms() as f64,
+                    marked_at_ms: pending.marked_at_ms,
                     quiet_origin,
                     title: Some(pending.title.clone()),
                     subagent_type: Some("cursor-agent".into()),
@@ -15505,13 +15517,24 @@ fn main() {
             }) as mahayana_host_runtime::runner::background_work::CloudAgentPendingCallback
         }),
         Some(Arc::new(move |completion| {
-            if let Some(store) = cloud_watch_settle_pending_store.as_ref() {
-                let _ = store.clear_one(
-                    &completion.parent_agent_id,
-                    PendingWakeKind::CloudAgent,
-                    &completion.work_id,
-                );
-            }
+            let quiet_origin = completion
+                .quiet_origin
+                .as_ref()
+                .and_then(coerce_quiet_origin);
+            let pending_wake_marker = DurablePendingWakeMarker {
+                agent_id: completion.parent_agent_id.clone(),
+                kind: PendingWakeKind::CloudAgent,
+                work_id: completion.work_id.clone(),
+                marked_at_ms: completion.marked_at_ms,
+                quiet_origin: quiet_origin.clone(),
+                title: Some(completion.title.clone()),
+                subagent_type: Some("cursor-agent".into()),
+                interrupted_by_recreate: false,
+                delivery_operation_id: None,
+                address_token: None,
+                failure_reason: None,
+                session_key: None,
+            };
             let completion_revivals = Arc::clone(&cloud_watch_settled);
             let thread_name = format!("mahayana-cloud-agent-revival-{}", completion.work_id);
             let _ = thread::Builder::new().name(thread_name).spawn(move || {
@@ -15522,10 +15545,8 @@ fn main() {
                     subagent_type: "cursor-agent".into(),
                     status: completion.status,
                     result: completion.result,
-                    quiet_origin: completion
-                        .quiet_origin
-                        .as_ref()
-                        .and_then(coerce_quiet_origin),
+                    quiet_origin,
+                    pending_wake_marker: Some(pending_wake_marker),
                 });
             });
         })),
@@ -15543,7 +15564,6 @@ fn main() {
     let shell_watch_box = Arc::clone(&forever_box);
     let shell_watch_local_tool_permission = local_tool_permission_extension.controller();
     let shell_watch_pending_store = transcript_runtime.pending_wake_store().cloned();
-    let shell_watch_settle_pending_store = transcript_runtime.pending_wake_store().cloned();
     let shell_watch_pending_events = gateway_events.clone();
     let shell_watch_settled = Arc::clone(&completion_revivals);
     let shell_watch_async_runtime = Arc::clone(&transcript_runtime);
@@ -15594,7 +15614,7 @@ fn main() {
                     agent_id: pending.parent_agent_id.clone(),
                     kind: PendingWakeKind::Shell,
                     work_id: pending.work_id.clone(),
-                    marked_at_ms: started_at_ms() as f64,
+                    marked_at_ms: pending.marked_at_ms,
                     quiet_origin,
                     title: Some(pending.title.clone()),
                     subagent_type: None,
@@ -15622,13 +15642,24 @@ fn main() {
             }) as mahayana_host_runtime::runner::background_work::BackgroundShellPendingCallback
         }),
         Some(Arc::new(move |completion| {
-            if let Some(store) = shell_watch_settle_pending_store.as_ref() {
-                let _ = store.clear_one(
-                    &completion.parent_agent_id,
-                    PendingWakeKind::Shell,
-                    &completion.work_id,
-                );
-            }
+            let quiet_origin = completion
+                .quiet_origin
+                .as_ref()
+                .and_then(coerce_quiet_origin);
+            let pending_wake_marker = DurablePendingWakeMarker {
+                agent_id: completion.parent_agent_id.clone(),
+                kind: PendingWakeKind::Shell,
+                work_id: completion.work_id.clone(),
+                marked_at_ms: completion.marked_at_ms,
+                quiet_origin: quiet_origin.clone(),
+                title: Some(completion.title.clone()),
+                subagent_type: None,
+                interrupted_by_recreate: false,
+                delivery_operation_id: None,
+                address_token: None,
+                failure_reason: None,
+                session_key: None,
+            };
             let completion_revivals = Arc::clone(&shell_watch_settled);
             let thread_name = format!("mahayana-shell-revival-{}", completion.work_id);
             let _ = thread::Builder::new().name(thread_name).spawn(move || {
@@ -15639,10 +15670,8 @@ fn main() {
                     status: completion.status,
                     detail: completion.detail,
                     output_path: completion.output_path,
-                    quiet_origin: completion
-                        .quiet_origin
-                        .as_ref()
-                        .and_then(coerce_quiet_origin),
+                    quiet_origin,
+                    pending_wake_marker: Some(pending_wake_marker),
                 });
             });
         })),

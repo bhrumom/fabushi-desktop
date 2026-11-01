@@ -1,7 +1,9 @@
 use std::collections::{HashMap, HashSet};
 use std::sync::{Arc, Mutex};
 
-use super::sand_pending_wake_store::{PendingWakeKind, QuietWakeOrigin};
+use super::sand_pending_wake_store::{
+    DurablePendingWakeMarker, PendingWakeKind, QuietWakeOrigin,
+};
 
 pub const QUIET_REVIVAL_INSTRUCTION: &str = "Pick the work back up. Everything above came out of your own quiet standing order(s) — the user did not ask to hear about it, so the saved instruction's delivery rule governs. If the outcome is a genuine change, a new actionable result, or a real blocker the user must know about, tell them once with a single useful SendMessage. If it amounts to no change, nothing new, or still waiting, end the turn with no SendMessage at all — no \"still waiting\" or progress notes; if the standing order says to keep watching, just keep the watch going quietly. Keep your status current, and clear it once everything is done and you're idle.";
 
@@ -14,6 +16,7 @@ pub struct SubagentCompletion {
     pub status: String,
     pub result: String,
     pub quiet_origin: Option<QuietWakeOrigin>,
+    pub pending_wake_marker: Option<DurablePendingWakeMarker>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -25,6 +28,7 @@ pub struct ShellCompletion {
     pub detail: Option<String>,
     pub output_path: Option<String>,
     pub quiet_origin: Option<QuietWakeOrigin>,
+    pub pending_wake_marker: Option<DurablePendingWakeMarker>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -51,7 +55,8 @@ pub trait CompletionRevivalRuntimePort: Send + Sync {
     fn can_execute(&self) -> bool;
     fn is_agent_deleted(&self, agent_id: &str) -> bool;
     fn is_agent_gone(&self, agent_id: &str) -> bool;
-    fn clear_pending_wake(&self, agent_id: &str, kind: PendingWakeKind, work_id: &str);
+    fn clear_pending_wake(&self, marker: DurablePendingWakeMarker);
+    fn clear_pending_wake_by_key(&self, agent_id: &str, kind: PendingWakeKind, work_id: &str);
     fn run_background_revival(
         &self,
         agent_id: &str,
@@ -173,15 +178,19 @@ impl CompletionRevivals {
                 break;
             }
             for completion in &completions {
-                self.runtime.clear_pending_wake(
-                    agent_id,
-                    if completion.subagent_type == "cursor-agent" {
-                        PendingWakeKind::CloudAgent
-                    } else {
-                        PendingWakeKind::Subagent
-                    },
-                    &completion.subagent_agent_id,
-                );
+                if let Some(marker) = completion.pending_wake_marker.clone() {
+                    self.runtime.clear_pending_wake(marker);
+                } else {
+                    self.runtime.clear_pending_wake_by_key(
+                        agent_id,
+                        if completion.subagent_type == "cursor-agent" {
+                            PendingWakeKind::CloudAgent
+                        } else {
+                            PendingWakeKind::Subagent
+                        },
+                        &completion.subagent_agent_id,
+                    );
+                }
             }
             let report = self.run_subagent_revival(agent_id, &completions);
             self.runtime.report_revival(RevivalReport {
@@ -279,11 +288,15 @@ impl CompletionRevivals {
                 break;
             }
             for completion in &completions {
-                self.runtime.clear_pending_wake(
-                    agent_id,
-                    PendingWakeKind::Shell,
-                    &completion.shell_id,
-                );
+                if let Some(marker) = completion.pending_wake_marker.clone() {
+                    self.runtime.clear_pending_wake(marker);
+                } else {
+                    self.runtime.clear_pending_wake_by_key(
+                        agent_id,
+                        PendingWakeKind::Shell,
+                        &completion.shell_id,
+                    );
+                }
             }
             let report = self.run_shell_revival(agent_id, &completions);
             self.runtime.report_revival(report);
