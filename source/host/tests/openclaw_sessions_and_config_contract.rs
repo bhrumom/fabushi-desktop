@@ -550,6 +550,23 @@ fn test_cron_candidate_bridge_releases_throttle_on_owner_read_failure() {
     assert!(bridge.contains("throttle.forget_owner(agent_id)"));
 }
 
+#[test]
+fn test_session_admission_creation_rechecks_create_race_identity() {
+    let owner_source = include_str!("../src/extensions/session/production.rs");
+    let ensure = owner_source
+        .split("fn ensure_main_session_work_admission_locked(")
+        .nth(1)
+        .expect("session admission initializer exists")
+        .split("pub fn assert_session_work_admission(")
+        .next()
+        .expect("session admission initializer boundary exists");
+    assert!(ensure.contains("let changed = db"));
+    assert!(ensure.contains("lost its race without a record"));
+    assert!(ensure.contains("malformed after create race"));
+    assert!(ensure.contains("record.session_key != expected_session_key"));
+    assert!(ensure.contains("current.session_key != expected_session_key"));
+}
+
 // ---------------------------------------------------------------------------
 // OCRM-SESSION-O01: Session Key Parsing, Classification & Harness Namespace
 // ---------------------------------------------------------------------------

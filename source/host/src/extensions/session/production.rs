@@ -2145,7 +2145,19 @@ impl ProductionSessionWorkers {
 
     fn ensure_main_session_work_admission_locked(&self, agent_id: &str) -> Result<(), String> {
         let db = self.open_agent_db_owner_locked(agent_id)?;
-        if db.read_session_work_admission().map_err(|error| error.to_string())?.is_some() {
+        let expected_session_key = format!("agent:{agent_id}:main");
+        if let Some(record) = db
+            .read_session_work_admission()
+            .map_err(|error| error.to_string())?
+        {
+            if record.session_id != agent_id
+                || record.session_key != expected_session_key
+                || record.lifecycle_revision.trim().is_empty()
+            {
+                return Err(format!(
+                    "agent {agent_id} session admission identity is malformed"
+                ));
+            }
             return Ok(());
         }
         let lifecycle_revision = db
@@ -2168,9 +2180,28 @@ impl ProductionSessionWorkers {
             provider_review_continuation_run_id: None,
             provider_review: None,
         };
-        let _ = db
+        let changed = db
             .compare_and_set_session_work_admission(None, &record)
             .map_err(|error| error.to_string())?;
+        if changed {
+            return Ok(());
+        }
+        let current = db
+            .read_session_work_admission()
+            .map_err(|error| error.to_string())?
+            .ok_or_else(|| {
+                format!(
+                    "agent {agent_id} session admission creation lost its race without a record"
+                )
+            })?;
+        if current.session_id != agent_id
+            || current.session_key != expected_session_key
+            || current.lifecycle_revision.trim().is_empty()
+        {
+            return Err(format!(
+                "agent {agent_id} session admission identity is malformed after create race"
+            ));
+        }
         Ok(())
     }
 
