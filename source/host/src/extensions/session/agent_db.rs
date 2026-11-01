@@ -1299,6 +1299,11 @@ impl SandAgentDb {
         if self.is_closed() {
             return Ok(false);
         }
+        if key == "agentId"
+            && value.as_str().map(str::trim) != Some(self.agent_dir_name.as_str())
+        {
+            return Ok(false);
+        }
         let Some(raw) = self.read_kv("metadata")? else {
             return Ok(false);
         };

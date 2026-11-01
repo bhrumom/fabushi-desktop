@@ -217,6 +217,12 @@ transaction now perform the same predicate check inside their SQLite
 transactions. A facade admission precheck can no longer be the only fence for
 direct spend-guard state mutation or card creation.
 
+The generic metadata owner also rejects an `agentId` value that does not equal
+the canonical agent-directory identity before entering its CAS transaction.
+The clone-specific pre-admission reseed helper remains the only separate
+identity initialization path; normal metadata updates cannot create a rebound
+owner identity and rely on a later reopen to discover it.
+
 The archive/restore owner now receives and checks both canonical
 `session_key` and `session_id` inside its transaction, so a producer cannot
 pass a valid session id with a different session selector and still mutate
