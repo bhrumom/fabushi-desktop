@@ -359,6 +359,25 @@ impl SandAgentSessionStore {
         )
     }
 
+    pub fn publish_cron_session_run_fences(
+        &self,
+        agent_id: &str,
+        automation_id: &str,
+        run_id: &str,
+        active_controller: bool,
+        pending_outgoing_media: bool,
+        unsettled_subagent: bool,
+    ) -> Result<bool, String> {
+        self.production.publish_cron_session_run_fences(
+            agent_id,
+            automation_id,
+            run_id,
+            active_controller,
+            pending_outgoing_media,
+            unsettled_subagent,
+        )
+    }
+
     pub fn list_cron_session_runs(
         &self,
         agent_id: &str,

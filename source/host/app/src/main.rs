@@ -170,7 +170,7 @@ use mahayana_host_runtime::extensions::transcript::workflow_commands::{
     WorkflowCommandError, WorkflowRunNowPlan,
 };
 use mahayana_host_runtime::extensions::transcript::automation_run_path::{
-    AutomationExecutionResult, FireAutomationOutcome,
+    AutomationExecutionResult, AutomationRunFenceSnapshot, FireAutomationOutcome,
 };
 use mahayana_host_runtime::extensions::transcript::automation_runtime::{
     AutomationCommandError, dispatch_automation_command,
@@ -5944,10 +5944,15 @@ fn run_local_automation_turn(
             let _ = deps
                 .runner_registry
                 .cancel_stream(&stream_id, "automation turn timed out");
-            return Ok(AutomationExecutionResult::Interrupted {
-                detail: "Interrupted before it finished.".into(),
-                quiesced_for_upgrade: deps.runner_registry.is_quiescing_for_upgrade(),
-            });
+            return Ok(attach_automation_run_fences(
+                &deps,
+                agent_id,
+                &stream_id,
+                AutomationExecutionResult::Interrupted {
+                    detail: "Interrupted before it finished.".into(),
+                    quiesced_for_upgrade: deps.runner_registry.is_quiescing_for_upgrade(),
+                },
+            ));
         }
         let wait = deadline
             .saturating_duration_since(now)
@@ -5962,7 +5967,12 @@ fn run_local_automation_turn(
                     {
                         *quiesced_for_upgrade = deps.runner_registry.is_quiescing_for_upgrade();
                     }
-                    return result;
+                    return Ok(attach_automation_run_fences(
+                        &deps,
+                        agent_id,
+                        &stream_id,
+                        result?,
+                    ));
                 }
             }
             Err(mpsc::RecvTimeoutError::Timeout) => continue,
@@ -5971,6 +5981,65 @@ fn run_local_automation_turn(
             }
         }
     }
+}
+
+fn attach_automation_run_fences(
+    deps: &LocalRoutedRunnerDeps,
+    agent_id: &str,
+    stream_id: &str,
+    result: AutomationExecutionResult,
+) -> AutomationExecutionResult {
+    let Some(fences) = read_automation_run_fences(deps, agent_id, stream_id) else {
+        return result;
+    };
+    match result {
+        AutomationExecutionResult::Completed => {
+            AutomationExecutionResult::CompletedWithFences { fences }
+        }
+        AutomationExecutionResult::Interrupted {
+            detail,
+            quiesced_for_upgrade,
+        } => AutomationExecutionResult::InterruptedWithFences {
+            detail,
+            quiesced_for_upgrade,
+            fences,
+        },
+        other => other,
+    }
+}
+
+fn read_automation_run_fences(
+    deps: &LocalRoutedRunnerDeps,
+    agent_id: &str,
+    stream_id: &str,
+) -> Option<AutomationRunFenceSnapshot> {
+    let admission = deps
+        .session_workers
+        .read_session_work_admission(agent_id)
+        .ok()??;
+    if admission
+        .admitted_work_id
+        .as_deref()
+        .is_some_and(|work_id| work_id != stream_id)
+    {
+        return None;
+    }
+    let active_streams = deps.runner_registry.active_stream_ids_for_agent(agent_id);
+    if active_streams.iter().any(|active| active != stream_id) {
+        return None;
+    }
+    let unsettled_subagent = deps
+        .generated_agent_runtime
+        .lock()
+        .ok()?
+        .running_subagent_ids_for_parent(agent_id)
+        .len()
+        > 0;
+    Some(AutomationRunFenceSnapshot {
+        active_controller: active_streams.iter().any(|active| active == stream_id),
+        pending_outgoing_media: admission.admitted_media_work_id.is_some(),
+        unsettled_subagent,
+    })
 }
 
 fn run_local_kickstart_turn(
@@ -6407,7 +6476,8 @@ fn run_local_background_revival_turn_with_context(
                     continue;
                 };
                 match result {
-                    Ok(AutomationExecutionResult::Completed) => {
+                    Ok(AutomationExecutionResult::Completed)
+                    | Ok(AutomationExecutionResult::CompletedWithFences { .. }) => {
                         deps.session_workers
                             .assert_session_work_admission_generation(
                                 agent_id,
@@ -6461,7 +6531,8 @@ fn run_local_background_revival_turn_with_context(
                             sent_message_count,
                         });
                     }
-                    Ok(AutomationExecutionResult::Interrupted { .. }) => {
+                    Ok(AutomationExecutionResult::Interrupted { .. })
+                    | Ok(AutomationExecutionResult::InterruptedWithFences { .. }) => {
                         let _ = deps.session_workers.release_session_work_admission(
                             agent_id,
                             &admitted_lifecycle_revision,

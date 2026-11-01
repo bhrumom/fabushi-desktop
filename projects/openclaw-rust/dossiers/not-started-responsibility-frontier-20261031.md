@@ -128,13 +128,21 @@ unpopulated fence columns into an accidental all-clear.
 Existing agent databases are migrated explicitly when the schema opens; a
 missing marker is added as false and migration errors are not swallowed.
 
-The current Host recheck does not identify a safe fence producer for this
+The pre-slice Host recheck did not identify a safe fence producer for this
 row. `run_local_automation_turn` owns a provider stream and receives the
 existing generated-subagent cleanup slot, but `AutomationRunPath` receives
 only `Completed`/`Interrupted`/`Error` and does not return a row-specific
 media/subagent snapshot keyed by the generated run id. Global runner or
 agent-level state therefore cannot be projected into one cron row; the
 marker remains false until an explicit producer/contract is added.
+
+The bounded D04 snapshot slice now adds that explicit typed contract for the
+Host automation path. At the terminal boundary it reads the admitted media
+projection, active runner streams, and generated-subagent runtime; it publishes
+the snapshot only when the work identity is compatible and no unrelated active
+stream makes attribution ambiguous. Any read/identity uncertainty retains the
+old result and leaves `fence_state_known=false`. This is fence publication
+evidence only, not transcript archival or deletion acceptance.
 
 This is direct producer → owner → durable row evidence for registration only.
 No retention parser, sweep trigger, transcript archive, active media/subagent

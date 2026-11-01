@@ -79,6 +79,12 @@ Schema initialization must migrate an already-created registration table by
 adding this marker with a default of false; migration errors remain explicit
 and non-passing.
 
+The next D04 slice may publish a typed fence snapshot at the existing Host
+automation terminal boundary. It may read only the current admitted media
+state, runner stream registry, and generated-subagent runtime through their
+existing owners; any unavailable or mismatched fact keeps the row unknown.
+Snapshot publication is not transcript archival or deletion authorization.
+
 ## Verification and Definition of Done
 
 - A source-backed architecture decision names the existing owners and all

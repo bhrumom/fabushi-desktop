@@ -34,6 +34,9 @@ retention duration; this projection is not permission to archive or delete.
 Because the current registration producer does not yet own all three fence
 facts, the row must also carry `fence_state_known`; false is an explicit
 non-candidate state, never an implicit all-clear.
+The existing Host automation terminal boundary may publish a typed snapshot
+only when all three reads are owner-backed and identity-compatible; otherwise
+it must leave the row unknown. This does not authorize cleanup.
 
 ## Source evidence and exact subjects
 

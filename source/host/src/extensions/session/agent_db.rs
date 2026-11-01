@@ -1591,6 +1591,59 @@ impl SandAgentDb {
         })
     }
 
+    /// Publish the complete row-specific activity fence before terminal
+    /// settlement. Unknown or stale identities never become known by this
+    /// operation.
+    pub fn publish_cron_session_run_fences(
+        &self,
+        session_key: &str,
+        session_id: &str,
+        lifecycle_revision: &str,
+        active_controller: bool,
+        pending_outgoing_media: bool,
+        unsettled_subagent: bool,
+    ) -> Result<bool, AgentDbProjectionError> {
+        let session_key = session_key.trim();
+        let session_id = session_id.trim();
+        let lifecycle_revision = lifecycle_revision.trim();
+        if session_key.is_empty() || session_id.is_empty() || lifecycle_revision.is_empty() {
+            return Ok(false);
+        }
+        self.run_write("publishCronSessionRunFences", |db| {
+            db.execute_batch("BEGIN IMMEDIATE")?;
+            let result = (|| -> Result<bool, rusqlite::Error> {
+                if !session_work_write_is_admitted(db)? {
+                    return Ok(false);
+                }
+                Ok(db.execute(
+                    "UPDATE cron_session_runs\
+                     SET active_controller = ?1, pending_outgoing_media = ?2,\
+                         unsettled_subagent = ?3, fence_state_known = 1\
+                     WHERE session_key = ?4 AND session_id = ?5\
+                       AND lifecycle_revision = ?6 AND state = 'running'",
+                    params![
+                        active_controller,
+                        pending_outgoing_media,
+                        unsettled_subagent,
+                        session_key,
+                        session_id,
+                        lifecycle_revision
+                    ],
+                )? > 0)
+            })();
+            match result {
+                Ok(changed) => {
+                    db.execute_batch("COMMIT")?;
+                    Ok(changed)
+                }
+                Err(error) => {
+                    let _ = db.execute_batch("ROLLBACK");
+                    Err(error)
+                }
+            }
+        })
+    }
+
     /// Read the per-run projections owned by this agent database. This is
     /// intentionally a projection only; retention policy and deletion remain
     /// outside this method and must use a later guarded lifecycle operation.

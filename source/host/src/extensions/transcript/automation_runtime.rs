@@ -14,8 +14,8 @@ use super::automation_event_fires::{
     AutomationEventFires, DroppedFire, DroppedFireReporter, EventBatchExecutor, EventFireBatch,
 };
 use super::automation_run_path::{
-    AutomationExecutionResult, AutomationRunPath, AutomationRunStore, AutomationRunTrigger,
-    FireAutomationArgs, FireAutomationOutcome,
+    AutomationExecutionResult, AutomationRunFenceSnapshot, AutomationRunPath,
+    AutomationRunStore, AutomationRunTrigger, FireAutomationArgs, FireAutomationOutcome,
 };
 use super::automation_spend_guard_runtime::AutomationSpendGuardRuntime;
 use super::automation_snapshot::{
@@ -423,6 +423,31 @@ impl AutomationRunStore for AdmittedAutomationRunStore<'_> {
             Ok(())
         } else {
             Err("cron session run settlement was stale or not committed".into())
+        }
+    }
+
+    fn publish_cron_session_fences(
+        &self,
+        agent_id: &str,
+        automation_id: &str,
+        run_id: &str,
+        fences: AutomationRunFenceSnapshot,
+    ) -> Result<(), String> {
+        if agent_id != self.agent_id {
+            return Err("cron fence publication agent identity mismatch".into());
+        }
+        let changed = self.session.publish_cron_session_run_fences(
+            agent_id,
+            automation_id,
+            run_id,
+            fences.active_controller,
+            fences.pending_outgoing_media,
+            fences.unsettled_subagent,
+        )?;
+        if changed {
+            Ok(())
+        } else {
+            Err("cron session fence publication was stale or not committed".into())
         }
     }
 }

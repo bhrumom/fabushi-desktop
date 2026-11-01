@@ -27,6 +27,15 @@ pub enum CronSessionRetentionPolicy {
     DurationMs(u64),
 }
 
+/// Owner-backed terminal facts for one automation run. A snapshot is only
+/// publishable when every field was read successfully at the same boundary.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct AutomationRunFenceSnapshot {
+    pub active_controller: bool,
+    pub pending_outgoing_media: bool,
+    pub unsettled_subagent: bool,
+}
+
 /// Resolve the upstream-compatible retention policy without consulting any
 /// filesystem, automation history, or session row. `false` and zero disable
 /// retention; malformed, negative, or non-finite values use the 24-hour
@@ -117,9 +126,17 @@ impl AutomationRunTrigger {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum AutomationExecutionResult {
     Completed,
+    CompletedWithFences {
+        fences: AutomationRunFenceSnapshot,
+    },
     Interrupted {
         detail: String,
         quiesced_for_upgrade: bool,
+    },
+    InterruptedWithFences {
+        detail: String,
+        quiesced_for_upgrade: bool,
+        fences: AutomationRunFenceSnapshot,
     },
 }
 
@@ -217,6 +234,16 @@ pub trait AutomationRunStore {
         _outcome: &str,
         _finished_at_ms: f64,
         _detail: Option<&str>,
+    ) -> Result<(), String> {
+        Ok(())
+    }
+
+    fn publish_cron_session_fences(
+        &self,
+        _agent_id: &str,
+        _automation_id: &str,
+        _run_id: &str,
+        _fences: AutomationRunFenceSnapshot,
     ) -> Result<(), String> {
         Ok(())
     }
@@ -431,12 +458,19 @@ impl AutomationRunPath {
         let quiesced_for_upgrade = matches!(
             execution.as_ref(),
             Ok(AutomationExecutionResult::Interrupted {
-                quiesced_for_upgrade: true,
-                ..
+                quiesced_for_upgrade: true, ..
+            }) | Ok(AutomationExecutionResult::InterruptedWithFences {
+                quiesced_for_upgrade: true, ..
             })
         );
         let result = match execution {
-            Ok(AutomationExecutionResult::Completed) => {
+            Ok(completed @ (AutomationExecutionResult::Completed
+            | AutomationExecutionResult::CompletedWithFences { .. })) => {
+                let fences = match completed {
+                    AutomationExecutionResult::Completed => None,
+                    AutomationExecutionResult::CompletedWithFences { fences } => Some(fences),
+                    _ => unreachable!("completed automation result pattern changed"),
+                };
                 finish_run(store, &args.automation.id, run_id.as_deref(), "ok", args.fired_at_ms, None)?;
                 finish_cron_session_run(
                     store,
@@ -447,14 +481,20 @@ impl AutomationRunPath {
                     "ok",
                     args.fired_at_ms,
                     None,
+                    fences,
                 )?;
                 self.clear_automation_failure_state(&args.agent_id, &args.automation.id);
                 Ok(Some(FireAutomationOutcome::Ok))
             }
-            Ok(AutomationExecutionResult::Interrupted {
-                detail,
-                quiesced_for_upgrade: _,
-            }) => {
+            Ok(interrupted @ (AutomationExecutionResult::Interrupted { .. }
+            | AutomationExecutionResult::InterruptedWithFences { .. })) => {
+                let (detail, fences) = match interrupted {
+                    AutomationExecutionResult::Interrupted { detail, .. } => (detail, None),
+                    AutomationExecutionResult::InterruptedWithFences { detail, fences, .. } => {
+                        (detail, Some(fences))
+                    }
+                    _ => unreachable!("interrupted automation result pattern changed"),
+                };
                 finish_run(
                     store,
                     &args.automation.id,
@@ -472,6 +512,7 @@ impl AutomationRunPath {
                     "interrupted",
                     args.fired_at_ms,
                     Some(&detail),
+                    fences,
                 )?;
                 Ok(Some(FireAutomationOutcome::Interrupted))
             }
@@ -493,6 +534,7 @@ impl AutomationRunPath {
                     "error",
                     args.fired_at_ms,
                     Some(&detail),
+                    None,
                 )?;
                 self.record_automation_failure(
                     &args.agent_id,
@@ -599,6 +641,7 @@ fn finish_cron_session_run(
     outcome: &str,
     finished_at_ms: f64,
     detail: Option<&str>,
+    fences: Option<AutomationRunFenceSnapshot>,
 ) -> Result<(), String> {
     if !trigger.is_background() {
         return Ok(());
@@ -606,6 +649,14 @@ fn finish_cron_session_run(
     let Some(run_id) = run_id else {
         return Ok(());
     };
+    if let Some(fences) = fences {
+        store.publish_cron_session_fences(
+            agent_id,
+            automation_id,
+            run_id,
+            fences,
+        )?;
+    }
     store.finish_cron_session_run(
         agent_id,
         automation_id,

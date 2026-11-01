@@ -2593,6 +2593,43 @@ impl ProductionSessionWorkers {
         })
     }
 
+    pub fn publish_cron_session_run_fences(
+        &self,
+        agent_id: &str,
+        automation_id: &str,
+        run_id: &str,
+        active_controller: bool,
+        pending_outgoing_media: bool,
+        unsettled_subagent: bool,
+    ) -> Result<bool, String> {
+        if agent_id.trim().is_empty()
+            || automation_id.trim().is_empty()
+            || run_id.trim().is_empty()
+        {
+            return Err("cron fence publication requires agent, automation, and run identities".into());
+        }
+        self.with_agent_filesystem_mutation(agent_id, || {
+            self.assert_agent_work_admission_locked(agent_id)?;
+            let db = self.open_agent_db_owner_locked(agent_id)?;
+            let admission = db
+                .read_session_work_admission()
+                .map_err(|error| error.to_string())?
+                .ok_or_else(|| "cron fence publication requires session admission".to_string())?;
+            let session_key = format!(
+                "agent:{agent_id}:cron:{automation_id}:{run_id}"
+            );
+            db.publish_cron_session_run_fences(
+                &session_key,
+                &session_key,
+                &admission.lifecycle_revision,
+                active_controller,
+                pending_outgoing_media,
+                unsettled_subagent,
+            )
+            .map_err(|error| error.to_string())
+        })
+    }
+
     pub fn list_cron_session_runs(
         &self,
         agent_id: &str,
