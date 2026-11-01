@@ -40,8 +40,14 @@ fn frozen_handoff_prompts_and_hidden_send_contract_are_preserved() {
         BOX_HANDOFF_VIEWER_CLOSED_PROMPT
     );
 
-    let args = build_box_handoff_resume_send_args("agent-a", "dismissed", 123);
+    let args = build_box_handoff_resume_send_args(
+        "agent-a",
+        "agent:agent-a:main",
+        "dismissed",
+        123,
+    );
     assert_eq!(args["agentId"], "agent-a");
+    assert_eq!(args["sessionKey"], "agent:agent-a:main");
     assert_eq!(args["prompt"], BOX_HANDOFF_DISMISSED_PROMPT);
     assert_eq!(args["appendUserMessage"], false);
     assert_eq!(args["awaitTurn"], false);
@@ -164,7 +170,14 @@ fn mcp_and_listener_resume_prompts_match_frozen_hidden_handoff_contract() {
     assert!(github.starts_with("[GitHub is now connected"));
     assert!(!github.contains("/invite @Cursor"));
 
-    let args = build_hidden_handoff_resume_send_args("agent-a", &mcp, "mcp-auth-resume", 42);
+    let args = build_hidden_handoff_resume_send_args(
+        "agent-a",
+        "agent:agent-a:main",
+        &mcp,
+        "mcp-auth-resume",
+        42,
+    );
+    assert_eq!(args["sessionKey"], "agent:agent-a:main");
     assert_eq!(args["appendUserMessage"], false);
     assert_eq!(args["awaitTurn"], false);
     assert_eq!(args["requestSource"], "handoff-resume");

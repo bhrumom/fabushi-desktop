@@ -508,3 +508,13 @@ the separate Human conversation store without deriving a key from
 `conversation_id` or making that store a session-admission owner. Human
 pending-send settlement, remote delivery correlation, conversation-turn
 registry production wiring, and runtime/exact-head acceptance remain pending.
+
+## 12.10 Hidden handoff builder identity contract — 2026-11-01
+
+The reusable `box_handoff_resume` hidden-send builders no longer synthesize
+`agent:{id}:main`. They require the producer-supplied `sessionKey` in their
+argument contract and preserve it verbatim in the routed payload. The current
+production handoff path does not call these builders; it uses the existing
+background-revival owner and its admission lookup. This removes a future
+identity-guessing seam without claiming a new production handoff caller or
+upgrading runtime acceptance.
