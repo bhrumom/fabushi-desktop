@@ -692,4 +692,5 @@ The automation spend-guard producer now uses one existing session owner
 transaction for a session-bound widget card, its spend-guard KV state, and the
 activity projection. The legacy no-admission compatibility branch remains
 explicitly separate; this closes one atomic producer edge without promoting
-the broader automation or session-work-admission responsibilities.
+the broader automation or session-work-admission responsibilities. Direct
+spend-guard state writes also pass the owner-level deletion admission fence.

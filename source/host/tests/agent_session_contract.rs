@@ -11,7 +11,9 @@ use mahayana_host_runtime::extensions::session::session_profile_files::AgentProf
 use mahayana_host_runtime::extensions::memory::memory_service::MemoryKind;
 use mahayana_host_runtime::automations::automation::AutomationSpec;
 use mahayana_host_runtime::workflows::workflow_library::WorkflowSpec;
-use mahayana_host_runtime::extensions::session::agent_db_serde::AwaitingUserResponse;
+use mahayana_host_runtime::extensions::session::agent_db_serde::{
+    AwaitingUserResponse, SpendGuardState,
+};
 use mahayana_host_runtime::extensions::session::agent_db_transcript_pages::{
     TranscriptPageQuery, TranscriptWindowQuery,
 };
@@ -168,6 +170,10 @@ fn deletion_fence_rejects_new_transcript_work_before_durable_write() {
         .set_agent_introduction_pending(&record.id, false)
         .expect_err("deletion-pending introduction state must be rejected");
     assert!(introduction_error.contains("new session work is not admitted"));
+    let spend_guard_error = production
+        .set_agent_automation_spend_guard_state(&record.id, &SpendGuardState::default())
+        .expect_err("deletion-pending spend-guard state must be rejected");
+    assert!(spend_guard_error.contains("new session work is not admitted"));
     let activity_error = production
         .mark_agent_activity(&record.id, 42.0)
         .expect_err("deletion-pending activity must be rejected");

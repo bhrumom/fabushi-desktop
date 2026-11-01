@@ -107,7 +107,7 @@ The automation spend-guard producer uses the same owner boundary for a
 session-bound widget card: card insertion, spend-guard KV state, and activity
 metadata commit together, or none commit. Legacy databases without a session
 admission record retain their existing compatibility path and remain subject
-to the facade admission checks.
+to the facade admission checks, including direct spend-guard state responses.
 
 ## Failure and edge cases
 
