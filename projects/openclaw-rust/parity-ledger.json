@@ -6892,12 +6892,16 @@
           "symbol": "ensureReaperSubscription"
         }
       ],
+      "adr_refs": [
+        "projects/openclaw-rust/docs/specs/cron-session-reaper.md",
+        "projects/openclaw-rust/decisions/2026-11-01-cron-session-reaper-owner-boundary.md"
+      ],
       "id": "OCRM-RESP-CRON-SESSION-REAPER-001",
       "integration": {
-        "consumer": "No production consumer for expired per-run cron session rows or guarded transcript artifact cleanup; current automation run records are history only",
-        "entrypoint": "source/host/src/extensions/transcript/automation_run_path.rs::fire_automation_inner plus source/host/src/extensions/session/production.rs session lifecycle owner",
-        "owner": "Not yet selected; requires CRON-REAPER-D01..D05 owner decision between existing session/transcript lifecycle owners",
-        "producer": "source/host/src/extensions/transcript/automation_runtime.rs schedules and fires automation runs, but no producer materializes a cron run session or triggers a guarded reaper sweep"
+        "consumer": "AutomationRuntime exposes a throttled read-only expired-candidate projection; no production scheduler consumes it, and no guarded transcript archive/delete consumer exists",
+        "entrypoint": "source/host/src/extensions/transcript/automation_run_path.rs::fire_automation_inner → source/host/src/extensions/transcript/automation_runtime.rs::AdmittedAutomationRunStore → source/host/src/extensions/session/production.rs → SandAgentDb",
+        "owner": "ProductionSessionWorkers/SandAgentDb owns the bounded per-run registration, fence, and candidate projection; cleanup/archive owner and scheduler remain unselected",
+        "producer": "AutomationRunPath registers and settles background schedule/event runs through the existing session owner; terminal fence publication is typed and atomic when owner-backed, while no sweep caller is wired"
       },
       "invariants": [
         "Sessions with pending media tasks are exempt from pruning",
@@ -6905,7 +6909,7 @@
       ],
       "migration_rollback": "Retain all cron sessions indefinitely",
       "oracle_ids": [],
-      "owner_decision": "Do not claim an existing TranscriptCleanup owner; complete CRON-REAPER-D01..D05 for per-run row identity, retention parsing, sweep fence, media/subagent custody, and guarded cleanup outcomes before implementation",
+      "owner_decision": "The bounded D01–D03 registration/policy/projection and D04 fence-publication slices use ProductionSessionWorkers/SandAgentDb; do not claim a TranscriptCleanup owner or promote cleanup implementation until CRON-REAPER-D04–D05 archive, media/subagent custody, guarded deletion, and scheduler decisions are complete",
       "postconditions": [
         "Expired ephemeral cron sessions pruned from SQLite store"
       ],
@@ -6927,8 +6931,16 @@
       "responsibility_kind": "business-runtime",
       "reviewer": "xuyao@ombhrum.com",
       "risk": "Medium; prevents database bloat while protecting active work items",
-      "selected_owner": "unselected pending cron-session-reaper architecture decision",
-      "source_refs": [],
+      "selected_owner": "bounded registration/projection owner selected: ProductionSessionWorkers/SandAgentDb; reaper scheduler/archive/delete owner remains unselected",
+      "source_refs": [
+        "source/host/src/extensions/transcript/automation_run_path.rs",
+        "source/host/src/extensions/transcript/automation_runtime.rs",
+        "source/host/src/extensions/session/production.rs",
+        "source/host/src/extensions/session/agent_db.rs",
+        "projects/openclaw-rust/docs/specs/cron-session-reaper.md",
+        "projects/openclaw-rust/decisions/2026-11-01-cron-session-reaper-owner-boundary.md",
+        "projects/openclaw-rust/dossiers/not-started-responsibility-frontier-20261031.md"
+      ],
       "status": {
         "acceptance": "pending",
         "implementation": "not-started",
@@ -6940,12 +6952,15 @@
       "target": {
         "language": "Rust",
         "path": "source/host/src/extensions/transcript/automation_run_path.rs",
-        "symbol": "No existing per-run session reaper owner"
+        "symbol": "AutomationRunPath::fire_automation_inner and ProductionSessionWorkers::list_expired_cron_session_runs; cleanup consumer not wired"
       },
       "tests": [
         "projects/openclaw-rust/docs/specs/cron-session-reaper.md"
       ],
       "typed_contracts": [
+        "cron_session_runs",
+        "AutomationRunFenceSnapshot",
+        "AutomationRuntime::list_expired_cron_session_candidates",
         "CRON-REAPER-D01..D05 architecture decisions"
       ],
       "unit_id": "OCRM-UNIT-AUTOMATION-001"
