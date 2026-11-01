@@ -1433,9 +1433,12 @@ impl ProductionSessionWorkers {
         agent_id: &str,
         platform: &str,
     ) -> Result<bool, String> {
-        self.connector_secret_store()
-            .remove_agent_platform(agent_id, platform)
-            .map_err(|error| error.to_string())
+        self.with_agent_filesystem_mutation(agent_id, || {
+            self.assert_agent_work_admission_locked(agent_id)?;
+            self.connector_secret_store()
+                .remove_agent_platform(agent_id, platform)
+                .map_err(|error| error.to_string())
+        })
     }
 
     pub fn disconnect_channel(&self, agent_id: &str, platform: &str) -> Result<bool, String> {

@@ -41,6 +41,8 @@ pub type AgentProfileWriter =
     Arc<dyn Fn(Option<String>, Option<String>) -> StateWriteResult + Send + Sync + 'static>;
 pub type AgentSettingsWriter =
     Arc<dyn Fn(Map<String, Value>) -> StateWriteResult + Send + Sync + 'static>;
+pub type AgentChannelDisconnector =
+    Arc<dyn Fn(&str) -> StateWriteResult + Send + Sync + 'static>;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum MemoryTier { Profile, Note, Log }
@@ -71,6 +73,7 @@ pub struct SandAgentState {
     remove_agent_memory: Option<AgentMemoryRemover>,
     write_agent_profile: Option<AgentProfileWriter>,
     write_agent_settings: Option<AgentSettingsWriter>,
+    disconnect_agent_channel: Option<AgentChannelDisconnector>,
 }
 
 impl SandAgentState {
@@ -94,6 +97,7 @@ impl SandAgentState {
             remove_agent_memory: None,
             write_agent_profile: None,
             write_agent_settings: None,
+            disconnect_agent_channel: None,
         })
     }
 
@@ -114,6 +118,13 @@ impl SandAgentState {
     }
     pub fn with_agent_settings_writer(mut self, writer: AgentSettingsWriter) -> Self {
         self.write_agent_settings = Some(writer);
+        self
+    }
+    pub fn with_agent_channel_disconnector(
+        mut self,
+        disconnector: AgentChannelDisconnector,
+    ) -> Self {
+        self.disconnect_agent_channel = Some(disconnector);
         self
     }
     pub fn agent_dir(&self) -> &Path { &self.agent_dir }
@@ -306,6 +317,9 @@ impl SandAgentState {
     }
 
     pub fn disconnect_channel(&self, platform: &str) -> StateWriteResult {
+        if let Some(disconnect_agent_channel) = self.disconnect_agent_channel.as_ref() {
+            return disconnect_agent_channel(platform);
+        }
         match self.channels.remove(platform) {
             Ok(true) => StateWriteResult::success(format!("Disconnected {platform}.")),
             Ok(false) => StateWriteResult::failure(format!("{platform} is not connected.")),

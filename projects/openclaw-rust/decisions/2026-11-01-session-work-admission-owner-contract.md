@@ -241,6 +241,10 @@ owner. The Runner's state surface receives an injected settings writer, while
 the standalone state fallback remains limited to non-production construction;
 no second settings authority was introduced.
 
+The production Runner channel-disconnect command now receives the existing
+channel owner as an injected callback; the standalone state fallback remains
+compatibility-only and does not establish a second channel authority.
+
 The spend-guard state setter and the atomic session-bound card/state/activity
 transaction now perform the same predicate check inside their SQLite
 transactions. A facade admission precheck can no longer be the only fence for

@@ -449,6 +449,9 @@ Production Gateway and Runner settings writes now use the same existing
 writer callback so its `settings.set` command does not write `settings.json`
 directly. The standalone `SandAgentState` fallback remains for non-production
 construction and is not production acceptance evidence.
+The Runner `channels.disconnect` command likewise injects the existing channel
+owner instead of deleting the channel directory directly; connector-secret
+removal uses the same admission boundary.
 The shared owner `write_kv` boundary now fences the remaining owner-local KV
 setters at the same SQLite edge; external memory-store clear paths remain
 separately governed.

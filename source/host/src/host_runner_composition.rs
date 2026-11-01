@@ -175,6 +175,19 @@ impl HostRunnerComposition {
                 )),
             }
         }));
+        let channel_sessions = Arc::clone(&sessions);
+        let channel_agent_id = agent_id.to_string();
+        state = state.with_agent_channel_disconnector(Arc::new(move |platform| {
+            match channel_sessions.disconnect_channel(&channel_agent_id, platform) {
+                Ok(true) => StateWriteResult::success(format!("Disconnected {platform}.")),
+                Ok(false) => StateWriteResult::failure(format!(
+                    "{platform} is not connected."
+                )),
+                Err(error) => StateWriteResult::failure(format!(
+                    "could not disconnect {platform}: {error}"
+                )),
+            }
+        }));
         let state_writer: Arc<dyn SandStateWriter> = Arc::new(state);
         let multitask_todo_state = if multitask_enabled {
             Some(sessions.open_agent_db_owner(agent_id)? as Arc<dyn MultitaskTodoState>)
