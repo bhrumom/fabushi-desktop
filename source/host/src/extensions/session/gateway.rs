@@ -105,12 +105,19 @@ pub fn persist_accepted_send_prompt_context(
         .map(str::trim)
         .filter(|value| !value.is_empty())
         .ok_or_else(|| SessionGatewayError::bad("sendPrompt requires agentId"))?;
-    let session_key = args
+    let requested_session_key = args
         .get("sessionKey")
         .or_else(|| args.get("sessionId"))
         .and_then(Value::as_str)
         .map(str::trim)
         .filter(|value| !value.is_empty());
+    let session_key = match requested_session_key {
+        Some(session_key) => Some(session_key.to_string()),
+        None => session
+            .read_session_work_admission(agent_id)
+            .map_err(SessionGatewayError::internal)?
+            .map(|record| record.session_key),
+    };
     let prompt = args
         .get("prompt")
         .or_else(|| args.get("text"))
@@ -203,7 +210,7 @@ pub fn persist_accepted_send_prompt_context(
                 branched: threading.is_fork,
             },
         );
-        if let Some(session_key) = session_key {
+        if let Some(session_key) = session_key.as_deref() {
             entry["sessionKey"] = Value::String(session_key.to_string());
         }
         first_echo_id.get_or_insert_with(|| id.clone());
@@ -228,7 +235,7 @@ pub fn persist_accepted_send_prompt_context(
             },
             system_now_ms(),
         );
-        if let Some(session_key) = session_key {
+        if let Some(session_key) = session_key.as_deref() {
             entry["sessionKey"] = Value::String(session_key.to_string());
         }
         user_message_id = Some(id.clone());
@@ -238,7 +245,7 @@ pub fn persist_accepted_send_prompt_context(
     }
 
     if !staged.is_empty() {
-        if let Some(session_key) = session_key {
+        if let Some(session_key) = session_key.as_deref() {
             session
                 .append_agent_transcript_entries_if_session_admitted(
                     agent_id,

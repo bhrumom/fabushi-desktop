@@ -542,10 +542,16 @@ fn persist_local_permission_event(
                 },
                 "timestampMs": now_ms(),
             });
-            if let Some(session_key) = event.request.session_key.as_deref() {
+            let session_key = match event.request.session_key.as_deref() {
+                Some(session_key) => Some(session_key.to_string()),
+                None => sessions
+                    .read_session_work_admission(&event.request.agent_id)?
+                    .map(|record| record.session_key),
+            };
+            if let Some(session_key) = session_key.as_deref() {
                 entry["sessionKey"] = Value::String(session_key.to_string());
             }
-            if let Some(session_key) = event.request.session_key.as_deref() {
+            if let Some(session_key) = session_key.as_deref() {
                 sessions
                     .append_agent_transcript_entries_if_session_admitted(
                         &event.request.agent_id,
