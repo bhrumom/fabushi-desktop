@@ -28702,9 +28702,10 @@
       "behavior_contract": "Fixed-U owns proxy mode, selected proxy, ordered list, IPv6/call flags, IP-warning state and rotation options/preferences in one Core::SettingsProxy embedded in Core::Settings. Its mutation invariants preserve preferred-index meaning under list changes; its append-compatible serializer/deserializer is persisted through Core::Settings -> encrypted dbiApplicationSettings. connection_box and ProxyRotationManager consume/update this owner but do not own a second durable settings truth.",
       "state_machine": "restore unified application settings -> one canonical ProxySettings state -> typed list/selection/mode/rotation mutations -> durable settings persistence -> selected-proxy/settings events projected to network and rotation consumers; proxy checks/timers remain transient runtime state.",
       "side_effects": [
-        "Fixed-U settings changes schedule the existing application settings write and emit connection/proxy-change projections.",
-        "Fixed-U rotation checks may promote preferred indices through SettingsProxy and request the existing settings save.",
-        "No Fabushi production side effect is added in this blocked round."
+        "Unified Settings load reads the authoritative ProductSettingsOwner snapshot through the existing renderer/Main/Coordinator/Host chain.",
+        "UI edits call the authoritative ProductSettingsOwner mutation API; owner persistence/publication semantics remain unchanged.",
+        "Only mode-derived proxyEnabled may republish to the pre-existing telegram.refreshSpecialConfig boundary; selected/list are not connected to a carrier.",
+        "No Telegram-specific Settings root/store, UI persistence owner, second runtime, proxy checker, timer, or selected-proxy transport side effect is introduced."
       ],
       "failure_cases": [
         "malformed or truncated legacy settings stream",
@@ -28717,7 +28718,7 @@
         "carrier or rotation scheduler becoming persisted settings owner",
         "parallel Telegram-specific settings subsystem"
       ],
-      "ui_disposition": "Existing unified Settings surface is the eventual projection/edit surface. No Telegram-specific Settings root, proxy app, route or parallel persistence UI is introduced in this round.",
+      "ui_disposition": "Implemented as a source-neutral Network proxy section inside the existing unified SettingsDesktopSurface -> GeneralSettingsPanel. It reuses SettingsGroup, SandSelect, SandSwitch and SandButton; no Telegram-specific Settings route/root/store is introduced.",
       "non_ui_responsibilities": [
         "canonical proxy settings state ownership",
         "list/selected/mode mutation invariants",
@@ -28725,7 +28726,7 @@
         "legacy settings decode/migration semantics",
         "single-owner persistence/restart boundary"
       ],
-      "platform_delta": "Task round98 extends the existing source-neutral ProductSettingsOwner to version 2 with complete durable typed proxy mode/selected/list/IPv6/call/IP-warning/rotation state, exact fixed-U list/preferred-index/timeout mutation invariants, and in-place migration from the prior Fabushi v1 proxyEnabled schema. proxyEnabled is now derived from mode == Enabled and remains the only projection sent to the already-existing special-config consumer; no selected endpoint is wired to an unimplemented carrier.",
+      "platform_delta": "Task round99 integrates ProductSettingsOwner v2 into the current complete Fabushi shipping tree and existing unified SettingsDesktopSurface. Source-neutral renderer/Main methods getNetworkProxySettings/mutateNetworkProxySettings forward through the existing coordinator MainData boundary to settings.snapshot/settings.mutateNetworkProxy. UI projection/edit covers the complete durable typed proxy state while selected/list remain intentionally unwired to any transport carrier.",
       "existing_owner_candidates": [
         "bhrumom/fabushi-desktop:mahayana-app-host feature.persistence/ui_state",
         "bhrumom/fabushi-desktop and platform-core:telegram-storage encrypted SQLite",
@@ -28753,7 +28754,17 @@
         "bhrumom/fabushi-platform-core:docs/specs/fabushi-product-settings-owner.md",
         "bhrumom/fabushi-desktop:docs/specs/fabushi-product-settings-owner.md",
         "bhrumom/fabushi-desktop:source/mahayana/mahayana-rs/mahayana-app-host/src/lib.rs",
-        "bhrumom/fabushi-desktop:source/mahayana/mahayana-rs/mahayana-telegram/src/lib.rs"
+        "bhrumom/fabushi-desktop:source/mahayana/mahayana-rs/mahayana-telegram/src/lib.rs",
+        "bhrumom/fabushi-desktop:source/shared/rpc/main.ts",
+        "bhrumom/fabushi-desktop:source/shared/rpc/coordinator-main.ts",
+        "bhrumom/fabushi-desktop:source/electron-main/main-edge.ts",
+        "bhrumom/fabushi-desktop:source/electron-main/adapters/main-rpc.ts",
+        "bhrumom/fabushi-desktop:source/electron-preload/preload.ts",
+        "bhrumom/fabushi-desktop:frontend/src/recovered/contracts/desktop-bridge.ts",
+        "bhrumom/fabushi-desktop:frontend/src/recovered/features/settings/overlay/desktop.ts",
+        "bhrumom/fabushi-desktop:frontend/src/recovered/features/settings/overlay/desktop-surface.tsx",
+        "bhrumom/fabushi-desktop:frontend/src/recovered/features/settings/overlay/panels.tsx",
+        "bhrumom/fabushi-desktop:frontend/src/recovered/features/settings/overlay/network-proxy.tsx"
       ],
       "fabushi_target_symbols": [
         "ProductSettingsOwner",
@@ -28766,7 +28777,13 @@
         "settings.snapshot",
         "settings.mutateNetworkProxy",
         "settings.setNetworkProxyEnabled",
-        "TelegramClientLease::refresh_special_config"
+        "TelegramClientLease::refresh_special_config",
+        "SettingsDesktopSurface",
+        "GeneralSettingsPanel",
+        "NetworkProxySettingsPanel",
+        "DesktopBridge.networkProxy",
+        "getNetworkProxySettings",
+        "mutateNetworkProxySettings"
       ],
       "target_language": "Rust for source-neutral settings state/persistence + existing React/TypeScript Settings projection",
       "language_rationale": "The fixed-U non-UI state/mutation/persistence responsibility belongs in the canonical product Settings owner, not Telegram runtime/network code; UI remains a projection of that source-neutral state.",
@@ -28835,7 +28852,16 @@
         "platform-core-round98-owner-spec-blob:1a582fc7adc6682364c6857219dee79c6204d50f",
         "platform-core-round98-proxy-state-spec-blob:ee9bc5e4666ee48b9aaa74162823a89f418e4306",
         "desktop-round98-production-commit:b6f491d2364684111ebfc8ddbdae67ca3adaff6b",
-        "desktop-round98-app-host-blob:3078e50bbfa0583383b3449818a79ba8465b064a"
+        "desktop-round98-app-host-blob:3078e50bbfa0583383b3449818a79ba8465b064a",
+        "desktop-round99-shipping-integration-commit:a9cece6754710ab4f91dd9089e3d4eee9ffb4e57",
+        "desktop-round99-main-method-table-blob:1836225532cf428fb1f0201d09a61542694b51b8",
+        "desktop-round99-coordinator-main-table-blob:da1c1f13b6ab5d8147242bf9856a53c81dcf8b8a",
+        "desktop-round99-main-edge-blob:944be083ba17a24813323bec0b86ac333527e2c0",
+        "desktop-round99-main-rpc-adapter-blob:d91e41255f7c4f8750269ec2555eca1074bf0973",
+        "desktop-round99-preload-blob:ed4e49ae6f6ef4ae4af3086ddf30716f22d95b51",
+        "desktop-round99-settings-surface-blob:f5450c500e7b5429f030a561b9c8804700a28deb",
+        "desktop-round99-settings-panel-blob:1cb5508daf79ea12458124b09ee497c4c08fd618",
+        "desktop-round99-network-proxy-ui-blob:cacc51a80b52af034354a170dc42645144cd6717"
       ],
       "test_evidence": [
         "Authored contract vectors are recorded in docs/specs/telegram-proxy-settings-state-persistence.md@e31a0d4f4d9f9286f7af35562c7d9edac6687487; no executable contract was run.",
@@ -28843,7 +28869,7 @@
         "Round129 authored AppHost contracts cover fixed-U defaults, v1->v2 in-place migration, typed list/selected/mode persistence/reopen, preferred-index normalization/remapping, rotation timeout normalization/promotion, malformed-state fail-closed and source-neutral host method naming; none were executed.",
         "Round130 authored renderer/Main allowlist, DesktopBridge, preferred-index UI and unified Settings projection contracts; none were executed."
       ],
-      "target_commit": "b6f491d2364684111ebfc8ddbdae67ca3adaff6b",
+      "target_commit": "a9cece6754710ab4f91dd9089e3d4eee9ffb4e57",
       "workflow_run": null,
       "run_attempt": null,
       "job": null,
@@ -28871,36 +28897,60 @@
       "novel_capability": false,
       "owner_absence_evidence": [],
       "minimal_owner_adr": "docs/specs/fabushi-product-settings-owner.md",
-      "ui_entry_class": "Existing Settings surface once the canonical Settings state owner exists",
+      "ui_entry_class": "Existing Settings primary navigation -> SettingsDesktopSurface",
       "primary_navigation_target": "Existing Settings",
-      "collection_surface": "Existing unified Settings network/proxy section; no new Telegram-specific collection",
+      "collection_surface": "Existing General Settings network-proxy section; no new provider-specific collection or app root.",
       "creation_flow": "Existing Settings add/import/edit flow; no new app/root",
       "object_action_scope": "Proxy settings",
-      "detail_section": "Network/proxy settings",
-      "capability_surface": "Existing unified Settings",
-      "route_contract": "No new top-level route.",
+      "detail_section": "Settings / General / Network proxy",
+      "capability_surface": "Existing unified SettingsDesktopSurface",
+      "route_contract": "No new top-level route. Existing Settings primary navigation and overlay/surface routing are reused.",
       "search_scope": "Not applicable",
       "search_provider": "Existing canonical Search owner; unchanged",
       "search_result_types": [],
       "search_filters": [],
       "search_permission_contract": "Unchanged.",
       "search_local_remote_contract": "Not applicable.",
-      "responsive_disposition": "No UI implementation in this blocked round.",
-      "accessibility_contract": "No UI implementation in this blocked round.",
-      "keyboard_contract": "No UI implementation in this blocked round.",
-      "state_continuity_contract": "Proxy settings must restore through the one canonical Settings persistence path; UI, carrier and rotation runtime must never form alternate durable truth.",
-      "ui_acceptance_scenarios": [],
-      "design_system_version": "Existing Fabushi design system; no visual changes",
-      "semantic_token_usage": [],
+      "responsive_disposition": "Source uses the existing Settings responsive container plus a two-column proxy endpoint field grid that collapses to one column at <=700px. Runtime/visual validation is not-run.",
+      "accessibility_contract": "Uses existing semantic SandSelect/SandSwitch/SandButton controls, explicit labels for endpoint fields, status text for invalid selected/list relation, and password inputs for secrets. Accessibility execution evidence remains not-run.",
+      "keyboard_contract": "Reuses canonical keyboard-capable SandSelect/SandSwitch/SandButton and native inputs; no custom key handler or focus trap is introduced. Keyboard acceptance remains not-run.",
+      "state_continuity_contract": "Authoritative ProductSettingsOwner mutation settlement replaces the projected networkProxy snapshot. Renderer endpoint drafts are transient edit buffers only; reload/restart restore remains owned by ProductSettingsOwner persistence. selected/list do not become carrier-owned truth.",
+      "ui_acceptance_scenarios": [
+        "Load Settings General and project mode/selected/list/flags/rotation from authoritative ProductSettingsOwner v2.",
+        "Edit mode and verify authoritative settlement without creating a second UI/store truth.",
+        "Add/edit/remove proxy endpoints and preserve ordered list/selected semantics.",
+        "Toggle IPv6/call/IP-warning/rotation and edit timeout/preferred indices.",
+        "Reload/restart and verify authoritative durable state restoration.",
+        "Verify selected/list changes alone do not activate a transport carrier."
+      ],
+      "design_system_version": "Existing Fabushi Settings/Sand design system at shipping main 9993ca8e107f7e019a8201e5ab74fa54e82159f2",
+      "semantic_token_usage": [
+        "existing Settings/Sand semantic CSS variables and primitives"
+      ],
       "legacy_token_adapter": null,
-      "canonical_component_ids": [],
-      "screen_pattern_id": "Existing Settings pattern",
-      "screen_slots": [],
-      "visual_state_matrix": [],
-      "density_contract": "Not applicable",
+      "canonical_component_ids": [
+        "SettingsGroup",
+        "SandSelect",
+        "SandSwitch",
+        "SandButton"
+      ],
+      "screen_pattern_id": "Existing unified Settings desktop surface / General section",
+      "screen_slots": [
+        "General Settings group: Network proxy"
+      ],
+      "visual_state_matrix": [
+        "mode system/enabled/disabled",
+        "empty vs populated proxy list",
+        "selected proxy in-list vs absent",
+        "rotation disabled/enabled",
+        "narrow <=700px vs wider layout"
+      ],
+      "density_contract": "Reuses existing Settings row/group density; endpoint editor follows Settings spacing and collapses to one column on narrow width.",
       "icon_asset_contract": "No new icon asset",
       "avatar_contract": "No change",
-      "content_copy_keys": [],
+      "content_copy_keys": [
+        "Round99 inline source-neutral Network proxy copy; localization extraction remains a later UI-quality follow-up if required by canonical localization policy."
+      ],
       "motion_contract": "No change",
       "reduced_motion_contract": "No change",
       "visual_baseline_ids": [],
@@ -28969,7 +29019,7 @@
       "acceptance_reviewer": null,
       "reviewer": null,
       "license_and_provenance": "Behavioral provenance is fixed-U Core::SettingsProxy/Core::Settings/localstorage/connection_box/application/proxy_rotation_manager. No upstream C++ copied and no parallel settings store introduced.",
-      "notes": "Task round99/source evidence round130. Existing shipping SettingsDesktopSurface/GeneralSettingsPanel now projects and edits ProductSettingsOwner v2 through source-neutral renderer/Main allowlists and exact settings.snapshot/settings.mutateNetworkProxy Host methods. The UI does not own persistence and no Telegram-specific UI/store was added. selected/list remain durable Settings state only; no selected-proxy carrier consumer is connected. Stage-B executable validation remains not-run; accepted=false.",
+      "notes": "Task round99/source evidence round130. ProductSettingsOwner v2 is now projected and edited by the current complete Fabushi shipping SettingsDesktopSurface through source-neutral renderer/Main and coordinator MainData allowlists, with exact settings.snapshot/settings.mutateNetworkProxy Host methods. The complete main shipping tree was fused with the checkpoint migration tree in production commit a9cece6754710ab4f91dd9089e3d4eee9ffb4e57 so the UI/IPC paths retain their dependencies. No Telegram-specific UI/store/runtime was added and selected/list remain durable Settings state only; no selected-proxy carrier consumer is connected. UI/IPC/contracts were authored but not run; Stage-B executable validation remains not-run and accepted=false.",
       "test_execution_evidence": [],
       "validation_status": "not-run",
       "accepted": false

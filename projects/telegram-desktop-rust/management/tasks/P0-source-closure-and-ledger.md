@@ -2054,3 +2054,8 @@ Shipping main `9993ca8e107f7e019a8201e5ab74fa54e82159f2` was re-read for Product
 The same ProductSettingsOwner v2 is projected into that unified Settings surface through `getNetworkProxySettings`/`mutateNetworkProxySettings`, with MainData forwarding only `settings.snapshot`/`settings.mutateNetworkProxy`. The UI edits mode, selected/list, tryIpv6, useProxyForCalls, checkIpWarningShown and rotation preferences/timeouts. No Telegram-specific store/UI/runtime was introduced; selected proxy state is not connected to a network carrier.
 
 UI/IPC/contracts were authored but not executed. Stage A remains `validation_status=not-run / accepted=false`. `TDRP-R9-PROXY-SETTINGS-STATE-PERSISTENCE-001` is implemented for canonical state/persistence plus unified UI projection; Stage-B executable evidence remains outstanding. `TDRP-R9-PROXY-MTPROTO-CONSUMER-001` remains mapped/pending for selected-proxy/custom-resolution carrier consumption.
+
+
+### Round 99 shipping-tree integration identity
+
+The checkpoint tree inherited a sparse-tree history that no longer contained the complete current desktop renderer/Electron dependency graph. The round-99 production integration commit `a9cece6754710ab4f91dd9089e3d4eee9ffb4e57` repairs that composition non-destructively: it uses current shipping main `9993ca8e107f7e019a8201e5ab74fa54e82159f2` as the complete tree base, overlays every blob present in checkpoint `695758b14d101e850651e1389861088e16c55f92` plus the network-proxy Settings changes, and records both histories as parents. This preserves checkpoint migration work while restoring the current shipping dependencies required by `ProductionRenderer -> SettingsDesktopSurface -> Main RPC -> Coordinator MainData -> AppHost`. No executable validation was run.
