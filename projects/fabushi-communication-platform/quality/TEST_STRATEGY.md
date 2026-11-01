@@ -478,3 +478,22 @@ Qualify `.agents/skills/perform-task/agents/openai.yaml@f238b707da7f39a4293b17d1
 The adapter passes only when invocation preserves the canonical perform-task boundary: one already selected/named task, no queue or inbox ownership, no replacement-task creation, no split/consolidation routing, and no independent task/review/evidence/publication state. Claude and Grok command wrappers remain peer host adapters for the same shared skill; provider-specific syntax cannot change semantic ownership. FMEP-001 keeps executable qualification deferred.
 
 Stage-A contracts authored, not run: `CONTRACT-TDRP-PERFORM-TASK-OPENAI-HOST-METADATA-001` and `INT-TDRP-PERFORM-TASK-OPENAI-HOST-INVOCATION-001`.
+
+
+#### Repository performer UI-driver qualification
+
+Qualify fixed-U `.agents/skills/perform-task/references/computer-use-testing.md@b7fc92d604a55975f75047828d476e64667aa259` as a UI-driver adapter inside the existing single-task performer evidence loop. It must not become a second performer, product Computer runtime, Telegram-specific quality owner, or acceptance store.
+
+Selection cases cover deterministic/overlay-only operation and hybrid selection only when physical input/native window mechanics are themselves part of the acceptance claim. Negative controls reject hybrid selection justified only by broader coverage, internal state/text/geometry already observable deterministically, or a driver narrative without planned semantic assertions.
+
+Capability qualification proves the active host exposes the approved driver mechanism, permissions are already satisfied, and the exact test app is distinguished from any release/user instance before the first state/action call. Hybrid operation revalidates exact app/process/start identity around every state/action boundary, refreshes accessibility/visual state before selecting ephemeral targets, and treats wrong/replaced subject, stale target, focus steal, local input interference, or user-stopped sessions as contaminated/test-evidence failures rather than product success.
+
+Operation qualification requires one bounded predeclared action per ready step, deterministic task-owned setup, a stable semantic target when available, immediate post-action identity/state refresh, application-owned observation of the result, watchdog/terminal handling, and durable semantic plus accessibility/visual artifacts at decisive checkpoints. Exploration alone cannot assign a product verdict.
+
+Safety qualification forbids unattended credential/secret entry, login/permission/security approval, account/privacy/network/OS changes, server-visible content mutation solely for evidence, external confirmation/link flows, payments, CAPTCHA/security-dialog approval, and unrelated-app control. If safe local fixtures cannot preserve the acceptance claim, record the precise unavailable/test-blocked condition through the ordinary recovery contract.
+
+Fallback qualification preserves the oracle: automatic mode may use a prewritten equivalent deterministic fallback; explicitly required physical interaction cannot be silently downgraded. Locked graphical sessions are never driven at the lock screen and use complete in-process instrumentation when that host path is sufficient. Missing capability/permission is a test/environment fact, not an implementation defect.
+
+Durable-evidence qualification preserves driver policy, capability result, host/driver identity, exact app/process identity, scenario/step, safety envelope, ordered action outcomes, decisive before/after accessibility state and tightly scoped visual captures, plus the application assertion/log paths that decide the claim. Evidence precedence is application assertion/crash state > semantic/in-process state and measured geometry > durable accessibility state > tight visual capture > narration. Stale target, wrong-window control, capability/permission failure, missing durable evidence, or ambiguous capture is `TEST_FLAW` or the precise test blocker according to recoverability.
+
+Stage-A contracts authored, not run: `CONTRACT-TDRP-PERFORM-TASK-UI-DRIVER-SELECTION-001`, `CONTRACT-TDRP-PERFORM-TASK-UI-DRIVER-SAFETY-001`, `CONTRACT-TDRP-PERFORM-TASK-UI-DRIVER-EVIDENCE-001`, and `FAULT-TDRP-PERFORM-TASK-UI-DRIVER-RECOVERY-001`.
