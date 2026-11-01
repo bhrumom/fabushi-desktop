@@ -299,10 +299,11 @@ The remaining transcript mutation producers were rechecked against the live
 Rust source. `WidgetResponses` now preserves and consumes `sessionKey`
 provenance for interactive updates to bound cards; cards without provenance
 remain on its generic agent-scoped compatibility path. Its stale-card sweep
-still uses a separate direct DB helper and remains pending for the same atomic
-session check. Shared-room restamp paths (`shared_rooms.rs`) still do not carry
-a canonical `session_key`. The generic delete and conversation-clear wrappers
-currently have no production caller in the Host source.
+now uses the same owner-local transaction for cards carrying provenance, while
+legacy cards without it retain the compatibility path. Shared-room restamp
+paths (`shared_rooms.rs`) still do not carry a canonical `session_key`. The
+generic delete and conversation-clear wrappers currently have no production
+caller in the Host source.
 
 The box-request path is now split by durable provenance: new Runner-created
 entries retain their canonical `sessionKey`, and

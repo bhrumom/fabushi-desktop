@@ -4117,6 +4117,62 @@ pub fn update_persisted_transcript_entry(
     Ok(Some(next.clone()))
 }
 
+pub fn update_persisted_transcript_entry_if_session_admitted(
+    db_path: &Path,
+    busy_timeout_ms: u64,
+    session_key: &str,
+    entry_id: &str,
+    next: &serde_json::Value,
+) -> Result<Option<serde_json::Value>, AgentDbProjectionError> {
+    let session_key = session_key.trim();
+    if session_key.is_empty() || entry_id.trim().is_empty() {
+        return Err(AgentDbProjectionError::WorkAdmissionInvalid(
+            "session-scoped persisted transcript update requires session key and entry identity"
+                .into(),
+        ));
+    }
+    let mut db = open_projection_db(db_path, busy_timeout_ms)?;
+    let transaction = db.transaction_with_behavior(rusqlite::TransactionBehavior::Immediate)?;
+    let raw_admission = transaction
+        .query_row(GET_KV_SQL, params![KV_SESSION_WORK_ADMISSION], |row| {
+            row.get::<_, String>(0)
+        })
+        .optional()?
+        .ok_or_else(|| {
+            AgentDbProjectionError::WorkAdmissionInvalid(
+                "session work admission record is unavailable".into(),
+            )
+        })?;
+    let admission: SessionWorkAdmissionRecord = serde_json::from_str(&raw_admission)?;
+    if admission.session_key != session_key || admission.archived_at_ms.is_some() {
+        return Err(AgentDbProjectionError::WorkAdmissionInvalid(
+            "session is not admitted for persisted transcript update".into(),
+        ));
+    }
+    let present = transaction
+        .query_row(GET_TRANSCRIPT_ENTRY_SQL, params![entry_id], |row| {
+            row.get::<_, String>(0)
+        })
+        .optional()?
+        .is_some();
+    if !present {
+        transaction.commit()?;
+        return Ok(None);
+    }
+    if transaction.execute(
+        UPDATE_TRANSCRIPT_ENTRY_SQL,
+        params![next.to_string(), entry_id],
+    )? != 1
+    {
+        transaction.commit()?;
+        return Ok(None);
+    }
+    transaction.commit()?;
+    bump_db_write_generation(db_path);
+    publish_entries_upserted(db_path, vec![next.clone()]);
+    Ok(Some(next.clone()))
+}
+
 pub fn clear_persisted_conversation(
     db_path: &Path,
     busy_timeout_ms: u64,

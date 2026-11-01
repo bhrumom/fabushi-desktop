@@ -4,7 +4,7 @@ use serde_json::Value;
 
 use super::agent_db::{
     AgentDbProjectionError, read_persisted_transcript_entries,
-    update_persisted_transcript_entry,
+    update_persisted_transcript_entry, update_persisted_transcript_entry_if_session_admitted,
 };
 
 pub fn expire_pending_auto_review_approval_entries(
@@ -34,14 +34,13 @@ pub fn expire_pending_auto_review_approval_entries(
         ) else {
             continue;
         };
-        if update_persisted_transcript_entry(
+        let updated = update_swept_entry(
             db_path,
             busy_timeout_ms,
-            entry_id(&entry).unwrap_or_default(),
+            &entry,
             &settled,
-        )?
-        .is_some()
-        {
+        )?;
+        if updated.is_some() {
             expired.push(request_id);
         }
     }
@@ -84,14 +83,13 @@ pub fn expire_pending_local_tool_permission_ask_entries(
         ) else {
             continue;
         };
-        if update_persisted_transcript_entry(
+        let updated = update_swept_entry(
             db_path,
             busy_timeout_ms,
-            entry_id(&entry).unwrap_or_default(),
+            &entry,
             &settled,
-        )?
-        .is_some()
-        {
+        )?;
+        if updated.is_some() {
             expired.push(request_id);
         }
     }
@@ -141,4 +139,29 @@ fn settle_pending_entry(
 
 fn entry_id(entry: &Value) -> Option<&str> {
     entry.get("id").and_then(Value::as_str)
+}
+
+fn update_swept_entry(
+    db_path: &Path,
+    busy_timeout_ms: u64,
+    current: &Value,
+    next: &Value,
+) -> Result<Option<Value>, AgentDbProjectionError> {
+    let entry_id = entry_id(current).unwrap_or_default();
+    if let Some(session_key) = current
+        .get("sessionKey")
+        .and_then(Value::as_str)
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+    {
+        update_persisted_transcript_entry_if_session_admitted(
+            db_path,
+            busy_timeout_ms,
+            session_key,
+            entry_id,
+            next,
+        )
+    } else {
+        update_persisted_transcript_entry(db_path, busy_timeout_ms, entry_id, next)
+    }
 }

@@ -139,6 +139,49 @@ fn session_bound_widget_interaction_rejects_archived_owner_without_partial_updat
 }
 
 #[test]
+fn session_bound_permission_sweep_rejects_archived_owner_without_expiry() {
+    let root = temp_root("session-bound-sweep-archive");
+    let workers = Arc::new(ProductionSessionWorkers::with_agents_root(&root, 500));
+    let record = workers
+        .materialize_new_session(None, "user", None)
+        .expect("session");
+    let current = workers
+        .read_session_work_admission(&record.id)
+        .expect("admission")
+        .expect("main admission");
+    let mut entry = permission_entry("bound-permission", "bound-request", "pending", 10);
+    entry["sessionKey"] = serde_json::Value::String(current.session_key.clone());
+    workers
+        .append_agent_transcript_entries(&record.id, &[entry])
+        .expect("permission");
+    workers
+        .transition_session_work_archive(
+            &record.id,
+            &current.session_key,
+            &current.session_id,
+            Some(&current.lifecycle_revision),
+            true,
+            Some("human-1"),
+            Some("review"),
+            100.0,
+        )
+        .expect("archive");
+    let error = workers
+        .expire_pending_local_tool_permission_asks(&record.id, Some("bound-request"), None)
+        .expect_err("archived session must reject bound stale sweep");
+    assert!(error.contains("session is not admitted"));
+    let entry = workers
+        .read_agent_transcript_entries(&record.id)
+        .expect("transcript")
+        .into_iter()
+        .find(|entry| entry["id"] == "bound-permission")
+        .expect("permission entry");
+    assert_eq!(entry["message"]["ask"]["status"], "pending");
+    workers.shutdown();
+    let _ = fs::remove_dir_all(root);
+}
+
+#[test]
 fn boot_sweep_expires_only_cards_pending_before_cutoff_across_agents() {
     let root = temp_root("sweep");
     let workers = Arc::new(ProductionSessionWorkers::with_agents_root(&root, 500));
