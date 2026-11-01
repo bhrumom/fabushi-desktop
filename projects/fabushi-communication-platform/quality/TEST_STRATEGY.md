@@ -866,3 +866,28 @@ Authored, not run in Stage A:
 - `SEC-TDRP-CONTRIBUTING-NO-FORCE-PUBLISH-001` — upstream `git push --force` applies to the contributor-fork recipe only and cannot bypass Fabushi expected-SHA CAS, branch protection or publication authority.
 
 Stage A status is `validation_status=not-run`, `accepted=false`; no fork mutation, Git rebase/reset/squash/force-push, build, test, validator, CI, PR mutation, package, deploy or runtime acceptance is executed by this qualification.
+
+
+### Repository bug-report issue-form qualification
+
+`TDRP-R9-REPOSITORY-BUG-REPORT-ISSUE-FORM-001` is qualified through authored-only Stage-A contracts and later frozen-candidate Stage-B repository-process evidence. Source identity is fixed-U `.github/ISSUE_TEMPLATE/BUG_REPORT.yml@847b56e543fc28586ad281640218dfe8954d8bee`, recursive-tree index 107 zero-based, mode 100644, 2,112 Git bytes / 2,100 Unicode code points, 74 LF newline characters, zero CR characters, trailing newline and 75 split lines.
+
+Authored, not run in Stage A:
+- `CONTRACT-TDRP-BUG-REPORT-HOST-AUTHORITY-001` — GitHub Issue Forms is the repository-host consumer; reporters and maintainers/triagers are human consumers; no product runtime or second issue tracker is created.
+- `CONTRACT-TDRP-BUG-REPORT-SCHEMA-001` — the exact top-level name/description/bug-label intent and eight ordered controls are preserved as source provenance.
+- `CONTRACT-TDRP-BUG-REPORT-REQUIRED-INPUTS-001` — exactly six source controls carry `required: true`; Crash ID and Logs remain optional.
+- `CONTRACT-TDRP-BUG-REPORT-REPRODUCTION-001` — steps, expected behavior and actual behavior remain distinct required report dimensions.
+- `CONTRACT-TDRP-BUG-REPORT-ENVIRONMENT-001` — exact OS guidance is retained while kernel-only text is recognized as source-declared poor input, not a schema regex.
+- `CONTRACT-TDRP-BUG-REPORT-VERSION-001` — exact version guidance rejects `LATEST` at maintainer-policy level; no nonexistent machine validator is invented.
+- `CONTRACT-TDRP-BUG-REPORT-INSTALL-SOURCE-001` — one required single-select dropdown exposes exactly seven source-declared installation choices and preserves distro-package routing as upstream policy only.
+- `CONTRACT-TDRP-BUG-REPORT-CRASH-ID-001` — Crash ID stays optional and Telegram beta-enablement steps remain source-specific diagnostic provenance.
+- `CONTRACT-TDRP-BUG-REPORT-LOG-RENDERING-001` — Logs stay optional; `render: shell` is formatting only and cannot imply command execution.
+- `CONTRACT-TDRP-BUG-REPORT-BUG-LABEL-ROUTING-001` — source routing intent is the `bug` label; later qualification must verify current target routing rather than infer success from prose.
+- `INT-TDRP-BUG-REPORT-PROCESS-COMPOSITION-001` — issue/reporting/process + privacy/security + shared quality/evidence owners compose without Telegram-specific support/runtime duplication.
+- `FAULT-TDRP-BUG-REPORT-MISSING-REQUIRED-001` — a missing required field remains host-blocked/non-submittable in source semantics.
+- `FAULT-TDRP-BUG-REPORT-AMBIGUOUS-ENVIRONMENT-001` — `LATEST`, kernel-only OS text, or mismatched package-source claims remain triage-quality failure even though the YAML has no custom regex.
+- `FAULT-TDRP-BUG-REPORT-SENSITIVE-LOGS-001` — secrets or sensitive diagnostics in a public report are non-passing and must be redacted/omitted/routed through an approved protected process.
+- `SEC-TDRP-BUG-REPORT-NO-LOG-EXECUTION-001` — shell rendering never authorizes execution of reporter-controlled text.
+- `SEC-TDRP-BUG-REPORT-PRIVACY-BOUNDARY-001` — the source's lack of redaction/private-report guidance cannot weaken Fabushi repository privacy/security policy.
+
+The current Fabushi checkpoint has no `.github/ISSUE_TEMPLATE` tree. Existing-owner-first therefore records the upstream form behavior in current repository issue/reporting/process and shared security/quality owners rather than copying Telegram branding, beta/cheat-code instructions, distro support policy, or a second issue system. Stage A status is `validation_status=not-run`, `accepted=false`; no issue submission/creation/label mutation, diagnostic acquisition, build, test, validator, CI, package, deploy or runtime acceptance is executed by this qualification.

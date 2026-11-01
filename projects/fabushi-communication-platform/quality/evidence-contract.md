@@ -799,3 +799,22 @@ PR-quality evidence records one-issue/atomic scope, isolated whitespace cleanup,
 Recovery evidence distinguishes stale/diverged lineage, conflicted or interrupted rebase, mixed-scope PRs, untested changes, unclear commit rationale and incorrect issue linkage. Recovery is explicit rebase/split/test/message correction through existing owners followed by fresh exact-candidate evidence. No automatic acceptance, hidden retry, duplicate PR tracker, second rebase engine or product persistence is introduced.
 
 Stage A records the fifteen contract/integration/fault/security cases from TEST_STRATEGY as authored only. No remote/fork mutation, fetch/log/rebase/reset/squash/force-push, build, lint, validator, test, CI, PR publication, packaging, deployment, runtime evidence or acceptance is performed. `validation_status=not-run`; `accepted=false`.
+
+
+### Repository bug-report issue-form evidence
+
+For `TDRP-R9-REPOSITORY-BUG-REPORT-ISSUE-FORM-001`, source evidence binds fixed-U `.github/ISSUE_TEMPLATE/BUG_REPORT.yml@847b56e543fc28586ad281640218dfe8954d8bee`, recursive-tree index 107 zero-based, mode 100644, 2,112 Git bytes / 2,100 Unicode code points, 74 LF newlines, zero CR characters, trailing newline and 75 split lines.
+
+Schema evidence records top-level bug-report name/description, `labels: [bug]`, and eight ordered fields. Required fields are Steps to reproduce, Expected behaviour, Actual behaviour, Operating system, Version of Telegram Desktop, and Installation source. Crash ID and Logs are optional. Installation source is single-select with exactly seven options.
+
+Validation evidence separates actual Issue Forms constraints from description text. Only `required: true` and the dropdown option set are declared as schema validation. The source's no-kernel-version, exact-version/not-`LATEST`, and Linux-package-manager support statements are human/maintainer guidance; there is no custom regex, script or hidden validator in this YAML.
+
+Diagnostic evidence records optional Crash ID instructions tied to Telegram's beta-version flow and optional Logs instructions tied to the Telegram `viewlogs` cheat code. `render: shell` is presentation metadata for pasted log text and supplies no execution authority. The source declares no telemetry upload, private diagnostic store, automated log collector or product crash service.
+
+Privacy/security evidence is negative but material: the source declares no redaction warning, consent checkbox, private security route, secret detector, attachment limit or security-vulnerability template. Target evidence must therefore apply existing Fabushi repository security/privacy governance rather than infer that public diagnostic publication is safe. Sensitive logs or identifiers remain redacted/omitted/protected, and reporter-controlled text is never executed.
+
+Consumer evidence identifies GitHub Issue Forms as the direct host consumer and bug reporters plus maintainers/triagers as human consumers. The current Fabushi checkpoint has no `.github/ISSUE_TEMPLATE` directory, so no Telegram-specific form is copied. Existing-owner-first remains root repository issue/reporting/process authority + shared privacy/security + quality/test-evidence governance; no product UI/runtime, crash telemetry owner, second issue tracker or platform-core service is introduced.
+
+Recovery evidence distinguishes schema-blocked missing fields from prose-quality failures that can still satisfy `required: true`. Ambiguous environment/version, incorrect source routing, missing label routing, sensitive diagnostics or executable treatment of pasted logs remain non-passing until corrected through existing owners and freshly qualified on the exact frozen candidate.
+
+Stage A records the sixteen contract/integration/fault/security cases from TEST_STRATEGY as authored only. No Issue Form submission, issue creation/label mutation, crash/log acquisition, beta toggle, cheat-code invocation, log execution, build, lint, validator, test, CI, packaging, deployment, runtime evidence or acceptance is performed. `validation_status=not-run`; `accepted=false`.
