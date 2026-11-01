@@ -80,8 +80,12 @@ impl MultitaskTodoState for SandAgentDb {
     fn store_todos(&self, todos: &[MultitaskTodoItem]) -> Result<(), String> {
         let raw = serde_json::to_string(todos)
             .map_err(|error| format!("could not encode durable multitask todos: {error}"))?;
-        self.write_kv(SAND_MULTITASK_TODOS_KV, &raw)
+        let wrote = self
+            .write_kv(SAND_MULTITASK_TODOS_KV, &raw)
             .map_err(|error| error.to_string())?;
+        if !wrote {
+            return Err("multitask todo write was rejected by session admission".into());
+        }
         Ok(())
     }
 }
