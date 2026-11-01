@@ -9,7 +9,7 @@
     "unknown": 16172,
     "unread": 16145,
     "omitted": 0,
-    "responsibilities_total": 109,
+    "responsibilities_total": 110,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -27863,6 +27863,259 @@
         "Telegram/SourceFiles/mtproto/connection_abstract.cpp@3baabf3f72c7c7edba3151814681fbf167a5ca0a",
         "Telegram/SourceFiles/mtproto/session_private.cpp@13cbc76ec723386027b5b4dcac79999b791c4614"
       ]
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+      "source_path": "Telegram/SourceFiles/mtproto/web_proxy/web_proxy_frame.cpp",
+      "source_blob_sha": "bd1d7b310f40203f9da914efc8bdd6711035884b",
+      "source_kind": "source",
+      "module_id": "tdesktop.mtproto.web-proxy.relay-stream",
+      "responsibility_id": "TDRP-R9-MTPROTO-WEB-PROXY-RELAY-STREAM-001",
+      "source_symbols": [
+        "WebProxy::SerializeFrame",
+        "WebProxy::ParseFrames",
+        "WebProxy::FrameType",
+        "Transport::Private::processRelayPayload",
+        "Transport::Private::processRelayFrame",
+        "Transport::Private::grantWindow",
+        "Transport::Private::flushWindows",
+        "Transport::Private::flushStream",
+        "Transport::Private::welcome",
+        "Transport::NextStreamId",
+        "WebProxySocket::read",
+        "WebProxySocket::write",
+        "WebviewCarrier::WebviewCarrier",
+        "WebviewCarrier::handleControl"
+      ],
+      "capability_ids": [
+        "CAP-MTPROTO-WEB-PROXY-RELAY-STREAM"
+      ],
+      "dependency_ids": [
+        "canonical telegram-network transport owner",
+        "existing obfuscated MTProto byte stream",
+        "future shipping WebProxy carrier integration"
+      ],
+      "source_analysis_path": "docs/specs/telegram-web-proxy-relay-stream-boundary.md",
+      "behavior_contract": "Fixed-U WebProxy relay frames use an 8-byte header (type, 24-bit big-endian stream id, 32-bit big-endian payload length), a 1 MiB payload ceiling and a 4096-frame batch ceiling. Per-stream flow control starts with 4 MiB send/receive credit; DATA consumes receive/send credit and WINDOW carries one nonzero big-endian u32 credit amount. WebProxySocket returns receive credit only for bytes actually drained. The 32-byte URL-safe WebView nonce gates tproxy-android-init version 1 before Hello(0,[1]). These rules are exact, but current Fabushi has no shipping WebProxy carrier call path, so an isolated codec would be dead production code.",
+      "state_machine": "carrier bootstrap -> exact nonce/version bridge init -> Hello(0,[1]) -> Welcome(0,empty) -> Open logical streams -> bounded Data/Window/Close exchange -> carrier loss/close; broader carrier selection, WebView retry/adoption, reconnect and connection scheduling stay outside this responsibility.",
+      "side_effects": [
+        "Pure frame serialization/parsing has no side effects.",
+        "Stream-window state changes only within a WebProxy carrier and grants receive credit only after consumer reads bytes.",
+        "WebView nonce generation consumes secure randomness in the carrier lifecycle."
+      ],
+      "failure_cases": [
+        "unknown relay frame type",
+        "stream id above 24-bit range on encode",
+        "payload above 1 MiB",
+        "more than 4096 completed frames in one batch",
+        "empty DATA or DATA above receive credit",
+        "WINDOW payload not exactly four bytes or zero credit",
+        "receive-window overgrant above the 4 MiB ceiling",
+        "non-WELCOME traffic before welcome or invalid duplicate WELCOME",
+        "traffic for an unknown never-opened stream",
+        "WebView init version or nonce mismatch",
+        "dead unused codec added without a shipping WebProxy carrier"
+      ],
+      "ui_disposition": "Not applicable; no UI surface is introduced by the relay stream boundary.",
+      "non_ui_responsibilities": [
+        "WebProxy relay frame grammar",
+        "incremental frame parsing bounds",
+        "logical stream id boundary",
+        "per-stream send/receive window semantics",
+        "consumer-driven receive-credit return",
+        "WebView bootstrap nonce gate classification"
+      ],
+      "platform_delta": "Mapped to the existing telegram-network owner. No production delta is made in this round because the live Fabushi call graph has no shipping WebProxy logical-stream/carrier implementation that can consume the codec/window state. telegram-protocol remains unchanged.",
+      "existing_owner_candidates": [
+        "bhrumom/fabushi-platform-core:native/telegram-network",
+        "bhrumom/fabushi-platform-core:native/telegram-protocol"
+      ],
+      "existing_owner": "bhrumom/fabushi-platform-core:native/telegram-network",
+      "rejected_existing_owners": [
+        "telegram-protocol: WebProxy relay frames multiplex the underlying carrier and are not MTProto TL/message/cryptography wire.",
+        "new Telegram/WebProxy provider or runtime: would duplicate the canonical transport owner."
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "bhrumom/fabushi-platform-core:native/telegram-network",
+        "bhrumom/fabushi-desktop:source/mahayana/mahayana-rs/providers/telegram-network"
+      ],
+      "fabushi_target_symbols": [
+        "existing telegram-network WebProxy carrier integration (blocked; no production symbol yet)"
+      ],
+      "target_language": "Rust",
+      "language_rationale": "The non-UI relay multiplexing and flow-control responsibility belongs in the existing Rust telegram-network transport owner. It must not create a source-specific parallel runtime or move carrier state into telegram-protocol.",
+      "command_event_contracts": [],
+      "state_owner": "Future per-carrier logical-stream state inside the existing telegram-network owner; no new persistent domain owner.",
+      "lifecycle_owner": "Existing telegram-network transport boundary when a shipping WebProxy carrier exists. Carrier selection, WebView retry/adoption, browser fallback, reconnect and broader connection scheduling remain separate/open.",
+      "persistence_and_restart": "No persistent state is required; relay stream/window/nonce state is per carrier connection.",
+      "concurrency_and_cancellation": "No scheduler is introduced in this round. Fixed-U transport uses a worker/carrier lifecycle, but broader scheduling/cancellation is explicitly excluded. A future implementation must integrate with existing telegram-network cancellation rather than add another scheduler.",
+      "security_boundary": "The WebView bootstrap nonce is 32 secure-random bytes encoded URL-safe base64 without padding and compared exactly before relay Hello. The nonce is lifecycle-bound; this round adds no crypto implementation or secret logging.",
+      "network_service_dependencies": [
+        "A future real WebProxy carrier selected by the existing telegram-network shipping path.",
+        "Relay endpoint implementing the fixed-U frame/window protocol."
+      ],
+      "service_owner": "Existing canonical telegram-network transport stack.",
+      "deployment_evidence": [],
+      "implementation_status": "mapped",
+      "coverage_disposition": "pending",
+      "blockers": [
+        "Current canonical telegram-network has no shipping WebProxy logical-stream/carrier implementation or selectable call path; adding only a frame/window codec would be unused production API.",
+        "WebView nonce/bootstrap is inseparable from carrier navigation/origin/adoption/health lifecycle and is not independently shippable.",
+        "Broader connection scheduling/racing/reconnect/send retry remains explicitly outside this responsibility.",
+        "Stage B executable validation has not run."
+      ],
+      "production_entrypoints": [],
+      "production_evidence": [
+        "fixed-U:Telegram/SourceFiles/mtproto/web_proxy/web_proxy_frame.h@a5ba491fed67d70aee88e6ec2e3ac47c991e78f3",
+        "fixed-U:Telegram/SourceFiles/mtproto/web_proxy/web_proxy_frame.cpp@bd1d7b310f40203f9da914efc8bdd6711035884b",
+        "fixed-U:Telegram/SourceFiles/mtproto/web_proxy/web_proxy_transport.h@f58850d2bc2ceabd93113d7725903e1c0d92d71b",
+        "fixed-U:Telegram/SourceFiles/mtproto/web_proxy/web_proxy_transport.cpp@e25ad970e84686e9aca061d02c274048793b5ad4",
+        "fixed-U:Telegram/SourceFiles/mtproto/details/mtproto_web_proxy_socket.cpp@9aa05e7034031310de4aa9d410fbb15d21c63ee8",
+        "fixed-U:Telegram/SourceFiles/mtproto/details/mtproto_web_proxy_socket.h@02ed27b77d4ff606b3e1cb548a60e4f2c2ca11f0",
+        "fixed-U:Telegram/SourceFiles/mtproto/web_proxy/web_proxy_webview.cpp@8a2efc8fb15e400366f199cd956effc8ad362da8",
+        "fixed-U:Telegram/SourceFiles/mtproto/connection_tcp.cpp@d721a9058e1885d2964ded55bd4e4c7c2ce9e381",
+        "platform-core-spec-commit:bde283f60d5413426649737a47912b5ec4c3899a",
+        "platform-core-spec-blob:b7de819a9594f74c6aab7f75112c6876f2b21e87",
+        "canonical-network-unchanged-blob:241cd8ec792070a8de8af9ec6ca5b317e34376d1",
+        "desktop-network-mirror-unchanged-blob:241cd8ec792070a8de8af9ec6ca5b317e34376d1",
+        "canonical-network-contract-unchanged-blob:71f9732b1c81d7bf782ff1eccb2852b1401cfa6f",
+        "desktop-network-contract-mirror-unchanged-blob:71f9732b1c81d7bf782ff1eccb2852b1401cfa6f"
+      ],
+      "test_evidence": [
+        "Authored source-level contract vectors are in docs/specs/telegram-web-proxy-relay-stream-boundary.md@b7de819a9594f74c6aab7f75112c6876f2b21e87; not executed.",
+        "No test-only hypothetical codec was added because there is no production WebProxy symbol to exercise."
+      ],
+      "target_commit": "bde283f60d5413426649737a47912b5ec4c3899a",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Canonical shared telegram-network transport stack",
+      "composition_slot": "WebProxy carrier / logical stream boundary (blocked pending shipping carrier)",
+      "capability_component": "WebProxy relay frame and stream-window contract",
+      "variation_axes": [
+        "frame type",
+        "stream id",
+        "payload length",
+        "partial input",
+        "window amount",
+        "pre/post Welcome",
+        "open/closed/unknown stream",
+        "WebView nonce match"
+      ],
+      "shared_owner_contracts": [
+        "Canonical telegram-network socket/carrier ownership",
+        "Existing MTProto obfuscated byte stream",
+        "No duplicate scheduler/provider/runtime"
+      ],
+      "duplicate_root_check": "No second Telegram runtime/provider/transport owner was introduced; telegram-protocol remains unchanged.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Not applicable",
+      "primary_navigation_target": "Existing Messages/Conversation navigation; unchanged",
+      "collection_surface": "Existing ConversationList; unchanged",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "Not applicable",
+      "detail_section": "Not applicable",
+      "capability_surface": "No UI surface",
+      "route_contract": "No new route.",
+      "search_scope": "Not applicable",
+      "search_provider": "Existing canonical Search owner; unchanged",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Unchanged.",
+      "search_local_remote_contract": "Not applicable.",
+      "responsive_disposition": "No UI change.",
+      "accessibility_contract": "No UI change.",
+      "keyboard_contract": "No UI change.",
+      "state_continuity_contract": "Relay stream/window state is per carrier and reconstructed on a new carrier; no parallel persistence is introduced.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Existing Fabushi design system; no visual changes",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": null,
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "No new icon asset",
+      "avatar_contract": "No change",
+      "content_copy_keys": [],
+      "motion_contract": "No change",
+      "reduced_motion_contract": "No change",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "high",
+      "requirement_ids": [
+        "TDRP-R9-MTPROTO-WEB-PROXY-RELAY-STREAM-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-MTPROTO-WEB-PROXY-RELAY-STREAM-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-WEB-PROXY-FRAME-HEADER-001",
+        "INV-TDRP-WEB-PROXY-WINDOW-CREDIT-001",
+        "INV-TDRP-WEB-PROXY-NONCE-GATE-001",
+        "INV-TDRP-WEB-PROXY-NO-DEAD-CODEC-001"
+      ],
+      "unit_case_ids": [],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-WEB-PROXY-RELAY-STREAM-001"
+      ],
+      "integration_case_ids": [
+        "INT-TDRP-WEB-PROXY-CARRIER-001"
+      ],
+      "functional_e2e_case_ids": [
+        "E2E-TDRP-WEB-PROXY-CARRIER-001"
+      ],
+      "temporal_case_ids": [
+        "TEMP-TDRP-WEB-PROXY-WINDOW-FLUSH-001"
+      ],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "fault_recovery_case_ids": [
+        "FAULT-TDRP-WEB-PROXY-MALFORMED-FRAME-001"
+      ],
+      "performance_case_ids": [
+        "PERF-TDRP-WEB-PROXY-BOUNDED-QUEUE-001"
+      ],
+      "security_case_ids": [
+        "SEC-TDRP-WEB-PROXY-NONCE-001"
+      ],
+      "soak_case_ids": [],
+      "exploratory_charter_ids": [],
+      "regression_ids": [],
+      "release_gate_ids": [
+        "G-TRACEABILITY",
+        "G-ARCHITECTURE",
+        "G-EVIDENCE"
+      ],
+      "test_fixture_ids": [
+        "fixed-u-web-proxy-relay-vectors"
+      ],
+      "test_environment_ids": [
+        "Stage B GitHub Actions candidate environment"
+      ],
+      "coverage_matrix_status": "pending",
+      "flake_status": "unknown",
+      "release_gate_status": "pending",
+      "acceptance_reviewer": null,
+      "reviewer": null,
+      "license_and_provenance": "Behavioral responsibility is anchored to fixed-U telegramdesktop/tdesktop WebProxy frame/transport/socket/webview and connection sources listed in production_evidence. No upstream C++ is copied and no new crypto implementation is introduced.",
+      "notes": "Task round79/source evidence round110. Exact relay frame/window rules are understood and mapped to the existing telegram-network owner. Current shipping reachability is absent, so this row remains mapped/pending rather than falsely implemented. WebView nonce/bootstrap is lifecycle-bound and remains blocked with the carrier. Stage-A executable validation is not run.",
+      "test_execution_evidence": [],
+      "validation_status": "not-run",
+      "accepted": false
     }
   ],
   "rebaseline_candidate": {
