@@ -518,3 +518,17 @@ production handoff path does not call these builders; it uses the existing
 background-revival owner and its admission lookup. This removes a future
 identity-guessing seam without claiming a new production handoff caller or
 upgrading runtime acceptance.
+
+## 12.11 Group-member selector fallback correction — 2026-11-01
+
+`run_local_group_member_turn` no longer synthesizes
+`agent:<member>:group:main` when the producer has no room selector. An
+explicit `group_room_id` remains the producer's group-scoped selector and is
+checked by the existing session admission owner. A selector-less shared-room
+request now reads the member's existing admission record and reuses its exact
+key; if no record exists, the turn fails closed before routed-send admission
+or Runner dispatch.
+
+This removes an agent-derived group identity guess from a real background
+producer. It does not establish a group-session catalog for selector-less
+remote requests, nor does it claim group runtime or exact-head acceptance.

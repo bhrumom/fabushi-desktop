@@ -5207,6 +5207,19 @@ fn run_local_group_member_turn(
     let member_id = request.member.id.clone();
     let member_name = request.member.name.clone();
     let group_room_id = group_room_id.map(ToOwned::to_owned);
+    let session_key = match group_room_id.as_deref() {
+        Some(room_id) => format!("agent:{member_id}:group:{room_id}"),
+        None => deps
+            .session_workers
+            .read_session_work_admission(&member_id)?
+            .map(|record| record.session_key)
+            .filter(|value| !value.trim().is_empty())
+            .ok_or_else(|| {
+                format!(
+                    "group-member turn requires an existing admitted session identity for {member_id}"
+                )
+            })?,
+    };
     let before = deps
         .session_workers
         .read_agent_transcript_entries(&member_id)?;
@@ -5214,7 +5227,7 @@ fn run_local_group_member_turn(
     let client_nonce = format!("group-member:{}:{}", member_id, uuid::Uuid::new_v4());
     let admission_args = serde_json::json!({
         "agentId": member_id,
-        "sessionKey": format!("agent:{member_id}:group:{}", group_room_id.as_deref().unwrap_or("main")),
+        "sessionKey": session_key,
         "prompt": request.prompt,
         "clientNonce": client_nonce,
         "streamId": stream_id,
@@ -5239,7 +5252,7 @@ fn run_local_group_member_turn(
     let runner_args = serde_json::json!({
         "provider": provider.as_str(),
         "agentId": member_id,
-        "sessionKey": format!("agent:{member_id}:group:{}", group_room_id.as_deref().unwrap_or("main")),
+        "sessionKey": admission_args["sessionKey"].clone(),
         "streamId": stream_id,
         "requestSource": "group-member",
         "groupMemberTurn": true,
