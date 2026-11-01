@@ -6,8 +6,8 @@
   "target_commit": "23d73b32e301408f9c8aed151cb1f9e442516e13",
   "coverage": {
     "source_entries_total": 16202,
-    "unknown": 16162,
-    "unread": 16135,
+    "unknown": 16161,
+    "unread": 16134,
     "omitted": 0,
     "responsibilities_total": 133,
     "unmapped_responsibilities": 0
@@ -34518,7 +34518,13 @@
         "Report",
         "interface.display_name",
         "interface.short_description",
-        "interface.default_prompt"
+        "interface.default_prompt",
+        "Inputs and boundary",
+        "Inventory and eligibility",
+        "Aggressive merge decision",
+        "Build replacement tasks",
+        "Traceability and validation",
+        "Publish and return"
       ],
       "capability_ids": [
         "CAP-REPOSITORY-TASK-AUTHORITY",
@@ -34559,7 +34565,13 @@
         "Consolidation weakens criteria/inputs/dependencies or creates a cycle",
         "Publication race/conflict is force-pushed or partially applied",
         "Second Telegram-specific task queue/scheduler or platform-core runtime owner introduced",
-        "Source-level implementation is promoted to executable verification or acceptance"
+        "Source-level implementation is promoted to executable verification or acceptance",
+        "Consolidation retires a task that is not pristine unclaimed todo work or crosses project/frozen-batch membership",
+        "Active/claimed/non-mergeable reverse dependent is stranded by retirement",
+        "Replacement dependency simulation creates a direct/transitive self-edge or cycle",
+        "No-merge path mutates unrelated queue/project/receipt state",
+        "Retired source loses task/input history, has a stale retained-content fingerprint, or leaves a non-terminating alias",
+        "Generic publish resumes a consolidation commit without re-running consolidation semantic validation"
       ],
       "ui_disposition": "Not applicable; repository development-process governance only.",
       "non_ui_responsibilities": [
@@ -34572,7 +34584,12 @@
         "Result-attributable discovery routing",
         "Compatible unfinished-task consolidation with durable aliases",
         "CAS publication and recoverable race/conflict handling",
-        "Implementation/validation/acceptance separation"
+        "Implementation/validation/acceptance separation",
+        "Fail-closed consolidation candidate eligibility and partitioning",
+        "Replacement dependency simulation and reverse-dependent fencing",
+        "Merge/no-merge criterion preservation and no-repeat completion boundary",
+        "Durable superseded aliases with retained-content fingerprinting",
+        "Explicit-path consolidation publication and generic-publish semantic revalidation"
       ],
       "platform_delta": "No platform-core production delta. This fixed-U responsibility is repository-development process governance, not shipping Tasks/Automations, Agent/Coordinator/Host/Runner, or platform runtime behavior.",
       "existing_owner_candidates": [
@@ -34612,7 +34629,14 @@
         "split-required -> atomic replacement mapping + optional single retained-work carrier",
         "in-scope result with attributable follow-up -> durable routing -> append only created task ids",
         "pending consolidation -> one queue-wide compatible-unclaimed optimization pass -> merged or durable no-merge",
-        "publication race/conflict -> retry safe pre-commit race or preserve recoverable blocked state, never force-push"
+        "publication race/conflict -> retry safe pre-commit race or preserve recoverable blocked state, never force-push",
+        "unfinished pristine todo inventory + project/batch partition -> eligible consolidation candidates",
+        "candidate cluster + reverse dependencies -> simulated replacement graph -> mergeable | reject",
+        "selected cluster -> pristine replacement + stable external dependency union + rewritten dependents/project links",
+        "retired source -> retained task/input + superseded alias + receipt + retained-content fingerprint",
+        "no compatible cluster -> completion marker STATUS: NO_MERGE with no unrelated mutation",
+        "last-moment source/dependent drift -> RACED with no tracked write and pending marker retained",
+        "consolidation commit + fetch/rebase/push -> same semantic validator -> CAS publish | recoverable BLOCKED"
       ],
       "state_owner": "Existing Fabushi repository development process authority",
       "lifecycle_owner": "Existing repository development lifecycle and quality/test-evidence governance",
@@ -34642,7 +34666,12 @@
         "desktop-spec-commit:56d0e8a62c2dd94fe5a558d0296054be3d86e453",
         "dossier:projects/telegram-desktop-rust/dossiers/continue-openai-host-adapter-complete-read.md",
         "upstream-sources:.agents/skills/continue/agents/openai.yaml@e981285ee10cbed9e27e358d60ce596c9e0b3d61",
-        "desktop-spec-commit:fc8bf28953a3f3e100e55663ea3c86f7a51dbb44"
+        "desktop-spec-commit:fc8bf28953a3f3e100e55663ea3c86f7a51dbb44",
+        "dossier:projects/telegram-desktop-rust/dossiers/continue-consolidation-complete-read.md",
+        "upstream-sources:.agents/skills/continue/references/consolidate-pending-tasks.md@bd301d93f8f670ad041b3db72330e17cbb50eb5c",
+        "upstream-consumer:.agents/skills/process-inbox/scripts/workspace.py@3cd99d173fcc3a6e293cfe36058a5fd9e492887d",
+        "upstream-contract-tests:.agents/skills/process-inbox/scripts/workspace_test.py@79f943a99809bc6acf173872d9a780346648b5cf",
+        "desktop-spec-commit:f999edc84561fe4d7d97b0eff8cebe068ad8369f"
       ],
       "test_evidence": [
         "CONTRACT-TDRP-CONTINUE-BATCH-FREEZE-001 authored, not run",
@@ -34654,9 +34683,14 @@
         "CONTRACT-TDRP-CONTINUE-RECOVERY-001 authored, not run",
         "INT-TDRP-CONTINUE-HOST-ADAPTER-COMPOSITION-001 authored, not run",
         "CONTRACT-TDRP-CONTINUE-OPENAI-HOST-METADATA-001 authored, not run",
-        "INT-TDRP-CONTINUE-OPENAI-HOST-INVOCATION-001 authored, not run"
+        "INT-TDRP-CONTINUE-OPENAI-HOST-INVOCATION-001 authored, not run",
+        "CONTRACT-TDRP-CONTINUE-CONSOLIDATION-ELIGIBILITY-001 authored, not run",
+        "CONTRACT-TDRP-CONTINUE-CONSOLIDATION-MERGE-NO-MERGE-001 authored, not run",
+        "CONTRACT-TDRP-CONTINUE-CONSOLIDATION-ALIAS-FINGERPRINT-001 authored, not run",
+        "INT-TDRP-CONTINUE-CONSOLIDATION-PUBLISH-001 authored, not run",
+        "FAULT-TDRP-CONTINUE-CONSOLIDATION-RECOVERY-001 authored, not run"
       ],
-      "target_commit": "fc8bf28953a3f3e100e55663ea3c86f7a51dbb44",
+      "target_commit": "f999edc84561fe4d7d97b0eff8cebe068ad8369f",
       "workflow_run": null,
       "run_attempt": null,
       "job": null,
@@ -34742,7 +34776,11 @@
         "INV-TDRP-CONTINUE-SPLIT-NO-DUPLICATE-LIVE-001",
         "INV-TDRP-CONTINUE-CONSOLIDATION-NO-WEAKENING-001",
         "INV-TDRP-CONTINUE-NO-FORCE-PUBLISH-001",
-        "INV-TDRP-CONTINUE-NO-SECOND-OWNER-001"
+        "INV-TDRP-CONTINUE-NO-SECOND-OWNER-001",
+        "INV-TDRP-CONTINUE-CONSOLIDATION-PRISTINE-CANDIDATE-001",
+        "INV-TDRP-CONTINUE-CONSOLIDATION-PARTITION-001",
+        "INV-TDRP-CONTINUE-CONSOLIDATION-ALIAS-FINGERPRINT-001",
+        "INV-TDRP-CONTINUE-CONSOLIDATION-NO-REPEAT-001"
       ],
       "unit_case_ids": [],
       "property_state_case_ids": [],
@@ -34754,11 +34792,15 @@
         "CONTRACT-TDRP-CONTINUE-SPLIT-TRANSACTION-001",
         "CONTRACT-TDRP-CONTINUE-CONSOLIDATION-001",
         "CONTRACT-TDRP-CONTINUE-RECOVERY-001",
-        "CONTRACT-TDRP-CONTINUE-OPENAI-HOST-METADATA-001"
+        "CONTRACT-TDRP-CONTINUE-OPENAI-HOST-METADATA-001",
+        "CONTRACT-TDRP-CONTINUE-CONSOLIDATION-ELIGIBILITY-001",
+        "CONTRACT-TDRP-CONTINUE-CONSOLIDATION-MERGE-NO-MERGE-001",
+        "CONTRACT-TDRP-CONTINUE-CONSOLIDATION-ALIAS-FINGERPRINT-001"
       ],
       "integration_case_ids": [
         "INT-TDRP-CONTINUE-HOST-ADAPTER-COMPOSITION-001",
-        "INT-TDRP-CONTINUE-OPENAI-HOST-INVOCATION-001"
+        "INT-TDRP-CONTINUE-OPENAI-HOST-INVOCATION-001",
+        "INT-TDRP-CONTINUE-CONSOLIDATION-PUBLISH-001"
       ],
       "functional_e2e_case_ids": [],
       "temporal_case_ids": [
@@ -34771,7 +34813,8 @@
       "fault_recovery_case_ids": [
         "FAULT-TDRP-CONTINUE-PUBLICATION-RACE-001",
         "FAULT-TDRP-CONTINUE-SPLIT-CARRIER-CONFLICT-001",
-        "FAULT-TDRP-CONTINUE-CONSOLIDATION-RACE-001"
+        "FAULT-TDRP-CONTINUE-CONSOLIDATION-RACE-001",
+        "FAULT-TDRP-CONTINUE-CONSOLIDATION-RECOVERY-001"
       ],
       "performance_case_ids": [],
       "security_case_ids": [
@@ -34800,14 +34843,15 @@
       "acceptance_reviewer": null,
       "reviewer": null,
       "license_and_provenance": "Behavioral repository task/process authority, batch-freeze, source-lineage, split, discovery-routing and consolidation contracts read from fixed-U continue skill and direct fixed-U host/workflow consumers; no upstream scheduler implementation copied into Fabushi shipping runtime. OpenAI invocation metadata was additionally read from fixed-U agents/openai.yaml; only declarative host-adapter behavior was mapped.",
-      "notes": "Task round114/source evidence round145. Complete fixed-U tree reread truncated=false confirms continue/SKILL.md is the next independent unrepresented blob after represented code-health sources.py. Exact 39,712-character / 722-line continue skill plus host invocation wrappers, process-inbox/perform-task boundaries and split/consolidation references were read. Exactly one independent source entry closes: unknown 16164->16163, unread 16137->16136, responsibilities 132->133. Adjacent continue agents/openai.yaml and reference blobs remain independently unclosed. Contracts authored, not run; accepted=false. Task round115/source evidence round146 independently closes the adjacent OpenAI continue adapter blob. Exact 291-character / 4-line YAML preserves display/discovery metadata plus a default prompt that invokes $continue, resumes active work first, freezes exactly the caller-selected batch, and processes one task at a time. No new responsibility or owner is created; unknown 16163->16162, unread 16136->16135, responsibilities remain 133. OpenAI host-metadata/invocation contracts authored, not run.",
+      "notes": "Task round114/source evidence round145. Complete fixed-U tree reread truncated=false confirms continue/SKILL.md is the next independent unrepresented blob after represented code-health sources.py. Exact 39,712-character / 722-line continue skill plus host invocation wrappers, process-inbox/perform-task boundaries and split/consolidation references were read. Exactly one independent source entry closes: unknown 16164->16163, unread 16137->16136, responsibilities 132->133. Adjacent continue agents/openai.yaml and reference blobs remain independently unclosed. Contracts authored, not run; accepted=false. Task round115/source evidence round146 independently closes the adjacent OpenAI continue adapter blob. Exact 291-character / 4-line YAML preserves display/discovery metadata plus a default prompt that invokes $continue, resumes active work first, freezes exactly the caller-selected batch, and processes one task at a time. No new responsibility or owner is created; unknown 16163->16162, unread 16136->16135, responsibilities remain 133. OpenAI host-metadata/invocation contracts authored, not run. Task round116/source evidence round147 independently closes the fixed-U pending-task consolidation reference. Exact 14,614-character / 285-line source plus continue scheduler, project-context policy, process-inbox alias consumer, workspace helper, and fixed-U workspace tests were read. Eligibility is pristine unclaimed todo only, partitioned by project and frozen-batch membership; merge/no-merge preserves criteria/inputs/dependencies; retired ids retain durable aliases and content fingerprints; pre-commit drift returns RACED with no write while committed semantic/publication failures preserve a recoverable BLOCKED commit and never force-push. Existing repository process owner is extended; no new responsibility/ADR/platform-core runtime is created. Exactly one independent source entry closes: unknown 16162->16161, unread 16135->16134, responsibilities remain 133. Contracts authored, not run; accepted=false.",
       "test_execution_evidence": [],
       "id": "TDRP-R9-REPOSITORY-CONTINUE-TASK-PROCESS-AUTHORITY-001",
       "validation_status": "not-run",
       "accepted": false,
       "source_paths": [
         ".agents/skills/continue/SKILL.md@aeb81dd57018abbc8f03ea3dbd34f91952128db5",
-        ".agents/skills/continue/agents/openai.yaml@e981285ee10cbed9e27e358d60ce596c9e0b3d61"
+        ".agents/skills/continue/agents/openai.yaml@e981285ee10cbed9e27e358d60ce596c9e0b3d61",
+        ".agents/skills/continue/references/consolidate-pending-tasks.md@bd301d93f8f670ad041b3db72330e17cbb50eb5c"
       ]
     }
   ],
