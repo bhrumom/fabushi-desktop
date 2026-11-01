@@ -27674,7 +27674,10 @@
         "platform-core-network-contract-path:native/telegram-network/tests/tcp_transport.rs@9dfb554bae0dac9ea68ebd6b2fe7cab664cc1240",
         "desktop-provider-sync-commit:f24b51ec5ba2d959f8c08fe44c6af706f38d7224",
         "path:source/mahayana/mahayana-rs/providers/telegram-network/src/lib.rs@7c442299aedd4aa7444ba53c7ab8212542dfc2d1",
-        "path:source/mahayana/mahayana-rs/providers/telegram-network/tests/tcp_transport.rs@9dfb554bae0dac9ea68ebd6b2fe7cab664cc1240"
+        "path:source/mahayana/mahayana-rs/providers/telegram-network/tests/tcp_transport.rs@9dfb554bae0dac9ea68ebd6b2fe7cab664cc1240",
+        "platform-core-final-compliance-commit:b48b9a92c45f7954322946fb7640b53affc5d7bc",
+        "platform-core-final-spec-blob:2fb3554e7c6d320ff8d8009f78f04b6436ef1c19",
+        "desktop-round108-bookkeeping-commit:da6bbfcafabb66681ba8614cf2d97c9e9e43ca5f"
       ],
       "test_evidence": [
         "Existing protocol contracts already pin generic Abridged/Intermediate quick-ACK marker/token behavior and a known quick_ack_token vector; not run.",
@@ -27798,7 +27801,7 @@
       "acceptance_reviewer": null,
       "reviewer": null,
       "license_and_provenance": "Behavioral responsibility is anchored to fixed-U telegramdesktop/tdesktop connection_tcp.cpp@d721a9058e1885d2964ded55bd4e4c7c2ce9e381, connection_abstract.cpp@3baabf3f72c7c7edba3151814681fbf167a5ca0a and session_private.cpp@13cbc76ec723386027b5b4dcac79999b791c4614. Source-neutral Rust owners are retained; no upstream C++ implementation is copied.",
-      "notes": "Stage A source-level implementation only. Existing telegram-protocol already owned generic quick-ACK token/marker wire primitives without request-history state. Fixed-U shipping does not request quick-ACK and explicitly leaves the newer receive form unsupported, so this round does not invent correlation. The minimal production delta changes existing TcpTransport receive behavior from silent token discard to typed fail-closed UnexpectedQuickAck(token). Contracts are authored/mirrored but not executed; validation_status=not-run and accepted=false. Broader correlation/history, connection scheduling, auth-key lifecycle, gzip and complete difference decoding remain open.",
+      "notes": "Stage A source-level implementation only. Existing telegram-protocol already owned generic quick-ACK token/marker wire primitives without request-history state. Fixed-U shipping does not request quick-ACK and explicitly leaves the newer receive form unsupported, so this round does not invent correlation. The minimal production delta changes existing TcpTransport receive behavior from silent token discard to typed fail-closed UnexpectedQuickAck(token). Contracts are authored/mirrored but not executed; validation_status=not-run and accepted=false. Broader correlation/history, connection scheduling, auth-key lifecycle, gzip and complete difference decoding remain open. Final canonical source-level compliance is platform-core b48b9a92c45f7954322946fb7640b53affc5d7bc / spec blob 2fb3554e7c6d320ff8d8009f78f04b6436ef1c19, referencing desktop bookkeeping da6bbfcafabb66681ba8614cf2d97c9e9e43ca5f. Executable validation remains not-run and acceptance remains false.",
       "test_execution_evidence": [],
       "validation_status": "not-run",
       "accepted": false,

@@ -1619,3 +1619,14 @@ Desktop provider synchronization: `f24b51ec5ba2d959f8c08fe44c6af706f38d7224`; mi
 The unique ledger adds `TDRP-R9-MTPROTO-QUICK-ACK-WIRE-001` as `implemented / coverage_disposition=rewritten / validation_status=not-run / accepted=false`. Coverage becomes `responsibilities_total=109, unknown=16172, unread=16145, omitted=0, unmapped_responsibilities=0`. Unknown/unread remain intentionally unchanged because broader connection scheduling/racing/reconnect/send retry, arbitrary request histories, proxy/Web/TLS camouflage, auth-key lifecycle, gzip and complete difference decoding/application remain open.
 
 No build, typecheck, lint, schema validator, generator, unit/contract/integration/E2E execution, GitHub Actions/status/check query, package, deployment, installation or runtime acceptance was performed.
+
+
+### Round 108 final source-level compliance
+
+Platform-core final source-level compliance is `b48b9a92c45f7954322946fb7640b53affc5d7bc` / spec blob `2fb3554e7c6d320ff8d8009f78f04b6436ef1c19`, referencing desktop bookkeeping checkpoint `da6bbfcafabb66681ba8614cf2d97c9e9e43ca5f`.
+
+Canonical production remains `605b8928de5fb64bf235196093ef804e350994f2`: `native/telegram-network/src/lib.rs@7c442299aedd4aa7444ba53c7ab8212542dfc2d1`; the existing protocol quick-ACK wire primitives remain unchanged at `crypto.rs@32d69573acc6ef4ce7bcc80073f5cdd7e2bea7ad` and `transport.rs@74189488dc3ec1015edc59989f7aced8ad65f5c3`. Authored-only network contracts remain `9dfb554bae0dac9ea68ebd6b2fe7cab664cc1240`; desktop provider production/test mirrors are byte-identical from checkpoint `f24b51ec5ba2d959f8c08fe44c6af706f38d7224`.
+
+The unique `TDRP-R9-MTPROTO-QUICK-ACK-WIRE-001` responsibility remains `implemented / coverage_disposition=rewritten / validation_status=not-run / accepted=false`. Coverage remains `responsibilities_total=109, unknown=16172, unread=16145, omitted=0, unmapped_responsibilities=0`.
+
+No executable validation or GitHub Actions/status/check query was performed. Quick-ACK request-to-request correlation/arbitrary request history, proxy/Web/TLS camouflage, broader auth-key lifecycle and connection scheduling/racing/reconnect/send retry, gzip, complete difference/differenceSlice decoding/application, broader fixed-U source/legal closure, Stage-B evidence and independent release ACCEPT remain open.

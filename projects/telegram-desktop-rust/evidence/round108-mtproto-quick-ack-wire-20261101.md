@@ -40,3 +40,12 @@ Shipping telegram-network never requests quick-ACK because send_payload calls or
 Quick-ACK request-to-outstanding-request correlation; arbitrary request histories; broader connection scheduling/racing/reconnect/send retry; proxy/Web/TLS camouflage; auth-key binding/persistence/expiry/renewal; gzip; complete difference/differenceSlice decoding/application; broader fixed-U source/legal closure; Stage-B executable evidence; independent release ACCEPT.
 
 No executable validation or GitHub Actions/status/check query was performed.
+
+
+## Final source-level compliance readback
+
+Platform-core final compliance: `b48b9a92c45f7954322946fb7640b53affc5d7bc` / spec blob `2fb3554e7c6d320ff8d8009f78f04b6436ef1c19`.
+
+Desktop bookkeeping before final readback: `da6bbfcafabb66681ba8614cf2d97c9e9e43ca5f`; unique ledger status `implemented / rewritten / not-run / accepted=false`, coverage `109 / 16172 / 16145 / 0 / 0` for responsibilities / unknown / unread / omitted / unmapped.
+
+No build, test, validator, Actions/status/check query, package, deployment, installation or runtime acceptance evidence was produced.
