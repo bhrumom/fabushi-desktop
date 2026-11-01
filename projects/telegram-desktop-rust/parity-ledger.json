@@ -28557,7 +28557,6 @@
       "implementation_status": "mapped",
       "coverage_disposition": "pending",
       "blockers": [
-        "Current live platform/desktop checkpoint trees contain no unified Fabushi proxy/settings production owner that can ship WebProxy user-input/import/share/persistence/selection without creating a second settings subsystem.",
         "native/telegram-protocol Cargo.toml@a62d99f23d370cd75590c7b3186307c1689554ed and Cargo.lock@97ad9046ce8926764258c978664cd8cd92fce503 contain no reviewed IDNA/URL dependency; exact fixed-U QUrl::toAce equivalence is therefore not currently implementable without a dependency decision.",
         "Stage A forbids executing dependency resolution/generation, so Cargo lock data must not be fabricated by hand.",
         "Stage B executable validation has not run."
@@ -28706,7 +28705,7 @@
       "acceptance_reviewer": null,
       "reviewer": null,
       "license_and_provenance": "Behavioral provenance is fixed-U mtproto_proxy_data.cpp/header plus connection_box.cpp. No upstream C++ copied. No new IDNA dependency or handwritten punycode introduced.",
-      "notes": "Task round81/source evidence round112. Exact Unicode/IDNA host/address plus settings import/share boundary is understood but not independently shippable in current Fabushi architecture: canonical protocol has only ASCII canonical validation and there is no live unified proxy/settings production owner or reviewed IDNA dependency. Recorded as mapped/pending with no production delta. Existing bridge wire remains implemented; relay carrier remains mapped/pending. Stage-A executable validation remains not-run. Final platform source compliance is 2682d35b46d5521d71ea82896557466c3e07a58f / spec blob eb924c6492ffb4f545b9ccc2eec404284c41335d; R1-R9/R11/R13-R14 and AC-1..AC-7 are source-review passed while R10/R12 remain explicitly blocked and executable validation remains not-run.",
+      "notes": "Task round81/source evidence round112 established the Unicode/IDNA canonical-address responsibility. ProductSettingsOwner v2 now closes the historical missing-settings-owner blocker and supplies the canonical source-neutral persistence/selection surface. This row remains mapped/pending because the current telegram-protocol dependency set still has no reviewed IDNA/URL implementation for exact fixed-U QUrl::toAce behavior, and Stage A forbids fabricating dependency-resolution/lock evidence. No production delta is claimed here; validation_status remains not-run and accepted=false.",
       "test_execution_evidence": [],
       "validation_status": "not-run",
       "accepted": false
@@ -29171,7 +29170,6 @@
       "implementation_status": "mapped",
       "coverage_disposition": "pending",
       "blockers": [
-        "No canonical Fabushi product Settings/application owner exists in the current checkpoint.",
         "No shipping external local-automation proxy command surface exists in the tracked desktop tree.",
         "Stage B executable validation has not run."
       ],
@@ -29295,7 +29293,7 @@
       "acceptance_reviewer": null,
       "reviewer": null,
       "license_and_provenance": "Behavioral provenance is fixed-U Telegram/SourceFiles/core/external_control.cpp@43327bc03c528b65b41ce72add5e7cca584ea371 plus adjacent proxy/settings/network source listed in round114 evidence. No upstream C++ copied.",
-      "notes": "Task round83/source evidence round114. External proxy list/add/remove/use/next/toggle/undo semantics are fully source-read and carrier-independent but cannot ship without the canonical Settings owner. Recorded mapped/pending, no production delta, validation_status=not-run, accepted=false. Final platform source-level compliance is de2460e31dfa5d47df0a1993580ef11a1cfa1378 / spec blob 438b64863eab0cc6fc746954cff8513de2fdd247. R1-R8 are source-review passed; R9 remains blocked on the missing canonical Settings/shipping consumer boundary; R10 executable validation remains not-run. AC-1 through AC-8 are bookkeeping/source-review satisfied without production delta.",
+      "notes": "Task round83/source evidence round114 source-read the external proxy list/add/remove/use/next/toggle/undo semantics. ProductSettingsOwner v2 now closes the historical missing-canonical-Settings blocker. The responsibility remains mapped/pending because the tracked shipping desktop tree still has no verified source-neutral external local-automation proxy command surface to extend; no new Telegram-specific control plane is introduced. validation_status remains not-run and accepted=false.",
       "test_execution_evidence": [],
       "validation_status": "not-run",
       "accepted": false,

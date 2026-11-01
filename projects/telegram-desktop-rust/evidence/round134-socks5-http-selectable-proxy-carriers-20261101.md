@@ -53,3 +53,6 @@ The existing telegram-network source contracts now cover SOCKS5 CONNECT wire sha
 ## Stage-A execution statement
 
 No GitHub Actions/check/status/workflow query or trigger was performed. No build, typecheck, lint, validator, generator, dependency resolution, unit/contract/integration/E2E, visual/a11y, package, deploy, install or runtime acceptance was executed.
+
+
+Round103 ledger hygiene: historical missing-canonical-Settings blockers were removed from `TDRP-R9-MTPROTO-WEB-PROXY-CANONICAL-ADDRESS-SETTINGS-001` and `TDRP-R9-PROXY-EXTERNAL-MUTATION-CONSUMER-001` because ProductSettingsOwner v2 is now authoritative. Neither row was advanced to implemented: exact reviewed IDNA/QUrl::toAce support and a verified shipping source-neutral external local-automation command surface remain open respectively. No executable validation was run.
