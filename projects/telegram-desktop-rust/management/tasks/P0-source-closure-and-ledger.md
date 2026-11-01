@@ -1362,3 +1362,18 @@ Coverage is `responsibilities_total=99, unknown=16172, unread=16145, omitted=0, 
 Arbitrary ACK scheduling/history/application, connection/TLS scheduling, auth-key binding/persistence, gzip,
 complete difference/differenceSlice decoding/application, broader source/legal closure, Stage-B executable evidence
 and independent release ACCEPT remain open. No executable validation was performed.
+
+
+## Stage-A MTProto p_q_inner_data adjacent builder disposition (evidence round 99; task round 68, 2026-11-01)
+
+Fixed U remains `telegramdesktop/tdesktop@f985723b552b30fe1c17d377d57f44e61a15a8c4`. Fresh readback of `mtproto.tl@76225965bfc794388db241f3f760db8ab79e84f8` and shipping `mtproto_dc_key_creator.cpp@13c57454f14b814b5923ea253048fb881ad8cf03` confirms `DcKeyCreator::pqAnswered` always carries `protocolDcId`: persistent attempts use `p_q_inner_data_dc#a9f55f95`, temporary attempts use `p_q_inner_data_temp_dc#56fddf88`. The adjacent no-dc `p_q_inner_data#83c95aec` and `p_q_inner_data_temp#3c6a84d4` therefore have no independent shipping call site in this fixed-U auth-key path.
+
+Existing-owner-first review finds **no production delta**. Canonical `handshake.rs@87616f4b96a1775455da42b0bbed77711fb3c9f6` already exposes exact `build_p_q_inner_data_dc`, and `AuthKeyHandshake::prepare_req_dh_params*` selects it before existing RSA_PAD/`req_DH_params` framing. Existing `lib.rs@abab39e42f100972484191f0e52e9edd9b88c6cf` already exports it. The separately closed temporary `*_temp_dc` path remains unchanged.
+
+Spec-first platform-core commit/blob is `1b78659027387846526d325056204020ec287220@e143d380d8a40cbef115ad7e211ebac67464de73`. A focused contract was authored only at canonical commit `88cee9084231b22c3d575726c39634884a45f270` / blob `9c5ce9630c3865f19869b372d1f8f88d2d665487`, then mirrored byte-identically into desktop at `8c1866bf054281a4518d605ecbdd811300b1e8c4`. It pins exact constructor/field order/signed dc_id/EOF and factor-mismatch rejection. It was not run.
+
+The unique ledger adds `TDRP-R9-MTPROTO-P-Q-INNER-DATA-ADJACENT-WIRE-001` as `implemented / coverage_disposition=rewritten / validation_status=not-run / accepted=false`. Coverage becomes `responsibilities_total=100, unknown=16172, unread=16145, omitted=0, unmapped_responsibilities=0`.
+
+Auth-key binding/persistence/expiry/renewal, connection scheduling/racing/send retry, arbitrary request histories, `gzip_packed`, complete difference/differenceSlice decoding/application, broader fixed-U source/legal closure, Stage-B executable evidence and independent release ACCEPT remain open.
+
+No GitHub Actions/status/check query or trigger, build, typecheck, lint, schema validator, generator, unit/contract/integration/E2E test, package, deployment, installation, or runtime acceptance was performed.

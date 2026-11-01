@@ -9,7 +9,7 @@
     "unknown": 16172,
     "unread": 16145,
     "omitted": 0,
-    "responsibilities_total": 99,
+    "responsibilities_total": 100,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -25098,6 +25098,256 @@
       "source_paths": [
         "Telegram/SourceFiles/mtproto/scheme/mtproto.tl@76225965bfc794388db241f3f760db8ab79e84f8",
         "Telegram/SourceFiles/mtproto/session_private.cpp@13cbc76ec723386027b5b4dcac79999b791c4614"
+      ]
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+      "source_path": "Telegram/SourceFiles/mtproto/scheme/mtproto.tl",
+      "source_blob_sha": "76225965bfc794388db241f3f760db8ab79e84f8",
+      "source_kind": "schema",
+      "module_id": "tdesktop.mtproto.p-q-inner-data-adjacent-wire",
+      "responsibility_id": "TDRP-R9-MTPROTO-P-Q-INNER-DATA-ADJACENT-WIRE-001",
+      "source_symbols": [
+        "p_q_inner_data#83c95aec pq:string p:string q:string nonce:int128 server_nonce:int128 new_nonce:int256 = P_Q_inner_data",
+        "p_q_inner_data_dc#a9f55f95 pq:string p:string q:string nonce:int128 server_nonce:int128 new_nonce:int256 dc:int = P_Q_inner_data",
+        "p_q_inner_data_temp#3c6a84d4 pq:string p:string q:string nonce:int128 server_nonce:int128 new_nonce:int256 expires_in:int = P_Q_inner_data",
+        "DcKeyCreator::pqAnswered / MTP_p_q_inner_data_dc / MTP_p_q_inner_data_temp_dc",
+        "AuthKeyHandshake::prepare_req_dh_params* / build_p_q_inner_data_dc"
+      ],
+      "capability_ids": [
+        "CAP-TELEGRAM-MTPROTO-P-Q-INNER-DATA-ADJACENT-WIRE"
+      ],
+      "dependency_ids": [
+        "telegram-protocol::AuthKeyHandshake",
+        "telegram-protocol::TlWriter",
+        "fixed-U DcKeyCreator persistent/temporary constructor selection"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/evidence/round99-mtproto-p-q-inner-data-adjacent-wire-20261101.md",
+      "behavior_contract": "The existing canonical AuthKeyHandshake builder exactly serializes fixed-U p_q_inner_data_dc#a9f55f95 as constructor, canonical TL bytes pq/p/q, raw nonce/server_nonce/new_nonce, and signed TL int dc_id, then the existing persistent prepare_req_dh_params* path RSA_PAD-encrypts it and builds req_DH_params. Fixed-U DcKeyCreator::pqAnswered always supplies protocolDcId and selects p_q_inner_data_dc for persistent attempts or p_q_inner_data_temp_dc for temporary attempts. The schema-adjacent no-dc p_q_inner_data#83c95aec and p_q_inner_data_temp#3c6a84d4 therefore have no independent shipping call site in this auth-key path and must not acquire dead standalone production builders.",
+      "state_machine": "persistent ResPqReceived + dc_id -> existing build_p_q_inner_data_dc -> existing RSA_PAD -> existing req_DH_params -> AwaitingServerDh; temporary path remains the already-closed p_q_inner_data_temp_dc branch. No-dc schema variants remain no-independent-shipping-reachability dispositions.",
+      "side_effects": [
+        "No production behavior delta; existing build_p_q_inner_data_dc and persistent AuthKeyHandshake request preparation already satisfy fixed-U shipping semantics",
+        "Authors one focused exact-layout/factor-mismatch contract without executing it in Stage A",
+        "Mirrors the authored contract into the existing desktop tracked provider test copy",
+        "Records the no-independent-shipping-reachability disposition for the two no-dc schema variants without adding dead APIs"
+      ],
+      "failure_cases": [
+        "Wrong p_q_inner_data_dc constructor or field order",
+        "pq/p/q not encoded with canonical TL bytes framing",
+        "nonce/server_nonce/new_nonce byte reordering or truncation",
+        "dc_id not preserved as signed little-endian TL int",
+        "pq factor mismatch accepted instead of PqFactorsDoNotMatch",
+        "p_q_inner_data or p_q_inner_data_temp counted as shipping production responsibilities despite no fixed-U DcKeyCreator call site",
+        "This isolated builder disposition used to claim auth-key binding/persistence, network scheduling, arbitrary request history, gzip or complete difference parity"
+      ],
+      "ui_disposition": "No UI change. This is an MTProto handshake wire/source-reachability disposition.",
+      "non_ui_responsibilities": [
+        "Exact fixed-U p_q_inner_data_dc serializer revalidation",
+        "Persistent AuthKeyHandshake shipping reachability revalidation",
+        "Factor-mismatch fail-closed behavior",
+        "No-independent-shipping-reachability disposition for p_q_inner_data and p_q_inner_data_temp",
+        "Strict separation from temporary-key binding/persistence and transport lifecycle"
+      ],
+      "platform_delta": "None. The existing source-neutral Rust AuthKeyHandshake already ships the exact p_q_inner_data_dc builder; the two no-dc schema variants remain intentionally unimplemented as standalone APIs because fixed-U DcKeyCreator does not call them.",
+      "existing_owner_candidates": [
+        "bhrumom/fabushi-platform-core:native/telegram-protocol/src/handshake.rs",
+        "bhrumom/fabushi-platform-core:native/telegram-protocol/src/lib.rs",
+        "source/mahayana/mahayana-rs/providers/telegram-protocol/src/lib.rs"
+      ],
+      "existing_owner": "Existing canonical embedded telegram-protocol AuthKeyHandshake/request-wire owner",
+      "rejected_existing_owners": [
+        "new handshake owner: rejected because AuthKeyHandshake already owns persistent req_DH_params preparation",
+        "standalone no-dc p_q_inner_data builders: rejected because fixed-U DcKeyCreator always carries protocolDcId and has no independent shipping caller for those variants",
+        "telegram-network/runtime: owns later transport/lifecycle concerns, not this exact inner-object serializer"
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "bhrumom/fabushi-platform-core:native/telegram-protocol/src/handshake.rs",
+        "bhrumom/fabushi-platform-core:native/telegram-protocol/src/lib.rs",
+        "bhrumom/fabushi-platform-core:native/telegram-protocol/tests/protocol_contract.rs",
+        "source/mahayana/mahayana-rs/providers/telegram-protocol/src/lib.rs",
+        "source/mahayana/mahayana-rs/providers/telegram-protocol/tests/protocol_contract.rs"
+      ],
+      "fabushi_target_symbols": [
+        "P_Q_INNER_DATA_DC_CONSTRUCTOR",
+        "build_p_q_inner_data_dc",
+        "AuthKeyHandshake::prepare_req_dh_params",
+        "AuthKeyHandshake::prepare_req_dh_params_with_random"
+      ],
+      "target_language": "Rust",
+      "language_rationale": "Exact MTProto handshake wire serialization is already owned by the source-neutral Rust telegram-protocol handshake module; no duplicate serializer/runtime is needed.",
+      "command_event_contracts": [
+        "ResPqReceived + dc_id -> prepare_req_dh_params* -> exact p_q_inner_data_dc -> existing RSA_PAD/build_req_dh_params",
+        "factor mismatch -> PqFactorsDoNotMatch before successful serialization",
+        "fixed-U no-dc p_q_inner_data / p_q_inner_data_temp -> no independent DcKeyCreator shipping entrypoint -> no dead production builder"
+      ],
+      "state_owner": "Existing AuthKeyHandshake remains authoritative; the pure existing builder adds no state owner.",
+      "lifecycle_owner": "Existing AuthKeyHandshake owns persistent request preparation. Temporary p_q_inner_data_temp_dc remains separately closed; auth-key binding/persistence/lifetime lifecycle remains outside this slice.",
+      "persistence_and_restart": "No persistence is introduced or changed.",
+      "concurrency_and_cancellation": "Pure synchronous builder/source disposition only; no scheduler, callback registry, request history, cancellation or shared mutable state is added.",
+      "security_boundary": "Factor mismatch fails closed. The exact builder preserves caller-provided nonce material and dc_id without taking ownership of auth-key persistence/binding or network transport.",
+      "network_service_dependencies": [
+        "No new network operation. Existing later auth-key transport/runtime owners remain unchanged."
+      ],
+      "service_owner": "Canonical embedded Telegram protocol runtime.",
+      "deployment_evidence": [],
+      "implementation_status": "implemented",
+      "coverage_disposition": "rewritten",
+      "blockers": [
+        "Stage B executable build/unit/contract/integration/packaged validation has not run.",
+        "Auth-key binding, temporary/permanent persistence, expiry/renewal and restore remain outside this isolated wire disposition.",
+        "Connection scheduling/racing/send retry, arbitrary request histories, gzip and complete difference/differenceSlice decoding/application remain open/fail-closed.",
+        "Broader fixed-U source/legal/release closure remains open."
+      ],
+      "production_entrypoints": [
+        "fixed-U DcKeyCreator::pqAnswered persistent branch -> MTP_p_q_inner_data_dc(..., protocolDcId) -> EncryptPQInnerRSA -> req_DH_params",
+        "canonical telegram-protocol::AuthKeyHandshake::prepare_req_dh_params* -> build_p_q_inner_data_dc -> existing rsa_pad_with_random -> build_req_dh_params",
+        "fixed-U temporary branch -> p_q_inner_data_temp_dc (already separately closed); no-dc p_q_inner_data/p_q_inner_data_temp have no independent shipping call site"
+      ],
+      "production_evidence": [
+        "fixed-U:Telegram/SourceFiles/mtproto/scheme/mtproto.tl@76225965bfc794388db241f3f760db8ab79e84f8",
+        "fixed-U:Telegram/SourceFiles/mtproto/details/mtproto_dc_key_creator.cpp@13c57454f14b814b5923ea253048fb881ad8cf03",
+        "platform-core-spec-commit:1b78659027387846526d325056204020ec287220",
+        "platform-core-spec-blob:e143d380d8a40cbef115ad7e211ebac67464de73",
+        "platform-core-production-path:native/telegram-protocol/src/handshake.rs@87616f4b96a1775455da42b0bbed77711fb3c9f6",
+        "platform-core-production-lib:native/telegram-protocol/src/lib.rs@abab39e42f100972484191f0e52e9edd9b88c6cf",
+        "platform-core-authored-contract-commit:88cee9084231b22c3d575726c39634884a45f270",
+        "platform-core-contract-blob:9c5ce9630c3865f19869b372d1f8f88d2d665487",
+        "desktop-contract-mirror-commit:8c1866bf054281a4518d605ecbdd811300b1e8c4",
+        "path:source/mahayana/mahayana-rs/providers/telegram-protocol/src/lib.rs@abab39e42f100972484191f0e52e9edd9b88c6cf",
+        "path:source/mahayana/mahayana-rs/providers/telegram-protocol/tests/protocol_contract.rs@9c5ce9630c3865f19869b372d1f8f88d2d665487"
+      ],
+      "test_evidence": [
+        "Canonical and desktop tracked authored-only focused contract covers exact p_q_inner_data_dc constructor/field order/signed dc_id/EOF and factor-mismatch rejection; not run."
+      ],
+      "target_commit": "8c1866bf054281a4518d605ecbdd811300b1e8c4",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Canonical Fabushi account + existing TelegramClientLease/runtime + shared telegram-protocol production composition",
+      "composition_slot": "Embedded Telegram MTProto p_q inner-data request preparation",
+      "capability_component": "Exact fixed-U p_q_inner_data_dc builder plus adjacent no-shipping disposition",
+      "variation_axes": [
+        "signed dc_id",
+        "valid/mismatched pq factors",
+        "persistent *_dc shipping variant",
+        "no-dc schema-only adjacent variants"
+      ],
+      "shared_owner_contracts": [
+        "Existing AuthKeyHandshake",
+        "Existing telegram-protocol TlWriter",
+        "Existing Cargo path-dependency composition"
+      ],
+      "duplicate_root_check": "No second account, runtime, provider, transport, handshake owner, auth-key store, request-history store, decompression runtime, difference runtime, UI root, sidecar, subprocess or Web wrapper was introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Not applicable",
+      "primary_navigation_target": "Existing Messages/Conversation navigation",
+      "collection_surface": "Existing ConversationList; no change",
+      "creation_flow": "Existing canonical conversation creation; no change",
+      "object_action_scope": "Not applicable",
+      "detail_section": "Not applicable",
+      "capability_surface": "Existing ConversationWorkspace through the same provider/runtime; no new surface",
+      "route_contract": "No new route.",
+      "search_scope": "Not applicable",
+      "search_provider": "Existing canonical Search owner; unchanged",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Unchanged.",
+      "search_local_remote_contract": "Not applicable.",
+      "responsive_disposition": "No UI change.",
+      "accessibility_contract": "No UI change.",
+      "keyboard_contract": "No UI change.",
+      "state_continuity_contract": "Persistent prepare continues using the same ResPqReceived -> AwaitingServerDh transition and existing p_q_inner_data_dc builder. Temporary *_dc path is unchanged; no-dc variants have no fixed-U shipping call site.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Existing Fabushi design system; no visual changes",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": null,
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "No new icon asset",
+      "avatar_contract": "No change",
+      "content_copy_keys": [],
+      "motion_contract": "No change",
+      "reduced_motion_contract": "No change",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "high",
+      "requirement_ids": [
+        "TDRP-R9-MTPROTO-P-Q-INNER-DATA-ADJACENT-WIRE-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-MTPROTO-P-Q-INNER-DATA-ADJACENT-WIRE-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-MTPROTO-P-Q-INNER-DATA-DC-EXACT-001",
+        "INV-TDRP-MTPROTO-P-Q-INNER-DATA-FACTORS-001",
+        "INV-TDRP-MTPROTO-P-Q-INNER-DATA-NO-DEAD-NODC-API-001"
+      ],
+      "unit_case_ids": [
+        "UNIT-TDRP-MTPROTO-P-Q-INNER-DATA-DC-LAYOUT-001",
+        "UNIT-TDRP-MTPROTO-P-Q-INNER-DATA-FACTORS-001"
+      ],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-MTPROTO-P-Q-INNER-DATA-ADJACENT-WIRE-001"
+      ],
+      "integration_case_ids": [],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "fault_recovery_case_ids": [],
+      "performance_case_ids": [],
+      "security_case_ids": [
+        "SEC-TDRP-MTPROTO-P-Q-INNER-DATA-FACTORS-001",
+        "SEC-TDRP-MTPROTO-P-Q-INNER-DATA-NO-DEAD-API-001"
+      ],
+      "soak_case_ids": [],
+      "exploratory_charter_ids": [],
+      "regression_ids": [
+        "REG-TDRP-MTPROTO-P-Q-INNER-DATA-DC-SHIPPING-001"
+      ],
+      "release_gate_ids": [
+        "G-TRACEABILITY",
+        "G-COMPOSITION",
+        "G-SECURITY",
+        "G-EVIDENCE",
+        "G-RELEASE"
+      ],
+      "test_fixture_ids": [
+        "mtproto-p-q-inner-data-dc-factored-272953",
+        "mtproto-p-q-inner-data-dc-patterned-nonces"
+      ],
+      "test_environment_ids": [
+        "GitHub Actions Stage B matrix (not run)"
+      ],
+      "coverage_matrix_status": "pending",
+      "flake_status": "stable",
+      "release_gate_status": "pending",
+      "acceptance_reviewer": null,
+      "reviewer": null,
+      "license_and_provenance": "Behavioral responsibility is anchored to fixed-U telegramdesktop/tdesktop Telegram/SourceFiles/mtproto/scheme/mtproto.tl@76225965bfc794388db241f3f760db8ab79e84f8 and shipping Telegram/SourceFiles/mtproto/details/mtproto_dc_key_creator.cpp@13c57454f14b814b5923ea253048fb881ad8cf03. Implementation is source-neutral Rust and copies no upstream C++ implementation.",
+      "notes": "Stage A source-level adjacent revalidation. Existing build_p_q_inner_data_dc plus AuthKeyHandshake persistent request preparation already close the fixed-U shipping *_dc responsibility, so production disposition is no-production-delta. Fixed-U DcKeyCreator always supplies protocolDcId and selects *_dc variants, so p_q_inner_data#83c95aec and p_q_inner_data_temp#3c6a84d4 have no independent shipping responsibility in this path and no dead builders are added. A focused contract was authored/mirrored but not executed; validation_status=not-run and accepted=false. Final source-level compliance is pending post-bookkeeping platform spec update.",
+      "test_execution_evidence": [],
+      "validation_status": "not-run",
+      "accepted": false,
+      "id": "TDRP-R9-MTPROTO-P-Q-INNER-DATA-ADJACENT-WIRE-001",
+      "source_paths": [
+        "Telegram/SourceFiles/mtproto/scheme/mtproto.tl@76225965bfc794388db241f3f760db8ab79e84f8",
+        "Telegram/SourceFiles/mtproto/details/mtproto_dc_key_creator.cpp@13c57454f14b814b5923ea253048fb881ad8cf03"
       ]
     }
   ],
