@@ -72,9 +72,14 @@ partial implementation evidence: exact upstream file-operation detail
 merging is now wired for the fixed `readFiles`/`modifiedFiles` contract, and
 split-turn prefix planning plus its second summarization call are wired.
 The producer also bounds large summary inputs with deterministic tail/user/head/
-middle selection, gap markers, and head/tail entry elision. Exact upstream
-message projection and CJK-weighted omission parity, live-turn proof, and
-frozen verification are still open.
+middle selection, gap markers, and head/tail entry elision. The existing
+Runner compaction owner now uses the fixed source's provider-independent CJK
+character heuristic for its canonical JSON-row projection: ASCII retains raw
+UTF-16 weight, common CJK is four weighted characters, rare BMP CJK is twelve,
+two-token compatibility ranges are eight, and supplementary ranges use the
+corresponding three/four-token weights. This is still an approximation over
+canonical rows, not approval of the richer upstream message projection.
+Live-turn proof and frozen verification remain open.
 
 Replay attachment ownership is now narrowed to the existing attachment owner:
 it may expose a read-only provider-usable HTTP(S) URL projection for a durable

@@ -373,9 +373,15 @@ subject above. Its bounded serializer reserves 50% for newest entries, 25% for
 older user entries, 10% for the oldest entries, and eight evenly spaced middle
 slices; it counts omission markers, preserves tool-result labels, and elides
 both ends of an oversized sampled entry. The Rust planner now mirrors that
-selection shape and gap/elision safeguards over canonical JSON rows. Exact
-CJK-weighted character accounting and the richer message-to-summary text
-projection remain unresolved and are not claimed as parity.
+selection shape and gap/elision safeguards over canonical JSON rows. A narrow
+source-neutral CJK character heuristic now lives at the same Runner planning
+owner: common CJK uses four weighted characters, rare BMP ranges twelve,
+two-token compatibility ranges eight, and supplementary ranges use the
+three/four-token fixed-source weights; ASCII keeps UTF-16 raw weight. This
+closes the weighting gap for the current JSON-row projection only. The richer
+message-to-summary text projection, exact UTF-16 slicing behavior, live-turn
+evidence, and frozen verification remain unresolved and are not claimed as
+parity.
 
 The existing attachment resolution evidence is app-owned rather than an
 inference contract: `source/host/app/src/main.rs:605-670`

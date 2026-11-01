@@ -58,24 +58,24 @@ pub fn estimate_entry_tokens(entry: &Value) -> u64 {
     let mut chars = 0u64;
     match object.get("kind").and_then(Value::as_str) {
         Some("message") => {
-            chars = value_chars(object.get("content"));
+            chars = weighted_value_chars(object.get("content"));
             if object.get("role").and_then(Value::as_str) == Some("assistant") {
                 if let Some(calls) = object.get("toolCalls").and_then(Value::as_array) {
-                    chars = chars.saturating_add(value_chars(Some(&Value::Array(calls.clone()))));
+                    chars = chars.saturating_add(weighted_value_chars(Some(&Value::Array(calls.clone()))));
                 }
             }
         }
         Some("send-message") => {
-            chars = value_chars(object.get("message").and_then(|value| value.get("content")));
+            chars = weighted_value_chars(object.get("message").and_then(|value| value.get("content")));
         }
         Some("user-attachment") => return IMAGE_BLOCK_TOKENS,
         Some("tool-call") => {
-            chars = value_chars(object.get("name"));
-            chars = chars.saturating_add(value_chars(object.get("arguments").or_else(|| object.get("args"))));
+            chars = weighted_value_chars(object.get("name"));
+            chars = chars.saturating_add(weighted_value_chars(object.get("arguments").or_else(|| object.get("args"))));
         }
-        Some("notice") => chars = value_chars(object.get("text")),
-        Some("event") => chars = value_chars(object.get("event")),
-        Some("compaction") => chars = value_chars(object.get("summary")),
+        Some("notice") => chars = weighted_value_chars(object.get("text")),
+        Some("event") => chars = weighted_value_chars(object.get("event")),
+        Some("compaction") => chars = weighted_value_chars(object.get("summary")),
         _ => {}
     }
     if chars == 0 {
@@ -225,7 +225,7 @@ fn serialize_entries_with_budget(entries: &[Value]) -> Result<String, String> {
                 .map_err(|error| format!("could not encode compaction transcript row: {error}"))
         })
         .collect::<Result<Vec<_>, _>>()?;
-    let full_chars = rendered.iter().map(|text| text.chars().count() + 1).sum::<usize>();
+    let full_chars = rendered.iter().map(|text| weighted_chars(text) + 1).sum::<usize>();
     if full_chars <= MAX_SUMMARY_INPUT_CHARS {
         return Ok(rendered.join("\n"));
     }
@@ -245,7 +245,7 @@ fn serialize_entries_with_budget(entries: &[Value]) -> Result<String, String> {
     let mut tail_start = entries.len();
     for index in (0..entries.len()).rev() {
         let remaining = tail_limit.saturating_sub(used_chars);
-        let verbatim = rendered[index].chars().count() + 1 <= remaining;
+        let verbatim = weighted_chars(&rendered[index]) + 1 <= remaining;
         if (!verbatim && tail_start != entries.len())
             || try_take_summary_entry(
                 index,
@@ -284,7 +284,7 @@ fn serialize_entries_with_budget(entries: &[Value]) -> Result<String, String> {
         let user_costs = older_users
             .iter()
             .map(|index| {
-                (rendered[*index].chars().count() + 1)
+                (weighted_chars(&rendered[*index]) + 1)
                     .min(user_entry_chars + 1)
                     .saturating_add(OMISSION_MARKER_CHARS)
             })
@@ -417,10 +417,10 @@ fn try_take_summary_entry(
         .saturating_sub(marker_cost)
         .min(max_entry_chars.saturating_add(1));
     let mut text = rendered[index].clone();
-    let mut chars = text.chars().count() + 1;
+    let mut chars = weighted_chars(&text) + 1;
     if chars > entry_limit {
         text = elide_summary_entry(&text, entry_limit.saturating_sub(1))?;
-        chars = text.chars().count() + 1;
+        chars = weighted_chars(&text) + 1;
     }
     let total_cost = chars.saturating_add(marker_cost);
     if used_chars.saturating_add(total_cost) > max_chars {
@@ -435,7 +435,7 @@ fn elide_summary_entry(text: &str, max_chars: usize) -> Option<String> {
     const MARKER: &str = "\n\n[... characters omitted ...]\n\n";
     const MIN_TRIMMED_ENTRY_CHARS: usize = 200;
     const ELISION_MARKER_RESERVE_CHARS: usize = 64;
-    if text.chars().count() <= max_chars {
+    if weighted_chars(text) <= max_chars {
         return Some(text.to_string());
     }
     let available = max_chars.saturating_sub(ELISION_MARKER_RESERVE_CHARS);
@@ -443,23 +443,15 @@ fn elide_summary_entry(text: &str, max_chars: usize) -> Option<String> {
         return None;
     }
     let head_budget = available * 7 / 10;
-    let tail_budget = available.saturating_sub(head_budget);
-    let head = text.chars().take(head_budget).collect::<String>();
-    let tail = text
-        .chars()
-        .rev()
-        .take(tail_budget)
-        .collect::<String>()
-        .chars()
-        .rev()
-        .collect::<String>();
+    let head = take_prefix_with_weight(text, head_budget);
+    let tail = take_suffix_with_weight(text, available.saturating_sub(weighted_chars(&head)));
     Some(format!("{head}{MARKER}{tail}"))
 }
 
 fn append_summary_text(output: &mut String, text: &str) {
-    let remaining = MAX_SUMMARY_INPUT_CHARS.saturating_sub(output.chars().count());
+    let remaining = MAX_SUMMARY_INPUT_CHARS.saturating_sub(weighted_chars(output));
     if remaining > 0 {
-        output.extend(text.chars().take(remaining));
+        output.push_str(&take_prefix_with_weight(text, remaining));
     }
 }
 
@@ -472,17 +464,17 @@ pub fn fit_compaction_summary(summary: &str, summary_token_budget: u64) -> Resul
         .unwrap_or(usize::MAX)
         .saturating_mul(CHARS_PER_TOKEN_ESTIMATE as usize);
     let max_chars = MAX_COMPACTION_SUMMARY_CHARS.min(token_bound.max(1));
-    if normalized.chars().count() <= max_chars {
+    if weighted_chars(&normalized) <= max_chars {
         return Ok(normalized);
     }
     const MARKER: &str = "\n\n[Compaction summary truncated to fit budget]";
-    if max_chars <= MARKER.chars().count() {
-        return Ok(normalized.chars().take(max_chars).collect());
+    if max_chars <= weighted_chars(MARKER) {
+        return Ok(take_prefix_with_weight(&normalized, max_chars));
     }
-    let prefix_chars = max_chars - MARKER.chars().count();
+    let prefix_chars = max_chars.saturating_sub(weighted_chars(MARKER));
     Ok(format!(
         "{}{}",
-        normalized.chars().take(prefix_chars).collect::<String>(),
+        take_prefix_with_weight(&normalized, prefix_chars),
         MARKER
     ))
 }
@@ -541,22 +533,22 @@ pub fn fit_compaction_summary_with_suffix(
         .unwrap_or(usize::MAX)
         .saturating_mul(CHARS_PER_TOKEN_ESTIMATE as usize);
     let max_chars = MAX_COMPACTION_SUMMARY_CHARS.min(token_bound.max(1));
-    let suffix_chars = suffix.chars().count();
+    let suffix_chars = weighted_chars(suffix);
     if suffix_chars >= max_chars {
         return Err("compaction details suffix leaves no room for summary text".into());
     }
     let available = max_chars - suffix_chars;
-    if normalized.chars().count() <= available {
+    if weighted_chars(&normalized) <= available {
         return Ok(format!("{normalized}{suffix}"));
     }
     const MARKER: &str = "\n\n[Compaction summary truncated to fit budget]";
-    if available <= MARKER.chars().count() {
+    if available <= weighted_chars(MARKER) {
         return Err("compaction summary cannot fit beside required details".into());
     }
-    let prefix_chars = available - MARKER.chars().count();
+    let prefix_chars = available - weighted_chars(MARKER);
     Ok(format!(
         "{}{}{}",
-        normalized.chars().take(prefix_chars).collect::<String>(),
+        take_prefix_with_weight(&normalized, prefix_chars),
         MARKER,
         suffix
     ))
@@ -810,8 +802,70 @@ fn normalize_summary_text(summary: &str) -> Result<String, String> {
     Ok(normalized.to_string())
 }
 
-fn value_chars(value: Option<&Value>) -> u64 {
-    value.map(|value| value.to_string().chars().count() as u64).unwrap_or_default()
+fn weighted_chars(text: &str) -> usize {
+    text.encode_utf16().count()
+        + text
+            .chars()
+            .map(|character| match character as u32 {
+                0x00b7 | 0x3000..=0x319f | 0x4e00..=0x9fa5 | 0xac00..=0xd7af
+                | 0xff01..=0xff60 => 3,
+                0x1100..=0x11ff | 0x2e80..=0x2fff | 0x31a0..=0x4dff
+                | 0x9fa6..=0x9fff | 0xa000..=0xa4ff | 0xa700..=0xa707
+                | 0xa960..=0xa97f | 0xd7b0..=0xd7ff | 0xf900..=0xfaff => 11,
+                0x02c7 | 0x02c9..=0x02cb | 0x02d9 | 0x02ea..=0x02eb
+                | 0x0305 | 0x0323 | 0xfe10..=0xfe4f | 0xff61..=0xffdc
+                | 0xffe0..=0xffe6 => 7,
+                0x1d360..=0x1d371 => 10,
+                0x16fe0..=0x16fff | 0x1aff0..=0x1afff | 0x1b000..=0x1b16f
+                | 0x1f200..=0x1f2ff | 0x20000..=0x2fa1f | 0x30000..=0x3347f => 14,
+                _ => 0,
+            })
+            .sum()
+}
+
+fn weighted_value_chars(value: Option<&Value>) -> u64 {
+    value
+        .map(|value| weighted_chars(&value.to_string()) as u64)
+        .unwrap_or_default()
+}
+
+fn take_prefix_with_weight(text: &str, max_weight: usize) -> String {
+    if weighted_chars(text) <= max_weight {
+        return text.to_string();
+    }
+    let chars = text.chars().collect::<Vec<_>>();
+    let mut low = 0usize;
+    let mut high = chars.len();
+    while low < high {
+        let middle = (low + high).div_ceil(2);
+        let candidate = chars[..middle].iter().collect::<String>();
+        if weighted_chars(&candidate) <= max_weight {
+            low = middle;
+        } else {
+            high = middle.saturating_sub(1);
+        }
+    }
+    chars[..low].iter().collect()
+}
+
+fn take_suffix_with_weight(text: &str, max_weight: usize) -> String {
+    if weighted_chars(text) <= max_weight {
+        return text.to_string();
+    }
+    let chars = text.chars().collect::<Vec<_>>();
+    let mut low = 0usize;
+    let mut high = chars.len();
+    while low < high {
+        let middle = (low + high).div_ceil(2);
+        let start = chars.len().saturating_sub(middle);
+        let candidate = chars[start..].iter().collect::<String>();
+        if weighted_chars(&candidate) <= max_weight {
+            low = middle;
+        } else {
+            high = middle.saturating_sub(1);
+        }
+    }
+    chars[chars.len().saturating_sub(low)..].iter().collect()
 }
 
 fn entry_role(entry: &Value) -> Option<&str> {
@@ -901,6 +955,26 @@ mod tests {
     fn invalid_window_does_not_trigger_compaction() {
         let settings = CompactionSettings { enabled: true, reserve_tokens: 10, keep_recent_tokens: 1 };
         assert!(!should_compact(100, 0, settings));
+    }
+
+    #[test]
+    fn cjk_weighting_matches_fixed_source_buckets() {
+        assert_eq!(weighted_chars("a"), 1);
+        assert_eq!(weighted_chars("中"), 4);
+        assert_eq!(weighted_chars("豈"), 12);
+        assert_eq!(weighted_chars("😀"), 2);
+        assert_eq!(weighted_chars("𠀀"), 16);
+    }
+
+    #[test]
+    fn weighted_prefix_and_suffix_stay_within_budget() {
+        let text = "中文和 English 混合文本";
+        let prefix = take_prefix_with_weight(text, 12);
+        let suffix = take_suffix_with_weight(text, 12);
+        assert!(weighted_chars(&prefix) <= 12);
+        assert!(weighted_chars(&suffix) <= 12);
+        assert!(text.starts_with(&prefix));
+        assert!(text.ends_with(&suffix));
     }
 
     #[test]
