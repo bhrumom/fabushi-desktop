@@ -15324,10 +15324,35 @@ fn main() {
             "event": event.clone(),
             "timestampMs": started_at_ms(),
         });
-        if let Err(error) = timeline_event_runner_deps
+        let admission = match timeline_event_runner_deps
             .session_workers
-            .append_agent_transcript_entries(&agent_id, &[entry])
+            .read_session_work_admission(&agent_id)
         {
+            Ok(admission) => admission,
+            Err(error) => {
+                eprintln!(
+                    "mahayana-host timeline_event_admission_read_failed agent={} error={error}",
+                    agent_id
+                );
+                return;
+            }
+        };
+        let append_result = if let Some(admission) = admission {
+            let mut entry = entry;
+            entry["sessionKey"] = serde_json::Value::String(admission.session_key.clone());
+            timeline_event_runner_deps
+                .session_workers
+                .append_agent_transcript_entries_if_session_admitted(
+                    &agent_id,
+                    &admission.session_key,
+                    &[entry],
+                )
+        } else {
+            timeline_event_runner_deps
+                .session_workers
+                .append_agent_transcript_entries(&agent_id, &[entry])
+        };
+        if let Err(error) = append_result {
             eprintln!(
                 "mahayana-host timeline_event_persist_failed agent={} error={error}",
                 agent_id
