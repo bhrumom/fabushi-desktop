@@ -6166,6 +6166,9 @@ fn append_channel_inbound_entries(
     agent_id: &str,
     envelopes: &[serde_json::Value],
 ) -> Result<(), String> {
+    let session_key = format!("agent:{agent_id}:main");
+    deps.session_workers
+        .assert_session_work_admission(agent_id, Some(&session_key))?;
     let mut transcript = deps
         .session_workers
         .read_agent_transcript_entries(agent_id)
@@ -6195,7 +6198,7 @@ fn append_channel_inbound_entries(
         return Ok(());
     }
     deps.session_workers
-        .append_agent_transcript_entries(agent_id, &entries)?;
+        .append_agent_transcript_entries_if_session_admitted(agent_id, &session_key, &entries)?;
     let _ = deps
         .session_workers
         .mark_agent_activity(agent_id, started_at_ms() as f64);
@@ -6244,11 +6247,6 @@ fn run_channel_inbound_revival_worker(
         if summary.is_group || summary.remote_room.is_some() {
             continue;
         }
-        if let Err(error) = append_channel_inbound_entries(&deps, roster.as_ref(), &agent_id, &envelopes) {
-            eprintln!("mahayana-host channel_inbound_persist_failed agent={agent_id} error={error}");
-            continue;
-        }
-
         let Some(provider) = configured_routed_provider(&deps.data_dir.join("settings.json")) else {
             let mut state = wakes
                 .lock()
@@ -6270,6 +6268,11 @@ fn run_channel_inbound_revival_worker(
                 envelopes.into_iter().chain(pending).collect(),
             );
             break;
+        }
+
+        if let Err(error) = append_channel_inbound_entries(&deps, roster.as_ref(), &agent_id, &envelopes) {
+            eprintln!("mahayana-host channel_inbound_persist_failed agent={agent_id} error={error}");
+            continue;
         }
 
         let addresses = distinct_inbound_channel_addresses(&envelopes);

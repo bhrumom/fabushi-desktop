@@ -1889,6 +1889,83 @@ impl SandAgentDb {
         Ok(inserted.len())
     }
 
+    /// Append entries only while the canonical session is currently admitted.
+    /// The admission check and transcript insert share one SQLite transaction
+    /// so archive/restore cannot race a channel or other session-scoped
+    /// producer at the durable write edge.
+    pub fn append_transcript_entries_if_session_admitted(
+        &self,
+        session_key: &str,
+        entries: &[serde_json::Value],
+    ) -> Result<usize, AgentDbProjectionError> {
+        let session_key = session_key.trim();
+        if session_key.is_empty() {
+            return Err(AgentDbProjectionError::WorkAdmissionInvalid(
+                "session-scoped transcript append requires a session key".into(),
+            ));
+        }
+        if entries.is_empty() {
+            return Ok(0);
+        }
+        let mut guard = self
+            .connection
+            .lock()
+            .map_err(|_| AgentDbProjectionError::OwnerPoisoned)?;
+        let Some(db) = guard.as_mut() else {
+            return Err(AgentDbProjectionError::WorkAdmissionInvalid(
+                "agent database is closed".into(),
+            ));
+        };
+        db.execute_batch("BEGIN IMMEDIATE")?;
+        let result = (|| -> Result<Vec<serde_json::Value>, AgentDbProjectionError> {
+            let raw_admission = db
+                .query_row(GET_KV_SQL, params![KV_SESSION_WORK_ADMISSION], |row| {
+                    row.get::<_, String>(0)
+                })
+                .optional()?
+                .ok_or_else(|| {
+                    AgentDbProjectionError::WorkAdmissionInvalid(
+                        "session work admission record is unavailable".into(),
+                    )
+                })?;
+            let admission: SessionWorkAdmissionRecord = serde_json::from_str(&raw_admission)?;
+            if admission.session_key != session_key || admission.archived_at_ms.is_some() {
+                return Err(AgentDbProjectionError::WorkAdmissionInvalid(
+                    "session is not admitted for transcript append".into(),
+                ));
+            }
+            let mut inserted = Vec::new();
+            let mut statement = db.prepare(INSERT_TRANSCRIPT_ENTRY_SQL)?;
+            for entry in entries {
+                let Some(id) = entry.get("id").and_then(serde_json::Value::as_str) else {
+                    continue;
+                };
+                if entry.get("kind").and_then(serde_json::Value::as_str).is_none() {
+                    continue;
+                }
+                if statement.execute(params![id, entry.to_string()])? > 0 {
+                    inserted.push(entry.clone());
+                }
+            }
+            Ok(inserted)
+        })();
+        match result {
+            Ok(inserted) => {
+                db.execute_batch("COMMIT")?;
+                let count = inserted.len();
+                drop(guard);
+                if !inserted.is_empty() {
+                    publish_entries_upserted(&self.db_path, inserted);
+                }
+                Ok(count)
+            }
+            Err(error) => {
+                let _ = db.execute_batch("ROLLBACK");
+                Err(error)
+            }
+        }
+    }
+
     /// Atomically append transcript entries and clear one captured outgoing
     /// media fence. A stale or rebound fence rolls back the transcript write.
     pub fn append_transcript_entries_and_release_media(

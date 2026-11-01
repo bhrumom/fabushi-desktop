@@ -2380,6 +2380,18 @@ impl ProductionSessionWorkers {
             .map_err(|error| error.to_string())
     }
 
+    pub fn append_agent_transcript_entries_if_session_admitted(
+        &self,
+        agent_id: &str,
+        session_key: &str,
+        entries: &[serde_json::Value],
+    ) -> Result<usize, String> {
+        self.assert_agent_work_admission(agent_id)?;
+        self.open_agent_db_owner(agent_id)?
+            .append_transcript_entries_if_session_admitted(session_key, entries)
+            .map_err(|error| error.to_string())
+    }
+
     pub fn append_agent_transcript_entries_and_release_media(
         &self,
         agent_id: &str,

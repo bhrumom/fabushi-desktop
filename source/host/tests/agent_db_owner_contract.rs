@@ -468,6 +468,82 @@ fn session_archive_transition_is_guarded_idempotent_and_blocks_active_work() {
 }
 
 #[test]
+fn admitted_transcript_append_is_rejected_after_archive_without_partial_write() {
+    let root = temp_root("work-admission-transcript-append");
+    let agent_dir = root.join("agent-work");
+    fs::create_dir_all(&agent_dir).expect("agent dir");
+    let db_path = agent_dir.join("store.db");
+    let owner = SandAgentDb::open(&db_path, 50).expect("owner");
+    let session_key = "agent:agent-work:main";
+    let record = SessionWorkAdmissionRecord {
+        session_key: session_key.into(),
+        session_id: "session-1".into(),
+        lifecycle_revision: "revision-1".into(),
+        archived_at_ms: None,
+        archived_by: None,
+        archive_reason: None,
+        admitted_work_id: None,
+        admitted_media_work_id: None,
+        admitted_media_paths: Vec::new(),
+        terminal_result_idempotency_key: None,
+        provider_review_id: None,
+        provider_review_phase: None,
+        provider_review_continuation_run_id: None,
+        provider_review: None,
+    };
+    assert!(owner
+        .compare_and_set_session_work_admission(None, &record)
+        .expect("create admission record"));
+
+    let first_entry = serde_json::json!({
+        "id": "entry-before-archive",
+        "kind": "message",
+        "role": "user",
+        "content": "accepted"
+    });
+    assert_eq!(
+        owner
+            .append_transcript_entries_if_session_admitted(session_key, &[first_entry])
+            .expect("append while admitted"),
+        1
+    );
+
+    owner
+        .transition_session_work_archive(
+            "session-1",
+            Some("revision-1"),
+            true,
+            Some("test"),
+            Some("archive"),
+            42.0,
+        )
+        .expect("archive transition");
+
+    let rejected_entry = serde_json::json!({
+        "id": "entry-after-archive",
+        "kind": "message",
+        "role": "user",
+        "content": "must not be written"
+    });
+    let error = owner
+        .append_transcript_entries_if_session_admitted(session_key, &[rejected_entry])
+        .expect_err("archived session must reject transcript append");
+    assert!(error
+        .to_string()
+        .contains("session is not admitted for transcript append"));
+    let ids = owner
+        .get_transcript_entries()
+        .expect("read transcript")
+        .into_iter()
+        .filter_map(|entry| entry.get("id").and_then(serde_json::Value::as_str).map(str::to_owned))
+        .collect::<Vec<_>>();
+    assert_eq!(ids, vec!["entry-before-archive"]);
+
+    owner.close(false);
+    let _ = fs::remove_dir_all(root);
+}
+
+#[test]
 fn media_settlement_appends_and_releases_in_one_owner_transaction() {
     let root = temp_root("media-settlement");
     let agent_dir = root.join("agent-media-settlement");
