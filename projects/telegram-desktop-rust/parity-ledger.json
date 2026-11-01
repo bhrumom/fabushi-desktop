@@ -6,8 +6,8 @@
   "target_commit": "23d73b32e301408f9c8aed151cb1f9e442516e13",
   "coverage": {
     "source_entries_total": 16202,
-    "unknown": 16159,
-    "unread": 16132,
+    "unknown": 16158,
+    "unread": 16131,
     "omitted": 0,
     "responsibilities_total": 134,
     "unmapped_responsibilities": 0
@@ -34909,7 +34909,10 @@
         "Snapshot and scope",
         "Release and advisory checks",
         "Incremental work and evidence",
-        "Report contract"
+        "Report contract",
+        "interface.display_name",
+        "interface.short_description",
+        "interface.default_prompt"
       ],
       "capability_ids": [
         "CAP-REPOSITORY-QUALITY-GOVERNANCE",
@@ -35034,7 +35037,9 @@
         "upstream-forks:.agents/skills/dependency-watch/references/forks.md@29a7aa587ae26118a0611a2e4037a69141a3ffde",
         "upstream-release-trust:.agents/skills/dependency-watch/references/release-trust.md@81a68395f9ad54ed651a84464a933ed7e57c9d32",
         "upstream-helper:.agents/skills/dependency-watch/scripts/watch.py@231c5a13e8d7e3cd337dbbad08e8f4434a943a38",
-        "desktop-spec-commit:d66c0d3bfa0e83148804b1bfb14036fd8176421e"
+        "desktop-spec-commit:d66c0d3bfa0e83148804b1bfb14036fd8176421e",
+        "dossier:projects/telegram-desktop-rust/dossiers/dependency-watch-openai-host-adapter-complete-read.md",
+        "desktop-spec-commit:832ce8cdbfba0fc24522f2e9bc001600d4fa6b20"
       ],
       "test_evidence": [
         "CONTRACT-TDRP-DEPENDENCY-SNAPSHOT-COVERAGE-001 authored, not run",
@@ -35043,9 +35048,11 @@
         "CONTRACT-TDRP-DEPENDENCY-FINDING-LIFECYCLE-001 authored, not run",
         "FAULT-TDRP-DEPENDENCY-PARTIAL-RECOVERY-001 authored, not run",
         "INT-TDRP-DEPENDENCY-ADVISORY-OWNER-001 authored, not run",
-        "upstream-watch-test:.agents/skills/dependency-watch/scripts/watch_test.py@d3107c617be3e8780a99bebaeba19a4f235ae6ea"
+        "upstream-watch-test:.agents/skills/dependency-watch/scripts/watch_test.py@d3107c617be3e8780a99bebaeba19a4f235ae6ea",
+        "CONTRACT-TDRP-DEPENDENCY-OPENAI-HOST-METADATA-001 authored, not run",
+        "INT-TDRP-DEPENDENCY-OPENAI-HOST-INVOCATION-001 authored, not run"
       ],
-      "target_commit": "d66c0d3bfa0e83148804b1bfb14036fd8176421e",
+      "target_commit": "832ce8cdbfba0fc24522f2e9bc001600d4fa6b20",
       "workflow_run": null,
       "run_attempt": null,
       "job": null,
@@ -35143,10 +35150,12 @@
         "CONTRACT-TDRP-DEPENDENCY-SNAPSHOT-COVERAGE-001",
         "CONTRACT-TDRP-DEPENDENCY-RELEASE-TRUST-001",
         "CONTRACT-TDRP-DEPENDENCY-SECURITY-FORK-001",
-        "CONTRACT-TDRP-DEPENDENCY-FINDING-LIFECYCLE-001"
+        "CONTRACT-TDRP-DEPENDENCY-FINDING-LIFECYCLE-001",
+        "CONTRACT-TDRP-DEPENDENCY-OPENAI-HOST-METADATA-001"
       ],
       "integration_case_ids": [
-        "INT-TDRP-DEPENDENCY-ADVISORY-OWNER-001"
+        "INT-TDRP-DEPENDENCY-ADVISORY-OWNER-001",
+        "INT-TDRP-DEPENDENCY-OPENAI-HOST-INVOCATION-001"
       ],
       "functional_e2e_case_ids": [],
       "temporal_case_ids": [],
@@ -35185,7 +35194,7 @@
       "acceptance_reviewer": null,
       "reviewer": null,
       "license_and_provenance": "Behavioral repository dependency-advisory contract read from telegramdesktop/tdesktop fixed-U authority; no upstream Python implementation copied into Fabushi shipping runtime. Fixed-U source identity: telegramdesktop/tdesktop@f985723b552b30fe1c17d377d57f44e61a15a8c4:.agents/skills/dependency-watch/SKILL.md@482b3a8d0c939d4bb7bd32ab146e0cc988d29fd8.",
-      "notes": "Task round118/source evidence round149. Complete fixed-U tree reread was truncated=false with 7,194 entries. Exact dependency-watch/SKILL.md (8932 characters / 150 lines) plus OpenAI adapter, fork/release-trust references, helper and helper tests were read for direct semantics. Existing-owner-first extends source-neutral repository quality/test-evidence governance; the shipping Electron updater is explicitly rejected. Exactly one independent source entry closes: unknown 16160->16159, unread 16133->16132, responsibilities 133->134. Adjacent dependency-watch blobs remain independent inventory entries. Contracts authored, not run; accepted=false.",
+      "notes": "Task round118/source evidence round149. Complete fixed-U tree reread was truncated=false with 7,194 entries. Exact dependency-watch/SKILL.md (8932 characters / 150 lines) plus OpenAI adapter, fork/release-trust references, helper and helper tests were read for direct semantics. Existing-owner-first extends source-neutral repository quality/test-evidence governance; the shipping Electron updater is explicitly rejected. Exactly one independent source entry closes: unknown 16160->16159, unread 16133->16132, responsibilities 133->134. Adjacent dependency-watch blobs remain independent inventory entries. Contracts authored, not run; accepted=false. Task round119/source evidence round150 independently closes the adjacent OpenAI Dependency Watch adapter blob. Exact 260-character / 4-line YAML exposes only display/discovery metadata plus a default prompt that invokes $dependency-watch, audits freshly fetched origin/dev, and presents pressing pending updates before the review-someday list. Repository search found no second in-repository parser or durable state owner; peer OpenAI adapters use the same declarative schema. No new responsibility/owner/ADR/platform-core delta is introduced; unknown 16159->16158, unread 16132->16131, responsibilities remain 134. OpenAI host-metadata/invocation contracts authored, not run; accepted=false.",
       "test_execution_evidence": [],
       "validation_status": "not-run",
       "accepted": false

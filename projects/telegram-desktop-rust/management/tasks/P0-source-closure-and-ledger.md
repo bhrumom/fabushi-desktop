@@ -2342,3 +2342,18 @@ Authored but not run: `CONTRACT-TDRP-DEPENDENCY-SNAPSHOT-COVERAGE-001`, `CONTRAC
 Exactly one independent source entry closes: `unknown 16160 -> 16159`, `unread 16133 -> 16132`, `omitted=0`; `responsibilities_total 133 -> 134`, `unmapped_responsibilities=0`. The next independent fixed-U blob in tree order is `.agents/skills/dependency-watch/agents/openai.yaml@a61c118c41e3b50d6bc4bde12dc6d4c1b3756b5d`.
 
 Stage A zero-CI discipline remained intact: no GitHub Actions/check/status/workflow query or trigger and no build, typecheck, lint, validator, generator, dependency resolution, unit/contract/integration/E2E, visual/a11y, package, deployment, installation or runtime acceptance was performed.
+
+
+## Round 119 / source-entry closure — OpenAI Dependency Watch host adapter (2026-11-01)
+
+From desktop checkpoint parent `46241ddf29ca947ce1dae3fafae56e27ba13bf97`, the live migration branch was reread unchanged before spec publication; spec-first CAS published `832ce8cdbfba0fc24522f2e9bc001600d4fa6b20`. Desktop main remains `9993ca8e107f7e019a8201e5ab74fa54e82159f2`; platform-core exact commit `e92b51e23b39dae5719f033fa1f7a20d6579dc8c` was verified. Fixed U remains `f985723b552b30fe1c17d377d57f44e61a15a8c4`; recursive root tree `91f2b083ab2877c0a17d07868eabec362a5cfca6` was reread `truncated=false` with 7,194 entries. Before closure the unique ledger was `source_entries_total=16202 / unknown=16159 / unread=16132 / omitted=0 / responsibilities_total=134 / unmapped_responsibilities=0`.
+
+The exact `.agents/skills/dependency-watch/agents/openai.yaml@a61c118c41e3b50d6bc4bde12dc6d4c1b3756b5d` blob was read completely: 260 characters / 4 lines, fixed-U tree index 58. It is declarative OpenAI host metadata only: `display_name="Dependency Watch"`, `short_description="Track dependency releases and missing upstream fixes"`, and a `default_prompt` that invokes `$dependency-watch`, audits freshly fetched `origin/dev`, and orders pressing pending updates before the review-someday list. Repository search found no second in-repository parser/state owner; code-health, continue, perform-task and process-inbox OpenAI adapters use the same declarative schema.
+
+Existing-owner-first attaches this source to the already implemented `TDRP-R9-REPOSITORY-DEPENDENCY-ADVISORY-001` owner under Fabushi repository quality/test-evidence governance. Shipping Electron updater, platform-core runtime, Product Tasks/Automations, Agent/Coordinator/Host/Runner, build-time inventory as decision authority and a copied Telegram/OpenAI dependency monitor remain rejected. No new responsibility, product/runtime owner, dependency pin, updater state, platform-core production delta or ADR is introduced.
+
+Spec-first commit `832ce8cdbfba0fc24522f2e9bc001600d4fa6b20` extends existing qualification/evidence and adds `projects/telegram-desktop-rust/dossiers/dependency-watch-openai-host-adapter-complete-read.md`. Authored, not run: `CONTRACT-TDRP-DEPENDENCY-OPENAI-HOST-METADATA-001` and `INT-TDRP-DEPENDENCY-OPENAI-HOST-INVOCATION-001`.
+
+Exactly one independent source entry closes under the existing responsibility: `unknown 16159 -> 16158`, `unread 16132 -> 16131`, `omitted=0`; `responsibilities_total=134`, `unmapped_responsibilities=0`. The next independent unrepresented fixed-U blob in tree order is `.agents/skills/dependency-watch/references/forks.md@29a7aa587ae26118a0611a2e4037a69141a3ffde`.
+
+Stage A zero-CI discipline remained intact: no GitHub Actions/check/status/workflow query or trigger and no build, typecheck, lint, validator, generator, dependency resolution, unit/contract/integration/E2E, visual/a11y, package, deployment, installation or runtime acceptance was performed.

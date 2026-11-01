@@ -2534,3 +2534,16 @@ The unique responsibility `TDRP-R9-REPOSITORY-DEPENDENCY-ADVISORY-001` is `imple
 Coverage after this independent source closure is `source_entries_total=16202 / unknown=16159 / unread=16132 / omitted=0 / responsibilities_total=134 / unmapped_responsibilities=0`. Adjacent dependency-watch blobs remain independent inventory entries; next in fixed-U tree order is `.agents/skills/dependency-watch/agents/openai.yaml@a61c118c41e3b50d6bc4bde12dc6d4c1b3756b5d`. Full fixed-U semantic closure, Stage-B executable validation and final independent acceptance remain open.
 
 No GitHub Actions/check/status/workflow query or trigger, build, typecheck, lint, validator, generator, dependency resolution, unit/contract/integration/E2E execution, package, deployment, installation or runtime acceptance was performed.
+
+
+## Round 119 / source-entry closure — OpenAI Dependency Watch host adapter (2026-11-01)
+
+Live desktop parent `46241ddf29ca947ce1dae3fafae56e27ba13bf97`, main `9993ca8e107f7e019a8201e5ab74fa54e82159f2`, platform-core `e92b51e23b39dae5719f033fa1f7a20d6579dc8c`, and fixed-U `f985723b552b30fe1c17d377d57f44e61a15a8c4` were reread. Fixed-U tree `91f2b083ab2877c0a17d07868eabec362a5cfca6` remains complete (`truncated=false`, 7,194 entries).
+
+The exact target `.agents/skills/dependency-watch/agents/openai.yaml@a61c118c41e3b50d6bc4bde12dc6d4c1b3756b5d` is a 260-character / 4-line declarative host adapter at tree index 58. Its only contract is discovery/default-prompt projection into the already read `$dependency-watch` skill: display name, short description, fresh-`origin/dev` audit invocation and pressing-before-review-someday report ordering. It owns no snapshot, dependency inventory, release/security decision, finding lifecycle, mutation, build/test, updater, release/deployment or acceptance state.
+
+Existing-owner-first reuses `TDRP-R9-REPOSITORY-DEPENDENCY-ADVISORY-001`. Spec-first CAS `832ce8cdbfba0fc24522f2e9bc001600d4fa6b20` adds host-adapter qualification/evidence and the complete-read dossier; `CONTRACT-TDRP-DEPENDENCY-OPENAI-HOST-METADATA-001` and `INT-TDRP-DEPENDENCY-OPENAI-HOST-INVOCATION-001` are authored but not run.
+
+Exactly one independent source entry closes: `unknown 16159 -> 16158`, `unread 16132 -> 16131`, `omitted=0`; responsibilities remain 134 and unmapped remains 0. Next independent fixed-U blob: `.agents/skills/dependency-watch/references/forks.md@29a7aa587ae26118a0611a2e4037a69141a3ffde`.
+
+No Actions/check/status/workflow query or trigger and no executable validation was performed.
