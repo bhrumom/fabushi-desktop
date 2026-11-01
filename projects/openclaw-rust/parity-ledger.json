@@ -13626,7 +13626,7 @@
       "oracle_ids": [
         "OCRM-MEDIA-STORE-O04"
       ],
-      "owner_decision": "Implement directory validation and atomic publication in media_store.rs",
+      "owner_decision": "Specify the missing read-scope capability, directory identity, verified handle, and host-consumer boundary before implementation; retain existing direct gateway publication as a separate unscoped mode",
       "postconditions": [
         "Atomic publication to target directory with verified handle identity"
       ],
@@ -13663,7 +13663,7 @@
       ],
       "status": {
         "acceptance": "pending",
-        "implementation": "implemented",
+        "implementation": "not-started",
         "mapping": "reviewed",
         "read": "read-complete",
         "verification": "not-run",

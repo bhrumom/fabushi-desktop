@@ -1,5 +1,7 @@
 # OCRM Technical Dossier — Unit 21: Media Persistence, Workspace Scoping, Read Scope, and Storage Lifecycle (`OCRM-UNIT-MEDIA-008`)
 
+Read-scope specification: `projects/openclaw-rust/docs/specs/media-store-read-scope.md`
+
 **Project ID**: OCRM-001  
 **Module**: OCRM-M24 (Media Storage Persistence, Read Scope Authority, Workspace Traversal Protection, Inbound/Outbound Lifecycle & Transcode Cache Pruning)  
 **Upstream Target Authority**: `openclaw/openclaw@ad8d12f126d29b0db204187adf5092db80294e70` (tree `04ccce62f1d74dc8e0c88290ae8ded027b7b0f16`)  
@@ -46,7 +48,8 @@ The audited source code was decomposed into 5 discrete Rust runtime responsibili
    - **Rust Owner**: `source/host/src/extensions/attachments/media_store.rs::resolve_media_scoped_dir, save_media_buffer, save_media_source`.
    - **Production Call Chain**: Producer `save_media_buffer, save_media_source` → Owner `media_store::resolve_media_scoped_dir` → Consumer: *Pending channel read authority scopes and session media receivers binding directory guard tokens*.
    - **Oracles**: `OCRM-MEDIA-STORE-O04`.
-   - **Status**: `implementation=implemented`, `wiring=not-wired`, `verification=not-run`, `blocker_ids=["BL-MEDIA-STORE-READ-SCOPE-CONSUMERS-001"]` (channel read authority scopes and session receivers do not yet bind directory guard tokens into `write_read_scope_media`).
+   - **Status**: `implementation=not-started`, `wiring=not-wired`, `verification=not-run`, `blocker_ids=["BL-MEDIA-STORE-READ-SCOPE-CONSUMERS-001"]` (the Rust owner has path containment and atomic temp-file rename, but no read-scope capability, directory identity guard, descriptor lifecycle, or `write_read_scope_media` consumer).
+   - **Calibration**: The previous `implementation=implemented` label described the selected owner and partial path checks, not the locked read-scope behavior. It is corrected here because no `write_read_scope_media` implementation, scope token, directory-handle identity check, or acceptance-bound consumer exists in the current source.
 
 3. **`OCRM-RESP-MEDIA-STORE-LIFECYCLE-001`**:
    - **Behavior**: Media storage lifecycle retention policies: playback transcode cache capped at 512MB disk budget with oldest-first LRU eviction and 7-day TTL; outbound staging with 24-hour TTL; cleanOldMedia routine with explicit exclusion of playback-transcode and SQLite-managed outgoing chat history.
