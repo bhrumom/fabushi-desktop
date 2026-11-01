@@ -250,6 +250,10 @@ stores with the admitted per-agent filesystem boundary. This protects the
 agent directory during deletion without creating an automation session catalog,
 reaper, or alternate lifecycle owner.
 
+The production Runner state surface now delegates automation/workflow mutation
+commands through injected callbacks to those existing Session owner methods;
+the standalone state fallback remains compatibility-only.
+
 The spend-guard state setter and the atomic session-bound card/state/activity
 transaction now perform the same predicate check inside their SQLite
 transactions. A facade admission precheck can no longer be the only fence for

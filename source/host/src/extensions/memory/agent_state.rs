@@ -43,6 +43,10 @@ pub type AgentSettingsWriter =
     Arc<dyn Fn(Map<String, Value>) -> StateWriteResult + Send + Sync + 'static>;
 pub type AgentChannelDisconnector =
     Arc<dyn Fn(&str) -> StateWriteResult + Send + Sync + 'static>;
+pub type AgentAutomationMutator =
+    Arc<dyn Fn(AgentAutomationMutation) -> StateWriteResult + Send + Sync + 'static>;
+pub type AgentWorkflowMutator =
+    Arc<dyn Fn(AgentWorkflowMutation) -> StateWriteResult + Send + Sync + 'static>;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum MemoryTier { Profile, Note, Log }
@@ -56,6 +60,20 @@ pub struct StateWriteResult { pub ok: bool, pub message: String }
 impl StateWriteResult {
     pub fn success(message: impl Into<String>) -> Self { Self { ok: true, message: message.into() } }
     pub fn failure(message: impl Into<String>) -> Self { Self { ok: false, message: message.into() } }
+}
+
+#[derive(Debug, Clone)]
+pub enum AgentAutomationMutation {
+    Create(AutomationSpec),
+    Update { id: String, spec: AutomationSpec },
+    SetEnabled { id: String, enabled: bool },
+    Remove { id: String },
+}
+
+#[derive(Debug, Clone)]
+pub enum AgentWorkflowMutation {
+    Upsert { id: Option<String>, spec: WorkflowSpec },
+    Remove { id: String },
 }
 
 pub struct SandAgentState {
@@ -74,6 +92,8 @@ pub struct SandAgentState {
     write_agent_profile: Option<AgentProfileWriter>,
     write_agent_settings: Option<AgentSettingsWriter>,
     disconnect_agent_channel: Option<AgentChannelDisconnector>,
+    mutate_agent_automation: Option<AgentAutomationMutator>,
+    mutate_agent_workflow: Option<AgentWorkflowMutator>,
 }
 
 impl SandAgentState {
@@ -98,6 +118,8 @@ impl SandAgentState {
             write_agent_profile: None,
             write_agent_settings: None,
             disconnect_agent_channel: None,
+            mutate_agent_automation: None,
+            mutate_agent_workflow: None,
         })
     }
 
@@ -125,6 +147,14 @@ impl SandAgentState {
         disconnector: AgentChannelDisconnector,
     ) -> Self {
         self.disconnect_agent_channel = Some(disconnector);
+        self
+    }
+    pub fn with_agent_automation_mutator(mut self, mutator: AgentAutomationMutator) -> Self {
+        self.mutate_agent_automation = Some(mutator);
+        self
+    }
+    pub fn with_agent_workflow_mutator(mut self, mutator: AgentWorkflowMutator) -> Self {
+        self.mutate_agent_workflow = Some(mutator);
         self
     }
     pub fn agent_dir(&self) -> &Path { &self.agent_dir }
@@ -188,6 +218,9 @@ impl SandAgentState {
     }
 
     pub fn create_automation(&self, spec: &AutomationSpec) -> StateWriteResult {
+        if let Some(mutator) = self.mutate_agent_automation.as_ref() {
+            return mutator(AgentAutomationMutation::Create(spec.clone()));
+        }
         match self.workflows.automations.upsert(spec, (self.now)() as f64) {
             Ok(Some(record)) => automation_result("Saved", &record),
             Ok(None) => StateWriteResult::failure(
@@ -198,6 +231,12 @@ impl SandAgentState {
     }
 
     pub fn update_automation(&self, id: &str, spec: &AutomationSpec) -> StateWriteResult {
+        if let Some(mutator) = self.mutate_agent_automation.as_ref() {
+            return mutator(AgentAutomationMutation::Update {
+                id: id.to_string(),
+                spec: spec.clone(),
+            });
+        }
         match self.workflows.automations.update(id, spec) {
             Ok(Some(record)) => automation_result("Updated", &record),
             Ok(None) => StateWriteResult::failure(format!(
@@ -208,6 +247,12 @@ impl SandAgentState {
     }
 
     pub fn set_automation_enabled(&self, id: &str, enabled: bool) -> StateWriteResult {
+        if let Some(mutator) = self.mutate_agent_automation.as_ref() {
+            return mutator(AgentAutomationMutation::SetEnabled {
+                id: id.to_string(),
+                enabled,
+            });
+        }
         match self.workflows.automations.set_enabled(id, enabled) {
             Ok(Some(record)) => StateWriteResult::success(format!(
                 "{} routine \"{}\" (folder {}).",
@@ -221,6 +266,9 @@ impl SandAgentState {
     }
 
     pub fn delete_automation(&self, id: &str) -> StateWriteResult {
+        if let Some(mutator) = self.mutate_agent_automation.as_ref() {
+            return mutator(AgentAutomationMutation::Remove { id: id.to_string() });
+        }
         let name = self.workflows.automations.get(id)
             .map(|record| record.name)
             .unwrap_or_else(|| id.to_string());
@@ -245,6 +293,12 @@ impl SandAgentState {
             trigger: None,
             source_ref: None,
         };
+        if let Some(mutator) = self.mutate_agent_workflow.as_ref() {
+            return mutator(AgentWorkflowMutation::Upsert {
+                id: id.map(ToOwned::to_owned),
+                spec,
+            });
+        }
         let result = match id {
             Some(id) => self.workflows.update(id, &spec),
             None => self.workflows.create(&spec),
@@ -268,6 +322,9 @@ impl SandAgentState {
     }
 
     pub fn delete_workflow(&self, id: &str) -> StateWriteResult {
+        if let Some(mutator) = self.mutate_agent_workflow.as_ref() {
+            return mutator(AgentWorkflowMutation::Remove { id: id.to_string() });
+        }
         match self.workflows.remove(id) {
             Ok(true) => StateWriteResult::success(format!("Deleted workflow {id}.")),
             Ok(false) => StateWriteResult::failure(format!(

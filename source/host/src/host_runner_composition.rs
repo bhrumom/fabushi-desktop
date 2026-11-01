@@ -12,7 +12,8 @@ use crate::extensions::local_tool_permission::local_tool_permission_controller::
     SandLocalToolRequestStatus,
 };
 use crate::extensions::memory::agent_state::{
-    AvatarBoxFileReader, SandAgentState, StateWriteResult,
+    AgentAutomationMutation, AgentWorkflowMutation, AvatarBoxFileReader, SandAgentState,
+    StateWriteResult,
 };
 use crate::extensions::session::production::ProductionSessionWorkers;
 use crate::runner::TurnUsage;
@@ -185,6 +186,56 @@ impl HostRunnerComposition {
                 )),
                 Err(error) => StateWriteResult::failure(format!(
                     "could not disconnect {platform}: {error}"
+                )),
+            }
+        }));
+        let automation_sessions = Arc::clone(&sessions);
+        let automation_agent_id = agent_id.to_string();
+        state = state.with_agent_automation_mutator(Arc::new(move |mutation| {
+            let result = match mutation {
+                AgentAutomationMutation::Create(spec) => automation_sessions
+                    .create_agent_automation(&automation_agent_id, &spec)
+                    .map(|_| "Saved routine."),
+                AgentAutomationMutation::Update { id, spec } => automation_sessions
+                    .update_agent_automation(&automation_agent_id, &id, &spec)
+                    .map(|_| "Updated routine."),
+                AgentAutomationMutation::SetEnabled { id, enabled } => automation_sessions
+                    .set_agent_automation_enabled(&automation_agent_id, &id, enabled)
+                    .map(|_| if enabled { "Resumed routine." } else { "Paused routine." }),
+                AgentAutomationMutation::Remove { id } => automation_sessions
+                    .remove_agent_automation(&automation_agent_id, &id)
+                    .map(|_| "Deleted routine."),
+            };
+            match result {
+                Ok(message) => StateWriteResult::success(message),
+                Err(error) => StateWriteResult::failure(format!(
+                    "could not update routine: {error}"
+                )),
+            }
+        }));
+        let workflow_sessions = Arc::clone(&sessions);
+        let workflow_agent_id = agent_id.to_string();
+        state = state.with_agent_workflow_mutator(Arc::new(move |mutation| {
+            let result = match mutation {
+                AgentWorkflowMutation::Upsert { id, spec } => {
+                    if let Some(id) = id {
+                        workflow_sessions
+                            .update_agent_workflow(&workflow_agent_id, &id, &spec)
+                            .map(|_| "Updated workflow.")
+                    } else {
+                        workflow_sessions
+                            .create_agent_workflow(&workflow_agent_id, &spec)
+                            .map(|_| "Saved workflow.")
+                    }
+                }
+                AgentWorkflowMutation::Remove { id } => workflow_sessions
+                    .remove_agent_workflow(&workflow_agent_id, &id)
+                    .map(|_| "Deleted workflow."),
+            };
+            match result {
+                Ok(message) => StateWriteResult::success(message),
+                Err(error) => StateWriteResult::failure(format!(
+                    "could not update workflow: {error}"
                 )),
             }
         }));

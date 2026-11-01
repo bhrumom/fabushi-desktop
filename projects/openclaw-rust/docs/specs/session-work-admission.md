@@ -457,6 +457,9 @@ filesystem-mutation wrapper around definition, enable/disable, removal, and
 workflow import operations. This protects agent-directory writes during
 deletion without turning automation history into a session catalog or cron
 reaper.
+The production Runner state surface now injects automation/workflow mutation
+callbacks that delegate to those same existing Session owner methods; its
+standalone fallback remains compatibility-only.
 The shared owner `write_kv` boundary now fences the remaining owner-local KV
 setters at the same SQLite edge; external memory-store clear paths remain
 separately governed.

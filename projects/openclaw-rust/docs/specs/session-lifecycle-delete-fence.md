@@ -260,6 +260,11 @@ admitted per-agent filesystem boundary. This is only deletion-race
 serialization; it does not implement the separate cron session-reaper rows or
 their guarded lifecycle deletion contract.
 
+The production Runner state surface delegates its automation/workflow mutation
+commands through the same Gateway/Session owner methods. Direct
+`SandAgentState` construction retains a local fallback and is not production
+acceptance evidence.
+
 The session-bound automation spend-guard card path now commits its transcript
 card, owner-local spend-guard state, and activity projection in one existing
 session database transaction. Legacy records without an admission row retain
