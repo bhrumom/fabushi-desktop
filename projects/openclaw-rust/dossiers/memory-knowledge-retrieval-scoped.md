@@ -96,3 +96,15 @@ the formatter. The ledger consequently records the policy implementation while
 retaining `wiring=not-wired`, `verification=not-run`, and
 `acceptance=pending`. No line number is inferred from a transcript snippet,
 entry ID, timestamp, or result ordering.
+
+## 5.3 Session-owner synthesis apply boundary — 2026-11-01
+
+Production memory synthesis now projects each per-agent `FileMemoryStore`
+through `ProductionSynthesisTarget`. Its apply step resolves the late-bound
+`MemoryService` synthesis gate, which is bound to the existing
+`ProductionSessionWorkers`; the gate holds the per-agent filesystem/deletion
+lock, rechecks session admission, and then delegates to the existing
+fingerprint/CAS `FileMemoryStore::apply_synthesis` owner. An unbound gate fails
+closed with `SynthesisApplyResult::Invalid`, so startup ordering cannot create a
+second unguarded production writer. This is source-level wiring evidence only;
+memory synthesis verification and acceptance remain not-run/pending.

@@ -59,6 +59,10 @@ durable state → consumer chain.
   snapshot clear loses a deletion-fence race, it must compensate by restoring
   the captured records and return a failure/unknown outcome rather than
   reporting success.
+- `SWA-10`: Background memory synthesis applies changes through the existing
+  `ProductionSessionWorkers` owner. The synthesis target must fail closed
+  until that owner gate is bound, hold the per-agent filesystem/deletion lock,
+  recheck admission, and retain the existing fingerprint/CAS stale result.
 
 ## Current and target state
 
@@ -287,6 +291,12 @@ owner boundary. They capture the external records and memory snapshot before
 mutation, clear the external store, and clear the owner-local snapshot. A
 deletion-fence rejection restores captured records before returning failure;
 the path does not claim crash-atomicity across files and SQLite.
+
+The production synthesis target is routed through a late-bound owner gate. A
+target without a bound `ProductionSessionWorkers` gate returns a
+typed invalid/stale-equivalent failure rather than writing the memory files;
+the bound path preserves `FileMemoryStore` fingerprint/CAS semantics inside
+the owner lock.
 
 The focused deletion-fence contract is recorded in
 `source/host/tests/agent_session_contract.rs::deletion_fence_rejects_new_transcript_work_before_durable_write`;

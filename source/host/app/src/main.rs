@@ -14601,6 +14601,7 @@ fn main() {
             production_extensions.memory.service(),
         ),
     );
+    session_workers.bind_memory_synthesis_gate();
     let handoff_prepare_box = Arc::clone(&forever_box);
     let handoff_screenshot_box = Arc::clone(&forever_box);
     let handoff_status_box = Arc::clone(&forever_box);

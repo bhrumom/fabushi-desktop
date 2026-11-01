@@ -68,7 +68,7 @@ use super::session_store_factories::{
     workflow_store_for_db_path_with_time_zone_resolver,
 };
 use crate::extensions::memory::memory_service::{
-    FileMemoryStore, MemoryRecord, MemoryService,
+    FileMemoryStore, MemoryRecord, MemoryService, SynthesisApplyResult,
 };
 use crate::extensions::memory::project_membership::AgentProjectMembership;
 use crate::automations::automation_store::{FileAutomationStore, UserTimeZoneResolver, agent_has_automations};
@@ -197,6 +197,27 @@ pub struct ProviderReviewAcknowledgment {
 }
 
 impl ProductionSessionWorkers {
+    pub fn bind_memory_synthesis_gate(self: &Arc<Self>) {
+        let weak = Arc::downgrade(self);
+        self.memory_service.set_synthesis_apply_gate(Some(Arc::new(
+            move |agent_id, store, snapshot, changes, now_ms| {
+                let Some(owner) = weak.upgrade() else {
+                    return SynthesisApplyResult::Invalid;
+                };
+                owner
+                    .with_agent_filesystem_mutation(agent_id, || {
+                        owner.assert_agent_work_admission(agent_id)?;
+                        Ok(
+                            store
+                                .apply_synthesis(snapshot, changes, now_ms)
+                                .unwrap_or(SynthesisApplyResult::Invalid),
+                        )
+                    })
+                    .unwrap_or(SynthesisApplyResult::Invalid)
+            },
+        )));
+    }
+
     pub fn production() -> Self {
         Self::production_with_user_time_zone_resolver(Arc::new(|| None))
     }

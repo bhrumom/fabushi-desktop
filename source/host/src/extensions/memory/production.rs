@@ -10,7 +10,9 @@ use crate::extensions::telemetry::sand_error_tags::SandErrorValue;
 use crate::storage::agent_paths::get_sand_agents_root_dir;
 
 use super::extension::{HostMemoryExtension, start_memory_extension};
-use super::memory_service::MemoryService;
+use super::memory_service::{
+    FileMemoryStore, MemoryService, SynthesisApplyResult, SynthesisChange, SynthesisSnapshot,
+};
 use super::memory_synthesis_service::{
     MemorySynthesisOptions, MemorySynthesisService, SynthesisCancelSignal,
     SynthesisProposalRequest, SynthesisReport, SynthesisReportOutcome, SynthesisTarget,
@@ -57,6 +59,45 @@ pub fn memory_synthesis_telemetry_report(report: &SynthesisReport) -> MemorySynt
     }
 }
 
+struct ProductionSynthesisTarget {
+    agent_id: String,
+    store: FileMemoryStore,
+    service: Arc<MemoryService>,
+}
+
+impl SynthesisTarget for ProductionSynthesisTarget {
+    fn prepare_synthesis(&self) -> SynthesisSnapshot {
+        self.store.prepare_synthesis()
+    }
+
+    fn apply_synthesis(
+        &self,
+        snapshot: &SynthesisSnapshot,
+        changes: &[SynthesisChange],
+        now_ms: i64,
+    ) -> SynthesisApplyResult {
+        self.service.apply_synthesis_with_gate(
+            &self.agent_id,
+            &self.store,
+            snapshot,
+            changes,
+            now_ms,
+        )
+    }
+
+    fn has_memories(&self) -> bool {
+        self.store.has_memories()
+    }
+
+    fn is_temporal_review_due(&self, now_ms: i64) -> bool {
+        self.store.is_temporal_review_due(now_ms)
+    }
+
+    fn mark_temporal_review(&self, now_ms: i64) {
+        let _ = self.store.mark_temporal_review(now_ms);
+    }
+}
+
 pub fn create_production_memory_synthesis(
     service: Arc<MemoryService>,
     inference: Arc<ProductionInferenceExtension>,
@@ -70,8 +111,12 @@ pub fn create_production_memory_synthesis(
             .into_iter()
             .map(|(agent_id, store)| {
                 (
-                    agent_id,
-                    Arc::new(store) as Arc<dyn SynthesisTarget>,
+                    agent_id.clone(),
+                    Arc::new(ProductionSynthesisTarget {
+                        agent_id,
+                        store,
+                        service: Arc::clone(&list_service),
+                    }) as Arc<dyn SynthesisTarget>,
                 )
             })
             .collect::<Vec<_>>()
@@ -81,7 +126,13 @@ pub fn create_production_memory_synthesis(
     let get_target = Arc::new(move |agent_id: &str| {
         target_service
             .synthesis_target_for_agent(agent_id)
-            .map(|store| Arc::new(store) as Arc<dyn SynthesisTarget>)
+            .map(|store| {
+                Arc::new(ProductionSynthesisTarget {
+                    agent_id: agent_id.to_string(),
+                    store,
+                    service: Arc::clone(&target_service),
+                }) as Arc<dyn SynthesisTarget>
+            })
     });
 
     let propose_inference = Arc::clone(&inference);

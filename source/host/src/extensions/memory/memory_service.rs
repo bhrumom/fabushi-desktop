@@ -100,6 +100,18 @@ pub enum SynthesisApplyResult {
     Invalid,
 }
 
+pub type SynthesisApplyGate = Arc<
+    dyn Fn(
+            &str,
+            &FileMemoryStore,
+            &SynthesisSnapshot,
+            &[SynthesisChange],
+            i64,
+        ) -> SynthesisApplyResult
+        + Send
+        + Sync,
+>;
+
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub struct MemoryRecall {
     pub profile: Vec<MemoryRecord>,
@@ -1023,6 +1035,7 @@ pub struct MemoryService {
     sand_root: PathBuf,
     agents_root_dir: PathBuf,
     synthesis_bridge: Arc<Mutex<Option<Weak<dyn MemorySynthesisBridge>>>>,
+    synthesis_apply_gate: Arc<Mutex<Option<SynthesisApplyGate>>>,
     active_agent_id: Arc<Mutex<Option<String>>>,
     listeners: Arc<Mutex<HashMap<u64, MemoryChangeListener>>>,
     next_listener_id: Arc<AtomicU64>,
@@ -1062,6 +1075,7 @@ impl MemoryService {
             sand_root: sand_root.into(),
             agents_root_dir: agents_root_dir.into(),
             synthesis_bridge: Arc::new(Mutex::new(None)),
+            synthesis_apply_gate: Arc::new(Mutex::new(None)),
             active_agent_id: Arc::new(Mutex::new(None)),
             listeners: Arc::new(Mutex::new(HashMap::new())),
             next_listener_id: Arc::new(AtomicU64::new(0)),
@@ -1096,6 +1110,31 @@ impl MemoryService {
 
     pub fn store_for_agent(&self, agent_id: &str) -> FileMemoryStore {
         self.create_agent_store(self.agents_root_dir.join(agent_id))
+    }
+
+    pub fn set_synthesis_apply_gate(&self, gate: Option<SynthesisApplyGate>) {
+        *self
+            .synthesis_apply_gate
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner()) = gate;
+    }
+
+    pub fn apply_synthesis_with_gate(
+        &self,
+        agent_id: &str,
+        store: &FileMemoryStore,
+        snapshot: &SynthesisSnapshot,
+        changes: &[SynthesisChange],
+        now_ms: i64,
+    ) -> SynthesisApplyResult {
+        let gate = self
+            .synthesis_apply_gate
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
+            .clone();
+        gate.map_or(SynthesisApplyResult::Invalid, |gate| {
+            gate(agent_id, store, snapshot, changes, now_ms)
+        })
     }
 
     pub fn user_memory_store(

@@ -534,12 +534,18 @@ fn memory_synthesis_is_pinned_to_authenticated_statsig_and_shipping_inference() 
         "is_cancelled()",
         "memory_synthesis_telemetry_report",
         "report_memory_synthesis",
+        "ProductionSynthesisTarget",
+        "apply_synthesis_with_gate",
     ] {
         assert!(
             MEMORY_PRODUCTION.contains(needle),
             "shipping Memory production must consume the shared inference/telemetry path: {needle}"
         );
     }
+    assert!(
+        SHIPPING_HOST.contains("bind_memory_synthesis_gate()"),
+        "shipping Host must bind Memory synthesis to the session owner before runtime use"
+    );
 }
 
 #[test]
