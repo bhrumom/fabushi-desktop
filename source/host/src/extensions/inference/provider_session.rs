@@ -31,7 +31,9 @@ use super::codex_direct_responses::{
     CodexDirectTransport, CodexDirectUsage, run_codex_direct_responses_with_cancel,
     parse_codex_provider_refusal, run_codex_direct_responses_with_lifecycle_and_tool_step_reminder,
 };
-use super::typed_replay_serialization::{serialize_cursor_replay, serialize_responses_replay};
+use super::typed_replay_serialization::{
+    serialize_chat_replay, serialize_cursor_replay, serialize_responses_replay,
+};
 
 pub const FABUSHI_ROUTER_SYSTEM_PROMPT: &str =
     "You are Fabushi, a warm, concise desktop assistant.\n\
@@ -1538,7 +1540,13 @@ pub fn run_routed_provider_text_with_lifecycle_reporting_usage_with_max_steps(
 ) -> Result<String, ProviderSessionError> {
     let max_steps = max_steps.max(1);
     if options.typed_replay.is_some()
-        && !matches!(provider, RoutedProvider::Cursor | RoutedProvider::Codex | RoutedProvider::Fabushi)
+        && !matches!(
+            provider,
+            RoutedProvider::Cursor
+                | RoutedProvider::Codex
+                | RoutedProvider::Fabushi
+                | RoutedProvider::OpenRouter
+        )
     {
         return Err(ProviderSessionError::Protocol(
             "typed compacted replay reached provider serialization before provider-specific message merge was enabled".into(),
@@ -1995,6 +2003,46 @@ pub fn run_openrouter_with_transport_reporting_usage_and_partials_with_max_steps
     max_steps: usize,
     tool_step_reminder: Option<&ProviderToolStepReminderHook>,
 ) -> Result<String, ProviderSessionError> {
+    run_openrouter_with_transport_reporting_usage_and_partials_with_initial_conversation(
+        transport,
+        model,
+        messages,
+        None,
+        tools,
+        execute_tool,
+        on_text_delta,
+        should_cancel,
+        resume_from,
+        on_checkpoint,
+        on_usage,
+        on_partial_tool_call,
+        max_steps,
+        tool_step_reminder,
+    )
+}
+
+pub fn run_openrouter_with_transport_reporting_usage_and_partials_with_initial_conversation(
+    transport: &mut dyn OpenRouterTransport,
+    model: &str,
+    messages: &[ProviderMessage],
+    initial_conversation: Option<&[Value]>,
+    tools: &[RoutedToolDefinition],
+    execute_tool: &mut dyn FnMut(
+        &RoutedToolDefinition,
+        Value,
+        &str,
+    ) -> Result<Value, ProviderSessionError>,
+    on_text_delta: &mut dyn FnMut(&str, &str),
+    should_cancel: &dyn Fn() -> bool,
+    resume_from: Option<&OpenRouterCheckpoint>,
+    on_checkpoint: &mut dyn FnMut(
+        &OpenRouterCheckpoint,
+    ) -> Result<(), ProviderSessionError>,
+    on_usage: &mut dyn FnMut(ProviderTokenUsage),
+    on_partial_tool_call: &mut dyn FnMut(ProviderPartialToolCall) -> Result<(), ProviderSessionError>,
+    max_steps: usize,
+    tool_step_reminder: Option<&ProviderToolStepReminderHook>,
+) -> Result<String, ProviderSessionError> {
     let max_steps = max_steps.max(1);
     let tool_index = tools
         .iter()
@@ -2019,21 +2067,25 @@ pub fn run_openrouter_with_transport_reporting_usage_and_partials_with_max_steps
                 "role": "system",
                 "content": system_prompt
             })];
-            conversation.extend(
-                messages
-                    .iter()
-                    .filter(|message| message.role != "system")
-                    .map(|message| {
-                        json!({
-                            "role": if message.role == "assistant" {
-                                "assistant"
-                            } else {
-                                "user"
-                            },
-                            "content": message.content,
-                        })
-                    }),
-            );
+            if let Some(initial_conversation) = initial_conversation {
+                conversation.extend(initial_conversation.iter().cloned());
+            } else {
+                conversation.extend(
+                    messages
+                        .iter()
+                        .filter(|message| message.role != "system")
+                        .map(|message| {
+                            json!({
+                                "role": if message.role == "assistant" {
+                                    "assistant"
+                                } else {
+                                    "user"
+                                },
+                                "content": message.content,
+                            })
+                        }),
+                );
+            }
             (conversation, String::new(), 0, 0)
         }
     };
@@ -2301,10 +2353,34 @@ fn run_openrouter_provider_text_with_lifecycle_reporting_usage(
         .on_partial_tool_call
         .as_deref_mut()
         .unwrap_or(&mut ignore_partial);
-    run_openrouter_with_transport_reporting_usage_and_partials_with_max_steps(
+    let initial_conversation = options
+        .typed_replay
+        .filter(|_| resume_from.is_none())
+        .map(serialize_chat_replay)
+        .transpose()
+        .map_err(|error| ProviderSessionError::Protocol(error.to_string()))?
+        .map(|mut replay| {
+            let message = messages
+                .iter()
+                .rev()
+                .find(|message| message.role == "user")
+                .ok_or_else(|| {
+                    ProviderSessionError::Protocol(
+                        "typed compacted replay requires a current user message".into(),
+                    )
+                })?;
+            replay.push(json!({
+                "role": "user",
+                "content": message.content,
+            }));
+            Ok::<_, ProviderSessionError>(replay)
+        })
+        .transpose()?;
+    run_openrouter_with_transport_reporting_usage_and_partials_with_initial_conversation(
         &mut transport,
         &model,
         messages,
+        initial_conversation.as_deref(),
         tools,
         execute_tool,
         on_text_delta,

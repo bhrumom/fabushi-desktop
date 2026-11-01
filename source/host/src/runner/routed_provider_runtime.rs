@@ -406,7 +406,13 @@ pub fn run_routed_provider_in_runner(
         run.multitask_enabled,
     );
     if run.typed_replay.is_some()
-        && !matches!(run.provider, RoutedProvider::Cursor | RoutedProvider::Codex | RoutedProvider::Fabushi)
+        && !matches!(
+            run.provider,
+            RoutedProvider::Cursor
+                | RoutedProvider::Codex
+                | RoutedProvider::Fabushi
+                | RoutedProvider::OpenRouter
+        )
     {
         return Err(ProviderSessionError::Protocol(
             "typed compacted replay reached the provider runtime before provider-specific message merge was enabled".into(),
