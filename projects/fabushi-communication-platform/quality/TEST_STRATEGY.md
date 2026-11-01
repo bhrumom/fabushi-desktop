@@ -822,3 +822,24 @@ Authored, not run in Stage A:
 - `SEC-TDRP-DEVCONTAINER-PRIVILEGE-BOUNDARY-001` — elevated development-container settings cannot leak into shipping/runtime security policy.
 
 Stage A status is `validation_status=not-run`, `accepted=false`; no Docker/Poetry/CMake/Ninja/build/test/lint/validator/package/deploy/container execution is permitted by this authored qualification.
+
+
+### Repository Git attributes / source-control normalization qualification
+
+`TDRP-R9-REPOSITORY-GIT-ATTRIBUTES-SOURCE-CONTROL-001` is qualified through authored-only Stage-A contracts and later frozen-candidate Stage-B source-control evidence. Source identity is fixed-U `.gitattributes@d7f1c6218bd3bd6b595385b1308c86ba9923fa14`, recursive-tree index 103 zero-based, mode 100644, 419 Git bytes / 419 ASCII characters, 15 LF newline characters, no CR characters, trailing newline and 16 split lines.
+
+Authored, not run in Stage A:
+- `CONTRACT-TDRP-GITATTRIBUTES-HOST-AUTHORITY-001` — Git attribute resolution is the direct repository consumer; no product/runtime owner is created.
+- `CONTRACT-TDRP-GITATTRIBUTES-TEXT-AUTO-001` — `* text=auto` preserves automatic text classification and index normalization semantics without being reinterpreted as a product encoding policy.
+- `CONTRACT-TDRP-GITATTRIBUTES-DIFF-LF-001` — `*.diff text eol=lf` requires LF working-tree text when such files exist.
+- `CONTRACT-TDRP-GITATTRIBUTES-BAT-CRLF-001` — `*.bat text eol=crlf` requires CRLF working-tree text for the six fixed-U Windows batch files.
+- `CONTRACT-TDRP-GITATTRIBUTES-ZXCVBN-LF-001` — the two fixed-U zxcvbn word lists retain LF byte identity so digest-sensitive upstream content is not line-ending converted.
+- `CONTRACT-TDRP-GITATTRIBUTES-BINARY-MACRO-001` — fourteen `.lottie` and ten `.bin` blobs are governed by Git's built-in binary macro and cannot enter text normalization/textual diff/merge treatment.
+- `CONTRACT-TDRP-GITATTRIBUTES-NO-CUSTOM-DRIVERS-001` — no named diff/merge driver, filter, working-tree encoding, export-ignore or export-subst behavior may be invented from this source.
+- `INT-TDRP-GITATTRIBUTES-SOURCE-CONTROL-COMPOSITION-001` — source-control normalization composes with existing repository process/provenance and quality/evidence governance, without a Telegram-specific Git owner.
+- `FAULT-TDRP-GITATTRIBUTES-STALE-INDEX-001` — an attribute change with stale pre-normalized index content remains non-passing until an explicit later renormalization/re-check.
+- `FAULT-TDRP-GITATTRIBUTES-PATTERN-MISCLASSIFICATION-001` — wrong text/binary or LF/CRLF classification is a qualification failure, not a tolerated platform variance.
+- `FAULT-TDRP-GITATTRIBUTES-DIGEST-DRIFT-001` — zxcvbn byte/digest drift remains explicit failure and cannot be normalized to success.
+- `SEC-TDRP-GITATTRIBUTES-NO-FILTER-EXECUTION-001` — the source defines no clean/smudge/process filter or custom executable merge/diff driver; Stage-B qualification must not invent or execute one as source behavior.
+
+The current Fabushi checkpoint has no root `.gitattributes` and no tracked paths matching the upstream special patterns. This is a source-neutral governance mapping, not permission to copy Telegram resource paths or to rewrite the Fabushi index during Stage A. Stage A status is `validation_status=not-run`, `accepted=false`; no checkout/add/renormalize/diff/merge/archive/digest/build/test/lint/validator/package/deploy operation is executed by this qualification.
