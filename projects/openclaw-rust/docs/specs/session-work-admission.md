@@ -98,6 +98,11 @@ The owner must recheck the captured generation and deletion/archive state at
 the actual durable commit edge. Unknown mutation outcomes must not be retried
 without a committed receipt.
 
+The existing atomic session-admitted transcript append, transcript update,
+background-result receipt, and outgoing-media settlement transactions must
+also reject the durable `deletion_pending` fence inside their SQLite
+transaction; a production precheck alone is not sufficient for a delete race.
+
 ## Failure and edge cases
 
 - missing or malformed session identity: reject before durable admission;

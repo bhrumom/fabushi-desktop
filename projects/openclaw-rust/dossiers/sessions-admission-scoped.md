@@ -681,3 +681,9 @@ Those producers cannot clear or rewrite introduction state after deletion
 custody begins, while the existing owner still controls cleanup and recovery.
 This remains a bounded negative admission slice, not full session-work-admission
 acceptance.
+
+The existing atomic session-admitted transcript append, transcript update,
+background-result receipt, and outgoing-media settlement owners now reject
+durable `deletion_pending` inside their SQLite transactions. These paths cannot
+commit after deletion custody wins the durable race; this is a write-edge
+correction, not completion of the detached-result/media lifecycle.

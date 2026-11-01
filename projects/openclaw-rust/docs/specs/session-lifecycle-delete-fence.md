@@ -208,6 +208,12 @@ introduction lifecycle metadata setter. This is a bounded negative admission
 contract for deletion custody; it does not make cleanup-time state disposal or
 the broader session-work-admission lifecycle complete.
 
+The existing atomic session-admitted transcript append, transcript update,
+background-result receipt, and outgoing-media settlement owners also recheck
+`deletion_pending` inside their SQLite transactions as well as at the
+production facade. This closes the durable-fence race at those write edges
+without changing the broader lifecycle status.
+
 ## Release, migration, rollback, and observability
 
 The migration must be backward-compatible for existing agent DBs and preserve

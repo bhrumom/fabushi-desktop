@@ -116,6 +116,11 @@ fn deletion_fence_rejects_new_transcript_work_before_durable_write() {
     let record = store
         .create_session(None, "user", None)
         .expect("agent");
+    let session_key = production
+        .read_session_work_admission(&record.id)
+        .expect("read session admission")
+        .expect("main session admission")
+        .session_key;
 
     production
         .begin_agent_delete(&record.id)
@@ -145,6 +150,20 @@ fn deletion_fence_rejects_new_transcript_work_before_durable_write() {
         .set_agent_awaiting_user_response_for_tab(&record.id, &awaiting.tab_id, None, None)
         .expect_err("deletion-pending tab awaiting state must be rejected");
     assert!(awaiting_tab_error.contains("new session work is not admitted"));
+    let session_admitted_error = production
+        .append_agent_transcript_entries_if_session_admitted(
+            &record.id,
+            &session_key,
+            &[serde_json::json!({
+                "id": "blocked-session-entry",
+                "kind": "message",
+                "role": "user",
+                "content": "durable deletion fence must be checked in owner transaction",
+                "sessionKey": session_key.clone(),
+            })],
+        )
+        .expect_err("durable deletion-pending session append must be rejected");
+    assert!(session_admitted_error.contains("session is not admitted"));
     let introduction_error = production
         .set_agent_introduction_pending(&record.id, false)
         .expect_err("deletion-pending introduction state must be rejected");

@@ -890,6 +890,7 @@ impl SandAgentDb {
             if admission.session_key != session_key
                 || admission.lifecycle_revision != expected_lifecycle_revision
                 || admission.archived_at_ms.is_some()
+                || admission.deletion_pending
                 || admission.admitted_work_id.as_deref() != Some(work_id)
             {
                 return Ok(SessionWorkResultCommitOutcome::RejectedStale);
@@ -1971,7 +1972,10 @@ impl SandAgentDb {
                     )
                 })?;
             let admission: SessionWorkAdmissionRecord = serde_json::from_str(&raw_admission)?;
-            if admission.session_key != session_key || admission.archived_at_ms.is_some() {
+            if admission.session_key != session_key
+                || admission.archived_at_ms.is_some()
+                || admission.deletion_pending
+            {
                 return Err(AgentDbProjectionError::WorkAdmissionInvalid(
                     "session is not admitted for transcript append".into(),
                 ));
@@ -2064,6 +2068,7 @@ impl SandAgentDb {
                 || admission.lifecycle_revision != expected_lifecycle_revision.trim()
                 || admission.admitted_media_work_id.as_deref() != Some(media_work_id.trim())
                 || admission.archived_at_ms.is_some()
+                || admission.deletion_pending
             {
                 return Err(AgentDbProjectionError::WorkAdmissionInvalid(
                     "media settlement generation or identity is stale".into(),
@@ -2450,7 +2455,10 @@ impl SandAgentDb {
                     )
                 })?;
             let admission: SessionWorkAdmissionRecord = serde_json::from_str(&raw_admission)?;
-            if admission.session_key != session_key.trim() || admission.archived_at_ms.is_some() {
+            if admission.session_key != session_key.trim()
+                || admission.archived_at_ms.is_some()
+                || admission.deletion_pending
+            {
                 return Err(AgentDbProjectionError::WorkAdmissionInvalid(
                     "session is not admitted for transcript update".into(),
                 ));
@@ -4181,7 +4189,10 @@ pub fn update_persisted_transcript_entry_if_session_admitted(
             )
         })?;
     let admission: SessionWorkAdmissionRecord = serde_json::from_str(&raw_admission)?;
-    if admission.session_key != session_key || admission.archived_at_ms.is_some() {
+    if admission.session_key != session_key
+        || admission.archived_at_ms.is_some()
+        || admission.deletion_pending
+    {
         return Err(AgentDbProjectionError::WorkAdmissionInvalid(
             "session is not admitted for persisted transcript update".into(),
         ));
