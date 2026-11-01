@@ -24762,7 +24762,9 @@
         "desktop-provider-sync-commit:6b914b3089a5d3593c276aa37120f9c2f53db198",
         "desktop-tls-blob:d15b24a350cc69960efa6f84c509245178917ba9",
         "desktop-protocol-lib-blob:8e0634a0c9508913e508807f94aaaeb6c71e56eb",
-        "desktop-network-blob:241cd8ec792070a8de8af9ec6ca5b317e34376d1"
+        "desktop-network-blob:241cd8ec792070a8de8af9ec6ca5b317e34376d1",
+        "platform-core-source-compliance-commit:c0f2a6c4098cc5b54f3ee580db078e55c61982ab",
+        "platform-core-final-spec-blob:e266a7805ac552bc23614d7344b5e2e223ac1b3a"
       ],
       "test_evidence": [
         "Authored-only canonical protocol contracts: native/telegram-protocol/tests/protocol_contract.rs@212728aacd277b38821d110379215f75c2b4b675; not executed.",
@@ -24881,7 +24883,7 @@
       "acceptance_reviewer": null,
       "reviewer": null,
       "license_and_provenance": "Behavioral responsibility is anchored to fixed-U telegramdesktop/tdesktop mtproto.tl@76225965bfc794388db241f3f760db8ab79e84f8, mtproto_tls_socket.cpp@e7562e3ca1a1da03f5d368085d5e61d887ab3f16, mtproto_tls_socket.h@d4a90083ead17f27fcacc219129935a148132608, connection_tcp.cpp@d721a9058e1885d2964ded55bd4e4c7c2ce9e381, and adjacent WebProxySocket source. No upstream C++ is copied. General-purpose crypto dependencies: hmac 0.12.1 (MIT OR Apache-2.0), x25519-dalek 2.0.1 (BSD-3-Clause).",
-      "notes": "Round109/task round78 refines the earlier whole-lifecycle blocker: the TL template remains local/non-wire, while exact template-to-ClientHello, ServerHello authentication, and application-record wire semantics are now carried by the existing telegram-protocol owner and consumed by the existing 0xEE TcpTransport shipping path. Web proxy lifecycle and broader scheduling remain separate/open. Stage A contracts are authored only; executable validation is not run.",
+      "notes": "Round109/task round78 refines the earlier whole-lifecycle blocker: the TL template remains local/non-wire, while exact template-to-ClientHello, ServerHello authentication, and application-record wire semantics are now carried by the existing telegram-protocol owner and consumed by the existing 0xEE TcpTransport shipping path. Web proxy lifecycle and broader scheduling remain separate/open. Stage A contracts are authored only; executable validation is not run. Final platform source-level compliance is c0f2a6c4098cc5b54f3ee580db078e55c61982ab / spec blob e266a7805ac552bc23614d7344b5e2e223ac1b3a; executable status remains not-run.",
       "test_execution_evidence": [],
       "validation_status": "not-run",
       "accepted": false

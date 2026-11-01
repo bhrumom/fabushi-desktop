@@ -1806,3 +1806,6 @@ Spec-first platform-core is `7313529ae77d1abb99f678e8105ec4525474fe55` / spec bl
 The sole ledger responsibility `TDRP-R9-MTPROTO-TLS-CLIENT-HELLO-TEMPLATE-001` is upgraded to `implemented / coverage_disposition=rewritten / validation_status=not-run / accepted=false`; totals remain `responsibilities_total=109, unknown=16172, unread=16145, omitted=0, unmapped_responsibilities=0` because this refines an existing row. Proxy/Web lifecycle, broader scheduling/racing/reconnect, arbitrary request history, auth-key binding/persistence, gzip, complete difference decoding/application, remaining fixed-U unknown/unread, broader source/legal closure, Stage-B executable evidence and independent release ACCEPT remain open.
 
 No GitHub Actions/status/check query or trigger, build, typecheck, lint, schema validator, generator, unit/contract/integration/E2E test, package, deployment, installation or runtime acceptance was performed.
+
+
+Platform-core final source-level compliance was then recorded at `c0f2a6c4098cc5b54f3ee580db078e55c61982ab` / spec blob `e266a7805ac552bc23614d7344b5e2e223ac1b3a`. It records R1-R12 as source-review passed where applicable while explicitly retaining executable validation as not-run. No Stage-B gate state changed.

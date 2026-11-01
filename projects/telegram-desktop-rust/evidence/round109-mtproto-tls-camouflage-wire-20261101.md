@@ -19,3 +19,6 @@ The exact implemented boundary is `0xEE || 16-byte key || domain`, fixed ClientH
 State: `implemented / rewritten / validation_status=not-run / accepted=false`. WebProxySocket/WebProxy::Transport, broader proxy selection, scheduling/racing/reconnect/send retry, arbitrary request history, auth-key binding/persistence, gzip, complete difference decoding/application, remaining unknown/unread, broader source/legal closure, Stage-B executable evidence and release ACCEPT remain open.
 
 No GitHub Actions/status/check query or trigger, build, typecheck, lint, schema validator, generator, unit/contract/integration/E2E test, packaging, deployment, installation or runtime acceptance was performed.
+
+
+Platform-core final source-level compliance was then recorded at `c0f2a6c4098cc5b54f3ee580db078e55c61982ab` / spec blob `e266a7805ac552bc23614d7344b5e2e223ac1b3a`. It records R1-R12 as source-review passed where applicable while explicitly retaining executable validation as not-run. No Stage-B gate state changed.
