@@ -242,6 +242,8 @@ transaction, so recovery cannot append entries while deletion custody is
 active.
 Pending-card maintenance fallback updates use the same owner update
 transaction and are likewise rejected during deletion custody.
+Hidden-entry repair cleanup now delegates deletion to the same owner
+transaction and reports no deletion while custody is active.
 
 The owner-local admission CAS now preserves the current `deletion_pending`
 value as part of its compare predicate. Ordinary work/review/media mutations

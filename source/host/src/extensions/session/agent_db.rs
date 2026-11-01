@@ -2871,8 +2871,23 @@ impl SandAgentDb {
         entry_id: &str,
     ) -> Result<bool, AgentDbProjectionError> {
         let committed = self.run_write("deleteTranscriptEntry", |db| {
-            db.execute(DELETE_TRANSCRIPT_ENTRY_SQL, params![entry_id])?;
-            Ok(true)
+            db.execute_batch("BEGIN IMMEDIATE")?;
+            let result = (|| -> Result<bool, rusqlite::Error> {
+                if !session_work_write_is_admitted(db)? {
+                    return Ok(false);
+                }
+                Ok(db.execute(DELETE_TRANSCRIPT_ENTRY_SQL, params![entry_id])? > 0)
+            })();
+            match result {
+                Ok(changed) => {
+                    db.execute_batch("COMMIT")?;
+                    Ok(changed)
+                }
+                Err(error) => {
+                    let _ = db.execute_batch("ROLLBACK");
+                    Err(error)
+                }
+            }
         })?;
         if committed {
             let mut mutation = serde_json::Map::new();
@@ -3834,20 +3849,10 @@ pub fn delete_persisted_transcript_entry(
     busy_timeout_ms: u64,
     entry_id: &str,
 ) -> Result<bool, AgentDbProjectionError> {
-    let db = open_projection_db(db_path, busy_timeout_ms)?;
-    let changed = db.execute(DELETE_TRANSCRIPT_ENTRY_SQL, params![entry_id])? > 0;
-    if changed {
-        bump_db_write_generation(db_path);
-        let mut mutation = serde_json::Map::new();
-        mutation.insert("kind".into(), serde_json::Value::String("entry-deleted".into()));
-        mutation.insert(
-            "agentId".into(),
-            serde_json::Value::String(agent_id_for_db_path(db_path)),
-        );
-        mutation.insert("entryId".into(), serde_json::Value::String(entry_id.to_string()));
-        publish_transcript_mutation(&mutation);
-    }
-    Ok(changed)
+    let mut options = SandAgentDbOptions::default();
+    options.recovery.busy_timeout_ms = busy_timeout_ms;
+    let owner = SandAgentDb::open_with_options_and_seed(db_path, options, false)?;
+    owner.delete_transcript_entry(entry_id)
 }
 
 pub fn read_persisted_automation_spend_guard_state(

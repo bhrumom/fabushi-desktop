@@ -420,6 +420,9 @@ fn owner_metadata_memory_writes_reject_deletion_fence_at_transaction_edge() {
         )
         .expect("fenced transcript update")
         .is_none());
+    assert!(!owner
+        .delete_transcript_entry("checkpoint-user")
+        .expect("fenced transcript delete"));
     assert_eq!(
         owner
             .get_metadata("lastActivityAt")
