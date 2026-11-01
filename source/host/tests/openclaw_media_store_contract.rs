@@ -188,7 +188,18 @@ fn test_ocrm_media_store_subdir_traversal_protection() {
         delete_media_buffer("../escaped.txt", "inbound", Some(&temp.path)).is_err(),
         "media deletion IDs must not traverse out of the scoped directory"
     );
+    assert!(
+        write_playback_transcode_cache(
+            "../escaped-cache.bin",
+            b"must stay inaccessible",
+            MEDIA_MAX_BYTES,
+            Some(&temp.path),
+        )
+        .is_err(),
+        "playback cache names must not traverse out of the cache directory"
+    );
     assert!(escaped_file.exists());
+    assert!(!temp.path.join("escaped-cache.bin").exists());
 
     #[cfg(unix)]
     {
