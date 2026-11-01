@@ -1977,3 +1977,13 @@ Desktop mirror commit `820418b875f227755f6060a5d531dc1596e5c0a6` carries byte-id
 `TDRP-R9-MTPROTO-SPECIAL-CONFIG-CARRIER-APPLICATION-001` remains `mapped / pending / validation_status=not-run / accepted=false` because the composite responsibility still lacks the separately blocked first-party direct NoProxy HTTPS/Web-PKI endpoint-acquisition carrier and Stage-B executable evidence. The prior shipping bare-help.getConfig orchestrator and dc_options-only publication blockers are closed. Coverage remains `source_entries_total=16202, responsibilities_total=122, unknown=16172, unread=16145, omitted=0, unmapped_responsibilities=0`.
 
 Stage A remained execution-free: no GitHub Actions/status/check query or trigger, build, typecheck, lint, validator, generator, dependency resolution, lock regeneration, unit/contract/integration/E2E execution, package, deployment, installation or runtime acceptance was performed.
+
+## Round 125 / task round 94 — direct HTTPS/Web-PKI carrier lifecycle
+
+- Fixed U remains f985723b552b30fe1c17d377d57f44e61a15a8c4.
+- Existing-owner-first direct carrier implemented in platform-core native/telegram-network; final platform source-compliance head 2cc022c6602e69204bcff53bc985c01bfa993983.
+- Desktop carrier mirror commit 623936831ac1831022a35b22471a58bd96036104; direct_https.rs and lib.rs blobs are byte-identical to platform.
+- Exact fixed-U NoProxy, 800 ms stagger, DomainResolver winner fencing, SpecialConfig continued stagger, and ServiceWebRequest explicit-abort-vs-ordinary-finalization semantics are recorded in round125 evidence.
+- TDRP-R9-MTPROTO-SPECIAL-CONFIG-CARRIER-APPLICATION-001 remains mapped/pending, validation_status=not-run, accepted=false. Carrier lifecycle is implemented; automatic acquisition-to-RuntimeClient composition and Stage-B executable evidence remain pending.
+- Stage A zero-CI discipline preserved: tests/contracts authored but not run; no executable validation or Actions/status/check query performed.
+

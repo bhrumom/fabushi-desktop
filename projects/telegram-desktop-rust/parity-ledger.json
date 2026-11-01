@@ -30180,7 +30180,7 @@
         "Temporary DC session",
         "DcOptions"
       ],
-      "source_analysis_path": "projects/telegram-desktop-rust/evidence/round124-mtproto-special-config-dc-options-application-20261101.md",
+      "source_analysis_path": "projects/telegram-desktop-rust/evidence/round125-mtproto-direct-https-carrier-lifecycle-20261101.md",
       "behavior_contract": "Dispatch the already-normalized fixed-U Google/Mozilla DoH and Firestore descriptors through a dedicated direct/no-proxy HTTPS carrier, preserve the source's 800 ms stagger and reply-finalization semantics without collapsing DomainResolver and SpecialConfigRequest into one winner policy, expose normalized body/header outputs to their existing owners, then drive temporary-DC help.getConfig and dc_options application. Pure request/response normalization and global HTTP-derived time mutation are separately implemented responsibilities.",
       "state_machine": "eligible special-config refresh -> 800 ms staggered direct web attempts -> each finished reply exposes successful Date header and is finalized -> any non-empty decodable config body may apply endpoints while remaining attempts continue if the owner remains alive -> selected endpoint -> transient temporary DC option -> temporary help.getConfig -> dc_options replacement -> terminate/kill temporary session; error/empty body leaves other attempts eligible",
       "side_effects": [
@@ -30201,7 +30201,7 @@
         "help.getConfig request/cancel/timeout",
         "dc_options replacement/change notification"
       ],
-      "platform_delta": "Task round 93/source evidence round124 closes the carrier-independent special-config application path inside existing telegram-protocol DcDirectory and telegram-runtime RuntimeClient/SessionOwner. Protocol now serializes bare help.getConfig#c4f9186b, parses Config only through dc_options without requiring response this_dc to be present in the option list, normalizes repeated dc/ip/port entries like fixed-U ApplyOneOption, and replaces DcDirectory endpoints only when fixed-U CountOptionsDifference observes IP+port membership/count changes. Runtime derives temporary logical 1000+d, builds one transient tcpo_only endpoint with optional secret, registers the existing exact 6000 ms owned request before controlled session open, invokes the bare request, treats empty dc_options as a successful no-op, applies non-empty dc_options only to existing server_directory, returns changed DC ids, and leaves shared per-real-DC AuthMaterial reusable. Complete responsibility remains mapped/pending solely because live direct NoProxy HTTPS/Web-PKI endpoint acquisition is still not implemented and executable Stage-B evidence is intentionally absent.",
+      "platform_delta": "Task round 94/source evidence round125 implements the previously blocked first-party direct NoProxy HTTPS/Web-PKI carrier lifecycle inside the existing native/telegram-network owner. The carrier uses direct TcpStream origin connections plus rustls/Web-PKI roots, consumes already-normalized request descriptors, preserves the exact 800 ms stagger constant, exposes status/headers/full bounded body, distinguishes ordinary reply finalization from explicit cancellation, preserves DomainResolver winner fencing without inventing explicit abort, and preserves SpecialConfigRequest continued scheduling after an accepted reply. Exact rustls/webpki dependency records were source-transcribed from an already-pinned repository lock without running dependency resolution or lock generation. The existing downstream RuntimeClient path for resolved endpoint -> temporary 1000+d session -> bare help.getConfig -> dc_options-only replacement remains unchanged and canonical. Aggregate responsibility remains mapped/pending because this slice intentionally does not add a new acquisition-to-RuntimeClient orchestrator and Stage B executable evidence is absent.",
       "existing_owner_candidates": [
         "bhrumom/fabushi-platform-core:native/telegram-network",
         "existing telegram-runtime/session owner",
@@ -30224,10 +30224,20 @@
         "bhrumom/fabushi-desktop:source/mahayana/mahayana-rs/providers/telegram-network/src/lib.rs",
         "bhrumom/fabushi-desktop:source/mahayana/mahayana-rs/providers/telegram-protocol/src/api.rs",
         "bhrumom/fabushi-desktop:source/mahayana/mahayana-rs/providers/telegram-protocol/src/dc.rs",
-        "bhrumom/fabushi-desktop:source/mahayana/mahayana-rs/providers/telegram-runtime/src/runtime.rs"
+        "bhrumom/fabushi-desktop:source/mahayana/mahayana-rs/providers/telegram-runtime/src/runtime.rs",
+        "bhrumom/fabushi-platform-core:native/telegram-network/src/direct_https.rs",
+        "bhrumom/fabushi-platform-core:native/telegram-network/Cargo.toml",
+        "bhrumom/fabushi-platform-core:native/telegram-network/Cargo.lock",
+        "bhrumom/fabushi-desktop:source/mahayana/mahayana-rs/providers/telegram-network/src/direct_https.rs"
       ],
       "fabushi_target_symbols": [
-        "future special-config acquisition scheduler",
+        "execute_direct_https_get",
+        "DirectHttpsRace",
+        "DirectHttpsRace::finalize_reply",
+        "DirectHttpsRace::cancel_reply",
+        "DirectHttpsRace::accept_reply",
+        "StaggerSettlementPolicy",
+        "SERVICE_REQUEST_STAGGER",
         "build_help_get_config",
         "parse_config_dc_options_prefix",
         "DcDirectory::replace_endpoints",
@@ -30247,7 +30257,7 @@
         "resume_auth_key_controlled",
         "EstablishedSession::invoke_raw_controlled"
       ],
-      "target_language": "Rust at the existing telegram-protocol DcDirectory and telegram-runtime/telegram-network owner boundary. The carrier-independent application path is implemented; the first-party direct NoProxy HTTPS/Web-PKI acquisition carrier remains pending.",
+      "target_language": "Rust in the existing telegram-network transport/lifecycle owner plus existing telegram-protocol DcDirectory and telegram-runtime SessionOwner boundaries. Direct HTTPS/Web-PKI carrier lifecycle is implemented; aggregate endpoint-acquisition-to-runtime orchestration and Stage-B execution evidence remain pending.",
       "language_rationale": "The exact consumer must live in the existing source-neutral domain owner; no retained C++ or Telegram-specific parallel runtime is introduced.",
       "command_event_contracts": [
         "initial config loader receives isEnabled",
@@ -30260,22 +30270,25 @@
       "state_owner": "Canonical Fabushi Settings/application owner for durable proxy state; downstream consumer owns projection/runtime observations only.",
       "lifecycle_owner": "RuntimeClient remains the canonical logical-session, per-real-DC auth-material and request-lifecycle owner. Owner-local request ids address NetworkAttemptControl independently while EstablishedSession is synchronously in flight. Transient request completion/cancellation tears down the configured logical session; no special-config-only registry/runtime exists.",
       "persistence_and_restart": "Temporary 1000+d routing overrides are transient and must not be persisted; fixed-U DcOptions serialization and config enumeration skip temporary ids. Canonical non-temporary endpoints retain the existing directory/restart owner.",
-      "concurrency_and_cancellation": "Carrier racing remains separately blocked. The carrier-independent application is now wired: one request owner is registered before controlled temporary logical-session open, one absolute deadline spans connect/TLS/auth/RPC, the special-config budget is exactly 6000 ms, a cloned control can cancel and shutdown registered socket I/O, and owned invoke always finishes or cancels teardown. Concurrent cancellation removes request ownership; the return path checks ownership before session reinsertion, preventing temporary-session resurrection. AuthMaterial remains keyed by real/auth DC and survives logical-session teardown. The successful callback applies only dc_options after the owned attempt returns.",
-      "security_boundary": "Service acquisition must be explicit direct/no-proxy HTTPS and must not inherit user/system/environment/PAC/WPAD or Telegram-selected proxy routing. Request payloads, secrets, response bodies, and sensitive headers must not be logged. Global HTTP-time mutation remains outside the carrier.",
+      "concurrency_and_cancellation": "The first-party carrier is now implemented in telegram-network. DirectHttpsRace owns independently cancellable NetworkAttemptControl handles, schedules attempt N at N*800 ms, and separates ordinary finalization from explicit cancellation. DomainResolver acceptance fences future delayed starts and releases remaining handles without calling cancel, matching fixed-U ordinary ServiceWebRequest erase semantics; already-running operations may finish. SpecialConfig acceptance finalizes only that reply and keeps remaining scheduled/in-flight attempts owned while the race owner lives. Dropping the race explicitly cancels still-owned handles. The existing temporary MTProto application remains separately owned by RuntimeClient SessionOwner with its exact 6000 ms absolute connect/auth/RPC budget and transient session teardown.",
+      "security_boundary": "Service acquisition is explicit direct/no-proxy HTTPS: the first-party carrier opens TcpStream directly to the normalized origin host:443, validates TLS against rustls/Web-PKI roots with SNI bound to the origin host, and does not consult user/system/environment/PAC/WPAD or Telegram-selected proxy routing. Normalized Host/Accept/User-Agent are preserved; request/response payload logging is not introduced. Global HTTP-time mutation remains a separate owner.",
       "network_service_dependencies": [
         "Existing embedded Telegram/native MTProto stack",
+        "Existing first-party native/telegram-network direct HTTPS/Web-PKI carrier lifecycle",
         "Existing RuntimeClient SessionOwner with per-real-DC auth material and generic secondary EstablishedSession open path",
-        "Separately blocked first-party direct NoProxy HTTPS carrier for live endpoint acquisition"
+        "Existing telegram-protocol request/response normalization and special-config decode/select owners"
       ],
       "service_owner": "Existing telegram-network/runtime/DcDirectory owners; no new bootstrap provider/runtime.",
       "deployment_evidence": [],
       "implementation_status": "mapped",
       "coverage_disposition": "pending",
       "blockers": [
-        "Canonical native/telegram-network still has no first-party direct NoProxy HTTPS/Web-PKI client, HTTP request scheduler/racing owner, or cancellable HTTP reply owner, so live endpoint acquisition remains separately blocked.",
+        "The direct carrier lifecycle is implemented, but aggregate automatic acquisition-to-RuntimeClient endpoint application is not newly composed in this slice; the existing apply_resolved_special_config_endpoint remains the downstream production entrypoint.",
         "Stage B executable validation has not run."
       ],
       "production_entrypoints": [
+        "fabushi_telegram_network::execute_direct_https_get",
+        "fabushi_telegram_network::DirectHttpsRace",
         "fabushi_telegram_runtime::apply_resolved_special_config_endpoint"
       ],
       "production_evidence": [
@@ -30380,7 +30393,19 @@
         "desktop-round93-protocol-runtime-mirror-commit:820418b875f227755f6060a5d531dc1596e5c0a6",
         "desktop-round93-protocol-api-blob:e032f4dbba09c0a4d912566b4e1c51311b677002",
         "desktop-round93-protocol-dc-blob:f9aecd0370b43317f81b437ee308fb88d141a302",
-        "desktop-round93-runtime-blob:b502e32e821433a14cc47861e17c10e106fd5af8"
+        "desktop-round93-runtime-blob:b502e32e821433a14cc47861e17c10e106fd5af8",
+        "platform-core-round94-spec-first-commit:a3a427f06fd4462a9d533a743a33564acadca0c6",
+        "platform-core-round94-direct-carrier-commit:dc2541aa769fb8fd3f9699683ba802a6a7afddbe",
+        "platform-core-round94-direct-carrier-blob:0c7444d23fdee0aa135f12fd55a50ec3fe42c690",
+        "platform-core-round94-network-lib-blob:bace7702a74f1c3b848ac12add69d8cd74748342",
+        "platform-core-round94-network-cargo-blob:51bd7e2a4ac50b76c3bad11e9aef7ac633f6cfef",
+        "platform-core-round94-network-lock-blob:efa2e4e217aa17bbb72de8494c5b2740d14e6a94",
+        "platform-core-round94-provenance-commit:cbe7e60632397e705725db7b30c41ce4bef80eb7",
+        "platform-core-round94-final-spec-commit:2cc022c6602e69204bcff53bc985c01bfa993983",
+        "platform-core-round94-final-spec-blob:6ad164db526366fae4d7a6084f1c013b39f8cf18",
+        "desktop-round94-direct-carrier-mirror-commit:623936831ac1831022a35b22471a58bd96036104",
+        "desktop-round94-direct-carrier-blob:0c7444d23fdee0aa135f12fd55a50ec3fe42c690",
+        "desktop-round94-network-lib-blob:bace7702a74f1c3b848ac12add69d8cd74748342"
       ],
       "test_evidence": [
         "Carrier/lifecycle contracts are fixed in docs/specs/telegram-doh-special-config-http-carrier-lifecycle-boundary.md; no fake executable contract was added against a nonexistent shipping HTTP carrier.",

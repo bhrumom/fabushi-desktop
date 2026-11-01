@@ -2142,3 +2142,29 @@ Desktop mirror commit `820418b875f227755f6060a5d531dc1596e5c0a6` carries byte-id
 `TDRP-R9-MTPROTO-SPECIAL-CONFIG-CARRIER-APPLICATION-001` remains `mapped / pending / validation_status=not-run / accepted=false` because the composite responsibility still lacks the separately blocked first-party direct NoProxy HTTPS/Web-PKI endpoint-acquisition carrier and Stage-B executable evidence. The prior shipping bare-help.getConfig orchestrator and dc_options-only publication blockers are closed. Coverage remains `source_entries_total=16202, responsibilities_total=122, unknown=16172, unread=16145, omitted=0, unmapped_responsibilities=0`.
 
 Stage A remained execution-free: no GitHub Actions/status/check query or trigger, build, typecheck, lint, validator, generator, dependency resolution, lock regeneration, unit/contract/integration/E2E execution, package, deployment, installation or runtime acceptance was performed.
+
+## Round 125 direct HTTPS carrier source closure — 2026-11-01
+
+Fixed-U behavioral sources reread:
+- telegramdesktop/tdesktop@f985723b552b30fe1c17d377d57f44e61a15a8c4 Telegram/SourceFiles/mtproto/special_config_request.cpp blob fdb65506b0a886bc2daeccb61090bc44be7e2d88
+- special_config_request.h blob 91901489e778089b03187682a9556e929867b94f
+- details/mtproto_domain_resolver.cpp blob eeac8f6a8e2df67967ea7b536fb165e2f8d983e9
+- details/mtproto_domain_resolver.h blob cb1979bbbf0454135c8668ed1e5013da85d1dedc
+- config_loader.cpp blob 5d07404ba07223016c6728b986dcba10628d7194
+- mtproto_config.cpp blob e8fc605ca197d2bc82a9f73da18eeb945967a99f
+
+Target implementation identities:
+- platform-core direct_https.rs blob 0c7444d23fdee0aa135f12fd55a50ec3fe42c690
+- platform-core telegram-network lib.rs blob bace7702a74f1c3b848ac12add69d8cd74748342
+- platform-core Cargo.toml blob 51bd7e2a4ac50b76c3bad11e9aef7ac633f6cfef
+- platform-core manually source-transcribed Cargo.lock blob efa2e4e217aa17bbb72de8494c5b2740d14e6a94
+- platform-core THIRD_PARTY_NOTICES blob 2e84b5a0ad5d80be35939ee488e4c56b07f9125c
+- platform-core final carrier spec blob 6ad164db526366fae4d7a6084f1c013b39f8cf18
+- desktop direct_https.rs blob 0c7444d23fdee0aa135f12fd55a50ec3fe42c690
+- desktop telegram-network lib.rs blob bace7702a74f1c3b848ac12add69d8cd74748342
+- desktop THIRD_PARTY_NOTICES blob 2e84b5a0ad5d80be35939ee488e4c56b07f9125c
+
+Dependency provenance: rustls/Web-PKI package identities were transcribed from an existing repository-pinned lock. No dependency resolution, lock generation, build, test, or CI execution occurred.
+
+Closure disposition: direct first-party carrier lifecycle is implemented and mirrored. Aggregate special-config carrier/application remains pending/not-run/not-accepted until automatic acquisition-to-existing-runtime composition and Stage-B executable evidence are closed.
+
