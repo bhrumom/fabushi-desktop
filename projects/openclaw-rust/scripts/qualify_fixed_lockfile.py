@@ -269,6 +269,24 @@ def manifest_dependency_frontier(
                             if importer_key in candidates
                             else "version-not-in-package-candidates"
                         )
+                        selected_keys = [
+                            key
+                            for key in candidates
+                            if key == importer_key or key.startswith(importer_key + "(")
+                        ]
+                        row["lock_selected_package_keys"] = selected_keys
+                        row["lock_selected_integrities"] = sorted(
+                            {
+                                integrity
+                                for key in selected_keys
+                                for integrity in package_observations.get(key, set())
+                            }
+                        )
+                        row["lock_integrity_status"] = (
+                            "observed"
+                            if row["lock_selected_integrities"]
+                            else "missing"
+                        )
                 if edge_kind == "workspace":
                     dependency_manifest = manifest_paths.get(dependency)
                     expected_link = None
@@ -292,6 +310,7 @@ def manifest_dependency_frontier(
                         row["lock_importer_version"] = importer_row.get("version")
                         row["lock_join_status"] = "workspace-importer-match"
                     row["lock_importer_join_status"] = "workspace-link"
+                    row["lock_integrity_status"] = "not-applicable-workspace"
                 elif not candidates:
                     row["lock_join_status"] = "no-lock-name-candidate"
                 elif specifier in {
@@ -300,6 +319,12 @@ def manifest_dependency_frontier(
                     row["lock_join_status"] = "exact-lock-version-candidate"
                 else:
                     row["lock_join_status"] = "lock-name-candidates"
+                if edge_kind == "registry-or-path" and "lock_integrity_status" not in row:
+                    row["lock_integrity_status"] = (
+                        "candidate-integrities-observed"
+                        if any(package_observations.get(key) for key in candidates)
+                        else "candidate-integrity-missing"
+                    )
                 rows.append(row)
     return rows
 
