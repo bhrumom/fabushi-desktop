@@ -3294,3 +3294,20 @@ Existing-owner-first maps the responsibility to current Fabushi repository conta
 Exactly one independent source entry closes: `unknown 16112 -> 16111`, `unread 16085 -> 16084`, `omitted=0`; responsibilities `166 -> 167`, unmapped remains 0. The next independent fixed-U blob is `.github/workflows/issue_closer.yml@355405165590712b1826b2f92a8f867c8d568dd9` at tree index 123 zero-based.
 
 Stage A zero-CI discipline remained intact: no Actions/check/status/workflow-run query or trigger; no matching push, checkout/action execution, recursive submodule fetch, apt/curl/Poetry execution, Docker/BuildKit build, registry login/push/pull, token probe, validator, test/E2E, package, signing, release, deployment, installation, runtime acceptance or platform-core mutation was performed.
+
+
+## Round 167 / source-entry closure — repository issue-closer workflow (2026-11-01)
+
+From desktop checkpoint `a625fb21fc1dccdca6fb9800406092b650774c53`, live authority was reread before the spec-first CAS. Spec-first commit `162abf8a836923448ed102a978b0d6292aca187e` authored source-neutral issue-closer contracts in root `AGENTS.md`, shared `TEST_STRATEGY.md`, shared `evidence-contract.md`, and `projects/telegram-desktop-rust/dossiers/issue-closer-workflow-complete-read.md`. Desktop main observed remains `9993ca8e107f7e019a8201e5ab74fa54e82159f2`; platform-core remains `bhrumom/fabushi-platform-core@e92b51e23b39dae5719f033fa1f7a20d6579dc8c`; fixed U remains `f985723b552b30fe1c17d377d57f44e61a15a8c4`, recursive tree `91f2b083ab2877c0a17d07868eabec362a5cfca6`, non-truncated with 7,194 entries.
+
+Exact `.github/workflows/issue_closer.yml@355405165590712b1826b2f92a8f867c8d568dd9` was read through EOF at tree index 123 zero-based: mode 100644, 251 ASCII bytes/code points, 14 LF, zero CR and trailing newline. Trigger is only `issues.opened`; the single mutable `ubuntu-slim` job has no explicit permissions/environment/concurrency/timeout/retry/checkout and passes `secrets.GITHUB_TOKEN` to mutable `desktop-app/action_issue_closer@master`.
+
+Observed Action lineage on 2026-11-01 is master `b2fc72db6cc262c8e84e10740c44296ec4be2e02`, tree `a949a72cc7db2446287cc7c88e651966c1243f77`, `action.yml@91083e19bf270c6b8fe109fd264522032a5f10a1`, `index.js@ea3b9b265e070522b56e75da86debaa80140278f`. The Action downloads `osx.telegram.org/updates/versions.xml` with suppressed wget failure, performs unversioned runtime npm installs, passes token in Node argv, reads exact issue-body headings/version, first repository tag and first macOS updater XML version, then applies an ordered version-decision matrix.
+
+Mutation intent is static comment, exact `TG macOS Swift` label, and close state. All three GitHub API promises are started without await/chaining, and `processIssue` is not awaited from the XML callback, so partial/unsettled mutation is an explicit failure boundary. The Action also logs the full reporter issue body, making workflow-log privacy an explicit security boundary.
+
+Existing-owner-first maps applicable guarantees to current Fabushi root issue/reporting/development-process + repository privacy/security + shared quality/evidence governance. No target Telegram issue workflow, second issue tracker/support subsystem, product runtime, Agent/Coordinator/Host/Runner change or platform-core delta is introduced. Sixteen contract, one integration, nine fault/recovery and seven security/privacy cases are authored only and not run.
+
+Exactly one independent source entry closes: `unknown 16111 -> 16110`, `unread 16084 -> 16083`, `omitted=0`; responsibilities `167 -> 168`, unmapped remains 0. The next independent fixed-U blob is `.github/workflows/linux.yml@dbedd23593c5ea66ff9b8b880bda6a8bc5a4cc55` at tree index 124 zero-based.
+
+Stage A zero-CI discipline remained intact: no Actions/check/status/workflow-run query or trigger; no opened-issue event, third-party Action/npm/XML execution, token probe, issue mutation, build, typecheck, lint, validator, test/E2E, package, signing, release, deployment, installation, runtime acceptance or platform-core mutation was performed.
