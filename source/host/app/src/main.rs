@@ -6756,6 +6756,16 @@ fn filter_current_channel_failure_provenance(
         .read_session_work_admission(agent_id)?
         .map(|record| record.session_key)
         .filter(|value| !value.trim().is_empty());
+    if current_session_key.is_none()
+        && failures.iter().any(|failure| {
+            failure
+                .get("sessionKey")
+                .and_then(serde_json::Value::as_str)
+                .is_some_and(|value| !value.trim().is_empty())
+        })
+    {
+        return Err("channel failure session provenance is unavailable".into());
+    }
     let mut stale = Vec::new();
     failures.retain(|failure| {
         let Some(session_key) = failure

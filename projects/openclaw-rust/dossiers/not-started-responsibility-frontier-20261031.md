@@ -472,3 +472,6 @@ durable wakes.
 Session provenance filtering also now fails closed when no current admission
 identity can be read: only an explicitly different current key is stale; an
 unknown current identity remains pending.
+When a bound failure exists but the current admission identity cannot be read,
+the worker now rejects the revival pass and requeues the batch; it does not
+dispatch under an unknown session.
