@@ -3105,9 +3105,11 @@ impl ProductionSessionWorkers {
     }
 
     pub fn clear_agent_transient_state(&self, agent_id: &str) -> Result<bool, String> {
-        self.open_agent_db_owner(agent_id)?
-            .clear_transient_state()
-            .map_err(|error| error.to_string())
+        self.with_agent_admitted_filesystem_mutation(agent_id, || {
+            self.open_agent_db_owner_locked(agent_id)?
+                .clear_transient_state()
+                .map_err(|error| error.to_string())
+        })
     }
 
     pub fn append_agent_transcript_entries(
@@ -3305,13 +3307,15 @@ impl ProductionSessionWorkers {
         agent_id: &str,
         only_request_id: Option<&str>,
     ) -> Result<Vec<String>, String> {
-        let db_path = self.existing_session_db_path(agent_id)?;
-        expire_pending_auto_review_approval_entries(
-            &db_path,
-            self.busy_timeout_ms,
-            only_request_id,
-        )
-        .map_err(|error| error.to_string())
+        self.with_agent_admitted_filesystem_mutation(agent_id, || {
+            let db_path = self.existing_session_db_path(agent_id)?;
+            expire_pending_auto_review_approval_entries(
+                &db_path,
+                self.busy_timeout_ms,
+                only_request_id,
+            )
+            .map_err(|error| error.to_string())
+        })
     }
 
     pub fn expire_pending_local_tool_permission_asks(
@@ -3320,14 +3324,16 @@ impl ProductionSessionWorkers {
         only_request_id: Option<&str>,
         if_pending_before_ms: Option<f64>,
     ) -> Result<Vec<String>, String> {
-        let db_path = self.existing_session_db_path(agent_id)?;
-        expire_pending_local_tool_permission_ask_entries(
-            &db_path,
-            self.busy_timeout_ms,
-            only_request_id,
-            if_pending_before_ms,
-        )
-        .map_err(|error| error.to_string())
+        self.with_agent_admitted_filesystem_mutation(agent_id, || {
+            let db_path = self.existing_session_db_path(agent_id)?;
+            expire_pending_local_tool_permission_ask_entries(
+                &db_path,
+                self.busy_timeout_ms,
+                only_request_id,
+                if_pending_before_ms,
+            )
+            .map_err(|error| error.to_string())
+        })
     }
 
     pub fn get_agent_profile_text(
