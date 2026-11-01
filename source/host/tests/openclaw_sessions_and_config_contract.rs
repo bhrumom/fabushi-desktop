@@ -564,6 +564,20 @@ fn test_cron_settlement_accepts_only_typed_terminal_outcomes() {
 }
 
 #[test]
+fn test_archive_owner_rolls_back_when_commit_fails() {
+    let owner_source = include_str!("../src/extensions/session/agent_db.rs");
+    let archive_owner = owner_source
+        .split("pub fn transition_session_work_archive(")
+        .nth(1)
+        .expect("archive owner exists")
+        .split("pub fn commit_session_work_result(")
+        .next()
+        .expect("archive owner boundary exists");
+    assert!(archive_owner.contains("if let Err(error) = db.execute_batch(\"COMMIT\")"));
+    assert!(archive_owner.contains("let _ = db.execute_batch(\"ROLLBACK\")"));
+}
+
+#[test]
 fn test_session_admission_creation_rechecks_create_race_identity() {
     let owner_source = include_str!("../src/extensions/session/production.rs");
     let ensure = owner_source
