@@ -232,7 +232,7 @@ impl PendingConversationTurnRegistry {
             let Some(turn) = inner.turns.get(&key) else { continue };
             let same_conversation = turn.snapshot.conversation_ref == conversation_ref
                 || (turn.snapshot.thread_id.is_some()
-                    && thread_id == Some(reply_to_id)
+                    && thread_id == turn.snapshot.thread_id.as_deref()
                     && parent_conversation_ref == Some(turn.snapshot.conversation_ref.as_str()));
             if turn.snapshot.claimed
                 || !same_conversation

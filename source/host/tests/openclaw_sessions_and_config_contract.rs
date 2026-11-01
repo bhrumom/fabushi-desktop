@@ -694,6 +694,48 @@ fn test_ocrm_session_o03_conversation_turn_correlation() {
     ));
     assert!(registry.complete("agent-1", &turn_id));
 
+    let threaded = registry
+        .register(
+            "agent-1",
+            Some("turn-threaded"),
+            "parent-conversation",
+            "session-1",
+            Some("thread-2"),
+            Duration::from_secs(30),
+        )
+        .expect("register threaded pending turn");
+    assert!(registry.set_outbound_message_id("agent-1", &threaded, "outbound-threaded"));
+    assert!(registry.mark_ready("agent-1", &threaded));
+    assert!(matches!(
+        registry.claim_reply(
+            "agent-1",
+            "thread-conversation",
+            Some("parent-conversation"),
+            "session-1",
+            "inbound-wrong-thread",
+            Some("outbound-threaded"),
+            Some("thread-wrong"),
+            "wrong thread",
+            1729900000001,
+        ),
+        PendingConversationTurnClaimResult::NotFound
+    ));
+    assert!(matches!(
+        registry.claim_reply(
+            "agent-1",
+            "thread-conversation",
+            Some("parent-conversation"),
+            "session-1",
+            "inbound-threaded",
+            Some("outbound-threaded"),
+            Some("thread-2"),
+            "threaded reply",
+            1729900000002,
+        ),
+        PendingConversationTurnClaimResult::Claimed(_)
+    ));
+    assert!(registry.complete("agent-1", &threaded));
+
     let second = registry
         .register("agent-1", Some("turn-2"), "conversation-1", "session-1", None, Duration::from_secs(30))
         .expect("register second pending turn");
