@@ -649,18 +649,24 @@ instead remains on the existing generic agent-owned path; an owner mismatch
 still fails closed. Recipient wake/materialization ownership is unchanged and
 full communication-policy wiring remains pending.
 
-The registry is now retained by the existing `ProductionSessionWorkers` owner
-and exposed through `SandAgentSessionStore`, so separately constructed session
+The registry is retained by the existing `ProductionSessionWorkers` owner and
+exposed through `SandAgentSessionStore`, so separately constructed session
 facades share one process-lifetime pending-turn state instead of creating
-parallel registries. This is owner-lifetime integration only; no inbound
-channel dispatcher, outbound provider, or transcript publication path has been
-invented, so production wiring remains pending.
+parallel registries. The admitted direct 1:1 Agent→Agent path now adds the
+bounded producer/consumer slice: sender registration precedes outbound
+transcript append, the real outbound entry ID is indexed and marked ready after
+append, the wake envelope carries the ID as reply context, and a later admitted
+reply is claimed and completed around recipient transcript append. Missing
+admission, group/shared-room, stale, duplicate, and mismatched correlations
+remain fail-closed; the registry is still process-local.
 
-The missing producer/consumer boundary is now explicit in the ledger as
-`BL-SESSION-COMMUNICATION-PRODUCTION-WIRING-001` for O02 and
-`BL-SESSION-CONVERSATION-TURN-PRODUCTION-WIRING-001` for O03. These blockers
-describe absent production paths; they do not convert the existing contract
-oracles into runtime acceptance.
+`BL-SESSION-COMMUNICATION-PRODUCTION-WIRING-001` remains open for O02's
+approval/broader-channel/runtime gates. The former
+`BL-SESSION-CONVERSATION-TURN-PRODUCTION-WIRING-001` absence claim is replaced
+by the bounded implementation recorded in
+`projects/openclaw-rust/decisions/2026-11-01-session-turn-correlation-wiring.md`;
+focused verification, broader channel coverage, exact-head evidence, and
+runtime/package acceptance remain pending and are not contract acceptance.
 
 ## 12.21 Session identity propagation recheck — 2026-11-01
 

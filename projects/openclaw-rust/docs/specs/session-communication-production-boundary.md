@@ -1,6 +1,6 @@
 # Session communication production boundary
 
-Status: narrow implementation wired; verification not run; acceptance pending
+Status: bounded direct-message turn correlation wired; verification not run; acceptance pending
 Project: OCRM-001  
 Responsibility: `OCRM-RESP-SESSION-COMMUNICATION-POLICY-001`  
 Owner boundary: existing Session admission owner → existing agent-to-agent
@@ -85,6 +85,24 @@ decision must reject before partner, transcript, or activity mutation. The
 legacy no-admission compatibility path remains separate and must not invent a
 new session owner.
 
+### SCP-09 — Bounded direct-message turn correlation
+
+For admitted 1:1 agent messages only, the existing session owner must register
+one pending conversation turn before sender transcript mutation, bind the turn
+to the actual sender session ID and the emitted outbound transcript entry ID,
+and mark it ready only after that entry is durably appended. The recipient wake
+envelope carries that outbound ID as `replyContext.targetId`; a later admitted
+direct agent send may carry the same ID as `replyToId` from the authenticated
+runner reply context.
+
+The inbound transcript owner must claim the pending turn using the canonical
+source/target agent identities, the original sender session ID, and the
+`replyToId` carried by the inbound envelope. A successful append completes the
+claimed turn; append failure releases it for retry. Missing, expired, duplicate,
+session-mismatched, group/shared-room, or compatibility-path correlations are
+rejected without inventing a turn. The correlation registry remains process
+local until a durable cross-process owner is specified.
+
 ## Current and target state
 
 | Concern | Current | Target |
@@ -95,6 +113,7 @@ new session owner.
 | Ask mode | Pure contract only | Fail closed until approval consumer exists |
 | Group send | Existing shared-room owner | Unchanged |
 | Inbound receipt | Consumer accepted a supplied source envelope | Existing session owner rechecks source identity and receive policy before persistence |
+| Direct turn correlation | Pending registry is contract-only | Admitted 1:1 producer → outbound ID → wake envelope → reply claim/complete |
 
 ## Data/control flow
 
@@ -117,12 +136,18 @@ send_to_agent_with_session
   treat `ask` as `always`.
 - Group/shared-room target: preserve the existing group owner path and do not
   apply direct-agent policy to it.
+- A reply context that does not resolve to a ready pending turn is not treated
+  as a new conversation turn.
+- Compatibility sends without an admitted sender session remain uncorrelated and
+  do not call the registry.
 
 ## Verification / Definition of Done
 
 - Focused contracts cover missing-policy compatibility, persisted `never`,
   persisted `ask`, allowed direct delivery, and no-side-effect rejection.
 - Static review proves admission precedes transcript, wake, and interrupt.
+- Static review proves turn registration precedes sender append, ready marking
+  follows append, and inbound claim/complete surrounds the recipient append.
 - Exact-head Actions evidence is required before `verification=verified`.
 - Approval producer/consumer, policy mutation route, inbound receipt, and
   packaged/runtime acceptance remain separate gates.

@@ -1130,6 +1130,7 @@ struct ProductionAgentManagementSink {
     agent_messages: Arc<Mutex<Vec<String>>>,
     agent_id: String,
     session_key: Option<String>,
+    reply_to_id: Option<String>,
 }
 
 impl AgentManagementSink for ProductionAgentManagementSink {
@@ -1178,6 +1179,38 @@ impl AgentManagementSink for ProductionAgentManagementSink {
             }
         }
         Ok(entry_id)
+    }
+
+    fn send_to_agent_with_reply(
+        &self,
+        target_id: &str,
+        message: &str,
+        images: &[AgentMessageImage],
+        priority: bool,
+        reply_to_id: Option<&str>,
+    ) -> Result<String, ProviderSessionError> {
+        let entry_id = self
+            .messaging
+            .send_to_agent_with_session_and_reply(
+                &self.agent_id,
+                self.session_key.as_deref(),
+                target_id,
+                message,
+                images,
+                priority,
+                reply_to_id,
+            )
+            .map_err(ProviderSessionError::Tool)?;
+        if !message.trim().is_empty() {
+            if let Ok(mut agent_messages) = self.agent_messages.lock() {
+                agent_messages.push(message.to_string());
+            }
+        }
+        Ok(entry_id)
+    }
+
+    fn current_reply_to_id(&self) -> Option<&str> {
+        self.reply_to_id.as_deref()
     }
 
     fn create_agent(
@@ -9995,6 +10028,9 @@ fn start_routed_provider_task(
                     agent_messages: Arc::clone(&turn_agent_messages),
                     agent_id: agent_id.clone(),
                     session_key: worker_session_admitted_key.clone(),
+                    reply_to_id: (request_source.as_deref() == Some("agent-inbound"))
+                        .then(|| worker_reply_thread_target.clone())
+                        .flatten(),
                 },
             );
             let base_send_message_sink: Arc<dyn SendMessageSink> = Arc::new(

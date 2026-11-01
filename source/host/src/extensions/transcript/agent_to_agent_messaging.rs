@@ -1,5 +1,5 @@
 use std::sync::Arc;
-use std::time::{SystemTime, UNIX_EPOCH};
+use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 use serde::Serialize;
 use serde_json::{Value, json};
@@ -11,6 +11,7 @@ use crate::extensions::session::production::ProductionSessionWorkers;
 use crate::extensions::session::agent_session::{
     CommunicationEndpoint, SessionCommunicationDecision, plan_session_communication,
 };
+use crate::extensions::session::session_conversation_state::PendingConversationTurnClaimResult;
 use crate::extensions::telemetry::agent_error_telemetry::AgentErrorReport;
 use crate::extensions::telemetry::sand_error_tags::SandErrorValue;
 use crate::extensions::trays::trays_service::PushErrorOptions;
@@ -177,6 +178,27 @@ impl ProductionAgentToAgentMessaging {
         images: &[AgentMessageImage],
         priority: bool,
     ) -> Result<String, String> {
+        self.send_to_agent_with_session_and_reply(
+            from_agent_id,
+            from_session_key,
+            to_agent_id,
+            text,
+            images,
+            priority,
+            None,
+        )
+    }
+
+    pub fn send_to_agent_with_session_and_reply(
+        &self,
+        from_agent_id: &str,
+        from_session_key: Option<&str>,
+        to_agent_id: &str,
+        text: &str,
+        images: &[AgentMessageImage],
+        priority: bool,
+        reply_to_id: Option<&str>,
+    ) -> Result<String, String> {
         let message = clamp_agent_message(text);
         if message.is_empty() { return Ok("Message was empty; nothing was sent.".into()); }
         if to_agent_id == from_agent_id { return Ok("An agent can't message itself.".into()); }
@@ -280,21 +302,54 @@ impl ProductionAgentToAgentMessaging {
         let _=self.sessions.add_agent_conversation_partner(from_agent_id,to_agent_id)?;
         let source_entries=self.sessions.read_agent_transcript_entries(from_agent_id)?;
         let outbound_id=next_entry_id(&source_entries,TranscriptEntryIdKind::AssistantMessage);
+        let pending_turn_id = if let (Some(session_key), Some(source_admission)) =
+            (sender_session_key.as_deref(), source_admission.as_ref())
+        {
+            let turns = self.sessions.pending_conversation_turns();
+            Some(turns.register(
+                from_agent_id,
+                None,
+                to_agent_id,
+                &source_admission.session_id,
+                None,
+                Duration::from_secs(15 * 60),
+            )?)
+        } else {
+            None
+        };
         let image_json=serde_json::to_value(images).map_err(|e|format!("could not encode agent message images: {e}"))?;
         let mut outbound_entry = json!({
             "kind":"message","id":outbound_id,"role":"assistant","content":message,"isStreaming":false,
             "timestampMs":timestamp_ms,"toAgent":{"id":to_agent_id,"name":target.name,"kind":"agent"},"images":image_json.clone()
         });
-        if let Some(session_key) = sender_session_key.as_deref() {
+        if let Some(reply_to_id) = reply_to_id.map(str::trim).filter(|value| !value.is_empty()) {
+            outbound_entry["replyToId"] = Value::String(reply_to_id.to_string());
+        }
+        let append_result = if let Some(session_key) = sender_session_key.as_deref() {
             outbound_entry["sessionKey"] = Value::String(session_key.trim().to_string());
             self.sessions.append_agent_transcript_entries_if_session_admitted(
                 from_agent_id,
                 session_key,
                 &[outbound_entry],
-            )?;
+            )
         } else {
             self.sessions
-                .append_agent_transcript_entries(from_agent_id, &[outbound_entry])?;
+                .append_agent_transcript_entries(from_agent_id, &[outbound_entry])
+        };
+        if let Err(error) = append_result {
+            if let Some(turn_id) = pending_turn_id.as_deref() {
+                let _ = self.sessions.pending_conversation_turns().cancel(from_agent_id, turn_id);
+            }
+            return Err(error);
+        }
+        if let Some(turn_id) = pending_turn_id.as_deref() {
+            let turns = self.sessions.pending_conversation_turns();
+            if !turns.set_outbound_message_id(from_agent_id, turn_id, &outbound_id)
+                || !turns.mark_ready(from_agent_id, turn_id)
+            {
+                turns.cancel(from_agent_id, turn_id);
+                return Err("could not finalize direct-agent conversation correlation".into());
+            }
         }
         let inbound = json!({
             "from": {"id": from_agent_id, "name": sender_name},
@@ -302,7 +357,12 @@ impl ProductionAgentToAgentMessaging {
             "timestampMs": timestamp_ms,
             "images": image_json,
             "priority": priority,
+            "replyContext": {"targetId": outbound_id.clone(), "quote": message},
         });
+        let mut inbound = inbound;
+        if let Some(reply_to_id) = reply_to_id.map(str::trim).filter(|value| !value.is_empty()) {
+            inbound["replyToId"] = Value::String(reply_to_id.to_string());
+        }
         let from=AgentAddress{
             id:from_agent_id.into(), name:sender_name,
             description:sender.as_ref().and_then(|a|{let v=a.description.trim();(!v.is_empty()).then(||v.to_string())}),
@@ -432,6 +492,31 @@ pub fn persist_agent_inbound_message(
         .unwrap_or_else(now_ms);
     let entries = sessions.read_agent_transcript_entries(agent_id)?;
     let entry_id = next_entry_id(&entries, TranscriptEntryIdKind::UserMessage);
+    let reply_to_id = inbound
+        .get("replyToId")
+        .and_then(Value::as_str)
+        .map(str::trim)
+        .filter(|value| !value.is_empty());
+    let mut claimed_turn = None;
+    if reply_to_id.is_some() {
+        let Some(target_admission) = target_admission.as_ref() else { return Ok(false); };
+        let claim = sessions.pending_conversation_turns().claim_reply(
+            agent_id,
+            from_id,
+            None,
+            &target_admission.session_id,
+            &entry_id,
+            reply_to_id,
+            None,
+            text,
+            timestamp_ms,
+        );
+        match claim {
+            PendingConversationTurnClaimResult::Claimed(reply) => claimed_turn = Some(reply),
+            PendingConversationTurnClaimResult::NotFound
+            | PendingConversationTurnClaimResult::NotReady => return Ok(false),
+        }
+    }
     let mut entry = json!({
         "kind": "message",
         "id": entry_id,
@@ -446,8 +531,14 @@ pub fn persist_agent_inbound_message(
     }) {
         entry["images"] = images.clone();
     }
+    if let Some(reply_context) = inbound.get("replyContext") {
+        entry["replyContext"] = reply_context.clone();
+    }
+    if let Some(reply_to_id) = reply_to_id {
+        entry["replyToId"] = Value::String(reply_to_id.to_string());
+    }
     let _ = sessions.add_agent_conversation_partner(agent_id, from_id)?;
-    if let Some(session_key) = sessions
+    let append_result = if let Some(session_key) = sessions
         .read_session_work_admission(agent_id)?
         .map(|record| record.session_key)
         .filter(|value| !value.trim().is_empty())
@@ -457,11 +548,20 @@ pub fn persist_agent_inbound_message(
             agent_id,
             &session_key,
             &[entry],
-        )?;
+        )
     } else {
-        sessions.append_agent_transcript_entries(agent_id, &[entry])?;
+        sessions.append_agent_transcript_entries(agent_id, &[entry])
+    };
+    if let Err(error) = append_result {
+        if let Some(reply) = claimed_turn.as_ref() {
+            let _ = sessions.pending_conversation_turns().release(agent_id, &reply.id);
+        }
+        return Err(error);
     }
     let _ = sessions.mark_agent_activity(agent_id, timestamp_ms as f64)?;
+    if let Some(reply) = claimed_turn {
+        let _ = sessions.pending_conversation_turns().complete(agent_id, &reply.id);
+    }
     Ok(true)
 }
 

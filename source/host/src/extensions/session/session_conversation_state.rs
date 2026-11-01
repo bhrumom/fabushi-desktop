@@ -45,6 +45,7 @@ pub struct TranscriptThread {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct PendingConversationTurnReply {
+    pub id: String,
     pub conversation_ref: String,
     pub message_id: String,
     pub reply_to_id: String,
@@ -253,6 +254,7 @@ impl PendingConversationTurnRegistry {
         }
         turn.snapshot.claimed = true;
         PendingConversationTurnClaimResult::Claimed(PendingConversationTurnReply {
+            id: turn.snapshot.id.clone(),
             conversation_ref: conversation_ref.to_string(),
             message_id: message_id.to_string(),
             reply_to_id: reply_to_id.to_string(),
