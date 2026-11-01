@@ -50,10 +50,11 @@ Current Fabushi has per-agent SQLite transcript state and lifecycle revisions.
 The owner now also has a migration-safe `sessionWorkAdmission` record,
 generation-bound background admission/recheck, and a same-owner idempotent
 hidden result receipt for the bounded local background-revival path. There is
-still no complete media custody contract or provider-review terminal
-settlement consumer; the session owner now has bounded typed refusal recording
-and continuation admission, while the media owner has a durable path fence,
-settlement receipt, and bounded reopen recovery consumer.
+still no complete media custody contract or full provider-review terminal
+lifecycle; the session owner now has bounded typed refusal recording,
+continuation admission, and generation/run-bound terminal settlement, while the
+media owner has a durable path fence, settlement receipt, and bounded reopen
+recovery consumer.
 The authenticated Host Gateway archive/restore producer is now the first
 bounded production path, limited to canonical main sessions and fail-closed
 while admitted work, active generated-subagent work, or an active foreground
@@ -65,7 +66,8 @@ deletion fence and is insufficient as the complete contract.
 Target state is one owner-local session admission record containing canonical
 `sessionKey`, `sessionId`, lifecycle revision, archive metadata, admitted
 background-work identity/idempotency, one durable pending outgoing-media work
-identity, and structured provider-review facts plus terminal phase. The record
+identity, and structured provider-review facts, continuation run identity, plus
+terminal phase. The record
 is changed transactionally with transcript/result publication. Pending media
 must block archive/restore transitions and be cleared only by the same
 session/transcript owner after commit or explicit rollback.
@@ -100,6 +102,9 @@ without a committed receipt.
 - active media/subagent work: preserve it during archive/reaper decisions;
 - cancellation/provider failure: leave prior transcript and generation intact;
 - uncertain deletion/transcript result: report outcome-unknown and do not retry.
+- provider-review continuation dispatch failure: restore the review to
+  `pending`; Runner cancellation/failure/unknown: retain terminal facts in a
+  non-actionable phase; Runner success: clear the matching review.
 
 ## Implementation strategy
 
@@ -137,9 +142,10 @@ the existing `call_send_prompt` plus local routed producer paths check that
 record before admission. Focused contracts cover rejection before durable
 write, admission after the fence clears, create-only migration, guarded
 archive transition, archived routed-work rejection, and stale transition
-rejection. This still does not wire detached background-result settlement or
-the provider-review terminal settlement consumer, so the responsibility remains
-open.
+rejection. This still does not wire the full detached background-result
+lifecycle or native provider-review runtime recovery, so the responsibility
+remains open even though the bounded provider-review terminal settlement path
+is now wired.
 
 The background revival path now also captures the active main-session
 `lifecycle_revision` before routed admission and rechecks the same generation
@@ -173,7 +179,7 @@ identity/revision guards and rejects active admitted work, active generated
 subagent work, and active foreground Runner streams before the durable
 transition. The media custody integration now includes durable path capture and
 bounded reopen recovery, but full detached media/result replay and the
-provider-review terminal settlement consumer remains absent. The next implementation
+full provider-review terminal lifecycle remains absent. The next implementation
 instrument must
 extend the existing session/transcript owner with those explicit outcomes; it
 must not replace the receipt with a best-effort CAS or add a parallel store.

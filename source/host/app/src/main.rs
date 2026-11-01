@@ -207,7 +207,9 @@ use mahayana_host_runtime::extensions::inference::provider_session::{
     RoutedMcpMetaToolDefinition, RoutedToolDefinition, configured_routed_provider,
     run_routed_provider_text,
 };
-use mahayana_host_runtime::extensions::session::agent_db::SessionProviderReview;
+use mahayana_host_runtime::extensions::session::agent_db::{
+    ProviderReviewContinuationOutcome, SessionProviderReview,
+};
 use mahayana_host_runtime::extensions::inference::inference_service::{
     InferenceUsage, authorize_routed_provider_request,
 };
@@ -3714,17 +3716,21 @@ impl UnifiedGatewayApi {
         session_key: &str,
         session_id: &str,
     ) -> Result<Option<serde_json::Value>, GatewayCommandError> {
-        let Some(review) = self
+        let Some(record) = self
             .session_workers
-            .read_session_provider_review(agent_id)
+            .read_session_work_admission(agent_id)
             .map_err(GatewayCommandError::Internal)?
         else {
+            return Ok(None);
+        };
+        let Some(review) = record.provider_review else {
             return Ok(None);
         };
         if review.session_id != session_id {
             return Ok(None);
         }
-        let can_continue = session_key == format!("agent:{agent_id}:main")
+        let can_continue = record.provider_review_phase.as_deref() == Some("pending")
+            && session_key == format!("agent:{agent_id}:main")
             && review.provider == "openai"
             && review
                 .continuation_message
@@ -4292,6 +4298,11 @@ impl UnifiedGatewayApi {
                     &admitted_revision,
                     next_run_id,
                 );
+                let _ = self.session_workers.release_provider_review_continuation(
+                    &route.agent_id,
+                    &admitted_revision,
+                    next_run_id,
+                );
                 return Err(GatewayCommandError::Conflict(error));
             }
         };
@@ -4317,6 +4328,8 @@ impl UnifiedGatewayApi {
             "streamId": next_run_id,
             "clientNonce": next_run_id,
             "requestSource": "provider-review",
+            "providerReviewLifecycleRevision": admitted_revision.clone(),
+            "providerReviewId": review_id,
             "prompt": continuation,
             "appendUserMessage": true,
             "skipAckObligation": true,
@@ -4341,6 +4354,11 @@ impl UnifiedGatewayApi {
                 &admitted_revision,
                 next_run_id,
             );
+            let _ = self.session_workers.release_provider_review_continuation(
+                &route.agent_id,
+                &admitted_revision,
+                next_run_id,
+            );
             return Err(map_production_send_error(error));
         }
         match self.call_with_context(
@@ -4351,6 +4369,11 @@ impl UnifiedGatewayApi {
             Ok(result) => Ok(result),
             Err(error) => {
                 let _ = self.session_workers.release_session_work_admission(
+                    &route.agent_id,
+                    &admitted_revision,
+                    next_run_id,
+                );
+                let _ = self.session_workers.release_provider_review_continuation(
                     &route.agent_id,
                     &admitted_revision,
                     next_run_id,
@@ -7238,6 +7261,19 @@ fn start_routed_provider_task(
         .filter(|value| !value.is_empty())
         .unwrap_or("")
         .to_string();
+    let provider_review_lifecycle_revision = args
+        .get("providerReviewLifecycleRevision")
+        .and_then(serde_json::Value::as_str)
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+        .map(ToOwned::to_owned);
+    if request_source.as_deref() == Some("provider-review")
+        && provider_review_lifecycle_revision.is_none()
+    {
+        return Err(GatewayCommandError::Internal(
+            "provider-review Runner dispatch requires the captured lifecycle revision".into(),
+        ));
+    }
     let generated_tool_call_id = args
         .get("parentAgentToolCallId")
         .and_then(serde_json::Value::as_str)
@@ -8044,6 +8080,7 @@ fn start_routed_provider_task(
     let worker_trays = Arc::clone(&trays);
     let worker_telemetry_logs = telemetry_logs.clone();
     let worker_request_source = request_source.clone();
+    let worker_provider_review_lifecycle_revision = provider_review_lifecycle_revision.clone();
     let worker_human_handoff_conversation_id = human_handoff_conversation_id.clone();
     let worker_group_room_id = group_room_id.clone();
     let worker_group_member_name = group_member_name.clone();
@@ -10909,6 +10946,37 @@ fn start_routed_provider_task(
 
             let sent_message_count = send_message_delivery_counter.count();
             let reacted = reaction_delivery_counter.count() > 0;
+            if worker_request_source.as_deref() == Some("provider-review") {
+                let outcome = if worker_cancellation.is_cancelled() {
+                    ProviderReviewContinuationOutcome::Cancelled
+                } else if waiting_user {
+                    ProviderReviewContinuationOutcome::OutcomeUnknown
+                } else if result.is_ok() {
+                    ProviderReviewContinuationOutcome::Completed
+                } else {
+                    ProviderReviewContinuationOutcome::Failed
+                };
+                if let Some(expected_revision) =
+                    worker_provider_review_lifecycle_revision.as_deref()
+                {
+                    if let Err(error) = worker_sessions.settle_provider_review_continuation(
+                        &agent_id,
+                        expected_revision,
+                        &worker_stream_id,
+                        outcome,
+                    ) {
+                        eprintln!(
+                            "mahayana-host provider_review_settlement_failed agent={} run={} error={error}",
+                            agent_id, worker_stream_id
+                        );
+                    }
+                } else {
+                    eprintln!(
+                        "mahayana-host provider_review_settlement_missing_generation agent={} run={}",
+                        agent_id, worker_stream_id
+                    );
+                }
+            }
             let terminal_projection = project_turn_terminal(
                 waiting_user,
                 worker_cancellation.is_cancelled(),

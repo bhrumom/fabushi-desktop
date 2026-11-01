@@ -16,7 +16,8 @@ use crate::storage::agent_paths::get_sand_agents_root_dir;
 
 use super::agent_db::{
     AgentDbSerdeSnapshot, CompactionCommit, CompactionCommitOutcome, SandAgentDb,
-    SessionProviderReview, SessionWorkAdmissionRecord, SessionWorkResultCommitOutcome,
+    ProviderReviewContinuationOutcome, SessionProviderReview, SessionWorkAdmissionRecord,
+    SessionWorkResultCommitOutcome,
     add_persisted_conversation_partner,
     append_persisted_transcript_entries, clear_persisted_agent_profile_prompt_snapshot,
     clear_persisted_memory_prompt_snapshot,
@@ -1661,6 +1662,7 @@ impl ProductionSessionWorkers {
             terminal_result_idempotency_key: None,
             provider_review_id: None,
             provider_review_phase: None,
+            provider_review_continuation_run_id: None,
             provider_review: None,
         };
         let _ = db
@@ -2027,6 +2029,7 @@ impl ProductionSessionWorkers {
             return Err("provider review runtime or lifecycle identity changed".into());
         }
         record.provider_review_phase = Some("accepted".into());
+        record.provider_review_continuation_run_id = Some(state.next_run_id.clone());
         if !owner
             .compare_and_set_session_work_admission(Some(&state.lifecycle_revision), &record)
             .map_err(|error| error.to_string())?
@@ -2034,6 +2037,38 @@ impl ProductionSessionWorkers {
             return Err("provider review acknowledgment lost its lifecycle race".into());
         }
         Ok(review)
+    }
+
+    pub fn settle_provider_review_continuation(
+        &self,
+        agent_id: &str,
+        expected_lifecycle_revision: &str,
+        continuation_run_id: &str,
+        outcome: ProviderReviewContinuationOutcome,
+    ) -> Result<bool, String> {
+        self.assert_agent_work_admission(agent_id)?;
+        self.open_agent_db_owner(agent_id)?
+            .settle_provider_review_continuation(
+                expected_lifecycle_revision,
+                continuation_run_id,
+                outcome,
+            )
+            .map_err(|error| error.to_string())
+    }
+
+    pub fn release_provider_review_continuation(
+        &self,
+        agent_id: &str,
+        expected_lifecycle_revision: &str,
+        continuation_run_id: &str,
+    ) -> Result<bool, String> {
+        self.assert_agent_work_admission(agent_id)?;
+        self.open_agent_db_owner(agent_id)?
+            .release_provider_review_continuation(
+                expected_lifecycle_revision,
+                continuation_run_id,
+            )
+            .map_err(|error| error.to_string())
     }
 
     pub fn transition_session_work_archive(

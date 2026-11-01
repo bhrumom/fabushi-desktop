@@ -144,7 +144,17 @@ pub struct SessionWorkAdmissionRecord {
     #[serde(default)]
     pub provider_review_phase: Option<String>,
     #[serde(default)]
+    pub provider_review_continuation_run_id: Option<String>,
+    #[serde(default)]
     pub provider_review: Option<SessionProviderReview>,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ProviderReviewContinuationOutcome {
+    Completed,
+    Cancelled,
+    Failed,
+    OutcomeUnknown,
 }
 
 /// Provider-authored refusal facts retained by the session admission owner.
@@ -572,6 +582,7 @@ impl SandAgentDb {
         }
         record.provider_review_id = Some(review.id.clone());
         record.provider_review_phase = Some("pending".into());
+        record.provider_review_continuation_run_id = None;
         record.provider_review = Some(review.clone());
         if !self.compare_and_set_session_work_admission(
             Some(expected_lifecycle_revision),
@@ -582,6 +593,92 @@ impl SandAgentDb {
             ));
         }
         Ok(review.clone())
+    }
+
+    /// Settle one admitted provider-review continuation against the exact
+    /// lifecycle generation and continuation run that claimed it. A completed
+    /// continuation clears the review; known non-success and unknown outcomes
+    /// retain the facts in a non-actionable terminal phase.
+    pub fn settle_provider_review_continuation(
+        &self,
+        expected_lifecycle_revision: &str,
+        continuation_run_id: &str,
+        outcome: ProviderReviewContinuationOutcome,
+    ) -> Result<bool, AgentDbProjectionError> {
+        let expected_lifecycle_revision = expected_lifecycle_revision.trim();
+        let continuation_run_id = continuation_run_id.trim();
+        if expected_lifecycle_revision.is_empty() || continuation_run_id.is_empty() {
+            return Err(AgentDbProjectionError::WorkAdmissionInvalid(
+                "provider review settlement requires lifecycle and continuation identity".into(),
+            ));
+        }
+        let Some(mut record) = self.read_session_work_admission()? else {
+            return Err(AgentDbProjectionError::WorkAdmissionInvalid(
+                "session work admission record is unavailable".into(),
+            ));
+        };
+        if record.lifecycle_revision != expected_lifecycle_revision
+            || record.provider_review_phase.as_deref() != Some("accepted")
+            || record.provider_review_continuation_run_id.as_deref() != Some(continuation_run_id)
+        {
+            return Ok(false);
+        }
+        match outcome {
+            ProviderReviewContinuationOutcome::Completed => {
+                record.provider_review_id = None;
+                record.provider_review_phase = Some("completed".into());
+                record.provider_review_continuation_run_id = None;
+                record.provider_review = None;
+            }
+            ProviderReviewContinuationOutcome::Cancelled => {
+                record.provider_review_phase = Some("cancelled".into());
+                record.provider_review_continuation_run_id = None;
+            }
+            ProviderReviewContinuationOutcome::Failed => {
+                record.provider_review_phase = Some("failed".into());
+                record.provider_review_continuation_run_id = None;
+            }
+            ProviderReviewContinuationOutcome::OutcomeUnknown => {
+                record.provider_review_phase = Some("outcome-unknown".into());
+                record.provider_review_continuation_run_id = None;
+            }
+        }
+        self.compare_and_set_session_work_admission(
+            Some(expected_lifecycle_revision),
+            &record,
+        )
+    }
+
+    /// Roll back a claimed review when the routed Runner never accepted the
+    /// dispatch. This is distinct from a Runner terminal failure, which has a
+    /// durable in-flight owner and therefore remains non-actionable.
+    pub fn release_provider_review_continuation(
+        &self,
+        expected_lifecycle_revision: &str,
+        continuation_run_id: &str,
+    ) -> Result<bool, AgentDbProjectionError> {
+        let expected_lifecycle_revision = expected_lifecycle_revision.trim();
+        let continuation_run_id = continuation_run_id.trim();
+        if expected_lifecycle_revision.is_empty() || continuation_run_id.is_empty() {
+            return Err(AgentDbProjectionError::WorkAdmissionInvalid(
+                "provider review release requires lifecycle and continuation identity".into(),
+            ));
+        }
+        let Some(mut record) = self.read_session_work_admission()? else {
+            return Ok(false);
+        };
+        if record.lifecycle_revision != expected_lifecycle_revision
+            || record.provider_review_phase.as_deref() != Some("accepted")
+            || record.provider_review_continuation_run_id.as_deref() != Some(continuation_run_id)
+        {
+            return Ok(false);
+        }
+        record.provider_review_phase = Some("pending".into());
+        record.provider_review_continuation_run_id = None;
+        self.compare_and_set_session_work_admission(
+            Some(expected_lifecycle_revision),
+            &record,
+        )
     }
 
     /// Atomically transition archive state for one canonical session

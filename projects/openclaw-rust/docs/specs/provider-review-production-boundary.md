@@ -1,6 +1,6 @@
 # Provider-review production boundary
 
-Status: typed Codex producer, terminal durable write, and Gateway continuation admission wired; supported native continuation identity remains unavailable in the current Rust producer
+Status: typed Codex producer, durable write, Gateway continuation admission, and bounded terminal settlement wired; supported native continuation identity remains unavailable in the current Rust producer
 Date: 2026-11-01
 Responsibility: `OCRM-RESP-SESSION-WORK-ADMISSION-001`
 
@@ -9,11 +9,11 @@ Responsibility: `OCRM-RESP-SESSION-WORK-ADMISSION-001`
 The fixed OpenClaw source records provider-authored refusal findings against
 one admitted session/run and lifecycle generation, then requires a host-issued
 acknowledgment before a continuation run can claim the review. Fabushi's
-current Rust provider path has the bounded producer → admission owner → durable
-state → continuation-admission slice, but still lacks the terminal
-settlement/clear consumer for successful, cancelled, or dispatch-unknown
-continuations. This spec defines the remaining lifecycle using existing
-Fabushi owners.
+current Rust provider path has bounded producer → admission owner → durable
+state → continuation-admission → terminal-settlement wiring. Full native
+continuation identity, detached lifecycle recovery, and exact production
+acceptance remain outside this bounded slice. This spec defines the remaining
+lifecycle using existing Fabushi owners.
 
 The fixed refusal envelope was re-read against the frozen upstream subject:
 the direct Responses API shape supplies only the bounded explanation,
@@ -42,14 +42,22 @@ native field.
 - `PR-03`: Durable review writes are compare-and-set/idempotent. Repeated
   terminal notifications retain the existing review identity; a changed
   session, run, or generation fails closed.
-- `PR-04`: Only the existing session admission owner stores review identity and
-  phase (`pending`/`accepted`); no provider runtime owns durable review state.
+- `PR-04`: Only the existing session admission owner stores review identity,
+  phase, and the admitted continuation run identity; no provider runtime owns
+  durable review state. `pending` is actionable, `accepted` is in-flight,
+  `completed` clears the review, and `cancelled`/`failed`/`outcome-unknown`
+  retain it as non-actionable terminal evidence.
 - `PR-05`: A continuation requires a host-issued, non-serializable
   acknowledgment bound to the stored review ID and next run ID. One
   acknowledgment may be claimed by at most one admitted attempt.
 - `PR-06`: Runtime/provider/model/API identity and lifecycle must be rechecked
   at continuation start and native-turn acceptance; stale acknowledgments are
   retired and cannot be retried.
+- `PR-06a`: A continuation run must carry the captured lifecycle revision and
+  run identity to the existing Runner terminal owner. A known successful
+  terminal outcome clears the matching review; cancellation, failure, and
+  outcome-unknown outcomes retain a non-actionable terminal phase. A dispatch
+  failure before Runner ownership restores `pending`.
 - `PR-07`: Incognito, unsupported runtime/API, missing continuation detail,
   duplicate/conflicting review, cancellation, and outcome-unknown paths fail
   closed with explicit outcomes.
@@ -68,7 +76,9 @@ fails closed when continuation details or supported native/runtime identity is
 missing. The authenticated `sessions.providerReview.continue` Gateway owner now
 performs generation-bound admission, issues and consumes the capability once,
 and dispatches the bounded continuation through the existing routed-send/run
-owners; unsupported current Rust identities fail before dispatch.
+owners; unsupported current Rust identities fail before dispatch. The existing
+Runner terminal owner now settles the matching accepted continuation against
+the captured generation and run identity.
 `SandAutoReview` is a separate action-approval owner and is not a valid
 substitute.
 
@@ -114,7 +124,7 @@ run.
 
 1. Confirm the fixed provider event/schema and add a typed Rust refusal value
    with bounded fields and no string classifier.
-2. Add migration-safe owner-local review CAS/read/clear methods and direct
+2. Add migration-safe owner-local review CAS/read/settle methods and direct
    negative contracts.
 3. Bind terminal producer and lifecycle recheck to the existing turn owner.
 4. Add authenticated capability issuance and one-claim continuation admission.
@@ -126,8 +136,8 @@ run.
 `PR-01`–`PR-07` each require direct positive and negative evidence: malformed
 refusal, stale generation, duplicate/conflicting review, forged serialized
 acknowledgment, double claim, runtime mismatch, incognito rejection, and
-successful accepted continuation. The remaining terminal-settlement contract
-also requires direct evidence for success, cancellation, dispatch failure, and
+successful accepted continuation. The bounded terminal-settlement contract
+requires direct evidence for success, cancellation, dispatch failure, and
 outcome-unknown handling, including review projection after settlement. Static
 contracts are design evidence only; the parity row remains pending until the
 full lifecycle wiring and exact-head verification are complete.

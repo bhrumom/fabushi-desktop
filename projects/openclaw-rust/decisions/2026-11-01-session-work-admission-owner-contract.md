@@ -29,8 +29,9 @@ captures those routing facts, admits work against the current generation,
 rechecks the matching terminal event, and commits an idempotent hidden receipt
 through the same owner. Duplicate and conflicting payloads are explicit. The
 remaining gap is the broader upstream detached-result/session catalog contract,
-full media/result replay, and provider-review terminal settlement/consumption
-after continuation dispatch.
+full media/result replay, native provider-review runtime recovery, and exact
+production verification. A bounded provider-review terminal
+settlement/consumption path is now wired after continuation dispatch.
 
 ## Decision
 
@@ -88,7 +89,7 @@ session-generation/archive/review implementation.
 2. Extend the existing Runner admission and background-result settlement only
    where the captured generation and durable receipt are available.
 3. Complete the detached-result/session catalog lifecycle and provider-review
-   terminal settlement consumer through existing authenticated owners; do not add a new
+   terminal recovery/settlement contract through existing authenticated owners; do not add a new
    session authority.
 4. Add or retain focused negative contracts for archived admission, deletion pending,
    stale generation, duplicate result, lifecycle change during archive/restore,

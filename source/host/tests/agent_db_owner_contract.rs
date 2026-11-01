@@ -4,8 +4,9 @@ use std::sync::{Arc, Mutex};
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use mahayana_host_runtime::extensions::session::agent_db::{
-    CompactionCommit, CompactionCommitOutcome, SandAgentDb, SandAgentDbOptions,
-    SessionProviderReview, SessionWorkAdmissionRecord, SessionWorkResultCommitOutcome,
+    CompactionCommit, CompactionCommitOutcome, ProviderReviewContinuationOutcome, SandAgentDb,
+    SandAgentDbOptions, SessionProviderReview, SessionWorkAdmissionRecord,
+    SessionWorkResultCommitOutcome,
 };
 use mahayana_host_runtime::extensions::session::agent_db_recovery::DbRecoveryOptions;
 use mahayana_host_runtime::extensions::session::agent_db_transcript_pages::{
@@ -179,6 +180,7 @@ fn session_work_admission_record_migrates_and_compare_and_sets_generation() {
         terminal_result_idempotency_key: None,
         provider_review_id: None,
         provider_review_phase: None,
+        provider_review_continuation_run_id: None,
         provider_review: None,
     };
     assert!(owner
@@ -231,6 +233,7 @@ fn provider_review_owner_is_generation_bound_idempotent_and_conflict_safe() {
         terminal_result_idempotency_key: None,
         provider_review_id: None,
         provider_review_phase: None,
+        provider_review_continuation_run_id: None,
         provider_review: None,
     };
     assert!(owner
@@ -293,6 +296,76 @@ fn provider_review_owner_is_generation_bound_idempotent_and_conflict_safe() {
 }
 
 #[test]
+fn provider_review_continuation_settlement_is_run_and_generation_bound() {
+    let root = temp_root("provider-review-settlement");
+    let agent_dir = root.join("agent-review-settlement");
+    fs::create_dir_all(&agent_dir).expect("agent dir");
+    let owner = SandAgentDb::open(agent_dir.join("store.db"), 50).expect("owner");
+    let review = SessionProviderReview {
+        id: "review-settle".into(),
+        session_id: "session-settle".into(),
+        run_id: "refusal-run".into(),
+        provider: "openai".into(),
+        model: "model-1".into(),
+        runtime_id: "openclaw".into(),
+        api: Some("openai-chatgpt-responses".into()),
+        native_thread_id: None,
+        native_turn_id: None,
+        explanation: "provider-authored refusal".into(),
+        continuation_message: Some("continue".into()),
+        error_type: None,
+    };
+    let admission = SessionWorkAdmissionRecord {
+        session_key: "agent:agent-review-settlement:main".into(),
+        session_id: "session-settle".into(),
+        lifecycle_revision: "revision-settle".into(),
+        archived_at_ms: None,
+        archived_by: None,
+        archive_reason: None,
+        admitted_work_id: None,
+        admitted_media_work_id: None,
+        admitted_media_paths: Vec::new(),
+        terminal_result_idempotency_key: None,
+        provider_review_id: Some(review.id.clone()),
+        provider_review_phase: Some("accepted".into()),
+        provider_review_continuation_run_id: Some("continuation-run".into()),
+        provider_review: Some(review),
+    };
+    assert!(owner
+        .compare_and_set_session_work_admission(None, &admission)
+        .expect("create accepted review"));
+    assert!(!owner
+        .settle_provider_review_continuation(
+            "stale-revision",
+            "continuation-run",
+            ProviderReviewContinuationOutcome::Completed,
+        )
+        .expect("stale settlement is explicit"));
+    assert!(owner
+        .settle_provider_review_continuation(
+            "revision-settle",
+            "continuation-run",
+            ProviderReviewContinuationOutcome::Completed,
+        )
+        .expect("complete continuation"));
+    let settled = owner
+        .read_session_work_admission()
+        .expect("read settled admission")
+        .expect("settled admission exists");
+    assert_eq!(settled.provider_review_phase.as_deref(), Some("completed"));
+    assert!(settled.provider_review.is_none());
+    assert!(!owner
+        .settle_provider_review_continuation(
+            "revision-settle",
+            "continuation-run",
+            ProviderReviewContinuationOutcome::Completed,
+        )
+        .expect("duplicate settlement is ignored"));
+    owner.close(false);
+    let _ = fs::remove_dir_all(root);
+}
+
+#[test]
 fn session_archive_transition_is_guarded_idempotent_and_blocks_active_work() {
     let root = temp_root("work-admission-archive-transition");
     let agent_dir = root.join("agent-work");
@@ -312,6 +385,7 @@ fn session_archive_transition_is_guarded_idempotent_and_blocks_active_work() {
         terminal_result_idempotency_key: None,
         provider_review_id: None,
         provider_review_phase: None,
+        provider_review_continuation_run_id: None,
         provider_review: None,
     };
     assert!(owner
@@ -413,6 +487,7 @@ fn media_settlement_appends_and_releases_in_one_owner_transaction() {
         terminal_result_idempotency_key: None,
         provider_review_id: None,
         provider_review_phase: None,
+        provider_review_continuation_run_id: None,
         provider_review: None,
     };
     assert!(owner
@@ -484,6 +559,7 @@ fn background_result_receipt_is_idempotent_and_conflicts_fail_closed() {
         terminal_result_idempotency_key: None,
         provider_review_id: None,
         provider_review_phase: None,
+        provider_review_continuation_run_id: None,
         provider_review: None,
     };
     assert!(owner

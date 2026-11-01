@@ -336,7 +336,23 @@ fn test_provider_review_continuation_uses_owner_capability_and_existing_run_path
     assert!(continuation.contains("capture_session_work_admission"));
     assert!(continuation.contains("accept_routed_send"));
     assert!(continuation.contains("RUNNER_START_ROUTED_PROVIDER_GATEWAY_METHOD"));
+    assert!(continuation.contains("providerReviewLifecycleRevision"));
+    assert!(continuation.contains("release_provider_review_continuation"));
     assert!(!continuation.contains("serde_json::from_value::<ProviderReviewAcknowledgment"));
+}
+
+#[test]
+fn test_provider_review_projection_hides_non_pending_continuations() {
+    let shipping_source = include_str!("../app/src/main.rs");
+    let projection = shipping_source
+        .split("fn provider_review_projection(")
+        .nth(1)
+        .expect("provider-review projection owner exists")
+        .split("fn call_openclaw_sessions_list(")
+        .next()
+        .expect("provider-review projection boundary exists");
+    assert!(projection.contains("provider_review_phase.as_deref() == Some(\"pending\")"));
+    assert!(projection.contains("read_session_work_admission"));
 }
 
 #[test]
@@ -349,6 +365,8 @@ fn test_provider_review_owner_exposes_single_claim_host_capability() {
     assert!(owner_source.contains("provider_review_capabilities"));
     assert!(owner_source.contains(".remove(&acknowledgment.token)"));
     assert!(owner_source.contains("provider_review_phase.as_deref() != Some(\"pending\")"));
+    assert!(owner_source.contains("settle_provider_review_continuation"));
+    assert!(owner_source.contains("provider_review_continuation_run_id"));
 }
 
 // ---------------------------------------------------------------------------
