@@ -121,6 +121,58 @@ pub fn serialize_cursor_replay(
     Ok(output)
 }
 
+pub fn serialize_claude_replay(
+    entries: &[TypedReplayEntry],
+) -> Result<String, TypedReplaySerializationError> {
+    let mut sections = Vec::new();
+    for (index, entry) in entries.iter().enumerate() {
+        match entry {
+            TypedReplayEntry::CompactionSummary(summary) => sections.push(format!(
+                "USER: {COMPACTION_SUMMARY_PREFIX}{}{COMPACTION_SUMMARY_SUFFIX}",
+                summary.summary
+            )),
+            TypedReplayEntry::Message(message) => {
+                if !message.attachments.is_empty()
+                    || !message.tool_calls.is_empty()
+                    || message.tool_result.is_some()
+                {
+                    return Err(TypedReplaySerializationError::UnsupportedRole {
+                        role: "typed-tool-or-attachment",
+                    });
+                }
+                let text = message
+                    .content
+                    .iter()
+                    .map(|part| match part {
+                        ReplayContentPart::Text(text) => Ok(text.as_str()),
+                        ReplayContentPart::Structured(_) => Err(
+                            TypedReplaySerializationError::UnsupportedStructuredContent { index },
+                        ),
+                    })
+                    .collect::<Result<Vec<_>, _>>()?
+                    .join("");
+                let role = match message.role {
+                    ReplayRole::User => "USER",
+                    ReplayRole::Assistant => "ASSISTANT",
+                    ReplayRole::Tool => {
+                        return Err(TypedReplaySerializationError::UnsupportedRole {
+                            role: "tool",
+                        });
+                    }
+                };
+                sections.push(format!("{role}: {text}"));
+            }
+            TypedReplayEntry::UserAttachment(_) => {
+                return Err(TypedReplaySerializationError::UnsupportedAttachment {
+                    index,
+                    detail: "Claude Code CLI receives one text prompt and has no replay attachment contract".into(),
+                });
+            }
+        }
+    }
+    Ok(sections.join("\n\n"))
+}
+
 fn serialize_cursor_message(
     index: usize,
     message: &ReplayMessage,
@@ -460,5 +512,28 @@ mod tests {
         let serialized = serialize_cursor_replay(&entries).expect("cursor replay");
         assert!(matches!(serialized[0], CursorCheckpointMessage::AssistantTool { .. }));
         assert!(matches!(serialized[1], CursorCheckpointMessage::ToolResult { .. }));
+    }
+
+    #[test]
+    fn claude_rejects_typed_tool_rows_instead_of_flattening_them() {
+        let entry = TypedReplayEntry::Message(ReplayMessage {
+            id: None,
+            role: ReplayRole::Assistant,
+            content: vec![],
+            attachments: vec![],
+            tool_calls: vec![ReplayToolCall {
+                id: "call-1".into(),
+                name: "read".into(),
+                arguments: json!({"path": "a"}),
+            }],
+            tool_result: None,
+        });
+        let error = serialize_claude_replay(&[entry]).expect_err("Claude must reject tool rows");
+        assert_eq!(
+            error,
+            TypedReplaySerializationError::UnsupportedRole {
+                role: "typed-tool-or-attachment"
+            }
+        );
     }
 }

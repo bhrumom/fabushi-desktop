@@ -302,8 +302,11 @@ attachments, and Chat Completions rejects non-image media because no provider
 file-part contract has been established. Cursor serialization now preserves
 its native assistant-tool/tool-result checkpoint pairing, while rejecting all
 attachments because the current Cursor protobuf has no attachment part. The
-serializers are not wired to a live Runner or provider attempt, so this is
-implementation evidence rather than production acceptance.
+Claude serialization now explicitly accepts only summary and plain
+user/assistant text, rejecting typed tool rows and attachments because the
+current CLI has no typed replay surface. The serializers are not wired to a
+live Runner or provider attempt, so this is implementation evidence rather
+than production acceptance.
 
 The existing attachment resolution evidence is app-owned rather than an
 inference contract: `source/host/app/src/main.rs:605-670`

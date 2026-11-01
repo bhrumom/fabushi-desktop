@@ -281,7 +281,7 @@ redacted content, test run identities, and exact-head Actions artifacts.
 | CC-04 | pending | Existing summarization binding is insufficient to prove compaction behavior. |
 | CC-05 | pending | Requires production compaction state and cancellation contract. |
 | CC-06 | blocked | No compaction entry is committed or replayed by a production caller. |
-| CC-07 | blocked | Strict owner-local replay projection and pure Responses/Chat Completions/Cursor serializers now exist with fail-closed pairing/media checks. They are not wired to a live Runner/provider attempt; Claude path and the attachment owner contract remain unresolved, while `ProviderMessage` remains role/text-only for ordinary turns. |
+| CC-07 | blocked | Strict owner-local replay projection and pure Responses/Chat Completions/Cursor/Claude serializers now exist with fail-closed pairing/media checks. They are not wired to a live Runner/provider attempt; Claude typed rows remain explicitly unsupported and the attachment owner contract remains unresolved, while `ProviderMessage` remains role/text-only for ordinary turns. |
 | AC-CC-01 | pending | Exact current-subject dossier exists, but complete transitive source/package/archive/license closure and Actions receipt are not yet present. |
 | AC-CC-02 | blocked | Owner commit/replay exists, but the production producer→owner→next-turn consumer chain is still missing; request `messages` cannot serve as that proof. |
 | AC-CC-03 | pending | Frozen verification has not run. |
