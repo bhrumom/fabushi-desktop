@@ -6,10 +6,10 @@
   "target_commit": "23d73b32e301408f9c8aed151cb1f9e442516e13",
   "coverage": {
     "source_entries_total": 16202,
-    "unknown": 16141,
-    "unread": 16114,
+    "unknown": 16140,
+    "unread": 16113,
     "omitted": 0,
-    "responsibilities_total": 137,
+    "responsibilities_total": 138,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -36411,6 +36411,262 @@
       "accepted": false,
       "source_paths": [
         ".clang-tidy@5610bd13664ca77549993def241eb3edaffeff7a"
+      ]
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+      "source_path": ".claude/ai-workflow-adapter.md",
+      "source_blob_sha": "370ff84a1ab4c080b15b601a54162b0630c4f4df",
+      "source_kind": "repository_ai_workflow_host_adapter",
+      "module_id": "tdesktop.repository-ai-workflow-host-adapter",
+      "responsibility_id": "TDRP-R9-REPOSITORY-AI-WORKFLOW-HOST-ADAPTER-001",
+      "source_symbols": [
+        "Delegation",
+        "Review and assessment provider",
+        "Model self-reporting",
+        "Text handling",
+        "Source lineage and branch routing",
+        "UI-driver capability",
+        "Concurrent routing lane"
+      ],
+      "capability_ids": [
+        "CAP-REPOSITORY-TASK-AUTHORITY",
+        "CAP-REPOSITORY-PROCESS-GOVERNANCE",
+        "CAP-REPOSITORY-TASK-EVIDENCE",
+        "CAP-REPOSITORY-QUALITY-GOVERNANCE"
+      ],
+      "dependency_ids": [
+        ".claude/commands/continue.md@e81c86031f2e501f30d2b6ed908fb03d648324c8",
+        ".claude/commands/perform-task.md@98ec6ed4aa51d3cac043a70a23adc6834b147f8e",
+        ".claude/commands/process-inbox.md@3bd1c22b06c735ff92cf2260bd893c9de2653f21",
+        ".claude/commands/code-health.md@bcabd4bd5b5a1a2ed09b40a7f1fbdd502042329a",
+        ".claude/commands/rebase.md@df14e750067aeac1258a92068886cd2b33f83120",
+        "CLAUDE.md@f8564d18cef4b9c545767025995d31deb3fa7155",
+        ".agents/shared/phase-effort.md@8d7b385dbb526e87fc090774ee35191e1619bb08",
+        ".agents/shared/codex-cli-leaves.md@11c59b68df43e442e596c3052296fc51a044d46a",
+        ".agents/skills/continue/SKILL.md@aeb81dd57018abbc8f03ea3dbd34f91952128db5",
+        ".agents/skills/perform-task/SKILL.md@590e6660cfd8782b37dbc3c6959944f53bb4541c",
+        ".agents/skills/process-inbox/SKILL.md@73bd3c360232679a0ebfe3b990073ecc4f322b7d"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/claude-ai-workflow-adapter-complete-read.md",
+      "behavior_contract": "Adapt the canonical repository AI workflow to Claude Code without creating a second task/process authority: load only from explicit Claude command wrappers, preserve one stateful performer and single-writer phase artifacts, use foreground leaf completion with bounded retry/resume, keep review-provider/model/text/UI-driver differences as host mechanics, retain source-lineage decisions at the shared orchestrator boundaries, and publish only through the existing canonical helper/routing contracts.",
+      "state_machine": "explicit Claude command -> shared workflow authority + host adapter -> one stateful performer / bounded disposable leaves -> phase artifacts and provider-specific execution -> shared lineage/publication boundary -> canonical task/result state; host failure or unresolved writer -> recover/fail closed, never duplicate authority",
+      "side_effects": [
+        "Stage-A closure changes repository governance/evidence documentation and the unique migration ledger only.",
+        "No shipping Product Tasks/Automations, Agent/Coordinator/Host/Runner runtime, platform-core runtime, Claude queue, task store, review store or publication store is introduced.",
+        "Executable Claude Agent/Codex/helper/build/test/UI-driver paths remain deferred to Stage B."
+      ],
+      "failure_cases": [
+        "Adapter becomes implicitly repository-global instead of explicit-load only",
+        "Claude host mechanics become a second durable task/process authority",
+        "Disposable phase leaf delegates, commits, or becomes publication owner",
+        "Progress-only reply or SendMessage-style side channel is treated as leaf/task completion",
+        "Watcher, Monitor, sleep/until polling or background ordinary phase leaf replaces foreground completion",
+        "A second stateful performer or artifact writer starts while the original may still write",
+        "Cross-task branch claim is injected into a worker prompt without checking the current branch",
+        "Review-provider fallback changes phase artifacts, verdict semantics or acceptance",
+        "Source-lineage decision is delegated to a leaf or converted into cherry-pick/rebase/merge/backport/branch-sync queue work",
+        "Claude text-handling exception bypasses substantive content/owned-path/review/test/publication gates",
+        "Unavailable UI driver is promoted to runtime evidence",
+        "Routing/consolidation worker remains unlanded when the invocation ends",
+        "Host reply or local artifact is treated as canonical publication evidence",
+        "Stage-A source implementation is promoted to executable verification or acceptance"
+      ],
+      "ui_disposition": "Not applicable; repository-development host adapter only.",
+      "non_ui_responsibilities": [
+        "Explicit-load Claude host boundary",
+        "Agent delegation and single-writer discipline",
+        "Foreground leaf completion and bounded recovery",
+        "Codex/native review-provider adaptation",
+        "Claude model self-reporting",
+        "Claude text-handling exception",
+        "Parent-owned source-lineage routing",
+        "UI-driver capability fallback",
+        "Concurrent routing/consolidation publication lane"
+      ],
+      "platform_delta": "No platform-core production delta. This responsibility is repository-development process/quality governance, not shipping runtime behavior.",
+      "implementation_language": "Markdown/JSON repository governance and evidence; no shipping runtime implementation.",
+      "target_owner": "Fabushi repository development process authority + repository quality/test-evidence governance",
+      "existing_owner_candidates": [
+        "Fabushi repository development process authority",
+        "Fabushi repository quality/test-evidence governance"
+      ],
+      "rejected_owners": [
+        "shipping Product Tasks / Automations",
+        "Agent / Coordinator / Host / Runner product runtime",
+        "platform-core runtime",
+        "Telegram/Claude-specific task queue or performer runtime",
+        "second task-state/review/evidence/publication store"
+      ],
+      "commands_events": [],
+      "persistence_contract": "Canonical task/process truth remains the existing repository task state, helpers, evidence docs and single parity ledger. Claude host state/leaf reports are subordinate execution artifacts and never a second durable authority.",
+      "concurrency_contract": "Exactly one stateful performer is preserved. Ordinary phase leaves complete synchronously; independent leaves may run concurrently only within a shared step. A replacement writer starts only after prior writer termination is established. At most one routing worker and one consolidation worker may be in flight, using the routing worktree.",
+      "cancellation_contract": "A stopped/interrupted leaf is incomplete evidence. Resume the exposed same worker where possible; otherwise bounded fresh retry is allowed only after proving prior writers stopped. Cancellation never implies task success or canonical Block.",
+      "security_boundary": "The host adapter cannot authorize credentials, product behavior, branch integration, CI execution during Stage A, branch-protection changes, force publication, acceptance, or release. UI-driver absence and provider/tool failures fail closed.",
+      "network_service_dependencies": [],
+      "service_owner": "Not applicable; repository-development host adapter only.",
+      "deployment_evidence": [],
+      "implementation_status": "implemented",
+      "coverage_disposition": "workflow-equivalent",
+      "blockers": [],
+      "production_entrypoints": [
+        "AGENTS.md -> Repository AI workflow host-adapter authority",
+        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md -> Repository Claude AI workflow host-adapter qualification",
+        "projects/fabushi-communication-platform/quality/evidence-contract.md -> Repository Claude AI workflow host-adapter evidence"
+      ],
+      "production_evidence": [
+        "spec-first commit:e16e4f418eb95718cc9f52fbbb252e8be5ca4066",
+        "dossier:projects/telegram-desktop-rust/dossiers/claude-ai-workflow-adapter-complete-read.md",
+        "upstream-source:.claude/ai-workflow-adapter.md@370ff84a1ab4c080b15b601a54162b0630c4f4df",
+        "upstream-consumer:.claude/commands/continue.md@e81c86031f2e501f30d2b6ed908fb03d648324c8",
+        "upstream-consumer:.claude/commands/perform-task.md@98ec6ed4aa51d3cac043a70a23adc6834b147f8e",
+        "upstream-consumer:.claude/commands/process-inbox.md@3bd1c22b06c735ff92cf2260bd893c9de2653f21",
+        "upstream-consumer:.claude/commands/code-health.md@bcabd4bd5b5a1a2ed09b40a7f1fbdd502042329a",
+        "upstream-negative-boundary:.claude/commands/rebase.md@df14e750067aeac1258a92068886cd2b33f83120"
+      ],
+      "test_evidence": [
+        "CONTRACT-TDRP-CLAUDE-HOST-AUTHORITY-001 authored, not run",
+        "CONTRACT-TDRP-CLAUDE-DELEGATION-SINGLE-WRITER-001 authored, not run",
+        "CONTRACT-TDRP-CLAUDE-LEAF-COMPLETION-RECOVERY-001 authored, not run",
+        "CONTRACT-TDRP-CLAUDE-REVIEW-PROVIDER-001 authored, not run",
+        "CONTRACT-TDRP-CLAUDE-SOURCE-LINEAGE-001 authored, not run",
+        "CONTRACT-TDRP-CLAUDE-TEXT-HANDLING-001 authored, not run",
+        "INT-TDRP-CLAUDE-HOST-PROCESS-COMPOSITION-001 authored, not run",
+        "INT-TDRP-CLAUDE-PUBLICATION-BOUNDARY-001 authored, not run",
+        "FAULT-TDRP-CLAUDE-DUPLICATE-WRITER-RECOVERY-001 authored, not run"
+      ],
+      "target_commit": "e16e4f418eb95718cc9f52fbbb252e8be5ca4066",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Fabushi repository development and quality evidence governance",
+      "composition_slot": "Repository AI workflow host adaptation",
+      "capability_component": "Source-neutral repository task/process host adaptation",
+      "variation_axes": [
+        "continue vs perform-task vs process-inbox vs code-health explicit loader",
+        "Claude native leaves vs Codex review/assessment provider",
+        "foreground ordinary phase leaves vs bounded concurrent routing lane",
+        "resume exposed worker id vs bounded fresh retry after writer termination",
+        "source-lineage satisfied vs pre-Phase-1 routing stop vs post-Phase-1 Block",
+        "UI-driver available vs unavailable fallback",
+        "Claude text normalization exception vs substantive content gates"
+      ],
+      "shared_owner_contracts": [
+        "Fabushi repository development process authority",
+        "Fabushi repository quality/test-evidence governance",
+        "canonical repository task-state and publication helper contracts",
+        "FMEP-001 Stage-A deferred executable validation"
+      ],
+      "duplicate_root_check": "No Claude-specific queue, performer runtime, second task state, second review/evidence store, shipping Product Tasks/Automations owner, Agent/Coordinator/Host/Runner owner or platform-core owner introduced.",
+      "novel_capability": true,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Not applicable",
+      "primary_navigation_target": "Not applicable",
+      "collection_surface": "Not applicable",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "Not applicable",
+      "detail_section": "Not applicable",
+      "capability_surface": "Repository development tooling",
+      "route_contract": "Not applicable",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Not applicable",
+      "search_local_remote_contract": "Not applicable",
+      "responsive_disposition": "Not applicable",
+      "accessibility_contract": "Not applicable",
+      "keyboard_contract": "Not applicable",
+      "state_continuity_contract": "Exact source and candidate identities fence host-adapter evidence. Worker/provider changes preserve canonical task artifacts/state; unresolved or duplicate writers fail closed.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Not applicable",
+      "semantic_token_usage": "Not applicable",
+      "legacy_token_adapter": "Not applicable",
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "Not applicable",
+      "avatar_contract": "Not applicable",
+      "content_copy_keys": [],
+      "motion_contract": "Not applicable",
+      "reduced_motion_contract": "Not applicable",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "medium",
+      "requirement_ids": [
+        "TDRP-R9-REPOSITORY-AI-WORKFLOW-HOST-ADAPTER-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-CLAUDE-HOST-AUTHORITY-001",
+        "ORA-TDRP-CLAUDE-SINGLE-WRITER-001",
+        "ORA-TDRP-CLAUDE-LEAF-COMPLETION-001",
+        "ORA-TDRP-CLAUDE-SOURCE-LINEAGE-001",
+        "ORA-TDRP-CLAUDE-PUBLICATION-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-CLAUDE-SHARED-WORKFLOW-AUTHORITY-001",
+        "INV-TDRP-CLAUDE-ONE-STATEFUL-PERFORMER-001",
+        "INV-TDRP-CLAUDE-NO-DUPLICATE-WRITER-001",
+        "INV-TDRP-CLAUDE-NO-BRANCH-INTEGRATION-TASK-001"
+      ],
+      "unit_case_ids": [],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-CLAUDE-HOST-AUTHORITY-001",
+        "CONTRACT-TDRP-CLAUDE-DELEGATION-SINGLE-WRITER-001",
+        "CONTRACT-TDRP-CLAUDE-LEAF-COMPLETION-RECOVERY-001",
+        "CONTRACT-TDRP-CLAUDE-REVIEW-PROVIDER-001",
+        "CONTRACT-TDRP-CLAUDE-SOURCE-LINEAGE-001",
+        "CONTRACT-TDRP-CLAUDE-TEXT-HANDLING-001"
+      ],
+      "integration_case_ids": [
+        "INT-TDRP-CLAUDE-HOST-PROCESS-COMPOSITION-001",
+        "INT-TDRP-CLAUDE-PUBLICATION-BOUNDARY-001"
+      ],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [],
+      "fault_recovery_case_ids": [
+        "FAULT-TDRP-CLAUDE-DUPLICATE-WRITER-RECOVERY-001"
+      ],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "performance_case_ids": [],
+      "soak_case_ids": [],
+      "security_case_ids": [],
+      "regression_ids": [],
+      "exploratory_charter_ids": [],
+      "release_gate_ids": [
+        "G-INVENTORY",
+        "G-TRACEABILITY",
+        "G-EVIDENCE",
+        "G-RELEASE"
+      ],
+      "test_fixture_ids": [],
+      "test_environment_ids": [
+        "Stage-B exact candidate repository workflow environment"
+      ],
+      "coverage_matrix_status": "pending",
+      "flake_status": "not-run",
+      "test_execution_evidence": [],
+      "acceptance_reviewer": null,
+      "release_gate_status": "not-run",
+      "license_and_provenance": "Behavioral repository-development host-adapter contract read from telegramdesktop/tdesktop fixed-U .claude/ai-workflow-adapter.md and exact fixed-U command/shared-workflow consumers; no upstream implementation copied into Fabushi shipping runtime.",
+      "reviewer": null,
+      "notes": "Task round137/source evidence round168. Live desktop checkpoint e16e4f418eb95718cc9f52fbbb252e8be5ca4066 and platform-core e92b51e23b39dae5719f033fa1f7a20d6579dc8c were reread before closure. Fixed-U recursive tree is complete with 7,194 entries / 6,859 blobs; source is tree index 86 zero-based and exact 13,188-byte UTF-8 / 13,166-character / 215-newline trailing-newline blob. Complete adapter plus explicit continue/perform-task/process-inbox/code-health loaders, explicit rebase non-consumer, root Claude authority pointer, phase-effort and Codex-leaf boundaries were read. Existing-owner-first maps one new cross-cutting responsibility into existing repository development process + quality/test-evidence governance; no new state owner, ADR, shipping runtime or platform-core delta. Spec-first CAS commit e16e4f418eb95718cc9f52fbbb252e8be5ca4066 authored governance/evidence contracts and dossier. Exactly one independent source entry closes: unknown 16141->16140, unread 16114->16113; responsibilities 137->138. Contracts authored, not run; accepted=false. Next fixed-U tree blob is .claude/commands/code-health.md@bcabd4bd5b5a1a2ed09b40a7f1fbdd502042329a.",
+      "validation_status": "not-run",
+      "accepted": false,
+      "source_paths": [
+        ".claude/ai-workflow-adapter.md@370ff84a1ab4c080b15b601a54162b0630c4f4df"
       ]
     }
   ],
