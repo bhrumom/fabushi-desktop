@@ -9,7 +9,7 @@
     "unknown": 16172,
     "unread": 16145,
     "omitted": 0,
-    "responsibilities_total": 105,
+    "responsibilities_total": 106,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -26663,6 +26663,277 @@
         "Telegram/SourceFiles/mtproto/connection_tcp.cpp@d721a9058e1885d2964ded55bd4e4c7c2ce9e381",
         "Telegram/SourceFiles/mtproto/scheme/mtproto.tl@76225965bfc794388db241f3f760db8ab79e84f8",
         "Telegram/SourceFiles/mtproto/session_private.cpp@13cbc76ec723386027b5b4dcac79999b791c4614"
+      ]
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+      "source_path": "Telegram/SourceFiles/mtproto/connection_tcp.cpp",
+      "source_blob_sha": "d721a9058e1885d2964ded55bd4e4c7c2ce9e381",
+      "source_kind": "wire",
+      "module_id": "tdesktop.mtproto.padded-intermediate-transport-frame-wire",
+      "responsibility_id": "TDRP-R9-MTPROTO-PADDED-INTERMEDIATE-TRANSPORT-FRAME-WIRE-001",
+      "source_symbols": [
+        "TcpConnection::Protocol::VersionD::id",
+        "TcpConnection::Protocol::VersionD::supportsArbitraryLength",
+        "TcpConnection::Protocol::VersionD::finalizePacket",
+        "TcpConnection::Protocol::VersionD::readPacketLength",
+        "TcpConnection::Protocol::VersionD::readPacket",
+        "TransportFrameCodec::encode/encode_with_padding/decode_intermediate",
+        "TcpTransport::send_payload/receive_payload"
+      ],
+      "capability_ids": [
+        "CAP-TELEGRAM-MTPROTO-PADDED-INTERMEDIATE-TRANSPORT-FRAME-WIRE"
+      ],
+      "dependency_ids": [
+        "telegram-protocol::TransportFrameCodec",
+        "telegram-network::TcpTransport",
+        "OS secure randomness"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/evidence/round105-mtproto-padded-intermediate-transport-frame-wire-20261101.md",
+      "behavior_contract": "Fixed-U VersionD padded-intermediate framing writes a four-byte little-endian byte length followed by a non-empty word-aligned MTProto payload plus 0..15 random padding bytes. Receive parsing requires at least four declared body bytes, treats incomplete header/body as partial input, and accepts only total packet lengths >=8 and strictly below 0x04000000. VersionD framing is isolated from the generic intermediate quick-ACK forms and fails closed on those high-bit/token forms.",
+      "state_machine": "Existing TcpTransport send_payload -> TransportFrameCodec::encode(PaddedIntermediate) -> socket; receive bytes -> TransportFrameCodec::decode(PaddedIntermediate) -> existing plaintext/encrypted-envelope owner. This slice owns only VersionD frame length/padding bytes, not connection-start nonce/AES-CTR, secret derivation, quick-ACK lifecycle, endpoint scheduling, request history, gzip, or difference application.",
+      "side_effects": [
+        "Shipping PaddedIntermediate encode now chooses 0..15 padding bytes from OS secure randomness",
+        "Explicit-padding encode enforces word alignment and the fixed-U 0..15 padding domain",
+        "Receive framing enforces the fixed-U VersionD packet floor and strict 0x04000000 ceiling",
+        "VersionD quick-ACK request/token forms fail closed while generic Intermediate quick-ACK behavior remains separate",
+        "Focused contracts are authored in canonical and desktop mirror locations without execution"
+      ],
+      "failure_cases": [
+        "outbound padded-intermediate payload is empty or not divisible by four",
+        "explicit padding contains more than 15 bytes",
+        "OS secure randomness is unavailable for shipping default padding",
+        "four-byte length header or declared body is incomplete",
+        "declared body is shorter than four bytes",
+        "declared packet length is >=0x04000000 or exceeds the configured local frame bound",
+        "VersionD quick-ACK request or high-bit length/token form is attempted"
+      ],
+      "ui_disposition": "No UI change. This is MTProto TCP padded-intermediate frame wire behavior in the existing shared protocol/network owners.",
+      "non_ui_responsibilities": [
+        "LE32 byte-length header for payload plus padding",
+        "4-byte alignment of the underlying MTProto payload",
+        "0..15 random outbound padding bytes",
+        "fixed-U VersionD receive floor and strict packet-size ceiling",
+        "partial-input preservation",
+        "strict separation from connection-start obfuscation/secret handling and quick-ACK lifecycle"
+      ],
+      "platform_delta": "Minimal production delta in the existing canonical TransportFrameCodec: make PaddedIntermediate match fixed-U VersionD random padding, alignment, length bounds and unsupported quick-ACK behavior. No new owner, socket, scheduler, or lifecycle state is introduced.",
+      "existing_owner_candidates": [
+        "bhrumom/fabushi-platform-core:native/telegram-protocol/src/transport.rs",
+        "bhrumom/fabushi-platform-core:native/telegram-network/src/lib.rs",
+        "bhrumom/fabushi-platform-core:native/telegram-protocol/tests/protocol_contract.rs",
+        "source/mahayana/mahayana-rs/providers/telegram-network/src/lib.rs",
+        "source/mahayana/mahayana-rs/providers/telegram-protocol/tests/protocol_contract.rs"
+      ],
+      "existing_owner": "Existing canonical telegram-protocol TransportFrameCodec plus existing telegram-network TcpTransport shipping caller",
+      "rejected_existing_owners": [
+        "new VersionD transport/runtime owner: rejected because TransportFrameCodec already owns padded-intermediate encode/decode",
+        "telegram-network duplicate framing implementation: rejected because TcpTransport already delegates framing to the shared codec",
+        "connection-start obfuscation owner: rejected for this slice because the 64-byte prefix/AES-CTR/secret lifecycle is adjacent but independently separable"
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "bhrumom/fabushi-platform-core:native/telegram-protocol/src/transport.rs",
+        "bhrumom/fabushi-platform-core:native/telegram-network/src/lib.rs",
+        "bhrumom/fabushi-platform-core:native/telegram-protocol/tests/protocol_contract.rs",
+        "source/mahayana/mahayana-rs/providers/telegram-network/src/lib.rs",
+        "source/mahayana/mahayana-rs/providers/telegram-protocol/tests/protocol_contract.rs"
+      ],
+      "fabushi_target_symbols": [
+        "TransportMode::PaddedIntermediate",
+        "TransportFrameCodec::encode",
+        "TransportFrameCodec::encode_with_padding",
+        "TransportFrameCodec::decode_intermediate",
+        "TransportFrameCodec::validate_padded_intermediate_frame_length",
+        "TcpTransport::send_payload",
+        "TcpTransport::receive_payload"
+      ],
+      "target_language": "Rust",
+      "language_rationale": "The existing source-neutral Rust telegram-protocol transport codec already owns this shipping frame boundary; fixed-U VersionD framing belongs there rather than in a Telegram-specific duplicate runtime.",
+      "command_event_contracts": [
+        "word-aligned payload -> LE32(payload+padding byte count) -> payload -> 0..15 padding bytes",
+        "default shipping encode -> OS randomness chooses padding length and bytes",
+        "header/body fragment -> incomplete input without fabricated payload",
+        "declared body 0..3 or packet >=0x04000000 -> fail closed",
+        "VersionD quick-ACK encode/token form -> fail closed",
+        "valid decoded opaque payload+padding -> existing higher MTProto envelope/body-length owner"
+      ],
+      "state_owner": "TransportFrameCodec owns stateless frame encoding/decoding; TcpTransport owns socket buffering and I/O.",
+      "lifecycle_owner": "Existing telegram-network TcpTransport. Connection-start obfuscation, connection selection/racing/retry and secret lifecycle remain outside this isolated framing slice.",
+      "persistence_and_restart": "No persistence or restart behavior is introduced or changed.",
+      "concurrency_and_cancellation": "Pure synchronous frame encode/decode in the existing socket path; OS randomness is consumed only during outbound default padded-intermediate encoding. No scheduler or cancellation owner is introduced.",
+      "security_boundary": "Malformed VersionD lengths, non-word-aligned outbound payloads, oversized packets and unsupported quick-ACK forms fail closed before payload handoff; random padding comes from the existing getrandom OS source.",
+      "network_service_dependencies": [
+        "Existing TcpTransport socket I/O and OS secure randomness only; no new network service dependency."
+      ],
+      "service_owner": "Canonical embedded Telegram protocol/network runtime.",
+      "deployment_evidence": [],
+      "implementation_status": "implemented",
+      "coverage_disposition": "rewritten",
+      "blockers": [
+        "Stage B executable build/unit/contract/integration/packaged validation has not run.",
+        "Connection-start obfuscation/AES-CTR prefix and Version1/VersionD secret validation/key derivation remain outside this isolated frame slice.",
+        "Quick-ACK lifecycle/correlation and broader connection scheduling/racing/send retry remain open/fail-closed.",
+        "Auth-key binding/persistence/expiry/renewal, arbitrary request histories, gzip and complete difference/differenceSlice decoding/application remain open/fail-closed.",
+        "Broader fixed-U source/legal/release closure remains open."
+      ],
+      "production_entrypoints": [
+        "fixed-U TcpConnection::Protocol::VersionD::finalizePacket -> LE32 byte length + payload + 0..15 padding",
+        "fixed-U TcpConnection::Protocol::VersionD::readPacketLength/readPacket -> exact floor/ceiling and payload+padding slice",
+        "canonical telegram-network::TcpTransport::send_payload -> TransportFrameCodec::encode",
+        "canonical telegram-network::TcpTransport::receive_payload -> TransportFrameCodec::decode",
+        "desktop tracked telegram-network provider remains byte-identical at 54f509474391bb5118ba4678ba5c566ab3e74ec8"
+      ],
+      "production_evidence": [
+        "fixed-U:Telegram/SourceFiles/mtproto/connection_tcp.cpp@d721a9058e1885d2964ded55bd4e4c7c2ce9e381",
+        "fixed-U:Telegram/SourceFiles/mtproto/scheme/mtproto.tl@76225965bfc794388db241f3f760db8ab79e84f8",
+        "platform-core-spec-commit:ed28746a014682767de9866966eb0b4bb2953618",
+        "platform-core-initial-spec-blob:2ecb3e305e850ffd67c7dcc4740bb4b283831566",
+        "platform-core-production-commit:3a3d850139082e32a783b7d03b6ea2fd31b00ee9",
+        "platform-core-production-path:native/telegram-protocol/src/transport.rs@5d6abd61f130b25baae10a6269eebd20fd025b3a",
+        "platform-core-network-path:native/telegram-network/src/lib.rs@54f509474391bb5118ba4678ba5c566ab3e74ec8",
+        "platform-core-contract-commit:cbc042f54b5b2bb7ec035ad68aaad5bd40263b4a",
+        "platform-core-contract-path:native/telegram-protocol/tests/protocol_contract.rs@cd53d0b1b546aaceaf5ad46aaf6957dab5b32bf9",
+        "desktop-contract-mirror-commit:551d641ba59ae6f2ef7e3c08bfbf884db8f7f2a3",
+        "path:source/mahayana/mahayana-rs/providers/telegram-network/src/lib.rs@54f509474391bb5118ba4678ba5c566ab3e74ec8",
+        "path:source/mahayana/mahayana-rs/providers/telegram-protocol/tests/protocol_contract.rs@cd53d0b1b546aaceaf5ad46aaf6957dab5b32bf9",
+        "platform-core-implementation-record-commit:440da6a1b0f24907e77f1c1a94761adb9d17ae1d",
+        "platform-core-implementation-record-spec-blob:b6ea2c2df755fe632d624e6621e5b89379a47b0e"
+      ],
+      "test_evidence": [
+        "Canonical and desktop authored-only contracts cover explicit padding 0/15, word alignment, fragmented header/body, 0..3 declared-length rejection, fixed-U upper packet boundary, default random padding domain, VersionD quick-ACK rejection and generic Intermediate quick-ACK preservation; not run."
+      ],
+      "target_commit": "551d641ba59ae6f2ef7e3c08bfbf884db8f7f2a3",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Canonical Fabushi account + existing TelegramClientLease/runtime + shared telegram-protocol/network production composition",
+      "composition_slot": "Embedded Telegram MTProto padded-intermediate TCP transport frame wire",
+      "capability_component": "Exact fixed-U VersionD padded-intermediate framing and validation",
+      "variation_axes": [
+        "explicit padding 0..15",
+        "shipping random padding",
+        "fragmented header/body",
+        "minimum body length",
+        "strict maximum packet length",
+        "unsupported VersionD quick-ACK"
+      ],
+      "shared_owner_contracts": [
+        "Existing telegram-protocol TransportFrameCodec",
+        "Existing telegram-network TcpTransport",
+        "Existing Cargo path-dependency composition"
+      ],
+      "duplicate_root_check": "No second account, runtime, provider, socket transport, frame codec, scheduler, auth key, request history, message store, UI root, sidecar, subprocess or Web wrapper was introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Not applicable",
+      "primary_navigation_target": "Existing Messages/Conversation navigation",
+      "collection_surface": "Existing ConversationList; no change",
+      "creation_flow": "Existing canonical conversation creation; no change",
+      "object_action_scope": "Not applicable",
+      "detail_section": "Not applicable",
+      "capability_surface": "No UI surface; existing embedded Telegram network path only",
+      "route_contract": "No new route.",
+      "search_scope": "Not applicable",
+      "search_provider": "Existing canonical Search owner; unchanged",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Unchanged.",
+      "search_local_remote_contract": "Not applicable.",
+      "responsive_disposition": "No UI change.",
+      "accessibility_contract": "No UI change.",
+      "keyboard_contract": "No UI change.",
+      "state_continuity_contract": "Padded-intermediate validation occurs before existing plaintext/encrypted payload owners; padding remains opaque at the transport frame boundary and no product state owner changes.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Existing Fabushi design system; no visual changes",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": null,
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "No new icon asset",
+      "avatar_contract": "No change",
+      "content_copy_keys": [],
+      "motion_contract": "No change",
+      "reduced_motion_contract": "No change",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "high",
+      "requirement_ids": [
+        "TDRP-R9-MTPROTO-PADDED-INTERMEDIATE-TRANSPORT-FRAME-WIRE-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-MTPROTO-PADDED-INTERMEDIATE-TRANSPORT-FRAME-WIRE-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-MTPROTO-PADDED-INTERMEDIATE-LENGTH-001",
+        "INV-TDRP-MTPROTO-PADDED-INTERMEDIATE-PADDING-001",
+        "INV-TDRP-MTPROTO-PADDED-INTERMEDIATE-QUICKACK-SEPARATION-001"
+      ],
+      "unit_case_ids": [
+        "UNIT-TDRP-MTPROTO-PADDED-INTERMEDIATE-BOUNDARY-001",
+        "UNIT-TDRP-MTPROTO-PADDED-INTERMEDIATE-ALIGNMENT-001",
+        "UNIT-TDRP-MTPROTO-PADDED-INTERMEDIATE-RANDOM-PADDING-001"
+      ],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-MTPROTO-PADDED-INTERMEDIATE-TRANSPORT-FRAME-WIRE-001"
+      ],
+      "integration_case_ids": [],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "fault_recovery_case_ids": [],
+      "performance_case_ids": [],
+      "security_case_ids": [
+        "SEC-TDRP-MTPROTO-PADDED-INTERMEDIATE-LENGTH-FAIL-CLOSED-001"
+      ],
+      "soak_case_ids": [],
+      "exploratory_charter_ids": [],
+      "regression_ids": [
+        "REG-TDRP-MTPROTO-PADDED-INTERMEDIATE-QUICKACK-CROSSMODE-001"
+      ],
+      "release_gate_ids": [
+        "G-TRACEABILITY",
+        "G-COMPOSITION",
+        "G-SECURITY",
+        "G-EVIDENCE",
+        "G-RELEASE"
+      ],
+      "test_fixture_ids": [
+        "mtproto-padded-intermediate-zero-padding",
+        "mtproto-padded-intermediate-max-padding",
+        "mtproto-padded-intermediate-length-boundary"
+      ],
+      "test_environment_ids": [
+        "GitHub Actions Stage B matrix (not run)"
+      ],
+      "coverage_matrix_status": "pending",
+      "flake_status": "stable",
+      "release_gate_status": "pending",
+      "acceptance_reviewer": null,
+      "reviewer": null,
+      "license_and_provenance": "Behavioral responsibility is anchored to fixed-U telegramdesktop/tdesktop connection_tcp.cpp@d721a9058e1885d2964ded55bd4e4c7c2ce9e381 and adjacent mtproto.tl@76225965bfc794388db241f3f760db8ab79e84f8. Implementation is source-neutral Rust and copies no upstream C++ implementation.",
+      "notes": "Stage A source-level implementation. Existing TransportFrameCodec/TcpTransport remain the only owners. This round makes PaddedIntermediate match fixed-U VersionD framing for random 0..15 padding, unpadded word alignment, receive floor/strict ceiling and quick-ACK separation, and authors/mirrors focused contracts without executing them. validation_status=not-run and accepted=false. Connection-start AES-CTR prefix/secret handling, quick-ACK lifecycle, broader connection scheduling, auth-key binding/persistence, arbitrary request history, gzip and complete difference decoding remain open.",
+      "test_execution_evidence": [],
+      "validation_status": "not-run",
+      "accepted": false,
+      "id": "TDRP-R9-MTPROTO-PADDED-INTERMEDIATE-TRANSPORT-FRAME-WIRE-001",
+      "source_paths": [
+        "Telegram/SourceFiles/mtproto/connection_tcp.cpp@d721a9058e1885d2964ded55bd4e4c7c2ce9e381",
+        "Telegram/SourceFiles/mtproto/scheme/mtproto.tl@76225965bfc794388db241f3f760db8ab79e84f8"
       ]
     }
   ],
