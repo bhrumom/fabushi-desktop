@@ -1036,3 +1036,24 @@ Publication evidence must bind registry, repository, tag and immutable pushed ma
 Failure/recovery evidence must cover non-default job skip, recursive checkout failure, installer/Poetry failure, disk cleanup side effects, registry-auth failure, generator failure, BuildKit failure, push interruption/partial state and latest-tag overwrite. There is no source concurrency group, retry/backoff, digest reconciliation or rollback mechanism. Ambiguous registry state remains non-passing until reconciled by immutable digest evidence.
 
 Existing-owner-first evidence attaches these guarantees to current Fabushi repository container/build/toolchain, release/process, security/provenance and shared quality/evidence gates. It must not create a Telegram runtime/provider, second container-release truth, or platform-core service. All authored Stage-A cases remain not-run and unaccepted until Stage B.
+
+
+### Repository issue-closer workflow evidence contract
+
+For `TDRP-R9-REPOSITORY-ISSUE-CLOSER-WORKFLOW-001`, source evidence binds `telegramdesktop/tdesktop@f985723b552b30fe1c17d377d57f44e61a15a8c4`, recursive tree `91f2b083ab2877c0a17d07868eabec362a5cfca6`, and exact `.github/workflows/issue_closer.yml@355405165590712b1826b2f92a8f867c8d568dd9`, index 123 zero-based, mode 100644, 251 ASCII bytes/code points, 14 LF, zero CR and trailing newline.
+
+Trigger/permission evidence must prove admission is only `issues.opened`, record mutable `ubuntu-slim`, absence of explicit permissions/environment/concurrency/timeout/retry/checkout, and effective frozen-candidate GITHUB_TOKEN issue/comment/label write scope without exposing the token.
+
+Action-lineage evidence records observed 2026-11-01 `desktop-app/action_issue_closer@master -> b2fc72db6cc262c8e84e10740c44296ec4be2e02`, tree `a949a72cc7db2446287cc7c88e651966c1243f77`, `action.yml@91083e19bf270c6b8fe109fd264522032a5f10a1`, and `index.js@ea3b9b265e070522b56e75da86debaa80140278f`. Because source references `master`, candidate evidence must capture the actual resolved commit. Runtime acquisition evidence separately captures exact unversioned npm package identities and transitive graph.
+
+Input evidence must bind exact opened issue body, presence/order of `Version of Telegram Desktop` and `Installation source`, first regex version match, exact repository tags response and first tag selected by the Action, downloaded `https://osx.telegram.org/updates/versions.xml` bytes/digest, XML parse result, and first item's `@_sparkle:shortVersionString`. A failed wget is source-suppressed by `|| exit 0`; malformed/null body/tag/XML structures remain explicit non-success or no-mutation outcomes.
+
+Classification evidence must execute the exact ordered compare branches: issue <= first tag and issue < macOS => no mutation; issue > macOS and not prefixed by macOS => indeterminate/no mutation; same first major character and issue > first tag => stale-tag/no mutation; otherwise mutation candidate. Boundary/equality/prefix/multi-component cases and unrelated issue forms without markers must be covered.
+
+Mutation evidence binds attempted static comment, exact `TG macOS Swift` label, target issue identity and final state. It must separately prove comment, label and close settlement. Because all three API promises are started without await/chaining and the XML callback does not await `processIssue`, workflow-step completion alone is insufficient; partial mutation, delayed failure, reordered settlement or process exit with unresolved promises is non-passing.
+
+Security/privacy evidence covers mutable third-party code, implicit token scope, token in Node argv, unpinned npm/network acquisition, remote XML trust, and full reporter issue-body logging. No secret/token value may be persisted. Telegram/macOS redirect copy remains upstream provenance, not Fabushi support routing.
+
+Consumer evidence identifies GitHub Issues opened-event admission, external Action, repository tags API, Telegram macOS updater XML, GitHub issue comment/label/state APIs, maintainers/triagers, and issue authors/readers. Existing-owner evidence binds root issue/reporting/development-process + repository privacy/security + shared quality/evidence governance. No target issue-closing workflow or platform-core change is required.
+
+Stage A records 16 contract, 1 integration, 9 fault/recovery and 7 security/privacy cases as authored only. No workflow run/query, Action/npm/XML execution, issue mutation, token-scope probe, build, test, package, release, install or runtime acceptance is performed. `validation_status=not-run`; `accepted=false`.
