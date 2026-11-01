@@ -42,6 +42,13 @@ Admitted direct inbound envelopes additionally carry the emitted outbound ID as
 delivery and rejects same-identity/different-payload conflicts. Legacy
 compatibility envelopes without that identity remain explicitly uncorrelated.
 
+The correlated session-scoped transcript append also re-runs the shared owner
+identity-admission predicate inside the same `BEGIN IMMEDIATE` transaction,
+before reading the admission record or inserting entries. A session key and
+otherwise well-formed admission payload are insufficient when the owner
+metadata identity is no longer admitted; the append fails closed at the
+durable write edge.
+
 ## Rejected alternatives
 
 - Accepting a caller-supplied turn ID without matching the canonical registry.

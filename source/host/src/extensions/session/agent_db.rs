@@ -2811,6 +2811,11 @@ impl SandAgentDb {
         };
         db.execute_batch("BEGIN IMMEDIATE")?;
         let result = (|| -> Result<Vec<serde_json::Value>, AgentDbProjectionError> {
+            if !session_work_write_is_admitted(db)? {
+                return Err(AgentDbProjectionError::WorkAdmissionInvalid(
+                    "session owner identity is not admitted for transcript append".into(),
+                ));
+            }
             let raw_admission = db
                 .query_row(GET_KV_SQL, params![KV_SESSION_WORK_ADMISSION], |row| {
                     row.get::<_, String>(0)
