@@ -39,6 +39,8 @@ pub type AgentMemoryWriter =
     Arc<dyn Fn(&str, MemoryTier) -> StateWriteResult + Send + Sync + 'static>;
 pub type AgentProfileWriter =
     Arc<dyn Fn(Option<String>, Option<String>) -> StateWriteResult + Send + Sync + 'static>;
+pub type AgentSettingsWriter =
+    Arc<dyn Fn(Map<String, Value>) -> StateWriteResult + Send + Sync + 'static>;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum MemoryTier { Profile, Note, Log }
@@ -68,6 +70,7 @@ pub struct SandAgentState {
     write_agent_memory: Option<AgentMemoryWriter>,
     remove_agent_memory: Option<AgentMemoryRemover>,
     write_agent_profile: Option<AgentProfileWriter>,
+    write_agent_settings: Option<AgentSettingsWriter>,
 }
 
 impl SandAgentState {
@@ -90,6 +93,7 @@ impl SandAgentState {
             write_agent_memory: None,
             remove_agent_memory: None,
             write_agent_profile: None,
+            write_agent_settings: None,
         })
     }
 
@@ -106,6 +110,10 @@ impl SandAgentState {
     }
     pub fn with_agent_profile_writer(mut self, writer: AgentProfileWriter) -> Self {
         self.write_agent_profile = Some(writer);
+        self
+    }
+    pub fn with_agent_settings_writer(mut self, writer: AgentSettingsWriter) -> Self {
+        self.write_agent_settings = Some(writer);
         self
     }
     pub fn agent_dir(&self) -> &Path { &self.agent_dir }
@@ -288,6 +296,9 @@ impl SandAgentState {
         if let Some(value) = hidden_from_sidebar { update.insert("hiddenFromSidebar".into(), Value::Bool(value)); }
         if let Some(value) = notify_on_agent_updates { update.insert("notifyOnAgentUpdates".into(), Value::Bool(value)); }
         if update.is_empty() { return StateWriteResult::failure("nothing to change - pass at least one setting field."); }
+        if let Some(write_agent_settings) = self.write_agent_settings.as_ref() {
+            return write_agent_settings(update);
+        }
         match write_sand_settings_file(get_sand_settings_path(&self.agent_dir), &update) {
             Ok(()) => StateWriteResult::success("Updated your settings."),
             Err(error) => StateWriteResult::failure(format!("could not update settings: {error}")),

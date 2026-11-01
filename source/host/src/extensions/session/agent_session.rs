@@ -9,7 +9,6 @@ use serde::{Deserialize, Serialize};
 use serde_json::{Map, Value};
 
 use crate::agents::agent_profile::SandAgentProfile;
-use crate::agents::settings_file::{get_sand_settings_path, write_sand_settings_file};
 use crate::storage::store_db::delete_sand_agent_db_write_generation;
 use crate::transcript_mutation_events::publish_transcript_mutation;
 use crate::extensions::memory::memory_service::FileMemoryStore;
@@ -1026,14 +1025,7 @@ impl SandAgentSessionStore {
     }
 
     fn write_settings(&self, agent_id: &str, update: Map<String, Value>) -> Result<(), String> {
-        if !self.agent_dir_exists(agent_id) {
-            return Err(format!("Agent missing: {agent_id}"));
-        }
-        write_sand_settings_file(
-            get_sand_settings_path(self.get_agent_dir(agent_id)),
-            &update,
-        )
-        .map_err(|error| error.to_string())
+        self.production.write_agent_settings(agent_id, update)
     }
 
     pub fn open_channel_store(&self, agent_id: &str) -> Result<FileChannelStore, String> {

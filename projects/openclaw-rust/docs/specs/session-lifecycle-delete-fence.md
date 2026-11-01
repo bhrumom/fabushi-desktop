@@ -246,6 +246,11 @@ after directory cleanup. This prevents a late writer from recreating agent
 state after successful deletion; callers already holding the boundary use the
 paired locked admission helper.
 
+The production Gateway and Runner settings paths also write through the
+existing session owner and boundary. A standalone `SandAgentState` without the
+production callback retains its local fallback for non-production construction
+and does not establish production lifecycle evidence.
+
 The session-bound automation spend-guard card path now commits its transcript
 card, owner-local spend-guard state, and activity projection in one existing
 session database transaction. Legacy records without an admission row retain

@@ -236,6 +236,11 @@ check with their mutation. Admission also fails closed when the canonical
 session database is gone, preventing post-delete writes from recreating an
 agent directory; no recursive mutex acquisition is relied upon.
 
+Production Gateway and Runner settings writes now use the existing session
+owner. The Runner's state surface receives an injected settings writer, while
+the standalone state fallback remains limited to non-production construction;
+no second settings authority was introduced.
+
 The spend-guard state setter and the atomic session-bound card/state/activity
 transaction now perform the same predicate check inside their SQLite
 transactions. A facade admission precheck can no longer be the only fence for

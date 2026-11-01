@@ -13,6 +13,7 @@ use crate::agent_isolation::{
 use crate::attachment_paths::{OutgoingMediaCustody, get_agent_media_store_roots};
 use crate::agents::agent_profile::SandAgentProfile;
 use crate::storage::agent_paths::get_sand_agents_root_dir;
+use crate::agents::settings_file::{get_sand_settings_path, write_sand_settings_file};
 
 use super::agent_db::{
     AgentDbSerdeSnapshot, CompactionCommit, CompactionCommitOutcome, PendingMemoryMutation,
@@ -1446,6 +1447,22 @@ impl ProductionSessionWorkers {
                 .map_err(|error| error.to_string())?;
             self.open_channel_store(agent_id)?
                 .remove(platform)
+                .map_err(|error| error.to_string())
+        })
+    }
+
+    pub fn write_agent_settings(
+        &self,
+        agent_id: &str,
+        update: serde_json::Map<String, serde_json::Value>,
+    ) -> Result<(), String> {
+        self.with_agent_filesystem_mutation(agent_id, || {
+            self.assert_agent_work_admission_locked(agent_id)?;
+            let db_path = self.existing_session_db_path(agent_id)?;
+            let agent_dir = db_path
+                .parent()
+                .ok_or_else(|| "agent database has no parent directory".to_string())?;
+            write_sand_settings_file(get_sand_settings_path(agent_dir), &update)
                 .map_err(|error| error.to_string())
         })
     }

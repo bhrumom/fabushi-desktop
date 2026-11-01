@@ -444,6 +444,11 @@ directory (`store_connector_credential` and `disconnect_channel`) now acquire
 the same boundary and recheck admission while holding it. Secret-file and
 channel-config updates remain separate existing stores; this closes the
 in-process deletion interleaving only and does not claim cross-store atomicity.
+Production Gateway and Runner settings writes now use the same existing
+`ProductionSessionWorkers` owner; the Runner state surface injects a settings
+writer callback so its `settings.set` command does not write `settings.json`
+directly. The standalone `SandAgentState` fallback remains for non-production
+construction and is not production acceptance evidence.
 The shared owner `write_kv` boundary now fences the remaining owner-local KV
 setters at the same SQLite edge; external memory-store clear paths remain
 separately governed.
