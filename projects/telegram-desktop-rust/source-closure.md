@@ -2346,3 +2346,16 @@ Stage A remains execution-free: no GitHub Actions/check/status/workflow query or
 
 
 Round105 final source-level compliance: platform-core `e92b51e23b39dae5719f033fa1f7a20d6579dc8c` / final spec blob `fd493a83b465c985ec4f8999655e29a7f3090e17` records R1-R8 and AC1-AC7 source-review passed for `TDRP-R9-MTPROTO-FILE-TRANSFER-SOCKET-BUFFER-001`. Desktop bookkeeping checkpoint is `77e9dc1a45e9486ea8cf0ebe912b1a15c83c17a7`; executable validation remains `not-run`, accepted remains false.
+
+## Fixed-U source-entry closure: helper-retention lifecycle reference (round 106, 2026-11-01)
+
+At desktop checkpoint parent `9837dd5b6b35ec38ad177c3e39be36e8a1ab7adf`, the unique parity ledger still reported `source_entries_total=16202 / unknown=16172 / unread=16145 / omitted=0`. A complete fixed-U root-tree reread (`telegramdesktop/tdesktop@f985723b552b30fe1c17d377d57f44e61a15a8c4`, tree `91f2b083ab2877c0a17d07868eabec362a5cfca6`, `truncated=false`) was compared in tree order against all independently represented ledger `source_path@blob` and `source_paths[]` anchors. The first unrepresented blob is `.agents/skills/code-health/references/harness-lifecycle.md@f18c847326d2cfbdc8bf168e804ecbd5343ee61c`.
+
+Its exact semantics are repository quality governance, not shipping product runtime: helper inventory must share the exact scanned revision; >=90-day no-recent-use / <=2-lifetime-consumer conditions only make a helper review-eligible; unknown evidence remains conservative, open consumers hold routing, archive data is a lower bound, documentation budget/missing-index conditions are decision findings, and newly eligible/materially changed candidates are reviewed no more than once per UTC week after direct caller/dependency/build/workflow/open-work inspection. Sparse use or age alone never proves dead code/Q0 safety.
+
+Direct consumers were also read at fixed U: `.agents/skills/code-health/SKILL.md@101e69bc18d8f37c73d3b077f04d266bd939360f`, `scripts/harness.py@652a9ee7ed6a690705cad45aeff06568210db6b1`, `scripts/health.py@4fd8d8013d0efb7103a57e4ff7b1d395c448eb0d`, and `scripts/report.py@40d9512e3be2e075154230e7fa214d4b52e2bc12`. These are caller evidence only and remain independent inventory entries unless separately represented.
+
+Existing-owner-first closes the applicable behavior through the current Fabushi repository quality-health owner: root `AGENTS.md` governance plus `quality/TEST_STRATEGY.md` qualification and `quality/evidence-contract.md` evidence. Spec-first contracts were saved in `9837dd5b6b35ec38ad177c3e39be36e8a1ab7adf`; no upstream Python scanner and no second findings/task/runtime owner is introduced. The unique ledger records `TDRP-R9-CODE-HEALTH-HELPER-RETENTION-LIFECYCLE-001=implemented / validation_status=not-run / accepted=false`.
+
+This independently closes exactly one fixed-U source entry, so coverage becomes `source_entries_total=16202 / unknown=16171 / unread=16144 / omitted=0`; `responsibilities_total=125`. Stage-B executable validation, broader fixed-U semantic closure, external-source blockers and final acceptance remain open.
+

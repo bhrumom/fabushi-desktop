@@ -6,10 +6,10 @@
   "target_commit": "23d73b32e301408f9c8aed151cb1f9e442516e13",
   "coverage": {
     "source_entries_total": 16202,
-    "unknown": 16172,
-    "unread": 16145,
+    "unknown": 16171,
+    "unread": 16144,
     "omitted": 0,
-    "responsibilities_total": 124,
+    "responsibilities_total": 125,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -32288,6 +32288,272 @@
         "Telegram/SourceFiles/mtproto/facade.h@39e2f732c7df32af37ebf8222e887aec7e11b256",
         "Telegram/SourceFiles/storage/file_upload.cpp@a19470a24b6a62b58c63d8cc21d831641d970260",
         "Telegram/SourceFiles/storage/download_manager_mtproto.cpp@d0007eb17fb0bcfbdffd89b86d8efdb900fcd363"
+      ]
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+      "source_path": ".agents/skills/code-health/references/harness-lifecycle.md",
+      "source_blob_sha": "f18c847326d2cfbdc8bf168e804ecbd5343ee61c",
+      "source_kind": "repository_quality_helper_retention_reference",
+      "module_id": "tdesktop.code-health-helper-retention-lifecycle",
+      "responsibility_id": "TDRP-R9-CODE-HEALTH-HELPER-RETENTION-LIFECYCLE-001",
+      "source_symbols": [
+        "Harness helper lifecycle / Daily inventory",
+        "harness-retention:test_<name>",
+        "harness-docs:Telegram/SourceFiles/test/README.md",
+        "Weekly retention decisions",
+        "retention review preconditions"
+      ],
+      "capability_ids": [
+        "CAP-REPOSITORY-QUALITY-GOVERNANCE",
+        "CAP-REPOSITORY-TASK-EVIDENCE"
+      ],
+      "dependency_ids": [
+        ".agents/skills/code-health/SKILL.md@101e69bc18d8f37c73d3b077f04d266bd939360f",
+        ".agents/skills/code-health/scripts/harness.py@652a9ee7ed6a690705cad45aeff06568210db6b1",
+        ".agents/skills/code-health/scripts/health.py@4fd8d8013d0efb7103a57e4ff7b1d395c448eb0d",
+        ".agents/skills/code-health/scripts/report.py@40d9512e3be2e075154230e7fa214d4b52e2bc12",
+        "Fabushi repository quality-health governance",
+        "Fabushi Test Strategy",
+        "Fabushi Test Evidence Contract"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/code-health-harness-lifecycle-reference-complete-read.md",
+      "behavior_contract": "Bind reusable-helper retention to the same exact source revision as the quality scan. A reusable helper aged at least 90 days becomes review-eligible when there is no independently observed use in the preceding 90 days or at most two observed lifetime product consumers remain. Unknown evidence is conservative, known open consumers hold routing, incomplete history/archive coverage leaves the signal unverified, and age/sparse use/size never by itself proves dead code or authorizes deletion. Documentation budget/missing-index conditions are decision findings. Newly eligible or materially changed candidates are reviewed at most once per UTC week before any ordinary task proposal.",
+      "state_machine": "exact-revision quality observation -> helper inventory/coverage -> stable retention or documentation decision finding -> threshold/hold check -> at-most-weekly canonical review -> inspect role/callers/dependents/registration/build/workflow/open work/pending replacement -> retain | defer | smaller API/reference proposal | ordinary retirement proposal with class proof; stale/incomplete authority -> prior finding unverified",
+      "side_effects": [
+        "Extends existing repository quality-health governance with helper-retention semantics.",
+        "Adds source-neutral qualification/evidence contracts; no upstream Python scanner or second findings/task owner.",
+        "Closes exactly this one fixed-U source entry."
+      ],
+      "failure_cases": [
+        "Auto-deletion/routing based only on age or sparse use.",
+        "Unknown consumers or missing archive/history treated as zero use.",
+        "Known open consumer fails to hold routing.",
+        "Unchanged candidate rerouted as age increments.",
+        "Stale canonical state resolves a prior finding.",
+        "Second helper-retention scanner/findings/task owner is created."
+      ],
+      "ui_disposition": "Not applicable; repository workflow/quality governance only.",
+      "non_ui_responsibilities": [
+        "Exact-revision helper inventory provenance",
+        "90-day/no-recent-use and <=2-lifetime-consumer review triggers",
+        "Conservative unknown handling",
+        "Open-consumer routing hold",
+        "Stable retention/documentation finding identity",
+        "Weekly duplicate-review fencing",
+        "Pre-retirement source/dependency/build/workflow/open-work inspection",
+        "No-auto-delete boundary"
+      ],
+      "platform_delta": "Existing-owner-first workflow-equivalent delta only in Fabushi repository quality-health/Test Strategy/Test Evidence. No platform-core runtime change is required.",
+      "existing_owner_candidates": [
+        "AGENTS.md repository quality-health governance",
+        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md",
+        "projects/fabushi-communication-platform/quality/evidence-contract.md",
+        "ordinary Fabushi quality-task lifecycle"
+      ],
+      "existing_owner": "Fabushi repository quality-health governance / Test Strategy / Test Evidence Contract",
+      "rejected_existing_owners": [
+        "Shipping Agent/Coordinator/Host/Runner do not own repository helper retention.",
+        "Platform-core runtime/network owners are unrelated.",
+        "Copying upstream harness.py or adding a helper-specific findings/task service would duplicate ownership."
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "AGENTS.md",
+        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md",
+        "projects/fabushi-communication-platform/quality/evidence-contract.md"
+      ],
+      "fabushi_target_symbols": [
+        "Repository helper-retention lifecycle governance",
+        "Repository helper-retention lifecycle qualification",
+        "Repository helper-retention lifecycle evidence"
+      ],
+      "target_language": "Markdown",
+      "language_rationale": "This source defines repository-development quality governance rather than shipping C++ product behavior.",
+      "command_event_contracts": [
+        "exact quality scan -> same-revision helper inventory -> stable findings",
+        "age>=90d + no recent independent use -> review candidate only with conservative coverage",
+        "age>=90d + <=2 lifetime consumers -> review candidate",
+        "known open consumer -> routing hold",
+        "new/materially changed candidate -> at most one UTC-week review",
+        "review -> retain/defer/smaller API/retirement proposal; ordinary class proof still required"
+      ],
+      "state_owner": "Existing Fabushi repository quality-health findings/evidence owner",
+      "lifecycle_owner": "Existing repository quality-health observation/review and ordinary quality-task lifecycle",
+      "persistence_and_restart": "Stable finding identity, exact revision, coverage gaps, candidate trigger, weekly review identity and decision history remain durable in existing repository-quality evidence.",
+      "concurrency_and_cancellation": "Canonical quality state is reread before weekly publication; concurrent completed review or changing/dirty authority holds duplicate publication/routing.",
+      "security_boundary": "Retention metrics authorize no product mutation, deletion, configured-build truth, credential access or release verdict.",
+      "network_service_dependencies": [
+        "GitHub repository authority",
+        "GitHub Actions hosted runners for deferred Stage-B qualification"
+      ],
+      "service_owner": "Existing Fabushi repository quality/release workflow / GitHub Actions",
+      "deployment_evidence": [],
+      "implementation_status": "implemented",
+      "coverage_disposition": "workflow-equivalent",
+      "blockers": [
+        "Stage B exact-head executable qualification has not run.",
+        "Broader fixed-U source migration closure remains open."
+      ],
+      "production_entrypoints": [
+        "AGENTS.md -> Repository helper-retention lifecycle governance",
+        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md -> Repository helper-retention lifecycle qualification",
+        "projects/fabushi-communication-platform/quality/evidence-contract.md -> Repository helper-retention lifecycle evidence"
+      ],
+      "production_evidence": [
+        "fixed-U:.agents/skills/code-health/references/harness-lifecycle.md@f18c847326d2cfbdc8bf168e804ecbd5343ee61c",
+        "fixed-U:.agents/skills/code-health/SKILL.md@101e69bc18d8f37c73d3b077f04d266bd939360f",
+        "fixed-U:.agents/skills/code-health/scripts/harness.py@652a9ee7ed6a690705cad45aeff06568210db6b1",
+        "fixed-U:.agents/skills/code-health/scripts/health.py@4fd8d8013d0efb7103a57e4ff7b1d395c448eb0d",
+        "fixed-U:.agents/skills/code-health/scripts/report.py@40d9512e3be2e075154230e7fa214d4b52e2bc12",
+        "desktop-spec-commit:9837dd5b6b35ec38ad177c3e39be36e8a1ab7adf",
+        "desktop-test-strategy-blob:8a2880a3b06c6fc2f0e3d03d5acefe4c4eec2155",
+        "desktop-evidence-contract-blob:0bac03fe8809638bf15ca3ad946ff4f41d1a1727"
+      ],
+      "test_evidence": [
+        "CONTRACT-TDRP-CODE-HEALTH-HELPER-RETENTION-THRESHOLDS-001 authored, not run",
+        "CONTRACT-TDRP-CODE-HEALTH-HELPER-RETENTION-COVERAGE-001 authored, not run",
+        "CONTRACT-TDRP-CODE-HEALTH-HELPER-RETENTION-WEEKLY-001 authored, not run",
+        "CONTRACT-TDRP-CODE-HEALTH-HELPER-RETENTION-NO-AUTO-DELETE-001 authored, not run"
+      ],
+      "target_commit": "9837dd5b6b35ec38ad177c3e39be36e8a1ab7adf",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Fabushi repository development and quality governance",
+      "composition_slot": "Reusable helper inventory, retention decision and documentation-health lifecycle",
+      "capability_component": "Source-neutral repository helper-retention lifecycle",
+      "variation_axes": [
+        "recent vs no recent use",
+        "<=2 vs >2 lifetime consumers",
+        "known vs unknown consumers",
+        "open consumer vs none",
+        "deep vs shallow history",
+        "new/materially changed vs unchanged candidate",
+        "first vs duplicate UTC-week review"
+      ],
+      "shared_owner_contracts": [
+        "Fabushi repository quality-health governance",
+        "Fabushi Test Strategy",
+        "Fabushi Test Evidence Contract",
+        "ordinary Fabushi quality-task/review lifecycle"
+      ],
+      "duplicate_root_check": "No upstream Python runtime, second scanner, second findings ledger, second task queue, product runtime or release owner introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Not applicable",
+      "primary_navigation_target": "Not applicable",
+      "collection_surface": "Not applicable",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "Not applicable",
+      "detail_section": "Not applicable",
+      "capability_surface": "Quality/tooling",
+      "route_contract": "Not applicable",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Not applicable",
+      "search_local_remote_contract": "Not applicable",
+      "responsive_disposition": "Not applicable",
+      "accessibility_contract": "Not applicable",
+      "keyboard_contract": "Not applicable",
+      "state_continuity_contract": "Exact-revision/stable-finding identity survives repeated scans/restarts; incomplete coverage cannot turn an open/unverified signal into resolved or safe-to-delete.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Not applicable to workflow governance",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": null,
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "Not applicable",
+      "avatar_contract": "Not applicable",
+      "content_copy_keys": [],
+      "motion_contract": "Not applicable",
+      "reduced_motion_contract": "Not applicable",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "medium",
+      "requirement_ids": [
+        "TDRP-R9-CODE-HEALTH-HELPER-RETENTION-LIFECYCLE-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-CODE-HEALTH-HELPER-RETENTION-THRESHOLD-001",
+        "ORA-TDRP-CODE-HEALTH-HELPER-RETENTION-COVERAGE-001",
+        "ORA-TDRP-CODE-HEALTH-HELPER-RETENTION-WEEKLY-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-CODE-HEALTH-HELPER-RETENTION-EXACT-REVISION-001",
+        "INV-TDRP-CODE-HEALTH-HELPER-RETENTION-UNKNOWN-NOT-ZERO-001",
+        "INV-TDRP-CODE-HEALTH-HELPER-RETENTION-NO-AUTO-DELETE-001",
+        "INV-TDRP-CODE-HEALTH-HELPER-RETENTION-NO-SECOND-OWNER-001"
+      ],
+      "unit_case_ids": [],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-CODE-HEALTH-HELPER-RETENTION-THRESHOLDS-001",
+        "CONTRACT-TDRP-CODE-HEALTH-HELPER-RETENTION-COVERAGE-001",
+        "CONTRACT-TDRP-CODE-HEALTH-HELPER-RETENTION-WEEKLY-001",
+        "CONTRACT-TDRP-CODE-HEALTH-HELPER-RETENTION-NO-AUTO-DELETE-001"
+      ],
+      "integration_case_ids": [
+        "INT-TDRP-CODE-HEALTH-HELPER-RETENTION-REPORT-001"
+      ],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [
+        "TEMPORAL-TDRP-CODE-HEALTH-HELPER-RETENTION-WEEKLY-IDEMPOTENCE-001"
+      ],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "fault_recovery_case_ids": [
+        "FAULT-TDRP-CODE-HEALTH-HELPER-RETENTION-SHALLOW-HISTORY-001",
+        "FAULT-TDRP-CODE-HEALTH-HELPER-RETENTION-DIRTY-QUEUE-001"
+      ],
+      "performance_case_ids": [],
+      "security_case_ids": [
+        "SEC-TDRP-CODE-HEALTH-HELPER-RETENTION-PROVENANCE-001"
+      ],
+      "soak_case_ids": [],
+      "exploratory_charter_ids": [
+        "EXP-TDRP-CODE-HEALTH-HELPER-RETENTION-001"
+      ],
+      "regression_ids": [],
+      "release_gate_ids": [
+        "G-INVENTORY",
+        "G-TRACEABILITY",
+        "G-EVIDENCE",
+        "G-RELEASE"
+      ],
+      "test_fixture_ids": [
+        "repository-helper-retention-contract-fixture"
+      ],
+      "test_environment_ids": [
+        "GitHub Actions Stage B candidate matrix (not run)"
+      ],
+      "coverage_matrix_status": "pending",
+      "flake_status": "stable",
+      "release_gate_status": "pending",
+      "acceptance_reviewer": null,
+      "reviewer": null,
+      "license_and_provenance": "Behavioral repository-quality/helper-retention contract read from fixed-U harness-lifecycle.md; no upstream Python implementation copied into Fabushi shipping runtime.",
+      "notes": "Task round106/source evidence round137. Full fixed-U tree reread was truncated=false. Comparing tree order with unique ledger source_path/source_paths anchors selected this as the first independently unrepresented entry. Direct consumers were read only for semantics and remain independent inventory entries. Exactly one entry closes: unknown 16172->16171 and unread 16145->16144; omitted stays 0. Contracts authored, not run; accepted=false.",
+      "test_execution_evidence": [],
+      "id": "TDRP-R9-CODE-HEALTH-HELPER-RETENTION-LIFECYCLE-001",
+      "validation_status": "not-run",
+      "accepted": false,
+      "source_paths": [
+        ".agents/skills/code-health/references/harness-lifecycle.md@f18c847326d2cfbdc8bf168e804ecbd5343ee61c"
       ]
     }
   ],

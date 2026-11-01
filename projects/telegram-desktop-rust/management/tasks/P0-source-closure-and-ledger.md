@@ -2152,3 +2152,14 @@ Stage A remains execution-free: no GitHub Actions/check/status/workflow query or
 
 
 Round105 final source-level compliance: platform-core `e92b51e23b39dae5719f033fa1f7a20d6579dc8c` / final spec blob `fd493a83b465c985ec4f8999655e29a7f3090e17` records R1-R8 and AC1-AC7 source-review passed for `TDRP-R9-MTPROTO-FILE-TRANSFER-SOCKET-BUFFER-001`. Desktop bookkeeping checkpoint is `77e9dc1a45e9486ea8cf0ebe912b1a15c83c17a7`; executable validation remains `not-run`, accepted remains false.
+
+## Round 106 / source-entry closure — repository helper-retention lifecycle (2026-11-01)
+
+Fixed U remains `f985723b552b30fe1c17d377d57f44e61a15a8c4` (root tree `91f2b083ab2877c0a17d07868eabec362a5cfca6`). The complete fixed-U recursive tree was reread with `truncated=false`. Comparing its blob order against the unique parity ledger's independent `source_path/source_paths` anchors selected the first remaining unrepresented entry: `.agents/skills/code-health/references/harness-lifecycle.md@f18c847326d2cfbdc8bf168e804ecbd5343ee61c`.
+
+The exact reference and direct code-health consumers were read. It defines conservative helper-retention/documentation decision signals, 90-day no-recent-use / <=2-lifetime-consumer review triggers, unknown/open-consumer holds, lower-bound archive coverage, at-most-weekly canonical decisions, and pre-retirement caller/dependency/build/workflow/open-work review. Direct consumers are fixed-U `SKILL.md@101e69bc18d8f37c73d3b077f04d266bd939360f`, `harness.py@652a9ee7ed6a690705cad45aeff06568210db6b1`, `health.py@4fd8d8013d0efb7103a57e4ff7b1d395c448eb0d`, and `report.py@40d9512e3be2e075154230e7fa214d4b52e2bc12`; those consumer reads do not bulk-close their independent source entries.
+
+Existing-owner-first maps this responsibility to the existing Fabushi repository quality-health / Test Strategy / Test Evidence owner. Source-neutral helper-retention qualification/evidence contracts were first saved at desktop spec checkpoint `9837dd5b6b35ec38ad177c3e39be36e8a1ab7adf`; the integration row is `TDRP-R9-CODE-HEALTH-HELPER-RETENTION-LIFECYCLE-001`. No platform-core product/runtime change is required and no second scanner/findings/task owner is created.
+
+Exactly one source entry is closed by this round: `unknown 16172 -> 16171`, `unread 16145 -> 16144`, `omitted=0`; `responsibilities_total 124 -> 125`. Authored contracts remain `not-run`; no executable verification or acceptance is claimed.
+
