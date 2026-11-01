@@ -27,8 +27,8 @@ are approved and then implemented with focused oracles.
 
 - Fabushi source subject: current chat branch
   `codex/openclaw-rust-fusion-chat-20261101-writer`, commit
-  `2a5e4e0837204687835e4c309cfe165905cd65d8`, tree
-  `fc22448ecadd3f79dec998fe86c8dbbb62cd62f7`.
+  `1d8a0ed011ad80455f4ac246499e21ec4007b552`, tree
+  `9c6dcdd3bc0916d3ad024c9617837222b6c2ac1e`.
 - Fixed OpenClaw implementation subject: commit
   `ad8d12f126d29b0db204187adf5092db80294e70`, tree
   `04ccce62f1d74dc8e0c88290ae8ded027b7b0f16`.
