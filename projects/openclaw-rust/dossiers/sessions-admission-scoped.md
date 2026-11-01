@@ -800,3 +800,15 @@ recorded; runtime and acceptance remain pending.
 The corresponding `read_session_work_admission(agent_id)` facade now applies
 the same canonical identity validation before returning a record, so direct
 producer reads cannot become an identity source from malformed durable state.
+
+## 2026-11-01 upgrade-resume marker recovery boundary
+
+The upgrade-resume producer now retains its durable pending marker until the
+resume is accepted or the agent is explicitly terminal-lost (deleted or
+non-resumable group). Identity, dispatch, and unknown failures leave the marker
+available for a later recovery attempt. Settlement uses the full observed
+`UpgradeResumeMarker` through `clear_if_matches`, so a newer marker written for
+the same agent during recovery cannot be removed by an older pass. This is a
+bounded recovery correction under the existing transcript/session owner; it
+does not establish the complete detached-result lifecycle, exact-head
+verification, runtime acceptance, or any global completion flag.
