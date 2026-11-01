@@ -6,10 +6,10 @@
   "target_commit": "23d73b32e301408f9c8aed151cb1f9e442516e13",
   "coverage": {
     "source_entries_total": 16202,
-    "unknown": 16166,
-    "unread": 16139,
+    "unknown": 16165,
+    "unread": 16138,
     "omitted": 0,
-    "responsibilities_total": 130,
+    "responsibilities_total": 131,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -33896,6 +33896,311 @@
       "accepted": false,
       "source_paths": [
         ".agents/skills/code-health/scripts/report.py@40d9512e3be2e075154230e7fa214d4b52e2bc12"
+      ]
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+      "source_path": ".agents/skills/code-health/scripts/review.py",
+      "source_blob_sha": "89f15913714c54467ef40d6f42feb5c526cb0f32",
+      "source_kind": "repository_quality_diff_review_ratchet_move_only_instrument",
+      "module_id": "tdesktop.code-health-review",
+      "responsibility_id": "TDRP-R9-CODE-HEALTH-DIFF-REVIEW-RATCHET-MOVE-ONLY-001",
+      "source_symbols": [
+        "tracked_path",
+        "untracked",
+        "changed",
+        "diff_lines",
+        "base_text",
+        "added_hunks",
+        "check",
+        "definitions",
+        "mention_lines",
+        "identifiers",
+        "defines",
+        "orphaned",
+        "platform_only",
+        "stranded",
+        "grown_classes",
+        "heavier",
+        "moves",
+        "out_of_order",
+        "comparable",
+        "declaration_like"
+      ],
+      "capability_ids": [
+        "CAP-REPOSITORY-QUALITY-GOVERNANCE",
+        "CAP-REPOSITORY-TASK-EVIDENCE"
+      ],
+      "dependency_ids": [
+        ".agents/skills/code-health/SKILL.md@101e69bc18d8f37c73d3b077f04d266bd939360f",
+        ".agents/skills/code-health/scripts/clones.py@b74e6e939a3ccaae894d1afa5978f422aec8ee65",
+        ".agents/skills/code-health/scripts/cmake_model.py@e40ec0fc152958f96bd58d795f70d1a3a24ab1eb",
+        ".agents/skills/code-health/scripts/cpp_text.py@366f173248add43c34317c8fe17d9ca31d46b1d4",
+        ".agents/skills/code-health/scripts/includes.py@2c02b4e7eb821f123588e0a80056edef86fc084c",
+        ".agents/skills/code-health/scripts/metrics.py@42f42b1100f88bd85977b66dfb6bf13e9dc88e46",
+        ".agents/skills/code-health/scripts/report.py@40d9512e3be2e075154230e7fa214d4b52e2bc12",
+        ".agents/skills/code-health/scripts/sources.py@749ccc1f503e203d4a651c9ac793381e0e0a314b",
+        ".agents/skills/code-health/scripts/health.py@4fd8d8013d0efb7103a57e4ff7b1d395c448eb0d",
+        ".agents/skills/code-health/scripts/health_test.py@6058fa64a5121c966021d8589b2010480aec8794"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/code-health-review-script-complete-read.md",
+      "behavior_contract": "Compare one explicit repository change subject with its base and emit a conservative diff-time quality ratchet: hard errors for new oversized files and novel cross-target include violations; strict-escalatable warnings for excessive oversized-file growth and copied-from additions; warnings for known crossings, class growth, material source-derived header build cost, stranded references and last-use orphans; plus a separate move-only proof that rejects substantive novelty, loss or statement reordering.",
+      "state_machine": "explicit base + staged/worktree/head subject -> changed/tracked/untracked scope -> source-derived CMake/include/limit/clone evidence -> warning/error review messages + health command exit semantics; or diff -> comparable removed/added lines + scaffolding/declaration normalization + source-order proof -> MOVE_ONLY/NOT_MOVE_ONLY",
+      "side_effects": [
+        "No shipping product side effects.",
+        "Review.py is read-only over the repository subject and returns review/move evidence; command presentation/exit code remains owned by health.py.",
+        "No durable quality-ledger mutation or task routing is owned by this instrument."
+      ],
+      "failure_cases": [
+        "Working-tree, staged, or explicit base/head provenance conflated",
+        "Untracked in-scope new file omitted from working-tree review",
+        "Warning incorrectly promoted/demoted outside declared strictness rules",
+        "Novel cross-target include treated as an existing-crossing warning",
+        "Existing target crossing treated as proof the dependency is valid",
+        "Source-derived include/build-cost proxy presented as configured-build or wall-clock evidence",
+        "Copied-from evidence treated as semantic proof duplication is wrong or safe to merge",
+        "Removed definition misses a platform-only surviving caller",
+        "Same-named unrelated method/local creates a stranded false positive",
+        "Removed last use treats declaration/definition as a live use or misses style/language-key rules",
+        "Numeric literal suffixes become identifier candidates",
+        "Moved definition or complete deletion is reported as stranded/orphaned",
+        "Move-only proof accepts changed logic, initializer value, lost lines or reordered statements",
+        "Second scanner/findings ledger/task queue/review runtime introduced"
+      ],
+      "ui_disposition": "Not applicable; repository review/quality evidence only.",
+      "non_ui_responsibilities": [
+        "Changed/staged/untracked review-subject acquisition",
+        "Warning/error severity and strictness policy",
+        "Diff-time include-layering ratchet",
+        "Diff-time copied-from clone ratchet",
+        "Oversized file and class-growth ratchets",
+        "Source-derived fresh-header build-cost ratchet",
+        "Removed-definition stranded-reference review including platform files",
+        "Last-use orphan candidate review for C++/style/language names",
+        "Move-only normalization and statement-order proof",
+        "Existing command presentation/exit-code composition"
+      ],
+      "platform_delta": "No platform-core production delta. Preserve this fixed-U tooling responsibility in existing Fabushi repository quality/test-evidence and command-review governance; do not copy the upstream Python runtime or create a second scanner/findings/task owner.",
+      "existing_owner_candidates": [
+        "AGENTS.md repository quality-health command orchestration governance",
+        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md",
+        "projects/fabushi-communication-platform/quality/evidence-contract.md",
+        "existing ordinary repository review/task lifecycle"
+      ],
+      "existing_owner": "Fabushi repository quality/test-evidence governance",
+      "rejected_existing_owners": [
+        "Shipping Agent/Coordinator/Host/Runner do not own repository diff review",
+        "Product analytics/performance telemetry does not own source-quality ratchets",
+        "Platform-core runtime has no production responsibility for repository review tooling",
+        "Configured-build evidence cannot be inferred from this source-derived ratchet",
+        "Copying upstream review.py/health.py would duplicate the existing source-neutral quality command owner",
+        "A second findings ledger/task queue would split canonical repository governance"
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md",
+        "projects/fabushi-communication-platform/quality/evidence-contract.md"
+      ],
+      "fabushi_target_symbols": [
+        "Repository diff-time review ratchet and move-only qualification",
+        "Repository diff-time review ratchet and move-only evidence"
+      ],
+      "target_language": "Markdown",
+      "language_rationale": "The upstream Python source implements repository-development review instrumentation, not shipping product behavior. Fabushi preserves the applicable behavior as source-neutral review/evidence contracts under the existing quality owner instead of copying a Telegram-specific Python runtime.",
+      "command_event_contracts": [
+        "base + staged/worktree subject -> changed in-scope paths + untracked additions -> review evidence",
+        "fresh include + source-derived target graph -> novel crossing error or known-pair warning",
+        "oversized growth/copied-from evidence + strict flag -> declared warning/error severity",
+        "removed definitions/uses + full tracked tree -> stranded/orphan review candidates",
+        "base + staged/worktree/head diff -> normalized moved/lost/novel/order evidence -> MOVE_ONLY/NOT_MOVE_ONLY",
+        "review/move result -> existing health command presentation and exit outcome"
+      ],
+      "state_owner": "Existing Fabushi repository quality/test-evidence governance",
+      "lifecycle_owner": "Existing repository quality-health command/review lifecycle and GitHub Actions Stage-B evidence review",
+      "persistence_and_restart": "No review-instrument-owned durable state. Each result is recomputed from an explicit base and current staged/worktree/head subject; durable task or acceptance evidence remains in existing repository governance and must bind to the exact candidate revision.",
+      "concurrency_and_cancellation": "Review is read-only over one explicitly identified subject. If the base/index/worktree changes during evidence production, that evidence is stale and must not be promoted. Process/source/provider failure remains non-passing rather than clean.",
+      "security_boundary": "Cannot authorize source mutation, deletion, task insertion, ownership changes, configured-build/runtime truth, credentials, product acceptance, release or deployment.",
+      "network_service_dependencies": [
+        "GitHub repository authority",
+        "GitHub Actions hosted runners",
+        "GitHub Actions artifact storage"
+      ],
+      "service_owner": "Existing Fabushi repository quality/release workflow / GitHub Actions",
+      "deployment_evidence": [],
+      "implementation_status": "implemented",
+      "coverage_disposition": "workflow-equivalent",
+      "blockers": [
+        "Stage-B exact-head execution of authored diff-review and move-only contracts is pending."
+      ],
+      "production_entrypoints": [
+        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md -> Repository diff-time review ratchet and move-only qualification",
+        "projects/fabushi-communication-platform/quality/evidence-contract.md -> Repository diff-time review ratchet and move-only evidence"
+      ],
+      "production_evidence": [
+        "dossier:projects/telegram-desktop-rust/dossiers/code-health-review-script-complete-read.md",
+        "upstream-review:.agents/skills/code-health/scripts/review.py@89f15913714c54467ef40d6f42feb5c526cb0f32",
+        "desktop-spec-commit:467f75c86e3558d7c15454a1cd66f22e2ea8e6c5"
+      ],
+      "test_evidence": [
+        "CONTRACT-TDRP-CODE-HEALTH-REVIEW-SCOPE-001 authored, not run",
+        "CONTRACT-TDRP-CODE-HEALTH-REVIEW-SEVERITY-001 authored, not run",
+        "CONTRACT-TDRP-CODE-HEALTH-REVIEW-ORPHAN-REFERENCE-001 authored, not run",
+        "CONTRACT-TDRP-CODE-HEALTH-REVIEW-CLONE-001 authored, not run",
+        "CONTRACT-TDRP-CODE-HEALTH-REVIEW-INCLUDE-LAYERING-001 authored, not run",
+        "CONTRACT-TDRP-CODE-HEALTH-REVIEW-BUILD-COST-001 authored, not run",
+        "CONTRACT-TDRP-CODE-HEALTH-REVIEW-CLASS-GROWTH-001 authored, not run",
+        "CONTRACT-TDRP-CODE-HEALTH-MOVE-ONLY-001 authored, not run",
+        "INT-TDRP-CODE-HEALTH-REVIEW-HEALTH-COMPOSITION-001 authored, not run"
+      ],
+      "target_commit": "467f75c86e3558d7c15454a1cd66f22e2ea8e6c5",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Fabushi repository development and quality evidence governance",
+      "composition_slot": "Diff-time repository quality ratchet and move-only proof",
+      "capability_component": "Source-neutral repository review evidence",
+      "variation_axes": [
+        "working tree vs staged index vs explicit base/head",
+        "tracked changed file vs untracked in-scope addition vs deletion",
+        "normal vs strict review",
+        "novel target crossing vs already-crossed target pair",
+        "new oversized file vs already-oversized bounded growth vs excessive growth",
+        "fresh header low vs material source-derived build cost",
+        "definition removed with platform/class-qualified mention vs complete deletion vs moved definition",
+        "last use removed with only declarations remaining vs genuine surviving use",
+        "copy-pasted addition vs no copied-from match",
+        "move-only extraction vs changed initializer/logic vs reordered statements vs whole-function reordering"
+      ],
+      "shared_owner_contracts": [
+        "Fabushi Test Strategy",
+        "Fabushi Test Evidence Contract",
+        "Repository quality-health governance",
+        "Repository quality-health command orchestration",
+        "Repository duplicate/clone evidence",
+        "Repository include-graph and build-cost evidence",
+        "Repository source-metric/unused evidence",
+        "Repository report limit policy"
+      ],
+      "duplicate_root_check": "No upstream Python review runtime, second scanner/findings ledger/task queue/product telemetry/configured-build owner introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Not applicable",
+      "primary_navigation_target": "Not applicable",
+      "collection_surface": "Not applicable",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "Not applicable",
+      "detail_section": "Not applicable",
+      "capability_surface": "Quality/tooling",
+      "route_contract": "Not applicable",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Not applicable",
+      "search_local_remote_contract": "Not applicable",
+      "responsive_disposition": "Not applicable",
+      "accessibility_contract": "Not applicable",
+      "keyboard_contract": "Not applicable",
+      "state_continuity_contract": "Review evidence is ephemeral and bound to explicit base/subject identity; move-only and warning/error outcomes are recomputed and cannot silently become durable acceptance evidence.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Not applicable",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": null,
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "Not applicable",
+      "avatar_contract": "Not applicable",
+      "content_copy_keys": [],
+      "motion_contract": "Not applicable",
+      "reduced_motion_contract": "Not applicable",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "medium",
+      "requirement_ids": [
+        "TDRP-R9-CODE-HEALTH-DIFF-REVIEW-RATCHET-MOVE-ONLY-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-CODE-HEALTH-REVIEW-SEVERITY-001",
+        "ORA-TDRP-CODE-HEALTH-REVIEW-REFERENCE-LIVENESS-001",
+        "ORA-TDRP-CODE-HEALTH-REVIEW-BUILD-COST-001",
+        "ORA-TDRP-CODE-HEALTH-MOVE-ONLY-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-CODE-HEALTH-REVIEW-EXPLICIT-SUBJECT-001",
+        "INV-TDRP-CODE-HEALTH-REVIEW-STRICTNESS-001",
+        "INV-TDRP-CODE-HEALTH-REVIEW-CONSERVATIVE-REFERENCE-001",
+        "INV-TDRP-CODE-HEALTH-REVIEW-NO-CONFIGURED-BUILD-CLAIM-001",
+        "INV-TDRP-CODE-HEALTH-REVIEW-NO-SECOND-OWNER-001"
+      ],
+      "unit_case_ids": [],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-CODE-HEALTH-REVIEW-SCOPE-001",
+        "CONTRACT-TDRP-CODE-HEALTH-REVIEW-SEVERITY-001",
+        "CONTRACT-TDRP-CODE-HEALTH-REVIEW-ORPHAN-REFERENCE-001",
+        "CONTRACT-TDRP-CODE-HEALTH-REVIEW-CLONE-001",
+        "CONTRACT-TDRP-CODE-HEALTH-REVIEW-INCLUDE-LAYERING-001",
+        "CONTRACT-TDRP-CODE-HEALTH-REVIEW-BUILD-COST-001",
+        "CONTRACT-TDRP-CODE-HEALTH-REVIEW-CLASS-GROWTH-001",
+        "CONTRACT-TDRP-CODE-HEALTH-MOVE-ONLY-001"
+      ],
+      "integration_case_ids": [
+        "INT-TDRP-CODE-HEALTH-REVIEW-HEALTH-COMPOSITION-001"
+      ],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "fault_recovery_case_ids": [
+        "FAULT-TDRP-CODE-HEALTH-REVIEW-STALE-SUBJECT-001",
+        "FAULT-TDRP-CODE-HEALTH-REVIEW-PROVIDER-FAILURE-001"
+      ],
+      "performance_case_ids": [],
+      "security_case_ids": [
+        "SEC-TDRP-CODE-HEALTH-REVIEW-AUTHORITY-001"
+      ],
+      "soak_case_ids": [],
+      "exploratory_charter_ids": [
+        "EXP-TDRP-CODE-HEALTH-REVIEW-001"
+      ],
+      "regression_ids": [],
+      "release_gate_ids": [
+        "G-INVENTORY",
+        "G-TRACEABILITY",
+        "G-EVIDENCE",
+        "G-RELEASE"
+      ],
+      "test_fixture_ids": [
+        "repository-diff-review-ratchet-move-only-contract-fixture"
+      ],
+      "test_environment_ids": [
+        "GitHub Actions Stage B candidate matrix (not run)"
+      ],
+      "coverage_matrix_status": "pending",
+      "flake_status": "stable",
+      "release_gate_status": "pending",
+      "acceptance_reviewer": null,
+      "reviewer": null,
+      "license_and_provenance": "Behavioral repository-quality diff-review/move-only contract read from fixed-U review.py, SKILL.md and direct fixed-U health/health_test consumers; no upstream Python implementation copied into Fabushi shipping runtime.",
+      "notes": "Task round112/source evidence round143. Complete fixed-U tree reread truncated=false confirms review.py is the next independent unrepresented blob after represented report.py; sources.py remains the next independent unrepresented script entry. Exact review.py plus health/health_test/SKILL consumers and clone/CMake/text/include/metrics/report/source providers were read. Exactly one independent source entry closes: unknown 16166->16165, unread 16139->16138, responsibilities 130->131. Contracts authored, not run; accepted=false.",
+      "test_execution_evidence": [],
+      "id": "TDRP-R9-CODE-HEALTH-DIFF-REVIEW-RATCHET-MOVE-ONLY-001",
+      "validation_status": "not-run",
+      "accepted": false,
+      "source_paths": [
+        ".agents/skills/code-health/scripts/review.py@89f15913714c54467ef40d6f42feb5c526cb0f32"
       ]
     }
   ],
