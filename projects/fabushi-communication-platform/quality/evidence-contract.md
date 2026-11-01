@@ -742,3 +742,14 @@ Ledger evidence records input ledger identity, stable key, prior/new verdict sta
 Recovery evidence covers resumed processing markers, retained incomplete triples, prior-run reuse, explicit fresh-run override, skipped unreadable logs, terminal invalid-version/no-tag/unknown-group paths, and filesystem/output failures. Security/privacy evidence minimizes raw crash logs, dumps, usernames/user tags, addresses and module lists and forbids copying them into Fabushi product persistence or broad migration evidence absent a concrete repository-quality need.
 
 Stage A contains authored contracts only. No helper execution, git subprocess, crash read/move/delete, local triage ledger write, build, validator, test, CI, packaging, deployment, runtime evidence or acceptance is performed. `validation_status=not-run`; `accepted=false`.
+
+
+### Repository Claude settings / house-rule PostToolUse evidence
+
+For `TDRP-R9-CLAUDE-REPOSITORY-SETTINGS-HOUSE-RULE-HOOK-001`, source evidence binds fixed-U `.claude/settings.json@d47520dc0e3b7e8d6067456e33062140c75f7c79`, recursive-tree index 101 zero-based, mode 100644, 321 Git bytes / 321 decoded ASCII characters, 16 newline characters, trailing newline and 17 split lines. Complete configuration evidence records sole top-level `hooks`, sole event `PostToolUse`, exact matcher `Edit|Write|MultiEdit`, command hook type, exact command `python3 "$CLAUDE_PROJECT_DIR/tools/rules/hook.py"`, and status message `Checking house rules`.
+
+Consumer evidence identifies Claude Code repository-settings discovery as the direct host consumer and fixed-U `tools/rules/hook.py@287b36c948566659970651226c92f7b8b056b434` as the invoked helper; canonical static-policy dependency is `.clang-tidy@5610bd13664ca77549993def241eb3edaffeff7a`. Sibling `--staged` callers may be recorded only as helper reuse, not settings consumers.
+
+Scope evidence records absence of any explicit allow/deny permission list or pre-use gate, and the helper's `.cpp/.h/.mm/.cxx` source-path filter. Post-use evidence must state that nonzero correction is not proof the preceding write never occurred. Failure evidence distinguishes rule violation, malformed JSON returning 0, non-source no-op, and host/interpreter/script resolution failure; missing/failed dispatch cannot be accepted as a successful rules check. `tools/rules/test_hook.py@dce99f3507e4ec9f71c8bbd5360e9dde9b62d45f` may be bound as a source oracle without execution.
+
+Stage A contains authored contracts only. No Claude hook invocation, Edit/Write/MultiEdit execution, Python/git subprocess, clang-tidy, build, lint, validator, test, CI, packaging, deployment, installation, runtime evidence or acceptance is performed. `validation_status=not-run`; `accepted=false`.
