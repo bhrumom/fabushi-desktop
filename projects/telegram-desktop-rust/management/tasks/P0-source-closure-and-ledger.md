@@ -1306,3 +1306,10 @@ Spec-first platform-core disposition is `d2efec8b167386ad70da5607e2fd5833fc6387b
 The sole ledger adds `TDRP-R9-MTPROTO-TLS-CLIENT-HELLO-TEMPLATE-001` as `mapped / coverage_disposition=blocked / validation_status=not-run / accepted=false`, not implemented. Coverage becomes `responsibilities_total=98`; `unknown=16172`, `unread=16145`, `omitted=0`, and `unmapped_responsibilities=0` remain unchanged. Real closure requires a source-neutral extension of the existing canonical telegram-network transport/TLS lifecycle; randomness/grease/X25519/HMAC/permutation/padding and connection scheduling remain outside telegram-protocol.
 
 No GitHub Actions/status/check query or trigger, build, typecheck, lint, schema validator, generator, unit/contract/integration/E2E test, package, deployment, installation, or runtime acceptance was performed.
+
+
+### Round 97 final source-level compliance
+
+Platform-core final compliance is `06ac74bc56fcdb362e4e004980d6c60917311bf6` / spec blob `d40d0a5f6d61f4bf16cbc58e303660350885756a`, referencing desktop bookkeeping checkpoint `918837f0456ea3745bd24d8bf11fd72e379b5069`. The unique TLS-template responsibility remains `mapped / coverage_disposition=blocked / validation_status=not-run / accepted=false`; production disposition remains **no production delta**. Canonical/desktop telegram-protocol api/lib blobs remain `ebfb3670b5cd097b9ce288782c7954f5cfe9fc43` / `abab39e42f100972484191f0e52e9edd9b88c6cf`.
+
+Real implementation remains blocked on a shipping canonical telegram-network TLS camouflage ClientHello generator/socket lifecycle. No dead parser/serializer was added, and no executable validation was performed.

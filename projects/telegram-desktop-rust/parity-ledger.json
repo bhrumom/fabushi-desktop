@@ -24709,12 +24709,15 @@
         "platform-core-live-api-blob:ebfb3670b5cd097b9ce288782c7954f5cfe9fc43",
         "platform-core-live-lib-blob:abab39e42f100972484191f0e52e9edd9b88c6cf",
         "desktop-live-api-blob:ebfb3670b5cd097b9ce288782c7954f5cfe9fc43",
-        "desktop-live-lib-blob:abab39e42f100972484191f0e52e9edd9b88c6cf"
+        "desktop-live-lib-blob:abab39e42f100972484191f0e52e9edd9b88c6cf",
+        "platform-core-round66-final-compliance-commit:06ac74bc56fcdb362e4e004980d6c60917311bf6",
+        "platform-core-round66-final-spec-blob:d40d0a5f6d61f4bf16cbc58e303660350885756a",
+        "desktop-round66-bookkeeping-commit:918837f0456ea3745bd24d8bf11fd72e379b5069"
       ],
       "test_evidence": [
         "Round97 source-level disposition contract authored in durable spec; not executed."
       ],
-      "target_commit": "d2efec8b167386ad70da5607e2fd5833fc6387b0",
+      "target_commit": "06ac74bc56fcdb362e4e004980d6c60917311bf6",
       "workflow_run": null,
       "run_attempt": null,
       "job": null,
@@ -24828,7 +24831,7 @@
       "acceptance_reviewer": null,
       "reviewer": null,
       "license_and_provenance": "Behavioral responsibility is anchored to fixed-U telegramdesktop/tdesktop mtproto.tl@76225965bfc794388db241f3f760db8ab79e84f8 and mtproto_tls_socket.cpp@e7562e3ca1a1da03f5d368085d5e61d887ab3f16. No upstream C++ implementation is copied.",
-      "notes": "Round97 adjacent reread confirms this family cannot be independently closed by the current telegram-protocol owner without dead code. It remains mapped/blocked, not implemented. Production api/lib blobs remain unchanged and byte-identical between platform-core and desktop. TLS camouflage generation/socket lifecycle is the missing real owner; executable validation remains not-run.",
+      "notes": "Round97 adjacent reread confirms this family cannot be independently closed by the current telegram-protocol owner without dead code. It remains mapped/blocked, not implemented. Production api/lib blobs remain unchanged and byte-identical between platform-core and desktop. TLS camouflage generation/socket lifecycle is the missing real owner; executable validation remains not-run. Final source-level compliance is platform-core 06ac74bc56fcdb362e4e004980d6c60917311bf6/spec blob d40d0a5f6d61f4bf16cbc58e303660350885756a; desktop bookkeeping checkpoint is 918837f0456ea3745bd24d8bf11fd72e379b5069.",
       "test_execution_evidence": [],
       "validation_status": "not-run",
       "accepted": false

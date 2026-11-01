@@ -27,3 +27,8 @@ Canonical and desktop telegram-protocol production blobs remain byte-identical: 
 The unique ledger responsibility is recorded as `mapped / blocked / validation_status=not-run / accepted=false`. It is intentionally not marked implemented until a real existing canonical telegram-network TLS camouflage lifecycle exists. Coverage is `98 responsibilities / 16172 unknown / 16145 unread / 0 omitted / 0 unmapped`.
 
 No GitHub Actions/status/check query or trigger, build, typecheck, lint, schema validator, generator, unit/contract/integration/E2E test, package, deployment, installation, or runtime acceptance was performed.
+
+
+### Final source-level compliance
+
+Platform-core final compliance is `06ac74bc56fcdb362e4e004980d6c60917311bf6` / spec blob `d40d0a5f6d61f4bf16cbc58e303660350885756a`; it references desktop bookkeeping checkpoint `918837f0456ea3745bd24d8bf11fd72e379b5069`. The responsibility remains `mapped / blocked / validation_status=not-run / accepted=false`, with no production delta and no executable validation.
