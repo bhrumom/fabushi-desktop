@@ -6,10 +6,10 @@
   "target_commit": "23d73b32e301408f9c8aed151cb1f9e442516e13",
   "coverage": {
     "source_entries_total": 16202,
-    "unknown": 16131,
-    "unread": 16104,
+    "unknown": 16130,
+    "unread": 16103,
     "omitted": 0,
-    "responsibilities_total": 147,
+    "responsibilities_total": 148,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -39105,6 +39105,274 @@
       "accepted": false,
       "source_paths": [
         ".claude/commands/release.md@baaa7c261db67dced2ce052c8cde016147031a7d"
+      ]
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+      "source_path": ".claude/grab_clipboard.ps1",
+      "source_blob_sha": "bece778c6038820ca4d16bbf4224548de1e385a8",
+      "source_kind": "repository_windows_clipboard_image_acquisition_host_adapter",
+      "module_id": "tdesktop.repository-windows-clipboard-image-acquisition-host-adapter",
+      "responsibility_id": "TDRP-R9-WINDOWS-CLIPBOARD-IMAGE-ACQUISITION-HOST-ADAPTER-001",
+      "source_symbols": [
+        "param([string]$outPath)",
+        "Add-Type -AssemblyName System.Windows.Forms",
+        "[System.Windows.Forms.Clipboard]::GetImage()",
+        "$img.Save($outPath, [System.Drawing.Imaging.ImageFormat]::Png)",
+        "Write-Host \"Saved to $outPath\"",
+        "exit 0",
+        "Write-Host \"No image on clipboard\"",
+        "exit 1"
+      ],
+      "capability_ids": [
+        "CAP-REPOSITORY-PROCESS-GOVERNANCE",
+        "CAP-UI-ASSET-GOVERNANCE",
+        "CAP-REPOSITORY-QUALITY-GOVERNANCE",
+        "CAP-REPOSITORY-TASK-EVIDENCE"
+      ],
+      "dependency_ids": [
+        ".claude/commands/icon.md@479e23eceb019477fd7f2ffe4e2c13aadcfc556e",
+        ".claude/grab_clipboard.sh@80c0c6d05c99a8f1fca6c57b325f561440e7b22e",
+        "TDRP-R9-ICON-GENERATION-CLAUDE-COMMAND-ADAPTER-001"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/claude-windows-clipboard-image-acquisition-complete-read.md",
+      "behavior_contract": "Windows repository-development input adapter: accept one caller-selected output path, acquire the current clipboard image through System.Windows.Forms, save it as PNG only on successful image acquisition, report success with exit 0, report no-image with exit 1, preserve all other host/save failures as non-success, and hand the transient file back to the existing icon source-match workflow without becoming product clipboard/resource or canonical asset authority.",
+      "state_machine": "caller supplies outPath -> load Windows Forms -> Clipboard::GetImage -> image present? no => message + exit 1; yes => Save PNG to exact outPath -> message + exit 0; assembly/clipboard/path/permission/encoder/write exception => host non-success -> caller-controlled retry/recovery -> existing icon source-match gate",
+      "side_effects": [
+        "Stage-A closure changes repository process/quality evidence documentation and the unique migration ledger only.",
+        "The source behavior may write one transient PNG to a caller-selected path when later executed; no clipboard read or file write is executed in Stage A.",
+        "No product clipboard service/history, product Resource/attachment store, Computer runtime, Agent/Coordinator/Host/Runner owner, platform-core service, second icon registry or durable input store is introduced."
+      ],
+      "failure_cases": [
+        "Clipboard contains no image but caller proceeds as though acquisition succeeded",
+        "System.Windows.Forms assembly load or clipboard access fails but success is fabricated",
+        "Invalid/missing destination, directory, permission, encoder or file-write failure is normalized to success",
+        "Successful PNG save is treated as approval without the icon workflow source-match gate",
+        "Unrelated ambient clipboard content is retained or promoted to evidence/product state",
+        "Chat pixels, arbitrary local files, network images or hidden retry/watchers substitute for failed acquisition",
+        "Transient .ai/icon_* content becomes a competing canonical asset/resource store",
+        "Stage-A PowerShell/clipboard/file-save or executable validation is performed",
+        "Stage-A source work is promoted to verified/accepted"
+      ],
+      "ui_disposition": "Not a product UI surface; repository-development Windows image-input helper for the existing icon-generation workflow.",
+      "non_ui_responsibilities": [
+        "caller-provided output-path intake",
+        "Windows Forms host assembly dependency",
+        "single clipboard image acquisition",
+        "PNG encoding/save to exact caller path",
+        "success/no-image process reporting",
+        "fail-closed exception/non-success boundary",
+        "caller-owned retry/recovery handoff",
+        "transient input privacy/retention boundary"
+      ],
+      "platform_delta": "No platform-core production delta.",
+      "implementation_language": "PowerShell source behavior mapped into Markdown/JSON repository process/quality governance; no shipping runtime implementation.",
+      "target_owner": "Existing Fabushi repository development-process authority + TDRP-R9 icon source-input contract + canonical design/icon asset owner + repository quality/evidence lifecycle",
+      "existing_owner_candidates": [
+        "root AGENTS.md repository development-process authority",
+        "TDRP-R9-ICON-GENERATION-CLAUDE-COMMAND-ADAPTER-001 source-input contract",
+        "projects/fabushi-communication-platform/design-system.md (FDS-001)",
+        "projects/fabushi-communication-platform/ui-component-contract.md (FUI-001)",
+        "projects/fabushi-communication-platform/visual-acceptance.md (FVA-001)",
+        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md",
+        "projects/fabushi-communication-platform/quality/evidence-contract.md"
+      ],
+      "rejected_owners": [
+        "product clipboard service/history",
+        "product attachment/resource/media persistence",
+        "shipping Product Tasks / Automations",
+        "Agent / Coordinator / Host / Runner product runtime",
+        "Computer runtime",
+        "platform-core runtime/service",
+        "Telegram-specific or vectosolve-specific input store",
+        ".ai/icon_* as durable production truth",
+        "second icon registry or evidence system"
+      ],
+      "commands_events": [
+        "powershell -ExecutionPolicy Bypass -File .claude/grab_clipboard.ps1 <outPath>",
+        "Clipboard::GetImage",
+        "Image.Save(..., ImageFormat::Png)",
+        "Saved to <outPath>",
+        "No image on clipboard",
+        "exit 0",
+        "exit 1"
+      ],
+      "persistence_contract": "The helper owns no durable store. A successful PNG is transient caller-owned repository-development input; the icon workflow owns its scratch lifetime and source-match lineage. Ambient clipboard state, unrelated user content and credentials are not durable evidence or product state. Canonical icon identity remains with the existing Fabushi asset/icon owner.",
+      "concurrency_contract": "One helper invocation reads the clipboard once and writes the caller-selected path synchronously. Concurrent clipboard or path changes are outside helper ownership; the caller must bind the resulting file identity and reconcile target/source changes rather than infer approval or overwrite canonical state.",
+      "cancellation_contract": "No-image or any assembly/clipboard/save non-success stops acquisition. Recovery requires explicit caller retry after re-copying the intended image or correcting destination/environment. The helper has no implicit retry, background watcher or fallback source.",
+      "security_boundary": "The helper may access only host clipboard image state and the caller-selected output path during explicit invocation. It does not authorize persistence of unrelated clipboard data, chat-pixel substitution, network retrieval, credentials, product Resource creation, canonical asset publication or Stage-A execution/acceptance.",
+      "network_service_dependencies": [],
+      "service_owner": "Not applicable; repository-development Windows host-input adapter only.",
+      "deployment_evidence": [],
+      "implementation_status": "implemented",
+      "coverage_disposition": "workflow-equivalent",
+      "blockers": [],
+      "production_entrypoints": [
+        "AGENTS.md -> Repository Windows clipboard-image acquisition host-adapter authority",
+        "TDRP-R9-ICON-GENERATION-CLAUDE-COMMAND-ADAPTER-001 -> existing source-match/generation caller contract",
+        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md -> Windows clipboard-image acquisition host-adapter qualification",
+        "projects/fabushi-communication-platform/quality/evidence-contract.md -> Windows clipboard-image acquisition host-adapter evidence"
+      ],
+      "production_evidence": [
+        "spec-first commit:adb09ee3833d5e5bc8318769a0abcbc932ca958b",
+        "dossier:projects/telegram-desktop-rust/dossiers/claude-windows-clipboard-image-acquisition-complete-read.md",
+        "upstream-source:.claude/grab_clipboard.ps1@bece778c6038820ca4d16bbf4224548de1e385a8",
+        "upstream-direct-consumer:.claude/commands/icon.md@479e23eceb019477fd7f2ffe4e2c13aadcfc556e Windows Phase-0 branch",
+        "upstream-macos-peer:.claude/grab_clipboard.sh@80c0c6d05c99a8f1fca6c57b325f561440e7b22e",
+        "existing-input-owner:TDRP-R9-ICON-GENERATION-CLAUDE-COMMAND-ADAPTER-001"
+      ],
+      "test_evidence": [
+        "CONTRACT-TDRP-WINDOWS-CLIPBOARD-IMAGE-HOST-AUTHORITY-001 authored, not run",
+        "CONTRACT-TDRP-WINDOWS-CLIPBOARD-IMAGE-IO-001 authored, not run",
+        "CONTRACT-TDRP-WINDOWS-CLIPBOARD-IMAGE-PNG-001 authored, not run",
+        "CONTRACT-TDRP-WINDOWS-CLIPBOARD-IMAGE-FAIL-CLOSED-001 authored, not run",
+        "CONTRACT-TDRP-WINDOWS-CLIPBOARD-ICON-CONSUMER-001 authored, not run",
+        "CONTRACT-TDRP-WINDOWS-CLIPBOARD-RECOVERY-001 authored, not run",
+        "INT-TDRP-WINDOWS-CLIPBOARD-ICON-COMPOSITION-001 authored, not run",
+        "FAULT-TDRP-WINDOWS-CLIPBOARD-NO-IMAGE-001 authored, not run",
+        "FAULT-TDRP-WINDOWS-CLIPBOARD-SAVE-FAILURE-001 authored, not run",
+        "SEC-TDRP-WINDOWS-CLIPBOARD-INPUT-BOUNDARY-001 authored, not run"
+      ],
+      "target_commit": "adb09ee3833d5e5bc8318769a0abcbc932ca958b",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Fabushi repository development + existing icon source-input/design asset + quality evidence governance",
+      "composition_slot": "Windows clipboard image acquisition host adaptation",
+      "capability_component": "Source-neutral transient image acquisition host-adapter contract",
+      "variation_axes": [
+        "clipboard image present vs absent",
+        "valid writable destination vs invalid/missing directory/permission failure",
+        "assembly/clipboard access success vs failure",
+        "PNG encode/write success vs failure",
+        "captured source matches requested preview vs mismatch",
+        "first attempt vs explicit corrected retry",
+        "authorized transient retention vs cleanup"
+      ],
+      "shared_owner_contracts": [
+        "TDRP-R9-ICON-GENERATION-CLAUDE-COMMAND-ADAPTER-001",
+        "FDS-001",
+        "FUI-001",
+        "FVA-001",
+        "FQT-EVID-001",
+        "FMEP-001 Stage-A deferred executable validation"
+      ],
+      "duplicate_root_check": "No product clipboard/history owner, attachment/resource store, Computer owner, Agent/Coordinator/Host/Runner owner, platform-core service, second icon/input registry or durable .ai scratch truth introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Repository development tooling; no product navigation entry",
+      "primary_navigation_target": "Not applicable",
+      "collection_surface": "Not applicable",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "Transient repository design-source acquisition only",
+      "detail_section": "Not applicable",
+      "capability_surface": "Repository development tooling",
+      "route_contract": "Successful acquisition routes only to the existing icon workflow source-match gate. It cannot route directly to a canonical asset, product Resource, attachment store or visual acceptance.",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Not applicable",
+      "search_local_remote_contract": "Not applicable",
+      "responsive_disposition": "Not applicable",
+      "accessibility_contract": "Not applicable to the host input helper; accessibility remains owned by the resulting canonical icon consumer.",
+      "keyboard_contract": "Not applicable",
+      "state_continuity_contract": "Each invocation yields one acquisition result. Retry is explicit and produces a new result; source approval remains a separate icon-workflow decision, and prior failures are not rewritten.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "FDS-001",
+      "semantic_token_usage": "Not applicable to transient PNG input; canonical icon color/semantic policy remains downstream.",
+      "legacy_token_adapter": "Not applicable",
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "Helper output is transient input only and must pass source-match and downstream canonical asset gates.",
+      "avatar_contract": "Not applicable",
+      "content_copy_keys": [],
+      "motion_contract": "Not applicable",
+      "reduced_motion_contract": "Not applicable",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "medium",
+      "requirement_ids": [
+        "TDRP-R9-WINDOWS-CLIPBOARD-IMAGE-ACQUISITION-HOST-ADAPTER-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-WINDOWS-CLIPBOARD-EXACT-PATH-PNG-001",
+        "ORA-TDRP-WINDOWS-CLIPBOARD-NO-IMAGE-FAIL-001",
+        "ORA-TDRP-WINDOWS-CLIPBOARD-SOURCE-MATCH-HANDOFF-001",
+        "ORA-TDRP-WINDOWS-CLIPBOARD-NO-DURABLE-STORE-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-WINDOWS-CLIPBOARD-SUCCESS-ONLY-ON-SAVED-IMAGE-001",
+        "INV-TDRP-WINDOWS-CLIPBOARD-NO-FALLBACK-SOURCE-001",
+        "INV-TDRP-WINDOWS-CLIPBOARD-NO-PRODUCT-RESOURCE-OWNER-001",
+        "INV-TDRP-WINDOWS-CLIPBOARD-STAGE-A-NO-EXECUTION-001"
+      ],
+      "unit_case_ids": [],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-WINDOWS-CLIPBOARD-IMAGE-HOST-AUTHORITY-001",
+        "CONTRACT-TDRP-WINDOWS-CLIPBOARD-IMAGE-IO-001",
+        "CONTRACT-TDRP-WINDOWS-CLIPBOARD-IMAGE-PNG-001",
+        "CONTRACT-TDRP-WINDOWS-CLIPBOARD-IMAGE-FAIL-CLOSED-001",
+        "CONTRACT-TDRP-WINDOWS-CLIPBOARD-ICON-CONSUMER-001",
+        "CONTRACT-TDRP-WINDOWS-CLIPBOARD-RECOVERY-001"
+      ],
+      "integration_case_ids": [
+        "INT-TDRP-WINDOWS-CLIPBOARD-ICON-COMPOSITION-001"
+      ],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [],
+      "fault_recovery_case_ids": [
+        "FAULT-TDRP-WINDOWS-CLIPBOARD-NO-IMAGE-001",
+        "FAULT-TDRP-WINDOWS-CLIPBOARD-SAVE-FAILURE-001"
+      ],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "performance_case_ids": [],
+      "soak_case_ids": [],
+      "security_case_ids": [
+        "SEC-TDRP-WINDOWS-CLIPBOARD-INPUT-BOUNDARY-001"
+      ],
+      "regression_ids": [],
+      "exploratory_charter_ids": [],
+      "release_gate_ids": [
+        "G-INVENTORY",
+        "G-TRACEABILITY",
+        "G-EVIDENCE",
+        "G-RELEASE"
+      ],
+      "test_fixture_ids": [
+        "FIX-TDRP-WINDOWS-CLIPBOARD-IMAGE",
+        "FIX-TDRP-WINDOWS-CLIPBOARD-NO-IMAGE",
+        "FIX-TDRP-WINDOWS-CLIPBOARD-SAVE-FAILURE",
+        "FIX-TDRP-WINDOWS-CLIPBOARD-SOURCE-MISMATCH"
+      ],
+      "test_environment_ids": [
+        "Stage-B Windows exact candidate repository host-input evidence environment"
+      ],
+      "coverage_matrix_status": "pending",
+      "flake_status": "not-run",
+      "test_execution_evidence": [],
+      "acceptance_reviewer": null,
+      "release_gate_status": "not-run",
+      "license_and_provenance": "Behavioral repository-development host-adapter contract read from telegramdesktop/tdesktop fixed-U .claude/grab_clipboard.ps1 plus its exact icon-command consumer and macOS peer; no upstream executable copied into Fabushi shipping runtime.",
+      "reviewer": null,
+      "notes": "Task round147/source evidence round178. Live desktop checkpoint parent b165387f233904fce062458385307e34a5d51482; spec-first CAS adb09ee3833d5e5bc8318769a0abcbc932ca958b; desktop main 9993ca8e107f7e019a8201e5ab74fa54e82159f2; platform-core e92b51e23b39dae5719f033fa1f7a20d6579dc8c. Fixed-U tree 91f2b083ab2877c0a17d07868eabec362a5cfca6 is complete: 7,194 entries / 6,859 blobs. Target is tree index 97 zero-based, exact 306-byte / 306-character / 12-split-line blob. Complete PowerShell helper, direct icon consumer and macOS peer read. Existing-owner-first adds one thin Windows clipboard-image acquisition host-adapter responsibility over the existing icon source-input/design/process/quality owners. Exactly one independent source entry closes: unknown 16131->16130, unread 16104->16103; responsibilities 147->148. Contracts authored, not run; accepted=false. Next fixed-U tree blob is .claude/grab_clipboard.sh@80c0c6d05c99a8f1fca6c57b325f561440e7b22e.",
+      "validation_status": "not-run",
+      "accepted": false,
+      "source_paths": [
+        ".claude/grab_clipboard.ps1@bece778c6038820ca4d16bbf4224548de1e385a8"
       ]
     }
   ],
