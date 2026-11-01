@@ -142,6 +142,8 @@ send_to_agent_with_session
   apply direct-agent policy to it.
 - A reply context that does not resolve to a ready pending turn is not treated
   as a new conversation turn.
+- An inbound reply context that is present but lacks non-empty `targetId` or
+  `quote` is rejected before the routed turn is dispatched.
 - Compatibility sends without an admitted sender session remain uncorrelated and
   do not call the registry.
 

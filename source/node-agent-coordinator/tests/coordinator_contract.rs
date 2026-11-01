@@ -2067,6 +2067,15 @@ fn agent_inbound_direct_wake_forwards_selected_images_without_group_fanout() {
         "selectedImages": "not-an-array"
     }))
     .is_err());
+    assert!(prepare_agent_inbound_wake_routes(&json!({
+        "agentId": "agent-target",
+        "sourceAgentId": "agent-source",
+        "prompt": "[agent] peer message",
+        "inbound": {
+            "replyContext": {"targetId": "outbound-1", "quote": " "}
+        }
+    }))
+    .is_err());
 }
 
 

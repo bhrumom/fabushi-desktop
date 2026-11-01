@@ -517,10 +517,25 @@ pub fn prepare_agent_inbound_wake_routes(
     }
     if let Some(inbound) = payload.get("inbound").filter(|value| !value.is_null()) {
         send_args["agentWake"]["inbound"] = inbound.clone();
-        if let Some(reply_context) = inbound
-            .get("replyContext")
-            .filter(|value| value.is_object())
-        {
+        if let Some(reply_context) = inbound.get("replyContext") {
+            let context = reply_context.as_object().ok_or_else(|| {
+                Failure::new(
+                    "INFERENCE_AGENT_WAKE_INVALID",
+                    "agent inbound replyContext must be an object",
+                )
+            })?;
+            for field in ["targetId", "quote"] {
+                if context
+                    .get(field)
+                    .and_then(Value::as_str)
+                    .is_none_or(|value| value.trim().is_empty())
+                {
+                    return Err(Failure::new(
+                        "INFERENCE_AGENT_WAKE_INVALID",
+                        format!("agent inbound replyContext requires non-empty {field}"),
+                    ));
+                }
+            }
             send_args["replyContext"] = reply_context.clone();
         }
     }
