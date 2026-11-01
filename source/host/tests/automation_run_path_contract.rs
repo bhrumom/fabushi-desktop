@@ -111,6 +111,32 @@ fn manual_run_persists_running_then_terminal_success_after_executor_returns() {
 }
 
 #[test]
+fn background_run_without_durable_history_identity_never_reaches_executor() {
+    let root = root("missing-run-identity");
+    let store = FileAutomationStore::new(root.join("automations"));
+    let automation = create_automation(&store);
+    assert!(store.remove(&automation.id).expect("remove automation"));
+
+    let mut args = FireAutomationArgs::manual("agent-1", automation, 2_500.0);
+    args.trigger = AutomationRunTrigger::Schedule;
+    let executed = Arc::new(Mutex::new(false));
+    let executed_by_executor = Arc::clone(&executed);
+    let error = AutomationRunPath::default()
+        .fire_automation_with(&store, args, |_| {
+            *executed_by_executor.lock().unwrap() = true;
+            Ok(AutomationExecutionResult::Completed)
+        })
+        .expect_err("background run without a durable identity must fail closed");
+
+    assert_eq!(
+        error,
+        "background automation run did not produce a durable run identity"
+    );
+    assert!(!*executed.lock().unwrap());
+    let _ = fs::remove_dir_all(root);
+}
+
+#[test]
 fn failed_and_interrupted_runs_settle_as_error_and_manual_failures_are_counted() {
     let root = root("terminal");
     let store = FileAutomationStore::new(root.join("automations"));

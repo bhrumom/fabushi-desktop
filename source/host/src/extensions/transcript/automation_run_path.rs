@@ -455,27 +455,30 @@ impl AutomationRunPath {
         let run_id = run.as_ref().map(|run| run.id.clone());
 
         if args.trigger.is_background() {
-            if let Some(run_id) = run_id.as_deref() {
-                if let Err(error) = store.begin_cron_session_run(
-                    &args.agent_id,
+            let Some(run_id) = run_id.as_deref() else {
+                return Err(
+                    "background automation run did not produce a durable run identity".into(),
+                );
+            };
+            if let Err(error) = store.begin_cron_session_run(
+                &args.agent_id,
+                &args.automation.id,
+                run_id,
+                args.fired_at_ms,
+            ) {
+                // The history row was opened before the owner admission
+                // was attempted. Preserve a terminal history outcome so
+                // a rejected owner cannot strand a permanently running
+                // compatibility record or execute without a row fence.
+                let _ = finish_run(
+                    store,
                     &args.automation.id,
-                    run_id,
+                    Some(run_id),
+                    "error",
                     args.fired_at_ms,
-                ) {
-                    // The history row was opened before the owner admission
-                    // was attempted. Preserve a terminal history outcome so
-                    // a rejected owner cannot strand a permanently running
-                    // compatibility record or execute without a row fence.
-                    let _ = finish_run(
-                        store,
-                        &args.automation.id,
-                        Some(run_id),
-                        "error",
-                        args.fired_at_ms,
-                        Some(&error),
-                    );
-                    return Err(error);
-                }
+                    Some(&error),
+                );
+                return Err(error);
             }
         }
 
