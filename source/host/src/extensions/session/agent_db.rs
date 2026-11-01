@@ -1895,18 +1895,21 @@ impl SandAgentDb {
     ) -> Result<bool, AgentDbProjectionError> {
         self.run_write("retireLegacyConversationBlobs", |db| {
             db.execute_batch("BEGIN IMMEDIATE")?;
-            let result = (|| -> Result<(), rusqlite::Error> {
+            let result = (|| -> Result<bool, rusqlite::Error> {
+                if !session_work_write_is_admitted(db)? {
+                    return Ok(false);
+                }
                 db.execute(CLEAR_BLOBS_SQL, [])?;
                 db.execute(
                     SET_KV_SQL,
                     params![KV_LEGACY_BLOB_RETIREMENT, version.to_string()],
                 )?;
-                Ok(())
+                Ok(true)
             })();
             match result {
-                Ok(()) => {
+                Ok(changed) => {
                     db.execute_batch("COMMIT")?;
-                    Ok(true)
+                    Ok(changed)
                 }
                 Err(error) => {
                     let _ = db.execute_batch("ROLLBACK");
@@ -4766,12 +4769,10 @@ pub fn write_persisted_version(
     key: &str,
     version: u64,
 ) -> Result<bool, AgentDbProjectionError> {
-    let db = open_projection_db(db_path, busy_timeout_ms)?;
-    let changed = db.execute(SET_KV_SQL, params![key, version.to_string()])? > 0;
-    if changed {
-        bump_db_write_generation(db_path);
-    }
-    Ok(changed)
+    let mut options = SandAgentDbOptions::default();
+    options.recovery.busy_timeout_ms = busy_timeout_ms;
+    let owner = SandAgentDb::open_with_options_and_seed(db_path, options, false)?;
+    owner.write_kv(key, &version.to_string())
 }
 
 pub fn stale_root_cleanup_version(
@@ -4827,16 +4828,10 @@ pub fn retire_persisted_legacy_conversation_blobs(
     busy_timeout_ms: u64,
     version: u64,
 ) -> Result<bool, AgentDbProjectionError> {
-    let mut db = open_projection_db(db_path, busy_timeout_ms)?;
-    let transaction = db.transaction_with_behavior(rusqlite::TransactionBehavior::Immediate)?;
-    transaction.execute(CLEAR_BLOBS_SQL, [])?;
-    transaction.execute(
-        SET_KV_SQL,
-        params![KV_LEGACY_BLOB_RETIREMENT, version.to_string()],
-    )?;
-    transaction.commit()?;
-    bump_db_write_generation(db_path);
-    Ok(true)
+    let mut options = SandAgentDbOptions::default();
+    options.recovery.busy_timeout_ms = busy_timeout_ms;
+    let owner = SandAgentDb::open_with_options_and_seed(db_path, options, false)?;
+    owner.retire_legacy_conversation_blobs(version)
 }
 
 pub fn read_persisted_transcript_entries(

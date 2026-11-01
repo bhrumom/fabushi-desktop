@@ -223,6 +223,12 @@ The clone-specific pre-admission reseed helper remains the only separate
 identity initialization path; normal metadata updates cannot create a rebound
 owner identity and rely on a later reopen to discover it.
 
+Session maintenance's legacy-blob retirement and repair/stale-root version
+markers now use the existing `SandAgentDb` owner. Retirement checks the shared
+admission predicate in the same transaction as blob cleanup and its marker;
+version markers use the owner KV transaction, so maintenance cannot publish
+session-owned cleanup state after archive or deletion custody wins.
+
 The archive/restore owner now receives and checks both canonical
 `session_key` and `session_id` inside its transaction, so a producer cannot
 pass a valid session id with a different session selector and still mutate
