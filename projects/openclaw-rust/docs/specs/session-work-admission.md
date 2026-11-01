@@ -50,9 +50,10 @@ Current Fabushi has per-agent SQLite transcript state and lifecycle revisions.
 The owner now also has a migration-safe `sessionWorkAdmission` record,
 generation-bound background admission/recheck, and a same-owner idempotent
 hidden result receipt for the bounded local background-revival path. There is
-still no complete media custody contract or provider-review terminal consumer;
-the media owner now has a durable path fence, settlement receipt, and bounded
-reopen recovery consumer.
+still no complete media custody contract or provider-review terminal
+settlement consumer; the session owner now has bounded typed refusal recording
+and continuation admission, while the media owner has a durable path fence,
+settlement receipt, and bounded reopen recovery consumer.
 The authenticated Host Gateway archive/restore producer is now the first
 bounded production path, limited to canonical main sessions and fail-closed
 while admitted work, active generated-subagent work, or an active foreground
@@ -137,7 +138,8 @@ record before admission. Focused contracts cover rejection before durable
 write, admission after the fence clears, create-only migration, guarded
 archive transition, archived routed-work rejection, and stale transition
 rejection. This still does not wire detached background-result settlement or
-the provider-review terminal consumer, so the responsibility remains open.
+the provider-review terminal settlement consumer, so the responsibility remains
+open.
 
 The background revival path now also captures the active main-session
 `lifecycle_revision` before routed admission and rechecks the same generation
@@ -171,7 +173,7 @@ identity/revision guards and rejects active admitted work, active generated
 subagent work, and active foreground Runner streams before the durable
 transition. The media custody integration now includes durable path capture and
 bounded reopen recovery, but full detached media/result replay and the
-provider-review terminal consumer remain absent. The next implementation
+provider-review terminal settlement consumer remains absent. The next implementation
 instrument must
 extend the existing session/transcript owner with those explicit outcomes; it
 must not replace the receipt with a best-effort CAS or add a parallel store.

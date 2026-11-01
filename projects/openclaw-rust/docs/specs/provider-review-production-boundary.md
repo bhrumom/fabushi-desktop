@@ -9,10 +9,11 @@ Responsibility: `OCRM-RESP-SESSION-WORK-ADMISSION-001`
 The fixed OpenClaw source records provider-authored refusal findings against
 one admitted session/run and lifecycle generation, then requires a host-issued
 acknowledgment before a continuation run can claim the review. Fabushi's
-current Rust provider path collapses provider failures into generic
-`Protocol`/`Transport` errors and has no durable review consumer. This spec
-defines the missing producer → admission owner → durable state → continuation
-consumer chain using existing Fabushi owners.
+current Rust provider path has the bounded producer → admission owner → durable
+state → continuation-admission slice, but still lacks the terminal
+settlement/clear consumer for successful, cancelled, or dispatch-unknown
+continuations. This spec defines the remaining lifecycle using existing
+Fabushi owners.
 
 The fixed refusal envelope was re-read against the frozen upstream subject:
 the direct Responses API shape supplies only the bounded explanation,
@@ -79,8 +80,9 @@ durable while continuation capability issuance correctly fails closed.
 Target state is one owner-local review record bound to the session admission
 generation. The provider/turn owner emits a typed refusal; the session owner
 records it; the authenticated Gateway continuation producer requests a
-host-issued acknowledgment; and the next run consumes that capability before
-provider dispatch.
+host-issued acknowledgment; the next run consumes that capability before
+provider dispatch; and the same session owner settles or clears the review only
+after the continuation has a known terminal outcome.
 
 ## Ownership and interfaces
 
@@ -95,6 +97,10 @@ provider dispatch.
   existing `accept_routed_send` and `runner.startRoutedProvider` owners.
 - `ProductionTranscriptRuntime` owns transcript publication and must not infer
   review acceptance from terminal text.
+- The existing Runner/turn settlement owner must report a known continuation
+  outcome back to the session owner; dispatch failure, cancellation, and
+  outcome-unknown paths must retain or explicitly settle the review without
+  making a stale `accepted` phase look actionable.
 
 ## Failure modes
 
@@ -120,9 +126,11 @@ run.
 `PR-01`–`PR-07` each require direct positive and negative evidence: malformed
 refusal, stale generation, duplicate/conflicting review, forged serialized
 acknowledgment, double claim, runtime mismatch, incognito rejection, and
-successful accepted continuation. Static contracts are design evidence only;
-the parity row remains pending until production wiring and exact-head
-verification are complete.
+successful accepted continuation. The remaining terminal-settlement contract
+also requires direct evidence for success, cancellation, dispatch failure, and
+outcome-unknown handling, including review projection after settlement. Static
+contracts are design evidence only; the parity row remains pending until the
+full lifecycle wiring and exact-head verification are complete.
 
 ## References
 
