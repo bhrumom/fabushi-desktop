@@ -1235,3 +1235,16 @@ Publication/credential evidence must positively show the source has no Snap Stor
 Direct-consumer evidence binds GitHub push/pull_request admission, checkout/submodules, runner/firewall/LXD, more-space, Snapcraft/manifest dependency graph, artifact service and maintainers/manual consumers. No reusable-workflow caller exists because the source exposes no `workflow_call`.
 
 Stage A records 34 contract, 1 integration, 20 fault/recovery and 18 security/provenance cases as authored only. No workflow/Action/Snap/Snapcraft/LXD/iptables/disk/cache/build/package/artifact/store/sign/deploy/install/runtime operation or Actions/check/status/workflow-run query is performed. `validation_status=not-run`; `accepted=false`.
+
+
+### Repository scheduled stale issue/PR lifecycle workflow evidence contract
+
+For `TDRP-R9-REPOSITORY-STALE-WORKFLOW-001`, evidence binds fixed U `f985723b552b30fe1c17d377d57f44e61a15a8c4`, non-truncated 7,194-entry recursive tree, and exact `.github/workflows/stale.yml@0d57eb7dbd9a9f758e1e33d45afbd1aefd212614` at index 131 zero-based. Capture sole cron `30 1 * * *`, mutable `ubuntu-slim`, absent explicit permissions/concurrency/timeout/retry, and effective token policy without token values.
+
+Third-party evidence binds observed `actions/stale@v11 -> 4391f3da665fdf50b6810c1a66712fb9ba21aa93`, metadata `b3354e9d52f319ff836a35b299bc1f266ed0f480`, Node24 bundle `3171f8fb5b6a9388ff5524197c02723fcf801875`, package `90c287625590b9b083f05a4cbf9dcb51c9c88de6`, MIT `5dad4d23768e80045d5067599d233a3f7cfe138d`, and default `repo-token=${{ github.token }}`.
+
+Issue evidence proves 180-day stale age, exact stale comment, logical stale label, `enhancement` exemption, 30-day close age, inherited default close reason `not_planned`, remove-stale-on-update default, closed/locked skip, and 1000-operation budget. PR evidence separately proves that `days-before-pr-stale=-1` prevents automatic staling but does not exclude a pre-staled PR from unstale/close processing because labels are normalized and PR close age inherits 30 days.
+
+Recovery evidence binds Actions cache key `_state`, processed-ID continuation, reset after complete traversal, and cache restore/save/delete fallback. Mutation evidence must reconcile authoritative GitHub state: caught errors and pre-set stale/closed outputs cannot prove comment/label/state settlement. Comment-list failure returning `[]` is a mandatory fail-closed case.
+
+Direct consumers: scheduled admission, Node24 Action, open issue/PR-shaped listing, events/comments/labels/state APIs, Actions cache, rate-limit APIs, maintainers/reporters/readers. No reusable caller exists. Stage A records 30 contract + 1 integration + 16 fault/recovery + 12 security/privacy/provenance cases as authored only; `validation_status=not-run`, `accepted=false`.
