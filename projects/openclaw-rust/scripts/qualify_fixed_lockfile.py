@@ -23,7 +23,7 @@ from typing import Any
 
 TOP_LEVEL_RE = re.compile(r"^([A-Za-z][A-Za-z0-9_-]*):(?:\s|$)")
 CHILD_KEY_RE = re.compile(
-    r"^  (?=\S)(?:'([^']+)'|\"([^\"]+)\"|([^:]+?)):\s*(?:$|#)"
+    r"^  (?=\S)(?:'([^']+)'|\"([^\"]+)\"|([^:]+?)):\s*(?:$|#|.+$)"
 )
 INTEGRITY_RE = re.compile(r"\bintegrity:\s*([^,}\s]+)")
 
@@ -104,6 +104,7 @@ def parse_fragment(content: str) -> dict[str, Any]:
         "package_count": len(sections["packages"]),
         "snapshot_count": len(sections["snapshots"]),
         "package_keys": sorted(sections["packages"]),
+        "snapshot_keys": sorted(sections["snapshots"]),
         "package_integrities": {
             key: sorted(set(value["integrities"]))
             for key, value in sections["packages"].items()
@@ -210,11 +211,13 @@ def manifest_dependency_frontier(
     document = json.loads(frontier_path.read_text(encoding="utf-8"))
     rows: list[dict[str, Any]] = []
     package_observations: dict[str, set[str]] = {}
+    snapshot_observations: set[str] = set()
     importer_observations: dict[tuple[str, str, str], dict[str, str]] = {}
     patched_dependencies: dict[str, str] = {}
     for fragment in split_fragments(lock_content):
         parsed_fragment = parse_fragment(fragment)
         importer_observations.update(parse_importer_dependencies(fragment))
+        snapshot_observations.update(parsed_fragment["snapshot_keys"])
         patched_dependencies.update(parse_patched_dependencies(fragment))
         for key, integrities in parsed_fragment["package_integrities"].items():
             package_observations.setdefault(key, set()).update(integrities)
@@ -311,6 +314,13 @@ def manifest_dependency_frontier(
                             if row["lock_selected_integrities"]
                             else "missing"
                         )
+                        snapshot_key = f"{dependency}@{importer_row['version']}"
+                        row["lock_snapshot_key"] = snapshot_key
+                        row["lock_snapshot_status"] = (
+                            "observed"
+                            if snapshot_key in snapshot_observations
+                            else "missing"
+                        )
                         row["lock_patch_status"] = (
                             "observed"
                             if any(key in patched_dependencies for key in selected_keys)
@@ -340,6 +350,7 @@ def manifest_dependency_frontier(
                         row["lock_join_status"] = "workspace-importer-match"
                     row["lock_importer_join_status"] = "workspace-link"
                     row["lock_integrity_status"] = "not-applicable-workspace"
+                    row["lock_snapshot_status"] = "not-applicable-workspace"
                     row["lock_patch_status"] = "not-applicable-workspace"
                 elif not candidates:
                     row["lock_join_status"] = "no-lock-name-candidate"
@@ -359,6 +370,12 @@ def manifest_dependency_frontier(
                         "candidate-patch-observed"
                         if any(key in patched_dependencies for key in candidates)
                         else "not-listed"
+                    )
+                if edge_kind == "registry-or-path" and "lock_snapshot_status" not in row:
+                    row["lock_snapshot_status"] = (
+                        "peer-selection-required"
+                        if section == "peerDependencies"
+                        else "importer-resolution-missing"
                     )
                 rows.append(row)
     return rows
@@ -411,6 +428,7 @@ def qualify(
     workspace_roots = workspace_manifest_roots(frontier_path)
     for fragment in fragments:
         keys = fragment.pop("package_keys")
+        fragment.pop("snapshot_keys")
         matches = []
         for root in roots:
             prefix = f"{root}@"

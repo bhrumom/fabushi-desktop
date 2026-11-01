@@ -101,7 +101,7 @@ python3 projects/openclaw-rust/scripts/qualify_fixed_lockfile.py \
 ```
 
 The machine-readable result digest is
-`635648d0cc088fb8b3d3b939658c59cd42958969a857a022e71875a1c84cafa2`.
+`9e93c56b7f0d0b10e452930e200d2e84d8844de7867c1986f3e73c6289e34336`.
 After de-duplicating repeated frontier rows by exact manifest path/package,
 the probe scanned `15` exact manifest identities; `13` of them declare at
 least one dependency row. The output contains `176` declared dependency edges:
@@ -115,6 +115,9 @@ package keys after removing pnpm peer suffixes, while four optional peer
 declarations remain explicitly `peer-selection-required` with multiple or
 range candidates. It does not establish recursive package resolution, peer
 selection, archive bytes, generated artifacts, or license/SBOM provenance.
+The resolved registry importer keys also have `155/155` observed snapshot
+keys in the lockfile; the four peer declarations remain unselected rather
+than being treated as resolved snapshots.
 The selected `155` registry package keys and all `4` peer candidate sets have
 an integrity observation in the lockfile; this remains lock metadata, not
 independently verified archive bytes or license provenance.
