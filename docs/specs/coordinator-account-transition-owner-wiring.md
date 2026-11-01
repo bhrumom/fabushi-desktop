@@ -39,8 +39,9 @@ including when local onboarding mirror persistence fails.
   `createProductionAccountTransitionCleanup` owner.
 - A2: The owner must set the account-departing latch and fence connector
   observations before host/local cleanup, exactly once per departure.
-- A3: Host-settings clear failure must be reported and must not skip local
-  account-scope, descriptor, or MCP cleanup in the owner's `finally` path.
+- A3: Onboarding mirror-clear or Host-settings clear failure must be reported
+  and must not skip local account-scope, descriptor, or MCP cleanup in the
+  owner's `finally` path.
 - A4: `production-provider.ts` must not perform a second account-departure
   latch or host-settings mirror-clear before delegating to the account owner.
 - A5: Startup/no-previous-account transitions retain their no-op preparation
@@ -91,7 +92,8 @@ The existing transition payload and persisted settings schema are unchanged.
 
 - Preserve cleanup ordering: latch, egress fence, onboarding mirror fence/clear,
   Host clear attempt, then local scope/descriptor/MCP cleanup.
-- Preserve best-effort Host-clear reporting and `finally` cleanup semantics.
+- Preserve best-effort onboarding-mirror/Host-clear reporting and `finally`
+  cleanup semantics.
 - Do not introduce a second call to `noteAccountDeparted`, mirror clear, or
   account latch.
 - Local commit and static checks only; no tests, builds, CI, packaging, or
@@ -104,6 +106,8 @@ The existing transition payload and persisted settings schema are unchanged.
   established failure boundary.
 - Host settings clear rejects: existing owner reports it and continues its
   `finally` cleanup.
+- A failure reporter throws: the cleanup owner contains that reporting error
+  so it cannot skip the remaining cleanup.
 - Descriptor or MCP cleanup rejects: existing account-runtime error handling
   remains responsible; this change does not invent a new recovery policy.
 - `previousSlot == null`: cleanup remains a no-op.

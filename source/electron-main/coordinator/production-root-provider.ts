@@ -66,6 +66,8 @@ function accountPorts(
   const transitionCleanup = createProductionAccountTransitionCleanup({
     setAccountDeparting: () => context.accountLifecycle.beginTransition(),
     onAccountDeparted: () => context.hostSettingsFields.onAccountDeparted(),
+    reportOnboardingMirrorClearFailure: (error) =>
+      context.reportFailure("host-settings", "onboarding-clear", error),
     noteAccountDeparted: () => context.accountLifecycle.noteAccountDeparted(),
     syncHostSettingsToBox: (settings) => context.coordinatorResync.pushHostSettings(settings),
     reportHostSettingsClearFailure: (error) => context.reportFailure("host-settings", "clear", error),

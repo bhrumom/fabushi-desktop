@@ -3,6 +3,8 @@ export interface ProductionAccountTransitionCleanupDeps {
   readonly setAccountDeparting: () => void;
   /** Abandons in-flight host-settings persistence and clears its local mirror. */
   readonly onAccountDeparted: () => void;
+  /** Reports a best-effort local onboarding-mirror clear failure. */
+  readonly reportOnboardingMirrorClearFailure: (error: unknown) => void;
   /** Fences account-scoped connector work before the host-settings clear. */
   readonly noteAccountDeparted: () => void;
   /** Writes the immutable empty account-scoped host-settings snapshot. */
@@ -32,12 +34,26 @@ export interface ProductionAccountTransitionCleanup {
 export function createProductionAccountTransitionCleanup(
   deps: ProductionAccountTransitionCleanupDeps,
 ): ProductionAccountTransitionCleanup {
+  const reportBestEffort = (
+    reporter: (error: unknown) => void,
+    error: unknown,
+  ): void => {
+    try {
+      reporter(error);
+    } catch {
+      // Failure reporting cannot be allowed to skip account cleanup.
+    }
+  };
   return {
     async prepareAccountTransition({ previousSlot }): Promise<void> {
       if (previousSlot == null) return;
 
       deps.setAccountDeparting();
-      deps.onAccountDeparted();
+      try {
+        deps.onAccountDeparted();
+      } catch (error) {
+        reportBestEffort(deps.reportOnboardingMirrorClearFailure, error);
+      }
       deps.noteAccountDeparted();
       try {
         await deps.syncHostSettingsToBox({
@@ -47,7 +63,7 @@ export function createProductionAccountTransitionCleanup(
           mcpDisabledToolsByServerId: {},
         });
       } catch (error) {
-        deps.reportHostSettingsClearFailure(error);
+        reportBestEffort(deps.reportHostSettingsClearFailure, error);
       } finally {
         deps.clearAccountScope();
         await deps.clearGatewayDescriptor();
