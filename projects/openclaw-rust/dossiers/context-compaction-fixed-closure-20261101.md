@@ -317,7 +317,7 @@ production turn path: `ProductionTurnInputProjection` →
 turns pass `None`. A non-empty replay is rejected at the provider runtime and
 provider-session dispatch boundaries until the canonical replay producer,
 system/current-turn merge, attachment resolution, and provider-specific
-serialization are all wired. Cursor now consumes the channel through its
+serialization are now wired for all four provider families. Cursor consumes the channel through its
 existing typed checkpoint conversation; the canonical app entrypoint supplies
 the channel only when an active compaction exists. Cursor attachments remain
 fail-closed because its protobuf has no attachment part. Claude now accepts

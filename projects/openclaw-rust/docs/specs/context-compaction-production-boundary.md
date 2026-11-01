@@ -108,8 +108,10 @@ authority gates open.
   with the fixed tree.
 - The canonical Fabushi transcript/state owner is now identified as
   `ProductionSessionWorkers` delegating to the per-agent `SandAgentDb` owner.
-  It now also exposes an owner-local guarded compaction commit and replay
-  projection. The Runner still has no production caller for those APIs.
+  It exposes an owner-local guarded compaction commit and replay projection.
+  The production Runner now reads an active typed replay projection and routes
+  it through the existing provider owners; no production producer yet prepares
+  or commits a new compaction entry.
 - An earlier fixed-commit relative-import census recorded 11,895 exact-tree
   files, four unresolved relative edges, and 261 lexical external-module
   candidates with digest
@@ -139,11 +141,10 @@ authority gates open.
 - The existing production turn projection now carries an optional typed replay
   channel through the Runner and provider-runtime owners. The routed provider
   path reads the canonical replay only after an active compaction is present;
-  Cursor merges it with system/current-turn messages through its existing typed
-  checkpoint serializer. Other providers remain rejected at inference
-  dispatch until provider-specific merge and serialization are enabled, so
-  typed history cannot be flattened into the legacy
-  `ProviderMessage { role, content }` path.
+  Cursor, Responses providers, OpenRouter, and Claude each use their existing
+  provider-specific serializers. Unsupported media/typed shapes fail closed,
+  and the legacy `ProviderMessage { role, content }` path is not used for
+  compacted typed replay.
 - Prompt/memory code reads persisted compaction epochs for snapshot rendering;
   this is a separate responsibility.
 - Status remains `implementation=not-started`, `wiring=not-wired`,
