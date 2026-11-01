@@ -1451,6 +1451,19 @@ impl ProductionSessionWorkers {
         &self,
         agent_id: &str,
     ) -> Result<Arc<SandAgentDb>, String> {
+        self.with_agent_filesystem_mutation(agent_id, || {
+            self.open_agent_db_owner_locked(agent_id)
+        })
+    }
+
+    /// Open or reuse the per-agent SQLite owner while the caller already
+    /// holds the filesystem/deletion serialization boundary. All owner-open
+    /// recovery must run under that boundary, but mutation producers cannot
+    /// reacquire the non-reentrant filesystem mutex.
+    fn open_agent_db_owner_locked(
+        &self,
+        agent_id: &str,
+    ) -> Result<Arc<SandAgentDb>, String> {
         let db_path = self.existing_session_db_path(agent_id)?;
         let mut owners = self
             .db_owners
@@ -2837,7 +2850,7 @@ impl ProductionSessionWorkers {
     pub fn remove_agent_memory(&self, agent_id: &str, memory_id: &str) -> Result<bool, String> {
         self.with_agent_filesystem_mutation(agent_id, || {
             self.assert_agent_work_admission(agent_id)?;
-            let owner = self.open_agent_db_owner(agent_id)?;
+            let owner = self.open_agent_db_owner_locked(agent_id)?;
             let prior_snapshot = owner
                 .get_memory_prompt_snapshot()
                 .map_err(|error| error.to_string())?;
@@ -2884,7 +2897,7 @@ impl ProductionSessionWorkers {
     pub fn clear_agent_memories(&self, agent_id: &str) -> Result<(), String> {
         self.with_agent_filesystem_mutation(agent_id, || {
             self.assert_agent_work_admission(agent_id)?;
-            let owner = self.open_agent_db_owner(agent_id)?;
+            let owner = self.open_agent_db_owner_locked(agent_id)?;
             let prior_snapshot = owner
                 .get_memory_prompt_snapshot()
                 .map_err(|error| error.to_string())?;
@@ -3208,7 +3221,7 @@ impl ProductionSessionWorkers {
             .ok_or_else(|| "agent database has no parent directory".to_string())?;
         self.with_agent_filesystem_mutation(agent_id, || {
             self.assert_agent_work_admission(agent_id)?;
-            let owner = self.open_agent_db_owner(agent_id)?;
+            let owner = self.open_agent_db_owner_locked(agent_id)?;
             let before_files = capture_profile_mutation_files(agent_dir, true)?;
             let mutation = Self::prepare_profile_mutation(
                 &owner,
@@ -3325,7 +3338,7 @@ impl ProductionSessionWorkers {
             .ok_or_else(|| "agent database has no parent directory".to_string())?;
         self.with_agent_filesystem_mutation(agent_id, || {
             self.assert_agent_work_admission(agent_id)?;
-            let owner = self.open_agent_db_owner(agent_id)?;
+            let owner = self.open_agent_db_owner_locked(agent_id)?;
             let before_files = capture_profile_mutation_files(agent_dir, false)?;
             let previous_profile = owner
                 .get_sand_profile()

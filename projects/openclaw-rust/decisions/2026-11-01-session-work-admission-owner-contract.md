@@ -212,6 +212,14 @@ journal. Archived, deletion-pending, malformed, or rebound owner state
 therefore retains the recovery journal and fails closed instead of treating
 cleanup itself as an admitted write.
 
+Owner-open recovery now shares the per-agent filesystem/deletion serialization
+boundary with profile/avatar and external-memory producers. The public owner
+open path acquires that boundary before identity validation and media/profile/
+memory journal recovery; producers already inside the boundary call the
+non-reacquiring internal open path. This prevents recovery from interleaving
+with directory deletion or another filesystem mutation without creating a
+second lifecycle lock or owner.
+
 The spend-guard state setter and the atomic session-bound card/state/activity
 transaction now perform the same predicate check inside their SQLite
 transactions. A facade admission precheck can no longer be the only fence for

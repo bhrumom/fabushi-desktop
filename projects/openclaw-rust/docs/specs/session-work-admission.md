@@ -256,6 +256,15 @@ reopen compares every affected file with the recorded before/after states,
 restores only an exact after-state, clears an already-before state, and
 retains the journal/fence for any mismatch.
 
+Owner-open recovery for media custody, external memory, and profile/avatar
+journals runs while holding that same per-agent filesystem/deletion
+serialization boundary. Producers that already hold the boundary use an
+internal owner-open entrypoint that does not reacquire the non-reentrant lock;
+ordinary owner opens acquire the boundary before identity validation and
+recovery. This keeps reopen recovery from interleaving with directory deletion
+or another external filesystem mutation without introducing a second lock or
+owner.
+
 The same fence covers owner-local viewed/unread projections, the persisted
 session profile projection, conversation-partner membership, and profile
 snapshot clearing. These are session metadata mutations, not alternate
