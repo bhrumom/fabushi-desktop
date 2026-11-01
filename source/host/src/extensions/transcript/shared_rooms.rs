@@ -122,7 +122,7 @@ impl SharedRooms {
             .ok_or_else(|| format!("No agent found with id {from_agent_id}."))?;
         let source_entries = self.sessions.read_agent_transcript_entries(from_agent_id)?;
         let outbound_id = next_entry_id(&source_entries, TranscriptEntryIdKind::AssistantMessage);
-        let outbound_entry = json!({
+        let mut outbound_entry = json!({
             "kind": "message",
             "id": outbound_id,
             "role": "assistant",
@@ -132,6 +132,7 @@ impl SharedRooms {
             "toAgent": {"id": group_id, "name": group.name, "kind": "group"},
         });
         if let Some(session_key) = from_session_key {
+            outbound_entry["sessionKey"] = Value::String(session_key.trim().to_string());
             self.sessions.append_agent_transcript_entries_if_session_admitted(
                 from_agent_id,
                 session_key,
@@ -144,13 +145,13 @@ impl SharedRooms {
 
         let room_entries = self.sessions.read_agent_transcript_entries(group_id)?;
         let room_entry_id = next_entry_id(&room_entries, TranscriptEntryIdKind::SendMessage);
-        self.sessions.append_agent_transcript_entries(group_id, &[json!({
+        self.append_room_owned_entry(group_id, json!({
             "kind": "send-message",
             "id": room_entry_id,
             "message": {"type": "text", "content": text},
             "timestampMs": timestamp_ms,
             "author": {"id": from_agent_id, "name": sender.name},
-        })])?;
+        }))?;
         let _ = self.sessions.mark_agent_activity(group_id, timestamp_ms)?;
         Ok(LocalAgentGroupPost {
             group_name: group.name,
@@ -343,8 +344,7 @@ impl SharedRooms {
             "text": text,
             "timestampMs": now_ms(),
         });
-        self.sessions
-            .append_agent_transcript_entries(&agent_id, &[entry])?;
+        self.append_room_owned_entry(&agent_id, entry)?;
         let _ = self.sessions.mark_agent_activity(&agent_id, now_ms());
         Ok(true)
     }
@@ -476,8 +476,7 @@ impl SharedRooms {
         if !images.is_empty() {
             entry["images"] = serde_json::to_value(images).unwrap_or(Value::Array(Vec::new()));
         }
-        self.sessions
-            .append_agent_transcript_entries(&agent_id, &[entry])?;
+        self.append_room_owned_entry(&agent_id, entry)?;
         let _ = self.sessions.mark_agent_activity(&agent_id, now_ms());
         Ok(Some(agent_id))
     }
@@ -626,8 +625,7 @@ impl SharedRooms {
                 _ => {}
             }
         }
-        self.sessions
-            .append_agent_transcript_entries(&agent_id, &[entry])?;
+        self.append_room_owned_entry(&agent_id, entry)?;
         let _ = self.sessions.mark_agent_activity(&agent_id, now_ms());
         Ok(true)
     }
@@ -644,6 +642,30 @@ impl SharedRooms {
                 (!summary.is_group).then(|| summary.id)
             })
             .collect()
+    }
+
+    fn append_room_owned_entry(
+        &self,
+        agent_id: &str,
+        mut entry: Value,
+    ) -> Result<(), String> {
+        let session_key = self
+            .sessions
+            .read_session_work_admission(agent_id)?
+            .map(|record| record.session_key)
+            .filter(|value| !value.trim().is_empty());
+        if let Some(session_key) = session_key {
+            entry["sessionKey"] = Value::String(session_key.clone());
+            self.sessions.append_agent_transcript_entries_if_session_admitted(
+                agent_id,
+                &session_key,
+                &[entry],
+            )?;
+        } else {
+            self.sessions
+                .append_agent_transcript_entries(agent_id, &[entry])?;
+        }
+        Ok(())
     }
 }
 
