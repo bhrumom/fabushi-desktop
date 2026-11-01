@@ -228,7 +228,10 @@ path, as well as the owner-local transient-state clear. A deletion fence
 therefore rejects those metadata mutations at the SQLite write edge; this
 now also covers metadata CAS writes used by transcript/checkpoint owners.
 These remain bounded owner-local corrections and do not close the separate
-cross-filesystem profile/avatar or external memory-store atomicity gaps.
+checkpoint blob, profile/avatar, or external memory-store atomicity gaps. The
+checkpoint transaction now rejects confirmation under the durable fence, while
+the already-materialized external blob remains a separate cleanup/recovery
+responsibility.
 
 The owner-local admission CAS now preserves the current `deletion_pending`
 value as part of its compare predicate. Ordinary work/review/media mutations

@@ -412,6 +412,78 @@ fn owner_metadata_memory_writes_reject_deletion_fence_at_transaction_edge() {
 }
 
 #[test]
+fn owner_rejects_checkpoint_confirmation_when_deletion_fence_is_present() {
+    let root = temp_root("checkpoint-deletion-fence");
+    let agent_dir = root.join("agent-checkpoint-deletion-fence");
+    fs::create_dir_all(&agent_dir).expect("agent dir");
+    let db_path = agent_dir.join("store.db");
+    let owner = SandAgentDb::open(&db_path, 50).expect("owner");
+    assert!(owner
+        .set_metadata("latestRootBlobId", serde_json::json!("aa"))
+        .expect("seed checkpoint root"));
+    owner
+        .append_transcript_entries(&[serde_json::json!({
+            "id": "checkpoint-user",
+            "kind": "message",
+            "role": "user",
+            "content": "checkpoint",
+        })])
+        .expect("seed user entry");
+    let revision = owner
+        .get_metadata("lifecycleRevision")
+        .expect("revision")
+        .and_then(|value| value.as_str().map(ToOwned::to_owned))
+        .expect("revision value");
+    let admission = SessionWorkAdmissionRecord {
+        session_key: "agent:agent-checkpoint-deletion-fence:main".into(),
+        session_id: "session-1".into(),
+        lifecycle_revision: revision.clone(),
+        deletion_pending: true,
+        archived_at_ms: None,
+        archived_by: None,
+        archive_reason: None,
+        admitted_work_id: None,
+        admitted_media_work_id: None,
+        admitted_media_paths: Vec::new(),
+        terminal_result_idempotency_key: None,
+        provider_review_id: None,
+        provider_review_phase: None,
+        provider_review_continuation_run_id: None,
+        provider_review: None,
+    };
+    assert!(owner
+        .compare_and_set_session_work_admission(None, &admission)
+        .expect("publish deletion fence"));
+
+    assert!(owner
+        .commit_checkpoint_root_and_confirm_user_message(
+            &[0xaa],
+            &[0xbb],
+            "checkpoint-user",
+        )
+        .expect("fenced checkpoint outcome")
+        .is_none());
+    assert_eq!(
+        owner
+            .get_metadata("latestRootBlobId")
+            .expect("checkpoint root")
+            .and_then(|value| value.as_str().map(ToOwned::to_owned)),
+        Some("aa".into())
+    );
+    assert!(!owner
+        .get_transcript_entries()
+        .expect("transcript")
+        .iter()
+        .find(|entry| entry.get("id").and_then(serde_json::Value::as_str) == Some("checkpoint-user"))
+        .and_then(|entry| entry.get("confirmed"))
+        .and_then(serde_json::Value::as_bool)
+        .unwrap_or(false));
+
+    owner.close(false);
+    let _ = fs::remove_dir_all(root);
+}
+
+#[test]
 fn provider_review_owner_is_generation_bound_idempotent_and_conflict_safe() {
     let root = temp_root("provider-review-owner");
     let agent_dir = root.join("agent-review");

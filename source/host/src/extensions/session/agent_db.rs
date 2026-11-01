@@ -1173,6 +1173,9 @@ impl SandAgentDb {
 
         db.execute_batch("BEGIN IMMEDIATE")?;
         let transaction = (|| -> Result<Option<serde_json::Value>, AgentDbProjectionError> {
+            if !session_work_write_is_admitted(db).map_err(AgentDbProjectionError::Sqlite)? {
+                return Ok(None);
+            }
             let raw_metadata = db
                 .query_row(GET_KV_SQL, params!["metadata"], |row| {
                     row.get::<_, String>(0)
