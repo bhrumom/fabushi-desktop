@@ -8,7 +8,7 @@ Source: `.agents/skills/dependency-watch/references/release-trust.md@81a68395f9a
 
 ## Exact source and direct consumer
 
-The target blob was read completely: 5,849 bytes / 94 lines, fixed-U recursive tree index 61. It is the release-adoption trust policy used by Dependency Watch; it does not install, approve deployment, or itself mutate a dependency.
+The target blob was read completely: 5,849 bytes / 95 lines, fixed-U recursive tree index 61. It is the release-adoption trust policy used by Dependency Watch; it does not install, approve deployment, or itself mutate a dependency.
 
 The direct in-repository workflow consumer is `.agents/skills/dependency-watch/SKILL.md@482b3a8d0c939d4bb7bd32ab146e0cc988d29fd8`. That skill requires reading this reference before recommending any candidate and explicitly separates update urgency from the decision to update, backport, hold, skip, or track. Repository code search found no additional direct `release-trust.md` consumer. Exact fixed-U `scripts/watch.py@231c5a13e8d7e3cd337dbbad08e8f4434a943a38` and `scripts/watch_test.py@d3107c617be3e8780a99bebaeba19a4f235ae6ea` contain no release-trust field/parser reference, so they do not create a second release-decision state owner.
 

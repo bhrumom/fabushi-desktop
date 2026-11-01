@@ -2562,3 +2562,18 @@ Spec-first desktop commit `5c8958895b5596bdab43a0d635e1b69bee125c74` extends the
 Coverage after closure is `source_entries_total=16202 / unknown=16157 / unread=16130 / omitted=0 / responsibilities_total=134 / unmapped_responsibilities=0`. Next independent fixed-U blob is `.agents/skills/dependency-watch/references/release-trust.md@81a68395f9ad54ed651a84464a933ed7e57c9d32`. Full fixed-U semantic closure, Stage-B executable validation and final independent acceptance remain open.
 
 No Actions/check/status/workflow query or trigger and no executable validation was performed.
+
+
+## Round 121 / source-entry closure — Dependency Watch release-trust reference (2026-11-01)
+
+Fixed U remains `telegramdesktop/tdesktop@f985723b552b30fe1c17d377d57f44e61a15a8c4`. Exact `.agents/skills/dependency-watch/references/release-trust.md@81a68395f9ad54ed651a84464a933ed7e57c9d32` was completely read at recursive-tree index 61 (5,849 bytes / 95 lines). Direct consumer is dependency-watch `SKILL.md`; fixed-U helper/test code does not own a second release-trust parser or durable decision lifecycle.
+
+The source specializes existing `TDRP-R9-REPOSITORY-DEPENDENCY-ADVISORY-001`: release identity binds publication date, canonical source, immutable tag/peeled commit or package/artifact identity and consumed source form; mutable replacements require explicit explanation; signatures/attestations/checksums require actual verification and do not prove benign code; regressions, publisher/signer/repository/release-process changes and unavailable independent checks remain first-class evidence. Decisions are `update/backport/hold/skip/track`, with seven days as a routine fresh-bugfix observation default rather than a safety guarantee, security-urgency overrides only with evidence/rationale, and durable decision/trust/unknown/review fields.
+
+The standing XZ case is fail-closed without project-wide blacklisting or malicious-artifact execution. Current fixed-U was re-established instead of inheriting the reference's historical initial snapshot: prepare checks out XZ commit `05af863c3166cddeb4ab935829b14e995c8346b4`; CentOS Docker clones `v5.8.4`, whose current annotated tag object `9151b328e76bbc468aa64f85c741886b6227cec1` peels to `d3e650e63c110e830fd5391e7f8b45df0b91d3da`. GitHub tag-signature verification is provenance evidence only.
+
+Spec-first desktop commit `5358a6e9a978d2c2540086244f68d729f702142c` extends the existing Test Strategy/Evidence Contract and adds `projects/telegram-desktop-rust/dossiers/dependency-watch-release-trust-complete-read.md`. Authored but not run: `CONTRACT-TDRP-DEPENDENCY-RELEASE-PROVENANCE-001` and `CONTRACT-TDRP-DEPENDENCY-RELEASE-DECISION-001`.
+
+Coverage after closure is `source_entries_total=16202 / unknown=16156 / unread=16129 / omitted=0 / responsibilities_total=134 / unmapped_responsibilities=0`. Next independent fixed-U blob is `.agents/skills/dependency-watch/scripts/watch.py@231c5a13e8d7e3cd337dbbad08e8f4434a943a38`. Full fixed-U semantic closure, Stage-B executable validation and final independent acceptance remain open.
+
+No Actions/check/status/workflow query or trigger and no executable validation was performed.
