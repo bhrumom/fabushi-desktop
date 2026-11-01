@@ -78,3 +78,12 @@ longer clears by key before attempting recovery or rewrites a newer same-key
 marker when rearm fails. Successful watch/notice ownership clears only the
 exact observed marker; subagent and interrupted-shell markers retain their
 existing follow-up semantics. This remains source/contract evidence only.
+
+The separate `CompletionRevivals` settlement callbacks were rechecked and are
+not promoted to this exact-marker correction: their port receives only the
+stable `(agent, kind, workId)` identity, not the persisted marker provenance
+(`markedAtMs`, title, quiet/session scope, or replacement generation), and the
+existing contract intentionally clears that durable wake before reporting
+delivery, error, or quiesce outcomes. Closing that boundary requires a
+producer-owned completion marker identity and a revised settlement contract;
+this pass does not infer one from the work id alone.
