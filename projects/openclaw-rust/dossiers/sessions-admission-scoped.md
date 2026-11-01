@@ -555,3 +555,15 @@ and does not invent a `sessionKey` or media admission fence. A media fence
 without a session identity fails closed. No second transcript, media, or session
 state owner was introduced. Detached media lifecycle coverage, runtime/exact-
 head verification, and broader group acceptance remain pending.
+
+## 12.14 Automation cron selector admission correction — 2026-11-01
+
+Automation turns and interrupted automation upgrade-resumes no longer place a
+derived `agent:<id>:cron:<automationId>` selector directly into routed-send
+payloads. They first require the existing session owner to return an admission
+record whose canonical key exactly matches that selector; a missing record or
+the usual owner `agent:<id>:main` record fails closed. This preserves the
+existing single `ProductionSessionWorkers`/`SandAgentDb` owner and makes the
+current absence of an automation per-run session catalog explicit. It does not
+create that catalog, reaper, or heartbeat lifecycle; cron run-session closure,
+runtime verification, and acceptance remain pending.

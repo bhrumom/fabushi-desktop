@@ -3429,7 +3429,11 @@ impl UnifiedGatewayApi {
                 }
                 _ => {
                     let session_key = if let Some(automation_id) = marker.automation_id.as_deref() {
-                        format!("agent:{}:cron:{automation_id}", marker.agent_id)
+                        resolve_admitted_automation_session_key(
+                            &self.session_workers,
+                            &marker.agent_id,
+                            automation_id,
+                        )?
                     } else {
                         self.session_workers
                             .read_session_work_admission(&marker.agent_id)?
@@ -5445,7 +5449,11 @@ fn start_local_upgrade_resume_turn(
     };
     let prompt = build_upgrade_resume_prompt(&resumed_source);
     let session_key = if let Some(automation_id) = marker.automation_id.as_deref() {
-        format!("agent:{}:cron:{automation_id}", marker.agent_id)
+        resolve_admitted_automation_session_key(
+            &deps.session_workers,
+            &marker.agent_id,
+            automation_id,
+        )?
     } else {
         deps.session_workers
             .read_session_work_admission(&marker.agent_id)?
@@ -5626,6 +5634,30 @@ fn automation_terminal_from_event(
     }
 }
 
+fn resolve_admitted_automation_session_key(
+    session_workers: &ProductionSessionWorkers,
+    agent_id: &str,
+    automation_id: &str,
+) -> Result<String, String> {
+    let expected_key = format!("agent:{agent_id}:cron:{automation_id}");
+    let Some(record) = session_workers.read_session_work_admission(agent_id)? else {
+        return Err(format!(
+            "automation {automation_id} requires an existing owner-admitted cron session for {agent_id}"
+        ));
+    };
+    if record.session_key != expected_key {
+        return Err(format!(
+            "automation {automation_id} has no owner-admitted session identity for {agent_id}"
+        ));
+    }
+    if record.session_key.trim().is_empty() {
+        return Err(format!(
+            "automation {automation_id} has an empty owner-admitted session identity for {agent_id}"
+        ));
+    }
+    Ok(record.session_key)
+}
+
 fn run_local_automation_turn(
     deps: LocalRoutedRunnerDeps,
     provider: RoutedProvider,
@@ -5648,9 +5680,14 @@ fn run_local_automation_turn(
         "id": automation_id,
         "name": automation_name,
     });
+    let session_key = resolve_admitted_automation_session_key(
+        &deps.session_workers,
+        agent_id,
+        automation_id,
+    )?;
     let admission_args = serde_json::json!({
         "agentId": agent_id,
-        "sessionKey": format!("agent:{agent_id}:cron:{automation_id}"),
+        "sessionKey": session_key.clone(),
         "prompt": prompt,
         "clientNonce": client_nonce,
         "streamId": stream_id,
@@ -5676,7 +5713,7 @@ fn run_local_automation_turn(
     let runner_args = serde_json::json!({
         "provider": provider.as_str(),
         "agentId": agent_id,
-        "sessionKey": format!("agent:{agent_id}:cron:{automation_id}"),
+        "sessionKey": session_key,
         "streamId": stream_id,
         "requestSource": "automation",
         "automationWake": {
