@@ -72,6 +72,10 @@ commit, including owner-local non-empty/16,000-character summary validation and
 trim-normalized idempotent retry matching,
 and `SandAgentDb::get_compacted_transcript_entries` implements the owner-local
 replay projection. `ProductionSessionWorkers` exposes both operations. The
+compaction transaction also re-reads the existing session-work admission record
+and rejects archived or deletion-pending state at the durable write edge,
+closing the same owner-local deletion race already covered by the other
+session-admitted transcript writers. The
 focused contract test is present in
 `source/host/tests/agent_db_owner_contract.rs`, but remains unrun during the
 development freeze.

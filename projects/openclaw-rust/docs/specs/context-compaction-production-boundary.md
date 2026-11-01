@@ -115,6 +115,9 @@ authority gates open.
 - The canonical Fabushi transcript/state owner is now identified as
   `ProductionSessionWorkers` delegating to the per-agent `SandAgentDb` owner.
   It exposes an owner-local guarded compaction commit and replay projection.
+  The guarded owner transaction also re-reads the existing session-work
+  admission record and rejects archived or deletion-pending sessions inside the
+  same transaction, rather than relying only on the production facade check.
   The production Runner now reads an active typed replay projection and routes
   it through the existing provider owners. The routed-provider completion
   boundary also invokes the pure planning owner, the existing summarization

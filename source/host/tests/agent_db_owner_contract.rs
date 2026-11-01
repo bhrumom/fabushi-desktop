@@ -1471,6 +1471,70 @@ fn owner_rejects_compaction_when_transcript_tail_changes_after_planning() {
     let _ = fs::remove_dir_all(root);
 }
 
+#[test]
+fn owner_rejects_compaction_when_deletion_fence_wins_inside_commit_transaction() {
+    let root = temp_root("compaction-deletion-fence");
+    let agent_dir = root.join("agent-compaction-deletion-fence");
+    fs::create_dir_all(&agent_dir).expect("agent dir");
+    let db_path = agent_dir.join("store.db");
+    let owner = SandAgentDb::open(&db_path, 50).expect("owner");
+
+    owner
+        .append_transcript_entries(&[
+            serde_json::json!({"id":"old", "kind":"message", "role":"user", "content":"old"}),
+            serde_json::json!({"id":"tail", "kind":"message", "role":"user", "content":"planned"}),
+        ])
+        .expect("history");
+    let expected_revision = owner
+        .get_metadata("lifecycleRevision")
+        .expect("revision")
+        .and_then(|value| value.as_str().map(ToOwned::to_owned))
+        .expect("revision value");
+    let admission = SessionWorkAdmissionRecord {
+        session_key: "agent:agent-compaction-deletion-fence:main".into(),
+        session_id: "agent-compaction-deletion-fence".into(),
+        lifecycle_revision: expected_revision.clone(),
+        deletion_pending: true,
+        archived_at_ms: None,
+        archived_by: None,
+        archive_reason: None,
+        admitted_work_id: None,
+        admitted_media_work_id: None,
+        admitted_media_paths: Vec::new(),
+        terminal_result_idempotency_key: None,
+        provider_review_id: None,
+        provider_review_phase: None,
+        provider_review_continuation_run_id: None,
+        provider_review: None,
+    };
+    assert!(owner
+        .compare_and_set_session_work_admission(None, &admission)
+        .expect("publish deletion fence"));
+
+    let commit = CompactionCommit {
+        entry_id: "compaction-deletion-fenced".into(),
+        expected_transcript_tail_id: "tail".into(),
+        first_kept_entry_id: Some("tail".into()),
+        summary: "summary".into(),
+        tokens_before: 123,
+        details: None,
+        source_turn_id: "turn-deletion-fenced".into(),
+        expected_lifecycle_revision: expected_revision,
+    };
+    assert!(matches!(
+        owner.commit_compaction(&commit).expect("fenced compaction outcome"),
+        CompactionCommitOutcome::RejectedStale
+    ));
+    assert!(owner
+        .get_transcript_entries()
+        .expect("transcript remains readable")
+        .iter()
+        .all(|entry| entry.get("kind").and_then(serde_json::Value::as_str) != Some("compaction")));
+
+    owner.close(true);
+    let _ = fs::remove_dir_all(root);
+}
+
 
 #[test]
 fn owner_closes_generic_metadata_versions_and_legacy_blob_surface() {

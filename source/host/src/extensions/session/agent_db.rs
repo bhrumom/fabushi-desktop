@@ -2353,6 +2353,17 @@ impl SandAgentDb {
                         "metadata has no lifecycleRevision".into(),
                     )
                 })?;
+            if let Some(raw_admission) = db
+                .query_row(GET_KV_SQL, params![KV_SESSION_WORK_ADMISSION], |row| {
+                    row.get::<_, String>(0)
+                })
+                .optional()?
+            {
+                let admission: SessionWorkAdmissionRecord = serde_json::from_str(&raw_admission)?;
+                if admission.deletion_pending || admission.archived_at_ms.is_some() {
+                    return Ok(CompactionCommitOutcome::RejectedStale);
+                }
+            }
             if current_revision != expected_revision {
                 return Ok(CompactionCommitOutcome::RejectedStale);
             }

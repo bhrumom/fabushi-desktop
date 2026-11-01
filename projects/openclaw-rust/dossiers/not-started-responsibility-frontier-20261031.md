@@ -288,6 +288,22 @@ open. `OCRM-RESP-AGENT-CONTEXT-COMPACTION-001` therefore remains
 `not-started/not-wired/not-run/pending`; no manual or test-only compaction route
 is added.
 
+### 2026-11-01 compaction durable deletion-fence correction
+
+The compaction owner was rechecked after the existing production Runner path
+was found to reach `ProductionSessionWorkers::commit_agent_compaction`. The
+facade already rejected deletion or archive state, but the `SandAgentDb`
+`BEGIN IMMEDIATE` compaction transaction did not re-read the owner-local
+`sessionWorkAdmission` record. It now rejects archived or
+`deletion_pending` state inside that transaction and preserves the prior
+transcript. A focused contract oracle covers a deletion fence published before
+commit and expects `RejectedStale` with no compaction row.
+
+This is a durable write-edge correction only. The compaction responsibility
+still remains `not-started/not-wired/not-run/pending` because fixed-source
+transitive closure, unsupported provider/attachment behavior, live provider
+proof, and frozen verification/acceptance remain open.
+
 ## Evidence boundary
 
 These are implementation gaps, not acceptance approvals. No row is promoted by the
