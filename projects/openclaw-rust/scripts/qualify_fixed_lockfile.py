@@ -69,6 +69,11 @@ def split_fragments(content: str) -> list[str]:
     return [content[start:end] for start, end in zip(starts, starts[1:] + [len(content)])]
 
 
+def document_separator_count(content: str) -> int:
+    """Count YAML document separators without interpreting arbitrary YAML."""
+    return len(re.findall(r"^---\s*$", content, re.MULTILINE))
+
+
 def parse_fragment(content: str) -> dict[str, Any]:
     sections: dict[str, dict[str, dict[str, Any]]] = {
         "importers": {},
@@ -119,6 +124,7 @@ def package_roots(frontier_path: Path) -> list[str]:
 def qualify(repo: Path, commit: str, frontier_path: Path, lock_path: str) -> dict[str, Any]:
     blob, content = git_blob(repo, commit, lock_path)
     fragments = [parse_fragment(fragment) for fragment in split_fragments(content)]
+    separators = document_separator_count(content)
     roots = package_roots(frontier_path)
     for fragment in fragments:
         keys = fragment.pop("package_keys")
@@ -157,7 +163,8 @@ def qualify(repo: Path, commit: str, frontier_path: Path, lock_path: str) -> dic
         "sha256": hashlib.sha256(content.encode("utf-8")).hexdigest(),
         "line_count": len(content.splitlines()),
         "fragment_count": len(fragments),
-        "duplicate_top_level_lockfile_headers": len(fragments) > 1,
+        "document_separator_count": separators,
+        "duplicate_top_level_lockfile_headers": len(fragments) > 1 and separators == 0,
         "candidate_root_count": len(roots),
         "fragments": fragments,
         "authority": "unselected-raw-blob-observations",
