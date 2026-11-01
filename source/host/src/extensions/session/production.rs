@@ -3298,10 +3298,9 @@ impl ProductionSessionWorkers {
         only_request_id: Option<&str>,
     ) -> Result<Vec<String>, String> {
         self.with_agent_admitted_filesystem_mutation(agent_id, || {
-            let db_path = self.existing_session_db_path(agent_id)?;
+            let owner = self.open_agent_db_owner_locked(agent_id)?;
             expire_pending_auto_review_approval_entries(
-                &db_path,
-                self.busy_timeout_ms,
+                owner.as_ref(),
                 only_request_id,
             )
             .map_err(|error| error.to_string())
@@ -3315,10 +3314,9 @@ impl ProductionSessionWorkers {
         if_pending_before_ms: Option<f64>,
     ) -> Result<Vec<String>, String> {
         self.with_agent_admitted_filesystem_mutation(agent_id, || {
-            let db_path = self.existing_session_db_path(agent_id)?;
+            let owner = self.open_agent_db_owner_locked(agent_id)?;
             expire_pending_local_tool_permission_ask_entries(
-                &db_path,
-                self.busy_timeout_ms,
+                owner.as_ref(),
                 only_request_id,
                 if_pending_before_ms,
             )
