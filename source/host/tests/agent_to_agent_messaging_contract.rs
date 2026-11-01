@@ -119,6 +119,24 @@ fn direct_delivery_preflights_admitted_target_before_side_effects() {
 }
 
 #[test]
+fn inbound_turn_claim_is_released_when_append_inserts_nothing() {
+    let source = include_str!("../src/extensions/transcript/agent_to_agent_messaging.rs");
+    let inbound = source
+        .split("pub fn persist_agent_inbound_message(")
+        .nth(1)
+        .expect("inbound owner exists")
+        .split("fn now_ms(")
+        .next()
+        .expect("inbound owner boundary exists");
+    let no_insert = inbound
+        .split("if inserted == 0 {")
+        .nth(1)
+        .expect("no-insert branch exists");
+    assert!(no_insert.contains("pending_conversation_turns().release"));
+    assert!(!no_insert.contains("pending_conversation_turns().complete"));
+}
+
+#[test]
 fn persisted_never_policy_rejects_before_transcript_or_wake(){
     let root=temp_root();let sessions=Arc::new(ProductionSessionWorkers::with_agents_root(&root,500));
     let alpha=sessions.materialize_new_session(Some(&profile("Alpha")),"user",None).expect("alpha");

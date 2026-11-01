@@ -612,7 +612,7 @@ pub fn persist_agent_inbound_message(
     };
     if inserted == 0 {
         if let Some(reply) = claimed_turn.as_ref() {
-            let _ = sessions.pending_conversation_turns().complete(agent_id, &reply.id);
+            let _ = sessions.pending_conversation_turns().release(agent_id, &reply.id);
         }
         return Ok(false);
     }
