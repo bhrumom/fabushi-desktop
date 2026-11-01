@@ -1,0 +1,329 @@
+//! Provider-owned serialization for the strict transcript replay model.
+//!
+//! These functions are intentionally pure and are not wired into the live
+//! Runner yet. They make provider capability and attachment failures explicit
+//! before a production replay call is enabled.
+
+use serde_json::{Value, json};
+use thiserror::Error;
+
+use crate::extensions::session::typed_replay::{
+    ReplayContentPart, ReplayMessage, ReplayRole, ReplayToolCall, ReplayToolResult,
+    TypedReplayEntry,
+};
+
+const COMPACTION_SUMMARY_PREFIX: &str =
+    "The conversation history before this point was compacted into the following summary:\n\n<summary>\n";
+const COMPACTION_SUMMARY_SUFFIX: &str = "\n</summary>";
+
+#[derive(Debug, Error, Clone, PartialEq, Eq)]
+pub enum TypedReplaySerializationError {
+    #[error("provider cannot serialize typed replay role {role}")]
+    UnsupportedRole { role: &'static str },
+    #[error("provider cannot serialize structured replay content at entry {index}")]
+    UnsupportedStructuredContent { index: usize },
+    #[error("provider cannot resolve replay attachment at entry {index}: {detail}")]
+    UnsupportedAttachment { index: usize, detail: String },
+    #[error("tool result {tool_call_id} has no matching replayed tool call")]
+    UnpairedToolResult { tool_call_id: String },
+}
+
+/// Serialize typed replay into OpenAI Responses input items. Attachments must
+/// already contain a provider-usable URL; local paths are rejected rather than
+/// silently converted to text.
+pub fn serialize_responses_replay(
+    entries: &[TypedReplayEntry],
+) -> Result<Vec<Value>, TypedReplaySerializationError> {
+    let mut output = Vec::new();
+    let mut calls = std::collections::HashSet::new();
+    for (index, entry) in entries.iter().enumerate() {
+        match entry {
+            TypedReplayEntry::CompactionSummary(summary) => output.push(json!({
+                "role": "user",
+                "content": format!(
+                    "{COMPACTION_SUMMARY_PREFIX}{}{COMPACTION_SUMMARY_SUFFIX}",
+                    summary.summary
+                )
+            })),
+            TypedReplayEntry::Message(message) => {
+                serialize_responses_message(index, message, &mut output, &mut calls)?;
+            }
+            TypedReplayEntry::UserAttachment(attachment) => {
+                output.push(responses_attachment(index, &attachment.value)?);
+            }
+        }
+    }
+    Ok(output)
+}
+
+/// Serialize typed replay into OpenAI-compatible Chat Completions messages.
+/// Tool calls and results remain native provider messages and are never folded
+/// into ordinary assistant text.
+pub fn serialize_chat_replay(
+    entries: &[TypedReplayEntry],
+) -> Result<Vec<Value>, TypedReplaySerializationError> {
+    let mut output = Vec::new();
+    let mut calls = std::collections::HashSet::new();
+    for (index, entry) in entries.iter().enumerate() {
+        match entry {
+            TypedReplayEntry::CompactionSummary(summary) => output.push(json!({
+                "role": "user",
+                "content": format!(
+                    "{COMPACTION_SUMMARY_PREFIX}{}{COMPACTION_SUMMARY_SUFFIX}",
+                    summary.summary
+                )
+            })),
+            TypedReplayEntry::Message(message) => {
+                serialize_chat_message(index, message, &mut output, &mut calls)?;
+            }
+            TypedReplayEntry::UserAttachment(attachment) => {
+                output.push(chat_attachment(index, &attachment.value)?);
+            }
+        }
+    }
+    Ok(output)
+}
+
+fn serialize_responses_message(
+    index: usize,
+    message: &ReplayMessage,
+    output: &mut Vec<Value>,
+    calls: &mut std::collections::HashSet<String>,
+) -> Result<(), TypedReplaySerializationError> {
+    if let Some(result) = message.tool_result.as_ref() {
+        ensure_tool_result_pair(result, calls)?;
+        output.push(json!({
+            "type": "function_call_output",
+            "call_id": result.tool_call_id,
+            "output": result.result.to_string(),
+        }));
+        return Ok(());
+    }
+    let role = responses_role(message.role)?;
+    let content = responses_content(index, message)?;
+    if !content.is_empty() || message.tool_calls.is_empty() {
+        output.push(json!({"role": role, "content": content}));
+    }
+    for call in &message.tool_calls {
+        calls.insert(call.id.clone());
+        output.push(responses_tool_call(call));
+    }
+    Ok(())
+}
+
+fn serialize_chat_message(
+    index: usize,
+    message: &ReplayMessage,
+    output: &mut Vec<Value>,
+    calls: &mut std::collections::HashSet<String>,
+) -> Result<(), TypedReplaySerializationError> {
+    if let Some(result) = message.tool_result.as_ref() {
+        ensure_tool_result_pair(result, calls)?;
+        output.push(json!({
+            "role": "tool",
+            "tool_call_id": result.tool_call_id,
+            "content": result.result.to_string(),
+        }));
+        return Ok(());
+    }
+    let role = chat_role(message.role)?;
+    let content = chat_content(index, message)?;
+    let mut item = json!({"role": role, "content": content});
+    if !message.tool_calls.is_empty() {
+        let tool_calls = message
+            .tool_calls
+            .iter()
+            .map(|call| {
+                calls.insert(call.id.clone());
+                json!({
+                    "id": call.id,
+                    "type": "function",
+                    "function": {
+                        "name": call.name,
+                        "arguments": call.arguments.to_string(),
+                    }
+                })
+            })
+            .collect::<Vec<_>>();
+        item["tool_calls"] = Value::Array(tool_calls);
+    }
+    output.push(item);
+    Ok(())
+}
+
+fn responses_role(role: ReplayRole) -> Result<&'static str, TypedReplaySerializationError> {
+    match role {
+        ReplayRole::User => Ok("user"),
+        ReplayRole::Assistant => Ok("assistant"),
+        ReplayRole::Tool => Err(TypedReplaySerializationError::UnsupportedRole { role: "tool" }),
+    }
+}
+
+fn chat_role(role: ReplayRole) -> Result<&'static str, TypedReplaySerializationError> {
+    match role {
+        ReplayRole::User => Ok("user"),
+        ReplayRole::Assistant => Ok("assistant"),
+        ReplayRole::Tool => Err(TypedReplaySerializationError::UnsupportedRole { role: "tool" }),
+    }
+}
+
+fn responses_content(
+    index: usize,
+    message: &ReplayMessage,
+) -> Result<Vec<Value>, TypedReplaySerializationError> {
+    let mut content = message
+        .content
+        .iter()
+        .map(|part| match part {
+            ReplayContentPart::Text(text) => Ok(json!({"type": "input_text", "text": text})),
+            ReplayContentPart::Structured(_) => {
+                Err(TypedReplaySerializationError::UnsupportedStructuredContent { index })
+            }
+        })
+        .collect::<Result<Vec<_>, _>>()?;
+    for attachment in &message.attachments {
+        content.push(responses_attachment(index, &attachment.value)?);
+    }
+    Ok(content)
+}
+
+fn chat_content(
+    index: usize,
+    message: &ReplayMessage,
+) -> Result<Value, TypedReplaySerializationError> {
+    let mut content = message
+        .content
+        .iter()
+        .map(|part| match part {
+            ReplayContentPart::Text(text) => Ok(json!({"type": "text", "text": text})),
+            ReplayContentPart::Structured(_) => {
+                Err(TypedReplaySerializationError::UnsupportedStructuredContent { index })
+            }
+        })
+        .collect::<Result<Vec<_>, _>>()?;
+    for attachment in &message.attachments {
+        content.push(chat_attachment(index, &attachment.value)?);
+    }
+    Ok(Value::Array(content))
+}
+
+fn responses_attachment(index: usize, value: &Value) -> Result<Value, TypedReplaySerializationError> {
+    let url = attachment_url(index, value)?;
+    let is_image = value
+        .get("mimeType")
+        .or_else(|| value.get("mime_type"))
+        .and_then(Value::as_str)
+        .is_some_and(|mime| mime.starts_with("image/"));
+    Ok(if is_image {
+        json!({"type": "input_image", "image_url": url})
+    } else {
+        json!({"type": "input_file", "file_url": url})
+    })
+}
+
+fn chat_attachment(index: usize, value: &Value) -> Result<Value, TypedReplaySerializationError> {
+    let url = attachment_url(index, value)?;
+    let is_image = value
+        .get("mimeType")
+        .or_else(|| value.get("mime_type"))
+        .and_then(Value::as_str)
+        .is_some_and(|mime| mime.starts_with("image/"));
+    if !is_image {
+        return Err(TypedReplaySerializationError::UnsupportedAttachment {
+            index,
+            detail: "Chat Completions replay currently supports image attachments only".into(),
+        });
+    }
+    Ok(json!({"type": "image_url", "image_url": {"url": url}}))
+}
+
+fn attachment_url(index: usize, value: &Value) -> Result<String, TypedReplaySerializationError> {
+    value
+        .get("url")
+        .or_else(|| value.get("signedUrl"))
+        .or_else(|| value.get("signed_url"))
+        .and_then(Value::as_str)
+        .map(str::trim)
+        .filter(|url| !url.is_empty() && (url.starts_with("https://") || url.starts_with("http://")))
+        .map(ToOwned::to_owned)
+        .ok_or_else(|| TypedReplaySerializationError::UnsupportedAttachment {
+            index,
+            detail: "attachment has no provider-usable https URL".into(),
+        })
+}
+
+fn responses_tool_call(call: &ReplayToolCall) -> Value {
+    json!({
+        "type": "function_call",
+        "call_id": call.id,
+        "name": call.name,
+        "arguments": call.arguments.to_string(),
+    })
+}
+
+fn ensure_tool_result_pair(
+    result: &ReplayToolResult,
+    calls: &std::collections::HashSet<String>,
+) -> Result<(), TypedReplaySerializationError> {
+    calls
+        .contains(&result.tool_call_id)
+        .then_some(())
+        .ok_or_else(|| TypedReplaySerializationError::UnpairedToolResult {
+            tool_call_id: result.tool_call_id.clone(),
+        })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::extensions::session::typed_replay::ReplayCompactionSummary;
+
+    #[test]
+    fn responses_preserves_summary_and_balanced_tool_items() {
+        let entries = vec![
+            TypedReplayEntry::CompactionSummary(ReplayCompactionSummary {
+                summary: "facts".into(),
+                tokens_before: 10,
+                details: None,
+            }),
+            TypedReplayEntry::Message(ReplayMessage {
+                id: None,
+                role: ReplayRole::Assistant,
+                content: vec![],
+                attachments: vec![],
+                tool_calls: vec![ReplayToolCall {
+                    id: "call-1".into(),
+                    name: "read".into(),
+                    arguments: json!({"path": "a"}),
+                }],
+                tool_result: None,
+            }),
+            TypedReplayEntry::Message(ReplayMessage {
+                id: None,
+                role: ReplayRole::Tool,
+                content: vec![],
+                attachments: vec![],
+                tool_calls: vec![],
+                tool_result: Some(ReplayToolResult {
+                    tool_call_id: "call-1".into(),
+                    tool_name: "read".into(),
+                    result: json!({"ok": true}),
+                    is_error: false,
+                }),
+            }),
+        ];
+        let serialized = serialize_responses_replay(&entries).expect("responses replay");
+        assert!(serialized[0]["content"].as_str().unwrap().contains("<summary>"));
+        assert_eq!(serialized[1]["type"], "function_call");
+        assert_eq!(serialized[2]["type"], "function_call_output");
+    }
+
+    #[test]
+    fn local_attachment_is_rejected_until_attachment_owner_resolves_it() {
+        let entry = TypedReplayEntry::UserAttachment(crate::extensions::session::typed_replay::ReplayAttachment {
+            value: json!({"file_path": "/tmp/a.png", "mimeType": "image/png"}),
+        });
+        let error = serialize_responses_replay(&[entry]).expect_err("local path must fail closed");
+        assert!(matches!(error, TypedReplaySerializationError::UnsupportedAttachment { .. }));
+    }
+}

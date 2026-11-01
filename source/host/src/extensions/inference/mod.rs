@@ -14,3 +14,4 @@ pub mod model_catalog_service;
 pub mod llm_transport_rate_limit;
 pub mod stream_wrappers_service;
 pub mod oauth_registry_service;
+pub mod typed_replay_serialization;
