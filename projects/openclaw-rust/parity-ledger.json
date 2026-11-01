@@ -113,8 +113,8 @@
       "status": {
         "acceptance": "pending",
         "implementation": "implemented",
-        "mapping": "unclassified",
-        "read": "unread",
+        "mapping": "reviewed",
+        "read": "read-complete",
         "verification": "not-run",
         "wiring": "not-wired"
       },
@@ -4734,8 +4734,8 @@
       "status": {
         "acceptance": "pending",
         "implementation": "implemented",
-        "mapping": "unclassified",
-        "read": "unread",
+        "mapping": "reviewed",
+        "read": "read-complete",
         "verification": "not-run",
         "wiring": "not-wired"
       },
@@ -17871,8 +17871,8 @@
       "status": {
         "acceptance": "pending",
         "implementation": "implemented",
-        "mapping": "unclassified",
-        "read": "unread",
+        "mapping": "reviewed",
+        "read": "read-complete",
         "verification": "not-run",
         "wiring": "not-wired"
       },
@@ -23268,8 +23268,8 @@
       "status": {
         "acceptance": "pending",
         "implementation": "implemented",
-        "mapping": "unclassified",
-        "read": "unread",
+        "mapping": "reviewed",
+        "read": "read-complete",
         "verification": "not-run",
         "wiring": "not-wired"
       },
@@ -23468,8 +23468,8 @@
       "status": {
         "acceptance": "pending",
         "implementation": "implemented",
-        "mapping": "unclassified",
-        "read": "unread",
+        "mapping": "reviewed",
+        "read": "read-complete",
         "verification": "not-run",
         "wiring": "not-wired"
       },
