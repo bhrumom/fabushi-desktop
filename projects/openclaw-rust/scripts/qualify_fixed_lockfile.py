@@ -574,6 +574,13 @@ def qualify(
     for fragment in fragments:
         keys = fragment.pop("package_keys")
         fragment.pop("snapshot_keys")
+        package_integrities = fragment["package_integrities"]
+        fragment["integrity_observed_package_count"] = sum(
+            bool(package_integrities.get(key)) for key in keys
+        )
+        fragment["integrity_missing_package_count"] = sum(
+            not package_integrities.get(key) for key in keys
+        )
         matches = []
         for root in roots:
             prefix = f"{root}@"

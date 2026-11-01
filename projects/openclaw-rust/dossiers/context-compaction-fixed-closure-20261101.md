@@ -102,7 +102,7 @@ python3 projects/openclaw-rust/scripts/qualify_fixed_lockfile.py \
 ```
 
 The machine-readable result digest is
-`6a9c31c99af88356d6a0f295470cecfabbafd3680ea09889ddc8be32c69b7461`.
+`f17f2d57b4d553e3580898daa4f0b834af4b09ee83441245e8b6db5195388eaa`.
 After de-duplicating repeated frontier rows by exact manifest path/package,
 the probe scanned `15` exact manifest identities; `13` of them declare at
 least one dependency row. The output contains `176` declared dependency edges:
@@ -134,6 +134,10 @@ peer resolution for the production install.
 The selected `155` registry package keys and all `4` peer candidate sets have
 an integrity observation in the lockfile; this remains lock metadata, not
 independently verified archive bytes or license provenance.
+At package-key level, the corrected parser observes integrity values for all
+`1764` package keys across the two lockfile fragments (`0` missing). This is
+still lock metadata coverage and does not prove that the referenced archives
+were downloaded, match their bytes, or satisfy license/SBOM requirements.
 Eight manifest edges also match a lockfile `patchedDependencies` hash entry;
 the remaining registry edges are explicitly `not-listed`, not inferred
 unpatched.
