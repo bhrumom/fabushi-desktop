@@ -222,7 +222,6 @@ fn serialize_entries_with_budget(entries: &[Value]) -> Result<String, String> {
         .iter()
         .map(|entry| {
             serde_json::to_string(entry)
-                .map(|text| truncate_entry_for_summary(&text))
                 .map_err(|error| format!("could not encode compaction transcript row: {error}"))
         })
         .collect::<Result<Vec<_>, _>>()?;
@@ -231,90 +230,230 @@ fn serialize_entries_with_budget(entries: &[Value]) -> Result<String, String> {
         return Ok(rendered.join("\n"));
     }
 
-    // Match the fixed source's intent: preserve the recent tail, user asks,
-    // and a bounded head before filling remaining room in canonical order.
-    let mut selected = BTreeSet::new();
-    let mut selected_chars = 0usize;
-    select_summary_indices(
-        (0..entries.len()).rev(),
-        &rendered,
-        MAX_SUMMARY_INPUT_CHARS / 2,
-        &mut selected,
-        &mut selected_chars,
-    );
-    select_summary_indices(
-        entries
+    // Match the fixed source's bounded tail/user/head/middle selection. The
+    // passes only order selection; try_take_summary_entry enforces one global
+    // budget and accounts for omission markers when a selected row splits a
+    // gap.
+    const OMISSION_MARKER_CHARS: usize = 40;
+    const SUMMARY_INPUT_MIDDLE_SLICES: usize = 8;
+    const MAX_USER_ENTRY_CHARS: usize = 2_000;
+    const MIN_USER_ENTRY_CHARS: usize = 400;
+
+    let mut selected = std::collections::BTreeMap::<usize, String>::new();
+    let mut used_chars = OMISSION_MARKER_CHARS;
+    let tail_limit = MAX_SUMMARY_INPUT_CHARS / 2;
+    let mut tail_start = entries.len();
+    for index in (0..entries.len()).rev() {
+        let remaining = tail_limit.saturating_sub(used_chars);
+        let verbatim = rendered[index].chars().count() + 1 <= remaining;
+        if (!verbatim && tail_start != entries.len())
+            || try_take_summary_entry(
+                index,
+                remaining,
+                remaining,
+                &rendered,
+                &mut selected,
+                &mut used_chars,
+                MAX_SUMMARY_INPUT_CHARS,
+                OMISSION_MARKER_CHARS,
+            )
+            .is_none()
+        {
+            break;
+        }
+        tail_start = index;
+    }
+
+    let older_users = entries
+        .iter()
+        .enumerate()
+        .filter(|(index, entry)| *index < tail_start && entry_role(entry) == Some("user"))
+        .map(|(index, _)| index)
+        .collect::<Vec<_>>();
+    if !older_users.is_empty() {
+        let user_budget = MAX_SUMMARY_INPUT_CHARS / 4;
+        let user_limit = used_chars.saturating_add(user_budget);
+        let user_entry_chars = MAX_USER_ENTRY_CHARS.min(
+            MIN_USER_ENTRY_CHARS.max(
+                user_budget
+                    .checked_div(older_users.len())
+                    .unwrap_or_default()
+                    .saturating_sub(OMISSION_MARKER_CHARS),
+            ),
+        );
+        let user_costs = older_users
             .iter()
-            .enumerate()
-            .filter(|(_, entry)| entry_role(entry) == Some("user"))
-            .map(|(index, _)| index),
-        &rendered,
-        MAX_SUMMARY_INPUT_CHARS * 3 / 4,
-        &mut selected,
-        &mut selected_chars,
-    );
-    select_summary_indices(
-        0..entries.len(),
-        &rendered,
-        MAX_SUMMARY_INPUT_CHARS * 17 / 20,
-        &mut selected,
-        &mut selected_chars,
-    );
-    select_summary_indices(
-        0..entries.len(),
-        &rendered,
-        MAX_SUMMARY_INPUT_CHARS,
-        &mut selected,
-        &mut selected_chars,
-    );
+            .map(|index| {
+                (rendered[*index].chars().count() + 1)
+                    .min(user_entry_chars + 1)
+                    .saturating_add(OMISSION_MARKER_CHARS)
+            })
+            .sum::<usize>();
+        let stride = (user_costs as f64 / user_budget.max(1) as f64).max(1.0);
+        let mut position = older_users.len() as f64 - 1.0;
+        while position >= 0.0 {
+            let Some(index) = older_users.get(position.round() as usize).copied() else {
+                break;
+            };
+            if try_take_summary_entry(
+                index,
+                user_limit.saturating_sub(used_chars),
+                user_entry_chars,
+                &rendered,
+                &mut selected,
+                &mut used_chars,
+                MAX_SUMMARY_INPUT_CHARS,
+                OMISSION_MARKER_CHARS,
+            )
+            .is_none()
+            {
+                break;
+            }
+            position -= stride;
+        }
+    }
+
+    let head_limit = used_chars.saturating_add(MAX_SUMMARY_INPUT_CHARS / 10);
+    let mut head_end = 0usize;
+    while head_end < tail_start {
+        if try_take_summary_entry(
+            head_end,
+            head_limit.saturating_sub(used_chars),
+            MAX_SAMPLED_ENTRY_CHARS,
+            &rendered,
+            &mut selected,
+            &mut used_chars,
+            MAX_SUMMARY_INPUT_CHARS,
+            OMISSION_MARKER_CHARS,
+        )
+        .is_none()
+        {
+            break;
+        }
+        head_end += 1;
+    }
+
+    let middle_count = tail_start.saturating_sub(head_end);
+    if middle_count > 0 {
+        let slice_limit = (MAX_SUMMARY_INPUT_CHARS.saturating_sub(used_chars))
+            / SUMMARY_INPUT_MIDDLE_SLICES;
+        let mut next_free = head_end;
+        for slice in 0..SUMMARY_INPUT_MIDDLE_SLICES {
+            let mut index = next_free.max(
+                head_end + slice.saturating_mul(middle_count) / SUMMARY_INPUT_MIDDLE_SLICES,
+            );
+            let slice_end = used_chars.saturating_add(slice_limit);
+            while index < tail_start {
+                if try_take_summary_entry(
+                    index,
+                    slice_end.saturating_sub(used_chars),
+                    MAX_SAMPLED_ENTRY_CHARS,
+                    &rendered,
+                    &mut selected,
+                    &mut used_chars,
+                    MAX_SUMMARY_INPUT_CHARS,
+                    OMISSION_MARKER_CHARS,
+                )
+                .is_none()
+                {
+                    break;
+                }
+                index += 1;
+            }
+            next_free = index;
+        }
+    }
 
     let mut output = String::new();
-    let mut previous = None;
-    for index in selected {
-        if let Some(previous_index) = previous
-            && index > previous_index + 1
-        {
+    let mut gap = 0usize;
+    for index in 0..=entries.len() {
+        let selected_text = selected.get(&index);
+        if selected_text.is_none() && index < entries.len() {
+            gap += 1;
+            continue;
+        }
+        if gap > 0 {
             append_summary_text(
                 &mut output,
-                &format!("<omitted {} transcript row(s)>\n", index - previous_index - 1),
+                &format!(
+                    "[... {gap} {} omitted ...]\n",
+                    if gap == 1 { "entry" } else { "entries" }
+                ),
             );
+            gap = 0;
         }
-        append_summary_text(&mut output, &rendered[index]);
-        append_summary_text(&mut output, "\n");
-        previous = Some(index);
+        if let Some(text) = selected_text {
+            append_summary_text(&mut output, text);
+            append_summary_text(&mut output, "\n");
+        }
     }
     Ok(output.trim_end().to_string())
 }
 
-fn truncate_entry_for_summary(text: &str) -> String {
-    if text.chars().count() <= MAX_SAMPLED_ENTRY_CHARS {
-        return text.to_string();
+fn try_take_summary_entry(
+    index: usize,
+    limit: usize,
+    max_entry_chars: usize,
+    rendered: &[String],
+    selected: &mut std::collections::BTreeMap<usize, String>,
+    used_chars: &mut usize,
+    max_chars: usize,
+    omission_marker_chars: usize,
+) -> Option<()> {
+    if selected.contains_key(&index) {
+        return Some(());
     }
-    let marker = "... [entry truncated]";
-    let head = MAX_SAMPLED_ENTRY_CHARS.saturating_sub(marker.chars().count());
-    format!("{}{}", text.chars().take(head).collect::<String>(), marker)
+    let left_open = index > 0 && !selected.contains_key(&(index - 1));
+    let right_open = index + 1 < rendered.len() && !selected.contains_key(&(index + 1));
+    let marker_delta = if left_open && right_open {
+        omission_marker_chars as isize
+    } else if !left_open && !right_open {
+        -(omission_marker_chars as isize)
+    } else {
+        0
+    };
+    let marker_cost = marker_delta.max(0) as usize;
+    let entry_limit = limit
+        .saturating_sub(marker_cost)
+        .min(max_entry_chars.saturating_add(1));
+    let mut text = rendered[index].clone();
+    let mut chars = text.chars().count() + 1;
+    if chars > entry_limit {
+        text = elide_summary_entry(&text, entry_limit.saturating_sub(1))?;
+        chars = text.chars().count() + 1;
+    }
+    let total_cost = chars.saturating_add(marker_cost);
+    if used_chars.saturating_add(total_cost) > max_chars {
+        return None;
+    }
+    *used_chars = used_chars.saturating_add(total_cost);
+    selected.insert(index, text);
+    Some(())
 }
 
-fn select_summary_indices<I>(
-    indices: I,
-    rendered: &[String],
-    budget: usize,
-    selected: &mut BTreeSet<usize>,
-    selected_chars: &mut usize,
-) where
-    I: IntoIterator<Item = usize>,
-{
-    for index in indices {
-        if selected.contains(&index) {
-            continue;
-        }
-        let cost = rendered[index].chars().count() + 1;
-        if *selected_chars + cost > budget {
-            continue;
-        }
-        selected.insert(index);
-        *selected_chars += cost;
+fn elide_summary_entry(text: &str, max_chars: usize) -> Option<String> {
+    const MARKER: &str = "\n\n[... characters omitted ...]\n\n";
+    const MIN_TRIMMED_ENTRY_CHARS: usize = 200;
+    const ELISION_MARKER_RESERVE_CHARS: usize = 64;
+    if text.chars().count() <= max_chars {
+        return Some(text.to_string());
     }
+    let available = max_chars.saturating_sub(ELISION_MARKER_RESERVE_CHARS);
+    if available < MIN_TRIMMED_ENTRY_CHARS {
+        return None;
+    }
+    let head_budget = available * 7 / 10;
+    let tail_budget = available.saturating_sub(head_budget);
+    let head = text.chars().take(head_budget).collect::<String>();
+    let tail = text
+        .chars()
+        .rev()
+        .take(tail_budget)
+        .collect::<String>()
+        .chars()
+        .rev()
+        .collect::<String>();
+    Some(format!("{head}{MARKER}{tail}"))
 }
 
 fn append_summary_text(output: &mut String, text: &str) {
@@ -965,7 +1104,9 @@ mod tests {
         };
         let prompt = build_compaction_summary_prompt(&plan).expect("prompt");
         assert!(prompt.contains("latest request"));
-        assert!(prompt.contains("omitted") || prompt.contains("entry truncated"));
+        assert!(prompt.contains("omitted"));
+        assert!(prompt.contains("row-0"));
+        assert!(prompt.contains("row-39"));
         assert!(prompt.len() < MAX_SUMMARY_INPUT_CHARS + 2_000);
     }
 }

@@ -71,9 +71,10 @@ reads the owner projection through typed provider serializers. This remains
 partial implementation evidence: exact upstream file-operation detail
 merging is now wired for the fixed `readFiles`/`modifiedFiles` contract, and
 split-turn prefix planning plus its second summarization call are wired.
-The producer also bounds large summary inputs with deterministic tail/user/head
-sampling and canonical fill. Exact upstream omission/weight parity, live-turn
-proof, and frozen verification are still open.
+The producer also bounds large summary inputs with deterministic tail/user/head/
+middle selection, gap markers, and head/tail entry elision. Exact upstream
+message projection and CJK-weighted omission parity, live-turn proof, and
+frozen verification are still open.
 
 Replay attachment ownership is now narrowed to the existing attachment owner:
 it may expose a read-only provider-usable HTTP(S) URL projection for a durable

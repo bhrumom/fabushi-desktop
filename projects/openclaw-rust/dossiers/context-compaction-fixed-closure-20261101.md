@@ -360,9 +360,22 @@ AC-CC-02/03/05 remain open.
 slice for the fixed boundary: invalid windows do not trigger, token estimates
 are bounded, retained-tail selection is explicit, tool-call/result ranges are
 not split, and the plan carries the latest retained user request plus a
-summary-token budget. It intentionally has no transcript, provider, or
-summarization side effects; its focused tests remain unrun during the
-development freeze.
+summary-token budget. Its bounded summary input now follows the fixed source's
+tail/user/head/evenly-spaced-middle selection shape, gap counting, and
+head/tail-preserving entry elision. The Rust input is still a canonical JSON
+row projection rather than the fixed source's richer CJK-weighted message
+serializer, so exact sampling parity remains open. It intentionally has no
+transcript, provider, or summarization side effects; focused tests remain
+unrun during the development freeze.
+
+The fixed `utils.ts` sampling contract was independently reread at the exact
+subject above. Its bounded serializer reserves 50% for newest entries, 25% for
+older user entries, 10% for the oldest entries, and eight evenly spaced middle
+slices; it counts omission markers, preserves tool-result labels, and elides
+both ends of an oversized sampled entry. The Rust planner now mirrors that
+selection shape and gap/elision safeguards over canonical JSON rows. Exact
+CJK-weighted character accounting and the richer message-to-summary text
+projection remain unresolved and are not claimed as parity.
 
 The existing attachment resolution evidence is app-owned rather than an
 inference contract: `source/host/app/src/main.rs:605-670`
