@@ -3,13 +3,13 @@
   "project_id": "TDRP-001",
   "spec_revision": 9,
   "upstream_commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
-  "target_commit": "e2fa2dc75f52763e126b5f3f7db8492ae26b92b5",
+  "target_commit": "e4fe918b8e8ba5589d1ab3d2cdae888087933719",
   "coverage": {
     "source_entries_total": 16202,
     "unknown": 16172,
     "unread": 16145,
     "omitted": 0,
-    "responsibilities_total": 122,
+    "responsibilities_total": 123,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -31701,6 +31701,297 @@
         "Telegram/SourceFiles/mtproto/details/mtproto_dcenter.cpp@ef0df612db798338d166f47087bb35c1d29ff72b",
         "Telegram/SourceFiles/mtproto/session.h@d6f197d233fa4dcc6d2b19745e6d2787c5227911",
         "Telegram/SourceFiles/mtproto/session.cpp@40d7048c3057c7c5523b786048670524c8bebe4c"
+      ]
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+      "source_path": "Telegram/SourceFiles/mtproto/details/mtproto_tcp_socket.cpp",
+      "source_blob_sha": "b3130fd706b7cbfa33f7c9f54ac5e87abe9c3e10",
+      "source_kind": "source",
+      "module_id": "tdesktop.mtproto.tcp-socket-lifecycle-fencing",
+      "responsibility_id": "TDRP-R9-MTPROTO-TCP-SOCKET-LIFECYCLE-FENCING-001",
+      "source_symbols": [
+        "TcpSocket::TcpSocket -> QTcpSocket::setProxy / queued signal forwarding",
+        "TcpSocket::connectToHost",
+        "TcpSocket::handleError",
+        "AbstractSocket::logError",
+        "TcpConnection::connectToServer",
+        "TcpConnection::disconnectFromServer",
+        "TcpConnection::socketError",
+        "SessionPrivate::onConnected/onDisconnected/onError/removeTestConnection/destroyAllConnections",
+        "NetworkAttemptControl::register_stream/clear_stream/cancel",
+        "TcpTransport::attach_attempt_control/clear_attempt_control/flush_bounded/send_payload",
+        "establish_auth_key_controlled_with_proxy",
+        "resume_auth_key_controlled_with_proxy",
+        "EstablishedSession::invoke_raw_controlled",
+        "SessionOwner::invalidate_network_transport"
+      ],
+      "capability_ids": [
+        "CAP-TELEGRAM-MTPROTO-TCP-SOCKET-LIFECYCLE"
+      ],
+      "dependency_ids": [
+        "Existing telegram-network TcpTransport",
+        "Existing NetworkAttemptControl",
+        "Existing RuntimeClient SessionOwner",
+        "Canonical ProductSettingsOwner carrier projection"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/evidence/round135-mtproto-tcp-socket-lifecycle-fencing-20261101.md",
+      "behavior_contract": "A connect/auth-handshake attempt owns and can cancel only its active socket while that attempt is in flight. After successful establishment/adoption, the connect-only deadline and active-stream registration are released without closing the live transport. A later owned RPC temporarily reattaches its request control and clears it when settlement completes. Socket/proxy/read/write/disconnect failures remain typed fail-closed network failures; enabled-proxy failures never fall back to direct transport. RuntimeClient projection change remains the higher-level fence that cancels owned requests and drops live sessions before replacing the transient proxy projection.",
+      "state_machine": "ProductSettingsOwner/TelegramClientLease projection -> RuntimeClient owned request -> NetworkAttemptControl owns connect/proxy/auth-handshake socket -> success => telegram-network releases connect-only active-stream/deadline ownership while keeping transport alive -> invoke_raw_controlled temporarily attaches the request control for bounded write/flush/read -> clear on settlement -> SessionOwner finish/cancel; projection change => cancel outstanding controls + drop live sessions -> new projection. Fixed-U protocolForFiles socket-buffer tuning remains separately open.",
+      "side_effects": [
+        "Controlled successful establish/resume paths now clear the connect-attempt control before returning the adopted EstablishedSession.",
+        "NetworkAttemptControl active-stream registration is released at successful handoff without cancelling the control or closing the live socket.",
+        "Bounded flush now delegates to the underlying transport instead of recursively calling itself, and send_payload uses that bounded flush path.",
+        "Existing request-scoped invoke_raw_controlled attach/clear semantics are preserved.",
+        "Existing RuntimeClient projection-change request/session fencing is preserved unchanged.",
+        "Focused lifecycle contracts were authored in the existing telegram-network test module and were not executed."
+      ],
+      "failure_cases": [
+        "A successful adopted session retains the connect-only absolute deadline and later unrelated I/O fails after that stale deadline.",
+        "Successful ownership handoff shuts down the adopted live socket instead of only releasing attempt registration.",
+        "Flush recursively re-enters flush_bounded or bypasses the current request/attempt write bound.",
+        "A stale cancelled attempt can still mutate/read through an adopted session after ownership changed.",
+        "Enabled SOCKS5/HTTP/MTProto/Web proxy failure silently falls back to direct Telegram transport.",
+        "Projection mutation leaves an old live session or owned request using the previous route.",
+        "The lifecycle slice incorrectly claims fixed-U protocolForFiles send/receive buffer tuning as implemented."
+      ],
+      "ui_disposition": "No UI change. This is source-neutral socket/request lifecycle fencing inside the existing telegram-network and RuntimeClient owners.",
+      "non_ui_responsibilities": [
+        "QTcpSocket proxy/connect/error lifecycle equivalence at the source-neutral carrier boundary",
+        "Connect-attempt ownership and successful handoff",
+        "Request-scoped re-attachment and cancellation fencing",
+        "Bounded write/flush/read behavior",
+        "Projection-change session/request invalidation"
+      ],
+      "platform_delta": "Existing-owner-first production delta only in canonical telegram-network: release connect-only NetworkAttemptControl after successful controlled establishment, preserve request-scoped attach/clear, and route flush through the bounded stream path. RuntimeClient/SessionOwner, ProductSettingsOwner, TelegramClientLease and proxy carrier owners remain unique and unchanged.",
+      "existing_owner_candidates": [
+        "bhrumom/fabushi-platform-core:native/telegram-network/src/lib.rs",
+        "bhrumom/fabushi-platform-core:native/telegram-runtime/src/runtime.rs",
+        "source/mahayana/mahayana-rs/providers/telegram-network/src/lib.rs",
+        "source/mahayana/mahayana-rs/providers/telegram-runtime/src/runtime.rs"
+      ],
+      "existing_owner": "Canonical telegram-network TcpTransport/NetworkAttemptControl for socket lifecycle; existing RuntimeClient SessionOwner for request/session fencing",
+      "rejected_existing_owners": [
+        "ProductSettingsOwner owns durable proxy preference state, not live socket/request lifetime.",
+        "TelegramClientLease publishes the source-neutral carrier projection but does not own sockets.",
+        "A new Telegram socket/runtime/provider owner would duplicate existing network/session truth."
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "bhrumom/fabushi-platform-core:docs/specs/telegram-tcp-socket-lifecycle-fencing.md",
+        "bhrumom/fabushi-platform-core:native/telegram-network/src/lib.rs",
+        "bhrumom/fabushi-platform-core:native/telegram-runtime/src/runtime.rs",
+        "bhrumom/fabushi-desktop:docs/specs/telegram-tcp-socket-lifecycle-fencing.md",
+        "bhrumom/fabushi-desktop:source/mahayana/mahayana-rs/providers/telegram-network/src/lib.rs",
+        "bhrumom/fabushi-desktop:source/mahayana/mahayana-rs/providers/telegram-runtime/src/runtime.rs"
+      ],
+      "fabushi_target_symbols": [
+        "NetworkAttemptControl",
+        "TcpTransport::attach_attempt_control",
+        "TcpTransport::clear_attempt_control",
+        "TcpTransport::flush_bounded",
+        "TcpTransport::send_payload",
+        "establish_auth_key_controlled_with_proxy",
+        "resume_auth_key_controlled_with_proxy",
+        "EstablishedSession::invoke_raw_controlled",
+        "SessionOwner::invalidate_network_transport"
+      ],
+      "target_language": "Rust in the existing canonical telegram-network/runtime owners; no retained C++ or second socket/runtime owner.",
+      "language_rationale": "Socket/carrier lifecycle and cancellation are already owned by the shared Rust telegram-network layer; request/session invalidation is already owned by RuntimeClient SessionOwner.",
+      "command_event_contracts": [
+        "controlled connect/auth handshake -> active NetworkAttemptControl owns current socket and absolute deadline",
+        "successful controlled establishment -> clear connect-only transport control and active-stream registration without socket shutdown",
+        "owned RPC -> invoke_raw_controlled attaches request control -> bounded write/flush/read -> clears transport control",
+        "request cancellation -> exact owned control cancellation shuts its registered stream",
+        "carrier projection change -> cancel all owned request controls + clear live sessions before replacing projection",
+        "enabled proxy failure -> typed failure; no direct fallback"
+      ],
+      "state_owner": "NetworkAttemptControl owns only transient attempt/request cancellation state and active stream registration; EstablishedSession owns the adopted live transport; RuntimeClient SessionOwner owns request/session fencing. No durable state is introduced.",
+      "lifecycle_owner": "Existing telegram-network owns socket/connect/request I/O lifetime; RuntimeClient SessionOwner owns request/session adoption and invalidation.",
+      "persistence_and_restart": "No persistence is introduced. Durable proxy preferences remain ProductSettingsOwner v2; persisted auth/transport material remains the existing runtime/storage responsibility.",
+      "concurrency_and_cancellation": "Cancellation is scoped to the exact active stream registered on a NetworkAttemptControl. Successful connect handoff clears that registration without cancellation. Later request-scoped invocation may re-register the same live transport; projection changes cancel owned controls before live sessions are discarded.",
+      "security_boundary": "Proxy credentials remain transient in NetworkProxyEndpoint and are not added to status/error/evidence projections. Socket handles and control internals stay private. No fallback bypasses enabled proxy policy.",
+      "network_service_dependencies": [
+        "Existing telegram-network TcpTransport and proxy carriers",
+        "Existing RuntimeClient SessionOwner",
+        "Existing MTProto framing/auth/session owners"
+      ],
+      "service_owner": "Existing embedded telegram-network/runtime only; no new service.",
+      "deployment_evidence": [],
+      "implementation_status": "implemented",
+      "coverage_disposition": "implemented",
+      "blockers": [
+        "Fixed-U protocolForFiles QAbstractSocket send/receive buffer sizing remains open as a separate file-transfer socket tuning responsibility.",
+        "Stage B executable build/unit/contract/integration/packaged validation has not run."
+      ],
+      "production_entrypoints": [
+        "TelegramClientLease::apply_network_proxy",
+        "telegram.applyNetworkProxy",
+        "open_logical_session_controlled",
+        "establish_auth_key_controlled_with_proxy",
+        "resume_auth_key_controlled_with_proxy",
+        "EstablishedSession::invoke_raw_controlled",
+        "SessionOwner::invalidate_network_transport"
+      ],
+      "production_evidence": [
+        "fixed-U:Telegram/SourceFiles/mtproto/details/mtproto_tcp_socket.cpp@b3130fd706b7cbfa33f7c9f54ac5e87abe9c3e10",
+        "fixed-U:Telegram/SourceFiles/mtproto/details/mtproto_abstract_socket.cpp@653033365b543e554104c99a963ee194ddb830d9",
+        "fixed-U:Telegram/SourceFiles/mtproto/connection_abstract.cpp@3baabf3f72c7c7edba3151814681fbf167a5ca0a",
+        "fixed-U:Telegram/SourceFiles/mtproto/connection_tcp.cpp@d721a9058e1885d2964ded55bd4e4c7c2ce9e381",
+        "fixed-U:Telegram/SourceFiles/mtproto/session_private.cpp@13cbc76ec723386027b5b4dcac79999b791c4614",
+        "platform-core-spec-commit:550c2e170f172ab7c96ba9d11c46234121b21c11",
+        "platform-core-implementation-commit:dc16f388756d681ef4ee6683b98525edef869e1f",
+        "platform-core-network-blob:63f9c4a26385a776fbdd42af3d0de44a37857691",
+        "platform-core-spec-blob:a463412a99805ebf38e035db3dde4f29964be206",
+        "desktop-production-mirror-commit:e4fe918b8e8ba5589d1ab3d2cdae888087933719",
+        "desktop-network-blob:63f9c4a26385a776fbdd42af3d0de44a37857691",
+        "desktop-spec-blob:a463412a99805ebf38e035db3dde4f29964be206",
+        "runtime-fencing-blob:3a3da0eb4bf004569a3989e05e55c8b86a199c41"
+      ],
+      "test_evidence": [
+        "native/telegram-network/src/lib.rs::network_attempt_control_contract_tests::successful_connect_handoff_releases_attempt_stream_without_cancelling_control authored, not run",
+        "native/telegram-network/src/lib.rs::network_attempt_control_contract_tests::request_control_can_be_reowned_after_connect_handoff_and_cleared_again authored, not run",
+        "Existing RuntimeClient projection-change request/session fencing contracts remain applicable and were not executed in Stage A."
+      ],
+      "target_commit": "e4fe918b8e8ba5589d1ab3d2cdae888087933719",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Canonical Fabushi ProductSettingsOwner/TelegramClientLease -> existing RuntimeClient SessionOwner -> shared telegram-network",
+      "composition_slot": "MTProto TCP/proxy socket lifecycle and request cancellation fencing",
+      "capability_component": "Connect-attempt handoff plus request-scoped transport ownership",
+      "variation_axes": [
+        "direct vs SOCKS5 vs HTTP vs MTProto vs Web carrier",
+        "connect/auth-handshake control vs adopted live session vs request-scoped control",
+        "success vs connection/read/write/proxy/auth failure vs cancellation",
+        "ordinary vs file-transfer protocolForFiles adjacency (file-buffer tuning remains open)"
+      ],
+      "shared_owner_contracts": [
+        "Canonical ProductSettingsOwner v2",
+        "Existing process-lifetime TelegramClientLease",
+        "Existing RuntimeClient SessionOwner",
+        "Existing NetworkAttemptControl/TcpTransport",
+        "Existing MTProto protocol/auth/session owners"
+      ],
+      "duplicate_root_check": "No second settings, proxy, network, socket, runtime, session, scheduler, persistence, account, provider, sidecar or subprocess owner was introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Not applicable",
+      "primary_navigation_target": "Existing Settings/Messages; unchanged",
+      "collection_surface": "Not applicable",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "Transient transport/request lifecycle",
+      "detail_section": "Not applicable",
+      "capability_surface": "Non-UI",
+      "route_contract": "No new route.",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Unchanged.",
+      "search_local_remote_contract": "Not applicable.",
+      "responsive_disposition": "No UI change.",
+      "accessibility_contract": "No UI change.",
+      "keyboard_contract": "No UI change.",
+      "state_continuity_contract": "Successful connect handoff preserves the adopted transport while releasing connect-only cancellation/deadline ownership; projection change remains the authoritative session/request fence.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Existing Fabushi design system; no visual changes",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": null,
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "No new icon asset",
+      "avatar_contract": "No change",
+      "content_copy_keys": [],
+      "motion_contract": "No change",
+      "reduced_motion_contract": "No change",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "high",
+      "requirement_ids": [
+        "TDRP-R9-MTPROTO-TCP-SOCKET-LIFECYCLE-FENCING-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-MTPROTO-TCP-CONNECT-HANDOFF-001",
+        "ORA-TDRP-MTPROTO-TCP-REQUEST-REOWN-001",
+        "ORA-TDRP-MTPROTO-TCP-PROJECTION-FENCE-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-MTPROTO-TCP-CONNECT-CONTROL-NOT-LIVE-SESSION-001",
+        "INV-TDRP-MTPROTO-TCP-CANCEL-EXACT-OWNED-STREAM-001",
+        "INV-TDRP-MTPROTO-TCP-NO-PROXY-FALLBACK-001",
+        "INV-TDRP-MTPROTO-TCP-NO-SECOND-OWNER-001"
+      ],
+      "unit_case_ids": [],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-MTPROTO-TCP-CONNECT-HANDOFF-001",
+        "CONTRACT-TDRP-MTPROTO-TCP-REQUEST-REOWN-001"
+      ],
+      "integration_case_ids": [
+        "INT-TDRP-MTPROTO-TCP-RUNTIME-FENCE-001"
+      ],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [
+        "TEMPORAL-TDRP-MTPROTO-TCP-STALE-DEADLINE-001"
+      ],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "fault_recovery_case_ids": [
+        "FAULT-TDRP-MTPROTO-TCP-CANCEL-DURING-CONNECT-001",
+        "FAULT-TDRP-MTPROTO-TCP-PROXY-FAIL-NO-DIRECT-001"
+      ],
+      "performance_case_ids": [],
+      "security_case_ids": [
+        "SEC-TDRP-MTPROTO-TCP-PROXY-CREDENTIAL-NO-OUTPUT-001"
+      ],
+      "soak_case_ids": [],
+      "exploratory_charter_ids": [],
+      "regression_ids": [
+        "REG-TDRP-MTPROTO-TCP-STALE-CONNECT-DEADLINE-001"
+      ],
+      "release_gate_ids": [
+        "G-TRACEABILITY",
+        "G-ARCHITECTURE",
+        "G-SECURITY",
+        "G-EVIDENCE",
+        "G-RELEASE"
+      ],
+      "test_fixture_ids": [
+        "loopback-tcp-lifecycle-fixture"
+      ],
+      "test_environment_ids": [
+        "GitHub Actions Stage B candidate matrix (not run)"
+      ],
+      "coverage_matrix_status": "pending",
+      "flake_status": "stable",
+      "release_gate_status": "pending",
+      "acceptance_reviewer": null,
+      "reviewer": null,
+      "license_and_provenance": "Behavioral provenance is fixed-U mtproto_tcp_socket.cpp plus adjacent AbstractSocket/TcpConnection/SessionPrivate lifecycle. No upstream C++ implementation is copied; implementation is source-neutral Rust in existing owners.",
+      "notes": "Round104/source evidence round135. Source review isolated connect-attempt ownership handoff as the next exact responsibility after selectable proxy carriers. Controlled successful establishment now releases the connect-only NetworkAttemptControl from the adopted transport; request-scoped invoke_raw_controlled may reattach/clear the owned request control. Bounded flush recursion/bypass was corrected in the same socket lifecycle owner. RuntimeClient projection-change fencing is unchanged. protocolForFiles socket-buffer tuning remains open. Contracts are authored but not run; validation_status=not-run; accepted=false.",
+      "test_execution_evidence": [],
+      "validation_status": "not-run",
+      "accepted": false,
+      "id": "TDRP-R9-MTPROTO-TCP-SOCKET-LIFECYCLE-FENCING-001",
+      "source_paths": [
+        "Telegram/SourceFiles/mtproto/details/mtproto_tcp_socket.cpp@b3130fd706b7cbfa33f7c9f54ac5e87abe9c3e10",
+        "Telegram/SourceFiles/mtproto/details/mtproto_abstract_socket.cpp@653033365b543e554104c99a963ee194ddb830d9",
+        "Telegram/SourceFiles/mtproto/connection_abstract.cpp@3baabf3f72c7c7edba3151814681fbf167a5ca0a",
+        "Telegram/SourceFiles/mtproto/connection_tcp.cpp@d721a9058e1885d2964ded55bd4e4c7c2ce9e381",
+        "Telegram/SourceFiles/mtproto/session_private.cpp@13cbc76ec723386027b5b4dcac79999b791c4614"
       ]
     }
   ],
