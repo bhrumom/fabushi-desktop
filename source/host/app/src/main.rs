@@ -605,10 +605,18 @@ fn persist_runner_media_bytes(
     bytes: &[u8],
     kind: AgentMediaKind,
 ) -> Option<String> {
-    let db_path = sessions.session_db_path(agent_id).ok()?;
-    let agent_dir = db_path.parent()?;
-    let path = persist_agent_media_bytes(agent_dir, source_name, bytes, kind).ok()?;
-    file_url_for_path(path)
+    sessions
+        .with_agent_admitted_filesystem_mutation(agent_id, || {
+            let db_path = sessions.session_db_path(agent_id)?;
+            let agent_dir = db_path
+                .parent()
+                .ok_or_else(|| "agent database has no parent directory".to_string())?;
+            let path = persist_agent_media_bytes(agent_dir, source_name, bytes, kind)
+                .map_err(|error| error.to_string())?;
+            file_url_for_path(path)
+                .ok_or_else(|| "persisted runner media path is not a valid file URL".to_string())
+        })
+        .ok()
 }
 
 fn resolve_production_attachment_source(
@@ -10370,30 +10378,17 @@ fn start_routed_provider_task(
                     if mime != "image/png" {
                         return;
                     }
-                    let Ok(db_path) =
-                        browser_media_sessions.session_db_path(&browser_media_agent_id)
-                    else {
-                        eprintln!(
-                            "mahayana-host browser_screenshot_persist_failed agent={} error=session-db-unavailable",
-                            browser_media_agent_id
-                        );
-                        return;
-                    };
-                    let Some(agent_dir) = db_path.parent() else {
-                        eprintln!(
-                            "mahayana-host browser_screenshot_persist_failed agent={} error=agent-dir-unavailable",
-                            browser_media_agent_id
-                        );
-                        return;
-                    };
-                    if let Err(error) = persist_agent_media_bytes(
-                        agent_dir,
+                    if persist_runner_media_bytes(
+                        &browser_media_sessions,
+                        &browser_media_agent_id,
                         "browser-screenshot.png",
                         bytes,
                         AgentMediaKind::Image,
-                    ) {
+                    )
+                    .is_none()
+                    {
                         eprintln!(
-                            "mahayana-host browser_screenshot_persist_failed agent={} error={error}",
+                            "mahayana-host browser_screenshot_persist_failed agent={} error=admission-or-persist-failed",
                             browser_media_agent_id
                         );
                     }
@@ -10486,18 +10481,13 @@ fn start_routed_provider_task(
                     if mime != "image/webp" {
                         return None;
                     }
-                    let db_path = computer_media_sessions
-                        .session_db_path(&computer_media_agent_id)
-                        .ok()?;
-                    let agent_dir = db_path.parent()?;
-                    let path = persist_agent_media_bytes(
-                        agent_dir,
+                    persist_runner_media_bytes(
+                        &computer_media_sessions,
+                        &computer_media_agent_id,
                         "computer-screenshot.webp",
                         bytes,
                         AgentMediaKind::Image,
                     )
-                    .ok()?;
-                    file_url_for_path(path)
                 },
             );
             let computer_navigation_baseline_box = Arc::clone(&box_resources);
