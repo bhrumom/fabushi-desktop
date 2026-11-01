@@ -1,6 +1,6 @@
 # ADR: Context-compaction owner contract
 
-Status: owner contract implemented; Runner integration pending
+Status: owner contract and Runner producer wiring implemented; verification pending
 Date: 2026-11-01
 Scope: Fabushi Desktop Host Runner, transcript, and inference integration
 Responsibility: `OCRM-RESP-AGENT-CONTEXT-COMPACTION-001`
@@ -62,9 +62,12 @@ operations. The focused contract test is present in
 `source/host/tests/agent_db_owner_contract.rs`, but remains unrun during the
 development freeze.
 
-The full responsibility is not implemented yet: no production Runner caller
-prepares a fixed-source cut point, invokes the summarization binding, commits
-the result, or reconstructs the next turn from the replay projection.
+The non-test routed-provider completion path now prepares a fixed-source cut
+point from canonical transcript rows, invokes the existing summarization
+binding, and calls the guarded owner commit. The next routed turn already
+reads the owner projection through typed provider serializers. This remains
+partial implementation evidence: exact upstream file-operation detail
+merging, live-turn proof, and frozen verification are still open.
 
 ## Required implementation sequence
 
@@ -73,7 +76,9 @@ the result, or reconstructs the next turn from the replay projection.
    and replay.
 2. Adapt the existing Runner turn owner to estimate context, prepare the fixed
    cut point, invoke the existing summarization binding, and call the owner
-   operation only after the provider result is complete.
+   operation only after the provider result is complete. (Implemented in the
+   routed-provider completion boundary; file-operation metadata remains a
+   deliberate fail-closed gap.)
 3. Ensure cancellation/provider failure leaves the prior transcript intact and
    that a newly constructed turn consumes the committed projection.
 4. Reconcile the parity ledger only when a non-test producer and next-turn

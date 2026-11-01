@@ -22,6 +22,7 @@ pub struct CompactionPlan {
     pub first_kept_entry_id: String,
     pub entries_to_summarize: Vec<Value>,
     pub previous_summary: Option<String>,
+    pub previous_details: Option<Value>,
     pub tokens_before: u64,
     pub summary_token_budget: u64,
     pub latest_user_request: Option<String>,
@@ -155,11 +156,50 @@ pub fn prepare_compaction_plan(
         first_kept_entry_id,
         entries_to_summarize,
         previous_summary,
+        previous_details: entries[..cut]
+            .iter()
+            .rev()
+            .find(|entry| entry.get("kind").and_then(Value::as_str) == Some("compaction"))
+            .and_then(|entry| entry.get("details").cloned()),
         tokens_before,
         summary_token_budget: settings.reserve_tokens.saturating_mul(4) / 5,
         latest_user_request,
         is_split_turn: entry_role(&entries[cut]) == Some("assistant"),
     })
+}
+
+/// Build the bounded user prompt consumed by the existing summarization
+/// inference owner. The prompt is deliberately a projection of the plan;
+/// this module does not decide transport, persistence, or provider format.
+pub fn build_compaction_summary_prompt(plan: &CompactionPlan) -> Result<String, String> {
+    let transcript = serde_json::to_string(&plan.entries_to_summarize)
+        .map_err(|error| format!("could not encode compaction transcript: {error}"))?;
+    let previous = plan.previous_summary.as_deref().unwrap_or("(none)");
+    let latest_request = plan.latest_user_request.as_deref().unwrap_or("(none)");
+    Ok(format!(
+        "Create a concise, durable conversation summary for the next agent turn. Preserve user intent, decisions, constraints, unresolved work, tool outcomes, and important identifiers. Do not invent facts. The summary must stand alone and fit within {budget} tokens.\n\nPrevious compaction summary (already captured; correct it only when the transcript provides newer facts):\n{previous}\n\nLatest retained user request (must remain actionable even when this is a split turn):\n{latest_request}\n\nTranscript rows to summarize (JSON, in canonical order):\n{transcript}",
+        budget = plan.summary_token_budget,
+    ))
+}
+
+/// Validate summarizer output before the session owner is allowed to mutate
+/// durable transcript state. Empty, oversized, or control-only output is a
+/// no-summary failure and leaves the old transcript authoritative.
+pub fn validate_compaction_summary(summary: &str) -> Result<String, String> {
+    let normalized = summary.trim();
+    if normalized.is_empty() {
+        return Err("compaction summarizer returned an empty summary".into());
+    }
+    if normalized.chars().count() > MAX_COMPACTION_SUMMARY_CHARS {
+        return Err(format!(
+            "compaction summary exceeds {} characters",
+            MAX_COMPACTION_SUMMARY_CHARS
+        ));
+    }
+    if normalized.chars().any(|character| character.is_control() && character != '\n' && character != '\t') {
+        return Err("compaction summary contains unsupported control characters".into());
+    }
+    Ok(normalized.to_string())
 }
 
 fn value_chars(value: Option<&Value>) -> u64 {

@@ -208,7 +208,8 @@ use mahayana_host_runtime::extensions::inference::provider_session::{
     run_routed_provider_text,
 };
 use mahayana_host_runtime::extensions::session::agent_db::{
-    ProviderReviewContinuationOutcome, SessionProviderReview,
+    CompactionCommit, CompactionCommitOutcome, ProviderReviewContinuationOutcome,
+    SessionProviderReview,
 };
 use mahayana_host_runtime::extensions::inference::inference_service::{
     InferenceUsage, authorize_routed_provider_request,
@@ -391,6 +392,10 @@ use mahayana_host_runtime::extensions::telemetry::bot_block_telemetry::BotBlockR
 use mahayana_host_runtime::runner::turn_agent_composition::{
     SAND_AGENT_TOKEN_LIMIT, TurnSubagentLaunchReviewBindings, build_turn_subagent_types,
     create_turn_subagent_task_review,
+};
+use mahayana_host_runtime::runner::compaction_planning::{
+    CompactionSettings, build_compaction_summary_prompt, prepare_compaction_plan,
+    validate_compaction_summary,
 };
 use mahayana_host_runtime::runner::turn_observation::{
     ToolCallTelemetryEvent, TurnObservation, TurnObservationHandle,
@@ -10612,6 +10617,144 @@ fn start_routed_provider_task(
                         "mahayana-host closing_send_nudge_telemetry_failed agent={} error={error}",
                         agent_id
                     );
+                }
+            }
+
+            // Context compaction is admitted only after the real provider turn
+            // has settled its final response. Planning is pure; summarization
+            // uses the existing Runner inference binding; the session owner is
+            // the only writer. Any missing usage, admission, unsupported
+            // metadata, cancellation, or summarizer failure leaves the prior
+            // transcript authoritative.
+            if is_user_turn
+                && result.is_ok()
+                && !waiting_user
+                && !worker_cancellation.is_cancelled()
+            {
+                let observed_usage = worker_provider_usage
+                    .lock()
+                    .ok()
+                    .and_then(|usage| *usage);
+                let context_tokens = observed_usage
+                    .map(|usage| usage.input_tokens)
+                    .unwrap_or_default();
+                if context_tokens > 0 {
+                    let compaction_entries = match worker_sessions
+                        .read_agent_transcript_entries(&agent_id)
+                    {
+                        Ok(entries) => entries,
+                        Err(error) => {
+                            eprintln!(
+                                "mahayana-host compaction_transcript_read_failed agent={} run={} error={error}",
+                                agent_id, worker_stream_id
+                            );
+                            Vec::new()
+                        }
+                    };
+                    let settings = CompactionSettings {
+                        enabled: true,
+                        reserve_tokens: 16_000,
+                        keep_recent_tokens: 8_000,
+                    };
+                    if let Some(plan) = prepare_compaction_plan(
+                        &compaction_entries,
+                        context_tokens,
+                        SAND_AGENT_TOKEN_LIMIT as u64,
+                        settings,
+                        None,
+                    ) {
+                        let has_unpreserved_file_metadata = plan
+                            .entries_to_summarize
+                            .iter()
+                            .any(|entry| {
+                                let Some(object) = entry.as_object() else {
+                                    return false;
+                                };
+                                object.keys().any(|key| {
+                                    matches!(
+                                        key.as_str(),
+                                        "fileOperations" | "file_operations" | "fileOps"
+                                    )
+                                })
+                            });
+                        if has_unpreserved_file_metadata {
+                            eprintln!(
+                                "mahayana-host compaction_skipped_unpreserved_file_metadata agent={} run={}",
+                                agent_id, worker_stream_id
+                            );
+                        } else {
+                            match worker_sessions.read_session_work_admission(&agent_id) {
+                                Ok(Some(admission)) => {
+                                    match build_compaction_summary_prompt(&plan) {
+                                        Ok(summary_prompt) => {
+                                            let should_cancel = || worker_cancellation.is_cancelled();
+                                            match runner.run_summarization_prompt(
+                                                "You are the Fabushi conversation-compaction summarizer. Return only the durable summary text.",
+                                                &summary_prompt,
+                                                &should_cancel,
+                                            ) {
+                                                Ok(summary) if !should_cancel() => {
+                                                    if let Ok(summary) = validate_compaction_summary(&summary) {
+                                                        let commit = CompactionCommit {
+                                                            entry_id: format!(
+                                                                "compaction:{}:{}",
+                                                                agent_id, worker_stream_id
+                                                            ),
+                                                            first_kept_entry_id: Some(
+                                                                plan.first_kept_entry_id.clone(),
+                                                            ),
+                                                            summary,
+                                                            tokens_before: plan.tokens_before,
+                                                            details: plan.previous_details.clone(),
+                                                            source_turn_id: worker_stream_id.clone(),
+                                                            expected_lifecycle_revision: admission
+                                                                .lifecycle_revision,
+                                                        };
+                                                        match worker_sessions
+                                                            .commit_agent_compaction(&agent_id, &commit)
+                                                        {
+                                                            Ok(CompactionCommitOutcome::Committed(_))
+                                                            | Ok(CompactionCommitOutcome::AlreadyCommitted(_)) => {}
+                                                            Ok(CompactionCommitOutcome::RejectedStale) => {
+                                                                eprintln!(
+                                                                    "mahayana-host compaction_rejected_stale agent={} run={}",
+                                                                    agent_id, worker_stream_id
+                                                                );
+                                                            }
+                                                            Err(error) => eprintln!(
+                                                                "mahayana-host compaction_commit_failed agent={} run={} error={error}",
+                                                                agent_id, worker_stream_id
+                                                            ),
+                                                        }
+                                                    }
+                                                }
+                                                Ok(_) => eprintln!(
+                                                    "mahayana-host compaction_cancelled_after_summary agent={} run={}",
+                                                    agent_id, worker_stream_id
+                                                ),
+                                                Err(error) => eprintln!(
+                                                    "mahayana-host compaction_summary_failed agent={} run={} error={error}",
+                                                    agent_id, worker_stream_id
+                                                ),
+                                            }
+                                        }
+                                        Err(error) => eprintln!(
+                                            "mahayana-host compaction_prompt_build_failed agent={} run={} error={error}",
+                                            agent_id, worker_stream_id
+                                        ),
+                                    }
+                                }
+                                Ok(None) => eprintln!(
+                                    "mahayana-host compaction_missing_admission agent={} run={}",
+                                    agent_id, worker_stream_id
+                                ),
+                                Err(error) => eprintln!(
+                                    "mahayana-host compaction_admission_read_failed agent={} run={} error={error}",
+                                    agent_id, worker_stream_id
+                                ),
+                            }
+                        }
+                    }
                 }
             }
 
