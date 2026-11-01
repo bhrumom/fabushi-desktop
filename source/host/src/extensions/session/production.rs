@@ -5043,6 +5043,16 @@ impl ProductionSessionWorkers {
         agent_id: &str,
         active_agent_id: Option<&str>,
     ) -> Result<Option<AgentSummary>, String> {
+        self.with_agent_filesystem_mutation(agent_id, || {
+            self.summarize_agent_by_id_locked(agent_id, active_agent_id)
+        })
+    }
+
+    fn summarize_agent_by_id_locked(
+        &self,
+        agent_id: &str,
+        active_agent_id: Option<&str>,
+    ) -> Result<Option<AgentSummary>, String> {
         let is_deleting = |candidate: &str| self.is_agent_being_deleted(candidate);
         summarize_agent_by_id(
             &self.agents_root,
