@@ -2841,6 +2841,11 @@ impl ProductionSessionWorkers {
             "reactions".into(),
             serde_json::Value::Array(projected_reactions),
         );
+        let admitted_session_key = owner
+            .read_session_work_admission()
+            .map_err(|error| error.to_string())?
+            .map(|record| record.session_key)
+            .filter(|value| !value.trim().is_empty());
         let existing = owner
             .get_transcript_entries()
             .map_err(|error| error.to_string())?;
@@ -2897,7 +2902,22 @@ impl ProductionSessionWorkers {
                     .ok_or_else(|| "local Human message disappeared before remote identity settlement".to_string());
             }
         }
-        if !owner
+        if let Some(session_key) = admitted_session_key {
+            entry["sessionKey"] = serde_json::Value::String(session_key.clone());
+            if owner
+                .append_transcript_entries_if_session_admitted(&session_key, &[entry.clone()])
+                .map_err(|error| error.to_string())?
+                == 0
+            {
+                let replay = owner
+                    .get_transcript_entries()
+                    .map_err(|error| error.to_string())?
+                    .into_iter()
+                    .find(|candidate| candidate.get("id") == entry.get("id"))
+                    .ok_or_else(|| "remote Human message was not durably materialized".to_string())?;
+                return Ok(replay);
+            }
+        } else if !owner
             .append_transcript_entry(&entry)
             .map_err(|error| error.to_string())?
         {

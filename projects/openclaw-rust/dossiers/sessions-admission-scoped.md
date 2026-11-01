@@ -420,3 +420,19 @@ It now lowercases only the structured agent identity after the existing
 parser, leaving legacy raw selectors opaque. Contract oracles cover the mixed
 case canonical route. This is a local boundary correction only; production
 wiring, verification, and acceptance remain pending.
+
+## 12.4 Owner-bound remote Human transcript append — 2026-11-01
+
+`ProductionSessionWorkers::materialize_remote_human_message` now reads the
+existing `SandAgentDb` session-work admission record before materializing a new
+remote Human message. When that record contains a non-empty canonical
+`session_key`, the projected entry carries the same `sessionKey` and is
+appended through `append_transcript_entries_if_session_admitted`, preserving
+the owner transaction's archive/rebind fence. If no admission record exists,
+the migration-compatible generic append remains available.
+
+This is a narrow producer-to-owner provenance slice. It does not infer a
+missing channel conversation identity, rewrite legacy Human rows that lack
+provenance, bind outbound pending Human sends or identity settlement, or prove
+channel delivery/receipt behavior. Full channel-to-session correlation,
+verification, and acceptance remain pending.
