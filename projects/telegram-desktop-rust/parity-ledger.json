@@ -3,7 +3,7 @@
   "project_id": "TDRP-001",
   "spec_revision": 9,
   "upstream_commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
-  "target_commit": "324add75e62fef572a68b038ac7d3a5a04a93451",
+  "target_commit": "57b1699fd047648fef1a8fb4daee81e6527e4836",
   "coverage": {
     "source_entries_total": 16202,
     "unknown": 16172,
@@ -27963,7 +27963,14 @@
         "bhrumom/fabushi-desktop:source/mahayana/mahayana-rs/providers/telegram-network/src/web_proxy_relay.rs",
         "bhrumom/fabushi-desktop:source/mahayana/mahayana-rs/providers/telegram-network/src/lib.rs",
         "bhrumom/fabushi-desktop:source/mahayana/mahayana-rs/providers/telegram-runtime/src/runtime.rs",
-        "bhrumom/fabushi-desktop:source/electron-main/main-edge.ts"
+        "bhrumom/fabushi-desktop:source/electron-main/main-edge.ts",
+        "bhrumom/fabushi-desktop:source/mahayana/mahayana-rs/mahayana-app-host/src/lib.rs",
+        "bhrumom/fabushi-desktop:source/mahayana/mahayana-rs/mahayana-unified-app-host/src/lib.rs",
+        "bhrumom/fabushi-desktop:source/mahayana/mahayana-rs/mahayana-app-host-desktop/src/main.rs",
+        "bhrumom/fabushi-desktop:source/node-agent-coordinator/src/main.rs",
+        "bhrumom/fabushi-desktop:source/electron-main/coordinator/coordinator-main-port-client.ts",
+        "bhrumom/fabushi-desktop:source/electron-main/coordinator/coordinator-main-legs.ts",
+        "bhrumom/fabushi-desktop:source/electron-main/main-production-services.ts"
       ],
       "fabushi_target_symbols": [
         "web_proxy_relay::{prepare_web_proxy_relay, retire_web_proxy_relay, WebProxyRelay, WebProxyRelayStream}",
@@ -27972,19 +27979,27 @@
         "connect_directory_with_projection(NetworkProxyKind::Web)",
         "apply_network_proxy_command",
         "parseWebProxyBootstrapUrl",
-        "createMainEdgeHandlers.mutateNetworkProxySettings"
+        "createMainEdgeHandlers.mutateNetworkProxySettings",
+        "startup_native_shell_event_for_carrier",
+        "AppHost::take_startup_native_shell_event",
+        "UnifiedAppHost::take_startup_native_shell_event",
+        "CoordinatorState::{queue_native_shell_event,flush_native_shell_event}",
+        "createCoordinatorMainPortClient(onEvent)",
+        "createCoordinatorMainLegs(onEvent)",
+        "openWebProxyBootstrapUrlInSystemBrowser"
       ],
       "target_language": "Rust",
       "language_rationale": "The non-UI relay multiplexing and flow-control responsibility belongs in the existing Rust telegram-network transport owner. It must not create a source-specific parallel runtime or move carrier state into telegram-protocol.",
       "command_event_contracts": [
         "ProductSettingsOwner mutation -> TelegramClientLease::apply_network_proxy -> telegram.applyNetworkProxy -> RuntimeClient transient projection",
         "RuntimeClient Web selection -> prepare_web_proxy_relay -> webProxyBootstrapUrl",
-        "MainEdge mutateNetworkProxySettings -> strict parseWebProxyBootstrapUrl -> existing shell.openInSystemBrowser",
+        "Mutation-time publication -> MainEdge mutateNetworkProxySettings -> shared strict Web bootstrap opener -> existing shell.openInSystemBrowser",
+        "Restored selection -> AppHost one-shot native-shell event -> existing Host unsolicited stdout transport -> Coordinator MainData Event(native-shell) -> Electron shared strict Web bootstrap opener -> existing shell.openInSystemBrowser",
         "NetworkAttemptControl cancellation -> WebProxyRelayCancel -> logical stream close"
       ],
       "state_owner": "Per-carrier relay input, Welcome state, logical streams/windows, closed-stream tombstones and browser capability are transient state inside the existing telegram-network owner. ProductSettingsOwner remains the only durable proxy owner; RuntimeClient/SessionOwner remains the only runtime/session owner.",
-      "lifecycle_owner": "Existing telegram-network transport boundary owns relay/browser carrier adoption, generation fencing, logical stream/window lifecycle and carrier teardown. Existing RuntimeClient owns projection/session invalidation; existing MainEdge/native shell owns platform browser opening.",
-      "persistence_and_restart": "No relay/window/browser capability state is persisted. Durable selected Web proxy remains in ProductSettingsOwner. A fresh relay/bootstrap is prepared after projection application. Automatic system-browser reopening for a restored Web projection during AppHost construction is an adjacent restart handoff gap and is not hidden by this row.",
+      "lifecycle_owner": "Existing telegram-network transport boundary owns relay/browser carrier adoption, generation fencing, logical stream/window lifecycle and carrier teardown. Existing RuntimeClient owns projection/session invalidation; ProductSettingsOwner remains the only durable settings owner. Existing AppHost/UnifiedAppHost/desktop Host unsolicited event transport and Coordinator MainData carry the one-shot restored-startup handoff; existing MainEdge/native shell remains the only platform browser-opening boundary.",
+      "persistence_and_restart": "No relay/window/browser capability state is persisted. Durable selected Web proxy remains in ProductSettingsOwner. AppHost startup reapplies that canonical projection and captures only the newly prepared one-shot webProxyBootstrapUrl. The existing desktop Host unsolicited-event transport forwards a source-neutral native-shell/web-proxy-bootstrap event; Coordinator holds at most the latest undelivered event until MainData Ready, and Electron reuses the same strict MainEdge loopback parser/system-browser shell boundary used by mutation-time adoption. Host restart prepares a fresh capability and does not persist or reuse the prior browser capability.",
       "concurrency_and_cancellation": "The relay uses bounded carrier/stream state with serialized outbound WebSocket writes, incremental frame parsing, condition-variable backpressure and generation fencing. NetworkAttemptControl can cancel either TCP or Web logical streams; no second scheduler/runtime is introduced.",
       "security_boundary": "The local browser capability is 32 secure-random bytes encoded URL-safe base64 without padding, one-shot and bounded to five minutes. The loopback server accepts only 127.0.0.1 Host/origin WebSocket traffic, requires the exact capability before adoption, and returns only a loopback bootstrap URL; proxy secret material is not emitted in runtime status. MainEdge rejects non-loopback/non-http/path/query/userinfo bootstrap URLs.",
       "network_service_dependencies": [
@@ -27998,13 +28013,13 @@
       "coverage_disposition": "rewritten",
       "blockers": [
         "Stage B executable validation has not run.",
-        "Automatic platform browser reopening for an already-restored Web selection during AppHost construction remains an adjacent restart re-adoption gap; mutation-time bootstrap opening is wired.",
         "SOCKS5/HTTP carriers and broader remaining fixed-U migration responsibilities are separate/open."
       ],
       "production_entrypoints": [
         "ProductSettingsOwner -> TelegramClientLease::apply_network_proxy -> RuntimeClient::telegram.applyNetworkProxy -> prepare_web_proxy_relay",
         "RuntimeClient SessionOwner -> connect_directory_with_projection(NetworkProxyKind::Web) -> WebProxyRelayStream -> existing MTProto obfuscation/framing",
-        "MainEdge mutateNetworkProxySettings -> publication.carrier.webProxyBootstrapUrl -> existing shell.openInSystemBrowser"
+        "MainEdge mutateNetworkProxySettings -> publication.carrier.webProxyBootstrapUrl -> shared strict opener -> existing shell.openInSystemBrowser",
+        "AppHost restored ProductSettingsOwner projection -> startup_native_shell_event_for_carrier -> UnifiedAppHost -> mahayana-app-host-desktop unsolicited stdout event -> Coordinator native-shell MainData event -> Electron production composition -> shared strict opener -> existing shell.openInSystemBrowser"
       ],
       "production_evidence": [
         "fixed-U:Telegram/SourceFiles/mtproto/web_proxy/web_proxy_frame.h@a5ba491fed67d70aee88e6ec2e3ac47c991e78f3",
@@ -28027,14 +28042,24 @@
         "desktop-lifecycle-mirror-commit:324add75e62fef572a68b038ac7d3a5a04a93451",
         "desktop-main-edge-blob:d9ffb976fcdfb7b6741e47e237f6e11e7110628d",
         "desktop-web-relay-blob:8f6297bace3318c099588e0d6549b65fdeeb3fd2",
-        "desktop-runtime-blob:3a3da0eb4bf004569a3989e05e55c8b86a199c41"
+        "desktop-runtime-blob:3a3da0eb4bf004569a3989e05e55c8b86a199c41",
+        "desktop-restored-web-re-adoption-commit:57b1699fd047648fef1a8fb4daee81e6527e4836",
+        "desktop-app-host-blob:0c055afd43a292c22a647108a126876d50917814",
+        "desktop-unified-app-host-blob:4f0b2d72fc07817de401bb5d378bf5312554e731",
+        "desktop-app-host-desktop-blob:9b6b359c5ca35e9e4ccd66e0487ec741b7a662dc",
+        "desktop-coordinator-blob:279dc93569effbba8f49918d9293325dbb0c4ac8",
+        "desktop-coordinator-main-port-client-blob:6c581e0d6c0c644e186190b45e191725295c1a6e",
+        "desktop-coordinator-main-legs-blob:b32b8efcbe3c9477cb40f6cfbbf790a3f33b57be",
+        "desktop-main-edge-re-adoption-blob:e4f060662317644ddaad8632d5745f3ad2b42f5b",
+        "desktop-main-production-services-blob:f9b474db6c062f631c8bda693cbf45ee4930c454"
       ],
       "test_evidence": [
         "Authored-only relay/frame/window/browser contracts in native/telegram-network/src/web_proxy_relay.rs@8f6297bace3318c099588e0d6549b65fdeeb3fd2; not executed.",
         "Authored-only runtime Web projection/bootstrap contract in native/telegram-runtime/src/runtime.rs@3a3da0eb4bf004569a3989e05e55c8b86a199c41; not executed.",
-        "Authored-only desktop bootstrap URL shell-boundary contract in source/electron-main/network-proxy-settings.contract.test.ts@d3576631d11ad4375aab3960dafb922886851be1; not executed."
+        "Authored-only AppHost restored carrier -> one-shot native-shell projection contract in source/mahayana/mahayana-rs/mahayana-app-host/src/lib.rs@0c055afd43a292c22a647108a126876d50917814; not executed.",
+        "Authored-only Electron strict system-browser opener and Coordinator MainData restart re-adoption contracts in source/electron-main/network-proxy-settings.contract.test.ts@b1ea8d2aef7fca34fc5f1d7385d94262a03394f0; not executed."
       ],
-      "target_commit": "324add75e62fef572a68b038ac7d3a5a04a93451",
+      "target_commit": "57b1699fd047648fef1a8fb4daee81e6527e4836",
       "workflow_run": null,
       "run_attempt": null,
       "job": null,
@@ -28079,7 +28104,7 @@
       "responsive_disposition": "No UI change.",
       "accessibility_contract": "No UI change.",
       "keyboard_contract": "No UI change.",
-      "state_continuity_contract": "Carrier-local state is deliberately ephemeral and generation-fenced. ProductSettingsOwner persists only canonical proxy state; projection re-creates relay state. Restored-startup browser reopening remains explicit follow-up rather than hidden persistence.",
+      "state_continuity_contract": "Carrier-local state remains ephemeral and generation-fenced. ProductSettingsOwner persists only canonical proxy state; each restored projection creates a fresh relay/bootstrap capability. AppHost exposes that capability once through the existing unsolicited-event transport, Coordinator retains only the latest not-yet-deliverable native-shell adoption event until MainData is serving, and Electron opens only the strict loopback bootstrap through the existing shell owner.",
       "ui_acceptance_scenarios": [],
       "design_system_version": "Existing Fabushi design system; no visual changes",
       "semantic_token_usage": [],
@@ -28158,7 +28183,7 @@
       "acceptance_reviewer": null,
       "reviewer": null,
       "license_and_provenance": "Behavioral responsibility is anchored to fixed-U telegramdesktop/tdesktop WebProxy frame/transport/socket/webview and connection sources listed in production_evidence. No upstream C++ is copied and no new crypto implementation is introduced.",
-      "notes": "Task round101/source evidence round132. The previous no-selectable-Web-carrier blocker is closed by the round100 source-neutral selected-proxy projection. Fixed-U frame/window/browser fallback semantics are production-rewritten in the existing telegram-network owner and composed beneath existing MTProto obfuscation/framing. Mutation-time bootstrap opening uses existing MainEdge/native shell only. Manual source review corrected incremental frame buffering, serialized carrier writes, relay registry lifetime, replacement generation fencing, and same-endpoint disabled/enabled/IPv6 retirement races before bookkeeping. Contracts are authored only; executable validation is not run. Automatic browser reopening on restored Web selection at AppHost startup is retained as an adjacent restart handoff gap.",
+      "notes": "Task round102/source evidence round133. Restored selected-Web startup re-adoption is now production-wired without a second runtime/provider/settings owner: AppHost captures the fresh transient webProxyBootstrapUrl returned by the existing TelegramClientLease/RuntimeClient projection, exposes it once as a source-neutral native-shell event, desktop Host uses the existing unsolicited stdout event transport, Coordinator routes/queues it only on MainData, and Electron reuses the same strict MainEdge 127.0.0.1 bootstrap validator plus existing system-browser shell used by mutation-time adoption. The Host stdout native-shell lane bypasses the SSE-live suppression because this Host-local event is not duplicated by gateway SSE. Contracts are authored only; executable validation remains not-run and accepted remains false.",
       "test_execution_evidence": [],
       "validation_status": "not-run",
       "accepted": false
