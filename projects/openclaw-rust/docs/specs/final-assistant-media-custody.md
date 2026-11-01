@@ -1,6 +1,6 @@
 # Final assistant media custody — production boundary
 
-Status: narrow implementation in progress; verification not run  
+Status: narrow implementation wired; verification not run
 Project: OCRM-001  
 Responsibility: `OCRM-RESP-MEDIA-FINAL-CUSTODY-001`  
 Owner boundary: existing Host Attachments persistence + Session/Transcript owners
@@ -11,9 +11,11 @@ The fixed OpenClaw media path keeps assistant-authored media bound to the
 admitted run while it is prepared, rewrites the owning assistant transcript
 message, retains managed outgoing media only after the rewrite commits, and
 removes media that never commits or whose admission is revoked. Fabushi already
-has an agent media store and a production `SendMessage` transcript sink, but
-that sink currently persists attachment bytes before transcript admission and
-does not clean up a failed append.
+has an agent media store and a production `SendMessage` transcript sink. The
+narrow custody path now captures session admission before owned media is
+exposed, settles transcript/media state through the existing session owner, and
+rolls back uncommitted paths on pre-commit failure. The broader upstream
+rewrite and detached-result responsibilities remain open.
 
 This slice adds the narrow custody boundary that the existing Fabushi
 SendMessage owner can actually support: newly materialized outgoing media is
@@ -125,6 +127,24 @@ path after commit.
 - Cleanup failure: preserve the original failure and emit a diagnostic with the
   exact owned path; do not report a committed send.
 
+## Current implementation evidence — 2026-11-01
+
+The narrow source-level chain is present:
+
+`ProductionSendMessageSink::resolve_attachment_source` →
+`OutgoingMediaCustody` + `capture_session_media_admission` →
+`assert_pending_media_current` →
+`append_generated_send_message_entry_with_media_custody` →
+`append_agent_transcript_entries_and_release_media` → custody commit.
+
+Failure before the durable append calls `abort_attachment_custody`, which
+removes only paths materialized by that tool call and attempts to release the
+matching session media fence. Successful settlement clears the pending fence in
+the same session-owner transaction before the local custody handle is committed.
+This is source-level wiring evidence only; no local OCRM verification,
+packaged/runtime acceptance, provider acceptance, or device acceptance is
+claimed.
+
 ## Verification / Definition of Done
 
 - Static review identifies one producer → custody handle → existing transcript
@@ -139,6 +159,21 @@ path after commit.
   replay beyond the bounded reopen consumer, and provider/device
   acceptance remain open. `verification=not-run` and `acceptance=pending`
   remain unchanged during the freeze.
+
+## Spec compliance record
+
+| Requirement | Status | Evidence / reason |
+| --- | --- | --- |
+| MAC-01 | passed (source wiring) | Existing attachment, SendMessage, and session owners are used; no parallel custody store exists. |
+| MAC-02 | passed (source wiring) | `OutgoingMediaCustody` tracks only paths materialized by the current SendMessage operation. |
+| MAC-03 | passed (source wiring) | The session owner performs transcript append and media-fence release together; local custody commits only afterward. |
+| MAC-04 | passed (source wiring) | Pre-commit failures invoke rollback and preserve the original error; cleanup errors are logged. |
+| MAC-05 | passed (scope disclosure) | Rewrite, placement/database identity, detached-result settlement, and full crash-recovery replay remain explicitly open. |
+| MAC-06 | passed (source wiring) | Session key and lifecycle revision are captured and rechecked before settlement. |
+| MAC-08 | passed (source wiring) | Durable media work identity and absolute paths are recorded through the existing session admission owner. |
+| MAC-07 | passed (source wiring) | Missing admission is rejected; the custody path does not synthesize session authority. |
+| Focused oracles | pending | No current exact-head verification receipt is available. |
+| Full upstream responsibility | pending | Assistant-content rewrite, detached-result settlement, and runtime/provider/device acceptance remain incomplete. |
 
 ## References
 
