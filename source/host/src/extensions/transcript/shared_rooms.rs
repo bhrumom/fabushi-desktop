@@ -452,12 +452,6 @@ impl SharedRooms {
             event.get("images").cloned().unwrap_or_else(|| Value::Array(Vec::new())),
         )
         .unwrap_or_default();
-        let db_path = self.sessions.session_db_path(&agent_id)?;
-        let images = materialize_inline_images(&db_path, &inline_images);
-        if text.is_empty() && images.is_empty() {
-            return Ok(Some(agent_id));
-        }
-
         let author_auth_id = event
             .get("authorAuthId")
             .and_then(Value::as_str)
@@ -467,32 +461,44 @@ impl SharedRooms {
             .and_then(Value::as_str)
             .filter(|value| !value.trim().is_empty())
             .unwrap_or("Someone");
-        let mut entry = json!({
-            "kind": "message",
-            "id": format!("user-message-xuser-{}", uuid::Uuid::new_v4()),
-            "role": "user",
-            "content": text,
-            "isStreaming": false,
-            "timestampMs": event.get("timestampMs").and_then(Value::as_f64).unwrap_or_else(now_ms),
-            "fromUser": {
-                "name": author_name,
-                "authId": author_auth_id,
-            },
-        });
-        if let Some(nonce) = client_nonce {
-            entry["clientNonce"] = Value::String(nonce.to_string());
+        let result = self.sessions.with_agent_admitted_filesystem_mutation(&agent_id, || {
+            let db_path = self.sessions.session_db_path(&agent_id)?;
+            let images = materialize_inline_images(&db_path, &inline_images);
+            if text.is_empty() && images.is_empty() {
+                return Ok(false);
+            }
+
+            let mut entry = json!({
+                "kind": "message",
+                "id": format!("user-message-xuser-{}", uuid::Uuid::new_v4()),
+                "role": "user",
+                "content": text,
+                "isStreaming": false,
+                "timestampMs": event.get("timestampMs").and_then(Value::as_f64).unwrap_or_else(now_ms),
+                "fromUser": {
+                    "name": author_name,
+                    "authId": author_auth_id,
+                },
+            });
+            if let Some(nonce) = client_nonce {
+                entry["clientNonce"] = Value::String(nonce.to_string());
+            }
+            if let Some(avatar_url) = event
+                .get("authorAvatarUrl")
+                .and_then(Value::as_str)
+                .filter(|value| !value.is_empty())
+            {
+                entry["fromUser"]["avatarUrl"] = Value::String(avatar_url.to_string());
+            }
+            if !images.is_empty() {
+                entry["images"] = serde_json::to_value(images).unwrap_or(Value::Array(Vec::new()));
+            }
+            self.append_room_owned_entry_locked(&agent_id, entry)?;
+            Ok(true)
+        })?;
+        if !result {
+            return Ok(Some(agent_id));
         }
-        if let Some(avatar_url) = event
-            .get("authorAvatarUrl")
-            .and_then(Value::as_str)
-            .filter(|value| !value.is_empty())
-        {
-            entry["fromUser"]["avatarUrl"] = Value::String(avatar_url.to_string());
-        }
-        if !images.is_empty() {
-            entry["images"] = serde_json::to_value(images).unwrap_or(Value::Array(Vec::new()));
-        }
-        self.append_room_owned_entry(&agent_id, entry)?;
         let _ = self.sessions.mark_agent_activity(&agent_id, now_ms());
         Ok(Some(agent_id))
     }
@@ -544,8 +550,6 @@ impl SharedRooms {
             wire.get("images").cloned().unwrap_or_else(|| Value::Array(Vec::new())),
         )
         .unwrap_or_default();
-        let db_path = self.sessions.session_db_path(&agent_id)?;
-        let images = materialize_inline_images(&db_path, &inline_images);
         let timestamp_ms = wire
             .get("timestampMs")
             .and_then(Value::as_f64)
@@ -556,7 +560,10 @@ impl SharedRooms {
             .unwrap_or_default()
             .to_string();
 
-        let mut entry = match wire.get("kind").and_then(Value::as_str) {
+        let result = self.sessions.with_agent_admitted_filesystem_mutation(&agent_id, || {
+            let db_path = self.sessions.session_db_path(&agent_id)?;
+            let images = materialize_inline_images(&db_path, &inline_images);
+            let mut entry = match wire.get("kind").and_then(Value::as_str) {
             Some("human-message") => {
                 let author_auth_id = wire
                     .get("authorAuthId")
@@ -627,21 +634,26 @@ impl SharedRooms {
                 })
             }
             _ => return Ok(true),
-        };
-        if !images.is_empty() {
-            match entry.get("kind").and_then(Value::as_str) {
-                Some("message") => {
-                    entry["images"] =
-                        serde_json::to_value(&images).unwrap_or(Value::Array(Vec::new()));
+            };
+            if !images.is_empty() {
+                match entry.get("kind").and_then(Value::as_str) {
+                    Some("message") => {
+                        entry["images"] =
+                            serde_json::to_value(&images).unwrap_or(Value::Array(Vec::new()));
+                    }
+                    Some("send-message") => {
+                        entry["message"]["images"] =
+                            serde_json::to_value(&images).unwrap_or(Value::Array(Vec::new()));
+                    }
+                    _ => {}
                 }
-                Some("send-message") => {
-                    entry["message"]["images"] =
-                        serde_json::to_value(&images).unwrap_or(Value::Array(Vec::new()));
-                }
-                _ => {}
             }
+            self.append_room_owned_entry_locked(&agent_id, entry)?;
+            Ok(true)
+        })?;
+        if !result {
+            return Ok(true);
         }
-        self.append_room_owned_entry(&agent_id, entry)?;
         let _ = self.sessions.mark_agent_activity(&agent_id, now_ms());
         Ok(true)
     }
@@ -681,6 +693,27 @@ impl SharedRooms {
             self.sessions
                 .append_agent_transcript_entries(agent_id, &[entry])?;
         }
+        Ok(())
+    }
+
+    fn append_room_owned_entry_locked(
+        &self,
+        agent_id: &str,
+        mut entry: Value,
+    ) -> Result<(), String> {
+        let session_key = self
+            .sessions
+            .read_session_work_admission_locked(agent_id)?
+            .map(|record| record.session_key)
+            .filter(|value| !value.trim().is_empty());
+        if let Some(session_key) = session_key.as_deref() {
+            entry["sessionKey"] = Value::String(session_key.to_string());
+        }
+        self.sessions.append_agent_transcript_entries_locked(
+            agent_id,
+            session_key.as_deref(),
+            &[entry],
+        )?;
         Ok(())
     }
 }

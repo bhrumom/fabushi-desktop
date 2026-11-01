@@ -2334,6 +2334,28 @@ impl ProductionSessionWorkers {
         Ok(Some(record))
     }
 
+    pub(crate) fn read_session_work_admission_locked(
+        &self,
+        agent_id: &str,
+    ) -> Result<Option<SessionWorkAdmissionRecord>, String> {
+        let record = self
+            .open_agent_db_owner_locked(agent_id)?
+            .read_session_work_admission()
+            .map_err(|error| error.to_string())?;
+        let Some(record) = record else {
+            return Ok(None);
+        };
+        if record.session_id != agent_id
+            || record.session_key.trim().is_empty()
+            || record.lifecycle_revision.trim().is_empty()
+        {
+            return Err(format!(
+                "agent {agent_id} session admission identity is malformed"
+            ));
+        }
+        Ok(Some(record))
+    }
+
     pub fn read_session_communication_policy(
         &self,
         agent_id: &str,
@@ -3053,6 +3075,27 @@ impl ProductionSessionWorkers {
         self.open_agent_db_owner(agent_id)?
             .append_transcript_entries_if_session_admitted(session_key, entries)
             .map_err(|error| error.to_string())
+    }
+
+    /// Append room-owned transcript state while the caller already holds the
+    /// per-agent filesystem/admission boundary. This keeps external producers
+    /// from reacquiring the non-reentrant mutation lock.
+    pub(crate) fn append_agent_transcript_entries_locked(
+        &self,
+        agent_id: &str,
+        session_key: Option<&str>,
+        entries: &[serde_json::Value],
+    ) -> Result<usize, String> {
+        self.assert_agent_transcript_write_admission_locked(agent_id)?;
+        let owner = self.open_agent_db_owner_locked(agent_id)?;
+        match session_key {
+            Some(session_key) => owner
+                .append_transcript_entries_if_session_admitted(session_key, entries)
+                .map_err(|error| error.to_string()),
+            None => owner
+                .append_transcript_entries(entries)
+                .map_err(|error| error.to_string()),
+        }
     }
 
     pub fn append_agent_spend_guard_card_if_session_admitted(
