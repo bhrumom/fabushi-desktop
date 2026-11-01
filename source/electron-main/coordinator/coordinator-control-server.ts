@@ -83,7 +83,12 @@ export function createCoordinatorControlServer(options: {
       }
     })().then((outcome) => {
       if (settlement == null) {
-        options.post({ kind: "reply", requestId, outcome });
+        try {
+          options.post({ kind: "reply", requestId, outcome });
+        } catch (error) {
+          options.reportFailure?.("reply-post", error);
+          breach(`failed to post control reply for ${requestId}`);
+        }
       }
     });
   };
@@ -94,11 +99,16 @@ export function createCoordinatorControlServer(options: {
         return breach("coordinator repeated hello on the control port");
       }
       helloObserved = true;
-      options.post({
-        kind: "lifecycle",
-        phase: "ready",
-        protocolVersion: COORDINATOR_PROTOCOL_VERSION,
-      });
+      try {
+        options.post({
+          kind: "lifecycle",
+          phase: "ready",
+          protocolVersion: COORDINATOR_PROTOCOL_VERSION,
+        });
+      } catch (error) {
+        options.reportFailure?.("ready-post", error);
+        return breach("failed to post control ready frame");
+      }
       return;
     }
     if (frame.kind === "lifecycle" && frame.phase === "shutdown") {
@@ -122,10 +132,9 @@ export function createCoordinatorControlServer(options: {
           frame.family,
         )
       ) {
-        options.onProblem(
+        return breach(
           `coordinator emitted an undeclared control event family: ${frame.family}`,
         );
-        return;
       }
       options.onEvent[frame.family]!(frame.payload);
     }
