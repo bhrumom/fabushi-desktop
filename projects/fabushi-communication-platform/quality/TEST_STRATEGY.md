@@ -802,3 +802,23 @@ Composition qualification binds edit-mode dispatch to fixed-U `tools/rules/hook.
 Security qualification proves the settings file adds no explicit allow/deny list, product permission state, persistence or remote service. The helper's canonical banned-function replacements remain sourced from root `.clang-tidy`; repository instructions remain process/security authority. Source-side `tools/rules/test_hook.py@dce99f3507e4ec9f71c8bbd5360e9dde9b62d45f` is retained only as a later oracle.
 
 Stage-A contracts authored, not run: `CONTRACT-TDRP-CLAUDE-SETTINGS-HOST-AUTHORITY-001`, `CONTRACT-TDRP-CLAUDE-SETTINGS-MATCHER-SCOPE-001`, `CONTRACT-TDRP-CLAUDE-SETTINGS-HOOK-COMMAND-001`, `CONTRACT-TDRP-CLAUDE-SETTINGS-STATIC-POLICY-COMPOSITION-001`, `CONTRACT-TDRP-CLAUDE-SETTINGS-POST-USE-BOUNDARY-001`, `CONTRACT-TDRP-CLAUDE-SETTINGS-NO-PERMISSION-EXPANSION-001`, `INT-TDRP-CLAUDE-SETTINGS-HOUSE-RULE-COMPOSITION-001`, `FAULT-TDRP-CLAUDE-SETTINGS-MALFORMED-PAYLOAD-001`, `FAULT-TDRP-CLAUDE-SETTINGS-HOOK-UNAVAILABLE-001`, and `SEC-TDRP-CLAUDE-SETTINGS-TOOL-SCOPE-001`. No hook/edit tool, Python/git subprocess, clang-tidy, build, lint, validator, test, CI, packaging, deployment, installation, runtime evidence or acceptance is executed in Stage A.
+
+
+### Repository development-container host/toolchain qualification
+
+`TDRP-R9-REPOSITORY-DEVELOPMENT-CONTAINER-HOST-TOOLCHAIN-001` is qualified through authored-only Stage-A contracts and later frozen-candidate Stage-B execution. Source identity is fixed-U `.devcontainer.json@16a1bcc1192bed87c5211da3dc63b0b0ed99a93e`, with image-production lineage `Telegram/build/prepare/linux.sh@e4d2f920e4becdff6292d296efe6f21455a19fcb` -> `pyproject.toml@8f43692fb217f075ccc588c3b677177e42b5688f` / `gen_dockerfile.py@86d27c96e1f732a1faf3e85397ea3ba38e493a0d` -> `Dockerfile@3fea9e6866e0ea6351f8a13ebb825ebf49cadfc2`, and workflow documentation `docs/building-linux.md@fbdf25355734f35617849224da106f1b9fafb3c9`.
+
+Authored, not run in Stage A:
+- `CONTRACT-TDRP-DEVCONTAINER-HOST-AUTHORITY-001` — VS Code Dev Containers remains the development-host consumer; no shipping runtime owner is created.
+- `CONTRACT-TDRP-DEVCONTAINER-IMAGE-LINEAGE-001` — exact `tdesktop:centos_env` name and preparation/generator/Dockerfile provenance remain bound.
+- `CONTRACT-TDRP-DEVCONTAINER-CMAKE-ENVIRONMENT-001` — Ninja Multi-Config, `out`, compile commands, IntelliSense and extension settings remain exact.
+- `CONTRACT-TDRP-DEVCONTAINER-WORKSPACE-MOUNT-001` — local workspace bind-mount and `/usr/src/tdesktop` workspace identity remain exact.
+- `CONTRACT-TDRP-DEVCONTAINER-SECURITY-BOUNDARY-001` — `SYS_PTRACE` plus `seccomp=unconfined` are explicit development-only privilege broadening and never product authorization.
+- `CONTRACT-TDRP-DEVCONTAINER-NO-SECRET-EXPANSION-001` — source declares no API credential, secret mount or production credential ownership.
+- `INT-TDRP-DEVCONTAINER-TOOLCHAIN-COMPOSITION-001` — host config composes with the existing build/toolchain provenance and repository process owners without a second build system.
+- `FAULT-TDRP-DEVCONTAINER-IMAGE-UNAVAILABLE-001` — missing/unprepared image remains non-passing.
+- `FAULT-TDRP-DEVCONTAINER-HOST-CAPABILITY-001` — rejected mount/ptrace/seccomp/Dev Containers host capability remains non-passing.
+- `FAULT-TDRP-DEVCONTAINER-WORKSPACE-MISMATCH-001` — wrong mount/workspace identity cannot qualify the environment.
+- `SEC-TDRP-DEVCONTAINER-PRIVILEGE-BOUNDARY-001` — elevated development-container settings cannot leak into shipping/runtime security policy.
+
+Stage A status is `validation_status=not-run`, `accepted=false`; no Docker/Poetry/CMake/Ninja/build/test/lint/validator/package/deploy/container execution is permitted by this authored qualification.
