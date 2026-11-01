@@ -243,3 +243,14 @@ For the threshold cases, record helper birth date/age, evaluation date, recent-w
 Exact-ref documentation cases identify both the committed source revision and any divergent worktree text and prove each mode reads only its declared authority. Internal/open-work cases preserve helper kind, required-by edges, indirect consumer propagation, open-task identity and routing hold. Finding-lifecycle cases preserve stable finding ID and `first_seen`, and prove unavailable current evidence changes an open finding to unverified rather than resolved while an already-resolved finding stays resolved when that evidence class is unavailable.
 
 No evidence from this suite authorizes helper deletion, task routing, configured-build/runtime reachability, product acceptance, or release readiness. Stage A stores only the authored contract/evidence requirements; executable pass/fail evidence remains absent until Stage B.
+
+
+## Repository include-graph and build-cost evidence
+
+Passing include-graph evidence records the exact scanned revision, source roots, build-model identity, resolved/unresolved include observations, style-import resolutions, and the resolution precedence used for sampled edges. System or third-party names absent from the exact project tree remain unresolved rather than being guessed from the host environment.
+
+Closure/PCH evidence records start node, cycle-safe transitive closure, target/PCH identity, PCH closure and subtraction used for sampled TU weight. Build-cost evidence records per-unit weight, per-header reach/rebuild, total unit work, distinct PCH contribution and source-line inputs. These proxies cannot be presented as compiler duration, configured-build reachability or performance acceptance.
+
+Layering evidence records including path/line, resolved include target, source target, included target and transitive allowed dependency set. Unknown ownership does not become a violation or a pass claim. Negative controls cover local/root precedence, cycles, PCH exclusion, unresolved includes, allowed transitive dependencies, forbidden cross-target edges and style imports.
+
+Stage-A contracts remain `not-run`; upstream source review or upstream test behavior is not Fabushi execution evidence. The responsibility remains under the existing repository quality/test-evidence owner and creates no second scanner, build-system owner, findings ledger, task queue, product runtime or release verdict.

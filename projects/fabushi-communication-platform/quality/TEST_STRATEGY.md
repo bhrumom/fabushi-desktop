@@ -260,3 +260,14 @@ The authored contract matrix covers: the exact 90-day eligibility boundary and l
 The contract IDs are `CONTRACT-TDRP-CODE-HEALTH-HARNESS-REGRESSION-BOUNDARIES-001`, `CONTRACT-TDRP-CODE-HEALTH-HARNESS-REGRESSION-COVERAGE-001`, `CONTRACT-TDRP-CODE-HEALTH-HARNESS-REGRESSION-CONSUMERS-001`, `CONTRACT-TDRP-CODE-HEALTH-HARNESS-REGRESSION-PATCH-FILTERING-001`, `CONTRACT-TDRP-CODE-HEALTH-HARNESS-REGRESSION-LEXICAL-OWNERSHIP-001`, `CONTRACT-TDRP-CODE-HEALTH-HARNESS-REGRESSION-EXACT-REF-001`, and `CONTRACT-TDRP-CODE-HEALTH-HARNESS-REGRESSION-FINDING-LIFECYCLE-001`; the suite-level integration contract is `INT-TDRP-CODE-HEALTH-HARNESS-REGRESSION-001`.
 
 Stage A authors these contracts only. Their execution belongs to the Stage-B exact-head GitHub Actions candidate campaign; no source review, fixture design, or upstream test result is a passing Fabushi execution claim.
+
+
+### Repository include-graph and build-cost qualification
+
+Qualify the repository include/dependency graph as source-neutral maintainability evidence, not configured-build truth or product runtime behavior. Resolve only project-owned quoted C/C++ include/import edges plus declared style `using "...";` imports against the exact scanned source tree, in local-path, own-root, then other-root order; generated `styles/style_<name>.h` references may map to the matching `<name>.style` source. Unresolved names remain explicit observations.
+
+Closure qualification is cycle-safe. Translation-unit `weight` is the source-line count of reachable project headers beyond the target PCH closure; header `reach` counts dependent translation units; header `rebuild` accumulates each dependent unit's own source lines plus non-PCH header weight; total build-work proxy adds all unit work plus each distinct declared PCH closure once. These are comparative source-line proxies, not wall-clock compile timings.
+
+Layering qualification uses the existing target/dependency model: an include is a violation only when both file owners are known and the included target is outside the including target's transitive link dependency closure. Review/report/atlas consumers may project the same exact graph into warnings, findings or area edges, but none of these observations proves configured-build reachability, ownership, product behavior, acceptance or release.
+
+Stage-A contracts authored, not run: `CONTRACT-TDRP-CODE-HEALTH-INCLUDE-GRAPH-RESOLUTION-001`, `CONTRACT-TDRP-CODE-HEALTH-INCLUDE-GRAPH-CLOSURE-PCH-001`, `CONTRACT-TDRP-CODE-HEALTH-INCLUDE-BUILD-COST-001`, `CONTRACT-TDRP-CODE-HEALTH-INCLUDE-LAYERING-001`, `CONTRACT-TDRP-CODE-HEALTH-STYLE-IMPORT-001`, and `INT-TDRP-CODE-HEALTH-INCLUDE-GRAPH-001`.
