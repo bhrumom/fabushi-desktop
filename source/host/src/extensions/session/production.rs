@@ -1642,6 +1642,19 @@ impl ProductionSessionWorkers {
         Ok(())
     }
 
+    fn assert_agent_transcript_write_admission(&self, agent_id: &str) -> Result<(), String> {
+        self.assert_agent_work_admission(agent_id)?;
+        if self
+            .read_session_work_admission(agent_id)?
+            .is_some_and(|record| record.archived_at_ms.is_some())
+        {
+            return Err(format!(
+                "agent {agent_id} session is archived; agent-only transcript writes are not admitted"
+            ));
+        }
+        Ok(())
+    }
+
     pub fn ensure_main_session_work_admission(&self, agent_id: &str) -> Result<(), String> {
         let db = self.open_agent_db_owner(agent_id)?;
         if db.read_session_work_admission().map_err(|error| error.to_string())?.is_some() {
@@ -2378,7 +2391,7 @@ impl ProductionSessionWorkers {
         agent_id: &str,
         entries: &[serde_json::Value],
     ) -> Result<usize, String> {
-        self.assert_agent_work_admission(agent_id)?;
+        self.assert_agent_transcript_write_admission(agent_id)?;
         self.open_agent_db_owner(agent_id)?
             .append_transcript_entries(entries)
             .map_err(|error| error.to_string())
@@ -2420,7 +2433,7 @@ impl ProductionSessionWorkers {
         agent_id: &str,
         commit: &CompactionCommit,
     ) -> Result<CompactionCommitOutcome, String> {
-        self.assert_agent_work_admission(agent_id)?;
+        self.assert_agent_transcript_write_admission(agent_id)?;
         self.open_agent_db_owner(agent_id)?
             .commit_compaction(commit)
             .map_err(|error| error.to_string())
@@ -2460,7 +2473,7 @@ impl ProductionSessionWorkers {
         entry_id: &str,
         next: &serde_json::Value,
     ) -> Result<Option<serde_json::Value>, String> {
-        self.assert_agent_work_admission(agent_id)?;
+        self.assert_agent_transcript_write_admission(agent_id)?;
         self.open_agent_db_owner(agent_id)?
             .update_transcript_entry(entry_id, next)
             .map_err(|error| error.to_string())
@@ -2484,14 +2497,14 @@ impl ProductionSessionWorkers {
         agent_id: &str,
         entry_id: &str,
     ) -> Result<bool, String> {
-        self.assert_agent_work_admission(agent_id)?;
+        self.assert_agent_transcript_write_admission(agent_id)?;
         self.open_agent_db_owner(agent_id)?
             .delete_transcript_entry(entry_id)
             .map_err(|error| error.to_string())
     }
 
     pub fn clear_agent_conversation(&self, agent_id: &str) -> Result<bool, String> {
-        self.assert_agent_work_admission(agent_id)?;
+        self.assert_agent_transcript_write_admission(agent_id)?;
         let store = self.create_agent_blob_store(agent_id)?;
         let db_path = self.existing_session_db_path(agent_id)?;
         futures::executor::block_on(self.pool.clear_blobs(

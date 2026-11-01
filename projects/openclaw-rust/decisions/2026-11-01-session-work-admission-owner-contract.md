@@ -185,6 +185,9 @@ source. They therefore remain pending rather than receiving a guessed
 `agent:{agent_id}:main` selector. A future change must first make the owning
 producer capture and propagate its canonical session identity, then add the
 corresponding atomic owner contract and negative stale/archive oracle.
+The generic compatibility wrappers now also reject writes against an archived
+owner record, so retaining agent-only identity does not bypass the archive
+fence.
 
 ## Rejected alternatives
 

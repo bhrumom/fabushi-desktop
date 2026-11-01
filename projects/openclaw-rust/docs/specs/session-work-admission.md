@@ -287,8 +287,10 @@ must not synthesize `agent:{agent_id}:main`, infer a session from an unrelated
 room or approval identity, or route them through the session-admitted update
 transaction until their owning producer captures and propagates the real
 canonical session identity. The existing agent-only compatibility boundary is
-retained for these non-session-scoped producers; this is incomplete evidence,
-not acceptance.
+retained for these non-session-scoped producers, but it is not an archive
+bypass: generic transcript and compaction wrappers reject writes when the
+owner-local admission record is archived. This is incomplete evidence, not
+acceptance.
 
 ## Release and rollback
 

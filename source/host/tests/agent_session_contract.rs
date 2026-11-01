@@ -178,6 +178,18 @@ fn archived_main_session_rejects_routed_work_admission() {
         .assert_session_work_admission(&record.id, Some(&current.session_key))
         .expect_err("archived session must reject work");
     assert!(error.contains("is archived"));
+    let transcript_error = production
+        .append_agent_transcript_entries(
+            &record.id,
+            &[serde_json::json!({
+                "id": "archived-entry",
+                "kind": "message",
+                "role": "user",
+                "content": "must not bypass archive fence",
+            })],
+        )
+        .expect_err("archived session must reject agent-only transcript writes");
+    assert!(transcript_error.contains("session is archived"));
     archived.archived_at_ms = None;
     archived.lifecycle_revision = "restored-revision".into();
     assert!(production
