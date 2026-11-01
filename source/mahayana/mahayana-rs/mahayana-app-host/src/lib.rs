@@ -88,18 +88,224 @@ pub struct HostResponse {
     pub error: Option<String>,
 }
 
-const PRODUCT_SETTINGS_VERSION: u32 = 1;
+const PRODUCT_SETTINGS_VERSION: u32 = 2;
+const PRODUCT_PROXY_ROTATION_TIMEOUT_DEFAULT_SECONDS: u32 = 10;
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+enum ProductProxyMode {
+    System,
+    Enabled,
+    Disabled,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+enum ProductProxyType {
+    Socks5,
+    Http,
+    Mtproto,
+    Web,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct ProductProxyEndpoint {
+    #[serde(rename = "type")]
+    proxy_type: ProductProxyType,
+    host: String,
+    port: u32,
+    user: String,
+    password: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct ProductProxyRotationSettings {
+    enabled: bool,
+    timeout_seconds: u32,
+    preferred_indices: Vec<usize>,
+}
+
+impl Default for ProductProxyRotationSettings {
+    fn default() -> Self {
+        Self {
+            enabled: false,
+            timeout_seconds: PRODUCT_PROXY_ROTATION_TIMEOUT_DEFAULT_SECONDS,
+            preferred_indices: Vec::new(),
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct ProductProxySettings {
+    mode: ProductProxyMode,
+    selected: Option<ProductProxyEndpoint>,
+    list: Vec<ProductProxyEndpoint>,
+    try_ipv6: bool,
+    use_proxy_for_calls: bool,
+    check_ip_warning_shown: bool,
+    rotation: ProductProxyRotationSettings,
+}
+
+impl Default for ProductProxySettings {
+    fn default() -> Self {
+        Self {
+            mode: ProductProxyMode::System,
+            selected: None,
+            list: Vec::new(),
+            try_ipv6: !cfg!(target_os = "windows"),
+            use_proxy_for_calls: false,
+            check_ip_warning_shown: false,
+            rotation: ProductProxyRotationSettings::default(),
+        }
+    }
+}
+
+impl ProductProxySettings {
+    fn proxy_enabled(&self) -> bool {
+        self.mode == ProductProxyMode::Enabled
+    }
+
+    fn normalize_preferred_indices(&mut self, indices: Vec<i64>) {
+        let mut normalized = Vec::new();
+        for index in indices {
+            let Ok(index) = usize::try_from(index) else {
+                continue;
+            };
+            if index >= self.list.len() || normalized.contains(&index) {
+                continue;
+            }
+            normalized.push(index);
+        }
+        self.rotation.preferred_indices = normalized;
+    }
+
+    fn apply(&mut self, mutation: ProductProxyMutation) -> Result<bool, AppHostError> {
+        let mut changed = false;
+        match mutation {
+            ProductProxyMutation::SetMode { mode } => {
+                changed = self.mode != mode;
+                self.mode = mode;
+            }
+            ProductProxyMutation::SetSelected { proxy } => {
+                changed = self.selected != proxy;
+                self.selected = proxy;
+            }
+            ProductProxyMutation::SetSelectedAndMode { proxy, mode } => {
+                changed = self.selected != proxy || self.mode != mode;
+                self.selected = proxy;
+                self.mode = mode;
+            }
+            ProductProxyMutation::SetList { list } => {
+                changed = self.list != list || !self.rotation.preferred_indices.is_empty();
+                self.list = list;
+                self.rotation.preferred_indices.clear();
+            }
+            ProductProxyMutation::Add { proxy } => {
+                self.list.push(proxy);
+                changed = true;
+            }
+            ProductProxyMutation::Insert { index, proxy } => {
+                let index = if index <= 0 {
+                    0
+                } else {
+                    usize::try_from(index).unwrap_or(usize::MAX).min(self.list.len())
+                };
+                for existing in &mut self.rotation.preferred_indices {
+                    if *existing >= index {
+                        *existing += 1;
+                    }
+                }
+                self.list.insert(index, proxy);
+                changed = true;
+            }
+            ProductProxyMutation::Remove { proxy } => {
+                if let Some(index) = self.list.iter().position(|existing| existing == &proxy) {
+                    self.list.remove(index);
+                    for existing in &mut self.rotation.preferred_indices {
+                        if *existing > index {
+                            *existing -= 1;
+                        }
+                    }
+                    self.rotation.preferred_indices.retain(|existing| *existing != index);
+                    changed = true;
+                }
+            }
+            ProductProxyMutation::Replace { was, proxy } => {
+                if let Some(index) = self.list.iter().position(|existing| existing == &was) {
+                    changed = self.list[index] != proxy;
+                    self.list[index] = proxy;
+                }
+            }
+            ProductProxyMutation::SetTryIpv6 { enabled } => {
+                changed = self.try_ipv6 != enabled;
+                self.try_ipv6 = enabled;
+            }
+            ProductProxyMutation::SetUseProxyForCalls { enabled } => {
+                changed = self.use_proxy_for_calls != enabled;
+                self.use_proxy_for_calls = enabled;
+            }
+            ProductProxyMutation::SetCheckIpWarningShown { shown } => {
+                changed = self.check_ip_warning_shown != shown;
+                self.check_ip_warning_shown = shown;
+            }
+            ProductProxyMutation::SetRotationEnabled { enabled } => {
+                changed = self.rotation.enabled != enabled;
+                self.rotation.enabled = enabled;
+            }
+            ProductProxyMutation::SetRotationTimeout { seconds } => {
+                let normalized = if seconds <= 0 {
+                    PRODUCT_PROXY_ROTATION_TIMEOUT_DEFAULT_SECONDS
+                } else {
+                    u32::try_from(seconds).map_err(|_| {
+                        AppHostError::InvalidRequest(
+                            "settings.mutateNetworkProxy rotation timeout is out of range".into(),
+                        )
+                    })?
+                };
+                changed = self.rotation.timeout_seconds != normalized;
+                self.rotation.timeout_seconds = normalized;
+            }
+            ProductProxyMutation::SetRotationPreferredIndices { indices } => {
+                let before = self.rotation.preferred_indices.clone();
+                self.normalize_preferred_indices(indices);
+                changed = self.rotation.preferred_indices != before;
+            }
+            ProductProxyMutation::PromoteRotationPreferredIndex { index } => {
+                if let Ok(index) = usize::try_from(index) {
+                    if index < self.list.len() {
+                        if self.rotation.preferred_indices.first().copied() != Some(index) {
+                            if let Some(existing) = self
+                                .rotation
+                                .preferred_indices
+                                .iter()
+                                .position(|existing| *existing == index)
+                            {
+                                self.rotation.preferred_indices.remove(existing);
+                            }
+                            self.rotation.preferred_indices.insert(0, index);
+                            changed = true;
+                        }
+                    }
+                }
+            }
+        }
+        Ok(changed)
+    }
+}
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 struct ProductNetworkSettings {
-    proxy_enabled: bool,
+    proxy: ProductProxySettings,
 }
 
 impl Default for ProductNetworkSettings {
     fn default() -> Self {
         Self {
-            proxy_enabled: false,
+            proxy: ProductProxySettings::default(),
         }
     }
 }
@@ -120,6 +326,81 @@ impl Default for ProductSettingsState {
     }
 }
 
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct LegacyProductNetworkSettingsV1 {
+    proxy_enabled: bool,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct LegacyProductSettingsStateV1 {
+    version: u32,
+    network: LegacyProductNetworkSettingsV1,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(tag = "type", rename_all = "camelCase")]
+enum ProductProxyMutation {
+    SetMode {
+        mode: ProductProxyMode,
+    },
+    SetSelected {
+        proxy: Option<ProductProxyEndpoint>,
+    },
+    SetSelectedAndMode {
+        proxy: Option<ProductProxyEndpoint>,
+        mode: ProductProxyMode,
+    },
+    SetList {
+        list: Vec<ProductProxyEndpoint>,
+    },
+    Add {
+        proxy: ProductProxyEndpoint,
+    },
+    Insert {
+        index: i64,
+        proxy: ProductProxyEndpoint,
+    },
+    Remove {
+        proxy: ProductProxyEndpoint,
+    },
+    Replace {
+        was: ProductProxyEndpoint,
+        proxy: ProductProxyEndpoint,
+    },
+    SetTryIpv6 {
+        enabled: bool,
+    },
+    SetUseProxyForCalls {
+        enabled: bool,
+    },
+    SetCheckIpWarningShown {
+        shown: bool,
+    },
+    SetRotationEnabled {
+        enabled: bool,
+    },
+    SetRotationTimeout {
+        seconds: i64,
+    },
+    SetRotationPreferredIndices {
+        indices: Vec<i64>,
+    },
+    PromoteRotationPreferredIndex {
+        index: i64,
+    },
+}
+
+impl ProductProxyMutation {
+    fn republishes_proxy_enabled(&self) -> bool {
+        matches!(
+            self,
+            Self::SetMode { .. } | Self::SetSelectedAndMode { .. }
+        )
+    }
+}
+
 /// Canonical, source-neutral product Settings owner for the desktop application.
 ///
 /// This intentionally does not reuse feature.persistence/ui_state and does not
@@ -135,16 +416,48 @@ impl ProductSettingsOwner {
             let encoded = std::fs::read_to_string(&path).map_err(|error| {
                 AppHostError::Operation(format!("read product Settings: {error}"))
             })?;
-            let state: ProductSettingsState = serde_json::from_str(&encoded).map_err(|error| {
+            let value: Value = serde_json::from_str(&encoded).map_err(|error| {
                 AppHostError::Operation(format!("decode product Settings: {error}"))
             })?;
-            if state.version != PRODUCT_SETTINGS_VERSION {
-                return Err(AppHostError::Operation(format!(
-                    "unsupported product Settings version {}",
-                    state.version
-                )));
+            let version = value
+                .get("version")
+                .and_then(Value::as_u64)
+                .ok_or_else(|| AppHostError::Operation("product Settings version is missing".into()))?;
+            match version {
+                1 => {
+                    let legacy: LegacyProductSettingsStateV1 =
+                        serde_json::from_value(value).map_err(|error| {
+                            AppHostError::Operation(format!(
+                                "decode product Settings version 1: {error}"
+                            ))
+                        })?;
+                    if legacy.version != 1 {
+                        return Err(AppHostError::Operation(
+                            "invalid product Settings version 1 payload".into(),
+                        ));
+                    }
+                    let mut migrated = ProductSettingsState::default();
+                    migrated.network.proxy.mode = if legacy.network.proxy_enabled {
+                        ProductProxyMode::Enabled
+                    } else {
+                        ProductProxyMode::System
+                    };
+                    Self::persist_to_path(&path, &migrated)?;
+                    migrated
+                }
+                version if version == u64::from(PRODUCT_SETTINGS_VERSION) => {
+                    serde_json::from_value(value).map_err(|error| {
+                        AppHostError::Operation(format!(
+                            "decode product Settings version {PRODUCT_SETTINGS_VERSION}: {error}"
+                        ))
+                    })?
+                }
+                other => {
+                    return Err(AppHostError::Operation(format!(
+                        "unsupported product Settings version {other}"
+                    )));
+                }
             }
-            state
         } else {
             ProductSettingsState::default()
         };
@@ -161,6 +474,23 @@ impl ProductSettingsOwner {
             .map_err(|_| AppHostError::Operation("product Settings lock is unavailable".into()))
     }
 
+    fn mutate_network_proxy(
+        &self,
+        mutation: ProductProxyMutation,
+    ) -> Result<ProductSettingsState, AppHostError> {
+        let mut current = self
+            .state
+            .lock()
+            .map_err(|_| AppHostError::Operation("product Settings lock is unavailable".into()))?;
+        let mut next = current.clone();
+        let changed = next.network.proxy.apply(mutation)?;
+        if changed {
+            self.persist(&next)?;
+            *current = next.clone();
+        }
+        Ok(next)
+    }
+
     fn set_network_proxy_enabled(
         &self,
         proxy_enabled: bool,
@@ -169,36 +499,44 @@ impl ProductSettingsOwner {
             .state
             .lock()
             .map_err(|_| AppHostError::Operation("product Settings lock is unavailable".into()))?;
-        if current.network.proxy_enabled == proxy_enabled {
-            return Ok(current.clone());
-        }
-
         let mut next = current.clone();
-        next.network.proxy_enabled = proxy_enabled;
-        self.persist(&next)?;
-        *current = next.clone();
+        let mode = next.network.proxy.mode;
+        next.network.proxy.mode = if proxy_enabled {
+            ProductProxyMode::Enabled
+        } else if mode == ProductProxyMode::Enabled {
+            ProductProxyMode::System
+        } else {
+            mode
+        };
+        if next != *current {
+            self.persist(&next)?;
+            *current = next.clone();
+        }
         Ok(next)
     }
 
     fn persist(&self, state: &ProductSettingsState) -> Result<(), AppHostError> {
-        if let Some(parent) = self.path.parent() {
+        Self::persist_to_path(&self.path, state)
+    }
+
+    fn persist_to_path(path: &Path, state: &ProductSettingsState) -> Result<(), AppHostError> {
+        if let Some(parent) = path.parent() {
             std::fs::create_dir_all(parent).map_err(|error| {
                 AppHostError::Operation(format!("create product Settings directory: {error}"))
             })?;
         }
         let encoded = serde_json::to_vec_pretty(state)
             .map_err(|error| AppHostError::Operation(format!("encode product Settings: {error}")))?;
-        let temporary = self.path.with_extension("json.tmp");
+        let temporary = path.with_extension("json.tmp");
         std::fs::write(&temporary, encoded).map_err(|error| {
             AppHostError::Operation(format!("write product Settings temporary file: {error}"))
         })?;
-        std::fs::rename(&temporary, &self.path).map_err(|error| {
+        std::fs::rename(&temporary, path).map_err(|error| {
             AppHostError::Operation(format!("commit product Settings: {error}"))
         })?;
         Ok(())
     }
 }
-
 
 pub struct AppHost {
     app_data_dir: PathBuf,
@@ -445,6 +783,7 @@ impl AppHost {
             "host.platform" => Ok(json!({"platform": host_platform()})),
             "settings.snapshot" => serde_json::to_value(self.settings.snapshot()?)
                 .map_err(|error| AppHostError::Operation(error.to_string())),
+            "settings.mutateNetworkProxy" => self.settings_mutate_network_proxy(params),
             "settings.setNetworkProxyEnabled" => self.settings_set_network_proxy_enabled(params),
             method if method.starts_with("feature.") => self.handle_feature(method, params),
             "platform.request" => self
@@ -466,6 +805,33 @@ impl AppHost {
     }
 
 
+    fn settings_mutate_network_proxy(&self, params: Value) -> Result<Value, AppHostError> {
+        let mutation_value = params
+            .get("mutation")
+            .cloned()
+            .ok_or_else(|| {
+                AppHostError::InvalidRequest(
+                    "settings.mutateNetworkProxy requires mutation".into(),
+                )
+            })?;
+        let mutation: ProductProxyMutation = serde_json::from_value(mutation_value).map_err(|error| {
+            AppHostError::InvalidRequest(format!(
+                "settings.mutateNetworkProxy mutation is invalid: {error}"
+            ))
+        })?;
+        let republish = mutation.republishes_proxy_enabled();
+        let state = self.settings.mutate_network_proxy(mutation)?;
+        let publication = if republish {
+            Some(self.publish_network_proxy_enabled(state.network.proxy.proxy_enabled())?)
+        } else {
+            None
+        };
+        Ok(json!({
+            "settings": state,
+            "publication": publication,
+        }))
+    }
+
     fn settings_set_network_proxy_enabled(&self, params: Value) -> Result<Value, AppHostError> {
         let proxy_enabled = params
             .get("proxyEnabled")
@@ -477,30 +843,35 @@ impl AppHost {
             })?;
 
         // Persistence is authoritative and occurs before downstream publication.
-        // The command deliberately republishes even for a same-value retry.
+        // The compatibility command deliberately republishes even for a same-value retry.
         let state = self.settings.set_network_proxy_enabled(proxy_enabled)?;
-        let publication = if let Some(client) = self.telegram_client.as_ref() {
+        let publication =
+            self.publish_network_proxy_enabled(state.network.proxy.proxy_enabled())?;
+        Ok(json!({
+            "settings": state,
+            "publication": publication,
+        }))
+    }
+
+    fn publish_network_proxy_enabled(&self, proxy_enabled: bool) -> Result<Value, AppHostError> {
+        if let Some(client) = self.telegram_client.as_ref() {
             let report = client
-                .refresh_special_config(state.network.proxy_enabled)
+                .refresh_special_config(proxy_enabled)
                 .map_err(|error| {
                     AppHostError::Operation(format!(
                         "publish product proxy setting to Telegram runtime: {error}"
                     ))
                 })?;
-            json!({
+            Ok(json!({
                 "available": true,
                 "report": report,
-            })
+            }))
         } else {
-            json!({
+            Ok(json!({
                 "available": false,
                 "reason": "telegramClientUnavailable",
-            })
-        };
-        Ok(json!({
-            "settings": state,
-            "publication": publication,
-        }))
+            }))
+        }
     }
 
     fn handle_feature(&self, method: &str, params: Value) -> Result<Value, AppHostError> {
@@ -1769,19 +2140,135 @@ mod telegram_composition_contract_tests {
         ))
     }
 
+    fn proxy_endpoint(label: &str) -> ProductProxyEndpoint {
+        ProductProxyEndpoint {
+            proxy_type: ProductProxyType::Socks5,
+            host: format!("{label}.example"),
+            port: 1080,
+            user: String::new(),
+            password: String::new(),
+        }
+    }
+
     #[test]
-    fn product_settings_owner_persists_source_neutral_proxy_projection() {
-        let path = product_settings_test_path("persist");
+    fn product_settings_owner_defaults_match_fixed_u_proxy_settings() {
+        let state = ProductSettingsState::default();
+        assert_eq!(state.version, 2);
+        assert_eq!(state.network.proxy.mode, ProductProxyMode::System);
+        assert!(state.network.proxy.selected.is_none());
+        assert!(state.network.proxy.list.is_empty());
+        assert_eq!(state.network.proxy.try_ipv6, !cfg!(target_os = "windows"));
+        assert!(!state.network.proxy.use_proxy_for_calls);
+        assert!(!state.network.proxy.check_ip_warning_shown);
+        assert!(!state.network.proxy.rotation.enabled);
+        assert_eq!(state.network.proxy.rotation.timeout_seconds, 10);
+        assert!(state.network.proxy.rotation.preferred_indices.is_empty());
+    }
+
+    #[test]
+    fn product_settings_owner_migrates_v1_proxy_enabled_in_place() {
+        let path = product_settings_test_path("migrate-v1");
+        std::fs::write(
+            &path,
+            br#"{"version":1,"network":{"proxyEnabled":true}}"#,
+        )
+        .expect("write version 1 fixture");
+        let owner = ProductSettingsOwner::open(path.clone()).expect("migrate version 1 Settings");
+        let state = owner.snapshot().expect("migrated snapshot");
+        assert_eq!(state.version, 2);
+        assert_eq!(state.network.proxy.mode, ProductProxyMode::Enabled);
+        drop(owner);
+
+        let encoded = std::fs::read_to_string(&path).expect("read migrated Settings");
+        assert!(encoded.contains(r#""version": 2"#));
+        assert!(!encoded.contains("proxyEnabled"));
+        let _ = std::fs::remove_file(path);
+    }
+
+    #[test]
+    fn product_settings_owner_persists_typed_proxy_state() {
+        let path = product_settings_test_path("persist-v2");
         let owner = ProductSettingsOwner::open(path.clone()).expect("open default Settings");
-        assert!(!owner.snapshot().expect("default snapshot").network.proxy_enabled);
         owner
-            .set_network_proxy_enabled(true)
-            .expect("persist proxy enabled");
+            .mutate_network_proxy(ProductProxyMutation::SetList {
+                list: vec![proxy_endpoint("a"), proxy_endpoint("b")],
+            })
+            .expect("persist proxy list");
+        owner
+            .mutate_network_proxy(ProductProxyMutation::SetSelectedAndMode {
+                proxy: Some(proxy_endpoint("b")),
+                mode: ProductProxyMode::Enabled,
+            })
+            .expect("persist selected proxy and mode");
         drop(owner);
 
         let restored = ProductSettingsOwner::open(path.clone()).expect("restore Settings");
-        assert!(restored.snapshot().expect("restored snapshot").network.proxy_enabled);
+        let state = restored.snapshot().expect("restored snapshot");
+        assert_eq!(state.network.proxy.list.len(), 2);
+        assert_eq!(state.network.proxy.selected, Some(proxy_endpoint("b")));
+        assert_eq!(state.network.proxy.mode, ProductProxyMode::Enabled);
+        assert!(state.network.proxy.proxy_enabled());
         let _ = std::fs::remove_file(path);
+    }
+
+    #[test]
+    fn product_proxy_list_mutations_preserve_fixed_u_preferred_index_invariants() {
+        let mut proxy = ProductProxySettings::default();
+        proxy.list = vec![
+            proxy_endpoint("a"),
+            proxy_endpoint("b"),
+            proxy_endpoint("c"),
+        ];
+        proxy.normalize_preferred_indices(vec![2, -1, 2, 0, 9]);
+        assert_eq!(proxy.rotation.preferred_indices, vec![2, 0]);
+
+        proxy
+            .apply(ProductProxyMutation::Insert {
+                index: 1,
+                proxy: proxy_endpoint("inserted"),
+            })
+            .expect("insert");
+        assert_eq!(proxy.rotation.preferred_indices, vec![3, 0]);
+
+        proxy
+            .apply(ProductProxyMutation::Remove {
+                proxy: proxy_endpoint("inserted"),
+            })
+            .expect("remove");
+        assert_eq!(proxy.rotation.preferred_indices, vec![2, 0]);
+
+        proxy
+            .apply(ProductProxyMutation::SetList {
+                list: vec![proxy_endpoint("replacement")],
+            })
+            .expect("replace whole list");
+        assert!(proxy.rotation.preferred_indices.is_empty());
+    }
+
+    #[test]
+    fn product_proxy_rotation_timeout_and_promotion_match_fixed_u() {
+        let mut proxy = ProductProxySettings::default();
+        proxy.list = vec![
+            proxy_endpoint("a"),
+            proxy_endpoint("b"),
+            proxy_endpoint("c"),
+        ];
+        proxy
+            .apply(ProductProxyMutation::SetRotationTimeout { seconds: 0 })
+            .expect("normalize timeout");
+        assert_eq!(proxy.rotation.timeout_seconds, 10);
+        proxy
+            .apply(ProductProxyMutation::SetRotationPreferredIndices {
+                indices: vec![0, 2],
+            })
+            .expect("preferred indices");
+        proxy
+            .apply(ProductProxyMutation::PromoteRotationPreferredIndex { index: 2 })
+            .expect("promote");
+        assert_eq!(proxy.rotation.preferred_indices, vec![2, 0]);
+        assert!(!proxy
+            .apply(ProductProxyMutation::PromoteRotationPreferredIndex { index: 2 })
+            .expect("idempotent promote"));
     }
 
     #[test]
@@ -1796,6 +2283,7 @@ mod telegram_composition_contract_tests {
     fn product_settings_host_contract_is_source_neutral() {
         let methods = [
             "settings.snapshot",
+            "settings.mutateNetworkProxy",
             "settings.setNetworkProxyEnabled",
         ];
         assert!(methods.iter().all(|method| !method.contains("telegram")));
