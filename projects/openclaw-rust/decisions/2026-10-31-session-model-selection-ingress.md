@@ -5,6 +5,16 @@ Date: 2026-10-31
 Scope: Fabushi Desktop Host session/model-picker integration
 Responsibilities: `OCRM-RESP-MODEL-PICKER-001`, `OCRM-RESP-SESSION-MODEL-OVERRIDES-001`
 
+## Evidence subject
+
+This boundary was revalidated against the current chat branch at commit
+`d34be086cfc9e79af3986383360efe3445dc613c`, tree
+`d22effe83a0edc179aacb667cfd49cbb23c1788e`. The fixed OpenClaw implementation
+authority remains commit `ad8d12f126d29b0db204187adf5092db80294e70`, tree
+`04ccce62f1d74dc8e0c88290ae8ded027b7b0f16`; moving discovery candidates are
+not substituted for it. This provenance refresh does not promote wiring,
+verification, acceptance, or any global completion flag.
+
 ## Context
 
 Fabushi already has two valid owner/state slices:
