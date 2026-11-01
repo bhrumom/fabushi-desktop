@@ -94,6 +94,13 @@ fn direct_delivery_defers_recipient_transcript_until_execution_admission(){
 }
 
 #[test]
+fn direct_delivery_preflights_admitted_target_before_side_effects() {
+    let source = include_str!("../src/extensions/transcript/agent_to_agent_messaging.rs");
+    assert!(source.contains("self.sessions.assert_session_work_admission(\n                to_agent_id"));
+    assert!(source.contains("Some(&target_admission.session_key)"));
+}
+
+#[test]
 fn persisted_never_policy_rejects_before_transcript_or_wake(){
     let root=temp_root();let sessions=Arc::new(ProductionSessionWorkers::with_agents_root(&root,500));
     let alpha=sessions.materialize_new_session(Some(&profile("Alpha")),"user",None).expect("alpha");

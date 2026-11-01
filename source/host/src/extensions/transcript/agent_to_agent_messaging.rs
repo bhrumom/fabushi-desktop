@@ -273,6 +273,12 @@ impl ProductionAgentToAgentMessaging {
             }
             SessionCommunicationDecision::Allowed { .. } => {}
         }
+        if let Some(target_admission) = target_admission.as_ref() {
+            self.sessions.assert_session_work_admission(
+                to_agent_id,
+                Some(&target_admission.session_key),
+            )?;
+        }
 
         if let Some(analytics) = self.analytics.as_ref() {
             analytics(from_agent_id, to_agent_id, false, priority);
