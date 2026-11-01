@@ -6690,13 +6690,64 @@ fn clear_durable_channel_failure_markers(
         return;
     };
     for failure in failures {
-        if let Some(operation_id) = failure
-            .get("deliveryOperationId")
-            .and_then(serde_json::Value::as_str)
-        {
-            let _ = store.clear_one(agent_id, PendingWakeKind::ChannelDelivery, operation_id);
+        let Some(marker) = channel_failure_marker_from_failure(agent_id, failure) else {
+            eprintln!(
+                "mahayana-host channel_failure_marker_identity_incomplete agent={agent_id}"
+            );
+            continue;
+        };
+        if !store.clear_if_matches(&marker) {
+            eprintln!(
+                "mahayana-host channel_failure_marker_settlement_missed agent={} operation={}",
+                agent_id, marker.work_id
+            );
         }
     }
+}
+
+fn channel_failure_marker_from_failure(
+    agent_id: &str,
+    failure: &serde_json::Value,
+) -> Option<DurablePendingWakeMarker> {
+    let work_id = failure
+        .get("deliveryOperationId")
+        .and_then(serde_json::Value::as_str)
+        .map(str::trim)
+        .filter(|value| !value.is_empty())?;
+    let marked_at_ms = failure
+        .get("markedAtMs")
+        .and_then(serde_json::Value::as_f64)
+        .filter(|value| value.is_finite())?;
+    let address_token = failure
+        .get("addressToken")
+        .and_then(serde_json::Value::as_str)
+        .map(str::trim)
+        .filter(|value| !value.is_empty())?;
+    let failure_reason = failure
+        .get("reason")
+        .and_then(serde_json::Value::as_str)
+        .map(str::trim)
+        .filter(|value| !value.is_empty())?;
+    let session_key = failure
+        .get("sessionKey")
+        .and_then(serde_json::Value::as_str)
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+        .map(ToOwned::to_owned);
+    Some(DurablePendingWakeMarker {
+        agent_id: agent_id.to_string(),
+        kind: PendingWakeKind::ChannelDelivery,
+        work_id: work_id.to_string(),
+        marked_at_ms,
+        quiet_origin: None,
+        title: Some("Channel delivery failure".into()),
+        subagent_type: None,
+        interrupted_by_recreate: false,
+        delivery_operation_id: Some(work_id.to_string()),
+        address_token: Some(address_token.to_string()),
+        failure_reason: Some(failure_reason.to_string()),
+        session_key,
+    })
 }
 
 fn filter_current_channel_failure_provenance(
@@ -6860,13 +6911,14 @@ fn queue_channel_delivery_failure(
     session_key: Option<String>,
     reason: String,
 ) {
+    let marked_at_ms = started_at_ms() as f64;
     if let Some(operation_id) = delivery_operation_id.as_deref() {
         if let Some(store) = deps.transcript_runtime.pending_wake_store() {
             let written = store.mark_pending(DurablePendingWakeMarker {
                 agent_id: agent_id.clone(),
                 kind: PendingWakeKind::ChannelDelivery,
                 work_id: operation_id.to_string(),
-                marked_at_ms: started_at_ms() as f64,
+                marked_at_ms,
                 quiet_origin: None,
                 title: Some("Channel delivery failure".into()),
                 subagent_type: None,
@@ -6894,6 +6946,7 @@ fn queue_channel_delivery_failure(
             serde_json::json!({
                 "addressToken": address_token,
                 "deliveryOperationId": delivery_operation_id,
+                "markedAtMs": marked_at_ms,
                 "sessionKey": session_key,
                 "reason": reason,
             }),

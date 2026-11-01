@@ -195,8 +195,12 @@ fn shipping_send_message_reaches_host_owned_delivery_failure_broadcast_and_conte
     assert!(SHIPPING_HOST.contains("delivery_operation_id: Option<String>"));
 
     assert!(SHIPPING_HOST.contains("queue_channel_delivery_failure("));
+    assert!(SHIPPING_HOST.contains("\"markedAtMs\": marked_at_ms"));
+    assert!(SHIPPING_HOST.contains("fn channel_failure_marker_from_failure("));
     assert!(SHIPPING_HOST.contains("run_channel_failure_revival_worker"));
     assert!(SHIPPING_HOST.contains("clear_durable_channel_failure_markers"));
+    assert!(SHIPPING_HOST.contains("store.clear_if_matches(&marker)"));
+    assert!(SHIPPING_HOST.contains("channel_failure_marker_identity_incomplete"));
     assert!(SHIPPING_HOST.contains(
         "!execution.aborted\n                    && !execution.quiesced_for_upgrade\n                    && execution.sent_message_count > 0"
     ));

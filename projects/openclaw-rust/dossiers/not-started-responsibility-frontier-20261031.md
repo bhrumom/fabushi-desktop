@@ -447,3 +447,16 @@ custody for all three receipt/entry types. This closes a durable replay bypass
 at the existing owner edge; the broader responsibility remains
 `not-started/not-wired/not-run/pending` because detached-result/media replay,
 provider-review recovery, and exact-head verification are still incomplete.
+
+## 2026-11-01 channel-delivery failure exact-marker settlement
+
+The production channel-delivery failure producer now retains the exact
+`markedAtMs` used when writing the durable `ChannelDelivery` pending-wake
+marker and carries it in the in-memory failure payload. Recovery reconstructs
+the complete observed marker (`agentId`, kind, operation, timestamp, address,
+reason, and optional session key) and settles it with `clear_if_matches`.
+Failures without complete marker provenance are logged and left pending;
+recovery no longer falls back to key-only deletion, so a newer same-key marker
+cannot be removed by an older channel-failure pass. This is static source and
+contract evidence only; provider, device, packaged, runtime, OCRM-AC01--AC24,
+and global completion acceptance remain pending.
