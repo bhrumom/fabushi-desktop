@@ -11,6 +11,7 @@ use crate::extensions::session::typed_replay::{
     ReplayContentPart, ReplayMessage, ReplayRole, ReplayToolCall, ReplayToolResult,
     TypedReplayEntry,
 };
+use super::cursor_inference_transport::{CursorCheckpointMessage, CursorCheckpointToolCall};
 
 const COMPACTION_SUMMARY_PREFIX: &str =
     "The conversation history before this point was compacted into the following summary:\n\n<summary>\n";
@@ -82,6 +83,106 @@ pub fn serialize_chat_replay(
         }
     }
     Ok(output)
+}
+
+/// Serialize typed replay into Cursor's existing checkpoint conversation.
+/// Cursor's current protobuf has no attachment content part, so attachments
+/// are rejected until that owner contract is extended and verified.
+pub fn serialize_cursor_replay(
+    entries: &[TypedReplayEntry],
+) -> Result<Vec<CursorCheckpointMessage>, TypedReplaySerializationError> {
+    let mut output = Vec::new();
+    let mut calls = std::collections::HashSet::new();
+    for (index, entry) in entries.iter().enumerate() {
+        match entry {
+            TypedReplayEntry::CompactionSummary(summary) => {
+                output.push(CursorCheckpointMessage::Text {
+                    role: "user".into(),
+                    text: format!(
+                        "{COMPACTION_SUMMARY_PREFIX}{}{COMPACTION_SUMMARY_SUFFIX}",
+                        summary.summary
+                    ),
+                });
+            }
+            TypedReplayEntry::Message(message) => {
+                serialize_cursor_message(index, message, &mut output, &mut calls)?;
+            }
+            TypedReplayEntry::UserAttachment(attachment) => {
+                return Err(TypedReplaySerializationError::UnsupportedAttachment {
+                    index,
+                    detail: format!(
+                        "Cursor protobuf has no attachment content part ({})",
+                        attachment.value
+                    ),
+                });
+            }
+        }
+    }
+    Ok(output)
+}
+
+fn serialize_cursor_message(
+    index: usize,
+    message: &ReplayMessage,
+    output: &mut Vec<CursorCheckpointMessage>,
+    calls: &mut std::collections::HashSet<String>,
+) -> Result<(), TypedReplaySerializationError> {
+    if !message.attachments.is_empty() {
+        return Err(TypedReplaySerializationError::UnsupportedAttachment {
+            index,
+            detail: "Cursor protobuf has no attachment content part".into(),
+        });
+    }
+    let text = message
+        .content
+        .iter()
+        .map(|part| match part {
+            ReplayContentPart::Text(text) => Ok(text.as_str()),
+            ReplayContentPart::Structured(_) => {
+                Err(TypedReplaySerializationError::UnsupportedStructuredContent { index })
+            }
+        })
+        .collect::<Result<Vec<_>, _>>()?
+        .join("");
+    if let Some(result) = message.tool_result.as_ref() {
+        ensure_tool_result_pair(result, calls)?;
+        output.push(CursorCheckpointMessage::ToolResult {
+            tool_call_id: result.tool_call_id.clone(),
+            tool_name: result.tool_name.clone(),
+            result: result.result.clone(),
+            is_error: result.is_error,
+        });
+        return Ok(());
+    }
+    match message.role {
+        ReplayRole::User => output.push(CursorCheckpointMessage::Text {
+            role: "user".into(),
+            text,
+        }),
+        ReplayRole::Assistant if message.tool_calls.is_empty() => {
+            output.push(CursorCheckpointMessage::Text {
+                role: "assistant".into(),
+                text,
+            });
+        }
+        ReplayRole::Assistant => {
+            let tool_calls = message
+                .tool_calls
+                .iter()
+                .map(|call| {
+                    calls.insert(call.id.clone());
+                    CursorCheckpointToolCall {
+                        tool_call_id: call.id.clone(),
+                        tool_name: call.name.clone(),
+                        args: call.arguments.to_string(),
+                    }
+                })
+                .collect();
+            output.push(CursorCheckpointMessage::AssistantTool { text, tool_calls });
+        }
+        ReplayRole::Tool => return Err(TypedReplaySerializationError::UnsupportedRole { role: "tool" }),
+    }
+    Ok(())
 }
 
 fn serialize_responses_message(
@@ -325,5 +426,39 @@ mod tests {
         });
         let error = serialize_responses_replay(&[entry]).expect_err("local path must fail closed");
         assert!(matches!(error, TypedReplaySerializationError::UnsupportedAttachment { .. }));
+    }
+
+    #[test]
+    fn cursor_preserves_native_tool_checkpoint_pairing() {
+        let entries = vec![
+            TypedReplayEntry::Message(ReplayMessage {
+                id: None,
+                role: ReplayRole::Assistant,
+                content: vec![],
+                attachments: vec![],
+                tool_calls: vec![ReplayToolCall {
+                    id: "cursor-call".into(),
+                    name: "read".into(),
+                    arguments: json!({"path": "a"}),
+                }],
+                tool_result: None,
+            }),
+            TypedReplayEntry::Message(ReplayMessage {
+                id: None,
+                role: ReplayRole::Tool,
+                content: vec![],
+                attachments: vec![],
+                tool_calls: vec![],
+                tool_result: Some(ReplayToolResult {
+                    tool_call_id: "cursor-call".into(),
+                    tool_name: "read".into(),
+                    result: json!({"ok": true}),
+                    is_error: false,
+                }),
+            }),
+        ];
+        let serialized = serialize_cursor_replay(&entries).expect("cursor replay");
+        assert!(matches!(serialized[0], CursorCheckpointMessage::AssistantTool { .. }));
+        assert!(matches!(serialized[1], CursorCheckpointMessage::ToolResult { .. }));
     }
 }
