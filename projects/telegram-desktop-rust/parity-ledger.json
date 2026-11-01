@@ -29969,7 +29969,10 @@
         "desktop-source-contract-sync-commit:4070ca2be5db0d22bd54c27857ccf84748ce8763",
         "desktop-response-normalization-blob:9371f73669b4e6b211608f043119ca4eca56e185",
         "desktop-lib-blob:27543d45f3825321e26c8a0b664e37c8488169e2",
-        "desktop-authored-contract-blob:259f457eeaacce0ed09f1acf1f0fd821a0269733"
+        "desktop-authored-contract-blob:259f457eeaacce0ed09f1acf1f0fd821a0269733",
+        "platform-core-final-source-compliance-commit:2585e75e6586480378f07d9daab39889e4111339",
+        "platform-core-final-spec-blob:63f2b715e733cc1fe851b151fdf83355e3f2582b",
+        "desktop-initial-bookkeeping-commit:4f91cd629df720e79743885807c5da7db97042c8"
       ],
       "test_evidence": [
         "Internal response_normalization.rs contracts cover DoH structural/filter/order/TTL behavior, TXT QMultiMap ordering/Latin-1 projection, and Firestore extraction; not executed.",
@@ -30098,7 +30101,7 @@
       "acceptance_reviewer": null,
       "reviewer": null,
       "license_and_provenance": "Behavioral provenance is fixed-U mtproto_domain_resolver.cpp/header plus special_config_request.cpp. Implementation is source-neutral Rust; no upstream C++ copied.",
-      "notes": "Task round85/source evidence round116. Pure DoH/Firestore response parsing and normalization is independently implemented in the existing telegram-protocol codec boundary and mirrored byte-identically. Actual carrier scheduling/HTTP Date mutation/temporary-DC/dc-options application remains separate mapped/pending. Contracts authored only; validation_status=not-run; accepted=false.",
+      "notes": "Task round85/source evidence round116. Pure Google/Mozilla DoH and Firestore response parsing/normalization is implemented in the existing telegram-protocol codec boundary and mirrored byte-identically. Actual carrier scheduling/HTTP Date mutation/temporary-DC/dc-options application remains separately mapped/pending. Contracts authored only; validation_status=not-run; accepted=false. Final platform source-level compliance is 2585e75e6586480378f07d9daab39889e4111339 / spec blob 63f2b715e733cc1fe851b151fdf83355e3f2582b.",
       "test_execution_evidence": [],
       "validation_status": "not-run",
       "accepted": false,
@@ -30213,7 +30216,9 @@
         "platform-core-final-spec-blob:0be79934e196946c3b0d11c232fbbd161d5aef94",
         "desktop-initial-bookkeeping-commit:651c199fee8b3cad83e9f97b6fd92c59cd38f996",
         "platform-core-response-normalization-commit:3d27d1aa1272bb15d39c1e2031872a1f2266c62e",
-        "desktop-response-normalization-sync-commit:4070ca2be5db0d22bd54c27857ccf84748ce8763"
+        "desktop-response-normalization-sync-commit:4070ca2be5db0d22bd54c27857ccf84748ce8763",
+        "platform-core-final-response-normalization-compliance-commit:2585e75e6586480378f07d9daab39889e4111339",
+        "platform-core-final-response-normalization-spec-blob:63f2b715e733cc1fe851b151fdf83355e3f2582b"
       ],
       "test_evidence": [
         "Carrier/application contracts are documented in the durable spec; no fake executable test was added against a nonexistent shipping scheduler."
@@ -30334,7 +30339,7 @@
       "acceptance_reviewer": null,
       "reviewer": null,
       "license_and_provenance": "Behavioral provenance is fixed-U Telegram/SourceFiles/mtproto/mtp_instance.cpp@d25fe3b72298fab371854f80186ee8e4777ea087 plus adjacent proxy/settings/network source listed in round114 evidence. No upstream C++ copied.",
-      "notes": "Task round85/source evidence round116. Carrier/application remains mapped/pending with no production delta after extracting pure response parsing/normalization into TDRP-R9-MTPROTO-RESPONSE-NORMALIZATION-001. Remaining HTTP acquisition/racing, HTTP Date mutation, temporary-DC help.getConfig and DcOptions application depend on a shipping network/runtime scheduler absent at the reviewed checkpoints. Stage-A executable validation remains not-run.",
+      "notes": "Task round85/source evidence round116. Carrier/application remains mapped/pending with no production delta after extracting pure response parsing/normalization into TDRP-R9-MTPROTO-RESPONSE-NORMALIZATION-001. Remaining HTTP acquisition/racing, HTTP Date mutation, temporary-DC help.getConfig and DcOptions application depend on a shipping network/runtime scheduler absent at the reviewed checkpoints. Final response-normalization source compliance is platform-core 2585e75e6586480378f07d9daab39889e4111339 / spec blob 63f2b715e733cc1fe851b151fdf83355e3f2582b. Stage-A executable validation remains not-run.",
       "test_execution_evidence": [],
       "validation_status": "not-run",
       "accepted": false,

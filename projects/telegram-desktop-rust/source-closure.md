@@ -1961,3 +1961,16 @@ Existing-owner-first outcome: the carrier scheduler still belongs to existing `t
 Ledger row `TDRP-R9-MTPROTO-RESPONSE-NORMALIZATION-001` is `implemented / rewritten / validation_status=not-run / accepted=false`. `TDRP-R9-MTPROTO-SPECIAL-CONFIG-CARRIER-APPLICATION-001` remains `mapped / pending / validation_status=not-run / accepted=false`, narrowed to request construction/racing, HTTP Date mutation, temporary-DC lifecycle and dc-options application. Coverage becomes `source_entries_total=16202, responsibilities_total=119, unknown=16172, unread=16145, omitted=0, unmapped_responsibilities=0`; focused semantic review does not decrement global source-entry unknown/unread.
 
 No GitHub Actions/status/check query or trigger, build, typecheck, lint, schema validator, generator, dependency resolution, lock regeneration, unit/contract/integration/E2E execution, package, deployment, installation or runtime acceptance was performed.
+
+
+### Round 116 final source-level compliance
+
+Platform-core final source-level compliance is `2585e75e6586480378f07d9daab39889e4111339` / spec blob `63f2b715e733cc1fe851b151fdf83355e3f2582b`. It references desktop initial bookkeeping commit `4f91cd629df720e79743885807c5da7db97042c8` and records R1-R11 plus AC-1 through AC-8 as passed at source/implementation/bookkeeping review level.
+
+`TDRP-R9-MTPROTO-RESPONSE-NORMALIZATION-001` remains `implemented / rewritten / validation_status=not-run / accepted=false`. The canonical and desktop response module/lib/contract blobs remain byte-identical at `9371f73669b4e6b211608f043119ca4eca56e185`, `27543d45f3825321e26c8a0b664e37c8488169e2`, and `259f457eeaacce0ed09f1acf1f0fd821a0269733`.
+
+`TDRP-R9-MTPROTO-SPECIAL-CONFIG-CARRIER-APPLICATION-001` remains `mapped / pending / validation_status=not-run / accepted=false` because request construction/racing, HTTP Date mutation, temporary-DC help.getConfig scheduling/cancel/timeout/kill and dc-options application still require a shipping existing network/runtime lifecycle. Pure response parsing/normalization is no longer part of that blocker.
+
+Coverage remains `source_entries_total=16202, responsibilities_total=119, unknown=16172, unread=16145, omitted=0, unmapped_responsibilities=0`.
+
+No GitHub Actions/status/check query or trigger, build, typecheck, lint, schema validator, generator, dependency resolution, lock regeneration, unit/contract/integration/E2E execution, package, deployment, installation or runtime acceptance was performed.
