@@ -1,0 +1,71 @@
+name: FDN G10 native Computer
+
+on:
+  pull_request:
+    paths:
+      - "source/mahayana/mahayana-rs/mahayana-computer/**"
+      - "source/mahayana/mahayana-rs/mahayana-host-protocol/**"
+      - "source/host/tests/g10_typed_native_control_contract.rs"
+      - ".github/workflows/fdn-g10-native-computer.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: fdn-g10-native-computer-${{ github.event_name == 'pull_request' && format('pr-{0}', github.event.pull_request.number) || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  native-computer:
+    name: Native Computer / ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, windows-2025, macos-15]
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 1
+      - name: Bind exact tested HEAD
+        shell: bash
+        run: |
+          set -euo pipefail
+          actual="$(git rev-parse HEAD)"
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            expected="${{ github.event.pull_request.head.sha }}"
+          else
+            expected="${{ github.sha }}"
+          fi
+          test "$actual" = "$expected"
+          echo "Exact tested HEAD: $actual" >> "$GITHUB_STEP_SUMMARY"
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: 1.97.1
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: source/mahayana/mahayana-rs -> target
+          shared-key: fdn-g10-native-computer-${{ matrix.os }}-1.97.1
+      - name: Install Linux native desktop dependencies
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y libwayland-dev libpipewire-0.3-dev libegl1-mesa-dev libegl-dev libgbm-dev libdrm-dev libxkbcommon-dev
+      - name: Test typed G10 protocol round trip
+        shell: bash
+        run: >-
+          cargo test -p mahayana-host-protocol
+          tests::typed_window_accessibility_and_semantic_contracts_round_trip
+          --manifest-path source/mahayana/mahayana-rs/Cargo.toml
+          -- --exact
+      - name: Test native Computer owner
+        shell: bash
+        run: >-
+          cargo test -p mahayana-computer
+          --manifest-path source/mahayana/mahayana-rs/Cargo.toml
+          --lib

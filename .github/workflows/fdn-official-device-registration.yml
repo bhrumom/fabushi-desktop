@@ -1,0 +1,81 @@
+name: FDN official device registration
+
+on:
+  pull_request:
+    paths:
+      - 'source/product/fabushi/**'
+      - 'source/electron-main/account/auth-service-contract.ts'
+      - 'source/electron-main/main-production-services.ts'
+      - 'desktop/tsconfig.fabushi-product.json'
+      - '.github/workflows/fdn-official-device-registration.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'source/product/fabushi/**'
+      - 'source/electron-main/account/auth-service-contract.ts'
+      - 'source/electron-main/main-production-services.ts'
+      - 'desktop/tsconfig.fabushi-product.json'
+      - '.github/workflows/fdn-official-device-registration.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  registration-contract:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 1
+      - name: Bind exact tested HEAD
+        shell: bash
+        run: |
+          set -euo pipefail
+          actual="$(git rev-parse HEAD)"
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            expected="${{ github.event.pull_request.head.sha }}"
+          else
+            expected="${{ github.sha }}"
+          fi
+          test "$actual" = "$expected"
+          echo "Exact tested HEAD: $actual" >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: desktop/package-lock.json
+      - run: npm --prefix desktop ci --prefer-offline --no-audit --no-fund
+      - name: Compile focused Fabushi account and registry contracts
+        run: ./desktop/node_modules/.bin/tsc -p desktop/tsconfig.fabushi-product.json
+      - name: Test account epoch, revoke, token boundary, registration and non-retry
+        run: >-
+          node --test
+          desktop/.tmp-fabushi-product/source/product/fabushi/fabushi-account-service.contract.test.js
+          desktop/.tmp-fabushi-product/source/product/fabushi/fabushi-official-device-registry.contract.test.js
+      - name: Bundle canonical Electron production wiring
+        run: npm --prefix desktop run build:electron
+      - name: Record exact-head registration evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p .evidence
+          cat > .evidence/fdn-official-device-registration.json <<EOF
+          {
+            "head_sha": "$(git rev-parse HEAD)",
+            "registry": "wss://fabushi-mcp.ombhrum.com/agent",
+            "tool": "fabushi.app.status",
+            "account_switch_fenced": true,
+            "revoke_fenced": true,
+            "fabushi_bearer_header_only": true,
+            "write_shaped_call_retried": false,
+            "production_wiring_bundled": true
+          }
+          EOF
+      - uses: actions/upload-artifact@v4
+        with:
+          name: fdn-official-device-registration-${{ github.event.pull_request.head.sha || github.sha }}
+          path: .evidence/fdn-official-device-registration.json
+          if-no-files-found: error
+          retention-days: 90
