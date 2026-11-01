@@ -2949,6 +2949,25 @@ impl ProductionSessionWorkers {
         })
     }
 
+    pub fn get_agent_pending_episode_turns(
+        &self,
+        agent_id: &str,
+    ) -> Result<Vec<EpisodeTurn>, String> {
+        self.with_agent_filesystem_mutation(agent_id, || {
+            self.open_agent_db_owner_locked(agent_id)?
+                .get_pending_episode_turns()
+                .map_err(|error| error.to_string())
+        })
+    }
+
+    pub fn clear_agent_pending_episode_turns(&self, agent_id: &str) -> Result<bool, String> {
+        self.with_agent_admitted_filesystem_mutation(agent_id, || {
+            self.open_agent_db_owner_locked(agent_id)?
+                .clear_pending_episode_turns()
+                .map_err(|error| error.to_string())
+        })
+    }
+
     pub fn get_agent_memory_prompt_snapshot(
         &self,
         agent_id: &str,

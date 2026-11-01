@@ -336,7 +336,8 @@ use mahayana_host_runtime::runner::sand_memory::{
     is_memorable_exchange, is_memory_freeze_enabled,
 };
 use mahayana_host_runtime::runner::turn_memory::{
-    TurnExchange, TurnMemoryMode, build_turn_memory_exchange, run_turn_memory_with,
+    ProductionEpisodeProgress, TurnExchange, TurnMemoryMode, build_turn_memory_exchange,
+    run_turn_memory_with,
 };
 use mahayana_host_runtime::runner::tools::sand_state_tool::{
     RoutineAutoReviewCallback, RoutinePostWriteCallback,
@@ -11452,9 +11453,11 @@ fn start_routed_provider_task(
                         memory_evidence_enabled,
                         is_memorable_exchange(&user_prompt),
                     ) {
-                        if let Ok(episode_db) =
-                            worker_retire_sessions.open_agent_db_owner(&agent_id)
                         {
+                            let episode_progress = ProductionEpisodeProgress::new(
+                                Arc::clone(&worker_retire_sessions),
+                                &agent_id,
+                            );
                             let memory_cancellation = worker_cancellation.clone();
                             let mut execute_memory_prompt =
                                 |system_prompt: &str, user_prompt: &str| -> Result<String, String> {
@@ -11518,7 +11521,7 @@ fn start_routed_provider_task(
                             };
                             let _ = run_turn_memory_with(
                                 worker_memory_store,
-                                Some(episode_db.as_ref()),
+                                Some(&episode_progress),
                                 runner_started_at_ms as i64,
                                 exchange,
                                 memory_mode,

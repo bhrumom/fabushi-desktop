@@ -503,6 +503,11 @@ reads stay inside the per-agent serialization boundary, and writes use the
 admitted owner wrapper before calling the existing `write_kv` predicate. This
 preserves the existing `multitaskTodos` KV schema and tool contract while
 closing the Host-to-Runner owner bypass; no second todo store is introduced.
+The terminal turn-memory path likewise uses a typed `EpisodeProgress` port and
+`ProductionEpisodeProgress` adapter. Production `main.rs` no longer opens a
+raw agent DB for episode recording; reads and mutations route through the
+Session owner, with read serialization and admitted write fencing preserved.
+The existing episode KV format and memory extraction behavior are unchanged.
 
 Profile and avatar filesystem mutations now run through a per-agent
 `ProductionSessionWorkers` serialization boundary. Profile updates and avatar
