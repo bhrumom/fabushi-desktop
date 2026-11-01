@@ -608,6 +608,20 @@ fn test_session_transcript_append_rolls_back_when_commit_fails() {
 }
 
 #[test]
+fn test_compaction_owner_rolls_back_when_commit_fails() {
+    let owner_source = include_str!("../src/extensions/session/agent_db.rs");
+    let compaction_owner = owner_source
+        .split("pub fn commit_compaction(")
+        .nth(1)
+        .expect("compaction owner exists")
+        .split("pub fn get_compacted_transcript_entries(")
+        .next()
+        .expect("compaction owner boundary exists");
+    assert!(compaction_owner.contains("if let Err(error) = db.execute_batch(\"COMMIT\")"));
+    assert!(compaction_owner.contains("let _ = db.execute_batch(\"ROLLBACK\")"));
+}
+
+#[test]
 fn test_session_admission_creation_rechecks_create_race_identity() {
     let owner_source = include_str!("../src/extensions/session/production.rs");
     let ensure = owner_source

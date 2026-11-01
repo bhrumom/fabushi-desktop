@@ -3909,7 +3909,10 @@ impl SandAgentDb {
 
         match result {
             Ok(outcome @ CompactionCommitOutcome::Committed(_)) => {
-                db.execute_batch("COMMIT")?;
+                if let Err(error) = db.execute_batch("COMMIT") {
+                    let _ = db.execute_batch("ROLLBACK");
+                    return Err(error.into());
+                }
                 bump_db_write_generation(&self.db_path);
                 if let CompactionCommitOutcome::Committed(entry) = &outcome {
                     publish_entries_upserted(&self.db_path, vec![entry.clone()]);
