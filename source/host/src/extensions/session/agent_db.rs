@@ -1210,6 +1210,9 @@ impl SandAgentDb {
         };
         db.execute_batch("BEGIN IMMEDIATE")?;
         let result = (|| -> Result<SessionWorkResultCommitOutcome, AgentDbProjectionError> {
+            if !session_work_write_is_admitted(db)? {
+                return Ok(SessionWorkResultCommitOutcome::RejectedStale);
+            }
             let raw_admission = db
                 .query_row(GET_KV_SQL, params![KV_SESSION_WORK_ADMISSION], |row| {
                     row.get::<_, String>(0)
@@ -3445,6 +3448,11 @@ impl SandAgentDb {
         };
         db.execute_batch("BEGIN IMMEDIATE")?;
         let result = (|| -> Result<Vec<serde_json::Value>, AgentDbProjectionError> {
+            if !session_work_write_is_admitted(db)? {
+                return Err(AgentDbProjectionError::WorkAdmissionInvalid(
+                    "session owner identity is not admitted for media settlement".into(),
+                ));
+            }
             let raw_admission = db
                 .query_row(GET_KV_SQL, params![KV_SESSION_WORK_ADMISSION], |row| {
                     row.get::<_, String>(0)
@@ -3967,6 +3975,11 @@ impl SandAgentDb {
         };
         db.execute_batch("BEGIN IMMEDIATE")?;
         let result = (|| -> Result<Option<serde_json::Value>, AgentDbProjectionError> {
+            if !session_work_write_is_admitted(db)? {
+                return Err(AgentDbProjectionError::WorkAdmissionInvalid(
+                    "session owner identity is not admitted for transcript update".into(),
+                ));
+            }
             let raw_admission = db
                 .query_row(GET_KV_SQL, params![KV_SESSION_WORK_ADMISSION], |row| {
                     row.get::<_, String>(0)
@@ -4128,6 +4141,11 @@ impl SandAgentDb {
         };
         db.execute_batch("BEGIN IMMEDIATE")?;
         let result = (|| -> Result<Option<serde_json::Value>, AgentDbProjectionError> {
+            if !session_work_write_is_admitted(db)? {
+                return Err(AgentDbProjectionError::WorkAdmissionInvalid(
+                    "session owner identity is not admitted for transcript identity settlement".into(),
+                ));
+            }
             let raw_admission = db
                 .query_row(GET_KV_SQL, params![KV_SESSION_WORK_ADMISSION], |row| {
                     row.get::<_, String>(0)
