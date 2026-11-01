@@ -2623,17 +2623,18 @@ impl ProductionSessionWorkers {
         content: &str,
         sent_message_count: usize,
     ) -> Result<SessionWorkResultCommitOutcome, String> {
-        self.assert_agent_work_admission(agent_id)?;
-        self.open_agent_db_owner(agent_id)?
-            .commit_session_work_result(
-                session_key,
-                expected_lifecycle_revision,
-                work_id,
-                idempotency_key,
-                content,
-                sent_message_count,
-            )
-            .map_err(|error| error.to_string())
+        self.with_agent_admitted_filesystem_mutation(agent_id, || {
+            self.open_agent_db_owner_locked(agent_id)?
+                .commit_session_work_result(
+                    session_key,
+                    expected_lifecycle_revision,
+                    work_id,
+                    idempotency_key,
+                    content,
+                    sent_message_count,
+                )
+                .map_err(|error| error.to_string())
+        })
     }
 
     pub fn release_session_work_admission(
@@ -2642,21 +2643,27 @@ impl ProductionSessionWorkers {
         expected_lifecycle_revision: &str,
         work_id: &str,
     ) -> Result<bool, String> {
-        self.assert_agent_work_admission(agent_id)?;
-        let Some(mut record) = self.read_session_work_admission(agent_id)? else {
-            return Ok(false);
-        };
-        if record.lifecycle_revision != expected_lifecycle_revision
-            || record.admitted_work_id.as_deref() != Some(work_id)
-        {
-            return Ok(false);
-        }
-        record.admitted_work_id = None;
-        self.compare_and_set_session_work_admission(
-            agent_id,
-            Some(expected_lifecycle_revision),
-            &record,
-        )
+        self.with_agent_admitted_filesystem_mutation(agent_id, || {
+            let owner = self.open_agent_db_owner_locked(agent_id)?;
+            let Some(mut record) = owner
+                .read_session_work_admission()
+                .map_err(|error| error.to_string())?
+            else {
+                return Ok(false);
+            };
+            if record.lifecycle_revision != expected_lifecycle_revision
+                || record.admitted_work_id.as_deref() != Some(work_id)
+            {
+                return Ok(false);
+            }
+            record.admitted_work_id = None;
+            owner
+                .compare_and_set_session_work_admission(
+                    Some(expected_lifecycle_revision),
+                    &record,
+                )
+                .map_err(|error| error.to_string())
+        })
     }
 
 
@@ -2665,17 +2672,19 @@ impl ProductionSessionWorkers {
         agent_id: &str,
         profile: &SandProfile,
     ) -> Result<bool, String> {
-        self.assert_agent_work_admission(agent_id)?;
-        self.open_agent_db_owner(agent_id)?
-            .set_sand_profile(profile)
-            .map_err(|error| error.to_string())
+        self.with_agent_admitted_filesystem_mutation(agent_id, || {
+            self.open_agent_db_owner_locked(agent_id)?
+                .set_sand_profile(profile)
+                .map_err(|error| error.to_string())
+        })
     }
 
     pub fn mark_agent_activity(&self, agent_id: &str, at: f64) -> Result<bool, String> {
-        self.assert_agent_work_admission(agent_id)?;
-        self.open_agent_db_owner(agent_id)?
-            .mark_activity(at)
-            .map_err(|error| error.to_string())
+        self.with_agent_admitted_filesystem_mutation(agent_id, || {
+            self.open_agent_db_owner_locked(agent_id)?
+                .mark_activity(at)
+                .map_err(|error| error.to_string())
+        })
     }
 
     pub fn get_agent_unread_state(&self, agent_id: &str) -> Result<UnreadState, String> {
@@ -2690,10 +2699,11 @@ impl ProductionSessionWorkers {
         at: f64,
         preserve_manual_unread: bool,
     ) -> Result<bool, String> {
-        self.assert_agent_work_admission(agent_id)?;
-        self.open_agent_db_owner(agent_id)?
-            .mark_viewed(at, preserve_manual_unread)
-            .map_err(|error| error.to_string())
+        self.with_agent_admitted_filesystem_mutation(agent_id, || {
+            self.open_agent_db_owner_locked(agent_id)?
+                .mark_viewed(at, preserve_manual_unread)
+                .map_err(|error| error.to_string())
+        })
     }
 
     pub fn set_agent_unread(
@@ -2702,14 +2712,15 @@ impl ProductionSessionWorkers {
         unread: bool,
         at: f64,
     ) -> Result<bool, String> {
-        self.assert_agent_work_admission(agent_id)?;
-        let owner = self.open_agent_db_owner(agent_id)?;
-        if unread {
-            owner.mark_unread(at)
-        } else {
-            owner.mark_read(at)
-        }
-        .map_err(|error| error.to_string())
+        self.with_agent_admitted_filesystem_mutation(agent_id, || {
+            let owner = self.open_agent_db_owner_locked(agent_id)?;
+            if unread {
+                owner.mark_unread(at)
+            } else {
+                owner.mark_read(at)
+            }
+            .map_err(|error| error.to_string())
+        })
     }
 
     pub fn get_agent_introduction_pending(&self, agent_id: &str) -> Result<bool, String> {
@@ -2723,10 +2734,11 @@ impl ProductionSessionWorkers {
         agent_id: &str,
         pending: bool,
     ) -> Result<bool, String> {
-        self.assert_agent_work_admission(agent_id)?;
-        self.open_agent_db_owner(agent_id)?
-            .set_introduction_pending(pending)
-            .map_err(|error| error.to_string())
+        self.with_agent_admitted_filesystem_mutation(agent_id, || {
+            self.open_agent_db_owner_locked(agent_id)?
+                .set_introduction_pending(pending)
+                .map_err(|error| error.to_string())
+        })
     }
 
     pub fn get_agent_automation_spend_guard_state(
@@ -2743,10 +2755,11 @@ impl ProductionSessionWorkers {
         agent_id: &str,
         state: &SpendGuardState,
     ) -> Result<bool, String> {
-        self.assert_agent_work_admission(agent_id)?;
-        self.open_agent_db_owner(agent_id)?
-            .set_automation_spend_guard_state(state)
-            .map_err(|error| error.to_string())
+        self.with_agent_admitted_filesystem_mutation(agent_id, || {
+            self.open_agent_db_owner_locked(agent_id)?
+                .set_automation_spend_guard_state(state)
+                .map_err(|error| error.to_string())
+        })
     }
 
     pub fn get_agent_conversation_partner_ids(
@@ -2763,10 +2776,11 @@ impl ProductionSessionWorkers {
         agent_id: &str,
         partner_id: &str,
     ) -> Result<bool, String> {
-        self.assert_agent_work_admission(agent_id)?;
-        self.open_agent_db_owner(agent_id)?
-            .add_conversation_partner(partner_id)
-            .map_err(|error| error.to_string())
+        self.with_agent_admitted_filesystem_mutation(agent_id, || {
+            self.open_agent_db_owner_locked(agent_id)?
+                .add_conversation_partner(partner_id)
+                .map_err(|error| error.to_string())
+        })
     }
 
     pub fn get_agent_newest_divider_anchor_timestamp_ms(
@@ -2792,10 +2806,11 @@ impl ProductionSessionWorkers {
         agent_id: &str,
         state: Option<&AwaitingUserResponse>,
     ) -> Result<bool, String> {
-        self.assert_agent_work_admission(agent_id)?;
-        self.open_agent_db_owner(agent_id)?
-            .set_awaiting_user_response(state)
-            .map_err(|error| error.to_string())
+        self.with_agent_admitted_filesystem_mutation(agent_id, || {
+            self.open_agent_db_owner_locked(agent_id)?
+                .set_awaiting_user_response(state)
+                .map_err(|error| error.to_string())
+        })
     }
 
     pub fn set_agent_awaiting_user_response_for_tab(
@@ -2805,10 +2820,11 @@ impl ProductionSessionWorkers {
         state: Option<&AwaitingUserResponse>,
         if_since_before: Option<f64>,
     ) -> Result<bool, String> {
-        self.assert_agent_work_admission(agent_id)?;
-        self.open_agent_db_owner(agent_id)?
-            .set_awaiting_user_response_for_tab(tab_id, state, if_since_before)
-            .map_err(|error| error.to_string())
+        self.with_agent_admitted_filesystem_mutation(agent_id, || {
+            self.open_agent_db_owner_locked(agent_id)?
+                .set_awaiting_user_response_for_tab(tab_id, state, if_since_before)
+                .map_err(|error| error.to_string())
+        })
     }
 
     pub fn record_agent_request_id(
@@ -2819,9 +2835,11 @@ impl ProductionSessionWorkers {
         prompt: Option<&str>,
         source: Option<&str>,
     ) -> Result<bool, String> {
-        self.open_agent_db_owner(agent_id)?
-            .record_request_id(request_id, at, prompt, source)
-            .map_err(|error| error.to_string())
+        self.with_agent_admitted_filesystem_mutation(agent_id, || {
+            self.open_agent_db_owner_locked(agent_id)?
+                .record_request_id(request_id, at, prompt, source)
+                .map_err(|error| error.to_string())
+        })
     }
 
     pub fn record_agent_episode_turn(
@@ -2829,9 +2847,11 @@ impl ProductionSessionWorkers {
         agent_id: &str,
         turn: &EpisodeTurn,
     ) -> Result<bool, String> {
-        self.open_agent_db_owner(agent_id)?
-            .record_episode_turn(turn)
-            .map_err(|error| error.to_string())
+        self.with_agent_admitted_filesystem_mutation(agent_id, || {
+            self.open_agent_db_owner_locked(agent_id)?
+                .record_episode_turn(turn)
+                .map_err(|error| error.to_string())
+        })
     }
 
     pub fn get_agent_memory_prompt_snapshot(
@@ -2848,17 +2868,19 @@ impl ProductionSessionWorkers {
         agent_id: &str,
         snapshot: &serde_json::Value,
     ) -> Result<bool, String> {
-        self.assert_agent_work_admission(agent_id)?;
-        self.open_agent_db_owner(agent_id)?
-            .set_memory_prompt_snapshot(snapshot)
-            .map_err(|error| error.to_string())
+        self.with_agent_admitted_filesystem_mutation(agent_id, || {
+            self.open_agent_db_owner_locked(agent_id)?
+                .set_memory_prompt_snapshot(snapshot)
+                .map_err(|error| error.to_string())
+        })
     }
 
     pub fn clear_agent_memory_prompt_snapshot(&self, agent_id: &str) -> Result<bool, String> {
-        self.assert_agent_work_admission(agent_id)?;
-        self.open_agent_db_owner(agent_id)?
-            .clear_memory_prompt_snapshot()
-            .map_err(|error| error.to_string())
+        self.with_agent_admitted_filesystem_mutation(agent_id, || {
+            self.open_agent_db_owner_locked(agent_id)?
+                .clear_memory_prompt_snapshot()
+                .map_err(|error| error.to_string())
+        })
     }
 
     fn restore_memory_records(
