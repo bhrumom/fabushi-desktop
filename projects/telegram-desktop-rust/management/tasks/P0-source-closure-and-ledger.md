@@ -1397,3 +1397,20 @@ Coverage is `responsibilities_total=100, unknown=16172, unread=16145, omitted=0,
 Auth-key binding/persistence/expiry/renewal, connection scheduling/racing/send retry, arbitrary request histories,
 gzip, complete difference/differenceSlice decoding/application, broader source/legal closure, Stage-B executable
 evidence and independent release ACCEPT remain open. No executable validation was performed.
+
+
+## Stage-A MTProto req_DH_params request wire (evidence round 100; task round 69, 2026-11-01)
+
+Fixed U remains `telegramdesktop/tdesktop@f985723b552b30fe1c17d377d57f44e61a15a8c4`. Fresh readback of `mtproto.tl@76225965bfc794388db241f3f760db8ab79e84f8` and shipping `mtproto_dc_key_creator.cpp@13c57454f14b814b5923ea253048fb881ad8cf03` confirms `DcKeyCreator::pqAnswered` factors the active resPQ, selects the server RSA fingerprint, encrypts the corresponding p_q inner data and sends `req_DH_params#d712e4be` with nonce/server_nonce/p/q/fingerprint/encrypted_data.
+
+Existing-owner-first review selected canonical `AuthKeyHandshake::prepare_req_dh_params*` / `build_req_dh_params`. A small production hardening was required: the exported pure builder previously checked the offered fingerprint and non-empty encrypted payload but did not itself reject p/q factors inconsistent with the active resPQ. Platform-core spec-first commit is `005bf696ba89b32a8965e510069f5867ed921b73` / spec blob `759586ea8e7b07cd9818da7620577512031ae553`; production/authored-contract commit is `39f9ba32d0ae6bcb03d7f957f708d690ec5fb74e`, with `handshake.rs@b6572c91a450a240c56c15ca80585afb97c19839` and contract blob `071b72be6772117fb174daf86d5c9a19ce372b73`.
+
+The production delta is limited to fail-closed `PqFactorsDoNotMatch` validation before serializing `req_DH_params`. Existing field order, fingerprint membership check, empty-encrypted-data check, request preparation and `ResPqReceived -> AwaitingServerDh` lifecycle remain unchanged. The focused contract also records unoffered-fingerprint and empty-encrypted-data failures. Contracts were authored only and not executed.
+
+Desktop has no duplicate tracked `handshake.rs` at this checkpoint, so no second owner was created. The existing tracked provider contract mirror was synchronized byte-identically at desktop commit `0e0188f5d1ebf96d2ee21444e1f7b65994c88ee2` / blob `071b72be6772117fb174daf86d5c9a19ce372b73`; existing desktop lib remains `abab39e42f100972484191f0e52e9edd9b88c6cf`.
+
+The unique ledger adds `TDRP-R9-MTPROTO-REQ-DH-PARAMS-REQUEST-WIRE-001` as `implemented / coverage_disposition=rewritten / validation_status=not-run / accepted=false`. Coverage becomes `responsibilities_total=101, unknown=16172, unread=16145, omitted=0, unmapped_responsibilities=0`.
+
+Auth-key binding/persistence/expiry/renewal, connection scheduling/racing/send retry, arbitrary request histories, `gzip_packed`, complete difference/differenceSlice decoding/application, broader fixed-U source/legal closure, Stage-B executable evidence and independent release ACCEPT remain open.
+
+No GitHub Actions/status/check query or trigger, build, typecheck, lint, schema validator, generator, unit/contract/integration/E2E test, package, deployment, installation, or runtime acceptance was performed.
