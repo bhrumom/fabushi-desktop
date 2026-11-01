@@ -224,6 +224,12 @@ background-result receipt, and outgoing-media settlement owners also recheck
 production facade. This closes the durable-fence race at those write edges
 without changing the broader lifecycle status.
 
+Conversation clearing now holds the same per-agent filesystem/deletion
+serialization boundary through external blob cleanup and the owner-local
+conversation clear. This closes the in-process deletion interleaving for that
+path; the external blob cleanup and SQLite commit remain a separate
+cross-storage crash-recovery gap and are not treated as atomic evidence.
+
 The session-bound automation spend-guard card path now commits its transcript
 card, owner-local spend-guard state, and activity projection in one existing
 session database transaction. Legacy records without an admission row retain

@@ -220,6 +220,11 @@ non-reacquiring internal open path. This prevents recovery from interleaving
 with directory deletion or another filesystem mutation without creating a
 second lifecycle lock or owner.
 
+The same boundary now covers conversation clearing across its external blob
+cleanup and owner-local transcript transaction. This is an in-process
+deletion-race closure only; the existing cross-storage crash window remains
+explicitly pending because no second blob journal or recovery owner was added.
+
 The spend-guard state setter and the atomic session-bound card/state/activity
 transaction now perform the same predicate check inside their SQLite
 transactions. A facade admission precheck can no longer be the only fence for

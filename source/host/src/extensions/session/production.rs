@@ -3098,18 +3098,20 @@ impl ProductionSessionWorkers {
     }
 
     pub fn clear_agent_conversation(&self, agent_id: &str) -> Result<bool, String> {
-        self.assert_agent_transcript_write_admission(agent_id)?;
-        let store = self.create_agent_blob_store(agent_id)?;
-        let db_path = self.existing_session_db_path(agent_id)?;
-        futures::executor::block_on(self.pool.clear_blobs(
-            agent_id,
-            &store.blob_db_path,
-            store.legacy_blob_db_path.as_deref(),
-        ))
-        .map_err(|error| error.to_string())?;
-        self.open_agent_db_owner(agent_id)?
-            .clear_conversation()
-            .map_err(|error| error.to_string())
+        self.with_agent_filesystem_mutation(agent_id, || {
+            self.assert_agent_transcript_write_admission(agent_id)?;
+            let store = self.create_agent_blob_store(agent_id)?;
+            self.existing_session_db_path(agent_id)?;
+            futures::executor::block_on(self.pool.clear_blobs(
+                agent_id,
+                &store.blob_db_path,
+                store.legacy_blob_db_path.as_deref(),
+            ))
+            .map_err(|error| error.to_string())?;
+            self.open_agent_db_owner_locked(agent_id)?
+                .clear_conversation()
+                .map_err(|error| error.to_string())
+        })
     }
 
     pub fn expire_pending_auto_review_approvals(

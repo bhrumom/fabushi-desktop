@@ -423,8 +423,12 @@ transaction and reports no deletion while custody is active.
 Transcript identity settlement used by Human handoff/replay also uses the
 same transaction-edge fence.
 Conversation clear now uses the same owner transaction and is rejected during
-deletion custody; the facade's pre-cleared external blob store remains a
-separate cross-storage atomicity gap.
+deletion custody. Its external blob cleanup now also runs under the shared
+per-agent filesystem/deletion serialization boundary, so it cannot interleave
+with directory deletion or profile/memory filesystem mutation. The facade's
+pre-cleared external blob store remains a separate cross-storage crash
+atomicity gap; this change does not add a second blob journal or claim recovery
+after a process interruption between the blob cleanup and owner transaction.
 The shared owner `write_kv` boundary now fences the remaining owner-local KV
 setters at the same SQLite edge; external memory-store clear paths remain
 separately governed.
