@@ -9,7 +9,7 @@
     "unknown": 16172,
     "unread": 16145,
     "omitted": 0,
-    "responsibilities_total": 110,
+    "responsibilities_total": 111,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -28116,6 +28116,268 @@
       "reviewer": null,
       "license_and_provenance": "Behavioral responsibility is anchored to fixed-U telegramdesktop/tdesktop WebProxy frame/transport/socket/webview and connection sources listed in production_evidence. No upstream C++ is copied and no new crypto implementation is introduced.",
       "notes": "Task round79/source evidence round110. Exact relay frame/window rules are understood and mapped to the existing telegram-network owner. Current shipping reachability is absent, so this row remains mapped/pending rather than falsely implemented. WebView nonce/bootstrap is lifecycle-bound and remains blocked with the carrier. Stage-A executable validation is not run. Final platform source-level compliance is 0fe86b6d40d1e7ad05b7f4a72ce2c8945cf06a6a / spec blob 4c8faf410867a0784623b9e00e73d7a9f46bc3cf; AC-4 records desktop bookkeeping passed while R16/AC-6 remain blocked on a real shipping WebProxy carrier.",
+      "test_execution_evidence": [],
+      "validation_status": "not-run",
+      "accepted": false
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+      "source_path": "Telegram/SourceFiles/mtproto/mtproto_proxy_data.cpp",
+      "source_blob_sha": "f9748fcb6358dd8ce7429536ec2b999cb2a989ef",
+      "source_kind": "source",
+      "module_id": "tdesktop.mtproto.web-proxy.bridge-capability",
+      "responsibility_id": "TDRP-R9-MTPROTO-WEB-PROXY-BRIDGE-CAPABILITY-001",
+      "source_symbols": [
+        "ComputeWebProxyBridgeCapability",
+        "WebProxyBridgeCapability",
+        "NormalizeWebProxyBasePath",
+        "WebProxyBridgePath",
+        "WebProxyBridgeUrl",
+        "EncodeWebProxyLinkSecret",
+        "DecodeWebProxyLinkSecret",
+        "ProxyData::webBasePath",
+        "ProxyData::status",
+        "Transport::Private::bridgeControl",
+        "WebviewCarrier::WebviewCarrier",
+        "ProxyDataToQueryPath",
+        "ProxyDataFromFields"
+      ],
+      "capability_ids": [
+        "CAP-MTPROTO-WEB-PROXY-BRIDGE-CAPABILITY"
+      ],
+      "dependency_ids": [
+        "canonical telegram-protocol wire/cryptography owner",
+        "existing hmac 0.12.1 + sha2 0.10 dependencies",
+        "existing hex 0.4 dependency"
+      ],
+      "source_analysis_path": "docs/specs/telegram-web-proxy-bridge-capability-wire.md",
+      "behavior_contract": "Carrier-independent fixed-U WebProxy config/wire boundary: root context is `tdesktop-web-proxy-bridge-v1\\n` + canonical host; path context is `tdesktop-web-proxy-bridge-v2\\n` + host + `\\n` + canonical base path; HMAC-SHA256 uses raw proxy-secret bytes and emits unpadded base64url. Bridge path/URL and 0x70 path-link-secret marker are exact.",
+      "state_machine": "canonical host + normalized base path + valid WebProxy secret -> v1/v2 HMAC capability -> bridge path/URL; share with path -> 0x70||secret base64url; import -> marked decode or root-only unmarked fallback. No carrier state.",
+      "side_effects": [
+        "Pure functions only; no socket I/O, scheduler, persistence, logging, or randomness.",
+        "HMAC uses the existing reviewed RustCrypto dependency."
+      ],
+      "failure_cases": [
+        "non-canonical host",
+        "invalid or >128-byte base path",
+        "malformed hex/base64url secret",
+        "unsupported 0xEE WebProxy secret",
+        "unmarked secret on a path-bearing link"
+      ],
+      "ui_disposition": "No UI surface. Unicode/IDNA input normalization, clipboard routing, QR and settings persistence remain adjacent owners.",
+      "non_ui_responsibilities": [
+        "WebProxy bridge HMAC capability",
+        "canonical base-path grammar",
+        "bridge path/URL construction",
+        "path-aware link-secret encode/decode",
+        "WebProxy secret-shape validation"
+      ],
+      "platform_delta": "Rewritten in canonical telegram-protocol and byte-identically mirrored into the desktop provider. No telegram-network/carrier code changed.",
+      "existing_owner_candidates": [
+        "bhrumom/fabushi-platform-core:native/telegram-protocol",
+        "bhrumom/fabushi-platform-core:native/telegram-network"
+      ],
+      "existing_owner": "bhrumom/fabushi-platform-core:native/telegram-protocol",
+      "rejected_existing_owners": [
+        "telegram-network: socket/scheduler owner; this boundary is pure config/wire and reuses protocol crypto dependencies.",
+        "standalone WebProxy/Telegram provider/runtime: duplicates canonical ownership.",
+        "UI/settings owner: user-input normalization/sharing UI/persistence are adjacent, not this exact wire contract."
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "bhrumom/fabushi-platform-core:native/telegram-protocol/src/web_proxy.rs",
+        "bhrumom/fabushi-platform-core:native/telegram-protocol/src/lib.rs",
+        "bhrumom/fabushi-platform-core:native/telegram-protocol/tests/protocol_contract.rs",
+        "bhrumom/fabushi-desktop:source/mahayana/mahayana-rs/providers/telegram-protocol/src/web_proxy.rs",
+        "bhrumom/fabushi-desktop:source/mahayana/mahayana-rs/providers/telegram-protocol/src/lib.rs",
+        "bhrumom/fabushi-desktop:source/mahayana/mahayana-rs/providers/telegram-protocol/tests/protocol_contract.rs"
+      ],
+      "fabushi_target_symbols": [
+        "WebProxyConfigError",
+        "normalize_web_proxy_base_path",
+        "validate_canonical_web_proxy_host",
+        "parse_web_proxy_secret_text",
+        "web_proxy_bridge_capability",
+        "web_proxy_bridge_path",
+        "web_proxy_bridge_url",
+        "encode_web_proxy_link_secret",
+        "decode_web_proxy_link_secret"
+      ],
+      "target_language": "Rust",
+      "language_rationale": "Deterministic non-UI config/wire logic belongs in the shared Rust protocol owner and needs no second runtime.",
+      "command_event_contracts": [],
+      "state_owner": "No mutable state; canonical telegram-protocol owns pure config/wire functions.",
+      "lifecycle_owner": "None for this pure boundary; carrier/browser/reconnect lifecycle remains separate in telegram-network.",
+      "persistence_and_restart": "No persistent data or migration.",
+      "concurrency_and_cancellation": "Pure synchronous functions; no scheduling/cancellation ownership.",
+      "security_boundary": "HMAC-SHA256 uses existing hmac 0.12.1 + sha2 0.10. Secrets are not logged/persisted here. Path links require marker 0x70; 0xEE WebProxy secrets fail closed.",
+      "network_service_dependencies": [
+        "None for the pure config/wire computation.",
+        "A future shipping WebProxy carrier remains a separate dependency tracked by TDRP-R9-MTPROTO-WEB-PROXY-RELAY-STREAM-001."
+      ],
+      "service_owner": "Canonical telegram-protocol for this exact boundary; canonical telegram-network remains future carrier owner.",
+      "deployment_evidence": [],
+      "implementation_status": "implemented",
+      "coverage_disposition": "rewritten",
+      "blockers": [
+        "Stage B executable validation has not run.",
+        "WebProxy relay carrier/window/WebView nonce/bootstrap/reconnect lifecycle remains separately mapped/pending.",
+        "Unicode/IDNA user-input normalization and UI/settings sharing integration remain adjacent.",
+        "Broader scheduling, arbitrary request history, auth-key binding/persistence, gzip, complete difference decoding, source/legal closure and release ACCEPT remain open."
+      ],
+      "production_entrypoints": [
+        "fabushi_telegram_protocol::web_proxy_bridge_capability",
+        "fabushi_telegram_protocol::web_proxy_bridge_path",
+        "fabushi_telegram_protocol::web_proxy_bridge_url",
+        "fabushi_telegram_protocol::encode_web_proxy_link_secret",
+        "fabushi_telegram_protocol::decode_web_proxy_link_secret"
+      ],
+      "production_evidence": [
+        "fixed-U:Telegram/SourceFiles/mtproto/mtproto_proxy_data.cpp@f9748fcb6358dd8ce7429536ec2b999cb2a989ef",
+        "fixed-U:Telegram/SourceFiles/mtproto/mtproto_proxy_data.h@d8deebac2359936f72901ba0eec0cbfdfb186e90",
+        "fixed-U:Telegram/SourceFiles/mtproto/web_proxy/web_proxy_webview.cpp@8a2efc8fb15e400366f199cd956effc8ad362da8",
+        "fixed-U:Telegram/SourceFiles/mtproto/web_proxy/web_proxy_transport.cpp@e25ad970e84686e9aca061d02c274048793b5ad4",
+        "fixed-U:Telegram/SourceFiles/boxes/connection_box.cpp@e9fa8a1d8f727042e4cadd632182eee5259f80c2",
+        "platform-core-spec-commit:4da2078cae694e8aadc45a5a03d8f206701d1ead",
+        "platform-core-initial-spec-blob:cae43055ab17dd8c24aed6ebf06e0c8873efb16a",
+        "platform-core-production-commit:de586fc446d7ac36d7542c5b23736964de70019b",
+        "platform-core-web-proxy-blob:4c91f6e4e6b8d37d84afd40aae6af9fbbe7d80d4",
+        "platform-core-protocol-lib-blob:42601393105e0ad49b8da97ee8cfd2acc6cf031e",
+        "platform-core-authored-contracts-commit:d87483eae204ba18aac503e2fa1f4e059b9f784f",
+        "platform-core-authored-contract-blob:2f4fed5e9d6f9103d3598ef94089dbede6d226af",
+        "desktop-source-sync-commit:7ebdbd7cd9ea4edb0b793be4cd7c616e15d80f71",
+        "desktop-contract-sync-commit:3d6489da4056a65d5dedc7a4094474863cbe3af6",
+        "desktop-web-proxy-blob:4c91f6e4e6b8d37d84afd40aae6af9fbbe7d80d4",
+        "desktop-protocol-lib-blob:42601393105e0ad49b8da97ee8cfd2acc6cf031e",
+        "desktop-authored-contract-blob:2f4fed5e9d6f9103d3598ef94089dbede6d226af",
+        "canonical-network-unchanged-blob:241cd8ec792070a8de8af9ec6ca5b317e34376d1",
+        "desktop-network-unchanged-blob:241cd8ec792070a8de8af9ec6ca5b317e34376d1"
+      ],
+      "test_evidence": [
+        "Authored-only canonical protocol contracts: protocol_contract.rs@2f4fed5e9d6f9103d3598ef94089dbede6d226af; not executed.",
+        "Desktop contract mirror is byte-identical at 2f4fed5e9d6f9103d3598ef94089dbede6d226af; not executed."
+      ],
+      "target_commit": "d87483eae204ba18aac503e2fa1f4e059b9f784f",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Canonical shared telegram-protocol wire/config stack",
+      "composition_slot": "WebProxy bridge capability/path/link-secret pure boundary",
+      "capability_component": "Carrier-independent WebProxy bridge config/wire codec",
+      "variation_axes": [
+        "root/path",
+        "16-byte/0xDD secret",
+        "hex/base64url secret text",
+        "marked/unmarked link secret"
+      ],
+      "shared_owner_contracts": [
+        "canonical telegram-protocol secret/crypto boundary",
+        "existing hmac/sha2/hex dependencies",
+        "separate telegram-network carrier ownership"
+      ],
+      "duplicate_root_check": "No second provider/runtime/scheduler and no relay/window implementation introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Not applicable",
+      "primary_navigation_target": "Existing Messages/Conversation navigation; unchanged",
+      "collection_surface": "Existing ConversationList; unchanged",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "Not applicable",
+      "detail_section": "Not applicable",
+      "capability_surface": "No UI surface",
+      "route_contract": "No new route.",
+      "search_scope": "Not applicable",
+      "search_provider": "Existing canonical Search owner; unchanged",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Unchanged.",
+      "search_local_remote_contract": "Not applicable.",
+      "responsive_disposition": "No UI change.",
+      "accessibility_contract": "No UI change.",
+      "keyboard_contract": "No UI change.",
+      "state_continuity_contract": "Pure functions have no runtime state; carrier lifecycle remains separate.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Existing Fabushi design system; no visual changes",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": null,
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "No new icon asset",
+      "avatar_contract": "No change",
+      "content_copy_keys": [],
+      "motion_contract": "No change",
+      "reduced_motion_contract": "No change",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "high",
+      "requirement_ids": [
+        "TDRP-R9-MTPROTO-WEB-PROXY-BRIDGE-CAPABILITY-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-MTPROTO-WEB-PROXY-BRIDGE-CAPABILITY-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-WEB-PROXY-BRIDGE-DOMAIN-SEPARATION-001",
+        "INV-TDRP-WEB-PROXY-BRIDGE-PATH-001",
+        "INV-TDRP-WEB-PROXY-LINK-SECRET-MARKER-001",
+        "INV-TDRP-WEB-PROXY-NO-CARRIER-SCHEDULER-001"
+      ],
+      "unit_case_ids": [
+        "UNIT-TDRP-WEB-PROXY-BRIDGE-BOUNDARY-001"
+      ],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-WEB-PROXY-BRIDGE-CAPABILITY-001"
+      ],
+      "integration_case_ids": [
+        "INT-TDRP-WEB-PROXY-BRIDGE-CONSUMER-001"
+      ],
+      "functional_e2e_case_ids": [
+        "E2E-TDRP-WEB-PROXY-CARRIER-001"
+      ],
+      "temporal_case_ids": [],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "fault_recovery_case_ids": [
+        "FAULT-TDRP-WEB-PROXY-BRIDGE-MALFORMED-SECRET-001"
+      ],
+      "performance_case_ids": [],
+      "security_case_ids": [
+        "SEC-TDRP-WEB-PROXY-BRIDGE-HMAC-001"
+      ],
+      "soak_case_ids": [],
+      "exploratory_charter_ids": [],
+      "regression_ids": [],
+      "release_gate_ids": [
+        "G-TRACEABILITY",
+        "G-ARCHITECTURE",
+        "G-EVIDENCE"
+      ],
+      "test_fixture_ids": [
+        "fixed-u-web-proxy-bridge-capability-vectors"
+      ],
+      "test_environment_ids": [
+        "Stage B GitHub Actions candidate environment"
+      ],
+      "coverage_matrix_status": "pending",
+      "flake_status": "unknown",
+      "release_gate_status": "pending",
+      "acceptance_reviewer": null,
+      "reviewer": null,
+      "license_and_provenance": "Fixed-U behavioral provenance is mtproto_proxy_data.cpp/header plus consuming web_proxy_webview.cpp, web_proxy_transport.cpp and connection_box.cpp. No upstream C++ copied. HMAC reuses hmac 0.12.1 + sha2 0.10.",
+      "notes": "Task round80/source evidence round111. Pure bridge capability/path/link-secret config/wire is independently implemented in existing telegram-protocol without a carrier scheduler. Relay carrier/window/bootstrap remains mapped/pending. Contracts authored only; executable validation not run.",
       "test_execution_evidence": [],
       "validation_status": "not-run",
       "accepted": false
