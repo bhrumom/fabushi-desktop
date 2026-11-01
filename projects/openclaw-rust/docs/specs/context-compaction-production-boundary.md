@@ -179,6 +179,14 @@ alone is insufficient for transcript rows that carry tool calls, tool
 results, or attachments. Unsupported or malformed rows are an explicit
 fail-closed outcome, never an implicit text conversion.
 
+Provider serialization is an inference-owner concern and is provider-specific:
+Cursor has an internal typed tool checkpoint but no attachment protobuf;
+Codex/Fabushi use Responses input; OpenRouter uses Chat Completions; and
+Claude Code currently receives one CLI prompt string. A production replay
+adapter must select a serializer for the selected provider and obtain a
+provider-supported attachment representation from the existing attachment
+owner, or reject the turn without changing durable transcript state.
+
 ## 9. Constraints and non-functional requirements
 
 - Preserve user data and transcript ordering on every failure path.
@@ -204,7 +212,10 @@ permission to add a new store.
 3. Add or repair the production Runner boundary only after steps 1–2 are
    approved in this spec/decision record.
 4. Implement the smallest owner-local adapter and guarded persistence path.
-5. Add mutation-sensitive contract tests, then run the required frozen exact
+5. Add provider-specific typed replay serializers at the inference owner and
+   connect only after attachment resolution and unsupported-provider failure
+   paths are explicit.
+6. Add mutation-sensitive contract tests, then run the required frozen exact
    head verification lane when the development freeze is lifted.
 
 ## 12. Verification / test strategy

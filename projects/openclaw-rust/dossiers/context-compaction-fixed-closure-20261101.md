@@ -273,3 +273,22 @@ representation plus provider-specific serialization for summary context,
 assistant/user roles, tool-call/tool-result pairing, and attachments, the
 production replay consumer remains unresolved and compaction wiring must not
 be enabled.
+
+## Provider serialization capability matrix (2026-11-01)
+
+The inference owner has no single serialization path that is rich enough for
+the typed replay contract:
+
+| Provider path | Current source boundary | Typed-history coverage | Blocking gap |
+| --- | --- | --- | --- |
+| Cursor | `cursor_inference_transport.rs` has `CursorCheckpointMessage` and protobuf tool-call/tool-result fields | tool-call/result pairing is representable | attachment-bearing content is not represented in the protobuf; the public `ProviderMessage` conversion still discards checkpoint structure |
+| Codex / Fabushi | `provider_session.rs` maps each `ProviderMessage` to Responses input with string `content` | ordinary text and role projection only | tool-call/result replay and attachments require a Responses-native serializer and media resolution |
+| OpenRouter | `provider_session.rs` builds Chat Completions `messages` with string `content` | ordinary text and role projection only | tool calls can only be preserved by constructing provider-native assistant/tool messages; attachments require provider-native content parts and resolved media |
+| Claude Code | `provider_session.rs` renders `provider_prompt` and passes one CLI string | text-only prompt | typed roles, tool pairing, and attachments cannot be preserved through the current CLI invocation |
+
+This matrix makes the next ownership boundary explicit: the inference owner
+must accept a typed replay input and select a provider-specific serializer;
+the attachment owner must resolve durable attachment identities into a
+provider-supported representation or return a fail-closed unsupported-media
+result. The current `ProviderMessage` path remains valid for ordinary turns
+and must not be silently reused for compacted typed replay.
