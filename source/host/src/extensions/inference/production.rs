@@ -479,6 +479,7 @@ impl ProductionInferenceExtension {
         let mut ignore_delta = |_delta: &str, _accumulated: &str| {};
         let mut options = RoutedProviderOptions {
             data_dir,
+            typed_replay: None,
             cursor_auth: Some(cursor_auth),
             tools: &[],
             mcp_server_url: None,

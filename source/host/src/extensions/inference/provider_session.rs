@@ -20,6 +20,7 @@ use tokio::time::timeout;
 use uuid::Uuid;
 
 use crate::host_paths::get_sand_root_dir;
+use crate::extensions::session::typed_replay::TypedReplayEntry;
 
 use super::cursor_inference_transport::{
     CursorCheckpoint, CursorInferenceAuth, CursorInferenceTransport,
@@ -1357,6 +1358,7 @@ fn run_fabushi_provider_text_with_lifecycle_reporting_usage_with_max_steps(
 
 pub struct RoutedProviderOptions<'a> {
     pub data_dir: &'a Path,
+    pub typed_replay: Option<&'a [TypedReplayEntry]>,
     pub cursor_auth: Option<Arc<dyn CursorInferenceAuth>>,
     pub tools: &'a [RoutedToolDefinition],
     pub mcp_server_url: Option<&'a str>,
@@ -1441,6 +1443,11 @@ pub fn run_routed_provider_text_with_lifecycle_reporting_usage_with_max_steps(
     tool_step_reminder: Option<&ProviderToolStepReminderHook>,
 ) -> Result<String, ProviderSessionError> {
     let max_steps = max_steps.max(1);
+    if options.typed_replay.is_some() {
+        return Err(ProviderSessionError::Protocol(
+            "typed compacted replay reached provider serialization before provider-specific message merge was enabled".into(),
+        ));
+    }
     if (options.should_cancel)() {
         return Err(ProviderSessionError::Cancelled(
             "Runner cancelled before provider dispatch".into(),

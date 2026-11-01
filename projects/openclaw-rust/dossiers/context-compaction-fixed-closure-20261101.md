@@ -308,6 +308,16 @@ current CLI has no typed replay surface. The serializers are not wired to a
 live Runner or provider attempt, so this is implementation evidence rather
 than production acceptance.
 
+The optional typed replay channel is now threaded through the existing
+production turn path: `ProductionTurnInputProjection` →
+`GeneratedAgentTurnContext` → `TurnAgentComposition` → `RoutedProviderRun` →
+`ProductionRoutedProviderAttemptExecutor` → `RoutedProviderOptions`. Ordinary
+turns pass `None`. A non-empty replay is rejected at the provider runtime and
+provider-session dispatch boundaries until the canonical replay producer,
+system/current-turn merge, attachment resolution, and provider-specific
+serialization are all wired. This is an ownership-preserving fail-closed
+integration slice, not live replay acceptance.
+
 The existing attachment resolution evidence is app-owned rather than an
 inference contract: `source/host/app/src/main.rs:605-670`
 `resolve_production_attachment_source` can persist host bytes or download box

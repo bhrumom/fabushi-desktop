@@ -15,6 +15,7 @@ use sha2::{Digest, Sha256};
 use uuid::Uuid;
 
 use crate::extensions::inference::cursor_inference_transport::CursorInferenceAuth;
+use crate::extensions::session::typed_replay::TypedReplayEntry;
 use crate::extensions::inference::provider_session::{
     ProviderMessage, ProviderPartialToolCall, ProviderSessionError, ProviderTokenUsage,
     ProviderToolStepReminderHook, RoutedMcpMetaToolDefinition, RoutedProvider,
@@ -316,6 +317,7 @@ struct ProductionRoutedProviderAttemptExecutor<'a> {
     provider: RoutedProvider,
     data_dir: &'a Path,
     messages: &'a [ProviderMessage],
+    typed_replay: Option<&'a [TypedReplayEntry]>,
     tools: &'a [RoutedToolDefinition],
     mcp_server_url: Option<&'a str>,
     cursor_auth: Option<Arc<dyn CursorInferenceAuth>>,
@@ -342,6 +344,7 @@ impl RoutedProviderAttemptExecutor for ProductionRoutedProviderAttemptExecutor<'
     ) -> Result<String, ProviderSessionError> {
         let mut options = RoutedProviderOptions {
             data_dir: self.data_dir,
+            typed_replay: self.typed_replay,
             cursor_auth: self.cursor_auth.clone(),
             tools: self.tools,
             mcp_server_url: self.mcp_server_url,
@@ -373,6 +376,7 @@ pub struct RoutedProviderRun<'a> {
     pub provider: RoutedProvider,
     pub data_dir: &'a Path,
     pub messages: &'a [ProviderMessage],
+    pub typed_replay: Option<&'a [TypedReplayEntry]>,
     pub bridge: Arc<dyn RoutedToolBridge>,
     pub cursor_auth: Option<Arc<dyn CursorInferenceAuth>>,
     pub request_context: RunnerRequestContextSnapshot,
@@ -401,6 +405,11 @@ pub fn run_routed_provider_in_runner(
         run.cloud_agents_enabled,
         run.multitask_enabled,
     );
+    if run.typed_replay.is_some() {
+        return Err(ProviderSessionError::Protocol(
+            "typed compacted replay reached the provider runtime before provider-specific message merge was enabled".into(),
+        ));
+    }
     let mut provider_messages = Vec::with_capacity(run.messages.len() + usize::from(!system_prompt.is_empty()));
     if !system_prompt.is_empty() {
         provider_messages.push(ProviderMessage {
@@ -471,6 +480,7 @@ pub fn run_routed_provider_in_runner(
         provider: run.provider,
         data_dir: run.data_dir,
         messages: &provider_messages,
+        typed_replay: run.typed_replay,
         tools: &direct_tools,
         mcp_server_url: mcp_url.as_deref(),
         cursor_auth: run.cursor_auth.clone(),

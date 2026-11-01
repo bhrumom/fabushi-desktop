@@ -65,6 +65,7 @@ fn provider_session_honors_runner_cancellation_before_provider_setup() {
         &messages,
         &mut RoutedProviderOptions {
             data_dir: &root,
+            typed_replay: None,
             cursor_auth: None,
             tools: &tools,
             mcp_server_url: None,

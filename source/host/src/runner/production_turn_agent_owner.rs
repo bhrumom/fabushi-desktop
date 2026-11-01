@@ -444,6 +444,7 @@ impl ProductionTurnAgentOwner {
                 options,
                 ack_token: None,
                 prompt_action: Default::default(),
+                typed_replay: None,
             },
             on_text_delta,
         )
@@ -465,6 +466,7 @@ impl ProductionTurnAgentOwner {
                 options,
                 ack_token: None,
                 prompt_action: Default::default(),
+                typed_replay: None,
             },
             on_text_delta,
         )

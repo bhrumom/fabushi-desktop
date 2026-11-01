@@ -6,6 +6,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 use serde_json::Value;
 
 use crate::extensions::inference::cursor_inference_transport::CursorInferenceAuth;
+use crate::extensions::session::typed_replay::TypedReplayEntry;
 use crate::extensions::inference::provider_session::{
     ProviderMessage, ProviderSessionError, ProviderTokenUsage, ProviderToolStepReminderHook,
     RoutedMcpMetaToolDefinition, RoutedProvider, RoutedProviderCheckpoint, RoutedToolDefinition,
@@ -959,6 +960,7 @@ impl TurnAgentComposition {
         &self,
         data_dir: &Path,
         messages: &[ProviderMessage],
+        typed_replay: Option<&[TypedReplayEntry]>,
         on_text_delta: &mut dyn FnMut(&str, &str),
     ) -> Result<String, ProviderSessionError> {
         self.reset_latest_provider_checkpoint();
@@ -1065,6 +1067,7 @@ impl TurnAgentComposition {
                 provider: self.provider,
                 data_dir,
                 messages,
+                typed_replay,
                 bridge,
                 cursor_auth: self.cursor_auth.clone(),
                 request_context: self.request_context.clone(),
