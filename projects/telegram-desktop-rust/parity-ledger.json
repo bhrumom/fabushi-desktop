@@ -9,7 +9,7 @@
     "unknown": 16172,
     "unread": 16145,
     "omitted": 0,
-    "responsibilities_total": 103,
+    "responsibilities_total": 104,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -26134,6 +26134,273 @@
       "source_paths": [
         "Telegram/SourceFiles/mtproto/connection_abstract.cpp@3baabf3f72c7c7edba3151814681fbf167a5ca0a",
         "Telegram/SourceFiles/mtproto/session_private.cpp@13cbc76ec723386027b5b4dcac79999b791c4614",
+        "Telegram/SourceFiles/mtproto/scheme/mtproto.tl@76225965bfc794388db241f3f760db8ab79e84f8"
+      ]
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+      "source_path": "Telegram/SourceFiles/mtproto/session_private.cpp",
+      "source_blob_sha": "13cbc76ec723386027b5b4dcac79999b791c4614",
+      "source_kind": "wire",
+      "module_id": "tdesktop.mtproto.secure-inner-message-wire",
+      "responsibility_id": "TDRP-R9-MTPROTO-SECURE-INNER-MESSAGE-WIRE-001",
+      "source_symbols": [
+        "SessionPrivate::sendSecureRequest",
+        "SessionPrivate::handleReceived",
+        "PlainMessage::encode",
+        "decode_plain_message",
+        "validate_plain_message",
+        "encrypt_message/decrypt_message"
+      ],
+      "capability_ids": [
+        "CAP-TELEGRAM-MTPROTO-SECURE-INNER-MESSAGE-WIRE"
+      ],
+      "dependency_ids": [
+        "telegram-protocol::PlainMessage",
+        "telegram-protocol::encrypt_message/decrypt_message",
+        "telegram-network::EstablishedSession"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/evidence/round103-mtproto-secure-inner-message-wire-20261101.md",
+      "behavior_contract": "The authenticated plaintext inside the already-closed encrypted MTProto envelope is exactly LE64 server_salt, LE64 session_id, LE64 message_id, LE32 sequence_number, LE32 msg_len, msg_len body bytes and 12..1024 authenticated padding bytes. Fixed-U handleReceived rejects body lengths above 16 MiB, non-4-byte body lengths, invalid padding, session mismatch and non-odd server message ids before body dispatch. The existing source-neutral PlainMessage/encrypt_message/decrypt_message owner already carried every rule except the fixed-U 16 MiB body ceiling, which is now added in that same owner.",
+      "state_machine": "Existing EstablishedSession send path constructs PlainMessage -> encrypt_message -> existing EncryptedEnvelope/transport. Receive path decrypts/authenticates -> decode_plain_message -> validate_plain_message(expected session/direction) -> existing incoming-message-id/service-body owners. No auth-key binding/persistence, connection scheduler, arbitrary request history, gzip or difference state is added.",
+      "side_effects": [
+        "Adds only the fixed-U 16 MiB body ceiling to the canonical telegram-protocol PlainMessage validation/decode boundary",
+        "Retains the existing shipping EstablishedSession encrypt/decrypt call chain and desktop network provider unchanged",
+        "Authors focused exact-offset/round-trip/session/parity/size contracts without executing them in Stage A",
+        "Mirrors the authored contracts into the existing desktop tracked provider test copy"
+      ],
+      "failure_cases": [
+        "secure plaintext fixed-width fields are reordered, widened, narrowed or encoded with the wrong endianness",
+        "body length is zero, not divisible by four, exceeds 16 MiB, overflows the plaintext boundary or is truncated",
+        "padding is outside 12..1024 bytes or total plaintext is not AES-block aligned",
+        "session mismatch or even server message id is accepted after authenticated decrypt",
+        "the isolated wire slice is expanded into salt adoption, replay/request history, ACK scheduling, connection retry, binding/persistence, gzip or difference application"
+      ],
+      "ui_disposition": "No UI change. This is authenticated MTProto secure-inner-message framing in the existing shared protocol/network owners.",
+      "non_ui_responsibilities": [
+        "Exact 8/8/8/4/4 fixed-width secure inner header and little-endian encoding",
+        "Exact msg_len/body/padding authenticated boundary",
+        "Fixed-U 16 MiB body ceiling and 4-byte body alignment",
+        "12..1024 byte padding and AES-block-aligned total plaintext",
+        "Expected-session and inbound server-message-id parity validation",
+        "Strict separation from salt adoption, request history, ACK scheduling, connection lifecycle, binding/persistence, gzip and difference application"
+      ],
+      "platform_delta": "Minimal production delta in the existing canonical owner: add MAX_MESSAGE_BODY_LENGTH=16 MiB to early decode and shared PlainMessage validation. No new owner, transport or lifecycle state is introduced.",
+      "existing_owner_candidates": [
+        "bhrumom/fabushi-platform-core:native/telegram-protocol/src/crypto.rs",
+        "bhrumom/fabushi-platform-core:native/telegram-network/src/lib.rs",
+        "bhrumom/fabushi-platform-core:native/telegram-protocol/tests/protocol_contract.rs",
+        "source/mahayana/mahayana-rs/providers/telegram-network/src/lib.rs",
+        "source/mahayana/mahayana-rs/providers/telegram-protocol/tests/protocol_contract.rs"
+      ],
+      "existing_owner": "Existing canonical telegram-protocol PlainMessage/MTProto 2 crypto plus existing telegram-network EstablishedSession shipping caller",
+      "rejected_existing_owners": [
+        "new secure-message owner: rejected because PlainMessage/encrypt_message/decrypt_message already own this authenticated plaintext boundary",
+        "new session/runtime owner: rejected because the current EstablishedSession already ships and receives through the canonical crypto owner",
+        "desktop duplicate crypto.rs: rejected because the sparse desktop overlay intentionally consumes platform-core crypto and only mirrors the existing contract surface"
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "bhrumom/fabushi-platform-core:native/telegram-protocol/src/crypto.rs",
+        "bhrumom/fabushi-platform-core:native/telegram-network/src/lib.rs",
+        "bhrumom/fabushi-platform-core:native/telegram-protocol/tests/protocol_contract.rs",
+        "source/mahayana/mahayana-rs/providers/telegram-network/src/lib.rs",
+        "source/mahayana/mahayana-rs/providers/telegram-protocol/tests/protocol_contract.rs"
+      ],
+      "fabushi_target_symbols": [
+        "PlainMessage",
+        "PlainMessage::encode",
+        "decode_plain_message",
+        "validate_plain_message",
+        "encrypt_message",
+        "decrypt_message",
+        "EstablishedSession::send_encrypted_message"
+      ],
+      "target_language": "Rust",
+      "language_rationale": "The existing source-neutral Rust telegram-protocol crypto owner already carries this shipping authenticated wire boundary; the fixed-U size guard belongs there rather than in a source-specific or duplicate runtime.",
+      "command_event_contracts": [
+        "PlainMessage -> exact LE64 salt/session/msg_id + LE32 seq_no/msg_len + body + padding -> existing MTProto 2 encryption",
+        "authenticated plaintext msg_len > 16 MiB / non-4-byte / invalid padding / truncated body -> fail closed",
+        "expected session mismatch -> SessionMismatch before body dispatch",
+        "authenticated inbound even server msg_id -> InvalidMessageId before body dispatch",
+        "valid secure inner message -> existing service-body/application owners"
+      ],
+      "state_owner": "Existing EstablishedSession owns session state; PlainMessage and crypto framing remain pure protocol values/functions.",
+      "lifecycle_owner": "Existing telegram-network EstablishedSession and telegram-protocol crypto owners. Salt adoption, connection selection/retry and auth-key binding/persistence remain outside this slice.",
+      "persistence_and_restart": "No persistence or restart behavior is introduced or changed.",
+      "concurrency_and_cancellation": "Pure synchronous encode/decode/crypto validation in the existing send/receive path; no scheduler, history registry, background task or cancellation owner is introduced.",
+      "security_boundary": "The secure inner message is authenticated by the existing MTProto 2 msg_key before decode/validation. The new 16 MiB ceiling fails closed both on outbound PlainMessage validation and early authenticated inbound decode, before large-body copying/dispatch.",
+      "network_service_dependencies": [
+        "Existing transport send_payload/receive_payload only; no new network service dependency."
+      ],
+      "service_owner": "Canonical embedded Telegram protocol/network runtime.",
+      "deployment_evidence": [],
+      "implementation_status": "implemented",
+      "coverage_disposition": "rewritten",
+      "blockers": [
+        "Stage B executable build/unit/contract/integration/packaged validation has not run.",
+        "Auth-key binding/persistence/expiry/renewal and restore remain outside this isolated wire slice.",
+        "Broader connection scheduling/racing/send retry, arbitrary request histories, gzip and complete difference/differenceSlice decoding/application remain open/fail-closed.",
+        "Broader fixed-U source/legal/release closure remains open."
+      ],
+      "production_entrypoints": [
+        "fixed-U SessionPrivate::sendSecureRequest -> server_salt/session_id + existing message id/seq/msg_len/body + MTProto2 padding -> authenticated encryption",
+        "fixed-U SessionPrivate::handleReceived -> authenticated decrypt -> 8/8/8/4/4 header -> <=16 MiB/alignment/padding/session/server-msg-id checks -> existing body dispatch",
+        "canonical EstablishedSession::send_encrypted_message -> PlainMessage -> encrypt_message -> existing transport",
+        "canonical receive path -> EncryptedEnvelope::from_bytes -> decrypt_message(expected session) -> existing service dispatch",
+        "desktop tracked telegram-network provider remains byte-identical at 54f509474391bb5118ba4678ba5c566ab3e74ec8"
+      ],
+      "production_evidence": [
+        "fixed-U:Telegram/SourceFiles/mtproto/session_private.cpp@13cbc76ec723386027b5b4dcac79999b791c4614",
+        "fixed-U:Telegram/SourceFiles/mtproto/connection_abstract.cpp@3baabf3f72c7c7edba3151814681fbf167a5ca0a",
+        "fixed-U:Telegram/SourceFiles/mtproto/scheme/mtproto.tl@76225965bfc794388db241f3f760db8ab79e84f8",
+        "platform-core-spec-commit:2f93a5c5dbfce33f3ea5ee85352f6f9b967ed042",
+        "platform-core-spec-blob:00843c11318f7f3f4d5dd025d78ba0527c68abf2",
+        "platform-core-production-commit:7ffc264ab3a2f7a2997c82a03e6f8f45ce4b5745",
+        "platform-core-production-path:native/telegram-protocol/src/crypto.rs@32d69573acc6ef4ce7bcc80073f5cdd7e2bea7ad",
+        "platform-core-network-path:native/telegram-network/src/lib.rs@54f509474391bb5118ba4678ba5c566ab3e74ec8",
+        "platform-core-contract-path:native/telegram-protocol/tests/protocol_contract.rs@f8e109c74a82ebe860b15c22766f403998e85b81",
+        "desktop-contract-mirror-commit:125891339237613d9f9813c32c55684f3b5b2ecd",
+        "path:source/mahayana/mahayana-rs/providers/telegram-network/src/lib.rs@54f509474391bb5118ba4678ba5c566ab3e74ec8",
+        "path:source/mahayana/mahayana-rs/providers/telegram-protocol/tests/protocol_contract.rs@f8e109c74a82ebe860b15c22766f403998e85b81"
+      ],
+      "test_evidence": [
+        "Canonical and desktop authored-only focused contracts pin exact 8/8/8/4/4 internal offsets/endianness, authenticated round-trip decoding, wrong-session rejection, invalid server-message-id parity and rejection above the fixed-U 16 MiB body ceiling; not run."
+      ],
+      "target_commit": "125891339237613d9f9813c32c55684f3b5b2ecd",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Canonical Fabushi account + existing TelegramClientLease/runtime + shared telegram-protocol/network production composition",
+      "composition_slot": "Embedded Telegram MTProto authenticated secure inner message wire",
+      "capability_component": "Exact fixed-U secure plaintext header/body/padding validation inside the encrypted envelope",
+      "variation_axes": [
+        "minimum/maximum valid body size vs >16 MiB",
+        "valid vs non-4-byte body length",
+        "12..1024 valid padding vs invalid padding",
+        "matching vs mismatched session id",
+        "valid odd vs invalid even inbound server message id"
+      ],
+      "shared_owner_contracts": [
+        "Existing AuthKey",
+        "Existing PlainMessage",
+        "Existing EncryptedEnvelope",
+        "Existing EstablishedSession",
+        "Existing MessageIdGuard/SessionSequence"
+      ],
+      "duplicate_root_check": "No second account, runtime, provider, transport, crypto owner, session store, auth-key store, request-history store, decompression runtime, difference runtime, UI root, sidecar, subprocess or Web wrapper was introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [
+        "Desktop sparse provider overlay has no tracked telegram-protocol/src/crypto.rs; canonical secure-message crypto remains in fabushi-platform-core while desktop tracks the shipping network consumer and authored contracts."
+      ],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Not applicable",
+      "primary_navigation_target": "Existing Messages/Conversation navigation",
+      "collection_surface": "Existing ConversationList; no change",
+      "creation_flow": "Existing canonical conversation creation; no change",
+      "object_action_scope": "Not applicable",
+      "detail_section": "Not applicable",
+      "capability_surface": "Existing ConversationWorkspace through the same provider/runtime; no new surface",
+      "route_contract": "No new route.",
+      "search_scope": "Not applicable",
+      "search_provider": "Existing canonical Search owner; unchanged",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Unchanged.",
+      "search_local_remote_contract": "Not applicable.",
+      "responsive_disposition": "No UI change.",
+      "accessibility_contract": "No UI change.",
+      "keyboard_contract": "No UI change.",
+      "state_continuity_contract": "The same EstablishedSession and canonical crypto owner continue to carry encrypted messages; this round only hardens the existing secure-inner body-length boundary and adds authored contracts.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Existing Fabushi design system; no visual changes",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": null,
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "No new icon asset",
+      "avatar_contract": "No change",
+      "content_copy_keys": [],
+      "motion_contract": "No change",
+      "reduced_motion_contract": "No change",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "high",
+      "requirement_ids": [
+        "TDRP-R9-MTPROTO-SECURE-INNER-MESSAGE-WIRE-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-MTPROTO-SECURE-INNER-MESSAGE-WIRE-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-MTPROTO-SECURE-INNER-LAYOUT-001",
+        "INV-TDRP-MTPROTO-SECURE-INNER-BODY-BOUND-001",
+        "INV-TDRP-MTPROTO-SECURE-INNER-SESSION-PARITY-001"
+      ],
+      "unit_case_ids": [
+        "UNIT-TDRP-MTPROTO-SECURE-INNER-LAYOUT-001",
+        "UNIT-TDRP-MTPROTO-SECURE-INNER-SESSION-PARITY-001",
+        "UNIT-TDRP-MTPROTO-SECURE-INNER-MAX-BODY-001"
+      ],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-MTPROTO-SECURE-INNER-MESSAGE-WIRE-001"
+      ],
+      "integration_case_ids": [],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "fault_recovery_case_ids": [],
+      "performance_case_ids": [],
+      "security_case_ids": [
+        "SEC-TDRP-MTPROTO-SECURE-INNER-AUTHENTICATED-BOUNDARY-001",
+        "SEC-TDRP-MTPROTO-SECURE-INNER-SIZE-001"
+      ],
+      "soak_case_ids": [],
+      "exploratory_charter_ids": [],
+      "regression_ids": [
+        "REG-TDRP-MTPROTO-SECURE-INNER-SHIPPING-001"
+      ],
+      "release_gate_ids": [
+        "G-TRACEABILITY",
+        "G-COMPOSITION",
+        "G-SECURITY",
+        "G-EVIDENCE",
+        "G-RELEASE"
+      ],
+      "test_fixture_ids": [
+        "mtproto-secure-inner-patterned-header",
+        "mtproto-secure-inner-over-16mib"
+      ],
+      "test_environment_ids": [
+        "GitHub Actions Stage B matrix (not run)"
+      ],
+      "coverage_matrix_status": "pending",
+      "flake_status": "stable",
+      "release_gate_status": "pending",
+      "acceptance_reviewer": null,
+      "reviewer": null,
+      "license_and_provenance": "Behavioral responsibility is anchored to fixed-U telegramdesktop/tdesktop session_private.cpp@13cbc76ec723386027b5b4dcac79999b791c4614, connection_abstract.cpp@3baabf3f72c7c7edba3151814681fbf167a5ca0a and mtproto.tl@76225965bfc794388db241f3f760db8ab79e84f8. Implementation is source-neutral Rust and copies no upstream C++ implementation.",
+      "notes": "Stage A source-level implementation. Existing PlainMessage/encrypt_message/decrypt_message and EstablishedSession shipping path already closed the exact authenticated inner layout, padding, expected-session and inbound parity rules. This round adds the fixed-U 16 MiB body ceiling in the existing canonical owner and authors/mirrors focused contracts without executing them; validation_status=not-run and accepted=false. Binding/persistence, broader connection scheduling, arbitrary request history, gzip and complete difference decoding remain open.",
+      "test_execution_evidence": [],
+      "validation_status": "not-run",
+      "accepted": false,
+      "id": "TDRP-R9-MTPROTO-SECURE-INNER-MESSAGE-WIRE-001",
+      "source_paths": [
+        "Telegram/SourceFiles/mtproto/session_private.cpp@13cbc76ec723386027b5b4dcac79999b791c4614",
+        "Telegram/SourceFiles/mtproto/connection_abstract.cpp@3baabf3f72c7c7edba3151814681fbf167a5ca0a",
         "Telegram/SourceFiles/mtproto/scheme/mtproto.tl@76225965bfc794388db241f3f760db8ab79e84f8"
       ]
     }
