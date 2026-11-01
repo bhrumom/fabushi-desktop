@@ -3376,3 +3376,20 @@ All 20 fixed-U workflow blobs were checked for direct reusable/workflow-run coup
 Exactly one independent source entry closes: `unknown 16108 -> 16107`, `unread 16081 -> 16080`, `omitted=0`; responsibilities `170 -> 171`, unmapped remains 0. The next independent fixed-U blob is `.github/workflows/mac_packaged.yml@6e9f0b5bddfc3146bbed0bcd56a465bd584b89fc` at tree index 127 zero-based.
 
 Stage A zero-CI discipline remained intact: no Actions/check/status/workflow-run query or trigger; no push/pull_request execution, third-party Action/cache execution, submodule fetch, Homebrew/Xcode/CMake host mutation, dependency preparation, build, validator, test/E2E, artifact upload/download, package, signing, notarization, release, deployment, installation, runtime acceptance or platform-core mutation was performed.
+
+
+## Round 171 / source-entry closure — repository macOS deployed-app artifact workflow (2026-11-01)
+
+From desktop checkpoint `81d4ab04c253bd02c033a4eaea2d1ad5556afe52`, live authority was reread before non-force expected-SHA spec-first CAS `65b872252bb463283bb28d6682a574063776c3e0`. Main was observed at `9993ca8e107f7e019a8201e5ab74fa54e82159f2`; platform-core remains `e92b51e23b39dae5719f033fa1f7a20d6579dc8c`; fixed U remains `f985723b552b30fe1c17d377d57f44e61a15a8c4`, recursive tree `91f2b083ab2877c0a17d07868eabec362a5cfca6`, non-truncated with 7,194 entries.
+
+Exact `.github/workflows/mac_packaged.yml@6e9f0b5bddfc3146bbed0bcd56a465bd584b89fc` at tree index 127 was completely read: 9,952 ASCII bytes/code points, 254 LF, no CR, trailing newline. Admission, implicit permission boundary, conditional mutable runner, recursive checkout, Homebrew/Xcode/CMake host mutation, cache-key construction, Rust 1.96.1 and exact TDE2E/tlottie/wallet-engine/patches lineage, mutable rnnoise/tg_owt head lookups, cache/build paths, Debug CMake flags, macdeployqt deployment, explicit signature removal, Telegram.app-only staging, one-day artifact upload, publication boundary and all failure/security semantics are recorded.
+
+The critical provenance race is preserved: rnnoise/tg_owt cache keys use API-read master SHAs, but miss paths shallow-clone mutable master without resetting to those SHAs. Audit-time observations were `6cbfd53eb348a8d394e0757b4025c6ded34eb2b6` and `020feec5c040fdae2cf752c2c2be62ddde7c236d`; actual cloned commits/submodules, not lookup values alone, are required Stage-B evidence.
+
+Existing-owner-first reuses Fabushi build/toolchain, canonical signed/notarized macOS package/release/update process, security/provenance and shared quality/evidence. The source's unsigned one-day app bundle is not release authority. All 20 fixed-U workflow blobs show no direct reusable/workflow-run/local-workflow caller; `mac.yml` is only a sibling.
+
+Thirty-six contract, one integration, twenty-two fault/recovery and eighteen security/provenance cases were authored and not run. No target workflow copy, runtime/provider/sidecar or platform-core production change was made.
+
+Exactly one source entry closes: `unknown 16107 -> 16106`, `unread 16080 -> 16079`, `omitted=0`; responsibilities `171 -> 172`, unmapped remains 0. Next is `.github/workflows/master_updater.yml@fedc24f8e5d781a0bbdcdf80e24baf3eb2fe199f`, tree index 128 zero-based.
+
+The pre-existing authority gap remains explicit: active fixed-U ledger/closure follows `f985723...`, while `upstream.lock.json` / inventory metadata still contains older `351204f...` identity. Stage A remains zero CI: no Actions/check/status/workflow-run query/trigger and no executable validation, build, package, sign, notarize, release, deployment or installation occurred.
