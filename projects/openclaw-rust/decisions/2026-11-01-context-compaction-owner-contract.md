@@ -56,7 +56,8 @@ valid substitutes.
 ## Current implementation evidence
 
 `SandAgentDb::commit_compaction` now implements the guarded transactional
-commit, including owner-local non-empty/16,000-character summary validation,
+commit, including owner-local non-empty/16,000-character summary validation and
+trim-normalized idempotent retry matching,
 and `SandAgentDb::get_compacted_transcript_entries` implements the owner-local
 replay projection. `ProductionSessionWorkers` exposes both operations. The
 focused contract test is present in

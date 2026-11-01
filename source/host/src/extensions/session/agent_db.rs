@@ -4018,7 +4018,7 @@ fn compaction_payload_matches(
             .and_then(serde_json::Value::as_str)
             == commit.first_kept_entry_id.as_deref().map(str::trim)
         && existing.get("summary").and_then(serde_json::Value::as_str)
-            == Some(commit.summary.as_str())
+            == Some(commit.summary.trim())
         && existing
             .get("tokensBefore")
             .and_then(serde_json::Value::as_u64)

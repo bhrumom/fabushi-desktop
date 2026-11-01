@@ -960,6 +960,14 @@ fn owner_commits_guarded_compaction_and_replays_from_cut_point() {
         owner.commit_compaction(&commit).expect("duplicate commit"),
         CompactionCommitOutcome::AlreadyCommitted(_)
     ));
+    let mut normalized_duplicate = commit.clone();
+    normalized_duplicate.summary = "  summary  ".into();
+    assert!(matches!(
+        owner
+            .commit_compaction(&normalized_duplicate)
+            .expect("normalized duplicate commit"),
+        CompactionCommitOutcome::AlreadyCommitted(_)
+    ));
     let mut conflict = commit.clone();
     conflict.summary = "different".into();
     assert!(matches!(
