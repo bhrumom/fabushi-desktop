@@ -28,8 +28,8 @@ authenticated reply context is copied into the outbound envelope. The inbound
 consumer on the original sender claims the registry entry using the original
 sender's session ID and target-agent conversation reference, appends the
 received message, completes the claim immediately after the append succeeds,
-and only then performs non-correlation activity bookkeeping. A failed append
-releases the claim. Invalid or absent correlation is never
+and only then performs partner/activity bookkeeping. A failed append releases
+the claim. Invalid or absent correlation is never
 converted into a new turn.
 
 The registry remains process-local. Group/shared-room delivery and sends with

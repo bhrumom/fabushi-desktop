@@ -299,7 +299,6 @@ impl ProductionAgentToAgentMessaging {
             self.sessions
                 .assert_session_work_admission(from_agent_id, Some(session_key))?;
         }
-        let _=self.sessions.add_agent_conversation_partner(from_agent_id,to_agent_id)?;
         let source_entries=self.sessions.read_agent_transcript_entries(from_agent_id)?;
         let outbound_id=next_entry_id(&source_entries,TranscriptEntryIdKind::AssistantMessage);
         let pending_turn_id = if let (Some(session_key), Some(source_admission)) =
@@ -351,6 +350,7 @@ impl ProductionAgentToAgentMessaging {
                 return Err("could not finalize direct-agent conversation correlation".into());
             }
         }
+        let _=self.sessions.add_agent_conversation_partner(from_agent_id,to_agent_id)?;
         let inbound = json!({
             "from": {"id": from_agent_id, "name": sender_name},
             "text": message,
@@ -537,7 +537,6 @@ pub fn persist_agent_inbound_message(
     if let Some(reply_to_id) = reply_to_id {
         entry["replyToId"] = Value::String(reply_to_id.to_string());
     }
-    let _ = sessions.add_agent_conversation_partner(agent_id, from_id)?;
     let append_result = if let Some(session_key) = sessions
         .read_session_work_admission(agent_id)?
         .map(|record| record.session_key)
@@ -558,6 +557,7 @@ pub fn persist_agent_inbound_message(
         }
         return Err(error);
     }
+    let _ = sessions.add_agent_conversation_partner(agent_id, from_id)?;
     if let Some(reply) = claimed_turn {
         let _ = sessions.pending_conversation_turns().complete(agent_id, &reply.id);
     }
