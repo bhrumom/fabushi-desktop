@@ -444,6 +444,7 @@ fn session_archive_transition_is_guarded_idempotent_and_blocks_active_work() {
 
     let archived = owner
         .transition_session_work_archive(
+            "agent:agent-work:main",
             "session-1",
             Some("revision-1"),
             true,
@@ -454,9 +455,22 @@ fn session_archive_transition_is_guarded_idempotent_and_blocks_active_work() {
         .expect("archive transition");
     assert_eq!(archived.archived_at_ms, Some(42.0));
     assert_eq!(archived.archive_reason.as_deref(), Some("manual review"));
+    let identity_error = owner
+        .transition_session_work_archive(
+            "agent:other-agent:main",
+            "session-1",
+            Some("revision-1"),
+            true,
+            Some("other-operator"),
+            Some("wrong identity"),
+            43.0,
+        )
+        .expect_err("archive must reject a mismatched canonical session key");
+    assert!(identity_error.to_string().contains("identity changed"));
     assert_eq!(
         owner
             .transition_session_work_archive(
+                "agent:agent-work:main",
                 "session-1",
                 Some("revision-1"),
                 true,
@@ -470,6 +484,7 @@ fn session_archive_transition_is_guarded_idempotent_and_blocks_active_work() {
     );
     let restored = owner
         .transition_session_work_archive(
+            "agent:agent-work:main",
             "session-1",
             Some("revision-1"),
             false,
@@ -487,6 +502,7 @@ fn session_archive_transition_is_guarded_idempotent_and_blocks_active_work() {
         .expect("admit active work"));
     let error = owner
         .transition_session_work_archive(
+            "agent:agent-work:main",
             "session-1",
             Some("revision-1"),
             true,
@@ -504,6 +520,7 @@ fn session_archive_transition_is_guarded_idempotent_and_blocks_active_work() {
         .expect("admit pending media"));
     let media_error = owner
         .transition_session_work_archive(
+            "agent:agent-work:main",
             "session-1",
             Some("revision-1"),
             true,
@@ -560,6 +577,7 @@ fn admitted_transcript_append_is_rejected_after_archive_without_partial_write() 
 
     owner
         .transition_session_work_archive(
+            "agent:agent-work:main",
             "session-1",
             Some("revision-1"),
             true,

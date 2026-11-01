@@ -692,6 +692,7 @@ impl SandAgentDb {
     /// callers must settle it before retrying.
     pub fn transition_session_work_archive(
         &self,
+        expected_session_key: &str,
         expected_session_id: &str,
         expected_lifecycle_revision: Option<&str>,
         archived: bool,
@@ -699,8 +700,12 @@ impl SandAgentDb {
         archive_reason: Option<&str>,
         archived_at_ms: f64,
     ) -> Result<SessionWorkAdmissionRecord, AgentDbProjectionError> {
+        let expected_session_key = expected_session_key.trim();
         let expected_session_id = expected_session_id.trim();
-        if expected_session_id.is_empty() || !archived_at_ms.is_finite() {
+        if expected_session_key.is_empty()
+            || expected_session_id.is_empty()
+            || !archived_at_ms.is_finite()
+        {
             return Err(AgentDbProjectionError::WorkAdmissionInvalid(
                 "session archive transition requires a valid session identity and timestamp".into(),
             ));
@@ -728,7 +733,9 @@ impl SandAgentDb {
                     "session work admission record is unavailable".into(),
                 ))?;
             let mut record: SessionWorkAdmissionRecord = serde_json::from_str(&raw)?;
-            if record.session_id != expected_session_id {
+            if record.session_key != expected_session_key
+                || record.session_id != expected_session_id
+            {
                 return Err(AgentDbProjectionError::WorkAdmissionInvalid(
                     "session archive transition identity changed".into(),
                 ));

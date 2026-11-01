@@ -266,6 +266,10 @@ facts, but may not use a valid prior revision to rebind the record to another
 session identity; such a CAS returns false and leaves the previous record
 intact.
 
+Archive and restore use the same exact identity at their durable owner edge:
+the canonical `session_key`, `session_id`, and optional lifecycle revision are
+all checked inside the SQLite transaction before archive state changes.
+
 ## Agent-only transcript mutation boundary — 2026-11-01
 
 The remaining transcript mutation producers were rechecked against the live

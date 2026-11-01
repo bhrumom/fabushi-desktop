@@ -2094,6 +2094,7 @@ impl ProductionSessionWorkers {
         self.ensure_main_session_work_admission(agent_id)?;
         self.open_agent_db_owner(agent_id)?
             .transition_session_work_archive(
+                session_key,
                 expected_session_id,
                 expected_lifecycle_revision,
                 archived,

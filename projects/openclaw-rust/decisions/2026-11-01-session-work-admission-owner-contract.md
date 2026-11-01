@@ -166,6 +166,11 @@ advancing a valid lifecycle revision cannot replace the stored `session_key` or
 `session_id`. An attempted identity-rebinding CAS is rejected without changing
 the prior admission record.
 
+The archive/restore owner now receives and checks both canonical
+`session_key` and `session_id` inside its transaction, so a producer cannot
+pass a valid session id with a different session selector and still mutate
+archive state.
+
 The remaining agent-only transcript mutation producers were rechecked against
 the live source. Widget-response updates, shared-room restamps, box-request
 settlement, and auto-review settlement carry only `agent_id`; the generic
