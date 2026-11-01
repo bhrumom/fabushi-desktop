@@ -187,13 +187,21 @@ fn resolve_tool_pair_boundary(entries: &[Value], index: usize) -> usize {
         if ids.is_empty() {
             continue;
         }
-        let has_later_result = entries[candidate_index + 1..].iter().any(|result| {
-            result
-                .get("toolCallId")
-                .and_then(Value::as_str)
-                .is_some_and(|id| ids.iter().any(|candidate| *candidate == id))
-        });
-        if has_later_result && candidate_index <= index {
+        let Some(pair_end) = entries[candidate_index + 1..]
+            .iter()
+            .enumerate()
+            .filter_map(|(offset, result)| {
+                result
+                    .get("toolCallId")
+                    .and_then(Value::as_str)
+                    .is_some_and(|id| ids.iter().any(|candidate| *candidate == id))
+                    .then_some(candidate_index + 1 + offset)
+            })
+            .max()
+        else {
+            continue;
+        };
+        if candidate_index <= index && index <= pair_end {
             pair_start = pair_start.min(candidate_index);
         }
     }
@@ -228,5 +236,6 @@ mod tests {
         ).expect("plan");
         assert_eq!(plan.first_kept_entry_id, "u2");
         assert_eq!(plan.latest_user_request.as_deref(), Some("latest"));
+        assert_eq!(plan.entries_to_summarize.len(), 3);
     }
 }
