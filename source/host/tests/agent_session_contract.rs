@@ -132,6 +132,19 @@ fn deletion_fence_rejects_new_transcript_work_before_durable_write() {
         )
         .expect_err("deletion-pending work must be rejected");
     assert!(error.contains("new session work is not admitted"));
+    let awaiting = AwaitingUserResponse {
+        tab_id: "tab-delete-fence".into(),
+        reason: "approval".into(),
+        since: 41.0,
+    };
+    let awaiting_error = production
+        .set_agent_awaiting_user_response(&record.id, Some(&awaiting))
+        .expect_err("deletion-pending awaiting state must be rejected");
+    assert!(awaiting_error.contains("new session work is not admitted"));
+    let awaiting_tab_error = production
+        .set_agent_awaiting_user_response_for_tab(&record.id, &awaiting.tab_id, None, None)
+        .expect_err("deletion-pending tab awaiting state must be rejected");
+    assert!(awaiting_tab_error.contains("new session work is not admitted"));
     let activity_error = production
         .mark_agent_activity(&record.id, 42.0)
         .expect_err("deletion-pending activity must be rejected");
@@ -139,6 +152,12 @@ fn deletion_fence_rejects_new_transcript_work_before_durable_write() {
     production
         .end_agent_delete(&record.id)
         .expect("clear deletion fence");
+    assert!(production
+        .set_agent_awaiting_user_response(&record.id, Some(&awaiting))
+        .expect("awaiting state is admitted after deletion fence clears"));
+    assert!(production
+        .set_agent_awaiting_user_response_for_tab(&record.id, &awaiting.tab_id, None, None)
+        .expect("tab awaiting state is admitted after deletion fence clears"));
     production
         .append_agent_transcript_entries(
             &record.id,

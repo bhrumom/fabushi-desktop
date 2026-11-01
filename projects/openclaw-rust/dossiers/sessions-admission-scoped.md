@@ -667,3 +667,10 @@ metadata write used by several transcript/session producers after an accepted
 append. A deletion race therefore cannot update activity metadata after the
 session owner has entered deletion custody. This remains a bounded negative
 admission slice, not full session-work-admission acceptance.
+
+The same deletion fence now covers both awaiting-user-response metadata setters,
+including the tab-scoped compare-and-set path. Box-handoff, send-acceptance, and
+auto-review producers therefore cannot create or clear awaiting state after the
+session owner has entered deletion custody. The existing owner remains responsible
+for cleanup-time state disposal; this is a bounded negative admission slice, not
+full session-work-admission acceptance.

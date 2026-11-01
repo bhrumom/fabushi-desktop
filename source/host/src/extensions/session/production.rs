@@ -2367,6 +2367,7 @@ impl ProductionSessionWorkers {
         agent_id: &str,
         state: Option<&AwaitingUserResponse>,
     ) -> Result<bool, String> {
+        self.assert_agent_work_admission(agent_id)?;
         self.open_agent_db_owner(agent_id)?
             .set_awaiting_user_response(state)
             .map_err(|error| error.to_string())
@@ -2379,6 +2380,7 @@ impl ProductionSessionWorkers {
         state: Option<&AwaitingUserResponse>,
         if_since_before: Option<f64>,
     ) -> Result<bool, String> {
+        self.assert_agent_work_admission(agent_id)?;
         self.open_agent_db_owner(agent_id)?
             .set_awaiting_user_response_for_tab(tab_id, state, if_since_before)
             .map_err(|error| error.to_string())
