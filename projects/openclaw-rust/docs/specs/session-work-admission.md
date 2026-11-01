@@ -384,7 +384,12 @@ path as well; clone/materialization initialization remains a separate
 pre-admission setup path. Agent cloning now explicitly reseeds the copied
 `sessionWorkAdmission` record with the new canonical agent/session identity,
 a fresh lifecycle revision, and no inherited work, archive, deletion, media,
-or provider-review custody before normal admission resumes.
+or provider-review custody before normal admission resumes. Clone setup also
+clears copied pending external-memory and profile/avatar mutation journals from
+the target database: those journals are source-agent crash-recovery custody and
+must never be replayed or rebound under the new agent identity. This cleanup is
+performed in the existing `SandAgentDb` setup owner before normal admission;
+the source database is not modified.
 Transcript backfill maintenance now also delegates to the same owner append
 transaction, so recovery cannot append entries while deletion custody is
 active.

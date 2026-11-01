@@ -4923,6 +4923,26 @@ pub fn clear_persisted_transient_state(
     Ok(changed)
 }
 
+/// Remove source-agent cross-store recovery custody from a cloned database.
+/// These journals belong to the source identity and must not be replayed or
+/// rebound after clone admission is reseeded. The source database is untouched.
+pub fn clear_persisted_clone_mutation_journals(
+    db_path: &Path,
+    busy_timeout_ms: u64,
+) -> Result<bool, AgentDbProjectionError> {
+    let mut db = open_projection_db(db_path, busy_timeout_ms)?;
+    let transaction = db.transaction_with_behavior(rusqlite::TransactionBehavior::Immediate)?;
+    let mut changed = false;
+    for key in [KV_PENDING_MEMORY_MUTATION, KV_PENDING_PROFILE_MUTATION] {
+        changed |= transaction.execute(DELETE_KV_SQL, params![key])? > 0;
+    }
+    transaction.commit()?;
+    if changed {
+        bump_db_write_generation(db_path);
+    }
+    Ok(changed)
+}
+
 pub fn read_persisted_agent_serde_snapshot(
     db_path: &Path,
     busy_timeout_ms: u64,

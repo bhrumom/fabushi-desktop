@@ -192,7 +192,10 @@ full session work-admission responsibility or change its ledger disposition.
 The same review found that `agent_clone::rewrite_identity` copied the source
 agent's `sessionWorkAdmission` unchanged. Clone setup now reseeds that record
 for the new canonical agent/session with a fresh lifecycle revision and empty
-custody fields before the clone re-enters normal admission. This is migration
+custody fields before the clone re-enters normal admission. Clone setup also
+removes copied pending external-memory and profile/avatar mutation journals
+from the target database, preserving those source-agent recovery records only
+under the source database. This is migration
 initialization evidence only; it does not close detached-result, media, or
 provider-review lifecycle ownership.
 

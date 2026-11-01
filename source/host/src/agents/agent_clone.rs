@@ -15,7 +15,8 @@ use crate::agents::agent_profile::{
 use crate::agents::agent_workflow_enablement::get_agent_workflow_enablement_path;
 use crate::agents::settings_file::{get_sand_settings_path, write_sand_settings_file};
 use crate::extensions::session::agent_db::{
-    clear_persisted_conversation, clear_persisted_transient_state,
+    clear_persisted_clone_mutation_journals, clear_persisted_conversation,
+    clear_persisted_transient_state,
     read_persisted_agent_serde_snapshot, reset_persisted_session_work_admission,
     set_persisted_agent_id,
     set_persisted_agent_origin, set_persisted_agent_purpose,
@@ -95,6 +96,8 @@ fn rewrite_identity(
     set_persisted_agent_id(&db_path, busy_timeout_ms, new_agent_id)
         .map_err(|error| SandAgentCloneError::Database(error.to_string()))?;
     reset_persisted_session_work_admission(&db_path, busy_timeout_ms, new_agent_id)
+        .map_err(|error| SandAgentCloneError::Database(error.to_string()))?;
+    clear_persisted_clone_mutation_journals(&db_path, busy_timeout_ms)
         .map_err(|error| SandAgentCloneError::Database(error.to_string()))?;
     set_persisted_agent_origin(&db_path, busy_timeout_ms, "user")
         .map_err(|error| SandAgentCloneError::Database(error.to_string()))?;
