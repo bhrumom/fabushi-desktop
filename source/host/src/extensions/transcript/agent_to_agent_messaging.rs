@@ -376,6 +376,12 @@ pub fn persist_agent_inbound_message(
         .map(str::trim)
         .filter(|value| !value.is_empty())
         .ok_or_else(|| "agent inbound message is missing from.id".to_string())?;
+    if from_id == agent_id || sessions.is_agent_being_deleted(from_id) {
+        return Ok(false);
+    }
+    if sessions.summarize_agent_by_id(from_id, None)?.is_none() {
+        return Ok(false);
+    }
     let from_name = from
         .get("name")
         .and_then(Value::as_str)

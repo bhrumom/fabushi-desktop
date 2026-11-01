@@ -112,6 +112,22 @@ fn persisted_ask_policy_rejects_without_approval_consumer(){
 }
 
 #[test]
+fn inbound_consumer_rejects_self_and_unknown_source_identities(){
+    let root=temp_root();let sessions=Arc::new(ProductionSessionWorkers::with_agents_root(&root,500));
+    let target=sessions.materialize_new_session(Some(&profile("Target")),"user",None).expect("target");
+    let inbound=|source:&str| serde_json::json!({
+        "from":{"id":source,"name":"source"},
+        "text":"must not be accepted",
+        "timestampMs":100,
+    });
+    assert!(!persist_agent_inbound_message(&sessions,&target.id,&inbound(&target.id)).expect("self inbound"));
+    assert!(!persist_agent_inbound_message(&sessions,&target.id,&inbound("missing-source")).expect("unknown inbound"));
+    assert!(sessions.read_agent_transcript_entries(&target.id).expect("target transcript").is_empty());
+    assert!(sessions.get_agent_conversation_partner_ids(&target.id).expect("target partners").is_empty());
+    sessions.shutdown();let _=fs::remove_dir_all(root);
+}
+
+#[test]
 fn session_bound_sender_append_rejects_an_archived_source_without_writing(){
     let root=temp_root();let sessions=Arc::new(ProductionSessionWorkers::with_agents_root(&root,500));
     let alpha=sessions.materialize_new_session(Some(&profile("Alpha")),"user",None).expect("alpha");
