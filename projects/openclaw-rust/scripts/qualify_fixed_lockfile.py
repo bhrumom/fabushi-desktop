@@ -364,6 +364,39 @@ def manifest_dependency_frontier(
     return rows
 
 
+def manifest_provenance_frontier(
+    repo: Path, commit: str, frontier_path: Path
+) -> list[dict[str, Any]]:
+    document = json.loads(frontier_path.read_text(encoding="utf-8"))
+    manifests: set[tuple[str, str]] = set()
+    for frontier in document.get("workspace_package_frontier", []):
+        path = frontier.get("manifest_path")
+        package = frontier.get("package")
+        if (
+            frontier.get("status") == "manifest-found"
+            and isinstance(path, str)
+            and isinstance(package, str)
+        ):
+            manifests.add((path, package))
+    rows: list[dict[str, Any]] = []
+    for path, package in sorted(manifests):
+        blob, content = git_blob(repo, commit, path)
+        parsed = json.loads(content)
+        rows.append(
+            {
+                "manifest_blob": blob,
+                "manifest_path": path,
+                "package": package,
+                "version": parsed.get("version"),
+                "license": parsed.get("license"),
+                "licenses": parsed.get("licenses"),
+                "private": parsed.get("private"),
+                "repository": parsed.get("repository"),
+            }
+        )
+    return rows
+
+
 def qualify(
     repo: Path,
     commit: str,
@@ -431,6 +464,9 @@ def qualify(
     if include_manifest_dependencies:
         result["manifest_dependency_frontier"] = manifest_dependency_frontier(
             repo, commit, frontier_path, content
+        )
+        result["manifest_provenance_frontier"] = manifest_provenance_frontier(
+            repo, commit, frontier_path
         )
     return result
 

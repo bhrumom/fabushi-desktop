@@ -92,7 +92,7 @@ python3 projects/openclaw-rust/scripts/qualify_fixed_lockfile.py \
 ```
 
 The machine-readable result digest is
-`2a20ef03bd13e837fa3e51a72112a1dfc794b9dbcbb9463ff693756ebd8d5f0a`.
+`635648d0cc088fb8b3d3b939658c59cd42958969a857a022e71875a1c84cafa2`.
 After de-duplicating repeated frontier rows by exact manifest path/package,
 the probe scanned `15` exact manifest identities; `13` of them declare at
 least one dependency row. The output contains `176` declared dependency edges:
@@ -112,6 +112,11 @@ independently verified archive bytes or license provenance.
 Eight manifest edges also match a lockfile `patchedDependencies` hash entry;
 the remaining registry edges are explicitly `not-listed`, not inferred
 unpatched.
+The same output records source-manifest provenance for all `15` manifests:
+four declare `MIT`, while eleven are private package manifests with no
+manifest license field. These are source declarations only; published package
+license files, third-party notices, archive contents, and SBOM attribution
+remain unverified.
 The output still reports `2` lockfile fragments,
 `document_separator_count=2`, and
 `duplicate_top_level_lockfile_headers=false`.
