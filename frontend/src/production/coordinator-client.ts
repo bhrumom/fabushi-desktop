@@ -151,6 +151,7 @@ export function createCoordinatorClient(portBridge: CoordinatorPortBridge): Prod
       }
       return;
     }
+    if (value.kind === "reply") return disconnect(expectedPort, "coordinator posted a malformed reply frame");
     if (value.kind === "event" && typeof value.family === "string") {
       if (value.family === COORDINATOR_TRANSPORT_STATE_FAMILY && isRecord(value.payload) && (value.payload.state === "connected" || value.payload.state === "down")) {
         for (const listener of transportListeners) listener(value.payload.state);

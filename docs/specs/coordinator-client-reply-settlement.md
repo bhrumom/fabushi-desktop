@@ -47,6 +47,8 @@ outcomes reject explicitly while preserving no indefinitely pending Promise.
   disconnect/reclaim path rather than escaping from the port-claim callback.
 - R9: A request send failure after pending registration must close the failed
   endpoint and settle the request through the existing disconnect/reclaim path.
+- R10: A reply frame with a missing or malformed outcome must trigger the
+  existing protocol-breach disconnect path instead of being ignored.
 
 ## 5. Current state
 
@@ -90,7 +92,7 @@ reply, malformed-frame shutdown send failure, and disposal after malformed
 reply, disposal shutdown-send failure, and endpoint close failure. A remote
 side effect remains outcome-unknown and must not be replayed by this client.
 Also cover a synchronous request `postMessage` failure after pending
-registration.
+registration, and a reply frame whose outcome is absent or malformed.
 
 ## 11. Implementation strategy
 
@@ -103,6 +105,8 @@ local cleanup unconditional after the best-effort shutdown send, and route a
 hello-send exception through the same disconnect owner. Treat a request-send
 exception as transport failure, close that endpoint best-effort, and use the
 same disconnect owner to settle all pending calls.
+Treat a reply-shaped frame that fails the local outcome shape gate as a
+protocol breach and use the same disconnect owner.
 
 ## 12. Verification / test strategy
 
@@ -141,7 +145,7 @@ artifacts; no runtime acceptance is claimed here.
 
 | Requirement / AC | Status | Evidence / reason |
 | --- | --- | --- |
-| R1–R9 | passed | `coordinator-client.ts` settles malformed replies and routes malformed-frame, hello, disposal, and request-send failures through bounded endpoint/disconnect cleanup. |
+| R1–R10 | passed | `coordinator-client.ts` settles valid replies and routes malformed reply frames plus all covered transport failures through bounded disconnect/reclaim cleanup. |
 | AC-1 | passed | Existing renderer client remains the sole pending/Promise owner; no new transport or business owner was added. |
 | AC-2 | passed | Every matching reply branch removes the pending entry only immediately before resolving or rejecting it. |
 | AC-3 | passed | `git diff --check` and source review passed; runtime, focused test, and packaged acceptance remain pending. |
