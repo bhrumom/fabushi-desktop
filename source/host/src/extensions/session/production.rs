@@ -1788,6 +1788,17 @@ impl ProductionSessionWorkers {
         agent_id: &str,
         checkpoint: bool,
     ) -> bool {
+        self.with_agent_filesystem_mutation(agent_id, || {
+            Ok(self.close_agent_db_owner_locked(agent_id, checkpoint))
+        })
+        .unwrap_or(false)
+    }
+
+    fn close_agent_db_owner_locked(
+        &self,
+        agent_id: &str,
+        checkpoint: bool,
+    ) -> bool {
         let owner = self
             .db_owners
             .lock()
@@ -1823,8 +1834,8 @@ impl ProductionSessionWorkers {
     ) -> Result<bool, String> {
         let db_path = self.session_db_path(agent_id)?;
         let blob_path = conversation_blobs_path(&db_path);
-        let store_closed = self.close_agent_store_owner(agent_id, flush);
-        let db_closed = self.close_agent_db_owner(agent_id, flush);
+        let store_closed = self.close_agent_store_owner_locked(agent_id, flush);
+        let db_closed = self.close_agent_db_owner_locked(agent_id, flush);
         self.pool.close_store_blocking(&blob_path);
         Ok(store_closed || db_closed)
     }
@@ -1876,6 +1887,17 @@ impl ProductionSessionWorkers {
     }
 
     pub fn close_agent_store_owner(
+        &self,
+        agent_id: &str,
+        flush: bool,
+    ) -> bool {
+        self.with_agent_filesystem_mutation(agent_id, || {
+            Ok(self.close_agent_store_owner_locked(agent_id, flush))
+        })
+        .unwrap_or(false)
+    }
+
+    fn close_agent_store_owner_locked(
         &self,
         agent_id: &str,
         flush: bool,

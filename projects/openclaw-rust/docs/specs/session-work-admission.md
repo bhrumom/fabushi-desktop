@@ -534,6 +534,9 @@ opened successor owner cached for the deleted identity.
 Public DB/AgentStore opens also reject the in-memory deletion fast-path after
 acquiring the boundary; deletion's own lifecycle code uses the locked internal
 open path so it can publish and consume its durable fence without recursion.
+The legacy public owner-close methods remain source-compatible for existing
+callers but now acquire that same boundary; deletion/reclaim paths use their
+locked variants through the owner retirement helper.
 
 Profile and avatar filesystem mutations now run through a per-agent
 `ProductionSessionWorkers` serialization boundary. Profile updates and avatar
