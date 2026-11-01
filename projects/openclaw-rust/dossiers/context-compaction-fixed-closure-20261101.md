@@ -325,6 +325,31 @@ only the serializer's summary/plain-text subset and rejects typed tool or
 attachment rows. This is a partial production wiring
 slice, not full replay acceptance.
 
+## Fixed-source compaction semantics rechecked
+
+The exact locked agent-core source was reread at commit
+`1440bb1771372334bea23d7642bb52deb7db1845`. The production port must preserve
+the following source-owned invariants before a Runner producer is enabled:
+
+- `estimateContextTokens` prefers the latest usable assistant usage block and
+  adds an estimate for the trailing messages; unavailable context usage is a
+  barrier rather than permission to trust older usage.
+- `shouldCompact` is enabled-only and compares context usage against the
+  context window minus the configured reserve; invalid or non-positive windows
+  do not trigger compaction.
+- `prepareCompaction`/`findCutPoint` retain a recent-token tail, move the cut
+  to a valid turn boundary, and resolve assistant tool calls with their tool
+  results as one indivisible range. A split turn preserves the latest
+  unresolved user request separately.
+- summary generation is bounded by the reserve and the 16,000-character
+  persisted-summary cap; fitting failure must leave the prior transcript
+  authoritative.
+
+These facts are source/closure evidence only. Fabushi still lacks the real
+Runner context/usage producer, fixed-source message projection, summary
+validation/fallback, and guarded commit caller, so CC-01/03/04/05/06 and
+AC-CC-02/03/05 remain open.
+
 The existing attachment resolution evidence is app-owned rather than an
 inference contract: `source/host/app/src/main.rs:605-670`
 `resolve_production_attachment_source` can persist host bytes or download box
