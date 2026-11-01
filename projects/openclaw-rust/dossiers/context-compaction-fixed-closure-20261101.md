@@ -163,6 +163,24 @@ exact root provenance inputs are `.gitattributes`
 does not establish recursive package archive, license attribution, or SBOM
 closure; those remain separate evidence lanes.
 
+Current-subject compaction source identities were also re-read directly:
+
+| Path | Blob |
+| --- | --- |
+| `src/agents/sessions/compaction/compaction.ts` | `8cc6dc9c87269c5d64de1bf4352365a79bfd57dd` |
+| `src/agents/sessions/compaction/runtime.ts` | `adfc2f1cca3d58d0ebfd0391dde16a8cd7d6fed1` |
+| `packages/agent-core/src/harness/compaction/compaction.ts` | `9ee5706cfd94a75f36e43752e16d1f75d9975147` |
+| `packages/agent-core/src/harness/compaction/compaction-cut-point.ts` | `af55af34ac16e508aa739e12aed3bebe9878b5ea` |
+| `packages/agent-core/src/harness/compaction/compaction-details.ts` | `26f973ce17756ebe0ae6754798b31eabd2773ba8` |
+| `packages/agent-core/src/harness/compaction/summarization-completion.ts` | `7e4b86c73a22a0cd942f36dd73d857f4cb3c5669` |
+| `packages/agent-core/src/harness/compaction/summary-checkpoint-prompt.ts` | `e04fa9be9e91ae99d40390cc122690905577732e` |
+| `packages/agent-core/src/harness/compaction/utils.ts` | `eb9190049906e875fcbe268ce977a5e6400425b5` |
+
+These current blobs show the facade/runtime split, cut-point and tool-result
+pairing, bounded compaction details, and summarization completion path. They
+are source mapping evidence only; the complete runtime/package dependency
+closure and a production Runner producer/typed replay consumer remain open.
+
 The two unresolved relative edges are generated Kysely declarations and are
 absent from the exact tree:
 `.artifacts/kysely/openclaw-agent-db.generated.js` and
