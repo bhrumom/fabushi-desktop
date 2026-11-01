@@ -491,6 +491,22 @@ fn test_automation_session_identity_helper_rechecks_owner_admission() {
     assert!(!helper.contains("format!(\"agent:{agent_id}:cron:{automation_id}\")"));
 }
 
+#[test]
+fn test_cron_candidate_projection_rejects_malformed_identity_rows() {
+    let owner_source = include_str!("../src/extensions/session/production.rs");
+    let projection = owner_source
+        .split("pub fn list_expired_cron_session_runs(")
+        .nth(1)
+        .expect("cron candidate projection exists")
+        .split("pub(crate) fn read_session_work_admission_locked(")
+        .next()
+        .expect("cron candidate projection boundary exists");
+    assert!(projection.contains("expected_session_key_prefix"));
+    assert!(projection.contains("row.session_key.starts_with(&expected_session_key_prefix)"));
+    assert!(projection.contains("row.session_id == row.session_key"));
+    assert!(projection.contains("!row.lifecycle_revision.trim().is_empty()"));
+}
+
 // ---------------------------------------------------------------------------
 // OCRM-SESSION-O01: Session Key Parsing, Classification & Harness Namespace
 // ---------------------------------------------------------------------------

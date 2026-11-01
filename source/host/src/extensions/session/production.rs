@@ -2703,12 +2703,18 @@ impl ProductionSessionWorkers {
             return Ok(Vec::new());
         }
         let rows = self.list_cron_session_runs(agent_id)?;
+        let expected_session_key_prefix = format!("agent:{agent_id}:cron:");
         let now_ms = now_ms.floor();
         let retention_ms = retention_ms as f64;
         Ok(rows
             .into_iter()
             .filter(|row| {
                 !row.base_session
+                    && !row.automation_id.trim().is_empty()
+                    && !row.run_id.trim().is_empty()
+                    && row.session_key.starts_with(&expected_session_key_prefix)
+                    && row.session_id == row.session_key
+                    && !row.lifecycle_revision.trim().is_empty()
                     && row.state == "terminal"
                     && !row.active_controller
                     && !row.pending_outgoing_media
