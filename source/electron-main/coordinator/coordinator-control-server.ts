@@ -36,6 +36,22 @@ export function createCoordinatorControlServer(options: {
   let settlement: any = null;
   const { promise: settled, resolve } = createDeferred<any>();
 
+  const reportFailure = (leg: string, error: unknown) => {
+    try {
+      options.reportFailure?.(leg, error);
+    } catch {
+      // Diagnostics must not escape the protocol settlement owner.
+    }
+  };
+
+  const reportProblem = (detail: string) => {
+    try {
+      options.onProblem(detail);
+    } catch (error) {
+      reportFailure("problem-handler", error);
+    }
+  };
+
   const finish = (value: any) => {
     if (settlement != null) return;
     settlement = value;
@@ -43,7 +59,7 @@ export function createCoordinatorControlServer(options: {
   };
 
   const breach = (detail: string) => {
-    options.onProblem(detail);
+    reportProblem(detail);
     if (settlement != null) return;
     try {
       options.post({
@@ -53,7 +69,7 @@ export function createCoordinatorControlServer(options: {
         detail,
       });
     } catch (error) {
-      options.reportFailure?.("breach-post", error);
+      reportFailure("breach-post", error);
     }
     finish({ outcome: "protocol-breach", detail });
   };
@@ -86,7 +102,7 @@ export function createCoordinatorControlServer(options: {
         try {
           options.post({ kind: "reply", requestId, outcome });
         } catch (error) {
-          options.reportFailure?.("reply-post", error);
+          reportFailure("reply-post", error);
           breach(`failed to post control reply for ${requestId}`);
         }
       }
@@ -106,7 +122,7 @@ export function createCoordinatorControlServer(options: {
           protocolVersion: COORDINATOR_PROTOCOL_VERSION,
         });
       } catch (error) {
-        options.reportFailure?.("ready-post", error);
+        reportFailure("ready-post", error);
         return breach("failed to post control ready frame");
       }
       return;
@@ -143,7 +159,7 @@ export function createCoordinatorControlServer(options: {
       try {
         onEvent(frame.payload);
       } catch (error) {
-        options.reportFailure?.("event-consumer", error);
+        reportFailure("event-consumer", error);
         return breach(`control event consumer failed: ${frame.family}`);
       }
     }
@@ -171,7 +187,7 @@ export function createCoordinatorControlServer(options: {
           detail: null,
         });
       } catch (error) {
-        options.reportFailure?.("dispose-post", error);
+        reportFailure("dispose-post", error);
       }
       finish({ outcome: "clean", reason: "disposed" });
     },
