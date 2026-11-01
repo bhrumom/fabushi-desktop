@@ -67,6 +67,9 @@ impl MeetingAudioChunk {
     }
 
     pub fn duration_ms(&self) -> u64 {
+        if self.channels == 0 {
+            return 0;
+        }
         let bytes_per_sample = 2u64; // 16-bit PCM
         let samples = self.data.len() as u64 / (self.channels as u64 * bytes_per_sample);
         (samples * 1000) / (self.sample_rate as u64)

@@ -50,3 +50,17 @@
   - `test_ocrm_meeting_bot_browser_controller`
   - `test_ocrm_meeting_bot_session_lifecycle`
 - Evidence: 3/3 passing contract tests with full positive and negative assertions.
+
+## 5. Malformed audio metadata guard — 2026-11-01
+
+Static review found that the public `MeetingAudioChunk` constructor accepts a
+zero channel count while `duration_ms` previously divided by
+`channels * 2`. The existing Host audio owner now returns a bounded zero
+duration before the division for `channels == 0`, preserving the valid
+positive-channel PCM calculation. The narrow behavior is specified in
+`projects/openclaw-rust/docs/specs/meeting-bot-audio-chunk-safety.md`.
+
+This is a malformed-input safety correction only. It does not add a realtime
+audio producer, meeting session consumer, browser transport, or acceptance
+evidence; the full audio responsibility remains `wiring=not-wired`,
+`verification=not-run`, and `acceptance=pending`.
