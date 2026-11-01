@@ -269,6 +269,9 @@ Hidden-entry repair deletion likewise reuses the owner transaction and remains
 fail-closed during deletion custody.
 Human handoff/replay identity settlement now shares the same fenced owner
 transaction.
+Conversation clear also reuses the owner transaction and remains fail-closed
+under deletion custody; its external blob-store ordering remains a separate
+cross-storage gap.
 
 ### 2026-11-01 background-result consumer recheck
 

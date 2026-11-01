@@ -246,6 +246,9 @@ Hidden-entry repair cleanup now delegates deletion to the same owner
 transaction and reports no deletion while custody is active.
 Transcript identity settlement used by Human handoff/replay also uses the
 same transaction-edge fence.
+Conversation clear now uses the same owner transaction and is rejected during
+deletion custody; the facade's pre-cleared external blob store remains a
+separate cross-storage atomicity gap.
 
 The owner-local admission CAS now preserves the current `deletion_pending`
 value as part of its compare predicate. Ordinary work/review/media mutations

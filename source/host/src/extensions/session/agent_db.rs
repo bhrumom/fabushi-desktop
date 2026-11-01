@@ -3115,7 +3115,10 @@ impl SandAgentDb {
 
         let committed = self.run_write("clearConversation", |db| {
             db.execute_batch("BEGIN IMMEDIATE")?;
-            let result = (|| -> Result<(), rusqlite::Error> {
+            let result = (|| -> Result<bool, rusqlite::Error> {
+                if !session_work_write_is_admitted(db)? {
+                    return Ok(false);
+                }
                 db.execute(CLEAR_BLOBS_SQL, [])?;
                 db.execute(CLEAR_TRANSCRIPT_ENTRIES_SQL, [])?;
                 for key in [
@@ -3131,12 +3134,12 @@ impl SandAgentDb {
                 if let Some(next_metadata) = next_metadata.as_deref() {
                     db.execute(SET_KV_SQL, params!["metadata", next_metadata])?;
                 }
-                Ok(())
+                Ok(true)
             })();
             match result {
-                Ok(()) => {
+                Ok(committed) => {
                     db.execute_batch("COMMIT")?;
-                    Ok(true)
+                    Ok(committed)
                 }
                 Err(error) => {
                     let _ = db.execute_batch("ROLLBACK");
@@ -4503,61 +4506,10 @@ pub fn clear_persisted_conversation(
     db_path: &Path,
     busy_timeout_ms: u64,
 ) -> Result<bool, AgentDbProjectionError> {
-    let mut db = open_projection_db(db_path, busy_timeout_ms)?;
-    let raw_metadata = read_kv(&db, "metadata")?;
-    let next_metadata = if let Some(raw) = raw_metadata.as_deref() {
-        let bytes = decode_hex(raw).map_err(AgentDbProjectionError::MetadataHex)?;
-        let mut metadata: serde_json::Value =
-            serde_json::from_slice(&bytes).map_err(AgentDbProjectionError::MetadataJson)?;
-        if let Some(object) = metadata.as_object_mut() {
-            object.insert(
-                "latestRootBlobId".into(),
-                serde_json::Value::String(String::new()),
-            );
-            object.insert(
-                "currentPlanUri".into(),
-                serde_json::Value::String(String::new()),
-            );
-        }
-        Some(encode_hex(&serde_json::to_vec(&metadata)?))
-    } else {
-        None
-    };
-
-    let transaction = db.transaction_with_behavior(rusqlite::TransactionBehavior::Immediate)?;
-    transaction.execute(CLEAR_BLOBS_SQL, [])?;
-    transaction.execute(CLEAR_TRANSCRIPT_ENTRIES_SQL, [])?;
-    for key in [
-        KV_AWAITING,
-        KV_LATEST_REQUEST_ID,
-        KV_REQUEST_IDS,
-        KV_EPISODE,
-        KV_MEMORY_SNAPSHOT,
-        KV_PROFILE_SNAPSHOT,
-    ] {
-        transaction.execute(DELETE_KV_SQL, params![key])?;
-    }
-    if let Some(next_metadata) = next_metadata {
-        transaction.execute(SET_KV_SQL, params!["metadata", next_metadata])?;
-    }
-    transaction.commit()?;
-    bump_db_write_generation(db_path);
-    let mut mutation = serde_json::Map::new();
-    mutation.insert(
-        "kind".into(),
-        serde_json::Value::String("conversation-cleared".into()),
-    );
-    mutation.insert(
-        "agentId".into(),
-        serde_json::Value::String(agent_id_for_db_path(db_path)),
-    );
-    publish_transcript_mutation(&mutation);
-    notify_agent_db_listeners(db_path, AgentDbListenerChannel::Awaiting);
-    notify_agent_db_listeners(
-        db_path,
-        AgentDbListenerChannel::Metadata("latestRootBlobId".into()),
-    );
-    Ok(true)
+    let mut options = SandAgentDbOptions::default();
+    options.recovery.busy_timeout_ms = busy_timeout_ms;
+    let owner = SandAgentDb::open_with_options_and_seed(db_path, options, false)?;
+    owner.clear_conversation()
 }
 
 fn write_persisted_kv(

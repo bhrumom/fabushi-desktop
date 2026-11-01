@@ -435,6 +435,9 @@ fn owner_metadata_memory_writes_reject_deletion_fence_at_transaction_edge() {
         )
         .expect("fenced transcript identity settlement")
         .is_none());
+    assert!(!owner
+        .clear_conversation()
+        .expect("fenced conversation clear"));
     assert_eq!(
         owner
             .get_metadata("lastActivityAt")
