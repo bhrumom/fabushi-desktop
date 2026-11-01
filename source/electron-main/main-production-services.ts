@@ -746,6 +746,7 @@ export function createElectronMainProductionComposition(bindings: ElectronMainPr
           const sink = telemetry?.telemetry;
           sink?.reportClientFailure?.(clientFailureReportToTelemetry(report));
         },
+        reportHydrationFailure: (error) => bindings.reportFailure("host-settings", "onboarding-hydrate", error),
       });
       const mcpHost: ProductionMcpHostPort = {
         refreshMcp: (completion) => requireValue(mcp, "mcp").refreshHostMcp(completion),
