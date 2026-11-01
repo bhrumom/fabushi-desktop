@@ -2881,3 +2881,16 @@ Spec-first commit `f90fd0fc1ef26cc7bd26215c6e11c2e09e2a5c5b` extends `AGENTS.md`
 Exactly one independent source entry closes: `unknown 16139 -> 16138`, `unread 16112 -> 16111`, `omitted=0`; responsibilities `139 -> 140`, unmapped remains 0. Next fixed-U tree blob: `.claude/commands/crash-reports-process.md@5ac555406670721694e78c4e1e6b2a96b3e98fb5`.
 
 Stage A zero-CI discipline remained intact: no Actions/check/status/workflow query or trigger; no queue/helper, Agent/Codex leaf, source-lineage/routing/consolidation execution, build, compile, typecheck, lint, validator, generator, dependency resolution, test, reviewer, UI-driver, visual/a11y, packaging, deployment, installation, runtime evidence or acceptance was executed.
+
+
+## Round 140 / source-entry closure — crash-report process command (2026-11-01)
+
+From desktop checkpoint parent `e35d300f6e915d88bf7788cf6851bab530a4518a`, spec-first CAS `b996f372412e78272a180c8ed8dc878e73565aa7` authored repository process/quality contracts and the complete-read dossier. Desktop main remains `9993ca8e107f7e019a8201e5ab74fa54e82159f2`; platform-core remains `e92b51e23b39dae5719f033fa1f7a20d6579dc8c`; fixed U remains `f985723b552b30fe1c17d377d57f44e61a15a8c4` with complete recursive tree `91f2b083ab2877c0a17d07868eabec362a5cfca6`, 7,194 entries / 6,859 blobs.
+
+Exact `.claude/commands/crash-reports-process.md@5ac555406670721694e78c4e1e6b2a96b3e98fb5` was read completely at index 90 zero-based: 13,431 UTF-8 bytes, 13,379 decoded characters, 268 newlines, trailing newline. Direct helper `.claude/scripts/crash_triage.py@2db6cc14d8e529c4e61c5dcf169aade31fd35c58` was read for claim, grouping, ledger, sweep and recovery semantics. Direct consumer is Claude Code command discovery/user `/crash-reports-process`; repository search found no path import. The generic Claude workflow adapter is not imported because this command never explicitly loads it.
+
+Existing-owner-first adds `TDRP-R9-CRASH-REPORT-PROCESS-CLAUDE-COMMAND-ADAPTER-001` under repository development-process plus quality/test-evidence governance. It preserves complete-triple claim, incomplete-report retention, resumable processing markers, move-not-delete sweep, summary-only parent context, waves of at most ten, isolated one-group investigations, adversarial verification, exact verdict routing, common-path performance fencing, serial current-branch application, per-wave record/reconcile and dry-run no-mutation. No shipping crash runtime, Product Tasks/Automations owner, Agent/Coordinator/Host/Runner owner, platform-core service, ADR or duplicate durable state is introduced.
+
+Seven contract cases, one integration case and two fault-recovery cases are authored only and not run. Exactly one source entry closes: `unknown 16138 -> 16137`, `unread 16111 -> 16110`, `omitted=0`; responsibilities `140 -> 141`, unmapped remains 0. Next fixed-U tree blob: `.claude/commands/cross-review.md@7769d03de798cde66987cd41303d2ea529321361`.
+
+Stage A zero-CI discipline remained intact: no Actions/check/status/workflow query or trigger and no crash helper, Agent/Workflow, build, test, validator, packaging, deployment, installation, runtime evidence or acceptance was executed.

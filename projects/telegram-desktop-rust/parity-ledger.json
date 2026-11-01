@@ -6,10 +6,10 @@
   "target_commit": "23d73b32e301408f9c8aed151cb1f9e442516e13",
   "coverage": {
     "source_entries_total": 16202,
-    "unknown": 16138,
-    "unread": 16111,
+    "unknown": 16137,
+    "unread": 16110,
     "omitted": 0,
-    "responsibilities_total": 140,
+    "responsibilities_total": 141,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -37154,6 +37154,253 @@
       "accepted": false,
       "source_paths": [
         ".claude/commands/continue.md@e81c86031f2e501f30d2b6ed908fb03d648324c8"
+      ]
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+      "source_path": ".claude/commands/crash-reports-process.md",
+      "source_blob_sha": "5ac555406670721694e78c4e1e6b2a96b3e98fb5",
+      "source_kind": "repository_crash_report_process_claude_command_adapter",
+      "module_id": "tdesktop.repository-crash-report-process-claude-command-adapter",
+      "responsibility_id": "TDRP-R9-CRASH-REPORT-PROCESS-CLAUDE-COMMAND-ADAPTER-001",
+      "source_symbols": [
+        "Process Crash Reports",
+        "Phase 0 — open the run",
+        "Phase 1 — plan the waves",
+        "Phase 2 — investigate each wave",
+        "Phase 3 — apply and commit, serially",
+        "Phase 4 — build and report",
+        "Known noise, worth checking before investigating",
+        "$ARGUMENTS"
+      ],
+      "capability_ids": [
+        "CAP-REPOSITORY-PROCESS-GOVERNANCE",
+        "CAP-REPOSITORY-QUALITY-GOVERNANCE",
+        "CAP-REPOSITORY-TASK-EVIDENCE"
+      ],
+      "dependency_ids": [
+        ".claude/scripts/crash_triage.py@2db6cc14d8e529c4e61c5dcf169aade31fd35c58",
+        "CLAUDE.md@f8564d18cef4b9c545767025995d31deb3fa7155"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/claude-crash-reports-process-command-complete-read.md",
+      "behavior_contract": "Claude Code crash-report triage command over existing repository process/quality governance: claim and classify only complete crash triples, preserve incomplete/dropped data, isolate one crash group per investigation, adversarially verify proposed fixes, apply confirmed low-risk fixes serially, record every selected verdict, reconcile apply-versus-record state after each wave, and defer final executable build/report qualification under Stage A.",
+      "state_machine": "invoke -> branch/version/run selection -> claim or prior-run reuse -> classify/group -> skip known -> waves <=10 -> isolated investigate -> verify proposed fixed -> serial apply/discuss/no-action -> record -> reconcile selected gids -> final build/report boundary",
+      "side_effects": [
+        "Stage-A closure changes repository governance/evidence documentation and the unique migration ledger only.",
+        "No crash inbox/helper, Agent/Workflow, product fix, build, test, CI or runtime acceptance is executed in Stage A.",
+        "No shipping crash runtime or platform-core service is introduced."
+      ],
+      "failure_cases": [
+        "Generic Claude workflow adapter semantics imported although the command never loads it",
+        "Incomplete triples moved",
+        "Cross-group context contamination",
+        "Investigator edits tracked source",
+        "Refuted or common-path-costly proposal remains fixed",
+        "Dropped reports deleted without explicit authority",
+        "Selected verdict not recorded and reconciliation misses it",
+        "Dry-run mutates state",
+        "Stage-A source work promoted to verified/accepted"
+      ],
+      "ui_disposition": "Not applicable; repository-development crash triage command only.",
+      "non_ui_responsibilities": [
+        "Claude slash-command entry",
+        "crash claim/classification",
+        "wave planning",
+        "isolated investigation",
+        "adversarial verification",
+        "serial application",
+        "ledger record/reconcile",
+        "interrupted-run recovery",
+        "final build/report boundary"
+      ],
+      "platform_delta": "No platform-core production delta.",
+      "implementation_language": "Markdown/JSON repository governance and evidence; no shipping runtime implementation.",
+      "target_owner": "Fabushi repository development process governance + repository quality/test-evidence governance + root host-command authority",
+      "existing_owner_candidates": [
+        "Fabushi repository development process governance",
+        "Fabushi repository quality/test-evidence governance",
+        "root repository host-command/instruction authority"
+      ],
+      "rejected_owners": [
+        "shipping Product Tasks / Automations",
+        "Agent / Coordinator / Host / Runner product runtime",
+        "platform-core runtime",
+        "shipping crash telemetry / crash upload service",
+        "Claude-specific crash queue / approval / evidence / publication store"
+      ],
+      "commands_events": [
+        "/crash-reports-process",
+        "scan --claim",
+        "sweep",
+        "show <gid>",
+        "record <gid>",
+        "--no-claim",
+        "--limit N",
+        "--dry-run"
+      ],
+      "persistence_contract": "Run-folder and signature-ledger recovery remain source-process mechanics: complete triples only, processing-marker resume, stable keys across line moves, atomic ledger replacement, per-wave record plus reconciliation. Fabushi adds no second product persistence.",
+      "concurrency_contract": "One isolated investigation per selected non-noise group, one adversarial verifier per proposed fix, serial application/recording by the parent; no duplicate durable crash owner.",
+      "cancellation_contract": "Interrupted claim resumes the same processing marker; completed group artifacts remain; apply/record gaps are caught before the next wave. Cancellation never creates approval.",
+      "security_boundary": "Host tool allowance cannot authorize deletion without request, branch self-switching, executable Stage-A validation, force publication, or shipping runtime authority.",
+      "network_service_dependencies": [],
+      "service_owner": "Not applicable; repository-development command adapter only.",
+      "deployment_evidence": [],
+      "implementation_status": "implemented",
+      "coverage_disposition": "workflow-equivalent",
+      "blockers": [],
+      "production_entrypoints": [
+        "AGENTS.md -> Repository crash-report process command authority",
+        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md -> crash-report process qualification",
+        "projects/fabushi-communication-platform/quality/evidence-contract.md -> crash-report process evidence"
+      ],
+      "production_evidence": [
+        "spec-first commit:b996f372412e78272a180c8ed8dc878e73565aa7",
+        "dossier:projects/telegram-desktop-rust/dossiers/claude-crash-reports-process-command-complete-read.md",
+        "upstream-source:.claude/commands/crash-reports-process.md@5ac555406670721694e78c4e1e6b2a96b3e98fb5",
+        "upstream-helper:.claude/scripts/crash_triage.py@2db6cc14d8e529c4e61c5dcf169aade31fd35c58",
+        "upstream-direct-consumer:Claude Code command discovery/user /crash-reports-process invocation"
+      ],
+      "test_evidence": [
+        "CONTRACT-TDRP-CRASH-REPORT-CLAUDE-HOST-AUTHORITY-001 authored, not run",
+        "CONTRACT-TDRP-CRASH-REPORT-INVOCATION-001 authored, not run",
+        "CONTRACT-TDRP-CRASH-REPORT-CLAIM-RECOVERY-001 authored, not run",
+        "CONTRACT-TDRP-CRASH-REPORT-DELEGATION-001 authored, not run",
+        "CONTRACT-TDRP-CRASH-REPORT-VERDICT-ROUTING-001 authored, not run",
+        "CONTRACT-TDRP-CRASH-REPORT-RECORD-RECONCILE-001 authored, not run",
+        "CONTRACT-TDRP-CRASH-REPORT-BUILD-REPORT-BOUNDARY-001 authored, not run",
+        "INT-TDRP-CRASH-REPORT-PROCESS-COMPOSITION-001 authored, not run",
+        "FAULT-TDRP-CRASH-REPORT-INTERRUPTED-CLAIM-001 authored, not run",
+        "FAULT-TDRP-CRASH-REPORT-DROPPED-VERDICT-001 authored, not run"
+      ],
+      "target_commit": "b996f372412e78272a180c8ed8dc878e73565aa7",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Fabushi repository development and quality evidence governance",
+      "composition_slot": "Repository crash-triage host command adaptation",
+      "capability_component": "Source-neutral repository crash-report process contract",
+      "variation_axes": [
+        "claim vs --no-claim",
+        "explicit version vs newest tag",
+        "explicit branch vs default dev question",
+        "full vs --limit",
+        "normal vs --dry-run",
+        "known vs fresh",
+        "three verdicts"
+      ],
+      "shared_owner_contracts": [
+        "Fabushi repository development process governance",
+        "Fabushi repository quality/test-evidence governance",
+        "FMEP-001 Stage-A deferred executable validation"
+      ],
+      "duplicate_root_check": "No shipping crash runtime, Product Tasks/Automations owner, Agent/Coordinator/Host/Runner owner, platform-core service, or duplicate crash queue/evidence/publication store introduced.",
+      "novel_capability": true,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Not applicable",
+      "primary_navigation_target": "Not applicable",
+      "collection_surface": "Not applicable",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "Not applicable",
+      "detail_section": "Not applicable",
+      "capability_surface": "Repository development tooling",
+      "route_contract": "Selected crash groups route only through the source-defined triage verdict/application/reconciliation process.",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Not applicable",
+      "search_local_remote_contract": "Not applicable",
+      "responsive_disposition": "Not applicable",
+      "accessibility_contract": "Not applicable",
+      "keyboard_contract": "Not applicable",
+      "state_continuity_contract": "Run folder, stable group key, prior verdict ledger and target-branch commit identity survive interruption; dry-run owns no durable mutation.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Not applicable",
+      "semantic_token_usage": "Not applicable",
+      "legacy_token_adapter": "Not applicable",
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "Not applicable",
+      "avatar_contract": "Not applicable",
+      "content_copy_keys": [],
+      "motion_contract": "Not applicable",
+      "reduced_motion_contract": "Not applicable",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "medium",
+      "requirement_ids": [
+        "TDRP-R9-CRASH-REPORT-PROCESS-CLAUDE-COMMAND-ADAPTER-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-CRASH-REPORT-ISOLATED-GROUP-001",
+        "ORA-TDRP-CRASH-REPORT-VERDICT-001",
+        "ORA-TDRP-CRASH-REPORT-RECONCILE-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-CRASH-REPORT-NO-SECOND-RUNTIME-001",
+        "INV-TDRP-CRASH-REPORT-COMPLETE-TRIPLE-001",
+        "INV-TDRP-CRASH-REPORT-STAGE-A-NO-EXECUTION-001"
+      ],
+      "unit_case_ids": [],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-CRASH-REPORT-CLAUDE-HOST-AUTHORITY-001",
+        "CONTRACT-TDRP-CRASH-REPORT-INVOCATION-001",
+        "CONTRACT-TDRP-CRASH-REPORT-CLAIM-RECOVERY-001",
+        "CONTRACT-TDRP-CRASH-REPORT-DELEGATION-001",
+        "CONTRACT-TDRP-CRASH-REPORT-VERDICT-ROUTING-001",
+        "CONTRACT-TDRP-CRASH-REPORT-RECORD-RECONCILE-001",
+        "CONTRACT-TDRP-CRASH-REPORT-BUILD-REPORT-BOUNDARY-001"
+      ],
+      "integration_case_ids": [
+        "INT-TDRP-CRASH-REPORT-PROCESS-COMPOSITION-001"
+      ],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [],
+      "fault_recovery_case_ids": [
+        "FAULT-TDRP-CRASH-REPORT-INTERRUPTED-CLAIM-001",
+        "FAULT-TDRP-CRASH-REPORT-DROPPED-VERDICT-001"
+      ],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "performance_case_ids": [],
+      "soak_case_ids": [],
+      "security_case_ids": [],
+      "regression_ids": [],
+      "exploratory_charter_ids": [],
+      "release_gate_ids": [
+        "G-INVENTORY",
+        "G-TRACEABILITY",
+        "G-EVIDENCE",
+        "G-RELEASE"
+      ],
+      "test_fixture_ids": [],
+      "test_environment_ids": [
+        "Stage-B exact candidate repository workflow environment"
+      ],
+      "coverage_matrix_status": "pending",
+      "flake_status": "not-run",
+      "test_execution_evidence": [],
+      "acceptance_reviewer": null,
+      "release_gate_status": "not-run",
+      "license_and_provenance": "Behavioral repository-development contract read from fixed-U crash-reports-process command and exact crash_triage.py helper; no upstream executable copied into Fabushi shipping runtime.",
+      "reviewer": null,
+      "notes": "Task round140/source evidence round171. Live checkpoint e35d300f6e915d88bf7788cf6851bab530a4518a, desktop main 9993ca8e107f7e019a8201e5ab74fa54e82159f2, platform-core e92b51e23b39dae5719f033fa1f7a20d6579dc8c. Fixed-U tree 91f2b083ab2877c0a17d07868eabec362a5cfca6 is complete: 7,194 entries / 6,859 blobs. Target is index 90 zero-based, 13,431 UTF-8 bytes / 13,379 characters / 268 newlines, trailing newline. Complete command and helper read; consumer boundary and generic-adapter negative dependency verified. Spec-first CAS b996f372412e78272a180c8ed8dc878e73565aa7 authored contracts/dossier. One entry closes: unknown 16138->16137, unread 16111->16110; responsibilities 140->141. Next: .claude/commands/cross-review.md@7769d03de798cde66987cd41303d2ea529321361.",
+      "validation_status": "not-run",
+      "accepted": false,
+      "source_paths": [
+        ".claude/commands/crash-reports-process.md@5ac555406670721694e78c4e1e6b2a96b3e98fb5"
       ]
     }
   ],
