@@ -559,14 +559,16 @@ impl ProductionAgentLifecycle {
         let clone_name = clone_agent_display_name(&summary.name);
         let production = Arc::clone(self.store.production());
         let new_id = production.mint_agent_with(|new_id| {
-            clone_agent_dir(
-                &source_dir,
-                &production.agents_root().join(new_id),
-                new_id,
-                &clone_name,
-                production.busy_timeout_ms(),
-            )
-            .map_err(|error| error.to_string())?;
+            production.with_agent_admitted_filesystem_mutation(source_id, || {
+                clone_agent_dir(
+                    &source_dir,
+                    &production.agents_root().join(new_id),
+                    new_id,
+                    &clone_name,
+                    production.busy_timeout_ms(),
+                )
+                .map_err(|error| error.to_string())
+            })?;
             Ok(new_id.to_string())
         })?;
 
