@@ -30268,10 +30268,11 @@
         "platform-core-telegram-runtime-cargo-blob:a0d5aee63c886b11c3ad8fbf37885e0a3c5b6053",
         "vendored-codex-http-client-cargo-blob:46afa51ba5d844e73894c743b7a4025263db0e7b",
         "vendored-codex-http-client-readme-blob:89e35ac59d2dbf390d056de0aec88b14833962b1",
-        "platform-core-http-network-time-final-spec-commit:1d8c8bd07de0c9a2a970610c39830a77eeff150c",
-        "platform-core-http-network-time-spec-blob:3e29206439aa736f6eea793952fcb301c3288689",
+        "platform-core-http-network-time-source-compliance-commit:1d8c8bd07de0c9a2a970610c39830a77eeff150c",
+        "platform-core-http-network-time-final-spec-blob:cc27f7ae6eca445aa6902f0af48619da28ab83f8",
         "platform-core-http-network-time-module-blob:19b77a6960d6059b7b708ceb4ec13643a1ec0944",
-        "desktop-http-network-time-mirror-commit:53e1a4b22e94a2d688d47e681ef41e6e4bf4247e"
+        "desktop-http-network-time-mirror-commit:53e1a4b22e94a2d688d47e681ef41e6e4bf4247e",
+        "platform-core-http-network-time-final-evidence-commit:39aa2275f68f168752d9cf24b52dbf56c3716d02"
       ],
       "test_evidence": [
         "Carrier/lifecycle contracts are fixed in docs/specs/telegram-doh-special-config-http-carrier-lifecycle-boundary.md; no fake executable contract was added against a nonexistent shipping HTTP carrier.",
@@ -30777,14 +30778,15 @@
         "platform-core-http-network-time-spec-initial-commit:645c6e924f38bc4e073d9c898bfc64eb5546f583",
         "platform-core-http-network-time-implementation-commit:16e9ea2297b4a8d6d8d41177f74bec927d93f11f",
         "platform-core-http-network-time-fixed-u-gate-commit:7c822678107d592c34380fe20683a2ecea66acd2",
-        "platform-core-http-network-time-final-spec-commit:1d8c8bd07de0c9a2a970610c39830a77eeff150c",
-        "platform-core-http-network-time-spec-blob:3e29206439aa736f6eea793952fcb301c3288689",
+        "platform-core-http-network-time-source-compliance-commit:1d8c8bd07de0c9a2a970610c39830a77eeff150c",
+        "platform-core-http-network-time-final-spec-blob:cc27f7ae6eca445aa6902f0af48619da28ab83f8",
         "platform-core-network-time-module-blob:19b77a6960d6059b7b708ceb4ec13643a1ec0944",
         "platform-core-network-lib-blob:e0dc33a728916fb7be916956f44cfb0b670486c6",
         "desktop-http-network-time-initial-mirror-commit:98209855c1595a5a412d430e4a9c883c969c6b42",
         "desktop-http-network-time-fixed-u-gate-mirror-commit:53e1a4b22e94a2d688d47e681ef41e6e4bf4247e",
         "desktop-network-time-module-blob:19b77a6960d6059b7b708ceb4ec13643a1ec0944",
-        "desktop-network-lib-blob:e0dc33a728916fb7be916956f44cfb0b670486c6"
+        "desktop-network-lib-blob:e0dc33a728916fb7be916956f44cfb0b670486c6",
+        "platform-core-http-network-time-final-evidence-commit:39aa2275f68f168752d9cf24b52dbf56c3716d02"
       ],
       "test_evidence": [
         "Eight isolated NetworkTimeState module contracts are authored in network_time.rs; none were executed.",

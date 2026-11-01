@@ -38,8 +38,9 @@ Platform spec-first sequence:
 - spec commit `645c6e924f38bc4e073d9c898bfc64eb5546f583`;
 - initial production commit `16e9ea2297b4a8d6d8d41177f74bec927d93f11f`;
 - source-review fixed-U global update gate correction `7c822678107d592c34380fe20683a2ecea66acd2`;
-- final platform compliance/spec commit `1d8c8bd07de0c9a2a970610c39830a77eeff150c`;
-- final spec blob `3e29206439aa736f6eea793952fcb301c3288689`.
+- source-compliance/spec commit `1d8c8bd07de0c9a2a970610c39830a77eeff150c`;
+- final cross-repository evidence commit `39aa2275f68f168752d9cf24b52dbf56c3716d02`;
+- final spec blob `cc27f7ae6eca445aa6902f0af48619da28ab83f8`.
 
 Canonical/mirrored production blobs:
 
