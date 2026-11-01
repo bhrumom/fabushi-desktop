@@ -632,6 +632,30 @@ fn test_session_transcript_update_and_identity_settlement_roll_back_when_commit_
 }
 
 #[test]
+fn test_session_transcript_delete_and_conversation_clear_roll_back_when_commit_fails() {
+    let owner_source = include_str!("../src/extensions/session/agent_db.rs");
+    let delete_owner = owner_source
+        .split("pub fn delete_transcript_entry(")
+        .nth(1)
+        .expect("session transcript delete owner exists")
+        .split("pub fn clear_conversation(")
+        .next()
+        .expect("session transcript delete owner boundary exists");
+    assert!(delete_owner.contains("if let Err(error) = db.execute_batch(\"COMMIT\")"));
+    assert!(delete_owner.contains("let _ = db.execute_batch(\"ROLLBACK\")"));
+
+    let clear_owner = owner_source
+        .split("pub fn clear_conversation(")
+        .nth(1)
+        .expect("conversation clear owner exists")
+        .split("pub fn clear_clone_mutation_journals(")
+        .next()
+        .expect("conversation clear owner boundary exists");
+    assert!(clear_owner.contains("if let Err(error) = db.execute_batch(\"COMMIT\")"));
+    assert!(clear_owner.contains("let _ = db.execute_batch(\"ROLLBACK\")"));
+}
+
+#[test]
 fn test_compaction_owner_rolls_back_when_commit_fails() {
     let owner_source = include_str!("../src/extensions/session/agent_db.rs");
     let compaction_owner = owner_source
