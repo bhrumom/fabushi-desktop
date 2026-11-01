@@ -4271,6 +4271,7 @@ impl UnifiedGatewayApi {
             ));
         }
         let route = resolve_gateway_session_route(args, raw_key)?;
+        reject_agent_wide_session_route(&route, "sessions.patch")?;
         let expected_key = format!("agent:{}:main", route.agent_id);
         if !raw_key.eq_ignore_ascii_case(&expected_key) {
             return Err(GatewayCommandError::BadRequest(

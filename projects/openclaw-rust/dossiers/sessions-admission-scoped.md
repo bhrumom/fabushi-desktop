@@ -855,11 +855,12 @@ unbound entries retain the compatibility update path.
 The public Gateway `sessions.get`, `chat.send`, and `chat.abort` handlers now
 reject `cron`, `group`, `spawn-child`, and `unknown` routes before reading the
 agent-wide transcript, dispatching through the agent-wide send owner, or
-cancelling the agent-wide Runner stream registry. `sessions.delete` uses the
-same route guard before dispatching the existing agent-wide lifecycle owner.
-This prevents a classified non-main selector from being treated as a durable
-per-session target while the session catalog, per-key transcript, and per-key
-Runner ownership contract remain absent.
+cancelling the agent-wide Runner stream registry. `sessions.delete` and
+`sessions.patch` use the same route guard before dispatching the existing
+agent-wide lifecycle/archive owners. This prevents a classified non-main
+selector from being treated as a durable per-session target while the session
+catalog, per-key transcript, and per-key Runner ownership contract remain
+absent.
 
 This is a fail-closed safety boundary, not full session-key wiring. Canonical
 main and opaque/legacy direct compatibility paths retain their existing owners;
