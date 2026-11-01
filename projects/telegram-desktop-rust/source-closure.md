@@ -1869,3 +1869,18 @@ The unique `TDRP-R9-MTPROTO-WEB-PROXY-CANONICAL-ADDRESS-SETTINGS-001` row remain
 
 No GitHub Actions/status/check query or trigger, build, typecheck, lint, schema validator, generator, dependency resolution, lock regeneration, unit/contract/integration/E2E execution, package, deployment, installation or runtime acceptance was performed.
 
+
+
+## Stage-A proxy settings state/persistence boundary (round 113, 2026-11-01)
+
+Fixed U remains `f985723b552b30fe1c17d377d57f44e61a15a8c4`. Manual fixed-U review of `core_settings_proxy.h@1f2ec5c516e03ae49e80c15bb6083bffa7ec6d99`, `core_settings_proxy.cpp@18e7ab8ce60865409dbaff267ee192e272622d26`, `core_settings.h@7192f0db82ddc214489f4c8bd5c247b8911b8a07`, `core_settings.cpp@6ef88cd5f0b946b0b92512d1a94e42a0f5c1fabb`, `localstorage.cpp@d71385083c0e940580398612fb65e522afc768b1`, `connection_box.cpp@e9fa8a1d8f727042e4cadd632182eee5259f80c2`, `application.cpp@7172206f5c1e540e19c90798e9a9e5721276cc53` and `proxy_rotation_manager.cpp@72723d4db408be654dbf68e1ac40bba21c59d4e6` establishes one durable source owner: `Core::SettingsProxy` is embedded once in `Core::Settings` and owns proxy mode, selected proxy, ordered list, IPv6/call flags, IP-warning bit, rotation toggle/timeout and preferred indices. `connection_box` keeps only an edit/view projection; `ProxyRotationManager` owns transient checks/timers and writes preferred order or selection back through the same Settings owner.
+
+Fixed-U persistence is likewise one chain: `SettingsProxy::serialize()` -> `Core::Settings::serialize()` -> encrypted `dbiApplicationSettings` in `Local::writeSettings()`; restore reverses that chain through `SettingsProxy::setFromSerialized()`. Exact list/preferred-index mutation, timeout normalization, proxy type mapping and append-compatible legacy decode semantics are recorded in the durable contract.
+
+Spec-first platform checkpoint is `5724aee519adcd3990bbf98f88a97581602bc313` / initial spec blob `e31a0d4f4d9f9286f7af35562c7d9edac6687487`. Current Fabushi candidates do not supply the required owner: `mahayana-app-host/src/lib.rs@ed69b2b7aa0d87ebd34210e9a13d9c8a8b3e3087` persists generic feature client/UI values in `feature-host/runtime/runtime.sqlite3` table `ui_state`; Telegram storage `sqlite.rs@e6cc314ec749f8a258bfe0125a25beb3613eb2ca` is encrypted Telegram runtime/auth/transport private persistence; `fabushi-account-service.ts@8e26fd5eab70d27ee553791ca30a8d6147358bf5` owns account/session plus protected Telegram storage-key material. None is the canonical product Settings/application state owner. Telegram network and rotation runtime are also rejected because they are consumers/schedulers, not durable settings owners.
+
+Therefore `TDRP-R9-PROXY-SETTINGS-STATE-PERSISTENCE-001` is added as `mapped / pending / validation_status=not-run / accepted=false` with no production delta. The state responsibility is independent of WebProxy carrier, but implementing it now would require either promoting UI/provider storage into the wrong owner or creating a parallel Telegram settings subsystem. Authored contract vectors live in the durable spec; no executable contract was run and no fake test against a nonexistent Settings API was added.
+
+Coverage becomes `source_entries_total=16202, responsibilities_total=113, unknown=16172, unread=16145, omitted=0, unmapped_responsibilities=0`; global unknown/unread remain unchanged by this focused source review.
+
+No GitHub Actions/status/check query or trigger, build, typecheck, lint, schema validator, generator, dependency resolution, lock regeneration, unit/contract/integration/E2E execution, package, deployment, installation or runtime acceptance was performed.

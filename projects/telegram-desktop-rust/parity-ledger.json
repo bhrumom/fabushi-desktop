@@ -9,7 +9,7 @@
     "unknown": 16172,
     "unread": 16145,
     "omitted": 0,
-    "responsibilities_total": 112,
+    "responsibilities_total": 113,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -28639,6 +28639,293 @@
       "reviewer": null,
       "license_and_provenance": "Behavioral provenance is fixed-U mtproto_proxy_data.cpp/header plus connection_box.cpp. No upstream C++ copied. No new IDNA dependency or handwritten punycode introduced.",
       "notes": "Task round81/source evidence round112. Exact Unicode/IDNA host/address plus settings import/share boundary is understood but not independently shippable in current Fabushi architecture: canonical protocol has only ASCII canonical validation and there is no live unified proxy/settings production owner or reviewed IDNA dependency. Recorded as mapped/pending with no production delta. Existing bridge wire remains implemented; relay carrier remains mapped/pending. Stage-A executable validation remains not-run. Final platform source compliance is 2682d35b46d5521d71ea82896557466c3e07a58f / spec blob eb924c6492ffb4f545b9ccc2eec404284c41335d; R1-R9/R11/R13-R14 and AC-1..AC-7 are source-review passed while R10/R12 remain explicitly blocked and executable validation remains not-run.",
+      "test_execution_evidence": [],
+      "validation_status": "not-run",
+      "accepted": false
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+      "source_path": "Telegram/SourceFiles/core/core_settings_proxy.cpp",
+      "source_blob_sha": "18e7ab8ce60865409dbaff267ee192e272622d26",
+      "source_kind": "source",
+      "module_id": "tdesktop.core.proxy-settings.state-persistence",
+      "responsibility_id": "TDRP-R9-PROXY-SETTINGS-STATE-PERSISTENCE-001",
+      "source_symbols": [
+        "Core::SettingsProxy",
+        "ProxySettingsToInt",
+        "IntToProxySettings",
+        "SerializeProxyData",
+        "DeserializeProxyData",
+        "NormalizeProxyRotationPreferredIndices",
+        "SettingsProxy::serialize",
+        "SettingsProxy::setFromSerialized",
+        "SettingsProxy::setProxyRotationPreferredIndices",
+        "SettingsProxy::promoteProxyRotationPreferredIndex",
+        "SettingsProxy::setProxyRotationTimeout",
+        "SettingsProxy::setSelected",
+        "SettingsProxy::setList",
+        "SettingsProxy::addToList",
+        "SettingsProxy::insertToList",
+        "SettingsProxy::removeFromList",
+        "SettingsProxy::replaceInList",
+        "Core::Settings::_proxy",
+        "Local::writeSettings",
+        "ProxiesBoxController",
+        "Application::setCurrentProxy",
+        "ProxyRotationManager"
+      ],
+      "capability_ids": [
+        "CAP-PROXY-SETTINGS-STATE-PERSISTENCE"
+      ],
+      "dependency_ids": [
+        "future canonical Fabushi Settings/application state owner",
+        "unified product settings persistence/recovery owner",
+        "existing canonical typed proxy config/value semantics"
+      ],
+      "source_analysis_path": "docs/specs/telegram-proxy-settings-state-persistence.md",
+      "behavior_contract": "Fixed-U owns proxy mode, selected proxy, ordered list, IPv6/call flags, IP-warning state and rotation options/preferences in one Core::SettingsProxy embedded in Core::Settings. Its mutation invariants preserve preferred-index meaning under list changes; its append-compatible serializer/deserializer is persisted through Core::Settings -> encrypted dbiApplicationSettings. connection_box and ProxyRotationManager consume/update this owner but do not own a second durable settings truth.",
+      "state_machine": "restore unified application settings -> one canonical ProxySettings state -> typed list/selection/mode/rotation mutations -> durable settings persistence -> selected-proxy/settings events projected to network and rotation consumers; proxy checks/timers remain transient runtime state.",
+      "side_effects": [
+        "Fixed-U settings changes schedule the existing application settings write and emit connection/proxy-change projections.",
+        "Fixed-U rotation checks may promote preferred indices through SettingsProxy and request the existing settings save.",
+        "No Fabushi production side effect is added in this blocked round."
+      ],
+      "failure_cases": [
+        "malformed or truncated legacy settings stream",
+        "negative proxy-list or preferred-index counts",
+        "unknown legacy proxy type decoded as None and skipped/remapped",
+        "invalid or duplicate rotation preferred indices",
+        "non-positive rotation timeout",
+        "UI/client persistence accidentally elevated into canonical product Settings truth",
+        "Telegram runtime storage accidentally elevated into global product Settings truth",
+        "carrier or rotation scheduler becoming persisted settings owner",
+        "parallel Telegram-specific settings subsystem"
+      ],
+      "ui_disposition": "Existing unified Settings surface is the eventual projection/edit surface. No Telegram-specific Settings root, proxy app, route or parallel persistence UI is introduced in this round.",
+      "non_ui_responsibilities": [
+        "canonical proxy settings state ownership",
+        "list/selected/mode mutation invariants",
+        "rotation preference normalization and persistence semantics",
+        "legacy settings decode/migration semantics",
+        "single-owner persistence/restart boundary"
+      ],
+      "platform_delta": "No production delta. The pure state responsibility is independent of WebProxy carrier scheduling, but the current Fabushi checkpoints do not contain the canonical product Settings/application owner required to ship it without creating a parallel settings truth.",
+      "existing_owner_candidates": [
+        "bhrumom/fabushi-desktop:mahayana-app-host feature.persistence/ui_state",
+        "bhrumom/fabushi-desktop and platform-core:telegram-storage encrypted SQLite",
+        "bhrumom/fabushi-desktop:fabushi-account-service",
+        "future canonical Fabushi Settings/application owner",
+        "bhrumom/fabushi-platform-core:native/telegram-network"
+      ],
+      "existing_owner": "Future canonical Fabushi Settings/application owner; no matching shipping state owner exists in the current desktop/platform-core checkpoints.",
+      "rejected_existing_owners": [
+        "mahayana-app-host feature.persistence: persists generic client/UI keys in a table literally named ui_state; it is not the product Settings state/lifecycle owner.",
+        "telegram-storage: encrypted Telegram runtime/auth/transport private persistence; using it would create provider-local product settings truth.",
+        "fabushi-account-service: owns account/session and protected Telegram storage-key material, not application network/proxy preferences.",
+        "telegram-network: owns transport/socket behavior, not product settings state or persistence.",
+        "ProxyRotationManager-equivalent runtime: owns transient checks/timers and consumes SettingsProxy, not canonical durable settings.",
+        "new TelegramProxySettings/TelegramSettingsStore: duplicates the required unified Settings root."
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "bhrumom/fabushi-platform-core:docs/specs/telegram-proxy-settings-state-persistence.md",
+        "bhrumom/fabushi-desktop:projects/telegram-desktop-rust/parity-ledger.json",
+        "bhrumom/fabushi-desktop:projects/telegram-desktop-rust/management/tasks/P0-source-closure-and-ledger.md",
+        "bhrumom/fabushi-desktop:projects/telegram-desktop-rust/source-closure.md",
+        "bhrumom/fabushi-desktop:projects/telegram-desktop-rust/evidence/round113-proxy-settings-state-persistence-boundary-20261101.md"
+      ],
+      "fabushi_target_symbols": [
+        "future ProxySettingsState",
+        "future canonical SettingsCommand::UpdateProxySettings",
+        "future canonical SettingsEvent::ProxySettingsChanged",
+        "future unified settings persistence/restart adapter",
+        "future legacy TDesktop proxy-settings migration adapter"
+      ],
+      "target_language": "Rust for source-neutral settings state/persistence + existing React/TypeScript Settings projection",
+      "language_rationale": "The fixed-U non-UI state/mutation/persistence responsibility belongs in the canonical product Settings owner, not Telegram runtime/network code; UI remains a projection of that source-neutral state.",
+      "command_event_contracts": [
+        "future typed canonical Settings commands/events for proxy list/selection/mode/rotation; not fabricated while the Settings owner is absent"
+      ],
+      "state_owner": "Future canonical Fabushi Settings/application owner; no new state owner is introduced in this round.",
+      "lifecycle_owner": "Future canonical Settings/application persistence/restart lifecycle; network carrier and rotation timers remain separate transient consumers.",
+      "persistence_and_restart": "No persistence delta in this round. Eventual proxy settings must use the unified product Settings persistence/recovery path; an optional legacy TDesktop reader may migrate old payloads but must not become a second canonical store.",
+      "concurrency_and_cancellation": "Settings mutations require one serialized/atomic owner boundary; no socket/checker/timer lifecycle is stored in the settings model. This round adds no concurrency code.",
+      "security_boundary": "Proxy secrets must not be logged or copied to UI persistence accidentally. Do not create an unencrypted/parallel settings store to close this responsibility.",
+      "network_service_dependencies": [
+        "None for the settings state/persistence responsibility itself; carrier use is a downstream projection."
+      ],
+      "service_owner": "No network service. Canonical product Settings/application owner is required.",
+      "deployment_evidence": [],
+      "implementation_status": "mapped",
+      "coverage_disposition": "pending",
+      "blockers": [
+        "Current desktop/platform-core checkpoint trees contain no canonical Fabushi product Settings/application state owner for proxy list/selection/rotation persistence.",
+        "mahayana-app-host feature.persistence is explicitly UI/client key-value persistence (ui_state), not a domain Settings owner.",
+        "telegram-storage is Telegram runtime/auth/transport private persistence; using it would create a provider-local settings subsystem.",
+        "fabushi-account-service owns account/session state, not global proxy/network preferences.",
+        "Stage-B executable validation has not run."
+      ],
+      "production_entrypoints": [],
+      "production_evidence": [
+        "fixed-U:Telegram/SourceFiles/core/core_settings_proxy.h@1f2ec5c516e03ae49e80c15bb6083bffa7ec6d99",
+        "fixed-U:Telegram/SourceFiles/core/core_settings_proxy.cpp@18e7ab8ce60865409dbaff267ee192e272622d26",
+        "fixed-U:Telegram/SourceFiles/core/core_settings.h@7192f0db82ddc214489f4c8bd5c247b8911b8a07",
+        "fixed-U:Telegram/SourceFiles/core/core_settings.cpp@6ef88cd5f0b946b0b92512d1a94e42a0f5c1fabb",
+        "fixed-U:Telegram/SourceFiles/boxes/connection_box.h@02717ab7b646089aa055c441b86e18e35d156e09",
+        "fixed-U:Telegram/SourceFiles/boxes/connection_box.cpp@e9fa8a1d8f727042e4cadd632182eee5259f80c2",
+        "fixed-U:Telegram/SourceFiles/core/application.cpp@7172206f5c1e540e19c90798e9a9e5721276cc53",
+        "fixed-U:Telegram/SourceFiles/core/proxy_rotation_manager.h@c1fee276961c4f98e21ab2a8e495a1d687672804",
+        "fixed-U:Telegram/SourceFiles/core/proxy_rotation_manager.cpp@72723d4db408be654dbf68e1ac40bba21c59d4e6",
+        "fixed-U:Telegram/SourceFiles/storage/localstorage.h@ca847ab41eb2614b2d56ea248e932ab8ebead9ec",
+        "fixed-U:Telegram/SourceFiles/storage/localstorage.cpp@d71385083c0e940580398612fb65e522afc768b1",
+        "fixed-U:Telegram/SourceFiles/mtproto/mtproto_proxy_data.h@d8deebac2359936f72901ba0eec0cbfdfb186e90",
+        "platform-core-initial-spec-commit:5724aee519adcd3990bbf98f88a97581602bc313",
+        "platform-core-initial-spec-blob:e31a0d4f4d9f9286f7af35562c7d9edac6687487",
+        "desktop-app-host-ui-persistence-unchanged-blob:ed69b2b7aa0d87ebd34210e9a13d9c8a8b3e3087",
+        "desktop-telegram-storage-unchanged-blob:e6cc314ec749f8a258bfe0125a25beb3613eb2ca",
+        "desktop-account-service-unchanged-blob:8e26fd5eab70d27ee553791ca30a8d6147358bf5",
+        "desktop-web-proxy-unchanged-blob:4c91f6e4e6b8d37d84afd40aae6af9fbbe7d80d4",
+        "desktop-network-unchanged-blob:241cd8ec792070a8de8af9ec6ca5b317e34376d1"
+      ],
+      "test_evidence": [
+        "Authored contract vectors are recorded in docs/specs/telegram-proxy-settings-state-persistence.md@e31a0d4f4d9f9286f7af35562c7d9edac6687487; no executable contract was run.",
+        "No fake executable contract against a nonexistent canonical Settings API was added."
+      ],
+      "target_commit": "5724aee519adcd3990bbf98f88a97581602bc313",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Future canonical Fabushi Settings/application root",
+      "composition_slot": "Network/proxy settings state and persistence",
+      "capability_component": "Proxy list/selection/mode/rotation settings state",
+      "variation_axes": [
+        "System/Enabled/Disabled mode",
+        "proxy type",
+        "list order",
+        "selected proxy",
+        "IPv4/IPv6 preference",
+        "rotation enabled/timeout/preferred order",
+        "legacy payload version/presence of appended fields"
+      ],
+      "shared_owner_contracts": [
+        "future canonical product Settings state/persistence",
+        "existing canonical typed proxy config/value semantics",
+        "separate telegram-network carrier ownership",
+        "separate transient rotation/checker runtime"
+      ],
+      "duplicate_root_check": "No Telegram-specific Settings root/store, no provider-local durable proxy settings, no UI-state promotion, and no carrier-owned settings state introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [
+        "desktop live checkpoint 757a1dc07e9c79a98f96703bb1cbd921c197b81d has no first-party canonical product Settings state owner path.",
+        "platform-core live checkpoint 2682d35b46d5521d71ea82896557466c3e07a58f has no first-party canonical product Settings state owner path.",
+        "mahayana-app-host@ed69b2b7aa0d87ebd34210e9a13d9c8a8b3e3087 persists generic feature UI/client keys in ui_state.",
+        "telegram-storage/sqlite.rs@e6cc314ec749f8a258bfe0125a25beb3613eb2ca is Telegram runtime private storage.",
+        "fabushi-account-service.ts@8e26fd5eab70d27ee553791ca30a8d6147358bf5 is account/session owner."
+      ],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Existing Settings surface once the canonical Settings state owner exists",
+      "primary_navigation_target": "Existing Settings",
+      "collection_surface": "Existing unified Settings network/proxy section; no new Telegram-specific collection",
+      "creation_flow": "Existing Settings add/import/edit flow; no new app/root",
+      "object_action_scope": "Proxy settings",
+      "detail_section": "Network/proxy settings",
+      "capability_surface": "Existing unified Settings",
+      "route_contract": "No new top-level route.",
+      "search_scope": "Not applicable",
+      "search_provider": "Existing canonical Search owner; unchanged",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Unchanged.",
+      "search_local_remote_contract": "Not applicable.",
+      "responsive_disposition": "No UI implementation in this blocked round.",
+      "accessibility_contract": "No UI implementation in this blocked round.",
+      "keyboard_contract": "No UI implementation in this blocked round.",
+      "state_continuity_contract": "Proxy settings must restore through the one canonical Settings persistence path; UI, carrier and rotation runtime must never form alternate durable truth.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Existing Fabushi design system; no visual changes",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": null,
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Existing Settings pattern",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "No new icon asset",
+      "avatar_contract": "No change",
+      "content_copy_keys": [],
+      "motion_contract": "No change",
+      "reduced_motion_contract": "No change",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "high",
+      "requirement_ids": [
+        "TDRP-R9-PROXY-SETTINGS-STATE-PERSISTENCE-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-PROXY-SETTINGS-STATE-PERSISTENCE-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-PROXY-SETTINGS-SINGLE-OWNER-001",
+        "INV-TDRP-PROXY-LIST-PREFERRED-INDEX-001",
+        "INV-TDRP-PROXY-SETTINGS-RESTORE-001",
+        "INV-TDRP-PROXY-CARRIER-NONOWNER-001"
+      ],
+      "unit_case_ids": [
+        "UNIT-TDRP-PROXY-SETTINGS-STATE-VECTORS-001"
+      ],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-PROXY-SETTINGS-STATE-001"
+      ],
+      "integration_case_ids": [
+        "INT-TDRP-PROXY-SETTINGS-PERSISTENCE-001"
+      ],
+      "functional_e2e_case_ids": [
+        "E2E-TDRP-PROXY-SETTINGS-RESTORE-001"
+      ],
+      "temporal_case_ids": [
+        "TEMPORAL-TDRP-PROXY-SETTINGS-RESTART-001"
+      ],
+      "ui_functional_case_ids": [
+        "UI-TDRP-PROXY-SETTINGS-001"
+      ],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "fault_recovery_case_ids": [
+        "FAULT-TDRP-PROXY-SETTINGS-MALFORMED-STATE-001"
+      ],
+      "performance_case_ids": [],
+      "security_case_ids": [
+        "SEC-TDRP-PROXY-SETTINGS-SECRET-PERSISTENCE-001"
+      ],
+      "soak_case_ids": [],
+      "exploratory_charter_ids": [],
+      "regression_ids": [],
+      "release_gate_ids": [
+        "G-TRACEABILITY",
+        "G-ARCHITECTURE",
+        "G-EVIDENCE"
+      ],
+      "test_fixture_ids": [
+        "fixed-u-proxy-settings-state-vectors"
+      ],
+      "test_environment_ids": [
+        "Stage B GitHub Actions candidate environment"
+      ],
+      "coverage_matrix_status": "pending",
+      "flake_status": "unknown",
+      "release_gate_status": "pending",
+      "acceptance_reviewer": null,
+      "reviewer": null,
+      "license_and_provenance": "Behavioral provenance is fixed-U Core::SettingsProxy/Core::Settings/localstorage/connection_box/application/proxy_rotation_manager. No upstream C++ copied and no parallel settings store introduced.",
+      "notes": "Task round82/source evidence round113. Exact proxy list/selected/mode/rotation state and persistence semantics are understood and carrier-independent, but the current Fabushi checkpoints have no matching canonical product Settings/application owner. Existing app-host ui_state, Telegram encrypted storage, account service, network and rotation runtime are rejected as state owners. Recorded as mapped/pending with no production delta; authored contract vectors are not executed. Stage-A validation_status=not-run and accepted=false.",
       "test_execution_evidence": [],
       "validation_status": "not-run",
       "accepted": false
