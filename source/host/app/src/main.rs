@@ -6200,7 +6200,16 @@ fn append_channel_inbound_entries(
     agent_id: &str,
     envelopes: &[serde_json::Value],
 ) -> Result<(), String> {
-    let session_key = format!("agent:{agent_id}:main");
+    let session_key = deps
+        .session_workers
+        .read_session_work_admission(agent_id)?
+        .map(|record| record.session_key)
+        .filter(|value| !value.trim().is_empty())
+        .ok_or_else(|| {
+            format!(
+                "channel inbound requires an existing admitted session identity for {agent_id}"
+            )
+        })?;
     deps.session_workers
         .assert_session_work_admission(agent_id, Some(&session_key))?;
     let mut transcript = deps
@@ -6224,6 +6233,7 @@ fn append_channel_inbound_entries(
             "timestampMs": envelope.get("timestampMs").cloned().unwrap_or_else(|| serde_json::Value::Number(started_at_ms().into())),
             "channel": channel,
             "channelSender": envelope.get("sender").cloned().unwrap_or(serde_json::Value::Null),
+            "sessionKey": session_key.clone(),
         });
         transcript.push(entry.clone());
         entries.push(entry);

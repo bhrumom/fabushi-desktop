@@ -421,6 +421,21 @@ parser, leaving legacy raw selectors opaque. Contract oracles cover the mixed
 case canonical route. This is a local boundary correction only; production
 wiring, verification, and acceptance remain pending.
 
+## 12.5 Channel inbound provenance correction — 2026-11-01
+
+`append_channel_inbound_entries` now resolves the session identity from the
+existing `ProductionSessionWorkers::read_session_work_admission` record and
+fails closed when no non-empty canonical key is available. It no longer
+synthesizes `agent:<id>:main`. Each materialized channel inbound transcript
+entry receives that same `sessionKey` before the existing admitted append
+transaction.
+
+This corrects the producer/owner contract for the wired channel inbound slice:
+the previous producer supplied an agent-derived key to the admission check but
+omitted entry provenance, so the owner rejected the append. It does not prove
+that every channel type has a session catalog or that provider delivery,
+thread correlation, reconnect, and runtime acceptance are complete.
+
 ## 12.4 Owner-bound remote Human transcript append — 2026-11-01
 
 `ProductionSessionWorkers::materialize_remote_human_message` now reads the
