@@ -3,7 +3,7 @@ use std::sync::{Arc, Mutex, atomic::{AtomicBool, Ordering}};
 
 use serde_json::{Map, Value};
 
-use crate::automations::automation::{AutomationRecord, AutomationSpec};
+use crate::automations::automation::{AutomationRecord, AutomationRun, AutomationSpec};
 use crate::automations::automation_id::stable_automation_id;
 use crate::automations::automation_schedule::summarize_schedule_next_7_days;
 use crate::automations::automation_store::FileAutomationStore;
@@ -14,8 +14,8 @@ use super::automation_event_fires::{
     AutomationEventFires, DroppedFire, DroppedFireReporter, EventBatchExecutor, EventFireBatch,
 };
 use super::automation_run_path::{
-    AutomationExecutionResult, AutomationRunPath, AutomationRunTrigger, FireAutomationArgs,
-    FireAutomationOutcome,
+    AutomationExecutionResult, AutomationRunPath, AutomationRunStore, AutomationRunTrigger,
+    FireAutomationArgs, FireAutomationOutcome,
 };
 use super::automation_spend_guard_runtime::AutomationSpendGuardRuntime;
 use super::automation_snapshot::{
@@ -306,6 +306,77 @@ pub struct AutomationRuntime {
     lifecycle_reporter: Arc<Mutex<Option<AutomationLifecycleReporter>>>,
 }
 
+struct AdmittedAutomationRunStore<'a> {
+    session: SandAgentSessionStore,
+    agent_id: &'a str,
+    store: &'a FileAutomationStore,
+}
+
+impl AutomationRunStore for AdmittedAutomationRunStore<'_> {
+    fn resolved_user_time_zone(&self) -> Option<String> {
+        self.store.resolved_user_time_zone()
+    }
+
+    fn mark_notice_raised(
+        &self,
+        automation_id: &str,
+        notice: &str,
+    ) -> Result<Option<AutomationRecord>, String> {
+        self.session
+            .with_admitted_filesystem_mutation(self.agent_id, || {
+                self.store.mark_notice_raised(automation_id, notice)
+            })
+    }
+
+    fn record_run(
+        &self,
+        automation_id: &str,
+        fired_at_ms: f64,
+    ) -> Result<Option<AutomationRecord>, String> {
+        self.session
+            .with_admitted_filesystem_mutation(self.agent_id, || {
+                self.store.record_run(automation_id, fired_at_ms)
+            })
+    }
+
+    fn begin_run(
+        &self,
+        automation_id: &str,
+        trigger: &str,
+        fired_at_ms: f64,
+        event: Option<&str>,
+        run_id: Option<&str>,
+        coalesced_run_ids: Option<&[String]>,
+    ) -> Result<Option<AutomationRun>, String> {
+        self.session
+            .with_admitted_filesystem_mutation(self.agent_id, || {
+                self.store.begin_run(
+                    automation_id,
+                    trigger,
+                    fired_at_ms,
+                    event,
+                    run_id,
+                    coalesced_run_ids,
+                )
+            })
+    }
+
+    fn finish_run(
+        &self,
+        automation_id: &str,
+        run_id: &str,
+        status: &str,
+        finished_at_ms: f64,
+        detail: Option<&str>,
+    ) -> Result<Option<AutomationRecord>, String> {
+        self.session
+            .with_admitted_filesystem_mutation(self.agent_id, || {
+                self.store
+                    .finish_run(automation_id, run_id, status, finished_at_ms, detail)
+            })
+    }
+}
+
 impl AutomationRuntime {
     pub fn new(sessions: Arc<ProductionSessionWorkers>) -> Self {
         Self {
@@ -535,14 +606,18 @@ impl AutomationRuntime {
         let mut args = FireAutomationArgs::manual(agent_id, automation, now_ms());
         args.is_group = Some(false);
         let runtime = self.clone();
-        let outcome = self.with_admitted_agent_mutation(agent_id, || {
-            let outcome = self.run_path.fire_automation_with_on_duplicate(
-                &store,
-                args,
-                move |args| runtime.report_fire_dropped(args, "duplicate_in_flight"),
-                execute,
-            )?;
-
+        let admitted_store = AdmittedAutomationRunStore {
+            session: SandAgentSessionStore::new(Arc::clone(&self.sessions)),
+            agent_id,
+            store: &store,
+        };
+        let outcome = self.run_path.fire_automation_with_on_duplicate(
+            &admitted_store,
+            args,
+            move |args| runtime.report_fire_dropped(args, "duplicate_in_flight"),
+            execute,
+        )?;
+        self.with_agent_mutation_lock(agent_id, || {
             let after = store.list_definitions();
             let _ = self.record_changes(
                 agent_id,
@@ -550,7 +625,7 @@ impl AutomationRuntime {
                 &after,
                 AutomationLifecycleSource::Agent,
             );
-            Ok(outcome)
+            Ok(())
         })?;
         Ok(outcome)
     }
@@ -625,14 +700,18 @@ impl AutomationRuntime {
             spend_guard_reminder: reminder,
         };
         let runtime = self.clone();
-        let outcome = self.with_admitted_agent_mutation(agent_id, || {
-            let outcome = self.run_path.fire_automation_with_on_duplicate(
-                &store,
-                args,
-                move |args| runtime.report_fire_dropped(args, "duplicate_in_flight"),
-                execute,
-            )?;
-
+        let admitted_store = AdmittedAutomationRunStore {
+            session: SandAgentSessionStore::new(Arc::clone(&self.sessions)),
+            agent_id,
+            store: &store,
+        };
+        let outcome = self.run_path.fire_automation_with_on_duplicate(
+            &admitted_store,
+            args,
+            move |args| runtime.report_fire_dropped(args, "duplicate_in_flight"),
+            execute,
+        )?;
+        self.with_agent_mutation_lock(agent_id, || {
             let current = store.list_definitions();
             let _ = self.record_changes(
                 agent_id,
@@ -640,7 +719,7 @@ impl AutomationRuntime {
                 &current,
                 AutomationLifecycleSource::Agent,
             );
-            Ok(outcome)
+            Ok(())
         })?;
         Ok(outcome)
     }

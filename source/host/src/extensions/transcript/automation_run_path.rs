@@ -6,7 +6,7 @@ use chrono::{DateTime, Local, TimeZone, Utc};
 use chrono_tz::Tz;
 use serde_json::Value;
 
-use crate::automations::automation::AutomationRecord;
+use crate::automations::automation::{AutomationRecord, AutomationRun};
 use crate::automations::automation_store::FileAutomationStore;
 use crate::automations::automation_trigger::{build_trigger_event_context_block, describe_trigger_event};
 use crate::automations::routine_notices::{
@@ -90,6 +90,95 @@ pub struct AutomationRunObservation {
 pub type AutomationRunReporter =
     Arc<dyn Fn(&AutomationRunObservation) + Send + Sync + 'static>;
 
+/// The run path owns run semantics; the caller supplies the persistence
+/// boundary so each durable mutation can be admitted by the session owner.
+pub trait AutomationRunStore {
+    fn resolved_user_time_zone(&self) -> Option<String>;
+    fn mark_notice_raised(
+        &self,
+        automation_id: &str,
+        notice: &str,
+    ) -> Result<Option<AutomationRecord>, String>;
+    fn record_run(
+        &self,
+        automation_id: &str,
+        fired_at_ms: f64,
+    ) -> Result<Option<AutomationRecord>, String>;
+    fn begin_run(
+        &self,
+        automation_id: &str,
+        trigger: &str,
+        fired_at_ms: f64,
+        event: Option<&str>,
+        run_id: Option<&str>,
+        coalesced_run_ids: Option<&[String]>,
+    ) -> Result<Option<AutomationRun>, String>;
+    fn finish_run(
+        &self,
+        automation_id: &str,
+        run_id: &str,
+        status: &str,
+        finished_at_ms: f64,
+        detail: Option<&str>,
+    ) -> Result<Option<AutomationRecord>, String>;
+}
+
+impl AutomationRunStore for FileAutomationStore {
+    fn resolved_user_time_zone(&self) -> Option<String> {
+        self.resolved_user_time_zone()
+    }
+
+    fn mark_notice_raised(
+        &self,
+        automation_id: &str,
+        notice: &str,
+    ) -> Result<Option<AutomationRecord>, String> {
+        self.mark_notice_raised(automation_id, notice)
+            .map_err(|error| error.to_string())
+    }
+
+    fn record_run(
+        &self,
+        automation_id: &str,
+        fired_at_ms: f64,
+    ) -> Result<Option<AutomationRecord>, String> {
+        self.record_run(automation_id, fired_at_ms)
+            .map_err(|error| error.to_string())
+    }
+
+    fn begin_run(
+        &self,
+        automation_id: &str,
+        trigger: &str,
+        fired_at_ms: f64,
+        event: Option<&str>,
+        run_id: Option<&str>,
+        coalesced_run_ids: Option<&[String]>,
+    ) -> Result<Option<AutomationRun>, String> {
+        self.begin_run(
+            automation_id,
+            trigger,
+            fired_at_ms,
+            event,
+            run_id,
+            coalesced_run_ids,
+        )
+        .map_err(|error| error.to_string())
+    }
+
+    fn finish_run(
+        &self,
+        automation_id: &str,
+        run_id: &str,
+        status: &str,
+        finished_at_ms: f64,
+        detail: Option<&str>,
+    ) -> Result<Option<AutomationRecord>, String> {
+        self.finish_run(automation_id, run_id, status, finished_at_ms, detail)
+            .map_err(|error| error.to_string())
+    }
+}
+
 impl FireAutomationArgs {
     pub fn manual(agent_id: impl Into<String>, automation: AutomationRecord, fired_at_ms: f64) -> Self {
         Self {
@@ -125,7 +214,7 @@ impl AutomationRunPath {
 
     pub fn fire_automation_with<Execute>(
         &self,
-        store: &FileAutomationStore,
+        store: &dyn AutomationRunStore,
         args: FireAutomationArgs,
         execute: Execute,
     ) -> Result<Option<FireAutomationOutcome>, String>
@@ -137,7 +226,7 @@ impl AutomationRunPath {
 
     pub fn fire_automation_with_on_duplicate<Execute, OnDuplicate>(
         &self,
-        store: &FileAutomationStore,
+        store: &dyn AutomationRunStore,
         args: FireAutomationArgs,
         on_duplicate: OnDuplicate,
         execute: Execute,
@@ -172,7 +261,7 @@ impl AutomationRunPath {
 
     fn fire_automation_inner<Execute>(
         &self,
-        store: &FileAutomationStore,
+        store: &dyn AutomationRunStore,
         args: &FireAutomationArgs,
         execute: Execute,
     ) -> Result<Option<FireAutomationOutcome>, String>
@@ -345,7 +434,7 @@ impl AutomationRunPath {
 }
 
 fn finish_run(
-    store: &FileAutomationStore,
+    store: &dyn AutomationRunStore,
     automation_id: &str,
     run_id: Option<&str>,
     status: &str,

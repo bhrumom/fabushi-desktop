@@ -886,8 +886,10 @@ mutex while `AutomationRunPath` directly mutated the per-agent
 state. The existing `SandAgentSessionStore` now exposes a narrow wrapper over
 `ProductionSessionWorkers::with_agent_admitted_filesystem_mutation`, and the
 automation runtime uses it around definition CRUD, spend-guard answer/update,
-manual and background run-store writes, including the synchronous provider
-execution interval. `AutomationRunPath` remains the run behavior owner and
+and each manual/background run-store mutation. The synchronous provider
+execution interval retains only the run-path duplicate-run guard, so
+Runner-side state mutations can safely re-enter the session owner.
+`AutomationRunPath` remains the run behavior owner and
 `ProductionSessionWorkers` remains the session/deletion admission owner; no
 second automation or session state owner was introduced.
 
