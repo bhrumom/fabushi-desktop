@@ -145,6 +145,10 @@ persisted `sessionKey` inside its SQLite transaction. Presence of an entry is
 not enough, because an out-of-transaction provenance read must not allow one
 admitted session to mutate a legacy or differently bound entry in the same
 agent database.
+The session-admitted append owner likewise requires every inserted entry to
+carry the exact admitted `sessionKey` inside the same transaction; it rejects
+missing or mismatched provenance instead of silently creating a session-bound
+row from an unbound payload.
 
 The bounded outgoing-media settlement now carries the producer's canonical
 session key through `ProductionSendMessageSink`, `ProductionTranscriptRuntime`,

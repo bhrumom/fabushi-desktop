@@ -219,6 +219,9 @@ Session-admitted transcript updates must validate the target entry's persisted
 Entry existence alone is insufficient: a caller must not use one admitted
 session key to mutate a legacy or differently bound entry in the same agent
 database after an out-of-transaction provenance read.
+The corresponding session-admitted append owner applies the same invariant to
+every inserted entry; missing or mismatched provenance is rejected in the
+append transaction rather than silently converted into a session-bound row.
 
 ## Direct media-custody boundary recheck — 2026-11-01
 

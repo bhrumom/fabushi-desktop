@@ -1983,6 +1983,17 @@ impl SandAgentDb {
                 if entry.get("kind").and_then(serde_json::Value::as_str).is_none() {
                     continue;
                 }
+                if entry
+                    .get("sessionKey")
+                    .and_then(serde_json::Value::as_str)
+                    .map(str::trim)
+                    != Some(session_key)
+                {
+                    return Err(AgentDbProjectionError::WorkAdmissionInvalid(
+                        "session-scoped transcript append requires matching entry provenance"
+                            .into(),
+                    ));
+                }
                 if statement.execute(params![id, entry.to_string()])? > 0 {
                     inserted.push(entry.clone());
                 }
@@ -2065,6 +2076,16 @@ impl SandAgentDb {
                     };
                     if entry.get("kind").and_then(serde_json::Value::as_str).is_none() {
                         continue;
+                    }
+                    if entry
+                        .get("sessionKey")
+                        .and_then(serde_json::Value::as_str)
+                        .map(str::trim)
+                        != Some(expected_session_key.trim())
+                    {
+                        return Err(AgentDbProjectionError::WorkAdmissionInvalid(
+                            "media settlement requires matching entry provenance".into(),
+                        ));
                     }
                     if statement.execute(params![id, entry.to_string()])? > 0 {
                         inserted.push(entry.clone());

@@ -590,7 +590,8 @@ fn admitted_transcript_append_is_rejected_after_archive_without_partial_write() 
         "id": "entry-before-archive",
         "kind": "message",
         "role": "user",
-        "content": "accepted"
+        "content": "accepted",
+        "sessionKey": session_key
     });
     assert_eq!(
         owner
@@ -598,6 +599,19 @@ fn admitted_transcript_append_is_rejected_after_archive_without_partial_write() 
             .expect("append while admitted"),
         1
     );
+
+    let unbound_entry = serde_json::json!({
+        "id": "entry-without-provenance",
+        "kind": "message",
+        "role": "user",
+        "content": "must be rejected",
+    });
+    let provenance_error = owner
+        .append_transcript_entries_if_session_admitted(session_key, &[unbound_entry])
+        .expect_err("session-bound append must require entry provenance");
+    assert!(provenance_error
+        .to_string()
+        .contains("matching entry provenance"));
 
     owner
         .transition_session_work_archive(
@@ -615,7 +629,8 @@ fn admitted_transcript_append_is_rejected_after_archive_without_partial_write() 
         "id": "entry-after-archive",
         "kind": "message",
         "role": "user",
-        "content": "must not be written"
+        "content": "must not be written",
+        "sessionKey": session_key
     });
     let error = owner
         .append_transcript_entries_if_session_admitted(session_key, &[rejected_entry])
