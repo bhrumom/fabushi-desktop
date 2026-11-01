@@ -106,7 +106,11 @@ call blocks in Responses, Chat Completions, and Cursor, with exact
 and cross-message duplicates. It also noted that a future strict one-result per
 call contract would need distinct seen/pending/consumed state; this slice keeps
 that behavior unchanged and records it as follow-up rather than silently
-claiming it is covered. No local executable verification was requested or run.
+claiming it is covered. The post-change review of commit `11f8a78c1` passed
+with no blocking defect: registration timing, projection-scoped state, both
+duplicate scenarios, and exact-subject separation were accepted. No local
+executable verification was requested or run; executable verification and
+acceptance remain pending.
 
 Replay attachment ownership is now narrowed to the existing attachment owner:
 it may expose a read-only provider-usable HTTP(S) URL projection for a durable
