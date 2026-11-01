@@ -93,6 +93,7 @@ use super::session_profile_files::{
     get_agent_profile_text as read_agent_profile_text, write_agent_profile_update,
 };
 use super::session_mutations::set_agent_avatar_bytes as mutate_agent_avatar_bytes;
+use super::typed_replay::{TypedReplayEntry, project_typed_replay_entries};
 use super::production_agent_store::{ProductionAgentStore, ProductionWorkerBlobStore};
 use super::native_messaging::{
     FabushiNativeMessagingClient, FabushiRemoteHumanAttachment, FabushiRemoteHumanCall,
@@ -2417,6 +2418,17 @@ impl ProductionSessionWorkers {
             .map_err(|error| error.to_string())?;
         hide_session_work_receipts(&mut entries);
         Ok(entries)
+    }
+
+    /// Read the canonical compacted replay through the strict typed transcript
+    /// boundary. Unsupported rows are rejected before any inference owner can
+    /// serialize them into provider text.
+    pub fn read_agent_typed_compacted_transcript_entries(
+        &self,
+        agent_id: &str,
+    ) -> Result<Vec<TypedReplayEntry>, String> {
+        let entries = self.read_agent_compacted_transcript_entries(agent_id)?;
+        project_typed_replay_entries(&entries).map_err(|error| error.to_string())
     }
 
     pub fn update_agent_transcript_entry(

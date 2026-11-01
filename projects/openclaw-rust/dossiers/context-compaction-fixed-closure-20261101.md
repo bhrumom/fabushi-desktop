@@ -234,3 +234,42 @@ modify `upstream.lock.json`, inventory identity, parity-ledger status, or any
 global completion flag. The local OCRM generator/validator/build/test/lint and
 Actions authority lanes remain intentionally untouched during the development
 freeze.
+
+## Typed replay boundary audit (2026-11-01)
+
+The current Fabushi production boundary cannot yet carry the fixed OpenClaw
+compaction projection without losing transcript semantics. The inference
+owner's `ProviderMessage` at
+`source/host/src/extensions/inference/provider_session.rs:89-92` contains only
+`role` and text `content`. `source/host/app/src/main.rs:6989-7010` decodes
+request rows into that two-field shape, and
+`source/host/src/runner/routed_provider_runtime.rs:404-414` forwards the same
+flattened representation to the provider attempt executor.
+
+The canonical transcript owner is richer than that boundary: transcript
+validation accepts `send-message`, `message`, `user-attachment`, `tool-call`,
+`notice`, and `event` rows in
+`source/host/src/extensions/session/agent_db_serde.rs:108-132`; production
+message rows can also carry `attachments` (for example
+`source/host/src/extensions/session/production.rs:3560-3578`), while the
+fixed OpenClaw compaction source explicitly preserves compaction summaries,
+tool calls, tool results, and non-text content. The existing replay API
+`ProductionSessionWorkers::read_agent_compacted_transcript_entries` therefore
+returns JSON rows but has no production consumer that can validate and project
+those typed cases into inference input.
+
+The first owner-local repair is now present in
+`source/host/src/extensions/session/typed_replay.rs`, exposed through
+`ProductionSessionWorkers::read_agent_typed_compacted_transcript_entries`.
+It preserves summary metadata, user/assistant/tool roles, tool-call/result
+identity, and attachment values, and rejects legacy unpaired `tool-call` rows
+instead of stringifying them. This is an owner-boundary contract and focused
+test surface only; no Runner or provider path calls it yet.
+
+This is a fail-closed `CC-07`/`AC-CC-05` boundary, not permission to stringify
+unsupported rows or widen `ProviderMessage` opportunistically. Until the
+owning inference/provider contract defines and verifies a typed message
+representation plus provider-specific serialization for summary context,
+assistant/user roles, tool-call/tool-result pairing, and attachments, the
+production replay consumer remains unresolved and compaction wiring must not
+be enabled.

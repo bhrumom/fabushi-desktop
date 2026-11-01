@@ -270,9 +270,9 @@ redacted content, test run identities, and exact-head Actions artifacts.
 | CC-04 | pending | Existing summarization binding is insufficient to prove compaction behavior. |
 | CC-05 | pending | Requires production compaction state and cancellation contract. |
 | CC-06 | blocked | No compaction entry is committed or replayed by a production caller. |
-| CC-07 | pending | Current `ProviderMessage` only carries role/text; a typed replay adapter for tool, result, and attachment semantics is not present. |
+| CC-07 | blocked | A strict owner-local typed replay projection now preserves summary, roles, tool-call/result identity, and attachments, and rejects unsupported rows. The owning inference/provider contract still has no verified serialization path; `ProviderMessage` remains role/text-only and unsupported rows remain fail-closed. |
 | AC-CC-01 | pending | Exact current-subject dossier exists, but complete transitive source/package/archive/license closure and Actions receipt are not yet present. |
 | AC-CC-02 | blocked | Owner commit/replay exists, but the production producer→owner→next-turn consumer chain is still missing; request `messages` cannot serve as that proof. |
 | AC-CC-03 | pending | Frozen verification has not run. |
 | AC-CC-04 | passed | Current audit explicitly excludes fixtures, helpers, and prompt epochs as acceptance evidence. |
-| AC-CC-05 | pending | No newly constructed production turn currently consumes a typed compacted projection. |
+| AC-CC-05 | blocked | No newly constructed production turn consumes a typed compacted projection, and the current inference boundary cannot preserve summary, tool-pair, or attachment semantics without an owner-approved typed provider contract. |
