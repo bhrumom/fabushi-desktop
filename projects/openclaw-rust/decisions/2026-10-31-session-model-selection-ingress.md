@@ -8,8 +8,8 @@ Responsibilities: `OCRM-RESP-MODEL-PICKER-001`, `OCRM-RESP-SESSION-MODEL-OVERRID
 ## Evidence subject
 
 This boundary was revalidated against the current chat branch at commit
-`d34be086cfc9e79af3986383360efe3445dc613c`, tree
-`d22effe83a0edc179aacb667cfd49cbb23c1788e`. The fixed OpenClaw implementation
+`e4117e2bc0a6ce2e12f0b2641e0d45bf30e94837`, tree
+`6a6c6f38cbbd453725a5e7f7814449dc0908462b`. The fixed OpenClaw implementation
 authority remains commit `ad8d12f126d29b0db204187adf5092db80294e70`, tree
 `04ccce62f1d74dc8e0c88290ae8ded027b7b0f16`; moving discovery candidates are
 not substituted for it. This provenance refresh does not promote wiring,
@@ -25,10 +25,10 @@ Fabushi already has two valid owner/state slices:
 - `source/host/src/extensions/session/agent_session.rs` persists an applied
   result as the agent-scoped `sessionModelSelection` SQLite KV.
 
-The production turn consumer is also present: `runner.startRoutedProvider`
-reads the persisted entry at `source/host/app/src/main.rs:6434-6436` and
+The production turn consumer is also present: `start_routed_provider_task`
+reads the persisted entry at `source/host/app/src/main.rs:7528-7530` and
 projects its model override and thinking level into `SandSessionOptions` at
-`:7296-7312`.
+`:8424-8440`.
 
 What is missing is the mutation producer. A non-test search found no caller of
 `SandAgentSessionStore::apply_session_model_selection`. The public Gateway
@@ -79,7 +79,13 @@ semantics and the negative invariant that agent defaults are not mutated.
 
 ## Verification and acceptance
 
-Static evidence currently proves the owner/state and consumer edges only.
+Static evidence at the exact subject above proves the owner/state and consumer
+edges only. The current gateway dispatch is visible at
+`source/host/app/src/main.rs:3647-3658`; its authenticated `sessions.patch`
+handler at `:4144-4255` only archives/restores the canonical session and does
+not mutate model selection. The model-selection owner definition remains at
+`source/host/src/extensions/session/agent_session.rs:266-287`, with no
+non-test caller in the exact source search.
 Focused tests and frozen Actions evidence must be added after the real
 producer exists; no local OCRM build/test or CI is run during the development
 freeze. The ADR does not promote any completion flag.

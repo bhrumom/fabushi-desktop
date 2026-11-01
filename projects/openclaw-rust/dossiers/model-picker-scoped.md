@@ -93,9 +93,9 @@ session-action caller are available in existing owners.
 
 The consumer portion of the preceding audit is superseded by the current
 checkout. `start_routed_provider_task` reads the persisted entry at
-`source/host/app/src/main.rs:6434-6436`, and the worker projects its
+`source/host/app/src/main.rs:7528-7530`, and the worker projects its
 `model_override` and `thinking_level` into `SandSessionOptions` at
-`source/host/app/src/main.rs:7296-7312`. The existing Runner/Inference
+`source/host/app/src/main.rs:8424-8440`. The existing Runner/Inference
 consumer edge is therefore confirmed.
 
 The missing edge is the producer: no non-test caller of
@@ -132,3 +132,24 @@ visibility, operator authority, placement, and generation context from their
 canonical owners. Accepting those policy inputs from request JSON, or adding a
 thin model-selection gateway route solely to reach the existing method, remains
 out of scope under the ADR.
+
+## 2026-11-01 exact-head evidence refresh
+
+The preceding negative producer audit was revalidated against commit
+`e4117e2bc0a6ce2e12f0b2641e0d45bf30e94837`, tree
+`6a6c6f38cbbd453725a5e7f7814449dc0908462b`. The gateway dispatch at
+`source/host/app/src/main.rs:3647-3658` exposes session listing, creation,
+deletion, chat send/abort, and an authenticated-context-only `sessions.patch`,
+but no model-selection mutation. The `sessions.patch` implementation at
+`:4144-4255` accepts only archive lifecycle fields and calls the session
+archive owner.
+
+The sole non-test owner entry point remains
+`source/host/src/extensions/session/agent_session.rs:266-287`; an exact
+repository search for `apply_session_model_selection(` finds that definition,
+the inference owner, and contract tests only. The model-picker presentation
+validator at `source/host/src/extensions/interactive/payload_service.rs:271-277`
+still has no action executor or authenticated session context. Therefore the
+consumer edge is wired, while `BL-MODEL-PICKER-EXEC-WIRING-001` and
+`BL-SESSION-MODEL-MUTATION-WIRING-001` remain `wiring=not-wired`,
+`verification=not-run`, and `acceptance=pending`.
