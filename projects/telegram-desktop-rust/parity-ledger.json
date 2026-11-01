@@ -3,7 +3,7 @@
   "project_id": "TDRP-001",
   "spec_revision": 9,
   "upstream_commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
-  "target_commit": "a32d435e5363804d6637867a662c00bf661e9ae2",
+  "target_commit": "c6c4dc28262154d2af11c467cd0ae4b731c52916",
   "coverage": {
     "source_entries_total": 16202,
     "unknown": 16172,
@@ -28787,7 +28787,10 @@
         "desktop-telegram-storage-unchanged-blob:e6cc314ec749f8a258bfe0125a25beb3613eb2ca",
         "desktop-account-service-unchanged-blob:8e26fd5eab70d27ee553791ca30a8d6147358bf5",
         "desktop-web-proxy-unchanged-blob:4c91f6e4e6b8d37d84afd40aae6af9fbbe7d80d4",
-        "desktop-network-unchanged-blob:241cd8ec792070a8de8af9ec6ca5b317e34376d1"
+        "desktop-network-unchanged-blob:241cd8ec792070a8de8af9ec6ca5b317e34376d1",
+        "platform-core-final-source-compliance-commit:e987637031705b3c3ef4612c1fd9524d9ee6756c",
+        "platform-core-final-spec-blob:33c419f1ac5a833e4b41f7f16602c9fc076d12a0",
+        "desktop-bookkeeping-commit:c6c4dc28262154d2af11c467cd0ae4b731c52916"
       ],
       "test_evidence": [
         "Authored contract vectors are recorded in docs/specs/telegram-proxy-settings-state-persistence.md@e31a0d4f4d9f9286f7af35562c7d9edac6687487; no executable contract was run.",
@@ -28925,7 +28928,7 @@
       "acceptance_reviewer": null,
       "reviewer": null,
       "license_and_provenance": "Behavioral provenance is fixed-U Core::SettingsProxy/Core::Settings/localstorage/connection_box/application/proxy_rotation_manager. No upstream C++ copied and no parallel settings store introduced.",
-      "notes": "Task round82/source evidence round113. Exact proxy list/selected/mode/rotation state and persistence semantics are understood and carrier-independent, but the current Fabushi checkpoints have no matching canonical product Settings/application owner. Existing app-host ui_state, Telegram encrypted storage, account service, network and rotation runtime are rejected as state owners. Recorded as mapped/pending with no production delta; authored contract vectors are not executed. Stage-A validation_status=not-run and accepted=false.",
+      "notes": "Task round82/source evidence round113. Exact proxy list/selected/mode/rotation state and persistence semantics are understood and carrier-independent, but the current Fabushi checkpoints have no matching canonical product Settings/application owner. Existing app-host ui_state, Telegram encrypted storage, account service, network and rotation runtime are rejected as state owners. Recorded as mapped/pending with no production delta; authored contract vectors are not executed. Stage-A validation_status=not-run and accepted=false. Final platform source compliance is e987637031705b3c3ef4612c1fd9524d9ee6756c / spec blob 33c419f1ac5a833e4b41f7f16602c9fc076d12a0; R1-R12/R15 and AC-1..AC-8 are source-review passed while R13-R14 remain explicitly blocked on the missing canonical Fabushi Settings/application owner. Executable validation remains not-run.",
       "test_execution_evidence": [],
       "validation_status": "not-run",
       "accepted": false

@@ -1884,3 +1884,12 @@ Therefore `TDRP-R9-PROXY-SETTINGS-STATE-PERSISTENCE-001` is added as `mapped / p
 Coverage becomes `source_entries_total=16202, responsibilities_total=113, unknown=16172, unread=16145, omitted=0, unmapped_responsibilities=0`; global unknown/unread remain unchanged by this focused source review.
 
 No GitHub Actions/status/check query or trigger, build, typecheck, lint, schema validator, generator, dependency resolution, lock regeneration, unit/contract/integration/E2E execution, package, deployment, installation or runtime acceptance was performed.
+
+
+### Round 113 final source-level compliance
+
+Platform-core final source-level compliance is `e987637031705b3c3ef4612c1fd9524d9ee6756c` / spec blob `33c419f1ac5a833e4b41f7f16602c9fc076d12a0`. It records exact fixed-U proxy settings state/mutation/persistence semantics and the unique `Core::SettingsProxy` source ownership chain. R1-R12/R15 and AC-1..AC-8 are source-review passed; R13-R14 remain explicitly blocked because the current Fabushi checkpoints have no canonical product Settings/application state owner. Existing AppHost `ui_state`, Telegram encrypted runtime storage, account-service, telegram-network and rotation runtime remain rejected as authoritative settings owners.
+
+The unique `TDRP-R9-PROXY-SETTINGS-STATE-PERSISTENCE-001` row remains `mapped / pending / validation_status=not-run / accepted=false`. No production blob changed; the responsibility is carrier-independent but cannot be shipped without the canonical unified Settings owner.
+
+No GitHub Actions/status/check query or trigger, build, typecheck, lint, schema validator, generator, dependency resolution, lock regeneration, unit/contract/integration/E2E execution, package, deployment, installation or runtime acceptance was performed.
