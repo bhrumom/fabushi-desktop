@@ -642,3 +642,14 @@ Routing qualification is independent from mode selection. A proposal reaches the
 Composition evidence must identify the direct Claude command-host consumer, the shared skill's documented `/code-health scan route` and `/code-health survey <area>` invocations, and the absence of a fixed-U repository file-level import of the command wrapper. The OpenAI `$code-health` registration is a peer adapter and cannot become a second behavior or state authority.
 
 Stage-A contracts authored but not run: `CONTRACT-TDRP-CODE-HEALTH-CLAUDE-HOST-AUTHORITY-001`, `CONTRACT-TDRP-CODE-HEALTH-CLAUDE-INVOCATION-001`, `CONTRACT-TDRP-CODE-HEALTH-CLAUDE-DELEGATION-001`, `CONTRACT-TDRP-CODE-HEALTH-CLAUDE-ROUTING-001`, `INT-TDRP-CODE-HEALTH-CLAUDE-COMPOSITION-001`, and `FAULT-TDRP-CODE-HEALTH-CLAUDE-ROUTE-FENCE-001`.
+
+
+#### Claude continue command-adapter qualification
+
+Qualify fixed-U `.claude/commands/continue.md@e81c86031f2e501f30d2b6ed908fb03d648324c8` as a thin Claude host adapter over the existing continue task/process scheduler plus generic Claude workflow adapter. Positive qualification proves complete loading of both dependencies before scheduling, read-only queue behavior when no batch specification is present, exact freeze of one selected batch with active-task precedence, and strict exclusion of unrelated later queue additions.
+
+Batch qualification allows only canonical split replacements and follow-ups routed from results produced by the same invocation to extend the effective batch. Source-lineage qualification keeps startup and pre-Phase-1 safe-switch decisions in the parent command, keeps post-Phase-1 mismatch task-local, and forbids cherry-pick/rebase/merge/backport/branch-sync queue work. Delegation qualification proves one stateful performer, fresh split worker, bounded routing/consolidation lanes, complete host-adapter loading by publication-owning workers, and no duplicate writer/scheduler authority.
+
+Review-provider qualification proves one startup choice: explicit no-Codex arguments select `native`, otherwise `codex`; provider choice is carried into performer prompts without changing shared artifacts, verdicts, task state, routing, or publication. Negative controls reject host-side task ownership, hidden batch widening, parallel performers, in-flight routing/consolidation at invocation end, host replies as durable publication, and any Stage-A execution.
+
+Stage-A contracts authored but not run: `CONTRACT-TDRP-CONTINUE-CLAUDE-HOST-AUTHORITY-001`, `CONTRACT-TDRP-CONTINUE-CLAUDE-BATCH-FREEZE-001`, `CONTRACT-TDRP-CONTINUE-CLAUDE-SOURCE-LINEAGE-001`, `CONTRACT-TDRP-CONTINUE-CLAUDE-DELEGATION-001`, `CONTRACT-TDRP-CONTINUE-CLAUDE-REVIEW-PROVIDER-001`, `CONTRACT-TDRP-CONTINUE-CLAUDE-ROUTING-LANE-001`, `INT-TDRP-CONTINUE-CLAUDE-COMPOSITION-001`, and `FAULT-TDRP-CONTINUE-CLAUDE-DUPLICATE-SCHEDULER-001`.

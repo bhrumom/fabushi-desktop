@@ -605,3 +605,14 @@ Invocation evidence records the raw `$ARGUMENTS` value and the selected declared
 Consumer/provenance evidence identifies Claude Code command discovery/user invocation as the direct host consumer, records the shared skill's documented scheduled/manual slash-command entrypoints, and records that no fixed-U repository file imports `.claude/commands/code-health.md` by path. The OpenAI `$code-health` registration is retained as a peer-host comparison, not a caller or second authority. Failure evidence keeps missing/partial adapter or skill reads, implicit route, invented host-side state/approval/publication, and Stage-A execution as non-passing conditions.
 
 During Stage A these contracts are source-authored only. No scan, survey, check, helper, Agent, routing, publication, build, validator, test, runtime evidence, or acceptance may be represented as executed; `validation_status` remains `not-run` and `accepted=false`.
+
+
+### Claude continue command-adapter evidence
+
+For `TDRP-R9-CONTINUE-CLAUDE-COMMAND-ADAPTER-001`, retain exact fixed-U source identity and complete command content together with exact dependency identities for the generic Claude adapter and shared continue skill. Evidence must distinguish host metadata/tool allowance from semantic authority: the wrapper is not task state, queue state, source-lineage state, routing state, or publication authority.
+
+Invocation evidence records the user batch specification, the selected shared-skill mode, startup active-task precedence, frozen initial ids, and any later effective-batch rewrite caused only by canonical split replacements or routed follow-ups produced by this invocation. A later unrelated queue addition is negative evidence. No-specification evidence is read-only queue plus user question only.
+
+Scheduler evidence records parent-owned source-lineage timing, single-performer discipline, split worker identity, routing/consolidation lane bounds, and the requirement that publication-owning workers completely read the Claude adapter before the applicable shared skill/reference. Review evidence records the one startup provider decision and proves that provider selection does not change canonical artifacts/verdict/task/publication semantics. Consumer evidence identifies Claude Code command discovery/user `/continue` invocation as the direct host consumer; the OpenAI `$continue` registration and Grok `/continue` command are peer host adapters, not callers.
+
+All Stage-A evidence is source-authored only. Missing dependency read, hidden batch widening, duplicate performer/scheduler, branch-integration queue work, unfinished routing/consolidation at invocation end, host reply treated as publication, or any executable validation in Stage A is non-passing. `validation_status` remains `not-run`; `accepted=false`.
