@@ -1377,3 +1377,23 @@ The unique ledger adds `TDRP-R9-MTPROTO-P-Q-INNER-DATA-ADJACENT-WIRE-001` as `im
 Auth-key binding/persistence/expiry/renewal, connection scheduling/racing/send retry, arbitrary request histories, `gzip_packed`, complete difference/differenceSlice decoding/application, broader fixed-U source/legal closure, Stage-B executable evidence and independent release ACCEPT remain open.
 
 No GitHub Actions/status/check query or trigger, build, typecheck, lint, schema validator, generator, unit/contract/integration/E2E test, package, deployment, installation, or runtime acceptance was performed.
+
+
+### Round 99 final source-level compliance
+
+Platform-core final compliance is `05b06d5f2f7d39280c0502cffcd091e6d67b0ed8` / spec blob
+`d28224576e5d9571c4e2b74e0798e42450af1519`, referencing desktop bookkeeping checkpoint
+`798965239cb0a72176de3106e4878809b4548bca`. The unique `TDRP-R9-MTPROTO-P-Q-INNER-DATA-ADJACENT-WIRE-001`
+responsibility is `implemented / coverage_disposition=rewritten / validation_status=not-run / accepted=false`.
+
+Production disposition remains **no production delta**. Canonical production handshake/lib blobs remain
+`87616f4b96a1775455da42b0bbed77711fb3c9f6` / `abab39e42f100972484191f0e52e9edd9b88c6cf`.
+The canonical/desktop authored contract blob is `9c5ce9630c3865f19869b372d1f8f88d2d665487`.
+Fixed-U `DcKeyCreator::pqAnswered` always supplies `protocolDcId`, so the no-dc
+`p_q_inner_data#83c95aec` and `p_q_inner_data_temp#3c6a84d4` remain no-independent-shipping-reachability
+dispositions and no dead builders were introduced.
+
+Coverage is `responsibilities_total=100, unknown=16172, unread=16145, omitted=0, unmapped_responsibilities=0`.
+Auth-key binding/persistence/expiry/renewal, connection scheduling/racing/send retry, arbitrary request histories,
+gzip, complete difference/differenceSlice decoding/application, broader source/legal closure, Stage-B executable
+evidence and independent release ACCEPT remain open. No executable validation was performed.

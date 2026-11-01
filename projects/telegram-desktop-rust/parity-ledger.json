@@ -25217,7 +25217,10 @@
         "platform-core-contract-blob:9c5ce9630c3865f19869b372d1f8f88d2d665487",
         "desktop-contract-mirror-commit:8c1866bf054281a4518d605ecbdd811300b1e8c4",
         "path:source/mahayana/mahayana-rs/providers/telegram-protocol/src/lib.rs@abab39e42f100972484191f0e52e9edd9b88c6cf",
-        "path:source/mahayana/mahayana-rs/providers/telegram-protocol/tests/protocol_contract.rs@9c5ce9630c3865f19869b372d1f8f88d2d665487"
+        "path:source/mahayana/mahayana-rs/providers/telegram-protocol/tests/protocol_contract.rs@9c5ce9630c3865f19869b372d1f8f88d2d665487",
+        "platform-core-final-compliance-commit:05b06d5f2f7d39280c0502cffcd091e6d67b0ed8",
+        "platform-core-final-spec-blob:d28224576e5d9571c4e2b74e0798e42450af1519",
+        "desktop-round68-bookkeeping-commit:798965239cb0a72176de3106e4878809b4548bca"
       ],
       "test_evidence": [
         "Canonical and desktop tracked authored-only focused contract covers exact p_q_inner_data_dc constructor/field order/signed dc_id/EOF and factor-mismatch rejection; not run."
@@ -25340,7 +25343,7 @@
       "acceptance_reviewer": null,
       "reviewer": null,
       "license_and_provenance": "Behavioral responsibility is anchored to fixed-U telegramdesktop/tdesktop Telegram/SourceFiles/mtproto/scheme/mtproto.tl@76225965bfc794388db241f3f760db8ab79e84f8 and shipping Telegram/SourceFiles/mtproto/details/mtproto_dc_key_creator.cpp@13c57454f14b814b5923ea253048fb881ad8cf03. Implementation is source-neutral Rust and copies no upstream C++ implementation.",
-      "notes": "Stage A source-level adjacent revalidation. Existing build_p_q_inner_data_dc plus AuthKeyHandshake persistent request preparation already close the fixed-U shipping *_dc responsibility, so production disposition is no-production-delta. Fixed-U DcKeyCreator always supplies protocolDcId and selects *_dc variants, so p_q_inner_data#83c95aec and p_q_inner_data_temp#3c6a84d4 have no independent shipping responsibility in this path and no dead builders are added. A focused contract was authored/mirrored but not executed; validation_status=not-run and accepted=false. Final source-level compliance is pending post-bookkeeping platform spec update.",
+      "notes": "Stage A source-level adjacent revalidation. Existing build_p_q_inner_data_dc plus AuthKeyHandshake persistent request preparation already close the fixed-U shipping *_dc responsibility, so production disposition is no-production-delta. Fixed-U DcKeyCreator always supplies protocolDcId and selects *_dc variants, so p_q_inner_data#83c95aec and p_q_inner_data_temp#3c6a84d4 have no independent shipping responsibility in this path and no dead builders are added. A focused contract was authored/mirrored but not executed; validation_status=not-run and accepted=false. Final source-level compliance is platform-core 05b06d5f2f7d39280c0502cffcd091e6d67b0ed8/spec blob d28224576e5d9571c4e2b74e0798e42450af1519; desktop bookkeeping checkpoint is 798965239cb0a72176de3106e4878809b4548bca. Executable validation remains not-run.",
       "test_execution_evidence": [],
       "validation_status": "not-run",
       "accepted": false,
