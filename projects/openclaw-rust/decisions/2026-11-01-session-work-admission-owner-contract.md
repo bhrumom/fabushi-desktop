@@ -191,7 +191,10 @@ fence.
 
 The Runner `SendToAgent` sender-side transcript producer now carries its
 already-owned `worker_session_key` through `ProductionAgentManagementSink` and
-`ProductionAgentToAgentMessaging` into the session-admitted append. The
+`ProductionAgentToAgentMessaging` into the session-admitted append only when
+the owner-local admission record confirms that key. A group-member worker
+whose group selector has no matching owner record remains on the generic
+archive-fenced compatibility path until that record exists. The
 recipient wake/inbound path remains compatibility-only because it does not
 carry a canonical target session selector; no `agent:{id}:main` key is derived
 there. The generic owner fence still rejects deletion-pending and archived

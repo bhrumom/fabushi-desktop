@@ -7282,6 +7282,12 @@ fn start_routed_provider_task(
         .filter(|value| !value.is_empty())
         .map(ToOwned::to_owned)
         .unwrap_or_else(|| format!("agent:{agent_id}:main"));
+    let worker_session_admitted_key = session_workers
+        .read_session_work_admission(&agent_id)
+        .map_err(GatewayCommandError::Internal)?
+        .and_then(|record| {
+            (record.session_key == worker_session_key).then(|| worker_session_key.clone())
+        });
     let persisted_session_model = SandAgentSessionStore::new(Arc::clone(&session_workers))
         .read_session_model_entry(&agent_id)
         .map_err(GatewayCommandError::Internal)?;
@@ -9567,11 +9573,11 @@ fn start_routed_provider_task(
                 );
             })).with_group_post({
                 let group_deps = worker_group_post_deps.clone();
-                let group_session_key = worker_session_key.clone();
+                let group_session_key = worker_session_admitted_key.clone();
                 Arc::new(move |from_agent_id, group_id, message, is_priority| {
                     post_agent_message_to_group_with_session(
                         group_deps.clone(),
-                        Some(group_session_key.as_str()),
+                        group_session_key.as_deref(),
                         from_agent_id,
                         group_id,
                         message,
@@ -9587,7 +9593,7 @@ fn start_routed_provider_task(
                     messaging: agent_messaging,
                     agent_messages: Arc::clone(&turn_agent_messages),
                     agent_id: agent_id.clone(),
-                    session_key: Some(worker_session_key.clone()),
+                    session_key: worker_session_admitted_key.clone(),
                 },
             );
             let base_send_message_sink: Arc<dyn SendMessageSink> = Arc::new(
