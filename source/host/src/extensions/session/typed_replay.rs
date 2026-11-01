@@ -137,18 +137,34 @@ fn project_message(
         "tool" => ReplayRole::Tool,
         role => return Err(malformed(index, format!("unsupported message role {role:?}"))),
     };
+    if role != ReplayRole::Assistant && object.get("toolCalls").is_some() {
+        return Err(malformed(
+            index,
+            "toolCalls are only valid on assistant replay messages",
+        ));
+    }
+    if role == ReplayRole::Tool && object.get("attachments").is_some() {
+        return Err(malformed(
+            index,
+            "attachments are not valid on tool replay messages",
+        ));
+    }
     let id = object
         .get("id")
         .and_then(Value::as_str)
         .map(ToOwned::to_owned);
-    let content = object
-        .get("content")
-        .map(|value| match value {
-            Value::String(text) => Ok(vec![ReplayContentPart::Text(text.clone())]),
-            other => Ok(vec![ReplayContentPart::Structured(other.clone())]),
-        })
-        .transpose()?
-        .unwrap_or_default();
+    let content = if role == ReplayRole::Tool {
+        Vec::new()
+    } else {
+        object
+            .get("content")
+            .map(|value| match value {
+                Value::String(text) => Ok(vec![ReplayContentPart::Text(text.clone())]),
+                other => Ok(vec![ReplayContentPart::Structured(other.clone())]),
+            })
+            .transpose()?
+            .unwrap_or_default()
+    };
     let attachments = object
         .get("attachments")
         .map(|value| {
@@ -329,5 +345,67 @@ mod tests {
         })])
         .expect_err("legacy tool-call must fail closed");
         assert_eq!(error, TypedReplayError::UnpairedToolCall { index: 0 });
+    }
+
+    #[test]
+    fn rejects_tool_calls_on_non_assistant_replay_messages() {
+        let error = project_typed_replay_entries(&[serde_json::json!({
+            "kind": "message",
+            "role": "user",
+            "content": "not a tool call owner",
+            "toolCalls": [{
+                "id": "call-1",
+                "name": "read",
+                "arguments": {"path": "a"}
+            }]
+        })])
+        .expect_err("non-assistant tool calls must fail closed");
+        assert_eq!(
+            error,
+            TypedReplayError::Malformed {
+                index: 0,
+                detail: "toolCalls are only valid on assistant replay messages".into(),
+            }
+        );
+    }
+
+    #[test]
+    fn rejects_attachments_on_tool_result_messages() {
+        let error = project_typed_replay_entries(&[serde_json::json!({
+            "kind": "message",
+            "role": "tool",
+            "toolCallId": "call-1",
+            "toolName": "read",
+            "result": {"ok": true},
+            "attachments": [{"file_path": "/tmp/result.txt"}]
+        })])
+        .expect_err("tool result attachments must fail closed");
+        assert_eq!(
+            error,
+            TypedReplayError::Malformed {
+                index: 0,
+                detail: "attachments are not valid on tool replay messages".into(),
+            }
+        );
+    }
+
+    #[test]
+    fn tool_result_content_fallback_is_not_replayed_as_an_extra_content_part() {
+        let projected = project_typed_replay_entries(&[serde_json::json!({
+            "kind": "message",
+            "role": "tool",
+            "toolCallId": "call-1",
+            "toolName": "read",
+            "content": {"ok": true}
+        })])
+        .expect("tool result content fallback");
+        let TypedReplayEntry::Message(message) = &projected[0] else {
+            panic!("tool result was not projected as a message");
+        };
+        assert!(message.content.is_empty());
+        assert_eq!(
+            message.tool_result.as_ref().map(|result| &result.result),
+            Some(&serde_json::json!({"ok": true}))
+        );
     }
 }
