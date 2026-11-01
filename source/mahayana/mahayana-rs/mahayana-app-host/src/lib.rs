@@ -740,7 +740,13 @@ impl AppHost {
         let telegram_client = open_platform_telegram_client(&app_data_dir, feature_mode)?;
         if let Some(client) = telegram_client.as_ref() {
             let restored = settings.snapshot()?;
-            publish_product_network_proxy(client, &restored.network.proxy)?;
+            client
+                .apply_network_proxy(&restored.network.proxy.carrier_projection())
+                .map_err(|error| {
+                    AppHostError::Operation(format!(
+                        "restore product network proxy carrier projection: {error}"
+                    ))
+                })?;
         }
         let telegram_handoff = telegram_client
             .as_ref()
