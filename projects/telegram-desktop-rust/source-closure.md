@@ -2479,3 +2479,16 @@ Spec-first commit `56d0e8a62c2dd94fe5a558d0296054be3d86e453` extends `AGENTS.md`
 
 Stage A zero-CI discipline remained intact: no GitHub Actions/check/status/workflow query or trigger and no build, typecheck, lint, validator, generator, unit/contract/integration/E2E, visual/a11y, package, deployment, installation or runtime acceptance was performed.
 
+## Round 115 / source-entry closure — OpenAI continue host adapter (2026-11-01)
+
+From desktop checkpoint parent `d620e371dbeab832fc6983462fc2466c5abe111c`, the live branch was reread unchanged before spec publication. Desktop main remains `9993ca8e107f7e019a8201e5ab74fa54e82159f2`; platform-core exact commit `e92b51e23b39dae5719f033fa1f7a20d6579dc8c` was verified in `bhrumom/fabushi-platform-core`. Fixed U remains `f985723b552b30fe1c17d377d57f44e61a15a8c4`; recursive tree `91f2b083ab2877c0a17d07868eabec362a5cfca6` is `truncated=false` with 7,194 entries / 6,859 blobs. Before closure the unique ledger reported `source_entries_total=16202 / unknown=16163 / unread=16136 / omitted=0 / responsibilities_total=133 / unmapped_responsibilities=0`.
+
+The exact `.agents/skills/continue/agents/openai.yaml@e981285ee10cbed9e27e358d60ce596c9e0b3d61` blob was read completely: 291 characters / 4 lines. It is declarative OpenAI host metadata only: `display_name`, `short_description`, and a `default_prompt` that invokes `$continue`, places active work first, freezes exactly the caller's batch specification behind it, and processes one task at a time. Repository search found no second in-repository parser/state owner. Adjacent OpenAI adapters for process-inbox, perform-task and code-health use the same declarative schema, confirming host discovery/invocation rather than durable scheduling ownership.
+
+Existing-owner-first maps the entry into the already implemented `TDRP-R9-REPOSITORY-CONTINUE-TASK-PROCESS-AUTHORITY-001` owner: Fabushi repository development process authority plus repository quality/test-evidence governance. Shipping Product Tasks/Automations, Agent/Coordinator/Host/Runner, platform-core runtime, a copied OpenAI skill runtime and a Telegram-specific scheduler remain rejected. No platform-core production delta and no ADR are required.
+
+Spec-first commit `fc8bf28953a3f3e100e55663ea3c86f7a51dbb44` extends existing qualification/evidence and adds `projects/telegram-desktop-rust/dossiers/continue-openai-host-adapter-complete-read.md`. Authored, not run: `CONTRACT-TDRP-CONTINUE-OPENAI-HOST-METADATA-001` and `INT-TDRP-CONTINUE-OPENAI-HOST-INVOCATION-001`.
+
+Exactly one independent source entry closes under the existing responsibility: `unknown 16163 -> 16162`, `unread 16136 -> 16135`, `omitted=0`; `responsibilities_total` remains 133 and `unmapped_responsibilities=0`. The next independent unrepresented fixed-U blob in tree order is `.agents/skills/continue/references/consolidate-pending-tasks.md@bd301d93f8f670ad041b3db72330e17cbb50eb5c`.
+
+Stage A zero-CI discipline remained intact: no GitHub Actions/check/status/workflow query or trigger and no build, typecheck, lint, validator, generator, unit/contract/integration/E2E, visual/a11y, package, deployment, installation or runtime acceptance was performed.
