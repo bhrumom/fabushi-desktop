@@ -60,6 +60,11 @@ generic append/update/delete methods, prompt `compaction_epoch` snapshots,
 contract-only `ContextWindowTracker`, and a second transcript database are not
 valid substitutes.
 
+Provider serializers must also reject duplicate tool-call identities while
+building a replay request. A tool result must resolve to exactly one prior
+call in the same projection; ambiguity is an unsupported replay shape, not a
+reason to stringify or silently drop the row.
+
 ## Current implementation evidence
 
 `SandAgentDb::commit_compaction` now implements the guarded transactional
@@ -87,6 +92,21 @@ two-token compatibility ranges are eight, and supplementary ranges use the
 corresponding three/four-token weights. This is still an approximation over
 canonical rows, not approval of the richer upstream message projection.
 Live-turn proof and frozen verification remain open.
+
+## Gemini Argon review record (2026-11-01, Asia/Shanghai)
+
+The plan and resulting diff were discussed in the native Gemini desktop
+conversation using the visible `Argon` model. Argon agreed that the slice stays
+within the existing Runner → summarizer → `ProductionSessionWorkers` /
+`SandAgentDb` → next-turn typed replay chain, and that the historical `ad8d12f`
+subject must remain separate from the `1440bb` candidate inventory subject.
+The review required duplicate-call registration before emitting provider tool
+call blocks in Responses, Chat Completions, and Cursor, with exact
+`DuplicateToolCall { tool_call_id }` negative assertions for both same-message
+and cross-message duplicates. It also noted that a future strict one-result per
+call contract would need distinct seen/pending/consumed state; this slice keeps
+that behavior unchanged and records it as follow-up rather than silently
+claiming it is covered. No local executable verification was requested or run.
 
 Replay attachment ownership is now narrowed to the existing attachment owner:
 it may expose a read-only provider-usable HTTP(S) URL projection for a durable

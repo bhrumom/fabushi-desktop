@@ -14,7 +14,7 @@
     "ref": "refs/heads/main",
     "commit": "1440bb1771372334bea23d7642bb52deb7db1845",
     "tree": "90c8aab39972da11cfad220361781d49e1bc6700",
-    "accepted_for_this_implementation_round": true,
+    "accepted_for_this_implementation_round": false,
     "baseline_identity_accepted": false
   },
   "discovery_baseline": {

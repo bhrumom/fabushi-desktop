@@ -27,6 +27,8 @@ pub enum TypedReplaySerializationError {
     UnsupportedAttachment { index: usize, detail: String },
     #[error("tool result {tool_call_id} has no matching replayed tool call")]
     UnpairedToolResult { tool_call_id: String },
+    #[error("tool call identity {tool_call_id} is duplicated in the replay projection")]
+    DuplicateToolCall { tool_call_id: String },
 }
 
 /// Serialize typed replay into OpenAI Responses input items. Attachments must
@@ -218,11 +220,13 @@ fn serialize_cursor_message(
             });
         }
         ReplayRole::Assistant => {
+            for call in &message.tool_calls {
+                register_tool_call(call, calls)?;
+            }
             let tool_calls = message
                 .tool_calls
                 .iter()
                 .map(|call| {
-                    calls.insert(call.id.clone());
                     CursorCheckpointToolCall {
                         tool_call_id: call.id.clone(),
                         tool_name: call.name.clone(),
@@ -258,7 +262,7 @@ fn serialize_responses_message(
         output.push(json!({"role": role, "content": content}));
     }
     for call in &message.tool_calls {
-        calls.insert(call.id.clone());
+        register_tool_call(call, calls)?;
         output.push(responses_tool_call(call));
     }
     Ok(())
@@ -287,17 +291,17 @@ fn serialize_chat_message(
             .tool_calls
             .iter()
             .map(|call| {
-                calls.insert(call.id.clone());
-                json!({
+                register_tool_call(call, calls)?;
+                Ok(json!({
                     "id": call.id,
                     "type": "function",
                     "function": {
                         "name": call.name,
                         "arguments": call.arguments.to_string(),
                     }
-                })
+                }))
             })
-            .collect::<Vec<_>>();
+            .collect::<Result<Vec<_>, TypedReplaySerializationError>>()?;
         item["tool_calls"] = Value::Array(tool_calls);
     }
     output.push(item);
@@ -420,6 +424,19 @@ fn ensure_tool_result_pair(
         })
 }
 
+fn register_tool_call(
+    call: &ReplayToolCall,
+    calls: &mut std::collections::HashSet<String>,
+) -> Result<(), TypedReplaySerializationError> {
+    if calls.insert(call.id.clone()) {
+        Ok(())
+    } else {
+        Err(TypedReplaySerializationError::DuplicateToolCall {
+            tool_call_id: call.id.clone(),
+        })
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -529,5 +546,79 @@ mod tests {
                 role: "typed-tool-or-attachment"
             }
         );
+    }
+
+    fn duplicate_call_entries() -> Vec<TypedReplayEntry> {
+        vec![
+            TypedReplayEntry::Message(ReplayMessage {
+                id: None,
+                role: ReplayRole::Assistant,
+                content: vec![],
+                attachments: vec![],
+                tool_calls: vec![ReplayToolCall {
+                    id: "duplicate-call".into(),
+                    name: "read".into(),
+                    arguments: json!({"path": "a"}),
+                }],
+                tool_result: None,
+            }),
+            TypedReplayEntry::Message(ReplayMessage {
+                id: None,
+                role: ReplayRole::Assistant,
+                content: vec![],
+                attachments: vec![],
+                tool_calls: vec![ReplayToolCall {
+                    id: "duplicate-call".into(),
+                    name: "read".into(),
+                    arguments: json!({"path": "b"}),
+                }],
+                tool_result: None,
+            }),
+        ]
+    }
+
+    fn duplicate_call_entries_in_one_message() -> Vec<TypedReplayEntry> {
+        vec![TypedReplayEntry::Message(ReplayMessage {
+            id: None,
+            role: ReplayRole::Assistant,
+            content: vec![],
+            attachments: vec![],
+            tool_calls: vec![
+                ReplayToolCall {
+                    id: "duplicate-call".into(),
+                    name: "read".into(),
+                    arguments: json!({"path": "a"}),
+                },
+                ReplayToolCall {
+                    id: "duplicate-call".into(),
+                    name: "write".into(),
+                    arguments: json!({"path": "b"}),
+                },
+            ],
+            tool_result: None,
+        })]
+    }
+
+    fn assert_duplicate_call_rejected(entries: &[TypedReplayEntry]) {
+        let responses = serialize_responses_replay(entries)
+            .expect_err("Responses must reject duplicate call identity");
+        let chat = serialize_chat_replay(entries)
+            .expect_err("Chat Completions must reject duplicate call identity");
+        let cursor = serialize_cursor_replay(entries)
+            .expect_err("Cursor must reject duplicate call identity");
+        for error in [responses, chat, cursor] {
+            assert_eq!(
+                error,
+                TypedReplaySerializationError::DuplicateToolCall {
+                    tool_call_id: "duplicate-call".into(),
+                }
+            );
+        }
+    }
+
+    #[test]
+    fn duplicate_tool_call_identity_is_rejected_by_all_typed_serializers() {
+        assert_duplicate_call_rejected(&duplicate_call_entries());
+        assert_duplicate_call_rejected(&duplicate_call_entries_in_one_message());
     }
 }

@@ -21,6 +21,20 @@ Implementation/acceptance: **未完成**
 4. 本项目 [`module-map.md`](module-map.md)、当前 task、ADR、lock/inventory/ledger/dossier、RTM 和 exact-head evidence。
 5. 历史研究与旧版本快照。它们必须重核后才能用于当前结论。
 
+### Exact-subject identity separation (2026-11-01)
+
+本轮实现历史锚点仍是
+`openclaw/openclaw@ad8d12f126d29b0db204187adf5092db80294e70` / tree
+`04ccce62f1d74dc8e0c88290ae8ded027b7b0f16`，与当前用户要求及 RTM 的
+source identity 一致。当前 `upstream.lock.json`、`inventory/index.json` 和
+shard manifest 中的 `1440bb1771372334bea23d7642bb52deb7db1845` /
+`90c8aab39972da11cfad220361781d49e1bc6700` 是后续 Actions 生成的
+candidate inventory subject，不是已接受的实现 authority；lock 已明确将其
+`accepted_for_this_implementation_round` 设为 `false`。这些 generated shards
+保持原始 provenance，不被手工重标为 ad8d 的 inventory，也不得与 ad8d 的
+RTM、source closure 或语义结论交叉拼接。当前 source authority / closure /
+global flags 继续保持未完成。
+
 主规范是全部行为、实施和验收要求的单一出处。module map 是候选落点与范围导航，不是批准新架构、实现状态或验收结果。当前工作任务为 [`P0-source-baseline-and-owner-audit.md`](management/tasks/P0-source-baseline-and-owner-audit.md)。
 
 ## 3. 不可弱化的约束
@@ -581,9 +595,11 @@ package roots。该结果消除了此前 workspace count 的歧义，但仍只�
 manifest/importer mapping；外部包 archive/integrity/license provenance、
 source closure 和 exact-head Actions authority 仍未闭合。
 
-2026-10-31 inventory field audit：当前提交的固定 subject shards 与
-`ad8d12f.../04ccce...` 一致，58,750 行路径唯一、`omitted_known=0`，其中
-57,331 行仍是 `unread/unclassified`，1,419 行是 `read-complete/mapped`。
+2026-10-31 inventory field audit：当前提交的 candidate shards 与
+`1440bb.../90c8aa...` 一致，62,130 条 tracked path（62,128 blobs、2 symlinks），
+`omitted_known=0`，其中 61,315 行仍是 `unread/unclassified`，其余映射数以
+candidate index 为准。该 inventory 不是用户指定的 ad8d implementation
+authority，不能与 ad8d 的 RTM 或历史 58,750 行计数拼接。
 但所有行都缺少 `applicability_status` 与 `disposition_status` 两个 schema-required
 keys，这不是已分流或已完成 disposition 的证据；因此
 `applicability_disposition_closure` 继续为 `false`。现有

@@ -60,7 +60,9 @@ chain.
   assistant/user roles, tool-call/tool-result pairing, and attachment-bearing
   entries. It must not flatten unsupported transcript rows into plain text;
   the existing provider message contract must be extended or adapted at its
-  owning boundary before production replay is enabled.
+  owning boundary before production replay is enabled. Tool-call identities
+  must be unique within one replay projection; duplicate or ambiguous call
+  identities fail closed before provider serialization.
 
 ## 5. Current state
 
