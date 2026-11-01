@@ -2374,16 +2374,19 @@ impl ProductionSessionWorkers {
         expected_lifecycle_revision: &str,
         policy: &super::agent_session::SessionCommunicationPolicyOverride,
     ) -> Result<(), String> {
-        let db = self.open_agent_db_owner(agent_id)?;
-        if !super::agent_session::write_session_communication_policy(
-            &db,
-            expected_session_id,
-            expected_lifecycle_revision,
-            policy,
-        )? {
-            return Err("SESSION_LIFECYCLE_CHANGED".into());
-        }
-        Ok(())
+        self.with_agent_filesystem_mutation(agent_id, || {
+            self.assert_agent_work_admission_locked(agent_id)?;
+            let db = self.open_agent_db_owner_locked(agent_id)?;
+            if !super::agent_session::write_session_communication_policy(
+                &db,
+                expected_session_id,
+                expected_lifecycle_revision,
+                policy,
+            )? {
+                return Err("SESSION_LIFECYCLE_CHANGED".into());
+            }
+            Ok(())
+        })
     }
 
     pub fn compare_and_set_session_work_admission(
