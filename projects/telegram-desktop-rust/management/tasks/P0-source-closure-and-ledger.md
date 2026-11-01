@@ -2688,3 +2688,20 @@ Spec-first commit `9bbd2014883783dd7fab15af05d97e94fd46bf2e` extends `AGENTS.md`
 Exactly one independent source entry closes: `unknown 16140 -> 16139`, `unread 16113 -> 16112`, `omitted=0`; responsibilities `138 -> 139` and unmapped remains 0. The next unrepresented fixed-U blob in tree order is `.claude/commands/continue.md@e81c86031f2e501f30d2b6ed908fb03d648324c8`.
 
 Stage A zero-CI discipline remained intact: no GitHub Actions/check/status/workflow query or trigger; no code-health scan/survey/check, Claude Agent/Codex leaf, workspace/source-lineage/routing helper, build, compile, typecheck, lint, validator, generator, dependency resolution, unit/contract/integration/E2E, reviewer, UI-driver, visual/a11y, package, deployment, installation, runtime evidence or acceptance was executed.
+
+
+## Round 139 / source-entry closure — Claude continue command adapter (2026-11-01)
+
+From desktop checkpoint parent `2c24fdb00934402bc6ac204d6856fe1e1a41a5c7`, spec-first CAS commit `f90fd0fc1ef26cc7bd26215c6e11c2e09e2a5c5b` was published with `force=false` and `expected_sha=2c24fdb00934402bc6ac204d6856fe1e1a41a5c7`. Desktop main remains `9993ca8e107f7e019a8201e5ab74fa54e82159f2`; platform-core remains `e92b51e23b39dae5719f033fa1f7a20d6579dc8c`; fixed U remains `f985723b552b30fe1c17d377d57f44e61a15a8c4` with recursive tree `91f2b083ab2877c0a17d07868eabec362a5cfca6`, `truncated=false`, 7,194 entries / 6,859 blobs.
+
+Exact `.claude/commands/continue.md@e81c86031f2e501f30d2b6ed908fb03d648324c8` was read completely: tree index 89 zero-based, 3,700 ASCII/UTF-8 bytes / 3,700 decoded characters, 67 newline characters, trailing newline, 68 split lines. It is a thin Claude host wrapper over the shared continue scheduler: no-spec is read-only queue/report/question; specified runs freeze exactly one batch with active-task precedence and admit later work only through canonical split replacements or follow-ups produced by this invocation.
+
+Direct dependencies are the exact generic Claude adapter and shared continue skill; direct host consumer is Claude Code command discovery/user `/continue`. No fixed-U file-level import/reference to the wrapper was found. OpenAI `$continue` and Grok `/continue` are peer host adapters, not callers. Existing-owner-first adds `TDRP-R9-CONTINUE-CLAUDE-COMMAND-ADAPTER-001` over existing continue scheduler + Claude host-adapter + quality/test-evidence governance; no new durable state owner, ADR, service, shipping runtime or platform-core production delta.
+
+Source-lineage timing stays parent-owned at startup/pre-Phase-1, post-Phase-1 mismatch stays task-local, one stateful performer is active, split routing is fresh/foreground, routing/consolidation stay in the existing bounded lane, and review provider is selected once (explicit Codex opt-out => native, otherwise codex) without changing canonical semantics.
+
+Spec-first commit `f90fd0fc1ef26cc7bd26215c6e11c2e09e2a5c5b` extends `AGENTS.md`, `TEST_STRATEGY.md`, `evidence-contract.md`, and adds the complete-read dossier. Authored but not run: six contract cases, one integration case and one fault-recovery case for host authority, batch freeze, source lineage, delegation, review provider, routing lane, composition and duplicate-scheduler recovery.
+
+Exactly one independent source entry closes: `unknown 16139 -> 16138`, `unread 16112 -> 16111`, `omitted=0`; responsibilities `139 -> 140`, unmapped remains 0. Next fixed-U tree blob: `.claude/commands/crash-reports-process.md@5ac555406670721694e78c4e1e6b2a96b3e98fb5`.
+
+Stage A zero-CI discipline remained intact: no Actions/check/status/workflow query or trigger; no queue/helper, Agent/Codex leaf, source-lineage/routing/consolidation execution, build, compile, typecheck, lint, validator, generator, dependency resolution, test, reviewer, UI-driver, visual/a11y, packaging, deployment, installation, runtime evidence or acceptance was executed.
