@@ -6076,8 +6076,10 @@ fn session_work_write_is_admitted(
     else {
         return Ok(false);
     };
+    let expected_session_key = format!("agent:{agent_id}:main");
     Ok(session_admission_identity_is_well_formed(&admission)
         && admission.session_id == agent_id
+        && admission.session_key == expected_session_key
         && !admission.deletion_pending
         && admission.archived_at_ms.is_none())
 }
