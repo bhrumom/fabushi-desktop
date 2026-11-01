@@ -107,14 +107,21 @@ subject must remain separate from the `1440bb` candidate inventory subject.
 The review required duplicate-call registration before emitting provider tool
 call blocks in Responses, Chat Completions, and Cursor, with exact
 `DuplicateToolCall { tool_call_id }` negative assertions for both same-message
-and cross-message duplicates. It also noted that a future strict one-result per
-call contract would need distinct seen/pending/consumed state; this slice keeps
-that behavior unchanged and records it as follow-up rather than silently
-claiming it is covered. The post-change review of commit `11f8a78c1` passed
-with no blocking defect: registration timing, projection-scoped state, both
-duplicate scenarios, and exact-subject separation were accepted. No local
+and cross-message duplicates. The post-change review of commit `11f8a78c1`
+passed with no blocking defect: registration timing, projection-scoped state,
+both duplicate scenarios, and exact-subject separation were accepted. No local
 executable verification was requested or run; executable verification and
 acceptance remain pending.
+
+The follow-up one-result contract is now implemented in the same inference
+owner at Fabushi commit `8c399d0f491d80270609c583adbf29747cc58147`, tree
+`7b790903314a9bf6700c5923393980f478a168ef7`. Responses, Chat Completions, and
+Cursor serializers use distinct pending/consumed tool-call state: a result must
+match one pending call, a second result is rejected as
+`DuplicateToolResult`, and an unreconciled call rejects as
+`UnsettledToolCall`. This is source and focused-contract evidence only; the
+contracts were not executed and live provider/runtime acceptance remains
+pending.
 
 Replay attachment ownership is now narrowed to the existing attachment owner:
 it may expose a read-only provider-usable HTTP(S) URL projection for a durable
