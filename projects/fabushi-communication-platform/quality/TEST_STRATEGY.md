@@ -347,3 +347,7 @@ Discovery routing and consolidation are separate from task execution. Routing ma
 
 Stage-A contracts authored, not run: `CONTRACT-TDRP-CONTINUE-BATCH-FREEZE-001`, `CONTRACT-TDRP-CONTINUE-TASK-STATE-AUTHORITY-001`, `CONTRACT-TDRP-CONTINUE-OWNERSHIP-001`, `CONTRACT-TDRP-CONTINUE-SOURCE-LINEAGE-001`, `CONTRACT-TDRP-CONTINUE-SPLIT-TRANSACTION-001`, `CONTRACT-TDRP-CONTINUE-CONSOLIDATION-001`, `CONTRACT-TDRP-CONTINUE-RECOVERY-001`, and `INT-TDRP-CONTINUE-HOST-ADAPTER-COMPOSITION-001`.
 
+OpenAI host-adapter qualification treats `.agents/skills/continue/agents/openai.yaml` as invocation metadata only. The interface may expose discoverability copy and a default prompt, but it cannot redefine canonical task state, ownership, split/consolidation, dependency or acceptance semantics. A passing default-prompt contract invokes `$continue`, places already-active work first, freezes exactly the caller's batch specification behind it, and drains one task at a time. It must not silently imply all-pending work, inbox processing, ownership, verification or acceptance.
+
+Additional Stage-A contracts authored, not run: `CONTRACT-TDRP-CONTINUE-OPENAI-HOST-METADATA-001` and `INT-TDRP-CONTINUE-OPENAI-HOST-INVOCATION-001`.
+
