@@ -9,7 +9,7 @@
     "unknown": 16172,
     "unread": 16145,
     "omitted": 0,
-    "responsibilities_total": 118,
+    "responsibilities_total": 119,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -29860,6 +29860,257 @@
     {
       "source_repository": "telegramdesktop/tdesktop",
       "source_commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+      "source_path": "Telegram/SourceFiles/mtproto/details/mtproto_domain_resolver.cpp",
+      "source_blob_sha": "eeac8f6a8e2df67967ea7b536fb165e2f8d983e9",
+      "source_kind": "source",
+      "module_id": "tdesktop.mtproto.doh-special-config-response-normalization",
+      "responsibility_id": "TDRP-R9-MTPROTO-RESPONSE-NORMALIZATION-001",
+      "source_symbols": [
+        "ParseDnsResponse",
+        "DomainResolver::requestFinished",
+        "ConcatenateDnsTxtFields",
+        "ParseFireStoreResponse",
+        "SpecialConfigRequest::requestFinished(Type::Mozilla/Google/FireStore)"
+      ],
+      "capability_ids": [
+        "CAP-MTPROTO-RESPONSE-NORMALIZATION"
+      ],
+      "dependency_ids": [
+        "existing fabushi-telegram-protocol serde_json codec",
+        "future telegram-network special-config/domain-resolution carrier scheduler"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/evidence/round116-doh-special-config-response-normalization-20261101.md",
+      "behavior_contract": "Fixed-U Google/Mozilla DoH responses share a JSON Answer parser that skips malformed entries, optionally filters source-rounded numeric DNS type, preserves accepted data order and defaults missing/non-number TTL to zero. Domain-resolution normalization computes a 10s minimum / 300s maximum effective TTL. Special-config DoH keeps TXT type 16, reproduces QMultiMap ordering by descending QString UTF-16 length with later equal-length insertion first, concatenates and projects QString::toLatin1 bytes. Firestore projects fields.data.stringValue with the same Latin-1 replacement semantics. Structural failures normalize to empty output.",
+      "state_machine": "carrier response bytes -> pure JSON/field validation -> typed DNS entries or compact special-config bytes -> caller-owned cache/payload decoder; no I/O, timer, proxy, clock, cache mutation or DC/session state",
+      "side_effects": [
+        "No runtime side effects; pure deterministic response transformation only.",
+        "Carrier acquisition/scheduling and cache/application side effects remain outside this responsibility."
+      ],
+      "failure_cases": [
+        "empty/malformed/non-object DoH JSON",
+        "missing/non-array Answer",
+        "non-object Answer entry",
+        "missing/non-number restricted type or mismatched type",
+        "missing/non-string data",
+        "missing/non-number TTL defaults to zero",
+        "malformed/missing/wrong-type Firestore fields.data.stringValue",
+        "TXT equal-length ordering diverges from QMultiMap insertion semantics",
+        "Unicode-to-Latin1 projection diverges from QString UTF-16 replacement behavior"
+      ],
+      "ui_disposition": "No UI responsibility.",
+      "non_ui_responsibilities": [
+        "DoH Answer JSON parsing/filtering",
+        "DNS data/TTL normalization",
+        "special-config TXT ordering/concatenation/Latin-1 projection",
+        "Firestore nested response extraction/Latin-1 projection"
+      ],
+      "platform_delta": "Implemented as a pure source-neutral codec in existing telegram-protocol and mirrored byte-identically to desktop. No network scheduler, manifest, dependency or lock delta.",
+      "existing_owner_candidates": [
+        "bhrumom/fabushi-platform-core:native/telegram-network",
+        "bhrumom/fabushi-platform-core:native/telegram-protocol"
+      ],
+      "existing_owner": "Existing telegram-protocol pure codec boundary; future telegram-network carrier scheduler consumes it without duplicating response semantics.",
+      "rejected_existing_owners": [
+        "new special-config/bootstrap provider or runtime: duplicates existing owners",
+        "telegram-network-local duplicate JSON codec: carrier lifecycle belongs there, but the current deterministic codec reuses protocol serde_json without adding network dependency/lock churn",
+        "settings/application owner: does not own carrier response parsing"
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "bhrumom/fabushi-platform-core:docs/specs/telegram-doh-special-config-response-normalization-boundary.md",
+        "bhrumom/fabushi-platform-core:native/telegram-protocol/src/response_normalization.rs",
+        "bhrumom/fabushi-platform-core:native/telegram-protocol/src/lib.rs",
+        "bhrumom/fabushi-platform-core:native/telegram-protocol/tests/protocol_contract.rs",
+        "source/mahayana/mahayana-rs/providers/telegram-protocol/src/response_normalization.rs",
+        "source/mahayana/mahayana-rs/providers/telegram-protocol/src/lib.rs",
+        "source/mahayana/mahayana-rs/providers/telegram-protocol/tests/protocol_contract.rs"
+      ],
+      "fabushi_target_symbols": [
+        "DnsEntry",
+        "NormalizedDnsResponse",
+        "parse_dns_response",
+        "normalize_dns_response",
+        "SpecialConfigResponseKind",
+        "normalize_special_config_response"
+      ],
+      "target_language": "Rust",
+      "language_rationale": "The responsibility is deterministic source-neutral response decoding and normalization; Rust reuses the existing protocol JSON dependency and avoids retaining Qt/C++ or adding a parallel carrier.",
+      "command_event_contracts": [],
+      "state_owner": "No durable state; pure response codec.",
+      "lifecycle_owner": "Future existing telegram-network scheduler owns acquisition/cancellation/cache/application; codec has no lifecycle.",
+      "persistence_and_restart": "None.",
+      "concurrency_and_cancellation": "Pure synchronous transform; no cancellation or scheduler state.",
+      "security_boundary": "Fail closed to empty response on malformed carrier structure; do not log compact config payloads or secrets.",
+      "network_service_dependencies": [
+        "None for parsing/normalization; future caller supplies acquired bytes."
+      ],
+      "service_owner": "Existing telegram-network remains future carrier/scheduler owner; no service owner for the pure codec.",
+      "deployment_evidence": [],
+      "implementation_status": "implemented",
+      "coverage_disposition": "rewritten",
+      "blockers": [
+        "Stage B executable validation has not run; carrier scheduling/application remains a separate pending responsibility."
+      ],
+      "production_entrypoints": [
+        "existing telegram-protocol public API -> parse_dns_response / normalize_dns_response / normalize_special_config_response; no carrier scheduler entrypoint is claimed"
+      ],
+      "production_evidence": [
+        "fixed-U:Telegram/SourceFiles/mtproto/details/mtproto_domain_resolver.cpp@eeac8f6a8e2df67967ea7b536fb165e2f8d983e9",
+        "fixed-U:Telegram/SourceFiles/mtproto/details/mtproto_domain_resolver.h@cb1979bbbf0454135c8668ed1e5013da85d1dedc",
+        "fixed-U:Telegram/SourceFiles/mtproto/special_config_request.cpp@fdb65506b0a886bc2daeccb61090bc44be7e2d88",
+        "platform-core-initial-spec-commit:64bdbc8521a33b0c16d1ca51680c7ea22e482f2d",
+        "platform-core-implementation-contract-commit:3d27d1aa1272bb15d39c1e2031872a1f2266c62e",
+        "platform-core-response-normalization-blob:9371f73669b4e6b211608f043119ca4eca56e185",
+        "platform-core-lib-blob:27543d45f3825321e26c8a0b664e37c8488169e2",
+        "platform-core-authored-contract-blob:259f457eeaacce0ed09f1acf1f0fd821a0269733",
+        "platform-core-source-compliance-commit:39db402654e3157d3e9b8694d9d91d89ea2c7f82",
+        "platform-core-source-compliance-spec-blob:8379890d8ee17db235037c42cd9fde0cac00c014",
+        "desktop-source-contract-sync-commit:4070ca2be5db0d22bd54c27857ccf84748ce8763",
+        "desktop-response-normalization-blob:9371f73669b4e6b211608f043119ca4eca56e185",
+        "desktop-lib-blob:27543d45f3825321e26c8a0b664e37c8488169e2",
+        "desktop-authored-contract-blob:259f457eeaacce0ed09f1acf1f0fd821a0269733"
+      ],
+      "test_evidence": [
+        "Internal response_normalization.rs contracts cover DoH structural/filter/order/TTL behavior, TXT QMultiMap ordering/Latin-1 projection, and Firestore extraction; not executed.",
+        "Public protocol_contract.rs contracts cover pure DNS normalization and compact special-config response adapters; not executed."
+      ],
+      "target_commit": "4070ca2be5db0d22bd54c27857ccf84748ce8763",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Existing shared telegram-protocol codec + future existing telegram-network carrier lifecycle",
+      "composition_slot": "Carrier response normalization before DNS cache or special-config payload decode",
+      "capability_component": "Pure DoH/Firestore response codec",
+      "variation_axes": [
+        "Google/Mozilla DoH common JSON",
+        "unrestricted vs typed DNS answer",
+        "DNS address vs TXT compact payload",
+        "valid vs malformed Firestore nesting"
+      ],
+      "shared_owner_contracts": [
+        "existing telegram-protocol serde_json dependency",
+        "existing special-config payload decoder",
+        "future telegram-network scheduler without duplicated parser"
+      ],
+      "duplicate_root_check": "No second network runtime/provider/settings/DC owner or duplicate JSON dependency introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Not applicable",
+      "primary_navigation_target": "Not applicable",
+      "collection_surface": "Not applicable",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "Not applicable",
+      "detail_section": "Not applicable",
+      "capability_surface": "Non-UI protocol/network boundary",
+      "route_contract": "No route.",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Not applicable.",
+      "search_local_remote_contract": "Not applicable.",
+      "responsive_disposition": "No UI change.",
+      "accessibility_contract": "No UI change.",
+      "keyboard_contract": "No UI change.",
+      "state_continuity_contract": "No state; caller owns cache/lifecycle.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Not applicable",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": null,
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "No new icon asset",
+      "avatar_contract": "No change",
+      "content_copy_keys": [],
+      "motion_contract": "No change",
+      "reduced_motion_contract": "No change",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "high",
+      "requirement_ids": [
+        "TDRP-R9-MTPROTO-RESPONSE-NORMALIZATION-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-MTPROTO-DNS-RESPONSE-001",
+        "ORA-TDRP-MTPROTO-SPECIAL-CONFIG-RESPONSE-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-DNS-ANSWER-FILTER-ORDER-001",
+        "INV-TDRP-DNS-TTL-BOUND-001",
+        "INV-TDRP-SPECIAL-CONFIG-TXT-ORDER-001",
+        "INV-TDRP-SPECIAL-CONFIG-FIRESTORE-001",
+        "INV-TDRP-RESPONSE-NO-SCHEDULER-001"
+      ],
+      "unit_case_ids": [
+        "UNIT-TDRP-DNS-RESPONSE-PARSE-001",
+        "UNIT-TDRP-DNS-TTL-NORMALIZE-001",
+        "UNIT-TDRP-SPECIAL-CONFIG-TXT-ADAPTER-001",
+        "UNIT-TDRP-SPECIAL-CONFIG-FIRESTORE-ADAPTER-001"
+      ],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-MTPROTO-RESPONSE-NORMALIZATION-001"
+      ],
+      "integration_case_ids": [],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "fault_recovery_case_ids": [
+        "FAULT-TDRP-RESPONSE-MALFORMED-001"
+      ],
+      "performance_case_ids": [],
+      "security_case_ids": [
+        "SEC-TDRP-SPECIAL-CONFIG-RESPONSE-NO-LOG-001"
+      ],
+      "soak_case_ids": [],
+      "exploratory_charter_ids": [],
+      "regression_ids": [
+        "REG-TDRP-DNS-TXT-EQUAL-LENGTH-ORDER-001"
+      ],
+      "release_gate_ids": [
+        "G-TRACEABILITY",
+        "G-COMPOSITION",
+        "G-EVIDENCE",
+        "G-RELEASE"
+      ],
+      "test_fixture_ids": [
+        "fixed-u-doh-json-vectors",
+        "fixed-u-firestore-config-vector"
+      ],
+      "test_environment_ids": [
+        "GitHub Actions Stage B matrix (not run)"
+      ],
+      "coverage_matrix_status": "pending",
+      "flake_status": "unknown",
+      "release_gate_status": "pending",
+      "acceptance_reviewer": null,
+      "reviewer": null,
+      "license_and_provenance": "Behavioral provenance is fixed-U mtproto_domain_resolver.cpp/header plus special_config_request.cpp. Implementation is source-neutral Rust; no upstream C++ copied.",
+      "notes": "Task round85/source evidence round116. Pure DoH/Firestore response parsing and normalization is independently implemented in the existing telegram-protocol codec boundary and mirrored byte-identically. Actual carrier scheduling/HTTP Date mutation/temporary-DC/dc-options application remains separate mapped/pending. Contracts authored only; validation_status=not-run; accepted=false.",
+      "test_execution_evidence": [],
+      "validation_status": "not-run",
+      "accepted": false,
+      "source_paths": [
+        "Telegram/SourceFiles/mtproto/details/mtproto_domain_resolver.cpp@eeac8f6a8e2df67967ea7b536fb165e2f8d983e9",
+        "Telegram/SourceFiles/mtproto/special_config_request.cpp@fdb65506b0a886bc2daeccb61090bc44be7e2d88"
+      ],
+      "id": "TDRP-R9-MTPROTO-RESPONSE-NORMALIZATION-001"
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
       "source_path": "Telegram/SourceFiles/mtproto/config_loader.cpp",
       "source_blob_sha": "5d07404ba07223016c6728b986dcba10628d7194",
       "source_kind": "source",
@@ -29884,7 +30135,7 @@
         "DcOptions"
       ],
       "source_analysis_path": "projects/telegram-desktop-rust/evidence/round115-special-config-payload-boundary-20261101.md",
-      "behavior_contract": "Acquire special-config bytes through fixed-U direct no-proxy web attempts, update source HTTP-derived time, race/cancel requests, insert a temporary tcpo_only endpoint, send help.getConfig through the temporary DC, and replace runtime dc_options on success without creating a second settings/network/DC owner.",
+      "behavior_contract": "Issue fixed-U direct no-proxy Google/Mozilla DoH and Firestore carrier requests, apply staggered racing/cancellation, update source HTTP-derived time, then use normalized compact payload output to drive temporary-DC help.getConfig and runtime dc_options replacement without creating a second settings/network/DC owner. Pure response parsing/normalization is separately implemented in TDRP-R9-MTPROTO-RESPONSE-NORMALIZATION-001.",
       "state_machine": "eligible config refresh -> staggered direct web attempts -> first successful compact payload -> selected endpoint -> transient temporary DC option -> temporary help.getConfig request -> dc_options replacement -> terminate/kill temporary session; timeout/error -> retry/terminate",
       "side_effects": [
         "No production delta in this round; carrier/scheduler/application behavior is recorded as an explicit blocker."
@@ -29897,13 +30148,13 @@
       ],
       "ui_disposition": "No new UI root. Existing unified Settings remains the future projection/edit surface.",
       "non_ui_responsibilities": [
-        "Direct no-proxy DoH/Firestore acquisition racing",
+        "Direct no-proxy DoH/Firestore request construction and staggered acquisition racing",
         "HTTP Date global-time update",
         "Temporary DC endpoint insertion and session lifecycle",
         "help.getConfig request/cancel/timeout",
         "dc_options replacement/change notification"
       ],
-      "platform_delta": "No production delta. Current telegram-network/runtime has no shipping special-config acquisition/temporary-DC scheduler/application chain; the pure decoder is separately implemented in telegram-protocol.",
+      "platform_delta": "No carrier/application production delta. Pure DoH/Firestore response parsing/normalization is now separately implemented in telegram-protocol; current telegram-network/runtime still has no shipping special-config acquisition/temporary-DC scheduler/application chain.",
       "existing_owner_candidates": [
         "bhrumom/fabushi-platform-core:native/telegram-network",
         "existing telegram-runtime/session owner",
@@ -29960,7 +30211,9 @@
         "platform-core-spec-commit:e4344c0c9b68efd54dc44c88f9da87b29acf8bbf",
         "platform-core-final-source-compliance-commit:cbfb785ef23f33fbcebda0950b457da2f0578c66",
         "platform-core-final-spec-blob:0be79934e196946c3b0d11c232fbbd161d5aef94",
-        "desktop-initial-bookkeeping-commit:651c199fee8b3cad83e9f97b6fd92c59cd38f996"
+        "desktop-initial-bookkeeping-commit:651c199fee8b3cad83e9f97b6fd92c59cd38f996",
+        "platform-core-response-normalization-commit:3d27d1aa1272bb15d39c1e2031872a1f2266c62e",
+        "desktop-response-normalization-sync-commit:4070ca2be5db0d22bd54c27857ccf84748ce8763"
       ],
       "test_evidence": [
         "Carrier/application contracts are documented in the durable spec; no fake executable test was added against a nonexistent shipping scheduler."
@@ -30081,7 +30334,7 @@
       "acceptance_reviewer": null,
       "reviewer": null,
       "license_and_provenance": "Behavioral provenance is fixed-U Telegram/SourceFiles/mtproto/mtp_instance.cpp@d25fe3b72298fab371854f80186ee8e4777ea087 plus adjacent proxy/settings/network source listed in round114 evidence. No upstream C++ copied.",
-      "notes": "Task round84/source evidence round115. Mapped/pending no-production-delta: HTTP acquisition/HTTP Date mutation/temporary-DC help.getConfig/DcOptions application depend on a shipping network/runtime scheduler absent at the reviewed checkpoints. Pure payload decode/selection is separately implemented. Final platform source-level compliance is cbfb785ef23f33fbcebda0950b457da2f0578c66 / spec blob 0be79934e196946c3b0d11c232fbbd161d5aef94.",
+      "notes": "Task round85/source evidence round116. Carrier/application remains mapped/pending with no production delta after extracting pure response parsing/normalization into TDRP-R9-MTPROTO-RESPONSE-NORMALIZATION-001. Remaining HTTP acquisition/racing, HTTP Date mutation, temporary-DC help.getConfig and DcOptions application depend on a shipping network/runtime scheduler absent at the reviewed checkpoints. Stage-A executable validation remains not-run.",
       "test_execution_evidence": [],
       "validation_status": "not-run",
       "accepted": false,
