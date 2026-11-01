@@ -53,6 +53,12 @@ durable state → consumer chain.
   boundary. The mutation must recheck admission while holding that boundary;
   deletion must hold it through directory cleanup. A facade precheck without
   this shared boundary is insufficient.
+- `SWA-09`: External per-agent memory deletion and clearing use the same
+  session-owner filesystem boundary as directory deletion. The owner captures
+  the affected records and snapshot before mutation; if the owner-local
+  snapshot clear loses a deletion-fence race, it must compensate by restoring
+  the captured records and return a failure/unknown outcome rather than
+  reporting success.
 
 ## Current and target state
 
@@ -121,6 +127,10 @@ Host turn memory/profile prompt snapshot setters are likewise admitted through
 the same owner fence. Their paired clear paths are intentionally not widened
 here because one production memory-clear caller mutates the external memory
 store before clearing the SQLite snapshot and needs a separate atomic contract.
+The selected contract is now an owner-composed memory mutation path with the
+same per-agent filesystem serialization boundary and bounded record restore on
+snapshot-clear rejection; crash recovery across the external store and SQLite
+remains a separate gap.
 
 The file-backed agent profile and avatar mutations remain a separate atomicity
 boundary. Profile updates write `profile.json`; avatar replacement or removal
@@ -272,10 +282,17 @@ write or legacy-pointer clear fails. This closes the in-process deletion race
 and the bounded mutation-error rollback path; cross-process crash recovery
 remains pending.
 
+The memory gateway's remove and clear producers now route through the same
+owner boundary. They capture the external records and memory snapshot before
+mutation, clear the external store, and clear the owner-local snapshot. A
+deletion-fence rejection restores captured records before returning failure;
+the path does not claim crash-atomicity across files and SQLite.
+
 The focused deletion-fence contract is recorded in
 `source/host/tests/agent_session_contract.rs::deletion_fence_rejects_new_transcript_work_before_durable_write`;
-it now also covers profile-file and avatar mutation refusal. The contract is
-source evidence only until the frozen verification run executes.
+it now also covers profile-file, avatar, and external memory mutation refusal.
+The contract is source evidence only until the frozen verification run
+executes.
 
 The owner-local admission CAS now preserves the current `deletion_pending`
 value as part of its compare predicate. Ordinary work/review/media mutations

@@ -221,8 +221,10 @@ the compatibility path and are not treated as equivalent atomic evidence.
 The spend-guard apply and widget-answer entrypoints reject before mutating the
 automation store when deletion custody is active.
 Host turn memory/profile prompt snapshot setters also reject in the production
-facade; clear paths with an external memory-store mutation remain a separate
-atomicity boundary.
+facade. Memory gateway remove/clear mutations now use the same per-agent
+filesystem serialization boundary and compensate captured records when the
+owner-local snapshot clear loses a deletion-fence race; cross-process crash
+recovery remains a separate atomicity gap.
 Owner-local viewed/unread, profile, partner-membership, and profile-snapshot
 clears use the same facade admission fence.
 
@@ -232,8 +234,8 @@ replacement/removal combines conventional-file cleanup or creation with an
 optional SQLite legacy-pointer mutation. The send-acceptance profile seeding
 producer reaches this path; it rechecks admission while holding the same
 boundary that the directory deletion owner holds through cleanup. This closes
-the in-process deletion race, but cross-process crash recovery and external
-memory-store mutation remain separate atomicity gaps.
+the in-process deletion race, but cross-process crash recovery remains a
+separate atomicity gap.
 
 The owner-local admission CAS preserves `deletion_pending` as a compare
 predicate for ordinary mutations. Clearing deletion custody is a separate

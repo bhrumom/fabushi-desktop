@@ -423,6 +423,18 @@ fn manager_owns_memory_gateway_and_invalidates_prompt_snapshot_after_mutation() 
         .expect("snapshot read")
         .is_none());
 
+    sessions
+        .begin_agent_delete(&agent.id)
+        .expect("publish memory deletion fence");
+    let blocked = manager
+        .dispatch_memory_gateway_call("clearAgentMemories", &json!({"id":agent.id}))
+        .expect("handled")
+        .expect_err("memory gateway must honor deletion fence");
+    assert!(blocked.contains("new session work is not admitted"));
+    sessions
+        .end_agent_delete(&agent.id)
+        .expect("clear memory deletion fence");
+
     manager.dispose();
     let _ = fs::remove_dir_all(root);
 }

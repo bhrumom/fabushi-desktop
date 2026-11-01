@@ -200,6 +200,14 @@ fn deletion_fence_rejects_new_transcript_work_before_durable_write() {
         .set_agent_avatar_bytes(&record.id, Some(b"blocked-avatar"), None)
         .expect_err("deletion-pending avatar mutation must be rejected");
     assert!(avatar_error.contains("new session work is not admitted"));
+    let memory_clear_error = production
+        .clear_agent_memories(&record.id)
+        .expect_err("deletion-pending external memory clear must be rejected");
+    assert!(memory_clear_error.contains("new session work is not admitted"));
+    let memory_remove_error = production
+        .remove_agent_memory(&record.id, "blocked-memory")
+        .expect_err("deletion-pending external memory removal must be rejected");
+    assert!(memory_remove_error.contains("new session work is not admitted"));
     let viewed_error = production
         .mark_agent_viewed(&record.id, 50.0, false)
         .expect_err("deletion-pending viewed state must be rejected");

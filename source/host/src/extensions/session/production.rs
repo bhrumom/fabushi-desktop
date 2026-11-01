@@ -67,7 +67,9 @@ use super::session_store_factories::{
     automation_store_for_db_path_with_time_zone_resolver, channel_store_for_db_path,
     workflow_store_for_db_path_with_time_zone_resolver,
 };
-use crate::extensions::memory::memory_service::{FileMemoryStore, MemoryService};
+use crate::extensions::memory::memory_service::{
+    FileMemoryStore, MemoryRecord, MemoryService,
+};
 use crate::extensions::memory::project_membership::AgentProjectMembership;
 use crate::automations::automation_store::{FileAutomationStore, UserTimeZoneResolver, agent_has_automations};
 use crate::workflows::workflow_store::{FileWorkflowStore, agent_has_workflows};
@@ -165,7 +167,7 @@ pub struct ProductionSessionWorkers {
     mint_queue: SessionMintQueue,
     db_owners: Mutex<BTreeMap<String, Arc<SandAgentDb>>>,
     agent_store_owners: Mutex<BTreeMap<String, Arc<ProductionAgentStore>>>,
-    profile_mutation_locks: Mutex<BTreeMap<String, Arc<Mutex<()>>>>,
+    filesystem_mutation_locks: Mutex<BTreeMap<String, Arc<Mutex<()>>>>,
     deleting_agents: Mutex<BTreeSet<String>>,
     roster_extras_cache: RosterExtrasCache,
     user_time_zone_resolver: UserTimeZoneResolver,
@@ -338,7 +340,7 @@ impl ProductionSessionWorkers {
             mint_queue: SessionMintQueue::default(),
             db_owners: Mutex::new(BTreeMap::new()),
             agent_store_owners: Mutex::new(BTreeMap::new()),
-            profile_mutation_locks: Mutex::new(BTreeMap::new()),
+            filesystem_mutation_locks: Mutex::new(BTreeMap::new()),
             deleting_agents: Mutex::new(BTreeSet::new()),
             roster_extras_cache: RosterExtrasCache::default(),
             user_time_zone_resolver,
@@ -1612,10 +1614,10 @@ impl ProductionSessionWorkers {
             .unwrap_or_default()
     }
 
-    /// Serialize filesystem-backed profile/avatar mutation with the existing
+    /// Serialize per-agent filesystem-backed mutation with the existing
     /// directory deletion owner. The caller must perform the durable
     /// admission check while this guard is held.
-    pub fn with_agent_profile_mutation<T, F>(
+    pub fn with_agent_filesystem_mutation<T, F>(
         &self,
         agent_id: &str,
         operation: F,
@@ -1624,15 +1626,15 @@ impl ProductionSessionWorkers {
         F: FnOnce() -> Result<T, String>,
     {
         let lock = self
-            .profile_mutation_locks
+            .filesystem_mutation_locks
             .lock()
-            .map_err(|_| "profile mutation lock registry is poisoned".to_string())?
+            .map_err(|_| "filesystem mutation lock registry is poisoned".to_string())?
             .entry(agent_id.to_string())
             .or_insert_with(|| Arc::new(Mutex::new(())))
             .clone();
         let _guard = lock
             .lock()
-            .map_err(|_| format!("profile mutation lock is poisoned for agent {agent_id}"))?;
+            .map_err(|_| format!("filesystem mutation lock is poisoned for agent {agent_id}"))?;
         operation()
     }
 
@@ -2472,6 +2474,90 @@ impl ProductionSessionWorkers {
             .map_err(|error| error.to_string())
     }
 
+    fn restore_memory_records(
+        store: &FileMemoryStore,
+        records: &[MemoryRecord],
+    ) -> Result<(), String> {
+        for record in records {
+            store
+                .add_memory(&record.content, record.created_at, record.kind)
+                .map_err(|error| error.to_string())?;
+        }
+        Ok(())
+    }
+
+    pub fn remove_agent_memory(&self, agent_id: &str, memory_id: &str) -> Result<bool, String> {
+        self.with_agent_filesystem_mutation(agent_id, || {
+            self.assert_agent_work_admission(agent_id)?;
+            let owner = self.open_agent_db_owner(agent_id)?;
+            let prior_snapshot = owner
+                .get_memory_prompt_snapshot()
+                .map_err(|error| error.to_string())?;
+            let store = self.memory_service.store_for_agent(agent_id);
+            let previous = store
+                .list_memories(usize::MAX)
+                .into_iter()
+                .find(|record| record.id == memory_id);
+            let removed = store
+                .remove_memory(memory_id)
+                .map_err(|error| error.to_string())?;
+            if !removed {
+                return Ok(false);
+            }
+            let cleared = owner
+                .clear_memory_prompt_snapshot()
+                .map_err(|error| error.to_string())?;
+            if cleared || prior_snapshot.is_none() {
+                return Ok(true);
+            }
+            let Some(previous) = previous else {
+                return Err(
+                    "memory snapshot clear was rejected and removed memory cannot be restored"
+                        .into(),
+                );
+            };
+            Self::restore_memory_records(&store, &[previous]).map_err(|restore_error| {
+                format!(
+                    "memory snapshot clear was rejected; memory rollback failed: {restore_error}"
+                )
+            })?;
+            Err("memory snapshot clear was rejected by the session owner".into())
+        })
+    }
+
+    pub fn clear_agent_memories(&self, agent_id: &str) -> Result<(), String> {
+        self.with_agent_filesystem_mutation(agent_id, || {
+            self.assert_agent_work_admission(agent_id)?;
+            let owner = self.open_agent_db_owner(agent_id)?;
+            let prior_snapshot = owner
+                .get_memory_prompt_snapshot()
+                .map_err(|error| error.to_string())?;
+            let store = self.memory_service.store_for_agent(agent_id);
+            let previous = store.list_memories(usize::MAX);
+            if let Err(error) = store.clear_memories() {
+                let restore_error = Self::restore_memory_records(&store, &previous).err();
+                return Err(match restore_error {
+                    Some(restore_error) => {
+                        format!("memory clear failed: {error}; rollback failed: {restore_error}")
+                    }
+                    None => error.to_string(),
+                });
+            }
+            let cleared = owner
+                .clear_memory_prompt_snapshot()
+                .map_err(|error| error.to_string())?;
+            if cleared || prior_snapshot.is_none() {
+                return Ok(());
+            }
+            if let Err(restore_error) = Self::restore_memory_records(&store, &previous) {
+                return Err(format!(
+                    "memory snapshot clear was rejected; memory rollback failed: {restore_error}"
+                ));
+            }
+            Err("memory snapshot clear was rejected by the session owner".into())
+        })
+    }
+
     pub fn get_agent_profile_prompt_snapshot(
         &self,
         agent_id: &str,
@@ -2707,7 +2793,7 @@ impl ProductionSessionWorkers {
         let agent_dir = db_path
             .parent()
             .ok_or_else(|| "agent database has no parent directory".to_string())?;
-        self.with_agent_profile_mutation(agent_id, || {
+        self.with_agent_filesystem_mutation(agent_id, || {
             self.assert_agent_work_admission(agent_id)?;
             write_agent_profile_update(agent_dir, update)
                 .map_err(|error| error.to_string())
@@ -2753,7 +2839,7 @@ impl ProductionSessionWorkers {
         active_agent_id: Option<&str>,
     ) -> Result<Option<AgentSummary>, String> {
         let db_path = self.existing_session_db_path(agent_id)?;
-        self.with_agent_profile_mutation(agent_id, || {
+        self.with_agent_filesystem_mutation(agent_id, || {
             self.assert_agent_work_admission(agent_id)?;
             let owner = self.open_agent_db_owner(agent_id)?;
             mutate_agent_avatar_bytes(

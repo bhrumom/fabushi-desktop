@@ -276,8 +276,10 @@ The shared owner KV write boundary now fences the remaining owner-local KV
 setters. Profile/avatar mutation and directory deletion now share a per-agent
 `ProductionSessionWorkers` serialization boundary, and avatar legacy-pointer
 clearing delegates to `SandAgentDb`; this closes the in-process deletion race,
-while cross-process crash recovery and external memory-store clear paths remain
-separate atomicity gaps.
+while cross-process crash recovery remains a separate atomicity gap. Memory
+gateway remove/clear now routes through the same filesystem owner and bounded
+record-restore path; this is a local lifecycle slice and does not change the
+responsibility's overall `not-started/not-wired/not-run/pending` disposition.
 
 ### 2026-11-01 background-result consumer recheck
 

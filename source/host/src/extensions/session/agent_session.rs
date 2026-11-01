@@ -452,7 +452,7 @@ impl SandAgentSessionStore {
 
     pub fn delete_session(&self, agent_id: &str) -> Result<(), String> {
         self.production.begin_agent_delete(agent_id)?;
-        let result = self.production.with_agent_profile_mutation(agent_id, || {
+        let result = self.production.with_agent_filesystem_mutation(agent_id, || {
             let db_path = self.production.session_db_path(agent_id)?;
             let blob_path = conversation_blobs_path(&db_path);
             let _ = self.production.close_agent_store_owner(agent_id, false);
