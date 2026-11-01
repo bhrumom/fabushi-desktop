@@ -1739,6 +1739,13 @@ impl SandAgentDb {
         self.write_kv(KV_UNREAD, &raw)
     }
 
+    pub fn set_unread_state(
+        &self,
+        state: &UnreadState,
+    ) -> Result<bool, AgentDbProjectionError> {
+        self.write_unread_state_owner(state)
+    }
+
     pub fn mark_activity(&self, at: f64) -> Result<bool, AgentDbProjectionError> {
         let current = self.get_unread_state()?;
         if current.last_activity_at >= at {
@@ -2640,6 +2647,32 @@ impl SandAgentDb {
                     KV_MEMORY_SNAPSHOT,
                     KV_PROFILE_SNAPSHOT,
                 ] {
+                    changed |= db.execute(DELETE_KV_SQL, params![key])? > 0;
+                }
+                Ok(changed)
+            })();
+            match result {
+                Ok(changed) => {
+                    db.execute_batch("COMMIT")?;
+                    Ok(changed)
+                }
+                Err(error) => {
+                    let _ = db.execute_batch("ROLLBACK");
+                    Err(error)
+                }
+            }
+        })
+    }
+
+    pub fn clear_clone_mutation_journals(&self) -> Result<bool, AgentDbProjectionError> {
+        self.run_write("clearCloneMutationJournals", |db| {
+            db.execute_batch("BEGIN IMMEDIATE")?;
+            let result = (|| -> Result<bool, rusqlite::Error> {
+                if !session_work_write_is_admitted(db)? {
+                    return Ok(false);
+                }
+                let mut changed = false;
+                for key in [KV_PENDING_MEMORY_MUTATION, KV_PENDING_PROFILE_MUTATION] {
                     changed |= db.execute(DELETE_KV_SQL, params![key])? > 0;
                 }
                 Ok(changed)
@@ -4888,20 +4921,10 @@ pub fn set_persisted_automation_spend_guard_state(
     busy_timeout_ms: u64,
     state: &SpendGuardState,
 ) -> Result<bool, AgentDbProjectionError> {
-    let mut db = open_projection_db(db_path, busy_timeout_ms)?;
-    let transaction = db.transaction_with_behavior(rusqlite::TransactionBehavior::Immediate)?;
-    let changed = if let Some(raw) = serialize_spend_guard_state(state) {
-        transaction.execute(SET_KV_SQL, params![KV_SPEND_GUARD, raw])? > 0
-    } else {
-        transaction.execute(DELETE_KV_SQL, params![KV_SPEND_GUARD])? > 0
-    };
-    let legacy_changed =
-        transaction.execute(DELETE_KV_SQL, params![KV_SPEND_GUARD_LEGACY])? > 0;
-    transaction.commit()?;
-    if changed || legacy_changed {
-        bump_db_write_generation(db_path);
-    }
-    Ok(changed || legacy_changed)
+    let mut options = SandAgentDbOptions::default();
+    options.recovery.busy_timeout_ms = busy_timeout_ms;
+    let owner = SandAgentDb::open_with_options_and_seed(db_path, options, false)?;
+    owner.set_automation_spend_guard_state(state)
 }
 
 pub fn read_persisted_agent_profile_prompt_snapshot(
@@ -4919,27 +4942,10 @@ pub fn clear_persisted_transient_state(
     db_path: &Path,
     busy_timeout_ms: u64,
 ) -> Result<bool, AgentDbProjectionError> {
-    let mut db = open_projection_db(db_path, busy_timeout_ms)?;
-    let transaction = db.transaction_with_behavior(rusqlite::TransactionBehavior::Immediate)?;
-    let mut changed = false;
-    for key in [
-        KV_UNREAD,
-        KV_SPEND_GUARD_LEGACY,
-        KV_SPEND_GUARD,
-        KV_AWAITING,
-        KV_LATEST_REQUEST_ID,
-        KV_REQUEST_IDS,
-        KV_EPISODE,
-        KV_MEMORY_SNAPSHOT,
-        KV_PROFILE_SNAPSHOT,
-    ] {
-        changed |= transaction.execute(DELETE_KV_SQL, params![key])? > 0;
-    }
-    transaction.commit()?;
-    if changed {
-        bump_db_write_generation(db_path);
-    }
-    Ok(changed)
+    let mut options = SandAgentDbOptions::default();
+    options.recovery.busy_timeout_ms = busy_timeout_ms;
+    let owner = SandAgentDb::open_with_options_and_seed(db_path, options, false)?;
+    owner.clear_transient_state()
 }
 
 /// Remove source-agent cross-store recovery custody from a cloned database.
@@ -4949,17 +4955,10 @@ pub fn clear_persisted_clone_mutation_journals(
     db_path: &Path,
     busy_timeout_ms: u64,
 ) -> Result<bool, AgentDbProjectionError> {
-    let mut db = open_projection_db(db_path, busy_timeout_ms)?;
-    let transaction = db.transaction_with_behavior(rusqlite::TransactionBehavior::Immediate)?;
-    let mut changed = false;
-    for key in [KV_PENDING_MEMORY_MUTATION, KV_PENDING_PROFILE_MUTATION] {
-        changed |= transaction.execute(DELETE_KV_SQL, params![key])? > 0;
-    }
-    transaction.commit()?;
-    if changed {
-        bump_db_write_generation(db_path);
-    }
-    Ok(changed)
+    let mut options = SandAgentDbOptions::default();
+    options.recovery.busy_timeout_ms = busy_timeout_ms;
+    let owner = SandAgentDb::open_with_options_and_seed(db_path, options, false)?;
+    owner.clear_clone_mutation_journals()
 }
 
 pub fn read_persisted_agent_serde_snapshot(
@@ -5026,22 +5025,10 @@ pub fn set_persisted_sand_profile(
     busy_timeout_ms: u64,
     profile: &SandProfile,
 ) -> Result<bool, AgentDbProjectionError> {
-    let db = open_projection_db(db_path, busy_timeout_ms)?;
-    let current = parse_profile(read_kv(&db, KV_PROFILE)?.as_deref());
-    if current == *profile {
-        return Ok(true);
-    }
-    let raw = serde_json::json!({
-        "description": profile.description.clone(),
-        "avatarPath": profile.avatar_path.clone(),
-    })
-    .to_string();
-    let wrote = db.execute(SET_KV_SQL, params![KV_PROFILE, raw])? > 0;
-    if wrote {
-        bump_db_write_generation(db_path);
-        notify_agent_db_listeners(db_path, AgentDbListenerChannel::Profile);
-    }
-    Ok(wrote)
+    let mut options = SandAgentDbOptions::default();
+    options.recovery.busy_timeout_ms = busy_timeout_ms;
+    let owner = SandAgentDb::open_with_options_and_seed(db_path, options, false)?;
+    owner.set_sand_profile(profile)
 }
 
 fn write_unread_state(
@@ -5049,19 +5036,10 @@ fn write_unread_state(
     busy_timeout_ms: u64,
     state: &UnreadState,
 ) -> Result<bool, AgentDbProjectionError> {
-    let db = open_projection_db(db_path, busy_timeout_ms)?;
-    let raw = serde_json::json!({
-        "lastActivityAt": state.last_activity_at,
-        "lastViewedAt": state.last_viewed_at,
-        "isManuallyUnread": state.is_manually_unread,
-        "unreadCount": state.unread_count,
-    })
-    .to_string();
-    let wrote = db.execute(SET_KV_SQL, params![KV_UNREAD, raw])? > 0;
-    if wrote {
-        bump_db_write_generation(db_path);
-    }
-    Ok(wrote)
+    let mut options = SandAgentDbOptions::default();
+    options.recovery.busy_timeout_ms = busy_timeout_ms;
+    let owner = SandAgentDb::open_with_options_and_seed(db_path, options, false)?;
+    owner.set_unread_state(state)
 }
 
 pub fn mark_persisted_activity(
@@ -5195,27 +5173,10 @@ pub fn set_persisted_awaiting_user_response(
     busy_timeout_ms: u64,
     state: Option<&AwaitingUserResponse>,
 ) -> Result<bool, AgentDbProjectionError> {
-    let db = open_projection_db(db_path, busy_timeout_ms)?;
-    let current = parse_awaiting_state(read_kv(&db, KV_AWAITING)?.as_deref());
-    if current.as_ref() == state {
-        return Ok(false);
-    }
-    let wrote = if let Some(state) = state {
-        let raw = serde_json::json!({
-            "tabId": state.tab_id.clone(),
-            "reason": state.reason.clone(),
-            "since": state.since,
-        })
-        .to_string();
-        db.execute(SET_KV_SQL, params![KV_AWAITING, raw])? > 0
-    } else {
-        db.execute(DELETE_KV_SQL, params![KV_AWAITING])? > 0
-    };
-    if wrote {
-        bump_db_write_generation(db_path);
-        notify_agent_db_listeners(db_path, AgentDbListenerChannel::Awaiting);
-    }
-    Ok(wrote)
+    let mut options = SandAgentDbOptions::default();
+    options.recovery.busy_timeout_ms = busy_timeout_ms;
+    let owner = SandAgentDb::open_with_options_and_seed(db_path, options, false)?;
+    owner.set_awaiting_user_response(state)
 }
 
 pub fn set_persisted_awaiting_user_response_for_tab(
@@ -5225,24 +5186,10 @@ pub fn set_persisted_awaiting_user_response_for_tab(
     state: Option<&AwaitingUserResponse>,
     if_since_before: Option<f64>,
 ) -> Result<bool, AgentDbProjectionError> {
-    let db = open_projection_db(db_path, busy_timeout_ms)?;
-    let current = parse_awaiting_state(read_kv(&db, KV_AWAITING)?.as_deref());
-    drop(db);
-    if current.as_ref().is_some_and(|current| current.tab_id != tab_id) {
-        return Ok(false);
-    }
-    if state.is_none()
-        && (current.is_none()
-            || if_since_before.is_some_and(|before| {
-                current.as_ref().is_some_and(|current| current.since >= before)
-            }))
-    {
-        return Ok(false);
-    }
-    if state.is_some_and(|state| state.tab_id != tab_id) {
-        return Ok(false);
-    }
-    set_persisted_awaiting_user_response(db_path, busy_timeout_ms, state)
+    let mut options = SandAgentDbOptions::default();
+    options.recovery.busy_timeout_ms = busy_timeout_ms;
+    let owner = SandAgentDb::open_with_options_and_seed(db_path, options, false)?;
+    owner.set_awaiting_user_response_for_tab(tab_id, state, if_since_before)
 }
 
 pub fn record_persisted_request_id(
@@ -5257,60 +5204,10 @@ pub fn record_persisted_request_id(
     if id.is_empty() {
         return Ok(false);
     }
-    let db = open_projection_db(db_path, busy_timeout_ms)?;
-    let mut records = parse_request_records(read_kv(&db, KV_REQUEST_IDS)?.as_deref());
-    if records.is_empty() {
-        if let Some(legacy) = read_kv(&db, KV_LATEST_REQUEST_ID)?
-            .map(|value| value.trim().to_string())
-            .filter(|value| !value.is_empty())
-        {
-            records.push(RequestRecord {
-                id: legacy,
-                at: 0.0,
-                prompt: None,
-                source: None,
-            });
-        }
-    }
-    if records.last().is_some_and(|record| record.id == id) {
-        return Ok(false);
-    }
-    let label = prompt
-        .map(str::trim)
-        .filter(|value| !value.is_empty())
-        .map(|value| value.chars().take(REQUEST_ID_PROMPT_MAX).collect::<String>());
-    records.push(RequestRecord {
-        id: id.to_string(),
-        at,
-        prompt: label,
-        source: source.filter(|value| !value.is_empty()).map(ToOwned::to_owned),
-    });
-    if records.len() > REQUEST_ID_HISTORY_MAX {
-        records.drain(0..records.len() - REQUEST_ID_HISTORY_MAX);
-    }
-    let raw = serde_json::Value::Array(
-        records
-            .iter()
-            .map(|record| {
-                let mut value = serde_json::Map::new();
-                value.insert("id".into(), serde_json::Value::String(record.id.clone()));
-                value.insert("at".into(), json_number(record.at));
-                if let Some(prompt) = &record.prompt {
-                    value.insert("prompt".into(), serde_json::Value::String(prompt.clone()));
-                }
-                if let Some(source) = &record.source {
-                    value.insert("source".into(), serde_json::Value::String(source.clone()));
-                }
-                serde_json::Value::Object(value)
-            })
-            .collect(),
-    )
-    .to_string();
-    let wrote = db.execute(SET_KV_SQL, params![KV_REQUEST_IDS, raw])? > 0;
-    if wrote {
-        bump_db_write_generation(db_path);
-    }
-    Ok(wrote)
+    let mut options = SandAgentDbOptions::default();
+    options.recovery.busy_timeout_ms = busy_timeout_ms;
+    let owner = SandAgentDb::open_with_options_and_seed(db_path, options, false)?;
+    owner.record_request_id(id, at, prompt, source)
 }
 
 pub fn record_persisted_episode_turn(
@@ -5318,34 +5215,10 @@ pub fn record_persisted_episode_turn(
     busy_timeout_ms: u64,
     turn: &EpisodeTurn,
 ) -> Result<bool, AgentDbProjectionError> {
-    let db = open_projection_db(db_path, busy_timeout_ms)?;
-    let mut turns = parse_pending_episode_turns(read_kv(&db, KV_EPISODE)?.as_deref());
-    turns.push(EpisodeTurn {
-        ts: turn.ts,
-        user: turn.user.chars().take(EPISODE_TURN_TEXT_CAP).collect(),
-        agent: turn.agent.chars().take(EPISODE_TURN_TEXT_CAP).collect(),
-    });
-    if turns.len() > EPISODE_PENDING_MAX {
-        turns.drain(0..turns.len() - EPISODE_PENDING_MAX);
-    }
-    let raw = serde_json::Value::Array(
-        turns
-            .iter()
-            .map(|turn| {
-                serde_json::json!({
-                    "ts": turn.ts,
-                    "user": turn.user.clone(),
-                    "agent": turn.agent.clone(),
-                })
-            })
-            .collect(),
-    )
-    .to_string();
-    let wrote = db.execute(SET_KV_SQL, params![KV_EPISODE, raw])? > 0;
-    if wrote {
-        bump_db_write_generation(db_path);
-    }
-    Ok(wrote)
+    let mut options = SandAgentDbOptions::default();
+    options.recovery.busy_timeout_ms = busy_timeout_ms;
+    let owner = SandAgentDb::open_with_options_and_seed(db_path, options, false)?;
+    owner.record_episode_turn(turn)
 }
 
 pub fn clear_persisted_pending_episode_turns(
@@ -5538,12 +5411,10 @@ fn write_persisted_kv(
     key: &str,
     value: &str,
 ) -> Result<bool, AgentDbProjectionError> {
-    let db = open_projection_db(db_path, busy_timeout_ms)?;
-    let wrote = db.execute(SET_KV_SQL, params![key, value])? > 0;
-    if wrote {
-        bump_db_write_generation(db_path);
-    }
-    Ok(wrote)
+    let mut options = SandAgentDbOptions::default();
+    options.recovery.busy_timeout_ms = busy_timeout_ms;
+    let owner = SandAgentDb::open_with_options_and_seed(db_path, options, false)?;
+    owner.write_kv(key, value)
 }
 
 fn delete_persisted_kv(
@@ -5551,12 +5422,10 @@ fn delete_persisted_kv(
     busy_timeout_ms: u64,
     key: &str,
 ) -> Result<bool, AgentDbProjectionError> {
-    let db = open_projection_db(db_path, busy_timeout_ms)?;
-    let wrote = db.execute(DELETE_KV_SQL, params![key])? > 0;
-    if wrote {
-        bump_db_write_generation(db_path);
-    }
-    Ok(wrote)
+    let mut options = SandAgentDbOptions::default();
+    options.recovery.busy_timeout_ms = busy_timeout_ms;
+    let owner = SandAgentDb::open_with_options_and_seed(db_path, options, false)?;
+    owner.delete_kv(key)
 }
 
 
