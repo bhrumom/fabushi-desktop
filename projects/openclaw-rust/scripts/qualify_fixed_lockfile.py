@@ -239,14 +239,37 @@ def manifest_dependency_frontier(
                     "edge_kind": edge_kind,
                     "lock_package_candidates": candidates,
                 }
+                importer_path = (
+                    "." if path == "package.json" else str(Path(path).parent)
+                )
+                row["lock_importer_path"] = importer_path
+                importer_row = importer_observations.get(
+                    (importer_path, section, dependency)
+                )
+                if importer_row is None:
+                    row["lock_importer_join_status"] = (
+                        "peer-selection-required"
+                        if section == "peerDependencies"
+                        else "missing"
+                    )
+                else:
+                    row["lock_importer_specifier"] = importer_row.get("specifier")
+                    row["lock_importer_version"] = importer_row.get("version")
+                    if importer_row.get("specifier") != specifier:
+                        row["lock_importer_join_status"] = "specifier-mismatch"
+                    elif importer_row.get("version") is None:
+                        row["lock_importer_join_status"] = "version-missing"
+                    else:
+                        resolved_base = importer_row["version"].split("(", 1)[0]
+                        row["lock_importer_resolved_base"] = resolved_base
+                        importer_key = f"{dependency}@{resolved_base}"
+                        row["lock_importer_key"] = importer_key
+                        row["lock_importer_join_status"] = (
+                            "candidate-match"
+                            if importer_key in candidates
+                            else "version-not-in-package-candidates"
+                        )
                 if edge_kind == "workspace":
-                    importer_path = (
-                        "." if path == "package.json" else str(Path(path).parent)
-                    )
-                    row["lock_importer_path"] = importer_path
-                    importer_row = importer_observations.get(
-                        (importer_path, section, dependency)
-                    )
                     dependency_manifest = manifest_paths.get(dependency)
                     expected_link = None
                     if dependency_manifest is not None:
@@ -256,7 +279,7 @@ def manifest_dependency_frontier(
                             target_dir or ".", base_dir
                         )
                     row["lock_expected_link"] = expected_link
-                    if importer_row is None:
+                    if row["lock_importer_join_status"] == "missing":
                         row["lock_join_status"] = "workspace-importer-missing"
                     elif importer_row.get("specifier") != specifier:
                         row["lock_join_status"] = "workspace-importer-specifier-mismatch"
@@ -268,6 +291,7 @@ def manifest_dependency_frontier(
                     else:
                         row["lock_importer_version"] = importer_row.get("version")
                         row["lock_join_status"] = "workspace-importer-match"
+                    row["lock_importer_join_status"] = "workspace-link"
                 elif not candidates:
                     row["lock_join_status"] = "no-lock-name-candidate"
                 elif specifier in {

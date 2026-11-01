@@ -92,7 +92,7 @@ python3 projects/openclaw-rust/scripts/qualify_fixed_lockfile.py \
 ```
 
 The machine-readable result digest is
-`e516b54def3ba3f90be099dff94ec409f126db5aa6950f849f7ce14777c1d725`.
+`fbe47467c8dbe1b5df1c624c20998357528b84349f92bcbaca1d6a837a2fd629`.
 After de-duplicating repeated frontier rows by exact manifest path/package,
 the probe scanned `15` exact manifest identities; `13` of them declare at
 least one dependency row. The output contains `176` declared dependency edges:
@@ -101,8 +101,11 @@ package-name candidate join against the same raw lockfile classified `155`
 edges as exact-version candidates, `4` as name candidates requiring range/peer
 selection, and all `17` workspace edges as matching the expected importer,
 specifier, and `link:` target shape. This is a bounded importer/package join,
-not dependency approval: it does not establish recursive package resolution,
-peer selection, archive bytes, generated artifacts, or license/SBOM provenance.
+not dependency approval: the `155` registry importer versions match candidate
+package keys after removing pnpm peer suffixes, while four optional peer
+declarations remain explicitly `peer-selection-required` with multiple or
+range candidates. It does not establish recursive package resolution, peer
+selection, archive bytes, generated artifacts, or license/SBOM provenance.
 The output still reports `2` lockfile fragments,
 `document_separator_count=2`, and
 `duplicate_top_level_lockfile_headers=false`.
