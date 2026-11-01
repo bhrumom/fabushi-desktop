@@ -5284,6 +5284,7 @@ impl ProductionSessionWorkers {
                 &session_db_path,
                 self.busy_timeout_ms,
                 &recovery_turns,
+                db_owner.as_ref(),
             )?;
         }
         let recovery_outline = recovery_turns
@@ -5294,6 +5295,7 @@ impl ProductionSessionWorkers {
             &session_db_path,
             self.busy_timeout_ms,
             &recovery_outline,
+            db_owner.as_ref(),
         )?;
         let persisted_root_blob_id = db_owner
             .get_latest_root_blob_id()
@@ -5328,6 +5330,7 @@ impl ProductionSessionWorkers {
             &session_db_path,
             &store.blob_db_path,
             self.busy_timeout_ms,
+            db_owner.as_ref(),
         )?;
         let _ = retire_legacy_store_blobs_once(
             Arc::clone(&self.pool),
@@ -5335,6 +5338,7 @@ impl ProductionSessionWorkers {
             &session_db_path,
             &store.blob_db_path,
             self.busy_timeout_ms,
+            db_owner.as_ref(),
         )?;
 
         let prepared = PreparedAgentBlobStore {
