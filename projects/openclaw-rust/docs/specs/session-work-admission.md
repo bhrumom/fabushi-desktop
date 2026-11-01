@@ -27,7 +27,12 @@ durable state → consumer chain.
   a durable generation/lifecycle revision.
 - `SWA-02`: Pending agent deletion rejects new writes and retains any owned
   terminal writes until the existing deletion owner publishes a safe replay or
-  failure outcome.
+  failure outcome. The owner-local admission record carries a migration-safe
+  `deletionPending` fence while the existing lifecycle owner has deletion
+  custody; the in-memory deletion marker remains a fast-path guard, not the
+  durable authority. A failed delete clears the durable fence only after the
+  existing agent directory remains available; an unknown cleanup outcome stays
+  fail-closed.
 - `SWA-03`: Detached background results commit at most once against the exact
   admitted session generation and preserve transcript/media idempotency.
 - `SWA-04`: Archived sessions reject new work; restore requires the existing
@@ -60,11 +65,13 @@ bounded production path, limited to canonical main sessions and fail-closed
 while admitted work, active generated-subagent work, or an active foreground
 Runner stream is active. Media custody still has no equivalent session-owned
 active-work authority and remains an open requirement.
-`deleting_agents` remains an in-memory
-deletion fence and is insufficient as the complete contract.
+`deleting_agents` remains the in-memory fast-path deletion fence; the durable
+`deletion_pending` field now backs the same owner-local admission record when
+the agent database is available. This closes the durable deletion-window
+sub-contract only; it is not the complete detached-result lifecycle.
 
 Target state is one owner-local session admission record containing canonical
-`sessionKey`, `sessionId`, lifecycle revision, archive metadata, admitted
+`sessionKey`, `sessionId`, lifecycle revision, `deletionPending`, archive metadata, admitted
 background-work identity/idempotency, one durable pending outgoing-media work
 identity, and structured provider-review facts, continuation run identity, plus
 terminal phase. The record

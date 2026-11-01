@@ -370,7 +370,9 @@ fn deletion_fenced_target_uses_frozen_agent_gone_response() {
     let beta = sessions
         .materialize_new_session(Some(&profile("Beta")), "user", None)
         .expect("beta");
-    sessions.begin_agent_delete(&beta.id);
+    sessions
+        .begin_agent_delete(&beta.id)
+        .expect("publish deletion fence");
 
     let service = ProductionAgentToAgentMessaging::new(
         Arc::clone(&sessions),
@@ -382,7 +384,9 @@ fn deletion_fenced_target_uses_frozen_agent_gone_response() {
         .expect("send result");
     assert_eq!(ack, "That agent no longer exists.");
 
-    sessions.end_agent_delete(&beta.id);
+    sessions
+        .end_agent_delete(&beta.id)
+        .expect("clear deletion fence");
     sessions.shutdown();
     let _ = fs::remove_dir_all(root);
 }

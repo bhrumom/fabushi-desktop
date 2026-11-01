@@ -877,3 +877,23 @@ fn generated_subagent_cleanup_keeps_the_gateway_lifecycle_owner_and_captured_rev
     assert!(completion != launch && guarded_delete_offset > 0);
     assert!(main.contains("generated_subagent_cleanup_gateway"));
 }
+
+#[test]
+fn deletion_owner_publishes_and_clears_the_durable_session_admission_fence() {
+    let manifest_dir = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+    let production = fs::read_to_string(manifest_dir.join("src/extensions/session/production.rs"))
+        .expect("session production source");
+    let agent_db = fs::read_to_string(manifest_dir.join("src/extensions/session/agent_db.rs"))
+        .expect("session database source");
+    let agent_session = fs::read_to_string(manifest_dir.join("src/extensions/session/agent_session.rs"))
+        .expect("session facade source");
+    assert!(agent_db.contains("pub deletion_pending: bool"));
+    assert!(production.contains("record.deletion_pending = true"));
+    assert!(production.contains("record.deletion_pending = false"));
+    assert!(production.contains("publishing deletion fence"));
+    assert!(production.contains("clearing deletion fence"));
+    assert!(agent_session.contains("self.production.begin_agent_delete(agent_id)?"));
+    assert!(agent_session.contains("self.production.clear_agent_delete_fast_path(agent_id)"));
+    assert!(agent_session.contains("Ok(()) => self.production.end_agent_delete(agent_id)"));
+    assert!(agent_session.contains("Err(error) => {"));
+}

@@ -216,10 +216,10 @@ The fixed source was re-read at the pinned H for
 `session-agent-work-admission.ts`, `background-session-result.ts`,
 `session-archive-restore.ts`, and provider-review terminal ownership. The
 current Rust source confirms that `ProductionSessionWorkers` owns per-agent
-SQLite/transcript state and lifecycle revisions, but only has an in-memory
-`deleting_agents` marker; no durable archived session row, generation-bound
-background-result producer, or authenticated archive/restore/review ingress
-exists.
+SQLite/transcript state and lifecycle revisions. The deletion window now has a
+durable owner-local `deletion_pending` fence in addition to the in-memory
+`deleting_agents` fast path; no complete generation-bound background-result
+producer or full authenticated archive/restore/review lifecycle exists.
 
 The new owner contract and production-boundary spec therefore define the
 minimum migration and preserve the row as not-started until that durable
@@ -237,9 +237,11 @@ The first implementation slice now adds
 `ProductionSessionWorkers::assert_agent_work_admission` to the existing
 transcript append/update/delete, compaction, and conversation-clear wrappers,
 with a focused contract proving rejection during `begin_agent_delete` and
-admission after the fence clears. This is only the in-memory deletion-window
-sub-contract; the row remains not-started until durable archive, background
-result generation, and provider-review ownership are implemented and wired.
+admission after the fence clears. The deletion owner now also publishes and
+clears a durable `deletion_pending` flag through the same admission record.
+This is the bounded deletion-window sub-contract; the row remains not-started
+until durable archive, background-result generation, and provider-review
+ownership are implemented and wired.
 
 ### 2026-11-01 background-result consumer recheck
 

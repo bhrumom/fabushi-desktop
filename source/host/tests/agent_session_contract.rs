@@ -117,7 +117,9 @@ fn deletion_fence_rejects_new_transcript_work_before_durable_write() {
         .create_session(None, "user", None)
         .expect("agent");
 
-    production.begin_agent_delete(&record.id);
+    production
+        .begin_agent_delete(&record.id)
+        .expect("publish deletion fence");
     let error = production
         .append_agent_transcript_entries(
             &record.id,
@@ -130,7 +132,9 @@ fn deletion_fence_rejects_new_transcript_work_before_durable_write() {
         )
         .expect_err("deletion-pending work must be rejected");
     assert!(error.contains("new session work is not admitted"));
-    production.end_agent_delete(&record.id);
+    production
+        .end_agent_delete(&record.id)
+        .expect("clear deletion fence");
     production
         .append_agent_transcript_entries(
             &record.id,
@@ -208,6 +212,36 @@ fn archived_main_session_rejects_routed_work_admission() {
     assert!(mismatch.contains("key mismatch"));
 
     store.close_worker_pool();
+    let _ = fs::remove_dir_all(root);
+}
+
+#[test]
+fn session_delete_publishes_and_clears_owner_local_deletion_fence() {
+    let root = temp_root("work-admission-deletion-fence");
+    let agents = root.join("agents");
+    let production = Arc::new(ProductionSessionWorkers::with_agents_root(&agents, 500));
+    let store = SandAgentSessionStore::new(Arc::clone(&production));
+    let record = store
+        .create_session(None, "user", None)
+        .expect("agent");
+
+    production
+        .begin_agent_delete(&record.id)
+        .expect("publish deletion fence");
+    assert!(production
+        .read_session_work_admission(&record.id)
+        .expect("read fenced admission")
+        .expect("admission")
+        .deletion_pending);
+    production
+        .end_agent_delete(&record.id)
+        .expect("clear deletion fence");
+    assert!(!production
+        .read_session_work_admission(&record.id)
+        .expect("read cleared admission")
+        .expect("admission")
+        .deletion_pending);
+
     let _ = fs::remove_dir_all(root);
 }
 

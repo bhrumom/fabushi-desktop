@@ -451,7 +451,7 @@ impl SandAgentSessionStore {
     }
 
     pub fn delete_session(&self, agent_id: &str) -> Result<(), String> {
-        self.production.begin_agent_delete(agent_id);
+        self.production.begin_agent_delete(agent_id)?;
         let result = (|| {
             let db_path = self.production.session_db_path(agent_id)?;
             let blob_path = conversation_blobs_path(&db_path);
@@ -471,8 +471,13 @@ impl SandAgentSessionStore {
             publish_transcript_mutation(&mutation);
             Ok(())
         })();
-        self.production.end_agent_delete(agent_id);
-        result
+        match result {
+            Err(error) => {
+                self.production.clear_agent_delete_fast_path(agent_id);
+                Err(error)
+            }
+            Ok(()) => self.production.end_agent_delete(agent_id),
+        }
     }
 
     pub fn list_agents(&self) -> Result<Vec<AgentSummary>, String> {

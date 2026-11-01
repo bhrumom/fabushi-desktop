@@ -171,6 +171,7 @@ fn session_work_admission_record_migrates_and_compare_and_sets_generation() {
         session_key: "agent:agent-work:main".into(),
         session_id: "session-1".into(),
         lifecycle_revision: "revision-1".into(),
+        deletion_pending: false,
         archived_at_ms: None,
         archived_by: None,
         archive_reason: None,
@@ -287,6 +288,46 @@ fn session_work_admission_record_migrates_and_compare_and_sets_generation() {
 }
 
 #[test]
+fn session_work_admission_deletion_fence_migrates_and_persists() {
+    let root = temp_root("work-admission-deletion-fence");
+    let agent_dir = root.join("agent-delete-fence");
+    fs::create_dir_all(&agent_dir).expect("agent dir");
+    let db_path = agent_dir.join("store.db");
+    let owner = SandAgentDb::open(&db_path, 50).expect("owner");
+
+    owner
+        .write_kv(
+            "sessionWorkAdmission",
+            &serde_json::json!({
+                "session_key": "agent:agent-delete-fence:main",
+                "session_id": "session-1",
+                "lifecycle_revision": "revision-1"
+            })
+            .to_string(),
+        )
+        .expect("write legacy admission record");
+    let migrated = owner
+        .read_session_work_admission()
+        .expect("read migrated admission")
+        .expect("migrated admission exists");
+    assert!(!migrated.deletion_pending);
+
+    let mut fenced = migrated.clone();
+    fenced.deletion_pending = true;
+    assert!(owner
+        .compare_and_set_session_work_admission(Some("revision-1"), &fenced)
+        .expect("publish deletion fence"));
+    assert!(owner
+        .read_session_work_admission()
+        .expect("read deletion fence")
+        .expect("fenced admission exists")
+        .deletion_pending);
+
+    owner.close(false);
+    let _ = fs::remove_dir_all(root);
+}
+
+#[test]
 fn provider_review_owner_is_generation_bound_idempotent_and_conflict_safe() {
     let root = temp_root("provider-review-owner");
     let agent_dir = root.join("agent-review");
@@ -297,6 +338,7 @@ fn provider_review_owner_is_generation_bound_idempotent_and_conflict_safe() {
         session_key: "agent:agent-review:main".into(),
         session_id: "session-1".into(),
         lifecycle_revision: "revision-1".into(),
+        deletion_pending: false,
         archived_at_ms: None,
         archived_by: None,
         archive_reason: None,
@@ -392,6 +434,7 @@ fn provider_review_continuation_settlement_is_run_and_generation_bound() {
         session_key: "agent:agent-review-settlement:main".into(),
         session_id: "session-settle".into(),
         lifecycle_revision: "revision-settle".into(),
+        deletion_pending: false,
         archived_at_ms: None,
         archived_by: None,
         archive_reason: None,
@@ -450,6 +493,7 @@ fn session_archive_transition_is_guarded_idempotent_and_blocks_active_work() {
         session_key: "agent:agent-work:main".into(),
         session_id: "session-1".into(),
         lifecycle_revision: "revision-1".into(),
+        deletion_pending: false,
         archived_at_ms: None,
         archived_by: None,
         archive_reason: None,
@@ -570,6 +614,7 @@ fn admitted_transcript_append_is_rejected_after_archive_without_partial_write() 
         session_key: session_key.into(),
         session_id: "session-1".into(),
         lifecycle_revision: "revision-1".into(),
+        deletion_pending: false,
         archived_at_ms: None,
         archived_by: None,
         archive_reason: None,
@@ -661,6 +706,7 @@ fn media_settlement_appends_and_releases_in_one_owner_transaction() {
         session_key: "agent:agent-media-settlement:main".into(),
         session_id: "session-1".into(),
         lifecycle_revision: "revision-1".into(),
+        deletion_pending: false,
         archived_at_ms: None,
         archived_by: None,
         archive_reason: None,
@@ -750,6 +796,7 @@ fn background_result_receipt_is_idempotent_and_conflicts_fail_closed() {
         session_key: "agent:agent-work:main".into(),
         session_id: "session-1".into(),
         lifecycle_revision: "revision-1".into(),
+        deletion_pending: false,
         archived_at_ms: None,
         archived_by: None,
         archive_reason: None,
@@ -820,6 +867,7 @@ fn stale_background_result_cas_rolls_back_receipt_insert() {
         session_key: "agent:agent-work:main".into(),
         session_id: "session-1".into(),
         lifecycle_revision: "revision-1".into(),
+        deletion_pending: false,
         archived_at_ms: None,
         archived_by: None,
         archive_reason: None,

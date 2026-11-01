@@ -213,7 +213,9 @@ fn production_roster_excludes_agents_while_delete_fence_is_active() {
             .is_some()
     );
 
-    workers.begin_agent_delete(&record.id);
+    workers
+        .begin_agent_delete(&record.id)
+        .expect("publish deletion fence");
     assert!(
         workers
             .summarize_agent_by_id(&record.id, None)
@@ -228,7 +230,9 @@ fn production_roster_excludes_agents_while_delete_fence_is_active() {
             .all(|summary| summary.id != record.id)
     );
 
-    workers.end_agent_delete(&record.id);
+    workers
+        .end_agent_delete(&record.id)
+        .expect("clear deletion fence");
     assert!(
         workers
             .summarize_agent_by_id(&record.id, None)
@@ -264,9 +268,13 @@ fn production_roster_cache_tracks_generation_and_prunes_removed_agents() {
         .expect("first summary");
     assert_eq!(refreshed.last_activity_at, 123.0);
 
-    workers.begin_agent_delete(&second.id);
+    workers
+        .begin_agent_delete(&second.id)
+        .expect("publish deletion fence");
     assert_eq!(workers.roster_extras_cache_entry_count(), 1);
-    workers.end_agent_delete(&second.id);
+    workers
+        .end_agent_delete(&second.id)
+        .expect("clear deletion fence");
     fs::remove_dir_all(root.join(&second.id)).expect("remove second agent");
     let listed = workers.list_agent_summaries(None).expect("pruned roster");
     assert!(listed.iter().all(|summary| summary.id != second.id));

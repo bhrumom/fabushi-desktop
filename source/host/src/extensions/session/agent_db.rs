@@ -123,6 +123,8 @@ pub struct SessionWorkAdmissionRecord {
     pub session_id: String,
     pub lifecycle_revision: String,
     #[serde(default)]
+    pub deletion_pending: bool,
+    #[serde(default)]
     pub archived_at_ms: Option<f64>,
     #[serde(default)]
     pub archived_by: Option<String>,

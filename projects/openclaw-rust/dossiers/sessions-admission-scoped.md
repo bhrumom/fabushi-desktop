@@ -643,3 +643,21 @@ path. The final `SandAgentDb` session-admitted append still validates the
 admission key, archive state, and each entry's persisted `sessionKey` inside
 the same transaction. This is a provenance-negative recheck only; it does not
 promote session-work-admission wiring, verification, or acceptance.
+
+## 12.22 Durable deletion-window fence — 2026-11-01
+
+The existing `ProductionSessionWorkers` deletion owner now publishes a
+migration-safe `deletion_pending` flag in the owner-local
+`SessionWorkAdmissionRecord` before destructive cleanup when the agent DB is
+available. Session admission checks reject new work from either the in-memory
+fast path or this durable fence. Confirmed successful cleanup removes the
+directory and releases the in-memory marker; failed or outcome-unknown cleanup
+releases only that fast path and retains the durable fence fail-closed. Existing
+stores deserialize the new field as `false`, and no second session store or
+deletion owner was added.
+
+Focused owner and session-facade oracles now cover legacy-field migration,
+durable publication/clear, and the delete-fence path. They were not executed
+under the development freeze. This closes only the deletion-window sub-contract;
+the full detached-result/media/provider-review lifecycle, exact-head
+verification, package, runtime, and acceptance evidence remain pending.

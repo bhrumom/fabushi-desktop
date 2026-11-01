@@ -98,6 +98,12 @@ The implementation must preserve the existing Host Gateway, Transcript/Session
 storage, Runner generation, and plugin Gateway-context owners. No unauthenticated
 fallback, alternate deletion path, or stale callback may bypass the guard.
 
+While the existing lifecycle owner has deletion custody, it must also publish a
+durable owner-local `deletionPending` fence when the session admission record is
+available. The existing in-memory deletion marker remains a fast-path guard. A
+failed delete may clear the durable fence only after the agent directory is
+still present; an unknown cleanup outcome remains fail-closed.
+
 ## Current and target state
 
 | Concern | Current state | Target state |
@@ -106,6 +112,7 @@ fallback, alternate deletion path, or stale callback may bypass the guard.
 | Lifecycle revision | Absent from Rust AgentSummary/storage projection | Durable opaque revision in existing session owner |
 | Updated-at guard | Accepted upstream but ignored by Rust delete | Compared under the same storage owner when supplied |
 | Async cleanup | `deleteAgent` runs after a shallow admission check | Drain/cleanup then immediate guarded commit recheck |
+| Deletion admission | In-memory deletion marker only | Existing owner-local admission record carries `deletionPending` during deletion custody when the DB is available |
 | Cron/subagent consumer | Current upstream carries revision/currentness | Rust callers carry the same guarded contract |
 
 ## Architecture and data flow
