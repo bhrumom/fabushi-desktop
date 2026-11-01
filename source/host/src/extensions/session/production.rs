@@ -2677,7 +2677,7 @@ impl ProductionSessionWorkers {
     fn prepare_memory_mutation(
         owner: &SandAgentDb,
         operation: &str,
-        records: Vec<MemoryRecord>,
+        records: Vec<MemoryRecoveryRecord>,
         prior_snapshot: Option<MemoryPromptSnapshot>,
     ) -> Result<PendingMemoryMutation, String> {
         let admission = owner
