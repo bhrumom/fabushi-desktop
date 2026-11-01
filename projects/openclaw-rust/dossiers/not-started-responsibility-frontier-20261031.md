@@ -466,3 +466,6 @@ and global completion acceptance remain pending.
 Provider revival errors now also requeue the exact in-memory failure batch before
 ending the worker pass, while retaining its durable marker. This preserves the
 next retry's context without spinning an unbounded immediate retry loop.
+If the owning agent is gone, the worker now records the explicit terminal-lost
+disposition by settling the exact observed markers instead of leaving orphaned
+durable wakes.

@@ -6796,7 +6796,10 @@ fn run_channel_failure_revival_worker(
 
         let summary = match deps.session_workers.summarize_agent_by_id(&agent_id, None) {
             Ok(Some(summary)) => summary,
-            Ok(None) => continue,
+            Ok(None) => {
+                clear_durable_channel_failure_markers(&deps, &agent_id, &failures);
+                continue;
+            }
             Err(error) => {
                 eprintln!(
                     "mahayana-host channel_failure_resolve_failed agent={} error={error}",
