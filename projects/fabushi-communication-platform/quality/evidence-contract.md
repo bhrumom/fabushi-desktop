@@ -232,3 +232,14 @@ A weekly decision record preserves the UTC calendar week, exact scanned commit, 
 
 Report evidence distinguishes newly eligible/materially changed decisions and coverage failures from trend metrics. It preserves helper count, source lines, mandatory and on-demand documentation weight, reuse/candidate changes and any unavailable historical baseline without describing a new metric baseline as deterioration from zero. Missing or stale evidence leaves prior retention findings unverified; it cannot silently resolve them. This evidence remains under the existing repository-quality owner and must not create a second scanner, findings ledger, ownership graph, task queue, product runtime or release verdict.
 
+
+
+## Repository helper-inventory regression contract-suite evidence
+
+Passing evidence for the helper-inventory regression suite is bound to the frozen Fabushi candidate commit and records the exact contract-suite revision, runner/environment identity, per-case result, fixture inputs, observed inventory/coverage fields, and any generated report/finding state needed by the oracle. The evidence must preserve the distinction between exact-ref and mutable-worktree fixtures, stable versus dirty/unavailable archive state, and direct versus indirect/internal consumer evidence.
+
+For the threshold cases, record helper birth date/age, evaluation date, recent-window cutoff, lifetime distinct product-task count and the resulting review reasons. Coverage-negative cases must record why evidence is unavailable (missing queue, no saved patches, dirty state or other declared limitation) and must show that product-task evidence is unknown/unavailable rather than rewritten to zero. Consumer-classification cases preserve creation, harness-only, self-test-only, uncertain and independent product buckets plus task-level de-duplication. Patch/lexical cases preserve the exact accepted/rejected hunk lines or identifier sources so comments, literals, deletions, helper implementation edits, unrelated namespaces and ambiguous ownership cannot manufacture a consumer.
+
+Exact-ref documentation cases identify both the committed source revision and any divergent worktree text and prove each mode reads only its declared authority. Internal/open-work cases preserve helper kind, required-by edges, indirect consumer propagation, open-task identity and routing hold. Finding-lifecycle cases preserve stable finding ID and `first_seen`, and prove unavailable current evidence changes an open finding to unverified rather than resolved while an already-resolved finding stays resolved when that evidence class is unavailable.
+
+No evidence from this suite authorizes helper deletion, task routing, configured-build/runtime reachability, product acceptance, or release readiness. Stage A stores only the authored contract/evidence requirements; executable pass/fail evidence remains absent until Stage B.
