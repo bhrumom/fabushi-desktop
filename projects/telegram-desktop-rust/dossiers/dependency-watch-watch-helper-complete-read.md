@@ -62,4 +62,4 @@ No dependency pin, product updater state, runtime code, platform-core production
 
 Fixed-U upstream test cases were read but not executed: `VersionTests.test_stable_ordering_and_prefixes`; `SnapshotTests.test_fetches_remote_without_touching_working_tree`; `SnapshotTests.test_fetch_failure_never_uses_stale_ref`; `SnapshotTests.test_missing_required_manifest_fails`; `SnapshotTests.test_offline_snapshot_is_marked_unverified`; and `SnapshotTests.test_linked_worktree_uses_common_report_storage`.
 
-Stage A validation remains `not-run`; acceptance remains false.
+Spec-first desktop commit: `98ca5286b5fe0c2b63e8da0c4e9bb39ad48b176e`. Stage A validation remains `not-run`; acceptance remains false.

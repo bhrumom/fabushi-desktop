@@ -6,8 +6,8 @@
   "target_commit": "23d73b32e301408f9c8aed151cb1f9e442516e13",
   "coverage": {
     "source_entries_total": 16202,
-    "unknown": 16156,
-    "unread": 16129,
+    "unknown": 16155,
+    "unread": 16128,
     "omitted": 0,
     "responsibilities_total": 134,
     "unmapped_responsibilities": 0
@@ -34919,7 +34919,16 @@
         "Release identity and publication provenance",
         "Signature/attestation/checksum trust boundaries",
         "Regression and observation-hold decisions",
-        "Malicious-release/XZ standing case"
+        "Malicious-release/XZ standing case",
+        "watch.git",
+        "watch.selected",
+        "watch.snapshot",
+        "watch.compare",
+        "watch.main",
+        "watch.REQUIRED",
+        "watch.MANIFEST_NAMES",
+        "watch.CANDIDATE",
+        "watch.STABLE_VERSION"
       ],
       "capability_ids": [
         "CAP-REPOSITORY-QUALITY-GOVERNANCE",
@@ -35063,7 +35072,10 @@
         "fixed-u-xz-prepare:Telegram/build/prepare/prepare.py@a9f3dd2d9e4020df958ab5af942376177d66c78b -> 05af863c3166cddeb4ab935829b14e995c8346b4",
         "fixed-u-xz-docker:Telegram/build/docker/centos_env/Dockerfile@3fea9e6866e0ea6351f8a13ebb825ebf49cadfc2 -> v5.8.4",
         "xz-v5.8.4-tag-object:9151b328e76bbc468aa64f85c741886b6227cec1 -> d3e650e63c110e830fd5391e7f8b45df0b91d3da",
-        "desktop-spec-commit:5358a6e9a978d2c2540086244f68d729f702142c"
+        "desktop-spec-commit:5358a6e9a978d2c2540086244f68d729f702142c",
+        "dossier:projects/telegram-desktop-rust/dossiers/dependency-watch-watch-helper-complete-read.md",
+        "upstream-helper-test:.agents/skills/dependency-watch/scripts/watch_test.py@d3107c617be3e8780a99bebaeba19a4f235ae6ea",
+        "desktop-spec-commit:98ca5286b5fe0c2b63e8da0c4e9bb39ad48b176e"
       ],
       "test_evidence": [
         "CONTRACT-TDRP-DEPENDENCY-SNAPSHOT-COVERAGE-001 authored, not run",
@@ -35078,9 +35090,14 @@
         "CONTRACT-TDRP-DEPENDENCY-FORK-IMPORT-HISTORY-001 authored, not run",
         "CONTRACT-TDRP-DEPENDENCY-FORK-FIX-APPLICABILITY-001 authored, not run",
         "CONTRACT-TDRP-DEPENDENCY-RELEASE-PROVENANCE-001 authored, not run",
-        "CONTRACT-TDRP-DEPENDENCY-RELEASE-DECISION-001 authored, not run"
+        "CONTRACT-TDRP-DEPENDENCY-RELEASE-DECISION-001 authored, not run",
+        "CONTRACT-TDRP-DEPENDENCY-WATCH-SNAPSHOT-001 authored, not run",
+        "CONTRACT-TDRP-DEPENDENCY-WATCH-STORAGE-001 authored, not run",
+        "CONTRACT-TDRP-DEPENDENCY-WATCH-CANDIDATES-001 authored, not run",
+        "CONTRACT-TDRP-DEPENDENCY-WATCH-VERSION-COMPARE-001 authored, not run",
+        "FAULT-TDRP-DEPENDENCY-WATCH-FRESHNESS-001 authored, not run"
       ],
-      "target_commit": "5358a6e9a978d2c2540086244f68d729f702142c",
+      "target_commit": "98ca5286b5fe0c2b63e8da0c4e9bb39ad48b176e",
       "workflow_run": null,
       "run_attempt": null,
       "job": null,
@@ -35107,7 +35124,13 @@
         "verified signature/attestation/checksum evidence vs unavailable/unverified evidence",
         "routine seven-day observation hold vs security-urgency override with rationale",
         "historical release identity vs current exact-snapshot release identity",
-        "exact malicious candidate rejection vs project-wide blacklist"
+        "exact malicious candidate rejection vs project-wide blacklist",
+        "exact tree/blob snapshot vs working-tree contents",
+        "shared common-Git-dir storage vs linked-worktree-local storage",
+        "candidate navigation matches vs complete dependency inventory",
+        "fresh fetch vs offline unverified remote-tracking snapshot",
+        "required manifest present/readable vs fail-closed missing/unreadable",
+        "three-component stable version vs prerelease/hash/milestone/four-component/legacy-letter scheme"
       ],
       "shared_owner_contracts": [
         "Fabushi repository AI development lifecycle",
@@ -35191,7 +35214,11 @@
         "CONTRACT-TDRP-DEPENDENCY-FORK-IMPORT-HISTORY-001",
         "CONTRACT-TDRP-DEPENDENCY-FORK-FIX-APPLICABILITY-001",
         "CONTRACT-TDRP-DEPENDENCY-RELEASE-PROVENANCE-001",
-        "CONTRACT-TDRP-DEPENDENCY-RELEASE-DECISION-001"
+        "CONTRACT-TDRP-DEPENDENCY-RELEASE-DECISION-001",
+        "CONTRACT-TDRP-DEPENDENCY-WATCH-SNAPSHOT-001",
+        "CONTRACT-TDRP-DEPENDENCY-WATCH-STORAGE-001",
+        "CONTRACT-TDRP-DEPENDENCY-WATCH-CANDIDATES-001",
+        "CONTRACT-TDRP-DEPENDENCY-WATCH-VERSION-COMPARE-001"
       ],
       "integration_case_ids": [
         "INT-TDRP-DEPENDENCY-ADVISORY-OWNER-001",
@@ -35203,7 +35230,8 @@
       "visual_case_ids": [],
       "accessibility_case_ids": [],
       "fault_recovery_case_ids": [
-        "FAULT-TDRP-DEPENDENCY-PARTIAL-RECOVERY-001"
+        "FAULT-TDRP-DEPENDENCY-PARTIAL-RECOVERY-001",
+        "FAULT-TDRP-DEPENDENCY-WATCH-FRESHNESS-001"
       ],
       "performance_case_ids": [],
       "security_case_ids": [
@@ -35234,7 +35262,7 @@
       "acceptance_reviewer": null,
       "reviewer": null,
       "license_and_provenance": "Behavioral repository dependency-advisory contract read from telegramdesktop/tdesktop fixed-U authority; no upstream Python implementation copied into Fabushi shipping runtime. Fixed-U source identity: telegramdesktop/tdesktop@f985723b552b30fe1c17d377d57f44e61a15a8c4:.agents/skills/dependency-watch/SKILL.md@482b3a8d0c939d4bb7bd32ab146e0cc988d29fd8.",
-      "notes": "Task round118/source evidence round149. Complete fixed-U tree reread was truncated=false with 7,194 entries. Exact dependency-watch/SKILL.md (8932 characters / 150 lines) plus OpenAI adapter, fork/release-trust references, helper and helper tests were read for direct semantics. Existing-owner-first extends source-neutral repository quality/test-evidence governance; the shipping Electron updater is explicitly rejected. Exactly one independent source entry closes: unknown 16160->16159, unread 16133->16132, responsibilities 133->134. Adjacent dependency-watch blobs remain independent inventory entries. Contracts authored, not run; accepted=false. Task round119/source evidence round150 independently closes the adjacent OpenAI Dependency Watch adapter blob. Exact 260-character / 4-line YAML exposes only display/discovery metadata plus a default prompt that invokes $dependency-watch, audits freshly fetched origin/dev, and presents pressing pending updates before the review-someday list. Repository search found no second in-repository parser or durable state owner; peer OpenAI adapters use the same declarative schema. No new responsibility/owner/ADR/platform-core delta is introduced; unknown 16159->16158, unread 16132->16131, responsibilities remain 134. OpenAI host-metadata/invocation contracts authored, not run; accepted=false. Task round120/source evidence round151 independently closes the patched-fork reference blob. Exact 4,581-byte / 74-line forks.md at tree index 60 requires consumed pin/fork head/original-upstream identities to remain separate; tg_owt and tg_angle import subjects M123/M115 are discovery clues, not fixed baselines; comparable-history counting is allowed only within verified shared ancestry or import mappings; missing-fix decisions require fixing diff, prerequisites, equivalent-patch/semantic applicability and explicit four-state classification. Fixed-U prepare/Docker/Snap consume tg_owt@07fb35bc33b3e79125a1beab7690e830f183f5d8; Windows prepare consumes tg_angle@9fd174a91e6155d1006c5f427366b23006f5d899. Existing build-time acquisition inventory contains tg_owt but no tg_angle identity, recorded as evidence-input gap rather than non-applicability. No new owner/ADR/platform-core delta; fork contracts authored not run; accepted=false. Task round121/source evidence round152 independently closes the fixed-U release-trust reference. Exact 5,849-byte / 95-line source at tree index 61 requires immutable release identity/publication provenance, changed-tag/asset explanation, independent trust/regression checks, signature/attestation/checksum evidence only after actual verification, a five-state update/backport/hold/skip/track decision with seven-day routine observation hold that is not a safety guarantee, durable decision/trust/unknown/review fields, and fail-closed handling of known malicious releases without executing them. The standing XZ case is not a permanent ban: current fixed-U recipes were re-established as prepare commit 05af863c3166cddeb4ab935829b14e995c8346b4 and Docker v5.8.4 rather than inheriting the reference's historical 5.4.5/5.8.1 example. Existing owner remains repository quality/test-evidence governance; no new owner/ADR/platform-core delta. Release provenance/decision contracts authored not run; accepted=false.",
+      "notes": "Task round118/source evidence round149. Complete fixed-U tree reread was truncated=false with 7,194 entries. Exact dependency-watch/SKILL.md (8932 characters / 150 lines) plus OpenAI adapter, fork/release-trust references, helper and helper tests were read for direct semantics. Existing-owner-first extends source-neutral repository quality/test-evidence governance; the shipping Electron updater is explicitly rejected. Exactly one independent source entry closes: unknown 16160->16159, unread 16133->16132, responsibilities 133->134. Adjacent dependency-watch blobs remain independent inventory entries. Contracts authored, not run; accepted=false. Task round119/source evidence round150 independently closes the adjacent OpenAI Dependency Watch adapter blob. Exact 260-character / 4-line YAML exposes only display/discovery metadata plus a default prompt that invokes $dependency-watch, audits freshly fetched origin/dev, and presents pressing pending updates before the review-someday list. Repository search found no second in-repository parser or durable state owner; peer OpenAI adapters use the same declarative schema. No new responsibility/owner/ADR/platform-core delta is introduced; unknown 16159->16158, unread 16132->16131, responsibilities remain 134. OpenAI host-metadata/invocation contracts authored, not run; accepted=false. Task round120/source evidence round151 independently closes the patched-fork reference blob. Exact 4,581-byte / 74-line forks.md at tree index 60 requires consumed pin/fork head/original-upstream identities to remain separate; tg_owt and tg_angle import subjects M123/M115 are discovery clues, not fixed baselines; comparable-history counting is allowed only within verified shared ancestry or import mappings; missing-fix decisions require fixing diff, prerequisites, equivalent-patch/semantic applicability and explicit four-state classification. Fixed-U prepare/Docker/Snap consume tg_owt@07fb35bc33b3e79125a1beab7690e830f183f5d8; Windows prepare consumes tg_angle@9fd174a91e6155d1006c5f427366b23006f5d899. Existing build-time acquisition inventory contains tg_owt but no tg_angle identity, recorded as evidence-input gap rather than non-applicability. No new owner/ADR/platform-core delta; fork contracts authored not run; accepted=false. Task round121/source evidence round152 independently closes the fixed-U release-trust reference. Exact 5,849-byte / 95-line source at tree index 61 requires immutable release identity/publication provenance, changed-tag/asset explanation, independent trust/regression checks, signature/attestation/checksum evidence only after actual verification, a five-state update/backport/hold/skip/track decision with seven-day routine observation hold that is not a safety guarantee, durable decision/trust/unknown/review fields, and fail-closed handling of known malicious releases without executing them. The standing XZ case is not a permanent ban: current fixed-U recipes were re-established as prepare commit 05af863c3166cddeb4ab935829b14e995c8346b4 and Docker v5.8.4 rather than inheriting the reference's historical 5.4.5/5.8.1 example. Existing owner remains repository quality/test-evidence governance; no new owner/ADR/platform-core delta. Release provenance/decision contracts authored not run; accepted=false. Task round122/source evidence round153 independently closes fixed-U dependency-watch scripts/watch.py. Exact 6,655-byte / 191-logical-line helper at recursive-tree index 63 was read completely together with its direct skill caller and helper tests. Snapshot canonicalizes the repo top level, optionally performs a no-tags/no-submodule-recursion fetch of origin/dev into refs/remotes/origin/dev, timestamps only after successful fetch, resolves origin/dev^{commit} once, then reads selected exact tree/blob inputs without touching HEAD or working files. The helper resolves --git-common-dir for shared dependency-watch/runs storage, preserves path-exact source copies, separates gitlinks/skipped inputs, treats candidates as navigation only, restricts compare to optional v/n/openssl- plus exactly three numeric components, and fails closed for fetch/timeout/OS/missing-or-unreadable required manifest conditions. --no-fetch remains offline/test-only with fresh_fetch=false and audit_status=snapshot-only. Existing owner remains repository quality/test-evidence governance; no new owner/ADR/platform-core/product-updater delta. Helper snapshot/storage/candidate/version/freshness contracts authored, not run; accepted=false.",
       "test_execution_evidence": [],
       "validation_status": "not-run",
       "accepted": false
