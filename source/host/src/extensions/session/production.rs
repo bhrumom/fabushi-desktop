@@ -2063,17 +2063,13 @@ impl ProductionSessionWorkers {
         policy: &super::agent_session::SessionCommunicationPolicyOverride,
     ) -> Result<(), String> {
         let db = self.open_agent_db_owner(agent_id)?;
-        let record = db
-            .read_session_work_admission()
-            .map_err(|error| error.to_string())?
-            .ok_or_else(|| "SESSION_LIFECYCLE_CHANGED".to_string())?;
-        if record.session_id != expected_session_id
-            || record.lifecycle_revision != expected_lifecycle_revision
-        {
+        if !super::agent_session::write_session_communication_policy(
+            &db,
+            expected_session_id,
+            expected_lifecycle_revision,
+            policy,
+        )? {
             return Err("SESSION_LIFECYCLE_CHANGED".into());
-        }
-        if !super::agent_session::write_session_communication_policy(&db, policy)? {
-            return Err("session communication policy write was not admitted".into());
         }
         Ok(())
     }

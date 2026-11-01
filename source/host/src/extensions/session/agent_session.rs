@@ -139,11 +139,18 @@ pub fn read_session_communication_policy(
 
 pub fn write_session_communication_policy(
     db: &crate::extensions::session::agent_db::SandAgentDb,
+    expected_session_id: &str,
+    expected_lifecycle_revision: &str,
     policy: &SessionCommunicationPolicyOverride,
 ) -> Result<bool, String> {
     let raw = serde_json::to_string(policy)
         .map_err(|error| format!("serialize session communication policy: {error}"))?;
-    db.write_kv(SESSION_COMMUNICATION_POLICY_KV, &raw)
+    db.write_session_kv_if_generation(
+        SESSION_COMMUNICATION_POLICY_KV,
+        &raw,
+        expected_session_id,
+        expected_lifecycle_revision,
+    )
         .map_err(|error| error.to_string())
 }
 

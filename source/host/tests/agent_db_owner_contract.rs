@@ -288,6 +288,74 @@ fn session_work_admission_record_migrates_and_compare_and_sets_generation() {
 }
 
 #[test]
+fn session_scoped_kv_write_rejects_stale_generation_atomically() {
+    let root = temp_root("session-kv-generation");
+    let agent_dir = root.join("agent-session-kv");
+    fs::create_dir_all(&agent_dir).expect("agent dir");
+    let db_path = agent_dir.join("store.db");
+    let owner = SandAgentDb::open(&db_path, 50).expect("owner");
+    let active = SessionWorkAdmissionRecord {
+        session_key: "agent:agent-session-kv:main".into(),
+        session_id: "session-1".into(),
+        lifecycle_revision: "revision-1".into(),
+        deletion_pending: false,
+        archived_at_ms: None,
+        archived_by: None,
+        archive_reason: None,
+        admitted_work_id: None,
+        admitted_media_work_id: None,
+        admitted_media_paths: Vec::new(),
+        terminal_result_idempotency_key: None,
+        provider_review_id: None,
+        provider_review_phase: None,
+        provider_review_continuation_run_id: None,
+        provider_review: None,
+    };
+    assert!(owner
+        .compare_and_set_session_work_admission(None, &active)
+        .expect("create admission"));
+    assert!(owner
+        .write_session_kv_if_generation(
+            "sessionCommunicationPolicy",
+            "{\"send\":\"always\"}",
+            "session-1",
+            "revision-1",
+        )
+        .expect("write current policy"));
+    assert_eq!(
+        owner
+            .read_kv("sessionCommunicationPolicy")
+            .expect("read policy")
+            .as_deref(),
+        Some("{\"send\":\"always\"}")
+    );
+
+    let mut next = active.clone();
+    next.lifecycle_revision = "revision-2".into();
+    assert!(owner
+        .compare_and_set_session_work_admission(Some("revision-1"), &next)
+        .expect("advance generation"));
+    assert!(!owner
+        .write_session_kv_if_generation(
+            "sessionCommunicationPolicy",
+            "{\"send\":\"never\"}",
+            "session-1",
+            "revision-1",
+        )
+        .expect("stale policy write"));
+    assert_eq!(
+        owner
+            .read_kv("sessionCommunicationPolicy")
+            .expect("read retained policy")
+            .as_deref(),
+        Some("{\"send\":\"always\"}")
+    );
+
+    owner.close(false);
+    let _ = fs::remove_dir_all(root);
+}
+
+#[test]
 fn session_work_admission_deletion_fence_migrates_and_persists() {
     let root = temp_root("work-admission-deletion-fence");
     let agent_dir = root.join("agent-delete-fence");

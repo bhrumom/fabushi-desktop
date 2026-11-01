@@ -458,6 +458,64 @@ impl SandAgentDb {
         })
     }
 
+    /// Write one session-scoped projection only when the caller still owns
+    /// the exact admitted session generation. The admission check and KV
+    /// write share one SQLite transaction so an older Gateway request cannot
+    /// publish policy into a newer lifecycle generation.
+    pub fn write_session_kv_if_generation(
+        &self,
+        key: &str,
+        value: &str,
+        expected_session_id: &str,
+        expected_lifecycle_revision: &str,
+    ) -> Result<bool, AgentDbProjectionError> {
+        let expected_session_id = expected_session_id.trim();
+        let expected_lifecycle_revision = expected_lifecycle_revision.trim();
+        if key.trim().is_empty()
+            || expected_session_id.is_empty()
+            || expected_lifecycle_revision.is_empty()
+        {
+            return Ok(false);
+        }
+        let changed = self.run_write_value("writeSessionKvIfGeneration", |db| {
+            db.execute_batch("BEGIN IMMEDIATE")?;
+            let result = (|| -> Result<(bool, bool), rusqlite::Error> {
+                let Some(raw_admission) = read_kv(db, KV_SESSION_WORK_ADMISSION)? else {
+                    return Ok((false, false));
+                };
+                let admission = serde_json::from_str::<SessionWorkAdmissionRecord>(&raw_admission)
+                    .map_err(|error| {
+                        rusqlite::Error::ToSqlConversionFailure(Box::new(error))
+                    })?;
+                if admission.session_id != expected_session_id
+                    || admission.lifecycle_revision != expected_lifecycle_revision
+                    || !session_work_write_is_admitted(db)?
+                {
+                    return Ok((false, false));
+                }
+                let changed = db.execute(SET_KV_SQL, params![key, value])? > 0;
+                Ok((changed, changed))
+            })();
+            match result {
+                Ok(result) => {
+                    db.execute_batch("COMMIT")?;
+                    Ok(result)
+                }
+                Err(error) => {
+                    let _ = db.execute_batch("ROLLBACK");
+                    Err(error)
+                }
+            }
+        })?;
+        if changed {
+            notify_agent_db_listeners(
+                &self.db_path,
+                AgentDbListenerChannel::Metadata(key.to_string()),
+            );
+        }
+        Ok(changed)
+    }
+
     pub fn delete_kv(&self, key: &str) -> Result<bool, AgentDbProjectionError> {
         self.run_write(&format!("deleteKv:{key}"), |db| {
             db.execute(DELETE_KV_SQL, params![key]).map(|changes| changes > 0)
