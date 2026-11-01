@@ -6,10 +6,10 @@
   "target_commit": "23d73b32e301408f9c8aed151cb1f9e442516e13",
   "coverage": {
     "source_entries_total": 16202,
-    "unknown": 16126,
-    "unread": 16099,
+    "unknown": 16125,
+    "unread": 16098,
     "omitted": 0,
-    "responsibilities_total": 152,
+    "responsibilities_total": 153,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -40473,6 +40473,257 @@
       "accepted": false,
       "source_paths": [
         ".devcontainer.json@16a1bcc1192bed87c5211da3dc63b0b0ed99a93e"
+      ]
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+      "source_path": ".gitattributes",
+      "source_blob_sha": "d7f1c6218bd3bd6b595385b1308c86ba9923fa14",
+      "source_kind": "repository_git_attributes_source_control_policy",
+      "module_id": "tdesktop.repository-git-attributes-source-control",
+      "responsibility_id": "TDRP-R9-REPOSITORY-GIT-ATTRIBUTES-SOURCE-CONTROL-001",
+      "source_symbols": [
+        "*:text=auto",
+        "*.diff:text,eol=lf",
+        "*.bat:text,eol=crlf",
+        "Telegram/Resources/zxcvbn/*.txt:text,eol=lf",
+        "*.lottie:binary",
+        "*.bin:binary"
+      ],
+      "capability_ids": [
+        "CAP-REPOSITORY-PROCESS-GOVERNANCE",
+        "CAP-REPOSITORY-QUALITY-GOVERNANCE",
+        "CAP-REPOSITORY-TASK-EVIDENCE"
+      ],
+      "dependency_ids": [
+        "Telegram/Resources/zxcvbn/ru_50k.txt@fa4412020b6409b90a45c1278d07e98812b544e2",
+        "Telegram/Resources/zxcvbn/uk_50k.txt@b5c607e7fe06c4ea1f3456a1a41f35f005b0a236"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/gitattributes-source-control-complete-read.md",
+      "behavior_contract": "Preserve the fixed-U repository source-control semantics supplied by .gitattributes: automatic text classification/normalization by default; explicit LF working-tree text for .diff and zxcvbn word lists; explicit CRLF working-tree text for Windows .bat scripts; binary treatment for .lottie and .bin; and no invented custom diff/merge/filter/working-tree-encoding/export behavior. Git attribute resolution is the direct consumer. Any future Fabushi root policy must remain source-neutral and owner-approved rather than copy Telegram-specific paths.",
+      "state_machine": "exact source blob -> Git attribute pattern resolution -> index/worktree normalization or binary classification -> diff/merge/archive attribute lookup -> later frozen-candidate evidence; stale index/wrong EOL/binary misclassification/digest drift -> non-passing -> explicit policy correction and controlled Stage-B renormalization/re-check",
+      "side_effects": [
+        "Stage-A closure changes only Fabushi repository governance/evidence documentation and the unique migration ledger.",
+        "No Fabushi root .gitattributes is added solely for Telegram parity and no current Fabushi index/worktree is renormalized.",
+        "When later exercised by Git, explicit text/eol rules may control working-tree line endings and the binary macro suppresses text conversion/textual diff/merge treatment for matching paths.",
+        "No product runtime, platform-core runtime, custom Git filter service, packaging exporter or second source-control registry is introduced."
+      ],
+      "failure_cases": [
+        "A Git client or repository operation ignores the expected fixed-U attributes and is treated as qualified",
+        "Existing index entries are assumed retroactively renormalized merely because attributes changed",
+        "*.diff or zxcvbn text is checked out with the wrong line-ending contract",
+        "*.bat files are checked out without the required CRLF contract",
+        "*.lottie or *.bin content is treated as text and line-ending converted",
+        "zxcvbn byte or digest drift is normalized to success",
+        "A named diff/merge/filter/working-tree-encoding/export behavior is attributed to this source although none is declared",
+        "Git's built-in binary macro is misrepresented as a custom executable filter or driver",
+        "A nested apply-patch fixture .gitattributes is treated as Fabushi root repository authority",
+        "Telegram-specific paths are copied into Fabushi without a current target-path owner need",
+        "Stage-A checkout/add/renormalize/diff/merge/archive/digest/test execution occurs",
+        "Stage-A source work is promoted to verified/accepted"
+      ],
+      "ui_disposition": "Not applicable; repository source-control/text-binary normalization policy only.",
+      "non_ui_responsibilities": [
+        "Repository default automatic text classification/normalization",
+        "Explicit LF and CRLF working-tree contracts",
+        "Digest-sensitive zxcvbn byte-preservation boundary",
+        "Binary classification for lottie and raw binary assets",
+        "Absence of custom diff/merge/filter/encoding/export drivers",
+        "Exact-path pattern scope",
+        "Stale-index and explicit renormalization recovery boundary"
+      ],
+      "platform_delta": "No platform-core production delta.",
+      "implementation_language": "Markdown/JSON repository governance and evidence; no shipping runtime implementation and no Stage-A repository renormalization.",
+      "target_owner": "Existing Fabushi root repository development-process/source-provenance authority + repository quality/test-evidence governance",
+      "existing_owner_candidates": [
+        "Fabushi root repository development-process/source-provenance instructions",
+        "Fabushi migration source identity/provenance governance",
+        "Fabushi repository quality/test-evidence governance"
+      ],
+      "rejected_owners": [
+        "Fabushi Product Storage / Sync",
+        "Fabushi Resource lifecycle",
+        "shipping packaging/updater/export runtime",
+        "Agent / Coordinator / Host / Runner product runtime",
+        "platform-core authorization/runtime/service",
+        "Telegram-specific source-control runtime",
+        "custom Git filter service",
+        "second source-control/evidence registry"
+      ],
+      "commands_events": [
+        "Git attribute resolution during add/checkout/index conversion",
+        "Git diff/merge attribute classification",
+        "Git archive attribute lookup",
+        "explicit future Stage-B renormalization when required"
+      ],
+      "persistence_contract": "This source governs Git repository/index/worktree byte and classification semantics only. It defines no product persistence, sync database, resource store, credential store or second evidence database. The existing single parity ledger remains migration truth.",
+      "concurrency_contract": "Qualification binds one exact repository commit, attribute blob and index/worktree state. Concurrent attribute or index changes invalidate stale source-control evidence and require a fresh exact-candidate qualification.",
+      "cancellation_contract": "Stage-A source reading has no executable cancellation path. Any later checkout/renormalization/digest qualification that is cancelled or interrupted remains incomplete/non-passing and cannot produce acceptance.",
+      "security_boundary": "The source defines no clean/smudge/process filter, named custom diff/merge driver, executable hook, credential, network endpoint or product authorization. The built-in binary macro must not be reinterpreted as permission to execute external code. Stage A performs no Git normalization or driver execution.",
+      "network_service_dependencies": [],
+      "service_owner": "Not applicable; repository source-control policy only.",
+      "deployment_evidence": [],
+      "implementation_status": "implemented",
+      "coverage_disposition": "workflow-equivalent",
+      "blockers": [],
+      "production_entrypoints": [
+        "AGENTS.md -> Repository Git attributes / source-control normalization authority",
+        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md -> Repository Git attributes / source-control normalization qualification",
+        "projects/fabushi-communication-platform/quality/evidence-contract.md -> Repository Git attributes / source-control normalization evidence"
+      ],
+      "production_evidence": [
+        "spec-first commit:494f6d79ca936625b8bc5f4efe7aad2cda633028",
+        "dossier:projects/telegram-desktop-rust/dossiers/gitattributes-source-control-complete-read.md",
+        "upstream-source:.gitattributes@d7f1c6218bd3bd6b595385b1308c86ba9923fa14",
+        "fixed-U-tree:91f2b083ab2877c0a17d07868eabec362a5cfca6"
+      ],
+      "test_evidence": [
+        "CONTRACT-TDRP-GITATTRIBUTES-HOST-AUTHORITY-001 authored, not run",
+        "CONTRACT-TDRP-GITATTRIBUTES-TEXT-AUTO-001 authored, not run",
+        "CONTRACT-TDRP-GITATTRIBUTES-DIFF-LF-001 authored, not run",
+        "CONTRACT-TDRP-GITATTRIBUTES-BAT-CRLF-001 authored, not run",
+        "CONTRACT-TDRP-GITATTRIBUTES-ZXCVBN-LF-001 authored, not run",
+        "CONTRACT-TDRP-GITATTRIBUTES-BINARY-MACRO-001 authored, not run",
+        "CONTRACT-TDRP-GITATTRIBUTES-NO-CUSTOM-DRIVERS-001 authored, not run",
+        "INT-TDRP-GITATTRIBUTES-SOURCE-CONTROL-COMPOSITION-001 authored, not run",
+        "FAULT-TDRP-GITATTRIBUTES-STALE-INDEX-001 authored, not run",
+        "FAULT-TDRP-GITATTRIBUTES-PATTERN-MISCLASSIFICATION-001 authored, not run",
+        "FAULT-TDRP-GITATTRIBUTES-DIGEST-DRIFT-001 authored, not run",
+        "SEC-TDRP-GITATTRIBUTES-NO-FILTER-EXECUTION-001 authored, not run"
+      ],
+      "target_commit": "494f6d79ca936625b8bc5f4efe7aad2cda633028",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Fabushi root repository development-process/source-provenance authority + quality/test-evidence governance",
+      "composition_slot": "Repository Git attributes/text-binary normalization policy",
+      "capability_component": "Source-neutral repository source-control governance",
+      "variation_axes": [
+        "core.autocrlf configured vs unset",
+        "automatic text vs explicit LF/CRLF text",
+        "text vs built-in binary classification",
+        "stale index vs explicitly renormalized index",
+        "current Fabushi no matching special paths vs future owner-approved matching import"
+      ],
+      "shared_owner_contracts": [
+        "Fabushi root repository development-process/source-provenance instructions",
+        "Fabushi Test Strategy",
+        "Fabushi Test Evidence Contract",
+        "FMEP-001 Stage-A deferred executable validation"
+      ],
+      "duplicate_root_check": "No Telegram-specific Git policy registry, custom filter service, product Storage/Resource owner, platform-core service or second evidence ledger introduced; no Fabushi root .gitattributes added solely for source parity.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Repository source-control configuration; no product navigation entry",
+      "primary_navigation_target": "Not applicable",
+      "collection_surface": "Not applicable",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "Repository text/binary normalization and Git attribute classification only",
+      "detail_section": "Not applicable",
+      "capability_surface": "Repository source-control tooling",
+      "route_contract": "Git resolves exact path attributes; mismatch or stale normalization remains explicit failure and routes to repository source-control recovery rather than product runtime or acceptance.",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Not applicable",
+      "search_local_remote_contract": "Not applicable",
+      "responsive_disposition": "Not applicable",
+      "accessibility_contract": "Not applicable",
+      "keyboard_contract": "Not applicable",
+      "state_continuity_contract": "Exact source/target commit and attribute identities preserve provenance; a changed attribute/index state invalidates stale evidence and cannot inherit a pass.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Not applicable",
+      "semantic_token_usage": "Not applicable",
+      "legacy_token_adapter": "Not applicable",
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "Not applicable",
+      "avatar_contract": "Not applicable",
+      "content_copy_keys": [],
+      "motion_contract": "Not applicable",
+      "reduced_motion_contract": "Not applicable",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "medium",
+      "requirement_ids": [
+        "TDRP-R9-REPOSITORY-GIT-ATTRIBUTES-SOURCE-CONTROL-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-GITATTRIBUTES-EXACT-RULES-001",
+        "ORA-TDRP-GITATTRIBUTES-PATTERN-SCOPE-001",
+        "ORA-TDRP-GITATTRIBUTES-BINARY-BYTE-IDENTITY-001",
+        "ORA-TDRP-GITATTRIBUTES-NO-CUSTOM-DRIVERS-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-GITATTRIBUTES-ONE-SOURCE-CONTROL-OWNER-001",
+        "INV-TDRP-GITATTRIBUTES-NO-STAGE-A-RENORMALIZATION-001",
+        "INV-TDRP-GITATTRIBUTES-NO-INVENTED-DRIVERS-001",
+        "INV-TDRP-GITATTRIBUTES-BINARY-NO-TEXT-CONVERSION-001"
+      ],
+      "unit_case_ids": [],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-GITATTRIBUTES-HOST-AUTHORITY-001",
+        "CONTRACT-TDRP-GITATTRIBUTES-TEXT-AUTO-001",
+        "CONTRACT-TDRP-GITATTRIBUTES-DIFF-LF-001",
+        "CONTRACT-TDRP-GITATTRIBUTES-BAT-CRLF-001",
+        "CONTRACT-TDRP-GITATTRIBUTES-ZXCVBN-LF-001",
+        "CONTRACT-TDRP-GITATTRIBUTES-BINARY-MACRO-001",
+        "CONTRACT-TDRP-GITATTRIBUTES-NO-CUSTOM-DRIVERS-001"
+      ],
+      "integration_case_ids": [
+        "INT-TDRP-GITATTRIBUTES-SOURCE-CONTROL-COMPOSITION-001"
+      ],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [],
+      "fault_recovery_case_ids": [
+        "FAULT-TDRP-GITATTRIBUTES-STALE-INDEX-001",
+        "FAULT-TDRP-GITATTRIBUTES-PATTERN-MISCLASSIFICATION-001",
+        "FAULT-TDRP-GITATTRIBUTES-DIGEST-DRIFT-001"
+      ],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "performance_case_ids": [],
+      "soak_case_ids": [],
+      "security_case_ids": [
+        "SEC-TDRP-GITATTRIBUTES-NO-FILTER-EXECUTION-001"
+      ],
+      "regression_ids": [],
+      "exploratory_charter_ids": [],
+      "release_gate_ids": [
+        "G-INVENTORY",
+        "G-TRACEABILITY",
+        "G-EVIDENCE",
+        "G-RELEASE"
+      ],
+      "test_fixture_ids": [],
+      "test_environment_ids": [
+        "Stage-B exact candidate on authorized Git clients with controlled core.autocrlf and index/worktree state"
+      ],
+      "coverage_matrix_status": "pending",
+      "flake_status": "not-run",
+      "test_execution_evidence": [],
+      "acceptance_reviewer": null,
+      "release_gate_status": "not-run",
+      "license_and_provenance": "Behavioral repository source-control policy read from telegramdesktop/tdesktop fixed-U root .gitattributes and complete fixed-U tree scope; no upstream implementation/configuration is copied into Fabushi shipping runtime.",
+      "reviewer": null,
+      "notes": "Task round152/source evidence round183. Live desktop checkpoint parent cb0c819330635228766d59817641bc95f07c8cdb; spec-first 494f6d79ca936625b8bc5f4efe7aad2cda633028; desktop main 9993ca8e107f7e019a8201e5ab74fa54e82159f2; platform-core checkpoint e92b51e23b39dae5719f033fa1f7a20d6579dc8c. Fixed-U tree 91f2b083ab2877c0a17d07868eabec362a5cfca6 complete, 7,194 entries; source index 103 zero-based, mode 100644, 419 bytes/ASCII chars, 15 LF newlines, zero CR, trailing newline. Pattern scope: diff=0, bat=6, zxcvbn=2, lottie=14, bin=10. Current Fabushi checkpoint has no root .gitattributes and zero matching special paths, so no Telegram-specific config copy or Stage-A renormalization is introduced. One source entry closes: unknown 16126->16125, unread 16099->16098; responsibilities 152->153. Next fixed-U independent blob: .github/CONTRIBUTING.md@4265e974d0b87622af223d5b8096b67edcbd4aab.",
+      "validation_status": "not-run",
+      "accepted": false,
+      "source_paths": [
+        ".gitattributes@d7f1c6218bd3bd6b595385b1308c86ba9923fa14"
       ]
     }
   ],
