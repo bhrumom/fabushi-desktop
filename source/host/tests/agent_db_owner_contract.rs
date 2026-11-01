@@ -699,6 +699,24 @@ fn provider_review_continuation_settlement_is_run_and_generation_bound() {
             ProviderReviewContinuationOutcome::Completed,
         )
         .expect("stale settlement is explicit"));
+    let mut rebound_work = admission.clone();
+    rebound_work.admitted_work_id = Some("different-run".into());
+    assert!(owner
+        .compare_and_set_session_work_admission(Some("revision-settle"), &rebound_work)
+        .expect("publish rebound continuation work"));
+    assert!(!owner
+        .release_provider_review_continuation("revision-settle", "continuation-run")
+        .expect("rebound release is explicit"));
+    assert!(!owner
+        .settle_provider_review_continuation(
+            "revision-settle",
+            "continuation-run",
+            ProviderReviewContinuationOutcome::Completed,
+        )
+        .expect("rebound settlement is explicit"));
+    assert!(owner
+        .compare_and_set_session_work_admission(Some("revision-settle"), &admission)
+        .expect("restore matching continuation work"));
     assert!(owner
         .settle_provider_review_continuation(
             "revision-settle",

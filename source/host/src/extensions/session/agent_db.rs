@@ -696,6 +696,7 @@ impl SandAgentDb {
         if record.lifecycle_revision != expected_lifecycle_revision
             || record.provider_review_phase.as_deref() != Some("accepted")
             || record.provider_review_continuation_run_id.as_deref() != Some(continuation_run_id)
+            || record.admitted_work_id.as_deref() != Some(continuation_run_id)
             || record.deletion_pending
         {
             return Ok(false);
@@ -750,6 +751,7 @@ impl SandAgentDb {
         if record.lifecycle_revision != expected_lifecycle_revision
             || record.provider_review_phase.as_deref() != Some("accepted")
             || record.provider_review_continuation_run_id.as_deref() != Some(continuation_run_id)
+            || record.admitted_work_id.as_deref() != Some(continuation_run_id)
             || record.deletion_pending
         {
             return Ok(false);

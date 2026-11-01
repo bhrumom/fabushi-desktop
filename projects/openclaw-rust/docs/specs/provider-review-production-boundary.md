@@ -57,8 +57,9 @@ native field.
   run identity to the existing Runner terminal owner. A known successful
   terminal outcome clears the matching review; cancellation, failure, and
   outcome-unknown outcomes retain a non-actionable terminal phase and release
-  the matching admitted work marker. A dispatch failure before Runner
-  ownership restores `pending`.
+  the matching admitted work marker. Claim, release, and settlement must all
+  fail closed if the owner-local admitted work marker has been rebound. A
+  dispatch failure before Runner ownership restores `pending`.
 - `PR-07`: Incognito, unsupported runtime/API, missing continuation detail,
   duplicate/conflicting review, cancellation, and outcome-unknown paths fail
   closed with explicit outcomes.

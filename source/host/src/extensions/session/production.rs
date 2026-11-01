@@ -2175,6 +2175,7 @@ impl ProductionSessionWorkers {
         if record.lifecycle_revision != state.lifecycle_revision
             || record.provider_review_id.as_deref() != Some(state.review_id.as_str())
             || record.provider_review_phase.as_deref() != Some("pending")
+            || record.admitted_work_id.as_deref() != Some(state.next_run_id.as_str())
             || record.deletion_pending
             || review.id != state.review_id
             || review.provider != provider.trim()
