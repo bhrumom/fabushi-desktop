@@ -685,7 +685,7 @@ struct ProductionSendMessageSink {
     transcript_runtime: Arc<ProductionTranscriptRuntime>,
     ack_token: Option<String>,
     agent_id: String,
-    session_key: String,
+    session_key: Option<String>,
     reply_thread_target: Option<String>,
     is_fork: bool,
     pending_media: Mutex<HashMap<String, PendingOutgoingMedia>>,
@@ -793,8 +793,10 @@ impl SendMessageSink for ProductionSendMessageSink {
                     "timestampMs": timestamp_ms,
                     "boxRequestId": request_id.clone(),
                     "boxInstruction": request.instruction,
-                    "sessionKey": self.session_key.clone(),
                 });
+                if let Some(session_key) = self.session_key.as_deref() {
+                    entry["sessionKey"] = serde_json::Value::String(session_key.to_string());
+                }
                 let tracking = self
                     .transcript_runtime
                     .track_box_request_entry(&self.agent_id, &entry);
@@ -812,14 +814,17 @@ impl SendMessageSink for ProductionSendMessageSink {
                         );
                     }
                 }
-                if let Err(error) = self
-                    .sessions
-                    .append_agent_transcript_entries_if_session_admitted(
+                let append_result = if let Some(session_key) = self.session_key.as_deref() {
+                    self.sessions.append_agent_transcript_entries_if_session_admitted(
                         &self.agent_id,
-                        &self.session_key,
+                        session_key,
                         &[entry],
                     )
-                {
+                } else {
+                    self.sessions
+                        .append_agent_transcript_entries(&self.agent_id, &[entry])
+                };
+                if let Err(error) = append_result {
                     let _ = self
                         .transcript_runtime
                         .resolve_box_request_tracking(&request_id);
@@ -847,15 +852,18 @@ impl SendMessageSink for ProductionSendMessageSink {
         source_url: &str,
         tool_call_id: &str,
     ) -> Result<ResolvedAttachmentSource, ProviderSessionError> {
-        self.sessions
-            .assert_session_work_admission(&self.agent_id, Some(&self.session_key))
-            .map_err(ProviderSessionError::Tool)?;
-        let admission = self
-            .sessions
-            .read_session_work_admission(&self.agent_id)
-            .map_err(ProviderSessionError::Tool)?
-            .filter(|record| record.session_key == self.session_key)
-            .map(|record| (record.session_key, record.lifecycle_revision));
+        let admission = if let Some(session_key) = self.session_key.as_deref() {
+            self.sessions
+                .assert_session_work_admission(&self.agent_id, Some(session_key))
+                .map_err(ProviderSessionError::Tool)?;
+            self.sessions
+                .read_session_work_admission(&self.agent_id)
+                .map_err(ProviderSessionError::Tool)?
+                .filter(|record| record.session_key == session_key)
+                .map(|record| (record.session_key, record.lifecycle_revision))
+        } else {
+            None
+        };
         let admission_session_key = admission.as_ref().map(|(key, _)| key.clone());
         let admission_lifecycle_revision = admission.map(|(_, revision)| revision);
         let (resolved, owned_path) = resolve_production_attachment_source(
@@ -868,18 +876,22 @@ impl SendMessageSink for ProductionSendMessageSink {
             let mut custody = OutgoingMediaCustody::default();
             custody.track(path.clone());
             let media_work_id = format!("send-media:{tool_call_id}");
-            let media_lifecycle_revision = self
-                .sessions
-                .capture_session_media_admission(
-                    &self.agent_id,
-                    &self.session_key,
-                    &media_work_id,
-                    Some(&path),
-                )
-                .map_err(|error| {
-                    let _ = custody.rollback();
-                    ProviderSessionError::Tool(error)
-                })?;
+            let media_lifecycle_revision = if let Some(session_key) = admission_session_key.as_deref() {
+                Some(self
+                    .sessions
+                    .capture_session_media_admission(
+                        &self.agent_id,
+                        session_key,
+                        &media_work_id,
+                        Some(&path),
+                    )
+                    .map_err(|error| {
+                        let _ = custody.rollback();
+                        ProviderSessionError::Tool(error)
+                    })?)
+            } else {
+                None
+            };
             let mut pending = match self.pending_media.lock() {
                 Ok(pending) => pending,
                 Err(_) => {
@@ -889,11 +901,13 @@ impl SendMessageSink for ProductionSendMessageSink {
                             self.agent_id, tool_call_id
                         );
                     }
-                    let _ = self.sessions.release_session_media_admission(
-                        &self.agent_id,
-                        &media_lifecycle_revision,
-                        &media_work_id,
-                    );
+                    if let Some(lifecycle_revision) = media_lifecycle_revision.as_deref() {
+                        let _ = self.sessions.release_session_media_admission(
+                            &self.agent_id,
+                            lifecycle_revision,
+                            &media_work_id,
+                        );
+                    }
                     return Err(ProviderSessionError::Tool(
                         "outgoing media custody lock poisoned".into(),
                     ));
@@ -903,12 +917,13 @@ impl SendMessageSink for ProductionSendMessageSink {
                 .entry(tool_call_id.to_string())
                 .or_insert_with(|| PendingOutgoingMedia {
                     custody: OutgoingMediaCustody::default(),
-                    session_key: admission_session_key
+                    session_key: admission_session_key.clone(),
+                    lifecycle_revision: media_lifecycle_revision
                         .clone()
-                        .or_else(|| Some(self.session_key.clone())),
-                    lifecycle_revision: Some(media_lifecycle_revision.clone())
                         .or(admission_lifecycle_revision.clone()),
-                    media_work_id: Some(media_work_id.clone()),
+                    media_work_id: media_lifecycle_revision
+                        .as_ref()
+                        .map(|_| media_work_id.clone()),
                 });
             pending_media.custody.absorb(custody);
         }
@@ -979,13 +994,13 @@ impl SendMessageSink for ProductionSendMessageSink {
                     pending.media_work_id.as_ref()?.clone(),
                 ))
             });
-        let entry = match media_fence {
-            Some((revision, work_id)) => self
+        let entry = match (media_fence, self.session_key.as_deref()) {
+            (Some((revision, work_id)), Some(session_key)) => self
                 .transcript_runtime
                 .append_generated_send_message_entry_with_media_custody(
                     self.sessions.as_ref(),
                     &self.agent_id,
-                    &self.session_key,
+                    session_key,
                     &message,
                     timestamp_ms,
                     self.reply_thread_target.as_deref(),
@@ -993,14 +1008,29 @@ impl SendMessageSink for ProductionSendMessageSink {
                     &revision,
                     &work_id,
                 ),
-            None => self.transcript_runtime.append_generated_send_message_entry(
-                self.sessions.as_ref(),
-                &self.agent_id,
-                &self.session_key,
-                &message,
-                timestamp_ms,
-                self.reply_thread_target.as_deref(),
-                self.is_fork,
+            (None, Some(session_key)) => self
+                .transcript_runtime
+                .append_generated_send_message_entry(
+                    self.sessions.as_ref(),
+                    &self.agent_id,
+                    session_key,
+                    &message,
+                    timestamp_ms,
+                    self.reply_thread_target.as_deref(),
+                    self.is_fork,
+                ),
+            (None, None) => self
+                .transcript_runtime
+                .append_generated_send_message_entry_compatibility(
+                    self.sessions.as_ref(),
+                    &self.agent_id,
+                    &message,
+                    timestamp_ms,
+                    self.reply_thread_target.as_deref(),
+                    self.is_fork,
+                ),
+            (Some((_revision, _work_id)), None) => Err(
+                "outgoing media fence is missing its admitted session identity".into(),
             ),
         }
             .map_err(|error| {
@@ -9715,7 +9745,7 @@ fn start_routed_provider_task(
                     transcript_runtime: Arc::clone(&worker_transcript_runtime),
                     ack_token: worker_ack_token.clone(),
                     agent_id: agent_id.clone(),
-                    session_key: worker_session_key.clone(),
+                    session_key: worker_session_admitted_key.clone(),
                     reply_thread_target: worker_reply_thread_target.clone(),
                     is_fork: worker_send_is_fork,
                     pending_media: Mutex::new(HashMap::new()),

@@ -1384,6 +1384,41 @@ impl ProductionTranscriptRuntime {
         Ok(entry)
     }
 
+    /// Append a generated send for an explicitly unbound compatibility
+    /// producer. The generic session owner still applies its deletion and
+    /// archive fence; no session identity is invented for the entry.
+    pub fn append_generated_send_message_entry_compatibility(
+        &self,
+        sessions: &ProductionSessionWorkers,
+        agent_id: &str,
+        message: &Value,
+        timestamp_ms: u64,
+        reply_thread_target: Option<&str>,
+        is_fork: bool,
+    ) -> Result<Value, String> {
+        let entries = sessions.read_agent_transcript_entries(agent_id)?;
+        let entry = self
+            .lock_state()
+            .pipeline
+            .prepare_generated_send_message_entry(
+                agent_id,
+                &entries,
+                message,
+                reply_thread_target,
+                is_fork,
+                timestamp_ms,
+            );
+        entry
+            .get("id")
+            .and_then(Value::as_str)
+            .ok_or_else(|| "generated send pipeline did not produce an entry id".to_string())?;
+        sessions.append_agent_transcript_entries(
+            agent_id,
+            std::slice::from_ref(&entry),
+        )?;
+        Ok(entry)
+    }
+
     /// Append a generated send and release its durable media fence in the same
     /// session-owner transaction.
     pub fn append_generated_send_message_entry_with_media_custody(

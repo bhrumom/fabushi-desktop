@@ -542,3 +542,16 @@ group turn fails closed before routed-send admission; identity is no longer
 deferred until a later Runner lookup. The existing group-chat and Runner
 owners remain unchanged, and group runtime/exact-head acceptance remains
 pending.
+
+## 12.13 Group-member compatibility ownership preservation — 2026-11-01
+
+The routed Runner's group-member compatibility path now carries the existing
+owner-confirmed admission key only when one is present. A session-admitted
+Runner uses the session owner for box-help transcript writes, attachment media
+custody, and generated SendMessage settlement. A compatibility Runner without
+an admission record remains explicitly unbound: it uses the existing generic
+archive/deletion-fenced transcript owner, keeps attachment custody process-local,
+and does not invent a `sessionKey` or media admission fence. A media fence
+without a session identity fails closed. No second transcript, media, or session
+state owner was introduced. Detached media lifecycle coverage, runtime/exact-
+head verification, and broader group acceptance remain pending.
