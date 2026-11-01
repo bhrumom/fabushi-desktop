@@ -527,6 +527,11 @@ filesystem/deletion serialization boundary used by deletion. This prevents a
 retirement close from interleaving with directory cleanup; it does not add a
 second lifecycle owner or change the live-session registry semantics.
 
+AgentStore owner opening now retains that same boundary through DB-owner open,
+blob-store recovery, checkpoint reset, and cache installation. A deletion
+cannot remove the agent directory between those steps and then leave a newly
+opened successor owner cached for the deleted identity.
+
 Profile and avatar filesystem mutations now run through a per-agent
 `ProductionSessionWorkers` serialization boundary. Profile updates and avatar
 replacement/removal recheck the durable admission record while holding that

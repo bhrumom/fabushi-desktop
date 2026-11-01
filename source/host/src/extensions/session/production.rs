@@ -1822,6 +1822,17 @@ impl ProductionSessionWorkers {
         &self,
         agent_id: &str,
     ) -> Result<Arc<ProductionAgentStore>, String> {
+        self.with_agent_filesystem_mutation(agent_id, || {
+            self.open_agent_store_owner_locked(agent_id)
+        })
+    }
+
+    /// Open or reuse the AgentStore while the caller already holds the
+    /// per-agent filesystem/deletion boundary.
+    fn open_agent_store_owner_locked(
+        &self,
+        agent_id: &str,
+    ) -> Result<Arc<ProductionAgentStore>, String> {
         if let Some(owner) = self
             .agent_store_owners
             .lock()
@@ -1832,7 +1843,7 @@ impl ProductionSessionWorkers {
             return Ok(owner);
         }
 
-        let db = self.open_agent_db_owner(agent_id)?;
+        let db = self.open_agent_db_owner_locked(agent_id)?;
         let blob_store = self.create_agent_blob_store(agent_id)?;
         let candidate = Arc::new(ProductionAgentStore::new(db, blob_store));
         let _ = candidate.try_reset_from_db();
