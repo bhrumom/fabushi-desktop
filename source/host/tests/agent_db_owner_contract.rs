@@ -1831,6 +1831,46 @@ fn owner_commits_guarded_compaction_and_replays_from_cut_point() {
         owner.commit_compaction(&stale).expect("stale commit"),
         CompactionCommitOutcome::RejectedStale
     ));
+    let current_revision = owner
+        .get_metadata("lifecycleRevision")
+        .expect("current compaction revision")
+        .and_then(|value| value.as_str().map(ToOwned::to_owned))
+        .expect("current compaction revision value");
+    let admission = SessionWorkAdmissionRecord {
+        session_key: "agent:agent-compaction:main".into(),
+        session_id: "session-compaction".into(),
+        lifecycle_revision: current_revision.clone(),
+        deletion_pending: false,
+        archived_at_ms: None,
+        archived_by: None,
+        archive_reason: None,
+        admitted_work_id: None,
+        admitted_media_work_id: None,
+        admitted_media_paths: Vec::new(),
+        terminal_result_idempotency_key: None,
+        provider_review_id: None,
+        provider_review_phase: None,
+        provider_review_continuation_run_id: None,
+        provider_review: None,
+    };
+    assert!(owner
+        .compare_and_set_session_work_admission(None, &admission)
+        .expect("create compaction admission"));
+    let mut fenced = admission.clone();
+    fenced.deletion_pending = true;
+    assert!(owner
+        .transition_session_deletion_pending(Some(&current_revision), false, &fenced)
+        .expect("publish compaction deletion fence"));
+    assert!(matches!(
+        owner.commit_compaction(&commit).expect("fenced compaction replay"),
+        CompactionCommitOutcome::RejectedStale
+    ));
+    let mut cleared = fenced;
+    cleared.deletion_pending = false;
+    assert!(owner
+        .clear_session_deletion_pending(&current_revision, &cleared)
+        .expect("clear compaction deletion fence"));
+
     let mut missing_cut = commit;
     missing_cut.entry_id = "compaction-missing".into();
     missing_cut.first_kept_entry_id = Some("missing".into());

@@ -2701,6 +2701,20 @@ impl SandAgentDb {
 
         db.execute_batch("BEGIN IMMEDIATE")?;
         let result = (|| -> Result<CompactionCommitOutcome, AgentDbProjectionError> {
+            if let Some(raw_admission) = db
+                .query_row(GET_KV_SQL, params![KV_SESSION_WORK_ADMISSION], |row| {
+                    row.get::<_, String>(0)
+                })
+                .optional()?
+            {
+                let admission: SessionWorkAdmissionRecord = serde_json::from_str(&raw_admission)?;
+                if !session_admission_identity_is_well_formed(&admission)
+                    || admission.deletion_pending
+                    || admission.archived_at_ms.is_some()
+                {
+                    return Ok(CompactionCommitOutcome::RejectedStale);
+                }
+            }
             let existing = db
                 .query_row(GET_TRANSCRIPT_ENTRY_SQL, params![entry_id], |row| {
                     row.get::<_, String>(0)

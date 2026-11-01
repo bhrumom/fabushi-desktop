@@ -419,10 +419,12 @@ The receipt contents carried their original session identity and generation,
 but that alone did not prove that the current session was still admitted: a
 deletion fence could be published without rotating the lifecycle revision.
 
-Both replay paths now recheck the current canonical session key, lifecycle
-revision, archive state, and `deletion_pending` fence before returning an
-idempotent result. Focused owner contracts cover replay during deletion
-custody for both receipt types. This closes a durable replay bypass at the
-existing owner edge; the broader responsibility remains
+Background-result and outgoing-media replay now recheck the current canonical
+session key, lifecycle revision, archive state, and `deletion_pending` fence
+before returning an idempotent result. Compaction-entry replay now performs
+the same owner-local archive/deletion admission check before returning
+`AlreadyCommitted`. Focused owner contracts cover replay during deletion
+custody for all three receipt/entry types. This closes a durable replay bypass
+at the existing owner edge; the broader responsibility remains
 `not-started/not-wired/not-run/pending` because detached-result/media replay,
 provider-review recovery, and exact-head verification are still incomplete.
