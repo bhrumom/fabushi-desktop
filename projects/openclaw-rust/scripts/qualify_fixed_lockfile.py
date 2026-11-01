@@ -233,9 +233,10 @@ def parse_snapshot_dependencies(
 def summarize_snapshot_graph(
     lock_content: str, rows: list[dict[str, Any]]
 ) -> dict[str, Any]:
-    snapshot_dependencies: dict[str, list[tuple[str, str, str]]] = {}
+    fragment_snapshot_maps: list[dict[str, list[tuple[str, str, str]]]] = []
     for fragment in split_fragments(lock_content):
-        snapshot_dependencies.update(parse_snapshot_dependencies(fragment))
+        fragment_snapshot_maps.append(parse_snapshot_dependencies(fragment))
+    snapshot_dependencies = max(fragment_snapshot_maps, key=len, default={})
     roots = sorted(
         {
             row["lock_snapshot_key"]
@@ -268,7 +269,12 @@ def summarize_snapshot_graph(
                 pending.append(child)
     return {
         "root_count": len(roots),
+        "total_snapshot_count": len(snapshot_dependencies),
         "reachable_snapshot_count": len(reachable),
+        "unreachable_snapshot_count": len(set(snapshot_dependencies) - reachable),
+        "unreachable_snapshot_examples": sorted(
+            set(snapshot_dependencies) - reachable
+        )[:20],
         "missing_edge_count": len(missing),
         "missing_edges": [
             {
