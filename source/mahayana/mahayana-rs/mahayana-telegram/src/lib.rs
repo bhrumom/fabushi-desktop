@@ -161,6 +161,42 @@ impl TelegramApplicationCredentials {
     }
 }
 
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum NetworkProxyKind {
+    Socks5,
+    Http,
+    Mtproto,
+    Web,
+}
+
+#[derive(Clone, PartialEq, Eq)]
+pub struct NetworkProxyEndpointProjection {
+    pub kind: NetworkProxyKind,
+    pub host: String,
+    pub port: u32,
+    pub user: String,
+    pub password: String,
+}
+
+#[derive(Clone, PartialEq, Eq)]
+pub struct NetworkProxyProjection {
+    pub enabled: bool,
+    pub selected: Option<NetworkProxyEndpointProjection>,
+    pub try_ipv6: bool,
+}
+
+impl NetworkProxyKind {
+    fn as_str(self) -> &'static str {
+        match self {
+            Self::Socks5 => "socks5",
+            Self::Http => "http",
+            Self::Mtproto => "mtproto",
+            Self::Web => "web",
+        }
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct TelegramClientHandoff {
     pub client_id: u64,
@@ -323,6 +359,31 @@ impl TelegramClientLease {
         self.decorate_authorization(json!({}))
     }
 
+
+    fn network_proxy_request(projection: &NetworkProxyProjection) -> Value {
+        let selected = projection.selected.as_ref().map(|proxy| {
+            json!({
+                "type": proxy.kind.as_str(),
+                "host": proxy.host,
+                "port": proxy.port,
+                "user": proxy.user,
+                "password": proxy.password,
+            })
+        });
+        json!({
+            "@type": "telegram.applyNetworkProxy",
+            "enabled": projection.enabled,
+            "tryIpv6": projection.try_ipv6,
+            "selected": selected,
+        })
+    }
+
+    pub fn apply_network_proxy(
+        &self,
+        projection: &NetworkProxyProjection,
+    ) -> Result<Value, ConversationError> {
+        self.execute(Self::network_proxy_request(projection))
+    }
 
     fn special_config_refresh_request(proxy_enabled: bool) -> Value {
         json!({
@@ -817,6 +878,32 @@ mod tests {
     use std::sync::Arc;
     use std::sync::Mutex;
 
+
+    #[test]
+    fn network_proxy_request_carries_only_transient_carrier_projection() {
+        let projection = NetworkProxyProjection {
+            enabled: true,
+            try_ipv6: true,
+            selected: Some(NetworkProxyEndpointProjection {
+                kind: NetworkProxyKind::Mtproto,
+                host: "proxy.example".into(),
+                port: 443,
+                user: String::new(),
+                password: "00112233445566778899aabbccddeeff".into(),
+            }),
+        };
+        let request = TelegramClientLease::network_proxy_request(&projection);
+        assert_eq!(request.get("@type").and_then(Value::as_str), Some("telegram.applyNetworkProxy"));
+        assert_eq!(request.get("enabled").and_then(Value::as_bool), Some(true));
+        assert_eq!(request.get("tryIpv6").and_then(Value::as_bool), Some(true));
+        assert_eq!(
+            request.pointer("/selected/type").and_then(Value::as_str),
+            Some("mtproto")
+        );
+        assert!(request.get("settings").is_none());
+        assert!(request.get("list").is_none());
+        assert!(request.get("rotation").is_none());
+    }
 
     #[test]
     fn special_config_refresh_request_carries_authoritative_proxy_projection() {

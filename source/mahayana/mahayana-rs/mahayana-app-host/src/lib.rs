@@ -16,6 +16,7 @@ use mahayana_plugin_runtime::{
 };
 use mahayana_product::MahayanaProductClient;
 use mahayana_telegram::{
+    NetworkProxyEndpointProjection, NetworkProxyKind, NetworkProxyProjection,
     TelegramApplicationCredentials, TelegramClientHandoff, TelegramClientLease,
 };
 use serde::{Deserialize, Serialize};
@@ -166,6 +167,26 @@ impl Default for ProductProxySettings {
 impl ProductProxySettings {
     fn proxy_enabled(&self) -> bool {
         self.mode == ProductProxyMode::Enabled
+    }
+
+    fn carrier_projection(&self) -> NetworkProxyProjection {
+        let selected = self.selected.as_ref().map(|proxy| NetworkProxyEndpointProjection {
+            kind: match proxy.proxy_type {
+                ProductProxyType::Socks5 => NetworkProxyKind::Socks5,
+                ProductProxyType::Http => NetworkProxyKind::Http,
+                ProductProxyType::Mtproto => NetworkProxyKind::Mtproto,
+                ProductProxyType::Web => NetworkProxyKind::Web,
+            },
+            host: proxy.host.clone(),
+            port: proxy.port,
+            user: proxy.user.clone(),
+            password: proxy.password.clone(),
+        });
+        NetworkProxyProjection {
+            enabled: self.proxy_enabled(),
+            selected,
+            try_ipv6: self.try_ipv6,
+        }
     }
 
     fn normalize_preferred_indices(&mut self, indices: Vec<i64>) {
@@ -393,10 +414,13 @@ enum ProductProxyMutation {
 }
 
 impl ProductProxyMutation {
-    fn republishes_proxy_enabled(&self) -> bool {
+    fn republishes_network_proxy(&self) -> bool {
         matches!(
             self,
-            Self::SetMode { .. } | Self::SetSelectedAndMode { .. }
+            Self::SetMode { .. }
+                | Self::SetSelected { .. }
+                | Self::SetSelectedAndMode { .. }
+                | Self::SetTryIpv6 { .. }
         )
     }
 }
@@ -651,6 +675,34 @@ pub fn is_platform_request_json(input: &str) -> bool {
         .unwrap_or(false)
 }
 
+
+fn publish_product_network_proxy(
+    client: &TelegramClientLease,
+    proxy: &ProductProxySettings,
+) -> Result<Value, AppHostError> {
+    // ProductSettingsOwner has already persisted the authoritative state before
+    // this transient publication is attempted.
+    let carrier = client
+        .apply_network_proxy(&proxy.carrier_projection())
+        .map_err(|error| {
+            AppHostError::Operation(format!(
+                "publish product network proxy carrier projection: {error}"
+            ))
+        })?;
+    let special_config = client
+        .refresh_special_config(proxy.proxy_enabled())
+        .map_err(|error| {
+            AppHostError::Operation(format!(
+                "publish product network proxy special-config projection: {error}"
+            ))
+        })?;
+    Ok(json!({
+        "available": true,
+        "carrier": carrier,
+        "report": special_config,
+    }))
+}
+
 impl AppHost {
     pub fn mini_app_account_port(&self) -> MiniAppAccountPort {
         self.feature.mini_app_account_port()
@@ -686,6 +738,10 @@ impl AppHost {
         let feature_root = feature_host_root(&app_data_dir);
         let settings = ProductSettingsOwner::open(feature_root.join("product-settings.json"))?;
         let telegram_client = open_platform_telegram_client(&app_data_dir, feature_mode)?;
+        if let Some(client) = telegram_client.as_ref() {
+            let restored = settings.snapshot()?;
+            publish_product_network_proxy(client, &restored.network.proxy)?;
+        }
         let telegram_handoff = telegram_client
             .as_ref()
             .map(TelegramClientLease::handoff)
@@ -819,10 +875,10 @@ impl AppHost {
                 "settings.mutateNetworkProxy mutation is invalid: {error}"
             ))
         })?;
-        let republish = mutation.republishes_proxy_enabled();
+        let republish = mutation.republishes_network_proxy();
         let state = self.settings.mutate_network_proxy(mutation)?;
         let publication = if republish {
-            Some(self.publish_network_proxy_enabled(state.network.proxy.proxy_enabled())?)
+            Some(self.publish_network_proxy(&state.network.proxy)?)
         } else {
             None
         };
@@ -845,27 +901,16 @@ impl AppHost {
         // Persistence is authoritative and occurs before downstream publication.
         // The compatibility command deliberately republishes even for a same-value retry.
         let state = self.settings.set_network_proxy_enabled(proxy_enabled)?;
-        let publication =
-            self.publish_network_proxy_enabled(state.network.proxy.proxy_enabled())?;
+        let publication = self.publish_network_proxy(&state.network.proxy)?;
         Ok(json!({
             "settings": state,
             "publication": publication,
         }))
     }
 
-    fn publish_network_proxy_enabled(&self, proxy_enabled: bool) -> Result<Value, AppHostError> {
+    fn publish_network_proxy(&self, proxy: &ProductProxySettings) -> Result<Value, AppHostError> {
         if let Some(client) = self.telegram_client.as_ref() {
-            let report = client
-                .refresh_special_config(proxy_enabled)
-                .map_err(|error| {
-                    AppHostError::Operation(format!(
-                        "publish product proxy setting to Telegram runtime: {error}"
-                    ))
-                })?;
-            Ok(json!({
-                "available": true,
-                "report": report,
-            }))
+            publish_product_network_proxy(client, proxy)
         } else {
             Ok(json!({
                 "available": false,
@@ -2277,6 +2322,43 @@ mod telegram_composition_contract_tests {
         std::fs::write(&path, b"{not-json").expect("write malformed contract fixture");
         assert!(ProductSettingsOwner::open(path.clone()).is_err());
         let _ = std::fs::remove_file(path);
+    }
+
+    #[test]
+    fn carrier_projection_is_derived_from_canonical_product_settings_only() {
+        let mut proxy = ProductProxySettings::default();
+        proxy.mode = ProductProxyMode::Enabled;
+        proxy.try_ipv6 = true;
+        proxy.selected = Some(ProductProxyEndpoint {
+            proxy_type: ProductProxyType::Mtproto,
+            host: "proxy.example".into(),
+            port: 443,
+            user: String::new(),
+            password: "00112233445566778899aabbccddeeff".into(),
+        });
+        let projection = proxy.carrier_projection();
+        assert!(projection.enabled);
+        assert!(projection.try_ipv6);
+        let selected = projection.selected.expect("selected carrier projection");
+        assert_eq!(selected.kind, NetworkProxyKind::Mtproto);
+        assert_eq!(selected.host, "proxy.example");
+        assert_eq!(selected.port, 443);
+    }
+
+    #[test]
+    fn carrier_publication_mutations_match_fixed_u_change_surface() {
+        assert!(ProductProxyMutation::SetMode {
+            mode: ProductProxyMode::Enabled
+        }.republishes_network_proxy());
+        assert!(ProductProxyMutation::SetSelected {
+            proxy: None
+        }.republishes_network_proxy());
+        assert!(ProductProxyMutation::SetTryIpv6 {
+            enabled: true
+        }.republishes_network_proxy());
+        assert!(!ProductProxyMutation::SetUseProxyForCalls {
+            enabled: true
+        }.republishes_network_proxy());
     }
 
     #[test]
