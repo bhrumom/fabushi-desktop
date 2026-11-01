@@ -214,6 +214,14 @@ lifecycle required for responsibility completion; the bounded Gateway
 archive/restore producer is now present but intentionally rejects active
 admitted work.
 
+The provider-review durable transitions now also recheck the owner-local
+`deletion_pending` fence at their SandAgentDb edge. Recording a refusal,
+releasing a claimed continuation, or settling its terminal outcome cannot
+mutate review state after deletion custody begins; the existing generation and
+CAS semantics remain unchanged. This is a bounded deletion write-edge
+correction, not completion of native continuation identity or the full
+detached lifecycle.
+
 The receipt transaction also rolls back the inserted receipt when its
 post-insert lifecycle compare-and-set loses a race. This preserves the
 `RejectedStale` outcome without leaving an orphan receipt that could make a

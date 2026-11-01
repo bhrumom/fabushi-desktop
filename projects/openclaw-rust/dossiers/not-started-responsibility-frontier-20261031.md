@@ -306,6 +306,17 @@ still remains `not-started/not-wired/not-run/pending` because fixed-source
 transitive closure, unsupported provider/attachment behavior, live provider
 proof, and frozen verification/acceptance remain open.
 
+### 2026-11-01 provider-review deletion-fence correction
+
+The same owner-local deletion race was found in the existing provider-review
+record, continuation-release, and terminal-settlement methods. Their facade
+checks were not sufficient at the `SandAgentDb` edge because the durable
+record could enter deletion custody between the read and CAS. The owner now
+rejects all three mutations when `deletion_pending` is set; focused contracts
+cover refusal recording plus release and settlement rejection while fenced.
+This remains a bounded write-edge correction and does not change the
+responsibility's `not-started/not-wired/not-run/pending` status.
+
 ## Evidence boundary
 
 These are implementation gaps, not acceptance approvals. No row is promoted by the

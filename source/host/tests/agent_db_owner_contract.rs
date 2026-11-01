@@ -368,6 +368,17 @@ fn provider_review_owner_is_generation_bound_idempotent_and_conflict_safe() {
         continuation_message: Some("Review and continue".into()),
         error_type: Some("policy".into()),
     };
+    let mut deletion_fenced = admission.clone();
+    deletion_fenced.deletion_pending = true;
+    assert!(owner
+        .compare_and_set_session_work_admission(Some("revision-1"), &deletion_fenced)
+        .expect("publish deletion fence"));
+    assert!(owner
+        .record_session_provider_review("revision-1", &review)
+        .is_err());
+    assert!(owner
+        .compare_and_set_session_work_admission(Some("revision-1"), &admission)
+        .expect("clear deletion fence"));
     assert_eq!(owner
         .record_session_provider_review("revision-1", &review)
         .expect("record review"), review);
@@ -450,6 +461,24 @@ fn provider_review_continuation_settlement_is_run_and_generation_bound() {
     assert!(owner
         .compare_and_set_session_work_admission(None, &admission)
         .expect("create accepted review"));
+    let mut deletion_fenced = admission.clone();
+    deletion_fenced.deletion_pending = true;
+    assert!(owner
+        .compare_and_set_session_work_admission(Some("revision-settle"), &deletion_fenced)
+        .expect("publish deletion fence"));
+    assert!(!owner
+        .release_provider_review_continuation("revision-settle", "continuation-run")
+        .expect("fenced release is explicit"));
+    assert!(!owner
+        .settle_provider_review_continuation(
+            "revision-settle",
+            "continuation-run",
+            ProviderReviewContinuationOutcome::Completed,
+        )
+        .expect("fenced settlement is explicit"));
+    assert!(owner
+        .compare_and_set_session_work_admission(Some("revision-settle"), &admission)
+        .expect("clear deletion fence"));
     assert!(!owner
         .settle_provider_review_continuation(
             "stale-revision",
