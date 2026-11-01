@@ -710,73 +710,91 @@ impl SandAgentDb {
                 "agent database is closed".into(),
             ));
         };
-        let raw = db
-            .query_row(GET_KV_SQL, params![KV_SESSION_WORK_ADMISSION], |row| {
-                row.get::<_, String>(0)
-            })
-            .optional()?
-            .ok_or_else(|| AgentDbProjectionError::WorkAdmissionInvalid(
-                "session work admission record is unavailable".into(),
-            ))?;
-        let mut record: SessionWorkAdmissionRecord = serde_json::from_str(&raw)?;
-        if record.session_id != expected_session_id {
-            return Err(AgentDbProjectionError::WorkAdmissionInvalid(
-                "session archive transition identity changed".into(),
-            ));
+        db.execute_batch("BEGIN IMMEDIATE")?;
+        let result = (|| -> Result<
+            (SessionWorkAdmissionRecord, bool),
+            AgentDbProjectionError,
+        > {
+            let raw = db
+                .query_row(GET_KV_SQL, params![KV_SESSION_WORK_ADMISSION], |row| {
+                    row.get::<_, String>(0)
+                })
+                .optional()?
+                .ok_or_else(|| AgentDbProjectionError::WorkAdmissionInvalid(
+                    "session work admission record is unavailable".into(),
+                ))?;
+            let mut record: SessionWorkAdmissionRecord = serde_json::from_str(&raw)?;
+            if record.session_id != expected_session_id {
+                return Err(AgentDbProjectionError::WorkAdmissionInvalid(
+                    "session archive transition identity changed".into(),
+                ));
+            }
+            if expected_lifecycle_revision.is_some_and(|expected| {
+                record.lifecycle_revision != expected.trim()
+            }) {
+                return Err(AgentDbProjectionError::WorkAdmissionInvalid(
+                    "session archive transition lifecycle changed".into(),
+                ));
+            }
+            if record.archived_at_ms.is_some() == archived {
+                return Ok((record, false));
+            }
+            if archived && record.admitted_work_id.is_some() {
+                return Err(AgentDbProjectionError::WorkAdmissionInvalid(
+                    "session has admitted work; archive requires settlement before retry".into(),
+                ));
+            }
+            if archived && record.admitted_media_work_id.is_some() {
+                return Err(AgentDbProjectionError::WorkAdmissionInvalid(
+                    "session has pending outgoing media; archive requires settlement before retry"
+                        .into(),
+                ));
+            }
+            if archived {
+                record.archived_at_ms = Some(archived_at_ms);
+                record.archived_by = archived_by
+                    .map(str::trim)
+                    .filter(|value| !value.is_empty())
+                    .map(ToOwned::to_owned);
+                record.archive_reason = archive_reason
+                    .map(str::trim)
+                    .filter(|value| !value.is_empty())
+                    .map(ToOwned::to_owned)
+                    .or_else(|| Some("manual".into()));
+            } else {
+                record.archived_at_ms = None;
+                record.archived_by = None;
+                record.archive_reason = None;
+            }
+            let encoded = serde_json::to_string(&record)?;
+            if db.execute(
+                COMPARE_AND_SET_KV_SQL,
+                params![encoded, KV_SESSION_WORK_ADMISSION, raw],
+            )? != 1
+            {
+                return Err(AgentDbProjectionError::WorkAdmissionInvalid(
+                    "session archive transition lost its lifecycle race".into(),
+                ));
+            }
+            Ok((record, true))
+        })();
+        match result {
+            Ok((record, changed)) => {
+                db.execute_batch("COMMIT")?;
+                drop(guard);
+                if changed {
+                    notify_agent_db_listeners(
+                        &self.db_path,
+                        AgentDbListenerChannel::Metadata(KV_SESSION_WORK_ADMISSION.into()),
+                    );
+                }
+                Ok(record)
+            }
+            Err(error) => {
+                let _ = db.execute_batch("ROLLBACK");
+                Err(error)
+            }
         }
-        if expected_lifecycle_revision.is_some_and(|expected| {
-            record.lifecycle_revision != expected.trim()
-        }) {
-            return Err(AgentDbProjectionError::WorkAdmissionInvalid(
-                "session archive transition lifecycle changed".into(),
-            ));
-        }
-        if record.archived_at_ms.is_some() == archived {
-            return Ok(record);
-        }
-        if archived && record.admitted_work_id.is_some() {
-            return Err(AgentDbProjectionError::WorkAdmissionInvalid(
-                "session has admitted work; archive requires settlement before retry".into(),
-            ));
-        }
-        if archived && record.admitted_media_work_id.is_some() {
-            return Err(AgentDbProjectionError::WorkAdmissionInvalid(
-                "session has pending outgoing media; archive requires settlement before retry"
-                    .into(),
-            ));
-        }
-        if archived {
-            record.archived_at_ms = Some(archived_at_ms);
-            record.archived_by = archived_by
-                .map(str::trim)
-                .filter(|value| !value.is_empty())
-                .map(ToOwned::to_owned);
-            record.archive_reason = archive_reason
-                .map(str::trim)
-                .filter(|value| !value.is_empty())
-                .map(ToOwned::to_owned)
-                .or_else(|| Some("manual".into()));
-        } else {
-            record.archived_at_ms = None;
-            record.archived_by = None;
-            record.archive_reason = None;
-        }
-        let encoded = serde_json::to_string(&record)?;
-        if db.execute(
-            COMPARE_AND_SET_KV_SQL,
-            params![encoded, KV_SESSION_WORK_ADMISSION, raw],
-        )? != 1
-        {
-            return Err(AgentDbProjectionError::WorkAdmissionInvalid(
-                "session archive transition lost its lifecycle race".into(),
-            ));
-        }
-        drop(guard);
-        notify_agent_db_listeners(
-            &self.db_path,
-            AgentDbListenerChannel::Metadata(KV_SESSION_WORK_ADMISSION.into()),
-        );
-        Ok(record)
     }
 
     /// Commit one background terminal receipt and the admission transition in
