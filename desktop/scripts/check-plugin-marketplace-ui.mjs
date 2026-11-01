@@ -1,0 +1,33 @@
+import { build } from 'esbuild';
+import { chromium } from '@playwright/test';
+import { mkdir, writeFile } from 'node:fs/promises';
+import { createServer } from 'node:http';
+import { readFile } from 'node:fs/promises';
+import assert from 'node:assert/strict';
+await mkdir('.tmp-plugin-ui', {recursive:true});
+await build({entryPoints:['e2e/fixtures/plugin-marketplace.tsx'],bundle:true,outfile:'.tmp-plugin-ui/app.js',jsx:'automatic',nodePaths:['node_modules'],define:{'process.env.NODE_ENV':'"production"'}});
+await writeFile('.tmp-plugin-ui/index.html','<html><head><link rel="stylesheet" href="/app.css"></head><body style="margin:0;padding:20px;background:#101114"><div id="root"></div><script src="/app.js"></script></body></html>');
+const server=createServer(async(req,res)=>{try{const path=({'/':'index.html','/app.js':'app.js','/app.css':'app.css'})[req.url];if(!path){res.writeHead(404);res.end();return;} res.setHeader('Content-Type',path.endsWith('css')?'text/css':path.endsWith('js')?'application/javascript':'text/html');res.end(await readFile('.tmp-plugin-ui/'+path));}catch{res.writeHead(500);res.end();}});
+await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
+const browser=await chromium.launch();
+try {
+const page=await browser.newPage({viewport:{width:1200,height:850}});
+await page.goto(`http://127.0.0.1:${server.address().port}`);
+await page.getByRole('heading',{name:'Plugins',exact:true}).waitFor();
+assert.equal(await page.locator('.sand-plugins__grid > button').count(),3);
+await page.screenshot({path:'.tmp-plugin-ui/catalog-desktop.png'});
+await page.getByRole('button',{name:'Skills',exact:true}).click();
+assert.equal(await page.locator('.sand-plugins__grid > button').count(),1);
+await page.getByRole('button',{name:'All',exact:true}).click();
+await page.getByRole('searchbox').fill('GitHub');
+await page.locator('.sand-plugins__grid > button').click();
+await page.getByRole('button',{name:'Add',exact:true}).click();
+assert.equal(await page.locator('body').getAttribute('data-installed'),'github');
+await page.screenshot({path:'.tmp-plugin-ui/detail.png'});
+await page.getByRole('button',{name:'Back',exact:true}).click();
+assert.equal(await page.getByRole('searchbox').inputValue(),'GitHub');
+await page.getByRole('searchbox').fill('');
+await page.setViewportSize({width:390,height:740});
+assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
+await page.screenshot({path:'.tmp-plugin-ui/catalog-narrow.png'});
+} finally { await browser.close();server.close(); }
