@@ -109,6 +109,10 @@ current lifecycle revision. Completion, interruption, and execution error
 settle the same row through the guarded identity/revision update. Manual runs
 retain the compatibility file-store no-op.
 
+The same owner now exposes a read-only `list_cron_session_runs` projection,
+including the reserved controller/media/subagent fence columns. It is
+intentionally not a retention or deletion consumer.
+
 This is direct producer → owner → durable row evidence for registration only.
 No retention parser, sweep trigger, transcript archive, active media/subagent
 preservation query, guarded deletion, focused verification, or acceptance was

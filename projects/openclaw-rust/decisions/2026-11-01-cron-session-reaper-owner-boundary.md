@@ -23,6 +23,8 @@ minimum viable target is an extension of the existing `SandAgentDb` /
 automation store, transcript owner, or filesystem-age cleanup job. The work
 outside that slice remains architecture-blocked until the migration and
 archive contract below are approved and then implemented with focused oracles.
+The slice also includes a read-only row projection owned by the same DB
+boundary; it is an input for a later sweep, not a deletion consumer.
 
 ## Source evidence and exact subjects
 

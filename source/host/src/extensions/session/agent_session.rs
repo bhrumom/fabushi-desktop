@@ -359,6 +359,13 @@ impl SandAgentSessionStore {
         )
     }
 
+    pub fn list_cron_session_runs(
+        &self,
+        agent_id: &str,
+    ) -> Result<Vec<crate::extensions::session::agent_db::CronSessionRunRecord>, String> {
+        self.production.list_cron_session_runs(agent_id)
+    }
+
     pub fn pending_conversation_turns(&self) -> PendingConversationTurnRegistry {
         self.production.pending_conversation_turns()
     }

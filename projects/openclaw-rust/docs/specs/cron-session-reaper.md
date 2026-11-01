@@ -59,7 +59,9 @@ selected and approved.
 The bounded registration slice implements only the durable identity and
 terminal-state portions of D01 and the producer/owner handoff in D03. It does
 not select a cleanup trigger, perform retention parsing, archive transcript
-artifacts, or delete rows.
+artifacts, or delete rows. A read-only owner projection of these rows is part
+of the same D01 slice so a future sweep cannot read `runs.json` as a substitute
+for session state.
 
 ## Verification and Definition of Done
 

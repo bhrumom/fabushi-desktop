@@ -2592,6 +2592,18 @@ impl ProductionSessionWorkers {
         })
     }
 
+    pub fn list_cron_session_runs(
+        &self,
+        agent_id: &str,
+    ) -> Result<Vec<crate::extensions::session::agent_db::CronSessionRunRecord>, String> {
+        self.with_agent_filesystem_mutation(agent_id, || {
+            Ok(self
+                .open_agent_db_owner_locked(agent_id)?
+                .list_cron_session_runs()
+                .map_err(|error| error.to_string())?)
+        })
+    }
+
     pub(crate) fn read_session_work_admission_locked(
         &self,
         agent_id: &str,
