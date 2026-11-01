@@ -9,7 +9,7 @@
     "unknown": 16172,
     "unread": 16145,
     "omitted": 0,
-    "responsibilities_total": 104,
+    "responsibilities_total": 105,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -26405,6 +26405,261 @@
         "Telegram/SourceFiles/mtproto/session_private.cpp@13cbc76ec723386027b5b4dcac79999b791c4614",
         "Telegram/SourceFiles/mtproto/connection_abstract.cpp@3baabf3f72c7c7edba3151814681fbf167a5ca0a",
         "Telegram/SourceFiles/mtproto/scheme/mtproto.tl@76225965bfc794388db241f3f760db8ab79e84f8"
+      ]
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+      "source_path": "Telegram/SourceFiles/mtproto/connection_tcp.cpp",
+      "source_blob_sha": "d721a9058e1885d2964ded55bd4e4c7c2ce9e381",
+      "source_kind": "wire",
+      "module_id": "tdesktop.mtproto.abridged-transport-frame-wire",
+      "responsibility_id": "TDRP-R9-MTPROTO-ABRIDGED-TRANSPORT-FRAME-WIRE-001",
+      "source_symbols": [
+        "TcpConnection::Protocol::Version0::finalizePacket",
+        "TcpConnection::Protocol::Version0::readPacketLength",
+        "TcpConnection::Protocol::Version0::readPacket",
+        "TransportFrameCodec::encode_abridged",
+        "TransportFrameCodec::decode_abridged",
+        "TcpTransport::send_payload/receive_payload"
+      ],
+      "capability_ids": [
+        "CAP-TELEGRAM-MTPROTO-ABRIDGED-TRANSPORT-FRAME-WIRE"
+      ],
+      "dependency_ids": [
+        "telegram-protocol::TransportFrameCodec",
+        "telegram-network::TcpTransport"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/evidence/round104-mtproto-abridged-transport-frame-wire-20261101.md",
+      "behavior_contract": "Fixed-U abridged MTProto framing measures payload in 4-byte words: 1..126 words use one unsigned length byte; 127 or more use 0x7f followed by the 24-bit little-endian word count. The extended form is invalid for counts below 127. Partial headers/payloads remain incomplete input and malformed/noncanonical lengths fail closed before payload dispatch.",
+      "state_machine": "Existing TcpTransport send_payload -> TransportFrameCodec::encode(Abridged) -> socket; receive bytes -> TransportFrameCodec::decode(Abridged) -> existing plaintext/encrypted-envelope owner. This slice changes only canonical abridged length decoding and does not own connection-start obfuscation, Version1/VersionD secrets, quick ACK semantics, connection scheduling, request history, gzip or difference application.",
+      "side_effects": [
+        "Rejects noncanonical four-byte abridged length headers whose decoded word count is below 127",
+        "Retains exact existing short and canonical extended encode forms in the canonical telegram-protocol transport owner",
+        "Retains the existing shipping telegram-network TcpTransport caller unchanged",
+        "Authors focused 126/127/noncanonical/fragmented-header contracts and mirrors them into desktop without executing them"
+      ],
+      "failure_cases": [
+        "outbound abridged payload is empty or not divisible by four",
+        "extended abridged length header is incomplete",
+        "extended abridged length encodes fewer than 127 words",
+        "declared payload is incomplete or exceeds the configured frame bound"
+      ],
+      "ui_disposition": "No UI change. This is MTProto TCP abridged transport framing in the existing shared protocol/network owners.",
+      "non_ui_responsibilities": [
+        "Canonical 1-byte length encoding for 1..126 4-byte words",
+        "Canonical 0x7f + LE24 length encoding for 127 or more words",
+        "Fail-closed rejection of noncanonical extended small lengths",
+        "Partial-frame handling and configured frame-size bound",
+        "Strict separation from transport obfuscation, padded intermediate, quick ACK lifecycle and connection scheduling"
+      ],
+      "platform_delta": "Minimal production delta in the existing canonical owner: reject noncanonical extended abridged lengths below 127 in decode_abridged. No new owner, socket, scheduler or lifecycle state is introduced.",
+      "existing_owner_candidates": [
+        "bhrumom/fabushi-platform-core:native/telegram-protocol/src/transport.rs",
+        "bhrumom/fabushi-platform-core:native/telegram-network/src/lib.rs",
+        "bhrumom/fabushi-platform-core:native/telegram-protocol/tests/protocol_contract.rs",
+        "source/mahayana/mahayana-rs/providers/telegram-network/src/lib.rs",
+        "source/mahayana/mahayana-rs/providers/telegram-protocol/tests/protocol_contract.rs"
+      ],
+      "existing_owner": "Existing canonical telegram-protocol TransportFrameCodec plus existing telegram-network TcpTransport shipping caller",
+      "rejected_existing_owners": [
+        "new TCP transport owner: rejected because TransportFrameCodec already owns exact frame encoding/decoding",
+        "telegram-network duplicate framing parser: rejected because sockets consume the shared codec",
+        "connection scheduler owner: rejected because framing is independent of endpoint racing/retry lifecycle"
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "bhrumom/fabushi-platform-core:native/telegram-protocol/src/transport.rs",
+        "bhrumom/fabushi-platform-core:native/telegram-network/src/lib.rs",
+        "bhrumom/fabushi-platform-core:native/telegram-protocol/tests/protocol_contract.rs",
+        "source/mahayana/mahayana-rs/providers/telegram-network/src/lib.rs",
+        "source/mahayana/mahayana-rs/providers/telegram-protocol/tests/protocol_contract.rs"
+      ],
+      "fabushi_target_symbols": [
+        "TransportFrameCodec::encode_abridged",
+        "TransportFrameCodec::decode_abridged",
+        "TransportMode::Abridged",
+        "TcpTransport::send_payload",
+        "TcpTransport::receive_payload"
+      ],
+      "target_language": "Rust",
+      "language_rationale": "The existing source-neutral Rust telegram-protocol transport codec already owns this shipping wire boundary; the fixed-U canonical-length guard belongs there rather than in a duplicate/source-specific transport.",
+      "command_event_contracts": [
+        "1..126 word payload -> one-byte word count -> payload",
+        "127+ word payload -> 0x7f + LE24 word count -> payload",
+        "extended word count <127 -> fail closed",
+        "incomplete header/payload -> incomplete input without fabricated frame",
+        "valid decoded payload -> existing plaintext/encrypted-envelope owners"
+      ],
+      "state_owner": "TransportFrameCodec owns stateless frame parsing/encoding; TcpTransport owns socket buffering and I/O.",
+      "lifecycle_owner": "Existing telegram-network TcpTransport. Connection selection/racing/retry and obfuscation setup remain outside this isolated framing slice.",
+      "persistence_and_restart": "No persistence or restart behavior is introduced or changed.",
+      "concurrency_and_cancellation": "Pure synchronous frame encode/decode in the existing socket path; no scheduler, request-history registry, background task or cancellation owner is introduced.",
+      "security_boundary": "A malformed or noncanonical abridged length fails closed in the shared codec before payload handoff. Existing maximum-frame enforcement remains intact.",
+      "network_service_dependencies": [
+        "Existing TcpTransport socket I/O only; no new network service dependency."
+      ],
+      "service_owner": "Canonical embedded Telegram protocol/network runtime.",
+      "deployment_evidence": [],
+      "implementation_status": "implemented",
+      "coverage_disposition": "rewritten",
+      "blockers": [
+        "Stage B executable build/unit/contract/integration/packaged validation has not run.",
+        "Connection-start obfuscation/AES-CTR prefix, Version1/VersionD secret handling and quick-ACK semantics remain outside this isolated abridged-frame slice.",
+        "Broader connection scheduling/racing/send retry, arbitrary request histories, gzip and complete difference/differenceSlice decoding/application remain open/fail-closed.",
+        "Broader fixed-U source/legal/release closure remains open."
+      ],
+      "production_entrypoints": [
+        "fixed-U TcpConnection::Protocol::Version0::finalizePacket -> canonical short/extended abridged frame",
+        "fixed-U TcpConnection::Protocol::Version0::readPacketLength/readPacket -> reject extended count <127 and slice exact payload",
+        "canonical telegram-network::TcpTransport::send_payload -> TransportFrameCodec::encode",
+        "canonical telegram-network::TcpTransport::receive_payload -> TransportFrameCodec::decode",
+        "desktop tracked telegram-network provider remains byte-identical at 54f509474391bb5118ba4678ba5c566ab3e74ec8"
+      ],
+      "production_evidence": [
+        "fixed-U:Telegram/SourceFiles/mtproto/connection_tcp.cpp@d721a9058e1885d2964ded55bd4e4c7c2ce9e381",
+        "fixed-U:Telegram/SourceFiles/mtproto/scheme/mtproto.tl@76225965bfc794388db241f3f760db8ab79e84f8",
+        "fixed-U:Telegram/SourceFiles/mtproto/session_private.cpp@13cbc76ec723386027b5b4dcac79999b791c4614",
+        "platform-core-spec-commit:6f0d7e3cfc1d8d90fa47360b21ae57900df2d33d",
+        "platform-core-spec-blob:a5ff2064fc9386cbfa4dc428b633291ff6d9623f",
+        "platform-core-production-commit:97c38a1bde61edc53ed9d888ffb3cb541e4ff68f",
+        "platform-core-production-path:native/telegram-protocol/src/transport.rs@7f981b96f2f8a17823ba9c84bf2e2324d408be31",
+        "platform-core-network-path:native/telegram-network/src/lib.rs@54f509474391bb5118ba4678ba5c566ab3e74ec8",
+        "platform-core-contract-path:native/telegram-protocol/tests/protocol_contract.rs@00eff72062ab8d3285234428bd09be3fccb27993",
+        "desktop-contract-mirror-commit:f2405ce2ea29785fbc218840d3e9bf1ff4048576",
+        "path:source/mahayana/mahayana-rs/providers/telegram-network/src/lib.rs@54f509474391bb5118ba4678ba5c566ab3e74ec8",
+        "path:source/mahayana/mahayana-rs/providers/telegram-protocol/tests/protocol_contract.rs@00eff72062ab8d3285234428bd09be3fccb27993"
+      ],
+      "test_evidence": [
+        "Canonical and desktop authored-only focused contracts pin the 126-word short boundary, 127-word extended boundary, rejection of noncanonical extended 126-word length, and fragmented extended-header handling; not run."
+      ],
+      "target_commit": "f2405ce2ea29785fbc218840d3e9bf1ff4048576",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Canonical Fabushi account + existing TelegramClientLease/runtime + shared telegram-protocol/network production composition",
+      "composition_slot": "Embedded Telegram MTProto abridged TCP transport frame wire",
+      "capability_component": "Exact fixed-U abridged transport length framing and canonical decode validation",
+      "variation_axes": [
+        "1..126 word short header",
+        "127+ word extended header",
+        "noncanonical extended small count",
+        "fragmented header/payload"
+      ],
+      "shared_owner_contracts": [
+        "Existing telegram-protocol TransportFrameCodec",
+        "Existing telegram-network TcpTransport",
+        "Existing Cargo path-dependency composition"
+      ],
+      "duplicate_root_check": "No second account, runtime, provider, socket transport, frame codec, scheduler, auth key, request history, message store, UI root, sidecar, subprocess or Web wrapper was introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Not applicable",
+      "primary_navigation_target": "Existing Messages/Conversation navigation",
+      "collection_surface": "Existing ConversationList; no change",
+      "creation_flow": "Existing canonical conversation creation; no change",
+      "object_action_scope": "Not applicable",
+      "detail_section": "Not applicable",
+      "capability_surface": "No UI surface; existing embedded Telegram network path only",
+      "route_contract": "No new route.",
+      "search_scope": "Not applicable",
+      "search_provider": "Existing canonical Search owner; unchanged",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Unchanged.",
+      "search_local_remote_contract": "Not applicable.",
+      "responsive_disposition": "No UI change.",
+      "accessibility_contract": "No UI change.",
+      "keyboard_contract": "No UI change.",
+      "state_continuity_contract": "Canonical abridged frame validation occurs before existing payload owners; no product state owner changes.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Existing Fabushi design system; no visual changes",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": null,
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "No new icon asset",
+      "avatar_contract": "No change",
+      "content_copy_keys": [],
+      "motion_contract": "No change",
+      "reduced_motion_contract": "No change",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "high",
+      "requirement_ids": [
+        "TDRP-R9-MTPROTO-ABRIDGED-TRANSPORT-FRAME-WIRE-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-MTPROTO-ABRIDGED-TRANSPORT-FRAME-WIRE-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-MTPROTO-ABRIDGED-CANONICAL-LENGTH-001",
+        "INV-TDRP-MTPROTO-ABRIDGED-FRAGMENT-001"
+      ],
+      "unit_case_ids": [
+        "UNIT-TDRP-MTPROTO-ABRIDGED-BOUNDARY-001",
+        "UNIT-TDRP-MTPROTO-ABRIDGED-NONCANONICAL-001"
+      ],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-MTPROTO-ABRIDGED-TRANSPORT-FRAME-WIRE-001"
+      ],
+      "integration_case_ids": [],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "fault_recovery_case_ids": [],
+      "performance_case_ids": [],
+      "security_case_ids": [
+        "SEC-TDRP-MTPROTO-ABRIDGED-NONCANONICAL-FAIL-CLOSED-001"
+      ],
+      "soak_case_ids": [],
+      "exploratory_charter_ids": [],
+      "regression_ids": [
+        "REG-TDRP-MTPROTO-ABRIDGED-EXTENDED-SMALL-001"
+      ],
+      "release_gate_ids": [
+        "G-TRACEABILITY",
+        "G-COMPOSITION",
+        "G-SECURITY",
+        "G-EVIDENCE",
+        "G-RELEASE"
+      ],
+      "test_fixture_ids": [
+        "mtproto-abridged-126-word",
+        "mtproto-abridged-127-word",
+        "mtproto-abridged-noncanonical-126-word"
+      ],
+      "test_environment_ids": [
+        "GitHub Actions Stage B matrix (not run)"
+      ],
+      "coverage_matrix_status": "pending",
+      "flake_status": "stable",
+      "release_gate_status": "pending",
+      "acceptance_reviewer": null,
+      "reviewer": null,
+      "license_and_provenance": "Behavioral responsibility is anchored to fixed-U telegramdesktop/tdesktop connection_tcp.cpp@d721a9058e1885d2964ded55bd4e4c7c2ce9e381, mtproto.tl@76225965bfc794388db241f3f760db8ab79e84f8 and session_private.cpp@13cbc76ec723386027b5b4dcac79999b791c4614. Implementation is source-neutral Rust and copies no upstream C++ implementation.",
+      "notes": "Stage A source-level implementation. Existing TransportFrameCodec/TcpTransport already closed the abridged short/extended encoding, word alignment, partial-input and size-bound rules. This round adds only fixed-U rejection of a noncanonical extended length whose decoded word count is below 127 and authors/mirrors focused contracts without executing them; validation_status=not-run and accepted=false. Connection-start obfuscation, Version1/VersionD, quick ACK lifecycle, broader connection scheduling, arbitrary request history, gzip and complete difference decoding remain open.",
+      "test_execution_evidence": [],
+      "validation_status": "not-run",
+      "accepted": false,
+      "id": "TDRP-R9-MTPROTO-ABRIDGED-TRANSPORT-FRAME-WIRE-001",
+      "source_paths": [
+        "Telegram/SourceFiles/mtproto/connection_tcp.cpp@d721a9058e1885d2964ded55bd4e4c7c2ce9e381",
+        "Telegram/SourceFiles/mtproto/scheme/mtproto.tl@76225965bfc794388db241f3f760db8ab79e84f8",
+        "Telegram/SourceFiles/mtproto/session_private.cpp@13cbc76ec723386027b5b4dcac79999b791c4614"
       ]
     }
   ],
