@@ -1230,3 +1230,91 @@ Direct callers/consumers are repository-process only: GitHub Issues opened-event
 Stage-A cases are authored only and remain `validation_status=not-run`, `accepted=false`: 16 contract, 1 integration, 9 fault/recovery and 7 security/privacy cases covering the exact trigger, permissions, runner, Action lineage, token/input parsing, decision matrix, comment/label/close settlement, external acquisition, partial failure, privacy and no-target-copy boundaries.
 
 No opened-issue event, workflow/action execution, XML download, npm installation, issue mutation, token-scope probe, build, typecheck, lint, validator, test/E2E, package, release, deployment, installation, runtime acceptance, workflow-run/status/check query, or platform-core mutation is performed in Stage A.
+
+
+##### Repository Linux CI build/artifact workflow authority
+
+Fixed-U `.github/workflows/linux.yml@dbedd23593c5ea66ff9b8b880bda6a8bc5a4cc55` is upstream Linux CI/build/artifact provenance, not Fabushi product runtime, packaging authority, updater, or a workflow to copy verbatim. Existing-owner-first responsibility `TDRP-R9-REPOSITORY-LINUX-WORKFLOW-001` stays with current Fabushi repository build/toolchain governance, package/release/process governance, repository security/provenance governance, and shared quality/evidence gates. No Telegram Linux product lane, second build/package truth, runtime/provider/sidecar, or platform-core delta is introduced.
+
+The exact source is fixed-U recursive-tree index 124 zero-based, mode 100644, 7,284 ASCII bytes/code points, 215 LF, zero CR and trailing newline. Push admission excludes `public-canary` and `private-canary` and carries path-ignore rules for docs/Markdown/legal/snap/platform-specific/build areas while spelling exceptions for `.github/workflows/linux.yml` and `Telegram/build/docker/centos_env/**`; pull_request uses the same path-ignore set without the canary branch exclusion. There is no schedule, manual/repository dispatch, reusable-workflow declaration, explicit `permissions`, environment, concurrency, timeout or retry/backoff.
+
+The sole matrix contains one empty `defines` value. Runner selection is source-conditional: pull_request, tag-like refs, or `refs/heads/nightly` select `depot-ubuntu-latest-16`; other admitted refs select mutable `ubuntu-latest`. Environment fixes `UPLOAD_ARTIFACT=true`, `ONLY_CACHE=false`, and local `IMAGE_TAG=tdesktop:centos_env`. Exact event/ref admission and runner availability remain frozen-candidate evidence; source expressions are not rewritten into assumptions.
+
+External Action lineage observed on 2026-11-01 separates mutable major tags from resolved commits: `actions/checkout@v7 -> 3d3c42e5aac5ba805825da76410c181273ba90b1`; `docker/setup-buildx-action@v4 -> f87e5991a6d7451dcb8d9637bfbc97413f497069`; `actions/cache@v6` (including restore/save subactions) `-> 55cc8345863c7cc4c66a329aec7e433d2d1c52a9`; `docker/build-push-action@v7 -> c3c9e263c25d99ce0380d002d59b67737d91b0dc`; `actions/upload-artifact@v7 -> cf430e030ddbb5b0abf93d22962f4752f3646cd9`. The source refs remain mutable. `jlumbroso/free-disk-space@ceedf095f4ec1a097402bc6bd80831f2e1a6fde6` and `reproducible-containers/buildkit-cache-dance@5422eac04292c961a382e0f584ea0f03ad9da723` are commit-pinned; the latter action metadata is blob `08ad2eef853162f5336e25928967d9a4e64c0c4e`, runs Node 24 main/post, defaults `save-always=false`, and defaults its utility image to mutable `ghcr.io/containerd/busybox:latest`.
+
+Bootstrap and toolchain lineage are mixed. The workflow runs `sudo apt update`, executes the response from `https://install.python-poetry.org` directly through `python3 -` without version/digest pin, and downloads ccache `4.13.6` by versioned GitHub release URL but without an asserted checksum before piping to privileged tar extraction. It sets `CCACHE_DIR=$RUNNER_TEMP/.tdesktop-cache`. Exact fixed-U `pyproject.toml@8f43692fb217f075ccc588c3b677177e42b5688f` and `poetry.lock@9d857912774d68b1f8adda1dbbccb87adefda788` govern Jinja2/MarkupSafe after Poetry bootstrap. Exact `gen_dockerfile.py@86d27c96e1f732a1faf3e85397ea3ba38e493a0d` receives present-empty `DEBUG` and `LTO`, therefore renders both booleans false; MINSIZE/ASAN remain false defaults and JOBS empty. The generated Dockerfile derives from exact template `3fea9e6866e0ea6351f8a13ebb825ebf49cadfc2`; its already-inventoried mutable/tag/exact-pin acquisition graph remains authoritative rather than duplicated here.
+
+Cache behavior is part of the contract but never acceptance evidence. Libraries cache stores Buildx local cache plus cache-mount data under key `${runner.OS}-libs-${hashFiles('Telegram/build/docker/centos_env/**')}` with broad `${runner.OS}-libs-` restore fallback. Cache-dance injects/extracts Dockerfile cache mounts and skips extraction on an exact cache hit. `docker/build-push-action@v7` builds the centos_env context, loads the local `tdesktop:centos_env` image because ONLY_CACHE is false, reads the old local Buildx cache and writes a new max-mode cache; the next shell step removes the old directory then renames the new cache, so interruption can lose the local cache optimization. Telegram Desktop ccache restore uses a per-run primary key plus OS/defines prefix fallback; default-branch runs with parsed misses >300 evict entries older than one day and save under the restore action's primary key. Non-numeric/empty ccache miss output is coerced to zero and suppresses trim/save rather than failing.
+
+Build execution uses exact `Telegram/build/docker/centos_env/build.sh@00b5c9a2faf5e25fb981325f654d3458ce074a7d`, which `set -e`, invokes exact `Telegram/configure.sh@c550d988cff5fe3047311cc330aeee943ee328e5`, then CMake build. Docker runs as the host uid, mounts the entire checked-out repository read-write at `/usr/src/tdesktop` and ccache read-write, sets CONFIG=Debug and CCACHE sloppiness, and passes Debug/no-optimization/pch flags plus `CMAKE_COMPILE_WARNING_AS_ERROR=ON`, `TDESKTOP_API_TEST=ON`, `DESKTOP_APP_DISABLE_AUTOUPDATE=OFF`, and `DESKTOP_APP_DISABLE_CRASH_REPORTS=OFF`. The API-test option is a build configuration, not evidence that tests execute in this workflow.
+
+Quality and artifact semantics are intentionally narrow. The `Check.` step proves only that `out/Debug/Telegram` is a regular file and prints its size; it does not require size >0, execute the binary, inspect Updater, package, sign, install, smoke-test, or validate runtime behavior. Artifact staging creates `out/Debug/artifact` and executes `mv {Telegram,Updater} artifact/`; a missing second file can leave partial staging before step failure. Upload then uses mutable `actions/upload-artifact@v7`, artifact name `Telegram` for the only matrix value, path `out/Debug/artifact/`, and one-day retention. The workflow captures no digest, SBOM, signature, provenance/attestation, package/install receipt, or release/updater identity. This is ephemeral unsigned Debug CI output and must never be promoted to Fabushi release acceptance.
+
+Direct caller/consumer scope is repository-process only. GitHub push/pull_request event admission starts the workflow; checkout/submodule, package/bootstrap, Docker/BuildKit/cache services and source-controlled build scripts are its inputs. The uploaded artifact is a GitHub Actions run artifact for maintainers/reviewers/manual CI consumption, not a shipping entrypoint. All 19 sibling fixed-U workflow blobs were inspected for direct reusable/workflow-run coupling: none invokes `linux.yml`; `canary.yml` only mentions `linux.yml` in prose and runs an independent build/artifact graph.
+
+Security and provenance stay fail-closed. The workflow has no explicit permissions while checkout defaults to GitHub token credential persistence; recursive submodules and the later read-write full-workspace Docker mount make credential/config exposure and untrusted pull-request source execution explicit boundaries. Mutable runner labels, mutable Action major tags, curl-to-Python bootstrap, no-digest ccache archive, broad cache restore prefixes, cache-dance's mutable busybox utility image, mutable Docker base/package/acquisition inputs, and unsigned Debug artifacts all require exact frozen-candidate evidence. Cache contents are optimization inputs, never proof of source/build identity. Secret/token values must never be captured.
+
+Failure/recovery has no workflow-level concurrency lock, timeout, retry, rollback, or compensation. Runner/action/bootstrap/submodule/cache/build failures stop normal progression; ccache-stat parse anomalies degrade to zero; local cache rotation and artifact staging can be partially mutated; the existence-only Telegram check can admit a zero-byte file; upload failure loses the one-day CI publication boundary. A later successful run cannot retroactively prove an earlier cache, build, or artifact identity.
+
+Stage-A cases are authored only and remain `validation_status=not-run`, `accepted=false`:
+- `CONTRACT-TDRP-LINUX-WORKFLOW-TRIGGER-PUSH-BRANCH-001`
+- `CONTRACT-TDRP-LINUX-WORKFLOW-TRIGGER-PUSH-PATHS-001`
+- `CONTRACT-TDRP-LINUX-WORKFLOW-TRIGGER-PR-PATHS-001`
+- `CONTRACT-TDRP-LINUX-WORKFLOW-CANARY-EXCLUSION-001`
+- `CONTRACT-TDRP-LINUX-WORKFLOW-PERMISSIONS-001`
+- `CONTRACT-TDRP-LINUX-WORKFLOW-RUNNER-SELECTION-001`
+- `CONTRACT-TDRP-LINUX-WORKFLOW-MATRIX-001`
+- `CONTRACT-TDRP-LINUX-WORKFLOW-CHECKOUT-LINEAGE-001`
+- `CONTRACT-TDRP-LINUX-WORKFLOW-RECURSIVE-SUBMODULES-001`
+- `CONTRACT-TDRP-LINUX-WORKFLOW-POETRY-BOOTSTRAP-001`
+- `CONTRACT-TDRP-LINUX-WORKFLOW-CCACHE-BOOTSTRAP-001`
+- `CONTRACT-TDRP-LINUX-WORKFLOW-GENERATOR-INPUTS-001`
+- `CONTRACT-TDRP-LINUX-WORKFLOW-DISK-CLEANUP-001`
+- `CONTRACT-TDRP-LINUX-WORKFLOW-BUILDX-LINEAGE-001`
+- `CONTRACT-TDRP-LINUX-WORKFLOW-LIBS-CACHE-001`
+- `CONTRACT-TDRP-LINUX-WORKFLOW-CACHE-DANCE-001`
+- `CONTRACT-TDRP-LINUX-WORKFLOW-BUILD-PUSH-LOCAL-IMAGE-001`
+- `CONTRACT-TDRP-LINUX-WORKFLOW-CACHE-ROTATION-001`
+- `CONTRACT-TDRP-LINUX-WORKFLOW-TDESKTOP-CCACHE-RESTORE-001`
+- `CONTRACT-TDRP-LINUX-WORKFLOW-BUILD-CONTAINER-001`
+- `CONTRACT-TDRP-LINUX-WORKFLOW-BUILD-FLAGS-001`
+- `CONTRACT-TDRP-LINUX-WORKFLOW-CCACHE-MISS-SAVE-001`
+- `CONTRACT-TDRP-LINUX-WORKFLOW-OUTPUT-CHECK-001`
+- `CONTRACT-TDRP-LINUX-WORKFLOW-ARTIFACT-STAGING-001`
+- `CONTRACT-TDRP-LINUX-WORKFLOW-ARTIFACT-UPLOAD-001`
+- `CONTRACT-TDRP-LINUX-WORKFLOW-PUBLICATION-BOUNDARY-001`
+- `CONTRACT-TDRP-LINUX-WORKFLOW-CONSUMERS-001`
+- `CONTRACT-TDRP-LINUX-WORKFLOW-NO-TARGET-COPY-001`
+- `INT-TDRP-LINUX-WORKFLOW-REPOSITORY-BUILD-001`
+- `FAULT-TDRP-LINUX-WORKFLOW-RUNNER-UNAVAILABLE-001`
+- `FAULT-TDRP-LINUX-WORKFLOW-CHECKOUT-SUBMODULE-001`
+- `FAULT-TDRP-LINUX-WORKFLOW-POETRY-BOOTSTRAP-001`
+- `FAULT-TDRP-LINUX-WORKFLOW-CCACHE-DOWNLOAD-001`
+- `FAULT-TDRP-LINUX-WORKFLOW-DISK-CLEANUP-001`
+- `FAULT-TDRP-LINUX-WORKFLOW-BUILDX-SETUP-001`
+- `FAULT-TDRP-LINUX-WORKFLOW-LIBS-CACHE-RESTORE-001`
+- `FAULT-TDRP-LINUX-WORKFLOW-CACHE-DANCE-001`
+- `FAULT-TDRP-LINUX-WORKFLOW-IMAGE-BUILD-001`
+- `FAULT-TDRP-LINUX-WORKFLOW-CACHE-MOVE-PARTIAL-001`
+- `FAULT-TDRP-LINUX-WORKFLOW-TDESKTOP-BUILD-001`
+- `FAULT-TDRP-LINUX-WORKFLOW-CCACHE-STATS-001`
+- `FAULT-TDRP-LINUX-WORKFLOW-OUTPUT-MISSING-001`
+- `FAULT-TDRP-LINUX-WORKFLOW-ZERO-BYTE-OUTPUT-001`
+- `FAULT-TDRP-LINUX-WORKFLOW-ARTIFACT-STAGE-PARTIAL-001`
+- `FAULT-TDRP-LINUX-WORKFLOW-ARTIFACT-UPLOAD-001`
+- `SEC-TDRP-LINUX-WORKFLOW-IMPLICIT-TOKEN-SCOPE-001`
+- `SEC-TDRP-LINUX-WORKFLOW-CHECKOUT-CREDENTIALS-001`
+- `SEC-TDRP-LINUX-WORKFLOW-PR-UNTRUSTED-SOURCE-001`
+- `SEC-TDRP-LINUX-WORKFLOW-MUTABLE-RUNNER-001`
+- `SEC-TDRP-LINUX-WORKFLOW-MUTABLE-ACTION-TAGS-001`
+- `SEC-TDRP-LINUX-WORKFLOW-CURL-TO-PYTHON-001`
+- `SEC-TDRP-LINUX-WORKFLOW-CCACHE-NO-DIGEST-001`
+- `SEC-TDRP-LINUX-WORKFLOW-CACHE-SCOPE-POISONING-001`
+- `SEC-TDRP-LINUX-WORKFLOW-MUTABLE-CACHE-UTILITY-IMAGE-001`
+- `SEC-TDRP-LINUX-WORKFLOW-MUTABLE-BUILD-INPUTS-001`
+- `SEC-TDRP-LINUX-WORKFLOW-WORKSPACE-RW-MOUNT-001`
+- `SEC-TDRP-LINUX-WORKFLOW-UNSIGNED-DEBUG-ARTIFACT-001`
+- `SEC-TDRP-LINUX-WORKFLOW-NO-ARTIFACT-ATTESTATION-001`
+- `SEC-TDRP-LINUX-WORKFLOW-NO-STAGE-A-EXECUTION-001`
+
+No source/target workflow run, push/pull_request trigger, checkout/action/bootstrap execution, apt/curl/Poetry/ccache acquisition, submodule fetch, Docker/BuildKit/cache operation, build, validator, test/E2E, artifact upload/download, package, signing, release, deployment, installation, runtime acceptance, workflow-run/status/check query, or platform-core mutation is performed in Stage A.
