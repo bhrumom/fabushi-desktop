@@ -14,3 +14,12 @@ Desktop network provider remains `54f509474391bb5118ba4678ba5c566ab3e74ec8`.
 Unique ledger row: `TDRP-R9-MTPROTO-ENCRYPTED-ENVELOPE-WIRE-001`, implemented / no-production-delta / validation not-run / accepted false. Coverage: responsibilities_total 103; unknown 16172; unread 16145; omitted 0; unmapped_responsibilities 0.
 
 No executable validation or CI/status/check query was performed.
+
+
+### Round 102 final source-level compliance
+
+Platform-core final compliance is `e449b65cbd68a287c98221d2d84da824b53707ca` / spec blob `806c1bf1f850eec6e346d5dd47f90db6f24c6501`, referencing desktop bookkeeping checkpoint `a6541989393bb6d1e44e76c542192af0cef2c3c0`. The unique `TDRP-R9-MTPROTO-ENCRYPTED-ENVELOPE-WIRE-001` responsibility is `implemented / coverage_disposition=no-production-delta / validation_status=not-run / accepted=false`.
+
+Canonical production `crypto.rs` remains `7882db6b9f3f5e9643fb963526ccc21dd0862d73`; canonical/desktop telegram-network blob remains `54f509474391bb5118ba4678ba5c566ab3e74ec8`; canonical/desktop authored contract blob is `b82069d5b7f42919e087efe053549ebddbe6e278`. Existing `EncryptedEnvelope` preserves exact LE64 auth-key id / 16-byte message-key / ciphertext external framing and the existing shipping decrypt path fails closed on active-key mismatch, empty/non-block-aligned ciphertext and authenticated message-key failure before body dispatch.
+
+Coverage is `responsibilities_total=103, unknown=16172, unread=16145, omitted=0, unmapped_responsibilities=0`. Auth-key binding/persistence/expiry/renewal, broader connection scheduling/racing/send retry, arbitrary request histories, gzip, complete difference/differenceSlice decoding/application, broader source/legal closure, Stage-B executable evidence and independent release ACCEPT remain open. No executable validation was performed.
