@@ -398,6 +398,53 @@ fn accepted_send_prompt_is_persisted_into_the_rust_authoritative_transcript() {
 }
 
 #[test]
+fn session_key_send_prompt_rechecks_admission_at_transcript_write() {
+    let root = temp_root("send-prompt-admission");
+    let agents = root.join("agents");
+    let runtime = Arc::new(ProductionSessionWorkers::with_agents_root(&agents, 500));
+    let record = runtime
+        .materialize_new_session(None, "user", None)
+        .expect("agent");
+    let session_key = format!("agent:{}:main", record.id);
+    let admission = runtime
+        .read_session_work_admission(&record.id)
+        .expect("read admission")
+        .expect("admission");
+    runtime
+        .transition_session_work_archive(
+            &record.id,
+            &session_key,
+            &record.id,
+            Some(&admission.lifecycle_revision),
+            true,
+            Some("contract"),
+            Some("write-fence"),
+            1000.0,
+        )
+        .expect("archive session");
+
+    let error = persist_accepted_send_prompt(
+        &runtime,
+        &json!({
+            "agentId": record.id,
+            "sessionKey": session_key,
+            "prompt": "must be rejected",
+            "clientNonce": "nonce-archived",
+        }),
+        &json!({"accepted": true}),
+    )
+    .expect_err("archived session write must be rejected");
+    assert!(error.to_string().contains("not admitted"));
+    assert!(runtime
+        .read_agent_transcript_entries(&record.id)
+        .expect("read transcript")
+        .is_empty());
+
+    runtime.shutdown();
+    let _ = fs::remove_dir_all(root);
+}
+
+#[test]
 fn accepted_send_prompt_uses_frozen_entry_ids_and_reply_fork_stamping() {
     let root = temp_root("send-prompt-threading");
     let agents = root.join("agents");

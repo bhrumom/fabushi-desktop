@@ -200,6 +200,9 @@ so archive state and the durable session identity are checked at the write
 edge. The generic agent-only append remains reserved for producers whose
 existing ownership is not session-scoped; it must not be used to bypass this
 session-bound admission boundary.
+The session gateway's accepted-send producer now applies the same rule when
+its request carries `sessionKey`/`sessionId`; only legacy non-session-scoped
+fallback sends retain the agent-only append.
 
 ## Direct media-custody boundary recheck — 2026-11-01
 

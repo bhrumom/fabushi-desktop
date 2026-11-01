@@ -105,6 +105,12 @@ pub fn persist_accepted_send_prompt_context(
         .map(str::trim)
         .filter(|value| !value.is_empty())
         .ok_or_else(|| SessionGatewayError::bad("sendPrompt requires agentId"))?;
+    let session_key = args
+        .get("sessionKey")
+        .or_else(|| args.get("sessionId"))
+        .and_then(Value::as_str)
+        .map(str::trim)
+        .filter(|value| !value.is_empty());
     let prompt = args
         .get("prompt")
         .or_else(|| args.get("text"))
@@ -226,7 +232,19 @@ pub fn persist_accepted_send_prompt_context(
     }
 
     if !staged.is_empty() {
-        session.append_agent_transcript_entries(agent_id, &staged).map_err(SessionGatewayError::internal)?;
+        if let Some(session_key) = session_key {
+            session
+                .append_agent_transcript_entries_if_session_admitted(
+                    agent_id,
+                    session_key,
+                    &staged,
+                )
+                .map_err(SessionGatewayError::internal)?;
+        } else {
+            session
+                .append_agent_transcript_entries(agent_id, &staged)
+                .map_err(SessionGatewayError::internal)?;
+        }
         mark_accepted_send_activity(session, agent_id, system_now_ms())
             .map_err(SessionGatewayError::internal)?;
     }
