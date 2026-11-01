@@ -3109,6 +3109,132 @@ impl SandAgentDb {
         Ok(updated)
     }
 
+    /// Settle one transcript identity only while the captured session remains
+    /// admitted. The existing row and replacement row must both retain the
+    /// same session provenance inside the owner transaction.
+    pub fn settle_transcript_entry_identity_if_session_admitted(
+        &self,
+        session_key: &str,
+        entry_id: &str,
+        next: &serde_json::Value,
+    ) -> Result<Option<serde_json::Value>, AgentDbProjectionError> {
+        let session_key = session_key.trim();
+        let entry_id = entry_id.trim();
+        let Some(next_id) = next.get("id").and_then(serde_json::Value::as_str) else {
+            return Ok(None);
+        };
+        if session_key.is_empty() || entry_id.is_empty() || next_id.trim().is_empty() {
+            return Err(AgentDbProjectionError::WorkAdmissionInvalid(
+                "session-scoped transcript identity settlement requires session key and entry identities"
+                    .into(),
+            ));
+        }
+        if next
+            .get("sessionKey")
+            .and_then(serde_json::Value::as_str)
+            .map(str::trim)
+            != Some(session_key)
+        {
+            return Err(AgentDbProjectionError::WorkAdmissionInvalid(
+                "session-scoped transcript identity settlement requires matching entry provenance"
+                    .into(),
+            ));
+        }
+        let mut guard = self
+            .connection
+            .lock()
+            .map_err(|_| AgentDbProjectionError::OwnerPoisoned)?;
+        let Some(db) = guard.as_mut() else {
+            return Err(AgentDbProjectionError::WorkAdmissionInvalid(
+                "agent database is closed".into(),
+            ));
+        };
+        db.execute_batch("BEGIN IMMEDIATE")?;
+        let result = (|| -> Result<Option<serde_json::Value>, AgentDbProjectionError> {
+            let raw_admission = db
+                .query_row(GET_KV_SQL, params![KV_SESSION_WORK_ADMISSION], |row| {
+                    row.get::<_, String>(0)
+                })
+                .optional()?
+                .ok_or_else(|| {
+                    AgentDbProjectionError::WorkAdmissionInvalid(
+                        "session work admission record is unavailable".into(),
+                    )
+                })?;
+            let admission: SessionWorkAdmissionRecord = serde_json::from_str(&raw_admission)?;
+            if !session_admission_identity_is_well_formed(&admission)
+                || admission.session_key != session_key
+                || admission.archived_at_ms.is_some()
+                || admission.deletion_pending
+            {
+                return Err(AgentDbProjectionError::WorkAdmissionInvalid(
+                    "session is not admitted for transcript identity settlement".into(),
+                ));
+            }
+            let raw_entry = db
+                .query_row(GET_TRANSCRIPT_ENTRY_SQL, params![entry_id], |row| {
+                    row.get::<_, String>(0)
+                })
+                .optional()?;
+            let Some(raw_entry) = raw_entry else {
+                return Ok(None);
+            };
+            let entry = parse_transcript_entry(&raw_entry).ok_or_else(|| {
+                AgentDbProjectionError::WorkAdmissionInvalid(
+                    "target transcript entry is not valid JSON".into(),
+                )
+            })?;
+            if entry
+                .get("sessionKey")
+                .and_then(serde_json::Value::as_str)
+                .map(str::trim)
+                != Some(session_key)
+            {
+                return Err(AgentDbProjectionError::WorkAdmissionInvalid(
+                    "target transcript entry provenance does not match admitted session".into(),
+                ));
+            }
+            if db.execute(
+                "UPDATE transcript_entries SET id = ?1, entry = ?2 WHERE id = ?3",
+                params![next_id, next.to_string(), entry_id],
+            )? != 1
+            {
+                return Ok(None);
+            }
+            Ok(Some(next.clone()))
+        })();
+        match result {
+            Ok(updated) => {
+                db.execute_batch("COMMIT")?;
+                drop(guard);
+                if let Some(entry) = updated.as_ref() {
+                    if entry_id != next_id {
+                        let mut mutation = serde_json::Map::new();
+                        mutation.insert(
+                            "kind".into(),
+                            serde_json::Value::String("entry-deleted".into()),
+                        );
+                        mutation.insert(
+                            "agentId".into(),
+                            serde_json::Value::String(self.agent_dir_name.clone()),
+                        );
+                        mutation.insert(
+                            "entryId".into(),
+                            serde_json::Value::String(entry_id.to_string()),
+                        );
+                        publish_transcript_mutation(&mutation);
+                    }
+                    publish_entries_upserted(&self.db_path, vec![entry.clone()]);
+                }
+                Ok(updated)
+            }
+            Err(error) => {
+                let _ = db.execute_batch("ROLLBACK");
+                Err(error)
+            }
+        }
+    }
+
     pub fn delete_transcript_entry(
         &self,
         entry_id: &str,

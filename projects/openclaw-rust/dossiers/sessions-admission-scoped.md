@@ -812,3 +812,20 @@ the same agent during recovery cannot be removed by an older pass. This is a
 bounded recovery correction under the existing transcript/session owner; it
 does not establish the complete detached-result lifecycle, exact-head
 verification, runtime acceptance, or any global completion flag.
+
+## 2026-11-01 session-bound remote Human identity settlement
+
+The remote Human producer already retained the target agent's canonical
+session key when an owner-local admission record existed, but its pending
+client-nonce settlement still called the generic identity-rewrite helper. That
+helper checked only the general write fence and did not prove that the pending
+row itself belonged to the admitted session.
+
+`SandAgentDb` now owns a session-scoped identity-settlement transaction. It
+checks the live admission record, the existing row's `sessionKey`, and the
+replacement row's `sessionKey` before changing the durable entry identity.
+`ProductionSessionWorkers::materialize_remote_human_message` uses this owner
+when the session key is present and retains the legacy helper only for
+unbound compatibility rows. A focused owner contract covers the bound
+settlement; channel correlation, remote delivery, and runtime acceptance
+remain pending.

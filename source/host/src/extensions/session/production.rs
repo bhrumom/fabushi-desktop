@@ -3254,10 +3254,23 @@ impl ProductionSessionWorkers {
                 ) {
                     return Err("local Human message already uses the server clientRequestId without a retryable settlement state".into());
                 }
-                return owner
-                    .settle_transcript_entry_identity(current_id, &entry)
-                    .map_err(|error| error.to_string())?
-                    .ok_or_else(|| "local Human message disappeared before remote identity settlement".to_string());
+                let settled = if let Some(session_key) = admitted_session_key.as_deref() {
+                    entry["sessionKey"] = serde_json::Value::String(session_key.to_string());
+                    owner
+                        .settle_transcript_entry_identity_if_session_admitted(
+                            session_key,
+                            current_id,
+                            &entry,
+                        )
+                        .map_err(|error| error.to_string())?
+                } else {
+                    owner
+                        .settle_transcript_entry_identity(current_id, &entry)
+                        .map_err(|error| error.to_string())?
+                };
+                return settled.ok_or_else(|| {
+                    "local Human message disappeared before remote identity settlement".to_string()
+                });
             }
         }
         if let Some(session_key) = admitted_session_key {

@@ -214,6 +214,33 @@ fn session_work_admission_record_migrates_and_compare_and_sets_generation() {
 
     owner
         .append_transcript_entries(&[serde_json::json!({
+            "id": "human-pending",
+            "kind": "message",
+            "role": "user",
+            "content": "pending remote Human",
+            "sessionKey": first.session_key.clone(),
+            "clientNonce": "human-nonce-1",
+        })])
+        .expect("seed session-bound Human entry");
+    let settled_human = owner
+        .settle_transcript_entry_identity_if_session_admitted(
+            &first.session_key,
+            "human-pending",
+            &serde_json::json!({
+                "id": "human-remote-1",
+                "kind": "message",
+                "role": "user",
+                "content": "pending remote Human",
+                "sessionKey": first.session_key.clone(),
+                "remoteMessageId": "remote-1",
+            }),
+        )
+        .expect("session-admitted Human identity settlement")
+        .expect("settled Human entry");
+    assert_eq!(settled_human["id"], "human-remote-1");
+
+    owner
+        .append_transcript_entries(&[serde_json::json!({
             "id": "legacy-permission-1",
             "kind": "send-message",
             "message": {"type": "local-tool-permission", "ask": {"status": "pending"}},
