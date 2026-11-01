@@ -2170,3 +2170,29 @@ Closure disposition: direct first-party carrier lifecycle is implemented and mir
 
 
 Lock metadata correction identity: platform-core commit 3b9368d2f3856d320557945226d8c8b039e2aed8; final platform carrier/spec head 5dd792399fe3c17d1256c80e0eb9fb2c1c2aa94f; final spec blob 3063810087c49061cbe689341c9926d93de526d0.
+
+## Round 126 special-config acquisition/runtime composition source closure — 2026-11-01
+
+Fixed-U behavioral sources reread:
+- telegramdesktop/tdesktop@f985723b552b30fe1c17d377d57f44e61a15a8c4 Telegram/SourceFiles/mtproto/special_config_request.cpp blob fdb65506b0a886bc2daeccb61090bc44be7e2d88
+- config_loader.cpp blob 5d07404ba07223016c6728b986dcba10628d7194
+- mtproto_config.cpp blob e8fc605ca197d2bc82a9f73da18eeb945967a99f
+
+Platform implementation identities:
+- spec-first commit bab99fd54de1cf98dd781f335dad666b3fa2b3ab
+- seeding/shuffle commit 2224fd041f99e3153be80c8b667270fbbd6ce3c5
+- RuntimeClient composition commit 87bb86ae509ca09c46d1b9e26f5177f81bb54830
+- queue timing correction commit 602b67b2c2c4b11f197ec968e8bc964e89af7695
+- final source-compliance head 0b24613beea74301bf974dad4e10c56988096c40
+- special_config_acquisition.rs blob 9c8ef0ee0176a78eaa98266b5f92db1757b5db7c
+- telegram-network lib.rs blob b073f01ab05e692b46afa4fc931cd3e8dd0893cf
+- telegram-runtime runtime.rs blob df8ed7c3cebed632f6591c5809c28753ede9bba0
+- telegram-runtime lib.rs blob 9acba52c16de3085a3dbfa61dc3e9f6ba5cdb689
+- final composition spec blob 62ec9f061745b1388728c2d60dc061ebaf86e920
+
+Desktop source-reviewed production mirror: 0c81381ed8b5d3862c9ced13bc7e2320b0e5d510. Mirrored implementation/spec blobs are byte-identical to platform-core.
+
+Closure disposition: TDRP-R9-MTPROTO-SPECIAL-CONFIG-CARRIER-APPLICATION-001 is Stage-A implemented because the existing direct carrier, normalization, Date/time, decode/select, RuntimeClient endpoint queue, temporary-session help.getConfig and dc_options-only application are now production-composed without a second runtime/provider. validation_status remains not-run and accepted=false; Stage-B executable evidence remains open.
+
+No executable validation or CI/status/check query occurred.
+

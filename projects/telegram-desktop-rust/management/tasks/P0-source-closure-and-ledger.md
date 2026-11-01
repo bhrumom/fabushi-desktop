@@ -1987,3 +1987,14 @@ Stage A remained execution-free: no GitHub Actions/status/check query or trigger
 - TDRP-R9-MTPROTO-SPECIAL-CONFIG-CARRIER-APPLICATION-001 remains mapped/pending, validation_status=not-run, accepted=false. Carrier lifecycle is implemented; automatic acquisition-to-RuntimeClient composition and Stage-B executable evidence remain pending.
 - Stage A zero-CI discipline preserved: tests/contracts authored but not run; no executable validation or Actions/status/check query performed.
 
+## Round 126 / task round 95 — special-config acquisition → RuntimeClient composition
+
+- Fixed U remains f985723b552b30fe1c17d377d57f44e61a15a8c4.
+- Fixed-U SpecialConfigRequest/ConfigLoader was reread for Google/Mozilla/Firestore group-local shuffle, Date-before-finalize body adaptation, decode/select callbacks, pending/tried dedupe, randomized endpoint dequeue and temporary help.getConfig application.
+- Platform final source-compliance head is 0b24613beea74301bf974dad4e10c56988096c40. Key blobs: special_config_acquisition.rs 9c8ef0ee0176a78eaa98266b5f92db1757b5db7c; telegram-network lib.rs b073f01ab05e692b46afa4fc931cd3e8dd0893cf; telegram-runtime runtime.rs df8ed7c3cebed632f6591c5809c28753ede9bba0; runtime lib.rs 9acba52c16de3085a3dbfa61dc3e9f6ba5cdb689; composition spec 62ec9f061745b1388728c2d60dc061ebaf86e920.
+- Desktop final production mirror before bookkeeping is 0c81381ed8b5d3862c9ced13bc7e2320b0e5d510 and the mirrored production/spec blobs are byte-identical.
+- Existing-owner-first production path is now request seeding/shuffle -> request_normalization -> DirectHttpsRace(SpecialConfig) -> successful Date/time adapter -> response_normalization -> special-config decode/select -> pending/tried randomized endpoint queue -> existing RuntimeClient apply_resolved_special_config_endpoint. Queue draining begins as decoded endpoints arrive while later HTTP stagger attempts remain independently live.
+- TDRP-R9-MTPROTO-SPECIAL-CONFIG-CARRIER-APPLICATION-001 advances to implementation_status=implemented / validation_status=not-run / accepted=false. Stage-B executable evidence remains pending; this is not verified or accepted.
+- Contracts were authored but not run. Stage A zero-CI discipline was preserved: no Actions/status/check query, build, typecheck, lint, validator, generator, dependency resolution, lock regeneration, unit/contract/integration/E2E execution, package, deployment, installation or runtime acceptance was performed.
+- Coverage counters remain source_entries_total=16202, responsibilities_total=122, unknown=16172, unread=16145, omitted=0, unmapped_responsibilities=0.
+

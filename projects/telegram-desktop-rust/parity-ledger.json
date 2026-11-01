@@ -3,7 +3,7 @@
   "project_id": "TDRP-001",
   "spec_revision": 9,
   "upstream_commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
-  "target_commit": "820418b875f227755f6060a5d531dc1596e5c0a6",
+  "target_commit": "0c81381ed8b5d3862c9ced13bc7e2320b0e5d510",
   "coverage": {
     "source_entries_total": 16202,
     "unknown": 16172,
@@ -30180,7 +30180,7 @@
         "Temporary DC session",
         "DcOptions"
       ],
-      "source_analysis_path": "projects/telegram-desktop-rust/evidence/round125-mtproto-direct-https-carrier-lifecycle-20261101.md",
+      "source_analysis_path": "projects/telegram-desktop-rust/evidence/round126-mtproto-special-config-acquisition-runtime-composition-20261101.md",
       "behavior_contract": "Dispatch the already-normalized fixed-U Google/Mozilla DoH and Firestore descriptors through a dedicated direct/no-proxy HTTPS carrier, preserve the source's 800 ms stagger and reply-finalization semantics without collapsing DomainResolver and SpecialConfigRequest into one winner policy, expose normalized body/header outputs to their existing owners, then drive temporary-DC help.getConfig and dc_options application. Pure request/response normalization and global HTTP-derived time mutation are separately implemented responsibilities.",
       "state_machine": "eligible special-config refresh -> 800 ms staggered direct web attempts -> each finished reply exposes successful Date header and is finalized -> any non-empty decodable config body may apply endpoints while remaining attempts continue if the owner remains alive -> selected endpoint -> transient temporary DC option -> temporary help.getConfig -> dc_options replacement -> terminate/kill temporary session; error/empty body leaves other attempts eligible",
       "side_effects": [
@@ -30201,7 +30201,7 @@
         "help.getConfig request/cancel/timeout",
         "dc_options replacement/change notification"
       ],
-      "platform_delta": "Task round 94/source evidence round125 implements the previously blocked first-party direct NoProxy HTTPS/Web-PKI carrier lifecycle inside the existing native/telegram-network owner. The carrier uses direct TcpStream origin connections plus rustls/Web-PKI roots, consumes already-normalized request descriptors, preserves the exact 800 ms stagger constant, exposes status/headers/full bounded body, distinguishes ordinary reply finalization from explicit cancellation, preserves DomainResolver winner fencing without inventing explicit abort, and preserves SpecialConfigRequest continued scheduling after an accepted reply. Exact rustls/webpki dependency records were source-transcribed from an already-pinned repository lock without running dependency resolution or lock generation; target-lock name ambiguity for ring's getrandom dependency was then corrected source-only to explicit getrandom 0.2.17 and re-audited with no remaining ambiguous newly-added dependency references. The existing downstream RuntimeClient path for resolved endpoint -> temporary 1000+d session -> bare help.getConfig -> dc_options-only replacement remains unchanged and canonical. Aggregate responsibility remains mapped/pending because this slice intentionally does not add a new acquisition-to-RuntimeClient orchestrator and Stage B executable evidence is absent.",
+      "platform_delta": "Task round 95/source evidence round126 closes the aggregate Stage-A production composition in the existing owners. native/telegram-network now seeds and independently shuffles the fixed-U Google/Mozilla group and production-only Firestore group, applies existing request normalization, and dispatches through the existing DirectHttpsRace SpecialConfig policy. RuntimeClient consumes each finished reply with fixed-U ordering: successful HTTP Date is parsed/applied to the existing HTTP-time owner before reply finalization/body decode; readable bodies flow through the existing DNS-TXT/Firestore response adapters and special-config decode/select owner; selected endpoints enter one pending/tried deduplicating randomized queue and are drained as responses arrive while later 800 ms HTTP attempts remain live. Queue application calls only the existing apply_resolved_special_config_endpoint, retaining the existing temporary 1000+d SessionOwner, per-real-DC auth material, bare help.getConfig, 6000 ms owned request, temporary-session teardown, and dc_options-only replacement. No second runtime/provider/network/settings owner was added. Stage-B execution evidence remains absent by design.",
       "existing_owner_candidates": [
         "bhrumom/fabushi-platform-core:native/telegram-network",
         "existing telegram-runtime/session owner",
@@ -30228,7 +30228,11 @@
         "bhrumom/fabushi-platform-core:native/telegram-network/src/direct_https.rs",
         "bhrumom/fabushi-platform-core:native/telegram-network/Cargo.toml",
         "bhrumom/fabushi-platform-core:native/telegram-network/Cargo.lock",
-        "bhrumom/fabushi-desktop:source/mahayana/mahayana-rs/providers/telegram-network/src/direct_https.rs"
+        "bhrumom/fabushi-desktop:source/mahayana/mahayana-rs/providers/telegram-network/src/direct_https.rs",
+        "bhrumom/fabushi-platform-core:native/telegram-network/src/special_config_acquisition.rs",
+        "bhrumom/fabushi-platform-core:docs/specs/telegram-special-config-acquisition-application-composition.md",
+        "bhrumom/fabushi-desktop:source/mahayana/mahayana-rs/providers/telegram-network/src/special_config_acquisition.rs",
+        "bhrumom/fabushi-desktop:docs/specs/telegram-special-config-acquisition-application-composition.md"
       ],
       "fabushi_target_symbols": [
         "execute_direct_https_get",
@@ -30255,9 +30259,24 @@
         "begin_special_config_attempt",
         "establish_auth_key_controlled",
         "resume_auth_key_controlled",
-        "EstablishedSession::invoke_raw_controlled"
+        "EstablishedSession::invoke_raw_controlled",
+        "seed_special_config_attempts",
+        "seed_special_config_attempts_with_entropy",
+        "secure_random_index",
+        "SpecialConfigAttempt",
+        "SpecialConfigAttemptKind",
+        "refresh_special_config",
+        "refresh_special_config_command",
+        "SpecialConfigEndpointQueue::enqueue",
+        "SpecialConfigEndpointQueue::take_at",
+        "drain_special_config_endpoint_queue",
+        "normalize_special_config_response",
+        "decode_and_select_special_config",
+        "parse_http_date_unix_seconds",
+        "update_http_time",
+        "http_time_now"
       ],
-      "target_language": "Rust in the existing telegram-network transport/lifecycle owner plus existing telegram-protocol DcDirectory and telegram-runtime SessionOwner boundaries. Direct HTTPS/Web-PKI carrier lifecycle is implemented; aggregate endpoint-acquisition-to-runtime orchestration and Stage-B execution evidence remain pending.",
+      "target_language": "Rust in the existing telegram-network request/carrier owner, telegram-protocol normalization/decode owner, and the single telegram-runtime RuntimeClient/SessionOwner. Aggregate acquisition-to-application production composition is implemented; validation remains deferred to Stage B.",
       "language_rationale": "The exact consumer must live in the existing source-neutral domain owner; no retained C++ or Telegram-specific parallel runtime is introduced.",
       "command_event_contracts": [
         "initial config loader receives isEnabled",
@@ -30270,23 +30289,29 @@
       "state_owner": "Canonical Fabushi Settings/application owner for durable proxy state; downstream consumer owns projection/runtime observations only.",
       "lifecycle_owner": "RuntimeClient remains the canonical logical-session, per-real-DC auth-material and request-lifecycle owner. Owner-local request ids address NetworkAttemptControl independently while EstablishedSession is synchronously in flight. Transient request completion/cancellation tears down the configured logical session; no special-config-only registry/runtime exists.",
       "persistence_and_restart": "Temporary 1000+d routing overrides are transient and must not be persisted; fixed-U DcOptions serialization and config enumeration skip temporary ids. Canonical non-temporary endpoints retain the existing directory/restart owner.",
-      "concurrency_and_cancellation": "The first-party carrier is now implemented in telegram-network. DirectHttpsRace owns independently cancellable NetworkAttemptControl handles, schedules attempt N at N*800 ms, and separates ordinary finalization from explicit cancellation. DomainResolver acceptance fences future delayed starts and releases remaining handles without calling cancel, matching fixed-U ordinary ServiceWebRequest erase semantics; already-running operations may finish. SpecialConfig acceptance finalizes only that reply and keeps remaining scheduled/in-flight attempts owned while the race owner lives. Dropping the race explicitly cancels still-owned handles. The existing temporary MTProto application remains separately owned by RuntimeClient SessionOwner with its exact 6000 ms absolute connect/auth/RPC budget and transient session teardown.",
+      "concurrency_and_cancellation": "DirectHttpsRace owns independently cancellable NetworkAttemptControl handles and schedules attempt N at N*800 ms. SpecialConfig settlement finalizes only the completed reply and does not fence later scheduled/in-flight attempts. RuntimeClient processes each carrier reply, and after a decodable response immediately drains the source-neutral pending/tried endpoint queue; because the HTTP attempts are independently scheduled/owned, later web attempts remain live while temporary MTProto endpoint application runs. Endpoint selection moves the item pending->tried before calling apply_resolved_special_config_endpoint. Each temporary MTProto application retains the existing exact 6000 ms request budget and transient-session teardown; one endpoint failure is recorded and does not prevent remaining queued endpoints.",
       "security_boundary": "Service acquisition is explicit direct/no-proxy HTTPS: the first-party carrier opens TcpStream directly to the normalized origin host:443, validates TLS against rustls/Web-PKI roots with SNI bound to the origin host, and does not consult user/system/environment/PAC/WPAD or Telegram-selected proxy routing. Normalized Host/Accept/User-Agent are preserved; request/response payload logging is not introduced. Global HTTP-time mutation remains a separate owner.",
       "network_service_dependencies": [
         "Existing embedded Telegram/native MTProto stack",
         "Existing first-party native/telegram-network direct HTTPS/Web-PKI carrier lifecycle",
         "Existing RuntimeClient SessionOwner with per-real-DC auth material and generic secondary EstablishedSession open path",
-        "Existing telegram-protocol request/response normalization and special-config decode/select owners"
+        "Existing telegram-protocol request/response normalization and special-config decode/select owners",
+        "Existing telegram-network SpecialConfig attempt seeding/shuffle owner",
+        "Existing DirectHttpsRace SpecialConfig settlement",
+        "Existing HTTP Date/network-time owner",
+        "Existing telegram-protocol DNS-TXT/Firestore normalization and decode/select owner"
       ],
-      "service_owner": "Existing telegram-network/runtime/DcDirectory owners; no new bootstrap provider/runtime.",
+      "service_owner": "Existing telegram-network + telegram-protocol + single telegram-runtime RuntimeClient/SessionOwner + DcDirectory owners; no bootstrap provider/runtime.",
       "deployment_evidence": [],
-      "implementation_status": "mapped",
-      "coverage_disposition": "pending",
+      "implementation_status": "implemented",
+      "coverage_disposition": "implemented",
       "blockers": [
-        "The direct carrier lifecycle is implemented, but aggregate automatic acquisition-to-RuntimeClient endpoint application is not newly composed in this slice; the existing apply_resolved_special_config_endpoint remains the downstream production entrypoint.",
-        "Stage B executable validation has not run."
+        "Stage B executable validation and acceptance evidence have not run."
       ],
       "production_entrypoints": [
+        "telegram.refreshSpecialConfig",
+        "fabushi_telegram_runtime::refresh_special_config",
+        "fabushi_telegram_network::seed_special_config_attempts",
         "fabushi_telegram_network::execute_direct_https_get",
         "fabushi_telegram_network::DirectHttpsRace",
         "fabushi_telegram_runtime::apply_resolved_special_config_endpoint"
@@ -30409,7 +30434,24 @@
         "platform-core-round94-lock-disambiguation-commit:3b9368d2f3856d320557945226d8c8b039e2aed8",
         "platform-core-round94-corrected-network-lock-blob:d0d7968508c43b433f27cf0e8f2fc7aea33a4953",
         "platform-core-round94-final-source-compliance-commit:5dd792399fe3c17d1256c80e0eb9fb2c1c2aa94f",
-        "platform-core-round94-final-carrier-spec-blob:3063810087c49061cbe689341c9926d93de526d0"
+        "platform-core-round94-final-carrier-spec-blob:3063810087c49061cbe689341c9926d93de526d0",
+        "platform-core-round95-spec-first-commit:bab99fd54de1cf98dd781f335dad666b3fa2b3ab",
+        "platform-core-round95-attempt-seeding-commit:2224fd041f99e3153be80c8b667270fbbd6ce3c5",
+        "platform-core-round95-special-config-acquisition-blob:9c8ef0ee0176a78eaa98266b5f92db1757b5db7c",
+        "platform-core-round95-network-lib-blob:b073f01ab05e692b46afa4fc931cd3e8dd0893cf",
+        "platform-core-round95-runtime-composition-commit:87bb86ae509ca09c46d1b9e26f5177f81bb54830",
+        "platform-core-round95-queue-timing-correction-commit:602b67b2c2c4b11f197ec968e8bc964e89af7695",
+        "platform-core-round95-runtime-blob:df8ed7c3cebed632f6591c5809c28753ede9bba0",
+        "platform-core-round95-runtime-lib-blob:9acba52c16de3085a3dbfa61dc3e9f6ba5cdb689",
+        "platform-core-round95-final-source-compliance-commit:0b24613beea74301bf974dad4e10c56988096c40",
+        "platform-core-round95-final-spec-blob:62ec9f061745b1388728c2d60dc061ebaf86e920",
+        "desktop-round95-initial-production-mirror-commit:19613c2566e0f4969455106f8143707584aeda78",
+        "desktop-round95-final-production-mirror-commit:0c81381ed8b5d3862c9ced13bc7e2320b0e5d510",
+        "desktop-round95-special-config-acquisition-blob:9c8ef0ee0176a78eaa98266b5f92db1757b5db7c",
+        "desktop-round95-network-lib-blob:b073f01ab05e692b46afa4fc931cd3e8dd0893cf",
+        "desktop-round95-runtime-blob:df8ed7c3cebed632f6591c5809c28753ede9bba0",
+        "desktop-round95-runtime-lib-blob:9acba52c16de3085a3dbfa61dc3e9f6ba5cdb689",
+        "desktop-round95-spec-blob:62ec9f061745b1388728c2d60dc061ebaf86e920"
       ],
       "test_evidence": [
         "Carrier/lifecycle contracts are fixed in docs/specs/telegram-doh-special-config-http-carrier-lifecycle-boundary.md; no fake executable contract was added against a nonexistent shipping HTTP carrier.",
@@ -30417,9 +30459,11 @@
         "Round120 boundary spec fixes future application contracts for 1000+d transient mapping, tcpo_only/secret preservation, bare help.getConfig, total 6000 ms termination, request cancel/session kill, empty-list rejection, endpoint-only replacement, no persistence, and no parallel runtime; no fake executable application test was added.",
         "Four auth-handshake protocol-DC prerequisite contracts are authored in telegram-network lib blob 6023c96c4ee96a7cae37dbd6f9be077cf88779cb and were not executed.",
         "Round122 adds three authored-only runtime contracts in blob 4983b262346b73c3dc7270bf5feac31780c28496 covering the per-real-DC auth prerequisite; the complete special-config request/timer/application contracts remain unexecuted and pending.",
-        "Round124 authored-only protocol/runtime contracts explicitly cover non-empty dc_options replacement that omits current this_dc; fixed-U setFromList permits this, keeps directory metadata unchanged, and publishes endpoint membership changes only. Contracts were not executed."
+        "Round124 authored-only protocol/runtime contracts explicitly cover non-empty dc_options replacement that omits current this_dc; fixed-U setFromList permits this, keeps directory metadata unchanged, and publishes endpoint membership changes only. Contracts were not executed.",
+        "Round126 authored-only telegram-network contracts cover injected-entropy Google/Mozilla shuffle, production/test Firestore seeding boundary, DoH-before-Firestore group ordering, request-kind normalization, and stable zero/one random-index behavior; none were executed.",
+        "Round126 authored-only RuntimeClient contracts cover pending/tried endpoint dedupe and move-to-tried-before-application queue semantics; none were executed."
       ],
-      "target_commit": "8cebdbe5634d092773cfda8b4a0b059bd552ccbb",
+      "target_commit": "0c81381ed8b5d3862c9ced13bc7e2320b0e5d510",
       "workflow_run": null,
       "run_attempt": null,
       "job": null,
@@ -30427,7 +30471,7 @@
       "artifact_digest": null,
       "composition_root": "Canonical Fabushi ProductShell/Settings + existing source-neutral runtime owners",
       "composition_slot": "Special-config acquisition / temporary-DC application",
-      "capability_component": "Blocked carrier scheduler and DC application lifecycle",
+      "capability_component": "Special-config direct acquisition and temporary-DC application lifecycle",
       "variation_axes": [
         "DoH/Firestore source",
         "success/failure/timeout",
@@ -30438,7 +30482,7 @@
         "Existing DcDirectory owner",
         "No duplicate settings owner"
       ],
-      "duplicate_root_check": "No second bootstrap runtime/provider/network/DC directory is introduced.",
+      "duplicate_root_check": "No second bootstrap runtime/provider/network/DC directory/settings owner was introduced; the production command is a new operation on the existing RuntimeClient.",
       "novel_capability": false,
       "owner_absence_evidence": [
         "Starting platform runtime.rs@10031c5261bb0810ad2df2fca3de2e2fe4f65301 had one Option<EstablishedSession> and no logical-session registry.",
@@ -30463,7 +30507,7 @@
       "responsive_disposition": "No UI change.",
       "accessibility_contract": "No UI change.",
       "keyboard_contract": "No UI change.",
-      "state_continuity_contract": "Temporary endpoint/session state must remain transient under the existing canonical session/directory owners. Current owner cannot yet represent the source-equivalent lifecycle, so application remains blocked rather than approximated.",
+      "state_continuity_contract": "Special-config web attempts remain independently owned under DirectHttpsRace; selected endpoints are transient pending/tried runtime queue state only and are never persisted. Temporary 1000+d session state remains transient under the existing SessionOwner, while canonical dc_options replacement stays in the existing DcDirectory.",
       "ui_acceptance_scenarios": [],
       "design_system_version": "Existing Fabushi design system; no visual changes",
       "semantic_token_usage": [],
@@ -30537,7 +30581,7 @@
       "acceptance_reviewer": null,
       "reviewer": null,
       "license_and_provenance": "Behavioral provenance is fixed-U config_loader.cpp@5d07404ba07223016c6728b986dcba10628d7194, mtproto_dc_options.cpp@d8499fc1df2ed7fdb88da687a04b824d243ff49a, facade.h@39e2f732c7df32af37ebf8222e887aec7e11b256, mtp_instance.h@eeb56d29cc8316bd6600c26b6f8edf3a912601eb, session_private.cpp@13cbc76ec723386027b5b4dcac79999b791c4614 and mtproto_dc_key_creator.cpp@13c57454f14b814b5923ea253048fb881ad8cf03. Source-neutral Rust/spec documentation only; no upstream C++ copied.",
-      "notes": "Task round93/source evidence round124 re-read fixed-U bare help.getConfig, ConfigLoader special callback, temporary 1000+d mapping and DcOptions setFromList/processFromList/CountOptionsDifference semantics, then wired the carrier-independent resolved-endpoint application inside existing telegram-protocol/runtime owners. Bare help.getConfig is exactly the constructor-only request; response parsing stops after dc_options; duplicate same dc/ip/port inputs are normalized first-wins; change publication compares only per-DC IP+port count/membership, so flags/secret-only changes are no-op and do not replace stored endpoints. Runtime uses existing owned 6000 ms temporary request/session lifecycle and returns changed DC ids while preserving unrelated Config/runtime state and real-DC AuthMaterial. The row remains mapped/pending/not-run/accepted=false only because direct NoProxy HTTPS/Web-PKI acquisition and Stage-B executable evidence remain open. Platform final source compliance is afc4379871a397bf4180fb74dd1f7729fbb86341 / spec blob 4109c09f3f92932ac79aa1f6d15d1825a6788359; desktop canonical mirror is 820418b875f227755f6060a5d531dc1596e5c0a6.",
+      "notes": "Task round95/source evidence round126 re-read fixed-U SpecialConfigRequest Google/Mozilla/Firestore seeding and group-local shuffle, requestFinished Date-before-finalize/body adapters, decode/select callback behavior, and ConfigLoader pending/tried endpoint queue. Production code now composes those responsibilities through existing telegram-network/protocol/runtime owners: seeded attempts -> request normalization -> DirectHttpsRace SpecialConfig 800 ms stagger -> successful Date adapter -> response normalization -> decode/select -> deduplicated randomized endpoint queue -> existing apply_resolved_special_config_endpoint. Queue draining begins after each decoded response while the independent web race remains live, and endpoint failures do not suppress the rest of the queue. Platform final source compliance is 0b24613beea74301bf974dad4e10c56988096c40 / spec blob 62ec9f061745b1388728c2d60dc061ebaf86e920; desktop production mirror is 0c81381ed8b5d3862c9ced13bc7e2320b0e5d510. Contracts are authored only; validation_status remains not-run and accepted=false.",
       "test_execution_evidence": [],
       "validation_status": "not-run",
       "accepted": false,
@@ -30551,7 +30595,8 @@
         "Telegram/SourceFiles/mtproto/details/mtproto_dc_key_creator.cpp@13c57454f14b814b5923ea253048fb881ad8cf03",
         "Telegram/SourceFiles/mtproto/special_config_request.cpp@fdb65506b0a886bc2daeccb61090bc44be7e2d88",
         "Telegram/SourceFiles/mtproto/scheme/api.tl@8319b7df634d145390c299404129fd161a5dbd2a",
-        "Telegram/SourceFiles/mtproto/mtproto_dc_options.h@4e0b979c4a84661f3365196ab8702dc8cb60fd03"
+        "Telegram/SourceFiles/mtproto/mtproto_dc_options.h@4e0b979c4a84661f3365196ab8702dc8cb60fd03",
+        "Telegram/SourceFiles/mtproto/mtproto_config.cpp@e8fc605ca197d2bc82a9f73da18eeb945967a99f"
       ]
     },
     {
