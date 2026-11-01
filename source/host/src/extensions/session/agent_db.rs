@@ -3607,12 +3607,10 @@ pub fn set_persisted_agent_name(
     if name.is_empty() {
         return Ok(false);
     }
-    let db = open_projection_db(db_path, busy_timeout_ms)?;
-    let Some(raw) = read_kv(&db, "metadata")? else {
-        return Ok(false);
-    };
-    let metadata_bytes = decode_hex(&raw).map_err(AgentDbProjectionError::MetadataHex)?;
-    let mut metadata: serde_json::Value = serde_json::from_slice(&metadata_bytes)?;
+    let mut options = SandAgentDbOptions::default();
+    options.recovery.busy_timeout_ms = busy_timeout_ms;
+    let owner = SandAgentDb::open_with_options_and_seed(db_path, options, false)?;
+    let metadata = owner.read_metadata()?;
     if metadata
         .get("name")
         .and_then(serde_json::Value::as_str)
@@ -3620,20 +3618,7 @@ pub fn set_persisted_agent_name(
     {
         return Ok(false);
     }
-    let Some(object) = metadata.as_object_mut() else {
-        return Ok(false);
-    };
-    object.insert("name".into(), serde_json::Value::String(name.to_string()));
-    let next_raw = encode_hex(&serde_json::to_vec(&metadata)?);
-    let changed = db.execute(SET_KV_SQL, params!["metadata", next_raw])? > 0;
-    if changed {
-        bump_db_write_generation(db_path);
-        notify_agent_db_listeners(
-            db_path,
-            AgentDbListenerChannel::Metadata("name".into()),
-        );
-    }
-    Ok(changed)
+    owner.set_metadata("name", serde_json::Value::String(name.to_string()))
 }
 
 pub fn reseed_minimal_persisted_agent_db_if_missing(

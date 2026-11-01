@@ -257,6 +257,10 @@ explicit external cleanup gap. Session maintenance now reuses the same
 a bounded metadata correction; it does not change the row's
 not-started/not-wired/not-run/pending disposition.
 
+Runtime recovered profile-name maintenance also routes through the owner
+metadata path; clone/materialization initialization remains explicitly outside
+the admitted-session deletion window.
+
 ### 2026-11-01 background-result consumer recheck
 
 The current Rust producer path was re-read at the interrupted continuation

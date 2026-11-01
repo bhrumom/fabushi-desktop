@@ -234,6 +234,9 @@ the standalone latest-root CAS is fenced as well. The already-materialized
 external blob remains a separate cleanup/recovery responsibility. Session
 maintenance now routes its persisted-root CAS through the same `SandAgentDb`
 owner instead of maintaining a second direct SQLite mutation path.
+Runtime profile-name recovery maintenance now uses the same owner metadata
+path as well; clone/materialization initialization remains a separate
+pre-admission setup path.
 
 The owner-local admission CAS now preserves the current `deletion_pending`
 value as part of its compare predicate. Ordinary work/review/media mutations
