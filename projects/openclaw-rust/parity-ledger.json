@@ -3707,10 +3707,10 @@
       ],
       "id": "OCRM-RESP-AGENT-CONTEXT-COMPACTION-001",
       "integration": {
-        "consumer": "No production next-turn consumer reads the canonical compaction replay projection; runner.startRoutedProvider still builds provider messages from request args at source/host/app/src/main.rs:6771-6772",
-        "entrypoint": "source/host/src/runner/conversation_state.rs::ContextWindowTracker",
-        "owner": "source/host/src/extensions/session/production.rs::ProductionSessionWorkers -> source/host/src/extensions/session/agent_db.rs::SandAgentDb; guarded compaction commit/replay contract implemented, Runner producer absent",
-        "producer": "No pre-run canonical context producer estimates transcript usage, prepares a cut point, invokes the bound summarizer, and commits SandAgentDb; OCRM-AGENT-O09/O10 remain contract-only logic"
+        "consumer": "Production start_routed_provider_task reads the typed compacted replay through the existing Runner/provider projection when a compaction entry is present; unsupported rows fail closed. Live-turn/provider acceptance remains pending.",
+        "entrypoint": "source/host/app/src/main.rs::start_routed_provider_task compaction completion boundary -> source/host/src/extensions/session/production.rs::ProductionSessionWorkers::read_agent_typed_compacted_transcript_entries",
+        "owner": "source/host/src/runner/compaction_planning.rs plus existing ProductionSessionWorkers -> source/host/src/extensions/session/agent_db.rs::SandAgentDb; guarded compaction commit/replay owner is wired, but fixed-source semantic closure and acceptance remain open",
+        "producer": "Non-test routed-provider completion boundary uses provider input-token usage, canonical transcript rows, the Runner planning owner, the bound summarizer, and SandAgentDb guarded commit; exact fixed-source semantics and frozen verification remain pending"
       },
       "invariants": [
         "Compaction triggered when token estimate exceeds configured reserve",

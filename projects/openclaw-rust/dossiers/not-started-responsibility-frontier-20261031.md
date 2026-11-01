@@ -14,7 +14,7 @@ verification remains pending in the parity ledger.
 | --- | --- | --- |
 | `OCRM-RESP-AGENT-ACP-COMMANDS-001` | No production `AvailableCommand`/`get_available_commands` producer; current ACP manager is test-consumed only; historical source path moved to the current chat-command registry. | Requires exact upstream command-registry mapping and a real ACP producer/consumer before adding a second command owner. Blocker: `BL-PLUGIN-SDK-ACP-WIRING-001`. |
 | `OCRM-RESP-AGENT-ACP-POLICY-001` | No production ACP dispatch-policy producer or consumer; current production runtime owns a separate Host turn lease/watchdog path. | Requires an exact ACP admission/settlement owner and a production caller; contract fixtures are insufficient. |
-| `OCRM-RESP-AGENT-CONTEXT-COMPACTION-001` | Fixed facade delegates to agent-core compaction semantics; Fabushi has a real summarization inference binding, but no production cut-point/compaction commit caller. Persisted compaction epochs belong to prompt/memory snapshots. | Requires transitive fixed-source closure, canonical transcript compaction owner, and a real producer→state→turn consumer path; wiring a parallel tracker would create a second owner. |
+| `OCRM-RESP-AGENT-CONTEXT-COMPACTION-001` | Fixed facade delegates to agent-core compaction semantics. Current Fabushi source now has a non-test routed-provider completion producer, guarded SandAgentDb commit, and typed replay consumer; exact fixed-source semantics, live provider proof, and Actions verification remain open. Persisted compaction epochs still belong to prompt/memory snapshots. | Do not add a second owner. Keep the row `not-started/not-wired/not-run/pending` until the partial producer→state→next-turn chain is reconciled with the fixed source, unsupported provider/attachment cases are accepted, and frozen verification is available. |
 | `OCRM-RESP-AGENT-MODEL-PRICING-001` | Fabushi has remote model-catalog price projection and `TurnUsage` aggregation, plus transport rate-limit/retry helpers, but no production cost calculator/consumer or provider-candidate admission path. | Requires a selected pricing authority/schema and an existing inference/agent owner that admits ordered fallback candidates and settles usage/cost; do not promote catalog projection or transport retry into a second runtime owner. |
 | `OCRM-RESP-CRON-SESSION-REAPER-001` | `AutomationRunPath` creates/finishes FileAutomationStore run history and reports a run id, but no per-run session row, lifecycle revision fence, transcript archive cleanup consumer, or media/subagent preservation query is present. | Requires CRON-REAPER-D01..D05 to select the per-run session representation and existing lifecycle/archive owner; do not treat automation history, generic session deletion, or media-store TTL cleanup as a reaper. |
 | `OCRM-RESP-SESSION-AUTH-PROFILE-LIFECYCLE-001` | `session_profile_files.rs` serves agent profile/avatar data; no auth-profile preservation/removal producer or lifecycle consumer is identified. | Requires a real session cleanup/auth owner and credential-preserving contract; profile files cannot be repurposed as auth storage. |
@@ -278,10 +278,13 @@ projection. `compaction_epoch` and `ContextWindowTracker` remain prompt/state
 signals and do not establish this chain.
 
 This confirms the existing context-compaction spec/ADR boundary at the same
-frozen H: owner contract is present, but producer → transactional owner →
-next-turn consumer is absent. `OCRM-RESP-AGENT-CONTEXT-COMPACTION-001`
-therefore remains `not-started/not-wired/not-run/pending`; no manual or
-test-only compaction route is added.
+frozen H: the owner contract and a bounded non-test producer → transactional
+owner → typed next-turn consumer now exist in the checkout, but they are only
+partial implementation evidence. Fixed-source transitive closure, unsupported
+provider/attachment behavior, live-turn proof, and frozen verification remain
+open. `OCRM-RESP-AGENT-CONTEXT-COMPACTION-001` therefore remains
+`not-started/not-wired/not-run/pending`; no manual or test-only compaction route
+is added.
 
 ## Evidence boundary
 
