@@ -145,6 +145,12 @@ authority gates open.
   provider-specific serializers. Unsupported media/typed shapes fail closed,
   and the legacy `ProviderMessage { role, content }` path is not used for
   compacted typed replay.
+- A pure Runner planning owner now mirrors the fixed threshold/token/cut-point
+  boundary in `source/host/src/runner/compaction_planning.rs`. It produces a
+  plan only; it does not summarize, mutate transcript state, or claim
+  production acceptance. The real producer must still supply exact context
+  usage, source transcript projection, summary validation/fallback, and the
+  guarded `ProductionSessionWorkers` commit call.
 - Prompt/memory code reads persisted compaction epochs for snapshot rendering;
   this is a separate responsibility.
 - Status remains `implementation=not-started`, `wiring=not-wired`,

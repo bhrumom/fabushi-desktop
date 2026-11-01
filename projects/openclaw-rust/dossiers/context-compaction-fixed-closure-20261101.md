@@ -350,6 +350,14 @@ Runner context/usage producer, fixed-source message projection, summary
 validation/fallback, and guarded commit caller, so CC-01/03/04/05/06 and
 AC-CC-02/03/05 remain open.
 
+`source/host/src/runner/compaction_planning.rs` now provides a pure planning
+slice for the fixed boundary: invalid windows do not trigger, token estimates
+are bounded, retained-tail selection is explicit, tool-call/result ranges are
+not split, and the plan carries the latest retained user request plus a
+summary-token budget. It intentionally has no transcript, provider, or
+summarization side effects; its focused tests remain unrun during the
+development freeze.
+
 The existing attachment resolution evidence is app-owned rather than an
 inference contract: `source/host/app/src/main.rs:605-670`
 `resolve_production_attachment_source` can persist host bytes or download box

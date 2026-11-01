@@ -11,6 +11,7 @@ mod checkpoint;
 mod turn_usage;
 mod tool_call_identity;
 mod conversation_state;
+pub mod compaction_planning;
 mod stream_attempt;
 mod transient_stream_error;
 mod turn_settle;
