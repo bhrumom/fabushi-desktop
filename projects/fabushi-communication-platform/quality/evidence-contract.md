@@ -401,3 +401,16 @@ Candidate evidence contains only `path`, one-based `line`, and stripped `text` f
 Failure evidence records the exact exception class/boundary and CLI failure result for Git nonzero exit, Git timeout, OS error, missing required manifest, or unread required manifest. A fetch failure must not create helper report storage and must not reuse an older remote ref as fresh. Offline mode is explicitly test-only and unverified. Successful CLI snapshot output records exact commit, freshness, snapshot-only status, storage/run identity and counts of source files/gitlinks/skipped files; compare output records current/candidate/classification only.
 
 Stage A does not execute the upstream helper tests or Fabushi contracts. Authored-only helper contracts are `CONTRACT-TDRP-DEPENDENCY-WATCH-SNAPSHOT-001`, `CONTRACT-TDRP-DEPENDENCY-WATCH-STORAGE-001`, `CONTRACT-TDRP-DEPENDENCY-WATCH-CANDIDATES-001`, `CONTRACT-TDRP-DEPENDENCY-WATCH-VERSION-COMPARE-001`, and `FAULT-TDRP-DEPENDENCY-WATCH-FRESHNESS-001`.
+
+
+### Dependency Watch upstream regression-fixture evidence
+
+Evidence for the fixed-U regression fixture binds exact source `.agents/skills/dependency-watch/scripts/watch_test.py@d3107c617be3e8780a99bebaeba19a4f235ae6ea`, recursive-tree index 64, 4,347-byte blob size, 99 logical lines, and exact Python test symbols. The file's direct code dependency is `watch`; its executable consumer boundary is standard Python `unittest` discovery / `unittest.main()`. The production Dependency Watch skill invokes `watch.py`, not `watch_test.py`, so this source remains regression evidence rather than a workflow/runtime owner.
+
+Version-regression evidence must retain all ten table cases and their exact classifications: five stable positive controls covering patch/minor/major/older/same, and five negative controls covering prerelease, hash, milestone, four-component, and legacy-letter version forms returning `unknown`. A report that renames the actual `VersionTests` class or silently drops any negative control is not exact-source evidence.
+
+Snapshot-regression evidence must identify the disposable remote/checkout fixture, creation of all helper-required manifests, synthetic gitlink mode `160000`, the local unfinished edit, pre/post checkout status and HEAD identities, saved source bytes, remote HEAD identity, exact gitlink result, and absence of a helper-owned `latest.md`. Fresh-fetch failure evidence must show origin redirected to the missing path, the expected `subprocess.CalledProcessError`, and absence of checkout `.git/dependency-watch` storage. Required-manifest failure binds deletion of `snap/snapcraft.yaml` to `ValueError`. Offline evidence binds `fetch=False` to `fresh_fetch=false` and `audit_status=snapshot-only`. Linked-worktree evidence binds the detached worktree's reported storage root to the primary checkout's resolved common `.git/dependency-watch` root.
+
+Stage A records these contracts as authored-only and must not execute the upstream test, Fabushi test harness, build, validator, or any CI. The Stage-B evidence consumer remains the existing repository quality/test-evidence owner.
+
+Stage-A regression contracts are `CONTRACT-TDRP-DEPENDENCY-WATCH-UPSTREAM-VERSION-REGRESSION-001` and `CONTRACT-TDRP-DEPENDENCY-WATCH-UPSTREAM-SNAPSHOT-REGRESSION-001`; both are authored but not run.
