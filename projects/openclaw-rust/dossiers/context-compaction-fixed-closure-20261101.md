@@ -130,6 +130,20 @@ exact root provenance inputs are `.gitattributes`
 does not establish recursive package archive, license attribution, or SBOM
 closure; those remain separate evidence lanes.
 
+The two unresolved relative edges are generated Kysely declarations and are
+absent from the exact tree:
+`.artifacts/kysely/openclaw-agent-db.generated.js` and
+`.artifacts/kysely/openclaw-state-db.generated.js`. The fixed tree does retain
+the generator `scripts/generate-kysely-types.mts`
+(`08060fa786ea57601647279c8302cba8b78be544`) and schema input
+`src/state/openclaw-agent-schema.sql`
+(`e3a3cfdb772cbaf28ee6d2f0af46a33428938489`); `CONTRIBUTING.md` states that
+the generated declarations live in ignored `.artifacts/kysely/` and are
+refreshed by install/build tooling. Therefore the generated edge is
+`source-present/generated-artifact-absent`, not a missing source file and not
+closure approval. Generator execution and generated-byte verification remain
+reserved for the exact-subject Actions lane.
+
 For the compaction behavior roots, the first workspace dependency chain is
 explicit in exact manifest blobs:
 
