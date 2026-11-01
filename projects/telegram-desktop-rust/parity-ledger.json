@@ -3,7 +3,7 @@
   "project_id": "TDRP-001",
   "spec_revision": 9,
   "upstream_commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
-  "target_commit": "5d816f224c21019f75725b56b6f8c759871f5295",
+  "target_commit": "2f0798e8709b3a3ea6b200f092060db6c1dccb62",
   "coverage": {
     "source_entries_total": 16202,
     "unknown": 16172,
@@ -29516,7 +29516,7 @@
         "ConfigLoader::refreshSpecialLoader",
         "ConfigLoader::sendSpecialRequest"
       ],
-      "platform_delta": "Task round100 implements the selected-proxy/custom-resolution slice in the existing source-neutral telegram-network/RuntimeClient owners. NetworkProxyProjection is transient; ProductSettingsOwner v2 remains the only durable source. MTProto proxies use the existing native obfuscated/TLS connection start, direct no-proxy DoH resolution and transient good-IP promotion. Unsupported enabled SOCKS5/HTTP/Web selections fail closed. Desktop AppHost publishes restored state at startup and mode/selected/IPv6 changes after persistence through the existing TelegramClientLease.",
+      "platform_delta": "Task round100 implements the selected-proxy/custom-resolution slice in the existing source-neutral telegram-network/RuntimeClient owners. NetworkProxyProjection is transient; ProductSettingsOwner v2 remains the only durable source. MTProto proxies use the existing native obfuscated/TLS connection start, direct no-proxy DoH resolution and transient good-IP promotion. Unsupported enabled SOCKS5/HTTP/Web selections fail closed. Desktop AppHost publishes only the restored carrier projection at startup, then publishes carrier plus the existing mode-derived special-config projection after persisted settings mutations.",
       "existing_owner_candidates": [
         "canonical Fabushi ProductSettingsOwner v2",
         "bhrumom/fabushi-platform-core:native/telegram-network",
@@ -29574,7 +29574,7 @@
       ],
       "state_owner": "Canonical ProductSettingsOwner v2 remains the only durable mode/list/selected/rotation/credential owner. RuntimeClient and telegram-network own transient projection, live sockets, resolver observations and session lifecycle only.",
       "lifecycle_owner": "Existing RuntimeClient SessionOwner owns session/request invalidation and reusable auth material; existing telegram-network owns socket/resolver lifecycle; ProductSettingsOwner owns persistence.",
-      "persistence_and_restart": "ProductSettingsOwner v2 restores durable state. AppHost publishes its restored carrier projection to the process-lifetime TelegramClientLease during construction before normal host use. RuntimeClient does not serialize the proxy projection or resolver cache; persisted transport/auth-key state remains separate.",
+      "persistence_and_restart": "ProductSettingsOwner v2 restores durable state. AppHost publishes only its restored carrier projection to the process-lifetime TelegramClientLease during construction before normal host use; it does not invoke special-config acquisition during startup. RuntimeClient does not serialize the proxy projection or resolver cache; persisted transport/auth-key state remains separate.",
       "concurrency_and_cancellation": "Applying a changed carrier projection synchronously cancels all owned request controls and drops live sessions before replacing the transient projection. SessionOwner auth_materials and persisted transport auth-key metadata remain reusable. Resolver races own/cancel their direct HTTPS attempts through existing DirectHttpsRace.",
       "security_boundary": "Proxy credentials are passed only in the transient in-process carrier projection required to open the selected proxy. NetworkProxyEndpoint/Projection deliberately do not derive Debug; runtime status/result/error surfaces expose only enabled/type/custom-resolution booleans and never password/secret. DoH resolver uses NoProxy direct HTTPS.",
       "network_service_dependencies": [
@@ -29612,19 +29612,20 @@
         "fixed-U:Telegram/SourceFiles/mtproto/mtproto_proxy_data.cpp@f9748fcb6358dd8ce7429536ec2b999cb2a989ef",
         "platform-core-round100-spec-commit:828fbc38ced6a78bdcc5f1cf4f224dc598a918fa",
         "platform-core-round100-implementation-commit:2a4e9542f8b102eeaac8cc28f123e1a62648235d",
-        "platform-core-round100-final-source-compliance-commit:f3075538f761ca0bf8a008c33ae7e3f25a1c66a3",
-        "platform-core-round100-spec-blob:6a80b94b2147a41a6815b5700c2856db4ed5e79d",
         "platform-core-round100-protocol-blob:98e65d426242f9ff1ca0a3a2213dae1e41eca824",
         "platform-core-round100-resolver-blob:ef6b36c26257ee375df0a690e63dae814656e545",
         "platform-core-round100-network-blob:cf1247b3ec2486ce5e05f5a08ceb30b1e460e1db",
         "platform-core-round100-runtime-blob:b605b13c110b545d0c703b7fae1cc27d3d10afab",
         "desktop-round100-production-commit:5d816f224c21019f75725b56b6f8c759871f5295",
         "desktop-round100-telegram-adapter-blob:8df8e7286f161452336727d7e5750e45b67c413f",
-        "desktop-round100-app-host-blob:aa10fcfde5f47fc4b56223ff466cd9f128300b33",
         "desktop-round100-provider-protocol-blob:98e65d426242f9ff1ca0a3a2213dae1e41eca824",
         "desktop-round100-provider-resolver-blob:ef6b36c26257ee375df0a690e63dae814656e545",
         "desktop-round100-provider-network-blob:cf1247b3ec2486ce5e05f5a08ceb30b1e460e1db",
-        "desktop-round100-provider-runtime-blob:b605b13c110b545d0c703b7fae1cc27d3d10afab"
+        "desktop-round100-provider-runtime-blob:b605b13c110b545d0c703b7fae1cc27d3d10afab",
+        "platform-core-round100-final-source-compliance-commit:fb44f2b7170558560833a4f2e6cea0533b8e8d56",
+        "platform-core-round100-final-spec-blob:d95fcbf209c2c00b75918aec3de3eb18921d57c0",
+        "desktop-round100-startup-publication-fix-commit:2f0798e8709b3a3ea6b200f092060db6c1dccb62",
+        "desktop-round100-app-host-blob:1fe55278a834b828b6ffdd8e2ca933fd2eaa3ef9"
       ],
       "test_evidence": [
         "Round100 platform/desktop source contracts were authored next to protocol/network/runtime/AppHost/TelegramClientLease production owners and were not executed.",
@@ -29633,7 +29634,7 @@
         "Runtime contracts cover transient secret-free carrier result projection and session invalidation on carrier change.",
         "AppHost/lease contracts cover source-neutral carrier DTO derivation, mode/selected/IPv6 publication surface and exact request shape."
       ],
-      "target_commit": "5d816f224c21019f75725b56b6f8c759871f5295",
+      "target_commit": "2f0798e8709b3a3ea6b200f092060db6c1dccb62",
       "workflow_run": null,
       "run_attempt": null,
       "job": null,
@@ -29752,7 +29753,7 @@
       "acceptance_reviewer": null,
       "reviewer": null,
       "license_and_provenance": "Behavioral provenance is fixed-U Telegram/SourceFiles/mtproto/mtp_instance.cpp@d25fe3b72298fab371854f80186ee8e4777ea087 plus adjacent proxy/settings/network source listed in round114 evidence. No upstream C++ copied.",
-      "notes": "Task round100/source evidence round131. Canonical ProductSettingsOwner v2 now publishes restored and post-persistence mode/selected/IPv6 carrier state through the existing process-lifetime TelegramClientLease into the existing RuntimeClient/telegram-network owners. MTProto selected-proxy plus custom-resolution consumption is implemented; resolver cache/order/expiry remain transient; projection changes fence live sessions/requests while preserving reusable auth material. Enabled SOCKS5/HTTP/Web fail closed and remain separate carrier responsibilities. Contracts are authored but not run; validation_status=not-run; accepted=false.",
+      "notes": "Task round100/source evidence round131. Canonical ProductSettingsOwner v2 publishes restored carrier state through the existing process-lifetime TelegramClientLease before normal host use, without triggering special-config acquisition at startup. Post-persistence mode/selected/IPv6 mutations publish the transient carrier projection and retain the existing mode-derived special-config publication. MTProto selected-proxy plus custom-resolution consumption is implemented; resolver cache/order/expiry remain transient; projection changes fence live sessions/requests while preserving reusable auth material. Enabled SOCKS5/HTTP/Web fail closed and remain separate carrier responsibilities. Contracts are authored but not run; validation_status=not-run; accepted=false.",
       "test_execution_evidence": [],
       "validation_status": "not-run",
       "accepted": false,

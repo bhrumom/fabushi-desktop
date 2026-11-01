@@ -11,8 +11,8 @@ Stage: A — implementation, zero executable validation
 - platform-core start: `c90e9150914f741b2ec3fbf81011da4005688d61`
 - platform spec-first: `828fbc38ced6a78bdcc5f1cf4f224dc598a918fa`
 - platform implementation: `2a4e9542f8b102eeaac8cc28f123e1a62648235d`
-- platform final source-compliance: `f3075538f761ca0bf8a008c33ae7e3f25a1c66a3`
-- desktop production: `5d816f224c21019f75725b56b6f8c759871f5295`
+- platform final source-compliance: `fb44f2b7170558560833a4f2e6cea0533b8e8d56`
+- desktop production: `2f0798e8709b3a3ea6b200f092060db6c1dccb62`
 
 ## Fixed-U source reread
 
@@ -30,7 +30,7 @@ Platform production `2a4e9542f8b102eeaac8cc28f123e1a62648235d`:
 - network `cf1247b3ec2486ce5e05f5a08ceb30b1e460e1db`: source-neutral NetworkProxyProjection, MTProto carrier and fail-closed unsupported enabled carriers;
 - runtime `b605b13c110b545d0c703b7fae1cc27d3d10afab`: transient `telegram.applyNetworkProxy`, request/session invalidation and preserved reusable auth material.
 
-Desktop production `5d816f224c21019f75725b56b6f8c759871f5295` mirrors those provider blobs. `TelegramClientLease@8df8e7286f161452336727d7e5750e45b67c413f` carries the typed transient projection; `AppHost@aa10fcfde5f47fc4b56223ff466cd9f128300b33` derives it from ProductSettingsOwner v2, publishes restored state before normal host use, and republishes mode/selected/IPv6 changes after persistence. Existing proxyEnabled special-config suppression remains.
+Desktop production `2f0798e8709b3a3ea6b200f092060db6c1dccb62` mirrors those provider blobs. `TelegramClientLease@8df8e7286f161452336727d7e5750e45b67c413f` carries the typed transient projection; `AppHost@1fe55278a834b828b6ffdd8e2ca933fd2eaa3ef9` derives it from ProductSettingsOwner v2, publishes only the restored carrier projection before normal host use, and republishes mode/selected/IPv6 changes after persistence; special-config publication is not a startup dependency. Existing proxyEnabled special-config suppression remains.
 
 Enabled SOCKS5/HTTP/Web selections deliberately fail closed and remain separate carrier responsibilities.
 
@@ -45,3 +45,8 @@ No GitHub Actions/check/status/workflow query or trigger was performed. No build
 ## Disposition
 
 `TDRP-R9-PROXY-MTPROTO-CONSUMER-001` is `implemented / validation_status=not-run / accepted=false`. Stage B executable validation remains open. The broader fixed-U migration remains incomplete.
+
+
+## Manual source-review correction
+
+After the first production composition, source-only call-chain review found that reusing the full carrier+special-config publisher during AppHost construction could call `refreshSpecialConfig(false)` before authorization phone context exists. Desktop `2f0798e8709b3a3ea6b200f092060db6c1dccb62` / AppHost `1fe55278a834b828b6ffdd8e2ca933fd2eaa3ef9` corrects startup restore to `TelegramClientLease::apply_network_proxy` only. Persisted settings mutations retain the existing carrier plus mode-derived special-config publication behavior. Platform spec/source-compliance was updated at `fb44f2b7170558560833a4f2e6cea0533b8e8d56`. This finding and correction used source inspection only; no executable validation was run.
