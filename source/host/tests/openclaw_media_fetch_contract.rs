@@ -27,6 +27,15 @@ use mahayana_host_runtime::extensions::attachments::media_fetch::{
     save_response_media, MediaFetchErrorCode, SaveResponseMediaOptions,
 };
 
+const MEDIA_FETCH_SOURCE: &str = include_str!("../src/extensions/attachments/media_fetch.rs");
+
+#[test]
+fn remote_fetch_entries_use_bounded_response_reads() {
+    assert!(MEDIA_FETCH_SOURCE.contains("fn read_bounded_response("));
+    assert!(MEDIA_FETCH_SOURCE.contains("take(max_bytes.saturating_add(1) as u64)"));
+    assert!(!MEDIA_FETCH_SOURCE.contains("res.bytes()"));
+}
+
 struct TempTestDir {
     path: PathBuf,
 }

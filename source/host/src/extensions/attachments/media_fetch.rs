@@ -7,6 +7,7 @@
 
 use std::collections::BTreeMap;
 use std::fmt;
+use std::io::Read;
 use std::path::PathBuf;
 use std::time::Duration;
 
@@ -23,6 +24,17 @@ use crate::extensions::attachments::media_store_shared::{
 
 pub const DEFAULT_MEDIA_RESPONSE_HEADER_TIMEOUT_MS: u64 = 15 * 60_000;
 pub const MAX_DOCUMENT_BYTES: usize = 50 * 1024 * 1024; // 50MB
+
+fn read_bounded_response(
+    response: &mut reqwest::blocking::Response,
+    max_bytes: usize,
+) -> std::io::Result<Vec<u8>> {
+    let mut bytes = Vec::new();
+    response
+        .take(max_bytes.saturating_add(1) as u64)
+        .read_to_end(&mut bytes)?;
+    Ok(bytes)
+}
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
@@ -628,7 +640,7 @@ pub fn read_remote_media_buffer_with_headers(
         .build()
         .map_err(|e| MediaFetchError::fetch_failed(source_url, e.to_string()))?;
 
-    let res = client
+    let mut res = client
         .get(source_url)
         .send()
         .map_err(|e| MediaFetchError::fetch_failed(source_url, e.to_string()))?;
@@ -693,8 +705,7 @@ pub fn read_remote_media_buffer_with_headers(
         .and_then(|v| v.to_str().ok())
         .map(ToString::to_string);
 
-    let bytes = res
-        .bytes()
+    let bytes = read_bounded_response(&mut res, effective_max_bytes)
         .map_err(|e| MediaFetchError::fetch_failed(source_url, e.to_string()))?;
 
     if bytes.len() > effective_max_bytes {
@@ -893,7 +904,7 @@ pub fn save_remote_media(
         .build()
         .map_err(|e| MediaFetchError::fetch_failed(source_url, e.to_string()))?;
 
-    let res = client
+    let mut res = client
         .get(source_url)
         .send()
         .map_err(|e| MediaFetchError::fetch_failed(source_url, e.to_string()))?;
@@ -908,8 +919,8 @@ pub fn save_remote_media(
         }
     }
 
-    let bytes = res
-        .bytes()
+    let effective_max_bytes = options.max_bytes.unwrap_or(MAX_DOCUMENT_BYTES);
+    let bytes = read_bounded_response(&mut res, effective_max_bytes)
         .map_err(|e| MediaFetchError::fetch_failed(source_url, e.to_string()))?;
 
     let save_opts = SaveResponseMediaOptions {
