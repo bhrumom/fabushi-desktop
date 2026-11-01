@@ -410,6 +410,25 @@ reviews. This is a bounded owner-local settlement chain, not full OpenClaw
 equivalence or production acceptance; exact-head Actions and real runtime
 evidence remain pending, and global completion flags are unchanged.
 
+## 2026-11-01 session-provenance producer sweep
+
+The current Host/Runner producer sweep rechecked transcript mutation sites
+that already carry a canonical session identity. Timeline events, channel
+inbound materialization, acknowledgement redrive, generated sends, local-tool
+permission cards, spend-guard cards, shared-room fanout, agent-to-agent sends,
+box-request settlement, Human handoff, Human reaction projection, and remote
+Human refresh/identity settlement all route their bound rows through the
+existing admitted session owner. Calls with no producer-owned session
+identity remain on the explicitly documented compatibility path; no
+`agent:{id}:main` selector was synthesized.
+
+Channel-delivery failure marker settlement remains pending for exact-marker
+recovery: the worker has a stable operation ID plus partial failure provenance,
+but not the complete persisted marker identity needed to safely replace
+key-only clearing. This sweep therefore adds no acceptance or global-flag
+claim and leaves the session-work-admission responsibility
+`not-started/not-wired/not-run/pending`.
+
 ## Receipt replay admission-fence correction — 2026-11-01
 
 The live `SandAgentDb` recheck found that an already-committed
