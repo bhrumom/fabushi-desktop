@@ -1861,3 +1861,18 @@ Final canonical and desktop telegram-network lib/request-normalization/authored-
 Coverage remains `source_entries_total=16202, responsibilities_total=120, unknown=16172, unread=16145, omitted=0, unmapped_responsibilities=0`.
 
 No GitHub Actions/status/check query or trigger, build, typecheck, lint, schema validator, generator, dependency resolution, lock regeneration, unit/contract/integration/E2E execution, package, deployment, installation or runtime acceptance was performed.
+
+
+### Round 118 direct HTTP carrier / staggered reply lifecycle owner audit
+
+Fixed-U carrier reread covered `mtproto_domain_resolver.cpp@eeac8f6a8e2df67967ea7b536fb165e2f8d983e9`, `mtproto_domain_resolver.h@cb1979bbbf0454135c8668ed1e5013da85d1dedc`, `special_config_request.cpp@fdb65506b0a886bc2daeccb61090bc44be7e2d88`, and `special_config_request.h@91901489e778089b03187682a9556e929867b94f`.
+
+Both source owners use a dedicated `QNetworkAccessManager` with `QNetworkProxy::NoProxy` and an 800 ms stagger. The lifecycle is not one generic winner policy: DomainResolver binds delayed attempts to a per-key weak guard and erases that guard after the first non-empty parsed DNS result, while SpecialConfigRequest binds delays to the request object and does not internally stop remaining attempts after one successful response. `ServiceWebRequest::destroy()` performs disconnect+abort+deleteLater only when replacing an owned reply; ordinary destruction only schedules deleteLater, and each finished reply is read then removed even when it carries error metadata.
+
+Existing-owner-first audit at platform-core found no reusable first-party HTTP carrier: `native/telegram-network/Cargo.toml@9ab75b9fa7d8a97f49ef4d627008727826337162` and its lock have no HTTP/Web-PKI/timer stack, `native/telegram-network/src/lib.rs@3743331b0b1453048a98a21ae4ac2d2b91a2b2a5` is synchronous TcpStream/MTProto plus pure normalization, and `native/telegram-runtime/Cargo.toml@a0d5aee63c886b11c3ad8fbf37885e0a3c5b6053` has no HTTP/timer owner. Vendored `third_party/mahayana/codex-rs/http-client` is explicitly Codex-owned and brings reqwest/rustls/tokio plus Codex proxy/logging policy, so it is rejected as an ownership and NoProxy-policy mismatch rather than reused.
+
+Platform durable carrier-lifecycle spec is commit `2eade7264ce40c53e18eee75a21aa6c2a214ef05` / blob `91c92cadaf5df2db84eacb1111616af942851b67`. Because actual HTTPS dispatch would require a new native HTTP/TLS/task dependency graph and lock inputs, this round records a blocked/no-production-delta instead of adding an unreachable facade, thread-sleep surrogate, system curl subprocess, or fake executable contract.
+
+`TDRP-R9-MTPROTO-SPECIAL-CONFIG-CARRIER-APPLICATION-001` remains `mapped / pending / validation_status=not-run / accepted=false`. Remaining scope is a first-party direct HTTPS carrier/lifecycle, then global HTTP-time mutation, temporary-DC help.getConfig, and dc_options application. Coverage remains `source_entries_total=16202, responsibilities_total=120, unknown=16172, unread=16145, omitted=0, unmapped_responsibilities=0`.
+
+No GitHub Actions/status/check query or trigger, build, typecheck, lint, schema validator, generator, dependency resolution, lock regeneration, unit/contract/integration/E2E execution, package, deployment, installation or runtime acceptance was performed.

@@ -30160,9 +30160,9 @@
         "Temporary DC session",
         "DcOptions"
       ],
-      "source_analysis_path": "projects/telegram-desktop-rust/evidence/round115-special-config-payload-boundary-20261101.md",
-      "behavior_contract": "Issue fixed-U direct no-proxy Google/Mozilla DoH and Firestore requests from the separately implemented semantic request descriptors, apply staggered racing/cancellation, consume pure normalized body/header outputs, mutate the global HTTP-derived time only after a valid parsed Date header, then drive temporary-DC help.getConfig and runtime dc_options replacement without creating a second settings/network/DC owner. Pure request shaping is implemented in TDRP-R9-MTPROTO-REQUEST-NORMALIZATION-001; pure response parsing is implemented in TDRP-R9-MTPROTO-RESPONSE-NORMALIZATION-001.",
-      "state_machine": "eligible config refresh -> staggered direct web attempts -> first successful compact payload -> selected endpoint -> transient temporary DC option -> temporary help.getConfig request -> dc_options replacement -> terminate/kill temporary session; timeout/error -> retry/terminate",
+      "source_analysis_path": "projects/telegram-desktop-rust/evidence/round118-doh-special-config-http-carrier-lifecycle-20261101.md",
+      "behavior_contract": "Dispatch the already-normalized fixed-U Google/Mozilla DoH and Firestore descriptors through a dedicated direct/no-proxy HTTPS carrier, preserve the source's 800 ms stagger and reply-finalization semantics without collapsing DomainResolver and SpecialConfigRequest into one winner policy, expose normalized body/header outputs to their existing owners, then separately drive global HTTP-derived time mutation, temporary-DC help.getConfig, and dc_options application. Pure request and response normalization remain separately implemented.",
+      "state_machine": "eligible special-config refresh -> 800 ms staggered direct web attempts -> each finished reply exposes successful Date header and is finalized -> any non-empty decodable config body may apply endpoints while remaining attempts continue if the owner remains alive -> selected endpoint -> transient temporary DC option -> temporary help.getConfig -> dc_options replacement -> terminate/kill temporary session; error/empty body leaves other attempts eligible",
       "side_effects": [
         "No production delta in this round; carrier/scheduler/application behavior is recorded as an explicit blocker."
       ],
@@ -30181,15 +30181,16 @@
         "help.getConfig request/cancel/timeout",
         "dc_options replacement/change notification"
       ],
-      "platform_delta": "Request shaping and response normalization are separately implemented in existing source-neutral owners. No carrier/application production delta: current telegram-network/runtime still has no shipping HTTP special-config acquisition/racing or temporary-DC help.getConfig application chain.",
+      "platform_delta": "No carrier/application production delta in round 87/source evidence round 118. Exact fixed-U dispatch/racing/finalization semantics were pinned, but canonical telegram-network/runtime has no first-party HTTPS/TLS/timer/cancellable-reply owner. Adding a new dependency graph or unreachable facade would violate the existing-owner-first and deferred-lock constraints.",
       "existing_owner_candidates": [
         "bhrumom/fabushi-platform-core:native/telegram-network",
         "existing telegram-runtime/session owner",
         "existing DcDirectory owner"
       ],
-      "existing_owner": "Future extension of existing telegram-network/runtime + DcDirectory lifecycle once a shipping bootstrap consumer exists",
+      "existing_owner": "Future extension of existing native/telegram-network plus existing telegram-runtime/DcDirectory lifecycle after a first-party direct HTTPS carrier is established in the canonical native networking layer",
       "rejected_existing_owners": [
         "telegram-protocol pure decoder: must remain side-effect free",
+        "third_party/mahayana/codex-rs/http-client: vendored Codex transport with reqwest/rustls/tokio plus Codex proxy/logging policy; not the canonical Telegram/native owner and not source-equivalent to a dedicated NoProxy manager",
         "new bootstrap provider/runtime: violates existing-owner-first",
         "Settings owner: does not own network acquisition/session scheduling"
       ],
@@ -30216,8 +30217,8 @@
       "state_owner": "Canonical Fabushi Settings/application owner for durable proxy state; downstream consumer owns projection/runtime observations only.",
       "lifecycle_owner": "Existing telegram-network/runtime owner for transient proxy observations once a shipping selectable proxy/config-acquisition path exists; Settings remains durable owner",
       "persistence_and_restart": "No new persistence. Durable proxy state remains in the future canonical Settings owner; transient consumer observations are not persisted.",
-      "concurrency_and_cancellation": "No scheduler or background lifecycle is added in this round. Existing consumer lifecycle remains authoritative when the shipping path exists.",
-      "security_boundary": "Proxy secrets must not be logged or copied into UI/provider-local persistence. External commands must be authorized before forwarding typed mutations.",
+      "concurrency_and_cancellation": "Fixed-U carrier contract is now explicit but not implemented: DomainResolver uses a per-key weak guard so a non-empty parsed DNS result erases _attempts[key] and fences not-yet-fired 800 ms callbacks; SpecialConfigRequest binds 800 ms callbacks to the request object and does not internally cancel remaining attempts after one successful response. ServiceWebRequest ordinary destruction only schedules deleteLater; explicit disconnect+abort+deleteLater occurs in destroy() during replacement, so a future carrier must not invent stronger per-drop abort claims.",
+      "security_boundary": "Service acquisition must be explicit direct/no-proxy HTTPS and must not inherit user/system/environment/PAC/WPAD or Telegram-selected proxy routing. Request payloads, secrets, response bodies, and sensitive headers must not be logged. Global HTTP-time mutation remains outside the carrier.",
       "network_service_dependencies": [
         "Existing embedded Telegram/native network stack only when a selectable proxy carrier exists"
       ],
@@ -30226,8 +30227,10 @@
       "implementation_status": "mapped",
       "coverage_disposition": "pending",
       "blockers": [
-        "Canonical/desktop telegram-network currently exposes no shipping HTTP client/special-config acquisition scheduler to dispatch the normalized request descriptors.",
-        "Current runtime has no proven special-config temporary-session lifecycle/caller to extend without inventing a parallel bootstrap runtime.",
+        "Canonical native/telegram-network has no first-party HTTPS/Web-PKI client, timer/task runtime, or cancellable HTTP reply owner; its current Cargo.toml and lock contain no reqwest, hyper, ureq, rustls, or native-tls HTTP/TLS stack.",
+        "The only repository HTTP client found is vendored third_party/mahayana/codex-rs/http-client, which is a Codex-owned reqwest/rustls/tokio transport with proxy/logging policy and is rejected as the Telegram carrier owner.",
+        "A real carrier would require a deliberate native shared HTTP/TLS lifecycle design plus dependency/lock inputs; Stage A forbids dependency resolution and lock regeneration, so this round cannot safely introduce that graph.",
+        "Current runtime still has no proven special-config temporary-session help.getConfig/dc_options application chain to extend without inventing a parallel bootstrap runtime.",
         "Stage B executable validation has not run."
       ],
       "production_entrypoints": [],
@@ -30254,10 +30257,22 @@
         "desktop-request-normalization-source-review-fix-commit:712bde77f6f232efafe775ff9390faa47e9595fe",
         "request-normalization-module-blob:2f3ea627054779296102f13c70be17a3655ddcb9",
         "platform-core-final-request-normalization-compliance-commit:445f49beed303bd7dbef2f8b998bfb22d8aaadce",
-        "platform-core-final-request-normalization-spec-blob:94c6b75c471167009aacec4bdb3fd4d00cb2bb27"
+        "platform-core-final-request-normalization-spec-blob:94c6b75c471167009aacec4bdb3fd4d00cb2bb27",
+        "fixed-U:mtproto_domain_resolver.cpp@eeac8f6a8e2df67967ea7b536fb165e2f8d983e9",
+        "fixed-U:mtproto_domain_resolver.h@cb1979bbbf0454135c8668ed1e5013da85d1dedc",
+        "fixed-U:special_config_request.h@91901489e778089b03187682a9556e929867b94f",
+        "platform-core-http-carrier-lifecycle-spec-commit:2eade7264ce40c53e18eee75a21aa6c2a214ef05",
+        "platform-core-http-carrier-lifecycle-spec-blob:91c92cadaf5df2db84eacb1111616af942851b67",
+        "platform-core-telegram-network-cargo-blob:9ab75b9fa7d8a97f49ef4d627008727826337162",
+        "platform-core-telegram-network-lib-blob:3743331b0b1453048a98a21ae4ac2d2b91a2b2a5",
+        "platform-core-telegram-network-lock-blob:d395652dcdffdafee02b8bcb1cc9aaf057ce1ac9",
+        "platform-core-telegram-runtime-cargo-blob:a0d5aee63c886b11c3ad8fbf37885e0a3c5b6053",
+        "vendored-codex-http-client-cargo-blob:46afa51ba5d844e73894c743b7a4025263db0e7b",
+        "vendored-codex-http-client-readme-blob:89e35ac59d2dbf390d056de0aec88b14833962b1"
       ],
       "test_evidence": [
-        "Carrier/application contracts are documented in the durable spec; no fake executable test was added against a nonexistent shipping scheduler."
+        "Carrier/lifecycle contracts are fixed in docs/specs/telegram-doh-special-config-http-carrier-lifecycle-boundary.md; no fake executable contract was added against a nonexistent shipping HTTP carrier.",
+        "Executable validation remains intentionally not-run in Stage A."
       ],
       "target_commit": "e4344c0c9b68efd54dc44c88f9da87b29acf8bbf",
       "workflow_run": null,
@@ -30281,7 +30296,9 @@
       "duplicate_root_check": "No second bootstrap runtime/provider/network/DC directory is introduced.",
       "novel_capability": false,
       "owner_absence_evidence": [
-        "Desktop tracked tree contains no shipping call/proxy consumer; telegram-network/runtime contain no proxy/config-loader/custom-resolution symbols at the reviewed blobs."
+        "At platform-core@2eade7264ce40c53e18eee75a21aa6c2a214ef05, native/telegram-network is synchronous TcpStream/MTProto plus pure request normalization; its manifest/lock provide no first-party HTTP/TLS carrier.",
+        "native/telegram-runtime has no HTTP client or timer/task runtime dependency.",
+        "third_party/mahayana/codex-rs/http-client is explicitly Codex-owned and depends on the Codex workspace reqwest/rustls/tokio stack, so it is rejected rather than promoted into the Telegram owner."
       ],
       "minimal_owner_adr": null,
       "ui_entry_class": "Not applicable",
@@ -30374,8 +30391,8 @@
       "release_gate_status": "pending",
       "acceptance_reviewer": null,
       "reviewer": null,
-      "license_and_provenance": "Behavioral provenance is fixed-U Telegram/SourceFiles/mtproto/mtp_instance.cpp@d25fe3b72298fab371854f80186ee8e4777ea087 plus adjacent proxy/settings/network source listed in round114 evidence. No upstream C++ copied.",
-      "notes": "Task round86/source evidence round117. Carrier/application remains mapped/pending after extracting both pure response normalization and pure request shaping. Remaining work is actual direct no-proxy HTTP dispatch/racing/reply lifecycle, global time mutation, temporary-DC help.getConfig and DcOptions application against a shipping existing network/runtime scheduler. Final request-normalization source compliance is platform-core 445f49beed303bd7dbef2f8b998bfb22d8aaadce / spec blob 94c6b75c471167009aacec4bdb3fd4d00cb2bb27. Stage-A executable validation remains not-run.",
+      "license_and_provenance": "Behavioral provenance is fixed-U mtproto_domain_resolver.cpp/.h, special_config_request.cpp/.h, and the already-reviewed config_loader/dc-options chain. Source-neutral Fabushi documentation only; no upstream C++ copied.",
+      "notes": "Task round87/source evidence round118. Direct no-proxy dispatch, 800 ms staggered scheduling and ServiceWebRequest finalization were reread at fixed U. DomainResolver fences future delayed attempts after the first non-empty parsed DNS result, while SpecialConfigRequest does not internally cancel remaining attempts after one successful response; ServiceWebRequest ordinary destruction is deleteLater-only and explicit abort is confined to destroy(). Existing native/telegram-network/runtime has no reusable first-party HTTP/TLS/timer/cancellable-reply owner; the vendored Codex HTTP client is rejected as an ownership/policy mismatch. Platform carrier-lifecycle spec commit 2eade7264ce40c53e18eee75a21aa6c2a214ef05 / blob 91c92cadaf5df2db84eacb1111616af942851b67. No production delta; carrier/application remains mapped/pending, validation_status=not-run, accepted=false.",
       "test_execution_evidence": [],
       "validation_status": "not-run",
       "accepted": false,
