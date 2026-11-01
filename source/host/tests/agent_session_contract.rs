@@ -174,6 +174,14 @@ fn deletion_fence_rejects_new_transcript_work_before_durable_write() {
         .set_agent_automation_spend_guard_state(&record.id, &SpendGuardState::default())
         .expect_err("deletion-pending spend-guard state must be rejected");
     assert!(spend_guard_error.contains("new session work is not admitted"));
+    let memory_snapshot_error = production
+        .set_agent_memory_prompt_snapshot(&record.id, &serde_json::json!({"render":"blocked"}))
+        .expect_err("deletion-pending memory snapshot must be rejected");
+    assert!(memory_snapshot_error.contains("new session work is not admitted"));
+    let profile_snapshot_error = production
+        .set_agent_profile_prompt_snapshot(&record.id, &serde_json::json!({"name":"blocked"}))
+        .expect_err("deletion-pending profile snapshot must be rejected");
+    assert!(profile_snapshot_error.contains("new session work is not admitted"));
     let activity_error = production
         .mark_agent_activity(&record.id, 42.0)
         .expect_err("deletion-pending activity must be rejected");

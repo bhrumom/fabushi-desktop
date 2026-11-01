@@ -2425,6 +2425,7 @@ impl ProductionSessionWorkers {
         agent_id: &str,
         snapshot: &serde_json::Value,
     ) -> Result<bool, String> {
+        self.assert_agent_work_admission(agent_id)?;
         self.open_agent_db_owner(agent_id)?
             .set_memory_prompt_snapshot(snapshot)
             .map_err(|error| error.to_string())
@@ -2450,6 +2451,7 @@ impl ProductionSessionWorkers {
         agent_id: &str,
         snapshot: &serde_json::Value,
     ) -> Result<bool, String> {
+        self.assert_agent_work_admission(agent_id)?;
         self.open_agent_db_owner(agent_id)?
             .set_agent_profile_prompt_snapshot(snapshot)
             .map_err(|error| error.to_string())

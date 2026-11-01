@@ -220,6 +220,9 @@ session database transaction. Legacy records without an admission row retain
 the compatibility path and are not treated as equivalent atomic evidence.
 The spend-guard apply and widget-answer entrypoints reject before mutating the
 automation store when deletion custody is active.
+Host turn memory/profile prompt snapshot setters also reject in the production
+facade; clear paths with an external memory-store mutation remain a separate
+atomicity boundary.
 
 ## Release, migration, rollback, and observability
 

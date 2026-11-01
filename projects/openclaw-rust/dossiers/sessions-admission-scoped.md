@@ -695,3 +695,8 @@ explicitly separate; this closes one atomic producer edge without promoting
 the broader automation or session-work-admission responsibilities. Direct
 spend-guard state writes also pass the owner-level deletion admission fence,
 and both mutation entrypoints reject before changing automation routine state.
+
+Host turn memory/profile prompt snapshot setters now pass the same deletion
+fence. The external-memory clear path remains open because its producer mutates
+the memory store before the SQLite snapshot and requires a separate atomic
+owner contract.

@@ -112,6 +112,11 @@ Both spend-guard mutation entrypoints also reject before changing the
 automation store, so deletion cannot leave a routine-side effect without its
 owner-local state transition.
 
+Host turn memory/profile prompt snapshot setters are likewise admitted through
+the same owner fence. Their paired clear paths are intentionally not widened
+here because one production memory-clear caller mutates the external memory
+store before clearing the SQLite snapshot and needs a separate atomic contract.
+
 ## Failure and edge cases
 
 - missing or malformed session identity: reject before durable admission;

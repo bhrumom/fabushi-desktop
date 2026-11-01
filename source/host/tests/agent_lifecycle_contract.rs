@@ -897,6 +897,8 @@ fn deletion_owner_publishes_and_clears_the_durable_session_admission_fence() {
     assert!(production.contains("pub fn set_agent_awaiting_user_response_for_tab"));
     assert!(production.contains("pub fn set_agent_introduction_pending"));
     assert!(production.contains("pub fn set_agent_automation_spend_guard_state"));
+    assert!(production.contains("pub fn set_agent_memory_prompt_snapshot"));
+    assert!(production.contains("pub fn set_agent_profile_prompt_snapshot"));
     assert!(agent_db.contains("admission.deletion_pending"));
     assert!(production.contains("publishing deletion fence"));
     assert!(production.contains("clearing deletion fence"));
