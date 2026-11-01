@@ -16199,7 +16199,11 @@ fn main() {
         paired: true,
         gateway_local: true,
     });
-    let _ = node_host_runtime.set_active(&local_session, true);
+    if !node_host_runtime.set_active(&local_session, true) {
+        host_lifecycle.fail();
+        eprintln!("failed to activate local NodeHost session during startup");
+        return;
+    }
 
     let gateway_api = Arc::new(UnifiedGatewayApi {
             host_tx: host_tx.clone(),
