@@ -293,6 +293,16 @@ provider-supported representation or return a fail-closed unsupported-media
 result. The current `ProviderMessage` path remains valid for ordinary turns
 and must not be silently reused for compacted typed replay.
 
+An inference-owner pure serializer contract is now present in
+`source/host/src/extensions/inference/typed_replay_serialization.rs`:
+Responses serialization preserves the summary envelope and balanced
+function-call/output items; Chat Completions serialization preserves native
+assistant tool calls and tool results. Both reject unresolved local
+attachments, and Chat Completions rejects non-image media because no provider
+file-part contract has been established. The serializers are not wired to a
+live Runner or provider attempt, so this is implementation evidence rather
+than production acceptance.
+
 The existing attachment resolution evidence is app-owned rather than an
 inference contract: `source/host/app/src/main.rs:605-670`
 `resolve_production_attachment_source` can persist host bytes or download box
