@@ -25,12 +25,15 @@ are approved and then implemented with focused oracles.
 
 ## Source evidence and exact subjects
 
-- Fabushi source subject: branch `codex/openclaw-rust-full-fusion-20261101`,
-  commit `a42a4f9135befb63bd074d9a13acce3e874976bf`, tree
-  `bdd35c532bae40d79ed273dd04ca6ef1ab026d93`.
-- Upstream discovery subject: OpenClaw commit
-  `94e33774c5fba3da3d3e521f47a2179d11113405`, tree
-  `7228383c9d7c5e025def3ae9a69eb1c75d3c1ea0`.
+- Fabushi source subject: current chat branch
+  `codex/openclaw-rust-fusion-chat-20261101-writer`, commit
+  `8011e9c1e24c9b154bfb2fda3aaedf251a48ad68`, tree
+  `4c509068be2a38d993b6bd5378a9e6a7c9bc45b5`.
+- Fixed OpenClaw implementation subject: commit
+  `ad8d12f126d29b0db204187adf5092db80294e70`, tree
+  `04ccce62f1d74dc8e0c88290ae8ded027b7b0f16`.
+- The fixed OpenClaw subject is the only implementation authority for this
+  decision; moving discovery candidates are not substituted for it.
 - Upstream behavior: `src/cron/session-reaper.ts` removes expired per-run
   rows, preserves base sessions, skips active media/subagent/controller work,
   and uses guarded lifecycle deletion when identity, revision, and update time
@@ -55,6 +58,13 @@ are approved and then implemented with focused oracles.
 - Session routing already recognizes `agent:<id>:cron:*` in
   `source/host/src/extensions/session/session_paths.rs`, but recognition is
   not durable row ownership or deletion capability.
+
+The exact-subject revalidation on 2026-11-01 found no implementation or
+wiring change that closes D01–D05: `AutomationRunPath` still persists only
+the existing bounded automation run history, while `SandAgentDb` still owns
+the canonical main-session row and has no per-run session table or guarded
+transcript archive primitive. This refresh corrects provenance only; it does
+not approve the architecture or promote any ledger/global status.
 
 ## Decisions
 
