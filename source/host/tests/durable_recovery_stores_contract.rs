@@ -7,7 +7,8 @@ use mahayana_host_runtime::extensions::transcript::sand_pending_wake_store::{
     SandPendingWakeStore, parse_pending_wake_file,
 };
 use mahayana_host_runtime::extensions::transcript::sand_upgrade_resume_store::{
-    SandUpgradeResumeStore, UpgradeResumeMarker, parse_upgrade_resume_file,
+    upgrade_resume_marker_identity_is_well_formed, SandUpgradeResumeStore, UpgradeResumeMarker,
+    parse_upgrade_resume_file,
 };
 
 fn temp_root(label: &str) -> std::path::PathBuf {
@@ -162,6 +163,18 @@ fn upgrade_resume_store_clears_only_the_observed_marker() {
     assert!(store.clear_if_matches(&newer));
     assert!(store.list_pending().is_empty());
     let _ = fs::remove_dir_all(root);
+}
+
+#[test]
+fn upgrade_resume_marker_rejects_incomplete_automation_identity() {
+    let marker = UpgradeResumeMarker {
+        agent_id: "agent-a".into(),
+        marked_at_ms: 1.0,
+        source: Some("automation".into()),
+        automation_id: None,
+        automation_run_id: Some("run-a".into()),
+    };
+    assert!(!upgrade_resume_marker_identity_is_well_formed(&marker));
 }
 
 #[test]

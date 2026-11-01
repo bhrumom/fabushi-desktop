@@ -67,3 +67,8 @@ marker for a later recovery attempt. Settlement uses the whole observed
 written for the same agent during recovery is not removed by an older pass.
 This is source and contract evidence only; runtime, exact-head verification,
 package, and acceptance remain pending.
+
+Malformed marker identity is also fail-closed: an empty automation identity or
+an automation run id without its automation id remains pending and is never
+reinterpreted as a direct-main resume. This preserves the existing marker for
+later repair/recovery rather than dispatching under a different session scope.

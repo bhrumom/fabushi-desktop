@@ -59,6 +59,22 @@ pub fn parse_upgrade_resume_file(raw: Option<&str>) -> Vec<UpgradeResumeMarker> 
         .unwrap_or_default()
 }
 
+pub fn upgrade_resume_marker_identity_is_well_formed(marker: &UpgradeResumeMarker) -> bool {
+    if marker.agent_id.trim().is_empty()
+        || marker
+            .automation_id
+            .as_deref()
+            .is_some_and(|value| value.trim().is_empty())
+        || marker
+            .automation_run_id
+            .as_deref()
+            .is_some_and(|value| value.trim().is_empty())
+    {
+        return false;
+    }
+    marker.automation_run_id.is_none() || marker.automation_id.is_some()
+}
+
 pub fn upsert_resume_marker(
     existing: &[UpgradeResumeMarker],
     marker: UpgradeResumeMarker,

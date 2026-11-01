@@ -197,6 +197,8 @@ lifecycle owners.
   terminal-lost disposition (for example, a deleted agent or non-resumable
   group); preserve the marker on identity, dispatch, or unknown failures, and
   never remove a newer marker written for the same agent during recovery.
+  A marker with an incomplete automation identity must fail closed and remain
+  pending; it must not be reinterpreted as a direct-main resume.
 - provider-review continuation dispatch failure: restore the review to
   `pending`; Runner cancellation/failure/unknown: retain terminal facts in a
   non-actionable phase and clear the matching terminal work marker; Runner

@@ -161,7 +161,9 @@ use mahayana_host_runtime::extensions::transcript::box_handoff_resume::{
     box_handoff_resume_prompt, format_mcp_account_display_name, listener_connect_resume_prompt,
     mcp_auth_resume_prompt, should_resume_hidden_handoff,
 };
-use mahayana_host_runtime::extensions::transcript::sand_upgrade_resume_store::UpgradeResumeMarker;
+use mahayana_host_runtime::extensions::transcript::sand_upgrade_resume_store::{
+    upgrade_resume_marker_identity_is_well_formed, UpgradeResumeMarker,
+};
 use mahayana_host_runtime::extensions::transcript::upgrade_recreate_resume::build_upgrade_resume_prompt;
 use mahayana_host_runtime::extensions::transcript::box_request_entries::resolve_box_request_entry;
 use mahayana_host_runtime::extensions::transcript::workflow_commands::{
@@ -3399,6 +3401,13 @@ impl UnifiedGatewayApi {
         }
 
         for marker in pending {
+            if !upgrade_resume_marker_identity_is_well_formed(&marker) {
+                eprintln!(
+                    "mahayana-host upgrade_resume_identity_invalid agent={}",
+                    marker.agent_id
+                );
+                continue;
+            }
             let Some(summary) = self
                 .session_workers
                 .summarize_agent_by_id(&marker.agent_id, None)?
